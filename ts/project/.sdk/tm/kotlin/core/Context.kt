@@ -244,4 +244,23 @@ class Context(ctxmap: MutableMap<String, Any?>?, basectx: Context?) {
   fun makeError(code: String, msg: String): SdkError {
     return SdkError(code, msg, this)
   }
+
+  // The serialised context leaves the pipeline (a logger, an error dump), so
+  // it is cleaned; the live fields stay raw for the pipeline's own use.
+  fun toMap(): Any? {
+    val record = linkedMapOf<String, Any?>()
+    record["id"] = this.id
+    record["op"] = this.op
+    record["spec"] = this.spec
+    record["entity"] = this.entity
+    record["result"] = this.result
+    record["response"] = this.response
+    record["meta"] = this.meta
+    val u = this.utility ?: return record
+    return u.clean(this, record)
+  }
+
+  override fun toString(): String {
+    return "Context " + Struct.jsonify(this.toMap())
+  }
 }

@@ -33,6 +33,7 @@ object MakeError {
     val spec = ctx.spec
 
     if (ctx.ctrl.explain != null) {
+      Clean.cleanExplain(ctx)
       val errRecord = new LinkedHashMap[String, Object]()
       errRecord.put("message", msg)
       ctx.ctrl.explain.put("err", errRecord)
@@ -44,6 +45,7 @@ object MakeError {
     val sdkErr = new SdkError(code, msg, ctx)
     sdkErr.result = Clean.clean(ctx, result)
     sdkErr.spec = Clean.clean(ctx, spec)
+    sdkErr.status = result.status
 
     ctx.ctrl.err = sdkErr
 
@@ -266,6 +268,19 @@ object MakeOptions {
     // null check, which cannot distinguish them.
     val authSuppressed = options.containsKey("auth") && null == options.get("auth")
 
+    // The secret registry exists BEFORE validation, fed from the raw input, so
+    // the constructor's own rejection of a mistyped credential is clean too.
+    val cleanlist = new ArrayList[Object]()
+    cleanlist.add(new LinkedHashMap[String, Object]())
+    cleanlist.add(Struct.clone(Schema.optspec.get("clean")))
+    cleanlist.add(Struct.clone(options.get("clean")))
+    val cleancfg = Clean.makeCleanConfig(Struct.merge(cleanlist))
+    val rawclean = Helpers.toMapAny(options.get("clean"))
+    for (raw <- List(options.get("apikey"), options.get("secret")) ++
+        Clean.splitvalues(if (rawclean == null) null else rawclean.get("values"))) {
+      Clean.registerValue(cleancfg, raw)
+    }
+
     var opts = Struct.clone(options).asInstanceOf[JMap[String, Object]]
 
     if (authSuppressed) opts.remove("auth")
@@ -332,7 +347,14 @@ object MakeOptions {
 
     val vopts = new LinkedHashMap[String, Object]()
     vopts.put("errs", new ArrayList[Object]())
-    val validated = Struct.validate(merged, optspec, vopts)
+    val validated =
+      try Struct.validate(merged, optspec, vopts)
+      catch {
+        // A rejection quotes the value it rejected.
+        case err: RuntimeException =>
+          val text = if (err.getMessage == null) String.valueOf(err) else err.getMessage
+          throw new SdkError("options_invalid", Clean.cleanWith(cleancfg, text).asInstanceOf[String], ctx)
+      }
     opts = validated.asInstanceOf[JMap[String, Object]]
 
     // Restore the suppression the optspec default would otherwise erase.
@@ -344,17 +366,6 @@ object MakeOptions {
       if (sys != null) sys.put("fetch", sysFetch)
       else { val sm = new LinkedHashMap[String, Object](); sm.put("fetch", sysFetch); opts.put("system", sm) }
     }
-
-    // Derived clean config.
-    var cleanKeys = "key,token,id"
-    Struct.getpath(opts, java.util.List.of("clean", "keys")) match { case s: String => cleanKeys = s; case _ => }
-
-    val filtered = new ArrayList[String]()
-    for (p0 <- cleanKeys.split(",")) {
-      val p = p0.trim
-      if ("" != p) filtered.add(Struct.escre(p))
-    }
-    val keyre = String.join("|", filtered)
 
     // Resolve the feature add-order: an explicit list order (above) wins;
     // otherwise order the map test-first, then the remaining names sorted, so
@@ -374,11 +385,21 @@ object MakeOptions {
     }
 
     val derived = new LinkedHashMap[String, Object]()
-    val derivedClean = new LinkedHashMap[String, Object]()
-    if ("" != keyre) derivedClean.put("keyre", keyre)
-    derived.put("clean", derivedClean)
+    derived.put("clean", cleancfg)
     derived.put("featureorder", featureorder)
     opts.put("__derived__", derived)
+
+    // Every string under a sensitive name anywhere in the options - a custom
+    // auth header, a feature credential - is a secret the SDK now handles.
+    val walked = Struct.clone(opts).asInstanceOf[JMap[String, Object]]
+    walked.remove("__derived__")
+    Struct.walk(walked, (key: String, v: Object, _: Object, _: JList[String]) => {
+      v match {
+        case s: String if key != null && Clean.cleanKeyWith(cleancfg, key) => Clean.registerValue(cleancfg, s)
+        case _ =>
+      }
+      v
+    })
 
     opts
   }

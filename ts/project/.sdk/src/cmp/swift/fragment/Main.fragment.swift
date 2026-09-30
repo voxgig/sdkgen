@@ -311,3 +311,15 @@ public final class ProjectNameSDK {
     return sdk
   }
 }
+
+// The client holds the credential in its options. Its default prints name
+// it and nothing more, and its mirror - which `dump` and a structured
+// logger walk, private stored properties included - shows only the mode
+// and the feature names.
+extension ProjectNameSDK: CustomStringConvertible, CustomDebugStringConvertible, CustomReflectable {
+  public var description: Swift.String { "ProjectNameSDK" }
+  public var debugDescription: Swift.String { "ProjectNameSDK(mode: " + mode + ")" }
+  public var customMirror: Swift.Mirror {
+    Swift.Mirror(self, children: ["mode": mode, "features": features.map { $0.getName() }])
+  }
+}

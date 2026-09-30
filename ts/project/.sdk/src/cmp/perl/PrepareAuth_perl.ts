@@ -291,6 +291,9 @@ function basicBlock(spec: AuthSpec, wantBasic: boolean): string {
       # newline inside a header value is not a header value.
       my $pass = $no_secret ? '' : $secret;
       my $b64 = MIME::Base64::encode_base64("$apikey:$pass", '');
+      # The joined, encoded pair is a wire form neither credential's own
+      # registration covers.
+      $ctx->{utility}{clean_add}->($ctx, $b64);
       $headers->{$CRED_NAME} =
         ('' eq $auth_prefix) ? $b64 : "$auth_prefix $b64";
     }

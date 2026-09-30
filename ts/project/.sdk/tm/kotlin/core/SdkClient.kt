@@ -81,6 +81,11 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
     this.util.featureHook(this.rootctx, "PostConstruct")
   }
 
+  // The options hold the credential; a printed client shows only its name.
+  override fun toString(): String {
+    return this.javaClass.simpleName + "(mode=" + this.mode + ")"
+  }
+
   fun optionsMap(): MutableMap<String, Any?> {
     val out = Struct.clone(this.options)
     if (out is MutableMap<*, *>) {

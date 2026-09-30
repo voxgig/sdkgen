@@ -9,12 +9,7 @@ import {
 } from '@voxgig/sdkgen'
 
 
-// The canary sweep (the lua port of TestClean_ts): every credential slot
-// holds a distinctive value, every diagnostic feature this SDK ships is
-// switched on with a capturing sink, a real operation runs through every
-// outcome, and every string that leaves the SDK is searched for the
-// canaries and their encoded forms. It also proves its own sensitivity: with
-// clean switched off the canary MUST show.
+// The canary sweep, the lua port of TestClean_ts.ts: see that component.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
   const { target } = props

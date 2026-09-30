@@ -26,26 +26,34 @@ public static partial class SdkUtility
 
         var errmsg = err.Message;
         var msg = "ProjectNameSDK: " + opname + ": " + errmsg;
-        msg = CleanUtil(ctx, msg) as string ?? msg;
 
         result.Err = null;
 
         var spec = ctx.Spec;
 
+        // The context stays reachable on the error for a debugger; the error
+        // type keeps it out of every serialiser.
+        var sdkErr = new ProjectNameError(
+            err is ProjectNameError se ? se.Code : "", msg, ctx);
+
+        CleanUtil(ctx, sdkErr);
+
+        // Promote the HTTP status to the top level, so a consumer can branch on
+        // err.Status instead of reaching into err.ResultVal.
+        sdkErr.Status = result.Status;
+
         if (ctx.Ctrl.Explain != null)
         {
             ctx.Ctrl.Explain["err"] = new Dictionary<string, object?>
             {
-                ["message"] = msg,
+                ["code"] = sdkErr.Code,
+                ["message"] = sdkErr.Message,
+                ["status"] = sdkErr.Status,
             };
         }
 
-        var sdkErr = new ProjectNameError(
-            err is ProjectNameError se ? se.Code : "", msg, ctx)
-        {
-            ResultVal = CleanUtil(ctx, result),
-            SpecVal = CleanUtil(ctx, spec),
-        };
+        sdkErr.ResultVal = CleanUtil(ctx, result);
+        sdkErr.SpecVal = CleanUtil(ctx, spec);
 
         ctx.Ctrl.Err = sdkErr;
 

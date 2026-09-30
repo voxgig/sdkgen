@@ -130,6 +130,7 @@ and utility = {
   mutable u_struct : struct_api;
   mutable u_fetcher : ctx -> string -> value -> (value * sdk_error option);
   mutable u_clean : ctx -> value -> value;
+  mutable u_clean_add : ctx -> string -> unit;
   mutable u_done : ctx -> value;
   mutable u_make_error : ctx -> sdk_error option -> value;
   mutable u_feature_add : ctx -> feature -> unit;

@@ -55,13 +55,28 @@ const FIXED: Row[] = [
     log: 'lua/feature/log_feature.lua', debug: 'lua/feature/debug_feature.lua', call: CLEAN_CALL },
   { target: 'zig', error: 'zig/core/utility.zig', done: 'zig/core/utility.zig',
     log: 'zig/feature/log.zig', debug: 'zig/feature/debug.zig', call: CLEAN_CALL },
+  { target: 'perl', error: 'perl/utility/make_error.pm', done: 'perl/utility/done.pm',
+    log: 'perl/feature/log_feature.pm', debug: 'perl/feature/debug_feature.pm', call: CLEAN_CALL },
+  { target: 'csharp', error: 'csharp/utility/MakeError.cs', done: 'csharp/utility/Done.cs',
+    log: 'csharp/feature/LogFeature.cs', debug: 'csharp/feature/DebugFeature.cs', call: CLEAN_CALL },
+  { target: 'swift', error: 'swift/Sources/ProjectNameSDK/utility/MakeError.swift',
+    done: 'swift/Sources/ProjectNameSDK/utility/ResultUtil.swift',
+    log: 'swift/Sources/ProjectNameSDK/feature/LogFeature.swift',
+    debug: 'swift/Sources/ProjectNameSDK/feature/DebugFeature.swift', call: CLEAN_CALL },
+  { target: 'kotlin', error: 'kotlin/utility/CoreUtil.kt', done: 'kotlin/utility/CoreUtil.kt',
+    log: 'kotlin/feature/LogFeature.kt', debug: 'kotlin/feature/DebugFeature.kt', call: CLEAN_CALL },
+  { target: 'scala', error: 'scala/utility/Make.scala', done: 'scala/utility/Misc.scala',
+    log: 'scala/feature/LogFeature.scala', debug: 'scala/feature/DebugFeature.scala', call: CLEAN_CALL },
+  { target: 'clojure', error: 'clojure/src/sdk/core.clj', done: 'clojure/src/sdk/core.clj',
+    log: 'clojure/src/sdk/features.clj', debug: 'clojure/src/sdk/features.clj', call: CLEAN_CALL },
+  { target: 'elixir', error: 'elixir/lib/projectname/utility.ex', done: 'elixir/lib/projectname/utility.ex',
+    log: 'elixir/lib/projectname/feature/log.ex', debug: 'elixir/lib/projectname/feature/debug.ex', call: CLEAN_CALL },
+  { target: 'ocaml', error: 'ocaml/sdk_runtime.ml', done: 'ocaml/sdk_runtime.ml',
+    log: 'ocaml/sdk_features.ml', debug: 'ocaml/sdk_features.ml', call: CLEAN_CALL },
 ]
 
 // Not yet ported, with the reason; empty before a fleet-wide release.
-const OUTSTANDING: Record<string, string> = { perl: 'port in progress',
-  csharp: 'port in progress', kotlin: 'port in progress', scala: 'port in progress',
-  swift: 'port in progress',
-  clojure: 'port in progress', elixir: 'port in progress', ocaml: 'port in progress',
+const OUTSTANDING: Record<string, string> = {
 }
 
 

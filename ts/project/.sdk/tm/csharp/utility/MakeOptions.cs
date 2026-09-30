@@ -134,6 +134,38 @@ public static partial class SdkUtility
             opts.Remove("auth");
         }
 
+        // The secret registry exists BEFORE validation, fed from the raw
+        // input, so the constructor's own rejection of a mistyped credential
+        // is clean too.
+        var cleanlayers = new List<object?>
+        {
+            new Dictionary<string, object?>(),
+            StructUtils.Clone(StructUtils.GetProp(SdkSchema.Optspec, "clean")),
+        };
+        if (opts.TryGetValue("clean", out var cleanraw) && cleanraw != null)
+        {
+            cleanlayers.Add(cleanraw);
+        }
+        var cleancfg = MakeCleanConfig(StructUtils.Merge(cleanlayers));
+        var cleanctx = new Context(new Dictionary<string, object?>
+        {
+            ["options"] = new Dictionary<string, object?>
+            {
+                ["__derived__"] = new Dictionary<string, object?> { ["clean"] = cleancfg },
+            },
+        }, null);
+        var rawsecrets = new List<object?>
+        {
+            opts.TryGetValue("apikey", out var rawapikey) ? rawapikey : null,
+            opts.TryGetValue("secret", out var rawsecret) ? rawsecret : null,
+        };
+        rawsecrets.AddRange(CleanSplitValues(
+            StructUtils.GetPath(opts, StructUtils.Jt("clean", "values"))));
+        foreach (var raw in rawsecrets)
+        {
+            CleanAddUtil(cleanctx, raw);
+        }
+
         // Feature add-order. options.feature may be given as an ordered LIST of
         // { name, active, ...opts } entries (the list position IS the order in
         // which features are added), or as a { name: {opts} } map. Normalize a
@@ -192,7 +224,24 @@ public static partial class SdkUtility
             StructUtils.Clone(cfgopts),
             opts,
         });
-        var validated = StructUtils.Validate(merged, optspec);
+        object? validated;
+        try
+        {
+            validated = StructUtils.Validate(merged, optspec);
+        }
+        catch (Exception verr)
+        {
+            // The struct port's message quotes the offending value, which is
+            // the credential when that is what was mistyped. Exception's
+            // message is read-only, so a changed message travels as the SDK's
+            // own error; an unchanged one is the original, rethrown.
+            var cleaned = CleanUtil(cleanctx, verr.Message) as string ?? verr.Message;
+            if (cleaned == verr.Message)
+            {
+                throw;
+            }
+            throw new ProjectNameError("options_invalid", cleaned, null);
+        }
         opts = validated as Dictionary<string, object?> ?? new Dictionary<string, object?>();
 
         // Restore the suppression the optspec default would otherwise erase.
@@ -263,20 +312,6 @@ public static partial class SdkUtility
             }
         }
 
-        // Derived clean config.
-        var cleanKeys = "key,token,id";
-        if (StructUtils.GetPath(opts, StructUtils.Jt("clean", "keys")) is string cks)
-        {
-            cleanKeys = cks;
-        }
-
-        var filtered = cleanKeys.Split(',')
-            .Select(p => p.Trim())
-            .Where(p => p != "")
-            .Select(StructUtils.EscRe)
-            .ToList();
-        var keyre = string.Join("|", filtered);
-
         // Resolve the feature add-order: an explicit list order (above) wins;
         // otherwise order the map test-first, then the remaining names sorted,
         // so the outcome is deterministic and `test` is always the base
@@ -319,19 +354,27 @@ public static partial class SdkUtility
             }
         }
 
-        var derived = new Dictionary<string, object?>
+        opts["__derived__"] = new Dictionary<string, object?>
         {
-            ["clean"] = new Dictionary<string, object?>(),
+            ["clean"] = cleancfg,
+            ["featureorder"] = featureorder,
         };
-        if (keyre != "")
+
+        // Every string under a sensitive name anywhere in the options - a
+        // custom auth header, a feature credential - is a secret the SDK now
+        // handles.
+        var optctx = new Context(new Dictionary<string, object?> { ["options"] = opts }, null);
+        var scan = StructUtils.Clone(opts) as Dictionary<string, object?>
+            ?? new Dictionary<string, object?>();
+        scan.Remove("__derived__");
+        StructUtils.Walk(scan, (key, val, _parent, _path) =>
         {
-            derived["clean"] = new Dictionary<string, object?>
+            if (val is string sval && CleanKeyUtil(optctx, key))
             {
-                ["keyre"] = keyre,
-            };
-        }
-        derived["featureorder"] = featureorder;
-        opts["__derived__"] = derived;
+                CleanAddUtil(optctx, sval);
+            }
+            return val;
+        });
 
         return opts;
     }

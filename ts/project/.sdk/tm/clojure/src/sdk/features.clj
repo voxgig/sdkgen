@@ -69,11 +69,24 @@
 
 (defn log-feature []
   (let [fa (new-feature "log" true "0.0.1")
+        ;; A log line leaves the pipeline, so it carries the cleaned record:
+        ;; the spec after auth holds the credential, and a logger serialises
+        ;; whatever it is handed. `logger` is a fn of the record, a map with
+        ;; an "info" fn, or anything else for the stderr default.
         loghook (fn [ctx hook]
-                  (when (:logger @fa)
-                    (let [opname (if (core/oget ctx :op) (core/op-name (core/oget ctx :op)) "")]
-                      (binding [*out* *err*]
-                        (println (str "[INFO] hook=" hook " op=" opname))))))]
+                  (when-let [logger (:logger @fa)]
+                    (let [opname (if (core/oget ctx :op) (core/op-name (core/oget ctx :op)) "")
+                          record (core/ucall ctx :clean
+                                             (vs/jm "hook" hook "op" opname
+                                                    "spec" (core/oget ctx :spec)
+                                                    "ctx" (core/ctx->data ctx)))]
+                      (cond
+                        (fn? logger) (logger record)
+                        (and (vs/ismap logger) (fn? (mget logger "info"))) ((mget logger "info") record)
+                        :else
+                        (binding [*out* *err*]
+                          (println (str "[INFO] hook=" hook " op=" opname " "
+                                        (vs/jsonify record (vs/jm "indent" 0)))))))))]
     (swap! fa assoc
            "init" (fn [ctx options]
                     (swap! fa assoc :client (core/oget ctx :client) :options options
@@ -779,10 +792,13 @@
                     (bump-bucket! (mget rec "ops") (str entity "." opname) amount)
                     (bump-bucket! (mget rec "actors") (str actor) amount)
                     (swap! fa update :seq (fnil inc 0))
-                    (.put ^java.util.Map rec "last"
-                          (vs/jm "seq" (:seq @fa) "entity" entity "op" opname "actor" (str actor)
-                                 "amount" amount "currency" (mget rec "currency")
-                                 "source" source "attempts" (mget p "attempts")))))
+                    (let [last (core/ucall ctx :clean
+                                           (vs/jm "seq" (:seq @fa) "entity" entity "op" opname "actor" (str actor)
+                                                  "amount" amount "currency" (mget rec "currency")
+                                                  "source" source "attempts" (mget p "attempts")))]
+                      (.put ^java.util.Map rec "last" last)
+                      (let [sink (opt fa "sink")]
+                        (when (fn? sink) (try (sink last) (catch Throwable _ nil)))))))
         finish! (fn [ctx done]
                   (when (active? fa)
                     (let [id (core/oget ctx :id) p (get (:pending @fa) id)]
@@ -910,9 +926,22 @@
                           (let [made (agent (:url @fa) url)]
                             (.put ^java.util.Map out "dispatcher" made)
                             (.put ^java.util.Map out "agent" made))))
-                      (let [t (track-ensure! fa "_proxy" (vs/jm "routed" 0 "url" (:url @fa)))]
+                      (let [t (track-ensure! fa "_proxy" (vs/jm "routed" 0 "url" (:clean-url @fa)))]
                         (.put ^java.util.Map t "routed" (inc (long (mget t "routed")))))
-                      out)))]
+                      out)))
+        ;; A proxy URL may carry credentials as userinfo, from the option or
+        ;; the environment, and neither is under a sensitive key name.
+        register-userinfo! (fn [ctx url]
+                             (when (string? url)
+                               (try
+                                 (let [ui (.getRawUserInfo (java.net.URI. ^String url))]
+                                   (when (and ui (seq ui))
+                                     (doseq [part (str/split ui #":" 2)]
+                                       (when (seq part)
+                                         (core/ucall ctx :clean-add part)
+                                         (try (core/ucall ctx :clean-add (java.net.URLDecoder/decode ^String part "UTF-8"))
+                                              (catch Throwable _ nil))))))
+                                 (catch Throwable _ nil))))]
     (swap! fa assoc
            "init" (fn [ctx options]
                     (swap! fa assoc :client (core/oget ctx :client)
@@ -928,7 +957,9 @@
                                                 (vs/islist no-proxy1) (vec no-proxy1)
                                                 :else [])
                                           (remove (fn [s] (or (nil? s) (= s "")))))]
-                        (swap! fa assoc :url url :no-proxy (vec no-proxy)))
+                        (register-userinfo! ctx url)
+                        (swap! fa assoc :url url :no-proxy (vec no-proxy)
+                               :clean-url (if (string? url) (core/ucall ctx :clean url) url)))
                       (wrap-fetcher! ctx (fn [fctx url fd inner] (inner fctx url (route url fd)))))))
     fa))
 
@@ -954,11 +985,12 @@
                     (.put ^java.util.Map span "end" (now-ms fa))
                     (.put ^java.util.Map span "durationMs" (max 0 (- (mget span "end") (mget span "start"))))
                     (.put ^java.util.Map span "ok" ok)
-                    (when-let [t (telem)]
-                      (.put ^java.util.Map t "active" (dec (long (mget t "active"))))
-                      (.add ^java.util.List (mget t "spans") span))
-                    (let [exporter (opt fa "exporter")]
-                      (when (fn? exporter) (try (exporter span) (catch Throwable _ nil)))))))]
+                    (let [out (core/ucall ctx :clean span)]
+                      (when-let [t (telem)]
+                        (.put ^java.util.Map t "active" (dec (long (mget t "active"))))
+                        (.add ^java.util.List (mget t "spans") out))
+                      (let [exporter (opt fa "exporter")]
+                        (when (fn? exporter) (try (exporter out) (catch Throwable _ nil))))))))]
     (swap! fa assoc :spans {} :seq 0)
     (swap! fa assoc
            "init" (fn [ctx options]
@@ -1043,19 +1075,18 @@
 ;; debug
 ;; ---------------------------------------------------------------------------
 
-(def REDACT-DEFAULT ["authorization" "cookie" "set-cookie" "api-key" "apikey" "x-api-key" "idempotency-key"])
-
 (defn debug-feature []
   (let [fa (new-feature "debug" false "0.0.1")
-        redact (fn [headers]
+        ;; The core clean rules apply (clean.keys, every registered value);
+        ;; the feature's own `redact` list ADDS header names on top of them.
+        redact (fn [ctx headers]
                  (if (nil? headers) (vs/jm)
-                     (let [patterns (or (opt fa "redact") REDACT-DEFAULT)
-                           pset (into #{} (map str (vec patterns)))
+                     (let [pset (into #{} (map (fn [p] (str/lower-case (str p))) (vec (or (opt fa "redact") []))))
                            out (vs/jm)]
                        (doseq [item (or (vs/items headers) [])]
                          (let [k (vs/getprop item 0) v (vs/getprop item 1)]
-                           (.put ^java.util.Map out k (if (contains? pset (str/lower-case (str k))) "<redacted>" v))))
-                       out)))
+                           (.put ^java.util.Map out k (if (contains? pset (str/lower-case (str k))) "[redacted]" v))))
+                       (core/ucall ctx :clean out))))
         finish (fn [ctx ok]
                  (let [entry (get (:entries @fa) ctx)]
                    (when entry
@@ -1065,12 +1096,18 @@
                        (.put ^java.util.Map entry "durationMs" (max 0 (- (now-ms fa) (mget entry "start"))))
                        (when (and (nil? (mget entry "status")) result)
                          (.put ^java.util.Map entry "status" (core/oget result :status)))
-                       (let [track (track-ensure! fa "_debug" (vs/jm "entries" (vs/jt)))
+                       ;; The whole entry leaves through the buffer and the
+                       ;; callback: the url and the error message can carry a
+                       ;; query credential the header mask above never saw.
+                       (let [entry (core/ucall ctx :clean entry)
+                             track (track-ensure! fa "_debug" (vs/jm "entries" (vs/jt)))
                              buf (mget track "entries")
                              max (opt fa "max" 100)]
                          (.add ^java.util.List buf entry)
                          (while (> (.size ^java.util.List buf) max) (.remove ^java.util.List buf 0))
-                         (let [on-entry (opt fa "on_entry")]
+                         ;; `onEntry` is the option spec's spelling; the
+                         ;; older `on_entry` is kept for callers that used it.
+                         (let [on-entry (or (opt fa "onEntry") (opt fa "on_entry"))]
                            (when (fn? on-entry) (try (on-entry entry) (catch Throwable _ nil)))))))))]
     (swap! fa assoc :entries {})
     (swap! fa assoc
@@ -1088,7 +1125,7 @@
                      method (when spec (core/oget spec :method))
                      headers (when spec (core/oget spec :headers))
                      entry (vs/jm "op" (str (if op (core/op-entity op) "_") "." (if op (core/op-name op) "_"))
-                                  "method" method "url" url "headers" (redact headers) "start" (now-ms fa)
+                                  "method" method "url" url "headers" (redact ctx headers) "start" (now-ms fa)
                                   "status" nil "ok" nil "durationMs" nil "error" nil)]
                  (swap! fa update :entries assoc ctx entry))))
            "PreResponse"
@@ -1125,10 +1162,11 @@
                  (swap! fa update :seq inc)
                  (let [op (core/oget ctx :op)
                        result (core/oget ctx :result)
-                       record (vs/jm "seq" (:seq @fa) "ts" (now-ms fa) "actor" (actor ctx)
-                                     "entity" (if op (core/op-entity op) "_") "op" (if op (core/op-name op) "_")
-                                     "outcome" outcome "status" (when result (core/oget result :status))
-                                     "correlationId" (core/oget ctx :id))
+                       record (core/ucall ctx :clean
+                                          (vs/jm "seq" (:seq @fa) "ts" (now-ms fa) "actor" (actor ctx)
+                                                 "entity" (if op (core/op-entity op) "_") "op" (if op (core/op-name op) "_")
+                                                 "outcome" outcome "status" (when result (core/oget result :status))
+                                                 "correlationId" (core/oget ctx :id)))
                        track (track-ensure! fa "_audit" (vs/jm "records" (vs/jt)))
                        recs (mget track "records")
                        max (opt fa "max" 1000)]

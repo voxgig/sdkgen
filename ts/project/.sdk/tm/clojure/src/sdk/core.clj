@@ -134,13 +134,19 @@
 ;; error map under ::sdk-error.
 ;; ---------------------------------------------------------------------------
 
+;; The context rides in the map's METADATA, not as a key: the error is data
+;; and `pr-str`/`ex-data` print every key, and the context holds the live
+;; spec and options. Reachable through `err-ctx` for a debugger, invisible to
+;; every printer.
 (defn make-error-obj
   ([code msg] (make-error-obj code msg nil))
   ([code msg ctx]
-   {:sdk-error true :sdk SDK-NAME :code (or code "") :msg (or msg "")
-    :ctx ctx :result nil :spec nil}))
+   (with-meta {:sdk-error true :sdk SDK-NAME :code (or code "") :msg (or msg "")
+               :result nil :spec nil}
+     {:ctx ctx})))
 
 (defn sdk-error? [x] (and (map? x) (true? (:sdk-error x))))
+(defn err-ctx [e] (when (sdk-error? e) (:ctx (meta e))))
 (defn err-msg [e]
   (cond
     (sdk-error? e) (:msg e)
@@ -332,6 +338,9 @@
         result (let [r (cprop "result")] (if (some? r) r (bget :result)))
         response (let [r (cprop "response")] (if (some? r) r (bget :response)))
         opname (or (cprop "opname") "")
+        ;; `:type` metadata routes print-method to the cleaned record (see
+        ;; ctx->data): a bare atom prints its whole value, spec and options
+        ;; included.
         ctx (atom {:id (str "C" (+ 10000000 (rand-int 89999999)))
                    :out (atom (vs/jm))
                    :client client :utility utility :ctrl ctrl :meta meta
@@ -340,7 +349,8 @@
                    :data (dmap "data") :reqdata (dmap "reqdata")
                    :match (dmap "match") :reqmatch (dmap "reqmatch")
                    :point point :spec spec :result result :response response
-                   :op nil})]
+                   :op nil}
+                  :meta {:type ::context})]
     (oset! ctx :op (resolve-op ctx opname))
     ctx))
 
@@ -430,7 +440,185 @@
 
 (def METHOD-MAP {"create" "POST" "update" "PUT" "load" "GET" "list" "GET" "remove" "DELETE" "patch" "PATCH"})
 
-(defn u-clean [_ctx val] val)
+;; ---------------------------------------------------------------------------
+;; clean. Everything that leaves the pipeline passes through it; inside, data
+;; stays raw so a hook can still read the header it must add to. See
+;; docs/explanation/secret-redaction.md.
+;; ---------------------------------------------------------------------------
+
+(def ^:private CLEAN-MAXDEPTH 32)
+(def ^:private CLEAN-CIRCULAR "[circular]")
+(def ^:private DROP (Object.))
+
+(defn- keyname [k] (cond (nil? k) "" (keyword? k) (name k) :else (str k)))
+
+(defn- normkey [k] (str/replace (str/lower-case (keyname k)) #"[-_]" ""))
+
+(defn- splitkeys [keys]
+  (->> (str/split (str (or keys "")) #"\s*,\s*") (map normkey) (remove empty?) vec))
+
+(defn splitvalues [values]
+  (if (or (vs/islist values) (sequential? values))
+    (filterv string? (vec values))
+    (->> (str/split (str (or values "")) #"\s*,\s*") (remove empty?) vec)))
+
+(defn- count-opt [v dflt]
+  (let [n (try (long (Math/floor (Double/parseDouble (str v)))) (catch Exception _ nil))]
+    (if (and n (<= 0 n)) n dflt)))
+
+;; The derived clean block: a struct map so it lives in options.__derived__
+;; and its `values` list stays MUTABLE after make-options - features register
+;; what they resolve later.
+(defn make-clean-config [cleanopts]
+  (let [o (fn [k] (mget cleanopts k))
+        keys (vs/jt)]
+    (doseq [k (splitkeys (o "keys"))] (.add ^java.util.List keys k))
+    (vs/jm "active" (not= false (o "active"))
+           "keys" keys
+           "values" (vs/jt)
+           "mask" (let [m (o "mask")] (if (string? m) m "[redacted]"))
+           "hint" (count-opt (o "hint") 0)
+           "min" (max 1 (count-opt (o "min") 4)))))
+
+;; A context without options (make-error accepts a bare one) still masks by
+;; the schema defaults.
+(defn- clean-config [ctx]
+  (let [options (when (instance? clojure.lang.IDeref ctx) (oget ctx :options))
+        derived (when (vs/ismap options) (vs/getpath options "__derived__.clean"))]
+    (if (vs/ismap derived) derived (make-clean-config (vs/getprop @optspec-parsed "clean")))))
+
+;; The encoded forms a value travels in.
+(defn- clean-forms [^String value]
+  (let [out (java.util.ArrayList.)
+        add (fn [s] (when (and (string? s) (not= "" s) (not (.contains out s))) (.add out s)))]
+    (add value)
+    (try (add (.encodeToString (java.util.Base64/getEncoder) (.getBytes value "UTF-8"))) (catch Throwable _ nil))
+    (try (add (vs/escurl value)) (catch Throwable _ nil))
+    (try (let [j (vs/jsonify value)] (add (subs j 1 (dec (count j))))) (catch Throwable _ nil))
+    (vec out)))
+
+(defn u-clean-add [ctx value]
+  (let [cfg (clean-config ctx)
+        minlen (long (or (mget cfg "min") 4))
+        values (mget cfg "values")]
+    (when (and (string? value) (>= (count value) minlen) (instance? java.util.List values))
+      (let [changed (atom false)]
+        (doseq [form (clean-forms value)]
+          (when (and (>= (count form) minlen) (not (.contains ^java.util.List values form)))
+            (.add ^java.util.List values form)
+            (reset! changed true)))
+        ;; Longest first, so a value is never masked by a substring of itself.
+        (when @changed
+          (let [sorted (sort-by (fn [^String s] (- (count s))) (vec values))]
+            (.clear ^java.util.List values)
+            (doseq [s sorted] (.add ^java.util.List values s))))))
+    nil))
+
+(defn- mask-value [cfg ^String value]
+  (let [hint (long (or (mget cfg "hint") 0))
+        mask (str (mget cfg "mask"))]
+    (if (and (pos? hint) (> (count value) (* 2 hint)))
+      (str mask (subs value (- (count value) hint)))
+      mask)))
+
+(defn- clean-string [cfg ^String text]
+  (reduce (fn [^String out ^String value]
+            (if (.contains out value) (str/replace out value (mask-value cfg value)) out))
+          text
+          (vec (or (mget cfg "values") []))))
+
+(defn- sensitive-key? [cfg key]
+  (if (or (nil? key) (number? key))
+    false
+    (let [^String nk (normkey key)]
+      (boolean (some (fn [^String k] (.contains nk k)) (vec (or (mget cfg "keys") [])))))))
+
+(defn- entity-instance? [v]
+  (and (map? v) (instance? clojure.lang.IAtom (:_data v)) (fn? (:get-name v))))
+
+;; A masked plain-data COPY (string-keyed struct nodes): an entity serialises
+;; as its record, an atom-object as its map, functions are dropped, cycles
+;; cut, and nothing is shared with the live value, whose spec must stay raw.
+(defn- clean-snapshot [cfg val key depth seen]
+  (cond
+    (nil? val) nil
+    (string? val) (if (sensitive-key? cfg key) (mask-value cfg val) (clean-string cfg val))
+    (fn? val) DROP
+    (or (number? val) (boolean? val) (keyword? val) (symbol? val) (char? val))
+    (if (sensitive-key? cfg key) (mget cfg "mask") val)
+    (or (<= CLEAN-MAXDEPTH depth) (some #(identical? % val) seen)) CLEAN-CIRCULAR
+    (sensitive-key? cfg key) (mget cfg "mask")
+    :else
+    (let [seen (conj seen val)]
+      (cond
+        (entity-instance? val) (clean-snapshot cfg (deref (:_data val)) key (inc depth) seen)
+        (instance? clojure.lang.IAtom val) (clean-snapshot cfg (deref val) key (inc depth) seen)
+        (instance? Throwable val)
+        (let [out (vs/jm "message" (clean-string cfg (str (.getMessage ^Throwable val))))]
+          (when (instance? clojure.lang.IExceptionInfo val)
+            (let [d (clean-snapshot cfg (ex-data val) "data" (inc depth) seen)]
+              (when-not (identical? DROP d) (.put ^java.util.Map out "data" d))))
+          out)
+        (instance? java.util.Map val)
+        (let [out (vs/jm)]
+          (doseq [^java.util.Map$Entry e (.entrySet ^java.util.Map val)]
+            (let [k (.getKey e)
+                  v (clean-snapshot cfg (.getValue e) k (inc depth) seen)]
+              (when-not (identical? DROP v) (.put ^java.util.Map out (keyname k) v))))
+          out)
+        (or (instance? java.util.Collection val) (sequential? val))
+        (let [out (vs/jt)]
+          (doseq [[i v] (map-indexed vector (seq val))]
+            (let [c (clean-snapshot cfg v i (inc depth) seen)]
+              (.add ^java.util.List out (if (identical? DROP c) nil c))))
+          out)
+        :else (clean-string cfg (str val))))))
+
+;; An error map is immutable, so "in place" is a cleaned copy carrying the
+;; same metadata (the context stays reachable through err-ctx).
+(defn- clean-error [cfg err]
+  (with-meta
+    (into {} (map (fn [[k v]]
+                    [k (let [c (clean-snapshot cfg v k 1 [])] (if (identical? DROP c) nil c))])
+                  err))
+    (meta err)))
+
+(defn u-clean [ctx val]
+  (let [cfg (clean-config ctx)]
+    (cond
+      (= false (mget cfg "active")) val
+      (string? val) (clean-string cfg val)
+      (sdk-error? val) (clean-error cfg val)
+      :else (let [out (clean-snapshot cfg val nil 0 [])] (if (identical? DROP out) nil out)))))
+
+;; The error as string-keyed data: jsonify reads a java.util.Map's keys as
+;; strings, so a keyword-keyed map would serialise as nulls.
+(defn err->data [e]
+  (when (sdk-error? e)
+    (u-clean (err-ctx e) (into {} (map (fn [[k v]] [(keyname k) v]) e)))))
+
+;; The serialised context leaves the pipeline (a logger, an error dump), so
+;; it is the cleaned record; the live fields stay raw for the pipeline's use.
+(defn ctx->data [ctx]
+  (let [m (deref ctx)
+        u (:utility m)
+        clean (or (when (instance? clojure.lang.IDeref u) (:clean (deref u))) u-clean)
+        entity (:entity m)]
+    (clean ctx (vs/jm "id" (:id m) "op" (:op m) "spec" (:spec m)
+                      "entity" (when (map? entity) (entity-get-name entity))
+                      "result" (:result m) "response" (:response m) "meta" (:meta m)))))
+
+(defmethod print-method ::context [ctx ^java.io.Writer w]
+  (.write w (str "#sdk/context " (vs/jsonify (ctx->data ctx) (vs/jm "indent" 0)))))
+
+;; The explain map is the CALLER's, so it is cleaned in place: what they hold
+;; after the call is the cleaned record.
+(defn- clean-explain! [ctx]
+  (when-let [ex (oget (oget ctx :ctrl) :explain)]
+    (let [cleaned (ucall ctx :clean ex)]
+      (when (and (vs/ismap ex) (vs/ismap cleaned) (not (identical? cleaned ex)))
+        (.clear ^java.util.Map ex)
+        (.putAll ^java.util.Map ex ^java.util.Map cleaned)))))
 
 ;; The API definition is authoritative: a POST-only or PATCH-based API
 ;; exposes `update` as POST or PATCH, not the PUT the op name implies.
@@ -978,16 +1166,22 @@
           :else
           (do
             (oset! spec :step "response")
-            (ucall ctx :result-basic)
-            (ucall ctx :result-headers)
-            (ucall ctx :result-body)
-            ;; GraphQL reports failures as a top-level `errors` array under
-            ;; HTTP 200, so result-basic's status check never sees them. Lift
-            ;; them here, before the response transform tries to unwrap data
-            ;; that is not there.
-            (ucall ctx :graphql-errors)
-            (ucall ctx :transform-response)
-            (when (nil? (oget result :err)) (oset! result :ok true))
+            ;; A body reader that throws (a non-JSON body) fails the result,
+            ;; as in ts; it must not escape the pipeline with the raw spec
+            ;; still on the explain record.
+            (try
+              (ucall ctx :result-basic)
+              (ucall ctx :result-headers)
+              (ucall ctx :result-body)
+              ;; GraphQL reports failures as a top-level `errors` array under
+              ;; HTTP 200, so result-basic's status check never sees them. Lift
+              ;; them here, before the response transform tries to unwrap data
+              ;; that is not there.
+              (ucall ctx :graphql-errors)
+              (ucall ctx :transform-response)
+              (when (nil? (oget result :err)) (oset! result :ok true))
+              (catch Throwable e
+                (oset! result :err e)))
             (when-let [ex (oget (oget ctx :ctrl) :explain)] (.put ^java.util.Map ex "result" result))
             [response nil])))))
 
@@ -1028,11 +1222,12 @@
           msg (ucall ctx :clean msg0)
           spec (oget ctx :spec)]
       (oset! result :err nil)
+      (clean-explain! ctx)
       (when-let [ex (oget (oget ctx :ctrl) :explain)] (.put ^java.util.Map ex "err" (vs/jm "message" msg)))
-      (let [sdk-err (assoc (make-error-obj "" msg ctx)
+      ;; Cleaned COPIES of the result and spec, never the live objects.
+      (let [sdk-err (assoc (make-error-obj (if (sdk-error? err) (:code err) "") msg ctx)
                            :result (ucall ctx :clean result)
-                           :spec (ucall ctx :clean spec)
-                           :code (if (sdk-error? err) (:code err) ""))]
+                           :spec (ucall ctx :clean spec))]
         (oset! (oget ctx :ctrl) :err sdk-err)
         ;; Fire PreUnexpected so observability features (metrics, telemetry,
         ;; audit, debug) close/record error paths that never reach PreDone
@@ -1047,10 +1242,9 @@
 
 (defn u-done [ctx]
   (let [ctrl (oget ctx :ctrl)]
+    (clean-explain! ctx)
     (when-let [ex (oget ctrl :explain)]
-      (let [cleaned (ucall ctx :clean ex)]
-        (oset! ctrl :explain cleaned)
-        (let [er (mget cleaned "result")] (when (vs/ismap er) (vs/delprop er "err")))))
+      (let [er (mget ex "result")] (when (vs/ismap er) (vs/delprop er "err"))))
     (let [result (oget ctx :result)]
       (if (and result (oget result :ok))
         (oget result :resdata)
@@ -1137,9 +1331,25 @@
           ;; one of twenty hand-maintained copies of a schema nothing
           ;; cross-checked — so add it to the model instead.
           optspec @optspec-parsed
+          ;; The secret registry exists BEFORE validation, fed from the raw
+          ;; input, so the constructor's own rejection of a mistyped
+          ;; credential is clean too. A shallow merge over the schema
+          ;; defaults: the clean block is flat.
+          cleancfg (make-clean-config
+                    (let [out (vs/jm)]
+                      (doseq [src [(vs/getprop optspec "clean") (vs/getprop opts0 "clean")]]
+                        (when (vs/ismap src)
+                          (doseq [k (vs/keysof src)] (.put ^java.util.Map out k (vs/getprop src k)))))
+                      out))
+          cleanctx (atom {:options (vs/jm "__derived__" (vs/jm "clean" cleancfg))})
+          _ (doseq [raw (concat [(vs/getprop opts0 "apikey") (vs/getprop opts0 "secret")]
+                                (splitvalues (vs/getpath opts0 "clean.values")))]
+              (u-clean-add cleanctx raw))
           sys-fetch (vs/getpath opts0 "system.fetch")
           merged (vs/merge (vs/jt (vs/jm) cfgopts opts0))
-          validated (vs/validate merged optspec)
+          validated (try (vs/validate merged optspec)
+                         (catch RuntimeException e
+                           (throw (RuntimeException. ^String (u-clean cleanctx (str (.getMessage e)))))))
           opts (if (vs/ismap validated) validated (vs/jm))
           ;; Restore the suppression the optspec default would otherwise erase.
           _ (when auth-suppressed (.put ^java.util.Map opts "auth" nil))
@@ -1179,10 +1389,7 @@
       (when sys-fetch
         (when (not (vs/ismap (vs/getprop opts "system"))) (.put ^java.util.Map opts "system" (vs/jm)))
         (.put ^java.util.Map (vs/getprop opts "system") "fetch" sys-fetch))
-      (let [clean-keys (let [k (vs/getpath opts "clean.keys")] (if (string? k) k "key,token,id"))
-            parts (->> (str/split clean-keys #",") (map str/trim) (remove empty?) (map vs/escre))
-            keyre (str/join "|" parts)
-            ;; Resolve the feature add-order: an explicit array order (above)
+      (let [;; Resolve the feature add-order: an explicit array order (above)
             ;; wins; otherwise order the map test-first, then the remaining
             ;; names sorted, so the outcome is deterministic and `test` is
             ;; always the base transport.
@@ -1195,9 +1402,18 @@
                 (when (some #(= % "test") names) (.add ^java.util.List order "test"))
                 (doseq [n names] (when (not= n "test") (.add ^java.util.List order n)))
                 order))
-            derived (vs/jm "clean" (if (empty? keyre) (vs/jm) (vs/jm "keyre" keyre))
-                           "featureorder" feature-order)]
+            derived (vs/jm "clean" cleancfg "featureorder" feature-order)]
         (.put ^java.util.Map opts "__derived__" derived)
+        ;; Every string under a sensitive name anywhere in the options - a
+        ;; custom auth header, a feature credential - is a secret the SDK now
+        ;; handles.
+        (let [optctx (atom {:options opts})
+              scan (vs/clone opts)]
+          (vs/delprop scan "__derived__")
+          (vs/walk scan (fn [key val _parent _path]
+                          (when (and (string? val) (sensitive-key? cleancfg key))
+                            (u-clean-add optctx val))
+                          val)))
         opts))))
 
 ;; ---------------------------------------------------------------------------
@@ -1258,7 +1474,7 @@
 ;; ---------------------------------------------------------------------------
 
 (defn base-utility-map []
-  {:clean u-clean :done u-done :make-error u-make-error
+  {:clean u-clean :clean-add u-clean-add :done u-done :make-error u-make-error
    :feature-add feature-add :feature-hook feature-hook :feature-init feature-init
    :fetcher u-fetcher :make-fetch-def u-make-fetch-def :make-context (fn [cm bc] (make-context cm bc))
    :make-options u-make-options :make-request u-make-request :make-response u-make-response

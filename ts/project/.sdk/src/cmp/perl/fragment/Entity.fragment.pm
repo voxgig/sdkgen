@@ -52,6 +52,19 @@ sub get_name {
   return $self->{_name};
 }
 
+# The entity serialises and prints as its data (clean honours TO_JSON),
+# never as the client it holds or the match it absorbed: a query
+# credential comes back in resmatch.
+sub TO_JSON {
+  my ($self) = @_;
+  return Voxgig::Struct::clone($self->{_data});
+}
+
+sub to_string {
+  my ($self) = @_;
+  return 'EntityName ' . Voxgig::Struct::jsonify($self->{_data});
+}
+
 sub make {
   my ($self) = @_;
   my $opts = { %{ $self->{_entopts} } };
@@ -260,11 +273,46 @@ sub _run_op {
     $out;
   };
   if (my $operr = $@) {
+    $ctx->{ctrl}{err} = $operr;
+
     # #PreUnexpected-Hook
 
-    die $operr;
+    my $e = $self->_unexpected($ctx, $operr);
+    die $e if defined $e;
+    return undef;
   }
   return $out;
+}
+
+# An exception the pipeline did not build still leaves through the
+# caller: it is cleaned, and so is the explain record it interrupted.
+# Answers undef when throwing is disabled, as the pipeline's own errors do.
+sub _unexpected {
+  my ($self, $ctx, $err) = @_;
+  my $clean = $self->{_utility}{clean};
+  my $explain = $ctx->{ctrl}{explain};
+  if (Voxgig::Struct::ismap($explain)) {
+    my $cleaned = $clean->($ctx, $explain);
+    if (Voxgig::Struct::ismap($cleaned)
+      && Scalar::Util::refaddr($cleaned) != Scalar::Util::refaddr($explain)) {
+      %$explain = %$cleaned;
+    }
+    delete $explain->{result}{err} if Voxgig::Struct::ismap($explain->{result});
+    my $msg = "$err";
+    $msg =~ s/\s+\z//;
+    my $cleanerr = $clean->($ctx, {
+      'message' => $msg,
+      'class' => (Scalar::Util::blessed($err) || ref($err) || 'die'),
+    });
+    if (!Voxgig::Struct::ismap($explain->{err})) {
+      $explain->{err} = $cleanerr;
+    }
+    elsif (($explain->{err}{message} // '') ne $cleanerr->{message}) {
+      $explain->{unexpected} = $cleanerr;
+    }
+  }
+  return undef if defined $ctx->{ctrl}{throw_err} && !$ctx->{ctrl}{throw_err};
+  return $clean->($ctx, $err);
 }
 
 1;

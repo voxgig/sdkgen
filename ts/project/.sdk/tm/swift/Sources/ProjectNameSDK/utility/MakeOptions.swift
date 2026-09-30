@@ -53,6 +53,24 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     opts.entries.removeValue(forKey: "auth")
   }
 
+  // The secret registry exists BEFORE validation, fed from the raw input, so
+  // the constructor's own rejection of a mistyped credential is clean too.
+  // (Here validate never throws - the struct port collects its errors - so
+  // there is no rejection to clean; the registry is early for the same
+  // reason regardless.)
+  var cleanlayers: [Value] = [.map(VMap()), clone(gp(SdkSchema.optspec, "clean"))]
+  if let cleanraw = opts.entries["clean"], !isNil(cleanraw) {
+    cleanlayers.append(cleanraw)
+  }
+  let cleancfg = makeCleanConfig(merge(.list(cleanlayers)))
+  let cleanctx = Context(
+    ["options": vm(("__derived__", .map(vm(("clean", .nat(cleancfg))))))], nil)
+  var rawsecrets: [Value] = [gp(opts, "apikey"), gp(opts, "secret")]
+  rawsecrets += cleanSplitValues(gpath(opts, "clean", "values")).map { .string($0) }
+  for raw in rawsecrets {
+    cleanAddUtil(cleanctx, raw)
+  }
+
   // Feature add-order. options.feature may be given as an ordered LIST of
   // { name, active, ...opts } entries (the list position IS the order in which
   // features are added), or as a { name: {opts} } map. Normalize a list to a
@@ -117,16 +135,6 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     }
   }
 
-  // Derived clean config.
-  var cleanKeys = "key,token,id"
-  if let cks = gpath(result, "clean", "keys").asString { cleanKeys = cks }
-
-  let filtered = cleanKeys.split(separator: ",", omittingEmptySubsequences: false)
-    .map { $0.trimmingCharacters(in: .whitespaces) }
-    .filter { $0 != "" }
-    .map { escre(.string($0)) }
-  let keyre = filtered.joined(separator: "|")
-
   // Resolve the feature add-order: an explicit list order (above) wins;
   // otherwise order the map test-first, then the remaining names sorted, so
   // the outcome is deterministic and `test` is always the base transport.
@@ -154,14 +162,21 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   }
 
   let derived = VMap()
-  derived.entries["clean"] = .map(VMap())
-  if keyre != "" {
-    let cm = VMap()
-    cm.entries["keyre"] = .string(keyre)
-    derived.entries["clean"] = .map(cm)
-  }
+  derived.entries["clean"] = .nat(cleancfg)
   derived.entries["featureorder"] = .list(VList(featureorder))
   result.entries["__derived__"] = .map(derived)
+
+  // Every string under a sensitive name anywhere in the options - a custom
+  // auth header, a feature credential - is a secret the SDK now handles.
+  let optctx = Context(["options": result], nil)
+  let scan = clone(.map(result)).asMap ?? VMap()
+  scan.entries.removeValue(forKey: "__derived__")
+  _ = walk(.map(scan), { key, val, parent, _ in
+    if !parent.isList, let k = key.asString, let s = val.asString, cleanKeyUtil(optctx, k) {
+      cleanAddUtil(optctx, .string(s))
+    }
+    return val
+  })
 
   return result
 }

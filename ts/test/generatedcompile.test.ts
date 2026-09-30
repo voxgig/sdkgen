@@ -4090,6 +4090,133 @@ const CLEAN_LANES: CleanLane[] = [
       return { bin: zig, args: ['build', 'test-clean', '--summary', 'all'] }
     },
   },
+  {
+    target: 'perl',
+    runner: 't/clean.t',
+    needs: 'perl',
+    command: () => {
+      const perl = toolchain('perl')
+      return null == perl ? null : { bin: perl, args: ['-Ilib', 't/clean.t'] }
+    },
+  },
+  {
+    target: 'csharp',
+    runner: 'test/CleanTest.cs',
+    needs: 'dotnet',
+    // Built here, under the longer budget a restore needs; the sweep itself
+    // then runs `--no-build`. The console logger at detailed verbosity is
+    // what shows a passing test's output, which the swept line is.
+    prepare: (sdkroot) => {
+      const dotnet = toolchain('dotnet')
+      if (null == dotnet) return null
+      const built = run(dotnet, ['build', '--nologo', '-v', 'quiet', 'test'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated csharp test project does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const dotnet = toolchain('dotnet')
+      return null == dotnet
+        ? null
+        : {
+          bin: dotnet,
+          args: ['test', '--nologo', '--no-build', '-v', 'quiet',
+            '--logger', 'console;verbosity=detailed',
+            '--filter', 'FullyQualifiedName~CleanTest', 'test'],
+        }
+    },
+  },
+  {
+    target: 'swift',
+    runner: 'Tests/DemoSdkTests/CleanTest.swift',
+    needs: 'swift',
+    // Built here, under the budget a first SwiftPM build needs; the filtered
+    // run below is then quick. XCTest shows a test's stdout, which is where
+    // the sweep prints its line.
+    prepare: (sdkroot) => {
+      const swift = toolchain('swift')
+      if (null == swift) return null
+      const built = run(swift, ['build', '--build-tests', '-j', '2'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated swift package does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const swift = toolchain('swift')
+      return null == swift
+        ? null
+        : { bin: swift, args: ['test', '-j', '2', '--skip-build', '--filter', 'CleanTest'] }
+    },
+  },
+  {
+    target: 'kotlin',
+    runner: 'test/CleanTest.kt',
+    needs: 'gradle (which resolves the Kotlin plugin from the network)',
+    command: () => {
+      // gradle hangs on windows rather than failing; the authnull lane skips
+      // there for the same reason.
+      if ('win32' === process.platform) return null
+      const gradle = toolchain('gradle')
+      if (null == gradle) return null
+      return { bin: gradle, args: ['--console=plain', 'test', '--tests', '*CleanTest*'] }
+    },
+  },
+  {
+    target: 'scala',
+    runner: 'sdktest/SdkCleanTestMain.scala',
+    needs: 'scala-cli (which resolves the Scala compiler from the network)',
+    command: () => {
+      const scalacli = toolchain('scala-cli')
+      if (null == scalacli) return null
+      return { bin: scalacli, args: ['run', '.', '--main-class', 'SdkCleanTestMain'] }
+    },
+  },
+  {
+    target: 'clojure',
+    runner: 'test/sdk/test/clean.clj',
+    needs: 'the clojure CLI (`clojure`)',
+    // sdk.test-runner requires the sweep namespace and prints its line;
+    // --sdk-only skips the corpus steps, which this lane has no corpus for.
+    command: () => {
+      const clj = toolchain('clojure')
+      return null == clj ? null : { bin: clj, args: ['-M:test', '--sdk-only'] }
+    },
+  },
+  {
+    target: 'elixir',
+    runner: 'test/clean_test.exs',
+    needs: 'elixir + mix',
+    // `mix test` refuses to run under any other MIX_ENV, so it is pinned;
+    // the sweep prints its line through IO.puts, which ExUnit passes through.
+    command: () => {
+      const mix = toolchain('mix')
+      const elixir = toolchain('elixir')
+      return null == mix || null == elixir
+        ? null
+        : {
+          bin: mix,
+          args: ['test', '--no-color', Path.join('test', 'clean_test.exs')],
+          env: { ...process.env, MIX_ENV: 'test' },
+        }
+    },
+  },
+  {
+    target: 'ocaml',
+    runner: 'test/clean_test.ml',
+    needs: 'ocamlc, make and a C compiler',
+    // The Makefile's CLEAN_TESTS links the sweep into run_sdk_test; `build`
+    // type-checks the library first so a broken template names its line.
+    prepare: (sdkroot) => {
+      const built = run(toolchain('make')!, ['OCAMLC=' + toolchain('ocamlc'), 'build'], sdkroot)
+      return built.ok ? null : 'the generated SDK does not type-check:\n' + tail(built.out)
+    },
+    command: () => {
+      const ocamlc = toolchain('ocamlc')
+      const make = toolchain('make')
+      const cc = toolchain('cc') || toolchain('gcc')
+      return null == ocamlc || null == make || null == cc
+        ? null
+        : { bin: make, args: ['CC=' + cc, 'OCAMLC=' + ocamlc, 'test-sdk'] }
+    },
+  },
 ]
 
 

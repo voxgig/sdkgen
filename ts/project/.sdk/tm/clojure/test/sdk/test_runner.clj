@@ -10,6 +10,7 @@
             [sdk.test.netsim :as netsim]
             [sdk.test.struct-corpus :as corpus]
             [sdk.test.omni-smoke :as omnismoke]
+            [sdk.test.clean :as clean]
             [sdk.gentest :as gentest]
             [clojure.java.io :as io]))
 
@@ -111,6 +112,9 @@
     (run-feature-suites rec)
     (netsim/run rec)
     (gentest/run rec)
+    ;; The canary sweep (generated: sdk/test/clean.clj) prints its own
+    ;; `clean: swept N surface(s), M leak(s)` line, which sdkgen's lane reads.
+    (clean/run rec)
     (let [fails (filter (complement :ok) @results)
           np (count (filter :ok @results))
           nf (count fails)]

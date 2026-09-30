@@ -14,16 +14,7 @@ import {
 import { zigVarName } from './utility_zig'
 
 
-// The canary sweep (the zig port of TestClean_ts): every credential slot
-// holds a distinctive value, every diagnostic feature this SDK ships is
-// switched on with a capturing sink, a real operation runs through every
-// outcome, and every string that leaves the SDK is searched for the
-// canaries and their encoded forms. It also proves its own sensitivity: with
-// clean switched off the canary MUST show.
-//
-// Zig has no runtime reflection over the client, so the candidate operations
-// usableOp drives are emitted here from the model, list and load first; the
-// first that completes against a plain 200 with no arguments is the one.
+// The canary sweep, the zig port of TestClean_ts.ts: see that component.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
   const { target } = props

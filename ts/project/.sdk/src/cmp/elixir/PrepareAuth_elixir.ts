@@ -156,6 +156,9 @@ ${bag}
             ap = S.getpath(options, "auth.prefix")
             auth_prefix = if is_binary(ap), do: ap, else: ""
             b64 = Base.encode64(apikey <> ":" <> if(no_secret, do: "", else: secret))
+            # The joined, encoded pair is a wire form neither credential's
+            # own registration covers.
+            ${spec.Name}.Utility.clean_add(ctx, b64)
             hv = if auth_prefix != "", do: auth_prefix <> " " <> b64, else: b64
             S.setprop(headers, @cred_name, hv)
           end

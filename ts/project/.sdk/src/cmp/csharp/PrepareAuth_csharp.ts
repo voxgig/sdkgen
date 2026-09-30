@@ -121,6 +121,9 @@ function renderHeader(Name: string, cred: string, basic: boolean): string {
                 }
                 var b64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(
                     (apikey as string ?? "") + ":" + (noSecret ? "" : secret as string ?? "")));
+                // The joined, encoded pair is a wire form neither credential's
+                // own registration covers.
+                ctx.Utility!.CleanAdd(ctx, b64);
                 headers[HeaderAuth] = basicPrefix == ""
                     ? b64
                     : basicPrefix + " " + b64;

@@ -831,7 +831,7 @@ public class FeatureDebugTest
         Assert.Single(f.Entries);
         Assert.Equal(2, seen.Count);
         var headers = seen[0]["headers"] as Dictionary<string, object?>;
-        Assert.Equal("<redacted>", headers?["authorization"]);
+        Assert.Equal("[redacted]", headers?["authorization"]);
     }
 
     [Fact]
@@ -872,7 +872,7 @@ public class FeatureDebugTest
             },
         });
         var headers = f.Entries[0]["headers"] as Dictionary<string, object?>;
-        Assert.Equal("<redacted>", headers?["x-secret"]);
+        Assert.Equal("[redacted]", headers?["x-secret"]);
         Assert.Equal("show", headers?["x-ok"]);
     }
 

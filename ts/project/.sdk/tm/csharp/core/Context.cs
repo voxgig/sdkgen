@@ -254,4 +254,36 @@ public class Context
     {
         return new ProjectNameError(code, msg, this);
     }
+
+    // The record form: what the context says about the operation, never its
+    // client, options or config.
+    internal Dictionary<string, object?> RawRecord()
+    {
+        return new Dictionary<string, object?>
+        {
+            ["id"] = Id,
+            ["op"] = Op,
+            ["spec"] = Spec,
+            ["entity"] = Entity?.GetName(),
+            ["result"] = Result,
+            ["response"] = Response,
+            ["meta"] = Meta,
+        };
+    }
+
+    // The serialised context leaves the pipeline (a logger, an error dump), so
+    // it is cleaned; the live fields stay raw for the pipeline's own use.
+    public Dictionary<string, object?> ToRecord()
+    {
+        var record = RawRecord();
+        var clean = Utility?.Clean;
+        return clean == null
+            ? record
+            : clean(this, record) as Dictionary<string, object?> ?? record;
+    }
+
+    public override string ToString()
+    {
+        return "Context " + StructUtils.Jsonify(ToRecord(), 0);
+    }
 }

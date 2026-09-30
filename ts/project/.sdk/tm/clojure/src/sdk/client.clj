@@ -13,12 +13,26 @@
             [voxgig.struct :as vs]
             [clojure.string :as str]))
 
+;; The client prints as its name and its options atom as the cleaned options:
+;; a bare map of atoms prints every slot, credentials included, and a client
+;; is what gets logged.
+(defmethod print-method ::client [_ ^java.io.Writer w]
+  (.write w (str "#sdk/client {\"name\":\"" core/SDK-NAME "\"}")))
+
+(defmethod print-method ::options [a ^java.io.Writer w]
+  (let [opts (deref a)]
+    (.write w (str "#sdk/options "
+                   (vs/jsonify (core/u-clean (atom {:options opts}) opts) (vs/jm "indent" 0))))))
+
 (defn make-sdk [options]
   (let [options (or options (vs/jm))
         utility (core/make-utility)
         cfg (config/make-config)
-        client {:features (atom []) :mode (atom "live") :store (atom {})
-                :options (atom (vs/jm)) :root-ctx (atom nil) :utility utility}
+        client (with-meta
+                 {:features (atom []) :mode (atom "live") :store (atom {})
+                  :options (atom (vs/jm) :meta {:type ::options})
+                  :root-ctx (atom nil) :utility utility}
+                 {:type ::client})
         rootctx (core/make-context
                  (vs/jm "client" client "utility" utility "config" cfg "options" options "shared" (vs/jm)) nil)
         validated ((core/uget rootctx :make-options) rootctx)]

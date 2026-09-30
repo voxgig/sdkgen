@@ -76,6 +76,9 @@ abstract class SdkClient(options0: JMap[String, Object]) {
     this.utility.featureHook(this.rootctx, "PostConstruct")
   }
 
+  // The options hold the credential; a printed client shows only its name.
+  override def toString: String = this.getClass.getSimpleName + "(mode=" + this.mode + ")"
+
   def optionsMap(): JMap[String, Object] = Struct.clone(this.options) match {
     case m: JMap[_, _] => m.asInstanceOf[JMap[String, Object]]
     case _ => new LinkedHashMap[String, Object]()

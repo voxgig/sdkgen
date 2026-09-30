@@ -158,4 +158,20 @@ class Context(ctxmap: JMap[String, Object], basectx: Context) {
   }
 
   def makeError(code: String, msg: String): SdkError = new SdkError(code, msg, this)
+
+  // The serialised context leaves the pipeline (a logger, an error dump), so
+  // it is cleaned; the live fields stay raw for the pipeline's own use.
+  def toMap(): Object = {
+    val record = new LinkedHashMap[String, Object]()
+    record.put("id", id)
+    record.put("op", op)
+    record.put("spec", spec)
+    record.put("entity", entity)
+    record.put("result", result)
+    record.put("response", response)
+    record.put("meta", meta)
+    if (utility == null || utility.clean == null) record else utility.clean(this, record)
+  }
+
+  override def toString: String = "Context " + Struct.jsonify(toMap())
 }

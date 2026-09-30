@@ -5,6 +5,7 @@ use warnings;
 
 use File::Basename ();
 use Cwd ();
+use Scalar::Util ();
 
 my $__dir;
 BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
@@ -19,7 +20,15 @@ $REGISTRY{done} = sub {
   my ($ctx) = @_;
   my $ctrl = $ctx->{ctrl};
   if ($ctrl->{explain}) {
-    $ctrl->{explain} = $ctx->{utility}{clean}->($ctx, $ctrl->{explain});
+    # The caller's own hash is the explain record (the control is built
+    # from it), so the cleaned copy is written back INTO it: assigning a
+    # fresh hash would leave the caller holding the raw one.
+    my $explain = $ctrl->{explain};
+    my $cleaned = $ctx->{utility}{clean}->($ctx, $explain);
+    if (Voxgig::Struct::ismap($cleaned) && Voxgig::Struct::ismap($explain)
+      && Scalar::Util::refaddr($cleaned) != Scalar::Util::refaddr($explain)) {
+      %$explain = %$cleaned;
+    }
     my $er = $ctrl->{explain}{result};
     delete $er->{err} if Voxgig::Struct::ismap($er);
   }

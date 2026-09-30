@@ -87,6 +87,10 @@ SDK = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml
 
 ENTITY_TESTS = $(sort $(wildcard test/*_entity_test.ml) $(wildcard test/*_direct_test.ml))
 
+# The canary sweep (generated: test/clean_test.ml), which prints the
+# `clean: swept N surface(s), M leak(s)` line sdkgen's lane reads.
+CLEAN_TESTS = $(sort $(wildcard test/clean_test.ml))
+
 # Doc-example structural gate (present only when the readme phase generated it).
 # Wildcard so an absent file is simply skipped, never a missing-target error.
 DOC_TESTS = $(sort $(wildcard test/readme_examples_test.ml))
@@ -96,7 +100,7 @@ DOC_TESTS = $(sort $(wildcard test/readme_examples_test.ml))
 SDK_TEST = $(RUNTIME) sdk_config.ml $(ENTITIES) sdk_client.ml sdk_error.ml \
   test/testutil.ml test/harness.ml \
   test/t_pipeline.ml test/t_feature.ml test/custom_utility.ml \
-  $(ENTITY_TESTS) $(DOC_TESTS) $(FEATURE_TESTS) test/t_main.ml
+  $(ENTITY_TESTS) $(CLEAN_TESTS) $(DOC_TESTS) $(FEATURE_TESTS) test/t_main.ml
 
 # The struct corpus needs only the struct library and the corpus engine —
 # omni carries its own JSON reader and regex engine, so nothing of the SDK
