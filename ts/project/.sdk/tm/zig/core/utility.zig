@@ -614,6 +614,9 @@ fn mo_str_less(_: void, a: []const u8, b: []const u8) bool {
     return std.mem.order(u8, a, b) == .lt;
 }
 
+// The options to scan for secrets. The feature map is keyed by feature
+// names, not field names, so it is scanned as a list: `secrets` must not
+// make every setting of that feature a secret.
 fn mo_without(opts: Value, keys: []const []const u8) Value {
     const out = h.omap();
     if (opts != .object) return out;
@@ -622,7 +625,15 @@ fn mo_without(opts: Value, keys: []const []const u8) Value {
         for (keys) |k| {
             if (std.mem.eql(u8, kv.key_ptr.*, k)) continue :outer;
         }
-        h.setp(out, kv.key_ptr.*, kv.value_ptr.*);
+        const v = kv.value_ptr.*;
+        if (std.mem.eql(u8, kv.key_ptr.*, "feature") and v == .object) {
+            const list = h.olist();
+            var fit = v.object.iterator();
+            while (fit.next()) |f| list.array.append(f.value_ptr.*) catch {};
+            h.setp(out, kv.key_ptr.*, list);
+        } else {
+            h.setp(out, kv.key_ptr.*, v);
+        }
     }
     return out;
 }
@@ -662,15 +673,24 @@ pub fn make_options_util(ctx: *Context) Value {
 
     var opts = h.clone(options);
 
+    const config = ctx.config;
+    const cfgopts: Value = switch (h.to_map(h.getp(config, "options"))) {
+        .object => h.to_map(h.getp(config, "options")),
+        else => h.omap(),
+    };
+
     // The secret registry exists BEFORE validation, fed from the raw input, so
     // the constructor's own rejection of a mistyped credential is clean too.
+    const cfgclean = h.to_map(h.getp(cfgopts, "clean"));
     const rawclean = h.to_map(h.getp(opts, "clean"));
     const cleancfg = make_clean_config(h.merge(h.ja(&.{
         h.omap(),
         h.clone(h.getp(schema.shared_optspec(), "clean")),
+        if (cfgclean == .object) h.clone(cfgclean) else h.omap(),
         if (rawclean == .object) h.clone(rawclean) else h.omap(),
     })));
     clean_add_sensitive_cfg(cleancfg, mo_without(opts, &.{"clean"}));
+    for (clean_splitvalues(h.getp(cfgclean, "values"))) |raw| clean_add_cfg(cleancfg, raw);
     for (clean_splitvalues(h.getp(rawclean, "values"))) |raw| clean_add_cfg(cleancfg, raw);
 
     if (auth_suppressed) h.del_prop(opts, h.vstr("auth"));
@@ -697,12 +717,6 @@ pub fn make_options_util(ctx: *Context) Value {
         }
         h.setp(opts, "feature", fmap);
     }
-
-    const config = ctx.config;
-    const cfgopts: Value = switch (h.to_map(h.getp(config, "options"))) {
-        .object => h.to_map(h.getp(config, "options")),
-        else => h.omap(),
-    };
 
     // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
     //

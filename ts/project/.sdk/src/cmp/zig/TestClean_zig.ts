@@ -286,6 +286,47 @@ const ThrowFeature = struct {
     };
 };
 
+// A feature that refuses the operation with the SDK's own error, as rbac
+// does, whose code quotes a registered value; it records the error
+// PreUnexpected hands a hook.
+const DenyFeature = struct {
+    sinks: *Sinks,
+
+    fn make(sinks: *Sinks) sdk.Feature {
+        const self = h.A().create(DenyFeature) catch unreachable;
+        self.* = .{ .sinks = sinks };
+        return .{ .ptr = @ptrCast(self), .vtable = &vtable };
+    }
+    fn self_of(p: *anyopaque) *DenyFeature {
+        return @ptrCast(@alignCast(p));
+    }
+    fn vname(_: *anyopaque) []const u8 {
+        return "denyhook";
+    }
+    fn vactive(_: *anyopaque) bool {
+        return true;
+    }
+    fn vaddopts(_: *anyopaque) Value {
+        return vnull();
+    }
+    fn vinit(_: *anyopaque, _: *sdk.Context, _: Value) void {}
+    fn vdispatch(p: *anyopaque, hook: []const u8, c: *sdk.Context) void {
+        if (std.mem.eql(u8, hook, "PrePoint")) {
+            const e = c.make_error(fmt("denied:{s}", .{CANARY_VALUE}), "denied");
+            c.out_set("point", sdk.OutVal{ .err = e });
+        } else if (std.mem.eql(u8, hook, "PreUnexpected")) {
+            if (c.ctrl.err) |e| self_of(p).sinks.err("error", e);
+        }
+    }
+    const vtable = sdk.Feature.VTable{
+        .name = vname,
+        .active = vactive,
+        .add_options = vaddopts,
+        .init = vinit,
+        .dispatch = vdispatch,
+    };
+};
+
 // ---- scenarios: what the transport answers ------------------------------
 
 const Scenario = enum { ok, notfound, server, transport, notjson };
@@ -499,6 +540,21 @@ test "clean: no credential leaves the SDK in any form" {
     const hookerr = drive(hooked, target, h.omap(), &sinks);
     try testing.expect(hookerr != null);
 
+    // A feature's own error keeps its code, which is cleaned like the
+    // message: returned, and handed to a hook.
+    const denied = drive(makeSdk(.ok, &sinks, true, DenyFeature.make(&sinks)), target, h.omap(), &sinks);
+    try testing.expect(denied != null);
+
+    // A client given no clean block at all masks by the schema defaults.
+    const bare = sdk.SDK.new(h.jo(&.{
+        .{ "apikey", h.vstr(CANARY_APIKEY) },
+        .{ "secret", h.vstr(CANARY_SECRET) },
+        .{ "headers", h.jo(&.{.{ "X-Custom-Token", h.vstr(CANARY_HEADER) }}) },
+        .{ "system", h.jo(&.{.{ "fetch", Transport.make(.notfound) }}) },
+    }));
+    const barerr = drive(bare, target, h.omap(), &sinks);
+    try testing.expect(barerr != null);
+
     var leaked: usize = 0;
     for (sinks.items.items) |s| {
         const found = leaks(s.text);
@@ -534,6 +590,8 @@ test "clean: no credential leaves the SDK in any form" {
         }
     }
     try testing.expect(std.mem.eql(u8, header(h.getp(spec, "headers"), "x-custom-token") orelse "", MASK));
+    try testing.expectEqualStrings("denied:" ++ MASK, denied.?.code);
+    try testing.expectEqualStrings(MASK, header(h.getp(barerr.?.spec, "headers"), "x-custom-token") orelse "");
 
     try testing.expect(h.getp(explained, "result") == .object);
     try testing.expect(std.mem.eql(u8, header(h.getp(h.getp(explained, "result"), "headers"), "x-session-token") orelse "", MASK));
@@ -581,6 +639,43 @@ test "clean: a registered value used as a property name is masked, collisions ke
     try testing.expectEqualStrings(MASK, keys.items[0]);
     try testing.expectEqualStrings(MASK ++ "#1", keys.items[1]);
     try testing.expectEqualStrings("plain", keys.items[2]);
+}
+
+test "clean: the generated config's own clean block is honoured" {
+    const utility = sdk.test_sdk(vnull(), vnull()).get_utility();
+    const config = h.jo(&.{.{ "options", h.jo(&.{.{ "clean", h.jo(&.{
+        .{ "keys", h.vstr("zzsens") },
+        .{ "values", h.vstr("CONFIG-SEEDED-1") },
+    }) }}) }});
+    const ctx = utility.make_context(sdk.CtxSpec{
+        .utility = utility,
+        .options = h.jo(&.{.{ "clean", h.jo(&.{.{ "values", h.vstr("CALLER-SEEDED-2") }}) }}),
+        .config = config,
+    }, null);
+    ctx.options = utility.make_options(ctx);
+    try testing.expectEqualStrings("a " ++ MASK ++ " b " ++ MASK,
+        sdk.utilmod.clean_str_util(ctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2"));
+    const out = sdk.utilmod.clean_util(ctx, h.jo(&.{ .{ "my_zzsens", h.vstr("x") }, .{ "other", h.vstr("y") } }));
+    try testing.expectEqualStrings(MASK, h.get_str(out, "my_zzsens") orelse "");
+    try testing.expectEqualStrings("y", h.get_str(out, "other") orelse "");
+    const cfgclean = h.getp(h.getp(config, "options"), "clean");
+    try testing.expectEqualStrings("zzsens", h.get_str(cfgclean, "keys") orelse "");
+    try testing.expectEqualStrings("CONFIG-SEEDED-1", h.get_str(cfgclean, "values") orelse "");
+}
+
+// A feature's name is not a field name: a feature called secrets does not
+// make its settings secret, though a sensitive field inside it still is.
+test "clean: a feature's name is read as a name" {
+    const client = sdk.SDK.new(h.jo(&.{
+        .{ "apikey", h.vstr(CANARY_APIKEY) },
+        .{ "feature", h.jo(&.{.{ "secrets", h.jo(&.{
+            .{ "active", h.vbool(false) },
+            .{ "name", h.vstr("ZZNAME-feat123") },
+            .{ "token", h.vstr("ZZTOKEN-feat456") },
+        }) }}) },
+    }));
+    try testing.expectEqualStrings("ZZNAME-feat123 " ++ MASK,
+        sdk.utilmod.clean_str_util(client.get_root_ctx(), "ZZNAME-feat123 ZZTOKEN-feat456"));
 }
 `
 }
