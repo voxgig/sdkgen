@@ -207,17 +207,50 @@ sub response {
   our @ISA = ('${Name}BaseFeature');
 
   sub new {
-    my ($class) = @_;
+    my ($class, $response, $unexpected) = @_;
     my $self = ${Name}BaseFeature::new($class);
     $self->{name} = 'throwhook';
     $self->{version} = '0.0.1';
     $self->{active} = 1;
+    $self->{response} = defined $response ? $response : 1;
+    $self->{unexpected} = $unexpected ? 1 : 0;
     return $self;
   }
 
   sub PreResponse {
     my ($s, $ctx) = @_;
-    die 'hook saw ' . $JSON->encode({ %{ $ctx->{spec} } });
+    die 'hook saw ' . $JSON->encode({ %{ $ctx->{spec} } }) if $s->{response};
+    return;
+  }
+
+  # Fires in make_error, and in the catch path before its cleaning.
+  sub PreUnexpected {
+    my ($s, $ctx) = @_;
+    die 'hook saw ' . $JSON->encode({ %{ $ctx->{spec} } }) if $s->{unexpected};
+    return;
+  }
+}
+
+# A stream that succeeds; the pipeline's terminal step ran before it.
+{
+  package ${Name}CleanStreamOkFeature;
+  our @ISA = ('${Name}BaseFeature');
+
+  sub new {
+    my ($class) = @_;
+    my $self = ${Name}BaseFeature::new($class);
+    $self->{name} = 'streamok';
+    $self->{version} = '0.0.1';
+    $self->{active} = 1;
+    return $self;
+  }
+
+  sub PreDone {
+    my ($s, $ctx) = @_;
+    my $data = $ctx->{result}{resdata};
+    my @items = ref $data eq 'ARRAY' ? @$data : (defined $data ? ($data) : ());
+    $ctx->{result}{stream} = sub { return shift @items };
+    return;
   }
 }
 
@@ -362,6 +395,8 @@ sub usable_op {
 
 sub drive {
   my ($sdk, $target, $ctrl, $sinks) = @_;
+  # A caller may keep the record it passed rather than read ctrl.explain.
+  my $held = $ctrl->{explain};
   my ($acc, $op) = ($target->{accessor}, $target->{op});
   my $out;
   my $ok = eval { $out = $sdk->$acc()->$op({ %{ $target->{match} } }, $ctrl); 1 };
@@ -369,6 +404,8 @@ sub drive {
   push @$sinks, forms('error', $err) if defined $err;
   push @$sinks, forms('result', $out) if defined $out;
   push @$sinks, forms('explain', $ctrl->{explain}) if defined $ctrl->{explain};
+  push @$sinks, forms('explain:held', $held) if defined $held && (!defined $ctrl->{explain}
+    || Scalar::Util::refaddr($held) != Scalar::Util::refaddr($ctrl->{explain}));
   return $err;
 }
 
@@ -409,20 +446,37 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
   push @sinks, forms('rejected', $rejected) if defined $rejected;
 
   # An error a feature hook dies with, quoting the request, skips make_error.
-  my $hooked = make_sdk($SCENARIOS[0], \\@sinks, undef, [ ${Name}CleanThrowFeature->new ]);
-  ok(defined drive($hooked, $target, {}, \\@sinks), 'the throwing hook fails the operation');
+  # The variant dying only in PreUnexpected reaches make_error's own firing
+  # through a 404.
+  my $hooked;
+  for my $hook ([ $SCENARIOS[0], 1, 0 ], [ $SCENARIOS[0], 1, 1 ], [ $SCENARIOS[1], 0, 1 ]) {
+    my ($scenario, $response, $unexpected) = @$hook;
+    $hooked = make_sdk($scenario, \\@sinks, undef,
+      [ ${Name}CleanThrowFeature->new($response, $unexpected) ]);
+    ok(defined drive($hooked, $target, { 'explain' => {} }, \\@sinks),
+      'the throwing hook fails the operation');
+  }
 
-  # Pulling from a stream runs inside the same catch path as the operation.
-  my $streamed = make_sdk($SCENARIOS[0], \\@sinks, undef, [ ${Name}CleanStreamThrowFeature->new ]);
-  my $streamerr;
-  eval {
-    my ($acc, $op) = ($target->{accessor}, $target->{op});
-    my $next = $streamed->$acc()->stream($op, { 'reqmatch' => { %{ $target->{match} } } });
-    1 while defined $next->();
-    1;
-  } or $streamerr = $@;
-  ok(defined $streamerr, 'the failing stream dies');
-  push @sinks, forms('stream', $streamerr) if defined $streamerr;
+  # Pulling from a stream runs inside the same catch path as the operation,
+  # and the explain record the caller passed is cleaned however it ends.
+  for my $case ([ 'stream', ${Name}CleanStreamThrowFeature->new ],
+    [ 'stream-ok', ${Name}CleanStreamOkFeature->new ], [ 'stream-plain' ]) {
+    my ($name, @extra) = @$case;
+    my $streamed = make_sdk($SCENARIOS[0], \\@sinks, undef, [ @extra ]);
+    my $explain = {};
+    my $streamerr;
+    eval {
+      my ($acc, $op) = ($target->{accessor}, $target->{op});
+      my $next = $streamed->$acc()->stream($op, { 'reqmatch' => { %{ $target->{match} } } },
+        { 'ctrl' => { 'explain' => $explain } });
+      1 while defined $next->();
+      1;
+    } or $streamerr = $@;
+    is(defined $streamerr ? 1 : 0, 'stream' eq $name ? 1 : 0, "$name: only the failing stream dies");
+    push @sinks, forms($name, $streamerr) if defined $streamerr;
+    ok(scalar(keys %$explain) > 0, "$name: the explain record is filled");
+    push @sinks, forms("$name:explain", $explain);
+  }
 
   # A registered value used as a property name is masked; names that mask
   # alike are all kept.

@@ -286,7 +286,15 @@ sub _run_op {
   if (my $operr = $@) {
     $ctx->{ctrl}{err} = $operr;
 
-    # #PreUnexpected-Hook
+    # What a hook dies with here must not escape the cleaning below.
+    my $fired = eval {
+      # #PreUnexpected-Hook
+      1;
+    };
+    if (!$fired) {
+      $operr = $@;
+      $ctx->{ctrl}{err} = $operr;
+    }
 
     my $e = $self->_unexpected($ctx, $operr);
     die $e if defined $e;
@@ -303,16 +311,7 @@ sub _unexpected {
   my $clean = $self->{_utility}{clean};
   my $explain = $ctx->{ctrl}{explain};
   if (Voxgig::Struct::ismap($explain)) {
-    my $cleaned = $clean->($ctx, $explain);
-    if (Voxgig::Struct::ismap($cleaned)
-      && Scalar::Util::refaddr($cleaned) != Scalar::Util::refaddr($explain)) {
-      %$explain = %$cleaned;
-    }
-    if (Voxgig::Struct::ismap($explain->{result})) {
-      my %pruned = %{ $explain->{result} };
-      delete $pruned{err};
-      $explain->{result} = \%pruned;
-    }
+    $self->{_utility}{clean_explain}->($ctx);
     my $msg = "$err";
     $msg =~ s/\s+\z//;
     my $cleanerr = $clean->($ctx, {
