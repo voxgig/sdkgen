@@ -543,6 +543,15 @@ int main(void) {
   PNError* barerr = drive(bare, op, NULL);
   CHECK(barerr != NULL, "the 404 scenario must throw without a clean block");
 
+  // The raw path returns its failure rather than an error.
+  PNError* directerr = NULL;
+  voxgig_value* direct = sdk_direct(make_sdk(SC_TRANSPORT, NULL, NULL),
+                                    cmap(1, "path", v_str("raw")), &directerr);
+  bool directok = true;
+  CHECK(NULL == directerr && get_bool(direct, "ok", &directok) && !directok,
+        "a transport failure should fail direct()");
+  push_value("direct", direct);
+
   size_t nleaks = 0;
   char found[4096];
   for (size_t i = 0; i < NSINKS; i++) {

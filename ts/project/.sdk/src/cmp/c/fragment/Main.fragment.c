@@ -188,7 +188,7 @@ static voxgig_value* sdk_raw_request(
   PNError* ferr = NULL;
   voxgig_value* fetched = utility_fetch(utility, ctx, url, fetchdef, &ferr);
   if (ferr) {
-    return err_map(ferr->msg);
+    return err_map(clean_str(ctx, ferr->msg));
   }
 
   if (v_is_noval(fetched) || v_is_null(fetched)) {
