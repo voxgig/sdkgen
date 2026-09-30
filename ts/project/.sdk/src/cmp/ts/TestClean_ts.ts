@@ -234,6 +234,18 @@ class ThrowFeature extends BaseFeature {
 }
 
 
+// A stream that fails while the caller iterates it, quoting a credential.
+class StreamThrowFeature extends BaseFeature {
+  name = 'streamthrow'
+  version = '0.0.1'
+  active = true
+  init() { }
+  PreDone(this: any, ctx: any) {
+    ctx.result.stream = async function* () { throw new Error('stream saw ' + CANARY.apikey) }
+  }
+}
+
+
 async function drive(sdk: any, target: Target, ctrl: any, sinks: Sink[]) {
   let out: any = undefined
   let err: any = undefined
@@ -296,6 +308,16 @@ describe('clean', () => {
     const hooked = makeSdk(SCENARIOS[0], sinks, undefined, [new ThrowFeature()])
     const hookerr = await drive(hooked, target, {}, sinks)
     ok(null != hookerr, 'the throwing hook should fail the operation')
+
+    // Iterating a stream runs inside the same catch path as the operation.
+    const streamed = makeSdk(SCENARIOS[0], sinks, undefined, [new StreamThrowFeature()])
+    let streamerr: any = undefined
+    try {
+      for await (const _item of streamed[target.accessor]().stream(target.op, { reqmatch: { ...target.match } })) { }
+    }
+    catch (e: any) { streamerr = e }
+    ok(null != streamerr, 'the failing stream should throw')
+    sinks.push(...forms('stream', streamerr))
 
     // Most callers pass no clean block; the defaults alone must mask.
     for (const scenario of [SCENARIOS[1], SCENARIOS[3]]) {
