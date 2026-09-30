@@ -45,7 +45,7 @@ class ProjectNameMakeError
         if ($ctx->ctrl->explain) {
             $ctx->ctrl->explain['err'] = ['message' => $sdk_err->msg];
             // A failure before done() leaves the record holding the live spec.
-            $ctx->ctrl->explain = ($ctx->utility->clean)($ctx, $ctx->ctrl->explain);
+            ($ctx->utility->clean_explain)($ctx);
         }
 
         $sdk_err->result = ($ctx->utility->clean)($ctx, $result);

@@ -235,6 +235,8 @@ class EntyClass
             $streamfn = ($result !== null && isset($result->stream) && is_callable($result->stream))
                 ? $result->stream : null;
             if ($streamfn !== null) {
+                // done() does not run on this path, so its record is cleaned here.
+                ($utility->clean_explain)($ctx);
                 foreach ($streamfn() as $item) {
                     if ($aborted()) {
                         return;
@@ -286,9 +288,7 @@ class EntyClass
     private function _unexpected($ctx, \Throwable $err): \Throwable
     {
         $ctx->ctrl->err = $err;
-        if ($ctx->ctrl->explain) {
-            $ctx->ctrl->explain = ($this->_utility->clean)($ctx, $ctx->ctrl->explain);
-        }
+        ($this->_utility->clean_explain)($ctx);
         return ($this->_utility->clean)($ctx, $err);
     }
 

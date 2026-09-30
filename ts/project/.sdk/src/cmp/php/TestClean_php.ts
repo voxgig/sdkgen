@@ -272,10 +272,11 @@ class CleanTest extends TestCase
 
     // A feature that throws from inside the pipeline, quoting the request
     // it saw: an error make_error never handled.
-    private static function throw_feature(): ${Name}BaseFeature
+    // Its PreUnexpected variant throws where that hook fires: make_error.
+    private static function throw_feature(bool $response = true, bool $unexpected = false): ${Name}BaseFeature
     {
-        return new class () extends ${Name}BaseFeature {
-            public function __construct()
+        return new class ($response, $unexpected) extends ${Name}BaseFeature {
+            public function __construct(private bool $response, private bool $unexpected)
             {
                 parent::__construct();
                 $this->name = 'throwhook';
@@ -285,7 +286,16 @@ class CleanTest extends TestCase
 
             public function PreResponse(${Name}Context $ctx): void
             {
-                throw new \\RuntimeException('hook saw ' . json_encode($ctx->spec));
+                if ($this->response) {
+                    throw new \\RuntimeException('hook saw ' . json_encode($ctx->spec));
+                }
+            }
+
+            public function PreUnexpected(${Name}Context $ctx): void
+            {
+                if ($this->unexpected) {
+                    throw new \\RuntimeException('hook saw ' . json_encode($ctx->spec));
+                }
             }
         };
     }
@@ -335,6 +345,29 @@ class CleanTest extends TestCase
                 $ctx->result->stream = function () use ($key): \\Generator {
                     throw new \\RuntimeException('stream saw ' . $key);
                     yield null;
+                };
+            }
+        };
+    }
+
+    // A stream that succeeds, so the pipeline's terminal step never runs.
+    private static function stream_ok_feature(): ${Name}BaseFeature
+    {
+        return new class () extends ${Name}BaseFeature {
+            public function __construct()
+            {
+                parent::__construct();
+                $this->name = 'streamok';
+                $this->version = '0.0.1';
+                $this->active = true;
+            }
+
+            public function PreDone(${Name}Context $ctx): void
+            {
+                $data = $ctx->result->resdata;
+                $items = is_array($data) && array_is_list($data) ? $data : (null === $data ? [] : [$data]);
+                $ctx->result->stream = function () use ($items): \\Generator {
+                    yield from $items;
                 };
             }
         };
@@ -463,6 +496,9 @@ class CleanTest extends TestCase
 
     private static function drive(object $sdk, object $watcher, array $target, array $ctrl, \\ArrayObject $sinks): array
     {
+        // What the caller passed and keeps; an array, so the call cannot
+        // change it, but it is searched like the record the watcher reads.
+        $held = $ctrl['explain'] ?? null;
         $out = null;
         $err = null;
         try {
@@ -489,6 +525,11 @@ class CleanTest extends TestCase
         if (null !== $last && is_array($last->ctrl->explain)) {
             $explain = $last->ctrl->explain;
             foreach (self::surfaces('explain', $explain) as $s) {
+                $sinks[] = $s;
+            }
+        }
+        if (null !== $held && $held !== $explain) {
+            foreach (self::surfaces('explain:held', $held) as $s) {
                 $sinks[] = $s;
             }
         }
@@ -561,24 +602,41 @@ class CleanTest extends TestCase
         }
 
         // An error a feature hook throws, quoting the request, skips make_error.
-        [$hooked, $hwatcher] = self::make_sdk(self::scenarios()['ok'], $sinks, null, [self::throw_feature()]);
-        [$hookerr, $_hexplain] = self::drive($hooked, $hwatcher, $target, [], $sinks);
-        $this->assertNotNull($hookerr, 'the throwing hook should fail the operation');
-
-        // Iterating a stream runs inside the same catch path as the operation.
-        [$streamed, $_swatcher] = self::make_sdk(self::scenarios()['ok'], $sinks, null,
-            [self::stream_throw_feature(self::CANARY['apikey'])]);
-        $streamerr = null;
-        try {
-            $accessor = $target['accessor'];
-            foreach ($streamed->$accessor()->stream($target['op'], ['reqmatch' => $target['match']]) as $_item) {
-            }
-        } catch (\\Throwable $e) {
-            $streamerr = $e;
+        // PreUnexpected fires only in make_error, which the variant throwing
+        // there alone reaches through a 404.
+        foreach ([['ok', self::throw_feature()], ['ok', self::throw_feature(true, true)],
+            ['notfound', self::throw_feature(false, true)]] as [$sname, $hook]) {
+            [$hooked, $hwatcher] = self::make_sdk(self::scenarios()[$sname], $sinks, null, [$hook]);
+            [$hookerr, $_hexplain] = self::drive($hooked, $hwatcher, $target, ['explain' => ['on' => true]], $sinks);
+            $this->assertNotNull($hookerr, 'the throwing hook should fail the operation');
         }
-        $this->assertNotNull($streamerr, 'the failing stream should throw');
-        foreach (self::surfaces('stream', $streamerr) as $s) {
-            $sinks[] = $s;
+
+        // Iterating a stream runs inside the same catch path as the operation,
+        // and the explain record is cleaned however it ends. The caller's copy
+        // is its own, so the record is read back as the watcher saw it.
+        foreach ([['stream', [self::stream_throw_feature(self::CANARY['apikey'])]],
+            ['stream-ok', [self::stream_ok_feature()]], ['stream-plain', []]] as [$name, $extra]) {
+            [$streamed, $swatcher] = self::make_sdk(self::scenarios()['ok'], $sinks, null, $extra);
+            $streamerr = null;
+            try {
+                $accessor = $target['accessor'];
+                foreach ($streamed->$accessor()->stream($target['op'], ['reqmatch' => $target['match']],
+                    ['ctrl' => ['explain' => ['on' => true]]]) as $_item) {
+                }
+            } catch (\\Throwable $e) {
+                $streamerr = $e;
+            }
+            $this->assertSame('stream' === $name, null !== $streamerr, $name . ': only the failing stream throws');
+            if (null !== $streamerr) {
+                foreach (self::surfaces($name, $streamerr) as $s) {
+                    $sinks[] = $s;
+                }
+            }
+            $explain = $swatcher->last->ctrl->explain ?? [];
+            $this->assertGreaterThan(1, count((array)$explain), $name . ': the explain record was not filled');
+            foreach (self::surfaces($name . ':explain', $explain) as $s) {
+                $sinks[] = $s;
+            }
         }
 
         // A registered value used as a property name is masked; names that
