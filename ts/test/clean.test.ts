@@ -205,6 +205,42 @@ describe('clean: the shipped ts utility', () => {
   })
 
 
+  test('a registered value used as a property name is masked, collisions kept', () => {
+    const mod = loadClean()
+    const ctx = ctxWith(mod, {}, ['ZZVAL-abc123', 'ZZVAL-xyz789'])
+    const out = mod.clean(ctx, { 'ZZVAL-abc123': 1, 'ZZVAL-xyz789': 2, plain: 3 })
+    deepStrictEqual(out, { [MASK]: 1, [MASK + '#1']: 2, plain: 3 })
+
+    const err: any = new Error('boom')
+    err['ZZVAL-abc123'] = 'x'
+    mod.clean(ctx, err)
+    ok(!Object.keys(err).includes('ZZVAL-abc123'))
+    strictEqual(err[MASK], 'x')
+  })
+
+
+  test('cleanAddSensitive registers every scalar under a sensitive name, at any depth', () => {
+    const mod = loadClean()
+    const ctx = ctxWith(mod)
+    mod.cleanAddSensitive(ctx, {
+      apikey: { value: 'NESTED-SECRET-1' },
+      headers: { 'X-Api-Token': ['LISTED-SECRET-2'] },
+      secret: 123456789,
+      name: 'not-a-secret',
+    })
+    const values = ctx.options.__derived__.clean.values
+    ok(values.includes('NESTED-SECRET-1'))
+    ok(values.includes('LISTED-SECRET-2'))
+    ok(values.includes('123456789'))
+    ok(!values.includes('not-a-secret'))
+
+    const loop: any = { token: 'LOOP-SECRET-3' }
+    loop.self = loop
+    mod.cleanAddSensitive(ctx, loop)
+    ok(values.includes('LOOP-SECRET-3'))
+  })
+
+
   test('splitvalues reads the comma-separated option and a list alike', () => {
     const mod = loadClean()
     deepStrictEqual(mod.splitvalues('a1234, b5678,,'), ['a1234', 'b5678'])

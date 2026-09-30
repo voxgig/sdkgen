@@ -240,7 +240,8 @@ class ProjectNameEntityBase<D = any> {
       return undefined
     }
 
-    return err
+    // An error a hook threw never passed through makeError.
+    return clean(ctx, err)
   }
 
 }

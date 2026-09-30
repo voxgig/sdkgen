@@ -204,9 +204,22 @@ function plain(cfg: CleanConfig, val: any, depth: number, seen: any[]): any {
   const out: any = {}
   for (const k of Object.keys(val)) {
     const v = snapshot(cfg, val[k], k, depth + 1, seen)
-    if (undefined !== v) out[k] = v
+    if (undefined !== v) out[cleanName(cfg, out, k)] = v
   }
   return out
+}
+
+
+// A registered value used as a property name is masked like any other
+// string; names that mask alike take a counter, so none is lost.
+function cleanName(cfg: CleanConfig, out: any, key: string): string {
+  const name = cleanString(cfg, key)
+  if (name === key || !Object.prototype.hasOwnProperty.call(out, name)) {
+    return name
+  }
+  let i = 1
+  while (Object.prototype.hasOwnProperty.call(out, name + '#' + i)) i++
+  return name + '#' + i
 }
 
 
@@ -228,13 +241,18 @@ function clean(ctx: Context, val: any) {
       val.stack = cleanString(cfg, val.stack)
     }
     for (const k of Object.keys(val)) {
-      const v = (val as any)[k]
+      let v = (val as any)[k]
       if ('string' === typeof v) {
-        (val as any)[k] = sensitiveKey(cfg, k) ? maskValue(cfg, v) : cleanString(cfg, v)
+        v = sensitiveKey(cfg, k) ? maskValue(cfg, v) : cleanString(cfg, v)
       }
       else if (null != v && 'object' === typeof v) {
-        (val as any)[k] = snapshot(cfg, v, k, 1, [])
+        v = snapshot(cfg, v, k, 1, [])
       }
+      const name = cleanString(cfg, k)
+      if (name !== k) {
+        delete (val as any)[k]
+      }
+      (val as any)[name === k ? k : cleanName(cfg, val, k)] = v
     }
     return val
   }
@@ -248,9 +266,34 @@ function cleanKey(ctx: Context, key: any): boolean {
 }
 
 
+// Every scalar under a sensitive name, at any depth and of any shape: a
+// credential mistyped as an object or a number is still a credential, and
+// the validation error that rejects it quotes it.
+function cleanAddSensitive(
+  ctx: Context, val: any, under = false, depth = 0, seen: any[] = []
+): void {
+  if (null == val || MAXDEPTH <= depth) {
+    return
+  }
+  const t = typeof val
+  if ('string' === t || 'number' === t || 'bigint' === t) {
+    if (under) cleanAdd(ctx, String(val))
+    return
+  }
+  if ('object' !== t || seen.includes(val)) {
+    return
+  }
+  seen.push(val)
+  for (const k of Object.keys(val)) {
+    cleanAddSensitive(ctx, val[k], under || cleanKey(ctx, k), depth + 1, seen)
+  }
+}
+
+
 export {
   clean,
   cleanAdd,
+  cleanAddSensitive,
   cleanKey,
   makeCleanConfig,
   splitvalues,

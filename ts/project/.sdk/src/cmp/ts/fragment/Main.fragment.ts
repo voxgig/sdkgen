@@ -35,7 +35,8 @@ class ProjectNameSDK {
 
     this._options = this._utility.makeOptions(this._rootctx)
 
-    for (const key of ['_options', '_rootctx']) {
+    // Feature state can hold a resolved or bought credential too.
+    for (const key of ['_options', '_rootctx', '_features']) {
       Object.defineProperty(this, key, {
         value: (this as any)[key], enumerable: false, writable: true, configurable: true
       })

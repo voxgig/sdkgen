@@ -142,7 +142,7 @@ const SCENARIOS: Scenario[] = [
 ]
 
 
-function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any): any {
+function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any[]): any {
   const capture = (name: string) => (rec: any) => { sinks.push(...forms(name, rec)) }
   const feature: any = {}
   if (hasFeature('log')) {
@@ -165,7 +165,7 @@ function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any): any {
     headers: { 'X-Custom-Token': CANARY.header },
     clean: { values: CANARY.value, ...(cleanopts || {}) },
     feature,
-    extend: [new CaptureFeature(sinks)],
+    extend: [new CaptureFeature(sinks), ...(extra || [])],
     utility: {
       fetcher: async (_ctx: any, url: string, fetchdef: any) => scenario.respond(url, fetchdef),
     },
@@ -174,38 +174,61 @@ function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any): any {
 }
 
 
-// The first operation that completes against a plain 200 with no arguments
-// (a required path parameter would fail before the request is built).
-async function usableOp(): Promise<{ accessor: string, op: string } | null> {
+// The first operation that completes against a plain 200: with no
+// arguments, else with every path parameter its points declare filled in.
+type Target = { accessor: string, op: string, match: any }
+
+async function usableOp(): Promise<Target | null> {
   const plain = new (SDK as any)({
     apikey: CANARY.apikey,
     utility: { fetcher: async () => response(200, { id: 'i1' }) },
   })
   const entities: Record<string, any> = plain._rootctx.config.entity || {}
+  const rank = (op: string) => (({ list: 0, load: 1 } as any)[op] ?? 2)
   for (const m of Object.getOwnPropertyNames(Object.getPrototypeOf(plain)).sort()) {
     if (!/^[A-Z]/.test(m) || 'function' !== typeof plain[m]) { continue }
     let inst: any
     try { inst = plain[m]() } catch (_e) { continue }
     if (null == inst || 'string' !== typeof inst.name || null == entities[inst.name]) { continue }
-    const ops = Object.keys(entities[inst.name].op || {})
-      .sort((a, b) => (({ list: 0, load: 1 } as any)[a] ?? 2) - (({ list: 0, load: 1 } as any)[b] ?? 2))
-    for (const op of ops) {
-      try {
-        await plain[m]()[op]({}, {})
-        return { accessor: m, op }
+    const opdefs = entities[inst.name].op || {}
+    for (const op of Object.keys(opdefs).sort((a, b) => rank(a) - rank(b))) {
+      const filled: any = {}
+      for (const point of opdefs[op].points || []) {
+        for (const p of point?.args?.params || []) {
+          if ('string' === typeof p?.name) filled[p.name] = 'p1'
+        }
       }
-      catch (_e) { continue }
+      for (const match of [{}, filled]) {
+        try {
+          await plain[m]()[op]({ ...match }, {})
+          return { accessor: m, op, match }
+        }
+        catch (_e) { continue }
+      }
     }
   }
   return null
 }
 
 
-async function drive(sdk: any, target: { accessor: string, op: string }, ctrl: any, sinks: Sink[]) {
+// A feature that throws from inside the pipeline, quoting the request it
+// saw: an error makeError never handled.
+class ThrowFeature extends BaseFeature {
+  name = 'throwhook'
+  version = '0.0.1'
+  active = true
+  init() { }
+  PreResponse(this: any, ctx: any) {
+    throw new Error('hook saw ' + JSON.stringify(ctx.spec))
+  }
+}
+
+
+async function drive(sdk: any, target: Target, ctrl: any, sinks: Sink[]) {
   let out: any = undefined
   let err: any = undefined
   try {
-    out = await sdk[target.accessor]()[target.op]({}, ctrl)
+    out = await sdk[target.accessor]()[target.op]({ ...target.match }, ctrl)
   }
   catch (e: any) {
     err = e
@@ -218,9 +241,11 @@ async function drive(sdk: any, target: { accessor: string, op: string }, ctrl: a
 
 
 describe('clean', () => {
-  test('no credential leaves the SDK in any form', async () => {
+  test('no credential leaves the SDK in any form', async (t) => {
     const target = await usableOp()
-    ok(null != target, 'no operation completes without arguments; nothing to sweep')
+    if (null == target) {
+      return t.skip('no operation of this SDK completes against a plain 200; nothing to sweep')
+    }
 
     const sinks: Sink[] = []
     const errors: Record<string, any> = {}
@@ -234,7 +259,7 @@ describe('clean', () => {
       ]) {
         const sdk = makeSdk(scenario, sinks)
         const ctrl: any = variant.ctrl()
-        const err = await drive(sdk, target!, ctrl, sinks)
+        const err = await drive(sdk, target, ctrl, sinks)
         const key = scenario.name + '/' + variant.name
         if (null != err) errors[key] = err
         if (null != ctrl.explain) explains[key] = ctrl.explain
@@ -242,6 +267,23 @@ describe('clean', () => {
         sinks.push({ name: 'sdk:spread', text: inspect({ ...sdk }, { depth: 6 }) })
       }
     }
+
+    // A credential mistyped as an object is rejected by validation, whose
+    // message quotes the value it rejected.
+    let rejected: any = undefined
+    try {
+      new (SDK as any)({ apikey: { value: CANARY.apikey }, clean: { values: CANARY.value } })
+    }
+    catch (e: any) {
+      rejected = e
+    }
+    ok(null != rejected, 'a credential mistyped as an object should be rejected')
+    sinks.push(...forms('rejected', rejected))
+
+    // An error a feature hook throws, quoting the request, skips makeError.
+    const hooked = makeSdk(SCENARIOS[0], sinks, undefined, [new ThrowFeature()])
+    const hookerr = await drive(hooked, target, {}, sinks)
+    ok(null != hookerr, 'the throwing hook should fail the operation')
 
     const leaked = sinks
       .map((s) => ({ name: s.name, found: leaks(s.text) }))
@@ -278,13 +320,15 @@ describe('clean', () => {
   })
 
 
-  test('the sweep can see a leak: clean switched off shows the credential', async () => {
+  test('the sweep can see a leak: clean switched off shows the credential', async (t) => {
     const target = await usableOp()
-    ok(null != target)
+    if (null == target) {
+      return t.skip('no operation of this SDK completes against a plain 200; nothing to sweep')
+    }
 
     const sinks: Sink[] = []
     const sdk = makeSdk(SCENARIOS[1], sinks, { active: false })
-    const err = await drive(sdk, target!, {}, sinks)
+    const err = await drive(sdk, target, {}, sinks)
     ok(null != err)
 
     const leaked = sinks.filter((s) => 0 < leaks(s.text).length)

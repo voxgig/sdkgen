@@ -2,7 +2,7 @@
 import { Context } from '../types'
 import { OPTSPEC } from '../Schema'
 
-import { clean, cleanAdd, cleanKey, makeCleanConfig, splitvalues } from './CleanUtility'
+import { clean, cleanAdd, cleanAddSensitive, makeCleanConfig, splitvalues } from './CleanUtility'
 
 
 function makeOptions(ctx: Context) {
@@ -13,7 +13,6 @@ function makeOptions(ctx: Context) {
   const setprop = struct.setprop
   const merge = struct.merge
   const validate = struct.validate
-  const walk = struct.walk
 
   let opts = { ...(options || {}) }
 
@@ -23,7 +22,8 @@ function makeOptions(ctx: Context) {
   // the constructor's own rejection of a mistyped credential is clean too.
   const cleancfg = makeCleanConfig(merge([{}, (OPTSPEC as any).clean, opts.clean]))
   const cleanctx: any = { options: { __derived__: { clean: cleancfg } } }
-  for (const raw of [opts.apikey, opts.secret].concat(splitvalues(opts.clean?.values))) {
+  cleanAddSensitive(cleanctx, { ...opts, clean: undefined })
+  for (const raw of splitvalues(opts.clean?.values)) {
     cleanAdd(cleanctx, raw)
   }
 
@@ -115,15 +115,8 @@ function makeOptions(ctx: Context) {
     featureorder,
   }
 
-  // Every string under a sensitive name anywhere in the options - a custom
-  // auth header, a feature credential - is a secret the SDK now handles.
-  const optctx: any = { options: opts }
-  walk(struct.clone({ ...opts, __derived__: undefined }), (key: any, val: any) => {
-    if ('string' === typeof val && cleanKey(optctx, key)) {
-      cleanAdd(optctx, val)
-    }
-    return val
-  })
+  // Again over the merged result: the config's own defaults can carry one.
+  cleanAddSensitive({ options: opts } as any, { ...opts, clean: undefined, __derived__: undefined })
 
   return opts
 }
