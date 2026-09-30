@@ -516,6 +516,11 @@ static void no_credential_leaves_the_sdk() {
   SdkErrorPtr barerr = drive(*bare, cand, target, vmap(), sinks);
   ASSERT_TRUE((bool)barerr, "the 404 scenario must throw without a clean block");
 
+  // The raw path returns its failure rather than throwing it.
+  Value direct = makeSdk(scenarios()[3], &sinks, Value::undef())->direct(vmap({{"path", Value("raw")}}));
+  ASSERT_TRUE(is_false(getp(direct, "ok")), "a transport failure should fail direct()");
+  addForms(sinks, "direct", direct);
+
   std::string leaked;
   int leakcount = 0;
   for (const Sink& s : sinks) {

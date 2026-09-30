@@ -1092,7 +1092,7 @@ inline Value SdkClient::rawRequest(const Value& fetchargs_) {
     fetched = u->fetcher(ctx, url.is_string() ? url.as_string() : "", fetchdef);
   } catch (const SdkErrorPtr& err) {
     map_put(out, "ok", Value(false));
-    map_put(out, "err", vmap({{"message", Value(err->msg)}}));
+    map_put(out, "err", vmap({{"message", u->clean(ctx, Value(err->msg))}}));
     return out;
   }
 
