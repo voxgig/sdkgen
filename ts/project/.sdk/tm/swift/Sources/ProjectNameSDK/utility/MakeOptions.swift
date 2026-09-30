@@ -61,8 +61,8 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   // (Here validate never throws - the struct port collects its errors - so
   // there is no rejection to clean; the registry is early for the same
   // reason regardless.)
-  // Maps only: merge lets any other value replace the defaults outright.
   var cleanlayers: [Value] = [.map(VMap()), clone(gp(SdkSchema.optspec, "clean"))]
+  // Maps only: merge lets any other value replace the defaults outright.
   for block in [gp(cfgopts, "clean"), opts.entries["clean"] ?? .noval] {
     if let m = block.asMap {
       cleanlayers.append(clone(.map(m)))
