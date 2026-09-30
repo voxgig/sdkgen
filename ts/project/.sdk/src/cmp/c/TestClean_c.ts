@@ -119,9 +119,13 @@ function render(spec: {
   *out = r ? r->vt->data(r, NULL) : v_undef();
   return NULL;
 }
+`).join('\n') + '\n' + candidates.map((c) =>
+    `static voxgig_value* ${c.fn}_stream(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* callopts, PNError** err) {
+  return ${c.evar}_stream(${ident}_${c.evar}(sdk, NULL), "${c.op}", mtch, callopts, err);
+}
 `).join('\n')
 
-  const table = candidates.map((c) => `  { "${c.name}", ${c.fn}, { ${
+  const table = candidates.map((c) => `  { "${c.name}", ${c.fn}, ${c.fn}_stream, { ${
     c.params.map((p) => '"' + cstr(p) + '", ').join('')}NULL } },`).join('\n')
 
   return `// Generated canary sweep (see TestClean_c): no credential leaves the SDK
@@ -267,7 +271,9 @@ static const FeatureVT CAPTURE_VT = {
 
 // A feature that fails the operation from inside the pipeline, quoting the
 // request it saw. A C hook has no error return, so it fails the result: an
-// error make_error receives from a hook, not from the pipeline.
+// error make_error receives from a hook, not from the pipeline. For the same
+// reason there is no variant failing in PreUnexpected: make_error has built
+// and cleaned the error it returns before that hook runs.
 static const char* throw_name(Feature* f) { (void)f; return "throwhook"; }
 static void throw_hook(Feature* f, const char* name, Context* ctx) {
   (void)f;
@@ -299,6 +305,34 @@ static void deny_hook(Feature* f, const char* name, Context* ctx) {
 
 static const FeatureVT DENY_VT = {
   deny_name, capture_active, capture_add_options, capture_init, deny_hook, NULL,
+};
+
+// A stream that succeeds, so the pipeline's terminal step never runs. A C
+// stream producer has no error channel, so no stream fails.
+static voxgig_value* streamok_items(void* ud) {
+  voxgig_value* data = (voxgig_value*)ud;
+  voxgig_value* out = v_list();
+  if (voxgig_is_list(data)) {
+    voxgig_list* l = voxgig_as_list(data);
+    for (size_t i = 0; i < l->len; i++) {
+      voxgig_list_push(voxgig_as_list(out), voxgig_retain(l->items[i]));
+    }
+  } else if (!v_is_noval(data) && !v_is_null(data)) {
+    voxgig_list_push(voxgig_as_list(out), voxgig_retain(data));
+  }
+  return out;
+}
+
+static const char* streamok_name(Feature* f) { (void)f; return "streamok"; }
+static void streamok_hook(Feature* f, const char* name, Context* ctx) {
+  (void)f;
+  if (0 != strcmp(name, "PreDone") || !ctx->result) return;
+  ctx->result->stream = streamok_items;
+  ctx->result->stream_ud = v_share(ctx->result->resdata);
+}
+
+static const FeatureVT STREAMOK_VT = {
+  streamok_name, capture_active, capture_add_options, capture_init, streamok_hook, NULL,
 };
 
 enum { SC_OK = 0, SC_NOTFOUND, SC_SERVER, SC_TRANSPORT, SC_NOTJSON, SC_COUNT };
@@ -390,17 +424,19 @@ static ${Name}SDK* make_sdk(int sc, voxgig_value* cleanopts, Feature* extra) {
 }
 
 typedef PNError* (*Drive)(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* ctrl, voxgig_value** out);
+typedef voxgig_value* (*Streamer)(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* callopts, PNError** err);
 
 ${drivers}
 // Generated: every CRUD operation of every active entity, list and load
 // first (they need no body), with the path parameters its points declare.
-static const struct { const char* name; Drive fn; const char* params[16]; } CANDIDATES[] = {
+static const struct { const char* name; Drive fn; Streamer stream; const char* params[16]; } CANDIDATES[] = {
 ${table}
-  { NULL, NULL, { NULL } },
+  { NULL, NULL, NULL, { NULL } },
 };
 
 typedef struct {
   Drive fn;
+  Streamer stream;
   voxgig_value* mtch;
 } Target;
 
@@ -421,6 +457,7 @@ static bool usable_op(Target* target) {
       PNError* err = CANDIDATES[i].fn(plain, voxgig_clone(tries[t]), NULL, &out);
       if (!err) {
         target->fn = CANDIDATES[i].fn;
+        target->stream = CANDIDATES[i].stream;
         target->mtch = tries[t];
         return true;
       }
@@ -430,6 +467,8 @@ static bool usable_op(Target* target) {
 }
 
 static PNError* drive(${Name}SDK* sdk, Target* target, voxgig_value* ctrl) {
+  // A caller may keep the record it passed rather than read ctrl.explain.
+  voxgig_value* held = ctrl ? getp(ctrl, "explain") : NULL;
   voxgig_value* out = NULL;
   PNError* err = target->fn(sdk, voxgig_clone(target->mtch), ctrl, &out);
   if (err) {
@@ -437,6 +476,9 @@ static PNError* drive(${Name}SDK* sdk, Target* target, voxgig_value* ctrl) {
   } else {
     push_value("result", out ? out : v_undef());
   }
+  voxgig_value* explain = ctrl ? getp(ctrl, "explain") : NULL;
+  if (v_is_map(explain)) push_value("explain", explain);
+  if (v_is_map(held) && held != explain) push_value("explain:held", held);
   return err;
 }
 
@@ -494,10 +536,7 @@ int main(void) {
       if (2 == variant) ctrl = cmap(2, "throw", v_bool(false), "explain", explain);
       PNError* err = drive(sdk, op, ctrl);
       if (SC_NOTFOUND == sc && 0 == variant) notfound = err;
-      if (0 != variant) {
-        push_value("explain", explain);
-        if (SC_OK == sc && 1 == variant) explained = explain;
-      }
+      if (SC_OK == sc && 1 == variant) explained = explain;
       (void)SC_NAMES;
     }
   }
@@ -515,11 +554,32 @@ int main(void) {
     push("mistyped:quoted", clean_str(sdk_get_root_ctx(mistyped), quoted));
   }
 
-  // An error a feature hook raises, quoting the request.
+  // An error a feature hook raises, quoting the request, with explain on.
   Feature* thrower = (Feature*)calloc(1, sizeof(CaptureFeature));
   thrower->vt = &THROW_VT;
-  PNError* hookerr = drive(make_sdk(SC_OK, NULL, thrower), op, NULL);
+  PNError* hookerr = drive(make_sdk(SC_OK, NULL, thrower), op, cmap(1, "explain", v_map()));
   CHECK(hookerr != NULL, "the throwing hook should fail the operation");
+
+  // The explain record a stream call is passed is cleaned however the stream
+  // ends: from a feature's producer, or materialised by done.
+  for (int s = 0; s < 2; s++) {
+    const char* name = 0 == s ? "stream-ok" : "stream-plain";
+    Feature* extra = NULL;
+    if (0 == s) {
+      extra = (Feature*)calloc(1, sizeof(CaptureFeature));
+      extra->vt = &STREAMOK_VT;
+    }
+    voxgig_value* explain = v_map();
+    PNError* serr = NULL;
+    op->stream(make_sdk(SC_OK, NULL, extra), voxgig_clone(op->mtch),
+               cmap(1, "ctrl", cmap(1, "explain", explain)), &serr);
+    char label[64];
+    snprintf(label, sizeof(label), "%s: only a failing stream raises", name);
+    CHECK(NULL == serr, label);
+    snprintf(label, sizeof(label), "%s: the explain record was not filled", name);
+    CHECK(0 < voxgig_as_map(explain)->len, label);
+    push_value(0 == s ? "stream-ok:explain" : "stream-plain:explain", explain);
+  }
 
   // A feature's own error keeps its code, which is cleaned like the message:
   // returned, handed to a hook, and cleaned where a step's error skips

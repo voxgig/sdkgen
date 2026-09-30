@@ -35,6 +35,8 @@ voxgig_value* make_error_util(Context* ctx, PNError* err, PNError** out) {
 
   voxgig_value* spec_val = ctx->spec ? spec_to_value(ctx->spec) : voxgig_new_undef();
 
+  clean_explain_util(ctx);
+
   Control* c = ctx->ctrl;
   if (control_has_explain(c)) {
     setp(c->explain, "err", cmap(1, "message", v_str(msg)));

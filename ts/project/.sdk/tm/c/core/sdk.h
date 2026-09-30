@@ -500,6 +500,7 @@ void clean_add_sensitive_util(Context* ctx, voxgig_value* val);
 void clean_error_util(Context* ctx, PNError* err);
 char* clean_base64(const char* in); // returns malloc'd
 voxgig_value* done_util(Context* ctx, PNError** err);
+void clean_explain_util(Context* ctx);
 voxgig_value* make_error_util(Context* ctx, PNError* err, PNError** out);
 void feature_add_util(Context* ctx, Feature* f);
 void feature_hook_util(Context* ctx, const char* name);
