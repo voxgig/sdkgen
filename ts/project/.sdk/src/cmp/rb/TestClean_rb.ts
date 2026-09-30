@@ -355,6 +355,28 @@ class ${Name}CleanTest < Minitest::Test
       util.clean.call(cfgctx, { "my_zzsens" => "x", "other" => "y" }))
     assert_equal({ "keys" => "zzsens", "values" => CANARY["config"] }, cfgclean)
 
+    # With no clean option at all, the schema defaults still apply.
+    bare = ${Name}SDK.new({
+      "apikey" => CANARY["apikey"],
+      "secret" => CANARY["secret"],
+      "headers" => { "X-Custom-Token" => CANARY["header"] },
+      "utility" => { "fetcher" => ->(_ctx, url, fetchdef) { SCENARIOS[1][1].call(url, fetchdef) } },
+    })
+    refute_nil drive(bare, target, { "explain" => {} }, sinks), "the 404 should fail"
+
+    # A feature's name is not a field name: only the sensitive names inside
+    # its settings register.
+    featured = ${Name}SDK.new({
+      "apikey" => CANARY["apikey"],
+      "feature" => {
+        "zzsecrets" => { "active" => false, "kind" => "PLAINSETTING-q8w2e4r6" },
+        "zzfeat" => { "active" => false, "apitoken" => "FEATTOKEN-z9y8x7w6" },
+      },
+    })
+    fclean = featured.get_utility.clean
+    fplain = fclean.call(featured.get_root_ctx, "kind PLAINSETTING-q8w2e4r6")
+    ftoken = fclean.call(featured.get_root_ctx, "token FEATTOKEN-z9y8x7w6")
+
     leaked = sinks
       .map { |s| [s["name"], Sweep.leaks(s["text"])] }
       .reject { |_, found| found.empty? }
@@ -385,6 +407,9 @@ class ${Name}CleanTest < Minitest::Test
 
     coded = errors["coded/throw"]
     assert coded.is_a?(${Name}Error) && coded.code == "denied_#{MASK}", coded.inspect
+
+    assert_equal "kind PLAINSETTING-q8w2e4r6", fplain
+    assert_equal "token #{MASK}", ftoken
 
     explained = explains["ok/explain"] || {}
     refute_nil explained["result"], "the explain record should carry the result"

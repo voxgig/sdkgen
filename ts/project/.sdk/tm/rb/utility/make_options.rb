@@ -69,7 +69,7 @@ module ProjectNameUtilities
     cleancfg = CleanSupport.make_config(VoxgigStruct.merge(
       [{}, ProjectNameSchema::OPTSPEC["clean"], cfgclean, opts["clean"]].select { |c| c.is_a?(Hash) }))
     cleanctx = { "options" => { "__derived__" => { "clean" => cleancfg } } }
-    CleanSupport.add_sensitive(cleanctx, opts.reject { |k, _| k == "clean" })
+    CleanSupport.add_options(cleanctx, opts.reject { |k, _| k == "clean" })
     [cfgopts, opts].each do |block|
       CleanSupport.splitvalues(VoxgigStruct.getpath(block, "clean.values")).each do |raw|
         CleanSupport.add(cleanctx, raw)
@@ -192,7 +192,7 @@ module ProjectNameUtilities
     end
 
     # Again over the merged result: the config's own defaults can carry one.
-    CleanSupport.add_sensitive(cleanctx, opts.reject { |k, _| k == "clean" })
+    CleanSupport.add_options(cleanctx, opts.reject { |k, _| k == "clean" })
 
     opts["__derived__"] = {
       "clean" => cleancfg,

@@ -287,6 +287,14 @@ module ProjectNameUtilities
       end
     end
 
+    # A feature's name is not a field name: only the sensitive names inside
+    # its settings count, so `secrets` does not make every setting a secret.
+    def self.add_options(ctx, opts)
+      add_sensitive(ctx, opts.reject { |k, _| k == "feature" })
+      feature = opts["feature"]
+      (feature.is_a?(Hash) ? feature.values : [feature]).each { |fopts| add_sensitive(ctx, fopts) }
+    end
+
     # Is this key name sensitive under the context's clean configuration?
     def self.key?(ctx, key)
       sensitive_key?(config(ctx), key)
