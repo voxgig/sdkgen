@@ -584,6 +584,13 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
     let barerr = drive(&bare, &target, Value::Noval, &sinks)
         .expect("the 404 scenario must throw without a clean block");
 
+    // The raw path returns its failure rather than an error.
+    let raw = make_sdk(Scenario::Transport, &sinks, None, Vec::new())
+        .direct(jo(vec![("path", Value::str("raw"))]))
+        .expect("direct() returns its failure as data");
+    assert_eq!(getp(&raw, "ok"), Value::Bool(false), "a transport failure should fail direct()");
+    push_value(&sinks, "direct", &raw);
+
     let leaked: Vec<String> = sinks
         .borrow()
         .iter()

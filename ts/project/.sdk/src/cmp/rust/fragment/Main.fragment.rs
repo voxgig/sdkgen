@@ -245,7 +245,7 @@ impl ProjectNameSDK {
             Err(err) => {
                 return Ok(jo(vec![
                     ("ok", Value::Bool(false)),
-                    ("err", Value::str(err.msg.clone())),
+                    ("err", Value::str(utility.clean_str(&ctx, &err.msg))),
                 ]));
             }
             Ok(f) => f,
