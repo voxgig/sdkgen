@@ -92,14 +92,22 @@ def make_options_util(ctx):
     if not isinstance(opts, dict):
         opts = {}
 
+    config = ctx.config or {}
+    cfgopts = {}
+    co = config.get("options") if isinstance(config, dict) else None
+    if isinstance(co, dict):
+        cfgopts = co
+
     # The secret registry exists BEFORE validation, fed from the raw input,
     # so the constructor's own rejection of a mistyped credential is clean
     # too.
+    cfgclean = cfgopts.get("clean") if isinstance(cfgopts.get("clean"), dict) else {}
     rawclean = opts.get("clean") if isinstance(opts.get("clean"), dict) else {}
-    cleancfg = make_clean_config(vs.merge([{}, vs.clone(OPTSPEC.get("clean")), rawclean]))
+    cleancfg = make_clean_config(vs.merge([
+        {}, vs.clone(OPTSPEC.get("clean")), vs.clone(cfgclean), rawclean]))
     cleanctx = _CleanCtx(cleancfg)
     clean_add_sensitive(cleanctx, {k: v for k, v in opts.items() if k != "clean"})
-    for raw in split_values(rawclean.get("values")):
+    for raw in split_values(cfgclean.get("values")) + split_values(rawclean.get("values")):
         clean_add_util(cleanctx, raw)
 
     if authsuppressed:
@@ -124,12 +132,6 @@ def make_options_util(ctx):
             fmap[name] = fopts
             featureorder.append(name)
         opts["feature"] = fmap
-
-    config = ctx.config or {}
-    cfgopts = {}
-    co = config.get("options") if isinstance(config, dict) else None
-    if isinstance(co, dict):
-        cfgopts = co
 
     # THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
     #

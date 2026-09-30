@@ -47,6 +47,7 @@ from urllib.parse import quote
 import pytest
 
 from ${pkg} import ${Name}SDK
+from ${pkg}.core.error import ${Name}Error
 from ${pkg}.feature.base_feature import ${Name}BaseFeature
 from test.feature_harness import has_feature
 
@@ -60,6 +61,7 @@ CANARY = {
     "secret": "CANARY-SECRET-w3e8r5t2y6",
     "header": "CANARY-HEADER-z1x4c7v0b3",
     "value": "CANARY-VALUE-n5m8b2v9c4",
+    "config": "CANARY-CONFIG-h6j3k8l2m5",
 }
 
 MASK = "[redacted]"
@@ -140,8 +142,12 @@ class _CaptureFeature(${Name}BaseFeature):
     def PreResponse(self, ctx):
         self._sinks.extend(_forms("ctx@PreResponse", ctx))
 
+    # The SDK's own error as a hook reads it, which an observability
+    # feature logs.
     def PreUnexpected(self, ctx):
         self._sinks.extend(_forms("ctx@PreUnexpected", ctx))
+        if isinstance(ctx.ctrl.err, ${Name}Error):
+            self._sinks.extend(_forms("ctrl.err@PreUnexpected", ctx.ctrl.err))
 
 
 def _response(status, data, headers=None):
@@ -176,6 +182,8 @@ SCENARIOS = [
     ("notfound", lambda url, fetchdef: (_response(404, {"error": "no such record"}), None)),
     ("server", lambda url, fetchdef: (_response(500, {"error": "boom"}), None)),
     ("transport", lambda url, fetchdef: (None, RuntimeError('socket hang up (URL was: "' + url + '")'))),
+    # The SDK's own error, its code quoting a registered value.
+    ("coded", lambda url, fetchdef: (None, ${Name}Error("denied_" + CANARY["apikey"], "coded failure"))),
     ("notjson", lambda url, fetchdef: (_notjson(), None)),
 ]
 
@@ -356,6 +364,22 @@ class TestClean:
         sinks.extend(_forms("named-error", err))
         assert CANARY["value"] not in vars(err) and vars(err).get(MASK) == "x", vars(err)
 
+        # The generated config's own clean block is read beside the caller's,
+        # and is not changed by it.
+        cfgclean = {"keys": "zzsens", "values": CANARY["config"]}
+        built = util.make_options(util.make_context({
+            "utility": util,
+            "config": {"options": {"clean": cfgclean}},
+            "options": {"clean": {"values": CANARY["value"]}},
+        }, None))
+        cfgctx = util.make_context({"options": built}, None)
+        seeded = util.clean(cfgctx, "config " + CANARY["config"] + " caller " + CANARY["value"])
+        sinks.append(("config-clean", seeded))
+        assert seeded == "config " + MASK + " caller " + MASK, seeded
+        bykey = util.clean(cfgctx, {"my_zzsens": "x", "other": "y"})
+        assert bykey == {"my_zzsens": MASK, "other": "y"}, bykey
+        assert cfgclean == {"keys": "zzsens", "values": CANARY["config"]}, cfgclean
+
         leaked = [(name, _leaks(text)) for name, text in sinks]
         leaked = [(name, found) for name, found in leaked if 0 < len(found)]
 
@@ -380,6 +404,9 @@ class TestClean:
                 cred = str(_header(spec.get("headers"), AUTH["name"]))
                 assert cred.endswith(MASK), AUTH["name"] + ": " + cred
         assert _header(spec.get("headers"), "x-custom-token") == MASK
+
+        coded = errors.get("coded/throw")
+        assert coded is not None and coded.code == "denied_" + MASK, repr(coded)
 
         explained = explains.get("ok/explain") or {}
         assert explained.get("result") is not None, "the explain record should carry the result"

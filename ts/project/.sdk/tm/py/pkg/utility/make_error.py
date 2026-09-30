@@ -46,7 +46,8 @@ def make_error_util(ctx, err):
 
     spec = ctx.spec
 
-    sdk_err = ProjectNameError("", msg, ctx)
+    sdk_err = ProjectNameError(
+        err.code if isinstance(err, ProjectNameError) else "", msg, ctx)
 
     # The context stays reachable for a debugger (a slot on the error), and
     # the error itself is cleaned in place; result and spec are cleaned
@@ -61,9 +62,6 @@ def make_error_util(ctx, err):
     # Promote the HTTP status to the top level, so a consumer can branch on
     # `err.status` / `err.not_found` instead of reaching into `err.result`.
     sdk_err.status = -1 if result.status is None else result.status
-
-    if isinstance(err, ProjectNameError):
-        sdk_err.code = err.code
 
     ctx.ctrl.err = sdk_err
 
