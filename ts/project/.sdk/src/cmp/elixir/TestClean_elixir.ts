@@ -318,6 +318,32 @@ ${candidates(Name, entity)}
     ])
   end
 
+  # Features that fail the operation with the SDK's own error, whose code
+  # quotes a registered value: one refuses it as rbac does, and records the
+  # error PreUnexpected hands a hook; the other raises.
+  defp deny_feature(sinks) do
+    S.jm([
+      "name", "denyhook", "version", "0.0.1", "active", true, "options", S.jm([]),
+      "init", fn _ctx, _opts -> nil end,
+      "PrePoint", fn ctx ->
+        err = ${Name}.Context.make_error(ctx, "denied:" <> @canary.value, "denied")
+        S.setprop(S.getprop(ctx, "out"), "point", err)
+      end,
+      "PreUnexpected", fn ctx ->
+        add(sinks, error_forms(S.getprop(S.getprop(ctx, "ctrl"), "err")))
+        nil
+      end
+    ])
+  end
+
+  defp raise_feature do
+    S.jm([
+      "name", "raisehook", "version", "0.0.1", "active", true, "options", S.jm([]),
+      "init", fn _ctx, _opts -> nil end,
+      "PreResponse", fn _ctx -> raise ${Name}.Error.new("raised:" <> @canary.value, "raised") end
+    ])
+  end
+
   defp drive(sdk, {_name, acc, op, match}, ctrl, sinks) do
     ent = acc.(sdk)
 
@@ -394,6 +420,19 @@ ${candidates(Name, entity)}
     hooked = make_sdk(ok, sinks, [], [throw_feature()])
     assert drive(hooked, target, S.jm([]), sinks) != nil, "the throwing hook should fail the operation"
 
+    # A feature's own error keeps its code, which is cleaned like the message:
+    # returned, handed to a hook, raised by a hook, and nested in a record.
+    denied = drive(make_sdk(ok, sinks, [], [deny_feature(sinks)]), target, S.jm([]), sinks)
+    assert denied != nil, "the refusing hook should fail the operation"
+    raised = drive(make_sdk(ok, sinks, [], [raise_feature()]), target, S.jm([]), sinks)
+    assert raised != nil, "the raising hook should fail the operation"
+
+    nested =
+      ${Name}.Utility.clean_impl(${Name}.get_root_ctx(make_sdk(ok, sinks, [])),
+        S.jm(["err", ${Name}.Error.new("nested:" <> @canary.value, "nested")]))
+
+    add(sinks, data_forms("nested", nested))
+
     all = sink_list(sinks)
     leaked = Enum.filter(all, fn s -> leaks(s.text) != [] end)
 
@@ -425,6 +464,9 @@ ${candidates(Name, entity)}
     end
 
     assert header(S.getprop(spec, "headers"), "x-custom-token") == @mask
+    assert denied.code == "denied:" <> @mask
+    assert raised.code == "raised:" <> @mask
+    assert S.getpath(nested, "err.code") == "nested:" <> @mask
 
     explained = explains["ok/explain"]
     result = if explained != nil, do: S.getprop(explained, "result"), else: nil
@@ -461,6 +503,21 @@ ${candidates(Name, entity)}
     assert S.getprop(out, @mask <> "#1") == 2
     assert S.getprop(out, "plain") == 3
     assert "ZZVAL-abc123" not in S.keysof(out)
+  end
+
+  test "the generated config's own clean block is honoured" do
+    config = S.jm(["options", S.jm(["clean", S.jm(["keys", "zzsens", "values", "CONFIG-SEEDED-1"])])])
+    ctx = S.jm(["config", config, "options", S.jm(["clean", S.jm(["values", "CALLER-SEEDED-2"])])])
+    cctx = S.jm(["options", ${Name}.Utility.make_options_impl(ctx)])
+
+    assert ${Name}.Utility.clean_impl(cctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2") ==
+             "a " <> @mask <> " b " <> @mask
+
+    out = ${Name}.Utility.clean_impl(cctx, S.jm(["my_zzsens", "x", "other", "y"]))
+    assert S.getprop(out, "my_zzsens") == @mask
+    assert S.getprop(out, "other") == "y"
+    assert S.getpath(config, "options.clean.keys") == "zzsens"
+    assert S.getpath(config, "options.clean.values") == "CONFIG-SEEDED-1"
   end
 
   test "clean_add_sensitive registers every scalar under a sensitive name, at any depth" do

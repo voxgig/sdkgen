@@ -357,7 +357,7 @@ defmodule ProjectName.Utility do
         out
 
       match?(%ProjectName.Error{}, val) ->
-        S.jm(["code", val.code, "message", clean_string(cfg, strof(val.msg))])
+        S.jm(["code", clean_code(cfg, val.code), "message", clean_string(cfg, strof(val.msg))])
 
       is_exception(val) ->
         S.jm(["message", clean_string(cfg, Exception.message(val))])
@@ -399,11 +399,14 @@ defmodule ProjectName.Utility do
     end
   end
 
+  defp clean_code(cfg, code), do: if(is_binary(code), do: clean_string(cfg, code), else: code)
+
   # The error is a struct, so "in place" is a copy carrying the same ctx.
   defp clean_error(cfg, err) do
     %{
       err
-      | msg: clean_string(cfg, strof(err.msg)),
+      | code: clean_code(cfg, err.code),
+        msg: clean_string(cfg, strof(err.msg)),
         result: clean_field(cfg, err.result, "result"),
         spec: clean_field(cfg, err.spec, "spec")
     }
@@ -427,22 +430,26 @@ defmodule ProjectName.Utility do
   def clean_exception(ctx, e) do
     cfg = clean_config(ctx)
 
-    if S.getprop(cfg, "active") == false or match?(%ProjectName.Error{}, e) do
-      e
-    else
-      copy =
-        Enum.reduce(Map.from_struct(e), e, fn
-          {k, v}, acc when is_binary(v) ->
-            Map.put(acc, k, if(sensitive_key?(cfg, k), do: mask_value(cfg, v), else: clean_string(cfg, v)))
-
-          _, acc ->
-            acc
-        end)
-
-      text = Exception.message(copy)
-      cleaned = clean_string(cfg, text)
-      if cleaned == text, do: copy, else: RuntimeError.exception(cleaned)
+    cond do
+      S.getprop(cfg, "active") == false -> e
+      match?(%ProjectName.Error{}, e) -> clean_error(cfg, e)
+      true -> clean_foreign_exception(cfg, e)
     end
+  end
+
+  defp clean_foreign_exception(cfg, e) do
+    copy =
+      Enum.reduce(Map.from_struct(e), e, fn
+        {k, v}, acc when is_binary(v) ->
+          Map.put(acc, k, if(sensitive_key?(cfg, k), do: mask_value(cfg, v), else: clean_string(cfg, v)))
+
+        _, acc ->
+          acc
+      end)
+
+    text = Exception.message(copy)
+    cleaned = clean_string(cfg, text)
+    if cleaned == text, do: copy, else: RuntimeError.exception(cleaned)
   end
 
   # The explain map is the CALLER's node, so it is cleaned in place: what
@@ -669,8 +676,9 @@ defmodule ProjectName.Utility do
     # so the constructor's own rejection of a mistyped credential is clean
     # too. A shallow merge over the schema defaults: the clean block is flat.
     cleanraw = S.jm([])
+    blocks = [S.getprop(optspec, "clean"), S.getprop(cfgopts, "clean"), S.getprop(opts0, "clean")]
 
-    Enum.each([S.getprop(optspec, "clean"), S.getprop(opts0, "clean")], fn src ->
+    Enum.each(blocks, fn src ->
       if S.ismap(src), do: Enum.each(H.entries(src), fn {k, v} -> S.setprop(cleanraw, k, v) end)
     end)
 
@@ -679,8 +687,8 @@ defmodule ProjectName.Utility do
 
     clean_add_sensitive(cleanctx, omit_keys(opts0, ["clean"]))
 
-    Enum.each(splitvalues(S.getpath(opts0, "clean.values")), fn raw ->
-      clean_add_impl(cleanctx, raw)
+    Enum.each([cfgopts, opts0], fn src ->
+      Enum.each(splitvalues(S.getpath(src, "clean.values")), fn raw -> clean_add_impl(cleanctx, raw) end)
     end)
 
     sys_fetch = S.getpath(opts0, "system.fetch")
@@ -1312,7 +1320,13 @@ defmodule ProjectName.Utility do
       spec: clean(ctx, spec)
     }
 
-    sdk_err = if match?(%ProjectName.Error{}, err), do: %{sdk_err | code: err.code}, else: sdk_err
+    # A hook's own error supplies the code as well as the message.
+    sdk_err =
+      if match?(%ProjectName.Error{}, err) do
+        %{sdk_err | code: if(is_binary(err.code), do: clean(ctx, err.code), else: err.code)}
+      else
+        sdk_err
+      end
 
     S.setprop(ctrl, "err", sdk_err)
 
