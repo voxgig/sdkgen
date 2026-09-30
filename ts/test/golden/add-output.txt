@@ -146,12 +146,12 @@ src/cmp/clojure/ReadmeTopHowto_clojure.ts e1494b86d033
 src/cmp/clojure/ReadmeTopQuick_clojure.ts 8ec041215dfd
 src/cmp/clojure/ReadmeTopTest_clojure.ts 0a72b8c41e8d
 src/cmp/clojure/Schema_clojure.ts 173cdd00d273
-src/cmp/clojure/TestClean_clojure.ts 768e3d01fa86
+src/cmp/clojure/TestClean_clojure.ts f2b5490053d7
 src/cmp/clojure/TestDirect_clojure.ts ebfe781a958d
 src/cmp/clojure/TestEntity_clojure.ts 0a5e84730678
 src/cmp/clojure/Test_clojure.ts 56abfa732719
 src/cmp/clojure/featureextra_clojure.ts 9327232c64f7
-src/cmp/clojure/fragment/Entity.fragment.clj a828351e2bb5
+src/cmp/clojure/fragment/Entity.fragment.clj 930c1508ef05
 src/cmp/clojure/fragment/EntityCreateOp.fragment.clj 726d7256199e
 src/cmp/clojure/fragment/EntityListOp.fragment.clj 13db019cb615
 src/cmp/clojure/fragment/EntityLoadOp.fragment.clj f4ddd881801f
@@ -222,7 +222,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 32327e3b999a
-tm/clojure/src/sdk/core.clj b096adeac2a5
+tm/clojure/src/sdk/core.clj 7a66e6bd949f
 tm/clojure/src/sdk/features.clj 9f957c42a096
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 2aa105a4e17e
@@ -453,7 +453,7 @@ src/cmp/elixir/ReadmeTopHowto_elixir.ts 90ecb763e0ad
 src/cmp/elixir/ReadmeTopQuick_elixir.ts 076794d8d4e1
 src/cmp/elixir/ReadmeTopTest_elixir.ts 5f12260e03e2
 src/cmp/elixir/Schema_elixir.ts a2d61dba669a
-src/cmp/elixir/TestClean_elixir.ts bb60f5c356bf
+src/cmp/elixir/TestClean_elixir.ts 15f2a01baab0
 src/cmp/elixir/TestDirect_elixir.ts 2ee44de0d1a9
 src/cmp/elixir/TestEntity_elixir.ts 79f042e3436d
 src/cmp/elixir/Test_elixir.ts 66686f882ff1
@@ -464,7 +464,7 @@ src/cmp/elixir/fragment/EntityLoadOp.fragment.ex b81370317230
 src/cmp/elixir/fragment/EntityRemoveOp.fragment.ex 535abcc38964
 src/cmp/elixir/fragment/EntityUpdateOp.fragment.ex c9cb692d45a8
 src/cmp/elixir/fragment/Main.fragment.ex 34458d6d3df6
-src/cmp/elixir/fragment/Pipeline.fragment.ex f4e10b5fdbce
+src/cmp/elixir/fragment/Pipeline.fragment.ex c81b3aa3c35c
 src/cmp/elixir/tsconfig.json 720a3f229019
 src/cmp/elixir/utility_elixir.ts d2ac9a3d5427
 tm/elixir/LICENSE c92ad97f8812
@@ -478,7 +478,7 @@ tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex 2de50e8b1581
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex b010977f82fe
+tm/elixir/lib/projectname/utility.ex 73388ec51712
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -1892,7 +1892,7 @@ src/cmp/swift/ReadmeTopQuick_swift.ts b0d732b88586
 src/cmp/swift/ReadmeTopTest_swift.ts e1b5bc35f382
 src/cmp/swift/Schema_swift.ts de5a4a02dc8d
 src/cmp/swift/SdkError_swift.ts eb21c3a56459
-src/cmp/swift/TestClean_swift.ts 6600f96de84e
+src/cmp/swift/TestClean_swift.ts f9c00c88ee75
 src/cmp/swift/TestDirect_swift.ts 3c38c4dfe812
 src/cmp/swift/TestEntity_swift.ts b5ab88d984a1
 src/cmp/swift/Test_swift.ts ab9d033258f1
