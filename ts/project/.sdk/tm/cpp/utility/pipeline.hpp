@@ -363,14 +363,18 @@ inline bool cleanKey(CtxPtr ctx, const Value& key) {
 }
 
 // The explain record is the CALLER'S map (a control map is shared, not
-// copied), so the cleaned copy is written back into it in place.
+// copied), so the cleaned copy is written back into it in place. err is
+// pruned from its result, a toValue snapshot rather than the live result.
 inline void cleanExplain(CtxPtr ctx) {
   Value explain = ctx->ctrl ? ctx->ctrl->explain : Value::undef();
   if (!explain.is_map()) return;
   Value cleaned = clean(ctx, explain);
-  if (!cleaned.is_map() || cleaned.as_map() == explain.as_map()) return;
-  explain.as_map()->clear();
-  for (const auto& kv : *cleaned.as_map()) map_put(explain, kv.first, kv.second);
+  if (cleaned.is_map() && cleaned.as_map() != explain.as_map()) {
+    explain.as_map()->clear();
+    for (const auto& kv : *cleaned.as_map()) map_put(explain, kv.first, kv.second);
+  }
+  Value rm = Helpers::toMapAny(getp(explain, "result"));
+  if (rm.is_map()) map_remove(rm, "err");
 }
 
 // ---- makeError --------------------------------------------------------
@@ -425,24 +429,32 @@ inline Value makeError(CtxPtr ctx, SdkErrorPtr err) {
   // debug) close/record error paths that never reach PreDone (e.g. a PrePoint
   // rbac short-circuit). Fires after ctx->ctrl->err is set so hooks can read
   // the error; features guard against double-recording when PreDone fired.
-  featureHook(ctx, "PreUnexpected");
+  // What a hook throws here replaces the error, and leaves cleaned too.
+  SdkErrorPtr raised = sdkErr;
+  try {
+    featureHook(ctx, "PreUnexpected");
+  } catch (const SdkErrorPtr& hookerr) {
+    raised = hookerr;
+  } catch (const std::exception& e) {
+    raised = ctx->makeError("unexpected", e.what());
+  }
+  if (raised != sdkErr) {
+    cleanError(ctx, raised);
+    cleanExplain(ctx);
+    ctx->ctrl->err = raised;
+  }
 
   if (is_false(ctx->ctrl->throwing)) {
     return result->resdata;
   }
 
-  throw sdkErr;
+  throw raised;
 }
 
 // ---- done -------------------------------------------------------------
 
 inline Value done(CtxPtr ctx) {
-  if (ctx->ctrl->explain.is_map()) {
-    cleanExplain(ctx);
-    Value explainResult = getp(ctx->ctrl->explain, "result");
-    Value rm = Helpers::toMapAny(explainResult);
-    if (rm.is_map()) map_remove(rm, "err");
-  }
+  cleanExplain(ctx);
 
   if (ctx->result && ctx->result->ok) {
     return ctx->result->resdata;
@@ -1713,6 +1725,7 @@ inline Value makeOptions(CtxPtr ctx) {
 inline void register_all(Utility& u) {
   u.clean = util::clean;
   u.cleanAdd = util::cleanAdd;
+  u.cleanExplain = util::cleanExplain;
   u.done = util::done;
   u.makeError = util::makeError;
   u.featureAdd = util::featureAdd;

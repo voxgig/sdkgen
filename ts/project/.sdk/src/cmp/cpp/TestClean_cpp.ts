@@ -83,8 +83,8 @@ function candidate(ProjectName: string, c: Candidate): string {
      [](${ProjectName}SDK& c, const Value& m, const Value& ctrl) -> Value {
       ${call}
     },
-     [](${ProjectName}SDK& c, const Value& m) -> std::vector<Value> {
-      return c.${c.accessor}()->stream(${cppstr(c.op)}, m);
+     [](${ProjectName}SDK& c, const Value& m, const Value& callopts) -> std::vector<Value> {
+      return c.${c.accessor}()->stream(${cppstr(c.op)}, m, callopts);
     }},`
 }
 
@@ -197,12 +197,20 @@ public:
 
 
 // A feature that throws from inside the pipeline, quoting the request it
-// saw: an exception makeError never handled.
+// saw: an exception makeError never handled. Its variant throws again from
+// PreUnexpected, which makeError fires once it has cleaned its own error.
 class ThrowFeature : public BaseFeature {
 public:
-  ThrowFeature() : BaseFeature("throwhook", "0.0.1", true) {}
+  bool unexpected;
+  explicit ThrowFeature(bool unexpected_ = false)
+      : BaseFeature("throwhook", "0.0.1", true), unexpected(unexpected_) {}
   void preResponse(CtxPtr ctx) override {
     throw std::runtime_error("hook saw " + vs::jsonify(ctx->spec ? ctx->spec->toValue() : Value::undef(), 0));
+  }
+  void preUnexpected(CtxPtr ctx) override {
+    if (unexpected) {
+      throw std::runtime_error("hook saw " + vs::jsonify(ctx->spec ? ctx->spec->toValue() : Value::undef(), 0));
+    }
   }
 };
 
@@ -242,6 +250,24 @@ public:
     ctx->result->stream = []() -> std::vector<Value> {
       throw std::runtime_error("stream saw " + CANARY_APIKEY);
     };
+  }
+};
+
+
+// A stream that succeeds, so the pipeline's terminal step never runs.
+class StreamOkFeature : public BaseFeature {
+public:
+  StreamOkFeature() : BaseFeature("streamok", "0.0.1", true) {}
+  void preDone(CtxPtr ctx) override {
+    if (!ctx->result) return;
+    std::vector<Value> items;
+    Value data = ctx->result->resdata;
+    if (data.is_list()) {
+      for (const auto& item : *data.as_list()) items.push_back(item);
+    } else if (!is_nullish(data)) {
+      items.push_back(data);
+    }
+    ctx->result->stream = [items]() { return items; };
   }
 };
 
@@ -372,7 +398,7 @@ struct Candidate {
   std::string name;
   std::vector<std::string> params;
   std::function<Value(${ProjectName}SDK&, const Value&, const Value&)> run;
-  std::function<std::vector<Value>(${ProjectName}SDK&, const Value&)> stream;
+  std::function<std::vector<Value>(${ProjectName}SDK&, const Value&, const Value&)> stream;
 };
 
 
@@ -426,6 +452,8 @@ static const char* NOTHING_TO_SWEEP =
 
 static SdkErrorPtr drive(${ProjectName}SDK& sdk, const Candidate& cand, const Target& target,
                          const Value& ctrl, std::vector<Sink>& sinks) {
+  // A caller may keep the record it passed rather than read ctrl.explain.
+  Value held = getp(ctrl, "explain");
   SdkErrorPtr err;
   Value out = Value::undef();
   bool got = false;
@@ -442,6 +470,9 @@ static SdkErrorPtr drive(${ProjectName}SDK& sdk, const Candidate& cand, const Ta
   if (got) addForms(sinks, "result", out);
   Value explain = getp(ctrl, "explain");
   if (explain.is_map()) addForms(sinks, "explain", explain);
+  if (held.is_map() && (!explain.is_map() || held.as_map() != explain.as_map())) {
+    addForms(sinks, "explain:held", held);
+  }
   return err;
 }
 
@@ -501,10 +532,13 @@ static void no_credential_leaves_the_sdk() {
   ASSERT_TRUE((bool)rejected, "a credential mistyped as a map should be rejected");
   if (rejected) addError(sinks, "rejected", rejected);
 
-  // An exception a feature hook throws, quoting the request, skips makeError.
-  auto hooked = makeSdk(scenarios()[0], &sinks, Value::undef(), std::make_shared<ThrowFeature>());
-  SdkErrorPtr hookerr = drive(*hooked, cand, target, vmap(), sinks);
-  ASSERT_TRUE((bool)hookerr, "the throwing hook should fail the operation");
+  // An exception a feature hook throws, quoting the request, skips makeError;
+  // the variant throws again from PreUnexpected. Both run with explain on.
+  for (bool unexpected : {false, true}) {
+    auto hooked = makeSdk(scenarios()[0], &sinks, Value::undef(), std::make_shared<ThrowFeature>(unexpected));
+    SdkErrorPtr hookerr = drive(*hooked, cand, target, vmap({{"explain", vmap()}}), sinks);
+    ASSERT_TRUE((bool)hookerr, "the throwing hook should fail the operation");
+  }
 
   // A feature's own error keeps its code, which is cleaned like the message:
   // returned, handed to a hook, thrown by a hook, and cleaned by cleanError.
@@ -518,19 +552,31 @@ static void no_credential_leaves_the_sdk() {
   util::cleanError(denier->getRootCtx(), stepped);
   addError(sinks, "stepped", stepped);
 
-  // Consuming a stream runs inside the same catch path as the operation.
-  auto streamed = makeSdk(scenarios()[0], &sinks, Value::undef(), std::make_shared<StreamThrowFeature>());
-  bool streamraised = false;
-  try {
-    for (const Value& item : cand.stream(*streamed, Struct::clone(target.match))) (void)item;
-  } catch (const SdkErrorPtr& e) {
-    streamraised = true;
-    addError(sinks, "stream", e);
-  } catch (const std::exception& e) {
-    streamraised = true;
-    sinks.push_back({"stream:what", std::string(e.what())});
+  // Consuming a stream runs inside the same catch path as the operation, and
+  // the explain record the caller passed is cleaned however the stream ends.
+  const std::vector<std::pair<std::string, FeaturePtr>> streams = {
+    {"stream", std::make_shared<StreamThrowFeature>()},
+    {"stream-ok", std::make_shared<StreamOkFeature>()},
+    {"stream-plain", nullptr},
+  };
+  for (const auto& [name, extra] : streams) {
+    auto streamed = makeSdk(scenarios()[0], &sinks, Value::undef(), extra);
+    Value explain = vmap();
+    Value callopts = vmap({{"ctrl", vmap({{"explain", explain}})}});
+    bool streamraised = false;
+    try {
+      for (const Value& item : cand.stream(*streamed, Struct::clone(target.match), callopts)) (void)item;
+    } catch (const SdkErrorPtr& e) {
+      streamraised = true;
+      addError(sinks, name, e);
+    } catch (const std::exception& e) {
+      streamraised = true;
+      sinks.push_back({name + ":what", std::string(e.what())});
+    }
+    ASSERT_TRUE(("stream" == name) == streamraised, name + ": only the failing stream throws");
+    ASSERT_TRUE(0 < explain.as_map()->size(), name + ": the explain record was not filled");
+    addForms(sinks, name + ":explain", explain);
   }
-  ASSERT_TRUE(streamraised, "the failing stream should throw");
 
   // A client given no clean block at all masks by the schema defaults.
   Scenario notfoundsc = scenarios()[1];

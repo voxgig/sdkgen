@@ -508,6 +508,7 @@ class Utility {
 public:
   std::function<Value(CtxPtr, const Value&)> clean;
   std::function<void(CtxPtr, const Value&)> cleanAdd;
+  std::function<void(CtxPtr)> cleanExplain;
   std::function<Value(CtxPtr)> done;
   std::function<Value(CtxPtr, SdkErrorPtr)> makeError;
   std::function<void(CtxPtr, FeaturePtr)> featureAdd;
@@ -551,6 +552,7 @@ public:
     auto u = std::shared_ptr<Utility>(new Utility(NoRegister{}));
     u->clean = clean;
     u->cleanAdd = cleanAdd;
+    u->cleanExplain = cleanExplain;
     u->done = done;
     u->makeError = makeError;
     u->featureAdd = featureAdd;
@@ -1280,6 +1282,8 @@ inline std::vector<Value> EntityBase::stream(const std::string& action,
     // back to the materialised items so stream always yields.
     ResultPtr res = ctx->result;
     if (res && res->stream) {
+      // done() does not run on this path, so its record is cleaned here.
+      u->cleanExplain(ctx);
       return res->stream();
     }
 
