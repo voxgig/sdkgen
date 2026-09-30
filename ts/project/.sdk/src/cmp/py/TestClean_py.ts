@@ -277,19 +277,27 @@ def _usable_op():
 
 
 # A feature that raises from inside the pipeline, quoting the request it
-# saw: an error make_error never handled.
+# saw: an error make_error never handled. Its PreUnexpected variant raises
+# where that hook fires: make_error, and the catch path before its cleaning.
 class _ThrowFeature(${Name}BaseFeature):
-    def __init__(self):
+    def __init__(self, response=True, unexpected=False):
         super().__init__()
         self.name = "throwhook"
         self.version = "0.0.1"
         self.active = True
+        self._response = response
+        self._unexpected = unexpected
 
     def init(self, ctx, options):
         pass
 
     def PreResponse(self, ctx):
-        raise RuntimeError("hook saw " + json.dumps(vars(ctx.spec), default=str))
+        if self._response:
+            raise RuntimeError("hook saw " + json.dumps(vars(ctx.spec), default=str))
+
+    def PreUnexpected(self, ctx):
+        if self._unexpected:
+            raise RuntimeError("hook saw " + json.dumps(vars(ctx.spec), default=str))
 
 
 # A stream that fails while the caller iterates it, quoting a credential.
@@ -310,7 +318,26 @@ class _StreamThrowFeature(${Name}BaseFeature):
         ctx.result.stream = fail
 
 
+# A stream that succeeds, so the pipeline's terminal step never runs.
+class _StreamOkFeature(${Name}BaseFeature):
+    def __init__(self):
+        super().__init__()
+        self.name = "streamok"
+        self.version = "0.0.1"
+        self.active = True
+
+    def init(self, ctx, options):
+        pass
+
+    def PreDone(self, ctx):
+        data = ctx.result.resdata
+        items = data if isinstance(data, list) else ([] if data is None else [data])
+        ctx.result.stream = lambda: iter(items)
+
+
 def _drive(sdk, target, ctrl, sinks):
+    # A caller may keep the record it passed rather than read ctrl["explain"].
+    held = ctrl.get("explain")
     out = None
     err = None
     try:
@@ -323,6 +350,8 @@ def _drive(sdk, target, ctrl, sinks):
         sinks.extend(_forms("result", out))
     if ctrl.get("explain") is not None:
         sinks.extend(_forms("explain", ctrl["explain"]))
+    if held is not None and held is not ctrl.get("explain"):
+        sinks.extend(_forms("explain:held", held))
     return err
 
 
@@ -365,21 +394,34 @@ class TestClean:
         sinks.extend(_forms("rejected", rejected))
 
         # An error a feature hook raises, quoting the request, skips make_error,
-        # as does the explain record it interrupts.
-        hooked = _make_sdk(SCENARIOS[0][1], sinks, None, [_ThrowFeature()])
-        hookerr = _drive(hooked, target, {"explain": {}}, sinks)
-        assert hookerr is not None, "the throwing hook should fail the operation"
+        # as does the explain record it interrupts. The variant raising only in
+        # PreUnexpected reaches make_error's own firing through a 404.
+        for respond, hook in [
+                (SCENARIOS[0][1], _ThrowFeature()),
+                (SCENARIOS[0][1], _ThrowFeature(unexpected=True)),
+                (SCENARIOS[1][1], _ThrowFeature(response=False, unexpected=True))]:
+            hooked = _make_sdk(respond, sinks, None, [hook])
+            hookerr = _drive(hooked, target, {"explain": {}}, sinks)
+            assert hookerr is not None, "the throwing hook should fail the operation"
 
-        # Iterating a stream runs inside the same catch path as the operation.
-        streamed = _make_sdk(SCENARIOS[0][1], sinks, None, [_StreamThrowFeature()])
-        streamerr = None
-        try:
-            for _item in getattr(streamed, target[0])().stream(target[1], {"reqmatch": dict(target[2])}):
-                pass
-        except Exception as e:
-            streamerr = e
-        assert streamerr is not None, "the failing stream should raise"
-        sinks.extend(_forms("stream", streamerr))
+        # Iterating a stream runs inside the same catch path as the operation,
+        # and the explain record the caller passed is cleaned however it ends.
+        for name, extra in [("stream", [_StreamThrowFeature()]),
+                            ("stream-ok", [_StreamOkFeature()]), ("stream-plain", [])]:
+            streamed = _make_sdk(SCENARIOS[0][1], sinks, None, extra)
+            explain = {}
+            streamerr = None
+            try:
+                for _item in getattr(streamed, target[0])().stream(
+                        target[1], {"reqmatch": dict(target[2])}, {"ctrl": {"explain": explain}}):
+                    pass
+            except Exception as e:
+                streamerr = e
+            assert ("stream" == name) == (streamerr is not None), name + ": only the failing stream raises"
+            if streamerr is not None:
+                sinks.extend(_forms(name, streamerr))
+            assert 0 < len(explain), name + ": the explain record was not filled"
+            sinks.extend(_forms(name + ":explain", explain))
 
         # A registered value used as a property name is masked; names that
         # mask alike are kept apart.

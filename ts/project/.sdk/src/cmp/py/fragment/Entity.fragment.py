@@ -158,6 +158,8 @@ class EntyClass:
             # else fall back to the materialised items so stream always yields.
             stream_fn = getattr(result, "stream", None) if result is not None else None
             if callable(stream_fn):
+                # done() does not run on this path, so its record is cleaned here.
+                utility.clean_explain(ctx)
                 for item in stream_fn():
                     if aborted():
                         return
@@ -251,7 +253,12 @@ class EntyClass:
             return out
 
         except Exception as err:
-            # #PreUnexpected-Hook
+            # What a hook raises here must not escape the cleaning below.
+            try:
+                # #PreUnexpected-Hook
+            except Exception as hookerr:
+                self._unexpected(ctx, hookerr)
+                raise hookerr from None
 
             self._unexpected(ctx, err)
             raise
@@ -262,13 +269,7 @@ class EntyClass:
         clean = self._utility.clean
         explain = ctx.ctrl.explain
         if isinstance(explain, dict):
-            cleaned = clean(ctx, explain)
-            if isinstance(cleaned, dict) and cleaned is not explain:
-                explain.clear()
-                explain.update(cleaned)
-            result = explain.get("result")
-            if isinstance(result, dict):
-                explain["result"] = {k: v for k, v in result.items() if k != "err"}
+            self._utility.clean_explain(ctx)
             cleanerr = clean(ctx, {"message": str(err), "class": type(err).__name__})
             if not isinstance(explain.get("err"), dict):
                 explain["err"] = cleanerr
