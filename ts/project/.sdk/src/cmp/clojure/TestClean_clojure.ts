@@ -98,7 +98,8 @@ function render(model: any, entity: any[], auth: {
 (def CANARY {:apikey "CANARY-APIKEY-k9x2m7q4p1"
              :secret "CANARY-SECRET-w3e8r5t2y6"
              :header "CANARY-HEADER-z1x4c7v0b3"
-             :value "CANARY-VALUE-n5m8b2v9c4"})
+             :value "CANARY-VALUE-n5m8b2v9c4"
+             :config "CANARY-CONFIG-h6j3k8l2m5"})
 
 (def MASK "[redacted]")
 
@@ -147,7 +148,13 @@ function render(model: any, entity: any[], auth: {
            "init" (fn [_ctx _opts] nil)
            "PreRequest" (cap "PreRequest")
            "PreResponse" (cap "PreResponse")
-           "PreUnexpected" (cap "PreUnexpected")})))
+           ;; The SDK's own error as a hook reads it, which an observability
+           ;; feature logs.
+           "PreUnexpected" (fn [ctx]
+                             ((cap "PreUnexpected") ctx)
+                             (let [err (core/oget (core/oget ctx :ctrl) :err)]
+                               (when (core/sdk-error? err)
+                                 (swap! sinks into (forms "ctrl.err@PreUnexpected" err)))))})))
 
 (defn- response [status data headers]
   (let [h (vs/jm "content-type" "application/json")]
@@ -166,6 +173,9 @@ function render(model: any, entity: any[], auth: {
    {:name "transport"
     :respond (fn [url _fd] [nil (core/make-error-obj "transport"
                                                      (str "socket hang up (URL was: \\"" url "\\")"))])}
+   ;; The SDK's own error, its code quoting a registered value.
+   {:name "coded"
+    :respond (fn [_url _fd] [nil (core/make-error-obj (str "denied_" (:apikey CANARY)) "coded failure")])}
    {:name "notjson"
     :respond (fn [_url _fd] [(vs/jm "status" 200 "statusText" "OK" "headers" (vs/jm)
                                     "body" "<html>"
@@ -228,6 +238,15 @@ ${candidates(entity)}
                            (throw (RuntimeException.
                                    (str "hook saw " (pr-str (if (instance? clojure.lang.IDeref sp) @sp sp)))))))}))
 
+;; A feature that throws the SDK's own error, its code quoting a registered
+;; value: an SDK error make-error never handled.
+(defn- coded-throw-feature []
+  (atom {:name "codedhook" :active true :version "0.0.1" :_options nil
+         "init" (fn [_ctx _opts] nil)
+         "PreResponse" (fn [_ctx]
+                         (core/sdk-throw (core/make-error-obj (str "denied_" (:apikey CANARY))
+                                                              "coded hook failure")))}))
+
 (defn- drive [sdk target ctrl sinks]
   (let [ent ((:accessor target) sdk)
         [out err] (try [((:op target) ent (:match target) ctrl) nil] (catch Throwable e [nil e]))
@@ -267,6 +286,23 @@ ${candidates(entity)}
           ;; An error a feature hook throws, quoting the request, skips make-error.
           (let [hooked (make-sdk (first SCENARIOS) sinks nil (throw-feature))]
             (t/is-some (drive hooked target (vs/jm) sinks) "the throwing hook should fail the operation"))
+          (let [codedhook (make-sdk (first SCENARIOS) sinks nil (coded-throw-feature))
+                err (drive codedhook target (vs/jm) sinks)]
+            (t/is-some err "the coded hook should fail the operation")
+            (swap! errors assoc "codedhook" err))
+          ;; The generated config's own clean block is read beside the
+          ;; caller's, and is not changed by it.
+          (let [config (vs/jm "options" (vs/jm "clean" (vs/jm "keys" "zzsens" "values" (:config CANARY))))
+                built (core/u-make-options
+                       (atom {:config config :options (vs/jm "clean" (vs/jm "values" (:value CANARY)))}))
+                cfgctx (atom {:options built})
+                seeded (core/u-clean cfgctx (str "config " (:config CANARY) " caller " (:value CANARY)))]
+            (swap! sinks conj {:name "config-clean" :text (str seeded)})
+            (t/is-eq seeded (str "config " MASK " caller " MASK) "the config's clean values are registered")
+            (t/is-deep (core/u-clean cfgctx (vs/jm "my_zzsens" "x" "other" "y"))
+                       (vs/jm "my_zzsens" MASK "other" "y") "the config's clean keys apply")
+            (t/is-deep (vs/getpath config "options.clean") (vs/jm "keys" "zzsens" "values" (:config CANARY))
+                       "the config's clean block is unchanged"))
           (let [leaked (filterv (fn [s] (seq (leaks (:text s)))) @sinks)]
             (println (str "clean: swept " (count @sinks) " surface(s), " (count leaked) " leak(s)"))
             (t/is-eq (count leaked) 0
@@ -293,6 +329,9 @@ ${candidates(entity)}
                   (t/is-true (str/ends-with? (str (header (vs/getprop spec "headers") (:name AUTH))) MASK)
                              (str (:name AUTH) ": " (header (vs/getprop spec "headers") (:name AUTH))))))
               (t/is-eq (header (vs/getprop spec "headers") "x-custom-token") MASK "custom token header masked")))
+          (doseq [key ["coded/throw" "codedhook"]]
+            (t/is-eq (:code (core/ex->sdk (get @errors key))) (str "denied_" MASK)
+                     (str key ": the error keeps its code, masked")))
           (let [explained (get @explains "ok/explain")
                 result (vs/getprop explained "result")]
             (t/is-some result "the explain record should carry the result")

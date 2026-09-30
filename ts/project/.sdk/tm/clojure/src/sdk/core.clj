@@ -635,14 +635,19 @@
 
 ;; A Throwable is immutable, so one that never passed through make-error (a
 ;; hook's, a fetcher's) leaves as a cleaned copy with the original's trace.
+;; One carrying the SDK error keeps it, cleaned, under the same key.
 (defn clean-throwable [ctx ^Throwable t]
   (let [cfg (clean-config ctx)]
     (if (= false (mget cfg "active"))
       t
-      (let [data (when (instance? clojure.lang.IExceptionInfo t)
-                   (clean-snapshot cfg (ex-data t) nil 0 []))
-            out (ex-info (clean-string cfg (str (.getMessage t)))
-                         (if (instance? java.util.Map data) (into {} data) {}))]
+      (let [sdkerr (ex->sdk t)
+            out (if (sdk-error? sdkerr)
+                  (let [e (clean-error cfg sdkerr)]
+                    (ex-info (err-msg e) {::sdk-error e}))
+                  (let [data (when (instance? clojure.lang.IExceptionInfo t)
+                               (clean-snapshot cfg (ex-data t) nil 0 []))]
+                    (ex-info (clean-string cfg (str (.getMessage t)))
+                             (if (instance? java.util.Map data) (into {} data) {}))))]
         (.setStackTrace ^Throwable out (.getStackTrace t))
         out))))
 
@@ -1280,7 +1285,8 @@
       (clean-explain! ctx)
       (when-let [ex (oget (oget ctx :ctrl) :explain)] (.put ^java.util.Map ex "err" (vs/jm "message" msg)))
       ;; Cleaned COPIES of the result and spec, never the live objects.
-      (let [sdk-err (assoc (make-error-obj (if (sdk-error? err) (:code err) "") msg ctx)
+      (let [code (when (sdk-error? err) (ucall ctx :clean (:code err)))
+            sdk-err (assoc (make-error-obj code msg ctx)
                            :result (ucall ctx :clean result)
                            :spec (ucall ctx :clean spec))]
         (oset! (oget ctx :ctrl) :err sdk-err)
@@ -1399,16 +1405,19 @@
           ;; defaults: the clean block is flat.
           cleancfg (make-clean-config
                     (let [out (vs/jm)]
-                      (doseq [src [(vs/getprop optspec "clean") (vs/getprop opts0 "clean")]]
+                      (doseq [src [(vs/getprop optspec "clean") (vs/getprop cfgopts "clean")
+                                   (vs/getprop opts0 "clean")]]
                         (when (vs/ismap src)
                           (doseq [k (vs/keysof src)] (.put ^java.util.Map out k (vs/getprop src k)))))
                       out))
           cleanctx (atom {:options (vs/jm "__derived__" (vs/jm "clean" cleancfg))})
           _ (u-clean-add-sensitive cleanctx (omit-keys opts0 ["clean"]))
-          _ (doseq [raw (splitvalues (vs/getpath opts0 "clean.values"))]
+          _ (doseq [raw (concat (splitvalues (vs/getpath cfgopts "clean.values"))
+                                (splitvalues (vs/getpath opts0 "clean.values")))]
               (u-clean-add cleanctx raw))
           sys-fetch (vs/getpath opts0 "system.fetch")
-          merged (vs/merge (vs/jt (vs/jm) cfgopts opts0))
+          ;; Cloned: merge writes through the nested maps of what it reads.
+          merged (vs/merge (vs/jt (vs/jm) (vs/clone cfgopts) opts0))
           validated (try (vs/validate merged optspec)
                          (catch RuntimeException e
                            (throw (RuntimeException. ^String (u-clean cleanctx (str (.getMessage e)))))))
