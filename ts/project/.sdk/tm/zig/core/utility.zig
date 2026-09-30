@@ -102,6 +102,10 @@ pub const Utility = struct {
         _ = self;
         return done_util(ctx);
     }
+    pub fn clean_explain(self: *Utility, ctx: *Context) void {
+        _ = self;
+        clean_explain_util(ctx);
+    }
     pub fn make_error(self: *Utility, ctx: *Context) E!Value {
         _ = self;
         return make_error_util(ctx);
@@ -472,30 +476,32 @@ fn clean_add_sensitive_in(cfg: Value, c: CleanCfg, val: Value, under: bool, dept
 }
 
 pub fn done_util(ctx: *Context) E!Value {
-    {
-        const c = ctx.ctrl;
-        if (c.has_explain()) {
-            const explain = c.explain;
-            const cleaned = clean_util(ctx, explain);
-            // The caller holds this map, so the masked entries replace its
-            // own rather than a copy the caller would never see.
-            if (cleaned == .object and cleaned.object != explain.object) {
-                explain.object.data.clearRetainingCapacity();
-                var it = cleaned.object.iterator();
-                while (it.next()) |kv| h.setp(explain, kv.key_ptr.*, kv.value_ptr.*);
-            }
-            if (h.getp(explain, "result") == .object) {
-                const rm = h.to_map(h.getp(explain, "result"));
-                h.del_prop(rm, h.vstr("err"));
-            }
-        }
-    }
+    clean_explain_util(ctx);
 
     if (ctx.result) |res| {
         if (res.ok) return res.resdata;
     }
 
     return make_error_util(ctx);
+}
+
+// Clean the explain record in place. The caller holds this map, so the
+// masked entries replace its own; with clean off the cleaned record is that
+// map, already current.
+pub fn clean_explain_util(ctx: *Context) void {
+    const c = ctx.ctrl;
+    if (!c.has_explain()) return;
+    const explain = c.explain;
+    const cleaned = clean_util(ctx, explain);
+    if (cleaned == .object and cleaned.object != explain.object) {
+        explain.object.data.clearRetainingCapacity();
+        var it = cleaned.object.iterator();
+        while (it.next()) |kv| h.setp(explain, kv.key_ptr.*, kv.value_ptr.*);
+    }
+    // explain.result is a to_value snapshot, never the live result.
+    if (h.getp(explain, "result") == .object) {
+        h.del_prop(h.to_map(h.getp(explain, "result")), h.vstr("err"));
+    }
 }
 
 pub fn make_error_util(ctx: *Context) E!Value {
@@ -521,6 +527,8 @@ pub fn make_error_util(ctx: *Context) E!Value {
     result.err = null;
 
     const spec_val: Value = if (ctx.spec) |s| s.to_value() else h.vnull();
+
+    clean_explain_util(ctx);
 
     const c = ctx.ctrl;
     if (c.has_explain()) {

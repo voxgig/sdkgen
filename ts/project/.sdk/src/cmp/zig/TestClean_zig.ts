@@ -105,6 +105,15 @@ fn ${name}(client: *sdk.SDK, mtch: Value, ctrl: Value) Outcome {
 }
 
 
+function streamFn(c: Candidate): string {
+  return `
+fn stream_${c.method}_${c.op}(client: *sdk.SDK, mtch: Value, callopts: Value) []Value {
+    return client.${c.method}(vnull()).stream("${c.op}", mtch, callopts);
+}
+`
+}
+
+
 function render(auth: {
   suppressed: boolean, where: string, name: string, basic: boolean
 }, candidates: Candidate[]): string {
@@ -254,7 +263,9 @@ const CaptureFeature = struct {
 
 // A feature that fails the operation from inside the pipeline, quoting the
 // request it saw. A zig hook has no error return, so it fails the result:
-// an error make_error receives from a hook, not from the pipeline.
+// an error make_error receives from a hook, not from the pipeline. For the
+// same reason there is no variant failing in PreUnexpected: make_error has
+// built and cleaned the error it returns before that hook runs.
 const ThrowFeature = struct {
     var instance: u8 = 0;
 
@@ -276,6 +287,50 @@ const ThrowFeature = struct {
         const res = c.result orelse return;
         const spec: Value = if (c.spec) |sp| sp.to_value() else vnull();
         res.err = c.make_error("hook", fmt("hook saw {s}", .{h.jsonify_compact(spec)}));
+    }
+    const vtable = sdk.Feature.VTable{
+        .name = vname,
+        .active = vactive,
+        .add_options = vaddopts,
+        .init = vinit,
+        .dispatch = vdispatch,
+    };
+};
+
+// A stream that succeeds, so the pipeline's terminal step never runs. A zig
+// stream producer has no error channel, so no stream fails.
+const StreamOkFeature = struct {
+    var instance: u8 = 0;
+
+    fn make() sdk.Feature {
+        return .{ .ptr = @ptrCast(&instance), .vtable = &vtable };
+    }
+    fn vname(_: *anyopaque) []const u8 {
+        return "streamok";
+    }
+    fn vactive(_: *anyopaque) bool {
+        return true;
+    }
+    fn vaddopts(_: *anyopaque) Value {
+        return vnull();
+    }
+    fn vinit(_: *anyopaque, _: *sdk.Context, _: Value) void {}
+    fn items(p: *anyopaque) []Value {
+        const res: *sdk.SdkResult = @ptrCast(@alignCast(p));
+        return switch (res.resdata) {
+            .array => |l| l.data.items,
+            .null => &.{},
+            else => blk: {
+                const one = h.A().alloc(Value, 1) catch break :blk &.{};
+                one[0] = res.resdata;
+                break :blk one;
+            },
+        };
+    }
+    fn vdispatch(_: *anyopaque, hook: []const u8, c: *sdk.Context) void {
+        if (!std.mem.eql(u8, hook, "PreDone")) return;
+        const res = c.result orelse return;
+        res.stream = .{ .ctx = @ptrCast(res), .call = items };
     }
     const vtable = sdk.Feature.VTable{
         .name = vname,
@@ -430,16 +485,18 @@ const Outcome = struct {
 };
 
 const Candidate = *const fn (client: *sdk.SDK, mtch: Value, ctrl: Value) Outcome;
-${candidates.map(candidateFn).join('')}
-const CandidateDef = struct { run: Candidate, params: []const []const u8 };
+const Streamer = *const fn (client: *sdk.SDK, mtch: Value, callopts: Value) []Value;
+${candidates.map(candidateFn).join('')}${candidates.map(streamFn).join('')}
+const CandidateDef = struct { run: Candidate, stream: Streamer, params: []const []const u8 };
 
 // Generated: every CRUD operation of every active entity, with the path
 // parameters its points declare.
 const CANDIDATES = [_]CandidateDef{${candidates.map((c) => '\n    .{ .run = try_' + c.method + '_' + c.op +
+    ', .stream = stream_' + c.method + '_' + c.op +
     ', .params = &.{' + c.params.map(zigstr).join(', ') + '} },').join('')}
 };
 
-const Target = struct { run: Candidate, mtch: Value };
+const Target = struct { run: Candidate, stream: Streamer, mtch: Value };
 
 // The first operation that completes against a plain 200: with no
 // arguments, else with every path parameter its points declare filled in.
@@ -452,7 +509,9 @@ fn usableOp() ?Target {
                 .{ "apikey", h.vstr(CANARY_APIKEY) },
                 .{ "system", h.jo(&.{.{ "fetch", Transport.make(.ok) }}) },
             }));
-            if (cand.run(plain, h.clone(mtch), h.omap()).ok) return .{ .run = cand.run, .mtch = mtch };
+            if (cand.run(plain, h.clone(mtch), h.omap()).ok) {
+                return .{ .run = cand.run, .stream = cand.stream, .mtch = mtch };
+            }
         }
     }
     return null;
@@ -461,11 +520,16 @@ fn usableOp() ?Target {
 const NOTHING_TO_SWEEP = "SKIP: no operation of this SDK completes against a plain 200; nothing to sweep\\n";
 
 fn drive(client: *sdk.SDK, target: Target, ctrl: Value, sinks: *Sinks) ?*sdk.h.SdkError {
+    // A caller may keep the record it passed rather than read ctrl.explain.
+    const held = h.getp(ctrl, "explain");
     const out = target.run(client, h.clone(target.mtch), ctrl);
     if (out.err) |e| sinks.err("error", e);
     if (out.ok) sinks.value("result", out.result);
     const explain = h.getp(ctrl, "explain");
     if (explain == .object) sinks.value("explain", explain);
+    if (held == .object and (explain != .object or held.object != explain.object)) {
+        sinks.value("explain:held", held);
+    }
     return out.err;
 }
 
@@ -535,10 +599,21 @@ test "clean: no credential leaves the SDK in any form" {
         fmt("apikey: expected string, got {{\\"value\\":\\"{s}\\"}}", .{CANARY_APIKEY}),
     ));
 
-    // An error a feature hook raises, quoting the request.
+    // An error a feature hook raises, quoting the request, with explain on.
     const hooked = makeSdk(.ok, &sinks, true, ThrowFeature.make());
-    const hookerr = drive(hooked, target, h.omap(), &sinks);
+    const hookerr = drive(hooked, target, h.jo(&.{.{ "explain", h.omap() }}), &sinks);
     try testing.expect(hookerr != null);
+
+    // The explain record a stream call is passed is cleaned however the
+    // stream ends: from a feature's producer, or materialised by done. A zig
+    // stream hands no error back, so the record is what is asserted on.
+    for ([_]?sdk.Feature{ StreamOkFeature.make(), null }, [_][]const u8{ "stream-ok", "stream-plain" }) |extra, name| {
+        const explain = h.omap();
+        const callopts = h.jo(&.{.{ "ctrl", h.jo(&.{.{ "explain", explain }}) }});
+        _ = target.stream(makeSdk(.ok, &sinks, true, extra), h.clone(target.mtch), callopts);
+        try testing.expect(0 < explain.object.count());
+        sinks.value(fmt("{s}:explain", .{name}), explain);
+    }
 
     // A feature's own error keeps its code, which is cleaned like the
     // message: returned, and handed to a hook.
