@@ -104,7 +104,7 @@ $REGISTRY{make_options} = sub {
   my $cleanctx = { 'options' => { '__derived__' => { 'clean' => $cleancfg } } };
   my %rawscan = %$opts;
   delete $rawscan{clean};
-  ProjectNameCleanSupport::add_sensitive($cleanctx, \%rawscan);
+  ProjectNameCleanSupport::add_options($cleanctx, \%rawscan);
   for my $block ($cfgopts, $opts) {
     for my $raw (@{ ProjectNameCleanSupport::splitvalues(ProjectNameHelpers::gpath($block, 'clean.values')) }) {
       ProjectNameCleanSupport::add($cleanctx, $raw);
@@ -218,7 +218,7 @@ $REGISTRY{make_options} = sub {
   # The extend instances are live objects, not option data.
   my %scan = %$opts;
   delete @scan{qw(__derived__ extend clean)};
-  ProjectNameCleanSupport::add_sensitive($cleanctx, \%scan);
+  ProjectNameCleanSupport::add_options($cleanctx, \%scan);
 
   return $opts;
 };

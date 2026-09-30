@@ -417,6 +417,32 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
   is_deeply($cfgclean, { 'keys' => 'zzsens', 'values' => $CANARY{config} },
     "the config's clean block is unchanged");
 
+  # With no clean option at all, the schema defaults still apply.
+  my $bare = ${Name}SDK->new({
+    'apikey' => $CANARY{apikey},
+    'secret' => $CANARY{secret},
+    'headers' => { 'X-Custom-Token' => $CANARY{header} },
+    'utility' => { 'fetcher' => sub {
+      my (undef, $url, $fetchdef) = @_;
+      return $SCENARIOS[1][1]->($url, $fetchdef);
+    } },
+  });
+  ok(defined drive($bare, $target, { 'explain' => {} }, \\@sinks),
+    'the 404 fails without a clean option');
+
+  # A feature's name is not a field name: only the sensitive names inside
+  # its settings register.
+  my $featured = ${Name}SDK->new({
+    'apikey' => $CANARY{apikey},
+    'feature' => {
+      'zzsecrets' => { 'active' => 0, 'kind' => 'PLAINSETTING-q8w2e4r6' },
+      'zzfeat' => { 'active' => 0, 'apitoken' => 'FEATTOKEN-z9y8x7w6' },
+    },
+  });
+  my $fclean = $featured->get_utility()->{clean};
+  my $fplain = $fclean->($featured->get_root_ctx(), 'kind PLAINSETTING-q8w2e4r6');
+  my $ftoken = $fclean->($featured->get_root_ctx(), 'token FEATTOKEN-z9y8x7w6');
+
   my @leaked = grep { @{ $_->{found} } }
     map { { 'name' => $_->{name}, 'found' => [ leaks($_->{text}) ] } } @sinks;
 
@@ -454,6 +480,9 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
   my $coded = $errors{'coded/throw'};
   ok(Scalar::Util::blessed($coded) && $coded->isa('${Name}Error')
     && $coded->{code} eq "denied_$MASK", 'the coded error keeps its code, masked');
+
+  is($fplain, 'kind PLAINSETTING-q8w2e4r6', "a feature's name does not register its settings");
+  is($ftoken, "token $MASK", 'a sensitive setting inside a feature registers');
 
   my $explained = $explains{'ok/explain'} || {};
   ok(defined $explained->{result}, 'the explain record carries the result');

@@ -312,6 +312,22 @@ sub add_sensitive {
   return;
 }
 
+# A feature's name is not a field name: only the sensitive names inside its
+# settings count, so `secrets` does not make every setting a secret.
+sub add_options {
+  my ($ctx, $opts) = @_;
+  my %scan = %$opts;
+  my $feature = delete $scan{feature};
+  add_sensitive($ctx, \%scan);
+  if (Voxgig::Struct::ismap($feature)) {
+    add_sensitive($ctx, $feature->{$_}) for keys %$feature;
+  }
+  else {
+    add_sensitive($ctx, $feature);
+  }
+  return;
+}
+
 # Is this key name sensitive under the context's clean configuration?
 sub key {
   my ($ctx, $key) = @_;
