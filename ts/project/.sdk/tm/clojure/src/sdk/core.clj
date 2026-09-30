@@ -672,13 +672,15 @@
   (.write w (str "#sdk/context " (vs/jsonify (ctx->data ctx) (vs/jm "indent" 0)))))
 
 ;; The explain map is the CALLER's, so it is cleaned in place: what they hold
-;; after the call is the cleaned record.
-(defn- clean-explain! [ctx]
+;; after the call is the cleaned record. With clean off its result is the live
+;; result atom, which the prune leaves alone.
+(defn clean-explain! [ctx]
   (when-let [ex (oget (oget ctx :ctrl) :explain)]
     (let [cleaned (ucall ctx :clean ex)]
       (when (and (vs/ismap ex) (vs/ismap cleaned) (not (identical? cleaned ex)))
         (.clear ^java.util.Map ex)
-        (.putAll ^java.util.Map ex ^java.util.Map cleaned)))))
+        (.putAll ^java.util.Map ex ^java.util.Map cleaned))
+      (let [er (mget ex "result")] (when (vs/ismap er) (vs/delprop er "err"))))))
 
 ;; The API definition is authoritative: a POST-only or PATCH-based API
 ;; exposes `update` as POST or PATCH, not the PUT the op name implies.
@@ -1302,14 +1304,11 @@
           (sdk-throw sdk-err))))))
 
 (defn u-done [ctx]
-  (let [ctrl (oget ctx :ctrl)]
-    (clean-explain! ctx)
-    (when-let [ex (oget ctrl :explain)]
-      (let [er (mget ex "result")] (when (vs/ismap er) (vs/delprop er "err"))))
-    (let [result (oget ctx :result)]
-      (if (and result (oget result :ok))
-        (oget result :resdata)
-        (ucall ctx :make-error nil)))))
+  (clean-explain! ctx)
+  (let [result (oget ctx :result)]
+    (if (and result (oget result :ok))
+      (oget result :resdata)
+      (ucall ctx :make-error nil))))
 
 ;; Public camelCase option key -> the kebab-case keyword naming a utility
 ;; member, or nil when the key is not a public name.

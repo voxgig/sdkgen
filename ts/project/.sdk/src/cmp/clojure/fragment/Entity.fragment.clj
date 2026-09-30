@@ -109,10 +109,15 @@
                                   (post-done)
                                   ((core/uget ctx :done) ctx))))))))))))))))
     (catch Throwable operr
-      ; #PreUnexpected-Hook
-      ;; An error a hook threw, SDK-shaped or not, never passed through
-      ;; make-error.
-      (throw (core/clean-throwable ctx operr)))))
+      ;; What a hook throws here must not escape the cleaning below.
+      (let [err (try
+                  ; #PreUnexpected-Hook
+                  operr
+                  (catch Throwable hookerr hookerr))]
+        ;; An error a hook threw, SDK-shaped or not, never passed through
+        ;; make-error.
+        (core/clean-explain! ctx)
+        (throw (core/clean-throwable ctx err))))))
 
 ;; Streaming operation. Runs `action` (an op name, e.g. "list") through the
 ;; full pipeline and returns a LAZY SEQUENCE of result items, so the

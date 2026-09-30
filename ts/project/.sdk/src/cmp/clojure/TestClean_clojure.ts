@@ -60,7 +60,7 @@ function candidates(entity: any[]): string {
     :accessor (fn [sdk] (api/${e.name} sdk nil))
     :params [${pointParams(e.op[op]).map(cljstr).join(' ')}]
     :op (fn [ent match ctrl] (e-${e.name}/${op} ent (args match) ctrl))
-    :stream (fn [ent match] (e-${e.name}/stream ent ${cljstr(op)} (vs/jm "reqmatch" (args match)) nil))}`,
+    :stream (fn [ent match callopts] (e-${e.name}/stream ent ${cljstr(op)} (vs/jm "reqmatch" (args match)) callopts))}`,
       })
     }
   })
@@ -231,13 +231,16 @@ ${candidates(entity)}
 
 ;; A feature that throws from inside the pipeline, quoting the request it
 ;; saw: an error make-error never handled.
-(defn- throw-feature []
+(defn- hook-saw [ctx]
+  (let [sp (core/oget ctx :spec)]
+    (RuntimeException. (str "hook saw " (pr-str (if (instance? clojure.lang.IDeref sp) @sp sp))))))
+
+(defn- throw-feature [unexpected]
   (atom {:name "throwhook" :active true :version "0.0.1" :_options nil
          "init" (fn [_ctx _opts] nil)
-         "PreResponse" (fn [ctx]
-                         (let [sp (core/oget ctx :spec)]
-                           (throw (RuntimeException.
-                                   (str "hook saw " (pr-str (if (instance? clojure.lang.IDeref sp) @sp sp)))))))}))
+         "PreResponse" (fn [ctx] (throw (hook-saw ctx)))
+         ;; Fired from the operation's catch, before its cleaning.
+         "PreUnexpected" (fn [ctx] (when unexpected (throw (hook-saw ctx))))}))
 
 ;; A stream that fails while it is realised, quoting a credential.
 (defn- stream-throw-feature []
@@ -247,6 +250,16 @@ ${candidates(entity)}
                      (core/oset! (core/oget ctx :result) :stream
                                  (fn [] (map (fn [_] (throw (RuntimeException. (str "stream saw " (:apikey CANARY)))))
                                              [1]))))}))
+
+;; A stream that succeeds, yielding the result's items.
+(defn- stream-ok-feature []
+  (atom {:name "streamok" :active true :version "0.0.1" :_options nil
+         "init" (fn [_ctx _opts] nil)
+         "PreDone" (fn [ctx]
+                     (let [result (core/oget ctx :result)
+                           rd (core/oget result :resdata)
+                           items (cond (vs/islist rd) (vec rd) (nil? rd) [] :else [rd])]
+                       (core/oset! result :stream (fn [] items))))}))
 
 ;; A feature that throws the SDK's own error, its code quoting a registered
 ;; value: an SDK error make-error never handled.
@@ -259,11 +272,14 @@ ${candidates(entity)}
 
 (defn- drive [sdk target ctrl sinks]
   (let [ent ((:accessor target) sdk)
+        ;; A caller may keep the record it passed rather than read ctrl.explain.
+        held (vs/getprop ctrl "explain")
         [out err] (try [((:op target) ent (:match target) ctrl) nil] (catch Throwable e [nil e]))
         explain (vs/getprop ctrl "explain")]
     (when err (swap! sinks into (forms "error" err)))
     (when (some? out) (swap! sinks into (forms "result" out)))
     (when (some? explain) (swap! sinks into (forms "explain" explain)))
+    (when (and (some? held) (not (identical? held explain))) (swap! sinks into (forms "explain:held" held)))
     err))
 
 (def ^:private NO-TARGET "no operation of this SDK completes against a plain 200; nothing to sweep")
@@ -294,15 +310,24 @@ ${candidates(entity)}
             (t/is-some rejected "a credential mistyped as a map should be rejected")
             (swap! sinks into (forms "rejected" rejected)))
           ;; An error a feature hook throws, quoting the request, skips make-error.
-          (let [hooked (make-sdk (first SCENARIOS) sinks nil (throw-feature))]
-            (t/is-some (drive hooked target (vs/jm) sinks) "the throwing hook should fail the operation"))
-          ;; Streaming runs through the same cleaning path as the operation.
-          (let [streamed (make-sdk (first SCENARIOS) sinks nil (stream-throw-feature))
-                err (try (vec ((:stream target) ((:accessor target) streamed) (:match target)))
-                         nil
-                         (catch Throwable e e))]
-            (t/is-some err "the failing stream should throw")
-            (swap! sinks into (forms "stream" err)))
+          (doseq [unexpected [false true]]
+            (let [hooked (make-sdk (first SCENARIOS) sinks nil (throw-feature unexpected))]
+              (t/is-some (drive hooked target (vs/jm "explain" (vs/jm)) sinks)
+                         "the throwing hook should fail the operation")))
+          ;; Streaming runs through the same cleaning path as the operation,
+          ;; and the explain record the caller passed is cleaned however it ends.
+          (doseq [[name extra] [["stream" [(stream-throw-feature)]] ["stream-ok" [(stream-ok-feature)]]
+                                ["stream-plain" []]]]
+            (let [streamed (apply make-sdk (first SCENARIOS) sinks nil extra)
+                  explain (vs/jm)
+                  err (try (vec ((:stream target) ((:accessor target) streamed) (:match target)
+                                 (vs/jm "ctrl" (vs/jm "explain" explain))))
+                           nil
+                           (catch Throwable e e))]
+              (t/is-eq (some? err) (= "stream" name) (str name ": only the failing stream throws"))
+              (when err (swap! sinks into (forms name err)))
+              (t/is-true (pos? (.size ^java.util.Map explain)) (str name ": the explain record was not filled"))
+              (swap! sinks into (forms (str name ":explain") explain))))
           (let [codedhook (make-sdk (first SCENARIOS) sinks nil (coded-throw-feature))
                 err (drive codedhook target (vs/jm) sinks)]
             (t/is-some err "the coded hook should fail the operation")
