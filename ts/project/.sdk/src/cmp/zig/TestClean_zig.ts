@@ -555,6 +555,11 @@ test "clean: no credential leaves the SDK in any form" {
     const barerr = drive(bare, target, h.omap(), &sinks);
     try testing.expect(barerr != null);
 
+    // The raw path returns its failure rather than an error.
+    const direct = makeSdk(.transport, &sinks, true, null).direct(h.jo(&.{.{ "path", h.vstr("raw") }}));
+    try testing.expect(h.getp(direct, "ok") == .bool and !h.getp(direct, "ok").bool);
+    sinks.value("direct", direct);
+
     var leaked: usize = 0;
     for (sinks.items.items) |s| {
         const found = leaks(s.text);

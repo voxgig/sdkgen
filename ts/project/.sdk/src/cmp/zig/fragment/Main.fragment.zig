@@ -265,7 +265,7 @@ pub const ProjectNameSDK = struct {
         const fetched = self.sdkUtility.fetch(ctx, url, fetchdef) catch {
             return h.jo(&.{
                 .{ "ok", h.vbool(false) },
-                .{ "err", h.vstr(if (ctx.pending_err) |e| e.msg else "fetch failed") },
+                .{ "err", h.vstr(if (ctx.pending_err) |e| self.sdkUtility.clean_str(ctx, e.msg) else "fetch failed") },
             });
         };
 
