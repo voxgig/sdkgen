@@ -352,6 +352,14 @@ class ProjectNameClean
             self::rewrite($err, 'message', $msg);
         }
 
+        // print_r and var_export show the protected code, a string for some
+        // drivers.
+        $code = $err->getCode();
+        $cleancode = is_string($code) ? self::clean_string($cfg, $code) : $code;
+        if ($cleancode !== $code) {
+            self::rewrite($err, 'code', $cleancode);
+        }
+
         // The base __toString caches its text, raw message and all.
         if ('' !== self::read($err, 'string')) {
             self::rewrite($err, 'string', '');

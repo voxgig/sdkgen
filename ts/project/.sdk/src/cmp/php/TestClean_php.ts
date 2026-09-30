@@ -71,6 +71,7 @@ class CleanTest extends TestCase
         'secret' => 'CANARY-SECRET-w3e8r5t2y6',
         'header' => 'CANARY-HEADER-z1x4c7v0b3',
         'value' => 'CANARY-VALUE-n5m8b2v9c4',
+        'config' => 'CANARY-CONFIG-h6j3k8l2m5',
     ];
 
     private const MASK = '[redacted]';
@@ -186,6 +187,10 @@ class CleanTest extends TestCase
             'transport' => function (string $url, array $_fetchdef): array {
                 return [null, new \\RuntimeException('socket hang up (URL was: "' . $url . '")')];
             },
+            // The SDK's own error, its code quoting a registered value.
+            'coded' => function (string $_url, array $_fetchdef): array {
+                return [null, new ${Name}Error('denied_' . self::CANARY['apikey'], 'coded failure')];
+            },
             // A body that is not JSON: the fetcher answers no parsed body.
             'notjson' => function (string $_url, array $_fetchdef): array {
                 return [[
@@ -245,9 +250,16 @@ class CleanTest extends TestCase
                 $this->take('ctx@PreResponse', $ctx);
             }
 
+            // The SDK's own error as a hook reads it, which an observability
+            // feature logs.
             public function PreUnexpected(${Name}Context $ctx): void
             {
                 $this->take('ctx@PreUnexpected', $ctx);
+                if ($ctx->ctrl->err instanceof ${Name}Error) {
+                    foreach (CleanTest::surfaces('ctrl.err@PreUnexpected', $ctx->ctrl->err) as $s) {
+                        $this->sinks[] = $s;
+                    }
+                }
             }
         };
     }
@@ -268,6 +280,32 @@ class CleanTest extends TestCase
             public function PreResponse(${Name}Context $ctx): void
             {
                 throw new \\RuntimeException('hook saw ' . json_encode($ctx->spec));
+            }
+        };
+    }
+
+    // A feature that throws a foreign exception whose string code, as some
+    // drivers set one, quotes a registered value.
+    private static function coded_throw_feature(string $failcode): ${Name}BaseFeature
+    {
+        return new class ($failcode) extends ${Name}BaseFeature {
+            public function __construct(private string $failcode)
+            {
+                parent::__construct();
+                $this->name = 'codedhook';
+                $this->version = '0.0.1';
+                $this->active = true;
+            }
+
+            public function PreResponse(${Name}Context $ctx): void
+            {
+                throw new class ('coded hook failure', $this->failcode) extends \\RuntimeException {
+                    public function __construct(string $msg, string $code)
+                    {
+                        parent::__construct($msg);
+                        $this->code = $code;
+                    }
+                };
             }
         };
     }
@@ -506,6 +544,30 @@ class CleanTest extends TestCase
             $sinks[] = $s;
         }
 
+        // A foreign exception a hook throws, its string code quoting the key.
+        [$codedhook, $cwatcher] = self::make_sdk(self::scenarios()['ok'], $sinks, null,
+            [self::coded_throw_feature('denied_' . self::CANARY['apikey'])]);
+        [$codederr, $_cexplain] = self::drive($codedhook, $cwatcher, $target, [], $sinks);
+        $this->assertNotNull($codederr, 'the coded hook should fail the operation');
+
+        // The generated config's own clean block is read beside the caller's,
+        // and is not changed by it.
+        $config = ['options' => ['clean' => ['keys' => 'zzsens', 'values' => self::CANARY['config']]]];
+        $util = $hooked->get_utility();
+        $built = ($util->make_options)(new ${Name}Context([
+            'utility' => $util,
+            'config' => $config,
+            'options' => ['clean' => ['values' => self::CANARY['value']]],
+        ], null));
+        $cfgctx = new ${Name}Context(['options' => $built], null);
+        $seeded = ($util->clean)($cfgctx, 'config ' . self::CANARY['config'] . ' caller ' . self::CANARY['value']);
+        $sinks[] = ['name' => 'config-clean', 'text' => (string)$seeded];
+        $this->assertSame('config ' . self::MASK . ' caller ' . self::MASK, $seeded);
+        $this->assertSame(['my_zzsens' => self::MASK, 'other' => 'y'],
+            ($util->clean)($cfgctx, ['my_zzsens' => 'x', 'other' => 'y']));
+        $this->assertSame(['keys' => 'zzsens', 'values' => self::CANARY['config']],
+            $config['options']['clean']);
+
         $leaked = [];
         $excerpt = '';
         foreach ($sinks as $s) {
@@ -546,6 +608,11 @@ class CleanTest extends TestCase
             }
         }
         $this->assertSame(self::MASK, self::header(self::header($spec, 'headers'), 'x-custom-token'));
+
+        $coded = $errors['coded/throw'] ?? null;
+        $this->assertInstanceOf(${Name}Error::class, $coded, 'the coded scenario must throw');
+        $this->assertSame('denied_' . self::MASK, $coded->sdk_code);
+        $this->assertSame('denied_' . self::MASK, $codederr->getCode());
 
         $explained = $explains['ok/explain'] ?? [];
         $this->assertNotNull($explained['result'] ?? null, 'the explain record should carry the result');

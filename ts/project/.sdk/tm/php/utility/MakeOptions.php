@@ -44,16 +44,19 @@ class ProjectNameMakeOptions
         require_once __DIR__ . '/../core/Context.php';
         $optspec = ProjectNameSchema::optspec();
 
+        $config = $ctx->config ?? [];
+        $cfgopts = isset($config['options']) && is_array($config['options']) ? $config['options'] : [];
+
         // The secret registry exists BEFORE validation, fed from the raw
         // input, so the constructor's own rejection of a mistyped credential
         // is clean too.
-        $rawclean = $options['clean'] ?? null;
-        $rawclean = is_object($rawclean) ? get_object_vars($rawclean)
-            : (is_array($rawclean) ? $rawclean : []);
-        $specclean = \Voxgig\Struct\Struct::getprop($optspec, 'clean');
-        $specclean = is_object($specclean) ? get_object_vars($specclean)
-            : (is_array($specclean) ? $specclean : []);
-        $cleancfg = ProjectNameClean::config(array_merge($specclean, $rawclean));
+        $block = function (mixed $clean): array {
+            return is_object($clean) ? get_object_vars($clean) : (is_array($clean) ? $clean : []);
+        };
+        $rawclean = $block($options['clean'] ?? null);
+        $cfgclean = $block($cfgopts['clean'] ?? null);
+        $specclean = $block(\Voxgig\Struct\Struct::getprop($optspec, 'clean'));
+        $cleancfg = ProjectNameClean::config(array_merge($specclean, $cfgclean, $rawclean));
         $cleanctx = new ProjectNameContext([
             'options' => ['__derived__' => ['clean' => $cleancfg]],
         ], null);
@@ -61,8 +64,10 @@ class ProjectNameMakeOptions
             : (is_array($options) ? $options : []);
         unset($rawopts['clean']);
         ProjectNameClean::add_sensitive($cleanctx, $rawopts);
-        foreach (ProjectNameClean::splitvalues($rawclean['values'] ?? null) as $raw) {
-            ProjectNameClean::add($cleanctx, $raw);
+        foreach ([$cfgclean, $rawclean] as $source) {
+            foreach (ProjectNameClean::splitvalues($source['values'] ?? null) as $raw) {
+                ProjectNameClean::add($cleanctx, $raw);
+            }
         }
 
         // Merge custom utility overrides.
@@ -181,9 +186,6 @@ class ProjectNameMakeOptions
             }
             $opts['feature'] = $fmap;
         }
-
-        $config = $ctx->config ?? [];
-        $cfgopts = isset($config['options']) && is_array($config['options']) ? $config['options'] : [];
 
         // Empty [] would be treated as a list and clobber the map under merge;
         // substitute an empty stdClass to preserve map semantics.
