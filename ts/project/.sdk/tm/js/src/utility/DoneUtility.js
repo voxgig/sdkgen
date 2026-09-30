@@ -6,8 +6,10 @@ function done(ctx) {
   const delprop = ctx.utility.struct.delprop
 
   if (ctx.ctrl.explain) {
-    ctx.ctrl.explain = clean(ctx, ctx.ctrl.explain)
-    delprop(ctx.ctrl.explain.result, 'err')
+    // A copy: with clean off, explain.result is the live result makeError reads.
+    const explain = clean(ctx, ctx.ctrl.explain)
+    if (null != explain.result) explain.result = delprop({ ...explain.result }, 'err')
+    ctx.ctrl.explain = explain
   }
 
   if (ctx.result && ctx.result.ok) {

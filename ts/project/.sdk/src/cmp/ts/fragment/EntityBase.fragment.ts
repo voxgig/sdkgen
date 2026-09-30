@@ -209,8 +209,9 @@ class ProjectNameEntityBase<D = any> {
     ctrl.err = err
 
     if (ctrl.explain) {
-      ctx.ctrl.explain = clean(ctx, ctx.ctrl.explain)
-      delprop(ctx.ctrl.explain.result, 'err')
+      const explain = clean(ctx, ctx.ctrl.explain)
+      if (null != explain.result) explain.result = delprop({ ...explain.result }, 'err')
+      ctx.ctrl.explain = explain
 
       if (null != ctx.result && null != ctx.result.err) {
         ctrl.explain.err = clean(ctx, merge([

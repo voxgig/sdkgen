@@ -308,11 +308,13 @@ describe('clean', () => {
     sinks.push({ name: 'config-clean', text: seeded })
 
     // A feature's name is not a field name: only the sensitive names inside
-    // its settings register.
+    // its settings register. An entity block, of per-entity settings or seeded
+    // records keyed by entity name and id, is not read at all.
     const featured = new SDK({ apikey: CANARY.apikey, feature: {
       zzsecrets: { active: false, kind: 'PLAINSETTING-q8w2e4r6' },
       zzfeat: { active: false, apitoken: 'FEATTOKEN-z9y8x7w6' },
-    } })
+      test: { active: false, entity: { zztoken: { ZZTOKEN01: { note: 'PLAINRECORD-t5r3e1w9' } } } },
+    }, entity: { zztoken: { alias: { zzkey: 'PLAINALIAS-m2n4b6v8' } } } })
     const fctx = { options: featured._options }
 
     // The raw path returns its failure rather than throwing it.
@@ -355,6 +357,8 @@ describe('clean', () => {
 
     equal(featured.utility().clean(fctx, 'kind PLAINSETTING-q8w2e4r6'), 'kind PLAINSETTING-q8w2e4r6')
     equal(featured.utility().clean(fctx, 'token FEATTOKEN-z9y8x7w6'), 'token ' + MASK)
+    equal(featured.utility().clean(fctx, 'record PLAINRECORD-t5r3e1w9'), 'record PLAINRECORD-t5r3e1w9')
+    equal(featured.utility().clean(fctx, 'alias PLAINALIAS-m2n4b6v8'), 'alias PLAINALIAS-m2n4b6v8')
 
     const coded = errors['coded/throw']
     ok(null != coded, 'the coded scenario must throw')
@@ -376,6 +380,10 @@ describe('clean', () => {
     const sdk = makeSdk(SCENARIOS[1], sinks, { active: false })
     const err = await drive(sdk, target, {}, sinks)
     ok(null != err)
+
+    // Explaining a failure must not cost it its error.
+    const explained = await drive(makeSdk(SCENARIOS[1], [], { active: false }), target, { explain: {} }, [])
+    equal(explained?.message, err.message, 'with clean off, explain lost the error')
 
     const leaked = sinks.filter((s) => 0 < leaks(s.text).length)
     ok(0 < leaked.length, 'with clean off, nothing showed the canary: the sweep is blind')

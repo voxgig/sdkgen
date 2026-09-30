@@ -27,7 +27,7 @@ function makeOptions(ctx: Context) {
   const cleancfg = makeCleanConfig(merge([{}, (OPTSPEC as any).clean,
     struct.clone(layer(cfgopts.clean)), layer(opts.clean)]))
   const cleanctx: any = { options: { __derived__: { clean: cleancfg } } }
-  cleanAddSensitive(cleanctx, { ...opts, clean: undefined })
+  cleanAddSensitive(cleanctx, settings(opts))
   for (const raw of [...splitvalues(cfgopts.clean?.values), ...splitvalues(opts.clean?.values)]) {
     cleanAdd(cleanctx, raw)
   }
@@ -118,9 +118,22 @@ function makeOptions(ctx: Context) {
   }
 
   // Again over the merged result: the config's own defaults can carry one.
-  cleanAddSensitive({ options: opts } as any, { ...opts, clean: undefined, __derived__: undefined })
+  cleanAddSensitive({ options: opts } as any, settings(opts))
 
   return opts
+}
+
+
+// Registration skips entity blocks: entity settings and seed records hold no credential.
+function settings(opts: any): any {
+  const noent = (b: any) => null != b && 'object' === typeof b && !Array.isArray(b)
+    ? { ...b, entity: undefined } : b
+  const feature = Array.isArray(opts.feature) ? opts.feature.map(noent)
+    : null != opts.feature && 'object' === typeof opts.feature
+      ? Object.fromEntries(Object.entries(opts.feature).map(([k, v]) => [k, noent(v)]))
+      : opts.feature
+  return { ...opts, clean: undefined, __derived__: undefined, entity: undefined,
+    test: noent(opts.test), feature }
 }
 
 

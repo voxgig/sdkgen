@@ -265,10 +265,10 @@ describe('clean: the shipped ts utility', () => {
 
 describe('clean: the registry makeOptions builds', () => {
 
-  function loadOptions(): { cleanmod: any, makeOptions: any } {
+  function loadOptions(extra?: any): { cleanmod: any, makeOptions: any } {
     const errs: any[] = []
     const base: any = new Aontu().generate(readFileSync(MODEL, 'utf8'), { path: MODEL, errs })
-    const OPTSPEC = base.main.kit.optspec
+    const OPTSPEC = { ...base.main.kit.optspec, ...(extra || {}) }
     const cleanmod = loadClean()
     const { makeOptions } = sandboxLoad(
       Path.join(TM, 'ts', 'src', 'utility', 'MakeOptionsUtility.ts'), {
@@ -289,6 +289,42 @@ describe('clean: the registry makeOptions builds', () => {
       ctx.options = makeOptions(ctx)
       strictEqual(cleanmod.clean(ctx, 'a NOCLEAN-KEY-12345 b NOCLEAN-HDR-67890'), 'a ' + MASK + ' b ' + MASK)
       deepStrictEqual(cleanmod.clean(ctx, { authorization: 'Bearer zz' }), { authorization: MASK })
+    }
+  })
+
+
+  test('an entity block is not read: entity names, record ids and aliases are not field names', () => {
+    const { cleanmod, makeOptions } = loadOptions({ feature: { '`$OPEN`': true } })
+    const seed = { token: { TOKEN01: { id: 'TOKEN01', note: 'SEEDED-RECORD-1' } } }
+    const plain = 'TOKEN01 SEEDED-RECORD-1 CONFIG-ALIAS-2 CALLER-ALIAS-3'
+    for (const feature of [
+      { test: { active: true, entity: seed } },
+      [{ name: 'test', active: true, entity: seed }],
+    ]) {
+      const config = { options: { entity: { token: { alias: { key: 'CONFIG-ALIAS-2' } } } } }
+      const ctx: any = { utility: { struct }, config, options: {
+        apikey: 'ENTITY-KEY-12345', feature, test: { entity: seed },
+        entity: { secret: { alias: { apikey: 'CALLER-ALIAS-3' } } },
+      } }
+      ctx.options = makeOptions(ctx)
+      strictEqual(cleanmod.clean(ctx, plain), plain)
+      strictEqual(cleanmod.clean(ctx, 'a ENTITY-KEY-12345'), 'a ' + MASK)
+    }
+  })
+
+
+  test('done prunes a copy of the explain result, so the error survives clean off', () => {
+    const cleanmod = loadClean()
+    const { done } = sandboxLoad(Path.join(TM, 'ts', 'src', 'utility', 'DoneUtility.ts'), {
+      '../types': {}, './CleanUtility': cleanmod })
+    for (const active of [true, false]) {
+      const err = new Error('boom')
+      const result: any = { ok: false, err }
+      const ctx: any = { ...ctxWith(cleanmod, { active }), result, ctrl: { explain: { result } },
+        utility: { struct, makeError: (c: any) => c.result.err } }
+      strictEqual(done(ctx), err)
+      strictEqual(result.err, err)
+      strictEqual(ctx.ctrl.explain.result.err, undefined)
     }
   })
 
