@@ -568,6 +568,36 @@ class CleanTest extends TestCase
         $this->assertSame(['keys' => 'zzsens', 'values' => self::CANARY['config']],
             $config['options']['clean']);
 
+        // With no clean option at all, the schema defaults still apply.
+        $respond404 = self::scenarios()['notfound'];
+        $bwatcher = self::capture_feature($sinks);
+        $bare = new ${Name}SDK([
+            'apikey' => self::CANARY['apikey'],
+            'secret' => self::CANARY['secret'],
+            'headers' => ['X-Custom-Token' => self::CANARY['header']],
+            'extend' => [$bwatcher],
+            'utility' => [
+                'fetcher' => function (${Name}Context $_ctx, string $url, array $fetchdef) use ($respond404): array {
+                    return $respond404($url, $fetchdef);
+                },
+            ],
+        ]);
+        [$bareerr, $_bexplain] = self::drive($bare, $bwatcher, $target, ['explain' => ['on' => true]], $sinks);
+        $this->assertNotNull($bareerr, 'the 404 should fail');
+
+        // A feature's name is not a field name: only the sensitive names
+        // inside its settings register.
+        $featured = new ${Name}SDK([
+            'apikey' => self::CANARY['apikey'],
+            'feature' => [
+                'zzsecrets' => ['active' => false, 'kind' => 'PLAINSETTING-q8w2e4r6'],
+                'zzfeat' => ['active' => false, 'apitoken' => 'FEATTOKEN-z9y8x7w6'],
+            ],
+        ]);
+        $fclean = $featured->get_utility()->clean;
+        $fplain = $fclean($featured->get_root_ctx(), 'kind PLAINSETTING-q8w2e4r6');
+        $ftoken = $fclean($featured->get_root_ctx(), 'token FEATTOKEN-z9y8x7w6');
+
         $leaked = [];
         $excerpt = '';
         foreach ($sinks as $s) {
@@ -613,6 +643,9 @@ class CleanTest extends TestCase
         $this->assertInstanceOf(${Name}Error::class, $coded, 'the coded scenario must throw');
         $this->assertSame('denied_' . self::MASK, $coded->sdk_code);
         $this->assertSame('denied_' . self::MASK, $codederr->getCode());
+
+        $this->assertSame('kind PLAINSETTING-q8w2e4r6', $fplain);
+        $this->assertSame('token ' . self::MASK, $ftoken);
 
         $explained = $explains['ok/explain'] ?? [];
         $this->assertNotNull($explained['result'] ?? null, 'the explain record should carry the result');

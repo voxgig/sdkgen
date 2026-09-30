@@ -97,6 +97,23 @@ class ProjectNameClean
         }
     }
 
+    // A feature's name is not a field name: only the sensitive names inside
+    // its settings count, so `secrets` does not make every setting a secret.
+    public static function add_options(?ProjectNameContext $ctx, array $opts): void
+    {
+        $feature = $opts['feature'] ?? null;
+        unset($opts['feature']);
+        self::add_sensitive($ctx, $opts);
+        $feature = is_object($feature) ? get_object_vars($feature) : $feature;
+        if (is_array($feature) && !array_is_list($feature)) {
+            foreach ($feature as $fopts) {
+                self::add_sensitive($ctx, $fopts);
+            }
+            return;
+        }
+        self::add_sensitive($ctx, $feature);
+    }
+
     // Is this key name sensitive under the context's clean configuration?
     public static function key(?ProjectNameContext $ctx, mixed $key): bool
     {

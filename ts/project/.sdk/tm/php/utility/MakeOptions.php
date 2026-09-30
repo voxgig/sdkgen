@@ -63,7 +63,7 @@ class ProjectNameMakeOptions
         $rawopts = is_object($options) ? get_object_vars($options)
             : (is_array($options) ? $options : []);
         unset($rawopts['clean']);
-        ProjectNameClean::add_sensitive($cleanctx, $rawopts);
+        ProjectNameClean::add_options($cleanctx, $rawopts);
         foreach ([$cfgclean, $rawclean] as $source) {
             foreach (ProjectNameClean::splitvalues($source['values'] ?? null) as $raw) {
                 ProjectNameClean::add($cleanctx, $raw);
@@ -307,7 +307,7 @@ class ProjectNameMakeOptions
         // Again over the merged result: the config's own defaults can carry one.
         $merged = $opts;
         unset($merged['clean']);
-        ProjectNameClean::add_sensitive($cleanctx, $merged);
+        ProjectNameClean::add_options($cleanctx, $merged);
 
         $opts['__derived__'] = [
             'clean' => $cleancfg,
