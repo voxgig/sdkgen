@@ -360,6 +360,9 @@ function basicBlock(): string {
                 else => "",
             };
             const b64 = base64_std(fmt("{s}:{s}", .{ apikey_val, secret_val }));
+            // The joined, encoded pair is a wire form neither credential's own
+            // registration covers.
+            ctx.util().clean_add(ctx, b64);
             if (basic_prefix.len == 0) {
                 h.setp(headers, CRED_NAME, h.vstr(b64));
             } else {

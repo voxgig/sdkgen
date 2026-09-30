@@ -123,6 +123,9 @@ ${cookieHelper(spec.where)}
     }
     else {
       const b64 = Buffer.from(apikey + ':' + pass).toString('base64')
+      // The joined, encoded pair is a wire form neither credential's own
+      // registration covers.
+      utility.cleanAdd(ctx, b64)
       setprop(headers, CRED_name, prefix ? prefix + ' ' + b64 : b64)
     }
 

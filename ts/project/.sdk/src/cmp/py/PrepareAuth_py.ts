@@ -168,6 +168,9 @@ function basicBlock(spec: AuthSpec): string {
             b64 = base64.b64encode(
                 (str(apikey) + ":" + ("" if no_secret else str(secret))).encode("utf-8")
             ).decode("ascii")
+            # The joined, encoded pair is a wire form neither credential's
+            # own registration covers.
+            ctx.utility.clean_add(ctx, b64)
             headers[HEADER_AUTH] = (
                 auth_prefix + " " + b64 if auth_prefix else b64
             )

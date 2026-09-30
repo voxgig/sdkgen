@@ -79,9 +79,9 @@ Spec* prepare_auth_util(Context* ctx, PNError** err) {
 
   // HTTP Basic is header-only by definition: the scheme is
   // `Authorization: Basic base64(user:pass)`. It cannot be expressed as a
-  // query parameter or a cookie, so the branch - and the base64 encoder it
-  // needs, which the c core does not otherwise ship - is emitted only where
-  // it can mean something.
+  // query parameter or a cookie, so the branch is emitted only where it can
+  // mean something. The encoder is the clean utility's, which needs it for
+  // the base64 form of every registered value.
   const withBasic = spec.basic && 'header' === spec.where
 
   const withStdio = 'query' !== spec.where
@@ -104,29 +104,7 @@ ${'cookie' === spec.where ? `#define COOKIE_HEADER "cookie"
 ` : ''}#define OPTION_APIKEY "apikey"
 ${withBasic ? `#define OPTION_SECRET "secret"
 ` : ''}#define NOT_FOUND "__NOTFOUND__"
-${withBasic ? `
-// The c core ships no base64 (the vendored encoder under
-// feature/secrets/plugins/ is gated behind that feature and is not linked
-// into a plain SDK), so the one placement that needs it carries its own.
-static const char B64_ALPHABET[] =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-static void b64_encode(const char* in, char* out, size_t outcap) {
-  size_t n = strlen(in);
-  size_t o = 0;
-  for (size_t i = 0; i < n; i += 3) {
-    unsigned int v = (unsigned char)in[i] << 16;
-    if (i + 1 < n) v |= (unsigned int)(unsigned char)in[i + 1] << 8;
-    if (i + 2 < n) v |= (unsigned int)(unsigned char)in[i + 2];
-    if (o + 5 > outcap) break;
-    out[o++] = B64_ALPHABET[(v >> 18) & 0x3f];
-    out[o++] = B64_ALPHABET[(v >> 12) & 0x3f];
-    out[o++] = (i + 1 < n) ? B64_ALPHABET[(v >> 6) & 0x3f] : '=';
-    out[o++] = (i + 2 < n) ? B64_ALPHABET[v & 0x3f] : '=';
-  }
-  out[o] = '\\0';
-}
-` : ''}
 Spec* prepare_auth_util(Context* ctx, PNError** err) {
   *err = NULL;
   Spec* spec = ctx->spec;
@@ -192,11 +170,13 @@ ${clear(spec.where, 6)}
       voxgig_value* prefix_v = getpath2(options, "auth", "prefix");
       const char* auth_prefix = voxgig_is_string(prefix_v) ? voxgig_as_string(prefix_v) : "";
       char pair[1024];
-      char b64[1400];
       snprintf(pair, sizeof(pair), "%s:%s",
                voxgig_is_string(apikey) ? voxgig_as_string(apikey) : "",
                !no_secret && voxgig_is_string(secret) ? voxgig_as_string(secret) : "");
-      b64_encode(pair, b64, sizeof(b64));
+      char* b64 = clean_base64(pair);
+      // The joined, encoded pair is a wire form neither credential's own
+      // registration covers.
+      clean_add_util(ctx, b64);
       if (auth_prefix[0] == '\\0') {
         setp(headers, CRED_NAME, v_str(b64));
       } else {

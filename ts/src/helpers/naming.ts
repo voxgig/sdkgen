@@ -149,7 +149,7 @@ function isPhpReservedType(Name: string): boolean {
 
 
 const PHP_SDK_CLASSES = new Set<string>([
-  'existstest', 'featurecorpustest', 'featuretest', 'netsimtest',
+  'cleantest', 'existstest', 'featurecorpustest', 'featuretest', 'netsimtest',
   'omnismoketest', 'pipelinetest', 'primaryutilitytest',
   'readmeexamplestest', 'structutilitytest',
   'ftclient', 'ftclock', 'ftctrl', 'ftentity', 'ftharness', 'ftrecorder',

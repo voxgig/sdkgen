@@ -435,7 +435,9 @@
                     (let [entries (mget (h-track h "_debug") "entries")]
                       (t/is-eq (vs/size entries) 1 "capped")
                       (t/is-eq (count @seen) 2 "2 seen")
-                      (t/is-eq (mget (mget (nth @seen 0) "headers") "authorization") "<redacted>" "redacted")))))
+                      ;; Masked by the core clean rule (clean.keys), not a
+                      ;; feature list of its own.
+                      (t/is-eq (mget (mget (nth @seen 0) "headers") "authorization") "[redacted]" "redacted")))))
     (check "debug-captures-failures" "debug"
            (fn [] (when (feature-present? "netsim")
                     (let [h (make-harness [(fspec "netsim" "failTimes" 1 "failStatus" 500) (fspec "debug")])]
@@ -447,7 +449,7 @@
            (fn [] (let [h (make-harness [(fspec "debug" "now" (fn [] 7) "redact" (vs/jt "x-secret"))])]
                     (h-op h :headers (vs/jm "x-secret" "hide" "x-ok" "show"))
                     (let [entry (vs/getelem (mget (h-track h "_debug") "entries") 0)]
-                      (t/is-eq (mget (mget entry "headers") "x-secret") "<redacted>" "redacted")
+                      (t/is-eq (mget (mget entry "headers") "x-secret") "[redacted]" "redacted")
                       (t/is-eq (mget (mget entry "headers") "x-ok") "show" "shown")))))
 
     ;; ---- audit ----

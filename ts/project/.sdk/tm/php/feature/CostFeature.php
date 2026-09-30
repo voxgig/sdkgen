@@ -280,7 +280,7 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
         $cost['actors'] = $this->_bump($cost['actors'], $actor, $amount);
 
         $this->seq++;
-        $record = [
+        $record = ($ctx->utility->clean)($ctx, [
             'seq' => $this->seq,
             'entity' => $entity,
             'op' => $opname,
@@ -289,7 +289,7 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
             'currency' => $cost['currency'],
             'source' => $source,
             'attempts' => $entry['attempts'],
-        ];
+        ]);
         $cost['last'] = $record;
         $client->_cost = $cost;
 

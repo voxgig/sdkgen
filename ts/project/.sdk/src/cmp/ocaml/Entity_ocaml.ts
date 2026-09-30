@@ -136,12 +136,13 @@ let rec make (client : sdk_client) (entopts_in : value) : entity_obj =
       ignore (run_op ctx (fun () -> ()));
       let signal = getp callopts "signal" in
       let aborted () = match signal with Func _ -> call_json signal = Bool true | _ -> false in
-      let raw = (match ctx.c_result with
+      (* A feature's stream runs after run_op returns, so it leaves the same way. *)
+      let raw = (try (match ctx.c_result with
           | Some result ->
             (match result.rt_stream with
              | Some fn -> fn ()
              | None -> (match result.rt_resdata with List r -> !r | v when is_nullish v -> [] | v -> [v]))
-          | None -> []) in
+          | None -> []) with e -> unexpected ctx e) in
       let rec seq_of l () = match l with
         | [] -> Seq.Nil
         | x :: rest -> if aborted () then Seq.Nil else Seq.Cons (x, seq_of rest) in

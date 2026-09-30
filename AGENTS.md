@@ -456,6 +456,7 @@ Rules:
 | Add or retype a **feature option** | that feature's `config.options` (with a default) or `config.optspec` (a type, for a callback or an option whose default understates it) | the option spec, the README table and the REFERENCE table all derive from these two — see `ts/src/helpers/optspec.ts` and `ts/src/cmp/FeatureDocs.ts` |
 | Add/remove a bundled target or feature | the trees above **and** `ts/project/sdkgen-package.json` | a guard test fails if the manifest and the directories disagree |
 | Change what an `add` writes | `ts/src/action/…` **and** `ts/src/action/doctor.ts` | a file add writes that doctor does not compare is a file the next add silently reverts; `remove` (`action/remove.ts`) plans from the same trees and refuses on doctor's findings, so it follows for free |
+| Emit something new from a feature or a pipeline step (a log line, a sink record, a buffer entry, an error field) | pass it through `ctx.utility.clean(ctx, value)` first, in every language | the generated `test/clean.test.<ext>` canary sweep fails on the first raw credential, and `ts/test/cleancoverage.test.ts` scans each target's error, done, log and debug files for the call — see [explanation/secret-redaction](./docs/explanation/secret-redaction.md) and ADR-003 |
 | Change a CLI flag | `ts/bin/voxgig-sdkgen` — parse entry, the closed `Shape`, **and** the help text | plus a row in [reference/cli](./docs/reference/cli.md); the shape is closed, so missing one of the three is a runtime rejection, and an optional flag is `Skip(String)` (see Sharp edges) |
 | Add a rule about a package's `.aontu` files | `ts/src/helpers/modelcheck.ts` | `package check` and `ts/test/model-compile.test.ts` are both callers — the bundled scaffold is checked by the same battery an author runs |
 | Ignore another build/editor dropping (`__pycache__`, `.DS_Store`, …) | `ts/src/helpers/junk.ts` | every walk already consults it — copy, prune, doctor, feature scan; `ts/test/junk.test.ts` guards the list against the shipped scaffold |
@@ -766,6 +767,20 @@ emitted broken source reached the fleet unchallenged.
   marker on `toJSON()` is namespaced `voxgig$entity`. Pinned by
   `ts/test/resultcontract.test.ts`, which transpiles and RUNS the shipped
   template.
+- **Everything that leaves the pipeline is CLEANED; inside it, data is raw.**
+  `clean` (one per target, in the utility registry) masks every registered
+  secret value with its encoded forms and every value under a sensitive key
+  name, and returns a plain-data COPY — `err.result` and `err.spec` are
+  masked copies, never the live `Result`/`Spec`, so masking cannot touch the
+  pipeline's own request. The registry is filled by `make_options` (raw
+  input, BEFORE validate, so the constructor's own rejection is clean),
+  `prepareAuth` (the Basic composite), the `secrets` feature (resolved values,
+  bought tokens) and `proxy` (URL userinfo). `err.ctx` stays for a debugger
+  and is out of every serialiser. A hook sees the raw spec on purpose: it must
+  read the real header to add its own. Configuration is the `clean` block of
+  `main.kit.optspec`, once; `active: false` is the only opt-out. The sweep
+  every SDK ships proves its own sensitivity by switching clean off and
+  finding the canary — keep that negative control when porting.
 - **The HTTP status is on the error, not just in `err.result`.** `err.status`
   (-1 when there was no response) plus a `notFound` predicate, so a consumer
   never couples itself to the internal shape of `result`.

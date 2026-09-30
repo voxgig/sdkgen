@@ -757,7 +757,7 @@ final class FeatureDebugTest: XCTestCase {
     XCTAssertEqual(f.entries.count, 1)
     XCTAssertEqual(seen.count, 2)
     let headers = seen[0].entries["headers"]?.asMap
-    XCTAssertEqual(headers?.entries["authorization"], .string("<redacted>"))
+    XCTAssertEqual(headers?.entries["authorization"], .string("[redacted]"))
   }
 
   func testCapturesFailures() {
@@ -777,7 +777,7 @@ final class FeatureDebugTest: XCTestCase {
     let h = Fh.make(nil, (f, vm(("now", .nat(clock.now)), ("redact", .list([.string("x-secret")])))))
     _ = h.op(FhOpSpec(op: "load", headers: vm(("x-secret", .string("hide")), ("x-ok", .string("show")))))
     let headers = f.entries[0].entries["headers"]?.asMap
-    XCTAssertEqual(headers?.entries["x-secret"], .string("<redacted>"))
+    XCTAssertEqual(headers?.entries["x-secret"], .string("[redacted]"))
     XCTAssertEqual(headers?.entries["x-ok"], .string("show"))
   }
 

@@ -164,6 +164,9 @@ function basicBlock(spec: AuthSpec): string {
         val b64 = Base64.getEncoder.encodeToString(
           ((apikey match { case s: String => s; case _ => "" }) + ":" +
             (if (noSecret) "" else secret match { case s: String => s; case _ => "" })).getBytes(StandardCharsets.UTF_8))
+        // The joined, encoded pair is a wire form neither credential's own
+        // registration covers.
+        if (ctx.utility != null && ctx.utility.cleanAdd != null) ctx.utility.cleanAdd(ctx, b64)
         if ("" == basicPrefix) headers.put(CRED_NAME, b64)
         else headers.put(CRED_NAME, basicPrefix + " " + b64)
       }

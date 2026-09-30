@@ -33,6 +33,7 @@ object MakeError {
     val spec = ctx.spec
 
     if (ctx.ctrl.explain != null) {
+      Clean.cleanExplain(ctx)
       val errRecord = new LinkedHashMap[String, Object]()
       errRecord.put("message", msg)
       ctx.ctrl.explain.put("err", errRecord)
@@ -44,6 +45,7 @@ object MakeError {
     val sdkErr = new SdkError(code, msg, ctx)
     sdkErr.result = Clean.clean(ctx, result)
     sdkErr.spec = Clean.clean(ctx, spec)
+    sdkErr.status = result.status
 
     ctx.ctrl.err = sdkErr
 
@@ -266,6 +268,29 @@ object MakeOptions {
     // null check, which cannot distinguish them.
     val authSuppressed = options.containsKey("auth") && null == options.get("auth")
 
+    var config = ctx.config
+    if (config == null) config = new LinkedHashMap[String, Object]()
+    var cfgopts = Helpers.toMapAny(config.get("options"))
+    if (cfgopts == null) cfgopts = new LinkedHashMap[String, Object]()
+
+    // The secret registry exists BEFORE validation, fed from the raw input, so
+    // the constructor's own rejection of a mistyped credential is clean too.
+    // An absent layer is left out: merge lets a null replace everything before it.
+    val cleanlist = new ArrayList[Object]()
+    cleanlist.add(new LinkedHashMap[String, Object]())
+    for (layer <- List(Schema.optspec.get("clean"), cfgopts.get("clean"), options.get("clean"))
+        if layer != null) {
+      cleanlist.add(Struct.clone(layer))
+    }
+    val cleancfg = Clean.makeCleanConfig(Struct.merge(cleanlist))
+    addSensitiveOptions(cleancfg, options, "clean")
+    for (block <- List(cfgopts.get("clean"), options.get("clean"))) {
+      val bm = Helpers.toMapAny(block)
+      for (raw <- Clean.splitvalues(if (bm == null) null else bm.get("values"))) {
+        Clean.registerValue(cleancfg, raw)
+      }
+    }
+
     var opts = Struct.clone(options).asInstanceOf[JMap[String, Object]]
 
     if (authSuppressed) opts.remove("auth")
@@ -298,11 +323,6 @@ object MakeOptions {
       case _ =>
     }
 
-    var config = ctx.config
-    if (config == null) config = new LinkedHashMap[String, Object]()
-    var cfgopts = Helpers.toMapAny(config.get("options"))
-    if (cfgopts == null) cfgopts = new LinkedHashMap[String, Object]()
-
     // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
     //
     // Built from the model: `main.kit.optspec` for the standard options, plus
@@ -330,9 +350,17 @@ object MakeOptions {
     mergeList.add(opts)
     val merged = Struct.merge(mergeList)
 
+    // Errors are collected, not thrown, so a mistyped option is not rejected.
     val vopts = new LinkedHashMap[String, Object]()
     vopts.put("errs", new ArrayList[Object]())
-    val validated = Struct.validate(merged, optspec, vopts)
+    val validated =
+      try Struct.validate(merged, optspec, vopts)
+      catch {
+        // A rejection quotes the value it rejected.
+        case err: RuntimeException =>
+          val text = if (err.getMessage == null) String.valueOf(err) else err.getMessage
+          throw new SdkError("options_invalid", Clean.cleanWith(cleancfg, text).asInstanceOf[String], ctx)
+      }
     opts = validated.asInstanceOf[JMap[String, Object]]
 
     // Restore the suppression the optspec default would otherwise erase.
@@ -344,17 +372,6 @@ object MakeOptions {
       if (sys != null) sys.put("fetch", sysFetch)
       else { val sm = new LinkedHashMap[String, Object](); sm.put("fetch", sysFetch); opts.put("system", sm) }
     }
-
-    // Derived clean config.
-    var cleanKeys = "key,token,id"
-    Struct.getpath(opts, java.util.List.of("clean", "keys")) match { case s: String => cleanKeys = s; case _ => }
-
-    val filtered = new ArrayList[String]()
-    for (p0 <- cleanKeys.split(",")) {
-      val p = p0.trim
-      if ("" != p) filtered.add(Struct.escre(p))
-    }
-    val keyre = String.join("|", filtered)
 
     // Resolve the feature add-order: an explicit list order (above) wins;
     // otherwise order the map test-first, then the remaining names sorted, so
@@ -374,13 +391,39 @@ object MakeOptions {
     }
 
     val derived = new LinkedHashMap[String, Object]()
-    val derivedClean = new LinkedHashMap[String, Object]()
-    if ("" != keyre) derivedClean.put("keyre", keyre)
-    derived.put("clean", derivedClean)
+    derived.put("clean", cleancfg)
     derived.put("featureorder", featureorder)
     opts.put("__derived__", derived)
 
+    // Again over the merged result: the config's own defaults can carry one.
+    addSensitiveOptions(cleancfg, opts, "clean", "__derived__")
+
     opts
+  }
+
+  // A feature's name is not a field name: a feature called `secrets` does not
+  // make every one of its options a secret. Entity blocks (entity settings,
+  // seeded records) hold no credential.
+  private def addSensitiveOptions(cfg: CleanConfig, m: JMap[String, Object], keys: String*): Unit = {
+    val top = omit(m, (keys :+ "feature" :+ "entity")*)
+    if (top.containsKey("test")) top.put("test", noEntity(top.get("test")))
+    Clean.addSensitiveWith(cfg, top)
+    m.get("feature") match {
+      case fm: JMap[_, _] => fm.values().forEach(v => Clean.addSensitiveWith(cfg, noEntity(v.asInstanceOf[Object])))
+      case fl: JList[_] => fl.forEach(v => Clean.addSensitiveWith(cfg, noEntity(v.asInstanceOf[Object])))
+      case other => Clean.addSensitiveWith(cfg, other)
+    }
+  }
+
+  private def noEntity(block: Object): Object = block match {
+    case bm: JMap[_, _] => omit(bm.asInstanceOf[JMap[String, Object]], "entity")
+    case other => other
+  }
+
+  private def omit(m: JMap[String, Object], keys: String*): JMap[String, Object] = {
+    val out = new LinkedHashMap[String, Object](m)
+    keys.foreach(k => out.remove(k))
+    out
   }
 }
 

@@ -33,6 +33,8 @@ require_relative 'transform_response'
 
 ProjectNameUtility.registrar = ->(u) {
   u.clean = ProjectNameUtilities::Clean
+  u.clean_add = ProjectNameUtilities::CleanAdd
+  u.clean_explain = ProjectNameUtilities::CleanExplain
   u.done = ProjectNameUtilities::Done
   u.make_error = ProjectNameUtilities::MakeError
   u.feature_add = ProjectNameUtilities::FeatureAdd

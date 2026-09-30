@@ -136,4 +136,31 @@ sub make_error {
   return ProjectNameError->new($code, $msg, $self);
 }
 
+# The serialised context leaves the pipeline (a logger, an error dump), so
+# it is cleaned; the live fields stay raw for the pipeline's own use. The
+# entity goes in as its own record: it holds the client, and the struct's
+# serialisers walk a blessed hash whole.
+sub TO_JSON {
+  my ($self) = @_;
+  my $entity = $self->{entity};
+  $entity = $entity->TO_JSON
+    if Scalar::Util::blessed($entity) && $entity->can('TO_JSON');
+  my $record = {
+    'id'       => $self->{id},
+    'op'       => $self->{op},
+    'spec'     => $self->{spec},
+    'entity'   => $entity,
+    'result'   => $self->{result},
+    'response' => $self->{response},
+    'meta'     => $self->{meta},
+  };
+  my $clean = $self->{utility} ? $self->{utility}{clean} : undef;
+  return ref $clean eq 'CODE' ? $clean->($self, $record) : $record;
+}
+
+sub to_string {
+  my ($self) = @_;
+  return 'Context ' . Voxgig::Struct::jsonify($self->TO_JSON);
+}
+
 1;

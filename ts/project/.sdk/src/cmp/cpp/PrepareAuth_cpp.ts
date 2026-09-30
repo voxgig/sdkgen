@@ -187,6 +187,9 @@ ${clear(spec.where, 6)}
       std::string b64 = authBase64(
         (apikey.is_string() ? apikey.as_string() : "") + ":" +
         (!noSecret && secret.is_string() ? secret.as_string() : ""));
+      // The joined, encoded pair is a wire form neither credential's own
+      // registration covers.
+      ctx->utility->cleanAdd(ctx, Value(b64));
       if (authPrefix.empty()) {
         map_put(headers, CRED_NAME, Value(b64));
       } else {

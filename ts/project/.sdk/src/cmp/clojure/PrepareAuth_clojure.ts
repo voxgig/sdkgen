@@ -121,6 +121,9 @@ function basicBlock(): string {
                     (let [auth-prefix (or (vs/getpath options "auth.prefix") "")
                           b64 (.encodeToString (java.util.Base64/getEncoder)
                                                (.getBytes ^String (str apikey ":" (if (missing? secret) "" secret)) "UTF-8"))]
+                      ;; The joined, encoded pair is a wire form neither
+                      ;; credential's own registration covers.
+                      (ucall ctx :clean-add b64)
                       (.put ^java.util.Map headers HEADER-AUTH
                             (if (= auth-prefix "") b64 (str auth-prefix " " b64))))))
 ${headerPlace(16)})`

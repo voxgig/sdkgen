@@ -996,9 +996,10 @@ swallowed, so audit forwarding can never take down a call.
 > Request/response capture ring buffer for debugging
 
 Records a bounded ring buffer of per-operation traces: operation, method,
-URL, headers, response status, duration, and any error. Header values
-matching `redact` are masked, so a captured trace can be pasted into a bug
-report without leaking a token.
+URL, headers, response status, duration, and any error. Every entry passes
+through the SDK's [secret redaction](../explanation/secret-redaction.md),
+and header names in `redact` are masked on top of that, so a captured trace
+can be pasted into a bug report without leaking a token.
 
 **Seam:** `PreRequest`, `PreResponse`, `PreDone`, `PreUnexpected`.
 
@@ -1006,7 +1007,7 @@ report without leaking a token.
 | --- | --- | --- |
 | `active` | `false` | Enable the feature. |
 | `max` | `100` | Maximum retained entries. |
-| `redact` | `authorization`, `cookie`, `set-cookie`, `api-key`, `apikey`, `x-api-key`, `idempotency-key` | Header names to mask. |
+| `redact` | `authorization`, `cookie`, `set-cookie`, `api-key`, `apikey`, `x-api-key`, `idempotency-key` | Header names to mask, added to `clean.keys`. |
 | `onEntry(entry)` | none | Called with each finished entry, e.g. to stream to a console. |
 | `now()` | `Date.now` | Injectable clock. |
 
@@ -1017,8 +1018,9 @@ feature: { debug: { active: true, onEntry: (e) => console.error(e) } }
 An entry is
 `{ op, method, url, headers, start, status, ok, durationMs, error }`.
 
-**Notes.** Replacing `redact` replaces the whole list, so include the
-defaults you still want. A throwing `onEntry` is swallowed.
+**Notes.** Replacing `redact` replaces only the feature's own additions;
+the SDK's `clean` rules still apply to every entry. A throwing `onEntry` is
+swallowed.
 
 ## `clienttrack`
 
@@ -1054,7 +1056,9 @@ always refreshed: it identifies this call, so a stale one would be wrong.
 > Structured request and response logging
 
 Logs at every pipeline stage, with the operation, spec, and context
-attached. Uses [pino](https://getpino.io) with pretty printing by default,
+attached, after [secret redaction](../explanation/secret-redaction.md): the
+credential in the spec's headers is masked before the record reaches the
+logger. Uses [pino](https://getpino.io) with pretty printing by default,
 and takes any pino-compatible logger instead.
 
 **Seam:** every lifecycle, entity-state and pipeline hook.

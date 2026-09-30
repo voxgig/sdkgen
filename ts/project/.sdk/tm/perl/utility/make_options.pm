@@ -11,6 +11,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/../schema.pm"));
+require(Cwd::abs_path("$__dir/clean.pm"));
 
 package ProjectNameUtilities;
 
@@ -89,6 +90,27 @@ $REGISTRY{make_options} = sub {
   $opts = {} unless Voxgig::Struct::ismap($opts);
   delete $opts->{extend};
 
+  my $config = $ctx->{config} || {};
+  my $cfgopts = Voxgig::Struct::ismap($config->{options}) ? $config->{options} : {};
+
+  # The secret registry exists BEFORE validation, fed from the raw input, so
+  # the constructor's own rejection of a mistyped credential is clean too.
+  my $cleancfg = ProjectNameCleanSupport::make_config(Voxgig::Struct::merge([
+    {},
+    grep { Voxgig::Struct::ismap($_) }
+      (Voxgig::Struct::clone(ProjectNameSchema::optspec()->{clean}),
+        Voxgig::Struct::clone($cfgopts->{clean}), $opts->{clean}),
+  ]));
+  my $cleanctx = { 'options' => { '__derived__' => { 'clean' => $cleancfg } } };
+  my %rawscan = %$opts;
+  delete $rawscan{clean};
+  ProjectNameCleanSupport::add_options($cleanctx, \%rawscan);
+  for my $block ($cfgopts, $opts) {
+    for my $raw (@{ ProjectNameCleanSupport::splitvalues(ProjectNameHelpers::gpath($block, 'clean.values')) }) {
+      ProjectNameCleanSupport::add($cleanctx, $raw);
+    }
+  }
+
   # Feature add-order. options.feature may be given as an ordered ARRAY of
   # { name, active, ...opts } entries (the array position IS the order in
   # which features are added), or as a { name => {opts} } map. Normalize an
@@ -110,9 +132,6 @@ $REGISTRY{make_options} = sub {
     }
     $opts->{feature} = \%fmap;
   }
-
-  my $config = $ctx->{config} || {};
-  my $cfgopts = Voxgig::Struct::ismap($config->{options}) ? $config->{options} : {};
 
   # THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
   #
@@ -146,7 +165,10 @@ $REGISTRY{make_options} = sub {
   # TARGETS, so without this one client's options (headers, server, ...) are
   # written into the shared config and inherited by every client after it.
   my $merged = Voxgig::Struct::merge([{}, Voxgig::Struct::clone($cfgopts), $opts]);
-  my $validated = Voxgig::Struct::validate($merged, $optspec);
+  my $validated = eval { Voxgig::Struct::validate($merged, $optspec) };
+  if (my $verr = $@) {
+    die ProjectNameCleanSupport::clean($cleanctx, $verr);
+  }
   $opts = Voxgig::Struct::ismap($validated) ? $validated : {};
 
   # Restore the suppression the optspec default would otherwise erase.
@@ -161,15 +183,6 @@ $REGISTRY{make_options} = sub {
   if (Voxgig::Struct::islist($extend_raw)) {
     $opts->{extend} = $extend_raw;
   }
-
-  my $clean_keys = ProjectNameHelpers::gpath($opts, 'clean.keys');
-  $clean_keys = 'key,token,id' unless defined $clean_keys && !ref $clean_keys;
-  my @parts;
-  for my $p (split /,/, $clean_keys) {
-    $p =~ s/^\s+|\s+$//g;
-    push @parts, Voxgig::Struct::escre($p) if '' ne $p;
-  }
-  my $keyre = join('|', @parts);
 
   # Resolve the feature add-order: an explicit array order (above) wins;
   # otherwise order the map test-first, then the remaining names sorted, so
@@ -197,9 +210,15 @@ $REGISTRY{make_options} = sub {
   }
 
   $opts->{__derived__} = {
-    'clean' => ('' eq $keyre ? {} : { 'keyre' => $keyre }),
+    'clean' => $cleancfg,
     'featureorder' => \@featureorder,
   };
+
+  # Again over the merged result: the config's own defaults can carry one.
+  # The extend instances are live objects, not option data.
+  my %scan = %$opts;
+  delete @scan{qw(__derived__ extend clean)};
+  ProjectNameCleanSupport::add_options($cleanctx, \%scan);
 
   return $opts;
 };

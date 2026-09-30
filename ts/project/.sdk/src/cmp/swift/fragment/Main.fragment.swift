@@ -177,13 +177,15 @@ public final class ProjectNameSDK {
   private func rawRequest(_ fetchargsIn: ProjectNameSdk.VMap?) -> ProjectNameSdk.VMap {
     let utility = self.utility
 
+    // The error is returned rather than passed through makeError, so it is
+    // cleaned here.
     let fetchdef: ProjectNameSdk.VMap
     do {
       fetchdef = try prepare(fetchargsIn)
     } catch {
       let r = ProjectNameSdk.VMap()
       r.entries["ok"] = .bool(false)
-      r.entries["err"] = .nat(error)
+      r.entries["err"] = utility.clean(rootctx, .nat(error))
       return r
     }
 
@@ -200,7 +202,7 @@ public final class ProjectNameSDK {
     } catch {
       let r = ProjectNameSdk.VMap()
       r.entries["ok"] = .bool(false)
-      r.entries["err"] = .nat(error)
+      r.entries["err"] = utility.clean(ctx, .nat(error))
       return r
     }
 
@@ -309,5 +311,17 @@ public final class ProjectNameSDK {
     let sdk = ProjectNameSDK(sdkopts)
     sdk.mode = "test"
     return sdk
+  }
+}
+
+// The client holds the credential in its options. Its default prints name
+// it and nothing more, and its mirror - which `dump` and a structured
+// logger walk, private stored properties included - shows only the mode
+// and the feature names.
+extension ProjectNameSDK: CustomStringConvertible, CustomDebugStringConvertible, CustomReflectable {
+  public var description: Swift.String { "ProjectNameSDK" }
+  public var debugDescription: Swift.String { "ProjectNameSDK(mode: " + mode + ")" }
+  public var customMirror: Swift.Mirror {
+    Swift.Mirror(self, children: ["mode": mode, "features": features.map { $0.getName() }])
   }
 }

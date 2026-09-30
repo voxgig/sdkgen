@@ -748,7 +748,7 @@ static void test_debug_redacts_and_honours_onentry_max(void) {
   CHECK_INT_EQ(fh_track_int(f, "entries"), 1, "debug: ring buffer capped at 1");
   CHECK_INT_EQ((int)voxgig_list_len(voxgig_as_list(seen)), 2, "debug: onEntry for both ops");
   voxgig_value* headers = getp(voxgig_getelem(seen, v_int(0), v_undef()), "headers");
-  CHECK_STR_EQ(get_str(headers, "authorization"), "<redacted>", "debug: redacted authorization");
+  CHECK_STR_EQ(get_str(headers, "authorization"), "[redacted]", "debug: redacted authorization");
 }
 
 static void test_debug_captures_failures(void) {
@@ -780,7 +780,7 @@ static void test_debug_injected_clock_and_custom_redact(void) {
   o.headers = cmap(2, "x-secret", v_str("hide"), "x-ok", v_str("show"));
   fh_op(&h, o);
   voxgig_value* headers = getp(voxgig_getelem(seen, v_int(0), v_undef()), "headers");
-  CHECK_STR_EQ(get_str(headers, "x-secret"), "<redacted>", "debug custom redact: x-secret");
+  CHECK_STR_EQ(get_str(headers, "x-secret"), "[redacted]", "debug custom redact: x-secret");
   CHECK_STR_EQ(get_str(headers, "x-ok"), "show", "debug custom redact: x-ok kept");
 }
 

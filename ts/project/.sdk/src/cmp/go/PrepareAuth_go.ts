@@ -146,6 +146,9 @@ ${cookieHelper(spec.where)}func prepareAuthUtil(ctx *core.Context) (*core.Spec, 
 		} else {
 			apikeyVal, _ := apikey.(string)
 			b64 := base64.StdEncoding.EncodeToString([]byte(apikeyVal + ":" + secretVal))
+			// The joined, encoded pair is a wire form neither credential's own
+			// registration covers.
+			ctx.Utility.CleanAdd(ctx, b64)
 
 			basicPrefix := ""
 			if ap := vs.GetPath(options, []any{"auth", "prefix"}); ap != nil {

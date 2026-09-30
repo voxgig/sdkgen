@@ -241,7 +241,244 @@ let make_context_impl (cs : ctxspec) (basectx : ctx option) : ctx =
 (* utilities                                                           *)
 (* ------------------------------------------------------------------ *)
 
-let clean_util (_ctx : ctx) (v : value) : value = v
+(* ----- clean -----
+ * Everything that leaves the pipeline passes through clean; inside it data
+ * stays raw, so a hook can still read the header it must add to. See
+ * docs/explanation/secret-redaction.md. *)
+
+let clean_maxdepth = 32
+let clean_circular = "[circular]"
+let clean_drop = Sentinel "clean_drop"
+
+let normkey (k : string) : string =
+  let b = Buffer.create (String.length k) in
+  String.iter (fun c -> match c with
+      | '-' | '_' -> ()
+      | c -> Buffer.add_char b (Char.lowercase_ascii c)) k;
+  Buffer.contents b
+
+let split_commas (s : string) : string list =
+  List.filter (fun x -> x <> "") (List.map String.trim (String.split_on_char ',' s))
+
+let splitkeys (v : value) : string list =
+  match v with
+  | Str s -> List.filter (fun x -> x <> "") (List.map normkey (split_commas s))
+  | _ -> []
+
+let splitvalues (v : value) : string list =
+  match v with
+  | List r -> List.filter_map (function Str s -> Some s | _ -> None) !r
+  | Str s -> split_commas s
+  | _ -> []
+
+let count_opt (v : value) (dflt : int) : int =
+  let n = match v with
+    | Num n -> Some n
+    | Str s -> float_of_string_opt (String.trim s)
+    | _ -> None in
+  match n with Some n when n >= 0. -> int_of_float (Float.floor n) | _ -> dflt
+
+(* The derived clean block: a struct map so it lives in options.__derived__
+ * and its `values` list stays MUTABLE after make_options - features
+ * register what they resolve later. *)
+let make_clean_config (cleanopts : value) : value =
+  jo [("active", Bool (getp cleanopts "active" <> Bool false));
+      ("keys", ja (List.map (fun s -> Str s) (splitkeys (getp cleanopts "keys"))));
+      ("values", empty_list ());
+      ("mask", (match getp cleanopts "mask" with Str s -> Str s | _ -> Str "[redacted]"));
+      ("hint", vint_of (count_opt (getp cleanopts "hint") 0));
+      ("min", vint_of (max 1 (count_opt (getp cleanopts "min") 4)))]
+
+(* A context without options (make_error accepts a bare one) still masks by
+ * the schema defaults. *)
+let clean_config (ctx : ctx) : value =
+  match getpath_s ctx.c_options "__derived__.clean" with
+  | Map _ as m -> m
+  | _ -> make_clean_config (getp (Sdk_schema.opt_spec_value ()) "clean")
+
+let str_values (v : value) : string list =
+  match v with List r -> List.filter_map (function Str s -> Some s | _ -> None) !r | _ -> []
+
+(* The encoded forms a value travels in. *)
+let clean_forms (value : string) : string list =
+  let out = ref [] in
+  let add s = if s <> "" && not (List.mem s !out) then out := !out @ [s] in
+  add value;
+  add (base64_encode value);
+  add (escurl_s value);
+  (let j = json_encode (Str value) in
+   if String.length j >= 2 then add (String.sub j 1 (String.length j - 2)));
+  !out
+
+let clean_add_util (ctx : ctx) (value : string) : unit =
+  let cfg = clean_config ctx in
+  let minlen = match getp cfg "min" with Num n -> int_of_float n | _ -> 4 in
+  match getp cfg "values" with
+  | List r when String.length value >= minlen ->
+    let have = str_values (List r) in
+    let add = List.filter (fun f -> String.length f >= minlen && not (List.mem f have))
+        (clean_forms value) in
+    (* Longest first, so a value is never masked by a substring of itself. *)
+    if add <> [] then
+      r := List.map (fun s -> Str s)
+          (List.stable_sort (fun a b -> compare (String.length b) (String.length a)) (have @ add))
+  | _ -> ()
+
+let mask_value (cfg : value) (value : string) : string =
+  let hint = match getp cfg "hint" with Num n -> int_of_float n | _ -> 0 in
+  let mask = match getp cfg "mask" with Str s -> s | _ -> "[redacted]" in
+  if hint > 0 && String.length value > 2 * hint
+  then mask ^ String.sub value (String.length value - hint) hint
+  else mask
+
+let clean_string (cfg : value) (text : string) : string =
+  List.fold_left (fun out v ->
+      if substr_contains out v then str_replace_all out v (mask_value cfg v) else out)
+    text (str_values (getp cfg "values"))
+
+let sensitive_key (cfg : value) (key : string option) : bool =
+  match key with
+  | None -> false
+  | Some k ->
+    (match int_of_string_opt k with
+     | Some _ -> false
+     | None ->
+       let nk = normkey k in
+       List.exists (fun sk -> substr_contains nk sk) (str_values (getp cfg "keys")))
+
+(* Every scalar under a sensitive name, at any depth and of any shape: a
+ * credential mistyped as a map or a number is still a credential, and the
+ * validation error that rejects it quotes it. *)
+let clean_add_sensitive (ctx : ctx) (v : value) : unit =
+  let cfg = clean_config ctx in
+  let rec walk v under depth seen =
+    if depth < clean_maxdepth then begin
+      match v with
+      | Str s -> if under then clean_add_util ctx s
+      | Num n -> if under then clean_add_util ctx (num_to_string n)
+      | Map m when not (List.memq v seen) ->
+        List.iter (fun (k, x) ->
+            walk x (under || sensitive_key cfg (Some k)) (depth + 1) (v :: seen)) m.entries
+      | List r when not (List.memq v seen) ->
+        List.iter (fun x -> walk x under (depth + 1) (v :: seen)) !r
+      | _ -> ()
+    end in
+  walk v false 0 []
+
+(* A registered value used as a property name is masked like any other
+ * string; names that mask alike take a counter, so none is lost. *)
+let clean_name (cfg : value) (out : value) (key : string) : string =
+  let name = clean_string cfg key in
+  let taken = keysof out in
+  if name = key || not (List.mem name taken) then name
+  else
+    let rec next i =
+      let n = name ^ "#" ^ string_of_int i in
+      if List.mem n taken then next (i + 1) else n in
+    next 1
+
+(* A masked plain-data COPY: functions dropped, cycles cut, and nothing
+ * shared with the live value, whose spec must stay raw. *)
+let rec clean_snapshot (cfg : value) (v : value) (key : string option) (depth : int) (seen : value list) : value =
+  match v with
+  | Noval | Null -> v
+  | Str s -> Str (if sensitive_key cfg key then mask_value cfg s else clean_string cfg s)
+  | Func _ | Sentinel _ -> clean_drop
+  | Bool _ | Num _ -> if sensitive_key cfg key then getp cfg "mask" else v
+  | Map _ | List _ ->
+    if depth >= clean_maxdepth || List.memq v seen then Str clean_circular
+    else if sensitive_key cfg key then getp cfg "mask"
+    else begin
+      let seen = v :: seen in
+      match v with
+      | Map m ->
+        let out = empty_map () in
+        List.iter (fun (k, x) ->
+            match clean_snapshot cfg x (Some k) (depth + 1) seen with
+            | Sentinel "clean_drop" -> ()
+            | c -> setp out (clean_name cfg out k) c) m.entries;
+        out
+      | List r ->
+        lst (List.map (fun x ->
+            match clean_snapshot cfg x None (depth + 1) seen with
+            | Sentinel "clean_drop" -> Null
+            | c -> c) !r)
+      | _ -> v
+    end
+
+let clean_util (ctx : ctx) (v : value) : value =
+  let cfg = clean_config ctx in
+  if getp cfg "active" = Bool false then v
+  else match v with
+    | Str s -> Str (clean_string cfg s)
+    | _ -> (match clean_snapshot cfg v None 0 [] with Sentinel "clean_drop" -> Noval | c -> c)
+
+(* An exception is immutable and of any shape, so one that never passed
+ * through make_error (a hook's, a fetcher's) leaves as a cleaned copy: a
+ * standard string-carrying one keeps its constructor, and any other whose
+ * printed form quotes a registered value leaves as a Failure of that form,
+ * cleaned. *)
+let clean_exn (ctx : ctx) (e : exn) : exn =
+  let cfg = clean_config ctx in
+  if getp cfg "active" = Bool false then e
+  else match e with
+    | Sdk_error_exc er ->
+      Sdk_error_exc { err_code = clean_string cfg er.err_code; err_msg = clean_string cfg er.err_msg;
+                      err_result = clean_util ctx er.err_result; err_spec = clean_util ctx er.err_spec }
+    | Failure msg -> Failure (clean_string cfg msg)
+    | Invalid_argument msg -> Invalid_argument (clean_string cfg msg)
+    | Struct_error msg -> Struct_error (clean_string cfg msg)
+    | _ ->
+      let text = Printexc.to_string e in
+      let cleaned = clean_string cfg text in
+      if cleaned = text then e else Failure cleaned
+
+(* The explain map is the CALLER's, so it is cleaned in place: what they hold
+ * after the call is the cleaned record. An omap is a mutable record, so its
+ * entries are replaced under the value the caller still references. Its
+ * result is a snapshot (result_to_value), never the live result, so err is
+ * pruned from it in place. *)
+let clean_explain (ctx : ctx) : unit =
+  match ctx.c_ctrl.ctrl_explain with
+  | Map m as ex ->
+    (match (cu ctx).u_clean ctx ex with
+     | Map cm when cm != m -> m.entries <- cm.entries
+     | _ -> ());
+    (match getp ex "result" with Map _ as r -> ignore (delprop r (Str "err")) | _ -> ())
+  | _ -> ()
+
+(* The serialised context leaves the pipeline (a logger, an error dump), so
+ * it is the cleaned record; the live fields stay raw for the pipeline's use.
+ * An OCaml record has no default print, so this is the SDK's own
+ * serialisation of a context. *)
+let ctx_to_value (ctx : ctx) : value =
+  let record = jo [
+      ("id", Str ctx.c_id);
+      ("op", jo [("entity", Str ctx.c_op.op_entity); ("name", Str ctx.c_op.op_name);
+                 ("input", Str ctx.c_op.op_input); ("points", ctx.c_op.op_points);
+                 ("alias", ctx.c_op.op_alias)]);
+      ("spec", (match ctx.c_spec with Some s -> spec_to_value s | None -> Noval));
+      ("entity", (match ctx.c_entity with Some e -> Str e.e_name | None -> Noval));
+      ("result", (match ctx.c_result with Some r -> result_to_value r | None -> Noval));
+      ("response", (match ctx.c_response with
+           | Some r -> jo [("status", vint_of r.rs_status); ("statusText", Str r.rs_status_text);
+                           ("headers", r.rs_headers); ("body", r.rs_body)]
+           | None -> Noval));
+      ("meta", ctx.c_meta) ] in
+  match ctx.c_utility with Some u -> u.u_clean ctx record | None -> clean_util ctx record
+
+(* The client's own serialisation: its name and mode, never its options. *)
+let client_to_value (client : sdk_client) : value =
+  jo [("name", Str "ProjectName"); ("mode", Str client.cl_mode)]
+
+(* The error prints as the cleaned pieces make_error attached. *)
+let () =
+  Printexc.register_printer (function
+      | Sdk_error_exc e ->
+        Some ("Sdk_error_exc " ^ jsonify ~flags:(jo [("indent", Num 0.)])
+                (jo [("code", Str e.err_code); ("message", Str e.err_msg);
+                     ("result", e.err_result); ("spec", e.err_spec)]))
+      | _ -> None)
 
 let make_error_util (ctx : ctx) (err_opt : sdk_error option) : value =
   let op = ctx.c_op in
@@ -256,11 +493,15 @@ let make_error_util (ctx : ctx) (err_opt : sdk_error option) : value =
   let msg = "ProjectNameSDK: " ^ opname ^ ": " ^ err.err_msg in
   let msg = match (cu ctx).u_clean ctx (Str msg) with Str s -> s | _ -> msg in
   result.rt_err <- None;
+  clean_explain ctx;
   (match ctx.c_ctrl.ctrl_explain with
    | Map _ -> setp ctx.c_ctrl.ctrl_explain "err" (jo [("message", Str msg)])
    | _ -> ());
+  (* Cleaned COPIES of the result and spec, never the live objects. *)
+  (* A hook's own error supplies the code as well as the message. *)
+  let code = match (cu ctx).u_clean ctx (Str err.err_code) with Str s -> s | _ -> err.err_code in
   let sdk_err = {
-    err_code = err.err_code; err_msg = msg;
+    err_code = code; err_msg = msg;
     err_result = (cu ctx).u_clean ctx (result_to_value result);
     err_spec = (match ctx.c_spec with Some s -> (cu ctx).u_clean ctx (spec_to_value s) | None -> Noval);
   } in
@@ -274,13 +515,7 @@ let make_error_util (ctx : ctx) (err_opt : sdk_error option) : value =
   else raise (Sdk_error_exc sdk_err)
 
 let done_util (ctx : ctx) : value =
-  (match ctx.c_ctrl.ctrl_explain with
-   | Map _ as ex ->
-     ctx.c_ctrl.ctrl_explain <- (cu ctx).u_clean ctx ex;
-     (match ctx.c_ctrl.ctrl_explain with
-      | Map _ as ex2 -> (match getp ex2 "result" with Map _ as r -> ignore (delprop r (Str "err")) | _ -> ())
-      | _ -> ())
-   | _ -> ());
+  clean_explain ctx;
   match ctx.c_result with
   | Some result when result.rt_ok -> result.rt_resdata
   | _ -> (cu ctx).u_make_error ctx None
@@ -942,14 +1177,20 @@ let make_response_util (ctx : ctx) : (response option * sdk_error option) =
            | None -> (None, Some (ctx_make_error ctx "response_no_result" "Expected context result property to be defined."))
            | Some result ->
              spec.sp_step <- "response";
-             u.u_result_basic ctx; u.u_result_headers ctx; u.u_result_body ctx;
-             (* GraphQL reports failures as a top-level `errors` array under
-              * HTTP 200, so result_basic's status check never sees them. Lift
-              * them here, before the response transform tries to unwrap data
-              * that is not there. *)
-             ignore (u.u_graphql_errors ctx);
-             ignore (u.u_transform_response ctx);
-             if result.rt_err = None then result.rt_ok <- true;
+             (* A body reader that raises (a non-JSON body) fails the result,
+              * as in ts; it must not escape the pipeline with the raw spec
+              * still on the explain record. *)
+             (try
+                u.u_result_basic ctx; u.u_result_headers ctx; u.u_result_body ctx;
+                (* GraphQL reports failures as a top-level `errors` array under
+                 * HTTP 200, so result_basic's status check never sees them.
+                 * Lift them here, before the response transform tries to
+                 * unwrap data that is not there. *)
+                ignore (u.u_graphql_errors ctx);
+                ignore (u.u_transform_response ctx);
+                if result.rt_err = None then result.rt_ok <- true
+              with e ->
+                result.rt_err <- Some (ctx_make_error ctx "response_body" (Printexc.to_string e)));
              (match ctx.c_ctrl.ctrl_explain with Map _ -> setp ctx.c_ctrl.ctrl_explain "result" (result_to_value result) | _ -> ());
              (Some response, None))))
 
@@ -1016,6 +1257,28 @@ let fetcher_util (ctx : ctx) (fullurl : string) (fetchdef : value) : (value * sd
 (* ------------------------------------------------------------------ *)
 
 
+let noentity (settings : value) : value =
+  match settings with
+  | Map _ ->
+    let out = empty_map () in
+    List.iter (fun k -> if k <> "entity" then setp out k (getp settings k)) (keysof settings);
+    out
+  | v -> v
+
+(* The options to scan for secrets. The feature map is keyed by feature
+ * names, not field names, so it is scanned as a list: `secrets` must not
+ * make every setting of that feature a secret. Entity blocks hold entity
+ * settings and seeded records, never a credential, so none is scanned. *)
+let secret_scan (opts : value) (names : string list) : value =
+  let out = empty_map () in
+  List.iter (fun k ->
+      if k <> "entity" && not (List.mem k names) then
+        match k, getp opts k with
+        | "feature", (Map _ as fm) -> setp out k (ja (List.map (fun f -> noentity (getp fm f)) (keysof fm)))
+        | "test", v -> setp out k (noentity v)
+        | _, v -> setp out k v) (keysof opts);
+  out
+
 let make_options_util (ctx : ctx) : value =
   let options = match ctx.c_options with Noval -> empty_map () | v -> v in
   (match getp options "utility" with
@@ -1071,9 +1334,25 @@ let make_options_util (ctx : ctx) : value =
      Parsed once and memoised by Sdk_schema: validate reads the spec and
      writes into the options, never into the spec. *)
   let optspec = Sdk_schema.opt_spec_value () in
+  (* The secret registry exists BEFORE validation, fed from the raw input, so
+     the constructor's own rejection of a mistyped credential is clean too. A
+     shallow merge over the schema defaults: the clean block is flat. *)
+  let cleanraw = empty_map () in
+  List.iter (fun src -> match src with
+      | Map _ -> List.iter (fun k -> setp cleanraw k (getp src k)) (keysof src)
+      | _ -> ()) [getp optspec "clean"; getp cfgopts "clean"; getp opts "clean"];
+  let cleancfg = make_clean_config cleanraw in
+  let cleanctx = { ctx with c_options = jo [("__derived__", jo [("clean", cleancfg)])] } in
+  clean_add_sensitive cleanctx (secret_scan opts ["clean"]);
+  List.iter (fun src -> List.iter (clean_add_util cleanctx) (splitvalues (getpath_s src "clean.values")))
+    [cfgopts; opts];
   let sys_fetch = getpath_s opts "system.fetch" in
-  let merged = merge (ja [empty_map (); cfgopts; opts]) in
-  let validated = validate merged optspec in
+  (* Clone the config side: merge writes into the nested maps it takes. *)
+  let merged = merge (ja [empty_map (); clone cfgopts; opts]) in
+  let validated =
+    try validate merged optspec
+    with Struct_error msg ->
+      raise (Struct_error (match clean_util cleanctx (Str msg) with Str s -> s | _ -> msg)) in
   let opts = match validated with Map _ as m -> m | _ -> empty_map () in
   (* Restore the suppression the optspec default would otherwise erase. *)
   let () = if auth_suppressed then setp opts "auth" Null in
@@ -1132,10 +1411,6 @@ let make_options_util (ctx : ctx) : value =
      match getp opts "system" with
      | Map _ as sys -> setp sys "fetch" sys_fetch
      | _ -> setp opts "system" (jo [("fetch", sys_fetch)]));
-  let clean_keys = match getpath_s opts "clean.keys" with Str s -> s | _ -> "key,token,id" in
-  let parts = List.filter_map (fun p -> let t = String.trim p in if t = "" then None else Some (escre_s t))
-      (String.split_on_char ',' clean_keys) in
-  let keyre = String.concat "|" parts in
   (* Resolve the feature add-order: an explicit list order (above) wins;
      otherwise order the map test-first, then the remaining names sorted, so
      the outcome is deterministic and `test` is always the base transport. *)
@@ -1148,10 +1423,11 @@ let make_options_util (ctx : ctx) : value =
       if List.mem "test" names
       then "test" :: List.filter (fun n -> n <> "test") names
       else names in
-  let derived = jo [("clean", empty_map ())] in
-  if keyre <> "" then setp derived "clean" (jo [("keyre", Str keyre)]);
-  setp derived "featureorder" (ja (List.map (fun s -> Str s) feature_order));
+  let derived = jo [("clean", cleancfg);
+                    ("featureorder", ja (List.map (fun s -> Str s) feature_order))] in
   setp opts "__derived__" derived;
+  (* Again over the merged result: the config's own defaults can carry one. *)
+  clean_add_sensitive { ctx with c_options = opts } (secret_scan opts ["clean"; "__derived__"]);
   opts
 
 (* ------------------------------------------------------------------ *)
@@ -1193,6 +1469,7 @@ let new_utility () : utility =
     u_struct = struct_api_instance;
     u_fetcher = fetcher_util;
     u_clean = clean_util;
+    u_clean_add = clean_add_util;
     u_done = done_util;
     u_make_error = make_error_util;
     u_feature_add = feature_add_util;
@@ -1229,6 +1506,7 @@ let new_utility () : utility =
 let register (u : utility) : unit =
   u.u_fetcher <- fetcher_util;
   u.u_clean <- clean_util;
+  u.u_clean_add <- clean_add_util;
   u.u_done <- done_util;
   u.u_make_error <- make_error_util;
   u.u_feature_add <- feature_add_util;

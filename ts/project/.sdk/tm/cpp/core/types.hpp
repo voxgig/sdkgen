@@ -14,6 +14,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -80,16 +81,41 @@ public:
   std::string sdk = "ProjectName";
   std::string code;
   std::string msg;
+  // Reachable for a debugger, never printed: the context holds the live
+  // spec and options, and an error is what gets logged (ADR-003).
   Context* ctx = nullptr;
-  ResultPtr result_obj;
-  SpecPtr spec_obj;
+  int status = -1;
+  // Masked plain-data copies, never the live Result/Spec: masking them can
+  // never mask the pipeline's own request.
+  Value result = Value::undef();
+  Value spec = Value::undef();
 
   SdkError(const std::string& code_, const std::string& msg_, Context* ctx_)
       : std::runtime_error(msg_), code(code_), msg(msg_), ctx(ctx_) {}
 
   const char* what() const noexcept override { return msg.c_str(); }
   const std::string& getMessage() const { return msg; }
+  bool notFound() const { return 404 == status; }
+
+  // What makeError attached is already cleaned; the context is not part of
+  // the record.
+  Value toValue() const {
+    Value o = vmap();
+    map_put(o, "sdk", Value(sdk));
+    map_put(o, "code", Value(code));
+    map_put(o, "message", Value(msg));
+    map_put(o, "status", Value(status));
+    if (!result.is_undef()) map_put(o, "result", result);
+    if (!spec.is_undef()) map_put(o, "spec", spec);
+    return o;
+  }
+
+  std::string to_string() const { return sdk + "Error " + vs::jsonify(toValue(), 0); }
 };
+
+inline std::ostream& operator<<(std::ostream& os, const SdkError& err) {
+  return os << err.to_string();
+}
 
 // ---- Control ----------------------------------------------------------
 
@@ -461,15 +487,28 @@ public:
 
   SdkErrorPtr makeError(const std::string& code, const std::string& msg);
 
+  // The raw record, for the pipeline's own use.
+  Value toValue() const;
+
+  // The serialised context leaves the pipeline (a logger, an error dump), so
+  // it is cleaned; the live fields stay raw.
+  std::string to_string() const;
+
 private:
   OperationPtr resolveOp(const std::string& opname);
 };
+
+inline std::ostream& operator<<(std::ostream& os, const Context& ctx) {
+  return os << ctx.to_string();
+}
 
 // ---- Utility (swappable pipeline function bundle) ---------------------
 
 class Utility {
 public:
   std::function<Value(CtxPtr, const Value&)> clean;
+  std::function<void(CtxPtr, const Value&)> cleanAdd;
+  std::function<void(CtxPtr)> cleanExplain;
   std::function<Value(CtxPtr)> done;
   std::function<Value(CtxPtr, SdkErrorPtr)> makeError;
   std::function<void(CtxPtr, FeaturePtr)> featureAdd;
@@ -512,6 +551,8 @@ public:
   UtilityPtr copy() const {
     auto u = std::shared_ptr<Utility>(new Utility(NoRegister{}));
     u->clean = clean;
+    u->cleanAdd = cleanAdd;
+    u->cleanExplain = cleanExplain;
     u->done = done;
     u->makeError = makeError;
     u->featureAdd = featureAdd;
@@ -569,6 +610,9 @@ public:
   UtilityPtr getUtility();
   CtxPtr getRootCtx() { return rootctx; }
 
+  // The options hold the credential; the printed client names itself only.
+  std::string to_string() const { return "ProjectNameSDK{mode=" + mode + "}"; }
+
   Value prepare(const Value& fetchargs);
   Value direct(const Value& fetchargs);
   Value graphql(const std::string& query, const Value& variables = Value::undef(),
@@ -583,6 +627,10 @@ public:
 
   static Value testOptions(const Value& testopts, const Value& sdkopts);
 };
+
+inline std::ostream& operator<<(std::ostream& os, const SdkClient& client) {
+  return os << client.to_string();
+}
 
 // ---- SdkEntity contract -----------------------------------------------
 
@@ -780,6 +828,40 @@ inline OperationPtr Context::resolveOp(const std::string& opname) {
 
 inline SdkErrorPtr Context::makeError(const std::string& code, const std::string& msg) {
   return std::make_shared<SdkError>(code, msg, this);
+}
+
+inline Value Context::toValue() const {
+  Value o = vmap();
+  map_put(o, "id", Value(id));
+  if (op) {
+    map_put(o, "op", vmap({{"entity", Value(op->entity)}, {"name", Value(op->name)},
+                           {"input", Value(op->input)}}));
+  }
+  if (spec) map_put(o, "spec", spec->toValue());
+  if (entity) map_put(o, "entity", Value(entity->getName()));
+  if (result) map_put(o, "result", result->toValue());
+  if (response) {
+    Value r = vmap();
+    map_put(r, "status", Value(response->status));
+    map_put(r, "statusText", Value(response->statusText));
+    if (response->headers.is_map()) map_put(r, "headers", response->headers);
+    if (!response->body.is_undef()) map_put(r, "body", response->body);
+    if (response->err) map_put(r, "err", vmap({{"message", Value(response->err->msg)}}));
+    map_put(o, "response", r);
+  }
+  if (meta.is_map()) map_put(o, "meta", meta);
+  return o;
+}
+
+inline std::string Context::to_string() const {
+  Value record = toValue();
+  if (utility && utility->clean) {
+    // clean takes the context by shared pointer; the record is what it reads
+    // the configuration from, so a non-owning alias is enough here.
+    CtxPtr self(const_cast<Context*>(this), [](Context*) {});
+    record = utility->clean(self, record);
+  }
+  return "Context " + vs::jsonify(record, 0);
 }
 
 // ---- SdkClient ----
@@ -1012,7 +1094,7 @@ inline Value SdkClient::rawRequest(const Value& fetchargs_) {
     fetched = u->fetcher(ctx, url.is_string() ? url.as_string() : "", fetchdef);
   } catch (const SdkErrorPtr& err) {
     map_put(out, "ok", Value(false));
-    map_put(out, "err", vmap({{"message", Value(err->msg)}}));
+    map_put(out, "err", vmap({{"message", u->clean(ctx, Value(err->msg))}}));
     return out;
   }
 
@@ -1138,6 +1220,9 @@ inline Value EntityBase::runOp(CtxPtr ctx, const std::function<void()>& postDone
   } catch (const SdkErrorPtr& err) {
     if (ctx->ctrl->err && err == ctx->ctrl->err) throw;
     return u->makeError(ctx, err);
+  } catch (const std::exception& e) {
+    // An exception a hook threw never passed through makeError.
+    return u->makeError(ctx, ctx->makeError("unexpected", e.what()));
   }
 }
 
@@ -1197,6 +1282,8 @@ inline std::vector<Value> EntityBase::stream(const std::string& action,
     // back to the materialised items so stream always yields.
     ResultPtr res = ctx->result;
     if (res && res->stream) {
+      // done() does not run on this path, so its record is cleaned here.
+      u->cleanExplain(ctx);
       return res->stream();
     }
 
@@ -1211,6 +1298,9 @@ inline std::vector<Value> EntityBase::stream(const std::string& action,
   } catch (const SdkErrorPtr& err) {
     if (ctx->ctrl->err && err == ctx->ctrl->err) throw;
     u->makeError(ctx, err);
+    return std::vector<Value>();
+  } catch (const std::exception& e) {
+    u->makeError(ctx, ctx->makeError("unexpected", e.what()));
     return std::vector<Value>();
   }
 }

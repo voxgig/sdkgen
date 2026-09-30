@@ -53,6 +53,31 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     opts.entries.removeValue(forKey: "auth")
   }
 
+  let config = ctx.config ?? VMap()
+  let cfgopts = gp(config, "options").asMap ?? VMap()
+
+  // The secret registry exists BEFORE validation, fed from the raw input, so
+  // the constructor's own rejection of a mistyped credential is clean too.
+  // (Here validate never throws - the struct port collects its errors - so
+  // there is no rejection to clean; the registry is early for the same
+  // reason regardless.)
+  var cleanlayers: [Value] = [.map(VMap()), clone(gp(SdkSchema.optspec, "clean"))]
+  // Maps only: merge lets any other value replace the defaults outright.
+  for block in [gp(cfgopts, "clean"), opts.entries["clean"] ?? .noval] {
+    if let m = block.asMap {
+      cleanlayers.append(clone(.map(m)))
+    }
+  }
+  let cleancfg = makeCleanConfig(merge(.list(cleanlayers)))
+  let cleanctx = Context(
+    ["options": vm(("__derived__", .map(vm(("clean", .nat(cleancfg))))))], nil)
+  cleanAddOptions(cleanctx, cleanOmit(opts, ["clean"]))
+  let cleanvalues = cleanSplitValues(gpath(cfgopts, "clean", "values"))
+    + cleanSplitValues(gpath(opts, "clean", "values"))
+  for raw in cleanvalues {
+    cleanAddUtil(cleanctx, .string(raw))
+  }
+
   // Feature add-order. options.feature may be given as an ordered LIST of
   // { name, active, ...opts } entries (the list position IS the order in which
   // features are added), or as a { name: {opts} } map. Normalize a list to a
@@ -72,9 +97,6 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     }
     opts.entries["feature"] = .map(fmap)
   }
-
-  let config = ctx.config ?? VMap()
-  let cfgopts = gp(config, "options").asMap ?? VMap()
 
   // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
   //
@@ -117,16 +139,6 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     }
   }
 
-  // Derived clean config.
-  var cleanKeys = "key,token,id"
-  if let cks = gpath(result, "clean", "keys").asString { cleanKeys = cks }
-
-  let filtered = cleanKeys.split(separator: ",", omittingEmptySubsequences: false)
-    .map { $0.trimmingCharacters(in: .whitespaces) }
-    .filter { $0 != "" }
-    .map { escre(.string($0)) }
-  let keyre = filtered.joined(separator: "|")
-
   // Resolve the feature add-order: an explicit list order (above) wins;
   // otherwise order the map test-first, then the remaining names sorted, so
   // the outcome is deterministic and `test` is always the base transport.
@@ -154,14 +166,41 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   }
 
   let derived = VMap()
-  derived.entries["clean"] = .map(VMap())
-  if keyre != "" {
-    let cm = VMap()
-    cm.entries["keyre"] = .string(keyre)
-    derived.entries["clean"] = .map(cm)
-  }
+  derived.entries["clean"] = .nat(cleancfg)
   derived.entries["featureorder"] = .list(VList(featureorder))
   result.entries["__derived__"] = .map(derived)
 
+  // Again over the merged result: the config's own defaults can carry one.
+  cleanAddOptions(Context(["options": result], nil), cleanOmit(result, ["clean", "__derived__"]))
+
   return result
+}
+
+// A feature's name is not a field name: only the sensitive names inside its
+// settings count, so `secrets` does not make every setting a secret. Entity
+// blocks hold entity settings and seeded records, never a credential.
+private func cleanAddOptions(_ ctx: Context, _ opts: VMap) {
+  let top = cleanOmit(opts, ["feature", "entity"])
+  if let test = top.entries["test"] {
+    top.entries["test"] = cleanWithoutEntity(test)
+  }
+  cleanAddSensitiveUtil(ctx, .map(top))
+  let feature = opts.entries["feature"] ?? .noval
+  let settings: [Value] = feature.asMap?.entries.values ?? feature.asList?.items ?? [feature]
+  for fopts in settings {
+    cleanAddSensitiveUtil(ctx, cleanWithoutEntity(fopts))
+  }
+}
+
+private func cleanWithoutEntity(_ block: Value) -> Value {
+  guard let m = block.asMap else { return block }
+  return .map(cleanOmit(m, ["entity"]))
+}
+
+private func cleanOmit(_ src: VMap, _ names: [String]) -> VMap {
+  let out = VMap()
+  for (k, v) in src.entries where !names.contains(k) {
+    out.entries[k] = v
+  }
+  return out
 }

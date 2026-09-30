@@ -86,9 +86,25 @@ pub const Utility = struct {
         _ = self;
         return clean_util(ctx, val);
     }
+    pub fn clean_str(self: *Utility, ctx: *Context, val: []const u8) []const u8 {
+        _ = self;
+        return clean_str_util(ctx, val);
+    }
+    pub fn clean_add(self: *Utility, ctx: *Context, value: []const u8) void {
+        _ = self;
+        clean_add_util(ctx, value);
+    }
+    pub fn clean_key(self: *Utility, ctx: *Context, key: []const u8) bool {
+        _ = self;
+        return clean_key_util(ctx, key);
+    }
     pub fn done(self: *Utility, ctx: *Context) E!Value {
         _ = self;
         return done_util(ctx);
+    }
+    pub fn clean_explain(self: *Utility, ctx: *Context) void {
+        _ = self;
+        clean_explain_util(ctx);
     }
     pub fn make_error(self: *Utility, ctx: *Context) E!Value {
         _ = self;
@@ -160,33 +176,332 @@ pub const Utility = struct {
 // clean / done / make_error
 // ============================================================================
 
-pub fn clean_util(ctx: *Context, val: Value) Value {
-    _ = ctx;
-    return val;
+// Everything that leaves the pipeline passes through clean; inside it data
+// stays raw, so a hook can still read the header it must add to. The zig
+// port of tm/ts/src/utility/CleanUtility.ts. The derived clean block is a
+// Value map (`options.__derived__.clean`) whose `values` list is MUTABLE:
+// features register secrets after make_options.
+
+const CLEAN_MAXDEPTH: usize = 32;
+const CLEAN_CIRCULAR = "[circular]";
+// The schema's own default, for a context that reaches clean before any
+// options exist.
+const CLEAN_DEFAULT_KEYS = "key,secret,token,password,passwd,authorization,cookie,credential,signature";
+
+const CleanCfg = struct {
+    active: bool,
+    keys: Value,
+    values: Value,
+    mask: []const u8,
+    hint: i64,
+    min: i64,
+};
+
+fn clean_normkey(key: []const u8) []const u8 {
+    var out: std.ArrayList(u8) = .empty;
+    for (key) |c| {
+        if (c == '-' or c == '_') continue;
+        out.append(h.A(), std.ascii.toLower(c)) catch {};
+    }
+    return out.toOwnedSlice(h.A()) catch key;
 }
-pub fn clean_str(ctx: *Context, val: []const u8) []const u8 {
-    _ = ctx;
-    return val;
+
+fn clean_count(v: Value, dflt: i64) i64 {
+    return switch (v) {
+        .integer => |i| if (i >= 0) i else dflt,
+        .float => |f| if (f >= 0) @as(i64, @intFromFloat(@floor(f))) else dflt,
+        .string => |s| blk: {
+            const n = std.fmt.parseFloat(f64, std.mem.trim(u8, s, " \t")) catch break :blk dflt;
+            break :blk if (n >= 0) @as(i64, @intFromFloat(@floor(n))) else dflt;
+        },
+        else => dflt,
+    };
+}
+
+pub fn make_clean_config(cleanopts: Value) Value {
+    const keys_src: []const u8 = switch (h.getp(cleanopts, "keys")) {
+        .string => |s| s,
+        else => CLEAN_DEFAULT_KEYS,
+    };
+    const keys = h.olist();
+    var it = std.mem.splitScalar(u8, keys_src, ',');
+    while (it.next()) |p| {
+        const k = clean_normkey(std.mem.trim(u8, p, " \t"));
+        if (k.len != 0) keys.array.append(h.vstr(k)) catch {};
+    }
+    const active = switch (h.getp(cleanopts, "active")) {
+        .bool => |b| b,
+        else => true,
+    };
+    const mask: []const u8 = switch (h.getp(cleanopts, "mask")) {
+        .string => |s| s,
+        else => "[redacted]",
+    };
+    return h.jo(&.{
+        .{ "active", h.vbool(active) },
+        .{ "keys", keys },
+        .{ "values", h.olist() },
+        .{ "mask", h.vstr(mask) },
+        .{ "hint", h.vnum(clean_count(h.getp(cleanopts, "hint"), 0)) },
+        .{ "min", h.vnum(@max(1, clean_count(h.getp(cleanopts, "min"), 4))) },
+    });
+}
+
+// The comma-separated `clean.values` option, or a list of strings.
+pub fn clean_splitvalues(values: Value) [][]const u8 {
+    var out: std.ArrayList([]const u8) = .empty;
+    switch (values) {
+        .array => |l| {
+            for (l.data.items) |v| {
+                if (v == .string) out.append(h.A(), v.string) catch {};
+            }
+        },
+        .string => |s| {
+            var it = std.mem.splitScalar(u8, s, ',');
+            while (it.next()) |p| {
+                const t = std.mem.trim(u8, p, " \t");
+                if (t.len != 0) out.append(h.A(), t) catch {};
+            }
+        },
+        else => {},
+    }
+    return out.toOwnedSlice(h.A()) catch &.{};
+}
+
+// A context without options (make_error accepts a bare one) still masks by
+// the schema defaults.
+fn clean_config(ctx: *Context) Value {
+    const derived = h.getpath(&.{ "__derived__", "clean" }, ctx.options);
+    if (derived == .object and h.getp(derived, "values") == .array) return derived;
+    return make_clean_config(h.getp(schema.shared_optspec(), "clean"));
+}
+
+fn clean_view(cfg: Value) CleanCfg {
+    return .{
+        .active = h.get_bool(cfg, "active") orelse true,
+        .keys = h.getp(cfg, "keys"),
+        .values = h.getp(cfg, "values"),
+        .mask = h.get_str(cfg, "mask") orelse "[redacted]",
+        .hint = h.get_i64(cfg, "hint") orelse 0,
+        .min = @max(1, h.get_i64(cfg, "min") orelse 4),
+    };
+}
+
+fn clean_base64(text: []const u8) []const u8 {
+    const enc = std.base64.standard.Encoder;
+    const buf = h.A().alloc(u8, enc.calcSize(text.len)) catch return "";
+    return enc.encode(buf, text);
+}
+
+fn clean_json_escape(text: []const u8) []const u8 {
+    const quoted = h.jsonify_compact(h.vstr(text));
+    if (quoted.len >= 2 and quoted[0] == '"' and quoted[quoted.len - 1] == '"') {
+        return quoted[1 .. quoted.len - 1];
+    }
+    return text;
+}
+
+fn clean_values_has(values: Value, s: []const u8) bool {
+    if (values != .array) return false;
+    for (values.array.data.items) |v| {
+        if (v == .string and std.mem.eql(u8, v.string, s)) return true;
+    }
+    return false;
+}
+
+fn clean_longer_first(_: void, a: Value, b: Value) bool {
+    const al: usize = if (a == .string) a.string.len else 0;
+    const bl: usize = if (b == .string) b.string.len else 0;
+    return al > bl;
+}
+
+// Register a value with the encoded forms it travels in.
+pub fn clean_add_cfg(cfg: Value, value: []const u8) void {
+    const c = clean_view(cfg);
+    if (c.values != .array) return;
+    if (@as(i64, @intCast(value.len)) < c.min) return;
+    const forms = [_][]const u8{ value, clean_base64(value), h.esc_url(value), clean_json_escape(value) };
+    var changed = false;
+    for (forms) |form| {
+        if (form.len == 0 or @as(i64, @intCast(form.len)) < c.min) continue;
+        if (clean_values_has(c.values, form)) continue;
+        c.values.array.append(h.vstr(form)) catch {};
+        changed = true;
+    }
+    if (changed) std.mem.sort(Value, c.values.array.data.items, {}, clean_longer_first);
+}
+
+pub fn clean_add_util(ctx: *Context, value: []const u8) void {
+    clean_add_cfg(clean_config(ctx), value);
+}
+
+fn clean_mask_value(c: CleanCfg, value: []const u8) []const u8 {
+    if (0 < c.hint and @as(i64, @intCast(value.len)) > 2 * c.hint) {
+        const keep: usize = @intCast(c.hint);
+        return fmt("{s}{s}", .{ c.mask, value[value.len - keep ..] });
+    }
+    return c.mask;
+}
+
+fn clean_string(c: CleanCfg, text: []const u8) []const u8 {
+    var out = text;
+    if (c.values != .array) return out;
+    for (c.values.array.data.items) |v| {
+        if (v != .string or v.string.len == 0) continue;
+        if (std.mem.indexOf(u8, out, v.string) != null) {
+            out = std.mem.replaceOwned(u8, h.A(), out, v.string, clean_mask_value(c, v.string)) catch out;
+        }
+    }
+    return out;
+}
+
+fn clean_sensitive_key(c: CleanCfg, key: ?[]const u8) bool {
+    const k = key orelse return false;
+    if (c.keys != .array) return false;
+    const nk = clean_normkey(k);
+    for (c.keys.array.data.items) |kv| {
+        if (kv == .string and kv.string.len != 0 and std.mem.indexOf(u8, nk, kv.string) != null) return true;
+    }
+    return false;
+}
+
+fn clean_seen(seen: []const usize, id: usize) bool {
+    for (seen) |s| {
+        if (s == id) return true;
+    }
+    return false;
+}
+
+// A registered value used as a property name is masked like any other
+// string; names that mask alike take a counter, so none is lost.
+fn clean_name(c: CleanCfg, out: Value, key: []const u8) []const u8 {
+    const name = clean_string(c, key);
+    if (std.mem.eql(u8, name, key) or out.object.get(name) == null) return name;
+    var i: usize = 1;
+    while (out.object.get(fmt("{s}#{d}", .{ name, i })) != null) i += 1;
+    return fmt("{s}#{d}", .{ name, i });
+}
+
+// A masked plain-data copy: functions dropped, cycles cut, and nothing
+// shared with the live value, whose spec must stay raw.
+fn clean_snapshot(c: CleanCfg, val: Value, key: ?[]const u8, depth: usize, seen: *std.ArrayList(usize)) Value {
+    switch (val) {
+        .null => return val,
+        .string => |s| return h.vstr(if (clean_sensitive_key(c, key)) clean_mask_value(c, s) else clean_string(c, s)),
+        .function => return h.vnull(),
+        .bool, .integer, .float, .number_string => return if (clean_sensitive_key(c, key)) h.vstr(c.mask) else val,
+        .object => |m| {
+            const id = @intFromPtr(m);
+            if (CLEAN_MAXDEPTH <= depth or clean_seen(seen.items, id)) return h.vstr(CLEAN_CIRCULAR);
+            if (clean_sensitive_key(c, key)) return h.vstr(c.mask);
+            seen.append(h.A(), id) catch {};
+            defer _ = seen.pop();
+            const out = h.omap();
+            var it = m.iterator();
+            while (it.next()) |kv| {
+                if (kv.value_ptr.* == .function) continue;
+                const v = clean_snapshot(c, kv.value_ptr.*, kv.key_ptr.*, depth + 1, seen);
+                h.setp(out, clean_name(c, out, kv.key_ptr.*), v);
+            }
+            return out;
+        },
+        .array => |l| {
+            const id = @intFromPtr(l);
+            if (CLEAN_MAXDEPTH <= depth or clean_seen(seen.items, id)) return h.vstr(CLEAN_CIRCULAR);
+            if (clean_sensitive_key(c, key)) return h.vstr(c.mask);
+            seen.append(h.A(), id) catch {};
+            defer _ = seen.pop();
+            const out = h.olist();
+            for (l.data.items) |item| {
+                out.array.append(clean_snapshot(c, item, null, depth + 1, seen)) catch {};
+            }
+            return out;
+        },
+    }
+}
+
+pub fn clean_util(ctx: *Context, val: Value) Value {
+    const c = clean_view(clean_config(ctx));
+    if (!c.active) return val;
+    var seen: std.ArrayList(usize) = .empty;
+    return clean_snapshot(c, val, null, 0, &seen);
+}
+
+pub fn clean_str_util(ctx: *Context, val: []const u8) []const u8 {
+    const c = clean_view(clean_config(ctx));
+    if (!c.active) return val;
+    return clean_string(c, val);
+}
+
+pub fn clean_key_util(ctx: *Context, key: []const u8) bool {
+    return clean_sensitive_key(clean_view(clean_config(ctx)), key);
+}
+
+// Every scalar under a sensitive name, at any depth and of any shape, is
+// registered: a credential mistyped as a map or a number is still a
+// credential.
+pub fn clean_add_sensitive_cfg(cfg: Value, val: Value) void {
+    var seen: std.ArrayList(usize) = .empty;
+    clean_add_sensitive_in(cfg, clean_view(cfg), val, false, 0, &seen);
+}
+
+pub fn clean_add_sensitive_util(ctx: *Context, val: Value) void {
+    clean_add_sensitive_cfg(clean_config(ctx), val);
+}
+
+fn clean_add_sensitive_in(cfg: Value, c: CleanCfg, val: Value, under: bool, depth: usize, seen: *std.ArrayList(usize)) void {
+    if (CLEAN_MAXDEPTH <= depth) return;
+    switch (val) {
+        .string, .integer, .float, .number_string => {
+            if (under) clean_add_cfg(cfg, h.scalar_str(val));
+        },
+        .object => |m| {
+            const id = @intFromPtr(m);
+            if (clean_seen(seen.items, id)) return;
+            seen.append(h.A(), id) catch {};
+            var it = m.iterator();
+            while (it.next()) |kv| {
+                const sub = under or clean_sensitive_key(c, kv.key_ptr.*);
+                clean_add_sensitive_in(cfg, c, kv.value_ptr.*, sub, depth + 1, seen);
+            }
+        },
+        .array => |l| {
+            const id = @intFromPtr(l);
+            if (clean_seen(seen.items, id)) return;
+            seen.append(h.A(), id) catch {};
+            for (l.data.items) |item| clean_add_sensitive_in(cfg, c, item, under, depth + 1, seen);
+        },
+        else => {},
+    }
 }
 
 pub fn done_util(ctx: *Context) E!Value {
-    {
-        const c = ctx.ctrl;
-        if (c.has_explain()) {
-            const explain = clean_util(ctx, c.explain);
-            if (h.getp(explain, "result") == .object) {
-                const rm = h.to_map(h.getp(explain, "result"));
-                h.del_prop(rm, h.vstr("err"));
-            }
-            c.explain = explain;
-        }
-    }
+    clean_explain_util(ctx);
 
     if (ctx.result) |res| {
         if (res.ok) return res.resdata;
     }
 
     return make_error_util(ctx);
+}
+
+// Clean the explain record in place. The caller holds this map, so the
+// masked entries replace its own; with clean off the cleaned record is that
+// map, already current.
+pub fn clean_explain_util(ctx: *Context) void {
+    const c = ctx.ctrl;
+    if (!c.has_explain()) return;
+    const explain = c.explain;
+    const cleaned = clean_util(ctx, explain);
+    if (cleaned == .object and cleaned.object != explain.object) {
+        explain.object.data.clearRetainingCapacity();
+        var it = cleaned.object.iterator();
+        while (it.next()) |kv| h.setp(explain, kv.key_ptr.*, kv.value_ptr.*);
+    }
+    // explain.result is a to_value snapshot, never the live result.
+    if (h.getp(explain, "result") == .object) {
+        h.del_prop(h.to_map(h.getp(explain, "result")), h.vstr("err"));
+    }
 }
 
 pub fn make_error_util(ctx: *Context) E!Value {
@@ -207,11 +522,13 @@ pub fn make_error_util(ctx: *Context) E!Value {
 
     const errmsg = the_err.msg;
     const msg0 = fmt("ProjectNameSDK: {s}: {s}", .{ opname, errmsg });
-    const msg = clean_str(ctx, msg0);
+    const msg = clean_str_util(ctx, msg0);
 
     result.err = null;
 
     const spec_val: Value = if (ctx.spec) |s| s.to_value() else h.vnull();
+
+    clean_explain_util(ctx);
 
     const c = ctx.ctrl;
     if (c.has_explain()) {
@@ -219,7 +536,8 @@ pub fn make_error_util(ctx: *Context) E!Value {
     }
 
     const sdk_err = err.ProjectNameError.make("", msg);
-    sdk_err.code = the_err.code;
+    // A hook's own error supplies the code as well as the message.
+    sdk_err.code = clean_str_util(ctx, the_err.code);
     sdk_err.result = clean_util(ctx, result.to_value());
     sdk_err.spec = clean_util(ctx, spec_val);
 
@@ -304,6 +622,50 @@ fn mo_str_less(_: void, a: []const u8, b: []const u8) bool {
     return std.mem.order(u8, a, b) == .lt;
 }
 
+fn mo_noentity(val: Value) Value {
+    if (val != .object) return val;
+    const out = h.omap();
+    var it = val.object.iterator();
+    while (it.next()) |kv| {
+        if (!std.mem.eql(u8, kv.key_ptr.*, "entity")) h.setp(out, kv.key_ptr.*, kv.value_ptr.*);
+    }
+    return out;
+}
+
+// The options to scan for secrets. The feature map is keyed by feature
+// names, not field names, so it is scanned as a list: `secrets` must not
+// make every setting of that feature a secret. Entity blocks hold entity
+// settings and seeded records, never a credential, so none is scanned. The
+// raw scan still sees the feature list form, whose entries each carry `name`.
+fn mo_without(opts: Value, keys: []const []const u8) Value {
+    const out = h.omap();
+    if (opts != .object) return out;
+    var it = opts.object.iterator();
+    outer: while (it.next()) |kv| {
+        const key = kv.key_ptr.*;
+        if (std.mem.eql(u8, key, "entity")) continue;
+        for (keys) |k| {
+            if (std.mem.eql(u8, key, k)) continue :outer;
+        }
+        const v = kv.value_ptr.*;
+        if (std.mem.eql(u8, key, "feature") and (v == .object or v == .array)) {
+            const list = h.olist();
+            if (v == .object) {
+                var fit = v.object.iterator();
+                while (fit.next()) |f| list.array.append(mo_noentity(f.value_ptr.*)) catch {};
+            } else {
+                for (v.array.data.items) |f| list.array.append(mo_noentity(f)) catch {};
+            }
+            h.setp(out, key, list);
+        } else if (std.mem.eql(u8, key, "test")) {
+            h.setp(out, key, mo_noentity(v));
+        } else {
+            h.setp(out, key, v);
+        }
+    }
+    return out;
+}
+
 pub fn make_options_util(ctx: *Context) Value {
     const options: Value = switch (ctx.options) {
         .object => ctx.options,
@@ -339,6 +701,26 @@ pub fn make_options_util(ctx: *Context) Value {
 
     var opts = h.clone(options);
 
+    const config = ctx.config;
+    const cfgopts: Value = switch (h.to_map(h.getp(config, "options"))) {
+        .object => h.to_map(h.getp(config, "options")),
+        else => h.omap(),
+    };
+
+    // The secret registry exists BEFORE validation, fed from the raw input, so
+    // the constructor's own rejection of a mistyped credential is clean too.
+    const cfgclean = h.to_map(h.getp(cfgopts, "clean"));
+    const rawclean = h.to_map(h.getp(opts, "clean"));
+    const cleancfg = make_clean_config(h.merge(h.ja(&.{
+        h.omap(),
+        h.clone(h.getp(schema.shared_optspec(), "clean")),
+        if (cfgclean == .object) h.clone(cfgclean) else h.omap(),
+        if (rawclean == .object) h.clone(rawclean) else h.omap(),
+    })));
+    clean_add_sensitive_cfg(cleancfg, mo_without(opts, &.{"clean"}));
+    for (clean_splitvalues(h.getp(cfgclean, "values"))) |raw| clean_add_cfg(cleancfg, raw);
+    for (clean_splitvalues(h.getp(rawclean, "values"))) |raw| clean_add_cfg(cleancfg, raw);
+
     if (auth_suppressed) h.del_prop(opts, h.vstr("auth"));
 
     // Feature add-order. options.feature may be an ordered list of
@@ -363,12 +745,6 @@ pub fn make_options_util(ctx: *Context) Value {
         }
         h.setp(opts, "feature", fmap);
     }
-
-    const config = ctx.config;
-    const cfgopts: Value = switch (h.to_map(h.getp(config, "options"))) {
-        .object => h.to_map(h.getp(config, "options")),
-        else => h.omap(),
-    };
 
     // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
     //
@@ -478,20 +854,6 @@ pub fn make_options_util(ctx: *Context) Value {
         }
     }
 
-    // Derived clean config.
-    const clean_keys: []const u8 = switch (h.getpath(&.{ "clean", "keys" }, opts)) {
-        .string => |s| s,
-        else => "key,token,id",
-    };
-
-    var parts: std.ArrayList([]const u8) = .empty;
-    var it = std.mem.splitScalar(u8, clean_keys, ',');
-    while (it.next()) |p| {
-        const t = std.mem.trim(u8, p, " \t");
-        if (t.len != 0) parts.append(h.A(), h.esc_re(t)) catch {};
-    }
-    const keyre = std.mem.join(h.A(), "|", parts.items) catch "";
-
     // Resolve the feature add-order: an explicit list order (above) wins;
     // otherwise order the map test-first, then the remaining names sorted, so
     // the outcome is deterministic and `test` is always the base transport.
@@ -513,11 +875,13 @@ pub fn make_options_util(ctx: *Context) Value {
         }
     }
 
-    const derived_clean = if (keyre.len == 0) h.omap() else h.jo(&.{.{ "keyre", h.vstr(keyre) }});
     h.setp(opts, "__derived__", h.jo(&.{
-        .{ "clean", derived_clean },
+        .{ "clean", cleancfg },
         .{ "featureorder", feature_order },
     }));
+
+    // Again over the merged result: the config's own defaults can carry one.
+    clean_add_sensitive_cfg(cleancfg, mo_without(opts, &.{ "clean", "__derived__" }));
 
     return opts;
 }

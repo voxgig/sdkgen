@@ -116,6 +116,15 @@ static voxgig_value* entyvar_run_op(entyvar_entity* self, Context* ctx,
   return done_util(ctx, err);
 }
 
+// A step's error does not pass through make_error in stream, so it and the
+// explain record are cleaned on the way out.
+static voxgig_value* entyvar_stream_fail(Context* ctx, PNError* pe, PNError** err) {
+  clean_explain_util(ctx);
+  clean_error_util(ctx, pe);
+  *err = pe;
+  return NULL;
+}
+
 // Streaming operation. Runs `action` through the full pipeline and returns a
 // List of the result items, so the `streaming` feature's incremental output
 // is reachable from a generated entity (a normal op call materialises the
@@ -162,27 +171,27 @@ voxgig_value* entyvar_stream(Entity* e, const char* action, voxgig_value* args,
 
   feature_hook_util(ctx, "PrePoint");
   voxgig_value* point = make_point_util(ctx, &pe);
-  if (pe) { *err = pe; return NULL; }
+  if (pe) return entyvar_stream_fail(ctx, pe, err);
   ctx_out_set_point_val(ctx, point);
 
   feature_hook_util(ctx, "PreSpec");
   Spec* spec = make_spec_util(ctx, &pe);
-  if (pe) { *err = pe; return NULL; }
+  if (pe) return entyvar_stream_fail(ctx, pe, err);
   ctx->out_spec = spec;
 
   feature_hook_util(ctx, "PreRequest");
   Response* resp = make_request_util(ctx, &pe);
-  if (pe) { *err = pe; return NULL; }
+  if (pe) return entyvar_stream_fail(ctx, pe, err);
   ctx->out_request = resp;
 
   feature_hook_util(ctx, "PreResponse");
   Response* resp2 = make_response_util(ctx, &pe);
-  if (pe) { *err = pe; return NULL; }
+  if (pe) return entyvar_stream_fail(ctx, pe, err);
   ctx->out_response = resp2;
 
   feature_hook_util(ctx, "PreResult");
   SdkResult* result = make_result_util(ctx, &pe);
-  if (pe) { *err = pe; return NULL; }
+  if (pe) return entyvar_stream_fail(ctx, pe, err);
   ctx->out_result = result;
 
   feature_hook_util(ctx, "PreDone");
@@ -191,6 +200,8 @@ voxgig_value* entyvar_stream(Entity* e, const char* action, voxgig_value* args,
   // back to the materialised items so `stream` always yields.
   SdkResult* res = ctx->result;
   if (res && res->stream) {
+    // done() does not run on this path, so its record is cleaned here.
+    clean_explain_util(ctx);
     return res->stream(res->stream_ud);
   }
 

@@ -267,4 +267,33 @@ public class Context {
   public SdkError makeError(String code, String msg) {
     return new SdkError(code, msg, this);
   }
+
+  /** The raw record a serialiser reads; the live fields stay raw for the pipeline. */
+  public Map<String, Object> record() {
+    Map<String, Object> record = new LinkedHashMap<>();
+    record.put("id", this.id);
+    record.put("op", this.op);
+    record.put("spec", this.spec);
+    record.put("entity", this.entity);
+    record.put("result", this.result);
+    record.put("response", this.response);
+    record.put("meta", this.meta);
+    return record;
+  }
+
+  // The serialised context leaves the pipeline (a logger, an error dump), so
+  // it is cleaned.
+  public Map<String, Object> toMap() {
+    Map<String, Object> record = record();
+    if (this.utility == null || this.utility.clean == null) {
+      return record;
+    }
+    Map<String, Object> cleaned = Helpers.toMapAny(this.utility.clean.apply(this, record));
+    return cleaned == null ? record : cleaned;
+  }
+
+  @Override
+  public String toString() {
+    return "Context " + Struct.jsonify(toMap());
+  }
 }

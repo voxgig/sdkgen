@@ -55,8 +55,327 @@ inline CtxPtr makeContext(const CtxSpec& cs, CtxPtr basectx) {
 }
 
 // ---- clean ------------------------------------------------------------
+//
+// Everything that leaves the pipeline passes through clean: the error, the
+// explain record, the serialised context, and whatever a feature emits.
+// Two layers: every registered secret VALUE (and its encoded forms) is
+// replaced wherever it appears in a string, and every value under a
+// sensitive KEY name is masked whatever it holds. Inside the pipeline data
+// stays raw, so a hook can still read the header it must add to.
+//
+// The configuration is the derived clean block makeOptions builds
+// (`options.__derived__.clean`): a plain map, so the registry list inside
+// it stays mutable after construction - features register later.
 
-inline Value clean(CtxPtr ctx, const Value& val) { return val; }
+constexpr int CLEAN_MAXDEPTH = 32;
+
+inline std::string cleanBase64(const std::string& in) {
+  static const char* ALPHABET =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  std::string out;
+  out.reserve(((in.size() + 2) / 3) * 4);
+  for (size_t i = 0; i < in.size(); i += 3) {
+    unsigned int v = static_cast<unsigned int>(static_cast<unsigned char>(in[i])) << 16;
+    if (i + 1 < in.size()) v |= static_cast<unsigned int>(static_cast<unsigned char>(in[i + 1])) << 8;
+    if (i + 2 < in.size()) v |= static_cast<unsigned int>(static_cast<unsigned char>(in[i + 2]));
+    out += ALPHABET[(v >> 18) & 0x3f];
+    out += ALPHABET[(v >> 12) & 0x3f];
+    out += (i + 1 < in.size()) ? ALPHABET[(v >> 6) & 0x3f] : '=';
+    out += (i + 2 < in.size()) ? ALPHABET[v & 0x3f] : '=';
+  }
+  return out;
+}
+
+inline std::string cleanNormkey(const std::string& key) {
+  std::string out;
+  for (char c : key) {
+    if ('-' == c || '_' == c) continue;
+    out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+  }
+  return out;
+}
+
+inline std::vector<std::string> cleanSplit(const Value& raw) {
+  std::vector<std::string> out;
+  if (raw.is_list()) {
+    for (const auto& v : *raw.as_list()) {
+      if (v.is_string() && !v.as_string().empty()) out.push_back(v.as_string());
+    }
+    return out;
+  }
+  std::string text = raw.is_string() ? raw.as_string() : "";
+  size_t start = 0;
+  while (start <= text.size()) {
+    size_t comma = text.find(',', start);
+    std::string tok = std::string::npos == comma ? text.substr(start)
+                                                 : text.substr(start, comma - start);
+    size_t a = tok.find_first_not_of(" \t\r\n");
+    size_t b = tok.find_last_not_of(" \t\r\n");
+    tok = std::string::npos == a ? "" : tok.substr(a, b - a + 1);
+    if (!tok.empty()) out.push_back(tok);
+    if (std::string::npos == comma) break;
+    start = comma + 1;
+  }
+  return out;
+}
+
+// The spec carries numbers as strings, so every target reads it alike.
+inline long long cleanCount(const Value& v, long long dflt) {
+  if (v.is_number()) return 0 <= v.as_int() ? v.as_int() : dflt;
+  if (!v.is_string()) return dflt;
+  try {
+    size_t pos = 0;
+    long long n = std::stoll(v.as_string(), &pos);
+    return 0 <= n ? n : dflt;
+  } catch (...) {
+    return dflt;
+  }
+}
+
+// The derived clean block, from the clean options merged over the spec.
+inline Value makeCleanConfig(const Value& cleanopts) {
+  Value opts = cleanopts.is_map() ? cleanopts : vmap();
+  Value keys = vlist();
+  for (const auto& k : cleanSplit(getp(opts, "keys"))) {
+    std::string nk = cleanNormkey(k);
+    if (!nk.empty()) keys.as_list()->push_back(Value(nk));
+  }
+  Value mask = getp(opts, "mask");
+  long long min = cleanCount(getp(opts, "min"), 4);
+  Value cfg = vmap();
+  map_put(cfg, "active", Value(!is_false(getp(opts, "active"))));
+  map_put(cfg, "keys", keys);
+  map_put(cfg, "values", vlist());
+  map_put(cfg, "mask", mask.is_string() ? mask : Value("[redacted]"));
+  map_put(cfg, "hint", Value(cleanCount(getp(opts, "hint"), 0)));
+  map_put(cfg, "min", Value(1 > min ? 1LL : min));
+  return cfg;
+}
+
+// A context without options (makeError is reached with a bare one) falls
+// back to the schema defaults, so nothing leaves raw for want of a
+// constructor.
+inline Value cleanConfig(CtxPtr ctx) {
+  Value derived = ctx ? Struct::getpath(ctx->options, {"__derived__", "clean"}) : Value::undef();
+  if (derived.is_map()) return derived;
+  return makeCleanConfig(getp(sharedOptspec(), "clean"));
+}
+
+// The encoded forms a value travels in: Basic and Bearer both carry base64,
+// a query credential is percent-encoded, and a JSON dump escapes it.
+inline std::vector<std::string> cleanForms(const std::string& value) {
+  std::vector<std::string> out{value};
+  auto add = [&out](const std::string& s) {
+    if (!s.empty() && std::find(out.begin(), out.end(), s) == out.end()) out.push_back(s);
+  };
+  add(cleanBase64(value));
+  add(Struct::escurl(Value(value)));
+  std::string json = vs::jsonify(Value(value), 0);
+  if (2 <= json.size()) add(json.substr(1, json.size() - 2));
+  return out;
+}
+
+// Register a secret value. Idempotent; shorter than `min` is not a secret
+// the SDK can mask without blanking ordinary text.
+inline void cleanAddCfg(const Value& cfg, const Value& value) {
+  if (!cfg.is_map() || !value.is_string()) return;
+  size_t min = static_cast<size_t>(cleanCount(getp(cfg, "min"), 4));
+  const std::string& raw = value.as_string();
+  if (raw.size() < min) return;
+  Value values = getp(cfg, "values");
+  if (!values.is_list()) {
+    values = vlist();
+    map_put(cfg, "values", values);
+  }
+  auto& list = *values.as_list();
+  bool changed = false;
+  for (const auto& form : cleanForms(raw)) {
+    if (form.size() < min) continue;
+    bool known = false;
+    for (const auto& v : list) {
+      if (v.is_string() && v.as_string() == form) { known = true; break; }
+    }
+    if (!known) {
+      list.push_back(Value(form));
+      changed = true;
+    }
+  }
+  if (changed) {
+    std::stable_sort(list.begin(), list.end(), [](const Value& a, const Value& b) {
+      return a.as_string().size() > b.as_string().size();
+    });
+  }
+}
+
+inline void cleanAdd(CtxPtr ctx, const Value& value) {
+  cleanAddCfg(cleanConfig(ctx), value);
+}
+
+inline std::string cleanMaskValue(const Value& cfg, const std::string& value) {
+  std::string mask = as_str(getp(cfg, "mask"), "[redacted]");
+  size_t hint = static_cast<size_t>(cleanCount(getp(cfg, "hint"), 0));
+  if (0 < hint && value.size() > 2 * hint) return mask + value.substr(value.size() - hint);
+  return mask;
+}
+
+inline std::string cleanString(const Value& cfg, const std::string& text) {
+  std::string out = text;
+  Value values = getp(cfg, "values");
+  if (!values.is_list()) return out;
+  for (const auto& v : *values.as_list()) {
+    if (!v.is_string() || v.as_string().empty()) continue;
+    if (std::string::npos != out.find(v.as_string())) {
+      out = replace_all(out, v.as_string(), cleanMaskValue(cfg, v.as_string()));
+    }
+  }
+  return out;
+}
+
+inline bool cleanSensitiveKey(const Value& cfg, const Value& key) {
+  if (!key.is_string()) return false;
+  std::string nk = cleanNormkey(key.as_string());
+  Value keys = getp(cfg, "keys");
+  if (!keys.is_list()) return false;
+  for (const auto& k : *keys.as_list()) {
+    if (k.is_string() && std::string::npos != nk.find(k.as_string())) return true;
+  }
+  return false;
+}
+
+// A registered value used as a property name is masked like any other
+// string; names that mask alike take a counter, so none is lost.
+inline std::string cleanName(const Value& cfg, const Value& out, const std::string& key) {
+  std::string name = cleanString(cfg, key);
+  if (name == key || !out.as_map()->contains(name)) return name;
+  int i = 1;
+  while (out.as_map()->contains(name + "#" + std::to_string(i))) i++;
+  return name + "#" + std::to_string(i);
+}
+
+// A plain-data copy of what is about to leave: functions are dropped,
+// cycles are cut, and no live container is shared with the copy - masking
+// the copy must never mask the pipeline's own spec.
+inline Value cleanSnapshot(const Value& cfg, const Value& val, const Value& key, int depth,
+                           std::vector<const void*>& seen) {
+  if (val.is_undef() || val.is_null()) return val;
+
+  if (val.is_string()) {
+    return Value(cleanSensitiveKey(cfg, key) ? cleanMaskValue(cfg, val.as_string())
+                                             : cleanString(cfg, val.as_string()));
+  }
+
+  if (val.is_func() || val.is_sentinel()) return Value::undef();
+
+  if (!val.is_node()) {
+    return cleanSensitiveKey(cfg, key) ? getp(cfg, "mask") : val;
+  }
+
+  const void* id = val.is_list() ? static_cast<const void*>(val.as_list().get())
+                                 : static_cast<const void*>(val.as_map().get());
+  if (CLEAN_MAXDEPTH <= depth || std::find(seen.begin(), seen.end(), id) != seen.end()) {
+    return Value("[circular]");
+  }
+
+  if (cleanSensitiveKey(cfg, key)) return getp(cfg, "mask");
+
+  seen.push_back(id);
+  Value out;
+  if (val.is_list()) {
+    out = vlist();
+    long long i = 0;
+    for (const auto& item : *val.as_list()) {
+      Value v = cleanSnapshot(cfg, item, Value(i++), depth + 1, seen);
+      if (!v.is_undef()) out.as_list()->push_back(v);
+    }
+  } else {
+    out = vmap();
+    for (const auto& kv : *val.as_map()) {
+      Value v = cleanSnapshot(cfg, kv.second, Value(kv.first), depth + 1, seen);
+      if (!v.is_undef()) map_put(out, cleanName(cfg, out, kv.first), v);
+    }
+  }
+  seen.pop_back();
+  return out;
+}
+
+inline Value cleanValue(const Value& cfg, const Value& val) {
+  if (is_false(getp(cfg, "active"))) return val;
+  if (val.is_string()) return Value(cleanString(cfg, val.as_string()));
+  std::vector<const void*> seen;
+  return cleanSnapshot(cfg, val, Value::undef(), 0, seen);
+}
+
+// Clean a value on its way out: a string is redacted; anything else comes
+// back as a masked plain-data copy.
+inline Value clean(CtxPtr ctx, const Value& val) {
+  return cleanValue(cleanConfig(ctx), val);
+}
+
+// An SdkError is cleaned IN PLACE: it is about to be thrown, and its
+// identity matters to the caller.
+inline void cleanError(CtxPtr ctx, const SdkErrorPtr& err) {
+  if (!err) return;
+  Value cfg = cleanConfig(ctx);
+  if (is_false(getp(cfg, "active"))) return;
+  err->msg = cleanString(cfg, err->msg);
+  err->code = cleanString(cfg, err->code);
+  err->result = cleanValue(cfg, err->result);
+  err->spec = cleanValue(cfg, err->spec);
+}
+
+// Every scalar under a sensitive name, at any depth and of any shape, is
+// registered: a credential mistyped as a map or a number is still a
+// credential, and the validation error that rejects it quotes it.
+inline void cleanAddSensitiveIn(const Value& cfg, const Value& val, bool under, int depth,
+                                std::vector<const void*>& seen) {
+  if (CLEAN_MAXDEPTH <= depth) return;
+  if (val.is_string() || val.is_number()) {
+    if (under) cleanAddCfg(cfg, val.is_string() ? val : Value(Struct::stringify(val)));
+    return;
+  }
+  if (!val.is_node()) return;
+  const void* id = val.is_list() ? static_cast<const void*>(val.as_list().get())
+                                 : static_cast<const void*>(val.as_map().get());
+  if (std::find(seen.begin(), seen.end(), id) != seen.end()) return;
+  seen.push_back(id);
+  if (val.is_list()) {
+    for (const auto& item : *val.as_list()) cleanAddSensitiveIn(cfg, item, under, depth + 1, seen);
+  } else {
+    for (const auto& kv : *val.as_map()) {
+      bool sub = under || cleanSensitiveKey(cfg, Value(kv.first));
+      cleanAddSensitiveIn(cfg, kv.second, sub, depth + 1, seen);
+    }
+  }
+}
+
+inline void cleanAddSensitiveCfg(const Value& cfg, const Value& val) {
+  std::vector<const void*> seen;
+  cleanAddSensitiveIn(cfg, val, false, 0, seen);
+}
+
+inline void cleanAddSensitive(CtxPtr ctx, const Value& val) {
+  cleanAddSensitiveCfg(cleanConfig(ctx), val);
+}
+
+// Is this key name sensitive under the context's clean configuration?
+inline bool cleanKey(CtxPtr ctx, const Value& key) {
+  return cleanSensitiveKey(cleanConfig(ctx), key);
+}
+
+// The explain record is the CALLER'S map (a control map is shared, not
+// copied), so the cleaned copy is written back into it in place. err is
+// pruned from its result, a toValue snapshot rather than the live result.
+inline void cleanExplain(CtxPtr ctx) {
+  Value explain = ctx->ctrl ? ctx->ctrl->explain : Value::undef();
+  if (!explain.is_map()) return;
+  Value cleaned = clean(ctx, explain);
+  if (cleaned.is_map() && cleaned.as_map() != explain.as_map()) {
+    explain.as_map()->clear();
+    for (const auto& kv : *cleaned.as_map()) map_put(explain, kv.first, kv.second);
+  }
+  Value rm = Helpers::toMapAny(getp(explain, "result"));
+  if (rm.is_map()) map_remove(rm, "err");
+}
 
 // ---- makeError --------------------------------------------------------
 
@@ -75,6 +394,10 @@ inline Value makeError(CtxPtr ctx, SdkErrorPtr err) {
   if (!err) err = result->err;
   if (!err) err = ctx->makeError("unknown", "unknown error");
 
+  // The source error is cleaned too: it stays reachable through the
+  // response it came from.
+  cleanError(ctx, err);
+
   std::string errmsg = err->getMessage();
   std::string msg = "ProjectNameSDK: " + opname + ": " + errmsg;
 
@@ -82,17 +405,23 @@ inline Value makeError(CtxPtr ctx, SdkErrorPtr err) {
 
   SpecPtr spec = ctx->spec;
 
-  if (ctx->ctrl->explain.is_map()) {
-    Value errRecord = vmap();
-    map_put(errRecord, "message", Value(msg));
-    map_put(ctx->ctrl->explain, "err", errRecord);
-  }
-
   std::string code = err->code;
 
   auto sdkErr = std::make_shared<SdkError>(code, msg, ctx.get());
-  sdkErr->result_obj = result;
-  sdkErr->spec_obj = spec;
+  sdkErr->result = result->toValue();
+  sdkErr->spec = spec ? spec->toValue() : Value::undef();
+  sdkErr->status = result->status;
+  cleanError(ctx, sdkErr);
+
+  if (ctx->ctrl->explain.is_map()) {
+    Value errRecord = vmap();
+    map_put(errRecord, "code", Value(sdkErr->code));
+    map_put(errRecord, "message", Value(sdkErr->msg));
+    map_put(ctx->ctrl->explain, "err", errRecord);
+    // A pipeline failure reaches here without passing done, so the record
+    // is cleaned on this path as well.
+    cleanExplain(ctx);
+  }
 
   ctx->ctrl->err = sdkErr;
 
@@ -100,23 +429,32 @@ inline Value makeError(CtxPtr ctx, SdkErrorPtr err) {
   // debug) close/record error paths that never reach PreDone (e.g. a PrePoint
   // rbac short-circuit). Fires after ctx->ctrl->err is set so hooks can read
   // the error; features guard against double-recording when PreDone fired.
-  featureHook(ctx, "PreUnexpected");
+  // What a hook throws here replaces the error, and leaves cleaned too.
+  SdkErrorPtr raised = sdkErr;
+  try {
+    featureHook(ctx, "PreUnexpected");
+  } catch (const SdkErrorPtr& hookerr) {
+    raised = hookerr;
+  } catch (const std::exception& e) {
+    raised = ctx->makeError("unexpected", e.what());
+  }
+  if (raised != sdkErr) {
+    cleanError(ctx, raised);
+    cleanExplain(ctx);
+    ctx->ctrl->err = raised;
+  }
 
   if (is_false(ctx->ctrl->throwing)) {
     return result->resdata;
   }
 
-  throw sdkErr;
+  throw raised;
 }
 
 // ---- done -------------------------------------------------------------
 
 inline Value done(CtxPtr ctx) {
-  if (ctx->ctrl->explain.is_map()) {
-    Value explainResult = getp(ctx->ctrl->explain, "result");
-    Value rm = Helpers::toMapAny(explainResult);
-    if (rm.is_map()) map_remove(rm, "err");
-  }
+  cleanExplain(ctx);
 
   if (ctx->result && ctx->result->ok) {
     return ctx->result->resdata;
@@ -1164,6 +1502,44 @@ inline Value transformRequest(CtxPtr ctx) {
 
 // ---- makeOptions ------------------------------------------------------
 
+inline Value optsNoEntity(const Value& settings) {
+  if (!settings.is_map()) return settings;
+  Value out = vmap();
+  for (const auto& kv : *settings.as_map()) {
+    if ("entity" != kv.first) map_put(out, kv.first, kv.second);
+  }
+  return out;
+}
+
+// The options to scan for secrets. The feature map is keyed by feature
+// names, not field names, so it is scanned as a list: `secrets` must not
+// make every setting of that feature a secret. Entity blocks hold entity
+// settings and seeded records, never a credential, so none is scanned. The
+// raw scan still sees the feature list form, whose entries each carry `name`.
+inline Value optsWithout(const Value& opts, std::initializer_list<const char*> keys) {
+  Value out = vmap();
+  if (!opts.is_map()) return out;
+  for (const auto& kv : *opts.as_map()) {
+    bool skip = "entity" == kv.first;
+    for (const char* k : keys) skip = skip || kv.first == k;
+    if (skip) continue;
+    if ("feature" == kv.first && (kv.second.is_map() || kv.second.is_list())) {
+      Value list = vlist();
+      if (kv.second.is_map()) {
+        for (const auto& f : *kv.second.as_map()) list.as_list()->push_back(optsNoEntity(f.second));
+      } else {
+        for (const auto& f : *kv.second.as_list()) list.as_list()->push_back(optsNoEntity(f));
+      }
+      map_put(out, kv.first, list);
+    } else if ("test" == kv.first) {
+      map_put(out, kv.first, optsNoEntity(kv.second));
+    } else {
+      map_put(out, kv.first, kv.second);
+    }
+  }
+  return out;
+}
+
 inline Value makeOptions(CtxPtr ctx) {
   Value options = ctx->options;
   if (!options.is_map()) options = vmap();
@@ -1198,6 +1574,25 @@ inline Value makeOptions(CtxPtr ctx) {
     map_remove(opts, "auth");
   }
 
+  Value config = ctx->config;
+  if (!config.is_map()) config = vmap();
+  Value cfgopts = Helpers::toMapAny(getp(config, "options"));
+  if (!cfgopts.is_map()) cfgopts = vmap();
+
+  // The secret registry exists BEFORE validation, fed from the raw input, so
+  // the constructor's own rejection of a mistyped credential is clean too.
+  Value cleanraw = vlist({vmap()});
+  for (const Value& src : {getp(sharedOptspec(), "clean"), getp(cfgopts, "clean"), getp(opts, "clean")}) {
+    if (src.is_map()) cleanraw.as_list()->push_back(Struct::clone(src));
+  }
+  Value derivedClean = makeCleanConfig(Struct::merge(cleanraw));
+  cleanAddSensitiveCfg(derivedClean, optsWithout(opts, {"clean"}));
+  for (const Value& src : {cfgopts, opts}) {
+    for (const auto& raw : cleanSplit(Struct::getpath(src, {"clean", "values"}))) {
+      cleanAddCfg(derivedClean, Value(raw));
+    }
+  }
+
   // Feature add-order. options.feature may be an ordered list of
   // { name, active, ...opts } entries (the list position IS the order in which
   // features are added), or a { name: {opts} } map. Normalize a list to a map
@@ -1225,11 +1620,6 @@ inline Value makeOptions(CtxPtr ctx) {
     }
   }
 
-  Value config = ctx->config;
-  if (!config.is_map()) config = vmap();
-  Value cfgopts = Helpers::toMapAny(getp(config, "options"));
-  if (!cfgopts.is_map()) cfgopts = vmap();
-
   // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
   //
   // Built from the model: `main.kit.optspec` for the standard options, plus
@@ -1256,8 +1646,18 @@ inline Value makeOptions(CtxPtr ctx) {
   Value merged = Struct::merge(mergeList);
 
   Value vopts = vmap();
-  map_put(vopts, "errs", vlist());
+  Value verrs = vlist();
+  map_put(vopts, "errs", verrs);
   Value validated = Struct::validate(merged, optspec, vopts);
+  if (!verrs.as_list()->empty()) {
+    std::string vmsg;
+    for (const auto& e : *verrs.as_list()) {
+      if (!vmsg.empty()) vmsg += " | ";
+      vmsg += Struct::stringify(e);
+    }
+    throw std::make_shared<SdkError>("options_invalid",
+        cleanString(derivedClean, "ProjectNameSDK: invalid options: " + vmsg), ctx.get());
+  }
   opts = validated;
 
   // Restore the suppression the optspec default would otherwise erase.
@@ -1274,34 +1674,6 @@ inline Value makeOptions(CtxPtr ctx) {
       map_put(sm, "fetch", sysFetch);
       map_put(opts, "system", sm);
     }
-  }
-
-  // Derived clean config.
-  std::string cleanKeys = "key,token,id";
-  Value ck = Struct::getpath(opts, {"clean", "keys"});
-  if (ck.is_string()) cleanKeys = ck.as_string();
-
-  std::vector<std::string> parts;
-  {
-    size_t start = 0;
-    while (start <= cleanKeys.size()) {
-      size_t comma = cleanKeys.find(',', start);
-      std::string tok = comma == std::string::npos ? cleanKeys.substr(start)
-                                                    : cleanKeys.substr(start, comma - start);
-      // trim
-      size_t a = tok.find_first_not_of(" \t");
-      size_t b = tok.find_last_not_of(" \t");
-      if (a != std::string::npos) tok = tok.substr(a, b - a + 1);
-      else tok = "";
-      if (!tok.empty()) parts.push_back(vs::escre(Value(tok)));
-      if (comma == std::string::npos) break;
-      start = comma + 1;
-    }
-  }
-  std::string keyre;
-  for (size_t i = 0; i < parts.size(); i++) {
-    if (i > 0) keyre += "|";
-    keyre += parts[i];
   }
 
   // Resolve the feature add-order: an explicit list order (above) wins;
@@ -1334,11 +1706,12 @@ inline Value makeOptions(CtxPtr ctx) {
   for (const auto& n : featureOrder) orderList.as_list()->push_back(Value(n));
 
   Value derived = vmap();
-  Value derivedClean = vmap();
-  if (!keyre.empty()) map_put(derivedClean, "keyre", Value(keyre));
   map_put(derived, "clean", derivedClean);
   map_put(derived, "featureorder", orderList);
   map_put(opts, "__derived__", derived);
+
+  // Again over the merged result: the config's own defaults can carry one.
+  cleanAddSensitiveCfg(derivedClean, optsWithout(opts, {"clean", "__derived__"}));
 
   return opts;
 }
@@ -1351,6 +1724,8 @@ inline Value makeOptions(CtxPtr ctx) {
 
 inline void register_all(Utility& u) {
   u.clean = util::clean;
+  u.cleanAdd = util::cleanAdd;
+  u.cleanExplain = util::cleanExplain;
   u.done = util::done;
   u.makeError = util::makeError;
   u.featureAdd = util::featureAdd;

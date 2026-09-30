@@ -3840,3 +3840,453 @@ describe('generated auth tests discover the credential name', () => {
   }
 
 })
+
+
+// The canary sweep every SDK ships (test/clean.test.<ext>), run for real:
+// generate the SDK per credential placement, since that is fixed at
+// generation time, build it, run the sweep, and read the line it prints.
+// Exit zero is not enough - a suite that found no operation to drive skips,
+// and every framework reports that as a pass.
+const CLEAN_FEATURES = [
+  'test', 'log', 'debug', 'audit', 'telemetry', 'metrics', 'cost', 'clienttrack',
+]
+
+const CLEAN_LINE = /clean: swept (\d+) surface\(s\), (\d+) leak\(s\)/
+
+const CLEAN_MODELS: { name: string, extra: string }[] = [
+  {
+    name: 'header',
+    extra: `
+main: kit: config: auth: { active: true, prefix: 'Bearer', in: 'header', name: 'Authorization' }
+`,
+  },
+  {
+    name: 'query',
+    extra: `
+main: kit: config: auth: { active: true, prefix: '', in: 'query', name: 'api_key' }
+`,
+  },
+  {
+    name: 'basic',
+    extra: `
+main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'Authorization' }
+`,
+  },
+]
+
+type CleanLane = {
+  target: string,
+  runner: string,
+  needs: string,
+  prepare?: (sdkroot: string) => string | null,
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+}
+
+// phpunit is a dev dependency of the generated SDK, not a system tool: when
+// none is on PATH or named by PHPUNIT, composer installs one, once per
+// process, into a scratch project every php lane shares. Composer reads its
+// CA bundle from COMPOSER_CAFILE alone, so a session that trusts a proxy
+// through the generic variables hands that bundle on.
+let composerPhpunit: { bin: string, args: string[] } | null | undefined
+
+function phpunitViaComposer(args: string[]) {
+  const ready = phpunit(args)
+  if (null != ready) return ready
+  if (undefined === composerPhpunit) {
+    composerPhpunit = null
+    const php = toolchain('php')
+    const composer = toolchain('composer')
+    if (null != php && null != composer) {
+      const root = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-phpunit-'))
+      process.on('exit', () => Fs.rmSync(root, { recursive: true, force: true }))
+      Fs.writeFileSync(Path.join(root, 'composer.json'), JSON.stringify({
+        name: 'sdkgen/phpunit-lane', type: 'project',
+        require: { php: '>=8.2' }, 'require-dev': { 'phpunit/phpunit': '^11.0' },
+      }))
+      const cafile = process.env.COMPOSER_CAFILE || process.env.SSL_CERT_FILE ||
+        process.env.CURL_CA_BUNDLE
+      const got = run(composer,
+        ['install', '--no-interaction', '--no-plugins', '--no-progress'], root, {
+          ...process.env,
+          COMPOSER_ALLOW_SUPERUSER: '1',
+          ...(null == cafile ? {} : { COMPOSER_CAFILE: cafile }),
+        }, 15 * 60 * 1000)
+      const phar = Path.join(root, 'vendor', 'bin', 'phpunit')
+      if (got.ok && Fs.existsSync(phar)) {
+        composerPhpunit = { bin: php, args: [phar, '--no-configuration'] }
+      }
+    }
+  }
+  return null == composerPhpunit
+    ? null
+    : { bin: composerPhpunit.bin, args: [...composerPhpunit.args, ...args] }
+}
+
+// Same reasoning as the cpp auth-null lane: a configured CXX that does not
+// resolve is a SKIP rather than a silent substitution.
+function cleanCxx(): string | null {
+  const configured = process.env.CXX
+  return null == configured || '' === configured
+    ? (toolchain('g++') || toolchain('c++') || toolchain('clang++'))
+    : toolchain(configured)
+}
+
+
+// A PHP whose ini hides exception trace arguments cannot see a credential
+// reaching var_export through them, so the sweep always runs with them on:
+// the worst case the language allows, whatever this machine's php.ini says.
+function phpTraceArgs(cmd: { bin: string, args: string[] } | null) {
+  const php = toolchain('php')
+  if (null == cmd || null == php) return cmd
+  const flag = ['-d', 'zend.exception_ignore_args=0']
+  return cmd.bin === php
+    ? { bin: php, args: [...flag, ...cmd.args] }
+    : { bin: php, args: [...flag, cmd.bin, ...cmd.args] }
+}
+
+
+const CLEAN_LANES: CleanLane[] = [
+  {
+    target: 'ts',
+    runner: 'test/clean.test.ts',
+    needs: 'the local typescript (run `npm install`)',
+    prepare: (sdkroot) => {
+      linkDeps(sdkroot)
+      const src = tsc(sdkroot, 'src')
+      if (!src.ok) return 'generated src does not compile:\n' + tail(src.out)
+      const suite = tsc(sdkroot, 'test')
+      if (!suite.ok) {
+        return 'the generated test suite does not compile:\n' + tail(suite.out)
+      }
+      return null
+    },
+    command: () => Fs.existsSync(TSC)
+      ? {
+        bin: process.execPath,
+        args: ['--test', '--test-reporter=tap', Path.join('dist-test', 'clean.test.js')],
+        env: nestedTestEnv(),
+      }
+      : null,
+  },
+  {
+    target: 'js',
+    runner: 'test/clean.test.js',
+    needs: 'node',
+    prepare: (sdkroot) => {
+      linkDeps(sdkroot)
+      return null
+    },
+    command: () => ({
+      bin: process.execPath,
+      args: ['--test', '--test-reporter=tap', Path.join('test', 'clean.test.js')],
+      env: nestedTestEnv(),
+    }),
+  },
+  {
+    target: 'py',
+    runner: 'test/test_clean.py',
+    needs: 'python3 with pytest',
+    command: () => pytest(['test/test_clean.py', '-q', '-s']),
+  },
+  {
+    target: 'rb',
+    runner: 'test/clean_test.rb',
+    needs: 'ruby with minitest',
+    command: () => {
+      const rb = toolchain('ruby')
+      if (null == rb) return null
+      if (!probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
+      return { bin: rb, args: ['test/clean_test.rb'] }
+    },
+  },
+  {
+    target: 'java',
+    runner: 'test/CleanTest.java',
+    needs: 'java and maven',
+    command: () => {
+      const mvn = toolchain('mvn')
+      if (null == mvn || null == toolchain('java')) return null
+      return {
+        bin: mvn,
+        args: ['-q', '-B', 'test', '-Dtest=CleanTest', '-DfailIfNoSpecifiedTests=false'],
+      }
+    },
+  },
+  {
+    target: 'php',
+    runner: 'test/CleanTest.php',
+    needs: 'php with phpunit (on PATH, PHPUNIT=<path to phpunit.phar>, or composer to install it)',
+    command: () => phpTraceArgs(phpunitViaComposer(['test/CleanTest.php'])),
+  },
+{
+    target: 'cpp',
+    runner: 'test/clean_test.cpp',
+    needs: 'make and a C++ compiler',
+    // Header-only: the sweep binary alone is built, by the SDK's own Makefile
+    // (the same rule `make test` uses), with the compiler that was probed.
+    prepare: (sdkroot) => {
+      const make = toolchain('make')
+      const cxx = cleanCxx()
+      if (null == make || null == cxx) return 'no make or C++ compiler'
+      const built = run(make, ['CXX=' + cxx, 'test/clean_test.out'], sdkroot)
+      return built.ok ? null : 'the generated sweep does not compile:\n' + tail(built.out)
+    },
+    command: () => {
+      if (null == toolchain('make') || null == cleanCxx()) return null
+      return { bin: Path.join('test', 'clean_test.out'), args: [] }
+    },
+  },
+  {
+    target: 'go',
+    runner: 'test/clean_test.go',
+    needs: 'go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go
+        ? null
+        : { bin: go, args: ['test', './test/', '-run', 'TestClean', '-v'] }
+    },
+  },
+  {
+    target: 'c',
+    runner: 'tests/clean_test.c',
+    needs: 'make and a C compiler',
+    prepare: (sdkroot) => {
+      const make = toolchain('make')
+      const configured = process.env.CC
+      const cc = null == configured || '' === configured
+        ? (toolchain('cc') || toolchain('gcc'))
+        : toolchain(configured)
+      if (null == make || null == cc) return null
+      const built = run(make, ['CC=' + cc, 'tests/clean_test.out'], sdkroot)
+      return built.ok ? null : 'the generated sweep does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const make = toolchain('make')
+      const sh = toolchain('sh')
+      const cc = toolchain(process.env.CC || 'cc') || toolchain('gcc')
+      return null == make || null == cc || null == sh ? null
+        : { bin: sh, args: ['-c', './tests/clean_test.out'] }
+    },
+  },
+  {
+    target: 'rust',
+    runner: 'tests/clean_test.rs',
+    needs: 'cargo',
+    // cargo hides a passing test's stdout; the swept line must reach the lane.
+    command: () => {
+      const cargo = toolchain('cargo')
+      return null == cargo ? null
+        : { bin: cargo, args: ['test', '--test', 'clean_test', '--', '--nocapture'] }
+    },
+  },
+  {
+    target: 'lua',
+    runner: 'test/clean_test.lua',
+    needs: 'lua 5.4 with busted and the dkjson rock',
+    command: () => {
+      const lua = toolchain('lua5.4') || toolchain('lua')
+      if (null == lua || !probeOk(lua, ['-e', 'require "dkjson"'])) return null
+      return busted(['test/clean_test.lua'])
+    },
+  },
+  {
+    target: 'zig',
+    runner: 'test/clean_test.zig',
+    needs: 'zig 0.16',
+    command: () => {
+      const zig = toolchain('zig')
+      if (null == zig) return null
+      const version = run(zig, ['version'], process.cwd())
+      if (!version.ok || !/^0\.16\./.test(version.out.trim())) return null
+      // The sweep prints its line with std.debug.print; `run` merges stderr
+      // into the output it hands back, so the line is read either way.
+      return { bin: zig, args: ['build', 'test-clean', '--summary', 'all'] }
+    },
+  },
+  {
+    target: 'perl',
+    runner: 't/clean.t',
+    needs: 'perl',
+    command: () => {
+      const perl = toolchain('perl')
+      return null == perl ? null : { bin: perl, args: ['-Ilib', 't/clean.t'] }
+    },
+  },
+  {
+    target: 'csharp',
+    runner: 'test/CleanTest.cs',
+    needs: 'dotnet',
+    // Built here, under the longer budget a restore needs; the sweep itself
+    // then runs `--no-build`. The console logger at detailed verbosity is
+    // what shows a passing test's output, which the swept line is.
+    prepare: (sdkroot) => {
+      const dotnet = toolchain('dotnet')
+      if (null == dotnet) return null
+      const built = run(dotnet, ['build', '--nologo', '-v', 'quiet', 'test'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated csharp test project does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const dotnet = toolchain('dotnet')
+      return null == dotnet
+        ? null
+        : {
+          bin: dotnet,
+          args: ['test', '--nologo', '--no-build', '-v', 'quiet',
+            '--logger', 'console;verbosity=detailed',
+            '--filter', 'FullyQualifiedName~CleanTest', 'test'],
+        }
+    },
+  },
+  {
+    target: 'swift',
+    runner: 'Tests/DemoSdkTests/CleanTest.swift',
+    needs: 'swift',
+    // Built here, under the budget a first SwiftPM build needs; the filtered
+    // run below is then quick. XCTest shows a test's stdout, which is where
+    // the sweep prints its line.
+    prepare: (sdkroot) => {
+      const swift = toolchain('swift')
+      if (null == swift) return null
+      const built = run(swift, ['build', '--build-tests', '-j', '2'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated swift package does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const swift = toolchain('swift')
+      return null == swift
+        ? null
+        : { bin: swift, args: ['test', '-j', '2', '--skip-build', '--filter', 'CleanTest'] }
+    },
+  },
+  {
+    target: 'kotlin',
+    runner: 'test/CleanTest.kt',
+    needs: 'gradle (which resolves the Kotlin plugin from the network)',
+    command: () => {
+      // gradle hangs on windows rather than failing; the authnull lane skips
+      // there for the same reason.
+      if ('win32' === process.platform) return null
+      const gradle = toolchain('gradle')
+      if (null == gradle) return null
+      return { bin: gradle, args: ['--console=plain', 'test', '--tests', '*CleanTest*'] }
+    },
+  },
+  {
+    target: 'scala',
+    runner: 'sdktest/SdkCleanTestMain.scala',
+    needs: 'scala-cli (which resolves the Scala compiler from the network)',
+    command: () => {
+      const scalacli = toolchain('scala-cli')
+      if (null == scalacli) return null
+      return { bin: scalacli, args: ['run', '.', '--main-class', 'SdkCleanTestMain'] }
+    },
+  },
+  {
+    target: 'clojure',
+    runner: 'test/sdk/test/clean.clj',
+    needs: 'the clojure CLI (`clojure`)',
+    // sdk.test-runner requires the sweep namespace and prints its line;
+    // --sdk-only skips the corpus steps, which this lane has no corpus for.
+    command: () => {
+      const clj = toolchain('clojure')
+      return null == clj ? null : { bin: clj, args: ['-M:test', '--sdk-only'] }
+    },
+  },
+  {
+    target: 'elixir',
+    runner: 'test/clean_test.exs',
+    needs: 'elixir + mix',
+    // `mix test` refuses to run under any other MIX_ENV, so it is pinned;
+    // the sweep prints its line through IO.puts, which ExUnit passes through.
+    command: () => {
+      const mix = toolchain('mix')
+      const elixir = toolchain('elixir')
+      return null == mix || null == elixir
+        ? null
+        : {
+          bin: mix,
+          args: ['test', '--no-color', Path.join('test', 'clean_test.exs')],
+          env: { ...process.env, MIX_ENV: 'test' },
+        }
+    },
+  },
+  {
+    target: 'ocaml',
+    runner: 'test/clean_test.ml',
+    needs: 'ocamlc, make and a C compiler',
+    // The Makefile's CLEAN_TESTS links the sweep into run_sdk_test; `build`
+    // type-checks the library first so a broken template names its line.
+    prepare: (sdkroot) => {
+      const built = run(toolchain('make')!, ['OCAMLC=' + toolchain('ocamlc'), 'build'], sdkroot)
+      return built.ok ? null : 'the generated SDK does not type-check:\n' + tail(built.out)
+    },
+    command: () => {
+      const ocamlc = toolchain('ocamlc')
+      const make = toolchain('make')
+      const cc = toolchain('cc') || toolchain('gcc')
+      return null == ocamlc || null == make || null == cc
+        ? null
+        : { bin: make, args: ['CC=' + cc, 'OCAMLC=' + ocamlc, 'test-sdk'] }
+    },
+  },
+]
+
+
+describe('the canary sweep runs from a generated SDK', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-clean-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of CLEAN_LANES) {
+    for (const auth of CLEAN_MODELS) {
+      test(lane.target + ': no credential leaves the SDK (' + auth.name + ' auth)',
+        async (t) => {
+          const sdkroot = Path.join(tmp, lane.target + '-' + auth.name)
+          const files = await generateTo(lane.target, sdkroot, auth.extra, CLEAN_FEATURES)
+
+          ok(null != files[lane.runner],
+            'the sweep was not generated into the SDK: expected ' + lane.runner +
+            ' among ' + Object.keys(files).length + ' files')
+
+          const cmd = lane.command()
+          if (null == cmd) {
+            return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+          }
+
+          const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+          ok(null == notready, lane.target + ': ' + notready)
+
+          const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+
+          if (ran.unlaunchable) {
+            return t.skip(lane.target + ': the toolchain could not be started here: ' +
+              tail(ran.out, 3))
+          }
+
+          const gap = UNUSABLE.find((re) => re.test(ran.out))
+          if (null != gap && !ran.ok) {
+            return t.skip(lane.target + ': toolchain present but not usable (' +
+              gap.source + '):\n' + tail(ran.out))
+          }
+
+          ok(ran.ok, 'the canary sweep FAILED against the generated ' + lane.target +
+            ' SDK (' + auth.name + ' auth):\n' + tail(ran.out, 60))
+
+          const swept = ran.out.match(CLEAN_LINE)
+          ok(null != swept, 'the ' + lane.target + ' sweep did not report what it swept:\n' +
+            tail(ran.out))
+          ok(0 < Number(swept![1]), 'the ' + lane.target + ' sweep swept nothing')
+          strictEqual(Number(swept![2]), 0, 'the ' + lane.target + ' sweep found leaks')
+        })
+    }
+  }
+})

@@ -12,6 +12,7 @@ use crate::core::sdk::ProjectNameSDK;
 use crate::core::spec::Spec;
 use crate::core::types::{Entity, OutVal};
 use crate::core::utility_type::Utility;
+use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
 pub type OpMap = Rc<RefCell<HashMap<String, Rc<Operation>>>>;
@@ -279,6 +280,46 @@ impl Context {
         ProjectNameError::new(code, msg)
     }
 
+    /// The context as a record, CLEANED: it leaves the pipeline (a logger, an
+    /// error dump), while the live fields stay raw for the pipeline's own use.
+    pub fn to_value(&self) -> Value {
+        let op = self.op.borrow();
+        let spec = match self.spec.borrow().clone() {
+            Some(s) => s.borrow().to_value(),
+            None => Value::Noval,
+        };
+        let result = match self.result.borrow().clone() {
+            Some(r) => r.borrow().to_value(),
+            None => Value::Noval,
+        };
+        let response = match self.response.borrow().clone() {
+            Some(r) => {
+                let r = r.borrow();
+                jo(vec![
+                    ("status", Value::Num(r.status as f64)),
+                    ("statusText", Value::str(r.status_text.clone())),
+                    ("headers", r.headers.clone()),
+                ])
+            }
+            None => Value::Noval,
+        };
+        let record = jo(vec![
+            ("id", Value::str(self.id.clone())),
+            (
+                "op",
+                jo(vec![
+                    ("entity", Value::str(op.entity.clone())),
+                    ("name", Value::str(op.name.clone())),
+                ]),
+            ),
+            ("spec", spec),
+            ("result", result),
+            ("response", response),
+            ("meta", self.meta.borrow().clone()),
+        ]);
+        crate::utility::clean::clean_value(self, &record)
+    }
+
     /// The context utility (set on every pipeline context).
     pub fn util(&self) -> Rc<Utility> {
         self.utility
@@ -307,5 +348,19 @@ impl Context {
             Some(OutVal::Val(v)) => v,
             _ => Value::Noval,
         }
+    }
+}
+
+// Both prints are the cleaned record: a context is what a hook author hands
+// to a logger.
+impl std::fmt::Debug for Context {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Context({})", vs::jsonify(&self.to_value(), Some(&vs::JsonFlags { indent: 0, offset: 0 })))
+    }
+}
+
+impl std::fmt::Display for Context {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&vs::jsonify(&self.to_value(), Some(&vs::JsonFlags { indent: 0, offset: 0 })))
     }
 }

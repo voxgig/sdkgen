@@ -180,25 +180,31 @@ impl EntyClass {
             *ctx.reqdata.borrow_mut() = reqdata;
         }
 
-        // Run the same pipeline as run_op.
+        // Run the same pipeline as run_op. A step's error does not pass
+        // through make_error here, so it and the explain record are cleaned
+        // on the way out.
+        let fail = |e: ProjectNameError| {
+            self.utility.clean_explain(&ctx);
+            crate::utility::clean::clean_error(&ctx, e)
+        };
         self.utility.feature_hook(&ctx, "PrePoint");
-        let point = self.utility.make_point(&ctx)?;
+        let point = self.utility.make_point(&ctx).map_err(fail)?;
         ctx.out_set("point", crate::core::types::OutVal::Val(point));
 
         self.utility.feature_hook(&ctx, "PreSpec");
-        let spec = self.utility.make_spec(&ctx)?;
+        let spec = self.utility.make_spec(&ctx).map_err(fail)?;
         ctx.out_set("spec", crate::core::types::OutVal::Spec(spec));
 
         self.utility.feature_hook(&ctx, "PreRequest");
-        let resp = self.utility.make_request(&ctx)?;
+        let resp = self.utility.make_request(&ctx).map_err(fail)?;
         ctx.out_set("request", crate::core::types::OutVal::Response(resp));
 
         self.utility.feature_hook(&ctx, "PreResponse");
-        let resp2 = self.utility.make_response(&ctx)?;
+        let resp2 = self.utility.make_response(&ctx).map_err(fail)?;
         ctx.out_set("response", crate::core::types::OutVal::Response(resp2));
 
         self.utility.feature_hook(&ctx, "PreResult");
-        let result = self.utility.make_result(&ctx)?;
+        let result = self.utility.make_result(&ctx).map_err(fail)?;
         ctx.out_set("result", crate::core::types::OutVal::Result(result));
 
         self.utility.feature_hook(&ctx, "PreDone");
@@ -209,6 +215,8 @@ impl EntyClass {
         if let Some(res) = &cur {
             let streamfn = res.borrow().stream.clone();
             if let Some(sf) = streamfn {
+                // done() does not run on this path, so its record is cleaned here.
+                self.utility.clean_explain(&ctx);
                 return Ok(sf().into_iter());
             }
         }

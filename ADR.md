@@ -22,6 +22,7 @@ ADR-NNN**, so the reasoning that led there stays readable.
 |-----|----------|--------|
 | [ADR-001](#adr-001--the-model-is-the-only-input-no-spec-annotations) | The model is the only input; no spec annotations | Accepted |
 | [ADR-002](#adr-002--a-generated-sdk-carries-only-what-it-uses) | A generated SDK carries only what it uses | Accepted |
+| [ADR-003](#adr-003--diagnostics-are-redacted-by-default) | Diagnostics are redacted by default | Accepted |
 
 ---
 
@@ -226,3 +227,82 @@ remains the default for a plugin whose files sdkgen owns outright.
   invariant that the core surface reaches no platform-dependent
   provider. If that regresses, this ADR's mechanism still runs and
   trims nothing worth trimming.
+
+---
+
+## ADR-003 — Diagnostics are redacted by default
+
+**Status:** Accepted
+
+### Context
+
+A generated SDK is the code that puts the credential on the wire, and it
+was also the code that printed it. The thrown error carried the request
+spec, with the `Authorization` header, twice over: as `err.spec` and inside
+`err.ctx`, whose serialisation included the spec again. The `log` feature
+handed the whole context to the logger at every stage. The fetcher's own
+failure message quoted the full URL, query credential included. Every
+target routed its error and its explain record through a `clean` utility,
+and in every target that utility returned its input unchanged; the
+`clean.keys` option it was meant to read was parsed and then ignored.
+Meanwhile the vendored sekreto shipped a value-based `redact()` in every
+port, and nothing in the pipeline called it.
+
+The generated README told the consumer to `console.error('load failed:',
+err)`. That is the right advice, and it printed the key.
+
+### Decision
+
+1. **The SDK registers every secret it handles.** Heuristics cannot know
+   what a credential looks like; the SDK does not have to guess, because it
+   is the code that received it. `makeOptions` registers `apikey`,
+   `secret`, every `clean.values` entry and the value of any option key
+   whose name is sensitive, from the raw input and before validation;
+   `prepareAuth` registers the Basic wire form it composes; the `secrets`
+   feature registers every value it resolves and every token it buys; the
+   `proxy` feature registers the userinfo of its URL. Each value is stored
+   with its base64, percent-encoded and JSON-escaped forms, so a plain
+   substring replacement catches it however it travels.
+2. **A sensitive key name masks whatever it holds**, registered or not:
+   `clean.keys` is a list of names, matched by normalised containment, so
+   `key` covers `apikey`, `x-api-key` and `idempotency-key`, and `token`
+   covers `private-token`, `access_token` and `refresh_token`.
+3. **Everything that leaves the pipeline passes through `clean`.** The
+   error's message, stack, result and spec; the explain record; the default
+   serialisation of the context, the error and the client; and every
+   record a feature emits. Inside the pipeline data stays raw: a hook must
+   see the real header to add its own beside it. The context stays
+   reachable on the error for a debugger and is excluded from every
+   serialiser.
+4. **Configuration lives in `main.kit.optspec.clean`**, once, and reaches
+   every target through the generated `Schema` module. `active: false` is
+   the one opt-out, for local debugging.
+
+### Consequences
+
+- The plain-data copy is what leaves. `err.result` and `err.spec` are
+  masked copies, not the live `Result` and `Spec`, so masking them cannot
+  mask the pipeline's own objects.
+- A value shorter than `clean.min` is not registered: masking three-letter
+  strings would blank ordinary prose. A user payload value quoted in a
+  message is masked only when it is under a sensitive key or registered
+  through `clean.values`.
+- `client.options()` still returns the raw credential. It is the documented
+  way to read it, and it is neither a log nor an error.
+- A feature author has one rule: what you emit, you `clean`.
+
+### Enforcement
+
+- Every generated SDK ships `test/clean.test.<ext>`: canary values in every
+  credential slot, every diagnostic feature on with a capturing sink, a
+  real operation through every outcome, and every string that leaves
+  searched for the canaries and their encoded forms. It proves its own
+  sensitivity by switching `clean` off and finding the canary.
+- `ts/test/generatedcompile.test.ts` generates header, query and Basic auth
+  SDKs per target, runs that suite, and requires its
+  `clean: swept N surface(s), 0 leak(s)` line.
+- `ts/test/clean.test.ts` runs the shipped `CleanUtility` against a case
+  table and pins the harness defaults to the model.
+- `ts/test/cleancoverage.test.ts` classifies every target and scans the
+  fixed ones for the `clean` call at each egress.
+

@@ -21,6 +21,25 @@ defmodule ProjectName.Context do
 
   def make_error(ctx, code, msg), do: Error.new(code, msg, ctx)
 
+  # The serialised context leaves the pipeline (a logger, an error dump), so
+  # it is the cleaned record; the live fields stay raw for the pipeline's use.
+  # A context node itself inspects as a handle, so this is the SDK's own
+  # serialisation of one.
+  def to_data(ctx) do
+    record =
+      S.jm([
+        "id", S.getprop(ctx, "id"),
+        "op", S.getprop(ctx, "op"),
+        "spec", S.getprop(ctx, "spec"),
+        "entity", entity_name(S.getprop(ctx, "entity")),
+        "result", S.getprop(ctx, "result"),
+        "response", S.getprop(ctx, "response"),
+        "meta", S.getprop(ctx, "meta")
+      ])
+
+    ProjectName.Feature.clean(ctx, record)
+  end
+
   def new(ctxmap \\ nil, basectx \\ nil) do
     cm = if S.ismap(ctxmap), do: ctxmap, else: nil
     gp = fn k -> H.get_ctx_prop(cm, k) end

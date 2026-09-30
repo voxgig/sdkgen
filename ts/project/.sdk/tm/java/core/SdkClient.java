@@ -290,13 +290,15 @@ public abstract class SdkClient {
 
     Map<String, Object> out = new LinkedHashMap<>();
 
+    // A raw request returns its failure rather than passing it through
+    // makeError, so it is cleaned here.
     Map<String, Object> fetchdef;
     try {
       fetchdef = this.prepare(fetchargs);
     }
     catch (RuntimeException err) {
       out.put("ok", false);
-      out.put("err", err);
+      out.put("err", utility.clean.apply(ctx, err));
       return out;
     }
 
@@ -308,7 +310,7 @@ public abstract class SdkClient {
     }
     catch (RuntimeException err) {
       out.put("ok", false);
-      out.put("err", err);
+      out.put("err", utility.clean.apply(ctx, err));
       return out;
     }
 

@@ -59,6 +59,7 @@ that matches what you are trying to do right now:
 - [Components vs templates: the two-layer generator](./explanation/components-and-templates.md)
 - [The operation pipeline and the feature model](./explanation/operation-pipeline.md)
 - [Regeneration is overwrite, not merge](./explanation/regeneration-overwrite.md)
+- [Secret redaction: nothing the SDK emits carries a credential](./explanation/secret-redaction.md)
 - [Out-of-tree targets: generating into another repo](./explanation/out-of-tree-targets.md)
   — the mechanism behind `seneca-provider`
 

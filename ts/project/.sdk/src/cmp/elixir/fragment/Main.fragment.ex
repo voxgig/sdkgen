@@ -209,7 +209,7 @@ defmodule ProjectName do
 
         cond do
           fetch_err != nil ->
-            S.jm(["ok", false, "err", fetch_err])
+            S.jm(["ok", false, "err", Utility.clean(ctx, fetch_err)])
 
           fetched == nil ->
             S.jm(["ok", false, "err", Context.make_error(ctx, "direct_no_response", "response: undefined")])

@@ -37,6 +37,8 @@ class ProjectNameLogFeature extends ProjectNameBaseFeature
         }
     }
 
+    // A log line leaves the pipeline, so it is cleaned before the logger
+    // sees it.
     private function _loghook(string $hook, ProjectNameContext $ctx, string $level = 'info'): void
     {
         if (!$this->logger) {
@@ -44,10 +46,11 @@ class ProjectNameLogFeature extends ProjectNameBaseFeature
         }
         $opname = $ctx->op ? $ctx->op->name : '';
         $msg = "hook={$hook} op={$opname}";
+        $line = ($ctx->utility->clean)($ctx, "[" . strtoupper($level) . "] {$msg}");
         if (is_resource($this->logger)) {
-            fwrite($this->logger, "[" . strtoupper($level) . "] {$msg}\n");
+            fwrite($this->logger, $line . "\n");
         } elseif (is_callable($this->logger)) {
-            ($this->logger)("[" . strtoupper($level) . "] {$msg}");
+            ($this->logger)($line);
         }
     }
 

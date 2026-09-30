@@ -116,6 +116,18 @@ sub get_root_ctx {
   return $self->{_rootctx};
 }
 
+# The options and the root context both hold the credential, so the
+# client's printed form is its name alone; `options_map` is the documented
+# way to read them back.
+sub TO_JSON {
+  return { 'name' => 'ProjectName' };
+}
+
+sub to_string {
+  my ($self) = @_;
+  return 'ProjectName ' . Voxgig::Struct::jsonify($self->TO_JSON);
+}
+
 # #SecretsAccessor
 sub prepare {
   my ($self, $fetchargs) = @_;
@@ -232,7 +244,7 @@ sub _raw_request {
   my $url = defined $fetchdef->{url} ? $fetchdef->{url} : '';
   my ($fetched, $fetch_err) = $utility->{fetcher}->($ctx, $url, $fetchdef);
 
-  return { 'ok' => 0, 'err' => $fetch_err } if $fetch_err;
+  return { 'ok' => 0, 'err' => $utility->{clean}->($ctx, $fetch_err) } if $fetch_err;
 
   if (!defined $fetched) {
     return {

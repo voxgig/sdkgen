@@ -1189,7 +1189,7 @@ fn feature_debug_redacts_and_honours_onentry_max() {
     let headers = getp(&seen.borrow()[0], "headers");
     assert_eq!(
         getp(&headers, "authorization"),
-        Value::str("<redacted>"),
+        Value::str("[redacted]"),
         "expected redacted authorization"
     );
 }
@@ -1247,7 +1247,7 @@ fn feature_debug_injected_clock_and_custom_redact() {
     });
     let fb = f.borrow();
     let headers = getp(&fb.entries[0], "headers");
-    assert_eq!(getp(&headers, "x-secret"), Value::str("<redacted>"));
+    assert_eq!(getp(&headers, "x-secret"), Value::str("[redacted]"));
     assert_eq!(getp(&headers, "x-ok"), Value::str("show"));
 }
 

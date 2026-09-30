@@ -3,6 +3,7 @@ package KOTLINPACKAGE.utility
 import KOTLINPACKAGE.core.Context
 import KOTLINPACKAGE.core.Helpers
 import KOTLINPACKAGE.core.Schema
+import KOTLINPACKAGE.core.SdkError
 import KOTLINPACKAGE.core.Utility
 import KOTLINPACKAGE.utility.struct.Struct
 
@@ -41,6 +42,32 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
   // check on the value, which cannot distinguish them.
   val authSuppressed = options.containsKey("auth") && null == options["auth"]
 
+  var config = ctx.config
+  if (config == null) {
+    config = linkedMapOf()
+  }
+  var cfgopts = Helpers.toMapAny(config["options"])
+  if (cfgopts == null) {
+    cfgopts = linkedMapOf()
+  }
+
+  // The secret registry exists BEFORE validation, fed from the raw input, so
+  // the constructor's own rejection of a mistyped credential is clean too.
+  // Both clean blocks are cloned for the reason the options merge below is,
+  // and an absent one is left out: merge lets a null replace everything.
+  val cleanblocks = listOf(Helpers.toMapAny(cfgopts["clean"]), Helpers.toMapAny(options["clean"]))
+  val cleanmerge = mutableListOf<Any?>(linkedMapOf<String, Any?>(), Struct.clone(Schema.optspec["clean"]))
+  for (block in cleanblocks.filterNotNull()) {
+    cleanmerge.add(Struct.clone(block))
+  }
+  val cleancfg = makeCleanConfig(Struct.merge(cleanmerge))
+  registerSensitive(cleancfg, options - "clean")
+  for (block in cleanblocks) {
+    for (raw in splitvalues(block?.get("values"))) {
+      registerValue(cleancfg, raw)
+    }
+  }
+
   var opts = Struct.clone(options) as MutableMap<String, Any?>
 
   if (authSuppressed) {
@@ -69,15 +96,6 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
       }
     }
     opts["feature"] = fmap
-  }
-
-  var config = ctx.config
-  if (config == null) {
-    config = linkedMapOf()
-  }
-  var cfgopts = Helpers.toMapAny(config["options"])
-  if (cfgopts == null) {
-    cfgopts = linkedMapOf()
   }
 
   // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
@@ -111,7 +129,13 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
 
   val vopts = linkedMapOf<String, Any?>()
   vopts["errs"] = mutableListOf<Any?>()
-  val validated = Struct.validate(merged, optspec, vopts)
+  val validated = try {
+    Struct.validate(merged, optspec, vopts)
+  } catch (err: RuntimeException) {
+    // A rejection quotes the value it rejected.
+    throw SdkError("options_invalid",
+      cleanWith(cleancfg, err.message ?: err.toString()) as String, ctx)
+  }
   opts = validated as MutableMap<String, Any?>
 
   // Restore the suppression the optspec default would otherwise erase.
@@ -130,22 +154,6 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
       opts["system"] = sm
     }
   }
-
-  // Derived clean config.
-  var cleanKeys = "key,token,id"
-  val ck = Struct.getpath(opts, listOf("clean", "keys"))
-  if (ck is String) {
-    cleanKeys = ck
-  }
-
-  val filtered = mutableListOf<String>()
-  for (pRaw in cleanKeys.split(",")) {
-    val p = pRaw.trim()
-    if ("" != p) {
-      filtered.add(Struct.escre(p))
-    }
-  }
-  val keyre = filtered.joinToString("|")
 
   // Resolve the feature add-order: an explicit list order (above) wins;
   // otherwise order the map test-first, then the remaining names sorted, so
@@ -177,13 +185,12 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
   }
 
   val derived = linkedMapOf<String, Any?>()
-  val derivedClean = linkedMapOf<String, Any?>()
-  if ("" != keyre) {
-    derivedClean["keyre"] = keyre
-  }
-  derived["clean"] = derivedClean
+  derived["clean"] = cleancfg
   derived["featureorder"] = featureorder
   opts["__derived__"] = derived
+
+  // Again over the merged result: the config's own defaults can carry one.
+  registerSensitive(cleancfg, opts - "clean" - "__derived__")
 
   return opts
 }

@@ -1,3 +1,18 @@
+(* The catch path every entity call leaves through: an error that never
+ * passed through make_error leaves cleaned, and so does the explain record
+ * it interrupted. An SDK error fires PreUnexpected here, and whatever that
+ * hook raises is cleaned in its place. *)
+let unexpected (ctx : ctx) (e : exn) : 'a =
+  let e = match e with
+    | Sdk_error_exc _ ->
+      (try
+         (* #PreUnexpected-Hook *)
+         e
+       with hookerr -> hookerr)
+    | _ -> e in
+  clean_explain ctx;
+  raise (clean_exn ctx e)
+
 (* Run the operation pipeline, firing feature hooks between stages via the
  * generated hook-marker lines. post_done runs after the PreDone stage, just
  * before done. Errors from any stage go through make_error (which either
@@ -26,7 +41,4 @@ let run_op (ctx : ctx) (post_done : unit -> unit) : value =
        post_done ();
        utility.u_done ctx
      with Op_return v -> v)
-  with
-  | Sdk_error_exc _ as e ->
-    (* #PreUnexpected-Hook *)
-    raise e
+  with e -> unexpected ctx e

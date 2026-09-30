@@ -31,6 +31,7 @@ defmodule ProjectName.Utility do
 
     reg = [
       {"clean", &clean_impl/2},
+      {"clean_add", &clean_add_impl/2},
       {"done", &done_impl/1},
       {"make_error", &make_error_impl/2},
       {"feature_add", &feature_add_impl/2},
@@ -87,6 +88,7 @@ defmodule ProjectName.Utility do
   def fetcher(ctx, url, fetchdef), do: u(ctx, "fetcher").(ctx, url, fetchdef)
   def param(ctx, pd), do: u(ctx, "param").(ctx, pd)
   def clean(ctx, v), do: u(ctx, "clean").(ctx, v)
+  def clean_add(ctx, v), do: u(ctx, "clean_add").(ctx, v)
   def prepare_auth(ctx), do: u(ctx, "prepare_auth").(ctx)
   def prepare_body(ctx), do: u(ctx, "prepare_body").(ctx)
   def prepare_headers(ctx), do: u(ctx, "prepare_headers").(ctx)
@@ -111,9 +113,369 @@ defmodule ProjectName.Utility do
 
   defp strv(v), do: if(is_binary(v), do: v, else: "")
 
-  # ---- clean / features ----------------------------------------------------
+  # ---- clean ---------------------------------------------------------------
+  #
+  # Everything that leaves the pipeline passes through clean; inside it data
+  # stays raw, so a hook can still read the header it must add to. See
+  # docs/explanation/secret-redaction.md.
 
-  def clean_impl(_ctx, val), do: val
+  @clean_maxdepth 32
+  @clean_circular "[circular]"
+
+  defp strof(v) do
+    cond do
+      is_binary(v) -> v
+      is_number(v) -> to_string(v)
+      is_atom(v) and v != nil -> to_string(v)
+      true -> ""
+    end
+  end
+
+  defp numof(v, _d) when is_number(v), do: trunc(v)
+  defp numof(_v, d), do: d
+
+  defp normkey(k), do: k |> strof() |> String.downcase() |> String.replace(~r/[-_]/, "")
+
+  defp splitkeys(keys) do
+    strof(keys)
+    |> String.split(~r/\s*,\s*/)
+    |> Enum.map(&normkey/1)
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  def splitvalues(values) do
+    cond do
+      S.islist(values) -> list_values(values) |> Enum.filter(&is_binary/1)
+      is_list(values) -> Enum.filter(values, &is_binary/1)
+      true -> strof(values) |> String.split(~r/\s*,\s*/) |> Enum.reject(&(&1 == ""))
+    end
+  end
+
+  defp list_values(node) do
+    if S.islist(node), do: Enum.map(H.entries(node), &elem(&1, 1)), else: []
+  end
+
+  defp count_opt(v, dflt) do
+    case Float.parse(strof(v)) do
+      {n, ""} when n >= 0 -> trunc(Float.floor(n))
+      _ -> dflt
+    end
+  end
+
+  # The derived clean block: a struct node so it lives in options.__derived__
+  # and its `values` stays MUTABLE after make_options - features register
+  # what they resolve later.
+  def make_clean_config(cleanopts) do
+    o = fn k -> if S.ismap(cleanopts), do: S.getprop(cleanopts, k), else: nil end
+    mask = o.("mask")
+
+    S.jm([
+      "active", o.("active") != false,
+      "keys", S.jt(splitkeys(o.("keys"))),
+      "values", S.jt([]),
+      "mask", if(is_binary(mask), do: mask, else: "[redacted]"),
+      "hint", count_opt(o.("hint"), 0),
+      "min", max(1, count_opt(o.("min"), 4))
+    ])
+  end
+
+  # A context without options (make_error accepts a bare one) still masks by
+  # the schema defaults.
+  defp clean_config(ctx) do
+    options = if S.ismap(ctx), do: S.getprop(ctx, "options"), else: nil
+    derived = if S.ismap(options), do: S.getpath(options, "__derived__.clean"), else: nil
+
+    if S.ismap(derived) do
+      derived
+    else
+      make_clean_config(S.getprop(ProjectName.Schema.optspec(), "clean"))
+    end
+  end
+
+  # The encoded forms a value travels in.
+  defp clean_forms(value) do
+    j = S.jsonify(value)
+
+    [value, Base.encode64(value), S.escurl(value), String.slice(j, 1, String.length(j) - 2)]
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq()
+  end
+
+  def clean_add_impl(ctx, value) do
+    cfg = clean_config(ctx)
+    minlen = numof(S.getprop(cfg, "min"), 4)
+    values = S.getprop(cfg, "values")
+
+    if is_binary(value) and String.length(value) >= minlen and S.islist(values) do
+      have = list_values(values)
+
+      add =
+        clean_forms(value)
+        |> Enum.filter(fn f -> String.length(f) >= minlen and f not in have end)
+
+      # Longest first, so a value is never masked by a substring of itself.
+      if add != [] do
+        S.setprop(cfg, "values", S.jt(Enum.sort_by(have ++ add, &(-String.length(&1)))))
+      end
+    end
+
+    nil
+  end
+
+  defp mask_value(cfg, value) do
+    hint = numof(S.getprop(cfg, "hint"), 0)
+    mask = strof(S.getprop(cfg, "mask"))
+
+    if hint > 0 and String.length(value) > 2 * hint do
+      mask <> String.slice(value, -hint, hint)
+    else
+      mask
+    end
+  end
+
+  defp clean_string(cfg, text) do
+    Enum.reduce(list_values(S.getprop(cfg, "values")), text, fn value, out ->
+      if is_binary(value) and String.contains?(out, value) do
+        String.replace(out, value, mask_value(cfg, value))
+      else
+        out
+      end
+    end)
+  end
+
+  defp sensitive_key?(cfg, key) do
+    if key == nil or is_number(key) do
+      false
+    else
+      nk = normkey(key)
+      Enum.any?(list_values(S.getprop(cfg, "keys")), fn k -> is_binary(k) and String.contains?(nk, k) end)
+    end
+  end
+
+  # Every scalar under a sensitive name, at any depth and of any shape: a
+  # credential mistyped as a map or a number is still a credential, and the
+  # validation error that rejects it quotes it.
+  def clean_add_sensitive(ctx, val) do
+    clean_add_sensitive_at(ctx, clean_config(ctx), val, false, 0, [])
+  end
+
+  defp clean_add_sensitive_at(ctx, cfg, val, under, depth, seen) do
+    cond do
+      val == nil or depth >= @clean_maxdepth ->
+        nil
+
+      is_binary(val) ->
+        if under, do: clean_add_impl(ctx, val)
+
+      is_number(val) ->
+        if under, do: clean_add_impl(ctx, number_text(val))
+
+      val in seen ->
+        nil
+
+      S.ismap(val) or S.islist(val) ->
+        Enum.each(H.entries(val), fn {k, v} ->
+          clean_add_sensitive_at(ctx, cfg, v, under or sensitive_key?(cfg, k), depth + 1, [val | seen])
+        end)
+
+      is_map(val) and not is_struct(val) ->
+        Enum.each(val, fn {k, v} ->
+          clean_add_sensitive_at(ctx, cfg, v, under or sensitive_key?(cfg, k), depth + 1, [val | seen])
+        end)
+
+      is_list(val) ->
+        Enum.each(val, fn v -> clean_add_sensitive_at(ctx, cfg, v, under, depth + 1, [val | seen]) end)
+
+      true ->
+        nil
+    end
+
+    nil
+  end
+
+  defp number_text(n) when is_float(n) and abs(n) < 9.0e15 and n == trunc(n),
+    do: Integer.to_string(trunc(n))
+
+  defp number_text(n), do: to_string(n)
+
+  # A registered value used as a property name is masked like any other
+  # string; names that mask alike take a counter, so none is lost.
+  defp clean_name(cfg, out, key) do
+    key = strof(key)
+    name = clean_string(cfg, key)
+    taken = S.keysof(out)
+
+    if name == key or name not in taken do
+      name
+    else
+      i = Enum.find(Stream.iterate(1, &(&1 + 1)), fn i -> (name <> "#" <> Integer.to_string(i)) not in taken end)
+      name <> "#" <> Integer.to_string(i)
+    end
+  end
+
+  # A masked plain-data COPY: functions dropped, cycles cut, an SDK error as
+  # its code and message, and nothing shared with the live value, whose spec
+  # must stay raw.
+  defp clean_snapshot(cfg, val, key, depth, seen) do
+    cond do
+      val == nil ->
+        nil
+
+      is_binary(val) ->
+        if sensitive_key?(cfg, key), do: mask_value(cfg, val), else: clean_string(cfg, val)
+
+      is_function(val) ->
+        :__drop__
+
+      is_number(val) or is_boolean(val) or is_atom(val) ->
+        if sensitive_key?(cfg, key), do: S.getprop(cfg, "mask"), else: val
+
+      depth >= @clean_maxdepth or val in seen ->
+        @clean_circular
+
+      sensitive_key?(cfg, key) ->
+        S.getprop(cfg, "mask")
+
+      S.ismap(val) ->
+        out = S.jm([])
+
+        Enum.each(H.entries(val), fn {k, v} ->
+          c = clean_snapshot(cfg, v, k, depth + 1, [val | seen])
+          if c != :__drop__, do: S.setprop(out, clean_name(cfg, out, k), c)
+        end)
+
+        out
+
+      S.islist(val) ->
+        out = S.jt([])
+
+        Enum.each(H.entries(val), fn {i, v} ->
+          c = clean_snapshot(cfg, v, i, depth + 1, [val | seen])
+          S.setprop(out, S.size(out), if(c == :__drop__, do: nil, else: c))
+        end)
+
+        out
+
+      match?(%ProjectName.Error{}, val) ->
+        S.jm(["code", clean_code(cfg, val.code), "message", clean_string(cfg, strof(val.msg))])
+
+      is_exception(val) ->
+        S.jm(["message", clean_string(cfg, Exception.message(val))])
+
+      is_struct(val) ->
+        clean_snapshot(cfg, Map.from_struct(val), key, depth, seen)
+
+      is_map(val) ->
+        out = S.jm([])
+
+        # Sorted, so colliding masked names number the same way every run.
+        Enum.each(Enum.sort_by(val, fn {k, _} -> strof(k) end), fn {k, v} ->
+          c = clean_snapshot(cfg, v, k, depth + 1, [val | seen])
+          if c != :__drop__, do: S.setprop(out, clean_name(cfg, out, k), c)
+        end)
+
+        out
+
+      is_list(val) or is_tuple(val) ->
+        items = if is_tuple(val), do: Tuple.to_list(val), else: val
+        out = S.jt([])
+
+        Enum.each(items, fn v ->
+          c = clean_snapshot(cfg, v, nil, depth + 1, [val | seen])
+          S.setprop(out, S.size(out), if(c == :__drop__, do: nil, else: c))
+        end)
+
+        out
+
+      true ->
+        clean_string(cfg, inspect(val))
+    end
+  end
+
+  defp clean_field(cfg, v, key) do
+    case clean_snapshot(cfg, v, key, 1, []) do
+      :__drop__ -> nil
+      c -> c
+    end
+  end
+
+  defp clean_code(cfg, code), do: if(is_binary(code), do: clean_string(cfg, code), else: code)
+
+  # The error is a struct, so "in place" is a copy carrying the same ctx.
+  defp clean_error(cfg, err) do
+    %{
+      err
+      | code: clean_code(cfg, err.code),
+        msg: clean_string(cfg, strof(err.msg)),
+        result: clean_field(cfg, err.result, "result"),
+        spec: clean_field(cfg, err.spec, "spec")
+    }
+  end
+
+  def clean_impl(ctx, val) do
+    cfg = clean_config(ctx)
+
+    cond do
+      S.getprop(cfg, "active") == false -> val
+      is_binary(val) -> clean_string(cfg, val)
+      match?(%ProjectName.Error{}, val) -> clean_error(cfg, val)
+      true -> clean_field(cfg, val, nil)
+    end
+  end
+
+  # An exception is immutable, so one that never passed through make_error (a
+  # hook's, a fetcher's) leaves as a copy with its string fields cleaned; one
+  # whose message still quotes a secret, from a field of another type, leaves
+  # as a RuntimeError carrying the cleaned message.
+  def clean_exception(ctx, e) do
+    cfg = clean_config(ctx)
+
+    cond do
+      S.getprop(cfg, "active") == false -> e
+      match?(%ProjectName.Error{}, e) -> clean_error(cfg, e)
+      true -> clean_foreign_exception(cfg, e)
+    end
+  end
+
+  defp clean_foreign_exception(cfg, e) do
+    copy =
+      Enum.reduce(Map.from_struct(e), e, fn
+        {k, v}, acc when is_binary(v) ->
+          Map.put(acc, k, if(sensitive_key?(cfg, k), do: mask_value(cfg, v), else: clean_string(cfg, v)))
+
+        _, acc ->
+          acc
+      end)
+
+    text = Exception.message(copy)
+    cleaned = clean_string(cfg, text)
+    if cleaned == text, do: copy, else: RuntimeError.exception(cleaned)
+  end
+
+  # The explain map is the CALLER's node, so it is cleaned in place: what
+  # they hold after the call is the cleaned record. With clean off,
+  # explain.result is the live result make_error reads, so err is pruned
+  # from a copy.
+  def clean_explain(ctx) do
+    ctrl = S.getprop(ctx, "ctrl")
+    explain = if ctrl != nil, do: S.getprop(ctrl, "explain"), else: nil
+
+    if S.ismap(explain) do
+      cleaned = clean(ctx, explain)
+
+      if S.ismap(cleaned) and cleaned != explain do
+        Enum.each(S.keysof(explain), fn k -> S.delprop(explain, k) end)
+        Enum.each(H.entries(cleaned), fn {k, v} -> S.setprop(explain, k, v) end)
+      end
+
+      er = S.getprop(explain, "result")
+      if S.ismap(er), do: S.setprop(explain, "result", without(er, "err"))
+    end
+
+    nil
+  end
+
+  # ---- features ------------------------------------------------------------
 
   def feature_hook_impl(ctx, name) do
     client = S.getprop(ctx, "client")
@@ -315,6 +677,25 @@ defmodule ProjectName.Utility do
     # instead and every ported target validates it.
     optspec = ProjectName.Schema.optspec()
 
+    # The secret registry exists BEFORE validation, fed from the raw input,
+    # so the constructor's own rejection of a mistyped credential is clean
+    # too. A shallow merge over the schema defaults: the clean block is flat.
+    cleanraw = S.jm([])
+    blocks = [S.getprop(optspec, "clean"), S.getprop(cfgopts, "clean"), S.getprop(opts0, "clean")]
+
+    Enum.each(blocks, fn src ->
+      if S.ismap(src), do: Enum.each(H.entries(src), fn {k, v} -> S.setprop(cleanraw, k, v) end)
+    end)
+
+    cleancfg = make_clean_config(cleanraw)
+    cleanctx = S.jm(["options", S.jm(["__derived__", S.jm(["clean", cleancfg])])])
+
+    clean_add_sensitive(cleanctx, secret_scan(opts0, ["clean"]))
+
+    Enum.each([cfgopts, opts0], fn src ->
+      Enum.each(splitvalues(S.getpath(src, "clean.values")), fn raw -> clean_add_impl(cleanctx, raw) end)
+    end)
+
     sys_fetch = S.getpath(opts0, "system.fetch")
 
     # CLONE the config side: `config` is a process-wide singleton
@@ -323,7 +704,16 @@ defmodule ProjectName.Utility do
     # ...) are written into the shared config and inherited by every client
     # constructed afterwards.
     merged = S.merge(S.jt([S.jm([]), S.clone(cfgopts), opts0]))
-    validated = S.validate(merged, optspec)
+
+    validated =
+      try do
+        S.validate(merged, optspec)
+      rescue
+        e in Voxgig.Struct.Error ->
+          reraise %Voxgig.Struct.Error{message: clean_impl(cleanctx, Exception.message(e))},
+                  __STACKTRACE__
+      end
+
     opts = if S.ismap(validated), do: validated, else: S.jm([])
 
     # Restore the suppression the optspec default would otherwise erase.
@@ -383,17 +773,6 @@ defmodule ProjectName.Utility do
       end
     end
 
-    ck = S.getpath(opts, "clean.keys")
-    clean_keys = if is_binary(ck), do: ck, else: "key,token,id"
-
-    keyre =
-      clean_keys
-      |> String.split(",")
-      |> Enum.map(&String.trim/1)
-      |> Enum.reject(&(&1 == ""))
-      |> Enum.map(&S.escre/1)
-      |> Enum.join("|")
-
     # Resolve the feature add-order: an explicit list order (above) wins;
     # otherwise order the map test-first, then the remaining names sorted, so
     # the outcome is deterministic and `test` is always the base transport.
@@ -435,12 +814,49 @@ defmodule ProjectName.Utility do
           list
       end
 
-    derived = S.jm(["clean", S.jm([])])
-    if keyre != "", do: S.setprop(derived, "clean", S.jm(["keyre", keyre]))
-    S.setprop(derived, "featureorder", S.jt(feature_order))
+    derived = S.jm(["clean", cleancfg, "featureorder", S.jt(feature_order)])
     S.setprop(opts, "__derived__", derived)
 
+    # Again over the merged result: the config's own defaults can carry one.
+    clean_add_sensitive(S.jm(["options", opts]), secret_scan(opts, ["clean", "__derived__"]))
+
     opts
+  end
+
+  # The options to scan for secrets. The feature map is keyed by feature
+  # names, not field names, so it is scanned as a list: `secrets` must not
+  # make every setting of that feature a secret. Entity blocks hold entity
+  # settings and seeded records, never a credential, so they are skipped.
+  defp secret_scan(opts, names) do
+    out = S.jm([])
+
+    Enum.each(H.entries(opts), fn {k, v} ->
+      cond do
+        k in names or k == "entity" ->
+          nil
+
+        k == "feature" and (S.ismap(v) or S.islist(v)) ->
+          S.setprop(out, k, S.jt(Enum.map(H.entries(v), fn {_, f} -> without(f, "entity") end)))
+
+        k == "test" ->
+          S.setprop(out, k, without(v, "entity"))
+
+        true ->
+          S.setprop(out, k, v)
+      end
+    end)
+
+    out
+  end
+
+  defp without(node, key) do
+    if S.ismap(node) do
+      out = S.jm([])
+      Enum.each(H.entries(node), fn {k, v} -> if k != key, do: S.setprop(out, k, v) end)
+      out
+    else
+      node
+    end
   end
 
   # ---- make_point ----------------------------------------------------------
@@ -781,19 +1197,26 @@ defmodule ProjectName.Utility do
         true ->
           S.setprop(spec, "step", "response")
 
-          result_basic(ctx)
-          result_headers(ctx)
-          result_body(ctx)
+          # A body reader that raises (a non-JSON body) fails the result, as
+          # in ts; it must not escape the pipeline with the raw spec still on
+          # the explain record.
+          try do
+            result_basic(ctx)
+            result_headers(ctx)
+            result_body(ctx)
 
-          # GraphQL reports failures as a top-level `errors` array under HTTP
-          # 200, so result_basic's status check never sees them. Lift them
-          # here, before the response transform tries to unwrap data that is
-          # not there.
-          graphql_errors(ctx)
+            # GraphQL reports failures as a top-level `errors` array under
+            # HTTP 200, so result_basic's status check never sees them. Lift
+            # them here, before the response transform tries to unwrap data
+            # that is not there.
+            graphql_errors(ctx)
 
-          transform_response(ctx)
+            transform_response(ctx)
 
-          if S.getprop(result, "err") == nil, do: S.setprop(result, "ok", true)
+            if S.getprop(result, "err") == nil, do: S.setprop(result, "ok", true)
+          rescue
+            e -> S.setprop(result, "err", e)
+          end
 
           ctrl = S.getprop(ctx, "ctrl")
           explain = S.getprop(ctrl, "explain")
@@ -865,16 +1288,7 @@ defmodule ProjectName.Utility do
   # ---- done ----------------------------------------------------------------
 
   def done_impl(ctx) do
-    ctrl = S.getprop(ctx, "ctrl")
-    explain = S.getprop(ctrl, "explain")
-
-    if explain != nil do
-      S.setprop(ctrl, "explain", clean(ctx, explain))
-      ex = S.getprop(ctrl, "explain")
-      er = if S.ismap(ex), do: S.getprop(ex, "result")
-      if S.ismap(er), do: S.delprop(er, "err")
-    end
-
+    clean_explain(ctx)
     result = S.getprop(ctx, "result")
 
     if result != nil and S.getprop(result, "ok") == true do
@@ -923,10 +1337,13 @@ defmodule ProjectName.Utility do
     S.setprop(result, "err", nil)
     spec = S.getprop(ctx, "spec")
 
+    clean_explain(ctx)
     ctrl = S.getprop(ctx, "ctrl")
     explain = S.getprop(ctrl, "explain")
     if explain != nil, do: S.setprop(explain, "err", S.jm(["message", msg]))
 
+    # Cleaned COPIES of the result and spec, never the live nodes; the ctx
+    # stays on the struct for a debugger and out of its Inspect form.
     sdk_err = %ProjectName.Error{
       code: "",
       msg: msg,
@@ -936,7 +1353,13 @@ defmodule ProjectName.Utility do
       spec: clean(ctx, spec)
     }
 
-    sdk_err = if match?(%ProjectName.Error{}, err), do: %{sdk_err | code: err.code}, else: sdk_err
+    # A hook's own error supplies the code as well as the message.
+    sdk_err =
+      if match?(%ProjectName.Error{}, err) do
+        %{sdk_err | code: if(is_binary(err.code), do: clean(ctx, err.code), else: err.code)}
+      else
+        sdk_err
+      end
 
     S.setprop(ctrl, "err", sdk_err)
 

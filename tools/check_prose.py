@@ -116,6 +116,7 @@ REQUIRED_PAGES = (
     "docs/explanation/operation-pipeline.md",
     "docs/explanation/out-of-tree-targets.md",
     "docs/explanation/regeneration-overwrite.md",
+    "docs/explanation/secret-redaction.md",
     "docs/how-to/add-a-feature.md",
     "docs/how-to/add-a-target.md",
     "docs/how-to/author-a-new-language.md",

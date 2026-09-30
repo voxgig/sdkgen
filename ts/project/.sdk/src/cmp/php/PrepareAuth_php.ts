@@ -217,6 +217,9 @@ function basicBlock(spec: AuthSpec): string {
             } else {
                 $auth_prefix = \\Voxgig\\Struct\\Struct::getpath($options, 'auth.prefix') ?? '';
                 $b64 = base64_encode("{$apikey_val}:{$secret_val}");
+                // The joined, encoded pair is a wire form neither credential's
+                // own registration covers.
+                ($ctx->utility->clean_add)($ctx, $b64);
                 $headers[self::HEADER_AUTH] = $auth_prefix === ''
                     ? $b64 : "{$auth_prefix} {$b64}";
             }

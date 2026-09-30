@@ -563,7 +563,7 @@ static void debug_redactsAndHonoursOnEntryMax() {
   ASSERT_EQ((int)f->entries.as_list()->size(), 1, "expected ring buffer capped at 1");
   ASSERT_EQ((int)seen.as_list()->size(), 2, "expected onEntry for both ops");
   Value headers = getp((*seen.as_list())[0], "headers");
-  ASSERT_EQ_VAL(getp(headers, "authorization"), Value("<redacted>"), "expected redacted authorization");
+  ASSERT_EQ_VAL(getp(headers, "authorization"), Value("[redacted]"), "expected redacted authorization");
 }
 
 static void debug_capturesFailures() {
@@ -584,7 +584,7 @@ static void debug_injectedClockAndCustomRedact() {
   auto h = fhMake(nullptr, {FF(f, fhMap({{"now", clock.nowFn()}, {"redact", vlist({Value("x-secret")})}}))});
   h->op(fhOp("load").setHeaders(fhMap({{"x-secret", Value("hide")}, {"x-ok", Value("show")}})));
   Value headers = getp((*f->entries.as_list())[0], "headers");
-  ASSERT_EQ_VAL(getp(headers, "x-secret"), Value("<redacted>"), "expected x-secret redacted");
+  ASSERT_EQ_VAL(getp(headers, "x-secret"), Value("[redacted]"), "expected x-secret redacted");
   ASSERT_EQ_VAL(getp(headers, "x-ok"), Value("show"), "expected x-ok kept");
 }
 

@@ -81,6 +81,11 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
     this.util.featureHook(this.rootctx, "PostConstruct")
   }
 
+  // The options hold the credential; a printed client shows only its name.
+  override fun toString(): String {
+    return this.javaClass.simpleName + "(mode=" + this.mode + ")"
+  }
+
   fun optionsMap(): MutableMap<String, Any?> {
     val out = Struct.clone(this.options)
     if (out is MutableMap<*, *>) {
@@ -262,12 +267,14 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
 
     val out = linkedMapOf<String, Any?>()
 
+    // A raw request returns its failure rather than passing it through
+    // makeError, so it is cleaned here.
     val fetchdef: MutableMap<String, Any?>
     try {
       fetchdef = this.prepare(fetchargs)
     } catch (err: RuntimeException) {
       out["ok"] = false
-      out["err"] = err
+      out["err"] = utility.clean(ctx, err)
       return out
     }
 
@@ -277,7 +284,7 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
       fetched = utility.fetcher(ctx, if (url is String) url else "", fetchdef)
     } catch (err: RuntimeException) {
       out["ok"] = false
-      out["err"] = err
+      out["err"] = utility.clean(ctx, err)
       return out
     }
 

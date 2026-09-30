@@ -168,6 +168,9 @@ function basicBlock(spec: AuthSpec): string {
       if let ap = gpath(options, "auth", "prefix").asString { authPrefix = ap }
       let joined = (apikey.asString ?? "") + ":" + (noSecret ? "" : (secret.asString ?? ""))
       let b64 = Data(joined.utf8).base64EncodedString()
+      // The joined, encoded pair is a wire form neither credential's own
+      // registration covers.
+      ctx.utility!.cleanAdd(ctx, .string(b64))
       // Empty prefix (raw credential) must not add a leading space.
       headers.entries[headerAuth] = .string(authPrefix == "" ? b64 : authPrefix + " " + b64)
     }

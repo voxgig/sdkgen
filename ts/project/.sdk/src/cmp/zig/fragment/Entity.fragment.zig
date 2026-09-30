@@ -147,6 +147,13 @@ pub const EntyClass = struct {
         return self.doneResult(ctx);
     }
 
+    // A step's error ends the stream empty without reaching done, so the
+    // explain record is cleaned here.
+    fn streamFail(utility: *Utility, ctx: *Context) []Value {
+        utility.clean_explain(ctx);
+        return &.{};
+    }
+
     /// Streaming operation. Runs `action` through the full pipeline and
     /// returns a slice of the result items, so the `streaming` feature's
     /// incremental output is reachable from a generated entity (a normal op
@@ -198,23 +205,23 @@ pub const EntyClass = struct {
         // Run the same pipeline as run_op, firing the feature hooks (the
         // streaming feature attaches result.stream on PreResult).
         utility.feature_hook(ctx, "PrePoint");
-        const point = utility.make_point(ctx) catch return &.{};
+        const point = utility.make_point(ctx) catch return streamFail(utility, ctx);
         ctx.out_set("point", OutVal{ .val = point });
 
         utility.feature_hook(ctx, "PreSpec");
-        const spec = utility.make_spec(ctx) catch return &.{};
+        const spec = utility.make_spec(ctx) catch return streamFail(utility, ctx);
         ctx.out_set("spec", OutVal{ .spec = spec });
 
         utility.feature_hook(ctx, "PreRequest");
-        const resp = utility.make_request(ctx) catch return &.{};
+        const resp = utility.make_request(ctx) catch return streamFail(utility, ctx);
         ctx.out_set("request", OutVal{ .response = resp });
 
         utility.feature_hook(ctx, "PreResponse");
-        const resp2 = utility.make_response(ctx) catch return &.{};
+        const resp2 = utility.make_response(ctx) catch return streamFail(utility, ctx);
         ctx.out_set("response", OutVal{ .response = resp2 });
 
         utility.feature_hook(ctx, "PreResult");
-        const result = utility.make_result(ctx) catch return &.{};
+        const result = utility.make_result(ctx) catch return streamFail(utility, ctx);
         ctx.out_set("result", OutVal{ .result = result });
 
         utility.feature_hook(ctx, "PreDone");
@@ -223,6 +230,8 @@ pub const EntyClass = struct {
         // fall back to the materialised items so stream always yields.
         if (ctx.result) |res| {
             if (res.stream) |sf| {
+                // done() does not run on this path, so its record is cleaned here.
+                utility.clean_explain(ctx);
                 return sf.call(sf.ctx);
             }
         }

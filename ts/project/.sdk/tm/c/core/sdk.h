@@ -55,6 +55,10 @@ typedef struct PNError {
 } PNError;
 
 PNError* pn_error_new(const char* code, const char* msg);
+// The error as a record and as its default print: the message and the
+// cleaned snapshots, nothing the pipeline holds live. Malloc'd string.
+voxgig_value* pn_error_to_value(PNError* e);
+char* pn_error_str(PNError* e);
 
 // ===========================================================================
 // Value helpers (mirrors core/helpers.rs). All return owned (unreleased)
@@ -407,6 +411,11 @@ struct Context {
 Context* context_new(CtxSpec spec, Context* basectx);
 PNError* context_make_error(Context* ctx, const char* code, const char* msg);
 Utility* context_util(Context* ctx);
+// The context as a record, CLEANED: it leaves the pipeline (a logger, an
+// error dump), while the live fields stay raw for the pipeline's own use.
+// context_str is its JSON, malloc'd.
+voxgig_value* context_to_value(Context* ctx);
+char* context_str(Context* ctx);
 
 // ctx.out helpers.
 void ctx_out_set_point_val(Context* ctx, voxgig_value* v);
@@ -478,7 +487,20 @@ void** feature_plugins(const char* name, size_t* n);
 
 voxgig_value* clean_util(Context* ctx, voxgig_value* val);
 char* clean_str(Context* ctx, const char* val); // returns malloc'd
+// Register a secret value the SDK will mask from now on, through a context
+// or straight against the options map a feature holds.
+void clean_add_util(Context* ctx, const char* value);
+void clean_add_opts(voxgig_value* options, const char* value);
+bool clean_key_util(Context* ctx, const char* key);
+voxgig_value* clean_opts(voxgig_value* options, voxgig_value* val);
+voxgig_value* clean_make_config(voxgig_value* cleanopts);
+voxgig_value* clean_split_values(voxgig_value* values);
+void clean_add_sensitive_opts(voxgig_value* options, voxgig_value* val);
+void clean_add_sensitive_util(Context* ctx, voxgig_value* val);
+void clean_error_util(Context* ctx, PNError* err);
+char* clean_base64(const char* in); // returns malloc'd
 voxgig_value* done_util(Context* ctx, PNError** err);
+void clean_explain_util(Context* ctx);
 voxgig_value* make_error_util(Context* ctx, PNError* err, PNError** out);
 void feature_add_util(Context* ctx, Feature* f);
 void feature_hook_util(Context* ctx, const char* name);

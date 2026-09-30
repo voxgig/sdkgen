@@ -9,6 +9,7 @@ import { cmp, each, Folder, entityCollection,
 
 import { TestLive } from './TestLive_js'
 import { TestDefinition } from './TestDefinition_js'
+import { TestClean } from './TestClean_js'
 import { TestDirect } from './TestDirect_js'
 import { TestEntity } from './TestEntity_js'
 
@@ -23,6 +24,7 @@ const Test = cmp(function Test(props: any) {
     TestControl({ target, dir: 'test' })
     TestLive({ target })
     TestDefinition({ target })
+    TestClean({ target })
 
     Folder({ name: 'entity' }, () => {
       const entity = each(entityCollection(model))

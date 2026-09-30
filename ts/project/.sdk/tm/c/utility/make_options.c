@@ -9,6 +9,55 @@ static int mo_cmp_cstr(const void* a, const void* b) {
   return strcmp(*(const char* const*)a, *(const char* const*)b);
 }
 
+static voxgig_value* mo_noentity(voxgig_value* val) {
+  if (!voxgig_is_map(val)) return voxgig_retain(val);
+  voxgig_value* out = v_map();
+  voxgig_map* m = voxgig_as_map(val);
+  for (size_t i = 0; i < m->len; i++) {
+    if (0 != strcmp(m->entries[i].key, "entity")) {
+      setp(out, m->entries[i].key, voxgig_retain(m->entries[i].value));
+    }
+  }
+  return out;
+}
+
+// The options to scan for secrets. The feature map is keyed by feature
+// names, not field names, so it is scanned as a list: `secrets` must not
+// make every setting of that feature a secret. Entity blocks hold entity
+// settings and seeded records, never a credential, so none is scanned.
+static voxgig_value* mo_without(voxgig_value* val, const char* k1, const char* k2) {
+  voxgig_value* out = v_map();
+  if (!voxgig_is_map(val)) return out;
+  voxgig_map* m = voxgig_as_map(val);
+  for (size_t i = 0; i < m->len; i++) {
+    const char* k = m->entries[i].key;
+    voxgig_value* v = m->entries[i].value;
+    if (0 == strcmp(k, "entity")) continue;
+    if ((k1 && 0 == strcmp(k, k1)) || (k2 && 0 == strcmp(k, k2))) continue;
+    if (0 == strcmp(k, "feature") && voxgig_is_map(v)) {
+      voxgig_value* list = v_list();
+      voxgig_map* fm = voxgig_as_map(v);
+      for (size_t f = 0; f < fm->len; f++) {
+        voxgig_list_push(voxgig_as_list(list), mo_noentity(fm->entries[f].value));
+      }
+      v = list;
+    } else if (0 == strcmp(k, "test")) {
+      v = mo_noentity(v);
+    } else {
+      voxgig_retain(v);
+    }
+    setp(out, k, v);
+  }
+  return out;
+}
+
+// A copy of the clean block, or an empty one: merge lets a missing value
+// replace everything merged before it, schema defaults included.
+static voxgig_value* mo_clean_block(voxgig_value* opts) {
+  voxgig_value* block = getp(opts, "clean");
+  return voxgig_is_map(block) ? voxgig_clone(block) : v_map();
+}
+
 voxgig_value* make_options_util(Context* ctx) {
   voxgig_value* options = voxgig_is_map(ctx->options) ? ctx->options : voxgig_new_map();
 
@@ -84,6 +133,24 @@ voxgig_value* make_options_util(Context* ctx) {
    * writes into the options, never into the spec. */
   voxgig_value* optspec = shared_optspec();
 
+  /* The secret registry exists BEFORE validation, fed from the raw input.
+   * Its block is shared by pointer: what is registered into `cleanopts`
+   * here is what `opts.__derived__.clean` carries out below. */
+  voxgig_value* cleancfg = clean_make_config(voxgig_merge(
+    clist(4, v_map(), voxgig_clone(getp(optspec, "clean")),
+          mo_clean_block(cfgopts), mo_clean_block(opts)),
+    VOXGIG_MAXDEPTH));
+  voxgig_value* cleanopts = cmap(1, "__derived__", cmap(1, "clean", v_share(cleancfg)));
+  clean_add_sensitive_opts(cleanopts, mo_without(opts, "clean", NULL));
+  voxgig_value* valueblocks[2] = { cfgopts, opts };
+  for (int b = 0; b < 2; b++) {
+    voxgig_list* rawvals =
+      voxgig_as_list(clean_split_values(getpath2(valueblocks[b], "clean", "values")));
+    for (size_t i = 0; i < rawvals->len; i++) {
+      clean_add_opts(cleanopts, voxgig_as_string(rawvals->items[i]));
+    }
+  }
+
   // Preserve system.fetch before merge/validate (validation strips it).
   voxgig_value* sys_fetch = getpath2(opts, "system", "fetch");
 
@@ -112,50 +179,6 @@ voxgig_value* make_options_util(Context* ctx) {
       setp(opts, "system", cmap(1, "fetch", v_share(sys_fetch)));
     }
   }
-
-  // Derived clean config.
-  voxgig_value* clean_keys_v = getpath2(opts, "clean", "keys");
-  const char* clean_keys = voxgig_is_string(clean_keys_v) ? voxgig_as_string(clean_keys_v)
-                                                          : "key,token,id";
-
-  // Split on ',', trim, filter empty, esc_re each, join with '|'.
-  char* keyre = (char*)malloc(1);
-  keyre[0] = '\0';
-  size_t keyre_len = 0;
-  bool first = true;
-  const char* p = clean_keys;
-  while (1) {
-    const char* comma = strchr(p, ',');
-    size_t seglen = comma ? (size_t)(comma - p) : strlen(p);
-    // trim
-    const char* start = p;
-    const char* end = p + seglen;
-    while (start < end && (*start == ' ' || *start == '\t')) start++;
-    while (end > start && (end[-1] == ' ' || end[-1] == '\t')) end--;
-    if (end > start) {
-      char* seg = (char*)malloc((size_t)(end - start) + 1);
-      memcpy(seg, start, (size_t)(end - start));
-      seg[end - start] = '\0';
-      char* esc = voxgig_escre(v_str(seg));
-      free(seg);
-      const char* e = esc ? esc : "";
-      size_t elen = strlen(e);
-      size_t extra = elen + (first ? 0 : 1);
-      keyre = (char*)realloc(keyre, keyre_len + extra + 1);
-      if (!first) keyre[keyre_len++] = '|';
-      memcpy(keyre + keyre_len, e, elen);
-      keyre_len += elen;
-      keyre[keyre_len] = '\0';
-      free(esc);
-      first = false;
-    }
-    if (!comma) break;
-    p = comma + 1;
-  }
-
-  voxgig_value* derived_clean = (keyre_len == 0) ? v_map()
-                                                 : cmap(1, "keyre", v_str(keyre));
-  free(keyre);
 
   // Resolve the feature add-order: an explicit list order (above) wins;
   // otherwise order the map test-first, then the remaining names sorted, so
@@ -198,7 +221,10 @@ voxgig_value* make_options_util(Context* ctx) {
   }
 
   setp(opts, "__derived__",
-       cmap(2, "clean", derived_clean, "featureorder", feature_order));
+       cmap(2, "clean", v_share(cleancfg), "featureorder", feature_order));
+
+  // Again over the merged result: the config's own defaults can carry one.
+  clean_add_sensitive_opts(opts, mo_without(opts, "clean", "__derived__"));
 
   return opts;
 }

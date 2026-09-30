@@ -76,9 +76,9 @@ pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.
 
   // HTTP Basic is header-only by definition: the scheme is
   // `Authorization: Basic base64(user:pass)`. It cannot be expressed as a
-  // query parameter or a cookie, so the branch — and the base64 encoder it
-  // needs, which the rust core does not otherwise ship — is emitted only
-  // where it can mean something.
+  // query parameter or a cookie, so the branch is emitted only where it can
+  // mean something. The encoder is the clean utility's, which needs it for
+  // the base64 form of every registered value.
   const withBasic = spec.basic && 'header' === spec.where
 
   const withGetpath = 'header' === spec.where
@@ -98,7 +98,8 @@ use crate::core::context::Context;
 use crate::core::error::${spec.errtype};
 use crate::core::helpers::{getp, ${withGetpath ? 'getpath, ' : ''}setp};
 use crate::core::spec::Spec;
-use crate::utility::voxgigstruct as vs;
+${withBasic ? `use crate::utility::clean::{base64_encode, clean_add};
+` : ''}use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
 ${credComment(spec.where)}
@@ -162,6 +163,9 @@ pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.
                 _ => String::new(),
             };
             let b64 = base64_encode(format!("{}:{}", apikey_val, secret_val).as_bytes());
+            // The joined, encoded pair is a wire form neither credential's own
+            // registration covers.
+            clean_add(ctx, &b64);
 
             let auth_prefix = match getpath(&["auth", "prefix"], &options) {
                 Value::Str(s) => s,
@@ -194,47 +198,7 @@ ${place(spec.where)}
 }
 `
 
-  const encoder = !withBasic ? '' : `
-/// Standard base64, for the \`Authorization: Basic base64(user:pass)\` value.
-///
-/// In-tree because the crate takes no dependency for it: the secrets
-/// feature's base64 DECODER lives behind a feature module this utility
-/// cannot reach, and adding a crate for twenty lines would put a dependency
-/// into every SDK whose API happens to use HTTP Basic.
-fn base64_encode(input: &[u8]) -> String {
-    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-    let mut out = String::with_capacity((input.len() + 2) / 3 * 4);
-
-    for chunk in input.chunks(3) {
-        // \`chunks\` hands back a 1- or 2-byte tail for input that is not a
-        // multiple of three; the missing bytes read as zero and are padded out
-        // below.
-        let b0 = chunk[0] as usize;
-        let b1 = *chunk.get(1).unwrap_or(&0) as usize;
-        let b2 = *chunk.get(2).unwrap_or(&0) as usize;
-
-        out.push(ALPHABET[b0 >> 2] as char);
-        out.push(ALPHABET[((b0 & 0x03) << 4) | (b1 >> 4)] as char);
-        // The tail is padded, never truncated: a decoder that counts groups
-        // of four needs the '=' to know how many bytes came back.
-        out.push(if 1 < chunk.len() {
-            ALPHABET[((b1 & 0x0f) << 2) | (b2 >> 6)] as char
-        } else {
-            '='
-        });
-        out.push(if 2 < chunk.len() {
-            ALPHABET[b2 & 0x3f] as char
-        } else {
-            '='
-        });
-    }
-
-    out
-}
-`
-
-  return head + basicBlock + tail + encoder
+  return head + basicBlock + tail
 }
 
 

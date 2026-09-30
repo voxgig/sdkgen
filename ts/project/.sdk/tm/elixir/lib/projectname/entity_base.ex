@@ -153,7 +153,7 @@ defmodule ProjectName.EntityBase do
     # materialised items so stream always yields.
     items =
       if S.isfunc(stream_fn) do
-        stream_fn.()
+        cleaned(ctx, stream_fn)
       else
         rd = if result != nil, do: S.getprop(result, "resdata"), else: nil
 
@@ -167,6 +167,27 @@ defmodule ProjectName.EntityBase do
     items
     |> Stream.take_while(fn _ -> not (S.isfunc(signal) and signal.() == true) end)
     |> Stream.map(&stream_unwrap/1)
+    |> guarded(ctx)
+  end
+
+  # The caller iterates after run_op has returned, so what the stream raises
+  # is cleaned here, as run_op's rescue would clean it. The caller's own
+  # reducer runs inside the reduce, so what it raises is cleaned too.
+  defp cleaned(ctx, step) do
+    step.()
+  rescue
+    e -> reraise(Utility.clean_exception(ctx, e), __STACKTRACE__)
+  end
+
+  defp guarded(enum, ctx) do
+    fn acc, fun -> reduce_step(ctx, fn -> Enumerable.reduce(enum, acc, fun) end) end
+  end
+
+  defp reduce_step(ctx, step) do
+    case cleaned(ctx, step) do
+      {:suspended, acc, cont} -> {:suspended, acc, fn a -> reduce_step(ctx, fn -> cont.(a) end) end}
+      done -> done
+    end
   end
 
   # Unwrap an entity node to its bare record; recurse into chunk lists.
