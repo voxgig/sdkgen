@@ -1266,7 +1266,7 @@ src/cmp/php/ReadmeTopHowto_php.ts a0a90593a80f
 src/cmp/php/ReadmeTopQuick_php.ts f52705d06444
 src/cmp/php/ReadmeTopTest_php.ts e602ef0b983e
 src/cmp/php/Schema_php.ts 9750487a267a
-src/cmp/php/TestClean_php.ts db3da1ca1537
+src/cmp/php/TestClean_php.ts 1818839a469c
 src/cmp/php/TestDirect_php.ts 40f767054ab8
 src/cmp/php/TestEntity_php.ts 49b3024f961d
 src/cmp/php/Test_php.ts 4b04d7202c7a

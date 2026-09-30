@@ -215,12 +215,19 @@ class CleanTest extends TestCase
     // Captures the serialised context from inside the pipeline: what a hook
     // author would hand to a logger. It also keeps the operation context,
     // the one place the explain record can be read back from.
+    // What the watchers capture, kept out of the SDK's object graph: with
+    // clean off, var_export of an error walks into the watcher, and text it
+    // held would be rendered again on every later capture.
+    public static array $captures = [];
+
     private static function capture_feature(\\ArrayObject $sinks): ${Name}BaseFeature
     {
-        return new class ($sinks) extends ${Name}BaseFeature {
+        $key = count(self::$captures);
+        self::$captures[$key] = $sinks;
+        return new class ($key) extends ${Name}BaseFeature {
             public mixed $last = null;
 
-            public function __construct(private \\ArrayObject $sinks)
+            public function __construct(private int $sinkkey)
             {
                 parent::__construct();
                 $this->name = 'capture';
@@ -228,10 +235,11 @@ class CleanTest extends TestCase
                 $this->active = true;
             }
 
-            private function take(string $name, ${Name}Context $ctx): void
+            private function take(string $name, mixed $val): void
             {
-                foreach (CleanTest::surfaces($name, $ctx) as $s) {
-                    $this->sinks[] = $s;
+                $sinks = CleanTest::$captures[$this->sinkkey];
+                foreach (CleanTest::surfaces($name, $val) as $s) {
+                    $sinks[] = $s;
                 }
             }
 
@@ -256,9 +264,7 @@ class CleanTest extends TestCase
             {
                 $this->take('ctx@PreUnexpected', $ctx);
                 if ($ctx->ctrl->err instanceof ${Name}Error) {
-                    foreach (CleanTest::surfaces('ctrl.err@PreUnexpected', $ctx->ctrl->err) as $s) {
-                        $this->sinks[] = $s;
-                    }
+                    $this->take('ctrl.err@PreUnexpected', $ctx->ctrl->err);
                 }
             }
         };
