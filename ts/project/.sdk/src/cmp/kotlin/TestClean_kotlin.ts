@@ -211,6 +211,19 @@ class CleanTest {
     }
   }
 
+  // A stream that succeeds, yielding the result's items.
+  inner class StreamOkFeature : BaseFeature("streamok", "0.0.1", true) {
+    override fun preDone(ctx: Context) {
+      val resdata = ctx.result?.resdata
+      val items: List<Any?> = when (resdata) {
+        is List<*> -> resdata.toList()
+        null -> emptyList()
+        else -> listOf(resdata)
+      }
+      ctx.result?.stream = Supplier<Iterator<Any?>> { items.iterator() }
+    }
+  }
+
   class Scenario(val name: String, val respond: (String, MutableMap<String, Any?>) -> Any?)
 
   private fun response(status: Int, data: Any?, headers: Map<String, String>?): MutableMap<String, Any?> {
@@ -392,6 +405,8 @@ class CleanTest {
   }
 
   private fun drive(sdk: ${SDK}, target: Target, ctrl: MutableMap<String, Any?>?, sinks: MutableList<Sink>): Throwable? {
+    // A caller may keep the record it passed rather than read ctrl's entry.
+    val held = ctrl?.get("explain")
     var out: Any? = null
     var err: Throwable? = null
     try {
@@ -408,6 +423,9 @@ class CleanTest {
     val explain = ctrl?.get("explain")
     if (explain != null) {
       sinks.addAll(surfaces("explain", explain))
+    }
+    if (held != null && held !== explain) {
+      sinks.addAll(surfaces("explain:held", held))
     }
     return err
   }
@@ -472,20 +490,33 @@ class CleanTest {
 
     for (unexpected in listOf(false, true)) {
       val hooked = makeSdk(scenarios[0], sinks, null, ThrowFeature(unexpected))
-      assertNotNull(drive(hooked, target, null, sinks), "the throwing hook should fail the operation")
+      assertNotNull(drive(hooked, target, linkedMapOf<String, Any?>("explain" to linkedMapOf<String, Any?>()), sinks),
+        "the throwing hook should fail the operation")
     }
 
-    // Iterating a stream runs inside the same catch path as the operation.
-    val streaming = entityOf(makeSdk(scenarios[0], sinks, null, StreamThrowFeature()), target.accessor)!!
-    var streamerr: Throwable? = null
-    try {
-      streaming.stream(target.op, linkedMapOf<String, Any?>("reqmatch" to LinkedHashMap(target.match)), null)
-        .forEach { }
-    } catch (e: Throwable) {
-      streamerr = e
+    // Iterating a stream runs inside the same catch path as the operation,
+    // and the explain record the caller passed is cleaned however it ends.
+    for ((name, extra) in listOf<Pair<String, Array<BaseFeature>>>(
+      Pair("stream", arrayOf(StreamThrowFeature())),
+      Pair("stream-ok", arrayOf(StreamOkFeature())),
+      Pair("stream-plain", arrayOf()))) {
+      val streaming = entityOf(makeSdk(scenarios[0], sinks, null, *extra), target.accessor)!!
+      val explain = linkedMapOf<String, Any?>()
+      var streamerr: Throwable? = null
+      try {
+        streaming.stream(target.op, linkedMapOf<String, Any?>("reqmatch" to LinkedHashMap(target.match)),
+          linkedMapOf<String, Any?>("ctrl" to linkedMapOf<String, Any?>("explain" to explain)))
+          .forEach { }
+      } catch (e: Throwable) {
+        streamerr = e
+      }
+      assertEquals("stream" == name, streamerr != null, name + ": only the failing stream throws")
+      if (streamerr != null) {
+        sinks.addAll(surfaces(name, streamerr))
+      }
+      assertTrue(explain.isNotEmpty(), name + ": the explain record was not filled")
+      sinks.addAll(surfaces(name + ":explain", explain))
     }
-    assertNotNull(streamerr, "the failing stream should throw")
-    sinks.addAll(surfaces("stream", streamerr))
 
     // The raw path returns its failure rather than throwing it.
     val raw = makeSdk(scenarios[3], sinks, null).direct(linkedMapOf<String, Any?>("path" to "raw"))
