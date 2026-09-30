@@ -471,7 +471,7 @@ object SdkTestMain {
       val h = fhMake(null, fhF(f, om("max" -> I(1), "onEntry" -> oe)))
       h.op(fhOp("load").withHeaders(om("authorization" -> "Bearer secret"))); h.op(fhOp("list"))
       eqI("debug.ring", 1, f.entries.size()); eqI("debug.onEntry", 2, seen.size())
-      eq("debug.redacted", "<redacted>", Helpers.toMapAny(seen.get(0).get("headers")).get("authorization")) }
+      eq("debug.redacted", "[redacted]", Helpers.toMapAny(seen.get(0).get("headers")).get("authorization")) }
     { val f = new DebugFeature()
       val h = fhMake(null, fhF(new NetsimFeature(), om("failTimes" -> I(1), "failStatus" -> I(500))), fhF(f, null))
       h.op(fhOp("load")); eqI("debug.fail.n", 1, f.entries.size()); eq("debug.fail.ok", B(false), f.entries.get(0).get("ok")) }
@@ -479,7 +479,7 @@ object SdkTestMain {
       val h = fhMake(null, fhF(f, om("now" -> f0(clk.nowFn), "redact" -> jl("x-secret"))))
       h.op(fhOp("load").withHeaders(om("x-secret" -> "hide", "x-ok" -> "show")))
       val dh = Helpers.toMapAny(f.entries.get(0).get("headers"))
-      eq("debug.redact.secret", "<redacted>", dh.get("x-secret")); eq("debug.redact.ok", "show", dh.get("x-ok")) }
+      eq("debug.redact.secret", "[redacted]", dh.get("x-secret")); eq("debug.redact.ok", "show", dh.get("x-ok")) }
     { val f = new DebugFeature()
       val h = fhMake(null, fhF(f, om("active" -> B(false))))
       h.op(fhOp("load")); eqI("debug.inactive", 0, f.entries.size()) }
