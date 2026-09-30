@@ -126,17 +126,25 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
     }
   }
 
-  // The catch path.
-  private def unexpected(ctx: Context, err: Throwable): Object = err match {
-    case e: RuntimeException =>
-      // An error already finalised by makeError must not be wrapped twice.
-      if (e eq ctx.ctrl.err) throw e
-      this.utility.makeError(ctx, e)
-    // Scala has no checked exceptions: a hook can throw a plain Exception,
-    // whose message can quote the request.
-    case _ =>
-      this.utility.makeError(ctx, new RuntimeException(
-        if (err.getMessage == null) String.valueOf(err) else err.getMessage))
+  // The catch path. makeError fires PreUnexpected; an error a hook throws
+  // there escapes it, even under throw false, so it is cleaned here.
+  private def unexpected(ctx: Context, err: Throwable): Object = {
+    val cause = err match {
+      case e: RuntimeException =>
+        // An error already finalised by makeError must not be wrapped twice.
+        if (e eq ctx.ctrl.err) throw e
+        e
+      // Scala has no checked exceptions: a hook can throw a plain Exception,
+      // whose message can quote the request.
+      case _ => new RuntimeException(if (err.getMessage == null) String.valueOf(err) else err.getMessage)
+    }
+    try this.utility.makeError(ctx, cause)
+    catch { case NonFatal(thrown) if !(thrown eq ctx.ctrl.err) => throw cleanError(ctx, thrown) }
+  }
+
+  private def cleanError(ctx: Context, err: Throwable): Throwable = this.utility.clean(ctx, err) match {
+    case t: Throwable => t
+    case _ => err
   }
 
   // Streaming operations. Runs `action` through the full pipeline and returns

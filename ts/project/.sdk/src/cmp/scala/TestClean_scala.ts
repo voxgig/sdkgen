@@ -164,10 +164,12 @@ object SdkCleanTestMain {
   }
 
   // A feature that throws from inside the pipeline, quoting the request it
-  // saw: a plain Exception, which is not a RuntimeException.
-  final class ThrowFeature extends BaseFeature("throwhook", "0.0.1", true) {
-    override def preResponse(ctx: Context): Unit =
-      throw new Exception("hook saw " + Struct.jsonify(plain(ctx.spec)))
+  // saw: a plain Exception, which is not a RuntimeException. makeError fires
+  // PreUnexpected, so what the unexpected variant throws there escapes it.
+  final class ThrowFeature(unexpected: Boolean) extends BaseFeature("throwhook", "0.0.1", true) {
+    private def saw(ctx: Context): Exception = new Exception("hook saw " + Struct.jsonify(plain(ctx.spec)))
+    override def preResponse(ctx: Context): Unit = throw saw(ctx)
+    override def preUnexpected(ctx: Context): Unit = if (unexpected) throw saw(ctx)
   }
 
   // A stream that fails while the caller iterates it, quoting a credential.
@@ -178,6 +180,20 @@ object SdkCleanTestMain {
         override def next(): Object = throw new NoSuchElementException()
       }
       ctx.result.stream = failing
+    }
+  }
+
+  // A stream that succeeds, yielding the result's items.
+  final class StreamOkFeature extends BaseFeature("streamok", "0.0.1", true) {
+    override def preDone(ctx: Context): Unit = {
+      val items = new ArrayList[Object]()
+      ctx.result.resdata match {
+        case l: JList[_] => l.forEach(item => items.add(item.asInstanceOf[Object]))
+        case null =>
+        case other => items.add(other)
+      }
+      val ok: Supplier[java.util.Iterator[Object]] = () => items.iterator()
+      ctx.result.stream = ok
     }
   }
 
@@ -341,13 +357,17 @@ object SdkCleanTestMain {
   private val NO_OP = "no operation of this SDK completes against a plain 200; nothing to sweep"
 
   private def drive(sdk: ${SDK}, target: Target, ctrl: JMap[String, Object], sinks: ArrayList[Sink]): Throwable = {
+    // A caller may keep the record it passed rather than read ctrl's entry.
+    val held = if (ctrl == null) null else ctrl.get("explain")
     var out: Object = null
     var err: Throwable = null
     try out = call(entityOf(sdk, target.accessor), target.op, target.matchArgs, ctrl)
     catch { case e: Throwable => err = e }
     if (err != null) collect(sinks, "error", err)
     if (out != null) collect(sinks, "result", out)
-    if (ctrl != null && ctrl.get("explain") != null) collect(sinks, "explain", ctrl.get("explain"))
+    val explain = if (ctrl == null) null else ctrl.get("explain")
+    if (explain != null) collect(sinks, "explain", explain)
+    if (held != null && !(held eq explain)) collect(sinks, "explain:held", held)
     err
   }
 
@@ -392,18 +412,28 @@ object SdkCleanTestMain {
       mistyped.getUtility().clean(mistyped.getRootCtx(), "found map: " + CANARY_APIKEY))
 
     // An exception a feature hook throws, quoting the request, skips makeError.
-    val hooked = makeSdk(SCENARIOS.head, sinks, null, new ThrowFeature())
-    val hookerr = drive(hooked, target, null, sinks)
-    rep.check("clean.hook-throws", hookerr != null, "the throwing hook should fail the operation")
+    for (unexpected <- List(false, true)) {
+      val hooked = makeSdk(SCENARIOS.head, sinks, null, new ThrowFeature(unexpected))
+      val hookerr = drive(hooked, target, om("explain" -> new LinkedHashMap[String, Object]()), sinks)
+      rep.check("clean.hook-throws", hookerr != null, "the throwing hook should fail the operation")
+    }
 
-    // Iterating a stream runs inside the same catch path as the operation.
-    val streaming = entityOf(makeSdk(SCENARIOS.head, sinks, null, new StreamThrowFeature()), target.accessor)
-    var streamerr: Throwable = null
-    try streaming.stream(target.op, om("reqmatch" -> new LinkedHashMap[String, Object](target.matchArgs)), null)
-      .foreach(_ => ())
-    catch { case e: Throwable => streamerr = e }
-    rep.check("clean.stream-throws", streamerr != null, "the failing stream should throw")
-    collect(sinks, "stream", streamerr)
+    // Iterating a stream runs inside the same catch path as the operation,
+    // and the explain record the caller passed is cleaned however it ends.
+    for ((name, extra) <- List[(String, BaseFeature)](
+        ("stream", new StreamThrowFeature()), ("stream-ok", new StreamOkFeature()), ("stream-plain", null))) {
+      val streaming = entityOf(makeSdk(SCENARIOS.head, sinks, null, extra), target.accessor)
+      val explain = new LinkedHashMap[String, Object]()
+      var streamerr: Throwable = null
+      try streaming.stream(target.op, om("reqmatch" -> new LinkedHashMap[String, Object](target.matchArgs)),
+        om("ctrl" -> om("explain" -> explain))).foreach(_ => ())
+      catch { case e: Throwable => streamerr = e }
+      rep.check("clean." + name + ".throws", ("stream" == name) == (streamerr != null),
+        name + ": only the failing stream throws")
+      if (streamerr != null) collect(sinks, name, streamerr)
+      rep.check("clean." + name + ".explain", !explain.isEmpty, name + ": the explain record was not filled")
+      collect(sinks, name + ":explain", explain)
+    }
 
     // The raw path returns its failure rather than throwing it.
     val raw = makeSdk(SCENARIOS(3), sinks, null).direct(om("path" -> "raw"))
