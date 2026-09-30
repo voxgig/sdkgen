@@ -1,6 +1,10 @@
 package utility
 
-import "GOMODULE/core"
+import (
+	"reflect"
+
+	"GOMODULE/core"
+)
 
 func doneUtil(ctx *core.Context) (any, error) {
 	if ctx.Ctrl.Explain != nil {
@@ -20,11 +24,12 @@ func doneUtil(ctx *core.Context) (any, error) {
 }
 
 // The explain map IS the caller's (`ctrl["explain"]`), so the cleaned copy
-// is written back into it rather than swapped in.
+// is written back into it rather than swapped in. With clean off it is the
+// same map, which the copy-back would empty.
 func cleanExplain(ctx *core.Context) {
 	explain := ctx.Ctrl.Explain
 	cleaned, ok := cleanUtil(ctx, explain).(map[string]any)
-	if !ok {
+	if !ok || reflect.ValueOf(cleaned).Pointer() == reflect.ValueOf(explain).Pointer() {
 		return
 	}
 	for k := range explain {

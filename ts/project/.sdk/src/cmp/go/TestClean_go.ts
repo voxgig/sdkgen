@@ -426,6 +426,17 @@ func (f *cleanThrow) PreResponse(ctx *sdk.Context) {
 	panic(fmt.Errorf("hook saw %s", raw))
 }
 
+// A stream function that panics when Stream calls it, quoting a credential.
+type cleanStreamPanic struct {
+	sdk.BaseFeature
+}
+
+func (f *cleanStreamPanic) PreDone(ctx *sdk.Context) {
+	ctx.Result.Stream = func() <-chan any {
+		panic("stream saw " + cleanCanary["apikey"])
+	}
+}
+
 // A panic that escapes is a surface too: what a crash would print.
 func cleanCatch(name string, sinks *[]cleanSink, fn func() error) (err error) {
 	defer func() {
@@ -502,6 +513,36 @@ func TestCleanSweep(t *testing.T) {
 		t.Errorf("the throwing hook should fail the operation")
 	}
 
+	// Stream has no error channel: a panic inside it must end the stream
+	// through MakeError, cleaned, and not crash the process.
+	for _, panicky := range []struct {
+		saw   string
+		extra any
+	}{
+		{"hook saw", &cleanThrow{
+			BaseFeature: sdk.BaseFeature{Version: "0.0.1", Name: "throwhook", Active: true}}},
+		{"stream saw", &cleanStreamPanic{
+			BaseFeature: sdk.BaseFeature{Version: "0.0.1", Name: "streampanic", Active: true}}},
+	} {
+		streamed := cleanMakeSdk(cleanScenarios[0], &sinks, nil, panicky.extra)
+		reqmatch := map[string]any{}
+		for k, v := range op.match {
+			reqmatch[k] = v
+		}
+		explain := map[string]any{}
+		items := cleanEntity(streamed, op.accessor).MethodByName("Stream").Call([]reflect.Value{
+			reflect.ValueOf(strings.ToLower(op.method)),
+			reflect.ValueOf(map[string]any{"reqmatch": reqmatch}),
+			reflect.ValueOf(map[string]any{"ctrl": map[string]any{"explain": explain}}),
+		})[0].Interface().(<-chan any)
+		for range items {
+		}
+		sinks = append(sinks, cleanSurfaces("stream:explain", explain)...)
+		if msg, _ := core.ToMapAny(explain["err"])["message"].(string); !strings.Contains(msg, panicky.saw) {
+			t.Errorf("the panic inside Stream should end it as the SDK error, got %v", explain)
+		}
+	}
+
 	// A registered value used as a property name is masked; names that mask
 	// alike are kept apart.
 	probe := cleanMakeSdk(cleanScenarios[0], &sinks, nil)
@@ -551,13 +592,18 @@ func TestCleanSweep(t *testing.T) {
 	}
 
 	// A feature's name is not a field name: only the sensitive names inside
-	// its settings register.
+	// its settings register. An entity block, of per-entity settings or seeded
+	// records keyed by entity name and id, is not read at all.
 	featured := sdk.New${Name}SDK(map[string]any{
 		"apikey": cleanCanary["apikey"],
 		"feature": map[string]any{
 			"zzsecrets": map[string]any{"active": false, "kind": "PLAINSETTING-q8w2e4r6"},
 			"zzfeat":    map[string]any{"active": false, "apitoken": "FEATTOKEN-z9y8x7w6"},
+			"test": map[string]any{"active": false, "entity": map[string]any{
+				"zztoken": map[string]any{"ZZTOKEN01": map[string]any{"note": "PLAINRECORD-t5r3e1w9"}},
+			}},
 		},
+		"entity": map[string]any{"zztoken": map[string]any{"alias": map[string]any{"zzkey": "PLAINALIAS-m2n4b6v8"}}},
 	})
 	fclean := featured.GetUtility().Clean
 	if got, _ := fclean(featured.GetRootCtx(), "kind PLAINSETTING-q8w2e4r6").(string); got != "kind PLAINSETTING-q8w2e4r6" {
@@ -565,6 +611,11 @@ func TestCleanSweep(t *testing.T) {
 	}
 	if got, _ := fclean(featured.GetRootCtx(), "token FEATTOKEN-z9y8x7w6").(string); got != "token "+cleanMask {
 		t.Errorf("a sensitive setting inside a feature was not registered: %q", got)
+	}
+	for _, plain := range []string{"record PLAINRECORD-t5r3e1w9", "alias PLAINALIAS-m2n4b6v8"} {
+		if got, _ := fclean(featured.GetRootCtx(), plain).(string); got != plain {
+			t.Errorf("an entity block was registered: %q", got)
+		}
 	}
 
 	leaked := []string{}
@@ -639,6 +690,18 @@ func TestCleanSensitivity(t *testing.T) {
 	err := cleanDrive(client, op, map[string]any{}, &sinks)
 	if err == nil {
 		t.Fatal("the 404 scenario must fail")
+	}
+
+	// Explaining a failure must not cost it its error, nor the record.
+	discard := []cleanSink{}
+	ectrl := map[string]any{"explain": map[string]any{}}
+	explained := cleanDrive(cleanMakeSdk(cleanScenarios[1], &discard, map[string]any{"active": false}),
+		op, ectrl, &discard)
+	if explained == nil || explained.Error() != err.Error() {
+		t.Errorf("with clean off, explain lost the error: %v", explained)
+	}
+	if nil == ectrl["explain"].(map[string]any)["err"] {
+		t.Errorf("with clean off, the explain record was emptied: %v", ectrl["explain"])
 	}
 
 	leaked := 0

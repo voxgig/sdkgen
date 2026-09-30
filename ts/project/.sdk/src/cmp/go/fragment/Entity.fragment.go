@@ -196,6 +196,15 @@ func (e *EntyClass) Stream(action string, args map[string]any, callopts map[stri
 	go func() {
 		defer close(out)
 
+		// With no error channel, a panicking hook or stream function ends the
+		// stream as runOp's error would. A goroutine the stream function
+		// starts is out of reach of this recover.
+		defer func() {
+			if r := recover(); r != nil {
+				e.recovered(ctx, r)
+			}
+		}()
+
 		utility.FeatureHook(ctx, "PrePoint")
 		point, err := utility.MakePoint(ctx)
 		ctx.Out["point"] = point
@@ -278,15 +287,9 @@ func (e *EntyClass) Stream(action string, args map[string]any, callopts map[stri
 func (e *EntyClass) runOp(ctx *core.Context, postDone func()) (out any, err error) {
 	utility := e.utility
 
-	// A hook, fetcher or parser that panics never reached MakeError, and its
-	// message can quote the request.
 	defer func() {
 		if r := recover(); r != nil {
-			perr, ok := r.(error)
-			if !ok {
-				perr = fmt.Errorf("%v", r)
-			}
-			out, err = utility.MakeError(ctx, perr)
+			out, err = e.recovered(ctx, r)
 		}
 	}()
 
@@ -352,4 +355,14 @@ func (e *EntyClass) runOp(ctx *core.Context, postDone func()) (out any, err erro
 	}
 
 	return out, nil
+}
+
+// A hook, fetcher or parser that panics never reached MakeError, and its
+// message can quote the request.
+func (e *EntyClass) recovered(ctx *core.Context, r any) (any, error) {
+	perr, ok := r.(error)
+	if !ok {
+		perr = fmt.Errorf("%v", r)
+	}
+	return e.utility.MakeError(ctx, perr)
 }
