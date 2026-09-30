@@ -1,7 +1,7 @@
 
 
 import { clean, cleanAdd } from './CleanUtility'
-import { done } from './DoneUtility'
+import { cleanExplain, done } from './DoneUtility'
 import { makeError } from './MakeErrorUtility'
 import { featureAdd } from './FeatureAddUtility'
 import { featureHook } from './FeatureHookUtility'
@@ -38,6 +38,7 @@ class Utility {
 
   clean = clean
   cleanAdd = cleanAdd
+  cleanExplain = cleanExplain
   done = done
   makeError = makeError
   featureAdd = featureAdd

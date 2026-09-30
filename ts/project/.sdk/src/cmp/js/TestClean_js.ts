@@ -221,9 +221,14 @@ class ThrowFeature extends BaseFeature {
   name = 'throwhook'
   version = '0.0.1'
   active = true
+  constructor(unexpected = false) { super(); this._unexpected = unexpected }
   init() { }
   PreResponse(ctx) {
     throw new Error('hook saw ' + JSON.stringify(ctx.spec))
+  }
+  // Fired from the operation's catch block, before its cleaning.
+  PreUnexpected(ctx) {
+    if (this._unexpected) throw new Error('hook saw ' + JSON.stringify(ctx.spec))
   }
 }
 
@@ -240,7 +245,22 @@ class StreamThrowFeature extends BaseFeature {
 }
 
 
+// A stream that succeeds, so the pipeline's terminal step never runs.
+class StreamOkFeature extends BaseFeature {
+  name = 'streamok'
+  version = '0.0.1'
+  active = true
+  init() { }
+  PreDone(ctx) {
+    const items = [].concat(ctx.result.resdata ?? [])
+    ctx.result.stream = async function* () { yield* items }
+  }
+}
+
+
 async function drive(sdk, target, ctrl, sinks) {
+  // A caller may keep the record it passed rather than read ctrl.explain.
+  const held = ctrl.explain
   let out = undefined
   let err = undefined
   try {
@@ -252,6 +272,7 @@ async function drive(sdk, target, ctrl, sinks) {
   if (undefined !== err) sinks.push(...forms('error', err))
   if (undefined !== out) sinks.push(...forms('result', out))
   if (null != ctrl.explain) sinks.push(...forms('explain', ctrl.explain))
+  if (null != held && held !== ctrl.explain) sinks.push(...forms('explain:held', held))
   return err
 }
 
@@ -299,19 +320,29 @@ describe('clean', () => {
     }
 
     // An error a feature hook throws, quoting the request, skips makeError.
-    const hooked = makeSdk(SCENARIOS[0], sinks, undefined, [new ThrowFeature()])
-    const hookerr = await drive(hooked, target, {}, sinks)
-    ok(null != hookerr, 'the throwing hook should fail the operation')
-
-    // Iterating a stream runs inside the same catch path as the operation.
-    const streamed = makeSdk(SCENARIOS[0], sinks, undefined, [new StreamThrowFeature()])
-    let streamerr = undefined
-    try {
-      for await (const _item of streamed[target.accessor]().stream(target.op, { reqmatch: { ...target.match } })) { }
+    for (const unexpected of [false, true]) {
+      const hooked = makeSdk(SCENARIOS[0], sinks, undefined, [new ThrowFeature(unexpected)])
+      const hookerr = await drive(hooked, target, { explain: {} }, sinks)
+      ok(null != hookerr, 'the throwing hook should fail the operation')
     }
-    catch (e) { streamerr = e }
-    ok(null != streamerr, 'the failing stream should throw')
-    sinks.push(...forms('stream', streamerr))
+
+    // Iterating a stream runs inside the same catch path as the operation,
+    // and the explain record the caller passed is cleaned however it ends.
+    for (const [name, extra] of [['stream', [new StreamThrowFeature()]],
+      ['stream-ok', [new StreamOkFeature()]], ['stream-plain', []]]) {
+      const streamed = makeSdk(SCENARIOS[0], sinks, undefined, extra)
+      const explain = {}
+      let streamerr = undefined
+      try {
+        for await (const _item of streamed[target.accessor]().stream(
+          target.op, { reqmatch: { ...target.match } }, { ctrl: { explain } })) { }
+      }
+      catch (e) { streamerr = e }
+      ok(('stream' === name) === (null != streamerr), name + ': only the failing stream throws')
+      if (null != streamerr) sinks.push(...forms(name, streamerr))
+      ok(0 < Object.keys(explain).length, name + ': the explain record was not filled')
+      sinks.push(...forms(name + ':explain', explain))
+    }
 
     // Most callers pass no clean block; the defaults alone must mask.
     for (const scenario of [SCENARIOS[1], SCENARIOS[3]]) {

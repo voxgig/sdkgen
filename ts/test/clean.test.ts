@@ -313,18 +313,23 @@ describe('clean: the registry makeOptions builds', () => {
   })
 
 
-  test('done prunes a copy of the explain result, so the error survives clean off', () => {
+  test('done cleans the caller\'s explain record in place, and prunes err from a copy', () => {
     const cleanmod = loadClean()
     const { done } = sandboxLoad(Path.join(TM, 'ts', 'src', 'utility', 'DoneUtility.ts'), {
       '../types': {}, './CleanUtility': cleanmod })
     for (const active of [true, false]) {
       const err = new Error('boom')
       const result: any = { ok: false, err }
-      const ctx: any = { ...ctxWith(cleanmod, { active }), result, ctrl: { explain: { result } },
+      const spec = { headers: { authorization: 'Bearer LIVE-TOKEN-1' } }
+      const explain: any = { result, spec }
+      const ctx: any = { ...ctxWith(cleanmod, { active }), result, ctrl: { explain },
         utility: { struct, makeError: (c: any) => c.result.err } }
       strictEqual(done(ctx), err)
+      strictEqual(ctx.ctrl.explain, explain)
       strictEqual(result.err, err)
-      strictEqual(ctx.ctrl.explain.result.err, undefined)
+      strictEqual(explain.result.err, undefined)
+      strictEqual(explain.spec.headers.authorization, active ? MASK : 'Bearer LIVE-TOKEN-1')
+      strictEqual(spec.headers.authorization, 'Bearer LIVE-TOKEN-1')
     }
   })
 
