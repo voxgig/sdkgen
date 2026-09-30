@@ -179,6 +179,8 @@ class EntyClass
           # else fall back to the materialised items so stream always yields.
           stream_enum = result ? result.stream : nil
           if stream_enum
+            # done does not run on this path, so its record is cleaned here.
+            utility.clean_explain.call(ctx)
             stream_enum.each do |item|
               throw :stream_stop if aborted.call
               give.call(item)
@@ -272,7 +274,13 @@ class EntyClass
     rescue StandardError => operr
       ctx.ctrl.err = operr
 
-      # #PreUnexpected-Hook
+      # What a hook raises here must not escape the cleaning below.
+      begin
+        # #PreUnexpected-Hook
+      rescue StandardError => hookerr
+        operr = hookerr
+        ctx.ctrl.err = operr
+      end
 
       e = _unexpected(ctx, operr)
       # Not a cause: the raw error would print beneath the cleaned one.
@@ -287,10 +295,7 @@ class EntyClass
   def _unexpected(ctx, err)
     clean = @_utility.clean
     if ctx.ctrl.explain.is_a?(Hash)
-      cleaned = clean.call(ctx, ctx.ctrl.explain)
-      ctx.ctrl.explain.replace(cleaned) if cleaned.is_a?(Hash) && !cleaned.equal?(ctx.ctrl.explain)
-      er = ctx.ctrl.explain["result"]
-      er.delete("err") if er.is_a?(Hash)
+      @_utility.clean_explain.call(ctx)
       cleanerr = clean.call(ctx, { "message" => err.message.to_s, "class" => err.class.name })
       if ctx.ctrl.explain["err"].nil?
         ctx.ctrl.explain["err"] = cleanerr

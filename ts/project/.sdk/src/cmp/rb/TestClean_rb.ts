@@ -156,15 +156,37 @@ class ${Name}CleanTest < Minitest::Test
   # A feature that raises from inside the pipeline, quoting the request it
   # saw: an error make_error never handled.
   class ThrowFeature < ${Name}BaseFeature
-    def initialize
+    def initialize(response = true, unexpected = false)
       super()
       @name = "throwhook"
       @version = "0.0.1"
       @active = true
+      @response = response
+      @unexpected = unexpected
     end
 
     def PreResponse(ctx)
-      raise "hook saw #{ctx.spec.inspect}"
+      raise "hook saw #{ctx.spec.inspect}" if @response
+    end
+
+    # Fires in make_error, and in the catch path before its cleaning.
+    def PreUnexpected(ctx)
+      raise "hook saw #{ctx.spec.inspect}" if @unexpected
+    end
+  end
+
+  # A stream that succeeds, so the pipeline's terminal step never runs.
+  class StreamOkFeature < ${Name}BaseFeature
+    def initialize
+      super()
+      @name = "streamok"
+      @version = "0.0.1"
+      @active = true
+    end
+
+    def PreDone(ctx)
+      data = ctx.result.resdata
+      ctx.result.stream = (data.is_a?(Array) ? data : (data.nil? ? [] : [data])).each
     end
   end
 
@@ -298,6 +320,8 @@ class ${Name}CleanTest < Minitest::Test
   end
 
   def drive(sdk, target, ctrl, sinks)
+    # A caller may keep the record it passed rather than read ctrl["explain"].
+    held = ctrl["explain"]
     out = nil
     err = nil
     begin
@@ -308,6 +332,7 @@ class ${Name}CleanTest < Minitest::Test
     sinks.concat(Sweep.forms("error", err)) unless err.nil?
     sinks.concat(Sweep.forms("result", out)) unless out.nil?
     sinks.concat(Sweep.forms("explain", ctrl["explain"])) unless ctrl["explain"].nil?
+    sinks.concat(Sweep.forms("explain:held", held)) unless held.nil? || held.equal?(ctrl["explain"])
     err
   end
 
@@ -343,26 +368,40 @@ class ${Name}CleanTest < Minitest::Test
     sinks.concat(Sweep.forms("rejected", rejected))
 
     # An error a feature hook raises, quoting the request, skips make_error.
-    hooked = make_sdk(SCENARIOS[0], sinks, nil, [ThrowFeature.new])
-    refute_nil drive(hooked, target, {}, sinks), "the throwing hook should fail the operation"
-
-    # Iterating a stream runs inside the same catch path as the operation;
-    # what the caller's own block raises passes through as it was raised.
-    stream = ->(src) {
-      make_sdk(SCENARIOS[0], sinks, nil, [StreamFeature.new(src)]).public_send(target["accessor"])
-        .stream(target["op"], { "reqmatch" => target["match"].dup })
-    }
-    streamerr = nil
-    begin
-      stream.call(Enumerator.new { |_y| raise "stream saw #{CANARY['apikey']}" }).each { |_item| }
-    rescue StandardError => e
-      streamerr = e
+    # The variant raising only in PreUnexpected reaches make_error's own
+    # firing through a 404.
+    hooked = nil
+    [[SCENARIOS[0], ThrowFeature.new], [SCENARIOS[0], ThrowFeature.new(true, true)],
+     [SCENARIOS[1], ThrowFeature.new(false, true)]].each do |scenario, hook|
+      hooked = make_sdk(scenario, sinks, nil, [hook])
+      refute_nil drive(hooked, target, { "explain" => {} }, sinks), "the throwing hook should fail the operation"
     end
-    refute_nil streamerr, "the failing stream should raise"
-    sinks.concat(Sweep.forms("stream", streamerr))
+
+    # Iterating a stream runs inside the same catch path as the operation,
+    # and the explain record the caller passed is cleaned however it ends;
+    # what the caller's own block raises passes through as it was raised.
+    stream = ->(extra, explain = {}) {
+      make_sdk(SCENARIOS[0], sinks, nil, extra).public_send(target["accessor"])
+        .stream(target["op"], { "reqmatch" => target["match"].dup }, { "ctrl" => { "explain" => explain } })
+    }
+    failing = Enumerator.new { |_y| raise "stream saw #{CANARY['apikey']}" }
+    [["stream", [StreamFeature.new(failing)]], ["stream-ok", [StreamOkFeature.new]],
+     ["stream-plain", []]].each do |name, extra|
+      explain = {}
+      streamerr = nil
+      begin
+        stream.call(extra, explain).each { |_item| }
+      rescue StandardError => e
+        streamerr = e
+      end
+      assert_equal name == "stream", !streamerr.nil?, "#{name}: only the failing stream raises"
+      sinks.concat(Sweep.forms(name, streamerr)) unless streamerr.nil?
+      refute_empty explain, "#{name}: the explain record was not filled"
+      sinks.concat(Sweep.forms("#{name}:explain", explain))
+    end
     mine = RuntimeError.new("caller saw #{CANARY['apikey']}")
     got = begin
-      stream.call([1].each).each { |_item| raise mine }
+      stream.call([StreamFeature.new([1].each)]).each { |_item| raise mine }
     rescue StandardError => e
       e
     end
