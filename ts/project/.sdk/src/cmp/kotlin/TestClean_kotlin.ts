@@ -199,6 +199,18 @@ class CleanTest {
     }
   }
 
+  // A stream that fails while the caller iterates it, quoting a credential.
+  inner class StreamThrowFeature : BaseFeature("streamthrow", "0.0.1", true) {
+    override fun preDone(ctx: Context) {
+      ctx.result?.stream = Supplier<Iterator<Any?>> {
+        object : Iterator<Any?> {
+          override fun hasNext(): Boolean = throw RuntimeException("stream saw " + canaryApikey)
+          override fun next(): Any? = throw NoSuchElementException()
+        }
+      }
+    }
+  }
+
   class Scenario(val name: String, val respond: (String, MutableMap<String, Any?>) -> Any?)
 
   private fun response(status: Int, data: Any?, headers: Map<String, String>?): MutableMap<String, Any?> {
@@ -463,6 +475,18 @@ class CleanTest {
       assertNotNull(drive(hooked, target, null, sinks), "the throwing hook should fail the operation")
     }
 
+    // Iterating a stream runs inside the same catch path as the operation.
+    val streaming = entityOf(makeSdk(scenarios[0], sinks, null, StreamThrowFeature()), target.accessor)!!
+    var streamerr: Throwable? = null
+    try {
+      streaming.stream(target.op, linkedMapOf<String, Any?>("reqmatch" to LinkedHashMap(target.match)), null)
+        .forEach { }
+    } catch (e: Throwable) {
+      streamerr = e
+    }
+    assertNotNull(streamerr, "the failing stream should throw")
+    sinks.addAll(surfaces("stream", streamerr))
+
     // The raw path returns its failure rather than throwing it.
     val raw = makeSdk(scenarios[3], sinks, null).direct(linkedMapOf<String, Any?>("path" to "raw"))
     assertTrue(false == raw["ok"] && raw["err"] is Throwable,
@@ -524,6 +548,11 @@ class CleanTest {
     val err = drive(sdk, target, null, sinks)
     assertNotNull(err)
 
+    // Explaining a failure must not cost it its error.
+    val explained = drive(makeSdk(scenarios[1], mutableListOf(), mapOf("active" to false)), target,
+      linkedMapOf<String, Any?>("explain" to linkedMapOf<String, Any?>()), mutableListOf())
+    assertEquals(err?.message, explained?.message, "with clean off, explain lost the error")
+
     val leaked = sinks.filter { leaks(it.text).isNotEmpty() }
     assertTrue(leaked.isNotEmpty(), "with clean off, nothing showed the canary: the sweep is blind")
 
@@ -534,14 +563,27 @@ class CleanTest {
     }
   }
 
+  // An entity block, of per-entity settings or seeded records keyed by
+  // entity name and id, is not read at all.
   @Test
   fun aFeatureNameDoesNotMakeItsSettingsSecret() {
     val sdk = ${SDK}(linkedMapOf<String, Any?>(
       "apikey" to canaryApikey,
-      "feature" to linkedMapOf<String, Any?>("secrets" to linkedMapOf<String, Any?>(
-        "active" to false, "kind" to "SETTING-KIND-4829", "token" to canarySecret))))
+      "feature" to linkedMapOf<String, Any?>(
+        "secrets" to linkedMapOf<String, Any?>(
+          "active" to false, "kind" to "SETTING-KIND-4829", "token" to canarySecret),
+        "test" to linkedMapOf<String, Any?>("active" to false, "entity" to linkedMapOf<String, Any?>(
+          "zztoken" to linkedMapOf<String, Any?>(
+            "ZZTOKEN01" to linkedMapOf<String, Any?>("note" to "PLAINRECORD-t5r3e1w9"))))),
+      "entity" to linkedMapOf<String, Any?>("zztoken" to linkedMapOf<String, Any?>(
+        "alias" to linkedMapOf<String, Any?>("zzkey" to "PLAINALIAS-m2n4b6v8")))))
+    val root = sdk.getRootCtx()
     assertEquals("SETTING-KIND-4829 " + mask,
-      sdk.getUtility().clean(sdk.getRootCtx(), "SETTING-KIND-4829 " + canarySecret))
+      sdk.getUtility().clean(root, "SETTING-KIND-4829 " + canarySecret))
+    assertEquals("record PLAINRECORD-t5r3e1w9",
+      sdk.getUtility().clean(root, "record PLAINRECORD-t5r3e1w9"))
+    assertEquals("alias PLAINALIAS-m2n4b6v8",
+      sdk.getUtility().clean(root, "alias PLAINALIAS-m2n4b6v8"))
   }
 
   @Test

@@ -159,19 +159,28 @@ fun cleanAdd(ctx: Context, value: Any?) {
 // shape: a credential mistyped as a map or a number is still one, and a
 // message can quote it. A key under `feature` names a feature, not a field,
 // so a feature called secrets does not make its settings secret.
+// Entity blocks (entity settings, seeded records) hold no credential.
 internal fun registerSensitive(cfg: CleanConfig, opts: Map<String, Any?>) {
   val seen = mutableListOf<Any>()
   for ((k, v) in opts) {
+    if ("entity" == k) {
+      continue
+    }
     val under = sensitiveKey(cfg, k)
-    if ("feature" == k && v is Map<*, *>) {
-      for (fopts in v.values) {
-        addSensitive(cfg, fopts, under, 2, seen)
+    when {
+      "feature" == k && v is Map<*, *> -> for (fopts in v.values) {
+        addSensitive(cfg, noEntity(fopts), under, 2, seen)
       }
-    } else {
-      addSensitive(cfg, v, under, 1, seen)
+      "feature" == k && v is List<*> -> for (fopts in v) {
+        addSensitive(cfg, noEntity(fopts), under, 2, seen)
+      }
+      else -> addSensitive(cfg, if ("test" == k) noEntity(v) else v, under, 1, seen)
     }
   }
 }
+
+private fun noEntity(block: Any?): Any? =
+  if (block is Map<*, *>) block.filterKeys { it != "entity" } else block
 
 private fun addSensitive(cfg: CleanConfig, v: Any?, under: Boolean, depth: Int, seen: MutableList<Any>) {
   if (v == null || MAXDEPTH <= depth) {
