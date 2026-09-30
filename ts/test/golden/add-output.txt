@@ -146,12 +146,12 @@ src/cmp/clojure/ReadmeTopHowto_clojure.ts e1494b86d033
 src/cmp/clojure/ReadmeTopQuick_clojure.ts 8ec041215dfd
 src/cmp/clojure/ReadmeTopTest_clojure.ts 0a72b8c41e8d
 src/cmp/clojure/Schema_clojure.ts 173cdd00d273
-src/cmp/clojure/TestClean_clojure.ts d7e9995cb3a5
+src/cmp/clojure/TestClean_clojure.ts 768e3d01fa86
 src/cmp/clojure/TestDirect_clojure.ts ebfe781a958d
 src/cmp/clojure/TestEntity_clojure.ts 0a5e84730678
 src/cmp/clojure/Test_clojure.ts 56abfa732719
 src/cmp/clojure/featureextra_clojure.ts 9327232c64f7
-src/cmp/clojure/fragment/Entity.fragment.clj ce5d7a389699
+src/cmp/clojure/fragment/Entity.fragment.clj a828351e2bb5
 src/cmp/clojure/fragment/EntityCreateOp.fragment.clj 726d7256199e
 src/cmp/clojure/fragment/EntityListOp.fragment.clj 13db019cb615
 src/cmp/clojure/fragment/EntityLoadOp.fragment.clj f4ddd881801f
@@ -222,7 +222,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 32327e3b999a
-tm/clojure/src/sdk/core.clj cc9bb35498e8
+tm/clojure/src/sdk/core.clj b096adeac2a5
 tm/clojure/src/sdk/features.clj 9f957c42a096
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 2aa105a4e17e
@@ -230,7 +230,7 @@ tm/clojure/test/sdk/test/feature/secrets.clj 6ab6b24e4eb5
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
 tm/clojure/test/sdk/test/omni_smoke.clj eb96d122a518
-tm/clojure/test/sdk/test/pipeline.clj c4410bff5076
+tm/clojure/test/sdk/test/pipeline.clj 6c40203b1a22
 tm/clojure/test/sdk/test/primary.clj f306427e725e
 tm/clojure/test/sdk/test/struct_corpus.clj 7bc252602c61
 tm/clojure/test/sdk/test_runner.clj 8532e550fe17
@@ -453,7 +453,7 @@ src/cmp/elixir/ReadmeTopHowto_elixir.ts 90ecb763e0ad
 src/cmp/elixir/ReadmeTopQuick_elixir.ts 076794d8d4e1
 src/cmp/elixir/ReadmeTopTest_elixir.ts 5f12260e03e2
 src/cmp/elixir/Schema_elixir.ts a2d61dba669a
-src/cmp/elixir/TestClean_elixir.ts 144828aaea0f
+src/cmp/elixir/TestClean_elixir.ts bb60f5c356bf
 src/cmp/elixir/TestDirect_elixir.ts 2ee44de0d1a9
 src/cmp/elixir/TestEntity_elixir.ts 79f042e3436d
 src/cmp/elixir/Test_elixir.ts 66686f882ff1
@@ -472,13 +472,13 @@ tm/elixir/Makefile 411daea82111
 tm/elixir/VERSION e6635045e1d2
 tm/elixir/lib/projectname/context.ex 9a3585bb5f37
 tm/elixir/lib/projectname/core.ex 54ae320f3c39
-tm/elixir/lib/projectname/entity_base.ex a1bebbb71a2b
+tm/elixir/lib/projectname/entity_base.ex 1868d678c8bc
 tm/elixir/lib/projectname/error.ex 3817e946f99d
 tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex 2de50e8b1581
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex 17fe4a1b7bcf
+tm/elixir/lib/projectname/utility.ex b010977f82fe
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -1892,7 +1892,7 @@ src/cmp/swift/ReadmeTopQuick_swift.ts b0d732b88586
 src/cmp/swift/ReadmeTopTest_swift.ts e1b5bc35f382
 src/cmp/swift/Schema_swift.ts de5a4a02dc8d
 src/cmp/swift/SdkError_swift.ts eb21c3a56459
-src/cmp/swift/TestClean_swift.ts 017bbdb65233
+src/cmp/swift/TestClean_swift.ts 6600f96de84e
 src/cmp/swift/TestDirect_swift.ts 3c38c4dfe812
 src/cmp/swift/TestEntity_swift.ts b5ab88d984a1
 src/cmp/swift/Test_swift.ts ab9d033258f1
@@ -1940,7 +1940,7 @@ tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift d29f13ae39e7
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift 080b2f2089b1
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 0ce0c9bc0652
-tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift bb1f3e920e67
+tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 671b04486ecb
 tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift 45031c8f814f
 tm/swift/Sources/ProjectNameSDK/utility/Register.swift b680c8e1d6bc
 tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 25a0d50325ab
