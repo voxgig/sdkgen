@@ -625,7 +625,7 @@ class FeatureTest {
     assertEquals(1, f.entries.size, "expected ring buffer capped at 1")
     assertEquals(2, seen.size, "expected onEntry for both ops")
     val headers = seen[0]["headers"] as MutableMap<String, Any?>
-    assertEquals("<redacted>", headers["authorization"], "expected redacted authorization")
+    assertEquals("[redacted]", headers["authorization"], "expected redacted authorization")
   }
 
   @Test
@@ -651,7 +651,7 @@ class FeatureTest {
     val h = fhMake(null, fhF(f, fhMap("now", nowFn(clock), "redact", redact)))
     h.op(fhOp("load").headers(fhMap("x-secret", "hide", "x-ok", "show")))
     val headers = f.entries[0]["headers"] as MutableMap<String, Any?>
-    assertEquals("<redacted>", headers["x-secret"], "expected x-secret redacted")
+    assertEquals("[redacted]", headers["x-secret"], "expected x-secret redacted")
     assertEquals("show", headers["x-ok"], "expected x-ok kept")
   }
 
