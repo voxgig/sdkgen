@@ -614,25 +614,45 @@ fn mo_str_less(_: void, a: []const u8, b: []const u8) bool {
     return std.mem.order(u8, a, b) == .lt;
 }
 
+fn mo_noentity(val: Value) Value {
+    if (val != .object) return val;
+    const out = h.omap();
+    var it = val.object.iterator();
+    while (it.next()) |kv| {
+        if (!std.mem.eql(u8, kv.key_ptr.*, "entity")) h.setp(out, kv.key_ptr.*, kv.value_ptr.*);
+    }
+    return out;
+}
+
 // The options to scan for secrets. The feature map is keyed by feature
 // names, not field names, so it is scanned as a list: `secrets` must not
-// make every setting of that feature a secret.
+// make every setting of that feature a secret. Entity blocks hold entity
+// settings and seeded records, never a credential, so none is scanned. The
+// raw scan still sees the feature list form, whose entries each carry `name`.
 fn mo_without(opts: Value, keys: []const []const u8) Value {
     const out = h.omap();
     if (opts != .object) return out;
     var it = opts.object.iterator();
     outer: while (it.next()) |kv| {
+        const key = kv.key_ptr.*;
+        if (std.mem.eql(u8, key, "entity")) continue;
         for (keys) |k| {
-            if (std.mem.eql(u8, kv.key_ptr.*, k)) continue :outer;
+            if (std.mem.eql(u8, key, k)) continue :outer;
         }
         const v = kv.value_ptr.*;
-        if (std.mem.eql(u8, kv.key_ptr.*, "feature") and v == .object) {
+        if (std.mem.eql(u8, key, "feature") and (v == .object or v == .array)) {
             const list = h.olist();
-            var fit = v.object.iterator();
-            while (fit.next()) |f| list.array.append(f.value_ptr.*) catch {};
-            h.setp(out, kv.key_ptr.*, list);
+            if (v == .object) {
+                var fit = v.object.iterator();
+                while (fit.next()) |f| list.array.append(mo_noentity(f.value_ptr.*)) catch {};
+            } else {
+                for (v.array.data.items) |f| list.array.append(mo_noentity(f)) catch {};
+            }
+            h.setp(out, key, list);
+        } else if (std.mem.eql(u8, key, "test")) {
+            h.setp(out, key, mo_noentity(v));
         } else {
-            h.setp(out, kv.key_ptr.*, v);
+            h.setp(out, key, v);
         }
     }
     return out;

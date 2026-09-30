@@ -625,6 +625,13 @@ test "clean: the sweep can see a leak: clean switched off shows the credential" 
         try testing.expect(std.mem.indexOf(u8, text, CANARY_APIKEY) != null or
             std.mem.indexOf(u8, text, basic) != null);
     }
+
+    // Explaining a failure must not cost it its error.
+    var quiet = Sinks{};
+    const explained = drive(makeSdk(.notfound, &quiet, false, null), target,
+        h.jo(&.{.{ "explain", h.omap() }}), &quiet);
+    try testing.expect(explained != null);
+    try testing.expectEqualStrings(err.?.msg, explained.?.msg);
 }
 
 test "clean: a registered value used as a property name is masked, collisions kept" {
@@ -669,18 +676,36 @@ test "clean: the generated config's own clean block is honoured" {
 }
 
 // A feature's name is not a field name: a feature called secrets does not
-// make its settings secret, though a sensitive field inside it still is.
+// make its settings secret, though a sensitive field inside it still is. An
+// entity block, of per-entity settings or seeded records keyed by entity name
+// and id, is not read at all.
 test "clean: a feature's name is read as a name" {
     const client = sdk.SDK.new(h.jo(&.{
         .{ "apikey", h.vstr(CANARY_APIKEY) },
-        .{ "feature", h.jo(&.{.{ "secrets", h.jo(&.{
-            .{ "active", h.vbool(false) },
-            .{ "name", h.vstr("ZZNAME-feat123") },
-            .{ "token", h.vstr("ZZTOKEN-feat456") },
-        }) }}) },
+        .{ "feature", h.jo(&.{
+            .{ "secrets", h.jo(&.{
+                .{ "active", h.vbool(false) },
+                .{ "name", h.vstr("ZZNAME-feat123") },
+                .{ "token", h.vstr("ZZTOKEN-feat456") },
+            }) },
+            .{ "test", h.jo(&.{
+                .{ "active", h.vbool(false) },
+                .{ "entity", h.jo(&.{.{ "zztoken", h.jo(&.{.{ "ZZTOKEN01", h.jo(&.{
+                    .{ "note", h.vstr("PLAINRECORD-t5r3e1w9") },
+                }) }}) }}) },
+            }) },
+        }) },
+        .{ "entity", h.jo(&.{.{ "zztoken", h.jo(&.{.{ "alias", h.jo(&.{
+            .{ "zzkey", h.vstr("PLAINALIAS-m2n4b6v8") },
+        }) }}) }}) },
     }));
+    const ctx = client.get_root_ctx();
     try testing.expectEqualStrings("ZZNAME-feat123 " ++ MASK,
-        sdk.utilmod.clean_str_util(client.get_root_ctx(), "ZZNAME-feat123 ZZTOKEN-feat456"));
+        sdk.utilmod.clean_str_util(ctx, "ZZNAME-feat123 ZZTOKEN-feat456"));
+    try testing.expectEqualStrings("record PLAINRECORD-t5r3e1w9",
+        sdk.utilmod.clean_str_util(ctx, "record PLAINRECORD-t5r3e1w9"));
+    try testing.expectEqualStrings("alias PLAINALIAS-m2n4b6v8",
+        sdk.utilmod.clean_str_util(ctx, "alias PLAINALIAS-m2n4b6v8"));
 }
 `
 }
