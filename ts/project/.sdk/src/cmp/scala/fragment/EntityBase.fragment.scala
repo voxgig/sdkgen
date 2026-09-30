@@ -122,16 +122,21 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
       }
       else out
     } catch {
-      case err: RuntimeException =>
-        // An error already finalised by makeError must not be wrapped twice.
-        if (err eq ctx.ctrl.err) throw err
-        utility.makeError(ctx, err)
-      // Scala has no checked exceptions: a hook can throw a plain Exception,
-      // whose message can quote the request.
-      case NonFatal(err) =>
-        utility.makeError(ctx, new RuntimeException(
-          if (err.getMessage == null) String.valueOf(err) else err.getMessage))
+      case NonFatal(err) => unexpected(ctx, err)
     }
+  }
+
+  // The catch path.
+  private def unexpected(ctx: Context, err: Throwable): Object = err match {
+    case e: RuntimeException =>
+      // An error already finalised by makeError must not be wrapped twice.
+      if (e eq ctx.ctrl.err) throw e
+      this.utility.makeError(ctx, e)
+    // Scala has no checked exceptions: a hook can throw a plain Exception,
+    // whose message can quote the request.
+    case _ =>
+      this.utility.makeError(ctx, new RuntimeException(
+        if (err.getMessage == null) String.valueOf(err) else err.getMessage))
   }
 
   // Streaming operations. Runs `action` through the full pipeline and returns
@@ -178,7 +183,10 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
     // Inbound: prefer the streaming feature's incremental iterator; else fall
     // back to the materialised items so `stream` always yields.
     val source: JIterator[Object] =
-      if (ctx.result != null && ctx.result.stream != null) ctx.result.stream.get()
+      if (ctx.result != null && ctx.result.stream != null) {
+        try ctx.result.stream.get()
+        catch { case NonFatal(err) => unexpected(ctx, err); null }
+      }
       else {
         val items: JList[Object] = materialised match {
           case l: JList[_] => l.asInstanceOf[JList[Object]]
@@ -193,9 +201,39 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
       case _ => () => false
     }
 
+    // The caller iterates after runOp has returned, so a failing source takes
+    // the catch path here. Both source calls sit in hasNext: under throw
+    // false the stream then ends rather than failing in next.
     new Iterator[Object] {
-      override def hasNext: Boolean = !aborted() && source.hasNext
-      override def next(): Object = source.next()
+      private var ended = source == null
+      private var ready = false
+      private var item: Object = null
+
+      override def hasNext: Boolean =
+        if (ended || aborted()) false
+        else {
+          if (!ready) pull()
+          ready
+        }
+
+      override def next(): Object = {
+        if (!hasNext) throw new NoSuchElementException()
+        ready = false
+        item
+      }
+
+      private def pull(): Unit =
+        try {
+          ready = source.hasNext
+          ended = !ready
+          item = if (ready) source.next() else null
+        }
+        catch {
+          case NonFatal(err) =>
+            ended = true
+            ready = false
+            unexpected(ctx, err)
+        }
     }
   }
 }

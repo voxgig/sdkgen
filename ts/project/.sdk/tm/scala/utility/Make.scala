@@ -402,13 +402,22 @@ object MakeOptions {
   }
 
   // A feature's name is not a field name: a feature called `secrets` does not
-  // make every one of its options a secret.
+  // make every one of its options a secret. Entity blocks (entity settings,
+  // seeded records) hold no credential.
   private def addSensitiveOptions(cfg: CleanConfig, m: JMap[String, Object], keys: String*): Unit = {
-    Clean.addSensitiveWith(cfg, omit(m, (keys :+ "feature")*))
+    val top = omit(m, (keys :+ "feature" :+ "entity")*)
+    if (top.containsKey("test")) top.put("test", noEntity(top.get("test")))
+    Clean.addSensitiveWith(cfg, top)
     m.get("feature") match {
-      case fm: JMap[_, _] => fm.values().forEach(v => Clean.addSensitiveWith(cfg, v.asInstanceOf[Object]))
+      case fm: JMap[_, _] => fm.values().forEach(v => Clean.addSensitiveWith(cfg, noEntity(v.asInstanceOf[Object])))
+      case fl: JList[_] => fl.forEach(v => Clean.addSensitiveWith(cfg, noEntity(v.asInstanceOf[Object])))
       case other => Clean.addSensitiveWith(cfg, other)
     }
+  }
+
+  private def noEntity(block: Object): Object = block match {
+    case bm: JMap[_, _] => omit(bm.asInstanceOf[JMap[String, Object]], "entity")
+    case other => other
   }
 
   private def omit(m: JMap[String, Object], keys: String*): JMap[String, Object] = {

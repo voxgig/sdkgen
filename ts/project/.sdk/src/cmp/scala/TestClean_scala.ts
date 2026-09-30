@@ -170,6 +170,17 @@ object SdkCleanTestMain {
       throw new Exception("hook saw " + Struct.jsonify(plain(ctx.spec)))
   }
 
+  // A stream that fails while the caller iterates it, quoting a credential.
+  final class StreamThrowFeature extends BaseFeature("streamthrow", "0.0.1", true) {
+    override def preDone(ctx: Context): Unit = {
+      val failing: Supplier[java.util.Iterator[Object]] = () => new java.util.Iterator[Object] {
+        override def hasNext: Boolean = throw new RuntimeException("stream saw " + CANARY_APIKEY)
+        override def next(): Object = throw new NoSuchElementException()
+      }
+      ctx.result.stream = failing
+    }
+  }
+
   final class Scenario(val name: String, val respond: (String, JMap[String, Object]) => Object)
 
   private def response(status: Int, data: Object, headers: JMap[String, Object]): JMap[String, Object] = {
@@ -385,6 +396,15 @@ object SdkCleanTestMain {
     val hookerr = drive(hooked, target, null, sinks)
     rep.check("clean.hook-throws", hookerr != null, "the throwing hook should fail the operation")
 
+    // Iterating a stream runs inside the same catch path as the operation.
+    val streaming = entityOf(makeSdk(SCENARIOS.head, sinks, null, new StreamThrowFeature()), target.accessor)
+    var streamerr: Throwable = null
+    try streaming.stream(target.op, om("reqmatch" -> new LinkedHashMap[String, Object](target.matchArgs)), null)
+      .foreach(_ => ())
+    catch { case e: Throwable => streamerr = e }
+    rep.check("clean.stream-throws", streamerr != null, "the failing stream should throw")
+    collect(sinks, "stream", streamerr)
+
     // The raw path returns its failure rather than throwing it.
     val raw = makeSdk(SCENARIOS(3), sinks, null).direct(om("path" -> "raw"))
     rep.check("clean.direct-fails", java.lang.Boolean.FALSE == raw.get("ok") && raw.get("err") != null,
@@ -461,6 +481,14 @@ object SdkCleanTestMain {
     val err = drive(sdk, target, null, sinks)
     rep.check("clean.off.throws", err != null, "the 404 scenario must throw")
 
+    // Explaining a failure must not cost it its error.
+    val explained = drive(makeSdk(SCENARIOS(1), new ArrayList[Sink](), om("active" -> B(false))), target,
+      om("explain" -> new LinkedHashMap[String, Object]()), new ArrayList[Sink]())
+    val errmsg = if (err == null) null else err.getMessage
+    val explainedmsg = if (explained == null) null else explained.getMessage
+    rep.check("clean.off.explain-keeps-error", errmsg == explainedmsg,
+      "with clean off, explain lost the error: expected " + errmsg + ", got " + explainedmsg)
+
     val leaked = sinks.toArray(new Array[Sink](0)).toList.filter(s => leaks(s.text).nonEmpty)
     rep.check("clean.off.shows-canary", leaked.nonEmpty,
       "with clean off, nothing showed the canary: the sweep is blind")
@@ -473,6 +501,26 @@ object SdkCleanTestMain {
           "the raw spec should carry the credential when clean is off")
       case _ =>
     }
+  }
+
+  // A feature's name is not a field name: only the sensitive names inside its
+  // settings register. An entity block, of per-entity settings or seeded
+  // records keyed by entity name and id, is not read at all.
+  private def featureNames(rep: SdkTestReport): Unit = {
+    val sdk = new ${SDK}(om(
+      "apikey" -> CANARY_APIKEY,
+      "feature" -> om(
+        "zzsecrets" -> om("active" -> B(false), "kind" -> "PLAINSETTING-q8w2e4r6"),
+        "zzfeat" -> om("active" -> B(false), "apitoken" -> "FEATTOKEN-z9y8x7w6"),
+        "test" -> om("active" -> B(false), "entity" -> om(
+          "zztoken" -> om("ZZTOKEN01" -> om("note" -> "PLAINRECORD-t5r3e1w9"))))),
+      "entity" -> om("zztoken" -> om("alias" -> om("zzkey" -> "PLAINALIAS-m2n4b6v8")))))
+    def clean(s: String): Object = sdk.getUtility().clean(sdk.getRootCtx(), s)
+
+    rep.eq("clean.feature.setting", "kind PLAINSETTING-q8w2e4r6", clean("kind PLAINSETTING-q8w2e4r6"))
+    rep.eq("clean.feature.token", "token " + MASK, clean("token FEATTOKEN-z9y8x7w6"))
+    rep.eq("clean.entity.record", "record PLAINRECORD-t5r3e1w9", clean("record PLAINRECORD-t5r3e1w9"))
+    rep.eq("clean.entity.alias", "alias PLAINALIAS-m2n4b6v8", clean("alias PLAINALIAS-m2n4b6v8"))
   }
 
   private def configBlock(rep: SdkTestReport): Unit = {
@@ -507,6 +555,7 @@ object SdkCleanTestMain {
 
     rep.scope("clean-no-credential-leaves-the-sdk") { sweep(rep) }
     rep.scope("clean-the-sweep-can-see-a-leak") { sensitivity(rep) }
+    rep.scope("clean-a-feature-name-does-not-make-its-settings-secret") { featureNames(rep) }
     rep.scope("clean-the-config-clean-block-is-honoured") { configBlock(rep) }
     rep.scope("clean-with-no-clean-block-the-schema-defaults-apply") { noBlock(rep) }
 
