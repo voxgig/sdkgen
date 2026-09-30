@@ -192,13 +192,24 @@ sub stream {
 
   # Inbound: prefer the streaming feature's incremental iterator; else fall
   # back to the materialised items so stream() always yields.
+  # Each pull runs the source, so what it dies with leaves through the same
+  # catch path as the operation, and ends the stream.
   if ($result && ref $result->{stream} eq 'CODE') {
     my $src = $result->{stream};
     return sub {
       return undef if $aborted->();
-      my $item = $src->();
-      return undef unless defined $item;
-      return $unwrap->($item);
+      my $item = eval {
+        my $next = $src->();
+        defined $next ? $unwrap->($next) : undef;
+      };
+      if (my $operr = $@) {
+        $src = sub { return undef };
+        $ctx->{ctrl}{err} = $operr;
+        my $e = $self->_unexpected($ctx, $operr);
+        die $e if defined $e;
+        return undef;
+      }
+      return $item;
     };
   }
 
@@ -297,7 +308,11 @@ sub _unexpected {
       && Scalar::Util::refaddr($cleaned) != Scalar::Util::refaddr($explain)) {
       %$explain = %$cleaned;
     }
-    delete $explain->{result}{err} if Voxgig::Struct::ismap($explain->{result});
+    if (Voxgig::Struct::ismap($explain->{result})) {
+      my %pruned = %{ $explain->{result} };
+      delete $pruned{err};
+      $explain->{result} = \%pruned;
+    }
     my $msg = "$err";
     $msg =~ s/\s+\z//;
     my $cleanerr = $clean->($ctx, {

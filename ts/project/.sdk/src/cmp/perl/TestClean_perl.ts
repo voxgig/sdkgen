@@ -221,6 +221,27 @@ sub response {
   }
 }
 
+# A stream that fails while the caller pulls from it, quoting a credential.
+{
+  package ${Name}CleanStreamThrowFeature;
+  our @ISA = ('${Name}BaseFeature');
+
+  sub new {
+    my ($class) = @_;
+    my $self = ${Name}BaseFeature::new($class);
+    $self->{name} = 'streamthrow';
+    $self->{version} = '0.0.1';
+    $self->{active} = 1;
+    return $self;
+  }
+
+  sub PreDone {
+    my ($s, $ctx) = @_;
+    $ctx->{result}{stream} = sub { die "stream saw $CANARY{apikey}\\n" };
+    return;
+  }
+}
+
 # Each scenario answers the transport's (response, err) pair.
 my @SCENARIOS = (
   ['ok', sub {
@@ -391,6 +412,18 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
   my $hooked = make_sdk($SCENARIOS[0], \\@sinks, undef, [ ${Name}CleanThrowFeature->new ]);
   ok(defined drive($hooked, $target, {}, \\@sinks), 'the throwing hook fails the operation');
 
+  # Pulling from a stream runs inside the same catch path as the operation.
+  my $streamed = make_sdk($SCENARIOS[0], \\@sinks, undef, [ ${Name}CleanStreamThrowFeature->new ]);
+  my $streamerr;
+  eval {
+    my ($acc, $op) = ($target->{accessor}, $target->{op});
+    my $next = $streamed->$acc()->stream($op, { 'reqmatch' => { %{ $target->{match} } } });
+    1 while defined $next->();
+    1;
+  } or $streamerr = $@;
+  ok(defined $streamerr, 'the failing stream dies');
+  push @sinks, forms('stream', $streamerr) if defined $streamerr;
+
   # A registered value used as a property name is masked; names that mask
   # alike are all kept.
   my $named = $hooked->get_utility()->{clean}->($hooked->get_root_ctx(),
@@ -431,17 +464,23 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
     'the 404 fails without a clean option');
 
   # A feature's name is not a field name: only the sensitive names inside
-  # its settings register.
+  # its settings register. An entity block, of per-entity settings or seeded
+  # records keyed by entity name and id, is not read at all.
   my $featured = ${Name}SDK->new({
     'apikey' => $CANARY{apikey},
     'feature' => {
       'zzsecrets' => { 'active' => 0, 'kind' => 'PLAINSETTING-q8w2e4r6' },
       'zzfeat' => { 'active' => 0, 'apitoken' => 'FEATTOKEN-z9y8x7w6' },
+      'test' => { 'active' => 0, 'entity' => {
+        'zztoken' => { 'ZZTOKEN01' => { 'note' => 'PLAINRECORD-t5r3e1w9' } } } },
     },
+    'entity' => { 'zztoken' => { 'alias' => { 'zzkey' => 'PLAINALIAS-m2n4b6v8' } } },
   });
   my $fclean = $featured->get_utility()->{clean};
   my $fplain = $fclean->($featured->get_root_ctx(), 'kind PLAINSETTING-q8w2e4r6');
   my $ftoken = $fclean->($featured->get_root_ctx(), 'token FEATTOKEN-z9y8x7w6');
+  my $frecord = $fclean->($featured->get_root_ctx(), 'record PLAINRECORD-t5r3e1w9');
+  my $falias = $fclean->($featured->get_root_ctx(), 'alias PLAINALIAS-m2n4b6v8');
 
   my @leaked = grep { @{ $_->{found} } }
     map { { 'name' => $_->{name}, 'found' => [ leaks($_->{text}) ] } } @sinks;
@@ -483,6 +522,8 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
 
   is($fplain, 'kind PLAINSETTING-q8w2e4r6', "a feature's name does not register its settings");
   is($ftoken, "token $MASK", 'a sensitive setting inside a feature registers');
+  is($frecord, 'record PLAINRECORD-t5r3e1w9', 'the records a test entity block seeds do not register');
+  is($falias, 'alias PLAINALIAS-m2n4b6v8', 'a per-entity setting does not register');
 
   my $explained = $explains{'ok/explain'} || {};
   ok(defined $explained->{result}, 'the explain record carries the result');
@@ -496,6 +537,10 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
   my $sdk = make_sdk($SCENARIOS[1], \\@sinks, { 'active' => 0 });
   my $err = drive($sdk, $target, {}, \\@sinks);
   ok(defined $err, 'clean off: the 404 still dies');
+
+  # Explaining a failure must not cost it its error.
+  my $explained = drive(make_sdk($SCENARIOS[1], [], { 'active' => 0 }), $target, { 'explain' => {} }, []);
+  is(ref $explained ? $explained->{msg} : $explained, $err->{msg}, 'with clean off, explain keeps the error');
 
   my @leaked = grep { leaks($_->{text}) } @sinks;
   ok(scalar(@leaked) > 0, 'with clean off, the canary shows: the sweep is not blind');

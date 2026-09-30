@@ -313,19 +313,27 @@ sub add_sensitive {
 }
 
 # A feature's name is not a field name: only the sensitive names inside its
-# settings count, so `secrets` does not make every setting a secret.
+# settings count, so `secrets` does not make every setting a secret. Entity
+# blocks (per-entity settings, seeded records) hold no credential.
 sub add_options {
   my ($ctx, $opts) = @_;
   my %scan = %$opts;
   my $feature = delete $scan{feature};
+  delete $scan{entity};
+  $scan{test} = no_entity($scan{test}) if exists $scan{test};
   add_sensitive($ctx, \%scan);
-  if (Voxgig::Struct::ismap($feature)) {
-    add_sensitive($ctx, $feature->{$_}) for keys %$feature;
-  }
-  else {
-    add_sensitive($ctx, $feature);
-  }
+  my @blocks = Voxgig::Struct::ismap($feature) ? values %$feature
+    : Voxgig::Struct::islist($feature) ? @$feature : ($feature);
+  add_sensitive($ctx, no_entity($_)) for @blocks;
   return;
+}
+
+sub no_entity {
+  my ($block) = @_;
+  return $block unless Voxgig::Struct::ismap($block);
+  my %copy = %$block;
+  delete $copy{entity};
+  return \%copy;
 }
 
 # Is this key name sensitive under the context's clean configuration?

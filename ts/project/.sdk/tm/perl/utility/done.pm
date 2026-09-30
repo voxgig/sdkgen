@@ -29,8 +29,13 @@ $REGISTRY{done} = sub {
       && Scalar::Util::refaddr($cleaned) != Scalar::Util::refaddr($explain)) {
       %$explain = %$cleaned;
     }
+    # A copy: with clean off, explain.result is the live result make_error reads.
     my $er = $ctrl->{explain}{result};
-    delete $er->{err} if Voxgig::Struct::ismap($er);
+    if (Voxgig::Struct::ismap($er)) {
+      my %pruned = %$er;
+      delete $pruned{err};
+      $ctrl->{explain}{result} = \%pruned;
+    }
   }
   if ($ctx->{result} && $ctx->{result}{ok}) {
     return $ctx->{result}{resdata};
