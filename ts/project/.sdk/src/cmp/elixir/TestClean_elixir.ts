@@ -449,6 +449,12 @@ ${candidates(Name, entity)}
     barerr = drive(bare, target, S.jm([]), sinks)
     assert barerr != nil, "the 404 scenario must fail without a clean block"
 
+    # The raw path returns its failure rather than raising it.
+    [_ok, _nf, _server, {_tr, transport_respond} | _] = scenarios()
+    direct = ${Name}.direct(make_sdk(transport_respond, sinks, []), S.jm(["path", "raw"]))
+    assert S.getprop(direct, "ok") == false, "a transport failure should fail direct()"
+    add(sinks, forms("direct", S.getprop(direct, "err")))
+
     all = sink_list(sinks)
     leaked = Enum.filter(all, fn s -> leaks(s.text) != [] end)
 
