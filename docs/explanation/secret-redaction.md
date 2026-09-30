@@ -57,7 +57,9 @@ carried into every target by the generated `Schema` module:
 | `min` | `'4'` | The shortest value the registry accepts. |
 
 The numbers are written as strings, like every value in the option spec,
-so each target reads the same schema.
+so each target reads the same schema. A project that extends the generated
+config can give it a `clean` block too: the client's block is merged over
+it, and the values both blocks list are registered.
 
 ```ts
 const sdk = new ProjectSDK({
@@ -78,6 +80,10 @@ The `debug` feature's `redact` option adds header names on top of
   registry covers what the SDK handles, not what the caller sends.
 - `client.options()` returns the raw credential. It is the documented way
   to read it back, and it is neither a log nor an error.
+- For an API that takes its key in the query string, `entity.match()`
+  returns that key, because an entity records the query it sent as its
+  match. Like `client.options()`, it is a way to read state back, and every
+  printed form of the entity masks it.
 - Raw values are visible in a debugger, and to a tool that annotates an
   exception where it is thrown. PHP's Xdebug, in develop mode, writes the
   arguments of every stack frame onto the exception after the SDK has
