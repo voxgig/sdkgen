@@ -33,7 +33,7 @@ function render(auth: {
   suppressed: boolean, where: string, name: string, basic: boolean
 }): string {
   return `const { test, describe } = require('node:test')
-const { ok, equal } = require('node:assert')
+const { ok, equal, deepStrictEqual } = require('node:assert')
 const { inspect } = require('node:util')
 
 const { SDK, BaseFeature } = require('..')
@@ -48,6 +48,7 @@ const CANARY = {
   secret: 'CANARY-SECRET-w3e8r5t2y6',
   header: 'CANARY-HEADER-z1x4c7v0b3',
   value: 'CANARY-VALUE-n5m8b2v9c4',
+  config: 'CANARY-CONFIG-h6j3k8l2m5',
 }
 
 const MASK = '[redacted]'
@@ -102,7 +103,11 @@ class CaptureFeature extends BaseFeature {
   init() { }
   PreRequest(ctx) { this._sinks.push(...forms('ctx@PreRequest', ctx)) }
   PreResponse(ctx) { this._sinks.push(...forms('ctx@PreResponse', ctx)) }
-  PreUnexpected(ctx) { this._sinks.push(...forms('ctx@PreUnexpected', ctx)) }
+  // The SDK's own error as a hook reads it, which an observability feature logs.
+  PreUnexpected(ctx) {
+    this._sinks.push(...forms('ctx@PreUnexpected', ctx))
+    if (ctx.ctrl?.err instanceof Error) this._sinks.push(...forms('ctrl.err@PreUnexpected', ctx.ctrl.err))
+  }
 }
 
 
@@ -134,6 +139,10 @@ const SCENARIOS = [
     text: async () => '<html>',
     headers: { get() { return undefined }, forEach() { } },
   }) },
+  // The SDK's own error, its code quoting a registered value.
+  { name: 'coded', respond: (_url, _fetchdef, ctx) => {
+    throw ctx.error('denied_' + CANARY.apikey, 'coded failure')
+  } },
 ]
 
 
@@ -161,7 +170,7 @@ function makeSdk(scenario, sinks, cleanopts, extra) {
     feature,
     extend: [new CaptureFeature(sinks), ...(extra || [])],
     utility: {
-      fetcher: async (_ctx, url, fetchdef) => scenario.respond(url, fetchdef),
+      fetcher: async (ctx, url, fetchdef) => scenario.respond(url, fetchdef, ctx),
     },
   }
   // null builds the client with no clean block at all, as most callers do.
@@ -289,6 +298,23 @@ describe('clean', () => {
       sinks.push(...forms('bare', bare))
     }
 
+    // The generated config's own clean block is read beside the caller's,
+    // and is not changed by it.
+    const util = makeSdk(SCENARIOS[0], sinks).utility()
+    const cfgclean = { keys: 'zzsens', values: CANARY.config }
+    const built = util.makeOptions({ utility: util, config: { options: { clean: cfgclean } },
+      options: { clean: { values: CANARY.value } } })
+    const seeded = util.clean({ options: built }, 'config ' + CANARY.config + ' caller ' + CANARY.value)
+    sinks.push({ name: 'config-clean', text: seeded })
+
+    // A feature's name is not a field name: only the sensitive names inside
+    // its settings register.
+    const featured = new SDK({ apikey: CANARY.apikey, feature: {
+      zzsecrets: { active: false, kind: 'PLAINSETTING-q8w2e4r6' },
+      zzfeat: { active: false, apitoken: 'FEATTOKEN-z9y8x7w6' },
+    } })
+    const fctx = { options: featured._options }
+
     // The raw path returns its failure rather than throwing it.
     const raw = await makeSdk(SCENARIOS[3], sinks).direct({ path: 'raw' })
     ok(false === raw.ok && null != raw.err, 'a transport failure should fail direct()')
@@ -322,6 +348,17 @@ describe('clean', () => {
       }
     }
     equal(header(notfound.spec.headers, 'x-custom-token'), MASK)
+
+    equal(seeded, 'config ' + MASK + ' caller ' + MASK)
+    deepStrictEqual(util.clean({ options: built }, { my_zzsens: 'x', other: 'y' }), { my_zzsens: MASK, other: 'y' })
+    deepStrictEqual(cfgclean, { keys: 'zzsens', values: CANARY.config })
+
+    equal(featured.utility().clean(fctx, 'kind PLAINSETTING-q8w2e4r6'), 'kind PLAINSETTING-q8w2e4r6')
+    equal(featured.utility().clean(fctx, 'token FEATTOKEN-z9y8x7w6'), 'token ' + MASK)
+
+    const coded = errors['coded/throw']
+    ok(null != coded, 'the coded scenario must throw')
+    equal(coded.code, 'denied_' + MASK)
 
     const explained = explains['ok/explain'] || {}
     ok(null != explained.result, 'the explain record should carry the result')

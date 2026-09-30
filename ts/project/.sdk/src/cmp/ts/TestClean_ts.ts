@@ -33,7 +33,7 @@ function render(auth: {
   suppressed: boolean, where: string, name: string, basic: boolean
 }): string {
   return `import { test, describe } from 'node:test'
-import { ok, equal } from 'node:assert'
+import { ok, equal, deepStrictEqual } from 'node:assert'
 import { inspect } from 'node:util'
 
 import { SDK, BaseFeature } from '..'
@@ -48,6 +48,7 @@ const CANARY = {
   secret: 'CANARY-SECRET-w3e8r5t2y6',
   header: 'CANARY-HEADER-z1x4c7v0b3',
   value: 'CANARY-VALUE-n5m8b2v9c4',
+  config: 'CANARY-CONFIG-h6j3k8l2m5',
 }
 
 const MASK = '[redacted]'
@@ -105,11 +106,15 @@ class CaptureFeature extends BaseFeature {
   init() { }
   PreRequest(this: any, ctx: any) { this._sinks.push(...forms('ctx@PreRequest', ctx)) }
   PreResponse(this: any, ctx: any) { this._sinks.push(...forms('ctx@PreResponse', ctx)) }
-  PreUnexpected(this: any, ctx: any) { this._sinks.push(...forms('ctx@PreUnexpected', ctx)) }
+  // The SDK's own error as a hook reads it, which an observability feature logs.
+  PreUnexpected(this: any, ctx: any) {
+    this._sinks.push(...forms('ctx@PreUnexpected', ctx))
+    if (ctx.ctrl?.err instanceof Error) this._sinks.push(...forms('ctrl.err@PreUnexpected', ctx.ctrl.err))
+  }
 }
 
 
-type Scenario = { name: string, respond: (url: string, fetchdef: any) => any }
+type Scenario = { name: string, respond: (url: string, fetchdef: any, ctx?: any) => any }
 
 function response(status: number, data: any, headers?: Record<string, string>): any {
   const h: Record<string, string> = { 'content-type': 'application/json', ...(headers || {}) }
@@ -139,6 +144,10 @@ const SCENARIOS: Scenario[] = [
     text: async () => '<html>',
     headers: { get() { return undefined }, forEach() { } },
   }) },
+  // The SDK's own error, its code quoting a registered value.
+  { name: 'coded', respond: (_url: string, _fetchdef: any, ctx: any) => {
+    throw ctx.error('denied_' + CANARY.apikey, 'coded failure')
+  } },
 ]
 
 
@@ -166,7 +175,7 @@ function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any
     feature,
     extend: [new CaptureFeature(sinks), ...(extra || [])],
     utility: {
-      fetcher: async (_ctx: any, url: string, fetchdef: any) => scenario.respond(url, fetchdef),
+      fetcher: async (ctx: any, url: string, fetchdef: any) => scenario.respond(url, fetchdef, ctx),
     },
   }
   // null builds the client with no clean block at all, as most callers do.
@@ -295,6 +304,23 @@ describe('clean', () => {
       sinks.push(...forms('bare', bare))
     }
 
+    // The generated config's own clean block is read beside the caller's,
+    // and is not changed by it.
+    const util: any = makeSdk(SCENARIOS[0], sinks).utility()
+    const cfgclean = { keys: 'zzsens', values: CANARY.config }
+    const built = util.makeOptions({ utility: util, config: { options: { clean: cfgclean } },
+      options: { clean: { values: CANARY.value } } })
+    const seeded = util.clean({ options: built }, 'config ' + CANARY.config + ' caller ' + CANARY.value)
+    sinks.push({ name: 'config-clean', text: seeded })
+
+    // A feature's name is not a field name: only the sensitive names inside
+    // its settings register.
+    const featured: any = new (SDK as any)({ apikey: CANARY.apikey, feature: {
+      zzsecrets: { active: false, kind: 'PLAINSETTING-q8w2e4r6' },
+      zzfeat: { active: false, apitoken: 'FEATTOKEN-z9y8x7w6' },
+    } })
+    const fctx = { options: featured._options }
+
     // The raw path returns its failure rather than throwing it.
     const raw = await makeSdk(SCENARIOS[3], sinks).direct({ path: 'raw' })
     ok(false === raw.ok && null != raw.err, 'a transport failure should fail direct()')
@@ -328,6 +354,17 @@ describe('clean', () => {
       }
     }
     equal(header(notfound.spec.headers, 'x-custom-token'), MASK)
+
+    equal(seeded, 'config ' + MASK + ' caller ' + MASK)
+    deepStrictEqual(util.clean({ options: built }, { my_zzsens: 'x', other: 'y' }), { my_zzsens: MASK, other: 'y' })
+    deepStrictEqual(cfgclean, { keys: 'zzsens', values: CANARY.config })
+
+    equal(featured.utility().clean(fctx, 'kind PLAINSETTING-q8w2e4r6'), 'kind PLAINSETTING-q8w2e4r6')
+    equal(featured.utility().clean(fctx, 'token FEATTOKEN-z9y8x7w6'), 'token ' + MASK)
+
+    const coded = errors['coded/throw']
+    ok(null != coded, 'the coded scenario must throw')
+    equal(coded.code, 'denied_' + MASK)
 
     const explained = explains['ok/explain'] || {}
     ok(null != explained.result, 'the explain record should carry the result')
