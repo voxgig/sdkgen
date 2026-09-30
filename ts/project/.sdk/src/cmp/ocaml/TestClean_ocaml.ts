@@ -70,8 +70,8 @@ function candidates(entity: any[]): string {
         text: `  { c_name = "${ocamlString(e.name + '.' + op)}";
     c_params = [${pointParams(e.op[op]).map((p) => '"' + ocamlString(p) + '"').join('; ')}];
     c_run = (fun sdk m ctrl -> let ent = Sdk_client.${fn} sdk Noval in ${run});
-    c_stream = (fun sdk m ->
-        let ent = Sdk_client.${fn} sdk Noval in List.of_seq (ent.e_stream "${op}" m Noval)) };`,
+    c_stream = (fun sdk m callopts ->
+        let ent = Sdk_client.${fn} sdk Noval in List.of_seq (ent.e_stream "${op}" m callopts)) };`,
       })
     }
   })
@@ -207,15 +207,22 @@ let make_sdk ?(extra = []) (sc : scenario) (sinks : sinks) (cleanopts : (string 
   client
 
 (* A feature that raises from inside the pipeline, quoting the request it
- * saw: an error make_error never handled. *)
-let throw_feature () : feature =
+ * saw: an error make_error never handled. The unexpected variant raises the
+ * SDK's own error there, so the catch path fires PreUnexpected, and raises
+ * again from that hook. *)
+let throw_feature ?(unexpected = false) () : feature =
+  let saw ctx = "hook saw " ^ (match ctx.c_spec with
+      | Some sp -> jsonify (spec_to_value sp)
+      | None -> "null") in
   { f_name = "throwhook"; f_version = "0.0.1"; f_active = true; f_options = Noval;
     f_init = (fun _ _ -> ());
     f_hook = (fun name ctx ->
-        if name = "PreResponse" then
-          failwith ("hook saw " ^ (match ctx.c_spec with
-              | Some sp -> jsonify (spec_to_value sp)
-              | None -> "null"))) }
+        match name, unexpected with
+        | "PreResponse", true ->
+          raise (Sdk_error_exc { err_code = "throwhook"; err_msg = saw ctx;
+                                 err_result = Noval; err_spec = Noval })
+        | "PreResponse", false | "PreUnexpected", true -> failwith (saw ctx)
+        | _ -> ()) }
 
 (* Features that fail the operation with the SDK's own error, whose code
  * quotes a registered value: one refuses it as rbac does, and records the
@@ -253,6 +260,17 @@ let stream_throw_feature () : feature =
           result.rt_stream <- Some (fun () -> failwith ("stream saw " ^ canary_of "apikey"))
         | _ -> ()) }
 
+(* A stream a feature supplies, which succeeds. *)
+let stream_ok_feature () : feature =
+  { f_name = "streamok"; f_version = "0.0.1"; f_active = true; f_options = Noval;
+    f_init = (fun _ _ -> ());
+    f_hook = (fun name ctx ->
+        match name, ctx.c_result with
+        | "PreDone", Some result ->
+          let items = match result.rt_resdata with List r -> !r | v when is_nullish v -> [] | v -> [v] in
+          result.rt_stream <- Some (fun () -> items)
+        | _ -> ()) }
+
 let code_of (e : exn option) : string =
   match e with Some (Sdk_error_exc er) -> er.err_code | _ -> "<no SDK error>"
 
@@ -263,7 +281,7 @@ type candidate = {
   c_name : string;
   c_params : string list;
   c_run : sdk_client -> value -> value -> value;
-  c_stream : sdk_client -> value -> value list;
+  c_stream : sdk_client -> value -> value -> value list;
 }
 
 type target = { t_cand : candidate; t_params : string list }
@@ -293,10 +311,16 @@ let usable_op () : target option =
           with _ -> None) [[]; c.c_params]) candidates
 
 let drive (sdk : sdk_client) (t : target) (ctrl : value) (sinks : sinks) : exn option =
+  (* A caller may keep the record it passed rather than read ctrl.explain. *)
+  let held = getp ctrl "explain" in
   let err =
     try value_forms sinks "result" (t.t_cand.c_run sdk (args t.t_params) ctrl); None
     with e -> error_forms sinks "error" e; Some e in
   (match getp ctrl "explain" with Map _ as ex -> value_forms sinks "explain" ex | _ -> ());
+  (match held, getp ctrl "explain" with
+   | Map h, Map now when h == now -> ()
+   | Map _, _ -> value_forms sinks "explain:held" held
+   | _ -> ());
   err
 
 let variants : (string * (unit -> value)) list = [
@@ -335,26 +359,34 @@ let () =
       (match rejected with
        | Some e -> error_forms sinks "rejected" e
        | None -> failwith "a credential mistyped as a map should be rejected");
-      (* An error a feature hook raises, quoting the request, skips make_error. *)
-      let hooked = make_sdk ~extra:[throw_feature ()] (List.hd scenarios) sinks [] in
-      check "the throwing hook should fail the operation"
-        (drive hooked target (empty_map ()) sinks <> None);
-      (* The explain record a raised error interrupted leaves cleaned too:
-       * ocaml's catch path, not make_error, is the one that cleans it. *)
-      check "the throwing hook should fail the explained operation"
-        (drive hooked target (jo [("explain", empty_map ())]) sinks <> None);
+      (* An error a feature hook raises, quoting the request, skips make_error,
+       * and the explain record it interrupted leaves cleaned too. *)
+      List.iter (fun unexpected ->
+          let hooked = make_sdk ~extra:[throw_feature ~unexpected ()] (List.hd scenarios) sinks [] in
+          check "the throwing hook should fail the operation"
+            (match drive hooked target (jo [("explain", empty_map ())]) sinks with
+             | Some (Failure m) -> substr_contains m "hook saw"
+             | _ -> false)) [false; true];
       (* A feature's own error keeps its code, which is cleaned like the
        * message: returned, handed to a hook, and raised by a hook. *)
       let denied = drive (make_sdk ~extra:[deny_feature sinks] (List.hd scenarios) sinks [])
           target (empty_map ()) sinks in
       let raised = drive (make_sdk ~extra:[raise_feature ()] (List.hd scenarios) sinks [])
           target (empty_map ()) sinks in
-      (* Consuming a stream runs inside the same catch path as the operation. *)
-      let streamed = make_sdk ~extra:[stream_throw_feature ()] (List.hd scenarios) sinks [] in
-      let streamerr =
-        try ignore (target.t_cand.c_stream streamed (args target.t_params)); None
-        with e -> error_forms sinks "stream" e; Some e in
-      check "the failing stream should throw" (streamerr <> None);
+      (* Consuming a stream runs inside the same catch path as the operation,
+       * and the explain record the caller passed is cleaned however it ends. *)
+      List.iter (fun (name, extra) ->
+          let streamed = make_sdk ~extra (List.hd scenarios) sinks [] in
+          let explain = empty_map () in
+          let streamerr =
+            try ignore (target.t_cand.c_stream streamed (args target.t_params)
+                          (jo [("ctrl", jo [("explain", explain)])])); None
+            with e -> error_forms sinks name e; Some e in
+          check (name ^ ": only the failing stream throws") ((name = "stream") = (streamerr <> None));
+          check (name ^ ": the explain record was not filled") (keysof explain <> []);
+          value_forms sinks (name ^ ":explain") explain)
+        [("stream", [stream_throw_feature ()]); ("stream-ok", [stream_ok_feature ()]);
+         ("stream-plain", [])];
       (* A client given no clean block at all masks by the schema defaults. *)
       let bare = Sdk_client.make (jo [
           ("apikey", Str (canary_of "apikey")); ("secret", Str (canary_of "secret"));

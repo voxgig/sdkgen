@@ -435,13 +435,16 @@ let clean_exn (ctx : ctx) (e : exn) : exn =
 
 (* The explain map is the CALLER's, so it is cleaned in place: what they hold
  * after the call is the cleaned record. An omap is a mutable record, so its
- * entries are replaced under the value the caller still references. *)
+ * entries are replaced under the value the caller still references. Its
+ * result is a snapshot (result_to_value), never the live result, so err is
+ * pruned from it in place. *)
 let clean_explain (ctx : ctx) : unit =
   match ctx.c_ctrl.ctrl_explain with
   | Map m as ex ->
     (match (cu ctx).u_clean ctx ex with
      | Map cm when cm != m -> m.entries <- cm.entries
-     | _ -> ())
+     | _ -> ());
+    (match getp ex "result" with Map _ as r -> ignore (delprop r (Str "err")) | _ -> ())
   | _ -> ()
 
 (* The serialised context leaves the pipeline (a logger, an error dump), so
@@ -513,9 +516,6 @@ let make_error_util (ctx : ctx) (err_opt : sdk_error option) : value =
 
 let done_util (ctx : ctx) : value =
   clean_explain ctx;
-  (match ctx.c_ctrl.ctrl_explain with
-   | Map _ as ex -> (match getp ex "result" with Map _ as r -> ignore (delprop r (Str "err")) | _ -> ())
-   | _ -> ());
   match ctx.c_result with
   | Some result when result.rt_ok -> result.rt_resdata
   | _ -> (cu ctx).u_make_error ctx None
