@@ -820,19 +820,38 @@ defmodule ProjectName.Utility do
 
   # The options to scan for secrets. The feature map is keyed by feature
   # names, not field names, so it is scanned as a list: `secrets` must not
-  # make every setting of that feature a secret.
+  # make every setting of that feature a secret. Entity blocks hold entity
+  # settings and seeded records, never a credential, so they are skipped.
   defp secret_scan(opts, names) do
     out = S.jm([])
 
     Enum.each(H.entries(opts), fn {k, v} ->
       cond do
-        k in names -> nil
-        k == "feature" and S.ismap(v) -> S.setprop(out, k, S.jt(Enum.map(H.entries(v), &elem(&1, 1))))
-        true -> S.setprop(out, k, v)
+        k in names or k == "entity" ->
+          nil
+
+        k == "feature" and (S.ismap(v) or S.islist(v)) ->
+          S.setprop(out, k, S.jt(Enum.map(H.entries(v), fn {_, f} -> without(f, "entity") end)))
+
+        k == "test" ->
+          S.setprop(out, k, without(v, "entity"))
+
+        true ->
+          S.setprop(out, k, v)
       end
     end)
 
     out
+  end
+
+  defp without(node, key) do
+    if S.ismap(node) do
+      out = S.jm([])
+      Enum.each(H.entries(node), fn {k, v} -> if k != key, do: S.setprop(out, k, v) end)
+      out
+    else
+      node
+    end
   end
 
   # ---- make_point ----------------------------------------------------------
@@ -1268,9 +1287,10 @@ defmodule ProjectName.Utility do
     ctrl = S.getprop(ctx, "ctrl")
     ex = S.getprop(ctrl, "explain")
 
+    # A copy: with clean off, explain.result is the live result make_error reads.
     if S.ismap(ex) do
       er = S.getprop(ex, "result")
-      if S.ismap(er), do: S.delprop(er, "err")
+      if S.ismap(er), do: S.setprop(ex, "result", without(er, "err"))
     end
 
     result = S.getprop(ctx, "result")

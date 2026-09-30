@@ -318,6 +318,25 @@ ${candidates(Name, entity)}
     ])
   end
 
+  # A stream that fails while the caller iterates it, quoting a credential.
+  defp stream_feature do
+    S.jm([
+      "name", "streamthrow", "version", "0.0.1", "active", true, "options", S.jm([]),
+      "init", fn _ctx, _opts -> nil end,
+      "PreDone", fn ctx ->
+        S.setprop(S.getprop(ctx, "result"), "stream",
+          fn -> Stream.map([1], fn _ -> raise "stream saw " <> @canary.apikey end) end)
+      end
+    ])
+  end
+
+  # The target operation, streamed through its entity.
+  defp stream_of(sdk, {name, acc, _op, match}) do
+    ent = acc.(sdk)
+    mod = S.getprop(ent, "_module")
+    mod.stream(ent, List.last(String.split(name, ".")), S.jm(["reqmatch", args(match)]))
+  end
+
   # Features that fail the operation with the SDK's own error, whose code
   # quotes a registered value: one refuses it as rbac does, and records the
   # error PreUnexpected hands a hook; the other raises.
@@ -420,6 +439,18 @@ ${candidates(Name, entity)}
     hooked = make_sdk(ok, sinks, [], [throw_feature()])
     assert drive(hooked, target, S.jm([]), sinks) != nil, "the throwing hook should fail the operation"
 
+    # Iterating a stream runs through the same cleaning path as the operation.
+    streamerr =
+      try do
+        Enum.to_list(stream_of(make_sdk(ok, sinks, [], [stream_feature()]), target))
+        nil
+      rescue
+        e -> e
+      end
+
+    assert streamerr != nil, "the failing stream should raise"
+    add(sinks, forms("stream", streamerr))
+
     # A feature's own error keeps its code, which is cleaned like the message:
     # returned, handed to a hook, raised by a hook, and nested in a record.
     denied = drive(make_sdk(ok, sinks, [], [deny_feature(sinks)]), target, S.jm([]), sinks)
@@ -504,6 +535,13 @@ ${candidates(Name, entity)}
     err = drive(sdk, target, S.jm([]), sinks)
     assert err != nil
 
+    # Explaining a failure must not cost it its error.
+    explained =
+      drive(make_sdk(notfound, S.jt([]), [{"active", false}]), target, S.jm(["explain", S.jm([])]), S.jt([]))
+
+    assert explained != nil and Exception.message(explained) == Exception.message(err),
+           "with clean off, explain lost the error"
+
     assert Enum.any?(sink_list(sinks), fn s -> leaks(s.text) != [] end),
            "with clean off, nothing showed the canary: the sweep is blind"
 
@@ -529,19 +567,28 @@ ${candidates(Name, entity)}
   end
 
   # A feature's name is not a field name: a feature called secrets does not
-  # make its settings secret, though a sensitive field inside it still is.
+  # make its settings secret, though a sensitive field inside it still is. An
+  # entity block, of entity settings or seeded records, is not read at all.
   test "a feature's name is read as a name" do
+    record = S.jm(["zztoken", S.jm(["ZZTOKEN01", S.jm(["note", "PLAINRECORD-t5r3e1w9"])])])
+
     client =
       ${Name}.new(
         S.jm([
           "apikey", @canary.apikey,
           "feature",
-          S.jm(["secrets", S.jm(["active", false, "name", "ZZNAME-feat123", "token", "ZZTOKEN-feat456"])])
+          S.jm([
+            "secrets", S.jm(["active", false, "name", "ZZNAME-feat123", "token", "ZZTOKEN-feat456"]),
+            "test", S.jm(["active", false, "entity", record])
+          ]),
+          "entity", S.jm(["zztoken", S.jm(["alias", S.jm(["zzkey", "PLAINALIAS-m2n4b6v8"])])])
         ])
       )
 
-    assert ${Name}.Utility.clean_impl(${Name}.get_root_ctx(client), "ZZNAME-feat123 ZZTOKEN-feat456") ==
-             "ZZNAME-feat123 " <> @mask
+    ctx = ${Name}.get_root_ctx(client)
+    assert ${Name}.Utility.clean_impl(ctx, "ZZNAME-feat123 ZZTOKEN-feat456") == "ZZNAME-feat123 " <> @mask
+    assert ${Name}.Utility.clean_impl(ctx, "record PLAINRECORD-t5r3e1w9") == "record PLAINRECORD-t5r3e1w9"
+    assert ${Name}.Utility.clean_impl(ctx, "alias PLAINALIAS-m2n4b6v8") == "alias PLAINALIAS-m2n4b6v8"
   end
 
   test "the generated config's own clean block is honoured" do
