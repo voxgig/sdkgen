@@ -810,12 +810,6 @@ defmodule ProjectName.Utility do
     opts
   end
 
-  defp omit_keys(node, names) do
-    out = S.jm([])
-    Enum.each(H.entries(node), fn {k, v} -> if k not in names, do: S.setprop(out, k, v) end)
-    out
-  end
-
   # ---- make_point ----------------------------------------------------------
 
   def make_point_impl(ctx) do
