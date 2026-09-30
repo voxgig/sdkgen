@@ -367,6 +367,25 @@ public class CleanTest {
     }
   }
 
+  // A stream that succeeds, yielding the result's items.
+  public static final class StreamOkFeature extends BaseFeature {
+    StreamOkFeature() {
+      super("streamok", "0.0.1", true);
+    }
+
+    @Override
+    public void preDone(Context ctx) {
+      List<Object> items = new ArrayList<>();
+      if (ctx.result.resdata instanceof List) {
+        items.addAll((List<Object>) ctx.result.resdata);
+      }
+      else if (ctx.result.resdata != null) {
+        items.add(ctx.result.resdata);
+      }
+      ctx.result.stream = items::iterator;
+    }
+  }
+
   static boolean hasFeature(String name) {
     Map<String, Object> fm = Helpers.toMapAny(Config.makeConfig().get("feature"));
     return fm != null && fm.get(name) != null;
@@ -605,6 +624,8 @@ public class CleanTest {
   }
 
   static Exception drive(${sdk} sdk, Op op, Map<String, Object> ctrl, List<Sink> sinks) {
+    // A caller may keep the record it passed rather than read ctrl's entry.
+    Object held = ctrl.get("explain");
     Object out = null;
     Exception err = null;
     try {
@@ -621,6 +642,9 @@ public class CleanTest {
     }
     if (ctrl.get("explain") != null) {
       forms(sinks, "explain", ctrl.get("explain"));
+    }
+    if (held != null && held != ctrl.get("explain")) {
+      forms(sinks, "explain:held", held);
     }
     return err;
   }
@@ -688,23 +712,36 @@ public class CleanTest {
 
       for (boolean unexpected : new boolean[] {false, true}) {
         ${sdk} hooked = makeSdk(SCENARIOS.get(0), sinks, null, new ThrowFeature(unexpected));
-        assertNotNull(drive(hooked, op, new LinkedHashMap<>(), sinks),
+        assertNotNull(drive(hooked, op, jm("explain", new LinkedHashMap<String, Object>()), sinks),
             "the throwing hook should fail the operation");
       }
 
-      // Iterating a stream runs inside the same catch path as the operation.
-      SdkEntity streamed = (SdkEntity) op.accessor.invoke(
-          makeSdk(SCENARIOS.get(0), sinks, null, new StreamThrowFeature()), new Object[] {null});
-      RuntimeException streamerr = null;
-      try {
-        streamed.stream(op.call.getName(), jm("reqmatch", new LinkedHashMap<>(op.match)), null)
-            .forEach(item -> { });
+      // Iterating a stream runs inside the same catch path as the operation,
+      // and the explain record the caller passed is cleaned however it ends.
+      Map<String, BaseFeature[]> streams = new LinkedHashMap<>();
+      streams.put("stream", new BaseFeature[] {new StreamThrowFeature()});
+      streams.put("stream-ok", new BaseFeature[] {new StreamOkFeature()});
+      streams.put("stream-plain", new BaseFeature[] {});
+      for (Map.Entry<String, BaseFeature[]> entry : streams.entrySet()) {
+        String name = entry.getKey();
+        SdkEntity streamed = (SdkEntity) op.accessor.invoke(
+            makeSdk(SCENARIOS.get(0), sinks, null, entry.getValue()), new Object[] {null});
+        Map<String, Object> explain = new LinkedHashMap<>();
+        RuntimeException streamerr = null;
+        try {
+          streamed.stream(op.call.getName(), jm("reqmatch", new LinkedHashMap<>(op.match)),
+              jm("ctrl", jm("explain", explain))).forEach(item -> { });
+        }
+        catch (RuntimeException e) {
+          streamerr = e;
+        }
+        assertEquals("stream".equals(name), streamerr != null, name + ": only the failing stream throws");
+        if (streamerr != null) {
+          forms(sinks, name, streamerr);
+        }
+        assertTrue(!explain.isEmpty(), name + ": the explain record was not filled");
+        forms(sinks, name + ":explain", explain);
       }
-      catch (RuntimeException e) {
-        streamerr = e;
-      }
-      assertNotNull(streamerr, "the failing stream should throw");
-      forms(sinks, "stream", streamerr);
 
       // The raw path returns its failure rather than throwing it.
       Map<String, Object> raw = makeSdk(SCENARIOS.get(3), sinks, null).direct(jm("path", "raw"));
