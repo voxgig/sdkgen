@@ -146,12 +146,12 @@ src/cmp/clojure/ReadmeTopHowto_clojure.ts e1494b86d033
 src/cmp/clojure/ReadmeTopQuick_clojure.ts 8ec041215dfd
 src/cmp/clojure/ReadmeTopTest_clojure.ts 0a72b8c41e8d
 src/cmp/clojure/Schema_clojure.ts 173cdd00d273
-src/cmp/clojure/TestClean_clojure.ts 41cce9003ca3
+src/cmp/clojure/TestClean_clojure.ts d7e9995cb3a5
 src/cmp/clojure/TestDirect_clojure.ts ebfe781a958d
 src/cmp/clojure/TestEntity_clojure.ts 0a5e84730678
 src/cmp/clojure/Test_clojure.ts 56abfa732719
 src/cmp/clojure/featureextra_clojure.ts 9327232c64f7
-src/cmp/clojure/fragment/Entity.fragment.clj da6592eddc88
+src/cmp/clojure/fragment/Entity.fragment.clj ce5d7a389699
 src/cmp/clojure/fragment/EntityCreateOp.fragment.clj 726d7256199e
 src/cmp/clojure/fragment/EntityListOp.fragment.clj 13db019cb615
 src/cmp/clojure/fragment/EntityLoadOp.fragment.clj f4ddd881801f
@@ -221,8 +221,8 @@ tm/clojure/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
-tm/clojure/src/sdk/client.clj 0f46fe3e495b
-tm/clojure/src/sdk/core.clj 4a74b072d425
+tm/clojure/src/sdk/client.clj 32327e3b999a
+tm/clojure/src/sdk/core.clj cc9bb35498e8
 tm/clojure/src/sdk/features.clj 9f957c42a096
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 2aa105a4e17e
@@ -526,7 +526,7 @@ src/cmp/go/ReadmeTopHowto_go.ts 2d7332aca33c
 src/cmp/go/ReadmeTopQuick_go.ts 13d3036bf5b7
 src/cmp/go/ReadmeTopTest_go.ts 747e3b9fc1c5
 src/cmp/go/Schema_go.ts 6a9b0bca5db2
-src/cmp/go/TestClean_go.ts c401396baef5
+src/cmp/go/TestClean_go.ts a3d7459a47fd
 src/cmp/go/TestDirect_go.ts e947dde27e1c
 src/cmp/go/TestEntity_go.ts be9e85608169
 src/cmp/go/Test_go.ts 836686c64aee
@@ -581,9 +581,9 @@ tm/go/utility/feature_init.go e2d9a7381261
 tm/go/utility/fetcher.go 842e6a52d26e
 tm/go/utility/graphql.go f0e6b8fef4a8
 tm/go/utility/make_context.go c30482d43cbb
-tm/go/utility/make_error.go f8cf1d7b5f55
+tm/go/utility/make_error.go 1bc795ee02c1
 tm/go/utility/make_fetch_def.go 1b2ecd1822cf
-tm/go/utility/make_options.go 57756058e385
+tm/go/utility/make_options.go 5eaa2facf8ea
 tm/go/utility/make_point.go 0d61c98c9993
 tm/go/utility/make_request.go cf4d4f55e911
 tm/go/utility/make_response.go 57ad84a7b3be
@@ -1161,7 +1161,7 @@ src/cmp/perl/ReadmeTopHowto_perl.ts 287f685ca3bf
 src/cmp/perl/ReadmeTopQuick_perl.ts dce0aa218d24
 src/cmp/perl/ReadmeTopTest_perl.ts fd5247ab7792
 src/cmp/perl/Schema_perl.ts 0591817e7773
-src/cmp/perl/TestClean_perl.ts 343401b93809
+src/cmp/perl/TestClean_perl.ts 01db1c3c2c76
 src/cmp/perl/TestDirect_perl.ts 47d073bf6657
 src/cmp/perl/TestEntity_perl.ts b7d4b337b0b9
 src/cmp/perl/Test_perl.ts cb7b4d57d5d1
@@ -1206,7 +1206,7 @@ tm/perl/t/struct_utility.t 9c229417ba35
 tm/perl/t/vendor/omni/Voxgig/Omni.pm 20a2ccce95cc
 tm/perl/t/vendor/omni/Voxgig/Omni/Runner.pm afd2f61d0d23
 tm/perl/t/vendor/omni/Voxgig/Omni/Util.pm fddf389729dc
-tm/perl/utility/clean.pm e6ac373293b2
+tm/perl/utility/clean.pm 99bc84f34b29
 tm/perl/utility/done.pm 0f95b944dc79
 tm/perl/utility/feature_add.pm 1904c2689cad
 tm/perl/utility/feature_hook.pm e28b546e5fd1
@@ -1216,7 +1216,7 @@ tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm 70a5bbc759c2
 tm/perl/utility/make_fetch_def.pm ebb77b54060c
-tm/perl/utility/make_options.pm 1dc1f211abf9
+tm/perl/utility/make_options.pm d7447ddc9918
 tm/perl/utility/make_point.pm 584666550bc1
 tm/perl/utility/make_request.pm d4b1ec8cf30d
 tm/perl/utility/make_response.pm 51a842fc584b
@@ -1266,7 +1266,7 @@ src/cmp/php/ReadmeTopHowto_php.ts a0a90593a80f
 src/cmp/php/ReadmeTopQuick_php.ts f52705d06444
 src/cmp/php/ReadmeTopTest_php.ts e602ef0b983e
 src/cmp/php/Schema_php.ts 9750487a267a
-src/cmp/php/TestClean_php.ts f19d3c690e26
+src/cmp/php/TestClean_php.ts db3da1ca1537
 src/cmp/php/TestDirect_php.ts 40f767054ab8
 src/cmp/php/TestEntity_php.ts 49b3024f961d
 src/cmp/php/Test_php.ts 4b04d7202c7a
@@ -1309,7 +1309,7 @@ tm/php/test/StructUtilityTest.php a566f84b9955
 tm/php/test/sdk-test-control.json 0ef7278caec2
 tm/php/test/vendor/omni/Runner.php 57ebb5adf76d
 tm/php/test/vendor/omni/Util.php d34cd162568c
-tm/php/utility/Clean.php f32e373e136f
+tm/php/utility/Clean.php 3da23ae3843a
 tm/php/utility/Done.php 012b31fe19fc
 tm/php/utility/FeatureAdd.php 7729798603cf
 tm/php/utility/FeatureHook.php 7f333010aba1
@@ -1319,7 +1319,7 @@ tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php b4d5d4dec68e
 tm/php/utility/MakeFetchDef.php c76cc8f6f00e
-tm/php/utility/MakeOptions.php eff40a9886e1
+tm/php/utility/MakeOptions.php 65763d374aa8
 tm/php/utility/MakePoint.php b17607873309
 tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
@@ -1370,7 +1370,7 @@ src/cmp/py/ReadmeTopHowto_py.ts 98e1b9247b51
 src/cmp/py/ReadmeTopQuick_py.ts 44790daff08d
 src/cmp/py/ReadmeTopTest_py.ts 5416eade0670
 src/cmp/py/Schema_py.ts ff45f83e6ff4
-src/cmp/py/TestClean_py.ts 6cd89b88f2c7
+src/cmp/py/TestClean_py.ts 8c1fb994a464
 src/cmp/py/TestDirect_py.ts 78942c6e7da1
 src/cmp/py/TestEntity_py.ts 5d83b1e1f5c2
 src/cmp/py/Test_py.ts 637c586815a4
@@ -1409,9 +1409,9 @@ tm/py/pkg/utility/feature_init.py 56df64ac9bd6
 tm/py/pkg/utility/fetcher.py 194e66654ac7
 tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
-tm/py/pkg/utility/make_error.py 0021de915830
+tm/py/pkg/utility/make_error.py f34170896d99
 tm/py/pkg/utility/make_fetch_def.py 0ad63d779a4e
-tm/py/pkg/utility/make_options.py ae888aea562e
+tm/py/pkg/utility/make_options.py 50010cef8663
 tm/py/pkg/utility/make_point.py 72db740ca620
 tm/py/pkg/utility/make_request.py 9835b18e665b
 tm/py/pkg/utility/make_response.py a0912bcd9cff
@@ -1503,7 +1503,7 @@ src/cmp/rb/ReadmeTopHowto_rb.ts d4c1341f730d
 src/cmp/rb/ReadmeTopQuick_rb.ts 8ca9e680843a
 src/cmp/rb/ReadmeTopTest_rb.ts 340ae1770980
 src/cmp/rb/Schema_rb.ts 7aac619fae8d
-src/cmp/rb/TestClean_rb.ts cb728752a4d6
+src/cmp/rb/TestClean_rb.ts 7ceea2a95f6c
 src/cmp/rb/TestDirect_rb.ts 90a043f19116
 src/cmp/rb/TestEntity_rb.ts 7e0db0f950e1
 src/cmp/rb/Test_rb.ts a98c4dcbd2fb
@@ -1547,7 +1547,7 @@ tm/rb/test/struct_utility_test.rb 53ba3c8608b5
 tm/rb/test/vendor/omni/runner.rb 26ce17d24a0b
 tm/rb/test/vendor/omni/util.rb 8717b6619a06
 tm/rb/test/vendor/omni/voxgig_omni.rb 4cda3a97ca3d
-tm/rb/utility/clean.rb 686e97419c6a
+tm/rb/utility/clean.rb 775596ebe605
 tm/rb/utility/done.rb b92c95b3d946
 tm/rb/utility/feature_add.rb 56c05f79aaf6
 tm/rb/utility/feature_hook.rb ae80d8f1f9c8
@@ -1557,7 +1557,7 @@ tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb 619849e17933
 tm/rb/utility/make_fetch_def.rb b0cbc0f3b381
-tm/rb/utility/make_options.rb 2eab30fbdf99
+tm/rb/utility/make_options.rb bff653d9c622
 tm/rb/utility/make_point.rb d5831921adcc
 tm/rb/utility/make_request.rb a4ef373194d8
 tm/rb/utility/make_response.rb 0ca41a876f23
@@ -1892,7 +1892,7 @@ src/cmp/swift/ReadmeTopQuick_swift.ts b0d732b88586
 src/cmp/swift/ReadmeTopTest_swift.ts e1b5bc35f382
 src/cmp/swift/Schema_swift.ts de5a4a02dc8d
 src/cmp/swift/SdkError_swift.ts eb21c3a56459
-src/cmp/swift/TestClean_swift.ts 38353c2ae347
+src/cmp/swift/TestClean_swift.ts 017bbdb65233
 src/cmp/swift/TestDirect_swift.ts 3c38c4dfe812
 src/cmp/swift/TestEntity_swift.ts b5ab88d984a1
 src/cmp/swift/Test_swift.ts ab9d033258f1
@@ -1903,8 +1903,8 @@ src/cmp/swift/fragment/EntityListOp.fragment.swift 3bfbedbef773
 src/cmp/swift/fragment/EntityLoadOp.fragment.swift 3628aa13f1fd
 src/cmp/swift/fragment/EntityRemoveOp.fragment.swift 4a4dcca1691f
 src/cmp/swift/fragment/EntityUpdateOp.fragment.swift 1aa90240964b
-src/cmp/swift/fragment/Main.fragment.swift 783f1f19f124
-src/cmp/swift/fragment/SdkError.fragment.swift 6e6bbcc7b361
+src/cmp/swift/fragment/Main.fragment.swift 1369c182f0b9
+src/cmp/swift/fragment/SdkError.fragment.swift 927b9a03be0d
 src/cmp/swift/tsconfig.json 720a3f229019
 src/cmp/swift/utility_swift.ts 2f94c741a269
 tm/swift/LICENSE ed2f88b0aab8
@@ -1940,10 +1940,10 @@ tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift d29f13ae39e7
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift 080b2f2089b1
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 0ce0c9bc0652
-tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift f0a050580f87
+tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift bb1f3e920e67
 tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift 45031c8f814f
 tm/swift/Sources/ProjectNameSDK/utility/Register.swift b680c8e1d6bc
-tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 07b8ae9f0e64
+tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 25a0d50325ab
 tm/swift/Tests/ProjectNameSDKTests/CustomUtilityTest.swift d761ef0813c8
 tm/swift/Tests/ProjectNameSDKTests/ExistsTest.swift b003ca8c07eb
 tm/swift/Tests/ProjectNameSDKTests/NetsimTest.swift e290a72e79ed
