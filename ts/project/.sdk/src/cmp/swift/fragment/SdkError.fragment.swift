@@ -6,10 +6,10 @@ import Foundation
 public final class ProjectNameError: Error {
   public let isProjectNameError = true
   public let sdk = "ProjectName"
-  public let code: String
 
-  // Clean rewrites the message in place, since the error is about to be
-  // thrown.
+  // Clean rewrites the code and the message in place, since the error is
+  // about to be thrown.
+  public internal(set) var code: String
   public internal(set) var message: String
 
   // Reachable for a debugger, out of every printer and mirror: the context

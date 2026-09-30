@@ -373,7 +373,7 @@ private func cleanErrorRecord(
   out.entries["message"] = .string(cleanString(cfg, errMessage(err)))
   if let se = err as? ProjectNameError {
     out.entries["sdk"] = .string(se.sdk)
-    out.entries["code"] = .string(se.code)
+    out.entries["code"] = .string(cleanString(cfg, se.code))
     out.entries["status"] = .int(Int64(se.status))
     out.entries["result"] = cleanSnapshot(cfg, se.resultVal, "result", depth + 1, &seen)
     out.entries["spec"] = cleanSnapshot(cfg, se.specVal, "spec", depth + 1, &seen)
@@ -480,6 +480,7 @@ func cleanUtil(_ ctx: Context, _ val: Value) -> Value {
   if let err = val.asNative as? ProjectNameError {
     var seen: [ObjectIdentifier] = []
     err.message = cleanString(cfg, err.message)
+    err.code = cleanString(cfg, err.code)
     if !isNil(err.resultVal) {
       err.resultVal = cleanSnapshot(cfg, err.resultVal, "result", 1, &seen)
     }

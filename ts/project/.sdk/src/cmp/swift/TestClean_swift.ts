@@ -99,6 +99,7 @@ private let canaryApikey = "CANARY-APIKEY-k9x2m7q4p1"
 private let canarySecret = "CANARY-SECRET-w3e8r5t2y6"
 private let canaryHeader = "CANARY-HEADER-z1x4c7v0b3"
 private let canaryValue = "CANARY-VALUE-n5m8b2v9c4"
+private let canaryConfig = "CANARY-CONFIG-h6j3k8l2m5"
 
 private let mask = "[redacted]"
 
@@ -115,7 +116,7 @@ private func percent(_ s: String) -> String {
 // Every form a canary can travel in.
 private let forms: [String] = {
   var out: [String] = []
-  for v in [canaryApikey, canarySecret, canaryHeader, canaryValue] {
+  for v in [canaryApikey, canarySecret, canaryHeader, canaryValue, canaryConfig] {
     out.append(v)
     out.append(base64(v))
     out.append(percent(v))
@@ -253,7 +254,15 @@ final class ${Name}CleanTest: XCTestCase {
     }
     override func preRequest(_ ctx: Context) { box.sinks += ${Name}CleanTest.formsOf("ctx@PreRequest", ctx) }
     override func preResponse(_ ctx: Context) { box.sinks += ${Name}CleanTest.formsOf("ctx@PreResponse", ctx) }
-    override func preUnexpected(_ ctx: Context) { box.sinks += ${Name}CleanTest.formsOf("ctx@PreUnexpected", ctx) }
+
+    // The SDK's own error as a hook reads it, which an observability feature
+    // logs.
+    override func preUnexpected(_ ctx: Context) {
+      box.sinks += ${Name}CleanTest.formsOf("ctx@PreUnexpected", ctx)
+      if let err = ctx.ctrl.err as? ${Name}Error {
+        box.sinks += ${Name}CleanTest.formsOf("ctrl.err@PreUnexpected", err)
+      }
+    }
   }
 
   // A feature that fails the operation from inside the pipeline, quoting the
@@ -284,6 +293,10 @@ final class ${Name}CleanTest: XCTestCase {
     }),
     Scenario(name: "transport", respond: { url, _ in
       throw TransportError(message: "socket hang up (URL was: \\"" + url + "\\")")
+    }),
+    // The SDK's own error, its code quoting a registered value.
+    Scenario(name: "coded", respond: { _, _ in
+      throw ${Name}Error("denied_" + canaryApikey, "coded failure", nil)
     }),
     Scenario(name: "notjson", respond: { _, _ in
       let m = VMap()
@@ -452,6 +465,27 @@ ${candidateLines}
     let hookerr = ${Name}CleanTest.drive(hooked, target, VMap(), box)
     XCTAssertNotNil(hookerr, "the failing hook should fail the operation")
 
+    // The generated config's own clean block is read beside the caller's,
+    // and is not changed by it.
+    let config = vm(("options", .map(vm(("clean", .map(vm(
+      ("keys", .string("zzsens")), ("values", .string(canaryConfig)))))))))
+    let built = makeOptionsUtil(Context(
+      ["config": config, "options": vm(("clean", .map(vm(("values", .string(canaryValue))))))], nil))
+    let cfgctx = Context(["options": built], nil)
+    let seeded = cleanUtil(cfgctx, .string("config " + canaryConfig + " caller " + canaryValue)).asString ?? ""
+    box.sinks.append(Sink(name: "config-clean", text: seeded))
+    XCTAssertEqual(seeded, "config " + mask + " caller " + mask)
+    let bykey = cleanUtil(cfgctx, .map(vm(("my_zzsens", .string("x")), ("other", .string("y"))))).asMap
+    XCTAssertEqual(bykey?.entries["my_zzsens"], Value.string(mask))
+    XCTAssertEqual(bykey?.entries["other"], Value.string("y"))
+    XCTAssertEqual(gpath(config, "options", "clean", "values"), .string(canaryConfig))
+    XCTAssertEqual(gpath(config, "options", "clean", "keys"), .string("zzsens"))
+
+    // A coded SDK error inside a structure is cleaned like any other field.
+    let nested = cleanUtil(cfgctx, .map(vm(
+      ("err", .nat(${Name}Error("denied_" + canaryValue, "coded failure", nil))))))
+    box.sinks += ${Name}CleanTest.formsOf("coded-nested", nested)
+
     let leaked = box.sinks
       .map { (name: $0.name, found: leaks($0.text)) }
       .filter { !$0.found.isEmpty }
@@ -481,6 +515,8 @@ ${candidateLines}
       }
     }
     XCTAssertEqual(header(gp(spec, "headers"), "x-custom-token"), .string(mask))
+
+    XCTAssertEqual((errors["coded/throw"] as? ${Name}Error)?.code, "denied_" + mask)
 
     let explained = explains["ok/explain"] ?? VMap()
     let result = gp(explained, "result")

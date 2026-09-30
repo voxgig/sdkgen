@@ -53,12 +53,19 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     opts.entries.removeValue(forKey: "auth")
   }
 
+  let config = ctx.config ?? VMap()
+  let cfgopts = gp(config, "options").asMap ?? VMap()
+
   // The secret registry exists BEFORE validation, fed from the raw input, so
   // the constructor's own rejection of a mistyped credential is clean too.
   // (Here validate never throws - the struct port collects its errors - so
   // there is no rejection to clean; the registry is early for the same
   // reason regardless.)
   var cleanlayers: [Value] = [.map(VMap()), clone(gp(SdkSchema.optspec, "clean"))]
+  let cfgclean = gp(cfgopts, "clean")
+  if !isNil(cfgclean) {
+    cleanlayers.append(clone(cfgclean))
+  }
   if let cleanraw = opts.entries["clean"], !isNil(cleanraw) {
     cleanlayers.append(cleanraw)
   }
@@ -66,7 +73,9 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   let cleanctx = Context(
     ["options": vm(("__derived__", .map(vm(("clean", .nat(cleancfg))))))], nil)
   cleanAddSensitiveUtil(cleanctx, .map(cleanOmit(opts, ["clean"])))
-  for raw in cleanSplitValues(gpath(opts, "clean", "values")) {
+  let cleanvalues = cleanSplitValues(gpath(cfgopts, "clean", "values"))
+    + cleanSplitValues(gpath(opts, "clean", "values"))
+  for raw in cleanvalues {
     cleanAddUtil(cleanctx, .string(raw))
   }
 
@@ -89,9 +98,6 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     }
     opts.entries["feature"] = .map(fmap)
   }
-
-  let config = ctx.config ?? VMap()
-  let cfgopts = gp(config, "options").asMap ?? VMap()
 
   // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
   //
