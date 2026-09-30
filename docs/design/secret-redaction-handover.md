@@ -13,7 +13,7 @@ restate them.
 | Repo | PR | Branch | State at hand-off |
 | --- | --- | --- | --- |
 | voxgig/sdkgen | #229 | `claude/amazing-goodall-33f6ox` | round 1 plus most of round 2 pushed with this note; CI not yet seen on the new head |
-| voxgig/sdkgen-langpack | #24 | same | round 1 pushed (a8f8dc6, green); round 2 exists only as UNCOMMITTED changes in the working container, which is lost with it; eight Codex findings unanswered |
+| voxgig/sdkgen-langpack | #24 | same | round 1 pushed (a8f8dc6, green); round 2 pushed as 3ff0fe5 but NEVER COMPILED; eight Codex findings unanswered |
 | voxgig/sdkgen-infrapack | #28 | same | round 1 pushed (0f5737a), green; nothing outstanding |
 
 ## sdkgen commits on the branch
@@ -113,10 +113,9 @@ applied:
      printed error kind) is value-cleaned too. Done in ts, js (in place over
      own properties), rust, c, cpp and zig. Check and fix the rest.
 3. **langpack#24.**
-   - Re-apply round 2 for dart, haskell and lean. The uncommitted changes did
-     not survive the container. They passed `npm test` and `make comments`
-     but were never compiled. A dart SDK was downloaded for a real check,
-     which was stopped before it reported.
+   - Compile and run round 2 (3ff0fe5) for dart, haskell and lean. It passed
+     `npm test` and `make comments` only; a dart check was stopped before it
+     reported, so the dart files may hold partial edits.
    - Answer the eight Codex findings there:
      1. P1: the config's clean block is ignored (L1 above).
      2. P1: lean's `failOp` exits leave `ctrl.explain` holding the live spec.
