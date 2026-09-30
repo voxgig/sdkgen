@@ -1,6 +1,8 @@
 (* The catch path every entity call leaves through: an error that never
- * passed through make_error leaves cleaned. *)
+ * passed through make_error leaves cleaned, and so does the explain record
+ * it interrupted. *)
 let unexpected (ctx : ctx) (e : exn) : 'a =
+  clean_explain ctx;
   match e with
   | Sdk_error_exc _ ->
     (* #PreUnexpected-Hook *)

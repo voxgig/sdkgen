@@ -339,6 +339,10 @@ let () =
       let hooked = make_sdk ~extra:[throw_feature ()] (List.hd scenarios) sinks [] in
       check "the throwing hook should fail the operation"
         (drive hooked target (empty_map ()) sinks <> None);
+      (* The explain record a raised error interrupted leaves cleaned too:
+       * ocaml's catch path, not make_error, is the one that cleans it. *)
+      check "the throwing hook should fail the explained operation"
+        (drive hooked target (jo [("explain", empty_map ())]) sinks <> None);
       (* A feature's own error keeps its code, which is cleaned like the
        * message: returned, handed to a hook, and raised by a hook. *)
       let denied = drive (make_sdk ~extra:[deny_feature sinks] (List.hd scenarios) sinks [])
