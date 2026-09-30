@@ -9,9 +9,22 @@ static int mo_cmp_cstr(const void* a, const void* b) {
   return strcmp(*(const char* const*)a, *(const char* const*)b);
 }
 
+static voxgig_value* mo_noentity(voxgig_value* val) {
+  if (!voxgig_is_map(val)) return voxgig_retain(val);
+  voxgig_value* out = v_map();
+  voxgig_map* m = voxgig_as_map(val);
+  for (size_t i = 0; i < m->len; i++) {
+    if (0 != strcmp(m->entries[i].key, "entity")) {
+      setp(out, m->entries[i].key, voxgig_retain(m->entries[i].value));
+    }
+  }
+  return out;
+}
+
 // The options to scan for secrets. The feature map is keyed by feature
 // names, not field names, so it is scanned as a list: `secrets` must not
-// make every setting of that feature a secret.
+// make every setting of that feature a secret. Entity blocks hold entity
+// settings and seeded records, never a credential, so none is scanned.
 static voxgig_value* mo_without(voxgig_value* val, const char* k1, const char* k2) {
   voxgig_value* out = v_map();
   if (!voxgig_is_map(val)) return out;
@@ -19,14 +32,17 @@ static voxgig_value* mo_without(voxgig_value* val, const char* k1, const char* k
   for (size_t i = 0; i < m->len; i++) {
     const char* k = m->entries[i].key;
     voxgig_value* v = m->entries[i].value;
+    if (0 == strcmp(k, "entity")) continue;
     if ((k1 && 0 == strcmp(k, k1)) || (k2 && 0 == strcmp(k, k2))) continue;
     if (0 == strcmp(k, "feature") && voxgig_is_map(v)) {
       voxgig_value* list = v_list();
       voxgig_map* fm = voxgig_as_map(v);
       for (size_t f = 0; f < fm->len; f++) {
-        voxgig_list_push(voxgig_as_list(list), voxgig_retain(fm->entries[f].value));
+        voxgig_list_push(voxgig_as_list(list), mo_noentity(fm->entries[f].value));
       }
       v = list;
+    } else if (0 == strcmp(k, "test")) {
+      v = mo_noentity(v);
     } else {
       voxgig_retain(v);
     }

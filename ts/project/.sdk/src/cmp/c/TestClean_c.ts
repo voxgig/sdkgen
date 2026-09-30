@@ -621,6 +621,15 @@ int main(void) {
           "the raw spec should carry the credential when clean is off");
   }
 
+  // Explaining a failure must not cost it its error.
+  {
+    voxgig_value* out = NULL;
+    PNError* explained = op->fn(make_sdk(SC_NOTFOUND, cmap(1, "active", v_bool(false)), NULL),
+                                voxgig_clone(op->mtch), cmap(1, "explain", v_map()), &out);
+    CHECK_STR_EQ(explained ? explained->msg : NULL, rawerr ? rawerr->msg : NULL,
+                 "with clean off, explain lost the error");
+  }
+
   // A registered value used as a property name is masked; names that mask
   // alike are all kept.
   ${Name}SDK* named = ${ident}_sdk_new(cmap(1,
@@ -661,18 +670,32 @@ int main(void) {
   }
 
   // A feature's name is not a field name: a feature called secrets does not
-  // make its settings secret, though a sensitive field inside it still is.
+  // make its settings secret, though a sensitive field inside it still is. An
+  // entity block, of per-entity settings or seeded records keyed by entity
+  // name and id, is not read at all.
   {
-    ${Name}SDK* featured = ${ident}_sdk_new(cmap(2,
+    ${Name}SDK* featured = ${ident}_sdk_new(cmap(3,
       "apikey", v_str(CANARY_APIKEY),
-      "feature", cmap(1, "secrets", cmap(3,
-        "active", v_bool(false),
-        "name", v_str("ZZNAME-feat123"),
-        "token", v_str("ZZTOKEN-feat456")))));
+      "feature", cmap(2,
+        "secrets", cmap(3,
+          "active", v_bool(false),
+          "name", v_str("ZZNAME-feat123"),
+          "token", v_str("ZZTOKEN-feat456")),
+        "test", cmap(2,
+          "active", v_bool(false),
+          "entity", cmap(1, "zztoken", cmap(1, "ZZTOKEN01",
+            cmap(1, "note", v_str("PLAINRECORD-t5r3e1w9")))))),
+      "entity", cmap(1, "zztoken", cmap(1, "alias",
+        cmap(1, "zzkey", v_str("PLAINALIAS-m2n4b6v8"))))));
+    Context* fctx = sdk_get_root_ctx(featured);
     char want[128];
     snprintf(want, sizeof(want), "ZZNAME-feat123 %s", MASK);
-    CHECK_STR_EQ(clean_str(sdk_get_root_ctx(featured), "ZZNAME-feat123 ZZTOKEN-feat456"), want,
+    CHECK_STR_EQ(clean_str(fctx, "ZZNAME-feat123 ZZTOKEN-feat456"), want,
                  "only the sensitive field of a feature is registered");
+    CHECK_STR_EQ(clean_str(fctx, "record PLAINRECORD-t5r3e1w9"), "record PLAINRECORD-t5r3e1w9",
+                 "a record seeded under an entity block is not registered");
+    CHECK_STR_EQ(clean_str(fctx, "alias PLAINALIAS-m2n4b6v8"), "alias PLAINALIAS-m2n4b6v8",
+                 "an entity's own settings are not registered");
   }
 
   TEST_SUMMARY("clean");
