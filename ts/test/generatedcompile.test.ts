@@ -4290,3 +4290,45 @@ describe('the canary sweep runs from a generated SDK', () => {
     }
   }
 })
+
+
+// The feature suite a generated SDK ships drives each present feature through
+// the SDK's own offline harness, which no other lane runs.
+const FEATURE_SUITE_LANES: { target: string, runner: string }[] = [
+  { target: 'ts', runner: Path.join('dist-test', 'feature.test.js') },
+  { target: 'js', runner: Path.join('test', 'feature.test.js') },
+]
+
+
+describe('the feature suite runs from a generated SDK', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-featuresuite-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of FEATURE_SUITE_LANES) {
+    test(lane.target + ': the generated feature suite passes', async (t) => {
+      const clean = CLEAN_LANES.find((l) => l.target === lane.target)!
+      if (null == clean.command()) {
+        return t.skip('no usable ' + lane.target + ' toolchain here (' + clean.needs + ')')
+      }
+      const sdkroot = Path.join(tmp, lane.target)
+      await generateTo(lane.target, sdkroot, undefined,
+        [...CLEAN_FEATURES, 'proxy', 'retry', 'timeout'])
+      const notready = null == clean.prepare ? null : clean.prepare(sdkroot)
+      ok(null == notready, lane.target + ': ' + notready)
+
+      const ran = run(process.execPath, ['--test', '--test-reporter=tap', lane.runner],
+        sdkroot, nestedTestEnv())
+      ok(ran.ok, 'the generated ' + lane.target + ' feature suite FAILED:\n' + tail(ran.out, 60))
+      const pass = Number((ran.out.match(/^# pass (\d+)/m) || [])[1] || 0)
+      ok(0 < pass, 'the generated ' + lane.target + ' feature suite ran nothing:\n' + tail(ran.out))
+    })
+  }
+})

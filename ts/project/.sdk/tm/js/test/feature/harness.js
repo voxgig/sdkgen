@@ -80,6 +80,9 @@ function makeClient(spec) {
 
   const utility = {
     struct,
+    // Features pass every record they emit through the SDK's own clean.
+    clean: stdutil.clean,
+    cleanAdd: stdutil.cleanAdd,
     fetcher: server,
     param: (ctx, name) => {
       const p = (ctx.spec && ctx.spec.params) || {}
