@@ -106,7 +106,7 @@ def make_options_util(ctx):
     cleancfg = make_clean_config(vs.merge([
         {}, vs.clone(OPTSPEC.get("clean")), vs.clone(cfgclean), rawclean]))
     cleanctx = _CleanCtx(cleancfg)
-    clean_add_sensitive(cleanctx, {k: v for k, v in opts.items() if k != "clean"})
+    _clean_add_options(cleanctx, {k: v for k, v in opts.items() if k != "clean"})
     for raw in split_values(cfgclean.get("values")) + split_values(rawclean.get("values")):
         clean_add_util(cleanctx, raw)
 
@@ -240,7 +240,16 @@ def make_options_util(ctx):
     }
 
     # Again over the merged result: the config's own defaults can carry one.
-    clean_add_sensitive(cleanctx, {
+    _clean_add_options(cleanctx, {
         k: v for k, v in opts.items() if k not in ("clean", "__derived__")})
 
     return opts
+
+
+# A feature's name is not a field name: only the sensitive names inside its
+# settings count, so `secrets` does not make every setting a secret.
+def _clean_add_options(cleanctx, opts):
+    clean_add_sensitive(cleanctx, {k: v for k, v in opts.items() if k != "feature"})
+    feature = opts.get("feature")
+    for fopts in (feature.values() if isinstance(feature, dict) else [feature]):
+        clean_add_sensitive(cleanctx, fopts)

@@ -380,6 +380,29 @@ class TestClean:
         assert bykey == {"my_zzsens": MASK, "other": "y"}, bykey
         assert cfgclean == {"keys": "zzsens", "values": CANARY["config"]}, cfgclean
 
+        # With no clean option at all, the schema defaults still apply.
+        bare = ${Name}SDK({
+            "apikey": CANARY["apikey"],
+            "secret": CANARY["secret"],
+            "headers": {"X-Custom-Token": CANARY["header"]},
+            "utility": {"fetcher": lambda ctx, url, fetchdef: SCENARIOS[1][1](url, fetchdef)},
+        })
+        assert _drive(bare, target, {"explain": {}}, sinks) is not None, "the 404 should fail"
+
+        # A feature's name is not a field name: only the sensitive names
+        # inside its settings register.
+        featured = ${Name}SDK({
+            "apikey": CANARY["apikey"],
+            "feature": {
+                "zzsecrets": {"active": False, "kind": "PLAINSETTING-q8w2e4r6"},
+                "zzfeat": {"active": False, "apitoken": "FEATTOKEN-z9y8x7w6"},
+            },
+        })
+        fclean = featured.get_utility().clean
+        froot = featured.get_root_ctx()
+        fplain = fclean(froot, "kind PLAINSETTING-q8w2e4r6")
+        ftoken = fclean(froot, "token FEATTOKEN-z9y8x7w6")
+
         leaked = [(name, _leaks(text)) for name, text in sinks]
         leaked = [(name, found) for name, found in leaked if 0 < len(found)]
 
@@ -407,6 +430,9 @@ class TestClean:
 
         coded = errors.get("coded/throw")
         assert coded is not None and coded.code == "denied_" + MASK, repr(coded)
+
+        assert fplain == "kind PLAINSETTING-q8w2e4r6", fplain
+        assert ftoken == "token " + MASK, ftoken
 
         explained = explains.get("ok/explain") or {}
         assert explained.get("result") is not None, "the explain record should carry the result"
