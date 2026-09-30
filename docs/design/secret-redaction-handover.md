@@ -72,12 +72,18 @@ sent by every client built after it. The #24 replies name each commit.
 - **clojure** ran through a stand-in for its CLI built from the Maven
   Central jars `deps.edn` names. Header and basic pass. Query auth fails
   five checks that fail identically before this work (see below).
-- **swift** was not compiled here.
+- **swift** was not compiled here. CI's ubuntu and macOS runners build and
+  run its sweep, green from 7a6e5b0 on, which covers its round-3 changes.
 - **Also passing:** every secrets-feature lane except swift and clojure; the
   auth-null, credential-name and java feature-corpus lanes; the clean,
   cleancoverage, generate, parity, featuremodel and characterize suites.
-- **The full `npm test`** ran green in CI on all three platforms at 7933ddd
-  (1814 tests; 32 skipped on ubuntu, 53 on macOS and windows).
+- **The full `npm test`** passed here on 1f4562e: 1814 tests, 1802 pass,
+  0 fail, 12 skipped. It passes in CI on all three platforms at 17e6087.
+- **A windows-only failure** in the php sweep's clean-off control test was
+  fixed in 17e6087: captured text was reachable from the SDK's object graph,
+  so each `var_export` rendered all earlier captures and passed PHP's 128M
+  limit, which only the windows runner sets. It reproduces with
+  `memory_limit=128M`.
 
 ### In CI
 
@@ -98,29 +104,27 @@ skips on every platform because the runners have no pytest.
 1. **CI coverage.** Installing pytest in `build.yml` would make CI run the py
    sweep; lua with busted and dkjson, zig, scala-cli, elixir and ocaml would
    cover the rest. This container verified those; CI cannot.
-2. **swift round 3** was desk-checked (every generated file parses); CI's
-   ubuntu and macOS runners are its first compile.
-3. **clojure query auth.** Five checks in `tm/clojure/test/sdk/test/pipeline.clj`
+2. **clojure query auth.** Five checks in `tm/clojure/test/sdk/test/pipeline.clj`
    assume an `authorization` header, and a query-auth SDK puts the key in
    the query. They fail the same way at 047db305, and no CI runs clojure.
-4. **Pre-existing on main: an explained failure can lose its error.**
+3. **Pre-existing on main: an explained failure can lose its error.**
    `done()` and EntityBase's `_unexpected` prune `err` from
    `ctrl.explain.result`, which is the live result unless `clean` returned a
    copy. On main `clean` returned its input, so an explained failure
    reported `unknown error`. This branch fixes the default path; with
    `clean.active: false` it recurs. The langpack prunes a copy in lean
    (b7312ab). The fix is to prune a copy in every target.
-5. **Entity names under `options.entity`** are read as field names during
+4. **Entity names under `options.entity`** are read as field names during
    registration, as feature names were, so an entity named like `token`
    registers its override settings. Low risk: the generated config gives
    each entity an empty block.
-6. **F5 gaps.** An error raised while iterating a stream result is not
+5. **F5 gaps.** An error raised while iterating a stream result is not
    cleaned in go, csharp and scala; the go `Stream` goroutine has no
    recover; a panicking rust hook is not caught; an exception from a custom
    haskell `system.fetch` propagates uncleaned.
-7. **Recorded, not fixed:** `entity.match()` returns a query-auth
+6. **Recorded, not fixed:** `entity.match()` returns a query-auth
    credential. The explainer's Edges list now says so.
-8. **Noticed, pre-existing:** `tm/rust/tests/vendor/omni/mod.rs` includes
+7. **Noticed, pre-existing:** `tm/rust/tests/vendor/omni/mod.rs` includes
    `../COMMENT-NOTES.md`, which the generated tree does not ship; elixir
    warns about an unused `H` alias and `Config.feature_plugins/1`;
    `src/cmp/py/fragment/SdkError.fragment.py` is unreferenced; the php
