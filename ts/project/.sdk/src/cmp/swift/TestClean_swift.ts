@@ -486,6 +486,35 @@ ${candidateLines}
       ("err", .nat(${Name}Error("denied_" + canaryValue, "coded failure", nil))))))
     box.sinks += ${Name}CleanTest.formsOf("coded-nested", nested)
 
+    // With no clean option at all, or one that is not a map, the schema
+    // defaults still apply.
+    for clean in [Value.noval, Value.bool(true)] {
+      let fetch404: FetcherFunc = { _, url, fetchdef in
+        try ${Name}CleanTest.scenarios[1].respond(url, fetchdef)
+      }
+      let bareopts = VMap()
+      bareopts.entries["apikey"] = .string(canaryApikey)
+      bareopts.entries["secret"] = .string(canarySecret)
+      bareopts.entries["headers"] = .map(vm(("X-Custom-Token", .string(canaryHeader))))
+      bareopts.entries["utility"] = .map(vm(("fetcher", .nat(fetch404))))
+      if !isNil(clean) {
+        bareopts.entries["clean"] = clean
+      }
+      let bareerr = ${Name}CleanTest.drive(${Name}SDK(bareopts), target, vm(("explain", .map(VMap()))), box)
+      XCTAssertNotNil(bareerr, "the 404 should fail with clean: " + stringify(clean))
+    }
+
+    // A feature's name is not a field name: only the sensitive names inside
+    // its settings register.
+    let featopts = VMap()
+    featopts.entries["apikey"] = .string(canaryApikey)
+    featopts.entries["feature"] = .map(vm(
+      ("zzsecrets", .map(vm(("active", .bool(false)), ("kind", .string("PLAINSETTING-q8w2e4r6"))))),
+      ("zzfeat", .map(vm(("active", .bool(false)), ("apitoken", .string("FEATTOKEN-z9y8x7w6")))))))
+    let fctx = Context(["options": makeOptionsUtil(Context(["options": featopts], nil))], nil)
+    let fplain = cleanUtil(fctx, .string("kind PLAINSETTING-q8w2e4r6")).asString
+    let ftoken = cleanUtil(fctx, .string("token FEATTOKEN-z9y8x7w6")).asString
+
     let leaked = box.sinks
       .map { (name: $0.name, found: leaks($0.text)) }
       .filter { !$0.found.isEmpty }
@@ -517,6 +546,9 @@ ${candidateLines}
     XCTAssertEqual(header(gp(spec, "headers"), "x-custom-token"), .string(mask))
 
     XCTAssertEqual((errors["coded/throw"] as? ${Name}Error)?.code, "denied_" + mask)
+
+    XCTAssertEqual(fplain, "kind PLAINSETTING-q8w2e4r6")
+    XCTAssertEqual(ftoken, "token " + mask)
 
     let explained = explains["ok/explain"] ?? VMap()
     let result = gp(explained, "result")

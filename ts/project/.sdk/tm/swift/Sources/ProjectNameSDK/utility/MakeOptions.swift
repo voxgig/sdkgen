@@ -61,18 +61,17 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   // (Here validate never throws - the struct port collects its errors - so
   // there is no rejection to clean; the registry is early for the same
   // reason regardless.)
+  // Maps only: merge lets any other value replace the defaults outright.
   var cleanlayers: [Value] = [.map(VMap()), clone(gp(SdkSchema.optspec, "clean"))]
-  let cfgclean = gp(cfgopts, "clean")
-  if !isNil(cfgclean) {
-    cleanlayers.append(clone(cfgclean))
-  }
-  if let cleanraw = opts.entries["clean"], !isNil(cleanraw) {
-    cleanlayers.append(cleanraw)
+  for block in [gp(cfgopts, "clean"), opts.entries["clean"] ?? .noval] {
+    if let m = block.asMap {
+      cleanlayers.append(clone(.map(m)))
+    }
   }
   let cleancfg = makeCleanConfig(merge(.list(cleanlayers)))
   let cleanctx = Context(
     ["options": vm(("__derived__", .map(vm(("clean", .nat(cleancfg))))))], nil)
-  cleanAddSensitiveUtil(cleanctx, .map(cleanOmit(opts, ["clean"])))
+  cleanAddOptions(cleanctx, cleanOmit(opts, ["clean"]))
   let cleanvalues = cleanSplitValues(gpath(cfgopts, "clean", "values"))
     + cleanSplitValues(gpath(opts, "clean", "values"))
   for raw in cleanvalues {
@@ -172,10 +171,23 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   result.entries["__derived__"] = .map(derived)
 
   // Again over the merged result: the config's own defaults can carry one.
-  cleanAddSensitiveUtil(
-    Context(["options": result], nil), .map(cleanOmit(result, ["clean", "__derived__"])))
+  cleanAddOptions(Context(["options": result], nil), cleanOmit(result, ["clean", "__derived__"]))
 
   return result
+}
+
+// A feature's name is not a field name: only the sensitive names inside its
+// settings count, so `secrets` does not make every setting a secret.
+private func cleanAddOptions(_ ctx: Context, _ opts: VMap) {
+  cleanAddSensitiveUtil(ctx, .map(cleanOmit(opts, ["feature"])))
+  let feature = opts.entries["feature"] ?? .noval
+  if let fmap = feature.asMap {
+    for (_, fopts) in fmap.entries {
+      cleanAddSensitiveUtil(ctx, fopts)
+    }
+  } else {
+    cleanAddSensitiveUtil(ctx, feature)
+  }
 }
 
 private func cleanOmit(_ src: VMap, _ names: [String]) -> VMap {
