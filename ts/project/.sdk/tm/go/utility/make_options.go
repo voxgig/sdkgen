@@ -90,7 +90,7 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 	cleanctx := &core.Context{Options: map[string]any{
 		"__derived__": map[string]any{"clean": cleancfg},
 	}}
-	cleanAddSensitive(cleanctx, cleanOmit(opts, "clean"))
+	cleanAddOptions(cleanctx, cleanOmit(opts, "clean"))
 	for _, block := range []map[string]any{cfgopts, opts} {
 		for _, s := range cleanSplit(vs.GetPath(block, []any{"clean", "values"})) {
 			cleancfg.add(s)
@@ -245,9 +245,22 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 	}
 
 	// Again over the merged result: the config's own defaults can carry one.
-	cleanAddSensitive(cleanctx, cleanOmit(opts, "clean", "__derived__"))
+	cleanAddOptions(cleanctx, cleanOmit(opts, "clean", "__derived__"))
 
 	return opts
+}
+
+// A feature's name is not a field name: only the sensitive names inside its
+// settings count, so `secrets` does not make every setting a secret.
+func cleanAddOptions(ctx *core.Context, opts map[string]any) {
+	cleanAddSensitive(ctx, cleanOmit(opts, "feature"))
+	if fmap, ok := opts["feature"].(map[string]any); ok {
+		for _, fopts := range fmap {
+			cleanAddSensitive(ctx, fopts)
+		}
+		return
+	}
+	cleanAddSensitive(ctx, opts["feature"])
 }
 
 func cleanOmit(m map[string]any, keys ...string) map[string]any {

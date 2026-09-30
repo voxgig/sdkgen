@@ -535,6 +535,38 @@ func TestCleanSweep(t *testing.T) {
 		t.Errorf("the config's own clean block was changed: %v", cfgclean)
 	}
 
+	// With no clean option at all, the schema defaults still apply.
+	bare := sdk.New${Name}SDK(map[string]any{
+		"apikey":  cleanCanary["apikey"],
+		"secret":  cleanCanary["secret"],
+		"headers": map[string]any{"X-Custom-Token": cleanCanary["header"]},
+		"utility": map[string]any{
+			"fetcher": sdk.FetcherFunc(func(_ *sdk.Context, url string, fetchdef map[string]any) (any, error) {
+				return cleanScenarios[1].respond(url, fetchdef)
+			}),
+		},
+	})
+	if nil == cleanDrive(bare, op, map[string]any{"explain": map[string]any{}}, &sinks) {
+		t.Errorf("the 404 scenario should fail without a clean option too")
+	}
+
+	// A feature's name is not a field name: only the sensitive names inside
+	// its settings register.
+	featured := sdk.New${Name}SDK(map[string]any{
+		"apikey": cleanCanary["apikey"],
+		"feature": map[string]any{
+			"zzsecrets": map[string]any{"active": false, "kind": "PLAINSETTING-q8w2e4r6"},
+			"zzfeat":    map[string]any{"active": false, "apitoken": "FEATTOKEN-z9y8x7w6"},
+		},
+	})
+	fclean := featured.GetUtility().Clean
+	if got, _ := fclean(featured.GetRootCtx(), "kind PLAINSETTING-q8w2e4r6").(string); got != "kind PLAINSETTING-q8w2e4r6" {
+		t.Errorf("a setting of a feature named like a secret was registered: %q", got)
+	}
+	if got, _ := fclean(featured.GetRootCtx(), "token FEATTOKEN-z9y8x7w6").(string); got != "token "+cleanMask {
+		t.Errorf("a sensitive setting inside a feature was not registered: %q", got)
+	}
+
 	leaked := []string{}
 	for _, s := range sinks {
 		if found := cleanLeaks(s.text); 0 < len(found) {
