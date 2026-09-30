@@ -265,6 +265,32 @@ public class CleanTest
             throw new Exception("hook saw " + Render(ctx.Spec));
     }
 
+    // A stream that fails while the caller iterates it, quoting a credential.
+    private sealed class StreamThrowFeature : BaseFeature
+    {
+        public StreamThrowFeature()
+        {
+            Name = "streamthrow";
+            Version = "0.0.1";
+            Active = true;
+        }
+
+        public override void PreDone(Context ctx)
+        {
+            if (null != ctx.Result)
+            {
+                ctx.Result.Stream = Failing;
+            }
+        }
+
+        private static IEnumerable<object?> Failing()
+        {
+            yield return Fail();
+        }
+
+        private static object? Fail() => throw new Exception("stream saw " + CanaryApikey);
+    }
+
     private sealed record Scenario(string Name, Func<string, Dictionary<string, object?>, object?> Respond);
 
     private static Dictionary<string, object?> Response(int status, object? data,
@@ -493,7 +519,7 @@ ${candidateLines}
     }
 
     [Fact]
-    public void NoCredentialLeavesTheSdkInAnyForm()
+    public async Task NoCredentialLeavesTheSdkInAnyForm()
     {
         var target = UsableOp();
         if (null == target)
@@ -560,6 +586,25 @@ ${candidateLines}
         var hooked = MakeSdk(Scenarios[0], sinks, null, new ThrowFeature());
         var hookerr = Drive(hooked, target, new Dictionary<string, object?>(), sinks);
         Assert.True(null != hookerr, "the throwing hook should fail the operation");
+
+        // Iterating a stream runs inside the same catch path as the operation.
+        var streaming = target.Candidate.Accessor(MakeSdk(Scenarios[0], sinks, null, new StreamThrowFeature()));
+        Exception? streamerr = null;
+        try
+        {
+            await foreach (var _ in streaming.Stream(target.Op, new Dictionary<string, object?>
+            {
+                ["reqmatch"] = new Dictionary<string, object?>(target.Match),
+            }))
+            {
+            }
+        }
+        catch (Exception e)
+        {
+            streamerr = e;
+        }
+        Assert.True(null != streamerr, "the failing stream should throw");
+        sinks.AddRange(FormsOf("stream", streamerr));
 
         // The raw path returns its failure rather than throwing it.
         var raw = MakeSdk(Scenarios[3], sinks).Direct(new Dictionary<string, object?> { ["path"] = "raw" });
@@ -642,6 +687,13 @@ ${candidateLines}
         var err = Drive(sdk, target, new Dictionary<string, object?>(), sinks);
         Assert.True(null != err, "the 404 scenario must throw");
 
+        // Explaining a failure must not cost it its error.
+        var explained = Drive(MakeSdk(Scenarios[1], new List<Sink>(),
+                new Dictionary<string, object?> { ["active"] = false }), target,
+            new Dictionary<string, object?> { ["explain"] = new Dictionary<string, object?>() }, new List<Sink>());
+        Assert.True(err?.Message == explained?.Message,
+            "with clean off, explain lost the error: expected " + err?.Message + ", got " + explained?.Message);
+
         var leaked = sinks.Where(s => 0 < Leaks(s.Text).Count).ToList();
         Assert.True(0 < leaked.Count, "with clean off, nothing showed the canary: the sweep is blind");
 
@@ -652,6 +704,53 @@ ${candidateLines}
                 text.Contains(Convert.ToBase64String(Encoding.UTF8.GetBytes(CanaryApikey + ":" + CanarySecret))),
                 "the raw spec should carry the credential when clean is off");
         }
+    }
+
+    // A feature's name is not a field name: only the sensitive names inside
+    // its settings register. An entity block, of per-entity settings or
+    // seeded records keyed by entity name and id, is not read at all.
+    [Fact]
+    public void AFeatureNameDoesNotMakeItsSettingsSecret()
+    {
+        var sdk = new ${Name}SDK(new Dictionary<string, object?>
+        {
+            ["apikey"] = CanaryApikey,
+            ["feature"] = new Dictionary<string, object?>
+            {
+                ["zzsecrets"] = new Dictionary<string, object?>
+                {
+                    ["active"] = false, ["kind"] = "PLAINSETTING-q8w2e4r6",
+                },
+                ["zzfeat"] = new Dictionary<string, object?>
+                {
+                    ["active"] = false, ["apitoken"] = "FEATTOKEN-z9y8x7w6",
+                },
+                ["test"] = new Dictionary<string, object?>
+                {
+                    ["active"] = false,
+                    ["entity"] = new Dictionary<string, object?>
+                    {
+                        ["zztoken"] = new Dictionary<string, object?>
+                        {
+                            ["ZZTOKEN01"] = new Dictionary<string, object?> { ["note"] = "PLAINRECORD-t5r3e1w9" },
+                        },
+                    },
+                },
+            },
+            ["entity"] = new Dictionary<string, object?>
+            {
+                ["zztoken"] = new Dictionary<string, object?>
+                {
+                    ["alias"] = new Dictionary<string, object?> { ["zzkey"] = "PLAINALIAS-m2n4b6v8" },
+                },
+            },
+        });
+        object? Cleaned(string s) => sdk.GetUtility().Clean(sdk.GetRootCtx(), s);
+
+        Assert.Equal("kind PLAINSETTING-q8w2e4r6", Cleaned("kind PLAINSETTING-q8w2e4r6"));
+        Assert.Equal("token " + Mask, Cleaned("token FEATTOKEN-z9y8x7w6"));
+        Assert.Equal("record PLAINRECORD-t5r3e1w9", Cleaned("record PLAINRECORD-t5r3e1w9"));
+        Assert.Equal("alias PLAINALIAS-m2n4b6v8", Cleaned("alias PLAINALIAS-m2n4b6v8"));
     }
 
     [Fact]

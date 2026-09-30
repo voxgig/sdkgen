@@ -124,13 +124,18 @@ public abstract class ProjectNameEntityBase : IEntity
         {
             return RunPipeline(ctx, postDone);
         }
-        // A hook's exception never passed through MakeError, and can quote the
-        // request. FeatureHook invokes by reflection, which wraps it.
         catch (Exception err) when (!ReferenceEquals(err, ctx.Ctrl.Err))
         {
-            return utility.MakeError(ctx,
-                err is TargetInvocationException { InnerException: { } inner } ? inner : err);
+            return Unexpected(ctx, err);
         }
+    }
+
+    // The catch path. A hook's exception never passed through MakeError, and
+    // can quote the request. FeatureHook invokes by reflection, which wraps it.
+    private object? Unexpected(Context ctx, Exception err)
+    {
+        return utility.MakeError(ctx,
+            err is TargetInvocationException { InnerException: { } inner } ? inner : err);
     }
 
     private object? RunPipeline(Context ctx, Action postDone)
@@ -292,13 +297,44 @@ public abstract class ProjectNameEntityBase : IEntity
         var stream = ctx.Result?.Stream;
         if (stream != null)
         {
-            foreach (var item in stream())
+            // The caller iterates after RunOp has returned, so a failing source
+            // takes the catch path here; under throw false the stream ends. A
+            // yield cannot sit in a try with a catch: the source is driven by hand.
+            IEnumerator<object?>? source = null;
+            try
             {
-                if (cancel.IsCancellationRequested || signal.IsCancellationRequested)
+                while (true)
                 {
-                    yield break;
+                    var more = false;
+                    object? item = null;
+                    try
+                    {
+                        source ??= stream().GetEnumerator();
+                        more = source.MoveNext();
+                        item = more ? source.Current : null;
+                    }
+                    catch (Exception err) when (!ReferenceEquals(err, ctx.Ctrl.Err))
+                    {
+                        more = false;
+                        Unexpected(ctx, err);
+                    }
+                    if (!more || cancel.IsCancellationRequested || signal.IsCancellationRequested)
+                    {
+                        yield break;
+                    }
+                    yield return item;
                 }
-                yield return item;
+            }
+            finally
+            {
+                try
+                {
+                    source?.Dispose();
+                }
+                catch (Exception err) when (!ReferenceEquals(err, ctx.Ctrl.Err))
+                {
+                    Unexpected(ctx, err);
+                }
             }
         }
         else

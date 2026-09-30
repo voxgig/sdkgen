@@ -365,23 +365,54 @@ public static partial class SdkUtility
     }
 
     // A feature's name is not a field name: a feature called `secrets` does
-    // not make every one of its options a secret.
+    // not make every one of its options a secret. Entity blocks (entity
+    // settings, seeded records) hold no credential.
     private static void CleanAddOptions(Context cleanctx, Dictionary<string, object?> opts,
         params string[] omit)
     {
-        CleanAddSensitive(cleanctx, CleanOmit(opts, omit.Append("feature").ToArray()));
+        var top = CleanOmit(opts, omit.Append("feature").Append("entity").ToArray());
+        if (top.ContainsKey("test"))
+        {
+            top["test"] = CleanNoEntity(top["test"]);
+        }
+        CleanAddSensitive(cleanctx, top);
         var feature = opts.GetValueOrDefault("feature");
         if (feature is IDictionary fmap)
         {
             foreach (DictionaryEntry kv in fmap)
             {
-                CleanAddSensitive(cleanctx, kv.Value);
+                CleanAddSensitive(cleanctx, CleanNoEntity(kv.Value));
+            }
+        }
+        else if (feature is IList flist)
+        {
+            foreach (var entry in flist)
+            {
+                CleanAddSensitive(cleanctx, CleanNoEntity(entry));
             }
         }
         else
         {
             CleanAddSensitive(cleanctx, feature);
         }
+    }
+
+    private static object? CleanNoEntity(object? block)
+    {
+        if (block is not IDictionary dict)
+        {
+            return block;
+        }
+        var out_ = new Dictionary<string, object?>();
+        foreach (DictionaryEntry kv in dict)
+        {
+            var key = Convert.ToString(kv.Key) ?? "";
+            if (key != "entity")
+            {
+                out_[key] = kv.Value;
+            }
+        }
+        return out_;
     }
 
     private static Dictionary<string, object?> CleanOmit(Dictionary<string, object?> opts,
