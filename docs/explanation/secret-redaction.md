@@ -32,10 +32,14 @@ header the SDK never issued.
 
 ## One choke point
 
-The `clean` utility applies both layers, and every egress calls it: the
-error's message, stack, result and spec; the `ctrl.explain` record; the
-default serialisation of the context, the error and the client; and the
-record each diagnostic feature hands to its sink, buffer, or logger.
+The `clean` utility applies both layers, and every egress calls it:
+
+- The error's message, stack, code, result and spec, and any error a feature
+  hook throws, `PreUnexpected` included.
+- The `ctrl.explain` record, on every stream path too. It is cleaned where it
+  is, so a caller that kept the object it passed reads the masked record.
+- The default serialisation of the context, the error and the client.
+- The record each diagnostic feature hands to its sink, buffer, or logger.
 
 Inside the pipeline data stays raw. A hook must see the real header to add
 its own beside it, and a transport wrapper must send the real credential.
@@ -104,8 +108,11 @@ feature the SDK carries with a capturing sink, drives a real operation
 through success, a 404, a 500, a transport failure and a body that is not
 JSON, and searches every string that leaves for the canaries and their
 encoded forms. It also passes a credential of the wrong type to the
-constructor, adds a feature hook that fails while quoting the request, and
-fails a raw `direct()` call. It then switches `clean` off and confirms the canary shows,
+constructor, adds feature hooks that fail while quoting the request, and
+fails a raw `direct()` call. Where the SDK allows it, one hook fails in
+`PreUnexpected`, and streams fail part-way or succeed. Each explain record is
+read through the object the sweep passed. It then switches `clean` off and
+confirms the canary shows,
 so a sweep that could not see a leak fails instead of passing. The
 suite prints one line, `clean: swept N surface(s), 0 leak(s)`, and the
 generator's own compile lanes require it.
