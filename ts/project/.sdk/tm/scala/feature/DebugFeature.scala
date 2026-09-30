@@ -133,9 +133,9 @@ class DebugFeature extends BaseFeature("debug", "0.0.1", true) {
       return out
     }
     val patterns = new ArrayList[String]()
-    val given = FeatureOptions.foptStrList(this.options, "redact")
-    if (given != null) {
-      val pit = given.iterator()
+    val listed = FeatureOptions.foptStrList(this.options, "redact")
+    if (listed != null) {
+      val pit = listed.iterator()
       while (pit.hasNext) patterns.add(pit.next().toLowerCase())
     }
     val it = headers.entrySet().iterator()
