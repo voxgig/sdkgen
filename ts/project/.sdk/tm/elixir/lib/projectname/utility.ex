@@ -453,8 +453,10 @@ defmodule ProjectName.Utility do
   end
 
   # The explain map is the CALLER's node, so it is cleaned in place: what
-  # they hold after the call is the cleaned record.
-  defp clean_explain(ctx) do
+  # they hold after the call is the cleaned record. With clean off,
+  # explain.result is the live result make_error reads, so err is pruned
+  # from a copy.
+  def clean_explain(ctx) do
     ctrl = S.getprop(ctx, "ctrl")
     explain = if ctrl != nil, do: S.getprop(ctrl, "explain"), else: nil
 
@@ -465,6 +467,9 @@ defmodule ProjectName.Utility do
         Enum.each(S.keysof(explain), fn k -> S.delprop(explain, k) end)
         Enum.each(H.entries(cleaned), fn {k, v} -> S.setprop(explain, k, v) end)
       end
+
+      er = S.getprop(explain, "result")
+      if S.ismap(er), do: S.setprop(explain, "result", without(er, "err"))
     end
 
     nil
@@ -1284,15 +1289,6 @@ defmodule ProjectName.Utility do
 
   def done_impl(ctx) do
     clean_explain(ctx)
-    ctrl = S.getprop(ctx, "ctrl")
-    ex = S.getprop(ctrl, "explain")
-
-    # A copy: with clean off, explain.result is the live result make_error reads.
-    if S.ismap(ex) do
-      er = S.getprop(ex, "result")
-      if S.ismap(er), do: S.setprop(ex, "result", without(er, "err"))
-    end
-
     result = S.getprop(ctx, "result")
 
     if result != nil and S.getprop(result, "ok") == true do

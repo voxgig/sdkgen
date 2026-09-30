@@ -52,10 +52,21 @@ defmodule ProjectName.Pipeline do
       Utility.done(ctx)
     rescue
       e ->
-        # #PreUnexpected-Hook
+        st = __STACKTRACE__
+
+        # What a hook raises here must not escape the cleaning below.
+        {e, st} =
+          try do
+            # #PreUnexpected-Hook
+
+            {e, st}
+          rescue
+            hookerr -> {hookerr, __STACKTRACE__}
+          end
 
         # An error a hook raised never passed through make_error.
-        reraise(Utility.clean_exception(ctx, e), __STACKTRACE__)
+        Utility.clean_explain(ctx)
+        reraise(Utility.clean_exception(ctx, e), st)
     catch
       {:sdk_ret, v} -> v
     end

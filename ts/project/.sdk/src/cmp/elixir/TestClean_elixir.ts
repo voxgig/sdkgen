@@ -310,11 +310,15 @@ ${candidates(Name, entity)}
 
   # A feature that raises from inside the pipeline, quoting the request it
   # saw: an error make_error never handled.
-  defp throw_feature do
+  defp throw_feature(unexpected) do
+    saw = fn ctx -> "hook saw " <> S.jsonify(S.getprop(ctx, "spec")) end
+
     S.jm([
       "name", "throwhook", "version", "0.0.1", "active", true, "options", S.jm([]),
       "init", fn _ctx, _opts -> nil end,
-      "PreResponse", fn ctx -> raise "hook saw " <> S.jsonify(S.getprop(ctx, "spec")) end
+      "PreResponse", fn ctx -> raise saw.(ctx) end,
+      # Fired from the operation's rescue, before its cleaning.
+      "PreUnexpected", fn ctx -> if unexpected, do: raise(saw.(ctx)) end
     ])
   end
 
@@ -330,11 +334,25 @@ ${candidates(Name, entity)}
     ])
   end
 
+  # A stream that succeeds, yielding the result's items.
+  defp stream_ok_feature do
+    S.jm([
+      "name", "streamok", "version", "0.0.1", "active", true, "options", S.jm([]),
+      "init", fn _ctx, _opts -> nil end,
+      "PreDone", fn ctx ->
+        result = S.getprop(ctx, "result")
+        rd = S.getprop(result, "resdata")
+        items = if S.islist(rd), do: Enum.map(H.entries(rd), &elem(&1, 1)), else: List.wrap(rd)
+        S.setprop(result, "stream", fn -> items end)
+      end
+    ])
+  end
+
   # The target operation, streamed through its entity.
-  defp stream_of(sdk, {name, acc, _op, match}) do
+  defp stream_of(sdk, {name, acc, _op, match}, callopts) do
     ent = acc.(sdk)
     mod = S.getprop(ent, "_module")
-    mod.stream(ent, List.last(String.split(name, ".")), S.jm(["reqmatch", args(match)]))
+    mod.stream(ent, List.last(String.split(name, ".")), S.jm(["reqmatch", args(match)]), callopts)
   end
 
   # Features that fail the operation with the SDK's own error, whose code
@@ -365,6 +383,8 @@ ${candidates(Name, entity)}
 
   defp drive(sdk, {_name, acc, op, match}, ctrl, sinks) do
     ent = acc.(sdk)
+    # A caller may keep the record it passed rather than read ctrl.explain.
+    held = S.getprop(ctrl, "explain")
 
     {out, err} =
       try do
@@ -377,6 +397,7 @@ ${candidates(Name, entity)}
     if out != nil, do: add(sinks, result_forms(out))
     explain = S.getprop(ctrl, "explain")
     if explain != nil, do: add(sinks, data_forms("explain", explain))
+    if held != nil and held != explain, do: add(sinks, data_forms("explain:held", held))
     err
   end
 
@@ -436,20 +457,32 @@ ${candidates(Name, entity)}
 
     # An error a feature hook raises, quoting the request, skips make_error.
     [{_name, ok} | _] = scenarios()
-    hooked = make_sdk(ok, sinks, [], [throw_feature()])
-    assert drive(hooked, target, S.jm([]), sinks) != nil, "the throwing hook should fail the operation"
 
-    # Iterating a stream runs through the same cleaning path as the operation.
-    streamerr =
-      try do
-        Enum.to_list(stream_of(make_sdk(ok, sinks, [], [stream_feature()]), target))
-        nil
-      rescue
-        e -> e
-      end
+    for unexpected <- [false, true] do
+      hooked = make_sdk(ok, sinks, [], [throw_feature(unexpected)])
+      err = drive(hooked, target, S.jm(["explain", S.jm([])]), sinks)
+      assert err != nil, "the throwing hook should fail the operation"
+    end
 
-    assert streamerr != nil, "the failing stream should raise"
-    add(sinks, forms("stream", streamerr))
+    # Iterating a stream runs through the same cleaning path as the operation,
+    # and the explain record the caller passed is cleaned however it ends.
+    for {name, extra} <- [{"stream", [stream_feature()]}, {"stream-ok", [stream_ok_feature()]}, {"stream-plain", []}] do
+      explain = S.jm([])
+      callopts = S.jm(["ctrl", S.jm(["explain", explain])])
+
+      streamerr =
+        try do
+          Enum.to_list(stream_of(make_sdk(ok, sinks, [], extra), target, callopts))
+          nil
+        rescue
+          e -> e
+        end
+
+      assert (name == "stream") == (streamerr != nil), name <> ": only the failing stream raises"
+      if streamerr != nil, do: add(sinks, forms(name, streamerr))
+      assert S.size(explain) > 0, name <> ": the explain record was not filled"
+      add(sinks, data_forms(name <> ":explain", explain))
+    end
 
     # A feature's own error keeps its code, which is cleaned like the message:
     # returned, handed to a hook, raised by a hook, and nested in a record.
