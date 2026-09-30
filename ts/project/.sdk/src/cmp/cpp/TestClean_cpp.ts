@@ -204,6 +204,31 @@ public:
 };
 
 
+// Features that fail the operation with the SDK's own error, whose code
+// quotes a registered value: one refuses it as rbac does, and records the
+// error PreUnexpected hands a hook; the other throws it.
+class DenyFeature : public BaseFeature {
+public:
+  std::vector<Sink>* sinks;
+  explicit DenyFeature(std::vector<Sink>* sinks_)
+      : BaseFeature("denyhook", "0.0.1", true), sinks(sinks_) {}
+  void prePoint(CtxPtr ctx) override {
+    ctx->out.pointError = ctx->makeError("denied:" + CANARY_VALUE, "denied");
+  }
+  void preUnexpected(CtxPtr ctx) override {
+    if (ctx->ctrl->err) addError(*sinks, "error", ctx->ctrl->err);
+  }
+};
+
+class RaiseFeature : public BaseFeature {
+public:
+  RaiseFeature() : BaseFeature("raisehook", "0.0.1", true) {}
+  void preResponse(CtxPtr) override {
+    throw std::make_shared<SdkError>("raised:" + CANARY_VALUE, "raised", nullptr);
+  }
+};
+
+
 // A sink callable: records every form of the record it receives.
 static Value capture(std::vector<Sink>* sinks, const std::string& name, int at) {
   vs::Injector fn = [sinks, name, at](vs::Injection&, const Value& args, const std::string&,
@@ -463,6 +488,34 @@ static void no_credential_leaves_the_sdk() {
   SdkErrorPtr hookerr = drive(*hooked, cand, target, vmap(), sinks);
   ASSERT_TRUE((bool)hookerr, "the throwing hook should fail the operation");
 
+  // A feature's own error keeps its code, which is cleaned like the message:
+  // returned, handed to a hook, thrown by a hook, and cleaned by cleanError.
+  auto denier = makeSdk(scenarios()[0], &sinks, Value::undef(), std::make_shared<DenyFeature>(&sinks));
+  SdkErrorPtr denied = drive(*denier, cand, target, vmap(), sinks);
+  ASSERT_TRUE((bool)denied, "the refusing hook should fail the operation");
+  auto raiser = makeSdk(scenarios()[0], &sinks, Value::undef(), std::make_shared<RaiseFeature>());
+  SdkErrorPtr raised = drive(*raiser, cand, target, vmap(), sinks);
+  ASSERT_TRUE((bool)raised, "the raising hook should fail the operation");
+  auto stepped = std::make_shared<SdkError>("stepped:" + CANARY_VALUE, "stepped", nullptr);
+  util::cleanError(denier->getRootCtx(), stepped);
+  addError(sinks, "stepped", stepped);
+
+  // A client given no clean block at all masks by the schema defaults.
+  Scenario notfoundsc = scenarios()[1];
+  vs::Injector barefetch = [notfoundsc](vs::Injection&, const Value& args, const std::string&,
+                                        const Value&) -> Value {
+    Value url = vs::getelem(args, Value(int64_t(0)));
+    return notfoundsc.respond(url.is_string() ? url.as_string() : "", vs::getelem(args, Value(int64_t(1))));
+  };
+  auto bare = std::make_shared<${ProjectName}SDK>(vmap({
+    {"apikey", Value(CANARY_APIKEY)},
+    {"secret", Value(CANARY_SECRET)},
+    {"headers", vmap({{"X-Custom-Token", Value(CANARY_HEADER)}})},
+    {"system", vmap({{"fetch", Value(barefetch)}})},
+  }));
+  SdkErrorPtr barerr = drive(*bare, cand, target, vmap(), sinks);
+  ASSERT_TRUE((bool)barerr, "the 404 scenario must throw without a clean block");
+
   std::string leaked;
   int leakcount = 0;
   for (const Sink& s : sinks) {
@@ -501,6 +554,13 @@ static void no_credential_leaves_the_sdk() {
     }
     ASSERT_EQ_VAL(header(getp(spec, "headers"), "x-custom-token"), Value(MASK),
                   "custom token header masked");
+  }
+  if (denied) ASSERT_TRUE(denied->code == "denied:" + MASK, "refusal code: " + denied->code);
+  if (raised) ASSERT_TRUE(raised->code == "raised:" + MASK, "raised code: " + raised->code);
+  ASSERT_TRUE(stepped->code == "stepped:" + MASK, "stepped code: " + stepped->code);
+  if (barerr) {
+    ASSERT_EQ_VAL(header(getp(barerr->spec, "headers"), "x-custom-token"), Value(MASK),
+                  "no clean block: custom token header masked");
   }
 
   auto ex = explains.find("ok/explain");
@@ -556,10 +616,51 @@ static void a_registered_value_used_as_a_name_is_masked() {
 }
 
 
+// The generated config's own clean block is honoured, and left unchanged.
+static void the_generated_configs_own_clean_block_is_honoured() {
+  auto client = std::make_shared<${ProjectName}SDK>(vmap());
+  UtilityPtr utility = client->getUtility();
+  Value config = vmap({{"options", vmap({{"clean", vmap({
+    {"keys", Value("zzsens")}, {"values", Value("CONFIG-SEEDED-1")},
+  })}})}});
+  CtxSpec cs;
+  cs.utility = utility;
+  cs.options = vmap({{"clean", vmap({{"values", Value("CALLER-SEEDED-2")}})}});
+  cs.config = config;
+  CtxPtr ctx = utility->makeContext(cs, nullptr);
+  ctx->options = utility->makeOptions(ctx);
+  ASSERT_EQ_VAL(util::clean(ctx, Value("a CONFIG-SEEDED-1 b CALLER-SEEDED-2")),
+                Value("a " + MASK + " b " + MASK), "both seeded values are masked");
+  Value out = util::clean(ctx, vmap({{"my_zzsens", Value("x")}, {"other", Value("y")}}));
+  ASSERT_EQ_VAL(getp(out, "my_zzsens"), Value(MASK), "the config's key name is sensitive");
+  ASSERT_EQ_VAL(getp(out, "other"), Value("y"), "an ordinary name is kept");
+  ASSERT_EQ_VAL(Struct::getpath(config, {"options", "clean", "keys"}), Value("zzsens"),
+                "the config's keys are left alone");
+  ASSERT_EQ_VAL(Struct::getpath(config, {"options", "clean", "values"}), Value("CONFIG-SEEDED-1"),
+                "the config's values are left alone");
+}
+
+
+// A feature's name is not a field name: a feature called secrets does not
+// make its settings secret, though a sensitive field inside it still is.
+static void a_feature_name_is_read_as_a_name() {
+  auto client = std::make_shared<${ProjectName}SDK>(vmap({
+    {"apikey", Value(CANARY_APIKEY)},
+    {"feature", vmap({{"secrets", vmap({
+      {"active", Value(false)}, {"name", Value("ZZNAME-feat123")}, {"token", Value("ZZTOKEN-feat456")},
+    })}})},
+  }));
+  ASSERT_EQ_VAL(util::clean(client->getRootCtx(), Value("ZZNAME-feat123 ZZTOKEN-feat456")),
+                Value("ZZNAME-feat123 " + MASK), "only the sensitive field is registered");
+}
+
+
 int main() {
   T_RUN(no_credential_leaves_the_sdk);
   T_RUN(the_sweep_can_see_a_leak);
   T_RUN(a_registered_value_used_as_a_name_is_masked);
+  T_RUN(the_generated_configs_own_clean_block_is_honoured);
+  T_RUN(a_feature_name_is_read_as_a_name);
   return sdktest::summary("clean_test");
 }
 `

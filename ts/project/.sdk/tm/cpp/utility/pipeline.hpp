@@ -1490,13 +1490,23 @@ inline Value transformRequest(CtxPtr ctx) {
 
 // ---- makeOptions ------------------------------------------------------
 
+// The options to scan for secrets. The feature map is keyed by feature
+// names, not field names, so it is scanned as a list: `secrets` must not
+// make every setting of that feature a secret.
 inline Value optsWithout(const Value& opts, std::initializer_list<const char*> keys) {
   Value out = vmap();
   if (!opts.is_map()) return out;
   for (const auto& kv : *opts.as_map()) {
     bool skip = false;
     for (const char* k : keys) skip = skip || kv.first == k;
-    if (!skip) map_put(out, kv.first, kv.second);
+    if (skip) continue;
+    if ("feature" == kv.first && kv.second.is_map()) {
+      Value list = vlist();
+      for (const auto& f : *kv.second.as_map()) list.as_list()->push_back(f.second);
+      map_put(out, kv.first, list);
+    } else {
+      map_put(out, kv.first, kv.second);
+    }
   }
   return out;
 }
@@ -1535,19 +1545,23 @@ inline Value makeOptions(CtxPtr ctx) {
     map_remove(opts, "auth");
   }
 
+  Value config = ctx->config;
+  if (!config.is_map()) config = vmap();
+  Value cfgopts = Helpers::toMapAny(getp(config, "options"));
+  if (!cfgopts.is_map()) cfgopts = vmap();
+
   // The secret registry exists BEFORE validation, fed from the raw input, so
   // the constructor's own rejection of a mistyped credential is clean too.
   Value cleanraw = vlist({vmap()});
-  if (getp(sharedOptspec(), "clean").is_map()) {
-    cleanraw.as_list()->push_back(Struct::clone(getp(sharedOptspec(), "clean")));
-  }
-  if (getp(opts, "clean").is_map()) {
-    cleanraw.as_list()->push_back(Struct::clone(getp(opts, "clean")));
+  for (const Value& src : {getp(sharedOptspec(), "clean"), getp(cfgopts, "clean"), getp(opts, "clean")}) {
+    if (src.is_map()) cleanraw.as_list()->push_back(Struct::clone(src));
   }
   Value derivedClean = makeCleanConfig(Struct::merge(cleanraw));
   cleanAddSensitiveCfg(derivedClean, optsWithout(opts, {"clean"}));
-  for (const auto& raw : cleanSplit(Struct::getpath(opts, {"clean", "values"}))) {
-    cleanAddCfg(derivedClean, Value(raw));
+  for (const Value& src : {cfgopts, opts}) {
+    for (const auto& raw : cleanSplit(Struct::getpath(src, {"clean", "values"}))) {
+      cleanAddCfg(derivedClean, Value(raw));
+    }
   }
 
   // Feature add-order. options.feature may be an ordered list of
@@ -1576,11 +1590,6 @@ inline Value makeOptions(CtxPtr ctx) {
       map_put(opts, "feature", fmap);
     }
   }
-
-  Value config = ctx->config;
-  if (!config.is_map()) config = vmap();
-  Value cfgopts = Helpers::toMapAny(getp(config, "options"));
-  if (!cfgopts.is_map()) cfgopts = vmap();
 
   // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
   //
