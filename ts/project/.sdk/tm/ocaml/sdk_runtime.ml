@@ -422,7 +422,9 @@ let clean_exn (ctx : ctx) (e : exn) : exn =
   let cfg = clean_config ctx in
   if getp cfg "active" = Bool false then e
   else match e with
-    | Sdk_error_exc _ -> e
+    | Sdk_error_exc er ->
+      Sdk_error_exc { err_code = clean_string cfg er.err_code; err_msg = clean_string cfg er.err_msg;
+                      err_result = clean_util ctx er.err_result; err_spec = clean_util ctx er.err_spec }
     | Failure msg -> Failure (clean_string cfg msg)
     | Invalid_argument msg -> Invalid_argument (clean_string cfg msg)
     | Struct_error msg -> Struct_error (clean_string cfg msg)
@@ -493,8 +495,10 @@ let make_error_util (ctx : ctx) (err_opt : sdk_error option) : value =
    | Map _ -> setp ctx.c_ctrl.ctrl_explain "err" (jo [("message", Str msg)])
    | _ -> ());
   (* Cleaned COPIES of the result and spec, never the live objects. *)
+  (* A hook's own error supplies the code as well as the message. *)
+  let code = match (cu ctx).u_clean ctx (Str err.err_code) with Str s -> s | _ -> err.err_code in
   let sdk_err = {
-    err_code = err.err_code; err_msg = msg;
+    err_code = code; err_msg = msg;
     err_result = (cu ctx).u_clean ctx (result_to_value result);
     err_spec = (match ctx.c_spec with Some s -> (cu ctx).u_clean ctx (spec_to_value s) | None -> Noval);
   } in
@@ -1314,13 +1318,15 @@ let make_options_util (ctx : ctx) : value =
   let cleanraw = empty_map () in
   List.iter (fun src -> match src with
       | Map _ -> List.iter (fun k -> setp cleanraw k (getp src k)) (keysof src)
-      | _ -> ()) [getp optspec "clean"; getp opts "clean"];
+      | _ -> ()) [getp optspec "clean"; getp cfgopts "clean"; getp opts "clean"];
   let cleancfg = make_clean_config cleanraw in
   let cleanctx = { ctx with c_options = jo [("__derived__", jo [("clean", cleancfg)])] } in
   clean_add_sensitive cleanctx (omit_keys opts ["clean"]);
-  List.iter (clean_add_util cleanctx) (splitvalues (getpath_s opts "clean.values"));
+  List.iter (fun src -> List.iter (clean_add_util cleanctx) (splitvalues (getpath_s src "clean.values")))
+    [cfgopts; opts];
   let sys_fetch = getpath_s opts "system.fetch" in
-  let merged = merge (ja [empty_map (); cfgopts; opts]) in
+  (* Clone the config side: merge writes into the nested maps it takes. *)
+  let merged = merge (ja [empty_map (); clone cfgopts; opts]) in
   let validated =
     try validate merged optspec
     with Struct_error msg ->

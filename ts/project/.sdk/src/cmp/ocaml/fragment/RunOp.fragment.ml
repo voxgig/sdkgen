@@ -29,7 +29,8 @@ let run_op (ctx : ctx) (post_done : unit -> unit) : value =
   with
   | Sdk_error_exc _ as e ->
     (* #PreUnexpected-Hook *)
-    raise e
+    (* A hook may raise the SDK's own error, which make_error never saw. *)
+    raise (clean_exn ctx e)
   | e ->
     (* An error a hook raised never passed through make_error. *)
     raise (clean_exn ctx e)

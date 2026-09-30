@@ -215,6 +215,34 @@ let throw_feature () : feature =
               | Some sp -> jsonify (spec_to_value sp)
               | None -> "null"))) }
 
+(* Features that fail the operation with the SDK's own error, whose code
+ * quotes a registered value: one refuses it as rbac does, and records the
+ * error PreUnexpected hands a hook; the other raises. *)
+let deny_feature (sinks : sinks) : feature =
+  { f_name = "denyhook"; f_version = "0.0.1"; f_active = true; f_options = Noval;
+    f_init = (fun _ _ -> ());
+    f_hook = (fun name ctx ->
+        match name with
+        | "PrePoint" ->
+          Hashtbl.replace ctx.c_out "point"
+            (OErr (ctx_make_error ctx ("denied:" ^ canary_of "value") "denied"))
+        | "PreUnexpected" ->
+          (match ctx.c_ctrl.ctrl_err with
+           | Some er -> error_forms sinks "error" (Sdk_error_exc er)
+           | None -> ())
+        | _ -> ()) }
+
+let raise_feature () : feature =
+  { f_name = "raisehook"; f_version = "0.0.1"; f_active = true; f_options = Noval;
+    f_init = (fun _ _ -> ());
+    f_hook = (fun name _ ->
+        if name = "PreResponse" then
+          raise (Sdk_error_exc { err_code = "raised:" ^ canary_of "value"; err_msg = "raised";
+                                 err_result = Noval; err_spec = Noval })) }
+
+let code_of (e : exn option) : string =
+  match e with Some (Sdk_error_exc er) -> er.err_code | _ -> "<no SDK error>"
+
 type candidate = {
   c_name : string;
   c_params : string list;
@@ -294,6 +322,12 @@ let () =
       let hooked = make_sdk ~extra:[throw_feature ()] (List.hd scenarios) sinks [] in
       check "the throwing hook should fail the operation"
         (drive hooked target (empty_map ()) sinks <> None);
+      (* A feature's own error keeps its code, which is cleaned like the
+       * message: returned, handed to a hook, and raised by a hook. *)
+      let denied = drive (make_sdk ~extra:[deny_feature sinks] (List.hd scenarios) sinks [])
+          target (empty_map ()) sinks in
+      let raised = drive (make_sdk ~extra:[raise_feature ()] (List.hd scenarios) sinks [])
+          target (empty_map ()) sinks in
       let leaked = List.filter (fun (_, text) -> leaks text <> []) !sinks in
       Printf.printf "clean: swept %d surface(s), %d leak(s)\\n%!" (List.length !sinks) (List.length leaked);
       if leaked <> [] then
@@ -315,6 +349,8 @@ let () =
           check "credential header masked" (ends_with_s (vstring (header (getp spec "headers") auth_name)) mask)
       end;
       check_vstr "custom token masked" (header (getp spec "headers") "x-custom-token") mask;
+      check ("the refusal's code is masked: " ^ code_of denied) (code_of denied = "denied:" ^ mask);
+      check ("the raised code is masked: " ^ code_of raised) (code_of raised = "raised:" ^ mask);
       let explained = match List.assoc_opt "ok/explain" !explains with
         | Some ex -> ex
         | None -> failwith "the ok scenario recorded no explain" in
@@ -358,6 +394,22 @@ let () =
       check_vnum "a colliding masked name is numbered" (getp out (mask ^ "#1")) 2.;
       check_vnum "a plain name is kept" (getp out "plain") 3.;
       check "the registered name is gone" (not (List.mem "ZZVAL-abc123" (keysof out))))
+
+let () =
+  test "clean.the_generated_configs_own_clean_block_is_honoured" (fun () ->
+      let base = make_context_impl (default_ctxspec ()) None in
+      let config = jo [("options", jo [("clean", jo [
+          ("keys", Str "zzsens"); ("values", Str "CONFIG-SEEDED-1")])])] in
+      let opts = make_options_util { base with c_config = config;
+                                               c_options = jo [("clean", jo [("values", Str "CALLER-SEEDED-2")])] } in
+      let ctx = { base with c_options = opts } in
+      check_vstr "both seeded values are masked"
+        (clean_util ctx (Str "a CONFIG-SEEDED-1 b CALLER-SEEDED-2")) ("a " ^ mask ^ " b " ^ mask);
+      let out = clean_util ctx (jo [("my_zzsens", Str "x"); ("other", Str "y")]) in
+      check_vstr "the config's key name is sensitive" (getp out "my_zzsens") mask;
+      check_vstr "an ordinary name is kept" (getp out "other") "y";
+      check_vstr "the config's keys are left alone" (getpath_s config "options.clean.keys") "zzsens";
+      check_vstr "the config's values are left alone" (getpath_s config "options.clean.values") "CONFIG-SEEDED-1")
 
 let () =
   test "clean.add_sensitive_registers_every_scalar_under_a_sensitive_name" (fun () ->
