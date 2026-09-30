@@ -66,14 +66,17 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         &ja(vec![
             Value::empty_map(),
             vs::clone(&getp(&optspec, "clean")),
-            vs::clone(&getp(&opts, "clean")),
+            clean_block(&cfgopts),
+            clean_block(&opts),
         ]),
         None,
     ));
     let cleanopts = jo(vec![("__derived__", jo(vec![("clean", cleancfg.clone())]))]);
     clean::clean_add_sensitive_opts(&cleanopts, &without(&opts, &["clean"]));
-    for value in clean::splitvalues(&getpath(&["clean", "values"], &opts)) {
-        clean::clean_add_opts(&cleanopts, &value);
+    for src in [&cfgopts, &opts] {
+        for value in clean::splitvalues(&getpath(&["clean", "values"], src)) {
+            clean::clean_add_opts(&cleanopts, &value);
+        }
     }
 
     // Preserve system.fetch before merge/validate (validation strips it).
@@ -203,6 +206,15 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
     clean::clean_add_sensitive_opts(&opts, &without(&opts, &["clean", "__derived__"]));
 
     opts
+}
+
+// A copy of the clean block, or an empty one: merge lets a missing value
+// replace everything merged before it, schema defaults included.
+fn clean_block(opts: &Value) -> Value {
+    match getp(opts, "clean") {
+        Value::Map(_) => vs::clone(&getp(opts, "clean")),
+        _ => Value::empty_map(),
+    }
 }
 
 fn without(val: &Value, keys: &[&str]) -> Value {

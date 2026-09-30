@@ -121,11 +121,12 @@ function render(spec: {
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use ${rustcrate}::core::helpers::{getp, jo, json_thunk, setp, vfn};
+use ${rustcrate}::core::helpers::{getp, getpath, jo, json_thunk, setp, vfn};
+use ${rustcrate}::core::types::OutVal;
 use ${rustcrate}::utility::clean;
 use ${rustcrate}::utility::voxgigstruct as vs;
 use ${rustcrate}::{
-    Context, Entity, Feature, FeatureRef, ${Name}Entity, ${Name}Error, ${Name}SDK, Value,
+    Context, CtxSpec, Entity, Feature, FeatureRef, ${Name}Entity, ${Name}Error, ${Name}SDK, Value,
 };
 
 // Generated: the credential's wire placement is fixed when the SDK is built.
@@ -270,6 +271,33 @@ impl Feature for ThrowFeature {
         let err = ctx.make_error("hook", &format!("hook saw {}", vs::jsonify(&spec, None)));
         if let Some(res) = ctx.result.borrow().clone() {
             res.borrow_mut().err = Some(err);
+        }
+    }
+}
+
+// A feature that refuses the operation with the SDK's own error, as rbac
+// does, whose code quotes a registered value; it records the error
+// PreUnexpected hands a hook.
+struct DenyFeature {
+    sinks: Sinks,
+}
+
+impl Feature for DenyFeature {
+    fn name(&self) -> String {
+        "denyhook".to_string()
+    }
+    fn active(&self) -> bool {
+        true
+    }
+    fn pre_point(&mut self, ctx: &Rc<Context>) {
+        let err = ctx.make_error(&format!("denied:{}", CANARY_VALUE), "denied");
+        ctx.out_set("point", OutVal::Err(err));
+    }
+    fn pre_unexpected(&mut self, ctx: &Rc<Context>) {
+        let ctrl = ctx.ctrl.borrow().clone();
+        let err = ctrl.borrow().err.clone();
+        if let Some(err) = err {
+            push_error(&self.sinks, "error", &err);
         }
     }
 }
@@ -529,6 +557,33 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
     let hookerr = drive(&hooked, &target, Value::Noval, &sinks);
     assert!(hookerr.is_some(), "the throwing hook should fail the operation");
 
+    // A feature's own error keeps its code, which is cleaned like the
+    // message: returned, handed to a hook, and cleaned where a step's error
+    // skips make_error.
+    let denier = make_sdk(
+        Scenario::Ok,
+        &sinks,
+        None,
+        vec![Rc::new(RefCell::new(DenyFeature { sinks: sinks.clone() })) as FeatureRef],
+    );
+    let denied = drive(&denier, &target, Value::Noval, &sinks)
+        .expect("the refusing hook should fail the operation");
+    let stepped = clean::clean_error(
+        &denier.get_root_ctx(),
+        ${Name}Error::new(&format!("stepped:{}", CANARY_VALUE), "stepped"),
+    );
+    push_error(&sinks, "stepped", &stepped);
+
+    // A client given no clean block at all masks by the schema defaults.
+    let bare = ${Name}SDK::new(jo(vec![
+        ("apikey", Value::str(CANARY_APIKEY)),
+        ("secret", Value::str(CANARY_SECRET)),
+        ("headers", jo(vec![("X-Custom-Token", Value::str(CANARY_HEADER))])),
+        ("system", jo(vec![("fetch", transport(Scenario::NotFound))])),
+    ]));
+    let barerr = drive(&bare, &target, Value::Noval, &sinks)
+        .expect("the 404 scenario must throw without a clean block");
+
     let leaked: Vec<String> = sinks
         .borrow()
         .iter()
@@ -572,6 +627,12 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
         }
     }
     assert_eq!(header(&headers, "x-custom-token"), Some(MASK.to_string()));
+    assert_eq!(denied.code, format!("denied:{}", MASK));
+    assert_eq!(stepped.code, format!("stepped:{}", MASK));
+    assert_eq!(
+        header(&getp(&barerr.spec, "headers"), "x-custom-token"),
+        Some(MASK.to_string())
+    );
 
     let explained = explains
         .iter()
@@ -632,6 +693,43 @@ fn clean_masks_a_registered_value_used_as_a_name() {
         _ => Vec::new(),
     };
     assert_eq!(keys, vec![MASK.to_string(), format!("{}#1", MASK), "plain".to_string()]);
+}
+
+#[test]
+fn clean_honours_the_generated_config_clean_block() {
+    let utility = ${Name}SDK::new(Value::empty_map()).get_utility();
+    let config = jo(vec![(
+        "options",
+        jo(vec![(
+            "clean",
+            jo(vec![("keys", Value::str("zzsens")), ("values", Value::str("CONFIG-SEEDED-1"))]),
+        )]),
+    )]);
+    let ctx = utility.make_context(
+        CtxSpec {
+            options: Some(jo(vec![(
+                "clean",
+                jo(vec![("values", Value::str("CALLER-SEEDED-2"))]),
+            )])),
+            config: Some(config.clone()),
+            ..Default::default()
+        },
+        None,
+    );
+    let opts = utility.make_options(&ctx);
+    *ctx.options.borrow_mut() = opts;
+    assert_eq!(
+        clean::clean_str(&ctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2"),
+        format!("a {} b {}", MASK, MASK)
+    );
+    let out = clean::clean_util(
+        &ctx,
+        &jo(vec![("my_zzsens", Value::str("x")), ("other", Value::str("y"))]),
+    );
+    assert_eq!(getp(&out, "my_zzsens"), Value::str(MASK));
+    assert_eq!(getp(&out, "other"), Value::str("y"));
+    assert_eq!(getpath(&["options", "clean", "keys"], &config), Value::str("zzsens"));
+    assert_eq!(getpath(&["options", "clean", "values"], &config), Value::str("CONFIG-SEEDED-1"));
 }
 `
 }
