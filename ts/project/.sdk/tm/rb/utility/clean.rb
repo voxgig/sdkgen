@@ -289,10 +289,18 @@ module ProjectNameUtilities
 
     # A feature's name is not a field name: only the sensitive names inside
     # its settings count, so `secrets` does not make every setting a secret.
+    # Entity blocks (per-entity settings, seeded records) hold no credential.
     def self.add_options(ctx, opts)
-      add_sensitive(ctx, opts.reject { |k, _| k == "feature" })
+      top = opts.reject { |k, _| k == "feature" || k == "entity" }
+      top["test"] = no_entity(top["test"]) if top.key?("test")
+      add_sensitive(ctx, top)
       feature = opts["feature"]
-      (feature.is_a?(Hash) ? feature.values : [feature]).each { |fopts| add_sensitive(ctx, fopts) }
+      blocks = feature.is_a?(Hash) ? feature.values : (feature.is_a?(Array) ? feature : [feature])
+      blocks.each { |fopts| add_sensitive(ctx, no_entity(fopts)) }
+    end
+
+    def self.no_entity(block)
+      block.is_a?(Hash) ? block.reject { |k, _| k == "entity" } : block
     end
 
     # Is this key name sensitive under the context's clean configuration?

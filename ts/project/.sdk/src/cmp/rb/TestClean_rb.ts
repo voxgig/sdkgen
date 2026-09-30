@@ -168,6 +168,21 @@ class ${Name}CleanTest < Minitest::Test
     end
   end
 
+  # A feature that hands the caller the stream it was given.
+  class StreamFeature < ${Name}BaseFeature
+    def initialize(stream)
+      super()
+      @name = "streamed"
+      @version = "0.0.1"
+      @active = true
+      @stream = stream
+    end
+
+    def PreDone(ctx)
+      ctx.result.stream = @stream
+    end
+  end
+
   class CaptureLogger
     def initialize(sinks)
       @sinks = sinks
@@ -331,6 +346,28 @@ class ${Name}CleanTest < Minitest::Test
     hooked = make_sdk(SCENARIOS[0], sinks, nil, [ThrowFeature.new])
     refute_nil drive(hooked, target, {}, sinks), "the throwing hook should fail the operation"
 
+    # Iterating a stream runs inside the same catch path as the operation;
+    # what the caller's own block raises passes through as it was raised.
+    stream = ->(src) {
+      make_sdk(SCENARIOS[0], sinks, nil, [StreamFeature.new(src)]).public_send(target["accessor"])
+        .stream(target["op"], { "reqmatch" => target["match"].dup })
+    }
+    streamerr = nil
+    begin
+      stream.call(Enumerator.new { |_y| raise "stream saw #{CANARY['apikey']}" }).each { |_item| }
+    rescue StandardError => e
+      streamerr = e
+    end
+    refute_nil streamerr, "the failing stream should raise"
+    sinks.concat(Sweep.forms("stream", streamerr))
+    mine = RuntimeError.new("caller saw #{CANARY['apikey']}")
+    got = begin
+      stream.call([1].each).each { |_item| raise mine }
+    rescue StandardError => e
+      e
+    end
+    assert_same mine, got, "the caller's own error should leave the stream as raised"
+
     # A registered value used as a property name is masked; names that
     # mask alike are all kept.
     named = hooked.get_utility.clean.call(hooked.get_root_ctx,
@@ -365,17 +402,23 @@ class ${Name}CleanTest < Minitest::Test
     refute_nil drive(bare, target, { "explain" => {} }, sinks), "the 404 should fail"
 
     # A feature's name is not a field name: only the sensitive names inside
-    # its settings register.
+    # its settings register. An entity block, of per-entity settings or
+    # seeded records keyed by entity name and id, is not read at all.
     featured = ${Name}SDK.new({
       "apikey" => CANARY["apikey"],
       "feature" => {
         "zzsecrets" => { "active" => false, "kind" => "PLAINSETTING-q8w2e4r6" },
         "zzfeat" => { "active" => false, "apitoken" => "FEATTOKEN-z9y8x7w6" },
+        "test" => { "active" => false, "entity" => {
+          "zztoken" => { "ZZTOKEN01" => { "note" => "PLAINRECORD-t5r3e1w9" } } } },
       },
+      "entity" => { "zztoken" => { "alias" => { "zzkey" => "PLAINALIAS-m2n4b6v8" } } },
     })
     fclean = featured.get_utility.clean
     fplain = fclean.call(featured.get_root_ctx, "kind PLAINSETTING-q8w2e4r6")
     ftoken = fclean.call(featured.get_root_ctx, "token FEATTOKEN-z9y8x7w6")
+    frecord = fclean.call(featured.get_root_ctx, "record PLAINRECORD-t5r3e1w9")
+    falias = fclean.call(featured.get_root_ctx, "alias PLAINALIAS-m2n4b6v8")
 
     leaked = sinks
       .map { |s| [s["name"], Sweep.leaks(s["text"])] }
@@ -410,6 +453,8 @@ class ${Name}CleanTest < Minitest::Test
 
     assert_equal "kind PLAINSETTING-q8w2e4r6", fplain
     assert_equal "token #{MASK}", ftoken
+    assert_equal "record PLAINRECORD-t5r3e1w9", frecord
+    assert_equal "alias PLAINALIAS-m2n4b6v8", falias
 
     explained = explains["ok/explain"] || {}
     refute_nil explained["result"], "the explain record should carry the result"
@@ -424,6 +469,10 @@ class ${Name}CleanTest < Minitest::Test
     sdk = make_sdk(SCENARIOS[1], sinks, { "active" => false })
     err = drive(sdk, target, {}, sinks)
     refute_nil err
+
+    # Explaining a failure must not cost it its error.
+    explained = drive(make_sdk(SCENARIOS[1], [], { "active" => false }), target, { "explain" => {} }, [])
+    assert_equal err.message, explained&.message, "with clean off, explain lost the error"
 
     leaked = sinks.select { |s| !Sweep.leaks(s["text"]).empty? }
     assert !leaked.empty?, "with clean off, nothing showed the canary: the sweep is blind"
