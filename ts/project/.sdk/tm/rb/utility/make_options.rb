@@ -60,14 +60,20 @@ module ProjectNameUtilities
 
     opts.delete('auth') if authsuppressed
 
+    config = ctx.config || {}
+    cfgopts = config["options"].is_a?(Hash) ? config["options"] : {}
+
     # The secret registry exists BEFORE validation, fed from the raw input, so
     # the constructor's own rejection of a mistyped credential is clean too.
+    cfgclean = cfgopts["clean"].is_a?(Hash) ? VoxgigStruct.clone(cfgopts["clean"]) : nil
     cleancfg = CleanSupport.make_config(VoxgigStruct.merge(
-      [{}, ProjectNameSchema::OPTSPEC["clean"], opts["clean"]].select { |c| c.is_a?(Hash) }))
+      [{}, ProjectNameSchema::OPTSPEC["clean"], cfgclean, opts["clean"]].select { |c| c.is_a?(Hash) }))
     cleanctx = { "options" => { "__derived__" => { "clean" => cleancfg } } }
     CleanSupport.add_sensitive(cleanctx, opts.reject { |k, _| k == "clean" })
-    CleanSupport.splitvalues(VoxgigStruct.getpath(opts, "clean.values")).each do |raw|
-      CleanSupport.add(cleanctx, raw)
+    [cfgopts, opts].each do |block|
+      CleanSupport.splitvalues(VoxgigStruct.getpath(block, "clean.values")).each do |raw|
+        CleanSupport.add(cleanctx, raw)
+      end
     end
 
     # Feature add-order. options["feature"] may be given as an ordered ARRAY of
@@ -89,9 +95,6 @@ module ProjectNameUtilities
       end
       opts["feature"] = fmap
     end
-
-    config = ctx.config || {}
-    cfgopts = config["options"].is_a?(Hash) ? config["options"] : {}
 
     # THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
     #

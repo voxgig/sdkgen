@@ -67,6 +67,7 @@ class ${Name}CleanTest < Minitest::Test
     "secret" => "CANARY-SECRET-w3e8r5t2y6",
     "header" => "CANARY-HEADER-z1x4c7v0b3",
     "value" => "CANARY-VALUE-n5m8b2v9c4",
+    "config" => "CANARY-CONFIG-h6j3k8l2m5",
   }.freeze
 
   MASK = "[redacted]"
@@ -142,7 +143,14 @@ class ${Name}CleanTest < Minitest::Test
 
     def PreRequest(ctx); @sinks.concat(Sweep.forms("ctx@PreRequest", ctx)); end
     def PreResponse(ctx); @sinks.concat(Sweep.forms("ctx@PreResponse", ctx)); end
-    def PreUnexpected(ctx); @sinks.concat(Sweep.forms("ctx@PreUnexpected", ctx)); end
+
+    # The SDK's own error as a hook reads it, which an observability feature
+    # logs.
+    def PreUnexpected(ctx)
+      @sinks.concat(Sweep.forms("ctx@PreUnexpected", ctx))
+      err = ctx.ctrl.err
+      @sinks.concat(Sweep.forms("ctrl.err@PreUnexpected", err)) if err.is_a?(${Name}Error)
+    end
   end
 
   # A feature that raises from inside the pipeline, quoting the request it
@@ -181,6 +189,8 @@ class ${Name}CleanTest < Minitest::Test
     ["transport", ->(url, _fd) {
       [nil, RuntimeError.new("socket hang up (URL was: \\"#{url}\\")")]
     }],
+    # The SDK's own error, its code quoting a registered value.
+    ["coded", ->(_url, _fd) { [nil, ${Name}Error.new("denied_#{CANARY['apikey']}", "coded failure")] }],
     ["notjson", ->(_url, _fd) {
       [{
         "status" => 200, "statusText" => "OK", "headers" => {},
@@ -328,6 +338,23 @@ class ${Name}CleanTest < Minitest::Test
     assert_equal({ MASK => 1, "#{MASK}#1" => 2, "plain" => 3 }, named)
     sinks.concat(Sweep.forms("named", named))
 
+    # The generated config's own clean block is read beside the caller's,
+    # and is not changed by it.
+    util = hooked.get_utility
+    cfgclean = { "keys" => "zzsens", "values" => CANARY["config"] }
+    built = util.make_options.call(util.make_context.call({
+      "utility" => util,
+      "config" => { "options" => { "clean" => cfgclean } },
+      "options" => { "clean" => { "values" => CANARY["value"] } },
+    }, nil))
+    cfgctx = util.make_context.call({ "options" => built }, nil)
+    seeded = util.clean.call(cfgctx, "config #{CANARY['config']} caller #{CANARY['value']}")
+    sinks << { "name" => "config-clean", "text" => seeded.to_s }
+    assert_equal "config #{MASK} caller #{MASK}", seeded
+    assert_equal({ "my_zzsens" => MASK, "other" => "y" },
+      util.clean.call(cfgctx, { "my_zzsens" => "x", "other" => "y" }))
+    assert_equal({ "keys" => "zzsens", "values" => CANARY["config"] }, cfgclean)
+
     leaked = sinks
       .map { |s| [s["name"], Sweep.leaks(s["text"])] }
       .reject { |_, found| found.empty? }
@@ -355,6 +382,9 @@ class ${Name}CleanTest < Minitest::Test
       end
     end
     assert_equal MASK, Sweep.header(notfound.spec["headers"], "x-custom-token")
+
+    coded = errors["coded/throw"]
+    assert coded.is_a?(${Name}Error) && coded.code == "denied_#{MASK}", coded.inspect
 
     explained = explains["ok/explain"] || {}
     refute_nil explained["result"], "the explain record should carry the result"
