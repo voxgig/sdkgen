@@ -254,15 +254,53 @@ public class CleanTest
     // saw: an exception MakeError never handled.
     private sealed class ThrowFeature : BaseFeature
     {
-        public ThrowFeature()
+        private readonly bool _unexpected;
+
+        public ThrowFeature(bool unexpected)
         {
             Name = "throwhook";
             Version = "0.0.1";
             Active = true;
+            _unexpected = unexpected;
         }
 
         public override void PreResponse(Context ctx) =>
             throw new Exception("hook saw " + Render(ctx.Spec));
+
+        // MakeError fires PreUnexpected, so what this throws escapes it.
+        public override void PreUnexpected(Context ctx)
+        {
+            if (_unexpected)
+            {
+                throw new Exception("hook saw " + Render(ctx.Spec));
+            }
+        }
+    }
+
+    // A stream that succeeds, yielding the result's items.
+    private sealed class StreamOkFeature : BaseFeature
+    {
+        public StreamOkFeature()
+        {
+            Name = "streamok";
+            Version = "0.0.1";
+            Active = true;
+        }
+
+        public override void PreDone(Context ctx)
+        {
+            if (null == ctx.Result)
+            {
+                return;
+            }
+            var items = ctx.Result.Resdata switch
+            {
+                IList list => list.Cast<object?>().ToList(),
+                null => new List<object?>(),
+                var one => new List<object?> { one },
+            };
+            ctx.Result.Stream = () => items;
+        }
     }
 
     // A stream that fails while the caller iterates it, quoting a credential.
@@ -492,6 +530,8 @@ ${candidateLines}
     private static Exception? Drive(${Name}SDK sdk, Target target,
         Dictionary<string, object?> ctrl, List<Sink> sinks)
     {
+        // A caller may keep the record it passed rather than read ctrl's entry.
+        var held = ctrl.GetValueOrDefault("explain");
         object? out_ = null;
         Exception? err = null;
         try
@@ -507,6 +547,10 @@ ${candidateLines}
         if (ctrl.TryGetValue("explain", out var explain) && null != explain)
         {
             sinks.AddRange(FormsOf("explain", explain));
+        }
+        if (null != held && !ReferenceEquals(held, ctrl.GetValueOrDefault("explain")))
+        {
+            sinks.AddRange(FormsOf("explain:held", held));
         }
         return err;
     }
@@ -583,28 +627,52 @@ ${candidateLines}
         sinks.AddRange(FormsOf("rejected", rejected));
 
         // An exception a feature hook throws, quoting the request, skips MakeError.
-        var hooked = MakeSdk(Scenarios[0], sinks, null, new ThrowFeature());
-        var hookerr = Drive(hooked, target, new Dictionary<string, object?>(), sinks);
-        Assert.True(null != hookerr, "the throwing hook should fail the operation");
+        foreach (var unexpected in new[] { false, true })
+        {
+            var hooked = MakeSdk(Scenarios[0], sinks, null, new ThrowFeature(unexpected));
+            var hookerr = Drive(hooked, target, new Dictionary<string, object?>
+            {
+                ["explain"] = new Dictionary<string, object?>(),
+            }, sinks);
+            Assert.True(null != hookerr, "the throwing hook should fail the operation");
+        }
 
-        // Iterating a stream runs inside the same catch path as the operation.
-        var streaming = target.Candidate.Accessor(MakeSdk(Scenarios[0], sinks, null, new StreamThrowFeature()));
-        Exception? streamerr = null;
-        try
+        // Iterating a stream runs inside the same catch path as the operation,
+        // and the explain record the caller passed is cleaned however it ends.
+        foreach (var (name, extra) in new (string, BaseFeature?)[]
         {
-            await foreach (var _ in streaming.Stream(target.Op, new Dictionary<string, object?>
+            ("stream", new StreamThrowFeature()),
+            ("stream-ok", new StreamOkFeature()),
+            ("stream-plain", null),
+        })
+        {
+            var streaming = target.Candidate.Accessor(MakeSdk(Scenarios[0], sinks, null, extra));
+            var explain = new Dictionary<string, object?>();
+            Exception? streamerr = null;
+            try
             {
-                ["reqmatch"] = new Dictionary<string, object?>(target.Match),
-            }))
-            {
+                await foreach (var _ in streaming.Stream(target.Op, new Dictionary<string, object?>
+                {
+                    ["reqmatch"] = new Dictionary<string, object?>(target.Match),
+                }, new Dictionary<string, object?>
+                {
+                    ["ctrl"] = new Dictionary<string, object?> { ["explain"] = explain },
+                }))
+                {
+                }
             }
+            catch (Exception e)
+            {
+                streamerr = e;
+            }
+            Assert.True(("stream" == name) == (null != streamerr), name + ": only the failing stream throws");
+            if (null != streamerr)
+            {
+                sinks.AddRange(FormsOf(name, streamerr));
+            }
+            Assert.True(0 < explain.Count, name + ": the explain record was not filled");
+            sinks.AddRange(FormsOf(name + ":explain", explain));
         }
-        catch (Exception e)
-        {
-            streamerr = e;
-        }
-        Assert.True(null != streamerr, "the failing stream should throw");
-        sinks.AddRange(FormsOf("stream", streamerr));
 
         // The raw path returns its failure rather than throwing it.
         var raw = MakeSdk(Scenarios[3], sinks).Direct(new Dictionary<string, object?> { ["path"] = "raw" });

@@ -42,8 +42,11 @@ public static partial class SdkUtility
         // err.Status instead of reaching into err.ResultVal.
         sdkErr.Status = result.Status;
 
+        // Reached from RunOp's catch as well as from Done, and a stage that
+        // throws never reaches Done's cleaning.
         if (ctx.Ctrl.Explain != null)
         {
+            CleanExplainUtil(ctx);
             ctx.Ctrl.Explain["err"] = new Dictionary<string, object?>
             {
                 ["code"] = sdkErr.Code,

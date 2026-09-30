@@ -132,11 +132,23 @@ public abstract class ProjectNameEntityBase : IEntity
 
     // The catch path. A hook's exception never passed through MakeError, and
     // can quote the request. FeatureHook invokes by reflection, which wraps it.
+    // MakeError fires PreUnexpected; an error a hook throws there escapes it,
+    // even under throw false, so it is cleaned here.
     private object? Unexpected(Context ctx, Exception err)
     {
-        return utility.MakeError(ctx,
-            err is TargetInvocationException { InnerException: { } inner } ? inner : err);
+        try
+        {
+            return utility.MakeError(ctx, Unwrapped(err));
+        }
+        catch (Exception thrown) when (!ReferenceEquals(thrown, ctx.Ctrl.Err))
+        {
+            var cause = Unwrapped(thrown);
+            throw utility.Clean(ctx, cause) as Exception ?? cause;
+        }
     }
+
+    private static Exception Unwrapped(Exception err) =>
+        err is TargetInvocationException { InnerException: { } inner } ? inner : err;
 
     private object? RunPipeline(Context ctx, Action postDone)
     {
