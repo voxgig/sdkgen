@@ -122,13 +122,22 @@ local function make_options_util(ctx)
     opts = {}
   end
 
+  local config = ctx.config or {}
+  local cfgopts = {}
+  local co = config["options"]
+  if type(co) == "table" then
+    cfgopts = co
+  end
+
   -- The secret registry exists BEFORE validation, fed from the raw input, so
   -- the constructor's own rejection of a mistyped credential is clean too.
   local specclean = type(schema.OPTSPEC) == "table" and schema.OPTSPEC.clean or nil
+  local cfgclean = type(cfgopts.clean) == "table" and cfgopts.clean or {}
   local rawclean = type(opts.clean) == "table" and opts.clean or {}
   local cleancfg = cleanmod.make_clean_config(vs.merge({
     {},
     type(specclean) == "table" and vs.clone(specclean) or {},
+    vs.clone(cfgclean),
     vs.clone(rawclean),
   }))
   local cleanctx = { options = { __derived__ = { clean = cleancfg } } }
@@ -139,8 +148,10 @@ local function make_options_util(ctx)
     end
   end
   cleanmod.clean_add_sensitive(cleanctx, rawscan)
-  for _, raw in ipairs(cleanmod.splitvalues(rawclean.values)) do
-    cleanmod.clean_add(cleanctx, raw)
+  for _, block in ipairs({ cfgclean, rawclean }) do
+    for _, raw in ipairs(cleanmod.splitvalues(block.values)) do
+      cleanmod.clean_add(cleanctx, raw)
+    end
   end
 
   -- Feature add-order. options.feature may be given as an ordered LIST of
@@ -166,13 +177,6 @@ local function make_options_util(ctx)
       end
     end
     opts.feature = fmap
-  end
-
-  local config = ctx.config or {}
-  local cfgopts = {}
-  local co = config["options"]
-  if type(co) == "table" then
-    cfgopts = co
   end
 
   -- THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.

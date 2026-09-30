@@ -261,6 +261,26 @@ function ThrowFeature:init(_ctx, _options) end
 function ThrowFeature:PreResponse(ctx) error("hook saw " .. tojson(ctx.spec)) end
 
 
+-- A feature that refuses the operation with the SDK's own error, as rbac
+-- does, whose code quotes a registered value.
+local DenyFeature = {}
+DenyFeature.__index = DenyFeature
+setmetatable(DenyFeature, { __index = BaseFeature })
+
+function DenyFeature.new()
+  local self = setmetatable(BaseFeature.new(), DenyFeature)
+  self.name = "denyhook"
+  self.version = "0.0.1"
+  self.active = true
+  return self
+end
+
+function DenyFeature:init(_ctx, _options) end
+function DenyFeature:PrePoint(ctx)
+  ctx.out["point"] = ctx:make_error("denied:" .. CANARY.value, "denied")
+end
+
+
 local function response(status, data, headers)
   local h = { ["content-type"] = "application/json" }
   for k, v in pairs(headers or {}) do
@@ -490,6 +510,10 @@ describe("clean", function()
     local hooked = make_sdk(SCENARIOS[1], sinks, nil, { ThrowFeature.new() })
     assert.is_not_nil(drive(hooked, target, {}, sinks), "the throwing hook should fail the operation")
 
+    -- A feature's own error keeps its code, which is cleaned like the message.
+    local denied = drive(make_sdk(SCENARIOS[1], sinks, nil, { DenyFeature.new() }), target, {}, sinks)
+    assert.is_not_nil(denied, "the refusing hook should fail the operation")
+
     -- A registered value used as a property name is masked; names that
     -- mask alike are all kept.
     local named = hooked:get_utility().clean(hooked:get_root_ctx(),
@@ -527,6 +551,7 @@ describe("clean", function()
       end
     end
     assert.are.equal(MASK, header(spec.headers, "x-custom-token"))
+    assert.are.equal("denied:" .. MASK, denied.code)
 
     local explained = explains["ok/explain"] or {}
     assert.is_not_nil(explained.result, "the explain record should carry the result")
@@ -561,6 +586,22 @@ describe("clean", function()
           or string.find(text, base64(CANARY.apikey .. ":" .. CANARY.secret), 1, true) ~= nil,
         "the raw spec should carry the credential when clean is off")
     end
+  end)
+
+
+  it("the generated config's own clean block is honoured", function()
+    local utility = sdk.new({}):get_utility()
+    local config = { options = { clean = { keys = "zzsens", values = "CONFIG-SEEDED-1" } } }
+    local opts = utility.make_options({
+      utility = utility,
+      config = config,
+      options = { clean = { values = "CALLER-SEEDED-2" } },
+    })
+    local ctx = { options = opts }
+    assert.are.equal("a " .. MASK .. " b " .. MASK,
+      utility.clean(ctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2"))
+    assert.are.same({ my_zzsens = MASK, other = "y" }, utility.clean(ctx, { my_zzsens = "x", other = "y" }))
+    assert.are.same({ keys = "zzsens", values = "CONFIG-SEEDED-1" }, config.options.clean)
   end)
 end)
 `

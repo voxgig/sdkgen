@@ -61,8 +61,9 @@ local function make_error_util(ctx, err)
   -- `err.status` instead of reaching into `err.result`.
   sdk_err.status = result.status or -1
 
+  -- A hook's own error supplies the code as well as the message.
   if type(err) == "table" and getmetatable(err) == ProjectNameError then
-    sdk_err.code = err.code
+    sdk_err.code = ctx.utility.clean(ctx, err.code)
   end
 
   ctx.ctrl.err = sdk_err
