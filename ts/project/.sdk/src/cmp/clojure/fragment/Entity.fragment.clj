@@ -154,12 +154,15 @@
                      (vs/islist item) (mapv unwrap (vec item))
                      :else item))
           ;; Inbound: prefer the streaming feature's iterator; else fall back
-          ;; to the materialised items so stream always yields.
-          raw (if (and result (fn? (core/oget result :stream)))
-                (vec ((core/oget result :stream)))
-                (let [rd (when result (core/oget result :resdata))]
-                  (cond (vs/islist rd) (vec rd) (nil? rd) [] :else [rd])))
-          items (mapv unwrap raw)]
+          ;; to the materialised items so stream always yields. Realised after
+          ;; run-op has returned, so what the stream throws is cleaned here.
+          items (try
+                  (mapv unwrap
+                        (if (and result (fn? (core/oget result :stream)))
+                          (vec ((core/oget result :stream)))
+                          (let [rd (when result (core/oget result :resdata))]
+                            (cond (vs/islist rd) (vec rd) (nil? rd) [] :else [rd]))))
+                  (catch Throwable e (throw (core/clean-throwable ctx e))))]
       ;; A lazy sequence that checks `signal` between yields.
       (letfn [(lz [xs] (lazy-seq
                          (when (and (seq xs) (not (signalled?)))

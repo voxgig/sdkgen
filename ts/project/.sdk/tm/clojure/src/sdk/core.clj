@@ -1328,21 +1328,18 @@
                             (fn [[_ c]]
                               (clojure.core/str "-" (str/lower-case c))))))))
 
-(defn- omit-keys [m names]
-  (let [out (vs/jm)]
-    (doseq [^java.util.Map$Entry e (.entrySet ^java.util.Map m)]
-      (when-not (some #(= % (.getKey e)) names)
-        (.put ^java.util.Map out (.getKey e) (.getValue e))))
-    out))
-
 ;; A feature's name is not a field name: only the sensitive names inside its
-;; settings count, so `secrets` does not make every setting a secret.
+;; settings count, so `secrets` does not make every setting a secret. Entity
+;; blocks hold entity settings and seeded records, never a credential.
 (defn- clean-add-options [ctx opts]
-  (u-clean-add-sensitive ctx (omit-keys opts ["feature"]))
-  (let [feature (vs/getprop opts "feature")]
-    (if (vs/ismap feature)
-      (doseq [k (vs/keysof feature)] (u-clean-add-sensitive ctx (vs/getprop feature k)))
-      (u-clean-add-sensitive ctx feature))))
+  (let [noent #(omit-keys % ["entity"])
+        top (dissoc (into {} opts) "feature" "entity")
+        feature (vs/getprop opts "feature")]
+    (u-clean-add-sensitive ctx (cond-> top (contains? top "test") (update "test" noent)))
+    (doseq [fopts (cond (vs/ismap feature) (map #(vs/getprop feature %) (vs/keysof feature))
+                        (vs/islist feature) (vec feature)
+                        :else [feature])]
+      (u-clean-add-sensitive ctx (noent fopts)))))
 
 (defn u-make-options [ctx]
   (let [options (or (oget ctx :options) (vs/jm))
