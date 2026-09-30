@@ -9,16 +9,37 @@ static int mo_cmp_cstr(const void* a, const void* b) {
   return strcmp(*(const char* const*)a, *(const char* const*)b);
 }
 
+// The options to scan for secrets. The feature map is keyed by feature
+// names, not field names, so it is scanned as a list: `secrets` must not
+// make every setting of that feature a secret.
 static voxgig_value* mo_without(voxgig_value* val, const char* k1, const char* k2) {
   voxgig_value* out = v_map();
   if (!voxgig_is_map(val)) return out;
   voxgig_map* m = voxgig_as_map(val);
   for (size_t i = 0; i < m->len; i++) {
     const char* k = m->entries[i].key;
+    voxgig_value* v = m->entries[i].value;
     if ((k1 && 0 == strcmp(k, k1)) || (k2 && 0 == strcmp(k, k2))) continue;
-    setp(out, k, voxgig_retain(m->entries[i].value));
+    if (0 == strcmp(k, "feature") && voxgig_is_map(v)) {
+      voxgig_value* list = v_list();
+      voxgig_map* fm = voxgig_as_map(v);
+      for (size_t f = 0; f < fm->len; f++) {
+        voxgig_list_push(voxgig_as_list(list), voxgig_retain(fm->entries[f].value));
+      }
+      v = list;
+    } else {
+      voxgig_retain(v);
+    }
+    setp(out, k, v);
   }
   return out;
+}
+
+// A copy of the clean block, or an empty one: merge lets a missing value
+// replace everything merged before it, schema defaults included.
+static voxgig_value* mo_clean_block(voxgig_value* opts) {
+  voxgig_value* block = getp(opts, "clean");
+  return voxgig_is_map(block) ? voxgig_clone(block) : v_map();
 }
 
 voxgig_value* make_options_util(Context* ctx) {
@@ -100,12 +121,15 @@ voxgig_value* make_options_util(Context* ctx) {
    * Its block is shared by pointer: what is registered into `cleanopts`
    * here is what `opts.__derived__.clean` carries out below. */
   voxgig_value* cleancfg = clean_make_config(voxgig_merge(
-    clist(3, v_map(), voxgig_clone(getp(optspec, "clean")), voxgig_clone(getp(opts, "clean"))),
+    clist(4, v_map(), voxgig_clone(getp(optspec, "clean")),
+          mo_clean_block(cfgopts), mo_clean_block(opts)),
     VOXGIG_MAXDEPTH));
   voxgig_value* cleanopts = cmap(1, "__derived__", cmap(1, "clean", v_share(cleancfg)));
   clean_add_sensitive_opts(cleanopts, mo_without(opts, "clean", NULL));
-  {
-    voxgig_list* rawvals = voxgig_as_list(clean_split_values(getpath2(opts, "clean", "values")));
+  voxgig_value* valueblocks[2] = { cfgopts, opts };
+  for (int b = 0; b < 2; b++) {
+    voxgig_list* rawvals =
+      voxgig_as_list(clean_split_values(getpath2(valueblocks[b], "clean", "values")));
     for (size_t i = 0; i < rawvals->len; i++) {
       clean_add_opts(cleanopts, voxgig_as_string(rawvals->items[i]));
     }

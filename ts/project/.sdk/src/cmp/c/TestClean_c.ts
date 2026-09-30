@@ -282,6 +282,25 @@ static const FeatureVT THROW_VT = {
   throw_name, capture_active, capture_add_options, capture_init, throw_hook, NULL,
 };
 
+// A feature that refuses the operation with the SDK's own error, as rbac
+// does, whose code quotes a registered value; it records the error
+// PreUnexpected hands a hook.
+static const char* deny_name(Feature* f) { (void)f; return "denyhook"; }
+static void deny_hook(Feature* f, const char* name, Context* ctx) {
+  (void)f;
+  if (0 == strcmp(name, "PrePoint")) {
+    char code[128];
+    snprintf(code, sizeof(code), "denied:%s", CANARY_VALUE);
+    ctx_out_set_point_err(ctx, context_make_error(ctx, code, "denied"));
+  } else if (0 == strcmp(name, "PreUnexpected") && ctx->ctrl && ctx->ctrl->err) {
+    push_error("error", ctx->ctrl->err);
+  }
+}
+
+static const FeatureVT DENY_VT = {
+  deny_name, capture_active, capture_add_options, capture_init, deny_hook, NULL,
+};
+
 enum { SC_OK = 0, SC_NOTFOUND, SC_SERVER, SC_TRANSPORT, SC_NOTJSON, SC_COUNT };
 static const char* SC_NAMES[] = { "ok", "notfound", "server", "transport", "notjson" };
 
@@ -502,6 +521,28 @@ int main(void) {
   PNError* hookerr = drive(make_sdk(SC_OK, NULL, thrower), op, NULL);
   CHECK(hookerr != NULL, "the throwing hook should fail the operation");
 
+  // A feature's own error keeps its code, which is cleaned like the message:
+  // returned, handed to a hook, and cleaned where a step's error skips
+  // make_error.
+  Feature* denier = (Feature*)calloc(1, sizeof(CaptureFeature));
+  denier->vt = &DENY_VT;
+  PNError* denied = drive(make_sdk(SC_OK, NULL, denier), op, NULL);
+  CHECK(denied != NULL, "the refusing hook should fail the operation");
+  char steppedcode[128];
+  snprintf(steppedcode, sizeof(steppedcode), "stepped:%s", CANARY_VALUE);
+  PNError* stepped = pn_error_new(steppedcode, "stepped");
+  clean_error_util(sdk_get_root_ctx(mistyped), stepped);
+  push("stepped", pn_error_str(stepped));
+
+  // A client given no clean block at all masks by the schema defaults.
+  ${Name}SDK* bare = ${ident}_sdk_new(cmap(4,
+    "apikey", v_str(CANARY_APIKEY),
+    "secret", v_str(CANARY_SECRET),
+    "headers", cmap(1, "X-Custom-Token", v_str(CANARY_HEADER)),
+    "system", cmap(1, "fetch", vfn(transport_fn, (void*)(intptr_t)SC_NOTFOUND))));
+  PNError* barerr = drive(bare, op, NULL);
+  CHECK(barerr != NULL, "the 404 scenario must throw without a clean block");
+
   size_t nleaks = 0;
   char found[4096];
   for (size_t i = 0; i < NSINKS; i++) {
@@ -533,6 +574,16 @@ int main(void) {
     }
     CHECK_STR_EQ(header(headers, "x-custom-token"), MASK, "a custom token header is masked by name");
   }
+
+  {
+    char want[64];
+    snprintf(want, sizeof(want), "denied:%s", MASK);
+    CHECK_STR_EQ(denied ? denied->code : NULL, want, "a feature's own error code is masked");
+    snprintf(want, sizeof(want), "stepped:%s", MASK);
+    CHECK_STR_EQ(stepped->code, want, "clean_error masks the code");
+  }
+  CHECK_STR_EQ(barerr ? header(getp(barerr->spec, "headers"), "x-custom-token") : NULL, MASK,
+               "a client with no clean block masks by the schema defaults");
 
   CHECK(explained != NULL && voxgig_is_map(getp(explained, "result")),
         "the explain record should carry the result");
@@ -575,6 +626,44 @@ int main(void) {
     CHECK_STR_EQ(rm->entries[0].key, MASK, "a registered value used as a name is masked");
     CHECK_STR_EQ(rm->entries[1].key, alt, "a colliding masked name takes a counter");
     CHECK_STR_EQ(rm->entries[2].key, "plain", "an ordinary name is kept");
+  }
+
+  // The generated config's own clean block is honoured, and left unchanged.
+  {
+    voxgig_value* config = cmap(1, "options", cmap(1, "clean", cmap(2,
+      "keys", v_str("zzsens"), "values", v_str("CONFIG-SEEDED-1"))));
+    CtxSpec cs;
+    memset(&cs, 0, sizeof(cs));
+    cs.options = cmap(1, "clean", cmap(1, "values", v_str("CALLER-SEEDED-2")));
+    cs.config = config;
+    Context* cctx = make_context_util(cs, NULL);
+    cctx->options = make_options_util(cctx);
+    char want[128];
+    snprintf(want, sizeof(want), "a %s b %s", MASK, MASK);
+    CHECK_STR_EQ(clean_str(cctx, "a CONFIG-SEEDED-1 b CALLER-SEEDED-2"), want,
+                 "the config's and the caller's values are both masked");
+    voxgig_value* out = clean_util(cctx, cmap(2, "my_zzsens", v_str("x"), "other", v_str("y")));
+    CHECK_STR_EQ(get_str(out, "my_zzsens"), MASK, "the config's key name is sensitive");
+    CHECK_STR_EQ(get_str(out, "other"), "y", "an ordinary name is kept");
+    voxgig_value* cfgclean = getpath2(config, "options", "clean");
+    CHECK_STR_EQ(get_str(cfgclean, "keys"), "zzsens", "the config's keys are left alone");
+    CHECK_STR_EQ(get_str(cfgclean, "values"), "CONFIG-SEEDED-1",
+                 "the config's values are left alone");
+  }
+
+  // A feature's name is not a field name: a feature called secrets does not
+  // make its settings secret, though a sensitive field inside it still is.
+  {
+    ${Name}SDK* featured = ${ident}_sdk_new(cmap(2,
+      "apikey", v_str(CANARY_APIKEY),
+      "feature", cmap(1, "secrets", cmap(3,
+        "active", v_bool(false),
+        "name", v_str("ZZNAME-feat123"),
+        "token", v_str("ZZTOKEN-feat456")))));
+    char want[128];
+    snprintf(want, sizeof(want), "ZZNAME-feat123 %s", MASK);
+    CHECK_STR_EQ(clean_str(sdk_get_root_ctx(featured), "ZZNAME-feat123 ZZTOKEN-feat456"), want,
+                 "only the sensitive field of a feature is registered");
   }
 
   TEST_SUMMARY("clean");
