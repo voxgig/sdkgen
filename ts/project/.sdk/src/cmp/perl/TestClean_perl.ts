@@ -69,6 +69,7 @@ my %CANARY = (
   'secret' => 'CANARY-SECRET-w3e8r5t2y6',
   'header' => 'CANARY-HEADER-z1x4c7v0b3',
   'value' => 'CANARY-VALUE-n5m8b2v9c4',
+  'config' => 'CANARY-CONFIG-h6j3k8l2m5',
 );
 
 my $MASK = '[redacted]';
@@ -186,7 +187,17 @@ sub response {
 
   sub PreRequest { my ($s, $ctx) = @_; push @{ $s->{sinks} }, main::forms('ctx@PreRequest', $ctx); return }
   sub PreResponse { my ($s, $ctx) = @_; push @{ $s->{sinks} }, main::forms('ctx@PreResponse', $ctx); return }
-  sub PreUnexpected { my ($s, $ctx) = @_; push @{ $s->{sinks} }, main::forms('ctx@PreUnexpected', $ctx); return }
+
+  # The SDK's own error as a hook reads it, which an observability feature
+  # logs.
+  sub PreUnexpected {
+    my ($s, $ctx) = @_;
+    push @{ $s->{sinks} }, main::forms('ctx@PreUnexpected', $ctx);
+    my $err = $ctx->{ctrl}{err};
+    push @{ $s->{sinks} }, main::forms('ctrl.err@PreUnexpected', $err)
+      if Scalar::Util::blessed($err) && $err->isa('${Name}Error');
+    return;
+  }
 }
 
 # A feature that dies from inside the pipeline, quoting the request it saw:
@@ -222,6 +233,8 @@ my @SCENARIOS = (
     my ($url) = @_;
     return (undef, "socket hang up (URL was: \\"$url\\")");
   }],
+  # The SDK's own error, its code quoting a registered value.
+  ['coded', sub { return (undef, ${Name}Error->new("denied_$CANARY{apikey}", 'coded failure')) }],
   ['notjson', sub {
     return ({
       'status' => 200, 'statusText' => 'OK', 'headers' => {},
@@ -386,6 +399,24 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
     'a registered value used as a property name is masked, collisions kept');
   push @sinks, forms('named', $named);
 
+  # The generated config's own clean block is read beside the caller's, and
+  # is not changed by it.
+  my $util = $hooked->get_utility();
+  my $cfgclean = { 'keys' => 'zzsens', 'values' => $CANARY{config} };
+  my $built = $util->{make_options}->($util->{make_context}->({
+    'utility' => $util,
+    'config' => { 'options' => { 'clean' => $cfgclean } },
+    'options' => { 'clean' => { 'values' => $CANARY{value} } },
+  }, undef));
+  my $cfgctx = $util->{make_context}->({ 'options' => $built }, undef);
+  my $seeded = $util->{clean}->($cfgctx, "config $CANARY{config} caller $CANARY{value}");
+  push @sinks, { 'name' => 'config-clean', 'text' => "$seeded" };
+  is($seeded, "config $MASK caller $MASK", "the config's clean values are registered");
+  is_deeply($util->{clean}->($cfgctx, { 'my_zzsens' => 'x', 'other' => 'y' }),
+    { 'my_zzsens' => $MASK, 'other' => 'y' }, "the config's clean keys apply");
+  is_deeply($cfgclean, { 'keys' => 'zzsens', 'values' => $CANARY{config} },
+    "the config's clean block is unchanged");
+
   my @leaked = grep { @{ $_->{found} } }
     map { { 'name' => $_->{name}, 'found' => [ leaks($_->{text}) ] } } @sinks;
 
@@ -419,6 +450,10 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
     }
   }
   is(header($notfound->{spec}{headers}, 'x-custom-token'), $MASK, 'x-custom-token is masked');
+
+  my $coded = $errors{'coded/throw'};
+  ok(Scalar::Util::blessed($coded) && $coded->isa('${Name}Error')
+    && $coded->{code} eq "denied_$MASK", 'the coded error keeps its code, masked');
 
   my $explained = $explains{'ok/explain'} || {};
   ok(defined $explained->{result}, 'the explain record carries the result');

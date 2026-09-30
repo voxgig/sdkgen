@@ -90,19 +90,25 @@ $REGISTRY{make_options} = sub {
   $opts = {} unless Voxgig::Struct::ismap($opts);
   delete $opts->{extend};
 
+  my $config = $ctx->{config} || {};
+  my $cfgopts = Voxgig::Struct::ismap($config->{options}) ? $config->{options} : {};
+
   # The secret registry exists BEFORE validation, fed from the raw input, so
   # the constructor's own rejection of a mistyped credential is clean too.
   my $cleancfg = ProjectNameCleanSupport::make_config(Voxgig::Struct::merge([
     {},
     grep { Voxgig::Struct::ismap($_) }
-      (Voxgig::Struct::clone(ProjectNameSchema::optspec()->{clean}), $opts->{clean}),
+      (Voxgig::Struct::clone(ProjectNameSchema::optspec()->{clean}),
+        Voxgig::Struct::clone($cfgopts->{clean}), $opts->{clean}),
   ]));
   my $cleanctx = { 'options' => { '__derived__' => { 'clean' => $cleancfg } } };
   my %rawscan = %$opts;
   delete $rawscan{clean};
   ProjectNameCleanSupport::add_sensitive($cleanctx, \%rawscan);
-  for my $raw (@{ ProjectNameCleanSupport::splitvalues(ProjectNameHelpers::gpath($opts, 'clean.values')) }) {
-    ProjectNameCleanSupport::add($cleanctx, $raw);
+  for my $block ($cfgopts, $opts) {
+    for my $raw (@{ ProjectNameCleanSupport::splitvalues(ProjectNameHelpers::gpath($block, 'clean.values')) }) {
+      ProjectNameCleanSupport::add($cleanctx, $raw);
+    }
   }
 
   # Feature add-order. options.feature may be given as an ordered ARRAY of
@@ -126,9 +132,6 @@ $REGISTRY{make_options} = sub {
     }
     $opts->{feature} = \%fmap;
   }
-
-  my $config = $ctx->{config} || {};
-  my $cfgopts = Voxgig::Struct::ismap($config->{options}) ? $config->{options} : {};
 
   # THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
   #
