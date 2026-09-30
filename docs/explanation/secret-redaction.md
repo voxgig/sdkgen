@@ -13,6 +13,10 @@ name is sensitive (a custom auth header, a feature credential), every value
 in `clean.values`, the Basic credential it composes, every value the
 `secrets` feature resolves or exchanges, and the credentials embedded in a
 proxy URL.
+Only field names count. The keys under `feature` name features, so the
+`secrets` feature does not make its own settings secret. An `entity` block
+holds per-entity settings and the records `SDK.test()` seeds, keyed by
+entity name and id, and registration does not read it.
 Each value is stored with its base64, percent-encoded and JSON-escaped
 forms. Wherever a registered form appears in a string that leaves the SDK,
 it is replaced by the mask. The SDK never has to guess what a secret looks
@@ -84,6 +88,9 @@ The `debug` feature's `redact` option adds header names on top of
   returns that key, because an entity records the query it sent as its
   match. Like `client.options()`, it is a way to read state back, and every
   printed form of the entity masks it.
+- A Rust hook that panics is not caught. The process's panic hook prints
+  the message where the panic happens, before any code could clean it, so
+  a hook must not panic with a credential in its message.
 - Raw values are visible in a debugger, and to a tool that annotates an
   exception where it is thrown. PHP's Xdebug, in develop mode, writes the
   arguments of every stack frame onto the exception after the SDK has
