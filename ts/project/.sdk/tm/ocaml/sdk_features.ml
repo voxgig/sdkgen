@@ -1730,7 +1730,7 @@ let raw_request (client : sdk_client) (fetchargs : value) : value =
     let url = match getp fetchdef "url" with Str s -> s | _ -> "" in
     let (fetched, fetch_err) = u.u_fetcher ctx url fetchdef in
     (match fetch_err with
-     | Some fe -> jo [("ok", Bool false); ("err", err_to_value fe)]
+     | Some fe -> jo [("ok", Bool false); ("err", u.u_clean ctx (err_to_value fe))]
      | None ->
        if is_noval fetched || fetched = Null then
          jo [("ok", Bool false); ("err", err_to_value (ctx_make_error ctx "direct_no_response" "response: undefined"))]

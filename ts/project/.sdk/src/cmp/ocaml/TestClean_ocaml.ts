@@ -336,6 +336,10 @@ let () =
                let url = match getelem args (Num 0.) with Str s -> s | _ -> "" in
                (List.nth scenarios 1).s_respond url (getelem args (Num 1.))))])]) in
       let barerr = drive bare target (empty_map ()) sinks in
+      (* The raw path returns its failure rather than raising it. *)
+      let direct = Sdk_client.direct (make_sdk (List.nth scenarios 3) sinks []) (jo [("path", Str "raw")]) in
+      check "a transport failure should fail direct()" (getp direct "ok" = Bool false);
+      value_forms sinks "direct" direct;
       let leaked = List.filter (fun (_, text) -> leaks text <> []) !sinks in
       Printf.printf "clean: swept %d surface(s), %d leak(s)\\n%!" (List.length !sinks) (List.length leaked);
       if leaked <> [] then
