@@ -433,6 +433,22 @@ ${candidates(Name, entity)}
 
     add(sinks, data_forms("nested", nested))
 
+    # A client given no clean block at all masks by the schema defaults.
+    [_ok, {_nf, notfound_respond} | _] = scenarios()
+
+    bare =
+      ${Name}.new(
+        S.jm([
+          "apikey", @canary.apikey,
+          "secret", @canary.secret,
+          "headers", S.jm(["X-Custom-Token", @canary.header]),
+          "utility", S.jm(["fetcher", fn _ctx, url, fd -> notfound_respond.(url, fd) end])
+        ])
+      )
+
+    barerr = drive(bare, target, S.jm([]), sinks)
+    assert barerr != nil, "the 404 scenario must fail without a clean block"
+
     all = sink_list(sinks)
     leaked = Enum.filter(all, fn s -> leaks(s.text) != [] end)
 
@@ -467,6 +483,7 @@ ${candidates(Name, entity)}
     assert denied.code == "denied:" <> @mask
     assert raised.code == "raised:" <> @mask
     assert S.getpath(nested, "err.code") == "nested:" <> @mask
+    assert header(S.getprop(barerr.spec, "headers"), "x-custom-token") == @mask
 
     explained = explains["ok/explain"]
     result = if explained != nil, do: S.getprop(explained, "result"), else: nil
@@ -503,6 +520,22 @@ ${candidates(Name, entity)}
     assert S.getprop(out, @mask <> "#1") == 2
     assert S.getprop(out, "plain") == 3
     assert "ZZVAL-abc123" not in S.keysof(out)
+  end
+
+  # A feature's name is not a field name: a feature called secrets does not
+  # make its settings secret, though a sensitive field inside it still is.
+  test "a feature's name is read as a name" do
+    client =
+      ${Name}.new(
+        S.jm([
+          "apikey", @canary.apikey,
+          "feature",
+          S.jm(["secrets", S.jm(["active", false, "name", "ZZNAME-feat123", "token", "ZZTOKEN-feat456"])])
+        ])
+      )
+
+    assert ${Name}.Utility.clean_impl(${Name}.get_root_ctx(client), "ZZNAME-feat123 ZZTOKEN-feat456") ==
+             "ZZNAME-feat123 " <> @mask
   end
 
   test "the generated config's own clean block is honoured" do

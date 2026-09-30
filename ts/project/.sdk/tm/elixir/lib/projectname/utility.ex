@@ -685,7 +685,7 @@ defmodule ProjectName.Utility do
     cleancfg = make_clean_config(cleanraw)
     cleanctx = S.jm(["options", S.jm(["__derived__", S.jm(["clean", cleancfg])])])
 
-    clean_add_sensitive(cleanctx, omit_keys(opts0, ["clean"]))
+    clean_add_sensitive(cleanctx, secret_scan(opts0, ["clean"]))
 
     Enum.each([cfgopts, opts0], fn src ->
       Enum.each(splitvalues(S.getpath(src, "clean.values")), fn raw -> clean_add_impl(cleanctx, raw) end)
@@ -813,9 +813,26 @@ defmodule ProjectName.Utility do
     S.setprop(opts, "__derived__", derived)
 
     # Again over the merged result: the config's own defaults can carry one.
-    clean_add_sensitive(S.jm(["options", opts]), omit_keys(opts, ["clean", "__derived__"]))
+    clean_add_sensitive(S.jm(["options", opts]), secret_scan(opts, ["clean", "__derived__"]))
 
     opts
+  end
+
+  # The options to scan for secrets. The feature map is keyed by feature
+  # names, not field names, so it is scanned as a list: `secrets` must not
+  # make every setting of that feature a secret.
+  defp secret_scan(opts, names) do
+    out = S.jm([])
+
+    Enum.each(H.entries(opts), fn {k, v} ->
+      cond do
+        k in names -> nil
+        k == "feature" and S.ismap(v) -> S.setprop(out, k, S.jt(Enum.map(H.entries(v), &elem(&1, 1))))
+        true -> S.setprop(out, k, v)
+      end
+    end)
+
+    out
   end
 
   # ---- make_point ----------------------------------------------------------
