@@ -172,7 +172,7 @@ function EntyClass:stream(action, args, callopts)
     return false
   end
 
-  return coroutine.wrap(function()
+  local co = coroutine.create(function()
     utility.feature_hook(ctx, "PrePoint")
     local point, err = utility.make_point(ctx)
     ctx.out["point"] = point
@@ -247,6 +247,23 @@ function EntyClass:stream(action, args, callopts)
       end
     end
   end)
+
+  -- An error raised while the caller iterates leaves through the same catch
+  -- path as an operation's.
+  return function()
+    if coroutine.status(co) == "dead" then
+      return nil
+    end
+    local ok, item = coroutine.resume(co)
+    if ok then
+      return item
+    end
+    local err = self:_unexpected(ctx, item)
+    if err ~= nil then
+      error(err, 0)
+    end
+    return nil
+  end
 end
 
 
@@ -268,9 +285,14 @@ function EntyClass:_run_op(ctx, post_done)
   if ok then
     return out, err
   end
+  return nil, self:_unexpected(ctx, out)
+end
 
+
+-- The raised error, cleaned; nil when the caller switched throwing off.
+function EntyClass:_unexpected(ctx, raised)
   local clean = self._utility.clean
-  local cleanerr = clean(ctx, out)
+  local cleanerr = clean(ctx, raised)
   ctx.ctrl.err = cleanerr
 
   local explain = ctx.ctrl.explain
@@ -290,9 +312,9 @@ function EntyClass:_run_op(ctx, post_done)
   end
 
   if ctx.ctrl.throw_err == false then
-    return nil, nil
+    return nil
   end
-  return nil, cleanerr
+  return cleanerr
 end
 
 

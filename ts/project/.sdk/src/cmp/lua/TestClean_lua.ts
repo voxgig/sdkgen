@@ -281,6 +281,27 @@ function DenyFeature:PrePoint(ctx)
 end
 
 
+-- A stream that fails while the caller iterates it, quoting a credential.
+local StreamThrowFeature = {}
+StreamThrowFeature.__index = StreamThrowFeature
+setmetatable(StreamThrowFeature, { __index = BaseFeature })
+
+function StreamThrowFeature.new()
+  local self = setmetatable(BaseFeature.new(), StreamThrowFeature)
+  self.name = "streamthrow"
+  self.version = "0.0.1"
+  self.active = true
+  return self
+end
+
+function StreamThrowFeature:init(_ctx, _options) end
+function StreamThrowFeature:PreDone(ctx)
+  ctx.result.stream = function()
+    return function() error("stream saw " .. CANARY.apikey) end
+  end
+end
+
+
 local function response(status, data, headers)
   local h = { ["content-type"] = "application/json" }
   for k, v in pairs(headers or {}) do
@@ -514,6 +535,15 @@ describe("clean", function()
     local denied = drive(make_sdk(SCENARIOS[1], sinks, nil, { DenyFeature.new() }), target, {}, sinks)
     assert.is_not_nil(denied, "the refusing hook should fail the operation")
 
+    -- Iterating a stream runs inside the same catch path as the operation.
+    local streamed = make_sdk(SCENARIOS[1], sinks, nil, { StreamThrowFeature.new() })
+    local sent = streamed[target.accessor](streamed)
+    local sok, streamerr = pcall(function()
+      for _ in sent:stream(target.op, { reqmatch = copy(target.match) }) do end
+    end)
+    assert.is_false(sok, "the failing stream should throw")
+    append(sinks, surfaces("stream", streamerr))
+
     -- A client given no clean block at all masks by the schema defaults.
     local bare = sdk.new({
       apikey = CANARY.apikey,
@@ -589,6 +619,10 @@ describe("clean", function()
     local err = drive(client, target, {}, sinks)
     assert.is_not_nil(err)
 
+    -- Explaining a failure must not cost it its error.
+    local explained = drive(make_sdk(SCENARIOS[2], {}, { active = false }), target, { explain = {} }, {})
+    assert.are.equal(err.msg, explained and explained.msg, "with clean off, explain lost the error")
+
     local seen = 0
     for _, s in ipairs(sinks) do
       if 0 < #leaks(s.text) then
@@ -608,14 +642,23 @@ describe("clean", function()
 
 
   -- A feature's name is not a field name: a feature called secrets does not
-  -- make its settings secret, though a sensitive field inside it still is.
+  -- make its settings secret, though a sensitive field inside it still is. An
+  -- entity block, of per-entity settings or seeded records keyed by entity
+  -- name and id, is not read at all.
   it("a feature's name is read as a name", function()
     local client = sdk.new({
       apikey = CANARY.apikey,
-      feature = { secrets = { active = false, name = "ZZNAME-feat123", token = "ZZTOKEN-feat456" } },
+      feature = {
+        secrets = { active = false, name = "ZZNAME-feat123", token = "ZZTOKEN-feat456" },
+        test = { active = false, entity = { zztoken = { ZZTOKEN01 = { note = "PLAINRECORD-t5r3e1w9" } } } },
+      },
+      entity = { zztoken = { alias = { zzkey = "PLAINALIAS-m2n4b6v8" } } },
     })
-    assert.are.equal("ZZNAME-feat123 " .. MASK,
-      client:get_utility().clean(client:get_root_ctx(), "ZZNAME-feat123 ZZTOKEN-feat456"))
+    local clean = client:get_utility().clean
+    local ctx = client:get_root_ctx()
+    assert.are.equal("ZZNAME-feat123 " .. MASK, clean(ctx, "ZZNAME-feat123 ZZTOKEN-feat456"))
+    assert.are.equal("record PLAINRECORD-t5r3e1w9", clean(ctx, "record PLAINRECORD-t5r3e1w9"))
+    assert.are.equal("alias PLAINALIAS-m2n4b6v8", clean(ctx, "alias PLAINALIAS-m2n4b6v8"))
   end)
 
 

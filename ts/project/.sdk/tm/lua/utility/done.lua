@@ -14,9 +14,16 @@ local function done_util(ctx)
         explain[k] = v
       end
     end
+    -- A copy: with clean off, explain.result is the live result make_error reads.
     local explain_result = explain["result"]
     if type(explain_result) == "table" then
-      explain_result["err"] = nil
+      local pruned = {}
+      for k, v in pairs(explain_result) do
+        if k ~= "err" then
+          pruned[k] = v
+        end
+      end
+      explain["result"] = pruned
     end
   end
 
