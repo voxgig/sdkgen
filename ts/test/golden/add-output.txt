@@ -345,18 +345,18 @@ src/cmp/csharp/ReadmeTopQuick_csharp.ts 46679cb3e2a7
 src/cmp/csharp/ReadmeTopTest_csharp.ts a4e7d74be219
 src/cmp/csharp/Schema_csharp.ts a898466bc43d
 src/cmp/csharp/SdkError_csharp.ts 1cd61a4cfec7
-src/cmp/csharp/TestClean_csharp.ts 0c5d19e70a94
+src/cmp/csharp/TestClean_csharp.ts 5142aef34c22
 src/cmp/csharp/TestDirect_csharp.ts ff43a0b759b9
 src/cmp/csharp/TestEntity_csharp.ts 64e47b480e35
 src/cmp/csharp/Test_csharp.ts 881ebab279a4
 src/cmp/csharp/fragment/Entity.fragment.cs ccdd760779fe
-src/cmp/csharp/fragment/EntityBase.fragment.cs 597524a3badd
+src/cmp/csharp/fragment/EntityBase.fragment.cs 4cb77f51a79d
 src/cmp/csharp/fragment/EntityCreateOp.fragment.cs 872a578961dc
 src/cmp/csharp/fragment/EntityListOp.fragment.cs d016cce5eafa
 src/cmp/csharp/fragment/EntityLoadOp.fragment.cs 3d8bdbd27972
 src/cmp/csharp/fragment/EntityRemoveOp.fragment.cs 31ef15229ea0
 src/cmp/csharp/fragment/EntityUpdateOp.fragment.cs bced8d6613a6
-src/cmp/csharp/fragment/Main.fragment.cs faa3207932a5
+src/cmp/csharp/fragment/Main.fragment.cs 0c983eeee8fd
 src/cmp/csharp/fragment/SdkError.fragment.cs f10488189e97
 src/cmp/csharp/tsconfig.json 720a3f229019
 src/cmp/csharp/utility_csharp.ts 0f589be03efc
@@ -392,7 +392,7 @@ tm/csharp/test/StructUtilityTest.cs bcc257581aee
 tm/csharp/test/sdk-test-control.json 1368770ffc61
 tm/csharp/test/vendor/omni/Runner.cs e57e4071d881
 tm/csharp/test/vendor/omni/Util.cs 184853df3946
-tm/csharp/utility/Clean.cs 1a4f28b897fd
+tm/csharp/utility/Clean.cs 2c203bc67092
 tm/csharp/utility/Done.cs c09195a568cf
 tm/csharp/utility/FeatureAdd.cs 5a5f0fd34beb
 tm/csharp/utility/FeatureHook.cs 923e6654ee06
@@ -402,7 +402,7 @@ tm/csharp/utility/Graphql.cs 6b8bdb457f11
 tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs 95c1ef2dbbeb
 tm/csharp/utility/MakeFetchDef.cs 89aca56837ef
-tm/csharp/utility/MakeOptions.cs 49a771da3b18
+tm/csharp/utility/MakeOptions.cs 0324dda06e2b
 tm/csharp/utility/MakePoint.cs c0182b4343c0
 tm/csharp/utility/MakeRequest.cs 32657a32522e
 tm/csharp/utility/MakeResponse.cs 86cf8db8ebd2
@@ -778,7 +778,7 @@ src/cmp/js/ReadmeTopQuick_js.ts 7ab59b7dc87d
 src/cmp/js/ReadmeTopTest_js.ts 1fa9a087871f
 src/cmp/js/Schema_js.ts 557790433a08
 src/cmp/js/SdkError_js.ts c3c526f2b624
-src/cmp/js/TestClean_js.ts bb38cf6a5eaf
+src/cmp/js/TestClean_js.ts 43d9acdf4444
 src/cmp/js/TestDefinition_js.ts 9bd45df6b9d9
 src/cmp/js/TestDirect_js.ts 825e6fd48af9
 src/cmp/js/TestEntity_js.ts 47daa51d19ce
@@ -815,7 +815,7 @@ tm/js/src/feature/README.md 630422c5567f
 tm/js/src/feature/base/BaseFeature.js 29d380a635f6
 tm/js/src/feature/test/TestFeature.js 64cd93422162
 tm/js/src/types.js f49c15c403b4
-tm/js/src/utility/CleanUtility.js d3722e64a74c
+tm/js/src/utility/CleanUtility.js 8fe607398143
 tm/js/src/utility/DoneUtility.js d1457eb69ac8
 tm/js/src/utility/FeatureAddUtility.js 7053d7f60b27
 tm/js/src/utility/FeatureHookUtility.js 55ecc0949c72
@@ -825,7 +825,7 @@ tm/js/src/utility/GraphqlUtility.js e8aed31713c4
 tm/js/src/utility/MakeContextUtility.js bbc1c9839da2
 tm/js/src/utility/MakeErrorUtility.js 7125f4ed791f
 tm/js/src/utility/MakeFetchDefUtility.js 624a772dedfa
-tm/js/src/utility/MakeOptionsUtility.js 0bbd2d6dfc23
+tm/js/src/utility/MakeOptionsUtility.js f098b5c26d84
 tm/js/src/utility/MakePointUtility.js 2f9abfa751fd
 tm/js/src/utility/MakeRequestUtility.js c586819bd2e6
 tm/js/src/utility/MakeResponseUtility.js 8e24747b5152
@@ -1727,12 +1727,12 @@ src/cmp/scala/ReadmeTopHowto_scala.ts 1169e3db1008
 src/cmp/scala/ReadmeTopQuick_scala.ts c862c80f21d9
 src/cmp/scala/ReadmeTopTest_scala.ts 8b1837c964cb
 src/cmp/scala/Schema_scala.ts 24932d354519
-src/cmp/scala/TestClean_scala.ts 63139b514a21
+src/cmp/scala/TestClean_scala.ts f01d5b947e50
 src/cmp/scala/TestDirect_scala.ts 26adc8d507d7
 src/cmp/scala/TestEntity_scala.ts 2396146bab02
 src/cmp/scala/Test_scala.ts 2fb85405a87f
 src/cmp/scala/fragment/Entity.fragment.scala 84b22d8892fa
-src/cmp/scala/fragment/EntityBase.fragment.scala c71ea901f88d
+src/cmp/scala/fragment/EntityBase.fragment.scala 7be099758e29
 src/cmp/scala/fragment/EntityCreateOp.fragment.scala e590dac67f21
 src/cmp/scala/fragment/EntityListOp.fragment.scala b67e9794e0ea
 src/cmp/scala/fragment/EntityLoadOp.fragment.scala cd8574cf6924
@@ -1752,7 +1752,7 @@ tm/scala/core/Operation.scala 0010d42accb3
 tm/scala/core/Point.scala ef199bf59853
 tm/scala/core/Response.scala 21d459961d52
 tm/scala/core/Result.scala 7d45eefe7847
-tm/scala/core/SdkClient.scala 805df91d7ad3
+tm/scala/core/SdkClient.scala 34e21172c1d2
 tm/scala/core/SdkError.scala 428cfdf49186
 tm/scala/core/Spec.scala 5da09308e8a8
 tm/scala/core/Types.scala 931d5c55babc
@@ -1762,7 +1762,7 @@ tm/scala/feature/BaseFeature.scala 0c6439fca620
 tm/scala/feature/CacheFeature.scala dde3197ebb96
 tm/scala/feature/ClienttrackFeature.scala a25ea3610993
 tm/scala/feature/CostFeature.scala f2777eba14cd
-tm/scala/feature/DebugFeature.scala 8bcad4fe4c22
+tm/scala/feature/DebugFeature.scala f5dfb38ae865
 tm/scala/feature/FeatureOptions.scala 5151555aa53a
 tm/scala/feature/IdempotencyFeature.scala 02a3f77337cd
 tm/scala/feature/LogFeature.scala 1e62678fa436
@@ -1816,7 +1816,7 @@ tm/scala/feature/secrets/sekreto/plugins/Sigv4.scala 116d50af73ff
 tm/scala/sdktest/OmniResolver.scala 2bbd5639ca7c
 tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
 tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
-tm/scala/sdktest/SdkTestMain.scala 204bb4c0509f
+tm/scala/sdktest/SdkTestMain.scala dae2e6ae02eb
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/StructCorpus.scala c6be9c1da3bb
 tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 47e00ea6de8e
@@ -1850,9 +1850,9 @@ tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
 tm/scala/utility/Fetcher.scala 04226d1f9cf1
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
-tm/scala/utility/Make.scala c500fb6fa3b5
+tm/scala/utility/Make.scala c0bfcafdbead
 tm/scala/utility/MakeSpec.scala 08289e20fcf3
-tm/scala/utility/Misc.scala 3dc7b27b4d9a
+tm/scala/utility/Misc.scala 991d82451bb7
 tm/scala/utility/Prepare.scala 04f2eb7c0904
 tm/scala/utility/Register.scala 12658a8e9bd5
 tm/scala/utility/Results.scala eaf1c9bb3189
@@ -1993,7 +1993,7 @@ src/cmp/ts/ReadmeTopQuick_ts.ts 74b733b901e7
 src/cmp/ts/ReadmeTopTest_ts.ts 791abb1924cf
 src/cmp/ts/Schema_ts.ts 28d8eedbb21a
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
-src/cmp/ts/TestClean_ts.ts e4ae20224b3b
+src/cmp/ts/TestClean_ts.ts 6837608ba57d
 src/cmp/ts/TestDefinition_ts.ts 8f242daf10a0
 src/cmp/ts/TestDirect_ts.ts e23c500cadc1
 src/cmp/ts/TestEntity_ts.ts fc92d6169a52
@@ -2031,7 +2031,7 @@ tm/ts/src/feature/base/BaseFeature.ts 4c0e468f5313
 tm/ts/src/feature/test/TestFeature.ts 37983ab82fef
 tm/ts/src/tsconfig.json c1b52cc621fb
 tm/ts/src/types.ts 5e1f5518bba6
-tm/ts/src/utility/CleanUtility.ts 1eb950f0541e
+tm/ts/src/utility/CleanUtility.ts 270e1471e070
 tm/ts/src/utility/DoneUtility.ts e0d566a5b81a
 tm/ts/src/utility/FeatureAddUtility.ts c391267d72a9
 tm/ts/src/utility/FeatureHookUtility.ts 95985140459e
@@ -2041,7 +2041,7 @@ tm/ts/src/utility/GraphqlUtility.ts bd8ce7cadbad
 tm/ts/src/utility/MakeContextUtility.ts 50caf1a75850
 tm/ts/src/utility/MakeErrorUtility.ts fc006ea4e4ae
 tm/ts/src/utility/MakeFetchDefUtility.ts 940b95f0d2b0
-tm/ts/src/utility/MakeOptionsUtility.ts 8b30e2328760
+tm/ts/src/utility/MakeOptionsUtility.ts 8a26d45ebd12
 tm/ts/src/utility/MakePointUtility.ts 838d0dd64da6
 tm/ts/src/utility/MakeRequestUtility.ts ea936f81c49b
 tm/ts/src/utility/MakeResponseUtility.ts a294cf7183ee
