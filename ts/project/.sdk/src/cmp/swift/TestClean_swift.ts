@@ -280,6 +280,21 @@ final class ${Name}CleanTest: XCTestCase {
     }
   }
 
+  // A stream that succeeds, yielding the result's items.
+  final class StreamOkFeature: BaseFeature {
+    override init() {
+      super.init()
+      name = "streamok"
+      version = "0.0.1"
+      active = true
+    }
+    override func preDone(_ ctx: Context) {
+      guard let result = ctx.result else { return }
+      let items: [Value] = result.resdata.asList?.items ?? (isNil(result.resdata) ? [] : [result.resdata])
+      result.stream = { items }
+    }
+  }
+
   static let scenarios: [Scenario] = [
     Scenario(name: "ok", respond: { _, _ in
       response(200, .map(vm(("id", .string("i1")), ("name", .string("n1")))),
@@ -412,6 +427,8 @@ ${candidateLines}
   }
 
   static func drive(_ sdk: ${Name}SDK, _ target: Target, _ ctrl: VMap, _ box: SinkBox) -> Error? {
+    // A caller may keep the record it passed rather than read ctrl["explain"].
+    let held = ctrl.entries["explain"]?.asMap
     var out: Value = .noval
     var err: Error? = nil
     do {
@@ -422,6 +439,7 @@ ${candidateLines}
     if let e = err { box.sinks += formsOf("error", e) }
     if !isNil(out) { box.sinks += formsOf("result", out) }
     if let explain = ctrl.entries["explain"]?.asMap { box.sinks += formsOf("explain", explain) }
+    if let h = held, h !== ctrl.entries["explain"]?.asMap { box.sinks += formsOf("explain:held", h) }
     return err
   }
 
@@ -461,9 +479,23 @@ ${candidateLines}
     box.sinks += ${Name}CleanTest.formsOf("mistyped", ${Name}SDK(mistyped))
 
     // An error a feature hook raises, quoting the request, skips makeError.
+    // A swift hook cannot throw, so no variant fails from PreUnexpected.
     let hooked = ${Name}CleanTest.makeSdk(${Name}CleanTest.scenarios[0], box, nil, [FailFeature()])
-    let hookerr = ${Name}CleanTest.drive(hooked, target, VMap(), box)
+    let hookerr = ${Name}CleanTest.drive(hooked, target, vm(("explain", .map(VMap()))), box)
     XCTAssertNotNil(hookerr, "the failing hook should fail the operation")
+
+    // The explain record a stream call carries is cleaned however the stream
+    // is fed. A swift stream cannot raise, so there is no failing variant,
+    // and the record is complete once stream() returns.
+    let streams: [(String, [BaseFeature])] = [("stream-ok", [StreamOkFeature()]), ("stream-plain", [])]
+    for (label, extra) in streams {
+      let explain = VMap()
+      let streamed = ${Name}CleanTest.makeSdk(${Name}CleanTest.scenarios[0], box, nil, extra)
+      XCTAssertNoThrow(try target.candidate.accessor(streamed).stream(
+        target.op, nil, vm(("ctrl", .map(vm(("explain", .map(explain))))))), label + ": the stream should not fail")
+      XCTAssertFalse(explain.entries.isEmpty, label + ": the explain record was not filled")
+      box.sinks += ${Name}CleanTest.formsOf(label + ":explain", explain)
+    }
 
     // The generated config's own clean block is read beside the caller's,
     // and is not changed by it.
