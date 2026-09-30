@@ -177,13 +177,15 @@ public final class ProjectNameSDK {
   private func rawRequest(_ fetchargsIn: ProjectNameSdk.VMap?) -> ProjectNameSdk.VMap {
     let utility = self.utility
 
+    // The error is returned rather than passed through makeError, so it is
+    // cleaned here.
     let fetchdef: ProjectNameSdk.VMap
     do {
       fetchdef = try prepare(fetchargsIn)
     } catch {
       let r = ProjectNameSdk.VMap()
       r.entries["ok"] = .bool(false)
-      r.entries["err"] = .nat(error)
+      r.entries["err"] = utility.clean(rootctx, .nat(error))
       return r
     }
 
@@ -200,7 +202,7 @@ public final class ProjectNameSDK {
     } catch {
       let r = ProjectNameSdk.VMap()
       r.entries["ok"] = .bool(false)
-      r.entries["err"] = .nat(error)
+      r.entries["err"] = utility.clean(ctx, .nat(error))
       return r
     }
 

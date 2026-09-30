@@ -515,6 +515,13 @@ ${candidateLines}
     let fplain = cleanUtil(fctx, .string("kind PLAINSETTING-q8w2e4r6")).asString
     let ftoken = cleanUtil(fctx, .string("token FEATTOKEN-z9y8x7w6")).asString
 
+    // direct() returns its error rather than throwing it. Only the SDK's own
+    // error can be cleaned in place, so the coded transport is the one used.
+    let raw = ${Name}CleanTest.makeSdk(${Name}CleanTest.scenarios[4], box).direct(vm(("path", .string("raw"))))
+    XCTAssertEqual(gp(raw, "ok"), .bool(false))
+    let rawerr = gp(raw, "err").asNative as? ${Name}Error
+    box.sinks += ${Name}CleanTest.formsOf("direct", rawerr)
+
     let leaked = box.sinks
       .map { (name: $0.name, found: leaks($0.text)) }
       .filter { !$0.found.isEmpty }
@@ -549,6 +556,7 @@ ${candidateLines}
 
     XCTAssertEqual(fplain, "kind PLAINSETTING-q8w2e4r6")
     XCTAssertEqual(ftoken, "token " + mask)
+    XCTAssertEqual(rawerr?.code, "denied_" + mask)
 
     let explained = explains["ok/explain"] ?? VMap()
     let result = gp(explained, "result")
