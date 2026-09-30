@@ -1,6 +1,7 @@
 package SCALAPACKAGE.entity
 
 import java.util.{ArrayList, LinkedHashMap, Iterator => JIterator, List => JList, Map => JMap}
+import scala.util.control.NonFatal
 import SCALAPACKAGE.core.{Context, Helpers, SdkClient, SdkEntity, Utility}
 import SCALAPACKAGE.utility.struct.Struct
 
@@ -125,6 +126,11 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
         // An error already finalised by makeError must not be wrapped twice.
         if (err eq ctx.ctrl.err) throw err
         utility.makeError(ctx, err)
+      // Scala has no checked exceptions: a hook can throw a plain Exception,
+      // whose message can quote the request.
+      case NonFatal(err) =>
+        utility.makeError(ctx, new RuntimeException(
+          if (err.getMessage == null) String.valueOf(err) else err.getMessage))
     }
   }
 

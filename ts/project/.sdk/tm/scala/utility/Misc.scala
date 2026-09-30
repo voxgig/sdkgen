@@ -284,9 +284,19 @@ object Clean {
     while (it.hasNext) {
       val e = it.next()
       val s = snapshot(cfg, e.getValue, e.getKey, depth + 1, seen)
-      if (s ne DROP) out.put(String.valueOf(e.getKey), s)
+      if (s ne DROP) out.put(cleanName(cfg, out, String.valueOf(e.getKey)), s)
     }
     out
+  }
+
+  // A registered value used as a map key is masked like any other string;
+  // keys that mask alike take a counter, so none is lost.
+  private def cleanName(cfg: CleanConfig, out: JMap[String, Object], key: String): String = {
+    val name = cleanString(cfg, key)
+    if (name == key || !out.containsKey(name)) return name
+    var i = 1
+    while (out.containsKey(name + "#" + i)) i += 1
+    name + "#" + i
   }
 
   private[utility] def cleanWith(cfg: CleanConfig, value: Object): Object = {
@@ -297,9 +307,14 @@ object Clean {
       case err: SdkError =>
         // Cleaned in place, since it is about to be thrown.
         err.msg = cleanString(cfg, err.msg)
+        err.code = cleanString(cfg, err.code)
         err.result = snapshot(cfg, err.result, "result", 1, new IdentityHashMap[Object, Object]())
         err.spec = snapshot(cfg, err.spec, "spec", 1, new IdentityHashMap[Object, Object]())
         return err
+      // A throwable's message is fixed, so a foreign one leaves as a cleaned
+      // copy of the SDK's own error, without the raw one as its cause.
+      case t: Throwable =>
+        return new SdkError("", cleanString(cfg, if (t.getMessage == null) String.valueOf(t) else t.getMessage), null)
       case _ =>
     }
 
@@ -311,7 +326,33 @@ object Clean {
 
   def cleanKey(ctx: Context, key: Object): Boolean = sensitiveKey(cleanConfig(ctx), key)
 
-  private[utility] def cleanKeyWith(cfg: CleanConfig, key: Object): Boolean = sensitiveKey(cfg, key)
+  // Every scalar under a sensitive name, at any depth and of any shape: a
+  // credential mistyped as a map or a number is still a credential, and a
+  // message about it can quote it.
+  private[utility] def addSensitiveWith(cfg: CleanConfig, v: Object): Unit =
+    addSensitive(cfg, v, false, 0, new IdentityHashMap[Object, Object]())
+
+  private def addSensitive(cfg: CleanConfig, v: Object, under: Boolean, depth: Int,
+      seen: IdentityHashMap[Object, Object]): Unit = {
+    if (v == null || MAXDEPTH <= depth) return
+    v match {
+      case s: String => if (under) registerValue(cfg, s)
+      case n: java.lang.Number => if (under) registerValue(cfg, Struct.stringify(n))
+      case _ if seen.containsKey(v) =>
+      case m: JMap[_, _] =>
+        seen.put(v, v)
+        val it = m.asInstanceOf[JMap[Object, Object]].entrySet().iterator()
+        while (it.hasNext) {
+          val e = it.next()
+          addSensitive(cfg, e.getValue, under || sensitiveKey(cfg, e.getKey), depth + 1, seen)
+        }
+      case l: JList[_] =>
+        seen.put(v, v)
+        val it = l.asInstanceOf[JList[Object]].iterator()
+        while (it.hasNext) addSensitive(cfg, it.next(), under, depth + 1, seen)
+      case _ =>
+    }
+  }
 
   // The caller holds the explain map, so the cleaned copy is written back
   // into it rather than swapped for it.

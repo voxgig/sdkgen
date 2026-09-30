@@ -2,6 +2,7 @@ package SCALAPACKAGE.core
 
 import java.util.{ArrayList, LinkedHashMap, List => JList, Map => JMap}
 import java.util.function.Supplier
+import scala.util.control.NonFatal
 import SCALAPACKAGE.utility.struct.Struct
 
 // Shared client runtime for the ProjectName SDK. The generated
@@ -244,15 +245,15 @@ abstract class SdkClient(options0: JMap[String, Object]) {
 
     val fetchdef =
       try this.prepare(fetchargs)
-      catch { case err: RuntimeException =>
-        out.put("ok", java.lang.Boolean.FALSE); out.put("err", err); return out
+      catch { case NonFatal(err) =>
+        out.put("ok", java.lang.Boolean.FALSE); out.put("err", cleanErr(ctx, err)); return out
       }
 
     val url = fetchdef.get("url")
     val fetched =
       try utility.fetcher(ctx, url match { case s: String => s; case _ => "" }, fetchdef)
-      catch { case err: RuntimeException =>
-        out.put("ok", java.lang.Boolean.FALSE); out.put("err", err); return out
+      catch { case NonFatal(err) =>
+        out.put("ok", java.lang.Boolean.FALSE); out.put("err", cleanErr(ctx, err)); return out
       }
 
     if (fetched == null) {
@@ -294,6 +295,12 @@ abstract class SdkClient(options0: JMap[String, Object]) {
         out.put("err", ctx.makeError("direct_invalid", "invalid response type"))
         out
     }
+  }
+
+  // A raw request returns its error rather than passing it through makeError.
+  private def cleanErr(ctx: Context, err: Throwable): Object = this.utility.clean(ctx, err) match {
+    case t: Throwable => t
+    case _ => err
   }
 }
 
