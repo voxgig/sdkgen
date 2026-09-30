@@ -49,6 +49,26 @@ local function densify_lists(v, seen)
   return v
 end
 
+-- The options to scan for secrets. The feature map is keyed by feature
+-- names, not field names, so it is scanned as a list: `secrets` must not
+-- make every setting of that feature a secret.
+local function secret_scan(opts, omit)
+  local out = {}
+  for k, v in pairs(opts) do
+    if not omit[k] then
+      if k == "feature" and type(v) == "table" and not vs.islist(v) then
+        local list = {}
+        for _, fopts in pairs(v) do
+          list[#list + 1] = fopts
+        end
+        v = list
+      end
+      out[k] = v
+    end
+  end
+  return out
+end
+
 local function copy_data(v)
   if type(v) ~= 'table' then
     return v
@@ -141,13 +161,7 @@ local function make_options_util(ctx)
     vs.clone(rawclean),
   }))
   local cleanctx = { options = { __derived__ = { clean = cleancfg } } }
-  local rawscan = {}
-  for k, v in pairs(opts) do
-    if k ~= "clean" and k ~= "extend" then
-      rawscan[k] = v
-    end
-  end
-  cleanmod.clean_add_sensitive(cleanctx, rawscan)
+  cleanmod.clean_add_sensitive(cleanctx, secret_scan(opts, { clean = true, extend = true }))
   for _, block in ipairs({ cfgclean, rawclean }) do
     for _, raw in ipairs(cleanmod.splitvalues(block.values)) do
       cleanmod.clean_add(cleanctx, raw)
@@ -368,13 +382,8 @@ local function make_options_util(ctx)
   end
 
   -- Again over the merged result: the config's own defaults can carry one.
-  local scan = {}
-  for k, v in pairs(opts) do
-    if k ~= "clean" and k ~= "extend" and k ~= "__derived__" then
-      scan[k] = v
-    end
-  end
-  cleanmod.clean_add_sensitive(cleanctx, scan)
+  cleanmod.clean_add_sensitive(cleanctx,
+    secret_scan(opts, { clean = true, extend = true, __derived__ = true }))
 
   opts["__derived__"] = {
     clean = cleancfg,

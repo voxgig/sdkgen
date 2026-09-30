@@ -514,6 +514,18 @@ describe("clean", function()
     local denied = drive(make_sdk(SCENARIOS[1], sinks, nil, { DenyFeature.new() }), target, {}, sinks)
     assert.is_not_nil(denied, "the refusing hook should fail the operation")
 
+    -- A client given no clean block at all masks by the schema defaults.
+    local bare = sdk.new({
+      apikey = CANARY.apikey,
+      secret = CANARY.secret,
+      headers = { ["X-Custom-Token"] = CANARY.header },
+      utility = {
+        fetcher = function(_ctx, url, fetchdef) return SCENARIOS[2].respond(url, fetchdef) end,
+      },
+    })
+    local barerr = drive(bare, target, {}, sinks)
+    assert.is_not_nil(barerr, "the 404 scenario must fail without a clean block")
+
     -- A registered value used as a property name is masked; names that
     -- mask alike are all kept.
     local named = hooked:get_utility().clean(hooked:get_root_ctx(),
@@ -552,6 +564,7 @@ describe("clean", function()
     end
     assert.are.equal(MASK, header(spec.headers, "x-custom-token"))
     assert.are.equal("denied:" .. MASK, denied.code)
+    assert.are.equal(MASK, header((barerr.spec or {}).headers, "x-custom-token"))
 
     local explained = explains["ok/explain"] or {}
     assert.is_not_nil(explained.result, "the explain record should carry the result")
@@ -586,6 +599,18 @@ describe("clean", function()
           or string.find(text, base64(CANARY.apikey .. ":" .. CANARY.secret), 1, true) ~= nil,
         "the raw spec should carry the credential when clean is off")
     end
+  end)
+
+
+  -- A feature's name is not a field name: a feature called secrets does not
+  -- make its settings secret, though a sensitive field inside it still is.
+  it("a feature's name is read as a name", function()
+    local client = sdk.new({
+      apikey = CANARY.apikey,
+      feature = { secrets = { active = false, name = "ZZNAME-feat123", token = "ZZTOKEN-feat456" } },
+    })
+    assert.are.equal("ZZNAME-feat123 " .. MASK,
+      client:get_utility().clean(client:get_root_ctx(), "ZZNAME-feat123 ZZTOKEN-feat456"))
   end)
 
 

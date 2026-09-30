@@ -526,11 +526,9 @@ describe("secrets", function()
 
     local NOTAPROVIDER = "not a provider or a provider spec"
 
-    -- Clean is off: a refusal quotes the secrets options, and clean
-    -- registers every value under them.
     local function refused_with(providers, fragment)
       local w = make_wire()
-      local client = secrets_client(w, { feature = chain(providers), clean = { active = false } })
+      local client = secrets_client(w, { feature = chain(providers) })
 
       local sf = secrets_feature_of(client)
       assert.is_not_nil(sf:init_error(), "construction must record the failure")
@@ -618,14 +616,12 @@ describe("secrets", function()
         -- "connection refused", httpjson raises sekreto's `cannot reach`,
         -- and the request is refused with zero calls. A helper that was
         -- never built answers "did not answer" instead - a different
-        -- message, so the assertion tells the two apart. Clean is off, as
-        -- for refused_with: the message quotes the provider's options.
+        -- message, so the assertion tells the two apart.
         local w = make_wire()
         local client = secrets_client(w, {
           feature = chain({
             { kind = "hashicorp", addr = "http://127.0.0.1:9", token = "t0" },
           }),
-          clean = { active = false },
         })
         local res = client:direct({ path = "/probe" })
         assert.is_false(res.ok)
@@ -645,7 +641,6 @@ describe("secrets", function()
           feature = chain({
             { kind = "hashicorp", addr = "http://127.0.0.1:9", token = "t0" },
           }),
-          clean = { active = false },
         })
         local res = client:direct({ path = "/probe" })
         assert.is_false(res.ok)
