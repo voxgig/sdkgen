@@ -1257,15 +1257,25 @@ let fetcher_util (ctx : ctx) (fullurl : string) (fetchdef : value) : (value * sd
 (* ------------------------------------------------------------------ *)
 
 
+let noentity (settings : value) : value =
+  match settings with
+  | Map _ ->
+    let out = empty_map () in
+    List.iter (fun k -> if k <> "entity" then setp out k (getp settings k)) (keysof settings);
+    out
+  | v -> v
+
 (* The options to scan for secrets. The feature map is keyed by feature
  * names, not field names, so it is scanned as a list: `secrets` must not
- * make every setting of that feature a secret. *)
+ * make every setting of that feature a secret. Entity blocks hold entity
+ * settings and seeded records, never a credential, so none is scanned. *)
 let secret_scan (opts : value) (names : string list) : value =
   let out = empty_map () in
   List.iter (fun k ->
-      if not (List.mem k names) then
+      if k <> "entity" && not (List.mem k names) then
         match k, getp opts k with
-        | "feature", (Map _ as fm) -> setp out k (ja (List.map (getp fm) (keysof fm)))
+        | "feature", (Map _ as fm) -> setp out k (ja (List.map (fun f -> noentity (getp fm f)) (keysof fm)))
+        | "test", v -> setp out k (noentity v)
         | _, v -> setp out k v) (keysof opts);
   out
 

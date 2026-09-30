@@ -1,3 +1,15 @@
+(* The catch path every entity call leaves through: an error that never
+ * passed through make_error leaves cleaned. *)
+let unexpected (ctx : ctx) (e : exn) : 'a =
+  match e with
+  | Sdk_error_exc _ ->
+    (* #PreUnexpected-Hook *)
+    (* A hook may raise the SDK's own error, which make_error never saw. *)
+    raise (clean_exn ctx e)
+  | _ ->
+    (* An error a hook raised never passed through make_error. *)
+    raise (clean_exn ctx e)
+
 (* Run the operation pipeline, firing feature hooks between stages via the
  * generated hook-marker lines. post_done runs after the PreDone stage, just
  * before done. Errors from any stage go through make_error (which either
@@ -26,11 +38,4 @@ let run_op (ctx : ctx) (post_done : unit -> unit) : value =
        post_done ();
        utility.u_done ctx
      with Op_return v -> v)
-  with
-  | Sdk_error_exc _ as e ->
-    (* #PreUnexpected-Hook *)
-    (* A hook may raise the SDK's own error, which make_error never saw. *)
-    raise (clean_exn ctx e)
-  | e ->
-    (* An error a hook raised never passed through make_error. *)
-    raise (clean_exn ctx e)
+  with e -> unexpected ctx e

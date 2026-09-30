@@ -69,7 +69,9 @@ function candidates(entity: any[]): string {
         rank: OP_ORDER[op] ?? 2,
         text: `  { c_name = "${ocamlString(e.name + '.' + op)}";
     c_params = [${pointParams(e.op[op]).map((p) => '"' + ocamlString(p) + '"').join('; ')}];
-    c_run = (fun sdk m ctrl -> let ent = Sdk_client.${fn} sdk Noval in ${run}) };`,
+    c_run = (fun sdk m ctrl -> let ent = Sdk_client.${fn} sdk Noval in ${run});
+    c_stream = (fun sdk m ->
+        let ent = Sdk_client.${fn} sdk Noval in List.of_seq (ent.e_stream "${op}" m Noval)) };`,
       })
     }
   })
@@ -240,13 +242,28 @@ let raise_feature () : feature =
           raise (Sdk_error_exc { err_code = "raised:" ^ canary_of "value"; err_msg = "raised";
                                  err_result = Noval; err_spec = Noval })) }
 
+(* A stream whose producer fails while the caller consumes it, quoting a
+ * credential. *)
+let stream_throw_feature () : feature =
+  { f_name = "streamthrow"; f_version = "0.0.1"; f_active = true; f_options = Noval;
+    f_init = (fun _ _ -> ());
+    f_hook = (fun name ctx ->
+        match name, ctx.c_result with
+        | "PreDone", Some result ->
+          result.rt_stream <- Some (fun () -> failwith ("stream saw " ^ canary_of "apikey"))
+        | _ -> ()) }
+
 let code_of (e : exn option) : string =
   match e with Some (Sdk_error_exc er) -> er.err_code | _ -> "<no SDK error>"
+
+let msg_of (e : exn option) : string =
+  match e with Some (Sdk_error_exc er) -> er.err_msg | _ -> "<no SDK error>"
 
 type candidate = {
   c_name : string;
   c_params : string list;
   c_run : sdk_client -> value -> value -> value;
+  c_stream : sdk_client -> value -> value list;
 }
 
 type target = { t_cand : candidate; t_params : string list }
@@ -328,6 +345,12 @@ let () =
           target (empty_map ()) sinks in
       let raised = drive (make_sdk ~extra:[raise_feature ()] (List.hd scenarios) sinks [])
           target (empty_map ()) sinks in
+      (* Consuming a stream runs inside the same catch path as the operation. *)
+      let streamed = make_sdk ~extra:[stream_throw_feature ()] (List.hd scenarios) sinks [] in
+      let streamerr =
+        try ignore (target.t_cand.c_stream streamed (args target.t_params)); None
+        with e -> error_forms sinks "stream" e; Some e in
+      check "the failing stream should throw" (streamerr <> None);
       (* A client given no clean block at all masks by the schema defaults. *)
       let bare = Sdk_client.make (jo [
           ("apikey", Str (canary_of "apikey")); ("secret", Str (canary_of "secret"));
@@ -384,6 +407,12 @@ let () =
       let err = drive sdk target (empty_map ()) sinks in
       check "with clean off, nothing showed the canary: the sweep is blind"
         (List.exists (fun (_, t) -> leaks t <> []) !sinks);
+      (* Explaining a failure must not cost it its error. *)
+      let quiet : sinks = ref [] in
+      let explained = drive (make_sdk (List.nth scenarios 1) quiet [("active", Bool false)])
+          target (jo [("explain", empty_map ())]) quiet in
+      check ("with clean off, explain lost the error: " ^ msg_of explained)
+        (msg_of explained = msg_of err);
       match err with
       | Some (Sdk_error_exc e) ->
         if not auth_suppressed then begin
@@ -412,17 +441,27 @@ let () =
       check "the registered name is gone" (not (List.mem "ZZVAL-abc123" (keysof out))))
 
 (* A feature's name is not a field name: a feature called secrets does not
- * make its settings secret, though a sensitive field inside it still is. *)
+ * make its settings secret, though a sensitive field inside it still is. An
+ * entity block, of per-entity settings or seeded records keyed by entity name
+ * and id, is not read at all. *)
 let () =
   test "clean.a_feature_name_is_read_as_a_name" (fun () ->
+      let seeded = jo [("zztoken", jo [("ZZTOKEN01", jo [("note", Str "PLAINRECORD-t5r3e1w9")])])] in
       let client = Sdk_client.make (jo [
           ("apikey", Str (canary_of "apikey"));
-          ("feature", jo [("secrets", jo [("active", Bool false); ("name", Str "ZZNAME-feat123");
-                                          ("token", Str "ZZTOKEN-feat456")])])]) in
+          ("feature", jo [
+              ("secrets", jo [("active", Bool false); ("name", Str "ZZNAME-feat123");
+                              ("token", Str "ZZTOKEN-feat456")]);
+              ("test", jo [("active", Bool false); ("entity", seeded)])]);
+          ("entity", jo [("zztoken", jo [("alias", jo [("zzkey", Str "PLAINALIAS-m2n4b6v8")])])])]) in
       match client.cl_rootctx with
       | Some ctx ->
         check_vstr "only the sensitive field is masked"
-          (clean_util ctx (Str "ZZNAME-feat123 ZZTOKEN-feat456")) ("ZZNAME-feat123 " ^ mask)
+          (clean_util ctx (Str "ZZNAME-feat123 ZZTOKEN-feat456")) ("ZZNAME-feat123 " ^ mask);
+        check_vstr "a record seeded under an entity block is not registered"
+          (clean_util ctx (Str "record PLAINRECORD-t5r3e1w9")) "record PLAINRECORD-t5r3e1w9";
+        check_vstr "an entity's own settings are not registered"
+          (clean_util ctx (Str "alias PLAINALIAS-m2n4b6v8")) "alias PLAINALIAS-m2n4b6v8"
       | None -> failwith "the client has no root context")
 
 let () =
