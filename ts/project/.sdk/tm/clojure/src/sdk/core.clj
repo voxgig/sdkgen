@@ -1335,6 +1335,15 @@
         (.put ^java.util.Map out (.getKey e) (.getValue e))))
     out))
 
+;; A feature's name is not a field name: only the sensitive names inside its
+;; settings count, so `secrets` does not make every setting a secret.
+(defn- clean-add-options [ctx opts]
+  (u-clean-add-sensitive ctx (omit-keys opts ["feature"]))
+  (let [feature (vs/getprop opts "feature")]
+    (if (vs/ismap feature)
+      (doseq [k (vs/keysof feature)] (u-clean-add-sensitive ctx (vs/getprop feature k)))
+      (u-clean-add-sensitive ctx feature))))
+
 (defn u-make-options [ctx]
   (let [options (or (oget ctx :options) (vs/jm))
         custom-utils (vs/getprop options "utility")]
@@ -1411,7 +1420,7 @@
                           (doseq [k (vs/keysof src)] (.put ^java.util.Map out k (vs/getprop src k)))))
                       out))
           cleanctx (atom {:options (vs/jm "__derived__" (vs/jm "clean" cleancfg))})
-          _ (u-clean-add-sensitive cleanctx (omit-keys opts0 ["clean"]))
+          _ (clean-add-options cleanctx (omit-keys opts0 ["clean"]))
           _ (doseq [raw (concat (splitvalues (vs/getpath cfgopts "clean.values"))
                                 (splitvalues (vs/getpath opts0 "clean.values")))]
               (u-clean-add cleanctx raw))
@@ -1476,7 +1485,7 @@
             derived (vs/jm "clean" cleancfg "featureorder" feature-order)]
         (.put ^java.util.Map opts "__derived__" derived)
         ;; Again over the merged result: the config's own defaults can carry one.
-        (u-clean-add-sensitive (atom {:options opts}) (omit-keys opts ["clean" "__derived__"]))
+        (clean-add-options (atom {:options opts}) (omit-keys opts ["clean" "__derived__"]))
         opts))))
 
 ;; ---------------------------------------------------------------------------

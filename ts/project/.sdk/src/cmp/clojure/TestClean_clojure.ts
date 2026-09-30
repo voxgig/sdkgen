@@ -262,7 +262,7 @@ ${candidates(entity)}
   (t/run-check rec "clean-no-credential-leaves-the-sdk"
     (fn []
       (if-let [target (usable-op)]
-        (let [sinks (atom []) errors (atom {}) explains (atom {})]
+        (let [sinks (atom []) errors (atom {}) explains (atom {}) featured (atom {})]
           (doseq [scenario SCENARIOS
                   variant [{:name "throw" :ctrl (fn [] (vs/jm))}
                            {:name "explain" :ctrl (fn [] (vs/jm "explain" (vs/jm)))}
@@ -309,6 +309,20 @@ ${candidates(entity)}
                        (vs/jm "my_zzsens" MASK "other" "y") "the config's clean keys apply")
             (t/is-deep (vs/getpath config "options.clean") (vs/jm "keys" "zzsens" "values" (:config CANARY))
                        "the config's clean block is unchanged"))
+          ;; With no clean option at all, the schema defaults still apply.
+          (let [bare (api/make-sdk (vs/jm "apikey" (:apikey CANARY) "secret" (:secret CANARY)
+                                          "headers" (vs/jm "X-Custom-Token" (:header CANARY))
+                                          "utility" (vs/jm "fetcher" (fn [_fctx url fd]
+                                                                       ((:respond (nth SCENARIOS 1)) url fd)))))]
+            (t/is-some (drive bare target (vs/jm "explain" (vs/jm)) sinks) "the 404 should fail without a clean option"))
+          ;; A feature's name is not a field name: only the sensitive names
+          ;; inside its settings register.
+          (let [sdk (api/make-sdk (vs/jm "apikey" (:apikey CANARY)
+                                         "feature" (vs/jm "zzsecrets" (vs/jm "active" false "kind" "PLAINSETTING-q8w2e4r6")
+                                                          "zzfeat" (vs/jm "active" false "apitoken" "FEATTOKEN-z9y8x7w6"))))
+                root (core/client-root-ctx sdk)]
+            (reset! featured {:plain (core/u-clean root "kind PLAINSETTING-q8w2e4r6")
+                              :token (core/u-clean root "token FEATTOKEN-z9y8x7w6")}))
           (let [leaked (filterv (fn [s] (seq (leaks (:text s)))) @sinks)]
             (println (str "clean: swept " (count @sinks) " surface(s), " (count leaked) " leak(s)"))
             (t/is-eq (count leaked) 0
@@ -341,6 +355,8 @@ ${candidates(entity)}
           (t/is-eq (:code (get @errors "direct/transport")) "transport" "direct() returns the fetcher's error")
           (t/is-eq (:code (get @errors "direct/coded")) (str "denied_" MASK)
                    "direct() returns the fetcher's error, its code masked")
+          (t/is-eq (:plain @featured) "kind PLAINSETTING-q8w2e4r6" "a feature's name does not register its settings")
+          (t/is-eq (:token @featured) (str "token " MASK) "a sensitive setting inside a feature registers")
           (let [explained (get @explains "ok/explain")
                 result (vs/getprop explained "result")]
             (t/is-some result "the explain record should carry the result")
