@@ -137,7 +137,7 @@ const SCENARIOS = [
 ]
 
 
-function makeSdk(scenario, sinks, cleanopts) {
+function makeSdk(scenario, sinks, cleanopts, extra) {
   const capture = (name) => (rec) => { sinks.push(...forms(name, rec)) }
   const feature = {}
   if (hasFeature('log')) {
@@ -160,7 +160,7 @@ function makeSdk(scenario, sinks, cleanopts) {
     headers: { 'X-Custom-Token': CANARY.header },
     clean: { values: CANARY.value, ...(cleanopts || {}) },
     feature,
-    extend: [new CaptureFeature(sinks)],
+    extend: [new CaptureFeature(sinks), ...(extra || [])],
     utility: {
       fetcher: async (_ctx, url, fetchdef) => scenario.respond(url, fetchdef),
     },
@@ -169,30 +169,52 @@ function makeSdk(scenario, sinks, cleanopts) {
 }
 
 
-// The first operation that completes against a plain 200 with no arguments
-// (a required path parameter would fail before the request is built).
+// The first operation that completes against a plain 200: with no
+// arguments, else with every path parameter its points declare filled in.
+// Resolves to { accessor, op, match }.
 async function usableOp() {
   const plain = new SDK({
     apikey: CANARY.apikey,
     utility: { fetcher: async () => response(200, { id: 'i1' }) },
   })
   const entities = plain._rootctx.config.entity || {}
+  const rank = (op) => (({ list: 0, load: 1 })[op] ?? 2)
   for (const m of Object.getOwnPropertyNames(Object.getPrototypeOf(plain)).sort()) {
     if (!/^[A-Z]/.test(m) || 'function' !== typeof plain[m]) { continue }
     let inst
     try { inst = plain[m]() } catch (_e) { continue }
     if (null == inst || 'string' !== typeof inst.name || null == entities[inst.name]) { continue }
-    const ops = Object.keys(entities[inst.name].op || {})
-      .sort((a, b) => (({ list: 0, load: 1 })[a] ?? 2) - (({ list: 0, load: 1 })[b] ?? 2))
-    for (const op of ops) {
-      try {
-        await plain[m]()[op]({}, {})
-        return { accessor: m, op }
+    const opdefs = entities[inst.name].op || {}
+    for (const op of Object.keys(opdefs).sort((a, b) => rank(a) - rank(b))) {
+      const filled = {}
+      for (const point of opdefs[op].points || []) {
+        for (const p of point?.args?.params || []) {
+          if ('string' === typeof p?.name) filled[p.name] = 'p1'
+        }
       }
-      catch (_e) { continue }
+      for (const match of [{}, filled]) {
+        try {
+          await plain[m]()[op]({ ...match }, {})
+          return { accessor: m, op, match }
+        }
+        catch (_e) { continue }
+      }
     }
   }
   return null
+}
+
+
+// A feature that throws from inside the pipeline, quoting the request it
+// saw: an error makeError never handled.
+class ThrowFeature extends BaseFeature {
+  name = 'throwhook'
+  version = '0.0.1'
+  active = true
+  init() { }
+  PreResponse(ctx) {
+    throw new Error('hook saw ' + JSON.stringify(ctx.spec))
+  }
 }
 
 
@@ -200,7 +222,7 @@ async function drive(sdk, target, ctrl, sinks) {
   let out = undefined
   let err = undefined
   try {
-    out = await sdk[target.accessor]()[target.op]({}, ctrl)
+    out = await sdk[target.accessor]()[target.op]({ ...target.match }, ctrl)
   }
   catch (e) {
     err = e
@@ -213,9 +235,11 @@ async function drive(sdk, target, ctrl, sinks) {
 
 
 describe('clean', () => {
-  test('no credential leaves the SDK in any form', async () => {
+  test('no credential leaves the SDK in any form', async (t) => {
     const target = await usableOp()
-    ok(null != target, 'no operation completes without arguments; nothing to sweep')
+    if (null == target) {
+      return t.skip('no operation of this SDK completes against a plain 200; nothing to sweep')
+    }
 
     const sinks = []
     const errors = {}
@@ -237,6 +261,28 @@ describe('clean', () => {
         sinks.push({ name: 'sdk:spread', text: inspect({ ...sdk }, { depth: 6 }) })
       }
     }
+
+    // A credential mistyped as an object is rejected by validation, whose
+    // message quotes the value it rejected.
+    let rejected = undefined
+    try {
+      new SDK({ apikey: { value: CANARY.apikey }, clean: { values: CANARY.value } })
+    }
+    catch (e) {
+      rejected = e
+    }
+    ok(null != rejected, 'a credential mistyped as an object should be rejected')
+    sinks.push(...forms('rejected', rejected))
+
+    // An error a feature hook throws, quoting the request, skips makeError.
+    const hooked = makeSdk(SCENARIOS[0], sinks, undefined, [new ThrowFeature()])
+    const hookerr = await drive(hooked, target, {}, sinks)
+    ok(null != hookerr, 'the throwing hook should fail the operation')
+
+    // The raw path returns its failure rather than throwing it.
+    const raw = await makeSdk(SCENARIOS[3], sinks).direct({ path: 'raw' })
+    ok(false === raw.ok && null != raw.err, 'a transport failure should fail direct()')
+    sinks.push(...forms('direct', raw.err))
 
     const leaked = sinks
       .map((s) => ({ name: s.name, found: leaks(s.text) }))
@@ -273,9 +319,11 @@ describe('clean', () => {
   })
 
 
-  test('the sweep can see a leak: clean switched off shows the credential', async () => {
+  test('the sweep can see a leak: clean switched off shows the credential', async (t) => {
     const target = await usableOp()
-    ok(null != target)
+    if (null == target) {
+      return t.skip('no operation of this SDK completes against a plain 200; nothing to sweep')
+    }
 
     const sinks = []
     const sdk = makeSdk(SCENARIOS[1], sinks, { active: false })

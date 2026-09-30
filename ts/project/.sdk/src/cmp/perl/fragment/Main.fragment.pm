@@ -244,7 +244,7 @@ sub _raw_request {
   my $url = defined $fetchdef->{url} ? $fetchdef->{url} : '';
   my ($fetched, $fetch_err) = $utility->{fetcher}->($ctx, $url, $fetchdef);
 
-  return { 'ok' => 0, 'err' => $fetch_err } if $fetch_err;
+  return { 'ok' => 0, 'err' => $utility->{clean}->($ctx, $fetch_err) } if $fetch_err;
 
   if (!defined $fetched) {
     return {

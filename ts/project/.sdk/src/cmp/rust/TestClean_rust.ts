@@ -4,6 +4,7 @@ import type {
 
 import {
   cmp,
+  configDefinition,
   each,
   File,
   Content,
@@ -27,8 +28,8 @@ const DIAGNOSTIC = ['log', 'debug', 'audit', 'telemetry', 'cost', 'metrics', 'cl
 
 // The canary sweep (twin of TestClean_ts). Rust is statically typed, so the
 // operation candidates the ts sweep finds by reflection are enumerated here
-// at generation time; the sweep still DRIVES them to find the first that
-// completes with empty arguments.
+// at generation time, each with the path parameters its config points
+// declare; the sweep still DRIVES them to find the first that completes.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
   const { target, rustcrate } = props
@@ -47,7 +48,9 @@ const TestClean = cmp(function TestClean(props: any) {
     .filter((name) => DIAGNOSTIC.includes(name))
     .sort()
 
-  const candidates: { name: string, fn: string, method: string, op: string }[] = []
+  const configEntity = configDefinition(model, target.name).def.entity || {}
+
+  const candidates: Candidate[] = []
   const entities = each(entityCollection(model)).filter((e: any) => false !== e.active)
   each(entities, (entity: ModelEntity) => {
     const method = rustMethodName(entity.name)
@@ -55,7 +58,10 @@ const TestClean = cmp(function TestClean(props: any) {
       .filter((op) => CRUD.includes(op))
       .sort((a, b) => CRUD.indexOf(a) - CRUD.indexOf(b))
     for (const op of ops) {
-      candidates.push({ name: entity.name + '.' + op, fn: 'drive_' + method + '_' + op, method, op })
+      candidates.push({
+        name: entity.name + '.' + op, fn: 'drive_' + method + '_' + op, method, op,
+        params: pointParams(configEntity[entity.name]?.op?.[op]),
+      })
     }
   })
 
@@ -65,30 +71,47 @@ const TestClean = cmp(function TestClean(props: any) {
 })
 
 
+type Candidate = { name: string, fn: string, method: string, op: string, params: string[] }
+
+
+// Every path parameter an operation's points declare, as the generated
+// config carries them (points[].args.params[].name).
+function pointParams(opdef: any): string[] {
+  const names: string[] = []
+  for (const point of opdef?.points || []) {
+    for (const p of point?.args?.params || []) {
+      if ('string' === typeof p?.name && !names.includes(p.name)) names.push(p.name)
+    }
+  }
+  return names
+}
+
+
 function render(spec: {
   Name: string,
   rustcrate: string,
   auth: { suppressed: boolean, where: string, name: string, basic: boolean },
   features: string[],
-  candidates: { name: string, fn: string, method: string, op: string }[],
+  candidates: Candidate[],
 }): string {
   const { Name, rustcrate, auth, features, candidates } = spec
 
   const drivers = candidates.map((c) => 'list' === c.op
-    ? `fn ${c.fn}(sdk: &Rc<${Name}SDK>, ctrl: Value) -> Result<Value, ${Name}Error> {
+    ? `fn ${c.fn}(sdk: &Rc<${Name}SDK>, mtch: Value, ctrl: Value) -> Result<Value, ${Name}Error> {
     sdk.${c.method}(Value::Noval)
-        .list(Value::empty_map(), ctrl)
+        .list(mtch, ctrl)
         .map(|items| Value::list(items.iter().map(|e| e.data(None)).collect()))
 }
 `
-    : `fn ${c.fn}(sdk: &Rc<${Name}SDK>, ctrl: Value) -> Result<Value, ${Name}Error> {
+    : `fn ${c.fn}(sdk: &Rc<${Name}SDK>, mtch: Value, ctrl: Value) -> Result<Value, ${Name}Error> {
     sdk.${c.method}(Value::Noval)
-        .${c.op}(Value::empty_map(), ctrl)
+        .${c.op}(mtch, ctrl)
         .map(|e| e.data(None))
 }
 `).join('\n')
 
-  const table = candidates.map((c) => `    ("${c.name}", ${c.fn}),`).join('\n')
+  const table = candidates.map((c) => `    ("${c.name}", ${c.fn}, &[${
+    c.params.map((p) => '"' + ruststr(p) + '"').join(', ')}]),`).join('\n')
 
   return `// Generated canary sweep (see TestClean_rust): no credential leaves the
 // SDK in any form, and the sweep can see one when clean is switched off.
@@ -99,6 +122,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use ${rustcrate}::core::helpers::{getp, jo, json_thunk, setp, vfn};
+use ${rustcrate}::utility::clean;
 use ${rustcrate}::utility::voxgigstruct as vs;
 use ${rustcrate}::{
     Context, Entity, Feature, FeatureRef, ${Name}Entity, ${Name}Error, ${Name}SDK, Value,
@@ -226,6 +250,30 @@ impl Feature for CaptureFeature {
     }
 }
 
+// A feature that fails the operation from inside the pipeline, quoting the
+// request it saw. A rust hook has no error return, so it fails the result:
+// an error make_error receives from a hook, not from the pipeline.
+struct ThrowFeature;
+
+impl Feature for ThrowFeature {
+    fn name(&self) -> String {
+        "throwhook".to_string()
+    }
+    fn active(&self) -> bool {
+        true
+    }
+    fn pre_response(&mut self, ctx: &Rc<Context>) {
+        let spec = match ctx.spec.borrow().clone() {
+            Some(s) => s.borrow().to_value(),
+            None => Value::Noval,
+        };
+        let err = ctx.make_error("hook", &format!("hook saw {}", vs::jsonify(&spec, None)));
+        if let Some(res) = ctx.result.borrow().clone() {
+            res.borrow_mut().err = Some(err);
+        }
+    }
+}
+
 fn response(status: i64, data: Value, headers: &[(&str, &str)]) -> Value {
     let h = jo(vec![("content-type", Value::str("application/json"))]);
     for (k, v) in headers {
@@ -303,7 +351,12 @@ fn transport(scenario: Scenario) -> Value {
     })
 }
 
-fn make_sdk(scenario: Scenario, sinks: &Sinks, cleanopts: Option<Value>) -> Rc<${Name}SDK> {
+fn make_sdk(
+    scenario: Scenario,
+    sinks: &Sinks,
+    cleanopts: Option<Value>,
+    extra: Vec<FeatureRef>,
+) -> Rc<${Name}SDK> {
     let feature = Value::empty_map();
     for name in FEATURES {
         let fopts = jo(vec![("active", Value::Bool(true))]);
@@ -338,36 +391,52 @@ fn make_sdk(scenario: Scenario, sinks: &Sinks, cleanopts: Option<Value>) -> Rc<$
     // construction (the \`extend\` option of the ts client).
     let f: FeatureRef = Rc::new(RefCell::new(CaptureFeature { sinks: sinks.clone() }));
     sdk.features.borrow_mut().push(f);
+    sdk.features.borrow_mut().extend(extra);
 
     sdk
 }
 
-type Drive = fn(&Rc<${Name}SDK>, Value) -> Result<Value, ${Name}Error>;
+type Drive = fn(&Rc<${Name}SDK>, Value, Value) -> Result<Value, ${Name}Error>;
 
 ${drivers}
 // Generated: every CRUD operation of every active entity, list and load
-// first (they need no body).
-const CANDIDATES: &[(&str, Drive)] = &[
+// first (they need no body), with the path parameters its points declare.
+const CANDIDATES: &[(&str, Drive, &[&str])] = &[
 ${table}
 ];
 
-// The first operation that completes against a plain 200 with no arguments
-// (a required path parameter would fail before the request is built).
-fn usable_op() -> Option<(&'static str, Drive)> {
+#[derive(Clone)]
+struct Target {
+    drive: Drive,
+    mtch: Value,
+}
+
+// The first operation that completes against a plain 200: with no
+// arguments, else with every path parameter its points declare filled in.
+fn usable_op() -> Option<Target> {
     let plain = ${Name}SDK::new(jo(vec![
         ("apikey", Value::str(CANARY_APIKEY)),
         ("system", jo(vec![("fetch", transport(Scenario::Ok))])),
     ]));
-    for (name, drive) in CANDIDATES {
-        if drive(&plain, Value::Noval).is_ok() {
-            return Some((name, *drive));
+    for (_name, drive, params) in CANDIDATES {
+        let filled = Value::empty_map();
+        for p in params.iter() {
+            setp(&filled, p, Value::str("p1"));
+        }
+        for mtch in [Value::empty_map(), filled] {
+            if drive(&plain, vs::clone(&mtch), Value::Noval).is_ok() {
+                return Some(Target { drive: *drive, mtch });
+            }
         }
     }
     None
 }
 
-fn drive(sdk: &Rc<${Name}SDK>, op: Drive, ctrl: Value, sinks: &Sinks) -> Option<${Name}Error> {
-    match op(sdk, ctrl) {
+const NOTHING_TO_SWEEP: &str =
+    "SKIP: no operation of this SDK completes against a plain 200; nothing to sweep";
+
+fn drive(sdk: &Rc<${Name}SDK>, target: &Target, ctrl: Value, sinks: &Sinks) -> Option<${Name}Error> {
+    match (target.drive)(sdk, vs::clone(&target.mtch), ctrl) {
         Ok(out) => {
             push_value(sinks, "result", &out);
             None
@@ -400,8 +469,10 @@ fn leaks(text: &str) -> Vec<String> {
 
 #[test]
 fn clean_no_credential_leaves_the_sdk_in_any_form() {
-    let (_opname, op) = usable_op()
-        .expect("no operation completes without arguments; nothing to sweep");
+    let Some(target) = usable_op() else {
+        println!("{}", NOTHING_TO_SWEEP);
+        return;
+    };
 
     let sinks: Sinks = Rc::new(RefCell::new(Vec::new()));
     let mut errors: Vec<(String, ${Name}Error)> = Vec::new();
@@ -409,7 +480,7 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
 
     for scenario in SCENARIOS {
         for variant in ["throw", "explain", "nothrow"] {
-            let sdk = make_sdk(scenario, &sinks, None);
+            let sdk = make_sdk(scenario, &sinks, None, Vec::new());
             let explain = Value::empty_map();
             let ctrl = match variant {
                 "explain" => jo(vec![("explain", explain.clone())]),
@@ -417,7 +488,7 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
                 _ => Value::Noval,
             };
             let key = format!("{}/{}", scenario.name(), variant);
-            if let Some(err) = drive(&sdk, op, ctrl, &sinks) {
+            if let Some(err) = drive(&sdk, &target, ctrl, &sinks) {
                 errors.push((key.clone(), err));
             }
             if "throw" != variant {
@@ -428,6 +499,35 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
             push(&sinks, "sdk:display", format!("{}", sdk));
         }
     }
+
+    // A credential mistyped as a map. The rust validator does not reject it
+    // (make_options keeps its input when validation fails), so what the
+    // constructor produced is swept instead: the client's prints, and a
+    // string quoting the value, cleaned the way a validation message is.
+    let mistyped = ${Name}SDK::new(jo(vec![
+        ("apikey", jo(vec![("value", Value::str(CANARY_APIKEY))])),
+        ("clean", jo(vec![("values", Value::str(CANARY_VALUE))])),
+    ]));
+    push(&sinks, "mistyped:debug", format!("{:?}", mistyped));
+    push(&sinks, "mistyped:display", format!("{}", mistyped));
+    push(
+        &sinks,
+        "mistyped:quoted",
+        clean::clean_str(
+            &mistyped.get_root_ctx(),
+            &format!("apikey: expected string, got {{\\"value\\":\\"{}\\"}}", CANARY_APIKEY),
+        ),
+    );
+
+    // An error a feature hook raises, quoting the request.
+    let hooked = make_sdk(
+        Scenario::Ok,
+        &sinks,
+        None,
+        vec![Rc::new(RefCell::new(ThrowFeature)) as FeatureRef],
+    );
+    let hookerr = drive(&hooked, &target, Value::Noval, &sinks);
+    assert!(hookerr.is_some(), "the throwing hook should fail the operation");
 
     let leaked: Vec<String> = sinks
         .borrow()
@@ -485,16 +585,19 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
 
 #[test]
 fn clean_the_sweep_can_see_a_leak() {
-    let (_opname, op) = usable_op()
-        .expect("no operation completes without arguments; nothing to sweep");
+    let Some(target) = usable_op() else {
+        println!("{}", NOTHING_TO_SWEEP);
+        return;
+    };
 
     let sinks: Sinks = Rc::new(RefCell::new(Vec::new()));
     let sdk = make_sdk(
         Scenario::NotFound,
         &sinks,
         Some(jo(vec![("active", Value::Bool(false))])),
+        Vec::new(),
     );
-    let err = drive(&sdk, op, Value::Noval, &sinks).expect("the 404 scenario must throw");
+    let err = drive(&sdk, &target, Value::Noval, &sinks).expect("the 404 scenario must throw");
 
     let leaked = sinks.borrow().iter().filter(|s| !leaks(&s.text).is_empty()).count();
     assert!(0 < leaked, "with clean off, nothing showed the canary: the sweep is blind");
@@ -508,6 +611,27 @@ fn clean_the_sweep_can_see_a_leak() {
         );
     }
     let _ = AUTH_BASIC;
+}
+
+#[test]
+fn clean_masks_a_registered_value_used_as_a_name() {
+    let sdk = ${Name}SDK::new(jo(vec![(
+        "clean",
+        jo(vec![("values", Value::str("ZZVAL-abc123,ZZVAL-xyz789"))]),
+    )]));
+    let out = clean::clean_util(
+        &sdk.get_root_ctx(),
+        &jo(vec![
+            ("ZZVAL-abc123", Value::Num(1.0)),
+            ("ZZVAL-xyz789", Value::Num(2.0)),
+            ("plain", Value::Num(3.0)),
+        ]),
+    );
+    let keys: Vec<String> = match &out {
+        Value::Map(m) => m.borrow().iter().map(|(k, _)| k.clone()).collect(),
+        _ => Vec::new(),
+    };
+    assert_eq!(keys, vec![MASK.to_string(), format!("{}#1", MASK), "plain".to_string()]);
 }
 `
 }

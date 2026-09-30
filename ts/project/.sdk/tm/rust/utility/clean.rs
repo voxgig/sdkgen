@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use crate::core::context::Context;
+use crate::core::error::ProjectNameError;
 use crate::core::helpers::{getp, getpath, jo, setp};
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
@@ -306,7 +307,8 @@ fn snapshot(cfg: &CleanConfig, val: &Value, key: Option<&str>, depth: usize, see
                     for (k, v) in m.borrow().iter() {
                         let cv = snapshot(cfg, v, Some(k), depth + 1, seen);
                         if !cv.is_noval() {
-                            setp(&out, k, cv);
+                            let name = clean_name(cfg, &out, k);
+                            setp(&out, &name, cv);
                         }
                     }
                     out
@@ -317,6 +319,24 @@ fn snapshot(cfg: &CleanConfig, val: &Value, key: Option<&str>, depth: usize, see
             out
         }
     }
+}
+
+// A registered value used as a property name is masked like any other
+// string; names that mask alike take a counter, so none is lost.
+fn clean_name(cfg: &CleanConfig, out: &Value, key: &str) -> String {
+    let taken = |n: &str| match out {
+        Value::Map(m) => m.borrow().get(n).is_some(),
+        _ => false,
+    };
+    let name = clean_string(cfg, key);
+    if name == key || !taken(&name) {
+        return name;
+    }
+    let mut i = 1;
+    while taken(&format!("{}#{}", name, i)) {
+        i += 1;
+    }
+    format!("{}#{}", name, i)
 }
 
 fn clean_with(cfg: &CleanConfig, val: &Value) -> Value {
@@ -364,56 +384,70 @@ pub fn clean_key(ctx: &Rc<Context>, key: &str) -> bool {
     sensitive_key(&read_config(&config_block(ctx)), Some(key))
 }
 
-/// Every string under a sensitive name anywhere in `val` is a secret the
-/// SDK handles: registered against `options`, whose own derived block is
-/// left out of the walk.
-pub fn register_sensitive(options: &Value, val: &Value) {
+/// An error that never passed through make_error, returned as its cleaned
+/// self: every text field and both snapshots.
+pub fn clean_error(ctx: &Rc<Context>, mut err: ProjectNameError) -> ProjectNameError {
+    let cfg = read_config(&config_block(ctx));
+    if cfg.active {
+        err.msg = clean_string(&cfg, &err.msg);
+        err.code = clean_string(&cfg, &err.code);
+        err.result = clean_with(&cfg, &err.result);
+        err.spec = clean_with(&cfg, &err.spec);
+    }
+    err
+}
+
+/// Every scalar under a sensitive name, at any depth and of any shape, is
+/// registered against `options`: a credential mistyped as a map or a number
+/// is still a credential.
+pub fn clean_add_sensitive_opts(options: &Value, val: &Value) {
     let block = derived_block(options);
     if !matches!(block, Value::Map(_)) {
         return;
     }
     let cfg = read_config(&block);
-    let mut seen: Vec<usize> = Vec::new();
-    walk_sensitive(&cfg, options, val, None, 0, &mut seen);
+    add_sensitive(&cfg, options, val, false, 0, &mut Vec::new());
 }
 
-fn walk_sensitive(
+pub fn clean_add_sensitive(ctx: &Rc<Context>, val: &Value) {
+    let options = ctx.options.borrow().clone();
+    clean_add_sensitive_opts(&options, val);
+}
+
+fn add_sensitive(
     cfg: &CleanConfig,
     options: &Value,
     val: &Value,
-    key: Option<&str>,
+    under: bool,
     depth: usize,
     seen: &mut Vec<usize>,
 ) {
+    if MAXDEPTH <= depth {
+        return;
+    }
     match val {
-        Value::Str(s) => {
-            if sensitive_key(cfg, key) {
-                clean_add_opts(options, s);
-            }
-        }
+        Value::Str(s) if under => clean_add_opts(options, s),
+        Value::Num(n) if under => clean_add_opts(options, &vs::value::num_to_string(*n)),
         Value::List(_) | Value::Map(_) => {
             let ptr = node_ptr(val).unwrap_or(0);
-            if MAXDEPTH <= depth || seen.contains(&ptr) {
+            if seen.contains(&ptr) {
                 return;
             }
             seen.push(ptr);
             match val {
                 Value::List(l) => {
                     for v in l.borrow().iter() {
-                        walk_sensitive(cfg, options, v, None, depth + 1, seen);
+                        add_sensitive(cfg, options, v, under, depth + 1, seen);
                     }
                 }
                 Value::Map(m) => {
                     for (k, v) in m.borrow().iter() {
-                        if "__derived__" == k {
-                            continue;
-                        }
-                        walk_sensitive(cfg, options, v, Some(k), depth + 1, seen);
+                        let sub = under || sensitive_key(cfg, Some(k));
+                        add_sensitive(cfg, options, v, sub, depth + 1, seen);
                     }
                 }
                 _ => {}
             }
-            seen.pop();
         }
         _ => {}
     }

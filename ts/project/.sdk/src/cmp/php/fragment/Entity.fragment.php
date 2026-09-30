@@ -269,6 +269,20 @@ class EntyClass
 
     private function _run_op($ctx, callable $post_done): mixed
     {
+        try {
+            return $this->_run_steps($ctx, $post_done);
+        } catch (\Throwable $err) {
+            // A hook, fetcher or parser threw: make_error never saw it.
+            $ctx->ctrl->err = $err;
+            if ($ctx->ctrl->explain) {
+                $ctx->ctrl->explain = ($this->_utility->clean)($ctx, $ctx->ctrl->explain);
+            }
+            throw ($this->_utility->clean)($ctx, $err);
+        }
+    }
+
+    private function _run_steps($ctx, callable $post_done): mixed
+    {
         $utility = $this->_utility;
 
         // #PrePoint-Hook

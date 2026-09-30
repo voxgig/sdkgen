@@ -57,8 +57,11 @@ class ProjectNameMakeOptions
         $cleanctx = new ProjectNameContext([
             'options' => ['__derived__' => ['clean' => $cleancfg]],
         ], null);
-        $rawsecrets = [$options['apikey'] ?? null, $options['secret'] ?? null];
-        foreach (array_merge($rawsecrets, ProjectNameClean::splitvalues($rawclean['values'] ?? null)) as $raw) {
+        $rawopts = is_object($options) ? get_object_vars($options)
+            : (is_array($options) ? $options : []);
+        unset($rawopts['clean']);
+        ProjectNameClean::add_sensitive($cleanctx, $rawopts);
+        foreach (ProjectNameClean::splitvalues($rawclean['values'] ?? null) as $raw) {
             ProjectNameClean::add($cleanctx, $raw);
         }
 
@@ -239,7 +242,7 @@ class ProjectNameMakeOptions
             }
             $opts['base'] = preg_replace_callback(
                 '/\{([A-Za-z0-9_]+)\}/',
-                function ($m) use ($server, $testmode, $sdkname, $base) {
+                function ($m) use ($server, $testmode, $sdkname, $base, $cleanctx) {
                     $name = $m[1];
                     $val = $server[$name] ?? '';
                     if (!is_string($val)) {
@@ -249,10 +252,11 @@ class ProjectNameMakeOptions
                         if ($testmode) {
                             return 'test-' . $name;
                         }
-                        throw new \InvalidArgumentException(
+                        // Its trace holds the raw options.
+                        throw ProjectNameClean::call($cleanctx, new \InvalidArgumentException(
                             $sdkname . ": the server variable '" . $name . "' is required: " .
                             "the API base URL is '" . $base . "' — pass " .
-                            "['server' => ['" . $name . "' => '...']] in the SDK options");
+                            "['server' => ['" . $name . "' => '...']] in the SDK options"));
                     }
                     return $val;
                 },
@@ -298,33 +302,16 @@ class ProjectNameMakeOptions
             }
         }
 
+        // Again over the merged result: the config's own defaults can carry one.
+        $merged = $opts;
+        unset($merged['clean']);
+        ProjectNameClean::add_sensitive($cleanctx, $merged);
+
         $opts['__derived__'] = [
             'clean' => $cleancfg,
             'featureorder' => $featureorder,
         ];
 
-        // Every string under a sensitive name anywhere in the options - a
-        // custom auth header, a feature credential - is a secret the SDK now
-        // handles.
-        self::register_sensitive($cleanctx, $opts, null);
-
         return $opts;
-    }
-
-    private static function register_sensitive(ProjectNameContext $ctx, mixed $node, mixed $key): void
-    {
-        if (is_string($node)) {
-            if (ProjectNameClean::key($ctx, $key)) {
-                ProjectNameClean::add($ctx, $node);
-            }
-            return;
-        }
-        if (is_array($node) || $node instanceof \stdClass) {
-            foreach ((array)$node as $k => $v) {
-                if ('__derived__' !== $k) {
-                    self::register_sensitive($ctx, $v, $k);
-                }
-            }
-        }
     }
 }

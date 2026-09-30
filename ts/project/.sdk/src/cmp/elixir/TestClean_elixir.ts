@@ -36,6 +36,22 @@ const OP_ORDER: Record<string, number> = { list: 0, load: 1 }
 const OPS = ['list', 'load', 'create', 'update', 'remove']
 
 
+// The path parameters an operation's points declare, as the runtime config
+// carries them under points[].args.params.
+function pointParams(opdef: any): string[] {
+  const names: string[] = []
+  for (const point of each(opdef?.points || [])) {
+    if (false === point?.a) continue
+    for (const arg of each(point?.g?.params || [])) {
+      if (false !== arg?.a && 'string' === typeof arg?.n && !names.includes(arg.n)) {
+        names.push(arg.n)
+      }
+    }
+  }
+  return names
+}
+
+
 // The operations to try, list and load first: a required path parameter is
 // what usually stops a candidate, and the read ops need none.
 function candidates(Name: string, entity: any[]): string {
@@ -46,7 +62,8 @@ function candidates(Name: string, entity: any[]): string {
       rows.push({
         rank: OP_ORDER[op] ?? 2,
         text: `      {${elixirString(e.name + '.' + op)}, fn sdk -> ${Name}.${e.name}(sdk) end,
-       fn ent, ctrl -> ${Name}.Entity.${e.Name}.${op}(ent, S.jm([]), ctrl) end}`,
+       fn ent, match, ctrl -> ${Name}.Entity.${e.Name}.${op}(ent, args(match), ctrl) end,
+       [${pointParams(e.op[op]).map((p) => elixirString(p)).join(', ')}]}`,
       })
     }
   })
@@ -221,7 +238,7 @@ defmodule ${Name}.CleanTest do
     ]
   end
 
-  defp make_sdk(respond, sinks, cleanopts) do
+  defp make_sdk(respond, sinks, cleanopts, extra \\\\ []) do
     capture = fn name -> fn rec -> add(sinks, data_forms(name, rec)) end end
     feature = S.jm([])
 
@@ -247,11 +264,15 @@ defmodule ${Name}.CleanTest do
         "headers", S.jm(["X-Custom-Token", @canary.header]),
         "clean", clean,
         "feature", feature,
-        "extend", S.jt([capture_feature(sinks)]),
+        "extend", S.jt([capture_feature(sinks) | extra]),
         "utility", S.jm(["fetcher", fn _ctx, url, fd -> respond.(url, fd) end])
       ])
     )
   end
+
+  # A fresh struct node of the match, since an operation may keep what it is
+  # given.
+  defp args(match), do: S.jm(Enum.flat_map(match, fn {k, v} -> [k, v] end))
 
   # The operations this SDK generated, read ops first.
   defp candidates do
@@ -260,7 +281,8 @@ ${candidates(Name, entity)}
     ]
   end
 
-  # The first operation that completes against a plain 200 with no arguments.
+  # The first operation that completes against a plain 200: with no
+  # arguments, else with every path parameter its points declare filled in.
   defp usable_op do
     plain =
       ${Name}.new(
@@ -270,24 +292,38 @@ ${candidates(Name, entity)}
         ])
       )
 
-    Enum.find(candidates(), fn {_name, acc, op} ->
-      try do
-        op.(acc.(plain), S.jm([]))
-        true
-      rescue
-        _ -> false
-      catch
-        _, _ -> false
-      end
+    Enum.find_value(candidates(), fn {name, acc, op, params} ->
+      filled = Map.new(params, fn p -> {p, "p1"} end)
+
+      Enum.find_value([%{}, filled], fn match ->
+        try do
+          op.(acc.(plain), match, S.jm([]))
+          {name, acc, op, match}
+        rescue
+          _ -> nil
+        catch
+          _, _ -> nil
+        end
+      end)
     end)
   end
 
-  defp drive(sdk, {_name, acc, op}, ctrl, sinks) do
+  # A feature that raises from inside the pipeline, quoting the request it
+  # saw: an error make_error never handled.
+  defp throw_feature do
+    S.jm([
+      "name", "throwhook", "version", "0.0.1", "active", true, "options", S.jm([]),
+      "init", fn _ctx, _opts -> nil end,
+      "PreResponse", fn ctx -> raise "hook saw " <> S.jsonify(S.getprop(ctx, "spec")) end
+    ])
+  end
+
+  defp drive(sdk, {_name, acc, op, match}, ctrl, sinks) do
     ent = acc.(sdk)
 
     {out, err} =
       try do
-        {op.(ent, ctrl), nil}
+        {op.(ent, match, ctrl), nil}
       rescue
         e -> {nil, e}
       end
@@ -299,10 +335,24 @@ ${candidates(Name, entity)}
     err
   end
 
-  test "no credential leaves the SDK in any form" do
-    target = usable_op()
-    assert target != nil, "no operation completes without arguments; nothing to sweep"
+  @no_target "no operation of this SDK completes against a plain 200; nothing to sweep"
 
+  # ExUnit has no runtime skip, so a sweep with nothing to drive says so.
+  test "no credential leaves the SDK in any form" do
+    case usable_op() do
+      nil -> IO.puts("SKIP no credential leaves the SDK in any form: " <> @no_target)
+      target -> sweep(target)
+    end
+  end
+
+  test "the sweep can see a leak: clean switched off shows the credential" do
+    case usable_op() do
+      nil -> IO.puts("SKIP the sweep can see a leak: " <> @no_target)
+      target -> sweep_blind(target)
+    end
+  end
+
+  defp sweep(target) do
     sinks = S.jt([])
 
     variants = [
@@ -325,6 +375,24 @@ ${candidates(Name, entity)}
           {errors, explains}
         end)
       end)
+
+    # A credential mistyped as a map is rejected by validation, whose message
+    # quotes the value it rejected.
+    rejected =
+      try do
+        ${Name}.new(S.jm(["apikey", S.jm(["value", @canary.apikey]), "clean", S.jm(["values", @canary.value])]))
+        nil
+      rescue
+        e -> e
+      end
+
+    assert rejected != nil, "a credential mistyped as a map should be rejected"
+    add(sinks, forms("rejected", rejected))
+
+    # An error a feature hook raises, quoting the request, skips make_error.
+    [{_name, ok} | _] = scenarios()
+    hooked = make_sdk(ok, sinks, [], [throw_feature()])
+    assert drive(hooked, target, S.jm([]), sinks) != nil, "the throwing hook should fail the operation"
 
     all = sink_list(sinks)
     leaked = Enum.filter(all, fn s -> leaks(s.text) != [] end)
@@ -364,10 +432,7 @@ ${candidates(Name, entity)}
     assert header(S.getprop(result, "headers"), "x-session-token") == @mask
   end
 
-  test "the sweep can see a leak: clean switched off shows the credential" do
-    target = usable_op()
-    assert target != nil
-
+  defp sweep_blind(target) do
     sinks = S.jt([])
     [_ok, {_name, notfound} | _] = scenarios()
     sdk = make_sdk(notfound, sinks, [{"active", false}])
@@ -384,6 +449,36 @@ ${candidates(Name, entity)}
                String.contains?(text, Base.encode64(@canary.apikey <> ":" <> @canary.secret)),
              "the raw spec should carry the credential when clean is off"
     end
+  end
+
+  test "a registered value used as a property name is masked, collisions kept" do
+    cfg = ${Name}.Utility.make_clean_config(S.jm(["keys", "key,secret,token"]))
+    ctx = S.jm(["options", S.jm(["__derived__", S.jm(["clean", cfg])])])
+    ${Name}.Utility.clean_add_impl(ctx, "ZZVAL-abc123")
+    ${Name}.Utility.clean_add_impl(ctx, "ZZVAL-xyz789")
+    out = ${Name}.Utility.clean_impl(ctx, S.jm(["ZZVAL-abc123", 1, "ZZVAL-xyz789", 2, "plain", 3]))
+    assert S.getprop(out, @mask) == 1
+    assert S.getprop(out, @mask <> "#1") == 2
+    assert S.getprop(out, "plain") == 3
+    assert "ZZVAL-abc123" not in S.keysof(out)
+  end
+
+  test "clean_add_sensitive registers every scalar under a sensitive name, at any depth" do
+    cfg = ${Name}.Utility.make_clean_config(S.jm(["keys", "key,secret,token"]))
+    ctx = S.jm(["options", S.jm(["__derived__", S.jm(["clean", cfg])])])
+
+    ${Name}.Utility.clean_add_sensitive(ctx, S.jm([
+      "apikey", S.jm(["value", "NESTED-SECRET-1"]),
+      "headers", S.jm(["X-Api-Token", S.jt(["LISTED-SECRET-2"])]),
+      "secret", 123456789,
+      "name", "not-a-secret"
+    ]))
+
+    values = Enum.map(H.entries(S.getprop(cfg, "values")), &elem(&1, 1))
+    assert "NESTED-SECRET-1" in values
+    assert "LISTED-SECRET-2" in values
+    assert "123456789" in values
+    refute "not-a-secret" in values
   end
 end
 `

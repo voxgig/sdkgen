@@ -9,6 +9,18 @@ static int mo_cmp_cstr(const void* a, const void* b) {
   return strcmp(*(const char* const*)a, *(const char* const*)b);
 }
 
+static voxgig_value* mo_without(voxgig_value* val, const char* k1, const char* k2) {
+  voxgig_value* out = v_map();
+  if (!voxgig_is_map(val)) return out;
+  voxgig_map* m = voxgig_as_map(val);
+  for (size_t i = 0; i < m->len; i++) {
+    const char* k = m->entries[i].key;
+    if ((k1 && 0 == strcmp(k, k1)) || (k2 && 0 == strcmp(k, k2))) continue;
+    setp(out, k, voxgig_retain(m->entries[i].value));
+  }
+  return out;
+}
+
 voxgig_value* make_options_util(Context* ctx) {
   voxgig_value* options = voxgig_is_map(ctx->options) ? ctx->options : voxgig_new_map();
 
@@ -91,8 +103,7 @@ voxgig_value* make_options_util(Context* ctx) {
     clist(3, v_map(), voxgig_clone(getp(optspec, "clean")), voxgig_clone(getp(opts, "clean"))),
     VOXGIG_MAXDEPTH));
   voxgig_value* cleanopts = cmap(1, "__derived__", cmap(1, "clean", v_share(cleancfg)));
-  clean_add_opts(cleanopts, get_str(opts, "apikey"));
-  clean_add_opts(cleanopts, get_str(opts, "secret"));
+  clean_add_sensitive_opts(cleanopts, mo_without(opts, "clean", NULL));
   {
     voxgig_list* rawvals = voxgig_as_list(clean_split_values(getpath2(opts, "clean", "values")));
     for (size_t i = 0; i < rawvals->len; i++) {
@@ -172,9 +183,8 @@ voxgig_value* make_options_util(Context* ctx) {
   setp(opts, "__derived__",
        cmap(2, "clean", v_share(cleancfg), "featureorder", feature_order));
 
-  /* Every string under a sensitive name anywhere in the options - a custom
-   * auth header, a feature credential - is a secret the SDK now handles. */
-  clean_register_sensitive(opts, opts);
+  // Again over the merged result: the config's own defaults can carry one.
+  clean_add_sensitive_opts(opts, mo_without(opts, "clean", "__derived__"));
 
   return opts;
 }

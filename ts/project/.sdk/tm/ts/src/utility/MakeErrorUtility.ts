@@ -57,16 +57,12 @@ function makeError(ctx: Context, err?: any) {
   err.result = clean(ctx, result)
   err.spec = clean(ctx, spec)
 
-  // Promote the HTTP status to the top level, so a consumer can branch on
-  // `err.status` / `err.notFound` instead of reaching into `err.result`.
+  // So a consumer branches on `err.status`, not on the shape of `err.result`.
   err.status = null == result.status ? -1 : result.status
 
   ctx.ctrl.err = err
 
-  // Fire PreUnexpected so observability features (metrics, telemetry, audit,
-  // debug) close/record error paths that never reach PreDone (e.g. a PrePoint
-  // rbac short-circuit). Fires after ctx.ctrl.err is set so hooks can read the
-  // error; features guard against double-recording when PreDone already fired.
+  // Closes error paths that never reach PreDone (e.g. an rbac short-circuit).
   if (null != ctx.client && null != ctx.utility &&
     'function' === typeof ctx.utility.featureHook) {
     ctx.utility.featureHook(ctx, 'PreUnexpected')

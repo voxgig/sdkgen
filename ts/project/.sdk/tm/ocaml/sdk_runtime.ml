@@ -346,6 +346,37 @@ let sensitive_key (cfg : value) (key : string option) : bool =
        let nk = normkey k in
        List.exists (fun sk -> substr_contains nk sk) (str_values (getp cfg "keys")))
 
+(* Every scalar under a sensitive name, at any depth and of any shape: a
+ * credential mistyped as a map or a number is still a credential, and the
+ * validation error that rejects it quotes it. *)
+let clean_add_sensitive (ctx : ctx) (v : value) : unit =
+  let cfg = clean_config ctx in
+  let rec walk v under depth seen =
+    if depth < clean_maxdepth then begin
+      match v with
+      | Str s -> if under then clean_add_util ctx s
+      | Num n -> if under then clean_add_util ctx (num_to_string n)
+      | Map m when not (List.memq v seen) ->
+        List.iter (fun (k, x) ->
+            walk x (under || sensitive_key cfg (Some k)) (depth + 1) (v :: seen)) m.entries
+      | List r when not (List.memq v seen) ->
+        List.iter (fun x -> walk x under (depth + 1) (v :: seen)) !r
+      | _ -> ()
+    end in
+  walk v false 0 []
+
+(* A registered value used as a property name is masked like any other
+ * string; names that mask alike take a counter, so none is lost. *)
+let clean_name (cfg : value) (out : value) (key : string) : string =
+  let name = clean_string cfg key in
+  let taken = keysof out in
+  if name = key || not (List.mem name taken) then name
+  else
+    let rec next i =
+      let n = name ^ "#" ^ string_of_int i in
+      if List.mem n taken then next (i + 1) else n in
+    next 1
+
 (* A masked plain-data COPY: functions dropped, cycles cut, and nothing
  * shared with the live value, whose spec must stay raw. *)
 let rec clean_snapshot (cfg : value) (v : value) (key : string option) (depth : int) (seen : value list) : value =
@@ -365,7 +396,7 @@ let rec clean_snapshot (cfg : value) (v : value) (key : string option) (depth : 
         List.iter (fun (k, x) ->
             match clean_snapshot cfg x (Some k) (depth + 1) seen with
             | Sentinel "clean_drop" -> ()
-            | c -> setp out k c) m.entries;
+            | c -> setp out (clean_name cfg out k) c) m.entries;
         out
       | List r ->
         lst (List.map (fun x ->
@@ -381,6 +412,24 @@ let clean_util (ctx : ctx) (v : value) : value =
   else match v with
     | Str s -> Str (clean_string cfg s)
     | _ -> (match clean_snapshot cfg v None 0 [] with Sentinel "clean_drop" -> Noval | c -> c)
+
+(* An exception is immutable and of any shape, so one that never passed
+ * through make_error (a hook's, a fetcher's) leaves as a cleaned copy: a
+ * standard string-carrying one keeps its constructor, and any other whose
+ * printed form quotes a registered value leaves as a Failure of that form,
+ * cleaned. *)
+let clean_exn (ctx : ctx) (e : exn) : exn =
+  let cfg = clean_config ctx in
+  if getp cfg "active" = Bool false then e
+  else match e with
+    | Sdk_error_exc _ -> e
+    | Failure msg -> Failure (clean_string cfg msg)
+    | Invalid_argument msg -> Invalid_argument (clean_string cfg msg)
+    | Struct_error msg -> Struct_error (clean_string cfg msg)
+    | _ ->
+      let text = Printexc.to_string e in
+      let cleaned = clean_string cfg text in
+      if cleaned = text then e else Failure cleaned
 
 (* The explain map is the CALLER's, so it is cleaned in place: what they hold
  * after the call is the cleaned record. An omap is a mutable record, so its
@@ -1268,9 +1317,8 @@ let make_options_util (ctx : ctx) : value =
       | _ -> ()) [getp optspec "clean"; getp opts "clean"];
   let cleancfg = make_clean_config cleanraw in
   let cleanctx = { ctx with c_options = jo [("__derived__", jo [("clean", cleancfg)])] } in
-  List.iter (fun v -> match v with Str s -> clean_add_util cleanctx s | _ -> ())
-    ([getp opts "apikey"; getp opts "secret"]
-     @ List.map (fun s -> Str s) (splitvalues (getpath_s opts "clean.values")));
+  clean_add_sensitive cleanctx (omit_keys opts ["clean"]);
+  List.iter (clean_add_util cleanctx) (splitvalues (getpath_s opts "clean.values"));
   let sys_fetch = getpath_s opts "system.fetch" in
   let merged = merge (ja [empty_map (); cfgopts; opts]) in
   let validated =
@@ -1350,16 +1398,8 @@ let make_options_util (ctx : ctx) : value =
   let derived = jo [("clean", cleancfg);
                     ("featureorder", ja (List.map (fun s -> Str s) feature_order))] in
   setp opts "__derived__" derived;
-  (* Every string under a sensitive name anywhere in the options - a custom
-     auth header, a feature credential - is a secret the SDK now handles. *)
-  let optctx = { ctx with c_options = opts } in
-  let scan = match clone opts with Map _ as m -> m | _ -> empty_map () in
-  ignore (delprop scan (Str "__derived__"));
-  ignore (walk ~after:(fun key v _parent _path ->
-      (match key, v with
-       | Str k, Str s when sensitive_key cleancfg (Some k) -> clean_add_util optctx s
-       | _ -> ());
-      v) scan);
+  (* Again over the merged result: the config's own defaults can carry one. *)
+  clean_add_sensitive { ctx with c_options = opts } (omit_keys opts ["clean"; "__derived__"]);
   opts
 
 (* ------------------------------------------------------------------ *)

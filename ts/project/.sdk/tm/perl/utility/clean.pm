@@ -234,11 +234,23 @@ sub snapshot {
 sub plain {
   my ($cfg, $val, $depth, $seen) = @_;
   my $out = {};
-  for my $k (keys %$val) {
+  for my $k (sort keys %$val) {
     my $v = snapshot($cfg, $val->{$k}, $k, $depth + 1, $seen);
-    $out->{$k} = $v unless _dropped($v);
+    $out->{ clean_name($cfg, $out, $k) } = $v unless _dropped($v);
   }
   return $out;
+}
+
+# A registered value used as a property name is masked like any other
+# string; names that mask alike take a counter, so none is lost. Callers
+# visit keys sorted, so the counters are stable.
+sub clean_name {
+  my ($cfg, $out, $key) = @_;
+  my $name = clean_string($cfg, $key);
+  return $name if $name eq $key || !exists $out->{$name};
+  my $i = 1;
+  $i++ while exists $out->{"$name#$i"};
+  return "$name#$i";
 }
 
 # Clean a value on its way out. A string is redacted; an SDK error is
@@ -256,22 +268,48 @@ sub clean {
   if (Scalar::Util::blessed($val)) {
     return $val unless $val->isa('ProjectNameError');
     $val->{msg} = clean_string($cfg, "$val->{msg}") if defined $val->{msg};
-    for my $k (keys %$val) {
+    for my $k (sort keys %$val) {
       next if 'msg' eq $k;
       my $v = $val->{$k};
-      next unless defined $v;
-      if (!ref $v) {
-        $val->{$k} = sensitive_key($cfg, $k) ? mask_value($cfg, "$v") : clean_string($cfg, $v);
+      if (defined $v && !ref $v) {
+        $v = sensitive_key($cfg, $k) ? mask_value($cfg, "$v") : clean_string($cfg, $v);
       }
-      elsif ((Scalar::Util::reftype($v) // '') =~ /\A(?:HASH|ARRAY)\z/) {
-        $val->{$k} = snapshot($cfg, $v, $k, 1, {});
+      elsif (ref $v && (Scalar::Util::reftype($v) // '') =~ /\A(?:HASH|ARRAY)\z/) {
+        $v = snapshot($cfg, $v, $k, 1, {});
       }
+      my $name = clean_string($cfg, $k);
+      delete $val->{$k} if $name ne $k;
+      $val->{ $name eq $k ? $k : clean_name($cfg, $val, $k) } = $v;
     }
     return $val;
   }
 
   my $out = snapshot($cfg, $val, undef, 0, {});
   return _dropped($out) ? undef : $out;
+}
+
+# Every scalar under a sensitive name, at any depth and of any shape: a
+# credential mistyped as a map or a number is still a credential, and the
+# validation error that rejects it quotes it.
+sub add_sensitive {
+  my ($ctx, $val, $under, $depth, $seen) = @_;
+  $depth //= 0;
+  $seen //= {};
+  return if !defined $val || $depth >= $MAXDEPTH;
+  if (!ref $val) {
+    add($ctx, "$val") if $under;
+    return;
+  }
+  my $type = Scalar::Util::reftype($val) // '';
+  return unless 'HASH' eq $type || 'ARRAY' eq $type;
+  return if $seen->{ Scalar::Util::refaddr($val) }++;
+  if ('HASH' eq $type) {
+    add_sensitive($ctx, $val->{$_}, $under || key($ctx, $_), $depth + 1, $seen) for keys %$val;
+  }
+  else {
+    add_sensitive($ctx, $_, $under, $depth + 1, $seen) for @$val;
+  }
+  return;
 }
 
 # Is this key name sensitive under the context's clean configuration?

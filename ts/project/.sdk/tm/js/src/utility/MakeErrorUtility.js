@@ -18,6 +18,14 @@ function makeError(ctx, err) {
   err = undefined === err ? reserr : err
   err = err || ctx.error('unknown', 'unknown error')
 
+  // A hook or fetcher may reject with a plain value; clean returns a masked
+  // copy of that rather than changing it, so the copy is what leaves.
+  if (!(err instanceof Error)) {
+    const copy = clean(ctx, err)
+    const text = 'string' === typeof copy ? copy : String(copy?.message ?? 'unknown error')
+    err = Object.assign(new Error(text), 'object' === typeof copy ? copy : {})
+  }
+
   const errmsg = err.message || 'unknown error'
   err.message = 'ProjectNameSDK: ' + op.name + ': ' + errmsg
 

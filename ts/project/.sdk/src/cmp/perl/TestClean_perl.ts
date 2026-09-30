@@ -189,6 +189,27 @@ sub response {
   sub PreUnexpected { my ($s, $ctx) = @_; push @{ $s->{sinks} }, main::forms('ctx@PreUnexpected', $ctx); return }
 }
 
+# A feature that dies from inside the pipeline, quoting the request it saw:
+# an error make_error never handled.
+{
+  package ${Name}CleanThrowFeature;
+  our @ISA = ('${Name}BaseFeature');
+
+  sub new {
+    my ($class) = @_;
+    my $self = ${Name}BaseFeature::new($class);
+    $self->{name} = 'throwhook';
+    $self->{version} = '0.0.1';
+    $self->{active} = 1;
+    return $self;
+  }
+
+  sub PreResponse {
+    my ($s, $ctx) = @_;
+    die 'hook saw ' . $JSON->encode({ %{ $ctx->{spec} } });
+  }
+}
+
 # Each scenario answers the transport's (response, err) pair.
 my @SCENARIOS = (
   ['ok', sub {
@@ -224,7 +245,7 @@ sub has_feature {
 }
 
 sub make_sdk {
-  my ($scenario, $sinks, $cleanopts) = @_;
+  my ($scenario, $sinks, $cleanopts, $extra) = @_;
   my $capture = sub {
     my ($name) = @_;
     return sub { push @$sinks, forms($name, $_[0]); return };
@@ -248,7 +269,7 @@ sub make_sdk {
     'headers' => { 'X-Custom-Token' => $CANARY{header} },
     'clean' => { 'values' => $CANARY{value}, %{ $cleanopts || {} } },
     'feature' => \\%feature,
-    'extend' => [ ${Name}CleanCaptureFeature->new($sinks) ],
+    'extend' => [ ${Name}CleanCaptureFeature->new($sinks), @{ $extra || [] } ],
     'utility' => { 'fetcher' => sub {
       my (undef, $url, $fetchdef) = @_;
       return $respond->($url, $fetchdef);
@@ -256,10 +277,10 @@ sub make_sdk {
   });
 }
 
-# The first operation that completes against a plain 200 with no
-# arguments (a required path parameter would fail before the request is
-# built). An entity accessor is a capitalised client method whose result
-# answers get_name, as the feature corpus runner finds them.
+# The first operation that completes against a plain 200: with no
+# arguments, else with every path parameter its points declare filled in.
+# An entity accessor is a capitalised client method whose result answers
+# get_name, as the feature corpus runner finds them.
 sub usable_op {
   my $plain = ${Name}SDK->new({
     'apikey' => $CANARY{apikey},
@@ -281,12 +302,25 @@ sub usable_op {
     }
   }
 
+  my $entities = ${Name}Config::shared_config()->{entity} || {};
   for my $entname (sort keys %found) {
     my $accessor = $found{$entname};
     for my $op (qw(list load create update remove)) {
       next unless $plain->$accessor()->can($op);
-      my $ok = eval { $plain->$accessor()->$op({}, {}); 1 };
-      return { 'accessor' => $accessor, 'op' => $op } if $ok;
+      my %filled;
+      my $opdef = eval { $entities->{$entname}{op}{$op} };
+      my $points = ref $opdef eq 'HASH' ? $opdef->{points} : undef;
+      for my $point (ref $points eq 'ARRAY' ? @$points : ()) {
+        my $params = ref $point eq 'HASH' && ref $point->{args} eq 'HASH'
+          ? $point->{args}{params} : undef;
+        for my $p (ref $params eq 'ARRAY' ? @$params : ()) {
+          $filled{ $p->{name} } = 'p1' if ref $p eq 'HASH' && defined $p->{name} && !ref $p->{name};
+        }
+      }
+      for my $match ({}, \\%filled) {
+        my $ok = eval { $plain->$accessor()->$op({ %$match }, {}); 1 };
+        return { 'accessor' => $accessor, 'op' => $op, 'match' => $match } if $ok;
+      }
     }
   }
   return undef;
@@ -296,7 +330,7 @@ sub drive {
   my ($sdk, $target, $ctrl, $sinks) = @_;
   my ($acc, $op) = ($target->{accessor}, $target->{op});
   my $out;
-  my $ok = eval { $out = $sdk->$acc()->$op({}, $ctrl); 1 };
+  my $ok = eval { $out = $sdk->$acc()->$op({ %{ $target->{match} } }, $ctrl); 1 };
   my $err = $ok ? undef : $@;
   push @$sinks, forms('error', $err) if defined $err;
   push @$sinks, forms('result', $out) if defined $out;
@@ -306,8 +340,8 @@ sub drive {
 
 
 my $target = usable_op();
-ok(defined $target, 'an operation completes without arguments; something to sweep')
-  or do { done_testing(); exit 0 };
+plan skip_all => 'no operation of this SDK completes against a plain 200; nothing to sweep'
+  unless defined $target;
 
 {
   my @sinks;
@@ -326,6 +360,31 @@ ok(defined $target, 'an operation completes without arguments; something to swee
       push @sinks, forms('sdk', $sdk);
     }
   }
+
+  # A credential mistyped as a map is rejected by validation, whose message
+  # quotes the value it rejected.
+  my $rejected;
+  eval {
+    ${Name}SDK->new({
+      'apikey' => { 'value' => $CANARY{apikey} },
+      'clean' => { 'values' => $CANARY{value} },
+    });
+    1;
+  } or $rejected = $@;
+  ok(defined $rejected, 'a credential mistyped as a map is rejected');
+  push @sinks, forms('rejected', $rejected) if defined $rejected;
+
+  # An error a feature hook dies with, quoting the request, skips make_error.
+  my $hooked = make_sdk($SCENARIOS[0], \\@sinks, undef, [ ${Name}CleanThrowFeature->new ]);
+  ok(defined drive($hooked, $target, {}, \\@sinks), 'the throwing hook fails the operation');
+
+  # A registered value used as a property name is masked; names that mask
+  # alike are all kept.
+  my $named = $hooked->get_utility()->{clean}->($hooked->get_root_ctx(),
+    { $CANARY{header} => 1, $CANARY{value} => 2, 'plain' => 3 });
+  is_deeply($named, { $MASK => 1, "$MASK#1" => 2, 'plain' => 3 },
+    'a registered value used as a property name is masked, collisions kept');
+  push @sinks, forms('named', $named);
 
   my @leaked = grep { @{ $_->{found} } }
     map { { 'name' => $_->{name}, 'found' => [ leaks($_->{text}) ] } } @sinks;

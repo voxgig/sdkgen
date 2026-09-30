@@ -98,8 +98,10 @@ $REGISTRY{make_options} = sub {
       (Voxgig::Struct::clone(ProjectNameSchema::optspec()->{clean}), $opts->{clean}),
   ]));
   my $cleanctx = { 'options' => { '__derived__' => { 'clean' => $cleancfg } } };
-  for my $raw ($opts->{apikey}, $opts->{secret},
-    @{ ProjectNameCleanSupport::splitvalues(ProjectNameHelpers::gpath($opts, 'clean.values')) }) {
+  my %rawscan = %$opts;
+  delete $rawscan{clean};
+  ProjectNameCleanSupport::add_sensitive($cleanctx, \%rawscan);
+  for my $raw (@{ ProjectNameCleanSupport::splitvalues(ProjectNameHelpers::gpath($opts, 'clean.values')) }) {
     ProjectNameCleanSupport::add($cleanctx, $raw);
   }
 
@@ -209,18 +211,11 @@ $REGISTRY{make_options} = sub {
     'featureorder' => \@featureorder,
   };
 
-  # Every string under a sensitive name anywhere in the options - a custom
-  # auth header, a feature credential - is a secret the SDK now handles.
+  # Again over the merged result: the config's own defaults can carry one.
   # The extend instances are live objects, not option data.
-  my $optctx = { 'options' => $opts };
   my %scan = %$opts;
-  delete @scan{qw(__derived__ extend)};
-  Voxgig::Struct::walk(Voxgig::Struct::clone(\%scan), sub {
-    my ($key, $val) = @_;
-    ProjectNameCleanSupport::add($optctx, $val)
-      if defined $val && !ref $val && ProjectNameCleanSupport::key($optctx, $key);
-    return $val;
-  });
+  delete @scan{qw(__derived__ extend clean)};
+  ProjectNameCleanSupport::add_sensitive($cleanctx, \%scan);
 
   return $opts;
 };

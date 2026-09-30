@@ -250,6 +250,29 @@ describe('clean: the shipped ts utility', () => {
 })
 
 
+describe('clean: the registry makeOptions builds', () => {
+
+  test('the generated config\'s own clean block is honoured', () => {
+    const errs: any[] = []
+    const base: any = new Aontu().generate(readFileSync(MODEL, 'utf8'), { path: MODEL, errs })
+    const OPTSPEC = base.main.kit.optspec
+    const cleanmod = loadClean()
+    const { makeOptions } = sandboxLoad(
+      Path.join(TM, 'ts', 'src', 'utility', 'MakeOptionsUtility.ts'), {
+        '../types': {},
+        '../Schema': { OPTSPEC },
+        './CleanUtility': cleanmod,
+      })
+    const config = { options: { clean: { keys: 'zzsens', values: 'CONFIG-SEEDED-1' } } }
+    const ctx: any = { utility: { struct }, config, options: { clean: { values: 'CALLER-SEEDED-2' } } }
+    ctx.options = makeOptions(ctx)
+    strictEqual(cleanmod.clean(ctx, 'a CONFIG-SEEDED-1 b CALLER-SEEDED-2'), 'a ' + MASK + ' b ' + MASK)
+    deepStrictEqual(cleanmod.clean(ctx, { my_zzsens: 'x', other: 'y' }), { my_zzsens: MASK, other: 'y' })
+    strictEqual(config.options.clean.values, 'CONFIG-SEEDED-1')
+  })
+})
+
+
 describe('clean: the option spec', () => {
 
   test('the clean block validates by example and rejects a wrong type', () => {

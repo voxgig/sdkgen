@@ -31,6 +31,22 @@ const OP_ORDER: Record<string, number> = { list: 0, load: 1 }
 const OPS = ['list', 'load', 'create', 'update', 'remove']
 
 
+// The path parameters an operation's points declare, as the runtime config
+// carries them under points[].args.params.
+function pointParams(opdef: any): string[] {
+  const names: string[] = []
+  for (const point of each(opdef?.points || [])) {
+    if (false === point?.a) continue
+    for (const arg of each(point?.g?.params || [])) {
+      if (false !== arg?.a && 'string' === typeof arg?.n && !names.includes(arg.n)) {
+        names.push(arg.n)
+      }
+    }
+  }
+  return names
+}
+
+
 // The operations to try, list and load first: a required path parameter is
 // what usually stops a candidate, and the read ops need none.
 function candidates(entity: any[]): string {
@@ -42,7 +58,8 @@ function candidates(entity: any[]): string {
         rank: OP_ORDER[op] ?? 2,
         text: `   {:name "${e.name}.${op}"
     :accessor (fn [sdk] (api/${e.name} sdk nil))
-    :op (fn [ent ctrl] (e-${e.name}/${op} ent (vs/jm) ctrl))}`,
+    :params [${pointParams(e.op[op]).map(cljstr).join(' ')}]
+    :op (fn [ent match ctrl] (e-${e.name}/${op} ent (args match) ctrl))}`,
       })
     }
   })
@@ -154,7 +171,7 @@ function render(model: any, entity: any[], auth: {
                                     "body" "<html>"
                                     "json" (fn [] (throw (RuntimeException. "Unexpected token < in JSON")))) nil])}])
 
-(defn- make-sdk [scenario sinks cleanopts]
+(defn- make-sdk [scenario sinks cleanopts & extra]
   (let [capture (fn [name] (fn [rec] (swap! sinks into (forms name rec))))
         feature (vs/jm)
         on (fn [name & kvs] (when (feature/feature-present? name)
@@ -172,8 +189,15 @@ function render(model: any, entity: any[], auth: {
                            "headers" (vs/jm "X-Custom-Token" (:header CANARY))
                            "clean" clean
                            "feature" feature
-                           "extend" (vs/jt (capture-feature sinks))
+                           "extend" (apply vs/jt (capture-feature sinks) extra)
                            "utility" (vs/jm "fetcher" (fn [_fctx url fd] ((:respond scenario) url fd))))))))
+
+;; A fresh struct map of the match, since an operation may keep what it is
+;; given.
+(defn- args [match]
+  (let [m (vs/jm)]
+    (doseq [[k v] match] (.put ^java.util.Map m k v))
+    m))
 
 ;; The operations this SDK generated, read ops first.
 (def CANDIDATES
@@ -181,27 +205,44 @@ function render(model: any, entity: any[], auth: {
 ${candidates(entity)}
    ])
 
-;; The first operation that completes against a plain 200 with no arguments.
+;; The first operation that completes against a plain 200: with no
+;; arguments, else with every path parameter its points declare filled in.
 (defn- usable-op []
   (let [plain (api/make-sdk (vs/jm "apikey" (:apikey CANARY)
                                    "utility" (vs/jm "fetcher" (fn [_ _ _] [(response 200 (vs/jm "id" "i1") {}) nil]))))]
-    (some (fn [c] (try ((:op c) ((:accessor c) plain) (vs/jm)) c (catch Throwable _ nil)))
+    (some (fn [c]
+            (some (fn [match]
+                    (try ((:op c) ((:accessor c) plain) match (vs/jm))
+                         (assoc c :match match)
+                         (catch Throwable _ nil)))
+                  [{} (into {} (map (fn [p] [p "p1"]) (:params c)))]))
           CANDIDATES)))
+
+;; A feature that throws from inside the pipeline, quoting the request it
+;; saw: an error make-error never handled.
+(defn- throw-feature []
+  (atom {:name "throwhook" :active true :version "0.0.1" :_options nil
+         "init" (fn [_ctx _opts] nil)
+         "PreResponse" (fn [ctx]
+                         (let [sp (core/oget ctx :spec)]
+                           (throw (RuntimeException.
+                                   (str "hook saw " (pr-str (if (instance? clojure.lang.IDeref sp) @sp sp)))))))}))
 
 (defn- drive [sdk target ctrl sinks]
   (let [ent ((:accessor target) sdk)
-        [out err] (try [((:op target) ent ctrl) nil] (catch Throwable e [nil e]))
+        [out err] (try [((:op target) ent (:match target) ctrl) nil] (catch Throwable e [nil e]))
         explain (vs/getprop ctrl "explain")]
     (when err (swap! sinks into (forms "error" err)))
     (when (some? out) (swap! sinks into (forms "result" out)))
     (when (some? explain) (swap! sinks into (forms "explain" explain)))
     err))
 
+(def ^:private NO-TARGET "no operation of this SDK completes against a plain 200; nothing to sweep")
+
 (defn run [rec]
   (t/run-check rec "clean-no-credential-leaves-the-sdk"
     (fn []
-      (let [target (usable-op)]
-        (t/is-some target "no operation completes without arguments; nothing to sweep")
+      (if-let [target (usable-op)]
         (let [sinks (atom []) errors (atom {}) explains (atom {})]
           (doseq [scenario SCENARIOS
                   variant [{:name "throw" :ctrl (fn [] (vs/jm))}
@@ -215,6 +256,17 @@ ${candidates(entity)}
               (when-let [ex (vs/getprop ctrl "explain")] (swap! explains assoc key ex))
               (swap! sinks into (forms "sdk" sdk))
               (swap! sinks conj {:name "sdk:slots" :text (pr-str (into {} sdk))})))
+          ;; A credential mistyped as a map is rejected by validation, whose
+          ;; message quotes the value it rejected.
+          (let [rejected (try (api/make-sdk (vs/jm "apikey" (vs/jm "value" (:apikey CANARY))
+                                                   "clean" (vs/jm "values" (:value CANARY))))
+                              nil
+                              (catch Throwable e e))]
+            (t/is-some rejected "a credential mistyped as a map should be rejected")
+            (swap! sinks into (forms "rejected" rejected)))
+          ;; An error a feature hook throws, quoting the request, skips make-error.
+          (let [hooked (make-sdk (first SCENARIOS) sinks nil (throw-feature))]
+            (t/is-some (drive hooked target (vs/jm) sinks) "the throwing hook should fail the operation"))
           (let [leaked (filterv (fn [s] (seq (leaks (:text s)))) @sinks)]
             (println (str "clean: swept " (count @sinks) " surface(s), " (count leaked) " leak(s)"))
             (t/is-eq (count leaked) 0
@@ -244,23 +296,50 @@ ${candidates(entity)}
           (let [explained (get @explains "ok/explain")
                 result (vs/getprop explained "result")]
             (t/is-some result "the explain record should carry the result")
-            (t/is-eq (header (vs/getprop result "headers") "x-session-token") MASK "response token masked"))))))
+            (t/is-eq (header (vs/getprop result "headers") "x-session-token") MASK "response token masked")))
+        (println (str "SKIP clean-no-credential-leaves-the-sdk: " NO-TARGET)))))
 
   (t/run-check rec "clean-the-sweep-can-see-a-leak"
     (fn []
-      (let [target (usable-op)
-            sinks (atom [])
-            sdk (make-sdk (nth SCENARIOS 1) sinks {"active" false})
-            err (drive sdk target (vs/jm) sinks)]
-        (t/is-some target "no operation completes without arguments")
-        (t/is-some err "the 404 scenario must throw")
-        (t/is-true (some (fn [s] (seq (leaks (:text s)))) @sinks)
-                   "with clean off, nothing showed the canary: the sweep is blind")
-        (when-not (:suppressed AUTH)
-          (let [text (pr-str (:spec (core/ex->sdk err)))]
-            (t/is-true (or (str/includes? text (:apikey CANARY))
-                           (str/includes? text (b64 (str (:apikey CANARY) ":" (:secret CANARY)))))
-                       "the raw spec should carry the credential when clean is off"))))))
+      (if-let [target (usable-op)]
+        (let [sinks (atom [])
+              sdk (make-sdk (nth SCENARIOS 1) sinks {"active" false})
+              err (drive sdk target (vs/jm) sinks)]
+          (t/is-some err "the 404 scenario must throw")
+          (t/is-true (some (fn [s] (seq (leaks (:text s)))) @sinks)
+                     "with clean off, nothing showed the canary: the sweep is blind")
+          (when-not (:suppressed AUTH)
+            (let [text (pr-str (:spec (core/ex->sdk err)))]
+              (t/is-true (or (str/includes? text (:apikey CANARY))
+                             (str/includes? text (b64 (str (:apikey CANARY) ":" (:secret CANARY)))))
+                         "the raw spec should carry the credential when clean is off"))))
+        (println (str "SKIP clean-the-sweep-can-see-a-leak: " NO-TARGET)))))
+
+  (t/run-check rec "clean-a-registered-value-used-as-a-property-name"
+    (fn []
+      (let [cfg (core/make-clean-config (vs/jm "keys" "key,secret,token"))
+            ctx (atom {:options (vs/jm "__derived__" (vs/jm "clean" cfg))})]
+        (core/u-clean-add ctx "ZZVAL-abc123")
+        (core/u-clean-add ctx "ZZVAL-xyz789")
+        (let [out (core/u-clean ctx (vs/jm "ZZVAL-abc123" 1 "ZZVAL-xyz789" 2 "plain" 3))]
+          (t/is-eq (vs/getprop out MASK) 1 "a registered name is masked")
+          (t/is-eq (vs/getprop out (str MASK "#1")) 2 "a colliding masked name is numbered")
+          (t/is-eq (vs/getprop out "plain") 3 "a plain name is kept")
+          (t/is-nil (vs/getprop out "ZZVAL-abc123") "the registered name is gone")))))
+
+  (t/run-check rec "clean-add-sensitive-registers-every-scalar-under-a-sensitive-name"
+    (fn []
+      (let [cfg (core/make-clean-config (vs/jm "keys" "key,secret,token"))
+            ctx (atom {:options (vs/jm "__derived__" (vs/jm "clean" cfg))})
+            values (vs/getprop cfg "values")]
+        (core/u-clean-add-sensitive ctx (vs/jm "apikey" (vs/jm "value" "NESTED-SECRET-1")
+                                               "headers" (vs/jm "X-Api-Token" (vs/jt "LISTED-SECRET-2"))
+                                               "secret" 123456789
+                                               "name" "not-a-secret"))
+        (t/is-true (.contains ^java.util.List values "NESTED-SECRET-1") "nested under apikey")
+        (t/is-true (.contains ^java.util.List values "LISTED-SECRET-2") "listed under a token header")
+        (t/is-true (.contains ^java.util.List values "123456789") "a number, as its text")
+        (t/is-false (.contains ^java.util.List values "not-a-secret") "an ordinary name"))))
   nil)
 `
 }

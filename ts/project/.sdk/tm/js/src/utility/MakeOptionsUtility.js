@@ -1,7 +1,7 @@
 
 const { OPTSPEC } = require('../Schema')
 
-const { clean, cleanAdd, cleanKey, makeCleanConfig, splitvalues } = require('./CleanUtility')
+const { clean, cleanAdd, cleanAddSensitive, makeCleanConfig, splitvalues } = require('./CleanUtility')
 
 
 function makeOptions(ctx) {
@@ -12,7 +12,6 @@ function makeOptions(ctx) {
   const setprop = struct.setprop
   const merge = struct.merge
   const validate = struct.validate
-  const walk = struct.walk
 
   // `auth: null` is the documented way to disable auth outright, and
   // prepareAuth honours it before it ever reads the apikey. But it cannot
@@ -37,9 +36,14 @@ function makeOptions(ctx) {
 
   // The secret registry exists BEFORE validation, fed from the raw input, so
   // the constructor's own rejection of a mistyped credential is clean too.
-  const cleancfg = makeCleanConfig(merge([{}, OPTSPEC.clean, opts.clean]))
+  let config = ctx.config || {}
+  let cfgopts = config.options || {}
+
+  const cleancfg = makeCleanConfig(merge([{}, OPTSPEC.clean,
+    struct.clone(cfgopts.clean || {}), opts.clean]))
   const cleanctx = { options: { __derived__: { clean: cleancfg } } }
-  for (const raw of [opts.apikey, opts.secret].concat(splitvalues(opts.clean?.values))) {
+  cleanAddSensitive(cleanctx, { ...opts, clean: undefined })
+  for (const raw of [...splitvalues(cfgopts.clean?.values), ...splitvalues(opts.clean?.values)]) {
     cleanAdd(cleanctx, raw)
   }
 
@@ -67,8 +71,6 @@ function makeOptions(ctx) {
     setprop(utility, key, val)
   }
 
-  let config = ctx.config || {}
-  let cfgopts = config.options || {}
 
   // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
   //
@@ -166,15 +168,8 @@ function makeOptions(ctx) {
     featureorder,
   }
 
-  // Every string under a sensitive name anywhere in the options - a custom
-  // auth header, a feature credential - is a secret the SDK now handles.
-  const optctx = { options: opts }
-  walk(struct.clone({ ...opts, __derived__: undefined }), (key, val) => {
-    if ('string' === typeof val && cleanKey(optctx, key)) {
-      cleanAdd(optctx, val)
-    }
-    return val
-  })
+  // Again over the merged result: the config's own defaults can carry one.
+  cleanAddSensitive({ options: opts }, { ...opts, clean: undefined, __derived__: undefined })
 
   return opts
 }

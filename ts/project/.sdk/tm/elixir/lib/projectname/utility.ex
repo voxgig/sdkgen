@@ -252,6 +252,67 @@ defmodule ProjectName.Utility do
     end
   end
 
+  # Every scalar under a sensitive name, at any depth and of any shape: a
+  # credential mistyped as a map or a number is still a credential, and the
+  # validation error that rejects it quotes it.
+  def clean_add_sensitive(ctx, val) do
+    clean_add_sensitive_at(ctx, clean_config(ctx), val, false, 0, [])
+  end
+
+  defp clean_add_sensitive_at(ctx, cfg, val, under, depth, seen) do
+    cond do
+      val == nil or depth >= @clean_maxdepth ->
+        nil
+
+      is_binary(val) ->
+        if under, do: clean_add_impl(ctx, val)
+
+      is_number(val) ->
+        if under, do: clean_add_impl(ctx, number_text(val))
+
+      val in seen ->
+        nil
+
+      S.ismap(val) or S.islist(val) ->
+        Enum.each(H.entries(val), fn {k, v} ->
+          clean_add_sensitive_at(ctx, cfg, v, under or sensitive_key?(cfg, k), depth + 1, [val | seen])
+        end)
+
+      is_map(val) and not is_struct(val) ->
+        Enum.each(val, fn {k, v} ->
+          clean_add_sensitive_at(ctx, cfg, v, under or sensitive_key?(cfg, k), depth + 1, [val | seen])
+        end)
+
+      is_list(val) ->
+        Enum.each(val, fn v -> clean_add_sensitive_at(ctx, cfg, v, under, depth + 1, [val | seen]) end)
+
+      true ->
+        nil
+    end
+
+    nil
+  end
+
+  defp number_text(n) when is_float(n) and abs(n) < 9.0e15 and n == trunc(n),
+    do: Integer.to_string(trunc(n))
+
+  defp number_text(n), do: to_string(n)
+
+  # A registered value used as a property name is masked like any other
+  # string; names that mask alike take a counter, so none is lost.
+  defp clean_name(cfg, out, key) do
+    key = strof(key)
+    name = clean_string(cfg, key)
+    taken = S.keysof(out)
+
+    if name == key or name not in taken do
+      name
+    else
+      i = Enum.find(Stream.iterate(1, &(&1 + 1)), fn i -> (name <> "#" <> Integer.to_string(i)) not in taken end)
+      name <> "#" <> Integer.to_string(i)
+    end
+  end
+
   # A masked plain-data COPY: functions dropped, cycles cut, an SDK error as
   # its code and message, and nothing shared with the live value, whose spec
   # must stay raw.
@@ -280,7 +341,7 @@ defmodule ProjectName.Utility do
 
         Enum.each(H.entries(val), fn {k, v} ->
           c = clean_snapshot(cfg, v, k, depth + 1, [val | seen])
-          if c != :__drop__, do: S.setprop(out, strof(k), c)
+          if c != :__drop__, do: S.setprop(out, clean_name(cfg, out, k), c)
         end)
 
         out
@@ -307,9 +368,10 @@ defmodule ProjectName.Utility do
       is_map(val) ->
         out = S.jm([])
 
-        Enum.each(val, fn {k, v} ->
+        # Sorted, so colliding masked names number the same way every run.
+        Enum.each(Enum.sort_by(val, fn {k, _} -> strof(k) end), fn {k, v} ->
           c = clean_snapshot(cfg, v, k, depth + 1, [val | seen])
-          if c != :__drop__, do: S.setprop(out, strof(k), c)
+          if c != :__drop__, do: S.setprop(out, clean_name(cfg, out, k), c)
         end)
 
         out
@@ -355,6 +417,31 @@ defmodule ProjectName.Utility do
       is_binary(val) -> clean_string(cfg, val)
       match?(%ProjectName.Error{}, val) -> clean_error(cfg, val)
       true -> clean_field(cfg, val, nil)
+    end
+  end
+
+  # An exception is immutable, so one that never passed through make_error (a
+  # hook's, a fetcher's) leaves as a copy with its string fields cleaned; one
+  # whose message still quotes a secret, from a field of another type, leaves
+  # as a RuntimeError carrying the cleaned message.
+  def clean_exception(ctx, e) do
+    cfg = clean_config(ctx)
+
+    if S.getprop(cfg, "active") == false or match?(%ProjectName.Error{}, e) do
+      e
+    else
+      copy =
+        Enum.reduce(Map.from_struct(e), e, fn
+          {k, v}, acc when is_binary(v) ->
+            Map.put(acc, k, if(sensitive_key?(cfg, k), do: mask_value(cfg, v), else: clean_string(cfg, v)))
+
+          _, acc ->
+            acc
+        end)
+
+      text = Exception.message(copy)
+      cleaned = clean_string(cfg, text)
+      if cleaned == text, do: copy, else: RuntimeError.exception(cleaned)
     end
   end
 
@@ -590,11 +677,11 @@ defmodule ProjectName.Utility do
     cleancfg = make_clean_config(cleanraw)
     cleanctx = S.jm(["options", S.jm(["__derived__", S.jm(["clean", cleancfg])])])
 
-    Enum.each(
-      [S.getprop(opts0, "apikey"), S.getprop(opts0, "secret")] ++
-        splitvalues(S.getpath(opts0, "clean.values")),
-      fn raw -> clean_add_impl(cleanctx, raw) end
-    )
+    clean_add_sensitive(cleanctx, omit_keys(opts0, ["clean"]))
+
+    Enum.each(splitvalues(S.getpath(opts0, "clean.values")), fn raw ->
+      clean_add_impl(cleanctx, raw)
+    end)
 
     sys_fetch = S.getpath(opts0, "system.fetch")
 
@@ -717,20 +804,16 @@ defmodule ProjectName.Utility do
     derived = S.jm(["clean", cleancfg, "featureorder", S.jt(feature_order)])
     S.setprop(opts, "__derived__", derived)
 
-    # Every string under a sensitive name anywhere in the options - a custom
-    # auth header, a feature credential - is a secret the SDK now handles.
-    optctx = S.jm(["options", opts])
-    scan = S.clone(opts)
-    S.delprop(scan, "__derived__")
-
-    S.walk(scan,
-      after: fn key, val, _parent, _path ->
-        if is_binary(val) and sensitive_key?(cleancfg, key), do: clean_add_impl(optctx, val)
-        val
-      end
-    )
+    # Again over the merged result: the config's own defaults can carry one.
+    clean_add_sensitive(S.jm(["options", opts]), omit_keys(opts, ["clean", "__derived__"]))
 
     opts
+  end
+
+  defp omit_keys(node, names) do
+    out = S.jm([])
+    Enum.each(H.entries(node), fn {k, v} -> if k not in names, do: S.setprop(out, k, v) end)
+    out
   end
 
   # ---- make_point ----------------------------------------------------------

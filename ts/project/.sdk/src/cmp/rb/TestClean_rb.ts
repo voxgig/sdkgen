@@ -145,6 +145,21 @@ class ${Name}CleanTest < Minitest::Test
     def PreUnexpected(ctx); @sinks.concat(Sweep.forms("ctx@PreUnexpected", ctx)); end
   end
 
+  # A feature that raises from inside the pipeline, quoting the request it
+  # saw: an error make_error never handled.
+  class ThrowFeature < ${Name}BaseFeature
+    def initialize
+      super()
+      @name = "throwhook"
+      @version = "0.0.1"
+      @active = true
+    end
+
+    def PreResponse(ctx)
+      raise "hook saw #{ctx.spec.inspect}"
+    end
+  end
+
   class CaptureLogger
     def initialize(sinks)
       @sinks = sinks
@@ -187,7 +202,7 @@ class ${Name}CleanTest < Minitest::Test
     f.is_a?(Hash) && !f[name].nil?
   end
 
-  def make_sdk(scenario, sinks, cleanopts = nil)
+  def make_sdk(scenario, sinks, cleanopts = nil, extra = [])
     capture = ->(name) { ->(rec) { sinks.concat(Sweep.forms(name, rec)) } }
     feature = {}
     feature["log"] = { "active" => true, "logger" => CaptureLogger.new(sinks) } if has_feature?("log")
@@ -205,15 +220,15 @@ class ${Name}CleanTest < Minitest::Test
       "headers" => { "X-Custom-Token" => CANARY["header"] },
       "clean" => { "values" => CANARY["value"] }.merge(cleanopts || {}),
       "feature" => feature,
-      "extend" => [CaptureFeature.new(sinks)],
+      "extend" => [CaptureFeature.new(sinks)] + extra,
       "utility" => { "fetcher" => ->(_ctx, url, fetchdef) { respond.call(url, fetchdef) } },
     })
   end
 
-  # The first operation that completes against a plain 200 with no
-  # arguments (a required path parameter would fail before the request is
-  # built). An entity accessor is a capitalised client method whose result
-  # answers get_name, as the feature corpus runner finds them.
+  # The first operation that completes against a plain 200: with no
+  # arguments, else with every path parameter its points declare filled in.
+  # An entity accessor is a capitalised client method whose result answers
+  # get_name, as the feature corpus runner finds them.
   def usable_op
     plain = ${Name}SDK.new({
       "apikey" => CANARY["apikey"],
@@ -233,13 +248,22 @@ class ${Name}CleanTest < Minitest::Test
       found[ent.get_name.to_s] = name
     end
 
+    entities = ${Name}Config.shared_config["entity"] || {}
     found.keys.sort.each do |entname|
       accessor = found[entname]
       %w[list load create update remove].each do |op|
         next unless plain.public_send(accessor).respond_to?(op)
-        begin
-          plain.public_send(accessor).public_send(op, {}, {})
-          return { "accessor" => accessor, "op" => op }
+        filled = {}
+        points = entities.dig(entname, "op", op, "points")
+        (points.is_a?(Array) ? points : []).each do |point|
+          params = point.is_a?(Hash) ? point.dig("args", "params") : nil
+          (params.is_a?(Array) ? params : []).each do |p|
+            filled[p["name"]] = "p1" if p.is_a?(Hash) && p["name"].is_a?(String)
+          end
+        end
+        [{}, filled].each do |match|
+          plain.public_send(accessor).public_send(op, match.dup, {})
+          return { "accessor" => accessor, "op" => op, "match" => match }
         rescue StandardError
           next
         end
@@ -252,7 +276,7 @@ class ${Name}CleanTest < Minitest::Test
     out = nil
     err = nil
     begin
-      out = sdk.public_send(target["accessor"]).public_send(target["op"], {}, ctrl)
+      out = sdk.public_send(target["accessor"]).public_send(target["op"], target["match"].dup, ctrl)
     rescue StandardError => e
       err = e
     end
@@ -264,7 +288,7 @@ class ${Name}CleanTest < Minitest::Test
 
   def test_no_credential_leaves_the_sdk_in_any_form
     target = usable_op
-    refute_nil target, "no operation completes without arguments; nothing to sweep"
+    skip "no operation of this SDK completes against a plain 200; nothing to sweep" if target.nil?
 
     sinks = []
     errors = {}
@@ -281,6 +305,28 @@ class ${Name}CleanTest < Minitest::Test
         sinks.concat(Sweep.forms("sdk", sdk))
       end
     end
+
+    # A credential mistyped as a map is rejected by validation, whose
+    # message quotes the value it rejected.
+    rejected = nil
+    begin
+      ${Name}SDK.new({ "apikey" => { "value" => CANARY["apikey"] }, "clean" => { "values" => CANARY["value"] } })
+    rescue StandardError => e
+      rejected = e
+    end
+    refute_nil rejected, "a credential mistyped as a map should be rejected"
+    sinks.concat(Sweep.forms("rejected", rejected))
+
+    # An error a feature hook raises, quoting the request, skips make_error.
+    hooked = make_sdk(SCENARIOS[0], sinks, nil, [ThrowFeature.new])
+    refute_nil drive(hooked, target, {}, sinks), "the throwing hook should fail the operation"
+
+    # A registered value used as a property name is masked; names that
+    # mask alike are all kept.
+    named = hooked.get_utility.clean.call(hooked.get_root_ctx,
+      { CANARY["header"] => 1, CANARY["value"] => 2, "plain" => 3 })
+    assert_equal({ MASK => 1, "#{MASK}#1" => 2, "plain" => 3 }, named)
+    sinks.concat(Sweep.forms("named", named))
 
     leaked = sinks
       .map { |s| [s["name"], Sweep.leaks(s["text"])] }
@@ -317,7 +363,7 @@ class ${Name}CleanTest < Minitest::Test
 
   def test_the_sweep_can_see_a_leak_clean_switched_off_shows_the_credential
     target = usable_op
-    refute_nil target
+    skip "no operation of this SDK completes against a plain 200; nothing to sweep" if target.nil?
 
     sinks = []
     sdk = make_sdk(SCENARIOS[1], sinks, { "active" => false })

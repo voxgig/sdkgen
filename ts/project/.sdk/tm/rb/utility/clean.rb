@@ -164,7 +164,7 @@ module ProjectNameUtilities
             name = ivar.to_s.delete_prefix("@")
             next if name == "ctx"
             v = snapshot(cfg, val.instance_variable_get(ivar), name, depth + 1, seen)
-            out[name] = v unless v.equal?(DROP)
+            out[clean_name(cfg, out, name)] = v unless v.equal?(DROP)
           end
           return out
         end
@@ -189,7 +189,7 @@ module ProjectNameUtilities
       out = {}
       val.each do |k, v|
         c = snapshot(cfg, v, k, depth + 1, seen)
-        out[k] = c unless c.equal?(DROP)
+        out[clean_name(cfg, out, k)] = c unless c.equal?(DROP)
       end
       out
     end
@@ -199,9 +199,31 @@ module ProjectNameUtilities
       val.instance_variables.each do |ivar|
         name = ivar.to_s.delete_prefix("@")
         c = snapshot(cfg, val.instance_variable_get(ivar), name, depth + 1, seen)
-        out[name] = c unless c.equal?(DROP)
+        out[clean_name(cfg, out, name)] = c unless c.equal?(DROP)
       end
       out
+    end
+
+    # A registered value used as a property name is masked like any other
+    # string; names that mask alike take a counter, so none is lost.
+    def self.clean_name(cfg, out, key)
+      return key unless key.is_a?(String)
+      name = clean_string(cfg, key)
+      return name if name == key || !out.key?(name)
+      i = 1
+      i += 1 while out.key?("#{name}##{i}")
+      "#{name}##{i}"
+    end
+
+    # Does any message along the cause chain hold a registered value?
+    def self.dirty_chain?(cfg, err)
+      seen = []
+      until err.nil? || seen.any? { |s| s.equal?(err) }
+        return true if clean_string(cfg, err.message.to_s) != err.message.to_s
+        seen << err
+        err = err.cause
+      end
+      false
     end
 
     # Clean a value on its way out. A string is redacted; an SDK error is
@@ -233,8 +255,10 @@ module ProjectNameUtilities
           return val
         end
 
+        # full_message prints the cause chain, so a dirty cause is dropped:
+        # a fresh exception carries none until it is raised.
+        return val unless dirty_chain?(cfg, val)
         msg = clean_string(cfg, val.message.to_s)
-        return val if msg == val.message.to_s
         out = val.class.exception(msg)
         out.set_backtrace(val.backtrace) if val.backtrace
         return out
@@ -242,6 +266,25 @@ module ProjectNameUtilities
 
       out = snapshot(cfg, val, nil, 0, [])
       out.equal?(DROP) ? nil : out
+    end
+
+    # Every scalar under a sensitive name, at any depth and of any shape: a
+    # credential mistyped as a map or a number is still a credential, and
+    # the validation error that rejects it quotes it.
+    def self.add_sensitive(ctx, val, under = false, depth = 0, seen = [])
+      return if val.nil? || depth >= MAXDEPTH
+      if val.is_a?(String) || val.is_a?(Integer) || val.is_a?(Float)
+        add(ctx, val.to_s) if under
+        return
+      end
+      return unless val.is_a?(Hash) || val.is_a?(Array)
+      return if seen.any? { |s| s.equal?(val) }
+      seen << val
+      if val.is_a?(Hash)
+        val.each { |k, v| add_sensitive(ctx, v, under || key?(ctx, k), depth + 1, seen) }
+      else
+        val.each { |v| add_sensitive(ctx, v, under, depth + 1, seen) }
+      end
     end
 
     # Is this key name sensitive under the context's clean configuration?

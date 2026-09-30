@@ -132,8 +132,13 @@ local function make_options_util(ctx)
     vs.clone(rawclean),
   }))
   local cleanctx = { options = { __derived__ = { clean = cleancfg } } }
-  cleanmod.clean_add(cleanctx, opts.apikey)
-  cleanmod.clean_add(cleanctx, opts.secret)
+  local rawscan = {}
+  for k, v in pairs(opts) do
+    if k ~= "clean" and k ~= "extend" then
+      rawscan[k] = v
+    end
+  end
+  cleanmod.clean_add_sensitive(cleanctx, rawscan)
   for _, raw in ipairs(cleanmod.splitvalues(rawclean.values)) do
     cleanmod.clean_add(cleanctx, raw)
   end
@@ -358,29 +363,19 @@ local function make_options_util(ctx)
     end
   end
 
+  -- Again over the merged result: the config's own defaults can carry one.
+  local scan = {}
+  for k, v in pairs(opts) do
+    if k ~= "clean" and k ~= "extend" and k ~= "__derived__" then
+      scan[k] = v
+    end
+  end
+  cleanmod.clean_add_sensitive(cleanctx, scan)
+
   opts["__derived__"] = {
     clean = cleancfg,
     featureorder = featureorder,
   }
-
-  -- Every string under a sensitive name anywhere in the options - a custom
-  -- auth header, a feature credential - is a secret the SDK now handles.
-  local optctx = { options = opts }
-  local function register(val, key, depth, seen)
-    if type(val) == "string" then
-      if cleanmod.clean_key(optctx, key) then
-        cleanmod.clean_add(optctx, val)
-      end
-    elseif type(val) == "table" and depth < 32 and not seen[val] then
-      seen[val] = true
-      for k, v in pairs(val) do
-        if k ~= "__derived__" then
-          register(v, k, depth + 1, seen)
-        end
-      end
-    end
-  end
-  register(opts, nil, 0, {})
 
   return opts
 end

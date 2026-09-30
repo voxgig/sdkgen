@@ -244,7 +244,9 @@ class EntyClass:
 
             return out
 
-        except Exception:
+        except Exception as err:
             # #PreUnexpected-Hook
 
+            # An error a hook raised never passed through make_error.
+            utility.clean(ctx, err)
             raise

@@ -1,5 +1,6 @@
 -- ProjectName SDK EntityName entity
 
+local json = require("dkjson")
 local vs = require("utility.struct.struct")
 local helpers = require("core.helpers")
 
@@ -39,6 +40,26 @@ end
 
 function EntyClass:get_name()
   return self._name
+end
+
+
+-- The entity serialises and prints as its data, as ts does: the instance
+-- also holds the client, the utility and a match that can carry a query
+-- credential.
+function EntyClass:to_record()
+  local rec = self._utility.clean(self._entctx, vs.clone(self._data or {}))
+  rec["voxgig$entity"] = self._name
+  return rec
+end
+
+EntyClass.__tostring = function(self)
+  local rec = self:to_record()
+  rec["voxgig$entity"] = nil
+  return self._name .. " " .. json.encode(rec)
+end
+
+EntyClass.__tojson = function(self)
+  return json.encode(self:to_record())
 end
 
 
@@ -240,7 +261,42 @@ end
 -- #RemoveOp
 
 
+-- A hook, fetcher or parser that raises never reaches make_error: its error
+-- leaves cleaned, and so does the explain record it interrupted.
 function EntyClass:_run_op(ctx, post_done)
+  local ok, out, err = pcall(self._run_steps, self, ctx, post_done)
+  if ok then
+    return out, err
+  end
+
+  local clean = self._utility.clean
+  local cleanerr = clean(ctx, out)
+  ctx.ctrl.err = cleanerr
+
+  local explain = ctx.ctrl.explain
+  if type(explain) == "table" then
+    local cleaned = clean(ctx, explain)
+    if type(cleaned) == "table" and cleaned ~= explain then
+      for k in pairs(explain) do
+        explain[k] = nil
+      end
+      for k, v in pairs(cleaned) do
+        explain[k] = v
+      end
+    end
+    if explain.err == nil then
+      explain.err = { message = type(cleanerr) == "table" and cleanerr.msg or tostring(cleanerr) }
+    end
+  end
+
+  if ctx.ctrl.throw_err == false then
+    return nil, nil
+  end
+  return nil, cleanerr
+end
+
+
+function EntyClass:_run_steps(ctx, post_done)
   local utility = self._utility
 
   -- #PrePoint-Hook

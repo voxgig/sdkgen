@@ -65,8 +65,8 @@ module ProjectNameUtilities
     cleancfg = CleanSupport.make_config(VoxgigStruct.merge(
       [{}, ProjectNameSchema::OPTSPEC["clean"], opts["clean"]].select { |c| c.is_a?(Hash) }))
     cleanctx = { "options" => { "__derived__" => { "clean" => cleancfg } } }
-    ([opts["apikey"], opts["secret"]] +
-      CleanSupport.splitvalues(VoxgigStruct.getpath(opts, "clean.values"))).each do |raw|
+    CleanSupport.add_sensitive(cleanctx, opts.reject { |k, _| k == "clean" })
+    CleanSupport.splitvalues(VoxgigStruct.getpath(opts, "clean.values")).each do |raw|
       CleanSupport.add(cleanctx, raw)
     end
 
@@ -118,7 +118,8 @@ module ProjectNameUtilities
     begin
       validated = VoxgigStruct.validate(merged, optspec)
     rescue StandardError => e
-      raise CleanSupport.clean(cleanctx, e)
+      # Not a cause: the raw error would print beneath the cleaned one.
+      raise CleanSupport.clean(cleanctx, e), cause: nil
     end
     opts = validated.is_a?(Hash) ? validated : {}
 
@@ -187,19 +188,13 @@ module ProjectNameUtilities
       end
     end
 
+    # Again over the merged result: the config's own defaults can carry one.
+    CleanSupport.add_sensitive(cleanctx, opts.reject { |k, _| k == "clean" })
+
     opts["__derived__"] = {
       "clean" => cleancfg,
       "featureorder" => featureorder,
     }
-
-    # Every string under a sensitive name anywhere in the options - a custom
-    # auth header, a feature credential - is a secret the SDK now handles.
-    optctx = { "options" => opts }
-    VoxgigStruct.walk(VoxgigStruct.clone(opts.reject { |k, _| k == "__derived__" }),
-      ->(key, val, _parent, _path) {
-        CleanSupport.add(optctx, val) if val.is_a?(String) && CleanSupport.key?(optctx, key)
-        val
-      })
 
     opts
   }

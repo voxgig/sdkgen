@@ -30,3 +30,6 @@ let run_op (ctx : ctx) (post_done : unit -> unit) : value =
   | Sdk_error_exc _ as e ->
     (* #PreUnexpected-Hook *)
     raise e
+  | e ->
+    (* An error a hook raised never passed through make_error. *)
+    raise (clean_exn ctx e)

@@ -4,7 +4,7 @@ from __future__ import annotations
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.schema import OPTSPEC
 from projectname_sdk.utility.clean import (
-    clean_util, clean_add_util, clean_key, make_clean_config, split_values)
+    clean_util, clean_add_util, clean_add_sensitive, make_clean_config, split_values)
 
 
 # A context carrying only the derived clean block, for the registry that
@@ -12,21 +12,6 @@ from projectname_sdk.utility.clean import (
 class _CleanCtx:
     def __init__(self, cleancfg):
         self.options = {"__derived__": {"clean": cleancfg}}
-
-
-# Every string under a sensitive name anywhere in the options - a custom
-# auth header, a feature credential - is a secret the SDK now handles.
-def _register_sensitive(ctx, node, key=None):
-    if isinstance(node, str):
-        if clean_key(ctx, key):
-            clean_add_util(ctx, node)
-    elif isinstance(node, dict):
-        for k, v in node.items():
-            if k != "__derived__":
-                _register_sensitive(ctx, v, k)
-    elif isinstance(node, list):
-        for v in node:
-            _register_sensitive(ctx, v, key)
 
 
 
@@ -113,7 +98,8 @@ def make_options_util(ctx):
     rawclean = opts.get("clean") if isinstance(opts.get("clean"), dict) else {}
     cleancfg = make_clean_config(vs.merge([{}, vs.clone(OPTSPEC.get("clean")), rawclean]))
     cleanctx = _CleanCtx(cleancfg)
-    for raw in [opts.get("apikey"), opts.get("secret")] + split_values(rawclean.get("values")):
+    clean_add_sensitive(cleanctx, {k: v for k, v in opts.items() if k != "clean"})
+    for raw in split_values(rawclean.get("values")):
         clean_add_util(cleanctx, raw)
 
     if authsuppressed:
@@ -251,6 +237,8 @@ def make_options_util(ctx):
         "featureorder": featureorder,
     }
 
-    _register_sensitive(_CleanCtx(cleancfg), opts)
+    # Again over the merged result: the config's own defaults can carry one.
+    clean_add_sensitive(cleanctx, {
+        k: v for k, v in opts.items() if k not in ("clean", "__derived__")})
 
     return opts

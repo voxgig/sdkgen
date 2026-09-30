@@ -346,6 +346,22 @@ static bool seen_has(const Seen* seen, const void* p) {
   return false;
 }
 
+// A registered value used as a property name is masked like any other
+// string; names that mask alike take a counter, so none is lost.
+static char* clean_name(const CleanCfg* cfg, voxgig_value* out, const char* key) {
+  char* name = clean_string(cfg, key);
+  voxgig_map* om = voxgig_as_map(out);
+  if (0 == strcmp(name, key) || !voxgig_map_get(om, name)) return name;
+  size_t cap = strlen(name) + 24;
+  char* alt = (char*)malloc(cap);
+  for (size_t i = 1;; i++) {
+    snprintf(alt, cap, "%s#%zu", name, i);
+    if (!voxgig_map_get(om, alt)) break;
+  }
+  free(name);
+  return alt;
+}
+
 // A plain-data copy of what is about to leave: functions are dropped
 // (NULL), cycles are cut, and no live node is shared with the copy -
 // masking the copy must never mask the pipeline's own spec.
@@ -385,7 +401,11 @@ static voxgig_value* snapshot(const CleanCfg* cfg, voxgig_value* val, const char
     voxgig_map* m = voxgig_as_map(val);
     for (size_t i = 0; i < m->len; i++) {
       voxgig_value* cv = snapshot(cfg, m->entries[i].value, m->entries[i].key, depth + 1, seen);
-      if (cv) setp(out, m->entries[i].key, cv);
+      if (cv) {
+        char* name = clean_name(cfg, out, m->entries[i].key);
+        setp(out, name, cv);
+        free(name);
+      }
     }
   }
   seen->n--;
@@ -439,42 +459,84 @@ bool clean_key_util(Context* ctx, const char* key) {
   return sensitive_key(&cfg, key);
 }
 
-static void walk_sensitive(const CleanCfg* cfg, voxgig_value* options, voxgig_value* val,
-                           const char* key, size_t depth, Seen* seen) {
-  if (!val) return;
+// An error that never passed through make_error, cleaned in place: every
+// text field and both snapshots.
+void clean_error_util(Context* ctx, PNError* err) {
+  if (!err) return;
+  CleanCfg cfg;
+  read_cfg(config_block(ctx), &cfg);
+  if (!cfg.active) return;
+  char* msg = clean_string(&cfg, err->msg ? err->msg : "");
+  free(err->msg);
+  err->msg = msg;
+  char* code = clean_string(&cfg, err->code ? err->code : "");
+  free(err->code);
+  err->code = code;
+  if (err->result) err->result = clean_with(&cfg, err->result);
+  if (err->spec) err->spec = clean_with(&cfg, err->spec);
+}
+
+typedef struct {
+  const void** ptrs;
+  size_t n;
+  size_t cap;
+} Visited;
+
+static void add_sensitive(const CleanCfg* cfg, voxgig_value* options, voxgig_value* val,
+                          bool under, size_t depth, Visited* seen) {
+  if (!val || CLEAN_MAXDEPTH <= depth) return;
   if (voxgig_is_string(val)) {
-    if (sensitive_key(cfg, key)) clean_add_opts(options, voxgig_as_string(val));
+    if (under) clean_add_opts(options, voxgig_as_string(val));
+    return;
+  }
+  if (voxgig_is_number(val)) {
+    if (under) {
+      char* text = voxgig_stringify(val, -1);
+      clean_add_opts(options, text);
+      free(text);
+    }
     return;
   }
   if (!voxgig_is_list(val) && !voxgig_is_map(val)) return;
 
   const void* ptr = node_ptr(val);
-  if (CLEAN_MAXDEPTH <= depth || seen_has(seen, ptr)) return;
+  for (size_t i = 0; i < seen->n; i++) {
+    if (seen->ptrs[i] == ptr) return;
+  }
+  if (seen->n == seen->cap) {
+    seen->cap = seen->cap ? seen->cap * 2 : 16;
+    seen->ptrs = (const void**)realloc((void*)seen->ptrs, seen->cap * sizeof(void*));
+  }
   seen->ptrs[seen->n++] = ptr;
+
   if (voxgig_is_list(val)) {
     voxgig_list* l = voxgig_as_list(val);
     for (size_t i = 0; i < l->len; i++) {
-      walk_sensitive(cfg, options, l->items[i], NULL, depth + 1, seen);
+      add_sensitive(cfg, options, l->items[i], under, depth + 1, seen);
     }
   } else {
     voxgig_map* m = voxgig_as_map(val);
     for (size_t i = 0; i < m->len; i++) {
-      if (0 == strcmp(m->entries[i].key, "__derived__")) continue;
-      walk_sensitive(cfg, options, m->entries[i].value, m->entries[i].key, depth + 1, seen);
+      bool sub = under || sensitive_key(cfg, m->entries[i].key);
+      add_sensitive(cfg, options, m->entries[i].value, sub, depth + 1, seen);
     }
   }
-  seen->n--;
 }
 
-// Every string under a sensitive name anywhere in `val` is a secret the
-// SDK handles: registered against `options`, whose own derived block is
-// left out of the walk.
-void clean_register_sensitive(voxgig_value* options, voxgig_value* val) {
+// Every scalar under a sensitive name, at any depth and of any shape, is
+// registered against `options`: a credential mistyped as a map or a number
+// is still a credential.
+void clean_add_sensitive_opts(voxgig_value* options, voxgig_value* val) {
   voxgig_value* block = derived_block(options);
   if (!voxgig_is_map(block)) return;
   CleanCfg cfg;
   read_cfg(block, &cfg);
-  Seen seen;
-  seen.n = 0;
-  walk_sensitive(&cfg, options, val, NULL, 0, &seen);
+  Visited seen = { NULL, 0, 0 };
+  add_sensitive(&cfg, options, val, false, 0, &seen);
+  free((void*)seen.ptrs);
+}
+
+void clean_add_sensitive_util(Context* ctx, voxgig_value* val) {
+  if (!ctx) return;
+  clean_add_sensitive_opts(ctx->options, val);
 }

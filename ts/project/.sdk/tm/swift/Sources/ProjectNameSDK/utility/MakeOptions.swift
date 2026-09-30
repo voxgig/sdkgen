@@ -65,10 +65,9 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   let cleancfg = makeCleanConfig(merge(.list(cleanlayers)))
   let cleanctx = Context(
     ["options": vm(("__derived__", .map(vm(("clean", .nat(cleancfg))))))], nil)
-  var rawsecrets: [Value] = [gp(opts, "apikey"), gp(opts, "secret")]
-  rawsecrets += cleanSplitValues(gpath(opts, "clean", "values")).map { .string($0) }
-  for raw in rawsecrets {
-    cleanAddUtil(cleanctx, raw)
+  cleanAddSensitiveUtil(cleanctx, .map(cleanOmit(opts, ["clean"])))
+  for raw in cleanSplitValues(gpath(opts, "clean", "values")) {
+    cleanAddUtil(cleanctx, .string(raw))
   }
 
   // Feature add-order. options.feature may be given as an ordered LIST of
@@ -166,17 +165,17 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   derived.entries["featureorder"] = .list(VList(featureorder))
   result.entries["__derived__"] = .map(derived)
 
-  // Every string under a sensitive name anywhere in the options - a custom
-  // auth header, a feature credential - is a secret the SDK now handles.
-  let optctx = Context(["options": result], nil)
-  let scan = clone(.map(result)).asMap ?? VMap()
-  scan.entries.removeValue(forKey: "__derived__")
-  _ = walk(.map(scan), { key, val, parent, _ in
-    if !parent.isList, let k = key.asString, let s = val.asString, cleanKeyUtil(optctx, k) {
-      cleanAddUtil(optctx, .string(s))
-    }
-    return val
-  })
+  // Again over the merged result: the config's own defaults can carry one.
+  cleanAddSensitiveUtil(
+    Context(["options": result], nil), .map(cleanOmit(result, ["clean", "__derived__"])))
 
   return result
+}
+
+private func cleanOmit(_ src: VMap, _ names: [String]) -> VMap {
+  let out = VMap()
+  for (k, v) in src.entries where !names.contains(k) {
+    out.entries[k] = v
+  }
+  return out
 }

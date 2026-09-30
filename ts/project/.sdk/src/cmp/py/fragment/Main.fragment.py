@@ -224,7 +224,8 @@ class ProjectNameSDK:
         except Exception as err:
             # direct() is the raw-HTTP escape hatch: it never raises, it
             # returns a result object callers branch on via result["ok"].
-            return {"ok": False, "err": err}
+            # That error never passes through make_error, so it is cleaned.
+            return {"ok": False, "err": utility.clean(self._rootctx, err)}
 
         if fetchargs is None:
             fetchargs = {}
@@ -241,7 +242,7 @@ class ProjectNameSDK:
         fetched, fetch_err = utility.fetcher(ctx, url, fetchdef)
 
         if fetch_err is not None:
-            return {"ok": False, "err": fetch_err}
+            return {"ok": False, "err": utility.clean(ctx, fetch_err)}
 
         if fetched is None:
             return {

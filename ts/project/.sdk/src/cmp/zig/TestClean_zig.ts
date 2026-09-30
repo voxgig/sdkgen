@@ -1,5 +1,6 @@
 import {
   cmp,
+  configDefinition,
   each,
   File,
   Content,
@@ -15,6 +16,7 @@ import { zigVarName } from './utility_zig'
 
 
 // The canary sweep, the zig port of TestClean_ts.ts: see that component.
+// Each operation carries the path parameters its config points declare.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
   const { target } = props
@@ -29,8 +31,9 @@ const TestClean = cmp(function TestClean(props: any) {
 
   const entityColl = entityCollection(model)
   const rank: Record<string, number> = { list: 0, load: 1 }
+  const configEntity = configDefinition(model, target.name).def.entity || {}
 
-  const candidates: { method: string, mod: string, cls: string, op: string }[] = []
+  const candidates: Candidate[] = []
   each(entityColl)
     .filter((e: any) => false !== e.active)
     .forEach((e: any) => {
@@ -39,11 +42,29 @@ const TestClean = cmp(function TestClean(props: any) {
       Object.keys(e.op || {})
         .filter((op) => ['list', 'load', 'create', 'update', 'remove'].includes(op))
         .sort((a, b) => ((rank[a] ?? 2) - (rank[b] ?? 2)) || a.localeCompare(b))
-        .forEach((op) => candidates.push({ method, mod: method, cls, op }))
+        .forEach((op) => candidates.push({
+          method, mod: method, cls, op, params: pointParams(configEntity[e.name]?.op?.[op]),
+        }))
     })
 
   File({ name: 'clean_test.' + target.ext }, () => Content(render(auth, candidates)))
 })
+
+
+type Candidate = { method: string, mod: string, cls: string, op: string, params: string[] }
+
+
+// Every path parameter an operation's points declare, as the generated
+// config carries them (points[].args.params[].name).
+function pointParams(opdef: any): string[] {
+  const names: string[] = []
+  for (const point of opdef?.points || []) {
+    for (const p of point?.args?.params || []) {
+      if ('string' === typeof p?.name && !names.includes(p.name)) names.push(p.name)
+    }
+  }
+  return names
+}
 
 
 function zigbool(b: boolean): string {
@@ -56,12 +77,12 @@ function zigstr(s: string): string {
 }
 
 
-function candidateFn(c: { method: string, mod: string, cls: string, op: string }): string {
+function candidateFn(c: Candidate): string {
   const name = 'try_' + c.method + '_' + c.op
-  const call = 'client.' + c.method + '(vnull()).' + c.op + '(h.omap(), ctrl)'
+  const call = 'client.' + c.method + '(vnull()).' + c.op + '(mtch, ctrl)'
   if ('list' === c.op) {
     return `
-fn ${name}(client: *sdk.SDK, ctrl: Value) Outcome {
+fn ${name}(client: *sdk.SDK, mtch: Value, ctrl: Value) Outcome {
     switch (${call}) {
         .ok => |ents| {
             const records = h.olist();
@@ -74,7 +95,7 @@ fn ${name}(client: *sdk.SDK, ctrl: Value) Outcome {
 `
   }
   return `
-fn ${name}(client: *sdk.SDK, ctrl: Value) Outcome {
+fn ${name}(client: *sdk.SDK, mtch: Value, ctrl: Value) Outcome {
     switch (${call}) {
         .ok => |ent| return .{ .ok = true, .err = null, .result = ent.asEntity().data(null) },
         .err => |e| return .{ .ok = false, .err = e, .result = vnull() },
@@ -86,7 +107,7 @@ fn ${name}(client: *sdk.SDK, ctrl: Value) Outcome {
 
 function render(auth: {
   suppressed: boolean, where: string, name: string, basic: boolean
-}, candidates: { method: string, mod: string, cls: string, op: string }[]): string {
+}, candidates: Candidate[]): string {
   return `// The canary sweep: every credential slot holds a distinctive value, every
 // diagnostic feature this SDK ships is switched on with a capturing sink, a
 // real operation runs through every outcome, and every string that leaves
@@ -231,6 +252,40 @@ const CaptureFeature = struct {
     };
 };
 
+// A feature that fails the operation from inside the pipeline, quoting the
+// request it saw. A zig hook has no error return, so it fails the result:
+// an error make_error receives from a hook, not from the pipeline.
+const ThrowFeature = struct {
+    var instance: u8 = 0;
+
+    fn make() sdk.Feature {
+        return .{ .ptr = @ptrCast(&instance), .vtable = &vtable };
+    }
+    fn vname(_: *anyopaque) []const u8 {
+        return "throwhook";
+    }
+    fn vactive(_: *anyopaque) bool {
+        return true;
+    }
+    fn vaddopts(_: *anyopaque) Value {
+        return vnull();
+    }
+    fn vinit(_: *anyopaque, _: *sdk.Context, _: Value) void {}
+    fn vdispatch(_: *anyopaque, hook: []const u8, c: *sdk.Context) void {
+        if (!std.mem.eql(u8, hook, "PreResponse")) return;
+        const res = c.result orelse return;
+        const spec: Value = if (c.spec) |sp| sp.to_value() else vnull();
+        res.err = c.make_error("hook", fmt("hook saw {s}", .{h.jsonify_compact(spec)}));
+    }
+    const vtable = sdk.Feature.VTable{
+        .name = vname,
+        .active = vactive,
+        .add_options = vaddopts,
+        .init = vinit,
+        .dispatch = vdispatch,
+    };
+};
+
 // ---- scenarios: what the transport answers ------------------------------
 
 const Scenario = enum { ok, notfound, server, transport, notjson };
@@ -287,7 +342,7 @@ const Transport = struct {
     }
 };
 
-fn makeSdk(scenario: Scenario, sinks: *Sinks, clean_active: bool) *sdk.SDK {
+fn makeSdk(scenario: Scenario, sinks: *Sinks, clean_active: bool, extra: ?sdk.Feature) *sdk.SDK {
     const feature = h.omap();
     if (fh.fh_has_feature("log")) h.setp(feature, "log", h.jo(&.{.{ "active", h.vbool(true) }}));
     if (fh.fh_has_feature("debug")) h.setp(feature, "debug", h.jo(&.{
@@ -321,6 +376,7 @@ fn makeSdk(scenario: Scenario, sinks: *Sinks, clean_active: bool) *sdk.SDK {
         .{ "system", h.jo(&.{.{ "fetch", Transport.make(scenario) }}) },
     });
 
+    if (extra) |f| return sdk.SDK.new_with(options, &.{ CaptureFeature.make(sinks), f });
     return sdk.SDK.new_with(options, &.{CaptureFeature.make(sinks)});
 }
 
@@ -332,25 +388,39 @@ const Outcome = struct {
     result: Value,
 };
 
-const Candidate = *const fn (client: *sdk.SDK, ctrl: Value) Outcome;
+const Candidate = *const fn (client: *sdk.SDK, mtch: Value, ctrl: Value) Outcome;
 ${candidates.map(candidateFn).join('')}
-const CANDIDATES = [_]Candidate{${candidates.map((c) => 'try_' + c.method + '_' + c.op).join(', ')}};
+const CandidateDef = struct { run: Candidate, params: []const []const u8 };
 
-// The first operation that completes against a plain 200 with no arguments
-// (a required path parameter would fail before the request is built).
-fn usableOp() ?Candidate {
+// Generated: every CRUD operation of every active entity, with the path
+// parameters its points declare.
+const CANDIDATES = [_]CandidateDef{${candidates.map((c) => '\n    .{ .run = try_' + c.method + '_' + c.op +
+    ', .params = &.{' + c.params.map(zigstr).join(', ') + '} },').join('')}
+};
+
+const Target = struct { run: Candidate, mtch: Value };
+
+// The first operation that completes against a plain 200: with no
+// arguments, else with every path parameter its points declare filled in.
+fn usableOp() ?Target {
     for (CANDIDATES) |cand| {
-        const plain = sdk.SDK.new(h.jo(&.{
-            .{ "apikey", h.vstr(CANARY_APIKEY) },
-            .{ "system", h.jo(&.{.{ "fetch", Transport.make(.ok) }}) },
-        }));
-        if (cand(plain, h.omap()).ok) return cand;
+        const filled = h.omap();
+        for (cand.params) |p| h.setp(filled, p, h.vstr("p1"));
+        for ([_]Value{ h.omap(), filled }) |mtch| {
+            const plain = sdk.SDK.new(h.jo(&.{
+                .{ "apikey", h.vstr(CANARY_APIKEY) },
+                .{ "system", h.jo(&.{.{ "fetch", Transport.make(.ok) }}) },
+            }));
+            if (cand.run(plain, h.clone(mtch), h.omap()).ok) return .{ .run = cand.run, .mtch = mtch };
+        }
     }
     return null;
 }
 
-fn drive(client: *sdk.SDK, cand: Candidate, ctrl: Value, sinks: *Sinks) ?*sdk.h.SdkError {
-    const out = cand(client, ctrl);
+const NOTHING_TO_SWEEP = "SKIP: no operation of this SDK completes against a plain 200; nothing to sweep\\n";
+
+fn drive(client: *sdk.SDK, target: Target, ctrl: Value, sinks: *Sinks) ?*sdk.h.SdkError {
+    const out = target.run(client, h.clone(target.mtch), ctrl);
     if (out.err) |e| sinks.err("error", e);
     if (out.ok) sinks.value("result", out.result);
     const explain = h.getp(ctrl, "explain");
@@ -392,10 +462,9 @@ fn ctrlFor(v: Variant) Value {
 }
 
 test "clean: no credential leaves the SDK in any form" {
-    const cand = usableOp() orelse {
-        std.debug.print("clean: no operation completes without arguments; nothing to sweep\\n", .{});
-        try testing.expect(false);
-        return;
+    const target = usableOp() orelse {
+        std.debug.print(NOTHING_TO_SWEEP, .{});
+        return error.SkipZigTest;
     };
 
     var sinks = Sinks{};
@@ -404,13 +473,31 @@ test "clean: no credential leaves the SDK in any form" {
 
     for ([_]Scenario{ .ok, .notfound, .server, .transport, .notjson }) |scenario| {
         for ([_]Variant{ .throw, .explain, .nothrow }) |variant| {
-            const client = makeSdk(scenario, &sinks, true);
+            const client = makeSdk(scenario, &sinks, true, null);
             const ctrl = ctrlFor(variant);
-            const err = drive(client, cand, ctrl, &sinks);
+            const err = drive(client, target, ctrl, &sinks);
             if (scenario == .notfound and variant == .throw) notfound = err;
             if (scenario == .ok and variant == .explain) explained = h.getp(ctrl, "explain");
         }
     }
+
+    // A credential mistyped as a map. The zig validator's failure is not
+    // raised (make_options keeps its input), so what the constructor produced
+    // is swept instead: a string quoting the value, cleaned the way a
+    // validation message is.
+    const mistyped = sdk.SDK.new(h.jo(&.{
+        .{ "apikey", h.jo(&.{.{ "value", h.vstr(CANARY_APIKEY) }}) },
+        .{ "clean", h.jo(&.{.{ "values", h.vstr(CANARY_VALUE) }}) },
+    }));
+    sinks.push("mistyped:quoted", sdk.utilmod.clean_str_util(
+        mistyped.get_root_ctx(),
+        fmt("apikey: expected string, got {{\\"value\\":\\"{s}\\"}}", .{CANARY_APIKEY}),
+    ));
+
+    // An error a feature hook raises, quoting the request.
+    const hooked = makeSdk(.ok, &sinks, true, ThrowFeature.make());
+    const hookerr = drive(hooked, target, h.omap(), &sinks);
+    try testing.expect(hookerr != null);
 
     var leaked: usize = 0;
     for (sinks.items.items) |s| {
@@ -453,14 +540,14 @@ test "clean: no credential leaves the SDK in any form" {
 }
 
 test "clean: the sweep can see a leak: clean switched off shows the credential" {
-    const cand = usableOp() orelse {
-        try testing.expect(false);
-        return;
+    const target = usableOp() orelse {
+        std.debug.print(NOTHING_TO_SWEEP, .{});
+        return error.SkipZigTest;
     };
 
     var sinks = Sinks{};
-    const client = makeSdk(.notfound, &sinks, false);
-    const err = drive(client, cand, h.omap(), &sinks);
+    const client = makeSdk(.notfound, &sinks, false, null);
+    const err = drive(client, target, h.omap(), &sinks);
     try testing.expect(err != null);
 
     var seen: usize = 0;
@@ -475,6 +562,25 @@ test "clean: the sweep can see a leak: clean switched off shows the credential" 
         try testing.expect(std.mem.indexOf(u8, text, CANARY_APIKEY) != null or
             std.mem.indexOf(u8, text, basic) != null);
     }
+}
+
+test "clean: a registered value used as a property name is masked, collisions kept" {
+    const client = sdk.SDK.new(h.jo(&.{
+        .{ "clean", h.jo(&.{.{ "values", h.vstr("ZZVAL-abc123,ZZVAL-xyz789") }}) },
+    }));
+    const out = sdk.utilmod.clean_util(client.get_root_ctx(), h.jo(&.{
+        .{ "ZZVAL-abc123", h.vnum(1) },
+        .{ "ZZVAL-xyz789", h.vnum(2) },
+        .{ "plain", h.vnum(3) },
+    }));
+    try testing.expect(out == .object);
+    var keys: std.ArrayList([]const u8) = .empty;
+    var it = out.object.iterator();
+    while (it.next()) |kv| keys.append(h.A(), kv.key_ptr.*) catch {};
+    try testing.expectEqual(@as(usize, 3), keys.items.len);
+    try testing.expectEqualStrings(MASK, keys.items[0]);
+    try testing.expectEqualStrings(MASK ++ "#1", keys.items[1]);
+    try testing.expectEqualStrings("plain", keys.items[2]);
 }
 `
 }

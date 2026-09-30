@@ -227,7 +227,8 @@ var cleanScenarios = []cleanScenario{
 	}},
 }
 
-func cleanMakeSdk(scenario cleanScenario, sinks *[]cleanSink, cleanopts map[string]any) *sdk.${Name}SDK {
+func cleanMakeSdk(scenario cleanScenario, sinks *[]cleanSink, cleanopts map[string]any,
+	extra ...any) *sdk.${Name}SDK {
 	capture := func(name string) func(map[string]any) {
 		return func(rec map[string]any) {
 			*sinks = append(*sinks, cleanSurfaces(name, rec)...)
@@ -271,7 +272,7 @@ func cleanMakeSdk(scenario cleanScenario, sinks *[]cleanSink, cleanopts map[stri
 		"headers": map[string]any{"X-Custom-Token": cleanCanary["header"]},
 		"clean":   clean,
 		"feature": feature,
-		"extend":  []any{newCleanCapture(sinks)},
+		"extend":  append([]any{newCleanCapture(sinks)}, extra...),
 		"utility": map[string]any{
 			"fetcher": sdk.FetcherFunc(func(_ *sdk.Context, url string, fetchdef map[string]any) (any, error) {
 				return scenario.respond(url, fetchdef)
@@ -281,10 +282,11 @@ func cleanMakeSdk(scenario cleanScenario, sinks *[]cleanSink, cleanopts map[stri
 }
 
 // One operation this SDK can perform: the client method returning the
-// entity, and the op method on it.
+// entity, the op method on it, and the match it completes with.
 type cleanOp struct {
 	accessor string
 	method   string
+	match    map[string]any
 }
 
 func cleanEntity(client *sdk.${Name}SDK, accessor string) reflect.Value {
@@ -293,8 +295,12 @@ func cleanEntity(client *sdk.${Name}SDK, accessor string) reflect.Value {
 }
 
 func cleanInvoke(client *sdk.${Name}SDK, op cleanOp, ctrl map[string]any) (any, error) {
+	match := map[string]any{}
+	for k, v := range op.match {
+		match[k] = v
+	}
 	rets := cleanEntity(client, op.accessor).MethodByName(op.method).Call([]reflect.Value{
-		reflect.ValueOf(map[string]any{}),
+		reflect.ValueOf(match),
 		reflect.ValueOf(ctrl),
 	})
 	var err error
@@ -304,10 +310,27 @@ func cleanInvoke(client *sdk.${Name}SDK, op cleanOp, ctrl map[string]any) (any, 
 	return rets[0].Interface(), err
 }
 
-// The first operation that completes against a plain 200 with no arguments
-// (a required path parameter would fail before the request is built). An
-// entity accessor is a client method taking one options map and returning
-// something that answers GetName().
+// Every path parameter an op's points declare, filled in.
+func cleanFilled(client *sdk.${Name}SDK, entity string, method string) map[string]any {
+	filled := map[string]any{}
+	opdef := core.ToMapAny(core.ToMapAny(core.ToMapAny(core.ToMapAny(
+		client.GetRootCtx().Config["entity"])[entity])["op"])[strings.ToLower(method)])
+	points, _ := opdef["points"].([]any)
+	for _, point := range points {
+		params, _ := core.ToMapAny(core.ToMapAny(point)["args"])["params"].([]any)
+		for _, p := range params {
+			if name, ok := core.ToMapAny(p)["name"].(string); ok {
+				filled[name] = "p1"
+			}
+		}
+	}
+	return filled
+}
+
+// The first operation that completes against a plain 200: with no
+// arguments, else with every path parameter its points declare filled in.
+// An entity accessor is a client method taking one options map and
+// returning something that answers GetName().
 func cleanUsableOp() (cleanOp, bool) {
 	plain := func() *sdk.${Name}SDK {
 		return sdk.New${Name}SDK(map[string]any{
@@ -350,9 +373,13 @@ func cleanUsableOp() (cleanOp, bool) {
 			if !om.IsValid() || om.Type().NumIn() != 2 || om.Type().NumOut() != 2 {
 				continue
 			}
-			op := cleanOp{accessor: accessor, method: method}
-			if _, err := cleanInvoke(plain(), op, map[string]any{}); err == nil {
-				return op, true
+			name := cleanEntity(probe, accessor).MethodByName("GetName").
+				Call(nil)[0].String()
+			for _, match := range []map[string]any{{}, cleanFilled(probe, name, method)} {
+				op := cleanOp{accessor: accessor, method: method, match: match}
+				if _, err := cleanInvoke(plain(), op, map[string]any{}); err == nil {
+					return op, true
+				}
 			}
 		}
 	}
@@ -373,10 +400,34 @@ func cleanDrive(client *sdk.${Name}SDK, op cleanOp, ctrl map[string]any, sinks *
 	return err
 }
 
+// A feature that fails from inside the pipeline, quoting the request it
+// saw: a panic MakeError never handled.
+type cleanThrow struct {
+	sdk.BaseFeature
+}
+
+func (f *cleanThrow) PreResponse(ctx *sdk.Context) {
+	raw, _ := json.Marshal(ctx.Spec)
+	panic(fmt.Errorf("hook saw %s", raw))
+}
+
+// A panic that escapes is a surface too: what a crash would print.
+func cleanCatch(name string, sinks *[]cleanSink, fn func() error) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			*sinks = append(*sinks, cleanSurfaces(name+":panic", r)...)
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
+	return fn()
+}
+
+const cleanNoOp = "no operation of this SDK completes against a plain 200; nothing to sweep"
+
 func TestCleanSweep(t *testing.T) {
 	op, found := cleanUsableOp()
 	if !found {
-		t.Fatal("no operation completes without arguments; nothing to sweep")
+		t.Skip(cleanNoOp)
 	}
 
 	sinks := []cleanSink{}
@@ -409,6 +460,42 @@ func TestCleanSweep(t *testing.T) {
 			sinks = append(sinks, cleanSurfaces("sdk", client)...)
 			sinks = append(sinks, cleanSink{"sdk:value", fmt.Sprintf("%+v", *client)})
 		}
+	}
+
+	// A credential mistyped as a map. The go validator substitutes the
+	// default rather than rejecting it, so there is no rejection to sweep:
+	// sweep what the constructor produced, and what clean makes of the value
+	// should anything later quote it.
+	cleanCatch("mistyped", &sinks, func() error {
+		client := sdk.New${Name}SDK(map[string]any{
+			"apikey": map[string]any{"value": cleanCanary["apikey"]},
+			"clean":  map[string]any{"values": cleanCanary["value"]},
+		})
+		sinks = append(sinks, cleanSurfaces("mistyped", client)...)
+		sinks = append(sinks, cleanSurfaces("mistyped:quoted",
+			client.GetUtility().Clean(client.GetRootCtx(), "found map: "+cleanCanary["apikey"]))...)
+		return nil
+	})
+
+	hookerr := cleanCatch("hook", &sinks, func() error {
+		hooked := cleanMakeSdk(cleanScenarios[0], &sinks, nil, &cleanThrow{
+			BaseFeature: sdk.BaseFeature{Version: "0.0.1", Name: "throwhook", Active: true},
+		})
+		return cleanDrive(hooked, op, map[string]any{}, &sinks)
+	})
+	if hookerr == nil {
+		t.Errorf("the throwing hook should fail the operation")
+	}
+
+	// A registered value used as a property name is masked; names that mask
+	// alike are kept apart.
+	probe := cleanMakeSdk(cleanScenarios[0], &sinks, nil)
+	named, _ := probe.GetUtility().Clean(probe.GetRootCtx(), map[string]any{
+		cleanCanary["value"]: 1, cleanCanary["header"]: 2, "plain": 3,
+	}).(map[string]any)
+	sinks = append(sinks, cleanSurfaces("named", named)...)
+	if want := map[string]any{cleanMask: 2, cleanMask + "#1": 1, "plain": 3}; !reflect.DeepEqual(named, want) {
+		t.Errorf("property names: expected %v, got %v", want, named)
 	}
 
 	leaked := []string{}
@@ -470,7 +557,7 @@ func TestCleanSweep(t *testing.T) {
 func TestCleanSensitivity(t *testing.T) {
 	op, found := cleanUsableOp()
 	if !found {
-		t.Fatal("no operation completes without arguments; nothing to sweep")
+		t.Skip(cleanNoOp)
 	}
 
 	sinks := []cleanSink{}

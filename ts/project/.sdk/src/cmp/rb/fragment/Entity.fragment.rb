@@ -259,7 +259,8 @@ class EntyClass
       # #PreUnexpected-Hook
 
       e = _unexpected(ctx, operr)
-      raise e unless e.nil?
+      # Not a cause: the raw error would print beneath the cleaned one.
+      raise e, cause: nil unless e.nil?
       nil
     end
   end

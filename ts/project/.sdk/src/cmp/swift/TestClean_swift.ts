@@ -40,6 +40,8 @@ const TestClean = cmp(function TestClean(props: any) {
       Name: e.Name,
       ops: Object.keys(e.op || {})
         .sort((a, b) => (rank[a] ?? 2) - (rank[b] ?? 2)),
+      params: Object.fromEntries(Object.keys(e.op || {})
+        .map((op: string) => [op, pointParams(e.op[op])])),
     }))
     .filter((c: any) => 0 < c.ops.length)
 
@@ -49,14 +51,32 @@ const TestClean = cmp(function TestClean(props: any) {
 })
 
 
+// The path parameters an operation's points declare, as the runtime config
+// carries them under points[].args.params.
+function pointParams(opdef: any): string[] {
+  const names: string[] = []
+  for (const point of each(opdef?.points || [])) {
+    if (false === point?.a) continue
+    for (const arg of each(point?.g?.params || [])) {
+      if (false !== arg?.a && 'string' === typeof arg?.n && !names.includes(arg.n)) {
+        names.push(arg.n)
+      }
+    }
+  }
+  return names
+}
+
+
 function render(
   Name: string,
   auth: { suppressed: boolean, where: string, name: string, basic: boolean },
-  candidates: { name: string, Name: string, ops: string[] }[],
+  candidates: { name: string, Name: string, ops: string[], params: Record<string, string[]> }[],
 ): string {
+  const swiftList = (items: string[]) => '[' + items.map((i) => swiftString(i)).join(', ') + ']'
   const candidateLines = candidates.map((c) =>
     `    Candidate(name: ${swiftString(c.name)}, accessor: { $0.${c.Name}(nil) }, ` +
-    `ops: [${c.ops.map((o) => swiftString(o)).join(', ')}]),`)
+    `ops: ${swiftList(c.ops)}, params: [${c.ops.map((o) =>
+      swiftString(o) + ': ' + swiftList(c.params[o] || [])).join(', ')}]),`)
     .join('\n')
 
   return `// The canary sweep: every credential slot holds a distinctive value, every
@@ -175,11 +195,13 @@ final class ${Name}CleanTest: XCTestCase {
     let name: String
     let accessor: (${Name}SDK) -> ${Name}EntityBase
     let ops: [String]
+    let params: [String: [String]]
   }
 
   struct Target {
     let candidate: Candidate
     let op: String
+    let params: [String]
   }
 
   struct TransportError: Error, CustomStringConvertible {
@@ -234,6 +256,21 @@ final class ${Name}CleanTest: XCTestCase {
     override func preUnexpected(_ ctx: Context) { box.sinks += ${Name}CleanTest.formsOf("ctx@PreUnexpected", ctx) }
   }
 
+  // A feature that fails the operation from inside the pipeline, quoting the
+  // request it saw. A swift hook cannot throw, so it fails the response the
+  // way a hook can, and the error never came from makeError.
+  final class FailFeature: BaseFeature {
+    override init() {
+      super.init()
+      name = "throwhook"
+      version = "0.0.1"
+      active = true
+    }
+    override func preResponse(_ ctx: Context) {
+      ctx.response?.err = TransportError(message: "hook saw " + render(ctx.spec))
+    }
+  }
+
   static let scenarios: [Scenario] = [
     Scenario(name: "ok", respond: { _, _ in
       response(200, .map(vm(("id", .string("i1")), ("name", .string("n1")))),
@@ -264,7 +301,9 @@ final class ${Name}CleanTest: XCTestCase {
     gp(SdkConfig.makeConfig(), "feature").asMap?.entries[name] != nil
   }
 
-  static func makeSdk(_ scenario: Scenario, _ box: SinkBox, _ cleanopts: VMap? = nil) -> ${Name}SDK {
+  static func makeSdk(
+    _ scenario: Scenario, _ box: SinkBox, _ cleanopts: VMap? = nil, _ extra: [BaseFeature] = []
+  ) -> ${Name}SDK {
     func capture(_ name: String) -> (VMap) -> Void {
       return { rec in box.sinks += formsOf(name, rec) }
     }
@@ -310,7 +349,9 @@ final class ${Name}CleanTest: XCTestCase {
     opts.entries["headers"] = .map(vm(("X-Custom-Token", .string(canaryHeader))))
     opts.entries["clean"] = .map(clean)
     opts.entries["feature"] = .map(feature)
-    opts.entries["extend"] = .list([.nat(CaptureFeature(box))])
+    var extend: [Value] = [.nat(CaptureFeature(box))]
+    for f in extra { extend.append(.nat(f)) }
+    opts.entries["extend"] = .list(VList(extend))
     opts.entries["utility"] = .map(vm(("fetcher", .nat(fetch))))
     return ${Name}SDK(opts)
   }
@@ -321,19 +362,23 @@ final class ${Name}CleanTest: XCTestCase {
 ${candidateLines}
   ]
 
-  static func invoke(_ ent: ${Name}EntityBase, _ op: String, _ ctrl: VMap?) throws -> Value {
+  static func invoke(
+    _ ent: ${Name}EntityBase, _ op: String, _ params: [String], _ ctrl: VMap?
+  ) throws -> Value {
+    let args = VMap()
+    for p in params { args.entries[p] = .string("p1") }
     switch op {
-    case "list": return try ent.list(VMap(), ctrl)
-    case "load": return try ent.load(VMap(), ctrl)
-    case "create": return try ent.create(VMap(), ctrl)
-    case "update": return try ent.update(VMap(), ctrl)
-    case "remove": return try ent.remove(VMap(), ctrl)
+    case "list": return try ent.list(args, ctrl)
+    case "load": return try ent.load(args, ctrl)
+    case "create": return try ent.create(args, ctrl)
+    case "update": return try ent.update(args, ctrl)
+    case "remove": return try ent.remove(args, ctrl)
     default: throw TransportError(message: "unknown operation: " + op)
     }
   }
 
-  // The first operation that completes against a plain 200 with no arguments
-  // (a required path parameter would fail before the request is built).
+  // The first operation that completes against a plain 200: with no
+  // arguments, else with every path parameter its points declare filled in.
   static func usableOp() -> Target? {
     let fetch: FetcherFunc = { _, _, _ in response(200, .map(vm(("id", .string("i1"))))) }
     let opts = VMap()
@@ -342,8 +387,11 @@ ${candidateLines}
     let plain = ${Name}SDK(opts)
     for candidate in candidates {
       for op in candidate.ops {
-        if (try? invoke(candidate.accessor(plain), op, nil)) != nil {
-          return Target(candidate: candidate, op: op)
+        let filled: [String] = candidate.params[op] ?? []
+        for params in [[], filled] {
+          if (try? invoke(candidate.accessor(plain), op, params, nil)) != nil {
+            return Target(candidate: candidate, op: op, params: params)
+          }
         }
       }
     }
@@ -354,7 +402,7 @@ ${candidateLines}
     var out: Value = .noval
     var err: Error? = nil
     do {
-      out = try invoke(target.candidate.accessor(sdk), target.op, ctrl)
+      out = try invoke(target.candidate.accessor(sdk), target.op, target.params, ctrl)
     } catch {
       err = error
     }
@@ -364,10 +412,9 @@ ${candidateLines}
     return err
   }
 
-  func testNoCredentialLeavesTheSdkInAnyForm() {
+  func testNoCredentialLeavesTheSdkInAnyForm() throws {
     guard let target = ${Name}CleanTest.usableOp() else {
-      XCTFail("no operation completes without arguments; nothing to sweep")
-      return
+      throw XCTSkip("no operation of this SDK completes against a plain 200; nothing to sweep")
     }
 
     let box = SinkBox()
@@ -391,6 +438,19 @@ ${candidateLines}
         box.sinks += ${Name}CleanTest.formsOf("sdk", sdk)
       }
     }
+
+    // A credential mistyped as a map. This struct port's validate collects
+    // its errors instead of throwing, so nothing rejects it: the client it
+    // produced is swept instead.
+    let mistyped = VMap()
+    mistyped.entries["apikey"] = .map(vm(("value", .string(canaryApikey))))
+    mistyped.entries["clean"] = .map(vm(("values", .string(canaryValue))))
+    box.sinks += ${Name}CleanTest.formsOf("mistyped", ${Name}SDK(mistyped))
+
+    // An error a feature hook raises, quoting the request, skips makeError.
+    let hooked = ${Name}CleanTest.makeSdk(${Name}CleanTest.scenarios[0], box, nil, [FailFeature()])
+    let hookerr = ${Name}CleanTest.drive(hooked, target, VMap(), box)
+    XCTAssertNotNil(hookerr, "the failing hook should fail the operation")
 
     let leaked = box.sinks
       .map { (name: $0.name, found: leaks($0.text)) }
@@ -428,10 +488,9 @@ ${candidateLines}
     XCTAssertEqual(header(gp(result, "headers"), "x-session-token"), .string(mask))
   }
 
-  func testTheSweepCanSeeALeakCleanSwitchedOffShowsTheCredential() {
+  func testTheSweepCanSeeALeakCleanSwitchedOffShowsTheCredential() throws {
     guard let target = ${Name}CleanTest.usableOp() else {
-      XCTFail("no operation completes without arguments")
-      return
+      throw XCTSkip("no operation of this SDK completes against a plain 200; nothing to sweep")
     }
 
     let box = SinkBox()
@@ -447,6 +506,36 @@ ${candidateLines}
       XCTAssertTrue(text.contains(canaryApikey) || text.contains(base64(canaryApikey + ":" + canarySecret)),
         "the raw spec should carry the credential when clean is off")
     }
+  }
+
+  func testARegisteredValueUsedAsAPropertyNameIsMaskedCollisionsKept() {
+    let cfg = makeCleanConfig(gp(SdkSchema.optspec, "clean"))
+    let ctx = Context(["options": vm(("__derived__", .map(vm(("clean", .nat(cfg))))))], nil)
+    cleanAddUtil(ctx, .string("ZZVAL-abc123"))
+    cleanAddUtil(ctx, .string("ZZVAL-xyz789"))
+    let src = vm(("ZZVAL-abc123", .int(1)), ("ZZVAL-xyz789", .int(2)), ("plain", .int(3)))
+    guard let out = cleanUtil(ctx, .map(src)).asMap else {
+      XCTFail("clean of a map should be a map")
+      return
+    }
+    XCTAssertEqual(out.entries[mask], Value.int(1))
+    XCTAssertEqual(out.entries[mask + "#1"], Value.int(2))
+    XCTAssertEqual(out.entries["plain"], Value.int(3))
+    XCTAssertNil(out.entries["ZZVAL-abc123"])
+  }
+
+  func testCleanAddSensitiveRegistersEveryScalarUnderASensitiveName() {
+    let cfg = makeCleanConfig(gp(SdkSchema.optspec, "clean"))
+    let ctx = Context(["options": vm(("__derived__", .map(vm(("clean", .nat(cfg))))))], nil)
+    cleanAddSensitiveUtil(ctx, .map(vm(
+      ("apikey", .map(vm(("value", .string("NESTED-SECRET-1"))))),
+      ("headers", .map(vm(("X-Api-Token", .list(VList([.string("LISTED-SECRET-2")])))))),
+      ("secret", .int(123456789)),
+      ("name", .string("not-a-secret")))))
+    XCTAssertTrue(cfg.values.contains("NESTED-SECRET-1"))
+    XCTAssertTrue(cfg.values.contains("LISTED-SECRET-2"))
+    XCTAssertTrue(cfg.values.contains("123456789"))
+    XCTAssertFalse(cfg.values.contains("not-a-secret"))
   }
 }
 `

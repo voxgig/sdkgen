@@ -54,7 +54,8 @@ defmodule ProjectName.Pipeline do
       e ->
         # #PreUnexpected-Hook
 
-        reraise(e, __STACKTRACE__)
+        # An error a hook raised never passed through make_error.
+        reraise(Utility.clean_exception(ctx, e), __STACKTRACE__)
     catch
       {:sdk_ret, v} -> v
     end

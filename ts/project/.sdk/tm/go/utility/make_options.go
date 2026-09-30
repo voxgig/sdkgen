@@ -79,11 +79,10 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		cleanraw[k] = v
 	}
 	cleancfg := makeCleanConfig(cleanraw)
-	for _, raw := range []any{opts["apikey"], opts["secret"]} {
-		if s, ok := raw.(string); ok {
-			cleancfg.add(s)
-		}
-	}
+	cleanctx := &core.Context{Options: map[string]any{
+		"__derived__": map[string]any{"clean": cleancfg},
+	}}
+	cleanAddSensitive(cleanctx, cleanOmit(opts, "clean"))
 	for _, s := range cleanSplit(vs.GetPath(opts, []any{"clean", "values"})) {
 		cleancfg.add(s)
 	}
@@ -246,16 +245,19 @@ func makeOptionsUtil(ctx *core.Context) map[string]any {
 		"featureorder": featureorder,
 	}
 
-	// Every string under a sensitive name anywhere in the options - a custom
-	// auth header, a feature credential - is a secret the SDK now handles.
-	scan := vs.Clone(opts).(map[string]any)
-	delete(scan, "__derived__")
-	vs.Walk(scan, func(key *string, val any, _ any, _ []string) any {
-		if s, ok := val.(string); ok && key != nil && cleancfg.sensitive(*key) {
-			cleancfg.add(s)
-		}
-		return val
-	})
+	// Again over the merged result: the config's own defaults can carry one.
+	cleanAddSensitive(cleanctx, cleanOmit(opts, "clean", "__derived__"))
 
 	return opts
+}
+
+func cleanOmit(m map[string]any, keys ...string) map[string]any {
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	for _, k := range keys {
+		delete(out, k)
+	}
+	return out
 }

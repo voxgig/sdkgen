@@ -61,6 +61,42 @@ class ProjectNameClean
         }
     }
 
+    // Every scalar under a sensitive name, at any depth and of any shape: a
+    // credential mistyped as a map or a number is still a credential, and
+    // the validation error that rejects it quotes it.
+    public static function add_sensitive(?ProjectNameContext $ctx, mixed $val): void
+    {
+        $seen = [];
+        self::walk_sensitive($ctx, $val, false, 0, $seen);
+    }
+
+    private static function walk_sensitive(
+        ?ProjectNameContext $ctx, mixed $val, bool $under, int $depth, array &$seen
+    ): void {
+        if (null === $val || self::MAXDEPTH <= $depth || $val instanceof \Closure) {
+            return;
+        }
+        if (is_string($val) || is_int($val) || is_float($val)) {
+            if ($under) {
+                self::add($ctx, (string)$val);
+            }
+            return;
+        }
+        if (is_object($val)) {
+            $id = spl_object_id($val);
+            if (in_array($id, $seen, true)) {
+                return;
+            }
+            $seen[] = $id;
+            $val = get_object_vars($val);
+        }
+        if (is_array($val)) {
+            foreach ($val as $k => $v) {
+                self::walk_sensitive($ctx, $v, $under || self::key($ctx, $k), $depth + 1, $seen);
+            }
+        }
+    }
+
     // Is this key name sensitive under the context's clean configuration?
     public static function key(?ProjectNameContext $ctx, mixed $key): bool
     {
@@ -247,7 +283,7 @@ class ProjectNameClean
                 ];
                 foreach (get_object_vars($val) as $k => $v) {
                     if (!($v instanceof \Closure)) {
-                        $out[$k] = self::snapshot($cfg, $v, $k, $depth + 1, $seen);
+                        $out[self::clean_name($cfg, $out, $k)] = self::snapshot($cfg, $v, $k, $depth + 1, $seen);
                     }
                 }
                 return $out;
@@ -271,19 +307,54 @@ class ProjectNameClean
         $out = [];
         foreach ($val as $k => $v) {
             if (!($v instanceof \Closure)) {
-                $out[$k] = self::snapshot($cfg, $v, $k, $depth + 1, $seen);
+                $out[self::clean_name($cfg, $out, $k)] = self::snapshot($cfg, $v, $k, $depth + 1, $seen);
             }
         }
         return $out;
     }
 
+    // A registered value used as a property name is masked like any other
+    // string; names that mask alike take a counter, so none is lost.
+    private static function clean_name(\stdClass $cfg, array|object $out, int|string $key): int|string
+    {
+        if (!is_string($key)) {
+            return $key;
+        }
+        $name = self::clean_string($cfg, $key);
+        $has = fn (string $n): bool => is_array($out) ? array_key_exists($n, $out) : property_exists($out, $n);
+        if ($name === $key || !$has($name)) {
+            return $name;
+        }
+        $i = 1;
+        while ($has($name . '#' . $i)) {
+            $i++;
+        }
+        return $name . '#' . $i;
+    }
+
     // In place: the message, the public fields, and the trace arguments,
-    // which hold every context the failing frames were handed.
-    private static function clean_throwable(\stdClass $cfg, \Throwable $err): void
+    // which hold every context the failing frames were handed. The previous
+    // chain too, since var_export walks it.
+    private static function clean_throwable(\stdClass $cfg, \Throwable $top): void
+    {
+        $seen = [];
+        for ($err = $top; null !== $err && !in_array(spl_object_id($err), $seen, true);
+             $err = $err->getPrevious()) {
+            $seen[] = spl_object_id($err);
+            self::clean_one($cfg, $err);
+        }
+    }
+
+    private static function clean_one(\stdClass $cfg, \Throwable $err): void
     {
         $msg = self::clean_string($cfg, $err->getMessage());
         if ($msg !== $err->getMessage()) {
             self::rewrite($err, 'message', $msg);
+        }
+
+        // The base __toString caches its text, raw message and all.
+        if ('' !== self::read($err, 'string')) {
+            self::rewrite($err, 'string', '');
         }
 
         $trace = $err->getTrace();
@@ -298,18 +369,37 @@ class ProjectNameClean
             self::rewrite($err, 'trace', $trace);
         }
 
-        foreach (get_object_vars($err) as $k => $v) {
+        foreach (get_object_vars($err) as $k => $raw) {
+            $v = $raw;
             if (is_string($v)) {
-                $cleaned = self::sensitive_key($cfg, $k)
+                $v = self::sensitive_key($cfg, $k)
                     ? self::mask_value($cfg, $v) : self::clean_string($cfg, $v);
-                if ($cleaned !== $v) {
-                    $err->$k = $cleaned;
-                }
             } elseif ((is_array($v) || is_object($v)) && !($v instanceof \Closure)) {
                 $seen = [];
-                $err->$k = self::snapshot($cfg, $v, $k, 1, $seen);
+                $v = self::snapshot($cfg, $v, $k, 1, $seen);
+            }
+            $name = is_string($k) ? self::clean_string($cfg, $k) : $k;
+            if ($name === $k) {
+                if ($v !== $raw) {
+                    $err->$k = $v;
+                }
+                continue;
+            }
+            // Only a dynamic property can carry a secret name. Re-adding it
+            // may raise a deprecation a handler turns into an exception; the
+            // raw name is gone either way.
+            unset($err->$k);
+            try {
+                $err->{self::clean_name($cfg, $err, $k)} = $v;
+            } catch (\Throwable $_e) {
             }
         }
+    }
+
+    private static function read(\Throwable $err, string $prop): mixed
+    {
+        $owner = $err instanceof \Exception ? \Exception::class : \Error::class;
+        return (new \ReflectionProperty($owner, $prop))->getValue($err);
     }
 
     // Exception::$message and ::$trace cannot be assigned from outside, and

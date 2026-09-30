@@ -290,7 +290,7 @@ function ProjectNameSDK:_raw_request(fetchargs)
   local fetched, fetch_err = utility.fetcher(ctx, url, fetchdef)
 
   if fetch_err ~= nil then
-    return { ok = false, err = fetch_err }, nil
+    return { ok = false, err = utility.clean(ctx, fetch_err) }, nil
   end
 
   if fetched == nil then

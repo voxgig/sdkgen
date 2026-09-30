@@ -368,6 +368,16 @@ fn clean_seen(seen: []const usize, id: usize) bool {
     return false;
 }
 
+// A registered value used as a property name is masked like any other
+// string; names that mask alike take a counter, so none is lost.
+fn clean_name(c: CleanCfg, out: Value, key: []const u8) []const u8 {
+    const name = clean_string(c, key);
+    if (std.mem.eql(u8, name, key) or out.object.get(name) == null) return name;
+    var i: usize = 1;
+    while (out.object.get(fmt("{s}#{d}", .{ name, i })) != null) i += 1;
+    return fmt("{s}#{d}", .{ name, i });
+}
+
 // A masked plain-data copy: functions dropped, cycles cut, and nothing
 // shared with the live value, whose spec must stay raw.
 fn clean_snapshot(c: CleanCfg, val: Value, key: ?[]const u8, depth: usize, seen: *std.ArrayList(usize)) Value {
@@ -386,7 +396,8 @@ fn clean_snapshot(c: CleanCfg, val: Value, key: ?[]const u8, depth: usize, seen:
             var it = m.iterator();
             while (it.next()) |kv| {
                 if (kv.value_ptr.* == .function) continue;
-                h.setp(out, kv.key_ptr.*, clean_snapshot(c, kv.value_ptr.*, kv.key_ptr.*, depth + 1, seen));
+                const v = clean_snapshot(c, kv.value_ptr.*, kv.key_ptr.*, depth + 1, seen);
+                h.setp(out, clean_name(c, out, kv.key_ptr.*), v);
             }
             return out;
         },
@@ -422,23 +433,39 @@ pub fn clean_key_util(ctx: *Context, key: []const u8) bool {
     return clean_sensitive_key(clean_view(clean_config(ctx)), key);
 }
 
-// Every string under a sensitive name anywhere in the options - a custom
-// auth header, a feature credential - is a secret the SDK now handles.
-fn clean_register_tree(cfg: Value, val: Value, key: ?[]const u8, depth: usize) void {
+// Every scalar under a sensitive name, at any depth and of any shape, is
+// registered: a credential mistyped as a map or a number is still a
+// credential.
+pub fn clean_add_sensitive_cfg(cfg: Value, val: Value) void {
+    var seen: std.ArrayList(usize) = .empty;
+    clean_add_sensitive_in(cfg, clean_view(cfg), val, false, 0, &seen);
+}
+
+pub fn clean_add_sensitive_util(ctx: *Context, val: Value) void {
+    clean_add_sensitive_cfg(clean_config(ctx), val);
+}
+
+fn clean_add_sensitive_in(cfg: Value, c: CleanCfg, val: Value, under: bool, depth: usize, seen: *std.ArrayList(usize)) void {
     if (CLEAN_MAXDEPTH <= depth) return;
     switch (val) {
-        .string => |s| {
-            if (clean_sensitive_key(clean_view(cfg), key)) clean_add_cfg(cfg, s);
+        .string, .integer, .float, .number_string => {
+            if (under) clean_add_cfg(cfg, h.scalar_str(val));
         },
         .object => |m| {
+            const id = @intFromPtr(m);
+            if (clean_seen(seen.items, id)) return;
+            seen.append(h.A(), id) catch {};
             var it = m.iterator();
             while (it.next()) |kv| {
-                if (std.mem.eql(u8, kv.key_ptr.*, "__derived__")) continue;
-                clean_register_tree(cfg, kv.value_ptr.*, kv.key_ptr.*, depth + 1);
+                const sub = under or clean_sensitive_key(c, kv.key_ptr.*);
+                clean_add_sensitive_in(cfg, c, kv.value_ptr.*, sub, depth + 1, seen);
             }
         },
         .array => |l| {
-            for (l.data.items) |item| clean_register_tree(cfg, item, null, depth + 1);
+            const id = @intFromPtr(l);
+            if (clean_seen(seen.items, id)) return;
+            seen.append(h.A(), id) catch {};
+            for (l.data.items) |item| clean_add_sensitive_in(cfg, c, item, under, depth + 1, seen);
         },
         else => {},
     }
@@ -501,7 +528,8 @@ pub fn make_error_util(ctx: *Context) E!Value {
     }
 
     const sdk_err = err.ProjectNameError.make("", msg);
-    sdk_err.code = the_err.code;
+    // A hook's own error supplies the code as well as the message.
+    sdk_err.code = clean_str_util(ctx, the_err.code);
     sdk_err.result = clean_util(ctx, result.to_value());
     sdk_err.spec = clean_util(ctx, spec_val);
 
@@ -586,6 +614,19 @@ fn mo_str_less(_: void, a: []const u8, b: []const u8) bool {
     return std.mem.order(u8, a, b) == .lt;
 }
 
+fn mo_without(opts: Value, keys: []const []const u8) Value {
+    const out = h.omap();
+    if (opts != .object) return out;
+    var it = opts.object.iterator();
+    outer: while (it.next()) |kv| {
+        for (keys) |k| {
+            if (std.mem.eql(u8, kv.key_ptr.*, k)) continue :outer;
+        }
+        h.setp(out, kv.key_ptr.*, kv.value_ptr.*);
+    }
+    return out;
+}
+
 pub fn make_options_util(ctx: *Context) Value {
     const options: Value = switch (ctx.options) {
         .object => ctx.options,
@@ -629,9 +670,7 @@ pub fn make_options_util(ctx: *Context) Value {
         h.clone(h.getp(schema.shared_optspec(), "clean")),
         if (rawclean == .object) h.clone(rawclean) else h.omap(),
     })));
-    for ([_][]const u8{ "apikey", "secret" }) |name| {
-        if (h.get_str(opts, name)) |raw| clean_add_cfg(cleancfg, raw);
-    }
+    clean_add_sensitive_cfg(cleancfg, mo_without(opts, &.{"clean"}));
     for (clean_splitvalues(h.getp(rawclean, "values"))) |raw| clean_add_cfg(cleancfg, raw);
 
     if (auth_suppressed) h.del_prop(opts, h.vstr("auth"));
@@ -799,7 +838,8 @@ pub fn make_options_util(ctx: *Context) Value {
         .{ "featureorder", feature_order },
     }));
 
-    clean_register_tree(cleancfg, opts, null, 0);
+    // Again over the merged result: the config's own defaults can carry one.
+    clean_add_sensitive_cfg(cleancfg, mo_without(opts, &.{ "clean", "__derived__" }));
 
     return opts;
 }

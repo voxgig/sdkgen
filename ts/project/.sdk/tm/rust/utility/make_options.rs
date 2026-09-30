@@ -71,14 +71,8 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         None,
     ));
     let cleanopts = jo(vec![("__derived__", jo(vec![("clean", cleancfg.clone())]))]);
-    let mut raw: Vec<String> = Vec::new();
-    for key in ["apikey", "secret"] {
-        if let Value::Str(s) = getp(&opts, key) {
-            raw.push(s);
-        }
-    }
-    raw.extend(clean::splitvalues(&getpath(&["clean", "values"], &opts)));
-    for value in raw {
+    clean::clean_add_sensitive_opts(&cleanopts, &without(&opts, &["clean"]));
+    for value in clean::splitvalues(&getpath(&["clean", "values"], &opts)) {
         clean::clean_add_opts(&cleanopts, &value);
     }
 
@@ -205,11 +199,22 @@ pub fn make_options_util(ctx: &Rc<Context>) -> Value {
         jo(vec![("clean", cleancfg), ("featureorder", order_list)]),
     );
 
-    // Every string under a sensitive name anywhere in the options - a custom
-    // auth header, a feature credential - is a secret the SDK now handles.
-    clean::register_sensitive(&opts, &opts);
+    // Again over the merged result: the config's own defaults can carry one.
+    clean::clean_add_sensitive_opts(&opts, &without(&opts, &["clean", "__derived__"]));
 
     opts
+}
+
+fn without(val: &Value, keys: &[&str]) -> Value {
+    let out = Value::empty_map();
+    if let Value::Map(m) = val {
+        for (k, v) in m.borrow().iter() {
+            if !keys.contains(&k.as_str()) {
+                setp(&out, k, v.clone());
+            }
+        }
+    }
+    out
 }
 
 /// Read a string option (helper shared by prepare utilities).

@@ -110,7 +110,8 @@
                                   ((core/uget ctx :done) ctx))))))))))))))))
     (catch Throwable operr
       ; #PreUnexpected-Hook
-      (throw operr))))
+      ;; An error a hook threw never passed through make-error.
+      (throw (if (core/ex->sdk operr) operr (core/clean-throwable ctx operr))))))
 
 ;; Streaming operation. Runs `action` (an op name, e.g. "list") through the
 ;; full pipeline and returns a LAZY SEQUENCE of result items, so the

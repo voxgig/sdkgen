@@ -78,6 +78,10 @@ The `debug` feature's `redact` option adds header names on top of
   registry covers what the SDK handles, not what the caller sends.
 - `client.options()` returns the raw credential. It is the documented way
   to read it back, and it is neither a log nor an error.
+- Raw values are visible in a debugger, and to a tool that annotates an
+  exception where it is thrown. PHP's Xdebug, in develop mode, writes the
+  arguments of every stack frame onto the exception after the SDK has
+  cleaned it. The PHP sweep removes that annotation before it searches.
 
 ## The proof
 
@@ -86,7 +90,9 @@ with canary values in every credential slot, switches on every diagnostic
 feature the SDK carries with a capturing sink, drives a real operation
 through success, a 404, a 500, a transport failure and a body that is not
 JSON, and searches every string that leaves for the canaries and their
-encoded forms. It then switches `clean` off and confirms the canary shows,
+encoded forms. It also passes a credential of the wrong type to the
+constructor, adds a feature hook that fails while quoting the request, and
+fails a raw `direct()` call. It then switches `clean` off and confirms the canary shows,
 so a sweep that could not see a leak fails instead of passing. The
 suite prints one line, `clean: swept N surface(s), 0 leak(s)`, and the
 generator's own compile lanes require it.

@@ -242,6 +242,75 @@ func cleanAddUtil(ctx *core.Context, val any) {
 	}
 }
 
+// A number registers as its decimal text, the form a message quotes it in.
+func cleanScalarText(val any) (string, bool) {
+	switch v := val.(type) {
+	case string:
+		return v, true
+	case json.Number:
+		return v.String(), true
+	case bool:
+		return "", false
+	}
+	rv := reflect.ValueOf(val)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return strconv.FormatInt(rv.Int(), 10), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return strconv.FormatUint(rv.Uint(), 10), true
+	case reflect.Float32, reflect.Float64:
+		return strconv.FormatFloat(rv.Float(), 'f', -1, 64), true
+	}
+	return "", false
+}
+
+// Every scalar under a sensitive name, at any depth and of any shape: a
+// credential mistyped as a map or a number is still a credential, and the
+// validation that rejects it can quote it.
+func (cfg *cleanConfig) addSensitive(val any, under bool, depth int, seen []uintptr) {
+	if val == nil || cleanMaxDepth <= depth {
+		return
+	}
+	if s, ok := cleanScalarText(val); ok {
+		if under {
+			cfg.add(s)
+		}
+		return
+	}
+	rv := reflect.ValueOf(val)
+	switch rv.Kind() {
+	case reflect.Map, reflect.Slice:
+		if rv.IsNil() {
+			return
+		}
+		id := rv.Pointer()
+		for _, s := range seen {
+			if s == id {
+				return
+			}
+		}
+		seen = append(seen, id)
+	case reflect.Array:
+	default:
+		return
+	}
+	if rv.Kind() == reflect.Map {
+		iter := rv.MapRange()
+		for iter.Next() {
+			k := fmt.Sprint(iter.Key().Interface())
+			cfg.addSensitive(iter.Value().Interface(), under || cfg.sensitive(k), depth+1, seen)
+		}
+		return
+	}
+	for i := 0; i < rv.Len(); i++ {
+		cfg.addSensitive(rv.Index(i).Interface(), under, depth+1, seen)
+	}
+}
+
+func cleanAddSensitive(ctx *core.Context, val any) {
+	cleanConfigOf(ctx).addSensitive(val, false, 0, nil)
+}
+
 // One pass over one value: the registry as it stood when the pass began,
 // and the ancestors of the node in hand, for cutting cycles.
 type cleaner struct {
@@ -387,15 +456,12 @@ func (c *cleaner) snapshot(val any, key string, haskey bool, depth int) any {
 	case reflect.Ptr:
 		return c.snapshot(rv.Elem().Interface(), key, haskey, depth+1)
 	case reflect.Map:
-		out := map[string]any{}
+		byname := map[string]any{}
 		iter := rv.MapRange()
 		for iter.Next() {
-			k := fmt.Sprint(iter.Key().Interface())
-			if s := c.snapshot(iter.Value().Interface(), k, true, depth+1); (cleanDrop{}) != s {
-				out[k] = s
-			}
+			byname[fmt.Sprint(iter.Key().Interface())] = iter.Value().Interface()
 		}
-		return out
+		return c.plain(byname, depth)
 	case reflect.Slice, reflect.Array:
 		out := make([]any, 0, rv.Len())
 		for i := 0; i < rv.Len(); i++ {
@@ -424,14 +490,38 @@ func (c *cleaner) roundtrip(val any, key string, haskey bool, depth int) any {
 	return c.snapshot(plain, key, haskey, depth+1)
 }
 
+// Keys in sorted order, so the counter a masked name takes does not depend
+// on map iteration.
 func (c *cleaner) plain(m map[string]any, depth int) map[string]any {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 	out := make(map[string]any, len(m))
-	for k, v := range m {
-		if s := c.snapshot(v, k, true, depth+1); (cleanDrop{}) != s {
-			out[k] = s
+	for _, k := range keys {
+		if s := c.snapshot(m[k], k, true, depth+1); (cleanDrop{}) != s {
+			out[c.cleanName(out, k)] = s
 		}
 	}
 	return out
+}
+
+// A registered value used as a property name is masked like any other
+// string; names that mask alike take a counter, so none is lost.
+func (c *cleaner) cleanName(out map[string]any, key string) string {
+	name := c.cleanString(key)
+	if _, taken := out[name]; name == key || !taken {
+		return name
+	}
+	i := 1
+	for {
+		cand := name + "#" + strconv.Itoa(i)
+		if _, taken := out[cand]; !taken {
+			return cand
+		}
+		i++
+	}
 }
 
 func (c *cleaner) list(l []any, depth int) []any {

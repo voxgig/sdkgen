@@ -227,7 +227,7 @@ func (sdk *ProjectNameSDK) rawRequest(fetchargs map[string]any) (map[string]any,
 
 	fetchdef, err := sdk.Prepare(fetchargs)
 	if err != nil {
-		return map[string]any{"ok": false, "err": err}, nil
+		return map[string]any{"ok": false, "err": sdk.cleanErr(sdk.rootctx, err)}, nil
 	}
 
 	if fetchargs == nil {
@@ -253,7 +253,7 @@ func (sdk *ProjectNameSDK) rawRequest(fetchargs map[string]any) (map[string]any,
 	fetched, fetchErr := utility.Fetcher(ctx, url, fetchdef)
 
 	if fetchErr != nil {
-		return map[string]any{"ok": false, "err": fetchErr}, nil
+		return map[string]any{"ok": false, "err": sdk.cleanErr(ctx, fetchErr)}, nil
 	}
 
 	if fetched == nil {
@@ -295,6 +295,14 @@ func (sdk *ProjectNameSDK) rawRequest(fetchargs map[string]any) (map[string]any,
 	}
 
 	return map[string]any{"ok": false, "err": ctx.MakeError("direct_invalid", "invalid response type")}, nil
+}
+
+// A raw request returns its error rather than passing it through MakeError.
+func (sdk *ProjectNameSDK) cleanErr(ctx *Context, err error) error {
+	if cleaned, ok := sdk.utility.Clean(ctx, err).(error); ok {
+		return cleaned
+	}
+	return err
 }
 
 func (sdk *ProjectNameSDK) Graphql(

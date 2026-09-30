@@ -18,12 +18,16 @@ function makeOptions(ctx: Context) {
 
   const authSuppressed = null === (options || {}).auth
 
+  let config = ctx.config || {}
+  let cfgopts = config.options || {}
+
   // The secret registry exists BEFORE validation, fed from the raw input, so
   // the constructor's own rejection of a mistyped credential is clean too.
-  const cleancfg = makeCleanConfig(merge([{}, (OPTSPEC as any).clean, opts.clean]))
+  const cleancfg = makeCleanConfig(merge([{}, (OPTSPEC as any).clean,
+    struct.clone(cfgopts.clean || {}), opts.clean]))
   const cleanctx: any = { options: { __derived__: { clean: cleancfg } } }
   cleanAddSensitive(cleanctx, { ...opts, clean: undefined })
-  for (const raw of splitvalues(opts.clean?.values)) {
+  for (const raw of [...splitvalues(cfgopts.clean?.values), ...splitvalues(opts.clean?.values)]) {
     cleanAdd(cleanctx, raw)
   }
 
@@ -44,9 +48,6 @@ function makeOptions(ctx: Context) {
   for (let [key, val] of items(customUtils)) {
     setprop(utility, key, val)
   }
-
-  let config = ctx.config || {}
-  let cfgopts = config.options || {}
 
   const optspec = OPTSPEC
 

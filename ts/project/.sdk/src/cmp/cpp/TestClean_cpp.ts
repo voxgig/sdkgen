@@ -2,6 +2,7 @@ import {
   Content,
   File,
   cmp,
+  configDefinition,
   each,
   entityCollection,
   isAuthSuppressed,
@@ -16,10 +17,12 @@ import { cppVarName } from './utility_cpp'
 
 // The canary sweep (see TestClean_ts). cpp has no reflection, so the
 // operations the ts sweep discovers from the client are emitted from the
-// model, and the transport is scripted through `system.fetch`, the seam a
-// closed options union leaves for it.
+// model, each with the path parameters its config points declare, and the
+// transport is scripted through `system.fetch`, the seam a closed options
+// union leaves for it.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
+  const { target } = props
 
   const ProjectName = model.const.Name
 
@@ -31,8 +34,10 @@ const TestClean = cmp(function TestClean(props: any) {
     basic: isHttpBasicAuth(model),
   }
 
+  const configEntity = configDefinition(model, target.name).def.entity || {}
+
   const rank: Record<string, number> = { list: 0, load: 1 }
-  const candidates: { name: string, accessor: string, op: string }[] = []
+  const candidates: Candidate[] = []
   each(entityCollection(model))
     .filter((e: any) => false !== e.active)
     .forEach((entity: any) => {
@@ -40,7 +45,10 @@ const TestClean = cmp(function TestClean(props: any) {
         .filter((op) => ['list', 'load', 'create', 'update', 'remove'].includes(op))
         .sort((a, b) => (rank[a] ?? 2) - (rank[b] ?? 2))
       for (const op of ops) {
-        candidates.push({ name: entity.name + '.' + op, accessor: cppVarName(entity.name), op })
+        candidates.push({
+          name: entity.name + '.' + op, accessor: cppVarName(entity.name), op,
+          params: pointParams(configEntity[entity.name]?.op?.[op]),
+        })
       }
     })
 
@@ -48,14 +56,31 @@ const TestClean = cmp(function TestClean(props: any) {
 })
 
 
-function candidate(ProjectName: string, c: { name: string, accessor: string, op: string }): string {
+type Candidate = { name: string, accessor: string, op: string, params: string[] }
+
+
+// Every path parameter an operation's points declare, as the generated
+// config carries them (points[].args.params[].name).
+function pointParams(opdef: any): string[] {
+  const names: string[] = []
+  for (const point of opdef?.points || []) {
+    for (const p of point?.args?.params || []) {
+      if ('string' === typeof p?.name && !names.includes(p.name)) names.push(p.name)
+    }
+  }
+  return names
+}
+
+
+function candidate(ProjectName: string, c: Candidate): string {
   const call = 'list' === c.op
-    ? `auto ents = c.${c.accessor}()->list(vmap(), ctrl);
+    ? `auto ents = c.${c.accessor}()->list(m, ctrl);
       Value out = vlist();
       for (const auto& e : ents) out.as_list()->push_back(e->data());
       return out;`
-    : `return c.${c.accessor}()->${c.op}(vmap(), ctrl)->data();`
-  return `    {"${c.name}", [](${ProjectName}SDK& c, const Value& ctrl) -> Value {
+    : `return c.${c.accessor}()->${c.op}(m, ctrl)->data();`
+  return `    {"${c.name}", {${c.params.map(cppstr).join(', ')}},
+     [](${ProjectName}SDK& c, const Value& m, const Value& ctrl) -> Value {
       ${call}
     }},`
 }
@@ -64,13 +89,14 @@ function candidate(ProjectName: string, c: { name: string, accessor: string, op:
 function render(
   ProjectName: string,
   auth: { suppressed: boolean, where: string, name: string, basic: boolean },
-  candidates: { name: string, accessor: string, op: string }[],
+  candidates: Candidate[],
 ): string {
   return `// Generated canary sweep: no credential leaves this SDK in any form.
 // Mirrors test/clean.test.ts in the ts reference. Do not hand-edit.
 
 #include <functional>
 #include <iostream>
+#include <stdexcept>
 #include <map>
 #include <string>
 #include <vector>
@@ -167,6 +193,17 @@ public:
 };
 
 
+// A feature that throws from inside the pipeline, quoting the request it
+// saw: an exception makeError never handled.
+class ThrowFeature : public BaseFeature {
+public:
+  ThrowFeature() : BaseFeature("throwhook", "0.0.1", true) {}
+  void preResponse(CtxPtr ctx) override {
+    throw std::runtime_error("hook saw " + vs::jsonify(ctx->spec ? ctx->spec->toValue() : Value::undef(), 0));
+  }
+};
+
+
 // A sink callable: records every form of the record it receives.
 static Value capture(std::vector<Sink>* sinks, const std::string& name, int at) {
   vs::Injector fn = [sinks, name, at](vs::Injection&, const Value& args, const std::string&,
@@ -239,7 +276,8 @@ static bool hasFeature(const std::string& name) {
 
 
 static std::shared_ptr<${ProjectName}SDK> makeSdk(const Scenario& scenario, std::vector<Sink>* sinks,
-                                              const Value& cleanopts) {
+                                              const Value& cleanopts,
+                                              FeaturePtr extra = nullptr) {
   Value feature = vmap();
   if (hasFeature("log")) {
     // The log feature hands [level, record] to its logger.
@@ -283,17 +321,26 @@ static std::shared_ptr<${ProjectName}SDK> makeSdk(const Scenario& scenario, std:
   });
   auto sdk = std::make_shared<${ProjectName}SDK>(opts);
   sdk->getRootCtx()->utility->featureAdd(sdk->getRootCtx(), std::make_shared<CaptureFeature>(sinks));
+  if (extra) sdk->getRootCtx()->utility->featureAdd(sdk->getRootCtx(), extra);
   return sdk;
 }
 
 
 struct Candidate {
   std::string name;
-  std::function<Value(${ProjectName}SDK&, const Value&)> run;
+  std::vector<std::string> params;
+  std::function<Value(${ProjectName}SDK&, const Value&, const Value&)> run;
 };
 
 
-// Generated from the model: every operation the active entities declare.
+struct Target {
+  int index;
+  Value match;
+};
+
+
+// Generated from the model: every operation the active entities declare,
+// with the path parameters its points declare.
 static std::vector<Candidate> candidates() {
   return {
 ${candidates.map((c) => candidate(ProjectName, c)).join('\n')}
@@ -301,8 +348,9 @@ ${candidates.map((c) => candidate(ProjectName, c)).join('\n')}
 }
 
 
-// The first operation that completes against a plain 200 with no arguments.
-static int usableOp(const std::vector<Candidate>& cands) {
+// The first operation that completes against a plain 200: with no
+// arguments, else with every path parameter its points declare filled in.
+static Target usableOp(const std::vector<Candidate>& cands) {
   vs::Injector fetch = [](vs::Injection&, const Value&, const std::string&, const Value&) -> Value {
     return response(200, vmap({{"id", Value("i1")}}), Value::undef());
   };
@@ -312,29 +360,40 @@ static int usableOp(const std::vector<Candidate>& cands) {
   });
   auto plain = std::make_shared<${ProjectName}SDK>(opts);
   for (size_t i = 0; i < cands.size(); i++) {
-    try {
-      cands[i].run(*plain, vmap());
-      return static_cast<int>(i);
-    } catch (const SdkErrorPtr&) {
-      continue;
-    } catch (const std::exception&) {
-      continue;
+    Value filled = vmap();
+    for (const auto& p : cands[i].params) map_put(filled, p, Value("p1"));
+    for (const Value& match : {vmap(), filled}) {
+      try {
+        cands[i].run(*plain, Struct::clone(match), vmap());
+        return {static_cast<int>(i), match};
+      } catch (const SdkErrorPtr&) {
+        continue;
+      } catch (const std::exception&) {
+        continue;
+      }
     }
   }
-  return -1;
+  return {-1, Value::undef()};
 }
 
 
-static SdkErrorPtr drive(${ProjectName}SDK& sdk, const Candidate& cand, const Value& ctrl,
-                         std::vector<Sink>& sinks) {
+static const char* NOTHING_TO_SWEEP =
+  "SKIP: no operation of this SDK completes against a plain 200; nothing to sweep";
+
+
+static SdkErrorPtr drive(${ProjectName}SDK& sdk, const Candidate& cand, const Target& target,
+                         const Value& ctrl, std::vector<Sink>& sinks) {
   SdkErrorPtr err;
   Value out = Value::undef();
   bool got = false;
   try {
-    out = cand.run(sdk, ctrl);
+    out = cand.run(sdk, Struct::clone(target.match), ctrl);
     got = true;
   } catch (const SdkErrorPtr& e) {
     err = e;
+  } catch (const std::exception& e) {
+    // Escaped the pipeline raw: swept as it is.
+    err = std::make_shared<SdkError>("escaped", e.what(), nullptr);
   }
   if (err) addError(sinks, "error", err);
   if (got) addForms(sinks, "result", out);
@@ -361,9 +420,12 @@ static std::vector<Variant> variants() {
 
 static void no_credential_leaves_the_sdk() {
   std::vector<Candidate> cands = candidates();
-  int target = usableOp(cands);
-  ASSERT_TRUE(0 <= target, "no operation completes without arguments; nothing to sweep");
-  if (0 > target) return;
+  Target target = usableOp(cands);
+  if (0 > target.index) {
+    std::cout << NOTHING_TO_SWEEP << std::endl;
+    return;
+  }
+  const Candidate& cand = cands[target.index];
 
   std::vector<Sink> sinks;
   std::map<std::string, SdkErrorPtr> errors;
@@ -373,7 +435,7 @@ static void no_credential_leaves_the_sdk() {
     for (const Variant& variant : variants()) {
       auto sdk = makeSdk(scenario, &sinks, Value::undef());
       Value ctrl = variant.ctrl();
-      SdkErrorPtr err = drive(*sdk, cands[target], ctrl, sinks);
+      SdkErrorPtr err = drive(*sdk, cand, target, ctrl, sinks);
       std::string key = scenario.name + "/" + variant.name;
       if (err) errors[key] = err;
       Value explain = getp(ctrl, "explain");
@@ -381,6 +443,25 @@ static void no_credential_leaves_the_sdk() {
       sinks.push_back({"sdk:string", sdk->to_string()});
     }
   }
+
+  // A credential mistyped as a map is rejected by validation, whose message
+  // quotes the value it rejected.
+  SdkErrorPtr rejected;
+  try {
+    std::make_shared<${ProjectName}SDK>(vmap({
+      {"apikey", vmap({{"value", Value(CANARY_APIKEY)}})},
+      {"clean", vmap({{"values", Value(CANARY_VALUE)}})},
+    }));
+  } catch (const SdkErrorPtr& e) {
+    rejected = e;
+  }
+  ASSERT_TRUE((bool)rejected, "a credential mistyped as a map should be rejected");
+  if (rejected) addError(sinks, "rejected", rejected);
+
+  // An exception a feature hook throws, quoting the request, skips makeError.
+  auto hooked = makeSdk(scenarios()[0], &sinks, Value::undef(), std::make_shared<ThrowFeature>());
+  SdkErrorPtr hookerr = drive(*hooked, cand, target, vmap(), sinks);
+  ASSERT_TRUE((bool)hookerr, "the throwing hook should fail the operation");
 
   std::string leaked;
   int leakcount = 0;
@@ -432,13 +513,15 @@ static void no_credential_leaves_the_sdk() {
 
 static void the_sweep_can_see_a_leak() {
   std::vector<Candidate> cands = candidates();
-  int target = usableOp(cands);
-  ASSERT_TRUE(0 <= target, "no operation completes without arguments");
-  if (0 > target) return;
+  Target target = usableOp(cands);
+  if (0 > target.index) {
+    std::cout << NOTHING_TO_SWEEP << std::endl;
+    return;
+  }
 
   std::vector<Sink> sinks;
   auto sdk = makeSdk(scenarios()[1], &sinks, vmap({{"active", Value(false)}}));
-  SdkErrorPtr err = drive(*sdk, cands[target], vmap(), sinks);
+  SdkErrorPtr err = drive(*sdk, cands[target.index], target, vmap(), sinks);
   ASSERT_TRUE((bool)err, "the 404 scenario must throw");
   if (!err) return;
 
@@ -457,9 +540,26 @@ static void the_sweep_can_see_a_leak() {
 }
 
 
+// A registered value used as a property name is masked; names that mask
+// alike are all kept.
+static void a_registered_value_used_as_a_name_is_masked() {
+  auto sdk = std::make_shared<${ProjectName}SDK>(vmap({
+    {"clean", vmap({{"values", Value("ZZVAL-abc123,ZZVAL-xyz789")}})},
+  }));
+  Value out = util::clean(sdk->getRootCtx(), vmap({
+    {"ZZVAL-abc123", Value(1)}, {"ZZVAL-xyz789", Value(2)}, {"plain", Value(3)},
+  }));
+  std::vector<std::string> keys;
+  for (const auto& kv : *out.as_map()) keys.push_back(kv.first);
+  ASSERT_TRUE((keys == std::vector<std::string>{MASK, MASK + "#1", "plain"}),
+              "masked names: " + Struct::stringify(out));
+}
+
+
 int main() {
   T_RUN(no_credential_leaves_the_sdk);
   T_RUN(the_sweep_can_see_a_leak);
+  T_RUN(a_registered_value_used_as_a_name_is_masked);
   return sdktest::summary("clean_test");
 }
 `

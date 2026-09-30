@@ -3898,6 +3898,7 @@ function phpunitViaComposer(args: string[]) {
     const composer = toolchain('composer')
     if (null != php && null != composer) {
       const root = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-phpunit-'))
+      process.on('exit', () => Fs.rmSync(root, { recursive: true, force: true }))
       Fs.writeFileSync(Path.join(root, 'composer.json'), JSON.stringify({
         name: 'sdkgen/phpunit-lane', type: 'project',
         require: { php: '>=8.2' }, 'require-dev': { 'phpunit/phpunit': '^11.0' },
@@ -4027,7 +4028,7 @@ const CLEAN_LANES: CleanLane[] = [
       const make = toolchain('make')
       const cxx = cleanCxx()
       if (null == make || null == cxx) return 'no make or C++ compiler'
-      const built = run(make, ['CXX=' + cxx, Path.join('test', 'clean_test.out')], sdkroot)
+      const built = run(make, ['CXX=' + cxx, 'test/clean_test.out'], sdkroot)
       return built.ok ? null : 'the generated sweep does not compile:\n' + tail(built.out)
     },
     command: () => {

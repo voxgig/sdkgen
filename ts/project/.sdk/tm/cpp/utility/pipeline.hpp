@@ -242,6 +242,16 @@ inline bool cleanSensitiveKey(const Value& cfg, const Value& key) {
   return false;
 }
 
+// A registered value used as a property name is masked like any other
+// string; names that mask alike take a counter, so none is lost.
+inline std::string cleanName(const Value& cfg, const Value& out, const std::string& key) {
+  std::string name = cleanString(cfg, key);
+  if (name == key || !out.as_map()->contains(name)) return name;
+  int i = 1;
+  while (out.as_map()->contains(name + "#" + std::to_string(i))) i++;
+  return name + "#" + std::to_string(i);
+}
+
 // A plain-data copy of what is about to leave: functions are dropped,
 // cycles are cut, and no live container is shared with the copy - masking
 // the copy must never mask the pipeline's own spec.
@@ -281,7 +291,7 @@ inline Value cleanSnapshot(const Value& cfg, const Value& val, const Value& key,
     out = vmap();
     for (const auto& kv : *val.as_map()) {
       Value v = cleanSnapshot(cfg, kv.second, Value(kv.first), depth + 1, seen);
-      if (!v.is_undef()) map_put(out, kv.first, v);
+      if (!v.is_undef()) map_put(out, cleanName(cfg, out, kv.first), v);
     }
   }
   seen.pop_back();
@@ -308,8 +318,43 @@ inline void cleanError(CtxPtr ctx, const SdkErrorPtr& err) {
   Value cfg = cleanConfig(ctx);
   if (is_false(getp(cfg, "active"))) return;
   err->msg = cleanString(cfg, err->msg);
+  err->code = cleanString(cfg, err->code);
   err->result = cleanValue(cfg, err->result);
   err->spec = cleanValue(cfg, err->spec);
+}
+
+// Every scalar under a sensitive name, at any depth and of any shape, is
+// registered: a credential mistyped as a map or a number is still a
+// credential, and the validation error that rejects it quotes it.
+inline void cleanAddSensitiveIn(const Value& cfg, const Value& val, bool under, int depth,
+                                std::vector<const void*>& seen) {
+  if (CLEAN_MAXDEPTH <= depth) return;
+  if (val.is_string() || val.is_number()) {
+    if (under) cleanAddCfg(cfg, val.is_string() ? val : Value(Struct::stringify(val)));
+    return;
+  }
+  if (!val.is_node()) return;
+  const void* id = val.is_list() ? static_cast<const void*>(val.as_list().get())
+                                 : static_cast<const void*>(val.as_map().get());
+  if (std::find(seen.begin(), seen.end(), id) != seen.end()) return;
+  seen.push_back(id);
+  if (val.is_list()) {
+    for (const auto& item : *val.as_list()) cleanAddSensitiveIn(cfg, item, under, depth + 1, seen);
+  } else {
+    for (const auto& kv : *val.as_map()) {
+      bool sub = under || cleanSensitiveKey(cfg, Value(kv.first));
+      cleanAddSensitiveIn(cfg, kv.second, sub, depth + 1, seen);
+    }
+  }
+}
+
+inline void cleanAddSensitiveCfg(const Value& cfg, const Value& val) {
+  std::vector<const void*> seen;
+  cleanAddSensitiveIn(cfg, val, false, 0, seen);
+}
+
+inline void cleanAddSensitive(CtxPtr ctx, const Value& val) {
+  cleanAddSensitiveCfg(cleanConfig(ctx), val);
 }
 
 // Is this key name sensitive under the context's clean configuration?
@@ -1445,6 +1490,17 @@ inline Value transformRequest(CtxPtr ctx) {
 
 // ---- makeOptions ------------------------------------------------------
 
+inline Value optsWithout(const Value& opts, std::initializer_list<const char*> keys) {
+  Value out = vmap();
+  if (!opts.is_map()) return out;
+  for (const auto& kv : *opts.as_map()) {
+    bool skip = false;
+    for (const char* k : keys) skip = skip || kv.first == k;
+    if (!skip) map_put(out, kv.first, kv.second);
+  }
+  return out;
+}
+
 inline Value makeOptions(CtxPtr ctx) {
   Value options = ctx->options;
   if (!options.is_map()) options = vmap();
@@ -1489,8 +1545,7 @@ inline Value makeOptions(CtxPtr ctx) {
     cleanraw.as_list()->push_back(Struct::clone(getp(opts, "clean")));
   }
   Value derivedClean = makeCleanConfig(Struct::merge(cleanraw));
-  cleanAddCfg(derivedClean, getp(opts, "apikey"));
-  cleanAddCfg(derivedClean, getp(opts, "secret"));
+  cleanAddSensitiveCfg(derivedClean, optsWithout(opts, {"clean"}));
   for (const auto& raw : cleanSplit(Struct::getpath(opts, {"clean", "values"}))) {
     cleanAddCfg(derivedClean, Value(raw));
   }
@@ -1617,17 +1672,8 @@ inline Value makeOptions(CtxPtr ctx) {
   map_put(derived, "featureorder", orderList);
   map_put(opts, "__derived__", derived);
 
-  // Every string under a sensitive name anywhere in the options - a custom
-  // auth header, a feature credential - is a secret the SDK now handles.
-  Value scan = Struct::clone(opts);
-  map_remove(scan, "__derived__");
-  Struct::walk(scan, [&derivedClean](const Value& key, const Value& val, const Value&,
-                                     const std::vector<std::string>&) -> Value {
-    if (val.is_string() && cleanSensitiveKey(derivedClean, key)) {
-      cleanAddCfg(derivedClean, val);
-    }
-    return val;
-  });
+  // Again over the merged result: the config's own defaults can carry one.
+  cleanAddSensitiveCfg(derivedClean, optsWithout(opts, {"clean", "__derived__"}));
 
   return opts;
 }

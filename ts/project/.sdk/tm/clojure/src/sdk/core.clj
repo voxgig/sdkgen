@@ -533,8 +533,46 @@
     (let [^String nk (normkey key)]
       (boolean (some (fn [^String k] (.contains nk k)) (vec (or (mget cfg "keys") [])))))))
 
+(defn- number-text [n]
+  (if (and (float? n) (== (double n) (Math/floor (double n))) (< (Math/abs (double n)) 9.0E15))
+    (str (long n))
+    (str n)))
+
+;; Every scalar under a sensitive name, at any depth and of any shape: a
+;; credential mistyped as a map or a number is still a credential, and the
+;; validation error that rejects it quotes it.
+(defn u-clean-add-sensitive
+  ([ctx val] (u-clean-add-sensitive ctx (clean-config ctx) val false 0 []))
+  ([ctx cfg val under depth seen]
+   (cond
+     (or (nil? val) (<= CLEAN-MAXDEPTH depth)) nil
+     (string? val) (when under (u-clean-add ctx val))
+     (number? val) (when under (u-clean-add ctx (number-text val)))
+     (some #(identical? % val) seen) nil
+     (instance? java.util.Map val)
+     (let [seen (conj seen val)]
+       (doseq [^java.util.Map$Entry e (vec (.entrySet ^java.util.Map val))]
+         (u-clean-add-sensitive ctx cfg (.getValue e)
+                                (or under (sensitive-key? cfg (.getKey e))) (inc depth) seen)))
+     (or (instance? java.util.Collection val) (sequential? val))
+     (let [seen (conj seen val)]
+       (doseq [v (seq val)]
+         (u-clean-add-sensitive ctx cfg v under (inc depth) seen)))
+     :else nil)))
+
 (defn- entity-instance? [v]
   (and (map? v) (instance? clojure.lang.IAtom (:_data v)) (fn? (:get-name v))))
+
+;; A registered value used as a property name is masked like any other
+;; string; names that mask alike take a counter, so none is lost.
+(defn- clean-name [cfg has? k]
+  (let [key (keyname k)
+        n (clean-string cfg key)]
+    (if (or (= n key) (not (has? n)))
+      n
+      (loop [i 1]
+        (let [c (str n "#" i)]
+          (if (has? c) (recur (inc i)) c))))))
 
 ;; A masked plain-data COPY (string-keyed struct nodes): an entity serialises
 ;; as its record, an atom-object as its map, functions are dropped, cycles
@@ -564,7 +602,9 @@
           (doseq [^java.util.Map$Entry e (.entrySet ^java.util.Map val)]
             (let [k (.getKey e)
                   v (clean-snapshot cfg (.getValue e) k (inc depth) seen)]
-              (when-not (identical? DROP v) (.put ^java.util.Map out (keyname k) v))))
+              (when-not (identical? DROP v)
+                (.put ^java.util.Map out
+                      (clean-name cfg #(.containsKey ^java.util.Map out %) k) v))))
           out)
         (or (instance? java.util.Collection val) (sequential? val))
         (let [out (vs/jt)]
@@ -578,9 +618,11 @@
 ;; same metadata (the context stays reachable through err-ctx).
 (defn- clean-error [cfg err]
   (with-meta
-    (into {} (map (fn [[k v]]
-                    [k (let [c (clean-snapshot cfg v k 1 [])] (if (identical? DROP c) nil c))])
-                  err))
+    (reduce (fn [out [k v]]
+              (let [c (clean-snapshot cfg v k 1 [])
+                    n (clean-name cfg #(contains? out %) k)]
+                (assoc out (if (= n (keyname k)) k n) (if (identical? DROP c) nil c))))
+            {} err)
     (meta err)))
 
 (defn u-clean [ctx val]
@@ -590,6 +632,19 @@
       (string? val) (clean-string cfg val)
       (sdk-error? val) (clean-error cfg val)
       :else (let [out (clean-snapshot cfg val nil 0 [])] (if (identical? DROP out) nil out)))))
+
+;; A Throwable is immutable, so one that never passed through make-error (a
+;; hook's, a fetcher's) leaves as a cleaned copy with the original's trace.
+(defn clean-throwable [ctx ^Throwable t]
+  (let [cfg (clean-config ctx)]
+    (if (= false (mget cfg "active"))
+      t
+      (let [data (when (instance? clojure.lang.IExceptionInfo t)
+                   (clean-snapshot cfg (ex-data t) nil 0 []))
+            out (ex-info (clean-string cfg (str (.getMessage t)))
+                         (if (instance? java.util.Map data) (into {} data) {}))]
+        (.setStackTrace ^Throwable out (.getStackTrace t))
+        out))))
 
 ;; The error as string-keyed data: jsonify reads a java.util.Map's keys as
 ;; strings, so a keyword-keyed map would serialise as nulls.
@@ -1267,6 +1322,13 @@
                             (fn [[_ c]]
                               (clojure.core/str "-" (str/lower-case c))))))))
 
+(defn- omit-keys [m names]
+  (let [out (vs/jm)]
+    (doseq [^java.util.Map$Entry e (.entrySet ^java.util.Map m)]
+      (when-not (some #(= % (.getKey e)) names)
+        (.put ^java.util.Map out (.getKey e) (.getValue e))))
+    out))
+
 (defn u-make-options [ctx]
   (let [options (or (oget ctx :options) (vs/jm))
         custom-utils (vs/getprop options "utility")]
@@ -1342,8 +1404,8 @@
                           (doseq [k (vs/keysof src)] (.put ^java.util.Map out k (vs/getprop src k)))))
                       out))
           cleanctx (atom {:options (vs/jm "__derived__" (vs/jm "clean" cleancfg))})
-          _ (doseq [raw (concat [(vs/getprop opts0 "apikey") (vs/getprop opts0 "secret")]
-                                (splitvalues (vs/getpath opts0 "clean.values")))]
+          _ (u-clean-add-sensitive cleanctx (omit-keys opts0 ["clean"]))
+          _ (doseq [raw (splitvalues (vs/getpath opts0 "clean.values"))]
               (u-clean-add cleanctx raw))
           sys-fetch (vs/getpath opts0 "system.fetch")
           merged (vs/merge (vs/jt (vs/jm) cfgopts opts0))
@@ -1404,16 +1466,8 @@
                 order))
             derived (vs/jm "clean" cleancfg "featureorder" feature-order)]
         (.put ^java.util.Map opts "__derived__" derived)
-        ;; Every string under a sensitive name anywhere in the options - a
-        ;; custom auth header, a feature credential - is a secret the SDK now
-        ;; handles.
-        (let [optctx (atom {:options opts})
-              scan (vs/clone opts)]
-          (vs/delprop scan "__derived__")
-          (vs/walk scan (fn [key val _parent _path]
-                          (when (and (string? val) (sensitive-key? cleancfg key))
-                            (u-clean-add optctx val))
-                          val)))
+        ;; Again over the merged result: the config's own defaults can carry one.
+        (u-clean-add-sensitive (atom {:options opts}) (omit-keys opts ["clean" "__derived__"]))
         opts))))
 
 ;; ---------------------------------------------------------------------------

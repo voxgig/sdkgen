@@ -230,6 +230,49 @@ func cleanAddUtil(_ ctx: Context, _ value: Value) {
   }
 }
 
+// Every scalar under a sensitive name, at any depth and of any shape: a
+// credential mistyped as a map or a number is still a credential.
+func cleanAddSensitiveUtil(_ ctx: Context, _ val: Value) {
+  var seen: [ObjectIdentifier] = []
+  cleanAddSensitiveAt(ctx, val, false, 0, &seen)
+}
+
+private func cleanAddSensitiveAt(
+  _ ctx: Context, _ val: Value, _ under: Bool, _ depth: Int, _ seen: inout [ObjectIdentifier]
+) {
+  if cleanMaxDepth <= depth { return }
+  switch val {
+  case .string(let s):
+    if under { cleanAddUtil(ctx, .string(s)) }
+  case .int(let i):
+    if under { cleanAddUtil(ctx, .string(String(i))) }
+  case .double(let d):
+    if under { cleanAddUtil(ctx, .string(cleanNumberText(d))) }
+  case .list(let l):
+    if seen.contains(ObjectIdentifier(l)) { return }
+    seen.append(ObjectIdentifier(l))
+    for item in l.items {
+      cleanAddSensitiveAt(ctx, item, under, depth + 1, &seen)
+    }
+  case .map(let m):
+    if seen.contains(ObjectIdentifier(m)) { return }
+    seen.append(ObjectIdentifier(m))
+    for (k, item) in m.entries {
+      cleanAddSensitiveAt(ctx, item, under || cleanKeyUtil(ctx, k), depth + 1, &seen)
+    }
+  default:
+    return
+  }
+}
+
+// A number's decimal text as JavaScript's String() writes it, for whole values.
+private func cleanNumberText(_ d: Double) -> String {
+  if d.rounded() == d && abs(d) < 9.0e15 {
+    return String(Int64(d))
+  }
+  return String(d)
+}
+
 private func cleanMaskValue(_ cfg: Utility.CleanConfig, _ value: String) -> String {
   if 0 < cfg.hint && value.count > 2 * cfg.hint {
     return cfg.mask + String(value.suffix(cfg.hint))
@@ -305,10 +348,22 @@ private func cleanSnapshot(
     let out = VMap()
     for (k, item) in m.entries {
       let v = cleanSnapshot(cfg, item, k, depth + 1, &seen)
-      if !v.isNoval { out.entries[k] = v }
+      if !v.isNoval { out.entries[cleanName(cfg, out, k)] = v }
     }
     return .map(out)
   }
+}
+
+// A registered value used as a property name is masked like any other
+// string; names that mask alike take a counter, so none is lost.
+private func cleanName(_ cfg: Utility.CleanConfig, _ out: VMap, _ key: String) -> String {
+  let name = cleanString(cfg, key)
+  if name == key || out.entries[name] == nil {
+    return name
+  }
+  var i = 1
+  while out.entries[name + "#" + String(i)] != nil { i += 1 }
+  return name + "#" + String(i)
 }
 
 private func cleanErrorRecord(
@@ -384,13 +439,17 @@ private func cleanNative(
     return .list(out)
   }
   if mirror.displayStyle == .dictionary {
-    let out = VMap()
+    // Sorted, so colliding masked names number the same way every run.
+    var pairs: [(String, Any)] = []
     for child in mirror.children {
       let pair = Mirror(reflecting: child.value).children.map { $0.value }
       guard 2 == pair.count else { continue }
-      let k = String(describing: pair[0])
-      let v = cleanNative(cfg, pair[1], k, depth + 1, &seen)
-      if !v.isNoval { out.entries[k] = v }
+      pairs.append((String(describing: pair[0]), pair[1]))
+    }
+    let out = VMap()
+    for (k, item) in pairs.sorted(by: { $0.0 < $1.0 }) {
+      let v = cleanNative(cfg, item, k, depth + 1, &seen)
+      if !v.isNoval { out.entries[cleanName(cfg, out, k)] = v }
     }
     return .map(out)
   }

@@ -285,6 +285,11 @@ describe('clean', () => {
     const hookerr = await drive(hooked, target, {}, sinks)
     ok(null != hookerr, 'the throwing hook should fail the operation')
 
+    // The raw path returns its failure rather than throwing it.
+    const raw = await makeSdk(SCENARIOS[3], sinks).direct({ path: 'raw' })
+    ok(false === raw.ok && null != raw.err, 'a transport failure should fail direct()')
+    sinks.push(...forms('direct', raw.err))
+
     const leaked = sinks
       .map((s) => ({ name: s.name, found: leaks(s.text) }))
       .filter((s) => 0 < s.found.length)

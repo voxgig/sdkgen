@@ -495,7 +495,9 @@ bool clean_key_util(Context* ctx, const char* key);
 voxgig_value* clean_opts(voxgig_value* options, voxgig_value* val);
 voxgig_value* clean_make_config(voxgig_value* cleanopts);
 voxgig_value* clean_split_values(voxgig_value* values);
-void clean_register_sensitive(voxgig_value* options, voxgig_value* val);
+void clean_add_sensitive_opts(voxgig_value* options, voxgig_value* val);
+void clean_add_sensitive_util(Context* ctx, voxgig_value* val);
+void clean_error_util(Context* ctx, PNError* err);
 char* clean_base64(const char* in); // returns malloc'd
 voxgig_value* done_util(Context* ctx, PNError** err);
 voxgig_value* make_error_util(Context* ctx, PNError* err, PNError** out);

@@ -1218,6 +1218,9 @@ inline Value EntityBase::runOp(CtxPtr ctx, const std::function<void()>& postDone
   } catch (const SdkErrorPtr& err) {
     if (ctx->ctrl->err && err == ctx->ctrl->err) throw;
     return u->makeError(ctx, err);
+  } catch (const std::exception& e) {
+    // An exception a hook threw never passed through makeError.
+    return u->makeError(ctx, ctx->makeError("unexpected", e.what()));
   }
 }
 
@@ -1291,6 +1294,9 @@ inline std::vector<Value> EntityBase::stream(const std::string& action,
   } catch (const SdkErrorPtr& err) {
     if (ctx->ctrl->err && err == ctx->ctrl->err) throw;
     u->makeError(ctx, err);
+    return std::vector<Value>();
+  } catch (const std::exception& e) {
+    u->makeError(ctx, ctx->makeError("unexpected", e.what()));
     return std::vector<Value>();
   }
 }

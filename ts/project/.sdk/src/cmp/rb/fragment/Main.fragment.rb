@@ -213,7 +213,7 @@ class ProjectNameSDK
     url = fetchdef["url"] || ""
     fetched, fetch_err = utility.fetcher.call(ctx, url, fetchdef)
 
-    return { "ok" => false, "err" => fetch_err } if fetch_err
+    return { "ok" => false, "err" => utility.clean.call(ctx, fetch_err) } if fetch_err
 
     if fetched.nil?
       return {

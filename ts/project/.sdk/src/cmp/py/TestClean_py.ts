@@ -64,6 +64,8 @@ CANARY = {
 
 MASK = "[redacted]"
 
+NO_OP = "no operation of this SDK completes against a plain 200; nothing to sweep"
+
 
 def _b64(s):
     return base64.b64encode(s.encode("utf-8")).decode("ascii")
@@ -178,7 +180,7 @@ SCENARIOS = [
 ]
 
 
-def _make_sdk(respond, sinks, cleanopts=None):
+def _make_sdk(respond, sinks, cleanopts=None, extra=None):
     def capture(name):
         return lambda rec, *a: sinks.extend(_forms(name, rec))
 
@@ -210,13 +212,13 @@ def _make_sdk(respond, sinks, cleanopts=None):
         "headers": {"X-Custom-Token": CANARY["header"]},
         "clean": clean,
         "feature": feature,
-        "extend": [_CaptureFeature(sinks)],
+        "extend": [_CaptureFeature(sinks)] + list(extra or []),
         "utility": {"fetcher": lambda ctx, url, fetchdef: respond(url, fetchdef)},
     })
 
 
-# The first operation that completes against a plain 200 with no arguments
-# (a required path parameter would fail before the request is built).
+# The first operation that completes against a plain 200: with no
+# arguments, else with every path parameter its points declare filled in.
 def _usable_op():
     def plain():
         return ${Name}SDK({
@@ -225,6 +227,7 @@ def _usable_op():
         })
 
     client = plain()
+    entities = (client.get_root_ctx().config or {}).get("entity") or {}
     found = {}
     for attr in dir(client):
         if not attr[:1].isupper():
@@ -249,20 +252,43 @@ def _usable_op():
         ops = [op for op in ["list", "load", "create", "update", "remove"]
                if callable(getattr(ent, op, None))]
         ops.sort(key=lambda o: safe.get(o, 2))
+        opdefs = (entities.get(name) or {}).get("op") or {}
         for op in ops:
-            try:
-                getattr(getattr(plain(), accessor)(), op)({}, {})
-                return (accessor, op)
-            except Exception:
-                continue
+            filled = {}
+            for point in (opdefs.get(op) or {}).get("points") or []:
+                for p in ((point or {}).get("args") or {}).get("params") or []:
+                    if isinstance((p or {}).get("name"), str):
+                        filled[p["name"]] = "p1"
+            for match in [{}, filled]:
+                try:
+                    getattr(getattr(plain(), accessor)(), op)(dict(match), {})
+                    return (accessor, op, match)
+                except Exception:
+                    continue
     return None
+
+
+# A feature that raises from inside the pipeline, quoting the request it
+# saw: an error make_error never handled.
+class _ThrowFeature(${Name}BaseFeature):
+    def __init__(self):
+        super().__init__()
+        self.name = "throwhook"
+        self.version = "0.0.1"
+        self.active = True
+
+    def init(self, ctx, options):
+        pass
+
+    def PreResponse(self, ctx):
+        raise RuntimeError("hook saw " + json.dumps(vars(ctx.spec), default=str))
 
 
 def _drive(sdk, target, ctrl, sinks):
     out = None
     err = None
     try:
-        out = getattr(getattr(sdk, target[0])(), target[1])({}, ctrl)
+        out = getattr(getattr(sdk, target[0])(), target[1])(dict(target[2]), ctrl)
     except Exception as e:
         err = e
     if err is not None:
@@ -278,7 +304,8 @@ class TestClean:
 
     def test_no_credential_leaves_the_sdk_in_any_form(self):
         target = _usable_op()
-        assert target is not None, "no operation completes without arguments; nothing to sweep"
+        if target is None:
+            pytest.skip(NO_OP)
 
         sinks = []
         errors = {}
@@ -300,6 +327,34 @@ class TestClean:
                     explains[key] = ctrl["explain"]
                 sinks.extend(_forms("sdk", sdk))
                 sinks.append(("sdk:vars", json.dumps(vars(sdk), default=repr)))
+
+        # A credential mistyped as a map is rejected by validation, whose
+        # message quotes the value it rejected.
+        rejected = None
+        try:
+            ${Name}SDK({"apikey": {"value": CANARY["apikey"]}, "clean": {"values": CANARY["value"]}})
+        except Exception as e:
+            rejected = e
+        assert rejected is not None, "a credential mistyped as a map should be rejected"
+        sinks.extend(_forms("rejected", rejected))
+
+        # An error a feature hook raises, quoting the request, skips make_error.
+        hooked = _make_sdk(SCENARIOS[0][1], sinks, None, [_ThrowFeature()])
+        hookerr = _drive(hooked, target, {}, sinks)
+        assert hookerr is not None, "the throwing hook should fail the operation"
+
+        # A registered value used as a property name is masked; names that
+        # mask alike are kept apart.
+        util = hooked.get_utility()
+        rootctx = hooked.get_root_ctx()
+        named = util.clean(rootctx, {CANARY["value"]: 1, CANARY["header"]: 2, "plain": 3})
+        sinks.extend(_forms("named", named))
+        assert named == {MASK: 1, MASK + "#1": 2, "plain": 3}, named
+        err = RuntimeError("boom")
+        setattr(err, CANARY["value"], "x")
+        util.clean(rootctx, err)
+        sinks.extend(_forms("named-error", err))
+        assert CANARY["value"] not in vars(err) and vars(err).get(MASK) == "x", vars(err)
 
         leaked = [(name, _leaks(text)) for name, text in sinks]
         leaked = [(name, found) for name, found in leaked if 0 < len(found)]
@@ -332,7 +387,8 @@ class TestClean:
 
     def test_the_sweep_can_see_a_leak_with_clean_switched_off(self):
         target = _usable_op()
-        assert target is not None
+        if target is None:
+            pytest.skip(NO_OP)
 
         sinks = []
         sdk = _make_sdk(SCENARIOS[1][1], sinks, {"active": False})

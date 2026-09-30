@@ -129,6 +129,31 @@ def clean_add_util(ctx, value):
         values.sort(key=len, reverse=True)
 
 
+# Every scalar under a sensitive name, at any depth and of any shape: a
+# credential mistyped as a map or a number is still a credential, and the
+# validation error that rejects it quotes it.
+def clean_add_sensitive(ctx, val, under=False, depth=0, seen=None):
+    if val is None or _MAXDEPTH <= depth or isinstance(val, bool):
+        return
+    if isinstance(val, (str, int, float)):
+        if under:
+            text = str(int(val)) if isinstance(val, float) and val.is_integer() else str(val)
+            clean_add_util(ctx, text)
+        return
+    if not isinstance(val, (dict, list, tuple)):
+        return
+    seen = [] if seen is None else seen
+    if id(val) in seen:
+        return
+    seen.append(id(val))
+    if isinstance(val, dict):
+        for k, v in val.items():
+            clean_add_sensitive(ctx, v, under or clean_key(ctx, k), depth + 1, seen)
+    else:
+        for v in val:
+            clean_add_sensitive(ctx, v, under, depth + 1, seen)
+
+
 def _mask_value(cfg, value):
     hint = cfg["hint"]
     if 0 < hint and len(value) > 2 * hint:
@@ -227,8 +252,20 @@ def _plain(cfg, items, depth, seen):
     for k, v in items:
         c = _snapshot(cfg, v, k, depth + 1, seen)
         if c is not _DROP:
-            out[str(k)] = c
+            out[_clean_name(cfg, out, str(k))] = c
     return out
+
+
+# A registered value used as a property name is masked like any other
+# string; names that mask alike take a counter, so none is lost.
+def _clean_name(cfg, out, key):
+    name = _clean_string(cfg, key)
+    if name == key or name not in out:
+        return name
+    i = 1
+    while name + "#" + str(i) in out:
+        i += 1
+    return name + "#" + str(i)
 
 
 # An exception is cleaned IN PLACE: it is about to be raised, and its
@@ -240,9 +277,14 @@ def _clean_exception(cfg, err):
 
     for k, v in _public(err):
         if isinstance(v, str):
-            setattr(err, k, _mask_value(cfg, v) if _sensitive_key(cfg, k) else _clean_string(cfg, v))
+            v = _mask_value(cfg, v) if _sensitive_key(cfg, k) else _clean_string(cfg, v)
         elif v is not None and not isinstance(v, (bool, int, float)) and not _is_function(v):
-            setattr(err, k, _snapshot(cfg, v, k, 1, []))
+            v = _snapshot(cfg, v, k, 1, [])
+        name = _clean_string(cfg, k)
+        if name != k:
+            delattr(err, k)
+            name = _clean_name(cfg, vars(err), k)
+        setattr(err, name, v)
 
     notes = getattr(err, "__notes__", None)
     if isinstance(notes, list):

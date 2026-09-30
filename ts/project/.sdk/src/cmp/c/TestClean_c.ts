@@ -4,6 +4,7 @@ import type {
 
 import {
   cmp,
+  configDefinition,
   each,
   File,
   Content,
@@ -27,8 +28,8 @@ const DIAGNOSTIC = ['log', 'debug', 'audit', 'telemetry', 'cost', 'metrics', 'cl
 
 // The canary sweep (twin of TestClean_ts). C is statically typed, so the
 // operation candidates the ts sweep finds by reflection are enumerated here
-// at generation time; the sweep still DRIVES them to find the first that
-// completes with empty arguments.
+// at generation time, each with the path parameters its config points
+// declare; the sweep still DRIVES them to find the first that completes.
 const TestClean = cmp(function TestClean(props: any) {
   const { model } = props.ctx$
   const { target } = props
@@ -48,7 +49,9 @@ const TestClean = cmp(function TestClean(props: any) {
     .filter((name) => DIAGNOSTIC.includes(name))
     .sort()
 
-  const candidates: { name: string, fn: string, evar: string, op: string }[] = []
+  const configEntity = configDefinition(model, target.name).def.entity || {}
+
+  const candidates: Candidate[] = []
   const entities = each(entityCollection(model)).filter((e: any) => false !== e.active)
   each(entities, (entity: ModelEntity) => {
     const evar = cVarName(entity.name)
@@ -56,7 +59,10 @@ const TestClean = cmp(function TestClean(props: any) {
       .filter((op) => CRUD.includes(op))
       .sort((a, b) => CRUD.indexOf(a) - CRUD.indexOf(b))
     for (const op of ops) {
-      candidates.push({ name: entity.name + '.' + op, fn: 'drive_' + evar + '_' + op, evar, op })
+      candidates.push({
+        name: entity.name + '.' + op, fn: 'drive_' + evar + '_' + op, evar, op,
+        params: pointParams(configEntity[entity.name]?.op?.[op]),
+      })
     }
   })
 
@@ -66,20 +72,36 @@ const TestClean = cmp(function TestClean(props: any) {
 })
 
 
+type Candidate = { name: string, fn: string, evar: string, op: string, params: string[] }
+
+
+// Every path parameter an operation's points declare, as the generated
+// config carries them (points[].args.params[].name).
+function pointParams(opdef: any): string[] {
+  const names: string[] = []
+  for (const point of opdef?.points || []) {
+    for (const p of point?.args?.params || []) {
+      if ('string' === typeof p?.name && !names.includes(p.name)) names.push(p.name)
+    }
+  }
+  return names
+}
+
+
 function render(spec: {
   Name: string,
   ident: string,
   auth: { suppressed: boolean, where: string, name: string, basic: boolean },
   features: string[],
-  candidates: { name: string, fn: string, evar: string, op: string }[],
+  candidates: Candidate[],
 }): string {
   const { Name, ident, auth, features, candidates } = spec
 
   const drivers = candidates.map((c) => 'list' === c.op
-    ? `static PNError* ${c.fn}(${Name}SDK* sdk, voxgig_value* ctrl, voxgig_value** out) {
+    ? `static PNError* ${c.fn}(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* ctrl, voxgig_value** out) {
   PNError* err = NULL;
   Entity* e = ${ident}_${c.evar}(sdk, NULL);
-  Entity** items = e->vt->list(e, v_map(), ctrl, &err);
+  Entity** items = e->vt->list(e, mtch, ctrl, &err);
   if (err) return err;
   voxgig_value* list = v_list();
   for (size_t i = 0; items && items[i]; i++) {
@@ -89,17 +111,18 @@ function render(spec: {
   return NULL;
 }
 `
-    : `static PNError* ${c.fn}(${Name}SDK* sdk, voxgig_value* ctrl, voxgig_value** out) {
+    : `static PNError* ${c.fn}(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* ctrl, voxgig_value** out) {
   PNError* err = NULL;
   Entity* e = ${ident}_${c.evar}(sdk, NULL);
-  Entity* r = e->vt->${c.op}(e, v_map(), ctrl, &err);
+  Entity* r = e->vt->${c.op}(e, mtch, ctrl, &err);
   if (err) return err;
   *out = r ? r->vt->data(r, NULL) : v_undef();
   return NULL;
 }
 `).join('\n')
 
-  const table = candidates.map((c) => `  { "${c.name}", ${c.fn} },`).join('\n')
+  const table = candidates.map((c) => `  { "${c.name}", ${c.fn}, { ${
+    c.params.map((p) => '"' + cstr(p) + '", ').join('')}NULL } },`).join('\n')
 
   return `// Generated canary sweep (see TestClean_c): no credential leaves the SDK
 // in any form, and the sweep can see one when clean is switched off.
@@ -242,6 +265,23 @@ static const FeatureVT CAPTURE_VT = {
   capture_name, capture_active, capture_add_options, capture_init, capture_hook, NULL,
 };
 
+// A feature that fails the operation from inside the pipeline, quoting the
+// request it saw. A C hook has no error return, so it fails the result: an
+// error make_error receives from a hook, not from the pipeline.
+static const char* throw_name(Feature* f) { (void)f; return "throwhook"; }
+static void throw_hook(Feature* f, const char* name, Context* ctx) {
+  (void)f;
+  if (0 != strcmp(name, "PreResponse") || !ctx->result) return;
+  char* spec = voxgig_jsonify(ctx->spec ? spec_to_value(ctx->spec) : v_undef(), NULL);
+  char msg[4096];
+  snprintf(msg, sizeof(msg), "hook saw %s", spec ? spec : "");
+  ctx->result->err = context_make_error(ctx, "hook", msg);
+}
+
+static const FeatureVT THROW_VT = {
+  throw_name, capture_active, capture_add_options, capture_init, throw_hook, NULL,
+};
+
 enum { SC_OK = 0, SC_NOTFOUND, SC_SERVER, SC_TRANSPORT, SC_NOTJSON, SC_COUNT };
 static const char* SC_NAMES[] = { "ok", "notfound", "server", "transport", "notjson" };
 
@@ -291,7 +331,7 @@ static voxgig_value* transport_fn(void* ud, voxgig_value* args) {
   return respond(sc, url);
 }
 
-static ${Name}SDK* make_sdk(int sc, voxgig_value* cleanopts) {
+static ${Name}SDK* make_sdk(int sc, voxgig_value* cleanopts, Feature* extra) {
   voxgig_value* feature = v_map();
   for (size_t i = 0; FEATURES[i]; i++) {
     const char* name = FEATURES[i];
@@ -325,37 +365,54 @@ static ${Name}SDK* make_sdk(int sc, voxgig_value* cleanopts) {
   CaptureFeature* cf = (CaptureFeature*)calloc(1, sizeof(CaptureFeature));
   cf->base.vt = &CAPTURE_VT;
   sdk_features_push(sdk, (Feature*)cf);
+  if (extra) sdk_features_push(sdk, extra);
 
   return sdk;
 }
 
-typedef PNError* (*Drive)(${Name}SDK* sdk, voxgig_value* ctrl, voxgig_value** out);
+typedef PNError* (*Drive)(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* ctrl, voxgig_value** out);
 
 ${drivers}
 // Generated: every CRUD operation of every active entity, list and load
-// first (they need no body).
-static const struct { const char* name; Drive fn; } CANDIDATES[] = {
+// first (they need no body), with the path parameters its points declare.
+static const struct { const char* name; Drive fn; const char* params[16]; } CANDIDATES[] = {
 ${table}
-  { NULL, NULL },
+  { NULL, NULL, { NULL } },
 };
 
-// The first operation that completes against a plain 200 with no arguments
-// (a required path parameter would fail before the request is built).
-static Drive usable_op(void) {
+typedef struct {
+  Drive fn;
+  voxgig_value* mtch;
+} Target;
+
+// The first operation that completes against a plain 200: with no
+// arguments, else with every path parameter its points declare filled in.
+static bool usable_op(Target* target) {
   ${Name}SDK* plain = ${ident}_sdk_new(cmap(2,
     "apikey", v_str(CANARY_APIKEY),
     "system", cmap(1, "fetch", vfn(transport_fn, (void*)(intptr_t)SC_OK))));
   for (size_t i = 0; CANDIDATES[i].name; i++) {
-    voxgig_value* out = NULL;
-    PNError* err = CANDIDATES[i].fn(plain, NULL, &out);
-    if (!err) return CANDIDATES[i].fn;
+    voxgig_value* filled = v_map();
+    for (size_t p = 0; CANDIDATES[i].params[p]; p++) {
+      setp(filled, CANDIDATES[i].params[p], v_str("p1"));
+    }
+    voxgig_value* tries[2] = { v_map(), filled };
+    for (int t = 0; t < 2; t++) {
+      voxgig_value* out = NULL;
+      PNError* err = CANDIDATES[i].fn(plain, voxgig_clone(tries[t]), NULL, &out);
+      if (!err) {
+        target->fn = CANDIDATES[i].fn;
+        target->mtch = tries[t];
+        return true;
+      }
+    }
   }
-  return NULL;
+  return false;
 }
 
-static PNError* drive(${Name}SDK* sdk, Drive op, voxgig_value* ctrl) {
+static PNError* drive(${Name}SDK* sdk, Target* target, voxgig_value* ctrl) {
   voxgig_value* out = NULL;
-  PNError* err = op(sdk, ctrl, &out);
+  PNError* err = target->fn(sdk, voxgig_clone(target->mtch), ctrl, &out);
   if (err) {
     push_error("error", err);
   } else {
@@ -399,16 +456,19 @@ static bool ends_with(const char* s, const char* suffix) {
 int main(void) {
   build_forms();
 
-  Drive op = usable_op();
-  CHECK(op != NULL, "no operation completes without arguments; nothing to sweep");
-  if (!op) TEST_SUMMARY("clean");
+  Target target;
+  if (!usable_op(&target)) {
+    printf("SKIP: no operation of this SDK completes against a plain 200; nothing to sweep\\n");
+    return 0;
+  }
+  Target* op = &target;
 
   PNError* notfound = NULL;
   voxgig_value* explained = NULL;
 
   for (int sc = 0; sc < SC_COUNT; sc++) {
     for (int variant = 0; variant < 3; variant++) {
-      ${Name}SDK* sdk = make_sdk(sc, NULL);
+      ${Name}SDK* sdk = make_sdk(sc, NULL, NULL);
       voxgig_value* explain = v_map();
       voxgig_value* ctrl = NULL;
       if (1 == variant) ctrl = cmap(1, "explain", explain);
@@ -422,6 +482,25 @@ int main(void) {
       (void)SC_NAMES;
     }
   }
+
+  // A credential mistyped as a map. The C validator defaults rather than
+  // rejects, so what the constructor produced is swept instead: a string
+  // quoting the value, cleaned the way a validation message is.
+  ${Name}SDK* mistyped = ${ident}_sdk_new(cmap(2,
+    "apikey", cmap(1, "value", v_str(CANARY_APIKEY)),
+    "clean", cmap(1, "values", v_str(CANARY_VALUE))));
+  {
+    char quoted[256];
+    snprintf(quoted, sizeof(quoted), "apikey: expected string, got {\\"value\\":\\"%s\\"}",
+             CANARY_APIKEY);
+    push("mistyped:quoted", clean_str(sdk_get_root_ctx(mistyped), quoted));
+  }
+
+  // An error a feature hook raises, quoting the request.
+  Feature* thrower = (Feature*)calloc(1, sizeof(CaptureFeature));
+  thrower->vt = &THROW_VT;
+  PNError* hookerr = drive(make_sdk(SC_OK, NULL, thrower), op, NULL);
+  CHECK(hookerr != NULL, "the throwing hook should fail the operation");
 
   size_t nleaks = 0;
   char found[4096];
@@ -465,7 +544,7 @@ int main(void) {
   // The negative control: with clean switched off the canary MUST show, or
   // the sweep is blind.
   size_t before = NSINKS;
-  ${Name}SDK* raw = make_sdk(SC_NOTFOUND, cmap(1, "active", v_bool(false)));
+  ${Name}SDK* raw = make_sdk(SC_NOTFOUND, cmap(1, "active", v_bool(false)), NULL);
   PNError* rawerr = drive(raw, op, NULL);
   CHECK(rawerr != NULL, "the 404 scenario must throw with clean off");
   size_t shown = 0;
@@ -480,6 +559,22 @@ int main(void) {
     char* pairb64 = b64(pair);
     CHECK(strstr(text, CANARY_APIKEY) || strstr(text, pairb64),
           "the raw spec should carry the credential when clean is off");
+  }
+
+  // A registered value used as a property name is masked; names that mask
+  // alike are all kept.
+  ${Name}SDK* named = ${ident}_sdk_new(cmap(1,
+    "clean", cmap(1, "values", v_str("ZZVAL-abc123,ZZVAL-xyz789"))));
+  voxgig_value* renamed = clean_util(sdk_get_root_ctx(named), cmap(3,
+    "ZZVAL-abc123", v_num(1), "ZZVAL-xyz789", v_num(2), "plain", v_num(3)));
+  voxgig_map* rm = voxgig_as_map(renamed);
+  CHECK(3 == rm->len, "every masked name is kept");
+  if (3 == rm->len) {
+    char alt[64];
+    snprintf(alt, sizeof(alt), "%s#1", MASK);
+    CHECK_STR_EQ(rm->entries[0].key, MASK, "a registered value used as a name is masked");
+    CHECK_STR_EQ(rm->entries[1].key, alt, "a colliding masked name takes a counter");
+    CHECK_STR_EQ(rm->entries[2].key, "plain", "an ordinary name is kept");
   }
 
   TEST_SUMMARY("clean");

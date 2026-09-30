@@ -248,6 +248,45 @@ local function sensitive_key(cfg, key)
 end
 
 
+-- Table keys in a stable order: pairs has none, and the collision counter
+-- below must not depend on it.
+local function sorted_keys(tbl)
+  local keys = {}
+  for k in pairs(tbl) do
+    keys[#keys + 1] = k
+  end
+  table.sort(keys, function(a, b)
+    local ta, tb = type(a), type(b)
+    if ta ~= tb then
+      return ta < tb
+    end
+    if ta == "number" or ta == "string" then
+      return a < b
+    end
+    return tostring(a) < tostring(b)
+  end)
+  return keys
+end
+
+
+-- A registered value used as a property name is masked like any other
+-- string; names that mask alike take a counter, so none is lost.
+local function clean_name(cfg, out, key)
+  if type(key) ~= "string" then
+    return key
+  end
+  local name = clean_string(cfg, key)
+  if name == key or out[name] == nil then
+    return name
+  end
+  local i = 1
+  while out[name .. "#" .. i] ~= nil do
+    i = i + 1
+  end
+  return name .. "#" .. i
+end
+
+
 -- A masked plain-data copy: an object's own record (to_record) honoured,
 -- functions dropped, cycles cut, and nothing shared with the live value,
 -- whose spec must stay raw.
@@ -297,10 +336,10 @@ local function snapshot(cfg, val, key, depth, seen)
   end
 
   local out = {}
-  for k, v in pairs(val) do
-    local cv = snapshot(cfg, v, k, depth + 1, seen)
+  for _, k in ipairs(sorted_keys(val)) do
+    local cv = snapshot(cfg, val[k], k, depth + 1, seen)
     if cv ~= nil then
-      out[k] = cv
+      out[clean_name(cfg, out, k)] = cv
     end
   end
 
@@ -322,16 +361,23 @@ local function clean_util(ctx, val)
   end
 
   if type(val) == "table" and val.is_sdk_error == true then
-    for k, v in pairs(val) do
+    for _, k in ipairs(sorted_keys(val)) do
+      local v = val[k]
       if type(v) == "string" then
         if k ~= "msg" and sensitive_key(cfg, k) then
-          val[k] = mask_value(cfg, v)
+          v = mask_value(cfg, v)
         else
-          val[k] = clean_string(cfg, v)
+          v = clean_string(cfg, v)
         end
       elseif type(v) == "table" then
-        val[k] = snapshot(cfg, v, k, 1, {})
+        v = snapshot(cfg, v, k, 1, {})
       end
+      local name = clean_name(cfg, {}, k)
+      if name ~= k then
+        val[k] = nil
+        name = clean_name(cfg, val, k)
+      end
+      val[name] = v
     end
     return val
   end
@@ -345,9 +391,40 @@ local function clean_key_util(ctx, key)
 end
 
 
+-- Every scalar under a sensitive name, at any depth and of any shape: a
+-- credential mistyped as a table or a number is still a credential, and
+-- the validation error that rejects it quotes it.
+local function clean_add_sensitive_util(ctx, val, under, depth, seen)
+  depth = depth or 0
+  seen = seen or {}
+  local t = type(val)
+  if val == nil or MAXDEPTH <= depth then
+    return
+  end
+  if t == "string" or t == "number" then
+    if under then
+      local text = tostring(val)
+      if math.type(val) == "float" and val == math.floor(val) then
+        text = string.format("%d", val)
+      end
+      clean_add_util(ctx, text)
+    end
+    return
+  end
+  if t ~= "table" or seen[val] then
+    return
+  end
+  seen[val] = true
+  for k, v in pairs(val) do
+    clean_add_sensitive_util(ctx, v, under or clean_key_util(ctx, k), depth + 1, seen)
+  end
+end
+
+
 return {
   clean = clean_util,
   clean_add = clean_add_util,
+  clean_add_sensitive = clean_add_sensitive_util,
   clean_key = clean_key_util,
   make_clean_config = make_clean_config,
   splitvalues = splitvalues,

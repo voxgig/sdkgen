@@ -121,6 +121,14 @@ class CleanTest extends TestCase
     // the error's own message and string form.
     public static function surfaces(string $name, mixed $val): array
     {
+        // Xdebug's develop mode writes every frame's arguments onto the
+        // exception at the throw; that is a debugger's view, like err.ctx.
+        for ($e = $val instanceof \\Throwable ? $val : null; null !== $e; $e = $e->getPrevious()) {
+            if (property_exists($e, 'xdebug_message')) {
+                unset($e->xdebug_message);
+            }
+        }
+
         $out = [];
         $push = function (string $kind, callable $fn) use (&$out, $name): void {
             try {
@@ -244,7 +252,29 @@ class CleanTest extends TestCase
         };
     }
 
-    private static function make_sdk(callable $respond, \\ArrayObject $sinks, ?array $cleanopts = null): array
+    // A feature that throws from inside the pipeline, quoting the request
+    // it saw: an error make_error never handled.
+    private static function throw_feature(): ${Name}BaseFeature
+    {
+        return new class () extends ${Name}BaseFeature {
+            public function __construct()
+            {
+                parent::__construct();
+                $this->name = 'throwhook';
+                $this->version = '0.0.1';
+                $this->active = true;
+            }
+
+            public function PreResponse(${Name}Context $ctx): void
+            {
+                throw new \\RuntimeException('hook saw ' . json_encode($ctx->spec));
+            }
+        };
+    }
+
+    private static function make_sdk(
+        callable $respond, \\ArrayObject $sinks, ?array $cleanopts = null, array $extra = []
+    ): array
     {
         $capture = function (string $name) use ($sinks): callable {
             return function (mixed $rec) use ($name, $sinks): void {
@@ -284,7 +314,7 @@ class CleanTest extends TestCase
             'secret' => self::CANARY['secret'],
             'headers' => ['X-Custom-Token' => self::CANARY['header']],
             'clean' => array_merge(['values' => self::CANARY['value']], $cleanopts ?? []),
-            'extend' => [$watcher],
+            'extend' => array_merge([$watcher], $extra),
             'utility' => [
                 'fetcher' => function (${Name}Context $_ctx, string $url, array $fetchdef) use ($respond): array {
                     return $respond($url, $fetchdef);
@@ -298,9 +328,9 @@ class CleanTest extends TestCase
         return [new ${Name}SDK($opts), $watcher];
     }
 
-    // The first operation that completes against a plain 200 with no
-    // arguments (a required path parameter would fail before the request is
-    // built). An entity accessor is a capitalised client method whose result
+    // The first operation that completes against a plain 200: with no
+    // arguments, else with every path parameter its points declare filled
+    // in. An entity accessor is a capitalised client method whose result
     // answers get_name(), as the feature corpus runner finds them.
     private static function usable_op(): ?array
     {
@@ -331,7 +361,8 @@ class CleanTest extends TestCase
         ksort($found);
 
         $rank = ['list' => 0, 'load' => 1];
-        foreach ($found as $accessor) {
+        $entities = ${Name}Config::shared_config()['entity'] ?? [];
+        foreach ($found as $entname => $accessor) {
             $ent = $plain->$accessor();
             $ops = array_values(array_filter(['list', 'load', 'create', 'update', 'remove'],
                 function (string $op) use ($ent): bool {
@@ -341,11 +372,21 @@ class CleanTest extends TestCase
                 return ($rank[$a] ?? 2) <=> ($rank[$b] ?? 2);
             });
             foreach ($ops as $op) {
-                try {
-                    $plain->$accessor()->$op([], []);
-                    return ['accessor' => $accessor, 'op' => $op];
-                } catch (\\Throwable $_e) {
-                    continue;
+                $filled = [];
+                foreach ((array)($entities[$entname]['op'][$op]['points'] ?? []) as $point) {
+                    foreach ((array)($point['args']['params'] ?? []) as $p) {
+                        if (is_string($p['name'] ?? null)) {
+                            $filled[$p['name']] = 'p1';
+                        }
+                    }
+                }
+                foreach ([[], $filled] as $match) {
+                    try {
+                        $plain->$accessor()->$op($match, []);
+                        return ['accessor' => $accessor, 'op' => $op, 'match' => $match];
+                    } catch (\\Throwable $_e) {
+                        continue;
+                    }
                 }
             }
         }
@@ -359,7 +400,7 @@ class CleanTest extends TestCase
         try {
             $accessor = $target['accessor'];
             $op = $target['op'];
-            $out = $sdk->$accessor()->$op([], $ctrl);
+            $out = $sdk->$accessor()->$op($target['match'], $ctrl);
         } catch (\\Throwable $e) {
             $err = $e;
         }
@@ -404,7 +445,9 @@ class CleanTest extends TestCase
     private function sweep(): void
     {
         $target = self::usable_op();
-        $this->assertNotNull($target, 'no operation completes without arguments; nothing to sweep');
+        if (null === $target) {
+            $this->markTestSkipped('no operation of this SDK completes against a plain 200; nothing to sweep');
+        }
 
         $sinks = new \\ArrayObject();
         $errors = [];
@@ -431,6 +474,36 @@ class CleanTest extends TestCase
                     $sinks[] = $s;
                 }
             }
+        }
+
+        // A credential mistyped as a map is rejected by validation, whose
+        // message quotes the value it rejected.
+        $rejected = null;
+        try {
+            new ${Name}SDK([
+                'apikey' => ['value' => self::CANARY['apikey']],
+                'clean' => ['values' => self::CANARY['value']],
+            ]);
+        } catch (\\Throwable $e) {
+            $rejected = $e;
+        }
+        $this->assertNotNull($rejected, 'a credential mistyped as a map should be rejected');
+        foreach (self::surfaces('rejected', $rejected) as $s) {
+            $sinks[] = $s;
+        }
+
+        // An error a feature hook throws, quoting the request, skips make_error.
+        [$hooked, $hwatcher] = self::make_sdk(self::scenarios()['ok'], $sinks, null, [self::throw_feature()]);
+        [$hookerr, $_hexplain] = self::drive($hooked, $hwatcher, $target, [], $sinks);
+        $this->assertNotNull($hookerr, 'the throwing hook should fail the operation');
+
+        // A registered value used as a property name is masked; names that
+        // mask alike are all kept.
+        $named = ($hooked->get_utility()->clean)($hooked->get_root_ctx(),
+            [self::CANARY['header'] => 1, self::CANARY['value'] => 2, 'plain' => 3]);
+        $this->assertSame([self::MASK => 1, self::MASK . '#1' => 2, 'plain' => 3], $named);
+        foreach (self::surfaces('named', $named) as $s) {
+            $sinks[] = $s;
         }
 
         $leaked = [];
@@ -483,7 +556,9 @@ class CleanTest extends TestCase
     public function test_the_sweep_can_see_a_leak_clean_switched_off_shows_the_credential(): void
     {
         $target = self::usable_op();
-        $this->assertNotNull($target);
+        if (null === $target) {
+            $this->markTestSkipped('no operation of this SDK completes against a plain 200; nothing to sweep');
+        }
 
         $sinks = new \\ArrayObject();
         [$sdk, $watcher] = self::make_sdk(self::scenarios()['notfound'], $sinks, ['active' => false]);

@@ -33,6 +33,22 @@ const TestClean = cmp(function TestClean(props: any) {
 const OP_ORDER: Record<string, number> = { list: 0, load: 1 }
 
 
+// The path parameters an operation's points declare, as the runtime config
+// carries them under points[].args.params.
+function pointParams(opdef: any): string[] {
+  const names: string[] = []
+  for (const point of each(opdef?.points || [])) {
+    if (false === point?.a) continue
+    for (const arg of each(point?.g?.params || [])) {
+      if (false !== arg?.a && 'string' === typeof arg?.n && !names.includes(arg.n)) {
+        names.push(arg.n)
+      }
+    }
+  }
+  return names
+}
+
+
 // The operations to try, list and load first: a required path parameter is
 // what usually stops a candidate, and the read ops need none. Each runs to
 // the record so the candidates share one type.
@@ -42,17 +58,18 @@ function candidates(entity: any[]): string {
     const fn = ocamlVarName(e.name)
     for (const op of Object.keys(e.op || {})) {
       const run = 'list' === op
-        ? `lst (List.map (fun en -> en.e_data_get ()) (ent.e_list (empty_map ()) ctrl))`
-        : 'load' === op ? `(ent.e_load (empty_map ()) ctrl).e_data_get ()`
-          : 'create' === op ? `(ent.e_create (empty_map ()) ctrl).e_data_get ()`
-            : 'update' === op ? `(ent.e_update (empty_map ()) ctrl).e_data_get ()`
-              : 'remove' === op ? `(ent.e_remove (empty_map ()) ctrl).e_data_get ()`
+        ? `lst (List.map (fun en -> en.e_data_get ()) (ent.e_list m ctrl))`
+        : 'load' === op ? `(ent.e_load m ctrl).e_data_get ()`
+          : 'create' === op ? `(ent.e_create m ctrl).e_data_get ()`
+            : 'update' === op ? `(ent.e_update m ctrl).e_data_get ()`
+              : 'remove' === op ? `(ent.e_remove m ctrl).e_data_get ()`
                 : null
       if (null == run) continue
       rows.push({
         rank: OP_ORDER[op] ?? 2,
         text: `  { c_name = "${ocamlString(e.name + '.' + op)}";
-    c_run = (fun sdk ctrl -> let ent = Sdk_client.${fn} sdk Noval in ${run}) };`,
+    c_params = [${pointParams(e.op[op]).map((p) => '"' + ocamlString(p) + '"').join('; ')}];
+    c_run = (fun sdk m ctrl -> let ent = Sdk_client.${fn} sdk Noval in ${run}) };`,
       })
     }
   })
@@ -163,7 +180,7 @@ let scenarios : scenario list = [
             ("body", Str "<html>");
             ("json", Func (fun _ _ _ _ -> failwith "Unexpected token < in JSON"))]) } ]
 
-let make_sdk (sc : scenario) (sinks : sinks) (cleanopts : (string * value) list) : sdk_client =
+let make_sdk ?(extra = []) (sc : scenario) (sinks : sinks) (cleanopts : (string * value) list) : sdk_client =
   let capture name = vfunc1 (fun record -> value_forms sinks name record; Noval) in
   let feature = empty_map () in
   let on name kvs = if Harness.has_feature name then setp feature name (jo (("active", Bool true) :: kvs)) in
@@ -184,26 +201,55 @@ let make_sdk (sc : scenario) (sinks : sinks) (cleanopts : (string * value) list)
       ("headers", jo [("X-Custom-Token", Str (canary_of "header"))]);
       ("clean", clean); ("feature", feature);
       ("system", jo [("fetch", fetch)])]) in
-  client.cl_features <- client.cl_features @ [capture_feature sinks];
+  client.cl_features <- client.cl_features @ [capture_feature sinks] @ extra;
   client
 
-type candidate = { c_name : string; c_run : sdk_client -> value -> value }
+(* A feature that raises from inside the pipeline, quoting the request it
+ * saw: an error make_error never handled. *)
+let throw_feature () : feature =
+  { f_name = "throwhook"; f_version = "0.0.1"; f_active = true; f_options = Noval;
+    f_init = (fun _ _ -> ());
+    f_hook = (fun name ctx ->
+        if name = "PreResponse" then
+          failwith ("hook saw " ^ (match ctx.c_spec with
+              | Some sp -> jsonify (spec_to_value sp)
+              | None -> "null"))) }
+
+type candidate = {
+  c_name : string;
+  c_params : string list;
+  c_run : sdk_client -> value -> value -> value;
+}
+
+type target = { t_cand : candidate; t_params : string list }
+
+(* A fresh match for each call, since an operation may keep what it is given. *)
+let args (params : string list) : value = jo (List.map (fun p -> (p, Str "p1")) params)
+
+let rec first_some (f : 'a -> 'b option) (l : 'a list) : 'b option =
+  match l with
+  | [] -> None
+  | x :: rest -> (match f x with Some _ as r -> r | None -> first_some f rest)
 
 (* The operations this SDK generated, read ops first. *)
 let candidates : candidate list = [
 ${candidates(entity)}
 ]
 
-(* The first operation that completes against a plain 200 with no arguments. *)
-let usable_op () : candidate option =
+(* The first operation that completes against a plain 200: with no
+ * arguments, else with every path parameter its points declare filled in. *)
+let usable_op () : target option =
   let plain = Sdk_client.make (jo [
       ("apikey", Str (canary_of "apikey"));
       ("system", jo [("fetch", Func (fun _ _ _ _ -> response 200 (jo [("id", Str "i1")])))])]) in
-  List.find_opt (fun c -> try ignore (c.c_run plain (empty_map ())); true with _ -> false) candidates
+  first_some (fun c ->
+      first_some (fun ps ->
+          try ignore (c.c_run plain (args ps) (empty_map ())); Some { t_cand = c; t_params = ps }
+          with _ -> None) [[]; c.c_params]) candidates
 
-let drive (sdk : sdk_client) (c : candidate) (ctrl : value) (sinks : sinks) : exn option =
+let drive (sdk : sdk_client) (t : target) (ctrl : value) (sinks : sinks) : exn option =
   let err =
-    try value_forms sinks "result" (c.c_run sdk ctrl); None
+    try value_forms sinks "result" (t.t_cand.c_run sdk (args t.t_params) ctrl); None
     with e -> error_forms sinks "error" e; Some e in
   (match getp ctrl "explain" with Map _ as ex -> value_forms sinks "explain" ex | _ -> ());
   err
@@ -213,11 +259,14 @@ let variants : (string * (unit -> value)) list = [
   ("explain", (fun () -> jo [("explain", empty_map ())]));
   ("nothrow", (fun () -> jo [("throw", Bool false); ("explain", empty_map ())])) ]
 
+let no_target = "no operation of this SDK completes against a plain 200; nothing to sweep"
+
+(* The harness has no skip, so a sweep with nothing to drive says so. *)
 let () =
   test "clean.no_credential_leaves_the_sdk" (fun () ->
-      let target = match usable_op () with
-        | Some c -> c
-        | None -> failwith "no operation completes without arguments; nothing to sweep" in
+      match usable_op () with
+      | None -> Printf.printf "SKIP clean.no_credential_leaves_the_sdk: %s\\n%!" no_target
+      | Some target ->
       let sinks : sinks = ref [] in
       let errors = ref [] and explains = ref [] in
       List.iter (fun sc ->
@@ -229,6 +278,22 @@ let () =
               (match err with Some e -> errors := (key, e) :: !errors | None -> ());
               (match getp ctrl "explain" with Map _ as ex -> explains := (key, ex) :: !explains | _ -> ());
               value_forms sinks "sdk" (client_to_value sdk)) variants) scenarios;
+      (* A credential mistyped as a map is rejected by validation, whose
+       * message quotes the value it rejected. *)
+      let rejected =
+        try
+          ignore (Sdk_client.make (jo [
+              ("apikey", jo [("value", Str (canary_of "apikey"))]);
+              ("clean", jo [("values", Str (canary_of "value"))])]));
+          None
+        with e -> Some e in
+      (match rejected with
+       | Some e -> error_forms sinks "rejected" e
+       | None -> failwith "a credential mistyped as a map should be rejected");
+      (* An error a feature hook raises, quoting the request, skips make_error. *)
+      let hooked = make_sdk ~extra:[throw_feature ()] (List.hd scenarios) sinks [] in
+      check "the throwing hook should fail the operation"
+        (drive hooked target (empty_map ()) sinks <> None);
       let leaked = List.filter (fun (_, text) -> leaks text <> []) !sinks in
       Printf.printf "clean: swept %d surface(s), %d leak(s)\\n%!" (List.length !sinks) (List.length leaked);
       if leaked <> [] then
@@ -259,9 +324,9 @@ let () =
 
 let () =
   test "clean.the_sweep_can_see_a_leak" (fun () ->
-      let target = match usable_op () with
-        | Some c -> c
-        | None -> failwith "no operation completes without arguments" in
+      match usable_op () with
+      | None -> Printf.printf "SKIP clean.the_sweep_can_see_a_leak: %s\\n%!" no_target
+      | Some target ->
       let sinks : sinks = ref [] in
       let sdk = make_sdk (List.nth scenarios 1) sinks [("active", Bool false)] in
       let err = drive sdk target (empty_map ()) sinks in
@@ -276,6 +341,37 @@ let () =
              || substr_contains text (base64_encode (canary_of "apikey" ^ ":" ^ canary_of "secret")))
         end
       | _ -> failwith "the 404 scenario must throw an SDK error")
+
+let clean_ctx () : value * ctx =
+  let cfg = make_clean_config (jo [("keys", Str "key,secret,token")]) in
+  let base = make_context_impl (default_ctxspec ()) None in
+  (cfg, { base with c_options = jo [("__derived__", jo [("clean", cfg)])] })
+
+let () =
+  test "clean.a_registered_value_used_as_a_property_name" (fun () ->
+      let (_, ctx) = clean_ctx () in
+      clean_add_util ctx "ZZVAL-abc123";
+      clean_add_util ctx "ZZVAL-xyz789";
+      let out = clean_util ctx
+          (jo [("ZZVAL-abc123", Num 1.); ("ZZVAL-xyz789", Num 2.); ("plain", Num 3.)]) in
+      check_vnum "a registered name is masked" (getp out mask) 1.;
+      check_vnum "a colliding masked name is numbered" (getp out (mask ^ "#1")) 2.;
+      check_vnum "a plain name is kept" (getp out "plain") 3.;
+      check "the registered name is gone" (not (List.mem "ZZVAL-abc123" (keysof out))))
+
+let () =
+  test "clean.add_sensitive_registers_every_scalar_under_a_sensitive_name" (fun () ->
+      let (cfg, ctx) = clean_ctx () in
+      clean_add_sensitive ctx (jo [
+          ("apikey", jo [("value", Str "NESTED-SECRET-1")]);
+          ("headers", jo [("X-Api-Token", ja [Str "LISTED-SECRET-2"])]);
+          ("secret", Num 123456789.);
+          ("name", Str "not-a-secret")]);
+      let values = str_values (getp cfg "values") in
+      check "nested under apikey" (List.mem "NESTED-SECRET-1" values);
+      check "listed under a token header" (List.mem "LISTED-SECRET-2" values);
+      check "a number, as its text" (List.mem "123456789" values);
+      check "an ordinary name" (not (List.mem "not-a-secret" values)))
 `
 }
 

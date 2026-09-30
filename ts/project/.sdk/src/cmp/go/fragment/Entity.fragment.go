@@ -2,6 +2,7 @@ package entity
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"GOMODULE/core"
 
@@ -274,8 +275,20 @@ func (e *EntyClass) Stream(action string, args map[string]any, callopts map[stri
 
 // #RemoveOp
 
-func (e *EntyClass) runOp(ctx *core.Context, postDone func()) (any, error) {
+func (e *EntyClass) runOp(ctx *core.Context, postDone func()) (out any, err error) {
 	utility := e.utility
+
+	// A hook, fetcher or parser that panics never reached MakeError, and its
+	// message can quote the request.
+	defer func() {
+		if r := recover(); r != nil {
+			perr, ok := r.(error)
+			if !ok {
+				perr = fmt.Errorf("%v", r)
+			}
+			out, err = utility.MakeError(ctx, perr)
+		}
+	}()
 
 	// #PrePoint-Hook
 
@@ -321,9 +334,9 @@ func (e *EntyClass) runOp(ctx *core.Context, postDone func()) (any, error) {
 
 	postDone()
 
-	out, doneErr := utility.Done(ctx)
-	if doneErr != nil {
-		return out, doneErr
+	out, err = utility.Done(ctx)
+	if err != nil {
+		return out, err
 	}
 
 	opname := ""

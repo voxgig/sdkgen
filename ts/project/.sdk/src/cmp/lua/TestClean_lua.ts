@@ -179,6 +179,15 @@ local function dump(val, depth, seen)
 end
 
 
+local function copy(tbl)
+  local out = {}
+  for k, v in pairs(tbl) do
+    out[k] = v
+  end
+  return out
+end
+
+
 local function append(sinks, more)
   for _, s in ipairs(more) do
     sinks[#sinks + 1] = s
@@ -234,6 +243,24 @@ function CaptureFeature:PreResponse(ctx) append(self.sinks, surfaces("ctx@PreRes
 function CaptureFeature:PreUnexpected(ctx) append(self.sinks, surfaces("ctx@PreUnexpected", ctx)) end
 
 
+-- A feature that raises from inside the pipeline, quoting the request it
+-- saw: an error make_error never handled.
+local ThrowFeature = {}
+ThrowFeature.__index = ThrowFeature
+setmetatable(ThrowFeature, { __index = BaseFeature })
+
+function ThrowFeature.new()
+  local self = setmetatable(BaseFeature.new(), ThrowFeature)
+  self.name = "throwhook"
+  self.version = "0.0.1"
+  self.active = true
+  return self
+end
+
+function ThrowFeature:init(_ctx, _options) end
+function ThrowFeature:PreResponse(ctx) error("hook saw " .. tojson(ctx.spec)) end
+
+
 local function response(status, data, headers)
   local h = { ["content-type"] = "application/json" }
   for k, v in pairs(headers or {}) do
@@ -282,7 +309,7 @@ local function has_feature(name)
 end
 
 
-local function make_sdk(scenario, sinks, cleanopts)
+local function make_sdk(scenario, sinks, cleanopts, extra)
   local function capture(name)
     return function(rec) append(sinks, surfaces(name, rec)) end
   end
@@ -319,13 +346,18 @@ local function make_sdk(scenario, sinks, cleanopts)
     clean[k] = v
   end
 
+  local extend = { CaptureFeature.new(sinks) }
+  for _, f in ipairs(extra or {}) do
+    extend[#extend + 1] = f
+  end
+
   return sdk.new({
     apikey = CANARY.apikey,
     secret = CANARY.secret,
     headers = { ["X-Custom-Token"] = CANARY.header },
     clean = clean,
     feature = feature,
-    extend = { CaptureFeature.new(sinks) },
+    extend = extend,
     utility = {
       fetcher = function(_ctx, url, fetchdef) return scenario.respond(url, fetchdef) end,
     },
@@ -333,8 +365,8 @@ local function make_sdk(scenario, sinks, cleanopts)
 end
 
 
--- The first operation that completes against a plain 200 with no arguments
--- (a required path parameter would fail before the request is built).
+-- The first operation that completes against a plain 200: with no
+-- arguments, else with every path parameter its points declare filled in.
 local function usable_op()
   local plain = sdk.new({
     apikey = CANARY.apikey,
@@ -366,9 +398,23 @@ local function usable_op()
       end)
       for _, op in ipairs(ops) do
         if type(inst[op]) == "function" then
-          local cok, out, err = pcall(inst[op], plain[accessor](plain), {}, {})
-          if cok and err == nil and out ~= nil then
-            return { accessor = accessor, op = op }
+          local filled = {}
+          local opdef = entities[inst:get_name()].op[op]
+          local points = type(opdef) == "table" and opdef.points or nil
+          for _, point in ipairs(type(points) == "table" and points or {}) do
+            local params = type(point) == "table" and type(point.args) == "table"
+              and point.args.params or nil
+            for _, p in ipairs(type(params) == "table" and params or {}) do
+              if type(p) == "table" and type(p.name) == "string" then
+                filled[p.name] = "p1"
+              end
+            end
+          end
+          for _, match in ipairs({ {}, filled }) do
+            local cok, out, err = pcall(inst[op], plain[accessor](plain), copy(match), {})
+            if cok and err == nil and out ~= nil then
+              return { accessor = accessor, op = op, match = match }
+            end
           end
         end
       end
@@ -380,7 +426,7 @@ end
 
 local function drive(client, target, ctrl, sinks)
   local ent = client[target.accessor](client)
-  local ok, out, err = pcall(ent[target.op], ent, {}, ctrl)
+  local ok, out, err = pcall(ent[target.op], ent, copy(target.match), ctrl)
   if not ok then
     err = out
     out = nil
@@ -402,7 +448,10 @@ describe("clean", function()
 
   it("no credential leaves the SDK in any form", function()
     local target = usable_op()
-    assert.is_not_nil(target, "no operation completes without arguments; nothing to sweep")
+    if target == nil then
+      pending("no operation of this SDK completes against a plain 200; nothing to sweep")
+      return
+    end
 
     local sinks = {}
     local errors = {}
@@ -427,6 +476,26 @@ describe("clean", function()
         append(sinks, surfaces("sdk", client))
       end
     end
+
+    -- A credential mistyped as a table is rejected by validation, whose
+    -- message quotes the value it rejected.
+    local built, rejected = pcall(sdk.new, {
+      apikey = { value = CANARY.apikey },
+      clean = { values = CANARY.value },
+    })
+    assert.is_false(built, "a credential mistyped as a table should be rejected")
+    append(sinks, surfaces("rejected", rejected))
+
+    -- An error a feature hook raises, quoting the request, skips make_error.
+    local hooked = make_sdk(SCENARIOS[1], sinks, nil, { ThrowFeature.new() })
+    assert.is_not_nil(drive(hooked, target, {}, sinks), "the throwing hook should fail the operation")
+
+    -- A registered value used as a property name is masked; names that
+    -- mask alike are all kept.
+    local named = hooked:get_utility().clean(hooked:get_root_ctx(),
+      { [CANARY.header] = 1, [CANARY.value] = 2, plain = 3 })
+    assert.are.same({ [MASK] = 1, [MASK .. "#1"] = 2, plain = 3 }, named)
+    append(sinks, surfaces("named", named))
 
     local leaked = {}
     for _, s in ipairs(sinks) do
@@ -467,7 +536,10 @@ describe("clean", function()
 
   it("the sweep can see a leak: clean switched off shows the credential", function()
     local target = usable_op()
-    assert.is_not_nil(target)
+    if target == nil then
+      pending("no operation of this SDK completes against a plain 200; nothing to sweep")
+      return
+    end
 
     local sinks = {}
     local client = make_sdk(SCENARIOS[2], sinks, { active = false })

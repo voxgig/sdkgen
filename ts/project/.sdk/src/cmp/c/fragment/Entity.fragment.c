@@ -158,31 +158,33 @@ voxgig_value* entyvar_stream(Entity* e, const char* action, voxgig_value* args,
     ctx->reqdata = reqdata;
   }
 
+  // A step's error does not pass through make_error here, so it is cleaned
+  // on the way out.
   PNError* pe = NULL;
 
   feature_hook_util(ctx, "PrePoint");
   voxgig_value* point = make_point_util(ctx, &pe);
-  if (pe) { *err = pe; return NULL; }
+  if (pe) { clean_error_util(ctx, pe); *err = pe; return NULL; }
   ctx_out_set_point_val(ctx, point);
 
   feature_hook_util(ctx, "PreSpec");
   Spec* spec = make_spec_util(ctx, &pe);
-  if (pe) { *err = pe; return NULL; }
+  if (pe) { clean_error_util(ctx, pe); *err = pe; return NULL; }
   ctx->out_spec = spec;
 
   feature_hook_util(ctx, "PreRequest");
   Response* resp = make_request_util(ctx, &pe);
-  if (pe) { *err = pe; return NULL; }
+  if (pe) { clean_error_util(ctx, pe); *err = pe; return NULL; }
   ctx->out_request = resp;
 
   feature_hook_util(ctx, "PreResponse");
   Response* resp2 = make_response_util(ctx, &pe);
-  if (pe) { *err = pe; return NULL; }
+  if (pe) { clean_error_util(ctx, pe); *err = pe; return NULL; }
   ctx->out_response = resp2;
 
   feature_hook_util(ctx, "PreResult");
   SdkResult* result = make_result_util(ctx, &pe);
-  if (pe) { *err = pe; return NULL; }
+  if (pe) { clean_error_util(ctx, pe); *err = pe; return NULL; }
   ctx->out_result = result;
 
   feature_hook_util(ctx, "PreDone");
