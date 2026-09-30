@@ -7,14 +7,7 @@ import (
 )
 
 func doneUtil(ctx *core.Context) (any, error) {
-	if ctx.Ctrl.Explain != nil {
-		cleanExplain(ctx)
-		if explainResult, ok := ctx.Ctrl.Explain["result"]; ok {
-			if rm, ok := explainResult.(map[string]any); ok {
-				delete(rm, "err")
-			}
-		}
-	}
+	cleanExplain(ctx)
 
 	if ctx.Result != nil && ctx.Result.Ok {
 		return ctx.Result.Resdata, nil
@@ -28,14 +21,20 @@ func doneUtil(ctx *core.Context) (any, error) {
 // same map, which the copy-back would empty.
 func cleanExplain(ctx *core.Context) {
 	explain := ctx.Ctrl.Explain
-	cleaned, ok := cleanUtil(ctx, explain).(map[string]any)
-	if !ok || reflect.ValueOf(cleaned).Pointer() == reflect.ValueOf(explain).Pointer() {
+	if explain == nil {
 		return
 	}
-	for k := range explain {
-		delete(explain, k)
+	cleaned, ok := cleanUtil(ctx, explain).(map[string]any)
+	if ok && reflect.ValueOf(cleaned).Pointer() != reflect.ValueOf(explain).Pointer() {
+		for k := range explain {
+			delete(explain, k)
+		}
+		for k, v := range cleaned {
+			explain[k] = v
+		}
 	}
-	for k, v := range cleaned {
-		explain[k] = v
+	// With clean off, explain.result is the live *core.Result, never a map.
+	if rm, ok := explain["result"].(map[string]any); ok {
+		delete(rm, "err")
 	}
 }

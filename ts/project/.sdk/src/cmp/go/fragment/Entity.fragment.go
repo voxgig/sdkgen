@@ -245,6 +245,8 @@ func (e *EntyClass) Stream(action string, args map[string]any, callopts map[stri
 		// Inbound: prefer the streaming feature's incremental iterator; else
 		// fall back to the materialised items so Stream always yields.
 		if ctx.Result != nil && ctx.Result.Stream != nil {
+			// Done does not run on this path, so its record is cleaned here.
+			utility.CleanExplain(ctx)
 			for item := range ctx.Result.Stream() {
 				if !send(item) {
 					return

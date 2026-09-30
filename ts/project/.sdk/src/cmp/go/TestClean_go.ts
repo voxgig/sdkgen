@@ -402,6 +402,8 @@ func cleanUsableOp() (cleanOp, bool) {
 }
 
 func cleanDrive(client *sdk.${Name}SDK, op cleanOp, ctrl map[string]any, sinks *[]cleanSink) error {
+	// A caller may keep the record it passed rather than read ctrl["explain"].
+	held, _ := ctrl["explain"].(map[string]any)
 	out, err := cleanInvoke(client, op, ctrl)
 	if err != nil {
 		*sinks = append(*sinks, cleanSurfaces("error", err)...)
@@ -409,21 +411,69 @@ func cleanDrive(client *sdk.${Name}SDK, op cleanOp, ctrl map[string]any, sinks *
 	if out != nil {
 		*sinks = append(*sinks, cleanSurfaces("result", out)...)
 	}
-	if explain, ok := ctrl["explain"].(map[string]any); ok {
+	explain, ok := ctrl["explain"].(map[string]any)
+	if ok {
 		*sinks = append(*sinks, cleanSurfaces("explain", explain)...)
+	}
+	if held != nil && reflect.ValueOf(held).Pointer() != reflect.ValueOf(explain).Pointer() {
+		*sinks = append(*sinks, cleanSurfaces("explain:held", held)...)
 	}
 	return err
 }
 
 // A feature that fails from inside the pipeline, quoting the request it
-// saw: a panic MakeError never handled.
+// saw: a panic MakeError never handled. Its PreUnexpected variant panics
+// inside MakeError, after the cleaning there.
 type cleanThrow struct {
 	sdk.BaseFeature
+	response   bool
+	unexpected bool
+}
+
+func newCleanThrow(response bool, unexpected bool) *cleanThrow {
+	return &cleanThrow{
+		BaseFeature: sdk.BaseFeature{Version: "0.0.1", Name: "throwhook", Active: true},
+		response:    response,
+		unexpected:  unexpected,
+	}
 }
 
 func (f *cleanThrow) PreResponse(ctx *sdk.Context) {
-	raw, _ := json.Marshal(ctx.Spec)
-	panic(fmt.Errorf("hook saw %s", raw))
+	if f.response {
+		raw, _ := json.Marshal(ctx.Spec)
+		panic(fmt.Errorf("hook saw %s", raw))
+	}
+}
+
+func (f *cleanThrow) PreUnexpected(ctx *sdk.Context) {
+	if f.unexpected {
+		raw, _ := json.Marshal(ctx.Spec)
+		panic(fmt.Errorf("hook saw %s", raw))
+	}
+}
+
+// A stream that succeeds, so Stream never reaches Done.
+type cleanStreamOk struct {
+	sdk.BaseFeature
+}
+
+func (f *cleanStreamOk) PreDone(ctx *sdk.Context) {
+	var items []any
+	switch d := ctx.Result.Resdata.(type) {
+	case []any:
+		items = d
+	case nil:
+	default:
+		items = []any{d}
+	}
+	ctx.Result.Stream = func() <-chan any {
+		ch := make(chan any, len(items))
+		for _, item := range items {
+			ch <- item
+		}
+		close(ch)
+		return ch
+	}
 }
 
 // A stream function that panics when Stream calls it, quoting a credential.
@@ -503,43 +553,60 @@ func TestCleanSweep(t *testing.T) {
 		return nil
 	})
 
-	hookerr := cleanCatch("hook", &sinks, func() error {
-		hooked := cleanMakeSdk(cleanScenarios[0], &sinks, nil, &cleanThrow{
-			BaseFeature: sdk.BaseFeature{Version: "0.0.1", Name: "throwhook", Active: true},
+	// MakeError is the one place PreUnexpected fires, so the variant that
+	// panics there alone is driven through a 404 as well.
+	for _, hooked := range []struct {
+		scenario cleanScenario
+		hook     *cleanThrow
+	}{
+		{cleanScenarios[0], newCleanThrow(true, false)},
+		{cleanScenarios[0], newCleanThrow(true, true)},
+		{cleanScenarios[1], newCleanThrow(false, true)},
+	} {
+		hookerr := cleanCatch("hook", &sinks, func() error {
+			return cleanDrive(cleanMakeSdk(hooked.scenario, &sinks, nil, hooked.hook), op,
+				map[string]any{"explain": map[string]any{}}, &sinks)
 		})
-		return cleanDrive(hooked, op, map[string]any{}, &sinks)
-	})
-	if hookerr == nil {
-		t.Errorf("the throwing hook should fail the operation")
+		if hookerr == nil {
+			t.Errorf("the throwing hook should fail the operation")
+		}
 	}
 
 	// Stream has no error channel: a panic inside it must end the stream
-	// through MakeError, cleaned, and not crash the process.
-	for _, panicky := range []struct {
+	// through MakeError, cleaned, and not crash the process. However it
+	// ends, the explain record the caller passed is left clean.
+	for _, streamed := range []struct {
+		name  string
 		saw   string
-		extra any
+		extra []any
 	}{
-		{"hook saw", &cleanThrow{
-			BaseFeature: sdk.BaseFeature{Version: "0.0.1", Name: "throwhook", Active: true}}},
-		{"stream saw", &cleanStreamPanic{
-			BaseFeature: sdk.BaseFeature{Version: "0.0.1", Name: "streampanic", Active: true}}},
+		{"stream-hook", "hook saw", []any{newCleanThrow(true, false)}},
+		{"stream", "stream saw", []any{&cleanStreamPanic{
+			BaseFeature: sdk.BaseFeature{Version: "0.0.1", Name: "streampanic", Active: true}}}},
+		{"stream-ok", "", []any{&cleanStreamOk{
+			BaseFeature: sdk.BaseFeature{Version: "0.0.1", Name: "streamok", Active: true}}}},
+		{"stream-plain", "", nil},
 	} {
-		streamed := cleanMakeSdk(cleanScenarios[0], &sinks, nil, panicky.extra)
+		client := cleanMakeSdk(cleanScenarios[0], &sinks, nil, streamed.extra...)
 		reqmatch := map[string]any{}
 		for k, v := range op.match {
 			reqmatch[k] = v
 		}
 		explain := map[string]any{}
-		items := cleanEntity(streamed, op.accessor).MethodByName("Stream").Call([]reflect.Value{
+		items := cleanEntity(client, op.accessor).MethodByName("Stream").Call([]reflect.Value{
 			reflect.ValueOf(strings.ToLower(op.method)),
 			reflect.ValueOf(map[string]any{"reqmatch": reqmatch}),
 			reflect.ValueOf(map[string]any{"ctrl": map[string]any{"explain": explain}}),
 		})[0].Interface().(<-chan any)
 		for range items {
 		}
-		sinks = append(sinks, cleanSurfaces("stream:explain", explain)...)
-		if msg, _ := core.ToMapAny(explain["err"])["message"].(string); !strings.Contains(msg, panicky.saw) {
-			t.Errorf("the panic inside Stream should end it as the SDK error, got %v", explain)
+		sinks = append(sinks, cleanSurfaces(streamed.name+":explain", explain)...)
+		if 0 == len(explain) {
+			t.Errorf("%s: the explain record was not filled", streamed.name)
+		}
+		msg, _ := core.ToMapAny(explain["err"])["message"].(string)
+		if ("" == streamed.saw) != (nil == explain["err"]) || !strings.Contains(msg, streamed.saw) {
+			t.Errorf("%s: only a failing stream ends as the SDK error, got %v", streamed.name, explain)
 		}
 	}
 

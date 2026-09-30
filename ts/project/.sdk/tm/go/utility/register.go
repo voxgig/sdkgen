@@ -9,6 +9,7 @@ func init() {
 func registerAll(u *core.Utility) {
 	u.Clean = cleanUtil
 	u.CleanAdd = cleanAddUtil
+	u.CleanExplain = cleanExplain
 	u.Done = doneUtil
 	u.MakeError = makeErrorUtil
 	u.FeatureAdd = featureAddUtil
@@ -51,6 +52,11 @@ func overrideUtil(u *core.Utility, key string, val any) bool {
 	case "cleanAdd":
 		if fn, ok := val.(func(ctx *core.Context, val any)); ok {
 			u.CleanAdd = fn
+			return true
+		}
+	case "cleanExplain":
+		if fn, ok := val.(func(ctx *core.Context)); ok {
+			u.CleanExplain = fn
 			return true
 		}
 	case "done":
