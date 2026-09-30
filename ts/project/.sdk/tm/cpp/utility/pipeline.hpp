@@ -1490,20 +1490,37 @@ inline Value transformRequest(CtxPtr ctx) {
 
 // ---- makeOptions ------------------------------------------------------
 
+inline Value optsNoEntity(const Value& settings) {
+  if (!settings.is_map()) return settings;
+  Value out = vmap();
+  for (const auto& kv : *settings.as_map()) {
+    if ("entity" != kv.first) map_put(out, kv.first, kv.second);
+  }
+  return out;
+}
+
 // The options to scan for secrets. The feature map is keyed by feature
 // names, not field names, so it is scanned as a list: `secrets` must not
-// make every setting of that feature a secret.
+// make every setting of that feature a secret. Entity blocks hold entity
+// settings and seeded records, never a credential, so none is scanned. The
+// raw scan still sees the feature list form, whose entries each carry `name`.
 inline Value optsWithout(const Value& opts, std::initializer_list<const char*> keys) {
   Value out = vmap();
   if (!opts.is_map()) return out;
   for (const auto& kv : *opts.as_map()) {
-    bool skip = false;
+    bool skip = "entity" == kv.first;
     for (const char* k : keys) skip = skip || kv.first == k;
     if (skip) continue;
-    if ("feature" == kv.first && kv.second.is_map()) {
+    if ("feature" == kv.first && (kv.second.is_map() || kv.second.is_list())) {
       Value list = vlist();
-      for (const auto& f : *kv.second.as_map()) list.as_list()->push_back(f.second);
+      if (kv.second.is_map()) {
+        for (const auto& f : *kv.second.as_map()) list.as_list()->push_back(optsNoEntity(f.second));
+      } else {
+        for (const auto& f : *kv.second.as_list()) list.as_list()->push_back(optsNoEntity(f));
+      }
       map_put(out, kv.first, list);
+    } else if ("test" == kv.first) {
+      map_put(out, kv.first, optsNoEntity(kv.second));
     } else {
       map_put(out, kv.first, kv.second);
     }

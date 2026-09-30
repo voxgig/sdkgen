@@ -82,6 +82,9 @@ function candidate(ProjectName: string, c: Candidate): string {
   return `    {"${c.name}", {${c.params.map(cppstr).join(', ')}},
      [](${ProjectName}SDK& c, const Value& m, const Value& ctrl) -> Value {
       ${call}
+    },
+     [](${ProjectName}SDK& c, const Value& m) -> std::vector<Value> {
+      return c.${c.accessor}()->stream(${cppstr(c.op)}, m);
     }},`
 }
 
@@ -229,6 +232,20 @@ public:
 };
 
 
+// A stream whose producer fails while the caller consumes it, quoting a
+// credential.
+class StreamThrowFeature : public BaseFeature {
+public:
+  StreamThrowFeature() : BaseFeature("streamthrow", "0.0.1", true) {}
+  void preDone(CtxPtr ctx) override {
+    if (!ctx->result) return;
+    ctx->result->stream = []() -> std::vector<Value> {
+      throw std::runtime_error("stream saw " + CANARY_APIKEY);
+    };
+  }
+};
+
+
 // A sink callable: records every form of the record it receives.
 static Value capture(std::vector<Sink>* sinks, const std::string& name, int at) {
   vs::Injector fn = [sinks, name, at](vs::Injection&, const Value& args, const std::string&,
@@ -355,6 +372,7 @@ struct Candidate {
   std::string name;
   std::vector<std::string> params;
   std::function<Value(${ProjectName}SDK&, const Value&, const Value&)> run;
+  std::function<std::vector<Value>(${ProjectName}SDK&, const Value&)> stream;
 };
 
 
@@ -500,6 +518,20 @@ static void no_credential_leaves_the_sdk() {
   util::cleanError(denier->getRootCtx(), stepped);
   addError(sinks, "stepped", stepped);
 
+  // Consuming a stream runs inside the same catch path as the operation.
+  auto streamed = makeSdk(scenarios()[0], &sinks, Value::undef(), std::make_shared<StreamThrowFeature>());
+  bool streamraised = false;
+  try {
+    for (const Value& item : cand.stream(*streamed, Struct::clone(target.match))) (void)item;
+  } catch (const SdkErrorPtr& e) {
+    streamraised = true;
+    addError(sinks, "stream", e);
+  } catch (const std::exception& e) {
+    streamraised = true;
+    sinks.push_back({"stream:what", std::string(e.what())});
+  }
+  ASSERT_TRUE(streamraised, "the failing stream should throw");
+
   // A client given no clean block at all masks by the schema defaults.
   Scenario notfoundsc = scenarios()[1];
   vs::Injector barefetch = [notfoundsc](vs::Injection&, const Value& args, const std::string&,
@@ -602,6 +634,14 @@ static void the_sweep_can_see_a_leak() {
                 std::string::npos != text.find(util::cleanBase64(CANARY_APIKEY + ":" + CANARY_SECRET)),
                 "the raw spec should carry the credential when clean is off");
   }
+
+  // Explaining a failure must not cost it its error.
+  std::vector<Sink> quiet;
+  auto explainer = makeSdk(scenarios()[1], &quiet, vmap({{"active", Value(false)}}));
+  SdkErrorPtr explained = drive(*explainer, cands[target.index], target,
+                                vmap({{"explain", vmap()}}), quiet);
+  ASSERT_TRUE(explained && explained->msg == err->msg,
+              "with clean off, explain lost the error: " + (explained ? explained->msg : "<none>"));
 }
 
 
@@ -647,16 +687,30 @@ static void the_generated_configs_own_clean_block_is_honoured() {
 
 
 // A feature's name is not a field name: a feature called secrets does not
-// make its settings secret, though a sensitive field inside it still is.
+// make its settings secret, though a sensitive field inside it still is. An
+// entity block, of per-entity settings or seeded records keyed by entity name
+// and id, is not read at all.
 static void a_feature_name_is_read_as_a_name() {
   auto client = std::make_shared<${ProjectName}SDK>(vmap({
     {"apikey", Value(CANARY_APIKEY)},
-    {"feature", vmap({{"secrets", vmap({
-      {"active", Value(false)}, {"name", Value("ZZNAME-feat123")}, {"token", Value("ZZTOKEN-feat456")},
-    })}})},
+    {"feature", vmap({
+      {"secrets", vmap({
+        {"active", Value(false)}, {"name", Value("ZZNAME-feat123")}, {"token", Value("ZZTOKEN-feat456")},
+      })},
+      {"test", vmap({
+        {"active", Value(false)},
+        {"entity", vmap({{"zztoken", vmap({{"ZZTOKEN01", vmap({{"note", Value("PLAINRECORD-t5r3e1w9")}})}})}})},
+      })},
+    })},
+    {"entity", vmap({{"zztoken", vmap({{"alias", vmap({{"zzkey", Value("PLAINALIAS-m2n4b6v8")}})}})}})},
   }));
-  ASSERT_EQ_VAL(util::clean(client->getRootCtx(), Value("ZZNAME-feat123 ZZTOKEN-feat456")),
+  CtxPtr ctx = client->getRootCtx();
+  ASSERT_EQ_VAL(util::clean(ctx, Value("ZZNAME-feat123 ZZTOKEN-feat456")),
                 Value("ZZNAME-feat123 " + MASK), "only the sensitive field is registered");
+  ASSERT_EQ_VAL(util::clean(ctx, Value("record PLAINRECORD-t5r3e1w9")),
+                Value("record PLAINRECORD-t5r3e1w9"), "a record seeded under an entity block is not registered");
+  ASSERT_EQ_VAL(util::clean(ctx, Value("alias PLAINALIAS-m2n4b6v8")),
+                Value("alias PLAINALIAS-m2n4b6v8"), "an entity's own settings are not registered");
 }
 
 
