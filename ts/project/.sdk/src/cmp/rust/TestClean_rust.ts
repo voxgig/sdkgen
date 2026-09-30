@@ -695,6 +695,30 @@ fn clean_masks_a_registered_value_used_as_a_name() {
     assert_eq!(keys, vec![MASK.to_string(), format!("{}#1", MASK), "plain".to_string()]);
 }
 
+// A feature's name is not a field name: a feature called secrets does not
+// make its settings secret, though a sensitive field inside it still is.
+#[test]
+fn clean_reads_a_feature_name_as_a_name() {
+    let sdk = ${Name}SDK::new(jo(vec![
+        ("apikey", Value::str(CANARY_APIKEY)),
+        (
+            "feature",
+            jo(vec![(
+                "secrets",
+                jo(vec![
+                    ("active", Value::Bool(false)),
+                    ("name", Value::str("ZZNAME-feat123")),
+                    ("token", Value::str("ZZTOKEN-feat456")),
+                ]),
+            )]),
+        ),
+    ]));
+    assert_eq!(
+        clean::clean_str(&sdk.get_root_ctx(), "ZZNAME-feat123 ZZTOKEN-feat456"),
+        format!("ZZNAME-feat123 {}", MASK)
+    );
+}
+
 #[test]
 fn clean_honours_the_generated_config_clean_block() {
     let utility = ${Name}SDK::new(Value::empty_map()).get_utility();
