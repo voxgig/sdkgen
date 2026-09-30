@@ -1,31 +1,7 @@
 -- ProjectName SDK utility: done
 
 local function done_util(ctx)
-  local explain = ctx.ctrl.explain
-  if explain ~= nil then
-    -- The caller holds this table, so the masked entries replace its own
-    -- rather than a copy the caller would never see.
-    local cleaned = ctx.utility.clean(ctx, explain)
-    if type(cleaned) == "table" and cleaned ~= explain then
-      for k in pairs(explain) do
-        explain[k] = nil
-      end
-      for k, v in pairs(cleaned) do
-        explain[k] = v
-      end
-    end
-    -- A copy: with clean off, explain.result is the live result make_error reads.
-    local explain_result = explain["result"]
-    if type(explain_result) == "table" then
-      local pruned = {}
-      for k, v in pairs(explain_result) do
-        if k ~= "err" then
-          pruned[k] = v
-        end
-      end
-      explain["result"] = pruned
-    end
-  end
+  ctx.utility.clean_explain(ctx)
 
   if ctx.result ~= nil and ctx.result.ok then
     return ctx.result.resdata, nil

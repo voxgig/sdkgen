@@ -244,21 +244,28 @@ function CaptureFeature:PreUnexpected(ctx) append(self.sinks, surfaces("ctx@PreU
 
 
 -- A feature that raises from inside the pipeline, quoting the request it
--- saw: an error make_error never handled.
+-- saw: an error make_error never handled. The unexpected variant raises
+-- from PreUnexpected instead, which fires inside make_error.
 local ThrowFeature = {}
 ThrowFeature.__index = ThrowFeature
 setmetatable(ThrowFeature, { __index = BaseFeature })
 
-function ThrowFeature.new()
+function ThrowFeature.new(unexpected)
   local self = setmetatable(BaseFeature.new(), ThrowFeature)
   self.name = "throwhook"
   self.version = "0.0.1"
   self.active = true
+  self.unexpected = unexpected == true
   return self
 end
 
 function ThrowFeature:init(_ctx, _options) end
-function ThrowFeature:PreResponse(ctx) error("hook saw " .. tojson(ctx.spec)) end
+function ThrowFeature:PreResponse(ctx)
+  if not self.unexpected then error("hook saw " .. tojson(ctx.spec)) end
+end
+function ThrowFeature:PreUnexpected(ctx)
+  if self.unexpected then error("hook saw " .. tojson(ctx.spec)) end
+end
 
 
 -- A feature that refuses the operation with the SDK's own error, as rbac
@@ -300,6 +307,49 @@ function StreamThrowFeature:PreDone(ctx)
     return function() error("stream saw " .. CANARY.apikey) end
   end
 end
+
+
+-- A stream that succeeds, so the pipeline's terminal step never runs.
+local StreamOkFeature = {}
+StreamOkFeature.__index = StreamOkFeature
+setmetatable(StreamOkFeature, { __index = BaseFeature })
+
+function StreamOkFeature.new()
+  local self = setmetatable(BaseFeature.new(), StreamOkFeature)
+  self.name = "streamok"
+  self.version = "0.0.1"
+  self.active = true
+  return self
+end
+
+function StreamOkFeature:init(_ctx, _options) end
+function StreamOkFeature:PreDone(ctx)
+  local items = { ctx.result.resdata or {} }
+  ctx.result.stream = function()
+    local i = 0
+    return function()
+      i = i + 1
+      return items[i]
+    end
+  end
+end
+
+
+-- Drops the result once the record holds it, so a later step fails.
+local StepFailFeature = {}
+StepFailFeature.__index = StepFailFeature
+setmetatable(StepFailFeature, { __index = BaseFeature })
+
+function StepFailFeature.new()
+  local self = setmetatable(BaseFeature.new(), StepFailFeature)
+  self.name = "stepfail"
+  self.version = "0.0.1"
+  self.active = true
+  return self
+end
+
+function StepFailFeature:init(_ctx, _options) end
+function StepFailFeature:PreResult(ctx) ctx.result = nil end
 
 
 local function response(status, data, headers)
@@ -466,6 +516,8 @@ end
 
 
 local function drive(client, target, ctrl, sinks)
+  -- A caller may keep the record it passed rather than read ctrl.explain.
+  local held = ctrl.explain
   local ent = client[target.accessor](client)
   local ok, out, err = pcall(ent[target.op], ent, copy(target.match), ctrl)
   if not ok then
@@ -480,6 +532,9 @@ local function drive(client, target, ctrl, sinks)
   end
   if ctrl.explain ~= nil then
     append(sinks, surfaces("explain", ctrl.explain))
+  end
+  if held ~= nil and held ~= ctrl.explain then
+    append(sinks, surfaces("explain:held", held))
   end
   return err
 end
@@ -528,21 +583,49 @@ describe("clean", function()
     append(sinks, surfaces("rejected", rejected))
 
     -- An error a feature hook raises, quoting the request, skips make_error.
+    -- PreUnexpected fires only inside make_error, so its variant needs a
+    -- failing response to reach it.
     local hooked = make_sdk(SCENARIOS[1], sinks, nil, { ThrowFeature.new() })
-    assert.is_not_nil(drive(hooked, target, {}, sinks), "the throwing hook should fail the operation")
+    local unexpected = make_sdk(SCENARIOS[2], sinks, nil, { ThrowFeature.new(true) })
+    for _, client in ipairs({ hooked, unexpected }) do
+      local hookerr = drive(client, target, { explain = {} }, sinks)
+      assert.is_truthy(string.find(tostring(hookerr), "hook saw", 1, true),
+        "the throwing hook should fail the operation")
+    end
+
+    -- A step's own error reaches make_error without passing through done().
+    local stepped = drive(make_sdk(SCENARIOS[1], sinks, nil, { StepFailFeature.new() }),
+      target, { explain = {} }, sinks)
+    assert.is_not_nil(stepped, "the failing step should fail the operation")
 
     -- A feature's own error keeps its code, which is cleaned like the message.
     local denied = drive(make_sdk(SCENARIOS[1], sinks, nil, { DenyFeature.new() }), target, {}, sinks)
     assert.is_not_nil(denied, "the refusing hook should fail the operation")
 
-    -- Iterating a stream runs inside the same catch path as the operation.
-    local streamed = make_sdk(SCENARIOS[1], sinks, nil, { StreamThrowFeature.new() })
-    local sent = streamed[target.accessor](streamed)
-    local sok, streamerr = pcall(function()
-      for _ in sent:stream(target.op, { reqmatch = copy(target.match) }) do end
-    end)
-    assert.is_false(sok, "the failing stream should throw")
-    append(sinks, surfaces("stream", streamerr))
+    -- Iterating a stream runs inside the same catch path as the operation,
+    -- and the explain record the caller passed is cleaned however it ends.
+    -- A step's error ends a stream without raising. The caller stops at the
+    -- first item, leaving the stream open.
+    for _, case in ipairs({
+      { name = "stream", extra = { StreamThrowFeature.new() }, raises = true },
+      { name = "stream-ok", extra = { StreamOkFeature.new() } },
+      { name = "stream-plain", extra = {} },
+      { name = "stream-step", extra = { StepFailFeature.new() } },
+    }) do
+      local streamed = make_sdk(SCENARIOS[1], sinks, nil, case.extra)
+      local sent = streamed[target.accessor](streamed)
+      local explain = {}
+      local sok, streamerr = pcall(function()
+        for _ in sent:stream(target.op, { reqmatch = copy(target.match) },
+          { ctrl = { explain = explain } }) do break end
+      end)
+      assert.are.equal(case.raises == true, not sok, case.name .. ": only the failing stream throws")
+      if not sok then
+        append(sinks, surfaces(case.name, streamerr))
+      end
+      assert.is_not_nil(next(explain), case.name .. ": the explain record was not filled")
+      append(sinks, surfaces(case.name .. ":explain", explain))
+    end
 
     -- A client given no clean block at all masks by the schema defaults.
     local bare = sdk.new({

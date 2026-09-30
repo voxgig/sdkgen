@@ -49,6 +49,7 @@ local function make_error_util(ctx, err)
 
   local spec = ctx.spec
 
+  ctx.utility.clean_explain(ctx)
   if ctx.ctrl.explain ~= nil then
     ctx.ctrl.explain["err"] = { message = msg }
   end

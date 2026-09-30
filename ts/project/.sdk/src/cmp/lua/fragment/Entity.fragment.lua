@@ -223,6 +223,8 @@ function EntyClass:stream(action, args, callopts)
       stream_fn = result.stream
     end
     if type(stream_fn) == "function" then
+      -- done() does not run on this path, so its record is cleaned here.
+      utility.clean_explain(ctx)
       for item in stream_fn() do
         if aborted() then
           return
@@ -249,13 +251,17 @@ function EntyClass:stream(action, args, callopts)
   end)
 
   -- An error raised while the caller iterates leaves through the same catch
-  -- path as an operation's.
+  -- path as an operation's. A step's error ends the stream silently, so the
+  -- record is cleaned whenever the stream ends.
   return function()
     if coroutine.status(co) == "dead" then
       return nil
     end
     local ok, item = coroutine.resume(co)
     if ok then
+      if coroutine.status(co) == "dead" then
+        utility.clean_explain(ctx)
+      end
       return item
     end
     local err = self:_unexpected(ctx, item)
@@ -297,15 +303,7 @@ function EntyClass:_unexpected(ctx, raised)
 
   local explain = ctx.ctrl.explain
   if type(explain) == "table" then
-    local cleaned = clean(ctx, explain)
-    if type(cleaned) == "table" and cleaned ~= explain then
-      for k in pairs(explain) do
-        explain[k] = nil
-      end
-      for k, v in pairs(cleaned) do
-        explain[k] = v
-      end
-    end
+    self._utility.clean_explain(ctx)
     if explain.err == nil then
       explain.err = { message = type(cleanerr) == "table" and cleanerr.msg or tostring(cleanerr) }
     end
