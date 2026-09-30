@@ -389,6 +389,20 @@ class CleanTest extends TestCase
 
     public function test_no_credential_leaves_the_sdk_in_any_form(): void
     {
+        // Frameworks turn every notice into an exception (PHPUnit 8 did too);
+        // one thrown mid-pipeline must still leave clean.
+        set_error_handler(static function (int $no, string $str, string $file, int $line): bool {
+            throw new \\ErrorException($str, 0, $no, $file, $line);
+        });
+        try {
+            $this->sweep();
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    private function sweep(): void
+    {
         $target = self::usable_op();
         $this->assertNotNull($target, 'no operation completes without arguments; nothing to sweep');
 
@@ -420,10 +434,17 @@ class CleanTest extends TestCase
         }
 
         $leaked = [];
+        $excerpt = '';
         foreach ($sinks as $s) {
             $found = self::leaks($s['text']);
             if (0 < count($found)) {
                 $leaked[] = $s['name'] . ' [' . implode(', ', $found) . ']';
+                if ('' === $excerpt) {
+                    // Where the first leak sits, so a failure names its path.
+                    $at = strpos($s['text'], $found[0]);
+                    $excerpt = "\\n" . $s['name'] . ' near the leak: ' .
+                        substr($s['text'], max(0, $at - 600), 700);
+                }
             }
         }
 
@@ -431,7 +452,7 @@ class CleanTest extends TestCase
         fwrite(STDERR, sprintf("clean: swept %d surface(s), %d leak(s)\\n",
             count($sinks), count($leaked)));
 
-        $this->assertSame([], $leaked, 'credential leaked through: ' . implode('; ', $leaked));
+        $this->assertSame([], $leaked, 'credential leaked through: ' . implode('; ', $leaked) . $excerpt);
 
         // The positive half: the slot the credential travelled in is masked,
         // and an unregistered token in a response header is masked by name.

@@ -3931,6 +3931,19 @@ function cleanCxx(): string | null {
 }
 
 
+// A PHP whose ini hides exception trace arguments cannot see a credential
+// reaching var_export through them, so the sweep always runs with them on:
+// the worst case the language allows, whatever this machine's php.ini says.
+function phpTraceArgs(cmd: { bin: string, args: string[] } | null) {
+  const php = toolchain('php')
+  if (null == cmd || null == php) return cmd
+  const flag = ['-d', 'zend.exception_ignore_args=0']
+  return cmd.bin === php
+    ? { bin: php, args: [...flag, ...cmd.args] }
+    : { bin: php, args: [...flag, cmd.bin, ...cmd.args] }
+}
+
+
 const CLEAN_LANES: CleanLane[] = [
   {
     target: 'ts',
@@ -4002,7 +4015,7 @@ const CLEAN_LANES: CleanLane[] = [
     target: 'php',
     runner: 'test/CleanTest.php',
     needs: 'php with phpunit (on PATH, PHPUNIT=<path to phpunit.phar>, or composer to install it)',
-    command: () => phpunitViaComposer(['test/CleanTest.php']),
+    command: () => phpTraceArgs(phpunitViaComposer(['test/CleanTest.php'])),
   },
 {
     target: 'cpp',
