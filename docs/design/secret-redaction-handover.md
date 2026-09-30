@@ -1,143 +1,132 @@
 # Secret redaction: handover
 
-Status at hand-off, 2026-09-30. Work was stopped on request partway through a
-second review round. This note says what is done, what is verified and how,
-and exactly what is left.
-
-The design itself is recorded in ADR.md (ADR-003) and
-`docs/explanation/secret-redaction.md`. Read those first; this note does not
-restate them.
+Status at hand-off, 2026-09-30, at the end of the second session on this
+work. The design is ADR-003 in ADR.md and
+`docs/explanation/secret-redaction.md`; this note does not restate it.
 
 ## The three pull requests
 
-| Repo | PR | Branch | State at hand-off |
+| Repo | PR | Branch | State |
 | --- | --- | --- | --- |
-| voxgig/sdkgen | #229 | `claude/amazing-goodall-33f6ox` | round 1 plus most of round 2 pushed with this note; CI not yet seen on the new head |
-| voxgig/sdkgen-langpack | #24 | same | round 1 pushed (a8f8dc6, green); round 2 pushed as 3ff0fe5 but NEVER COMPILED; eight Codex findings unanswered |
-| voxgig/sdkgen-infrapack | #28 | same | round 1 pushed (0f5737a), green; nothing outstanding |
+| voxgig/sdkgen | #229 | `claude/amazing-goodall-33f6ox` | Rounds 1 to 3, and two later defects, fixed in all 20 bundled targets. All seven Codex threads answered and resolved. |
+| voxgig/sdkgen-langpack | #24 | same | Round 2 compiled and run for dart, haskell and lean; the eight Codex findings fixed, answered and resolved. |
+| voxgig/sdkgen-infrapack | #28 | same | Round 1 (0f5737a), green; nothing outstanding. |
 
-## sdkgen commits on the branch
+## What the second session did
 
-| Commit | What |
-| --- | --- |
-| up to 4d26b41 | Round 1: `clean`, the registry, the sweep and a lane, across all 20 bundled targets. |
-| 89dbfc5 | swift entity prints only its data (CustomReflectable); php lane runs with `zend.exception_ignore_args=0`. |
-| c7629e6 | Round 2 in the ts reference: the six Codex findings (below). |
-| dbcc817 | Round 2 ported to js, go, py, php, rb, perl, lua, rust, c, cpp, zig, swift, clojure, elixir and ocaml. Also: `direct()` cleans the error it returns; the php Xdebug fix; the Windows cpp lane path; the phpunit temp-project cleanup; config-level `clean` honoured (ts, js only). |
+### sdkgen
 
-## What CI said about 89dbfc5, and what dbcc817 does about it
+- **Round 2 (F3 to F6)** ported to java, kotlin, csharp and scala.
+- **Round 3 in all 20 targets.** L1: a `clean` block in the generated config
+  merges under the caller's, and both blocks' values are registered. L5: the
+  error code is value-cleaned wherever the error is.
+- **Two defects in the ts reference**, found by the csharp and scala port,
+  fixed in every target:
+  - *No `clean` block meant no redaction.* merge let an absent last layer
+    replace every layer before it, leaving no keys and an empty registry, so
+    a client built the ordinary way masked nothing. ts, js, rust, c and
+    kotlin had it; swift had it for a non-map block. Every sweep passed
+    `clean.values`, so none saw it. Every sweep now also builds a client
+    with no `clean` block.
+  - *Feature names read as field names.* The feature name `secrets`
+    registered every setting of that feature, which was then masked in
+    every message. Keys directly under `feature` no longer count; field
+    names inside a feature's settings still do.
+- **`direct()` cleans the error it returns** in every target. Round 2 had
+  done it in ts, js and lua only.
+- **Defects found by compiling targets for the first time:**
+  - scala had never compiled: a round-1 local was named `given`, a Scala 3
+    keyword.
+  - The java sweep's capture feature was package-private, so reflective
+    hook dispatch skipped it, and the round-1 java sweep captured nothing
+    from inside the pipeline.
+  - elixir: a duplicate `omit_keys` from round 2 broke request bodies, and
+    the option spec was parsed at compile time, so any other VM got garbage
+    specs (pre-existing).
+  - The lua and ocaml secrets suites were red, lua since round 1.
+  - kotlin and scala debug tests still expected the old `<redacted>` mask.
+- **Every sweep** now also covers the config block, a coded SDK error, the
+  bare client, the feature-name rule and a failing `direct()`.
 
-- **macOS:** green, which confirms the swift fix.
-- **ubuntu:** php header, query and basic lanes failed.
-  - The "near the leak" excerpt showed the leaking text is Xdebug's
-    `xdebug_message`. In develop mode Xdebug writes every stack frame's
-    arguments onto an exception AT THE THROW, after the SDK has cleaned it.
-    Those frames include the caller's own `$sdk`, whose `options` hold the
-    raw key.
-  - The SDK cannot clean something written after `throw`. It is a debugger's
-    view, like `err.ctx`.
-  - The generated php sweep therefore unsets `xdebug_message` on the error
-    and on its `getPrevious()` chain before searching. The explainer's Edges
-    list says so.
-- **windows:** the cpp lane passed `test\clean_test.out` to make, which has
-  no such rule. It now passes `test/clean_test.out`.
+### langpack
 
-## Round 2: the findings being fixed
-
-Codex left seven threads on #229. One is outdated: it asked for the fleet
-port, which landed in 9a82d7e and 4d26b41. The other six:
-
-| Id | Finding | ts/js | Fleet |
-| --- | --- | --- | --- |
-| F1 | makeError dropped the cleaned copy of a non-Error throwable | fixed | n/a (typed errors) |
-| F2 | `_features` enumerable on the client | fixed | n/a |
-| F3 | a mistyped credential (`apikey: { value }`) leaked through the constructor's validation error; register every scalar under a sensitive name, any depth, BEFORE validation (`cleanAddSensitive`) | fixed | ported in dbcc817 except java, kotlin, scala, csharp |
-| F4 | the sweep failed on an SDK with no argument-free op; retry with path params, skip visibly | fixed | same |
-| F5 | the op catch path (`_unexpected`) rethrew an uncleaned error, e.g. from a hook | fixed | same |
-| F6 | a registered secret used as a property NAME survived; mask names, suffix `#n` on collision | fixed | same |
-
-Each sweep gained two scenarios. The first is a mistyped credential. The
-second is a feature hook that fails while quoting `ctx.spec`. The ts and js
-sweeps also gained a failing `direct()`. Every new scenario was shown to FAIL
-with its fix reverted, wherever a toolchain was present.
-
-Replies on the seven #229 threads have NOT been posted. Reply with the fixing
-commit (c7629e6 for the ts reference, dbcc817 for the fleet), then resolve
-each thread. The thread ids are:
-
-- `PRRT_kwDOMfi0us6nUIAe` (F1)
-- `PRRT_kwDOMfi0us6nUIAt` (F2)
-- `PRRT_kwDOMfi0us6nUIA0` (F3)
-- `PRRT_kwDOMfi0us6nUIA7` (outdated)
-- `PRRT_kwDOMfi0us6nUIBB` (F4)
-- `PRRT_kwDOMfi0us6nUIBH` (F5)
-- `PRRT_kwDOMfi0us6nUIBJ` (F6)
+dart, haskell and lean were compiled and run for the first time: haskell and
+lean needed compile fixes. The eight findings, both defects above and
+`direct()` cleaning are in, plus a dart cross-client leak: the module-level
+`Config` was merged without being cloned, so one client's custom header was
+sent by every client built after it. The #24 replies name each commit.
 
 ## What is verified, and how
 
-Run in this container, on dbcc817 or on the same patches before they were
-applied:
+### In this container, on the integrated sdkgen head
 
-- **Local lanes, 24 of 24 pass.**
-  `node --test --test-name-pattern="(ts|js|go|py|rust|c|cpp|zig): no credential" dist-test/generatedcompile.test.js`.
-  zig was a downloaded 0.16.0.
-- **php, rb, perl and lua, 12 of 12 pass**, in the porting agent's worktree
-  on the same patch. Lua 5.4 was apt-installed there. These were not re-run
-  in the main checkout after the patches were applied.
-- **`dist-test/clean.test.js`: 20 of 20 pass.** This includes the config
-  `clean` block test, which fails with the L1 fix reverted.
-- **`make comments` and `make scan-prose` are clean.** `npm run golden` was
-  refreshed.
-- **Not compiled here:** swift, clojure, elixir and ocaml. They were only
-  desk-checked, and generate, parity, featuremodel and cleancoverage pass.
-  CI compiles swift on macOS.
-- **The full `npm test` was NOT run on dbcc817.** The first CI run on this
-  head is the first full run.
+- **Clean lanes, header, query and basic, all pass for 18 targets:** ts, js,
+  py, rb, php, go, perl, java, kotlin, csharp, scala, rust, c, cpp, zig, lua,
+  ocaml and elixir.
+- **How the toolchains got there** (a fact about this container, not a
+  requirement): dotnet 8, ghc with cabal, ocaml 4.14, elixir 1.14, lua 5.4
+  with busted and dkjson, and the libssl and libcurl headers from apt; zig
+  0.16.0 and pytest from PyPI; dart from the Dart archive; scala-cli from its
+  JVM artifacts resolved from Maven Central, with every dependency pinned to
+  its highest requested version.
+- **clojure** ran through a stand-in for its CLI built from the Maven
+  Central jars `deps.edn` names. Header and basic pass. Query auth fails
+  five checks that fail identically before this work (see below).
+- **swift** was not compiled here.
+- **Also passing:** every secrets-feature lane except swift and clojure; the
+  auth-null, credential-name and java feature-corpus lanes; the clean,
+  cleancoverage, generate, parity, featuremodel and characterize suites.
+- **The full `npm test`** ran green in CI on all three platforms at 7933ddd
+  (1814 tests; 32 skipped on ubuntu, 53 on macOS and windows).
+
+### In CI
+
+Run 36748626078 on 7933ddd was green on all three platforms. Which clean
+lanes ran:
+
+| Platform | Run | Skipped, no toolchain |
+| --- | --- | --- |
+| ubuntu | ts js rb java php cpp go c rust perl csharp swift kotlin | py lua zig scala clojure elixir ocaml |
+| macOS | ts js rb java cpp c rust perl csharp swift kotlin | php go py lua zig scala clojure elixir ocaml |
+| windows | ts js rb java php cpp go c rust perl csharp | py swift kotlin lua zig scala clojure elixir ocaml |
+
+CI never runs the py, lua, zig, scala, clojure, elixir or ocaml sweeps. py
+skips on every platform because the runners have no pytest.
 
 ## What is left
 
-1. **java, kotlin, scala, csharp: port round 2 (F3 to F6) and L1/L5.** An
-   agent had partial, unverified changes in a scratch worktree when work
-   stopped. They were not preserved. Start from dbcc817 and mirror the ts
-   diff in c7629e6 plus the ts MakeOptionsUtility change in dbcc817. javac is
-   usually available here; kotlin, scala and csharp are compiled by CI.
-2. **Round 3, fleet-wide.** Both findings come from Codex on langpack#24, and
-   both apply to sdkgen targets too.
-   - **L1:** the derived clean config must merge the schema defaults, then a
-     COPY of the generated config's own `clean` block, then the caller's
-     block. The `values` of both blocks must be registered. Done in ts and js
-     only. Pattern: `ts/project/.sdk/tm/ts/src/utility/MakeOptionsUtility.ts`
-     and the test "the generated config's own clean block is honoured" in
-     `ts/test/clean.test.ts`.
-   - **L5:** wherever clean cleans the error value, the `code` (or the
-     printed error kind) is value-cleaned too. Done in ts, js (in place over
-     own properties), rust, c, cpp and zig. Check and fix the rest.
-3. **langpack#24.**
-   - Compile and run round 2 (3ff0fe5) for dart, haskell and lean. It passed
-     `npm test` and `make comments` only; a dart check was stopped before it
-     reported, so the dart files may hold partial edits.
-   - Answer the eight Codex findings there:
-     1. P1: the config's clean block is ignored (L1 above).
-     2. P1: lean's `failOp` exits leave `ctrl.explain` holding the live spec.
-     3. P2: a lean proxy password with a colon must split at the FIRST
-        colon.
-     4. P2: haskell and lean percent-decode proxy userinfo byte-by-byte;
-        decode it as UTF-8.
-     5. P2: the error `code` is not cleaned in dart, haskell or lean (L5).
-     6. P2: map keys are not masked (F6).
-     7. P2: haskell `2 * crHint` can overflow for a huge `hint`; cap it.
-     8. P2: with clean off, lean's `doneExplain` mutates the live result;
-        clone it first.
-4. **Update the #229 body.** Cover:
-   - the CI-found leaks (the swift `dump` of `entity.match`, and the php
-     Xdebug annotation) and their fixes;
-   - the observation below;
-   - a coverage table that says CI verifies more targets than this container
-     did.
-5. **Record, but do not fix here:** every target copies the query-auth
-   credential into `resmatch`, and so into `entity.match()`. It is a
-   programmatic accessor rather than an egress, and it is masked wherever it
-   is printed. Removing it is a behaviour change to propose separately.
+1. **CI coverage.** Installing pytest in `build.yml` would make CI run the py
+   sweep; lua with busted and dkjson, zig, scala-cli, elixir and ocaml would
+   cover the rest. This container verified those; CI cannot.
+2. **swift round 3** was desk-checked (every generated file parses); CI's
+   ubuntu and macOS runners are its first compile.
+3. **clojure query auth.** Five checks in `tm/clojure/test/sdk/test/pipeline.clj`
+   assume an `authorization` header, and a query-auth SDK puts the key in
+   the query. They fail the same way at 047db305, and no CI runs clojure.
+4. **Pre-existing on main: an explained failure can lose its error.**
+   `done()` and EntityBase's `_unexpected` prune `err` from
+   `ctrl.explain.result`, which is the live result unless `clean` returned a
+   copy. On main `clean` returned its input, so an explained failure
+   reported `unknown error`. This branch fixes the default path; with
+   `clean.active: false` it recurs. The langpack prunes a copy in lean
+   (b7312ab). The fix is to prune a copy in every target.
+5. **Entity names under `options.entity`** are read as field names during
+   registration, as feature names were, so an entity named like `token`
+   registers its override settings. Low risk: the generated config gives
+   each entity an empty block.
+6. **F5 gaps.** An error raised while iterating a stream result is not
+   cleaned in go, csharp and scala; the go `Stream` goroutine has no
+   recover; a panicking rust hook is not caught; an exception from a custom
+   haskell `system.fetch` propagates uncleaned.
+7. **Recorded, not fixed:** `entity.match()` returns a query-auth
+   credential. The explainer's Edges list now says so.
+8. **Noticed, pre-existing:** `tm/rust/tests/vendor/omni/mod.rs` includes
+   `../COMMENT-NOTES.md`, which the generated tree does not ship; elixir
+   warns about an unused `H` alias and `Config.feature_plugins/1`;
+   `src/cmp/py/fragment/SdkError.fragment.py` is unreferenced; the php
+   clean-off control test warns about a circular reference in `var_export`;
+   three lean checks (paging, streaming, one secrets exchange check) fail on
+   the langpack's main as well.
 
 ## Deliberate per-target divergences reported by the ports
 
@@ -165,6 +154,21 @@ in a comment at the divergence if it is not there already.
   ts does, because `_match` absorbed the query credential.
 - **clojure and ocaml.** F5 returns a cleaned copy, because throwables are
   immutable, so the exception class can change.
+- **Foreign exceptions.** java, kotlin, csharp and scala replace a foreign
+  exception with a cleaned SDK error carrying the original stack, because
+  their messages are immutable; the original is not attached as the cause,
+  since a printed trace would show it. elixir and ocaml return a cleaned copy
+  from the catch path. swift's `direct()` cleans only the SDK's own error.
+- **Where F5 sits.** java and kotlin already route a failed stage through
+  `makeError`, so their gap was a `PreUnexpected` hook; that error still
+  propagates under `throw: false`, now cleaned. csharp and scala route a
+  non-SDK exception through `makeError`, as go and cpp do.
+- **Validators that collect errors** (java, kotlin, scala, like go and swift):
+  the sweep checks the constructed client and a quoted value instead of a
+  rejection.
+- **csharp** prints its skip line, because xunit 2 has no runtime skip.
+- **The feature-name rule** lives in `make_options` in the native targets,
+  which scan the feature map as a list of each feature's options.
 
 ## How to pick it up
 
