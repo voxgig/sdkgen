@@ -292,6 +292,24 @@ class _ThrowFeature(${Name}BaseFeature):
         raise RuntimeError("hook saw " + json.dumps(vars(ctx.spec), default=str))
 
 
+# A stream that fails while the caller iterates it, quoting a credential.
+class _StreamThrowFeature(${Name}BaseFeature):
+    def __init__(self):
+        super().__init__()
+        self.name = "streamthrow"
+        self.version = "0.0.1"
+        self.active = True
+
+    def init(self, ctx, options):
+        pass
+
+    def PreDone(self, ctx):
+        def fail():
+            raise RuntimeError("stream saw " + CANARY["apikey"])
+            yield
+        ctx.result.stream = fail
+
+
 def _drive(sdk, target, ctrl, sinks):
     out = None
     err = None
@@ -346,10 +364,22 @@ class TestClean:
         assert rejected is not None, "a credential mistyped as a map should be rejected"
         sinks.extend(_forms("rejected", rejected))
 
-        # An error a feature hook raises, quoting the request, skips make_error.
+        # An error a feature hook raises, quoting the request, skips make_error,
+        # as does the explain record it interrupts.
         hooked = _make_sdk(SCENARIOS[0][1], sinks, None, [_ThrowFeature()])
-        hookerr = _drive(hooked, target, {}, sinks)
+        hookerr = _drive(hooked, target, {"explain": {}}, sinks)
         assert hookerr is not None, "the throwing hook should fail the operation"
+
+        # Iterating a stream runs inside the same catch path as the operation.
+        streamed = _make_sdk(SCENARIOS[0][1], sinks, None, [_StreamThrowFeature()])
+        streamerr = None
+        try:
+            for _item in getattr(streamed, target[0])().stream(target[1], {"reqmatch": dict(target[2])}):
+                pass
+        except Exception as e:
+            streamerr = e
+        assert streamerr is not None, "the failing stream should raise"
+        sinks.extend(_forms("stream", streamerr))
 
         # A registered value used as a property name is masked; names that
         # mask alike are kept apart.
@@ -390,18 +420,24 @@ class TestClean:
         assert _drive(bare, target, {"explain": {}}, sinks) is not None, "the 404 should fail"
 
         # A feature's name is not a field name: only the sensitive names
-        # inside its settings register.
+        # inside its settings register. An entity block, of per-entity
+        # settings or seeded records keyed by entity name and id, is not read.
         featured = ${Name}SDK({
             "apikey": CANARY["apikey"],
             "feature": {
                 "zzsecrets": {"active": False, "kind": "PLAINSETTING-q8w2e4r6"},
                 "zzfeat": {"active": False, "apitoken": "FEATTOKEN-z9y8x7w6"},
+                "test": {"active": False, "entity": {
+                    "zztoken": {"ZZTOKEN01": {"note": "PLAINRECORD-t5r3e1w9"}}}},
             },
+            "entity": {"zztoken": {"alias": {"zzkey": "PLAINALIAS-m2n4b6v8"}}},
         })
         fclean = featured.get_utility().clean
         froot = featured.get_root_ctx()
         fplain = fclean(froot, "kind PLAINSETTING-q8w2e4r6")
         ftoken = fclean(froot, "token FEATTOKEN-z9y8x7w6")
+        frecord = fclean(froot, "record PLAINRECORD-t5r3e1w9")
+        falias = fclean(froot, "alias PLAINALIAS-m2n4b6v8")
 
         leaked = [(name, _leaks(text)) for name, text in sinks]
         leaked = [(name, found) for name, found in leaked if 0 < len(found)]
@@ -433,6 +469,8 @@ class TestClean:
 
         assert fplain == "kind PLAINSETTING-q8w2e4r6", fplain
         assert ftoken == "token " + MASK, ftoken
+        assert frecord == "record PLAINRECORD-t5r3e1w9", frecord
+        assert falias == "alias PLAINALIAS-m2n4b6v8", falias
 
         explained = explains.get("ok/explain") or {}
         assert explained.get("result") is not None, "the explain record should carry the result"
@@ -447,6 +485,10 @@ class TestClean:
         sdk = _make_sdk(SCENARIOS[1][1], sinks, {"active": False})
         err = _drive(sdk, target, {}, sinks)
         assert err is not None
+
+        # Explaining a failure must not cost it its error.
+        explained = _drive(_make_sdk(SCENARIOS[1][1], [], {"active": False}), target, {"explain": {}}, [])
+        assert str(explained) == str(err), "with clean off, explain lost the error: " + str(explained)
 
         leaked = [name for name, text in sinks if 0 < len(_leaks(text))]
         assert 0 < len(leaked), "with clean off, nothing showed the canary: the sweep is blind"

@@ -247,9 +247,21 @@ def make_options_util(ctx):
 
 
 # A feature's name is not a field name: only the sensitive names inside its
-# settings count, so `secrets` does not make every setting a secret.
+# settings count, so `secrets` does not make every setting a secret. Entity
+# blocks (per-entity settings, seeded records) hold no credential.
 def _clean_add_options(cleanctx, opts):
-    clean_add_sensitive(cleanctx, {k: v for k, v in opts.items() if k != "feature"})
+    top = {k: v for k, v in opts.items() if k not in ("feature", "entity")}
+    if "test" in top:
+        top["test"] = _no_entity(top["test"])
+    clean_add_sensitive(cleanctx, top)
     feature = opts.get("feature")
-    for fopts in (feature.values() if isinstance(feature, dict) else [feature]):
-        clean_add_sensitive(cleanctx, fopts)
+    blocks = feature.values() if isinstance(feature, dict) else (
+        feature if isinstance(feature, list) else [feature])
+    for fopts in blocks:
+        clean_add_sensitive(cleanctx, _no_entity(fopts))
+
+
+def _no_entity(block):
+    if isinstance(block, dict):
+        return {k: v for k, v in block.items() if k != "entity"}
+    return block
