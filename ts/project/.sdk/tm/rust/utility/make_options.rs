@@ -219,24 +219,41 @@ fn clean_block(opts: &Value) -> Value {
 
 // The options to scan for secrets. The feature map is keyed by feature
 // names, not field names, so it is scanned as a list: `secrets` must not
-// make every setting of that feature a secret.
+// make every setting of that feature a secret. Entity blocks hold entity
+// settings and seeded records, never a credential, so none is scanned.
 fn without(val: &Value, keys: &[&str]) -> Value {
     let out = Value::empty_map();
     if let Value::Map(m) = val {
         for (k, v) in m.borrow().iter() {
-            if keys.contains(&k.as_str()) {
+            if "entity" == k.as_str() || keys.contains(&k.as_str()) {
                 continue;
             }
             let v = match (k.as_str(), v) {
                 ("feature", Value::Map(fm)) => {
-                    Value::list(fm.borrow().iter().map(|(_, fv)| fv.clone()).collect())
+                    Value::list(fm.borrow().iter().map(|(_, fv)| noentity(fv)).collect())
                 }
+                ("test", _) => noentity(v),
                 _ => v.clone(),
             };
             setp(&out, k, v);
         }
     }
     out
+}
+
+fn noentity(val: &Value) -> Value {
+    match val {
+        Value::Map(m) => {
+            let out = Value::empty_map();
+            for (k, v) in m.borrow().iter() {
+                if "entity" != k.as_str() {
+                    setp(&out, k, v.clone());
+                }
+            }
+            out
+        }
+        _ => val.clone(),
+    }
 }
 
 /// Read a string option (helper shared by prepare utilities).

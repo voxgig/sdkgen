@@ -667,6 +667,20 @@ fn clean_the_sweep_can_see_a_leak() {
     );
     let err = drive(&sdk, &target, Value::Noval, &sinks).expect("the 404 scenario must throw");
 
+    // Explaining a failure must not cost it its error.
+    let quiet: Sinks = Rc::new(RefCell::new(Vec::new()));
+    let explained = drive(
+        &make_sdk(Scenario::NotFound, &quiet, Some(jo(vec![("active", Value::Bool(false))])), Vec::new()),
+        &target,
+        jo(vec![("explain", Value::empty_map())]),
+        &quiet,
+    );
+    assert_eq!(
+        explained.map(|e| e.msg),
+        Some(err.msg.clone()),
+        "with clean off, explain lost the error"
+    );
+
     let leaked = sinks.borrow().iter().filter(|s| !leaks(&s.text).is_empty()).count();
     assert!(0 < leaked, "with clean off, nothing showed the canary: the sweep is blind");
 
@@ -703,27 +717,46 @@ fn clean_masks_a_registered_value_used_as_a_name() {
 }
 
 // A feature's name is not a field name: a feature called secrets does not
-// make its settings secret, though a sensitive field inside it still is.
+// make its settings secret, though a sensitive field inside it still is. An
+// entity block, of per-entity settings or seeded records keyed by entity name
+// and id, is not read at all.
 #[test]
 fn clean_reads_a_feature_name_as_a_name() {
+    let seeded = jo(vec![(
+        "zztoken",
+        jo(vec![("ZZTOKEN01", jo(vec![("note", Value::str("PLAINRECORD-t5r3e1w9"))]))]),
+    )]);
     let sdk = ${Name}SDK::new(jo(vec![
         ("apikey", Value::str(CANARY_APIKEY)),
         (
             "feature",
+            jo(vec![
+                (
+                    "secrets",
+                    jo(vec![
+                        ("active", Value::Bool(false)),
+                        ("name", Value::str("ZZNAME-feat123")),
+                        ("token", Value::str("ZZTOKEN-feat456")),
+                    ]),
+                ),
+                ("test", jo(vec![("active", Value::Bool(false)), ("entity", seeded)])),
+            ]),
+        ),
+        (
+            "entity",
             jo(vec![(
-                "secrets",
-                jo(vec![
-                    ("active", Value::Bool(false)),
-                    ("name", Value::str("ZZNAME-feat123")),
-                    ("token", Value::str("ZZTOKEN-feat456")),
-                ]),
+                "zztoken",
+                jo(vec![("alias", jo(vec![("zzkey", Value::str("PLAINALIAS-m2n4b6v8"))]))]),
             )]),
         ),
     ]));
+    let ctx = sdk.get_root_ctx();
     assert_eq!(
-        clean::clean_str(&sdk.get_root_ctx(), "ZZNAME-feat123 ZZTOKEN-feat456"),
+        clean::clean_str(&ctx, "ZZNAME-feat123 ZZTOKEN-feat456"),
         format!("ZZNAME-feat123 {}", MASK)
     );
+    assert_eq!(clean::clean_str(&ctx, "record PLAINRECORD-t5r3e1w9"), "record PLAINRECORD-t5r3e1w9");
+    assert_eq!(clean::clean_str(&ctx, "alias PLAINALIAS-m2n4b6v8"), "alias PLAINALIAS-m2n4b6v8");
 }
 
 #[test]

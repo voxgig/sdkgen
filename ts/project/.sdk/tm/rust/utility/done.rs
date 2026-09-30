@@ -19,10 +19,13 @@ pub fn done_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
             // The explain map is the CALLER's own (Control copies the Rc, not
             // the ctrl object ts reassigns a field on), so the cleaned copy is
             // written back into it entry by entry rather than swapped in.
+            // With clean off the cleaned record IS that map, already current.
             if let (Value::Map(orig), Value::Map(cleaned)) = (&c.explain, &explain) {
-                let mut o = orig.borrow_mut();
-                for (k, v) in cleaned.borrow().iter() {
-                    o.insert(k.clone(), v.clone());
+                if !Rc::ptr_eq(orig, cleaned) {
+                    let mut o = orig.borrow_mut();
+                    for (k, v) in cleaned.borrow().iter() {
+                        o.insert(k.clone(), v.clone());
+                    }
                 }
             } else {
                 c.explain = explain;
