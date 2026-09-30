@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BooleanSupplier;
@@ -163,17 +164,21 @@ public abstract class EntityBase implements SdkEntity {
       return out;
     }
     catch (RuntimeException err) {
-      // An error already finalised by makeError (e.g. via done) must not
-      // be wrapped a second time.
-      if (err == ctx.ctrl.err) {
-        throw err;
-      }
-      try {
-        return utility.makeError.apply(ctx, err);
-      }
-      catch (RuntimeException unexpected) {
-        throw unexpected == ctx.ctrl.err ? unexpected : cleanError(ctx, unexpected);
-      }
+      return unexpected(ctx, err);
+    }
+  }
+
+  // The catch path. An error already finalised by makeError (e.g. via done)
+  // must not be wrapped a second time.
+  private Object unexpected(Context ctx, RuntimeException err) {
+    if (err == ctx.ctrl.err) {
+      throw err;
+    }
+    try {
+      return this.utility.makeError.apply(ctx, err);
+    }
+    catch (RuntimeException thrown) {
+      throw thrown == ctx.ctrl.err ? thrown : cleanError(ctx, thrown);
     }
   }
 
@@ -239,9 +244,14 @@ public abstract class EntityBase implements SdkEntity {
 
     // Inbound: prefer the streaming feature's incremental iterator; else fall
     // back to the materialised items so `stream` always yields.
-    Iterator<Object> source;
+    Iterator<Object> source = null;
     if (ctx.result != null && ctx.result.stream != null) {
-      source = ctx.result.stream.get();
+      try {
+        source = ctx.result.stream.get();
+      }
+      catch (RuntimeException err) {
+        unexpected(ctx, err);
+      }
     }
     else {
       List<Object> items;
@@ -258,19 +268,42 @@ public abstract class EntityBase implements SdkEntity {
       source = items.iterator();
     }
 
+    // The caller iterates after runOp has returned, so a failing source takes
+    // the catch path here. Both source calls sit in hasNext: under throw
+    // false the stream then ends rather than failing in next.
     final Iterator<Object> src = source;
     Iterator<Object> guarded = new Iterator<Object>() {
+      private boolean ended = src == null;
+      private boolean ready = false;
+      private Object item;
+
       @Override
       public boolean hasNext() {
-        if (signal != null && signal.getAsBoolean()) {
+        if (ended || (signal != null && signal.getAsBoolean())) {
           return false;
         }
-        return src.hasNext();
+        if (!ready) {
+          try {
+            ready = src.hasNext();
+            ended = !ready;
+            item = ready ? src.next() : null;
+          }
+          catch (RuntimeException err) {
+            ended = true;
+            ready = false;
+            unexpected(ctx, err);
+          }
+        }
+        return ready;
       }
 
       @Override
       public Object next() {
-        return src.next();
+        if (!hasNext()) {
+          throw new NoSuchElementException();
+        }
+        ready = false;
+        return item;
       }
     };
 

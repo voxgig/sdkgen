@@ -219,19 +219,35 @@ final class Clean {
   // any shape: a credential mistyped as a map or a number is still one, and
   // a message can quote it. A key under `feature` names a feature, not a
   // field, so a feature called secrets does not make its settings secret.
+  // Entity blocks (entity settings, seeded records) hold no credential.
   static void addSensitiveOptions(Map<String, Object> cfg, Map<String, Object> opts) {
     IdentityHashMap<Object, Boolean> seen = new IdentityHashMap<>();
     for (Map.Entry<String, Object> e : opts.entrySet()) {
-      boolean under = sensitive(cfg, e.getKey());
-      if ("feature".equals(e.getKey()) && e.getValue() instanceof Map) {
-        for (Object fopts : ((Map<?, ?>) e.getValue()).values()) {
-          addSensitive(cfg, fopts, under, 2, seen);
+      String key = e.getKey();
+      Object val = e.getValue();
+      boolean under = sensitive(cfg, key);
+      if ("entity".equals(key)) {
+        continue;
+      }
+      if ("feature".equals(key) && (val instanceof Map || val instanceof List)) {
+        Collection<?> fsets = val instanceof Map ? ((Map<?, ?>) val).values() : (List<?>) val;
+        for (Object fopts : fsets) {
+          addSensitive(cfg, noEntity(fopts), under, 2, seen);
         }
       }
       else {
-        addSensitive(cfg, e.getValue(), under, 1, seen);
+        addSensitive(cfg, "test".equals(key) ? noEntity(val) : val, under, 1, seen);
       }
     }
+  }
+
+  private static Object noEntity(Object block) {
+    if (!(block instanceof Map)) {
+      return block;
+    }
+    Map<Object, Object> out = new LinkedHashMap<>((Map<?, ?>) block);
+    out.remove("entity");
+    return out;
   }
 
   private static void addSensitive(Map<String, Object> cfg, Object val, boolean under,

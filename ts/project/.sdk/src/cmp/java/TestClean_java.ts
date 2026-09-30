@@ -55,9 +55,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -75,6 +77,7 @@ import ${jp}.core.Context;
 import ${jp}.core.Entity;
 import ${jp}.core.Helpers;
 import ${jp}.core.${sdk};
+import ${jp}.core.SdkEntity;
 import ${jp}.core.SdkError;
 import ${jp}.core.Utility;
 import ${jp}.feature.BaseFeature;
@@ -342,6 +345,28 @@ public class CleanTest {
     }
   }
 
+  // A stream that fails while the caller iterates it, quoting a credential.
+  public static final class StreamThrowFeature extends BaseFeature {
+    StreamThrowFeature() {
+      super("streamthrow", "0.0.1", true);
+    }
+
+    @Override
+    public void preDone(Context ctx) {
+      ctx.result.stream = () -> new Iterator<Object>() {
+        @Override
+        public boolean hasNext() {
+          throw new RuntimeException("stream saw " + CANARY_APIKEY);
+        }
+
+        @Override
+        public Object next() {
+          throw new NoSuchElementException();
+        }
+      };
+    }
+  }
+
   static boolean hasFeature(String name) {
     Map<String, Object> fm = Helpers.toMapAny(Config.makeConfig().get("feature"));
     return fm != null && fm.get(name) != null;
@@ -601,7 +626,7 @@ public class CleanTest {
   }
 
   @Test
-  public void noCredentialLeavesTheSdkInAnyForm() {
+  public void noCredentialLeavesTheSdkInAnyForm() throws Exception {
     Op op = usableOrSkip();
 
     List<Sink> sinks = new ArrayList<>();
@@ -666,6 +691,20 @@ public class CleanTest {
         assertNotNull(drive(hooked, op, new LinkedHashMap<>(), sinks),
             "the throwing hook should fail the operation");
       }
+
+      // Iterating a stream runs inside the same catch path as the operation.
+      SdkEntity streamed = (SdkEntity) op.accessor.invoke(
+          makeSdk(SCENARIOS.get(0), sinks, null, new StreamThrowFeature()), new Object[] {null});
+      RuntimeException streamerr = null;
+      try {
+        streamed.stream(op.call.getName(), jm("reqmatch", new LinkedHashMap<>(op.match)), null)
+            .forEach(item -> { });
+      }
+      catch (RuntimeException e) {
+        streamerr = e;
+      }
+      assertNotNull(streamerr, "the failing stream should throw");
+      forms(sinks, "stream", streamerr);
 
       // The raw path returns its failure rather than throwing it.
       Map<String, Object> raw = makeSdk(SCENARIOS.get(3), sinks, null).direct(jm("path", "raw"));
@@ -739,6 +778,12 @@ public class CleanTest {
     Exception err = drive(sdk, op, new LinkedHashMap<>(), sinks);
     assertNotNull(err);
 
+    // Explaining a failure must not cost it its error.
+    Exception explained = drive(makeSdk(SCENARIOS.get(1), new ArrayList<>(), jm("active", false)), op,
+        jm("explain", new LinkedHashMap<String, Object>()), new ArrayList<>());
+    assertEquals(err.getMessage(), explained == null ? null : explained.getMessage(),
+        "with clean off, explain lost the error");
+
     int leaked = 0;
     for (Sink s : sinks) {
       if (!leaks(s.text).isEmpty()) {
@@ -756,14 +801,24 @@ public class CleanTest {
     }
   }
 
+  // An entity block, of per-entity settings or seeded records keyed by
+  // entity name and id, is not read at all.
   @Test
   public void aFeatureNameDoesNotMakeItsSettingsSecret() {
     ${sdk} sdk = new ${sdk}(jm(
         "apikey", CANARY_APIKEY,
-        "feature", jm("secrets", jm(
-            "active", false, "kind", "SETTING-KIND-4829", "token", CANARY_SECRET))));
+        "feature", jm(
+            "secrets", jm("active", false, "kind", "SETTING-KIND-4829", "token", CANARY_SECRET),
+            "test", jm("active", false, "entity",
+                jm("zztoken", jm("ZZTOKEN01", jm("note", "PLAINRECORD-t5r3e1w9"))))),
+        "entity", jm("zztoken", jm("alias", jm("zzkey", "PLAINALIAS-m2n4b6v8")))));
+    Context root = sdk.getRootCtx();
     assertEquals("SETTING-KIND-4829 " + MASK,
-        sdk.getUtility().clean.apply(sdk.getRootCtx(), "SETTING-KIND-4829 " + CANARY_SECRET));
+        sdk.getUtility().clean.apply(root, "SETTING-KIND-4829 " + CANARY_SECRET));
+    assertEquals("record PLAINRECORD-t5r3e1w9",
+        sdk.getUtility().clean.apply(root, "record PLAINRECORD-t5r3e1w9"));
+    assertEquals("alias PLAINALIAS-m2n4b6v8",
+        sdk.getUtility().clean.apply(root, "alias PLAINALIAS-m2n4b6v8"));
   }
 
   @Test
