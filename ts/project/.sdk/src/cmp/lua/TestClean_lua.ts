@@ -526,6 +526,11 @@ describe("clean", function()
     local barerr = drive(bare, target, {}, sinks)
     assert.is_not_nil(barerr, "the 404 scenario must fail without a clean block")
 
+    -- The raw path returns its failure rather than raising it.
+    local direct = make_sdk(SCENARIOS[4], sinks):direct({ path = "raw" })
+    assert.is_false(direct.ok, "a transport failure should fail direct()")
+    append(sinks, surfaces("direct", direct.err))
+
     -- A registered value used as a property name is masked; names that
     -- mask alike are all kept.
     local named = hooked:get_utility().clean(hooked:get_root_ctx(),
