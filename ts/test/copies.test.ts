@@ -66,6 +66,13 @@ function editCopy(project: any, rel: string) {
 }
 
 
+function crlf(project: any, rel: string) {
+  const path = ROOT + '/' + rel
+  project.fs.writeFileSync(path,
+    String(project.fs.readFileSync(path, 'utf8')).replace(/\r?\n/g, '\r\n'))
+}
+
+
 function firstFile(project: any, prefix: string): string {
   const found = Object.keys(record(project).files)
     .find((rel: string) => rel.startsWith(prefix) && rel.endsWith('.ts'))
@@ -176,6 +183,36 @@ describe('doctor reads the copy record', () => {
     deepStrictEqual(report.edited, [rel])
     deepStrictEqual(report.unrecorded, [rel])
     deepStrictEqual(report.outdated, [])
+  })
+})
+
+
+describe('line endings, which git may rewrite on checkout', () => {
+
+  test('a copy checked out with CRLF is the copy add wrote', async () => {
+    const project = await added('ts')
+    crlf(project, firstFile(project, 'tm/ts/'))
+    crlf(project, firstFile(project, 'src/cmp/ts/'))
+    crlf(project, 'model/target/ts.aontu')
+
+    const report: any = (await doctor(project.actx)).report
+
+    strictEqual(report.ok, true, JSON.stringify(
+      { forked: report.forked, edited: report.edited, outdated: report.outdated }))
+    deepStrictEqual(await copyCheck(project.actx), [])
+  })
+
+
+  test('an outdated copy checked out with CRLF is still outdated', async () => {
+    const project = await added('ts')
+    const rel = firstFile(project, 'tm/ts/')
+    ageCopy(project, rel)
+    crlf(project, rel)
+
+    const report: any = (await doctor(project.actx)).report
+
+    deepStrictEqual(report.outdated, [rel])
+    deepStrictEqual(report.edited, [])
   })
 })
 

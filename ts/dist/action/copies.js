@@ -30,8 +30,12 @@ function copiesPath(folder) {
 function itemKey(kind, name) {
     return kind + '/' + name;
 }
+// CRLF and LF copies of one file share a fingerprint, as doctor compares
+// them. latin1 maps each byte to one character, so nothing else changes.
 function fingerprint(content) {
-    return (0, node_crypto_1.createHash)('sha256').update(content).digest('hex').slice(0, 16);
+    const bytes = Buffer.isBuffer(content) ? content : Buffer.from(String(content));
+    const lf = Buffer.from(bytes.toString('latin1').replace(/\r\n/g, '\n'), 'latin1');
+    return (0, node_crypto_1.createHash)('sha256').update(lf).digest('hex').slice(0, 16);
 }
 // An unreadable record is treated as absent: every copy is then unrecorded,
 // which is exactly the state of a project from before the record existed.

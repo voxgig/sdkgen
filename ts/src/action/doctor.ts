@@ -100,9 +100,8 @@ type DoctorReport = {
   // it is what an alias is FOR.
   aliasedDiff: string[]
 
-  // A copy that differs from its source although the copy record shows the
-  // project has not touched it since an add wrote it: the source moved on.
-  // Drift, since generate reads it, but refreshing it discards nothing.
+  // Differs from its source, but the copy record shows it untouched since an
+  // add wrote it: the source moved on, so refreshing it discards nothing.
   outdated: string[]
 
   // The forked and edited findings the copy record has no entry for, so
@@ -1009,10 +1008,16 @@ function renderPair(
   const rawsrc = fs.readFileSync(scaffoldPath, 'utf8')
   const src = null == rewrite ? rawsrc : rewrite(rawsrc)
 
+  // git may rewrite line endings on checkout (core.autocrlf).
   return {
-    expected: template(src, model, { replace }),
-    actual: fs.readFileSync(projectPath, 'utf8'),
+    expected: lfEndings(template(src, model, { replace })),
+    actual: lfEndings(fs.readFileSync(projectPath, 'utf8')),
   }
+}
+
+
+function lfEndings(text: string): string {
+  return text.replace(/\r\n/g, '\n')
 }
 
 

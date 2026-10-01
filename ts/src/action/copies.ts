@@ -44,8 +44,12 @@ function itemKey(kind: string, name: string): string {
 }
 
 
+// CRLF and LF copies of one file share a fingerprint, as doctor compares
+// them. latin1 maps each byte to one character, so nothing else changes.
 function fingerprint(content: any): string {
-  return createHash('sha256').update(content).digest('hex').slice(0, 16)
+  const bytes = Buffer.isBuffer(content) ? content : Buffer.from(String(content))
+  const lf = Buffer.from(bytes.toString('latin1').replace(/\r\n/g, '\n'), 'latin1')
+  return createHash('sha256').update(lf).digest('hex').slice(0, 16)
 }
 
 

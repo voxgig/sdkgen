@@ -161,6 +161,10 @@ A model file installed from a source that still ships `<name>.aon` is
 compared after the same include renaming `add` applied, so the renaming
 alone is never reported as drift.
 
+Line endings are not compared either. git may rewrite them on checkout
+(`core.autocrlf`), so a copy checked out with CRLF is still the copy `add`
+wrote.
+
 #### The copy record
 
 Every add writes `.sdk/sdkgen-copies.json`: a fingerprint of each file it

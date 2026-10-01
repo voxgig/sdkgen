@@ -656,10 +656,14 @@ function differs(fs, scaffoldPath, projectPath, model, replace, ignore, rewrite)
 function renderPair(fs, scaffoldPath, projectPath, model, replace, rewrite) {
     const rawsrc = fs.readFileSync(scaffoldPath, 'utf8');
     const src = null == rewrite ? rawsrc : rewrite(rawsrc);
+    // git may rewrite line endings on checkout (core.autocrlf).
     return {
-        expected: (0, jostraca_1.template)(src, model, { replace }),
-        actual: fs.readFileSync(projectPath, 'utf8'),
+        expected: lfEndings((0, jostraca_1.template)(src, model, { replace })),
+        actual: lfEndings(fs.readFileSync(projectPath, 'utf8')),
     };
+}
+function lfEndings(text) {
+    return text.replace(/\r\n/g, '\n');
 }
 function quietLog(log) {
     const noop = () => { };
