@@ -28,6 +28,7 @@ const feature_1 = require("./feature");
 const action_1 = require("./action");
 const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
+const copies_1 = require("./copies");
 const CMD_MAP = {
     add: cmd_target_add,
     remove: cmd_target_remove,
@@ -78,8 +79,10 @@ async function target_add(targets, actx) {
         'test',
         ...Object.keys(featuremodel).filter((n) => false !== featuremodel[n]?.active),
     ]));
-    const jres = await jostraca.generate(opts, () => TargetRoot({ targets, features, actx }));
+    const installed = [];
+    const jres = await jostraca.generate(opts, () => TargetRoot({ targets, features, actx, installed }));
     (0, util_1.showChanges)(opts.log, 'target-result', jres);
+    (0, copies_1.recordCopies)(actx, jres, 'target', installed);
     if (actx.opts.dryrun) {
         (0, dryrun_1.showDryrun)(opts.log, 'target-result', jres, actx.folder);
     }
@@ -96,7 +99,7 @@ async function target_add(targets, actx) {
     };
 }
 const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
-    const { ctx$, targets, features, actx } = props;
+    const { ctx$, targets, features, actx, installed } = props;
     const { model, log } = ctx$;
     const fs = ctx$.fs();
     // The prune below writes through `fs` directly rather than through
@@ -122,6 +125,7 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
             const source = (0, kind_1.resolveKind)(tref, 'target', ctx$);
             const { name: tname, folder: tfolder, origname: torigname, base } = source;
             tnames.push(tname);
+            installed?.push(source);
             const targetNote = tname + (tname != tref ? ' ref:' + tref : '');
             log.info({
                 point: 'target-name', name: tname, folder: tfolder,

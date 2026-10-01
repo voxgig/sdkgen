@@ -32,6 +32,9 @@ import { templateReplacements } from '../helpers/stdrep'
 import { copyOpts } from '../helpers/junk'
 
 import { resolveKind, kindModel, kindIndex } from './kind'
+import type { Source } from './resolve'
+
+import { recordCopies } from './copies'
 
 
 import {
@@ -111,9 +114,14 @@ async function feature_add(features: string[], actx: ActionContext): Promise<Act
     note: (actx.opts.dryrun ? '** DRY RUN **' : '')
   })
 
-  const jres = await jostraca.generate(opts, () => FeatureRoot({ features }))
+  const installed: Source[] = []
+
+  const jres = await jostraca.generate(opts, () =>
+    FeatureRoot({ features, installed }))
 
   showChanges(opts.log, 'feature-result', jres)
+
+  recordCopies(actx, jres, 'feature', installed)
 
   if (actx.opts.dryrun) {
     showDryrun(opts.log, 'feature-result', jres, actx.folder)
@@ -131,7 +139,7 @@ async function feature_add(features: string[], actx: ActionContext): Promise<Act
 
 
 const FeatureRoot = cmp(function FeatureRoot(props: any) {
-  const { ctx$, features } = props
+  const { ctx$, features, installed } = props
   const { model, log } = ctx$
 
   const fs = ctx$.fs()
@@ -167,6 +175,7 @@ const FeatureRoot = cmp(function FeatureRoot(props: any) {
 
       const fname = source.name
       fnames.push(fname)
+      installed?.push(source)
 
       log.info({
         point: 'feature-build',

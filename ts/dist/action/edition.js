@@ -9,6 +9,7 @@ const stdrep_1 = require("../helpers/stdrep");
 const junk_1 = require("../helpers/junk");
 const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
+const copies_1 = require("./copies");
 const target_1 = require("./target");
 const action_1 = require("./action");
 // The PREFIX of a edition item's component tree (`src/cmp/edition/`), for the
@@ -66,7 +67,9 @@ async function edition_add(edition, actx) {
     (0, action_1.ensureModelInclude)(actx, 'edition');
     // Later items in the command read this in-memory registration.
     (0, resolve_1.registerInstalled)('edition', edition, actx);
-    const jres = await jostraca.generate(opts, () => EditionRoot({ edition, actx }));
+    const installed = [];
+    const jres = await jostraca.generate(opts, () => EditionRoot({ edition, actx, installed }));
+    (0, copies_1.recordCopies)(actx, jres, 'edition', installed);
     return { jres };
 }
 function preflight(edition, actx) {
@@ -87,7 +90,7 @@ function preflight(edition, actx) {
     }
 }
 const EditionRoot = (0, jostraca_1.cmp)(function EditionRoot(props) {
-    const { ctx$, edition } = props;
+    const { ctx$, edition, installed } = props;
     const { log } = ctx$;
     (0, jostraca_1.Project)({}, () => {
         const dnames = [];
@@ -96,6 +99,7 @@ const EditionRoot = (0, jostraca_1.cmp)(function EditionRoot(props) {
             log.info({ point: 'edition-build', edition: dref, note: dref });
             const source = (0, kind_1.resolveKind)(dref, 'edition', ctx$);
             dnames.push(source.name);
+            installed?.push(source);
             log.info({
                 point: 'edition-name', edition: source.name, folder: source.folder, ref: dref,
                 note: source.name +

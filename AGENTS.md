@@ -455,7 +455,7 @@ Rules:
 | Add or retype an **SDK client option** | `main: kit: optspec` in `ts/model/sdkgen.aontu` | one place, not twenty: the generated `Schema` module carries it into every SDK target. No `make_options` template holds a spec of its own any more — if you find one, it is a regression |
 | Add or retype a **feature option** | that feature's `config.options` (with a default) or `config.optspec` (a type, for a callback or an option whose default understates it) | the option spec, the README table and the REFERENCE table all derive from these two — see `ts/src/helpers/optspec.ts` and `ts/src/cmp/FeatureDocs.ts` |
 | Add/remove a bundled target or feature | the trees above **and** `ts/project/sdkgen-package.json` | a guard test fails if the manifest and the directories disagree |
-| Change what an `add` writes | `ts/src/action/…` **and** `ts/src/action/doctor.ts` | a file add writes that doctor does not compare is a file the next add silently reverts; `remove` (`action/remove.ts`) plans from the same trees and refuses on doctor's findings, so it follows for free |
+| Change what an `add` writes | `ts/src/action/…` **and** `ts/src/action/doctor.ts` | a file add writes that doctor does not compare is a file the next add silently reverts; `remove` (`action/remove.ts`) plans from the same trees and refuses on doctor's findings, so it follows for free; the add must also pass its jostraca result to `recordCopies` (`action/copies.ts`), or doctor cannot tell its files outdated from edited |
 | Emit something new from a feature or a pipeline step (a log line, a sink record, a buffer entry, an error field) | pass it through `ctx.utility.clean(ctx, value)` first, in every language | the generated `test/clean.test.<ext>` canary sweep fails on the first raw credential, and `ts/test/cleancoverage.test.ts` scans each target's error, done, log and debug files for the call — see [explanation/secret-redaction](./docs/explanation/secret-redaction.md) and ADR-003 |
 | Change a CLI flag | `ts/bin/voxgig-sdkgen` — parse entry, the closed `Shape`, **and** the help text | plus a row in [reference/cli](./docs/reference/cli.md); the shape is closed, so missing one of the three is a runtime rejection, and an optional flag is `Skip(String)` (see Sharp edges) |
 | Add a rule about a package's `.aontu` files | `ts/src/helpers/modelcheck.ts` | `package check` and `ts/test/model-compile.test.ts` are both callers — the bundled scaffold is checked by the same battery an author runs |
@@ -668,6 +668,17 @@ emitted broken source reached the fleet unchallenged.
   only because they emit theirs from `Gitignore_<lang>.ts`, which is now
   the rule for all 24. `ts/test/packaging.test.ts` asks `npm pack`
   directly rather than restating npm's exclusion list.
+- **The copy record is the only thing that tells OUTDATED from EDITED.**
+  Every add hands the files its own jostraca run wrote to `recordCopies`,
+  which fingerprints them into `.sdk/sdkgen-copies.json` with the package
+  version. Doctor then files a differing copy whose fingerprint still
+  matches as `outdated` (the source moved on), which `package update`
+  refreshes without `--force`, `remove` deletes without refusing, and
+  `generate` warns about before it writes. Record from what jostraca
+  reports, never by re-deriving the trees afterwards: the model an action
+  holds was compiled before the add ran. An add path that skips the record
+  leaves its files unrecorded, so after the next upgrade they read as
+  possible edits and the `--force` trap of issue #257 is back.
 - **`package update` must check BEFORE it fetches.** Measured before the
   source moves, a differing copy means the project changed it; measured
   after, every item legitimately differs, the gate fires on all of them,

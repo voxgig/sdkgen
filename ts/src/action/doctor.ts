@@ -37,6 +37,9 @@ import { findFeatureSources } from '../helpers/featureSource'
 
 import { isJunk } from '../helpers/junk'
 
+import { readCopies, untouched, itemKey } from './copies'
+import type { CopyRecord } from './copies'
+
 
 const IGNORED_RE = /(~|-jostraca-off)$/
 
@@ -97,8 +100,39 @@ type DoctorReport = {
   // it is what an alias is FOR.
   aliasedDiff: string[]
 
+  // Differs from its source, but the copy record shows it untouched since an
+  // add wrote it: the source moved on, so refreshing it discards nothing.
+  outdated: string[]
+
+  // The forked and edited findings the copy record has no entry for, so
+  // nothing shows whether the project changed them.
+  unrecorded: string[]
+
+  // Per item with findings, keyed `<kind>/<name>`.
+  byItem: Record<string, ItemDrift>
+
   ok: boolean
 }
+
+
+type ItemDrift = {
+  // The package the item resolves to now, which is what refreshes it.
+  package?: string
+
+  // The version its copies came from, and the version installed now.
+  from?: string
+  to?: string
+
+  outdated: number
+
+  // Forked, edited, missing and stale files.
+  changed: number
+}
+
+
+type Category = 'forked' | 'edited' | 'missing' | 'stale'
+
+type Found = (category: Category, label: string) => void
 
 
 const CMD_MAP: any = {
@@ -243,8 +277,11 @@ async function doctor(
   const report: DoctorReport = {
     forked: [], edited: [], stale: [], missing: [], additive: [],
     superseded: [], unwired: [], orphanModel: [],
-    resyncPending: [], aliasedDiff: [], ok: true,
+    resyncPending: [], aliasedDiff: [],
+    outdated: [], unrecorded: [], byItem: {}, ok: true,
   }
+
+  const copies = readCopies(fs, root)
 
   report.superseded = supersededFiles(actx)
 
@@ -285,12 +322,14 @@ async function doctor(
         continue
       }
 
+      const found = noteDrift(actx, report, copies, kind, source)
+
       if ('target' === kind) {
-        checkTarget(actx, source, report, selected)
+        checkTarget(actx, source, report, found, selected)
       }
 
       if ('edition' === kind) {
-        checkEdition(actx, source, report)
+        checkEdition(actx, source, report, found)
       }
 
       // Only an ACTIVE feature has source copied out; an inactive one's
@@ -298,10 +337,10 @@ async function doctor(
       if ('feature' === kind &&
         (false !== (model as any)?.main?.[KIT]?.feature?.[name]?.active ||
           true === selected?.includes(name))) {
-        checkFeatureSource(actx, source, targets, report)
+        checkFeatureSource(actx, source, targets, found)
       }
 
-      checkItemModel(actx, kind, source, report)
+      checkItemModel(actx, kind, source, report, found)
     }
   }
 
@@ -316,7 +355,7 @@ async function doctor(
   // authoritative either way.
   report.ok = 0 === report.forked.length + report.edited.length +
     report.stale.length + report.missing.length + report.superseded.length +
-    report.orphanModel.length
+    report.orphanModel.length + report.outdated.length
 
   for (const [kind, note] of [
     ['forked', 'FORKED (will be reverted by `target add`)'],
@@ -329,9 +368,21 @@ async function doctor(
     ['orphanModel', 'ORPHAN MODEL FILE (on disk, included by nothing, read by nobody)'],
     ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
     ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
+    ['outdated', 'OUTDATED (unchanged since it was copied, but its source has moved on)'],
   ] as [keyof DoctorReport, string][]) {
     for (const file of (report[kind] as string[])) {
       log.info({ point: 'doctor-finding', kind, file, note: note + ': ' + file })
+    }
+  }
+
+  for (const item of Object.keys(report.byItem).sort()) {
+    const drift = report.byItem[item]
+    if (0 < drift.outdated) {
+      log.info({
+        point: 'doctor-outdated', item, ...drift,
+        note: outdatedNote(item, drift) + ' - `voxgig-sdkgen ' +
+          refreshCommand(item, drift.package) + '` refreshes them'
+      })
     }
   }
 
@@ -348,11 +399,13 @@ async function doctor(
     orphanModel: report.orphanModel.length,
     resyncPending: report.resyncPending.length,
     aliasedDiff: report.aliasedDiff.length,
+    outdated: report.outdated.length,
     note: report.ok ?
       ('.sdk matches the scaffold (' + report.additive.length + ' additive)') :
       ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
         report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
-        report.missing.length + ' missing')
+        report.missing.length + ' missing, ' + report.outdated.length +
+        ' outdated')
   })
 
   return { report }
@@ -412,7 +465,7 @@ function resolveDeclared(
 
 
 function checkTarget(
-  actx: ActionContext, resolved: Source, report: DoctorReport,
+  actx: ActionContext, resolved: Source, report: DoctorReport, found: Found,
   selected?: string[],
 ) {
   const tname = resolved.name
@@ -466,7 +519,7 @@ function checkTarget(
     { log: quietLog(actx.log), fs: () => fs, folder: root, model },
     tfolder, torigname, tname, features)
 
-  compareTrees(actx, report, trees, {
+  compareTrees(actx, report, found, trees, {
     excludes,
     foreign: (kind: string) => 'edited' === kind ?
       foreignFeatureSource(actx, resolved) : [],
@@ -477,6 +530,7 @@ function checkTarget(
 function compareTrees(
   actx: ActionContext,
   report: DoctorReport,
+  found: Found,
   trees: TreeCompare[],
   opts?: {
     excludes?: RegExp[],
@@ -518,7 +572,7 @@ function compareTrees(
 
     for (const rel of expected) {
       if (!actualSet.has(rel)) {
-        report.missing.push(label + rel)
+        found('missing', label + rel)
         continue
       }
 
@@ -535,7 +589,7 @@ function compareTrees(
 
       if (differs(fs, from, Path.join(tree.project, rel),
         model, tree.replace, undefined, tree.rewrite)) {
-        report[tree.kind].push(label + rel)
+        found(tree.kind, label + rel)
       }
     }
 
@@ -553,7 +607,7 @@ function compareTrees(
         report.additive.push(label + rel)
       }
       else {
-        report.stale.push(label + rel)
+        found('stale', label + rel)
       }
     }
   }
@@ -561,7 +615,7 @@ function compareTrees(
 
 
 function checkEdition(
-  actx: ActionContext, resolved: Source, report: DoctorReport,
+  actx: ActionContext, resolved: Source, report: DoctorReport, found: Found,
 ) {
   const fs = actx.fs()
   const root = actx.folder
@@ -593,7 +647,7 @@ function checkEdition(
     } as TreeCompare]
   })
 
-  compareTrees(actx, report, trees)
+  compareTrees(actx, report, found, trees)
 }
 
 
@@ -677,7 +731,7 @@ function checkFeatureSource(
   actx: ActionContext,
   feature: Source,
   targets: Map<string, Source>,
-  report: DoctorReport,
+  found: Found,
 ) {
   const fs = actx.fs()
   const root = actx.folder
@@ -689,14 +743,14 @@ function checkFeatureSource(
       const label = 'tm/' + tname + '/' + rel
 
       if (!fs.existsSync(project)) {
-        report.missing.push(label)
+        found('missing', label)
         continue
       }
 
       // The same map `feature add` copies with — see helpers/stdrep. A
       // different one here would report every substituted file as edited.
       if (differs(fs, from, project, model, templateReplacements(model, tname))) {
-        report.edited.push(label)
+        found('edited', label)
       }
     }
   }
@@ -705,6 +759,7 @@ function checkFeatureSource(
 
 function checkItemModel(
   actx: ActionContext, kind: string, source: Source, report: DoctorReport,
+  found: Found,
 ) {
   const name = source.name
   const origname = source.origname
@@ -723,7 +778,7 @@ function checkItemModel(
   const label = 'model/' + kind + '/' + Path.basename(project)
 
   if (!fs.existsSync(project)) {
-    report.missing.push(label)
+    found('missing', label)
     return
   }
 
@@ -746,7 +801,92 @@ function checkItemModel(
     return
   }
 
-  report.forked.push(label)
+  found('forked', label)
+}
+
+
+// Files every finding through one place: a forked or edited copy the record
+// shows untouched is outdated instead, and every item keeps a tally.
+function noteDrift(
+  actx: ActionContext, report: DoctorReport, copies: CopyRecord,
+  kind: string, source: Source,
+): Found {
+  const fs = actx.fs()
+  const item = itemKey(kind, source.name)
+  const copied = copies.items[item]
+
+  return (category: Category, label: string) => {
+    let into: Category | 'outdated' = category
+
+    if ('forked' === category || 'edited' === category) {
+      const same = untouched(fs, actx.folder, copies, label)
+
+      if (true === same) {
+        into = 'outdated'
+      }
+      else if (undefined === same) {
+        report.unrecorded.push(label)
+      }
+    }
+
+    report[into].push(label)
+
+    const drift = report.byItem[item] = report.byItem[item] ?? {
+      ...pkgOf(source.package ?? copied?.package),
+      ...(null == copied?.version ? {} : { from: copied.version }),
+      ...(null == source.version ? {} : { to: source.version }),
+      outdated: 0,
+      changed: 0,
+    }
+
+    if ('outdated' === into) {
+      drift.outdated++
+    }
+    else {
+      drift.changed++
+    }
+  }
+}
+
+
+function pkgOf(name?: string): { package?: string } {
+  return null == name ? {} : { package: name }
+}
+
+
+// The command that brings an item's copies up to the installed source. The
+// package form checks first and refuses to overwrite a local edit.
+function refreshCommand(item: string, pkg?: string): string {
+  if (null != pkg) {
+    return 'package update ' + pkg + ' --no-fetch'
+  }
+
+  const [kind, ...name] = item.split('/')
+  return kind + ' add ' + name.join('/')
+}
+
+
+function outdatedNote(item: string, drift: ItemDrift): string {
+  return item.replace('/', ' ') + ': ' + drift.outdated +
+    ' file(s) are unchanged copies' + sinceCopied(drift.package, [drift])
+}
+
+
+// Names both versions only when they differ: a source that changed under the
+// same version (a linked checkout, say) is still a source that moved on.
+function sinceCopied(pkg: string | undefined, drift: ItemDrift[]): string {
+  const froms = Array.from(new Set(drift.map((d: ItemDrift) => d.from)))
+  const to = drift[0].to
+  const from = 1 === froms.length ? froms[0] : undefined
+  const name = pkg ?? 'their source'
+
+  if (null != from && null != to && from !== to) {
+    return ' from ' + name + ' ' + from + ', but ' + name + ' ' + to +
+      ' is installed'
+  }
+
+  return ', but ' + name + (null == to ? '' : ' ' + to) +
+    ' has changed since they were copied'
 }
 
 
@@ -868,10 +1008,16 @@ function renderPair(
   const rawsrc = fs.readFileSync(scaffoldPath, 'utf8')
   const src = null == rewrite ? rawsrc : rewrite(rawsrc)
 
+  // git may rewrite line endings on checkout (core.autocrlf).
   return {
-    expected: template(src, model, { replace }),
-    actual: fs.readFileSync(projectPath, 'utf8'),
+    expected: lfEndings(template(src, model, { replace })),
+    actual: lfEndings(fs.readFileSync(projectPath, 'utf8')),
   }
+}
+
+
+function lfEndings(text: string): string {
+  return text.replace(/\r\n/g, '\n')
 }
 
 
@@ -883,12 +1029,92 @@ function quietLog(log: any): any {
 }
 
 
+function silentLog(): any {
+  const noop = () => { }
+  const silent: any = { info: noop, debug: noop, warn: noop, error: noop, trace: noop, fatal: noop }
+  silent.child = () => silent
+  return silent
+}
+
+
+// What `generate` checks before it reads the copies: the active items only,
+// and a warning per refresh command rather than a failure, since a
+// difference may be a deliberate edit.
+async function copyCheck(actx: ActionContext): Promise<string[]> {
+  const active = (kind: string, name: string) =>
+    false !== kindCollection(actx.model, kind)?.[name]?.active
+
+  const res: any = await doctor({ ...actx, log: silentLog() }, active)
+
+  return copyWarnings(res.report)
+}
+
+
+function copyWarnings(report: DoctorReport): string[] {
+  const groups = new Map<string, { items: string[], files: number, drift: ItemDrift[] }>()
+
+  const add = (key: string, item: string, files: number, drift: ItemDrift) => {
+    const group = groups.get(key) ?? { items: [], files: 0, drift: [] }
+    group.items.push(item.replace('/', ' '))
+    group.files += files
+    group.drift.push(drift)
+    groups.set(key, group)
+  }
+
+  for (const item of Object.keys(report.byItem).sort()) {
+    const drift = report.byItem[item]
+    const command = refreshCommand(item, drift.package)
+
+    if (0 < drift.outdated) {
+      add('outdated\n' + command, item, drift.outdated, drift)
+    }
+
+    if (0 < drift.changed) {
+      add('changed\n' + command, item, drift.changed, drift)
+    }
+  }
+
+  const lines: string[] = []
+
+  for (const [key, group] of groups) {
+    const [what, command] = key.split('\n')
+    const pkg = group.drift[0].package
+    const to = group.drift[0].to
+    const installed = null == pkg ? 'their source' :
+      (pkg + (null == to ? '' : ' ' + to))
+    const refresh = '`npx voxgig-sdkgen ' + command + '`'
+
+    if ('outdated' === what) {
+      lines.push(group.items.join(', ') + ': ' + group.files +
+        ' file(s) in .sdk are unchanged copies' +
+        sinceCopied(pkg, group.drift) + ', so this run generates from ' +
+        'older templates. Run ' + refresh + ' to refresh them.')
+    }
+    else {
+      lines.push(group.items.join(', ') + ': ' + group.files +
+        ' file(s) in .sdk differ from what ' + installed + ' installs: ' +
+        'changed in this project, or copied before sdkgen recorded its ' +
+        'copies. `npx voxgig-sdkgen doctor` lists them; ' + refresh +
+        ' refreshes them' +
+        (null == pkg ? ', discarding any local edit.' :
+          ', and refuses before it overwrites a local edit.'))
+    }
+  }
+
+  return lines
+}
+
+
 export type {
   DoctorReport,
   DoctorScope,
+  ItemDrift,
 }
 
 export {
   action_doctor,
   doctor,
+  copyCheck,
+  copyWarnings,
+  refreshCommand,
 }

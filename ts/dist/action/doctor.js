@@ -5,6 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.action_doctor = action_doctor;
 exports.doctor = doctor;
+exports.copyCheck = copyCheck;
+exports.copyWarnings = copyWarnings;
+exports.refreshCommand = refreshCommand;
 const kindCollection_1 = require("../helpers/kindCollection");
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
@@ -17,6 +20,7 @@ const resolve_1 = require("./resolve");
 const definition_1 = require("../helpers/definition");
 const featureSource_1 = require("../helpers/featureSource");
 const junk_1 = require("../helpers/junk");
+const copies_1 = require("./copies");
 const IGNORED_RE = /(~|-jostraca-off)$/;
 function ignoredEntry(name) {
     return IGNORED_RE.test(name) || (0, junk_1.isJunk)(name);
@@ -134,8 +138,10 @@ async function doctor(actx, scope, selected) {
     const report = {
         forked: [], edited: [], stale: [], missing: [], additive: [],
         superseded: [], unwired: [], orphanModel: [],
-        resyncPending: [], aliasedDiff: [], ok: true,
+        resyncPending: [], aliasedDiff: [],
+        outdated: [], unrecorded: [], byItem: {}, ok: true,
     };
+    const copies = (0, copies_1.readCopies)(fs, root);
     report.superseded = supersededFiles(actx);
     report.orphanModel = orphanModelFiles(actx);
     const kinds = Object.keys(kind_1.KINDS).sort();
@@ -162,20 +168,21 @@ async function doctor(actx, scope, selected) {
             if (null == source) {
                 continue;
             }
+            const found = noteDrift(actx, report, copies, kind, source);
             if ('target' === kind) {
-                checkTarget(actx, source, report, selected);
+                checkTarget(actx, source, report, found, selected);
             }
             if ('edition' === kind) {
-                checkEdition(actx, source, report);
+                checkEdition(actx, source, report, found);
             }
             // Only an ACTIVE feature has source copied out; an inactive one's
             // leftovers are stale. `selected` overrides that for the caller's own.
             if ('feature' === kind &&
                 (false !== model?.main?.[types_1.KIT]?.feature?.[name]?.active ||
                     true === selected?.includes(name))) {
-                checkFeatureSource(actx, source, targets, report);
+                checkFeatureSource(actx, source, targets, found);
             }
-            checkItemModel(actx, kind, source, report);
+            checkItemModel(actx, kind, source, report, found);
         }
     }
     if (null == scope) {
@@ -188,7 +195,7 @@ async function doctor(actx, scope, selected) {
     // authoritative either way.
     report.ok = 0 === report.forked.length + report.edited.length +
         report.stale.length + report.missing.length + report.superseded.length +
-        report.orphanModel.length;
+        report.orphanModel.length + report.outdated.length;
     for (const [kind, note] of [
         ['forked', 'FORKED (will be reverted by `target add`)'],
         ['edited', 'EDITED template master'],
@@ -200,9 +207,20 @@ async function doctor(actx, scope, selected) {
         ['orphanModel', 'ORPHAN MODEL FILE (on disk, included by nothing, read by nobody)'],
         ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
         ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
+        ['outdated', 'OUTDATED (unchanged since it was copied, but its source has moved on)'],
     ]) {
         for (const file of report[kind]) {
             log.info({ point: 'doctor-finding', kind, file, note: note + ': ' + file });
+        }
+    }
+    for (const item of Object.keys(report.byItem).sort()) {
+        const drift = report.byItem[item];
+        if (0 < drift.outdated) {
+            log.info({
+                point: 'doctor-outdated', item, ...drift,
+                note: outdatedNote(item, drift) + ' - `voxgig-sdkgen ' +
+                    refreshCommand(item, drift.package) + '` refreshes them'
+            });
         }
     }
     log.info({
@@ -218,11 +236,13 @@ async function doctor(actx, scope, selected) {
         orphanModel: report.orphanModel.length,
         resyncPending: report.resyncPending.length,
         aliasedDiff: report.aliasedDiff.length,
+        outdated: report.outdated.length,
         note: report.ok ?
             ('.sdk matches the scaffold (' + report.additive.length + ' additive)') :
             ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
                 report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
-                report.missing.length + ' missing')
+                report.missing.length + ' missing, ' + report.outdated.length +
+                ' outdated')
     });
     return { report };
 }
@@ -266,7 +286,7 @@ function resolveDeclared(kind, name, actx) {
         return undefined;
     }
 }
-function checkTarget(actx, resolved, report, selected) {
+function checkTarget(actx, resolved, report, found, selected) {
     const tname = resolved.name;
     const tfolder = resolved.folder;
     const torigname = resolved.origname;
@@ -309,13 +329,13 @@ function checkTarget(actx, resolved, report, selected) {
     // different trim from the one `target add` applied and report correctly
     // trimmed files as missing.
     const excludes = (0, target_1.trimFeatures)({ log: quietLog(actx.log), fs: () => fs, folder: root, model }, tfolder, torigname, tname, features);
-    compareTrees(actx, report, trees, {
+    compareTrees(actx, report, found, trees, {
         excludes,
         foreign: (kind) => 'edited' === kind ?
             foreignFeatureSource(actx, resolved) : [],
     });
 }
-function compareTrees(actx, report, trees, opts) {
+function compareTrees(actx, report, found, trees, opts) {
     const fs = actx.fs();
     const model = actx.model;
     const root = actx.folder;
@@ -342,7 +362,7 @@ function compareTrees(actx, report, trees, opts) {
         const actualSet = new Set(actual);
         for (const rel of expected) {
             if (!actualSet.has(rel)) {
-                report.missing.push(label + rel);
+                found('missing', label + rel);
                 continue;
             }
             // A foreign feature's file is EXPECTED here (so it is not stale) but
@@ -355,7 +375,7 @@ function compareTrees(actx, report, trees, opts) {
             }
             const from = landed.get(rel);
             if (differs(fs, from, node_path_1.default.join(tree.project, rel), model, tree.replace, undefined, tree.rewrite)) {
-                report[tree.kind].push(label + rel);
+                found(tree.kind, label + rel);
             }
         }
         for (const rel of actual) {
@@ -371,12 +391,12 @@ function compareTrees(actx, report, trees, opts) {
                 report.additive.push(label + rel);
             }
             else {
-                report.stale.push(label + rel);
+                found('stale', label + rel);
             }
         }
     }
 }
-function checkEdition(actx, resolved, report) {
+function checkEdition(actx, resolved, report, found) {
     const fs = actx.fs();
     const root = actx.folder;
     const name = resolved.name;
@@ -401,7 +421,7 @@ function checkEdition(actx, resolved, report) {
                     (src) => (0, target_1.aliasCmpText)(src, origname, name) : undefined,
             }];
     });
-    compareTrees(actx, report, trees);
+    compareTrees(actx, report, found, trees);
 }
 function foreignFeatureSource(actx, target) {
     const out = new Map();
@@ -445,7 +465,7 @@ function overlayFiles(actx, feature, target) {
     }
     return out;
 }
-function checkFeatureSource(actx, feature, targets, report) {
+function checkFeatureSource(actx, feature, targets, found) {
     const fs = actx.fs();
     const root = actx.folder;
     const model = actx.model;
@@ -454,18 +474,18 @@ function checkFeatureSource(actx, feature, targets, report) {
             const project = node_path_1.default.join(root, 'tm', tname, rel);
             const label = 'tm/' + tname + '/' + rel;
             if (!fs.existsSync(project)) {
-                report.missing.push(label);
+                found('missing', label);
                 continue;
             }
             // The same map `feature add` copies with — see helpers/stdrep. A
             // different one here would report every substituted file as edited.
             if (differs(fs, from, project, model, (0, stdrep_1.templateReplacements)(model, tname))) {
-                report.edited.push(label);
+                found('edited', label);
             }
         }
     }
 }
-function checkItemModel(actx, kind, source, report) {
+function checkItemModel(actx, kind, source, report, found) {
     const name = source.name;
     const origname = source.origname;
     const base = source.base;
@@ -478,7 +498,7 @@ function checkItemModel(actx, kind, source, report) {
     const project = (0, definition_1.definitionPath)(actx.folder, kind, name);
     const label = 'model/' + kind + '/' + node_path_1.default.basename(project);
     if (!fs.existsSync(project)) {
-        report.missing.push(label);
+        found('missing', label);
         return;
     }
     const provenance = (0, stdrep_1.provenanceReplace)({ base, origname, name, package: source.package });
@@ -494,7 +514,70 @@ function checkItemModel(actx, kind, source, report) {
         report.resyncPending.push(label);
         return;
     }
-    report.forked.push(label);
+    found('forked', label);
+}
+// Files every finding through one place: a forked or edited copy the record
+// shows untouched is outdated instead, and every item keeps a tally.
+function noteDrift(actx, report, copies, kind, source) {
+    const fs = actx.fs();
+    const item = (0, copies_1.itemKey)(kind, source.name);
+    const copied = copies.items[item];
+    return (category, label) => {
+        let into = category;
+        if ('forked' === category || 'edited' === category) {
+            const same = (0, copies_1.untouched)(fs, actx.folder, copies, label);
+            if (true === same) {
+                into = 'outdated';
+            }
+            else if (undefined === same) {
+                report.unrecorded.push(label);
+            }
+        }
+        report[into].push(label);
+        const drift = report.byItem[item] = report.byItem[item] ?? {
+            ...pkgOf(source.package ?? copied?.package),
+            ...(null == copied?.version ? {} : { from: copied.version }),
+            ...(null == source.version ? {} : { to: source.version }),
+            outdated: 0,
+            changed: 0,
+        };
+        if ('outdated' === into) {
+            drift.outdated++;
+        }
+        else {
+            drift.changed++;
+        }
+    };
+}
+function pkgOf(name) {
+    return null == name ? {} : { package: name };
+}
+// The command that brings an item's copies up to the installed source. The
+// package form checks first and refuses to overwrite a local edit.
+function refreshCommand(item, pkg) {
+    if (null != pkg) {
+        return 'package update ' + pkg + ' --no-fetch';
+    }
+    const [kind, ...name] = item.split('/');
+    return kind + ' add ' + name.join('/');
+}
+function outdatedNote(item, drift) {
+    return item.replace('/', ' ') + ': ' + drift.outdated +
+        ' file(s) are unchanged copies' + sinceCopied(drift.package, [drift]);
+}
+// Names both versions only when they differ: a source that changed under the
+// same version (a linked checkout, say) is still a source that moved on.
+function sinceCopied(pkg, drift) {
+    const froms = Array.from(new Set(drift.map((d) => d.from)));
+    const to = drift[0].to;
+    const from = 1 === froms.length ? froms[0] : undefined;
+    const name = pkg ?? 'their source';
+    if (null != from && null != to && from !== to) {
+        return ' from ' + name + ' ' + from + ', but ' + name + ' ' + to +
+            ' is installed';
+    }
+    return ', but ' + name + (null == to ? '' : ' ' + to) +
+        ' has changed since they were copied';
 }
 function stampOnly(fs, scaffoldPath, projectPath, model, provenance, rewrite) {
     const { expected, actual } = renderPair(fs, scaffoldPath, projectPath, model, provenance, rewrite);
@@ -573,15 +656,78 @@ function differs(fs, scaffoldPath, projectPath, model, replace, ignore, rewrite)
 function renderPair(fs, scaffoldPath, projectPath, model, replace, rewrite) {
     const rawsrc = fs.readFileSync(scaffoldPath, 'utf8');
     const src = null == rewrite ? rawsrc : rewrite(rawsrc);
+    // git may rewrite line endings on checkout (core.autocrlf).
     return {
-        expected: (0, jostraca_1.template)(src, model, { replace }),
-        actual: fs.readFileSync(projectPath, 'utf8'),
+        expected: lfEndings((0, jostraca_1.template)(src, model, { replace })),
+        actual: lfEndings(fs.readFileSync(projectPath, 'utf8')),
     };
+}
+function lfEndings(text) {
+    return text.replace(/\r\n/g, '\n');
 }
 function quietLog(log) {
     const noop = () => { };
     const quiet = { info: noop, debug: noop, warn: log.warn.bind(log), error: noop, trace: noop, fatal: noop };
     quiet.child = () => quiet;
     return quiet;
+}
+function silentLog() {
+    const noop = () => { };
+    const silent = { info: noop, debug: noop, warn: noop, error: noop, trace: noop, fatal: noop };
+    silent.child = () => silent;
+    return silent;
+}
+// What `generate` checks before it reads the copies: the active items only,
+// and a warning per refresh command rather than a failure, since a
+// difference may be a deliberate edit.
+async function copyCheck(actx) {
+    const active = (kind, name) => false !== (0, kindCollection_1.kindCollection)(actx.model, kind)?.[name]?.active;
+    const res = await doctor({ ...actx, log: silentLog() }, active);
+    return copyWarnings(res.report);
+}
+function copyWarnings(report) {
+    const groups = new Map();
+    const add = (key, item, files, drift) => {
+        const group = groups.get(key) ?? { items: [], files: 0, drift: [] };
+        group.items.push(item.replace('/', ' '));
+        group.files += files;
+        group.drift.push(drift);
+        groups.set(key, group);
+    };
+    for (const item of Object.keys(report.byItem).sort()) {
+        const drift = report.byItem[item];
+        const command = refreshCommand(item, drift.package);
+        if (0 < drift.outdated) {
+            add('outdated\n' + command, item, drift.outdated, drift);
+        }
+        if (0 < drift.changed) {
+            add('changed\n' + command, item, drift.changed, drift);
+        }
+    }
+    const lines = [];
+    for (const [key, group] of groups) {
+        const [what, command] = key.split('\n');
+        const pkg = group.drift[0].package;
+        const to = group.drift[0].to;
+        const installed = null == pkg ? 'their source' :
+            (pkg + (null == to ? '' : ' ' + to));
+        const refresh = '`npx voxgig-sdkgen ' + command + '`';
+        if ('outdated' === what) {
+            lines.push(group.items.join(', ') + ': ' + group.files +
+                ' file(s) in .sdk are unchanged copies' +
+                sinceCopied(pkg, group.drift) + ', so this run generates from ' +
+                'older templates. Run ' + refresh + ' to refresh them.');
+        }
+        else {
+            lines.push(group.items.join(', ') + ': ' + group.files +
+                ' file(s) in .sdk differ from what ' + installed + ' installs: ' +
+                'changed in this project, or copied before sdkgen recorded its ' +
+                'copies. `npx voxgig-sdkgen doctor` lists them; ' + refresh +
+                ' refreshes them' +
+                (null == pkg ? ', discarding any local edit.' :
+                    ', and refuses before it overwrites a local edit.'));
+        }
+    }
+    return lines;
 }
 //# sourceMappingURL=doctor.js.map

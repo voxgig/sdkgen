@@ -40,7 +40,7 @@ includes.
 | `--only <items>` | — | string | everything | `package add` only: install a subset, as `<kind>:<name>` entries. |
 | `--alias <map>` | — | string | — | `package add` only: install under different names, as `<name>=<alias>` entries. |
 | `--force` | — | flag | off | `package update`: overwrite locally-changed files, listing what it discarded. `<kind> remove`: delete forked, edited, stale and project-owned files too. |
-| `--no-fetch` | — | flag | off | `package update` only: skip the fetch and use the source already installed. |
+| `--no-fetch` | — | flag | off | `package update` only: skip the fetch and use the source already installed, which is how to refresh the copies after updating a package with `npm`. |
 | `--delete-output` | — | flag | off | `target remove` only: also delete the generated output directory beside `.sdk/`. |
 
 `--only` and `--alias` are arguments to one *command*, not generator
@@ -136,7 +136,7 @@ voxgig-sdkgen doctor
 It compares the three things `target add` owns and overwrites:
 `.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aontu`.
 
-Six categories:
+Seven categories:
 
 | Category | Meaning |
 | --- | --- |
@@ -144,10 +144,11 @@ Six categories:
 | **edited** | A template master in `.sdk/tm/**` differs — compared *after* applying the same substitutions `target add` applied, so placeholder replacement is not reported as an edit. |
 | **stale** | Present in the project, but `target add` would no longer write it. Orphaned output. |
 | **missing** | `target add` would write it and the project does not have it. |
+| **outdated** | Differs from its source, although the copy record shows the project has not touched it since an add wrote it: the generator or the package moved on and the copy was not refreshed. `package update <pkg> --no-fetch` refreshes it without `--force`. |
 | **additive** | A project-owned component the scaffold never shipped. Reported, never a failure — this is the supported way to extend a target (see `registerComponent`). |
 | **unwired** | A root-level component this sdkgen provides that the project's `src/*.ts` wiring never calls. Informational: opting out is legitimate. |
 
-The first four fail the check. A plain `diff -r` against the scaffold cannot
+The first five fail the check. A plain `diff -r` against the scaffold cannot
 do this job: `target add` writes template masters with substitution partly
 applied and inconsistently, so most of what a naive diff reports is not an
 edit at all.
@@ -159,6 +160,25 @@ editing that file is how an alias is differentiated in the first place.
 A model file installed from a source that still ships `<name>.aon` is
 compared after the same include renaming `add` applied, so the renaming
 alone is never reported as drift.
+
+Line endings are not compared either. git may rewrite them on checkout
+(`core.autocrlf`), so a copy checked out with CRLF is still the copy `add`
+wrote.
+
+#### The copy record
+
+Every add writes `.sdk/sdkgen-copies.json`: a fingerprint of each file it
+copied, and the version of the package each item came from. Commit it.
+`doctor` reads it to tell an **outdated** copy from a **forked** or
+**edited** one: refreshing an outdated copy loses nothing, while refreshing
+a forked or edited one discards a change. A project from before the record
+gets one at its next add. Until then a difference is reported as forked or
+edited, as it always was.
+
+`npm run generate` runs the same comparison over the items it is about to
+read, before it writes anything, and prints one warning per refresh
+command. It never fails the build, since a difference may be a deliberate
+edit.
 
 ### `feature add <name>[,<name>...]`
 
@@ -381,21 +401,29 @@ What it refreshes is what the **project installed**, read from recorded
 provenance — which may be a subset (`--only`) or carry aliases the
 package never mentions.
 
-`--force` overwrites locally-changed files, listing what it discarded.
-Without it, the refusal states both readings, because nothing recorded in
-the project distinguishes them:
+The [copy record](#the-copy-record) settles most of what the check finds.
+A copy the project has not touched since it was written is outdated, and
+the update refreshes it without asking. A copy the record shows was changed
+is a local edit, and the update stops and names it. `--force` overwrites
+locally-changed files, listing what it discarded.
+
+Only a copy from before the record existed is ambiguous, and for those the
+refusal states both readings:
 
 ```
 @acme/sdkgen-iot: 1 file(s) differ from the installed source, so updating
 would overwrite them:
   model/target/iot-go.aontu
 
-  This means one of two things, and nothing recorded in the project tells
-  them apart:
+  1 of them predate sdkgen-copies.json, so nothing tells these two apart:
     - they are LOCAL EDITS, and `--force` will discard them;
     - or @acme/sdkgen-iot was already updated out of band (an `npm update`
       in another shell), in which case they are merely STALE and nothing
       is at risk.
+  If you updated it and changed nothing, --force is safe. To check first,
+  reinstall the version you had and re-run this command.
+
+  Copy anything you want to keep into .sdk/model/, then re-run with --force.
 ```
 
 An **aliased item's model file is never rewritten** — that file is where
@@ -405,7 +433,8 @@ can be ported by hand rather than silently never applied.
 
 `--no-fetch` uses the source already installed. It is not the default,
 because then the command would only re-apply the source it already has,
-which is `package add`.
+which is `package add`. It is the command `generate` suggests after a
+package was updated with `npm`.
 
 A failed fetch leaves the project untouched: nothing is overwritten
 before step 3.

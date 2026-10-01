@@ -10,6 +10,7 @@ import {
   package_add, package_update, action_package, npmFetchArgs,
 } from '../dist/action/package.js'
 import { ACTION_MAP, actionNames } from '../dist/action/dispatch.js'
+import { COPIES } from '../dist/action/copies.js'
 import {
   SCAFFOLD, SCAFFOLD_BASE, ROOT, makeProject, recordLog, targetRef,
   target_add, feature_add,
@@ -898,10 +899,31 @@ describe('package update', () => {
 
 
   test('the refusal states BOTH readings, with an out for each', async () => {
-    // It cannot prove which applies: nothing recorded distinguishes a local
+    // A project from before the copy record: nothing distinguishes a local
     // edit from a copy that is merely stale because the source was updated
     // out of band. Asserting a fork it cannot diagnose would be worse than
     // saying so.
+    const pkg = makePackage()
+    try {
+      const project = await installed(pkg)
+      project.actx.fetchPackage = async () => { }
+      project.actx.flags = {}
+      project.fs.unlinkSync(Path.join(ROOT, COPIES))
+
+      const path = Path.join(ROOT, 'model/target/iotgo.aontu')
+      project.fs.writeFileSync(path,
+        String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
+
+      await rejects(() => package_update(['@acme/sdkgen-iot'], project.actx),
+        /LOCAL EDITS[\s\S]*out of band[\s\S]*STALE[\s\S]*--force/)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+  })
+
+
+  test('with the copy record, a local edit is named as one', async () => {
     const pkg = makePackage()
     try {
       const project = await installed(pkg)
@@ -913,7 +935,8 @@ describe('package update', () => {
         String(project.fs.readFileSync(path, 'utf8')) + '\n# hand edit\n')
 
       await rejects(() => package_update(['@acme/sdkgen-iot'], project.actx),
-        /LOCAL EDITS[\s\S]*out of band[\s\S]*STALE[\s\S]*--force/)
+        (err: any) => /changed in this project after an add wrote them/
+          .test(err.message) && !/out of band/.test(err.message))
     }
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })

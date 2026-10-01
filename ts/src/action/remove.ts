@@ -29,6 +29,8 @@ import { removeIndexEntries } from './action'
 
 import { doctor } from './doctor'
 
+import { forgetCopies } from './copies'
+
 
 // Everything one `remove` would touch, decided before anything is written.
 type RemovePlan = {
@@ -121,6 +123,8 @@ async function kind_remove(
     }
 
     removed.push(...applyRemove(plan, actx, dryrun))
+
+    forgetCopies(actx, kind, plan.name)
   }
 
   log.info({

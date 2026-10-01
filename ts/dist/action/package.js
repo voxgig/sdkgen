@@ -22,6 +22,7 @@ const semver_1 = require("../helpers/semver");
 const kind_1 = require("./kind");
 const check_1 = require("./check");
 const doctor_1 = require("./doctor");
+const copies_1 = require("./copies");
 const resolve_1 = require("./resolve");
 const CMD_MAP = Object.assign(Object.create(null), {
     add: cmd_package_add,
@@ -420,6 +421,15 @@ async function preCheck(pkgname, installed, actx) {
     const wanted = blastRadius(installed, actx);
     const res = await (0, doctor_1.doctor)(actx, (kind, name) => wanted.has(kind + ':' + name));
     const report = res.report;
+    // Unchanged since an add wrote them, so refreshing them loses nothing.
+    if (0 < report.outdated.length) {
+        actx.log.info({
+            point: 'package-update-outdated', package: pkgname,
+            files: report.outdated.length,
+            note: pkgname + ': ' + report.outdated.length + ' outdated file(s) ' +
+                'will be refreshed; ' + copies_1.COPIES + ' shows nothing in them was changed'
+        });
+    }
     const changed = [...report.forked, ...report.edited];
     if (0 === changed.length) {
         return;
@@ -432,18 +442,26 @@ async function preCheck(pkgname, installed, actx) {
         });
         return;
     }
+    const unrecorded = new Set(report.unrecorded);
+    const edited = changed.filter((file) => !unrecorded.has(file));
+    const unknown = changed.filter((file) => unrecorded.has(file));
     throw new utility_1.SdkGenError(pkgname + ': ' + changed.length + ' file(s) differ from the installed ' +
         'source, so updating would overwrite them:\n  ' + changed.join('\n  ') +
-        '\n\n  This means one of two things, and nothing recorded in the project ' +
-        'tells them apart:' +
-        '\n    - they are LOCAL EDITS, and `--force` will discard them;' +
-        '\n    - or ' + pkgname + ' was already updated out of band (an ' +
-        '`npm update` in another shell), in which case they are merely STALE ' +
-        'and nothing is at risk.' +
-        '\n\n  If you did not update it: copy anything you want to keep into ' +
-        '.sdk/model/, then re-run with --force.' +
-        '\n  If you did: reinstall the version you had, re-run this command, ' +
-        'and it will check against the right source.');
+        (0 === edited.length ? '' :
+            '\n\n  ' + edited.length + ' of them changed in this project after ' +
+                'an add wrote them (' + copies_1.COPIES + ' records what it wrote), so updating ' +
+                'would discard those edits.') +
+        (0 === unknown.length ? '' :
+            '\n\n  ' + unknown.length + ' of them predate ' + copies_1.COPIES + ', so ' +
+                'nothing tells these two apart:' +
+                '\n    - they are LOCAL EDITS, and `--force` will discard them;' +
+                '\n    - or ' + pkgname + ' was already updated out of band (an ' +
+                '`npm update` in another shell), in which case they are merely STALE ' +
+                'and nothing is at risk.' +
+                '\n  If you updated it and changed nothing, --force is safe. To check ' +
+                'first, reinstall the version you had and re-run this command.') +
+        '\n\n  Copy anything you want to keep into .sdk/model/, then re-run ' +
+        'with --force.');
 }
 async function fetchPackage(pkgname, installed, actx) {
     const flags = actx.flags ?? {};

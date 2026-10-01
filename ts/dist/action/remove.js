@@ -17,6 +17,7 @@ const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
 const action_1 = require("./action");
 const doctor_1 = require("./doctor");
+const copies_1 = require("./copies");
 async function kind_remove(kind, names, actx) {
     const log = actx.log;
     const dryrun = !!actx.opts?.dryrun;
@@ -63,6 +64,7 @@ async function kind_remove(kind, names, actx) {
             log.warn({ point: 'remove-note', kind, [kind]: plan.name, note });
         }
         removed.push(...applyRemove(plan, actx, dryrun));
+        (0, copies_1.forgetCopies)(actx, kind, plan.name);
     }
     log.info({
         point: 'remove-end', kind, names, count: removed.length,
