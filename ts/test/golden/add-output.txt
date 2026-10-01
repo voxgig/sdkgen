@@ -850,9 +850,9 @@ tm/js/src/utility/Utility.js e127745be793
 tm/js/test/README.md e621bcce9282
 tm/js/test/definition-runner.js b6abc076556a
 tm/js/test/exists.test.js ba7655664d5c
-tm/js/test/feature.test.js fdf33f5b6f74
+tm/js/test/feature.test.js 89f0f47aa9a9
 tm/js/test/feature/Corpus.test.js 660f9dc0a2d3
-tm/js/test/feature/harness.js ec64607a8bb4
+tm/js/test/feature/harness.js b78f40cfbc50
 tm/js/test/live-contract.js 07a8529d19cf
 tm/js/test/live-entity.js f10261248a5b
 tm/js/test/live-runner.js 5956b8798cde
@@ -2067,9 +2067,9 @@ tm/ts/src/utility/Utility.ts 287130464808
 tm/ts/test/README.md 087d364e7b4f
 tm/ts/test/definition-runner.ts 6cff06d585ea
 tm/ts/test/exists.test.ts 0b0e94cf2d76
-tm/ts/test/feature.test.ts 430dfcb28c46
+tm/ts/test/feature.test.ts bcc8fb9538f5
 tm/ts/test/feature/Corpus.test.ts c2778c773852
-tm/ts/test/feature/harness.ts 1eb7465da345
+tm/ts/test/feature/harness.ts c92635b43d4f
 tm/ts/test/live-contract.ts 82fd421e40a1
 tm/ts/test/live-entity.ts 2bf74bbdedf2
 tm/ts/test/live-runner.ts 5ad89ea5290f

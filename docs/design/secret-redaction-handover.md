@@ -8,9 +8,12 @@ work. The design is ADR-003 in ADR.md and
 
 | Repo | PR | Branch | State |
 | --- | --- | --- | --- |
-| voxgig/sdkgen | #229 | `claude/amazing-goodall-33f6ox` | Rounds 1 to 4 in all 20 bundled targets. All seven Codex threads answered and resolved. |
-| voxgig/sdkgen-langpack | #24 | same | Rounds 2 to 4 compiled and run for dart, haskell and lean; the eight Codex findings fixed, answered and resolved. |
-| voxgig/sdkgen-infrapack | #28 | same | Round 1 (0f5737a), green; nothing outstanding. |
+| voxgig/sdkgen | #229 | `claude/amazing-goodall-33f6ox` | Merged as f0b7fd07. Rounds 1 to 4 in all 20 bundled targets. |
+| voxgig/sdkgen-langpack | #24 | same | Merged as a37f3fd. Rounds 2 to 4 compiled and run for dart, haskell and lean. |
+| voxgig/sdkgen-infrapack | #28 | same | Merged as 464ae53. |
+
+None of the three is released yet: each repository's latest release predates
+its merge.
 
 ## What the second session did
 
@@ -119,6 +122,40 @@ operation's catch path; a throwing custom `system.fetch` leaves haskell's
 leaves `data` unset, as ts does; dart needed all three explain fixes and lean
 the in-place one.
 
+## Validation after the merge
+
+- **The merged trees** are identical to the PR heads that were tested. On
+  sdkgen's merged main the full `npm test` passes (1816 tests, 0 fail, the
+  five swift lanes skipped) and CI is green on all three platforms. The
+  langpack and infrapack suites pass on their merged mains; dart, haskell and
+  lean regenerated from the merged mains match their pre-merge results; and
+  the infrapack's canary test, linked to the merged sdkgen, runs and passes.
+- **Every target's whole generated suite was compared** before the merge
+  (982ce560, the published 4.32.1) and after it, generated through a
+  create-sdkgen-shaped consumer and run with each SDK's own declared
+  dependencies, and again with every feature for the targets whose
+  cross-feature suite needs that.
+- **One regression:** the offline harness a generated ts or js SDK ships
+  gave the features a utility with no `clean`, which the audit, debug, proxy
+  and telemetry features now call, so 18 ts and 10 js feature tests failed.
+  Fixed in 92fd74ca, with a lane that runs that suite. Every other target
+  fails exactly what it failed before the merge, plus the new clean suite,
+  which passes everywhere.
+- **Across the tool chain, on 1 October 2026,** all on Node 24.21.0: this
+  branch's full sdkgen gate passes (1818 tests, 0 failures, the five swift
+  lanes skipped); apidef main passes `make all`; docgen main passes 58/58,
+  both on its locked sdkgen and linked to this branch; apidef-validate's
+  gates and both corpora pass; sdkgen-validate's full run with this
+  branch's `ts/` linked gives 14/14 specs and 98/98 generated suites; and
+  docgen-validate passes 5/5 SDKs, 17/17 checks each, on the published
+  tools and on this branch alike, once its driver switches the GitHub
+  Pages edition on (#262). Without that it reports 1/5. The documentation
+  this branch generates matches the published sdkgen's, word for word, by
+  the prose score's counts.
+- **The merge also fixed two pre-existing defects:** cpp's entity tests did
+  not compile, and an elixir SDK read garbage option specs on any run after
+  the one that compiled it.
+
 ## What is verified, and how
 
 ### In this container, on the integrated sdkgen head
@@ -159,44 +196,29 @@ skips on every platform because the runners have no pytest.
 
 ## What is left
 
-1. **CI coverage.** Installing pytest in `build.yml` would make CI run the py
-   sweep, and every other py lane with it, on all three platforms; lua with
-   busted and dkjson, zig, scala-cli, elixir and ocaml would cover the rest.
-   This container verified those; CI cannot. It is a CI cost decision.
-2. **Recorded, not fixed:** `entity.match()` returns a query-auth
-   credential. The explainer's Edges list says so.
-3. **PreUnexpected coverage in haskell and lean.** Both fire it only inside
-   makeError, so an error that bypasses makeError (a throwing hook, a
-   throwing fetch, a failing stream) fires no PreUnexpected at all. That is
-   a gap in what an observability feature sees, not a leak.
-4. **haskell, pre-existing:** an entity operation whose fetch throws fails
-   through `cleanUnexpected` (code `unexpected`, no operation-name prefix, no
-   retry) where ts carries the throw into `response.err`; `runOpPipeline`
-   rethrows under `throw: false`; `done()` runs before a feature's stream,
-   so a failed result that a feature streams raises, where ts's does not.
-5. **lua streams end silently** on a step error or a failed operation, where
-   ts raises; an rbac denial on a lua stream is swallowed the same way.
-6. **rbac rules** are keyed by `<entity>.<op>`, so for an entity whose name
-   contains a sensitive word, a rule's permission value is registered and
-   masked in diagnostics. Masking only; nothing leaks.
-7. **lean with a plugin group active** was not built: its link needs a
-   `link.rsp` that only `make ffi` writes, and the harness calls lake
-   directly.
-8. **Noticed, pre-existing:**
-   - `src/cmp/c/TestDirect_c.ts` reads a parameter's `.name` where the compact
-     params carry `.n` (go's reads `.n`), so c's `planet_direct_test` fails
-     one check; it fails on main too.
-   - `tm/rust/tests/vendor/omni/mod.rs` includes `../COMMENT-NOTES.md`, which
-     the generated tree does not ship, so rust's omni and corpus tests do not
-     compile.
-   - elixir warns about an unused `H` alias and `Config.feature_plugins/1`;
-     `src/cmp/py/fragment/SdkError.fragment.py` is unreferenced; the php
-     clean-off control test warns about a circular reference in
-     `var_export`; three lean checks (paging, streaming, one secrets exchange
-     check) fail on the langpack's main as well.
-   - The java, kotlin, scala, csharp and ocaml stream calls write `stream`
-     into the caller's own ctrl map, a self-cycle ts avoids by copying ctrl.
-     It leaks nothing.
+Every open item is an issue in voxgig/sdkgen, with the files, lines and
+evidence:
+
+| Issue | What |
+| --- | --- |
+| #245 | The ts and js generated feature suites fail on main; 92fd74ca on this branch fixes them |
+| #246 | php: an SDK that selects `validate` fails at load |
+| #247 | rust: two vendored files include a `COMMENT-NOTES.md` the scaffold does not ship |
+| #248 | Feature corpus: a case composing a feature the SDK lacks fails instead of skipping |
+| #249 | c: the direct-call test sends path parameters under `undefined` |
+| #250 | scala: the secrets suite's plugin table omits `minivault` |
+| #251 | Streams end silently on a failed operation in go, py, rb, php, lua and zig |
+| #252 | java, kotlin, scala, csharp, ocaml: `stream()` writes into the caller's ctrl map |
+| #253 | rbac rules for a sensitive-named entity register their permission values |
+| #254 | Decide whether `entity.match()` returns a query-placed credential |
+| #255 | Lanes that run each generated SDK's own test suite |
+| #256 | CI runs no lane for py, lua, zig, scala, clojure, elixir or ocaml |
+| #257 | Upgrading sdkgen does not refresh an existing project's `.sdk/tm` copies |
+| #258 | Hygiene: compiler warnings, dead code, the clojure test exit |
+| #259 | Packaged targets: langpack (haskell, lean, dart) and infrapack follow-ups |
+| #260 | php and lua: a thrown error fires no PreUnexpected; php ignores `throw: false` |
+| #261 | ts: a generated SDK does not build or test under TypeScript 7 |
+| #262 | docgen-validate does not switch the GitHub Pages edition on since docgen 0.30.0 |
 
 ## Deliberate per-target divergences reported by the ports
 

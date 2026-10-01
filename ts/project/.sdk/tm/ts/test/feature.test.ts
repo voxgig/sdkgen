@@ -518,6 +518,13 @@ describe('feature', () => {
       await h.op({ op: 'load' })
       strictEqual(rec.calls[0].fetchdef.proxy, undefined)
     })
+
+    test('masks the credentials in the URL it reports', async () => {
+      const h = makeClient({ features: [{ name: 'proxy', options: { url: 'http://pxuser:pxs3cret@proxy:8080' } }] })
+      await h.op({ op: 'load' })
+      strictEqual(h.client._proxy.url.includes('pxs3cret'), false)
+      strictEqual(h.client._proxy.url.includes('pxuser'), false)
+    })
   })
 
 

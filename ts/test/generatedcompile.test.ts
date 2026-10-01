@@ -4290,3 +4290,67 @@ describe('the canary sweep runs from a generated SDK', () => {
     }
   }
 })
+
+
+// The feature suite a generated SDK ships drives each present feature through
+// the SDK's own offline harness, which no other lane runs.
+const FEATURE_SUITE_LANES: { target: string, runner: string }[] = [
+  { target: 'ts', runner: Path.join('dist-test', 'feature.test.js') },
+  { target: 'js', runner: Path.join('test', 'feature.test.js') },
+]
+
+// The features that pass what they record through clean. Each must run a test,
+// or a generation that left one out would pass the lane.
+const FEATURE_SUITE_SUBJECTS = ['audit', 'debug', 'proxy', 'telemetry']
+
+// How many tests a TAP subtest block ran without skipping.
+function tapRan(out: string, name: string): number {
+  const lines = out.split('\n')
+  const start = lines.findIndex((l) => l.trim() === '# Subtest: ' + name)
+  if (start < 0) return 0
+  const indent = lines[start].search(/\S/)
+  let ran = 0
+  for (let i = start + 1; i < lines.length; i++) {
+    const at = lines[i].search(/\S/)
+    if (0 <= at && at <= indent) break
+    if (/^\s*ok \d+ - /.test(lines[i]) && !/# SKIP/.test(lines[i])) ran++
+  }
+  return ran
+}
+
+
+describe('the feature suite runs from a generated SDK', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-featuresuite-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of FEATURE_SUITE_LANES) {
+    test(lane.target + ': the generated feature suite passes', async (t) => {
+      const clean = CLEAN_LANES.find((l) => l.target === lane.target)!
+      if (null == clean.command()) {
+        return t.skip('no usable ' + lane.target + ' toolchain here (' + clean.needs + ')')
+      }
+      const sdkroot = Path.join(tmp, lane.target)
+      // netsim too: the audit test, and the failure-path tests, skip without it.
+      await generateTo(lane.target, sdkroot, undefined,
+        [...CLEAN_FEATURES, 'netsim', 'proxy', 'retry', 'timeout'])
+      const notready = null == clean.prepare ? null : clean.prepare(sdkroot)
+      ok(null == notready, lane.target + ': ' + notready)
+
+      const ran = run(process.execPath, ['--test', '--test-reporter=tap', lane.runner],
+        sdkroot, nestedTestEnv())
+      ok(ran.ok, 'the generated ' + lane.target + ' feature suite FAILED:\n' + tail(ran.out, 60))
+      for (const name of FEATURE_SUITE_SUBJECTS) {
+        ok(0 < tapRan(ran.out, name), lane.target + ': no ' + name +
+          ' test ran in the generated feature suite:\n' + tail(ran.out))
+      }
+    })
+  }
+})
