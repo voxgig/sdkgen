@@ -14,12 +14,15 @@ import {
 import { doctor, copyCheck } from '../dist/action/doctor.js'
 import { package_update } from '../dist/action/package.js'
 import { kind_remove } from '../dist/action/remove.js'
-import { COPIES, fingerprint, readCopies } from '../dist/action/copies.js'
+import { COPY_LOG, fingerprint, readCopies } from '../dist/action/copies.js'
 import { SdkGen, projectConst } from '../dist/sdkgen.js'
 
 
 const SHIPPED = JSON.parse(
   Fs.readFileSync(Path.join(PROJECT, 'sdkgen-package.json'), 'utf8'))
+
+// Where 4.34.0 kept the record, as one rewritten file.
+const LEGACY = 'sdkgen-copies.json'
 
 
 async function added(target = 'ts', opts: any = {}): Promise<any> {
@@ -44,6 +47,17 @@ function record(project: any): any {
 }
 
 
+function logText(project: any): string {
+  const path = ROOT + '/' + COPY_LOG
+  return project.fs.existsSync(path) ? String(project.fs.readFileSync(path, 'utf8')) : ''
+}
+
+
+function entries(project: any): any[] {
+  return logText(project).split('\n').filter(Boolean).map((line: string) => JSON.parse(line))
+}
+
+
 // What an older generator leaves behind: a file it wrote, recorded as it
 // wrote it, that the installed source now writes differently.
 function ageCopy(project: any, rel: string) {
@@ -51,11 +65,8 @@ function ageCopy(project: any, rel: string) {
   const older = String(project.fs.readFileSync(path, 'utf8')) +
     '\n// written by an older generator\n'
   project.fs.writeFileSync(path, older)
-
-  const copies = JSON.parse(String(project.fs.readFileSync(
-    ROOT + '/' + COPIES, 'utf8')))
-  copies.files[rel] = fingerprint(older)
-  project.fs.writeFileSync(ROOT + '/' + COPIES, JSON.stringify(copies))
+  project.fs.appendFileSync(ROOT + '/' + COPY_LOG,
+    JSON.stringify({ op: 'add', files: { [rel]: fingerprint(older) } }) + '\n')
 }
 
 
@@ -108,20 +119,54 @@ describe('the copy record', () => {
   })
 
 
-  test('is byte-stable, with sorted keys', async () => {
-    const one = String((await added('ts')).fs.readFileSync(ROOT + '/' + COPIES, 'utf8'))
-    const two = String((await added('ts')).fs.readFileSync(ROOT + '/' + COPIES, 'utf8'))
+  test('lives in .sdk/log, and an add writes nothing at the top of .sdk', async () => {
+    const project = await added('ts')
 
-    strictEqual(one, two)
+    strictEqual(COPY_LOG, 'log/copies.jsonl')
+    ok(project.fs.existsSync(ROOT + '/' + COPY_LOG))
+    deepStrictEqual(project.files().filter((rel: string) => !rel.includes('/')), [])
+  })
 
-    const files = Object.keys(JSON.parse(one).files)
-    deepStrictEqual(files, [...files].sort())
+
+  test('each line is one change, with sorted keys', async () => {
+    const project = await added('ts')
+    const lines = entries(project)
+
+    deepStrictEqual(lines.map((line: any) => [line.op, Object.keys(line.items)]), [
+      ['add', ['target/ts']],
+      ['add', ['feature/test']],
+    ])
+
+    for (const line of lines) {
+      ok(!Number.isNaN(Date.parse(line.at)), line.at)
+      const files = Object.keys(line.files)
+      deepStrictEqual(files, [...files].sort())
+    }
+  })
+
+
+  test('is append-only, and an add that changes nothing appends nothing', async () => {
+    const project = await added('ts')
+    const first = logText(project)
+
+    await target_add([targetRef('ts')], project.actx)
+    strictEqual(logText(project), first, 'a re-add of identical copies dirtied the log')
+
+    const rel = firstFile(project, 'tm/ts/')
+    ageCopy(project, rel)
+    const aged = logText(project)
+
+    await target_add([targetRef('ts')], project.actx)
+
+    ok(logText(project).startsWith(aged), 'an add rewrote earlier lines')
+    const last = entries(project).pop()
+    deepStrictEqual([last.op, last.items, Object.keys(last.files)], ['add', {}, [rel]])
   })
 
 
   test('a dry run records nothing', async () => {
     const project = await added('ts', { dryrun: true })
-    ok(!project.fs.existsSync(ROOT + '/' + COPIES))
+    ok(!project.fs.existsSync(ROOT + '/log'))
   })
 
 
@@ -135,6 +180,31 @@ describe('the copy record', () => {
     strictEqual(copies.items['target/ts'], undefined)
     deepStrictEqual(Object.keys(copies.files)
       .filter((rel: string) => rel.startsWith('tm/ts/') || rel.startsWith('src/cmp/ts/')), [])
+
+    const last = entries(project).pop()
+    deepStrictEqual([last.op, last.items], ['remove', { 'target/ts': null }])
+    ok(Object.values(last.files).every((print: any) => null === print))
+  })
+
+
+  test('a record from 4.34.0 is read, then moved into the log by the next add', async () => {
+    const project = await added('ts')
+    const rel = firstFile(project, 'tm/ts/')
+    ageCopy(project, rel)
+
+    project.fs.writeFileSync(ROOT + '/' + LEGACY, JSON.stringify(record(project)))
+    project.fs.unlinkSync(ROOT + '/' + COPY_LOG)
+
+    const before: any = (await doctor(project.actx)).report
+    deepStrictEqual(before.outdated, [rel])
+
+    await target_add([targetRef('ts')], project.actx)
+
+    ok(!project.fs.existsSync(ROOT + '/' + LEGACY))
+    deepStrictEqual(entries(project).map((line: any) => line.op), ['import', 'add'])
+
+    const after: any = (await doctor(project.actx)).report
+    strictEqual(after.ok, true)
   })
 })
 
@@ -175,7 +245,7 @@ describe('doctor reads the copy record', () => {
   test('without a record a difference stays unproven, as it always was', async () => {
     const project = await added('ts')
     const rel = firstFile(project, 'tm/ts/')
-    project.fs.unlinkSync(ROOT + '/' + COPIES)
+    project.fs.unlinkSync(ROOT + '/' + COPY_LOG)
     editCopy(project, rel)
 
     const report: any = (await doctor(project.actx)).report
@@ -213,6 +283,48 @@ describe('line endings, which git may rewrite on checkout', () => {
 
     deepStrictEqual(report.outdated, [rel])
     deepStrictEqual(report.edited, [])
+  })
+})
+
+
+describe('a .gitignore that hides the log', () => {
+
+  // What every create-sdkgen scaffold wrote before the record moved here.
+  const SCAFFOLDED = '# Generated logs\nlog/\n*.log\n'
+
+
+  test('the add that starts the log says so, once', async () => {
+    const log = recordLog()
+    const project = makeProject({ log })
+    project.fs.writeFileSync(ROOT + '/.gitignore', SCAFFOLDED)
+
+    await target_add([targetRef('ts')], project.actx)
+    await target_add([targetRef('go')], project.actx)
+
+    const warned = log.lines.filter((l: any) => 'copies-ignored' === l.point)
+    strictEqual(warned.length, 1, JSON.stringify(warned))
+    strictEqual(warned[0].level, 'warn')
+    ok(warned[0].note.includes('Delete the log/ line'), warned[0].note)
+  })
+
+
+  test('doctor and generate keep saying so until the line goes', async () => {
+    const project = await added('ts')
+    project.fs.writeFileSync(ROOT + '/.gitignore', SCAFFOLDED)
+
+    const hidden: any = (await doctor(project.actx)).report
+    strictEqual(hidden.ignoredLog, true)
+    strictEqual(hidden.ok, true, 'a hidden record is not drift')
+
+    const lines = await copyCheck(project.actx)
+    strictEqual(lines.length, 1, lines.join('\n'))
+    ok(lines[0].includes('.gitignore ignores log/'), lines[0])
+
+    project.fs.writeFileSync(ROOT + '/.gitignore', '# Generated logs\n*.log\n')
+
+    const shown: any = (await doctor(project.actx)).report
+    strictEqual(shown.ignoredLog, false)
+    deepStrictEqual(await copyCheck(project.actx), [])
   })
 })
 

@@ -10,7 +10,7 @@ import {
   package_add, package_update, action_package, npmFetchArgs,
 } from '../dist/action/package.js'
 import { ACTION_MAP, actionNames } from '../dist/action/dispatch.js'
-import { COPIES } from '../dist/action/copies.js'
+import { COPY_LOG } from '../dist/action/copies.js'
 import {
   SCAFFOLD, SCAFFOLD_BASE, ROOT, makeProject, recordLog, targetRef,
   target_add, feature_add,
@@ -908,7 +908,7 @@ describe('package update', () => {
       const project = await installed(pkg)
       project.actx.fetchPackage = async () => { }
       project.actx.flags = {}
-      project.fs.unlinkSync(Path.join(ROOT, COPIES))
+      project.fs.unlinkSync(Path.join(ROOT, COPY_LOG))
 
       const path = Path.join(ROOT, 'model/target/iotgo.aontu')
       project.fs.writeFileSync(path,

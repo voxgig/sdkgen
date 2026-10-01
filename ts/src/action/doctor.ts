@@ -37,7 +37,9 @@ import { findFeatureSources } from '../helpers/featureSource'
 
 import { isJunk } from '../helpers/junk'
 
-import { readCopies, untouched, itemKey } from './copies'
+import {
+  readCopies, untouched, itemKey, ignoredLog, IGNORED_LOG,
+} from './copies'
 import type { CopyRecord } from './copies'
 
 
@@ -110,6 +112,9 @@ type DoctorReport = {
 
   // Per item with findings, keyed `<kind>/<name>`.
   byItem: Record<string, ItemDrift>
+
+  // `.sdk/.gitignore` hides the copy record from git. Informational.
+  ignoredLog: boolean
 
   ok: boolean
 }
@@ -278,10 +283,15 @@ async function doctor(
     forked: [], edited: [], stale: [], missing: [], additive: [],
     superseded: [], unwired: [], orphanModel: [],
     resyncPending: [], aliasedDiff: [],
-    outdated: [], unrecorded: [], byItem: {}, ok: true,
+    outdated: [], unrecorded: [], byItem: {}, ignoredLog: false, ok: true,
   }
 
   const copies = readCopies(fs, root)
+
+  report.ignoredLog = ignoredLog(fs, root)
+  if (report.ignoredLog) {
+    log.warn({ point: 'doctor-copies-ignored', note: IGNORED_LOG })
+  }
 
   report.superseded = supersededFiles(actx)
 
@@ -1074,7 +1084,7 @@ function copyWarnings(report: DoctorReport): string[] {
     }
   }
 
-  const lines: string[] = []
+  const lines: string[] = report.ignoredLog ? [IGNORED_LOG] : []
 
   for (const [key, group] of groups) {
     const [what, command] = key.split('\n')

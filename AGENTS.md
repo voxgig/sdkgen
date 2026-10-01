@@ -670,15 +670,24 @@ emitted broken source reached the fleet unchallenged.
   directly rather than restating npm's exclusion list.
 - **The copy record is the only thing that tells OUTDATED from EDITED.**
   Every add hands the files its own jostraca run wrote to `recordCopies`,
-  which fingerprints them into `.sdk/sdkgen-copies.json` with the package
-  version. Doctor then files a differing copy whose fingerprint still
-  matches as `outdated` (the source moved on), which `package update`
-  refreshes without `--force`, `remove` deletes without refusing, and
-  `generate` warns about before it writes. Record from what jostraca
-  reports, never by re-deriving the trees afterwards: the model an action
-  holds was compiled before the add ran. An add path that skips the record
-  leaves its files unrecorded, so after the next upgrade they read as
-  possible edits and the `--force` trap of issue #257 is back.
+  which appends their fingerprints and the package version to
+  `.sdk/log/copies.jsonl`. Doctor then files a differing copy whose
+  fingerprint still matches as `outdated` (the source moved on), which
+  `package update` refreshes without `--force`, `remove` deletes without
+  refusing, and `generate` warns about before it writes. Record from what
+  jostraca reports, never by re-deriving the trees afterwards: the model an
+  action holds was compiled before the add ran. An add path that skips the
+  record leaves its files unrecorded, so after the next upgrade they read
+  as possible edits and the `--force` trap of issue #257 is back.
+- **A tool's own records go in `.sdk/log/`, never loose at the top of
+  `.sdk`.** `.sdk` is the project's control folder. A record is an
+  append-only JSONL log: one line per change, holding only the change, and
+  no line at all when nothing changed, so a run that changes nothing leaves
+  the tree clean. An index JSON beside it is for a log too slow to replay;
+  the copy log replays in milliseconds at twenty targets, so it has none.
+  A record that must travel with the repository also has to survive the
+  scaffold's `.sdk/.gitignore`, which once ignored `log/` wholesale;
+  `ignoredLog` (`action/copies.ts`) is what warns about that line.
 - **`package update` must check BEFORE it fetches.** Measured before the
   source moves, a differing copy means the project changed it; measured
   after, every item legitimately differs, the gate fires on all of them,

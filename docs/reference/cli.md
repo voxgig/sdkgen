@@ -167,13 +167,26 @@ wrote.
 
 #### The copy record
 
-Every add writes `.sdk/sdkgen-copies.json`: a fingerprint of each file it
-copied, and the version of the package each item came from. Commit it.
+Every add records a fingerprint of each file it copied, and the version of
+the package each item came from, in `.sdk/log/copies.jsonl`. Commit it.
 `doctor` reads it to tell an **outdated** copy from a **forked** or
 **edited** one: refreshing an outdated copy loses nothing, while refreshing
 a forked or edited one discards a change. A project from before the record
 gets one at its next add. Until then a difference is reported as forked or
 edited, as it always was.
+
+The log is append-only. Each line is one JSON object holding only what an
+add or a remove changed: `items` and `files`, where `null` forgets an
+entry. An add that changes nothing appends nothing, so re-adding identical
+copies leaves the working tree clean. Reading the record replays the log,
+which takes a few milliseconds even for twenty targets.
+
+sdkgen 4.34.0 kept the whole record in `.sdk/sdkgen-copies.json`. That
+file is still read, and the next add moves it into the log and deletes
+it. A project scaffolded by an earlier create-sdkgen may list `log/` in
+`.sdk/.gitignore`. Delete that line so the log is committed: a clone
+without it has no record. Until it goes, `doctor` and `npm run generate`
+warn about it, as does the add that starts the log.
 
 `npm run generate` runs the same comparison over the items it is about to
 read, before it writes anything, and prints one warning per refresh
@@ -415,7 +428,7 @@ refusal states both readings:
 would overwrite them:
   model/target/iot-go.aontu
 
-  1 of them predate sdkgen-copies.json, so nothing tells these two apart:
+  1 of them predate .sdk/log/copies.jsonl, so nothing tells these two apart:
     - they are LOCAL EDITS, and `--force` will discard them;
     - or @acme/sdkgen-iot was already updated out of band (an `npm update`
       in another shell), in which case they are merely STALE and nothing

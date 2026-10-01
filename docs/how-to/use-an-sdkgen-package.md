@@ -86,7 +86,7 @@ changed. If you fetch first and check afterwards, everything differs
 because the source moved — the check fires on every file and stops
 meaning anything.
 
-Every add also records what it wrote, in `.sdk/sdkgen-copies.json`, so the
+Every add also records what it wrote, in `.sdk/log/copies.jsonl`, so the
 check separates three cases:
 
 - A file the record shows you have not touched, but whose source has moved
@@ -101,7 +101,7 @@ check separates three cases:
 would overwrite them:
   model/target/iot-go.aontu
 
-  1 of them predate sdkgen-copies.json, so nothing tells these two apart:
+  1 of them predate .sdk/log/copies.jsonl, so nothing tells these two apart:
     - they are LOCAL EDITS, and `--force` will discard them;
     - or @acme/sdkgen-iot was already updated out of band (an `npm update`
       in another shell), in which case they are merely STALE and nothing
@@ -110,7 +110,8 @@ would overwrite them:
 
 When it stops, copy anything you want to keep into `.sdk/model/`, then
 re-run with `--force`. A project gets its record at its next add, and from
-then on only a real edit stops an update.
+then on only a real edit stops an update. Commit `.sdk/log/copies.jsonl`
+with the copies it describes.
 
 Already fetched deliberately? `--no-fetch` uses the source you have.
 
