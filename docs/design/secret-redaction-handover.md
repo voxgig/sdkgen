@@ -8,9 +8,12 @@ work. The design is ADR-003 in ADR.md and
 
 | Repo | PR | Branch | State |
 | --- | --- | --- | --- |
-| voxgig/sdkgen | #229 | `claude/amazing-goodall-33f6ox` | Rounds 1 to 4 in all 20 bundled targets. All seven Codex threads answered and resolved. |
-| voxgig/sdkgen-langpack | #24 | same | Rounds 2 to 4 compiled and run for dart, haskell and lean; the eight Codex findings fixed, answered and resolved. |
-| voxgig/sdkgen-infrapack | #28 | same | Round 1 (0f5737a), green; nothing outstanding. |
+| voxgig/sdkgen | #229 | `claude/amazing-goodall-33f6ox` | Merged as f0b7fd07. Rounds 1 to 4 in all 20 bundled targets. |
+| voxgig/sdkgen-langpack | #24 | same | Merged as a37f3fd. Rounds 2 to 4 compiled and run for dart, haskell and lean. |
+| voxgig/sdkgen-infrapack | #28 | same | Merged as 464ae53. |
+
+None of the three is released yet: each repository's latest release predates
+its merge.
 
 ## What the second session did
 
@@ -119,6 +122,29 @@ operation's catch path; a throwing custom `system.fetch` leaves haskell's
 leaves `data` unset, as ts does; dart needed all three explain fixes and lean
 the in-place one.
 
+## Validation after the merge
+
+- **The merged trees** are identical to the PR heads that were tested. On
+  sdkgen's merged main the full `npm test` passes (1816 tests, 0 fail, the
+  five swift lanes skipped) and CI is green on all three platforms. The
+  langpack and infrapack suites pass on their merged mains; dart, haskell and
+  lean regenerated from the merged mains match their pre-merge results; and
+  the infrapack's canary test, linked to the merged sdkgen, runs and passes.
+- **Every target's whole generated suite was compared** before the merge
+  (982ce560, the published 4.32.1) and after it, generated through a
+  create-sdkgen-shaped consumer and run with each SDK's own declared
+  dependencies, and again with every feature for the targets whose
+  cross-feature suite needs that.
+- **One regression:** the offline harness a generated ts or js SDK ships
+  gave the features a utility with no `clean`, which the audit, debug, proxy
+  and telemetry features now call, so 18 ts and 10 js feature tests failed.
+  Fixed in 92fd74ca, with a lane that runs that suite. Every other target
+  fails exactly what it failed before the merge, plus the new clean suite,
+  which passes everywhere.
+- **The merge also fixed two pre-existing defects:** cpp's entity tests did
+  not compile, and an elixir SDK read garbage option specs on any run after
+  the one that compiled it.
+
 ## What is verified, and how
 
 ### In this container, on the integrated sdkgen head
@@ -197,6 +223,25 @@ skips on every platform because the runners have no pytest.
    - The java, kotlin, scala, csharp and ocaml stream calls write `stream`
      into the caller's own ctrl map, a self-cycle ts avoids by copying ctrl.
      It leaks nothing.
+
+### Found by the post-merge comparison, all failing before the merge too
+
+- **php `validate`** crashes any php SDK that selects it, at load:
+  `tm/php/feature/ValidateFeature.php` declares `PreSpec` and `PreDone` as
+  returning `mixed` where `BaseFeature.php` declares `void` (since
+  7e57f573). The dispatcher ignores hook return values, so `: void` with a
+  bare `return;` should fix it. No test generates a php SDK with `validate`.
+- **scala's secrets vocabulary check** fails: the vendored sekreto lists a
+  `minivault` provider that `SecretsTestMain`'s `PLUGINMODULES` table does
+  not.
+- **Lanes that would have caught more of this:** only ts and js run a
+  generated SDK's feature suite. The cross-feature suites that go, java,
+  kotlin, csharp, rust, cpp, c and swift declare in `fullset` are generated
+  only when every feature is declared and switched on, `secrets` included,
+  so neither a standard generation nor any lane runs them. A lane running
+  each native target's whole `make test` would have caught the rust include
+  and the old cpp compile errors, and an elixir lane running `mix test` a
+  second time on one build would catch compile-time state.
 
 ## Deliberate per-target divergences reported by the ports
 
