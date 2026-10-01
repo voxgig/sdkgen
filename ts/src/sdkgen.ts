@@ -146,6 +146,7 @@ import {
 import {
   action_doctor,
   doctor,
+  copyCheck,
 } from './action/doctor'
 import type { DoctorReport } from './action/doctor'
 
@@ -200,6 +201,16 @@ type ExternalOverride = {
 
 
 const { Jostraca } = JostracaModule
+
+
+// The `const` block every action's model carries, and so what an add
+// substitutes into the copies it writes.
+function projectConst(model: any): any {
+  const projectconst: any = { name: model.name }
+  names(projectconst, model.name)
+  projectconst.year = new Date().getFullYear()
+  return projectconst
+}
 
 
 function modelError(path: string, cause: any, rooterrs: any[]): any {
@@ -299,6 +310,10 @@ function SdkGen(opts: SdkGenOptions) {
 
     const root = Path.resolve(folder)
 
+    // Generation renders from the copies in `.sdk`, not from the installed
+    // generator, so an outdated copy would otherwise be used without a word.
+    await warnCopies(root, model)
+
     const externalOverride = resolveExternalOverride(opts, log)
     // Snapshot the decision before preflight. In particular, do not check a
     // missing optional destination once for safety and AGAIN before writing:
@@ -361,6 +376,34 @@ function SdkGen(opts: SdkGenOptions) {
     log.info({ point: 'generate-end' })
 
     return { ok: true, name: 'sdkgen' }
+  }
+
+
+  // A warning, never a failure: a difference may be a deliberate edit, and a
+  // check that cannot run must not stop a build.
+  async function warnCopies(root: string, model: any) {
+    const sdk = Path.join(root, '.sdk')
+
+    try {
+      if (!fs.existsSync(Path.join(sdk, 'model'))) {
+        return
+      }
+
+      // Compared with the values an add substituted. Generation derives its
+      // own `const` later, in the project's Root.
+      const lines = await copyCheck({
+        fs: () => fs, log, folder: sdk,
+        model: { ...model, const: projectConst(model) },
+        url: '', jostraca, opts: { dryrun: !!opts.dryrun }, flags: {},
+      } as ActionContext)
+
+      for (const note of lines) {
+        log.warn({ point: 'generate-copies', note })
+      }
+    }
+    catch (err: any) {
+      log.debug({ point: 'generate-copies-unchecked', err: err?.message })
+    }
   }
 
 
@@ -445,11 +488,7 @@ function SdkGen(opts: SdkGenOptions) {
       throw modelError(path, errs[0], errs)
     }
 
-    model.const = { name: model.name }
-
-    names(model.const, model.name)
-
-    model.const.year = new Date().getFullYear()
+    model.const = projectConst(model)
 
     return {
       model,
@@ -1054,6 +1093,7 @@ export {
   deriveEntityNames,
   entityCollection,
   guardModelNames,
+  projectConst,
   isReservedName,
   safeVarName,
   exampleVarName,

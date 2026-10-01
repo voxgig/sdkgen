@@ -10,10 +10,23 @@ type DoctorReport = {
     orphanModel: string[];
     resyncPending: string[];
     aliasedDiff: string[];
+    outdated: string[];
+    unrecorded: string[];
+    byItem: Record<string, ItemDrift>;
     ok: boolean;
+};
+type ItemDrift = {
+    package?: string;
+    from?: string;
+    to?: string;
+    outdated: number;
+    changed: number;
 };
 declare function action_doctor(args: string[], actx: ActionContext): Promise<ActionResult>;
 type DoctorScope = (kind: string, name: string) => boolean;
 declare function doctor(actx: ActionContext, scope?: DoctorScope, selected?: string[]): Promise<ActionResult>;
-export type { DoctorReport, DoctorScope, };
-export { action_doctor, doctor, };
+declare function refreshCommand(item: string, pkg?: string): string;
+declare function copyCheck(actx: ActionContext): Promise<string[]>;
+declare function copyWarnings(report: DoctorReport): string[];
+export type { DoctorReport, DoctorScope, ItemDrift, };
+export { action_doctor, doctor, copyCheck, copyWarnings, refreshCommand, };

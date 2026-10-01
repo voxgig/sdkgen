@@ -82,6 +82,7 @@ function resolveSource(ref, kind, ctx$) {
     // absolute. Normalise both sides first for the same reason.
     const nroot = node_path_1.default.normalize(root);
     const rootslash = nroot.endsWith(node_path_1.default.sep) ? nroot : nroot + node_path_1.default.sep;
+    const owner = sourcePackage(fs, folder, kind, origname, ctx$);
     return {
         name,
         origname,
@@ -93,7 +94,10 @@ function resolveSource(ref, kind, ctx$) {
         // backslash-separated, and appending '/model/...' produced a mixed-
         // separator path that some readers handle and others do not.
         model: (0, definition_1.definitionPathAny)(fs, folder, kind, origname),
-        package: sourcePackage(fs, folder, kind, origname, ctx$),
+        ...(null == owner ? {} : {
+            package: owner.name,
+            ...(null == owner.version ? {} : { version: owner.version }),
+        }),
     };
 }
 function sourcePackage(fs, folder, kind, origname, ctx$) {
@@ -120,7 +124,11 @@ function sourcePackage(fs, folder, kind, origname, ctx$) {
         });
         return undefined;
     }
-    return read.manifest.name;
+    const version = read.manifest.version;
+    return {
+        name: read.manifest.name,
+        ...('string' === typeof version && '' !== version ? { version } : {}),
+    };
 }
 function warnManifest(ctx$, file, err) {
     ctx$.log?.warn({

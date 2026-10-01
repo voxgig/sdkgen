@@ -15,6 +15,7 @@ const featureSource_1 = require("../helpers/featureSource");
 const stdrep_1 = require("../helpers/stdrep");
 const junk_1 = require("../helpers/junk");
 const kind_1 = require("./kind");
+const copies_1 = require("./copies");
 const action_1 = require("./action");
 const CMD_MAP = {
     add: cmd_feature_add,
@@ -67,8 +68,10 @@ async function feature_add(features, actx) {
         point: 'feature-start',
         note: (actx.opts.dryrun ? '** DRY RUN **' : '')
     });
-    const jres = await jostraca.generate(opts, () => FeatureRoot({ features }));
+    const installed = [];
+    const jres = await jostraca.generate(opts, () => FeatureRoot({ features, installed }));
     (0, util_1.showChanges)(opts.log, 'feature-result', jres);
+    (0, copies_1.recordCopies)(actx, jres, 'feature', installed);
     if (actx.opts.dryrun) {
         (0, dryrun_1.showDryrun)(opts.log, 'feature-result', jres, actx.folder);
     }
@@ -81,7 +84,7 @@ async function feature_add(features, actx) {
     };
 }
 const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
-    const { ctx$, features } = props;
+    const { ctx$, features, installed } = props;
     const { model, log } = ctx$;
     const fs = ctx$.fs();
     const target = model.main[types_1.KIT].target;
@@ -111,6 +114,7 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
             }
             const fname = source.name;
             fnames.push(fname);
+            installed?.push(source);
             log.info({
                 point: 'feature-build',
                 feature: fname,

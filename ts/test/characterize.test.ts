@@ -9,6 +9,7 @@ import { createHash } from 'node:crypto'
 import {
   SCAFFOLD, PROJECT, ROOT, makeProject, targetRef, target_add, feature_add,
 } from './actionharness'
+import { COPIES } from '../dist/action/copies.js'
 
 
 const GOLDEN = Path.resolve(__dirname, '..', 'test', 'golden', 'add-output.txt')
@@ -31,13 +32,11 @@ function hash(content: Buffer): string {
 }
 
 
-// `<path> <hash>` for every file in the project, sorted by path.
-//
-// Paths are joined with '/' rather than Path.join: these are memfs paths, and
-// on Windows Path.join would hand the layered fs a backslash path it does not
-// resolve.
+// `<path> <hash>` for every project file but the copy record, which is
+// derived from them and carries the generator's version. Paths are joined
+// with '/': on Windows Path.join hands the layered memfs a backslash path.
 function manifest(project: any): string[] {
-  return project.files().map((rel: string) => {
+  return project.files().filter((rel: string) => COPIES !== rel).map((rel: string) => {
     const content = project.fs.readFileSync(ROOT + '/' + rel)
     return rel + ' ' + hash(content)
   })

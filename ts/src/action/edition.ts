@@ -17,6 +17,9 @@ import { resolveKind, kindModel, kindIndex, kindTrees } from './kind'
 import type { TreeDef } from './kind'
 
 import { registerInstalled } from './resolve'
+import type { Source } from './resolve'
+
+import { recordCopies } from './copies'
 
 import { aliasCmpTree, pruneStaleTemplates } from './target'
 
@@ -107,8 +110,12 @@ async function edition_add(
   // Later items in the command read this in-memory registration.
   registerInstalled('edition', edition, actx)
 
+  const installed: Source[] = []
+
   const jres = await jostraca.generate(opts, () =>
-    EditionRoot({ edition, actx }))
+    EditionRoot({ edition, actx, installed }))
+
+  recordCopies(actx, jres, 'edition', installed)
 
   return { jres }
 }
@@ -139,7 +146,7 @@ function preflight(edition: string[], actx: ActionContext) {
 
 
 const EditionRoot = cmp(function EditionRoot(props: any) {
-  const { ctx$, edition } = props
+  const { ctx$, edition, installed } = props
   const { log } = ctx$
 
   Project({}, () => {
@@ -153,6 +160,7 @@ const EditionRoot = cmp(function EditionRoot(props: any) {
       const source = resolveKind(dref, 'edition', ctx$)
 
       dnames.push(source.name)
+      installed?.push(source)
 
       log.info({
         point: 'edition-name', edition: source.name, folder: source.folder, ref: dref,

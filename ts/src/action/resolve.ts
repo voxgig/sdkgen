@@ -30,6 +30,9 @@ type Source = {
   // The sdkgen package that provided it, when the source has a manifest.
   // Undefined for a bare `.sdk`-shaped folder, which stays legal.
   package?: string
+
+  // That package's version, read from the same manifest.
+  version?: string
 }
 
 
@@ -113,6 +116,8 @@ function resolveSource(ref: string, kind: string, ctx$: any): Source {
   const nroot = Path.normalize(root)
   const rootslash = nroot.endsWith(Path.sep) ? nroot : nroot + Path.sep
 
+  const owner = sourcePackage(fs, folder, kind, origname, ctx$)
+
   return {
     name,
     origname,
@@ -125,14 +130,17 @@ function resolveSource(ref: string, kind: string, ctx$: any): Source {
     // separator path that some readers handle and others do not.
     model: definitionPathAny(fs, folder, kind, origname),
 
-    package: sourcePackage(fs, folder, kind, origname, ctx$),
+    ...(null == owner ? {} : {
+      package: owner.name,
+      ...(null == owner.version ? {} : { version: owner.version }),
+    }),
   }
 }
 
 
 function sourcePackage(
   fs: any, folder: string, kind: string, origname: string, ctx$: any,
-): string | undefined {
+): { name: string, version?: string } | undefined {
   const read = readManifest(fs, folder)
 
   if (null != read.err) {
@@ -164,7 +172,12 @@ function sourcePackage(
     return undefined
   }
 
-  return read.manifest.name
+  const version = read.manifest.version
+
+  return {
+    name: read.manifest.name,
+    ...('string' === typeof version && '' !== version ? { version } : {}),
+  }
 }
 
 

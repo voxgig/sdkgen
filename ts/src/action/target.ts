@@ -56,6 +56,9 @@ import {
 import { kindModel, kindIndex, resolveKind, escapeRe } from './kind'
 
 import { BUNDLED, resolveSource, registerInstalled } from './resolve'
+import type { Source } from './resolve'
+
+import { recordCopies } from './copies'
 
 
 const CMD_MAP: any = {
@@ -125,10 +128,14 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
     ...Object.keys(featuremodel).filter((n: string) => false !== featuremodel[n]?.active),
   ]))
 
+  const installed: Source[] = []
+
   const jres = await jostraca.generate(opts, () =>
-    TargetRoot({ targets, features, actx }))
+    TargetRoot({ targets, features, actx, installed }))
 
   showChanges(opts.log, 'target-result', jres)
+
+  recordCopies(actx, jres, 'target', installed)
 
   if (actx.opts.dryrun) {
     showDryrun(opts.log, 'target-result', jres, actx.folder)
@@ -152,7 +159,7 @@ async function target_add(targets: string[], actx: ActionContext): Promise<Actio
 
 
 const TargetRoot = cmp(function TargetRoot(props: any) {
-  const { ctx$, targets, features, actx } = props
+  const { ctx$, targets, features, actx, installed } = props
   const { model, log } = ctx$
 
   const fs = ctx$.fs()
@@ -185,6 +192,7 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
       const source = resolveKind(tref, 'target', ctx$)
       const { name: tname, folder: tfolder, origname: torigname, base } = source
       tnames.push(tname)
+      installed?.push(source)
       const targetNote = tname + (tname != tref ? ' ref:' + tref : '')
 
       log.info({

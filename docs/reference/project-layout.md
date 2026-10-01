@@ -151,6 +151,7 @@ my-sdk/
 │   │   └── feature/           # feature defs + feature-index.aontu
 │   ├── src/cmp/<lang>/        # components copied from sdkgen by `target add`
 │   ├── tm/<lang>/             # templates copied from sdkgen by `target add`
+│   ├── sdkgen-copies.json     # what every add copied, read by doctor (commit it)
 │   └── dist/                  # compiled components (the `generate` step requires these)
 ├── ts/                        # ← generated TypeScript SDK
 ├── go/                        # ← generated Go SDK

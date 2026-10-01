@@ -29,6 +29,8 @@ import { cmd_package_check } from './check'
 
 import { doctor } from './doctor'
 
+import { COPIES } from './copies'
+
 import { resolveSource, registerInstalled, nameConflict } from './resolve'
 import type { Source } from './resolve'
 
@@ -639,6 +641,16 @@ async function preCheck(
 
   const report = res.report
 
+  // Unchanged since an add wrote them, so refreshing them loses nothing.
+  if (0 < report.outdated.length) {
+    actx.log.info({
+      point: 'package-update-outdated', package: pkgname,
+      files: report.outdated.length,
+      note: pkgname + ': ' + report.outdated.length + ' outdated file(s) ' +
+        'will be refreshed; ' + COPIES + ' shows nothing in them was changed'
+    })
+  }
+
   const changed = [...report.forked, ...report.edited]
 
   if (0 === changed.length) {
@@ -654,19 +666,28 @@ async function preCheck(
     return
   }
 
+  const unrecorded = new Set<string>(report.unrecorded)
+  const edited = changed.filter((file: string) => !unrecorded.has(file))
+  const unknown = changed.filter((file: string) => unrecorded.has(file))
+
   throw new SdkGenError(
     pkgname + ': ' + changed.length + ' file(s) differ from the installed ' +
     'source, so updating would overwrite them:\n  ' + changed.join('\n  ') +
-    '\n\n  This means one of two things, and nothing recorded in the project ' +
-    'tells them apart:' +
-    '\n    - they are LOCAL EDITS, and `--force` will discard them;' +
-    '\n    - or ' + pkgname + ' was already updated out of band (an ' +
-    '`npm update` in another shell), in which case they are merely STALE ' +
-    'and nothing is at risk.' +
-    '\n\n  If you did not update it: copy anything you want to keep into ' +
-    '.sdk/model/, then re-run with --force.' +
-    '\n  If you did: reinstall the version you had, re-run this command, ' +
-    'and it will check against the right source.')
+    (0 === edited.length ? '' :
+      '\n\n  ' + edited.length + ' of them changed in this project after ' +
+      'an add wrote them (' + COPIES + ' records what it wrote), so updating ' +
+      'would discard those edits.') +
+    (0 === unknown.length ? '' :
+      '\n\n  ' + unknown.length + ' of them predate ' + COPIES + ', so ' +
+      'nothing tells these two apart:' +
+      '\n    - they are LOCAL EDITS, and `--force` will discard them;' +
+      '\n    - or ' + pkgname + ' was already updated out of band (an ' +
+      '`npm update` in another shell), in which case they are merely STALE ' +
+      'and nothing is at risk.' +
+      '\n  If you updated it and changed nothing, --force is safe. To check ' +
+      'first, reinstall the version you had and re-run this command.') +
+    '\n\n  Copy anything you want to keep into .sdk/model/, then re-run ' +
+    'with --force.')
 }
 
 

@@ -86,28 +86,53 @@ changed. If you fetch first and check afterwards, everything differs
 because the source moved — the check fires on every file and stops
 meaning anything.
 
-If it finds differences it stops and reports them, because it cannot know
-which of two things they are:
+Every add also records what it wrote, in `.sdk/sdkgen-copies.json`, so the
+check separates three cases:
+
+- A file the record shows you have not touched, but whose source has moved
+  on, is **outdated**. The update refreshes it without asking.
+- A file the record shows you changed is a **local edit**. The update stops
+  and lists it.
+- A file from before the record existed could be either, and the update
+  stops and says so:
 
 ```
 @acme/sdkgen-iot: 1 file(s) differ from the installed source, so updating
 would overwrite them:
   model/target/iot-go.aontu
 
-  This means one of two things, and nothing recorded in the project tells
-  them apart:
+  1 of them predate sdkgen-copies.json, so nothing tells these two apart:
     - they are LOCAL EDITS, and `--force` will discard them;
     - or @acme/sdkgen-iot was already updated out of band (an `npm update`
       in another shell), in which case they are merely STALE and nothing
       is at risk.
 ```
 
-- If you did not update it: copy anything you want to keep into
-  `.sdk/model/`, then re-run with `--force`.
-- If you did: reinstall the version you had and re-run, so the check runs
-  against the right source.
+When it stops, copy anything you want to keep into `.sdk/model/`, then
+re-run with `--force`. A project gets its record at its next add, and from
+then on only a real edit stops an update.
 
 Already fetched deliberately? `--no-fetch` uses the source you have.
+
+### Update sdkgen itself
+
+The bundled targets and features come from `@voxgig/sdkgen`, so updating
+the generator is the same command:
+
+```bash
+voxgig-sdkgen package update @voxgig/sdkgen
+```
+
+Generation renders from the copies in `.sdk/`, never from the installed
+generator. Updating `@voxgig/sdkgen` with `npm` alone moves the generator
+and leaves the copies as they were, so the next `npm run generate` would
+still use the old templates. `generate` checks for this before it writes
+anything, and prints a warning that names the copies and the command to
+run. After an update with `npm`, that command is:
+
+```bash
+voxgig-sdkgen package update @voxgig/sdkgen --no-fetch
+```
 
 An **aliased** item's model file is never rewritten by an update; its
 `src/cmp` and `tm` trees are refreshed and the skip is reported, so you
@@ -122,7 +147,8 @@ voxgig-sdkgen doctor
 `doctor` compares every tree and every copied model file against the
 source each records — including items from external packages, and
 including a feature package's per-target source. It exits non-zero on
-drift, so it works as a CI gate.
+drift, so it works as a CI gate. It reports an outdated copy apart from a
+local edit, with the version the copy came from and the version installed.
 
 The rule it enforces: **`add` overwrites**, so a project decision belongs
 in the project's own model (`.sdk/model/sdk.aontu`), never as a hand-edit
@@ -143,19 +169,24 @@ to a copied file.
 ### Updating from a local checkout
 
 `--no-fetch` skips step 2 only — the check in step 1 still runs, and it
-runs against the source **as it now is**. So updating the checkout first
-is exactly the out-of-band case the check cannot tell from a local edit,
-and it will stop:
+runs against the source **as it now is**. With the copy record that is
+safe: after a pull, the files you never touched read as outdated and are
+refreshed, and a file you changed still stops the update.
+
+```bash
+git -C ../acme-sdkgen-iot pull
+voxgig-sdkgen package update @acme/sdkgen-iot --no-fetch
+```
+
+A project with no record yet cannot tell a pulled change from a local
+edit, so run `doctor` before you pull. A clean result, measured against
+the source you still have, is what makes `--force` safe afterwards:
 
 ```bash
 voxgig-sdkgen doctor                  # BEFORE you pull: clean == no local edits
 git -C ../acme-sdkgen-iot pull
 voxgig-sdkgen package update @acme/sdkgen-iot --no-fetch --force
 ```
-
-The clean `doctor` is what makes `--force` safe here: it is measured
-against the source you still have, so it distinguishes the two cases the
-update itself no longer can.
 
 ## See also
 

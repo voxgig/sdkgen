@@ -42,6 +42,7 @@ exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonScalarK
 exports.stationLibrary = exports.pluginExcludesFor = exports.pluginExcludes = exports.srcFeatureExcludes = exports.fullsetExcludes = exports.featureExcludes = exports.findFeatureSources = exports.availableFeatures = exports.featureOf = exports.litFor = exports.dataArg = exports.matchArg = exports.idLiteral = exports.primaryOpCall = exports.liveStrict = exports.serverVarEnv = exports.hasServerVariables = exports.serverVariables = exports.tsSafeTypeName = exports.isTsSdkType = exports.isTsReservedType = exports.phpSafeTypeName = exports.isPhpSdkClass = exports.isPhpReservedType = exports.swiftSafeTypeName = exports.isSwiftSdkType = exports.rbSafeTypeName = exports.isRbSdkConstant = exports.isRbCoreConstant = exports.entityCacheField = exports.phpEntityAccessor = exports.exampleVarName = exports.safeVarName = exports.isReservedName = exports.guardModelNames = exports.entityCollection = exports.deriveEntityNames = exports.warnEntityTypeCollisions = exports.entityTypeCollisions = exports.entityClassName = exports.pickExampleEntity = exports.entityPrimaryOp = exports.entityOps = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.entityPath = exports.entityActions = exports.opActions = exports.ownPoint = void 0;
 exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.originName = exports.langLabel = exports.apiName = exports.repoInfo = exports.packageVersion = exports.goPackageIdent = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.contributorList = exports.authorInfo = exports.keywords = exports.nonAffiliation = exports.pkgDescription = exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.sdkName = exports.packageName = exports.prefixLeadingDigit = exports.luaKey = exports.jsKey = exports.jsOptProp = exports.jsProp = exports.validateManifest = exports.readManifest = exports.manifestPath = exports.MANIFEST = exports.definitionNames = exports.definitionFolder = exports.definitionPath = exports.TAGS = exports.unknownTags = exports.featureTags = exports.targetFeatures = exports.featureApplies = void 0;
 exports.SdkGen = SdkGen;
+exports.projectConst = projectConst;
 const node_fs_1 = __importDefault(require("node:fs"));
 const node_path_1 = __importDefault(require("node:path"));
 const util_1 = require("@voxgig/util");
@@ -281,6 +282,14 @@ const dispatch_1 = require("./action/dispatch");
 const kind_1 = require("./action/kind");
 const { Jostraca } = JostracaModule;
 exports.Jostraca = Jostraca;
+// The `const` block every action's model carries, and so what an add
+// substitutes into the copies it writes.
+function projectConst(model) {
+    const projectconst = { name: model.name };
+    (0, exports.names)(projectconst, model.name);
+    projectconst.year = new Date().getFullYear();
+    return projectconst;
+}
 function modelError(path, cause, rooterrs) {
     const detail = String(cause?.msg ?? cause?.message ?? cause ?? '').trim();
     const err = new utility_1.SdkGenError('Model Error: ' + path + '\n' + detail);
@@ -357,6 +366,9 @@ function SdkGen(opts) {
             cmp: (0, junk_1.copyOpts)(),
         };
         const root = node_path_1.default.resolve(folder);
+        // Generation renders from the copies in `.sdk`, not from the installed
+        // generator, so an outdated copy would otherwise be used without a word.
+        await warnCopies(root, model);
         const externalOverride = resolveExternalOverride(opts, log);
         // Snapshot the decision before preflight. In particular, do not check a
         // missing optional destination once for safety and AGAIN before writing:
@@ -402,6 +414,29 @@ function SdkGen(opts) {
         }
         log.info({ point: 'generate-end' });
         return { ok: true, name: 'sdkgen' };
+    }
+    // A warning, never a failure: a difference may be a deliberate edit, and a
+    // check that cannot run must not stop a build.
+    async function warnCopies(root, model) {
+        const sdk = node_path_1.default.join(root, '.sdk');
+        try {
+            if (!fs.existsSync(node_path_1.default.join(sdk, 'model'))) {
+                return;
+            }
+            // Compared with the values an add substituted. Generation derives its
+            // own `const` later, in the project's Root.
+            const lines = await (0, doctor_1.copyCheck)({
+                fs: () => fs, log, folder: sdk,
+                model: { ...model, const: projectConst(model) },
+                url: '', jostraca, opts: { dryrun: !!opts.dryrun }, flags: {},
+            });
+            for (const note of lines) {
+                log.warn({ point: 'generate-copies', note });
+            }
+        }
+        catch (err) {
+            log.debug({ point: 'generate-copies-unchecked', err: err?.message });
+        }
     }
     async function action(args, flags) {
         const actname = args[0];
@@ -460,9 +495,7 @@ function SdkGen(opts) {
         if (0 < errs.length) {
             throw modelError(path, errs[0], errs);
         }
-        model.const = { name: model.name };
-        (0, exports.names)(model.const, model.name);
-        model.const.year = new Date().getFullYear();
+        model.const = projectConst(model);
         return {
             model,
             url: path,
