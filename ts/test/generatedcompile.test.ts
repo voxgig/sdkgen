@@ -4299,6 +4299,25 @@ const FEATURE_SUITE_LANES: { target: string, runner: string }[] = [
   { target: 'js', runner: Path.join('test', 'feature.test.js') },
 ]
 
+// The features that pass what they record through clean. Each must run a test,
+// or a generation that left one out would pass the lane.
+const FEATURE_SUITE_SUBJECTS = ['audit', 'debug', 'proxy', 'telemetry']
+
+// How many tests a TAP subtest block ran without skipping.
+function tapRan(out: string, name: string): number {
+  const lines = out.split('\n')
+  const start = lines.findIndex((l) => l.trim() === '# Subtest: ' + name)
+  if (start < 0) return 0
+  const indent = lines[start].search(/\S/)
+  let ran = 0
+  for (let i = start + 1; i < lines.length; i++) {
+    const at = lines[i].search(/\S/)
+    if (0 <= at && at <= indent) break
+    if (/^\s*ok \d+ - /.test(lines[i]) && !/# SKIP/.test(lines[i])) ran++
+  }
+  return ran
+}
+
 
 describe('the feature suite runs from a generated SDK', () => {
 
@@ -4319,16 +4338,19 @@ describe('the feature suite runs from a generated SDK', () => {
         return t.skip('no usable ' + lane.target + ' toolchain here (' + clean.needs + ')')
       }
       const sdkroot = Path.join(tmp, lane.target)
+      // netsim too: the audit test, and the failure-path tests, skip without it.
       await generateTo(lane.target, sdkroot, undefined,
-        [...CLEAN_FEATURES, 'proxy', 'retry', 'timeout'])
+        [...CLEAN_FEATURES, 'netsim', 'proxy', 'retry', 'timeout'])
       const notready = null == clean.prepare ? null : clean.prepare(sdkroot)
       ok(null == notready, lane.target + ': ' + notready)
 
       const ran = run(process.execPath, ['--test', '--test-reporter=tap', lane.runner],
         sdkroot, nestedTestEnv())
       ok(ran.ok, 'the generated ' + lane.target + ' feature suite FAILED:\n' + tail(ran.out, 60))
-      const pass = Number((ran.out.match(/^# pass (\d+)/m) || [])[1] || 0)
-      ok(0 < pass, 'the generated ' + lane.target + ' feature suite ran nothing:\n' + tail(ran.out))
+      for (const name of FEATURE_SUITE_SUBJECTS) {
+        ok(0 < tapRan(ran.out, name), lane.target + ': no ' + name +
+          ' test ran in the generated feature suite:\n' + tail(ran.out))
+      }
     })
   }
 })
