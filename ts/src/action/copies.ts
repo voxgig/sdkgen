@@ -13,14 +13,14 @@ import { KINDS } from './kind'
 import type { Source } from './resolve'
 
 
-// What every add last wrote into `.sdk`, by fingerprint, and the version of
-// the package each item came from. It is the only record that tells a copy
-// the project changed from one its source has since moved past.
-const COPIES = 'sdkgen-copies.json'
+// What every add wrote into `.sdk`, by fingerprint, and the version of the
+// package each item came from: the only record that tells a copy the project
+// changed from one its source has since moved past. Append-only, one line per
+// add or remove that changed the record, holding just the change.
+const COPY_LOG = 'log/copies.jsonl'
 
-const ABOUT = 'Written by voxgig-sdkgen on every add: what it copied into ' +
-  '.sdk, so that doctor, generate and package update can tell an outdated ' +
-  'copy from a local edit. Commit it; do not edit it.'
+// Where 4.34.0 kept the whole record, until the next write moves it.
+const LEGACY = 'sdkgen-copies.json'
 
 
 type CopyItem = {
@@ -33,9 +33,15 @@ type CopyRecord = {
   files: Record<string, string>
 }
 
+// A null forgets the item or the file.
+type CopyEntry = {
+  items?: Record<string, CopyItem | null>
+  files?: Record<string, string | null>
+}
 
-function copiesPath(folder: string): string {
-  return Path.join(folder, COPIES)
+
+function logPath(folder: string): string {
+  return Path.join(folder, ...COPY_LOG.split('/'))
 }
 
 
@@ -53,38 +59,123 @@ function fingerprint(content: any): string {
 }
 
 
-// An unreadable record is treated as absent: every copy is then unrecorded,
-// which is exactly the state of a project from before the record existed.
+// Unreadable lines are skipped. A copy can then only lose its entry, which
+// leaves it unrecorded, as in a project from before the record existed.
 function readCopies(fs: any, folder: string): CopyRecord {
-  const empty: CopyRecord = { items: {}, files: {} }
-  const path = copiesPath(folder)
+  const record: CopyRecord = { items: {}, files: {} }
+  const log = logPath(folder)
 
-  if (!fs.existsSync(path)) {
-    return empty
+  const entries = fs.existsSync(log) ?
+    String(fs.readFileSync(log, 'utf8')).split('\n').map(parseEntry) :
+    [readLegacy(fs, folder)]
+
+  for (const entry of entries) {
+    if (null != entry) {
+      apply(record, entry)
+    }
+  }
+
+  return record
+}
+
+
+function parseEntry(line: string): CopyEntry | undefined {
+  if ('' === line.trim()) {
+    return undefined
   }
 
   try {
-    const read = JSON.parse(String(fs.readFileSync(path, 'utf8')))
-    return {
-      items: { ...(read?.items ?? {}) },
-      files: { ...(read?.files ?? {}) },
-    }
+    return JSON.parse(line) ?? undefined
   }
   catch (err: any) {
-    return empty
+    return undefined
   }
 }
 
 
-function writeCopies(fs: any, folder: string, record: CopyRecord) {
-  const sorted = (obj: Record<string, any>) => Object.fromEntries(
+function readLegacy(fs: any, folder: string): CopyEntry | undefined {
+  const path = Path.join(folder, LEGACY)
+
+  if (!fs.existsSync(path)) {
+    return undefined
+  }
+
+  try {
+    const read = JSON.parse(String(fs.readFileSync(path, 'utf8')))
+    return { items: read?.items ?? {}, files: read?.files ?? {} }
+  }
+  catch (err: any) {
+    return undefined
+  }
+}
+
+
+function apply(record: CopyRecord, entry: CopyEntry) {
+  for (const [key, item] of Object.entries(entry.items ?? {})) {
+    if (null == item) {
+      delete record.items[key]
+    }
+    else {
+      record.items[key] = item
+    }
+  }
+
+  for (const [rel, print] of Object.entries(entry.files ?? {})) {
+    if (null == print) {
+      delete record.files[rel]
+    }
+    else {
+      record.files[rel] = print
+    }
+  }
+}
+
+
+// The only writer. An entry that changes nothing is not written, so an add
+// that rewrites identical copies leaves the log, and git, as they were.
+function appendEntry(fs: any, folder: string, op: string, entry: CopyEntry) {
+  const log = logPath(folder)
+  const legacy = Path.join(folder, LEGACY)
+  const lines: string[] = []
+
+  if (!fs.existsSync(log)) {
+    const imported = readLegacy(fs, folder)
+    if (null != imported && changes(imported)) {
+      lines.push(entryLine('import', imported))
+    }
+  }
+
+  if (changes(entry)) {
+    lines.push(entryLine(op, entry))
+  }
+
+  if (0 < lines.length) {
+    fs.mkdirSync(Path.dirname(log), { recursive: true })
+    fs.appendFileSync(log, lines.join('\n') + '\n')
+  }
+
+  if (fs.existsSync(legacy)) {
+    fs.unlinkSync(legacy)
+  }
+}
+
+
+function changes(entry: CopyEntry): boolean {
+  return 0 < Object.keys(entry.items ?? {}).length ||
+    0 < Object.keys(entry.files ?? {}).length
+}
+
+
+function entryLine(op: string, entry: CopyEntry): string {
+  const sorted = (obj: Record<string, any> = {}) => Object.fromEntries(
     Object.keys(obj).sort().map((key: string) => [key, obj[key]]))
 
-  fs.writeFileSync(copiesPath(folder), JSON.stringify({
-    about: ABOUT,
-    items: sorted(record.items),
-    files: sorted(record.files),
-  }, null, 2) + '\n')
+  return JSON.stringify({
+    at: new Date().toISOString(),
+    op,
+    items: sorted(entry.items),
+    files: sorted(entry.files),
+  })
 }
 
 
@@ -139,49 +230,69 @@ function recordCopies(
   const folder = actx.folder
   const record = readCopies(fs, folder)
 
-  const files: string[] = [
-    ...(jres.files.written ?? []), ...(jres.files.unchanged ?? []),
-  ]
+  const items: Record<string, CopyItem> = {}
+  const files: Record<string, string | null> = gone(fs, folder, record)
 
-  for (const abs of files) {
-    const rel = relativeTo(folder, abs)
+  for (const source of sources) {
+    const key = itemKey(kind, source.name)
+    const item = provenanceOf(source)
+    const known = record.items[key]
 
-    if (null != rel && isCopy(rel) && fs.existsSync(abs)) {
-      record.files[rel] = fingerprint(fs.readFileSync(abs))
+    if (null == known ||
+      known.package !== item.package || known.version !== item.version) {
+      items[key] = item
     }
   }
 
-  for (const source of sources) {
-    record.items[itemKey(kind, source.name)] = provenanceOf(source)
+  const written: string[] = [
+    ...(jres.files.written ?? []), ...(jres.files.unchanged ?? []),
+  ]
+
+  for (const abs of written) {
+    const rel = relativeTo(folder, abs)
+
+    if (null != rel && isCopy(rel) && fs.existsSync(abs)) {
+      const print = fingerprint(fs.readFileSync(abs))
+      if (print !== record.files[rel]) {
+        files[rel] = print
+      }
+    }
   }
 
-  pruneMissing(fs, folder, record)
-  writeCopies(fs, folder, record)
+  appendEntry(fs, folder, 'add', { items, files })
 }
 
 
 // After a remove: the item goes, with every file entry nothing holds now.
 function forgetCopies(actx: ActionContext, kind: string, name: string) {
-  const fs = actx.fs()
-  const folder = actx.folder
-
-  if (true === actx.opts?.dryrun || !fs.existsSync(copiesPath(folder))) {
+  if (true === actx.opts?.dryrun) {
     return
   }
 
+  const fs = actx.fs()
+  const folder = actx.folder
   const record = readCopies(fs, folder)
-  delete record.items[itemKey(kind, name)]
-  pruneMissing(fs, folder, record)
-  writeCopies(fs, folder, record)
+  const key = itemKey(kind, name)
+
+  appendEntry(fs, folder, 'remove', {
+    items: null == record.items[key] ? {} : { [key]: null },
+    files: gone(fs, folder, record),
+  })
 }
 
 
-function pruneMissing(fs: any, folder: string, record: CopyRecord) {
+function gone(
+  fs: any, folder: string, record: CopyRecord,
+): Record<string, null> {
+  const missing: Record<string, null> = {}
+
   for (const rel of Object.keys(record.files)) {
     if (!fs.existsSync(Path.join(folder, ...rel.split('/')))) {
-      delete record.files[rel]
+      missing[rel] = null
     }
   }
+
+  return missing
 }
 
 
@@ -207,8 +318,7 @@ export type {
 }
 
 export {
-  COPIES,
-  copiesPath,
+  COPY_LOG,
   itemKey,
   fingerprint,
   readCopies,

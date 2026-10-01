@@ -427,7 +427,8 @@ async function preCheck(pkgname, installed, actx) {
             point: 'package-update-outdated', package: pkgname,
             files: report.outdated.length,
             note: pkgname + ': ' + report.outdated.length + ' outdated file(s) ' +
-                'will be refreshed; ' + copies_1.COPIES + ' shows nothing in them was changed'
+                'will be refreshed; .sdk/' + copies_1.COPY_LOG + ' shows nothing in them ' +
+                'was changed'
         });
     }
     const changed = [...report.forked, ...report.edited];
@@ -449,10 +450,10 @@ async function preCheck(pkgname, installed, actx) {
         'source, so updating would overwrite them:\n  ' + changed.join('\n  ') +
         (0 === edited.length ? '' :
             '\n\n  ' + edited.length + ' of them changed in this project after ' +
-                'an add wrote them (' + copies_1.COPIES + ' records what it wrote), so updating ' +
-                'would discard those edits.') +
+                'an add wrote them (.sdk/' + copies_1.COPY_LOG + ' records what it wrote), so ' +
+                'updating would discard those edits.') +
         (0 === unknown.length ? '' :
-            '\n\n  ' + unknown.length + ' of them predate ' + copies_1.COPIES + ', so ' +
+            '\n\n  ' + unknown.length + ' of them predate .sdk/' + copies_1.COPY_LOG + ', so ' +
                 'nothing tells these two apart:' +
                 '\n    - they are LOCAL EDITS, and `--force` will discard them;' +
                 '\n    - or ' + pkgname + ' was already updated out of band (an ' +

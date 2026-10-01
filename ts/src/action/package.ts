@@ -29,7 +29,7 @@ import { cmd_package_check } from './check'
 
 import { doctor } from './doctor'
 
-import { COPIES } from './copies'
+import { COPY_LOG } from './copies'
 
 import { resolveSource, registerInstalled, nameConflict } from './resolve'
 import type { Source } from './resolve'
@@ -647,7 +647,8 @@ async function preCheck(
       point: 'package-update-outdated', package: pkgname,
       files: report.outdated.length,
       note: pkgname + ': ' + report.outdated.length + ' outdated file(s) ' +
-        'will be refreshed; ' + COPIES + ' shows nothing in them was changed'
+        'will be refreshed; .sdk/' + COPY_LOG + ' shows nothing in them ' +
+        'was changed'
     })
   }
 
@@ -675,10 +676,10 @@ async function preCheck(
     'source, so updating would overwrite them:\n  ' + changed.join('\n  ') +
     (0 === edited.length ? '' :
       '\n\n  ' + edited.length + ' of them changed in this project after ' +
-      'an add wrote them (' + COPIES + ' records what it wrote), so updating ' +
-      'would discard those edits.') +
+      'an add wrote them (.sdk/' + COPY_LOG + ' records what it wrote), so ' +
+      'updating would discard those edits.') +
     (0 === unknown.length ? '' :
-      '\n\n  ' + unknown.length + ' of them predate ' + COPIES + ', so ' +
+      '\n\n  ' + unknown.length + ' of them predate .sdk/' + COPY_LOG + ', so ' +
       'nothing tells these two apart:' +
       '\n    - they are LOCAL EDITS, and `--force` will discard them;' +
       '\n    - or ' + pkgname + ' was already updated out of band (an ' +
