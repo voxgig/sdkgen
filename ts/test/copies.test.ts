@@ -279,13 +279,20 @@ describe('generate warns about copies', () => {
 
 
 // `generate` is given the project ROOT and reads `.sdk` beneath it, while the
-// harness keeps its `.sdk` at ROOT. This maps one onto the other.
+// harness keeps its `.sdk` at ROOT. This maps one onto the other. `generate`
+// resolves the folder, which on Windows adds a drive and backslashes.
 const WORKSPACE = '/w'
 
 function underWorkspace(fs: any): any {
   const sdk = WORKSPACE + '/.sdk'
-  const map = (arg: any) => ('string' === typeof arg &&
-    (sdk === arg || arg.startsWith(sdk + '/'))) ? ROOT + arg.slice(sdk.length) : arg
+  const map = (arg: any) => {
+    if ('string' !== typeof arg) {
+      return arg
+    }
+    const posix = arg.replace(/\\/g, '/').replace(/^[A-Za-z]:/, '')
+    return (sdk === posix || posix.startsWith(sdk + '/')) ?
+      ROOT + posix.slice(sdk.length) : arg
+  }
 
   return new Proxy(fs, {
     get(target: any, prop: any) {
