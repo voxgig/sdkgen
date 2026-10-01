@@ -141,6 +141,17 @@ the in-place one.
   Fixed in 92fd74ca, with a lane that runs that suite. Every other target
   fails exactly what it failed before the merge, plus the new clean suite,
   which passes everywhere.
+- **Across the tool chain, on 1 October 2026,** all on Node 24.21.0: this
+  branch's full sdkgen gate passes (1818 tests, 0 failures, the five swift
+  lanes skipped); apidef main passes `make all`; docgen main passes 58/58,
+  both on its locked sdkgen and linked to this branch; apidef-validate's
+  gates and both corpora pass; sdkgen-validate's full run with this
+  branch's `ts/` linked gives 14/14 specs and 98/98 generated suites; and
+  docgen-validate passes 5/5 SDKs, 17/17 checks each, on the published
+  tools and on this branch alike, once its driver switches the GitHub
+  Pages edition on (#262). Without that it reports 1/5. The documentation
+  this branch generates matches the published sdkgen's, word for word, by
+  the prose score's counts.
 - **The merge also fixed two pre-existing defects:** cpp's entity tests did
   not compile, and an elixir SDK read garbage option specs on any run after
   the one that compiled it.
