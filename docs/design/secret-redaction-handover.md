@@ -185,63 +185,29 @@ skips on every platform because the runners have no pytest.
 
 ## What is left
 
-1. **CI coverage.** Installing pytest in `build.yml` would make CI run the py
-   sweep, and every other py lane with it, on all three platforms; lua with
-   busted and dkjson, zig, scala-cli, elixir and ocaml would cover the rest.
-   This container verified those; CI cannot. It is a CI cost decision.
-2. **Recorded, not fixed:** `entity.match()` returns a query-auth
-   credential. The explainer's Edges list says so.
-3. **PreUnexpected coverage in haskell and lean.** Both fire it only inside
-   makeError, so an error that bypasses makeError (a throwing hook, a
-   throwing fetch, a failing stream) fires no PreUnexpected at all. That is
-   a gap in what an observability feature sees, not a leak.
-4. **haskell, pre-existing:** an entity operation whose fetch throws fails
-   through `cleanUnexpected` (code `unexpected`, no operation-name prefix, no
-   retry) where ts carries the throw into `response.err`; `runOpPipeline`
-   rethrows under `throw: false`; `done()` runs before a feature's stream,
-   so a failed result that a feature streams raises, where ts's does not.
-5. **lua streams end silently** on a step error or a failed operation, where
-   ts raises; an rbac denial on a lua stream is swallowed the same way.
-6. **rbac rules** are keyed by `<entity>.<op>`, so for an entity whose name
-   contains a sensitive word, a rule's permission value is registered and
-   masked in diagnostics. Masking only; nothing leaks.
-7. **lean with a plugin group active** was not built: its link needs a
-   `link.rsp` that only `make ffi` writes, and the harness calls lake
-   directly.
-8. **Noticed, pre-existing:**
-   - `src/cmp/c/TestDirect_c.ts` reads a parameter's `.name` where the compact
-     params carry `.n` (go's reads `.n`), so c's `planet_direct_test` fails
-     one check; it fails on main too.
-   - `tm/rust/tests/vendor/omni/mod.rs` includes `../COMMENT-NOTES.md`, which
-     the generated tree does not ship, so rust's omni and corpus tests do not
-     compile.
-   - elixir warns about an unused `H` alias and `Config.feature_plugins/1`;
-     `src/cmp/py/fragment/SdkError.fragment.py` is unreferenced; the php
-     clean-off control test warns about a circular reference in
-     `var_export`; three lean checks (paging, streaming, one secrets exchange
-     check) fail on the langpack's main as well.
-   - The java, kotlin, scala, csharp and ocaml stream calls write `stream`
-     into the caller's own ctrl map, a self-cycle ts avoids by copying ctrl.
-     It leaks nothing.
+Every open item is an issue in voxgig/sdkgen, with the files, lines and
+evidence:
 
-### Found by the post-merge comparison, all failing before the merge too
-
-- **php `validate`** crashes any php SDK that selects it, at load:
-  `tm/php/feature/ValidateFeature.php` declares `PreSpec` and `PreDone` as
-  returning `mixed` where `BaseFeature.php` declares `void` (since
-  7e57f573). The dispatcher ignores hook return values, so `: void` with a
-  bare `return;` should fix it. No test generates a php SDK with `validate`.
-- **scala's secrets vocabulary check** fails: the vendored sekreto lists a
-  `minivault` provider that `SecretsTestMain`'s `PLUGINMODULES` table does
-  not.
-- **Lanes that would have caught more of this:** only ts and js run a
-  generated SDK's feature suite. The cross-feature suites that go, java,
-  kotlin, csharp, rust, cpp, c and swift declare in `fullset` are generated
-  only when every feature is declared and switched on, `secrets` included,
-  so neither a standard generation nor any lane runs them. A lane running
-  each native target's whole `make test` would have caught the rust include
-  and the old cpp compile errors, and an elixir lane running `mix test` a
-  second time on one build would catch compile-time state.
+| Issue | What |
+| --- | --- |
+| #245 | The ts and js generated feature suites fail on main; 92fd74ca on this branch fixes them |
+| #246 | php: an SDK that selects `validate` fails at load |
+| #247 | rust: two vendored files include a `COMMENT-NOTES.md` the scaffold does not ship |
+| #248 | Feature corpus: a case composing a feature the SDK lacks fails instead of skipping |
+| #249 | c: the direct-call test sends path parameters under `undefined` |
+| #250 | scala: the secrets suite's plugin table omits `minivault` |
+| #251 | Streams end silently on a failed operation in go, py, rb, php, lua and zig |
+| #252 | java, kotlin, scala, csharp, ocaml: `stream()` writes into the caller's ctrl map |
+| #253 | rbac rules for a sensitive-named entity register their permission values |
+| #254 | Decide whether `entity.match()` returns a query-placed credential |
+| #255 | Lanes that run each generated SDK's own test suite |
+| #256 | CI runs no lane for py, lua, zig, scala, clojure, elixir or ocaml |
+| #257 | Upgrading sdkgen does not refresh an existing project's `.sdk/tm` copies |
+| #258 | Hygiene: compiler warnings, dead code, the clojure test exit |
+| #259 | Packaged targets: langpack (haskell, lean, dart) and infrapack follow-ups |
+| #260 | php and lua: a thrown error fires no PreUnexpected; php ignores `throw: false` |
+| #261 | ts: a generated SDK does not build or test under TypeScript 7 |
+| #262 | docgen-validate does not switch the GitHub Pages edition on since docgen 0.30.0 |
 
 ## Deliberate per-target divergences reported by the ports
 
