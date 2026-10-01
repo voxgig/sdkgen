@@ -139,9 +139,13 @@ async function doctor(actx, scope, selected) {
         forked: [], edited: [], stale: [], missing: [], additive: [],
         superseded: [], unwired: [], orphanModel: [],
         resyncPending: [], aliasedDiff: [],
-        outdated: [], unrecorded: [], byItem: {}, ok: true,
+        outdated: [], unrecorded: [], byItem: {}, ignoredLog: false, ok: true,
     };
     const copies = (0, copies_1.readCopies)(fs, root);
+    report.ignoredLog = (0, copies_1.ignoredLog)(fs, root);
+    if (report.ignoredLog) {
+        log.warn({ point: 'doctor-copies-ignored', note: copies_1.IGNORED_LOG });
+    }
     report.superseded = supersededFiles(actx);
     report.orphanModel = orphanModelFiles(actx);
     const kinds = Object.keys(kind_1.KINDS).sort();
@@ -704,7 +708,7 @@ function copyWarnings(report) {
             add('changed\n' + command, item, drift.changed, drift);
         }
     }
-    const lines = [];
+    const lines = report.ignoredLog ? [copies_1.IGNORED_LOG] : [];
     for (const [key, group] of groups) {
         const [what, command] = key.split('\n');
         const pkg = group.drift[0].package;

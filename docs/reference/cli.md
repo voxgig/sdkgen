@@ -185,7 +185,8 @@ sdkgen 4.34.0 kept the whole record in `.sdk/sdkgen-copies.json`. That
 file is still read, and the next add moves it into the log and deletes
 it. A project scaffolded by an earlier create-sdkgen may list `log/` in
 `.sdk/.gitignore`. Delete that line so the log is committed: a clone
-without it has no record.
+without it has no record. Until it goes, `doctor` and `npm run generate`
+warn about it, as does the add that starts the log.
 
 `npm run generate` runs the same comparison over the items it is about to
 read, before it writes anything, and prints one warning per refresh

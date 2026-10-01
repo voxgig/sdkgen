@@ -13,6 +13,7 @@ type DoctorReport = {
     outdated: string[];
     unrecorded: string[];
     byItem: Record<string, ItemDrift>;
+    ignoredLog: boolean;
     ok: boolean;
 };
 type ItemDrift = {

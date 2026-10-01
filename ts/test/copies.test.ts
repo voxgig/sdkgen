@@ -287,6 +287,48 @@ describe('line endings, which git may rewrite on checkout', () => {
 })
 
 
+describe('a .gitignore that hides the log', () => {
+
+  // What every create-sdkgen scaffold wrote before the record moved here.
+  const SCAFFOLDED = '# Generated logs\nlog/\n*.log\n'
+
+
+  test('the add that starts the log says so, once', async () => {
+    const log = recordLog()
+    const project = makeProject({ log })
+    project.fs.writeFileSync(ROOT + '/.gitignore', SCAFFOLDED)
+
+    await target_add([targetRef('ts')], project.actx)
+    await target_add([targetRef('go')], project.actx)
+
+    const warned = log.lines.filter((l: any) => 'copies-ignored' === l.point)
+    strictEqual(warned.length, 1, JSON.stringify(warned))
+    strictEqual(warned[0].level, 'warn')
+    ok(warned[0].note.includes('Delete the log/ line'), warned[0].note)
+  })
+
+
+  test('doctor and generate keep saying so until the line goes', async () => {
+    const project = await added('ts')
+    project.fs.writeFileSync(ROOT + '/.gitignore', SCAFFOLDED)
+
+    const hidden: any = (await doctor(project.actx)).report
+    strictEqual(hidden.ignoredLog, true)
+    strictEqual(hidden.ok, true, 'a hidden record is not drift')
+
+    const lines = await copyCheck(project.actx)
+    strictEqual(lines.length, 1, lines.join('\n'))
+    ok(lines[0].includes('.gitignore ignores log/'), lines[0])
+
+    project.fs.writeFileSync(ROOT + '/.gitignore', '# Generated logs\n*.log\n')
+
+    const shown: any = (await doctor(project.actx)).report
+    strictEqual(shown.ignoredLog, false)
+    deepStrictEqual(await copyCheck(project.actx), [])
+  })
+})
+
+
 describe('package update reads the copy record', () => {
 
   test('refreshes outdated copies without --force', async () => {

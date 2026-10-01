@@ -22,6 +22,10 @@ const COPY_LOG = 'log/copies.jsonl'
 // Where 4.34.0 kept the whole record, until the next write moves it.
 const LEGACY = 'sdkgen-copies.json'
 
+const IGNORED_LOG = '.sdk/.gitignore ignores log/, so .sdk/' + COPY_LOG +
+  ' is not committed and a fresh clone has no copy record. Delete the ' +
+  'log/ line.'
+
 
 type CopyItem = {
   package?: string
@@ -133,12 +137,15 @@ function apply(record: CopyRecord, entry: CopyEntry) {
 
 // The only writer. An entry that changes nothing is not written, so an add
 // that rewrites identical copies leaves the log, and git, as they were.
-function appendEntry(fs: any, folder: string, op: string, entry: CopyEntry) {
+function appendEntry(actx: ActionContext, op: string, entry: CopyEntry) {
+  const fs = actx.fs()
+  const folder = actx.folder
   const log = logPath(folder)
   const legacy = Path.join(folder, LEGACY)
+  const fresh = !fs.existsSync(log)
   const lines: string[] = []
 
-  if (!fs.existsSync(log)) {
+  if (fresh) {
     const imported = readLegacy(fs, folder)
     if (null != imported && changes(imported)) {
       lines.push(entryLine('import', imported))
@@ -152,11 +159,25 @@ function appendEntry(fs: any, folder: string, op: string, entry: CopyEntry) {
   if (0 < lines.length) {
     fs.mkdirSync(Path.dirname(log), { recursive: true })
     fs.appendFileSync(log, lines.join('\n') + '\n')
+
+    if (fresh && ignoredLog(fs, folder)) {
+      actx.log.warn({ point: 'copies-ignored', note: IGNORED_LOG })
+    }
   }
 
   if (fs.existsSync(legacy)) {
     fs.unlinkSync(legacy)
   }
+}
+
+
+// The line every create-sdkgen scaffold wrote before the record moved into
+// log/. Only git knows every rule, so this finds that one, not all of them.
+function ignoredLog(fs: any, folder: string): boolean {
+  const path = Path.join(folder, '.gitignore')
+
+  return fs.existsSync(path) && String(fs.readFileSync(path, 'utf8'))
+    .split('\n').some((line: string) => /^\/?log(\/\*?)?$/.test(line.trim()))
 }
 
 
@@ -259,7 +280,7 @@ function recordCopies(
     }
   }
 
-  appendEntry(fs, folder, 'add', { items, files })
+  appendEntry(actx, 'add', { items, files })
 }
 
 
@@ -274,7 +295,7 @@ function forgetCopies(actx: ActionContext, kind: string, name: string) {
   const record = readCopies(fs, folder)
   const key = itemKey(kind, name)
 
-  appendEntry(fs, folder, 'remove', {
+  appendEntry(actx, 'remove', {
     items: null == record.items[key] ? {} : { [key]: null },
     files: gone(fs, folder, record),
   })
@@ -319,6 +340,8 @@ export type {
 
 export {
   COPY_LOG,
+  IGNORED_LOG,
+  ignoredLog,
   itemKey,
   fingerprint,
   readCopies,

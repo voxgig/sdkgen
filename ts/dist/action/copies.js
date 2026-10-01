@@ -3,7 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.COPY_LOG = void 0;
+exports.IGNORED_LOG = exports.COPY_LOG = void 0;
+exports.ignoredLog = ignoredLog;
 exports.itemKey = itemKey;
 exports.fingerprint = fingerprint;
 exports.readCopies = readCopies;
@@ -23,6 +24,10 @@ const COPY_LOG = 'log/copies.jsonl';
 exports.COPY_LOG = COPY_LOG;
 // Where 4.34.0 kept the whole record, until the next write moves it.
 const LEGACY = 'sdkgen-copies.json';
+const IGNORED_LOG = '.sdk/.gitignore ignores log/, so .sdk/' + COPY_LOG +
+    ' is not committed and a fresh clone has no copy record. Delete the ' +
+    'log/ line.';
+exports.IGNORED_LOG = IGNORED_LOG;
 function logPath(folder) {
     return node_path_1.default.join(folder, ...COPY_LOG.split('/'));
 }
@@ -95,11 +100,14 @@ function apply(record, entry) {
 }
 // The only writer. An entry that changes nothing is not written, so an add
 // that rewrites identical copies leaves the log, and git, as they were.
-function appendEntry(fs, folder, op, entry) {
+function appendEntry(actx, op, entry) {
+    const fs = actx.fs();
+    const folder = actx.folder;
     const log = logPath(folder);
     const legacy = node_path_1.default.join(folder, LEGACY);
+    const fresh = !fs.existsSync(log);
     const lines = [];
-    if (!fs.existsSync(log)) {
+    if (fresh) {
         const imported = readLegacy(fs, folder);
         if (null != imported && changes(imported)) {
             lines.push(entryLine('import', imported));
@@ -111,10 +119,20 @@ function appendEntry(fs, folder, op, entry) {
     if (0 < lines.length) {
         fs.mkdirSync(node_path_1.default.dirname(log), { recursive: true });
         fs.appendFileSync(log, lines.join('\n') + '\n');
+        if (fresh && ignoredLog(fs, folder)) {
+            actx.log.warn({ point: 'copies-ignored', note: IGNORED_LOG });
+        }
     }
     if (fs.existsSync(legacy)) {
         fs.unlinkSync(legacy);
     }
+}
+// The line every create-sdkgen scaffold wrote before the record moved into
+// log/. Only git knows every rule, so this finds that one, not all of them.
+function ignoredLog(fs, folder) {
+    const path = node_path_1.default.join(folder, '.gitignore');
+    return fs.existsSync(path) && String(fs.readFileSync(path, 'utf8'))
+        .split('\n').some((line) => /^\/?log(\/\*?)?$/.test(line.trim()));
 }
 function changes(entry) {
     return 0 < Object.keys(entry.items ?? {}).length ||
@@ -188,7 +206,7 @@ function recordCopies(actx, jres, kind, sources) {
             }
         }
     }
-    appendEntry(fs, folder, 'add', { items, files });
+    appendEntry(actx, 'add', { items, files });
 }
 // After a remove: the item goes, with every file entry nothing holds now.
 function forgetCopies(actx, kind, name) {
@@ -199,7 +217,7 @@ function forgetCopies(actx, kind, name) {
     const folder = actx.folder;
     const record = readCopies(fs, folder);
     const key = itemKey(kind, name);
-    appendEntry(fs, folder, 'remove', {
+    appendEntry(actx, 'remove', {
         items: null == record.items[key] ? {} : { [key]: null },
         files: gone(fs, folder, record),
     });

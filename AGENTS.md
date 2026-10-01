@@ -686,7 +686,8 @@ emitted broken source reached the fleet unchallenged.
   the tree clean. An index JSON beside it is for a log too slow to replay;
   the copy log replays in milliseconds at twenty targets, so it has none.
   A record that must travel with the repository also has to survive the
-  scaffold's `.sdk/.gitignore`, which once ignored `log/` wholesale.
+  scaffold's `.sdk/.gitignore`, which once ignored `log/` wholesale;
+  `ignoredLog` (`action/copies.ts`) is what warns about that line.
 - **`package update` must check BEFORE it fetches.** Measured before the
   source moves, a differing copy means the project changed it; measured
   after, every item legitimately differs, the gate fires on all of them,
