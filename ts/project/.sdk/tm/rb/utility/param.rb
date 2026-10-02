@@ -3,13 +3,6 @@ require_relative 'struct/voxgig_struct'
 require_relative '../core/helpers'
 module ProjectNameUtilities
   Param = ->(ctx, paramdef) {
-    point = ctx.point
-    spec = ctx.spec
-    match_val = ctx.match
-    reqmatch = ctx.reqmatch
-    data = ctx.data
-    reqdata = ctx.reqdata
-
     pt = VoxgigStruct.typify(paramdef)
     key = if (VoxgigStruct::T_string & pt) > 0
             paramdef
@@ -18,33 +11,41 @@ module ProjectNameUtilities
             k.is_a?(String) ? k : ""
           end
 
-    akey = ""
-    if point
-      alias_map = ProjectNameHelpers.to_map(VoxgigStruct.getprop(point, "alias"))
-      if alias_map
-        ak = VoxgigStruct.getprop(alias_map, key)
-        akey = ak if ak.is_a?(String)
-      end
+    akey = ProjectNameUtilities.param_alias(ctx.point, key)
+    if ctx.spec && !akey.empty? &&
+       VoxgigStruct.getprop(ctx.reqmatch, key).nil? && VoxgigStruct.getprop(ctx.match, key).nil?
+      ctx.spec.alias_map[akey] = key
     end
 
-    val = VoxgigStruct.getprop(reqmatch, key)
-    val = VoxgigStruct.getprop(match_val, key) if val.nil?
+    ProjectNameUtilities.param_value(ctx, ctx.point, key)
+  }
+
+  # The name a point gives a parameter in the call, if it renames it.
+  def self.param_alias(point, key)
+    return "" unless point
+    alias_map = ProjectNameHelpers.to_map(VoxgigStruct.getprop(point, "alias"))
+    ak = alias_map ? VoxgigStruct.getprop(alias_map, key) : nil
+    ak.is_a?(String) ? ak : ""
+  end
+
+  # The value the call or its entity gives a point's parameter, under its name
+  # or the point's alias for it.
+  def self.param_value(ctx, point, key)
+    akey = param_alias(point, key)
+
+    val = VoxgigStruct.getprop(ctx.reqmatch, key)
+    val = VoxgigStruct.getprop(ctx.match, key) if val.nil?
+    val = VoxgigStruct.getprop(ctx.reqmatch, akey) if val.nil? && !akey.empty?
+    val = VoxgigStruct.getprop(ctx.reqdata, key) if val.nil?
+    val = VoxgigStruct.getprop(ctx.data, key) if val.nil?
 
     if val.nil? && !akey.empty?
-      spec.alias_map[akey] = key if spec
-      val = VoxgigStruct.getprop(reqmatch, akey)
-    end
-
-    val = VoxgigStruct.getprop(reqdata, key) if val.nil?
-    val = VoxgigStruct.getprop(data, key) if val.nil?
-
-    if val.nil? && !akey.empty?
-      val = VoxgigStruct.getprop(reqdata, akey)
-      val = VoxgigStruct.getprop(data, akey) if val.nil?
+      val = VoxgigStruct.getprop(ctx.reqdata, akey)
+      val = VoxgigStruct.getprop(ctx.data, akey) if val.nil?
     end
 
     val
-  }
+  end
 
   # The arguments a point declares in one location, query or header, each
   # with the name it travels under and the value this call passes in its

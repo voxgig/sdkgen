@@ -515,6 +515,7 @@ voxgig_value* make_point_util(Context* ctx, PNError** err);
 Spec* make_spec_util(Context* ctx, PNError** err);
 char* make_url_util(Context* ctx, PNError** err); // malloc'd
 voxgig_value* param_util(Context* ctx, voxgig_value* paramdef);
+voxgig_value* param_value(Context* ctx, voxgig_value* point, const char* key);
 voxgig_value* call_args(Context* ctx, const char* kind); // list of [name, wire, val]
 Spec* prepare_auth_util(Context* ctx, PNError** err);
 voxgig_value* prepare_body_util(Context* ctx);

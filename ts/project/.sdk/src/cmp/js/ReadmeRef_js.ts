@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey , targetFeatures } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey , targetFeatures, opNeedsAction } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -268,6 +268,10 @@ const ${eVar} = client.${ent.Name}()
 ${info.desc}
 
 `)
+
+          if (opNeedsAction(ent.op[opname])) {
+            return
+          }
 
           // Show example
           if ('load' === opname || 'remove' === opname) {

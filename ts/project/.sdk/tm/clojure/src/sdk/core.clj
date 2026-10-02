@@ -733,29 +733,41 @@
           (.put ^java.util.Map out key (vs/stringify v)))))
     out))
 
-(defn u-param [ctx paramdef]
-  (let [point (oget ctx :point)
-        spec (oget ctx :spec)
-        match (oget ctx :match)
+;; The name a point gives a parameter in the call, if it renames it.
+(defn- param-alias [point key]
+  (let [am (when point (to-map (vs/getprop point "alias")))
+        ak (when am (vs/getprop am key))]
+    (if (string? ak) ak "")))
+
+;; The value the call or its entity gives a point's parameter, under its name
+;; or the point's alias for it.
+(defn param-value [ctx point key]
+  (let [akey (param-alias point key)
         reqmatch (oget ctx :reqmatch)
-        data (oget ctx :data)
         reqdata (oget ctx :reqdata)
-        pt (vs/typify paramdef)
-        key (if (pos? (bit-and vs/T_string pt)) paramdef
-                (let [k (vs/getprop paramdef "name")] (if (string? k) k "")))
-        akey (let [am (when point (to-map (vs/getprop point "alias")))]
-               (if am (let [ak (vs/getprop am key)] (if (string? ak) ak "")) ""))
+        data (oget ctx :data)
         v (atom (vs/getprop reqmatch key))]
-    (when (nil? @v) (reset! v (vs/getprop match key)))
-    (when (and (nil? @v) (seq akey))
-      (when spec (.put ^java.util.Map (oget spec :alias) akey key))
-      (reset! v (vs/getprop reqmatch akey)))
+    (when (nil? @v) (reset! v (vs/getprop (oget ctx :match) key)))
+    (when (and (nil? @v) (seq akey)) (reset! v (vs/getprop reqmatch akey)))
     (when (nil? @v) (reset! v (vs/getprop reqdata key)))
     (when (nil? @v) (reset! v (vs/getprop data key)))
     (when (and (nil? @v) (seq akey))
       (reset! v (vs/getprop reqdata akey))
       (when (nil? @v) (reset! v (vs/getprop data akey))))
     @v))
+
+(defn u-param [ctx paramdef]
+  (let [point (oget ctx :point)
+        spec (oget ctx :spec)
+        pt (vs/typify paramdef)
+        key (if (pos? (bit-and vs/T_string pt)) paramdef
+                (let [k (vs/getprop paramdef "name")] (if (string? k) k "")))
+        akey (param-alias point key)]
+    (when (and spec (seq akey)
+               (nil? (vs/getprop (oget ctx :reqmatch) key))
+               (nil? (vs/getprop (oget ctx :match) key)))
+      (.put ^java.util.Map (oget spec :alias) akey key))
+    (param-value ctx point key)))
 
 (defn u-prepare-params [ctx]
   (let [point (oget ctx :point)
@@ -973,14 +985,13 @@
 (load "prepare_auth")
 
 ;; The path parameters of a point that neither the call nor the entity gives a
-;; value for, looked up where u-param looks.
+;; value for, looked up as u-param looks them up.
 (defn- unfilled-params [ctx point]
-  (let [parts (vs/getprop point "parts")
-        sources [(oget ctx :reqmatch) (oget ctx :match) (oget ctx :reqdata) (oget ctx :data)]]
+  (let [parts (vs/getprop point "parts")]
     (if (vs/islist parts)
       (vec (keep (fn [part]
                    (when-let [[_ pname] (and (string? part) (re-matches #"\{([^{}/]+)\}" part))]
-                     (when (every? #(nil? (vs/getprop % pname)) sources) pname)))
+                     (when (nil? (param-value ctx point pname)) pname)))
                  (vec parts)))
       [])))
 
@@ -1069,15 +1080,19 @@
                     ;; one, as generation does, and only to a route the call
                     ;; can fill.
                     plain (filterv #(nil? (vs/getprop (to-map (vs/getprop % "select")) "$action")) all)
-                    pool (if (empty? plain) all plain)
-                    fillable (filterv #(empty? (unfilled-params ctx %)) pool)
+                    fillable (filterv #(empty? (unfilled-params ctx %)) plain)
                     chosen (or matched (when (seq fillable) (own-point fillable)))]
                 (cond
+                  (and (nil? matched) (empty? plain))
+                  [nil (ctx-error ctx "point_action_required"
+                                  (str "Operation \"" (op-name op)
+                                       "\" has only action endpoints; pass $action to choose one."))]
+
                   (nil? chosen)
                   [nil (ctx-error ctx "point_no_match"
                                   (str "Operation \"" (op-name op)
                                        "\" has no endpoint whose path parameters are all given (missing: "
-                                       (str/join ", " (unfilled-params ctx (own-point pool))) ")."))]
+                                       (str/join ", " (unfilled-params ctx (own-point plain))) ")."))]
 
                   (and reqselector req-action)
                   (let [point-select (to-map (vs/getprop chosen "select"))

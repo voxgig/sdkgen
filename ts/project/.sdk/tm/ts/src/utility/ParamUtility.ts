@@ -4,10 +4,6 @@ import { Context } from '../types'
 function param(ctx: Context, paramdef: any) {
   const point = ctx.point
   const spec = ctx.spec
-  const match = ctx.match
-  const reqmatch = ctx.reqmatch
-  const data = ctx.data
-  const reqdata = ctx.reqdata
 
   const utility = ctx.utility
   const struct = utility.struct
@@ -23,36 +19,46 @@ function param(ctx: Context, paramdef: any) {
 
   const key = 0 < (T_string & pt) ? paramdef : getprop(paramdef, 'name')
 
-  let akey = getprop(point.alias, key)
+  const akey = getprop(point.alias, key)
 
-  let val = getprop(reqmatch, key)
+  if (null != spec && null != akey &&
+    null == getprop(ctx.reqmatch, key) && null == getprop(ctx.match, key)) {
+    setprop(spec.alias, akey, key)
+  }
+
+  return paramValue(ctx, point, key)
+}
+
+
+// The value the call or its entity gives a point's parameter, under its name
+// or the point's alias for it.
+function paramValue(ctx: Context, point: any, key: string): any {
+  const getprop = ctx.utility.struct.getprop
+  const akey = getprop(point?.alias, key)
+
+  let val = getprop(ctx.reqmatch, key)
 
   if (null == val) {
-    val = getprop(match, key)
+    val = getprop(ctx.match, key)
   }
 
   if (null == val && null != akey) {
-
-    if (null != spec) {
-      setprop(spec.alias, akey, key)
-    }
-
-    val = getprop(reqmatch, akey)
+    val = getprop(ctx.reqmatch, akey)
   }
 
   if (null == val) {
-    val = getprop(reqdata, key)
+    val = getprop(ctx.reqdata, key)
   }
 
   if (null == val) {
-    val = getprop(data, key)
+    val = getprop(ctx.data, key)
   }
 
   if (null == val && null != akey) {
-    val = getprop(reqdata, akey)
+    val = getprop(ctx.reqdata, akey)
 
     if (null == val) {
-      val = getprop(data, akey)
+      val = getprop(ctx.data, akey)
     }
   }
 
@@ -86,6 +92,7 @@ function callArgs(ctx: Context, kind: string): CallArg[] {
 
 export {
   param,
+  paramValue,
   callArgs,
 }
 

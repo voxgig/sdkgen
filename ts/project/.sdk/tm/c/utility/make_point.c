@@ -55,13 +55,12 @@ static voxgig_value* own_point(voxgig_value* points) {
 }
 
 // The path parameters of a point that neither the call nor the entity gives a
-// value for, looked up where prepare_params_util looks: a list of names.
+// value for, looked up as prepare_params_util looks them up: a list of names.
 static voxgig_value* unfilled(Context* ctx, voxgig_value* point) {
   voxgig_value* missing = voxgig_new_list();
   voxgig_value* parts = getp(point, "parts");
   if (!voxgig_is_list(parts)) return missing;
 
-  voxgig_value* sources[4] = { ctx->reqmatch, ctx->mtch, ctx->reqdata, ctx->data };
   voxgig_list* pl = voxgig_as_list(parts);
   for (size_t i = 0; i < pl->len; i++) {
     if (!voxgig_is_string(pl->items[i])) continue;
@@ -72,12 +71,10 @@ static voxgig_value* unfilled(Context* ctx, voxgig_value* point) {
     char* name = (char*)malloc(n - 1);
     memcpy(name, part + 1, n - 2);
     name[n - 2] = '\0';
-    bool given = false;
-    for (int s = 0; s < 4 && !given; s++) {
-      voxgig_value* val = getp(sources[s], name);
-      given = !v_is_noval(val) && !v_is_null(val);
+    voxgig_value* val = param_value(ctx, point, name);
+    if (v_is_noval(val) || v_is_null(val)) {
+      voxgig_list_push(voxgig_as_list(missing), voxgig_new_string(name));
     }
-    if (!given) voxgig_list_push(voxgig_as_list(missing), voxgig_new_string(name));
     free(name);
   }
   return missing;
@@ -198,30 +195,34 @@ voxgig_value* make_point_util(Context* ctx, PNError** err) {
 
       // A call without an action falls back to a point without one, as
       // generation does, and only to a route the call can fill.
-      voxgig_value* pool = voxgig_new_list();
+      voxgig_value* plain = voxgig_new_list();
       for (int64_t i = 0; i < plen; i++) {
         voxgig_value* cand = get_elem_i(points, i);
         if (v_is_noval(getp(to_map(getp(cand, "select")), "$action"))) {
-          voxgig_list_push(voxgig_as_list(pool), v_share(cand));
+          voxgig_list_push(voxgig_as_list(plain), v_share(cand));
         }
       }
-      if (0 == voxgig_as_list(pool)->len) {
-        for (int64_t i = 0; i < plen; i++) {
-          voxgig_list_push(voxgig_as_list(pool), v_share(get_elem_i(points, i)));
-        }
+      if (0 == voxgig_as_list(plain)->len) {
+        voxgig_release(plain);
+        char buf[512];
+        snprintf(buf, sizeof(buf),
+                 "Operation \"%s\" has only action endpoints; pass $action to choose one.",
+                 op->name);
+        *err = context_make_error(ctx, "point_action_required", buf);
+        return NULL;
       }
       voxgig_value* fillable = voxgig_new_list();
-      voxgig_list* pool_l = voxgig_as_list(pool);
-      for (size_t i = 0; i < pool_l->len; i++) {
-        voxgig_value* missing = unfilled(ctx, pool_l->items[i]);
+      voxgig_list* plain_l = voxgig_as_list(plain);
+      for (size_t i = 0; i < plain_l->len; i++) {
+        voxgig_value* missing = unfilled(ctx, plain_l->items[i]);
         if (0 == voxgig_as_list(missing)->len) {
-          voxgig_list_push(voxgig_as_list(fillable), v_share(pool_l->items[i]));
+          voxgig_list_push(voxgig_as_list(fillable), v_share(plain_l->items[i]));
         }
         voxgig_release(missing);
       }
 
       if (0 == voxgig_as_list(fillable)->len) {
-        voxgig_value* missing = unfilled(ctx, own_point(pool));
+        voxgig_value* missing = unfilled(ctx, own_point(plain));
         char* names = join_names(missing);
         char buf[512];
         snprintf(buf, sizeof(buf),
@@ -230,14 +231,14 @@ voxgig_value* make_point_util(Context* ctx, PNError** err) {
         free(names);
         voxgig_release(missing);
         voxgig_release(fillable);
-        voxgig_release(pool);
+        voxgig_release(plain);
         *err = context_make_error(ctx, "point_no_match", buf);
         return NULL;
       }
 
       point = own_point(fillable);
       voxgig_release(fillable);
-      voxgig_release(pool);
+      voxgig_release(plain);
     }
 
     voxgig_value* req_action = getp(reqselector, "$action");

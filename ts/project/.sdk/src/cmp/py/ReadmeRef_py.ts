@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, matchArg, idLiteral, targetFeatures } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, matchArg, idLiteral, targetFeatures, opNeedsAction } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -255,6 +255,10 @@ ${eVar} = client.${ent.Name}()
 ${info.desc}
 
 `)
+
+          if (opNeedsAction(ent.op[opname])) {
+            return
+          }
 
           // Show example. Entity ops return the ENTITY and raise on
           // error; direct() is the only method that returns a result dict.

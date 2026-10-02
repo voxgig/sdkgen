@@ -4,26 +4,19 @@ declare(strict_types=1);
 // ProjectName SDK utility: make_point
 
 require_once __DIR__ . '/../core/Helpers.php';
+require_once __DIR__ . '/Param.php';
 
 class ProjectNameMakePoint
 {
     // The path parameters of a point that neither the call nor the entity
-    // gives a value for, looked up where prepareParams looks.
+    // gives a value for, looked up as prepareParams looks them up.
     private static function unfilled(ProjectNameContext $ctx, mixed $point): array
     {
         $parts = \Voxgig\Struct\Struct::getprop($point, 'parts');
         $missing = [];
         foreach (is_array($parts) ? $parts : [] as $part) {
-            if (!is_string($part) || !preg_match('/^\{([^{}\/]+)\}$/D', $part, $found)) {
-                continue;
-            }
-            $given = false;
-            foreach ([$ctx->reqmatch, $ctx->match, $ctx->reqdata, $ctx->data] as $src) {
-                if (null !== \Voxgig\Struct\Struct::getprop($src ?? [], $found[1])) {
-                    $given = true;
-                }
-            }
-            if (!$given) {
+            if (is_string($part) && preg_match('/^\{([^{}\/]+)\}$/D', $part, $found) &&
+                null === ProjectNameParam::value($ctx, $point, $found[1])) {
                 $missing[] = $found[1];
             }
         }
@@ -154,14 +147,18 @@ class ProjectNameMakePoint
                 $plain = array_values(array_filter($op->points, fn($p) => null ===
                     \Voxgig\Struct\Struct::getprop(
                         ProjectNameHelpers::to_map(\Voxgig\Struct\Struct::getprop($p, 'select')), '$action')));
-                $pool = 0 < count($plain) ? $plain : array_values($op->points);
-                $fillable = array_values(array_filter($pool,
+                if (0 === count($plain)) {
+                    return [null, $ctx->make_error('point_action_required',
+                        "Operation \"{$op->name}\" has only action endpoints; pass \$action to choose one.")];
+                }
+
+                $fillable = array_values(array_filter($plain,
                     fn($p) => 0 === count(self::unfilled($ctx, $p))));
 
                 if (0 === count($fillable)) {
                     return [null, $ctx->make_error('point_no_match',
                         "Operation \"{$op->name}\" has no endpoint whose path parameters are all given (missing: " .
-                        implode(', ', self::unfilled($ctx, $own_point($pool))) . ").")];
+                        implode(', ', self::unfilled($ctx, $own_point($plain))) . ").")];
                 }
 
                 $point = $own_point($fillable);

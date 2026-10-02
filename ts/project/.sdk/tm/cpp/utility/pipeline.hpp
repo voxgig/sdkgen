@@ -668,8 +668,35 @@ inline std::string makeUrl(CtxPtr ctx) {
 
 // ---- makePoint --------------------------------------------------------
 
+// The name a point gives a parameter in the call, if it renames it.
+inline std::string paramAlias(const Value& point, const std::string& key) {
+  if (!point.is_map()) return "";
+  Value alias = Helpers::toMapAny(getp(point, "alias"));
+  if (!alias.is_map()) return "";
+  Value ak = getp(alias, key);
+  return ak.is_string() ? ak.as_string() : "";
+}
+
+// The value the call or its entity gives a point's parameter, under its name
+// or the point's alias for it.
+inline Value paramValue(CtxPtr ctx, const Value& point, const std::string& key) {
+  std::string akey = paramAlias(point, key);
+
+  Value val = getp(ctx->reqmatch, key, Value(nullptr));
+  if (val.is_null()) val = getp(ctx->match, key, Value(nullptr));
+  if (val.is_null() && !akey.empty()) val = getp(ctx->reqmatch, akey, Value(nullptr));
+  if (val.is_null()) val = getp(ctx->reqdata, key, Value(nullptr));
+  if (val.is_null()) val = getp(ctx->data, key, Value(nullptr));
+  if (val.is_null() && !akey.empty()) {
+    val = getp(ctx->reqdata, akey, Value(nullptr));
+    if (val.is_null()) val = getp(ctx->data, akey, Value(nullptr));
+  }
+
+  return val;
+}
+
 // The path parameters of a point that neither the call nor the entity gives a
-// value for, looked up where param looks.
+// value for, looked up as param looks them up.
 inline std::vector<std::string> unfilledParams(CtxPtr ctx, const Value& point) {
   std::vector<std::string> missing;
   Value parts = getp(point, "parts");
@@ -680,11 +707,7 @@ inline std::vector<std::string> unfilledParams(CtxPtr ctx, const Value& point) {
     if (text.size() < 3 || '{' != text.front() ||
         text.size() - 1 != text.find_first_of("{}/", 1) || '}' != text.back()) continue;
     std::string name = text.substr(1, text.size() - 2);
-    bool given = false;
-    for (const Value* src : {&ctx->reqmatch, &ctx->match, &ctx->reqdata, &ctx->data}) {
-      given = given || !is_nullish(getp(*src, name, Value(nullptr)));
-    }
-    if (!given) missing.push_back(name);
+    if (is_nullish(paramValue(ctx, point, name))) missing.push_back(name);
   }
   return missing;
 }
@@ -812,21 +835,25 @@ inline Value makePoint(CtxPtr ctx) {
 
       // A call without an action falls back to a point without one, as
       // generation does, and only to a route the call can fill.
-      std::vector<Value> pool;
+      std::vector<Value> plain;
       for (const auto& cand : op->points) {
         if (getp(Helpers::toMapAny(getp(cand, "select")), "$action", Value(nullptr)).is_null()) {
-          pool.push_back(cand);
+          plain.push_back(cand);
         }
       }
-      if (pool.empty()) pool = op->points;
+      if (plain.empty()) {
+        throw ctx->makeError("point_action_required",
+            "Operation \"" + op->name +
+            "\" has only action endpoints; pass $action to choose one.");
+      }
       std::vector<Value> fillable;
-      for (const auto& cand : pool) {
+      for (const auto& cand : plain) {
         if (unfilledParams(ctx, cand).empty()) fillable.push_back(cand);
       }
 
       if (fillable.empty()) {
         std::string missing;
-        for (const auto& name : unfilledParams(ctx, ownPoint(pool))) {
+        for (const auto& name : unfilledParams(ctx, ownPoint(plain))) {
           missing += (missing.empty() ? "" : ", ") + name;
         }
         throw ctx->makeError("point_no_match",
@@ -1383,13 +1410,6 @@ inline Value prepareHeaders(CtxPtr ctx) {
 // ---- param ------------------------------------------------------------
 
 inline Value param(CtxPtr ctx, const Value& paramdef) {
-  Value point = ctx->point;
-  SpecPtr spec = ctx->spec;
-  Value match = ctx->match;
-  Value reqmatch = ctx->reqmatch;
-  Value data = ctx->data;
-  Value reqdata = ctx->reqdata;
-
   int pt = Struct::typify(paramdef);
 
   std::string key;
@@ -1400,29 +1420,14 @@ inline Value param(CtxPtr ctx, const Value& paramdef) {
     key = k.is_string() ? k.as_string() : "";
   }
 
-  std::string akey = "";
-  if (point.is_map()) {
-    Value alias = Helpers::toMapAny(getp(point, "alias"));
-    if (alias.is_map()) {
-      Value ak = getp(alias, key);
-      if (ak.is_string()) akey = ak.as_string();
-    }
+  std::string akey = paramAlias(ctx->point, key);
+  if (ctx->spec && !akey.empty() &&
+      getp(ctx->reqmatch, key, Value(nullptr)).is_null() &&
+      getp(ctx->match, key, Value(nullptr)).is_null()) {
+    map_put(ctx->spec->alias, akey, Value(key));
   }
 
-  Value val = getp(reqmatch, key, Value(nullptr));
-  if (val.is_null()) val = getp(match, key, Value(nullptr));
-  if (val.is_null() && !akey.empty()) {
-    if (spec) map_put(spec->alias, akey, Value(key));
-    val = getp(reqmatch, akey, Value(nullptr));
-  }
-  if (val.is_null()) val = getp(reqdata, key, Value(nullptr));
-  if (val.is_null()) val = getp(data, key, Value(nullptr));
-  if (val.is_null() && !akey.empty()) {
-    val = getp(reqdata, akey, Value(nullptr));
-    if (val.is_null()) val = getp(data, akey, Value(nullptr));
-  }
-
-  return val;
+  return paramValue(ctx, ctx->point, key);
 }
 
 // ---- prepareParams ----------------------------------------------------

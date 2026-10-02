@@ -101,7 +101,7 @@ object MakePoint {
   }
 
   // The path parameters of a point that neither the call nor the entity gives
-  // a value for, looked up where param looks.
+  // a value for, looked up as param looks them up.
   private def unfilled(ctx: Context, point: JMap[String, Object]): Seq[String] =
     Struct.getprop(point, "parts") match {
       case parts: JList[_] =>
@@ -112,9 +112,7 @@ object MakePoint {
             case text: String =>
               text match {
                 case PathParam(name) =>
-                  val given = Seq(ctx.reqmatch, ctx.matchData, ctx.reqdata, ctx.data)
-                    .exists(src => src != null && Struct.getprop(src, name, null) != null)
-                  if (!given) missing += name
+                  if (Param.value(ctx, point, name) == null) missing += name
                 case _ =>
               }
             case _ =>
@@ -211,13 +209,17 @@ object MakePoint {
         val all = (0 until op.points.size()).map(op.points.get(_))
         val plain = all.filter(cand =>
           Struct.getprop(Helpers.toMapAny(Struct.getprop(cand, "select")), "$action", null) == null)
-        val pool = if (plain.isEmpty) all else plain
-        val fillable = pool.filter(cand => unfilled(ctx, cand).isEmpty)
+        if (plain.isEmpty) {
+          throw ctx.makeError("point_action_required",
+            "Operation \"" + op.name + "\" has only action endpoints; pass $action to choose one.")
+        }
+
+        val fillable = plain.filter(cand => unfilled(ctx, cand).isEmpty)
 
         if (fillable.isEmpty) {
           throw ctx.makeError("point_no_match",
             "Operation \"" + op.name + "\" has no endpoint whose path parameters are all given (missing: " +
-              unfilled(ctx, ownPoint(pool)).mkString(", ") + ").")
+              unfilled(ctx, ownPoint(plain)).mkString(", ") + ").")
         }
 
         point = ownPoint(fillable)

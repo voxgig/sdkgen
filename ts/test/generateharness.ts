@@ -374,6 +374,137 @@ main: kit: flow: BasicHistoryFlow: {
 `
 
 
+// Calls the runtime refuses when made bare: moon lists and loads under its
+// planet, and every list route of signal is an action.
+const ROUTING_MODEL = `
+main: kit: entity: moon: {
+  alias: field: {}
+  name: "moon"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "planet_id": { h: 'PlanetId', n: "planet_id", r: false, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: { params: [ { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" } ] }
+        m: "GET", o: "/planet/{planet_id}/moon"
+        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "moon" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    load: {
+      name: "load"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" }
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "m01" }
+        ] }
+        m: "GET", o: "/planet/{planet_id}/moon/{id}"
+        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "moon" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: entity: signal: {
+  alias: field: {}
+  name: "signal"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "level": { h: 'Level', n: "level", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: {
+      name: "list"
+      points: [
+        {
+          g: {}, m: "GET", o: "/signal/strong", s: [{ lit: "signal" }, { lit: "strong" }]
+          q: { "$action": "strong", exist: [] }
+          t: { req: "\`reqdata\`", res: "\`body\`" }
+        }
+        {
+          g: {}, m: "GET", o: "/signal/weak", s: [{ lit: "signal" }, { lit: "weak" }]
+          q: { "$action": "weak", exist: [] }
+          t: { req: "\`reqdata\`", res: "\`body\`" }
+        }
+      ]
+    }
+    load: {
+      name: "load"
+      points: [ {
+        g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" } ] }
+        m: "GET", o: "/signal/{id}", s: [{ lit: "signal" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: flow: BasicMoonFlow: {
+  entity: "moon", kind: "basic", name: "BasicMoonFlow"
+  step: [
+    { o: "list", m: { planet_id: "planet01" } }
+    { o: "load", m: { planet_id: "planet01" }, i: { ref: "moon_ref01", srcdatavar: "moon_ref01_data", suffix: "_dt0" } }
+  ]
+}
+
+main: kit: flow: BasicSignalFlow: {
+  entity: "signal", kind: "basic", name: "BasicSignalFlow"
+  step: [
+    { o: "list" }
+    { o: "load", i: { ref: "signal_ref01", srcdatavar: "signal_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
+
+// The entity test data create-sdkgen writes to .sdk/test/entity/<name>/:
+// existing records with every field and path parameter, and a new one.
+function entityTestData(entity: any): any {
+  const fields: any[] = Object.values(entity.fields || {})
+  const fill = (start: number, rec: any) => {
+    let num = start * fields.length * 10
+    for (const f of fields) {
+      rec[f.n] = f.n.endsWith('_id') ? f.n.slice(0, -3).toUpperCase() + '01' :
+        ['`$NUMBER`', '`$INTEGER`'].includes(f.t) ? num : 's' + num.toString(16)
+      num++
+    }
+    return rec
+  }
+
+  const params = new Map<string, string>()
+  for (const op of Object.values(entity.op || {}) as any[]) {
+    for (const point of op.points || []) {
+      for (const p of point.g?.params || []) {
+        if ('id' !== p.n && !params.has(p.n)) params.set(p.n, p.n.replace(/_id$/, '').toUpperCase() + '01')
+      }
+    }
+  }
+
+  const existing: any = {}
+  for (let i = 0; i < 3; i++) {
+    const id = (entity.name + String(i).padStart(2, '0')).toUpperCase()
+    const rec = fill(i + 1, {})
+    for (const [k, v] of params) if (undefined === rec[k]) rec[k] = v
+    existing[id] = { ...rec, id }
+  }
+  const created = fill(4, {})
+  delete created.id
+
+  return {
+    existing: { [entity.name]: existing },
+    new: { [entity.name]: { [entity.name + '_ref01']: created } },
+    requests: {},
+  }
+}
+
+
 function makeModel(
   targetNames: string[], name?: string, extra?: string, features?: string[],
 ): any {
@@ -480,6 +611,8 @@ export {
   STAGE,
   SCAFFOLD,
   API_MODEL,
+  ROUTING_MODEL,
+  entityTestData,
   makeLog,
   layeredFs,
   makeModel,

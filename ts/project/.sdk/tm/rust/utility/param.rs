@@ -8,10 +8,6 @@ use crate::utility::voxgigstruct::Value;
 pub fn param_util(ctx: &Rc<Context>, paramdef: &Value) -> Value {
     let point = ctx.point.borrow().clone();
     let spec = ctx.spec.borrow().clone();
-    let mtch = ctx.mtch.borrow().clone();
-    let reqmatch = ctx.reqmatch.borrow().clone();
-    let data = ctx.data.borrow().clone();
-    let reqdata = ctx.reqdata.borrow().clone();
 
     let pt = vs::typify(paramdef);
 
@@ -24,36 +20,57 @@ pub fn param_util(ctx: &Rc<Context>, paramdef: &Value) -> Value {
         get_str(paramdef, "name").unwrap_or_default()
     };
 
-    let mut akey = String::new();
-    if !point.is_noval() {
-        let alias = to_map(&getp(&point, "alias"));
-        if !alias.is_noval() {
-            if let Some(ak) = get_str(&alias, &key) {
-                akey = ak;
-            }
-        }
-    }
-
-    let mut val = getp(&reqmatch, &key);
-
-    if val.is_noval() {
-        val = getp(&mtch, &key);
-    }
-
-    if val.is_noval() && !akey.is_empty() {
+    let akey = param_alias(&point, &key);
+    if !akey.is_empty()
+        && getp(&ctx.reqmatch.borrow().clone(), &key).is_noval()
+        && getp(&ctx.mtch.borrow().clone(), &key).is_noval()
+    {
         if let Some(sp) = &spec {
             let alias = sp.borrow().alias.clone();
             crate::core::helpers::setp(&alias, &akey, Value::str(key.clone()));
         }
+    }
+
+    param_value(ctx, &point, &key)
+}
+
+// The name a point gives a parameter in the call, if it renames it.
+fn param_alias(point: &Value, key: &str) -> String {
+    if point.is_noval() {
+        return String::new();
+    }
+    let alias = to_map(&getp(point, "alias"));
+    if alias.is_noval() {
+        return String::new();
+    }
+    get_str(&alias, key).unwrap_or_default()
+}
+
+// The value the call or its entity gives a point's parameter, under its name
+// or the point's alias for it.
+pub fn param_value(ctx: &Rc<Context>, point: &Value, key: &str) -> Value {
+    let akey = param_alias(point, key);
+    let mtch = ctx.mtch.borrow().clone();
+    let reqmatch = ctx.reqmatch.borrow().clone();
+    let data = ctx.data.borrow().clone();
+    let reqdata = ctx.reqdata.borrow().clone();
+
+    let mut val = getp(&reqmatch, key);
+
+    if val.is_noval() {
+        val = getp(&mtch, key);
+    }
+
+    if val.is_noval() && !akey.is_empty() {
         val = getp(&reqmatch, &akey);
     }
 
     if val.is_noval() {
-        val = getp(&reqdata, &key);
+        val = getp(&reqdata, key);
     }
 
     if val.is_noval() {
-        val = getp(&data, &key);
+        val = getp(&data, key);
     }
 
     if val.is_noval() && !akey.is_empty() {

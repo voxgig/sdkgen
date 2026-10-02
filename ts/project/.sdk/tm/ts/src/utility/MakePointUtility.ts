@@ -1,6 +1,8 @@
 
 import { Context, Point } from '../types'
 
+import { paramValue } from './ParamUtility'
+
 
 function terminalParam(point: any): boolean {
   const parts = point.parts
@@ -27,16 +29,13 @@ function ownPoint(points: any[]): any {
 
 
 // The path parameters of a point that neither the call nor the entity gives a
-// value for, looked up where prepareParams looks.
+// value for, looked up as prepareParams looks them up.
 function unfilled(ctx: Context, point: any): string[] {
-  const getprop = ctx.utility.struct.getprop
   const missing: string[] = []
 
   for (const part of (point.parts || [])) {
     const name = /^\{([^{}\/]+)\}$/.exec(String(part))?.[1]
-    if (null != name &&
-      null == getprop(ctx.reqmatch, name) && null == getprop(ctx.match, name) &&
-      null == getprop(ctx.reqdata, name) && null == getprop(ctx.data, name)) {
+    if (null != name && null == paramValue(ctx, point, name)) {
       missing.push(name)
     }
   }
@@ -115,13 +114,18 @@ function makePoint(ctx: Context): Point | Error {
       // A call without an action falls back to a point without one, as
       // generation does, and only to a route the call can fill.
       const plain = op.points.filter((cand: any) => null == cand.select?.$action)
-      const pool = 0 < plain.length ? plain : op.points
-      const fillable = pool.filter((cand: any) => 0 === unfilled(ctx, cand).length)
+
+      if (0 === plain.length) {
+        return ctx.error('point_action_required', 'Operation "' + op.name +
+          '" has only action endpoints; pass $action to choose one.')
+      }
+
+      const fillable = plain.filter((cand: any) => 0 === unfilled(ctx, cand).length)
 
       if (0 === fillable.length) {
         return ctx.error('point_no_match', 'Operation "' + op.name +
           '" has no endpoint whose path parameters are all given (missing: ' +
-          unfilled(ctx, ownPoint(pool)).join(', ') + ').')
+          unfilled(ctx, ownPoint(plain)).join(', ') + ').')
       }
 
       point = ownPoint(fillable)

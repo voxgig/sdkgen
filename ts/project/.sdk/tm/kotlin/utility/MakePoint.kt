@@ -44,17 +44,14 @@ private fun ownPoint(points: List<MutableMap<String, Any?>>): MutableMap<String,
 }
 
 // The path parameters of a point that neither the call nor the entity gives
-// a value for, looked up where param looks.
+// a value for, looked up as param looks them up.
 private fun unfilledParams(ctx: Context, point: Map<String, Any?>?): List<String> {
   val parts = Struct.getprop(point, "parts") as? List<*> ?: return emptyList()
   val missing = mutableListOf<String>()
   for (part in parts) {
     val found = PATH_PARAM.matchEntire(part as? String ?: "") ?: continue
-    val name = found.groupValues[1]
-    val given = listOf(ctx.reqmatch, ctx.match, ctx.reqdata, ctx.data)
-      .any { Struct.getprop(it, name, null) != null }
-    if (!given) {
-      missing.add(name)
+    if (paramValue(ctx, point, found.groupValues[1]) == null) {
+      missing.add(found.groupValues[1])
     }
   }
   return missing
@@ -170,15 +167,22 @@ fun makePoint(ctx: Context): Map<String, Any?> {
       val plain = op.points.filter {
         Struct.getprop(Helpers.toMapAny(Struct.getprop(it, "select")), "\$action", null) == null
       }
-      val pool = if (plain.isEmpty()) op.points else plain
-      val fillable = pool.filter { unfilledParams(ctx, it).isEmpty() }
+      if (plain.isEmpty()) {
+        throw ctx.makeError(
+          "point_action_required",
+          "Operation \"" + op.name +
+            "\" has only action endpoints; pass \$action to choose one.",
+        )
+      }
+
+      val fillable = plain.filter { unfilledParams(ctx, it).isEmpty() }
 
       if (fillable.isEmpty()) {
         throw ctx.makeError(
           "point_no_match",
           "Operation \"" + op.name +
             "\" has no endpoint whose path parameters are all given (missing: " +
-            unfilledParams(ctx, ownPoint(pool)).joinToString(", ") + ").",
+            unfilledParams(ctx, ownPoint(plain)).joinToString(", ") + ").",
         )
       }
 

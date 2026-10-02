@@ -49,26 +49,17 @@ end
 
 
 -- The path parameters of a point that neither the call nor the entity gives
--- a value for, looked up where param looks.
+-- a value for, looked up as param looks them up.
 local function unfilled(ctx, point)
   local missing = {}
   local parts = vs.getprop(point, "parts")
   if type(parts) ~= "table" then
     return missing
   end
-  local sources = { ctx.reqmatch or {}, ctx.match or {}, ctx.reqdata or {}, ctx.data or {} }
   for _, part in ipairs(parts) do
     local name = type(part) == "string" and part:match("^{([^{}/]+)}$") or nil
-    if name ~= nil then
-      local given = false
-      for _, src in ipairs(sources) do
-        if vs.getprop(src, name) ~= nil then
-          given = true
-        end
-      end
-      if not given then
-        missing[#missing + 1] = name
-      end
+    if name ~= nil and helpers.param_value(ctx, point, name) == nil then
+      missing[#missing + 1] = name
     end
   end
   return missing
@@ -173,18 +164,20 @@ local function make_point_util(ctx)
 
       -- A call without an action falls back to a point without one, as
       -- generation does, and only to a route the call can fill.
-      local pool = {}
+      local plain = {}
       for i = 1, #op.points do
         local cand = op.points[i]
         if vs.getprop(helpers.to_map(vs.getprop(cand, "select")), "$action") == nil then
-          pool[#pool + 1] = cand
+          plain[#plain + 1] = cand
         end
       end
-      if #pool == 0 then
-        pool = op.points
+      if #plain == 0 then
+        return nil, ctx:make_error("point_action_required",
+          'Operation "' .. op.name ..
+          '" has only action endpoints; pass $action to choose one.')
       end
       local fillable = {}
-      for _, cand in ipairs(pool) do
+      for _, cand in ipairs(plain) do
         if #unfilled(ctx, cand) == 0 then
           fillable[#fillable + 1] = cand
         end
@@ -194,7 +187,7 @@ local function make_point_util(ctx)
         return nil, ctx:make_error("point_no_match",
           'Operation "' .. op.name ..
           '" has no endpoint whose path parameters are all given (missing: ' ..
-          table.concat(unfilled(ctx, own_point(pool)), ", ") .. ').')
+          table.concat(unfilled(ctx, own_point(plain)), ", ") .. ').')
       end
 
       point = own_point(fillable)

@@ -5,6 +5,8 @@ exports.deriveEntityNames = deriveEntityNames;
 exports.entityCollection = entityCollection;
 exports.opTypeName = opTypeName;
 exports.opParams = opParams;
+exports.opReachable = opReachable;
+exports.opNeedsAction = opNeedsAction;
 exports.ownPoint = ownPoint;
 exports.opActions = opActions;
 exports.entityActions = entityActions;
@@ -111,6 +113,37 @@ function ownPoint(points) {
 function samePath(points) {
     const first = (0, pointPath_1.pointPathKey)(points[0]);
     return points.every((pt) => first === (0, pointPath_1.pointPathKey)(pt));
+}
+// A placeholder inside a literal segment needs a value too.
+function pointParams(point) {
+    const names = [];
+    for (const seg of (0, pointPath_1.pointSegments)(point)) {
+        if (null != seg.var) {
+            names.push(String(seg.var));
+        }
+        else {
+            for (const found of String(seg.lit ?? '').matchAll(/\{([^{}/]+)\}/g)) {
+                names.push(found[1]);
+            }
+        }
+    }
+    return names;
+}
+// The rule makePoint applies: a lone point is taken as it is, otherwise only
+// a point without an action, and one the call fills.
+function opReachable(op, given) {
+    const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
+    const have = new Set(given);
+    const fills = (pt) => pointParams(pt).every((name) => have.has(name));
+    if (1 === points.length) {
+        return fills(points[0]);
+    }
+    return points.some((pt) => null == (pt && pt.q && pt.q['$action']) && fills(pt));
+}
+function opNeedsAction(op) {
+    const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
+    return 1 < points.length &&
+        points.every((pt) => null != (pt && pt.q && pt.q['$action']));
 }
 function opParams(op) {
     let points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
@@ -224,15 +257,15 @@ function entityIdField(ent) {
     // degrade to a no-arg load(); `.id` access is decided by entityDataIdField.
     return null;
 }
-// The entity's ACTIVE op names, in canonical CRUD order (list, load, create,
-// update, remove), with any non-canonical ops appended in sorted order. Doc
-// generators must gate an op example on this (an op present in the model but
-// `active: false` generates no method, so an example calling it would not
-// compile) — NOT on the raw `Object.keys(ent.op)`, which includes inactive ops.
+// The entity's ACTIVE op names, in canonical CRUD order, then any others
+// sorted. Doc generators gate an op example on this, NOT on the raw
+// `Object.keys(ent.op)`: an `active: false` op generates no method, and an op
+// whose every route is an action is refused without one, so a plain example
+// of either would fail.
 const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'remove'];
 function entityOps(ent) {
     const ops = (ent && ent.op) || {};
-    const active = Object.keys(ops).filter((o) => ops[o] && ops[o].active !== false);
+    const active = Object.keys(ops).filter((o) => ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]));
     return CANON_OP_ORDER.filter((o) => active.includes(o))
         .concat(active.filter((o) => !CANON_OP_ORDER.includes(o)).sort());
 }
@@ -343,8 +376,27 @@ function pickExampleEntity(entity) {
     // representative entity, not the alphabetically-first one (often a degenerate
     // stub with a terse name and no fields) nor an atypically sprawling one.
     const pool = readable.length ? readable : (withOp.length ? withOp : actives);
-    const chosen = pickMedianEntity(pool);
+    let chosen = pickMedianEntity(pool);
+    // A bare list example cannot fill a nested route: prefer a reachable call.
+    if (null != chosen && !exampleReachable(chosen)) {
+        const reachable = pool.filter(exampleReachable);
+        if (0 < reachable.length) {
+            chosen = pickMedianEntity(reachable);
+        }
+    }
     return { entity: chosen, primaryOp: null == chosen ? null : entityPrimaryOp(chosen) };
+}
+// A list example passes nothing; the others pass the required members.
+function exampleReachable(ent) {
+    const opname = entityPrimaryOp(ent);
+    if (null == opname) {
+        return false;
+    }
+    const idF = entityIdField(ent);
+    const given = 'list' === opname ? [] : opRequestShape(ent, opname).items
+        .filter((it) => !it.optional || it.name === idF)
+        .map((it) => it.name);
+    return opReachable(ent.op[opname], given);
 }
 // The pool entity closest to the median on both axes (name length, field
 // count). Distance on each axis is normalised by that axis's own median so the

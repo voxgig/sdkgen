@@ -43,25 +43,15 @@ final class MakePoint {
       java.util.regex.Pattern.compile("\\{([^{}/]+)\\}");
 
   // The path parameters of a point that neither the call nor the entity gives
-  // a value for, looked up where prepareParams looks.
+  // a value for, looked up as prepareParams looks them up.
   private static List<String> unfilled(Context ctx, Map<String, Object> point) {
     List<String> missing = new ArrayList<>();
     Object parts = Struct.getprop(point, "parts");
     if (parts instanceof List) {
       for (Object part : (List<Object>) parts) {
         java.util.regex.Matcher found = PATH_PARAM.matcher(String.valueOf(part));
-        if (!found.matches()) {
-          continue;
-        }
-        String name = found.group(1);
-        boolean given = false;
-        for (Map<String, Object> src : java.util.Arrays.asList(ctx.reqmatch, ctx.match, ctx.reqdata, ctx.data)) {
-          if (src != null && Struct.getprop(src, name, null) != null) {
-            given = true;
-          }
-        }
-        if (!given) {
-          missing.add(name);
+        if (found.matches() && Param.paramValue(ctx, point, found.group(1)) == null) {
+          missing.add(found.group(1));
         }
       }
     }
@@ -188,18 +178,20 @@ final class MakePoint {
 
         // A call without an action falls back to a point without one, as
         // generation does, and only to a route the call can fill.
-        List<Map<String, Object>> pool = new ArrayList<>();
+        List<Map<String, Object>> plain = new ArrayList<>();
         for (Map<String, Object> cand : op.points) {
           Map<String, Object> candSelect = Helpers.toMapAny(Struct.getprop(cand, "select"));
           if (Struct.getprop(candSelect, "$action", null) == null) {
-            pool.add(cand);
+            plain.add(cand);
           }
         }
-        if (pool.isEmpty()) {
-          pool = op.points;
+        if (plain.isEmpty()) {
+          throw ctx.makeError("point_action_required",
+              "Operation \"" + op.name
+                  + "\" has only action endpoints; pass $action to choose one.");
         }
         List<Map<String, Object>> fillable = new ArrayList<>();
-        for (Map<String, Object> cand : pool) {
+        for (Map<String, Object> cand : plain) {
           if (unfilled(ctx, cand).isEmpty()) {
             fillable.add(cand);
           }
@@ -209,7 +201,7 @@ final class MakePoint {
           throw ctx.makeError("point_no_match",
               "Operation \"" + op.name
                   + "\" has no endpoint whose path parameters are all given (missing: "
-                  + String.join(", ", unfilled(ctx, ownPoint(pool))) + ").");
+                  + String.join(", ", unfilled(ctx, ownPoint(plain))) + ").");
         }
 
         point = ownPoint(fillable);

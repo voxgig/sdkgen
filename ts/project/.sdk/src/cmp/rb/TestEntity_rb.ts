@@ -1,4 +1,4 @@
-import { flowSteps } from '@voxgig/sdkgen'
+import { flowSteps, opReachable } from '@voxgig/sdkgen'
 
 import {
   flatten,
@@ -51,11 +51,11 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const target = props.target
   const entity: ModelEntity = props.entity
 
-  // The stream test streams the "list" op and asserts a 3-item collection, so
-  // it only applies to entities that declare a list op. Others (e.g. Batch =
-  // create/load) have no list endpoint — make_point errors and the stream
-  // yields nothing — so skip the stream test for them.
-  const hasList = !!(entity.op && (entity.op as any)?.list)
+  // The stream test streams the "list" op with no match and asserts a 3-item
+  // collection, so it only applies to an entity whose list a bare call can
+  // reach: not one without a list (e.g. Batch = create/load), not a nested
+  // list needing its parent's id, and not one whose routes all need an action.
+  const hasList = opReachable((entity.op as any)?.list, [])
 
   const basicflow: ModelEntityFlow | undefined =
     getModelPath(model, `main.${KIT}.flow.Basic${nom(entity, 'Name')}Flow`)

@@ -10,13 +10,6 @@ public static partial class SdkUtility
 {
     internal static object? ParamUtil(Context ctx, object? paramdef)
     {
-        var point = ctx.Point;
-        var spec = ctx.Spec;
-        var match = ctx.Match;
-        var reqmatch = ctx.Reqmatch;
-        var data = ctx.Data;
-        var reqdata = ctx.Reqdata;
-
         var pt = StructUtils.Typify(paramdef);
 
         string key;
@@ -29,37 +22,53 @@ public static partial class SdkUtility
             key = StructUtils.GetProp(paramdef, "name") as string ?? "";
         }
 
-        var akey = "";
+        var akey = ParamAlias(ctx.Point, key);
+        if (ctx.Spec != null && akey != "" &&
+            StructUtils.GetProp(ctx.Reqmatch, key) == null && StructUtils.GetProp(ctx.Match, key) == null)
+        {
+            ctx.Spec.Alias[akey] = key;
+        }
+
+        return ParamValue(ctx, ctx.Point, key);
+    }
+
+    // The name a point gives a parameter in the call, if it renames it.
+    private static string ParamAlias(Dictionary<string, object?>? point, string key)
+    {
         if (point != null)
         {
             var alias = Helpers.ToMapAny(StructUtils.GetProp(point, "alias"));
             if (alias != null && StructUtils.GetProp(alias, key) is string ak)
             {
-                akey = ak;
+                return ak;
             }
         }
+        return "";
+    }
 
-        var val = StructUtils.GetProp(reqmatch, key);
+    // The value the call or its entity gives a point's parameter, under its
+    // name or the point's alias for it.
+    internal static object? ParamValue(Context ctx, Dictionary<string, object?>? point, string key)
+    {
+        var akey = ParamAlias(point, key);
 
-        val ??= StructUtils.GetProp(match, key);
+        var val = StructUtils.GetProp(ctx.Reqmatch, key);
+
+        val ??= StructUtils.GetProp(ctx.Match, key);
 
         if (val == null && akey != "")
         {
-            if (spec != null)
-            {
-                spec.Alias[akey] = key;
-            }
-            val = StructUtils.GetProp(reqmatch, akey);
+            val = StructUtils.GetProp(ctx.Reqmatch, akey);
         }
 
-        val ??= StructUtils.GetProp(reqdata, key);
+        val ??= StructUtils.GetProp(ctx.Reqdata, key);
 
-        val ??= StructUtils.GetProp(data, key);
+        val ??= StructUtils.GetProp(ctx.Data, key);
 
         if (val == null && akey != "")
         {
-            val = StructUtils.GetProp(reqdata, akey);
-            val ??= StructUtils.GetProp(data, akey);
+            val = StructUtils.GetProp(ctx.Reqdata, akey);
+            val ??= StructUtils.GetProp(ctx.Data, akey);
         }
 
         return val;

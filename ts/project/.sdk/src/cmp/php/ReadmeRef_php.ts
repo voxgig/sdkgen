@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, phpEntityAccessor , targetFeatures } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, phpEntityAccessor , targetFeatures, opNeedsAction } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -254,6 +254,10 @@ $${ent.name} = $client->${phpEntityAccessor(ent.Name)}();
 ${info.desc}
 
 `)
+
+          if (opNeedsAction(ent.op[opname])) {
+            return
+          }
 
           if ('load' === opname || 'remove' === opname) {
             // The id key plus every REQUIRED match key (parent path params

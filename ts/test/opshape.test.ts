@@ -2,7 +2,10 @@
 import { test, describe } from 'node:test'
 import { strictEqual, deepStrictEqual, ok } from 'node:assert'
 
-import { opRequestShape, opTypeName, OP_SUFFIX, entityClassName, pickExampleEntity } from '../dist/sdkgen.js'
+import {
+  opRequestShape, opTypeName, OP_SUFFIX, entityClassName, pickExampleEntity,
+  opReachable, opNeedsAction, entityOps, guardFlowSteps,
+} from '../dist/sdkgen.js'
 
 
 // A model entity with a mix of required/optional fields, a per-op exclusion,
@@ -401,5 +404,147 @@ describe('opRequestShape — body ops take fields, not path params', () => {
     const { items, fromParams } = opRequestShape(makeItemEntity(), 'load')
     strictEqual(fromParams, true)
     deepStrictEqual(optionalByName(items), { id: false })
+  })
+})
+
+
+// Points as apidef writes them: typed segments, and $action in the selector.
+function pt(path: string, action?: string): any {
+  return {
+    s: path.split('/').filter((x) => '' !== x)
+      .map((x) => /^\{[^{}]+\}$/.test(x) ? { var: x.slice(1, -1) } : { lit: x }),
+    q: null == action ? { exist: [] } : { exist: [], $action: action },
+  }
+}
+
+
+describe('opReachable — the route makePoint would take', () => {
+
+  test('a lone point is taken whatever its action, if the call fills it', () => {
+    strictEqual(opReachable({ points: [pt('/planet/{id}')] }, ['id']), true)
+    strictEqual(opReachable({ points: [pt('/planet/{id}')] }, []), false)
+    strictEqual(opReachable({ points: [pt('/signal/strong', 'strong')] }, []), true)
+  })
+
+  test('otherwise only a point without an action, and one the call fills', () => {
+    const op = { points: [pt('/planet/{id}/terraform', 'terraform'), pt('/planet/{planet_id}/moon')] }
+    strictEqual(opReachable(op, ['planet_id']), true)
+    strictEqual(opReachable(op, ['id']), false)
+    strictEqual(opReachable({ points: [pt('/a', 'x'), pt('/b', 'y')] }, ['id']), false)
+  })
+
+  test('a placeholder inside a literal segment needs a value too', () => {
+    const op = { points: [{ s: [{ var: 'board' }, { lit: 'thread' }, { lit: '{threadId}.json' }] }] }
+    strictEqual(opReachable(op, ['board', 'thread_id']), false)
+    strictEqual(opReachable(op, ['board', 'threadId']), true)
+  })
+
+  test('an op with no points, or no op, is not reachable', () => {
+    strictEqual(opReachable({ points: [] }, []), false)
+    strictEqual(opReachable(undefined, []), false)
+  })
+})
+
+
+describe('opNeedsAction and entityOps', () => {
+
+  test('every route an action, and more than one of them', () => {
+    strictEqual(opNeedsAction({ points: [pt('/a', 'x'), pt('/b', 'y')] }), true)
+    strictEqual(opNeedsAction({ points: [pt('/a', 'x')] }), false)
+    strictEqual(opNeedsAction({ points: [pt('/a', 'x'), pt('/b')] }), false)
+    strictEqual(opNeedsAction({}), false)
+  })
+
+  test('an op that needs an action gets no plain example', () => {
+    const ent = {
+      name: 'signal',
+      op: {
+        list: { points: [pt('/signal/strong', 'strong'), pt('/signal/weak', 'weak')] },
+        load: { points: [pt('/signal/{id}')] },
+      },
+    }
+    deepStrictEqual(entityOps(ent), ['load'])
+  })
+})
+
+
+describe('pickExampleEntity — a call the runtime takes', () => {
+
+  // Same name length and field count, so only reachability separates them.
+  const moon = {
+    name: 'moon', Name: 'Moon', active: true, fields: { id: { n: 'id' } },
+    op: { list: { points: [pt('/planet/{planet_id}/moon')] } },
+  }
+  const star = {
+    name: 'star', Name: 'Star', active: true, fields: { id: { n: 'id' } },
+    op: { list: { points: [pt('/star')] } },
+  }
+
+  test('a nested list, which a bare example cannot fill, is passed over', () => {
+    strictEqual(pickExampleEntity({ moon, star }).entity.name, 'star')
+    strictEqual(pickExampleEntity({ star, moon }).entity.name, 'star')
+  })
+
+  test('with nothing reachable the median pick still stands', () => {
+    strictEqual(pickExampleEntity({ moon }).entity.name, 'moon')
+  })
+})
+
+
+describe('guardFlowSteps — a generated flow test makes only calls the runtime takes', () => {
+
+  function model(op: any, step: any[]): any {
+    return {
+      main: {
+        kit: {
+          entity: { moon: { name: 'moon', fields: { id: { n: 'id' }, title: { n: 'title' } }, op } },
+          flow: { BasicMoonFlow: { entity: 'moon', step } },
+        },
+      },
+    }
+  }
+
+  test('a step whose routes all need an action is switched off', () => {
+    const m = model({
+      list: { points: [pt('/moon/new', 'new'), pt('/moon/old', 'old')] },
+      load: { points: [pt('/moon/{id}')] },
+    }, [{ o: 'list' }, { o: 'load' }])
+
+    const sink: any[] = []
+    const log = { warn: (e: any) => sink.push(e) }
+    deepStrictEqual(guardFlowSteps(m, log), [{ flow: 'BasicMoonFlow', step: 0, op: 'list' }])
+    deepStrictEqual(m.main.kit.flow.BasicMoonFlow.step.map((s: any) => s.a), [false, undefined])
+    strictEqual(sink.length, 1)
+    strictEqual(sink[0].point, 'flow-step-unreachable')
+  })
+
+  test('a step that fills no route is switched off; one that does is kept', () => {
+    const op = { list: { points: [pt('/planet/{planet_id}/moon')] } }
+    const m = model(op, [{ o: 'list' }, { o: 'list', m: { planet_id: 'planet01' } }])
+    guardFlowSteps(m)
+    deepStrictEqual(m.main.kit.flow.BasicMoonFlow.step.map((s: any) => s.a), [false, undefined])
+  })
+
+  test('a record an earlier create stored fills a later step', () => {
+    const op = {
+      create: { points: [pt('/moon')] },
+      load: { points: [pt('/moon/{title}/{id}')] },
+    }
+    const created = model(op, [{ o: 'create' }, { o: 'load' }])
+    deepStrictEqual(guardFlowSteps(created), [])
+
+    const bare = model(op, [{ o: 'load' }])
+    deepStrictEqual(guardFlowSteps(bare), [{ flow: 'BasicMoonFlow', step: 0, op: 'load' }])
+
+    // A create's record has no id yet, so an {id} route is out of reach.
+    const upsert = model({ create: { points: [pt('/moon/{id}')] } }, [{ o: 'create' }])
+    deepStrictEqual(guardFlowSteps(upsert), [{ flow: 'BasicMoonFlow', step: 0, op: 'create' }])
+  })
+
+  test('a step already off, or an op the entity lacks, is left alone', () => {
+    const m = model({ list: { points: [pt('/a', 'x'), pt('/b', 'y')] } },
+      [{ o: 'list', a: false }, { o: 'remove' }])
+    deepStrictEqual(guardFlowSteps(m), [])
+    deepStrictEqual(guardFlowSteps({}), [])
   })
 })

@@ -628,33 +628,37 @@ let prepare_headers_util (ctx : ctx) : value =
     (call_args ctx "header");
   out
 
+(* The name a point gives a parameter in the call, if it renames it. *)
+let param_alias (point : value) (key : string) : string =
+  match to_map (getp point "alias") with
+  | Map _ as alias -> (match getp alias key with Str s -> s | _ -> "")
+  | _ -> ""
+
+(* The value the call or its entity gives a point's parameter, under its name
+   or the point's alias for it. *)
+let param_value (ctx : ctx) (point : value) (key : string) : value =
+  let akey = param_alias point key in
+  let v = ref (getp ctx.c_reqmatch key) in
+  if is_noval !v then v := getp ctx.c_match key;
+  if is_noval !v && akey <> "" then v := getp ctx.c_reqmatch akey;
+  if is_noval !v then v := getp ctx.c_reqdata key;
+  if is_noval !v then v := getp ctx.c_data key;
+  if is_noval !v && akey <> "" then begin
+    v := getp ctx.c_reqdata akey;
+    if is_noval !v then v := getp ctx.c_data akey
+  end;
+  !v
+
 let param_util (ctx : ctx) (paramdef : value) : value =
-  let point = ctx.c_point and spec = ctx.c_spec in
-  let mtch = ctx.c_match and reqmatch = ctx.c_reqmatch
-  and data = ctx.c_data and reqdata = ctx.c_reqdata in
   let pt = typify paramdef in
   let key =
     if (t_string land pt) > 0 then (match paramdef with Str s -> s | _ -> "")
     else (match getp paramdef "name" with Str s -> s | _ -> "")
   in
-  let akey =
-    match to_map (getp point "alias") with
-    | Map _ as alias -> (match getp alias key with Str s -> s | _ -> "")
-    | _ -> ""
-  in
-  let v = ref (getp reqmatch key) in
-  if is_noval !v then v := getp mtch key;
-  if is_noval !v && akey <> "" then begin
-    (match spec with Some sp -> setp sp.sp_alias akey (Str key) | None -> ());
-    v := getp reqmatch akey
-  end;
-  if is_noval !v then v := getp reqdata key;
-  if is_noval !v then v := getp data key;
-  if is_noval !v && akey <> "" then begin
-    v := getp reqdata akey;
-    if is_noval !v then v := getp data akey
-  end;
-  !v
+  let akey = param_alias ctx.c_point key in
+  if akey <> "" && is_noval (getp ctx.c_reqmatch key) && is_noval (getp ctx.c_match key) then
+    (match ctx.c_spec with Some sp -> setp sp.sp_alias akey (Str key) | None -> ());
+  param_value ctx ctx.c_point key
 
 let prepare_params_util (ctx : ctx) : value =
   let params =
@@ -957,7 +961,7 @@ let placeholders (s : string) : string list =
   scan 0 []
 
 (* The path parameters of a point that neither the call nor the entity gives
-   a value for, looked up where param_util looks. *)
+   a value for, looked up as param_util looks them up. *)
 let unfilled_params (ctx : ctx) (point : value) : string list =
   match getp point "parts" with
   | List r ->
@@ -965,10 +969,7 @@ let unfilled_params (ctx : ctx) (point : value) : string list =
         match part with
         | Str s when placeholders s = [s] ->
           let name = String.sub s 1 (String.length s - 2) in
-          let given = List.exists (fun src ->
-              match getp src name with Noval | Null -> false | _ -> true)
-              [ctx.c_reqmatch; ctx.c_match; ctx.c_reqdata; ctx.c_data] in
-          if given then None else Some name
+          (match param_value ctx point name with Noval | Null -> Some name | _ -> None)
         | _ -> None) !r
   | _ -> []
 
@@ -1063,12 +1064,14 @@ let make_point_util (ctx : ctx) : (value * sdk_error option) =
              generation does, and only to a route the call can fill. *)
           let plain = List.filter (fun p ->
               is_noval (getp (to_map (getp p "select")) "$action")) points in
-          let pool = match plain with [] -> points | _ -> plain in
-          match List.filter (fun p -> unfilled_params ctx p = []) pool with
+          if plain = [] then
+            raise (Sdk_error_exc (ctx_make_error ctx "point_action_required"
+              ("Operation \"" ^ op.op_name ^ "\" has only action endpoints; pass $action to choose one.")));
+          match List.filter (fun p -> unfilled_params ctx p = []) plain with
           | [] ->
             raise (Sdk_error_exc (ctx_make_error ctx "point_no_match"
               ("Operation \"" ^ op.op_name ^ "\" has no endpoint whose path parameters are all given (missing: " ^
-               String.concat ", " (unfilled_params ctx (own_point pool)) ^ ").")))
+               String.concat ", " (unfilled_params ctx (own_point plain)) ^ ").")))
           | fillable -> chosen := own_point fillable
         end;
         let req_action = getp reqselector "$action" in

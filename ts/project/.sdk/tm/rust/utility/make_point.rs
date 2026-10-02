@@ -5,6 +5,7 @@ use crate::core::error::ProjectNameError;
 use crate::core::helpers::{getp, getpath, to_map};
 use crate::core::types::OutVal;
 use crate::utility::make_url::placeholders;
+use crate::utility::param::param_value;
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
@@ -46,14 +47,8 @@ fn own_point(points: &[Value]) -> Value {
 }
 
 // The path parameters of a point that neither the call nor the entity gives a
-// value for, looked up where prepare_params_util looks.
+// value for, looked up as prepare_params_util looks them up.
 fn unfilled(ctx: &Rc<Context>, point: &Value) -> Vec<String> {
-    let sources = [
-        ctx.reqmatch.borrow().clone(),
-        ctx.mtch.borrow().clone(),
-        ctx.reqdata.borrow().clone(),
-        ctx.data.borrow().clone(),
-    ];
     let mut missing = Vec::new();
     if let Value::List(pl) = getp(point, "parts") {
         for part in pl.borrow().iter() {
@@ -66,11 +61,8 @@ fn unfilled(ctx: &Rc<Context>, point: &Value) -> Vec<String> {
                 continue;
             }
             let name = &text[1..text.len() - 1];
-            let given = sources.iter().any(|src| {
-                let val = getp(src, name);
-                !val.is_noval() && !val.is_null()
-            });
-            if !given {
+            let val = param_value(ctx, point, name);
+            if val.is_noval() || val.is_null() {
                 missing.push(name.to_string());
             }
         }
@@ -193,9 +185,17 @@ pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
                 .filter(|cand| getp(&to_map(&getp(cand, "select")), "$action").is_noval())
                 .cloned()
                 .collect();
-            let pool = if plain.is_empty() { all } else { plain };
+            if plain.is_empty() {
+                return Err(ctx.make_error(
+                    "point_action_required",
+                    &format!(
+                        "Operation \"{}\" has only action endpoints; pass $action to choose one.",
+                        op.name
+                    ),
+                ));
+            }
             let fillable: Vec<Value> =
-                pool.iter().filter(|cand| unfilled(ctx, cand).is_empty()).cloned().collect();
+                plain.iter().filter(|cand| unfilled(ctx, cand).is_empty()).cloned().collect();
 
             if fillable.is_empty() {
                 return Err(ctx.make_error(
@@ -203,7 +203,7 @@ pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
                     &format!(
                         "Operation \"{}\" has no endpoint whose path parameters are all given (missing: {}).",
                         op.name,
-                        unfilled(ctx, &own_point(&pool)).join(", ")
+                        unfilled(ctx, &own_point(&plain)).join(", ")
                     ),
                 ));
             }

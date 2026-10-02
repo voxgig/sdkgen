@@ -23,14 +23,13 @@ func pathPlaceholders(_ text: String) -> [String] {
 }
 
 // The path parameters of a point that neither the call nor the entity gives a
-// value for, looked up where paramUtil looks.
+// value for, looked up as paramUtil looks them up.
 private func unfilledParams(_ ctx: Context, _ point: VMap) -> [String] {
   var missing: [String] = []
   for part in gp(point, "parts").asList?.items ?? [] {
     guard let text = part.asString, pathPlaceholders(text) == [text] else { continue }
     let name = String(text.dropFirst().dropLast())
-    let given = [ctx.reqmatch, ctx.match, ctx.reqdata, ctx.data].contains { !isNil(gp($0, name)) }
-    if !given { missing.append(name) }
+    if isNil(paramValue(ctx, point, name)) { missing.append(name) }
   }
   return missing
 }
@@ -149,13 +148,17 @@ func makePointUtil(_ ctx: Context) throws -> VMap? {
       // A call without an action falls back to a point without one, as
       // generation does, and only to a route the call can fill.
       let plain = op.points.filter { isNil(gp(gp($0, "select"), "$action")) }
-      let pool = plain.isEmpty ? op.points : plain
-      let fillable = pool.filter { unfilledParams(ctx, $0).isEmpty }
+      if plain.isEmpty {
+        throw ctx.makeError("point_action_required",
+          "Operation \"\(op.name)\" has only action endpoints; pass $action to choose one.")
+      }
+
+      let fillable = plain.filter { unfilledParams(ctx, $0).isEmpty }
 
       if fillable.isEmpty {
         throw ctx.makeError("point_no_match",
           "Operation \"\(op.name)\" has no endpoint whose path parameters are all given (missing: " +
-          unfilledParams(ctx, ownPoint(pool)).joined(separator: ", ") + ").")
+          unfilledParams(ctx, ownPoint(plain)).joined(separator: ", ") + ").")
       }
 
       point = ownPoint(fillable)

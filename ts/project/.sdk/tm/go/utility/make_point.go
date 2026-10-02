@@ -48,7 +48,7 @@ func ownPoint(points []map[string]any) map[string]any {
 var pathParamRe = regexp.MustCompile(`^\{([^{}/]+)\}$`)
 
 // The path parameters of a point that neither the call nor the entity gives
-// a value for, looked up where prepareParamsUtil looks.
+// a value for, looked up as prepareParamsUtil looks them up.
 func unfilledParams(ctx *core.Context, point map[string]any) []string {
 	missing := []string{}
 	parts, _ := vs.GetProp(point, "parts").([]any)
@@ -58,10 +58,8 @@ func unfilledParams(ctx *core.Context, point map[string]any) []string {
 		if nil == found {
 			continue
 		}
-		name := found[1]
-		if nil == vs.GetProp(ctx.Reqmatch, name) && nil == vs.GetProp(ctx.Match, name) &&
-			nil == vs.GetProp(ctx.Reqdata, name) && nil == vs.GetProp(ctx.Data, name) {
-			missing = append(missing, name)
+		if nil == paramValue(ctx, point, found[1]) {
+			missing = append(missing, found[1])
 		}
 	}
 	return missing
@@ -161,17 +159,19 @@ func makePointUtil(ctx *core.Context) (map[string]any, error) {
 
 			// A call without an action falls back to a point without one, as
 			// generation does, and only to a route the call can fill.
-			pool := []map[string]any{}
+			plain := []map[string]any{}
 			for _, cand := range op.Points {
 				if nil == vs.GetProp(vs.GetProp(cand, "select"), "$action") {
-					pool = append(pool, cand)
+					plain = append(plain, cand)
 				}
 			}
-			if 0 == len(pool) {
-				pool = op.Points
+			if 0 == len(plain) {
+				return nil, ctx.MakeError("point_action_required",
+					"Operation \""+op.Name+
+						"\" has only action endpoints; pass $action to choose one.")
 			}
 			fillable := []map[string]any{}
-			for _, cand := range pool {
+			for _, cand := range plain {
 				if 0 == len(unfilledParams(ctx, cand)) {
 					fillable = append(fillable, cand)
 				}
@@ -181,7 +181,7 @@ func makePointUtil(ctx *core.Context) (map[string]any, error) {
 				return nil, ctx.MakeError("point_no_match",
 					"Operation \""+op.Name+
 						"\" has no endpoint whose path parameters are all given (missing: "+
-						strings.Join(unfilledParams(ctx, ownPoint(pool)), ", ")+").")
+						strings.Join(unfilledParams(ctx, ownPoint(plain)), ", ")+").")
 			}
 
 			point = ownPoint(fillable)

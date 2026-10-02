@@ -5,6 +5,7 @@ import re
 
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.core.helpers import to_map
+from projectname_sdk.utility.param import param_value
 
 
 _PATH_PARAM = re.compile(r"\{([^{}/]+)\}")
@@ -44,17 +45,13 @@ def _own_point(points):
 
 def _unfilled(ctx, point):
     # The path parameters of a point that neither the call nor the entity
-    # gives a value for, looked up where prepare_params looks.
+    # gives a value for, looked up as prepare_params looks them up.
     missing = []
     parts = vs.getprop(point, "parts")
     for part in (parts if isinstance(parts, list) else []):
         found = _PATH_PARAM.fullmatch(str(part))
-        if found is None:
-            continue
-        name = found.group(1)
-        if all(vs.getprop(src or {}, name) is None
-               for src in (ctx.reqmatch, ctx.match, ctx.reqdata, ctx.data)):
-            missing.append(name)
+        if found is not None and param_value(ctx, point, found.group(1)) is None:
+            missing.append(found.group(1))
     return missing
 
 
@@ -142,14 +139,18 @@ def make_point_util(ctx):
             # generation does, and only to a route the call can fill.
             plain = [cand for cand in op.points
                      if vs.getprop(to_map(vs.getprop(cand, "select")), "$action") is None]
-            pool = plain if 0 < len(plain) else op.points
-            fillable = [cand for cand in pool if 0 == len(_unfilled(ctx, cand))]
+            if 0 == len(plain):
+                return None, ctx.make_error("point_action_required",
+                    'Operation "' + op.name +
+                    '" has only action endpoints; pass $action to choose one.')
+
+            fillable = [cand for cand in plain if 0 == len(_unfilled(ctx, cand))]
 
             if 0 == len(fillable):
                 return None, ctx.make_error("point_no_match",
                     'Operation "' + op.name +
                     '" has no endpoint whose path parameters are all given (missing: ' +
-                    ", ".join(_unfilled(ctx, _own_point(pool))) + ').')
+                    ", ".join(_unfilled(ctx, _own_point(plain))) + ').')
 
             point = _own_point(fillable)
 

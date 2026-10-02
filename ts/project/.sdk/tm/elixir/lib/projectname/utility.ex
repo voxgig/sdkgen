@@ -895,10 +895,9 @@ defmodule ProjectName.Utility do
   end
 
   # The path parameters of a point that neither the call nor the entity gives
-  # a value for, looked up where param_impl looks.
+  # a value for, looked up as param_impl looks them up.
   defp unfilled(ctx, point) do
     parts = S.getprop(point, "parts")
-    sources = Enum.map(["reqmatch", "match", "reqdata", "data"], &S.getprop(ctx, &1))
 
     if S.islist(parts) and S.size(parts) > 0 do
       Enum.flat_map(0..(S.size(parts) - 1), fn i ->
@@ -906,7 +905,7 @@ defmodule ProjectName.Utility do
 
         case is_binary(part) && Regex.run(~r/\A\{([^{}\/]+)\}\z/, part) do
           [_, name] ->
-            if Enum.any?(sources, &(S.getprop(&1, name) != nil)), do: [], else: [name]
+            if param_value(ctx, point, name) != nil, do: [], else: [name]
 
           _ ->
             []
@@ -1010,15 +1009,14 @@ defmodule ProjectName.Utility do
           # so nothing matched. A call without an action falls back to a
           # point without one, as generation does, and only to a route the
           # call can fill.
-          {point, pool} =
+          {point, plain} =
             if matched? do
-              {elem(point, 1), []}
+              {elem(point, 1), nil}
             else
               all = Enum.map(0..(npoints - 1), &S.getelem(points, &1))
               plain = Enum.filter(all, &(S.getprop(H.to_map(S.getprop(&1, "select")), "$action") == nil))
-              pool = if plain == [], do: all, else: plain
-              fillable = Enum.filter(pool, &(unfilled(ctx, &1) == []))
-              {if(fillable == [], do: nil, else: own_point(fillable)), pool}
+              fillable = Enum.filter(plain, &(unfilled(ctx, &1) == []))
+              {if(fillable == [], do: nil, else: own_point(fillable)), plain}
             end
 
           unmatched_action =
@@ -1038,10 +1036,14 @@ defmodule ProjectName.Utility do
                 Context.make_error(ctx, "point_action_invalid",
                   "Operation \"" <> opname <> "\" action \"" <> S.stringify(unmatched_action) <> "\" is not valid.")
 
-              point == nil and pool != [] ->
+              plain == [] ->
+                Context.make_error(ctx, "point_action_required",
+                  "Operation \"" <> opname <> "\" has only action endpoints; pass $action to choose one.")
+
+              point == nil and plain != nil ->
                 Context.make_error(ctx, "point_no_match",
                   "Operation \"" <> opname <> "\" has no endpoint whose path parameters are all given (missing: " <>
-                    Enum.join(unfilled(ctx, own_point(pool)), ", ") <> ").")
+                    Enum.join(unfilled(ctx, own_point(plain)), ", ") <> ").")
 
               reqselector != nil ->
                 req_action = S.getprop(reqselector, "$action")
@@ -1523,10 +1525,6 @@ defmodule ProjectName.Utility do
   def param_impl(ctx, paramdef) do
     point = S.getprop(ctx, "point")
     spec = S.getprop(ctx, "spec")
-    match = S.getprop(ctx, "match")
-    reqmatch = S.getprop(ctx, "reqmatch")
-    data = S.getprop(ctx, "data")
-    reqdata = S.getprop(ctx, "reqdata")
 
     key =
       if is_binary(paramdef) do
@@ -1536,43 +1534,43 @@ defmodule ProjectName.Utility do
         if is_binary(k), do: k, else: ""
       end
 
-    akey =
-      if point != nil do
-        alias = H.to_map(S.getprop(point, "alias"))
+    akey = param_alias(point, key)
 
-        if alias != nil do
-          ak = S.getprop(alias, key)
-          if is_binary(ak), do: ak, else: ""
-        else
-          ""
-        end
-      else
-        ""
-      end
+    if spec != nil and akey != "" and S.getprop(S.getprop(ctx, "reqmatch"), key) == nil and
+         S.getprop(S.getprop(ctx, "match"), key) == nil do
+      S.setprop(S.getprop(spec, "alias"), akey, key)
+    end
+
+    param_value(ctx, point, key)
+  end
+
+  # The name a point gives a parameter in the call, if it renames it.
+  defp param_alias(point, key) do
+    alias = if point != nil, do: H.to_map(S.getprop(point, "alias")), else: nil
+    ak = if alias != nil, do: S.getprop(alias, key), else: nil
+    if is_binary(ak), do: ak, else: ""
+  end
+
+  # The value the call or its entity gives a point's parameter, under its name
+  # or the point's alias for it.
+  defp param_value(ctx, point, key) do
+    akey = param_alias(point, key)
+    reqmatch = S.getprop(ctx, "reqmatch")
+    reqdata = S.getprop(ctx, "reqdata")
+    data = S.getprop(ctx, "data")
 
     val = S.getprop(reqmatch, key)
-    val = if val == nil, do: S.getprop(match, key), else: val
-
-    val =
-      if val == nil and akey != "" do
-        if spec != nil, do: S.setprop(S.getprop(spec, "alias"), akey, key)
-        S.getprop(reqmatch, akey)
-      else
-        val
-      end
-
+    val = if val == nil, do: S.getprop(S.getprop(ctx, "match"), key), else: val
+    val = if val == nil and akey != "", do: S.getprop(reqmatch, akey), else: val
     val = if val == nil, do: S.getprop(reqdata, key), else: val
     val = if val == nil, do: S.getprop(data, key), else: val
 
-    val =
-      if val == nil and akey != "" do
-        v2 = S.getprop(reqdata, akey)
-        if v2 == nil, do: S.getprop(data, akey), else: v2
-      else
-        val
-      end
-
-    val
+    if val == nil and akey != "" do
+      v2 = S.getprop(reqdata, akey)
+      if v2 == nil, do: S.getprop(data, akey), else: v2
+    else
+      val
+    end
   end
 
   # The arguments a point declares in one location, query or header, each as

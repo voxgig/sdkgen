@@ -28,7 +28,10 @@ and `t`; `or` preserves the original name and `ex` supplies an example.
 
 Flow steps use `a`, `o`, `i`, `m`, `d`, `s`, and `v` for activation,
 operation, inputs, match, data, mutations, and assertions. Inactive steps
-are omitted from generated tests. Ancestor chains contain checked entity
+are omitted from generated tests. Generation also makes a step inactive when
+its call reaches no route of its operation, because the SDK refuses that
+call: every route is an action the step does not name, or needs a path
+parameter the step does not give. Ancestor chains contain checked entity
 addresses such as `path($.main.kit.entity.planet)`.
 
 Components read this compact model directly. `configDefinition` projects

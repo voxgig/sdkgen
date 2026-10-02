@@ -1,4 +1,4 @@
-import { flowSteps } from '@voxgig/sdkgen'
+import { flowSteps, opReachable } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -153,7 +153,9 @@ ${allSteps.length > 0 ? `    val client = setup.client\n\n` : ''}`)
 
 `)
 
-    const flowHasList = allSteps.some((s: any) => s.o === 'list')
+    // The stream test lists with no match, so a bare call must reach a route.
+    const flowHasList = allSteps.some((s: any) => s.o === 'list') &&
+      opReachable((entity.op as any)?.list, [])
     if (flowHasList) {
       Content(`  @Test
   fun stream() {

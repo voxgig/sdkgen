@@ -233,6 +233,38 @@ describe('routing: the fallback takes a route the call can fill', () => {
     })
 
 
+    // param() reads a path parameter under the point's alias too, so the
+    // route the alias fills is the one taken, and filled.
+    test(lang + ': a path parameter given under its alias fills that route', () => {
+      const aliased = REMOVE.map((p: any, i: number) =>
+        0 === i ? { ...p, alias: { id: 'number' } } : p)
+      const out: any = call(lang, 'remove', aliased, { database_id: 1, number: '4712345678' })
+      ok(!(out instanceof Error), String(out?.message))
+      strictEqual(out.path, '/public/database/1/permission/4712345678')
+    })
+
+
+    test(lang + ': a call without an action is refused when every route is one', () => {
+      const list = points('signal', 'list', [
+        { m: 'GET', o: '/signal/strong', s: seg('/signal/strong'), g: {}, q: { exist: [], $action: 'strong' }, t: TRANSFORM },
+        { m: 'GET', o: '/signal/weak', s: seg('/signal/weak'), g: {}, q: { exist: [], $action: 'weak' }, t: TRANSFORM },
+      ])
+      const err: any = call(lang, 'list', list, {})
+      ok(err instanceof Error, 'a request was built: ' + JSON.stringify(err))
+      strictEqual((err as any).code, 'point_action_required')
+      strictEqual(err.message, 'Operation "list" has only action endpoints; pass $action to choose one.')
+      strictEqual((call(lang, 'list', list, { $action: 'weak' }) as any).path, '/signal/weak')
+    })
+
+
+    test(lang + ': a lone action route is taken without one', () => {
+      const list = points('signal', 'list', [
+        { m: 'GET', o: '/signal/strong', s: seg('/signal/strong'), g: {}, q: { exist: [], $action: 'strong' }, t: TRANSFORM },
+      ])
+      strictEqual((call(lang, 'list', list, {}) as any).path, '/signal/strong')
+    })
+
+
     // A placeholder that shares its segment with other text is kept as a
     // literal by the model, so nothing fills it.
     test(lang + ': a placeholder inside a segment is an error, not a request', () => {

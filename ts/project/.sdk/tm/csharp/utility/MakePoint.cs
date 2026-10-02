@@ -54,7 +54,7 @@ public static partial class SdkUtility
     }
 
     // The path parameters of a point that neither the call nor the entity
-    // gives a value for, looked up where ParamUtil looks.
+    // gives a value for, looked up as ParamUtil looks them up.
     private static List<string> UnfilledParams(Context ctx, Dictionary<string, object?>? point)
     {
         var missing = new List<string>();
@@ -65,22 +65,9 @@ public static partial class SdkUtility
         foreach (var part in parts)
         {
             var found = PathParamRe.Match(part as string ?? "");
-            if (!found.Success)
+            if (found.Success && ParamValue(ctx, point, found.Groups[1].Value) == null)
             {
-                continue;
-            }
-            var name = found.Groups[1].Value;
-            var given = false;
-            foreach (var src in new[] { ctx.Reqmatch, ctx.Match, ctx.Reqdata, ctx.Data })
-            {
-                if (src != null && StructUtils.GetProp(src, name) != null)
-                {
-                    given = true;
-                }
-            }
-            if (!given)
-            {
-                missing.Add(name);
+                missing.Add(found.Groups[1].Value);
             }
         }
         return missing;
@@ -207,20 +194,22 @@ public static partial class SdkUtility
 
                 // A call without an action falls back to a point without one,
                 // as generation does, and only to a route the call can fill.
-                var pool = op.Points.Where(candidate => StructUtils.GetProp(
+                var plain = op.Points.Where(candidate => StructUtils.GetProp(
                     Helpers.ToMapAny(StructUtils.GetProp(candidate, "select")), "$action") == null).ToList();
-                if (pool.Count == 0)
+                if (plain.Count == 0)
                 {
-                    pool = op.Points.ToList();
+                    throw ctx.MakeError("point_action_required",
+                        "Operation \"" + op.Name +
+                        "\" has only action endpoints; pass $action to choose one.");
                 }
-                var fillable = pool.Where(candidate => UnfilledParams(ctx, candidate).Count == 0).ToList();
+                var fillable = plain.Where(candidate => UnfilledParams(ctx, candidate).Count == 0).ToList();
 
                 if (fillable.Count == 0)
                 {
                     throw ctx.MakeError("point_no_match",
                         "Operation \"" + op.Name +
                         "\" has no endpoint whose path parameters are all given (missing: " +
-                        string.Join(", ", UnfilledParams(ctx, OwnPoint(pool))) + ").");
+                        string.Join(", ", UnfilledParams(ctx, OwnPoint(plain))) + ").");
                 }
 
                 point = OwnPoint(fillable);

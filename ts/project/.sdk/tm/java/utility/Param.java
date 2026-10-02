@@ -6,7 +6,6 @@ import java.util.Map;
 
 import JAVAPACKAGE.core.Context;
 import JAVAPACKAGE.core.Helpers;
-import JAVAPACKAGE.core.Spec;
 import JAVAPACKAGE.utility.struct.Struct;
 
 final class Param {
@@ -14,13 +13,6 @@ final class Param {
   private Param() {}
 
   static Object param(Context ctx, Object paramdef) {
-    Map<String, Object> point = ctx.point;
-    Spec spec = ctx.spec;
-    Map<String, Object> match = ctx.match;
-    Map<String, Object> reqmatch = ctx.reqmatch;
-    Map<String, Object> data = ctx.data;
-    Map<String, Object> reqdata = ctx.reqdata;
-
     int pt = Struct.typify(paramdef);
 
     String key;
@@ -32,42 +24,57 @@ final class Param {
       key = k instanceof String ? (String) k : "";
     }
 
-    String akey = "";
+    String akey = alias(ctx.point, key);
+    if (ctx.spec != null && !"".equals(akey)
+        && Struct.getprop(ctx.reqmatch, key, null) == null
+        && Struct.getprop(ctx.match, key, null) == null) {
+      ctx.spec.alias.put(akey, key);
+    }
+
+    return paramValue(ctx, ctx.point, key);
+  }
+
+  // The name a point gives a parameter in the call, if it renames it.
+  private static String alias(Map<String, Object> point, String key) {
     if (point != null) {
       Map<String, Object> alias = Helpers.toMapAny(Struct.getprop(point, "alias"));
       if (alias != null) {
         Object ak = Struct.getprop(alias, key);
         if (ak instanceof String) {
-          akey = (String) ak;
+          return (String) ak;
         }
       }
     }
+    return "";
+  }
 
-    Object val = Struct.getprop(reqmatch, key, null);
+  // The value the call or its entity gives a point's parameter, under its
+  // name or the point's alias for it.
+  static Object paramValue(Context ctx, Map<String, Object> point, String key) {
+    String akey = alias(point, key);
+
+    Object val = Struct.getprop(ctx.reqmatch, key, null);
 
     if (val == null) {
-      val = Struct.getprop(match, key, null);
+      val = Struct.getprop(ctx.match, key, null);
     }
 
     if (val == null && !"".equals(akey)) {
-      if (spec != null) {
-        spec.alias.put(akey, key);
-      }
-      val = Struct.getprop(reqmatch, akey, null);
+      val = Struct.getprop(ctx.reqmatch, akey, null);
     }
 
     if (val == null) {
-      val = Struct.getprop(reqdata, key, null);
+      val = Struct.getprop(ctx.reqdata, key, null);
     }
 
     if (val == null) {
-      val = Struct.getprop(data, key, null);
+      val = Struct.getprop(ctx.data, key, null);
     }
 
     if (val == null && !"".equals(akey)) {
-      val = Struct.getprop(reqdata, akey, null);
+      val = Struct.getprop(ctx.reqdata, akey, null);
       if (val == null) {
-        val = Struct.getprop(data, akey, null);
+        val = Struct.getprop(ctx.data, akey, null);
       }
     }
 

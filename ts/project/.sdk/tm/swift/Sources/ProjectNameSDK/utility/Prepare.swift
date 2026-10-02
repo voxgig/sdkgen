@@ -163,16 +163,9 @@ func prepareBodyUtil(_ ctx: Context) -> Value {
 // SwiftPM target.
 //
 // The seven functions above and paramUtil below do not depend on the model,
-// so they stay templated.
+// so they stay templated, and so does the lookup it shares with makePoint.
 
 func paramUtil(_ ctx: Context, _ paramdef: Value) -> Value {
-  let point = ctx.point
-  let spec = ctx.spec
-  let match = ctx.match
-  let reqmatch = ctx.reqmatch
-  let data = ctx.data
-  let reqdata = ctx.reqdata
-
   let pt = typify(paramdef)
 
   let key: String
@@ -182,25 +175,36 @@ func paramUtil(_ ctx: Context, _ paramdef: Value) -> Value {
     key = gp(paramdef, "name").asString ?? ""
   }
 
-  var akey = ""
+  let akey = paramAlias(ctx.point, key)
+  if let sp = ctx.spec, akey != "", isNil(gp(ctx.reqmatch, key)), isNil(gp(ctx.match, key)) {
+    sp.alias.entries[akey] = .string(key)
+  }
+
+  return paramValue(ctx, ctx.point, key)
+}
+
+// The name a point gives a parameter in the call, if it renames it.
+private func paramAlias(_ point: VMap?, _ key: String) -> String {
   if let alias = gp(point, "alias").asMap, let ak = gp(alias, key).asString {
-    akey = ak
+    return ak
   }
+  return ""
+}
 
-  var val = gp(reqmatch, key)
-  if isNil(val) { val = gp(match, key) }
+// The value the call or its entity gives a point's parameter, under its name
+// or the point's alias for it.
+func paramValue(_ ctx: Context, _ point: VMap?, _ key: String) -> Value {
+  let akey = paramAlias(point, key)
+
+  var val = gp(ctx.reqmatch, key)
+  if isNil(val) { val = gp(ctx.match, key) }
+  if isNil(val) && akey != "" { val = gp(ctx.reqmatch, akey) }
+  if isNil(val) { val = gp(ctx.reqdata, key) }
+  if isNil(val) { val = gp(ctx.data, key) }
 
   if isNil(val) && akey != "" {
-    if let sp = spec { sp.alias.entries[akey] = .string(key) }
-    val = gp(reqmatch, akey)
-  }
-
-  if isNil(val) { val = gp(reqdata, key) }
-  if isNil(val) { val = gp(data, key) }
-
-  if isNil(val) && akey != "" {
-    val = gp(reqdata, akey)
-    if isNil(val) { val = gp(data, akey) }
+    val = gp(ctx.reqdata, akey)
+    if isNil(val) { val = gp(ctx.data, akey) }
   }
 
   return val

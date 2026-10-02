@@ -2,17 +2,16 @@
 require_relative 'struct/voxgig_struct'
 require_relative '../core/helpers'
 require_relative '../core/error'
+require_relative 'param'
 module ProjectNameUtilities
   # The path parameters of a point that neither the call nor the entity gives
-  # a value for, looked up where prepare_params looks.
+  # a value for, looked up as prepare_params looks them up.
   def self.unfilled_params(ctx, point)
     parts = VoxgigStruct.getprop(point, "parts")
     return [] unless parts.is_a?(Array)
     parts.each_with_object([]) do |part, missing|
       found = part.to_s.match(/\A\{([^{}\/]+)\}\z/)
-      next unless found
-      sources = [ctx.reqmatch, ctx.match, ctx.reqdata, ctx.data]
-      missing << found[1] if sources.all? { |src| VoxgigStruct.getprop(src || {}, found[1]).nil? }
+      missing << found[1] if found && param_value(ctx, point, found[1]).nil?
     end
   end
 
@@ -123,11 +122,15 @@ module ProjectNameUtilities
         plain = op.points.select { |p|
           VoxgigStruct.getprop(ProjectNameHelpers.to_map(VoxgigStruct.getprop(p, "select")), "$action").nil?
         }
-        pool = plain.empty? ? op.points : plain
-        fillable = pool.select { |p| ProjectNameUtilities.unfilled_params(ctx, p).empty? }
+        if plain.empty?
+          return nil, ctx.make_error("point_action_required",
+            "Operation \"#{op.name}\" has only action endpoints; pass $action to choose one.")
+        end
+
+        fillable = plain.select { |p| ProjectNameUtilities.unfilled_params(ctx, p).empty? }
 
         if fillable.empty?
-          missing = ProjectNameUtilities.unfilled_params(ctx, own_point.call(pool)).join(", ")
+          missing = ProjectNameUtilities.unfilled_params(ctx, own_point.call(plain)).join(", ")
           return nil, ctx.make_error("point_no_match",
             "Operation \"#{op.name}\" has no endpoint whose path parameters are all given (missing: #{missing}).")
         end

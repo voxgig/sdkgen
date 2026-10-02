@@ -27,15 +27,7 @@ private val METHOD_MAP: Map<String, String> = mapOf(
   "patch" to "PATCH",
 )
 
-@Suppress("UNCHECKED_CAST")
 fun param(ctx: Context, paramdef: Any?): Any? {
-  val point = ctx.point
-  val spec = ctx.spec
-  val match = ctx.match
-  val reqmatch = ctx.reqmatch
-  val data = ctx.data
-  val reqdata = ctx.reqdata
-
   val pt = Struct.typify(paramdef)
 
   val key: String
@@ -46,42 +38,58 @@ fun param(ctx: Context, paramdef: Any?): Any? {
     key = if (k is String) k else ""
   }
 
-  var akey = ""
+  val akey = paramAlias(ctx.point, key)
+  val spec = ctx.spec
+  if (spec != null && "" != akey &&
+    Struct.getprop(ctx.reqmatch, key, null) == null && Struct.getprop(ctx.match, key, null) == null
+  ) {
+    spec.alias[akey] = key
+  }
+
+  return paramValue(ctx, ctx.point, key)
+}
+
+// The name a point gives a parameter in the call, if it renames it.
+private fun paramAlias(point: Map<String, Any?>?, key: String): String {
   if (point != null) {
     val alias = Helpers.toMapAny(Struct.getprop(point, "alias"))
     if (alias != null) {
       val ak = Struct.getprop(alias, key)
       if (ak is String) {
-        akey = ak
+        return ak
       }
     }
   }
+  return ""
+}
 
-  var v = Struct.getprop(reqmatch, key, null)
+// The value the call or its entity gives a point's parameter, under its name
+// or the point's alias for it.
+fun paramValue(ctx: Context, point: Map<String, Any?>?, key: String): Any? {
+  val akey = paramAlias(point, key)
+
+  var v = Struct.getprop(ctx.reqmatch, key, null)
 
   if (v == null) {
-    v = Struct.getprop(match, key, null)
+    v = Struct.getprop(ctx.match, key, null)
   }
 
   if (v == null && "" != akey) {
-    if (spec != null) {
-      spec.alias[akey] = key
-    }
-    v = Struct.getprop(reqmatch, akey, null)
+    v = Struct.getprop(ctx.reqmatch, akey, null)
   }
 
   if (v == null) {
-    v = Struct.getprop(reqdata, key, null)
+    v = Struct.getprop(ctx.reqdata, key, null)
   }
 
   if (v == null) {
-    v = Struct.getprop(data, key, null)
+    v = Struct.getprop(ctx.data, key, null)
   }
 
   if (v == null && "" != akey) {
-    v = Struct.getprop(reqdata, akey, null)
+    v = Struct.getprop(ctx.reqdata, akey, null)
     if (v == null) {
-      v = Struct.getprop(data, akey, null)
+      v = Struct.getprop(ctx.data, akey, null)
     }
   }
 

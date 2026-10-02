@@ -928,7 +928,7 @@ fn own_point(points: []const Value) Value {
 }
 
 // The path parameters of a point that neither the call nor the entity gives a
-// value for, looked up where param_util looks.
+// value for, looked up as param_util looks them up.
 fn unfilled_params(ctx: *Context, point: Value) [][]const u8 {
     var missing: std.ArrayList([]const u8) = .empty;
     const parts = h.getp(point, "parts");
@@ -939,12 +939,7 @@ fn unfilled_params(ctx: *Context, point: Value) [][]const u8 {
             if (text.len < 3 or '{' != text[0] or '}' != text[text.len - 1] or
                 std.mem.indexOfAny(u8, text[1 .. text.len - 1], "{}/") != null) continue;
             const name = text[1 .. text.len - 1];
-            const sources = [_]Value{ ctx.reqmatch, ctx.mtch, ctx.reqdata, ctx.data };
-            var given = false;
-            for (sources) |src| {
-                if (!h.is_noval(h.getp(src, name))) given = true;
-            }
-            if (!given) missing.append(h.A(), name) catch {};
+            if (h.is_noval(param_value(ctx, point, name))) missing.append(h.A(), name) catch {};
         }
     }
     return missing.toOwnedSlice(h.A()) catch &.{};
@@ -1044,22 +1039,22 @@ pub fn make_point_util(ctx: *Context) E!Value {
 
             // A call without an action falls back to a point without one, as
             // generation does, and only to a route the call can fill.
-            var all: std.ArrayList(Value) = .empty;
-            var pool: std.ArrayList(Value) = .empty;
+            var plain: std.ArrayList(Value) = .empty;
             var j: i64 = 0;
             while (j < plen) : (j += 1) {
                 const cand = h.get_elem(points, h.vnum(j), h.vnull());
-                all.append(h.A(), cand) catch {};
-                if (h.is_noval(h.getp(h.to_map(h.getp(cand, "select")), "$action"))) pool.append(h.A(), cand) catch {};
+                if (h.is_noval(h.getp(h.to_map(h.getp(cand, "select")), "$action"))) plain.append(h.A(), cand) catch {};
             }
-            if (0 == pool.items.len) pool = all;
+            if (0 == plain.items.len) {
+                return ctx.fail("point_action_required", fmt("Operation \"{s}\" has only action endpoints; pass $action to choose one.", .{op.name}));
+            }
             var fillable: std.ArrayList(Value) = .empty;
-            for (pool.items) |cand| {
+            for (plain.items) |cand| {
                 if (0 == unfilled_params(ctx, cand).len) fillable.append(h.A(), cand) catch {};
             }
 
             if (0 == fillable.items.len) {
-                const missing = std.mem.join(h.A(), ", ", unfilled_params(ctx, own_point(pool.items))) catch "";
+                const missing = std.mem.join(h.A(), ", ", unfilled_params(ctx, own_point(plain.items))) catch "";
                 return ctx.fail("point_no_match", fmt("Operation \"{s}\" has no endpoint whose path parameters are all given (missing: {s}).", .{ op.name, missing }));
             }
 
@@ -1397,13 +1392,6 @@ pub fn make_result_util(ctx: *Context) E!*SdkResult {
 // ============================================================================
 
 pub fn param_util(ctx: *Context, paramdef: Value) Value {
-    const point = ctx.point;
-    const spec = ctx.spec;
-    const mtch = ctx.mtch;
-    const reqmatch = ctx.reqmatch;
-    const data = ctx.data;
-    const reqdata = ctx.reqdata;
-
     const pt = h.typify(paramdef);
 
     const key: []const u8 = if (0 != ((@as(i64, vs.T_string)) & pt))
@@ -1414,30 +1402,38 @@ pub fn param_util(ctx: *Context, paramdef: Value) Value {
     else
         (h.get_str(paramdef, "name") orelse "");
 
-    var akey: []const u8 = "";
-    if (!h.is_noval(point)) {
-        const alias = h.to_map(h.getp(point, "alias"));
-        if (!h.is_noval(alias)) {
-            if (h.get_str(alias, key)) |ak| akey = ak;
-        }
-    }
-
-    var val = h.getp(reqmatch, key);
-    if (h.is_noval(val)) val = h.getp(mtch, key);
-
-    if (h.is_noval(val) and akey.len != 0) {
-        if (spec) |sp| {
+    const akey = param_alias(ctx.point, key);
+    if (akey.len != 0 and h.is_noval(h.getp(ctx.reqmatch, key)) and h.is_noval(h.getp(ctx.mtch, key))) {
+        if (ctx.spec) |sp| {
             h.setp(sp.alias, akey, h.vstr(key));
         }
-        val = h.getp(reqmatch, akey);
     }
 
-    if (h.is_noval(val)) val = h.getp(reqdata, key);
-    if (h.is_noval(val)) val = h.getp(data, key);
+    return param_value(ctx, ctx.point, key);
+}
+
+// The name a point gives a parameter in the call, if it renames it.
+fn param_alias(point: Value, key: []const u8) []const u8 {
+    if (h.is_noval(point)) return "";
+    const alias = h.to_map(h.getp(point, "alias"));
+    if (h.is_noval(alias)) return "";
+    return h.get_str(alias, key) orelse "";
+}
+
+// The value the call or its entity gives a point's parameter, under its name
+// or the point's alias for it.
+pub fn param_value(ctx: *Context, point: Value, key: []const u8) Value {
+    const akey = param_alias(point, key);
+
+    var val = h.getp(ctx.reqmatch, key);
+    if (h.is_noval(val)) val = h.getp(ctx.mtch, key);
+    if (h.is_noval(val) and akey.len != 0) val = h.getp(ctx.reqmatch, akey);
+    if (h.is_noval(val)) val = h.getp(ctx.reqdata, key);
+    if (h.is_noval(val)) val = h.getp(ctx.data, key);
 
     if (h.is_noval(val) and akey.len != 0) {
-        val = h.getp(reqdata, akey);
-        if (h.is_noval(val)) val = h.getp(data, akey);
+        val = h.getp(ctx.reqdata, akey);
+        if (h.is_noval(val)) val = h.getp(ctx.data, akey);
     }
 
     return val;

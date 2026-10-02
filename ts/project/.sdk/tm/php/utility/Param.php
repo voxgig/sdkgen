@@ -9,13 +9,6 @@ class ProjectNameParam
 {
     public static function call(ProjectNameContext $ctx, mixed $paramdef): mixed
     {
-        $point = $ctx->point;
-        $spec = $ctx->spec;
-        $match_val = $ctx->match;
-        $reqmatch = $ctx->reqmatch;
-        $data = $ctx->data;
-        $reqdata = $ctx->reqdata;
-
         $pt = \Voxgig\Struct\Struct::typify($paramdef);
         if ((\Voxgig\Struct\Struct::T_string & $pt) > 0) {
             $key = $paramdef;
@@ -24,46 +17,66 @@ class ProjectNameParam
             $key = is_string($k) ? $k : '';
         }
 
-        $akey = '';
+        $akey = self::alias($ctx->point, $key);
+        if ($ctx->spec && $akey !== '' &&
+            self::absent(\Voxgig\Struct\Struct::getprop($ctx->reqmatch, $key)) &&
+            self::absent(\Voxgig\Struct\Struct::getprop($ctx->match, $key))) {
+            $ctx->spec->alias_map[$akey] = $key;
+        }
+
+        return self::value($ctx, $ctx->point, $key);
+    }
+
+    // The name a point gives a parameter in the call, if it renames it.
+    private static function alias(mixed $point, string $key): string
+    {
         if ($point) {
             $alias_map = ProjectNameHelpers::to_map(\Voxgig\Struct\Struct::getprop($point, 'alias'));
             if ($alias_map) {
                 $ak = \Voxgig\Struct\Struct::getprop($alias_map, $key);
                 if (is_string($ak)) {
-                    $akey = $ak;
+                    return $ak;
                 }
             }
         }
+        return '';
+    }
 
-        $undef = '__UNDEFINED__';
+    private static function absent(mixed $val): bool
+    {
+        return $val === null || $val === '__UNDEFINED__';
+    }
 
-        $val = \Voxgig\Struct\Struct::getprop($reqmatch, $key);
-        if ($val === null || $val === $undef) {
-            $val = \Voxgig\Struct\Struct::getprop($match_val, $key);
+    // The value the call or its entity gives a point's parameter, under its
+    // name or the point's alias for it.
+    public static function value(ProjectNameContext $ctx, mixed $point, string $key): mixed
+    {
+        $akey = self::alias($point, $key);
+
+        $val = \Voxgig\Struct\Struct::getprop($ctx->reqmatch, $key);
+        if (self::absent($val)) {
+            $val = \Voxgig\Struct\Struct::getprop($ctx->match, $key);
         }
 
-        if (($val === null || $val === $undef) && $akey !== '') {
-            if ($spec) {
-                $spec->alias_map[$akey] = $key;
+        if (self::absent($val) && $akey !== '') {
+            $val = \Voxgig\Struct\Struct::getprop($ctx->reqmatch, $akey);
+        }
+
+        if (self::absent($val)) {
+            $val = \Voxgig\Struct\Struct::getprop($ctx->reqdata, $key);
+        }
+        if (self::absent($val)) {
+            $val = \Voxgig\Struct\Struct::getprop($ctx->data, $key);
+        }
+
+        if (self::absent($val) && $akey !== '') {
+            $val = \Voxgig\Struct\Struct::getprop($ctx->reqdata, $akey);
+            if (self::absent($val)) {
+                $val = \Voxgig\Struct\Struct::getprop($ctx->data, $akey);
             }
-            $val = \Voxgig\Struct\Struct::getprop($reqmatch, $akey);
         }
 
-        if ($val === null || $val === $undef) {
-            $val = \Voxgig\Struct\Struct::getprop($reqdata, $key);
-        }
-        if ($val === null || $val === $undef) {
-            $val = \Voxgig\Struct\Struct::getprop($data, $key);
-        }
-
-        if (($val === null || $val === $undef) && $akey !== '') {
-            $val = \Voxgig\Struct\Struct::getprop($reqdata, $akey);
-            if ($val === null || $val === $undef) {
-                $val = \Voxgig\Struct\Struct::getprop($data, $akey);
-            }
-        }
-
-        return ($val === $undef) ? null : $val;
+        return self::absent($val) ? null : $val;
     }
 
     // The arguments a point declares in one location, query or header, each

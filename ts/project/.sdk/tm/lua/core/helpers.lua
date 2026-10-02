@@ -29,6 +29,48 @@ function helpers.get_ctx_prop(m, key)
 end
 
 
+-- The name a point gives a parameter in the call, if it renames it.
+function helpers.param_alias(point, key)
+  local alias = point ~= nil and helpers.to_map(vs.getprop(point, "alias")) or nil
+  local ak = alias ~= nil and vs.getprop(alias, key) or nil
+  return type(ak) == "string" and ak or ""
+end
+
+
+-- The value the call or its entity gives a point's parameter, under its name
+-- or the point's alias for it.
+function helpers.param_value(ctx, point, key)
+  local akey = helpers.param_alias(point, key)
+
+  local val = vs.getprop(ctx.reqmatch, key)
+
+  if val == nil then
+    val = vs.getprop(ctx.match, key)
+  end
+
+  if val == nil and akey ~= "" then
+    val = vs.getprop(ctx.reqmatch, akey)
+  end
+
+  if val == nil then
+    val = vs.getprop(ctx.reqdata, key)
+  end
+
+  if val == nil then
+    val = vs.getprop(ctx.data, key)
+  end
+
+  if val == nil and akey ~= "" then
+    val = vs.getprop(ctx.reqdata, akey)
+    if val == nil then
+      val = vs.getprop(ctx.data, akey)
+    end
+  end
+
+  return val
+end
+
+
 -- The arguments a point declares in one location, query or header, each as
 -- { name, wire, val }: the name it travels under and the value this call
 -- passes in its match or else its data. Unlike a path parameter, the entity's

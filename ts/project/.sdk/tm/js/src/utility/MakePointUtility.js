@@ -1,3 +1,5 @@
+const { paramValue } = require('./ParamUtility')
+
 
 // The entity's OWN route among an op's points, as opposed to a
 // CROSS-REFERENCE: another resource's route that happens to return this
@@ -46,17 +48,14 @@ function ownPoint(points) {
 
 
 // The path parameters of a point that neither the call nor the entity gives a
-// value for, looked up where prepareParams looks.
+// value for, looked up as prepareParams looks them up.
 function unfilled(ctx, point) {
-  const getprop = ctx.utility.struct.getprop
   const missing = []
 
   for (const part of (point.parts || [])) {
     const found = /^\{([^{}\/]+)\}$/.exec(String(part))
     const name = found && found[1]
-    if (null != name &&
-      null == getprop(ctx.reqmatch, name) && null == getprop(ctx.match, name) &&
-      null == getprop(ctx.reqdata, name) && null == getprop(ctx.data, name)) {
+    if (null != name && null == paramValue(ctx, point, name)) {
       missing.push(name)
     }
   }
@@ -147,13 +146,18 @@ function makePoint(ctx) {
       // A call without an action falls back to a point without one, as
       // generation does, and only to a route the call can fill.
       const plain = op.points.filter((cand) => null == (cand.select && cand.select.$action))
-      const pool = 0 < plain.length ? plain : op.points
-      const fillable = pool.filter((cand) => 0 === unfilled(ctx, cand).length)
+
+      if (0 === plain.length) {
+        return ctx.error('point_action_required', 'Operation "' + op.name +
+          '" has only action endpoints; pass $action to choose one.')
+      }
+
+      const fillable = plain.filter((cand) => 0 === unfilled(ctx, cand).length)
 
       if (0 === fillable.length) {
         return ctx.error('point_no_match', 'Operation "' + op.name +
           '" has no endpoint whose path parameters are all given (missing: ' +
-          unfilled(ctx, ownPoint(pool)).join(', ') + ').')
+          unfilled(ctx, ownPoint(plain)).join(', ') + ').')
       }
 
       point = ownPoint(fillable)

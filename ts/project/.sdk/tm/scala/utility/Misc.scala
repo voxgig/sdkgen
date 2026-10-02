@@ -383,38 +383,42 @@ object Done {
 
 object Param {
   def param(ctx: Context, paramdef: Object): Object = {
-    val point = ctx.point
-    val spec = ctx.spec
-    val matchData = ctx.matchData
-    val reqmatch = ctx.reqmatch
-    val data = ctx.data
-    val reqdata = ctx.reqdata
-
     val pt = Struct.typify(paramdef)
 
     val key: String =
       if (0 < (Struct.T_string & pt)) paramdef match { case s: String => s; case _ => "" }
       else Struct.getprop(paramdef, "name") match { case s: String => s; case _ => "" }
 
-    var akey = ""
-    if (point != null) {
-      val alias = Helpers.toMapAny(Struct.getprop(point, "alias"))
-      if (alias != null) {
-        Struct.getprop(alias, key) match { case ak: String => akey = ak; case _ => }
-      }
+    val akey = alias(ctx.point, key)
+    if (ctx.spec != null && "" != akey &&
+      Struct.getprop(ctx.reqmatch, key, null) == null && Struct.getprop(ctx.matchData, key, null) == null) {
+      ctx.spec.alias.put(akey, key)
     }
 
-    var v = Struct.getprop(reqmatch, key, null)
-    if (v == null) v = Struct.getprop(matchData, key, null)
+    value(ctx, ctx.point, key)
+  }
+
+  // The name a point gives a parameter in the call, if it renames it.
+  private def alias(point: Object, key: String): String = {
+    if (point == null) return ""
+    val aliasMap = Helpers.toMapAny(Struct.getprop(point, "alias"))
+    if (aliasMap == null) return ""
+    Struct.getprop(aliasMap, key) match { case ak: String => ak; case _ => "" }
+  }
+
+  // The value the call or its entity gives a point's parameter, under its
+  // name or the point's alias for it.
+  def value(ctx: Context, point: Object, key: String): Object = {
+    val akey = alias(point, key)
+
+    var v = Struct.getprop(ctx.reqmatch, key, null)
+    if (v == null) v = Struct.getprop(ctx.matchData, key, null)
+    if (v == null && "" != akey) v = Struct.getprop(ctx.reqmatch, akey, null)
+    if (v == null) v = Struct.getprop(ctx.reqdata, key, null)
+    if (v == null) v = Struct.getprop(ctx.data, key, null)
     if (v == null && "" != akey) {
-      if (spec != null) spec.alias.put(akey, key)
-      v = Struct.getprop(reqmatch, akey, null)
-    }
-    if (v == null) v = Struct.getprop(reqdata, key, null)
-    if (v == null) v = Struct.getprop(data, key, null)
-    if (v == null && "" != akey) {
-      v = Struct.getprop(reqdata, akey, null)
-      if (v == null) v = Struct.getprop(data, akey, null)
+      v = Struct.getprop(ctx.reqdata, akey, null)
+      if (v == null) v = Struct.getprop(ctx.data, akey, null)
     }
     v
   }

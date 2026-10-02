@@ -12,6 +12,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/../core/error.pm"));
+require(Cwd::abs_path("$__dir/param.pm"));
 
 package ProjectNameUtilities;
 
@@ -54,7 +55,7 @@ sub _own_point {
 }
 
 # The path parameters of a point that neither the call nor the entity gives a
-# value for, looked up where prepare_params looks.
+# value for, looked up as prepare_params looks them up.
 sub _unfilled {
   my ($ctx, $point) = @_;
   my $parts = ProjectNameHelpers::gp($point, 'parts');
@@ -63,9 +64,7 @@ sub _unfilled {
   for my $part (@$parts) {
     next unless defined $part && !ref $part && $part =~ /\A\{([^{}\/]+)\}\z/;
     my $name = $1;
-    push @missing, $name
-      unless grep { defined ProjectNameHelpers::gp($_ || {}, $name) }
-        ($ctx->{reqmatch}, $ctx->{match}, $ctx->{reqdata}, $ctx->{data});
+    push @missing, $name unless defined param_value($ctx, $point, $name);
   }
   return @missing;
 }
@@ -162,14 +161,19 @@ $REGISTRY{make_point} = sub {
         !defined ProjectNameHelpers::gp(
           ProjectNameHelpers::to_map(ProjectNameHelpers::gp($_, 'select')), '$action')
       } @{ $op->{points} };
-      my @pool = @plain ? @plain : @{ $op->{points} };
-      my @fillable = grep { my @missing = _unfilled($ctx, $_); !@missing } @pool;
+      unless (@plain) {
+        return (undef, $ctx->make_error('point_action_required',
+          'Operation "' . $op->{name} .
+          '" has only action endpoints; pass $action to choose one.'));
+      }
+
+      my @fillable = grep { my @missing = _unfilled($ctx, $_); !@missing } @plain;
 
       unless (@fillable) {
         return (undef, $ctx->make_error('point_no_match',
           'Operation "' . $op->{name} .
           '" has no endpoint whose path parameters are all given (missing: ' .
-          join(', ', _unfilled($ctx, _own_point(@pool))) . ').'));
+          join(', ', _unfilled($ctx, _own_point(@plain))) . ').'));
       }
 
       $point = _own_point(@fillable);
