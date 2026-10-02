@@ -2,7 +2,7 @@
 import { test, describe } from 'node:test'
 import { strictEqual, deepStrictEqual, ok } from 'node:assert'
 
-import { opRequestShape, opTypeName, OP_SUFFIX, entityClassName, pickExampleEntity } from '../dist/sdkgen.js'
+import { opRequestShape, opTypeName, OP_SUFFIX, entityClassName, pickExampleEntity, ungeneratedOps, warnUngeneratedOps } from '../dist/sdkgen.js'
 
 
 // A model entity with a mix of required/optional fields, a per-op exclusion,
@@ -401,5 +401,98 @@ describe('opRequestShape — body ops take fields, not path params', () => {
     const { items, fromParams } = opRequestShape(makeItemEntity(), 'load')
     strictEqual(fromParams, true)
     deepStrictEqual(optionalByName(items), { id: false })
+  })
+})
+
+
+// Novu's workflow keeps its PUT as update and its PATCH as a sixth op, which
+// no target generates a method for.
+function patchModel(): any {
+  return {
+    main: {
+      kit: {
+        entity: {
+          workflow: {
+            name: 'workflow',
+            op: {
+              update: { name: 'update', points: [{ m: 'PUT', o: '/v2/workflows/{workflowId}' }] },
+              patch: { name: 'patch', points: [{ m: 'PATCH', o: '/v2/workflows/{workflowId}' }] },
+            },
+          },
+          project: {
+            name: 'project',
+            op: {
+              load: { name: 'load', points: [{ m: 'GET', o: '/projects/{id}' }] },
+              patch: {
+                name: 'patch', points: [
+                  { m: 'PATCH', o: '/projects/{project_id}' },
+                  { m: 'PATCH', o: '/projects/{project_id}/off', a: false },
+                ],
+              },
+            },
+          },
+          archived: {
+            name: 'archived', active: false,
+            op: { patch: { name: 'patch', points: [{ m: 'PATCH', o: '/archived/{id}' }] } },
+          },
+          planet: {
+            name: 'planet',
+            op: {
+              list: { name: 'list', points: [{ m: 'GET', o: '/planet' }] },
+              patch: { name: 'patch', active: false, points: [{ m: 'PATCH', o: '/planet/{id}' }] },
+            },
+          },
+          ambient: { name: 'ambient' },
+        },
+      },
+    },
+  }
+}
+
+
+describe('ungeneratedOps — operations no target generates', () => {
+
+  test('names each active op outside the five, with its active points', () => {
+    deepStrictEqual(ungeneratedOps(patchModel()), [
+      { entity: 'project', op: 'patch', points: ['PATCH /projects/{project_id}'] },
+      { entity: 'workflow', op: 'patch', points: ['PATCH /v2/workflows/{workflowId}'] },
+    ])
+  })
+
+  test('an inactive entity or op is switched off, not dropped', () => {
+    const found = ungeneratedOps(patchModel()).map((d: any) => d.entity)
+    ok(!found.includes('archived'), 'inactive entity reported')
+    ok(!found.includes('planet'), 'inactive op reported')
+  })
+
+  test('a model without entities reports nothing', () => {
+    deepStrictEqual(ungeneratedOps({}), [])
+    deepStrictEqual(ungeneratedOps({ main: { kit: { entity: {} } } }), [])
+  })
+
+  test('warns once, listing every entity and op', () => {
+    const warns: any[] = []
+    const dropped = warnUngeneratedOps(patchModel(), { warn: (e: any) => warns.push(e) })
+
+    strictEqual(dropped.length, 2)
+    strictEqual(warns.length, 1)
+    strictEqual(warns[0].point, 'entity-op-ungenerated')
+    for (const part of [
+      'project.patch (PATCH /projects/{project_id})',
+      'workflow.patch (PATCH /v2/workflows/{workflowId})',
+      'list, load, create, update and remove',
+      '.sdk/model/guide/guide.aontu',
+    ]) {
+      ok(warns[0].note.includes(part), 'note names ' + part + ': ' + warns[0].note)
+    }
+  })
+
+  test('stays quiet when every op is generated', () => {
+    const warns: any[] = []
+    const model = patchModel()
+    delete model.main.kit.entity.workflow.op.patch
+    delete model.main.kit.entity.project.op.patch
+    deepStrictEqual(warnUngeneratedOps(model, { warn: (e: any) => warns.push(e) }), [])
+    strictEqual(warns.length, 0)
   })
 })

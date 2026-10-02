@@ -790,7 +790,9 @@ emitted broken source reached the fleet unchallenged.
   derived does not survive, because the consumer's own `Root.ts` re-derives
   it from `entity.name` per target. Do not add a second guard on a derived
   form. The wire is untouched — a path comes from the point's `orig`, never
-  the name.
+  the name. Right after it, `warnUngeneratedOps()` names, once per run, every
+  op of an active entity outside the five every target generates — apidef's
+  `patch` beside a PUT is the one that occurs.
 - **An entity need not declare `op`.** Read it as `entity.op || {}` /
   `entity.op?.load`; an unguarded `Object.keys(entity.op)` aborts generation
   for every target. `ts/test/entityname.test.ts` fails if one is reintroduced.

@@ -67,7 +67,7 @@ import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonToDtype, canonKey, canonScalarKey } from './helpers/canonType'
 import { canonToSpec, entityDataSpec, entityOpSpec, entitySpecs } from './helpers/canonSpec'
 import { optionSpec, featureOptionSpec, entitySpecMap } from './helpers/optspec'
-import { OP_SUFFIX, opTypeName, opParams, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape'
+import { OP_SUFFIX, opTypeName, opParams, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, deriveEntityNames, entityCollection } from './helpers/opShape'
 import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, isTsSdkType, tsSafeTypeName, isElixirReservedType, elixirSafeTypeName, jsProp, jsOptProp, jsKey, luaKey, prefixLeadingDigit } from './helpers/naming'
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
 import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
@@ -279,6 +279,7 @@ function SdkGen(opts: SdkGenOptions) {
     // target — so the only correction that survives is one made to the model
     // itself, before Root runs. See helpers/modelNames.
     guardModelNames(model, log)
+    warnUngeneratedOps(model, log)
 
     let Root = spec.root
 
@@ -1091,6 +1092,8 @@ export {
   entityClassName,
   entityTypeCollisions,
   warnEntityTypeCollisions,
+  ungeneratedOps,
+  warnUngeneratedOps,
   deriveEntityNames,
   entityCollection,
   guardModelNames,

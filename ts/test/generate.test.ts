@@ -360,7 +360,7 @@ describe('generate', () => {
   })
 
 
-  test('the case rename is reported once per run', async () => {
+  test('the rename and the ungenerated op are each reported once per run', async () => {
     const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
     const sink: any[] = []
     await generate(targets, undefined, FOLD_ENTITY, sink)
@@ -369,6 +369,12 @@ describe('generate', () => {
     strictEqual(guard.length, 1, 'case guard warnings: ' + guard.length)
     deepStrictEqual(guard[0].names, ['contacts_field', 'contactsfield'])
     ok(guard[0].note.includes('contactsfield -> contactsfield2'), guard[0].note)
+
+    const dropped = sink.filter((e: any) => 'entity-op-ungenerated' === e?.point)
+    strictEqual(dropped.length, 1, 'ungenerated-op warnings: ' + dropped.length)
+    deepStrictEqual(dropped[0].ops, [{
+      entity: 'contacts_field', op: 'patch', points: ['PATCH /contacts/fields/{id}'],
+    }])
   })
 
 

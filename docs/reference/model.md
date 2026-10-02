@@ -378,6 +378,15 @@ the `Name` case variants. The SDK generates one entity class per active
 entity, with `load` / `list` / `create` / `update` / `remove` where the
 API supports them.
 
+No target generates an operation under any other name. apidef keeps a
+PATCH beside a PUT as a sixth operation, `patch`, which then has no method
+in any SDK. Each generation names every such operation of an active
+entity, with its method and path, in one warning
+(`entity-op-ungenerated`). Reclassify the operation in the guide to reach
+it, or switch it off there (`op: patch: active: false` on its path) to
+accept the gap. An inactive entity, or an operation already switched off,
+is not reported.
+
 An entity name is also an identifier stem: the class name, the SDK method
 that returns it, the generated type names and the per-language module names
 all come from it.

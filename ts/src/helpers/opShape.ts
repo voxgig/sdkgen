@@ -289,6 +289,69 @@ function entityOps(ent: any): string[] {
 }
 
 
+type UngeneratedOp = { entity: string, op: string, points: string[] }
+
+
+// Every target emits a method for the CANON_OP_ORDER ops and nothing else, so
+// any other active op of an active entity is in the model and unreachable.
+function ungeneratedOps(model: any): UngeneratedOp[] {
+  const entity = model?.main?.[KIT]?.entity
+  if (null == entity || 'object' !== typeof entity) {
+    return []
+  }
+
+  const out: UngeneratedOp[] = []
+
+  for (const key of Object.keys(entity).sort()) {
+    const ent = entity[key]
+    if (null == ent || 'object' !== typeof ent || false === ent.active) {
+      continue
+    }
+
+    const ops = ent.op || {}
+    for (const opname of Object.keys(ops).sort()) {
+      const op = ops[opname]
+      if (null == op || 'object' !== typeof op || false === op.active ||
+        CANON_OP_ORDER.includes(opname)) {
+        continue
+      }
+
+      const points = (Array.isArray(op.points) ? op.points : [])
+        .filter((pt: any) => null != pt && false !== pt.a)
+        .map((pt: any) => [pt.m, pt.o].filter((s: any) => null != s).join(' '))
+
+      out.push({
+        entity: 'string' === typeof ent.name ? ent.name : key,
+        op: opname,
+        points,
+      })
+    }
+  }
+
+  return out
+}
+
+
+function warnUngeneratedOps(model: any, log: any): UngeneratedOp[] {
+  const dropped = ungeneratedOps(model)
+  if (0 < dropped.length && log && log.warn) {
+    const listed = dropped.map((d) => `${d.entity}.${d.op}` +
+      (0 < d.points.length ? ` (${d.points.join(', ')})` : ''))
+    const generated = CANON_OP_ORDER.slice(0, -1).join(', ') + ' and ' +
+      CANON_OP_ORDER[CANON_OP_ORDER.length - 1]
+    log.warn({
+      point: 'entity-op-ungenerated', ops: dropped,
+      note: `operation(s) in the model that no target generates (each ` +
+        `generates ${generated} only), so the SDK has no method for them: ` +
+        `${listed.join(', ')}. To reach one, reclassify it in the guide ` +
+        `(.sdk/model/guide/guide.aontu); to accept the gap, switch it off ` +
+        `there with op: <name>: active: false on its path`,
+    })
+  }
+  return dropped
+}
+
+
 // The entity's primary/representative op for a single illustrative call —
 // prefer a read op (list, then load) so the snippet needs no fabricated match,
 // then fall back to create/update/remove. null when the entity exposes no op.
@@ -492,8 +555,11 @@ export {
   entityClassName,
   entityTypeCollisions,
   warnEntityTypeCollisions,
+  ungeneratedOps,
+  warnUngeneratedOps,
 }
 
 export type {
   OpShapeItem,
+  UngeneratedOp,
 }
