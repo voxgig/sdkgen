@@ -101,10 +101,14 @@ sub scripted_fetcher {
 #
 # The plain constructor, not the test-mode one: the `test` feature is
 # transport: 'base' and REPLACES the transport, so a client in test mode
-# would shadow the script.
+# would shadow the script. The `test` OPTION installs no transport: it says
+# the client is not live, so a required server variable becomes test-<name>.
 sub build_client {
   my ($kase) = @_;
-  my $opts = { 'utility' => { 'fetcher' => scripted_fetcher($kase->{res}) } };
+  my $opts = {
+    'test' => { 'active' => 1 },
+    'utility' => { 'fetcher' => scripted_fetcher($kase->{res}) },
+  };
   $opts->{feature} = $kase->{feature} if defined $kase->{feature};
   return ProjectNameSDK->new($opts);
 }

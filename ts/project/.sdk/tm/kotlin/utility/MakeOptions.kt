@@ -7,6 +7,9 @@ import KOTLINPACKAGE.core.SdkError
 import KOTLINPACKAGE.core.Utility
 import KOTLINPACKAGE.utility.struct.Struct
 
+// A {name} placeholder in a templated server URL (an OpenAPI server variable).
+private val SERVER_VAR = Regex("\\{([A-Za-z0-9_]+)\\}")
+
 @Suppress("UNCHECKED_CAST")
 fun makeOptions(ctx: Context): MutableMap<String, Any?> {
   var options = ctx.options
@@ -152,6 +155,29 @@ fun makeOptions(ctx: Context): MutableMap<String, Any?> {
       val sm = linkedMapOf<String, Any?>()
       sm["fetch"] = sysFetch
       opts["system"] = sm
+    }
+  }
+
+  // A templated base URL takes each {name} from options.server. An empty value
+  // cannot make a working URL, so it fails construction, except in test mode,
+  // where it becomes test-<name>.
+  val base = opts["base"]
+  if (base is String && base.contains('{')) {
+    val testmode = true == Struct.getpath(opts, listOf("test", "active")) ||
+      true == Struct.getpath(opts, listOf("feature", "test", "active"))
+    val server = Helpers.toMapAny(opts["server"])
+    val mainName = Struct.getpath(config, listOf("main", "name"))
+    val sdkname = if (mainName is String && "" != mainName) mainName else "SDK"
+    opts["base"] = SERVER_VAR.replace(base) { m ->
+      val name = m.groupValues[1]
+      val value = server?.get(name) as? String ?: ""
+      when {
+        "" != value -> value
+        testmode -> "test-$name"
+        else -> throw SdkError("server_var_required",
+          "$sdkname: the server variable '$name' is required: the API base URL is " +
+            "'$base' - pass \"server\" to mapOf(\"$name\" to \"...\") in the SDK options", ctx)
+      }
     }
   }
 
