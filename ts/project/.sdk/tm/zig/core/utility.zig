@@ -1112,7 +1112,9 @@ pub fn make_spec_util(ctx: *Context) E!*Spec {
     const c = ctx.ctrl;
     if (c.has_explain()) h.setp(c.explain, "spec", spec.to_value());
 
+    const query = h.clone(spec.query);
     const spec2 = try prepare_auth_util(ctx);
+    spec2.note_authquery(query);
     ctx.spec = spec2;
     return spec2;
 }
@@ -1162,7 +1164,8 @@ pub fn make_url_util(ctx: *Context) E![]const u8 {
             if (!h.is_noval(val)) {
                 url = fmt("{s}{s}{s}={s}", .{ url, qsep, h.esc_url(key), h.esc_url(h.scalar_str(val)) });
                 qsep = "&";
-                h.setp(resmatch, key, val);
+                // Sent with the request, never recorded as the entity's match.
+                if (!spec.authquery_has(key)) h.setp(resmatch, key, val);
             }
         }
     }

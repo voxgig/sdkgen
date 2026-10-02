@@ -374,7 +374,8 @@ class CleanTest extends TestCase
     }
 
     private static function make_sdk(
-        callable $respond, \\ArrayObject $sinks, ?array $cleanopts = null, array $extra = []
+        callable $respond, \\ArrayObject $sinks, ?array $cleanopts = null, array $extra = [],
+        ?array $auth = null
     ): array
     {
         $capture = function (string $name) use ($sinks): callable {
@@ -424,6 +425,9 @@ class CleanTest extends TestCase
         ];
         if (0 < count($feature)) {
             $opts['feature'] = $feature;
+        }
+        if (null !== $auth) {
+            $opts['auth'] = $auth;
         }
 
         return [new ${Name}SDK($opts), $watcher];
@@ -499,12 +503,13 @@ class CleanTest extends TestCase
         // What the caller passed and keeps; an array, so the call cannot
         // change it, but it is searched like the record the watcher reads.
         $held = $ctrl['explain'] ?? null;
+        $accessor = $target['accessor'];
+        $op = $target['op'];
+        $entity = $sdk->$accessor();
         $out = null;
         $err = null;
         try {
-            $accessor = $target['accessor'];
-            $op = $target['op'];
-            $out = $sdk->$accessor()->$op($target['match'], $ctrl);
+            $out = $entity->$op($target['match'], $ctrl);
         } catch (\\Throwable $e) {
             $err = $e;
         }
@@ -518,6 +523,10 @@ class CleanTest extends TestCase
             foreach (self::surfaces('result', $out) as $s) {
                 $sinks[] = $s;
             }
+        }
+        // Raw, as a caller copying the match into another query reads it.
+        foreach (self::surfaces('match', $entity->match_get()) as $s) {
+            $sinks[] = $s;
         }
 
         $explain = null;
@@ -584,6 +593,11 @@ class CleanTest extends TestCase
                 }
             }
         }
+
+        // A name given at run time replaces the declared one: the match leaves
+        // out whichever name prepare_auth placed.
+        [$sdk, $watcher] = self::make_sdk(self::scenarios()['ok'], $sinks, null, [], ['name' => 'zzcred']);
+        self::drive($sdk, $watcher, $target, [], $sinks);
 
         // A credential mistyped as a map is rejected by validation, whose
         // message quotes the value it rejected.

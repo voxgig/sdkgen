@@ -192,7 +192,12 @@ func makeSpecUtil(_ ctx: Context) throws -> Spec {
     explain.entries["spec"] = .nat(ctx.spec!)
   }
 
+  // Whatever prepareAuth sets in the query, under whichever name, is the
+  // credential; a key it leaves as it was is the caller's.
+  let query = ctx.spec!.query.entries
+
   let spec = try utility.prepareAuth(ctx)
+  spec.authquery = spec.query.entries.keys.filter { query[$0] != spec.query.entries[$0] }
   ctx.spec = spec
   return spec
 }
@@ -207,6 +212,9 @@ func makeUrlUtil(_ ctx: Context) throws -> String {
 
   var url = join(jtp(spec.base, spec.prefix, spec.path, spec.suffix), "/", true)
   let resmatch = VMap()
+
+  // Sent with the request, never recorded as the entity's match.
+  let authquery = spec.authquery
 
   // A route the definition ends with a slash keeps it: a server such as a
   // Django REST one redirects or refuses the route without it.
@@ -232,7 +240,9 @@ func makeUrlUtil(_ ctx: Context) throws -> String {
     if !isNil(val) {
       url += qsep + escurl(.string(key)) + "=" + escurl(.string(stringify(val)))
       qsep = "&"
-      resmatch.entries[key] = val
+      if !authquery.contains(key) {
+        resmatch.entries[key] = val
+      }
     }
   }
 

@@ -11,6 +11,9 @@ module ProjectNameUtilities
     url = VoxgigStruct.join([spec.base, spec.prefix, spec.path, spec.suffix], "/", true)
     resmatch = {}
 
+    # Sent with the request, never recorded as the entity's match.
+    authquery = (spec.respond_to?(:authquery) ? spec.authquery : nil) || []
+
     # A route the definition ends with a slash keeps it: a server such as a
     # Django REST one redirects or refuses the route without it.
     orig = ctx.point ? VoxgigStruct.getprop(ctx.point, "orig") : nil
@@ -44,7 +47,7 @@ module ProjectNameUtilities
           val_str = val.is_a?(String) ? val : val.to_s
           url += qsep + VoxgigStruct.escurl(key) + "=" + VoxgigStruct.escurl(val_str)
           qsep = "&"
-          resmatch[key] = val
+          resmatch[key] = val unless authquery.include?(key)
         end
       end
     end

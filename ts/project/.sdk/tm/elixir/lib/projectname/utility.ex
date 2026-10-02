@@ -1101,11 +1101,21 @@ defmodule ProjectName.Utility do
         explain = S.getprop(ctrl, "explain")
         if explain != nil, do: S.setprop(explain, "spec", spec)
 
+        # Whatever prepare_auth sets in the query, under whichever name, is
+        # the credential; a key it leaves as it was is the caller's.
+        query = Map.new(H.entries(S.getprop(spec, "query")))
+
         {spec2, err} = prepare_auth(ctx)
 
         if err != nil do
           {nil, err}
         else
+          authquery =
+            for {key, val} <- H.entries(S.getprop(spec2, "query")),
+                not Map.has_key?(query, key) or Map.get(query, key) != val,
+                do: key
+
+          S.setprop(spec2, "authquery", S.jt(authquery))
           S.setprop(ctx, "spec", spec2)
           {spec2, nil}
         end
@@ -1446,6 +1456,9 @@ defmodule ProjectName.Utility do
 
         resmatch = S.jm([])
 
+        # Sent with the request, never recorded as the entity's match.
+        authquery = for {_, name} <- H.entries(S.getprop(spec, "authquery")), do: name
+
         url1 =
           Enum.reduce(H.entries(S.getprop(spec, "params")), url0, fn {key, val}, acc ->
             if val != nil and is_binary(key) do
@@ -1461,7 +1474,7 @@ defmodule ProjectName.Utility do
           Enum.reduce(H.entries(S.getprop(spec, "query")), {url1, "?"}, fn {key, val}, {acc, qsep} ->
             if val != nil and is_binary(key) do
               vstr = if is_binary(val), do: val, else: S.stringify(val)
-              S.setprop(resmatch, key, val)
+              if key not in authquery, do: S.setprop(resmatch, key, val)
               {acc <> qsep <> S.escurl(key) <> "=" <> S.escurl(vstr), "&"}
             else
               {acc, qsep}

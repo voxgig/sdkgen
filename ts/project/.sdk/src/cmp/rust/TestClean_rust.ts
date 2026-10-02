@@ -100,16 +100,18 @@ function render(spec: {
   const { Name, rustcrate, auth, features, candidates } = spec
 
   const drivers = candidates.map((c) => 'list' === c.op
-    ? `fn ${c.fn}(sdk: &Rc<${Name}SDK>, mtch: Value, ctrl: Value) -> Result<Value, ${Name}Error> {
-    sdk.${c.method}(Value::Noval)
+    ? `fn ${c.fn}(sdk: &Rc<${Name}SDK>, mtch: Value, ctrl: Value) -> (Result<Value, ${Name}Error>, Value) {
+    let ent = sdk.${c.method}(Value::Noval);
+    let out = ent
         .list(mtch, ctrl)
-        .map(|items| Value::list(items.iter().map(|e| e.data(None)).collect()))
+        .map(|items| Value::list(items.iter().map(|e| e.data(None)).collect()));
+    (out, ent.matchv(None))
 }
 `
-    : `fn ${c.fn}(sdk: &Rc<${Name}SDK>, mtch: Value, ctrl: Value) -> Result<Value, ${Name}Error> {
-    sdk.${c.method}(Value::Noval)
-        .${c.op}(mtch, ctrl)
-        .map(|e| e.data(None))
+    : `fn ${c.fn}(sdk: &Rc<${Name}SDK>, mtch: Value, ctrl: Value) -> (Result<Value, ${Name}Error>, Value) {
+    let ent = sdk.${c.method}(Value::Noval);
+    let out = ent.${c.op}(mtch, ctrl).map(|e| e.data(None));
+    (out, ent.matchv(None))
 }
 `).join('\n') + '\n' + candidates.map((c) =>
     `fn ${c.sfn}(sdk: &Rc<${Name}SDK>, mtch: Value, callopts: Value) -> Result<Vec<Value>, ${Name}Error> {
@@ -418,6 +420,16 @@ fn make_sdk(
     cleanopts: Option<Value>,
     extra: Vec<FeatureRef>,
 ) -> Rc<${Name}SDK> {
+    make_sdk_with(scenario, sinks, cleanopts, extra, None)
+}
+
+fn make_sdk_with(
+    scenario: Scenario,
+    sinks: &Sinks,
+    cleanopts: Option<Value>,
+    extra: Vec<FeatureRef>,
+    auth: Option<Value>,
+) -> Rc<${Name}SDK> {
     let feature = Value::empty_map();
     for name in FEATURES {
         let fopts = jo(vec![("active", Value::Bool(true))]);
@@ -439,14 +451,18 @@ fn make_sdk(
         }
     }
 
-    let sdk = ${Name}SDK::new(jo(vec![
+    let opts = jo(vec![
         ("apikey", Value::str(CANARY_APIKEY)),
         ("secret", Value::str(CANARY_SECRET)),
         ("headers", jo(vec![("X-Custom-Token", Value::str(CANARY_HEADER))])),
         ("clean", clean),
         ("feature", feature),
         ("system", jo(vec![("fetch", transport(scenario))])),
-    ]));
+    ]);
+    if let Some(auth) = auth {
+        setp(&opts, "auth", auth);
+    }
+    let sdk = ${Name}SDK::new(opts);
 
     // Rust options are pure data, so the extension feature is added after
     // construction (the \`extend\` option of the ts client).
@@ -457,7 +473,8 @@ fn make_sdk(
     sdk
 }
 
-type Drive = fn(&Rc<${Name}SDK>, Value, Value) -> Result<Value, ${Name}Error>;
+// What the operation returned, and the match its entity then holds.
+type Drive = fn(&Rc<${Name}SDK>, Value, Value) -> (Result<Value, ${Name}Error>, Value);
 type Stream = fn(&Rc<${Name}SDK>, Value, Value) -> Result<Vec<Value>, ${Name}Error>;
 
 ${drivers}
@@ -487,7 +504,7 @@ fn usable_op() -> Option<Target> {
             setp(&filled, p, Value::str("p1"));
         }
         for mtch in [Value::empty_map(), filled] {
-            if drive(&plain, vs::clone(&mtch), Value::Noval).is_ok() {
+            if drive(&plain, vs::clone(&mtch), Value::Noval).0.is_ok() {
                 return Some(Target { drive: *drive, stream: *stream, mtch });
             }
         }
@@ -508,7 +525,8 @@ fn same_node(a: &Value, b: &Value) -> bool {
 fn drive(sdk: &Rc<${Name}SDK>, target: &Target, ctrl: Value, sinks: &Sinks) -> Option<${Name}Error> {
     // A caller may keep the record it passed rather than read ctrl.explain.
     let held = getp(&ctrl, "explain");
-    let out = match (target.drive)(sdk, vs::clone(&target.mtch), ctrl.clone()) {
+    let (res, mtch) = (target.drive)(sdk, vs::clone(&target.mtch), ctrl.clone());
+    let out = match res {
         Ok(out) => {
             push_value(sinks, "result", &out);
             None
@@ -518,6 +536,8 @@ fn drive(sdk: &Rc<${Name}SDK>, target: &Target, ctrl: Value, sinks: &Sinks) -> O
             Some(err)
         }
     };
+    // Raw, as a caller copying the match into another query reads it.
+    push_value(sinks, "match", &mtch);
     let explain = getp(&ctrl, "explain");
     if let Value::Map(_) = explain {
         push_value(sinks, "explain", &explain);
@@ -580,6 +600,12 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
             push(&sinks, "sdk:display", format!("{}", sdk));
         }
     }
+
+    // A name given at run time replaces the declared one: the match leaves
+    // out whichever name prepare_auth placed.
+    let renamed = make_sdk_with(Scenario::Ok, &sinks, None, Vec::new(),
+        Some(jo(vec![("name", Value::str("zzcred"))])));
+    drive(&renamed, &target, Value::Noval, &sinks);
 
     // A credential mistyped as a map. The rust validator does not reject it
     // (make_options keeps its input when validation fails), so what the

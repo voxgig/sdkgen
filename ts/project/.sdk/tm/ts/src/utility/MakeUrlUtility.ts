@@ -26,6 +26,9 @@ function makeUrl(ctx: Context): Error | string {
   let url = join([spec.base, spec.prefix, spec.path, spec.suffix], '/', true)
   let resmatch: Record<string, any> = {}
 
+  // Sent with the request, never recorded as the entity's match.
+  const authquery: string[] = spec.authquery || []
+
   // A route the definition ends with a slash keeps it: a server such as a
   // Django REST one redirects or refuses the route without it.
   const orig = ctx.point?.orig
@@ -51,7 +54,9 @@ function makeUrl(ctx: Context): Error | string {
     if (null != val) {
       url += qsep + escurl(key) + '=' + escurl(val)
       qsep = '&'
-      resmatch[key] = val
+      if (!authquery.includes(key)) {
+        resmatch[key] = val
+      }
     }
   }
 

@@ -249,7 +249,7 @@ class ${Name}CleanTest < Minitest::Test
     f.is_a?(Hash) && !f[name].nil?
   end
 
-  def make_sdk(scenario, sinks, cleanopts = nil, extra = [])
+  def make_sdk(scenario, sinks, cleanopts = nil, extra = [], auth = nil)
     capture = ->(name) { ->(rec) { sinks.concat(Sweep.forms(name, rec)) } }
     feature = {}
     feature["log"] = { "active" => true, "logger" => CaptureLogger.new(sinks) } if has_feature?("log")
@@ -261,7 +261,7 @@ class ${Name}CleanTest < Minitest::Test
     feature["clienttrack"] = { "active" => true } if has_feature?("clienttrack")
 
     respond = scenario[1]
-    ${Name}SDK.new({
+    opts = {
       "apikey" => CANARY["apikey"],
       "secret" => CANARY["secret"],
       "headers" => { "X-Custom-Token" => CANARY["header"] },
@@ -269,7 +269,9 @@ class ${Name}CleanTest < Minitest::Test
       "feature" => feature,
       "extend" => [CaptureFeature.new(sinks)] + extra,
       "utility" => { "fetcher" => ->(_ctx, url, fetchdef) { respond.call(url, fetchdef) } },
-    })
+    }
+    opts["auth"] = auth unless auth.nil?
+    ${Name}SDK.new(opts)
   end
 
   # The first operation that completes against a plain 200: with no
@@ -322,15 +324,18 @@ class ${Name}CleanTest < Minitest::Test
   def drive(sdk, target, ctrl, sinks)
     # A caller may keep the record it passed rather than read ctrl["explain"].
     held = ctrl["explain"]
+    entity = sdk.public_send(target["accessor"])
     out = nil
     err = nil
     begin
-      out = sdk.public_send(target["accessor"]).public_send(target["op"], target["match"].dup, ctrl)
+      out = entity.public_send(target["op"], target["match"].dup, ctrl)
     rescue StandardError => e
       err = e
     end
     sinks.concat(Sweep.forms("error", err)) unless err.nil?
     sinks.concat(Sweep.forms("result", out)) unless out.nil?
+    # Raw, as a caller copying the match into another query reads it.
+    sinks.concat(Sweep.forms("match", entity.match_get))
     sinks.concat(Sweep.forms("explain", ctrl["explain"])) unless ctrl["explain"].nil?
     sinks.concat(Sweep.forms("explain:held", held)) unless held.nil? || held.equal?(ctrl["explain"])
     err
@@ -355,6 +360,10 @@ class ${Name}CleanTest < Minitest::Test
         sinks.concat(Sweep.forms("sdk", sdk))
       end
     end
+
+    # A name given at run time replaces the declared one: the match leaves
+    # out whichever name prepare_auth placed.
+    drive(make_sdk(SCENARIOS[0], sinks, nil, [], { "name" => "zzcred" }), target, {}, sinks)
 
     # A credential mistyped as a map is rejected by validation, whose
     # message quotes the value it rejected.

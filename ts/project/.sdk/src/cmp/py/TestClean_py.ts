@@ -188,7 +188,7 @@ SCENARIOS = [
 ]
 
 
-def _make_sdk(respond, sinks, cleanopts=None, extra=None):
+def _make_sdk(respond, sinks, cleanopts=None, extra=None, auth=None):
     def capture(name):
         return lambda rec, *a: sinks.extend(_forms(name, rec))
 
@@ -214,7 +214,7 @@ def _make_sdk(respond, sinks, cleanopts=None, extra=None):
     clean = {"values": CANARY["value"]}
     clean.update(cleanopts or {})
 
-    return ${Name}SDK({
+    opts = {
         "apikey": CANARY["apikey"],
         "secret": CANARY["secret"],
         "headers": {"X-Custom-Token": CANARY["header"]},
@@ -222,7 +222,10 @@ def _make_sdk(respond, sinks, cleanopts=None, extra=None):
         "feature": feature,
         "extend": [_CaptureFeature(sinks)] + list(extra or []),
         "utility": {"fetcher": lambda ctx, url, fetchdef: respond(url, fetchdef)},
-    })
+    }
+    if auth is not None:
+        opts["auth"] = auth
+    return ${Name}SDK(opts)
 
 
 # The first operation that completes against a plain 200: with no
@@ -338,16 +341,19 @@ class _StreamOkFeature(${Name}BaseFeature):
 def _drive(sdk, target, ctrl, sinks):
     # A caller may keep the record it passed rather than read ctrl["explain"].
     held = ctrl.get("explain")
+    entity = getattr(sdk, target[0])()
     out = None
     err = None
     try:
-        out = getattr(getattr(sdk, target[0])(), target[1])(dict(target[2]), ctrl)
+        out = getattr(entity, target[1])(dict(target[2]), ctrl)
     except Exception as e:
         err = e
     if err is not None:
         sinks.extend(_forms("error", err))
     if out is not None:
         sinks.extend(_forms("result", out))
+    # Raw, as a caller copying the match into another query reads it.
+    sinks.extend(_forms("match", entity.match_get()))
     if ctrl.get("explain") is not None:
         sinks.extend(_forms("explain", ctrl["explain"]))
     if held is not None and held is not ctrl.get("explain"):
@@ -382,6 +388,10 @@ class TestClean:
                     explains[key] = ctrl["explain"]
                 sinks.extend(_forms("sdk", sdk))
                 sinks.append(("sdk:vars", json.dumps(vars(sdk), default=repr)))
+
+        # A name given at run time replaces the declared one: the match
+        # leaves out whichever name prepare_auth placed.
+        _drive(_make_sdk(SCENARIOS[0][1], sinks, auth={"name": "zzcred"}), target, {}, sinks)
 
         # A credential mistyped as a map is rejected by validation, whose
         # message quotes the value it rejected.

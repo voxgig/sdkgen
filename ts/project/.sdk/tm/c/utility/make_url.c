@@ -90,7 +90,8 @@ char* make_url_util(Context* ctx, PNError** err) {
         free(eval);
         url = str_append(url, frag);
         qsep = "&";
-        setp(resmatch, key, v_share(val));
+        // Sent with the request, never recorded as the entity's match.
+        if (!spec_authquery_has(spec, key)) setp(resmatch, key, v_share(val));
       }
     }
   }

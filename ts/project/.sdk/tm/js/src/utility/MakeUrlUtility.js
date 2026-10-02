@@ -48,6 +48,15 @@ function makeUrl(ctx) {
 
   result.resmatch = resmatch
 
+  // The credential prepareAuth placed in the query is no part of the match;
+  // a path parameter of the same name still is.
+  for (const key of spec.authquery || []) {
+    delete resmatch[key]
+    if (null != params && null != params[key]) {
+      resmatch[key] = params[key]
+    }
+  }
+
   return url
 }
 

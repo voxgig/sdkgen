@@ -253,7 +253,10 @@
            :method  (g "method" "GET")
            :body    (g "body" nil)
            :url     (g "url" "")
-           :path    (g "path" "")})))
+           :path    (g "path" "")
+           ;; The query parameters prepare-auth placed: the credential, which
+           ;; the request sends and the entity's match leaves out.
+           :authquery (g "authquery" [])})))
 
 ;; ---------------------------------------------------------------------------
 ;; Result (atom-map).
@@ -1097,8 +1100,17 @@
                 (oset! spec :body (ucall ctx :prepare-body))
                 (oset! spec :path (ucall ctx :prepare-path))))
             (when-let [ex (oget (oget ctx :ctrl) :explain)] (.put ^java.util.Map ex "spec" spec))
-            (let [[s err] (ucall ctx :prepare-auth)]
-              (if err [nil err] (do (oset! ctx :spec s) [s nil])))))))))
+            ;; Whatever prepare-auth sets in the query, under whichever name,
+            ;; is the credential; a key it leaves as it was is the caller's.
+            (let [query (java.util.LinkedHashMap. ^java.util.Map (or (oget spec :query) (vs/jm)))
+                  [s err] (ucall ctx :prepare-auth)]
+              (if err [nil err]
+                  (do
+                    (oset! s :authquery
+                           (vec (for [[k v] (or (oget s :query) (vs/jm))
+                                      :when (or (not (.containsKey query k)) (not= (.get query k) v))]
+                                  k)))
+                    (oset! ctx :spec s) [s nil])))))))))
 
 (defn u-make-url [ctx]
   (let [spec (oget ctx :spec) result (oget ctx :result)]
@@ -1108,6 +1120,8 @@
       :else
       (let [url (atom (vs/join (vs/jt (oget spec :base) (oget spec :prefix) (oget spec :path) (oget spec :suffix)) "/" true))
             resmatch (vs/jm)
+            ;; Sent with the request, never recorded as the entity's match.
+            authquery (set (oget spec :authquery []))
             point (oget ctx :point)
             orig (when point (vs/getprop point "orig"))]
         ;; A route the definition ends with a slash keeps it: a server such as a
@@ -1130,7 +1144,8 @@
                 (let [val-str (if (string? v) v (vs/stringify v))]
                   (reset! url (str @url @qsep (vs/escurl k) "=" (vs/escurl val-str)))
                   (reset! qsep "&")
-                  (.put ^java.util.Map resmatch k v))))))
+                  (when-not (contains? authquery k)
+                    (.put ^java.util.Map resmatch k v)))))))
         (oset! result :resmatch resmatch)
         [@url nil]))))
 

@@ -377,7 +377,8 @@ public class CleanTest
     };
 
     private static ${Name}SDK MakeSdk(Scenario scenario, List<Sink> sinks,
-        Dictionary<string, object?>? cleanopts = null, BaseFeature? extra = null)
+        Dictionary<string, object?>? cleanopts = null, BaseFeature? extra = null,
+        Dictionary<string, object?>? auth = null)
     {
         Action<Dictionary<string, object?>> Capture(string name) =>
             rec => sinks.AddRange(FormsOf(name, rec));
@@ -445,7 +446,7 @@ ${cost ? `        if (Fh.HasFeature("cost"))
             extend.Add(extra);
         }
 
-        return new ${Name}SDK(new Dictionary<string, object?>
+        var opts = new Dictionary<string, object?>
         {
             ["apikey"] = CanaryApikey,
             ["secret"] = CanarySecret,
@@ -454,7 +455,12 @@ ${cost ? `        if (Fh.HasFeature("cost"))
             ["feature"] = feature,
             ["extend"] = extend,
             ["utility"] = new Dictionary<string, object?> { ["fetcher"] = fetcher },
-        });
+        };
+        if (null != auth)
+        {
+            opts["auth"] = auth;
+        }
+        return new ${Name}SDK(opts);
     }
 
     // Emitted from the model: every active entity with the operations it
@@ -538,11 +544,12 @@ ${candidateLines}
     {
         // A caller may keep the record it passed rather than read ctrl's entry.
         var held = ctrl.GetValueOrDefault("explain");
+        var entity = target.Candidate.Accessor(sdk);
         object? out_ = null;
         Exception? err = null;
         try
         {
-            out_ = Invoke(target.Candidate.Accessor(sdk), target.Op, target.Match, ctrl);
+            out_ = Invoke(entity, target.Op, target.Match, ctrl);
         }
         catch (Exception e)
         {
@@ -550,6 +557,8 @@ ${candidateLines}
         }
         if (null != err) sinks.AddRange(FormsOf("error", err));
         if (null != out_) sinks.AddRange(FormsOf("result", out_));
+        // Raw, as a caller copying the match into another query reads it.
+        sinks.AddRange(FormsOf("match", entity.Match()));
         if (ctrl.TryGetValue("explain", out var explain) && null != explain)
         {
             sinks.AddRange(FormsOf("explain", explain));
@@ -613,6 +622,11 @@ ${candidateLines}
                 sinks.AddRange(FormsOf("sdk", sdk));
             }
         }
+
+        // A name given at run time replaces the declared one: the match leaves
+        // out whichever name PrepareAuth placed.
+        Drive(MakeSdk(Scenarios[0], sinks, auth: new Dictionary<string, object?> { ["name"] = "zzcred" }),
+            target, new Dictionary<string, object?>(), sinks);
 
         // A credential mistyped as a map is rejected by validation, whose
         // message quotes the value it rejected.

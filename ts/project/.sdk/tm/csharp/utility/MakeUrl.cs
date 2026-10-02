@@ -20,6 +20,9 @@ public static partial class SdkUtility
             StructUtils.Jt(spec.Base, spec.Prefix, spec.Path, spec.Suffix), "/", true);
         var resmatch = new Dictionary<string, object?>();
 
+        // Sent with the request, never recorded as the entity's match.
+        var authquery = spec.AuthQuery;
+
         // A route the definition ends with a slash keeps it: a server such as
         // a Django REST one redirects or refuses the route without it.
         if (ctx.Point != null && StructUtils.GetProp(ctx.Point, "orig") is string orig &&
@@ -51,7 +54,10 @@ public static partial class SdkUtility
                 url += qsep + StructUtils.EscUrl(key) + "=" +
                     StructUtils.EscUrl(StructUtils.Stringify(val));
                 qsep = "&";
-                resmatch[key] = val;
+                if (!authquery.Contains(key))
+                {
+                    resmatch[key] = val;
+                }
             }
         }
 

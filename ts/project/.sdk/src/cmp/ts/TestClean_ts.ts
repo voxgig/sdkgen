@@ -151,7 +151,7 @@ const SCENARIOS: Scenario[] = [
 ]
 
 
-function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any[]): any {
+function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any[], auth?: any): any {
   const capture = (name: string) => (rec: any) => { sinks.push(...forms(name, rec)) }
   const feature: any = {}
   if (hasFeature('log')) {
@@ -180,6 +180,7 @@ function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any
   }
   // null builds the client with no clean block at all, as most callers do.
   if (null !== cleanopts) opts.clean = { values: CANARY.value, ...(cleanopts || {}) }
+  if (null != auth) opts.auth = auth
   return new (SDK as any)(opts)
 }
 
@@ -268,16 +269,19 @@ class StreamOkFeature extends BaseFeature {
 async function drive(sdk: any, target: Target, ctrl: any, sinks: Sink[]) {
   // A caller may keep the record it passed rather than read ctrl.explain.
   const held = ctrl.explain
+  const entity = sdk[target.accessor]()
   let out: any = undefined
   let err: any = undefined
   try {
-    out = await sdk[target.accessor]()[target.op]({ ...target.match }, ctrl)
+    out = await entity[target.op]({ ...target.match }, ctrl)
   }
   catch (e: any) {
     err = e
   }
   if (undefined !== err) sinks.push(...forms('error', err))
   if (undefined !== out) sinks.push(...forms('result', out))
+  // Raw, as a caller copying the match into another query reads it.
+  sinks.push(...forms('match', entity.match()))
   if (null != ctrl.explain) sinks.push(...forms('explain', ctrl.explain))
   if (null != held && held !== ctrl.explain) sinks.push(...forms('explain:held', held))
   return err
@@ -311,6 +315,11 @@ describe('clean', () => {
         sinks.push({ name: 'sdk:spread', text: inspect({ ...sdk }, { depth: 6 }) })
       }
     }
+
+    // A name given at run time replaces the declared one: the match leaves
+    // out whichever name prepareAuth placed.
+    await drive(makeSdk(SCENARIOS[0], sinks, undefined, undefined, { name: 'zzcred' }),
+      target, {}, sinks)
 
     // A credential mistyped as an object is rejected by validation, whose
     // message quotes the value it rejected; with and without a clean block.

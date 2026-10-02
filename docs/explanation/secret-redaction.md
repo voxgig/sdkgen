@@ -88,10 +88,11 @@ The `debug` feature's `redact` option adds header names on top of
   registry covers what the SDK handles, not what the caller sends.
 - `client.options()` returns the raw credential. It is the documented way
   to read it back, and it is neither a log nor an error.
-- For an API that takes its key in the query string, `entity.match()`
-  returns that key, because an entity records the query it sent as its
-  match. Like `client.options()`, it is a way to read state back, and every
-  printed form of the entity masks it.
+- For an API that takes its key in the query string, the request carries
+  the key and `entity.match()` does not. An entity records the query it sent
+  as its match, less the parameter `prepareAuth` placed, whether the key
+  went out under the declared name or under `auth.name`. Every other query
+  parameter stays in the match.
 - A Rust hook that panics is not caught. The process's panic hook prints
   the message where the panic happens, before any code could clean it, so
   a hook must not panic with a credential in its message.
@@ -107,14 +108,15 @@ with canary values in every credential slot, switches on every diagnostic
 feature the SDK carries with a capturing sink, drives a real operation
 through success, a 404, a 500, a transport failure and a body that is not
 JSON, and searches every string that leaves for the canaries and their
-encoded forms. It also passes a credential of the wrong type to the
-constructor, adds feature hooks that fail while quoting the request, and
-fails a raw `direct()` call. Where the SDK allows it, one hook fails in
-`PreUnexpected`, and streams fail part-way or succeed. Each explain record is
-read through the object the sweep passed. It then switches `clean` off and
-confirms the canary shows,
-so a sweep that could not see a leak fails instead of passing. The
-suite prints one line, `clean: swept N surface(s), 0 leak(s)`, and the
+encoded forms. It reads each entity's match back raw, as a caller does, and
+searches that too. It also passes a credential of the wrong type to the
+constructor, renames the credential at run time through `auth.name`, adds
+feature hooks that fail while quoting the request, and fails a raw
+`direct()` call. Where the SDK allows it, one hook fails in `PreUnexpected`,
+and streams fail part-way or succeed. Each explain record is read through
+the object the sweep passed. It then switches `clean` off and confirms the
+canary shows, so a sweep that could not see a leak fails instead of passing.
+The suite prints one line, `clean: swept N surface(s), 0 leak(s)`, and the
 generator's own compile lanes require it.
 
 ## See also

@@ -69,7 +69,9 @@ function candidates(entity: any[]): string {
         rank: OP_ORDER[op] ?? 2,
         text: `  { c_name = "${ocamlString(e.name + '.' + op)}";
     c_params = [${pointParams(e.op[op]).map((p) => '"' + ocamlString(p) + '"').join('; ')}];
-    c_run = (fun sdk m ctrl -> let ent = Sdk_client.${fn} sdk Noval in ${run});
+    c_run = (fun sdk m ctrl mtch ->
+        let ent = Sdk_client.${fn} sdk Noval in
+        Fun.protect ~finally:(fun () -> mtch := ent.e_match_get ()) (fun () -> ${run}));
     c_stream = (fun sdk m callopts ->
         let ent = Sdk_client.${fn} sdk Noval in List.of_seq (ent.e_stream "${op}" m callopts)) };`,
       })
@@ -182,7 +184,8 @@ let scenarios : scenario list = [
             ("body", Str "<html>");
             ("json", Func (fun _ _ _ _ -> failwith "Unexpected token < in JSON"))]) } ]
 
-let make_sdk ?(extra = []) (sc : scenario) (sinks : sinks) (cleanopts : (string * value) list) : sdk_client =
+let make_sdk ?(extra = []) ?(auth = Noval) (sc : scenario) (sinks : sinks)
+    (cleanopts : (string * value) list) : sdk_client =
   let capture name = vfunc1 (fun record -> value_forms sinks name record; Noval) in
   let feature = empty_map () in
   let on name kvs = if Harness.has_feature name then setp feature name (jo (("active", Bool true) :: kvs)) in
@@ -198,11 +201,13 @@ let make_sdk ?(extra = []) (sc : scenario) (sinks : sinks) (cleanopts : (string 
   let fetch = Func (fun _ args _ _ ->
       let url = match getelem args (Num 0.) with Str s -> s | _ -> "" in
       sc.s_respond url (getelem args (Num 1.))) in
-  let client = Sdk_client.make (jo [
+  let opts = jo [
       ("apikey", Str (canary_of "apikey")); ("secret", Str (canary_of "secret"));
       ("headers", jo [("X-Custom-Token", Str (canary_of "header"))]);
       ("clean", clean); ("feature", feature);
-      ("system", jo [("fetch", fetch)])]) in
+      ("system", jo [("fetch", fetch)])] in
+  (match auth with Map _ -> setp opts "auth" auth | _ -> ());
+  let client = Sdk_client.make opts in
   client.cl_features <- client.cl_features @ [capture_feature sinks] @ extra;
   client
 
@@ -280,7 +285,8 @@ let msg_of (e : exn option) : string =
 type candidate = {
   c_name : string;
   c_params : string list;
-  c_run : sdk_client -> value -> value -> value;
+  (* The operation's data; the ref receives the match its entity then holds. *)
+  c_run : sdk_client -> value -> value -> value ref -> value;
   c_stream : sdk_client -> value -> value -> value list;
 }
 
@@ -307,15 +313,18 @@ let usable_op () : target option =
       ("system", jo [("fetch", Func (fun _ _ _ _ -> response 200 (jo [("id", Str "i1")])))])]) in
   first_some (fun c ->
       first_some (fun ps ->
-          try ignore (c.c_run plain (args ps) (empty_map ())); Some { t_cand = c; t_params = ps }
+          try ignore (c.c_run plain (args ps) (empty_map ()) (ref Noval)); Some { t_cand = c; t_params = ps }
           with _ -> None) [[]; c.c_params]) candidates
 
 let drive (sdk : sdk_client) (t : target) (ctrl : value) (sinks : sinks) : exn option =
   (* A caller may keep the record it passed rather than read ctrl.explain. *)
   let held = getp ctrl "explain" in
+  let mtch = ref Noval in
   let err =
-    try value_forms sinks "result" (t.t_cand.c_run sdk (args t.t_params) ctrl); None
+    try value_forms sinks "result" (t.t_cand.c_run sdk (args t.t_params) ctrl mtch); None
     with e -> error_forms sinks "error" e; Some e in
+  (* Raw, as a caller copying the match into another query reads it. *)
+  value_forms sinks "match" !mtch;
   (match getp ctrl "explain" with Map _ as ex -> value_forms sinks "explain" ex | _ -> ());
   (match held, getp ctrl "explain" with
    | Map h, Map now when h == now -> ()
@@ -347,6 +356,10 @@ let () =
               (match err with Some e -> errors := (key, e) :: !errors | None -> ());
               (match getp ctrl "explain" with Map _ as ex -> explains := (key, ex) :: !explains | _ -> ());
               value_forms sinks "sdk" (client_to_value sdk)) variants) scenarios;
+      (* A name given at run time replaces the declared one: the match
+       * leaves out whichever name prepare_auth placed. *)
+      ignore (drive (make_sdk ~auth:(jo [("name", Str "zzcred")]) (List.hd scenarios) sinks [])
+                target (empty_map ()) sinks);
       (* A credential mistyped as a map is rejected by validation, whose
        * message quotes the value it rejected. *)
       let rejected =

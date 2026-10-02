@@ -182,7 +182,7 @@ function render(model: any, entity: any[], auth: {
                                     "body" "<html>"
                                     "json" (fn [] (throw (RuntimeException. "Unexpected token < in JSON")))) nil])}])
 
-(defn- make-sdk [scenario sinks cleanopts & extra]
+(defn- sdk-opts [scenario sinks cleanopts extra]
   (let [capture (fn [name] (fn [rec] (swap! sinks into (forms name rec))))
         feature (vs/jm)
         on (fn [name & kvs] (when (feature/feature-present? name)
@@ -196,12 +196,15 @@ function render(model: any, entity: any[], auth: {
     (on "clienttrack")
     (let [clean (vs/jm "values" (:value CANARY))]
       (doseq [[k v] (or cleanopts {})] (.put ^java.util.Map clean k v))
-      (api/make-sdk (vs/jm "apikey" (:apikey CANARY) "secret" (:secret CANARY)
-                           "headers" (vs/jm "X-Custom-Token" (:header CANARY))
-                           "clean" clean
-                           "feature" feature
-                           "extend" (apply vs/jt (capture-feature sinks) extra)
-                           "utility" (vs/jm "fetcher" (fn [_fctx url fd] ((:respond scenario) url fd))))))))
+      (vs/jm "apikey" (:apikey CANARY) "secret" (:secret CANARY)
+             "headers" (vs/jm "X-Custom-Token" (:header CANARY))
+             "clean" clean
+             "feature" feature
+             "extend" (apply vs/jt (capture-feature sinks) extra)
+             "utility" (vs/jm "fetcher" (fn [_fctx url fd] ((:respond scenario) url fd)))))))
+
+(defn- make-sdk [scenario sinks cleanopts & extra]
+  (api/make-sdk (sdk-opts scenario sinks cleanopts extra)))
 
 ;; A fresh struct map of the match, since an operation may keep what it is
 ;; given.
@@ -278,6 +281,8 @@ ${candidates(entity)}
         explain (vs/getprop ctrl "explain")]
     (when err (swap! sinks into (forms "error" err)))
     (when (some? out) (swap! sinks into (forms "result" out)))
+    ;; Raw, as a caller copying the match into another query reads it.
+    (swap! sinks into (forms "match" ((:match-get ent))))
     (when (some? explain) (swap! sinks into (forms "explain" explain)))
     (when (and (some? held) (not (identical? held explain))) (swap! sinks into (forms "explain:held" held)))
     err))
@@ -301,6 +306,11 @@ ${candidates(entity)}
               (when-let [ex (vs/getprop ctrl "explain")] (swap! explains assoc key ex))
               (swap! sinks into (forms "sdk" sdk))
               (swap! sinks conj {:name "sdk:slots" :text (pr-str (into {} sdk))})))
+          ;; A name given at run time replaces the declared one: the match
+          ;; leaves out whichever name prepare-auth placed.
+          (let [opts (sdk-opts (first SCENARIOS) sinks nil nil)]
+            (.put ^java.util.Map opts "auth" (vs/jm "name" "zzcred"))
+            (drive (api/make-sdk opts) target (vs/jm) sinks))
           ;; A credential mistyped as a map is rejected by validation, whose
           ;; message quotes the value it rejected.
           (let [rejected (try (api/make-sdk (vs/jm "apikey" (vs/jm "value" (:apikey CANARY))

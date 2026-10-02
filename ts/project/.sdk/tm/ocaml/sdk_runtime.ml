@@ -92,7 +92,8 @@ let new_spec (m : value) : spec =
     sp_query = gv "query" (empty_map ());
     sp_step = gs "step" ""; sp_method = gs "method" "GET";
     sp_body = getp m "body";
-    sp_url = gs "url" ""; sp_path = gs "path" "" }
+    sp_url = gs "url" ""; sp_path = gs "path" "";
+    sp_authquery = [] }
 
 let new_response (m : value) : response =
   { rs_status = (match getp m "status" with Num n -> int_of_float n | _ -> -1);
@@ -1071,10 +1072,18 @@ let make_spec_util (ctx : ctx) : (spec option * sdk_error option) =
         sp.sp_path <- u.u_prepare_path ctx
       end;
       (match ctx.c_ctrl.ctrl_explain with Map _ -> setp ctx.c_ctrl.ctrl_explain "spec" (spec_to_value sp) | _ -> ());
+      (* Whatever prepare_auth sets in the query, under whichever name, is the
+       * credential; a key it leaves as it was is the caller's. *)
+      let query = List.map (fun k -> (k, getp sp.sp_query k)) (keysof sp.sp_query) in
+      let note (s : spec) =
+        s.sp_authquery <- List.filter (fun k ->
+            match List.assoc_opt k query with
+            | Some was -> not (veq was (getp s.sp_query k))
+            | None -> true) (keysof s.sp_query) in
       match u.u_prepare_auth ctx with
       | (_, Some err) -> (None, Some err)
-      | (Some spec2, None) -> ctx.c_spec <- Some spec2; (Some spec2, None)
-      | (None, None) -> (Some sp, None)
+      | (Some spec2, None) -> note spec2; ctx.c_spec <- Some spec2; (Some spec2, None)
+      | (None, None) -> note sp; (Some sp, None)
     end
 
 let make_url_util (ctx : ctx) : (string * sdk_error option) =
@@ -1103,7 +1112,8 @@ let make_url_util (ctx : ctx) : (string * sdk_error option) =
         if not (is_noval v) then begin
           url := !url ^ !qsep ^ escurl_s key ^ "=" ^ escurl_s (vstring v);
           qsep := "&";
-          setp resmatch key v
+          (* Sent with the request, never recorded as the entity's match. *)
+          if not (List.mem key spec.sp_authquery) then setp resmatch key v
         end) (keysof spec.sp_query);
     result.rt_resmatch <- resmatch;
     (!url, None)

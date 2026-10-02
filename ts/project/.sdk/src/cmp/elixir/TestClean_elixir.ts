@@ -238,7 +238,7 @@ defmodule ${Name}.CleanTest do
     ]
   end
 
-  defp make_sdk(respond, sinks, cleanopts, extra \\\\ []) do
+  defp make_sdk(respond, sinks, cleanopts, extra \\\\ [], auth \\\\ nil) do
     capture = fn name -> fn rec -> add(sinks, data_forms(name, rec)) end end
     feature = S.jm([])
 
@@ -257,7 +257,7 @@ defmodule ${Name}.CleanTest do
     clean = S.jm(["values", @canary.value])
     Enum.each(cleanopts, fn {k, v} -> S.setprop(clean, k, v) end)
 
-    ${Name}.new(
+    opts =
       S.jm([
         "apikey", @canary.apikey,
         "secret", @canary.secret,
@@ -267,7 +267,9 @@ defmodule ${Name}.CleanTest do
         "extend", S.jt([capture_feature(sinks) | extra]),
         "utility", S.jm(["fetcher", fn _ctx, url, fd -> respond.(url, fd) end])
       ])
-    )
+
+    if auth != nil, do: S.setprop(opts, "auth", auth)
+    ${Name}.new(opts)
   end
 
   # A fresh struct node of the match, since an operation may keep what it is
@@ -395,6 +397,8 @@ ${candidates(Name, entity)}
 
     if err != nil, do: add(sinks, error_forms(err))
     if out != nil, do: add(sinks, result_forms(out))
+    # Raw, as a caller copying the match into another query reads it.
+    add(sinks, data_forms("match", ${Name}.EntityBase.match_get(ent)))
     explain = S.getprop(ctrl, "explain")
     if explain != nil, do: add(sinks, data_forms("explain", explain))
     if held != nil and held != explain, do: add(sinks, data_forms("explain:held", held))
@@ -441,6 +445,11 @@ ${candidates(Name, entity)}
           {errors, explains}
         end)
       end)
+
+    # A name given at run time replaces the declared one: the match leaves
+    # out whichever name prepare_auth placed.
+    [{_ok, ok_respond} | _] = scenarios()
+    drive(make_sdk(ok_respond, sinks, [], [], S.jm(["name", "zzcred"])), target, S.jm([]), sinks)
 
     # A credential mistyped as a map is rejected by validation, whose message
     # quotes the value it rejected.
