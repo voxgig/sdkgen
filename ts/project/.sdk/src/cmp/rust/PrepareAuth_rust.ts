@@ -81,8 +81,6 @@ pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.
   // the base64 form of every registered value.
   const withBasic = spec.basic && 'header' === spec.where
 
-  const withGetpath = 'header' === spec.where
-
   const bag = bagName(spec.where)
 
   const head = `// prepare_auth utility.
@@ -96,7 +94,7 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::error::${spec.errtype};
-use crate::core::helpers::{getp, ${withGetpath ? 'getpath, ' : ''}setp};
+use crate::core::helpers::{getp, getpath, setp};
 use crate::core::spec::Spec;
 ${withBasic ? `use crate::utility::clean::{base64_encode, clean_add};
 ` : ''}use crate::utility::voxgigstruct as vs;
@@ -109,6 +107,14 @@ ${'cookie' === spec.where ? `const COOKIE_HEADER: &str = "cookie";
 ${withBasic ? `const OPTION_SECRET: &str = "secret";
 ` : ''}const NOT_FOUND: &str = "__NOTFOUND__";
 
+/// The client's \`auth.name\` option, when set, replaces the name the API declares.
+fn auth_name(options: &Value) -> String {
+    match getpath(&["auth", "name"], options) {
+        Value::Str(s) if !s.is_empty() => ${'header' === spec.where ? 's.to_lowercase()' : 's'},
+        _ => CRED_NAME.to_string(),
+    }
+}
+${'cookie' === spec.where ? COOKIE_HELPER : ''}
 pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.errtype}> {
     let spec = ctx.spec.borrow().clone().ok_or_else(|| {
         ctx.make_error("auth_no_spec", "Expected context spec property to be defined.")
@@ -123,8 +129,15 @@ pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.
     // Public APIs that need no auth omit the options.auth block entirely.
     let auth = getp(&options, "auth");
     if auth.is_noval() || auth.is_null() {
-        ${clear(spec.where)};
+        ${clear(spec.where, 'CRED_NAME')};
         return Ok(spec);
+    }
+
+    let name = auth_name(&options);
+
+    // A credential left under the declared name would travel beside the renamed one.
+    if name != CRED_NAME {
+        ${clear(spec.where, 'CRED_NAME')};
     }
 
     let apikey = vs::get_prop(&options, &Value::str(OPTION_APIKEY), Value::str(NOT_FOUND));
@@ -152,7 +165,7 @@ pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.
         };
 
         if skip {
-            vs::del_prop(headers, &Value::str(CRED_NAME));
+            ${clear(spec.where, '&name')};
         } else {
             let apikey_val = match &apikey {
                 Value::Str(s) => s.clone(),
@@ -173,11 +186,11 @@ pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.
             };
             // Empty prefix (raw apiKey credential) must not add a leading space.
             if auth_prefix.is_empty() {
-                setp(&headers, CRED_NAME, Value::str(b64));
+                setp(&headers, &name, Value::str(b64));
             } else {
                 setp(
                     &headers,
-                    CRED_NAME,
+                    &name,
                     Value::str(format!("{} {}", auth_prefix, b64)),
                 );
             }
@@ -189,7 +202,7 @@ pub fn prepare_auth_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ${spec.
 
   const tail = `
     if skip {
-        ${clear(spec.where)};
+        ${clear(spec.where, '&name')};
     } else {
 ${place(spec.where)}
     }
@@ -223,9 +236,41 @@ function bagName(where: string): string {
 }
 
 
-function clear(where: string): string {
-  return `vs::del_prop(${bagName(where)}, &Value::str(CRED_NAME))`
+// A cookie credential is a pair inside the `cookie` header, not a header.
+function clear(where: string, name: string): string {
+  if ('cookie' === where) {
+    return `set_cookie(&headers, ${name}, None)`
+  }
+  return `vs::del_prop(${bagName(where)}.clone(), &Value::str(${name}))`
 }
+
+
+// The caller's other cookies stay; only the credential's pair is spliced.
+const COOKIE_HELPER = `
+/// Rewrites the cookie header with the named pair removed, then set to the
+/// value when there is one; every other cookie is kept in order.
+fn set_cookie(headers: &Value, name: &str, value: Option<&str>) {
+    let existing = match getp(headers, COOKIE_HEADER) {
+        Value::Str(s) => s,
+        _ => String::new(),
+    };
+    let lead = format!("{}=", name);
+    let mut kept: Vec<String> = existing
+        .split(';')
+        .map(|part| part.trim())
+        .filter(|piece| !piece.is_empty() && *piece != name && !piece.starts_with(&lead))
+        .map(|piece| piece.to_string())
+        .collect();
+    if let Some(value) = value {
+        kept.push(format!("{}{}", lead, value));
+    }
+    if kept.is_empty() {
+        vs::del_prop(headers.clone(), &Value::str(COOKIE_HEADER));
+    } else {
+        setp(headers, COOKIE_HEADER, Value::str(kept.join("; ")));
+    }
+}
+`
 
 
 function place(where: string): string {
@@ -235,7 +280,7 @@ function place(where: string): string {
             _ => String::new(),
         };
         // No prefix: a query parameter carries the raw credential.
-        setp(&query, CRED_NAME, Value::str(apikey_val));`
+        setp(&query, &name, Value::str(apikey_val));`
   }
 
   if ('cookie' === where) {
@@ -243,22 +288,9 @@ function place(where: string): string {
             Value::Str(s) => s.clone(),
             _ => String::new(),
         };
-        let pair = format!("{}={}", CRED_NAME, apikey_val);
-        // APPEND: the cookie header may already carry pairs this SDK did not
-        // set, and replacing it outright would drop them.
-        let existing = match getp(&headers, COOKIE_HEADER) {
-            Value::Str(s) => s,
-            _ => String::new(),
-        };
-        if existing.is_empty() {
-            setp(&headers, COOKIE_HEADER, Value::str(pair));
-        } else {
-            setp(
-                &headers,
-                COOKIE_HEADER,
-                Value::str(format!("{}; {}", existing, pair)),
-            );
-        }`
+        // Spliced in, replacing an earlier pair of the same name, beside any
+        // cookie the caller set.
+        set_cookie(&headers, &name, Some(apikey_val.as_str()));`
   }
 
   return `        let auth_prefix = match getpath(&["auth", "prefix"], &options) {
@@ -271,11 +303,11 @@ function place(where: string): string {
         };
         // Empty prefix (raw apiKey credential) must not add a leading space.
         if auth_prefix.is_empty() {
-            setp(&headers, CRED_NAME, Value::str(apikey_val));
+            setp(&headers, &name, Value::str(apikey_val));
         } else {
             setp(
                 &headers,
-                CRED_NAME,
+                &name,
                 Value::str(format!("{} {}", auth_prefix, apikey_val)),
             );
         }`

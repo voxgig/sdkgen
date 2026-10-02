@@ -131,7 +131,7 @@ function renderHeader(spec: AuthSpec, head: string): string {
 let option_apikey = "apikey"
 ${spec.basic ? `let option_secret = "secret"
 ` : ''}let not_found = "__NOTFOUND__"
-
+${authName(true)}
 let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =
   match ctx.c_spec with
   | None -> (None, Some (ctx_make_error ctx "auth_no_spec" "Expected context spec property to be defined."))
@@ -143,17 +143,20 @@ let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =
       * needs no auth omits the block entirely. Both land here. *)
      | Noval | Null -> ignore (delprop headers (Str cred_name)); (Some spec, None)
      | _ ->
+       let name = auth_name options in
+       (* A credential left under the declared name would travel beside the renamed one. *)
+       if name <> cred_name then ignore (delprop headers (Str cred_name));
        let apikey = getprop ~alt:(Str not_found) options (Str option_apikey) in
        let is_notfound = (match apikey with Str s -> s = not_found | _ -> false) in
        let no_apikey = is_notfound || is_noval apikey || apikey = Str "" in
 ${spec.basic ? BASIC : ''}       if no_apikey then
-         ignore (delprop headers (Str cred_name))
+         ignore (delprop headers (Str name))
        else begin
          let auth_prefix = match getpath_s options "auth.prefix" with Str s -> s | _ -> "" in
          let apikey_val = match apikey with Str s -> s | _ -> "" in
          (* Empty prefix (a raw apiKey credential) must not add a leading space. *)
          let authval = if auth_prefix <> "" then auth_prefix ^ " " ^ apikey_val else apikey_val in
-         setp headers cred_name (Str authval)
+         setp headers name (Str authval)
        end;
        (Some spec, None))
 `
@@ -168,7 +171,7 @@ function renderQuery(spec: AuthSpec, head: string): string {
   return head + `
 let option_apikey = "apikey"
 let not_found = "__NOTFOUND__"
-
+${authName(false)}
 let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =
   match ctx.c_spec with
   | None -> (None, Some (ctx_make_error ctx "auth_no_spec" "Expected context spec property to be defined."))
@@ -180,16 +183,19 @@ let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =
       * needs no auth omits the block entirely. Both land here. *)
      | Noval | Null -> ignore (delprop query (Str cred_name)); (Some spec, None)
      | _ ->
+       let name = auth_name options in
+       (* A credential left under the declared name would travel beside the renamed one. *)
+       if name <> cred_name then ignore (delprop query (Str cred_name));
        let apikey = getprop ~alt:(Str not_found) options (Str option_apikey) in
        let is_notfound = (match apikey with Str s -> s = not_found | _ -> false) in
        if is_notfound || is_noval apikey || apikey = Str "" then
-         ignore (delprop query (Str cred_name))
+         ignore (delprop query (Str name))
        else begin
          (* NO PREFIX IN A QUERY STRING. \`?${spec.name}=Bearer%20abc\` is not a
           * thing any API reads: the prefix is a header-value convention, so
           * it is dropped here deliberately rather than concatenated. *)
          let apikey_val = match apikey with Str s -> s | _ -> "" in
-         setp query cred_name (Str apikey_val)
+         setp query name (Str apikey_val)
        end;
        (Some spec, None))
 `
@@ -201,7 +207,7 @@ function renderCookie(spec: AuthSpec, head: string): string {
 let cookie_header = "cookie"
 let option_apikey = "apikey"
 let not_found = "__NOTFOUND__"
-
+${authName(false)}
 (* Strip ASCII spaces and tabs from both ends of one cookie pair. *)
 let cookie_trim (s : string) : string =
   let n = String.length s in
@@ -210,21 +216,21 @@ let cookie_trim (s : string) : string =
   while !e > !b && (s.[!e - 1] = ' ' || s.[!e - 1] = '\\t') do decr e done;
   String.sub s !b (!e - !b)
 
-(* True for OUR pair only: the bare name, or the name followed by '='. A
- * cookie called "${ocamlString(spec.name)}_backup" must survive. *)
-let cookie_is_cred (pair : string) : bool =
-  let n = String.length cred_name in
-  pair = cred_name
-  || (String.length pair > n && String.sub pair 0 (n + 1) = cred_name ^ "=")
+(* True for the named pair only: the bare name, or the name followed by
+ * '='. A cookie called "${ocamlString(spec.name)}_backup" must survive. *)
+let cookie_is_cred (name : string) (pair : string) : bool =
+  let n = String.length name in
+  pair = name
+  || (String.length pair > n && String.sub pair 0 (n + 1) = name ^ "=")
 
-(* Rewrite the cookie header with our pair set (Some v) or removed (None),
- * every other cookie kept in order. *)
-let cookie_set (headers : value) (v : string option) : unit =
+(* Rewrite the cookie header with the named pair set (Some v) or removed
+ * (None), every other cookie kept in order. *)
+let cookie_set (headers : value) (name : string) (v : string option) : unit =
   let existing = match getp headers cookie_header with Str s -> s | _ -> "" in
   let kept =
-    List.filter (fun p -> p <> "" && not (cookie_is_cred p))
+    List.filter (fun p -> p <> "" && not (cookie_is_cred name p))
       (List.map cookie_trim (String.split_on_char ';' existing)) in
-  let kept = match v with None -> kept | Some x -> kept @ [cred_name ^ "=" ^ x] in
+  let kept = match v with None -> kept | Some x -> kept @ [name ^ "=" ^ x] in
   if [] = kept then ignore (delprop headers (Str cookie_header))
   else setp headers cookie_header (Str (String.concat "; " kept))
 
@@ -237,19 +243,35 @@ let prepare_auth_util (ctx : ctx) : (spec option * sdk_error option) =
     (match getp options "auth" with
      (* \`auth: null\` is the documented suppression, and a public API that
       * needs no auth omits the block entirely. Both land here. *)
-     | Noval | Null -> cookie_set headers None; (Some spec, None)
+     | Noval | Null -> cookie_set headers cred_name None; (Some spec, None)
      | _ ->
+       let name = auth_name options in
+       (* A credential left under the declared name would travel beside the renamed one. *)
+       if name <> cred_name then cookie_set headers cred_name None;
        let apikey = getprop ~alt:(Str not_found) options (Str option_apikey) in
        let is_notfound = (match apikey with Str s -> s = not_found | _ -> false) in
        if is_notfound || is_noval apikey || apikey = Str "" then
-         cookie_set headers None
+         cookie_set headers name None
        else begin
          (* NO PREFIX IN A COOKIE either - a cookie carries a bare
           * \`name=value\` pair, not a header's scheme-prefixed credential. *)
          let apikey_val = match apikey with Str s -> s | _ -> "" in
-         cookie_set headers (Some apikey_val)
+         cookie_set headers name (Some apikey_val)
        end;
        (Some spec, None))
+`
+}
+
+
+// The client's `auth.name` option, when set, replaces the declared name; a
+// header name travels lower-cased.
+function authName(header: boolean): string {
+  return `
+(* The client's auth.name option, when set, replaces the name the API declares. *)
+let auth_name (options : value) : string =
+  match getpath_s options "auth.name" with
+  | Str s when s <> "" -> ${header ? 'String.lowercase_ascii s' : 's'}
+  | _ -> cred_name
 `
 }
 
@@ -266,7 +288,7 @@ const BASIC = `       if (match getpath_s options "auth.basic" with Bool b -> b 
            (match secret with Str s -> s = not_found | _ -> false)
            || is_noval secret || secret = Str "" in
          if no_apikey then
-           ignore (delprop headers (Str cred_name))
+           ignore (delprop headers (Str name))
          else begin
            let auth_prefix = match getpath_s options "auth.prefix" with Str s -> s | _ -> "" in
            let apikey_val = match apikey with Str s -> s | _ -> "" in
@@ -275,7 +297,7 @@ const BASIC = `       if (match getpath_s options "auth.basic" with Bool b -> b 
            (* The joined, encoded pair is a wire form neither credential's
             * own registration covers. base64_encode is Sdk_helpers'. *)
            (cu ctx).u_clean_add ctx joined;
-           setp headers cred_name
+           setp headers name
              (Str (if auth_prefix <> "" then auth_prefix ^ " " ^ joined else joined))
          end
        end

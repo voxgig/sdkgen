@@ -95,7 +95,7 @@ object PrepareAuth {
   val CRED_NAME = "${scalastr(spec.name)}"
   val OPTION_APIKEY = "apikey"
 ${spec.basic ? `  val OPTION_SECRET = "secret"\n` : ''}  val NOT_FOUND = "__NOTFOUND__"
-
+${authName(true)}
   def prepareAuth(ctx: Context): Spec = {
     val spec = ctx.spec
     if (spec == null) throw ctx.makeError("auth_no_spec", "Expected context spec property to be defined.")
@@ -109,6 +109,13 @@ ${spec.basic ? `  val OPTION_SECRET = "secret"\n` : ''}  val NOT_FOUND = "__NOTF
       return spec
     }
 
+    val name = authName(options)
+
+    // A credential left under the declared name would travel beside the renamed one.
+    if (name != CRED_NAME) {
+      headers.remove(CRED_NAME)
+    }
+
     val apikey = Struct.getprop(options, OPTION_APIKEY, NOT_FOUND)
 ${basicBlock(spec)}
     var skip = false
@@ -119,15 +126,15 @@ ${basicBlock(spec)}
     }
 
     if (skip) {
-      headers.remove(CRED_NAME)
+      headers.remove(name)
     } else {
       var authPrefix = ""
       Struct.getpath(options, java.util.List.of("auth", "prefix")) match { case s: String => authPrefix = s; case _ => }
       val apikeyVal = apikey match { case s: String => s; case _ => "" }
       // A raw credential (empty prefix, e.g. an apiKey scheme) must go in
       // as-is; only a non-empty prefix (Bearer/Basic/OAuth) is space-joined.
-      if ("" == authPrefix) headers.put(CRED_NAME, apikeyVal)
-      else headers.put(CRED_NAME, authPrefix + " " + apikeyVal)
+      if ("" == authPrefix) headers.put(name, apikeyVal)
+      else headers.put(name, authPrefix + " " + apikeyVal)
     }
 
     spec
@@ -157,7 +164,7 @@ function basicBlock(spec: AuthSpec): string {
       val noSecret = secret == null || (secret match { case s: String => NOT_FOUND == s || "" == s; case _ => false })
 
       if (noApikey) {
-        headers.remove(CRED_NAME)
+        headers.remove(name)
       } else {
         var basicPrefix = ""
         Struct.getpath(options, java.util.List.of("auth", "prefix")) match { case s: String => basicPrefix = s; case _ => }
@@ -167,8 +174,8 @@ function basicBlock(spec: AuthSpec): string {
         // The joined, encoded pair is a wire form neither credential's own
         // registration covers.
         if (ctx.utility != null && ctx.utility.cleanAdd != null) ctx.utility.cleanAdd(ctx, b64)
-        if ("" == basicPrefix) headers.put(CRED_NAME, b64)
-        else headers.put(CRED_NAME, basicPrefix + " " + b64)
+        if ("" == basicPrefix) headers.put(name, b64)
+        else headers.put(name, basicPrefix + " " + b64)
       }
 
       return spec
@@ -188,7 +195,7 @@ object PrepareAuth {
   val CRED_NAME = "${scalastr(spec.name)}"
   val OPTION_APIKEY = "apikey"
   val NOT_FOUND = "__NOTFOUND__"
-
+${authName(false)}
   def prepareAuth(ctx: Context): Spec = {
     val spec = ctx.spec
     if (spec == null) throw ctx.makeError("auth_no_spec", "Expected context spec property to be defined.")
@@ -202,6 +209,13 @@ object PrepareAuth {
       return spec
     }
 
+    val name = authName(options)
+
+    // A credential left under the declared name would travel beside the renamed one.
+    if (name != CRED_NAME) {
+      query.remove(CRED_NAME)
+    }
+
     val apikey = Struct.getprop(options, OPTION_APIKEY, NOT_FOUND)
 
     var skip = false
@@ -212,14 +226,14 @@ object PrepareAuth {
     }
 
     if (skip) {
-      query.remove(CRED_NAME)
+      query.remove(name)
     } else {
       val apikeyVal = apikey match { case s: String => s; case _ => "" }
       // NO PREFIX IN A QUERY STRING. \`?${spec.name}=Bearer%20abc\` is not a
       // thing any API reads: the prefix is a header convention, so the
       // options auth.prefix is dropped here deliberately rather than
       // silently concatenated.
-      query.put(CRED_NAME, apikeyVal)
+      query.put(name, apikeyVal)
     }
 
     spec
@@ -243,21 +257,21 @@ object PrepareAuth {
   val CRED_NAME = "${scalastr(spec.name)}"
   val OPTION_APIKEY = "apikey"
   val NOT_FOUND = "__NOTFOUND__"
-
-  // The cookie header minus our own pair, every other cookie untouched.
-  private def without(headers: JMap[String, Object]): String = {
+${authName(false)}
+  // The cookie header minus the named pair, every other cookie untouched.
+  private def without(headers: JMap[String, Object], name: String): String = {
     val existing = headers.get(COOKIE_HEADER) match { case s: String => s; case _ => "" }
     if ("" == existing) return ""
 
     val kept = existing.split(";").map(_.trim).filter { piece =>
-      "" != piece && CRED_NAME != piece && !piece.startsWith(CRED_NAME + "=")
+      "" != piece && name != piece && !piece.startsWith(name + "=")
     }
     kept.mkString("; ")
   }
 
-  // Set (a value) or remove (null) our pair, leaving the rest in place.
-  private def place(headers: JMap[String, Object], value: String): Unit = {
-    val rest = without(headers)
+  // Set (a value) or remove (null) the named pair, leaving the rest in place.
+  private def place(headers: JMap[String, Object], name: String, value: String): Unit = {
+    val rest = without(headers, name)
 
     if (value == null) {
       if ("" == rest) headers.remove(COOKIE_HEADER)
@@ -265,7 +279,7 @@ object PrepareAuth {
       return
     }
 
-    val pair = CRED_NAME + "=" + value
+    val pair = name + "=" + value
     if ("" == rest) headers.put(COOKIE_HEADER, pair)
     else headers.put(COOKIE_HEADER, rest + "; " + pair)
   }
@@ -279,8 +293,15 @@ object PrepareAuth {
 
     // Public APIs that need no auth omit the options.auth block entirely.
     if (options.get("auth") == null) {
-      place(headers, null)
+      place(headers, CRED_NAME, null)
       return spec
+    }
+
+    val name = authName(options)
+
+    // A credential left under the declared name would travel beside the renamed one.
+    if (name != CRED_NAME) {
+      place(headers, CRED_NAME, null)
     }
 
     val apikey = Struct.getprop(options, OPTION_APIKEY, NOT_FOUND)
@@ -293,17 +314,31 @@ object PrepareAuth {
     }
 
     if (skip) {
-      place(headers, null)
+      place(headers, name, null)
     } else {
       val apikeyVal = apikey match { case s: String => s; case _ => "" }
       // NO PREFIX IN A COOKIE either - a cookie carries a bare
       // \`name=value\` pair, not a header's scheme-prefixed credential.
-      place(headers, apikeyVal)
+      place(headers, name, apikeyVal)
     }
 
     spec
   }
 }
+`
+}
+
+
+// The client's `auth.name` option, when set, replaces the declared name; a
+// header name travels lower-cased.
+function authName(header: boolean): string {
+  return `
+  // The client's auth.name option, when set, replaces the name the API declares.
+  private def authName(options: Object): String =
+    Struct.getpath(options, java.util.List.of("auth", "name")) match {
+      case s: String if "" != s => ${header ? 's.toLowerCase(java.util.Locale.ROOT)' : 's'}
+      case _ => CRED_NAME
+    }
 `
 }
 
