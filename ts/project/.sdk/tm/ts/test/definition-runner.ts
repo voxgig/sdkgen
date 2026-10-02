@@ -18,6 +18,7 @@ type DefinitionPoint = {
   select: Record<string, any>
   headers?: { name: string, wire: string, value: any }[]
   query: string[]
+  queryArgs?: { name: string, wire: string }[]
   auth: Credential[][] | null
   status: number
   sample: any
@@ -82,6 +83,10 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
   for (const key of url.searchParams.keys()) {
     assert(point.query.includes(key) || credentialQuery.includes(key),
       'query parameter not in the definition: ' + key)
+  }
+
+  for (const q of point.queryArgs || []) {
+    assert(url.searchParams.has(q.wire), 'query parameter not sent: ' + q.wire)
   }
 
   // From the apikey alone, placed as the definition's security scheme says.

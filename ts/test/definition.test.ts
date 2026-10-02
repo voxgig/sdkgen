@@ -141,6 +141,10 @@ describe('definitionPlan', () => {
     const [list] = uploads({ points: [{ m: 'GET', o: '/uploads', g: { query } }] })
     deepStrictEqual(list.select, { campaign_id: 'v1', resource_id: 'v1' })
     deepStrictEqual(list.query, ['campaignId', 'resource_ids'])
+    deepStrictEqual(list.queryArgs, [
+      { name: 'campaign_id', wire: 'campaignId' },
+      { name: 'resource_id', wire: 'resource_ids' },
+    ])
   })
 
   test('a query argument another point selects on stays out', () => {
@@ -152,6 +156,39 @@ describe('definitionPlan', () => {
       { campaign_id: 'v1', resource_id: 'v1' },
       { resource_id: 'v1' },
     ])
+    deepStrictEqual(plan.map((p: any) => p.queryArgs.map((q: any) => q.name)), [
+      ['campaign_id', 'resource_id'],
+      ['resource_id'],
+    ])
+  })
+
+  // SMSAPI declares `username` with no `in`, which the model reads as a
+  // query argument. A create sends its input as the body.
+  test('only a declared query argument of a match must arrive', () => {
+    const def = { ...DEF, paths: { '/groups': {
+      get: {
+        parameters: [{ name: 'username' }, { in: 'query', name: 'limit' }],
+        responses: { '200': { content: { 'application/json': { example: [] } } } },
+      },
+      post: {
+        parameters: [{ in: 'query', name: 'dry_run' }],
+        responses: { '201': { content: { 'application/json': { example: { id: 'g1' } } } } },
+      },
+    } } }
+    const model = { main: { kit: { entity: { group: {
+      name: 'group', id: { field: 'id', name: 'id' }, op: {
+        list: { points: [{ m: 'GET', o: '/groups',
+          g: { query: [{ n: 'username' }, { n: 'limit' }] } }] },
+        create: { points: [{ m: 'POST', o: '/groups', g: { query: [{ n: 'dry_run' }] } }] },
+      },
+    } } } } }
+    const plan = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(Object.fromEntries(plan.map((p: any) => [p.op, p.queryArgs])), {
+      list: [{ name: 'limit', wire: 'limit' }],
+      create: [],
+    })
   })
 
   test('an inactive operation is left out', () => {
@@ -312,7 +349,7 @@ function loadRunner(): any {
 // An SDK stand-in whose behaviour is a switch, so each defect the runner
 // exists to catch can be switched on alone.
 function fakeSDK(defect: '' | 'basic-blank' | 'basic-password' | 'unwrap' | 'query-echo' |
-  'query-name' | 'header-query' | 'header-drop') {
+  'query-name' | 'query-drop' | 'header-query' | 'header-drop') {
   return class {
     opts: any
     constructor(opts: any) { this.opts = opts }
@@ -339,7 +376,7 @@ function fakeSDK(defect: '' | 'basic-blank' | 'basic-password' | 'unwrap' | 'que
       return {
         list: async (match: any) => {
           const name = 'query-name' === defect ? 'resource_id' : 'resource_ids'
-          const body = await send('GET', '/addresses', match,
+          const body = await send('GET', '/addresses', match, 'query-drop' === defect ? {} :
             { limit: match.limit, [name]: match.resource_id })
           const records = 'unwrap' === defect ? body : body.data
           return Array.isArray(records) ? records.map(wrap) : []
@@ -389,6 +426,11 @@ for (const [lang, runner] of [
       await runDefinitionPoint(fakeSDK(''), p)
       await rejects(runDefinitionPoint(fakeSDK('query-name'), p),
         /query parameter not in the definition: resource_id/)
+    })
+
+    test('catches a declared query parameter never sent', async () => {
+      await rejects(runDefinitionPoint(fakeSDK('query-drop'), point('list')),
+        /query parameter not sent: limit/)
     })
 
     test('catches a list read at the envelope instead of its records', async () => {
