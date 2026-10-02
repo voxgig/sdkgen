@@ -189,4 +189,35 @@ for (const [lang, synthesize, LiveBlocked] of TWINS) {
       assert.deepEqual(synthesize(body({ allOf })), { sender: value })
     })
   }
+
+  // A failed part is dropped only when validating the whole schema still enforces
+  // what it asked for. One with a constraint the validator does not check blocks.
+  test(lang + ': a part the validator cannot check blocks rather than being dropped', () => {
+    const unchecked = (schema: any) => assert.throws(() => synthesize(schema),
+      (error: any) => error instanceof LiveBlocked &&
+        /Unsupported contract constraint: minProperties/.test(error.message))
+    unchecked({ allOf: [{ type: 'object' }, { minProperties: 1 }] })
+    unchecked(body({ allOf: [{ type: 'object' }, { minProperties: 1 }] }))
+    blocked({ allOf: [{ type: 'object' }, { required: ['a'] }] })
+    assert.deepEqual(synthesize({ allOf: [{ type: 'object' }, { required: [] }] }), {})
+  })
+
+  // Each candidate is validated against the whole schema, so neither the order of
+  // the parts nor a declared value another part rules out decides the result.
+  for (const [what, allOf, value] of [
+    ['a tighter minimum after a looser one',
+      [{ type: 'integer', minimum: 1 }, { type: 'integer', minimum: 3 }], 3],
+    ['a tighter minimum before a looser one',
+      [{ type: 'integer', minimum: 3 }, { type: 'integer', minimum: 1 }], 3],
+    ['a longer minItems after a shorter one', [{ type: 'array', items: { type: 'integer' }, minItems: 1 },
+      { type: 'array', items: { type: 'integer' }, minItems: 2 }], [1, 1]],
+    ['an example another part rules out', [{ type: 'integer', example: 0 }, { type: 'integer', minimum: 1 }], 1],
+    ['the first of several examples another part rules out',
+      [{ type: 'string', examples: ['ab', 'abc'] }, { minLength: 3 }], 'abc'],
+  ] as [string, any[], any][]) {
+    test(lang + ': an allOf takes the first candidate the whole schema accepts: ' + what, () => {
+      assert.deepEqual(synthesize({ allOf }), value)
+      assert.deepEqual(synthesize(body({ allOf })), { sender: value })
+    })
+  }
 }
