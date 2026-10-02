@@ -151,7 +151,7 @@ test('a failure is reported by its error code or fixed message, never by a value
 })
 
 
-test('the live transport records the status, content type and user agent', async () => {
+test('the live transport records the status, content type and whether an agent was set', async () => {
   const server = Http.createServer((req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
     res.end('<html>' + req.headers['user-agent'] + '</html>')
@@ -163,11 +163,11 @@ test('the live transport records the status, content type and user agent', async
     const report = await runLiveSteps([{ id: 'page', run: async (ctx: any) => {
       transport.enter(ctx)
       await (await transport.fetch(origin + '/page?token=SECRET_SENTINEL',
-        { headers: { 'User-Agent': 'Mozilla/5.0 probe' } })).text()
+        { headers: { 'User-Agent': 'Mozilla/5.0 probe SECRET_SENTINEL' } })).text()
       await (await transport.fetch(origin + '/plain')).text()
     } }])
     assert.deepEqual(report.results[0].requests, [
-      { method: 'GET', path: origin + '/page', agent: 'Mozilla/5.0 probe', status: 200, type: 'text/html' },
+      { method: 'GET', path: origin + '/page', agent: 'configured', status: 200, type: 'text/html' },
       { method: 'GET', path: origin + '/plain', agent: 'transport default', status: 200, type: 'text/html' },
     ])
     assert(!JSON.stringify(report).includes('SECRET_SENTINEL'))

@@ -34,7 +34,7 @@ async function resultBody(ctx) {
 function unreadableBody(ctx, res) {
   const type = headerValue(res.headers, 'content-type')
   const detail = 'HTTP ' + res.status + ', content-type ' + (type || 'none') +
-    ', user-agent ' + (headerValue(res.sent, 'user-agent') || 'transport default') +
+    ', user-agent ' + (ctx.utility.clean(ctx, headerValue(res.sent, 'user-agent')) || 'transport default') +
     (null == res.text ? '' : ', body: ' + preview(ctx, res.text))
 
   if (null != res.failed) {
@@ -62,10 +62,10 @@ function headerValue(headers, name) {
 }
 
 
+// Cleaned whole: a secret the bound would split could leave its prefix.
 function preview(ctx, text) {
-  const flat = String(text).replace(/\s+/g, ' ').trim()
-  const cut = PREVIEW_LENGTH < flat.length ? flat.slice(0, PREVIEW_LENGTH) + '...' : flat
-  return ctx.utility.clean(ctx, cut)
+  const flat = ctx.utility.clean(ctx, String(text).replace(/\s+/g, ' ').trim())
+  return PREVIEW_LENGTH < flat.length ? flat.slice(0, PREVIEW_LENGTH) + '...' : flat
 }
 
 

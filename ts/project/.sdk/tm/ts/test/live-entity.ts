@@ -101,6 +101,7 @@ async function runLiveEntity(
           if (request.schema) input = { ...synthesizeInput(request.schema, selected.li?.input ?? request.example) }
           else if (selectedFacts.protocol === 'http') input = {}
           for (const arg of selected.g?.params || []) if (resolved[arg.n] !== undefined) input[arg.n] = resolved[arg.n]
+          if (undefined !== resolved.$action) input.$action = resolved.$action
         }
         let intendedMark: { name: string, value: any } | undefined
         if (op === 'update') {

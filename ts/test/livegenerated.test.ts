@@ -44,12 +44,48 @@ main: kit: flow: Basic${Name}Flow: {
 `
 }
 
+// A create reached only through actions, and the one operation with a definition
+// behind it: the live harness builds its body from the request schema.
+const ACTION_CREATE = `
+main: kit: entity: v2021: {
+  alias: field: {}
+  name: "v2021"
+  field: { city: { name: "city", kind: "field", type: "\`$STRING\`" } }
+  fields: { "city": { h: 'City', n: "city", r: false, t: "\`$STRING\`" } }
+  op: { create: { name: "create", points: [ {
+    g: {}
+    m: "POST", o: "/v2021/issue", q: { "$action": "issue" }
+    s: [{ lit: "v2021" }, { lit: "issue" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  }, {
+    g: {}
+    m: "POST", o: "/v2021/draft", q: { "$action": "draft" }
+    s: [{ lit: "v2021" }, { lit: "draft" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  } ] } }
+}
+main: kit: flow: BasicV2021Flow: {
+  entity: "v2021", kind: "basic", name: "BasicV2021Flow"
+  step: [ { o: "create", i: { ref: "v2021_ref01" } } ]
+}
+`
+
+const CREATE_FACTS = {
+  protocol: 'http',
+  requestBody: { required: true, content: { 'application/json': { schema: {
+    type: 'object', required: ['city'], properties: { city: { type: 'string', example: 'bern' } },
+  } } } },
+  responses: { '200': { content: { 'application/json': { example: { id: 'issue01', city: 'bern' } } } } },
+}
+const DEFINED: Record<string, any> = { 'POST /v2021/issue': CREATE_FACTS, 'POST /v2021/draft': CREATE_FACTS }
+
 // An action-only load reachable through one action, one with no usable
 // action, and one whose only usable route is an action beside a plain route.
 const EXTRA_ENTITIES = CREATELESS_ENTITY +
   actionEntity('v2018', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current', city: 'bern' }]) +
   actionEntity('v2019', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current' }]) +
-  actionEntity('v2020', [{ path: 'weather' }, { action: 'reset', path: 'reset', method: 'POST', bare: true }])
+  actionEntity('v2020', [{ path: 'weather' }, { action: 'reset', path: 'reset', method: 'POST', bare: true }]) +
+  ACTION_CREATE
 
 function skipped(output: string): number {
   const found = output.match(/(?:^# skipped|\u2139 skipped) (\d+)/m)
@@ -111,6 +147,9 @@ describe('generated live tests continue after failures', () => {
       if (key === 'GET /v2018/current' && url.searchParams.get('city') === 'bern') {
         return send({ temperature: 12 })
       }
+      if (key === 'POST /v2021/issue' || key === 'POST /v2021/draft') {
+        return send({ id: 'issue01', ...JSON.parse(body || '{}') })
+      }
       if (/^\/v20(18|19|20)\//.test(url.pathname)) return send({ error: 'unexpected route' }, 404)
       if (failure === 'invalid-json' && url.pathname === '/history') {
         res.writeHead(200, { 'content-type': 'application/json' })
@@ -163,7 +202,9 @@ describe('generated live tests continue after failures', () => {
       const cwd = process.cwd()
       try {
         process.chdir(SCAFFOLD)
-        await generator.generate({ model, root: makeRoot() })
+        // The resolved definition, as apidef publishes it on the build context.
+        await generator.generate({ model, root: makeRoot(),
+          buildctx: { resolved: { operation: (m: string, o: string) => DEFINED[m + ' ' + o] } } })
       }
       finally { process.chdir(cwd) }
       const root = roots[name] = Path.join(tmp, name)
@@ -221,6 +262,16 @@ describe('generated live tests continue after failures', () => {
     const tree = name.startsWith('ts') ? 'dist-test' : 'test'
     const files = tests.map(test => `${tree}/entity/${test}.test.js`)
     return child(['--test', '--test-concurrency=1', ...files], roots[name])
+  }
+
+  async function withControl(name: string, options: any,
+    run: () => Promise<{ code: number | null, output: string }>) {
+    const control = Path.join(roots[name], 'test/sdk-test-control.json')
+    const saved = Fs.readFileSync(control, 'utf8')
+    Fs.writeFileSync(control, JSON.stringify({ version: 1,
+      test: { live: { delayMs: 0 }, client: { options } } }))
+    try { return await run() }
+    finally { Fs.writeFileSync(control, saved) }
   }
 
   for (const target of ['ts', 'js']) {
@@ -349,23 +400,37 @@ describe('generated live tests continue after failures', () => {
       const flow = await runTests(target, 'html', ['history/HistoryEntity'])
       assert.notEqual(flow.code, 0, flow.output)
       assert(flow.output.includes('"reason":"Request failed: response_content_type"'), flow.output)
-      assert(flow.output.includes('"agent":"' + DEFAULT_AGENT + '","status":200,"type":"text/html"'),
-        flow.output)
+      assert(flow.output.includes('"agent":"configured","status":200,"type":"text/html"'), flow.output)
+    })
+
+    test(target + ': an action-only create is sent through its action with the body the definition gives',
+      async () => {
+        const result = await runTests(target, '', ['v2021/V2021Entity'])
+        assert.equal(result.code, 0, result.output)
+        assert(queries.includes('POST /v2021/issue'), queries.join('\n') + '\n' + result.output)
+        assert(result.output.includes('"state":"passed"'), result.output)
+      })
+
+    // A credential can travel as the agent (auth.name); here a registered value does.
+    test(target + ': a secret sent as the user agent reaches no live line and no message', async () => {
+      const canary = 'CANARY-LIVE-KEY-7f3a9c2e'
+      const result = await withControl(target,
+        { headers: { 'user-agent': 'Mozilla/5.0 ' + canary }, clean: { values: canary } },
+        () => runTests(target, 'html', ['history/HistoryEntity', 'history/HistoryDirect']))
+      assert.notEqual(result.code, 0, result.output)
+      assert(agents.some(agent => agent.includes(canary)), agents.join('\n'))
+      assert(result.output.includes('"agent":"configured"'), result.output)
+      assert(result.output.includes('user-agent ') && result.output.includes('[redacted]'), result.output)
+      for (const form of [canary, Buffer.from(canary).toString('base64')]) {
+        assert(!result.output.includes(form), 'the credential reached the output as ' + form + '\n' + result.output)
+      }
     })
   }
 
   test('ts: a configured user agent replaces the default', async () => {
-    const control = Path.join(roots.ts, 'test/sdk-test-control.json')
-    const saved = Fs.readFileSync(control, 'utf8')
-    Fs.writeFileSync(control, JSON.stringify({ version: 1, test: { live: { delayMs: 0 },
-      client: { options: { headers: { 'user-agent': 'Mozilla/5.0 configured' } } } } }))
-    try {
-      const result = await runTests('ts', 'ua', ['history/HistoryEntity', 'history/HistoryDirect'])
-      assert.equal(result.code, 0, result.output)
-      assert.deepEqual([...new Set(agents)], ['Mozilla/5.0 configured'], result.output)
-    }
-    finally {
-      Fs.writeFileSync(control, saved)
-    }
+    const result = await withControl('ts', { headers: { 'user-agent': 'Mozilla/5.0 configured' } },
+      () => runTests('ts', 'ua', ['history/HistoryEntity', 'history/HistoryDirect']))
+    assert.equal(result.code, 0, result.output)
+    assert.deepEqual([...new Set(agents)], ['Mozilla/5.0 configured'], result.output)
   })
 })

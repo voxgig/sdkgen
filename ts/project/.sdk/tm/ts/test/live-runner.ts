@@ -199,9 +199,11 @@ function createLiveTransport(timeoutMs = 30000) {
     enter(next: LiveContext) { context = next },
     fetch: async (input: any, init?: any) => {
       const url = new URL(String(input))
+      // A credential can travel as the agent (auth.name), so only whether
+      // the request carried one is recorded, never its value.
       const request: LiveRequest = {
         method: init?.method || 'GET', path: url.origin + url.pathname,
-        agent: new Headers(init?.headers).get('user-agent') ?? 'transport default',
+        agent: null == new Headers(init?.headers).get('user-agent') ? 'transport default' : 'configured',
       }
       requests.push(request)
       context?.requests.push(request)

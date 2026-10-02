@@ -119,6 +119,8 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
                     for (const arg of selected.g?.params || [])
                         if (resolved[arg.n] !== undefined)
                             input[arg.n] = resolved[arg.n];
+                    if (undefined !== resolved.$action)
+                        input.$action = resolved.$action;
                 }
                 let intendedMark;
                 if (op === 'update') {
