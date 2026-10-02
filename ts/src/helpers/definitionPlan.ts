@@ -216,8 +216,8 @@ function recordsMedia(model: any): boolean {
 }
 
 
-// Every type a success response declares: OpenAPI 3 content, or Swagger 2
-// produces (else JSON) for a response with a schema.
+// Every type a success response declares: OpenAPI 3 content, or Swagger's
+// `produces` (else JSON) for a response with a schema.
 function successMedia(facts: any): string[] {
   const out: string[] = []
   const add = (types: string[]) => types.forEach((t) => out.includes(t) || out.push(t))

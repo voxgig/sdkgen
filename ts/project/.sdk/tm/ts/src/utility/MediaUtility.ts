@@ -3,8 +3,7 @@
 // Accept header, and `body` (the model's `rb`) for the request body.
 
 
-// The data key holding a raw request body. Like `$action`, it can never be a
-// declared argument name.
+// The data key of a raw request body; like `$action`, never an argument name.
 const RAW_BODY = '$body'
 
 
@@ -14,8 +13,7 @@ function isJsonMedia(type: any): boolean {
 }
 
 
-// The declared JSON type alone, else every declared type in the model's
-// order; nothing when no success response declares a body.
+// The declared JSON type alone, else every declared type in model order; nothing without a body.
 function acceptOf(point: any): string | undefined {
   const res = point?.response
   if (null == res || 'string' !== typeof res.media || '' === res.media) {

@@ -802,7 +802,7 @@ describe('definitionPlan: media types', () => {
 })
 
 
-// A cat SDK stand-in that sends what the plan expects unless one defect is on.
+// A cat SDK stand-in that sends what the definition expects unless one defect is on.
 function mediaSDK(defect: '' | 'accept-none' | 'accept-any' | 'accept-all' |
   'raw-json' | 'raw-type') {
   return class {

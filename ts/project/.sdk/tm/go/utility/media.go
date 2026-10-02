@@ -9,8 +9,7 @@ import (
 // The media types a point declares: `response` (the model's `rs`) for the
 // Accept header, and `body` (the model's `rb`) for the request body.
 
-// The data key holding a raw request body. Like `$action`, it can never be a
-// declared argument name.
+// The data key of a raw request body; like `$action`, never an argument name.
 const rawBodyKey = "$body"
 
 func isJSONMedia(media string) bool {
@@ -18,8 +17,7 @@ func isJSONMedia(media string) bool {
 	return "application/json" == m || "text/json" == m || strings.HasSuffix(m, "+json")
 }
 
-// The declared JSON type alone, else every declared type in the model's
-// order; "" when no success response declares a body.
+// The declared JSON type alone, else every declared type in model order; "" without a body.
 func acceptOf(point map[string]any) string {
 	res := vs.GetProp(point, "response")
 	media, _ := vs.GetProp(res, "media").(string)

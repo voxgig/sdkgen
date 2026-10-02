@@ -163,8 +163,8 @@ function jsonMedia(response) {
 function recordsMedia(model) {
     return Object.values((0, opShape_1.entityCollection)(model)).some((entity) => Object.values(entity?.op || {}).some((operation) => (operation?.points || []).some((p) => null != p.rs || null != p.rb)));
 }
-// Every type a success response declares: OpenAPI 3 content, or Swagger 2
-// produces (else JSON) for a response with a schema.
+// Every type a success response declares: OpenAPI 3 content, or Swagger's
+// `produces` (else JSON) for a response with a schema.
 function successMedia(facts) {
     const out = [];
     const add = (types) => types.forEach((t) => out.includes(t) || out.push(t));
