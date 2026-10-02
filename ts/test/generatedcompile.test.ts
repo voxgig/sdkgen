@@ -4993,6 +4993,79 @@ const MEDIA_LANES: MediaLane[] = [
       return run(toolchain('java')!, ['-cp', classes, 'MediaProbe'], sdkroot, env)
     },
   },
+  {
+    target: 'kotlin',
+    // gradle hangs on windows rather than failing, as the other kotlin lanes note.
+    ready: () => 'win32' === process.platform ? 'gradle hangs on windows'
+      : null == toolchain('gradle') ? 'no gradle toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('test/MediaProbe.kt', MEDIA_PROBES.kotlin)
+      return run(toolchain('gradle')!,
+        ['--console=plain', 'test', '--tests', '*MediaProbe*'], sdkroot, env)
+    },
+  },
+  {
+    target: 'scala',
+    ready: () => null == toolchain('scala-cli') ? 'no scala-cli toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('sdktest/MediaProbe.scala', MEDIA_PROBES.scala)
+      return run(toolchain('scala-cli')!, ['run', '.', '--main-class', 'MediaProbeMain'], sdkroot, env)
+    },
+  },
+  {
+    target: 'csharp',
+    ready: () => null == toolchain('dotnet') ? 'no .NET toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      const sdkproj = Fs.readdirSync(sdkroot).find((n) => n.endsWith('.csproj'))!
+      const tfm = Fs.readFileSync(Path.join(sdkroot, sdkproj), 'utf8')
+        .match(/<TargetFramework>([^<]+)<\/TargetFramework>/)![1]
+      write('test/MediaProbe.cs', MEDIA_PROBES.csharp)
+      write('zz-media/MediaProbe.csproj',
+        '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>' +
+        '<OutputType>Exe</OutputType><TargetFramework>' + tfm + '</TargetFramework>' +
+        '<Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>' +
+        '<EnableDefaultCompileItems>false</EnableDefaultCompileItems>' +
+        '</PropertyGroup><ItemGroup><Compile Include="../test/MediaProbe.cs" />' +
+        '<ProjectReference Include="../' + sdkproj + '" /></ItemGroup></Project>')
+      return run(toolchain('dotnet')!, ['run', '--project', 'zz-media/MediaProbe.csproj'], sdkroot, env)
+    },
+  },
+  {
+    target: 'swift',
+    ready: () => null == toolchain('swift') ? 'no swift toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      const tests = Fs.readdirSync(Path.join(sdkroot, 'Tests')).find((d) => d.endsWith('Tests'))!
+      write(Path.join('Tests', tests, 'MediaProbeTest.swift'), MEDIA_PROBES.swift)
+      return run(toolchain('swift')!, ['test', '-j', '2', '--filter', 'MediaProbeTest'], sdkroot,
+        { ...env, MEDIA_CASES: Path.join(sdkroot, 'media-cases.json') }, 30 * 60 * 1000)
+    },
+  },
+  {
+    target: 'elixir',
+    ready: () => null == toolchain('mix') || null == toolchain('elixir') ? 'no elixir toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('test/media_probe_test.exs', MEDIA_PROBES.elixir)
+      return run(toolchain('mix')!, ['test', '--no-color', Path.join('test', 'media_probe_test.exs')],
+        sdkroot, { ...env, MIX_ENV: 'test' })
+    },
+  },
+  {
+    target: 'clojure',
+    ready: () => null == toolchain('clojure') ? 'no clojure CLI' : null,
+    exec: (sdkroot, env, write) => {
+      write('media_probe.clj', MEDIA_PROBES.clojure)
+      return run(toolchain('clojure')!, ['-M', 'media_probe.clj'], sdkroot, env)
+    },
+  },
+  {
+    target: 'rust',
+    ready: () => null == toolchain('cargo') ? 'no Rust toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('tests/media_probe.rs', MEDIA_PROBES.rust)
+      return run(toolchain('cargo')!, ['test', '--test', 'media_probe', '--', '--nocapture'],
+        sdkroot, env)
+    },
+  },
 ]
 
 

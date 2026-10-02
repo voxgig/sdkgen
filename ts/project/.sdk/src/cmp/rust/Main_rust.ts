@@ -212,6 +212,7 @@ pub use crate::core::types::{
 pub use crate::core::utility_type::Utility;
 pub use crate::feature::base::BaseFeature;
 pub use crate::utility::jsonparse::json_parse;
+pub use crate::utility::media::bytes_value;
 pub use crate::utility::voxgigstruct::Value;
 
 // No-argument convenience constructors: \`${rustcrate}::new()\` /

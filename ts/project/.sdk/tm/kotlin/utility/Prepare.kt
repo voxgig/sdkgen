@@ -123,6 +123,9 @@ internal fun callArgs(ctx: Context, kind: String): List<CallArg> {
 
 fun prepareBody(ctx: Context): Any? {
   if ("data" == ctx.op.input) {
+    if (Media.isRawRequest(ctx.point)) {
+      return Media.rawBody(ctx.reqdata)
+    }
     return ctx.utility!!.transformRequest(ctx)
   }
   return null
@@ -133,8 +136,8 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
   val options = ctx.client!!.optionsMap()
 
   val headers = Struct.getprop(options, "headers", null)
-  val out: MutableMap<String, Any?> =
-    (if (headers == null) null else Helpers.toMapAny(Struct.clone(headers))) ?: linkedMapOf()
+  val out: MutableMap<String, Any?> = Media.headers(ctx.point,
+    (if (headers == null) null else Helpers.toMapAny(Struct.clone(headers))) ?: linkedMapOf())
 
   // A header argument replaces a default of the same name, whatever its case.
   for (arg in callArgs(ctx, "header")) {

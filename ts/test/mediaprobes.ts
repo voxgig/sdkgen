@@ -92,7 +92,7 @@ const MEDIA_MODEL =
   entity('picture', {
     load: point('GET', '/picture/{id}', `rs: { kind: "raw", media: "image/jpeg", binary: true,
           alternatives: [ { kind: "raw", media: "image/png", binary: true } ] }`),
-    update: point('PATCH', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }'),
+    update: point('PUT', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }'),
   })
 
 
@@ -153,7 +153,7 @@ const MEDIA_CASES: MediaCase[] = [
     name: 'a declared JSON type replaces the default',
     entity: 'picture', op: 'update', input: { id: 'p01', title: 'Mars' },
     expect: {
-      method: 'PATCH', path: '/picture/p01', accept: null,
+      method: 'PUT', path: '/picture/p01', accept: null,
       contentType: 'application/merge-patch+json', json: { title: 'Mars' },
     },
   },
@@ -596,8 +596,375 @@ public class MediaProbe {
 `
 
 
+const KOTLIN_PROBE = String.raw`package voxgig.demosdk.sdktest
+
+import java.io.File
+
+import org.junit.jupiter.api.Test
+
+import voxgig.demosdk.core.DemoSDK
+import voxgig.demosdk.core.SdkEntity
+import voxgig.demosdk.utility.Json
+
+class MediaProbe {
+
+  @Suppress("UNCHECKED_CAST")
+  @Test
+  fun mediaProbe() {
+    val cases = Json.parse(File("media-cases.json").readText()) as List<Map<String, Any?>>
+    val base = System.getenv("MEDIA_BASE")
+    for ((i, c) in cases.withIndex()) {
+      val opts = linkedMapOf<String, Any?>("base" to base + "/c" + i)
+      if (c["headers"] != null) opts["headers"] = c["headers"]
+      val client = DemoSDK(opts)
+      val data = LinkedHashMap(c["input"] as Map<String, Any?>)
+      (c["bodyHex"] as String?)?.let { h ->
+        data["\$body"] = ByteArray(h.length / 2) { h.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
+      }
+      (c["bodyText"] as String?)?.let { data["\$body"] = it }
+      try {
+        val ent: SdkEntity = when (c["entity"]) {
+          "cat" -> client.cat(null)
+          "picture" -> client.picture(null)
+          else -> client.planet(null)
+        }
+        when (c["op"]) {
+          "load" -> ent.load(data, null)
+          "list" -> ent.list(data, null)
+          "create" -> ent.create(data, null)
+          "update" -> ent.update(data, null)
+          else -> ent.remove(data, null)
+        }
+      } catch (e: Exception) {
+        println("media-probe: case " + i + ": " + e.message)
+      }
+    }
+    println("media-probe: ran " + cases.size + " cases")
+  }
+}
+`
+
+
+const SCALA_PROBE = String.raw`
+import java.nio.file.{Files, Paths}
+import java.util.{LinkedHashMap, List => JList, Map => JMap}
+import voxgig.demosdk.core.{DemoSDK, SdkEntity}
+import voxgig.demosdk.utility.Json
+
+object MediaProbeMain {
+  def main(args: Array[String]): Unit = {
+    val cases = Json.parse(new String(Files.readAllBytes(Paths.get("media-cases.json")), "UTF-8"))
+      .asInstanceOf[JList[JMap[String, Object]]]
+    val base = System.getenv("MEDIA_BASE")
+    for (i <- 0 until cases.size()) {
+      val c = cases.get(i)
+      val opts = new LinkedHashMap[String, Object]()
+      opts.put("base", base + "/c" + i)
+      if (c.get("headers") != null) opts.put("headers", c.get("headers"))
+      val client = new DemoSDK(opts)
+      val data = new LinkedHashMap[String, Object](c.get("input").asInstanceOf[JMap[String, Object]])
+      c.get("bodyHex") match {
+        case h: String => data.put("$body", h.grouped(2).map(Integer.parseInt(_, 16).toByte).toArray)
+        case _ =>
+      }
+      c.get("bodyText") match {
+        case t: String => data.put("$body", t)
+        case _ =>
+      }
+      try {
+        val ent: SdkEntity = c.get("entity") match {
+          case "cat" => client.cat(null)
+          case "picture" => client.picture(null)
+          case _ => client.planet(null)
+        }
+        c.get("op") match {
+          case "load" => ent.load(data, null)
+          case "list" => ent.list(data, null)
+          case "create" => ent.create(data, null)
+          case "update" => ent.update(data, null)
+          case _ => ent.remove(data, null)
+        }
+      }
+      catch {
+        case e: Exception => println("media-probe: case " + i + ": " + e.getMessage)
+      }
+    }
+    println("media-probe: ran " + cases.size() + " cases")
+  }
+}
+`
+
+
+const CSHARP_PROBE = String.raw`
+using DemoSdk;
+using System.Text.Json;
+
+public static class MediaProbe
+{
+    static object? Value(JsonElement e) => e.ValueKind switch
+    {
+        JsonValueKind.Object => e.EnumerateObject().ToDictionary(p => p.Name, p => Value(p.Value)),
+        JsonValueKind.Array => e.EnumerateArray().Select(Value).ToList(),
+        JsonValueKind.String => e.GetString(),
+        JsonValueKind.True => true,
+        JsonValueKind.False => false,
+        JsonValueKind.Null => null,
+        _ => throw new Exception("unexpected fixture value"),
+    };
+
+    public static void Main()
+    {
+        using var fixture = JsonDocument.Parse(File.ReadAllText("media-cases.json"));
+        var cases = (List<object?>)Value(fixture.RootElement)!;
+        var mbase = Environment.GetEnvironmentVariable("MEDIA_BASE");
+        for (var i = 0; i < cases.Count; i++)
+        {
+            var c = (Dictionary<string, object?>)cases[i]!;
+            var opts = new Dictionary<string, object?> { ["base"] = mbase + "/c" + i };
+            if (c.TryGetValue("headers", out var h) && h != null) opts["headers"] = h;
+            var client = new DemoSDK(opts);
+            var data = new Dictionary<string, object?>((Dictionary<string, object?>)c["input"]!);
+            if (c.TryGetValue("bodyHex", out var hex) && hex is string hs) data["$body"] = Convert.FromHexString(hs);
+            if (c.TryGetValue("bodyText", out var text) && text is string ts) data["$body"] = ts;
+            try
+            {
+                var ent = (string)c["entity"]! switch
+                {
+                    "cat" => client.Cat(),
+                    "picture" => client.Picture(),
+                    _ => client.Planet(),
+                };
+                switch ((string)c["op"]!)
+                {
+                    case "load": ent.Load(data); break;
+                    case "list": ent.List(data); break;
+                    case "create": ent.Create(data); break;
+                    case "update": ent.Update(data); break;
+                    default: ent.Remove(data); break;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"media-probe: case {i}: {e.Message}");
+            }
+        }
+        Console.WriteLine($"media-probe: ran {cases.Count} cases");
+    }
+}
+`
+
+
+const SWIFT_PROBE = String.raw`import Foundation
+import XCTest
+@testable import DemoSdk
+
+final class MediaProbeTest: XCTestCase {
+  func testMediaProbe() throws {
+    let env = ProcessInfo.processInfo.environment
+    let text = try String(contentsOfFile: env["MEDIA_CASES"] ?? "media-cases.json", encoding: .utf8)
+    let cases = try JSON.parse(text).asList?.items ?? []
+    let base = env["MEDIA_BASE"] ?? ""
+    for (i, c) in cases.enumerated() {
+      let opts = VMap()
+      opts.entries["base"] = .string(base + "/c" + String(i))
+      let headers = gp(c, "headers")
+      if !isNil(headers) { opts.entries["headers"] = headers }
+      let client = DemoSDK(opts)
+      let data = VMap()
+      for (k, v) in gp(c, "input").asMap?.entries ?? [:] { data.entries[k] = v }
+      if let hex = gp(c, "bodyHex").asString {
+        var bytes = [UInt8]()
+        var idx = hex.startIndex
+        while idx < hex.endIndex {
+          let next = hex.index(idx, offsetBy: 2)
+          bytes.append(UInt8(hex[idx..<next], radix: 16)!)
+          idx = next
+        }
+        data.entries["$body"] = .nat(Data(bytes))
+      }
+      if let t = gp(c, "bodyText").asString { data.entries["$body"] = .string(t) }
+      do {
+        let ent: DemoEntityBase
+        switch gp(c, "entity").asString {
+        case "cat": ent = client.Cat(nil)
+        case "picture": ent = client.Picture(nil)
+        default: ent = client.Planet(nil)
+        }
+        switch gp(c, "op").asString {
+        case "load": _ = try ent.load(data, nil)
+        case "list": _ = try ent.list(data, nil)
+        case "create": _ = try ent.create(data, nil)
+        case "update": _ = try ent.update(data, nil)
+        default: _ = try ent.remove(data, nil)
+        }
+      } catch {
+        print("media-probe: case \(i): \(error)")
+      }
+    }
+    print("media-probe: ran \(cases.count) cases")
+  }
+}
+`
+
+
+const ELIXIR_PROBE = String.raw`
+defmodule Demo.MediaProbeTest do
+  use ExUnit.Case
+
+  alias Voxgig.Struct, as: S
+
+  test "media probe" do
+    cases = Demo.Json.parse(File.read!("media-cases.json"))
+    base = System.get_env("MEDIA_BASE")
+    n = S.size(cases)
+
+    Enum.each(0..(n - 1), fn i ->
+      c = S.getelem(cases, i)
+      opts = S.jm(["base", base <> "/c" <> Integer.to_string(i)])
+      headers = S.getprop(c, "headers")
+      if headers != nil, do: S.setprop(opts, "headers", headers)
+      client = Demo.new(opts)
+      data = S.clone(S.getprop(c, "input"))
+      hex = S.getprop(c, "bodyHex")
+      if hex != nil, do: S.setprop(data, "$body", Base.decode16!(hex, case: :lower))
+      text = S.getprop(c, "bodyText")
+      if text != nil, do: S.setprop(data, "$body", text)
+
+      try do
+        {ent, mod} =
+          case S.getprop(c, "entity") do
+            "cat" -> {Demo.cat(client), Demo.Entity.Cat}
+            "picture" -> {Demo.picture(client), Demo.Entity.Picture}
+            _ -> {Demo.planet(client), Demo.Entity.Planet}
+          end
+
+        apply(mod, String.to_atom(S.getprop(c, "op")), [ent, data])
+      rescue
+        e -> IO.puts("media-probe: case #{i}: #{Exception.message(e)}")
+      end
+    end)
+
+    IO.puts("media-probe: ran #{n} cases")
+  end
+end
+`
+
+
+const CLOJURE_PROBE = String.raw`
+(require '[sdk.api :as api]
+         '[sdk.core :as core]
+         '[voxgig.struct :as vs]
+         '[sdk.entity.cat :as e-cat]
+         '[sdk.entity.picture :as e-picture]
+         '[sdk.entity.planet :as e-planet])
+
+(def cases (core/json-parse (slurp "media-cases.json")))
+(def base (System/getenv "MEDIA_BASE"))
+
+(defn- unhex [^String h]
+  (byte-array (map (fn [i] (unchecked-byte (Integer/parseInt (subs h (* 2 i) (+ 2 (* 2 i))) 16)))
+                   (range (quot (count h) 2)))))
+
+(doseq [i (range (vs/size cases))]
+  (let [c (vs/getelem cases i)
+        opts (vs/jm "base" (str base "/c" i))
+        _ (when-let [h (vs/getprop c "headers")] (.put ^java.util.Map opts "headers" h))
+        client (api/make-sdk opts)
+        data (vs/clone (vs/getprop c "input"))]
+    (when-let [h (vs/getprop c "bodyHex")] (.put ^java.util.Map data "$body" (unhex h)))
+    (when-let [t (vs/getprop c "bodyText")] (.put ^java.util.Map data "$body" t))
+    (try
+      (let [entity (vs/getprop c "entity")
+            op (vs/getprop c "op")
+            ent (case entity
+                  "cat" (api/cat client nil)
+                  "picture" (api/picture client nil)
+                  (api/planet client nil))
+            f (case [entity op]
+                ["cat" "load"] e-cat/load
+                ["cat" "list"] e-cat/list
+                ["cat" "create"] e-cat/create
+                ["cat" "update"] e-cat/update
+                ["cat" "remove"] e-cat/remove
+                ["picture" "load"] e-picture/load
+                ["picture" "update"] e-picture/update
+                e-planet/create)]
+        (f ent data (vs/jm)))
+      (catch Throwable e (println (str "media-probe: case " i ": " (.getMessage e)))))))
+
+(println (str "media-probe: ran " (vs/size cases) " cases"))
+`
+
+
+const RUST_PROBE = String.raw`
+use demo_sdk::core::helpers::{getp, jo, setp};
+use demo_sdk::utility::voxgigstruct as vs;
+use demo_sdk::{bytes_value, json_parse, DemoEntity, DemoSDK, Value};
+
+macro_rules! call {
+    ($ent:expr, $op:ident, $data:expr) => {
+        $ent.$op($data, Value::Noval).map(|_| ()).map_err(|e| e.to_string())
+    };
+}
+
+#[test]
+fn media_probe() {
+    let cases = json_parse(&std::fs::read_to_string("media-cases.json").unwrap()).unwrap();
+    let base = std::env::var("MEDIA_BASE").unwrap();
+    let n = match &cases {
+        Value::List(l) => l.borrow().len(),
+        _ => 0,
+    };
+    for i in 0..n {
+        let c = vs::get_elem(&cases, &Value::Num(i as f64), Value::Noval);
+        let opts = jo(vec![("base", Value::str(format!("{}/c{}", base, i)))]);
+        let headers = getp(&c, "headers");
+        if !headers.is_noval() {
+            setp(&opts, "headers", headers);
+        }
+        let client = DemoSDK::new(opts);
+        let data = vs::clone(&getp(&c, "input"));
+        if let Value::Str(h) = getp(&c, "bodyHex") {
+            let bytes: Vec<u8> = (0..h.len() / 2)
+                .map(|j| u8::from_str_radix(&h[2 * j..2 * j + 2], 16).unwrap())
+                .collect();
+            setp(&data, "$body", bytes_value(&bytes));
+        }
+        if let Value::Str(t) = getp(&c, "bodyText") {
+            setp(&data, "$body", Value::Str(t));
+        }
+        let text = |k: &str| match getp(&c, k) {
+            Value::Str(s) => s,
+            _ => String::new(),
+        };
+        let res = match (text("entity").as_str(), text("op").as_str()) {
+            ("cat", "load") => call!(client.cat(Value::Noval), load, data),
+            ("cat", "list") => call!(client.cat(Value::Noval), list, data),
+            ("cat", "create") => call!(client.cat(Value::Noval), create, data),
+            ("cat", "update") => call!(client.cat(Value::Noval), update, data),
+            ("cat", "remove") => call!(client.cat(Value::Noval), remove, data),
+            ("picture", "load") => call!(client.picture(Value::Noval), load, data),
+            ("picture", "update") => call!(client.picture(Value::Noval), update, data),
+            _ => call!(client.planet(Value::Noval), create, data),
+        };
+        if let Err(e) = res {
+            println!("media-probe: case {}: {}", i, e);
+        }
+    }
+    println!("media-probe: ran {} cases", n);
+}
+`
+
+
 const MEDIA_PROBES: Record<string, string> = {
   node: NODE_PROBE,
+  rust: RUST_PROBE,
+  clojure: CLOJURE_PROBE,
+  elixir: ELIXIR_PROBE,
+  swift: SWIFT_PROBE,
+  csharp: CSHARP_PROBE,
+  scala: SCALA_PROBE,
+  kotlin: KOTLIN_PROBE,
   java: JAVA_PROBE,
   go: GO_PROBE,
   py: PY_PROBE,

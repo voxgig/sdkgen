@@ -29,12 +29,14 @@ pub fn make_fetch_def_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError>
     setp(&fetchdef, "method", Value::str(spec.borrow().method.clone()));
     setp(&fetchdef, "headers", spec.borrow().headers.clone());
 
+    // A list is a raw body's bytes, and JSON on any other point.
     let body = spec.borrow().body.clone();
     if !body.is_noval() {
-        if let Value::Map(_) = body {
-            setp(&fetchdef, "body", Value::str(vs::jsonify(&body, None)));
-        } else {
-            setp(&fetchdef, "body", body);
+        let raw = crate::utility::media::is_raw_request(&ctx.point.borrow());
+        match body {
+            Value::Map(_) => setp(&fetchdef, "body", Value::str(vs::jsonify(&body, None))),
+            Value::List(_) if !raw => setp(&fetchdef, "body", Value::str(vs::jsonify(&body, None))),
+            _ => setp(&fetchdef, "body", body),
         }
     }
 
