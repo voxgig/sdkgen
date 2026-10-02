@@ -61,9 +61,15 @@ function makeSpec(ctx) {
     ctx.ctrl.explain.spec = ctx.spec
   }
 
+  // Whatever prepareAuth sets in the query, under whichever name, is the
+  // credential; a key it leaves as it was is the caller's.
+  const query = { ...ctx.spec.query }
+
   const spec = prepareAuth(ctx)
 
   if (!(spec instanceof Error)) {
+    spec.authquery = Object.keys(spec.query || {})
+      .filter((key) => spec.query[key] !== query[key])
     ctx.spec = spec
   }
 

@@ -54,8 +54,7 @@ func NewEntyClass(client *core.ProjectNameSDK, entopts map[string]any) *EntyClas
 func (e *EntyClass) GetName() string { return e.name }
 
 // An entity prints and serialises as its data, as ts's toString and toJSON
-// do: the match state can carry a query credential, and the client holds
-// the options.
+// do: the client it holds carries the options.
 func (e *EntyClass) String() string {
 	return "EntityName " + vs.Jsonify(e.data, map[string]any{"indent": 0})
 }

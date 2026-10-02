@@ -424,7 +424,7 @@ local function construct(opts)
 end
 
 
-local function make_sdk(scenario, sinks, cleanopts, extra)
+local function make_sdk(scenario, sinks, cleanopts, extra, auth)
   local function capture(name)
     return function(rec) append(sinks, surfaces(name, rec)) end
   end
@@ -476,6 +476,7 @@ local function make_sdk(scenario, sinks, cleanopts, extra)
     utility = {
       fetcher = function(_ctx, url, fetchdef) return scenario.respond(url, fetchdef) end,
     },
+    auth = auth,
   })
 end
 
@@ -554,6 +555,8 @@ local function drive(client, target, ctrl, sinks)
   if out ~= nil then
     append(sinks, surfaces("result", out))
   end
+  -- Raw, as a caller copying the match into another query reads it.
+  append(sinks, surfaces("match", ent:match_get()))
   if ctrl.explain ~= nil then
     append(sinks, surfaces("explain", ctrl.explain))
   end
@@ -596,6 +599,10 @@ describe("clean", function()
         append(sinks, surfaces("sdk", client))
       end
     end
+
+    -- A name given at run time replaces the declared one: the match leaves
+    -- out whichever name prepare_auth placed.
+    drive(make_sdk(SCENARIOS[1], sinks, nil, nil, { name = "zzcred" }), target, {}, sinks)
 
     -- A credential mistyped as a table is rejected by validation, whose
     -- message quotes the value it rejected.

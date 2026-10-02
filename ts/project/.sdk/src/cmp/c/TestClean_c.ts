@@ -98,10 +98,12 @@ function render(spec: {
   const { Name, ident, auth, features, candidates } = spec
 
   const drivers = candidates.map((c) => 'list' === c.op
-    ? `static PNError* ${c.fn}(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* ctrl, voxgig_value** out) {
+    ? `static PNError* ${c.fn}(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* ctrl, voxgig_value** out,
+    voxgig_value** match) {
   PNError* err = NULL;
   Entity* e = ${ident}_${c.evar}(sdk, NULL);
   Entity** items = e->vt->list(e, mtch, ctrl, &err);
+  if (match) *match = e->vt->matchv(e, NULL);
   if (err) return err;
   voxgig_value* list = v_list();
   for (size_t i = 0; items && items[i]; i++) {
@@ -111,10 +113,12 @@ function render(spec: {
   return NULL;
 }
 `
-    : `static PNError* ${c.fn}(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* ctrl, voxgig_value** out) {
+    : `static PNError* ${c.fn}(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* ctrl, voxgig_value** out,
+    voxgig_value** match) {
   PNError* err = NULL;
   Entity* e = ${ident}_${c.evar}(sdk, NULL);
   Entity* r = e->vt->${c.op}(e, mtch, ctrl, &err);
+  if (match) *match = e->vt->matchv(e, NULL);
   if (err) return err;
   *out = r ? r->vt->data(r, NULL) : v_undef();
   return NULL;
@@ -384,7 +388,8 @@ static voxgig_value* transport_fn(void* ud, voxgig_value* args) {
   return respond(sc, url);
 }
 
-static ${Name}SDK* make_sdk(int sc, voxgig_value* cleanopts, Feature* extra) {
+static ${Name}SDK* make_sdk_with(int sc, voxgig_value* cleanopts, Feature* extra,
+    voxgig_value* auth) {
   voxgig_value* feature = v_map();
   for (size_t i = 0; FEATURES[i]; i++) {
     const char* name = FEATURES[i];
@@ -405,13 +410,15 @@ static ${Name}SDK* make_sdk(int sc, voxgig_value* cleanopts, Feature* extra) {
     }
   }
 
-  ${Name}SDK* sdk = ${ident}_sdk_new(cmap(6,
+  voxgig_value* opts = cmap(6,
     "apikey", v_str(CANARY_APIKEY),
     "secret", v_str(CANARY_SECRET),
     "headers", cmap(1, "X-Custom-Token", v_str(CANARY_HEADER)),
     "clean", clean,
     "feature", feature,
-    "system", cmap(1, "fetch", vfn(transport_fn, (void*)(intptr_t)sc))));
+    "system", cmap(1, "fetch", vfn(transport_fn, (void*)(intptr_t)sc)));
+  if (auth) setp(opts, "auth", auth);
+  ${Name}SDK* sdk = ${ident}_sdk_new(opts);
 
   // C options are pure data, so the extension feature is added after
   // construction (the \`extend\` option of the ts client).
@@ -423,7 +430,13 @@ static ${Name}SDK* make_sdk(int sc, voxgig_value* cleanopts, Feature* extra) {
   return sdk;
 }
 
-typedef PNError* (*Drive)(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* ctrl, voxgig_value** out);
+static ${Name}SDK* make_sdk(int sc, voxgig_value* cleanopts, Feature* extra) {
+  return make_sdk_with(sc, cleanopts, extra, NULL);
+}
+
+// What the operation returned, and the match its entity then holds.
+typedef PNError* (*Drive)(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* ctrl, voxgig_value** out,
+    voxgig_value** match);
 typedef voxgig_value* (*Streamer)(${Name}SDK* sdk, voxgig_value* mtch, voxgig_value* callopts, PNError** err);
 
 ${drivers}
@@ -454,7 +467,7 @@ static bool usable_op(Target* target) {
     voxgig_value* tries[2] = { v_map(), filled };
     for (int t = 0; t < 2; t++) {
       voxgig_value* out = NULL;
-      PNError* err = CANDIDATES[i].fn(plain, voxgig_clone(tries[t]), NULL, &out);
+      PNError* err = CANDIDATES[i].fn(plain, voxgig_clone(tries[t]), NULL, &out, NULL);
       if (!err) {
         target->fn = CANDIDATES[i].fn;
         target->stream = CANDIDATES[i].stream;
@@ -470,12 +483,15 @@ static PNError* drive(${Name}SDK* sdk, Target* target, voxgig_value* ctrl) {
   // A caller may keep the record it passed rather than read ctrl.explain.
   voxgig_value* held = ctrl ? getp(ctrl, "explain") : NULL;
   voxgig_value* out = NULL;
-  PNError* err = target->fn(sdk, voxgig_clone(target->mtch), ctrl, &out);
+  voxgig_value* match = NULL;
+  PNError* err = target->fn(sdk, voxgig_clone(target->mtch), ctrl, &out, &match);
   if (err) {
     push_error("error", err);
   } else {
     push_value("result", out ? out : v_undef());
   }
+  // Raw, as a caller copying the match into another query reads it.
+  push_value("match", match ? match : v_undef());
   voxgig_value* explain = ctrl ? getp(ctrl, "explain") : NULL;
   if (v_is_map(explain)) push_value("explain", explain);
   if (v_is_map(held) && held != explain) push_value("explain:held", held);
@@ -540,6 +556,10 @@ int main(void) {
       (void)SC_NAMES;
     }
   }
+
+  // A name given at run time replaces the declared one: the match leaves
+  // out whichever name prepare_auth placed.
+  drive(make_sdk_with(SC_OK, NULL, NULL, cmap(1, "name", v_str("zzcred"))), op, NULL);
 
   // A credential mistyped as a map. The C validator defaults rather than
   // rejects, so what the constructor produced is swept instead: a string
@@ -685,7 +705,7 @@ int main(void) {
   {
     voxgig_value* out = NULL;
     PNError* explained = op->fn(make_sdk(SC_NOTFOUND, cmap(1, "active", v_bool(false)), NULL),
-                                voxgig_clone(op->mtch), cmap(1, "explain", v_map()), &out);
+                                voxgig_clone(op->mtch), cmap(1, "explain", v_map()), &out, NULL);
     CHECK_STR_EQ(explained ? explained->msg : NULL, rawerr ? rawerr->msg : NULL,
                  "with clean off, explain lost the error");
   }

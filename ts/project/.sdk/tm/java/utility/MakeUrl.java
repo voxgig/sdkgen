@@ -47,6 +47,9 @@ final class MakeUrl {
 
     Map<String, Object> resmatch = new LinkedHashMap<>();
 
+    // Sent with the request, never recorded as the entity's match.
+    List<String> authquery = spec.authquery == null ? List.of() : spec.authquery;
+
     Map<String, Object> params = spec.params;
     for (List<Object> item : Struct.items(params)) {
       String key = item.get(0) instanceof String ? (String) item.get(0) : "";
@@ -81,7 +84,9 @@ final class MakeUrl {
       if (val != null) {
         url += qsep + Struct.escurl(key) + "=" + Struct.escurl(Struct.stringify(val));
         qsep = "&";
-        resmatch.put(key, val);
+        if (!authquery.contains(key)) {
+          resmatch.put(key, val);
+        }
       }
     }
 

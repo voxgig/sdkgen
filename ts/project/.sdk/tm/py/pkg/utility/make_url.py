@@ -23,6 +23,9 @@ def make_url_util(ctx):
     url = vs.join([spec.base, spec.prefix, spec.path, spec.suffix], "/", True)
     resmatch = {}
 
+    # Sent with the request, never recorded as the entity's match.
+    authquery = getattr(spec, "authquery", None) or []
+
     # A route the definition ends with a slash keeps it: a server such as a
     # Django REST one redirects or refuses the route without it.
     orig = vs.getprop(ctx.point, "orig") if ctx.point is not None else None
@@ -61,7 +64,8 @@ def make_url_util(ctx):
                 val_str = val if isinstance(val, str) else str(val)
                 url += qsep + vs.escurl(key) + "=" + vs.escurl(val_str)
                 qsep = "&"
-                resmatch[key] = val
+                if key not in authquery:
+                    resmatch[key] = val
 
     result.resmatch = resmatch
 

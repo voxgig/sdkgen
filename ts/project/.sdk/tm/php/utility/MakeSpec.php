@@ -78,9 +78,20 @@ class ProjectNameMakeSpec
             $ctx->ctrl->explain['spec'] = $ctx->spec;
         }
 
+        // Whatever prepare_auth sets in the query, under whichever name, is
+        // the credential; a key it leaves as it was is the caller's.
+        $query = $ctx->spec->query;
+
         [$spec, $err] = ($utility->prepare_auth)($ctx);
         if ($err) {
             return [null, $err];
+        }
+
+        $spec->authquery = [];
+        foreach ($spec->query as $key => $val) {
+            if (!array_key_exists($key, $query) || $query[$key] !== $val) {
+                $spec->authquery[] = $key;
+            }
         }
 
         $ctx->spec = $spec;

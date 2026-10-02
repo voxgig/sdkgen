@@ -30,6 +30,7 @@ type DefinitionPoint = {
     status: number;
     sample: any;
     idField: string;
+    ownQuery?: string;
     responseMedia?: string[];
     rawBody?: {
         media: string[];
