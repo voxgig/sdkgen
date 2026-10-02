@@ -263,8 +263,11 @@ public abstract class ProjectNameEntityBase : IEntity
                 ? sigTok
                 : CancellationToken.None;
 
-        var ctrl = Helpers.ToMapAny(StructUtils.GetProp(callopts, "ctrl"))
-            ?? new Dictionary<string, object?>();
+        // A copy: the caller's ctrl gains no key, and explain stays its own record.
+        var callerCtrl = Helpers.ToMapAny(StructUtils.GetProp(callopts, "ctrl"));
+        var ctrl = callerCtrl == null
+            ? new Dictionary<string, object?>()
+            : new Dictionary<string, object?>(callerCtrl);
         ctrl["stream"] = callopts;
 
         var ctxmap = new Dictionary<string, object?>

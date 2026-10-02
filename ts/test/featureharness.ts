@@ -346,8 +346,7 @@ function makeClient(spec: {
       }
 
       // PreSpec. A feature may REJECT here by assigning an Error to
-      // ctx.out.spec: the real makeSpec short-circuits on an out.spec that is
-      // already set (`return ctx.spec = ctx.out.spec`) and the Entity*Op
+      // ctx.out.spec: the real makeSpec returns it, and the Entity*Op
       // fragment then tests it with `instanceof Error`. Mirrored here, or a
       // feature that rejects at this stage would appear to do nothing.
       await featureHook(ctx, 'PreSpec')

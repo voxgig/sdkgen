@@ -1,4 +1,4 @@
-import { flowSteps, opReachable } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -240,6 +240,8 @@ fn ${evar}_entity_stream() {
 }
 `)
     }
+
+    Content(failureTests(rustcrate, entity, evar, method))
 
     Content(`
 #[test]
@@ -722,6 +724,98 @@ const GENERATE_OP: Record<string, OpGen> = {
   update: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
+}
+
+
+// A failed operation fails a stream as it fails the operation: a transport
+// failure, and a hook that rejects the call. The caller's ctrl stays its own.
+// An invalid request fails with validate's own error, before it is sent. A
+// rust hook cannot throw, so there is no throwing-hook case.
+function failureTests(rustcrate: string, entity: ModelEntity, evar: string, method: string): string {
+  const feature = (name: string) =>
+    `getp(&getp(&${rustcrate}::make_config(), "feature"), "${name}").is_noval()`
+  let out = ''
+
+  if (opReachable((entity.op as any)?.list, [])) {
+    out += `
+#[test]
+fn ${evar}_entity_stream_error() {
+    let offline = jo(vec![("net", jo(vec![("offline", Value::Bool(true))]))]);
+    let err = test_sdk(offline.clone(), Value::Noval)
+        .${method}(Value::Noval)
+        .stream("list", Value::empty_map(), Value::empty_map())
+        .err()
+        .expect("a failed operation should fail the stream");
+    assert!(err.msg.contains("offline"), "{}", err.msg);
+
+    let quiet = jo(vec![("ctrl", jo(vec![("throw", Value::Bool(false))]))]);
+    assert!(test_sdk(offline, Value::Noval)
+        .${method}(Value::Noval)
+        .stream("list", Value::empty_map(), quiet)
+        .is_ok());
+
+    if !${feature('rbac')} {
+        let denied = test_sdk(Value::Noval, jo(vec![(
+            "feature",
+            jo(vec![("rbac", jo(vec![("active", Value::Bool(true)), ("deny", Value::Bool(true))]))]),
+        )]));
+        let denyerr = denied
+            .${method}(Value::Noval)
+            .stream("list", Value::empty_map(), Value::empty_map())
+            .err()
+            .expect("a denied operation should fail the stream");
+        assert_eq!(denyerr.code, "rbac_denied");
+    }
+}
+
+#[test]
+fn ${evar}_entity_stream_ctrl() {
+    let explain = Value::empty_map();
+    let ctrl = jo(vec![("explain", explain.clone())]);
+    let items: Vec<Value> = test_sdk(Value::Noval, Value::Noval)
+        .${method}(Value::Noval)
+        .stream("list", Value::empty_map(), jo(vec![("ctrl", ctrl.clone())]))
+        .expect("stream failed")
+        .collect();
+    assert!(getp(&ctrl, "stream").is_noval(), "the stream changed the caller's ctrl");
+    let filled = match &explain {
+        Value::Map(m) => !m.borrow().is_empty(),
+        _ => false,
+    };
+    assert!(filled, "the caller's explain record was not filled");
+}
+`
+  }
+
+  const bad = invalidRequest(entity)
+  if (null != bad) {
+    const args = Object.entries(bad.args)
+      .map(([k, v]) => '(' + JSON.stringify(k) + ', ' +
+        ('number' === typeof v ? 'Value::Num(' + v + '.0)' :
+          'boolean' === typeof v ? 'Value::Bool(' + v + ')' :
+            'Value::str(' + JSON.stringify(v) + ')') + ')')
+      .join(', ')
+    out += `
+#[test]
+fn ${evar}_entity_validate() {
+    if ${feature('validate')} {
+        return;
+    }
+    let client = test_sdk(Value::Noval, jo(vec![(
+        "feature",
+        jo(vec![("validate", jo(vec![("active", Value::Bool(true))]))]),
+    )]));
+    let err = client
+        .${method}(Value::Noval)
+        .${bad.op}(jo(vec![${args}]), Value::Noval)
+        .err()
+        .expect("an invalid request should fail");
+    assert_eq!(err.code, "validate_failed");
+}
+`
+  }
+
+  return out
 }
 
 

@@ -12,6 +12,11 @@ class ProjectNameMakeSpec
     public static function call(ProjectNameContext $ctx): array
     {
         if (isset($ctx->out['spec'])) {
+            // A PreSpec hook (validate) rejects the operation by placing its
+            // error here; the pipeline raises it, and ctx->spec stays a spec.
+            if ($ctx->out['spec'] instanceof \Throwable) {
+                return [null, $ctx->out['spec']];
+            }
             $ctx->spec = $ctx->out['spec'];
             return [$ctx->spec, null];
         }

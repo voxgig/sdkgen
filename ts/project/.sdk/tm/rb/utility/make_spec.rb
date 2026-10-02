@@ -5,6 +5,9 @@ require_relative '../core/spec'
 module ProjectNameUtilities
   MakeSpec = ->(ctx) {
     if ctx.out["spec"]
+      # A PreSpec hook (validate) rejects the operation by placing its error
+      # here; the pipeline raises it, and ctx.spec stays a request spec.
+      return nil, ctx.out["spec"] if ctx.out["spec"].is_a?(Exception)
       ctx.spec = ctx.out["spec"]
       return ctx.spec, nil
     end

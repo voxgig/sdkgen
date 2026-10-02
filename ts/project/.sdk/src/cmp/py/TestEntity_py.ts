@@ -28,6 +28,7 @@ import {
   serverVarEnv,
   serverVariables,
   entityDataIdField, envName, envToken,
+  invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
 } from '@voxgig/sdkgen'
 
@@ -148,9 +149,12 @@ import pytest
 from ${model.const.Name.toLowerCase()}_sdk.utility.voxgig_struct import voxgig_struct as vs
 from ${model.const.Name.toLowerCase()}_sdk import ${model.const.Name}SDK
 from ${model.const.Name.toLowerCase()}_sdk.core import helpers
+from ${model.const.Name.toLowerCase()}_sdk.config import shared_config
+from ${model.const.Name.toLowerCase()}_sdk.feature.base_feature import ${model.const.Name}BaseFeature
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 from test import runner
+${hasList ? failHookClass(model, entity) : ''}
 
 
 ${liveStrictNote(strict, '#')}
@@ -197,7 +201,7 @@ ${hasList ? `
                 else:
                     got.append(item)
             assert len(got) == 3
-` : ''}
+${failureTests(model, entity)}` : ''}${validateTest(model, entity)}
 ${strict ? '' : `    @runner.live_observe("${PROJUPPER}_TEST_LIVE", LIVE_STRICT)\n`}    def test_should_run_basic_flow(self):
         setup = _${entity.name}_basic_setup(None)
         # Per-op sdk-test-control.json skip — basic test exercises a flow with
@@ -619,6 +623,97 @@ const GENERATE_OP: Record<string, OpGen> = {
   update: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
+}
+
+
+// A feature whose PreSpec hook raises, counting the PreUnexpected calls it sees.
+function failHookClass(model: Model, entity: ModelEntity): string {
+  return `
+
+class _FailHook(${model.const.Name}BaseFeature):
+    def __init__(self):
+        super().__init__()
+        self.name = "failhook"
+        self.unexpected = 0
+
+    def init(self, ctx, options):
+        pass
+
+    def PreSpec(self, ctx):
+        raise RuntimeError("${entity.name} hook failed")
+
+    def PreUnexpected(self, ctx):
+        self.unexpected += 1
+`
+}
+
+
+// A failed operation raises from a stream as it does from the operation: a
+// transport failure, and a hook that rejects the call. A raising hook fires
+// PreUnexpected. The caller's ctrl stays its own.
+function failureTests(model: Model, entity: ModelEntity): string {
+  const Name = model.const.Name
+  const Entity = entity.Name
+  return `
+    def test_should_report_a_failed_stream(self):
+        offline = {"net": {"offline": True}}
+        with pytest.raises(Exception, match="offline"):
+            list(${Name}SDK.test(offline, None).${Entity}(None).stream("list", None, None))
+
+        quiet = {"ctrl": {"throw": False}}
+        list(${Name}SDK.test(offline, None).${Entity}(None).stream("list", None, quiet))
+
+        if "rbac" in (shared_config().get("feature") or {}):
+            denied = ${Name}SDK.test(
+                None, {"feature": {"rbac": {"active": True, "deny": True}}})
+            with pytest.raises(Exception) as err:
+                list(denied.${Entity}(None).stream("list", None, None))
+            assert "rbac_denied" == getattr(err.value, "code", None)
+
+    def test_should_leave_the_callers_ctrl(self):
+        explain = {}
+        ctrl = {"explain": explain}
+        list(${Name}SDK.test(None, None).${Entity}(None).stream("list", None, {"ctrl": ctrl}))
+        assert ["explain"] == list(ctrl.keys())
+        assert explain is ctrl["explain"] and 0 < len(explain)
+
+    def test_should_fire_pre_unexpected(self):
+        hook = _FailHook()
+        client = ${Name}SDK({"feature": {"test": {"active": True}}, "extend": [hook]})
+        with pytest.raises(Exception, match="hook failed"):
+            client.${Entity}(None).list(None, None)
+        assert 0 < hook.unexpected
+
+        fired = hook.unexpected
+        assert client.${Entity}(None).list(None, {"throw": False}) is None
+        assert fired < hook.unexpected
+`
+}
+
+
+// An invalid request fails with validate's own error, before it is sent.
+function validateTest(model: Model, entity: ModelEntity): string {
+  const bad = invalidRequest(entity)
+  if (null == bad) {
+    return ''
+  }
+  const args = Object.entries(bad.args)
+    .map(([k, v]) => JSON.stringify(k) + ': ' + pyLit(v)).join(', ')
+  return `
+    def test_should_refuse_an_invalid_request(self):
+        if "validate" not in (shared_config().get("feature") or {}):
+            pytest.skip("feature not present in this SDK: validate")
+        client = ${model.const.Name}SDK.test(
+            None, {"feature": {"validate": {"active": True}}})
+        with pytest.raises(Exception) as err:
+            client.${entity.Name}(None).${bad.op}({${args}}, None)
+        assert "validate_failed" == getattr(err.value, "code", None)
+`
+}
+
+
+function pyLit(v: any): string {
+  return true === v ? 'True' : false === v ? 'False' : JSON.stringify(v)
 }
 
 

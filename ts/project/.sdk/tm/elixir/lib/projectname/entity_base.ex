@@ -116,7 +116,10 @@ defmodule ProjectName.EntityBase do
   #   - signal: an optional 0-arity fn; when it returns true iteration stops.
   def stream(ent, action, args \\ nil, callopts \\ nil) do
     callopts = if S.ismap(callopts), do: callopts, else: S.jm([])
-    ctrl = H.or_(H.to_map(S.getprop(callopts, "ctrl")), S.jm([]))
+    # A copy: the caller's ctrl gains no key, and explain stays its own record.
+    ctrl = S.jm([])
+    given = H.to_map(S.getprop(callopts, "ctrl"))
+    if given != nil, do: Enum.each(H.entries(given), fn {k, v} -> S.setprop(ctrl, k, v) end)
     S.setprop(ctrl, "stream", callopts)
 
     ctxmap =
@@ -153,7 +156,7 @@ defmodule ProjectName.EntityBase do
     # materialised items so stream always yields.
     items =
       if S.isfunc(stream_fn) do
-        cleaned(ctx, stream_fn)
+        source(ctx, stream_fn)
       else
         rd = if result != nil, do: S.getprop(result, "resdata"), else: nil
 
@@ -168,6 +171,14 @@ defmodule ProjectName.EntityBase do
     |> Stream.take_while(fn _ -> not (S.isfunc(signal) and signal.() == true) end)
     |> Stream.map(&stream_unwrap/1)
     |> guarded(ctx)
+  end
+
+  # The streaming feature's items. What its function raises leaves through
+  # run_op's catch path; under throw: false the stream is empty.
+  defp source(ctx, stream_fn) do
+    stream_fn.()
+  rescue
+    e -> Pipeline.unexpected(ctx, e, __STACKTRACE__) || []
   end
 
   # The caller iterates after run_op has returned, so what the stream raises

@@ -164,8 +164,10 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
 
     val signal = opts.get("signal")
 
-    var ctrl = Helpers.toMapAny(opts.get("ctrl"))
-    if (ctrl == null) ctrl = new LinkedHashMap[String, Object]()
+    // A copy: the caller's ctrl gains no key, and explain stays its own record.
+    val ctrl = new LinkedHashMap[String, Object]()
+    val callerCtrl = Helpers.toMapAny(opts.get("ctrl"))
+    if (callerCtrl != null) ctrl.putAll(callerCtrl)
     ctrl.put("stream", opts)
 
     val ctxmap = new LinkedHashMap[String, Object]()

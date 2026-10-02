@@ -73,6 +73,21 @@
 
 (defn deleted [ent] (true? (deref (:_deleted ent))))
 
+(defn- unexpected
+  "The catch path every entity call leaves through: an error a hook threw,
+  SDK-shaped or not, never passed through make-error. Nil when the caller
+  switched throwing off."
+  [ctx operr]
+  ;; What a hook throws here must not escape the cleaning below.
+  (let [err (try
+              ; #PreUnexpected-Hook
+              operr
+              (catch Throwable hookerr hookerr))]
+    (core/clean-explain! ctx)
+    (let [cleaned (core/clean-throwable ctx err)]
+      (when-not (= false (core/oget (core/oget ctx :ctrl) :throw))
+        (throw cleaned)))))
+
 (defn- run-op [ctx post-done]
   (try
     ; #PrePoint-Hook
@@ -109,15 +124,7 @@
                                   (post-done)
                                   ((core/uget ctx :done) ctx))))))))))))))))
     (catch Throwable operr
-      ;; What a hook throws here must not escape the cleaning below.
-      (let [err (try
-                  ; #PreUnexpected-Hook
-                  operr
-                  (catch Throwable hookerr hookerr))]
-        ;; An error a hook threw, SDK-shaped or not, never passed through
-        ;; make-error.
-        (core/clean-explain! ctx)
-        (throw (core/clean-throwable ctx err))))))
+      (unexpected ctx operr))))
 
 ;; Streaming operation. Runs `action` (an op name, e.g. "list") through the
 ;; full pipeline and returns a LAZY SEQUENCE of result items, so the
@@ -133,7 +140,9 @@
 ;;   - signal: an optional 0-arg fn; when it returns true iteration stops.
 (defn stream [ent action args callopts]
   (let [callopts (let [m (core/to-map callopts)] (if m m (vs/jm)))
-        ctrl (let [c (core/to-map (vs/getprop callopts "ctrl"))] (if c c (vs/jm)))
+        ;; A copy: the caller's ctrl gains no key, and explain stays its own record.
+        ctrl (let [c (core/to-map (vs/getprop callopts "ctrl"))]
+               (if c (java.util.LinkedHashMap. ^java.util.Map c) (vs/jm)))
         _ (.put ^java.util.Map ctrl "stream" callopts)
         ctxmap (vs/jm "opname" action "ctrl" ctrl
                       "match" (deref (:_match ent)) "data" (deref (:_data ent)))
@@ -167,7 +176,7 @@
                           (vec ((core/oget result :stream)))
                           (let [rd (when result (core/oget result :resdata))]
                             (cond (vs/islist rd) (vec rd) (nil? rd) [] :else [rd]))))
-                  (catch Throwable e (throw (core/clean-throwable ctx e))))]
+                  (catch Throwable e (unexpected ctx e) []))]
       ;; A lazy sequence that checks `signal` between yields.
       (letfn [(lz [xs] (lazy-seq
                          (when (and (seq xs) (not (signalled?)))

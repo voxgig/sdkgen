@@ -116,7 +116,11 @@ let rec make (client : sdk_client) (entopts_in : value) : entity_obj =
    * and signal (a 0-arity fn -> Bool; iteration stops when it returns true). *)
   ent.e_stream <- (fun action args callopts ->
       let callopts = match to_map callopts with Map _ as m -> m | _ -> empty_map () in
-      let ctrl = match to_map (getp callopts "ctrl") with Map _ as m -> m | _ -> empty_map () in
+      (* A copy: the caller's ctrl gains no key, and explain stays its own record. *)
+      let ctrl = empty_map () in
+      (match to_map (getp callopts "ctrl") with
+       | Map _ as given -> List.iter (fun k -> setp ctrl k (getp given k)) (keysof given)
+       | _ -> ());
       setp ctrl "stream" callopts;
       let reqmatch = match to_map args with Map _ as m -> m | _ -> empty_map () in
       let ctx = utility.u_make_context
@@ -142,7 +146,7 @@ let rec make (client : sdk_client) (entopts_in : value) : entity_obj =
             (match result.rt_stream with
              | Some fn -> fn ()
              | None -> (match result.rt_resdata with List r -> !r | v when is_nullish v -> [] | v -> [v]))
-          | None -> []) with e -> unexpected ctx e) in
+          | None -> []) with e -> ignore (unexpected ctx e); []) in
       let rec seq_of l () = match l with
         | [] -> Seq.Nil
         | x :: rest -> if aborted () then Seq.Nil else Seq.Cons (x, seq_of rest) in
