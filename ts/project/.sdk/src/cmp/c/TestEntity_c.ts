@@ -91,9 +91,8 @@ int main(void) {
 
 
 // A failed operation fails a stream as it fails the operation: a transport
-// failure, and a hook that rejects the call. The caller's ctrl stays its own.
-// An invalid request fails with validate's own error, before it is sent. A C
-// hook cannot throw, so there is no throwing-hook case.
+// failure, and a hook that rejects the call. The caller's ctrl stays its own,
+// and an invalid request fails with validate's own error. A C hook cannot throw.
 function failureTests(ident: string, evar: string, entity: ModelEntity, hasList: boolean): string {
   const feature = (name: string) =>
     `!v_is_noval(getp(getp(shared_config(), "feature"), "${name}"))`
