@@ -239,7 +239,13 @@ function clean(ctx, val) {
   }
 
   if (val instanceof Error) {
-    val.message = cleanString(cfg, String(val.message))
+    // Defined, not assigned: a DOMException's message is a getter without
+    // a setter, so assigning throws in strict code and is lost in sloppy.
+    Object.defineProperty(val, 'message', {
+      value: cleanString(cfg, String(val.message)),
+      writable: true,
+      configurable: true,
+    })
     if ('string' === typeof val.stack) {
       val.stack = cleanString(cfg, val.stack)
     }

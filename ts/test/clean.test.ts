@@ -27,6 +27,13 @@ function loadClean(): any {
 }
 
 
+function loadCleanJs(): any {
+  return sandboxLoad(Path.join(TM, 'js', 'src', 'utility', 'CleanUtility.js'), {
+    '../Schema': { OPTSPEC: { clean: CLEAN_DEFAULTS } },
+  })
+}
+
+
 // A context carrying a derived clean block, as makeOptions leaves it.
 function ctxWith(mod: any, over?: any, values?: string[]): any {
   const ctx = { options: { __derived__: { clean: mod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...(over || {}) }) } } }
@@ -164,6 +171,21 @@ describe('clean: the shipped ts utility', () => {
     strictEqual(err.spec.headers.authorization, MASK)
     strictEqual(err.detail, MASK)
   })
+
+
+  // fetch rejects a timed-out or aborted request with a DOMException.
+  for (const lang of ['ts', 'js']) {
+    test(lang + ': a DOMException is cleaned in place, though its message has no setter', () => {
+      const mod = 'ts' === lang ? loadClean() : loadCleanJs()
+      const ctx = ctxWith(mod, {}, ['SECRET-abc123'])
+      const err: any = new DOMException('timed out sending SECRET-abc123', 'TimeoutError')
+      const out = mod.clean(ctx, err)
+      strictEqual(out, err)
+      ok(err instanceof DOMException)
+      strictEqual(err.name, 'TimeoutError')
+      strictEqual(err.message, 'timed out sending ' + MASK)
+    })
+  }
 
 
   test('non-string scalars pass through', () => {
