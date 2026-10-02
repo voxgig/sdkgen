@@ -222,17 +222,19 @@ function fitting(sample: any, schema: any): any {
 }
 
 
-// Schema-shaped data where the definition gives no example: every property,
-// one item per array, the first branch of a union.
+// Schema-shaped data where the definition gives no example: every property, one item
+// per array, a union's first branch, an allOf's objects merged, else a value its parts give.
 function synthesize(schema: any, depth: number): any {
   if (null == schema || 'object' !== typeof schema || depth > 6) return undefined
   if (undefined !== schema.example) return schema.example
   if (Array.isArray(schema.enum) && 0 < schema.enum.length) return schema.enum[0]
 
   if (Array.isArray(schema.allOf)) {
-    const parts = schema.allOf.map((s: any) => synthesize(s, depth + 1))
-      .filter((v: any) => null != v && 'object' === typeof v && !Array.isArray(v))
-    return Object.assign({}, ...parts)
+    const values = schema.allOf.map((s: any) => synthesize(s, depth + 1))
+    const parts = values.filter((v: any) => null != v && 'object' === typeof v && !Array.isArray(v))
+    if (0 < parts.length) return Object.assign({}, ...parts)
+    const declared = declaredValue(schema.allOf)
+    return undefined !== declared ? declared : values.find((v: any) => undefined !== v)
   }
 
   const union = schema.oneOf ?? schema.anyOf
@@ -260,6 +262,18 @@ function synthesize(schema: any, depth: number): any {
       'date' === schema.format ? '2026-01-01' : 'x'
   }
   return undefined
+}
+
+
+// Whichever part declares it: an example, then an enum's first value, then a default.
+function declaredValue(parts: any[]): any {
+  const schemas = parts.filter((part: any) => null != part && 'object' === typeof part)
+  const shown = schemas.find((part: any) => undefined !== part.example ||
+    (Array.isArray(part.examples) && 0 < part.examples.length))
+  if (null != shown) return undefined !== shown.example ? shown.example : shown.examples[0]
+  const listed = schemas.find((part: any) => Array.isArray(part.enum) && 0 < part.enum.length)
+  if (null != listed) return listed.enum[0]
+  return schemas.find((part: any) => undefined !== part.default)?.default
 }
 
 
