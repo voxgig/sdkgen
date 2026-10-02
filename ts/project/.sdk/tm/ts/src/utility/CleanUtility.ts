@@ -236,13 +236,7 @@ function clean(ctx: Context, val: any) {
   }
 
   if (val instanceof Error) {
-    // Defined, not assigned: a DOMException's message is a getter without
-    // a setter, so assigning throws in strict code and is lost in sloppy.
-    Object.defineProperty(val, 'message', {
-      value: cleanString(cfg, String(val.message)),
-      writable: true,
-      configurable: true,
-    })
+    setMessage(val, cleanString(cfg, String(val.message)))
     if ('string' === typeof val.stack) {
       val.stack = cleanString(cfg, val.stack)
     }
@@ -264,6 +258,29 @@ function clean(ctx: Context, val: any) {
   }
 
   return snapshot(cfg, val, undefined, 0, [])
+}
+
+
+// Assigned where assignment works. A DOMException's message is an inherited
+// getter with no setter, which strict code cannot assign, so it is defined
+// on the instance; an own message that can be neither is left as it is.
+function setMessage(err: any, text: string): void {
+  let owner = err
+  let desc = Object.getOwnPropertyDescriptor(owner, 'message')
+  while (null == desc && null != (owner = Object.getPrototypeOf(owner))) {
+    desc = Object.getOwnPropertyDescriptor(owner, 'message')
+  }
+  if (null == desc || desc.writable || null != desc.set) {
+    err.message = text
+  }
+  else if (owner !== err || desc.configurable) {
+    Object.defineProperty(err, 'message', {
+      value: text,
+      writable: true,
+      enumerable: owner === err && !!desc.enumerable,
+      configurable: true,
+    })
+  }
 }
 
 
@@ -304,5 +321,6 @@ export {
   cleanAddSensitive,
   cleanKey,
   makeCleanConfig,
+  setMessage,
   splitvalues,
 }

@@ -34,6 +34,30 @@ function loadCleanJs(): any {
 }
 
 
+// fetch rejects a timed-out or aborted request with a DOMException, and a
+// third-party error class may define its message without `configurable`.
+const ERROR_SHAPES: Record<string, () => any> = {
+  'a DOMException, whose message is a getter with no setter': () =>
+    new DOMException('timed out sending SECRET-abc123', 'TimeoutError'),
+  'an Error whose own message is writable but not configurable': () =>
+    Object.defineProperty(new Error(), 'message', {
+      value: 'timed out sending SECRET-abc123', writable: true }),
+}
+
+
+function loadMakeError(lang: string): { cleanmod: any, makeError: any } {
+  const cleanmod = 'ts' === lang ? loadClean() : loadCleanJs()
+  const { makeError } = sandboxLoad(
+    Path.join(TM, lang, 'src', 'utility', 'MakeErrorUtility.' + lang), {
+      '../types': {},
+      '../Result': { Result: class { } },
+      './CleanUtility': cleanmod,
+      './StructUtility': { clone: struct.clone, delprop: struct.delprop },
+    })
+  return { cleanmod, makeError }
+}
+
+
 // A context carrying a derived clean block, as makeOptions leaves it.
 function ctxWith(mod: any, over?: any, values?: string[]): any {
   const ctx = { options: { __derived__: { clean: mod.makeCleanConfig({ ...CLEAN_DEFAULTS, ...(over || {}) }) } } }
@@ -173,18 +197,18 @@ describe('clean: the shipped ts utility', () => {
   })
 
 
-  // fetch rejects a timed-out or aborted request with a DOMException.
   for (const lang of ['ts', 'js']) {
-    test(lang + ': a DOMException is cleaned in place, though its message has no setter', () => {
-      const mod = 'ts' === lang ? loadClean() : loadCleanJs()
-      const ctx = ctxWith(mod, {}, ['SECRET-abc123'])
-      const err: any = new DOMException('timed out sending SECRET-abc123', 'TimeoutError')
-      const out = mod.clean(ctx, err)
-      strictEqual(out, err)
-      ok(err instanceof DOMException)
-      strictEqual(err.name, 'TimeoutError')
-      strictEqual(err.message, 'timed out sending ' + MASK)
-    })
+    for (const [shape, make] of Object.entries(ERROR_SHAPES)) {
+      test(lang + ': ' + shape + ' is cleaned in place', () => {
+        const mod = 'ts' === lang ? loadClean() : loadCleanJs()
+        const ctx = ctxWith(mod, {}, ['SECRET-abc123'])
+        const err = make()
+        const name = err.name
+        strictEqual(mod.clean(ctx, err), err)
+        strictEqual(err.name, name)
+        strictEqual(err.message, 'timed out sending ' + MASK)
+      })
+    }
   }
 
 
@@ -282,6 +306,32 @@ describe('clean: the shipped ts utility', () => {
     deepStrictEqual(mod.splitvalues(['x', 1, 'y']), ['x', 'y'])
     deepStrictEqual(mod.splitvalues(undefined), [])
   })
+})
+
+
+describe('clean: the error makeError throws', () => {
+
+  for (const lang of ['ts', 'js']) {
+    for (const [shape, make] of Object.entries(ERROR_SHAPES)) {
+      test(lang + ': ' + shape + ' is prefixed and cleaned, not replaced', () => {
+        const { cleanmod, makeError } = loadMakeError(lang)
+        const err = make()
+        const ctx: any = { ...ctxWith(cleanmod, {}, ['SECRET-abc123']),
+          op: { name: 'load' }, ctrl: { throw: true }, spec: {}, result: { err } }
+        let thrown: any = null
+        try {
+          makeError(ctx)
+        }
+        catch (e: any) {
+          thrown = e
+        }
+        strictEqual(thrown, err)
+        strictEqual(err.message, 'ProjectNameSDK: load: timed out sending ' + MASK)
+        ok(!String(err.stack).includes('SECRET-abc123'))
+        strictEqual(err.status, -1)
+      })
+    }
+  }
 })
 
 

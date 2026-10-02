@@ -2,7 +2,7 @@
 import { Result, Context } from '../types'
 
 
-import { clean } from './CleanUtility'
+import { clean, setMessage } from './CleanUtility'
 
 import { clone, delprop } from './StructUtility'
 
@@ -31,7 +31,7 @@ function makeError(ctx: Context, err?: any) {
   }
 
   const errmsg = err.message || 'unknown error'
-  err.message = 'ProjectNameSDK: ' + op.name + ': ' + errmsg
+  setMessage(err, 'ProjectNameSDK: ' + op.name + ': ' + errmsg)
 
   // Reachable for a debugger, invisible to a serialiser.
   if (null != err.ctx) {
