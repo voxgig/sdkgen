@@ -14,7 +14,7 @@ src/cmp/c/EntityTypes_c.ts 8668158135d0
 src/cmp/c/Entity_c.ts 9f41087a24e4
 src/cmp/c/Gitignore_c.ts 1c1cfa982fef
 src/cmp/c/MainEntity_c.ts d6e780384b49
-src/cmp/c/Main_c.ts e4157d34104f
+src/cmp/c/Main_c.ts c1dce7783690
 src/cmp/c/Package_c.ts e1fcd4b774ba
 src/cmp/c/PrepareAuth_c.ts 324cf46cc65f
 src/cmp/c/ReadmeEntity_c.ts b6d4fde34d49
@@ -129,7 +129,7 @@ src/cmp/clojure/EntityOperation_clojure.ts 89f82bc53713
 src/cmp/clojure/Entity_clojure.ts f0756ed21b8e
 src/cmp/clojure/Gitignore_clojure.ts 02def6714f53
 src/cmp/clojure/MainEntity_clojure.ts 7c402f26036e
-src/cmp/clojure/Main_clojure.ts b9be0fb330e2
+src/cmp/clojure/Main_clojure.ts 12e7f6f00f73
 src/cmp/clojure/Package_clojure.ts d675493d467e
 src/cmp/clojure/PrepareAuth_clojure.ts d472b4fc98ab
 src/cmp/clojure/ReadmeEntity_clojure.ts 30ca3dea7d43
@@ -252,7 +252,7 @@ src/cmp/cpp/EntityTypes_cpp.ts 39b9c7675548
 src/cmp/cpp/Entity_cpp.ts 58549e5990d6
 src/cmp/cpp/Gitignore_cpp.ts 164c931b3983
 src/cmp/cpp/MainEntity_cpp.ts e419d3bb76ae
-src/cmp/cpp/Main_cpp.ts 6587ed526c9b
+src/cmp/cpp/Main_cpp.ts 1ecaff97452a
 src/cmp/cpp/Package_cpp.ts e1fcd4b774ba
 src/cmp/cpp/PrepareAuth_cpp.ts beabc288cd34
 src/cmp/cpp/ReadmeEntity_cpp.ts e9558b862472
@@ -327,7 +327,7 @@ src/cmp/csharp/EntityTypes_csharp.ts c2d5e1784cb3
 src/cmp/csharp/Entity_csharp.ts 9989ea860d04
 src/cmp/csharp/Gitignore_csharp.ts bd603cc2c5c7
 src/cmp/csharp/MainEntity_csharp.ts 1c24807ab2fe
-src/cmp/csharp/Main_csharp.ts e7ff276c24b3
+src/cmp/csharp/Main_csharp.ts 45456e223adc
 src/cmp/csharp/Package_csharp.ts 403c86c3e8f8
 src/cmp/csharp/PrepareAuth_csharp.ts 000b32ce4738
 src/cmp/csharp/ReadmeEntity_csharp.ts 05356d2b0bd6
@@ -436,7 +436,7 @@ src/cmp/elixir/EntityTypes_elixir.ts 815de2a62c19
 src/cmp/elixir/Entity_elixir.ts c30a8cfd1fee
 src/cmp/elixir/Gitignore_elixir.ts d98ec8dd42b0
 src/cmp/elixir/MainEntity_elixir.ts 8f2d02c0bb9f
-src/cmp/elixir/Main_elixir.ts 63b79499da17
+src/cmp/elixir/Main_elixir.ts d12f5e9c14a6
 src/cmp/elixir/Package_elixir.ts d1da632e37fe
 src/cmp/elixir/PrepareAuth_elixir.ts 5fb5e655976f
 src/cmp/elixir/ReadmeEntity_elixir.ts 39314a4bc7d5
@@ -509,7 +509,7 @@ src/cmp/go/EntityTypes_go.ts f25d0e7a84f2
 src/cmp/go/Entity_go.ts 18407461f03e
 src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts 01154abb3c65
-src/cmp/go/Main_go.ts c86c9492fb7b
+src/cmp/go/Main_go.ts d2d413b873c7
 src/cmp/go/Package_go.ts 111b2b904994
 src/cmp/go/PrepareAuth_go.ts 0d27b23e4552
 src/cmp/go/ReadmeEntity_go.ts 76467eb192a5
@@ -644,7 +644,7 @@ src/cmp/java/EntityTypes_java.ts 0d2a9a7ae14d
 src/cmp/java/Entity_java.ts b2c3e59ae49f
 src/cmp/java/Gitignore_java.ts 549792550319
 src/cmp/java/MainEntity_java.ts 3f146ec80ca7
-src/cmp/java/Main_java.ts 096274899c8d
+src/cmp/java/Main_java.ts e66b76cce845
 src/cmp/java/Package_java.ts 2ed76b17901b
 src/cmp/java/PrepareAuth_java.ts 2ec067748708
 src/cmp/java/ReadmeEntity_java.ts 9ec4399cbc63
@@ -761,7 +761,7 @@ src/cmp/js/EntityTypes_js.ts d2b6cd2ca8c8
 src/cmp/js/Entity_js.ts 9993def32681
 src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
-src/cmp/js/Main_js.ts 2cf0c266ab75
+src/cmp/js/Main_js.ts 5964cdac192d
 src/cmp/js/Package_js.ts fc08bacc5431
 src/cmp/js/PrepareAuth_js.ts 66f355b798bc
 src/cmp/js/ReadmeEntity_js.ts c7b481415ab3
@@ -884,7 +884,7 @@ src/cmp/kotlin/EntityTypes_kotlin.ts 2580ad963ffd
 src/cmp/kotlin/Entity_kotlin.ts f0c61298222a
 src/cmp/kotlin/Gitignore_kotlin.ts f164b2f3bdde
 src/cmp/kotlin/MainEntity_kotlin.ts bca2e71d5f00
-src/cmp/kotlin/Main_kotlin.ts 76f18bd4887e
+src/cmp/kotlin/Main_kotlin.ts adb4c559efa5
 src/cmp/kotlin/Package_kotlin.ts caea8d967fed
 src/cmp/kotlin/PrepareAuth_kotlin.ts 155dc2b8abef
 src/cmp/kotlin/ReadmeEntity_kotlin.ts b6f2c831010c
@@ -977,7 +977,7 @@ src/cmp/lua/EntityTypes_lua.ts f30b82ceb5b6
 src/cmp/lua/Entity_lua.ts ae1915c8f58b
 src/cmp/lua/Gitignore_lua.ts ddf4d3003936
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
-src/cmp/lua/Main_lua.ts bd521b9f657b
+src/cmp/lua/Main_lua.ts 12d209201ab5
 src/cmp/lua/Package_lua.ts ad22ea96b732
 src/cmp/lua/PrepareAuth_lua.ts eb840ff3430a
 src/cmp/lua/ReadmeEntity_lua.ts 65abbe121f16
@@ -1084,7 +1084,7 @@ src/cmp/ocaml/EntityOperation_ocaml.ts 37079c1c863e
 src/cmp/ocaml/Entity_ocaml.ts ea7ca4b94c5b
 src/cmp/ocaml/Gitignore_ocaml.ts 17f97d494254
 src/cmp/ocaml/MainEntity_ocaml.ts ab4c2d6c3549
-src/cmp/ocaml/Main_ocaml.ts 74597ef7acbf
+src/cmp/ocaml/Main_ocaml.ts 017cbbaf15a1
 src/cmp/ocaml/Package_ocaml.ts 88cb9d73a295
 src/cmp/ocaml/PrepareAuth_ocaml.ts bf1eea30779f
 src/cmp/ocaml/ReadmeEntity_ocaml.ts aab1609ad5ee
@@ -1145,7 +1145,7 @@ src/cmp/perl/EntityOperation_perl.ts 8d50a8beeb42
 src/cmp/perl/Entity_perl.ts 6d69e2af808c
 src/cmp/perl/Gitignore_perl.ts cef200d91d8f
 src/cmp/perl/MainEntity_perl.ts 49d50e77add8
-src/cmp/perl/Main_perl.ts d48e950b6b69
+src/cmp/perl/Main_perl.ts dbbd7bcdcdde
 src/cmp/perl/Package_perl.ts 2ebfd41530af
 src/cmp/perl/PrepareAuth_perl.ts bd67985dc0b7
 src/cmp/perl/ReadmeEntity_perl.ts 28642f172828
@@ -1250,7 +1250,7 @@ src/cmp/php/EntityTypes_php.ts b31685764a5c
 src/cmp/php/Entity_php.ts 44b5f53db2e9
 src/cmp/php/Gitignore_php.ts e6379c0edbe7
 src/cmp/php/MainEntity_php.ts 7546376a4b42
-src/cmp/php/Main_php.ts dbd3cdb22fcf
+src/cmp/php/Main_php.ts 7cf40a8baf83
 src/cmp/php/Package_php.ts 807fc4e5a993
 src/cmp/php/PrepareAuth_php.ts e7fe6f896bf5
 src/cmp/php/ReadmeEntity_php.ts fc1191440ab8
@@ -1354,7 +1354,7 @@ src/cmp/py/EntityTypes_py.ts ebc17adf1a07
 src/cmp/py/Entity_py.ts 882145a9c936
 src/cmp/py/Gitignore_py.ts 07f7135b0381
 src/cmp/py/MainEntity_py.ts 853d7533f8fb
-src/cmp/py/Main_py.ts c8090bc018ef
+src/cmp/py/Main_py.ts 5630f0feb88c
 src/cmp/py/Package_py.ts f64acebbf344
 src/cmp/py/PrepareAuth_py.ts 1afe6ae8a99d
 src/cmp/py/ReadmeEntity_py.ts fd64bff3c546
@@ -1487,7 +1487,7 @@ src/cmp/rb/EntityTypes_rb.ts c70621f44e27
 src/cmp/rb/Entity_rb.ts c1e1f85b9859
 src/cmp/rb/Gitignore_rb.ts d6ab9def4134
 src/cmp/rb/MainEntity_rb.ts a88eedc19290
-src/cmp/rb/Main_rb.ts 7525d2565c75
+src/cmp/rb/Main_rb.ts d92e24cb896b
 src/cmp/rb/Package_rb.ts d24de8455ef7
 src/cmp/rb/PrepareAuth_rb.ts 9735d3d86963
 src/cmp/rb/ReadmeEntity_rb.ts 3cdc2c1073b4
@@ -1593,7 +1593,7 @@ src/cmp/rust/EntityTypes_rust.ts c4e8e9716b8e
 src/cmp/rust/Entity_rust.ts d3888b06a52a
 src/cmp/rust/Gitignore_rust.ts 285a6decc9dd
 src/cmp/rust/MainEntity_rust.ts cfab71599f0a
-src/cmp/rust/Main_rust.ts 2f22e63791e1
+src/cmp/rust/Main_rust.ts 21757b4e29ce
 src/cmp/rust/Package_rust.ts 2803ef7d34a0
 src/cmp/rust/PrepareAuth_rust.ts 1c02ceecd66e
 src/cmp/rust/ReadmeEntity_rust.ts 7f8faa7c795f
@@ -1711,7 +1711,7 @@ src/cmp/scala/EntityTypes_scala.ts 3e19162e3355
 src/cmp/scala/Entity_scala.ts 8f2825f036c8
 src/cmp/scala/Gitignore_scala.ts 4c75b5801ca5
 src/cmp/scala/MainEntity_scala.ts 911328e9d2ca
-src/cmp/scala/Main_scala.ts bf561711dcc2
+src/cmp/scala/Main_scala.ts 5f8d4af4b296
 src/cmp/scala/Package_scala.ts 8ae04e6b348b
 src/cmp/scala/PrepareAuth_scala.ts 5ca14bd9aed9
 src/cmp/scala/ReadmeEntity_scala.ts f938d6034125
@@ -1875,7 +1875,7 @@ src/cmp/swift/EntityTypes_swift.ts e64fe36af143
 src/cmp/swift/Entity_swift.ts 251e4b55da25
 src/cmp/swift/Gitignore_swift.ts 335a862c06a8
 src/cmp/swift/MainEntity_swift.ts a077a33118e1
-src/cmp/swift/Main_swift.ts 5ca73969cba1
+src/cmp/swift/Main_swift.ts 2117f9682f71
 src/cmp/swift/Package_swift.ts 3867408088b4
 src/cmp/swift/PrepareAuth_swift.ts 92d287f34c55
 src/cmp/swift/ReadmeEntity_swift.ts 382b501d91d9
@@ -1975,7 +1975,7 @@ src/cmp/ts/EntityTypes_ts.ts f0f532ae4826
 src/cmp/ts/Entity_ts.ts f06e9476d5a6
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
-src/cmp/ts/Main_ts.ts fcb39dadee1f
+src/cmp/ts/Main_ts.ts 1220d104f55d
 src/cmp/ts/Package_ts.ts 8f2b744f085e
 src/cmp/ts/PrepareAuth_ts.ts b4927c7fef70
 src/cmp/ts/ReadmeEntity_ts.ts a15c2fdf8490
@@ -2101,7 +2101,7 @@ src/cmp/zig/EntityOperation_zig.ts 04bd390df007
 src/cmp/zig/Entity_zig.ts 0740088c5f9a
 src/cmp/zig/Gitignore_zig.ts ec49760abeae
 src/cmp/zig/MainEntity_zig.ts d0d2ec1fe12a
-src/cmp/zig/Main_zig.ts 7f43e88e2fad
+src/cmp/zig/Main_zig.ts 8f91bc6af36f
 src/cmp/zig/Package_zig.ts 3e14e57fa638
 src/cmp/zig/PrepareAuth_zig.ts 64728630b59d
 src/cmp/zig/ReadmeEntity_zig.ts ed14566bfe0f

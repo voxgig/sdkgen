@@ -993,6 +993,27 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // A target that cannot trim keeps the feature itself, never its groups.
+  test('a declared feature that is off ships no source, tests or plugin groups', async () => {
+    const SECRETS = /(^|\/)(secrets\/|secrets(_feature)?\.[a-z]+$|SecretsFeature\.[a-z]+$)/
+    const shipped: string[] = []
+
+    for (const target of allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))) {
+      const off = 'main: kit: feature: secrets: { active: false plugin: vault: active: true }'
+      const trims = false !== makeModel([target]).main[KIT].target[target].feature?.trim
+      const out = await generate([target], undefined, off, undefined, ['test', 'log', 'secrets'])
+
+      for (const [path] of filesFor(out, target)) {
+        if (/hashicorp/i.test(path) || (trims && SECRETS.test(path.slice(target.length)))) {
+          shipped.push(path)
+        }
+      }
+    }
+
+    deepStrictEqual(shipped, [], 'files of a feature the model switches off')
+  })
+
+
   // Root.ts (via makeRoot) and every Test_<lang>.ts each read the raw,
   // unfiltered entity map independently, ignoring `active`.
   test('an inactive entity generates no source file and no test file', async () => {

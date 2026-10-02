@@ -12,10 +12,12 @@ exports.findFeatureSources = findFeatureSources;
 exports.featureExcludes = featureExcludes;
 exports.fullsetExcludes = fullsetExcludes;
 exports.srcFeatureExcludes = srcFeatureExcludes;
+exports.inactiveFeatureExcludes = inactiveFeatureExcludes;
 exports.pluginExcludes = pluginExcludes;
 exports.pluginExcludesFor = pluginExcludesFor;
 const node_path_1 = __importDefault(require("node:path"));
 const apidef_1 = require("@voxgig/apidef");
+const applicability_1 = require("./applicability");
 const definition_1 = require("./definition");
 const junk_1 = require("./junk");
 const FEATURE_DIR = 'feature';
@@ -105,6 +107,44 @@ function srcFeatureExcludes(model) {
         .filter((name) => null == active[name])
         .map((name) => new RegExp('(^|/)src/feature/' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '/'));
 }
+// Generation trims what `target add` would: each declared feature this target
+// does not run, tests included, and the cross-feature suite with it. Paths
+// are relative to `from`, the tree a Copy reads.
+function inactiveFeatureExcludes(ctx$, target, from) {
+    const model = ctx$?.model;
+    if (null == model || null == target?.name || false === target.feature?.trim) {
+        return [];
+    }
+    const declared = Object.keys((0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.feature`, { required: false, only_active: false }) || {});
+    const on = (0, applicability_1.targetFeatures)(model, target);
+    const off = new Set(declared.filter((name) => null == on[name])
+        .map((name) => name.toLowerCase()));
+    if (0 === off.size) {
+        return [];
+    }
+    const root = 'tm/' + target.name;
+    const drop = findFeatureSources(ctx$.fs(), root, declared.map((name) => name.toLowerCase()))
+        .filter((s) => off.has(s.name));
+    if (0 === drop.length) {
+        return [];
+    }
+    const prefix = node_path_1.default.posix.relative(root, from ?? root);
+    const within = (path) => '' === prefix ? path :
+        path.startsWith(prefix + '/') ? path.slice(prefix.length + 1) : null;
+    const sources = [];
+    for (const s of drop) {
+        const path = within(s.path);
+        if (null != path)
+            sources.push({ ...s, path });
+    }
+    const fullset = [];
+    for (const p of (target.feature?.fullset || [])) {
+        const path = within(String(p));
+        if (null != path)
+            fullset.push(path);
+    }
+    return [...featureExcludes(sources), ...fullsetExcludes(fullset)];
+}
 function pluginExcludesFor(model, fname) {
     if (null == model || null == fname) {
         return [];
@@ -131,12 +171,14 @@ function pluginExcludesFor(model, fname) {
     return out;
 }
 function pluginExcludes(model) {
+    const declared = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.feature`, { required: false, only_active: false }) || {};
     const active = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.feature`, { required: false }) || {};
     const out = [];
     const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    for (const fname of Object.keys(active)) {
+    for (const fname of Object.keys(declared)) {
         const all = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.feature.${fname}.plugin`, { required: false, only_active: false }) || {};
-        const on = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.feature.${fname}.plugin`, { required: false }) || {};
+        // Every group of a feature that is off is off.
+        const on = null == active[fname] ? {} : (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.feature.${fname}.plugin`, { required: false }) || {};
         for (const pname of Object.keys(all)) {
             if (null != on[pname])
                 continue;
