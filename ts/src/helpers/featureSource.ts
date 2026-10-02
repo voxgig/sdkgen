@@ -3,6 +3,7 @@ import Path from 'node:path'
 
 import { KIT, getModelPath } from '@voxgig/apidef'
 
+import { targetFeatures } from './applicability'
 import { definitionNames } from './definition'
 
 import { isJunk } from './junk'
@@ -154,6 +155,54 @@ function srcFeatureExcludes(model: any): RegExp[] {
 }
 
 
+// Generation trims what `target add` would: each declared feature this target
+// does not run, tests included, and the cross-feature suite with it. Paths
+// are relative to `from`, the tree a Copy reads.
+function inactiveFeatureExcludes(ctx$: any, target: any, from?: string): RegExp[] {
+  const model = ctx$?.model
+  if (null == model || null == target?.name || false === target.feature?.trim) {
+    return []
+  }
+
+  const declared = Object.keys(getModelPath(model, `main.${KIT}.feature`,
+    { required: false, only_active: false }) || {})
+  const on = targetFeatures(model, target)
+  const off = new Set(declared.filter((name: string) => null == on[name])
+    .map((name: string) => name.toLowerCase()))
+
+  if (0 === off.size) {
+    return []
+  }
+
+  const root = 'tm/' + target.name
+  const drop = findFeatureSources(ctx$.fs(), root,
+    declared.map((name: string) => name.toLowerCase()))
+    .filter((s: FeatureSource) => off.has(s.name))
+
+  if (0 === drop.length) {
+    return []
+  }
+
+  const prefix = Path.posix.relative(root, from ?? root)
+  const within = (path: string): string | null => '' === prefix ? path :
+    path.startsWith(prefix + '/') ? path.slice(prefix.length + 1) : null
+
+  const sources: FeatureSource[] = []
+  for (const s of drop) {
+    const path = within(s.path)
+    if (null != path) sources.push({ ...s, path })
+  }
+
+  const fullset: string[] = []
+  for (const p of (target.feature?.fullset || [])) {
+    const path = within(String(p))
+    if (null != path) fullset.push(path)
+  }
+
+  return [...featureExcludes(sources), ...fullsetExcludes(fullset)]
+}
+
+
 function pluginExcludesFor(model: any, fname: string): RegExp[] {
   if (null == model || null == fname) {
     return []
@@ -191,17 +240,20 @@ function pluginExcludesFor(model: any, fname: string): RegExp[] {
 
 
 function pluginExcludes(model: any): RegExp[] {
+  const declared = getModelPath(model, `main.${KIT}.feature`,
+    { required: false, only_active: false }) || {}
   const active = getModelPath(model, `main.${KIT}.feature`,
     { required: false }) || {}
 
   const out: RegExp[] = []
   const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-  for (const fname of Object.keys(active)) {
+  for (const fname of Object.keys(declared)) {
     const all = getModelPath(model,
       `main.${KIT}.feature.${fname}.plugin`,
       { required: false, only_active: false }) || {}
-    const on = getModelPath(model,
+    // Every group of a feature that is off is off.
+    const on = null == active[fname] ? {} : getModelPath(model,
       `main.${KIT}.feature.${fname}.plugin`,
       { required: false }) || {}
 
@@ -251,6 +303,7 @@ export {
   featureExcludes,
   fullsetExcludes,
   srcFeatureExcludes,
+  inactiveFeatureExcludes,
   pluginExcludes,
   pluginExcludesFor,
 }

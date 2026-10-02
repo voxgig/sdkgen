@@ -79,6 +79,14 @@ function definitionPlan(ctx$) {
                     const def = params.find((p) => 'query' === p?.in && (arg.or || arg.n) === p?.name);
                     selected[arg.n] = scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'v1';
                 }
+                // Create and update send their input as the body: only a match has a query.
+                const queryArgs = 'create' === op || 'update' === op ? [] :
+                    (point.g?.query || [])
+                        .filter((arg) => undefined !== selected[arg.n] &&
+                        !args.some((a) => a.name === arg.n) &&
+                        !headers.some((h) => h.name === arg.n))
+                        .map((arg) => ({ name: arg.n, wire: String(arg.or || arg.n) }))
+                        .filter((q) => params.some((p) => 'query' === p?.in && q.wire === p?.name));
                 const success = successResponse(facts.responses);
                 const media = null == success ? undefined : jsonMedia(success.response);
                 plan.push({
@@ -92,6 +100,7 @@ function definitionPlan(ctx$) {
                     select: selected,
                     headers,
                     query: params.filter((p) => 'query' === p?.in).map((p) => p.name),
+                    queryArgs,
                     auth: unchecked ? null : credentialSets(facts, own),
                     status: success?.status ?? 200,
                     sample: null == media ? null : boundedSample(fitting(sampleOf(media), media.schema)),

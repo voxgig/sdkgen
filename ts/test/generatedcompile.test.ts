@@ -1527,6 +1527,29 @@ namespace {
     })
 
 
+  // `php -l` reads one file at a time, and PHP checks an override against
+  // its parent only when the class loads.
+  test('php: an SDK with every feature active loads', async (t) => {
+    const php = toolchain('php')
+    if (null == php) {
+      return t.skip('no php toolchain here')
+    }
+
+    const features = Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'feature'))
+      .filter((f: string) => f.endsWith('.aontu') && 'feature-index.aontu' !== f)
+      .map((f: string) => f.replace(/\.aontu$/, ''))
+    const sdkroot = Path.join(tmp, 'php-every-feature')
+    await generateTo('php', sdkroot,
+      features.map((f: string) => 'main: kit: feature: ' + f + ': active: true').join('\n'),
+      features)
+
+    const load = run(php, ['-r',
+      'require "demo_sdk.php"; echo count(get_declared_classes()), " classes\\n";'], sdkroot)
+    ok(load.ok && /\d+ classes/.test(load.out),
+      'the php SDK does not load with every feature active:\n' + tail(load.out))
+  })
+
+
   test('clojure: the secrets feature runs with the feature active', async (t) => {
     const clj = toolchain('clojure')
     if (null == clj) {
@@ -1682,6 +1705,12 @@ function inertLine(name: string): RegExp {
 // Sections of the fixture whose feature the lane does NOT generate, to pin
 // the inert line. Every other section must run.
 const CORPUS_INERT = ['audit']
+
+// A case that composes a feature the SDK lacks is skipped, by name, while the
+// rest of its section runs.
+const SKIPPED_CASE = 'a case composing a feature the SDK lacks is skipped'
+const SKIPPED_LINE = new RegExp('skip "' + SKIPPED_CASE +
+  '": needs the audit feature, which this SDK does not generate')
 
 
 // Output that means the toolchain cannot run here, rather than the generated
@@ -3241,6 +3270,14 @@ describe('the feature corpus runs from a generated SDK', () => {
             'the ' + lane.target + ' corpus ran zero feature.' + name +
             ' cases:\n' + tail(ran.out))
         }
+
+        ok(SKIPPED_LINE.test(ran.out),
+          'the ' + lane.target + ' corpus runner did not skip, by name, a case ' +
+          'composing a feature the SDK does not generate:\n' + tail(ran.out))
+        const retry = ran.out.match(ranLine('retry'))!
+        ok(Number(retry[1]) < Number(retry[2]),
+          'the ' + lane.target + ' corpus runner counted the skipped case as run: ' +
+          retry[0])
       })
   }
 
@@ -3288,6 +3325,16 @@ const CORPUS_FIXTURE: { feature: Record<string, any> } = {
             ],
             op: [{ op: '#OP1', err: true }],
             out: { attempts: 1 },
+          },
+          {
+            // Composes a feature no lane generates: skipped, never run.
+            name: SKIPPED_CASE,
+            feature: [
+              { name: 'audit', active: true },
+              { name: 'retry', active: true, retries: 1, minDelay: 1, jitter: false },
+            ],
+            op: [{ op: '#OP1' }],
+            out: { attempts: 99 },
           },
         ],
       },

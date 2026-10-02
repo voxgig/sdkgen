@@ -37,6 +37,15 @@ function makeUrl(ctx) {
     }
   }
 
+  let qsep = '?'
+  for (let [key, val] of items(spec.query)) {
+    if (null != val) {
+      url += qsep + escurl(key) + '=' + escurl(val)
+      qsep = '&'
+      resmatch[key] = val
+    }
+  }
+
   result.resmatch = resmatch
 
   return url

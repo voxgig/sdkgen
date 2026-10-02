@@ -8,6 +8,7 @@ import {
   isHttpBasicAuth,
   resolveAuthIn,
   resolveAuthName,
+  targetFeatures,
 } from '@voxgig/sdkgen'
 
 
@@ -31,6 +32,10 @@ const TestClean = cmp(function TestClean(props: any) {
     basic: isHttpBasicAuth(model),
   }
 
+  // CostRecord is declared by the cost feature's source, which ships only
+  // when the model selects the feature.
+  const cost = null != targetFeatures(model, target).cost
+
   // Same order the ts sweep tries: list, then load, then the rest.
   const rank: Record<string, number> = { list: 0, load: 1 }
   const candidates = each(entityCollection(model))
@@ -47,7 +52,7 @@ const TestClean = cmp(function TestClean(props: any) {
 
   // Inside Tests/<Name>SdkTests already: Test_swift.ts opens those folders.
   File({ name: 'CleanTest.' + target.ext }, () =>
-    Content(render(model.const.Name, auth, candidates)))
+    Content(render(model.const.Name, auth, candidates, cost)))
 })
 
 
@@ -71,6 +76,7 @@ function render(
   Name: string,
   auth: { suppressed: boolean, where: string, name: string, basic: boolean },
   candidates: { name: string, Name: string, ops: string[], params: Record<string, string[]> }[],
+  cost: boolean,
 ): string {
   const swiftList = (items: string[]) => '[' + items.map((i) => swiftString(i)).join(', ') + ']'
   const candidateLines = candidates.map((c) =>
@@ -352,11 +358,11 @@ final class ${Name}CleanTest: XCTestCase {
     if hasFeature("telemetry") {
       feature.entries["telemetry"] = .map(vm(("active", .bool(true)), ("exporter", .nat(capture("telemetry")))))
     }
-    if hasFeature("cost") {
+${cost ? `    if hasFeature("cost") {
       let sink: (CostRecord) -> Void = { rec in box.sinks += formsOf("cost", rec) }
       feature.entries["cost"] = .map(vm(("active", .bool(true)), ("sink", .nat(sink))))
     }
-    if hasFeature("metrics") {
+` : ''}    if hasFeature("metrics") {
       feature.entries["metrics"] = .map(vm(("active", .bool(true))))
     }
     if hasFeature("clienttrack") {

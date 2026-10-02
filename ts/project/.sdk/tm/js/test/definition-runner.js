@@ -66,6 +66,10 @@ async function runDefinitionPoint(SDK, point) {
       'query parameter not in the definition: ' + key)
   }
 
+  for (const q of point.queryArgs || []) {
+    assert(url.searchParams.has(q.wire), 'query parameter not sent: ' + q.wire)
+  }
+
   // From the apikey alone, placed as the definition's security scheme says.
   if (null != point.auth && 0 < point.auth.length) {
     const headers = new Headers(init.headers)

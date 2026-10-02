@@ -15,7 +15,8 @@ declare function findFeatureSources(fs: any, tmfolder: string, available: string
 declare function featureExcludes(sources: FeatureSource[]): RegExp[];
 declare function fullsetExcludes(paths: string[]): RegExp[];
 declare function srcFeatureExcludes(model: any): RegExp[];
+declare function inactiveFeatureExcludes(ctx$: any, target: any, from?: string): RegExp[];
 declare function pluginExcludesFor(model: any, fname: string): RegExp[];
 declare function pluginExcludes(model: any): RegExp[];
 export type { FeatureSource, FeatureEntry, };
-export { BASE_FEATURE, featureOf, featureShaped, availableFeatures, findFeatureEntries, findFeatureSources, featureExcludes, fullsetExcludes, srcFeatureExcludes, pluginExcludes, pluginExcludesFor, };
+export { BASE_FEATURE, featureOf, featureShaped, availableFeatures, findFeatureEntries, findFeatureSources, featureExcludes, fullsetExcludes, srcFeatureExcludes, inactiveFeatureExcludes, pluginExcludes, pluginExcludesFor, };
