@@ -1659,7 +1659,7 @@ tm/rust/tests/primary_utility_test.rs 75f520f9ec6a
 tm/rust/tests/sdk-test-control.json 8e1530378d2f
 tm/rust/tests/struct_utility_test.rs e19a58dc8fad
 tm/rust/tests/vendor/omni/json.rs 93db9e411eab
-tm/rust/tests/vendor/omni/mod.rs 23c7539442bd
+tm/rust/tests/vendor/omni/mod.rs 0399d7e2d533
 tm/rust/tests/vendor/omni/regex.rs d6601dd5334d
 tm/rust/tests/vendor/omni/runner.rs 4764724087ae
 tm/rust/tests/vendor/omni/util.rs a28f17130190

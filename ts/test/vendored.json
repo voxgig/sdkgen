@@ -315,8 +315,14 @@
      ]
     },
     "tm/rust/tests/vendor/omni/mod.rs": {
-     "sha256": "23c7539442bdaa5465943d474c20ca98b1258a680c376eb24c69980e91ba118b",
-     "upstream": "rust/src/lib.rs"
+     "sha256": "0399d7e2d533448979bbd3f56f39a5750d58a995c117d09cbb05c003cc213679",
+     "upstream": "rust/src/lib.rs",
+     "adapt": [
+      {
+       "from": "#![doc = include_str!(\"../COMMENT-NOTES.md\")]",
+       "to": ""
+      }
+     ]
     },
     "tm/rust/tests/vendor/omni/regex.rs": {
      "sha256": "d6601dd5334dd557a5565a0d9967db063c4e8a33708121001725dd935abc901b",
@@ -4749,7 +4755,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/minivault.rs": {
-     "sha256": "764549bfcbd860281b7392d93858d3c6d7ebed0a2390d66807357ac8f40fc340",
+     "sha256": "422bcbc3fb2b4fb149d33e71eeba702c8f095ec9467a247118cf084b58165c8c",
      "upstream": "rust/plugins/minivault/src/lib.rs",
      "adapt": [
       {
@@ -4759,6 +4765,10 @@
       {
        "from": "use voxgig_sekreto::",
        "to": "use crate::feature::secrets::sekreto::"
+      },
+      {
+       "from": "#![doc = include_str!(\"../COMMENT-NOTES.md\")]",
+       "to": ""
       },
       {
        "from": "use format::",

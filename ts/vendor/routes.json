@@ -417,6 +417,12 @@
    },
    "adapt": [
     {
+     "note": "The crate root pulls its docs from a COMMENT-NOTES.md beside src/, which is not vendored; as a module the path resolves to a file that is not there.",
+     "match": "vendor/omni/mod\\.rs$",
+     "from": "#![doc = include_str!(\"../COMMENT-NOTES.md\")]",
+     "to": ""
+    },
+    {
      "match": "vendor/omni/runner\\.rs$",
      "from": "use crate::json::{self, Json};",
      "to": "use super::json::{self, Json};"
@@ -1858,6 +1864,12 @@
      "match": "feature/secrets/sekreto/mod\\.rs$",
      "from": "pub use voxgig_plugin;",
      "to": "pub use super::plugin as voxgig_plugin;"
+    },
+    {
+     "note": "The crate root pulls its docs from a COMMENT-NOTES.md beside src/, which is not vendored; as a module the path resolves to a file that is not there.",
+     "match": "feature/secrets/plugins/minivault\\.rs$",
+     "from": "#![doc = include_str!(\"../COMMENT-NOTES.md\")]",
+     "to": ""
     },
     {
      "note": "`mod format;` becomes a submodule of plugins/minivault.rs here, so its sibling-module imports need `self::`. The bare `format::FORMAT` path expressions already resolve that way and are left alone.",
