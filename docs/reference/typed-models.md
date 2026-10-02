@@ -50,6 +50,12 @@ the result.
      PascalCase `Name` coincides) and every emitter warns loudly
      (`point: entity-types-name-collision`). Fix collisions in the model
      (rename/alias an entity).
+   - **Names a language reserves** — the bare entity data type takes a
+     suffix where the language already owns its name: `Type` in ts
+     (`Record`, `Context`), rb, php and swift, and `_type` in elixir, where
+     a built-in type such as `mfa`, `node` or `port` cannot be redefined
+     (`@type mfa_type`). The op types keep the plain stem, since their
+     suffix already sets them apart.
 
 4. **`EntityTypes_<lang>.ts`** (scaffold, `ts/project/.sdk/src/cmp/<lang>/`)
    renders the typed model file per target. Emitters fetch the entity

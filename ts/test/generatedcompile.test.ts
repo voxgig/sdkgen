@@ -23,7 +23,9 @@ const SCAFFOLD = Path.resolve(PKG, 'project', '.sdk')
 const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin', 'tsc')
 
 
-import { makeModel, makeRoot, layeredFs, makeLog } from './generateharness'
+import {
+  makeModel, makeRoot, layeredFs, makeLog, BUILTIN_TYPE_ENTITY,
+} from './generateharness'
 
 
 function materialise(files: Record<string, string>, root: string) {
@@ -1546,6 +1548,29 @@ namespace {
       'require "demo_sdk.php"; echo count(get_declared_classes()), " classes\\n";'], sdkroot)
     ok(load.ok && /\d+ classes/.test(load.out),
       'the php SDK does not load with every feature active:\n' + tail(load.out))
+  })
+
+
+  // `@type mfa :: ...` stops mix outright.
+  test('elixir: entities named after built-in types compile', async (t) => {
+    const sdkroot = Path.join(tmp, 'elixir-names')
+    await generateTo('elixir', sdkroot, BUILTIN_TYPE_ENTITY)
+
+    const mix = toolchain('mix')
+    const elixir = toolchain('elixir')
+    if (null == mix || null == elixir) {
+      return t.skip('no usable elixir toolchain here (elixir + mix)')
+    }
+
+    const ran = run(mix, ['compile'], sdkroot, { ...process.env, MIX_ENV: 'dev' })
+    if (ran.unlaunchable) {
+      return t.skip('elixir: the toolchain could not be started here: ' +
+        tail(ran.out, 3))
+    }
+    if (ran.timedOut) {
+      return t.skip('elixir: ' + ran.out)
+    }
+    ok(ran.ok, 'elixir: mix compile failed:\n' + tail(ran.out))
   })
 
 

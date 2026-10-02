@@ -753,7 +753,12 @@ emitted broken source reached the fleet unchallenged.
   imports beside the entity's own types — `Operation`, `Context`, `Control` —
   re-derived from `Entity.fragment.ts` by `test/ts-sdk-types.test.ts`. Neon's
   `operation` entity and Novu's `context` failed the ts build with TS2300
-  before it existed.
+  before it existed. elixir has only the LANGUAGE half: its types module
+  declares nothing but entity and op types, while Erlang and Elixir own
+  `mfa`, `node`, `port`, `module`... (`ELIXIR_BUILTIN_TYPES`, plus the
+  reserved words), so the bare entity type becomes `<name>_type`.
+  `test/elixir-types.test.ts` re-derives the Erlang table from
+  `erl_internal` and compiles every name where a toolchain exists.
 - **`ts/test/fixture/**` has its OWN compile lane.** `check-scaffold` covers
   `ts/project/.sdk/src/cmp/**` and nothing else, so the fixture PACKAGE's
   components — which are what an external author's components look like — had

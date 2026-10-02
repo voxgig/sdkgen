@@ -374,6 +374,42 @@ main: kit: flow: BasicHistoryFlow: {
 `
 
 
+const BUILTIN_TYPE_ENTITY = `
+main: kit: entity: mfa: {
+  alias: field: {}
+  name: "mfa"
+  field: { code: { name: "code", kind: "field", type: "\`$STRING\`" } }
+  fields: { "code": { h: 'Code', n: "code", r: false, t: "\`$STRING\`" } }
+  op: {
+    create: {
+      name: "create"
+      points: [ {
+        g: {}, m: "POST", o: "/mfa/codes/verifications"
+        s: [{ lit: "mfa" }, { lit: "codes" }, { lit: "verifications" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: entity: node: {
+  alias: field: {}
+  name: "node"
+  field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: {}, m: "GET", o: "/nodes", s: [{ lit: "nodes" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+`
+
+
 function makeModel(
   targetNames: string[], name?: string, extra?: string, features?: string[],
 ): any {
@@ -480,6 +516,7 @@ export {
   STAGE,
   SCAFFOLD,
   API_MODEL,
+  BUILTIN_TYPE_ENTITY,
   makeLog,
   layeredFs,
   makeModel,

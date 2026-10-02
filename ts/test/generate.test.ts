@@ -17,6 +17,7 @@ import { SdkGen } from '../dist/sdkgen.js'
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot,
+  BUILTIN_TYPE_ENTITY,
 } from './generateharness'
 
 
@@ -307,6 +308,23 @@ describe('generate', () => {
     const sdk = out['ts/src/DemoSDK.ts']
     ok(null != sdk, 'ts SDK not generated')
     ok(sdk.includes('N3dsSession('), 'the accessor is not the guarded Name')
+  })
+
+
+  test('elixir: an entity named after a built-in type declares a type it can', async () => {
+    const files = filesFor(await generate(['elixir'], undefined, BUILTIN_TYPE_ENTITY), 'elixir')
+
+    const types = files.find(([p]) => /lib\/[^/]+_types\.ex$/.test(p))
+    ok(null != types, 'no elixir types module')
+    ok(types![1].includes('@type mfa_type ::'), 'mfa keeps a built-in name')
+    ok(!/@type (mfa|node|record) ::/.test(types![1]), 'a built-in type is redefined')
+    ok(types![1].includes('@type node_type ::'))
+    ok(types![1].includes('@type mfa_create_data ::'), 'op type renamed')
+
+    const entity = files.find(([p]) => p.endsWith('lib/entity/mfa_entity.ex'))
+    ok(null != entity, 'no mfa entity module')
+    ok(entity![1].includes('Demo.Types.mfa_type/0'), 'the comment names a missing type')
+    ok(entity![1].includes('Demo.Types.mfa_create_data()'), 'the spec lost its op type')
   })
 
 

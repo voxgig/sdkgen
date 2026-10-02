@@ -201,6 +201,36 @@ function tsSafeTypeName(Name: string): string {
 }
 
 
+// Erlang's zero-arity built-ins (`erl_internal:is_type/2`), Elixir's own, and
+// `record`, which compiles only with a warning that it overrides the built-in.
+const ELIXIR_BUILTIN_TYPES = new Set<string>([
+  'any', 'arity', 'atom', 'binary', 'bitstring', 'bool', 'boolean', 'byte',
+  'char', 'charlist', 'dynamic', 'float', 'function', 'identifier', 'integer',
+  'iodata', 'iolist', 'keyword', 'list', 'map', 'maybe_improper_list', 'mfa',
+  'module', 'neg_integer', 'nil', 'no_return', 'node', 'non_neg_integer',
+  'none', 'nonempty_binary', 'nonempty_bitstring', 'nonempty_charlist',
+  'nonempty_list', 'nonempty_maybe_improper_list', 'nonempty_string',
+  'number', 'pid', 'port', 'pos_integer', 'record', 'reference', 'string',
+  'struct', 'term', 'timeout', 'tuple', 'var',
+])
+
+const ELIXIR_RESERVED = new Set<string>([
+  'after', 'and', 'catch', 'do', 'else', 'end', 'false', 'fn', 'in', 'nil',
+  'not', 'or', 'rescue', 'true', 'when',
+])
+
+
+function isElixirReservedType(name: string): boolean {
+  return ELIXIR_BUILTIN_TYPES.has(name) || ELIXIR_RESERVED.has(name)
+}
+
+
+// As tsSafeTypeName, for the bare entity type alone.
+function elixirSafeTypeName(name: string): string {
+  return isElixirReservedType(name) ? name + '_type' : name
+}
+
+
 function isReservedName(name: string, lang: string): boolean {
   const set = RESERVED[lang]
   return !!set && set.has(name)
@@ -320,6 +350,8 @@ export {
   isTsReservedType,
   isTsSdkType,
   tsSafeTypeName,
+  isElixirReservedType,
+  elixirSafeTypeName,
   jsProp,
   jsOptProp,
   jsKey,

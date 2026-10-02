@@ -2,6 +2,7 @@
 import {
   cmp, camelify,
   Fragment,
+  elixirSafeTypeName,
 } from '@voxgig/sdkgen'
 
 
@@ -14,6 +15,10 @@ const EntityOperation = cmp(function Operation(props: any) {
     eject: ['# EJECT-START', '# EJECT-END'],
     replace: {
       ...entrep,
+      // Longer keys match first, so the bare type keeps its safe name while
+      // the op types beside it take the plain one.
+      'ProjectName.Types.entityname/0':
+        model.const.Name + '.Types.' + elixirSafeTypeName(entity.name) + '/0',
       ProjectName: model.const.Name,
       EntityName: entity.Name,
       entityname: entity.name,
