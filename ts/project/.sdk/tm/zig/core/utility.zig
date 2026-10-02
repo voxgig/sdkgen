@@ -1504,6 +1504,92 @@ fn call_args(ctx: *Context, kind: []const u8) []CallArg {
     return out.toOwnedSlice(h.A()) catch &.{};
 }
 
+// ============================================================================
+// media
+// ============================================================================
+
+// The media types a point declares: `response` (the model's `rs`) for the
+// Accept header, and `body` (the model's `rb`) for the request body.
+
+// The data key holding a raw request body. Like `$action`, it can never be a
+// declared argument name.
+pub const RAW_BODY = "$body";
+
+pub fn is_json_media(media: []const u8) bool {
+    const semi = std.mem.indexOfScalar(u8, media, ';') orelse media.len;
+    const m = std.mem.trim(u8, media[0..semi], " \t");
+    return std.ascii.eqlIgnoreCase(m, "application/json") or
+        std.ascii.eqlIgnoreCase(m, "text/json") or
+        (m.len >= 5 and std.ascii.eqlIgnoreCase(m[m.len - 5 ..], "+json"));
+}
+
+fn media_text(v: Value) ?[]const u8 {
+    return if (v == .string and v.string.len != 0) v.string else null;
+}
+
+// The declared JSON type alone, else every declared type in the model's
+// order; null when no success response declares a body.
+pub fn accept_of(point: Value) ?[]const u8 {
+    const res = h.getp(point, "response");
+    const media = media_text(h.getp(res, "media")) orelse return null;
+    if (media_text(h.getp(res, "kind"))) |kind| {
+        if (std.mem.eql(u8, kind, "json")) return media;
+    }
+    var out: std.ArrayList(u8) = .empty;
+    out.appendSlice(h.A(), media) catch return media;
+    const alts = h.getp(res, "alternatives");
+    if (alts == .array) {
+        for (alts.array.data.items) |alt| {
+            const m = media_text(h.getp(alt, "media")) orelse continue;
+            out.appendSlice(h.A(), ", ") catch return media;
+            out.appendSlice(h.A(), m) catch return media;
+        }
+    }
+    return out.toOwnedSlice(h.A()) catch media;
+}
+
+pub fn is_raw_request(point: Value) bool {
+    const kind = media_text(h.getp(h.getp(point, "body"), "kind")) orelse return false;
+    return std.mem.eql(u8, kind, "raw");
+}
+
+fn has_media_header(headers: Value, name: []const u8) bool {
+    var kit = headers.object.iterator();
+    while (kit.next()) |kv| {
+        if (std.ascii.eqlIgnoreCase(kv.key_ptr.*, name)) return true;
+    }
+    return false;
+}
+
+// A caller's accept wins. A declared request type replaces each JSON
+// content-type, the SDK default, and leaves any other the caller set.
+pub fn media_headers(point: Value, headers: Value) void {
+    if (headers != .object) return;
+    if (accept_of(point)) |accept| {
+        if (!has_media_header(headers, "accept")) h.setp(headers, "accept", h.vstr(accept));
+    }
+
+    const body = h.getp(point, "body");
+    const kind = media_text(h.getp(body, "kind")) orelse return;
+    const media = media_text(h.getp(body, "media")) orelse return;
+    if (!std.mem.eql(u8, kind, "raw") and !std.mem.eql(u8, kind, "json")) return;
+    while (true) {
+        var kit = headers.object.iterator();
+        const json: ?[]const u8 = while (kit.next()) |kv| {
+            const v = kv.value_ptr.*;
+            if (std.ascii.eqlIgnoreCase(kv.key_ptr.*, "content-type") and
+                v == .string and is_json_media(v.string)) break kv.key_ptr.*;
+        } else null;
+        _ = headers.object.fetchOrderedRemove(json orelse break);
+    }
+    if (!has_media_header(headers, "content-type")) h.setp(headers, "content-type", h.vstr(media));
+}
+
+// A string of text or bytes, sent as it is.
+pub fn raw_body(reqdata: Value) Value {
+    return h.getp(reqdata, RAW_BODY);
+}
+
 pub fn prepare_headers_util(ctx: *Context) Value {
     const options: Value = if (ctx.client) |client| client.options_map() else ctx.options;
 
@@ -1512,6 +1598,7 @@ pub fn prepare_headers_util(ctx: *Context) Value {
         .object => h.clone(headers),
         else => h.omap(),
     };
+    media_headers(ctx.point, out);
 
     // A header argument replaces a default of the same name, whatever its case.
     for (call_args(ctx, "header")) |arg| {
@@ -1532,6 +1619,7 @@ pub fn prepare_headers_util(ctx: *Context) Value {
 
 pub fn prepare_body_util(ctx: *Context) Value {
     if (std.mem.eql(u8, ctx.op.input, "data")) {
+        if (is_raw_request(ctx.point)) return raw_body(ctx.reqdata);
         return transform_request_util(ctx);
     }
     return h.vnull();

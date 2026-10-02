@@ -5066,6 +5066,60 @@ const MEDIA_LANES: MediaLane[] = [
         sdkroot, env)
     },
   },
+  {
+    target: 'c',
+    ready: () => null == toolchain('make') || null == authProbeCc() ? 'no C toolchain' : null,
+    seam: () => true,
+    exec: (sdkroot, env, write) => {
+      write('tests/media_probe.c', MEDIA_PROBES.c)
+      const built = run(toolchain('make')!, ['CC=' + authProbeCc(), 'tests/media_probe.out'], sdkroot)
+      if (!built.ok) return built
+      return run(Path.join(sdkroot, 'tests', 'media_probe.out'), [], sdkroot, env)
+    },
+  },
+  {
+    target: 'cpp',
+    ready: () => null == toolchain('make') || null == cleanCxx() ? 'no C++ toolchain' : null,
+    seam: () => true,
+    exec: (sdkroot, env, write) => {
+      write('test/media_probe.cpp', MEDIA_PROBES.cpp)
+      const built = run(toolchain('make')!, ['CXX=' + cleanCxx(), 'test/media_probe.out'], sdkroot)
+      if (!built.ok) return built
+      return run(Path.join(sdkroot, 'test', 'media_probe.out'), [], sdkroot, env)
+    },
+  },
+  {
+    target: 'zig',
+    ready: () => {
+      const zig = toolchain('zig')
+      if (null == zig) return 'no zig toolchain'
+      const version = run(zig, ['version'], process.cwd())
+      return version.ok && /^0\.16\./.test(version.out.trim()) ? null : 'zig is not 0.16'
+    },
+    seam: () => true,
+    // build.zig names its test files, and `test-clean` builds this one alone.
+    exec: (sdkroot, env, write) => {
+      write('test/clean_test.zig', MEDIA_PROBES.zig)
+      return run(toolchain('zig')!, ['build', 'test-clean', '--summary', 'all'], sdkroot, env)
+    },
+  },
+  {
+    target: 'ocaml',
+    ready: () => null == toolchain('make') || null == toolchain('ocamlc') ? 'no OCaml toolchain' : null,
+    seam: () => true,
+    // A makefile beside the generated one links the probe against its module list.
+    exec: (sdkroot, env, write) => {
+      write('test/media_probe.ml', MEDIA_PROBES.ocaml)
+      write('media.mk', 'include Makefile\n' +
+        'run_media_probe: $(SDK) $(FEATURE_OBJ) test/media_probe.ml\n' +
+        '\t$(OCAMLC) $(INC) $(FEATURE_LIB) $(SDK) test/media_probe.ml ' +
+        '$(FEATURE_OBJ) $(FEATURE_LINK) -o run_media_probe\n')
+      const built = run(toolchain('make')!,
+        ['-f', 'media.mk', 'OCAMLC=' + toolchain('ocamlc'), 'run_media_probe'], sdkroot)
+      if (!built.ok) return built
+      return run(Path.join(sdkroot, 'run_media_probe'), [], sdkroot, env)
+    },
+  },
 ]
 
 

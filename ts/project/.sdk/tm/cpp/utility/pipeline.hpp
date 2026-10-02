@@ -1369,8 +1369,91 @@ inline std::string prepareMethod(CtxPtr ctx) {
 
 // ---- prepareBody ------------------------------------------------------
 
+// ---- media ------------------------------------------------------------
+
+// The media types a point declares: `response` (the model's `rs`) for the
+// Accept header, and `body` (the model's `rb`) for the request body.
+
+// The data key holding a raw request body. Like `$action`, it can never be a
+// declared argument name.
+inline const char* rawBodyKey() { return "$body"; }
+
+inline std::string mediaLower(std::string s) {
+  for (auto& ch : s) ch = (char)std::tolower((unsigned char)ch);
+  return s;
+}
+
+inline bool isJsonMedia(const Value& v) {
+  if (!v.is_string()) return false;
+  std::string m = v.as_string().substr(0, v.as_string().find(';'));
+  size_t b = m.find_first_not_of(" \t");
+  size_t e = m.find_last_not_of(" \t");
+  m = std::string::npos == b ? "" : mediaLower(m.substr(b, e - b + 1));
+  return m == "application/json" || m == "text/json" ||
+    (m.size() >= 5 && 0 == m.compare(m.size() - 5, 5, "+json"));
+}
+
+// The declared JSON type alone, else every declared type in the model's
+// order; empty when no success response declares a body.
+inline std::string acceptOf(const Value& point) {
+  Value res = getp(point, "response");
+  Value media = getp(res, "media");
+  if (!media.is_string() || media.as_string().empty()) return "";
+  Value kind = getp(res, "kind");
+  if (kind.is_string() && kind.as_string() == "json") return media.as_string();
+  std::string out = media.as_string();
+  Value alts = getp(res, "alternatives");
+  if (alts.is_list()) {
+    for (const auto& alt : *alts.as_list()) {
+      Value m = getp(alt, "media");
+      if (m.is_string() && !m.as_string().empty()) out += ", " + m.as_string();
+    }
+  }
+  return out;
+}
+
+inline bool isRawRequest(const Value& point) {
+  Value kind = getp(getp(point, "body"), "kind");
+  return kind.is_string() && kind.as_string() == "raw";
+}
+
+inline bool hasMediaHeader(const Value& headers, const std::string& name) {
+  for (const auto& item : Struct::items(headers)) {
+    if (mediaLower(as_str(pair_key(item))) == name) return true;
+  }
+  return false;
+}
+
+// A caller's accept wins. A declared request type replaces each JSON
+// content-type, the SDK default, and leaves any other the caller set.
+inline Value mediaHeaders(const Value& point, Value headers) {
+  std::string accept = acceptOf(point);
+  if (!accept.empty() && !hasMediaHeader(headers, "accept")) {
+    map_put(headers, "accept", Value(accept));
+  }
+
+  Value body = getp(point, "body");
+  Value kind = getp(body, "kind");
+  Value media = getp(body, "media");
+  if (kind.is_string() && (kind.as_string() == "raw" || kind.as_string() == "json") &&
+      media.is_string() && !media.as_string().empty()) {
+    for (const auto& item : Struct::items(headers)) {
+      std::string key = as_str(pair_key(item));
+      if (mediaLower(key) == "content-type" && isJsonMedia(getp(headers, key))) {
+        headers.as_map()->erase(key);
+      }
+    }
+    if (!hasMediaHeader(headers, "content-type")) map_put(headers, "content-type", media);
+  }
+  return headers;
+}
+
+// A string Value holds any bytes, and they are sent as they are.
+inline Value rawBody(const Value& reqdata) { return getp(reqdata, rawBodyKey()); }
+
 inline Value prepareBody(CtxPtr ctx) {
   if (ctx->op->input == "data") {
+    if (isRawRequest(ctx->point)) return rawBody(ctx->reqdata);
     return ctx->utility->transformRequest(ctx);
   }
   return Value::undef();
@@ -1414,6 +1497,7 @@ inline Value prepareHeaders(CtxPtr ctx) {
   Value headers = getp(options, "headers");
   Value out = is_nullish(headers) ? vmap() : Helpers::toMapAny(Struct::clone(headers));
   if (!out.is_map()) out = vmap();
+  out = mediaHeaders(ctx->point, out);
 
   // A header argument replaces a default of the same name, whatever its case.
   auto lower = [](std::string s) {

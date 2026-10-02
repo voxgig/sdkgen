@@ -608,6 +608,69 @@ let call_args (ctx : ctx) (kind : string) : (string * string * value) list =
         | _ -> None) !r
   | _ -> []
 
+(* ---- media ----
+ * The media types a point declares: `response` (the model's `rs`) for the
+ * Accept header, and `body` (the model's `rb`) for the request body. *)
+
+(* The data key holding a raw request body. Like `$action`, it can never be a
+ * declared argument name. *)
+let raw_body_key = "$body"
+
+let is_json_media (media : string) : bool =
+  let base = match String.index_opt media ';' with
+    | Some i -> String.sub media 0 i
+    | None -> media in
+  let m = String.lowercase_ascii (String.trim base) in
+  let n = String.length m in
+  m = "application/json" || m = "text/json"
+  || (n >= 5 && String.sub m (n - 5) 5 = "+json")
+
+(* The declared JSON type alone, else every declared type in the model's
+ * order; nothing when no success response declares a body. *)
+let accept_of (point : value) : string option =
+  let res = getp point "response" in
+  match getp res "media" with
+  | Str media when media <> "" ->
+    (match getp res "kind" with
+     | Str "json" -> Some media
+     | _ ->
+       let others = match getp res "alternatives" with
+         | List r ->
+           List.filter_map (fun alt -> match getp alt "media" with
+               | Str m when m <> "" -> Some m
+               | _ -> None) !r
+         | _ -> [] in
+       Some (String.concat ", " (media :: others)))
+  | _ -> None
+
+let is_raw_request (point : value) : bool =
+  match getp (getp point "body") "kind" with Str "raw" -> true | _ -> false
+
+let has_media_header (headers : value) (name : string) : bool =
+  List.exists (fun k -> String.lowercase_ascii k = name) (keysof headers)
+
+(* A caller's accept wins. A declared request type replaces each JSON
+ * content-type, the SDK default, and leaves any other the caller set. *)
+let media_headers (point : value) (headers : value) : unit =
+  (match accept_of point with
+   | Some accept when not (has_media_header headers "accept") ->
+     setp headers "accept" (Str accept)
+   | _ -> ());
+  let body = getp point "body" in
+  match getp body "kind", getp body "media" with
+  | Str ("raw" | "json"), Str media when media <> "" ->
+    List.iter (fun k ->
+        match getp headers k with
+        | Str v when String.lowercase_ascii k = "content-type" && is_json_media v ->
+          ignore (delprop headers (Str k))
+        | _ -> ())
+      (keysof headers);
+    if not (has_media_header headers "content-type") then
+      setp headers "content-type" (Str media)
+  | _ -> ()
+
+let raw_body (reqdata : value) : value = getp reqdata raw_body_key
+
 let prepare_headers_util (ctx : ctx) : value =
   let options = client_options_map (cc ctx) in
   let out =
@@ -615,6 +678,7 @@ let prepare_headers_util (ctx : ctx) : value =
     | Noval -> empty_map ()
     | h -> (match clone h with Map _ as m -> m | _ -> empty_map ())
   in
+  media_headers ctx.c_point out;
   (* A header argument replaces a default of the same name, whatever its
    * case. *)
   List.iter (fun (_, wire, v) ->
@@ -727,7 +791,9 @@ let prepare_query_util (ctx : ctx) : value =
   out
 
 let prepare_body_util (ctx : ctx) : value =
-  if ctx.c_op.op_input = "data" then (cu ctx).u_transform_request ctx else Noval
+  if ctx.c_op.op_input <> "data" then Noval
+  else if is_raw_request ctx.c_point then raw_body ctx.c_reqdata
+  else (cu ctx).u_transform_request ctx
 
 (* ---- graphql (transport) -------------------------------------------------
  *

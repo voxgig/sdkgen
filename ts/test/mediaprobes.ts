@@ -956,8 +956,323 @@ fn media_probe() {
 `
 
 
+// c and cpp ship no live transport: system.fetch prints each request.
+const C_PROBE = String.raw`
+#include "sdk.h"
+#include "api.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+static voxgig_value* printer(void* ud, voxgig_value* args) {
+  (void)ud;
+  voxgig_list* a = voxgig_as_list(args);
+  voxgig_value* fetchdef = a->items[1];
+  voxgig_value* body = getp(fetchdef, "body");
+  char* headers = voxgig_jsonify(getp(fetchdef, "headers"), cmap(1, "indent", v_int(0)));
+  printf("MEDIA-REQUEST {\"url\":\"%s\",\"method\":\"%s\",\"headers\":%s,\"bodyHex\":\"",
+    voxgig_as_string(a->items[0]), get_str(fetchdef, "method"), headers ? headers : "{}");
+  if (voxgig_is_string(body)) {
+    const unsigned char* b = (const unsigned char*)voxgig_as_string(body);
+    for (size_t i = 0; i < voxgig_string_len(body); i++) printf("%02x", b[i]);
+  }
+  printf("\"}\n");
+  free(headers);
+  return cmap(5, "status", v_num(200), "statusText", v_str("OK"), "headers", v_map(),
+    "body", v_str("{}"), "json", json_thunk(cmap(1, "id", v_str("x01"))));
+}
+
+static voxgig_value* unhex(const char* h) {
+  size_t n = strlen(h) / 2;
+  char* b = (char*)malloc(n + 1);
+  for (size_t i = 0; i < n; i++) {
+    unsigned int x = 0;
+    sscanf(h + 2 * i, "%2x", &x);
+    b[i] = (char)x;
+  }
+  voxgig_value* v = voxgig_new_string_n(b, n);
+  free(b);
+  return v;
+}
+
+int main(void) {
+  voxgig_list* cases = voxgig_as_list(voxgig_parse_json_file("media-cases.json"));
+  const char* base = getenv("MEDIA_BASE");
+  size_t n = voxgig_list_len(cases);
+  for (size_t i = 0; i < n; i++) {
+    voxgig_value* c = voxgig_list_get(cases, i);
+    char url[512];
+    snprintf(url, sizeof(url), "%s/c%zu", base, i);
+    voxgig_value* opts = cmap(2, "base", v_str(url), "system", cmap(1, "fetch", vfn(printer, NULL)));
+    voxgig_value* headers = getp(c, "headers");
+    if (!v_is_noval(headers)) setp(opts, "headers", headers);
+    DemoSDK* sdk = demo_sdk_new(opts);
+    voxgig_value* input = voxgig_clone(getp(c, "input"));
+    const char* hex = get_str(c, "bodyHex");
+    if (hex) setp(input, "$body", unhex(hex));
+    const char* text = get_str(c, "bodyText");
+    if (text) setp(input, "$body", v_str(text));
+    const char* entity = get_str(c, "entity");
+    const char* op = get_str(c, "op");
+    Entity* e = 0 == strcmp(entity, "cat") ? demo_cat(sdk, NULL) :
+      0 == strcmp(entity, "picture") ? demo_picture(sdk, NULL) : demo_planet(sdk, NULL);
+    PNError* err = NULL;
+    if (0 == strcmp(op, "load")) e->vt->load(e, input, v_map(), &err);
+    else if (0 == strcmp(op, "list")) e->vt->list(e, input, v_map(), &err);
+    else if (0 == strcmp(op, "create")) e->vt->create(e, input, v_map(), &err);
+    else if (0 == strcmp(op, "update")) e->vt->update(e, input, v_map(), &err);
+    else e->vt->remove(e, input, v_map(), &err);
+    if (err) printf("media-probe: case %zu: %s\n", i, pn_error_str(err));
+  }
+  printf("media-probe: ran %zu cases\n", n);
+  return 0;
+}
+`
+
+
+const CPP_PROBE = String.raw`
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
+#include "harness.hpp"
+
+using namespace sdk;
+
+static std::string hexOf(const std::string& s) {
+  static const char* digits = "0123456789abcdef";
+  std::string out;
+  for (unsigned char ch : s) {
+    out += digits[ch >> 4];
+    out += digits[ch & 15];
+  }
+  return out;
+}
+
+static std::string unhex(const std::string& h) {
+  std::string out;
+  for (size_t i = 0; i + 1 < h.size(); i += 2) out += (char)std::stoi(h.substr(i, 2), nullptr, 16);
+  return out;
+}
+
+int main() {
+  std::ifstream in("media-cases.json");
+  std::stringstream text;
+  text << in.rdbuf();
+  Value cases = vs::parse_json(text.str());
+  if (!cases.is_list()) return 1;
+  std::string base = std::getenv("MEDIA_BASE") ? std::getenv("MEDIA_BASE") : "";
+  vs::Injector fetch = [](vs::Injection&, const Value& args, const std::string&, const Value&) -> Value {
+    Value fetchdef = vs::getelem(args, Value(int64_t(1)));
+    Value body = getp(fetchdef, "body");
+    std::cout << "MEDIA-REQUEST " << vs::jsonify(vmap({
+      {"url", vs::getelem(args, Value(int64_t(0)))},
+      {"method", getp(fetchdef, "method")},
+      {"headers", getp(fetchdef, "headers")},
+      {"bodyHex", Value(body.is_string() ? hexOf(body.as_string()) : std::string())},
+    }), 0) << std::endl;
+    Value out = vmap();
+    map_put(out, "status", Value(200));
+    map_put(out, "statusText", Value("OK"));
+    map_put(out, "headers", vmap());
+    map_put(out, "body", Value("{}"));
+    map_put(out, "json", json_thunk(vmap({{"id", Value("x01")}})));
+    return out;
+  };
+  size_t i = 0;
+  for (const auto& c : *cases.as_list()) {
+    Value opts = vmap({
+      {"base", Value(base + "/c" + std::to_string(i))},
+      {"system", vmap({{"fetch", Value(fetch)}})},
+    });
+    Value headers = getp(c, "headers");
+    if (headers.is_map()) map_put(opts, "headers", headers);
+    auto client = std::make_shared<DemoSDK>(opts);
+    Value data = vs::clone(getp(c, "input"));
+    Value hex = getp(c, "bodyHex");
+    if (hex.is_string()) map_put(data, "$body", Value(unhex(hex.as_string())));
+    Value txt = getp(c, "bodyText");
+    if (txt.is_string()) map_put(data, "$body", txt);
+    std::string entity = as_str(getp(c, "entity"));
+    std::string op = as_str(getp(c, "op"));
+    try {
+      SdkEntityPtr ent = "cat" == entity ? SdkEntityPtr(client->cat()) :
+        "picture" == entity ? SdkEntityPtr(client->picture()) : SdkEntityPtr(client->planet());
+      if ("load" == op) ent->load(data, vmap());
+      else if ("list" == op) ent->list(data, vmap());
+      else if ("create" == op) ent->create(data, vmap());
+      else if ("update" == op) ent->update(data, vmap());
+      else ent->remove(data, vmap());
+    }
+    catch (const std::exception& e) {
+      std::cout << "media-probe: case " << i << ": " << e.what() << std::endl;
+    }
+    catch (const SdkErrorPtr& e) {
+      std::cout << "media-probe: case " << i << ": " << e->what() << std::endl;
+    }
+    i++;
+  }
+  std::cout << "media-probe: ran " << i << " cases" << std::endl;
+  return 0;
+}
+`
+
+
+// zig ships no live transport either, so the base is a placeholder.
+const ZIG_PROBE = String.raw`
+const std = @import("std");
+const sdk = @import("sdk");
+const h = sdk.h;
+const vs = sdk.vs;
+const Value = sdk.Value;
+
+fn vnull() Value {
+    return Value{ .null = {} };
+}
+
+fn hexOf(bytes: []const u8) []const u8 {
+    const digits = "0123456789abcdef";
+    const out = h.A().alloc(u8, bytes.len * 2) catch unreachable;
+    for (bytes, 0..) |b, i| {
+        out[2 * i] = digits[b >> 4];
+        out[2 * i + 1] = digits[b & 15];
+    }
+    return out;
+}
+
+fn unhex(text: []const u8) []const u8 {
+    const out = h.A().alloc(u8, text.len / 2) catch unreachable;
+    for (out, 0..) |*b, i| b.* = std.fmt.parseInt(u8, text[2 * i .. 2 * i + 2], 16) catch 0;
+    return out;
+}
+
+fn printer(_: *anyopaque, _: std.mem.Allocator, arg: Value) anyerror!Value {
+    const fetchdef = h.get_elem(arg, h.vnum(1), vnull());
+    const body = h.getp(fetchdef, "body");
+    const line = h.jsonify_compact(h.jo(&.{
+        .{ "url", h.get_elem(arg, h.vnum(0), vnull()) },
+        .{ "method", h.getp(fetchdef, "method") },
+        .{ "headers", h.getp(fetchdef, "headers") },
+        .{ "bodyHex", h.vstr(if (body == .string) hexOf(body.string) else "") },
+    }));
+    std.debug.print("MEDIA-REQUEST {s}\n", .{line});
+    return h.jo(&.{
+        .{ "status", h.vnum(200) },
+        .{ "statusText", h.vstr("OK") },
+        .{ "headers", h.omap() },
+        .{ "json", h.json_thunk(h.jo(&.{.{ "id", h.vstr("x01") }})) },
+        .{ "body", h.vstr("{}") },
+    });
+}
+var printer_dummy: u8 = 0;
+
+fn report(i: usize, r: anytype) void {
+    switch (r) {
+        .ok => {},
+        .err => std.debug.print("media-probe: case {d}: error\n", .{i}),
+    }
+}
+
+test "media probe" {
+    const io = std.Io.Threaded.global_single_threaded.io();
+    const text = try std.Io.Dir.cwd().readFileAlloc(io, "media-cases.json", h.A(), .unlimited);
+    const parsed = try std.json.parseFromSlice(std.json.Value, h.A(), text, .{});
+    const cases = try vs.fromStdJson(h.A(), parsed.value);
+    for (cases.array.data.items, 0..) |c, i| {
+        const base = std.fmt.allocPrint(h.A(), "http://media.test/c{d}", .{i}) catch unreachable;
+        const opts = h.jo(&.{
+            .{ "base", h.vstr(base) },
+            .{ "system", h.jo(&.{.{ "fetch", h.callable(@ptrCast(&printer_dummy), printer) }}) },
+        });
+        const headers = h.getp(c, "headers");
+        if (headers == .object) h.setp(opts, "headers", headers);
+        const client = sdk.SDK.new(opts);
+        const data = h.clone(h.getp(c, "input"));
+        const hex = h.getp(c, "bodyHex");
+        if (hex == .string) h.setp(data, "$body", h.vstr(unhex(hex.string)));
+        const txt = h.getp(c, "bodyText");
+        if (txt == .string) h.setp(data, "$body", txt);
+        const entity = h.scalar_str(h.getp(c, "entity"));
+        const op = h.scalar_str(h.getp(c, "op"));
+        const is = std.mem.eql;
+        if (is(u8, entity, "cat") and is(u8, op, "load")) report(i, client.cat(vnull()).load(data, h.omap()));
+        if (is(u8, entity, "cat") and is(u8, op, "list")) report(i, client.cat(vnull()).list(data, h.omap()));
+        if (is(u8, entity, "cat") and is(u8, op, "create")) report(i, client.cat(vnull()).create(data, h.omap()));
+        if (is(u8, entity, "cat") and is(u8, op, "update")) report(i, client.cat(vnull()).update(data, h.omap()));
+        if (is(u8, entity, "cat") and is(u8, op, "remove")) report(i, client.cat(vnull()).remove(data, h.omap()));
+        if (is(u8, entity, "picture") and is(u8, op, "load")) report(i, client.picture(vnull()).load(data, h.omap()));
+        if (is(u8, entity, "picture") and is(u8, op, "update")) report(i, client.picture(vnull()).update(data, h.omap()));
+        if (is(u8, entity, "planet")) report(i, client.planet(vnull()).create(data, h.omap()));
+    }
+    std.debug.print("media-probe: ran {d} cases\n", .{cases.array.data.items.len});
+}
+`
+
+
+// ocaml ships no live transport either.
+const OCAML_PROBE = String.raw`
+(* Prints what system.fetch is given for each media case. *)
+open Voxgig_struct
+open Sdk_types
+open Sdk_helpers
+
+let hex_of (s : string) : string =
+  String.concat "" (List.init (String.length s) (fun i -> Printf.sprintf "%02x" (Char.code s.[i])))
+
+let unhex (h : string) : string =
+  String.init (String.length h / 2) (fun i -> Char.chr (int_of_string ("0x" ^ String.sub h (2 * i) 2)))
+
+let fetch = Func (fun _ args _ _ ->
+    let fetchdef = getelem args (Num 1.) in
+    let body = match getp fetchdef "body" with Str b -> hex_of b | _ -> "" in
+    print_endline ("MEDIA-REQUEST " ^ jsonify ~flags:(jo [("indent", Num 0.)]) (jo [
+        ("url", getelem args (Num 0.));
+        ("method", getp fetchdef "method");
+        ("headers", getp fetchdef "headers");
+        ("bodyHex", Str body)]));
+    jo [("status", Num 200.); ("statusText", Str "OK"); ("headers", empty_map ());
+        ("body", Str "{}"); ("json", json_thunk (jo [("id", Str "x01")]))])
+
+let run (ent : entity_obj) (op : value) (input : value) : unit =
+  match op with
+  | Str "load" -> ignore (ent.e_load input (empty_map ()))
+  | Str "list" -> ignore (ent.e_list input (empty_map ()))
+  | Str "create" -> ignore (ent.e_create input (empty_map ()))
+  | Str "update" -> ignore (ent.e_update input (empty_map ()))
+  | _ -> ignore (ent.e_remove input (empty_map ()))
+
+let () =
+  let ic = open_in_bin "media-cases.json" in
+  let text = really_input_string ic (in_channel_length ic) in
+  close_in ic;
+  let cases = match Sdk_json.json_read text with List r -> !r | _ -> [] in
+  let base = try Sys.getenv "MEDIA_BASE" with Not_found -> "" in
+  List.iteri (fun i c ->
+      let opts = jo [("base", Str (base ^ "/c" ^ string_of_int i));
+                     ("system", jo [("fetch", fetch)])] in
+      (match getp c "headers" with Map _ as h -> setp opts "headers" h | _ -> ());
+      let client = Sdk_client.make opts in
+      let input = clone (getp c "input") in
+      (match getp c "bodyHex" with Str h -> setp input "$body" (Str (unhex h)) | _ -> ());
+      (match getp c "bodyText" with Str t -> setp input "$body" (Str t) | _ -> ());
+      let ent = match getp c "entity" with
+        | Str "cat" -> Sdk_client.cat client Noval
+        | Str "picture" -> Sdk_client.picture client Noval
+        | _ -> Sdk_client.planet client Noval in
+      try run ent (getp c "op") input
+      with e -> Printf.printf "media-probe: case %d: %s\n" i (Printexc.to_string e))
+    cases;
+  Printf.printf "media-probe: ran %d cases\n" (List.length cases)
+`
+
+
 const MEDIA_PROBES: Record<string, string> = {
   node: NODE_PROBE,
+  ocaml: OCAML_PROBE,
+  zig: ZIG_PROBE,
+  cpp: CPP_PROBE,
+  c: C_PROBE,
   rust: RUST_PROBE,
   clojure: CLOJURE_PROBE,
   elixir: ELIXIR_PROBE,
