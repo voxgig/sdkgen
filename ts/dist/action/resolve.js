@@ -7,6 +7,8 @@ exports.BUNDLED = void 0;
 exports.resolveSource = resolveSource;
 exports.recordedRef = recordedRef;
 exports.isBare = isBare;
+exports.resolvesBundled = resolvesBundled;
+exports.targetOrigins = targetOrigins;
 exports.registerInstalled = registerInstalled;
 exports.nameConflict = nameConflict;
 exports.lastSegment = lastSegment;
@@ -225,6 +227,31 @@ function recordedRef(declared, name) {
 }
 function isBare(ref) {
     return !ref.includes('/') && !ref.includes(node_path_1.default.sep);
+}
+// Whether an item's recorded provenance leads back to this package's own
+// scaffold, read the way resolveSource reads the ref recordedRef rebuilds: a
+// bare ref resolves to BUNDLED, any other to the folder its directory names.
+function resolvesBundled(declared, name) {
+    const ref = recordedRef(declared, name) ?? name;
+    return isBare(ref) ||
+        BUNDLED === normaliseBase(node_path_1.default.join(node_path_1.default.dirname(ref), '.sdk'));
+}
+function targetOrigins(model) {
+    const targets = (0, kindCollection_1.kindCollection)(model, 'target');
+    const origins = { bundled: [], external: [] };
+    for (const name of Object.keys(targets).sort()) {
+        const target = targets[name];
+        if (null == target || 'object' !== typeof target || false === target.active) {
+            continue;
+        }
+        if (resolvesBundled(target, name)) {
+            origins.bundled.push(name);
+        }
+        else {
+            origins.external.push({ name, from: normaliseBase(target.base) });
+        }
+    }
+    return origins;
 }
 function normaliseBase(base) {
     return node_path_1.default.normalize(String(base ?? '')).split(node_path_1.default.sep).join('/');

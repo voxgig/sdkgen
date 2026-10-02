@@ -40,6 +40,48 @@ const makeLog = (sink?: any[]): any => {
 }
 
 
+const RUNNABLE = ['.com', '.exe', '.bat', '.cmd']
+
+// Walks the search path as a shell does, needing no `which`; on Windows it
+// tries the runnable PATHEXT extensions. A missing toolchain is skipped.
+function toolchain(name: string, searchPath = process.env.PATH ?? ''): string | null {
+  const win = 'win32' === process.platform
+  const exts = !win || RUNNABLE.some((e) => name.toLowerCase().endsWith(e)) ? [''] :
+    (process.env.PATHEXT || RUNNABLE.join(';')).toLowerCase().split(';')
+      .filter((e) => RUNNABLE.includes(e))
+  const dirs = Path.basename(name) !== name ? [''] : searchPath.split(Path.delimiter)
+    .map((d) => d.replace(/^"(.*)"$/, '$1'))
+    .filter((d) => '' !== d)
+
+  for (const dir of dirs) {
+    for (const ext of exts) {
+      const file = Path.join(dir, name + ext)
+      if (runnable(file, win)) {
+        return file
+      }
+    }
+  }
+
+  return null
+}
+
+
+function runnable(file: string, win: boolean): boolean {
+  try {
+    if (!Fs.statSync(file).isFile()) {
+      return false
+    }
+    if (!win) {
+      Fs.accessSync(file, Fs.constants.X_OK)
+    }
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
+
 function layeredFs(mem: any): any {
   const readThrough = (name: string) => (path: any, ...rest: any[]) => {
     const target = mem.existsSync(path) ? mem : Fs
@@ -505,6 +547,157 @@ function entityTestData(entity: any): any {
 }
 
 
+// SMSAPI's pair, whose classes differ only in case, and a PATCH beside a PUT.
+const FOLD_ENTITY = `
+main: kit: entity: contacts_field: {
+  alias: field: {}
+  name: "contacts_field"
+  id: { field: "id", name: "id" }
+  field: {
+    id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
+    label: { name: "label", kind: "field", type: "\`$STRING\`" }
+  }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "label": { h: 'Label', n: "label", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: {}, m: "GET", o: "/contacts/fields", s: [{ lit: "contacts" }, { lit: "fields" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    update: {
+      name: "update"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "cf01" }
+        ] }
+        m: "PUT", o: "/contacts/fields/{id}"
+        s: [{ lit: "contacts" }, { lit: "fields" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    patch: {
+      name: "patch"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "cf01" }
+        ] }
+        m: "PATCH", o: "/contacts/fields/{id}"
+        s: [{ lit: "contacts" }, { lit: "fields" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: entity: contactsfield: {
+  alias: field: {}
+  name: "contactsfield"
+  id: { field: "id", name: "id" }
+  field: {
+    id:   { name: "id",   kind: "field", type: "\`$STRING\`", required: true }
+    kind: { name: "kind", kind: "field", type: "\`$STRING\`" }
+  }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "kind": { h: 'Kind', n: "kind", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    create: {
+      name: "create"
+      points: [ {
+        g: {}, m: "POST", o: "/contacts/fields", s: [{ lit: "contacts" }, { lit: "fields" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    remove: {
+      name: "remove"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "cf01" }
+        ] }
+        m: "DELETE", o: "/contacts/fields/{id}"
+        s: [{ lit: "contacts" }, { lit: "fields" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: flow: BasicContactsFieldFlow: {
+  entity: "contacts_field", kind: "basic", name: "BasicContactsFieldFlow"
+  step: [ { o: "list" } ]
+}
+
+main: kit: flow: BasicContactsfieldFlow: {
+  entity: "contactsfield", kind: "basic", name: "BasicContactsfieldFlow"
+  step: [ { o: "create", i: { ref: "contactsfield_ref01" } } ]
+}
+`
+
+
+const BUILTIN_TYPE_ENTITY = `
+main: kit: entity: mfa: {
+  alias: field: {}
+  name: "mfa"
+  field: { code: { name: "code", kind: "field", type: "\`$STRING\`" } }
+  fields: { "code": { h: 'Code', n: "code", r: false, t: "\`$STRING\`" } }
+  op: {
+    create: {
+      name: "create"
+      points: [ {
+        g: {}, m: "POST", o: "/mfa/codes/verifications"
+        s: [{ lit: "mfa" }, { lit: "codes" }, { lit: "verifications" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: entity: node: {
+  alias: field: {}
+  name: "node"
+  field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: {}, m: "GET", o: "/nodes", s: [{ lit: "nodes" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+`
+
+
+// Inactive, and already named the type elixir gives `mfa` in its place: the
+// types module declares a type for every entity, active or not.
+const SAFE_TYPE_ENTITY = `
+main: kit: entity: mfa_type: {
+  active: false
+  alias: field: {}
+  name: "mfa_type"
+  field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: {}, m: "GET", o: "/mfa-types", s: [{ lit: "mfa-types" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+`
+
+
 function makeModel(
   targetNames: string[], name?: string, extra?: string, features?: string[],
 ): any {
@@ -610,9 +803,13 @@ export {
   KIT,
   STAGE,
   SCAFFOLD,
+  toolchain,
   API_MODEL,
   ROUTING_MODEL,
   entityTestData,
+  FOLD_ENTITY,
+  BUILTIN_TYPE_ENTITY,
+  SAFE_TYPE_ENTITY,
   makeLog,
   layeredFs,
   makeModel,
