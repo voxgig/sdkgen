@@ -69,9 +69,9 @@ export function synthesizeInput(schema: any, explicit?: any, depth = 0): any {
   for (const choice of schema.oneOf || schema.anyOf || []) {
     try { const v = synthesizeInput(choice, undefined, depth + 1); validateContract(schema, v); return v } catch {}
   }
+  if (schema.allOf) return allOfInput(schema, depth)
   let value: any
-  if (schema.allOf) value = Object.assign({}, ...schema.allOf.map((s: any) => synthesizeInput(s, undefined, depth + 1)))
-  else if (schema.type === 'object' || schema.properties) {
+  if (schema.type === 'object' || schema.properties) {
     value = {}
     for (const key of schema.required || []) if (!schema.properties?.[key]?.readOnly) {
       value[key] = synthesizeInput(schema.properties?.[key], undefined, depth + 1)
@@ -88,6 +88,33 @@ export function synthesizeInput(schema: any, explicit?: any, depth = 0): any {
   else throw new LiveBlocked('Required input needs a guide recipe or validated example')
   validateContract(schema, value)
   return value
+}
+
+// An allOf's objects merged, else a value its parts give. A part that gives none, such
+// as a description, blocks only a value the whole schema then rejects.
+function allOfInput(schema: any, depth: number): any {
+  let blocked: unknown
+  const given = schema.allOf.map((part: any) => {
+    try { return synthesizeInput(part, undefined, depth + 1) } catch (error) { blocked ??= error }
+  })
+  const objects = given.filter((v: any) => v !== null && typeof v === 'object' && !Array.isArray(v))
+  const declared = declaredValue(schema.allOf)
+  const value = objects.length ? Object.assign({}, ...objects)
+    : declared !== undefined ? declared : given.find((v: any) => v !== undefined)
+  if (value === undefined) throw blocked ?? new LiveBlocked('Required input needs a guide recipe or validated example')
+  try { validateContract(schema, value) } catch (error) { throw blocked ?? error }
+  return value
+}
+
+// Whichever part declares it: an example, then an enum's first value, then a default.
+function declaredValue(parts: any[]): any {
+  const schemas = parts.filter(part => part !== null && typeof part === 'object')
+  const shown = schemas.find(part => part.example !== undefined ||
+    (Array.isArray(part.examples) && part.examples.length > 0))
+  if (shown) return shown.example !== undefined ? shown.example : shown.examples[0]
+  const listed = schemas.find(part => Array.isArray(part.enum) && part.enum.length > 0)
+  if (listed) return listed.enum[0]
+  return schemas.find(part => part.default !== undefined)?.default
 }
 
 export function requestContract(facts: any): { schema?: any, example?: any, required?: boolean } {
