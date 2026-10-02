@@ -17,7 +17,7 @@ import { SdkGen } from '../dist/sdkgen.js'
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL,
-  FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
+  FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
 } from './generateharness'
 
 
@@ -1896,55 +1896,88 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
-  test('live strictness is model-driven', async () => {
-    const lenient = await generate(['ts', 'go'], undefined,
-      'main: kit: test: live: strict: false')
-    const strict = await generate(['ts', 'go'], undefined,
-      'main: kit: test: live: strict: true')
+  // Every target with a live suite: the comment states the value read, the
+  // constant beside it holds that value, and the checks act on it.
+  const LIVE_SUITE_TARGETS = [
+    'ts', 'js', 'go', 'py', 'php', 'rb', 'lua', 'perl', 'java', 'kotlin', 'rust', 'csharp',
+  ]
 
-    // ts: the lenient early-return disappears; the offline assertions become
-    // unconditional, so a failed request fails the test.
-    const tsLenient = findFile(lenient, 'ts/test/entity/planet/PlanetDirect.test.ts')
-    const tsStrict = findFile(strict, 'ts/test/entity/planet/PlanetDirect.test.ts')
-    ok(null != tsLenient && null != tsStrict, 'ts: no direct test generated')
+  const STRICT_DECL = /(?:LIVE_STRICT|LiveStrict)(?:\s*:\s*bool)?\s*=>?\s*(true|false|True|False|1|0)\b/
 
-    ok(tsLenient!.includes('Live mode is lenient'),
-      'ts: the default stopped being lenient')
-    ok(!tsStrict!.includes('Live mode is lenient'),
-      'ts: strict mode still emits the lenient early return')
-    ok(!tsStrict!.includes('if (setup.live) {\n      // Live mode'),
-      'ts: strict mode still branches on setup.live for the result check')
-    ok(tsStrict!.includes('assert(result.ok === true)'),
-      'ts: strict mode dropped the assertions entirely')
+  test('live strictness is model-driven in every live target', async () => {
+    const lenient = 'main: kit: test: live: strict: false'
+    const variants: Record<string, Record<string, string>> = {
+      absent: await generate(LIVE_SUITE_TARGETS),
+      strict: await generate(LIVE_SUITE_TARGETS, undefined, 'main: kit: test: live: strict: true'),
+      lenient: await generate(LIVE_SUITE_TARGETS, undefined, lenient),
+      override: await generate(LIVE_SUITE_TARGETS, undefined,
+        lenient + '\nmain: kit: target: go: test: live: strict: true'),
+    }
 
-    // go: the same non-2xx path becomes Fatalf instead of Skipf.
-    const goLenient = findFile(lenient, 'go/test/planet_direct_test.go')
-    const goStrict = findFile(strict, 'go/test/planet_direct_test.go')
-    ok(null != goLenient && null != goStrict, 'go: no direct test generated')
+    deepStrictEqual(Object.keys(variants.strict).sort(), Object.keys(variants.absent).sort(),
+      'declaring strict:true changed which files are generated')
+    for (const path of Object.keys(variants.absent)) {
+      strictEqual(variants.strict[path], variants.absent[path],
+        'declaring strict:true changed ' + path)
+    }
 
-    ok(goLenient!.includes('t.Skipf("load call failed'),
-      'go: the default stopped skipping a failed live load')
-    ok(goStrict!.includes('t.Fatalf("load call failed'),
-      'go: strict mode still skips a failed live load')
-    ok(!goStrict!.includes('t.Skipf("load call failed'),
-      'go: strict mode left a lenient skip behind')
+    const gaps: string[] = []
+    for (const [variant, out] of Object.entries(variants)) {
+      for (const target of LIVE_SUITE_TARGETS) {
+        const strict = 'lenient' !== variant && ('override' !== variant || 'go' === target)
+        const files = testFiles(out, target).filter(([name]) => /planet/i.test(name))
+        if (2 !== files.length) {
+          gaps.push(`${variant} ${target}: ${files.length} planet test files`)
+        }
+        for (const [name, content] of files) {
+          const src = String(content)
+          const where = `${variant} ${target}:${name}`
+          if (!src.includes(`main.kit.test.live.strict is ${strict} (the default is true)`) ||
+            src.includes(`main.kit.test.live.strict is ${!strict}`) ||
+            !src.includes(strict ? 'fails the test.' : 'skips the test with the reason.')) {
+            gaps.push(where + ' does not state strict: ' + strict)
+          }
+          const declared = src.match(STRICT_DECL)
+          if (null == declared || strict !== ['true', 'True', '1'].includes(declared[1])) {
+            gaps.push(where + ' declares ' + declared?.[0])
+          }
+          const uses = (src.match(/LIVE_STRICT|LiveStrict/g) || []).length
+          if (/direct/i.test(name)) {
+            if (uses < 2) gaps.push(where + ' never consults the setting')
+          }
+          else if (['ts', 'js'].includes(target)) {
+            if (!src.includes('strict: LIVE_STRICT')) gaps.push(where + ' does not pass the setting on')
+          }
+          else if (strict === /live_?observe|liveObserver/i.test(src)) {
+            gaps.push(where + (strict ? ' observes a strict flow' : ' fails a lenient flow'))
+          }
+        }
+      }
+    }
+    deepStrictEqual(gaps, [])
   })
 
 
-  // No model key, no change. Every existing project must generate exactly
-  // what it generated before — the whole point of a default.
-  test('live strictness defaults to assertions', async () => {
-    const absent = await generate(['ts', 'go'])
-    const explicit = await generate(['ts', 'go'], undefined,
-      'main: kit: test: live: strict: true')
-
-    deepStrictEqual(Object.keys(absent).sort(), Object.keys(explicit).sort(),
-      'declaring strict:true changed which files are generated')
-
-    for (const path of Object.keys(absent)) {
-      strictEqual(explicit[path], absent[path],
-        'declaring strict:true changed ' + path)
+  test('every live target loads the record a create-less flow lists', async () => {
+    const out = await generate(LIVE_SUITE_TARGETS, undefined, CREATELESS_ENTITY)
+    const gaps: string[] = []
+    for (const target of LIVE_SUITE_TARGETS) {
+      const files = testFiles(out, target).filter(([name]) => /metric/i.test(name))
+      const direct = files.find(([name]) => /direct/i.test(name))
+      const entity = files.find(([name]) => !/direct/i.test(name))
+      if (null == direct || null == entity) {
+        gaps.push(target + ': no metric direct and entity tests')
+        continue
+      }
+      if (!String(direct[1]).includes('The account has no metric record to load')) {
+        gaps.push(`${target}:${direct[0]} does not skip on an empty account`)
+      }
+      const reads = ['ts', 'js'].includes(target)
+        ? String(entity[1]).includes('runLiveEntity(')
+        : /live_?existing/i.test(String(entity[1]))
+      if (!reads) gaps.push(`${target}:${entity[0]} does not read a listed record`)
     }
+    deepStrictEqual(gaps, [])
   })
 
 
