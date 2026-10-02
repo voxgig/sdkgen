@@ -175,8 +175,8 @@ function fitting(sample, schema) {
     }
     return array && !Array.isArray(sample) ? undefined : sample;
 }
-// Schema-shaped data where the definition gives no example: every property,
-// one item per array, the first branch of a union.
+// Schema-shaped data where the definition gives no example: every property, one item
+// per array, a union's first branch, an allOf's objects merged, else a value its parts give.
 function synthesize(schema, depth) {
     if (null == schema || 'object' !== typeof schema || depth > 6)
         return undefined;
@@ -185,9 +185,12 @@ function synthesize(schema, depth) {
     if (Array.isArray(schema.enum) && 0 < schema.enum.length)
         return schema.enum[0];
     if (Array.isArray(schema.allOf)) {
-        const parts = schema.allOf.map((s) => synthesize(s, depth + 1))
-            .filter((v) => null != v && 'object' === typeof v && !Array.isArray(v));
-        return Object.assign({}, ...parts);
+        const values = schema.allOf.map((s) => synthesize(s, depth + 1));
+        const parts = values.filter((v) => null != v && 'object' === typeof v && !Array.isArray(v));
+        if (0 < parts.length)
+            return Object.assign({}, ...parts);
+        const declared = declaredValue(schema.allOf);
+        return undefined !== declared ? declared : values.find((v) => undefined !== v);
     }
     const union = schema.oneOf ?? schema.anyOf;
     if (Array.isArray(union) && 0 < union.length)
@@ -216,6 +219,18 @@ function synthesize(schema, depth) {
             'date' === schema.format ? '2026-01-01' : 'x';
     }
     return undefined;
+}
+// Whichever part declares it: an example, then an enum's first value, then a default.
+function declaredValue(parts) {
+    const schemas = parts.filter((part) => null != part && 'object' === typeof part);
+    const shown = schemas.find((part) => undefined !== part.example ||
+        (Array.isArray(part.examples) && 0 < part.examples.length));
+    if (null != shown)
+        return undefined !== shown.example ? shown.example : shown.examples[0];
+    const listed = schemas.find((part) => Array.isArray(part.enum) && 0 < part.enum.length);
+    if (null != listed)
+        return listed.enum[0];
+    return schemas.find((part) => undefined !== part.default)?.default;
 }
 function boundedSample(sample) {
     const bound = (node, depth) => {
