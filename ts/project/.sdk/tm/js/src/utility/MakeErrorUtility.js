@@ -1,7 +1,7 @@
 
 const { Result } = require('../Result')
 
-const { clean } = require('./CleanUtility')
+const { clean, setMessage } = require('./CleanUtility')
 const { clone, delprop } = require('./StructUtility')
 
 function makeError(ctx, err) {
@@ -27,7 +27,7 @@ function makeError(ctx, err) {
   }
 
   const errmsg = err.message || 'unknown error'
-  err.message = 'ProjectNameSDK: ' + op.name + ': ' + errmsg
+  setMessage(err, 'ProjectNameSDK: ' + op.name + ': ' + errmsg)
 
   // The context stays reachable for a debugger, but not for a serialiser:
   // a transport error carries none, and a pipeline error's is enumerable
