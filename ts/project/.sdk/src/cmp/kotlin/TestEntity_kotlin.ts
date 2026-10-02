@@ -1,4 +1,4 @@
-import { flowSteps, opReachable } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -90,13 +90,18 @@ import java.nio.file.Paths
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.Test
 
+import ${kotlinpackage}.core.Config
+import ${kotlinpackage}.core.Context
 import ${kotlinpackage}.core.Helpers
 import ${kotlinpackage}.core.SdkEntity
+import ${kotlinpackage}.core.SdkError
 import ${kotlinpackage}.core.${SDK}
+import ${kotlinpackage}.feature.BaseFeature
 import ${kotlinpackage}.utility.Json
 import ${kotlinpackage}.utility.struct.Struct
 
@@ -192,6 +197,8 @@ ${allSteps.length > 0 ? `    val client = setup.client\n\n` : ''}`)
 
 `)
     }
+
+    Content(failureTests(SDK, entity, accessor))
 
     // Setup function (companion object).
     Content(`  companion object {
@@ -558,6 +565,106 @@ const GENERATE_OP: Record<string, OpGen> = {
   update: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
+}
+
+
+// A failed operation throws from a stream as it does from the operation: a
+// transport failure, and a hook that rejects the call. A throwing hook fires
+// PreUnexpected, under throw false too. The caller's ctrl stays its own. An
+// invalid request fails with validate's own error, before it is sent.
+function failureTests(SDK: string, entity: ModelEntity, accessor: string): string {
+  const hasList = opReachable((entity.op as any)?.list, [])
+  const bad = invalidRequest(entity)
+  if (!hasList && null == bad) {
+    return ''
+  }
+
+  let out = `  private fun hasFeature(name: String): Boolean {
+    val fm = Helpers.toMapAny(Config.sharedConfig()["feature"])
+    return fm != null && fm[name] != null
+  }
+
+`
+
+  if (hasList) {
+    out += `  class FailHook : BaseFeature("failhook", "0.0.1", true) {
+    var unexpected = 0
+    override fun preSpec(ctx: Context) { throw RuntimeException("${entity.name} hook failed") }
+    override fun preUnexpected(ctx: Context) { unexpected++ }
+  }
+
+  @Test
+  fun streamError() {
+    val offline = linkedMapOf<String, Any?>("net" to linkedMapOf<String, Any?>("offline" to true))
+    val err = assertThrows(RuntimeException::class.java) {
+      ${SDK}.testSDK(offline, null).${accessor}(null).stream("list", null, null).toList()
+    }
+    assertTrue(err.message.orEmpty().contains("offline"), err.message)
+
+    ${SDK}.testSDK(offline, null).${accessor}(null).stream("list", null,
+      linkedMapOf<String, Any?>("ctrl" to linkedMapOf<String, Any?>("throw" to false))).toList()
+
+    if (hasFeature("rbac")) {
+      val denied = ${SDK}.testSDK(null, linkedMapOf<String, Any?>(
+        "feature" to linkedMapOf<String, Any?>(
+          "rbac" to linkedMapOf<String, Any?>("active" to true, "deny" to true))))
+      val denyerr = assertThrows(SdkError::class.java) {
+        denied.${accessor}(null).stream("list", null, null).toList()
+      }
+      assertEquals("rbac_denied", denyerr.code)
+    }
+  }
+
+  @Test
+  fun streamCtrl() {
+    val explain = linkedMapOf<String, Any?>()
+    val ctrl = linkedMapOf<String, Any?>("explain" to explain)
+    ${SDK}.testSDK().${accessor}(null).stream("list", null,
+      linkedMapOf<String, Any?>("ctrl" to ctrl)).toList()
+    assertEquals(listOf("explain"), ctrl.keys.toList())
+    assertTrue(explain === ctrl["explain"] && explain.isNotEmpty())
+  }
+
+  @Test
+  fun unexpected() {
+    val hook = FailHook()
+    val client = ${SDK}(linkedMapOf<String, Any?>(
+      "feature" to linkedMapOf<String, Any?>("test" to linkedMapOf<String, Any?>("active" to true)),
+      "extend" to mutableListOf<Any?>(hook)))
+
+    val err = assertThrows(RuntimeException::class.java) {
+      client.${accessor}(null).list(null, null)
+    }
+    assertTrue(err.message.orEmpty().contains("hook failed"), err.message)
+    assertTrue(0 < hook.unexpected)
+
+    val fired = hook.unexpected
+    client.${accessor}(null).list(null, linkedMapOf<String, Any?>("throw" to false))
+    assertTrue(fired < hook.unexpected)
+  }
+
+`
+  }
+
+  if (null != bad) {
+    const args = Object.entries(bad.args)
+      .map(([k, v]) => JSON.stringify(k) + ' to ' + JSON.stringify(v)).join(', ')
+    out += `  @Test
+  fun validate() {
+    Assumptions.assumeTrue(hasFeature("validate"), "feature not present in this SDK: validate")
+    val client = ${SDK}.testSDK(null, linkedMapOf<String, Any?>(
+      "feature" to linkedMapOf<String, Any?>(
+        "validate" to linkedMapOf<String, Any?>("active" to true))))
+    val err = assertThrows(SdkError::class.java) {
+      client.${accessor}(null).${bad.op}(linkedMapOf<String, Any?>(${args}), null)
+    }
+    assertEquals("validate_failed", err.code)
+  }
+
+`
+  }
+
+  return out
 }
 
 
