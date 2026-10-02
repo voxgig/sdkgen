@@ -218,17 +218,18 @@ function fitting(sample: any, schema: any): any {
 }
 
 
-// Schema-shaped data where the definition gives no example: every property,
-// one item per array, the first branch of a union.
+// Schema-shaped data where the definition gives no example: every property, one item
+// per array, a union's first branch, and an allOf's objects merged, else its first value.
 function synthesize(schema: any, depth: number): any {
   if (null == schema || 'object' !== typeof schema || depth > 6) return undefined
   if (undefined !== schema.example) return schema.example
   if (Array.isArray(schema.enum) && 0 < schema.enum.length) return schema.enum[0]
 
   if (Array.isArray(schema.allOf)) {
-    const parts = schema.allOf.map((s: any) => synthesize(s, depth + 1))
-      .filter((v: any) => null != v && 'object' === typeof v && !Array.isArray(v))
-    return Object.assign({}, ...parts)
+    const values = schema.allOf.map((s: any) => synthesize(s, depth + 1))
+    const parts = values.filter((v: any) => null != v && 'object' === typeof v && !Array.isArray(v))
+    return 0 < parts.length ? Object.assign({}, ...parts) :
+      values.find((v: any) => undefined !== v)
   }
 
   const union = schema.oneOf ?? schema.anyOf
