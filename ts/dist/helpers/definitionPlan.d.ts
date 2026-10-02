@@ -30,6 +30,11 @@ type DefinitionPoint = {
     status: number;
     sample: any;
     idField: string;
+    responseMedia?: string[];
+    rawBody?: {
+        media: string[];
+        text: boolean;
+    };
 };
 declare function definitionPlan(ctx$: any): DefinitionPoint[];
 export type { DefinitionPoint, };

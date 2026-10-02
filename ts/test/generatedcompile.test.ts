@@ -5,7 +5,7 @@ import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 
 import { memfs } from 'memfs'
 
@@ -28,6 +28,10 @@ import {
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
+import {
+  MEDIA_CASES, MEDIA_MODEL, MEDIA_PROBES, MEDIA_RAN, MEDIA_SERVER,
+  mediaFailures, mediaPrinted, mediaRecord,
+} from './mediaprobes'
 
 
 function materialise(files: Record<string, string>, root: string) {
@@ -4891,6 +4895,116 @@ describe('the README examples run for a slug carrying the word client', () => {
         README_SLUG + ':\n' + tail(ran.out, 60))
       ok(lane.ran.test(ran.out), lane.target + ': the README suite reported no full run:\n' +
         tail(ran.out))
+    })
+  }
+})
+
+
+// The media types a point declares, driven through a generated SDK. A probe
+// with a live transport sends every case to a local server, which records
+// what arrives; one without prints what its transport is given.
+type MediaLane = {
+  target: string
+  ready: () => string | null
+  // Writes the probe, builds what needs building, and runs the probe.
+  exec: (sdkroot: string, env: NodeJS.ProcessEnv,
+    write: (name: string, source: string) => void) => ReturnType<typeof run>
+  seam?: boolean
+}
+
+
+const MEDIA_LANES: MediaLane[] = [
+  ...['ts', 'js'].map((target) => ({
+    target,
+    ready: () => 'ts' === target && !Fs.existsSync(TSC) ? 'typescript is not installed here' : null,
+    exec: (sdkroot: string, env: NodeJS.ProcessEnv, write: (name: string, source: string) => void) => {
+      linkDeps(sdkroot)
+      if ('ts' === target) {
+        const built = tsc(sdkroot, 'src')
+        if (!built.ok) return built
+      }
+      write('media-probe.cjs', MEDIA_PROBES.node.replace('SDK_MODULE', '.'))
+      return run(process.execPath, ['media-probe.cjs'], sdkroot, env)
+    },
+  })),
+]
+
+
+function mediaServer(dir: string): Promise<{ port: number, log: string, stop: () => void }> {
+  const file = Path.join(dir, 'media-server.cjs')
+  const log = Path.join(dir, 'media-requests.jsonl')
+  Fs.writeFileSync(file, MEDIA_SERVER)
+  Fs.writeFileSync(log, '')
+  const proc = spawn(process.execPath, [file, log], { stdio: ['ignore', 'pipe', 'inherit'] })
+  return new Promise((resolve, reject) => {
+    let seen = ''
+    proc.on('error', reject)
+    proc.on('exit', (code) => reject(new Error('media server exited: ' + code)))
+    proc.stdout!.on('data', (chunk) => {
+      seen += String(chunk)
+      const m = /listening (\d+)/.exec(seen)
+      if (null != m) {
+        proc.removeAllListeners('exit')
+        resolve({ port: Number(m[1]), log, stop: () => proc.kill('SIGKILL') })
+      }
+    })
+  })
+}
+
+
+describe('the media types a point declares reach the wire', () => {
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-media-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of MEDIA_LANES) {
+    test(lane.target + ': Accept, content-type and a raw body', async (t) => {
+      const missing = lane.ready()
+      if (null != missing) return t.skip(missing)
+
+      const sdkroot = Path.join(tmp, lane.target)
+      await generateTo(lane.target, sdkroot, MEDIA_MODEL)
+      Fs.writeFileSync(Path.join(sdkroot, 'media-cases.json'), JSON.stringify(MEDIA_CASES))
+      const write = (name: string, source: string) => {
+        const path = Path.join(sdkroot, name)
+        Fs.mkdirSync(Path.dirname(path), { recursive: true })
+        Fs.writeFileSync(path, source)
+      }
+
+      const server = true === lane.seam ? null : await mediaServer(sdkroot)
+      let ran: ReturnType<typeof run>
+      try {
+        ran = lane.exec(sdkroot, {
+          ...nestedTestEnv(),
+          MEDIA_BASE: null == server ? 'http://media.test' : 'http://127.0.0.1:' + server.port,
+        }, write)
+      }
+      finally {
+        server?.stop()
+      }
+
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+      }
+
+      ok(ran.ok, lane.target + ': the media probe failed:\n' + tail(ran.out, 60))
+      const count = MEDIA_RAN.exec(ran.out)
+      strictEqual(Number(count?.[1]), MEDIA_CASES.length,
+        lane.target + ': the probe did not run every case:\n' + tail(ran.out))
+
+      const records = null == server ? mediaPrinted(ran.out) :
+        Fs.readFileSync(server.log, 'utf8').split('\n').filter((line) => '' !== line)
+          .map((line) => JSON.parse(line))
+          .map((r) => mediaRecord(r.method, r.url, r.headers, r.bodyHex))
+
+      deepStrictEqual(mediaFailures(MEDIA_CASES, records), [],
+        lane.target + ' probe output:\n' + tail(ran.out))
     })
   }
 })

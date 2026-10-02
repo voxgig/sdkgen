@@ -10,6 +10,9 @@ const assert = require('node:assert/strict')
 const KEY = 'definition-test-key'
 const BASE = 'http://definition.test'
 
+const RAW_TEXT = 'definition-test-body'
+const RAW_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0xff])
+
 
 async function runDefinitionPoint(SDK, point) {
   const sent = []
@@ -34,6 +37,7 @@ async function runDefinitionPoint(SDK, point) {
   for (const arg of point.args) input[arg.name] = arg.value
   for (const h of point.headers || []) input[h.name] = h.value
   if (null != point.action) input.$action = point.action
+  if (null != point.rawBody) input.$body = rawSample(point)
 
   let result
   let error
@@ -89,6 +93,31 @@ async function runDefinitionPoint(SDK, point) {
       'header parameter not sent as a header: ' + h.wire)
   }
 
+  // Accept asks only for what a success response declares: its JSON type
+  // alone, when it declares one.
+  if (null != point.responseMedia) {
+    const declared = point.responseMedia
+    const asked = String(new Headers(init.headers).get('accept') ?? '').split(',')
+      .map(baseMedia).filter((type) => '' !== type)
+    assert(0 < asked.length, 'no Accept for a declared response body: ' + declared.join(', '))
+    for (const type of asked) {
+      assert(declared.some((d) => covers(d, type)),
+        'Accept asks for a type no success response declares: ' + type)
+    }
+    if (declared.some(isJson)) {
+      assert(1 === asked.length && isJson(asked[0]),
+        'Accept is not the declared JSON type alone: ' + asked.join(', '))
+    }
+  }
+
+  // A raw body goes out as given, under a type the definition declares.
+  if (null != point.rawBody) {
+    const type = baseMedia(new Headers(init.headers).get('content-type') ?? '')
+    assert(point.rawBody.media.some((d) => covers(d, type)),
+      'raw body sent as a type the definition does not declare: ' + type)
+    assert.deepEqual(bytesOf(init.body), bytesOf(rawSample(point)), 'raw body not sent as given')
+  }
+
   if (null != error) {
     throw error
   }
@@ -113,6 +142,37 @@ async function runDefinitionPoint(SDK, point) {
         'the entity does not hold the record the definition example returns')
     }
   }
+}
+
+
+function rawSample(point) {
+  return point.rawBody.text ? RAW_TEXT : RAW_BYTES
+}
+
+
+function bytesOf(body) {
+  return 'string' === typeof body ? Buffer.from(body, 'utf8') :
+    body instanceof ArrayBuffer ? Buffer.from(new Uint8Array(body)) :
+      ArrayBuffer.isView(body) ? Buffer.from(body.buffer, body.byteOffset, body.byteLength) :
+        Buffer.from(String(body))
+}
+
+
+function baseMedia(type) {
+  return type.split(';')[0].trim().toLowerCase()
+}
+
+
+function isJson(type) {
+  const media = baseMedia(type)
+  return 'application/json' === media || 'text/json' === media || media.endsWith('+json')
+}
+
+
+function covers(declared, type) {
+  const media = baseMedia(declared)
+  return media === type || '*/*' === media ||
+    (media.endsWith('/*') && type.startsWith(media.slice(0, -1)))
 }
 
 

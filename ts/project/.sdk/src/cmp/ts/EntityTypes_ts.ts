@@ -6,7 +6,7 @@ import {
   File, Content,
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, opActions, tsSafeTypeName } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, opActions, tsSafeTypeName, opRawBody } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -82,6 +82,11 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
           Content(`  ${propKey(it.name)}${opt}: ${canonToType(it.type, LANG)}
 `)
         })
+
+        if (('create' === opname || 'update' === opname) && null != opRawBody(ops[opname])) {
+          Content(`  $body?: Uint8Array | ArrayBuffer | Blob | ReadableStream | AsyncIterable<Uint8Array> | string
+`)
+        }
 
         const actions = opActions(ops[opname])
         if (0 < actions.length) {

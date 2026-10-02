@@ -1,5 +1,6 @@
 
 const { Result } = require('../Result')
+const { isRawValue, isStream } = require('./MediaUtility')
 
 function makeFetchDef(ctx) {
   const spec = ctx.spec
@@ -32,8 +33,13 @@ function makeFetchDef(ctx) {
   }
 
   if (null != spec.body) {
-    fetchdef.body =
-      'object' === typeof spec.body ? jsonify(spec.body) : spec.body
+    const body = spec.body
+    fetchdef.body = 'object' !== typeof body || isRawValue(body) ? body : jsonify(body)
+
+    // Node's fetch refuses a stream body without it.
+    if (isStream(body)) {
+      fetchdef.duplex = 'half'
+    }
   }
 
   return fetchdef

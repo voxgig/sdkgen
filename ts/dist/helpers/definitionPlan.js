@@ -24,6 +24,8 @@ function definitionPlan(ctx$) {
     // definition declares no scheme: LearnWorlds declares it as a parameter.
     const ownHeader = !(0, utility_1.isAuthSuppressed)(model) && 'header' === (0, utility_1.resolveAuthIn)(model) ?
         (0, utility_1.resolveAuthName)(model).toLowerCase() : null;
+    // A model from before apidef recorded media types sends neither header.
+    const recorded = recordsMedia(model);
     for (const entity of Object.values((0, opShape_1.entityCollection)(model))) {
         if (false === entity.active)
             continue;
@@ -89,6 +91,9 @@ function definitionPlan(ctx$) {
                         .filter((q) => params.some((p) => 'query' === p?.in && q.wire === p?.name));
                 const success = successResponse(facts.responses);
                 const media = null == success ? undefined : jsonMedia(success.response);
+                const responseMedia = recorded ? successMedia(facts) : [];
+                const rawBody = recorded && ('create' === op || 'update' === op) ?
+                    rawRequestBody(facts) : undefined;
                 plan.push({
                     entity: entity.name,
                     accessor: (0, apidef_1.nom)(entity, 'Name'),
@@ -99,6 +104,8 @@ function definitionPlan(ctx$) {
                     args,
                     select: selected,
                     headers,
+                    ...(0 === responseMedia.length ? {} : { responseMedia }),
+                    ...(null == rawBody ? {} : { rawBody }),
                     query: params.filter((p) => 'query' === p?.in).map((p) => p.name),
                     queryArgs,
                     auth: unchecked ? null : credentialSets(facts, own),
@@ -149,6 +156,43 @@ function jsonMedia(response) {
         return { schema: response.schema, example: response.examples?.['application/json'] };
     }
     return undefined;
+}
+function recordsMedia(model) {
+    return Object.values((0, opShape_1.entityCollection)(model)).some((entity) => Object.values(entity?.op || {}).some((operation) => (operation?.points || []).some((p) => null != p.rs || null != p.rb)));
+}
+// Every type a success response declares: OpenAPI 3 content, or Swagger 2
+// produces (else JSON) for a response with a schema.
+function successMedia(facts) {
+    const out = [];
+    const add = (types) => types.forEach((t) => out.includes(t) || out.push(t));
+    for (const [code, res] of Object.entries(facts.responses || {})) {
+        if (!/^2(\d\d|XX)$/i.test(code))
+            continue;
+        if (null != res?.content && 'object' === typeof res.content) {
+            add(Object.keys(res.content));
+        }
+        else if (null != res?.schema) {
+            add(Array.isArray(facts.produces) && 0 < facts.produces.length ?
+                facts.produces : ['application/json']);
+        }
+    }
+    return out;
+}
+// A request body declared in concrete raw types alone, which no SDK may
+// encode: no JSON, form, multipart or range.
+function rawRequestBody(facts) {
+    const content = facts.requestBody?.content;
+    const types = null != content && 'object' === typeof content ? Object.keys(content) :
+        (facts.parameters || []).some((p) => 'body' === p?.in) && Array.isArray(facts.consumes) ?
+            facts.consumes : [];
+    const raw = (t) => !/json|^application\/x-www-form-urlencoded|^multipart\/|\*/i
+        .test(t.split(';')[0].trim());
+    if (0 === types.length || !types.every(raw))
+        return undefined;
+    return {
+        media: types,
+        text: types.every((t) => /^text\/|^application\/xml|\+xml/i.test(t.split(';')[0].trim())),
+    };
 }
 function sampleOf(media) {
     if (undefined !== media.example)
