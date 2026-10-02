@@ -546,6 +546,7 @@ needs editing.
 | `apikey`, `secret` | Credentials. `auth: null` suppresses auth outright. |
 | `base`, `prefix`, `suffix` | The API base URL and path affixes. |
 | `auth.prefix`, `auth.basic` | Credential scheme. |
+| `auth.name` | The header, query parameter or cookie that carries the credential, in the placement the API declares. Read on every request; empty means the declared name, and a different name also removes a credential under the declared one. |
 | `headers` | Extra headers sent with every request. |
 | `allow.method`, `allow.op` | Comma-separated allow-lists. |
 | `entity` | Per-entity overrides. |

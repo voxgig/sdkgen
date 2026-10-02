@@ -750,7 +750,10 @@ class PipelineTest extends TestCase
         if ('' !== $cred['pair']) {
             // A cookie credential is a `<scheme>=<key>` pair, and the scheme
             // name leaves no room for the option's prefix.
-            $this->assertMatchesRegularExpression(self::COOKIE_PAIR, $cred['value']);
+            // preg_match rather than assertMatchesRegularExpression, which
+            // PHPUnit 8 does not have.
+            $this->assertSame(1, preg_match(self::COOKIE_PAIR, (string) $cred['value']),
+                (string) $cred['value']);
             return;
         }
         // A header credential is prefix-joined; a query credential is the raw
