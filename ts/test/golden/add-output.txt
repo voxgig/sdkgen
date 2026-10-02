@@ -32,7 +32,7 @@ src/cmp/c/ReadmeTopQuick_c.ts 421cdbda1c4d
 src/cmp/c/ReadmeTopTest_c.ts 94aa193c7015
 src/cmp/c/Schema_c.ts c4ed362679d7
 src/cmp/c/TestClean_c.ts 2f2662ecfece
-src/cmp/c/TestDirect_c.ts 931439b72ac7
+src/cmp/c/TestDirect_c.ts 4c48a27a306e
 src/cmp/c/TestEntity_c.ts 84c0cb4a54e6
 src/cmp/c/Test_c.ts f1a8a6c7a0c6
 src/cmp/c/fragment/Entity.fragment.c 6369839d9814

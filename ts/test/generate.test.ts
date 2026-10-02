@@ -228,6 +228,7 @@ describe('generate', () => {
     ok(5 < targets.length, 'expected the full target set, got ' + targets.length)
 
     const leaks: string[] = []
+    const undef: string[] = []
 
     for (const target of targets) {
       let out: Record<string, string>
@@ -253,11 +254,17 @@ describe('generate', () => {
           !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
           leaks.push(path)
         }
+
+        // A component that reads a compact field by a name it does not carry.
+        if (/direct/i.test(path) && /["']undefined["']/.test(content)) {
+          undef.push(path)
+        }
       }
     }
 
     strictEqual(leaks.length, 0,
       'generated files leak the ProjectName placeholder:\n  ' + leaks.join('\n  '))
+    deepStrictEqual(undef, [], 'direct tests that name undefined')
   })
 
 
