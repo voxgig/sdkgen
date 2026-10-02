@@ -24,7 +24,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 
 import {
-  makeModel, makeRoot, layeredFs, makeLog, toolchain,
+  makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
@@ -4883,6 +4883,99 @@ describe('the feature suite runs from a generated SDK', () => {
       }
     })
   }
+})
+
+
+// The runtime refuses a call that fills no route of its operation, or names
+// no action where every route is one. Generated from the routing fixture, a
+// stream, smoke or flow test that made such a call fails here, as it would in
+// every consumer's suite; planet's tests still run, so the gates are not
+// simply switching everything off.
+describe('generated entity tests make only calls the runtime takes', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-routing-'))
+    const model = makeModel(['ts'], undefined, ROUTING_MODEL)
+    for (const entity of Object.values(model.main.kit.entity) as any[]) {
+      const Name = entity.name.split('_').map((w: string) => w[0].toUpperCase() + w.slice(1)).join('')
+      const dir = Path.join(tmp, '.sdk', 'test', 'entity', entity.name)
+      Fs.mkdirSync(dir, { recursive: true })
+      Fs.writeFileSync(Path.join(dir, Name + 'TestData.json'), JSON.stringify(entityTestData(entity)))
+    }
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+
+  test('ts: the moon, signal and planet entity tests pass', async () => {
+    const root = Path.join(tmp, 'ts')
+    await generateTo('ts', root, ROUTING_MODEL)
+    linkDeps(root)
+    for (const tree of ['src', 'test']) {
+      const built = tsc(root, tree)
+      ok(built.ok, 'ts: the generated ' + tree + ' does not compile:\n' + built.out)
+    }
+
+    const files = ['moon/Moon', 'signal/Signal', 'planet/Planet']
+      .map((n) => Path.join('dist-test', 'entity', n + 'Entity.test.js'))
+    const res = run(process.execPath,
+      ['--test', '--test-concurrency=1', '--test-reporter=tap', ...files], root, nestedTestEnv())
+    ok(res.ok, 'ts: a generated entity test failed:\n' + tail(res.out))
+    ok(/# pass 6\b/.test(res.out), 'ts: expected six passing tests:\n' + tail(res.out))
+  })
+
+
+  test('go: the moon, signal and planet entity tests pass', async (t) => {
+    const go = toolchain('go')
+    if (null == go) return t.skip('needs go')
+
+    const root = Path.join(tmp, 'go')
+    await generateTo('go', root, ROUTING_MODEL)
+    const res = run(go, ['test', './test/', '-count=1', '-v',
+      '-run', '^Test(Moon|Signal|Planet)Entity$'], root)
+    if (res.timedOut) return t.skip('go: ' + res.out)
+    ok(res.ok, 'go: a generated entity test failed:\n' + tail(res.out))
+    for (const name of ['Moon', 'Signal', 'Planet']) {
+      ok(res.out.includes('--- PASS: Test' + name + 'Entity '), 'go: Test' + name + 'Entity did not pass:\n' + tail(res.out))
+    }
+    ok(res.out.includes('--- PASS: TestPlanetEntity/stream'), 'go: planet\'s stream test did not run:\n' + tail(res.out))
+    ok(!/Test(Moon|Signal)Entity\/stream/.test(res.out), 'go: a stream test lists a refused route:\n' + tail(res.out))
+  })
+
+
+  test('c: the moon, signal and planet entity tests pass', async (t) => {
+    const make = toolchain('make')
+    const configured = process.env.CC
+    const cc = null == configured || '' === configured
+      ? (toolchain('cc') || toolchain('gcc'))
+      : toolchain(configured)
+    if (null == make || null == cc) {
+      return t.skip('needs make and a C compiler (make: ' + make + ', cc: ' + cc + ')')
+    }
+
+    const root = Path.join(tmp, 'c')
+    await generateTo('c', root, ROUTING_MODEL)
+    const checks: Record<string, number> = {}
+    for (const name of ['moon', 'signal', 'planet']) {
+      const out = name + '_entity_test.out'
+      // make matches a target as a string, so it is spelled with / on every OS.
+      const built = run(make, ['CC=' + cc, 'tests/' + out], root)
+      if (built.timedOut) return t.skip('c: ' + built.out)
+      ok(built.ok, 'c: the ' + name + ' entity test did not build:\n' + tail(built.out))
+      const res = run(Path.join(root, 'tests', out), [], root)
+      ok(res.ok, 'c: the ' + name + ' entity test failed:\n' + tail(res.out))
+      const summary = new RegExp('^' + name + '_entity: (\\d+) checks, 0 failed$', 'm').exec(res.out)
+      ok(null != summary, 'c: the ' + name + ' entity test printed no clean summary:\n' + tail(res.out))
+      checks[name] = Number(summary![1])
+    }
+    // Planet's stream test adds checks; moon and signal keep only the instance ones.
+    ok(checks.moon === checks.signal && checks.moon < checks.planet,
+      'c: unexpected check counts ' + JSON.stringify(checks))
+  })
 })
 
 

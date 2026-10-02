@@ -14,36 +14,21 @@ public static partial class SdkUtility
         var result = (headers == null ? null : StructUtils.Clone(headers) as Dictionary<string, object?>)
             ?? new Dictionary<string, object?>();
 
-        // A header parameter travels as a header, under the name the
-        // definition gives it, and only from this call's own arguments. It
-        // replaces a default of the same name, whatever its case.
-        if (ctx.Point != null &&
-            StructUtils.GetPath(ctx.Point, StructUtils.Jt("args", "header")) is List<object?> hl)
+        // A header argument replaces a default of the same name, whatever its
+        // case.
+        foreach (var arg in CallArgs(ctx, "header"))
         {
-            foreach (var hd in hl)
+            if (arg.Val != null)
             {
-                if (StructUtils.GetProp(hd, "name") is not string name || name == "")
+                var key = arg.Wire.ToLowerInvariant();
+                foreach (var k in new List<string>(result.Keys))
                 {
-                    continue;
-                }
-                var wire = StructUtils.GetProp(hd, "orig") is string orig && orig != "" ? orig : name;
-                var val = ctx.Reqmatch == null ? null : StructUtils.GetProp(ctx.Reqmatch, name);
-                if (val == null && ctx.Reqdata != null)
-                {
-                    val = StructUtils.GetProp(ctx.Reqdata, name);
-                }
-                if (val != null)
-                {
-                    var key = wire.ToLowerInvariant();
-                    foreach (var k in new List<string>(result.Keys))
+                    if (k.ToLowerInvariant() == key)
                     {
-                        if (k.ToLowerInvariant() == key)
-                        {
-                            result.Remove(k);
-                        }
+                        result.Remove(k);
                     }
-                    result[key] = StructUtils.Stringify(val);
                 }
+                result[key] = StructUtils.Stringify(arg.Val);
             }
         }
 

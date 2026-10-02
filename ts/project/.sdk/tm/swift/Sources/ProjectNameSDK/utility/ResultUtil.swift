@@ -60,14 +60,11 @@ private func stripAction(_ reqdata: Value) -> Value {
   return omitKeys(reqdata, ["$action"])
 }
 
-// A header argument travels as a header, which prepareHeadersUtil sends, so
-// the body is built from the request data without it.
-private func headerArgNames(_ ctx: Context) -> [String] {
-  guard let ahl = gpath(ctx.point, "args", "header").asList else { return [] }
-  return ahl.items.compactMap { hd in
-    guard let name = gp(hd, "name").asString, !name.isEmpty else { return nil }
-    return name
-  }
+// A header or query argument travels where prepareHeadersUtil or
+// prepareQueryUtil sends it, so the body is built from the request data
+// without it.
+private func routedArgNames(_ ctx: Context) -> [String] {
+  return (callArgs(ctx, "header") + callArgs(ctx, "query")).map { $0.name }
 }
 
 private func omitKeys(_ reqdata: Value, _ names: [String]) -> Value {
@@ -84,7 +81,7 @@ private func omitKeys(_ reqdata: Value, _ names: [String]) -> Value {
 func transformRequestUtil(_ ctx: Context) -> Value {
   if let sp = ctx.spec { sp.step = "reqform" }
 
-  let reqdata = omitKeys(.map(ctx.reqdata), headerArgNames(ctx))
+  let reqdata = omitKeys(.map(ctx.reqdata), routedArgNames(ctx))
 
   guard let tfm = gp(ctx.point, "transform").asMap else { return stripAction(reqdata) }
   let reqform = gp(tfm, "req")

@@ -4,37 +4,47 @@
 
 #include <string.h>
 
-/* A header argument travels as a header, which prepare_headers_util sends,
-   so the body is built from the request data without it. */
-static bool header_arg(voxgig_value* point, const char* key) {
-  voxgig_value* aheader = getpath2(point, "args", "header");
-  if (!voxgig_is_list(aheader)) return false;
-  voxgig_list* hl = voxgig_as_list(aheader);
-  for (size_t i = 0; i < hl->len; i++) {
-    voxgig_value* name = getp(hl->items[i], "name");
-    if (voxgig_is_string(name) && strcmp(voxgig_as_string(name), key) == 0) return true;
+/* A header or query argument travels where prepare_headers_util or
+   prepare_query_util sends it, so the body is built from the request data
+   without it. */
+static voxgig_value* routed_args(Context* ctx) {
+  voxgig_value* routed = call_args(ctx, "header");
+  voxgig_value* qargs = call_args(ctx, "query");
+  voxgig_list* ql = voxgig_as_list(qargs);
+  for (size_t i = 0; i < ql->len; i++) {
+    voxgig_list_push(voxgig_as_list(routed), v_share(ql->items[i]));
+  }
+  voxgig_release(qargs);
+  return routed;
+}
+
+static bool routed_arg(voxgig_value* routed, const char* key) {
+  voxgig_list* rl = voxgig_as_list(routed);
+  for (size_t i = 0; i < rl->len; i++) {
+    voxgig_list* arg = voxgig_as_list(rl->items[i]);
+    if (strcmp(voxgig_as_string(arg->items[0]), key) == 0) return true;
   }
   return false;
 }
 
 /* `$action` selects the point (see make_point_util); it is never an API
-   field, so the body is a copy without it, or, given a point, without its
-   header arguments. The caller's map is left untouched. */
-static bool dropped(const char* key, voxgig_value* point) {
-  return NULL == point ? strcmp(key, "$action") == 0 : header_arg(point, key);
+   field, so the body is a copy without it, or, given the routed arguments,
+   without those. The caller's map is left untouched. */
+static bool dropped(const char* key, voxgig_value* routed) {
+  return NULL == routed ? strcmp(key, "$action") == 0 : routed_arg(routed, key);
 }
 
-static voxgig_value* omit_keys(voxgig_value* reqdata, voxgig_value* point) {
+static voxgig_value* omit_keys(voxgig_value* reqdata, voxgig_value* routed) {
   if (!voxgig_is_map(reqdata)) return reqdata;
   voxgig_map* rm = voxgig_as_map(reqdata);
   bool has = false;
   for (size_t i = 0; i < rm->len; i++) {
-    if (dropped(rm->entries[i].key, point)) { has = true; break; }
+    if (dropped(rm->entries[i].key, routed)) { has = true; break; }
   }
   if (!has) return reqdata;
   voxgig_value* body = voxgig_new_map();
   for (size_t i = 0; i < rm->len; i++) {
-    if (!dropped(rm->entries[i].key, point)) {
+    if (!dropped(rm->entries[i].key, routed)) {
       setp(body, rm->entries[i].key, v_share(rm->entries[i].value));
     }
   }
@@ -51,7 +61,9 @@ voxgig_value* transform_request_util(Context* ctx) {
 
   if (spec) spec_set_step(spec, "reqform");
 
-  voxgig_value* data = NULL == point ? ctx->reqdata : omit_keys(ctx->reqdata, point);
+  voxgig_value* routed = NULL == point ? NULL : routed_args(ctx);
+  voxgig_value* data = NULL == routed ? ctx->reqdata : omit_keys(ctx->reqdata, routed);
+  if (NULL != routed) voxgig_release(routed);
 
   voxgig_value* transform = to_map(getp(point, "transform"));
   if (v_is_noval(transform)) return strip_action(data);

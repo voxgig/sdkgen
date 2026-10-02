@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::helpers::{getp, jo, setp, to_map};
+use crate::utility::param::call_args;
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
@@ -11,20 +12,17 @@ fn strip_action(reqdata: Value) -> Value {
     omit_keys(reqdata, &["$action".to_string()])
 }
 
-// A header argument travels as a header, which prepare_headers_util sends, so
-// the body is built from the request data without it.
-fn header_arg_names(point: &Value) -> Vec<String> {
-    match getp(&getp(point, "args"), "header") {
-        Value::List(hl) => hl
-            .borrow()
-            .iter()
-            .filter_map(|hd| match getp(hd, "name") {
-                Value::Str(n) if !n.is_empty() => Some(n),
-                _ => None,
-            })
-            .collect(),
-        _ => Vec::new(),
+// A header or query argument travels where prepare_headers_util or
+// prepare_query_util sends it, so the body is built from the request data
+// without it.
+fn routed_arg_names(ctx: &Rc<Context>) -> Vec<String> {
+    let mut names = Vec::new();
+    for kind in ["header", "query"] {
+        for (name, _, _) in call_args(ctx, kind) {
+            names.push(name);
+        }
     }
+    names
 }
 
 fn omit_keys(reqdata: Value, names: &[String]) -> Value {
@@ -59,7 +57,7 @@ pub fn transform_request_util(ctx: &Rc<Context>) -> Value {
         sp.borrow_mut().step = "reqform".to_string();
     }
 
-    let reqdata = omit_keys(ctx.reqdata.borrow().clone(), &header_arg_names(&point));
+    let reqdata = omit_keys(ctx.reqdata.borrow().clone(), &routed_arg_names(ctx));
 
     let transform = to_map(&getp(&point, "transform"));
     if transform.is_noval() {

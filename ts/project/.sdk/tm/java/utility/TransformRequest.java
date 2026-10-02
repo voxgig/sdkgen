@@ -18,7 +18,7 @@ final class TransformRequest {
       ctx.spec.step = "reqform";
     }
 
-    Object reqdata = omit(ctx.reqdata, headerArgNames(ctx));
+    Object reqdata = omit(ctx.reqdata, routedArgNames(ctx));
 
     Map<String, Object> transform =
         Helpers.toMapAny(Struct.getprop(ctx.point, "transform"));
@@ -43,18 +43,13 @@ final class TransformRequest {
     return omit(reqdata, List.of("$action"));
   }
 
-  // A header argument travels as a header, which PrepareHeaders sends, so the
-  // body is built from the request data without it.
-  @SuppressWarnings("unchecked")
-  private static List<String> headerArgNames(Context ctx) {
+  // A header or query argument travels where PrepareHeaders or PrepareQuery
+  // sends it, so the body is built from the request data without it.
+  private static List<String> routedArgNames(Context ctx) {
     List<String> names = new ArrayList<>();
-    Object hl = ctx.point == null ? null : Struct.getpath(ctx.point, List.of("args", "header"));
-    if (hl instanceof List) {
-      for (Object hd : (List<Object>) hl) {
-        Object name = Struct.getprop(hd, "name", null);
-        if (name instanceof String && !((String) name).isEmpty()) {
-          names.add((String) name);
-        }
+    for (String kind : List.of("header", "query")) {
+      for (Param.CallArg arg : Param.callArgs(ctx, kind)) {
+        names.add(arg.name());
       }
     }
     return names;

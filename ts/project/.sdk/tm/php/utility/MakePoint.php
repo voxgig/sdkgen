@@ -4,9 +4,25 @@ declare(strict_types=1);
 // ProjectName SDK utility: make_point
 
 require_once __DIR__ . '/../core/Helpers.php';
+require_once __DIR__ . '/Param.php';
 
 class ProjectNameMakePoint
 {
+    // The path parameters of a point that neither the call nor the entity
+    // gives a value for, looked up as prepareParams looks them up.
+    private static function unfilled(ProjectNameContext $ctx, mixed $point): array
+    {
+        $parts = \Voxgig\Struct\Struct::getprop($point, 'parts');
+        $missing = [];
+        foreach (is_array($parts) ? $parts : [] as $part) {
+            if (is_string($part) && preg_match('/^\{([^{}\/]+)\}$/D', $part, $found) &&
+                null === ProjectNameParam::value($ctx, $point, $found[1])) {
+                $missing[] = $found[1];
+            }
+        }
+        return $missing;
+    }
+
     public static function call(ProjectNameContext $ctx): array
     {
         if (isset($ctx->out['point'])) {
@@ -47,7 +63,9 @@ class ProjectNameMakePoint
                 $select_def = ProjectNameHelpers::to_map(\Voxgig\Struct\Struct::getprop($p, 'select'));
                 $found = true;
 
-                if ($selector && $select_def) {
+                // An empty stored match is falsy in PHP; the point's exist
+                // list is tested regardless.
+                if (null !== $selector && $select_def) {
                     $exist = \Voxgig\Struct\Struct::getprop($select_def, 'exist');
                     if (is_array($exist)) {
                         foreach ($exist as $ek) {
@@ -110,16 +128,40 @@ class ProjectNameMakePoint
                     $last = $parts[count($parts) - 1];
                     return is_string($last) && 0 === strpos($last, '{');
                 };
-                $point = $op->points[0];
-                foreach ($op->points as $p) {
-                    if ($terminal_param($p) !== $terminal_param($point)) {
-                        if ($terminal_param($p)) {
-                            $point = $p;
+                $own_point = function (array $points) use ($parts_len, $terminal_param) {
+                    $best = $points[0];
+                    foreach ($points as $p) {
+                        if ($terminal_param($p) !== $terminal_param($best)) {
+                            if ($terminal_param($p)) {
+                                $best = $p;
+                            }
+                        } elseif ($parts_len($p) < $parts_len($best)) {
+                            $best = $p;
                         }
-                    } elseif ($parts_len($p) < $parts_len($point)) {
-                        $point = $p;
                     }
+                    return $best;
+                };
+
+                // A call without an action falls back to a point without one,
+                // as generation does, and only to a route the call can fill.
+                $plain = array_values(array_filter($op->points, fn($p) => null ===
+                    \Voxgig\Struct\Struct::getprop(
+                        ProjectNameHelpers::to_map(\Voxgig\Struct\Struct::getprop($p, 'select')), '$action')));
+                if (0 === count($plain)) {
+                    return [null, $ctx->make_error('point_action_required',
+                        "Operation \"{$op->name}\" has only action endpoints; pass \$action to choose one.")];
                 }
+
+                $fillable = array_values(array_filter($plain,
+                    fn($p) => 0 === count(self::unfilled($ctx, $p))));
+
+                if (0 === count($fillable)) {
+                    return [null, $ctx->make_error('point_no_match',
+                        "Operation \"{$op->name}\" has no endpoint whose path parameters are all given (missing: " .
+                        implode(', ', self::unfilled($ctx, $own_point($plain))) . ").")];
+                }
+
+                $point = $own_point($fillable);
             }
 
             if ($reqselector) {

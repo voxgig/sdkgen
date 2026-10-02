@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, entityIdField, opRequestShape, opNeedsAction } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -73,6 +73,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
   publishedEntities.map((entity: any) => {
     const opnames = Object.keys(entity.op || {})
+    // An op that needs an action has no plain call to show.
+    const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
     const fields = Object.values(entity.fields || {})
     const idF = entityIdField(entity)
     const evar = cVarName(entity.name)
@@ -128,7 +130,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
     }
 
-    if (opnames.includes('load')) {
+    if (callable.includes('load')) {
       const loadItems = opRequestShape(entity, 'load').items
         .filter((it: any) => !it.optional || it.name === idF)
         .sort((a: any, b: any) =>
@@ -146,7 +148,7 @@ voxgig_value* ${evar}_rec = ${evar}->vt->load(${evar}, ${loadArg}, NULL, &err);
 `)
     }
 
-    if (opnames.includes('list')) {
+    if (callable.includes('list')) {
       Content(`#### Example: List
 
 \`\`\`c
@@ -157,7 +159,7 @@ voxgig_value* ${evar}s = ${evar}->vt->list(${evar}, NULL, NULL, &err);
 `)
     }
 
-    if (opnames.includes('create')) {
+    if (callable.includes('create')) {
       const createItems = opRequestShape(entity, 'create').items
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
