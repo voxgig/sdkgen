@@ -93,7 +93,7 @@ for that purpose:
 | `main.kit.repo.path` / `.host` | Repo identity. The repo is NOT always `<origin>/<name>-sdk`; deriving it from the slug produced a go module path that returns 404 and homepage/bugs URLs for a repo that does not exist. |
 | `main.kit.author` / `main.kit.contributor.<key>` | Manifest attribution. Hand-edited credit in a `package.json` is DELETED by the next regeneration — which is what happened to a hand-written provider repo the first time it was regenerated. |
 | `main.kit.target.<t>.author` | Attribution for ONE target, overriding the model-wide value. A generated SDK is an artefact of the publisher; a Seneca provider is independently released by named people. One model produces both. |
-| `main.kit.test.live.strict` | Whether a live test run asserts or merely observes. |
+| `main.kit.test.live.strict` | Whether a live test that does not succeed fails or skips. |
 | `main.kit.target.<t>.module.path` / `.package` / `.goversion` | Go-family module identity and the `go` directive. |
 | `main.kit.target.<t>.output.path` / `.repo` / `.create` | Generate this target into ANOTHER repo and optionally require that repo to exist already (see [below](#generating-outside-the-sdk-repo-output)). |
 | `main.kit.target.<t>.active` | Whether the target is generated. `false` keeps it in the model, where a target wrapping it can still read it. |
@@ -138,7 +138,7 @@ main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: 'https://example.com
 
 | Path | Type | Default | Description |
 | --- | --- | --- | --- |
-| `test.live.strict` | boolean | `true` | Assert live request outcomes in the TS and Go direct-test generators. Independent tests continue after failures. Explicit `false` retains legacy exploratory result handling; it does not establish full API coverage. Overridable per target (`main.kit.target.<t>.test.live.strict`). Pinned by `ts/test/generate.test.ts` and `ts/test/livegenerated.test.ts`. |
+| `test.live.strict` | boolean | `true` | What a live run does with a live test that does not succeed: a failed request, a test missing an input it needs, or an entity flow step that failed or was blocked. `true` fails the test; `false` skips it and names the reason. Read by every target with a live suite (`ts`, `js`, `go`, `py`, `php`, `rb`, `lua`, `perl`, `java`, `kotlin`, `rust` and `csharp`) in its direct tests and entity flows, and in `ts` and `js` by the live coverage check as well. Each generated live test states the value it was generated with in a comment. An account holding no record for a test to read skips that test under either value. Overridable per target (`main.kit.target.<t>.test.live.strict`). Pinned by `ts/test/generate.test.ts` and `ts/test/livegenerated.test.ts`. |
 
 ## `main.kit.phase`
 

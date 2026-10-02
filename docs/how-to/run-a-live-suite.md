@@ -90,27 +90,80 @@ suite rather than shipping a live suite that cannot run.
 
 ## Outcomes and continued execution
 
-Live request assertions are enabled by default in the TS and Go direct-test
-generators through `main.kit.test.live.strict`. A failed request fails its test;
-the test framework continues the other tests. Explicit `false` retains legacy
-exploratory result handling for migration.
+`main.kit.test.live.strict` decides what happens to a live test that does not
+succeed: a request that fails, a test missing an input it needs, or an entity
+flow step that failed or was blocked. The default, `true`, fails the test.
+`false` skips it and names the reason, so a lenient run still reports what it
+did not cover. Every target with a live suite reads the setting, and each
+generated live test states in a comment the value it was generated with. Set
+it for one target with `main.kit.target.<t>.test.live.strict`.
+
+A test that needs a record the account does not hold skips under either value:
+a direct load whose list came back empty, or an entity flow with no create step
+whose list found nothing to load. An empty list is a valid answer, and no live
+test asserts how many records an account holds.
+
+An entity flow with no create step reads its record from its own list, so it
+runs without `<PROJ>_TEST_<ENTITY>_ENTID`. A flow that binds an identifier it
+can neither create nor list still needs that variable; without it, the test
+names the identifier it is missing.
 
 The TS and JS entity flow runners also continue independent operations within
 a flow. A failed create blocks dependent writes, while independent reads still
 run. A failed update does not prevent a later load or cleanup of the resource
-created by that flow. An unavailable prerequisite is reported as blocked.
+created by that flow. An unavailable prerequisite is reported as blocked. An
+operation reached only through `$action` routes is attempted through the first
+action whose inputs are available; when none is, the blocked step names each
+action and the inputs it needed. An operation that also has a route without an
+action is attempted only through such a route, unless the step names an action.
 
 Entity flows print `LIVE STEP` outcomes and a `LIVE SUMMARY` containing planned,
-attempted, passed, failed, blocked, and excluded counts. Request records contain
-methods, paths, and HTTP statuses; response bodies and credentials are omitted.
-The runner raises its final failure after the remaining operations and cleanup
-have run. A flow that attempted no requests cannot report live success.
+attempted, passed, failed, blocked, empty, and excluded counts. Request records
+contain methods, paths, HTTP statuses, response content types, and the user
+agent sent; response bodies and credentials are omitted, and a failure is
+reported by its SDK error code rather than by any value. The runner raises its
+final failure after the remaining operations and cleanup have run. A flow that
+attempted no requests cannot report live success.
 
 These execution changes do not supply valid API inputs automatically. The model,
 fixtures, and configured identifiers still determine which requests can succeed.
 Live assertions remain separate from the mock transport's synthetic identities.
 `ts/test/livegenerated.test.ts` executes generated TS and JS suites against a
 local HTTP server to check continuation, cleanup, and failure outcomes.
+
+## Responses that are not JSON
+
+A service can answer a client it does not recognise with an HTML page, often a
+bot challenge, instead of the JSON its API returns. The TS and JS SDKs report
+such a body as an error giving the HTTP status, the content type, the user
+agent sent, and the start of the body, with credentials masked:
+
+| `err.code` | Meaning |
+| --- | --- |
+| `response_content_type` | A body that is not JSON and is not labelled as JSON. |
+| `response_json_invalid` | A body labelled as JSON, or not labelled at all, that does not parse. |
+| `request_status` | An HTTP failure; its message also describes a body that is not JSON. |
+
+`direct()` returns the same error as `err`, with `ok` set to `false`.
+
+Unless the client configures one, the SDKs of most targets send a
+browser-shaped `User-Agent`; the TS and JS SDKs do so under Node and leave the
+header to the browser elsewhere. To send a different one, set it in the
+client's `headers` option. For the live suite, put it under
+`test.client.options`:
+
+```json
+{
+  "version": 1,
+  "test": {
+    "client": {
+      "options": {
+        "headers": { "user-agent": "curl/8.5.0" }
+      }
+    }
+  }
+}
+```
 
 ## `sdk-test-control.json` is write-once
 
