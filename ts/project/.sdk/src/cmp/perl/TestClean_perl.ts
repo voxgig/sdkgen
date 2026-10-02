@@ -329,7 +329,7 @@ sub construct {
 }
 
 sub make_sdk {
-  my ($scenario, $sinks, $cleanopts, $extra) = @_;
+  my ($scenario, $sinks, $cleanopts, $extra, $auth) = @_;
   my $capture = sub {
     my ($name) = @_;
     return sub { push @$sinks, forms($name, $_[0]); return };
@@ -347,7 +347,7 @@ sub make_sdk {
   $feature{clienttrack} = { 'active' => 1 } if has_feature('clienttrack');
 
   my $respond = $scenario->[1];
-  return construct({
+  my $opts = {
     'apikey' => $CANARY{apikey},
     'secret' => $CANARY{secret},
     'headers' => { 'X-Custom-Token' => $CANARY{header} },
@@ -358,7 +358,9 @@ sub make_sdk {
       my (undef, $url, $fetchdef) = @_;
       return $respond->($url, $fetchdef);
     } },
-  });
+  };
+  $opts->{auth} = $auth if defined $auth;
+  return construct($opts);
 }
 
 # The first operation that completes against a plain 200: with no
@@ -415,11 +417,14 @@ sub drive {
   # A caller may keep the record it passed rather than read ctrl.explain.
   my $held = $ctrl->{explain};
   my ($acc, $op) = ($target->{accessor}, $target->{op});
+  my $entity = $sdk->$acc();
   my $out;
-  my $ok = eval { $out = $sdk->$acc()->$op({ %{ $target->{match} } }, $ctrl); 1 };
+  my $ok = eval { $out = $entity->$op({ %{ $target->{match} } }, $ctrl); 1 };
   my $err = $ok ? undef : $@;
   push @$sinks, forms('error', $err) if defined $err;
   push @$sinks, forms('result', $out) if defined $out;
+  # Raw, as a caller copying the match into another query reads it.
+  push @$sinks, forms('match', $entity->match_get());
   push @$sinks, forms('explain', $ctrl->{explain}) if defined $ctrl->{explain};
   push @$sinks, forms('explain:held', $held) if defined $held && (!defined $ctrl->{explain}
     || Scalar::Util::refaddr($held) != Scalar::Util::refaddr($ctrl->{explain}));
@@ -448,6 +453,11 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
       push @sinks, forms('sdk', $sdk);
     }
   }
+
+  # A name given at run time replaces the declared one: the match leaves out
+  # whichever name prepare_auth placed.
+  drive(make_sdk($SCENARIOS[0], \\@sinks, undef, undef, { 'name' => 'zzcred' }),
+    $target, {}, \\@sinks);
 
   # A credential mistyped as a map is rejected by validation, whose message
   # quotes the value it rejected.

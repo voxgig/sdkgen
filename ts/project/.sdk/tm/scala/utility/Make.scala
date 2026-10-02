@@ -682,6 +682,10 @@ object MakeUrl {
 
     val resmatch = new LinkedHashMap[String, Object]()
 
+    // Sent with the request, never recorded as the entity's match.
+    val authquery: JList[String] =
+      if (spec.authquery == null) new java.util.ArrayList[String]() else spec.authquery
+
     val pit = Struct.items(spec.params).iterator()
     while (pit.hasNext) {
       val item = pit.next()
@@ -711,7 +715,7 @@ object MakeUrl {
       if (v != null) {
         url += qsep + Struct.escurl(key) + "=" + Struct.escurl(Struct.stringify(v))
         qsep = "&"
-        resmatch.put(key, v)
+        if (!authquery.contains(key)) resmatch.put(key, v)
       }
     }
 

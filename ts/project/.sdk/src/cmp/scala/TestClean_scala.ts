@@ -245,7 +245,7 @@ object SdkCleanTestMain {
     }
 
   private def makeSdk(scenario: Scenario, sinks: ArrayList[Sink], cleanopts: JMap[String, Object],
-      extra: BaseFeature = null): ${SDK} = {
+      extra: BaseFeature = null, auth: JMap[String, Object] = null): ${SDK} = {
     def capture(name: String): Consumer[Object] = (rec: Object) => collect(sinks, name, rec)
 
     val feature = new LinkedHashMap[String, Object]()
@@ -284,6 +284,7 @@ object SdkCleanTestMain {
     if (extra != null) extend.add(extra)
     opts.put("extend", extend)
     opts.put("utility", om("fetcher" -> fetcher))
+    if (auth != null) opts.put("auth", auth)
     construct(opts)
   }
 
@@ -376,12 +377,15 @@ object SdkCleanTestMain {
   private def drive(sdk: ${SDK}, target: Target, ctrl: JMap[String, Object], sinks: ArrayList[Sink]): Throwable = {
     // A caller may keep the record it passed rather than read ctrl's entry.
     val held = if (ctrl == null) null else ctrl.get("explain")
+    val entity = entityOf(sdk, target.accessor)
     var out: Object = null
     var err: Throwable = null
-    try out = call(entityOf(sdk, target.accessor), target.op, target.matchArgs, ctrl)
+    try out = call(entity, target.op, target.matchArgs, ctrl)
     catch { case e: Throwable => err = e }
     if (err != null) collect(sinks, "error", err)
     if (out != null) collect(sinks, "result", out)
+    // Raw, as a caller copying the match into another query reads it.
+    if (entity != null) collect(sinks, "match", entity.matchArgs())
     val explain = if (ctrl == null) null else ctrl.get("explain")
     if (explain != null) collect(sinks, "explain", explain)
     if (held != null && !(held eq explain)) collect(sinks, "explain:held", held)
@@ -415,6 +419,10 @@ object SdkCleanTestMain {
         collect(sinks, "sdk", sdk)
       }
     }
+
+    // A name given at run time replaces the declared one: the match leaves
+    // out whichever name prepareAuth placed.
+    drive(makeSdk(SCENARIOS.head, sinks, null, auth = om("name" -> "zzcred")), target, null, sinks)
 
     // A credential mistyped as a map. Validation here collects its errors
     // rather than throwing, so there is no rejection to sweep: sweep the

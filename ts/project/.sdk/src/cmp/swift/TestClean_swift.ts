@@ -346,7 +346,8 @@ final class ${Name}CleanTest: XCTestCase {
   }
 
   static func makeSdk(
-    _ scenario: Scenario, _ box: SinkBox, _ cleanopts: VMap? = nil, _ extra: [BaseFeature] = []
+    _ scenario: Scenario, _ box: SinkBox, _ cleanopts: VMap? = nil, _ extra: [BaseFeature] = [],
+    auth: VMap? = nil
   ) -> ${Name}SDK {
     func capture(_ name: String) -> (VMap) -> Void {
       return { rec in box.sinks += formsOf(name, rec) }
@@ -397,6 +398,7 @@ ${cost ? `    if hasFeature("cost") {
     for f in extra { extend.append(.nat(f)) }
     opts.entries["extend"] = .list(VList(extend))
     opts.entries["utility"] = .map(vm(("fetcher", .nat(fetch))))
+    if let a = auth { opts.entries["auth"] = .map(a) }
     return ${Name}SDK(${Name}CleanTest.offline(opts))
   }
 
@@ -445,15 +447,18 @@ ${candidateLines}
   static func drive(_ sdk: ${Name}SDK, _ target: Target, _ ctrl: VMap, _ box: SinkBox) -> Error? {
     // A caller may keep the record it passed rather than read ctrl["explain"].
     let held = ctrl.entries["explain"]?.asMap
+    let entity = target.candidate.accessor(sdk)
     var out: Value = .noval
     var err: Error? = nil
     do {
-      out = try invoke(target.candidate.accessor(sdk), target.op, target.params, ctrl)
+      out = try invoke(entity, target.op, target.params, ctrl)
     } catch {
       err = error
     }
     if let e = err { box.sinks += formsOf("error", e) }
     if !isNil(out) { box.sinks += formsOf("result", out) }
+    // Raw, as a caller copying the match into another query reads it.
+    box.sinks += formsOf("match", entity.matchv(nil))
     if let explain = ctrl.entries["explain"]?.asMap { box.sinks += formsOf("explain", explain) }
     if let h = held, h !== ctrl.entries["explain"]?.asMap { box.sinks += formsOf("explain:held", h) }
     return err
@@ -485,6 +490,12 @@ ${candidateLines}
         box.sinks += ${Name}CleanTest.formsOf("sdk", sdk)
       }
     }
+
+    // A name given at run time replaces the declared one: the match leaves
+    // out whichever name prepareAuth placed.
+    _ = ${Name}CleanTest.drive(
+      ${Name}CleanTest.makeSdk(${Name}CleanTest.scenarios[0], box, auth: vm(("name", .string("zzcred")))),
+      target, VMap(), box)
 
     // A credential mistyped as a map. This struct port's validate collects
     // its errors instead of throwing, so nothing rejects it: the client it

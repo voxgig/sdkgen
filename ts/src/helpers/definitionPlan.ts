@@ -31,6 +31,7 @@ type DefinitionPoint = {
   status: number
   sample: any
   idField: string
+  ownQuery?: string
 }
 
 
@@ -50,10 +51,12 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
     false === model?.main?.[KIT]?.info?.auth
   // A generated SDK sends one credential, under the scheme apidef chose for it.
   const own = model?.main?.[KIT]?.info?.security?.scheme
-  // The header the SDK puts any key in, as its prepareAuth does, though the
-  // definition declares no scheme: LearnWorlds declares it as a parameter.
+  // Where prepareAuth puts any key, though LearnWorlds declares no scheme (and
+  // its header as a parameter) and open-meteo applies its query key nowhere.
   const ownHeader = !isAuthSuppressed(model) && 'header' === resolveAuthIn(model) ?
     resolveAuthName(model).toLowerCase() : null
+  const ownQuery = !isAuthSuppressed(model) && 'query' === resolveAuthIn(model) ?
+    resolveAuthName(model) : null
 
   for (const entity of Object.values(entityCollection(model)) as any[]) {
     if (false === entity.active) continue
@@ -142,6 +145,7 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           status: success?.status ?? 200,
           sample: null == media ? null : boundedSample(fitting(sampleOf(media), media.schema)),
           idField: entity.id?.field || 'id',
+          ...(null == ownQuery ? {} : { ownQuery }),
         })
       }
     }

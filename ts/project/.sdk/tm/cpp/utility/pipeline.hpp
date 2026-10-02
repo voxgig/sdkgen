@@ -662,7 +662,10 @@ inline std::string makeUrl(CtxPtr ctx) {
     if (!is_nullish(val)) {
       url += qsep + Struct::escurl(Value(key)) + "=" + Struct::escurl(Value(Struct::stringify(val)));
       qsep = "&";
-      map_put(resmatch, key, val);
+      // Sent with the request, never recorded as the entity's match.
+      if (spec->authquery.end() == std::find(spec->authquery.begin(), spec->authquery.end(), key)) {
+        map_put(resmatch, key, val);
+      }
     }
   }
 
@@ -1077,7 +1080,25 @@ inline SpecPtr makeSpec(CtxPtr ctx) {
     map_put(ctx->ctrl->explain, "spec", ctx->spec->toValue());
   }
 
+  // Whatever prepareAuth sets in the query, under whichever name, is the
+  // credential; a key it leaves as it was is the caller's.
+  std::vector<std::pair<std::string, Value>> query;
+  for (const auto& item : Struct::items(ctx->spec->query)) {
+    query.emplace_back(as_str(pair_key(item)), pair_val(item));
+  }
+
   SpecPtr spec = utility->prepareAuth(ctx);
+  if (spec) {
+    spec->authquery.clear();
+    for (const auto& item : Struct::items(spec->query)) {
+      std::string key = as_str(pair_key(item));
+      auto was = std::find_if(query.begin(), query.end(),
+        [&](const std::pair<std::string, Value>& kv) { return kv.first == key; });
+      if (query.end() == was || !(was->second == pair_val(item))) {
+        spec->authquery.push_back(key);
+      }
+    }
+  }
   ctx->spec = spec;
   return spec;
 }

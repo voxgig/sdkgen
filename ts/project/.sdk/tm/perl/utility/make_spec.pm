@@ -79,8 +79,23 @@ $REGISTRY{make_spec} = sub {
 
   $ctx->{ctrl}{explain}{spec} = $ctx->{spec} if $ctx->{ctrl}{explain};
 
+  # Whatever prepare_auth sets in the query, under whichever name, is the
+  # credential; a key it leaves as it was is the caller's.
+  my %query = %{ $ctx->{spec}{query} || {} };
+
   my ($spec, $err) = $utility->{prepare_auth}->($ctx);
   return (undef, $err) if $err;
+
+  my $same = sub {
+    my ($was, $now) = @_;
+    return !defined $now unless defined $was;
+    return 0 if !defined $now || ref $was ne ref $now;
+    return ref $now ? $was == $now : $was eq $now;
+  };
+  my $now = $spec->{query} || {};
+  $spec->{authquery} = [ grep {
+    !exists $query{$_} || !$same->($query{$_}, $now->{$_})
+  } sort keys %$now ];
 
   $ctx->{spec} = $spec;
   return ($spec, undef);

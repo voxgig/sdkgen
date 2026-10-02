@@ -74,14 +74,21 @@ function pointParams(opdef: any): string[] {
 
 function candidate(ProjectName: string, c: Candidate): string {
   const call = 'list' === c.op
-    ? `auto ents = c.${c.accessor}()->list(m, ctrl);
-      Value out = vlist();
-      for (const auto& e : ents) out.as_list()->push_back(e->data());
-      return out;`
-    : `return c.${c.accessor}()->${c.op}(m, ctrl)->data();`
+    ? `auto ents = ent->list(m, ctrl);
+        Value out = vlist();
+        for (const auto& e : ents) out.as_list()->push_back(e->data());`
+    : `Value out = ent->${c.op}(m, ctrl)->data();`
   return `    {"${c.name}", {${c.params.map(cppstr).join(', ')}},
-     [](${ProjectName}SDK& c, const Value& m, const Value& ctrl) -> Value {
-      ${call}
+     [](${ProjectName}SDK& c, const Value& m, const Value& ctrl, Value* match) -> Value {
+      auto ent = c.${c.accessor}();
+      try {
+        ${call}
+        if (match) *match = ent->match();
+        return out;
+      } catch (...) {
+        if (match) *match = ent->match();
+        throw;
+      }
     },
      [](${ProjectName}SDK& c, const Value& m, const Value& callopts) -> std::vector<Value> {
       return c.${c.accessor}()->stream(${cppstr(c.op)}, m, callopts);
@@ -369,7 +376,8 @@ static std::shared_ptr<${ProjectName}SDK> construct(const Value& opts) {
 
 static std::shared_ptr<${ProjectName}SDK> makeSdk(const Scenario& scenario, std::vector<Sink>* sinks,
                                               const Value& cleanopts,
-                                              FeaturePtr extra = nullptr) {
+                                              FeaturePtr extra = nullptr,
+                                              const Value& auth = Value::undef()) {
   Value feature = vmap();
   if (hasFeature("log")) {
     // The log feature hands [level, record] to its logger.
@@ -411,6 +419,7 @@ static std::shared_ptr<${ProjectName}SDK> makeSdk(const Scenario& scenario, std:
     {"feature", feature},
     {"system", vmap({{"fetch", Value(fetch)}})},
   });
+  if (auth.is_map()) map_put(opts, "auth", auth);
   auto sdk = construct(opts);
   sdk->getRootCtx()->utility->featureAdd(sdk->getRootCtx(), std::make_shared<CaptureFeature>(sinks));
   if (extra) sdk->getRootCtx()->utility->featureAdd(sdk->getRootCtx(), extra);
@@ -421,7 +430,8 @@ static std::shared_ptr<${ProjectName}SDK> makeSdk(const Scenario& scenario, std:
 struct Candidate {
   std::string name;
   std::vector<std::string> params;
-  std::function<Value(${ProjectName}SDK&, const Value&, const Value&)> run;
+  // The operation's data, and the match its entity then holds.
+  std::function<Value(${ProjectName}SDK&, const Value&, const Value&, Value*)> run;
   std::function<std::vector<Value>(${ProjectName}SDK&, const Value&, const Value&)> stream;
 };
 
@@ -457,7 +467,7 @@ static Target usableOp(const std::vector<Candidate>& cands) {
     for (const auto& p : cands[i].params) map_put(filled, p, Value("p1"));
     for (const Value& match : {vmap(), filled}) {
       try {
-        cands[i].run(*plain, Struct::clone(match), vmap());
+        cands[i].run(*plain, Struct::clone(match), vmap(), nullptr);
         return {static_cast<int>(i), match};
       } catch (const SdkErrorPtr&) {
         continue;
@@ -480,9 +490,10 @@ static SdkErrorPtr drive(${ProjectName}SDK& sdk, const Candidate& cand, const Ta
   Value held = getp(ctrl, "explain");
   SdkErrorPtr err;
   Value out = Value::undef();
+  Value match = Value::undef();
   bool got = false;
   try {
-    out = cand.run(sdk, Struct::clone(target.match), ctrl);
+    out = cand.run(sdk, Struct::clone(target.match), ctrl, &match);
     got = true;
   } catch (const SdkErrorPtr& e) {
     err = e;
@@ -492,6 +503,8 @@ static SdkErrorPtr drive(${ProjectName}SDK& sdk, const Candidate& cand, const Ta
   }
   if (err) addError(sinks, "error", err);
   if (got) addForms(sinks, "result", out);
+  // Raw, as a caller copying the match into another query reads it.
+  addForms(sinks, "match", match);
   Value explain = getp(ctrl, "explain");
   if (explain.is_map()) addForms(sinks, "explain", explain);
   if (held.is_map() && (!explain.is_map() || held.as_map() != explain.as_map())) {
@@ -541,6 +554,11 @@ static void no_credential_leaves_the_sdk() {
       sinks.push_back({"sdk:string", sdk->to_string()});
     }
   }
+
+  // A name given at run time replaces the declared one: the match leaves out
+  // whichever name prepareAuth placed.
+  drive(*makeSdk(scenarios()[0], &sinks, Value::undef(), nullptr, vmap({{"name", Value("zzcred")}})),
+        cand, target, vmap(), sinks);
 
   // A credential mistyped as a map is rejected by validation, whose message
   // quotes the value it rejected.

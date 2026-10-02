@@ -61,6 +61,10 @@ async function runDefinitionPoint(SDK, point) {
   // Only what the definition declares, so never a path parameter again.
   const credentialQuery = (point.auth || []).flat()
     .filter((c) => 'query' === c.in).map((c) => c.name)
+  // prepareAuth sends the key whether or not this operation applies its scheme.
+  if (null != point.ownQuery) {
+    credentialQuery.push(point.ownQuery)
+  }
   for (const key of url.searchParams.keys()) {
     assert(point.query.includes(key) || credentialQuery.includes(key),
       'query parameter not in the definition: ' + key)

@@ -69,7 +69,24 @@ object MakeSpec {
 
     if (ctx.ctrl.explain != null) ctx.ctrl.explain.put("spec", ctx.spec)
 
+    // Whatever prepareAuth sets in the query, under whichever name, is the
+    // credential; a key it leaves as it was is the caller's.
+    val query = new LinkedHashMap[String, Object]()
+    if (ctx.spec.query != null) query.putAll(ctx.spec.query)
+
     val spec = utility.prepareAuth(ctx)
+    val authquery = new java.util.ArrayList[String]()
+    if (spec.query != null) {
+      val qit = spec.query.entrySet().iterator()
+      while (qit.hasNext) {
+        val entry = qit.next()
+        if (!query.containsKey(entry.getKey) ||
+          !java.util.Objects.equals(query.get(entry.getKey), entry.getValue)) {
+          authquery.add(entry.getKey)
+        }
+      }
+    }
+    spec.authquery = authquery
     ctx.spec = spec
     spec
   }

@@ -57,8 +57,16 @@ module ProjectNameUtilities
 
     ctx.ctrl.explain["spec"] = ctx.spec if ctx.ctrl.explain
 
+    # Whatever prepare_auth sets in the query, under whichever name, is the
+    # credential; a key it leaves as it was is the caller's.
+    query = (ctx.spec.query || {}).dup
+
     spec, err = utility.prepare_auth.call(ctx)
     return nil, err if err
+
+    spec.authquery = (spec.query || {}).keys.select { |k|
+      !query.key?(k) || query[k] != spec.query[k]
+    }
 
     ctx.spec = spec
     return spec, nil

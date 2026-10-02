@@ -210,7 +210,7 @@ evidence:
 | #251 | Streams end silently on a failed operation in go, py, rb, php, lua and zig |
 | #252 | java, kotlin, scala, csharp, ocaml: `stream()` writes into the caller's ctrl map |
 | #253 | rbac rules for a sensitive-named entity register their permission values |
-| #254 | Decide whether `entity.match()` returns a query-placed credential |
+| #254 | Decided: `entity.match()` leaves out the query credential `prepareAuth` placed, in every target; the clean sweeps read the match back raw |
 | #255 | Lanes that run each generated SDK's own test suite |
 | #256 | CI runs no lane for py, lua, zig, scala, clojure, elixir or ocaml |
 | #257 | Upgrading sdkgen does not refresh an existing project's `.sdk/tm` copies |
@@ -253,9 +253,8 @@ in a comment at the divergence if it is not there already.
   raises, because that code runs inside the reduce.
 - **perl.** A foreign blessed exception object is returned unchanged; only a
   string error or the SDK's own error is cleaned.
-- **lua.** The entity prints only its data, as ts does, because `_match`
-  absorbed the query credential. Calling the stream iterator again after it
-  ends returns `nil` rather than raising.
+- **lua.** The entity prints only its data, as ts does. Calling the stream
+  iterator again after it ends returns `nil` rather than raising.
 - **clojure and ocaml.** F5 returns a cleaned copy, because throwables are
   immutable, so the exception class can change. clojure realises a stream
   eagerly, so a stream error surfaces from the `stream` call.
