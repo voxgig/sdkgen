@@ -148,6 +148,12 @@ for (const [lang, synthesize, LiveBlocked] of TWINS) {
     blocked(body({ allOf: [{ nullable: true }, { title: 'Sender', deprecated: true }] }))
   })
 
+  // The facts bound cuts a deep allOf down to no parts at all.
+  test(lang + ': an allOf of no parts gives nothing, as an empty schema does', () => {
+    blocked({})
+    blocked({ allOf: [] })
+  })
+
   test(lang + ': an allOf of objects still merges them', () => {
     const a = { type: 'object', required: ['a'], properties: { a: { type: 'string', example: 'x' } } }
     const b = { type: 'object', required: ['b'], properties: { b: { type: 'integer' } } }
@@ -157,8 +163,9 @@ for (const [lang, synthesize, LiveBlocked] of TWINS) {
     blocked({ allOf: [{ type: 'object', required: ['c'], properties: { c: { type: 'string' } } }, b] })
   })
 
-  // A string type alone gives no value here and an integer type a placeholder;
-  // both lose to what another part declares.
+  // definitionPlan's synthesize holds the same rule, which definition.test.ts pins with
+  // rows like these. A string type alone gives no value here and an integer type a
+  // placeholder; both lose to what another part declares.
   for (const [what, allOf, value] of [
     ['an enum after the type', [{ type: 'string' }, { enum: ['active', 'closed'] }], 'active'],
     ['an enum before the type', [{ enum: ['active', 'closed'] }, { type: 'string' }], 'active'],
