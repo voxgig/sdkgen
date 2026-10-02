@@ -5281,7 +5281,7 @@
    "tag": "sdk-20260925-1316-0",
    "file": {
     "tm/csharp/utility/struct/Struct.cs": {
-     "sha256": "06bd316ccd4742c1e3f82c17c33a3069387b648c4c67b060ca5bf3091ae11456",
+     "sha256": "1e6d93939501283a24d9587781b3271a6ff583c7a0b45846235f5248e72516a5",
      "upstream": "csharp/Struct.cs"
     }
    }

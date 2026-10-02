@@ -177,8 +177,11 @@ function toolchain(name: string): string | null {
 }
 
 
+// `top` also writes the project's root files (the root README.md) into the
+// directory above `root`, where a generated suite reading them looks.
 async function generateTo(
   target: string, root: string, extra?: string, features?: string[],
+  project?: { name?: string, top?: boolean },
 ): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
@@ -192,17 +195,20 @@ async function generateTo(
   const cwd = process.cwd()
   process.chdir(SCAFFOLD)
   const res = await sdkgen.generate({
-    model: makeModel([target], undefined, extra, features), root: makeRoot() })
+    model: makeModel([target], project?.name, extra, features), root: makeRoot() })
   process.chdir(cwd)
   strictEqual(res.ok, true, target + ': generation did not report ok')
 
   const out: Record<string, string> = {}
+  const top: Record<string, string> = {}
   for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
     const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
     if (rel.startsWith('.jostraca/') || rel.includes('/.jostraca/')) continue
+    if (!rel.includes('/')) top[rel] = content
     if (!rel.startsWith(target + '/')) continue
     out[rel.slice(target.length + 1)] = content
   }
+  if (true === project?.top) materialise(top, Path.dirname(root))
 
   ok(0 < Object.keys(out).length, 'nothing generated for ' + target)
   materialise(out, root)
@@ -2772,6 +2778,30 @@ public static class AuthNullProbe
     {
         var fail = new List<string>();
 
+        foreach (var explicitNull in new[] { false, true })
+        {
+            var options = new Dictionary<string, object?>
+            {
+                ["auth"] = new Dictionary<string, object?>(),
+                ["base"] = "http://localhost:8000",
+            };
+            var keys = new[] { "apikey", "secret", "prefix", "suffix" };
+            if (explicitNull)
+            {
+                foreach (var key in keys) options[key] = null;
+            }
+            var normalized = new DemoSDK(options).OptionsMap();
+            foreach (var key in keys)
+            {
+                if (!normalized.TryGetValue(key, out var value) || !Equals(value, ""))
+                    fail.Add(key + " did not receive its scalar default");
+            }
+            if (!Equals(normalized["base"], "http://localhost:8000"))
+                fail.Add("base override was lost");
+            Wire(options);
+            if (!called || had) fail.Add("credential-free request did not reach the transport");
+        }
+
         Wire(new Dictionary<string, object?> { ["apikey"] = "OPTKEY01" });
         if (!had || "OPTKEY01" != seen)
         {
@@ -4108,23 +4138,30 @@ const CLEAN_FEATURES = [
 
 const CLEAN_LINE = /clean: swept (\d+) surface\(s\), (\d+) leak\(s\)/
 
-const CLEAN_MODELS: { name: string, extra: string }[] = [
+// Two of the three also template the server URL on a variable the spec
+// gives no usable default, which the sweep's client must still be built with.
+const CLEAN_MODELS: { name: string, server: string, extra: string }[] = [
   {
     name: 'header',
+    server: 'no server variable',
     extra: `
 main: kit: config: auth: { active: true, prefix: 'Bearer', in: 'header', name: 'Authorization' }
 `,
   },
   {
     name: 'query',
+    server: 'server variable with an empty default',
     extra: `
 main: kit: config: auth: { active: true, prefix: '', in: 'query', name: 'api_key' }
+main: kit: info: servers: [{ url: 'https://api.example.test/bot{token}', variables: { token: { default: '' } } }]
 `,
   },
   {
     name: 'basic',
+    server: 'server variable with no declaration',
     extra: `
 main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'Authorization' }
+main: kit: info: servers: [{ url: 'http://{{base_url}}' }]
 `,
   },
 ]
@@ -4503,7 +4540,8 @@ describe('the canary sweep runs from a generated SDK', () => {
 
   for (const lane of CLEAN_LANES) {
     for (const auth of CLEAN_MODELS) {
-      test(lane.target + ': no credential leaves the SDK (' + auth.name + ' auth)',
+      test(lane.target + ': no credential leaves the SDK (' + auth.name + ' auth, ' +
+        auth.server + ')',
         async (t) => {
           const sdkroot = Path.join(tmp, lane.target + '-' + auth.name)
           const files = await generateTo(lane.target, sdkroot, auth.extra, CLEAN_FEATURES)
@@ -4700,4 +4738,97 @@ describe('generated entity tests make only calls the runtime takes', () => {
     ok(checks.moon === checks.signal && checks.moon < checks.planet,
       'c: unexpected check counts ' + JSON.stringify(checks))
   })
+})
+
+
+// A slug carrying the word `client` puts it into the package name, the
+// import path and the install line of every README, where a classifier that
+// matches the word rather than the client variable misfiles a block.
+const README_SLUG = 'multifon-client'
+
+const README_LANES: {
+  target: string,
+  runner: string,
+  needs: string,
+  ran: RegExp,
+  command: () => { bin: string, args: string[] } | null,
+}[] = [
+  {
+    target: 'rb',
+    runner: 'test/readme_examples_test.rb',
+    needs: 'ruby with minitest',
+    ran: /\d+ runs, \d+ assertions, 0 failures, 0 errors, 0 skips/,
+    command: () => minitest(['test/readme_examples_test.rb']),
+  },
+  {
+    target: 'go',
+    runner: 'test/readme_examples_test.go',
+    needs: 'go',
+    ran: /--- PASS: TestReadmeGoSnippets/,
+    command: () => {
+      const go = toolchain('go')
+      return null == go
+        ? null
+        : { bin: go, args: ['test', './test/', '-run', 'TestReadmeGoSnippets', '-v'] }
+    },
+  },
+  {
+    target: 'lua',
+    runner: 'test/readme_examples_test.lua',
+    needs: 'lua 5.4 with busted and the dkjson rock',
+    ran: /[1-9]\d* successes \/ 0 failures \/ 0 errors \/ 0 pending/,
+    command: () => {
+      const lua = toolchain('lua5.4') || toolchain('lua')
+      if (null == lua || !probeOk(lua, ['-e', 'require "dkjson"'])) return null
+      return busted(['test/readme_examples_test.lua'])
+    },
+  },
+  {
+    target: 'py',
+    runner: 'test/test_readme_examples.py',
+    needs: 'python3 with pytest',
+    ran: /[1-9]\d* passed/,
+    command: () => pytest(['test/test_readme_examples.py', '-q']),
+  },
+]
+
+
+describe('the README examples run for a slug carrying the word client', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-readme-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of README_LANES) {
+    test(lane.target + ': every README example is classified, and run', async (t) => {
+      const sdkroot = Path.join(tmp, lane.target, lane.target)
+      const files = await generateTo(lane.target, sdkroot, undefined, undefined,
+        { name: README_SLUG, top: true })
+      ok(null != files[lane.runner], lane.target + ': ' + lane.runner + ' was not generated')
+      ok(String(files['README.md']).includes(README_SLUG),
+        lane.target + ': the README does not carry the slug, so it tests nothing')
+
+      const cmd = lane.command()
+      if (null == cmd) {
+        return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+      }
+
+      const ran = run(cmd.bin, cmd.args, sdkroot)
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' +
+          tail(ran.out, 3))
+      }
+
+      ok(ran.ok, 'the README examples FAILED for the generated ' + lane.target + ' SDK ' +
+        README_SLUG + ':\n' + tail(ran.out, 60))
+      ok(lane.ran.test(ran.out), lane.target + ': the README suite reported no full run:\n' +
+        tail(ran.out))
+    })
+  }
 })

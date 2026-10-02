@@ -1,6 +1,6 @@
 
 import { test, describe, before, after } from 'node:test'
-import { strictEqual } from 'node:assert'
+import { strictEqual, deepStrictEqual } from 'node:assert'
 
 import Fs from 'node:fs'
 import Os from 'node:os'
@@ -340,4 +340,99 @@ describe('vendored struct null semantics', () => {
     strictEqual(JSON.stringify(rows), JSON.stringify(documented),
       'the table at the top of this file and the PORTS list have diverged')
   })
+})
+
+const DEFAULT_SPEC = {
+  apikey: '', secret: '', base: 'http://localhost:8000', prefix: '', suffix: '',
+  retries: 3, enabled: true,
+}
+
+const DEFAULT_CASES = [
+  { name: 'absent', data: {}, spec: DEFAULT_SPEC, expected: DEFAULT_SPEC },
+  { name: 'partial', data: { base: 'http://x' }, spec: DEFAULT_SPEC,
+    expected: { ...DEFAULT_SPEC, base: 'http://x' } },
+  { name: 'null', data: Object.fromEntries(Object.keys(DEFAULT_SPEC).map(k => [k, null])),
+    spec: DEFAULT_SPEC, expected: DEFAULT_SPEC },
+  { name: 'overrides', data: { apikey: 'key', base: '', retries: 0, enabled: false },
+    spec: DEFAULT_SPEC, expected: { ...DEFAULT_SPEC, apikey: 'key', base: '', retries: 0, enabled: false } },
+  { name: 'nested', data: { options: { apikey: null } }, spec: { options: DEFAULT_SPEC },
+    expected: { options: DEFAULT_SPEC } },
+  { name: 'list', data: [null, null, null], spec: ['default', 3, true],
+    expected: ['default', 3, true] },
+  ...['apikey', 'retries', 'enabled'].map(key => ({
+    name: 'invalid-' + key, data: { [key]: [] }, spec: DEFAULT_SPEC, error: true,
+  })),
+  ...['STRING', 'NUMBER', 'BOOLEAN'].flatMap(type => [
+    { name: 'required-absent-' + type, data: {}, spec: { value: '`$' + type + '`' }, error: true },
+    { name: 'required-null-' + type, data: { value: null }, spec: { value: '`$' + type + '`' }, error: true },
+  ]),
+  { name: 'exact-null', data: { value: null }, spec: { value: ['`$EXACT`', 'yes'] }, error: true },
+  { name: 'exact-absent', data: {}, spec: { value: ['`$EXACT`', 'yes'] }, error: true },
+]
+
+
+describe('bare scalar defaults match the reference', () => {
+  for (const target of ['ts', 'js', 'csharp']) {
+    test(target + ': absent/null defaults, overrides and invalid values', (t) => {
+      const dotnet = target === 'csharp' ? toolchain('dotnet') : null
+      if (target === 'csharp' && !dotnet) return t.skip('needs dotnet')
+      const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-defaults-'))
+      try {
+        Fs.writeFileSync(Path.join(dir, 'cases.json'), JSON.stringify(DEFAULT_CASES))
+        let ran: { ok: boolean, out: string }
+        if (target === 'csharp') {
+          Fs.copyFileSync(Path.join(TM, target, 'utility/struct/Struct.cs'), Path.join(dir, 'Struct.cs'))
+          Fs.writeFileSync(Path.join(dir, 'probe.csproj'),
+            '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType>' +
+            '<TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings>' +
+            '<Nullable>enable</Nullable></PropertyGroup></Project>')
+          Fs.writeFileSync(Path.join(dir, 'Program.cs'), `using System.Text.Json;
+using Voxgig.Struct;
+
+object? Decode(JsonElement el) => el.ValueKind switch {
+    JsonValueKind.Object => el.EnumerateObject().ToDictionary(p => p.Name, p => Decode(p.Value)),
+    JsonValueKind.Array => el.EnumerateArray().Select(Decode).ToList(),
+    JsonValueKind.String => el.GetString(),
+    JsonValueKind.Number => el.GetInt64(),
+    JsonValueKind.True => true,
+    JsonValueKind.False => false,
+    _ => null,
+};
+var results = new List<object?>();
+foreach (var item in JsonDocument.Parse(File.ReadAllText("cases.json")).RootElement.EnumerateArray()) {
+    try { results.Add(new { value = StructUtils.Validate(Decode(item.GetProperty("data")), Decode(item.GetProperty("spec"))) }); }
+    catch (InvalidOperationException) { results.Add(new { error = true }); }
+}
+Console.WriteLine("results=" + JsonSerializer.Serialize(results));
+`)
+          ran = run(dotnet!, ['run', '--project', dir, '-v', 'q', '--nologo'], dir)
+        }
+        else {
+          const ext = target === 'ts' ? 'ts' : 'js'
+          Fs.copyFileSync(Path.join(TM, target, 'src/utility/StructUtility.' + ext),
+            Path.join(dir, 'StructUtility.' + ext))
+          Fs.writeFileSync(Path.join(dir, 'probe.' + ext),
+            (target === 'ts' ? "import { validate } from './StructUtility.ts'\n" :
+              "const { validate } = require('./StructUtility.js')\n") +
+            `const cases = ${JSON.stringify(DEFAULT_CASES)}
+const results = cases.map(c => {
+  try { return { value: validate(c.data, c.spec) } }
+  catch (e) { return { error: true } }
+})
+console.log('results=' + JSON.stringify(results))
+`)
+          ran = run(process.execPath, [Path.join(dir, 'probe.' + ext)], dir)
+        }
+        strictEqual(ran.ok, true, ran.out)
+        const line = ran.out.split(/\r?\n/).find(line => line.startsWith('results='))
+        const results = JSON.parse(line?.slice('results='.length) ?? 'null')
+        strictEqual(results?.length, DEFAULT_CASES.length, ran.out)
+        DEFAULT_CASES.forEach((item, i) => deepStrictEqual(results[i],
+          'error' in item ? { error: true } : { value: item.expected }, target + ': ' + item.name))
+      }
+      finally {
+        Fs.rmSync(dir, { recursive: true, force: true })
+      }
+    })
+  }
 })

@@ -2,6 +2,8 @@
 
 import { spawnSync } from 'node:child_process'
 
+import { npmCommand } from '../helpers/npm'
+
 
 type Mode = 'setup' | 'check' | 'dry-run'
 
@@ -282,9 +284,9 @@ function npmFailure(action: string, stderr: string): string {
 
 // An npm without the command still exits 0 from `npm trust --help`, printing
 // "Unknown command", so only the usage text tells a capable npm apart.
-function trustCapableNpm(): string[] {
-  const shell = 'win32' === process.platform
-  const probe = spawnSync('npm', ['trust', '--help'], { encoding: 'utf8', shell })
+function trustCapableNpm(): ['npm'] | ['npx', ...string[]] {
+  const npm = npmCommand('npm', ['trust', '--help'])
+  const probe = spawnSync(npm.file, npm.args, { encoding: 'utf8' })
   return /npm trust github/.test(String(probe.stdout || '') + String(probe.stderr || '')) ?
     ['npm'] : ['npx', '--yes', 'npm@latest']
 }
@@ -293,18 +295,17 @@ function trustCapableNpm(): string[] {
 // A captured call has no terminal, so npm raises EOTP instead of prompting;
 // the mutating calls keep the terminal and can prompt.
 function npmPort(otp?: string): NpmPort {
-  const npm = trustCapableNpm()
-  const shell = 'win32' === process.platform
+  const [tool, ...lead] = trustCapableNpm()
   const otpArgs = null == otp ? [] : ['--otp', otp]
 
   const call = (args: string[], capture: boolean): string => {
-    const res = spawnSync(npm[0], [...npm.slice(1), ...args, ...otpArgs], {
+    const npm = npmCommand(tool, [...lead, ...args, ...otpArgs])
+    const res = spawnSync(npm.file, npm.args, {
       encoding: 'utf8',
       stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
-      shell,
     })
     if (null != res.error) {
-      throw new Error(`could not run ${npm[0]}: ${res.error.message}`)
+      throw new Error(`could not run ${tool}: ${res.error.message}`)
     }
     if (0 !== res.status) {
       throw new Error(npmFailure(`npm ${args.slice(0, 3).join(' ')}`, String(res.stderr || '')))

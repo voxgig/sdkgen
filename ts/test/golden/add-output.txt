@@ -146,7 +146,7 @@ src/cmp/clojure/ReadmeTopHowto_clojure.ts e1494b86d033
 src/cmp/clojure/ReadmeTopQuick_clojure.ts 8ec041215dfd
 src/cmp/clojure/ReadmeTopTest_clojure.ts 0a72b8c41e8d
 src/cmp/clojure/Schema_clojure.ts 173cdd00d273
-src/cmp/clojure/TestClean_clojure.ts f2b5490053d7
+src/cmp/clojure/TestClean_clojure.ts 7b8b23874d33
 src/cmp/clojure/TestDirect_clojure.ts ebfe781a958d
 src/cmp/clojure/TestEntity_clojure.ts 833cd4efdfb2
 src/cmp/clojure/Test_clojure.ts 56abfa732719
@@ -345,7 +345,7 @@ src/cmp/csharp/ReadmeTopQuick_csharp.ts 46679cb3e2a7
 src/cmp/csharp/ReadmeTopTest_csharp.ts a4e7d74be219
 src/cmp/csharp/Schema_csharp.ts a898466bc43d
 src/cmp/csharp/SdkError_csharp.ts 1cd61a4cfec7
-src/cmp/csharp/TestClean_csharp.ts 7ef82350da2b
+src/cmp/csharp/TestClean_csharp.ts 63fb9fb3fa44
 src/cmp/csharp/TestDirect_csharp.ts ff43a0b759b9
 src/cmp/csharp/TestEntity_csharp.ts 843c629de0ea
 src/cmp/csharp/Test_csharp.ts 881ebab279a4
@@ -422,7 +422,7 @@ tm/csharp/utility/ResultBody.cs 5e641c84a4fa
 tm/csharp/utility/ResultHeaders.cs e593a27709b5
 tm/csharp/utility/TransformRequest.cs f419b88f1464
 tm/csharp/utility/TransformResponse.cs 01583a33873e
-tm/csharp/utility/struct/Struct.cs 06bd316ccd47
+tm/csharp/utility/struct/Struct.cs 1e6d93939501
 
 ## target elixir
 model/feature/feature-index.aontu 0351fe150e6a
@@ -453,7 +453,7 @@ src/cmp/elixir/ReadmeTopHowto_elixir.ts 90ecb763e0ad
 src/cmp/elixir/ReadmeTopQuick_elixir.ts 076794d8d4e1
 src/cmp/elixir/ReadmeTopTest_elixir.ts 5f12260e03e2
 src/cmp/elixir/Schema_elixir.ts a2d61dba669a
-src/cmp/elixir/TestClean_elixir.ts 15f2a01baab0
+src/cmp/elixir/TestClean_elixir.ts 9d6353a243f7
 src/cmp/elixir/TestDirect_elixir.ts 2ee44de0d1a9
 src/cmp/elixir/TestEntity_elixir.ts 1454530c9b2f
 src/cmp/elixir/Test_elixir.ts 66686f882ff1
@@ -513,7 +513,7 @@ src/cmp/go/Main_go.ts d2d413b873c7
 src/cmp/go/Package_go.ts 111b2b904994
 src/cmp/go/PrepareAuth_go.ts 749f232befaf
 src/cmp/go/ReadmeEntity_go.ts 76467eb192a5
-src/cmp/go/ReadmeExamplesTest_go.ts f190781dd76e
+src/cmp/go/ReadmeExamplesTest_go.ts a4d939c3d7cf
 src/cmp/go/ReadmeExplanation_go.ts 702c211cf5bb
 src/cmp/go/ReadmeHowto_go.ts 1b4f5e905937
 src/cmp/go/ReadmeInstall_go.ts 5d12316078af
@@ -526,7 +526,7 @@ src/cmp/go/ReadmeTopHowto_go.ts 2d7332aca33c
 src/cmp/go/ReadmeTopQuick_go.ts 13d3036bf5b7
 src/cmp/go/ReadmeTopTest_go.ts 747e3b9fc1c5
 src/cmp/go/Schema_go.ts 6a9b0bca5db2
-src/cmp/go/TestClean_go.ts df5dfebf146d
+src/cmp/go/TestClean_go.ts 22a5cab90b15
 src/cmp/go/TestDirect_go.ts e947dde27e1c
 src/cmp/go/TestEntity_go.ts ec3c486d5595
 src/cmp/go/Test_go.ts 836686c64aee
@@ -662,7 +662,7 @@ src/cmp/java/ReadmeTopQuick_java.ts 0bccd909a63e
 src/cmp/java/ReadmeTopTest_java.ts 798f5114294c
 src/cmp/java/Schema_java.ts 1695e2237594
 src/cmp/java/SdkError_java.ts 2957202451b0
-src/cmp/java/TestClean_java.ts ac04769b646b
+src/cmp/java/TestClean_java.ts 0e16f2e7e107
 src/cmp/java/TestDirect_java.ts 825e775e22c2
 src/cmp/java/TestEntity_java.ts f3077f574dd6
 src/cmp/java/Test_java.ts 941460b7f312
@@ -778,7 +778,7 @@ src/cmp/js/ReadmeTopQuick_js.ts 7ab59b7dc87d
 src/cmp/js/ReadmeTopTest_js.ts 1fa9a087871f
 src/cmp/js/Schema_js.ts 557790433a08
 src/cmp/js/SdkError_js.ts c3c526f2b624
-src/cmp/js/TestClean_js.ts 74b94fe9ee2e
+src/cmp/js/TestClean_js.ts a1cff8ffb2c0
 src/cmp/js/TestDefinition_js.ts 9bd45df6b9d9
 src/cmp/js/TestDirect_js.ts 825e6fd48af9
 src/cmp/js/TestEntity_js.ts 47daa51d19ce
@@ -815,7 +815,7 @@ tm/js/src/feature/README.md 630422c5567f
 tm/js/src/feature/base/BaseFeature.js 29d380a635f6
 tm/js/src/feature/test/TestFeature.js 64cd93422162
 tm/js/src/types.js f49c15c403b4
-tm/js/src/utility/CleanUtility.js 8fe607398143
+tm/js/src/utility/CleanUtility.js 0951a5263766
 tm/js/src/utility/DoneUtility.js 7da13c3a73d2
 tm/js/src/utility/FeatureAddUtility.js 7053d7f60b27
 tm/js/src/utility/FeatureHookUtility.js 55ecc0949c72
@@ -823,7 +823,7 @@ tm/js/src/utility/FeatureInitUtility.js 8626f12492c2
 tm/js/src/utility/FetcherUtility.js 95146d11d1c1
 tm/js/src/utility/GraphqlUtility.js e8aed31713c4
 tm/js/src/utility/MakeContextUtility.js bbc1c9839da2
-tm/js/src/utility/MakeErrorUtility.js 7125f4ed791f
+tm/js/src/utility/MakeErrorUtility.js cbc545744541
 tm/js/src/utility/MakeFetchDefUtility.js 624a772dedfa
 tm/js/src/utility/MakeOptionsUtility.js 8d7da586ed7d
 tm/js/src/utility/MakePointUtility.js 9f8c3a73e6c3
@@ -981,7 +981,7 @@ src/cmp/lua/Main_lua.ts 12d209201ab5
 src/cmp/lua/Package_lua.ts ad22ea96b732
 src/cmp/lua/PrepareAuth_lua.ts e5586117a910
 src/cmp/lua/ReadmeEntity_lua.ts 8a8e5b0144ad
-src/cmp/lua/ReadmeExamplesTest_lua.ts 859a83243921
+src/cmp/lua/ReadmeExamplesTest_lua.ts 9db724ff4430
 src/cmp/lua/ReadmeExplanation_lua.ts 74936c6ce867
 src/cmp/lua/ReadmeHowto_lua.ts bf706cc84dcc
 src/cmp/lua/ReadmeInstall_lua.ts a0104d093179
@@ -994,7 +994,7 @@ src/cmp/lua/ReadmeTopHowto_lua.ts 2f4ff4561460
 src/cmp/lua/ReadmeTopQuick_lua.ts 6835f2fd1f56
 src/cmp/lua/ReadmeTopTest_lua.ts e41f06e4f3d2
 src/cmp/lua/Schema_lua.ts 5c629a1e1a22
-src/cmp/lua/TestClean_lua.ts a7a3c998ba0b
+src/cmp/lua/TestClean_lua.ts 7243b49d5d51
 src/cmp/lua/TestDirect_lua.ts 1cc8cfd58fe2
 src/cmp/lua/TestEntity_lua.ts 64e3ef7d0f17
 src/cmp/lua/Test_lua.ts c206f43dff79
@@ -1102,7 +1102,7 @@ src/cmp/ocaml/ReadmeTopQuick_ocaml.ts 145826e324e0
 src/cmp/ocaml/ReadmeTopTest_ocaml.ts 23c39ffb5001
 src/cmp/ocaml/Schema_ocaml.ts b079f590abc8
 src/cmp/ocaml/SdkError_ocaml.ts fa425e8da4bd
-src/cmp/ocaml/TestClean_ocaml.ts 8d4e87dc8d6b
+src/cmp/ocaml/TestClean_ocaml.ts 803c42b33f6e
 src/cmp/ocaml/TestDirect_ocaml.ts 216a29066541
 src/cmp/ocaml/TestEntity_ocaml.ts 4c58f8de077a
 src/cmp/ocaml/Test_ocaml.ts 97451223ef72
@@ -1267,7 +1267,7 @@ src/cmp/php/ReadmeTopHowto_php.ts a0a90593a80f
 src/cmp/php/ReadmeTopQuick_php.ts f52705d06444
 src/cmp/php/ReadmeTopTest_php.ts e602ef0b983e
 src/cmp/php/Schema_php.ts 9750487a267a
-src/cmp/php/TestClean_php.ts d786e8952f64
+src/cmp/php/TestClean_php.ts 5cc474471010
 src/cmp/php/TestDirect_php.ts 40f767054ab8
 src/cmp/php/TestEntity_php.ts 0aee3376d89f
 src/cmp/php/Test_php.ts 4b04d7202c7a
@@ -1358,7 +1358,7 @@ src/cmp/py/Main_py.ts 5630f0feb88c
 src/cmp/py/Package_py.ts f64acebbf344
 src/cmp/py/PrepareAuth_py.ts 37a58f5b3341
 src/cmp/py/ReadmeEntity_py.ts 2e584cfcd659
-src/cmp/py/ReadmeExamplesTest_py.ts 734a3cfd4d03
+src/cmp/py/ReadmeExamplesTest_py.ts 2a1f8a65b371
 src/cmp/py/ReadmeExplanation_py.ts d7c6b57925cf
 src/cmp/py/ReadmeHowto_py.ts 3a5e2fa36108
 src/cmp/py/ReadmeInstall_py.ts aa3941eb8a77
@@ -1371,7 +1371,7 @@ src/cmp/py/ReadmeTopHowto_py.ts 98e1b9247b51
 src/cmp/py/ReadmeTopQuick_py.ts 44790daff08d
 src/cmp/py/ReadmeTopTest_py.ts 5416eade0670
 src/cmp/py/Schema_py.ts ff45f83e6ff4
-src/cmp/py/TestClean_py.ts b34ebd04e32c
+src/cmp/py/TestClean_py.ts bb39f1196806
 src/cmp/py/TestDirect_py.ts 78942c6e7da1
 src/cmp/py/TestEntity_py.ts 0d33498f8d52
 src/cmp/py/Test_py.ts 637c586815a4
@@ -1491,7 +1491,7 @@ src/cmp/rb/Main_rb.ts d92e24cb896b
 src/cmp/rb/Package_rb.ts d24de8455ef7
 src/cmp/rb/PrepareAuth_rb.ts 1ca3c30abfff
 src/cmp/rb/ReadmeEntity_rb.ts c173b83c9604
-src/cmp/rb/ReadmeExamplesTest_rb.ts e57ac3f92fca
+src/cmp/rb/ReadmeExamplesTest_rb.ts 89818e139642
 src/cmp/rb/ReadmeExplanation_rb.ts 324138dd35be
 src/cmp/rb/ReadmeHowto_rb.ts 78f217bb1bf0
 src/cmp/rb/ReadmeInstall_rb.ts 9647d87d114e
@@ -1504,7 +1504,7 @@ src/cmp/rb/ReadmeTopHowto_rb.ts d4c1341f730d
 src/cmp/rb/ReadmeTopQuick_rb.ts 8ca9e680843a
 src/cmp/rb/ReadmeTopTest_rb.ts 340ae1770980
 src/cmp/rb/Schema_rb.ts 7aac619fae8d
-src/cmp/rb/TestClean_rb.ts 409d98bbe03d
+src/cmp/rb/TestClean_rb.ts d8c6d50d4ed4
 src/cmp/rb/TestDirect_rb.ts 90a043f19116
 src/cmp/rb/TestEntity_rb.ts 42b87acbc2b1
 src/cmp/rb/Test_rb.ts a98c4dcbd2fb
@@ -1611,7 +1611,7 @@ src/cmp/rust/ReadmeTopQuick_rust.ts fd5cbe899956
 src/cmp/rust/ReadmeTopTest_rust.ts d42ced4f735d
 src/cmp/rust/Schema_rust.ts 62516d49914a
 src/cmp/rust/SdkError_rust.ts 44f812a8460e
-src/cmp/rust/TestClean_rust.ts e824b290538c
+src/cmp/rust/TestClean_rust.ts e545e1a49092
 src/cmp/rust/TestDirect_rust.ts ade372f5b26b
 src/cmp/rust/TestEntity_rust.ts d3c93b074a87
 src/cmp/rust/Test_rust.ts bacb4080dc83
@@ -1980,7 +1980,7 @@ src/cmp/ts/Package_ts.ts 8f2b744f085e
 src/cmp/ts/PrepareAuth_ts.ts 7987802ded47
 src/cmp/ts/ReadmeEntity_ts.ts c35c4ebb6363
 src/cmp/ts/ReadmeExampleTest_ts.ts 5dfbe547c29e
-src/cmp/ts/ReadmeExamplesTest_ts.ts 433df12bf3ce
+src/cmp/ts/ReadmeExamplesTest_ts.ts 3a76e44d7eee
 src/cmp/ts/ReadmeExplanation_ts.ts adae2c36cfde
 src/cmp/ts/ReadmeHowto_ts.ts 4abcad2306c3
 src/cmp/ts/ReadmeInstall_ts.ts 9dc4a0af5ea2
@@ -1994,7 +1994,7 @@ src/cmp/ts/ReadmeTopQuick_ts.ts 74b733b901e7
 src/cmp/ts/ReadmeTopTest_ts.ts 791abb1924cf
 src/cmp/ts/Schema_ts.ts 28d8eedbb21a
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
-src/cmp/ts/TestClean_ts.ts b5e29edb780c
+src/cmp/ts/TestClean_ts.ts cbcad2b57954
 src/cmp/ts/TestDefinition_ts.ts 8f242daf10a0
 src/cmp/ts/TestDirect_ts.ts e23c500cadc1
 src/cmp/ts/TestEntity_ts.ts fc92d6169a52
@@ -2032,7 +2032,7 @@ tm/ts/src/feature/base/BaseFeature.ts 4c0e468f5313
 tm/ts/src/feature/test/TestFeature.ts 37983ab82fef
 tm/ts/src/tsconfig.json c1b52cc621fb
 tm/ts/src/types.ts 5e1f5518bba6
-tm/ts/src/utility/CleanUtility.ts 270e1471e070
+tm/ts/src/utility/CleanUtility.ts 127a2d0fb150
 tm/ts/src/utility/DoneUtility.ts 228a75d46df4
 tm/ts/src/utility/FeatureAddUtility.ts c391267d72a9
 tm/ts/src/utility/FeatureHookUtility.ts 95985140459e
@@ -2040,7 +2040,7 @@ tm/ts/src/utility/FeatureInitUtility.ts 389de58bea48
 tm/ts/src/utility/FetcherUtility.ts 582b8d7209d4
 tm/ts/src/utility/GraphqlUtility.ts bd8ce7cadbad
 tm/ts/src/utility/MakeContextUtility.ts 50caf1a75850
-tm/ts/src/utility/MakeErrorUtility.ts fc006ea4e4ae
+tm/ts/src/utility/MakeErrorUtility.ts f0f90c81d7ce
 tm/ts/src/utility/MakeFetchDefUtility.ts 940b95f0d2b0
 tm/ts/src/utility/MakeOptionsUtility.ts 784fa1cd92d5
 tm/ts/src/utility/MakePointUtility.ts a11e755a970e
@@ -2118,7 +2118,7 @@ src/cmp/zig/ReadmeTopHowto_zig.ts 77361baf4079
 src/cmp/zig/ReadmeTopQuick_zig.ts 3842318a13c0
 src/cmp/zig/ReadmeTopTest_zig.ts 854a85eef838
 src/cmp/zig/Schema_zig.ts c55b2e5555f7
-src/cmp/zig/TestClean_zig.ts 13a762f27a7b
+src/cmp/zig/TestClean_zig.ts 6538060ab4c1
 src/cmp/zig/TestDirect_zig.ts af5fda4e0b0f
 src/cmp/zig/TestEntity_zig.ts 8124f7bf8752
 src/cmp/zig/Test_zig.ts 025739cd3912
