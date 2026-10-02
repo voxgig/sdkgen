@@ -238,6 +238,21 @@ defmodule ${Name}.CleanTest do
     ]
   end
 
+  # Offline, as every generated suite is: the test OPTION resolves a required
+  # server variable to test-<name>, and installs no transport.
+  defp offline(opts), do: S.setprop(opts, "test", S.jm(["active", true]))
+
+  # A client the sweep cannot build leaves nothing swept: a harness error, not
+  # a leak.
+  defp construct(opts) do
+    ${Name}.new(offline(opts))
+  rescue
+    e ->
+      reraise "clean harness: the client could not be constructed, so nothing was swept: " <>
+                Exception.message(e),
+              __STACKTRACE__
+  end
+
   defp make_sdk(respond, sinks, cleanopts, extra \\\\ [], auth \\\\ nil) do
     capture = fn name -> fn rec -> add(sinks, data_forms(name, rec)) end end
     feature = S.jm([])
@@ -269,7 +284,7 @@ defmodule ${Name}.CleanTest do
       ])
 
     if auth != nil, do: S.setprop(opts, "auth", auth)
-    ${Name}.new(opts)
+    construct(opts)
   end
 
   # A fresh struct node of the match, since an operation may keep what it is
@@ -287,7 +302,7 @@ ${candidates(Name, entity)}
   # arguments, else with every path parameter its points declare filled in.
   defp usable_op do
     plain =
-      ${Name}.new(
+      construct(
         S.jm([
           "apikey", @canary.apikey,
           "utility", S.jm(["fetcher", fn _c, _u, _f -> {response(200, S.jm(["id", "i1"]), []), nil} end])
@@ -455,7 +470,7 @@ ${candidates(Name, entity)}
     # quotes the value it rejected.
     rejected =
       try do
-        ${Name}.new(S.jm(["apikey", S.jm(["value", @canary.apikey]), "clean", S.jm(["values", @canary.value])]))
+        ${Name}.new(offline(S.jm(["apikey", S.jm(["value", @canary.apikey]), "clean", S.jm(["values", @canary.value])])))
         nil
       rescue
         e -> e
@@ -510,7 +525,7 @@ ${candidates(Name, entity)}
     [_ok, {_nf, notfound_respond} | _] = scenarios()
 
     bare =
-      ${Name}.new(
+      construct(
         S.jm([
           "apikey", @canary.apikey,
           "secret", @canary.secret,
@@ -615,7 +630,7 @@ ${candidates(Name, entity)}
     record = S.jm(["zztoken", S.jm(["ZZTOKEN01", S.jm(["note", "PLAINRECORD-t5r3e1w9"])])])
 
     client =
-      ${Name}.new(
+      construct(
         S.jm([
           "apikey", @canary.apikey,
           "feature",

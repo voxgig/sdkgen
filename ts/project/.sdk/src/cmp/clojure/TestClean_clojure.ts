@@ -182,6 +182,22 @@ function render(model: any, entity: any[], auth: {
                                     "body" "<html>"
                                     "json" (fn [] (throw (RuntimeException. "Unexpected token < in JSON")))) nil])}])
 
+;; Offline, as every generated suite is: the test OPTION resolves a required
+;; server variable to test-<name>, and installs no transport.
+(defn- offline [opts]
+  (.put ^java.util.Map opts "test" (vs/jm "active" true))
+  opts)
+
+;; A client the sweep cannot build leaves nothing swept: a harness error, not
+;; a leak.
+(defn- construct [opts]
+  (try (api/make-sdk (offline opts))
+       (catch Throwable e
+         (throw (IllegalStateException.
+                 (str "clean harness: the client could not be constructed, so nothing was swept: "
+                      (.getMessage e))
+                 e)))))
+
 (defn- sdk-opts [scenario sinks cleanopts extra]
   (let [capture (fn [name] (fn [rec] (swap! sinks into (forms name rec))))
         feature (vs/jm)
@@ -204,7 +220,7 @@ function render(model: any, entity: any[], auth: {
              "utility" (vs/jm "fetcher" (fn [_fctx url fd] ((:respond scenario) url fd)))))))
 
 (defn- make-sdk [scenario sinks cleanopts & extra]
-  (api/make-sdk (sdk-opts scenario sinks cleanopts extra)))
+  (construct (sdk-opts scenario sinks cleanopts extra)))
 
 ;; A fresh struct map of the match, since an operation may keep what it is
 ;; given.
@@ -222,8 +238,8 @@ ${candidates(entity)}
 ;; The first operation that completes against a plain 200: with no
 ;; arguments, else with every path parameter its points declare filled in.
 (defn- usable-op []
-  (let [plain (api/make-sdk (vs/jm "apikey" (:apikey CANARY)
-                                   "utility" (vs/jm "fetcher" (fn [_ _ _] [(response 200 (vs/jm "id" "i1") {}) nil]))))]
+  (let [plain (construct (vs/jm "apikey" (:apikey CANARY)
+                                "utility" (vs/jm "fetcher" (fn [_ _ _] [(response 200 (vs/jm "id" "i1") {}) nil]))))]
     (some (fn [c]
             (some (fn [match]
                     (try ((:op c) ((:accessor c) plain) match (vs/jm))
@@ -310,11 +326,11 @@ ${candidates(entity)}
           ;; leaves out whichever name prepare-auth placed.
           (let [opts (sdk-opts (first SCENARIOS) sinks nil nil)]
             (.put ^java.util.Map opts "auth" (vs/jm "name" "zzcred"))
-            (drive (api/make-sdk opts) target (vs/jm) sinks))
+            (drive (construct opts) target (vs/jm) sinks))
           ;; A credential mistyped as a map is rejected by validation, whose
           ;; message quotes the value it rejected.
-          (let [rejected (try (api/make-sdk (vs/jm "apikey" (vs/jm "value" (:apikey CANARY))
-                                                   "clean" (vs/jm "values" (:value CANARY))))
+          (let [rejected (try (api/make-sdk (offline (vs/jm "apikey" (vs/jm "value" (:apikey CANARY))
+                                                            "clean" (vs/jm "values" (:value CANARY)))))
                               nil
                               (catch Throwable e e))]
             (t/is-some rejected "a credential mistyped as a map should be rejected")
@@ -362,20 +378,20 @@ ${candidates(entity)}
             (t/is-deep (vs/getpath config "options.clean") (vs/jm "keys" "zzsens" "values" (:config CANARY))
                        "the config's clean block is unchanged"))
           ;; With no clean option at all, the schema defaults still apply.
-          (let [bare (api/make-sdk (vs/jm "apikey" (:apikey CANARY) "secret" (:secret CANARY)
-                                          "headers" (vs/jm "X-Custom-Token" (:header CANARY))
-                                          "utility" (vs/jm "fetcher" (fn [_fctx url fd]
-                                                                       ((:respond (nth SCENARIOS 1)) url fd)))))]
+          (let [bare (construct (vs/jm "apikey" (:apikey CANARY) "secret" (:secret CANARY)
+                                       "headers" (vs/jm "X-Custom-Token" (:header CANARY))
+                                       "utility" (vs/jm "fetcher" (fn [_fctx url fd]
+                                                                    ((:respond (nth SCENARIOS 1)) url fd)))))]
             (t/is-some (drive bare target (vs/jm "explain" (vs/jm)) sinks) "the 404 should fail without a clean option"))
           ;; A feature's name is not a field name: only the sensitive names
           ;; inside its settings register. An entity block, of entity settings
           ;; or seeded records keyed by entity name and id, is not read at all.
           (let [record (vs/jm "zztoken" (vs/jm "ZZTOKEN01" (vs/jm "note" "PLAINRECORD-t5r3e1w9")))
-                sdk (api/make-sdk (vs/jm "apikey" (:apikey CANARY)
-                                         "feature" (vs/jm "zzsecrets" (vs/jm "active" false "kind" "PLAINSETTING-q8w2e4r6")
-                                                          "zzfeat" (vs/jm "active" false "apitoken" "FEATTOKEN-z9y8x7w6")
-                                                          "test" (vs/jm "active" false "entity" record))
-                                         "entity" (vs/jm "zztoken" (vs/jm "alias" (vs/jm "zzkey" "PLAINALIAS-m2n4b6v8")))))
+                sdk (construct (vs/jm "apikey" (:apikey CANARY)
+                                      "feature" (vs/jm "zzsecrets" (vs/jm "active" false "kind" "PLAINSETTING-q8w2e4r6")
+                                                       "zzfeat" (vs/jm "active" false "apitoken" "FEATTOKEN-z9y8x7w6")
+                                                       "test" (vs/jm "active" false "entity" record))
+                                      "entity" (vs/jm "zztoken" (vs/jm "alias" (vs/jm "zzkey" "PLAINALIAS-m2n4b6v8")))))
                 root (core/client-root-ctx sdk)]
             (reset! featured {:plain (core/u-clean root "kind PLAINSETTING-q8w2e4r6")
                               :token (core/u-clean root "token FEATTOKEN-z9y8x7w6")

@@ -400,6 +400,30 @@ local function has_feature(name)
 end
 
 
+-- Offline, as every generated suite is: the test OPTION resolves a required
+-- server variable to test-<name>, and installs no transport.
+local function offline(opts)
+  local out = {}
+  for k, v in pairs(opts) do
+    out[k] = v
+  end
+  out.test = { active = true }
+  return out
+end
+
+
+-- A client the sweep cannot build leaves nothing swept: a harness error, not
+-- a leak.
+local function construct(opts)
+  local ok, client = pcall(sdk.new, offline(opts))
+  if not ok then
+    error("clean harness: the client could not be constructed, so nothing was swept: " ..
+      tostring(client), 0)
+  end
+  return client
+end
+
+
 local function make_sdk(scenario, sinks, cleanopts, extra, auth)
   local function capture(name)
     return function(rec) append(sinks, surfaces(name, rec)) end
@@ -442,7 +466,7 @@ local function make_sdk(scenario, sinks, cleanopts, extra, auth)
     extend[#extend + 1] = f
   end
 
-  return sdk.new({
+  return construct({
     apikey = CANARY.apikey,
     secret = CANARY.secret,
     headers = { ["X-Custom-Token"] = CANARY.header },
@@ -460,7 +484,7 @@ end
 -- The first operation that completes against a plain 200: with no
 -- arguments, else with every path parameter its points declare filled in.
 local function usable_op()
-  local plain = sdk.new({
+  local plain = construct({
     apikey = CANARY.apikey,
     utility = { fetcher = function() return response(200, { id = "i1" }) end },
   })
@@ -582,10 +606,10 @@ describe("clean", function()
 
     -- A credential mistyped as a table is rejected by validation, whose
     -- message quotes the value it rejected.
-    local built, rejected = pcall(sdk.new, {
+    local built, rejected = pcall(sdk.new, offline({
       apikey = { value = CANARY.apikey },
       clean = { values = CANARY.value },
-    })
+    }))
     assert.is_false(built, "a credential mistyped as a table should be rejected")
     append(sinks, surfaces("rejected", rejected))
 
@@ -635,7 +659,7 @@ describe("clean", function()
     end
 
     -- A client given no clean block at all masks by the schema defaults.
-    local bare = sdk.new({
+    local bare = construct({
       apikey = CANARY.apikey,
       secret = CANARY.secret,
       headers = { ["X-Custom-Token"] = CANARY.header },
@@ -736,7 +760,7 @@ describe("clean", function()
   -- entity block, of per-entity settings or seeded records keyed by entity
   -- name and id, is not read at all.
   it("a feature's name is read as a name", function()
-    local client = sdk.new({
+    local client = construct({
       apikey = CANARY.apikey,
       feature = {
         secrets = { active = false, name = "ZZNAME-feat123", token = "ZZTOKEN-feat456" },
@@ -753,7 +777,7 @@ describe("clean", function()
 
 
   it("the generated config's own clean block is honoured", function()
-    local utility = sdk.new({}):get_utility()
+    local utility = construct({}):get_utility()
     local config = { options = { clean = { keys = "zzsens", values = "CONFIG-SEEDED-1" } } }
     local opts = utility.make_options({
       utility = utility,

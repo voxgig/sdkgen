@@ -9,6 +9,7 @@ exports.package_add = package_add;
 exports.package_update = package_update;
 exports.installedFrom = installedFrom;
 exports.npmFetchArgs = npmFetchArgs;
+exports.npmFetchCommand = npmFetchCommand;
 exports.resolvePackage = resolvePackage;
 exports.selectItems = selectItems;
 exports.parseAliases = parseAliases;
@@ -19,6 +20,7 @@ const types_1 = require("../types");
 const utility_1 = require("../utility");
 const manifest_1 = require("../helpers/manifest");
 const semver_1 = require("../helpers/semver");
+const npm_1 = require("../helpers/npm");
 const kind_1 = require("./kind");
 const check_1 = require("./check");
 const doctor_1 = require("./doctor");
@@ -512,7 +514,8 @@ async function npmFetch(pkgname, actx) {
         note: pkgname + ': npm install ' + pkgname + '@latest'
     });
     try {
-        const out = await run('win32' === process.platform ? 'npm.cmd' : 'npm', npmFetchArgs(pkgname), { cwd, maxBuffer: 64 * 1024 * 1024 });
+        const npm = npmFetchCommand(pkgname);
+        const out = await run(npm.file, npm.args, { cwd, maxBuffer: 64 * 1024 * 1024 });
         actx.log.debug({
             point: 'package-update-fetched', package: pkgname,
             stdout: out.stdout, stderr: out.stderr
@@ -530,6 +533,9 @@ async function npmFetch(pkgname, actx) {
 // An .npmrc `save-exact` outranks the prefix, so it is switched off here.
 function npmFetchArgs(pkgname) {
     return ['install', '--save-dev', '--save-exact=false', '--save-prefix=~', pkgname + '@latest'];
+}
+function npmFetchCommand(pkgname, host) {
+    return (0, npm_1.npmCommand)('npm', npmFetchArgs(pkgname), host);
 }
 function validateFetched(pkgname, installed, actx) {
     const base = installed.find((i) => '' !== i.base)?.base;

@@ -414,6 +414,30 @@ fn transport(scenario: Scenario) -> Value {
     })
 }
 
+// Offline, as every generated suite is: the test OPTION resolves a required
+// server variable to test-<name>, and installs no transport.
+fn offline(opts: Value) -> Value {
+    setp(&opts, "test", jo(vec![("active", Value::Bool(true))]));
+    opts
+}
+
+// A client the sweep cannot build leaves nothing swept: a harness error, not
+// a leak.
+fn construct(opts: Value) -> Rc<${Name}SDK> {
+    let opts = offline(opts);
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| ${Name}SDK::new(opts))) {
+        Ok(sdk) => sdk,
+        Err(cause) => panic!(
+            "clean harness: the client could not be constructed, so nothing was swept: {}",
+            cause
+                .downcast_ref::<String>()
+                .cloned()
+                .or_else(|| cause.downcast_ref::<&str>().map(|s| s.to_string()))
+                .unwrap_or_default()
+        ),
+    }
+}
+
 fn make_sdk(
     scenario: Scenario,
     sinks: &Sinks,
@@ -462,7 +486,7 @@ fn make_sdk_with(
     if let Some(auth) = auth {
         setp(&opts, "auth", auth);
     }
-    let sdk = ${Name}SDK::new(opts);
+    let sdk = construct(opts);
 
     // Rust options are pure data, so the extension feature is added after
     // construction (the \`extend\` option of the ts client).
@@ -494,7 +518,7 @@ struct Target {
 // The first operation that completes against a plain 200: with no
 // arguments, else with every path parameter its points declare filled in.
 fn usable_op() -> Option<Target> {
-    let plain = ${Name}SDK::new(jo(vec![
+    let plain = construct(jo(vec![
         ("apikey", Value::str(CANARY_APIKEY)),
         ("system", jo(vec![("fetch", transport(Scenario::Ok))])),
     ]));
@@ -611,10 +635,10 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
     // (make_options keeps its input when validation fails), so what the
     // constructor produced is swept instead: the client's prints, and a
     // string quoting the value, cleaned the way a validation message is.
-    let mistyped = ${Name}SDK::new(jo(vec![
+    let mistyped = ${Name}SDK::new(offline(jo(vec![
         ("apikey", jo(vec![("value", Value::str(CANARY_APIKEY))])),
         ("clean", jo(vec![("values", Value::str(CANARY_VALUE))])),
-    ]));
+    ])));
     push(&sinks, "mistyped:debug", format!("{:?}", mistyped));
     push(&sinks, "mistyped:display", format!("{}", mistyped));
     push(
@@ -673,7 +697,7 @@ fn clean_no_credential_leaves_the_sdk_in_any_form() {
     push_error(&sinks, "stepped", &stepped);
 
     // A client given no clean block at all masks by the schema defaults.
-    let bare = ${Name}SDK::new(jo(vec![
+    let bare = construct(jo(vec![
         ("apikey", Value::str(CANARY_APIKEY)),
         ("secret", Value::str(CANARY_SECRET)),
         ("headers", jo(vec![("X-Custom-Token", Value::str(CANARY_HEADER))])),
@@ -795,7 +819,7 @@ fn clean_the_sweep_can_see_a_leak() {
 
 #[test]
 fn clean_masks_a_registered_value_used_as_a_name() {
-    let sdk = ${Name}SDK::new(jo(vec![(
+    let sdk = construct(jo(vec![(
         "clean",
         jo(vec![("values", Value::str("ZZVAL-abc123,ZZVAL-xyz789"))]),
     )]));
@@ -824,7 +848,7 @@ fn clean_reads_a_feature_name_as_a_name() {
         "zztoken",
         jo(vec![("ZZTOKEN01", jo(vec![("note", Value::str("PLAINRECORD-t5r3e1w9"))]))]),
     )]);
-    let sdk = ${Name}SDK::new(jo(vec![
+    let sdk = construct(jo(vec![
         ("apikey", Value::str(CANARY_APIKEY)),
         (
             "feature",
@@ -859,7 +883,7 @@ fn clean_reads_a_feature_name_as_a_name() {
 
 #[test]
 fn clean_honours_the_generated_config_clean_block() {
-    let utility = ${Name}SDK::new(Value::empty_map()).get_utility();
+    let utility = construct(Value::empty_map()).get_utility();
     let config = jo(vec![(
         "options",
         jo(vec![(

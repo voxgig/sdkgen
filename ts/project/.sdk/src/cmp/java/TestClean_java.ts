@@ -435,9 +435,30 @@ public class CleanTest {
           },
           "body", "<html>")));
 
+  // Offline, as every generated suite is: the test OPTION resolves a
+  // required server variable to test-<name>, and installs no transport.
+  static Map<String, Object> offline(Map<String, Object> opts) {
+    Map<String, Object> out = new LinkedHashMap<>(opts);
+    out.put("test", jm("active", true));
+    return out;
+  }
+
+  // A client the sweep cannot build leaves nothing swept: a harness error,
+  // not a leak.
+  static ${sdk} construct(Map<String, Object> opts) {
+    try {
+      return new ${sdk}(offline(opts));
+    }
+    catch (RuntimeException e) {
+      throw new IllegalStateException(
+          "clean harness: the client could not be constructed, so nothing was swept: "
+          + e.getMessage(), e);
+    }
+  }
+
   static ${sdk} makeSdk(Scenario scenario, List<Sink> sinks, Map<String, Object> cleanopts,
       BaseFeature... extra) {
-    return new ${sdk}(makeOpts(scenario, sinks, cleanopts, extra));
+    return construct(makeOpts(scenario, sinks, cleanopts, extra));
   }
 
   static Map<String, Object> makeOpts(Scenario scenario, List<Sink> sinks,
@@ -568,7 +589,7 @@ public class CleanTest {
     Map<String, Object> plainOpts = jm("apikey", CANARY_APIKEY, "utility", jm("fetcher", ok));
 
     Map<String, Method> accessors = new TreeMap<>();
-    ${sdk} probe = new ${sdk}(plainOpts);
+    ${sdk} probe = construct(plainOpts);
     for (Method m : probe.getClass().getMethods()) {
       if (1 != m.getParameterCount() || !Map.class.isAssignableFrom(m.getParameterTypes()[0])) {
         continue;
@@ -609,7 +630,7 @@ public class CleanTest {
         for (Map<String, Object> match : matches) {
           Op op = new Op(e.getValue(), call, match);
           try {
-            invoke(new ${sdk}(plainOpts), op, new LinkedHashMap<>());
+            invoke(construct(plainOpts), op, new LinkedHashMap<>());
             return op;
           }
           catch (Exception ex) {
@@ -701,10 +722,10 @@ public class CleanTest {
       // out whichever name prepareAuth placed.
       Map<String, Object> renamed = makeOpts(SCENARIOS.get(0), sinks, null);
       renamed.put("auth", jm("name", "zzcred"));
-      drive(new ${sdk}(renamed), op, new LinkedHashMap<>(), sinks);
+      drive(construct(renamed), op, new LinkedHashMap<>(), sinks);
 
       // No clean option at all: the schema defaults still apply.
-      ${sdk} bare = new ${sdk}(jm(
+      ${sdk} bare = construct(jm(
           "apikey", CANARY_APIKEY,
           "secret", CANARY_SECRET,
           "headers", jm("X-Custom-Token", CANARY_HEADER),
@@ -716,8 +737,8 @@ public class CleanTest {
       // is no rejection to sweep: sweep the client, and what clean makes of
       // the value should anything quote it.
       try {
-        ${sdk} mistyped = new ${sdk}(jm(
-            "apikey", jm("value", CANARY_APIKEY), "clean", jm("values", CANARY_VALUE)));
+        ${sdk} mistyped = new ${sdk}(offline(jm(
+            "apikey", jm("value", CANARY_APIKEY), "clean", jm("values", CANARY_VALUE))));
         forms(sinks, "mistyped", mistyped);
         forms(sinks, "mistyped:quoted", mistyped.getUtility().clean.apply(
             mistyped.getRootCtx(), "found map: " + CANARY_APIKEY));
@@ -727,7 +748,7 @@ public class CleanTest {
       }
 
       // A number is registered as the text a message quotes it in.
-      ${sdk} numeric = new ${sdk}(jm("apikey", 918273645));
+      ${sdk} numeric = construct(jm("apikey", 918273645));
       numbered = numeric.getUtility().clean.apply(numeric.getRootCtx(), "found 918273645");
 
       for (boolean unexpected : new boolean[] {false, true}) {
@@ -862,7 +883,7 @@ public class CleanTest {
   // entity name and id, is not read at all.
   @Test
   public void aFeatureNameDoesNotMakeItsSettingsSecret() {
-    ${sdk} sdk = new ${sdk}(jm(
+    ${sdk} sdk = construct(jm(
         "apikey", CANARY_APIKEY,
         "feature", jm(
             "secrets", jm("active", false, "kind", "SETTING-KIND-4829", "token", CANARY_SECRET),

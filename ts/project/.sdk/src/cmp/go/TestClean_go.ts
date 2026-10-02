@@ -242,9 +242,39 @@ var cleanScenarios = []cleanScenario{
 	}},
 }
 
+// Offline, as every generated suite is: the test OPTION resolves a required
+// server variable to test-<name>, and installs no transport.
+func cleanOffline(opts map[string]any) map[string]any {
+	opts["test"] = map[string]any{"active": true}
+	return opts
+}
+
+// A client the sweep cannot build leaves nothing swept: a harness error, not
+// a leak, which cleanHarness reports instead of letting the panic end the run.
+type cleanHarnessError struct{ cause any }
+
+func cleanNew(opts map[string]any) *sdk.${Name}SDK {
+	defer func() {
+		if r := recover(); r != nil {
+			panic(cleanHarnessError{r})
+		}
+	}()
+	return sdk.New${Name}SDK(cleanOffline(opts))
+}
+
+func cleanHarness(t *testing.T) {
+	if r := recover(); r != nil {
+		if h, ok := r.(cleanHarnessError); ok {
+			t.Fatalf("clean harness: the client could not be constructed, so nothing was swept: %v",
+				h.cause)
+		}
+		panic(r)
+	}
+}
+
 func cleanMakeSdk(scenario cleanScenario, sinks *[]cleanSink, cleanopts map[string]any,
 	extra ...any) *sdk.${Name}SDK {
-	return sdk.New${Name}SDK(cleanOptions(scenario, sinks, cleanopts, extra...))
+	return cleanNew(cleanOptions(scenario, sinks, cleanopts, extra...))
 }
 
 func cleanOptions(scenario cleanScenario, sinks *[]cleanSink, cleanopts map[string]any,
@@ -353,7 +383,7 @@ func cleanFilled(client *sdk.${Name}SDK, entity string, method string) map[strin
 // returning something that answers GetName().
 func cleanUsableOp() (cleanOp, bool) {
 	plain := func() *sdk.${Name}SDK {
-		return sdk.New${Name}SDK(map[string]any{
+		return cleanNew(map[string]any{
 			"apikey": cleanCanary["apikey"],
 			"utility": map[string]any{
 				"fetcher": sdk.FetcherFunc(func(*sdk.Context, string, map[string]any) (any, error) {
@@ -500,6 +530,9 @@ func (f *cleanStreamPanic) PreDone(ctx *sdk.Context) {
 func cleanCatch(name string, sinks *[]cleanSink, fn func() error) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
+			if _, harness := r.(cleanHarnessError); harness {
+				panic(r)
+			}
 			*sinks = append(*sinks, cleanSurfaces(name+":panic", r)...)
 			err = fmt.Errorf("panic: %v", r)
 		}
@@ -510,6 +543,7 @@ func cleanCatch(name string, sinks *[]cleanSink, fn func() error) (err error) {
 const cleanNoOp = "no operation of this SDK completes against a plain 200; nothing to sweep"
 
 func TestCleanSweep(t *testing.T) {
+	defer cleanHarness(t)
 	op, found := cleanUsableOp()
 	if !found {
 		t.Skip(cleanNoOp)
@@ -551,17 +585,17 @@ func TestCleanSweep(t *testing.T) {
 	// out whichever name PrepareAuth placed.
 	renamed := cleanOptions(cleanScenarios[0], &sinks, nil)
 	renamed["auth"] = map[string]any{"name": "zzcred"}
-	cleanDrive(sdk.New${Name}SDK(renamed), op, map[string]any{}, &sinks)
+	cleanDrive(cleanNew(renamed), op, map[string]any{}, &sinks)
 
 	// A credential mistyped as a map. The go validator substitutes the
 	// default rather than rejecting it, so there is no rejection to sweep:
 	// sweep what the constructor produced, and what clean makes of the value
 	// should anything later quote it.
 	cleanCatch("mistyped", &sinks, func() error {
-		client := sdk.New${Name}SDK(map[string]any{
+		client := sdk.New${Name}SDK(cleanOffline(map[string]any{
 			"apikey": map[string]any{"value": cleanCanary["apikey"]},
 			"clean":  map[string]any{"values": cleanCanary["value"]},
-		})
+		}))
 		sinks = append(sinks, cleanSurfaces("mistyped", client)...)
 		sinks = append(sinks, cleanSurfaces("mistyped:quoted",
 			client.GetUtility().Clean(client.GetRootCtx(), "found map: "+cleanCanary["apikey"]))...)
@@ -659,7 +693,7 @@ func TestCleanSweep(t *testing.T) {
 	}
 
 	// With no clean option at all, the schema defaults still apply.
-	bare := sdk.New${Name}SDK(map[string]any{
+	bare := cleanNew(map[string]any{
 		"apikey":  cleanCanary["apikey"],
 		"secret":  cleanCanary["secret"],
 		"headers": map[string]any{"X-Custom-Token": cleanCanary["header"]},
@@ -676,7 +710,7 @@ func TestCleanSweep(t *testing.T) {
 	// A feature's name is not a field name: only the sensitive names inside
 	// its settings register. An entity block, of per-entity settings or seeded
 	// records keyed by entity name and id, is not read at all.
-	featured := sdk.New${Name}SDK(map[string]any{
+	featured := cleanNew(map[string]any{
 		"apikey": cleanCanary["apikey"],
 		"feature": map[string]any{
 			"zzsecrets": map[string]any{"active": false, "kind": "PLAINSETTING-q8w2e4r6"},
@@ -762,6 +796,7 @@ func TestCleanSweep(t *testing.T) {
 }
 
 func TestCleanSensitivity(t *testing.T) {
+	defer cleanHarness(t)
 	op, found := cleanUsableOp()
 	if !found {
 		t.Skip(cleanNoOp)

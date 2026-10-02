@@ -184,6 +184,20 @@ let scenarios : scenario list = [
             ("body", Str "<html>");
             ("json", Func (fun _ _ _ _ -> failwith "Unexpected token < in JSON"))]) } ]
 
+(* Offline, as every generated suite is: the test OPTION resolves a required
+ * server variable to test-<name>, and installs no transport. *)
+let offline (opts : value) : value =
+  setp opts "test" (jo [("active", Bool true)]);
+  opts
+
+(* A client the sweep cannot build leaves nothing swept: a harness error, not
+ * a leak. *)
+let construct (opts : value) : sdk_client =
+  try Sdk_client.make (offline opts)
+  with e ->
+    failwith ("clean harness: the client could not be constructed, so nothing was swept: "
+              ^ Printexc.to_string e)
+
 let make_sdk ?(extra = []) ?(auth = Noval) (sc : scenario) (sinks : sinks)
     (cleanopts : (string * value) list) : sdk_client =
   let capture name = vfunc1 (fun record -> value_forms sinks name record; Noval) in
@@ -207,7 +221,7 @@ let make_sdk ?(extra = []) ?(auth = Noval) (sc : scenario) (sinks : sinks)
       ("clean", clean); ("feature", feature);
       ("system", jo [("fetch", fetch)])] in
   (match auth with Map _ -> setp opts "auth" auth | _ -> ());
-  let client = Sdk_client.make opts in
+  let client = construct opts in
   client.cl_features <- client.cl_features @ [capture_feature sinks] @ extra;
   client
 
@@ -308,7 +322,7 @@ ${candidates(entity)}
 (* The first operation that completes against a plain 200: with no
  * arguments, else with every path parameter its points declare filled in. *)
 let usable_op () : target option =
-  let plain = Sdk_client.make (jo [
+  let plain = construct (jo [
       ("apikey", Str (canary_of "apikey"));
       ("system", jo [("fetch", Func (fun _ _ _ _ -> response 200 (jo [("id", Str "i1")])))])]) in
   first_some (fun c ->
@@ -364,9 +378,9 @@ let () =
        * message quotes the value it rejected. *)
       let rejected =
         try
-          ignore (Sdk_client.make (jo [
+          ignore (Sdk_client.make (offline (jo [
               ("apikey", jo [("value", Str (canary_of "apikey"))]);
-              ("clean", jo [("values", Str (canary_of "value"))])]));
+              ("clean", jo [("values", Str (canary_of "value"))])])));
           None
         with e -> Some e in
       (match rejected with
@@ -401,7 +415,7 @@ let () =
         [("stream", [stream_throw_feature ()]); ("stream-ok", [stream_ok_feature ()]);
          ("stream-plain", [])];
       (* A client given no clean block at all masks by the schema defaults. *)
-      let bare = Sdk_client.make (jo [
+      let bare = construct (jo [
           ("apikey", Str (canary_of "apikey")); ("secret", Str (canary_of "secret"));
           ("headers", jo [("X-Custom-Token", Str (canary_of "header"))]);
           ("system", jo [("fetch", Func (fun _ args _ _ ->
@@ -496,7 +510,7 @@ let () =
 let () =
   test "clean.a_feature_name_is_read_as_a_name" (fun () ->
       let seeded = jo [("zztoken", jo [("ZZTOKEN01", jo [("note", Str "PLAINRECORD-t5r3e1w9")])])] in
-      let client = Sdk_client.make (jo [
+      let client = construct (jo [
           ("apikey", Str (canary_of "apikey"));
           ("feature", jo [
               ("secrets", jo [("active", Bool false); ("name", Str "ZZNAME-feat123");
