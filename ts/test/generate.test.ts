@@ -1175,6 +1175,14 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  test('the root readme says regeneration overwrites', async () => {
+    const readme = (await generate(['ts']))['README.md']
+    ok(readme.includes('**Regeneration overwrites.**'), 'the overwrite bullet is gone')
+    ok(readme.includes('.sdk/model/sdk.aontu'), 'the bullet does not name the project model')
+    ok(!/merge/i.test(readme), 'the root readme still promises a merge')
+  })
+
+
   test('elixir: no empty argument in a singleton load example', async () => {
     const out = await generate(['elixir'])
 
