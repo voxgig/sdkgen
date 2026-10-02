@@ -7,7 +7,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/c.aontu a815ea8be12c
 model/target/target-index.aontu 221a8f331196
-src/cmp/c/Config_c.ts 1d969ec1dff5
+src/cmp/c/Config_c.ts 9f95a05164ae
 src/cmp/c/EntityBase_c.ts 70f610b1220f
 src/cmp/c/EntityOperation_c.ts 2f10c1394cb9
 src/cmp/c/EntityTypes_c.ts 8668158135d0
@@ -31,7 +31,7 @@ src/cmp/c/ReadmeTopHowto_c.ts 53480bd63967
 src/cmp/c/ReadmeTopQuick_c.ts 421cdbda1c4d
 src/cmp/c/ReadmeTopTest_c.ts 94aa193c7015
 src/cmp/c/Schema_c.ts c4ed362679d7
-src/cmp/c/TestClean_c.ts 5bc88136af39
+src/cmp/c/TestClean_c.ts fce03fa9144c
 src/cmp/c/TestDirect_c.ts 4c48a27a306e
 src/cmp/c/TestEntity_c.ts b39350aa2f3f
 src/cmp/c/Test_c.ts f1a8a6c7a0c6
@@ -70,7 +70,8 @@ tm/c/tests/omni_resolver.h d02058fb3bc4
 tm/c/tests/omni_smoke_test.c 6408be08e5b4
 tm/c/tests/pipeline_test.c 11b2fb00152b
 tm/c/tests/primary_corpus_test.c 698fafc15f25
-tm/c/tests/primary_utility_test.c d2287e397f76
+tm/c/tests/primary_utility_test.c 01ca5c5d1c03
+tm/c/tests/server_variable_test.c b49f64ffac4b
 tm/c/tests/struct_corpus_test.c d210851e0ef4
 tm/c/tests/vendor/omni/json.c 0d5ff94634c7
 tm/c/tests/vendor/omni/omni.h 1c5cd90fdb75
@@ -87,7 +88,7 @@ tm/c/utility/jsonparse.c cffd3f2ac8b1
 tm/c/utility/make_context.c 615156796cbb
 tm/c/utility/make_error.c 8b7d2f39fd5c
 tm/c/utility/make_fetch_def.c 08c73a9454ed
-tm/c/utility/make_options.c c4c2359dc0b8
+tm/c/utility/make_options.c 02a0e841ef11
 tm/c/utility/make_point.c 60d3426dd3bf
 tm/c/utility/make_request.c b5887e3fd94c
 tm/c/utility/make_response.c 5cb2535aec54
@@ -269,7 +270,7 @@ src/cmp/cpp/ReadmeTopHowto_cpp.ts 4b4bbe9d899a
 src/cmp/cpp/ReadmeTopQuick_cpp.ts 4b94785fbebc
 src/cmp/cpp/ReadmeTopTest_cpp.ts 1a2decabecde
 src/cmp/cpp/Schema_cpp.ts 8148c50576cd
-src/cmp/cpp/TestClean_cpp.ts e805e4efdaad
+src/cmp/cpp/TestClean_cpp.ts cd39276d5baa
 src/cmp/cpp/TestDirect_cpp.ts 0ddba7fccaf8
 src/cmp/cpp/TestEntity_cpp.ts 910822890d6c
 src/cmp/cpp/Test_cpp.ts a9b085808534
@@ -301,15 +302,16 @@ tm/cpp/test/netsim_test.cpp 40bb856c820b
 tm/cpp/test/omni_resolver.hpp e8a41e0b16fc
 tm/cpp/test/omni_smoke_test.cpp dacc9e1b8327
 tm/cpp/test/pipeline_test.cpp e6c9e7f43f35
-tm/cpp/test/primary_utility_test.cpp 17e9785ad044
+tm/cpp/test/primary_utility_test.cpp 68d1c6667f71
 tm/cpp/test/runner_support.hpp cf97960870c1
 tm/cpp/test/sdk-test-control.json acadc87764f6
+tm/cpp/test/server_variable_test.cpp a6a1670e96ac
 tm/cpp/test/struct_corpus_test.cpp 5e5b63bd4113
 tm/cpp/test/testlib.hpp f5f70c8c25b7
 tm/cpp/test/vendor/omni/json.hpp 8e36b1f58d52
 tm/cpp/test/vendor/omni/omni.hpp 6d8f1d38f39e
 tm/cpp/test/vendor/omni/util.hpp 7737f6997c2b
-tm/cpp/utility/pipeline.hpp 49a72bf6f04d
+tm/cpp/utility/pipeline.hpp e71dd7aa4f20
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp f3832db06d59
@@ -877,7 +879,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/kotlin.aontu 3e22fd40e08d
 model/target/target-index.aontu 5312fdf85ea6
-src/cmp/kotlin/Config_kotlin.ts 161122214786
+src/cmp/kotlin/Config_kotlin.ts 3acaf3d96500
 src/cmp/kotlin/EntityBase_kotlin.ts afa36713ef4c
 src/cmp/kotlin/EntityOperation_kotlin.ts ea019cd45fe0
 src/cmp/kotlin/EntityTypes_kotlin.ts 2580ad963ffd
@@ -902,7 +904,7 @@ src/cmp/kotlin/ReadmeTopQuick_kotlin.ts e22c0932b99e
 src/cmp/kotlin/ReadmeTopTest_kotlin.ts 15706807d852
 src/cmp/kotlin/Schema_kotlin.ts 84ebe8267b11
 src/cmp/kotlin/SdkError_kotlin.ts dc0cd7ddcc31
-src/cmp/kotlin/TestClean_kotlin.ts 77ba100cbcde
+src/cmp/kotlin/TestClean_kotlin.ts d668af7ea97f
 src/cmp/kotlin/TestDirect_kotlin.ts 9b06fd20b9f5
 src/cmp/kotlin/TestEntity_kotlin.ts 9d6aecfac497
 src/cmp/kotlin/Test_kotlin.ts 322f28ee5f6e
@@ -946,6 +948,7 @@ tm/kotlin/test/OmniSmokeTest.kt ec9e888beb69
 tm/kotlin/test/PipelineTest.kt 1acf7a0ade5f
 tm/kotlin/test/PrimaryUtilityTest.kt 4ba96fe66435
 tm/kotlin/test/RunnerSupport.kt e4d6c6ea20c8
+tm/kotlin/test/ServerVariableTest.kt cf52d241cde8
 tm/kotlin/test/StructCorpusTest.kt fb99eabed538
 tm/kotlin/test/sdk-test-control.json bb1582608f2f
 tm/kotlin/test/vendor/omni/Json.kt 0178bab5e817
@@ -956,7 +959,7 @@ tm/kotlin/utility/FeatureUtil.kt 0afe6596ecdb
 tm/kotlin/utility/Fetcher.kt dca90881c23d
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
-tm/kotlin/utility/MakeOptions.kt 20272f830992
+tm/kotlin/utility/MakeOptions.kt dffd4d4c5f9a
 tm/kotlin/utility/MakePoint.kt f48e8143bce2
 tm/kotlin/utility/MakeReqRes.kt a745863aa7aa
 tm/kotlin/utility/MakeSpecUrl.kt 07ede6bb2636
@@ -1162,7 +1165,7 @@ src/cmp/perl/ReadmeTopHowto_perl.ts 287f685ca3bf
 src/cmp/perl/ReadmeTopQuick_perl.ts dce0aa218d24
 src/cmp/perl/ReadmeTopTest_perl.ts fd5247ab7792
 src/cmp/perl/Schema_perl.ts 0591817e7773
-src/cmp/perl/TestClean_perl.ts 3744982a4323
+src/cmp/perl/TestClean_perl.ts d737494c0595
 src/cmp/perl/TestDirect_perl.ts 47d073bf6657
 src/cmp/perl/TestEntity_perl.ts b7d4b337b0b9
 src/cmp/perl/Test_perl.ts cb7b4d57d5d1
@@ -1194,7 +1197,7 @@ tm/perl/src/feature/README.md 74fc01b8a34f
 tm/perl/src/feature/base/.gitkeep e3b0c44298fc
 tm/perl/src/feature/test/.gitkeep e3b0c44298fc
 tm/perl/t/feature.t 43c00dd488f7
-tm/perl/t/feature_corpus.t 6d336c21f374
+tm/perl/t/feature_corpus.t d5bd155e6dd1
 tm/perl/t/netsim.t e5829249c5e9
 tm/perl/t/omni.pm 05901a362319
 tm/perl/t/omni_smoke.t 5b5284fad82f
@@ -1202,6 +1205,7 @@ tm/perl/t/pipeline.t b9dfbf3bdc49
 tm/perl/t/primary_utility.t c1cf989695c2
 tm/perl/t/runner.pm e320b3fae01b
 tm/perl/t/sdk-test-control.json b75ea700c514
+tm/perl/t/server_variables.t 4404608c9256
 tm/perl/t/stream.t 0e1aa023c171
 tm/perl/t/struct_utility.t 9c229417ba35
 tm/perl/t/vendor/omni/Voxgig/Omni.pm 20a2ccce95cc
@@ -1217,7 +1221,7 @@ tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm 70a5bbc759c2
 tm/perl/utility/make_fetch_def.pm ebb77b54060c
-tm/perl/utility/make_options.pm d7447ddc9918
+tm/perl/utility/make_options.pm 113f6b2b0a30
 tm/perl/utility/make_point.pm 64f74a122af7
 tm/perl/utility/make_request.pm d4b1ec8cf30d
 tm/perl/utility/make_response.pm 51a842fc584b
@@ -1704,7 +1708,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/scala.aontu 4cdf74ce532f
 model/target/target-index.aontu e1085548f758
-src/cmp/scala/Config_scala.ts e46569d84089
+src/cmp/scala/Config_scala.ts 12ed6618ad10
 src/cmp/scala/EntityBase_scala.ts 95d5e61aa06f
 src/cmp/scala/EntityOperation_scala.ts 5de61f269ee2
 src/cmp/scala/EntityTypes_scala.ts 3e19162e3355
@@ -1728,7 +1732,7 @@ src/cmp/scala/ReadmeTopHowto_scala.ts 1169e3db1008
 src/cmp/scala/ReadmeTopQuick_scala.ts c862c80f21d9
 src/cmp/scala/ReadmeTopTest_scala.ts 8b1837c964cb
 src/cmp/scala/Schema_scala.ts 24932d354519
-src/cmp/scala/TestClean_scala.ts 0898d8942248
+src/cmp/scala/TestClean_scala.ts 463d6bfafc80
 src/cmp/scala/TestDirect_scala.ts 26adc8d507d7
 src/cmp/scala/TestEntity_scala.ts 2396146bab02
 src/cmp/scala/Test_scala.ts 2fb85405a87f
@@ -1743,7 +1747,7 @@ src/cmp/scala/fragment/Main.fragment.scala 48af9dfdab50
 src/cmp/scala/tsconfig.json 720a3f229019
 src/cmp/scala/utility_scala.ts 0f8b6c6f8f64
 tm/scala/LICENSE ed2f88b0aab8
-tm/scala/Makefile 00f9090df6de
+tm/scala/Makefile c8ec788f756e
 tm/scala/VERSION e6635045e1d2
 tm/scala/core/Context.scala 6491a917aced
 tm/scala/core/Contracts.scala caa9f20bf5be
@@ -1819,6 +1823,7 @@ tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
 tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
 tm/scala/sdktest/SdkTestMain.scala dae2e6ae02eb
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
+tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala c6be9c1da3bb
 tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 7eaf74f2c52d
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
@@ -1851,7 +1856,7 @@ tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
 tm/scala/utility/Fetcher.scala 04226d1f9cf1
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
-tm/scala/utility/Make.scala bc44f711e77c
+tm/scala/utility/Make.scala e25c3f9b33b3
 tm/scala/utility/MakeSpec.scala 710f9c42337c
 tm/scala/utility/Misc.scala c701e8463ca8
 tm/scala/utility/Prepare.scala 00061242ab51
@@ -1893,7 +1898,7 @@ src/cmp/swift/ReadmeTopQuick_swift.ts b0d732b88586
 src/cmp/swift/ReadmeTopTest_swift.ts e1b5bc35f382
 src/cmp/swift/Schema_swift.ts de5a4a02dc8d
 src/cmp/swift/SdkError_swift.ts eb21c3a56459
-src/cmp/swift/TestClean_swift.ts b4f5ca55b192
+src/cmp/swift/TestClean_swift.ts b6b74422e75c
 src/cmp/swift/TestDirect_swift.ts 3c38c4dfe812
 src/cmp/swift/TestEntity_swift.ts 117bb2796fdd
 src/cmp/swift/Test_swift.ts ab9d033258f1
@@ -1941,7 +1946,7 @@ tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift d29f13ae39e7
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift 44fc6537aa9d
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 0ce0c9bc0652
-tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 671b04486ecb
+tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 59809fdb32e3
 tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift caefe334f5e6
 tm/swift/Sources/ProjectNameSDK/utility/Register.swift b680c8e1d6bc
 tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 4af21a5c56ee
@@ -1951,8 +1956,9 @@ tm/swift/Tests/ProjectNameSDKTests/NetsimTest.swift e290a72e79ed
 tm/swift/Tests/ProjectNameSDKTests/OmniResolver.swift 4f79581412cb
 tm/swift/Tests/ProjectNameSDKTests/OmniSmokeTest.swift 8c71b23490e1
 tm/swift/Tests/ProjectNameSDKTests/PipelineTest.swift fba6b7236be3
-tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift 7a78fea032d9
+tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift 796713e32345
 tm/swift/Tests/ProjectNameSDKTests/Runner.swift 7cacfc13a4c6
+tm/swift/Tests/ProjectNameSDKTests/ServerVariableTest.swift e3469c9beea6
 tm/swift/Tests/ProjectNameSDKTests/StructUtilityTest.swift df46c84a8c75
 tm/swift/Tests/vendor/omni/Json.swift 5bb6d27ebbb4
 tm/swift/Tests/vendor/omni/Runner.swift df5f0901104b
