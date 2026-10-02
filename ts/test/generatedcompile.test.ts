@@ -4106,23 +4106,30 @@ const CLEAN_FEATURES = [
 
 const CLEAN_LINE = /clean: swept (\d+) surface\(s\), (\d+) leak\(s\)/
 
-const CLEAN_MODELS: { name: string, extra: string }[] = [
+// Two of the three also template the server URL on a variable the spec
+// gives no usable default, which the sweep's client must still be built with.
+const CLEAN_MODELS: { name: string, server: string, extra: string }[] = [
   {
     name: 'header',
+    server: 'no server variable',
     extra: `
 main: kit: config: auth: { active: true, prefix: 'Bearer', in: 'header', name: 'Authorization' }
 `,
   },
   {
     name: 'query',
+    server: 'server variable with an empty default',
     extra: `
 main: kit: config: auth: { active: true, prefix: '', in: 'query', name: 'api_key' }
+main: kit: info: servers: [{ url: 'https://api.example.test/bot{token}', variables: { token: { default: '' } } }]
 `,
   },
   {
     name: 'basic',
+    server: 'server variable with no declaration',
     extra: `
 main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'Authorization' }
+main: kit: info: servers: [{ url: 'http://{{base_url}}' }]
 `,
   },
 ]
@@ -4501,7 +4508,8 @@ describe('the canary sweep runs from a generated SDK', () => {
 
   for (const lane of CLEAN_LANES) {
     for (const auth of CLEAN_MODELS) {
-      test(lane.target + ': no credential leaves the SDK (' + auth.name + ' auth)',
+      test(lane.target + ': no credential leaves the SDK (' + auth.name + ' auth, ' +
+        auth.server + ')',
         async (t) => {
           const sdkroot = Path.join(tmp, lane.target + '-' + auth.name)
           const files = await generateTo(lane.target, sdkroot, auth.extra, CLEAN_FEATURES)

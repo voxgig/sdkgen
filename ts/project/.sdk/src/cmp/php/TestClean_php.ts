@@ -373,6 +373,25 @@ class CleanTest extends TestCase
         };
     }
 
+    // Offline, as every generated suite is: the test OPTION resolves a
+    // required server variable to test-<name>, and installs no transport.
+    private static function offline(array $opts): array
+    {
+        return array_merge($opts, ['test' => ['active' => true]]);
+    }
+
+    // A client the sweep cannot build leaves nothing swept: a harness error,
+    // not a leak.
+    private static function construct(array $opts): ${Name}SDK
+    {
+        try {
+            return new ${Name}SDK(self::offline($opts));
+        } catch (\\Throwable $e) {
+            throw new \\RuntimeException('clean harness: the client could not be constructed, ' .
+                'so nothing was swept: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
     private static function make_sdk(
         callable $respond, \\ArrayObject $sinks, ?array $cleanopts = null, array $extra = []
     ): array
@@ -426,7 +445,7 @@ class CleanTest extends TestCase
             $opts['feature'] = $feature;
         }
 
-        return [new ${Name}SDK($opts), $watcher];
+        return [self::construct($opts), $watcher];
     }
 
     // The first operation that completes against a plain 200: with no
@@ -435,7 +454,7 @@ class CleanTest extends TestCase
     // answers get_name(), as the feature corpus runner finds them.
     private static function usable_op(): ?array
     {
-        $plain = new ${Name}SDK([
+        $plain = self::construct([
             'apikey' => self::CANARY['apikey'],
             'utility' => [
                 'fetcher' => function (${Name}Context $_ctx, string $_url, array $_fetchdef): array {
@@ -589,10 +608,10 @@ class CleanTest extends TestCase
         // message quotes the value it rejected.
         $rejected = null;
         try {
-            new ${Name}SDK([
+            new ${Name}SDK(self::offline([
                 'apikey' => ['value' => self::CANARY['apikey']],
                 'clean' => ['values' => self::CANARY['value']],
-            ]);
+            ]));
         } catch (\\Throwable $e) {
             $rejected = $e;
         }
@@ -675,7 +694,7 @@ class CleanTest extends TestCase
         // With no clean option at all, the schema defaults still apply.
         $respond404 = self::scenarios()['notfound'];
         $bwatcher = self::capture_feature($sinks);
-        $bare = new ${Name}SDK([
+        $bare = self::construct([
             'apikey' => self::CANARY['apikey'],
             'secret' => self::CANARY['secret'],
             'headers' => ['X-Custom-Token' => self::CANARY['header']],
@@ -692,7 +711,7 @@ class CleanTest extends TestCase
         // A feature's name is not a field name: only the sensitive names
         // inside its settings register. An entity block, of per-entity
         // settings or seeded records keyed by entity name and id, is not read.
-        $featured = new ${Name}SDK([
+        $featured = self::construct([
             'apikey' => self::CANARY['apikey'],
             'feature' => [
                 'zzsecrets' => ['active' => false, 'kind' => 'PLAINSETTING-q8w2e4r6'],

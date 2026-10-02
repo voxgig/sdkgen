@@ -188,6 +188,22 @@ SCENARIOS = [
 ]
 
 
+# Offline, as every generated suite is: the test OPTION resolves a required
+# server variable to test-<name>, and installs no transport.
+def _offline(opts):
+    return dict(opts, test={"active": True})
+
+
+# A client the sweep cannot build leaves nothing swept: a harness error, not a leak.
+def _construct(opts):
+    try:
+        return ${Name}SDK(_offline(opts))
+    except Exception as e:
+        raise RuntimeError(
+            "clean harness: the client could not be constructed, so nothing was swept: "
+            + str(e)) from e
+
+
 def _make_sdk(respond, sinks, cleanopts=None, extra=None):
     def capture(name):
         return lambda rec, *a: sinks.extend(_forms(name, rec))
@@ -214,7 +230,7 @@ def _make_sdk(respond, sinks, cleanopts=None, extra=None):
     clean = {"values": CANARY["value"]}
     clean.update(cleanopts or {})
 
-    return ${Name}SDK({
+    return _construct({
         "apikey": CANARY["apikey"],
         "secret": CANARY["secret"],
         "headers": {"X-Custom-Token": CANARY["header"]},
@@ -229,7 +245,7 @@ def _make_sdk(respond, sinks, cleanopts=None, extra=None):
 # arguments, else with every path parameter its points declare filled in.
 def _usable_op():
     def plain():
-        return ${Name}SDK({
+        return _construct({
             "apikey": CANARY["apikey"],
             "utility": {"fetcher": lambda ctx, url, fetchdef: (_response(200, {"id": "i1"}), None)},
         })
@@ -387,7 +403,8 @@ class TestClean:
         # message quotes the value it rejected.
         rejected = None
         try:
-            ${Name}SDK({"apikey": {"value": CANARY["apikey"]}, "clean": {"values": CANARY["value"]}})
+            ${Name}SDK(_offline(
+                {"apikey": {"value": CANARY["apikey"]}, "clean": {"values": CANARY["value"]}}))
         except Exception as e:
             rejected = e
         assert rejected is not None, "a credential mistyped as a map should be rejected"
@@ -453,7 +470,7 @@ class TestClean:
         assert cfgclean == {"keys": "zzsens", "values": CANARY["config"]}, cfgclean
 
         # With no clean option at all, the schema defaults still apply.
-        bare = ${Name}SDK({
+        bare = _construct({
             "apikey": CANARY["apikey"],
             "secret": CANARY["secret"],
             "headers": {"X-Custom-Token": CANARY["header"]},
@@ -464,7 +481,7 @@ class TestClean:
         # A feature's name is not a field name: only the sensitive names
         # inside its settings register. An entity block, of per-entity
         # settings or seeded records keyed by entity name and id, is not read.
-        featured = ${Name}SDK({
+        featured = _construct({
             "apikey": CANARY["apikey"],
             "feature": {
                 "zzsecrets": {"active": False, "kind": "PLAINSETTING-q8w2e4r6"},
