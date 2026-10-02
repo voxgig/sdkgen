@@ -779,10 +779,11 @@ emitted broken source reached the fleet unchallenged.
     `prefixLeadingDigit`, so it is a no-op on any model apidef produced.
   - Names whose identifiers or files MEET once case is ignored keep one
     name and suffix the rest (`contacts_field` + `contactsfield` ->
-    `contactsfield2`): APFS/NTFS hold one file for the pair and PHP one
-    class. "Meet" is `foldKeys`, the lowercased PascalCase form and the
-    lowercased snake form the C-family targets build; a group is a connected
-    component of either. Inactive entities count, because every
+    `contactsfield2`): APFS/NTFS hold one file for the pair, and on every
+    OS tsc refuses it (TS1149) and PHP declares it twice. "Meet" is
+    `foldKeys`, the lowercased PascalCase form and the lowercased snake
+    form the C-family targets build; a group is a connected component of
+    either. Inactive entities count, because every
     `EntityTypes_<lang>` emits them. apidef's `casecollide` only WARNS
     about a pair that both carry operations, so this pass does fire on
     apidef models.

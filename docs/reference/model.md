@@ -402,11 +402,12 @@ Two names also collide when a target derives the same identifier or file
 name from both once case is ignored, as a case-insensitive filesystem
 (macOS, Windows) and PHP class and method names do. `contacts_field` and
 `contactsfield` give `ContactsFieldEntity` and `ContactsfieldEntity`: one
-file on macOS, and in PHP a class declared twice on any system. Names that
-differ only in their separators (`foo-bar`, `foo_bar`) collide the same
-way, as do two names the rust, c, cpp, zig and ocaml targets reduce to one
-snake form. apidef keeps both entities of such a pair when both carry
-operations, so a model apidef produced can hold one.
+file on macOS, and on any system a TypeScript build that stops with TS1149
+(filenames that differ only in casing) and a PHP class declared twice.
+Names that differ only in their separators (`foo-bar`, `foo_bar`) collide
+the same way, as do two names the rust, c, cpp, zig and ocaml targets
+reduce to one snake form. apidef keeps both entities of such a pair when
+both carry operations, so a model apidef produced can hold one.
 
 Generation keeps one name in each colliding group and adds a numeric
 suffix to the others, before anything reads a name: `contactsfield`

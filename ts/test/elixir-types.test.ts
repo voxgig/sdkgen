@@ -68,7 +68,7 @@ describe('elixir type name guard', () => {
 
   // The re-derivation half: Erlang's own table of zero-arity built-ins, read
   // from the abstract code of `erl_internal:is_type/2`.
-  test('the guard covers every arity-0 built-in Erlang declares', (t) => {
+  test('the guard covers every zero-arity built-in Erlang declares', (t) => {
     const erl = toolchain('erl')
     if (null == erl) {
       return t.skip('no erl here: the built-in table cannot be read')
