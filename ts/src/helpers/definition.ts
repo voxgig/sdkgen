@@ -186,8 +186,8 @@ function assertMigrated(fs: any, paths: string[]): void {
     'and aontu reads only .aontu.' +
     '\n  Re-scaffold the project with the current create-sdkgen, which ' +
     'migrates it:' +
-    '\n    npm create @voxgig/sdkgen@latest ...   (run over this project, ' +
-    'with the arguments it was created with)')
+    '\n    npm create @voxgig/sdkgen@latest -- ...   (run over this project, ' +
+    'with the arguments it was created with after the --)')
 }
 
 
