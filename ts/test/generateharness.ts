@@ -416,6 +416,40 @@ main: kit: flow: BasicHistoryFlow: {
 `
 
 
+// An entity with no create: its flow loads the record its own list returns.
+const CREATELESS_ENTITY = `
+main: kit: entity: metric: {
+  alias: field: {}
+  name: "metric"
+  id: { field: "id", name: "id" }
+  field: {
+    id: { name: "id", kind: "field", type: "\`$STRING\`", required: true }
+    count: { name: "count", kind: "field", type: "\`$NUMBER\`" }
+  }
+  fields: {
+    "count": { h: 'Count', n: "count", r: false, t: "\`$NUMBER\`" }
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+  }
+  op: {
+    list: { name: "list", points: [ { g: {}, m: "GET", o: "/metric", s: [{ lit: "metric" }],
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/metric/{id}", s: [{ lit: "metric" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: flow: BasicMetricFlow: {
+  entity: "metric", kind: "basic", name: "BasicMetricFlow"
+  step: [
+    { o: "list", i: { ref: "metric_ref01" } }
+    { o: "load", i: { ref: "metric_ref01", srcdatavar: "metric_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
+
 // SMSAPI's pair, whose classes differ only in case, and a PATCH beside a PUT.
 const FOLD_ENTITY = `
 main: kit: entity: contacts_field: {
@@ -674,6 +708,7 @@ export {
   SCAFFOLD,
   toolchain,
   API_MODEL,
+  CREATELESS_ENTITY,
   FOLD_ENTITY,
   BUILTIN_TYPE_ENTITY,
   SAFE_TYPE_ENTITY,
