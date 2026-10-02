@@ -2,14 +2,18 @@
 import { test, describe } from 'node:test'
 import { ok, deepStrictEqual, strictEqual } from 'node:assert'
 
-import { readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import Path from 'node:path'
 
+import { memfs } from 'memfs'
 import { transform } from 'sucrase'
 
 import * as struct from '@voxgig/struct'
 
-import { configDefinition, bodyNote, opRawBody } from '../dist/sdkgen'
+import { SdkGen, configDefinition, bodyNote, opRawBody } from '../dist/sdkgen'
+
+import { STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot } from './generateharness'
+import { MEDIA_MODEL } from './mediaprobes'
 
 
 const TM = Path.resolve(__dirname, '..', 'project', '.sdk', 'tm')
@@ -337,5 +341,43 @@ describe('media: the generator', () => {
       .includes('as JSON'))
     strictEqual(bodyNote(op({ kind: 'json', media: 'application/json' }), { values: 'x' }), '')
     strictEqual(bodyNote(op(undefined), { values: 'x' }), '')
+  })
+})
+
+
+describe('media: every target documents a raw body', () => {
+
+  test('the reference names $body for each raw create and update', async () => {
+    const cmpdir = Path.join(SCAFFOLD, 'src', 'cmp')
+    const targets = readdirSync(cmpdir)
+      .filter((t) => existsSync(Path.join(cmpdir, t, 'ReadmeRef_' + t + '.ts')))
+      .sort()
+    ok(20 <= targets.length, 'expected every bundled target, got ' + targets.length)
+
+    const { fs, vol } = memfs({})
+    const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
+    const cwd = process.cwd()
+    process.chdir(SCAFFOLD)
+    try {
+      await sdkgen.generate({ model: makeModel(targets, undefined, MEDIA_MODEL), root: makeRoot() })
+    }
+    finally {
+      process.chdir(cwd)
+    }
+
+    const out = vol.toJSON() as Record<string, string>
+    const missing: string[] = []
+    for (const target of targets) {
+      const ref = Object.entries(out).find(([p]) =>
+        Path.relative(STAGE, p).split(Path.sep).join('/') === target + '/REFERENCE.md')
+      const text = String(ref?.[1] ?? '')
+      const notes = text.split('\n').filter((line) => line.includes('pass it as `$body`'))
+      if (2 !== notes.length ||
+        !notes.some((n) => n.includes('`application/pdf`') && n.includes('`image/png`')) ||
+        !notes.some((n) => n.includes('`text/plain`'))) {
+        missing.push(target + ': ' + JSON.stringify(notes))
+      }
+    }
+    deepStrictEqual(missing, [])
   })
 })
