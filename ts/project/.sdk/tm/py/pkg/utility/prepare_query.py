@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
+from projectname_sdk.utility.param import call_args
 
 
 def _contains_param(params, s):
@@ -59,5 +60,10 @@ def prepare_query_util(ctx):
             if val is not None and isinstance(key, str) and key != "$action" \
                     and not _contains_param(params, key):
                 out[wire.get(key, key)] = val
+
+    # A create or update passes its query arguments in its data.
+    for name, orig, val in call_args(ctx, "query"):
+        if val is not None and not _contains_param(params, name):
+            out[orig] = val
 
     return out

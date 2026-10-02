@@ -14,7 +14,8 @@ const TM = Path.resolve(__dirname, '..', 'project', '.sdk', 'tm')
 
 
 // Load a shipped template module. Type-only imports (`../types`) vanish in
-// the transpile; value imports of sibling templates are shimmed.
+// the transpile; value imports are shimmed, or else loaded from the sibling
+// templates.
 function loadTemplate(rel: string, shims: Record<string, any> = {}): any {
   const file = Path.join(TM, rel)
   const js = transform(readFileSync(file, 'utf8'), {
@@ -28,7 +29,8 @@ function loadTemplate(rel: string, shims: Record<string, any> = {}): any {
         return shims[key]
       }
     }
-    return require(p)
+    return p.startsWith('.') ? loadTemplate(
+      Path.relative(TM, Path.resolve(Path.dirname(file), p)) + Path.extname(file), shims) : require(p)
   }
 
   const mod: any = { exports: {} }
@@ -119,6 +121,16 @@ describe('actionstrip: the $action selector never reaches the wire', () => {
       const wrapped: any = bodyCtx(reqdata, { thing: '`reqdata`' })
       wrapped.point.args = args
       deepStrictEqual(transformRequest(wrapped), { thing: { name: 'n' } })
+      strictEqual(JSON.stringify(reqdata), before, 'reqdata was mutated')
+    })
+
+
+    test(lang + ': transformRequest keeps a query argument out of the body', () => {
+      const reqdata = { name: 'n', api_key: 'x' }
+      const before = JSON.stringify(reqdata)
+      const ctx: any = bodyCtx(reqdata)
+      ctx.point.args = { query: [{ name: 'api_key', orig: 'apiKey' }] }
+      deepStrictEqual(transformRequest(ctx), { name: 'n' })
       strictEqual(JSON.stringify(reqdata), before, 'reqdata was mutated')
     })
 
@@ -256,6 +268,12 @@ describe('actionstrip: every SDK target strips the selector', () => {
     test(lang + ': transform-request builds the body without the header arguments', () => {
       ok(/\bheader\b/.test(siteText(SITES[lang].body)),
         lang + ': ' + SITES[lang].body[0] + ' never reads the header arguments')
+    })
+
+    test(lang + ': transform-request builds the body without the query arguments', () => {
+      const text = siteText(SITES[lang].body)
+      ok(/call[_-]?args/i.test(text) && /["']query["']/.test(text),
+        lang + ': ' + SITES[lang].body[0] + ' never leaves the query arguments out')
     })
 
     test(lang + ': prepare-query and transform-request both mention $action', () => {

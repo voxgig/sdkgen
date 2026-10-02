@@ -3,6 +3,7 @@ import {
   Content,
   File,
   cmp,
+  opReachable,
 } from '@voxgig/sdkgen'
 
 
@@ -16,7 +17,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const { target, entity } = props
   const Name = model.const.Name
 
-  const hasList = Object.keys(entity.op || {}).includes('list')
+  // The stream test lists with no match, so a bare call must reach a route.
+  const hasList = opReachable(entity.op?.list, [])
 
   File({ name: entity.Name + 'EntityTest.' + target.ext }, () => {
     Content(`// ${entity.name} entity test (generated from the API model).

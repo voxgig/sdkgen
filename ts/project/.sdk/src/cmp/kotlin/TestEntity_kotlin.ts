@@ -1,4 +1,4 @@
-import { flowSteps } from '@voxgig/sdkgen'
+import { flowSteps, opReachable } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -202,7 +202,9 @@ ${liveFlowGate(entity, needs, entidEnvVar, accessor, strict, allSteps.length > 0
 
 `)
 
-    const flowHasList = allSteps.some((s: any) => s.o === 'list')
+    // The stream test lists with no match, so a bare call must reach a route.
+    const flowHasList = allSteps.some((s: any) => s.o === 'list') &&
+      opReachable((entity.op as any)?.list, [])
     if (flowHasList) {
       Content(`  @Test
   fun stream() {

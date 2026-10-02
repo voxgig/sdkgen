@@ -1,13 +1,14 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, opReachable } from '@voxgig/sdkgen'
 
 
 const TestEntity = cmp(function TestEntity(props: any) {
   const e = props.entity
 
-  const ops = Object.keys(e.op || {})
-  const hasCreate = ops.includes('create')
-  const hasList = ops.includes('list')
+  // Each smoke call passes only what it shows, so a bare call must reach a
+  // route: a name for create, nothing for list.
+  const hasCreate = opReachable(e.op?.create, ['name'])
+  const hasList = opReachable(e.op?.list, [])
 
   // Accessor existence.
   Content(`  (t/run-check rec "gen-exists-${e.name}"

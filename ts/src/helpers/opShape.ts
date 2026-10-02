@@ -138,6 +138,45 @@ function samePath(points: any[]): boolean {
 }
 
 
+// A placeholder inside a literal segment needs a value too.
+function pointParams(point: any): string[] {
+  const names: string[] = []
+  for (const seg of pointSegments(point)) {
+    if (null != seg.var) {
+      names.push(String(seg.var))
+    }
+    else {
+      for (const found of String(seg.lit ?? '').matchAll(/\{([^{}/]+)\}/g)) {
+        names.push(found[1])
+      }
+    }
+  }
+  return names
+}
+
+
+// The rule makePoint applies: a lone point is taken as it is, otherwise only
+// a point without an action, and one the call fills.
+function opReachable(op: any, given: string[]): boolean {
+  const points: any[] = op && op.points ? each(op.points) : []
+  const have = new Set(given)
+  const fills = (pt: any) => pointParams(pt).every((name) => have.has(name))
+
+  if (1 === points.length) {
+    return fills(points[0])
+  }
+
+  return points.some((pt: any) => null == (pt && pt.q && pt.q['$action']) && fills(pt))
+}
+
+
+function opNeedsAction(op: any): boolean {
+  const points: any[] = op && op.points ? each(op.points) : []
+  return 1 < points.length &&
+    points.every((pt: any) => null != (pt && pt.q && pt.q['$action']))
+}
+
+
 function opParams(op: any): any[] {
   let points: any[] = op && op.points ? each(op.points) : []
 
@@ -276,16 +315,17 @@ function entityIdField(ent: any): string | null {
 }
 
 
-// The entity's ACTIVE op names, in canonical CRUD order (list, load, create,
-// update, remove), with any non-canonical ops appended in sorted order. Doc
-// generators must gate an op example on this (an op present in the model but
-// `active: false` generates no method, so an example calling it would not
-// compile) — NOT on the raw `Object.keys(ent.op)`, which includes inactive ops.
+// The entity's ACTIVE op names, in canonical CRUD order, then any others
+// sorted. Doc generators gate an op example on this, NOT on the raw
+// `Object.keys(ent.op)`: an `active: false` op generates no method, and an op
+// whose every route is an action is refused without one, so a plain example
+// of either would fail.
 const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'remove']
 
 function entityOps(ent: any): string[] {
   const ops = (ent && ent.op) || {}
-  const active = Object.keys(ops).filter((o: string) => ops[o] && ops[o].active !== false)
+  const active = Object.keys(ops).filter((o: string) =>
+    ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]))
   return CANON_OP_ORDER.filter((o) => active.includes(o))
     .concat(active.filter((o) => !CANON_OP_ORDER.includes(o)).sort())
 }
@@ -494,8 +534,29 @@ function pickExampleEntity(entity: any): { entity: any, primaryOp: string | null
   // representative entity, not the alphabetically-first one (often a degenerate
   // stub with a terse name and no fields) nor an atypically sprawling one.
   const pool = readable.length ? readable : (withOp.length ? withOp : actives)
-  const chosen = pickMedianEntity(pool)
+  let chosen = pickMedianEntity(pool)
+  // A bare list example cannot fill a nested route: prefer a reachable call.
+  if (null != chosen && !exampleReachable(chosen)) {
+    const reachable = pool.filter(exampleReachable)
+    if (0 < reachable.length) {
+      chosen = pickMedianEntity(reachable)
+    }
+  }
   return { entity: chosen, primaryOp: null == chosen ? null : entityPrimaryOp(chosen) }
+}
+
+
+// A list example passes nothing; the others pass the required members.
+function exampleReachable(ent: any): boolean {
+  const opname = entityPrimaryOp(ent)
+  if (null == opname) {
+    return false
+  }
+  const idF = entityIdField(ent)
+  const given = 'list' === opname ? [] : opRequestShape(ent, opname).items
+    .filter((it: OpShapeItem) => !it.optional || it.name === idF)
+    .map((it: OpShapeItem) => it.name)
+  return opReachable(ent.op[opname], given)
 }
 
 
@@ -558,6 +619,8 @@ export {
   entityCollection,
   opTypeName,
   opParams,
+  opReachable,
+  opNeedsAction,
   ownPoint,
   opActions,
   entityActions,

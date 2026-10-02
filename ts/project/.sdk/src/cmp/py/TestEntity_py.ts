@@ -1,4 +1,4 @@
-import { flowSteps } from '@voxgig/sdkgen'
+import { flowSteps, opReachable } from '@voxgig/sdkgen'
 
 import {
   flatten,
@@ -129,11 +129,11 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const needs = liveFlowNeeds(entity, basicflow)
   const entidEnv = PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID'
 
-  // The stream test streams the "list" op and asserts a 3-item collection, so
-  // it only applies to entities that actually declare a `list` op. Others
-  // (e.g. Batch = create/load) have no list endpoint — make_point would error
-  // and the stream would yield nothing — so skip the test for them.
-  const hasList = !!(entity.op && (entity.op as any)?.list)
+  // The stream test streams the "list" op with no match and asserts a 3-item
+  // collection, so it only applies to an entity whose list a bare call can
+  // reach: not one without a list (e.g. Batch = create/load), not a nested
+  // list needing its parent's id, and not one whose routes all need an action.
+  const hasList = opReachable((entity.op as any)?.list, [])
 
   File({ name: 'test_' + entity.name + '_entity.' + target.ext }, () => {
 

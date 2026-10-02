@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, opNeedsAction } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -53,6 +53,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
   publishedEntities.map((entity: any) => {
     const opnames = Object.keys(entity.op || {})
+    // An op that needs an action has no plain call to show.
+    const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
     const fields = Object.values(entity.fields || {})
     const idF = entityIdField(entity)
     const eVar = rustVarName(entity.name)
@@ -108,7 +110,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 `)
     }
 
-    if (opnames.includes('load')) {
+    if (callable.includes('load')) {
       const loadItems = opRequestShape(entity, 'load').items
         .filter((it: any) => !it.optional || it.name === idF)
         .sort((a: any, b: any) =>
@@ -127,7 +129,7 @@ let ${eVar} = client.${method}(Value::Noval).load(${loadArg}, Value::Noval).unwr
 `)
     }
 
-    if (opnames.includes('list')) {
+    if (callable.includes('list')) {
       Content(`#### Example: List
 
 \`\`\`rust
@@ -137,7 +139,7 @@ let ${eVar}s = client.${method}(Value::Noval).list(Value::Noval, Value::Noval).u
 `)
     }
 
-    if (opnames.includes('create')) {
+    if (callable.includes('create')) {
       const createItems = opRequestShape(entity, 'create').items
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create

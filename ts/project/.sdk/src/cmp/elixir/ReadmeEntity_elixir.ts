@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, opRequestShape, opNeedsAction } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -49,6 +49,8 @@ takes an entity handle built from the client:
     const EName = entity.Name
     const eVar = entity.name
     const opnames = Object.keys(entity.op || {})
+    // An op that needs an action has no plain call to show.
+    const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
     const fields = Object.values(entity.fields || {})
     const idF = entityIdField(entity)
 
@@ -102,7 +104,7 @@ takes an entity handle built from the client:
 `)
     }
 
-    if (opnames.includes('load')) {
+    if (callable.includes('load')) {
       const loadItems = opRequestShape(entity, 'load').items
         .filter((it: any) => !it.optional || it.name === idF)
         .sort((a: any, b: any) =>
@@ -122,7 +124,7 @@ record = ${Name}.Entity.${EName}.load(${eVar}, ${loadArg})
 `)
     }
 
-    if (opnames.includes('list')) {
+    if (callable.includes('list')) {
       Content(`#### Example: List
 
 \`\`\`elixir
@@ -133,7 +135,7 @@ records = ${Name}.Entity.${EName}.list(${eVar})
 `)
     }
 
-    if (opnames.includes('create')) {
+    if (callable.includes('create')) {
       // Members come from the SAME shape the runtime validates
       // (opRequestShape): every required member must appear — with a real,
       // executable literal.
