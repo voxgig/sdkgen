@@ -799,15 +799,20 @@ describe('pluginExcludes', () => {
     }), [])
   })
 
-  // An INACTIVE feature's whole tree is already gone via
-  // srcFeatureExcludes, so its plugins must not be walked again here -
-  // and the model's only_active filter would not return them anyway.
-  test('an inactive feature contributes no plugin patterns', () => {
+  // A target that cannot trim keeps a feature that is off, so its groups
+  // go here, active or not.
+  test('every group of an inactive feature is excluded', () => {
     deepStrictEqual(pluginExcludes({
       main: { kit: { feature: { secrets: {
         name: 'secrets', active: false,
-        plugin: { aws: { name: 'aws', active: false } },
+        plugin: {
+          aws: { name: 'aws', active: false },
+          dotenv: { name: 'dotenv', active: true },
+        },
       } } } },
-    }), [])
+    }).map(String), [
+      String(/(^|\/)src\/feature\/secrets\/plugin\/aws\//),
+      String(/(^|\/)src\/feature\/secrets\/plugin\/dotenv\//),
+    ])
   })
 })

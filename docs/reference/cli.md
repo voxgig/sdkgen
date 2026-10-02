@@ -24,10 +24,11 @@ aontu reads only `.aontu` files. A project created before that rename,
 whose `model/sdk.aon` or `model/<kind>/<kind>-index.aon` has no `.aontu`
 file beside it, is refused by every action that reads its model. The
 message names the old files and the fix: run the current create-sdkgen
-over the project (`npm create @voxgig/sdkgen@latest`, with the arguments
-the project was created with), which migrates it. Nothing is written
-first, so no new `.aontu` index appears that the old entry file never
-includes.
+over the project with the arguments it was created with, which migrates
+it. The command is `npm create @voxgig/sdkgen@latest -- <args>`, and the
+`--` keeps npm from reading those arguments as its own options. Nothing
+is written first, so no new `.aontu` index appears that the old entry
+file never includes.
 
 ## Options
 

@@ -96,7 +96,7 @@ const RAW_DIGIT_IDENT = /(^|[^A-Za-z0-9_$."'`\/-])(3ds[A-Za-z_]|3ds_session)/
 
 
 async function generate(
-  targetNames: string[], name?: string, extra?: string, sink?: any[],
+  targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
 ): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
@@ -110,7 +110,7 @@ async function generate(
   // generate() either completes or throws — it has no failure return. Let the
   // throw reach the caller, which names the target it came from.
   const res = await sdkgen.generate({
-    model: makeModel(targetNames, name, extra),
+    model: makeModel(targetNames, name, extra, features),
     root: makeRoot(),
   })
   strictEqual(res.ok, true, 'generation did not report ok')
@@ -228,6 +228,7 @@ describe('generate', () => {
     ok(5 < targets.length, 'expected the full target set, got ' + targets.length)
 
     const leaks: string[] = []
+    const undef: string[] = []
 
     for (const target of targets) {
       let out: Record<string, string>
@@ -253,11 +254,17 @@ describe('generate', () => {
           !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
           leaks.push(path)
         }
+
+        // A component that reads a compact field by a name it does not carry.
+        if (/direct/i.test(path) && /["']undefined["']/.test(content)) {
+          undef.push(path)
+        }
       }
     }
 
     strictEqual(leaks.length, 0,
       'generated files leak the ProjectName placeholder:\n  ' + leaks.join('\n  '))
+    deepStrictEqual(undef, [], 'direct tests that name undefined')
   })
 
 
@@ -971,6 +978,48 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // CostRecord is the cost feature's own type, absent without the feature.
+  test('a clean sweep names CostRecord only when the model selects cost', async () => {
+    const sweep = (out: Record<string, string>, target: string) =>
+      filesFor(out, target).filter(([p]) => /\/(t|tests?|sdktest)\/(.+\/)?[^/]*clean[^/]*$/i.test(p))
+
+    const named: string[] = []
+    for (const target of allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))) {
+      const files = sweep(await generate([target]), target)
+      ok(0 < files.length, target + ': no clean sweep generated')
+      named.push(...files.filter(([, c]) => /CostRecord/.test(String(c))).map(([p]) => p))
+    }
+    deepStrictEqual(named, [], 'clean sweeps that name CostRecord without the cost feature')
+
+    for (const target of ['csharp', 'swift']) {
+      const files = sweep(await generate([target], undefined,
+        'main: kit: feature: cost: active: true', undefined, ['test', 'log', 'cost']), target)
+      ok(files.some(([, c]) => /CostRecord/.test(String(c))),
+        target + ': the clean sweep lost its cost sink with the feature selected')
+    }
+  })
+
+
+  // A target that cannot trim keeps the feature itself, never its groups.
+  test('a declared feature that is off ships no source, tests or plugin groups', async () => {
+    const SECRETS = /(^|\/)(secrets\/|secrets(_feature)?\.[a-z]+$|SecretsFeature\.[a-z]+$)/
+    const shipped: string[] = []
+
+    for (const target of allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))) {
+      const off = 'main: kit: feature: secrets: { active: false plugin: vault: active: true }'
+      const trims = false !== makeModel([target]).main[KIT].target[target].feature?.trim
+      const out = await generate([target], undefined, off, undefined, ['test', 'log', 'secrets'])
+
+      for (const [path] of filesFor(out, target)) {
+        if (/hashicorp/i.test(path) || (trims && SECRETS.test(path.slice(target.length)))) {
+          shipped.push(path)
+        }
+      }
+    }
+
+    deepStrictEqual(shipped, [], 'files of a feature the model switches off')
+  })
+
 
   // Root.ts (via makeRoot) and every Test_<lang>.ts each read the raw,
   // unfiltered entity map independently, ignoring `active`.
@@ -1123,6 +1172,14 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     ok(null != line, 'the root readme has no Features line')
     ok(!line!.includes('undefined'), 'the Features line prints undefined: ' + line)
     ok(line!.includes('`test`'), 'the Features line does not name the test feature: ' + line)
+  })
+
+
+  test('the root readme says regeneration overwrites', async () => {
+    const readme = (await generate(['ts']))['README.md']
+    ok(readme.includes('**Regeneration overwrites.**'), 'the overwrite bullet is gone')
+    ok(readme.includes('.sdk/model/sdk.aontu'), 'the bullet does not name the project model')
+    ok(!/merge/i.test(readme), 'the root readme still promises a merge')
   })
 
 

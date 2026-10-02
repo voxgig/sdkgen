@@ -464,8 +464,8 @@ Pass custom features via the \`extend\` option at construction time.
 `);
         // 11c. Customization — the generator's whole story for "the output is
         // not quite right": model-driven declarations, in-repo templates and
-        // components, merge-aware regeneration, and packages for custom targets
-        // and features. Every SDK repo carries its own generator, so this
+        // components, regeneration that overwrites, and packages for custom
+        // targets and features. Every SDK repo carries its own generator, so this
         // belongs in every README.
         (0, jostraca_1.Content)(`## Customizing this SDK
 
@@ -481,10 +481,12 @@ customizable without forking any upstream tool:
 - **Templates** (\`.sdk/tm/\`) and **components** (\`.sdk/src/cmp/\`) are
   the two layers of generation, copied into this repo: templates are the
   literal per-language source, components generate the API-shaped parts.
-- **Regeneration merges.** By default, newly generated content is
-  three-way merged into existing files, so generator updates and local
-  edits usually converge without manual conflict handling. A project can
-  opt for plain overwrite instead.
+- **Regeneration overwrites.** Each run rewrites every generated file from
+  the model, the templates and the components, so an edit made to
+  generated output is lost. Say what this project needs in its own model
+  (\`.sdk/model/sdk.aontu\`), or extend a target with a component of its
+  own in \`.sdk/src/cmp/<target>/\`, registered with \`registerComponent\`,
+  which \`voxgig-sdkgen doctor\` reports as an addition rather than drift.
 - **Custom features and entire custom targets** arrive through sdkgen
   packages (\`voxgig-sdkgen package add\`), on the same rails as the
   bundled languages, and \`voxgig-sdkgen doctor\` reports any drift from

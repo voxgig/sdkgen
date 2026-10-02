@@ -26,6 +26,7 @@ type DefinitionPoint = {
   select: Record<string, any>
   headers: { name: string, wire: string, value: any }[]
   query: string[]
+  queryArgs: { name: string, wire: string }[]
   auth: Credential[][] | null
   status: number
   sample: any
@@ -113,6 +114,15 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           selected[arg.n] = scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'v1'
         }
 
+        // Create and update send their input as the body: only a match has a query.
+        const queryArgs = 'create' === op || 'update' === op ? [] :
+          (point.g?.query || [])
+            .filter((arg: any) => undefined !== selected[arg.n] &&
+              !args.some((a: any) => a.name === arg.n) &&
+              !headers.some((h: any) => h.name === arg.n))
+            .map((arg: any) => ({ name: arg.n, wire: String(arg.or || arg.n) }))
+            .filter((q: any) => params.some((p: any) => 'query' === p?.in && q.wire === p?.name))
+
         const success = successResponse(facts.responses)
         const media = null == success ? undefined : jsonMedia(success.response)
 
@@ -127,6 +137,7 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           select: selected,
           headers,
           query: params.filter((p: any) => 'query' === p?.in).map((p: any) => p.name),
+          queryArgs,
           auth: unchecked ? null : credentialSets(facts, own),
           status: success?.status ?? 200,
           sample: null == media ? null : boundedSample(fitting(sampleOf(media), media.schema)),

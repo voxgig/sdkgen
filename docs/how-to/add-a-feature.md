@@ -221,7 +221,11 @@ carries exactly the features it asked for — see
 ## Trimming the feature set
 
 `target add` copies a target's template tree minus the source of every
-shipped feature the model did not select. Two things follow from that:
+shipped feature the model did not select. Generation repeats the trim for a
+feature the model declares but leaves off: `feature add` copies a feature's
+source and tests whether the model activates it or not, and neither reaches
+the generated SDK until the feature is switched on. Two things follow from
+the trim:
 
 - **A template that statically references every feature stops
   compiling.** Each target declares those in its own model as

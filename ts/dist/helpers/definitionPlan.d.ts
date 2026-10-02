@@ -22,6 +22,10 @@ type DefinitionPoint = {
         value: any;
     }[];
     query: string[];
+    queryArgs: {
+        name: string;
+        wire: string;
+    }[];
     auth: Credential[][] | null;
     status: number;
     sample: any;

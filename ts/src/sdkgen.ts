@@ -83,6 +83,7 @@ import {
   featureExcludes,
   fullsetExcludes,
   srcFeatureExcludes,
+  inactiveFeatureExcludes,
   pluginExcludes,
   pluginExcludesFor,
 } from './helpers/featureSource'
@@ -1125,6 +1126,7 @@ export {
   featureExcludes,
   fullsetExcludes,
   srcFeatureExcludes,
+  inactiveFeatureExcludes,
   pluginExcludes,
   pluginExcludesFor,
   stationLibrary,

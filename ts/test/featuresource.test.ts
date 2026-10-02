@@ -1,5 +1,5 @@
 
-import { test, describe } from 'node:test'
+import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
 import Fs from 'node:fs'
@@ -9,6 +9,7 @@ import { Aontu } from 'aontu'
 
 import {
   featureOf, findFeatureSources, availableFeatures, srcFeatureExcludes,
+  inactiveFeatureExcludes, pluginExcludes,
 } from '../dist/sdkgen.js'
 import { SCAFFOLD, PROJECT, KIT, addTarget } from './actionharness'
 
@@ -140,6 +141,105 @@ describe('srcFeatureExcludes', () => {
 
   test('a model with no features excludes nothing', () => {
     strictEqual(srcFeatureExcludes({ main: { [KIT]: {} } }).length, 0)
+  })
+})
+
+
+describe('inactiveFeatureExcludes', () => {
+
+  // The helper reads `tm/<target>` from the working directory, as Copy does.
+  let cwd = ''
+  before(() => {
+    cwd = process.cwd()
+    process.chdir(SCAFFOLD)
+  })
+  after(() => {
+    if ('' !== cwd) process.chdir(cwd)
+  })
+
+  const ctx = (feature: Record<string, any>) =>
+    ({ fs: () => Fs, model: { main: { [KIT]: { feature } } } })
+  const target = (name: string) => ({ name, feature: targetFeature(name) })
+  const OFF = {
+    secrets: { name: 'secrets', active: false },
+    test: { name: 'test', active: true },
+  }
+  const hit = (excludes: RegExp[], path: string) => excludes.some((re) => re.test(path))
+
+
+  test('a declared feature that is off loses its source and its tests', () => {
+    const available = availableFeatures(Fs, SCAFFOLD)
+    const kept: string[] = []
+    const lost: string[] = []
+
+    for (const name of allTargets()) {
+      if (false === targetFeature(name).trim) continue
+
+      const excludes = inactiveFeatureExcludes(ctx(OFF), target(name))
+      for (const s of findFeatureSources(Fs, Path.join(SCAFFOLD, 'tm', name), available)) {
+        const path = s.path + (s.folder ? '/x' : '')
+        if ('secrets' === s.name && !hit(excludes, path)) kept.push(name + ': ' + s.path)
+        if ('test' === s.name && hit(excludes, path)) lost.push(name + ': ' + s.path)
+      }
+    }
+
+    deepStrictEqual(kept, [], 'secrets source shipped although the model switches it off')
+    deepStrictEqual(lost, [], 'test feature source trimmed although it is active')
+  })
+
+
+  test('a Copy of a subtree gets paths relative to it', () => {
+    const py = inactiveFeatureExcludes(ctx(OFF), target('py'), 'tm/py/pkg')
+    ok(hit(py, 'feature/secrets_feature.py'))
+    ok(hit(py, 'feature/secrets/voxgig_sekreto/sekreto.py'))
+    ok(!hit(py, 'feature/test_feature.py'))
+
+    const swift = inactiveFeatureExcludes(ctx(OFF), target('swift'),
+      'tm/swift/Tests/ProjectNameSDKTests')
+    ok(hit(swift, 'feature/secrets/SecretsFeatureTest.swift'))
+    ok(hit(swift, 'FeatureTest.swift'), 'the cross-feature suite stayed')
+  })
+
+
+  test('the cross-feature suite goes only when something is trimmed', () => {
+    ok(hit(inactiveFeatureExcludes(ctx(OFF), target('go')), 'test/feature_test.go'))
+    deepStrictEqual(inactiveFeatureExcludes(ctx({
+      ...OFF, secrets: { name: 'secrets', active: true },
+    }), target('go')), [])
+    deepStrictEqual(inactiveFeatureExcludes(ctx({}), target('go')), [])
+  })
+
+
+  test('a target that cannot trim keeps every feature', () => {
+    for (const name of ['clojure', 'scala', 'zig']) {
+      deepStrictEqual(inactiveFeatureExcludes(ctx(OFF), target(name)), [], name)
+    }
+  })
+})
+
+
+describe('pluginExcludes', () => {
+
+  const model = (active: boolean) => ({ main: { [KIT]: { feature: { secrets: {
+    name: 'secrets', active, plugin: {
+      vault: { active: true, path: ['feature/secrets/plugins/hashicorp.rs'] },
+      aws: { active: false, path: ['feature/secrets/plugins/aws.rs'] },
+    },
+  } } } } })
+  const hit = (excludes: RegExp[], path: string) => excludes.some((re) => re.test(path))
+
+
+  test('an active feature keeps its active groups', () => {
+    const excludes = pluginExcludes(model(true))
+    ok(!hit(excludes, 'feature/secrets/plugins/hashicorp.rs'))
+    ok(hit(excludes, 'feature/secrets/plugins/aws.rs'))
+  })
+
+
+  test('a feature that is off loses every group', () => {
+    const excludes = pluginExcludes(model(false))
+    ok(hit(excludes, 'feature/secrets/plugins/hashicorp.rs'))
+    ok(hit(excludes, 'feature/secrets/plugins/aws.rs'))
   })
 })
 

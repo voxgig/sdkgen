@@ -8,6 +8,7 @@ import {
   isHttpBasicAuth,
   resolveAuthIn,
   resolveAuthName,
+  targetFeatures,
 } from '@voxgig/sdkgen'
 
 
@@ -27,6 +28,10 @@ const TestClean = cmp(function TestClean(props: any) {
     basic: isHttpBasicAuth(model),
   }
 
+  // CostRecord is declared by the cost feature's source, which ships only
+  // when the model selects the feature.
+  const cost = null != targetFeatures(model, target).cost
+
   // Same order the ts sweep tries: list, then load, then the rest.
   const rank: Record<string, number> = { list: 0, load: 1 }
   const candidates = each(entityCollection(model))
@@ -39,7 +44,7 @@ const TestClean = cmp(function TestClean(props: any) {
     }))
     .filter((c: any) => 0 < c.ops.length)
 
-  File({ name: 'CleanTest.' + target.ext }, () => Content(render(model.const.Name, auth, candidates)))
+  File({ name: 'CleanTest.' + target.ext }, () => Content(render(model.const.Name, auth, candidates, cost)))
 })
 
 
@@ -47,6 +52,7 @@ function render(
   Name: string,
   auth: { suppressed: boolean, where: string, name: string, basic: boolean },
   candidates: { name: string, Name: string, ops: string[] }[],
+  cost: boolean,
 ): string {
   const candidateLines = candidates.map((c) =>
     `        new Candidate("${c.name}", sdk => sdk.${c.Name}(null), new[] { ${c.ops.map((o) => `"${o}"`).join(', ')} }),`)
@@ -407,7 +413,7 @@ public class CleanTest
                 ["active"] = true, ["exporter"] = Capture("telemetry"),
             };
         }
-        if (Fh.HasFeature("cost"))
+${cost ? `        if (Fh.HasFeature("cost"))
         {
             feature["cost"] = new Dictionary<string, object?>
             {
@@ -415,7 +421,7 @@ public class CleanTest
                 ["sink"] = (Action<CostRecord>)(rec => sinks.AddRange(FormsOf("cost", rec))),
             };
         }
-        if (Fh.HasFeature("metrics"))
+` : ''}        if (Fh.HasFeature("metrics"))
         {
             feature["metrics"] = new Dictionary<string, object?> { ["active"] = true };
         }
