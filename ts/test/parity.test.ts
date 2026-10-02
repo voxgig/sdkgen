@@ -1672,6 +1672,29 @@ describe('vendored-library rollout parity', () => {
   })
 
 
+  // The scala suite compares this table with sekreto's kinds only where
+  // scala runs.
+  test('the scala secrets suite tables every kind its sekreto ships', () => {
+    const quoted = (src: string) => Array.from(src.matchAll(/"([a-z0-9]+)"/g), (m) => m[1])
+    const sekreto = Path.join(TM, 'scala', 'feature', 'secrets', 'sekreto')
+
+    const kinds = /val plugin: List\[String\] = List\(([^)]*)\)/
+      .exec(readFileSync(Path.join(sekreto, 'Providers.scala'), 'utf8'))
+    ok(null != kinds, 'no plugin kind list in Providers.scala')
+
+    const table = /PLUGINMODULES: List\[\(String, List\[String\]\)\] = List\(([\s\S]*?)\n {2}\)/
+      .exec(readFileSync(Path.join(TM, 'scala', 'sdktest', 'feature', 'secrets',
+        'SecretsTestMain.scala'), 'utf8'))
+    ok(null != table, 'no PLUGINMODULES table in SecretsTestMain.scala')
+
+    const rows = Array.from(table![1].matchAll(/"(\w+)" -> List\(([^)]*)\)/g))
+    deepStrictEqual(rows.flatMap((r) => quoted(r[2])).sort(), quoted(kinds![1]).sort())
+    for (const [, file] of rows) {
+      ok(existsSync(Path.join(sekreto, 'plugins', file + '.scala')), 'no module ' + file)
+    }
+  })
+
+
   test('no target ships secrets source without being listed', () => {
     // Feature containers are per-language too: ts/js use src/feature/,
     // go a top-level feature/ dir, py pkg/feature/.

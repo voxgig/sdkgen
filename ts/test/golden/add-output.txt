@@ -1820,7 +1820,7 @@ tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
 tm/scala/sdktest/SdkTestMain.scala dae2e6ae02eb
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/StructCorpus.scala c6be9c1da3bb
-tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 47e00ea6de8e
+tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 7eaf74f2c52d
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
 tm/scala/sdktest/vendor/omni/Json.scala 85c970e8ae7f
 tm/scala/sdktest/vendor/omni/Runner.scala 9baab0c37da9
