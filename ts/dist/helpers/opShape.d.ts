@@ -1,3 +1,4 @@
+import type { TargetOrigins } from '../action/resolve';
 declare function entityCollection(model: any): any;
 declare function deriveEntityNames(entityColl: any): any[];
 declare const OP_SUFFIX: Record<string, 'Match' | 'Data'>;
@@ -25,6 +26,13 @@ declare function opRequestShape(ent: any, opname: string): {
 };
 declare function entityIdField(ent: any): string | null;
 declare function entityOps(ent: any): string[];
+type UngeneratedOp = {
+    entity: string;
+    op: string;
+    points: string[];
+};
+declare function ungeneratedOps(model: any): UngeneratedOp[];
+declare function warnUngeneratedOps(model: any, log: any, origins: TargetOrigins): UngeneratedOp[];
 declare function entityPrimaryOp(ent: any): string | null;
 declare function entityClassName(ent: any, entityColl: any): string;
 declare function entityTypeCollisions(entityColl: any): string[];
@@ -34,5 +42,5 @@ declare function pickExampleEntity(entity: any): {
     primaryOp: string | null;
 };
 declare function entityDataIdField(ent: any): string | null;
-export { OP_SUFFIX, deriveEntityNames, entityCollection, opTypeName, opParams, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, };
-export type { OpShapeItem, };
+export { OP_SUFFIX, deriveEntityNames, entityCollection, opTypeName, opParams, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
+export type { OpShapeItem, UngeneratedOp, };

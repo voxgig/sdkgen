@@ -1,6 +1,6 @@
 
 import { test, describe } from 'node:test'
-import { ok, strictEqual } from 'node:assert'
+import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
 import { readFileSync } from 'node:fs'
 import Path from 'node:path'
@@ -249,6 +249,48 @@ describe('EntityTypes emitters — fixture model output', () => {
     ok(out.includes('@type sun_load_match ::'), 'op alias (shared OP_SUFFIX derived)')
     ok(out.includes('@type sun_create_data ::'), 'data op alias')
     ok(out.includes('String.t() | integer()'), 'union renders as typespec union')
+  })
+
+  // `@type mfa :: ...` stops the compile: mfa/0 is a built-in type.
+  test('elixir: an entity named after a built-in type declares one it can', async () => {
+    const model: any = makeModel()
+    model.main[KIT].entity.mfa = {
+      active: true, name: 'mfa',
+      fields: { code: { n: 'code', t: '`$STRING`', r: false } },
+      op: { create: { active: true, points: [] } },
+    }
+    model.main[KIT].entity.node = {
+      active: false, name: 'node', op: { list: { active: true, points: [] } },
+    }
+
+    const { files } = await render('elixir', { name: 'elixir', ext: 'ex' }, model)
+    const out = findFile(files, /demo_types\.ex$/)
+    ok(out.includes('@type mfa_type ::'), 'mfa takes the safe name')
+    ok(!/@type mfa ::/.test(out), 'no built-in redefined')
+    ok(out.includes('@type mfa_create_data ::'), 'the op type keeps the plain stem')
+    ok(out.includes('@type node_type ::'), 'an inactive entity is guarded too')
+    ok(out.includes('@type node_list_match ::'), 'its op type keeps the plain stem')
+    ok(out.includes('@type sun ::'), 'an ordinary name is untouched')
+  })
+
+  // `mfa` would take `mfa_type`, which an entity of that name already declares.
+  test('elixir: a safe type name another entity holds is not declared twice', async () => {
+    const model: any = makeModel()
+    model.main[KIT].entity.mfa = {
+      active: true, name: 'mfa', op: { create: { active: true, points: [] } },
+    }
+    model.main[KIT].entity.mfa_type = {
+      active: false, name: 'mfa_type', op: { list: { active: true, points: [] } },
+    }
+
+    const { files } = await render('elixir', { name: 'elixir', ext: 'ex' }, model)
+    const out = findFile(files, /demo_types\.ex$/)
+    const declared = [...out.matchAll(/@type (\w+) ::/g)].map((m) => m[1])
+    deepStrictEqual(declared.filter((t, i) => declared.indexOf(t) !== i), [],
+      'types declared twice')
+    ok(declared.includes('mfa_type2'), 'mfa takes the next free name')
+    ok(declared.includes('mfa_type'), 'the mfa_type entity keeps its name')
+    ok(declared.includes('mfa_create_data') && declared.includes('mfa_type_list_match'))
   })
 
   test('rb: a nameless field is dropped, not emitted as an empty symbol', async () => {

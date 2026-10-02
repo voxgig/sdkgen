@@ -17,5 +17,14 @@ declare function nameConflict(kind: string, source: Source, ctx$: any): {
 } | undefined;
 declare function recordedRef(declared: any, name: string): string | undefined;
 declare function isBare(ref: string): boolean;
-export type { Source, };
-export { resolveSource, recordedRef, isBare, registerInstalled, nameConflict, lastSegment, BUNDLED, };
+declare function resolvesBundled(declared: any, name: string): boolean;
+type TargetOrigins = {
+    bundled: string[];
+    external: {
+        name: string;
+        from: string;
+    }[];
+};
+declare function targetOrigins(model: any): TargetOrigins;
+export type { Source, TargetOrigins, };
+export { resolveSource, recordedRef, isBare, resolvesBundled, targetOrigins, registerInstalled, nameConflict, lastSegment, BUNDLED, };

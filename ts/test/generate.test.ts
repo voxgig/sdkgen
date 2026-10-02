@@ -17,6 +17,7 @@ import { SdkGen } from '../dist/sdkgen.js'
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot,
+  FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
 } from './generateharness'
 
 
@@ -93,6 +94,16 @@ main: kit: flow: Basic3dsSessionFlow: {
 
 
 const RAW_DIGIT_IDENT = /(^|[^A-Za-z0-9_$."'`\/-])(3ds[A-Za-z_]|3ds_session)/
+
+
+// Paths that are one file on a case-insensitive filesystem.
+function foldedPaths(paths: string[]): string[] {
+  const byFold: Record<string, string[]> = {}
+  for (const p of paths) {
+    (byFold[p.toLowerCase()] = byFold[p.toLowerCase()] || []).push(p)
+  }
+  return Object.values(byFold).filter((g) => 1 < g.length).map((g) => g.join(' ~ '))
+}
 
 
 async function generate(
@@ -307,6 +318,134 @@ describe('generate', () => {
     const sdk = out['ts/src/DemoSDK.ts']
     ok(null != sdk, 'ts SDK not generated')
     ok(sdk.includes('N3dsSession('), 'the accessor is not the guarded Name')
+  })
+
+
+  // Both files of such a pair exist on Linux; on macOS and Windows the second
+  // write replaces the first.
+  test('a case-colliding entity pair generates no path that differs only in case', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+
+    const folded: string[] = []
+    const missing: string[] = []
+
+    for (const target of targets) {
+      const files = filesFor(await generate([target], undefined, FOLD_ENTITY), target)
+      ok(0 < files.length, target + ': generated no files')
+
+      folded.push(...foldedPaths(files.map(([path]) => path)))
+
+      if (!files.some(([path, content]) =>
+        /contactsfield2/i.test(path) || /contactsfield2/i.test(content))) {
+        missing.push(target)
+      }
+    }
+
+    deepStrictEqual(folded, [], 'paths that differ only in case')
+    deepStrictEqual(missing, [], 'targets that lost the renamed entity')
+  })
+
+
+  test('the case rename leaves the route alone', async () => {
+    const out = await generate(['ts'], undefined, FOLD_ENTITY)
+
+    const sdk = out['ts/src/DemoSDK.ts']
+    ok(sdk.includes('ContactsField(') && sdk.includes('Contactsfield2('),
+      'the accessors are not the guarded names')
+    ok(null != out['ts/src/entity/Contactsfield2Entity.ts'], 'renamed entity file')
+
+    const config = out['ts/src/Config.ts']
+    ok(/contactsfield2/.test(config) && config.includes('/contacts/fields/{id}'),
+      'the route did not survive the rename')
+  })
+
+
+  test('the rename and the ungenerated op are each reported once per run', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const sink: any[] = []
+    await generate(targets, undefined, FOLD_ENTITY, sink)
+
+    const guard = sink.filter((e: any) => 'entity-name-case-guard' === e?.point)
+    strictEqual(guard.length, 1, 'case guard warnings: ' + guard.length)
+    deepStrictEqual(guard[0].names, ['contacts_field', 'contactsfield'])
+    ok(guard[0].note.includes('contactsfield -> contactsfield2'), guard[0].note)
+
+    const dropped = sink.filter((e: any) => 'entity-op-ungenerated' === e?.point)
+    strictEqual(dropped.length, 1, 'ungenerated-op warnings: ' + dropped.length)
+    deepStrictEqual(dropped[0].ops, [{
+      entity: 'contacts_field', op: 'patch', points: ['PATCH /contacts/fields/{id}'],
+    }])
+  })
+
+
+  test('elixir: an entity named after a built-in type declares a type it can', async () => {
+    const files = filesFor(await generate(['elixir'], undefined, BUILTIN_TYPE_ENTITY), 'elixir')
+
+    const types = files.find(([p]) => /lib\/[^/]+_types\.ex$/.test(p))
+    ok(null != types, 'no elixir types module')
+    ok(types![1].includes('@type mfa_type ::'), 'mfa keeps a built-in name')
+    ok(!/@type (mfa|node|record) ::/.test(types![1]), 'a built-in type is redefined')
+    ok(types![1].includes('@type node_type ::'))
+    ok(types![1].includes('@type mfa_create_data ::'), 'op type renamed')
+
+    const entity = files.find(([p]) => p.endsWith('lib/entity/mfa_entity.ex'))
+    ok(null != entity, 'no mfa entity module')
+    ok(entity![1].includes('Demo.Types.mfa_type/0'), 'the comment names a missing type')
+    ok(entity![1].includes('Demo.Types.mfa_create_data()'), 'the spec lost its op type')
+  })
+
+
+  test('elixir: a safe type name another entity holds is declared once', async () => {
+    const files = filesFor(await generate(['elixir'], undefined,
+      BUILTIN_TYPE_ENTITY + SAFE_TYPE_ENTITY), 'elixir')
+
+    const types = files.find(([p]) => /lib\/[^/]+_types\.ex$/.test(p))
+    ok(null != types, 'no elixir types module')
+    const declared = [...types![1].matchAll(/@type (\w+) ::/g)].map((m) => m[1])
+    deepStrictEqual(declared.filter((t, i) => declared.indexOf(t) !== i), [],
+      'a type is declared twice')
+    for (const type of ['mfa_type2', 'mfa_type', 'mfa_type_list_match', 'node_type']) {
+      ok(declared.includes(type), 'no type ' + type + ': ' + declared.join(', '))
+    }
+
+    const entity = files.find(([p]) => p.endsWith('lib/entity/mfa_entity.ex'))
+    ok(null != entity, 'no mfa entity module')
+    ok(entity![1].includes('Demo.Types.mfa_type2/0'), 'the comment names another type')
+    ok(!entity![1].includes('Demo.Types.mfa_type/0'), 'the comment names another type')
+  })
+
+
+  // A target installed from another package may generate more operations, so
+  // the warning names it as outside its claim rather than judging it.
+  test('the ungenerated-op warning speaks only for the bundled targets', async () => {
+    const LANGPACK = 'node_modules/@voxgig/sdkgen-langpack/.sdk'
+    const warned = async (external: string[]) => {
+      const sink: any[] = []
+      const model = makeModel(['go', 'ts'], undefined, FOLD_ENTITY)
+      for (const name of external) {
+        Object.assign(model.main[KIT].target[name],
+          { base: LANGPACK, package: '@voxgig/sdkgen-langpack' })
+      }
+      const { fs } = memfs({})
+      const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(sink) })
+      strictEqual((await sdkgen.generate({ model, root: makeRoot() })).ok, true)
+      return sink.filter((e: any) => 'entity-op-ungenerated' === e?.point)
+    }
+
+    const bundled = await warned([])
+    strictEqual(bundled.length, 1)
+    deepStrictEqual(bundled[0].bundled, ['go', 'ts'])
+    ok(bundled[0].note.includes('the bundled targets do not generate'), bundled[0].note)
+
+    const mixed = await warned(['go'])
+    strictEqual(mixed.length, 1)
+    deepStrictEqual(mixed[0].bundled, ['ts'])
+    deepStrictEqual(mixed[0].external, [{ name: 'go', from: LANGPACK }])
+    ok(mixed[0].note.includes('the bundled targets (ts) do not generate'), mixed[0].note)
+    ok(mixed[0].note.includes('go from ' + LANGPACK), mixed[0].note)
+    ok(!/no target|the SDK has no method|active: false/.test(mixed[0].note), mixed[0].note)
+
+    deepStrictEqual(await warned(['go', 'ts']), [], 'judged a target from another package')
   })
 
 

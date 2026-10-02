@@ -67,8 +67,8 @@ import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonToDtype, canonKey, canonScalarKey } from './helpers/canonType'
 import { canonToSpec, entityDataSpec, entityOpSpec, entitySpecs } from './helpers/canonSpec'
 import { optionSpec, featureOptionSpec, entitySpecMap } from './helpers/optspec'
-import { OP_SUFFIX, opTypeName, opParams, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, deriveEntityNames, entityCollection } from './helpers/opShape'
-import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, isTsSdkType, tsSafeTypeName, jsProp, jsOptProp, jsKey, luaKey, prefixLeadingDigit } from './helpers/naming'
+import { OP_SUFFIX, opTypeName, opParams, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, deriveEntityNames, entityCollection } from './helpers/opShape'
+import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, isTsSdkType, tsSafeTypeName, isElixirReservedType, elixirSafeTypeName, elixirTypeNames, elixirTypeName, jsProp, jsOptProp, jsKey, luaKey, prefixLeadingDigit } from './helpers/naming'
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
 import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
 import type { ExampleLang } from './helpers/opExample'
@@ -164,6 +164,7 @@ import { edition_add } from './action/edition'
 // The verbs, built from the kind registry — see action/dispatch.
 import { ACTION_MAP, actionNames, needsModel } from './action/dispatch'
 import { KINDS } from './action/kind'
+import { targetOrigins } from './action/resolve'
 
 
 
@@ -273,12 +274,13 @@ function SdkGen(opts: SdkGenOptions) {
     log.info({ point: 'generate-start', start, note: opts.dryrun ? '** DRY RUN **' : '' })
     log.debug({ point: 'generate-spec', spec })
 
-    // BEFORE ANYTHING READS A NAME. An entity whose name starts with a digit
-    // yields identifiers no target language accepts, and the consumer's own
-    // Root.ts re-derives those names per target — so the only correction that
-    // survives is one made to the model itself, before Root runs. No-op on
-    // every model apidef produces; see helpers/modelNames.
+    // BEFORE ANYTHING READS A NAME. A digit-leading name, or a pair of names
+    // that meet once case is ignored, yields identifiers or files no target
+    // can hold, and the consumer's own Root.ts re-derives those names per
+    // target — so the only correction that survives is one made to the model
+    // itself, before Root runs. See helpers/modelNames.
     guardModelNames(model, log)
+    warnUngeneratedOps(model, log, targetOrigins(model))
 
     let Root = spec.root
 
@@ -1091,6 +1093,8 @@ export {
   entityClassName,
   entityTypeCollisions,
   warnEntityTypeCollisions,
+  ungeneratedOps,
+  warnUngeneratedOps,
   deriveEntityNames,
   entityCollection,
   guardModelNames,
@@ -1111,6 +1115,10 @@ export {
   isTsReservedType,
   isTsSdkType,
   tsSafeTypeName,
+  isElixirReservedType,
+  elixirSafeTypeName,
+  elixirTypeNames,
+  elixirTypeName,
   serverVariables,
   hasServerVariables,
   serverVarEnv,
