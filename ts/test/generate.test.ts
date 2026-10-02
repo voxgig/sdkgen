@@ -96,7 +96,7 @@ const RAW_DIGIT_IDENT = /(^|[^A-Za-z0-9_$."'`\/-])(3ds[A-Za-z_]|3ds_session)/
 
 
 async function generate(
-  targetNames: string[], name?: string, extra?: string, sink?: any[],
+  targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
 ): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
@@ -110,7 +110,7 @@ async function generate(
   // generate() either completes or throws — it has no failure return. Let the
   // throw reach the caller, which names the target it came from.
   const res = await sdkgen.generate({
-    model: makeModel(targetNames, name, extra),
+    model: makeModel(targetNames, name, extra, features),
     root: makeRoot(),
   })
   strictEqual(res.ok, true, 'generation did not report ok')
@@ -970,6 +970,27 @@ main: kit: target: js: phase: feature: active: false
       leaks.join('\n  '))
   })
 
+
+  // CostRecord is the cost feature's own type, absent without the feature.
+  test('a clean sweep names CostRecord only when the model selects cost', async () => {
+    const sweep = (out: Record<string, string>, target: string) =>
+      filesFor(out, target).filter(([p]) => /\/(t|tests?|sdktest)\/(.+\/)?[^/]*clean[^/]*$/i.test(p))
+
+    const named: string[] = []
+    for (const target of allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))) {
+      const files = sweep(await generate([target]), target)
+      ok(0 < files.length, target + ': no clean sweep generated')
+      named.push(...files.filter(([, c]) => /CostRecord/.test(String(c))).map(([p]) => p))
+    }
+    deepStrictEqual(named, [], 'clean sweeps that name CostRecord without the cost feature')
+
+    for (const target of ['csharp', 'swift']) {
+      const files = sweep(await generate([target], undefined,
+        'main: kit: feature: cost: active: true', undefined, ['test', 'log', 'cost']), target)
+      ok(files.some(([, c]) => /CostRecord/.test(String(c))),
+        target + ': the clean sweep lost its cost sink with the feature selected')
+    }
+  })
 
 
   // Root.ts (via makeRoot) and every Test_<lang>.ts each read the raw,

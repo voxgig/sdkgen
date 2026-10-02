@@ -345,7 +345,7 @@ src/cmp/csharp/ReadmeTopQuick_csharp.ts 46679cb3e2a7
 src/cmp/csharp/ReadmeTopTest_csharp.ts a4e7d74be219
 src/cmp/csharp/Schema_csharp.ts a898466bc43d
 src/cmp/csharp/SdkError_csharp.ts 1cd61a4cfec7
-src/cmp/csharp/TestClean_csharp.ts c507f5f22f0e
+src/cmp/csharp/TestClean_csharp.ts 7ef82350da2b
 src/cmp/csharp/TestDirect_csharp.ts ff43a0b759b9
 src/cmp/csharp/TestEntity_csharp.ts 64e47b480e35
 src/cmp/csharp/Test_csharp.ts 881ebab279a4
@@ -1893,7 +1893,7 @@ src/cmp/swift/ReadmeTopQuick_swift.ts b0d732b88586
 src/cmp/swift/ReadmeTopTest_swift.ts e1b5bc35f382
 src/cmp/swift/Schema_swift.ts de5a4a02dc8d
 src/cmp/swift/SdkError_swift.ts eb21c3a56459
-src/cmp/swift/TestClean_swift.ts f9c00c88ee75
+src/cmp/swift/TestClean_swift.ts 7e93284dbb82
 src/cmp/swift/TestDirect_swift.ts 3c38c4dfe812
 src/cmp/swift/TestEntity_swift.ts b5ab88d984a1
 src/cmp/swift/Test_swift.ts ab9d033258f1
