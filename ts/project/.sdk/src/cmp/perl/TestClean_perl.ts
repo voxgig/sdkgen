@@ -311,6 +311,23 @@ sub has_feature {
   return (Voxgig::Struct::ismap($f) && defined $f->{$name}) ? 1 : 0;
 }
 
+# Offline, as every generated suite is: the test OPTION resolves a required
+# server variable to test-<name>, and installs no transport.
+sub offline {
+  my ($opts) = @_;
+  return { %$opts, 'test' => { 'active' => 1 } };
+}
+
+# A client the sweep cannot build leaves nothing swept: a harness error, not a
+# leak.
+sub construct {
+  my ($opts) = @_;
+  my $client = eval { ${Name}SDK->new(offline($opts)) };
+  die "clean harness: the client could not be constructed, so nothing was swept: $@"
+    unless defined $client;
+  return $client;
+}
+
 sub make_sdk {
   my ($scenario, $sinks, $cleanopts, $extra, $auth) = @_;
   my $capture = sub {
@@ -343,7 +360,7 @@ sub make_sdk {
     } },
   };
   $opts->{auth} = $auth if defined $auth;
-  return ${Name}SDK->new($opts);
+  return construct($opts);
 }
 
 # The first operation that completes against a plain 200: with no
@@ -351,7 +368,7 @@ sub make_sdk {
 # An entity accessor is a capitalised client method whose result answers
 # get_name, as the feature corpus runner finds them.
 sub usable_op {
-  my $plain = ${Name}SDK->new({
+  my $plain = construct({
     'apikey' => $CANARY{apikey},
     'utility' => { 'fetcher' => sub { return (response(200, { 'id' => 'i1' }), undef) } },
   });
@@ -446,10 +463,10 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
   # quotes the value it rejected.
   my $rejected;
   eval {
-    ${Name}SDK->new({
+    ${Name}SDK->new(offline({
       'apikey' => { 'value' => $CANARY{apikey} },
       'clean' => { 'values' => $CANARY{value} },
-    });
+    }));
     1;
   } or $rejected = $@;
   ok(defined $rejected, 'a credential mistyped as a map is rejected');
@@ -515,7 +532,7 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
     "the config's clean block is unchanged");
 
   # With no clean option at all, the schema defaults still apply.
-  my $bare = ${Name}SDK->new({
+  my $bare = construct({
     'apikey' => $CANARY{apikey},
     'secret' => $CANARY{secret},
     'headers' => { 'X-Custom-Token' => $CANARY{header} },
@@ -530,7 +547,7 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
   # A feature's name is not a field name: only the sensitive names inside
   # its settings register. An entity block, of per-entity settings or seeded
   # records keyed by entity name and id, is not read at all.
-  my $featured = ${Name}SDK->new({
+  my $featured = construct({
     'apikey' => $CANARY{apikey},
     'feature' => {
       'zzsecrets' => { 'active' => 0, 'kind' => 'PLAINSETTING-q8w2e4r6' },

@@ -31,10 +31,12 @@ servers:
 ```
 
 A variable with no usable default is REQUIRED: the SDK refuses to construct
-rather than issue requests to a URL with a literal `{account_id}` in it. So a
-live suite for such an API cannot run at all until it is given the values —
-which is what `<PROJ>_SERVER_<NAME>` is for. `account_id` becomes
-`<PROJ>_SERVER_ACCOUNT_ID`.
+rather than issue requests to a URL with a literal `{account_id}` in it. Most
+targets raise that refusal as an error from the constructor. Go and Rust
+panic, and C, Swift and Zig stop the process, because their constructors
+cannot return an error. So a live suite for such an API cannot run at all
+until it is given the values, which is what `<PROJ>_SERVER_<NAME>` is for.
+`account_id` becomes `<PROJ>_SERVER_ACCOUNT_ID`.
 
 In MOCK mode nothing needs supplying: a required variable resolves to the
 deterministic `test-<name>`, so the offline suite needs no configuration.

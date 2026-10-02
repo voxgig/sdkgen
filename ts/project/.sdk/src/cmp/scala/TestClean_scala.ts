@@ -227,6 +227,23 @@ object SdkCleanTestMain {
     }),
   )
 
+  // Offline, as every generated suite is: the test OPTION resolves a required
+  // server variable to test-<name>, and installs no transport.
+  private def offline(opts: JMap[String, Object]): JMap[String, Object] = {
+    val out = new LinkedHashMap[String, Object](opts)
+    out.put("test", om("active" -> B(true)))
+    out
+  }
+
+  // A client the sweep cannot build leaves nothing swept: a harness error, not
+  // a leak.
+  private def construct(opts: JMap[String, Object]): ${SDK} =
+    try new ${SDK}(offline(opts))
+    catch {
+      case e: RuntimeException => throw new IllegalStateException(
+        "clean harness: the client could not be constructed, so nothing was swept: " + e.getMessage, e)
+    }
+
   private def makeSdk(scenario: Scenario, sinks: ArrayList[Sink], cleanopts: JMap[String, Object],
       extra: BaseFeature = null, auth: JMap[String, Object] = null): ${SDK} = {
     def capture(name: String): Consumer[Object] = (rec: Object) => collect(sinks, name, rec)
@@ -268,7 +285,7 @@ object SdkCleanTestMain {
     opts.put("extend", extend)
     opts.put("utility", om("fetcher" -> fetcher))
     if (auth != null) opts.put("auth", auth)
-    new ${SDK}(opts)
+    construct(opts)
   }
 
   final class Target(val accessor: Method, val op: String, val matchArgs: JMap[String, Object])
@@ -323,7 +340,7 @@ object SdkCleanTestMain {
   private def usableOp(): Target = {
     val plainFetch: (Context, String, JMap[String, Object]) => Object =
       (_, _, _) => response(200, om("id" -> "i1"), null)
-    val plain = new ${SDK}(om("apikey" -> CANARY_APIKEY, "utility" -> om("fetcher" -> plainFetch)))
+    val plain = construct(om("apikey" -> CANARY_APIKEY, "utility" -> om("fetcher" -> plainFetch)))
     val entities = Helpers.toMapAny(Config.sharedConfig().get("entity"))
     if (entities == null) return null
     val rank = Map("list" -> 0, "load" -> 1)
@@ -412,8 +429,8 @@ object SdkCleanTestMain {
     // client it built, an operation it runs, and a message quoting the value.
     val fetch404: (Context, String, JMap[String, Object]) => Object =
       (_, url, fetchdef) => SCENARIOS(1).respond(url, fetchdef)
-    val mistyped = new ${SDK}(om("apikey" -> om("value" -> CANARY_APIKEY),
-      "clean" -> om("values" -> CANARY_VALUE), "utility" -> om("fetcher" -> fetch404)))
+    val mistyped = new ${SDK}(offline(om("apikey" -> om("value" -> CANARY_APIKEY),
+      "clean" -> om("values" -> CANARY_VALUE), "utility" -> om("fetcher" -> fetch404))))
     collect(sinks, "mistyped", mistyped)
     drive(mistyped, target, null, sinks)
     collect(sinks, "mistyped:quoted",
@@ -545,7 +562,7 @@ object SdkCleanTestMain {
   // settings register. An entity block, of per-entity settings or seeded
   // records keyed by entity name and id, is not read at all.
   private def featureNames(rep: SdkTestReport): Unit = {
-    val sdk = new ${SDK}(om(
+    val sdk = construct(om(
       "apikey" -> CANARY_APIKEY,
       "feature" -> om(
         "zzsecrets" -> om("active" -> B(false), "kind" -> "PLAINSETTING-q8w2e4r6"),
@@ -562,7 +579,7 @@ object SdkCleanTestMain {
   }
 
   private def configBlock(rep: SdkTestReport): Unit = {
-    val utility = new ${SDK}(om()).getUtility()
+    val utility = construct(om()).getUtility()
     val config = om("options" -> om("clean" -> om("keys" -> "zzsens", "values" -> "CONFIG-SEEDED-1")))
     val ctx = utility.makeContext(om("utility" -> utility, "config" -> config,
       "options" -> om("clean" -> om("values" -> "CALLER-SEEDED-2"))), null)
@@ -577,7 +594,7 @@ object SdkCleanTestMain {
   }
 
   private def noBlock(rep: SdkTestReport): Unit = {
-    val utility = new ${SDK}(om()).getUtility()
+    val utility = construct(om()).getUtility()
     val ctx = utility.makeContext(om("utility" -> utility,
       "options" -> om("apikey" -> "NOBLOCK-APIKEY-k3j5h7")), null)
     ctx.options = utility.makeOptions(ctx)
