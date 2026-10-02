@@ -75,7 +75,6 @@ function render(spec: AuthSpec): string {
 #define SDK_UTILITY_PREPARE_AUTH_HPP
 
 ${'header' === spec.where ? `#include <algorithm>
-#include <cctype>
 ` : ''}${withBasic ? `#include <cstddef>
 ` : ''}#include <string>
 
@@ -161,8 +160,9 @@ ${clear(spec.where, 'CRED_NAME', 4)}
   if (name.empty()) {
     name = CRED_NAME;
   }${'header' === spec.where ? ` else {
+    // ASCII rules, as a field name is ASCII: std::tolower follows the C locale.
     std::transform(name.begin(), name.end(), name.begin(),
-      [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+      [](char c) { return ('A' <= c && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; });
   }` : ''}
 
   // A credential left under the declared name would travel beside the renamed one.

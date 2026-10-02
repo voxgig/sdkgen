@@ -248,7 +248,7 @@ function authName(declared: string, header: boolean): string {
 ;; The client's auth.name option, when set, replaces the name the API declares.
 (defn- prepare-auth-name [options]
   (let [given (vs/getpath options "auth.name")]
-    (if (and (string? given) (not= "" given)) ${header ? '(str/lower-case given)' : 'given'} ${declared})))
+    (if (and (string? given) (not= "" given)) ${header ? '(.toLowerCase ^String given java.util.Locale/ROOT)' : 'given'} ${declared})))
 `
 }
 

@@ -89,8 +89,9 @@ local vs = require("utility.struct.struct")
 -- The client's auth.name option, when set, replaces the name the API declares.
 local function auth_name(options)
   local name = vs.getpath(options, "auth.name")
-  if type(name) == "string" and name ~= "" then
-    return ${'header' === where ? 'string.lower(name)' : 'name'}
+  if type(name) == "string" and name ~= "" then${'header' === where ? `
+    -- ASCII rules, as a field name is ASCII: lower-casing in the string library follows the C locale.` : ''}
+    return ${'header' === where ? FOLD : 'name'}
   end
   return ${CRED}
 end
@@ -133,6 +134,9 @@ end
 return prepare_auth_util
 `
 }
+
+
+const FOLD = '(string.gsub(name, "[A-Z]", function(c) return string.char(c:byte() + 32) end))'
 
 
 function credConst(where: string): string {

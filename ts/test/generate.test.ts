@@ -1146,6 +1146,40 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // A field name is ASCII, so the run-time name folds the same under any
+  // locale. Each pattern is that language's locale-sensitive lower-casing.
+  test('every target folds a header name without the process locale', async () => {
+    const LOCALE_FOLD: Record<string, RegExp> = {
+      c: /\btolower\s*\(/,
+      cpp: /\btolower\s*\(/,
+      lua: /\bstring\.lower\b|:lower\(\)/,
+      clojure: /lower-case|\(\.toLowerCase(?![^)]*Locale)/,
+      java: /\.toLowerCase\(\)/,
+      kotlin: /\.toLowerCase\(\)/,
+      scala: /\.toLowerCase\(\)/,
+      csharp: /\.ToLower\(\)/,
+      ts: /toLocaleLowerCase/,
+      js: /toLocaleLowerCase/,
+      swift: /lowercased\(with/,
+      perl: /\buse locale\b/,
+    }
+    const PREPARE_AUTH_FILE = /(^|\/)(sdk_)?prepare_?auth(utility)?\.[a-z]+$/i
+    const targets = Object.keys(LOCALE_FOLD)
+    const out = await generate(targets, undefined,
+      "main: kit: config: auth: { active: true, prefix: '', in: 'header', name: 'X-Declared' }")
+    const found: string[] = []
+
+    for (const target of targets) {
+      const files = filesFor(out, target).filter(([path]) => PREPARE_AUTH_FILE.test(path))
+      ok(1 === files.length, target + ': ' + files.length + ' prepareAuth files')
+      const hit = files[0][1].match(LOCALE_FOLD[target])
+      if (null != hit) found.push(target + ': ' + hit[0])
+    }
+
+    deepStrictEqual(found, [], 'a header name folded by the process locale')
+  })
+
+
   // The Features line printed `undefined` once per feature: it read `f.n`
   // from featureDocs, whose entries carry `name`.
   test('the root readme names each active feature', async () => {

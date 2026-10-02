@@ -3603,6 +3603,40 @@ describe('prepareAuth names, replaces and clears only its own credential', () =>
       })
     }
   }
+
+  // The c helpers allocate the folded name, the joined credential and the
+  // rewritten cookie header. The rest of the c pipeline does not free its
+  // values, so a leak counts only when prepare_auth.c made the allocation.
+  test('c: prepareAuth frees what it allocates', async (t) => {
+    if ('linux' !== process.platform) return t.skip('LeakSanitizer is checked on linux only')
+    const make = toolchain('make')
+    const cc = authProbeCc()
+    if (null == make || null == cc) return t.skip('no C toolchain')
+
+    for (const model of AUTH_MODELS.filter((m) => 'query' !== m.name)) {
+      const sdkroot = Path.join(tmp, 'leak', model.name)
+      await generateTo('c', sdkroot, model.extra)
+      Fs.writeFileSync(Path.join(sdkroot, 'auth-cases.json'), JSON.stringify(model.cases))
+      Fs.writeFileSync(Path.join(sdkroot, 'tests', 'auth_probe.c'), AUTH_PROBES.c)
+
+      const flags = Fs.readFileSync(Path.join(sdkroot, 'Makefile'), 'utf8')
+        .match(/^CFLAGS \?= (.+)$/m)![1] + ' -fno-omit-frame-pointer -fsanitize=address'
+      const built = run(make, ['CC=' + cc, 'CFLAGS=' + flags, 'tests/auth_probe.out'], sdkroot)
+      if (!built.ok) return t.skip('c: no AddressSanitizer build here:\n' + tail(built.out, 5))
+
+      const ran = run(Path.join(sdkroot, 'tests', 'auth_probe.out'), [], sdkroot,
+        { ...process.env, ASAN_OPTIONS: 'detect_leaks=1:fast_unwind_on_malloc=0' })
+      if (!/leak of \d+ byte/.test(ran.out)) {
+        return t.skip('c: LeakSanitizer reported nothing, so it did not run here:\n' +
+          tail(ran.out, 5))
+      }
+      ok(ran.out.includes('auth-probe: ran ' + model.cases.length + ' cases'), tail(ran.out))
+
+      const own = ran.out.split(/(?=(?:Direct|Indirect) leak of)/)
+        .filter((block) => /^\s*#1 .*prepare_auth\.c:/m.test(block))
+      deepStrictEqual(own, [], 'c (' + model.name + '): prepareAuth leaks its own allocation')
+    }
+  })
 })
 
 

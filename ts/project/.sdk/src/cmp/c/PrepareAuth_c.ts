@@ -97,8 +97,7 @@ Spec* prepare_auth_util(Context* ctx, PNError** err) {
 
 #include "sdk.h"
 
-${header ? `#include <ctype.h>
-#include <stdio.h>
+${header ? `#include <stdio.h>
 ` : ''}#include <stdlib.h>
 #include <string.h>
 
@@ -108,42 +107,35 @@ ${cookie ? `#define COOKIE_HEADER "cookie"
 ${withBasic ? `#define OPTION_SECRET "secret"
 ` : ''}#define NOT_FOUND "__NOTFOUND__"
 
-// The client's auth.name option, when set, replaces the name the API
-// declares.${header ? ' NULL when the lower-cased copy cannot be allocated.' : ''}
-static const char* auth_name(voxgig_value* options) {
+${header ? `// The client's auth.name option, when set, replaces the name the API
+// declares. A run-time name is lower-cased into *owned, which the caller
+// frees; NULL when that copy cannot be allocated.
+static const char* auth_name(voxgig_value* options, char** owned) {
+  *owned = NULL;
   voxgig_value* v = getpath2(options, "auth", "name");
   const char* name = voxgig_is_string(v) ? voxgig_as_string(v) : NULL;
   if (NULL == name || '\\0' == name[0]) return CRED_NAME;
-${header ? `  size_t n = strlen(name);
+  size_t n = strlen(name);
   char* lower = (char*)malloc(n + 1);
   if (NULL == lower) return NULL;
-  for (size_t i = 0; i <= n; i++) lower[i] = (char)tolower((unsigned char)name[i]);
-  return lower;` : `  return name;`}
-}
+  // ASCII rules, as a field name is ASCII: tolower follows the C locale.
+  for (size_t i = 0; i <= n; i++) {
+    char c = name[i];
+    lower[i] = ('A' <= c && c <= 'Z') ? (char)(c - 'A' + 'a') : c;
+  }
+  *owned = lower;
+  return lower;
+}` : `// The client's auth.name option, when set, replaces the name the API declares.
+static const char* auth_name(voxgig_value* options) {
+  voxgig_value* v = getpath2(options, "auth", "name");
+  const char* name = voxgig_is_string(v) ? voxgig_as_string(v) : NULL;
+  return (NULL == name || '\\0' == name[0]) ? CRED_NAME : name;
+}`}
 ${header ? JOIN_HELPER : ''}${cookie ? COOKIE_HELPER : ''}
-Spec* prepare_auth_util(Context* ctx, PNError** err) {
-  *err = NULL;
-  Spec* spec = ctx->spec;
-  if (!spec) {
-    *err = context_make_error(ctx, "auth_no_spec", "Expected context spec property to be defined.");
-    return NULL;
-  }
-
-  voxgig_value* ${bag} = spec->${bag};
-  voxgig_value* options = ctx->client ? sdk_options_map(ctx->client) : ctx->options;
-
-  voxgig_value* auth = getp(options, "auth");
-  if (v_is_noval(auth) || v_is_null(auth)) {
-${clear(spec.where, 'CRED_NAME', 4)}
-    return spec;
-  }
-
-  const char* name = auth_name(options);${header ? `
-  if (NULL == name) {
-    *err = context_make_error(ctx, "auth_alloc", "Could not allocate the credential name.");
-    return NULL;
-  }` : ''}
-
+// Places or clears the credential under name, the one in effect.
+static Spec* prepare_auth_as(Context* ctx, Spec* spec, voxgig_value* ${bag},
+                             voxgig_value* options,${withBasic ? ' voxgig_value* auth,' : ''} const char* name,
+                             PNError** err) {
   // A credential left under the declared name would travel beside the renamed one.
   if (0 != strcmp(name, CRED_NAME)) {
 ${clear(spec.where, 'CRED_NAME', 4)}
@@ -223,6 +215,36 @@ ${place(spec.where)}
   }
 
   return spec;
+}
+
+Spec* prepare_auth_util(Context* ctx, PNError** err) {
+  *err = NULL;
+  Spec* spec = ctx->spec;
+  if (!spec) {
+    *err = context_make_error(ctx, "auth_no_spec", "Expected context spec property to be defined.");
+    return NULL;
+  }
+
+  voxgig_value* ${bag} = spec->${bag};
+  voxgig_value* options = ctx->client ? sdk_options_map(ctx->client) : ctx->options;
+
+  voxgig_value* auth = getp(options, "auth");
+  if (v_is_noval(auth) || v_is_null(auth)) {
+${clear(spec.where, 'CRED_NAME', 4)}
+    return spec;
+  }
+${header ? `
+  char* owned = NULL;
+  const char* name = auth_name(options, &owned);
+  if (NULL == name) {
+    *err = context_make_error(ctx, "auth_alloc", "Could not allocate the credential name.");
+    return NULL;
+  }
+
+  Spec* out = prepare_auth_as(ctx, spec, ${bag}, options,${withBasic ? ' auth,' : ''} name, err);
+  free(owned);
+  return out;` : `
+  return prepare_auth_as(ctx, spec, ${bag}, options, auth_name(options), err);`}
 }
 `
 }

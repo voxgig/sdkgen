@@ -381,6 +381,7 @@ int main(void) {
     }
   }
   printf("auth-probe: ran %zu cases\n", voxgig_list_len(cases));
+  fflush(stdout);
   return 0;
 }
 `,

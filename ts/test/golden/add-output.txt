@@ -16,7 +16,7 @@ src/cmp/c/Gitignore_c.ts 1c1cfa982fef
 src/cmp/c/MainEntity_c.ts d6e780384b49
 src/cmp/c/Main_c.ts e4157d34104f
 src/cmp/c/Package_c.ts e1fcd4b774ba
-src/cmp/c/PrepareAuth_c.ts 8d69299d213c
+src/cmp/c/PrepareAuth_c.ts 86912afb8eb1
 src/cmp/c/ReadmeEntity_c.ts b6d4fde34d49
 src/cmp/c/ReadmeExamplesTest_c.ts 2e899b115aaa
 src/cmp/c/ReadmeExplanation_c.ts 193fa2c194dd
@@ -131,7 +131,7 @@ src/cmp/clojure/Gitignore_clojure.ts 02def6714f53
 src/cmp/clojure/MainEntity_clojure.ts 7c402f26036e
 src/cmp/clojure/Main_clojure.ts b9be0fb330e2
 src/cmp/clojure/Package_clojure.ts d675493d467e
-src/cmp/clojure/PrepareAuth_clojure.ts f1f4d99a7862
+src/cmp/clojure/PrepareAuth_clojure.ts 9c83918e7e19
 src/cmp/clojure/ReadmeEntity_clojure.ts 30ca3dea7d43
 src/cmp/clojure/ReadmeExamplesTest_clojure.ts 845d633b4210
 src/cmp/clojure/ReadmeExplanation_clojure.ts 2f6eac715762
@@ -254,7 +254,7 @@ src/cmp/cpp/Gitignore_cpp.ts 164c931b3983
 src/cmp/cpp/MainEntity_cpp.ts e419d3bb76ae
 src/cmp/cpp/Main_cpp.ts 6587ed526c9b
 src/cmp/cpp/Package_cpp.ts e1fcd4b774ba
-src/cmp/cpp/PrepareAuth_cpp.ts 214b2c3d4bfe
+src/cmp/cpp/PrepareAuth_cpp.ts 67d32577b280
 src/cmp/cpp/ReadmeEntity_cpp.ts e9558b862472
 src/cmp/cpp/ReadmeExamplesTest_cpp.ts 76497cfc63d1
 src/cmp/cpp/ReadmeExplanation_cpp.ts beb3014070b4
@@ -979,7 +979,7 @@ src/cmp/lua/Gitignore_lua.ts ddf4d3003936
 src/cmp/lua/MainEntity_lua.ts 5dcd807504e4
 src/cmp/lua/Main_lua.ts bd521b9f657b
 src/cmp/lua/Package_lua.ts ad22ea96b732
-src/cmp/lua/PrepareAuth_lua.ts 41c44face6b6
+src/cmp/lua/PrepareAuth_lua.ts e5586117a910
 src/cmp/lua/ReadmeEntity_lua.ts 65abbe121f16
 src/cmp/lua/ReadmeExamplesTest_lua.ts 859a83243921
 src/cmp/lua/ReadmeExplanation_lua.ts 74936c6ce867
