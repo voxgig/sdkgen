@@ -186,7 +186,7 @@ class ProjectNameValidateFeature < ProjectNameBaseFeature
   end
 
   def _entname(ctx)
-    name = ctx.entity.nil? ? nil : ctx.entity.name
+    name = ctx.entity.respond_to?(:get_name) ? ctx.entity.get_name : nil
     return name if name.is_a?(String) && !name.empty?
 
     entname = ctx.op.nil? ? nil : ctx.op.entity

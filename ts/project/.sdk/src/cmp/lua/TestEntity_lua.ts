@@ -27,7 +27,8 @@ import {
   isAuthActive,
   entityDataIdField, envName, envToken,
   serverVarEnv,
-  serverVariables
+  serverVariables,
+  invalidRequest,
 } from '@voxgig/sdkgen'
 
 import { formatLuaValue } from './utility_lua'
@@ -109,7 +110,7 @@ local helpers = require("core.helpers")
 local runner = require("test.runner")
 
 local _test_dir = debug.getinfo(1, "S").source:match("^@(.+/)")  or "./"
-
+${hasList ? failHookClass(entity) : ''}
 describe("${entity.Name}Entity", function()
   it("should create instance", function()
     local testsdk = sdk.test(nil, nil)
@@ -157,7 +158,7 @@ ${hasList ? `
       assert.are.equal(3, #got)
     end
   end)
-` : ''}
+${failureTests(entity)}` : ''}${validateTest(entity)}
   it("should run basic flow", function()
     local setup = ${entity.name}_basic_setup(nil)
     -- Per-op sdk-test-control.json skip.
@@ -605,6 +606,114 @@ const GENERATE_OP: Record<string, OpGen> = {
   update: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
+}
+
+
+// A feature whose PreSpec hook raises, counting the PreUnexpected calls it sees.
+function failHookClass(entity: ModelEntity): string {
+  return `
+local BaseFeature = require("feature.base_feature")
+
+local FailHook = {}
+FailHook.__index = FailHook
+setmetatable(FailHook, { __index = BaseFeature })
+
+function FailHook.new()
+  local self = setmetatable(BaseFeature.new(), FailHook)
+  self.name = "failhook"
+  self.unexpected = 0
+  return self
+end
+
+function FailHook:init(_ctx, _options) end
+function FailHook:PreSpec(_ctx) error("${entity.name} hook failed") end
+function FailHook:PreUnexpected(_ctx) self.unexpected = self.unexpected + 1 end
+
+local function errtext(err)
+  if type(err) == "table" then
+    return tostring(err.msg or err.message or "")
+  end
+  return tostring(err)
+end
+`
+}
+
+
+// A failed operation raises from a stream as it fails the operation: a
+// transport failure, and a hook that rejects the call. A raising hook fires
+// PreUnexpected, and under throw false the call returns no error. The
+// caller's ctrl stays its own.
+function failureTests(entity: ModelEntity): string {
+  const Entity = entity.Name
+  return `
+  it("should report a failed stream", function()
+    local offline = { net = { offline = true } }
+    local ok, err = pcall(function()
+      for _ in sdk.test(offline, nil):${Entity}(nil):stream("list", nil, nil) do end
+    end)
+    assert.is_false(ok)
+    assert.truthy(string.find(errtext(err), "offline", 1, true))
+
+    for _ in sdk.test(offline, nil):${Entity}(nil):stream("list", nil, { ctrl = { throw = false } }) do end
+
+    local config = require("config_shared")()
+    if type(config.feature) == "table" and config.feature.rbac ~= nil then
+      local denied = sdk.test(nil, { feature = { rbac = { active = true, deny = true } } })
+      local dok, derr = pcall(function()
+        for _ in denied:${Entity}(nil):stream("list", nil, nil) do end
+      end)
+      assert.is_false(dok)
+      assert.are.equal("rbac_denied", type(derr) == "table" and derr.code or nil)
+    end
+  end)
+
+  it("should leave the caller's ctrl", function()
+    local explain = {}
+    local ctrl = { explain = explain }
+    for _ in sdk.test(nil, nil):${Entity}(nil):stream("list", nil, { ctrl = ctrl }) do end
+    assert.is_nil(ctrl.stream)
+    assert.are.equal(explain, ctrl.explain)
+    assert.is_not_nil(next(explain))
+  end)
+
+  it("should fire PreUnexpected", function()
+    local hook = FailHook.new()
+    local client = sdk.new({ feature = { test = { active = true } }, extend = { hook } })
+
+    local out, err = client:${Entity}(nil):list(nil, nil)
+    assert.is_nil(out)
+    assert.truthy(string.find(errtext(err), "hook failed", 1, true))
+    assert.is_true(hook.unexpected > 0)
+
+    local fired = hook.unexpected
+    out, err = client:${Entity}(nil):list(nil, { throw = false })
+    assert.is_nil(err)
+    assert.is_true(hook.unexpected > fired)
+  end)
+`
+}
+
+
+// An invalid request fails with validate's own error, before it is sent.
+function validateTest(entity: ModelEntity): string {
+  const bad = invalidRequest(entity)
+  if (null == bad) {
+    return ''
+  }
+  const args = Object.entries(bad.args)
+    .map(([k, v]) => '[' + JSON.stringify(k) + '] = ' + formatLuaValue(v)).join(', ')
+  return `
+  it("should refuse an invalid request", function()
+    local config = require("config_shared")()
+    if type(config.feature) ~= "table" or config.feature.validate == nil then
+      pending("feature not present in this SDK: validate")
+      return
+    end
+    local client = sdk.test(nil, { feature = { validate = { active = true } } })
+    local _, err = client:${entity.Name}(nil):${bad.op}({ ${args} }, nil)
+    assert.are.equal("validate_failed", type(err) == "table" and err.code or nil)
+  end)
+`
 }
 
 

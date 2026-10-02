@@ -27,7 +27,8 @@ import {
   isAuthActive,
   entityDataIdField, envName, envToken,
   serverVarEnv,
-  serverVariables
+  serverVariables,
+  invalidRequest,
 } from '@voxgig/sdkgen'
 
 import { formatRubyValue } from './utility_rb'
@@ -149,7 +150,7 @@ ${hasList ? `
       assert_equal 3, got.length
     end
   end
-` : ''}
+${failureTests(model, entity)}` : ''}${validateTest(model, entity)}
   def test_basic_flow
     setup = ${entity.name}_basic_setup(nil)
     # Per-op sdk-test-control.json skip.
@@ -585,6 +586,104 @@ const GENERATE_OP: Record<string, OpGen> = {
   update: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
+}
+
+
+// A failed operation raises from a stream as it does from the operation: a
+// transport failure, and a hook that rejects the call. A raising hook fires
+// PreUnexpected, and under throw false the call returns nil. The caller's
+// ctrl stays its own.
+function failureTests(model: Model, entity: ModelEntity): string {
+  const Name = model.const.Name
+  const Entity = entity.Name
+  return `
+  class FailHook < ${Name}BaseFeature
+    attr_reader :unexpected
+
+    def initialize
+      super()
+      @name = "failhook"
+      @unexpected = 0
+    end
+
+    def PreSpec(ctx)
+      raise "${entity.name} hook failed"
+    end
+
+    def PreUnexpected(ctx)
+      @unexpected += 1
+    end
+  end
+
+  def test_stream_error
+    offline = { "net" => { "offline" => true } }
+    err = assert_raises(StandardError) do
+      ${Name}SDK.test(offline, nil).${Entity}(nil).stream("list", nil, nil).to_a
+    end
+    assert_match(/offline/, err.message)
+
+    ${Name}SDK.test(offline, nil).${Entity}(nil)
+      .stream("list", nil, { "ctrl" => { "throw" => false } }).to_a
+
+    cfg = ${Name}Config.shared_config
+    if cfg["feature"].is_a?(Hash) && cfg["feature"].key?("rbac")
+      denied = ${Name}SDK.test(nil, { "feature" => { "rbac" => { "active" => true, "deny" => true } } })
+      err = assert_raises(StandardError) do
+        denied.${Entity}(nil).stream("list", nil, nil).to_a
+      end
+      assert_equal "rbac_denied", err.code
+    end
+  end
+
+  def test_stream_ctrl
+    explain = {}
+    ctrl = { "explain" => explain }
+    ${Name}SDK.test(nil, nil).${Entity}(nil).stream("list", nil, { "ctrl" => ctrl }).to_a
+    assert_equal ["explain"], ctrl.keys
+    assert_same explain, ctrl["explain"]
+    refute_empty explain
+  end
+
+  def test_unexpected
+    hook = FailHook.new
+    client = ${Name}SDK.new({ "feature" => { "test" => { "active" => true } }, "extend" => [hook] })
+
+    err = assert_raises(StandardError) do
+      client.${Entity}(nil).list(nil, nil)
+    end
+    assert_match(/hook failed/, err.message)
+    assert_operator hook.unexpected, :>, 0
+
+    fired = hook.unexpected
+    assert_nil client.${Entity}(nil).list(nil, { "throw" => false })
+    assert_operator hook.unexpected, :>, fired
+  end
+`
+}
+
+
+// An invalid request fails with validate's own error, before it is sent.
+function validateTest(model: Model, entity: ModelEntity): string {
+  const bad = invalidRequest(entity)
+  if (null == bad) {
+    return ''
+  }
+  const Name = model.const.Name
+  const args = Object.entries(bad.args)
+    .map(([k, v]) => JSON.stringify(k) + ' => ' + formatRubyValue(v)).join(', ')
+  return `
+  def test_validate
+    cfg = ${Name}Config.shared_config
+    unless cfg["feature"].is_a?(Hash) && cfg["feature"].key?("validate")
+      skip("feature not present in this SDK: validate")
+    end
+    client = ${Name}SDK.test(nil, { "feature" => { "validate" => { "active" => true } } })
+    err = assert_raises(StandardError) do
+      client.${entity.Name}(nil).${bad.op}({ ${args} }, nil)
+    end
+    assert_equal "validate_failed", err.code
+  end
+`
 }
 
 
