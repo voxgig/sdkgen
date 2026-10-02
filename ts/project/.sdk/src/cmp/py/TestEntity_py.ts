@@ -27,8 +27,38 @@ import {
   isAuthActive,
   serverVarEnv,
   serverVariables,
-  entityDataIdField, envName, envToken
+  entityDataIdField, envName, envToken,
+  liveFlowNeeds, liveStrict, liveStrictNote,
 } from '@voxgig/sdkgen'
+
+
+// The live prologue of a flow built from offline fixtures: blocked without
+// the ids it binds, and a create-less load reading the first listed record.
+function liveFlowGate(entity: any, needs: any, entidEnv: string): string {
+  let out = ''
+  if (0 < needs.keys.length) {
+    out += `        if setup["live"]:
+            for _live_key in [${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')}]:
+                if setup.get("synthetic_only") or setup["idmap"].get(_live_key) is None:
+                    runner.live_miss(LIVE_STRICT, f"Live entity test blocked: needs {_live_key} via ${entidEnv}")
+`
+  }
+  if (null != needs.blocked) {
+    out += `        if setup["live"]:
+            runner.live_miss(LIVE_STRICT, "Live entity test blocked: " + ${JSON.stringify(needs.blocked)})
+`
+  }
+  out += '        client = setup["client"]\n'
+  if (null != needs.discover) {
+    const match = Object.entries(needs.discover)
+      .map(([k, v]: any) => `${JSON.stringify(k)}: setup["idmap"].get(${JSON.stringify(v)})`).join(', ')
+    out += `        if setup["live"]:
+            runner.live_existing(setup, LIVE_STRICT, ${JSON.stringify(entity.name)},
+                                 lambda: client.${entity.Name}(None).list({${match}}, None))
+`
+  }
+  return out
+}
 
 
 // See TestEntity_ts.ts for the GenCtx/OpGen contract.
@@ -95,6 +125,10 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
 
+  const strict = liveStrict(model, target.name)
+  const needs = liveFlowNeeds(entity, basicflow)
+  const entidEnv = PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID'
+
   // The stream test streams the "list" op and asserts a 3-item collection, so
   // it only applies to entities that actually declare a `list` op. Others
   // (e.g. Batch = create/load) have no list endpoint — make_point would error
@@ -117,6 +151,10 @@ from ${model.const.Name.toLowerCase()}_sdk.core import helpers
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 from test import runner
+
+
+${liveStrictNote(strict, '#')}
+LIVE_STRICT = ${strict ? 'True' : 'False'}
 
 
 class Test${entity.Name}Entity:
@@ -160,7 +198,7 @@ ${hasList ? `
                     got.append(item)
             assert len(got) == 3
 ` : ''}
-    def test_should_run_basic_flow(self):
+${strict ? '' : `    @runner.live_observe("${PROJUPPER}_TEST_LIVE", LIVE_STRICT)\n`}    def test_should_run_basic_flow(self):
         setup = _${entity.name}_basic_setup(None)
         # Per-op sdk-test-control.json skip — basic test exercises a flow with
         # multiple ops; skipping any one skips the whole flow (steps depend
@@ -171,13 +209,7 @@ ${hasList ? `
             if _skip:
                 pytest.skip(_reason or "skipped via sdk-test-control.json")
                 return
-        # The basic flow consumes synthetic IDs from the fixture. In live mode
-        # without an *_ENTID env override, those IDs hit the live API and 4xx.
-        if setup.get("synthetic_only"):
-            pytest.skip("live entity test uses synthetic IDs from fixture — "
-                        "set ${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID JSON to run live")
-        client = setup["client"]
-
+${liveFlowGate(entity, needs, entidEnv)}
 `)
 
     // Check if the flow has a create step
@@ -242,9 +274,8 @@ def _${entity.name}_basic_setup(extra):
 
 `)
 
-    Content(`    # Detect ENTID env override before envOverride consumes it. When live
-    # mode is on without a real override, the basic test runs against synthetic
-    # IDs from the fixture and 4xx's. We surface this so the test can skip.
+    Content(`    # Whether *_ENTID supplied the idmap, read before env_override consumes
+    # it: without it, the ids a live flow binds are the fixture's synthetic ones.
     _entid_env_raw = os.environ.get(
         "${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID")
     _idmap_overridden = _entid_env_raw is not None and _entid_env_raw.strip().startswith("{")

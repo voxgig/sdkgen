@@ -29,9 +29,49 @@ import {
   serverVariables,
   entityDataIdField, envName, envToken,
   phpEntityAccessor,
+  liveFlowNeeds, liveStrict, liveStrictNote,
 } from '@voxgig/sdkgen'
 
 import { formatPhpValue } from './utility_php'
+
+
+// The live prologue of a flow built from offline fixtures: blocked without
+// the ids it binds, a create-less load reading the first listed record, and
+// a lenient run observing its checks rather than failing on them.
+function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: string,
+  strict: boolean): string {
+  let out = ''
+  if (0 < needs.keys.length) {
+    out += `        if (!empty($setup["live"])) {
+            foreach ([${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')}] as $_liveKey) {
+                if (!empty($setup["synthetic_only"]) || null === ($setup["idmap"][$_liveKey] ?? null)) {
+                    Runner::live_miss(self::LIVE_STRICT, "Live entity test blocked: needs " . $_liveKey . " via ${entidEnv}");
+                }
+            }
+        }
+`
+  }
+  if (null != needs.blocked) {
+    out += `        if (!empty($setup["live"])) {
+            Runner::live_miss(self::LIVE_STRICT, "Live entity test blocked: " . ${JSON.stringify(needs.blocked)});
+        }
+`
+  }
+  out += '        $client = $setup["client"];\n'
+  if (null != needs.discover) {
+    const match = Object.entries(needs.discover)
+      .map(([k, v]: any) => `${JSON.stringify(k)} => $setup["idmap"][${JSON.stringify(v)}] ?? null`).join(', ')
+    out += `        if (!empty($setup["live"])) {
+            Runner::live_existing($setup, self::LIVE_STRICT, ${JSON.stringify(entity.name)},
+                fn() => $client->${accessor}(null)->list([${match}], null));
+        }
+`
+  }
+  if (!strict) {
+    out += '        try {\n'
+  }
+  return out
+}
 
 
 type GenCtx = {
@@ -102,6 +142,10 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER, accessor }
 
+  const strict = liveStrict(model, target.name)
+  const needs = liveFlowNeeds(entity, basicflow)
+  const entidEnv = PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID'
+
   File({ name: entity.Name + 'EntityTest.' + target.ext }, () => {
 
     Content(`<?php
@@ -117,6 +161,9 @@ use Voxgig\\Struct\\Struct as Vs;
 
 class ${entity.Name}EntityTest extends TestCase
 {
+${liveStrictNote(strict, '//', '    ')}
+    private const LIVE_STRICT = ${strict};
+
     public function test_create_instance(): void
     {
         $testsdk = ${model.const.Name}SDK::test(null, null);
@@ -175,14 +222,7 @@ ${hasList ? `
                 return;
             }
         }
-        // The basic flow consumes synthetic IDs from the fixture. In live mode
-        // without an *_ENTID env override, those IDs hit the live API and 4xx.
-        if (!empty($setup["synthetic_only"])) {
-            $this->markTestSkipped("live entity test uses synthetic IDs from fixture — set ${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID JSON to run live");
-            return;
-        }
-        $client = $setup["client"];
-
+${liveFlowGate(entity, needs, entidEnv, accessor, strict)}
 `)
 
     // Check if the flow has a create step
@@ -216,7 +256,10 @@ ${hasList ? `
       }
     })
 
-    Content(`    }
+    Content(`${strict ? '' : `        } catch (\\Throwable $e) {
+            Runner::live_observe($e, $setup, self::LIVE_STRICT);
+        }
+`}    }
 }
 
 `)
@@ -246,9 +289,8 @@ ${hasList ? `
 
 `)
 
-    Content(`    // Detect ENTID env override before envOverride consumes it. When live
-    // mode is on without a real override, the basic test runs against synthetic
-    // IDs from the fixture and 4xx's. Surface this so the test can skip.
+    Content(`    // Whether *_ENTID supplied the idmap, read before env_override consumes
+    // it: without it, the ids a live flow binds are the fixture's synthetic ones.
     $entid_env_raw = getenv("${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID");
     $idmap_overridden = $entid_env_raw !== false && str_starts_with(trim($entid_env_raw), "{");
 

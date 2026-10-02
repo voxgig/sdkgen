@@ -72,7 +72,8 @@ import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityC
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
 import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
 import type { ExampleLang } from './helpers/opExample'
-import { liveStrict } from './helpers/testPolicy'
+import { liveStrict, liveStrictNote, liveFlowNeeds } from './helpers/testPolicy'
+import type { LiveFlowNeeds } from './helpers/testPolicy'
 import { pointSegments, pointParts, pointTerminalParam, pointPathKey }
   from './helpers/pointPath'
 import type { PathSegment } from './helpers/pointPath'
@@ -942,6 +943,7 @@ export type {
   SdkGenOptions,
   ExampleLang,
   DepEntry,
+  LiveFlowNeeds,
   PathSegment,
   FeatureSource,
   DoctorReport,
@@ -1123,6 +1125,8 @@ export {
   hasServerVariables,
   serverVarEnv,
   liveStrict,
+  liveStrictNote,
+  liveFlowNeeds,
   primaryOpCall,
   idLiteral,
   matchArg,

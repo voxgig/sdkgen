@@ -1,15 +1,21 @@
 import assert from 'node:assert/strict'
 import { requestContract, synthesizeInput } from './live-contract'
-import { runLiveSteps, assertLiveReport, LiveBlocked } from './live-runner'
+import { runLiveSteps, settleLiveReport, LiveBlocked, LiveEmpty } from './live-runner'
+import type { LiveSettle } from './live-runner'
 import { isControlSkipped, liveDelayMs } from './utility'
 
 // The offline flow keeps its deterministic fixture assertions. Live flows
 // resolve real prerequisites per operation and collect failures until done.
-async function runLiveEntity(setup: any, entity: any, flow: any, accessor: string, facts: any = {}) {
+async function runLiveEntity(
+  setup: any, entity: any, flow: any, accessor: string, facts: any = {}, settle: LiveSettle = {},
+) {
   const { client, transport } = setup
   const steps: any[] = (flow.step || []).filter((step: any) => false !== step.a)
   const created = new Map<string, any>()
   const listed: any[] = []
+  let listedEmpty = false
+  const recordFields = new Set<string>(['id', entity.id?.field || 'id',
+    ...Object.values(entity.fields || {}).map((field: any) => field?.n).filter(Boolean)])
   const marks = new Map<string, { name: string, value: any }>()
   const idField = entity.id?.field || 'id'
   const copy = (value: any) => JSON.parse(JSON.stringify(value ?? {}))
@@ -52,14 +58,17 @@ async function runLiveEntity(setup: any, entity: any, flow: any, accessor: strin
         }
         // A nested route needing a parent id must not hide an available
         // parameter-free route for the same operation. Use the first viable
-        // candidate; the SDK still performs its normal route selection.
+        // candidate. An action route is taken only when the step names its
+        // action or the operation has no other route, and then by name.
         let resolved: any
         let selected: any
-        const missing = new Set<string>()
+        const unusable: { route: string, missing: string[] }[] = []
+        const actionOnly = points.every((point: any) => null != point.q?.$action)
         for (const point of points) {
-          if (point.q?.$action !== input.$action) continue
-          const candidate = { ...input }
-          let viable = true
+          const action = point.q?.$action
+          if (null == input.$action ? null != action && !actionOnly : action !== input.$action) continue
+          const candidate = null == action ? { ...input } : { ...input, $action: action }
+          const missing: string[] = []
           const params = point.g?.params || []
           const query = (point.g?.query || []).filter((arg: any) => arg.r)
           for (const arg of [...params, ...query]) {
@@ -67,11 +76,21 @@ async function runLiveEntity(setup: any, entity: any, flow: any, accessor: strin
             const key = arg.n === 'id' ? entity.name + '01' : arg.n.replace(/_id$/, '') + '01'
             const value = setup.idmap[key] ?? setup.idmap[arg.n] ?? loaded?.[arg.n] ?? arg.ex
             if (undefined !== value && null !== value) candidate[arg.n] = value
-            else if (arg.r !== false) { viable = false; missing.add(arg.n) }
+            else if (arg.r !== false) missing.push(arg.n)
           }
-          if (viable) { resolved = candidate; selected = point; break }
+          if (0 === missing.length) { resolved = candidate; selected = point; break }
+          unusable.push({ route: null == action ? point.m + ' ' + point.o : '$action ' + action, missing })
         }
-        if (!resolved) throw new LiveBlocked('No usable route; missing arguments: ' + [...missing].join(', '))
+        if (!resolved) {
+          // An empty list is a valid answer: the account has no record to load.
+          if (op === 'load' && !record && listedEmpty &&
+              unusable.every(route => route.missing.every(name => recordFields.has(name)))) {
+            throw new LiveEmpty('The account has no ' + entity.name + ' record to load')
+          }
+          throw new LiveBlocked(0 === unusable.length ? 'No route for $action ' + input.$action :
+            'No usable route: ' + unusable.map(route => route.route + ' needs ' +
+              route.missing.join(', ')).join('; '))
+        }
         input = resolved
         if (op === 'create' && facts[selected.m + ' ' + selected.o]) {
           const selectedFacts = facts[selected.m + ' ' + selected.o]
@@ -102,6 +121,7 @@ async function runLiveEntity(setup: any, entity: any, flow: any, accessor: strin
             return item.data()
           })
           listed.splice(0, listed.length, ...data)
+          listedEmpty = 0 === data.length
           context.publish(data)
           for (const validation of step.v || []) {
             const previous = created.get(validation.def?.ref)
@@ -136,7 +156,7 @@ async function runLiveEntity(setup: any, entity: any, flow: any, accessor: strin
     report: result => console.log('LIVE STEP ' + JSON.stringify(result)),
   })
   console.log('LIVE SUMMARY ' + JSON.stringify({ entity: entity.name, ...report }))
-  assertLiveReport(report)
+  settleLiveReport(report, settle)
 }
 
 export { runLiveEntity }
