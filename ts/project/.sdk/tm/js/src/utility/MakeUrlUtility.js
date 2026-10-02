@@ -28,6 +28,9 @@ function makeUrl(ctx) {
   }
   let resmatch = {}
 
+  // Sent with the request, never recorded as the entity's match.
+  const authquery = spec.authquery || []
+
   const params = spec.params
 
   for (let [key, val] of items(params)) {
@@ -42,20 +45,13 @@ function makeUrl(ctx) {
     if (null != val) {
       url += qsep + escurl(key) + '=' + escurl(val)
       qsep = '&'
-      resmatch[key] = val
+      if (!authquery.includes(key)) {
+        resmatch[key] = val
+      }
     }
   }
 
   result.resmatch = resmatch
-
-  // The credential prepareAuth placed in the query is no part of the match;
-  // a path parameter of the same name still is.
-  for (const key of spec.authquery || []) {
-    delete resmatch[key]
-    if (null != params && null != params[key]) {
-      resmatch[key] = params[key]
-    }
-  }
 
   return url
 }
