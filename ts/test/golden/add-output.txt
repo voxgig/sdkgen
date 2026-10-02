@@ -855,7 +855,7 @@ tm/js/test/exists.test.js ba7655664d5c
 tm/js/test/feature.test.js 89f0f47aa9a9
 tm/js/test/feature/Corpus.test.js 326d68928695
 tm/js/test/feature/harness.js b78f40cfbc50
-tm/js/test/live-contract.js 206b4d3b95d8
+tm/js/test/live-contract.js 348bc8916e69
 tm/js/test/live-entity.js f10261248a5b
 tm/js/test/live-runner.js 5956b8798cde
 tm/js/test/live-scenarios.js 28bf7209183d
@@ -2076,7 +2076,7 @@ tm/ts/test/exists.test.ts 0b0e94cf2d76
 tm/ts/test/feature.test.ts bcc8fb9538f5
 tm/ts/test/feature/Corpus.test.ts f4a7c6022700
 tm/ts/test/feature/harness.ts c92635b43d4f
-tm/ts/test/live-contract.ts f3fdf5e002fa
+tm/ts/test/live-contract.ts 54ee4d2e6fe6
 tm/ts/test/live-entity.ts 2bf74bbdedf2
 tm/ts/test/live-runner.ts 5ad89ea5290f
 tm/ts/test/live-scenarios.ts 395f8e50b630
