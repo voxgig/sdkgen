@@ -4785,11 +4785,12 @@ describe('generated entity tests make only calls the runtime takes', () => {
     await generateTo('c', root, ROUTING_MODEL)
     const checks: Record<string, number> = {}
     for (const name of ['moon', 'signal', 'planet']) {
-      const bin = Path.join('tests', name + '_entity_test.out')
-      const built = run(make, ['CC=' + cc, bin], root)
+      const out = name + '_entity_test.out'
+      // make matches a target as a string, so it is spelled with / on every OS.
+      const built = run(make, ['CC=' + cc, 'tests/' + out], root)
       if (built.timedOut) return t.skip('c: ' + built.out)
       ok(built.ok, 'c: the ' + name + ' entity test did not build:\n' + tail(built.out))
-      const res = run(Path.join(root, bin), [], root)
+      const res = run(Path.join(root, 'tests', out), [], root)
       ok(res.ok, 'c: the ' + name + ' entity test failed:\n' + tail(res.out))
       const summary = new RegExp('^' + name + '_entity: (\\d+) checks, 0 failed$', 'm').exec(res.out)
       ok(null != summary, 'c: the ' + name + ' entity test printed no clean summary:\n' + tail(res.out))
