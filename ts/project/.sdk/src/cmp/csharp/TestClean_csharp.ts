@@ -376,6 +376,31 @@ public class CleanTest
         }),
     };
 
+    // Offline, as every generated suite is: the test OPTION resolves a
+    // required server variable to test-<name>, and installs no transport.
+    private static Dictionary<string, object?> Offline(Dictionary<string, object?> opts)
+    {
+        var copy = new Dictionary<string, object?>(opts);
+        copy["test"] = new Dictionary<string, object?> { ["active"] = true };
+        return copy;
+    }
+
+    // A client the sweep cannot build leaves nothing swept: a harness error,
+    // not a leak.
+    private static ${Name}SDK Construct(Dictionary<string, object?> opts)
+    {
+        try
+        {
+            return new ${Name}SDK(Offline(opts));
+        }
+        catch (Exception e)
+        {
+            throw new InvalidOperationException(
+                "clean harness: the client could not be constructed, so nothing was swept: " +
+                e.Message, e);
+        }
+    }
+
     private static ${Name}SDK MakeSdk(Scenario scenario, List<Sink> sinks,
         Dictionary<string, object?>? cleanopts = null, BaseFeature? extra = null)
     {
@@ -445,7 +470,7 @@ ${cost ? `        if (Fh.HasFeature("cost"))
             extend.Add(extra);
         }
 
-        return new ${Name}SDK(new Dictionary<string, object?>
+        return Construct(new Dictionary<string, object?>
         {
             ["apikey"] = CanaryApikey,
             ["secret"] = CanarySecret,
@@ -505,7 +530,7 @@ ${candidateLines}
     {
         var fetcher = (Context _ctx, string _url, Dictionary<string, object?> _def) =>
             (object?)Response(200, new Dictionary<string, object?> { ["id"] = "i1" });
-        var plain = new ${Name}SDK(new Dictionary<string, object?>
+        var plain = Construct(new Dictionary<string, object?>
         {
             ["apikey"] = CanaryApikey,
             ["utility"] = new Dictionary<string, object?> { ["fetcher"] = fetcher },
@@ -619,11 +644,11 @@ ${candidateLines}
         Exception? rejected = null;
         try
         {
-            new ${Name}SDK(new Dictionary<string, object?>
+            new ${Name}SDK(Offline(new Dictionary<string, object?>
             {
                 ["apikey"] = new Dictionary<string, object?> { ["value"] = CanaryApikey },
                 ["clean"] = new Dictionary<string, object?> { ["values"] = CanaryValue },
-            });
+            }));
         }
         catch (Exception e)
         {
@@ -786,7 +811,7 @@ ${candidateLines}
     [Fact]
     public void AFeatureNameDoesNotMakeItsSettingsSecret()
     {
-        var sdk = new ${Name}SDK(new Dictionary<string, object?>
+        var sdk = Construct(new Dictionary<string, object?>
         {
             ["apikey"] = CanaryApikey,
             ["feature"] = new Dictionary<string, object?>
@@ -830,7 +855,7 @@ ${candidateLines}
     [Fact]
     public void TheGeneratedConfigsOwnCleanBlockIsHonoured()
     {
-        var utility = new ${Name}SDK(new Dictionary<string, object?>()).GetUtility();
+        var utility = Construct(new Dictionary<string, object?>()).GetUtility();
         var config = new Dictionary<string, object?>
         {
             ["options"] = new Dictionary<string, object?>
@@ -868,7 +893,7 @@ ${candidateLines}
     [Fact]
     public void WithNoCleanBlockTheSchemaDefaultsApply()
     {
-        var utility = new ${Name}SDK(new Dictionary<string, object?>()).GetUtility();
+        var utility = Construct(new Dictionary<string, object?>()).GetUtility();
         var ctx = utility.MakeContext(new Dictionary<string, object?>
         {
             ["utility"] = utility,

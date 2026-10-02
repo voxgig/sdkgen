@@ -157,7 +157,10 @@ describe('error contract', () => {
 
   const { makeError } = loadTemplate('ts/src/utility/MakeErrorUtility.ts', {
     '../types': {},
-    './CleanUtility': { clean: (_c: any, v: any) => v },
+    './CleanUtility': {
+      clean: (_c: any, v: any) => v,
+      setMessage: (e: any, text: string) => { e.message = text },
+    },
     './StructUtility': {
       clone: (v: any) => JSON.parse(JSON.stringify(v)),
       delprop: (o: any, k: string) => { delete o[k] },

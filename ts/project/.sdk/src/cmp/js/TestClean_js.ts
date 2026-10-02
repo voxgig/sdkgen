@@ -146,6 +146,25 @@ const SCENARIOS = [
 ]
 
 
+// Offline, as every generated suite is: the test OPTION resolves a required
+// server variable to test-<name>, and installs no transport.
+function offline(opts) {
+  return { ...opts, test: { active: true } }
+}
+
+
+// A client the sweep cannot build leaves nothing swept: a harness error, not a leak.
+function construct(opts) {
+  try {
+    return new SDK(offline(opts))
+  }
+  catch (err) {
+    throw new Error('clean harness: the client could not be constructed, so nothing was swept: ' +
+      (err?.message ?? String(err)))
+  }
+}
+
+
 function makeSdk(scenario, sinks, cleanopts, extra) {
   const capture = (name) => (rec) => { sinks.push(...forms(name, rec)) }
   const feature = {}
@@ -175,7 +194,7 @@ function makeSdk(scenario, sinks, cleanopts, extra) {
   }
   // null builds the client with no clean block at all, as most callers do.
   if (null !== cleanopts) opts.clean = { values: CANARY.value, ...(cleanopts || {}) }
-  return new SDK(opts)
+  return construct(opts)
 }
 
 
@@ -183,7 +202,7 @@ function makeSdk(scenario, sinks, cleanopts, extra) {
 // arguments, else with every path parameter its points declare filled in.
 // Resolves to { accessor, op, match }.
 async function usableOp() {
-  const plain = new SDK({
+  const plain = construct({
     apikey: CANARY.apikey,
     utility: { fetcher: async () => response(200, { id: 'i1' }) },
   })
@@ -310,7 +329,7 @@ describe('clean', () => {
     for (const cleanblock of [{ clean: { values: CANARY.value } }, {}]) {
       let rejected = undefined
       try {
-        new SDK({ apikey: { value: CANARY.apikey }, ...cleanblock })
+        new SDK(offline({ apikey: { value: CANARY.apikey }, ...cleanblock }))
       }
       catch (e) {
         rejected = e
@@ -363,7 +382,7 @@ describe('clean', () => {
     // A feature's name is not a field name: only the sensitive names inside
     // its settings register. An entity block, of per-entity settings or seeded
     // records keyed by entity name and id, is not read at all.
-    const featured = new SDK({ apikey: CANARY.apikey, feature: {
+    const featured = construct({ apikey: CANARY.apikey, feature: {
       zzsecrets: { active: false, kind: 'PLAINSETTING-q8w2e4r6' },
       zzfeat: { active: false, apitoken: 'FEATTOKEN-z9y8x7w6' },
       test: { active: false, entity: { zztoken: { ZZTOKEN01: { note: 'PLAINRECORD-t5r3e1w9' } } } },
