@@ -113,7 +113,10 @@ fails a raw `direct()` call. Where the SDK allows it, one hook fails in
 `PreUnexpected`, and streams fail part-way or succeed. Each explain record is
 read through the object the sweep passed. It then switches `clean` off and
 confirms the canary shows,
-so a sweep that could not see a leak fails instead of passing. The
+so a sweep that could not see a leak fails instead of passing. Where the
+SDK requires a value for a variable in the API's server URL, the sweep
+passes the test option the SDK's other offline suites pass, which fills the
+variable with a placeholder, so it can still build its clients. The
 suite prints one line, `clean: swept N surface(s), 0 leak(s)`, and the
 generator's own compile lanes require it.
 

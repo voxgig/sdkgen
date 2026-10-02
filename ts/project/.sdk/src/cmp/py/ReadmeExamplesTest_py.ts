@@ -263,10 +263,9 @@ def test_readme_python_blocks_typecheck():
 # ----------------------------------------------------------------------------
 
 def _uses_var(block, var):
-    # True if the block reads an attribute off the whole-word variable "var"
-    # (i.e. contains "var." with a non-identifier char, or nothing, before it).
-    # This distinguishes a client-driving "sdk." from the "_sdk." tail of an
-    # import module name.
+    # True if the block reads an attribute off the variable "var", not off a
+    # name that ends in it: "_sdk." in a module name, "-client." in a package
+    # name or a host, ".client." on another object.
     needle = var + "."
     start = 0
     while True:
@@ -276,7 +275,7 @@ def _uses_var(block, var):
         ok_before = True
         if j > 0:
             ch = block[j - 1]
-            if ch.isalnum() or ch == "_":
+            if ch.isalnum() or ch in "_-./\\"'":
                 ok_before = False
         if ok_before:
             return True

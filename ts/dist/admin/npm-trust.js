@@ -10,6 +10,7 @@ exports.parseTrustList = parseTrustList;
 exports.run = run;
 exports.trustCommand = trustCommand;
 const node_child_process_1 = require("node:child_process");
+const npm_1 = require("../helpers/npm");
 const USAGE = 'usage: npm-trust --repository <owner/repo> ' +
     '--publish <package>=<workflow.yml> [--publish ...] ' +
     '[--check | --dry-run] [--replace] [--otp <code>]';
@@ -217,25 +218,24 @@ function npmFailure(action, stderr) {
 // An npm without the command still exits 0 from `npm trust --help`, printing
 // "Unknown command", so only the usage text tells a capable npm apart.
 function trustCapableNpm() {
-    const shell = 'win32' === process.platform;
-    const probe = (0, node_child_process_1.spawnSync)('npm', ['trust', '--help'], { encoding: 'utf8', shell });
+    const npm = (0, npm_1.npmCommand)('npm', ['trust', '--help']);
+    const probe = (0, node_child_process_1.spawnSync)(npm.file, npm.args, { encoding: 'utf8' });
     return /npm trust github/.test(String(probe.stdout || '') + String(probe.stderr || '')) ?
         ['npm'] : ['npx', '--yes', 'npm@latest'];
 }
 // A captured call has no terminal, so npm raises EOTP instead of prompting;
 // the mutating calls keep the terminal and can prompt.
 function npmPort(otp) {
-    const npm = trustCapableNpm();
-    const shell = 'win32' === process.platform;
+    const [tool, ...lead] = trustCapableNpm();
     const otpArgs = null == otp ? [] : ['--otp', otp];
     const call = (args, capture) => {
-        const res = (0, node_child_process_1.spawnSync)(npm[0], [...npm.slice(1), ...args, ...otpArgs], {
+        const npm = (0, npm_1.npmCommand)(tool, [...lead, ...args, ...otpArgs]);
+        const res = (0, node_child_process_1.spawnSync)(npm.file, npm.args, {
             encoding: 'utf8',
             stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
-            shell,
         });
         if (null != res.error) {
-            throw new Error(`could not run ${npm[0]}: ${res.error.message}`);
+            throw new Error(`could not run ${tool}: ${res.error.message}`);
         }
         if (0 !== res.status) {
             throw new Error(npmFailure(`npm ${args.slice(0, 3).join(' ')}`, String(res.stderr || '')));

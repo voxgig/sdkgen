@@ -67,6 +67,11 @@ const TEST_SEED = ${seedLiteral}
 const SEED_ARG = JSON.stringify(TEST_SEED)
 const SEEDED_CTOR = SDK_NAME + '.test(' + SEED_ARG + ')'
 
+// The client VARIABLE, not the word: a package name carries the word between
+// hyphens (@voxgig-sdk/multifon-client-sdk).
+const CLIENT = /(?<![\\w$.\\-\\/'"\`])client(?![\\w$\\-\\/'"\`])/
+const CLIENT_CALL = new RegExp(CLIENT.source + '\\\\s*\\\\.')
+
 
 // The three docs this gate covers, resolved relative to dist-test/.
 const DOCS: Array<{ label: string; key: string; path: string }> = [
@@ -132,7 +137,7 @@ function isRunnable(code: string): boolean {
   return (
     /new\\s+${Name}SDK\\b/.test(code) ||
     /\\b${Name}SDK\\.test\\b/.test(code) ||
-    /\\bclient\\s*\\./.test(code)
+    CLIENT_CALL.test(code)
   )
 }
 
@@ -270,7 +275,7 @@ function rewriteForRun(code: string): string {
   let out = stripImports(code)
   out = out.replace(/new\\s+${Name}SDK\\s*\\([^)]*\\)/g, () => SEEDED_CTOR)
   out = out.replace(/${Name}SDK\\.test\\s*\\([^)]*\\)/g, () => SEEDED_CTOR)
-  if (/\\bclient\\b/.test(out) && !/\\b(?:const|let|var)\\s+client\\b/.test(out)) {
+  if (CLIENT.test(out) && !/\\b(?:const|let|var)\\s+client\\b/.test(out)) {
     out = 'const client = ' + SEEDED_CTOR + '\\n' + out
   }
   return out

@@ -151,6 +151,25 @@ const SCENARIOS: Scenario[] = [
 ]
 
 
+// Offline, as every generated suite is: the test OPTION resolves a required
+// server variable to test-<name>, and installs no transport.
+function offline(opts: any): any {
+  return { ...opts, test: { active: true } }
+}
+
+
+// A client the sweep cannot build leaves nothing swept: a harness error, not a leak.
+function construct(opts: any): any {
+  try {
+    return new (SDK as any)(offline(opts))
+  }
+  catch (err: any) {
+    throw new Error('clean harness: the client could not be constructed, so nothing was swept: ' +
+      (err?.message ?? String(err)))
+  }
+}
+
+
 function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any[]): any {
   const capture = (name: string) => (rec: any) => { sinks.push(...forms(name, rec)) }
   const feature: any = {}
@@ -180,7 +199,7 @@ function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any
   }
   // null builds the client with no clean block at all, as most callers do.
   if (null !== cleanopts) opts.clean = { values: CANARY.value, ...(cleanopts || {}) }
-  return new (SDK as any)(opts)
+  return construct(opts)
 }
 
 
@@ -189,7 +208,7 @@ function makeSdk(scenario: Scenario, sinks: Sink[], cleanopts?: any, extra?: any
 type Target = { accessor: string, op: string, match: any }
 
 async function usableOp(): Promise<Target | null> {
-  const plain = new (SDK as any)({
+  const plain = construct({
     apikey: CANARY.apikey,
     utility: { fetcher: async () => response(200, { id: 'i1' }) },
   })
@@ -317,7 +336,7 @@ describe('clean', () => {
     for (const cleanblock of [{ clean: { values: CANARY.value } }, {}]) {
       let rejected: any = undefined
       try {
-        new (SDK as any)({ apikey: { value: CANARY.apikey }, ...cleanblock })
+        new (SDK as any)(offline({ apikey: { value: CANARY.apikey }, ...cleanblock }))
       }
       catch (e: any) {
         rejected = e
@@ -370,7 +389,7 @@ describe('clean', () => {
     // A feature's name is not a field name: only the sensitive names inside
     // its settings register. An entity block, of per-entity settings or seeded
     // records keyed by entity name and id, is not read at all.
-    const featured: any = new (SDK as any)({ apikey: CANARY.apikey, feature: {
+    const featured: any = construct({ apikey: CANARY.apikey, feature: {
       zzsecrets: { active: false, kind: 'PLAINSETTING-q8w2e4r6' },
       zzfeat: { active: false, apitoken: 'FEATTOKEN-z9y8x7w6' },
       test: { active: false, entity: { zztoken: { ZZTOKEN01: { note: 'PLAINRECORD-t5r3e1w9' } } } },

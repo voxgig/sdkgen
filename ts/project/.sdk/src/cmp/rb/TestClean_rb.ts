@@ -249,6 +249,19 @@ class ${Name}CleanTest < Minitest::Test
     f.is_a?(Hash) && !f[name].nil?
   end
 
+  # Offline, as every generated suite is: the test OPTION resolves a required
+  # server variable to test-<name>, and installs no transport.
+  def offline(opts)
+    opts.merge("test" => { "active" => true })
+  end
+
+  # A client the sweep cannot build leaves nothing swept: a harness error, not a leak.
+  def construct(opts)
+    ${Name}SDK.new(offline(opts))
+  rescue StandardError => e
+    raise "clean harness: the client could not be constructed, so nothing was swept: #{e.message}"
+  end
+
   def make_sdk(scenario, sinks, cleanopts = nil, extra = [])
     capture = ->(name) { ->(rec) { sinks.concat(Sweep.forms(name, rec)) } }
     feature = {}
@@ -261,7 +274,7 @@ class ${Name}CleanTest < Minitest::Test
     feature["clienttrack"] = { "active" => true } if has_feature?("clienttrack")
 
     respond = scenario[1]
-    ${Name}SDK.new({
+    construct({
       "apikey" => CANARY["apikey"],
       "secret" => CANARY["secret"],
       "headers" => { "X-Custom-Token" => CANARY["header"] },
@@ -277,7 +290,7 @@ class ${Name}CleanTest < Minitest::Test
   # An entity accessor is a capitalised client method whose result answers
   # get_name, as the feature corpus runner finds them.
   def usable_op
-    plain = ${Name}SDK.new({
+    plain = construct({
       "apikey" => CANARY["apikey"],
       "utility" => { "fetcher" => ->(_ctx, _url, _fd) { [Sweep.response(200, { "id" => "i1" }), nil] } },
     })
@@ -360,7 +373,7 @@ class ${Name}CleanTest < Minitest::Test
     # message quotes the value it rejected.
     rejected = nil
     begin
-      ${Name}SDK.new({ "apikey" => { "value" => CANARY["apikey"] }, "clean" => { "values" => CANARY["value"] } })
+      ${Name}SDK.new(offline({ "apikey" => { "value" => CANARY["apikey"] }, "clean" => { "values" => CANARY["value"] } }))
     rescue StandardError => e
       rejected = e
     end
@@ -432,7 +445,7 @@ class ${Name}CleanTest < Minitest::Test
     assert_equal({ "keys" => "zzsens", "values" => CANARY["config"] }, cfgclean)
 
     # With no clean option at all, the schema defaults still apply.
-    bare = ${Name}SDK.new({
+    bare = construct({
       "apikey" => CANARY["apikey"],
       "secret" => CANARY["secret"],
       "headers" => { "X-Custom-Token" => CANARY["header"] },
@@ -443,7 +456,7 @@ class ${Name}CleanTest < Minitest::Test
     # A feature's name is not a field name: only the sensitive names inside
     # its settings register. An entity block, of per-entity settings or
     # seeded records keyed by entity name and id, is not read at all.
-    featured = ${Name}SDK.new({
+    featured = construct({
       "apikey" => CANARY["apikey"],
       "feature" => {
         "zzsecrets" => { "active" => false, "kind" => "PLAINSETTING-q8w2e4r6" },

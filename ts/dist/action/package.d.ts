@@ -1,5 +1,6 @@
 import type { ActionContext, ActionResult } from '../types';
 import type { Manifest } from '../helpers/manifest';
+import type { NpmCommand, NpmHost } from '../helpers/npm';
 declare function action_package(args: string[], actx: ActionContext): Promise<ActionResult>;
 type PackageSource = {
     ref: string;
@@ -23,4 +24,5 @@ type Installed = {
 declare function installedFrom(pkgname: string, actx: ActionContext): Installed[];
 declare function package_update(names: string[], actx: ActionContext): Promise<ActionResult>;
 declare function npmFetchArgs(pkgname: string): string[];
-export { action_package, package_add, package_update, installedFrom, npmFetchArgs, resolvePackage, selectItems, parseAliases, registerAdder, SDKGEN_VERSION, };
+declare function npmFetchCommand(pkgname: string, host?: NpmHost): NpmCommand;
+export { action_package, package_add, package_update, installedFrom, npmFetchArgs, npmFetchCommand, resolvePackage, selectItems, parseAliases, registerAdder, SDKGEN_VERSION, };

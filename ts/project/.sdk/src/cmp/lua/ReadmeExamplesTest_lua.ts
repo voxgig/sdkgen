@@ -102,12 +102,18 @@ local function extract_blocks(md, lang)
   return blocks
 end
 
+-- The client VARIABLE, not the word: a module name carries the word between
+-- hyphens (multifon-client_sdk).
+local function uses_client(src)
+  return (" " .. src .. " "):find("[^%w_%-%./\\"']client[^%w_%-/\\"']") ~= nil
+end
+
 -- A block is runnable if it builds a client (sdk.new / sdk.test) or uses one
 -- (references \`client\`). These are the blocks we EXECUTE offline.
 local function is_runnable(block)
   return block:find("sdk%s*%.%s*new") ~= nil
     or block:find("sdk%s*%.%s*test") ~= nil
-    or block:find("client") ~= nil
+    or uses_client(block)
 end
 
 -- NARROW illustration class:
@@ -149,7 +155,7 @@ local function make_runnable(block)
   if not src:find("require%s*%(") then
     table.insert(prelude, 'local sdk = require("' .. SDK_MODULE .. '")')
   end
-  if not constructs and src:find("client") then
+  if not constructs and uses_client(src) then
     table.insert(prelude, "local client = " .. TEST_CTOR)
   end
 
