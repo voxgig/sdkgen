@@ -68,6 +68,9 @@ and spec = {
   mutable sp_body : value;
   mutable sp_url : string;
   mutable sp_path : string;
+  (* The query parameters prepare_auth placed: the credential, which the
+   * request sends and the entity's match leaves out. *)
+  mutable sp_authquery : string list;
 }
 
 and response = {

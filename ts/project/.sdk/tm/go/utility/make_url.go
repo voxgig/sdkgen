@@ -61,11 +61,23 @@ func makeUrlUtil(ctx *core.Context) (string, error) {
 		if val != nil {
 			url += qsep + vs.EscUrl(key) + "=" + vs.EscUrl(vs.Stringify(val))
 			qsep = "&"
-			resmatch[key] = val
+			if !authQueryHas(spec, key) {
+				resmatch[key] = val
+			}
 		}
 	}
 
 	result.Resmatch = resmatch
 
 	return url, nil
+}
+
+// Sent with the request, never recorded as the entity's match.
+func authQueryHas(spec *core.Spec, key string) bool {
+	for _, name := range spec.AuthQuery {
+		if name == key {
+			return true
+		}
+	}
+	return false
 }

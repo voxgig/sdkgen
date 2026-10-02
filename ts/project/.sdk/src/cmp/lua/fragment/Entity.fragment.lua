@@ -44,8 +44,7 @@ end
 
 
 -- The entity serialises and prints as its data, as ts does: the instance
--- also holds the client, the utility and a match that can carry a query
--- credential.
+-- also holds the client and the utility.
 function EntyClass:to_record()
   local rec = self._utility.clean(self._entctx, vs.clone(self._data or {}))
   rec["voxgig$entity"] = self._name

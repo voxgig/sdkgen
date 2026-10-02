@@ -83,9 +83,23 @@ local function make_spec_util(ctx)
     ctx.ctrl.explain["spec"] = ctx.spec
   end
 
+  -- Whatever prepare_auth sets in the query, under whichever name, is the
+  -- credential; a key it leaves as it was is the caller's.
+  local query = {}
+  for k, v in pairs(ctx.spec.query or {}) do
+    query[k] = v
+  end
+
   local spec, err = utility.prepare_auth(ctx)
   if err ~= nil then
     return nil, err
+  end
+
+  spec.authquery = {}
+  for k, v in pairs(spec.query or {}) do
+    if query[k] ~= v then
+      table.insert(spec.authquery, k)
+    end
   end
 
   ctx.spec = spec

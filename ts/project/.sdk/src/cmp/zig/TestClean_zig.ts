@@ -79,26 +79,27 @@ function zigstr(s: string): string {
 
 function candidateFn(c: Candidate): string {
   const name = 'try_' + c.method + '_' + c.op
-  const call = 'client.' + c.method + '(vnull()).' + c.op + '(mtch, ctrl)'
   if ('list' === c.op) {
     return `
 fn ${name}(client: *sdk.SDK, mtch: Value, ctrl: Value) Outcome {
-    switch (${call}) {
+    const ent = client.${c.method}(vnull());
+    switch (ent.list(mtch, ctrl)) {
         .ok => |ents| {
             const records = h.olist();
             for (ents) |e| records.array.append(e.asEntity().data(null)) catch {};
-            return .{ .ok = true, .err = null, .result = records };
+            return .{ .ok = true, .err = null, .result = records, .match = ent.asEntity().matchv(null) };
         },
-        .err => |e| return .{ .ok = false, .err = e, .result = vnull() },
+        .err => |e| return .{ .ok = false, .err = e, .result = vnull(), .match = ent.asEntity().matchv(null) },
     }
 }
 `
   }
   return `
 fn ${name}(client: *sdk.SDK, mtch: Value, ctrl: Value) Outcome {
-    switch (${call}) {
-        .ok => |ent| return .{ .ok = true, .err = null, .result = ent.asEntity().data(null) },
-        .err => |e| return .{ .ok = false, .err = e, .result = vnull() },
+    const ent = client.${c.method}(vnull());
+    switch (ent.${c.op}(mtch, ctrl)) {
+        .ok => |res| return .{ .ok = true, .err = null, .result = res.asEntity().data(null), .match = ent.asEntity().matchv(null) },
+        .err => |e| return .{ .ok = false, .err = e, .result = vnull(), .match = ent.asEntity().matchv(null) },
     }
 }
 `
@@ -446,6 +447,10 @@ fn offline(options: Value) Value {
 }
 
 fn makeSdk(scenario: Scenario, sinks: *Sinks, clean_active: bool, extra: ?sdk.Feature) *sdk.SDK {
+    return makeSdkWith(scenario, sinks, clean_active, extra, vnull());
+}
+
+fn makeSdkWith(scenario: Scenario, sinks: *Sinks, clean_active: bool, extra: ?sdk.Feature, auth: Value) *sdk.SDK {
     const feature = h.omap();
     if (fh.fh_has_feature("log")) h.setp(feature, "log", h.jo(&.{.{ "active", h.vbool(true) }}));
     if (fh.fh_has_feature("debug")) h.setp(feature, "debug", h.jo(&.{
@@ -478,6 +483,7 @@ fn makeSdk(scenario: Scenario, sinks: *Sinks, clean_active: bool, extra: ?sdk.Fe
         .{ "feature", feature },
         .{ "system", h.jo(&.{.{ "fetch", Transport.make(scenario) }}) },
     }));
+    if (auth == .object) h.setp(options, "auth", auth);
 
     if (extra) |f| return sdk.SDK.new_with(options, &.{ CaptureFeature.make(sinks), f });
     return sdk.SDK.new_with(options, &.{CaptureFeature.make(sinks)});
@@ -489,6 +495,8 @@ const Outcome = struct {
     ok: bool,
     err: ?*sdk.h.SdkError,
     result: Value,
+    // The match the entity holds once the operation returns.
+    match: Value,
 };
 
 const Candidate = *const fn (client: *sdk.SDK, mtch: Value, ctrl: Value) Outcome;
@@ -532,6 +540,8 @@ fn drive(client: *sdk.SDK, target: Target, ctrl: Value, sinks: *Sinks) ?*sdk.h.S
     const out = target.run(client, h.clone(target.mtch), ctrl);
     if (out.err) |e| sinks.err("error", e);
     if (out.ok) sinks.value("result", out.result);
+    // Raw, as a caller copying the match into another query reads it.
+    sinks.value("match", out.match);
     const explain = h.getp(ctrl, "explain");
     if (explain == .object) sinks.value("explain", explain);
     if (held == .object and (explain != .object or held.object != explain.object)) {
@@ -592,6 +602,11 @@ test "clean: no credential leaves the SDK in any form" {
             if (scenario == .ok and variant == .explain) explained = h.getp(ctrl, "explain");
         }
     }
+
+    // A name given at run time replaces the declared one: the match leaves
+    // out whichever name prepare_auth placed.
+    _ = drive(makeSdkWith(.ok, &sinks, true, null, h.jo(&.{.{ "name", h.vstr("zzcred") }})),
+        target, h.omap(), &sinks);
 
     // A credential mistyped as a map. The zig validator's failure is not
     // raised (make_options keeps its input), so what the constructor produced

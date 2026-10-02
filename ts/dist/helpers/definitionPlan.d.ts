@@ -30,6 +30,7 @@ type DefinitionPoint = {
     status: number;
     sample: any;
     idField: string;
+    ownQuery?: string;
 };
 declare function definitionPlan(ctx$: any): DefinitionPoint[];
 export type { DefinitionPoint, };

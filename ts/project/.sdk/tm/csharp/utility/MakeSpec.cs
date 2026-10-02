@@ -77,7 +77,16 @@ public static partial class SdkUtility
             ctx.Ctrl.Explain["spec"] = ctx.Spec;
         }
 
+        // Whatever PrepareAuth sets in the query, under whichever name, is the
+        // credential; a key it leaves as it was is the caller's.
+        var query = new Dictionary<string, object?>(ctx.Spec.Query);
+
         var spec = utility.PrepareAuth(ctx);
+
+        spec.AuthQuery = spec.Query
+            .Where(e => !query.TryGetValue(e.Key, out var was) || !Equals(was, e.Value))
+            .Select(e => e.Key)
+            .ToList();
 
         ctx.Spec = spec;
         return spec;

@@ -146,6 +146,9 @@ public:
   Value body = Value::undef();
   std::string url = "";
   std::string path = "";
+  // The query parameters prepareAuth placed: the credential, which the
+  // request sends and the entity's match leaves out.
+  std::vector<std::string> authquery;
 
   Spec() {
     headers = vmap();

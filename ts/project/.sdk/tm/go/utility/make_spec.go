@@ -1,6 +1,7 @@
 package utility
 
 import (
+	"reflect"
 	"strings"
 
 	vs "github.com/voxgig/struct"
@@ -76,9 +77,23 @@ func makeSpecUtil(ctx *core.Context) (*core.Spec, error) {
 		ctx.Ctrl.Explain["spec"] = ctx.Spec
 	}
 
+	// Whatever PrepareAuth sets in the query, under whichever name, is the
+	// credential; a key it leaves as it was is the caller's.
+	query := map[string]any{}
+	for k, v := range ctx.Spec.Query {
+		query[k] = v
+	}
+
 	spec, err := utility.PrepareAuth(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	spec.AuthQuery = []string{}
+	for k, v := range spec.Query {
+		if prev, had := query[k]; !had || !reflect.DeepEqual(prev, v) {
+			spec.AuthQuery = append(spec.AuthQuery, k)
+		}
 	}
 
 	ctx.Spec = spec

@@ -70,6 +70,9 @@ pub fn make_url_util(ctx: &Rc<Context>) -> Result<String, ProjectNameError> {
 
     let resmatch = Value::empty_map();
 
+    // Sent with the request, never recorded as the entity's match.
+    let authquery = spec.borrow().authquery.clone();
+
     if let Value::Map(pm) = &params {
         let entries: Vec<(String, Value)> = pm
             .borrow()
@@ -113,7 +116,9 @@ pub fn make_url_util(ctx: &Rc<Context>) -> Result<String, ProjectNameError> {
                     vs::esc_url(&Value::str(vs::stringify(&val, None, false)))
                 ));
                 qsep = "&";
-                setp(&resmatch, &key, val);
+                if !authquery.contains(&key) {
+                    setp(&resmatch, &key, val);
+                }
             }
         }
     }

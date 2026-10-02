@@ -458,6 +458,11 @@ public class CleanTest {
 
   static ${sdk} makeSdk(Scenario scenario, List<Sink> sinks, Map<String, Object> cleanopts,
       BaseFeature... extra) {
+    return construct(makeOpts(scenario, sinks, cleanopts, extra));
+  }
+
+  static Map<String, Object> makeOpts(Scenario scenario, List<Sink> sinks,
+      Map<String, Object> cleanopts, BaseFeature... extra) {
     Map<String, Object> feature = new LinkedHashMap<>();
     if (hasFeature("log")) {
       feature.put("log", jm("active", true));
@@ -498,7 +503,7 @@ public class CleanTest {
         "feature", feature,
         "extend", extend,
         "utility", jm("fetcher", scenario.respond));
-    return construct(opts);
+    return opts;
   }
 
   // Every log line the log feature emits, whichever level it chooses.
@@ -539,7 +544,10 @@ public class CleanTest {
   }
 
   static Object invoke(${sdk} client, Op op, Map<String, Object> ctrl) throws Exception {
-    Object ent = op.accessor.invoke(client, new Object[] {null});
+    return invokeOn(op.accessor.invoke(client, new Object[] {null}), op, ctrl);
+  }
+
+  static Object invokeOn(Object ent, Op op, Map<String, Object> ctrl) throws Exception {
     try {
       return op.call.invoke(ent, new LinkedHashMap<String, Object>(op.match), ctrl);
     }
@@ -647,10 +655,12 @@ public class CleanTest {
   static Exception drive(${sdk} sdk, Op op, Map<String, Object> ctrl, List<Sink> sinks) {
     // A caller may keep the record it passed rather than read ctrl's entry.
     Object held = ctrl.get("explain");
+    Object ent = null;
     Object out = null;
     Exception err = null;
     try {
-      out = invoke(sdk, op, ctrl);
+      ent = op.accessor.invoke(sdk, new Object[] {null});
+      out = invokeOn(ent, op, ctrl);
     }
     catch (Exception e) {
       err = e;
@@ -660,6 +670,10 @@ public class CleanTest {
     }
     if (out != null) {
       forms(sinks, "result", out);
+    }
+    // Raw, as a caller copying the match into another query reads it.
+    if (ent instanceof Entity) {
+      forms(sinks, "match", ((Entity) ent).match());
     }
     if (ctrl.get("explain") != null) {
       forms(sinks, "explain", ctrl.get("explain"));
@@ -703,6 +717,12 @@ public class CleanTest {
           forms(sinks, "sdk", sdk);
         }
       }
+
+      // A name given at run time replaces the declared one: the match leaves
+      // out whichever name prepareAuth placed.
+      Map<String, Object> renamed = makeOpts(SCENARIOS.get(0), sinks, null);
+      renamed.put("auth", jm("name", "zzcred"));
+      drive(construct(renamed), op, new LinkedHashMap<>(), sinks);
 
       // No clean option at all: the schema defaults still apply.
       ${sdk} bare = construct(jm(

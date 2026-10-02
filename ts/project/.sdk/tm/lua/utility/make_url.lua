@@ -18,6 +18,12 @@ local function make_url_util(ctx)
   local url = vs.join({ spec.base, spec.prefix, spec.path, spec.suffix }, "/", true)
   local resmatch = {}
 
+  -- Sent with the request, never recorded as the entity's match.
+  local authquery = {}
+  for _, name in ipairs(spec.authquery or {}) do
+    authquery[name] = true
+  end
+
   -- A route the definition ends with a slash keeps it: a server such as a
   -- Django REST one redirects or refuses the route without it.
   local orig = ctx.point ~= nil and vs.getprop(ctx.point, "orig") or nil
@@ -70,7 +76,9 @@ local function make_url_util(ctx)
         local val_str = type(val) == "string" and val or tostring(val)
         url = url .. qsep .. vs.escurl(key) .. "=" .. vs.escurl(val_str)
         qsep = "&"
-        resmatch[key] = val
+        if not authquery[key] then
+          resmatch[key] = val
+        end
       end
     end
   end
