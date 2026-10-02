@@ -861,6 +861,61 @@ defmodule ProjectName.Utility do
 
   # ---- make_point ----------------------------------------------------------
 
+  # A terminal parameter marks a record route (/boards/{id}); a
+  # cross-reference ends in the relationship's name (/posts/{id}/author), and
+  # failing that the shallower path wins. The same rule runs at generation
+  # time, in helpers/opShape.ts — both sides must move together.
+  defp parts_len(p) do
+    parts = S.getprop(p, "parts")
+    if S.islist(parts), do: S.size(parts), else: 0
+  end
+
+  defp terminal_param?(p) do
+    parts = S.getprop(p, "parts")
+
+    if S.islist(parts) and S.size(parts) > 0 do
+      last = S.getelem(parts, S.size(parts) - 1)
+      is_binary(last) and String.starts_with?(last, "{")
+    else
+      false
+    end
+  end
+
+  defp own_point(points) do
+    Enum.reduce(points, hd(points), fn cand, best ->
+      ct = terminal_param?(cand)
+      bt = terminal_param?(best)
+
+      cond do
+        ct != bt -> if ct, do: cand, else: best
+        parts_len(cand) < parts_len(best) -> cand
+        true -> best
+      end
+    end)
+  end
+
+  # The path parameters of a point that neither the call nor the entity gives
+  # a value for, looked up as param_impl looks them up.
+  defp unfilled(ctx, point) do
+    parts = S.getprop(point, "parts")
+
+    if S.islist(parts) and S.size(parts) > 0 do
+      Enum.flat_map(0..(S.size(parts) - 1), fn i ->
+        part = S.getelem(parts, i)
+
+        case is_binary(part) && Regex.run(~r/\A\{([^{}\/]+)\}\z/, part) do
+          [_, name] ->
+            if param_value(ctx, point, name) != nil, do: [], else: [name]
+
+          _ ->
+            []
+        end
+      end)
+    else
+      []
+    end
+  end
+
   def make_point_impl(ctx) do
     out = S.getprop(ctx, "out")
     pre = S.getprop(out, "point")
@@ -950,44 +1005,18 @@ defmodule ProjectName.Utility do
 
           matched? = match?({:halt, _}, point)
 
-          point =
+          # select.exist can list more than the params needed to pick a point,
+          # so nothing matched. A call without an action falls back to a
+          # point without one, as generation does, and only to a route the
+          # call can fill.
+          {point, plain} =
             if matched? do
-              elem(point, 1)
+              {elem(point, 1), nil}
             else
-              # select.exist can list more than the params needed to pick a
-              # point, so nothing matched. Fall back to the entity's own
-              # route: a terminal parameter marks a record route
-              # (/boards/{id}) where a cross-reference ends in the
-              # relationship's name (/posts/{id}/author), and failing that
-              # the shallower path wins. The same rule runs at generation
-              # time, in helpers/opShape.ts — both sides must move together.
-              parts_len = fn p ->
-                parts = S.getprop(p, "parts")
-                if S.islist(parts), do: S.size(parts), else: 0
-              end
-
-              terminal_param? = fn p ->
-                parts = S.getprop(p, "parts")
-
-                if S.islist(parts) and S.size(parts) > 0 do
-                  last = S.getelem(parts, S.size(parts) - 1)
-                  is_binary(last) and String.starts_with?(last, "{")
-                else
-                  false
-                end
-              end
-
-              Enum.reduce(0..(npoints - 1), S.getelem(points, 0), fn i, best ->
-                cand = S.getelem(points, i)
-                ct = terminal_param?.(cand)
-                bt = terminal_param?.(best)
-
-                cond do
-                  ct != bt -> if ct, do: cand, else: best
-                  parts_len.(cand) < parts_len.(best) -> cand
-                  true -> best
-                end
-              end)
+              all = Enum.map(0..(npoints - 1), &S.getelem(points, &1))
+              plain = Enum.filter(all, &(S.getprop(H.to_map(S.getprop(&1, "select")), "$action") == nil))
+              fillable = Enum.filter(plain, &(unfilled(ctx, &1) == []))
+              {if(fillable == [], do: nil, else: own_point(fillable)), plain}
             end
 
           unmatched_action =
@@ -1006,6 +1035,15 @@ defmodule ProjectName.Utility do
               unmatched_action != nil ->
                 Context.make_error(ctx, "point_action_invalid",
                   "Operation \"" <> opname <> "\" action \"" <> S.stringify(unmatched_action) <> "\" is not valid.")
+
+              plain == [] ->
+                Context.make_error(ctx, "point_action_required",
+                  "Operation \"" <> opname <> "\" has only action endpoints; pass $action to choose one.")
+
+              point == nil and plain != nil ->
+                Context.make_error(ctx, "point_no_match",
+                  "Operation \"" <> opname <> "\" has no endpoint whose path parameters are all given (missing: " <>
+                    Enum.join(unfilled(ctx, own_point(plain)), ", ") <> ").")
 
               reqselector != nil ->
                 req_action = S.getprop(reqselector, "$action")
@@ -1470,6 +1508,14 @@ defmodule ProjectName.Utility do
             end
           end)
 
+        # A placeholder left in the route would send the request to the wrong
+        # route. The base's own placeholders are server variables, resolved
+        # with the options.
+        base = S.getprop(spec, "base")
+        base = if is_binary(base), do: String.trim_trailing(base, "/"), else: ""
+        route = String.replace_prefix(url1, base, "")
+        unfilled = Regex.scan(~r/\{[^{}\/]+\}/, route) |> Enum.map(&hd/1)
+
         {url2, _qsep} =
           Enum.reduce(H.entries(S.getprop(spec, "query")), {url1, "?"}, fn {key, val}, {acc, qsep} ->
             if val != nil and is_binary(key) do
@@ -1481,8 +1527,13 @@ defmodule ProjectName.Utility do
             end
           end)
 
-        S.setprop(result, "resmatch", resmatch)
-        {url2, nil}
+        if unfilled != [] do
+          {"", Context.make_error(ctx, "url_param_missing",
+            "URL path has no value for " <> Enum.join(unfilled, ", ") <> ".")}
+        else
+          S.setprop(result, "resmatch", resmatch)
+          {url2, nil}
+        end
     end
   end
 
@@ -1491,10 +1542,6 @@ defmodule ProjectName.Utility do
   def param_impl(ctx, paramdef) do
     point = S.getprop(ctx, "point")
     spec = S.getprop(ctx, "spec")
-    match = S.getprop(ctx, "match")
-    reqmatch = S.getprop(ctx, "reqmatch")
-    data = S.getprop(ctx, "data")
-    reqdata = S.getprop(ctx, "reqdata")
 
     key =
       if is_binary(paramdef) do
@@ -1504,43 +1551,71 @@ defmodule ProjectName.Utility do
         if is_binary(k), do: k, else: ""
       end
 
-    akey =
-      if point != nil do
-        alias = H.to_map(S.getprop(point, "alias"))
+    akey = param_alias(point, key)
 
-        if alias != nil do
-          ak = S.getprop(alias, key)
-          if is_binary(ak), do: ak, else: ""
-        else
-          ""
-        end
-      else
-        ""
-      end
+    if spec != nil and akey != "" and S.getprop(S.getprop(ctx, "reqmatch"), key) == nil and
+         S.getprop(S.getprop(ctx, "match"), key) == nil do
+      S.setprop(S.getprop(spec, "alias"), akey, key)
+    end
+
+    param_value(ctx, point, key)
+  end
+
+  # The name a point gives a parameter in the call, if it renames it.
+  defp param_alias(point, key) do
+    alias = if point != nil, do: H.to_map(S.getprop(point, "alias")), else: nil
+    ak = if alias != nil, do: S.getprop(alias, key), else: nil
+    if is_binary(ak), do: ak, else: ""
+  end
+
+  # The value the call or its entity gives a point's parameter, under its name
+  # or the point's alias for it.
+  defp param_value(ctx, point, key) do
+    akey = param_alias(point, key)
+    reqmatch = S.getprop(ctx, "reqmatch")
+    reqdata = S.getprop(ctx, "reqdata")
+    data = S.getprop(ctx, "data")
 
     val = S.getprop(reqmatch, key)
-    val = if val == nil, do: S.getprop(match, key), else: val
-
-    val =
-      if val == nil and akey != "" do
-        if spec != nil, do: S.setprop(S.getprop(spec, "alias"), akey, key)
-        S.getprop(reqmatch, akey)
-      else
-        val
-      end
-
+    val = if val == nil, do: S.getprop(S.getprop(ctx, "match"), key), else: val
+    val = if val == nil and akey != "", do: S.getprop(reqmatch, akey), else: val
     val = if val == nil, do: S.getprop(reqdata, key), else: val
     val = if val == nil, do: S.getprop(data, key), else: val
 
-    val =
-      if val == nil and akey != "" do
-        v2 = S.getprop(reqdata, akey)
-        if v2 == nil, do: S.getprop(data, akey), else: v2
-      else
-        val
-      end
+    if val == nil and akey != "" do
+      v2 = S.getprop(reqdata, akey)
+      if v2 == nil, do: S.getprop(data, akey), else: v2
+    else
+      val
+    end
+  end
 
-    val
+  # The arguments a point declares in one location, query or header, each as
+  # {name, wire, val}: the name it travels under and the value this call
+  # passes in its match or else its data. Unlike a path parameter, the
+  # entity's stored match and data never supply one.
+  defp call_args(ctx, kind) do
+    point = S.getprop(ctx, "point")
+    defs = if point != nil, do: S.getpath(point, "args." <> kind), else: nil
+
+    if S.islist(defs) and S.size(defs) > 0 do
+      Enum.flat_map(0..(S.size(defs) - 1), fn i ->
+        ad = S.getelem(defs, i)
+        name = S.getprop(ad, "name")
+
+        if is_binary(name) and name != "" do
+          orig = S.getprop(ad, "orig")
+          wire = if is_binary(orig) and orig != "", do: orig, else: name
+          val = S.getprop(S.getprop(ctx, "reqmatch"), name)
+          val = if val == nil, do: S.getprop(S.getprop(ctx, "reqdata"), name), else: val
+          [{name, wire, val}]
+        else
+          []
+        end
+      end)
+    else
+      []
+    end
   end
 
   # ---- prepare_* -----------------------------------------------------------
@@ -1580,34 +1655,18 @@ defmodule ProjectName.Utility do
         if S.ismap(cloned), do: cloned, else: S.jm([])
       end
 
-    # A header parameter travels as a header, under the name the definition
-    # gives it, and only from this call's own arguments. It replaces a default
-    # of the same name, whatever its case.
-    point = S.getprop(ctx, "point")
-    aheader = if point != nil, do: S.getpath(point, "args.header"), else: nil
+    # A header argument replaces a default of the same name, whatever its case.
+    Enum.each(call_args(ctx, "header"), fn {_name, wire, val} ->
+      if val != nil do
+        key = String.downcase(wire)
 
-    if S.islist(aheader) and S.size(aheader) > 0 do
-      Enum.each(0..(S.size(aheader) - 1), fn i ->
-        hd = S.getelem(aheader, i)
-        name = S.getprop(hd, "name")
+        Enum.each(H.entries(out), fn {k, _} ->
+          if is_binary(k) and String.downcase(k) == key, do: S.delprop(out, k)
+        end)
 
-        if is_binary(name) and name != "" do
-          orig = S.getprop(hd, "orig")
-          wire = if is_binary(orig) and orig != "", do: orig, else: name
-          val = S.getprop(S.getprop(ctx, "reqmatch"), name)
-          val = if val == nil, do: S.getprop(S.getprop(ctx, "reqdata"), name), else: val
-          if val != nil do
-            key = String.downcase(wire)
-
-            Enum.each(H.entries(out), fn {k, _} ->
-              if is_binary(k) and String.downcase(k) == key, do: S.delprop(out, k)
-            end)
-
-            S.setprop(out, key, S.stringify(val))
-          end
-        end
-      end)
-    end
+        S.setprop(out, key, S.stringify(val))
+      end
+    end)
 
     out
   end
@@ -1729,6 +1788,11 @@ defmodule ProjectName.Utility do
            not Enum.member?(param_strs, key) do
         S.setprop(out, Map.get(wire, key, key), val)
       end
+    end)
+
+    # A create or update passes its query arguments in its data.
+    Enum.each(call_args(ctx, "query"), fn {name, orig, val} ->
+      if val != nil and not Enum.member?(param_strs, name), do: S.setprop(out, orig, val)
     end)
 
     out
@@ -1968,17 +2032,11 @@ defmodule ProjectName.Utility do
   # untouched.
   defp strip_action(reqdata), do: omit_keys(reqdata, ["$action"])
 
-  # A header argument travels as a header, which prepare_headers_impl sends, so
-  # the body is built from the request data without it.
-  defp header_arg_names(point) do
-    aheader = if point != nil, do: S.getpath(point, "args.header"), else: nil
-
-    if S.islist(aheader) and S.size(aheader) > 0 do
-      Enum.map(0..(S.size(aheader) - 1), &S.getprop(S.getelem(aheader, &1), "name"))
-      |> Enum.filter(&(is_binary(&1) and &1 != ""))
-    else
-      []
-    end
+  # A header or query argument travels where prepare_headers_impl or
+  # prepare_query_impl sends it, so the body is built from the request data
+  # without it.
+  defp routed_arg_names(ctx) do
+    Enum.map(call_args(ctx, "header") ++ call_args(ctx, "query"), &elem(&1, 0))
   end
 
   defp omit_keys(reqdata, names) do
@@ -2000,7 +2058,7 @@ defmodule ProjectName.Utility do
     point = S.getprop(ctx, "point")
     if spec != nil, do: S.setprop(spec, "step", "reqform")
 
-    data = omit_keys(S.getprop(ctx, "reqdata"), header_arg_names(point))
+    data = omit_keys(S.getprop(ctx, "reqdata"), routed_arg_names(ctx))
     transform = H.to_map(S.getprop(point, "transform"))
 
     reqdata =

@@ -10,6 +10,7 @@ my $__dir;
 BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
+require(Cwd::abs_path("$__dir/param.pm"));
 
 package ProjectNameUtilities;
 
@@ -65,6 +66,13 @@ $REGISTRY{prepare_query} = sub {
       next if grep { defined $_ && !ref $_ && $_ eq $key } @$params;
       $out->{exists $wire{$key} ? $wire{$key} : $key} = $val;
     }
+  }
+  # A create or update passes its query arguments in its data.
+  for my $arg (ProjectNameUtilities::call_args($ctx, 'query')) {
+    my ($name, $orig, $val) = @$arg;
+    next unless defined $val;
+    next if grep { defined $_ && !ref $_ && $_ eq $name } @$params;
+    $out->{$orig} = $val;
   }
   return $out;
 };

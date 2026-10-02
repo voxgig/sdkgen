@@ -223,9 +223,16 @@ The typed-model subsystem (full picture:
 - **`entityIdField(ent)`** / **`entityDataIdField(ent)`** — the id-like
   key of the load match / of the data type (they differ; doc generators
   must pick the right one). **`entityOps(ent)`** — active op names in
-  canonical order; **`entityPrimaryOp(ent)`** — the representative op for
-  a single example; **`pickExampleEntity(entityColl)`** — the entity a
-  README example should use.
+  canonical order, leaving out an op whose every route is an action;
+  **`entityPrimaryOp(ent)`** — the representative op for a single example;
+  **`pickExampleEntity(entityColl)`** — the entity a README example should
+  use, preferring one whose example call reaches a route.
+- **`opReachable(op, given) → boolean`** — whether a call that gives these
+  parameter names reaches a route of the op, by the rule the runtime point
+  choice applies: a lone route is taken as it is, and otherwise only a route
+  without an action that the call fills. **`opNeedsAction(op) → boolean`**
+  — whether the op has more than one route and every one is an action, so a
+  call must name one with `$action`.
 
 ---
 

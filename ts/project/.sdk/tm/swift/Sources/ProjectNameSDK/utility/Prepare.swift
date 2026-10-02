@@ -36,29 +36,35 @@ func preparePathUtil(_ ctx: Context) -> String {
   return join(.list(parts), "/", true)
 }
 
+// The arguments a point declares in one location, query or header, each with
+// the name it travels under and the value this call passes in its match or
+// else its data. Unlike a path parameter, the entity's stored match and data
+// never supply one.
+func callArgs(_ ctx: Context, _ kind: String) -> [(name: String, wire: String, val: Value)] {
+  var out: [(name: String, wire: String, val: Value)] = []
+  guard let defs = gpath(ctx.point, "args", kind).asList else { return out }
+  for ad in defs.items {
+    guard let name = gp(ad, "name").asString, !name.isEmpty else { continue }
+    let orig = gp(ad, "orig").asString ?? ""
+    var val = gp(ctx.reqmatch, name)
+    if isNil(val) { val = gp(ctx.reqdata, name) }
+    out.append((name: name, wire: orig.isEmpty ? name : orig, val: val))
+  }
+  return out
+}
+
 func prepareHeadersUtil(_ ctx: Context) -> VMap {
   let options = ctx.client!.optionsMap()
   let headers = gp(options, "headers")
   let out = isNil(headers) ? VMap() : (clone(headers).asMap ?? VMap())
 
-  // A header parameter travels as a header, under the name the definition
-  // gives it, and only from this call's own arguments. It replaces a default
-  // of the same name, whatever its case.
-  if let ahl = gpath(ctx.point, "args", "header").asList {
-    for hd in ahl.items {
-      guard let name = gp(hd, "name").asString, !name.isEmpty else { continue }
-      let orig = gp(hd, "orig").asString ?? ""
-      let wire = orig.isEmpty ? name : orig
-      var val = gp(ctx.reqmatch, name)
-      if isNil(val) { val = gp(ctx.reqdata, name) }
-      if !isNil(val) {
-        let key = wire.lowercased()
-        for k in out.entries.keys where k.lowercased() == key {
-          _ = out.entries.removeValue(forKey: k)
-        }
-        out.entries[key] = .string(stringify(val))
-      }
+  // A header argument replaces a default of the same name, whatever its case.
+  for arg in callArgs(ctx, "header") where !isNil(arg.val) {
+    let key = arg.wire.lowercased()
+    for k in out.entries.keys where k.lowercased() == key {
+      _ = out.entries.removeValue(forKey: k)
     }
+    out.entries[key] = .string(stringify(arg.val))
   }
   return out
 }
@@ -119,6 +125,11 @@ func prepareQueryUtil(_ ctx: Context) -> VMap {
       query.entries[wire[key] ?? key] = val
     }
   }
+
+  // A create or update passes its query arguments in its data.
+  for arg in callArgs(ctx, "query") where !isNil(arg.val) && !containsStr(paramnames, arg.name) {
+    query.entries[arg.wire] = arg.val
+  }
   return query
 }
 
@@ -152,16 +163,9 @@ func prepareBodyUtil(_ ctx: Context) -> Value {
 // SwiftPM target.
 //
 // The seven functions above and paramUtil below do not depend on the model,
-// so they stay templated.
+// so they stay templated, and so does the lookup it shares with makePoint.
 
 func paramUtil(_ ctx: Context, _ paramdef: Value) -> Value {
-  let point = ctx.point
-  let spec = ctx.spec
-  let match = ctx.match
-  let reqmatch = ctx.reqmatch
-  let data = ctx.data
-  let reqdata = ctx.reqdata
-
   let pt = typify(paramdef)
 
   let key: String
@@ -171,25 +175,36 @@ func paramUtil(_ ctx: Context, _ paramdef: Value) -> Value {
     key = gp(paramdef, "name").asString ?? ""
   }
 
-  var akey = ""
+  let akey = paramAlias(ctx.point, key)
+  if let sp = ctx.spec, akey != "", isNil(gp(ctx.reqmatch, key)), isNil(gp(ctx.match, key)) {
+    sp.alias.entries[akey] = .string(key)
+  }
+
+  return paramValue(ctx, ctx.point, key)
+}
+
+// The name a point gives a parameter in the call, if it renames it.
+private func paramAlias(_ point: VMap?, _ key: String) -> String {
   if let alias = gp(point, "alias").asMap, let ak = gp(alias, key).asString {
-    akey = ak
+    return ak
   }
+  return ""
+}
 
-  var val = gp(reqmatch, key)
-  if isNil(val) { val = gp(match, key) }
+// The value the call or its entity gives a point's parameter, under its name
+// or the point's alias for it.
+func paramValue(_ ctx: Context, _ point: VMap?, _ key: String) -> Value {
+  let akey = paramAlias(point, key)
+
+  var val = gp(ctx.reqmatch, key)
+  if isNil(val) { val = gp(ctx.match, key) }
+  if isNil(val) && akey != "" { val = gp(ctx.reqmatch, akey) }
+  if isNil(val) { val = gp(ctx.reqdata, key) }
+  if isNil(val) { val = gp(ctx.data, key) }
 
   if isNil(val) && akey != "" {
-    if let sp = spec { sp.alias.entries[akey] = .string(key) }
-    val = gp(reqmatch, akey)
-  }
-
-  if isNil(val) { val = gp(reqdata, key) }
-  if isNil(val) { val = gp(data, key) }
-
-  if isNil(val) && akey != "" {
-    val = gp(reqdata, akey)
-    if isNil(val) { val = gp(data, akey) }
+    val = gp(ctx.reqdata, akey)
+    if isNil(val) { val = gp(ctx.data, akey) }
   }
 
   return val

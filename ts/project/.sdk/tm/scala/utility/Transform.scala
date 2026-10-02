@@ -8,7 +8,7 @@ object TransformRequest {
   def transformRequest(ctx: Context): Object = {
     if (ctx.spec != null) ctx.spec.step = "reqform"
 
-    val reqdata = omit(ctx.reqdata, headerArgNames(ctx))
+    val reqdata = omit(ctx.reqdata, routedArgNames(ctx))
 
     val transform = Helpers.toMapAny(Struct.getprop(ctx.point, "transform"))
     if (transform == null) return stripAction(reqdata)
@@ -26,25 +26,10 @@ object TransformRequest {
   // the body is a copy without it. The caller's map is left untouched.
   private def stripAction(reqdata: Object): Object = omit(reqdata, Seq("$action"))
 
-  // A header argument travels as a header, which PrepareHeaders sends, so the
-  // body is built from the request data without it.
-  private def headerArgNames(ctx: Context): Seq[String] = {
-    if (ctx.point == null) return Seq.empty
-    Struct.getpath(ctx.point, java.util.List.of("args", "header")) match {
-      case l: java.util.List[_] =>
-        val names = scala.collection.mutable.ArrayBuffer[String]()
-        val hit = l.iterator()
-        while (hit.hasNext) {
-          val hd = hit.next()
-          Struct.getprop(hd, "name") match {
-            case name: String if name.nonEmpty => names += name
-            case _ =>
-          }
-        }
-        names.toSeq
-      case _ => Seq.empty
-    }
-  }
+  // A header or query argument travels where PrepareHeaders or PrepareQuery
+  // sends it, so the body is built from the request data without it.
+  private def routedArgNames(ctx: Context): Seq[String] =
+    (Param.callArgs(ctx, "header") ++ Param.callArgs(ctx, "query")).map(_._1)
 
   private def omit(reqdata: Object, names: Seq[String]): Object = {
     reqdata match {

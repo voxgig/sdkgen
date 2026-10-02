@@ -1,5 +1,6 @@
 # ProjectName SDK utility: prepare_query
 require_relative 'struct/voxgig_struct'
+require_relative 'param'
 module ProjectNameUtilities
   PrepareQuery = ->(ctx) {
     point = ctx.point
@@ -46,6 +47,10 @@ module ProjectNameUtilities
         key, val = item[0], item[1]
         out[wire.fetch(key, key)] = val if val && key.is_a?(String) && key != "$action" && !params.include?(key)
       end
+    end
+    # A create or update passes its query arguments in its data.
+    ProjectNameUtilities.call_args(ctx, "query").each do |name, orig, val|
+      out[orig] = val if !val.nil? && !params.include?(name)
     end
     out
   }

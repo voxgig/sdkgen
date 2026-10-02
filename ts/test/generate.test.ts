@@ -16,7 +16,7 @@ import { SdkGen } from '../dist/sdkgen.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
 } from './generateharness'
 
@@ -534,9 +534,13 @@ describe('generate', () => {
       const emitted = findFile(out, 'utility/TransformRequestUtility.js')
       ok(null != emitted, 'the js request transform was not generated')
 
+      const param = findFile(out, 'utility/ParamUtility.js')
+      ok(null != param, 'the js parameter utility was not generated')
+
       const tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-xreq-'))
       const file = Path.join(tmp, 'TransformRequestUtility.js')
       writeFileSync(file, emitted as string)
+      writeFileSync(Path.join(tmp, 'ParamUtility.js'), param as string)
       const { transformRequest } = require(file)
 
       const run = (reqdata: any) => transformRequest({
@@ -4054,4 +4058,98 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     }
   })
 
+})
+
+
+// A bare call to moon's list has no planet to fill its route, and every list
+// route of signal is an action, so the runtime refuses both. Nothing the
+// generator writes may make either call: a test that did fails, and an
+// example that did fails the README example suites that run it.
+describe('generate: no test or example makes a call the runtime refuses', () => {
+
+  let out: Record<string, string> = {}
+  let targets: string[] = []
+  let cwd = ''
+  const STREAM_LIST = /stream[^\n]{0,40}"list"/i
+
+  before(async () => {
+    cwd = process.cwd()
+    process.chdir(SCAFFOLD)
+    targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    out = await generate(targets, undefined, ROUTING_MODEL)
+  })
+
+  after(() => {
+    if ('' !== cwd) process.chdir(cwd)
+  })
+
+  // Whether a target's tests stream an entity's list: most write one test
+  // file per entity; clojure and zig name the entity in one shared file.
+  function streams(target: string, entity: string): boolean {
+    const files = filesFor(out, target).filter(([p]) => /test/i.test(p))
+    if ('clojure' === target) return files.some(([, c]) => c.includes('"gen-stream-' + entity + '"'))
+    if ('zig' === target) return files.some(([, c]) => c.includes('test "' + entity + '_stream_smoke"'))
+    return files.some(([p, c]) => p.toLowerCase().includes(entity) && STREAM_LIST.test(c))
+  }
+
+  test('a stream test lists only what a bare call reaches', () => {
+    const bare = targets.flatMap((t) =>
+      ['moon', 'signal'].filter((e) => streams(t, e)).map((e) => t + ':' + e))
+    deepStrictEqual(bare, [], 'a stream test lists a route a bare call cannot reach')
+    // Planet's list is reachable, so the check sees every stream test there is.
+    deepStrictEqual(targets.filter((t) => streams(t, 'planet')).sort(), ['c', 'clojure',
+      'cpp', 'csharp', 'go', 'java', 'kotlin', 'lua', 'ocaml', 'php', 'py', 'rb', 'rust',
+      'swift', 'zig'])
+  })
+
+  // Each smoke test, as [file, the call a bare test must not make, the same
+  // call for planet, which it must still make].
+  const SMOKE: Record<string, [RegExp, RegExp, RegExp][]> = {
+    zig: [[/./, /test "(moon_load|moon_list|signal_list)_smoke"/, /test "planet_list_smoke"/]],
+    elixir: [
+      [/moon_entity_test/, /should (list|load)/, /./],
+      [/signal_entity_test/, /should list/, /./],
+      [/planet_entity_test/, /^$/, /should list records/],
+    ],
+    ocaml: [
+      [/moon_entity_test/, /seeded_ops|e_list|e_load/, /./],
+      [/signal_entity_test/, /e_list/, /./],
+      [/planet_entity_test/, /^$/, /seeded_ops/],
+    ],
+    clojure: [[/gentest/, /gen-smoke-moon|e-signal\/list/, /gen-smoke-planet/]],
+  }
+
+  test('a smoke test calls only what a bare call reaches', () => {
+    for (const [target, checks] of Object.entries(SMOKE)) {
+      for (const [file, bad, good] of checks) {
+        const files = filesFor(out, target).filter(([p]) => /test/i.test(p) && file.test(p))
+        ok(0 < files.length, target + ': no test file matches ' + file)
+        ok(!files.some(([, c]) => bad.test(c)),
+          target + ': a smoke test calls a route a bare call cannot reach (' + bad + ')')
+        ok(files.some(([, c]) => good.test(c)), target + ': the smoke tests are gone (' + good + ')')
+      }
+    }
+  })
+
+  test('no example calls an operation that needs an action without one', () => {
+    const bad: string[] = []
+    for (const target of targets) {
+      for (const [path, content] of filesFor(out, target)) {
+        if (!/(README|REFERENCE)\.md$/.test(path)) continue
+        for (const block of content.split(/^```/m).filter((_b, i) => 1 === i % 2)) {
+          if (/signal\b[^\n]{0,24}\blist\b/i.test(block) && !block.includes('$action')) {
+            bad.push(path + ':\n' + block.slice(0, 200))
+          }
+        }
+      }
+    }
+    deepStrictEqual(bad, [])
+  })
+
+  test('the flow switches off the step whose routes all need an action', () => {
+    const ts = filesFor(out, 'ts').find(([p]) => p.endsWith('SignalEntity.test.ts'))
+    ok(null != ts, 'ts: no signal entity test generated')
+    ok(!/\.list\(/.test(ts![1]), 'ts: the signal flow still lists')
+    ok(/\.load\(/.test(ts![1]), 'ts: the signal flow lost its load step')
+  })
 })

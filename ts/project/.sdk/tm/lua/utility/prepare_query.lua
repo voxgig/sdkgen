@@ -1,6 +1,7 @@
 -- ProjectName SDK utility: prepare_query
 
 local vs = require("utility.struct.struct")
+local helpers = require("core.helpers")
 
 local function contains_param(params, s)
   for _, v in ipairs(params) do
@@ -72,6 +73,13 @@ local function prepare_query_util(ctx)
           and not contains_param(params, key) then
         out[wire[key] or key] = val
       end
+    end
+  end
+
+  -- A create or update passes its query arguments in its data.
+  for _, arg in ipairs(helpers.call_args(ctx, "query")) do
+    if arg.val ~= nil and not contains_param(params, arg.name) then
+      out[arg.wire] = arg.val
     end
   end
 

@@ -8,6 +8,7 @@ import {
   Content,
   File,
   cmp,
+  opReachable,
 } from '@voxgig/sdkgen'
 
 
@@ -41,10 +42,9 @@ int main(void) {
   CHECK_STR_EQ(e->vt->get_name(e), "${entity.name}", "entity get_name");
 `)
 
-    // The stream test drives the list op; only emit it when the entity has a
-    // list op — a create/load-only entity has no list endpoint, so
-    // stream("list") would error.
-    const hasList = null != (entity.op && (entity.op as any)?.list)
+    // The stream test drives the list op with no match; only emit it when a
+    // bare call can reach a list route (see helpers/opShape opReachable).
+    const hasList = opReachable((entity.op as any)?.list, [])
     if (hasList) {
       Content(`
   // stream(): runs the list op through the full pipeline and returns a List

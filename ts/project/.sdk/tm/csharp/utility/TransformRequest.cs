@@ -17,7 +17,7 @@ public static partial class SdkUtility
             spec.Step = "reqform";
         }
 
-        var data = OmitKeys(ctx.Reqdata, HeaderArgNames(point));
+        var data = OmitKeys(ctx.Reqdata, RoutedArgNames(ctx));
 
         var transform = Helpers.ToMapAny(StructUtils.GetProp(point, "transform"));
         if (transform == null)
@@ -47,23 +47,12 @@ public static partial class SdkUtility
         return OmitKeys(reqdata, new List<string> { "$action" });
     }
 
-    // A header argument travels as a header, which PrepareHeadersUtil sends,
-    // so the body is built from the request data without it.
-    private static List<string> HeaderArgNames(object? point)
+    // A header or query argument travels where PrepareHeadersUtil or
+    // PrepareQueryUtil sends it, so the body is built from the request data
+    // without it.
+    private static List<string> RoutedArgNames(Context ctx)
     {
-        var names = new List<string>();
-        if (point != null &&
-            StructUtils.GetPath(point, StructUtils.Jt("args", "header")) is List<object?> hl)
-        {
-            foreach (var hd in hl)
-            {
-                if (StructUtils.GetProp(hd, "name") is string name && name != "")
-                {
-                    names.Add(name);
-                }
-            }
-        }
-        return names;
+        return CallArgs(ctx, "header").Concat(CallArgs(ctx, "query")).Select(arg => arg.Name).ToList();
     }
 
     private static object? OmitKeys(object? reqdata, List<string> names)
