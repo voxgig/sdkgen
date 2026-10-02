@@ -18,6 +18,8 @@ exports.isTsSdkType = isTsSdkType;
 exports.tsSafeTypeName = tsSafeTypeName;
 exports.isElixirReservedType = isElixirReservedType;
 exports.elixirSafeTypeName = elixirSafeTypeName;
+exports.elixirTypeNames = elixirTypeNames;
+exports.elixirTypeName = elixirTypeName;
 exports.jsProp = jsProp;
 exports.jsOptProp = jsOptProp;
 exports.jsKey = jsKey;
@@ -204,6 +206,39 @@ function isElixirReservedType(name) {
 // As tsSafeTypeName, for the bare entity type alone.
 function elixirSafeTypeName(name) {
     return isElixirReservedType(name) ? name + '_type' : name;
+}
+const _elixirTypeNames = new WeakMap();
+// The bare type each entity declares in the one types module: a safe name
+// another entity already holds (`mfa` beside `mfa_type`) takes the lowest
+// free number from 2.
+function elixirTypeNames(entityColl) {
+    const cached = _elixirTypeNames.get(entityColl);
+    if (null != cached) {
+        return cached;
+    }
+    const all = [...new Set(Object.values(entityColl || {})
+            .map((e) => e?.name)
+            .filter((n) => 'string' === typeof n))]
+        .sort();
+    const taken = new Set(all.filter((n) => !isElixirReservedType(n)));
+    const out = {};
+    for (const name of all) {
+        let type = elixirSafeTypeName(name);
+        if (type !== name) {
+            for (let n = 2; taken.has(type); n++) {
+                type = name + '_type' + n;
+            }
+            taken.add(type);
+        }
+        out[name] = type;
+    }
+    if (null != entityColl && 'object' === typeof entityColl) {
+        _elixirTypeNames.set(entityColl, out);
+    }
+    return out;
+}
+function elixirTypeName(ent, entityColl) {
+    return elixirTypeNames(entityColl)[ent?.name] ?? elixirSafeTypeName(ent?.name);
 }
 function isReservedName(name, lang) {
     const set = RESERVED[lang];

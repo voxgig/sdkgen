@@ -1,3 +1,4 @@
+import type { TargetOrigins } from '../action/resolve';
 declare function entityCollection(model: any): any;
 declare function deriveEntityNames(entityColl: any): any[];
 declare const OP_SUFFIX: Record<string, 'Match' | 'Data'>;
@@ -31,7 +32,7 @@ type UngeneratedOp = {
     points: string[];
 };
 declare function ungeneratedOps(model: any): UngeneratedOp[];
-declare function warnUngeneratedOps(model: any, log: any): UngeneratedOp[];
+declare function warnUngeneratedOps(model: any, log: any, origins: TargetOrigins): UngeneratedOp[];
 declare function entityPrimaryOp(ent: any): string | null;
 declare function entityClassName(ent: any, entityColl: any): string;
 declare function entityTypeCollisions(entityColl: any): string[];

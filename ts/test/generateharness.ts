@@ -40,6 +40,48 @@ const makeLog = (sink?: any[]): any => {
 }
 
 
+const RUNNABLE = ['.com', '.exe', '.bat', '.cmd']
+
+// Walks the search path as a shell does, needing no `which`; on Windows it
+// tries the runnable PATHEXT extensions. A missing toolchain is skipped.
+function toolchain(name: string, searchPath = process.env.PATH ?? ''): string | null {
+  const win = 'win32' === process.platform
+  const exts = !win || RUNNABLE.some((e) => name.toLowerCase().endsWith(e)) ? [''] :
+    (process.env.PATHEXT || RUNNABLE.join(';')).toLowerCase().split(';')
+      .filter((e) => RUNNABLE.includes(e))
+  const dirs = Path.basename(name) !== name ? [''] : searchPath.split(Path.delimiter)
+    .map((d) => d.replace(/^"(.*)"$/, '$1'))
+    .filter((d) => '' !== d)
+
+  for (const dir of dirs) {
+    for (const ext of exts) {
+      const file = Path.join(dir, name + ext)
+      if (runnable(file, win)) {
+        return file
+      }
+    }
+  }
+
+  return null
+}
+
+
+function runnable(file: string, win: boolean): boolean {
+  try {
+    if (!Fs.statSync(file).isFile()) {
+      return false
+    }
+    if (!win) {
+      Fs.accessSync(file, Fs.constants.X_OK)
+    }
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
+
 function layeredFs(mem: any): any {
   const readThrough = (name: string) => (path: any, ...rest: any[]) => {
     const target = mem.existsSync(path) ? mem : Fs
@@ -503,6 +545,28 @@ main: kit: entity: node: {
 `
 
 
+// Inactive, and already named the type elixir gives `mfa` in its place: the
+// types module declares a type for every entity, active or not.
+const SAFE_TYPE_ENTITY = `
+main: kit: entity: mfa_type: {
+  active: false
+  alias: field: {}
+  name: "mfa_type"
+  field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: {}, m: "GET", o: "/mfa-types", s: [{ lit: "mfa-types" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+`
+
+
 function makeModel(
   targetNames: string[], name?: string, extra?: string, features?: string[],
 ): any {
@@ -608,9 +672,11 @@ export {
   KIT,
   STAGE,
   SCAFFOLD,
+  toolchain,
   API_MODEL,
   FOLD_ENTITY,
   BUILTIN_TYPE_ENTITY,
+  SAFE_TYPE_ENTITY,
   makeLog,
   layeredFs,
   makeModel,

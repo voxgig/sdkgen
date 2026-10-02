@@ -2,7 +2,12 @@
 import { test, describe } from 'node:test'
 import { strictEqual, deepStrictEqual, ok } from 'node:assert'
 
+import Fs from 'node:fs'
+import Os from 'node:os'
+import Path from 'node:path'
+
 import { opRequestShape, opTypeName, OP_SUFFIX, entityClassName, pickExampleEntity, ungeneratedOps, warnUngeneratedOps } from '../dist/sdkgen.js'
+import { targetOrigins, resolvesBundled, resolveSource, BUNDLED } from '../dist/action/resolve.js'
 
 
 // A model entity with a mix of required/optional fields, a per-op exclusion,
@@ -406,7 +411,7 @@ describe('opRequestShape — body ops take fields, not path params', () => {
 
 
 // Novu's workflow keeps its PUT as update and its PATCH as a sixth op, which
-// no target generates a method for.
+// no bundled target generates a method for.
 function patchModel(): any {
   return {
     main: {
@@ -450,7 +455,7 @@ function patchModel(): any {
 }
 
 
-describe('ungeneratedOps — operations no target generates', () => {
+describe('ungeneratedOps — operations the bundled targets do not generate', () => {
 
   test('names each active op outside the five, with its active points', () => {
     deepStrictEqual(ungeneratedOps(patchModel()), [
@@ -472,19 +477,23 @@ describe('ungeneratedOps — operations no target generates', () => {
 
   test('warns once, listing every entity and op', () => {
     const warns: any[] = []
-    const dropped = warnUngeneratedOps(patchModel(), { warn: (e: any) => warns.push(e) })
+    const dropped = warnUngeneratedOps(patchModel(),
+      { warn: (e: any) => warns.push(e) }, BUNDLED_ONLY)
 
     strictEqual(dropped.length, 2)
     strictEqual(warns.length, 1)
     strictEqual(warns[0].point, 'entity-op-ungenerated')
     for (const part of [
+      'the bundled targets do not generate',
       'project.patch (PATCH /projects/{project_id})',
       'workflow.patch (PATCH /v2/workflows/{workflowId})',
       'list, load, create, update and remove',
       '.sdk/model/guide/guide.aontu',
+      'op: <name>: active: false',
     ]) {
       ok(warns[0].note.includes(part), 'note names ' + part + ': ' + warns[0].note)
     }
+    ok(!warns[0].note.includes('no target'), warns[0].note)
   })
 
   test('stays quiet when every op is generated', () => {
@@ -492,7 +501,133 @@ describe('ungeneratedOps — operations no target generates', () => {
     const model = patchModel()
     delete model.main.kit.entity.workflow.op.patch
     delete model.main.kit.entity.project.op.patch
-    deepStrictEqual(warnUngeneratedOps(model, { warn: (e: any) => warns.push(e) }), [])
+    deepStrictEqual(warnUngeneratedOps(model,
+      { warn: (e: any) => warns.push(e) }, BUNDLED_ONLY), [])
+    strictEqual(warns.length, 0)
+  })
+
+  // A target from another package may generate the op, so the warning must
+  // not say the op is out of reach, nor advise switching it off for all.
+  test('a target from another package is named outside the claim', () => {
+    const warns: any[] = []
+    const dropped = warnUngeneratedOps(patchModel(),
+      { warn: (e: any) => warns.push(e) }, MIXED)
+
+    strictEqual(dropped.length, 2)
+    strictEqual(warns.length, 1)
+    deepStrictEqual(warns[0].bundled, ['go', 'ts'])
+    deepStrictEqual(warns[0].external, MIXED.external)
+    const note = warns[0].note
+    for (const part of [
+      'the bundled targets (go, ts) do not generate',
+      'so their SDKs have no method for them',
+      'workflow.patch (PATCH /v2/workflows/{workflowId})',
+      'dart from node_modules/@voxgig/sdkgen-langpack/.sdk',
+    ]) {
+      ok(note.includes(part), 'note names ' + part + ': ' + note)
+    }
+    for (const claim of ['no target', 'the SDK has no method', 'active: false']) {
+      ok(!note.includes(claim), 'note claims ' + claim + ': ' + note)
+    }
+  })
+
+  test('says nothing when no bundled target is generated', () => {
+    const warns: any[] = []
+    const external = { bundled: [], external: MIXED.external }
+    deepStrictEqual(warnUngeneratedOps(patchModel(),
+      { warn: (e: any) => warns.push(e) }, external), [])
+    deepStrictEqual(warnUngeneratedOps(patchModel(),
+      { warn: (e: any) => warns.push(e) }, { bundled: [], external: [] }), [])
     strictEqual(warns.length, 0)
   })
 })
+
+
+const BUNDLED_ONLY = { bundled: ['go', 'ts'], external: [] }
+
+const MIXED = {
+  bundled: ['go', 'ts'],
+  external: [{ name: 'dart', from: 'node_modules/@voxgig/sdkgen-langpack/.sdk' }],
+}
+
+
+// Every form of provenance a target's model file can carry: stamped by an add
+// from the bundled scaffold (plain and aliased), the raw scaffold placeholder,
+// none at all (a copy predating provenance), another package, a project-local
+// package, and a checkout named by an absolute path.
+function provenanceModel(checkout: string): any {
+  const scaffold = { base: BUNDLED, package: '@voxgig/sdkgen' }
+  return {
+    main: {
+      kit: {
+        target: {
+          go: { ...scaffold, origname: 'go' },
+          go2: { ...scaffold, origname: 'go' },
+          ts: { base: 'BASE' },
+          js: {},
+          rb: { ...scaffold, origname: 'rb', active: false },
+          dart: {
+            base: 'node_modules/@voxgig/sdkgen-langpack/.sdk', origname: 'dart',
+            package: '@voxgig/sdkgen-langpack',
+          },
+          bash: { base: 'ext/.sdk', origname: 'bash' },
+          py: { base: checkout, origname: 'py', package: '@voxgig/sdkgen' },
+        },
+      },
+    },
+  }
+}
+
+
+describe('targetOrigins — which targets the ungenerated-op warning speaks for', () => {
+
+  test('splits the active targets by where their provenance leads', () => {
+    deepStrictEqual(targetOrigins(provenanceModel('/elsewhere/sdkgen/ts/project/.sdk')), {
+      bundled: ['go', 'go2', 'js', 'ts'],
+      external: [
+        { name: 'bash', from: 'ext/.sdk' },
+        { name: 'dart', from: 'node_modules/@voxgig/sdkgen-langpack/.sdk' },
+        { name: 'py', from: '/elsewhere/sdkgen/ts/project/.sdk' },
+      ],
+    })
+    deepStrictEqual(targetOrigins({}), { bundled: [], external: [] })
+  })
+
+  // The same answer resolveSource gives when the next add re-resolves each
+  // bare name from its recorded provenance, so the two cannot drift apart.
+  test('agrees with resolveSource on every recorded form', () => {
+    const tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-origins-'))
+    try {
+      const root = Path.join(tmp, 'project')
+      const checkout = Path.join(tmp, 'checkout', 'ts', 'project', '.sdk')
+      for (const dir of [
+        BUNDLED, 'node_modules/@voxgig/sdkgen-langpack/.sdk', 'ext/.sdk',
+      ]) {
+        Fs.mkdirSync(Path.join(root, dir), { recursive: true })
+      }
+      Fs.mkdirSync(checkout, { recursive: true })
+
+      const model = provenanceModel(checkout)
+      const ctx$ = { model, folder: root, fs: () => Fs, log: makeQuietLog() }
+      const bundled = Path.normalize(Path.join(root, BUNDLED))
+      const targets = model.main.kit.target
+
+      let seen = 0
+      for (const name of Object.keys(targets)) {
+        const resolved = resolveSource(name, 'target', ctx$).folder === bundled
+        strictEqual(resolvesBundled(targets[name], name), resolved, name)
+        seen += resolved ? 1 : 0
+      }
+      strictEqual(seen, 5, 'every bundled form resolves to the scaffold')
+    }
+    finally {
+      Fs.rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+})
+
+
+function makeQuietLog(): any {
+  const noop = () => { }
+  return { info: noop, warn: noop, debug: noop, error: noop }
+}

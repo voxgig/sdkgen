@@ -310,6 +310,44 @@ function isBare(ref: string): boolean {
 }
 
 
+// Whether an item's recorded provenance leads back to this package's own
+// scaffold, read the way resolveSource reads the ref recordedRef rebuilds: a
+// bare ref resolves to BUNDLED, any other to the folder its directory names.
+function resolvesBundled(declared: any, name: string): boolean {
+  const ref = recordedRef(declared, name) ?? name
+  return isBare(ref) ||
+    BUNDLED === normaliseBase(Path.join(Path.dirname(ref), '.sdk'))
+}
+
+
+type TargetOrigins = {
+  bundled: string[]
+  external: { name: string, from: string }[]
+}
+
+
+function targetOrigins(model: any): TargetOrigins {
+  const targets = kindCollection(model, 'target')
+  const origins: TargetOrigins = { bundled: [], external: [] }
+
+  for (const name of Object.keys(targets).sort()) {
+    const target = targets[name]
+    if (null == target || 'object' !== typeof target || false === target.active) {
+      continue
+    }
+
+    if (resolvesBundled(target, name)) {
+      origins.bundled.push(name)
+    }
+    else {
+      origins.external.push({ name, from: normaliseBase(target.base) })
+    }
+  }
+
+  return origins
+}
+
+
 function normaliseBase(base: string): string {
   return Path.normalize(String(base ?? '')).split(Path.sep).join('/')
 }
@@ -322,12 +360,15 @@ function capitalise(s: string): string {
 
 export type {
   Source,
+  TargetOrigins,
 }
 
 export {
   resolveSource,
   recordedRef,
   isBare,
+  resolvesBundled,
+  targetOrigins,
   registerInstalled,
   nameConflict,
   lastSegment,

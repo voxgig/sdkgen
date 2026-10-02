@@ -59,8 +59,11 @@ the result.
      suffix where the language already owns its name: `Type` in ts
      (`Record`, `Context`), rb, php and swift, and `_type` in elixir, where
      a built-in type such as `mfa`, `node` or `port` cannot be redefined
-     (`@type mfa_type`). The op types keep the plain stem, since their
-     suffix already sets them apart.
+     (`@type mfa_type`). One elixir module declares every entity's type,
+     so when another entity, active or not, is already named `mfa_type`,
+     `mfa` takes the lowest free number instead (`mfa_type2`). The op
+     types keep the plain stem, since their suffix already sets them
+     apart.
 
 4. **`EntityTypes_<lang>.ts`** (scaffold, `ts/project/.sdk/src/cmp/<lang>/`)
    renders the typed model file per target. Emitters fetch the entity

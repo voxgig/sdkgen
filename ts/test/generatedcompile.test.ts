@@ -24,7 +24,8 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 
 import {
-  makeModel, makeRoot, layeredFs, makeLog, FOLD_ENTITY, BUILTIN_TYPE_ENTITY,
+  makeModel, makeRoot, layeredFs, makeLog, toolchain,
+  FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 
@@ -153,27 +154,6 @@ function nestedTestEnv(): NodeJS.ProcessEnv {
 
 function tsc(cwd: string, project: string) {
   return run(process.execPath, [TSC, '--build', project], cwd)
-}
-
-
-// A toolchain this machine does not have is skipped, not failed: the check
-// is worth whatever compilers are present, and CI can install more. Windows
-// has `where` rather than `which`, and a lookup that cannot run at all counts
-// as absent, so the suite skips instead of failing on the probe.
-function toolchain(name: string): string | null {
-  const probe = 'win32' === process.platform
-    ? run('where', [name], process.cwd())
-    : run('/usr/bin/which', [name], process.cwd())
-  if (!probe.ok) return null
-
-  const found = probe.out.trim().split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => '' !== line)
-  if (0 === found.length) return null
-
-  if ('win32' !== process.platform) return found[0]
-
-  return found.find((path) => /\.(exe|com|cmd|bat)$/i.test(path)) || null
 }
 
 
@@ -1597,11 +1577,13 @@ echo get_class($client->ContactsField(null)), ' ',
   })
 
 
-  // `@type mfa :: ...` stops mix outright, and modules whose names differ only
+  // `@type mfa :: ...` stops mix outright, as does a second `@type mfa_type`
+  // when an entity already has that name, and modules whose names differ only
   // in case compile to one .beam file on macOS and Windows.
   test('elixir: built-in type names and a case-colliding pair compile', async (t) => {
     const sdkroot = Path.join(tmp, 'elixir-names')
-    await generateTo('elixir', sdkroot, BUILTIN_TYPE_ENTITY + FOLD_ENTITY)
+    await generateTo('elixir', sdkroot,
+      BUILTIN_TYPE_ENTITY + SAFE_TYPE_ENTITY + FOLD_ENTITY)
 
     const mix = toolchain('mix')
     const elixir = toolchain('elixir')

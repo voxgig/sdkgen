@@ -17,7 +17,7 @@ import { SdkGen } from '../dist/sdkgen.js'
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot,
-  FOLD_ENTITY, BUILTIN_TYPE_ENTITY,
+  FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
 } from './generateharness'
 
 
@@ -392,6 +392,60 @@ describe('generate', () => {
     ok(null != entity, 'no mfa entity module')
     ok(entity![1].includes('Demo.Types.mfa_type/0'), 'the comment names a missing type')
     ok(entity![1].includes('Demo.Types.mfa_create_data()'), 'the spec lost its op type')
+  })
+
+
+  test('elixir: a safe type name another entity holds is declared once', async () => {
+    const files = filesFor(await generate(['elixir'], undefined,
+      BUILTIN_TYPE_ENTITY + SAFE_TYPE_ENTITY), 'elixir')
+
+    const types = files.find(([p]) => /lib\/[^/]+_types\.ex$/.test(p))
+    ok(null != types, 'no elixir types module')
+    const declared = [...types![1].matchAll(/@type (\w+) ::/g)].map((m) => m[1])
+    deepStrictEqual(declared.filter((t, i) => declared.indexOf(t) !== i), [],
+      'a type is declared twice')
+    for (const type of ['mfa_type2', 'mfa_type', 'mfa_type_list_match', 'node_type']) {
+      ok(declared.includes(type), 'no type ' + type + ': ' + declared.join(', '))
+    }
+
+    const entity = files.find(([p]) => p.endsWith('lib/entity/mfa_entity.ex'))
+    ok(null != entity, 'no mfa entity module')
+    ok(entity![1].includes('Demo.Types.mfa_type2/0'), 'the comment names another type')
+    ok(!entity![1].includes('Demo.Types.mfa_type/0'), 'the comment names another type')
+  })
+
+
+  // A target installed from another package may generate more operations, so
+  // the warning names it as outside its claim rather than judging it.
+  test('the ungenerated-op warning speaks only for the bundled targets', async () => {
+    const LANGPACK = 'node_modules/@voxgig/sdkgen-langpack/.sdk'
+    const warned = async (external: string[]) => {
+      const sink: any[] = []
+      const model = makeModel(['go', 'ts'], undefined, FOLD_ENTITY)
+      for (const name of external) {
+        Object.assign(model.main[KIT].target[name],
+          { base: LANGPACK, package: '@voxgig/sdkgen-langpack' })
+      }
+      const { fs } = memfs({})
+      const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(sink) })
+      strictEqual((await sdkgen.generate({ model, root: makeRoot() })).ok, true)
+      return sink.filter((e: any) => 'entity-op-ungenerated' === e?.point)
+    }
+
+    const bundled = await warned([])
+    strictEqual(bundled.length, 1)
+    deepStrictEqual(bundled[0].bundled, ['go', 'ts'])
+    ok(bundled[0].note.includes('the bundled targets do not generate'), bundled[0].note)
+
+    const mixed = await warned(['go'])
+    strictEqual(mixed.length, 1)
+    deepStrictEqual(mixed[0].bundled, ['ts'])
+    deepStrictEqual(mixed[0].external, [{ name: 'go', from: LANGPACK }])
+    ok(mixed[0].note.includes('the bundled targets (ts) do not generate'), mixed[0].note)
+    ok(mixed[0].note.includes('go from ' + LANGPACK), mixed[0].note)
+    ok(!/no target|the SDK has no method|active: false/.test(mixed[0].note), mixed[0].note)
+
+    deepStrictEqual(await warned(['go', 'ts']), [], 'judged a target from another package')
   })
 
 

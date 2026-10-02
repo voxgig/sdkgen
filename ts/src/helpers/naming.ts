@@ -231,6 +231,48 @@ function elixirSafeTypeName(name: string): string {
 }
 
 
+const _elixirTypeNames = new WeakMap<object, Record<string, string>>()
+
+// The bare type each entity declares in the one types module: a safe name
+// another entity already holds (`mfa` beside `mfa_type`) takes the lowest
+// free number from 2.
+function elixirTypeNames(entityColl: any): Record<string, string> {
+  const cached = _elixirTypeNames.get(entityColl)
+  if (null != cached) {
+    return cached
+  }
+
+  const all = [...new Set(Object.values(entityColl || {})
+    .map((e: any) => e?.name)
+    .filter((n: any): n is string => 'string' === typeof n))]
+    .sort()
+
+  const taken = new Set(all.filter((n) => !isElixirReservedType(n)))
+  const out: Record<string, string> = {}
+
+  for (const name of all) {
+    let type = elixirSafeTypeName(name)
+    if (type !== name) {
+      for (let n = 2; taken.has(type); n++) {
+        type = name + '_type' + n
+      }
+      taken.add(type)
+    }
+    out[name] = type
+  }
+
+  if (null != entityColl && 'object' === typeof entityColl) {
+    _elixirTypeNames.set(entityColl, out)
+  }
+  return out
+}
+
+
+function elixirTypeName(ent: any, entityColl: any): string {
+  return elixirTypeNames(entityColl)[ent?.name] ?? elixirSafeTypeName(ent?.name)
+}
+
+
 function isReservedName(name: string, lang: string): boolean {
   const set = RESERVED[lang]
   return !!set && set.has(name)
@@ -352,6 +394,8 @@ export {
   tsSafeTypeName,
   isElixirReservedType,
   elixirSafeTypeName,
+  elixirTypeNames,
+  elixirTypeName,
   jsProp,
   jsOptProp,
   jsKey,

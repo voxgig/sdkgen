@@ -6,7 +6,7 @@ import {
   File, Folder, Content,
 } from '@voxgig/sdkgen'
 
-import { opRequestShape, OP_SUFFIX, warnEntityTypeCollisions, deriveEntityNames, elixirSafeTypeName } from '@voxgig/sdkgen'
+import { opRequestShape, OP_SUFFIX, warnEntityTypeCollisions, deriveEntityNames, elixirTypeName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -92,7 +92,7 @@ defmodule ${Name}.Types do
           .filter((f: any) => f.a !== false)
 
         emitType(
-          elixirSafeTypeName(ename),
+          elixirTypeName(ent, entityCollection(model)),
           `${EName} entity data model.`,
           fields.map((f: any) => ({ name: f.n, type: f.t, optional: false === f.r })),
         )

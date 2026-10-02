@@ -756,7 +756,10 @@ emitted broken source reached the fleet unchallenged.
   before it existed. elixir has only the LANGUAGE half: its types module
   declares nothing but entity and op types, while Erlang and Elixir own
   `mfa`, `node`, `port`, `module`... (`ELIXIR_BUILTIN_TYPES`, plus the
-  reserved words), so the bare entity type becomes `<name>_type`.
+  reserved words), so the bare entity type becomes `<name>_type`, or
+  `<name>_type2` and up when another entity — inactive ones included, since
+  the types module declares them all — already has that name
+  (`elixirTypeNames`, which the op fragments' comments read too).
   `test/elixir-types.test.ts` re-derives the Erlang table from
   `erl_internal` and compiles every name where a toolchain exists.
 - **`ts/test/fixture/**` has its OWN compile lane.** `check-scaffold` covers
@@ -792,8 +795,11 @@ emitted broken source reached the fleet unchallenged.
   it from `entity.name` per target. Do not add a second guard on a derived
   form. The wire is untouched — a path comes from the point's `orig`, never
   the name. Right after it, `warnUngeneratedOps()` names, once per run, every
-  op of an active entity outside the five every target generates — apidef's
-  `patch` beside a PUT is the one that occurs.
+  op of an active entity outside the five the bundled targets generate —
+  apidef's `patch` beside a PUT is the one that occurs. It speaks for those
+  targets alone: `targetOrigins()` (`action/resolve`) splits the active
+  targets by the provenance `resolveSource` would follow, and one installed
+  from another package is named as not judged, never as unable to reach it.
 - **An entity need not declare `op`.** Read it as `entity.op || {}` /
   `entity.op?.load`; an unguarded `Object.keys(entity.op)` aborts generation
   for every target. `ts/test/entityname.test.ts` fails if one is reintroduced.

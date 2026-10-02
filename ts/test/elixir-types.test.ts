@@ -7,7 +7,11 @@ import Os from 'node:os'
 import Path from 'node:path'
 import { spawnSync } from 'node:child_process'
 
-import { isElixirReservedType, elixirSafeTypeName } from '../dist/sdkgen.js'
+import {
+  isElixirReservedType, elixirSafeTypeName, elixirTypeNames,
+} from '../dist/sdkgen.js'
+
+import { toolchain } from './generateharness'
 
 
 // Each fails `@type <name> :: ...`: a built-in type cannot be redefined, `nil`
@@ -40,15 +44,6 @@ const ORDINARY = [
 const GUARDED = BUILTIN.concat(RESERVED, OVERRIDES)
 
 
-function toolchain(name: string): string | null {
-  const probe = 'win32' === process.platform
-    ? spawnSync('where', [name], { encoding: 'utf8' })
-    : spawnSync('/usr/bin/which', [name], { encoding: 'utf8' })
-  const found = String(probe.stdout || '').trim().split(/\r?\n/)[0]
-  return 0 === probe.status && '' !== found ? found : null
-}
-
-
 describe('elixir type name guard', () => {
 
   test('a built-in or reserved name gains _type', () => {
@@ -63,6 +58,33 @@ describe('elixir type name guard', () => {
     for (const n of ORDINARY) {
       strictEqual(elixirSafeTypeName(n), n)
     }
+  })
+
+
+  // One types module holds every entity's type, so `mfa` beside an entity
+  // named `mfa_type` would declare `mfa_type` twice.
+  test('a safe name another entity already holds takes a number', () => {
+    deepStrictEqual(elixirTypeNames({
+      mfa: { name: 'mfa' }, mfa_type: { name: 'mfa_type', active: false },
+      planet: { name: 'planet' },
+    }), { mfa: 'mfa_type2', mfa_type: 'mfa_type', planet: 'planet' })
+
+    deepStrictEqual(elixirTypeNames({
+      mfa_type2: { name: 'mfa_type2' }, mfa_type: { name: 'mfa_type' },
+      mfa: { name: 'mfa' }, node: { name: 'node' },
+    }), { mfa: 'mfa_type3', mfa_type: 'mfa_type', mfa_type2: 'mfa_type2',
+      node: 'node_type' })
+  })
+
+
+  test('every entity of a collection declares a type of its own', () => {
+    const coll: any = {}
+    for (const n of GUARDED.concat(GUARDED.map((g) => g + '_type'), ORDINARY)) {
+      coll[n] = { name: n }
+    }
+    const types = Object.values(elixirTypeNames(coll))
+    strictEqual(new Set(types).size, types.length, 'a type is declared twice')
+    deepStrictEqual(types.filter((t) => isElixirReservedType(t)), [])
   })
 
 
@@ -128,6 +150,40 @@ describe('elixir type name guard', () => {
       }
       for (const n of ORDINARY) {
         ok(seen[n]?.startsWith('ok '), n + ' should compile as a type: ' + seen[n])
+      }
+    }
+    finally {
+      Fs.rmSync(tmp, { recursive: true, force: true })
+    }
+  })
+
+})
+
+
+describe('toolchain resolution', () => {
+
+  // A tool on PATH is found without asking a `which`, which some hosts lack.
+  test('a tool placed only on the search path is found there', () => {
+    const tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-toolchain-'))
+    try {
+      const bin = Path.join(tmp, 'bin')
+      const empty = Path.join(tmp, 'empty')
+      Fs.mkdirSync(bin)
+      Fs.mkdirSync(empty)
+
+      const win = 'win32' === process.platform
+      const tool = Path.join(bin, win ? 'sdkgen-probe-tool.cmd' : 'sdkgen-probe-tool')
+      Fs.writeFileSync(tool, win ? '@echo off\r\n' : '#!/bin/sh\n', { mode: 0o755 })
+
+      strictEqual(toolchain('sdkgen-probe-tool', bin), tool)
+      strictEqual(toolchain('sdkgen-probe-tool', [empty, bin].join(Path.delimiter)), tool)
+
+      // The negative controls: absent from the path, or present but not runnable.
+      strictEqual(toolchain('sdkgen-probe-tool', empty), null)
+      strictEqual(toolchain('sdkgen-probe-tool'), null)
+      if (!win) {
+        Fs.chmodSync(tool, 0o644)
+        strictEqual(toolchain('sdkgen-probe-tool', bin), null)
       }
     }
     finally {
