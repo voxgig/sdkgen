@@ -34,8 +34,11 @@ GitHub's check suite preferences beside the repository they belong to.
 The mock answers with the definition's own response example. Where the
 definition gives none, it answers with data built from the response schema:
 every property, one item per list, and the object parts of an `allOf` merged
-into one. An `allOf` with no object part takes the value of its first part
-that has one. OpenAPI 3.0 ignores the siblings of a `$ref`, so a definition
+into one. An `allOf` with no object part takes the value one of its parts
+declares, in any order: an `example` or the first of its `examples`, then the
+first value of an `enum`, then a `default`. Only when no part declares one
+does it take the value of its first part that has one, such as a placeholder
+for its type. OpenAPI 3.0 ignores the siblings of a `$ref`, so a definition
 gives a `$ref` a `description` by wrapping both in an `allOf`, and a `$ref`
 to a string wrapped that way is still a string. An example whose top level
 contradicts its own schema, such as a list where the schema is an object,

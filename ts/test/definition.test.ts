@@ -291,6 +291,29 @@ describe('definitionPlan', () => {
     ] }).sample, { id: 'adr_1', name: 'x', count: 1 })
   })
 
+  // A part's type alone gives a placeholder, which loses to what another part declares.
+  for (const [what, allOf, value] of [
+    ['an enum after the type', [{ type: 'string' }, { enum: ['active', 'closed'] }], 'active'],
+    ['an enum before the type', [{ enum: ['active', 'closed'] }, { type: 'string' }], 'active'],
+    ['an example after the type', [{ type: 'string' }, { example: 'declared-id' }], 'declared-id'],
+    ['an example before the type', [{ example: 'declared-id' }, { type: 'string' }], 'declared-id'],
+    ['examples after the type', [{ type: 'string' }, { examples: ['listed-id', 'other'] }], 'listed-id'],
+    ['examples before the type', [{ examples: ['listed-id', 'other'] }, { type: 'string' }], 'listed-id'],
+    ['a default after the type', [{ type: 'string' }, { default: 'fallback' }], 'fallback'],
+    ['a default before the type', [{ default: 'fallback' }, { type: 'string' }], 'fallback'],
+    ['an example over an enum and a default', [{ default: 'fallback' },
+      { type: 'string', enum: ['active', 'closed'] }, { example: 'closed' }], 'closed'],
+    ['an example over an enum and a default, reversed', [{ example: 'closed' },
+      { type: 'string', enum: ['active', 'closed'] }, { default: 'fallback' }], 'closed'],
+    ['an enum over a default', [{ default: 'fallback' }, { type: 'string', enum: ['active'] }], 'active'],
+    ['an enum over a default, reversed', [{ type: 'string', enum: ['active'] }, { default: 'fallback' }],
+      'active'],
+  ] as [string, any[], any][]) {
+    test('an allOf takes the value a part declares: ' + what, () => {
+      deepStrictEqual(loadWith(record({ allOf })).sample, { id: value, name: 'x' })
+    })
+  }
+
   test('no resolved definition, no plan', () => {
     deepStrictEqual(definitionPlan({ model: MODEL, meta: {} }), [])
   })
