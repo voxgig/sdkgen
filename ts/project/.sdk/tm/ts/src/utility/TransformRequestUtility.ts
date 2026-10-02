@@ -1,6 +1,8 @@
 
 import { Context } from '../types'
 
+import { callArgs } from './ParamUtility'
+
 function transformRequest(ctx: Context) {
   const spec = ctx.spec
   const utility = ctx.utility
@@ -15,7 +17,7 @@ function transformRequest(ctx: Context) {
   try {
     const reqform = point.transform.req
     const reqdata = isfunc(reqform) ? reqform(ctx) : transform({
-      reqdata: omit(ctx.reqdata, headerArgNames(ctx))
+      reqdata: omit(ctx.reqdata, routedArgNames(ctx))
     }, reqform)
 
     return stripAction(reqdata)
@@ -33,11 +35,10 @@ function stripAction(reqdata: any) {
 }
 
 
-// A header argument travels as a header, which prepareHeaders sends, so the
-// body is built from the request data without it.
-function headerArgNames(ctx: Context): string[] {
-  return (ctx.point?.args?.header || []).map((h: any) => h?.name)
-    .filter((name: any) => 'string' === typeof name && '' !== name)
+// A header or query argument travels where prepareHeaders or prepareQuery
+// sends it, so the body is built from the request data without it.
+function routedArgNames(ctx: Context): string[] {
+  return [...callArgs(ctx, 'header'), ...callArgs(ctx, 'query')].map((arg) => arg.name)
 }
 
 

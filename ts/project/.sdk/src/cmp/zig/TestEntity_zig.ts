@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, opReachable } from '@voxgig/sdkgen'
 
 import { zigVarName } from './utility_zig'
 
@@ -10,7 +10,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const method = zigVarName(entity.name)
   const ops = entity.op || {}
 
-  if (ops.load) {
+  // Each smoke test calls with only what it shows, so a bare call must reach
+  // a route: an id for load, nothing for list.
+  if (opReachable(ops.load, ['id'])) {
     Content(`
 test "${method}_load_smoke" {
     const fixture = h.jo(&.{.{ "${entity.name}", h.jo(&.{.{ "t01", h.jo(&.{.{ "id", h.vstr("t01") }}) }}) }});
@@ -37,7 +39,7 @@ test "${method}_load_smoke" {
 `)
   }
 
-  if (ops.list) {
+  if (opReachable(ops.list, [])) {
     Content(`
 test "${method}_list_smoke" {
     const fixture = h.jo(&.{.{ "${entity.name}", h.jo(&.{.{ "t01", h.jo(&.{.{ "id", h.vstr("t01") }}) }}) }});

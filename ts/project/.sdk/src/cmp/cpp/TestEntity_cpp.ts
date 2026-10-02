@@ -1,4 +1,4 @@
-import { flowSteps } from '@voxgig/sdkgen'
+import { flowSteps, opReachable } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -151,10 +151,10 @@ static void ${evar}_entity_instance() {
 
 `)
 
-    // The stream test drives the list op; only emit it when the entity has a
-    // list op (a create/load-only entity has no list endpoint, so
-    // stream("list") throws "Operation \"list\" has no endpoint definitions").
-    const flowHasList = allSteps.some((s: any) => 'list' === s.o)
+    // The stream test drives the list op with no match; only emit it when a
+    // bare call can reach a list route (see helpers/opShape opReachable).
+    const flowHasList = allSteps.some((s: any) => 'list' === s.o) &&
+      opReachable((entity.op as any)?.list, [])
     if (flowHasList) {
       Content(`
 static void ${evar}_entity_stream() {

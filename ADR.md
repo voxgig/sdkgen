@@ -289,6 +289,9 @@ err)`. That is the right advice, and it printed the key.
   through `clean.values`.
 - `client.options()` still returns the raw credential. It is the documented
   way to read it, and it is neither a log nor an error.
+- `entity.match()` does not. An entity records the query it sent as its
+  match, less the parameter `prepareAuth` placed: a caller copying the match
+  into another query, a cache key or a fixture must not carry the key with it.
 - A feature author has one rule: what you emit, you `clean`.
 
 ### Enforcement

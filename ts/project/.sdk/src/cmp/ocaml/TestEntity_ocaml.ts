@@ -3,6 +3,7 @@ import {
   Content,
   File,
   cmp,
+  opReachable,
 } from '@voxgig/sdkgen'
 
 import { ocamlString, ocamlVarName } from './utility_ocaml'
@@ -17,9 +18,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const { target, entity } = props
 
   const fn = ocamlVarName(entity.name)
-  const opnames = Object.keys(entity.op || {})
-  const hasList = opnames.includes('list')
-  const hasLoad = opnames.includes('load')
+  const hasList = opReachable(entity.op?.list, [])
+  const hasLoad = opReachable(entity.op?.load, ['id'])
   const hasId = null != entity.id
   const id = entity.name + '01'
 

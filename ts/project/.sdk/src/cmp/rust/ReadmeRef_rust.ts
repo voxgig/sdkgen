@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -251,6 +251,10 @@ let ${eVar} = client.${method}(Value::Noval);
 ${info.desc}
 
 `)
+
+          if (opNeedsAction(ent.op[opname])) {
+            return
+          }
 
           if ('load' === opname || 'remove' === opname) {
             const matchItems = opRequestShape(ent, opname).items

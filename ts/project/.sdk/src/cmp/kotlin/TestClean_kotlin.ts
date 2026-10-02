@@ -264,7 +264,7 @@ class CleanTest {
   )
 
   private fun makeSdk(scenario: Scenario, sinks: MutableList<Sink>, cleanopts: Map<String, Any?>?,
-    vararg extra: BaseFeature): ${SDK} {
+    vararg extra: BaseFeature, auth: MutableMap<String, Any?>? = null): ${SDK} {
     val capture = { name: String -> Consumer<Any?> { rec -> sinks.addAll(surfaces(name, rec)) } }
 
     val feature = linkedMapOf<String, Any?>()
@@ -312,6 +312,9 @@ class CleanTest {
     opts["feature"] = feature
     opts["extend"] = mutableListOf<Any?>(CaptureFeature(sinks), *extra)
     opts["utility"] = linkedMapOf<String, Any?>("fetcher" to fetcher)
+    if (auth != null) {
+      opts["auth"] = auth
+    }
     return ${SDK}(opts)
   }
 
@@ -407,10 +410,11 @@ class CleanTest {
   private fun drive(sdk: ${SDK}, target: Target, ctrl: MutableMap<String, Any?>?, sinks: MutableList<Sink>): Throwable? {
     // A caller may keep the record it passed rather than read ctrl's entry.
     val held = ctrl?.get("explain")
+    val entity = entityOf(sdk, target.accessor)!!
     var out: Any? = null
     var err: Throwable? = null
     try {
-      out = call(entityOf(sdk, target.accessor)!!, target.op, target.match, ctrl)
+      out = call(entity, target.op, target.match, ctrl)
     } catch (e: Throwable) {
       err = e
     }
@@ -420,6 +424,8 @@ class CleanTest {
     if (out != null) {
       sinks.addAll(surfaces("result", out))
     }
+    // Raw, as a caller copying the match into another query reads it.
+    sinks.addAll(surfaces("match", entity.match()))
     val explain = ctrl?.get("explain")
     if (explain != null) {
       sinks.addAll(surfaces("explain", explain))
@@ -458,6 +464,11 @@ class CleanTest {
         sinks.addAll(surfaces("sdk", sdk))
       }
     }
+
+    // A name given at run time replaces the declared one: the match leaves
+    // out whichever name prepareAuth placed.
+    drive(makeSdk(scenarios[0], sinks, null, auth = linkedMapOf<String, Any?>("name" to "zzcred")),
+      target, null, sinks)
 
     // No clean option at all: the schema defaults still apply.
     val bareFetch: (Context, String, MutableMap<String, Any?>) -> Any? =

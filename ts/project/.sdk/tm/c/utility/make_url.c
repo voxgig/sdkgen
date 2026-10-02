@@ -15,6 +15,28 @@ static char* str_append(char* buf, const char* add) {
   return nb;
 }
 
+// The {name} placeholders in a text, joined with a comma, malloc'd, or NULL
+// when there are none.
+static char* placeholders(const char* text) {
+  char* out = NULL;
+  const char* at = text;
+  while (*at) {
+    size_t n = '{' == *at ? strcspn(at + 1, "{}/") : 0;
+    if (0 < n && '}' == at[1 + n]) {
+      if (NULL != out) out = str_append(out, ", ");
+      size_t ol = NULL == out ? 0 : strlen(out);
+      out = (char*)realloc(out, ol + n + 3);
+      memcpy(out + ol, at, n + 2);
+      out[ol + n + 2] = '\0';
+      at += n + 2;
+    }
+    else {
+      at++;
+    }
+  }
+  return out;
+}
+
 char* make_url_util(Context* ctx, PNError** err) {
   *err = NULL;
   Spec* spec = ctx->spec;
@@ -72,6 +94,20 @@ char* make_url_util(Context* ctx, PNError** err) {
     }
   }
 
+  // A placeholder left in the route would send the request to the wrong route.
+  // The base's own placeholders are server variables, resolved with the options.
+  size_t blen = NULL == spec->base ? 0 : strlen(spec->base);
+  while (0 < blen && '/' == spec->base[blen - 1]) blen--;
+  char* unfilled = placeholders(0 == strncmp(url, NULL == spec->base ? "" : spec->base, blen) ? url + blen : url);
+  if (NULL != unfilled) {
+    char buf[512];
+    snprintf(buf, sizeof(buf), "URL path has no value for %s.", unfilled);
+    free(unfilled);
+    free(url);
+    *err = context_make_error(ctx, "url_param_missing", buf);
+    return NULL;
+  }
+
   // Query string.
   const char* qsep = "?";
   if (voxgig_is_map(spec->query)) {
@@ -90,7 +126,8 @@ char* make_url_util(Context* ctx, PNError** err) {
         free(eval);
         url = str_append(url, frag);
         qsep = "&";
-        setp(resmatch, key, v_share(val));
+        // Sent with the request, never recorded as the entity's match.
+        if (!spec_authquery_has(spec, key)) setp(resmatch, key, v_share(val));
       }
     }
   }

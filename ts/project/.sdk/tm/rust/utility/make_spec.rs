@@ -94,7 +94,25 @@ pub fn make_spec_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ProjectNam
         }
     }
 
+    // Whatever prepare_auth sets in the query, under whichever name, is the
+    // credential; a key it leaves as it was is the caller's.
+    let query: Vec<(String, Value)> = match &spec.borrow().query {
+        Value::Map(qm) => qm.borrow().iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+        _ => Vec::new(),
+    };
+
     let spec = crate::utility::prepare_auth::prepare_auth_util(ctx)?;
+
+    let authquery: Vec<String> = match &spec.borrow().query {
+        Value::Map(qm) => qm
+            .borrow()
+            .iter()
+            .filter(|(k, v)| !query.iter().any(|(qk, qv)| qk == *k && qv == *v))
+            .map(|(k, _)| k.clone())
+            .collect(),
+        _ => Vec::new(),
+    };
+    spec.borrow_mut().authquery = authquery;
 
     *ctx.spec.borrow_mut() = Some(spec.clone());
     Ok(spec)

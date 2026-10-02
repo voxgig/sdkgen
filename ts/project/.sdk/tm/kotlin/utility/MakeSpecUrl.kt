@@ -80,7 +80,16 @@ fun makeSpec(ctx: Context): Spec {
     ctx.ctrl.explain!!["spec"] = spec
   }
 
+  // Whatever prepareAuth sets in the query, under whichever name, is the
+  // credential; a key it leaves as it was is the caller's.
+  val query = LinkedHashMap(spec.query)
+
   val authed = utility.prepareAuth(ctx)
+
+  authed.authquery = authed.query.entries
+    .filter { !query.containsKey(it.key) || query[it.key] != it.value }
+    .map { it.key }
+    .toMutableList()
 
   ctx.spec = authed
   return authed
@@ -114,6 +123,9 @@ fun makeUrl(ctx: Context): String {
 
   val resmatch = linkedMapOf<String, Any?>()
 
+  // Sent with the request, never recorded as the entity's match.
+  val authquery = spec.authquery
+
   val params = spec.params
   for (item in Struct.items(params)) {
     val key = if (item[0] is String) item[0] as String else ""
@@ -125,6 +137,14 @@ fun makeUrl(ctx: Context): String {
     }
   }
 
+  // A placeholder left in the route would send the request to the wrong route.
+  // The base's own placeholders are server variables, resolved with the options.
+  val route = url.removePrefix(spec.base.trimEnd('/'))
+  val unfilled = Regex("\\{[^{}/]+\\}").findAll(route).map { it.value }.toList()
+  if (unfilled.isNotEmpty()) {
+    throw ctx.makeError("url_param_missing", "URL path has no value for " + unfilled.joinToString(", ") + ".")
+  }
+
   // Append query string from spec.query.
   var qsep = "?"
   for (item in Struct.items(spec.query)) {
@@ -133,7 +153,9 @@ fun makeUrl(ctx: Context): String {
     if (v != null) {
       url += qsep + Struct.escurl(key) + "=" + Struct.escurl(Struct.stringify(v))
       qsep = "&"
-      resmatch[key] = v
+      if (!authquery.contains(key)) {
+        resmatch[key] = v
+      }
     }
   }
 

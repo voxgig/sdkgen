@@ -1,7 +1,12 @@
 # ProjectName SDK utility: make_url
 
 from __future__ import annotations
+import re
+
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
+
+
+_PLACEHOLDER = re.compile(r"\{[^{}/]+\}")
 
 
 def make_url_util(ctx):
@@ -17,6 +22,9 @@ def make_url_util(ctx):
 
     url = vs.join([spec.base, spec.prefix, spec.path, spec.suffix], "/", True)
     resmatch = {}
+
+    # Sent with the request, never recorded as the entity's match.
+    authquery = getattr(spec, "authquery", None) or []
 
     # A route the definition ends with a slash keeps it: a server such as a
     # Django REST one redirects or refuses the route without it.
@@ -36,6 +44,15 @@ def make_url_util(ctx):
                 url = url.replace("{" + key + "}", encoded)
                 resmatch[key] = val
 
+    # A placeholder left in the route would send the request to the wrong route.
+    # The base's own placeholders are server variables, resolved with the options.
+    base = spec.base.rstrip("/") if isinstance(spec.base, str) else ""
+    route = url[len(base):] if url.startswith(base) else url
+    unfilled = _PLACEHOLDER.findall(route)
+    if 0 < len(unfilled):
+        return "", ctx.make_error("url_param_missing",
+            "URL path has no value for " + ", ".join(unfilled) + ".")
+
     # Append query string from spec.query.
     qsep = "?"
     query_items = vs.items(getattr(spec, "query", None))
@@ -47,7 +64,8 @@ def make_url_util(ctx):
                 val_str = val if isinstance(val, str) else str(val)
                 url += qsep + vs.escurl(key) + "=" + vs.escurl(val_str)
                 qsep = "&"
-                resmatch[key] = val
+                if key not in authquery:
+                    resmatch[key] = val
 
     result.resmatch = resmatch
 

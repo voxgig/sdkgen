@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, entityIdField, opRequestShape, opNeedsAction } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -66,6 +66,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
   publishedEntities.map((entity: any) => {
     const opnames = Object.keys(entity.op || {})
+    // An op that needs an action has no plain call to show.
+    const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
     const fields = Object.values(entity.fields || {})
     const idF = entityIdField(entity)
     const eVar = zigVarName(entity.name)
@@ -124,7 +126,7 @@ carries the result \`Value\`, \`.err => |e|\` carries the branded error.
 `)
     }
 
-    if (opnames.includes('load')) {
+    if (callable.includes('load')) {
       const loadItems = opRequestShape(entity, 'load').items
         .filter((it: any) => !it.optional || it.name === idF)
         .sort((a: any, b: any) =>
@@ -146,7 +148,7 @@ switch (client.${method}(h.vnull()).load(${loadArg}, h.vnull())) {
 `)
     }
 
-    if (opnames.includes('list')) {
+    if (callable.includes('list')) {
       Content(`#### Example: List
 
 \`\`\`zig
@@ -159,7 +161,7 @@ switch (client.${method}(h.vnull()).list(h.vnull(), h.vnull())) {
 `)
     }
 
-    if (opnames.includes('create')) {
+    if (callable.includes('create')) {
       const createItems = opRequestShape(entity, 'create').items
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create

@@ -402,6 +402,51 @@ describe('definitionPlan', () => {
     const off = { ...MODEL, main: { kit: { ...MODEL.main.kit, config: { auth: { active: false } } } } }
     ok(definitionPlan({ ...ctx$, model: off }).every((p: any) => null === p.auth))
   })
+
+  // open-meteo applies its query key scheme to no operation, openfda makes it
+  // optional and ip-data applies it. The client sends the key to all three.
+  test('the query parameter the SDK sends its key in is planned, applied or not', () => {
+    const answers = { responses: { '200': { content: { 'application/json': { example: [] } } } } }
+    const def = { ...DEF, security: undefined,
+      components: { securitySchemes: {
+        ApiKeyAuth: { type: 'apiKey', in: 'query', name: 'apikey' },
+      } },
+      paths: {
+        '/forecast': { get: answers },
+        '/label': { get: { ...answers, security: [{}, { ApiKeyAuth: [] }] } },
+        '/info': { get: { ...answers, security: [{ ApiKeyAuth: [] }] } },
+      } }
+    const list = (o: string) => ({ list: { points: [{ m: 'GET', o }] } })
+    const plan = (kit: any) => definitionPlan({ model: { main: { kit: {
+      info: { security: { scheme: 'ApiKeyAuth', type: 'apiKey', in: 'query', name: 'apikey' } },
+      entity: {
+        forecast: { name: 'forecast', id: { field: 'id' }, op: list('/forecast') },
+        label: { name: 'label', id: { field: 'id' }, op: list('/label') },
+        info: { name: 'info', id: { field: 'id' }, op: list('/info') },
+      },
+      ...kit,
+    } } }, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    const by = (points: any[]) =>
+      Object.fromEntries(points.map((p: any) => [p.entity, [p.auth, p.ownQuery]]))
+
+    deepStrictEqual(by(plan({})), {
+      forecast: [[], 'apikey'],
+      label: [[], 'apikey'],
+      info: [[[{ in: 'query', name: 'apikey' }]], 'apikey'],
+    })
+
+    // The name prepareAuth places: the project's own, where it gives one.
+    ok(plan({ config: { auth: { in: 'query', name: 'key' } } })
+      .every((p: any) => 'key' === p.ownQuery))
+    // A model that says `auth: false` is not checked for a credential, and
+    // its prepareAuth still sends one.
+    ok(plan({ info: { auth: false, security: { in: 'query', name: 'apikey' } } })
+      .every((p: any) => null === p.auth && 'apikey' === p.ownQuery))
+    ok(plan({ config: { auth: { active: false } } }).every((p: any) => undefined === p.ownQuery))
+    ok(definitionPlan(ctx$).every((p: any) => undefined === p.ownQuery))
+  })
 })
 
 
@@ -417,7 +462,7 @@ function loadRunner(): any {
 // An SDK stand-in whose behaviour is a switch, so each defect the runner
 // exists to catch can be switched on alone.
 function fakeSDK(defect: '' | 'basic-blank' | 'basic-password' | 'unwrap' | 'query-echo' |
-  'query-name' | 'query-drop' | 'header-query' | 'header-drop') {
+  'query-name' | 'query-drop' | 'header-query' | 'header-drop', keyQuery?: string) {
   return class {
     opts: any
     constructor(opts: any) { this.opts = opts }
@@ -425,6 +470,7 @@ function fakeSDK(defect: '' | 'basic-blank' | 'basic-password' | 'unwrap' | 'que
     Address() {
       const opts = this.opts
       const send = async (method: string, path: string, match: any, query: any) => {
+        if (null != keyQuery) query = { ...query, [keyQuery]: opts.apikey }
         const headers: any = {}
         if ('basic-blank' !== defect) {
           const pass = 'basic-password' === defect ? 'x' : ''
@@ -509,6 +555,30 @@ for (const [lang, runner] of [
     test('catches a path parameter echoed into the query', async () => {
       await rejects(runDefinitionPoint(fakeSDK('query-echo'), point('load')),
         /query parameter not in the definition: id/)
+    })
+
+    // open-meteo's operations apply no scheme, and its client still sends
+    // the key under the name its scheme declares.
+    test('the key the client sends in the query passes where no scheme applies', async () => {
+      const p = { ...point('load'), auth: [], ownQuery: 'apikey' }
+      await runDefinitionPoint(fakeSDK('', 'apikey'), p)
+      await rejects(runDefinitionPoint(fakeSDK('', 'apikey'), { ...p, ownQuery: undefined }),
+        /query parameter not in the definition: apikey/)
+    })
+
+    test('catches any other undeclared parameter beside the key', async () => {
+      const p = { ...point('load'), auth: [], ownQuery: 'apikey' }
+      await rejects(runDefinitionPoint(fakeSDK('', 'api_key'), p),
+        /query parameter not in the definition: api_key/)
+      await rejects(runDefinitionPoint(fakeSDK('query-echo', 'apikey'), p),
+        /query parameter not in the definition: id/)
+    })
+
+    test('the key stands in for no declared argument a list must send', async () => {
+      const p = { ...point('list'), auth: [], ownQuery: 'apikey' }
+      await runDefinitionPoint(fakeSDK('', 'apikey'), p)
+      await rejects(runDefinitionPoint(fakeSDK('query-drop', 'apikey'), p),
+        /query parameter not sent: limit/)
     })
 
     const withHeader = () => ({ ...point('load'),

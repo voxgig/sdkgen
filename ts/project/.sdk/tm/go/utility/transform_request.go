@@ -14,7 +14,7 @@ func transformRequestUtil(ctx *core.Context) any {
 		spec.Step = "reqform"
 	}
 
-	data := omitKeys(ctx.Reqdata, headerArgNames(point))
+	data := omitKeys(ctx.Reqdata, routedArgNames(ctx))
 
 	transform := core.ToMapAny(vs.GetProp(point, "transform"))
 	if transform == nil {
@@ -47,16 +47,13 @@ func stripAction(reqdata any) any {
 	return omitKeys(reqdata, []string{"$action"})
 }
 
-// A header argument travels as a header, which prepareHeadersUtil sends, so
-// the body is built from the request data without it.
-func headerArgNames(point any) []string {
+// A header or query argument travels where prepareHeadersUtil or
+// prepareQueryUtil sends it, so the body is built from the request data
+// without it.
+func routedArgNames(ctx *core.Context) []string {
 	names := []string{}
-	if hl, ok := vs.GetPath(point, []any{"args", "header"}).([]any); ok {
-		for _, hd := range hl {
-			if name, _ := vs.GetProp(hd, "name").(string); "" != name {
-				names = append(names, name)
-			}
-		}
+	for _, arg := range append(callArgs(ctx, "header"), callArgs(ctx, "query")...) {
+		names = append(names, arg.name)
 	}
 	return names
 }

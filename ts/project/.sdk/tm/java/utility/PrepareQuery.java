@@ -74,6 +74,13 @@ final class PrepareQuery {
       }
     }
 
+    // A create or update passes its query arguments in its data.
+    for (Param.CallArg arg : Param.callArgs(ctx, "query")) {
+      if (arg.val() != null && !containsStr(params, arg.name())) {
+        out.put(arg.wire(), arg.val());
+      }
+    }
+
     return out;
   }
 

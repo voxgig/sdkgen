@@ -64,6 +64,64 @@ object MakeError {
 }
 
 object MakePoint {
+  private val PathParam = "\\{([^{}/]+)\\}".r
+
+  // A terminal parameter marks a record route (/boards/{id}); a
+  // cross-reference ends in the relationship's name (/posts/{id}/author).
+  // Failing that, the shallower path wins. The same rule runs at generation
+  // time, in helpers/opShape.ts — both sides must move together.
+  private def partsLen(p: JMap[String, Object]): Int =
+    Struct.getprop(p, "parts") match {
+      case parts: JList[_] => parts.size()
+      case _ => 0
+    }
+
+  private def terminalParam(p: JMap[String, Object]): Boolean =
+    Struct.getprop(p, "parts") match {
+      case parts: JList[_] if parts.size() > 0 =>
+        parts.get(parts.size() - 1) match {
+          case s: String => s.startsWith("{")
+          case _ => false
+        }
+      case _ => false
+    }
+
+  private def ownPoint(points: Seq[JMap[String, Object]]): JMap[String, Object] = {
+    var best = points.head
+    for (cand <- points) {
+      val candTerm = terminalParam(cand)
+      val bestTerm = terminalParam(best)
+      if (candTerm != bestTerm) {
+        if (candTerm) best = cand
+      } else if (partsLen(cand) < partsLen(best)) {
+        best = cand
+      }
+    }
+    best
+  }
+
+  // The path parameters of a point that neither the call nor the entity gives
+  // a value for, looked up as param looks them up.
+  private def unfilled(ctx: Context, point: JMap[String, Object]): Seq[String] =
+    Struct.getprop(point, "parts") match {
+      case parts: JList[_] =>
+        val missing = scala.collection.mutable.ArrayBuffer[String]()
+        val it = parts.iterator()
+        while (it.hasNext) {
+          it.next() match {
+            case text: String =>
+              text match {
+                case PathParam(name) =>
+                  if (Param.value(ctx, point, name) == null) missing += name
+                case _ =>
+              }
+            case _ =>
+          }
+        }
+        missing.toSeq
+      case _ => Seq.empty
+    }
+
   def makePoint(ctx: Context): JMap[String, Object] = {
     val outPoint = ctx.out.get("point")
     if (outPoint != null) {
@@ -146,39 +204,25 @@ object MakePoint {
               Struct.stringify(unmatchedAction) + "\" is not valid.")
         }
 
-        // A terminal parameter marks a record route (/boards/{id}); a
-        // cross-reference ends in the relationship's name
-        // (/posts/{id}/author). Failing that, the shallower path wins. The
-        // same rule runs at generation time, in helpers/opShape.ts — both
-        // sides must move together.
-        def partsLen(p: JMap[String, Object]): Int =
-          Struct.getprop(p, "parts") match {
-            case parts: JList[_] => parts.size()
-            case _ => 0
-          }
-        def terminalParam(p: JMap[String, Object]): Boolean =
-          Struct.getprop(p, "parts") match {
-            case parts: JList[_] if parts.size() > 0 =>
-              parts.get(parts.size() - 1) match {
-                case s: String => s.startsWith("{")
-                case _ => false
-              }
-            case _ => false
-          }
-
-        point = op.points.get(0)
-        var j = 0
-        while (j < op.points.size()) {
-          val cand = op.points.get(j)
-          val candTerm = terminalParam(cand)
-          val bestTerm = terminalParam(point)
-          if (candTerm != bestTerm) {
-            if (candTerm) point = cand
-          } else if (partsLen(cand) < partsLen(point)) {
-            point = cand
-          }
-          j += 1
+        // A call without an action falls back to a point without one, as
+        // generation does, and only to a route the call can fill.
+        val all = (0 until op.points.size()).map(op.points.get(_))
+        val plain = all.filter(cand =>
+          Struct.getprop(Helpers.toMapAny(Struct.getprop(cand, "select")), "$action", null) == null)
+        if (plain.isEmpty) {
+          throw ctx.makeError("point_action_required",
+            "Operation \"" + op.name + "\" has only action endpoints; pass $action to choose one.")
         }
+
+        val fillable = plain.filter(cand => unfilled(ctx, cand).isEmpty)
+
+        if (fillable.isEmpty) {
+          throw ctx.makeError("point_no_match",
+            "Operation \"" + op.name + "\" has no endpoint whose path parameters are all given (missing: " +
+              unfilled(ctx, ownPoint(plain)).mkString(", ") + ").")
+        }
+
+        point = ownPoint(fillable)
       }
 
       if (reqselector != null) {
@@ -603,6 +647,10 @@ object MakeUrl {
 
     val resmatch = new LinkedHashMap[String, Object]()
 
+    // Sent with the request, never recorded as the entity's match.
+    val authquery: JList[String] =
+      if (spec.authquery == null) new java.util.ArrayList[String]() else spec.authquery
+
     val pit = Struct.items(spec.params).iterator()
     while (pit.hasNext) {
       val item = pit.next()
@@ -615,6 +663,14 @@ object MakeUrl {
       }
     }
 
+    // A placeholder left in the route would send the request to the wrong route.
+    // The base's own placeholders are server variables, resolved with the options.
+    val base = if (null == spec.base) "" else spec.base.replaceAll("/+$", "")
+    val unfilled = "\\{[^{}/]+\\}".r.findAllIn(url.stripPrefix(base)).toList
+    if (unfilled.nonEmpty) {
+      throw ctx.makeError("url_param_missing", "URL path has no value for " + unfilled.mkString(", ") + ".")
+    }
+
     var qsep = "?"
     val qit = Struct.items(spec.query).iterator()
     while (qit.hasNext) {
@@ -624,7 +680,7 @@ object MakeUrl {
       if (v != null) {
         url += qsep + Struct.escurl(key) + "=" + Struct.escurl(Struct.stringify(v))
         qsep = "&"
-        resmatch.put(key, v)
+        if (!authquery.contains(key)) resmatch.put(key, v)
       }
     }
 

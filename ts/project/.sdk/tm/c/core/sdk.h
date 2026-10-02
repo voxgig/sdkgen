@@ -201,10 +201,14 @@ struct Spec {
   voxgig_value* body;
   char* url;
   char* path;
+  // List: the query parameters prepare_auth placed, the credential the
+  // request sends and the entity's match leaves out.
+  voxgig_value* authquery;
 };
 
 Spec* spec_new(voxgig_value* specmap);
 voxgig_value* spec_to_value(Spec* s);
+bool spec_authquery_has(Spec* s, const char* key);
 // mutable string setters (free old, dup new)
 void spec_set_step(Spec* s, const char* v);
 void spec_set_method(Spec* s, const char* v);
@@ -515,6 +519,8 @@ voxgig_value* make_point_util(Context* ctx, PNError** err);
 Spec* make_spec_util(Context* ctx, PNError** err);
 char* make_url_util(Context* ctx, PNError** err); // malloc'd
 voxgig_value* param_util(Context* ctx, voxgig_value* paramdef);
+voxgig_value* param_value(Context* ctx, voxgig_value* point, const char* key);
+voxgig_value* call_args(Context* ctx, const char* kind); // list of [name, wire, val]
 Spec* prepare_auth_util(Context* ctx, PNError** err);
 voxgig_value* prepare_body_util(Context* ctx);
 voxgig_value* prepare_headers_util(Context* ctx);

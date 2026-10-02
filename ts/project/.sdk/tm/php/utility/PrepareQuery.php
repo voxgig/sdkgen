@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 // ProjectName SDK utility: prepare_query
 
+require_once __DIR__ . '/Param.php';
+
 class ProjectNamePrepareQuery
 {
     public static function call(ProjectNameContext $ctx): array
@@ -63,6 +65,12 @@ class ProjectNamePrepareQuery
                 if ($val !== null && is_string($key) && '$action' !== $key && !in_array($key, $params, true)) {
                     $out[$wire[$key] ?? $key] = $val;
                 }
+            }
+        }
+        // A create or update passes its query arguments in its data.
+        foreach (ProjectNameParam::callArgs($ctx, 'query') as [$name, $orig, $val]) {
+            if (null !== $val && !in_array($name, $params, true)) {
+                $out[$orig] = $val;
             }
         }
         return $out;
