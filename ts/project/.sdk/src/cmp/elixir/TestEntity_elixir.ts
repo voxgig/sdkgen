@@ -10,6 +10,7 @@ import {
   Content,
   File,
   cmp,
+  invalidRequest,
   opReachable,
 } from '@voxgig/sdkgen'
 
@@ -112,6 +113,92 @@ defmodule ${Name}.${EName}EntityTest do
     made = ${Name}.EntityBase.data_get(created)
     assert S.ismap(made)
     assert S.getprop(made, "id") != nil
+  end
+`)
+    }
+
+    if (hasList) {
+      Content(`
+  test "should report a failed stream" do
+    offline = S.jm(["net", S.jm(["offline", true])])
+
+    err =
+      assert_raise ${Name}.Error, fn ->
+        Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(${Name}.test(offline)), "list"))
+      end
+
+    assert String.contains?(Exception.message(err), "offline")
+
+    quiet = S.jm(["ctrl", S.jm(["throw", false])])
+    Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(${Name}.test(offline)), "list", nil, quiet))
+
+    if ${Name}.FeatureHarness.has_feature("rbac") do
+      denied = ${Name}.test(nil, S.jm(["feature", S.jm(["rbac", S.jm(["active", true, "deny", true])])]))
+
+      err =
+        assert_raise ${Name}.Error, fn ->
+          Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(denied), "list"))
+        end
+
+      assert err.code == "rbac_denied"
+    end
+  end
+
+  test "should leave the caller's ctrl" do
+    explain = S.jm([])
+    ctrl = S.jm(["explain", explain])
+    Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(${Name}.test()), "list", nil, S.jm(["ctrl", ctrl])))
+    assert S.keysof(ctrl) == ["explain"]
+    assert S.size(explain) > 0
+  end
+
+  test "should fire PreUnexpected" do
+    seen = S.jm(["n", 0])
+
+    hook =
+      S.jm([
+        "name", "failhook", "version", "0.0.1", "active", true, "options", S.jm([]),
+        "init", fn _ctx, _opts -> nil end,
+        "PreSpec", fn _ctx -> raise "${ename} hook failed" end,
+        "PreUnexpected", fn _ctx -> S.setprop(seen, "n", S.getprop(seen, "n") + 1) end
+      ])
+
+    client = ${Name}.new(S.jm(["feature", S.jm(["test", S.jm(["active", true])]), "extend", S.jt([hook])]))
+
+    err =
+      try do
+        ${Name}.Entity.${EName}.list(${Name}.${ename}(client), S.jm([]))
+        nil
+      rescue
+        e -> e
+      end
+
+    assert err != nil and String.contains?(Exception.message(err), "hook failed")
+    assert S.getprop(seen, "n") > 0
+
+    fired = S.getprop(seen, "n")
+    assert ${Name}.Entity.${EName}.list(${Name}.${ename}(client), S.jm([]), S.jm(["throw", false])) == nil
+    assert S.getprop(seen, "n") > fired
+  end
+`)
+    }
+
+    const bad = invalidRequest(entity)
+    if (null != bad) {
+      const args = Object.entries(bad.args)
+        .map(([k, v]) => JSON.stringify(k) + ', ' + JSON.stringify(v)).join(', ')
+      Content(`
+  test "should refuse an invalid request" do
+    if ${Name}.FeatureHarness.has_feature("validate") do
+      client = ${Name}.test(nil, S.jm(["feature", S.jm(["validate", S.jm(["active", true])])]))
+
+      err =
+        assert_raise ${Name}.Error, fn ->
+          ${Name}.Entity.${EName}.${bad.op}(${Name}.${ename}(client), S.jm([${args}]))
+        end
+
+      assert err.code == "validate_failed"
+    end
   end
 `)
     }

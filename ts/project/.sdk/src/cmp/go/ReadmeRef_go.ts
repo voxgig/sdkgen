@@ -356,6 +356,14 @@ Get or set the entity match criteria. Works the same as \`Data()\`.
 Create a new \`${ent.Name}Entity\` instance with the same client and
 options.
 
+#### \`Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem\`
+
+Run an operation through the pipeline and send its result items on the
+returned channel, which closes when the stream ends. A \`StreamItem\` holds
+one item in \`Item\`, or in \`Err\` the error that ended the stream: the
+error the operation itself would return, sent as the last value. Under
+\`throw: false\` in \`callopts["ctrl"]\`, no error is sent.
+
 #### \`GetName() string\`
 
 Return the entity name.

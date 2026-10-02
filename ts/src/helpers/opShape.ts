@@ -332,13 +332,13 @@ const WELLTYPED: Record<string, any> = {
 }
 
 
-// A request the validate feature rejects: the first operation whose request
-// has a scalar-typed item, that item mistyped and every other required one
-// filled, so the call still resolves its route.
+// A request the validate feature rejects: the first generated operation whose
+// request has a scalar-typed item, that item mistyped and every other required
+// one filled, so the call still resolves its route.
 function invalidRequest(ent: any):
   { op: string, field: string, args: Record<string, any> } | null {
 
-  for (const opname of entityOps(ent)) {
+  for (const opname of entityOps(ent).filter((o) => CANON_OP_ORDER.includes(o))) {
     const { items } = opRequestShape(ent, opname)
     const bad = items.find((it: OpShapeItem) => null != MISTYPED[canonKey(it.type)])
     if (null == bad) {
