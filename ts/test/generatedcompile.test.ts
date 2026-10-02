@@ -1526,6 +1526,29 @@ namespace {
     })
 
 
+  // `php -l` reads one file at a time, and PHP checks an override against
+  // its parent only when the class loads.
+  test('php: an SDK with every feature active loads', async (t) => {
+    const php = toolchain('php')
+    if (null == php) {
+      return t.skip('no php toolchain here')
+    }
+
+    const features = Fs.readdirSync(Path.join(SCAFFOLD, 'model', 'feature'))
+      .filter((f: string) => f.endsWith('.aontu') && 'feature-index.aontu' !== f)
+      .map((f: string) => f.replace(/\.aontu$/, ''))
+    const sdkroot = Path.join(tmp, 'php-every-feature')
+    await generateTo('php', sdkroot,
+      features.map((f: string) => 'main: kit: feature: ' + f + ': active: true').join('\n'),
+      features)
+
+    const load = run(php, ['-r',
+      'require "demo_sdk.php"; echo count(get_declared_classes()), " classes\\n";'], sdkroot)
+    ok(load.ok && /\d+ classes/.test(load.out),
+      'the php SDK does not load with every feature active:\n' + tail(load.out))
+  })
+
+
   test('clojure: the secrets feature runs with the feature active', async (t) => {
     const clj = toolchain('clojure')
     if (null == clj) {
