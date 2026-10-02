@@ -52,7 +52,7 @@ const EXTRA_ENTITIES = CREATELESS_ENTITY +
   actionEntity('v2020', [{ path: 'weather' }, { action: 'reset', path: 'reset', method: 'POST', bare: true }])
 
 function skipped(output: string): number {
-  const found = output.match(/(?:^# skip|\u2139 skipped) (\d+)/m)
+  const found = output.match(/(?:^# skipped|\u2139 skipped) (\d+)/m)
   return null == found ? 0 : Number(found[1])
 }
 
