@@ -4,6 +4,7 @@ use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
 use crate::core::helpers::{getp, getpath, to_map};
 use crate::core::types::OutVal;
+use crate::utility::make_url::placeholders;
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
@@ -26,6 +27,55 @@ fn terminal_param(point: &Value) -> bool {
         }
         _ => false,
     }
+}
+
+fn own_point(points: &[Value]) -> Value {
+    let mut best = points[0].clone();
+    for cand in points {
+        let cand_term = terminal_param(cand);
+        let best_term = terminal_param(&best);
+        if cand_term != best_term {
+            if cand_term {
+                best = cand.clone();
+            }
+        } else if parts_len(cand) < parts_len(&best) {
+            best = cand.clone();
+        }
+    }
+    best
+}
+
+// The path parameters of a point that neither the call nor the entity gives a
+// value for, looked up where prepare_params_util looks.
+fn unfilled(ctx: &Rc<Context>, point: &Value) -> Vec<String> {
+    let sources = [
+        ctx.reqmatch.borrow().clone(),
+        ctx.mtch.borrow().clone(),
+        ctx.reqdata.borrow().clone(),
+        ctx.data.borrow().clone(),
+    ];
+    let mut missing = Vec::new();
+    if let Value::List(pl) = getp(point, "parts") {
+        for part in pl.borrow().iter() {
+            let text = match part {
+                Value::Str(s) => s,
+                _ => continue,
+            };
+            let found = placeholders(text);
+            if 1 != found.len() || found[0] != *text {
+                continue;
+            }
+            let name = &text[1..text.len() - 1];
+            let given = sources.iter().any(|src| {
+                let val = getp(src, name);
+                !val.is_noval() && !val.is_null()
+            });
+            if !given {
+                missing.push(name.to_string());
+            }
+        }
+    }
+    missing
 }
 
 pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
@@ -133,19 +183,32 @@ pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
                 ));
             }
 
-            point = vs::get_elem(&points, &Value::Num(0.0), Value::Noval);
-            for i in 0..plen {
-                let cand = vs::get_elem(&points, &Value::Num(i as f64), Value::Noval);
-                let cand_term = terminal_param(&cand);
-                let best_term = terminal_param(&point);
-                if cand_term != best_term {
-                    if cand_term {
-                        point = cand;
-                    }
-                } else if parts_len(&cand) < parts_len(&point) {
-                    point = cand;
-                }
+            // A call without an action falls back to a point without one, as
+            // generation does, and only to a route the call can fill.
+            let all: Vec<Value> = (0..plen)
+                .map(|i| vs::get_elem(&points, &Value::Num(i as f64), Value::Noval))
+                .collect();
+            let plain: Vec<Value> = all
+                .iter()
+                .filter(|cand| getp(&to_map(&getp(cand, "select")), "$action").is_noval())
+                .cloned()
+                .collect();
+            let pool = if plain.is_empty() { all } else { plain };
+            let fillable: Vec<Value> =
+                pool.iter().filter(|cand| unfilled(ctx, cand).is_empty()).cloned().collect();
+
+            if fillable.is_empty() {
+                return Err(ctx.make_error(
+                    "point_no_match",
+                    &format!(
+                        "Operation \"{}\" has no endpoint whose path parameters are all given (missing: {}).",
+                        op.name,
+                        unfilled(ctx, &own_point(&pool)).join(", ")
+                    ),
+                ));
             }
+
+            point = own_point(&fillable);
         }
 
         let req_action = getp(&reqselector, "$action");

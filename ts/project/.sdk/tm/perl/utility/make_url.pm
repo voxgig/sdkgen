@@ -48,6 +48,11 @@ $REGISTRY{make_url} = sub {
     }
   }
 
+  # A placeholder left in the path would send the request to the wrong route.
+  my @unfilled = $url =~ /(\{[^{}\/]+\})/g;
+  return ('', $ctx->make_error('url_param_missing',
+    'URL path has no value for ' . join(', ', @unfilled) . '.')) if @unfilled;
+
   # Append query string from spec.query.
   my $qsep = '?';
   my $query_items = Voxgig::Struct::items($spec->{query});

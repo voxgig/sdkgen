@@ -42,9 +42,15 @@ function makeUrl(ctx: Context): Error | string {
     }
   }
 
+  // A placeholder left in the path would send the request to the wrong route.
+  const unfilled = url.match(/\{[^{}\/]+\}/g)
+  if (null != unfilled) {
+    return ctx.error('url_param_missing', 'URL path has no value for ' + unfilled.join(', ') + '.')
+  }
+
 
   // Append query string from spec.query. Entity ops populate this via
-  // PrepareQueryUtility from the operation's reqmatch; direct() callers
+  // PrepareQueryUtility from the operation's arguments; direct() callers
   // pass it as fetchargs.query.
   let qsep = '?'
   for (let [key, val] of items(spec.query)) {

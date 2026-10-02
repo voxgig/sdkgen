@@ -1,4 +1,6 @@
 
+const { callArgs } = require('./ParamUtility')
+
 function prepareQuery(ctx) {
   const utility = ctx.utility
   const struct = utility.struct
@@ -31,6 +33,13 @@ function prepareQuery(ctx) {
   for (let [key, val] of items(reqmatch)) {
     if (null != val && '$action' !== key && !inpath.includes(key)) {
       out[null == wire[key] ? key : wire[key]] = val
+    }
+  }
+
+  // A create or update passes its query arguments in its data.
+  for (const arg of callArgs(ctx, 'query')) {
+    if (null != arg.val && !inpath.includes(arg.name)) {
+      out[arg.wire] = arg.val
     }
   }
 

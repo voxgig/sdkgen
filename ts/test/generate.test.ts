@@ -388,9 +388,13 @@ describe('generate', () => {
       const emitted = findFile(out, 'utility/TransformRequestUtility.js')
       ok(null != emitted, 'the js request transform was not generated')
 
+      const param = findFile(out, 'utility/ParamUtility.js')
+      ok(null != param, 'the js parameter utility was not generated')
+
       const tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-xreq-'))
       const file = Path.join(tmp, 'TransformRequestUtility.js')
       writeFileSync(file, emitted as string)
+      writeFileSync(Path.join(tmp, 'ParamUtility.js'), param as string)
       const { transformRequest } = require(file)
 
       const run = (reqdata: any) => transformRequest({

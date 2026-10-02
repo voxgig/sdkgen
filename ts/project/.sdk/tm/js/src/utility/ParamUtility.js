@@ -56,6 +56,27 @@ function param(ctx, paramdef) {
   return val
 }
 
+
+// The arguments a point declares in one location, query or header, each with
+// the name it travels under and the value this call passes in its match or
+// else its data. Unlike a path parameter, the entity's stored match and data
+// never supply one.
+function callArgs(ctx, kind) {
+  const getprop = ctx.utility.struct.getprop
+  const declared = (ctx.point && ctx.point.args && ctx.point.args[kind]) || []
+  const out = []
+
+  for (const arg of declared) {
+    if (null == arg || 'string' !== typeof arg.name || '' === arg.name) continue
+    let val = getprop(ctx.reqmatch, arg.name)
+    if (null == val) val = getprop(ctx.reqdata, arg.name)
+    out.push({ name: arg.name, wire: String(arg.orig || arg.name), val })
+  }
+
+  return out
+}
+
 module.exports = {
-  param
+  param,
+  callArgs,
 }

@@ -638,6 +638,19 @@ inline std::string makeUrl(CtxPtr ctx) {
     }
   }
 
+  // A placeholder left in the path would send the request to the wrong route.
+  std::string unfilled;
+  for (size_t at = url.find('{'); std::string::npos != at; at = url.find('{', at + 1)) {
+    size_t end = url.find_first_of("{}/", at + 1);
+    if (std::string::npos != end && '}' == url[end] && end > at + 1) {
+      unfilled += (unfilled.empty() ? "" : ", ") + url.substr(at, end - at + 1);
+      at = end;
+    }
+  }
+  if (!unfilled.empty()) {
+    throw ctx->makeError("url_param_missing", "URL path has no value for " + unfilled + ".");
+  }
+
   std::string qsep = "?";
   for (const auto& item : Struct::items(spec->query)) {
     std::string key = as_str(pair_key(item));
@@ -654,6 +667,27 @@ inline std::string makeUrl(CtxPtr ctx) {
 }
 
 // ---- makePoint --------------------------------------------------------
+
+// The path parameters of a point that neither the call nor the entity gives a
+// value for, looked up where param looks.
+inline std::vector<std::string> unfilledParams(CtxPtr ctx, const Value& point) {
+  std::vector<std::string> missing;
+  Value parts = getp(point, "parts");
+  if (!parts.is_list()) return missing;
+  for (const auto& part : *parts.as_list()) {
+    if (!part.is_string()) continue;
+    const std::string& text = part.as_string();
+    if (text.size() < 3 || '{' != text.front() ||
+        text.size() - 1 != text.find_first_of("{}/", 1) || '}' != text.back()) continue;
+    std::string name = text.substr(1, text.size() - 2);
+    bool given = false;
+    for (const Value* src : {&ctx->reqmatch, &ctx->match, &ctx->reqdata, &ctx->data}) {
+      given = given || !is_nullish(getp(*src, name, Value(nullptr)));
+    }
+    if (!given) missing.push_back(name);
+  }
+  return missing;
+}
 
 inline Value makePoint(CtxPtr ctx) {
   // A PrePoint feature hook (e.g. rbac) may short-circuit by storing an
@@ -761,18 +795,46 @@ inline Value makePoint(CtxPtr ctx) {
         return last.is_string() && 0 == last.as_string().rfind("{", 0);
       };
 
-      point = op->points[0];
-      for (size_t i = 0; i < op->points.size(); i++) {
-        const Value& cand = op->points[i];
-        bool candTerm = terminalParam(cand);
-        bool bestTerm = terminalParam(point);
-        if (candTerm != bestTerm) {
-          if (candTerm) point = cand;
+      auto ownPoint = [&](const std::vector<Value>& points) {
+        Value best = points[0];
+        for (const auto& cand : points) {
+          bool candTerm = terminalParam(cand);
+          bool bestTerm = terminalParam(best);
+          if (candTerm != bestTerm) {
+            if (candTerm) best = cand;
+          }
+          else if (partsLen(cand) < partsLen(best)) {
+            best = cand;
+          }
         }
-        else if (partsLen(cand) < partsLen(point)) {
-          point = cand;
+        return best;
+      };
+
+      // A call without an action falls back to a point without one, as
+      // generation does, and only to a route the call can fill.
+      std::vector<Value> pool;
+      for (const auto& cand : op->points) {
+        if (getp(Helpers::toMapAny(getp(cand, "select")), "$action", Value(nullptr)).is_null()) {
+          pool.push_back(cand);
         }
       }
+      if (pool.empty()) pool = op->points;
+      std::vector<Value> fillable;
+      for (const auto& cand : pool) {
+        if (unfilledParams(ctx, cand).empty()) fillable.push_back(cand);
+      }
+
+      if (fillable.empty()) {
+        std::string missing;
+        for (const auto& name : unfilledParams(ctx, ownPoint(pool))) {
+          missing += (missing.empty() ? "" : ", ") + name;
+        }
+        throw ctx->makeError("point_no_match",
+            "Operation \"" + op->name +
+            "\" has no endpoint whose path parameters are all given (missing: " + missing + ").");
+      }
+
+      point = ownPoint(fillable);
     }
 
     if (reqselector.is_map()) {
@@ -1262,6 +1324,37 @@ inline Value prepareBody(CtxPtr ctx) {
   return Value::undef();
 }
 
+// ---- callArgs ---------------------------------------------------------
+
+// One argument a point declares, with the name it travels under and the
+// value the call passes for it.
+struct CallArg {
+  std::string name;
+  std::string wire;
+  Value val;
+};
+
+// The arguments a point declares in one location, query or header, each with
+// the name it travels under and the value this call passes in its match or
+// else its data. Unlike a path parameter, the entity's stored match and data
+// never supply one.
+inline std::vector<CallArg> callArgs(CtxPtr ctx, const std::string& kind) {
+  std::vector<CallArg> out;
+  Value defs = ctx->point.is_map() ? getp(getp(ctx->point, "args"), kind) : Value::undef();
+  if (!defs.is_list()) return out;
+  for (const auto& ad : *defs.as_list()) {
+    Value name = getp(ad, "name");
+    if (!name.is_string() || name.as_string().empty()) continue;
+    Value orig = getp(ad, "orig");
+    std::string wire = orig.is_string() && !orig.as_string().empty() ?
+      orig.as_string() : name.as_string();
+    Value val = getp(ctx->reqmatch, name.as_string(), Value(nullptr));
+    if (is_nullish(val)) val = getp(ctx->reqdata, name.as_string(), Value(nullptr));
+    out.push_back({name.as_string(), wire, val});
+  }
+  return out;
+}
+
 // ---- prepareHeaders ---------------------------------------------------
 
 inline Value prepareHeaders(CtxPtr ctx) {
@@ -1270,30 +1363,19 @@ inline Value prepareHeaders(CtxPtr ctx) {
   Value out = is_nullish(headers) ? vmap() : Helpers::toMapAny(Struct::clone(headers));
   if (!out.is_map()) out = vmap();
 
-  // A header parameter travels as a header, under the name the definition
-  // gives it, and only from this call's own arguments. It replaces a default
-  // of the same name, whatever its case.
+  // A header argument replaces a default of the same name, whatever its case.
   auto lower = [](std::string s) {
     for (auto& ch : s) ch = (char)std::tolower((unsigned char)ch);
     return s;
   };
-  Value aheader = ctx->point.is_map() ? getp(getp(ctx->point, "args"), "header") : Value::undef();
-  if (aheader.is_list()) {
-    for (const auto& hd : *aheader.as_list()) {
-      Value name = getp(hd, "name");
-      if (!name.is_string() || name.as_string().empty()) continue;
-      Value orig = getp(hd, "orig");
-      std::string wire = lower(orig.is_string() && !orig.as_string().empty() ?
-        orig.as_string() : name.as_string());
-      Value val = getp(ctx->reqmatch, name.as_string(), Value(nullptr));
-      if (val.is_null()) val = getp(ctx->reqdata, name.as_string(), Value(nullptr));
-      if (is_nullish(val)) continue;
-      for (const auto& item : Struct::items(out)) {
-        std::string key = as_str(pair_key(item));
-        if (lower(key) == wire) out.as_map()->erase(key);
-      }
-      map_put(out, wire, Value(Struct::stringify(val)));
+  for (const auto& arg : callArgs(ctx, "header")) {
+    if (is_nullish(arg.val)) continue;
+    std::string wire = lower(arg.wire);
+    for (const auto& item : Struct::items(out)) {
+      std::string key = as_str(pair_key(item));
+      if (lower(key) == wire) out.as_map()->erase(key);
     }
+    map_put(out, wire, Value(Struct::stringify(arg.val)));
   }
   return out;
 }
@@ -1434,6 +1516,14 @@ inline Value prepareQuery(CtxPtr ctx) {
       map_put(out, wire_name(key), val);
     }
   }
+
+  // A create or update passes its query arguments in its data.
+  for (const auto& arg : callArgs(ctx, "query")) {
+    if (!is_nullish(arg.val) && !contains_str(params, arg.name) &&
+        !named(aparams, arg.name) && !named(aheader, arg.name)) {
+      map_put(out, arg.wire, arg.val);
+    }
+  }
   return out;
 }
 
@@ -1470,16 +1560,12 @@ inline Value omitKeys(const Value& reqdata, const std::vector<std::string>& name
 // the body is a copy without it. The caller's map is left untouched.
 inline Value stripAction(const Value& reqdata) { return omitKeys(reqdata, {"$action"}); }
 
-// A header argument travels as a header, which prepareHeaders sends, so the
-// body is built from the request data without it.
-inline std::vector<std::string> headerArgNames(CtxPtr ctx) {
+// A header or query argument travels where prepareHeaders or prepareQuery
+// sends it, so the body is built from the request data without it.
+inline std::vector<std::string> routedArgNames(CtxPtr ctx) {
   std::vector<std::string> names;
-  Value aheader = ctx->point.is_map() ? getp(getp(ctx->point, "args"), "header") : Value::undef();
-  if (aheader.is_list()) {
-    for (const auto& hd : *aheader.as_list()) {
-      Value name = getp(hd, "name");
-      if (name.is_string() && !name.as_string().empty()) names.push_back(name.as_string());
-    }
+  for (const char* kind : {"header", "query"}) {
+    for (const auto& arg : callArgs(ctx, kind)) names.push_back(arg.name);
   }
   return names;
 }
@@ -1487,7 +1573,7 @@ inline std::vector<std::string> headerArgNames(CtxPtr ctx) {
 inline Value transformRequest(CtxPtr ctx) {
   if (ctx->spec) ctx->spec->step = "reqform";
 
-  Value reqdata = omitKeys(ctx->reqdata, headerArgNames(ctx));
+  Value reqdata = omitKeys(ctx->reqdata, routedArgNames(ctx));
 
   Value transform = Helpers::toMapAny(getp(ctx->point, "transform"));
   if (!transform.is_map()) return stripAction(reqdata);

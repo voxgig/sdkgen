@@ -9,6 +9,8 @@ import (
 	"GOMODULE/core"
 )
 
+var placeholderRe = regexp.MustCompile(`\{[^{}/]+\}`)
+
 func makeUrlUtil(ctx *core.Context) (string, error) {
 	spec := ctx.Spec
 	result := ctx.Result
@@ -41,6 +43,12 @@ func makeUrlUtil(ctx *core.Context) (string, error) {
 			url = re.ReplaceAllString(url, vs.EscUrl(vs.Stringify(val)))
 			resmatch[key] = val
 		}
+	}
+
+	// A placeholder left in the path would send the request to the wrong route.
+	if unfilled := placeholderRe.FindAllString(url, -1); 0 < len(unfilled) {
+		return "", ctx.MakeError("url_param_missing",
+			"URL path has no value for "+strings.Join(unfilled, ", ")+".")
 	}
 
 	// Append query string from spec.Query.

@@ -37,6 +37,12 @@ function makeUrl(ctx) {
     }
   }
 
+  // A placeholder left in the path would send the request to the wrong route.
+  const unfilled = url.match(/\{[^{}\/]+\}/g)
+  if (null != unfilled) {
+    return ctx.error('url_param_missing', 'URL path has no value for ' + unfilled.join(', ') + '.')
+  }
+
   result.resmatch = resmatch
 
   return url

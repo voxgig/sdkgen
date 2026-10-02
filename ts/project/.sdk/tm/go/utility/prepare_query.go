@@ -75,6 +75,13 @@ func prepareQueryUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
+	// A create or update passes its query arguments in its data.
+	for _, arg := range callArgs(ctx, "query") {
+		if arg.val != nil && !containsStr(params, arg.name) {
+			out[arg.wire] = arg.val
+		}
+	}
+
 	return out
 }
 

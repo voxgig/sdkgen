@@ -125,6 +125,12 @@ fun makeUrl(ctx: Context): String {
     }
   }
 
+  // A placeholder left in the path would send the request to the wrong route.
+  val unfilled = Regex("\\{[^{}/]+\\}").findAll(url).map { it.value }.toList()
+  if (unfilled.isNotEmpty()) {
+    throw ctx.makeError("url_param_missing", "URL path has no value for " + unfilled.joinToString(", ") + ".")
+  }
+
   // Append query string from spec.query.
   var qsep = "?"
   for (item in Struct.items(spec.query)) {

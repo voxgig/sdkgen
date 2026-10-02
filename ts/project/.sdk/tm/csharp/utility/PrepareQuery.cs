@@ -72,6 +72,15 @@ public static partial class SdkUtility
             }
         }
 
+        // A create or update passes its query arguments in its data.
+        foreach (var arg in CallArgs(ctx, "query"))
+        {
+            if (arg.Val != null && !ContainsStr(paramnames, arg.Name))
+            {
+                query[arg.Wire] = arg.Val;
+            }
+        }
+
         return query;
     }
 

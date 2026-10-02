@@ -39,6 +39,51 @@ final class MakePoint {
     return last instanceof String && ((String) last).startsWith("{");
   }
 
+  private static final java.util.regex.Pattern PATH_PARAM =
+      java.util.regex.Pattern.compile("\\{([^{}/]+)\\}");
+
+  // The path parameters of a point that neither the call nor the entity gives
+  // a value for, looked up where prepareParams looks.
+  private static List<String> unfilled(Context ctx, Map<String, Object> point) {
+    List<String> missing = new ArrayList<>();
+    Object parts = Struct.getprop(point, "parts");
+    if (parts instanceof List) {
+      for (Object part : (List<Object>) parts) {
+        java.util.regex.Matcher found = PATH_PARAM.matcher(String.valueOf(part));
+        if (!found.matches()) {
+          continue;
+        }
+        String name = found.group(1);
+        boolean given = false;
+        for (Map<String, Object> src : java.util.Arrays.asList(ctx.reqmatch, ctx.match, ctx.reqdata, ctx.data)) {
+          if (src != null && Struct.getprop(src, name, null) != null) {
+            given = true;
+          }
+        }
+        if (!given) {
+          missing.add(name);
+        }
+      }
+    }
+    return missing;
+  }
+
+  private static Map<String, Object> ownPoint(List<Map<String, Object>> points) {
+    Map<String, Object> best = points.get(0);
+    for (Map<String, Object> cand : points) {
+      boolean candTerm = terminalParam(cand);
+      boolean bestTerm = terminalParam(best);
+      if (candTerm != bestTerm) {
+        if (candTerm) {
+          best = cand;
+        }
+      } else if (partsLen(cand) < partsLen(best)) {
+        best = cand;
+      }
+    }
+    return best;
+  }
+
   static Map<String, Object> makePoint(Context ctx) {
     Object outPoint = ctx.out.get("point");
     if (outPoint != null) {
@@ -141,18 +186,33 @@ final class MakePoint {
                   + "\" action \"" + Struct.stringify(unmatchedAction) + "\" is not valid.");
         }
 
-        point = op.points.get(0);
+        // A call without an action falls back to a point without one, as
+        // generation does, and only to a route the call can fill.
+        List<Map<String, Object>> pool = new ArrayList<>();
         for (Map<String, Object> cand : op.points) {
-          boolean candTerm = terminalParam(cand);
-          boolean bestTerm = terminalParam(point);
-          if (candTerm != bestTerm) {
-            if (candTerm) {
-              point = cand;
-            }
-          } else if (partsLen(cand) < partsLen(point)) {
-            point = cand;
+          Map<String, Object> candSelect = Helpers.toMapAny(Struct.getprop(cand, "select"));
+          if (Struct.getprop(candSelect, "$action", null) == null) {
+            pool.add(cand);
           }
         }
+        if (pool.isEmpty()) {
+          pool = op.points;
+        }
+        List<Map<String, Object>> fillable = new ArrayList<>();
+        for (Map<String, Object> cand : pool) {
+          if (unfilled(ctx, cand).isEmpty()) {
+            fillable.add(cand);
+          }
+        }
+
+        if (fillable.isEmpty()) {
+          throw ctx.makeError("point_no_match",
+              "Operation \"" + op.name
+                  + "\" has no endpoint whose path parameters are all given (missing: "
+                  + String.join(", ", unfilled(ctx, ownPoint(pool))) + ").");
+        }
+
+        point = ownPoint(fillable);
       }
 
       if (reqselector != null) {

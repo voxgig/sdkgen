@@ -64,4 +64,32 @@ public static partial class SdkUtility
 
         return val;
     }
+
+    // The arguments a point declares in one location, query or header, each
+    // with the name it travels under and the value this call passes in its
+    // match or else its data. Unlike a path parameter, the entity's stored
+    // match and data never supply one.
+    internal static List<(string Name, string Wire, object? Val)> CallArgs(Context ctx, string kind)
+    {
+        var args = new List<(string Name, string Wire, object? Val)>();
+        if (ctx.Point != null &&
+            StructUtils.GetPath(ctx.Point, StructUtils.Jt("args", kind)) is List<object?> defs)
+        {
+            foreach (var ad in defs)
+            {
+                if (StructUtils.GetProp(ad, "name") is not string name || name == "")
+                {
+                    continue;
+                }
+                var wire = StructUtils.GetProp(ad, "orig") is string orig && orig != "" ? orig : name;
+                var val = ctx.Reqmatch == null ? null : StructUtils.GetProp(ctx.Reqmatch, name);
+                if (val == null && ctx.Reqdata != null)
+                {
+                    val = StructUtils.GetProp(ctx.Reqdata, name);
+                }
+                args.Add((name, wire, val));
+            }
+        }
+        return args;
+    }
 }

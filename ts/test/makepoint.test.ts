@@ -1,6 +1,6 @@
 
 import { test, describe } from 'node:test'
-import { strictEqual } from 'node:assert'
+import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
 import { readFileSync } from 'node:fs'
 import Path from 'node:path'
@@ -142,9 +142,69 @@ describe('makePoint', () => {
         select: { exist: ['not_a_real_key'] },
       }
       const xref = { parts: ['posts', '{id}', 'author'], select: { exist: ['nope'] } }
+      const match = { id: 'x', account_id: 'a' }
 
-      strictEqual(makePoint(makeCtx([own, xref])), own, 'own route first')
-      strictEqual(makePoint(makeCtx([xref, own])), own, 'own route last')
+      strictEqual(makePoint(makeCtx([own, xref], match)), own, 'own route first')
+      strictEqual(makePoint(makeCtx([xref, own], match)), own, 'own route last')
+    })
+
+
+    // A route whose placeholder the call cannot fill went out with a literal
+    // `{id}` in it.
+    test(lang + ': the fallback takes a route the call can fill', () => {
+      const byid = {
+        parts: ['public', 'database', '{database_id}', 'permission', '{id}'],
+        select: { exist: ['api_key', 'database_id', 'id'] },
+      }
+      const permanent = {
+        parts: ['public', 'database', '{database_id}', 'permission', 'permanent', '{msisdn}'],
+        select: { exist: ['api_key', 'database_id', 'msisdn'] },
+      }
+
+      strictEqual(makePoint(makeCtx([byid, permanent], { database_id: 1, msisdn: 'm' })),
+        permanent, 'chose a route with an unfilled placeholder')
+      strictEqual(makePoint(makeCtx([byid, permanent], { database_id: 1, id: 'i' })), byid)
+    })
+
+
+    test(lang + ': a call that can fill no route is refused, naming what is missing', () => {
+      const byid = {
+        parts: ['public', 'database', '{database_id}', 'permission', '{id}'],
+        select: { exist: ['api_key', 'database_id', 'id'] },
+      }
+      const permanent = {
+        parts: ['public', 'database', '{database_id}', 'permission', 'permanent', '{msisdn}'],
+        select: { exist: ['api_key', 'database_id', 'msisdn'] },
+      }
+
+      const out = makePoint(makeCtx([byid, permanent], { database_id: 1 }))
+
+      strictEqual(out.code, 'point_no_match')
+      strictEqual(out.message,
+        'Operation "load" has no endpoint whose path parameters are all given (missing: id).')
+    })
+
+
+    // The entity's own data fills a path, as prepareParams fills it.
+    test(lang + ': the entity\'s stored data fills a route', () => {
+      const own = { parts: ['planet', '{id}'], select: { exist: ['id', 'opt'] } }
+      const xref = { parts: ['system', '{system_id}', 'planet'], select: { exist: ['system_id', 'opt'] } }
+      const ctx: any = makeCtx([xref, own], {})
+      ctx.op.input = 'data'
+      ctx.reqdata = { name: 'n' }
+      ctx.data = { id: 'p1' }
+
+      strictEqual(makePoint(ctx), own)
+    })
+
+
+    // At generation, an entity's API is read from its points without an
+    // action; a call without one is never sent to an action's route.
+    test(lang + ': a call without an action never falls back to an action route', () => {
+      const own = { parts: ['planet', '{id}', 'info'], select: { exist: ['id', 'opt'] } }
+      const action = { parts: ['planet', '{id}'], select: { exist: ['id', 'opt'], $action: 'touch' } }
+
+      strictEqual(makePoint(makeCtx([action, own])), own)
     })
 
 
@@ -157,4 +217,55 @@ describe('makePoint', () => {
 
   }
 
+})
+
+
+// Source, so it proves the refusal is there, not that it runs. Each entry is
+// the file and the start of the function's definition.
+describe('makePoint in every target', () => {
+
+  const TEMPLATES: Record<string, [string, string]> = {
+    c: ['c/utility/make_point.c', 'voxgig_value* make_point_util('],
+    clojure: ['clojure/src/sdk/core.clj', '(defn u-make-point '],
+    cpp: ['cpp/utility/pipeline.hpp', 'inline Value makePoint('],
+    csharp: ['csharp/utility/MakePoint.cs', 'MakePointUtil(Context ctx)'],
+    elixir: ['elixir/lib/projectname/utility.ex', 'def make_point_impl('],
+    go: ['go/utility/make_point.go', 'func makePointUtil('],
+    java: ['java/utility/MakePoint.java', 'static Map<String, Object> makePoint('],
+    js: ['js/src/utility/MakePointUtility.js', 'function makePoint('],
+    kotlin: ['kotlin/utility/MakePoint.kt', 'fun makePoint('],
+    lua: ['lua/utility/make_point.lua', 'local function make_point_util('],
+    ocaml: ['ocaml/sdk_runtime.ml', 'let make_point_util '],
+    perl: ['perl/utility/make_point.pm', '$REGISTRY{make_point}'],
+    php: ['php/utility/MakePoint.php', 'public static function call('],
+    py: ['py/pkg/utility/make_point.py', 'def make_point_util('],
+    rb: ['rb/utility/make_point.rb', 'MakePoint = ->'],
+    rust: ['rust/utility/make_point.rs', 'pub fn make_point_util('],
+    scala: ['scala/utility/Make.scala', 'def makePoint('],
+    swift: ['swift/Sources/ProjectNameSDK/utility/Make.swift', 'func makePointUtil('],
+    ts: ['ts/src/utility/MakePointUtility.ts', 'function makePoint('],
+    zig: ['zig/core/utility.zig', 'pub fn make_point_util('],
+  }
+
+  test('every target refuses a fallback the call cannot fill', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      ok(-1 !== at, lang + ': no makePoint definition in ' + rel)
+      const body = src.slice(at, at + 8000)
+      if (!body.includes('point_no_match') || !body.includes('missing: ')) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose makePoint falls back to a route it cannot fill')
+  })
+
+  // An empty PHP array is falsy, so testing the entity's stored match for
+  // truth would skip every point's exist list and take the first route.
+  test('php tests each point when the entity has nothing stored', () => {
+    const src = readFileSync(Path.join(TM, TEMPLATES.php[0]), 'utf8')
+    ok(src.includes('if (null !== $selector && $select_def)'),
+      'php decides whether to test a point by the truth of its stored match')
+  })
 })

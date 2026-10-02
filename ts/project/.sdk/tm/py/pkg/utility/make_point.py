@@ -1,8 +1,13 @@
 # ProjectName SDK utility: make_point
 
 from __future__ import annotations
+import re
+
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.core.helpers import to_map
+
+
+_PATH_PARAM = re.compile(r"\{([^{}/]+)\}")
 
 
 def _parts_len(point):
@@ -35,6 +40,22 @@ def _own_point(points):
         elif _parts_len(cand) < _parts_len(best):
             best = cand
     return best
+
+
+def _unfilled(ctx, point):
+    # The path parameters of a point that neither the call nor the entity
+    # gives a value for, looked up where prepare_params looks.
+    missing = []
+    parts = vs.getprop(point, "parts")
+    for part in (parts if isinstance(parts, list) else []):
+        found = _PATH_PARAM.fullmatch(str(part))
+        if found is None:
+            continue
+        name = found.group(1)
+        if all(vs.getprop(src or {}, name) is None
+               for src in (ctx.reqmatch, ctx.match, ctx.reqdata, ctx.data)):
+            missing.append(name)
+    return missing
 
 
 def make_point_util(ctx):
@@ -117,7 +138,20 @@ def make_point_util(ctx):
                     'Operation "' + op.name + '" action "' +
                     vs.stringify(req_action) + '" is not valid.')
 
-            point = _own_point(op.points)
+            # A call without an action falls back to a point without one, as
+            # generation does, and only to a route the call can fill.
+            plain = [cand for cand in op.points
+                     if vs.getprop(to_map(vs.getprop(cand, "select")), "$action") is None]
+            pool = plain if 0 < len(plain) else op.points
+            fillable = [cand for cand in pool if 0 == len(_unfilled(ctx, cand))]
+
+            if 0 == len(fillable):
+                return None, ctx.make_error("point_no_match",
+                    'Operation "' + op.name +
+                    '" has no endpoint whose path parameters are all given (missing: ' +
+                    ", ".join(_unfilled(ctx, _own_point(pool))) + ').')
+
+            point = _own_point(fillable)
 
         if reqselector is not None:
             req_action = vs.getprop(reqselector, "$action")

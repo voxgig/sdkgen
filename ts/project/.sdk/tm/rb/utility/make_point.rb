@@ -3,6 +3,19 @@ require_relative 'struct/voxgig_struct'
 require_relative '../core/helpers'
 require_relative '../core/error'
 module ProjectNameUtilities
+  # The path parameters of a point that neither the call nor the entity gives
+  # a value for, looked up where prepare_params looks.
+  def self.unfilled_params(ctx, point)
+    parts = VoxgigStruct.getprop(point, "parts")
+    return [] unless parts.is_a?(Array)
+    parts.each_with_object([]) do |part, missing|
+      found = part.to_s.match(/\A\{([^{}\/]+)\}\z/)
+      next unless found
+      sources = [ctx.reqmatch, ctx.match, ctx.reqdata, ctx.data]
+      missing << found[1] if sources.all? { |src| VoxgigStruct.getprop(src || {}, found[1]).nil? }
+    end
+  end
+
   MakePoint = ->(ctx) {
     if ctx.out["point"]
       preset = ctx.out["point"]
@@ -93,14 +106,33 @@ module ProjectNameUtilities
           parts = VoxgigStruct.getprop(p, "parts")
           parts.is_a?(Array) && parts.length > 0 && parts[-1].to_s.start_with?("{")
         }
-        point = op.points[0]
-        op.points.each do |p|
-          if terminal_param.call(p) != terminal_param.call(point)
-            point = p if terminal_param.call(p)
-          elsif parts_len.call(p) < parts_len.call(point)
-            point = p
+        own_point = ->(points) {
+          best = points[0]
+          points.each do |p|
+            if terminal_param.call(p) != terminal_param.call(best)
+              best = p if terminal_param.call(p)
+            elsif parts_len.call(p) < parts_len.call(best)
+              best = p
+            end
           end
+          best
+        }
+
+        # A call without an action falls back to a point without one, as
+        # generation does, and only to a route the call can fill.
+        plain = op.points.select { |p|
+          VoxgigStruct.getprop(ProjectNameHelpers.to_map(VoxgigStruct.getprop(p, "select")), "$action").nil?
+        }
+        pool = plain.empty? ? op.points : plain
+        fillable = pool.select { |p| ProjectNameUtilities.unfilled_params(ctx, p).empty? }
+
+        if fillable.empty?
+          missing = ProjectNameUtilities.unfilled_params(ctx, own_point.call(pool)).join(", ")
+          return nil, ctx.make_error("point_no_match",
+            "Operation \"#{op.name}\" has no endpoint whose path parameters are all given (missing: #{missing}).")
         end
+
+        point = own_point.call(fillable)
       end
 
       if reqselector

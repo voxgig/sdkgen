@@ -698,31 +698,39 @@
       ;; shared corpus caught all three.
       (get METHOD-MAP (op-name (oget ctx :op))))))
 
+;; The arguments a point declares in one location, query or header, each as
+;; [name wire val]: the name it travels under and the value this call passes
+;; in its match or else its data. Unlike a path parameter, the entity's stored
+;; match and data never supply one.
+(defn- call-args [ctx kind]
+  (let [point (oget ctx :point)
+        args (when point (vs/getprop point "args"))
+        defs (when (vs/ismap args) (vs/getprop args kind))]
+    (if (vs/islist defs)
+      (vec (keep (fn [ad]
+                   (let [name (when (vs/ismap ad) (vs/getprop ad "name"))]
+                     (when (and (string? name) (seq name))
+                       (let [orig (vs/getprop ad "orig")
+                             wire (if (and (string? orig) (seq orig)) orig name)
+                             v (vs/getprop (oget ctx :reqmatch) name)
+                             v (if (nil? v) (vs/getprop (oget ctx :reqdata) name) v)]
+                         [name wire v]))))
+                 (vec defs)))
+      [])))
+
 (defn u-prepare-headers [ctx]
   (let [options (client-options-map (oget ctx :client))
         headers (vs/getprop options "headers")
         out (if (nil? headers) (vs/jm)
-                (let [o (vs/clone headers)] (if (vs/ismap o) o (vs/jm))))
-        point (oget ctx :point)
-        args (when point (vs/getprop point "args"))
-        aheader (let [h (when (vs/ismap args) (vs/getprop args "header"))]
-                  (if (vs/islist h) h (vs/jt)))]
-    ;; A header parameter travels as a header, under the name the definition
-    ;; gives it, and only from this call's own arguments. It replaces a default
-    ;; of the same name, whatever its case.
-    (doseq [hd (vec aheader)]
-      (let [name (when (vs/ismap hd) (vs/getprop hd "name"))]
-        (when (and (string? name) (seq name))
-          (let [orig (vs/getprop hd "orig")
-                wire (if (and (string? orig) (seq orig)) orig name)
-                v (vs/getprop (oget ctx :reqmatch) name)
-                v (if (nil? v) (vs/getprop (oget ctx :reqdata) name) v)]
-            (when (some? v)
-              (let [key (str/lower-case wire)]
-                (doseq [k (vec (.keySet ^java.util.Map out))]
-                  (when (and (string? k) (= key (str/lower-case k)))
-                    (.remove ^java.util.Map out k)))
-                (.put ^java.util.Map out key (vs/stringify v))))))))
+                (let [o (vs/clone headers)] (if (vs/ismap o) o (vs/jm))))]
+    ;; A header argument replaces a default of the same name, whatever its case.
+    (doseq [[_ wire v] (call-args ctx "header")]
+      (when (some? v)
+        (let [key (str/lower-case wire)]
+          (doseq [k (vec (.keySet ^java.util.Map out))]
+            (when (and (string? k) (= key (str/lower-case k)))
+              (.remove ^java.util.Map out k)))
+          (.put ^java.util.Map out key (vs/stringify v)))))
     out))
 
 (defn u-param [ctx paramdef]
@@ -801,6 +809,10 @@
       (let [k (vs/getprop item 0) v (vs/getprop item 1)]
         (when (and (some? v) (string? k) (not= "$action" k) (not (contains? pset k)))
           (.put ^java.util.Map out (get wire k k) v))))
+    ;; A create or update passes its query arguments in its data.
+    (doseq [[name orig v] (call-args ctx "query")]
+      (when (and (some? v) (not (contains? pset name)))
+        (.put ^java.util.Map out orig v)))
     out))
 
 (defn- omit-keys [reqdata names]
@@ -816,19 +828,15 @@
 ;; so the body is a copy without it. The caller's map is left untouched.
 (defn- strip-action [reqdata] (omit-keys reqdata ["$action"]))
 
-;; A header argument travels as a header, which u-prepare-headers sends, so the
-;; body is built from the request data without it.
-(defn- header-arg-names [point]
-  (let [args (when point (vs/getprop point "args"))
-        h (when (vs/ismap args) (vs/getprop args "header"))]
-    (if (vs/islist h)
-      (filterv #(and (string? %) (seq %))
-               (map #(when (vs/ismap %) (vs/getprop % "name")) (vec h)))
-      [])))
+;; A header or query argument travels where u-prepare-headers or
+;; u-prepare-query sends it, so the body is built from the request data
+;; without it.
+(defn- routed-arg-names [ctx]
+  (mapv first (concat (call-args ctx "header") (call-args ctx "query"))))
 
 (defn u-transform-request [ctx]
   (let [spec (oget ctx :spec) point (oget ctx :point)
-        data (omit-keys (oget ctx :reqdata) (header-arg-names point))]
+        data (omit-keys (oget ctx :reqdata) (routed-arg-names ctx))]
     (when spec (oset! spec :step "reqform"))
     (let [transform (to-map (vs/getprop point "transform"))]
       (strip-action
@@ -964,6 +972,18 @@
 ;; feature/secrets) go on resolving exactly as before.
 (load "prepare_auth")
 
+;; The path parameters of a point that neither the call nor the entity gives a
+;; value for, looked up where u-param looks.
+(defn- unfilled-params [ctx point]
+  (let [parts (vs/getprop point "parts")
+        sources [(oget ctx :reqmatch) (oget ctx :match) (oget ctx :reqdata) (oget ctx :data)]]
+    (if (vs/islist parts)
+      (vec (keep (fn [part]
+                   (when-let [[_ pname] (and (string? part) (re-matches #"\{([^{}/]+)\}" part))]
+                     (when (every? #(nil? (vs/getprop % pname)) sources) pname)))
+                 (vec parts)))
+      [])))
+
 (defn u-make-point [ctx]
   (let [preset (out-get ctx "point")]
     (if (some? preset)
@@ -1044,14 +1064,30 @@
                               (str "Operation \"" (op-name op) "\" action \"" (vs/stringify req-action) "\" is not valid."))]
 
               :else
-              (let [chosen (or matched (own-point (vec (op-points op))))]
-                (if (and reqselector req-action chosen)
+              (let [all (vec (op-points op))
+                    ;; A call without an action falls back to a point without
+                    ;; one, as generation does, and only to a route the call
+                    ;; can fill.
+                    plain (filterv #(nil? (vs/getprop (to-map (vs/getprop % "select")) "$action")) all)
+                    pool (if (empty? plain) all plain)
+                    fillable (filterv #(empty? (unfilled-params ctx %)) pool)
+                    chosen (or matched (when (seq fillable) (own-point fillable)))]
+                (cond
+                  (nil? chosen)
+                  [nil (ctx-error ctx "point_no_match"
+                                  (str "Operation \"" (op-name op)
+                                       "\" has no endpoint whose path parameters are all given (missing: "
+                                       (str/join ", " (unfilled-params ctx (own-point pool))) ")."))]
+
+                  (and reqselector req-action)
                   (let [point-select (to-map (vs/getprop chosen "select"))
                         point-action (vs/getprop point-select "$action")]
                     (if (not= req-action point-action)
                       [nil (ctx-error ctx "point_action_invalid"
                                       (str "Operation \"" (op-name op) "\" action \"" (vs/stringify req-action) "\" is not valid."))]
                       (do (oset! ctx :point chosen) [(oget ctx :point) nil])))
+
+                  :else
                   (do (oset! ctx :point chosen) [(oget ctx :point) nil]))))))))))
 
 (defn u-make-spec [ctx]
@@ -1123,16 +1159,22 @@
                     encoded (vs/escurl val-str)]
                 (reset! url (str/replace @url placeholder encoded))
                 (.put ^java.util.Map resmatch k v)))))
-        (let [qsep (atom "?")]
-          (doseq [item (or (vs/items (oget spec :query)) [])]
-            (let [k (vs/getprop item 0) v (vs/getprop item 1)]
-              (when (and (some? v) (string? k))
-                (let [val-str (if (string? v) v (vs/stringify v))]
-                  (reset! url (str @url @qsep (vs/escurl k) "=" (vs/escurl val-str)))
-                  (reset! qsep "&")
-                  (.put ^java.util.Map resmatch k v))))))
-        (oset! result :resmatch resmatch)
-        [@url nil]))))
+        ;; A placeholder left in the path would send the request to the wrong
+        ;; route.
+        (if-let [unfilled (seq (re-seq #"\{[^{}/]+\}" @url))]
+          ["" (ctx-error ctx "url_param_missing"
+                         (str "URL path has no value for " (str/join ", " unfilled) "."))]
+          (do
+            (let [qsep (atom "?")]
+              (doseq [item (or (vs/items (oget spec :query)) [])]
+                (let [k (vs/getprop item 0) v (vs/getprop item 1)]
+                  (when (and (some? v) (string? k))
+                    (let [val-str (if (string? v) v (vs/stringify v))]
+                      (reset! url (str @url @qsep (vs/escurl k) "=" (vs/escurl val-str)))
+                      (reset! qsep "&")
+                      (.put ^java.util.Map resmatch k v))))))
+            (oset! result :resmatch resmatch)
+            [@url nil]))))))
 
 (defn u-make-fetch-def [ctx]
   (let [spec (oget ctx :spec)]

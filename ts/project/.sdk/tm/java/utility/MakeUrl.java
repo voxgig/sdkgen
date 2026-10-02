@@ -14,6 +14,9 @@ final class MakeUrl {
 
   private MakeUrl() {}
 
+  private static final java.util.regex.Pattern PLACEHOLDER =
+      java.util.regex.Pattern.compile("\\{[^{}/]+\\}");
+
   static String makeUrl(Context ctx) {
     Spec spec = ctx.spec;
     Result result = ctx.result;
@@ -54,6 +57,17 @@ final class MakeUrl {
                 Struct.escurl(Struct.stringify(val))));
         resmatch.put(key, val);
       }
+    }
+
+    // A placeholder left in the path would send the request to the wrong route.
+    List<String> unfilled = new ArrayList<>();
+    java.util.regex.Matcher found = PLACEHOLDER.matcher(url);
+    while (found.find()) {
+      unfilled.add(found.group());
+    }
+    if (!unfilled.isEmpty()) {
+      throw ctx.makeError("url_param_missing",
+          "URL path has no value for " + String.join(", ", unfilled) + ".");
     }
 
     // Append query string from spec.query.

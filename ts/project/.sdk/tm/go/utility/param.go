@@ -64,3 +64,37 @@ func paramUtil(ctx *core.Context, paramdef any) any {
 
 	return val
 }
+
+// One argument a point declares, with the name it travels under and the
+// value the call passes for it.
+type callArg struct {
+	name string
+	wire string
+	val  any
+}
+
+// The arguments a point declares in one location, query or header, each with
+// the name it travels under and the value this call passes in its match or
+// else its data. Unlike a path parameter, the entity's stored match and data
+// never supply one.
+func callArgs(ctx *core.Context, kind string) []callArg {
+	out := []callArg{}
+	if al, ok := vs.GetPath(ctx.Point, []any{"args", kind}).([]any); ok {
+		for _, ad := range al {
+			name, _ := vs.GetProp(ad, "name").(string)
+			if "" == name {
+				continue
+			}
+			wire, _ := vs.GetProp(ad, "orig").(string)
+			if "" == wire {
+				wire = name
+			}
+			val := vs.GetProp(ctx.Reqmatch, name)
+			if val == nil {
+				val = vs.GetProp(ctx.Reqdata, name)
+			}
+			out = append(out, callArg{name: name, wire: wire, val: val})
+		}
+	}
+	return out
+}

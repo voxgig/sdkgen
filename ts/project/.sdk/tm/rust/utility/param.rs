@@ -65,3 +65,33 @@ pub fn param_util(ctx: &Rc<Context>, paramdef: &Value) -> Value {
 
     val
 }
+
+
+// The arguments a point declares in one location, query or header, each as
+// its name, the name it travels under, and the value this call passes in its
+// match or else its data. Unlike a path parameter, the entity's stored match
+// and data never supply one.
+pub fn call_args(ctx: &Rc<Context>, kind: &str) -> Vec<(String, String, Value)> {
+    let point = ctx.point.borrow().clone();
+    let mut out = Vec::new();
+    if let Value::List(al) = getp(&getp(&point, "args"), kind) {
+        let reqmatch = ctx.reqmatch.borrow().clone();
+        let reqdata = ctx.reqdata.borrow().clone();
+        for ad in al.borrow().iter() {
+            let name = match getp(ad, "name") {
+                Value::Str(n) if !n.is_empty() => n,
+                _ => continue,
+            };
+            let wire = match getp(ad, "orig") {
+                Value::Str(o) if !o.is_empty() => o,
+                _ => name.clone(),
+            };
+            let mut val = getp(&reqmatch, &name);
+            if val.is_noval() || val.is_null() {
+                val = getp(&reqdata, &name);
+            }
+            out.push((name, wire, val));
+        }
+    }
+    out
+}

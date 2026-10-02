@@ -62,4 +62,25 @@ $REGISTRY{param} = sub {
   return $val;
 };
 
+# The arguments a point declares in one location, query or header, each with
+# the name it travels under and the value this call passes in its match or
+# else its data. Unlike a path parameter, the entity's stored match and data
+# never supply one.
+sub call_args {
+  my ($ctx, $kind) = @_;
+  my $defs = $ctx->{point} ? ProjectNameHelpers::gpath($ctx->{point}, "args.$kind") : undef;
+  return () unless Voxgig::Struct::islist($defs);
+  my @out;
+  for my $ad (@$defs) {
+    my $name = ProjectNameHelpers::gp($ad, 'name');
+    next unless defined $name && !ref $name && '' ne $name;
+    my $wire = ProjectNameHelpers::gp($ad, 'orig');
+    $wire = $name unless defined $wire && !ref $wire && '' ne $wire;
+    my $val = ProjectNameHelpers::gp($ctx->{reqmatch} || {}, $name);
+    $val = ProjectNameHelpers::gp($ctx->{reqdata} || {}, $name) unless defined $val;
+    push @out, [$name, $wire, $val];
+  }
+  return @out;
+}
+
 1;

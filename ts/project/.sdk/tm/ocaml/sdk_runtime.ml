@@ -588,6 +588,25 @@ let prepare_method_util (ctx : ctx) : string =
      * two behaviours: a mistyped or unsupported op quietly fetched. *)
     | _ -> ""
 
+(* The arguments a point declares in one location, query or header, each as
+ * (name, wire, value): the name it travels under and the value this call
+ * passes in its match or else its data. Unlike a path parameter, the
+ * entity's stored match and data never supply one. *)
+let call_args (ctx : ctx) (kind : string) : (string * string * value) list =
+  match getp (getp ctx.c_point "args") kind with
+  | List r ->
+    List.filter_map (fun ad ->
+        match getp ad "name" with
+        | Str name when name <> "" ->
+          let wire = match getp ad "orig" with Str o when o <> "" -> o | _ -> name in
+          let v = match getp ctx.c_reqmatch name with
+            | Noval | Null -> getp ctx.c_reqdata name
+            | v -> v
+          in
+          Some (name, wire, v)
+        | _ -> None) !r
+  | _ -> []
+
 let prepare_headers_util (ctx : ctx) : value =
   let options = client_options_map (cc ctx) in
   let out =
@@ -595,29 +614,18 @@ let prepare_headers_util (ctx : ctx) : value =
     | Noval -> empty_map ()
     | h -> (match clone h with Map _ as m -> m | _ -> empty_map ())
   in
-  (* A header parameter travels as a header, under the name the definition
-   * gives it, and only from this call's own arguments. It replaces a default
-   * of the same name, whatever its case. *)
-  (match getp (getp ctx.c_point "args") "header" with
-   | List r ->
-     List.iter (fun hd ->
-         match getp hd "name" with
-         | Str name when name <> "" ->
-           let wire = match getp hd "orig" with Str o when o <> "" -> o | _ -> name in
-           let v = match getp ctx.c_reqmatch name with
-             | Noval | Null -> getp ctx.c_reqdata name
-             | v -> v
-           in
-           (match v with
-            | Noval | Null -> ()
-            | v ->
-              let key = String.lowercase_ascii wire in
-              List.iter (fun k ->
-                  if String.lowercase_ascii k = key then ignore (delprop out (Str k)))
-                (keysof out);
-              setp out key (Str (stringify v)))
-         | _ -> ()) !r
-   | _ -> ());
+  (* A header argument replaces a default of the same name, whatever its
+   * case. *)
+  List.iter (fun (_, wire, v) ->
+      match v with
+      | Noval | Null -> ()
+      | v ->
+        let key = String.lowercase_ascii wire in
+        List.iter (fun k ->
+            if String.lowercase_ascii k = key then ignore (delprop out (Str k)))
+          (keysof out);
+        setp out key (Str (stringify v)))
+    (call_args ctx "header");
   out
 
 let param_util (ctx : ctx) (paramdef : value) : value =
@@ -705,6 +713,12 @@ let prepare_query_util (ctx : ctx) : value =
       if not (is_noval v) && k <> "$action" && not (contains_param k) then
         setp out (wire_name k) v)
     (keysof reqmatch);
+  (* A create or update passes its query arguments in its data. *)
+  List.iter (fun (name, orig, v) ->
+      match v with
+      | Noval | Null -> ()
+      | v -> if not (contains_param name) then setp out orig v)
+    (call_args ctx "query");
   out
 
 let prepare_body_util (ctx : ctx) : value =
@@ -859,18 +873,15 @@ let omit_keys (reqdata : value) (names : string list) : value =
    untouched. *)
 let strip_action (reqdata : value) : value = omit_keys reqdata ["$action"]
 
-(* A header argument travels as a header, which prepare_headers_util sends,
-   so the body is built from the request data without it. *)
-let header_arg_names (point : value) : string list =
-  match getp (getp point "args") "header" with
-  | List r ->
-    List.filter_map (fun hd ->
-        match getp hd "name" with Str n when n <> "" -> Some n | _ -> None) !r
-  | _ -> []
+(* A header or query argument travels where prepare_headers_util or
+   prepare_query_util sends it, so the body is built from the request data
+   without it. *)
+let routed_arg_names (ctx : ctx) : string list =
+  List.map (fun (name, _, _) -> name) (call_args ctx "header" @ call_args ctx "query")
 
 let transform_request_util (ctx : ctx) : value =
   (match ctx.c_spec with Some s -> s.sp_step <- "reqform" | None -> ());
-  let data = omit_keys ctx.c_reqdata (header_arg_names ctx.c_point) in
+  let data = omit_keys ctx.c_reqdata (routed_arg_names ctx) in
   strip_action
     (match to_map (getp ctx.c_point "transform") with
      | Map _ as tr ->
@@ -930,6 +941,36 @@ let result_headers_util (ctx : ctx) : unit =
      | None -> result.rt_headers <- empty_map ())
 
 (* ----- make_* pipeline stages ----- *)
+
+(* The {name} placeholders in a text, in order. *)
+let placeholders (s : string) : string list =
+  let n = String.length s in
+  let rec close j = if j < n && not (String.contains "{}/" s.[j]) then close (j + 1) else j in
+  let rec scan i acc =
+    if i >= n then List.rev acc
+    else if s.[i] <> '{' then scan (i + 1) acc
+    else
+      let j = close (i + 1) in
+      if j < n && s.[j] = '}' && j > i + 1 then scan (j + 1) (String.sub s i (j - i + 1) :: acc)
+      else scan (i + 1) acc
+  in
+  scan 0 []
+
+(* The path parameters of a point that neither the call nor the entity gives
+   a value for, looked up where param_util looks. *)
+let unfilled_params (ctx : ctx) (point : value) : string list =
+  match getp point "parts" with
+  | List r ->
+    List.filter_map (fun part ->
+        match part with
+        | Str s when placeholders s = [s] ->
+          let name = String.sub s 1 (String.length s - 2) in
+          let given = List.exists (fun src ->
+              match getp src name with Noval | Null -> false | _ -> true)
+              [ctx.c_reqmatch; ctx.c_match; ctx.c_reqdata; ctx.c_data] in
+          if given then None else Some name
+        | _ -> None) !r
+  | _ -> []
 
 let make_point_util (ctx : ctx) : (value * sdk_error option) =
   match Hashtbl.find_opt ctx.c_out "point" with
@@ -1012,11 +1053,23 @@ let make_point_util (ctx : ctx) : (value * sdk_error option) =
                  String.length s > 0 && s.[0] = '{'
                | [] -> false)
             | _ -> false in
-          chosen := arr.(0);
-          Array.iter (fun cand ->
-              let ct = terminal_param cand and bt = terminal_param !chosen in
-              if ct <> bt then (if ct then chosen := cand)
-              else if parts_len cand < parts_len !chosen then chosen := cand) arr
+          let own_point pts =
+            List.fold_left (fun best cand ->
+                let ct = terminal_param cand and bt = terminal_param best in
+                if ct <> bt then (if ct then cand else best)
+                else if parts_len cand < parts_len best then cand else best)
+              (List.hd pts) pts in
+          (* A call without an action falls back to a point without one, as
+             generation does, and only to a route the call can fill. *)
+          let plain = List.filter (fun p ->
+              is_noval (getp (to_map (getp p "select")) "$action")) points in
+          let pool = match plain with [] -> points | _ -> plain in
+          match List.filter (fun p -> unfilled_params ctx p = []) pool with
+          | [] ->
+            raise (Sdk_error_exc (ctx_make_error ctx "point_no_match"
+              ("Operation \"" ^ op.op_name ^ "\" has no endpoint whose path parameters are all given (missing: " ^
+               String.concat ", " (unfilled_params ctx (own_point pool)) ^ ").")))
+          | fillable -> chosen := own_point fillable
         end;
         let req_action = getp reqselector "$action" in
         if not (is_noval req_action) && not (is_noval !chosen) then begin
@@ -1097,16 +1150,23 @@ let make_url_util (ctx : ctx) : (string * sdk_error option) =
           url := str_replace_all !url ("{" ^ key ^ "}") encoded;
           setp resmatch key v
         end) (keysof spec.sp_params);
-    let qsep = ref "?" in
-    List.iter (fun key ->
-        let v = getp spec.sp_query key in
-        if not (is_noval v) then begin
-          url := !url ^ !qsep ^ escurl_s key ^ "=" ^ escurl_s (vstring v);
-          qsep := "&";
-          setp resmatch key v
-        end) (keysof spec.sp_query);
-    result.rt_resmatch <- resmatch;
-    (!url, None)
+    (* A placeholder left in the path would send the request to the wrong
+     * route. *)
+    match placeholders !url with
+    | _ :: _ as unfilled ->
+      ("", Some (ctx_make_error ctx "url_param_missing"
+         ("URL path has no value for " ^ String.concat ", " unfilled ^ ".")))
+    | [] ->
+      let qsep = ref "?" in
+      List.iter (fun key ->
+          let v = getp spec.sp_query key in
+          if not (is_noval v) then begin
+            url := !url ^ !qsep ^ escurl_s key ^ "=" ^ escurl_s (vstring v);
+            qsep := "&";
+            setp resmatch key v
+          end) (keysof spec.sp_query);
+      result.rt_resmatch <- resmatch;
+      (!url, None)
 
 let make_fetch_def_util (ctx : ctx) : (value * sdk_error option) =
   match ctx.c_spec with

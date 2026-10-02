@@ -33,6 +33,12 @@ module ProjectNameUtilities
       end
     end
 
+    # A placeholder left in the path would send the request to the wrong route.
+    unfilled = url.scan(/\{[^{}\/]+\}/)
+    unless unfilled.empty?
+      return "", ctx.make_error("url_param_missing", "URL path has no value for #{unfilled.join(', ')}.")
+    end
+
     # Append query string from spec.query.
     qsep = "?"
     query_items = VoxgigStruct.items(spec.respond_to?(:query) ? spec.query : nil)

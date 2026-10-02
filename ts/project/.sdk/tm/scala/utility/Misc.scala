@@ -418,4 +418,33 @@ object Param {
     }
     v
   }
+
+  // The arguments a point declares in one location, query or header, each as
+  // (name, wire, value): the name it travels under and the value this call
+  // passes in its match or else its data. Unlike a path parameter, the
+  // entity's stored match and data never supply one.
+  def callArgs(ctx: Context, kind: String): Seq[(String, String, Object)] = {
+    if (ctx.point == null) return Seq.empty
+    Struct.getpath(ctx.point, java.util.List.of("args", kind)) match {
+      case l: JList[_] =>
+        val out = scala.collection.mutable.ArrayBuffer[(String, String, Object)]()
+        val it = l.iterator()
+        while (it.hasNext) {
+          val ad = it.next()
+          Struct.getprop(ad, "name") match {
+            case name: String if name.nonEmpty =>
+              val wire = Struct.getprop(ad, "orig") match {
+                case o: String if o.nonEmpty => o
+                case _ => name
+              }
+              var v: Object = if (ctx.reqmatch == null) null else Struct.getprop(ctx.reqmatch, name, null)
+              if (v == null && ctx.reqdata != null) v = Struct.getprop(ctx.reqdata, name, null)
+              out += ((name, wire, v))
+            case _ =>
+          }
+        }
+        out.toSeq
+      case _ => Seq.empty
+    }
+  }
 }

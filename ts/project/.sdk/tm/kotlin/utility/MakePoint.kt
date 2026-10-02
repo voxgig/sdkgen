@@ -25,6 +25,41 @@ private fun terminalParam(point: Map<String, Any?>?): Boolean {
   return last is String && last.startsWith("{")
 }
 
+private val PATH_PARAM = Regex("\\{([^{}/]+)\\}")
+
+private fun ownPoint(points: List<MutableMap<String, Any?>>): MutableMap<String, Any?> {
+  var best = points[0]
+  for (cand in points) {
+    val candTerm = terminalParam(cand)
+    val bestTerm = terminalParam(best)
+    if (candTerm != bestTerm) {
+      if (candTerm) {
+        best = cand
+      }
+    } else if (partsLen(cand) < partsLen(best)) {
+      best = cand
+    }
+  }
+  return best
+}
+
+// The path parameters of a point that neither the call nor the entity gives
+// a value for, looked up where param looks.
+private fun unfilledParams(ctx: Context, point: Map<String, Any?>?): List<String> {
+  val parts = Struct.getprop(point, "parts") as? List<*> ?: return emptyList()
+  val missing = mutableListOf<String>()
+  for (part in parts) {
+    val found = PATH_PARAM.matchEntire(part as? String ?: "") ?: continue
+    val name = found.groupValues[1]
+    val given = listOf(ctx.reqmatch, ctx.match, ctx.reqdata, ctx.data)
+      .any { Struct.getprop(it, name, null) != null }
+    if (!given) {
+      missing.add(name)
+    }
+  }
+  return missing
+}
+
 @Suppress("UNCHECKED_CAST")
 fun makePoint(ctx: Context): Map<String, Any?> {
   val outPoint = ctx.out["point"]
@@ -130,18 +165,24 @@ fun makePoint(ctx: Context): Map<String, Any?> {
         )
       }
 
-      point = op.points[0]
-      for (cand in op.points) {
-        val candTerm = terminalParam(cand)
-        val bestTerm = terminalParam(point)
-        if (candTerm != bestTerm) {
-          if (candTerm) {
-            point = cand
-          }
-        } else if (partsLen(cand) < partsLen(point)) {
-          point = cand
-        }
+      // A call without an action falls back to a point without one, as
+      // generation does, and only to a route the call can fill.
+      val plain = op.points.filter {
+        Struct.getprop(Helpers.toMapAny(Struct.getprop(it, "select")), "\$action", null) == null
       }
+      val pool = if (plain.isEmpty()) op.points else plain
+      val fillable = pool.filter { unfilledParams(ctx, it).isEmpty() }
+
+      if (fillable.isEmpty()) {
+        throw ctx.makeError(
+          "point_no_match",
+          "Operation \"" + op.name +
+            "\" has no endpoint whose path parameters are all given (missing: " +
+            unfilledParams(ctx, ownPoint(pool)).joinToString(", ") + ").",
+        )
+      }
+
+      point = ownPoint(fillable)
     }
 
     val reqAction = Struct.getprop(reqselector, "\$action", null)

@@ -65,4 +65,30 @@ class ProjectNameParam
 
         return ($val === $undef) ? null : $val;
     }
+
+    // The arguments a point declares in one location, query or header, each
+    // with the name it travels under and the value this call passes in its
+    // match or else its data. Unlike a path parameter, the entity's stored
+    // match and data never supply one.
+    public static function callArgs(ProjectNameContext $ctx, string $kind): array
+    {
+        $defs = $ctx->point ? \Voxgig\Struct\Struct::getpath($ctx->point, 'args.' . $kind) : null;
+        $out = [];
+        foreach (is_array($defs) ? $defs : [] as $ad) {
+            $name = \Voxgig\Struct\Struct::getprop($ad, 'name');
+            if (!is_string($name) || '' === $name) {
+                continue;
+            }
+            $wire = \Voxgig\Struct\Struct::getprop($ad, 'orig');
+            if (!is_string($wire) || '' === $wire) {
+                $wire = $name;
+            }
+            $val = \Voxgig\Struct\Struct::getprop($ctx->reqmatch ?? [], $name);
+            if (null === $val) {
+                $val = \Voxgig\Struct\Struct::getprop($ctx->reqdata ?? [], $name);
+            }
+            $out[] = [$name, $wire, $val];
+        }
+        return $out;
+    }
 }

@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::helpers::{getp, setp};
+use crate::utility::param::call_args;
 use crate::utility::voxgigstruct::Value;
 
 pub fn prepare_query_util(ctx: &Rc<Context>) -> Value {
@@ -89,6 +90,13 @@ pub fn prepare_query_util(ctx: &Rc<Context>) -> Value {
             {
                 setp(&out, &wire_name(&key), val);
             }
+        }
+    }
+
+    // A create or update passes its query arguments in its data.
+    for (name, wire, val) in call_args(ctx, "query") {
+        if !val.is_noval() && !val.is_null() && !contains(&name) && !in_args(&name) && !in_header(&name) {
+            setp(&out, &wire, val);
         }
     }
 

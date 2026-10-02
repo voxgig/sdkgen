@@ -4,6 +4,37 @@
 
 import Foundation
 
+// The {name} placeholders in a text, in order.
+func pathPlaceholders(_ text: String) -> [String] {
+  var out: [String] = []
+  var open: String.Index? = nil
+  for i in text.indices {
+    let ch = text[i]
+    if ch == "{" {
+      open = i
+    } else if ch == "}" || ch == "/" {
+      if ch == "}", let o = open, text.index(after: o) < i {
+        out.append(String(text[o...i]))
+      }
+      open = nil
+    }
+  }
+  return out
+}
+
+// The path parameters of a point that neither the call nor the entity gives a
+// value for, looked up where paramUtil looks.
+private func unfilledParams(_ ctx: Context, _ point: VMap) -> [String] {
+  var missing: [String] = []
+  for part in gp(point, "parts").asList?.items ?? [] {
+    guard let text = part.asString, pathPlaceholders(text) == [text] else { continue }
+    let name = String(text.dropFirst().dropLast())
+    let given = [ctx.reqmatch, ctx.match, ctx.reqdata, ctx.data].contains { !isNil(gp($0, name)) }
+    if !given { missing.append(name) }
+  }
+  return missing
+}
+
 func makePointUtil(_ ctx: Context) throws -> VMap? {
   if let stored = ctx.out["point"], let sp = stored {
     // A PrePoint feature hook (e.g. rbac) may short-circuit the operation by
@@ -100,18 +131,34 @@ func makePointUtil(_ ctx: Context) throws -> VMap? {
         return (last.asString ?? "").hasPrefix("{")
       }
 
-      point = op.points.first
-      for candidate in op.points {
-        guard let best = point else { break }
-        let candTerm = terminalParam(candidate)
-        let bestTerm = terminalParam(best)
-        if candTerm != bestTerm {
-          if candTerm { point = candidate }
+      func ownPoint(_ points: [VMap]) -> VMap {
+        var best = points[0]
+        for candidate in points {
+          let candTerm = terminalParam(candidate)
+          let bestTerm = terminalParam(best)
+          if candTerm != bestTerm {
+            if candTerm { best = candidate }
+          }
+          else if partsLen(candidate) < partsLen(best) {
+            best = candidate
+          }
         }
-        else if partsLen(candidate) < partsLen(best) {
-          point = candidate
-        }
+        return best
       }
+
+      // A call without an action falls back to a point without one, as
+      // generation does, and only to a route the call can fill.
+      let plain = op.points.filter { isNil(gp(gp($0, "select"), "$action")) }
+      let pool = plain.isEmpty ? op.points : plain
+      let fillable = pool.filter { unfilledParams(ctx, $0).isEmpty }
+
+      if fillable.isEmpty {
+        throw ctx.makeError("point_no_match",
+          "Operation \"\(op.name)\" has no endpoint whose path parameters are all given (missing: " +
+          unfilledParams(ctx, ownPoint(pool)).joined(separator: ", ") + ").")
+      }
+
+      point = ownPoint(fillable)
     }
 
     let reqAction = gp(reqselector, "$action")
@@ -223,6 +270,13 @@ func makeUrlUtil(_ ctx: Context) throws -> String {
       url = regexReplace(url, pattern, escurl(.string(stringify(val))))
       resmatch.entries[key] = val
     }
+  }
+
+  // A placeholder left in the path would send the request to the wrong route.
+  let unfilled = pathPlaceholders(url)
+  if !unfilled.isEmpty {
+    throw ctx.makeError("url_param_missing",
+      "URL path has no value for " + unfilled.joined(separator: ", ") + ".")
   }
 
   var qsep = "?"

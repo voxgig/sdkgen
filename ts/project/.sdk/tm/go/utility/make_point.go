@@ -1,6 +1,7 @@
 package utility
 
 import (
+	"regexp"
 	"strings"
 
 	vs "github.com/voxgig/struct"
@@ -42,6 +43,28 @@ func ownPoint(points []map[string]any) map[string]any {
 		}
 	}
 	return best
+}
+
+var pathParamRe = regexp.MustCompile(`^\{([^{}/]+)\}$`)
+
+// The path parameters of a point that neither the call nor the entity gives
+// a value for, looked up where prepareParamsUtil looks.
+func unfilledParams(ctx *core.Context, point map[string]any) []string {
+	missing := []string{}
+	parts, _ := vs.GetProp(point, "parts").([]any)
+	for _, part := range parts {
+		text, _ := part.(string)
+		found := pathParamRe.FindStringSubmatch(text)
+		if nil == found {
+			continue
+		}
+		name := found[1]
+		if nil == vs.GetProp(ctx.Reqmatch, name) && nil == vs.GetProp(ctx.Match, name) &&
+			nil == vs.GetProp(ctx.Reqdata, name) && nil == vs.GetProp(ctx.Data, name) {
+			missing = append(missing, name)
+		}
+	}
+	return missing
 }
 
 func makePointUtil(ctx *core.Context) (map[string]any, error) {
@@ -136,7 +159,32 @@ func makePointUtil(ctx *core.Context) (map[string]any, error) {
 						"\" is not valid.")
 			}
 
-			point = ownPoint(op.Points)
+			// A call without an action falls back to a point without one, as
+			// generation does, and only to a route the call can fill.
+			pool := []map[string]any{}
+			for _, cand := range op.Points {
+				if nil == vs.GetProp(vs.GetProp(cand, "select"), "$action") {
+					pool = append(pool, cand)
+				}
+			}
+			if 0 == len(pool) {
+				pool = op.Points
+			}
+			fillable := []map[string]any{}
+			for _, cand := range pool {
+				if 0 == len(unfilledParams(ctx, cand)) {
+					fillable = append(fillable, cand)
+				}
+			}
+
+			if 0 == len(fillable) {
+				return nil, ctx.MakeError("point_no_match",
+					"Operation \""+op.Name+
+						"\" has no endpoint whose path parameters are all given (missing: "+
+						strings.Join(unfilledParams(ctx, ownPoint(pool)), ", ")+").")
+			}
+
+			point = ownPoint(fillable)
 		}
 
 		if reqselector != nil {

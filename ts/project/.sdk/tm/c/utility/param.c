@@ -57,3 +57,26 @@ voxgig_value* param_util(Context* ctx, voxgig_value* paramdef) {
 
   return val;
 }
+
+// The arguments a point declares in one location, query or header, each as
+// [name, wire, val]: the name it travels under and the value this call passes
+// in its match or else its data. Unlike a path parameter, the entity's stored
+// match and data never supply one.
+voxgig_value* call_args(Context* ctx, const char* kind) {
+  voxgig_value* out = voxgig_new_list();
+  voxgig_value* defs = getpath2(ctx->point, "args", kind);
+  if (!voxgig_is_list(defs)) return out;
+
+  voxgig_list* dl = voxgig_as_list(defs);
+  for (size_t i = 0; i < dl->len; i++) {
+    voxgig_value* name = getp(dl->items[i], "name");
+    if (!voxgig_is_string(name) || voxgig_as_string(name)[0] == '\0') continue;
+    voxgig_value* orig = getp(dl->items[i], "orig");
+    voxgig_value* wire = voxgig_is_string(orig) && voxgig_as_string(orig)[0] != '\0' ? orig : name;
+
+    voxgig_value* val = getp(ctx->reqmatch, voxgig_as_string(name));
+    if (v_is_noval(val) || v_is_null(val)) val = getp(ctx->reqdata, voxgig_as_string(name));
+    voxgig_list_push(voxgig_as_list(out), clist(3, name, wire, val));
+  }
+  return out;
+}

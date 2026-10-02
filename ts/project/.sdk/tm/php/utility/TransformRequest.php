@@ -4,6 +4,7 @@ declare(strict_types=1);
 // ProjectName SDK utility: transform_request
 
 require_once __DIR__ . '/../core/Helpers.php';
+require_once __DIR__ . '/Param.php';
 
 class ProjectNameTransformRequest
 {
@@ -14,7 +15,7 @@ class ProjectNameTransformRequest
         if ($spec) {
             $spec->step = 'reqform';
         }
-        $data = self::omit($ctx->reqdata, self::header_arg_names($point));
+        $data = self::omit($ctx->reqdata, self::routed_arg_names($ctx));
         $transform = ProjectNameHelpers::to_map(\Voxgig\Struct\Struct::getprop($point, 'transform'));
         if (!$transform) {
             return self::strip_action($data);
@@ -34,19 +35,13 @@ class ProjectNameTransformRequest
         return self::omit($reqdata, ['$action']);
     }
 
-    // A header argument travels as a header, which PrepareHeaders sends, so
-    // the body is built from the request data without it.
-    private static function header_arg_names(mixed $point): array
+    // A header or query argument travels where PrepareHeaders or PrepareQuery
+    // sends it, so the body is built from the request data without it.
+    private static function routed_arg_names(ProjectNameContext $ctx): array
     {
-        $hl = $point ? \Voxgig\Struct\Struct::getpath($point, 'args.header') : null;
-        $names = [];
-        foreach (is_array($hl) ? $hl : [] as $hd) {
-            $name = \Voxgig\Struct\Struct::getprop($hd, 'name');
-            if (is_string($name) && '' !== $name) {
-                $names[] = $name;
-            }
-        }
-        return $names;
+        $args = array_merge(ProjectNameParam::callArgs($ctx, 'header'),
+            ProjectNameParam::callArgs($ctx, 'query'));
+        return array_map(fn($arg) => $arg[0], $args);
     }
 
     private static function omit(mixed $reqdata, array $names): mixed

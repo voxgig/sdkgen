@@ -53,3 +53,25 @@ def param_util(ctx, paramdef):
             val = vs.getprop(data, akey)
 
     return val
+
+
+# The arguments a point declares in one location, query or header, each with
+# the name it travels under and the value this call passes in its match or
+# else its data. Unlike a path parameter, the entity's stored match and data
+# never supply one.
+def call_args(ctx, kind):
+    out = []
+    defs = vs.getpath(ctx.point, "args." + kind) if ctx.point is not None else None
+    if isinstance(defs, list):
+        for ad in defs:
+            name = vs.getprop(ad, "name")
+            if not isinstance(name, str) or name == "":
+                continue
+            wire = vs.getprop(ad, "orig")
+            if not isinstance(wire, str) or wire == "":
+                wire = name
+            val = vs.getprop(ctx.reqmatch or {}, name)
+            if val is None:
+                val = vs.getprop(ctx.reqdata or {}, name)
+            out.append((name, wire, val))
+    return out

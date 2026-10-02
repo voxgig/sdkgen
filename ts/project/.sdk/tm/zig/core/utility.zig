@@ -913,6 +913,43 @@ fn point_terminal_param(point: Value) bool {
     return 0 < last.string.len and '{' == last.string[0];
 }
 
+fn own_point(points: []const Value) Value {
+    var best = points[0];
+    for (points) |cand| {
+        const cand_term = point_terminal_param(cand);
+        const best_term = point_terminal_param(best);
+        if (cand_term != best_term) {
+            if (cand_term) best = cand;
+        } else if (point_parts_len(cand) < point_parts_len(best)) {
+            best = cand;
+        }
+    }
+    return best;
+}
+
+// The path parameters of a point that neither the call nor the entity gives a
+// value for, looked up where param_util looks.
+fn unfilled_params(ctx: *Context, point: Value) [][]const u8 {
+    var missing: std.ArrayList([]const u8) = .empty;
+    const parts = h.getp(point, "parts");
+    if (parts == .array) {
+        for (parts.array.data.items) |part| {
+            if (part != .string) continue;
+            const text = part.string;
+            if (text.len < 3 or '{' != text[0] or '}' != text[text.len - 1] or
+                std.mem.indexOfAny(u8, text[1 .. text.len - 1], "{}/") != null) continue;
+            const name = text[1 .. text.len - 1];
+            const sources = [_]Value{ ctx.reqmatch, ctx.mtch, ctx.reqdata, ctx.data };
+            var given = false;
+            for (sources) |src| {
+                if (!h.is_noval(h.getp(src, name))) given = true;
+            }
+            if (!given) missing.append(h.A(), name) catch {};
+        }
+    }
+    return missing.toOwnedSlice(h.A()) catch &.{};
+}
+
 pub fn make_point_util(ctx: *Context) E!Value {
     if (ctx.out_get("point")) |ov| {
         switch (ov) {
@@ -1005,23 +1042,28 @@ pub fn make_point_util(ctx: *Context) E!Value {
                 return ctx.fail("point_action_invalid", fmt("Operation \"{s}\" action \"{s}\" is not valid.", .{ op.name, h.stringify(unmatched_action) }));
             }
 
-            // A terminal parameter marks a record route (/boards/{id}); a
-            // cross-reference ends in the relationship's name
-            // (/posts/{id}/author). Failing that, the shallower path wins.
-            // The same rule runs at generation time, in helpers/opShape.ts —
-            // both sides must move together.
-            point = h.get_elem(points, h.vnum(0), h.vnull());
+            // A call without an action falls back to a point without one, as
+            // generation does, and only to a route the call can fill.
+            var all: std.ArrayList(Value) = .empty;
+            var pool: std.ArrayList(Value) = .empty;
             var j: i64 = 0;
             while (j < plen) : (j += 1) {
                 const cand = h.get_elem(points, h.vnum(j), h.vnull());
-                const cand_term = point_terminal_param(cand);
-                const best_term = point_terminal_param(point);
-                if (cand_term != best_term) {
-                    if (cand_term) point = cand;
-                } else if (point_parts_len(cand) < point_parts_len(point)) {
-                    point = cand;
-                }
+                all.append(h.A(), cand) catch {};
+                if (h.is_noval(h.getp(h.to_map(h.getp(cand, "select")), "$action"))) pool.append(h.A(), cand) catch {};
             }
+            if (0 == pool.items.len) pool = all;
+            var fillable: std.ArrayList(Value) = .empty;
+            for (pool.items) |cand| {
+                if (0 == unfilled_params(ctx, cand).len) fillable.append(h.A(), cand) catch {};
+            }
+
+            if (0 == fillable.items.len) {
+                const missing = std.mem.join(h.A(), ", ", unfilled_params(ctx, own_point(pool.items))) catch "";
+                return ctx.fail("point_no_match", fmt("Operation \"{s}\" has no endpoint whose path parameters are all given (missing: {s}).", .{ op.name, missing }));
+            }
+
+            point = own_point(fillable.items);
         }
 
         const req_action = h.getp(reqselector, "$action");
@@ -1117,6 +1159,22 @@ pub fn make_spec_util(ctx: *Context) E!*Spec {
     return spec2;
 }
 
+// The {name} placeholders in a text, in order.
+fn placeholders(text: []const u8) [][]const u8 {
+    var out: std.ArrayList([]const u8) = .empty;
+    var i: usize = 0;
+    while (i < text.len) : (i += 1) {
+        if ('{' != text[i]) continue;
+        const rest = text[i + 1 ..];
+        const n = std.mem.indexOfAny(u8, rest, "{}/") orelse rest.len;
+        if (0 < n and n < rest.len and '}' == rest[n]) {
+            out.append(h.A(), text[i .. i + n + 2]) catch {};
+            i += n + 1;
+        }
+    }
+    return out.toOwnedSlice(h.A()) catch &.{};
+}
+
 pub fn make_url_util(ctx: *Context) E![]const u8 {
     const spec = ctx.spec orelse return ctx.fail("url_no_spec", "Expected context spec property to be defined.");
     const result = ctx.result orelse return ctx.fail("url_no_result", "Expected context result property to be defined.");
@@ -1151,6 +1209,12 @@ pub fn make_url_util(ctx: *Context) E![]const u8 {
                 h.setp(resmatch, key, val);
             }
         }
+    }
+
+    // A placeholder left in the path would send the request to the wrong route.
+    const unfilled = placeholders(url);
+    if (0 < unfilled.len) {
+        return ctx.fail("url_param_missing", fmt("URL path has no value for {s}.", .{std.mem.join(h.A(), ", ", unfilled) catch ""}));
     }
 
     var qsep: []const u8 = "?";
@@ -1412,6 +1476,31 @@ pub fn prepare_method_util(ctx: *Context) []const u8 {
     return "";
 }
 
+// One argument a point declares, with the name it travels under and the value
+// the call passes for it.
+const CallArg = struct { name: []const u8, wire: []const u8, val: Value };
+
+// The arguments a point declares in one location, query or header, each with
+// the name it travels under and the value this call passes in its match or
+// else its data. Unlike a path parameter, the entity's stored match and data
+// never supply one.
+fn call_args(ctx: *Context, kind: []const u8) []CallArg {
+    var out: std.ArrayList(CallArg) = .empty;
+    const defs: Value = h.getpath(&.{ "args", kind }, ctx.point);
+    if (defs == .array) {
+        for (defs.array.data.items) |ad| {
+            const name = h.getp(ad, "name");
+            if (name != .string or name.string.len == 0) continue;
+            const orig = h.getp(ad, "orig");
+            const wire: []const u8 = if (orig == .string and orig.string.len != 0) orig.string else name.string;
+            var val = h.getp(ctx.reqmatch, name.string);
+            if (h.is_noval(val)) val = h.getp(ctx.reqdata, name.string);
+            out.append(h.A(), .{ .name = name.string, .wire = wire, .val = val }) catch {};
+        }
+    }
+    return out.toOwnedSlice(h.A()) catch &.{};
+}
+
 pub fn prepare_headers_util(ctx: *Context) Value {
     const options: Value = if (ctx.client) |client| client.options_map() else ctx.options;
 
@@ -1421,29 +1510,18 @@ pub fn prepare_headers_util(ctx: *Context) Value {
         else => h.omap(),
     };
 
-    // A header parameter travels as a header, under the name the definition
-    // gives it, and only from this call's own arguments. It replaces a default
-    // of the same name, whatever its case.
-    const aheader: Value = h.getpath(&.{ "args", "header" }, ctx.point);
-    if (aheader == .array) {
-        for (aheader.array.data.items) |hd| {
-            const name = h.getp(hd, "name");
-            if (name != .string or name.string.len == 0) continue;
-            const orig = h.getp(hd, "orig");
-            const wire: []const u8 = if (orig == .string and orig.string.len != 0) orig.string else name.string;
-            var val = h.getp(ctx.reqmatch, name.string);
-            if (h.is_noval(val)) val = h.getp(ctx.reqdata, name.string);
-            if (h.is_noval(val)) continue;
-            const key = std.ascii.allocLowerString(h.A(), wire) catch wire;
-            while (true) {
-                var kit = out.object.iterator();
-                const same: ?[]const u8 = while (kit.next()) |kv| {
-                    if (std.ascii.eqlIgnoreCase(kv.key_ptr.*, key)) break kv.key_ptr.*;
-                } else null;
-                _ = out.object.fetchOrderedRemove(same orelse break);
-            }
-            h.setp(out, key, h.vstr(h.stringify(val)));
+    // A header argument replaces a default of the same name, whatever its case.
+    for (call_args(ctx, "header")) |arg| {
+        if (h.is_noval(arg.val)) continue;
+        const key = std.ascii.allocLowerString(h.A(), arg.wire) catch arg.wire;
+        while (true) {
+            var kit = out.object.iterator();
+            const same: ?[]const u8 = while (kit.next()) |kv| {
+                if (std.ascii.eqlIgnoreCase(kv.key_ptr.*, key)) break kv.key_ptr.*;
+            } else null;
+            _ = out.object.fetchOrderedRemove(same orelse break);
         }
+        h.setp(out, key, h.vstr(h.stringify(arg.val)));
     }
 
     return out;
@@ -1552,6 +1630,17 @@ pub fn prepare_query_util(ctx: *Context) Value {
             }
             if (!h.is_noval(val) and !std.mem.eql(u8, key, "$action") and !contained) h.setp(out, wire, val);
         }
+    }
+
+    // A create or update passes its query arguments in its data.
+    for (call_args(ctx, "query")) |arg| {
+        var contained = h.is_noval(arg.val) or names_key(aparams, arg.name) or names_key(aheader, arg.name);
+        if (params == .array) {
+            for (params.array.data.items) |v| {
+                if (v == .string and std.mem.eql(u8, v.string, arg.name)) contained = true;
+            }
+        }
+        if (!contained) h.setp(out, arg.wire, arg.val);
     }
     return out;
 }
@@ -1808,33 +1897,39 @@ pub fn result_body_util(ctx: *Context) ?*SdkResult {
 // `$action` selects the point (see make_point_util); it is never an API
 // field, so the body is a copy without it. The caller's map is left untouched.
 fn strip_action(reqdata: Value) Value {
-    return omit_keys(reqdata, h.vnull(), true);
+    return omit_keys(reqdata, &.{}, true);
 }
 
-// A header argument travels as a header, which prepare_headers_util sends, so
-// the body is built from the request data without it.
-fn dropped(key: []const u8, point: Value, action: bool) bool {
+// A header or query argument travels where prepare_headers_util or
+// prepare_query_util sends it, so the body is built from the request data
+// without it.
+fn routed_arg_names(ctx: *Context) [][]const u8 {
+    var names: std.ArrayList([]const u8) = .empty;
+    for ([_][]const u8{ "header", "query" }) |kind| {
+        for (call_args(ctx, kind)) |arg| names.append(h.A(), arg.name) catch {};
+    }
+    return names.toOwnedSlice(h.A()) catch &.{};
+}
+
+fn dropped(key: []const u8, routed: []const []const u8, action: bool) bool {
     if (action) return std.mem.eql(u8, key, "$action");
-    const aheader: Value = h.getpath(&.{ "args", "header" }, point);
-    if (aheader != .array) return false;
-    for (aheader.array.data.items) |hd| {
-        const name = h.getp(hd, "name");
-        if (name == .string and std.mem.eql(u8, name.string, key)) return true;
+    for (routed) |name| {
+        if (std.mem.eql(u8, name, key)) return true;
     }
     return false;
 }
 
-fn omit_keys(reqdata: Value, point: Value, action: bool) Value {
+fn omit_keys(reqdata: Value, routed: []const []const u8, action: bool) Value {
     if (reqdata != .object) return reqdata;
     var found = false;
     var it = reqdata.object.iterator();
-    while (it.next()) |kv| found = found or dropped(kv.key_ptr.*, point, action);
+    while (it.next()) |kv| found = found or dropped(kv.key_ptr.*, routed, action);
     if (!found) return reqdata;
     const body = h.omap();
     var bit = reqdata.object.iterator();
     while (bit.next()) |kv| {
         const key = kv.key_ptr.*;
-        if (!dropped(key, point, action)) h.setp(body, key, kv.value_ptr.*);
+        if (!dropped(key, routed, action)) h.setp(body, key, kv.value_ptr.*);
     }
     return body;
 }
@@ -1845,7 +1940,7 @@ pub fn transform_request_util(ctx: *Context) Value {
 
     if (spec) |sp| sp.step = "reqform";
 
-    const reqdata = omit_keys(ctx.reqdata, point, false);
+    const reqdata = omit_keys(ctx.reqdata, routed_arg_names(ctx), false);
 
     const transform = h.to_map(h.getp(point, "transform"));
     if (h.is_noval(transform)) return strip_action(reqdata);

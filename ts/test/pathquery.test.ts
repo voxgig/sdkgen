@@ -11,6 +11,7 @@ import { transform } from 'sucrase'
 const TM = Path.resolve(__dirname, '..', 'project', '.sdk', 'tm')
 
 
+// A ts template, with its sibling imports loaded from the templates beside it.
 function loadTemplate(rel: string): any {
   const file = Path.join(TM, rel)
   const js = transform(readFileSync(file, 'utf8'), {
@@ -18,14 +19,28 @@ function loadTemplate(rel: string): any {
     filePath: file,
   }).code
 
+  const req = (p: string) => '../types' === p ? {} : p.startsWith('.') ?
+    loadTemplate(Path.relative(TM, Path.resolve(Path.dirname(file), p)) + '.ts') : require(p)
+
   const mod: any = { exports: {} }
   const fn = new Function('exports', 'require', 'module', '__dirname', '__filename', js)
-  fn(mod.exports, require, mod, Path.dirname(file), file)
+  fn(mod.exports, req, mod, Path.dirname(file), file)
   return mod.exports
 }
 
 
-const struct = { items: (o: any) => Object.entries(o ?? {}) }
+const struct = {
+  items: (o: any) => Object.entries(o ?? {}),
+  getprop: (o: any, k: string) => null == o ? undefined : o[k],
+}
+
+
+// A call of the shared argument helper for one location, in any target's
+// spelling: callArgs(ctx, 'query'), call_args($ctx, 'query'), (call-args ctx
+// "query"), call_args ctx "query".
+function callsArgs(kind: string): RegExp {
+  return new RegExp('call[_-]?args\\W{1,4}(?:\\$?\\w+\\W{1,4})?' + kind + '\\b', 'i')
+}
 
 function ctx(point: any, reqmatch: any) {
   return { utility: { struct }, point, reqmatch }
@@ -158,6 +173,21 @@ describe('prepareQuery', () => {
     }
     deepStrictEqual(missing, [], 'targets whose prepareQuery never maps a query argument to its orig')
   })
+
+  // A create or update has no match, so its query arguments were left in the
+  // body.
+  test('every target takes the declared query arguments from the call', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      ok(-1 !== at, lang + ': no prepareQuery definition in ' + rel)
+      if (!callsArgs('query').test(src.slice(at, at + 4000))) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose prepareQuery reads only the match')
+  })
 })
 
 
@@ -239,7 +269,8 @@ describe('prepareHeaders', () => {
   }
 
   // Source, so it proves the shape is read, not that it runs: the header
-  // list, its orig, and a lowercased name.
+  // list and its orig, read here or through the shared argument helper, and a
+  // lowercased name.
   test('every target sends a header argument as a header', () => {
     const missing: string[] = []
     for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
@@ -247,8 +278,9 @@ describe('prepareHeaders', () => {
       const at = src.indexOf(def)
       ok(-1 !== at, lang + ': no prepareHeaders definition in ' + rel)
       const body = src.slice(at, at + 2500)
-      if (!/\bargs\b\W{1,12}header\b/.test(body) || !/\borig\b/.test(body) ||
-        !/lower|downcase|\blc\b/i.test(body)) {
+      const reads = callsArgs('header').test(body) ||
+        (/\bargs\b\W{1,12}header\b/.test(body) && /\borig\b/.test(body))
+      if (!reads || !/lower|downcase|\blc\b/i.test(body)) {
         missing.push(lang)
       }
     }
@@ -357,5 +389,84 @@ describe('makeUrl', () => {
       }
     }
     deepStrictEqual(missing, [], 'targets whose makeUrl drops a trailing slash')
+  })
+
+  // One fleet SDK sent DELETE /permission/{id} for a call that never named an
+  // id, and raised nothing.
+  test('every target refuses a URL with a placeholder left in it', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      ok(-1 !== at, lang + ': no makeUrl definition in ' + rel)
+      if (!src.slice(at, at + 3500).includes('url_param_missing')) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose makeUrl sends an unfilled placeholder')
+  })
+})
+
+
+// The rule every target's prepareQuery, prepareHeaders and transformRequest
+// share: a query or header argument comes from the call itself.
+describe('callArgs', () => {
+
+  const HELPERS: Record<string, [string, string]> = {
+    c: ['c/utility/param.c', 'voxgig_value* call_args('],
+    clojure: ['clojure/src/sdk/core.clj', '(defn- call-args '],
+    cpp: ['cpp/utility/pipeline.hpp', 'inline std::vector<CallArg> callArgs('],
+    csharp: ['csharp/utility/Param.cs', 'CallArgs(Context ctx, string kind)'],
+    elixir: ['elixir/lib/projectname/utility.ex', 'defp call_args('],
+    go: ['go/utility/param.go', 'func callArgs('],
+    java: ['java/utility/Param.java', 'static List<CallArg> callArgs('],
+    js: ['js/src/utility/ParamUtility.js', 'function callArgs('],
+    kotlin: ['kotlin/utility/Prepare.kt', 'internal fun callArgs('],
+    lua: ['lua/core/helpers.lua', 'function helpers.call_args('],
+    ocaml: ['ocaml/sdk_runtime.ml', 'let call_args '],
+    perl: ['perl/utility/param.pm', 'sub call_args'],
+    php: ['php/utility/Param.php', 'public static function callArgs('],
+    py: ['py/pkg/utility/param.py', 'def call_args('],
+    rb: ['rb/utility/param.rb', 'def self.call_args('],
+    rust: ['rust/utility/param.rs', 'pub fn call_args('],
+    scala: ['scala/utility/Misc.scala', 'def callArgs('],
+    swift: ['swift/Sources/ProjectNameSDK/utility/Prepare.swift', 'func callArgs('],
+    ts: ['ts/src/utility/ParamUtility.ts', 'function callArgs('],
+    zig: ['zig/core/utility.zig', 'fn call_args('],
+  }
+
+  // A read of the entity's stored match or data, in each target's spelling.
+  const STORED = new RegExp('ctx(?:\\?\\.|\\.|->)\\{?(?:c_)?(?:match|data|Match|Data|mtch|matchData)\\b' +
+    '|getprop\\(ctx, "(?:match|data)"\\)|oget ctx :(?:match|data)\\b')
+
+  function helperBody(rel: string, def: string): string {
+    const src = readFileSync(Path.join(TM, rel), 'utf8')
+    const at = src.indexOf(def)
+    ok(-1 !== at, 'no argument helper definition in ' + rel)
+    return src.slice(at, at + 1200)
+  }
+
+  test('every target reads a declared argument, its orig, and the call', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(HELPERS)) {
+      const body = helperBody(rel, def)
+      if (!/\bargs\b/.test(body) || !/\borig\b/.test(body) ||
+        !/reqmatch/i.test(body) || !/reqdata/i.test(body)) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose argument helper misses part of the rule')
+  })
+
+  // An idempotency key or a query flag stored on the entity would be replayed
+  // on its next call.
+  test('no target takes one from the entity\'s stored match or data', () => {
+    const readers: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(HELPERS)) {
+      if (STORED.test(helperBody(rel, def))) {
+        readers.push(lang)
+      }
+    }
+    deepStrictEqual(readers, [], 'targets whose argument helper reads the entity')
   })
 })

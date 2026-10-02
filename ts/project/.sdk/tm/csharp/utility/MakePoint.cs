@@ -1,5 +1,7 @@
 // ProjectName SDK utility: makePoint - endpoint resolution.
 
+using System.Text.RegularExpressions;
+
 using Voxgig.Struct;
 
 namespace ProjectNameSdk.Util;
@@ -25,6 +27,63 @@ public static partial class SdkUtility
             return false;
         }
         return parts[parts.Count - 1] is string last && last.StartsWith("{");
+    }
+
+    private static readonly Regex PathParamRe = new Regex("^\\{([^{}/]+)\\}\\z");
+
+    private static Dictionary<string, object?>? OwnPoint(List<Dictionary<string, object?>> points)
+    {
+        var best = points[0];
+        foreach (var candidate in points)
+        {
+            var candTerm = TerminalParam(candidate);
+            var bestTerm = TerminalParam(best);
+            if (candTerm != bestTerm)
+            {
+                if (candTerm)
+                {
+                    best = candidate;
+                }
+            }
+            else if (PartsLen(candidate) < PartsLen(best))
+            {
+                best = candidate;
+            }
+        }
+        return best;
+    }
+
+    // The path parameters of a point that neither the call nor the entity
+    // gives a value for, looked up where ParamUtil looks.
+    private static List<string> UnfilledParams(Context ctx, Dictionary<string, object?>? point)
+    {
+        var missing = new List<string>();
+        if (StructUtils.GetProp(point, "parts") is not List<object?> parts)
+        {
+            return missing;
+        }
+        foreach (var part in parts)
+        {
+            var found = PathParamRe.Match(part as string ?? "");
+            if (!found.Success)
+            {
+                continue;
+            }
+            var name = found.Groups[1].Value;
+            var given = false;
+            foreach (var src in new[] { ctx.Reqmatch, ctx.Match, ctx.Reqdata, ctx.Data })
+            {
+                if (src != null && StructUtils.GetProp(src, name) != null)
+                {
+                    given = true;
+                }
+            }
+            if (!given)
+            {
+                missing.Add(name);
+            }
+        }
+        return missing;
     }
 
     internal static Dictionary<string, object?>? MakePointUtil(Context ctx)
@@ -146,23 +205,25 @@ public static partial class SdkUtility
                         "\" is not valid.");
                 }
 
-                point = op.Points[0];
-                foreach (var candidate in op.Points)
+                // A call without an action falls back to a point without one,
+                // as generation does, and only to a route the call can fill.
+                var pool = op.Points.Where(candidate => StructUtils.GetProp(
+                    Helpers.ToMapAny(StructUtils.GetProp(candidate, "select")), "$action") == null).ToList();
+                if (pool.Count == 0)
                 {
-                    var candTerm = TerminalParam(candidate);
-                    var bestTerm = TerminalParam(point);
-                    if (candTerm != bestTerm)
-                    {
-                        if (candTerm)
-                        {
-                            point = candidate;
-                        }
-                    }
-                    else if (PartsLen(candidate) < PartsLen(point))
-                    {
-                        point = candidate;
-                    }
+                    pool = op.Points.ToList();
                 }
+                var fillable = pool.Where(candidate => UnfilledParams(ctx, candidate).Count == 0).ToList();
+
+                if (fillable.Count == 0)
+                {
+                    throw ctx.MakeError("point_no_match",
+                        "Operation \"" + op.Name +
+                        "\" has no endpoint whose path parameters are all given (missing: " +
+                        string.Join(", ", UnfilledParams(ctx, OwnPoint(pool))) + ").");
+                }
+
+                point = OwnPoint(fillable);
             }
 
             if (reqselector != null)

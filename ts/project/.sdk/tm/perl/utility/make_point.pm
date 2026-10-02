@@ -38,6 +38,38 @@ sub _terminal_param {
   return (defined $last && !ref $last && $last =~ /^\{/) ? 1 : 0;
 }
 
+# The entity's own route among some points.
+sub _own_point {
+  my (@points) = @_;
+  my $best = $points[0];
+  for my $p (@points) {
+    if (_terminal_param($p) != _terminal_param($best)) {
+      $best = $p if _terminal_param($p);
+    }
+    elsif (_parts_len($p) < _parts_len($best)) {
+      $best = $p;
+    }
+  }
+  return $best;
+}
+
+# The path parameters of a point that neither the call nor the entity gives a
+# value for, looked up where prepare_params looks.
+sub _unfilled {
+  my ($ctx, $point) = @_;
+  my $parts = ProjectNameHelpers::gp($point, 'parts');
+  return () unless Voxgig::Struct::islist($parts);
+  my @missing;
+  for my $part (@$parts) {
+    next unless defined $part && !ref $part && $part =~ /\A\{([^{}\/]+)\}\z/;
+    my $name = $1;
+    push @missing, $name
+      unless grep { defined ProjectNameHelpers::gp($_ || {}, $name) }
+        ($ctx->{reqmatch}, $ctx->{match}, $ctx->{reqdata}, $ctx->{data});
+  }
+  return @missing;
+}
+
 $REGISTRY{make_point} = sub {
   my ($ctx) = @_;
 
@@ -124,15 +156,23 @@ $REGISTRY{make_point} = sub {
           Voxgig::Struct::stringify($unmatched_action) . '" is not valid.'));
       }
 
-      $point = $op->{points}[0];
-      for my $p (@{ $op->{points} }) {
-        if (_terminal_param($p) != _terminal_param($point)) {
-          $point = $p if _terminal_param($p);
-        }
-        elsif (_parts_len($p) < _parts_len($point)) {
-          $point = $p;
-        }
+      # A call without an action falls back to a point without one, as
+      # generation does, and only to a route the call can fill.
+      my @plain = grep {
+        !defined ProjectNameHelpers::gp(
+          ProjectNameHelpers::to_map(ProjectNameHelpers::gp($_, 'select')), '$action')
+      } @{ $op->{points} };
+      my @pool = @plain ? @plain : @{ $op->{points} };
+      my @fillable = grep { my @missing = _unfilled($ctx, $_); !@missing } @pool;
+
+      unless (@fillable) {
+        return (undef, $ctx->make_error('point_no_match',
+          'Operation "' . $op->{name} .
+          '" has no endpoint whose path parameters are all given (missing: ' .
+          join(', ', _unfilled($ctx, _own_point(@pool))) . ').'));
       }
+
+      $point = _own_point(@fillable);
     }
 
     if ($reqselector) {
