@@ -1,4 +1,4 @@
-import { flowSteps } from '@voxgig/sdkgen'
+import { flowSteps, opReachable } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -180,7 +180,9 @@ ${allSteps.length > 0 ? '        var client = setup.Client;\n\n' : ''}`)
 
 `)
 
-    const flowHasList = allSteps.some((s: any) => s.o === 'list')
+    // The stream test lists with no match, so a bare call must reach a route.
+    const flowHasList = allSteps.some((s: any) => s.o === 'list') &&
+      opReachable((entity.op as any)?.list, [])
     if (flowHasList) {
       Content(`    [Fact]
     public async Task Stream()

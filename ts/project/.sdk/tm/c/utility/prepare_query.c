@@ -69,5 +69,19 @@ voxgig_value* prepare_query_util(Context* ctx) {
       }
     }
   }
+
+  // A create or update passes its query arguments in its data.
+  voxgig_value* qargs = call_args(ctx, "query");
+  voxgig_list* ql = voxgig_as_list(qargs);
+  for (size_t i = 0; i < ql->len; i++) {
+    voxgig_list* arg = voxgig_as_list(ql->items[i]);
+    const char* name = voxgig_as_string(arg->items[0]);
+    voxgig_value* val = arg->items[2];
+    if (!v_is_noval(val) && !v_is_null(val) && !params_contains(params, name) &&
+        !args_params_contains(aparams, name) && !args_params_contains(aheader, name)) {
+      setp(out, voxgig_as_string(arg->items[1]), v_share(val));
+    }
+  }
+  voxgig_release(qargs);
   return out;
 }

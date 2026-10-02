@@ -42,6 +42,16 @@ class ProjectNameMakeUrl
             }
         }
 
+        // A placeholder left in the route would send the request to the wrong
+        // route. The base's own placeholders are server variables, resolved
+        // with the options.
+        $base = is_string($spec->base) ? rtrim($spec->base, '/') : '';
+        $route = str_starts_with($url, $base) ? substr($url, strlen($base)) : $url;
+        if (preg_match_all('/\{[^{}\/]+\}/', $route, $unfilled) > 0) {
+            return ['', $ctx->make_error('url_param_missing',
+                'URL path has no value for ' . implode(', ', $unfilled[0]) . '.')];
+        }
+
         // Append query string from spec.query.
         $qsep = '?';
         $query_items = \Voxgig\Struct\Struct::items($spec->query ?? null);

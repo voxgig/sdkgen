@@ -117,6 +117,11 @@ object PrepareQuery {
       val v = item.get(1)
       if (v != null && "$action" != key && !containsStr(params, key)) out.put(wire.getOrDefault(key, key), v)
     }
+
+    // A create or update passes its query arguments in its data.
+    for ((name, orig, v) <- Param.callArgs(ctx, "query") if v != null && !containsStr(params, name)) {
+      out.put(orig, v)
+    }
     out
   }
 
@@ -136,33 +141,11 @@ object PrepareHeaders {
     val cloned = if (headers == null) null else Helpers.toMapAny(Struct.clone(headers))
     val out: JMap[String, Object] = if (cloned != null) cloned else new LinkedHashMap[String, Object]()
 
-    // A header parameter travels as a header, under the name the definition
-    // gives it, and only from this call's own arguments. It replaces a default
-    // of the same name, whatever its case.
-    if (ctx.point != null) {
-      Struct.getpath(ctx.point, java.util.List.of("args", "header")) match {
-        case l: JList[_] =>
-          val hit = l.iterator()
-          while (hit.hasNext) {
-            val hd = hit.next()
-            Struct.getprop(hd, "name") match {
-              case name: String if name.nonEmpty =>
-                val wire = Struct.getprop(hd, "orig") match {
-                  case o: String if o.nonEmpty => o
-                  case _ => name
-                }
-                var v: Object = if (ctx.reqmatch == null) null else Struct.getprop(ctx.reqmatch, name, null)
-                if (v == null && ctx.reqdata != null) v = Struct.getprop(ctx.reqdata, name, null)
-                if (v != null) {
-                  val key = wire.toLowerCase(java.util.Locale.ROOT)
-                  out.keySet().removeIf(k => k != null && k.toLowerCase(java.util.Locale.ROOT) == key)
-                  out.put(key, Struct.stringify(v))
-                }
-              case _ =>
-            }
-          }
-        case _ =>
-      }
+    // A header argument replaces a default of the same name, whatever its case.
+    for ((_, wire, v) <- Param.callArgs(ctx, "header") if v != null) {
+      val key = wire.toLowerCase(java.util.Locale.ROOT)
+      out.keySet().removeIf(k => k != null && k.toLowerCase(java.util.Locale.ROOT) == key)
+      out.put(key, Struct.stringify(v))
     }
 
     out

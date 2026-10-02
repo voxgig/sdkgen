@@ -1,6 +1,8 @@
 
 import { Context } from '../types'
 
+import { callArgs } from './ParamUtility'
+
 
 function prepareQuery(ctx: Context) {
   const utility = ctx.utility
@@ -34,6 +36,13 @@ function prepareQuery(ctx: Context) {
   for (let [key, val] of items(reqmatch)) {
     if (null != val && '$action' !== key && !inpath.includes(key)) {
       out[wire[key] ?? key] = val
+    }
+  }
+
+  // A create or update passes its query arguments in its data.
+  for (const arg of callArgs(ctx, 'query')) {
+    if (null != arg.val && !inpath.includes(arg.name)) {
+      out[arg.wire] = arg.val
     }
   }
 

@@ -1,6 +1,7 @@
 # ProjectName SDK utility: transform_request
 require_relative 'struct/voxgig_struct'
 require_relative '../core/helpers'
+require_relative 'param'
 module ProjectNameUtilities
   # `$action` selects the point (see MakePoint); it is never an API field, so
   # the body is a copy without it. The caller's hash is left untouched.
@@ -8,12 +9,10 @@ module ProjectNameUtilities
     omit_keys(reqdata, ["$action"])
   end
 
-  # A header argument travels as a header, which PrepareHeaders sends, so the
-  # body is built from the request data without it.
-  def self.header_arg_names(point)
-    hl = point ? VoxgigStruct.getpath(point, "args.header") : nil
-    return [] unless hl.is_a?(Array)
-    hl.map { |hd| VoxgigStruct.getprop(hd, "name") }.select { |n| n.is_a?(String) && !n.empty? }
+  # A header or query argument travels where PrepareHeaders or PrepareQuery
+  # sends it, so the body is built from the request data without it.
+  def self.routed_arg_names(ctx)
+    (call_args(ctx, "header") + call_args(ctx, "query")).map(&:first)
   end
 
   def self.omit_keys(reqdata, names)
@@ -25,7 +24,7 @@ module ProjectNameUtilities
     spec = ctx.spec
     point = ctx.point
     spec.step = "reqform" if spec
-    data = ProjectNameUtilities.omit_keys(ctx.reqdata, ProjectNameUtilities.header_arg_names(point))
+    data = ProjectNameUtilities.omit_keys(ctx.reqdata, ProjectNameUtilities.routed_arg_names(ctx))
     transform = ProjectNameHelpers.to_map(VoxgigStruct.getprop(point, "transform"))
     return ProjectNameUtilities.strip_action(data) unless transform
     reqform = VoxgigStruct.getprop(transform, "req")

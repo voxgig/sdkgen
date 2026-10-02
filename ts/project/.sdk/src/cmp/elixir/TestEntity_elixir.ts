@@ -10,6 +10,7 @@ import {
   Content,
   File,
   cmp,
+  opReachable,
 } from '@voxgig/sdkgen'
 
 
@@ -25,10 +26,12 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const EName = entity.Name
   const ename = entity.name
 
-  const opnames = Object.keys(entity.op || {})
-  const hasLoad = opnames.includes('load')
-  const hasList = opnames.includes('list')
-  const hasCreate = opnames.includes('create')
+  // Each test calls with only what it shows, so a bare call must reach a
+  // route: an id for load, nothing for list, a name for create.
+  const ops: any = entity.op || {}
+  const hasLoad = opReachable(ops.load, ['id'])
+  const hasList = opReachable(ops.list, [])
+  const hasCreate = opReachable(ops.create, ['name'])
 
   const fixture = `../.sdk/test/entity/${ename}/${EName}TestData.json`
 
