@@ -513,7 +513,7 @@ src/cmp/go/Main_go.ts d2d413b873c7
 src/cmp/go/Package_go.ts 111b2b904994
 src/cmp/go/PrepareAuth_go.ts 749f232befaf
 src/cmp/go/ReadmeEntity_go.ts 76467eb192a5
-src/cmp/go/ReadmeExamplesTest_go.ts f190781dd76e
+src/cmp/go/ReadmeExamplesTest_go.ts a4d939c3d7cf
 src/cmp/go/ReadmeExplanation_go.ts 702c211cf5bb
 src/cmp/go/ReadmeHowto_go.ts 1b4f5e905937
 src/cmp/go/ReadmeInstall_go.ts 5d12316078af
@@ -981,7 +981,7 @@ src/cmp/lua/Main_lua.ts 12d209201ab5
 src/cmp/lua/Package_lua.ts ad22ea96b732
 src/cmp/lua/PrepareAuth_lua.ts e5586117a910
 src/cmp/lua/ReadmeEntity_lua.ts 65abbe121f16
-src/cmp/lua/ReadmeExamplesTest_lua.ts 859a83243921
+src/cmp/lua/ReadmeExamplesTest_lua.ts 9db724ff4430
 src/cmp/lua/ReadmeExplanation_lua.ts 74936c6ce867
 src/cmp/lua/ReadmeHowto_lua.ts bf706cc84dcc
 src/cmp/lua/ReadmeInstall_lua.ts a0104d093179
@@ -1358,7 +1358,7 @@ src/cmp/py/Main_py.ts 5630f0feb88c
 src/cmp/py/Package_py.ts f64acebbf344
 src/cmp/py/PrepareAuth_py.ts 37a58f5b3341
 src/cmp/py/ReadmeEntity_py.ts fd64bff3c546
-src/cmp/py/ReadmeExamplesTest_py.ts 734a3cfd4d03
+src/cmp/py/ReadmeExamplesTest_py.ts 2a1f8a65b371
 src/cmp/py/ReadmeExplanation_py.ts d7c6b57925cf
 src/cmp/py/ReadmeHowto_py.ts 3a5e2fa36108
 src/cmp/py/ReadmeInstall_py.ts aa3941eb8a77
@@ -1491,7 +1491,7 @@ src/cmp/rb/Main_rb.ts d92e24cb896b
 src/cmp/rb/Package_rb.ts d24de8455ef7
 src/cmp/rb/PrepareAuth_rb.ts 1ca3c30abfff
 src/cmp/rb/ReadmeEntity_rb.ts 3cdc2c1073b4
-src/cmp/rb/ReadmeExamplesTest_rb.ts e57ac3f92fca
+src/cmp/rb/ReadmeExamplesTest_rb.ts 89818e139642
 src/cmp/rb/ReadmeExplanation_rb.ts 324138dd35be
 src/cmp/rb/ReadmeHowto_rb.ts 78f217bb1bf0
 src/cmp/rb/ReadmeInstall_rb.ts 9647d87d114e
@@ -1980,7 +1980,7 @@ src/cmp/ts/Package_ts.ts 8f2b744f085e
 src/cmp/ts/PrepareAuth_ts.ts 7987802ded47
 src/cmp/ts/ReadmeEntity_ts.ts a15c2fdf8490
 src/cmp/ts/ReadmeExampleTest_ts.ts 5dfbe547c29e
-src/cmp/ts/ReadmeExamplesTest_ts.ts 433df12bf3ce
+src/cmp/ts/ReadmeExamplesTest_ts.ts 3a76e44d7eee
 src/cmp/ts/ReadmeExplanation_ts.ts adae2c36cfde
 src/cmp/ts/ReadmeHowto_ts.ts 4abcad2306c3
 src/cmp/ts/ReadmeInstall_ts.ts 9dc4a0af5ea2

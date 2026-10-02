@@ -75,6 +75,10 @@ ${entityLines}
   # signature/method-table "illustration" class.
   METHODS = %w[options_map get_utility prepare direct data_get data_set match_get match_set make get_name]
 
+  # The client VARIABLE, not the word: a gem or package name carries the word
+  # between hyphens (voxgig-sdk-multifon-client-sdk).
+  CLIENT = /(?<![\\w\\-.\\/"'])client(?![\\w\\-\\/"'])/
+
   # Ruby-level errors that indicate a real bug in a documented example (as
   # opposed to an expected not-found / domain error, which is tolerated).
   FATAL = /NoMethodError|NameError|ArgumentError|undefined method|undefined local variable|uninitialized constant|wrong number of arguments/
@@ -102,7 +106,7 @@ ${entityLines}
   # an entity operation. Every runnable block MUST be executed.
   def runnable?(b)
     b =~ /#{Regexp.escape(SDK_CLASS)}\\.(?:new|test)\\b/ ||
-      b =~ /\\bclient\\./ ||
+      b =~ /#{CLIENT}\\./ ||
       b =~ /\\.(?:load|list|create|update|remove)\\b/ ? true : false
   end
 
@@ -111,7 +115,7 @@ ${entityLines}
   # mentions the SDK but is not a signature illustration is an uncovered
   # runnable-looking block and must fail the completeness gate.
   def looks_sdk?(b)
-    return true if b =~ /\\bclient\\b/
+    return true if b =~ CLIENT
     return true if b =~ /\\b#{Regexp.escape(SDK_CLASS)}\\b/
     return true if b =~ /\\.(?:load|list|create|update|remove)\\b/
     ENTITIES.each_key { |name| return true if b =~ /\\.#{Regexp.escape(name)}\\b/ }
@@ -124,7 +128,7 @@ ${entityLines}
   # catch-all — so an unexecuted block that uses a client variable cannot hide here.
   def illustration?(b)
     return false if runnable?(b)
-    return false if b =~ /\\bclient\\b/
+    return false if b =~ CLIENT
     return true if b =~ /\\b#{Regexp.escape(SDK_CLASS)}\\b/
     METHODS.each { |m| return true if b =~ /\\b#{Regexp.escape(m)}\\s*\\(/ }
     false
@@ -161,7 +165,7 @@ ${entityLines}
   # Build the SDK 'entity' fixture option (as Ruby source) for the entities a
   # block references, falling back to seeding all entities when none are named.
   def fixtures_literal(block)
-    refs = ENTITIES.select { |name, _| block =~ /\\bclient\\.#{Regexp.escape(name)}\\b/ }
+    refs = ENTITIES.select { |name, _| block =~ /#{CLIENT}\\.#{Regexp.escape(name)}\\b/ }
     refs = ENTITIES if refs.empty?
     entity = {}
     refs.each_value { |storage| entity[storage] = { "test01" => { "id" => "test01" } } }
