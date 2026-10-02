@@ -753,7 +753,15 @@ emitted broken source reached the fleet unchallenged.
   imports beside the entity's own types — `Operation`, `Context`, `Control` —
   re-derived from `Entity.fragment.ts` by `test/ts-sdk-types.test.ts`. Neon's
   `operation` entity and Novu's `context` failed the ts build with TS2300
-  before it existed.
+  before it existed. elixir has only the LANGUAGE half: its types module
+  declares nothing but entity and op types, while Erlang and Elixir own
+  `mfa`, `node`, `port`, `module`... (`ELIXIR_BUILTIN_TYPES`, plus the
+  reserved words), so the bare entity type becomes `<name>_type`, or
+  `<name>_type2` and up when another entity — inactive ones included, since
+  the types module declares them all — already has that name
+  (`elixirTypeNames`, which the op fragments' comments read too).
+  `test/elixir-types.test.ts` re-derives the Erlang table from
+  `erl_internal` and compiles every name where a toolchain exists.
 - **`ts/test/fixture/**` has its OWN compile lane.** `check-scaffold` covers
   `ts/project/.sdk/src/cmp/**` and nothing else, so the fixture PACKAGE's
   components — which are what an external author's components look like — had
@@ -766,16 +774,32 @@ emitted broken source reached the fleet unchallenged.
   a helper that reads `e.Name`, call `deriveEntityNames()` first — and never
   memoise a result computed from an underived collection.
 - **An entity name is guarded before generation, once.** `generate()` runs
-  `guardModelNames()` before Root: an entity name that starts with a digit is
-  not an identifier in any target, so it is renamed (`3ds_session` ->
-  `n3ds_session`), along with the model's own references to it — the
-  collection key, the flow that names it, ancestor entries. The rename is on
-  the MODEL, deliberately: guarding `Name` where it is derived does not
-  survive, because the consumer's own `Root.ts` re-derives it from
-  `entity.name` per target. Do not add a second guard on a derived form. The
-  wire is untouched — a path comes from the point's `orig`, never the name.
-  Same rule, same result, as apidef's `prefixLeadingDigit`, so it is a no-op
-  on any model apidef produced.
+  `guardModelNames()` before Root, and it renames in two passes, each along
+  with the model's own references to the name — the collection key, the
+  flow that names it, ancestor entries:
+  - A name that starts with a digit is not an identifier in any target
+    (`3ds_session` -> `n3ds_session`). Same rule, same result, as apidef's
+    `prefixLeadingDigit`, so it is a no-op on any model apidef produced.
+  - Names whose identifiers or files MEET once case is ignored keep one
+    name and suffix the rest (`contacts_field` + `contactsfield` ->
+    `contactsfield2`): APFS/NTFS hold one file for the pair, and on every
+    OS tsc refuses it (TS1149) and PHP declares it twice. "Meet" is
+    `foldKeys`, the lowercased PascalCase form and the lowercased snake
+    form the C-family targets build; a group is a connected component of
+    either. Inactive entities count, because every
+    `EntityTypes_<lang>` emits them. apidef's `casecollide` only WARNS
+    about a pair that both carry operations, so this pass does fire on
+    apidef models.
+  The rename is on the MODEL, deliberately: guarding `Name` where it is
+  derived does not survive, because the consumer's own `Root.ts` re-derives
+  it from `entity.name` per target. Do not add a second guard on a derived
+  form. The wire is untouched — a path comes from the point's `orig`, never
+  the name. Right after it, `warnUngeneratedOps()` names, once per run, every
+  op of an active entity outside the five the bundled targets generate —
+  apidef's `patch` beside a PUT is the one that occurs. It speaks for those
+  targets alone: `targetOrigins()` (`action/resolve`) splits the active
+  targets by the provenance `resolveSource` would follow, and one installed
+  from another package is named as not judged, never as unable to reach it.
 - **An entity need not declare `op`.** Read it as `entity.op || {}` /
   `entity.op?.load`; an unguarded `Object.keys(entity.op)` aborts generation
   for every target. `ts/test/entityname.test.ts` fails if one is reintroduced.

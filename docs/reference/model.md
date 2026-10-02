@@ -378,6 +378,21 @@ the `Name` case variants. The SDK generates one entity class per active
 entity, with `load` / `list` / `create` / `update` / `remove` where the
 API supports them.
 
+No bundled target generates an operation under any other name. apidef
+keeps a PATCH beside a PUT as a sixth operation, `patch`, which then has
+no method in their SDKs. Each generation names every such operation of an
+active entity, with its method and path, in one warning
+(`entity-op-ungenerated`). Reclassify the operation in the guide to reach
+it, or switch it off there (`op: patch: active: false` on its path) to
+accept the gap. An inactive entity, or an operation already switched off,
+is not reported.
+
+The warning covers the bundled targets only, identified by the provenance
+each target's model file records. A target installed from another package
+may generate more operations, so the warning lists it as not judged and
+drops the advice to switch the operation off. When every active target
+comes from another package, there is no warning.
+
 An entity name is also an identifier stem: the class name, the SDK method
 that returns it, the generated type names and the per-language module names
 all come from it.
@@ -388,6 +403,38 @@ that does is prefixed with an `n` before anything reads it — the entity
 reference move with it. The request path does not: it comes from the point,
 so the SDK still calls `/3ds-sessions`. apidef applies the same rule when it
 derives the name, so this changes nothing for a model apidef produced.
+
+Two names also collide when a target derives the same identifier or file
+name from both once case is ignored, as a case-insensitive filesystem
+(macOS, Windows) and PHP class and method names do. `contacts_field` and
+`contactsfield` give `ContactsFieldEntity` and `ContactsfieldEntity`: one
+file on macOS, and on any system a TypeScript build that stops with TS1149
+(filenames that differ only in casing) and a PHP class declared twice.
+Names that differ only in their separators (`foo-bar`, `foo_bar`) collide
+the same way, as do two names the rust, c, cpp, zig and ocaml targets
+reduce to one snake form. apidef keeps both entities of such a pair when
+both carry operations, so a model apidef produced can hold one.
+
+Generation keeps one name in each colliding group and adds a numeric
+suffix to the others, before anything reads a name: `contactsfield`
+becomes `contactsfield2`, and its class `Contactsfield2Entity`. The key,
+the flow and any ancestor reference move with it, and the routes stay as
+they were. The entity that keeps its name is chosen the same way on every
+run:
+
+- a name the model holds outranks one the leading-digit rule produced,
+- then an active entity outranks an inactive one, whose name still
+  reaches every typed model,
+- then the name that sorts first in code-unit order.
+
+The suffix is the lowest number from 2 that leaves the new name clear of
+every other name in the model, case ignored, and of every basic flow key.
+A warning (`entity-name-case-guard`) names the group, the rename, and the
+renamed entity's paths. To choose the name yourself, move that entity's
+operations onto an entity named as you want in the guide
+(`.sdk/model/guide/guide.aontu`), and switch the old one off there with
+`guide: entity: contactsfield: active: false`. An entity switched off in
+the guide never reaches the model, so the pair no longer collides.
 
 ## `main.kit.feature.<name>`
 
