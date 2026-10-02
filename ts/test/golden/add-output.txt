@@ -815,7 +815,7 @@ tm/js/src/feature/README.md 630422c5567f
 tm/js/src/feature/base/BaseFeature.js 29d380a635f6
 tm/js/src/feature/test/TestFeature.js 64cd93422162
 tm/js/src/types.js f49c15c403b4
-tm/js/src/utility/CleanUtility.js 8fe607398143
+tm/js/src/utility/CleanUtility.js 0951a5263766
 tm/js/src/utility/DoneUtility.js 7da13c3a73d2
 tm/js/src/utility/FeatureAddUtility.js 7053d7f60b27
 tm/js/src/utility/FeatureHookUtility.js 55ecc0949c72
@@ -823,7 +823,7 @@ tm/js/src/utility/FeatureInitUtility.js 8626f12492c2
 tm/js/src/utility/FetcherUtility.js 95146d11d1c1
 tm/js/src/utility/GraphqlUtility.js e8aed31713c4
 tm/js/src/utility/MakeContextUtility.js bbc1c9839da2
-tm/js/src/utility/MakeErrorUtility.js 7125f4ed791f
+tm/js/src/utility/MakeErrorUtility.js cbc545744541
 tm/js/src/utility/MakeFetchDefUtility.js 624a772dedfa
 tm/js/src/utility/MakeOptionsUtility.js 8d7da586ed7d
 tm/js/src/utility/MakePointUtility.js 2f9abfa751fd
@@ -2032,7 +2032,7 @@ tm/ts/src/feature/base/BaseFeature.ts 4c0e468f5313
 tm/ts/src/feature/test/TestFeature.ts 37983ab82fef
 tm/ts/src/tsconfig.json c1b52cc621fb
 tm/ts/src/types.ts 5e1f5518bba6
-tm/ts/src/utility/CleanUtility.ts 270e1471e070
+tm/ts/src/utility/CleanUtility.ts 127a2d0fb150
 tm/ts/src/utility/DoneUtility.ts 228a75d46df4
 tm/ts/src/utility/FeatureAddUtility.ts c391267d72a9
 tm/ts/src/utility/FeatureHookUtility.ts 95985140459e
@@ -2040,7 +2040,7 @@ tm/ts/src/utility/FeatureInitUtility.ts 389de58bea48
 tm/ts/src/utility/FetcherUtility.ts 582b8d7209d4
 tm/ts/src/utility/GraphqlUtility.ts bd8ce7cadbad
 tm/ts/src/utility/MakeContextUtility.ts 50caf1a75850
-tm/ts/src/utility/MakeErrorUtility.ts fc006ea4e4ae
+tm/ts/src/utility/MakeErrorUtility.ts f0f90c81d7ce
 tm/ts/src/utility/MakeFetchDefUtility.ts 940b95f0d2b0
 tm/ts/src/utility/MakeOptionsUtility.ts 784fa1cd92d5
 tm/ts/src/utility/MakePointUtility.ts 838d0dd64da6
