@@ -29,6 +29,9 @@ $REGISTRY{make_url} = sub {
     [$spec->{base}, $spec->{prefix}, $spec->{path}, $spec->{suffix}], '/', 1);
   my $resmatch = {};
 
+  # Sent with the request, never recorded as the entity's match.
+  my %authquery = map { $_ => 1 } @{ $spec->{authquery} || [] };
+
   # A route the definition ends with a slash keeps it: a server such as a
   # Django REST one redirects or refuses the route without it.
   my $orig = $ctx->{point} ? ProjectNameHelpers::gp($ctx->{point}, 'orig') : undef;
@@ -66,7 +69,7 @@ $REGISTRY{make_url} = sub {
       if (ProjectNameHelpers::rb_truthy($val) && defined $key && !ref $key) {
         $url .= $qsep . Voxgig::Struct::escurl("$key") . '=' . Voxgig::Struct::escurl("$val");
         $qsep = '&';
-        $resmatch->{$key} = $val;
+        $resmatch->{$key} = $val unless $authquery{$key};
       }
     }
   }

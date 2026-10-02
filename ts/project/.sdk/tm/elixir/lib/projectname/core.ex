@@ -42,7 +42,10 @@ defmodule ProjectName.Spec do
       "method", d.("method", "GET"),
       "body", S.getprop(m, "body"),
       "url", d.("url", ""),
-      "path", d.("path", "")
+      "path", d.("path", ""),
+      # The query parameters prepare_auth placed: the credential, which the
+      # request sends and the entity's match leaves out.
+      "authquery", d.("authquery", S.jt([]))
     ])
   end
 end
