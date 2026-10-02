@@ -1108,7 +1108,41 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       strictEqual(header({ apikey: 'K', secret: 'S', auth: basic }), 'Basic ' + b64('K:S'), lang + ': both')
       strictEqual(header({ apikey: '', secret: 'S', auth: basic }), undefined, lang + ': no key')
       strictEqual(header({ auth: basic }), undefined, lang + ': nothing')
+
+      // The Basic pair travels under a run-time name, and the declared header goes.
+      const spec: any = { headers: { authorization: 'Basic OLD', accept: 'application/json' } }
+      const renamed = { apikey: 'K', secret: 'S', auth: { ...basic, name: 'X-Basic' } }
+      mod.exports.prepareAuth({
+        utility: { struct, cleanAdd() { } }, client: { options: () => renamed }, spec })
+      deepStrictEqual(spec.headers,
+        { accept: 'application/json', 'x-basic': 'Basic ' + b64('K:S') }, lang + ': renamed')
     }
+  })
+
+
+  // The probes in generatedcompile.test.ts drive the run-time name where a
+  // toolchain is present; this holds the read itself in every target.
+  test('every target reads the auth.name option at run time', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const PREPARE_AUTH_FILE = /(^|\/)(sdk_)?prepare_?auth(utility)?\.[a-z]+$/i
+    const READS_NAME = /\.auth\.name\b|["']auth\.name["']|["']auth["']\s*,\s*["']name["']/
+    const missing: string[] = []
+
+    for (const where of ['header', 'query', 'cookie']) {
+      const out = await generate(targets, undefined,
+        `main: kit: config: auth: { active: true, prefix: '', in: '${where}', name: 'X-Declared' }`)
+      for (const target of targets) {
+        const files = filesFor(out, target).filter(([path]) => PREPARE_AUTH_FILE.test(path))
+        if (1 !== files.length) {
+          missing.push(target + ' (' + where + '): ' + files.length + ' prepareAuth files')
+        }
+        else if (!READS_NAME.test(files[0][1])) {
+          missing.push(target + ' (' + where + '): ' + files[0][0])
+        }
+      }
+    }
+
+    deepStrictEqual(missing, [], 'prepareAuth ignores the auth.name option')
   })
 
 

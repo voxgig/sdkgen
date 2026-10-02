@@ -24,6 +24,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 
 import { makeModel, makeRoot, layeredFs, makeLog } from './generateharness'
+import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 
 
 function materialise(files: Record<string, string>, root: string) {
@@ -3440,6 +3441,171 @@ main: kit: flow: BasicNamespaceFlow: {
 `
 
 
+// prepareAuth driven on ONE spec across repeated calls, per placement: the
+// run-time `auth.name` replaces the declared name, and a credential is
+// replaced or cleared without touching the cookies, headers and query
+// parameters beside it.
+type AuthProbeRun = { ok: boolean, out: string, unlaunchable?: boolean }
+
+const AUTH_PROBE_LANES: {
+  target: string,
+  ready: () => string | null,
+  probe: (sdkroot: string, write: (name: string, source: string) => void) => AuthProbeRun,
+}[] = [
+  ...['ts', 'js'].map((target) => ({
+    target,
+    ready: () => 'ts' === target && !Fs.existsSync(TSC) ? 'typescript is not installed here' : null,
+    probe: (sdkroot: string, write: (name: string, source: string) => void) => {
+      linkDeps(sdkroot)
+      if ('ts' === target) {
+        const built = tsc(sdkroot, 'src')
+        if (!built.ok) return built
+      }
+      write('auth-probe.cjs', AUTH_PROBES.node.replace('PREPARE_AUTH',
+        ('ts' === target ? 'dist' : 'src') + '/utility/PrepareAuthUtility'))
+      return run(process.execPath, ['auth-probe.cjs'], sdkroot)
+    },
+  })),
+  ...([['py', 'python3', 'auth_probe.py'], ['rb', 'ruby', 'auth_probe.rb'],
+    ['php', 'php', 'auth_probe.php'], ['perl', 'perl', 'auth_probe.pl']] as const)
+    .map(([target, command, file]) => ({
+      target,
+      ready: () => null == toolchain(command) ? 'no ' + command + ' toolchain' : null,
+      probe: (sdkroot: string, write: (name: string, source: string) => void) => {
+        write(file, AUTH_PROBES[target])
+        return run(toolchain(command)!, [file], sdkroot)
+      },
+    })),
+  {
+    target: 'go',
+    ready: () => null == toolchain('go') ? 'no go toolchain' : null,
+    probe: (sdkroot, write) => {
+      const mod = Fs.readFileSync(Path.join(sdkroot, 'go.mod'), 'utf8').match(/^module (.+)$/m)![1]
+      write('test/auth_probe_test.go', AUTH_PROBES.go.replace('GOMODULE', mod))
+      return run(toolchain('go')!, ['test', '-v', './test', '-run', '^TestAuthProbe$'], sdkroot)
+    },
+  },
+  {
+    target: 'java',
+    ready: () => null == toolchain('javac') || null == toolchain('java') ? 'no Java toolchain' : null,
+    probe: (sdkroot, write) => {
+      write('AuthProbe.java', AUTH_PROBES.java)
+      const classes = Path.join(sdkroot, 'zz-classes')
+      Fs.mkdirSync(classes, { recursive: true })
+      const sources = listFiles(sdkroot, '.java').filter((f) => !f.split(Path.sep).includes('test'))
+      const built = run(toolchain('javac')!, ['-d', classes, ...sources], sdkroot)
+      if (!built.ok) return built
+      return run(toolchain('java')!, ['-cp', classes, 'AuthProbe'], sdkroot)
+    },
+  },
+  {
+    target: 'rust',
+    ready: () => null == toolchain('cargo') ? 'no Rust toolchain' : null,
+    probe: (sdkroot, write) => {
+      write('tests/auth_probe.rs', AUTH_PROBES.rust)
+      return run(toolchain('cargo')!, ['test', '--test', 'auth_probe', '--', '--nocapture'], sdkroot)
+    },
+  },
+  {
+    target: 'c',
+    ready: () => null == toolchain('make') || null == authProbeCc() ? 'no C toolchain' : null,
+    probe: (sdkroot, write) => {
+      write('tests/auth_probe.c', AUTH_PROBES.c)
+      const built = run(toolchain('make')!, ['CC=' + authProbeCc(), 'tests/auth_probe.out'], sdkroot)
+      if (!built.ok) return built
+      return run(Path.join(sdkroot, 'tests', 'auth_probe.out'), [], sdkroot)
+    },
+  },
+  {
+    target: 'cpp',
+    ready: () => null == toolchain('make') || null == cleanCxx() ? 'no C++ toolchain' : null,
+    probe: (sdkroot, write) => {
+      write('test/auth_probe.cpp', AUTH_PROBES.cpp)
+      const built = run(toolchain('make')!, ['CXX=' + cleanCxx(), 'test/auth_probe.out'], sdkroot)
+      if (!built.ok) return built
+      return run(Path.join(sdkroot, 'test', 'auth_probe.out'), [], sdkroot)
+    },
+  },
+  {
+    target: 'kotlin',
+    // gradle hangs on windows rather than failing, as the other kotlin lanes note.
+    ready: () => 'win32' === process.platform ? 'gradle hangs on windows'
+      : null == toolchain('gradle') ? 'no gradle toolchain' : null,
+    probe: (sdkroot, write) => {
+      write('test/AuthProbe.kt', AUTH_PROBES.kotlin)
+      return run(toolchain('gradle')!, ['--console=plain', 'test', '--tests', '*AuthProbe*'], sdkroot)
+    },
+  },
+  {
+    target: 'csharp',
+    ready: () => null == toolchain('dotnet') ? 'no .NET toolchain' : null,
+    probe: (sdkroot, write) => {
+      const sdkproj = Fs.readdirSync(sdkroot).find((n) => n.endsWith('.csproj'))!
+      const tfm = Fs.readFileSync(Path.join(sdkroot, sdkproj), 'utf8')
+        .match(/<TargetFramework>([^<]+)<\/TargetFramework>/)![1]
+      write('test/AuthProbe.cs', AUTH_PROBES.csharp)
+      write('zz-auth/AuthProbe.csproj',
+        '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>' +
+        '<OutputType>Exe</OutputType><TargetFramework>' + tfm + '</TargetFramework>' +
+        '<Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>' +
+        '<EnableDefaultCompileItems>false</EnableDefaultCompileItems>' +
+        '</PropertyGroup><ItemGroup><Compile Include="../test/AuthProbe.cs" />' +
+        '<ProjectReference Include="../' + sdkproj + '" /></ItemGroup></Project>')
+      return run(toolchain('dotnet')!, ['run', '--project', 'zz-auth/AuthProbe.csproj'], sdkroot)
+    },
+  },
+]
+
+
+function authProbeCc(): string | null {
+  const configured = process.env.CC
+  return null == configured || '' === configured
+    ? (toolchain('cc') || toolchain('gcc'))
+    : toolchain(configured)
+}
+
+
+describe('prepareAuth names, replaces and clears only its own credential', () => {
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-auth-probe-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const model of AUTH_MODELS) {
+    for (const lane of AUTH_PROBE_LANES) {
+      test(lane.target + ': a ' + model.name + ' credential', async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+
+        const sdkroot = Path.join(tmp, model.name, lane.target)
+        await generateTo(lane.target, sdkroot, model.extra)
+        Fs.writeFileSync(Path.join(sdkroot, 'auth-cases.json'), JSON.stringify(model.cases))
+
+        const ran = lane.probe(sdkroot, (name, source) => {
+          const path = Path.join(sdkroot, name)
+          Fs.mkdirSync(Path.dirname(path), { recursive: true })
+          Fs.writeFileSync(path, source)
+        })
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' +
+            tail(ran.out, 3))
+        }
+
+        ok(ran.ok, lane.target + ' (' + model.name + '):\n' + tail(ran.out))
+        ok(ran.out.includes('auth-probe: ran ' + model.cases.length + ' cases'),
+          lane.target + ' (' + model.name + ') did not run every case:\n' + tail(ran.out))
+      })
+    }
+  }
+})
+
+
 // APIs whose credential a generated test cannot name in advance. apidef takes
 // the name from the spec's own security scheme, so a test asserting the
 // literal `authorization` fails while the SDK places the credential rightly.
@@ -3448,9 +3614,8 @@ main: kit: flow: BasicNamespaceFlow: {
 // carries `auth.basic: true`: a probe that left the branch on would read a
 // base64 pair where it expects the key it passed, so the probes switch it off.
 
-// A cookie credential is not here. Its placement cases pass, but the SDK
-// clears a cookie credential by the scheme name while it lives under
-// `headers.cookie`, so the drop cases fail on the SDK, not on the test.
+// The cookie entry holds the drop cases to the credential's own pair inside
+// the shared `cookie` header, which is where prepareAuth places it.
 const CREDNAME_MODELS: { name: string, extra: string }[] = [
   {
     name: 'a credential named by the API, not `authorization`',
@@ -3462,6 +3627,12 @@ main: kit: config: auth: { active: true, prefix: '', in: 'header', name: 'X-Api-
     name: 'an HTTP Basic API, whose config takes the Basic branch',
     extra: `
 main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'X-Api-Key' }
+`,
+  },
+  {
+    name: 'a credential carried as a cookie',
+    extra: `
+main: kit: config: auth: { active: true, prefix: '', in: 'cookie', name: 'session' }
 `,
   },
 ]
@@ -3687,7 +3858,8 @@ const CREDNAME_LANES: CredNameLane[] = [
           const perl = toolchain('perl')
           return null == perl ? null : { bin: perl, args: ['-Ilib', 't/pipeline.t'] }
         },
-        ran: /^ok \d+ - prepare_auth places the apikey where this API puts it/m,
+        // A cookie credential reports its placement on a line of its own.
+        ran: /^ok \d+ - prepare_auth places the apikey (where this API puts it|as a cookie pair)$/m,
       },
       {
         name: 'the corpus prepareAuth section',
