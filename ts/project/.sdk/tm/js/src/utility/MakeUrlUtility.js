@@ -43,6 +43,15 @@ function makeUrl(ctx) {
     return ctx.error('url_param_missing', 'URL path has no value for ' + unfilled.join(', ') + '.')
   }
 
+  let qsep = '?'
+  for (let [key, val] of items(spec.query)) {
+    if (null != val) {
+      url += qsep + escurl(key) + '=' + escurl(val)
+      qsep = '&'
+      resmatch[key] = val
+    }
+  }
+
   result.resmatch = resmatch
 
   return url

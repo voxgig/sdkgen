@@ -348,6 +348,18 @@ describe('makeUrl', () => {
       deepStrictEqual(makeUrl(uctx('/pets/', { path: 'pets', suffix: '.json' })),
         'https://api.test/pets/.json')
     })
+
+    test(lang + ': the query follows the path, each name and value escaped', () => {
+      const c = uctx('/pets/{id}', { path: 'pets/{id}', params: { id: 'p 1' },
+        query: { limit: 2, 'a b': 'x&y', skip: null } })
+      deepStrictEqual(makeUrl(c), 'https://api.test/pets/p%201?limit=2&a%20b=x%26y')
+      deepStrictEqual(c.result, { resmatch: { id: 'p 1', limit: 2, 'a b': 'x&y' } })
+    })
+
+    test(lang + ': a declared trailing slash comes before the query', () => {
+      deepStrictEqual(makeUrl(uctx('/ability/', { path: 'ability', query: { limit: 5 } })),
+        'https://api.test/ability/?limit=5')
+    })
   }
 
 
@@ -404,6 +416,21 @@ describe('makeUrl', () => {
       }
     }
     deepStrictEqual(missing, [], 'targets whose makeUrl sends an unfilled placeholder')
+  })
+
+  // Source again: the spec's query, and the separator that starts it.
+  test('every target appends the query', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      ok(-1 !== at, lang + ': no makeUrl definition in ' + rel)
+      const body = src.slice(at, at + 4000)
+      if (!/query/i.test(body) || !/["']\?["']/.test(body)) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose makeUrl drops the query')
   })
 })
 

@@ -78,10 +78,10 @@ class ProjectNameValidateFeature extends ProjectNameBaseFeature
     // Outbound. make_spec short-circuits on a $ctx->out['spec'] that is
     // already set, so assigning the error here rejects the operation before
     // the request is built - the same seam rbac uses one stage earlier.
-    public function PreSpec(ProjectNameContext $ctx): mixed
+    public function PreSpec(ProjectNameContext $ctx): void
     {
         if (!$this->active || !$this->request) {
-            return null;
+            return;
         }
 
         $opname = $this->_opname($ctx);
@@ -90,19 +90,19 @@ class ProjectNameValidateFeature extends ProjectNameBaseFeature
         $opspec = is_array($ops) ? ($ops[$opname] ?? null) : null;
 
         if ($opspec === null) {
-            return null;
+            return;
         }
 
         $errs = $this->_check($ctx, $this->_payload($ctx, $opname), $opspec, 'request');
         if (count($errs) === 0 || $this->mode === 'report') {
-            return null;
+            return;
         }
 
         $entname = $this->_entname($ctx);
         $err = $ctx->make_error('validate_failed',
             "Invalid {$opname} request for entity \"{$entname}\": " . implode('; ', $errs));
         $ctx->out['spec'] = $err;
-        return $err;
+        return;
     }
 
     // Inbound. PreDone rather than PreResult: the records are extracted from
@@ -115,25 +115,25 @@ class ProjectNameValidateFeature extends ProjectNameBaseFeature
     // debug, metrics and telemetry. Those observers therefore record the
     // operation as a success before this hook has looked at it. Activating
     // features as an ORDERED LIST fixes it.
-    public function PreDone(ProjectNameContext $ctx): mixed
+    public function PreDone(ProjectNameContext $ctx): void
     {
         if (!$this->active || !$this->response) {
-            return null;
+            return;
         }
 
         $espec = $this->_entity_spec($ctx);
         if (!is_array($espec)) {
-            return null;
+            return;
         }
 
         $dataspec = $espec['data'] ?? null;
         if ($dataspec === null) {
-            return null;
+            return;
         }
 
         $result = $ctx->result ?? null;
         if ($result === null || $result->resdata === null) {
-            return null;
+            return;
         }
 
         // A list op returns many records and a load returns one; both are
@@ -159,7 +159,7 @@ class ProjectNameValidateFeature extends ProjectNameBaseFeature
         }
 
         if (count($errs) === 0 || $this->mode === 'report') {
-            return null;
+            return;
         }
 
         $entname = $this->_entname($ctx);
@@ -180,7 +180,7 @@ class ProjectNameValidateFeature extends ProjectNameBaseFeature
         // feature had just declared invalid.
         $result->resdata = null;
 
-        return $err;
+        return;
     }
 
     // The payload an operation is about to send.

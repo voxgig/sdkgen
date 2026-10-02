@@ -358,7 +358,7 @@ describe('an item from a package that still ships .aon', () => {
 
 describe('a project that predates .aontu', () => {
 
-  const FIX = /predates \.aontu[\s\S]*npm create @voxgig\/sdkgen@latest/
+  const FIX = /predates \.aontu[\s\S]*npm create @voxgig\/sdkgen@latest -- /
 
   // The CLI reads the project model relative to the working directory.
   async function inProject(
