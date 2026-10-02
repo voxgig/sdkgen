@@ -114,11 +114,11 @@ end
     ? `      query = S.getprop(spec, "query")`
     : `      headers = S.getprop(spec, "headers")`
 
-  const clear = query
-    ? 'S.delprop(query, @cred_name)'
+  const clear = (name: string) => query
+    ? `S.delprop(query, ${name})`
     : cookie
-      ? 'apply_cookie(headers, nil)'
-      : 'S.delprop(headers, @cred_name)'
+      ? `apply_cookie(headers, ${name}, nil)`
+      : `S.delprop(headers, ${name})`
 
   const preamble = `  def prepare_auth_impl(ctx) do
     spec = S.getprop(ctx, "spec")
@@ -131,9 +131,16 @@ ${bag}
 
       # Public APIs that need no auth omit the options.auth block entirely.
       if S.getprop(options, "auth") == nil do
-        ${clear}
+        ${clear('@cred_name')}
         {spec, nil}
       else
+        name = auth_name(options)
+
+        # A credential left under the declared name would travel beside the renamed one.
+        if name != @cred_name do
+          ${clear('@cred_name')}
+        end
+
         apikey = S.getprop(options, @option_apikey, @not_found)
 
 `
@@ -151,7 +158,7 @@ ${bag}
           no_secret = not is_binary(secret) or secret == @not_found or secret == ""
 
           if no_apikey do
-            S.delprop(headers, @cred_name)
+            S.delprop(headers, name)
           else
             ap = S.getpath(options, "auth.prefix")
             auth_prefix = if is_binary(ap), do: ap, else: ""
@@ -160,13 +167,13 @@ ${bag}
             # own registration covers.
             ${spec.Name}.Utility.clean_add(ctx, b64)
             hv = if auth_prefix != "", do: auth_prefix <> " " <> b64, else: b64
-            S.setprop(headers, @cred_name, hv)
+            S.setprop(headers, name, hv)
           end
         else
-${indent(place(spec, clear), 1)}
+${indent(place(spec, clear('name')), 1)}
         end
 `
-    : place(spec, clear)
+    : place(spec, clear('name'))
 
   return head + attrs + preamble + body + `
         {spec, nil}
@@ -191,7 +198,7 @@ function place(spec: AuthSpec, clear: string): string {
           # thing any API reads: the prefix is a header convention, so
           # options.auth.prefix is dropped here deliberately rather than
           # silently concatenated.
-          S.setprop(query, @cred_name, apikey_val)
+          S.setprop(query, name, apikey_val)
         end
 `
   }
@@ -200,7 +207,7 @@ function place(spec: AuthSpec, clear: string): string {
     return guard + `          apikey_val = if is_binary(apikey), do: apikey, else: ""
           # NO PREFIX IN A COOKIE either - a cookie carries a bare
           # \`name=value\` pair, not a header's scheme-prefixed credential.
-          apply_cookie(headers, apikey_val)
+          apply_cookie(headers, name, apikey_val)
         end
 `
   }
@@ -210,14 +217,24 @@ function place(spec: AuthSpec, clear: string): string {
           apikey_val = if is_binary(apikey), do: apikey, else: ""
           # Empty prefix (raw apiKey credential) must not add a leading space.
           hv = if auth_prefix != "", do: auth_prefix <> " " <> apikey_val, else: apikey_val
-          S.setprop(headers, @cred_name, hv)
+          S.setprop(headers, name, hv)
         end
 `
 }
 
 
 function helpers(spec: AuthSpec): string {
-  const optsMap = `  # The client's options as a MAP, cloned. The clone is load-bearing: the
+  const authName = `  # The client's auth.name option, when set, replaces the name the API declares.
+  defp auth_name(options) do
+    case S.getpath(options, "auth.name") do
+      given when is_binary(given) and given != "" -> ${'header' === spec.where ? 'String.downcase(given)' : 'given'}
+      _ -> @cred_name
+    end
+  end
+
+`
+
+  const optsMap = authName + `  # The client's options as a MAP, cloned. The clone is load-bearing: the
   # secrets feature rewrites options.apikey on the live client, and
   # prepare_auth must read a snapshot rather than the node the feature is
   # mutating. Same body as ${spec.Name}.Utility's own private opts_map/1.
@@ -236,8 +253,8 @@ function helpers(spec: AuthSpec): string {
   // cookies the caller set - so the pair is spliced in and out rather than
   // the header assigned over. Splicing also makes this idempotent: a
   // retried request cannot end up carrying the credential twice.
-  return optsMap + `  # The cookie header minus our own pair, every other cookie untouched.
-  defp cookies_without_cred(headers) do
+  return optsMap + `  # The cookie header minus the named pair, every other cookie untouched.
+  defp cookies_without_cred(headers, name) do
     existing = S.getprop(headers, @cookie_header)
 
     if is_binary(existing) and existing != "" do
@@ -245,8 +262,8 @@ function helpers(spec: AuthSpec): string {
       |> String.split(";")
       |> Enum.map(&String.trim/1)
       |> Enum.reject(fn piece ->
-        piece == "" or piece == @cred_name or
-          String.starts_with?(piece, @cred_name <> "=")
+        piece == "" or piece == name or
+          String.starts_with?(piece, name <> "=")
       end)
       |> Enum.join("; ")
     else
@@ -254,9 +271,9 @@ function helpers(spec: AuthSpec): string {
     end
   end
 
-  # Remove our pair, leaving the rest of the cookie header in place.
-  defp apply_cookie(headers, nil) do
-    rest = cookies_without_cred(headers)
+  # Remove the named pair, leaving the rest of the cookie header in place.
+  defp apply_cookie(headers, name, nil) do
+    rest = cookies_without_cred(headers, name)
 
     if rest == "" do
       S.delprop(headers, @cookie_header)
@@ -265,10 +282,10 @@ function helpers(spec: AuthSpec): string {
     end
   end
 
-  # Set our pair, leaving the rest of the cookie header in place.
-  defp apply_cookie(headers, value) do
-    rest = cookies_without_cred(headers)
-    pair = @cred_name <> "=" <> value
+  # Set the named pair, leaving the rest of the cookie header in place.
+  defp apply_cookie(headers, name, value) do
+    rest = cookies_without_cred(headers, name)
+    pair = name <> "=" <> value
     S.setprop(headers, @cookie_header, if(rest == "", do: pair, else: rest <> "; " <> pair))
   end
 

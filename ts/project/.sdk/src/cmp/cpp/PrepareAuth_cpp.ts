@@ -74,7 +74,8 @@ function render(spec: AuthSpec): string {
 #ifndef SDK_UTILITY_PREPARE_AUTH_HPP
 #define SDK_UTILITY_PREPARE_AUTH_HPP
 
-${withBasic ? `#include <cstddef>
+${'header' === spec.where ? `#include <algorithm>
+` : ''}${withBasic ? `#include <cstddef>
 ` : ''}#include <string>
 
 #include "../core/types.hpp"
@@ -150,8 +151,23 @@ inline std::string authBase64(const std::string& in) {
   // Public APIs that need no auth omit the options.auth block entirely, and
   // \`auth: null\` is the documented way to suppress a credential outright.
   if (is_nullish(getp(options, "auth"))) {
-${clear(spec.where, 4)}
+${clear(spec.where, 'CRED_NAME', 4)}
     return spec;
+  }
+
+  // The client's auth.name option, when set, replaces the name the API declares.
+  std::string name = as_str(Struct::getpath(options, {"auth", "name"}));
+  if (name.empty()) {
+    name = CRED_NAME;
+  }${'header' === spec.where ? ` else {
+    // ASCII rules, as a field name is ASCII: std::tolower follows the C locale.
+    std::transform(name.begin(), name.end(), name.begin(),
+      [](char c) { return ('A' <= c && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c; });
+  }` : ''}
+
+  // A credential left under the declared name would travel beside the renamed one.
+  if (name != CRED_NAME) {
+${clear(spec.where, 'CRED_NAME', 4)}
   }
 
   Value apikey = getp(options, "apikey", Value(NOT_FOUND));
@@ -181,7 +197,7 @@ ${clear(spec.where, 4)}
     }
 
     if (skip) {
-${clear(spec.where, 6)}
+${clear(spec.where, 'name', 6)}
     } else {
       std::string authPrefix = as_str(Struct::getpath(options, {"auth", "prefix"}));
       std::string b64 = authBase64(
@@ -191,9 +207,9 @@ ${clear(spec.where, 6)}
       // registration covers.
       ctx->utility->cleanAdd(ctx, Value(b64));
       if (authPrefix.empty()) {
-        map_put(headers, CRED_NAME, Value(b64));
+        map_put(headers, name, Value(b64));
       } else {
-        map_put(headers, CRED_NAME, Value(authPrefix + " " + b64));
+        map_put(headers, name, Value(authPrefix + " " + b64));
       }
     }
 
@@ -203,7 +219,7 @@ ${clear(spec.where, 6)}
 
   return head + helpers + basicHelper + preamble + basicBlock + `
   if (skip) {
-${clear(spec.where, 4)}
+${clear(spec.where, 'name', 4)}
   } else {
 ${place(spec.where)}
   }
@@ -215,7 +231,7 @@ ${place(spec.where)}
 
 
 function cookieHelpers(): string {
-  return `// The cookie header minus our own pair, every other cookie untouched.
+  return `// The cookie header minus the named pair, every other cookie untouched.
 inline std::string authCookieRest(const Value& headers, const std::string& cred) {
   std::string existing = as_str(getp(headers, "cookie"));
   if (existing.empty()) return "";
@@ -245,7 +261,7 @@ inline std::string authCookieRest(const Value& headers, const std::string& cred)
 }
 
 
-// Set (remove=false) or drop (remove=true) our pair, leaving the rest in place.
+// Set (remove=false) or drop (remove=true) the named pair, leaving the rest in place.
 inline void authCookieApply(const Value& headers, const std::string& cred,
                             const std::string& value, bool remove) {
   std::string rest = authCookieRest(headers, cred);
@@ -278,24 +294,24 @@ function bagName(where: string): string {
 }
 
 
-function clear(where: string, indent: number): string {
+function clear(where: string, name: string, indent: number): string {
   const pad = ' '.repeat(indent)
 
   if ('cookie' === where) {
-    return `${pad}authCookieApply(headers, CRED_NAME, "", true);`
+    return `${pad}authCookieApply(headers, ${name}, "", true);`
   }
 
-  return `${pad}map_remove(${bagName(where)}, CRED_NAME);`
+  return `${pad}map_remove(${bagName(where)}, ${name});`
 }
 
 
 function place(where: string): string {
   if ('query' === where) {
-    return `    map_put(query, CRED_NAME, Value(apikey.is_string() ? apikey.as_string() : ""));`
+    return `    map_put(query, name, Value(apikey.is_string() ? apikey.as_string() : ""));`
   }
 
   if ('cookie' === where) {
-    return `    authCookieApply(headers, CRED_NAME,
+    return `    authCookieApply(headers, name,
       apikey.is_string() ? apikey.as_string() : "", false);`
   }
 
@@ -304,9 +320,9 @@ function place(where: string): string {
     // A raw credential (empty prefix, e.g. an apiKey scheme) must go in
     // as-is; only a non-empty prefix (Bearer/Basic/OAuth) is space-joined.
     if (authPrefix.empty()) {
-      map_put(headers, CRED_NAME, Value(apikeyVal));
+      map_put(headers, name, Value(apikeyVal));
     } else {
-      map_put(headers, CRED_NAME, Value(authPrefix + " " + apikeyVal));
+      map_put(headers, name, Value(authPrefix + " " + apikeyVal));
     }`
 }
 

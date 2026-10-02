@@ -84,10 +84,8 @@ final class PrepareAuth {
       'import java.nio.charset.StandardCharsets;',
       'import java.util.Base64;',
     ] : []),
-    // `List.of("auth", "prefix")` is the only use of java.util.List, and a
-    // prefix is a HEADER convention — the query and cookie branches drop it,
-    // so neither needs the import.
-    ...(header ? ['import java.util.List;'] : []),
+    ...(cookie ? ['import java.util.ArrayList;'] : []),
+    'import java.util.List;',
     'import java.util.Map;',
   ].join('\n')
 
@@ -113,7 +111,7 @@ final class PrepareAuth {
           || NOT_FOUND.equals(secret) || "".equals(secret);
 
       if (noApikey) {
-        headers.remove(CRED_NAME);
+        headers.remove(name);
       }
       else {
         String basicPrefix = "";
@@ -127,10 +125,10 @@ final class PrepareAuth {
         // registration covers.
         ctx.utility.cleanAdd.apply(ctx, b64);
         if ("".equals(basicPrefix)) {
-          headers.put(CRED_NAME, b64);
+          headers.put(name, b64);
         }
         else {
-          headers.put(CRED_NAME, basicPrefix + " " + b64);
+          headers.put(name, basicPrefix + " " + b64);
         }
       }
 
@@ -152,6 +150,13 @@ final class PrepareAuth {
 
 ${consts}
 
+  // The client's auth.name option, when set, replaces the name the API declares.
+  static String authName(Map<String, Object> options) {
+    Object name = Struct.getpath(options, List.of("auth", "name"));
+    return name instanceof String && !"".equals(name)
+        ? ${header ? '((String) name).toLowerCase(java.util.Locale.ROOT)' : '(String) name'} : CRED_NAME;
+  }
+${cookie ? COOKIE_HELPER : ''}
   static Spec prepareAuth(Context ctx) {
     Spec spec = ctx.spec;
     if (spec == null) {
@@ -164,8 +169,15 @@ ${consts}
 
     // Public APIs that need no auth omit the options.auth block entirely.
     if (options.get("auth") == null) {
-      ${clear(spec.where)}
+      ${clear(spec.where, 'CRED_NAME')}
       return spec;
+    }
+
+    String name = authName(options);
+
+    // A credential left under the declared name would travel beside the renamed one.
+    if (!name.equals(CRED_NAME)) {
+      ${clear(spec.where, 'CRED_NAME')}
     }
 
     Object apikey = Struct.getprop(options, OPTION_APIKEY, NOT_FOUND);
@@ -180,10 +192,10 @@ ${basicBlock}
     }
 
     if (skip) {
-      ${clear(spec.where)}
+      ${clear(spec.where, 'name')}
     }
     else {
-${place(spec.where)}
+${place(spec.where, 'name')}
     }
 
     return spec;
@@ -198,28 +210,58 @@ function credName(where: string, name: string): string {
 }
 
 
-function clear(where: string): string {
-  return 'query' === where ? 'query.remove(CRED_NAME);' : 'headers.remove(CRED_NAME);'
+// A cookie has no header of its own: place() writes it into `cookie` as
+// `name=value`, so clear() frees that pair, not a header of that name.
+function clear(where: string, name: string): string {
+  if ('cookie' === where) {
+    return `applyCookie(headers, ${name}, null);`
+  }
+  return 'query' === where ? `query.remove(${name});` : `headers.remove(${name});`
 }
 
 
-function place(where: string): string {
+// The cookie header is shared with whatever cookies the caller set, so the
+// credential's pair is spliced in and out rather than appended.
+const COOKIE_HELPER = `
+  // Rewrites the cookie header with the named pair removed, then set to the
+  // value when it is not null; every other cookie is kept in order.
+  static void applyCookie(Map<String, Object> headers, String name, String value) {
+    Object existing = headers.get(COOKIE_HEADER);
+    String cookie = existing instanceof String ? (String) existing : "";
+    List<String> kept = new ArrayList<>();
+    for (String part : cookie.split(";")) {
+      String piece = part.trim();
+      if (!piece.isEmpty() && !piece.equals(name) && !piece.startsWith(name + "=")) {
+        kept.add(piece);
+      }
+    }
+    if (value != null) {
+      kept.add(name + "=" + value);
+    }
+    if (kept.isEmpty()) {
+      headers.remove(COOKIE_HEADER);
+    }
+    else {
+      headers.put(COOKIE_HEADER, String.join("; ", kept));
+    }
+  }
+`
+
+
+function place(where: string, name: string): string {
   if ('query' === where) {
     return `      String apikeyVal = apikey instanceof String ? (String) apikey : "";
       // NO PREFIX IN A QUERY STRING: ?name=Bearer%20abc is not a thing any
       // API reads, so the auth.prefix option is dropped here deliberately.
-      query.put(CRED_NAME, apikeyVal);`
+      query.put(${name}, apikeyVal);`
   }
 
   if ('cookie' === where) {
     return `      String apikeyVal = apikey instanceof String ? (String) apikey : "";
-      // A cookie IS a header, but the request may already carry others, so
-      // the pair is APPENDED rather than replacing the whole cookie header.
-      // No prefix, for the same reason a query parameter carries none.
-      Object existing = Struct.getprop(headers, COOKIE_HEADER, "");
-      String cookie = existing instanceof String ? (String) existing : "";
-      String pair = CRED_NAME + "=" + apikeyVal;
-      headers.put(COOKIE_HEADER, "".equals(cookie) ? pair : cookie + "; " + pair);`
+      // Spliced in, replacing an earlier pair of the same name, beside any
+      // cookie the caller set. No prefix, for the same reason a query
+      // parameter carries none.
+      applyCookie(headers, ${name}, apikeyVal);`
   }
 
   return `      String authPrefix = "";
@@ -230,10 +272,10 @@ function place(where: string): string {
       String apikeyVal = apikey instanceof String ? (String) apikey : "";
       // Empty prefix (raw apiKey credential) must not add a leading space.
       if ("".equals(authPrefix)) {
-        headers.put(CRED_NAME, apikeyVal);
+        headers.put(${name}, apikeyVal);
       }
       else {
-        headers.put(CRED_NAME, authPrefix + " " + apikeyVal);
+        headers.put(${name}, authPrefix + " " + apikeyVal);
       }`
 }
 
