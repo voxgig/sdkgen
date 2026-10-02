@@ -23,6 +23,9 @@ import type { Manifest, Finding } from '../helpers/manifest'
 
 import { satisfies } from '../helpers/semver'
 
+import { npmCommand } from '../helpers/npm'
+import type { NpmCommand, NpmHost } from '../helpers/npm'
+
 import { KINDS, kindDef } from './kind'
 
 import { cmd_package_check } from './check'
@@ -757,10 +760,8 @@ async function npmFetch(pkgname: string, actx: ActionContext) {
   })
 
   try {
-    const out = await run(
-      'win32' === process.platform ? 'npm.cmd' : 'npm',
-      npmFetchArgs(pkgname),
-      { cwd, maxBuffer: 64 * 1024 * 1024 })
+    const npm = npmFetchCommand(pkgname)
+    const out = await run(npm.file, npm.args, { cwd, maxBuffer: 64 * 1024 * 1024 })
 
     actx.log.debug({
       point: 'package-update-fetched', package: pkgname,
@@ -782,6 +783,11 @@ async function npmFetch(pkgname: string, actx: ActionContext) {
 // An .npmrc `save-exact` outranks the prefix, so it is switched off here.
 function npmFetchArgs(pkgname: string): string[] {
   return ['install', '--save-dev', '--save-exact=false', '--save-prefix=~', pkgname + '@latest']
+}
+
+
+function npmFetchCommand(pkgname: string, host?: NpmHost): NpmCommand {
+  return npmCommand('npm', npmFetchArgs(pkgname), host)
 }
 
 
@@ -969,6 +975,7 @@ export {
   package_update,
   installedFrom,
   npmFetchArgs,
+  npmFetchCommand,
   resolvePackage,
   selectItems,
   parseAliases,
