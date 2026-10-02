@@ -388,6 +388,14 @@ static voxgig_value* transport_fn(void* ud, voxgig_value* args) {
   return respond(sc, url);
 }
 
+// Offline, as every generated suite is: the test OPTION resolves a required
+// server variable to test-<name>, and installs no transport. A construction
+// that fails aborts, which no harness can catch, so the option is the guard.
+static voxgig_value* offline(voxgig_value* opts) {
+  setp(opts, "test", cmap(1, "active", v_bool(true)));
+  return opts;
+}
+
 static ${Name}SDK* make_sdk_with(int sc, voxgig_value* cleanopts, Feature* extra,
     voxgig_value* auth) {
   voxgig_value* feature = v_map();
@@ -418,7 +426,7 @@ static ${Name}SDK* make_sdk_with(int sc, voxgig_value* cleanopts, Feature* extra
     "feature", feature,
     "system", cmap(1, "fetch", vfn(transport_fn, (void*)(intptr_t)sc)));
   if (auth) setp(opts, "auth", auth);
-  ${Name}SDK* sdk = ${ident}_sdk_new(opts);
+  ${Name}SDK* sdk = ${ident}_sdk_new(offline(opts));
 
   // C options are pure data, so the extension feature is added after
   // construction (the \`extend\` option of the ts client).
@@ -456,9 +464,9 @@ typedef struct {
 // The first operation that completes against a plain 200: with no
 // arguments, else with every path parameter its points declare filled in.
 static bool usable_op(Target* target) {
-  ${Name}SDK* plain = ${ident}_sdk_new(cmap(2,
+  ${Name}SDK* plain = ${ident}_sdk_new(offline(cmap(2,
     "apikey", v_str(CANARY_APIKEY),
-    "system", cmap(1, "fetch", vfn(transport_fn, (void*)(intptr_t)SC_OK))));
+    "system", cmap(1, "fetch", vfn(transport_fn, (void*)(intptr_t)SC_OK)))));
   for (size_t i = 0; CANDIDATES[i].name; i++) {
     voxgig_value* filled = v_map();
     for (size_t p = 0; CANDIDATES[i].params[p]; p++) {
@@ -564,9 +572,9 @@ int main(void) {
   // A credential mistyped as a map. The C validator defaults rather than
   // rejects, so what the constructor produced is swept instead: a string
   // quoting the value, cleaned the way a validation message is.
-  ${Name}SDK* mistyped = ${ident}_sdk_new(cmap(2,
+  ${Name}SDK* mistyped = ${ident}_sdk_new(offline(cmap(2,
     "apikey", cmap(1, "value", v_str(CANARY_APIKEY)),
-    "clean", cmap(1, "values", v_str(CANARY_VALUE))));
+    "clean", cmap(1, "values", v_str(CANARY_VALUE)))));
   {
     char quoted[256];
     snprintf(quoted, sizeof(quoted), "apikey: expected string, got {\\"value\\":\\"%s\\"}",
@@ -615,11 +623,11 @@ int main(void) {
   push("stepped", pn_error_str(stepped));
 
   // A client given no clean block at all masks by the schema defaults.
-  ${Name}SDK* bare = ${ident}_sdk_new(cmap(4,
+  ${Name}SDK* bare = ${ident}_sdk_new(offline(cmap(4,
     "apikey", v_str(CANARY_APIKEY),
     "secret", v_str(CANARY_SECRET),
     "headers", cmap(1, "X-Custom-Token", v_str(CANARY_HEADER)),
-    "system", cmap(1, "fetch", vfn(transport_fn, (void*)(intptr_t)SC_NOTFOUND))));
+    "system", cmap(1, "fetch", vfn(transport_fn, (void*)(intptr_t)SC_NOTFOUND)))));
   PNError* barerr = drive(bare, op, NULL);
   CHECK(barerr != NULL, "the 404 scenario must throw without a clean block");
 
@@ -712,8 +720,8 @@ int main(void) {
 
   // A registered value used as a property name is masked; names that mask
   // alike are all kept.
-  ${Name}SDK* named = ${ident}_sdk_new(cmap(1,
-    "clean", cmap(1, "values", v_str("ZZVAL-abc123,ZZVAL-xyz789"))));
+  ${Name}SDK* named = ${ident}_sdk_new(offline(cmap(1,
+    "clean", cmap(1, "values", v_str("ZZVAL-abc123,ZZVAL-xyz789")))));
   voxgig_value* renamed = clean_util(sdk_get_root_ctx(named), cmap(3,
     "ZZVAL-abc123", v_num(1), "ZZVAL-xyz789", v_num(2), "plain", v_num(3)));
   voxgig_map* rm = voxgig_as_map(renamed);
@@ -754,7 +762,7 @@ int main(void) {
   // entity block, of per-entity settings or seeded records keyed by entity
   // name and id, is not read at all.
   {
-    ${Name}SDK* featured = ${ident}_sdk_new(cmap(3,
+    ${Name}SDK* featured = ${ident}_sdk_new(offline(cmap(3,
       "apikey", v_str(CANARY_APIKEY),
       "feature", cmap(2,
         "secrets", cmap(3,
@@ -766,7 +774,7 @@ int main(void) {
           "entity", cmap(1, "zztoken", cmap(1, "ZZTOKEN01",
             cmap(1, "note", v_str("PLAINRECORD-t5r3e1w9")))))),
       "entity", cmap(1, "zztoken", cmap(1, "alias",
-        cmap(1, "zzkey", v_str("PLAINALIAS-m2n4b6v8"))))));
+        cmap(1, "zzkey", v_str("PLAINALIAS-m2n4b6v8")))))));
     Context* fctx = sdk_get_root_ctx(featured);
     char want[128];
     snprintf(want, sizeof(want), "ZZNAME-feat123 %s", MASK);

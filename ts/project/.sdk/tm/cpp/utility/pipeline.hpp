@@ -1740,6 +1740,51 @@ inline Value optsWithout(const Value& opts, std::initializer_list<const char*> k
   return out;
 }
 
+// A templated base URL takes each {name} from options.server. An empty value
+// cannot make a working URL, so it fails construction, except in test mode,
+// where it becomes test-<name>.
+inline std::string resolveServerBase(const std::string& base, const Value& opts,
+                                     const Value& config, CtxPtr ctx) {
+  bool testmode = is_true(Struct::getpath(opts, {"test", "active"}))
+    || is_true(Struct::getpath(opts, {"feature", "test", "active"}));
+  Value server = Helpers::toMapAny(getp(opts, "server"));
+  Value nameV = Struct::getpath(config, {"main", "name"});
+  std::string sdkname = nameV.is_string() && !nameV.as_string().empty()
+    ? nameV.as_string() : "SDK";
+  auto namechar = [](char c) {
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || '_' == c;
+  };
+
+  std::string out;
+  size_t i = 0;
+  while (i < base.size()) {
+    size_t j = i + 1;
+    if ('{' == base[i]) {
+      while (j < base.size() && namechar(base[j])) j++;
+    }
+    // A placeholder only when it closes and the name is [A-Za-z0-9_]+.
+    if ('{' != base[i] || j == i + 1 || j >= base.size() || '}' != base[j]) {
+      out += base[i];
+      i++;
+      continue;
+    }
+    std::string name = base.substr(i + 1, j - i - 1);
+    Value val = server.is_map() ? getp(server, name) : Value::undef();
+    if (val.is_string() && !val.as_string().empty()) {
+      out += val.as_string();
+    } else if (testmode) {
+      out += "test-" + name;
+    } else {
+      throw std::make_shared<SdkError>("server_var_required",
+          sdkname + ": the server variable '" + name + "' is required: the API base URL is '" +
+          base + "' - pass {\"server\", vmap({{\"" + name + "\", Value(\"...\")}})} in the SDK options",
+          ctx.get());
+    }
+    i = j + 1;
+  }
+  return out;
+}
+
 inline Value makeOptions(CtxPtr ctx) {
   Value options = ctx->options;
   if (!options.is_map()) options = vmap();
@@ -1874,6 +1919,11 @@ inline Value makeOptions(CtxPtr ctx) {
       map_put(sm, "fetch", sysFetch);
       map_put(opts, "system", sm);
     }
+  }
+
+  Value baseV = getp(opts, "base");
+  if (baseV.is_string() && std::string::npos != baseV.as_string().find('{')) {
+    map_put(opts, "base", Value(resolveServerBase(baseV.as_string(), opts, config, ctx)));
   }
 
   // Resolve the feature add-order: an explicit list order (above) wins;

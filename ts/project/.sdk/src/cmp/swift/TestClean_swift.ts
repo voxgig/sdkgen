@@ -335,6 +335,16 @@ final class ${Name}CleanTest: XCTestCase {
     gp(SdkConfig.makeConfig(), "feature").asMap?.entries[name] != nil
   }
 
+  // Offline, as every generated suite is: the test OPTION resolves a required
+  // server variable to test-<name>, and installs no transport. A construction
+  // that fails traps, which no harness can catch, so the option is the guard.
+  static func offline(_ opts: VMap) -> VMap {
+    let out = VMap()
+    for (k, v) in opts.entries { out.entries[k] = v }
+    out.entries["test"] = .map(vm(("active", .bool(true))))
+    return out
+  }
+
   static func makeSdk(
     _ scenario: Scenario, _ box: SinkBox, _ cleanopts: VMap? = nil, _ extra: [BaseFeature] = [],
     auth: VMap? = nil
@@ -389,7 +399,7 @@ ${cost ? `    if hasFeature("cost") {
     opts.entries["extend"] = .list(VList(extend))
     opts.entries["utility"] = .map(vm(("fetcher", .nat(fetch))))
     if let a = auth { opts.entries["auth"] = .map(a) }
-    return ${Name}SDK(opts)
+    return ${Name}SDK(${Name}CleanTest.offline(opts))
   }
 
   // Emitted from the model: every active entity with the operations it
@@ -420,7 +430,7 @@ ${candidateLines}
     let opts = VMap()
     opts.entries["apikey"] = .string(canaryApikey)
     opts.entries["utility"] = .map(vm(("fetcher", .nat(fetch))))
-    let plain = ${Name}SDK(opts)
+    let plain = ${Name}SDK(${Name}CleanTest.offline(opts))
     for candidate in candidates {
       for op in candidate.ops {
         let filled: [String] = candidate.params[op] ?? []
@@ -493,7 +503,7 @@ ${candidateLines}
     let mistyped = VMap()
     mistyped.entries["apikey"] = .map(vm(("value", .string(canaryApikey))))
     mistyped.entries["clean"] = .map(vm(("values", .string(canaryValue))))
-    box.sinks += ${Name}CleanTest.formsOf("mistyped", ${Name}SDK(mistyped))
+    box.sinks += ${Name}CleanTest.formsOf("mistyped", ${Name}SDK(${Name}CleanTest.offline(mistyped)))
 
     // An error a feature hook raises, quoting the request, skips makeError.
     // A swift hook cannot throw, so no variant fails from PreUnexpected.
@@ -549,7 +559,8 @@ ${candidateLines}
       if !isNil(clean) {
         bareopts.entries["clean"] = clean
       }
-      let bareerr = ${Name}CleanTest.drive(${Name}SDK(bareopts), target, vm(("explain", .map(VMap()))), box)
+      let bareerr = ${Name}CleanTest.drive(
+        ${Name}SDK(${Name}CleanTest.offline(bareopts)), target, vm(("explain", .map(VMap()))), box)
       XCTAssertNotNil(bareerr, "the 404 should fail with clean: " + stringify(clean))
     }
 

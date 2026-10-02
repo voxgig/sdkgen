@@ -27,10 +27,46 @@ import {
   isAuthActive,
   entityDataIdField, envName, envToken,
   serverVarEnv,
-  serverVariables
+  serverVariables,
+  liveFlowNeeds, liveStrict, liveStrictNote,
 } from '@voxgig/sdkgen'
 
 import { formatRubyValue } from './utility_rb'
+
+
+// The live prologue of a flow built from offline fixtures: blocked without
+// the ids it binds, and a create-less load reading the first listed record.
+function liveFlowGate(entity: any, needs: any, entidEnv: string): string {
+  let out = ''
+  if (0 < needs.keys.length) {
+    out += `    if setup[:live]
+      [${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')}].each do |_live_key|
+        if setup[:synthetic_only] || setup[:idmap][_live_key].nil?
+          Runner.live_miss(LIVE_STRICT, "Live entity test blocked: needs #{_live_key} via ${entidEnv}")
+        end
+      end
+    end
+`
+  }
+  if (null != needs.blocked) {
+    out += `    if setup[:live]
+      Runner.live_miss(LIVE_STRICT, "Live entity test blocked: " + ${JSON.stringify(needs.blocked)})
+    end
+`
+  }
+  out += '    client = setup[:client]\n'
+  if (null != needs.discover) {
+    const match = Object.entries(needs.discover)
+      .map(([k, v]: any) => `${JSON.stringify(k)} => setup[:idmap][${JSON.stringify(v)}]`).join(', ')
+    out += `    if setup[:live]
+      Runner.live_existing(setup, LIVE_STRICT, ${JSON.stringify(entity.name)}) do
+        client.${entity.Name}(nil).list({${match}}, nil)
+      end
+    end
+`
+  }
+  return out
+}
 
 
 // See TestEntity_ts.ts for the GenCtx/OpGen contract.
@@ -98,6 +134,10 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
 
+  const strict = liveStrict(model, target.name)
+  const needs = liveFlowNeeds(entity, basicflow)
+  const entidEnv = PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID'
+
   File({ name: entity.name + '_entity_test.' + target.ext }, () => {
 
     Content(`# ${entity.Name} entity test
@@ -108,6 +148,9 @@ require_relative "../${model.const.Name}_sdk"
 require_relative "runner"
 
 class ${entity.Name}EntityTest < Minitest::Test
+${liveStrictNote(strict, '#', '  ')}
+  LIVE_STRICT = ${strict}
+
   def test_create_instance
     testsdk = ${model.const.Name}SDK.test(nil, nil)
     ent = testsdk.${entity.Name}(nil)
@@ -161,14 +204,7 @@ ${hasList ? `
         return
       end
     end
-    # The basic flow consumes synthetic IDs from the fixture. In live mode
-    # without an *_ENTID env override, those IDs hit the live API and 4xx.
-    if setup[:synthetic_only]
-      skip "live entity test uses synthetic IDs from fixture — set ${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID JSON to run live"
-      return
-    end
-    client = setup[:client]
-
+${liveFlowGate(entity, needs, entidEnv)}
 `)
 
     // Check if the flow has a create step
@@ -202,7 +238,11 @@ ${hasList ? `
       }
     })
 
-    Content(`  end
+    Content(`${strict ? '' : `  rescue Minitest::Skip
+    raise
+  rescue StandardError, Minitest::Assertion => e
+    Runner.live_observe(e, setup, LIVE_STRICT)
+`}  end
 end
 
 `)
@@ -236,9 +276,8 @@ end
 
 `)
 
-    Content(`  # Detect ENTID env override before envOverride consumes it. When live
-  # mode is on without a real override, the basic test runs against synthetic
-  # IDs from the fixture and 4xx's. Surface this so the test can skip.
+    Content(`  # Whether *_ENTID supplied the idmap, read before env_override consumes
+  # it: without it, the ids a live flow binds are the fixture's synthetic ones.
   entid_env_raw = ENV["${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID"]
   idmap_overridden = !entid_env_raw.nil? && entid_env_raw.strip.start_with?("{")
 

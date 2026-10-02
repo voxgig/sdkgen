@@ -3,6 +3,7 @@ const { inspect } = require('node:util')
 
 const { config } = require('./Config')
 const { Utility } = require('./utility/Utility')
+const { unreadableBody } = require('./utility/ResultBodyUtility')
 const { ProjectNameEntityBase } = require('./ProjectNameEntityBase')
 
 
@@ -219,22 +220,37 @@ class ProjectNameSDK {
       const noBody = 204 === status || 304 === status || '0' === String(contentLength)
 
       let json = undefined
+      let err = undefined
       if (!noBody) {
+        let text = undefined
         try {
-          json = 'function' === typeof fetched.json ? await fetched.json() : fetched.json
+          const raw = fetched
+          if ('function' === typeof raw.text) {
+            text = await raw.text()
+            json = '' === text.trim() ? undefined : JSON.parse(text)
+          }
+          else {
+            json = 'function' === typeof fetched.json ? await fetched.json() : fetched.json
+          }
         }
         catch (parseErr) {
-          // Body wasn't valid JSON — surface the raw response rather than
-          // throwing. data stays undefined; callers can inspect status/headers.
-          json = undefined
+          if ('SyntaxError' !== parseErr?.name) {
+            throw parseErr
+          }
+          err = unreadableBody(ctx, {
+            status, headers, text: text ?? parseErr.text, sent: fetchdef.headers,
+            failed: 200 <= status && status < 300 ? undefined :
+              ctx.error('request_status', 'request: ' + status + ': ' + fetched.statusText),
+          })
         }
       }
 
       return {
-        ok: status >= 200 && status < 300,
+        ok: null == err && status >= 200 && status < 300,
         status,
         headers: fetched.headers,
         data: json,
+        ...(null == err ? {} : { err: utility.clean(ctx, err) }),
       }
     }
     catch (err) {

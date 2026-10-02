@@ -7,9 +7,90 @@ import Http from 'node:http'
 import { spawn, spawnSync } from 'node:child_process'
 import { memfs } from 'memfs'
 import { SdkGen } from '../dist/sdkgen'
-import { makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD } from './generateharness'
+import {
+  makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD, CREATELESS_ENTITY,
+} from './generateharness'
 
 const PKG = Path.resolve(__dirname, '..')
+
+const DEFAULT_AGENT = 'Mozilla/5.0 (compatible; DemoSDK/1.0)'
+
+const CHALLENGE = '<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>' +
+  'x'.repeat(300) + '</body></html>'
+
+function actionEntity(name: string,
+  routes: { action?: string, city?: string, path: string, method?: string, bare?: boolean }[]): string {
+  const Name = name[0].toUpperCase() + name.slice(1)
+  const points = routes.map(route => `{
+      g: { query: [` + (route.bare ? '' : ` { k: "query", n: "city", or: "city", r: true,
+        t: "\`$STRING\`"` + (route.city ? `, ex: "${route.city}"` : '') + ` }`) + ` ] }
+      m: "${route.method || 'GET'}", o: "/${name}/${route.path}",
+      s: [{ lit: "${name}" }, { lit: "${route.path}" }]
+      ` + (null == route.action ? '' : `q: { "$action": "${route.action}" }`) + `
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    }`).join('\n')
+  return `
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  field: { temperature: { name: "temperature", kind: "field", type: "\`$NUMBER\`" } }
+  fields: { "temperature": { h: 'Temperature', n: "temperature", r: false, t: "\`$NUMBER\`" } }
+  op: { load: { name: "load", points: [ ${points} ] } }
+}
+main: kit: flow: Basic${Name}Flow: {
+  entity: "${name}", kind: "basic", name: "Basic${Name}Flow"
+  step: [ { o: "load", i: { ref: "${name}_ref01", srcdatavar: "${name}_ref01_data", suffix: "_dt0" } } ]
+}
+`
+}
+
+// A create reached only through actions, and the one operation with a definition
+// behind it: the live harness builds its body from the request schema.
+const ACTION_CREATE = `
+main: kit: entity: v2021: {
+  alias: field: {}
+  name: "v2021"
+  field: { city: { name: "city", kind: "field", type: "\`$STRING\`" } }
+  fields: { "city": { h: 'City', n: "city", r: false, t: "\`$STRING\`" } }
+  op: { create: { name: "create", points: [ {
+    g: {}
+    m: "POST", o: "/v2021/issue", q: { "$action": "issue" }
+    s: [{ lit: "v2021" }, { lit: "issue" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  }, {
+    g: {}
+    m: "POST", o: "/v2021/draft", q: { "$action": "draft" }
+    s: [{ lit: "v2021" }, { lit: "draft" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  } ] } }
+}
+main: kit: flow: BasicV2021Flow: {
+  entity: "v2021", kind: "basic", name: "BasicV2021Flow"
+  step: [ { o: "create", i: { ref: "v2021_ref01" } } ]
+}
+`
+
+const CREATE_FACTS = {
+  protocol: 'http',
+  requestBody: { required: true, content: { 'application/json': { schema: {
+    type: 'object', required: ['city'], properties: { city: { type: 'string', example: 'bern' } },
+  } } } },
+  responses: { '200': { content: { 'application/json': { example: { id: 'issue01', city: 'bern' } } } } },
+}
+const DEFINED: Record<string, any> = { 'POST /v2021/issue': CREATE_FACTS, 'POST /v2021/draft': CREATE_FACTS }
+
+// An action-only load reachable through one action, one with no usable
+// action, and one whose only usable route is an action beside a plain route.
+const EXTRA_ENTITIES = CREATELESS_ENTITY +
+  actionEntity('v2018', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current', city: 'bern' }]) +
+  actionEntity('v2019', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current' }]) +
+  actionEntity('v2020', [{ path: 'weather' }, { action: 'reset', path: 'reset', method: 'POST', bare: true }]) +
+  ACTION_CREATE
+
+function skipped(output: string): number {
+  const found = output.match(/(?:^# skipped|\u2139 skipped) (\d+)/m)
+  return null == found ? 0 : Number(found[1])
+}
 
 function child(args: string[], cwd: string): Promise<{ code: number | null, output: string }> {
   return new Promise((resolve, reject) => {
@@ -33,6 +114,8 @@ describe('generated live tests continue after failures', () => {
   let port: number
   let failure = ''
   const calls: string[] = []
+  const queries: string[] = []
+  const agents: string[] = []
   const records = new Map<string, any>()
   const roots: Record<string, string> = {}
 
@@ -42,6 +125,8 @@ describe('generated live tests continue after failures', () => {
       const url = new URL(req.url || '/', 'http://localhost')
       const key = req.method + ' ' + url.pathname
       calls.push(key)
+      queries.push(key + url.search)
+      agents.push(String(req.headers['user-agent']))
       let body = ''
       for await (const chunk of req) body += chunk
       const send = (data: any, status = 200) => {
@@ -49,6 +134,23 @@ describe('generated live tests continue after failures', () => {
         res.end(JSON.stringify(data))
       }
       if (failure === key) return send({ error: 'failure-fixture' }, 500)
+      const html = (status: number) => {
+        res.writeHead(status, { 'content-type': 'text/html; charset=utf-8' })
+        res.end(CHALLENGE)
+      }
+      if (failure === 'ua' && !String(req.headers['user-agent']).startsWith('Mozilla/')) return html(403)
+      if (failure === 'html' && url.pathname === '/history') return html(200)
+      if (failure === 'empty' && req.method === 'GET' &&
+        ['/planet', '/history', '/metric'].includes(url.pathname)) return send([])
+      if (url.pathname === '/metric') return send([{ id: 'metric01', count: 3 }])
+      if (url.pathname.startsWith('/metric/')) return send({ id: url.pathname.split('/').pop(), count: 3 })
+      if (key === 'GET /v2018/current' && url.searchParams.get('city') === 'bern') {
+        return send({ temperature: 12 })
+      }
+      if (key === 'POST /v2021/issue' || key === 'POST /v2021/draft') {
+        return send({ id: 'issue01', ...JSON.parse(body || '{}') })
+      }
+      if (/^\/v20(18|19|20)\//.test(url.pathname)) return send({ error: 'unexpected route' }, 404)
       if (failure === 'invalid-json' && url.pathname === '/history') {
         res.writeHead(200, { 'content-type': 'application/json' })
         return res.end('not json')
@@ -80,9 +182,11 @@ describe('generated live tests continue after failures', () => {
     await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
     port = (server.address() as any).port
 
-    for (const target of ['ts', 'js']) {
+    for (const name of ['ts', 'js', 'ts-lenient', 'js-lenient']) {
+      const target = name.replace('-lenient', '')
       const model = makeModel([target], undefined,
-        `main: kit: info: servers: [{ url: 'http://127.0.0.1:${port}' }]`, ['test'])
+        `main: kit: info: servers: [{ url: 'http://127.0.0.1:${port}' }]\n` + EXTRA_ENTITIES +
+        (name === target ? '' : '\nmain: kit: test: live: strict: false\n'), ['test'])
       delete model.main.kit.entity.planet.op.load.points[0].g.params[0].ex
       // The first route needs an unavailable parent; the singleton route
       // remains usable and must still be exercised without ENTID.
@@ -98,10 +202,12 @@ describe('generated live tests continue after failures', () => {
       const cwd = process.cwd()
       try {
         process.chdir(SCAFFOLD)
-        await generator.generate({ model, root: makeRoot() })
+        // The resolved definition, as apidef publishes it on the build context.
+        await generator.generate({ model, root: makeRoot(),
+          buildctx: { resolved: { operation: (m: string, o: string) => DEFINED[m + ' ' + o] } } })
       }
       finally { process.chdir(cwd) }
-      const root = roots[target] = Path.join(tmp, target)
+      const root = roots[name] = Path.join(tmp, name)
       for (const [file, content] of Object.entries(vol.toJSON())) {
         const rel = Path.relative(STAGE, file).split(Path.sep).join('/')
         if (!rel.startsWith(target + '/') || content == null) continue
@@ -141,15 +247,31 @@ describe('generated live tests continue after failures', () => {
   })
 
   async function run(target: string, mode: string, direct = false) {
+    return runTests(target, mode, direct
+      ? ['planet/PlanetDirect', 'history/HistoryDirect']
+      : ['planet/PlanetEntity', 'ambient/AmbientEntity', 'history/HistoryEntity'], direct)
+  }
+
+  async function runTests(name: string, mode: string, tests: string[], seed = false) {
     failure = mode
     records.clear()
     calls.length = 0
-    if (direct) records.set('existing01', { id: 'existing01', title: 'existing' })
-    const tree = target === 'ts' ? 'dist-test' : 'test'
-    const files = direct
-      ? ['planet/Planet', 'history/History'].map(name => `${tree}/entity/${name}Direct.test.js`)
-      : ['planet/Planet', 'ambient/Ambient', 'history/History'].map(name => `${tree}/entity/${name}Entity.test.js`)
-    return child(['--test', '--test-concurrency=1', ...files], roots[target])
+    queries.length = 0
+    agents.length = 0
+    if (seed) records.set('existing01', { id: 'existing01', title: 'existing' })
+    const tree = name.startsWith('ts') ? 'dist-test' : 'test'
+    const files = tests.map(test => `${tree}/entity/${test}.test.js`)
+    return child(['--test', '--test-concurrency=1', ...files], roots[name])
+  }
+
+  async function withControl(name: string, options: any,
+    run: () => Promise<{ code: number | null, output: string }>) {
+    const control = Path.join(roots[name], 'test/sdk-test-control.json')
+    const saved = Fs.readFileSync(control, 'utf8')
+    Fs.writeFileSync(control, JSON.stringify({ version: 1,
+      test: { live: { delayMs: 0 }, client: { options } } }))
+    try { return await run() }
+    finally { Fs.writeFileSync(control, saved) }
   }
 
   for (const target of ['ts', 'js']) {
@@ -204,4 +326,111 @@ describe('generated live tests continue after failures', () => {
       assert(calls.includes('GET /history'), result.output)
     })
   }
+
+  for (const target of ['ts', 'js']) {
+    test(target + ': an action-only operation is attempted through its action', async () => {
+      const result = await runTests(target, '', ['v2018/V2018Entity'])
+      assert.equal(result.code, 0, result.output)
+      assert(queries.includes('GET /v2018/current?city=bern'), queries.join('\n') + '\n' + result.output)
+      assert(result.output.includes('"state":"passed"'), result.output)
+    })
+
+    test(target + ': an operation with no usable route names each action it tried', async () => {
+      const result = await runTests(target, '', ['v2019/V2019Entity'])
+      assert.notEqual(result.code, 0, result.output)
+      assert.deepEqual(calls, [], result.output)
+      assert(result.output.includes('No usable route: $action history needs city; ' +
+        '$action current needs city'), result.output)
+    })
+
+    test(target + ': an action is not taken in place of an unusable plain route', async () => {
+      const result = await runTests(target, '', ['v2020/V2020Entity'])
+      assert.notEqual(result.code, 0, result.output)
+      assert.deepEqual(calls, [], result.output)
+      assert(result.output.includes('No usable route: GET /v2020/weather needs city'), result.output)
+    })
+
+    test(target + ': an account with no record to read skips, in strict mode too', async () => {
+      const result = await runTests(target, 'empty', ['metric/MetricEntity', 'history/HistoryEntity',
+        'metric/MetricDirect', 'planet/PlanetDirect'])
+      assert.equal(result.code, 0, result.output)
+      assert(calls.includes('GET /metric') && calls.includes('GET /planet'), result.output)
+      assert(!calls.some(call => call.startsWith('GET /metric/') || call.startsWith('GET /planet/')),
+        result.output)
+      assert(result.output.includes('The account has no metric record to load'), result.output)
+      assert(result.output.includes('The account has no planet record to load'), result.output)
+      assert.equal(skipped(result.output), 3, result.output)
+    })
+
+    test(target + ': a lenient run skips a failed live test with the reason', async () => {
+      const result = await runTests(target + '-lenient', 'GET /planet',
+        ['planet/PlanetEntity', 'history/HistoryEntity', 'planet/PlanetDirect'], true)
+      assert.equal(result.code, 0, result.output)
+      for (const request of ['POST /planet', 'GET /planet', 'GET /history']) {
+        assert(calls.includes(request), request + '\n' + result.output)
+      }
+      assert(result.output.includes('main.kit.test.live.strict is false'), result.output)
+      assert(/planet\.list\.\d+ failed \(Request failed: request_status\)/.test(result.output), result.output)
+      assert(result.output.includes('Live list failed'), result.output)
+      assert(result.output.includes('Live list discovery failed'), result.output)
+      assert.equal(skipped(result.output), 3, result.output)
+
+      const strict = await runTests(target, 'GET /planet', ['planet/PlanetDirect'], true)
+      assert.notEqual(strict.code, 0, strict.output)
+      assert(strict.output.includes('Live list discovery failed'), strict.output)
+    })
+
+    test(target + ': requests carry a browser-shaped user agent by default', async () => {
+      const result = await runTests(target, 'ua',
+        ['planet/PlanetEntity', 'ambient/AmbientEntity', 'history/HistoryEntity'])
+      assert.equal(result.code, 0, result.output)
+      assert(agents.length >= 6, agents.join('\n'))
+      assert.deepEqual([...new Set(agents)], [DEFAULT_AGENT], result.output)
+    })
+
+    test(target + ': a non-JSON response names its status, type, agent and body', async () => {
+      const direct = await runTests(target, 'html', ['history/HistoryDirect'])
+      assert.notEqual(direct.code, 0, direct.output)
+      for (const part of ['expected JSON, got text/html', 'HTTP 200', 'content-type text/html',
+        'user-agent ' + DEFAULT_AGENT, 'body: <!DOCTYPE html><html><head><title>Just a moment...']) {
+        assert(direct.output.includes(part), part + '\n' + direct.output)
+      }
+      assert(!direct.output.includes('x'.repeat(200)), 'the body preview is not bounded')
+
+      const flow = await runTests(target, 'html', ['history/HistoryEntity'])
+      assert.notEqual(flow.code, 0, flow.output)
+      assert(flow.output.includes('"reason":"Request failed: response_content_type"'), flow.output)
+      assert(flow.output.includes('"agent":"configured","status":200,"type":"text/html"'), flow.output)
+    })
+
+    test(target + ': an action-only create is sent through its action with the body the definition gives',
+      async () => {
+        const result = await runTests(target, '', ['v2021/V2021Entity'])
+        assert.equal(result.code, 0, result.output)
+        assert(queries.includes('POST /v2021/issue'), queries.join('\n') + '\n' + result.output)
+        assert(result.output.includes('"state":"passed"'), result.output)
+      })
+
+    // A credential can travel as the agent (auth.name); here a registered value does.
+    test(target + ': a secret sent as the user agent reaches no live line and no message', async () => {
+      const canary = 'CANARY-LIVE-KEY-7f3a9c2e'
+      const result = await withControl(target,
+        { headers: { 'user-agent': 'Mozilla/5.0 ' + canary }, clean: { values: canary } },
+        () => runTests(target, 'html', ['history/HistoryEntity', 'history/HistoryDirect']))
+      assert.notEqual(result.code, 0, result.output)
+      assert(agents.some(agent => agent.includes(canary)), agents.join('\n'))
+      assert(result.output.includes('"agent":"configured"'), result.output)
+      assert(result.output.includes('user-agent ') && result.output.includes('[redacted]'), result.output)
+      for (const form of [canary, Buffer.from(canary).toString('base64')]) {
+        assert(!result.output.includes(form), 'the credential reached the output as ' + form + '\n' + result.output)
+      }
+    })
+  }
+
+  test('ts: a configured user agent replaces the default', async () => {
+    const result = await withControl('ts', { headers: { 'user-agent': 'Mozilla/5.0 configured' } },
+      () => runTests('ts', 'ua', ['history/HistoryEntity', 'history/HistoryDirect']))
+    assert.equal(result.code, 0, result.output)
+    assert.deepEqual([...new Set(agents)], ['Mozilla/5.0 configured'], result.output)
+  })
 })

@@ -8,10 +8,10 @@ const opShape_1 = require("./opShape");
 const BY_ID = ['load', 'update', 'remove'];
 // Ops after which the entity instance holds a record for later steps to read.
 const STORES = ['create', 'load', 'update'];
-// A generated flow test calls each step's op with the step's own match and
-// data, the record's id where the op acts on one, and whatever the entity
-// instance already holds. A step whose call can reach no route of its op is
-// switched off, as the runtime would refuse it.
+// A generated flow test calls each step's op with its own match and data,
+// the record's id where the op acts on one, and what the entity instance
+// holds. A step whose call reaches no route is switched off, as the runtime
+// would refuse it, and marked unreachable for the live harness to resolve.
 function guardFlowSteps(model, log) {
     const kit = model?.main?.[apidef_1.KIT];
     const flows = kit?.flow;
@@ -44,6 +44,7 @@ function guardFlowSteps(model, log) {
             const op = ent.op?.[step.o];
             if (null != op && !(0, opShape_1.opReachable)(op, given)) {
                 step.a = false;
+                step.unreachable = true;
                 out.push({ flow: name, step: index, op: step.o });
                 return;
             }

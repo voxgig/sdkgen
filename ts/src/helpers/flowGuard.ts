@@ -15,10 +15,10 @@ const BY_ID = ['load', 'update', 'remove']
 const STORES = ['create', 'load', 'update']
 
 
-// A generated flow test calls each step's op with the step's own match and
-// data, the record's id where the op acts on one, and whatever the entity
-// instance already holds. A step whose call can reach no route of its op is
-// switched off, as the runtime would refuse it.
+// A generated flow test calls each step's op with its own match and data,
+// the record's id where the op acts on one, and what the entity instance
+// holds. A step whose call reaches no route is switched off, as the runtime
+// would refuse it, and marked unreachable for the live harness to resolve.
 function guardFlowSteps(model: any, log?: any): Unreachable[] {
   const kit = model?.main?.[KIT]
   const flows = kit?.flow
@@ -57,6 +57,7 @@ function guardFlowSteps(model: any, log?: any): Unreachable[] {
       const op = ent.op?.[step.o]
       if (null != op && !opReachable(op, given)) {
         step.a = false
+        step.unreachable = true
         out.push({ flow: name, step: index, op: step.o })
         return
       }
