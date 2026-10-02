@@ -4,6 +4,12 @@ import { Context, Spec } from '../types'
 
 // Create request specificaton.
 function makeSpec(ctx: Context): Spec | Error {
+  // A PreSpec hook (validate) rejects the operation by placing its error
+  // here; the pipeline raises it, and ctx.spec stays a request spec.
+  if (ctx.out.spec instanceof Error) {
+    return ctx.out.spec
+  }
+
   if (ctx.out.spec) {
     return ctx.spec = ctx.out.spec
   }

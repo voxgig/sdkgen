@@ -5,6 +5,7 @@ use warnings;
 
 use File::Basename ();
 use Cwd ();
+use Scalar::Util ();
 
 my $__dir;
 BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
@@ -20,7 +21,12 @@ $REGISTRY{make_spec} = sub {
   my ($ctx) = @_;
 
   if ($ctx->{out}{spec}) {
-    $ctx->{spec} = $ctx->{out}{spec};
+    my $preset = $ctx->{out}{spec};
+    # A PreSpec hook (validate) rejects the operation by placing its error
+    # here; the pipeline raises it, and ctx.spec stays a request spec.
+    return (undef, $preset)
+      if Scalar::Util::blessed($preset) && $preset->isa('ProjectNameError');
+    $ctx->{spec} = $preset;
     return ($ctx->{spec}, undef);
   }
 

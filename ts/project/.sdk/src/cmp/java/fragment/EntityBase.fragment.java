@@ -214,9 +214,11 @@ public abstract class EntityBase implements SdkEntity {
     final BooleanSupplier signal =
         signalObj instanceof BooleanSupplier ? (BooleanSupplier) signalObj : null;
 
-    Map<String, Object> ctrl = Helpers.toMapAny(callopts.get("ctrl"));
-    if (ctrl == null) {
-      ctrl = new LinkedHashMap<>();
+    // A copy: the caller's ctrl gains no key, and explain stays its own record.
+    Map<String, Object> ctrl = new LinkedHashMap<>();
+    Map<String, Object> callerCtrl = Helpers.toMapAny(callopts.get("ctrl"));
+    if (callerCtrl != null) {
+      ctrl.putAll(callerCtrl);
     }
     ctrl.put("stream", callopts);
 

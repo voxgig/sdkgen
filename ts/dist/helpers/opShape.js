@@ -15,6 +15,7 @@ exports.opRequestShape = opRequestShape;
 exports.entityIdField = entityIdField;
 exports.entityDataIdField = entityDataIdField;
 exports.entityOps = entityOps;
+exports.invalidRequest = invalidRequest;
 exports.entityPrimaryOp = entityPrimaryOp;
 exports.pickExampleEntity = pickExampleEntity;
 exports.entityClassName = entityClassName;
@@ -25,6 +26,7 @@ exports.warnUngeneratedOps = warnUngeneratedOps;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
 const pointPath_1 = require("./pointPath");
+const canonType_1 = require("./canonType");
 const _entityCollCache = new WeakMap();
 function entityCollection(model) {
     if (null == model || 'object' !== typeof model) {
@@ -257,6 +259,44 @@ function entityIdField(ent) {
     // DATA type has an `id` field but whose load match does NOT (a query-param
     // load, e.g. playstation-store's StoreLoadMatch { age, country, ... }) must
     // degrade to a no-arg load(); `.id` access is decided by entityDataIdField.
+    return null;
+}
+// A value of another type for each scalar item type, which validate rejects.
+const MISTYPED = {
+    STRING: 1,
+    NUMBER: 'x',
+    INTEGER: 'x',
+    BOOLEAN: 'x',
+};
+const WELLTYPED = {
+    STRING: 'x',
+    NUMBER: 1,
+    INTEGER: 1,
+    BOOLEAN: true,
+};
+// A request the validate feature rejects: the first operation whose request
+// has a scalar-typed item, that item mistyped and every other required one
+// filled, so the call still resolves its route.
+function invalidRequest(ent) {
+    for (const opname of entityOps(ent)) {
+        const { items } = opRequestShape(ent, opname);
+        const bad = items.find((it) => null != MISTYPED[(0, canonType_1.canonKey)(it.type)]);
+        if (null == bad) {
+            continue;
+        }
+        const args = {};
+        for (const it of items) {
+            if (it === bad) {
+                args[it.name] = MISTYPED[(0, canonType_1.canonKey)(it.type)];
+            }
+            else if (!it.optional) {
+                args[it.name] = WELLTYPED[(0, canonType_1.canonKey)(it.type)] ?? 'x';
+            }
+        }
+        if (opReachable(ent.op[opname], Object.keys(args))) {
+            return { op: opname, field: bad.name, args };
+        }
+    }
     return null;
 }
 // The entity's ACTIVE op names, in canonical CRUD order, then any others

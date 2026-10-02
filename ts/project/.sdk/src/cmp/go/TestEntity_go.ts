@@ -27,7 +27,8 @@ import {
   isAuthActive,
   serverVarEnv,
   serverVariables,
-  entityDataIdField, envName, envToken
+  entityDataIdField, envName, envToken,
+  invalidRequest,
 } from '@voxgig/sdkgen'
 
 
@@ -131,7 +132,7 @@ import (
 
 	vs "${gomodule}/utility/struct"
 )
-
+${hasList ? failHookType(entity) : ''}
 func Test${entity.Name}Entity(t *testing.T) {
 	t.Run("instance", func(t *testing.T) {
 		testsdk := sdk.TestSDK(nil, nil)
@@ -159,8 +160,11 @@ ${hasList ? `
 		// Fallback: streaming inactive -> yields the materialised list items.
 		base := sdk.TestSDK(seed, nil)
 		var seen []any
-		for item := range base.${entity.Name}(nil).Stream("list", nil, nil) {
-			seen = append(seen, item)
+		for si := range base.${entity.Name}(nil).Stream("list", nil, nil) {
+			if si.Err != nil {
+				t.Fatalf("stream failed: %v", si.Err)
+			}
+			seen = append(seen, si.Item)
 		}
 		if len(seen) != 3 {
 			t.Fatalf("expected 3 streamed items, got %d", len(seen))
@@ -176,11 +180,14 @@ ${hasList ? `
 				"feature": map[string]any{"streaming": map[string]any{"active": true}},
 			})
 			var got []any
-			for item := range streamSdk.${entity.Name}(nil).Stream("list", nil, nil) {
-				if sub, ok := item.([]any); ok {
+			for si := range streamSdk.${entity.Name}(nil).Stream("list", nil, nil) {
+				if si.Err != nil {
+					t.Fatalf("stream failed: %v", si.Err)
+				}
+				if sub, ok := si.Item.([]any); ok {
 					got = append(got, sub...)
 				} else {
-					got = append(got, item)
+					got = append(got, si.Item)
 				}
 			}
 			if len(got) != 3 {
@@ -188,7 +195,7 @@ ${hasList ? `
 			}
 		}
 	})
-` : ''}
+${failureTests(model, entity)}` : ''}${validateTest(model, entity)}
 	t.Run("basic", func(t *testing.T) {
 		setup := ${entity.name}BasicSetup(nil)
 		// Per-op sdk-test-control.json skip — basic test exercises a flow
@@ -712,6 +719,131 @@ const GENERATE_OP: Record<string, OpGen> = {
   update: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
+}
+
+
+// A feature whose PreSpec hook panics, counting the PreUnexpected calls it sees.
+function failHookType(entity: ModelEntity): string {
+  return `
+type ${entity.name}FailHook struct {
+	sdk.BaseFeature
+	unexpected int
+}
+
+func (f *${entity.name}FailHook) PreSpec(ctx *sdk.Context) {
+	panic("${entity.name} hook failed")
+}
+
+func (f *${entity.name}FailHook) PreUnexpected(ctx *sdk.Context) {
+	f.unexpected++
+}
+`
+}
+
+
+// A failed operation ends a stream with its error as the last value: a
+// transport failure, and a hook that rejects the call. A panicking hook
+// fires PreUnexpected. The caller's ctrl stays its own.
+function failureTests(model: Model, entity: ModelEntity): string {
+  const Name = entity.Name
+  const SdkError = 'core.' + model.const.Name + 'Error'
+  return `
+	t.Run("stream-error", func(t *testing.T) {
+		offline := map[string]any{"net": map[string]any{"offline": true}}
+		var streamerr error
+		for si := range sdk.TestSDK(offline, nil).${Name}(nil).Stream("list", nil, nil) {
+			if si.Err != nil {
+				streamerr = si.Err
+			}
+		}
+		if nil == streamerr || !strings.Contains(streamerr.Error(), "offline") {
+			t.Fatalf("expected the transport failure as a stream value, got %v", streamerr)
+		}
+
+		quiet := map[string]any{"ctrl": map[string]any{"throw": false}}
+		for si := range sdk.TestSDK(offline, nil).${Name}(nil).Stream("list", nil, quiet) {
+			if si.Err != nil {
+				t.Fatalf("throw false: expected no error value, got %v", si.Err)
+			}
+		}
+
+		if fhHasFeature("rbac") {
+			denied := sdk.TestSDK(nil, map[string]any{
+				"feature": map[string]any{"rbac": map[string]any{"active": true, "deny": true}},
+			})
+			var denyerr error
+			for si := range denied.${Name}(nil).Stream("list", nil, nil) {
+				if si.Err != nil {
+					denyerr = si.Err
+				}
+			}
+			if sdkerr, ok := denyerr.(*${SdkError}); !ok || "rbac_denied" != sdkerr.Code {
+				t.Fatalf("expected the rbac denial as a stream value, got %v", denyerr)
+			}
+		}
+	})
+
+	t.Run("stream-ctrl", func(t *testing.T) {
+		explain := map[string]any{}
+		ctrl := map[string]any{"explain": explain}
+		for range sdk.TestSDK(nil, nil).${Name}(nil).Stream("list", nil, map[string]any{"ctrl": ctrl}) {
+		}
+		if _, has := ctrl["stream"]; has || 1 != len(ctrl) {
+			t.Fatalf("the stream changed the caller's ctrl")
+		}
+		if 0 == len(explain) {
+			t.Fatalf("the caller's explain record was not filled")
+		}
+	})
+
+	t.Run("unexpected", func(t *testing.T) {
+		hook := &${entity.name}FailHook{
+			BaseFeature: sdk.BaseFeature{Version: "0.0.1", Name: "failhook", Active: true}}
+		client := sdk.TestSDK(nil, map[string]any{"extend": []any{hook}})
+
+		_, err := client.${Name}(nil).List(nil, nil)
+		if nil == err || !strings.Contains(err.Error(), "hook failed") {
+			t.Fatalf("expected the hook's failure, got %v", err)
+		}
+		if 0 == hook.unexpected {
+			t.Fatalf("PreUnexpected did not fire")
+		}
+
+		fired := hook.unexpected
+		if _, err := client.${Name}(nil).List(nil, map[string]any{"throw": false}); nil != err {
+			t.Fatalf("throw false: expected no error, got %v", err)
+		}
+		if fired == hook.unexpected {
+			t.Fatalf("throw false: PreUnexpected did not fire")
+		}
+	})
+`
+}
+
+
+// An invalid request fails with validate's own error, before it is sent.
+function validateTest(model: Model, entity: ModelEntity): string {
+  const bad = invalidRequest(entity)
+  if (null == bad) {
+    return ''
+  }
+  const SdkError = 'core.' + model.const.Name + 'Error'
+  const args = Object.entries(bad.args)
+    .map(([k, v]) => JSON.stringify(k) + ': ' + JSON.stringify(v)).join(', ')
+  return `
+	t.Run("validate", func(t *testing.T) {
+		if !fhHasFeature("validate") {
+			t.Skip("feature not present in this SDK: validate")
+		}
+		client := sdk.TestSDK(nil, map[string]any{
+			"feature": map[string]any{"validate": map[string]any{"active": true}},
+		})
+		_, err := client.${entity.Name}(nil).${bad.op[0].toUpperCase() + bad.op.slice(1)}(map[string]any{${args}}, nil)
+		if sdkerr, ok := err.(*${SdkError}); !ok || "validate_failed" != sdkerr.Code {
+			t.Fatalf("expected validate_failed, got %v", err)
+		}
+	})
+`
 }
 
 

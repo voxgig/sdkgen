@@ -188,7 +188,11 @@ open class ProjectNameEntityBase: Entity {
 
     let signal = opts.entries["signal"]?.asNative as? @Sendable () -> Bool
 
-    let ctrl = opts.entries["ctrl"]?.asMap ?? VMap()
+    // A copy: the caller's ctrl gains no key, and explain stays its own record.
+    let ctrl = VMap()
+    if let given = opts.entries["ctrl"]?.asMap {
+      ctrl.entries = given.entries
+    }
     ctrl.entries["stream"] = .map(opts)
 
     var ctxmap: [String: Any?] = [

@@ -3,6 +3,7 @@ import { each, names } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
 
 import { pointSegments, pointTerminalParam, pointPathKey } from './pointPath'
+import { canonKey } from './canonType'
 
 import type { TargetOrigins } from '../action/resolve'
 
@@ -311,6 +312,54 @@ function entityIdField(ent: any): string | null {
   // DATA type has an `id` field but whose load match does NOT (a query-param
   // load, e.g. playstation-store's StoreLoadMatch { age, country, ... }) must
   // degrade to a no-arg load(); `.id` access is decided by entityDataIdField.
+  return null
+}
+
+
+// A value of another type for each scalar item type, which validate rejects.
+const MISTYPED: Record<string, any> = {
+  STRING: 1,
+  NUMBER: 'x',
+  INTEGER: 'x',
+  BOOLEAN: 'x',
+}
+
+const WELLTYPED: Record<string, any> = {
+  STRING: 'x',
+  NUMBER: 1,
+  INTEGER: 1,
+  BOOLEAN: true,
+}
+
+
+// A request the validate feature rejects: the first operation whose request
+// has a scalar-typed item, that item mistyped and every other required one
+// filled, so the call still resolves its route.
+function invalidRequest(ent: any):
+  { op: string, field: string, args: Record<string, any> } | null {
+
+  for (const opname of entityOps(ent)) {
+    const { items } = opRequestShape(ent, opname)
+    const bad = items.find((it: OpShapeItem) => null != MISTYPED[canonKey(it.type)])
+    if (null == bad) {
+      continue
+    }
+
+    const args: Record<string, any> = {}
+    for (const it of items) {
+      if (it === bad) {
+        args[it.name] = MISTYPED[canonKey(it.type)]
+      }
+      else if (!it.optional) {
+        args[it.name] = WELLTYPED[canonKey(it.type)] ?? 'x'
+      }
+    }
+
+    if (opReachable(ent.op[opname], Object.keys(args))) {
+      return { op: opname, field: bad.name, args }
+    }
+  }
+
   return null
 }
 
@@ -629,6 +678,7 @@ export {
   entityIdField,
   entityDataIdField,
   entityOps,
+  invalidRequest,
   entityPrimaryOp,
   pickExampleEntity,
   entityClassName,

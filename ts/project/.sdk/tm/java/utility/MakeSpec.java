@@ -18,6 +18,11 @@ final class MakeSpec {
 
   static Spec makeSpec(Context ctx) {
     Object outSpec = ctx.out.get("spec");
+    // A PreSpec hook (validate) rejects the operation by placing its error
+    // here; the pipeline raises it, and ctx.spec stays a request spec.
+    if (outSpec instanceof RuntimeException) {
+      throw (RuntimeException) outSpec;
+    }
     if (outSpec instanceof Spec) {
       ctx.spec = (Spec) outSpec;
       return ctx.spec;
