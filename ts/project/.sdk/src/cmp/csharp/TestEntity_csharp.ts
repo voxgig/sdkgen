@@ -20,7 +20,8 @@ import {
   getMatchEntries,
   isAuthActive, envName, envToken,
   serverVarEnv,
-  serverVariables
+  serverVariables,
+  liveFlowNeeds, liveStrict, liveStrictNote,
 } from '@voxgig/sdkgen'
 
 
@@ -41,6 +42,55 @@ type GenCtx = {
 }
 
 type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
+
+
+// The live prologue of a flow built from offline fixtures: blocked without
+// the ids it binds, a create-less load reading the first listed record, and
+// a lenient run observing its checks rather than failing on them.
+function liveFlowGate(entity: any, needs: any, entidEnv: string, strict: boolean,
+  hasSteps: boolean): string {
+  let out = ''
+  if (0 < needs.keys.length) {
+    out += `        if (setup.Live)
+        {
+            foreach (var liveKey in new[] { ${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')} })
+            {
+                if (setup.SyntheticOnly || StructUtils.GetProp(setup.Idmap, liveKey) == null)
+                {
+                    TestRunner.LiveMiss(LIVE_STRICT, "Live entity test blocked: needs " + liveKey + " via ${entidEnv}");
+                    return;
+                }
+            }
+        }
+`
+  }
+  if (null != needs.blocked) {
+    out += `        if (setup.Live)
+        {
+            TestRunner.LiveMiss(LIVE_STRICT, "Live entity test blocked: " + ${JSON.stringify(needs.blocked)});
+            return;
+        }
+`
+  }
+  if (!hasSteps) {
+    return out
+  }
+  out += '        var client = setup.Client;\n'
+  if (null != needs.discover) {
+    const match = Object.entries(needs.discover)
+      .map(([k, v]: any) => ` [${JSON.stringify(k)}] = setup.Idmap[${JSON.stringify(v)}],`).join('')
+    out += `        if (setup.Live && !TestRunner.LiveExisting(setup.Data, LIVE_STRICT, ${JSON.stringify(entity.name)},
+            () => client.${entity.Name}().List(new Dictionary<string, object?> {${match} }, null)))
+        {
+            return;
+        }
+`
+  }
+  if (!strict) {
+    out += '        try\n        {\n'
+  }
+  return out + '\n'
+}
 
 
 const TestEntity = cmp(function TestEntity(props: any) {
@@ -95,6 +145,10 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
 
+  const strict = liveStrict(model, target.name)
+  const needs = liveFlowNeeds(entity, basicflow)
+  const entidEnvVar = `${PROJUPPER}_TEST_${ENTUPPER}_ENTID`
+
   const opNames = Array.from(new Set(
     (allSteps as any[]).map((s: any) => s.o).filter(Boolean)))
   const opsList = opNames.map(o => `"${o}"`).join(', ')
@@ -132,6 +186,9 @@ namespace ${Name}Sdk.Test;
 
 public class ${entity.Name}EntityTest
 {
+${liveStrictNote(strict, '//', '    ')}
+    private const bool LIVE_STRICT = ${strict};
+
     [Fact]
     public void Instance()
     {
@@ -144,14 +201,7 @@ public class ${entity.Name}EntityTest
     public void Basic()
     {
         var setup = ${entity.Name}BasicSetup(null);
-${skipBlock}        // The basic flow consumes synthetic IDs from the fixture. In live
-        // mode without an *_ENTID env override, those IDs hit the live API
-        // and 4xx; set ${PROJUPPER}_TEST_${ENTUPPER}_ENTID JSON to run live.
-        if (setup.SyntheticOnly)
-        {
-            return;
-        }
-${allSteps.length > 0 ? '        var client = setup.Client;\n\n' : ''}`)
+${skipBlock}${liveFlowGate(entity, needs, entidEnvVar, strict, allSteps.length > 0)}`)
 
     // Check if the flow has a create step; if not, bootstrap entity data
     const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
@@ -177,7 +227,12 @@ ${allSteps.length > 0 ? '        var client = setup.Client;\n\n' : ''}`)
       }
     })
 
-    Content(`    }
+    Content(`${strict || 0 === allSteps.length ? '' : `        }
+        catch (Exception liveErr)
+        {
+            TestRunner.LiveObserve(liveErr, setup.Live, LIVE_STRICT);
+        }
+`}    }
 
 `)
 
@@ -272,9 +327,8 @@ ${allSteps.length > 0 ? '        var client = setup.Client;\n\n' : ''}`)
                 },
             });
 
-        // Detect ENTID env override before EnvOverride consumes it. When
-        // live mode is on without a real override, the basic test runs
-        // against synthetic IDs from the fixture and 4xx's.
+        // Whether *_ENTID supplied the idmap, read before EnvOverride consumes
+        // it: without it, the ids a live flow binds are the fixture's synthetic ones.
         var entidEnvRaw = Environment.GetEnvironmentVariable(
             "${PROJUPPER}_TEST_${ENTUPPER}_ENTID") ?? "";
         var idmapOverridden = entidEnvRaw != "" &&

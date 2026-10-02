@@ -493,4 +493,24 @@ describe('pipeline:result helpers', () => {
     await stdutil.resultBody(ctx)
     strictEqual(ctx.result.body, undefined)
   })
+
+  // The agent and the body preview may carry a registered value; the body is
+  // cleaned before the bound so a split value cannot leave its prefix.
+  test('resultBody masks a registered value in the agent and across the preview bound', async () => {
+    const secret = 'PIPELINE-SECRET-a1b2c3d4e5f6'
+    const text = 'x'.repeat(150) + secret + 'y'.repeat(100)
+    const ctx = base({
+      options: { __derived__: { clean: { active: true, keys: [], values: [], mask: '[redacted]', hint: 0, min: 4 } } },
+      spec: { headers: { 'user-agent': 'Probe ' + secret } },
+      response: { body: 'body', json: async () => { throw Object.assign(new SyntaxError('bad json'), { text }) } },
+      result: { status: 200, headers: { 'content-type': 'text/html' } },
+    })
+    stdutil.cleanAdd(ctx, secret)
+    await stdutil.resultBody(ctx)
+    const message = String(ctx.result.err.message)
+    strictEqual(ctx.result.err.code, 'response_content_type')
+    ok(message.includes('user-agent Probe [redacted]'), message)
+    ok(message.includes('body: ' + 'x'.repeat(150) + '[redacted]'), message)
+    ok(!message.includes(secret.slice(0, 8)), message)
+  })
 })

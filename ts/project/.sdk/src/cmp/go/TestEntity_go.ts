@@ -29,6 +29,7 @@ import {
   serverVariables,
   entityDataIdField, envName, envToken,
   invalidRequest,
+  liveFlowNeeds, liveStrict, liveStrictNote,
 } from '@voxgig/sdkgen'
 
 
@@ -106,6 +107,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, gomodule, flow: basicflow, PROJUPPER }
 
+  const strict = liveStrict(model, target.name)
+  const strictConst = entity.name + 'EntityLiveStrict'
+
   // fmt is only used by the TextFieldMark Update branch — omit the import
   // when no step needs it, otherwise Go's strict unused-import check fails.
   const needsFmt = allSteps.some((s: any) =>
@@ -132,6 +136,10 @@ import (
 
 	vs "${gomodule}/utility/struct"
 )
+
+${liveStrictNote(strict, '//')}
+const ${strictConst} = ${strict}
+
 ${hasList ? failHookType(entity) : ''}
 func Test${entity.Name}Entity(t *testing.T) {
 	t.Run("instance", func(t *testing.T) {
@@ -196,7 +204,8 @@ ${hasList ? `
 		}
 	})
 ${failureTests(model, entity)}` : ''}${validateTest(model, entity)}
-	t.Run("basic", func(t *testing.T) {
+	t.Run("basic", func(tt *testing.T) {
+		var t testing.TB = tt
 		setup := ${entity.name}BasicSetup(nil)
 		// Per-op sdk-test-control.json skip — basic test exercises a flow
 		// with multiple ops; skipping any op skips the whole flow.
@@ -213,13 +222,8 @@ ${failureTests(model, entity)}` : ''}${validateTest(model, entity)}
 				return
 			}
 		}
-		// The basic flow consumes synthetic IDs from the fixture. In live mode
-		// without an *_ENTID env override, those IDs hit the live API and 4xx.
-		if setup.syntheticOnly {
-			t.Skip("live entity test uses synthetic IDs from fixture — set ${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID JSON to run live")
-			return
-		}
-${allSteps.length > 0 ? '\t\tclient := setup.client\n\n' : ''}`)
+${liveFlowGate(entity, liveFlowNeeds(entity, basicflow), strict, strictConst,
+      PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID', allSteps.length > 0)}`)
 
     // Check if the flow has a create step; if not, bootstrap entity data
     const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
@@ -299,9 +303,8 @@ ${allSteps.length > 0 ? '\t\tclient := setup.client\n\n' : ''}`)
     Content('\t)\n')
 
     Content(`
-	// Detect ENTID env override before envOverride consumes it. When live
-	// mode is on without a real override, the basic test runs against synthetic
-	// IDs from the fixture and 4xx's. Surface this so the test can skip.
+	// Whether *_ENTID supplied the idmap, read before envOverride consumes it:
+	// without it, the ids a live flow binds are the fixture's synthetic ones.
 	entidEnvRaw := os.Getenv("${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID")
 	idmapOverridden := entidEnvRaw != "" && strings.HasPrefix(strings.TrimSpace(entidEnvRaw), "{")
 
@@ -363,6 +366,51 @@ ${allSteps.length > 0 ? '\t\tclient := setup.client\n\n' : ''}`)
 `)
   })
 })
+
+
+// The live prologue of a flow built from offline fixtures: blocked without
+// the ids it binds, a create-less load reading the first listed record, and
+// a lenient run observing its checks rather than failing on them.
+function liveFlowGate(entity: any, needs: any, strict: boolean, strictConst: string,
+  entidEnv: string, hasSteps: boolean): string {
+  let out = ''
+  if (0 < needs.keys.length) {
+    out += `		if setup.live {
+			for _, _liveKey := range []string{${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')}} {
+				if setup.syntheticOnly || setup.idmap[_liveKey] == nil {
+					liveMiss(t, ${strictConst}, "Live entity test blocked: needs %s via ${entidEnv}", _liveKey)
+				}
+			}
+		}
+`
+  }
+  if (null != needs.blocked) {
+    out += `		if setup.live {
+			liveMiss(t, ${strictConst}, "Live entity test blocked: %s", ${JSON.stringify(needs.blocked)})
+		}
+`
+  }
+  if (hasSteps) {
+    out += '\t\tclient := setup.client\n'
+  }
+  if (null != needs.discover) {
+    const match = Object.entries(needs.discover)
+      .map(([k, v]: any) => `${JSON.stringify(k)}: setup.idmap[${JSON.stringify(v)}]`).join(', ')
+    out += `		if setup.live {
+			liveExisting(t, ${strictConst}, setup.data, ${JSON.stringify(entity.name)}, func() (any, error) {
+				return client.${entity.Name}(nil).List(map[string]any{${match}}, nil)
+			})
+		}
+`
+  }
+  if (!strict) {
+    out += `		if setup.live {
+			t = liveObserver{tt}
+		}
+`
+  }
+  return out + (hasSteps ? '\n' : '')
+}
 
 
 const generateCreate: OpGen = (ctx, step, index) => {

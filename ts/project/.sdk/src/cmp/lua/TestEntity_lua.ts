@@ -29,6 +29,7 @@ import {
   serverVarEnv,
   serverVariables,
   invalidRequest,
+  liveFlowNeeds, liveStrict, liveStrictNote,
 } from '@voxgig/sdkgen'
 
 import { formatLuaValue } from './utility_lua'
@@ -43,6 +44,45 @@ type GenCtx = {
 }
 
 type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
+
+
+// The live prologue of a flow built from offline fixtures: blocked without
+// the ids it binds, a create-less load reading the first listed record, and
+// a lenient run observing its checks rather than failing on them.
+function liveFlowGate(entity: any, needs: any, entidEnv: string, strict: boolean): string {
+  let out = ''
+  if (0 < needs.keys.length) {
+    out += `    if setup.live then
+      for _, _live_key in ipairs({${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')}}) do
+        if setup.synthetic_only or setup.idmap[_live_key] == nil then
+          runner.live_miss(pending, LIVE_STRICT, "Live entity test blocked: needs " .. _live_key .. " via ${entidEnv}")
+        end
+      end
+    end
+`
+  }
+  if (null != needs.blocked) {
+    out += `    if setup.live then
+      runner.live_miss(pending, LIVE_STRICT, "Live entity test blocked: " .. ${JSON.stringify(needs.blocked)})
+    end
+`
+  }
+  out += '    local client = setup.client\n'
+  if (null != needs.discover) {
+    const match = Object.entries(needs.discover)
+      .map(([k, v]: any) => `[${JSON.stringify(k)}] = setup.idmap[${JSON.stringify(v)}]`).join(', ')
+    out += `    if setup.live then
+      runner.live_existing(pending, setup, LIVE_STRICT, ${JSON.stringify(entity.name)}, function()
+        return client:${entity.Name}(nil):list({${match}}, nil)
+      end)
+    end
+`
+  }
+  if (!strict) {
+    out += '    local _live_ok, _live_err = pcall(function()\n'
+  }
+  return out
+}
 
 
 const TestEntity = cmp(function TestEntity(props: any) {
@@ -99,6 +139,10 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
 
+  const strict = liveStrict(model, target.name)
+  const needs = liveFlowNeeds(entity, basicflow)
+  const entidEnv = PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID'
+
   File({ name: entity.name + '_entity_test.' + target.ext }, () => {
 
     Content(`-- ${entity.Name} entity test
@@ -110,6 +154,10 @@ local helpers = require("core.helpers")
 local runner = require("test.runner")
 
 local _test_dir = debug.getinfo(1, "S").source:match("^@(.+/)")  or "./"
+
+${liveStrictNote(strict, '--')}
+local LIVE_STRICT = ${strict}
+
 ${hasList ? failHookClass(entity) : ''}
 describe("${entity.Name}Entity", function()
   it("should create instance", function()
@@ -170,14 +218,7 @@ ${failureTests(entity)}` : ''}${validateTest(entity)}
         return
       end
     end
-    -- The basic flow consumes synthetic IDs from the fixture. In live mode
-    -- without an *_ENTID env override, those IDs hit the live API and 4xx.
-    if setup.synthetic_only then
-      pending("live entity test uses synthetic IDs from fixture — set ${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID JSON to run live")
-      return
-    end
-    local client = setup.client
-
+${liveFlowGate(entity, needs, entidEnv, strict)}
 `)
 
     // Check if the flow has a create step
@@ -211,7 +252,11 @@ ${failureTests(entity)}` : ''}${validateTest(entity)}
       }
     })
 
-    Content(`  end)
+    Content(`${strict ? '' : `    end)
+    if not _live_ok then
+      runner.live_observe(pending, _live_err, setup, LIVE_STRICT)
+    end
+`}  end)
 end)
 
 `)
@@ -251,9 +296,8 @@ end)
 
 `)
 
-    Content(`  -- Detect ENTID env override before envOverride consumes it. When live
-  -- mode is on without a real override, the basic test runs against synthetic
-  -- IDs from the fixture and 4xx's. Surface this so the test can skip.
+    Content(`  -- Whether *_ENTID supplied the idmap, read before env_override consumes
+  -- it: without it, the ids a live flow binds are the fixture's synthetic ones.
   local entid_env_raw = os.getenv("${PROJUPPER}_TEST_${envToken(entity.name)}_ENTID")
   local idmap_overridden = entid_env_raw ~= nil and entid_env_raw:match("^%s*{") ~= nil
 

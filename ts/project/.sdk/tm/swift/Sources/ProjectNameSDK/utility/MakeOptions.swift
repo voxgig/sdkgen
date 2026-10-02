@@ -139,6 +139,16 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
     }
   }
 
+  if let base = result.entries["base"]?.asString, base.contains("{") {
+    do {
+      let resolved = try resolveServerBase(base, result, config, ctx)
+      result.entries["base"] = .string(resolved)
+    } catch {
+      // The initializer cannot throw, so a construction error traps, as zig's panics.
+      fatalError(errMessage(error))
+    }
+  }
+
   // Resolve the feature add-order: an explicit list order (above) wins;
   // otherwise order the map test-first, then the remaining names sorted, so
   // the outcome is deterministic and `test` is always the base transport.
@@ -174,6 +184,50 @@ func makeOptionsUtil(_ ctx: Context) -> VMap {
   cleanAddOptions(Context(["options": result], nil), cleanOmit(result, ["clean", "__derived__"]))
 
   return result
+}
+
+// A templated base URL takes each {name} from options.server. An empty value
+// cannot make a working URL, so it is an error, except in test mode, where it
+// becomes test-<name>.
+func resolveServerBase(_ base: String, _ opts: VMap, _ config: VMap, _ ctx: Context?) throws -> String {
+  let testmode = gpath(opts, "test", "active") == .bool(true)
+    || gpath(opts, "feature", "test", "active") == .bool(true)
+  let server = gp(opts, "server").asMap ?? VMap()
+  var sdkname = gpath(config, "main", "name").asString ?? ""
+  if sdkname.isEmpty { sdkname = "SDK" }
+
+  let chars = Array(base)
+  var out = ""
+  var i = 0
+  while i < chars.count {
+    var j = i + 1
+    if "{" == chars[i] {
+      while j < chars.count, "_" == chars[j] || (chars[j].isASCII && (chars[j].isLetter || chars[j].isNumber)) {
+        j += 1
+      }
+    }
+    // A placeholder only when it closes and the name is [A-Za-z0-9_]+.
+    if "{" != chars[i] || j == i + 1 || j >= chars.count || "}" != chars[j] {
+      out.append(chars[i])
+      i += 1
+      continue
+    }
+    let name = String(chars[(i + 1)..<j])
+    let value = gp(server, name).asString ?? ""
+    if !value.isEmpty {
+      out += value
+    } else if testmode {
+      out += "test-" + name
+    } else {
+      let hint = "options.entries[\"server\"] = .map(server) with server.entries[\"\(name)\"]"
+        + " = .string(\"...\")"
+      throw ProjectNameError("server_var_required",
+        "\(sdkname): the server variable '\(name)' is required: the API base URL is '\(base)'"
+          + " - pass \(hint) in the SDK options", ctx)
+    }
+    i = j + 1
+  }
+  return out
 }
 
 // A feature's name is not a field name: only the sensitive names inside its

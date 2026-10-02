@@ -18,7 +18,8 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken
+  isAuthActive, envName, envToken,
+  liveFlowNeeds, liveStrict, liveStrictNote,
 } from '@voxgig/sdkgen'
 
 
@@ -41,6 +42,49 @@ type GenCtx = {
 }
 
 type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
+
+
+// The live prologue of a flow built from offline fixtures: blocked without
+// the ids it binds, a create-less load reading the first listed record, and
+// a lenient run observing its checks rather than failing on them.
+function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: string,
+  strict: boolean, hasSteps: boolean): string {
+  let out = ''
+  if (0 < needs.keys.length) {
+    out += `    if (setup.live) {
+      for (liveKey in arrayOf<String>(${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')})) {
+        if (setup.syntheticOnly || setup.idmap?.get(liveKey) == null) {
+          RunnerSupport.liveMiss(LIVE_STRICT, "Live entity test blocked: needs " + liveKey + " via ${entidEnv}")
+        }
+      }
+    }
+`
+  }
+  if (null != needs.blocked) {
+    out += `    if (setup.live) {
+      RunnerSupport.liveMiss(LIVE_STRICT, "Live entity test blocked: " + ${JSON.stringify(needs.blocked)})
+    }
+`
+  }
+  if (!hasSteps) {
+    return out
+  }
+  out += '    val client = setup.client\n'
+  if (null != needs.discover) {
+    const match = Object.entries(needs.discover)
+      .map(([k, v]: any) => `${JSON.stringify(k)} to setup.idmap?.get(${JSON.stringify(v)})`).join(', ')
+    out += `    if (setup.live) {
+      RunnerSupport.liveExisting(setup.data!!, LIVE_STRICT, ${JSON.stringify(entity.name)}) {
+        client.${accessor}(null).list(linkedMapOf<String, Any?>(${match}), null)
+      }
+    }
+`
+  }
+  if (!strict) {
+    out += '    try {\n'
+  }
+  return out + '\n'
+}
 
 
 const TestEntity = cmp(function TestEntity(props: any) {
@@ -77,6 +121,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, kotlinpackage, flow: basicflow, PROJUPPER, accessor }
 
+  const strict = liveStrict(model, target.name)
+  const needs = liveFlowNeeds(entity, basicflow)
+
   const stepOps = Array.from(new Set(
     (allSteps as any[]).map((s: any) => s.o).filter(Boolean)))
 
@@ -108,6 +155,9 @@ import ${kotlinpackage}.utility.struct.Struct
 @Suppress("UNCHECKED_CAST", "UNUSED_VARIABLE", "UNUSED_VALUE")
 class ${entity.Name}EntityTest {
 
+${liveStrictNote(strict, '//', '  ')}
+  private val LIVE_STRICT = ${strict}
+
   @Test
   fun instance() {
     val testsdk = ${SDK}.testSDK()
@@ -127,11 +177,7 @@ class ${entity.Name}EntityTest {
         if (reason == null || "" == reason) "skipped via sdk-test-control.json" else reason,
       )
     }
-    Assumptions.assumeFalse(
-      setup.syntheticOnly,
-      "live entity test uses synthetic IDs from fixture — set ${entidEnvVar} JSON to run live",
-    )
-${allSteps.length > 0 ? `    val client = setup.client\n\n` : ''}`)
+${liveFlowGate(entity, needs, entidEnvVar, accessor, strict, allSteps.length > 0)}`)
 
     const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
     if (!flowHasCreate) {
@@ -154,7 +200,10 @@ ${allSteps.length > 0 ? `    val client = setup.client\n\n` : ''}`)
       }
     })
 
-    Content(`  }
+    Content(`${strict || 0 === allSteps.length ? '' : `    } catch (err: Throwable) {
+      RunnerSupport.liveObserve(err, setup.live, LIVE_STRICT)
+    }
+`}  }
 
 `)
 
@@ -234,7 +283,7 @@ ${allSteps.length > 0 ? `    val client = setup.client\n\n` : ''}`)
           "\\"\`\\$VAL\`\\": [\\"\`\\$FORMAT\`\\", \\"upper\\", \\"\`\\$COPY\`\\"]" +
           "}]}"))
 
-      // Detect ENTID env override before envOverride consumes it.
+      // Whether *_ENTID supplied the idmap, read before envOverride consumes it.
       val entidEnvRaw = RunnerSupport.getenv("${entidEnvVar}")
       val idmapOverridden = entidEnvRaw != null && entidEnvRaw.trim().startsWith("{")
 

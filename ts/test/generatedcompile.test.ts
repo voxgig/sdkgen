@@ -4646,6 +4646,182 @@ describe('the canary sweep runs from a generated SDK', () => {
 })
 
 
+// A templated base URL takes each {name} from the `server` option, as the ts
+// makeOptions does: a missing or empty value fails construction, and test mode
+// fills in test-<name>. The test each of these SDKs ships passes its own
+// templated base, so the fixture model is enough to run it.
+type ServerLane = {
+  target: string,
+  runner: string,
+  needs: string,
+  prepare?: (sdkroot: string) => string | null,
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // Lines the run must report. Exit zero is not enough: a filter that matches
+  // nothing passes in every one of these frameworks.
+  ran: RegExp[],
+  // Where the framework reports a pass to a file rather than to the console.
+  report?: (sdkroot: string) => string,
+}
+
+function cCompiler(): string | null {
+  const configured = process.env.CC
+  return null == configured || '' === configured
+    ? (toolchain('cc') || toolchain('gcc'))
+    : toolchain(configured)
+}
+
+const SERVER_LANES: ServerLane[] = [
+  {
+    target: 'kotlin',
+    runner: 'test/ServerVariableTest.kt',
+    needs: 'gradle (which resolves the Kotlin plugin from the network)',
+    command: () => {
+      // gradle hangs on windows rather than failing, as the clean lane says.
+      if ('win32' === process.platform) return null
+      const gradle = toolchain('gradle')
+      return null == gradle ? null
+        : { bin: gradle, args: ['--console=plain', 'test', '--tests', '*ServerVariableTest*'] }
+    },
+    ran: [/<testsuite name="[^"]*ServerVariableTest" tests="3" skipped="0" failures="0" errors="0"/],
+    report: (sdkroot) => {
+      const dir = Path.join(sdkroot, 'build', 'test-results', 'test')
+      return Fs.existsSync(dir)
+        ? Fs.readdirSync(dir).filter((f) => f.endsWith('ServerVariableTest.xml'))
+          .map((f) => Fs.readFileSync(Path.join(dir, f), 'utf8')).join('\n')
+        : ''
+    },
+  },
+  {
+    target: 'scala',
+    runner: 'sdktest/ServerVariableTest.scala',
+    needs: 'scala-cli (which resolves the Scala compiler from the network)',
+    command: () => {
+      const scalacli = toolchain('scala-cli')
+      return null == scalacli ? null
+        : { bin: scalacli, args: ['run', '.', '--main-class', 'SdkServerTestMain'] }
+    },
+    ran: [/SERVER PASS [1-9]\d* {2}FAIL 0/],
+  },
+  {
+    target: 'swift',
+    runner: 'Tests/DemoSdkTests/ServerVariableTest.swift',
+    needs: 'swift',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('swift')!, ['build', '--build-tests', '-j', '2'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated swift package does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const swift = toolchain('swift')
+      return null == swift ? null
+        : { bin: swift, args: ['test', '-j', '2', '--skip-build', '--filter', 'ServerVariableTest'] }
+    },
+    ran: [/Executed 3 tests, with 0 failures/],
+  },
+  {
+    target: 'perl',
+    runner: 't/server_variables.t',
+    needs: 'perl',
+    command: () => {
+      const perl = toolchain('perl')
+      return null == perl ? null : { bin: perl, args: ['-Ilib', 't/server_variables.t'] }
+    },
+    ran: [
+      /^ok \d+ - construction fails without a value for zzvar$/m,
+      /^ok \d+ - a server value fills the base$/m,
+      /^ok \d+ - the test feature fills test-<name>$/m,
+    ],
+  },
+  {
+    target: 'c',
+    runner: 'tests/server_variable_test.c',
+    needs: 'make, sh and a C compiler',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('make')!, ['CC=' + cCompiler(), 'tests/server_variable_test.out'],
+        sdkroot)
+      return built.ok ? null : 'the generated test does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const sh = toolchain('sh')
+      return null == toolchain('make') || null == cCompiler() || null == sh ? null
+        : { bin: sh, args: ['-c', './tests/server_variable_test.out'] }
+    },
+    // Without fork() the stopped construction cannot be watched, and is left out.
+    ran: ['win32' === process.platform
+      ? /server_variable_test: [1-9]\d* checks, 0 failed/
+      : /server_variable_test: 11 checks, 0 failed/],
+  },
+  {
+    target: 'cpp',
+    runner: 'test/server_variable_test.cpp',
+    needs: 'make and a C++ compiler',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('make')!, ['CXX=' + cleanCxx(), 'test/server_variable_test.out'],
+        sdkroot)
+      return built.ok ? null : 'the generated test does not build:\n' + tail(built.out)
+    },
+    command: () => null == toolchain('make') || null == cleanCxx() ? null
+      : { bin: Path.join('test', 'server_variable_test.out'), args: [] },
+    ran: [/server_variable_test: 3 tests, [1-9]\d* checks, 0 failures/],
+  },
+]
+
+
+describe('a templated server URL is resolved by the generated SDK', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-server-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of SERVER_LANES) {
+    test(lane.target + ': a server variable is required, filled from options, or test-<name>',
+      async (t) => {
+        const sdkroot = Path.join(tmp, lane.target)
+        const files = await generateTo(lane.target, sdkroot)
+
+        ok(null != files[lane.runner],
+          'the server-variable test was not generated into the SDK: expected ' + lane.runner)
+
+        const cmd = lane.command()
+        if (null == cmd) {
+          return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+        }
+
+        const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+        ok(null == notready, lane.target + ': ' + notready)
+
+        const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' +
+            tail(ran.out, 3))
+        }
+
+        const gap = UNUSABLE.find((re) => re.test(ran.out))
+        if (null != gap && !ran.ok) {
+          return t.skip(lane.target + ': toolchain present but not usable (' +
+            gap.source + '):\n' + tail(ran.out))
+        }
+
+        ok(ran.ok, 'the server-variable test FAILED against the generated ' + lane.target +
+          ' SDK:\n' + tail(ran.out, 60))
+
+        const seen = ran.out + (null == lane.report ? '' : '\n' + lane.report(sdkroot))
+        for (const line of lane.ran) {
+          ok(line.test(seen), lane.target + ': the server-variable test did not report (' +
+            line.source + '):\n' + tail(seen))
+        }
+      })
+  }
+})
+
+
 // The feature suite a generated SDK ships drives each present feature through
 // the SDK's own offline harness, which no other lane runs.
 const FEATURE_SUITE_LANES: { target: string, runner: string }[] = [

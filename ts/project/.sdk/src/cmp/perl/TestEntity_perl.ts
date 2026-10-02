@@ -20,7 +20,8 @@ import {
   getMatchEntries,
   isAuthActive, envName, envToken,
   serverVarEnv,
-  serverVariables
+  serverVariables,
+  liveFlowNeeds, liveStrict, liveStrictNote,
 } from '@voxgig/sdkgen'
 
 import { perlStringLiteral } from './utility_perl'
@@ -40,11 +41,55 @@ type GenCtx = {
 type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 
 
+// The live prologue of a flow built from offline fixtures: blocked without
+// the ids it binds, a create-less load reading the first listed record, and
+// a lenient run reporting a failed check without failing the test.
+function liveFlowGate(N: string, entity: any, needs: any, entidEnv: string,
+  strict: boolean): string {
+  const label = entity.name + ': basic flow'
+  let out = ''
+  if (0 < needs.keys.length) {
+    out += `  if ($setup->{live}) {
+    my @missing = grep { $setup->{synthetic_only} || !defined $setup->{idmap}{$_} } (${needs.keys.map((k: string) => `'${k}'`).join(', ')});
+    if (@missing) {
+      ${N}TestRunner::live_miss(LIVE_STRICT, '${label}', 'Live entity test blocked: needs ' . join(', ', @missing) . ' via ${entidEnv}');
+      last BASIC_FLOW;
+    }
+  }
+`
+  }
+  if (null != needs.blocked) {
+    out += `  if ($setup->{live}) {
+    ${N}TestRunner::live_miss(LIVE_STRICT, '${label}', 'Live entity test blocked: ${needs.blocked}');
+    last BASIC_FLOW;
+  }
+`
+  }
+  out += '  my $client = $setup->{client};\n'
+  if (null != needs.discover) {
+    const match = Object.entries(needs.discover)
+      .map(([k, v]: any) => `'${k}' => $setup->{idmap}{'${v}'}`).join(', ')
+    out += `  if ($setup->{live}) {
+    ${N}TestRunner::live_existing($setup, LIVE_STRICT, '${label}', '${entity.name}',
+      sub { $client->${entity.Name}(undef)->list({${match}}, undef) }) or last BASIC_FLOW;
+  }
+`
+  }
+  if (!strict) {
+    out += `  local $main::TODO = $setup->{live} ? 'live run, main.kit.test.live.strict is false' : undef;
+  eval {
+`
+  }
+  return out
+}
+
+
 const TestEntity = cmp(function TestEntity(props: any) {
   const ctx$ = props.ctx$
   const model: Model = ctx$.model
 
   const entity: ModelEntity = props.entity
+  const target = props.target
 
   const basicflow: ModelEntityFlow | undefined =
     getModelPath(model, `main.${KIT}.flow.Basic${nom(entity, 'Name')}Flow`)
@@ -99,6 +144,8 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, flow: basicflow, N, PROJUPPER }
 
+  const strict = liveStrict(model, target.name)
+  const needs = liveFlowNeeds(entity, basicflow)
   // The failure tests stream and list with no match, so they need a list a
   // bare call can reach.
   const hasList = opReachable((entity.op as any)?.list, [])
@@ -117,6 +164,9 @@ use Cwd ();
 
 use ${N}SDK;
 require(Cwd::abs_path("$FindBin::Bin/runner.pm"));
+
+${liveStrictNote(strict, '#')}
+use constant LIVE_STRICT => ${strict ? 1 : 0};
 
 {
   my $testsdk = ${N}SDK->test(undef, undef);
@@ -137,15 +187,7 @@ BASIC_FLOW: {
       last BASIC_FLOW;
     }
   }
-  # The basic flow consumes synthetic IDs from the fixture. In live mode
-  # without an *_ENTID env override, those IDs hit the live API and 4xx.
-  if ($setup->{synthetic_only}) {
-    note('live entity test uses synthetic IDs from fixture - set ${ENTIDVAR} JSON to run live');
-    pass('${entity.name}: basic flow skipped (synthetic IDs only)');
-    last BASIC_FLOW;
-  }
-  my $client = $setup->{client};
-  my %V;
+${liveFlowGate(N, entity, needs, ENTIDVAR, strict)}  my %V;
 
 `)
 
@@ -172,7 +214,9 @@ BASIC_FLOW: {
       }
     })
 
-    Content(`}
+    Content(`${strict ? '' : `    1;
+  } or ${N}TestRunner::live_observe($@, $setup, LIVE_STRICT, '${entity.name}: basic flow');
+`}}
 
 `)
 
@@ -205,10 +249,8 @@ BASIC_FLOW: {
     }
   );
 
-  # Detect ENTID env override before env_override consumes it. When live
-  # mode is on without a real override, the basic test runs against
-  # synthetic IDs from the fixture and 4xx's. Surface this so the test can
-  # skip.
+  # Whether *_ENTID supplied the idmap, read before env_override consumes
+  # it: without it, the ids a live flow binds are the fixture's synthetic ones.
   my $entid_env_raw = $ENV{'${ENTIDVAR}'};
   my $idmap_overridden = (defined $entid_env_raw && $entid_env_raw =~ /^\\s*\\{/) ? 1 : 0;
 

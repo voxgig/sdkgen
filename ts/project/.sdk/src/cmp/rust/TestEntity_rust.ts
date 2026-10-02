@@ -20,7 +20,8 @@ import {
   getMatchEntries,
   isAuthActive, envName, envToken,
   serverVarEnv,
-  serverVariables
+  serverVariables,
+  liveFlowNeeds, liveStrict, liveStrictNote,
 } from '@voxgig/sdkgen'
 
 
@@ -36,6 +37,54 @@ type GenCtx = {
 }
 
 type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
+
+
+// The live prologue of a flow built from offline fixtures: blocked without
+// the ids it binds, a create-less load reading the first listed record, and
+// a lenient run observing its checks rather than failing on them.
+function liveFlowGate(entity: any, needs: any, entidEnv: string, method: string,
+  strict: boolean, hasSteps: boolean): string {
+  let out = ''
+  if (0 < needs.keys.length) {
+    out += `    if setup.live {
+        for live_key in [${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')}] {
+            if setup.synthetic_only || getp(&setup.idmap, live_key).is_noval() {
+                live_miss(LIVE_STRICT, &format!("Live entity test blocked: needs {} via ${entidEnv}", live_key));
+                return;
+            }
+        }
+    }
+`
+  }
+  if (null != needs.blocked) {
+    out += `    if setup.live {
+        live_miss(LIVE_STRICT, ${JSON.stringify('Live entity test blocked: ' + needs.blocked)});
+        return;
+    }
+`
+  }
+  if (!hasSteps) {
+    return out
+  }
+  out += '    let client = setup.client.clone();\n'
+  if (null != needs.discover) {
+    const match = Object.entries(needs.discover)
+      .map(([k, v]: any) => `(${JSON.stringify(k)}, getp(&setup.idmap, ${JSON.stringify(v)}))`).join(', ')
+    out += `    if setup.live && !live_existing(&setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)}, || {
+        client
+            .${method}(Value::Noval)
+            .list(jo(vec![${match}]), Value::Noval)
+            .map(|list| ja(list.iter().map(|e| e.data(None)).collect::<Vec<Value>>()))
+    }) {
+        return;
+    }
+`
+  }
+  if (!strict) {
+    out += '    let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {\n'
+  }
+  return out
+}
 
 
 const TestEntity = cmp(function TestEntity(props: any) {
@@ -85,6 +134,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const genCtx: GenCtx = { model, entity, rustcrate, flow: basicflow, PROJUPPER }
 
+  const strict = liveStrict(model, target.name)
+  const needs = liveFlowNeeds(entity, basicflow)
+
   const opNames = Array.from(new Set(allSteps.map((s: any) => s.o).filter(Boolean)))
   const opsList = opNames.map(o => `"${o}"`).join(', ')
 
@@ -129,6 +181,9 @@ use common::*;
 use ${rustcrate}::core::helpers::{getp, getpath, ja, jo, now_ms, setp, to_map};
 use ${rustcrate}::utility::voxgigstruct as vs;
 use ${rustcrate}::{test_sdk, Entity, ${model.const.Name}Entity, ${model.const.Name}SDK, Value};
+
+${liveStrictNote(strict, '//')}
+const LIVE_STRICT: bool = ${strict};
 
 #[test]
 fn ${evar}_entity_instance() {
@@ -192,13 +247,8 @@ fn ${evar}_entity_stream() {
 #[test]
 fn ${evar}_entity_basic() {
     let setup = ${evar}_basic_setup(Value::Noval);
-${skipBlock}    // The basic flow consumes synthetic IDs from the fixture. In live mode
-    // without an *_ENTID env override, those IDs hit the live API and 4xx.
-    if setup.synthetic_only {
-        eprintln!("skip: live entity test uses synthetic IDs from fixture — set ${PROJUPPER}_TEST_${ENTUPPER}_ENTID JSON to run live");
-        return;
-    }
-${allSteps.length > 0 ? '    let client = setup.client.clone();\n' : ''}`)
+${skipBlock}${liveFlowGate(entity, needs, PROJUPPER + '_TEST_' + ENTUPPER + '_ENTID', method, strict,
+  allSteps.length > 0)}`)
 
     // No create step: bootstrap entity data from existing fixture data.
     const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
@@ -224,7 +274,11 @@ ${allSteps.length > 0 ? '    let client = setup.client.clone();\n' : ''}`)
       }
     })
 
-    Content(`}
+    Content(`${strict || 0 === allSteps.length ? '' : `    }));
+    if let Err(err) = outcome {
+        live_observe(err, setup.live, LIVE_STRICT);
+    }
+`}}
 
 `)
 
@@ -270,9 +324,8 @@ ${allSteps.length > 0 ? '    let client = setup.client.clone();\n' : ''}`)
     )
     .unwrap_or_else(|_| Value::empty_map());
 
-    // Detect ENTID env override before env_override consumes it. When live
-    // mode is on without a real override, the basic test runs against
-    // synthetic IDs from the fixture and 4xx's.
+    // Whether *_ENTID supplied the idmap, read before env_override consumes
+    // it: without it, the ids a live flow binds are the fixture's synthetic ones.
     let entid_env_raw = std::env::var("${PROJUPPER}_TEST_${ENTUPPER}_ENTID").unwrap_or_default();
     let idmap_overridden =
         !entid_env_raw.trim().is_empty() && entid_env_raw.trim().starts_with('{');

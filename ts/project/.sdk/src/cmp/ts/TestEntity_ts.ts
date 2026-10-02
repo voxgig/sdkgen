@@ -40,6 +40,8 @@ import {
   jsKey,
   jsProp,
   hasLiveScenarios,
+  liveStrict,
+  liveStrictNote,
 } from '@voxgig/sdkgen'
 
 
@@ -128,6 +130,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
         Slot({ name: 'basicSetup' }, () => {
           Content(`
+${liveStrictNote(liveStrict(model, target.name), '//')}
+const LIVE_STRICT = ${liveStrict(model, target.name)}
+
 function basicSetup(extra?: any) {
   // TODO: fix test def options
   const options: any = {} // ${jsonify(basicflow.test, { offset: indent - 2 })}
@@ -235,7 +240,7 @@ function basicSetup(extra?: any) {
     ${hasLiveScenarios(model) ? `if (live) { t.skip('Covered by live operation scenarios'); return }` : ''}
     const setup = basicSetup()
     if (setup.live) {
-      return runLiveEntity(setup, ${JSON.stringify(entity)}, ${JSON.stringify(basicflow)}, '${nom(entity, 'Name')}', ${JSON.stringify(liveFacts)})
+      return runLiveEntity(setup, ${JSON.stringify(entity)}, ${JSON.stringify(basicflow)}, '${nom(entity, 'Name')}', ${JSON.stringify(liveFacts)}, { strict: LIVE_STRICT, t })
     }
     const client = setup.client
     const struct = setup.struct
