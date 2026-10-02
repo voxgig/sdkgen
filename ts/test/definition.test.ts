@@ -79,6 +79,25 @@ const ctx$ = { model: MODEL, meta: { apidef: {
 } } }
 
 
+// The load point when the address it answers with has this schema and no example.
+function loadWith(schema: any): any {
+  const def = { ...DEF, paths: { ...DEF.paths, '/addresses/{adr_id}': {
+    ...DEF.paths['/addresses/{adr_id}'],
+    get: { responses: { '200': { content: { 'application/json': { schema } } } } },
+  } } }
+  return definitionPlan({ ...ctx$, meta: { apidef: {
+    operation: (m: string, o: string) => operationFacts(def, { m, o }),
+  } } }).find((p: any) => 'load' === p.op)!
+}
+
+const record = (id: any) => ({ type: 'object', properties: { id, name: { type: 'string' } } })
+
+// SMSAPI's sent message: its id, a string $ref, gets a description from an
+// allOf around it, as the siblings of a $ref are ignored in OpenAPI 3.0.
+const ID = { type: 'string', format: 'oid', example: 'adr_1' }
+const DESCRIBED_ID = { allOf: [ID, { description: 'The address id.' }] }
+
+
 describe('definitionPlan', () => {
 
   const plan = definitionPlan(ctx$)
@@ -245,6 +264,55 @@ describe('definitionPlan', () => {
   test('a schema with no example is synthesized', () => {
     deepStrictEqual(point('load').sample, { id: 'x', name: 'x' })
   })
+
+  for (const [what, id, value] of [
+    ['an allOf that describes a $ref to a string is that string', DESCRIBED_ID, 'adr_1'],
+    ['an allOf that also makes it nullable is that string',
+      { allOf: [{ nullable: true }, ID, { description: 'The address id, if any.' }] }, 'adr_1'],
+    ['a described scalar with no example of its own is synthesized',
+      { allOf: [{ type: 'integer' }, { description: 'The address number.' }] }, 1],
+  ] as [string, any, any][]) {
+    test(what, () => {
+      deepStrictEqual(loadWith(record(id)).sample, { id: value, name: 'x' })
+    })
+  }
+
+  test('an allOf that only annotates gives nothing, as a bare description does', () => {
+    deepStrictEqual(loadWith(record({ allOf: [{ description: 'The address id.' }] })).sample,
+      { name: 'x' })
+    deepStrictEqual(loadWith(record({ description: 'The address id.' })).sample, { name: 'x' })
+  })
+
+  test('an allOf of objects still merges them', () => {
+    deepStrictEqual(loadWith({ allOf: [
+      { properties: { id: { type: 'string', example: 'adr_1' } } },
+      { type: 'object', properties: { name: { type: 'string' }, count: { type: 'integer' } } },
+      { description: 'An address.' },
+    ] }).sample, { id: 'adr_1', name: 'x', count: 1 })
+  })
+
+  // A part's type alone gives a placeholder, which loses to what another part declares.
+  for (const [what, allOf, value] of [
+    ['an enum after the type', [{ type: 'string' }, { enum: ['active', 'closed'] }], 'active'],
+    ['an enum before the type', [{ enum: ['active', 'closed'] }, { type: 'string' }], 'active'],
+    ['an example after the type', [{ type: 'string' }, { example: 'declared-id' }], 'declared-id'],
+    ['an example before the type', [{ example: 'declared-id' }, { type: 'string' }], 'declared-id'],
+    ['examples after the type', [{ type: 'string' }, { examples: ['listed-id', 'other'] }], 'listed-id'],
+    ['examples before the type', [{ examples: ['listed-id', 'other'] }, { type: 'string' }], 'listed-id'],
+    ['a default after the type', [{ type: 'string' }, { default: 'fallback' }], 'fallback'],
+    ['a default before the type', [{ default: 'fallback' }, { type: 'string' }], 'fallback'],
+    ['an example over an enum and a default', [{ default: 'fallback' },
+      { type: 'string', enum: ['active', 'closed'] }, { example: 'closed' }], 'closed'],
+    ['an example over an enum and a default, reversed', [{ example: 'closed' },
+      { type: 'string', enum: ['active', 'closed'] }, { default: 'fallback' }], 'closed'],
+    ['an enum over a default', [{ default: 'fallback' }, { type: 'string', enum: ['active'] }], 'active'],
+    ['an enum over a default, reversed', [{ type: 'string', enum: ['active'] }, { default: 'fallback' }],
+      'active'],
+  ] as [string, any[], any][]) {
+    test('an allOf takes the value a part declares: ' + what, () => {
+      deepStrictEqual(loadWith(record({ allOf })).sample, { id: value, name: 'x' })
+    })
+  }
 
   test('no resolved definition, no plan', () => {
     deepStrictEqual(definitionPlan({ model: MODEL, meta: {} }), [])
@@ -563,6 +631,22 @@ for (const [lang, runner] of [
       const p = { ...point('load'), entity: 'check_suite_preference',
         sample: { preferences: { auto_trigger_checks: [] }, repository: { id: 7 } } }
       await runDefinitionPoint(fakeSDK(''), p)
+    })
+
+    test('an id described in an allOf is compared as the string it is', async () => {
+      const p = loadWith(record(DESCRIBED_ID))
+      await runDefinitionPoint(fakeSDK(''), p)
+      const other = class extends fakeSDK('') {
+        Address() {
+          const ops = super.Address()
+          return { ...ops, load: async (match: any) => {
+            await ops.load(match)
+            return { data: () => ({ id: 'adr_2', name: 'x' }) }
+          } }
+        }
+      }
+      await rejects(runDefinitionPoint(other, p),
+        /the entity does not hold the record the definition example returns/)
     })
 
     // GitLab writes a NuGet route as `Packages\(\)`, which the URL parser
