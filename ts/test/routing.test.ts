@@ -122,6 +122,7 @@ function call(lang: string, opname: string, opoints: any[], args: any, stored: a
 
   return {
     method: point.method,
+    url,
     path: url.split('?')[0].replace('https://api.test', ''),
     query: ctx.spec.query,
     headers: ctx.spec.headers,
@@ -188,6 +189,7 @@ describe('routing: the fallback takes a route the call can fill', () => {
     test(lang + ': a call without {id} takes the route its msisdn fills', () => {
       deepStrictEqual(call(lang, 'remove', REMOVE, { database_id: 1, msisdn: '4712345678' }), {
         method: 'DELETE',
+        url: 'https://api.test/public/database/1/permission/permanent/4712345678',
         path: '/public/database/1/permission/permanent/4712345678',
         query: {},
         headers: {},
@@ -260,6 +262,7 @@ describe('routing: an argument travels where the definition puts it', () => {
 
       deepStrictEqual(call(lang, 'create', CREATE, args), {
         method: 'POST',
+        url: 'https://api.test/public/database/1/permission/paged/list?apiKey=x',
         path: '/public/database/1/permission/paged/list',
         query: { apiKey: 'x' },
         headers: { 'idempotency-key': 'k1' },
