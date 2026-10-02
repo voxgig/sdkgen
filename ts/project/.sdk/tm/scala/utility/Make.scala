@@ -202,6 +202,9 @@ object MakePoint {
 
 object MakeOptions {
 
+  // A {name} placeholder in a templated server URL (an OpenAPI server variable).
+  private val SERVER_VAR = "\\{([A-Za-z0-9_]+)\\}".r
+
   /**
    * Replaces one utility member from `options.utility`, matching the ts
    * reference: a key naming a real member REPLACES it, and any other key is
@@ -371,6 +374,38 @@ object MakeOptions {
       val sys = Helpers.toMapAny(opts.get("system"))
       if (sys != null) sys.put("fetch", sysFetch)
       else { val sm = new LinkedHashMap[String, Object](); sm.put("fetch", sysFetch); opts.put("system", sm) }
+    }
+
+    // A templated base URL takes each {name} from options.server. An empty
+    // value cannot make a working URL, so it fails construction, except in
+    // test mode, where it becomes test-<name>.
+    opts.get("base") match {
+      case base: String if base.contains("{") =>
+        val testmode =
+          java.lang.Boolean.TRUE == Struct.getpath(opts, java.util.List.of("test", "active")) ||
+            java.lang.Boolean.TRUE == Struct.getpath(opts, java.util.List.of("feature", "test", "active"))
+        val server = Helpers.toMapAny(opts.get("server"))
+        val sdkname = Struct.getpath(config, java.util.List.of("main", "name")) match {
+          case s: String if s.nonEmpty => s
+          case _ => "SDK"
+        }
+        val resolved = SERVER_VAR.replaceAllIn(base, (m: scala.util.matching.Regex.Match) => {
+          val name = m.group(1)
+          val value = (if (server == null) null else server.get(name)) match {
+            case s: String => s
+            case _ => ""
+          }
+          val filled =
+            if ("" != value) value
+            else if (testmode) "test-" + name
+            else throw new SdkError("server_var_required",
+              sdkname + ": the server variable '" + name + "' is required: the API base URL is '" +
+                base + "' - pass options.put(\"server\", java.util.Map.of(\"" + name +
+                "\", \"...\")) in the SDK options", ctx)
+          scala.util.matching.Regex.quoteReplacement(filled)
+        })
+        opts.put("base", resolved)
+      case _ =>
     }
 
     // Resolve the feature add-order: an explicit list order (above) wins;

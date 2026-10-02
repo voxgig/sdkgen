@@ -2,6 +2,7 @@
 
 #include "sdk.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -56,6 +57,78 @@ static voxgig_value* mo_without(voxgig_value* val, const char* k1, const char* k
 static voxgig_value* mo_clean_block(voxgig_value* opts) {
   voxgig_value* block = getp(opts, "clean");
   return voxgig_is_map(block) ? voxgig_clone(block) : v_map();
+}
+
+static bool mo_true(voxgig_value* v) {
+  return voxgig_is_bool(v) && voxgig_as_bool(v);
+}
+
+static bool mo_namechar(char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || '_' == c;
+}
+
+static void mo_append(char** out, size_t* len, size_t* cap, const char* s, size_t n) {
+  while (*len + n + 1 > *cap) {
+    *cap *= 2;
+    *out = (char*)realloc(*out, *cap);
+  }
+  memcpy(*out + *len, s, n);
+  *len += n;
+  (*out)[*len] = '\0';
+}
+
+/* A templated base URL takes each {name} from options.server. An empty value
+ * cannot make a working URL, so construction stops, as a rust or zig panic
+ * does, except in test mode, where it becomes test-<name>. */
+static void mo_resolve_base(voxgig_value* opts, voxgig_value* config) {
+  const char* base = get_str(opts, "base");
+  if (NULL == base || NULL == strchr(base, '{')) return;
+
+  bool testmode = mo_true(getpath2(opts, "test", "active"))
+    || mo_true(getpath3(opts, "feature", "test", "active"));
+  voxgig_value* server = to_map(getp(opts, "server"));
+  const char* sdkname = get_str(getp(config, "main"), "name");
+  if (NULL == sdkname || '\0' == sdkname[0]) sdkname = "SDK";
+
+  size_t blen = strlen(base);
+  size_t len = 0;
+  size_t cap = blen + 1;
+  char* out = (char*)malloc(cap);
+  out[0] = '\0';
+  size_t i = 0;
+  while (i < blen) {
+    size_t j = i + 1;
+    if ('{' == base[i]) {
+      while (j < blen && mo_namechar(base[j])) j++;
+    }
+    // A placeholder only when it closes and the name is [A-Za-z0-9_]+.
+    if ('{' != base[i] || j == i + 1 || j >= blen || '}' != base[j]) {
+      mo_append(&out, &len, &cap, base + i, 1);
+      i++;
+      continue;
+    }
+    size_t nlen = j - i - 1;
+    char* name = (char*)malloc(nlen + 1);
+    memcpy(name, base + i + 1, nlen);
+    name[nlen] = '\0';
+    const char* val = get_str(server, name);
+    if (NULL != val && '\0' != val[0]) {
+      mo_append(&out, &len, &cap, val, strlen(val));
+    } else if (testmode) {
+      mo_append(&out, &len, &cap, "test-", 5);
+      mo_append(&out, &len, &cap, name, nlen);
+    } else {
+      fprintf(stderr, "%s: the server variable '%s' is required: the API base URL is '%s'"
+              " - pass cmap(1, \"server\", cmap(1, \"%s\", v_str(\"...\"))) in the SDK options\n",
+              sdkname, name, base, name);
+      fflush(stderr);
+      abort();
+    }
+    free(name);
+    i = j + 1;
+  }
+  setp(opts, "base", v_str(out));
+  free(out);
 }
 
 voxgig_value* make_options_util(Context* ctx) {
@@ -179,6 +252,8 @@ voxgig_value* make_options_util(Context* ctx) {
       setp(opts, "system", cmap(1, "fetch", v_share(sys_fetch)));
     }
   }
+
+  mo_resolve_base(opts, config);
 
   // Resolve the feature add-order: an explicit list order (above) wins;
   // otherwise order the map test-first, then the remaining names sorted, so

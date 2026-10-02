@@ -10,6 +10,7 @@ my $__dir;
 BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
+require(Cwd::abs_path("$__dir/../core/error.pm"));
 require(Cwd::abs_path("$__dir/../schema.pm"));
 require(Cwd::abs_path("$__dir/clean.pm"));
 
@@ -182,6 +183,29 @@ $REGISTRY{make_options} = sub {
   # Re-attach the raw extend instances captured above.
   if (Voxgig::Struct::islist($extend_raw)) {
     $opts->{extend} = $extend_raw;
+  }
+
+  # A templated base URL takes each {name} from options.server. An empty value
+  # cannot make a working URL, so it fails construction, except in test mode,
+  # where it becomes test-<name>.
+  my $base = $opts->{base};
+  if (defined $base && !ref $base && 0 <= index($base, '{')) {
+    my $testmode = ProjectNameHelpers::is_true(ProjectNameHelpers::gpath($opts, 'test.active'))
+      || ProjectNameHelpers::is_true(ProjectNameHelpers::gpath($opts, 'feature.test.active'));
+    my $server = ProjectNameHelpers::to_map($opts->{server}) || {};
+    my $sdkname = ProjectNameHelpers::gpath($config, 'main.name');
+    $sdkname = 'SDK' unless defined $sdkname && !ref $sdkname && '' ne $sdkname;
+    my $fill = sub {
+      my ($name) = @_;
+      my $val = $server->{$name};
+      return $val if defined $val && !ref $val && '' ne $val;
+      return 'test-' . $name if $testmode;
+      die ProjectNameError->new('server_var_required',
+        "$sdkname: the server variable '$name' is required: the API base URL is '$base'"
+        . " - pass { 'server' => { '$name' => '...' } } in the SDK options", $ctx);
+    };
+    (my $resolved = $base) =~ s/\{([A-Za-z0-9_]+)\}/$fill->($1)/ge;
+    $opts->{base} = $resolved;
   }
 
   # Resolve the feature add-order: an explicit array order (above) wins;

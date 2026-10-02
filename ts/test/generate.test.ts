@@ -988,6 +988,32 @@ main: kit: target: js: phase: feature: active: false
     })
 
 
+  // makeOptions fills a templated base URL from options.server merged over the
+  // config's own server block, so a config that drops the block refuses an API
+  // whose spec supplies the value.
+  test('every SDK target carries the declared server defaults in its config', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const servers = "main: kit: info: servers: [{ url: 'https://{region}.api.example.test/v1'," +
+      " variables: { region: { default: 'zzregion-dflt' } } }]"
+    const out = await generate(targets, undefined, servers)
+
+    const gaps: string[] = []
+    for (const target of targets) {
+      const configs = filesFor(out, target).filter(([path]) =>
+        /(^|\/)(sdk_)?config\.[a-z]+$/i.test(path) && !/(^|\/)feature\//.test(path))
+      if (1 !== configs.length) {
+        gaps.push(target + ': expected one config file, found ' +
+          JSON.stringify(configs.map(([path]) => path)))
+      }
+      else if (!configs[0][1].includes('zzregion-dflt')) {
+        gaps.push(configs[0][0] + ' drops the declared server default')
+      }
+    }
+
+    deepStrictEqual(gaps, [], 'a declared server default does not reach every config')
+  })
+
+
   test('an edited sdk-test-control.json survives regeneration', async () => {
     const TARGETS = ['ts', 'go', 'py', 'rust', 'perl', 'scala']
 

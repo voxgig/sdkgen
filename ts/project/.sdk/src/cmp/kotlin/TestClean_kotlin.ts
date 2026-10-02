@@ -263,6 +263,24 @@ class CleanTest {
     },
   )
 
+  // Offline, as every generated suite is: the test OPTION resolves a required
+  // server variable to test-<name>, and installs no transport.
+  private fun offline(opts: Map<String, Any?>): MutableMap<String, Any?> {
+    val out = LinkedHashMap<String, Any?>(opts)
+    out["test"] = linkedMapOf<String, Any?>("active" to true)
+    return out
+  }
+
+  // A client the sweep cannot build leaves nothing swept: a harness error, not
+  // a leak.
+  private fun construct(opts: Map<String, Any?>): ${SDK} =
+    try {
+      ${SDK}(offline(opts))
+    } catch (e: RuntimeException) {
+      throw IllegalStateException(
+        "clean harness: the client could not be constructed, so nothing was swept: " + e.message, e)
+    }
+
   private fun makeSdk(scenario: Scenario, sinks: MutableList<Sink>, cleanopts: Map<String, Any?>?,
     vararg extra: BaseFeature): ${SDK} {
     val capture = { name: String -> Consumer<Any?> { rec -> sinks.addAll(surfaces(name, rec)) } }
@@ -312,7 +330,7 @@ class CleanTest {
     opts["feature"] = feature
     opts["extend"] = mutableListOf<Any?>(CaptureFeature(sinks), *extra)
     opts["utility"] = linkedMapOf<String, Any?>("fetcher" to fetcher)
-    return ${SDK}(opts)
+    return construct(opts)
   }
 
   class Target(val accessor: Method, val op: String, val match: Map<String, Any?>)
@@ -371,7 +389,7 @@ class CleanTest {
   private fun usableOp(): Target? {
     val plainFetch: (Context, String, MutableMap<String, Any?>) -> Any? =
       { _, _, _ -> response(200, linkedMapOf<String, Any?>("id" to "i1"), null) }
-    val plain = ${SDK}(linkedMapOf<String, Any?>(
+    val plain = construct(linkedMapOf<String, Any?>(
       "apikey" to canaryApikey,
       "utility" to linkedMapOf<String, Any?>("fetcher" to plainFetch)))
     val entities = Helpers.toMapAny(Config.sharedConfig()["entity"]) ?: linkedMapOf()
@@ -462,7 +480,7 @@ class CleanTest {
     // No clean option at all: the schema defaults still apply.
     val bareFetch: (Context, String, MutableMap<String, Any?>) -> Any? =
       { _, url, fetchdef -> scenarios[1].respond(url, fetchdef) }
-    val bare = ${SDK}(linkedMapOf<String, Any?>(
+    val bare = construct(linkedMapOf<String, Any?>(
       "apikey" to canaryApikey,
       "secret" to canarySecret,
       "headers" to linkedMapOf<String, Any?>("X-Custom-Token" to canaryHeader),
@@ -474,9 +492,9 @@ class CleanTest {
     // no rejection to sweep: sweep the client, and what clean makes of the
     // value should anything quote it.
     try {
-      val mistyped = ${SDK}(linkedMapOf<String, Any?>(
+      val mistyped = ${SDK}(offline(linkedMapOf<String, Any?>(
         "apikey" to linkedMapOf<String, Any?>("value" to canaryApikey),
-        "clean" to linkedMapOf<String, Any?>("values" to canaryValue)))
+        "clean" to linkedMapOf<String, Any?>("values" to canaryValue))))
       sinks.addAll(surfaces("mistyped", mistyped))
       sinks.addAll(surfaces("mistyped:quoted",
         mistyped.getUtility().clean(mistyped.getRootCtx(), "found map: " + canaryApikey)))
@@ -485,7 +503,7 @@ class CleanTest {
     }
 
     // A number is registered as the text a message quotes it in.
-    val numeric = ${SDK}(linkedMapOf<String, Any?>("apikey" to 918273645))
+    val numeric = construct(linkedMapOf<String, Any?>("apikey" to 918273645))
     val numbered = numeric.getUtility().clean(numeric.getRootCtx(), "found 918273645")
 
     for (unexpected in listOf(false, true)) {
@@ -598,7 +616,7 @@ class CleanTest {
   // entity name and id, is not read at all.
   @Test
   fun aFeatureNameDoesNotMakeItsSettingsSecret() {
-    val sdk = ${SDK}(linkedMapOf<String, Any?>(
+    val sdk = construct(linkedMapOf<String, Any?>(
       "apikey" to canaryApikey,
       "feature" to linkedMapOf<String, Any?>(
         "secrets" to linkedMapOf<String, Any?>(
