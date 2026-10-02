@@ -12,7 +12,10 @@ const utility_1 = require("./utility");
 // resolve real prerequisites per operation and collect failures until done.
 async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle = {}) {
     const { client, transport } = setup;
-    const steps = (flow.step || []).filter((step) => false !== step.a);
+    // A step switched off only because the offline call reaches no route of
+    // its operation still runs here, where each route's inputs are resolved.
+    const steps = (flow.step || [])
+        .filter((step) => false !== step.a || true === step.unreachable);
     const created = new Map();
     const listed = [];
     let listedEmpty = false;

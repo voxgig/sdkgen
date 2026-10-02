@@ -10,7 +10,10 @@ async function runLiveEntity(
   setup: any, entity: any, flow: any, accessor: string, facts: any = {}, settle: LiveSettle = {},
 ) {
   const { client, transport } = setup
-  const steps: any[] = (flow.step || []).filter((step: any) => false !== step.a)
+  // A step switched off only because the offline call reaches no route of
+  // its operation still runs here, where each route's inputs are resolved.
+  const steps: any[] = (flow.step || [])
+    .filter((step: any) => false !== step.a || true === step.unreachable)
   const created = new Map<string, any>()
   const listed: any[] = []
   let listedEmpty = false

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { liveStrict, liveStrictNote, liveFlowNeeds } from '../dist/sdkgen'
+import { liveStrict, liveStrictNote, liveFlowNeeds, guardFlowSteps } from '../dist/sdkgen'
 
 const model = (global?: boolean, go?: boolean) => ({ main: { kit: {
   test: null == global ? {} : { live: { strict: global } },
@@ -48,4 +48,17 @@ test('a create-less flow lists its record, or says why it cannot run live', () =
   assert.deepEqual(liveFlowNeeds(entity, flow({ o: 'list' }, { o: 'update', d: {} })),
     { keys: [], blocked: 'the flow updates a metric record it did not create' })
   assert.deepEqual(liveFlowNeeds({ name: 'ambient' }, flow({ o: 'load' })), { keys: [] })
+})
+
+
+test('a step switched off for want of a route is marked for the live harness', () => {
+  const action = (name: string) => ({ m: 'GET', o: '/signal/' + name, s: [], q: { $action: name } })
+  const model = { main: { kit: {
+    entity: { signal: { name: 'signal', fields: {}, op: { list: { points: [action('weak'), action('strong')] } } } },
+    flow: { BasicSignalFlow: { entity: 'signal', step: [{ o: 'list' }, { o: 'list', a: false }] } },
+  } } }
+  assert.deepEqual(guardFlowSteps(model), [{ flow: 'BasicSignalFlow', step: 0, op: 'list' }])
+  const [guarded, disabled] = model.main.kit.flow.BasicSignalFlow.step as any[]
+  assert.deepEqual([guarded.a, guarded.unreachable], [false, true])
+  assert.deepEqual([disabled.a, disabled.unreachable], [false, undefined])
 })

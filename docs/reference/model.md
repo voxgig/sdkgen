@@ -31,8 +31,10 @@ operation, inputs, match, data, mutations, and assertions. Inactive steps
 are omitted from generated tests. Generation also makes a step inactive when
 its call reaches no route of its operation, because the SDK refuses that
 call: every route is an action the step does not name, or needs a path
-parameter the step does not give. Ancestor chains contain checked entity
-addresses such as `path($.main.kit.entity.planet)`.
+parameter the step does not give. Such a step is also marked `unreachable`,
+and the TS and JS live suites still run it, resolving each route's inputs and
+naming an action themselves. Ancestor chains contain checked entity addresses
+such as `path($.main.kit.entity.planet)`.
 
 Components read this compact model directly. `configDefinition` projects
 it into the descriptive attribute names used by runtime hooks. Live-test
