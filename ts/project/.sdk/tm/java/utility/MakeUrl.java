@@ -59,9 +59,12 @@ final class MakeUrl {
       }
     }
 
-    // A placeholder left in the path would send the request to the wrong route.
+    // A placeholder left in the route would send the request to the wrong route.
+    // The base's own placeholders are server variables, resolved with the options.
+    String base = null == spec.base ? "" : spec.base.replaceAll("/+$", "");
+    String route = url.startsWith(base) ? url.substring(base.length()) : url;
     List<String> unfilled = new ArrayList<>();
-    java.util.regex.Matcher found = PLACEHOLDER.matcher(url);
+    java.util.regex.Matcher found = PLACEHOLDER.matcher(route);
     while (found.find()) {
       unfilled.add(found.group());
     }

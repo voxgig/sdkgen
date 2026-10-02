@@ -659,8 +659,10 @@ object MakeUrl {
       }
     }
 
-    // A placeholder left in the path would send the request to the wrong route.
-    val unfilled = "\\{[^{}/]+\\}".r.findAllIn(url).toList
+    // A placeholder left in the route would send the request to the wrong route.
+    // The base's own placeholders are server variables, resolved with the options.
+    val base = if (null == spec.base) "" else spec.base.replaceAll("/+$", "")
+    val unfilled = "\\{[^{}/]+\\}".r.findAllIn(url.stripPrefix(base)).toList
     if (unfilled.nonEmpty) {
       throw ctx.makeError("url_param_missing", "URL path has no value for " + unfilled.mkString(", ") + ".")
     }

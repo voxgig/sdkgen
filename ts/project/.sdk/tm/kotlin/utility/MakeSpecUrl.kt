@@ -125,8 +125,10 @@ fun makeUrl(ctx: Context): String {
     }
   }
 
-  // A placeholder left in the path would send the request to the wrong route.
-  val unfilled = Regex("\\{[^{}/]+\\}").findAll(url).map { it.value }.toList()
+  // A placeholder left in the route would send the request to the wrong route.
+  // The base's own placeholders are server variables, resolved with the options.
+  val route = url.removePrefix(spec.base.trimEnd('/'))
+  val unfilled = Regex("\\{[^{}/]+\\}").findAll(route).map { it.value }.toList()
   if (unfilled.isNotEmpty()) {
     throw ctx.makeError("url_param_missing", "URL path has no value for " + unfilled.joinToString(", ") + ".")
   }

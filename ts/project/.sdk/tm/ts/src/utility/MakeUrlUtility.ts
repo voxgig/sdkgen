@@ -42,8 +42,11 @@ function makeUrl(ctx: Context): Error | string {
     }
   }
 
-  // A placeholder left in the path would send the request to the wrong route.
-  const unfilled = url.match(/\{[^{}\/]+\}/g)
+  // A placeholder left in the route would send the request to the wrong route.
+  // The base's own placeholders are server variables, resolved with the options.
+  const base = ('string' === typeof spec.base ? spec.base : '').replace(/\/+$/, '')
+  const route = url.startsWith(base) ? url.slice(base.length) : url
+  const unfilled = route.match(/\{[^{}\/]+\}/g)
   if (null != unfilled) {
     return ctx.error('url_param_missing', 'URL path has no value for ' + unfilled.join(', ') + '.')
   }

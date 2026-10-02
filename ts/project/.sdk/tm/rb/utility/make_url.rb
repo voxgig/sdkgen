@@ -33,8 +33,11 @@ module ProjectNameUtilities
       end
     end
 
-    # A placeholder left in the path would send the request to the wrong route.
-    unfilled = url.scan(/\{[^{}\/]+\}/)
+    # A placeholder left in the route would send the request to the wrong route.
+    # The base's own placeholders are server variables, resolved with the options.
+    base = spec.base.is_a?(String) ? spec.base.sub(%r{/+\z}, "") : ""
+    route = url.delete_prefix(base)
+    unfilled = route.scan(/\{[^{}\/]+\}/)
     unless unfilled.empty?
       return "", ctx.make_error("url_param_missing", "URL path has no value for #{unfilled.join(', ')}.")
     end

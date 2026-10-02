@@ -93,7 +93,7 @@ tm/c/utility/make_request.c b5887e3fd94c
 tm/c/utility/make_response.c 5cb2535aec54
 tm/c/utility/make_result.c 1a912f59bee6
 tm/c/utility/make_spec.c abe2a56ab788
-tm/c/utility/make_url.c 09cc80e01a8a
+tm/c/utility/make_url.c 9f45a55abdd8
 tm/c/utility/param.c c400d75563ef
 tm/c/utility/prepare_body.c 722b1b98ddcb
 tm/c/utility/prepare_headers.c aa21e9bb0bb4
@@ -222,7 +222,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 32327e3b999a
-tm/clojure/src/sdk/core.clj 8e70572e4d97
+tm/clojure/src/sdk/core.clj df3a57f7f67e
 tm/clojure/src/sdk/features.clj 9f957c42a096
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 2aa105a4e17e
@@ -309,7 +309,7 @@ tm/cpp/test/testlib.hpp f5f70c8c25b7
 tm/cpp/test/vendor/omni/json.hpp 8e36b1f58d52
 tm/cpp/test/vendor/omni/omni.hpp 6d8f1d38f39e
 tm/cpp/test/vendor/omni/util.hpp 7737f6997c2b
-tm/cpp/utility/pipeline.hpp d6b8b994c450
+tm/cpp/utility/pipeline.hpp 8fac0a98f934
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp f3832db06d59
@@ -408,7 +408,7 @@ tm/csharp/utility/MakeRequest.cs 32657a32522e
 tm/csharp/utility/MakeResponse.cs 86cf8db8ebd2
 tm/csharp/utility/MakeResult.cs c8c17a3334d3
 tm/csharp/utility/MakeSpec.cs 761f23d14ee3
-tm/csharp/utility/MakeUrl.cs bea0afadf042
+tm/csharp/utility/MakeUrl.cs eaf04833cd17
 tm/csharp/utility/Param.cs a2e585c9d675
 tm/csharp/utility/PrepareBody.cs aa7b0e893ec3
 tm/csharp/utility/PrepareHeaders.cs 9f95c2b36c0a
@@ -478,7 +478,7 @@ tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex 2de50e8b1581
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex 9ba0b5478a1d
+tm/elixir/lib/projectname/utility.ex 437990a464b1
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -589,7 +589,7 @@ tm/go/utility/make_request.go cf4d4f55e911
 tm/go/utility/make_response.go 57ad84a7b3be
 tm/go/utility/make_result.go a9ddaa230b15
 tm/go/utility/make_spec.go ad96a3785a36
-tm/go/utility/make_url.go 9a101cac3468
+tm/go/utility/make_url.go 7b6355f61f60
 tm/go/utility/param.go 03774afe60e3
 tm/go/utility/prepare_body.go 46a79e8badf6
 tm/go/utility/prepare_headers.go 9a16128a2fb3
@@ -732,7 +732,7 @@ tm/java/utility/MakeRequest.java b326d47c077d
 tm/java/utility/MakeResponse.java bce6807c2f70
 tm/java/utility/MakeResult.java cb3522d54432
 tm/java/utility/MakeSpec.java 87caf21e31cc
-tm/java/utility/MakeUrl.java e1f6a3c73dd7
+tm/java/utility/MakeUrl.java 6d7bb7fe9a25
 tm/java/utility/Param.java 5948cea07ff9
 tm/java/utility/PrepareBody.java b294040b9aca
 tm/java/utility/PrepareHeaders.java 904a10c3fb18
@@ -831,7 +831,7 @@ tm/js/src/utility/MakeRequestUtility.js c586819bd2e6
 tm/js/src/utility/MakeResponseUtility.js 8e24747b5152
 tm/js/src/utility/MakeResultUtility.js 762de0f9d1b7
 tm/js/src/utility/MakeSpecUtility.js cbee14e5cf64
-tm/js/src/utility/MakeUrlUtility.js aed48c875a65
+tm/js/src/utility/MakeUrlUtility.js b48dd1ee409f
 tm/js/src/utility/ParamUtility.js a537a0dae300
 tm/js/src/utility/PrepareBodyUtility.js 6f8b768a5f9c
 tm/js/src/utility/PrepareHeadersUtility.js 5bc8cd98bd9f
@@ -959,7 +959,7 @@ tm/kotlin/utility/Json.kt 300cfa023e24
 tm/kotlin/utility/MakeOptions.kt 20272f830992
 tm/kotlin/utility/MakePoint.kt f48e8143bce2
 tm/kotlin/utility/MakeReqRes.kt a745863aa7aa
-tm/kotlin/utility/MakeSpecUrl.kt 77195e5f2ffc
+tm/kotlin/utility/MakeSpecUrl.kt fb5d20ae0dbe
 tm/kotlin/utility/Prepare.kt c04734c30de7
 tm/kotlin/utility/Register.kt b81ff2deff00
 tm/kotlin/utility/ResultTransform.kt ea220d07fe3a
@@ -1056,7 +1056,7 @@ tm/lua/utility/make_request.lua 4ba90ee83ff3
 tm/lua/utility/make_response.lua 6255f621011a
 tm/lua/utility/make_result.lua d9eae1b6119e
 tm/lua/utility/make_spec.lua f9e02d5616da
-tm/lua/utility/make_url.lua 33a92516c3f2
+tm/lua/utility/make_url.lua 2edd76a57f31
 tm/lua/utility/param.lua 77de052718f0
 tm/lua/utility/prepare_body.lua e73f29e0e301
 tm/lua/utility/prepare_headers.lua 5c84668763e6
@@ -1115,7 +1115,7 @@ tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml d76c4fb7fe05
 tm/ocaml/sdk_helpers.ml 225ba3f1d2a0
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml 981ff65b0577
+tm/ocaml/sdk_runtime.ml 5763b871762a
 tm/ocaml/sdk_types.ml dd926d011948
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
@@ -1223,7 +1223,7 @@ tm/perl/utility/make_request.pm d4b1ec8cf30d
 tm/perl/utility/make_response.pm 51a842fc584b
 tm/perl/utility/make_result.pm 1665a30e56a4
 tm/perl/utility/make_spec.pm 4be385ac2dce
-tm/perl/utility/make_url.pm 76d703c4b304
+tm/perl/utility/make_url.pm ce7704f6b5e4
 tm/perl/utility/param.pm 890556ba5f72
 tm/perl/utility/prepare_body.pm ee68f24ca672
 tm/perl/utility/prepare_headers.pm 18fc21d6694f
@@ -1326,7 +1326,7 @@ tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
 tm/php/utility/MakeResult.php f30434dbc6ba
 tm/php/utility/MakeSpec.php 62dd321a5d56
-tm/php/utility/MakeUrl.php 71fcdea39445
+tm/php/utility/MakeUrl.php afb1ccc533cf
 tm/php/utility/Param.php 9040137e8d48
 tm/php/utility/PrepareBody.php 046f9944a301
 tm/php/utility/PrepareHeaders.php b44bddad0113
@@ -1418,7 +1418,7 @@ tm/py/pkg/utility/make_request.py 9835b18e665b
 tm/py/pkg/utility/make_response.py a0912bcd9cff
 tm/py/pkg/utility/make_result.py cc36137e3e1d
 tm/py/pkg/utility/make_spec.py 81e763681594
-tm/py/pkg/utility/make_url.py fa42b755d90d
+tm/py/pkg/utility/make_url.py 100028dde74d
 tm/py/pkg/utility/param.py f49ed6811d0c
 tm/py/pkg/utility/prepare_body.py b0f86ae6ffca
 tm/py/pkg/utility/prepare_headers.py 2074db34020a
@@ -1564,7 +1564,7 @@ tm/rb/utility/make_request.rb a4ef373194d8
 tm/rb/utility/make_response.rb 0ca41a876f23
 tm/rb/utility/make_result.rb 144c21f62388
 tm/rb/utility/make_spec.rb 3e1bc3fb0c0b
-tm/rb/utility/make_url.rb 734be76a376b
+tm/rb/utility/make_url.rb b429775b00e6
 tm/rb/utility/param.rb 2dabbb11a048
 tm/rb/utility/prepare_body.rb 2270ecdcb9f6
 tm/rb/utility/prepare_headers.rb 3015cc94ec14
@@ -1676,7 +1676,7 @@ tm/rust/utility/make_request.rs fa9eeee6d176
 tm/rust/utility/make_response.rs 87ae886eda3b
 tm/rust/utility/make_result.rs 0a9846aa446c
 tm/rust/utility/make_spec.rs dc9b3224e3bc
-tm/rust/utility/make_url.rs 64d48080fe1e
+tm/rust/utility/make_url.rs 6bc99425f0e1
 tm/rust/utility/mod.rs ee46b7d5cbca
 tm/rust/utility/param.rs f11f048e9156
 tm/rust/utility/prepare_body.rs ac6c83fd468b
@@ -1851,7 +1851,7 @@ tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
 tm/scala/utility/Fetcher.scala 04226d1f9cf1
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
-tm/scala/utility/Make.scala ea5086adede0
+tm/scala/utility/Make.scala 98b92a6590e5
 tm/scala/utility/MakeSpec.scala 08289e20fcf3
 tm/scala/utility/Misc.scala c701e8463ca8
 tm/scala/utility/Prepare.scala 00061242ab51
@@ -1939,7 +1939,7 @@ tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 6bb7c2363df3
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
 tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift d29f13ae39e7
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
-tm/swift/Sources/ProjectNameSDK/utility/Make.swift 45f4ef7056cb
+tm/swift/Sources/ProjectNameSDK/utility/Make.swift 61dc1a09a172
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 0ce0c9bc0652
 tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 671b04486ecb
 tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift caefe334f5e6
@@ -2048,7 +2048,7 @@ tm/ts/src/utility/MakeRequestUtility.ts ea936f81c49b
 tm/ts/src/utility/MakeResponseUtility.ts a294cf7183ee
 tm/ts/src/utility/MakeResultUtility.ts 35a8c1404935
 tm/ts/src/utility/MakeSpecUtility.ts 8d5ff5640e08
-tm/ts/src/utility/MakeUrlUtility.ts 2a4bb1bb7953
+tm/ts/src/utility/MakeUrlUtility.ts 76a3fcedf39e
 tm/ts/src/utility/ParamUtility.ts e4e7866b92af
 tm/ts/src/utility/PrepareBodyUtility.ts c7d7290cbdd0
 tm/ts/src/utility/PrepareHeadersUtility.ts 80d5cb2d69f6
@@ -2147,7 +2147,7 @@ tm/zig/core/response.zig 4df235df5674
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 76f0cf3fd406
 tm/zig/core/types.zig ed211da482aa
-tm/zig/core/utility.zig 9e2b374bee6c
+tm/zig/core/utility.zig b91d34ea84ac
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig d7352c80c34e

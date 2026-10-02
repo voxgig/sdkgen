@@ -45,8 +45,10 @@ func makeUrlUtil(ctx *core.Context) (string, error) {
 		}
 	}
 
-	// A placeholder left in the path would send the request to the wrong route.
-	if unfilled := placeholderRe.FindAllString(url, -1); 0 < len(unfilled) {
+	// A placeholder left in the route would send the request to the wrong route.
+	// The base's own placeholders are server variables, resolved with the options.
+	route := strings.TrimPrefix(url, strings.TrimRight(spec.Base, "/"))
+	if unfilled := placeholderRe.FindAllString(route, -1); 0 < len(unfilled) {
 		return "", ctx.MakeError("url_param_missing",
 			"URL path has no value for "+strings.Join(unfilled, ", ")+".")
 	}

@@ -275,8 +275,12 @@ func makeUrlUtil(_ ctx: Context) throws -> String {
     }
   }
 
-  // A placeholder left in the path would send the request to the wrong route.
-  let unfilled = pathPlaceholders(url)
+  // A placeholder left in the route would send the request to the wrong route.
+  // The base's own placeholders are server variables, resolved with the options.
+  var base = spec.base
+  while base.hasSuffix("/") { base.removeLast() }
+  let route = !base.isEmpty && url.hasPrefix(base) ? String(url.dropFirst(base.count)) : url
+  let unfilled = pathPlaceholders(route)
   if !unfilled.isEmpty {
     throw ctx.makeError("url_param_missing",
       "URL path has no value for " + unfilled.joined(separator: ", ") + ".")

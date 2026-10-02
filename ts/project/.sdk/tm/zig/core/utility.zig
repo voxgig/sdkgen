@@ -1206,8 +1206,12 @@ pub fn make_url_util(ctx: *Context) E![]const u8 {
         }
     }
 
-    // A placeholder left in the path would send the request to the wrong route.
-    const unfilled = placeholders(url);
+    // A placeholder left in the route would send the request to the wrong route.
+    // The base's own placeholders are server variables, resolved with the options.
+    var blen = spec.base.len;
+    while (0 < blen and '/' == spec.base[blen - 1]) blen -= 1;
+    const route = if (std.mem.startsWith(u8, url, spec.base[0..blen])) url[blen..] else url;
+    const unfilled = placeholders(route);
     if (0 < unfilled.len) {
         return ctx.fail("url_param_missing", fmt("URL path has no value for {s}.", .{std.mem.join(h.A(), ", ", unfilled) catch ""}));
     }

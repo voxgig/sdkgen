@@ -638,12 +638,16 @@ inline std::string makeUrl(CtxPtr ctx) {
     }
   }
 
-  // A placeholder left in the path would send the request to the wrong route.
+  // A placeholder left in the route would send the request to the wrong route.
+  // The base's own placeholders are server variables, resolved with the options.
+  std::string base = spec->base;
+  while (!base.empty() && '/' == base.back()) base.pop_back();
+  const std::string route = 0 == url.compare(0, base.size(), base) ? url.substr(base.size()) : url;
   std::string unfilled;
-  for (size_t at = url.find('{'); std::string::npos != at; at = url.find('{', at + 1)) {
-    size_t end = url.find_first_of("{}/", at + 1);
-    if (std::string::npos != end && '}' == url[end] && end > at + 1) {
-      unfilled += (unfilled.empty() ? "" : ", ") + url.substr(at, end - at + 1);
+  for (size_t at = route.find('{'); std::string::npos != at; at = route.find('{', at + 1)) {
+    size_t end = route.find_first_of("{}/", at + 1);
+    if (std::string::npos != end && '}' == route[end] && end > at + 1) {
+      unfilled += (unfilled.empty() ? "" : ", ") + route.substr(at, end - at + 1);
       at = end;
     }
   }

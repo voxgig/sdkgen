@@ -51,7 +51,7 @@ pub fn make_url_util(ctx: &Rc<Context>) -> Result<String, ProjectNameError> {
     let suffixless = suffix.is_empty();
     let mut url = vs::join(
         &Value::list(vec![
-            Value::str(base),
+            Value::str(base.clone()),
             Value::str(prefix),
             Value::str(path),
             Value::str(suffix),
@@ -86,8 +86,9 @@ pub fn make_url_util(ctx: &Rc<Context>) -> Result<String, ProjectNameError> {
         }
     }
 
-    // A placeholder left in the path would send the request to the wrong route.
-    let unfilled = placeholders(&url);
+    // A placeholder left in the route would send the request to the wrong route.
+    // The base's own placeholders are server variables, resolved with the options.
+    let unfilled = placeholders(url.strip_prefix(base.trim_end_matches('/')).unwrap_or(url.as_str()));
     if !unfilled.is_empty() {
         return Err(ctx.make_error(
             "url_param_missing",

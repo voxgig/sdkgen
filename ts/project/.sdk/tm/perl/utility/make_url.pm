@@ -48,8 +48,12 @@ $REGISTRY{make_url} = sub {
     }
   }
 
-  # A placeholder left in the path would send the request to the wrong route.
-  my @unfilled = $url =~ /(\{[^{}\/]+\})/g;
+  # A placeholder left in the route would send the request to the wrong route.
+  # The base's own placeholders are server variables, resolved with the options.
+  my $base = defined $spec->{base} && !ref $spec->{base} ? $spec->{base} : '';
+  $base =~ s{/+\z}{};
+  my $route = 0 == index($url, $base) ? substr($url, length $base) : $url;
+  my @unfilled = $route =~ /(\{[^{}\/]+\})/g;
   return ('', $ctx->make_error('url_param_missing',
     'URL path has no value for ' . join(', ', @unfilled) . '.')) if @unfilled;
 

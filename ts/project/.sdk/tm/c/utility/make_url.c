@@ -94,8 +94,11 @@ char* make_url_util(Context* ctx, PNError** err) {
     }
   }
 
-  // A placeholder left in the path would send the request to the wrong route.
-  char* unfilled = placeholders(url);
+  // A placeholder left in the route would send the request to the wrong route.
+  // The base's own placeholders are server variables, resolved with the options.
+  size_t blen = NULL == spec->base ? 0 : strlen(spec->base);
+  while (0 < blen && '/' == spec->base[blen - 1]) blen--;
+  char* unfilled = placeholders(0 == strncmp(url, NULL == spec->base ? "" : spec->base, blen) ? url + blen : url);
   if (NULL != unfilled) {
     char buf[512];
     snprintf(buf, sizeof(buf), "URL path has no value for %s.", unfilled);

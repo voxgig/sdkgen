@@ -1495,9 +1495,13 @@ defmodule ProjectName.Utility do
             end
           end)
 
-        # A placeholder left in the path would send the request to the wrong
-        # route.
-        unfilled = Regex.scan(~r/\{[^{}\/]+\}/, url1) |> Enum.map(&hd/1)
+        # A placeholder left in the route would send the request to the wrong
+        # route. The base's own placeholders are server variables, resolved
+        # with the options.
+        base = S.getprop(spec, "base")
+        base = if is_binary(base), do: String.trim_trailing(base, "/"), else: ""
+        route = String.replace_prefix(url1, base, "")
+        unfilled = Regex.scan(~r/\{[^{}\/]+\}/, route) |> Enum.map(&hd/1)
 
         {url2, _qsep} =
           Enum.reduce(H.entries(S.getprop(spec, "query")), {url1, "?"}, fn {key, val}, {acc, qsep} ->

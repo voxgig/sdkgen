@@ -42,9 +42,12 @@ public static partial class SdkUtility
             }
         }
 
-        // A placeholder left in the path would send the request to the wrong
-        // route.
-        var unfilled = PlaceholderRe.Matches(url).Select(m => m.Value).ToList();
+        // A placeholder left in the route would send the request to the wrong
+        // route. The base's own placeholders are server variables, resolved
+        // with the options.
+        var baseUrl = (spec.Base ?? "").TrimEnd('/');
+        var route = url.StartsWith(baseUrl, System.StringComparison.Ordinal) ? url.Substring(baseUrl.Length) : url;
+        var unfilled = PlaceholderRe.Matches(route).Select(m => m.Value).ToList();
         if (unfilled.Count > 0)
         {
             throw ctx.MakeError("url_param_missing",

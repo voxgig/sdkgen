@@ -80,7 +80,10 @@ const TRANSFORM = { req: '`reqdata`', res: '`body`' }
 
 // A call through the shipped templates, as the entity operation runs them,
 // stopping at the URL the fetcher would be given.
-function call(lang: string, opname: string, opoints: any[], args: any, stored: any = {}) {
+function call(
+  lang: string, opname: string, opoints: any[], args: any, stored: any = {},
+  base = 'https://api.test',
+) {
   const pipe = PIPES[lang]
   const input = 'create' === opname || 'update' === opname ? 'data' : 'match'
 
@@ -104,7 +107,7 @@ function call(lang: string, opname: string, opoints: any[], args: any, stored: a
   }
 
   ctx.spec = {
-    base: 'https://api.test', prefix: '', suffix: '', alias: {},
+    base, prefix: '', suffix: '', alias: {},
     path: struct.join(point.parts, '/', true),
     params: pipe.prepareParams(ctx),
     query: pipe.prepareQuery(ctx),
@@ -279,6 +282,43 @@ describe('routing: the fallback takes a route the call can fill', () => {
       strictEqual((err as any).code, 'url_param_missing')
       ok(err.message.includes('{threadId}'), err.message)
     })
+  }
+})
+
+
+// Where the options cannot resolve a server variable the base keeps it: a
+// `{token}` in kotlin's, or ts's `{{base_url}}` in test mode, outer braces
+// and all. Neither is a path parameter.
+describe('routing: a server variable left in the base is not a path parameter', () => {
+
+  const LOAD = points('planet', 'load', [{
+    m: 'GET', o: '/planet/{id}', s: seg('/planet/{id}'),
+    g: { params: [arg('param', 'id', 'id')] }, q: { exist: ['id'] }, t: TRANSFORM,
+  }])
+
+  const BASES = [
+    'https://api.example.test/bot{token}',
+    'http://{{base_url}}',
+    'http://{test-base_url}/',
+  ]
+
+  for (const lang of Object.keys(PIPES)) {
+    for (const base of BASES) {
+
+      test(lang + ': a filled route under ' + base + ' is built', () => {
+        const out: any = call(lang, 'load', LOAD, { id: 'p1' }, {}, base)
+        ok(!(out instanceof Error), String(out?.message))
+        strictEqual(out.url, base.replace(/\/+$/, '') + '/planet/p1')
+      })
+
+
+      test(lang + ': an unfilled route under ' + base + ' is refused for its own placeholder', () => {
+        const err: any = call(lang, 'load', LOAD, {}, {}, base)
+        ok(err instanceof Error, 'a request was built: ' + JSON.stringify(err))
+        strictEqual((err as any).code, 'url_param_missing')
+        strictEqual(err.message, 'URL path has no value for {id}.')
+      })
+    }
   }
 })
 

@@ -1153,9 +1153,16 @@ let make_url_util (ctx : ctx) : (string * sdk_error option) =
           url := str_replace_all !url ("{" ^ key ^ "}") encoded;
           setp resmatch key v
         end) (keysof spec.sp_params);
-    (* A placeholder left in the path would send the request to the wrong
-     * route. *)
-    match placeholders !url with
+    (* A placeholder left in the route would send the request to the wrong
+     * route. The base's own placeholders are server variables, resolved with
+     * the options. *)
+    let rec root s = if ends_slash s then root (String.sub s 0 (String.length s - 1)) else s in
+    let base = root spec.sp_base in
+    let blen = String.length base in
+    let route =
+      if String.length !url >= blen && String.sub !url 0 blen = base
+      then String.sub !url blen (String.length !url - blen) else !url in
+    match placeholders route with
     | _ :: _ as unfilled ->
       ("", Some (ctx_make_error ctx "url_param_missing"
          ("URL path has no value for " ^ String.concat ", " unfilled ^ ".")))

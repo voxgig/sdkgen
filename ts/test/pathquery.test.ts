@@ -418,6 +418,23 @@ describe('makeUrl', () => {
     deepStrictEqual(missing, [], 'targets whose makeUrl sends an unfilled placeholder')
   })
 
+  // A server variable the options leave in the base is not a path parameter,
+  // so the scan reads the route after the base, trimmed of trailing slashes.
+  test('every target scans only the route after the base', () => {
+    const TRIM = /\/\+\$|\/\+\\z|rstrip|rtrim|TrimRight|TrimEnd|trimEnd|trim_end_matches|trim_trailing|pop_back|removeLast|blen--|blen -= 1|ends_slash/
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const body = src.slice(src.indexOf(def), src.indexOf(def) + 3500)
+      const from = body.indexOf('left in the route')
+      const guard = -1 === from ? '' : body.slice(from, body.indexOf('url_param_missing', from))
+      if (!/base/i.test(guard) || !TRIM.test(guard)) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose guard reads the base as part of the route')
+  })
+
   // Source again: the spec's query, and the separator that starts it.
   test('every target appends the query', () => {
     const missing: string[] = []
