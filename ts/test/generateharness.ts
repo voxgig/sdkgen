@@ -374,6 +374,99 @@ main: kit: flow: BasicHistoryFlow: {
 `
 
 
+// SMSAPI's pair, whose classes differ only in case, and a PATCH beside a PUT.
+const FOLD_ENTITY = `
+main: kit: entity: contacts_field: {
+  alias: field: {}
+  name: "contacts_field"
+  id: { field: "id", name: "id" }
+  field: {
+    id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
+    label: { name: "label", kind: "field", type: "\`$STRING\`" }
+  }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "label": { h: 'Label', n: "label", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: {}, m: "GET", o: "/contacts/fields", s: [{ lit: "contacts" }, { lit: "fields" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    update: {
+      name: "update"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "cf01" }
+        ] }
+        m: "PUT", o: "/contacts/fields/{id}"
+        s: [{ lit: "contacts" }, { lit: "fields" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    patch: {
+      name: "patch"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "cf01" }
+        ] }
+        m: "PATCH", o: "/contacts/fields/{id}"
+        s: [{ lit: "contacts" }, { lit: "fields" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: entity: contactsfield: {
+  alias: field: {}
+  name: "contactsfield"
+  id: { field: "id", name: "id" }
+  field: {
+    id:   { name: "id",   kind: "field", type: "\`$STRING\`", required: true }
+    kind: { name: "kind", kind: "field", type: "\`$STRING\`" }
+  }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "kind": { h: 'Kind', n: "kind", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    create: {
+      name: "create"
+      points: [ {
+        g: {}, m: "POST", o: "/contacts/fields", s: [{ lit: "contacts" }, { lit: "fields" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    remove: {
+      name: "remove"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "cf01" }
+        ] }
+        m: "DELETE", o: "/contacts/fields/{id}"
+        s: [{ lit: "contacts" }, { lit: "fields" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: flow: BasicContactsFieldFlow: {
+  entity: "contacts_field", kind: "basic", name: "BasicContactsFieldFlow"
+  step: [ { o: "list" } ]
+}
+
+main: kit: flow: BasicContactsfieldFlow: {
+  entity: "contactsfield", kind: "basic", name: "BasicContactsfieldFlow"
+  step: [ { o: "create", i: { ref: "contactsfield_ref01" } } ]
+}
+`
+
+
 const BUILTIN_TYPE_ENTITY = `
 main: kit: entity: mfa: {
   alias: field: {}
@@ -516,6 +609,7 @@ export {
   STAGE,
   SCAFFOLD,
   API_MODEL,
+  FOLD_ENTITY,
   BUILTIN_TYPE_ENTITY,
   makeLog,
   layeredFs,

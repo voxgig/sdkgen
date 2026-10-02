@@ -17,7 +17,7 @@ import { SdkGen } from '../dist/sdkgen.js'
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot,
-  BUILTIN_TYPE_ENTITY,
+  FOLD_ENTITY, BUILTIN_TYPE_ENTITY,
 } from './generateharness'
 
 
@@ -94,6 +94,16 @@ main: kit: flow: Basic3dsSessionFlow: {
 
 
 const RAW_DIGIT_IDENT = /(^|[^A-Za-z0-9_$."'`\/-])(3ds[A-Za-z_]|3ds_session)/
+
+
+// Paths that are one file on a case-insensitive filesystem.
+function foldedPaths(paths: string[]): string[] {
+  const byFold: Record<string, string[]> = {}
+  for (const p of paths) {
+    (byFold[p.toLowerCase()] = byFold[p.toLowerCase()] || []).push(p)
+  }
+  return Object.values(byFold).filter((g) => 1 < g.length).map((g) => g.join(' ~ '))
+}
 
 
 async function generate(
@@ -308,6 +318,57 @@ describe('generate', () => {
     const sdk = out['ts/src/DemoSDK.ts']
     ok(null != sdk, 'ts SDK not generated')
     ok(sdk.includes('N3dsSession('), 'the accessor is not the guarded Name')
+  })
+
+
+  // Both files of such a pair exist on Linux; on macOS and Windows the second
+  // write replaces the first.
+  test('a case-colliding entity pair generates no path that differs only in case', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+
+    const folded: string[] = []
+    const missing: string[] = []
+
+    for (const target of targets) {
+      const files = filesFor(await generate([target], undefined, FOLD_ENTITY), target)
+      ok(0 < files.length, target + ': generated no files')
+
+      folded.push(...foldedPaths(files.map(([path]) => path)))
+
+      if (!files.some(([path, content]) =>
+        /contactsfield2/i.test(path) || /contactsfield2/i.test(content))) {
+        missing.push(target)
+      }
+    }
+
+    deepStrictEqual(folded, [], 'paths that differ only in case')
+    deepStrictEqual(missing, [], 'targets that lost the renamed entity')
+  })
+
+
+  test('the case rename leaves the route alone', async () => {
+    const out = await generate(['ts'], undefined, FOLD_ENTITY)
+
+    const sdk = out['ts/src/DemoSDK.ts']
+    ok(sdk.includes('ContactsField(') && sdk.includes('Contactsfield2('),
+      'the accessors are not the guarded names')
+    ok(null != out['ts/src/entity/Contactsfield2Entity.ts'], 'renamed entity file')
+
+    const config = out['ts/src/Config.ts']
+    ok(/contactsfield2/.test(config) && config.includes('/contacts/fields/{id}'),
+      'the route did not survive the rename')
+  })
+
+
+  test('the case rename is reported once per run', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const sink: any[] = []
+    await generate(targets, undefined, FOLD_ENTITY, sink)
+
+    const guard = sink.filter((e: any) => 'entity-name-case-guard' === e?.point)
+    strictEqual(guard.length, 1, 'case guard warnings: ' + guard.length)
+    deepStrictEqual(guard[0].names, ['contacts_field', 'contactsfield'])
+    ok(guard[0].note.includes('contactsfield -> contactsfield2'), guard[0].note)
   })
 
 

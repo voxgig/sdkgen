@@ -24,7 +24,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 
 import {
-  makeModel, makeRoot, layeredFs, makeLog, BUILTIN_TYPE_ENTITY,
+  makeModel, makeRoot, layeredFs, makeLog, FOLD_ENTITY, BUILTIN_TYPE_ENTITY,
 } from './generateharness'
 
 
@@ -383,6 +383,26 @@ describe('generated SDK compiles', () => {
       '\nThis is the check that text assertions cannot make. A flow test ' +
       'reading `.id` off an op result is a type error the moment operations ' +
       'resolve to entities.')
+  })
+
+
+  // tsc refuses the pair on every OS (TS1149: file names that differ only in
+  // casing), and on macOS and Windows the second file replaces the first.
+  test('typescript: an entity pair whose names differ only in case type-checks', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-fold')
+    await generateTo('ts', sdkroot, FOLD_ENTITY)
+    linkDeps(sdkroot)
+
+    ok(Fs.existsSync(Path.join(sdkroot, 'src', 'entity', 'Contactsfield2Entity.ts')),
+      'the renamed entity was not generated')
+
+    const src = tsc(sdkroot, 'src')
+    ok(src.ok, 'generated src does not compile:\n' + src.out)
+
+    const suite = tsc(sdkroot, 'test')
+    ok(suite.ok, 'the generated test suite does not compile:\n' + suite.out)
   })
 
 
@@ -1551,10 +1571,36 @@ namespace {
   })
 
 
-  // `@type mfa :: ...` stops mix outright.
-  test('elixir: entities named after built-in types compile', async (t) => {
+  // PHP class and method names are case-insensitive, so this pair stops the
+  // SDK loading on every OS: `Cannot redeclare DemoSDK::Contactsfield()`.
+  test('php: an entity pair whose names differ only in case loads', async (t) => {
+    const php = toolchain('php')
+    if (null == php) {
+      return t.skip('no php here')
+    }
+
+    const sdkroot = Path.join(tmp, 'php-fold')
+    await generateTo('php', sdkroot, FOLD_ENTITY)
+
+    Fs.writeFileSync(Path.join(sdkroot, 'fold.php'), `<?php
+require __DIR__ . '/demo_sdk.php';
+require_once __DIR__ . '/types/DemoTypes.php';
+$client = DemoSDK::test(null, null);
+echo get_class($client->ContactsField(null)), ' ',
+  get_class($client->Contactsfield2(null)), "\n";
+`)
+    const loaded = run(php, ['fold.php'], sdkroot)
+    ok(loaded.ok, 'the generated php SDK does not load:\n' + tail(loaded.out))
+    ok(loaded.out.includes('ContactsFieldEntity Contactsfield2Entity'),
+      'the pair is not both reachable:\n' + loaded.out)
+  })
+
+
+  // `@type mfa :: ...` stops mix outright, and modules whose names differ only
+  // in case compile to one .beam file on macOS and Windows.
+  test('elixir: built-in type names and a case-colliding pair compile', async (t) => {
     const sdkroot = Path.join(tmp, 'elixir-names')
-    await generateTo('elixir', sdkroot, BUILTIN_TYPE_ENTITY)
+    await generateTo('elixir', sdkroot, BUILTIN_TYPE_ENTITY + FOLD_ENTITY)
 
     const mix = toolchain('mix')
     const elixir = toolchain('elixir')
@@ -1571,6 +1617,16 @@ namespace {
       return t.skip('elixir: ' + ran.out)
     }
     ok(ran.ok, 'elixir: mix compile failed:\n' + tail(ran.out))
+
+    const lib = Path.join(sdkroot, '_build', 'dev', 'lib')
+    const beams = Fs.readdirSync(lib)
+      .flatMap((app: string) => Fs.existsSync(Path.join(lib, app, 'ebin'))
+        ? Fs.readdirSync(Path.join(lib, app, 'ebin')) : [])
+    ok(beams.includes('Elixir.Demo.Entity.Contactsfield2.beam'),
+      'elixir: the renamed entity module was not compiled')
+    const folded = beams.filter((b: string, i: number) =>
+      beams.findIndex((o: string) => o.toLowerCase() === b.toLowerCase()) !== i)
+    deepStrictEqual(folded, [], 'elixir: modules that are one file on macOS')
   })
 
 

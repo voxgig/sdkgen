@@ -771,16 +771,26 @@ emitted broken source reached the fleet unchallenged.
   a helper that reads `e.Name`, call `deriveEntityNames()` first — and never
   memoise a result computed from an underived collection.
 - **An entity name is guarded before generation, once.** `generate()` runs
-  `guardModelNames()` before Root: an entity name that starts with a digit is
-  not an identifier in any target, so it is renamed (`3ds_session` ->
-  `n3ds_session`), along with the model's own references to it — the
-  collection key, the flow that names it, ancestor entries. The rename is on
-  the MODEL, deliberately: guarding `Name` where it is derived does not
-  survive, because the consumer's own `Root.ts` re-derives it from
-  `entity.name` per target. Do not add a second guard on a derived form. The
-  wire is untouched — a path comes from the point's `orig`, never the name.
-  Same rule, same result, as apidef's `prefixLeadingDigit`, so it is a no-op
-  on any model apidef produced.
+  `guardModelNames()` before Root, and it renames in two passes, each along
+  with the model's own references to the name — the collection key, the
+  flow that names it, ancestor entries:
+  - A name that starts with a digit is not an identifier in any target
+    (`3ds_session` -> `n3ds_session`). Same rule, same result, as apidef's
+    `prefixLeadingDigit`, so it is a no-op on any model apidef produced.
+  - Names whose identifiers or files MEET once case is ignored keep one
+    name and suffix the rest (`contacts_field` + `contactsfield` ->
+    `contactsfield2`): APFS/NTFS hold one file for the pair and PHP one
+    class. "Meet" is `foldKeys`, the lowercased PascalCase form and the
+    lowercased snake form the C-family targets build; a group is a connected
+    component of either. Inactive entities count, because every
+    `EntityTypes_<lang>` emits them. apidef's `casecollide` only WARNS
+    about a pair that both carry operations, so this pass does fire on
+    apidef models.
+  The rename is on the MODEL, deliberately: guarding `Name` where it is
+  derived does not survive, because the consumer's own `Root.ts` re-derives
+  it from `entity.name` per target. Do not add a second guard on a derived
+  form. The wire is untouched — a path comes from the point's `orig`, never
+  the name.
 - **An entity need not declare `op`.** Read it as `entity.op || {}` /
   `entity.op?.load`; an unguarded `Object.keys(entity.op)` aborts generation
   for every target. `ts/test/entityname.test.ts` fails if one is reintroduced.

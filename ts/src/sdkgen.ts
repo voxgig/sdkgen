@@ -273,11 +273,11 @@ function SdkGen(opts: SdkGenOptions) {
     log.info({ point: 'generate-start', start, note: opts.dryrun ? '** DRY RUN **' : '' })
     log.debug({ point: 'generate-spec', spec })
 
-    // BEFORE ANYTHING READS A NAME. An entity whose name starts with a digit
-    // yields identifiers no target language accepts, and the consumer's own
-    // Root.ts re-derives those names per target — so the only correction that
-    // survives is one made to the model itself, before Root runs. No-op on
-    // every model apidef produces; see helpers/modelNames.
+    // BEFORE ANYTHING READS A NAME. A digit-leading name, or a pair of names
+    // that meet once case is ignored, yields identifiers or files no target
+    // can hold, and the consumer's own Root.ts re-derives those names per
+    // target — so the only correction that survives is one made to the model
+    // itself, before Root runs. See helpers/modelNames.
     guardModelNames(model, log)
 
     let Root = spec.root

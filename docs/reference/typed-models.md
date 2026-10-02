@@ -43,12 +43,17 @@ the result.
      intersection across alternative points; `$action` points excluded);
      otherwise entity fields with per-op policy (create respects `req`,
      update/list all-optional, load/remove require the `id` field).
-   - **Collision handling** — `entityClassName` keeps entity *class* names
-     unique. Data/op *type* names cannot be renamed (fragments reference
-     them by token), so `entityTypeCollisions` /
-     `warnEntityTypeCollisions` detect duplicates (two entities whose
-     PascalCase `Name` coincides) and every emitter warns loudly
-     (`point: entity-types-name-collision`). Fix collisions in the model
+   - **Collision handling** — two entity names whose PascalCase forms
+     meet once case is ignored never reach an emitter: generation renames
+     one of them on the model first (see
+     [the model reference](./model.md#mainkitentityname)). `entityClassName`
+     keeps entity *class* names unique. Data/op *type* names cannot be
+     renamed (fragments reference them by token), so
+     `entityTypeCollisions` / `warnEntityTypeCollisions` detect what
+     remains: one entity's data type that equals the op type of another,
+     such as an entity `planet_load_match` beside `planet`'s
+     `PlanetLoadMatch`. Every emitter warns loudly
+     (`point: entity-types-name-collision`). Fix those in the model
      (rename/alias an entity).
    - **Names a language reserves** — the bare entity data type takes a
      suffix where the language already owns its name: `Type` in ts

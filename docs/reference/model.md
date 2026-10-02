@@ -389,6 +389,37 @@ reference move with it. The request path does not: it comes from the point,
 so the SDK still calls `/3ds-sessions`. apidef applies the same rule when it
 derives the name, so this changes nothing for a model apidef produced.
 
+Two names also collide when a target derives the same identifier or file
+name from both once case is ignored, as a case-insensitive filesystem
+(macOS, Windows) and PHP class and method names do. `contacts_field` and
+`contactsfield` give `ContactsFieldEntity` and `ContactsfieldEntity`: one
+file on macOS, and in PHP a class declared twice on any system. Names that
+differ only in their separators (`foo-bar`, `foo_bar`) collide the same
+way, as do two names the rust, c, cpp, zig and ocaml targets reduce to one
+snake form. apidef keeps both entities of such a pair when both carry
+operations, so a model apidef produced can hold one.
+
+Generation keeps one name in each colliding group and adds a numeric
+suffix to the others, before anything reads a name: `contactsfield`
+becomes `contactsfield2`, and its class `Contactsfield2Entity`. The key,
+the flow and any ancestor reference move with it, and the routes stay as
+they were. The entity that keeps its name is chosen the same way on every
+run:
+
+- a name the model holds outranks one the leading-digit rule produced,
+- then an active entity outranks an inactive one, whose name still
+  reaches every typed model,
+- then the name that sorts first in code-unit order.
+
+The suffix is the lowest number from 2 that leaves the new name clear of
+every other name in the model, case ignored, and of every basic flow key.
+A warning (`entity-name-case-guard`) names the group, the rename, and the
+renamed entity's paths. To choose the name yourself, move that entity's
+operations onto an entity named as you want in the guide
+(`.sdk/model/guide/guide.aontu`), and switch the old one off there with
+`guide: entity: contactsfield: active: false`. An entity switched off in
+the guide never reaches the model, so the pair no longer collides.
+
 ## `main.kit.feature.<name>`
 
 | Field | Type | Default | Description |

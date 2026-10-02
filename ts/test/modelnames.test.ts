@@ -225,3 +225,237 @@ describe('guard-model-names', () => {
   })
 
 })
+
+
+// SMSAPI's /contacts/fields gave apidef both `contacts_field` and
+// `contactsfield`: classes ContactsFieldEntity and ContactsfieldEntity, one
+// file on macOS and Windows, one class in PHP everywhere.
+function foldModel(): any {
+  return makeModel({
+    entity: {
+      contacts_field: {
+        name: 'contacts_field',
+        op: {
+          list: { name: 'list', points: [{ m: 'GET', o: '/contacts/fields' }] },
+        },
+      },
+      contactsfield: {
+        name: 'contactsfield',
+        op: {
+          create: { name: 'create', points: [{ m: 'POST', o: '/contacts/fields' }] },
+          remove: {
+            name: 'remove', points: [{ m: 'DELETE', o: '/contacts/fields/{id}' }],
+          },
+        },
+      },
+      planet: {
+        name: 'planet',
+        relations: { ancestors: [['$.main.kit.entity.contactsfield']] },
+      },
+    },
+    flow: {
+      BasicContactsFieldFlow: {
+        name: 'BasicContactsFieldFlow', entity: 'contacts_field', kind: 'basic',
+      },
+      BasicContactsfieldFlow: {
+        name: 'BasicContactsfieldFlow', entity: 'contactsfield', kind: 'basic',
+      },
+    },
+  })
+}
+
+
+describe('guard-model-names: names that meet once case is ignored', () => {
+
+  test('renames one of the pair, with its key and derived forms', () => {
+    const model = foldModel()
+    model.main[KIT].entity.contactsfield.Name = 'Contactsfield'
+
+    deepEqual(guardModelNames(model),
+      [{ from: 'contactsfield', to: 'contactsfield2', key: 'contactsfield2' }])
+
+    const ents = model.main[KIT].entity
+    equal(ents.contactsfield, undefined, 'old key removed')
+    equal(ents.contactsfield2.name, 'contactsfield2')
+    equal(ents.contactsfield2.Name, undefined, 'derived form re-derived later')
+    equal(ents.contacts_field.name, 'contacts_field', 'the other keeps its name')
+  })
+
+
+  test('leaves every route untouched', () => {
+    const model = foldModel()
+    guardModelNames(model)
+
+    const op = model.main[KIT].entity.contactsfield2.op
+    equal(op.create.points[0].o, '/contacts/fields')
+    equal(op.remove.points[0].o, '/contacts/fields/{id}')
+  })
+
+
+  test('moves the flow and the ancestor reference with it', () => {
+    const model = foldModel()
+    guardModelNames(model)
+
+    const flow = model.main[KIT].flow
+    equal(flow.BasicContactsfieldFlow, undefined, 'old flow key removed')
+    equal(flow.BasicContactsfield2Flow.entity, 'contactsfield2')
+    equal(flow.BasicContactsfield2Flow.name, 'BasicContactsfield2Flow')
+    equal(flow.BasicContactsFieldFlow.entity, 'contacts_field')
+
+    deepEqual(model.main[KIT].entity.planet.relations.ancestors,
+      [['$.main.kit.entity.contactsfield2']])
+  })
+
+
+  test('renames the same entity whatever order the model holds them in', () => {
+    const model = foldModel()
+    const ents = model.main[KIT].entity
+    model.main[KIT].entity = {
+      planet: ents.planet, contactsfield: ents.contactsfield,
+      contacts_field: ents.contacts_field,
+    }
+
+    deepEqual(guardModelNames(model),
+      [{ from: 'contactsfield', to: 'contactsfield2', key: 'contactsfield2' }])
+  })
+
+
+  test('names that differ only in case collide too', () => {
+    const model = makeModel({
+      entity: { Widget: { name: 'Widget' }, widget: { name: 'widget' } },
+    })
+
+    deepEqual(guardModelNames(model),
+      [{ from: 'widget', to: 'widget2', key: 'widget2' }])
+  })
+
+
+  // rust, c, cpp, zig and ocaml name files and identifiers by turning every
+  // non-word character into `_`, which the PascalCase form keeps.
+  test('names the C-family targets fold together collide', () => {
+    const model = makeModel({
+      entity: { 'foo.bar': { name: 'foo.bar' }, foo_bar: { name: 'foo_bar' } },
+    })
+
+    deepEqual(guardModelNames(model),
+      [{ from: 'foo_bar', to: 'foo_bar2', key: 'foo_bar2' }])
+  })
+
+
+  test('an inactive entity yields its name to an active one', () => {
+    const model = foldModel()
+    model.main[KIT].entity.contacts_field.active = false
+
+    deepEqual(guardModelNames(model),
+      [{ from: 'contacts_field', to: 'contacts_field2', key: 'contacts_field2' }])
+  })
+
+
+  // The digit guard runs first; its own product must not push aside a name
+  // the model chose.
+  test('a name the digit guard produced yields to one the model chose', () => {
+    const model = makeModel({
+      entity: {
+        '3ds_session': { name: '3ds_session' },
+        n3dssession: { name: 'n3dssession' },
+      },
+    })
+
+    deepEqual(guardModelNames(model), [
+      { from: '3ds_session', to: 'n3ds_session', key: 'n3ds_session' },
+      { from: 'n3ds_session', to: 'n3ds_session2', key: 'n3ds_session2' },
+    ])
+    ok(null != model.main[KIT].entity.n3dssession, 'the model name kept')
+  })
+
+
+  test('the new name avoids every other name, case ignored', () => {
+    const model = foldModel()
+    model.main[KIT].entity.Contacts_Field2 = { name: 'Contacts_Field2' }
+
+    deepEqual(guardModelNames(model),
+      [{ from: 'contactsfield', to: 'contactsfield3', key: 'contactsfield3' }])
+  })
+
+
+  test('a flow already on the new key moves the suffix on', () => {
+    const model = foldModel()
+    model.main[KIT].flow.BasicContactsfield2Flow = {
+      name: 'BasicContactsfield2Flow', entity: 'something_else', kind: 'basic',
+    }
+
+    deepEqual(guardModelNames(model),
+      [{ from: 'contactsfield', to: 'contactsfield3', key: 'contactsfield3' }])
+    equal(model.main[KIT].flow.BasicContactsfield2Flow.entity, 'something_else')
+    equal(model.main[KIT].flow.BasicContactsfield3Flow.entity, 'contactsfield3')
+  })
+
+
+  test('every member past the first of a larger group is renamed', () => {
+    const model = makeModel({
+      entity: {
+        ab: { name: 'ab' }, a_b: { name: 'a_b' }, 'a-b': { name: 'a-b' },
+      },
+    })
+
+    deepEqual(guardModelNames(model), [
+      { from: 'a_b', to: 'a_b2', key: 'a_b2' },
+      { from: 'ab', to: 'ab3', key: 'ab3' },
+    ])
+    deepEqual(Object.keys(model.main[KIT].entity).sort(), ['a-b', 'a_b2', 'ab3'])
+  })
+
+
+  test('keeps a key that is not the name', () => {
+    const model = makeModel({
+      entity: {
+        contacts_field: { name: 'contacts_field' },
+        fields: { name: 'contactsfield' },
+      },
+    })
+
+    deepEqual(guardModelNames(model),
+      [{ from: 'contactsfield', to: 'contactsfield2', key: 'fields' }])
+    equal(model.main[KIT].entity.fields.name, 'contactsfield2')
+  })
+
+
+  test('names that only look alike are left alone', () => {
+    const model = makeModel({
+      entity: {
+        contact: { name: 'contact' }, contacts: { name: 'contacts' },
+        field_set: { name: 'field_set' }, fieldset_item: { name: 'fieldset_item' },
+      },
+    })
+    const before = JSON.stringify(model)
+
+    deepEqual(guardModelNames(model), [])
+    equal(JSON.stringify(model), before)
+  })
+
+
+  test('warns once per pair, naming both, the new name and the guide', () => {
+    const warns: any[] = []
+    guardModelNames(foldModel(), { warn: (e: any) => warns.push(e) })
+
+    equal(warns.length, 1)
+    equal(warns[0].point, 'entity-name-case-guard')
+    deepEqual(warns[0].names, ['contacts_field', 'contactsfield'])
+    deepEqual(warns[0].renames,
+      [{ from: 'contactsfield', to: 'contactsfield2', key: 'contactsfield2' }])
+
+    const note = warns[0].note
+    for (const part of [
+      'contacts_field, contactsfield', 'ContactsField, Contactsfield',
+      'contactsfield -> contactsfield2',
+      '/contacts/fields, /contacts/fields/{id}',
+      '.sdk/model/guide/guide.aontu',
+      'guide: entity: contactsfield: active: false',
+      '.sdk/test/entity/contactsfield/ContactsfieldTestData.json',
+      '.sdk/test/entity/contactsfield2/Contactsfield2TestData.json',
+    ]) {
+      ok(note.includes(part), 'note names ' + part + ': ' + note)
+    }
+  })
+
+})
