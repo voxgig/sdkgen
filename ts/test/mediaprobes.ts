@@ -302,8 +302,309 @@ const base = process.env.MEDIA_BASE
 `
 
 
+const GO_PROBE = String.raw`package sdktest
+
+import (
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"os"
+	"testing"
+
+	sdk "GOMODULE"
+)
+
+func TestMediaProbe(t *testing.T) {
+	data, err := os.ReadFile("../media-cases.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases []map[string]any
+	if err := json.Unmarshal(data, &cases); err != nil {
+		t.Fatal(err)
+	}
+	base := os.Getenv("MEDIA_BASE")
+	for i, c := range cases {
+		opts := map[string]any{"base": fmt.Sprintf("%s/c%d", base, i)}
+		if h, ok := c["headers"].(map[string]any); ok {
+			opts["headers"] = h
+		}
+		client := sdk.NewDemoSDK(opts)
+		input := map[string]any{}
+		if in, ok := c["input"].(map[string]any); ok {
+			for k, v := range in {
+				input[k] = v
+			}
+		}
+		if h, ok := c["bodyHex"].(string); ok {
+			b, _ := hex.DecodeString(h)
+			input["$body"] = b
+		}
+		if s, ok := c["bodyText"].(string); ok {
+			input["$body"] = s
+		}
+		var ent sdk.DemoEntity
+		switch c["entity"] {
+		case "cat":
+			ent = client.Cat(nil)
+		case "picture":
+			ent = client.Picture(nil)
+		case "planet":
+			ent = client.Planet(nil)
+		}
+		var cerr error
+		switch c["op"] {
+		case "load":
+			_, cerr = ent.Load(input, nil)
+		case "list":
+			_, cerr = ent.List(input, nil)
+		case "create":
+			_, cerr = ent.Create(input, nil)
+		case "update":
+			_, cerr = ent.Update(input, nil)
+		case "remove":
+			_, cerr = ent.Remove(input, nil)
+		}
+		if cerr != nil {
+			fmt.Printf("media-probe: case %d: %v\n", i, cerr)
+		}
+	}
+	fmt.Printf("media-probe: ran %d cases\n", len(cases))
+}
+`
+
+
+// Without a live transport (py's needs requests), MEDIA_SEAM prints each
+// request instead of sending it.
+const PY_PROBE = String.raw`
+import json, os
+from demo_sdk import DemoSDK
+
+with open('media-cases.json') as f:
+    cases = json.load(f)
+base = os.environ['MEDIA_BASE']
+seam = 'MEDIA_SEAM' in os.environ
+
+
+def printer(url, fetchdef):
+    body = fetchdef.get('body')
+    if hasattr(body, 'read'):
+        body = body.read()
+    if isinstance(body, str):
+        body = body.encode('utf-8')
+    print('MEDIA-REQUEST ' + json.dumps({
+        'url': url, 'method': fetchdef.get('method'), 'headers': fetchdef.get('headers'),
+        'bodyHex': bytes(body or b'').hex()}))
+    return {'status': 200, 'statusText': 'OK', 'headers': {},
+            'json': lambda: {'id': 'x01'}, 'body': '{}'}, None
+
+
+for i, c in enumerate(cases):
+    opts = {'base': base + '/c' + str(i)}
+    if c.get('headers'):
+        opts['headers'] = c['headers']
+    if seam:
+        opts['system'] = {'fetch': printer}
+    client = DemoSDK(opts)
+    data = dict(c['input'])
+    if 'bodyHex' in c:
+        data['$body'] = bytes.fromhex(c['bodyHex'])
+    if 'bodyText' in c:
+        data['$body'] = c['bodyText']
+    ent = getattr(client, c['entity'].capitalize())()
+    try:
+        getattr(ent, c['op'])(data)
+    except Exception as e:
+        print('media-probe: case %d: %s' % (i, e))
+print('media-probe: ran %d cases' % len(cases))
+`
+
+
+const RB_PROBE = String.raw`
+require 'json'
+require_relative 'Demo_sdk'
+
+cases = JSON.parse(File.read('media-cases.json'))
+base = ENV['MEDIA_BASE']
+cases.each_with_index do |c, i|
+  opts = { 'base' => "#{base}/c#{i}" }
+  opts['headers'] = c['headers'] if c['headers']
+  client = DemoSDK.new(opts)
+  data = c['input'].dup
+  data['$body'] = [c['bodyHex']].pack('H*') if c['bodyHex']
+  data['$body'] = c['bodyText'] if c['bodyText']
+  ent = client.send(c['entity'].capitalize)
+  begin
+    ent.send(c['op'], data)
+  rescue StandardError => e
+    puts "media-probe: case #{i}: #{e.message}"
+  end
+end
+puts "media-probe: ran #{cases.length} cases"
+`
+
+
+const PHP_PROBE = String.raw`<?php
+require_once __DIR__ . '/demo_sdk.php';
+$cases = json_decode(file_get_contents('media-cases.json'), true, 512, JSON_THROW_ON_ERROR);
+$base = getenv('MEDIA_BASE');
+foreach ($cases as $i => $c) {
+    $opts = ['base' => $base . '/c' . $i];
+    if (isset($c['headers'])) {
+        $opts['headers'] = $c['headers'];
+    }
+    $client = new DemoSDK($opts);
+    $data = $c['input'];
+    if (isset($c['bodyHex'])) {
+        $data['$body'] = hex2bin($c['bodyHex']);
+    }
+    if (isset($c['bodyText'])) {
+        $data['$body'] = $c['bodyText'];
+    }
+    $accessor = ucfirst($c['entity']);
+    try {
+        $client->$accessor()->{$c['op']}($data);
+    } catch (Throwable $e) {
+        echo 'media-probe: case ' . $i . ': ' . $e->getMessage() . "\n";
+    }
+}
+echo 'media-probe: ran ' . count($cases) . " cases\n";
+`
+
+
+const PERL_PROBE = String.raw`
+use strict;
+use warnings;
+use lib 'lib';
+use JSON::PP;
+use DemoSDK;
+
+open my $fh, '<', 'media-cases.json' or die $!;
+my $cases = decode_json(do { local $/; <$fh> });
+my $base = $ENV{MEDIA_BASE};
+for my $i (0 .. $#$cases) {
+  my $c = $cases->[$i];
+  my $opts = { base => "$base/c$i" };
+  $opts->{headers} = $c->{headers} if $c->{headers};
+  my $client = DemoSDK->new($opts);
+  my %data = %{ $c->{input} };
+  $data{'$body'} = pack('H*', $c->{bodyHex}) if defined $c->{bodyHex};
+  $data{'$body'} = $c->{bodyText} if defined $c->{bodyText};
+  my $accessor = ucfirst $c->{entity};
+  my $op = $c->{op};
+  eval { $client->$accessor->$op(\%data); 1 } or print "media-probe: case $i: $@\n";
+}
+print 'media-probe: ran ' . scalar(@$cases) . " cases\n";
+`
+
+
+// lua's live transport needs luasocket; without it MEDIA_SEAM prints.
+const LUA_PROBE = String.raw`
+local json = require("dkjson")
+local sdk = require("demo_sdk")
+
+local f = assert(io.open("media-cases.json", "rb"))
+local cases = json.decode(f:read("a"))
+f:close()
+local base = os.getenv("MEDIA_BASE")
+local seam = os.getenv("MEDIA_SEAM") ~= nil
+
+local function hex(s)
+  return (s:gsub(".", function(c) return string.format("%02x", c:byte()) end))
+end
+
+local function unhex(h)
+  return (h:gsub("..", function(cc) return string.char(tonumber(cc, 16)) end))
+end
+
+local function printer(url, fetchdef)
+  local body = fetchdef.body
+  print("MEDIA-REQUEST " .. json.encode({
+    url = url, method = fetchdef.method, headers = fetchdef.headers,
+    bodyHex = type(body) == "string" and hex(body) or "",
+  }))
+  return { status = 200, statusText = "OK", headers = {},
+    json = function() return { id = "x01" } end, body = "{}" }, nil
+end
+
+for i, c in ipairs(cases) do
+  local n = i - 1
+  local opts = { base = base .. "/c" .. n }
+  if c.headers then opts.headers = c.headers end
+  if seam then opts.system = { fetch = printer } end
+  local client = sdk.new(opts)
+  local data = {}
+  for k, v in pairs(c.input) do data[k] = v end
+  if c.bodyHex then data["$body"] = unhex(c.bodyHex) end
+  if c.bodyText then data["$body"] = c.bodyText end
+  local accessor = c.entity:sub(1, 1):upper() .. c.entity:sub(2)
+  local ok, res, err = pcall(function()
+    local ent = client[accessor](client)
+    return ent[c.op](ent, data)
+  end)
+  if not ok then
+    print("media-probe: case " .. n .. ": " .. tostring(res))
+  elseif err ~= nil then
+    print("media-probe: case " .. n .. ": " .. tostring(err))
+  end
+end
+print("media-probe: ran " .. #cases .. " cases")
+`
+
+
+const JAVA_PROBE = String.raw`
+import java.nio.file.*;
+import java.util.*;
+import voxgig.demosdk.core.*;
+import voxgig.demosdk.utility.Json;
+
+public class MediaProbe {
+  @SuppressWarnings("unchecked")
+  public static void main(String[] args) throws Exception {
+    var cases = (List<Map<String, Object>>) Json.parse(Files.readString(Path.of("media-cases.json")));
+    String base = System.getenv("MEDIA_BASE");
+    for (int i = 0; i < cases.size(); i++) {
+      var c = cases.get(i);
+      Map<String, Object> opts = new LinkedHashMap<>();
+      opts.put("base", base + "/c" + i);
+      if (c.get("headers") != null) opts.put("headers", c.get("headers"));
+      var client = new DemoSDK(opts);
+      Map<String, Object> data = new LinkedHashMap<>((Map<String, Object>) c.get("input"));
+      if (c.get("bodyHex") != null) data.put("$body", HexFormat.of().parseHex((String) c.get("bodyHex")));
+      if (c.get("bodyText") != null) data.put("$body", c.get("bodyText"));
+      try {
+        SdkEntity ent = switch ((String) c.get("entity")) {
+          case "cat" -> client.cat(null);
+          case "picture" -> client.picture(null);
+          default -> client.planet(null);
+        };
+        switch ((String) c.get("op")) {
+          case "load" -> ent.load(data, null);
+          case "list" -> ent.list(data, null);
+          case "create" -> ent.create(data, null);
+          case "update" -> ent.update(data, null);
+          default -> ent.remove(data, null);
+        }
+      }
+      catch (Exception e) {
+        System.out.println("media-probe: case " + i + ": " + e.getMessage());
+      }
+    }
+    System.out.println("media-probe: ran " + cases.size() + " cases");
+  }
+}
+`
+
+
 const MEDIA_PROBES: Record<string, string> = {
   node: NODE_PROBE,
+  java: JAVA_PROBE,
+  go: GO_PROBE,
+  py: PY_PROBE,
+  rb: RB_PROBE,
+  php: PHP_PROBE,
+  perl: PERL_PROBE,
+  lua: LUA_PROBE,
 }
 
 

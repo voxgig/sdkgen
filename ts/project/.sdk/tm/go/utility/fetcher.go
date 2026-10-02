@@ -1,6 +1,7 @@
 package utility
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -59,8 +60,15 @@ func defaultHTTPFetch(fullurl string, fetchdef map[string]any) (map[string]any, 
 	}
 
 	var bodyReader io.Reader
-	if body, ok := fetchdef["body"].(string); ok && body != "" {
-		bodyReader = strings.NewReader(body)
+	switch body := fetchdef["body"].(type) {
+	case string:
+		if body != "" {
+			bodyReader = strings.NewReader(body)
+		}
+	case []byte:
+		bodyReader = bytes.NewReader(body)
+	case io.Reader:
+		bodyReader = body
 	}
 
 	req, err := http.NewRequest(method, fullurl, bodyReader)

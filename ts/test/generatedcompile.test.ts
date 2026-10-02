@@ -4909,7 +4909,8 @@ type MediaLane = {
   // Writes the probe, builds what needs building, and runs the probe.
   exec: (sdkroot: string, env: NodeJS.ProcessEnv,
     write: (name: string, source: string) => void) => ReturnType<typeof run>
-  seam?: boolean
+  // The probe prints what its transport is given, for want of a live one.
+  seam?: () => boolean
 }
 
 
@@ -4927,7 +4928,83 @@ const MEDIA_LANES: MediaLane[] = [
       return run(process.execPath, ['media-probe.cjs'], sdkroot, env)
     },
   })),
+  {
+    target: 'go',
+    ready: () => null == toolchain('go') ? 'no go toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      const mod = Fs.readFileSync(Path.join(sdkroot, 'go.mod'), 'utf8').match(/^module (.+)$/m)![1]
+      write('test/media_probe_test.go', MEDIA_PROBES.go.replace('GOMODULE', mod))
+      return run(toolchain('go')!,
+        ['test', '-v', '-count=1', './test', '-run', '^TestMediaProbe$'], sdkroot, env)
+    },
+  },
+  {
+    target: 'py',
+    ready: () => null == mediaPython() ? 'no python toolchain' : null,
+    seam: () => !probeOk(mediaPython()!, ['-c', 'import requests']),
+    exec: (sdkroot, env, write) => {
+      write('media_probe.py', MEDIA_PROBES.py)
+      return run(mediaPython()!, ['media_probe.py'], sdkroot, env)
+    },
+  },
+  {
+    target: 'rb',
+    ready: () => null == toolchain('ruby') ? 'no ruby toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('media_probe.rb', MEDIA_PROBES.rb)
+      return run(toolchain('ruby')!, ['media_probe.rb'], sdkroot, env)
+    },
+  },
+  {
+    target: 'php',
+    ready: () => null == toolchain('php') ? 'no php toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('media_probe.php', MEDIA_PROBES.php)
+      return run(toolchain('php')!, ['media_probe.php'], sdkroot, env)
+    },
+  },
+  {
+    target: 'perl',
+    ready: () => null == toolchain('perl') ? 'no perl toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('media_probe.pl', MEDIA_PROBES.perl)
+      return run(toolchain('perl')!, ['media_probe.pl'], sdkroot, env)
+    },
+  },
+  {
+    target: 'lua',
+    ready: () => null == mediaLua() ? 'no lua toolchain with the dkjson rock' : null,
+    seam: () => !probeOk(mediaLua()!, ['-e', 'require "socket.http"']),
+    exec: (sdkroot, env, write) => {
+      write('media_probe.lua', MEDIA_PROBES.lua)
+      return run(mediaLua()!, ['media_probe.lua'], sdkroot, env)
+    },
+  },
+  {
+    target: 'java',
+    ready: () => null == toolchain('javac') || null == toolchain('java') ? 'no Java toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('MediaProbe.java', MEDIA_PROBES.java)
+      const classes = Path.join(sdkroot, 'zz-classes')
+      Fs.mkdirSync(classes, { recursive: true })
+      const sources = listFiles(sdkroot, '.java').filter((f) => !f.split(Path.sep).includes('test'))
+      const built = run(toolchain('javac')!, ['-d', classes, ...sources], sdkroot)
+      if (!built.ok) return built
+      return run(toolchain('java')!, ['-cp', classes, 'MediaProbe'], sdkroot, env)
+    },
+  },
 ]
+
+
+function mediaLua(): string | null {
+  const lua = toolchain('lua5.4') || toolchain('lua')
+  return null == lua || !probeOk(lua, ['-e', 'require "dkjson"']) ? null : lua
+}
+
+
+function mediaPython(): string | null {
+  return toolchain('python3') || toolchain('python')
+}
 
 
 function mediaServer(dir: string): Promise<{ port: number, log: string, stop: () => void }> {
@@ -4977,12 +5054,14 @@ describe('the media types a point declares reach the wire', () => {
         Fs.writeFileSync(path, source)
       }
 
-      const server = true === lane.seam ? null : await mediaServer(sdkroot)
+      const seam = null != lane.seam && lane.seam()
+      const server = seam ? null : await mediaServer(sdkroot)
       let ran: ReturnType<typeof run>
       try {
         ran = lane.exec(sdkroot, {
           ...nestedTestEnv(),
           MEDIA_BASE: null == server ? 'http://media.test' : 'http://127.0.0.1:' + server.port,
+          ...(seam ? { MEDIA_SEAM: '1' } : {}),
         }, write)
       }
       finally {

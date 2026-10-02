@@ -32,6 +32,9 @@ class ProjectNameFetcher
     {
         $method_str = strtoupper($fetchdef['method'] ?? 'GET');
         $body_str = $fetchdef['body'] ?? null;
+        if (is_resource($body_str)) {
+            $body_str = stream_get_contents($body_str);
+        }
         $headers = $fetchdef['headers'] ?? [];
 
         $header_lines = [];

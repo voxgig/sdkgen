@@ -36,25 +36,28 @@ function isRawRequest(point) {
 }
 
 
-function headerKey(headers, name) {
-  return Object.keys(headers).find((key) => name === key.toLowerCase())
+function hasHeader(headers, name) {
+  return Object.keys(headers).some((key) => name === key.toLowerCase())
 }
 
 
-// A caller's accept wins. A declared request type replaces a JSON
+// A caller's accept wins. A declared request type replaces each JSON
 // content-type, the SDK default, and leaves any other the caller set.
 function mediaHeaders(point, headers) {
   const accept = acceptOf(point)
-  if (null != accept && null == headerKey(headers, 'accept')) {
+  if (null != accept && !hasHeader(headers, 'accept')) {
     headers.accept = accept
   }
 
   const body = null == point ? undefined : point.body
   if (null != body && ('raw' === body.kind || 'json' === body.kind) &&
     'string' === typeof body.media && '' !== body.media) {
-    const key = headerKey(headers, 'content-type')
-    if (null == key || isJsonMedia(headers[key])) {
-      if (null != key) delete headers[key]
+    for (const key of Object.keys(headers)) {
+      if ('content-type' === key.toLowerCase() && isJsonMedia(headers[key])) {
+        delete headers[key]
+      }
+    }
+    if (!hasHeader(headers, 'content-type')) {
       headers['content-type'] = body.media
     }
   }

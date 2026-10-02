@@ -4,6 +4,7 @@ declare(strict_types=1);
 // ProjectName SDK utility: prepare_headers
 
 require_once __DIR__ . '/Param.php';
+require_once __DIR__ . '/Media.php';
 
 class ProjectNamePrepareHeaders
 {
@@ -15,6 +16,7 @@ class ProjectNamePrepareHeaders
         if (!is_array($out)) {
             $out = [];
         }
+        $out = ProjectNameMedia::headers($ctx->point, $out);
         // A header argument replaces a default of the same name, whatever its
         // case.
         foreach (ProjectNameParam::callArgs($ctx, 'header') as [$name, $orig, $val]) {

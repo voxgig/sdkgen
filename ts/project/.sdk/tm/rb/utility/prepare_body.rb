@@ -1,6 +1,9 @@
 # ProjectName SDK utility: prepare_body
+require_relative 'media'
 module ProjectNameUtilities
   PrepareBody = ->(ctx) {
-    ctx.op.input == "data" ? ctx.utility.transform_request.call(ctx) : nil
+    return nil unless ctx.op.input == "data"
+    return ProjectNameUtilities.raw_body(ctx.reqdata) if ProjectNameUtilities.raw_request?(ctx.point)
+    ctx.utility.transform_request.call(ctx)
   }
 end

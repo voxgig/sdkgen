@@ -11,6 +11,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/param.pm"));
+require(Cwd::abs_path("$__dir/media.pm"));
 
 package ProjectNameUtilities;
 
@@ -22,6 +23,7 @@ $REGISTRY{prepare_headers} = sub {
   my $headers = ProjectNameHelpers::gp($options, 'headers');
   my $out = ProjectNameHelpers::rb_truthy($headers) ? Voxgig::Struct::clone($headers) : {};
   $out = {} unless Voxgig::Struct::ismap($out);
+  $out = ProjectNameUtilities::media_headers($ctx->{point}, $out);
   # A header argument replaces a default of the same name, whatever its case.
   for my $arg (ProjectNameUtilities::call_args($ctx, 'header')) {
     my (undef, $orig, $val) = @$arg;

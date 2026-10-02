@@ -223,6 +223,12 @@ describe('media: a raw request body is sent as given', () => {
       deepStrictEqual(def.headers, { 'Content-Type': 'image/png' })
     })
 
+    test(lang + ': a caller content-type wins over a default beside it', () => {
+      const def = call(lang, 'create', point('create', { rb: UPLOAD }),
+        { id: 'c1', $body: BYTES }, { 'content-type': 'application/json', 'Content-Type': 'image/png' })
+      deepStrictEqual(def.headers, { 'Content-Type': 'image/png' })
+    })
+
     test(lang + ': a content-type header argument wins', () => {
       const def = call(lang, 'create', point('create', { rb: UPLOAD }),
         { id: 'c1', content_type: 'image/png', $body: BYTES })

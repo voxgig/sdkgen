@@ -1,5 +1,6 @@
 package JAVAPACKAGE.utility;
 
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
@@ -66,6 +67,13 @@ final class Fetcher {
     Object body = fetchdef.get("body");
     if (body instanceof String && !"".equals(body)) {
       bodyPublisher = HttpRequest.BodyPublishers.ofString((String) body);
+    }
+    else if (body instanceof byte[]) {
+      bodyPublisher = HttpRequest.BodyPublishers.ofByteArray((byte[]) body);
+    }
+    else if (body instanceof InputStream) {
+      InputStream stream = (InputStream) body;
+      bodyPublisher = HttpRequest.BodyPublishers.ofInputStream(() -> stream);
     }
 
     HttpRequest.Builder reqb;

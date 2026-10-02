@@ -17,6 +17,7 @@ func prepareHeadersUtil(ctx *core.Context) map[string]any {
 			out = om
 		}
 	}
+	out = mediaHeaders(ctx.Point, out)
 
 	// A header argument replaces a default of the same name, whatever its case.
 	for _, arg := range callArgs(ctx, "header") {
