@@ -13,6 +13,7 @@ import { swiftVarName, swiftListMatch } from './utility_swift'
 
 function swiftLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return '.null'
   if ('INTEGER' === k) return '.int(1)'
   if ('NUMBER' === k) return '.double(1.0)'
   if ('BOOLEAN' === k) return '.bool(true)'

@@ -15,6 +15,7 @@ import { csVarName, csListMatch } from './utility_csharp'
 // loose object model means all values live in Dictionary<string, object?>.
 function csLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k) return '1L'
   if ('NUMBER' === k) return '1.0'
   if ('BOOLEAN' === k) return 'true'

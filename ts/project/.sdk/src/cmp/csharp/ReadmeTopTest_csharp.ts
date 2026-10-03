@@ -13,6 +13,7 @@ import { csVarName } from './utility_csharp'
 // A type-correct C# literal for a field's canonical type.
 function csLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k) return '1L'
   if ('NUMBER' === k) return '1.0'
   if ('BOOLEAN' === k) return 'true'
@@ -50,7 +51,7 @@ var client = ${model.const.Name}SDK.TestSDK(null, null);
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `new Dictionary<string, object?> {${items.map((it: any) =>
-          ` ["${it.name}"] = ${it.name === idF ? '"test01"' : csLit(it.type)}`).join(',')} }`
+          ` ["${it.name}"] = ${isMatchOp && it.name === idF ? '"test01"' : csLit(it.type)}`).join(',')} }`
         : 'null'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items

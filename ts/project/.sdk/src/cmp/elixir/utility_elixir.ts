@@ -26,6 +26,7 @@ function elixirType(sentinel: unknown): string {
 
 function elixirLit(sentinel: unknown, placeholder: string = 'example'): string {
   switch (canonScalarKey(sentinel)) {
+    case 'NULL': return 'nil'
     case 'INTEGER':
     case 'NUMBER': return '1'
     case 'BOOLEAN': return 'true'

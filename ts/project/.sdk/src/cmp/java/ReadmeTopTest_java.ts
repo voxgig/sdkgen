@@ -49,7 +49,7 @@ ${SDK} client = ${SDK}.testSDK(null, null);
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? javaMapOf(items.map((it: any) =>
-          `"${it.name}", ${it.name === idF ? '"test01"' : javaLit(it.type)}`))
+          `"${it.name}", ${isMatchOp && it.name === idF ? '"test01"' : javaLit(it.type)}`))
         : 'null'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items

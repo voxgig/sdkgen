@@ -57,6 +57,7 @@ ${ctor}
   // params render a typed sdk::Value; strings render the quoted placeholder.
   const cppLit = (type: any, placeholder: string = 'example'): string => {
     const k = canonScalarKey(type)
+    if ('NULL' === k) return 'Value(nullptr)'
     if ('INTEGER' === k || 'NUMBER' === k) return 'Value(1)'
     if ('BOOLEAN' === k) return 'Value(true)'
     if ('ARRAY' === k) return 'vlist()'

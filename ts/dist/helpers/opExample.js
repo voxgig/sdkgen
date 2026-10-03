@@ -109,8 +109,7 @@ function javaMapOf(pairs, pkg = '') {
 }
 // A list's required route and query parameters.
 function listMatchArg(lang, ent) {
-    const idF = (0, opShape_1.entityIdField)(ent);
-    return matchArg(lang, ent, 'list', idF, idLiteral(ent, 'list', idF));
+    return matchArg(lang, ent, 'list', null, '');
 }
 // An update that only addresses its record, by id and route, also changes a field.
 function dataArg(lang, ent, op, idF) {
@@ -166,7 +165,10 @@ function primaryOpCall(lang, eName, eLower, op, idF, ent) {
         sep = '.';
     }
     let arg;
-    if (isList || isMatch) {
+    if (isList) {
+        arg = listMatchArg(lang, ent);
+    }
+    else if (isMatch) {
         arg = matchArg(lang, ent, op, idF, idLit);
     }
     else if (isData) {

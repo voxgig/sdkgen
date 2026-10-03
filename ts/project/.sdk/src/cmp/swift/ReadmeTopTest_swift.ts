@@ -12,6 +12,7 @@ import { swiftVarName } from './utility_swift'
 // A type-correct Swift `Value` literal for a field's canonical type.
 function swiftLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return '.null'
   if ('INTEGER' === k) return '.int(1)'
   if ('NUMBER' === k) return '.double(1.0)'
   if ('BOOLEAN' === k) return '.bool(true)'
@@ -50,7 +51,7 @@ let client = ${SDK}.testSDK(nil, nil)
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `VMap([${items.map((it: any) =>
-          `("${it.name}", ${it.name === idF ? '.string("test01")' : swiftLit(it.type)})`).join(', ')}])`
+          `("${it.name}", ${isMatchOp && it.name === idF ? '.string("test01")' : swiftLit(it.type)})`).join(', ')}])`
         : 'nil'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items

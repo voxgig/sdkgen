@@ -11,6 +11,7 @@ import {
 // A type-correct Perl literal for a field's canonical type.
 function perlLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'undef'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return '1'
   if ('ARRAY' === k) return '[]'
@@ -50,7 +51,7 @@ my $client = ${model.const.Name}SDK->test(undef, undef);
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `{ ${items.map((it: any) =>
-          `'${it.name}' => ${it.name === idF ? "'test01'" : perlLit(it.type)}`).join(', ')} }`
+          `'${it.name}' => ${isMatchOp && it.name === idF ? "'test01'" : perlLit(it.type)}`).join(', ')} }`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items

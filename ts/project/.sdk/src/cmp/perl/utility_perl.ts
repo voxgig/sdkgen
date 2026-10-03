@@ -73,7 +73,7 @@ function perlVersionLabel(version: string): string {
 
 function perlListArgs(entity: any): string {
   const lit = (type: any): string =>
-    (({ INTEGER: '1', NUMBER: '1', BOOLEAN: '1', ARRAY: '[]', OBJECT: '{}' }) as any)[canonScalarKey(type)] ?? "'example'"
+    (({ NULL: 'undef', INTEGER: '1', NUMBER: '1', BOOLEAN: '1', ARRAY: '[]', OBJECT: '{}' }) as any)[canonScalarKey(type)] ?? "'example'"
   const items = requiredItems(entity, 'list')
   return 0 < items.length
     ? `({ ${items.map((it: any) => `'${it.name}' => ${lit(it.type)}`).join(', ')} })`

@@ -226,7 +226,7 @@ ${aboutMd.trim()}
             const primaryOp = (0, opShape_1.entityPrimaryOp)(exEnt);
             let exCall = '';
             const exIdField = (0, opShape_1.entityIdField)(exEnt);
-            const exListArg = (0, opExample_1.matchArg)('ts', exEnt, 'list', exIdField, (0, opExample_1.idLiteral)(exEnt, 'list', exIdField));
+            const exListArg = (0, opExample_1.listMatchArg)('ts', exEnt);
             const exLoadArg = (0, opExample_1.matchArg)('ts', exEnt, 'load', exIdField, (0, opExample_1.idLiteral)(exEnt, 'load', exIdField));
             if ('list' === primaryOp) {
                 exCall = `const items = await client.${ex}().list(${exListArg})`;

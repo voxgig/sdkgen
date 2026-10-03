@@ -37,6 +37,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // A type-correct rust expression constructing a voxgig struct Value.
   const rustLit = (type: any, placeholder: string = 'example'): string => {
     const k = canonScalarKey(type)
+    if ('NULL' === k) return 'Value::Null'
     if ('INTEGER' === k || 'NUMBER' === k) return 'Value::Num(1.0)'
     if ('BOOLEAN' === k) return 'Value::Bool(true)'
     if ('ARRAY' === k) return 'Value::empty_list()'

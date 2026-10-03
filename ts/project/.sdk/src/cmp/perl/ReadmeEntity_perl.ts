@@ -14,6 +14,7 @@ import { perlListArgs } from './utility_perl'
 // value. Strings render the quoted placeholder.
 function perlLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'undef'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return '1'
   if ('ARRAY' === k) return '[]'

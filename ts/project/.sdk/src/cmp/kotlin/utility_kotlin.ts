@@ -113,7 +113,7 @@ function jsonAppendLines(value: any, bufname: string): string {
 // A list's required route and query parameters, as the match it is called with.
 function kotlinListMatch(entity: any): string {
   const lit = (type: any): string =>
-    (({ INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'listOf<Any?>()', OBJECT: 'mapOf<String, Any?>()' }) as any)[canonScalarKey(type)] ?? '"example"'
+    (({ NULL: 'null', INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'listOf<Any?>()', OBJECT: 'mapOf<String, Any?>()' }) as any)[canonScalarKey(type)] ?? '"example"'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
     ? `mutableMapOf<String, Any?>(${items.map((it: any) => `"${it.name}" to ${lit(it.type)}`).join(', ')})`

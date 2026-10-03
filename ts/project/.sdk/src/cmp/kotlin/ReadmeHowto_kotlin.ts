@@ -12,6 +12,7 @@ import { kotlinVarName } from './utility_kotlin'
 // A type-correct Kotlin literal for a field's canonical type.
 function kotlinLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k) return '1L'
   if ('NUMBER' === k) return '1.0'
   if ('BOOLEAN' === k) return 'true'

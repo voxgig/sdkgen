@@ -13,6 +13,7 @@ import { ocamlVarName, ocamlListMatch } from './utility_ocaml'
 // render the quoted placeholder.
 function ocamlLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'Null'
   if ('INTEGER' === k || 'NUMBER' === k) return '(Num 1.)'
   if ('BOOLEAN' === k) return '(Bool true)'
   if ('ARRAY' === k) return '(empty_list ())'

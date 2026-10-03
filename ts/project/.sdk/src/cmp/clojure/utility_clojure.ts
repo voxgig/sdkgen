@@ -124,7 +124,7 @@ function cljStringChunks(json: string, maxBytes: number = 20000): string[] {
 // A list's required route and query parameters, as the match it is called with.
 function cljListMatch(entity: any): string {
   const lit = (type: any): string =>
-    (({ INTEGER: '1', NUMBER: '1', BOOLEAN: 'true', ARRAY: '(vs/jt)', OBJECT: '(vs/jm)' }) as any)[canonScalarKey(type)] ?? '"example"'
+    (({ NULL: 'nil', INTEGER: '1', NUMBER: '1', BOOLEAN: 'true', ARRAY: '(vs/jt)', OBJECT: '(vs/jm)' }) as any)[canonScalarKey(type)] ?? '"example"'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
     ? `(vs/jm ${items.map((it: any) => `"${it.name}" ${lit(it.type)}`).join(' ')})`

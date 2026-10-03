@@ -14,6 +14,7 @@ import { cIdent, cVarName } from './utility_c'
 // canonical type.
 function cLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'v_null()'
   if ('INTEGER' === k || 'NUMBER' === k) return 'v_num(1)'
   if ('BOOLEAN' === k) return 'v_bool(true)'
   if ('ARRAY' === k) return 'v_list()'
@@ -60,7 +61,7 @@ PNError* err = NULL;
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = cmapExpr(items.map((it: any) =>
-        `"${it.name}", ${it.name === idF ? 'v_str("test01")' : cLit(it.type)}`))
+        `"${it.name}", ${isMatchOp && it.name === idF ? 'v_str("test01")' : cLit(it.type)}`))
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')

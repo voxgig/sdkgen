@@ -40,7 +40,7 @@ sdk = ${Name}.test()
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `H.deep(%{${items.map((it: any) =>
-          `"${it.name}" => ${it.name === idF ? '"test01"' : elixirLit(it.type)}`).join(', ')}})`
+          `"${it.name}" => ${isMatchOp && it.name === idF ? '"test01"' : elixirLit(it.type)}`).join(', ')}})`
         : 'H.deep(%{})'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items

@@ -10,6 +10,7 @@ import {
 // A type-correct Clojure literal for a field's canonical type.
 function cljLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '(vs/jt)'
@@ -52,7 +53,7 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `(vs/jm ${items.map((it: any) =>
-          `"${it.name}" ${it.name === idF ? '"test01"' : cljLit(it.type)}`).join(' ')})`
+          `"${it.name}" ${isMatchOp && it.name === idF ? '"test01"' : cljLit(it.type)}`).join(' ')})`
         : 'nil'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items

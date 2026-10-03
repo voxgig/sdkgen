@@ -13,6 +13,7 @@ import { kotlinVarName, kotlinListMatch } from './utility_kotlin'
 
 function kotlinLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k) return '1L'
   if ('NUMBER' === k) return '1.0'
   if ('BOOLEAN' === k) return 'true'

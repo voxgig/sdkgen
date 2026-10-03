@@ -12,6 +12,7 @@ import { swiftVarName } from './utility_swift'
 // A type-correct Swift `Value` literal for a field's canonical type.
 function swiftLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return '.null'
   if ('INTEGER' === k) return '.int(1)'
   if ('NUMBER' === k) return '.double(1.0)'
   if ('BOOLEAN' === k) return '.bool(true)'

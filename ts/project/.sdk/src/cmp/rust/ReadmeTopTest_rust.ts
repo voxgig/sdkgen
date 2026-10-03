@@ -14,6 +14,7 @@ import { crateIdent, rustVarName, rustMethodName } from './utility_rust'
 // field's canonical type.
 function rustLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'Value::Null'
   if ('INTEGER' === k || 'NUMBER' === k) return 'Value::Num(1.0)'
   if ('BOOLEAN' === k) return 'Value::Bool(true)'
   if ('ARRAY' === k) return 'Value::empty_list()'
@@ -53,7 +54,7 @@ let client = test_sdk(Value::Noval, Value::Noval);
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `jo(vec![${items.map((it: any) =>
-          `("${it.name}", ${it.name === idF ? 'Value::str("test01")' : rustLit(it.type)})`).join(', ')}])`
+          `("${it.name}", ${isMatchOp && it.name === idF ? 'Value::str("test01")' : rustLit(it.type)})`).join(', ')}])`
         : 'Value::Noval'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items

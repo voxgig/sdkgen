@@ -1,7 +1,7 @@
 
 import { each } from 'jostraca'
 import { canonScalarKey } from './canonType'
-import { opRequestShape, opParams, entityIdField } from './opShape'
+import { opRequestShape, opParams } from './opShape'
 
 import { phpEntityAccessor } from './naming'
 
@@ -120,8 +120,7 @@ function javaMapOf(pairs: string[], pkg = ''): string {
 
 // A list's required route and query parameters.
 function listMatchArg(lang: LiteralLang, ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg(lang, ent, 'list', idF, idLiteral(ent, 'list', idF))
+  return matchArg(lang, ent, 'list', null, '')
 }
 
 
@@ -183,7 +182,9 @@ function primaryOpCall(
   else { factory = `client.${eName}()`; sep = '.' }
 
   let arg: string
-  if (isList || isMatch) {
+  if (isList) {
+    arg = listMatchArg(lang, ent)
+  } else if (isMatch) {
     arg = matchArg(lang, ent, op, idF, idLit)
   } else if (isData) {
     arg = dataArg(lang, ent, op, idF)

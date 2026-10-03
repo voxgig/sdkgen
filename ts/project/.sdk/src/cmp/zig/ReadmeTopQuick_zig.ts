@@ -15,6 +15,7 @@ import { zigVarName, zigListMatch } from './utility_zig'
 // render a typed literal.
 function zigLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'h.vnull()'
   if ('INTEGER' === k || 'NUMBER' === k) return 'h.vnum(1)'
   if ('BOOLEAN' === k) return 'h.vbool(true)'
   if ('ARRAY' === k) return 'h.olist()'

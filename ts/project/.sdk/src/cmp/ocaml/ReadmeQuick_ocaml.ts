@@ -56,6 +56,7 @@ let client = ${ctor}
     // A type-correct OCaml `value` literal for a param.
     const ocamlLit = (type: any, placeholder: string = 'example'): string => {
       const k = canonScalarKey(type)
+      if ('NULL' === k) return 'Null'
       if ('INTEGER' === k || 'NUMBER' === k) return '(Num 1.)'
       if ('BOOLEAN' === k) return '(Bool true)'
       if ('ARRAY' === k) return '(empty_list ())'

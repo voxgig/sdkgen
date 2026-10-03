@@ -12,6 +12,7 @@ import { kotlinVarName } from './utility_kotlin'
 // A type-correct Kotlin literal for a field's canonical type.
 function kotlinLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k) return '1L'
   if ('NUMBER' === k) return '1.0'
   if ('BOOLEAN' === k) return 'true'
@@ -49,7 +50,7 @@ val client = ${SDK}.testSDK(null, null)
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `mutableMapOf<String, Any?>(${items.map((it: any) =>
-          `"${it.name}" to ${it.name === idF ? '"test01"' : kotlinLit(it.type)}`).join(', ')})`
+          `"${it.name}" to ${isMatchOp && it.name === idF ? '"test01"' : kotlinLit(it.type)}`).join(', ')})`
         : 'null'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items

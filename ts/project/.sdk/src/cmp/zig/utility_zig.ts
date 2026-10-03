@@ -143,7 +143,7 @@ function clean(o: any, dropDefaults?: boolean): any {
 // A list's required route and query parameters, as the match it is called with.
 function zigListMatch(entity: any): string {
   const lit = (type: any): string =>
-    (({ INTEGER: 'h.vnum(1)', NUMBER: 'h.vnum(1)', BOOLEAN: 'h.vbool(true)', ARRAY: 'h.olist()', OBJECT: 'h.omap()' }) as any)[canonScalarKey(type)] ?? 'h.vstr("example")'
+    (({ NULL: 'h.vnull()', INTEGER: 'h.vnum(1)', NUMBER: 'h.vnum(1)', BOOLEAN: 'h.vbool(true)', ARRAY: 'h.olist()', OBJECT: 'h.omap()' }) as any)[canonScalarKey(type)] ?? 'h.vstr("example")'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
     ? `h.jo(&.{${items.map((it: any) => `.{ "${it.name}", ${lit(it.type)} }`).join(', ')}})`

@@ -4549,24 +4549,68 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
-  test('a list example writes a null-only parameter as null in a shared section', async () => {
+  test('a list example writes a null-only parameter as its language\'s null', async () => {
     const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
     const out = await generate(targets, undefined, listOnly('tally', [['z', '"`$NULL`"']]))
 
-    // Every other target's shared sections are written in TypeScript.
+    // Shared sections are written in TypeScript for the targets the shared
+    // helper does not write. Java and Scala keep the placeholder: Map.of
+    // rejects a null value.
     const pair: Record<string, string> = {
-      ts: 'z: null', js: 'z: null', py: '"z": None', php: '"z" => null',
-      rb: '"z" => nil', lua: 'z = nil', go: '"z": nil',
+      ts: 'z: null', js: 'z: null', py: '"z": None', php: '"z" => null', rb: '"z" => nil',
+      lua: 'z = nil', go: '"z": nil', c: '"z", v_null()', cpp: '{"z", Value(nullptr)}',
+      csharp: '["z"] = null', kotlin: '"z" to null', perl: "'z' => undef", rust: '("z", Value::Null)',
+      swift: '("z", .null)', zig: '.{ "z", h.vnull() }', ocaml: '("z", Null)', clojure: '"z" nil',
+      elixir: '"z" => nil',
     }
     const wrong: string[] = []
     for (const target of targets) {
       const found = listCalls(out, target, /[Tt]ally/)
       ok(0 < found.length, target + ': no list example found')
-      wrong.push(...found.filter((line: string) => /undefined/.test(line) || (null != pair[target]
-        ? !line.includes(pair[target])
-        : /\.list\(\{/.test(line) && !line.includes(pair.ts))))
+      if ('java' === target || 'scala' === target) continue
+      ok(null != pair[target], target + ': no null pair declared')
+      ok(found.some((line: string) => line.includes(pair[target])),
+        target + ': no list example writes ' + pair[target] + ':\n' + found.join('\n'))
+      wrong.push(...found.filter((line: string) => /undefined|example/.test(line)))
     }
     deepStrictEqual(wrong, [], 'list examples that do not write a NULL parameter as null:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('a list parameter named like the load id takes its own type\'s literal', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, entityOnly(`
+main: kit: entity: badge: {
+  alias: field: {}
+  name: "badge"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    list: { name: "list", points: [ {
+      g: { query: [ { k: "query", n: "id", or: "id", r: true, t: "\`$BOOLEAN\`" } ] }
+      m: "GET", o: "/badge", s: [{ lit: "badge" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/badge/{id}", s: [{ lit: "badge" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: flow: BasicBadgeFlow: {
+  entity: "badge", kind: "basic", name: "BasicBadgeFlow"
+  step: [ { o: "list", m: { id: true } } ]
+}
+`))
+
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Bb]adge/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => /example_id|test01|\bid\b[^,)]*example/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'list examples that write the load id literal for a BOOLEAN list parameter:\n' +
       wrong.join('\n'))
   })
 

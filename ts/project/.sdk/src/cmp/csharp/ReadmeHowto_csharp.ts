@@ -13,6 +13,7 @@ import { csVarName } from './utility_csharp'
 // A type-correct C# literal for a field's canonical type.
 function csLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k) return '1L'
   if ('NUMBER' === k) return '1.0'
   if ('BOOLEAN' === k) return 'true'

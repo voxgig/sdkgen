@@ -13,7 +13,7 @@ import type { FeatureDoc } from './FeatureDocs'
 import {
   entityPrimaryOp, entityIdField, opRequestShape, entityPath, entityActions,
 } from '../helpers/opShape'
-import { EXAMPLE_LANGS, matchArg, idLiteral, primaryOpCall } from '../helpers/opExample'
+import { EXAMPLE_LANGS, matchArg, listMatchArg, idLiteral, primaryOpCall } from '../helpers/opExample'
 import { mcpTools, MCP_WRITE_OPS } from '../helpers/mcpTools'
 import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { canonScalarKey } from '../helpers/canonType'
@@ -271,8 +271,7 @@ ${aboutMd.trim()}
       const primaryOp = entityPrimaryOp(exEnt)
       let exCall = ''
       const exIdField = entityIdField(exEnt)
-      const exListArg = matchArg('ts', exEnt, 'list', exIdField,
-        idLiteral(exEnt, 'list', exIdField))
+      const exListArg = listMatchArg('ts', exEnt)
       const exLoadArg = matchArg('ts', exEnt, 'load', exIdField,
         idLiteral(exEnt, 'load', exIdField))
 

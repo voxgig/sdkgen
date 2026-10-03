@@ -47,7 +47,7 @@ client = ${model.const.Name}SDK.test()
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `{${items.map((it: any) =>
-          `"${it.name}": ${it.name === idF ? '"test01"' : pyLit(it.type)}`).join(', ')}}`
+          `"${it.name}": ${isMatchOp && it.name === idF ? '"test01"' : pyLit(it.type)}`).join(', ')}}`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items

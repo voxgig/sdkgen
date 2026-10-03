@@ -13,6 +13,7 @@ import { zigVarName } from './utility_zig'
 // A type-correct zig expression constructing a voxgig struct Value.
 function zigLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'h.vnull()'
   if ('INTEGER' === k || 'NUMBER' === k) return 'h.vnum(1)'
   if ('BOOLEAN' === k) return 'h.vbool(true)'
   if ('ARRAY' === k) return 'h.olist()'
@@ -52,7 +53,7 @@ const client = sdk.test_sdk(h.vnull(), h.vnull());
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `h.jo(&.{${items.map((it: any) =>
-          `.{ "${it.name}", ${it.name === idF ? 'h.vstr("test01")' : zigLit(it.type)} }`).join(', ')}})`
+          `.{ "${it.name}", ${isMatchOp && it.name === idF ? 'h.vstr("test01")' : zigLit(it.type)} }`).join(', ')}})`
         : 'h.vnull()'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items

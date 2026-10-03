@@ -57,6 +57,7 @@ var client = ${ctor};
     // A type-correct C# literal for a param.
     const csLit = (type: any, placeholder: string = 'example'): string => {
       const k = canonScalarKey(type)
+      if ('NULL' === k) return 'null'
       if ('INTEGER' === k) return '1L'
       if ('NUMBER' === k) return '1.0'
       if ('BOOLEAN' === k) return 'true'

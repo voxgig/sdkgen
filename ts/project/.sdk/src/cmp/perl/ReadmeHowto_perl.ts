@@ -11,6 +11,7 @@ import {
 // A type-correct Perl literal for a field's canonical type.
 function perlLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'undef'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return '1'
   if ('ARRAY' === k) return '[]'

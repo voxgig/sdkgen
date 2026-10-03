@@ -13,6 +13,7 @@ import { cljListMatch } from './utility_clojure'
 // example builds a real struct map, so array/object render as (vs/jt)/(vs/jm).
 function cljLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '(vs/jt)'

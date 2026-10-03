@@ -44,7 +44,7 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       callArg = 0 < items.length
         ? `{ ${items.map((it: any) =>
-          `"${it.name}" => ${it.name === idF ? '"test01"' : rbLit(it.type)}`).join(', ')} }`
+          `"${it.name}" => ${isMatchOp && it.name === idF ? '"test01"' : rbLit(it.type)}`).join(', ')} }`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
