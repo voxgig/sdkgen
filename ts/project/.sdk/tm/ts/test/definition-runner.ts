@@ -118,10 +118,14 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
     const wire = h.wire.toLowerCase()
     if (credentialHeaders.includes(wire) || 'content-type' === wire) continue
     const sentValue = new Headers(init.headers).get(wire)
-    // A Cookie header argument is cookie pieces, which the cookie arguments join.
+    // A Cookie header argument is cookie pieces, which the cookie arguments and
+    // the cookie credential join, each replacing the piece whose name it owns.
     if ('cookie' === wire) {
+      const owned = (point.cookies || []).map((c) => c.wire).concat((point.auth || []).flat()
+        .filter((c) => 'cookie' === c.in).map((c) => c.name))
       const pieces = String(sentValue ?? '').split(';').map((c) => c.trim())
       for (const piece of String(h.value).split(';').map((c) => c.trim()).filter((c) => '' !== c)) {
+        if (owned.includes(piece.split('=')[0].trim())) continue
         assert(pieces.includes(piece), 'header parameter not sent as a header: ' + h.wire)
       }
       continue

@@ -9,6 +9,9 @@ import { transform } from 'sucrase'
 
 const TM = Path.resolve(__dirname, '..', 'project', '.sdk', 'tm')
 
+// The credential the runners configure the client with.
+const KEY = 'definition-test-key'
+
 
 function loadTs(rel: string): any {
   const file = Path.join(TM, rel)
@@ -43,10 +46,10 @@ function fakeSdk(headers: Record<string, string>) {
 }
 
 
-function point(headers: any[], cookies: any[]) {
+function point(headers: any[], cookies: any[], auth: any = null) {
   return {
     entity: 'thing', accessor: 'thing', op: 'list', method: 'GET', path: '/things',
-    args: [], select: {}, headers, cookies, query: [], queryArgs: [], auth: null,
+    args: [], select: {}, headers, cookies, query: [], queryArgs: [], auth,
     status: 200, sample: null, idField: 'id',
   }
 }
@@ -67,6 +70,22 @@ describe('definition runner', () => {
       const theme = [{ name: 'theme', wire: 'theme', value: 'dark' }]
       await doesNotReject(run(fakeSdk({ cookie: 'raw=one; theme=dark' }), point(cookieHeader, theme)))
       await rejects(run(fakeSdk({ cookie: 'theme=dark' }), point(cookieHeader, theme)))
+    })
+
+    // The SDK replaces a caller's cookie whose name a cookie argument or the
+    // cookie credential owns, so the replaced piece is not required.
+    test(lang + ': a Cookie header piece a cookie argument replaces is not required', async () => {
+      const cookieHeader = [{ name: 'cookie', wire: 'Cookie', value: 'theme=old; raw=one' }]
+      const theme = [{ name: 'theme', wire: 'theme', value: 'dark' }]
+      await doesNotReject(run(fakeSdk({ cookie: 'raw=one; theme=dark' }), point(cookieHeader, theme)))
+      await rejects(run(fakeSdk({ cookie: 'theme=old; theme=dark' }), point(cookieHeader, theme)))
+    })
+
+    test(lang + ': a Cookie header piece the cookie credential replaces is not required', async () => {
+      const cookieHeader = [{ name: 'cookie', wire: 'Cookie', value: 'session=OLD; raw=one' }]
+      const session = [[{ in: 'cookie', name: 'session' }]]
+      await doesNotReject(run(fakeSdk({ cookie: 'raw=one; session=' + KEY }), point(cookieHeader, [], session)))
+      await rejects(run(fakeSdk({ cookie: 'session=' + KEY }), point(cookieHeader, [], session)))
     })
 
     test(lang + ': any other header argument is checked exactly', async () => {
