@@ -20,7 +20,6 @@ const stdutil = new Utility()
 // A request's outcome: ok is false alone on an error with no response, so a
 // caller narrowing on it reaches the status and the data.
 type DirectResult =
-  | Error
   | { ok: false, err: any, status?: undefined, headers?: undefined, data?: undefined }
   | { ok: boolean, status: number, headers: any, data: any, err?: any }
 
