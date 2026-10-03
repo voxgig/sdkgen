@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -370,6 +371,29 @@ func TestFeatureTimeout(t *testing.T) {
 		}
 		f := feat.NewTimeoutFeature()
 		h := fhMake(server, fhF(f, map[string]any{"ms": 10}))
+		res := h.op(fhOpSpec{op: "load"})
+		if fhErrCode(res.err) != "timeout" {
+			t.Errorf("expected timeout error, got %v", res.err)
+		}
+		if f.Count != 1 {
+			t.Errorf("expected 1 timeout, got %d", f.Count)
+		}
+	})
+
+	// The deadline runs from the request's start, not from the wait: a
+	// response that arrives after it is a timeout even when the caller only
+	// looks once it is complete. The clock answers the start, then
+	// stands 300 ms later for every later read.
+	t.Run("late-response-times-out-however-late-the-caller-looks", func(t *testing.T) {
+		var reads int64
+		now := func() int64 {
+			if 1 == atomic.AddInt64(&reads, 1) {
+				return 0
+			}
+			return 300
+		}
+		f := feat.NewTimeoutFeature()
+		h := fhMake(nil, fhF(f, map[string]any{"ms": 20, "now": now}))
 		res := h.op(fhOpSpec{op: "load"})
 		if fhErrCode(res.err) != "timeout" {
 			t.Errorf("expected timeout error, got %v", res.err)

@@ -43,6 +43,7 @@ public final class TimeoutFeature: BaseFeature {
   private final class Box: @unchecked Sendable {
     var result: Value = .noval
     var err: Error? = nil
+    var arrived: Int64 = Int64.max
   }
 
   private func withTimeout(_ ctx: Context, _ url: String, _ fetchdef: VMap,
@@ -52,28 +53,43 @@ public final class TimeoutFeature: BaseFeature {
       return try inner(ctx, url, fetchdef)
     }
 
+    // The deadline runs from here, not from the wait below: a caller paused
+    // between the two would otherwise find a late response complete and take
+    // it. The worker notes when the response arrived, so one that arrived
+    // after the deadline is a timeout however late the caller looks.
+    let now = foptNow(options)
+    let start = now()
     let box = Box()
     let sem = DispatchSemaphore(value: 0)
 
     DispatchQueue.global().async {
       do {
         box.result = try inner(ctx, url, fetchdef)
+        box.arrived = now()
       } catch {
         box.err = error
       }
       sem.signal()
     }
 
-    if sem.wait(timeout: .now() + .milliseconds(msLimit)) == .timedOut {
-      track(msLimit)
-      throw ctx.makeError("timeout", "Request exceeded timeout of \(msLimit)ms")
+    let remaining = max(Int64(0), Int64(msLimit) - (now() - start))
+    if sem.wait(timeout: .now() + .milliseconds(Int(remaining))) == .timedOut {
+      throw timeout(ctx, msLimit)
     }
 
     // Unwraps any inner exception.
     if let err = box.err {
       throw err
     }
+    if Int64(msLimit) < box.arrived - start {
+      throw timeout(ctx, msLimit)
+    }
     return box.result
+  }
+
+  private func timeout(_ ctx: Context, _ msLimit: Int) -> Error {
+    track(msLimit)
+    return ctx.makeError("timeout", "Request exceeded timeout of \(msLimit)ms")
   }
 
   private func track(_ msLimit: Int) {

@@ -428,6 +428,26 @@ final class FeatureTimeoutTest: XCTestCase {
     XCTAssertEqual(f.count, 1)
   }
 
+  // The deadline runs from the request's start, not from the wait: a response
+  // that arrives after it is a timeout even when the caller only looks once it
+  // is complete. The clock answers the start, then stands 300 ms later.
+  func testLateResponseTimesOutHoweverLateTheCallerLooks() {
+    if Fh.skipWithout("timeout") { return }
+    let lock = NSLock()
+    var reads = 0
+    let now: () -> Int64 = {
+      lock.lock()
+      defer { lock.unlock() }
+      reads += 1
+      return 1 == reads ? 0 : 300
+    }
+    let f = TimeoutFeature()
+    let h = Fh.make(nil, (f, vm(("ms", .int(20)), ("now", .nat(now)))))
+    let res = h.op(FhOpSpec(op: "load"))
+    XCTAssertEqual(Fh.errCode(res.err), "timeout")
+    XCTAssertEqual(f.count, 1)
+  }
+
   func testFastRequestPasses() {
     if Fh.skipWithout("timeout") { return }
     let h = Fh.make(nil, (TimeoutFeature(), vm(("ms", .int(1000)))))

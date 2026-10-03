@@ -265,6 +265,15 @@
            (fn [] (let [c (make-clock)
                         h (make-harness [(fspec "timeout" "ms" 1000 "now" (clock-now c))])]
                     (t/is-eq (get (h-op h) "ok") true "ok"))))
+    ;; The deadline runs from the request's start, not from the wait:
+    ;; the clock answers the start, then stands 300 ms later for every read.
+    (check "timeout-late-response-however-late-the-caller-looks" "timeout"
+           (fn [] (let [reads (atom 0)
+                        now (fn [] (if (= 1 (swap! reads inc)) 0 300))
+                        h (make-harness [(fspec "timeout" "ms" 20 "now" now)])
+                        res (h-op h)]
+                    (t/is-eq (rcode res) "timeout" "timeout")
+                    (t/is-eq (mget (h-track h "_timeout") "count") 1 "count"))))
     (check "timeout-ms-zero-disables" "timeout"
            (fn [] (let [h (make-harness [(fspec "timeout" "ms" 0)])]
                     (t/is-eq (get (h-op h) "ok") true "ok"))))

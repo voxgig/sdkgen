@@ -342,6 +342,22 @@ public class FeatureTimeoutTest
         Assert.Equal(1, f.Count);
     }
 
+    // The deadline runs from the request's start, not from the wait: a response
+    // that arrives after it is a timeout even when the caller only looks once it
+    // is complete. The clock answers the start, then stands 300 ms later.
+    [Fact]
+    public void LateResponseTimesOutHoweverLateTheCallerLooks()
+    {
+        if (Fh.SkipWithout("timeout")) return;
+        var reads = 0;
+        Func<long> now = () => 1 == Interlocked.Increment(ref reads) ? 0L : 300L;
+        var f = new TimeoutFeature();
+        var h = Fh.Make(null, (f, new Dictionary<string, object?> { ["ms"] = 20, ["now"] = now }));
+        var res = h.Op(new FhOpSpec { Op = "load" });
+        Assert.Equal("timeout", Fh.ErrCode(res.Err));
+        Assert.Equal(1, f.Count);
+    }
+
     [Fact]
     public void FastRequestPasses()
     {

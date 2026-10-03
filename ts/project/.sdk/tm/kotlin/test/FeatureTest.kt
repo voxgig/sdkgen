@@ -274,6 +274,21 @@ class FeatureTest {
     assertEquals(1, f.count, "expected 1 timeout")
   }
 
+  // The deadline runs from the request's start, not from the wait: a response
+  // that arrives after it is a timeout even when the caller only looks once it
+  // is complete. The clock answers the start, then stands 300 ms later.
+  @Test
+  fun timeout_lateResponseTimesOutHoweverLateTheCallerLooks() {
+    assumeFeatures("timeout")
+    val reads = java.util.concurrent.atomic.AtomicLong()
+    val now = LongSupplier { if (0L == reads.getAndIncrement()) 0L else 300L }
+    val f = TimeoutFeature()
+    val h = fhMake(null, fhF(f, fhMap("ms", 20, "now", now)))
+    val res = h.op(fhOp("load"))
+    assertEquals("timeout", fhErrCode(res.err), "expected timeout error, got ${res.err}")
+    assertEquals(1, f.count, "expected 1 timeout")
+  }
+
   @Test
   fun timeout_fastRequestPasses() {
     assumeFeatures("timeout")

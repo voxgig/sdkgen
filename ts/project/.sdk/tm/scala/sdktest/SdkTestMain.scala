@@ -348,6 +348,13 @@ object SdkTestMain {
     { val f = new TimeoutFeature()
       val h = fhMake((c, u, fd) => { Thread.sleep(60); fhResponse(200, om("ok" -> B(true)), null) }, fhF(f, om("ms" -> I(10))))
       val r = h.op(fhOp("load")); eq("timeout.err", "timeout", fhErrCode(r.err)); eqI("timeout.count", 1, f.count) }
+    // The deadline runs from the request's start, not from the wait:
+    // the clock answers the start, then stands 300 ms later for every read.
+    { val reads = new java.util.concurrent.atomic.AtomicLong()
+      val now: java.util.function.LongSupplier = () => if (0L == reads.getAndIncrement()) 0L else 300L
+      val f = new TimeoutFeature()
+      val h = fhMake(null, fhF(f, om("ms" -> I(20), "now" -> f0(now))))
+      val r = h.op(fhOp("load")); eq("timeout.late", "timeout", fhErrCode(r.err)); eqI("timeout.late.count", 1, f.count) }
     { val h = fhMake(null, fhF(new TimeoutFeature(), om("ms" -> I(1000))))
       check("timeout.fast", h.op(fhOp("load")).ok, "expected ok") }
     { val h = fhMake(null, fhF(new TimeoutFeature(), om("ms" -> I(0))))

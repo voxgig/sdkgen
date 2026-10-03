@@ -297,6 +297,23 @@ public class FeatureTest {
     assertEquals(1, f.count, "expected 1 timeout");
   }
 
+  // The deadline runs from the request's start, not from the wait: a response
+  // that arrives after it is a timeout even when the caller only looks once it
+  // is complete, as a paused thread did on a loaded runner. The clock
+  // answers the start, then stands 300 ms later for every later read, so the
+  // response is instant in real time and late by the clock.
+  @Test
+  public void timeout_lateResponseTimesOutHoweverLateTheCallerLooks() {
+    assumeFeatures("timeout");
+    java.util.concurrent.atomic.AtomicLong reads = new java.util.concurrent.atomic.AtomicLong();
+    LongSupplier now = () -> 0L == reads.getAndIncrement() ? 0L : 300L;
+    TimeoutFeature f = new TimeoutFeature();
+    FhHarness h = fhMake(null, fhF(f, fhMap("ms", 20, "now", now)));
+    FhOpResult res = h.op(fhOp("load"));
+    assertEquals("timeout", fhErrCode(res.err), "expected timeout error, got " + res.err);
+    assertEquals(1, f.count, "expected 1 timeout");
+  }
+
   @Test
   public void timeout_fastRequestPasses() {
     assumeFeatures("timeout");

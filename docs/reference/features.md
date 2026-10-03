@@ -343,9 +343,11 @@ before retrying writes.
 > Per-request timeout with transport abort
 
 Races each transport attempt against a deadline. If the deadline wins the
-call resolves to a `timeout` error instead of hanging. An `AbortController`
-signal is attached to the request, so a live `fetch` is genuinely
-cancelled rather than left running.
+call resolves to a `timeout` error instead of hanging. The deadline runs
+from the request's start in every target: a response that arrives after it
+is a `timeout` error however late the caller observes it. An
+`AbortController` signal is attached to the request, so a live `fetch` is
+genuinely cancelled rather than left running.
 
 **Seam:** transport wrapper. No pipeline hooks.
 

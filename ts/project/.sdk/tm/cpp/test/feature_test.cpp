@@ -3,7 +3,9 @@
 // harness (mirrors java test/FeatureTest.java). Each block runs only when
 // its feature is present in this SDK.
 
+#include <atomic>
 #include <chrono>
+#include <memory>
 #include <regex>
 #include <thread>
 #include <vector>
@@ -241,6 +243,23 @@ static void timeout_slowRequestTimesOut() {
     return fhResponse(200, fhMap({{"ok", Value(true)}}), Value::undef());
   };
   auto h = fhMake(server, {FF(f, fhMap({{"ms", Value(10)}}))});
+  FhOpResult res = h->op(fhOp("load"));
+  ASSERT_EQ(fhErrCode(res.err), std::string("timeout"), "expected timeout error");
+  ASSERT_EQ(f->count, 1, "expected 1 timeout");
+}
+
+// The deadline runs from the request's start, not from the wait: a response
+// that arrives after it is a timeout even when the caller only looks once it
+// is complete. The clock answers the start, then stands 300 ms later.
+static void timeout_lateResponseTimesOutHoweverLateTheCallerLooks() {
+  if (!have({"timeout"})) return;
+  auto reads = std::make_shared<std::atomic<int>>(0);
+  vs::Injector now = [reads](vs::Injection&, const Value&, const std::string&,
+                             const Value&) -> Value {
+    return Value(0 == reads->fetch_add(1) ? 0LL : 300LL);
+  };
+  auto f = std::make_shared<TimeoutFeature>();
+  auto h = fhMake(nullptr, {FF(f, fhMap({{"ms", Value(20)}, {"now", Value(now)}}))});
   FhOpResult res = h->op(fhOp("load"));
   ASSERT_EQ(fhErrCode(res.err), std::string("timeout"), "expected timeout error");
   ASSERT_EQ(f->count, 1, "expected 1 timeout");
@@ -857,6 +876,7 @@ int main() {
   T_RUN(retry_inactiveDoesNotWrap);
 
   T_RUN(timeout_slowRequestTimesOut);
+  T_RUN(timeout_lateResponseTimesOutHoweverLateTheCallerLooks);
   T_RUN(timeout_fastRequestPasses);
   T_RUN(timeout_msZeroDisables);
   T_RUN(timeout_inactiveDoesNotWrap);

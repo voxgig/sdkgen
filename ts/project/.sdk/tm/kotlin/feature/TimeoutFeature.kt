@@ -5,6 +5,7 @@ import java.util.concurrent.CompletionException
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicLong
 
 import KOTLINPACKAGE.core.Context
 import KOTLINPACKAGE.core.FetcherFn
@@ -42,13 +43,28 @@ class TimeoutFeature : BaseFeature("timeout", "0.0.1", true) {
       return inner(ctx, url, fetchdef)
     }
 
-    val fut: CompletableFuture<Any?> = CompletableFuture.supplyAsync { inner(ctx, url, fetchdef) }
+    // The deadline runs from here, not from the wait below: a caller paused
+    // between the two would otherwise find a late response complete and take
+    // it. The worker notes when the response arrived, so one that arrived
+    // after the deadline is a timeout however late the caller looks.
+    val now = FeatureOptions.foptNow(this.options)
+    val start = now.asLong
+    val arrived = AtomicLong(Long.MAX_VALUE)
+    val fut: CompletableFuture<Any?> = CompletableFuture.supplyAsync {
+      val out = inner(ctx, url, fetchdef)
+      arrived.set(now.asLong)
+      out
+    }
 
     try {
-      return fut.get(deadline.toLong(), TimeUnit.MILLISECONDS)
+      val remaining = maxOf(0L, deadline - (now.asLong - start))
+      val out = fut.get(remaining, TimeUnit.MILLISECONDS)
+      if (deadline < arrived.get() - start) {
+        throw timeout(ctx, deadline)
+      }
+      return out
     } catch (e: TimeoutException) {
-      track(deadline)
-      throw ctx.makeError("timeout", "Request exceeded timeout of ${deadline}ms")
+      throw timeout(ctx, deadline)
     } catch (e: ExecutionException) {
       var cause: Throwable? = e.cause
       if (cause is CompletionException && cause.cause != null) {
@@ -65,6 +81,11 @@ class TimeoutFeature : BaseFeature("timeout", "0.0.1", true) {
       Thread.currentThread().interrupt()
       throw RuntimeException(e)
     }
+  }
+
+  private fun timeout(ctx: Context, deadline: Int): Throwable {
+    track(deadline)
+    return ctx.makeError("timeout", "Request exceeded timeout of ${deadline}ms")
   }
 
   private fun track(deadline: Int) {

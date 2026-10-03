@@ -57,29 +57,39 @@ func (f *TimeoutFeature) withTimeout(ctx *core.Context, url string, fetchdef map
 		return inner(ctx, url, fetchdef)
 	}
 
+	// A response after the deadline is a timeout, even when the select finds both ready.
+	now := foptNow(f.options)
+	start := now()
 	tctx, cancel := context.WithTimeout(context.Background(), time.Duration(ms)*time.Millisecond)
 	defer cancel()
 
 	type fetched struct {
-		res any
-		err error
+		res     any
+		err     error
+		arrived int64
 	}
 
 	// Buffered so the inner transport never blocks after a timeout loss.
 	out := make(chan fetched, 1)
 	go func() {
 		res, err := inner(ctx, url, fetchdef)
-		out <- fetched{res: res, err: err}
+		out <- fetched{res: res, err: err, arrived: now()}
 	}()
 
 	select {
 	case got := <-out:
+		if int64(ms) < got.arrived-start {
+			return nil, f.timeout(ctx, ms)
+		}
 		return got.res, got.err
 	case <-tctx.Done():
-		f.track(ms)
-		return nil, ctx.MakeError("timeout",
-			fmt.Sprintf("Request exceeded timeout of %dms", ms))
+		return nil, f.timeout(ctx, ms)
 	}
+}
+
+func (f *TimeoutFeature) timeout(ctx *core.Context, ms int) error {
+	f.track(ms)
+	return ctx.MakeError("timeout", fmt.Sprintf("Request exceeded timeout of %dms", ms))
 }
 
 func (f *TimeoutFeature) track(ms int) {
