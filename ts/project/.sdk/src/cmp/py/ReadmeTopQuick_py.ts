@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, matchArg, idLiteral , serverVariables} from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, serverVariables, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -19,12 +19,6 @@ function pyLit(type: any, placeholder: string = 'example'): string {
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
   return `"${placeholder}"`
-}
-
-
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('py', ent, 'list', idF, idLiteral(ent, 'list', idF))
 }
 
 
@@ -69,7 +63,7 @@ client = ${ctor}
 
     if (opnames.includes('list')) {
       Content(`# List all ${eName.toLowerCase()}s (returns a list, raises on error)
-${eVar}s = client.${eName}().list(${listMatchArg(exampleEntity)})
+${eVar}s = client.${eName}().list(${listMatchArg('py', exampleEntity)})
 for ${eVar} in ${eVar}s:
     print(${eVar})
 `)

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -37,6 +37,9 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'Value::Noval'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `jo(vec![("${idF}", Value::str("test01"))])` : 'Value::Noval'
+  } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+    const chosen = requiredItems(exampleEntity, 'list')
+    testArg = `jo(vec![${chosen.map((it: any) => `("${it.name}", ${rustLit(it.type)})`).join(', ')}])`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')

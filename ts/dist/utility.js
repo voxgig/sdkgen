@@ -10,6 +10,7 @@ exports.isAuthActive = isAuthActive;
 exports.resolveAuthPrefix = resolveAuthPrefix;
 exports.resolveAuthIn = resolveAuthIn;
 exports.resolveAuthName = resolveAuthName;
+exports.credentialPlacement = credentialPlacement;
 exports.isAuthSuppressed = isAuthSuppressed;
 exports.resolveAuthExchange = resolveAuthExchange;
 exports.isHttpBasicAuth = isHttpBasicAuth;
@@ -72,6 +73,19 @@ function resolveAuthName(model) {
         return String(security.name);
     }
     return 'Authorization';
+}
+// Where the client sends the API key, when that is not the Authorization header.
+function credentialPlacement(model) {
+    if (!isAuthActive(model))
+        return '';
+    const where = resolveAuthIn(model);
+    const name = resolveAuthName(model);
+    if ('query' === where)
+        return `The client sends the API key as the \`${name}\` query parameter.`;
+    if ('cookie' === where)
+        return `The client sends the API key as the \`${name}\` cookie.`;
+    return 'authorization' === name.toLowerCase() ? '' :
+        `The client sends the API key in the \`${name}\` header.`;
 }
 function isHttpBasicAuth(model) {
     const auth = (0, apidef_1.getModelPath)(model, `main.${apidef_1.KIT}.config.auth`, { only_active: false, required: false });

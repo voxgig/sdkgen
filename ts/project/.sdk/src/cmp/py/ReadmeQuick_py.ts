@@ -1,17 +1,11 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, matchArg, idLiteral , serverVariables} from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, serverVariables, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
   nom,
 } from '@voxgig/apidef'
-
-
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('py', ent, 'list', idF, idLiteral(ent, 'list', idF))
-}
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -90,7 +84,7 @@ error — iterate it directly.
 
 \`\`\`python
 try:
-    ${eVar}s = client.${eName}().list(${listMatchArg(exampleEntity)})
+    ${eVar}s = client.${eName}().list(${listMatchArg('py', exampleEntity)})
     for ${eVar} in ${eVar}s:
         print(${eVar})
 except Exception as err:

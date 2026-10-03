@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { kotlinVarName } from './utility_kotlin'
+import { kotlinVarName, kotlinListMatch } from './utility_kotlin'
 
 
 // Type names come from the shared canonToType 'kotlin' column (single source of truth).
@@ -140,7 +140,7 @@ val ${eVar} = client.${accessor}(null).load(${loadArg}, null)
       Content(`#### Example: List
 
 \`\`\`kotlin
-val ${eVar}List = client.${accessor}(null).list(null, null)
+val ${eVar}List = client.${accessor}(null).list(${kotlinListMatch(entity)}, null)
 \`\`\`
 
 `)

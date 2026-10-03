@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { perlListArgs } from './utility_perl'
+
 
 // A type-correct, executable Perl literal for a param: numeric/boolean/
 // array/hash params render a typed literal; strings render the quoted
@@ -50,7 +52,7 @@ my $client = ${ctor};
 
     if (opnames.includes('list')) {
       Content(`# List all ${eName.toLowerCase()}s (returns an arrayref; dies on error)
-my $${eVar}s = $client->${eName}->list;
+my $${eVar}s = $client->${eName}->list${perlListArgs(exampleEntity)};
 for my $${eVar} (@$${eVar}s) {
     print "$${eVar}->{id}\\n";
 }

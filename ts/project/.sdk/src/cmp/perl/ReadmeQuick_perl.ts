@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { perlListArgs } from './utility_perl'
+
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
@@ -70,7 +72,7 @@ my $client = ${ctor};
 error — iterate it directly.
 
 \`\`\`perl
-my $${eVar}s = eval { $client->${eName}->list };
+my $${eVar}s = eval { $client->${eName}->list${perlListArgs(exampleEntity)} };
 if (my $err = $@) {
     print "list failed: $err\\n";
 }

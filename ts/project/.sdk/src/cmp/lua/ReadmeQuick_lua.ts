@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, luaKey } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, luaKey, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -89,7 +89,7 @@ Entity operations return \`(value, err)\`. For \`list\`, \`value\` is the
 array of records itself — iterate it directly (there is no wrapper).
 
 \`\`\`lua
-local ${eVar}s, err = client:${eName}():list()
+local ${eVar}s, err = client:${eName}():list(${listMatchArg('lua', exampleEntity)})
 if err then error(err) end
 
 for _, item in ipairs(${eVar}s) do

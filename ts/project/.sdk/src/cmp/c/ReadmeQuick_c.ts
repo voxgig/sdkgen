@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName } from './utility_c'
+import { cIdent, cVarName, cListMatch } from './utility_c'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -78,7 +78,7 @@ PNError* err = NULL;
 
 \`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-voxgig_value* ${evar}s = ${evar}->vt->list(${evar}, NULL, NULL, &err);
+voxgig_value* ${evar}s = ${evar}->vt->list(${evar}, ${cListMatch(exampleEntity)}, NULL, &err);
 if (err) {
     fprintf(stderr, "list failed: %s\\n", err->msg);
 } else {

@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { swiftVarName } from './utility_swift'
+import { swiftVarName, swiftListMatch } from './utility_swift'
 
 
 // A type-correct Swift `Value` literal for a param: numeric/boolean/array/
@@ -66,7 +66,7 @@ let client = ${SDK}(options)
 
     if (opnames.includes('list')) {
       Content(`// List all ${eNameLower}s (returns a Value list, throws on error)
-let ${eVar}List = try client.${eName}().list(nil, nil)
+let ${eVar}List = try client.${eName}().list(${swiftListMatch(exampleEntity)}, nil)
 for ${eVar} in ${eVar}List.asList?.items ?? [] {
     print(${eVar})
 }

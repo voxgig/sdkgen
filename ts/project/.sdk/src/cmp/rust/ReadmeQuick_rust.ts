@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { crateIdent, rustVarName, rustMethodName } from './utility_rust'
+import { crateIdent, rustVarName, rustMethodName, rustListMatch } from './utility_rust'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -72,7 +72,7 @@ let client = ${ctor};
 failure — match on the \`Result\`.
 
 \`\`\`rust
-match client.${method}(Value::Noval).list(Value::Noval, Value::Noval) {
+match client.${method}(Value::Noval).list(${rustListMatch(exampleEntity)}, Value::Noval) {
     Ok(${eVar}s) => {
         if let Value::List(items) = &${eVar}s {
             for ${eVar} in items.borrow().iter() {

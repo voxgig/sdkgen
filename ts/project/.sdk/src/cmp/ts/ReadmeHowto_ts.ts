@@ -28,13 +28,12 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
 
   const primaryArg = (idPlaceholder: string): string => {
     if (!exampleEntity || !primaryOp) return ''
-    if ('list' === primaryOp) return ''
-    if (isMatchOp) {
+    if (isMatchOp || 'list' === primaryOp) {
       // Every REQUIRED match key (id first), not just idF — a composite-match
       // entity (e.g. Umbrella's FlatPermission, database_id + id) needs them all
       // to satisfy the typed <Name>LoadMatch. Mirrors ReadmeTopTest.
       const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF)
+        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
         .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       if (0 === items.length) return ''
       const pairs = items.map((it: any) =>

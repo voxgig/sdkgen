@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName } from './utility_c'
+import { cIdent, cVarName, cListMatch } from './utility_c'
 
 
 // Canonical type sentinel -> a C type name for the field/param tables.
@@ -282,7 +282,7 @@ voxgig_value* result = ${evar}->vt->${opname}(${evar}, ${arg}, NULL, &err);
           else if ('list' === opname) {
             Content(`\`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-voxgig_value* results = ${evar}->vt->list(${evar}, NULL, NULL, &err);
+voxgig_value* results = ${evar}->vt->list(${evar}, ${cListMatch(ent)}, NULL, &err);
 for (size_t i = 0; i < (size_t)voxgig_size(results); i++) {
     printf("%s\\n", voxgig_to_json(voxgig_getelem(results, v_int(i), NULL)));
 }

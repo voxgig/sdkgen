@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, goModule } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, goModule, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -45,6 +45,9 @@ client := sdk.Test()
     let arg = 'nil'
     if (isMatchOp) {
       arg = idF ? `map[string]any{"${idF}": "test01"}` : 'nil'
+    } else if ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+      const chosen = requiredItems(exampleEntity, 'list')
+      arg = `map[string]any{${chosen.map((it: any) => `"${it.name}": ${goLit(it.type)}`).join(', ')}}`
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')

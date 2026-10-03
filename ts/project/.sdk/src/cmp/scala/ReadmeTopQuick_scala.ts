@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { scalaVarName, scalaPackage } from './utility_scala'
+import { scalaVarName, scalaPackage, scalaListMatch } from './utility_scala'
 
 
 // A type-correct Scala literal for a param: numeric/boolean/array/object params
@@ -62,7 +62,7 @@ val client = new ${SDK}(options)
 
     if (opnames.includes('list')) {
       Content(`// List all ${eNameLower}s (returns Object, an aggregate list; raises on error)
-val ${eVar}List = client.${accessor}(null).list(null, null)
+val ${eVar}List = client.${accessor}(null).list(${scalaListMatch(exampleEntity)}, null)
 println(${eVar}List)
 `)
     }

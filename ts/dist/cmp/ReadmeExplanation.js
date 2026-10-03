@@ -208,9 +208,9 @@ const ReadmeExplanation = (0, jostraca_1.cmp)(function ReadmeExplanation(props) 
         // match compiles.
         idLit = (0, opExample_1.idLiteral)(ex, primaryOp, idF);
         // Language-correct call argument for the primary op: a match for
-        // load/remove, a required-field body for create/update, nothing for list.
+        // load/remove/list, a required-field body for create/update.
         if ('list' === primaryOp) {
-            stateArg = 'go' === target.name ? 'nil' : '';
+            stateArg = (0, opExample_1.listMatchArg)(lname, ex);
         }
         else if (isMatchOp) {
             stateArg = (0, opExample_1.matchArg)(lname, ex, primaryOp, idF, idLit);

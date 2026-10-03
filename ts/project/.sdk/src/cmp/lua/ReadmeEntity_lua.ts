@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, opNeedsAction, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -132,7 +132,7 @@ local ${eVar}, err = client:${entity.Name}():load(${loadArg})
       Content(`#### Example: List
 
 \`\`\`lua
-local ${eVar}s, err = client:${entity.Name}():list()
+local ${eVar}s, err = client:${entity.Name}():list(${listMatchArg('lua', entity)})
 \`\`\`
 
 `)

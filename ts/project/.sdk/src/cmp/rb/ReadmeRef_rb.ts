@@ -7,6 +7,8 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { rbListArgs } from './utility_rb'
+
 
 // A type-correct Ruby literal for a field's canonical type — the create body
 // is EXECUTED by the doc test, so it must carry a real value per field.
@@ -283,7 +285,7 @@ result = client.${ent.Name}.${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`ruby
-results = client.${ent.Name}.list
+results = client.${ent.Name}.list${rbListArgs(ent)}
 \`\`\`
 
 `)

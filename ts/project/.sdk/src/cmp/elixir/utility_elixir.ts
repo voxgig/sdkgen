@@ -10,6 +10,7 @@ import {
   canonKey,
   canonScalarKey,
   canonToType,
+  requiredItems,
 } from '@voxgig/sdkgen'
 
 
@@ -32,6 +33,15 @@ function elixirLit(sentinel: unknown, placeholder: string = 'example'): string {
     case 'OBJECT': return '%{}'
     default: return `"${placeholder}"`
   }
+}
+
+
+// A list's required route and query parameters, as the match argument after the entity.
+function elixirListArgs(entity: any, name: string): string {
+  const items = requiredItems(entity, 'list')
+  return 0 < items.length
+    ? `, ${name}.Helpers.deep(%{${items.map((it: any) => `"${it.name}" => ${elixirLit(it.type)}`).join(', ')}})`
+    : ''
 }
 
 
@@ -137,5 +147,6 @@ export {
   elixirString,
   elixirType,
   elixirLit,
+  elixirListArgs,
   projectPath,
 }

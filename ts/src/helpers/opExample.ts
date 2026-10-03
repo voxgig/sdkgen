@@ -66,10 +66,15 @@ function litPair(lang: LiteralLang, name: string, value: string): string {
 }
 
 
+function requiredItems(ent: any, op: string): any[] {
+  return opRequestShape(ent, op).items.filter((it: any) => !it.optional)
+}
+
+
 function matchArg(
   lang: LiteralLang, ent: any, op: string, idF: string | null, idLit: string
 ): string {
-  const items = opRequestShape(ent, op).items.filter((it: any) => !it.optional)
+  const items = requiredItems(ent, op)
   if (0 === items.length) return 'go' === lang ? 'nil' : ('json' === lang ? '{}' : '')
   const pairs = items.map((it: any) =>
     litPair(lang, it.name, it.name === idF ? idLit : litFor(lang, it.type)))
@@ -79,6 +84,13 @@ function matchArg(
     case 'go': return `map[string]any{${pairs.join(', ')}}`
     default: return `{ ${pairs.join(', ')} }`
   }
+}
+
+
+// A list's required route and query parameters.
+function listMatchArg(lang: LiteralLang, ent: any): string {
+  const idF = entityIdField(ent)
+  return matchArg(lang, ent, 'list', idF, idLiteral(ent, 'list', idF))
 }
 
 
@@ -160,7 +172,9 @@ function primaryOpCall(
 export {
   primaryOpCall,
   idLiteral,
+  requiredItems,
   matchArg,
+  listMatchArg,
   dataArg,
   litFor,
 }

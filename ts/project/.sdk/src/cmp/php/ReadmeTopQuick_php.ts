@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -51,7 +51,7 @@ $client = ${ctor};
 
     if (opnames.includes('list')) {
       Content(`// List all ${eName.toLowerCase()}s (returns an array; throws on error)
-$${eName.toLowerCase()}s = $client->${phpEntityAccessor(eName)}()->list();
+$${eName.toLowerCase()}s = $client->${phpEntityAccessor(eName)}()->list(${listMatchArg('php', exampleEntity)});
 print_r(array_map(fn($item) => $item->data_get(), $${eName.toLowerCase()}s));
 `)
       hasCall = true

@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { crateIdent, rustVarName, rustMethodName } from './utility_rust'
+import { crateIdent, rustVarName, rustMethodName, rustListMatch } from './utility_rust'
 
 
 // A type-correct rust expression constructing a voxgig struct Value for a
@@ -54,7 +54,7 @@ let client = ${ctor};
 
     if (opnames.includes('list')) {
       Content(`// List all ${eName.toLowerCase()}s (returns a Value::List, Err on failure)
-let ${eVar}s = client.${method}(Value::Noval).list(Value::Noval, Value::Noval).unwrap();
+let ${eVar}s = client.${method}(Value::Noval).list(${rustListMatch(exampleEntity)}, Value::Noval).unwrap();
 if let Value::List(items) = &${eVar}s {
     for ${eVar} in items.borrow().iter() {
         println!("{:?}", ${eVar});

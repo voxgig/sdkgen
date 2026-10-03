@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { csVarName } from './utility_csharp'
+import { csVarName, csListMatch } from './utility_csharp'
 
 
 // A type-correct C# literal for a param: numeric/boolean/array/object params
@@ -53,7 +53,7 @@ var client = ${ctor};
 
     if (opnames.includes('list')) {
       Content(`// List all ${eName.toLowerCase()}s (returns object?, an aggregate list; raises on error)
-var ${eVar}List = client.${eName}().List(null);
+var ${eVar}List = client.${eName}().List(${csListMatch(exampleEntity)});
 Console.WriteLine(${eVar}List);
 `)
     }

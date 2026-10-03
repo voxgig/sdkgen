@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { rbListArgs } from './utility_rb'
+
 
 // A type-correct, executable Ruby literal for a param: numeric/boolean/
 // array/hash params render a typed literal; strings render the quoted
@@ -53,7 +55,7 @@ client = ${ctor}
 
     if (opnames.includes('list')) {
       Content(`# List all ${eName.toLowerCase()}s (returns an Array; raises on error)
-${eVar}s = client.${eName}.list
+${eVar}s = client.${eName}.list${rbListArgs(exampleEntity)}
 puts ${eVar}s
 `)
       hasCall = true

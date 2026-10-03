@@ -6,6 +6,8 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { cljListMatch } from './utility_clojure'
+
 
 // A type-correct Clojure literal for a field's canonical type. The create
 // example builds a real struct map, so array/object render as (vs/jt)/(vs/jm).
@@ -147,7 +149,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       Content(`#### Example: List
 
 \`\`\`clojure
-(def ${eLow}s (e-${eLow}/list (api/${eLow} client nil) nil nil))
+(def ${eLow}s (e-${eLow}/list (api/${eLow} client nil) ${cljListMatch(entity)} nil))
 \`\`\`
 
 `)

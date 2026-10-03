@@ -1,5 +1,5 @@
 
-import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, jsKey } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, requiredItems, safeVarName, exampleVarName, jsKey } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -24,6 +24,11 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
       .filter((it: any) => !it.optional)
       .slice(0, 3) : []
 
+  // A list matches its required parameters against the record, so the seed
+  // carries the values the call below sends.
+  const listFields = 'list' === primaryOp ? requiredItems(exampleEntity, 'list')
+    .filter((it: any) => !seedFields.some((sf: any) => sf.name === it.name)) : []
+
   const seedId = 'test01'
   const seedBody = [
     `${jsKey('id')}: '${seedId}'`,
@@ -32,6 +37,10 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
       .map((it: any) => `${jsKey(it.name)}: ${exampleValue(
         exampleEntity, exampleEntity.op && exampleEntity.op.create, it.name,
         'example_' + it.name)}`),
+    ...listFields
+      .filter((it: any) => 'id' !== it.name)
+      .map((it: any) => `${jsKey(it.name)}: ${exampleValue(
+        exampleEntity, exampleEntity.op.list, it.name, 'example_' + it.name)}`),
   ].join(', ')
 
   Content(`\`\`\`ts
@@ -54,11 +63,12 @@ const client = ${model.const.Name}SDK.test({
     const primaryOpDef = exampleEntity.op && exampleEntity.op[primaryOp]
     const idF = entityIdField(exampleEntity)
     let arg = ''
-    if ('load' === primaryOp || 'remove' === primaryOp) {
+    const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
+    if (isMatchOp || 'list' === primaryOp) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's Match type, so the block type-checks.
       const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF)
+        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length

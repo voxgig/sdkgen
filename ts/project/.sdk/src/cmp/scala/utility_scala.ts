@@ -4,6 +4,8 @@ import * as Path from 'node:path'
 
 import {
   camelify,
+  canonScalarKey,
+  requiredItems,
 } from '@voxgig/sdkgen'
 
 import {
@@ -108,8 +110,19 @@ function jsonAppendLines(value: any, bufname: string): string {
     .join('')
 }
 
+// A list's required route and query parameters, as the match it is called with.
+function scalaListMatch(entity: any): string {
+  const lit = (type: any): string =>
+    (({ INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'java.util.List.of()', OBJECT: 'java.util.Map.of()' }) as any)[canonScalarKey(type)] ?? '"example"'
+  const items = requiredItems(entity, 'list')
+  return 0 < items.length
+    ? `java.util.Map.of(${items.map((it: any) => `"${it.name}", ${lit(it.type)}`).join(', ')})`
+    : 'null'
+}
+
 
 export {
+  scalaListMatch,
   cleanModel,
   mavenGroupId,
   jsonAppendLines,

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, matchArg, idLiteral, targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, targetFeatures, opNeedsAction, bodyNote, listMatchArg } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -18,12 +18,6 @@ function pyLit(type: any, placeholder: string = 'example'): string {
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
   return `"${placeholder}"`
-}
-
-
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('py', ent, 'list', idF, idLiteral(ent, 'list', idF))
 }
 
 
@@ -283,7 +277,7 @@ result = client.${ent.Name}().${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`python
-results = client.${ent.Name}().list(${listMatchArg(ent)})
+results = client.${ent.Name}().list(${listMatchArg('py', ent)})
 for ${eVar} in results:
     print(${eVar})
 \`\`\`
@@ -410,8 +404,6 @@ client = ${model.const.Name}SDK({
 
   })
 })
-
-
 
 
 export {

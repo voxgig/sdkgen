@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { kotlinVarName } from './utility_kotlin'
+import { kotlinVarName, kotlinListMatch } from './utility_kotlin'
 
 
 // Type names come from the shared canonToType 'kotlin' column (single source of truth).
@@ -280,7 +280,7 @@ val result = client.${accessor}(null).${opname}(${arg}, null)
           }
           else if ('list' === opname) {
             Content(`\`\`\`kotlin
-val results = client.${accessor}(null).list(null, null)
+val results = client.${accessor}(null).list(${kotlinListMatch(ent)}, null)
 println(results)
 \`\`\`
 

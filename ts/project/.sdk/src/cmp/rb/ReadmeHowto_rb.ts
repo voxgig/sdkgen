@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -38,9 +38,9 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
     ? `${model.const.Name}SDK.test({\n  "entity" => { "${eName.toLowerCase()}" => { "test01" => { "${idF}" => "test01" } } },\n})`
     : `${model.const.Name}SDK.test`
   let testCallArg = ''
-  if (exampleEntity && isMatchOp) {
+  if (exampleEntity && (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length))) {
     const items = opRequestShape(exampleEntity, primaryOp).items
-      .filter((it: any) => !it.optional || it.name === idF)
+      .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
       .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
     testCallArg = 0 < items.length
       ? `{ ${items.map((it: any) => `"${it.name}" => ${it.name === idF ? '"test01"' : rbLit(it.type)}`).join(', ')} }`

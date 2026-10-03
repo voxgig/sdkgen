@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, opNeedsAction, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -133,7 +133,7 @@ $${entity.name} = $client->${phpEntityAccessor(entity.Name)}()->load(${loadArg})
 
 \`\`\`php
 // list() returns an array of ${entity.Name} records (throws on error).
-$${entity.name}s = $client->${phpEntityAccessor(entity.Name)}()->list();
+$${entity.name}s = $client->${phpEntityAccessor(entity.Name)}()->list(${listMatchArg('php', entity)});
 \`\`\`
 
 `)

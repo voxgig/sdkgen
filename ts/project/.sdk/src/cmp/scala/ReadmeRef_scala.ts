@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { scalaVarName } from './utility_scala'
+import { scalaVarName, scalaListMatch } from './utility_scala'
 
 
 // Type names come from the shared canonToType 'scala' column (single source of truth).
@@ -280,7 +280,7 @@ val result = client.${accessor}(null).${opname}(${arg}, null)
           }
           else if ('list' === opname) {
             Content(`\`\`\`scala
-val results = client.${accessor}(null).list(null, null)
+val results = client.${accessor}(null).list(${scalaListMatch(ent)}, null)
 println(results)
 \`\`\`
 

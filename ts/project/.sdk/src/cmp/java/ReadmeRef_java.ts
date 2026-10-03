@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { javaVarName } from './utility_java'
+import { javaVarName, javaListMatch } from './utility_java'
 
 
 // Type names come from the shared canonToType 'java' column (single source of truth).
@@ -280,7 +280,7 @@ Object result = client.${accessor}(null).${opname}(${arg}, null);
           }
           else if ('list' === opname) {
             Content(`\`\`\`java
-Object results = client.${accessor}(null).list(null, null);
+Object results = client.${accessor}(null).list(${javaListMatch(ent)}, null);
 System.out.println(results);
 \`\`\`
 

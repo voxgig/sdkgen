@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { crateIdent, rustVarName, rustMethodName } from './utility_rust'
+import { crateIdent, rustVarName, rustMethodName, rustListMatch } from './utility_rust'
 
 
 // Type names come from the shared canonToType 'rust' column (single source of truth).
@@ -274,7 +274,7 @@ let result = client.${method}(Value::Noval).${opname}(${arg}, Value::Noval).unwr
           }
           else if ('list' === opname) {
             Content(`\`\`\`rust
-let results = client.${method}(Value::Noval).list(Value::Noval, Value::Noval).unwrap();
+let results = client.${method}(Value::Noval).list(${rustListMatch(ent)}, Value::Noval).unwrap();
 if let Value::List(items) = &results {
     for ${eVar} in items.borrow().iter() {
         println!("{:?}", ${eVar});

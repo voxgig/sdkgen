@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { zigVarName } from './utility_zig'
+import { zigVarName, zigListMatch } from './utility_zig'
 
 
 // Canonical type sentinel -> a zig type name for the field/param tables.
@@ -286,7 +286,7 @@ switch (client.${method}(h.vnull()).${opname}(${arg}, h.vnull())) {
           }
           else if ('list' === opname) {
             Content(`\`\`\`zig
-switch (client.${method}(h.vnull()).list(h.vnull(), h.vnull())) {
+switch (client.${method}(h.vnull()).list(${zigListMatch(ent)}, h.vnull())) {
     .ok => |results| std.debug.print("{s}\\n", .{h.stringify(results)}),
     .err => |e| std.debug.print("list failed: {s}\\n", .{e.msg}),
 }

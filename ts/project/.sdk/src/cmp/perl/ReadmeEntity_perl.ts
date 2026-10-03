@@ -6,6 +6,8 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { perlListArgs } from './utility_perl'
+
 
 // A type-correct, executable Perl literal for a field's canonical type. The
 // create example is EXECUTED by the doc test, so a placeholder must be a real
@@ -144,7 +146,7 @@ my $${eVar} = $client->${entity.Name}->load(${loadArg});
       Content(`#### Example: List
 
 \`\`\`perl
-my $${eVar}s = $client->${entity.Name}->list;
+my $${eVar}s = $client->${entity.Name}->list${perlListArgs(entity)};
 \`\`\`
 
 `)

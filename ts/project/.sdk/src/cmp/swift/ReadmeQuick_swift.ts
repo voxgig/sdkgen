@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { swiftVarName } from './utility_swift'
+import { swiftVarName, swiftListMatch } from './utility_swift'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -89,7 +89,7 @@ iterate its items.
 
 \`\`\`swift
 do {
-    let ${eVar}List = try client.${accessor}().list(nil, nil)
+    let ${eVar}List = try client.${accessor}().list(${swiftListMatch(exampleEntity)}, nil)
     for ${eVar} in ${eVar}List.asList?.items ?? [] {
         print(${eVar})
     }

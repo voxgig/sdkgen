@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, phpEntityAccessor , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, phpEntityAccessor, targetFeatures, opNeedsAction, bodyNote, listMatchArg } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -280,7 +280,7 @@ $result = $client->${phpEntityAccessor(ent.Name)}()->${opname}(${arg});
           }
           else if ('list' === opname) {
             Content(`\`\`\`php
-$results = $client->${phpEntityAccessor(ent.Name)}()->list();
+$results = $client->${phpEntityAccessor(ent.Name)}()->list(${listMatchArg('php', ent)});
 \`\`\`
 
 `)

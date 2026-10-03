@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { scalaVarName, scalaPackage } from './utility_scala'
+import { scalaVarName, scalaPackage, scalaListMatch } from './utility_scala'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -89,7 +89,7 @@ aggregate list) and raises on error.
 
 \`\`\`scala
 try {
-    val ${eVar}List = client.${accessor}(null).list(null, null)
+    val ${eVar}List = client.${accessor}(null).list(${scalaListMatch(exampleEntity)}, null)
     println(${eVar}List)
 }
 catch {
