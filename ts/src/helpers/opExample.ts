@@ -79,12 +79,16 @@ function matchArg(
 }
 
 
+// An update whose only required member is its id also changes a field.
 function dataArg(lang: ExampleLang, ent: any, op: string, idF: string | null): string {
   const items = opRequestShape(ent, op).items
     .filter((it: any) =>
       (it.name !== idF && it.name !== 'id') || !it.optional)
   const required = items.filter((it: any) => !it.optional)
-  const chosen = required.length ? required : items.slice(0, 3)
+  const changed = 'update' === op &&
+    required.every((it: any) => it.name === idF || it.name === 'id') ?
+    items.filter((it: any) => it.optional).slice(0, 1) : []
+  const chosen = required.length ? [...required, ...changed] : items.slice(0, 3)
   const pairs = chosen.map((it: any) => litPair(lang, it.name, litFor(lang, it.type)))
   switch (lang) {
     case 'php': return `[${pairs.join(', ')}]`

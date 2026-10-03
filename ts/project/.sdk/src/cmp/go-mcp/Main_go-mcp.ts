@@ -3,7 +3,7 @@ import * as Path from 'node:path'
 
 import {
   cmp, each, deriveEntityNames, entityIdField, mcpTools, matchArg, dataArg, idLiteral,
-  File, Content, Fragment, Slot, goModule, goVersion, packageVersion
+  File, Content, Fragment, Slot, goModule, goVersion, packageVersion, MCP_WRITE_OPS
 } from '@voxgig/sdkgen'
 
 import type { McpTool } from '@voxgig/sdkgen'
@@ -90,18 +90,17 @@ function entityNames(tool: McpTool): string[] {
 }
 
 
-// The arguments an agent sends to the tool, for its first entity.
+// The arguments an agent sends to the tool, for its first entity. A list
+// sends a query only for a route parameter it must fill.
 function toolExample(tool: McpTool): string {
   const ent: any = tool.entities[0]
   const name = String(ent.name).toLowerCase()
-  if ('list' === tool.op) {
-    return `{ "entity": "${name}" }`
-  }
   const spec = TOOL_SPEC[tool.op]
   const idF = entityIdField(ent)
   const arg = 'Data' === spec.field ? dataArg('json', ent, tool.op, idF) :
     matchArg('json', ent, tool.op, idF, idLiteral(ent, tool.op, idF))
-  return `{ "entity": "${name}", "${spec.key}": ${arg} }`
+  return 'list' === tool.op && '{}' === arg ? `{ "entity": "${name}" }` :
+    `{ "entity": "${name}", "${spec.key}": ${arg} }`
 }
 
 
@@ -150,14 +149,18 @@ const Main = cmp(function Main(props: any) {
   const apiKeyEnv = projUpper + '_APIKEY'
   const baseEnv = projUpper + '_BASE'
 
-  const writeText = write ?
-    `Create, update and remove are on, as the SDK's model sets
-\`main: kit: target: 'go-mcp': tool: write: true\`. Each tool carries the MCP
-hints an agent host reads before calling it: list and load are read-only,
-create only adds, and update and remove change or delete what is there.` :
-    `The server only reads. Create, update and remove become tools too when the
-SDK's own model sets \`main: kit: target: 'go-mcp': tool: write: true\`; they
-are off by default, as an agent calling them changes the API's data.`
+  const toggle = `\`main: kit: target: '${target.name}': tool: write: true\``
+  const writeOps = tools.map((tool) => tool.op).filter((op) => MCP_WRITE_OPS.includes(op))
+  const writeNames = phrase(writeOps)
+  const writeText = 0 < writeOps.length ?
+    `${writeNames.charAt(0).toUpperCase() + writeNames.slice(1)} ${1 < writeOps.length ? 'are' : 'is'} on, as the SDK's model sets
+${toggle}. Each tool carries the MCP hints an agent host reads before calling
+it, listed in the reference below.` : write ?
+      `The server only reads: the SDK's model sets ${toggle}, but no entity
+has a create, update or remove a plain call runs.` :
+      `The server only reads. Create, update and remove become tools too when the
+SDK's own model sets ${toggle}; they are off by default, as an agent calling
+them changes the API's data.`
 
   const exampleCalls = tools.map((tool) =>
     `// ${tool.name}: ${TOOL_SPEC[tool.op].summary}\n${toolExample(tool)}`).join('\n\n')
@@ -300,7 +303,7 @@ ${howtoCalls}
 In the SDK's own model (\`.sdk/model/sdk.aontu\`), then regenerate:
 
 \`\`\`
-main: kit: target: 'go-mcp': tool: write: ${write ? 'false' : 'true'}
+main: kit: target: '${target.name}': tool: write: ${write ? 'false' : 'true'}
 \`\`\`
 
 ### Cross-compile release binaries

@@ -1,3 +1,4 @@
+import type { SdkModel } from '../types';
 type McpTool = {
     op: string;
     name: string;
@@ -5,6 +6,6 @@ type McpTool = {
 };
 declare const MCP_READ_OPS: string[];
 declare const MCP_WRITE_OPS: string[];
-declare function mcpTools(model: any, target?: string): McpTool[];
+declare function mcpTools(model: SdkModel, target?: string): McpTool[];
 export type { McpTool, };
 export { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS, };
