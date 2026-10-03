@@ -1,5 +1,7 @@
 // ProjectName SDK utility: prepareHeaders.
 
+using System.Collections;
+
 using Voxgig.Struct;
 
 namespace ProjectNameSdk.Util;
@@ -39,8 +41,8 @@ public static partial class SdkUtility
         var sent = CallArgs(ctx, "cookie").Where(arg => arg.Val != null).ToList();
         if (0 < sent.Count)
         {
-            var names = sent.SelectMany(arg => arg.Val is Dictionary<string, object?>
-                ? StructUtils.KeysOf(arg.Val).Select(key => StructUtils.EscUrl(key))
+            var names = sent.SelectMany(arg => arg.Val is IDictionary map
+                ? CookieKeys(map).Select(key => StructUtils.EscUrl(key))
                 : new List<string> { arg.Wire }).ToList();
             var kept = new List<string>();
             foreach (var k in new List<string>(result.Keys))
@@ -94,16 +96,16 @@ public static partial class SdkUtility
     {
         string Esc(object? v) => StructUtils.EscUrl(StructUtils.Stringify(v));
         var pairs = new List<string>();
-        if (val is List<object?> items)
+        if (val is IList items)
         {
             foreach (var item in items)
             {
                 pairs.Add(wire + "=" + Esc(item));
             }
         }
-        else if (val is Dictionary<string, object?> map)
+        else if (val is IDictionary map)
         {
-            foreach (var key in StructUtils.KeysOf(map))
+            foreach (var key in CookieKeys(map))
             {
                 pairs.Add(StructUtils.EscUrl(key) + "=" + Esc(map[key]));
             }
@@ -113,5 +115,17 @@ public static partial class SdkUtility
             pairs.Add(wire + "=" + Esc(val));
         }
         return string.Join("; ", pairs);
+    }
+
+    // A map's keys as the struct port orders them, whatever the map's type.
+    private static List<string> CookieKeys(IDictionary map)
+    {
+        var keys = new List<string>();
+        foreach (var key in map.Keys)
+        {
+            keys.Add(Convert.ToString(key) ?? "");
+        }
+        keys.Sort(StringComparer.Ordinal);
+        return keys;
     }
 }

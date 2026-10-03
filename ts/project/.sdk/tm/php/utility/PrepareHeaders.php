@@ -81,7 +81,8 @@ class ProjectNamePrepareHeaders
             $pairs = array_map(fn($item) => $wire . '=' . $esc($item), $val);
         } elseif (\Voxgig\Struct\Struct::ismap($val)) {
             $pairs = array_map(
-                fn($key) => \Voxgig\Struct\Struct::escurl((string) $key) . '=' . $esc($val[$key]),
+                fn($key) => \Voxgig\Struct\Struct::escurl((string) $key) . '='
+                    . $esc(\Voxgig\Struct\Struct::getprop($val, $key)),
                 \Voxgig\Struct\Struct::keysof($val)
             );
         } else {

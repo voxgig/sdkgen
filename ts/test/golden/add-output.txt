@@ -389,7 +389,7 @@ tm/csharp/test/FeatureHarness.cs 740ed27e3234
 tm/csharp/test/NetsimTest.cs 3c36d55e1540
 tm/csharp/test/OmniResolver.cs 12edf791ee98
 tm/csharp/test/OmniSmokeTest.cs adbc2519341d
-tm/csharp/test/PipelineTest.cs 7dec99e924da
+tm/csharp/test/PipelineTest.cs 541ddeb74bbf
 tm/csharp/test/PrimaryUtilityTest.cs dbd0f417929c
 tm/csharp/test/Runner.cs 1e85bb505148
 tm/csharp/test/StructUtilityTest.cs bcc257581aee
@@ -416,7 +416,7 @@ tm/csharp/utility/MakeUrl.cs 7669d0b88a26
 tm/csharp/utility/Media.cs 5f2b58cca2f0
 tm/csharp/utility/Param.cs a2e585c9d675
 tm/csharp/utility/PrepareBody.cs aa92aad85e16
-tm/csharp/utility/PrepareHeaders.cs 8b6c7017e1f1
+tm/csharp/utility/PrepareHeaders.cs 7e744feda4af
 tm/csharp/utility/PrepareMethod.cs a79cca84546b
 tm/csharp/utility/PrepareParams.cs e900c068560e
 tm/csharp/utility/PreparePath.cs 231686f6cd6b
@@ -1316,7 +1316,7 @@ tm/php/test/FeatureTest.php 5ed09a226ce2
 tm/php/test/NetsimTest.php fac241d6b75a
 tm/php/test/Omni.php a5fdc0be95cc
 tm/php/test/OmniSmokeTest.php cad939a73897
-tm/php/test/PipelineTest.php 6cd473f7c83d
+tm/php/test/PipelineTest.php c089cea66406
 tm/php/test/PrimaryUtilityTest.php 2cf1ca929598
 tm/php/test/Runner.php ce56f8fce3d0
 tm/php/test/StructUtilityTest.php a566f84b9955
@@ -1343,7 +1343,7 @@ tm/php/utility/MakeUrl.php 508aa2081316
 tm/php/utility/Media.php aef6e50c7c02
 tm/php/utility/Param.php 9040137e8d48
 tm/php/utility/PrepareBody.php d401d3455d62
-tm/php/utility/PrepareHeaders.php 2c8c45517768
+tm/php/utility/PrepareHeaders.php d7d6a7c38839
 tm/php/utility/PrepareMethod.php b77464feb55e
 tm/php/utility/PrepareParams.php cb242a1ea1ea
 tm/php/utility/PreparePath.php cb65b1f7db12
