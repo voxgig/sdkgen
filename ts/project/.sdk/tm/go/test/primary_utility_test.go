@@ -825,6 +825,24 @@ func TestPrepareHeadersCookieTypedSlice(t *testing.T) {
 	}
 }
 
+// A typed map is a map to a cookie argument as a typed slice is a list: its
+// keys go out as pairs, and replace the caller's cookies of those names.
+func TestPrepareHeadersCookieTypedMap(t *testing.T) {
+	client := sdk.TestSDK(nil, map[string]any{"headers": map[string]any{"Cookie": "lang=old; theme=dark"}})
+	utility := client.GetUtility()
+	ctx := makeTestCtx(client, utility, nil)
+	ctx.Point = map[string]any{
+		"args": map[string]any{"cookie": []any{
+			map[string]any{"name": "prefs", "orig": "prefs", "kind": "cookie"},
+		}},
+	}
+	ctx.Reqmatch = map[string]any{"prefs": map[string]string{"size": "2", "lang": "en gb"}}
+	headers := utility.PrepareHeaders(ctx)
+	if "theme=dark; lang=en%20gb; size=2" != headers["cookie"] {
+		t.Errorf("expected the map as its pairs, got %v", headers["cookie"])
+	}
+}
+
 // Helper: create basic test context
 func makeTestCtx(client *sdk.ProjectNameSDK, utility *sdk.Utility, overrides map[string]any) *sdk.Context {
 	ctxmap := map[string]any{
