@@ -22,7 +22,7 @@ local function cookie_pair(wire, val)
   else
     pairs_[#pairs_ + 1] = wire .. "=" .. esc(val)
   end
-  return table.concat(pairs_, "&")
+  return table.concat(pairs_, "; ")
 end
 
 local function prepare_headers_util(ctx)

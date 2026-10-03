@@ -92,41 +92,19 @@ final class PrepareHeaders {
     } else {
       pairs.add(wire + "=" + Struct.escurl(Struct.stringify(val)));
     }
-    return String.join("&", pairs);
+    return String.join("; ", pairs);
   }
 
-  // The caller's cookie pieces with every named cookie removed. A piece whose
-  // &-parts are all pairs is the exploded form cookiePair writes, and loses
-  // only the pairs named; any other piece is one cookie, kept or dropped whole.
+  // The caller's cookie pieces with the named cookies removed: a cookie is one
+  // ;-delimited piece, whatever its value holds.
   static List<String> cookieKeep(String header, List<String> names) {
     List<String> kept = new ArrayList<>();
-    for (String piece : header.split(";", -1)) {
-      String[] parts = piece.split("&", -1);
-      boolean pairs = true;
-      for (String part : parts) {
-        if (!part.contains("=")) {
-          pairs = false;
-        }
-      }
-      List<String> rest = new ArrayList<>();
-      if (pairs) {
-        for (String part : parts) {
-          if (!cookieNamed(part, names)) {
-            rest.add(part);
-          }
-        }
-      } else if (!cookieNamed(piece, names)) {
-        rest.add(piece);
-      }
-      String cookie = String.join("&", rest).trim();
-      if (!cookie.isEmpty()) {
+    for (String piece : header.split(";")) {
+      String cookie = piece.trim();
+      if (!cookie.isEmpty() && !names.contains(cookie.split("=", 2)[0].trim())) {
         kept.add(cookie);
       }
     }
     return kept;
-  }
-
-  private static boolean cookieNamed(String part, List<String> names) {
-    return names.contains(part.split("=", 2)[0].trim());
   }
 }

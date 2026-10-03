@@ -98,30 +98,18 @@ fn cookie_pair(wire: &str, val: &Value) -> String {
             .collect(),
         _ => vec![format!("{}={}", wire, esc(val))],
     };
-    pairs.join("&")
+    pairs.join("; ")
 }
 
-// The caller's cookie pieces with every named cookie removed. A piece whose
-// &-parts are all pairs is the exploded form cookie_pair writes, and loses
-// only the pairs named; any other piece is one cookie, kept or dropped whole.
+// The caller's cookie pieces with the named cookies removed: a cookie is one
+// ;-delimited piece, whatever its value holds.
 pub fn cookie_keep(header: &str, names: &[String]) -> Vec<String> {
-    let named = |part: &str| {
-        let name = part.split('=').next().unwrap_or("").trim();
-        names.iter().any(|n| n == name)
-    };
     let mut kept: Vec<String> = Vec::new();
     for piece in header.split(';') {
-        let parts: Vec<&str> = piece.split('&').collect();
-        let rest: Vec<&str> = if parts.iter().all(|part| part.contains('=')) {
-            parts.iter().copied().filter(|part| !named(part)).collect()
-        } else if named(piece) {
-            Vec::new()
-        } else {
-            parts
-        };
-        let cookie = rest.join("&").trim().to_string();
-        if !cookie.is_empty() {
-            kept.push(cookie);
+        let cookie = piece.trim();
+        let name = cookie.split('=').next().unwrap_or("").trim();
+        if !cookie.is_empty() && !names.iter().any(|n| n == name) {
+            kept.push(cookie.to_string());
         }
     }
     kept

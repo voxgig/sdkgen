@@ -17,7 +17,7 @@ def _cookie_pair(wire, val):
         pairs = [vs.escurl(key) + "=" + esc(val[key]) for key in vs.keysof(val)]
     else:
         pairs = [wire + "=" + esc(val)]
-    return "&".join(pairs)
+    return "; ".join(pairs)
 
 
 def prepare_headers_util(ctx):
@@ -62,25 +62,13 @@ def prepare_headers_util(ctx):
 
 
 def cookie_keep(header, names):
-    """The caller's cookie pieces with every named cookie removed.
+    """The caller's cookie pieces with the named cookies removed.
 
-    A piece whose &-parts are all pairs is the exploded form _cookie_pair
-    writes, and loses only the pairs named; any other piece is one cookie,
-    kept or dropped whole.
+    A cookie is one ;-delimited piece, whatever its value holds.
     """
-    def named(part):
-        return part.split("=", 1)[0].strip() in names
-
     kept = []
     for piece in header.split(";"):
-        parts = piece.split("&")
-        if all("=" in part for part in parts):
-            rest = [part for part in parts if not named(part)]
-        elif named(piece):
-            rest = []
-        else:
-            rest = parts
-        cookie = "&".join(rest).strip()
-        if cookie != "":
+        cookie = piece.strip()
+        if cookie != "" and cookie.split("=", 1)[0].strip() not in names:
             kept.append(cookie)
     return kept

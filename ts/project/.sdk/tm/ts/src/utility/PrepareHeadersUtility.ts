@@ -58,21 +58,17 @@ function cookiePair(struct: any, wire: string, val: any): string {
   const pairs: string[] = struct.islist(val) ? val.map((item: any) => wire + '=' + esc(item)) :
     struct.ismap(val) ? struct.keysof(val).map((key: string) => struct.escurl(key) + '=' + esc(val[key])) :
       [wire + '=' + esc(val)]
-  return pairs.join('&')
+  return pairs.join('; ')
 }
 
 
-// The caller's cookie pieces with the named cookies removed: a piece of
-// &-joined pairs, as cookiePair writes a map, loses only those named.
+// The caller's cookie pieces with the named cookies removed: a cookie is one
+// `;`-delimited piece, whatever its value holds.
 function cookieKeep(header: string, names: string[]): string[] {
-  const named = (part: string) => names.includes(part.split('=')[0].trim())
   const kept: string[] = []
   for (const piece of header.split(';')) {
-    const parts = piece.split('&')
-    const rest = parts.every((part: string) => part.includes('=')) ? parts.filter((part: string) => !named(part)) :
-      named(piece) ? [] : parts
-    const cookie = rest.join('&').trim()
-    if ('' !== cookie) kept.push(cookie)
+    const cookie = piece.trim()
+    if ('' !== cookie && !names.includes(cookie.split('=')[0].trim())) kept.push(cookie)
   }
   return kept
 }

@@ -679,7 +679,7 @@ let cookie_pair (wire : string) (v : value) : string =
     | List items -> List.map (fun item -> wire ^ "=" ^ esc item) !items
     | Map _ -> List.map (fun k -> escurl_s k ^ "=" ^ esc (getp v k)) (keysof v)
     | _ -> [wire ^ "=" ^ esc v] in
-  String.concat "&" pairs
+  String.concat "; " pairs
 
 let prepare_headers_util (ctx : ctx) : value =
   let options = client_options_map (cc ctx) in

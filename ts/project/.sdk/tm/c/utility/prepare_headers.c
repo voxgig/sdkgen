@@ -83,18 +83,16 @@ static char* name_value(const char* name, const char* value) {
   return pair;
 }
 
-// Whether a cookie pair's name, blanks aside, is one the predicate owns.
-static bool pair_named(const char* part, bool (*named)(const char* name, size_t nlen, void* ud), void* ud) {
-  while (isspace((unsigned char)*part)) part++;
-  size_t nlen = strcspn(part, "=");
-  while (0 < nlen && isspace((unsigned char)part[nlen - 1])) nlen--;
-  return named(part, nlen, ud);
+// Whether a cookie's name, blanks aside, is one the predicate owns.
+static bool cookie_named(const char* cookie, bool (*named)(const char* name, size_t nlen, void* ud), void* ud) {
+  size_t nlen = strcspn(cookie, "=");
+  while (0 < nlen && isspace((unsigned char)cookie[nlen - 1])) nlen--;
+  return named(cookie, nlen, ud);
 }
 
-// The caller's cookie pieces with every owned cookie removed, "; "-joined and
-// malloc'd, or NULL when none is kept. A piece whose &-parts are all pairs is
-// the exploded form cookie_pair writes, and loses only the pairs owned; any
-// other piece is one cookie, kept or dropped whole.
+// The caller's cookie pieces with the owned cookies removed, "; "-joined and
+// malloc'd, or NULL when none is kept: a cookie is one ;-delimited piece,
+// whatever its value holds.
 char* cookie_keep(const char* header, bool (*named)(const char* name, size_t nlen, void* ud), void* ud) {
   char* joined = NULL;
   size_t jlen = 0;
@@ -104,34 +102,8 @@ char* cookie_keep(const char* header, bool (*named)(const char* name, size_t nle
     char* piece = (char*)malloc(plen + 1);
     memcpy(piece, text, plen);
     piece[plen] = '\0';
-    bool pairs = true;
-    for (const char* sub = piece;;) {
-      size_t slen = strcspn(sub, "&");
-      if (NULL == memchr(sub, '=', slen)) pairs = false;
-      if ('\0' == sub[slen]) break;
-      sub += slen + 1;
-    }
-    char* rest = NULL;
-    size_t rlen = 0;
-    if (pairs) {
-      for (const char* sub = piece;;) {
-        size_t slen = strcspn(sub, "&");
-        char* part = (char*)malloc(slen + 1);
-        memcpy(part, sub, slen);
-        part[slen] = '\0';
-        if (!pair_named(part, named, ud)) join_part(&rest, &rlen, "&", part);
-        free(part);
-        if ('\0' == sub[slen]) break;
-        sub += slen + 1;
-      }
-    } else if (!pair_named(piece, named, ud)) {
-      join_part(&rest, &rlen, "", piece);
-    }
-    if (NULL != rest) {
-      char* cookie = trim_blank(rest);
-      if ('\0' != *cookie) join_part(&joined, &jlen, "; ", cookie);
-      free(rest);
-    }
+    char* cookie = trim_blank(piece);
+    if ('\0' != *cookie && !cookie_named(cookie, named, ud)) join_part(&joined, &jlen, "; ", cookie);
     free(piece);
     text += plen + (';' == text[plen] ? 1 : 0);
   }
@@ -148,7 +120,7 @@ static char* cookie_pair(const char* wire, voxgig_value* val) {
     for (size_t i = 0; i < items->len; i++) {
       char* text = esc_text(items->items[i]);
       char* pair = name_value(wire, text);
-      join_part(&joined, &jlen, "&", pair);
+      join_part(&joined, &jlen, "; ", pair);
       free(pair);
       free(text);
     }
@@ -160,7 +132,7 @@ static char* cookie_pair(const char* wire, voxgig_value* val) {
       voxgig_release(kv);
       char* text = esc_text(getp(val, keys.data[i]));
       char* pair = name_value(name, text);
-      join_part(&joined, &jlen, "&", pair);
+      join_part(&joined, &jlen, "; ", pair);
       free(pair);
       free(text);
       free(name);

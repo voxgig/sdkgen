@@ -14,7 +14,7 @@ module ProjectNameUtilities
     else
       ["#{wire}=#{esc.call(val)}"]
     end
-    pairs.join("&")
+    pairs.join("; ")
   end
   PrepareHeaders = ->(ctx) {
     options = ctx.client.options_map
@@ -52,22 +52,12 @@ module ProjectNameUtilities
     out
   }
 
-  # The caller's cookie pieces with every named cookie removed. A piece whose
-  # &-parts are all pairs is the exploded form cookie_pair writes, and loses
-  # only the pairs named; any other piece is one cookie, kept or dropped whole.
+  # The caller's cookie pieces with the named cookies removed: a cookie is one
+  # ;-delimited piece, whatever its value holds.
   def self.cookie_keep(header, names)
-    named = ->(part) { names.include?(part.split("=", 2)[0].to_s.strip) }
-    header.split(";", -1).each_with_object([]) do |piece, kept|
-      parts = piece.split("&", -1)
-      rest = if parts.all? { |part| part.include?("=") }
-        parts.reject { |part| named.call(part) }
-      elsif named.call(piece)
-        []
-      else
-        parts
-      end
-      cookie = rest.join("&").strip
-      kept << cookie unless cookie.empty?
+    header.split(";").each_with_object([]) do |piece, kept|
+      cookie = piece.strip
+      kept << cookie unless cookie.empty? || names.include?(cookie.split("=", 2)[0].to_s.strip)
     end
   end
 end

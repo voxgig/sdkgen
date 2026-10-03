@@ -101,24 +101,18 @@ private func cookiePair(_ wire: String, _ val: Value) -> String {
   } else {
     pairs.append(wire + "=" + esc(val))
   }
-  return pairs.joined(separator: "&")
+  return pairs.joined(separator: "; ")
 }
 
-// The caller's cookie pieces with every named cookie removed. A piece whose
-// &-parts are all pairs is the exploded form cookiePair writes, and loses
-// only the pairs named; any other piece is one cookie, kept or dropped whole.
+// The caller's cookie pieces with the named cookies removed: a cookie is one
+// ;-delimited piece, whatever its value holds.
 func cookieKeep(_ header: String, _ names: [String]) -> [String] {
-  let named = { (part: Substring) -> Bool in
-    let name = part.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
-    return names.contains(name.trimmingCharacters(in: .whitespaces))
-  }
   var kept: [String] = []
   for piece in header.split(separator: ";", omittingEmptySubsequences: false) {
-    let parts = piece.split(separator: "&", omittingEmptySubsequences: false)
-    let rest = parts.allSatisfy { $0.contains("=") } ? parts.filter { !named($0) }
-      : named(piece) ? [] : parts
-    let cookie = rest.joined(separator: "&").trimmingCharacters(in: .whitespaces)
-    if !cookie.isEmpty { kept.append(cookie) }
+    let cookie = piece.trimmingCharacters(in: .whitespaces)
+    let name = cookie.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+      .first.map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+    if !cookie.isEmpty && !names.contains(name) { kept.append(cookie) }
   }
   return kept
 }

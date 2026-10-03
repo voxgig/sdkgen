@@ -101,36 +101,16 @@ func cookiePair(wire string, val any) string {
 	default:
 		pairs = append(pairs, wire+"="+esc(val))
 	}
-	return strings.Join(pairs, "&")
+	return strings.Join(pairs, "; ")
 }
 
-// The caller's cookie pieces with every named cookie removed. A piece whose
-// &-parts are all pairs is the exploded form cookiePair writes, and loses
-// only the pairs named; any other piece is one cookie, kept or dropped whole.
+// The caller's cookie pieces with the named cookies removed: a cookie is one
+// ;-delimited piece, whatever its value holds.
 func cookieKeep(header string, names map[string]bool) []string {
-	named := func(part string) bool {
-		return names[strings.TrimSpace(strings.SplitN(part, "=", 2)[0])]
-	}
 	kept := []string{}
 	for _, piece := range strings.Split(header, ";") {
-		parts := strings.Split(piece, "&")
-		pairs := true
-		for _, part := range parts {
-			if !strings.Contains(part, "=") {
-				pairs = false
-			}
-		}
-		rest := []string{}
-		if pairs {
-			for _, part := range parts {
-				if !named(part) {
-					rest = append(rest, part)
-				}
-			}
-		} else if !named(piece) {
-			rest = parts
-		}
-		if cookie := strings.TrimSpace(strings.Join(rest, "&")); "" != cookie {
+		cookie := strings.TrimSpace(piece)
+		if "" != cookie && !names[strings.TrimSpace(strings.SplitN(cookie, "=", 2)[0])] {
 			kept = append(kept, cookie)
 		}
 	}

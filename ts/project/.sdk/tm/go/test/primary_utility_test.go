@@ -820,7 +820,7 @@ func TestPrepareHeadersCookieTypedSlice(t *testing.T) {
 	}
 	ctx.Reqmatch = map[string]any{"theme": []string{"dark", "x y"}}
 	headers := utility.PrepareHeaders(ctx)
-	if "theme=dark&theme=x%20y" != headers["cookie"] {
+	if "theme=dark; theme=x%20y" != headers["cookie"] {
 		t.Errorf("expected the slice as repeated pairs, got %v", headers["cookie"])
 	}
 }

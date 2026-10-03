@@ -1684,7 +1684,7 @@ fn cookie_pair(wire: []const u8, val: Value) []const u8 {
             pairs.append(h.A(), pair) catch {};
         },
     }
-    return std.mem.join(h.A(), "&", pairs.items) catch "";
+    return std.mem.join(h.A(), "; ", pairs.items) catch "";
 }
 
 pub fn prepare_body_util(ctx: *Context) Value {

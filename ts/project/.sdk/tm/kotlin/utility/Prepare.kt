@@ -180,7 +180,7 @@ private fun cookiePair(wire: String, v: Any?): String {
     is Map<*, *> -> Struct.keysof(v).map { Struct.escurl(it) + "=" + esc(Struct.getprop(v, it)) }
     else -> listOf(wire + "=" + esc(v))
   }
-  return pairs.joinToString("&")
+  return pairs.joinToString("; ")
 }
 
 fun prepareMethod(ctx: Context): String? {
@@ -333,21 +333,13 @@ private fun containsStr(list: List<Any?>, s: String): Boolean {
   return false
 }
 
-// The caller's cookie pieces with every named cookie removed. A piece whose
-// &-parts are all pairs is the exploded form cookiePair writes, and loses
-// only the pairs named; any other piece is one cookie, kept or dropped whole.
+// The caller's cookie pieces with the named cookies removed: a cookie is one
+// ;-delimited piece, whatever its value holds.
 internal fun cookieKeep(header: String, names: List<String>): MutableList<String> {
-  val named = { part: String -> part.substringBefore("=").trim() in names }
   val kept = mutableListOf<String>()
   for (piece in header.split(";")) {
-    val parts = piece.split("&")
-    val rest = when {
-      parts.all { it.contains("=") } -> parts.filter { !named(it) }
-      named(piece) -> emptyList()
-      else -> parts
-    }
-    val cookie = rest.joinToString("&").trim()
-    if (cookie.isNotEmpty()) kept.add(cookie)
+    val cookie = piece.trim()
+    if (cookie.isNotEmpty() && cookie.substringBefore("=").trim() !in names) kept.add(cookie)
   }
   return kept
 }

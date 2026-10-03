@@ -7,49 +7,27 @@
 namespace sdk {
 namespace util {
 
-// The caller's cookie pieces with every named cookie removed. A piece whose
-// &-parts are all pairs is the exploded form cookiePair writes, and loses
-// only the pairs named; any other piece is one cookie, kept or dropped whole.
+// The caller's cookie pieces with the named cookies removed: a cookie is one
+// ;-delimited piece, whatever its value holds.
 inline std::vector<std::string> cookieKeep(const std::string& header, const std::vector<std::string>& names) {
   auto trim = [](const std::string& s) {
     size_t a = s.find_first_not_of(" \t");
     size_t b = s.find_last_not_of(" \t");
     return std::string::npos == a ? std::string() : s.substr(a, b - a + 1);
   };
-  auto split = [](const std::string& s, char sep) {
-    std::vector<std::string> parts;
-    size_t at = 0;
-    while (true) {
-      size_t end = s.find(sep, at);
-      parts.push_back(s.substr(at, (std::string::npos == end ? s.size() : end) - at));
-      if (std::string::npos == end) return parts;
-      at = end + 1;
-    }
-  };
-  auto named = [&](const std::string& part) {
-    std::string name = trim(part.substr(0, part.find('=')));
-    for (const auto& n : names) {
-      if (n == name) return true;
-    }
-    return false;
-  };
   std::vector<std::string> kept;
-  for (const auto& piece : split(header, ';')) {
-    std::vector<std::string> parts = split(piece, '&');
-    bool pairs = true;
-    for (const auto& part : parts) {
-      if (std::string::npos == part.find('=')) pairs = false;
+  size_t at = 0;
+  while (at <= header.size()) {
+    size_t end = header.find(';', at);
+    if (std::string::npos == end) end = header.size();
+    std::string cookie = trim(header.substr(at, end - at));
+    std::string name = trim(cookie.substr(0, cookie.find('=')));
+    bool owned = false;
+    for (const auto& n : names) {
+      if (n == name) owned = true;
     }
-    std::string rest;
-    if (pairs) {
-      for (const auto& part : parts) {
-        if (!named(part)) rest += (rest.empty() ? "" : "&") + part;
-      }
-    } else if (!named(piece)) {
-      rest = piece;
-    }
-    std::string cookie = trim(rest);
-    if (!cookie.empty()) kept.push_back(cookie);
+    if (!cookie.empty() && !owned) kept.push_back(cookie);
+    at = end + 1;
   }
   return kept;
 }

@@ -73,14 +73,10 @@ const COOKIE_CASES: AuthCase[] = [
     cookieStep({ auth, apikey: 'K' }, 'other=' + 'x'.repeat(4096) + '; session=K'),
     cookieStep({ auth }, 'other=' + 'x'.repeat(4096)),
   ]),
-  // The exploded form a map cookie argument takes, &-joined pairs, is read the
-  // way prepareHeaders writes it; a value that merely holds & is one cookie.
-  cookieCase('replace the credential pair inside an exploded cookie', 'lang=en&session=OLD; theme=dark', [
-    cookieStep({ auth, apikey: 'K' }, 'lang=en; theme=dark; session=K'),
-    cookieStep({ auth: null }, 'lang=en; theme=dark'),
-  ]),
-  cookieCase('replace the credential pair leading an exploded cookie', 'session=OLD&lang=en; theme=dark', [
-    cookieStep({ auth, apikey: 'K' }, 'lang=en; theme=dark; session=K'),
+  // A cookie is one ;-delimited piece: nothing inside its value is read.
+  cookieCase('keep an opaque cookie whose value holds pairs', 'other=a=b&session=OLD; session=OLD2', [
+    cookieStep({ auth, apikey: 'K' }, 'other=a=b&session=OLD; session=K'),
+    cookieStep({ auth: null }, 'other=a=b&session=OLD'),
   ]),
   cookieCase('keep an opaque cookie value with ampersands', 'other=a&&b; session=OLD', [
     cookieStep({ auth, apikey: 'K' }, 'other=a&&b; session=K'),

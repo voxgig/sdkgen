@@ -1786,27 +1786,13 @@ defmodule ProjectName.Utility do
     out
   end
 
-  # The caller's cookie pieces with every named cookie removed. A piece whose
-  # &-parts are all pairs is the exploded form cookie_pair writes, and loses
-  # only the pairs named; any other piece is one cookie, kept or dropped whole.
+  # The caller's cookie pieces with the named cookies removed: a cookie is one
+  # ;-delimited piece, whatever its value holds.
   def cookie_keep(header, names) do
     header
     |> String.split(";")
-    |> Enum.flat_map(fn piece ->
-      parts = String.split(piece, "&")
-
-      rest =
-        cond do
-          Enum.all?(parts, &String.contains?(&1, "=")) -> Enum.reject(parts, &(cookie_name(&1) in names))
-          cookie_name(piece) in names -> []
-          true -> parts
-        end
-
-      case String.trim(Enum.join(rest, "&")) do
-        "" -> []
-        cookie -> [cookie]
-      end
-    end)
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(fn cookie -> cookie == "" or cookie_name(cookie) in names end)
   end
 
   defp cookie_name(cookie), do: cookie |> String.split("=", parts: 2) |> hd() |> String.trim()
@@ -1828,7 +1814,7 @@ defmodule ProjectName.Utility do
           [wire <> "=" <> esc.(val)]
       end
 
-    Enum.join(pairs, "&")
+    Enum.join(pairs, "; ")
   end
 
   def prepare_body_impl(ctx) do

@@ -188,20 +188,13 @@ object PrepareHeaders {
     out
   }
 
-  // The caller's cookie pieces with every named cookie removed. A piece whose
-  // &-parts are all pairs is the exploded form cookiePair writes, and loses
-  // only the pairs named; any other piece is one cookie, kept or dropped whole.
+  // The caller's cookie pieces with the named cookies removed: a cookie is one
+  // ;-delimited piece, whatever its value holds.
   def cookieKeep(header: String, names: Seq[String]): scala.collection.mutable.ArrayBuffer[String] = {
-    def named(part: String): Boolean = names.contains(part.split("=", 2)(0).trim)
     val kept = scala.collection.mutable.ArrayBuffer[String]()
-    header.split(";", -1).foreach { piece =>
-      val parts = piece.split("&", -1).toSeq
-      val rest =
-        if (parts.forall(_.contains("="))) parts.filterNot(named)
-        else if (named(piece)) Seq.empty[String]
-        else parts
-      val cookie = rest.mkString("&").trim
-      if (cookie.nonEmpty) kept += cookie
+    header.split(";").foreach { piece =>
+      val cookie = piece.trim
+      if (cookie.nonEmpty && !names.contains(cookie.split("=", 2)(0).trim)) kept += cookie
     }
     kept
   }
@@ -223,7 +216,7 @@ object PrepareHeaders {
         }
       case _ => pairs += wire + "=" + esc(v)
     }
-    pairs.mkString("&")
+    pairs.mkString("; ")
   }
 }
 

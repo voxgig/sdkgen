@@ -1515,7 +1515,7 @@ inline std::string cookiePair(const std::string& wire, const Value& val) {
     pairs.push_back(wire + "=" + esc(val));
   }
   std::string joined;
-  for (size_t i = 0; i < pairs.size(); i++) joined += (0 < i ? "&" : "") + pairs[i];
+  for (size_t i = 0; i < pairs.size(); i++) joined += (0 < i ? "; " : "") + pairs[i];
   return joined;
 }
 

@@ -308,11 +308,12 @@ describe('prepareHeaders', () => {
 
     // The form style: a value is percent-encoded, so a space, a comma or a
     // semicolon in it cannot split or end the cookie; a list repeats the name
-    // and a map sends its own keys.
+    // and a map sends its own keys, each pair a cookie of its own, since
+    // cookie-pairs are delimited by `; ` and never by `&` (RFC 6265).
     test(lang + ': a cookie argument is form serialized and percent-encoded', () => {
       deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 'a b;c,d' },
         { theme: ['dark', 'x y'], prefs: { size: 2, lang: 'en gb' } })),
-      { cookie: 'SESSIONID=a%20b%3Bc%2Cd; theme=dark&theme=x%20y; lang=en%20gb&size=2' })
+      { cookie: 'SESSIONID=a%20b%3Bc%2Cd; theme=dark; theme=x%20y; lang=en%20gb; size=2' })
     })
 
     test(lang + ': a cookie argument replaces a cookie of the same name the caller sends', () => {
@@ -325,7 +326,7 @@ describe('prepareHeaders', () => {
     test(lang + ': a map cookie argument replaces the cookies its keys name', () => {
       deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' },
         { prefs: { lang: 'en', size: 2 } }, { Cookie: 'lang=old; theme=dark' })),
-      { cookie: 'theme=dark; SESSIONID=s1; lang=en&size=2' })
+      { cookie: 'theme=dark; SESSIONID=s1; lang=en; size=2' })
     })
 
     // ...and sends them percent-encoded, so that is the form it replaces.
@@ -335,14 +336,14 @@ describe('prepareHeaders', () => {
       { cookie: 'theme=dark; SESSIONID=s1; x%20y=new' })
     })
 
-    // A default written in the same form style, `&`-joined, is replaced pair by pair.
-    test(lang + ': a map cookie argument replaces a default inside an &-joined cookie', () => {
+    // A default is one cookie whatever its value holds: nothing inside it is
+    // read, so pairs in the value are kept with it, and & is just a character.
+    test(lang + ': a default cookie whose value holds pairs is kept whole', () => {
       deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' },
-        { prefs: { 'x y': 'new' } }, { Cookie: 'lang=old&x%20y=old; theme=dark' })),
-      { cookie: 'lang=old; theme=dark; SESSIONID=s1; x%20y=new' })
+        { theme: 'dark' }, { Cookie: 'session=a=b&theme=old' })),
+      { cookie: 'session=a=b&theme=old; SESSIONID=s1; theme=dark' })
     })
 
-    // A value that merely holds & is one cookie: kept as it is, or replaced whole.
     test(lang + ': an opaque default cookie value keeps its ampersands', () => {
       deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' }, {},
         { Cookie: 'other=a&&b; theme=dark' })),

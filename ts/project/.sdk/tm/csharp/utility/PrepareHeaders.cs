@@ -72,20 +72,15 @@ public static partial class SdkUtility
         return result;
     }
 
-    // The caller's cookie pieces with every named cookie removed. A piece whose
-    // &-parts are all pairs is the exploded form CookiePair writes, and loses
-    // only the pairs named; any other piece is one cookie, kept or dropped whole.
+    // The caller's cookie pieces with the named cookies removed: a cookie is
+    // one ;-delimited piece, whatever its value holds.
     internal static List<string> CookieKeep(string header, List<string> names)
     {
-        bool Named(string part) => names.Contains(part.Split('=', 2)[0].Trim());
         var kept = new List<string>();
         foreach (var piece in header.Split(';'))
         {
-            var parts = piece.Split('&');
-            var rest = parts.All(part => part.Contains('=')) ? parts.Where(part => !Named(part))
-                : Named(piece) ? Enumerable.Empty<string>() : parts;
-            var cookie = string.Join("&", rest).Trim();
-            if ("" != cookie)
+            var cookie = piece.Trim();
+            if ("" != cookie && !names.Contains(cookie.Split('=', 2)[0].Trim()))
             {
                 kept.Add(cookie);
             }
@@ -117,6 +112,6 @@ public static partial class SdkUtility
         {
             pairs.Add(wire + "=" + Esc(val));
         }
-        return string.Join("&", pairs);
+        return string.Join("; ", pairs);
     }
 }
