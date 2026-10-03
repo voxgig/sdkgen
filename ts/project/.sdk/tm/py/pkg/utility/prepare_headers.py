@@ -51,9 +51,10 @@ def prepare_headers_util(ctx):
             given = out.pop(key)
             if isinstance(given, str):
                 for piece in given.split(";"):
-                    cookie = piece.strip()
-                    if cookie != "" and cookie.split("=", 1)[0].strip() not in names:
-                        kept.append(cookie)
+                    rest = [pair.strip() for pair in piece.split("&")]
+                    rest = [pair for pair in rest if pair != "" and pair.split("=", 1)[0].strip() not in names]
+                    if rest:
+                        kept.append("&".join(rest))
         for orig, val in sent:
             pair = _cookie_pair(orig, val)
             if pair != "":

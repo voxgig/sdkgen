@@ -53,10 +53,12 @@ public static partial class SdkUtility
                 {
                     foreach (var piece in given.Split(';'))
                     {
-                        var cookie = piece.Trim();
-                        if ("" != cookie && !names.Contains(cookie.Split('=', 2)[0].Trim()))
+                        var rest = piece.Split('&').Select(part => part.Trim())
+                            .Where(pair => "" != pair && !names.Contains(pair.Split('=', 2)[0].Trim()))
+                            .ToList();
+                        if (0 < rest.Count)
                         {
-                            kept.Add(cookie);
+                            kept.Add(string.Join("&", rest));
                         }
                     }
                 }

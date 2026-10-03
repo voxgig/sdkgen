@@ -47,10 +47,14 @@ $REGISTRY{prepare_headers} = sub {
       my $given = delete $out->{$key};
       next if !defined $given || ref $given;
       for my $piece (split /;/, $given) {
-        (my $cookie = $piece) =~ s/^\s+|\s+$//g;
-        next if $cookie eq '';
-        (my $name = (split /=/, $cookie, 2)[0]) =~ s/^\s+|\s+$//g;
-        push @kept, $cookie unless $names{$name};
+        my @rest;
+        for my $part (split /&/, $piece) {
+          (my $pair = $part) =~ s/^\s+|\s+$//g;
+          next if $pair eq '';
+          (my $name = (split /=/, $pair, 2)[0]) =~ s/^\s+|\s+$//g;
+          push @rest, $pair unless $names{$name};
+        }
+        push @kept, join('&', @rest) if @rest;
       }
     }
     for my $arg (@sent) {

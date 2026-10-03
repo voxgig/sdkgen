@@ -1559,17 +1559,26 @@ inline Value prepareHeaders(CtxPtr ctx) {
         while (at <= text.size()) {
           size_t end = text.find(';', at);
           if (std::string::npos == end) end = text.size();
-          std::string cookie = trimBlank(text.substr(at, end - at));
-          std::string name = trimBlank(cookie.substr(0, cookie.find('=')));
-          bool replaced = false;
-          for (const auto& arg : sent) {
-            if (arg.val.is_map()) {
-              for (const auto& item : Struct::items(arg.val)) replaced = replaced || Struct::escurl(pair_key(item)) == name;
-            } else {
-              replaced = replaced || arg.wire == name;
+          const std::string cookie = text.substr(at, end - at);
+          std::string rest;
+          size_t pat = 0;
+          while (pat <= cookie.size()) {
+            size_t pend = cookie.find('&', pat);
+            if (std::string::npos == pend) pend = cookie.size();
+            std::string pair = trimBlank(cookie.substr(pat, pend - pat));
+            std::string name = trimBlank(pair.substr(0, pair.find('=')));
+            bool replaced = false;
+            for (const auto& arg : sent) {
+              if (arg.val.is_map()) {
+                for (const auto& item : Struct::items(arg.val)) replaced = replaced || Struct::escurl(pair_key(item)) == name;
+              } else {
+                replaced = replaced || arg.wire == name;
+              }
             }
+            if (!pair.empty() && !replaced) rest += (rest.empty() ? "" : "&") + pair;
+            pat = pend + 1;
           }
-          if (!cookie.empty() && !replaced) kept.push_back(cookie);
+          if (!rest.empty()) kept.push_back(rest);
           at = end + 1;
         }
       }

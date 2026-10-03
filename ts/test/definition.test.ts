@@ -275,6 +275,31 @@ describe('definitionPlan', () => {
     deepStrictEqual(list.select, {})
   })
 
+  // A query parameter may share its call name with a cookie: the SDK sends
+  // both from one value, so the query argument stays planned and the pair
+  // takes the cookie's value.
+  test('a query argument that shares a cookie name stays in the plan', () => {
+    const def = { ...DEF, paths: { '/uploads': { get: {
+      parameters: [
+        { in: 'query', name: 'lang', example: 'en' },
+        { in: 'cookie', name: 'lang', example: 'fr' },
+      ],
+      responses: { '200': { content: { 'application/json': { example: [] } } } },
+    } } } }
+    const model = { main: { kit: { entity: { upload: {
+      name: 'upload', id: { field: 'id', name: 'id' }, op: { list: { points: [{
+        m: 'GET', o: '/uploads',
+        g: { query: [{ n: 'lang', or: 'lang' }], cookie: [{ n: 'lang', or: 'lang' }] },
+      }] } },
+    } } } } }
+    const [list] = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(list.queryArgs, [{ name: 'lang', wire: 'lang' }])
+    deepStrictEqual(list.cookies, [{ name: 'lang', wire: 'lang', value: 'fr' }])
+    strictEqual(list.select.lang, 'fr')
+  })
+
   test('the example is the sample, three items at most', () => {
     strictEqual(point('list').sample.data.length, 3)
     deepStrictEqual(point('list').query, ['limit'])

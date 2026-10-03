@@ -1773,8 +1773,14 @@ defmodule ProjectName.Utility do
           if is_binary(v) do
             v
             |> String.split(";")
-            |> Enum.map(&String.trim/1)
-            |> Enum.reject(fn cookie -> cookie == "" or cookie_name(cookie) in names end)
+            |> Enum.map(fn piece ->
+              piece
+              |> String.split("&")
+              |> Enum.map(&String.trim/1)
+              |> Enum.reject(fn pair -> pair == "" or cookie_name(pair) in names end)
+              |> Enum.join("&")
+            end)
+            |> Enum.reject(&(&1 == ""))
           else
             []
           end

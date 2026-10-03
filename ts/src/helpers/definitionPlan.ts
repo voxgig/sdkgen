@@ -132,17 +132,16 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           .flatMap((p: any) => p.q?.exist || []))
         for (const arg of point.g?.query || []) {
           if (false === arg.a || undefined !== selected[arg.n] || elsewhere.has(arg.n)) continue
+          const shared = cookies.find((c: any) => c.name === arg.n) ?? headers.find((h: any) => h.name === arg.n)
           const def = params.find((p: any) => 'query' === p?.in && (arg.or || arg.n) === p?.name)
-          selected[arg.n] = scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'v1'
+          selected[arg.n] = shared?.value ?? scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'v1'
         }
 
         // Create and update send their input as the body: only a match has a query.
         const queryArgs = 'create' === op || 'update' === op ? [] :
           (point.g?.query || [])
             .filter((arg: any) => undefined !== selected[arg.n] &&
-              !args.some((a: any) => a.name === arg.n) &&
-              !headers.some((h: any) => h.name === arg.n) &&
-              !cookies.some((c: any) => c.name === arg.n))
+              !args.some((a: any) => a.name === arg.n))
             .map((arg: any) => ({ name: arg.n, wire: String(arg.or || arg.n) }))
             .filter((q: any) => params.some((p: any) => 'query' === p?.in && q.wire === p?.name))
 

@@ -42,8 +42,9 @@ module ProjectNameUtilities
         given = out.delete(k)
         next unless given.is_a?(String)
         given.split(";").each do |piece|
-          cookie = piece.strip
-          kept << cookie unless cookie.empty? || names.include?(cookie.split("=", 2)[0].strip)
+          rest = piece.split("&").map(&:strip)
+            .reject { |pair| pair.empty? || names.include?(pair.split("=", 2)[0].strip) }
+          kept << rest.join("&") unless rest.empty?
         end
       end
       sent.each do |_name, orig, val|

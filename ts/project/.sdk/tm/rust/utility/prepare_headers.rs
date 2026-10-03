@@ -64,10 +64,16 @@ pub fn prepare_headers_util(ctx: &Rc<Context>) -> Value {
             for k in given {
                 if let Some(Value::Str(s)) = m.borrow_mut().shift_remove(&k) {
                     for piece in s.split(';') {
-                        let cookie = piece.trim();
-                        let name = cookie.split('=').next().unwrap_or("").trim();
-                        if !cookie.is_empty() && !names.iter().any(|n| n == name) {
-                            kept.push(cookie.to_string());
+                        let rest: Vec<&str> = piece
+                            .split('&')
+                            .map(|part| part.trim())
+                            .filter(|pair| {
+                                let name = pair.split('=').next().unwrap_or("").trim();
+                                !pair.is_empty() && !names.iter().any(|n| n == name)
+                            })
+                            .collect();
+                        if !rest.is_empty() {
+                            kept.push(rest.join("&"));
                         }
                     }
                 }

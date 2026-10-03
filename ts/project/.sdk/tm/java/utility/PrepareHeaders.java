@@ -61,9 +61,15 @@ final class PrepareHeaders {
         Object given = out.remove(k);
         if (given instanceof String) {
           for (String piece : ((String) given).split(";")) {
-            String cookie = piece.trim();
-            if (!cookie.isEmpty() && !names.contains(cookie.split("=", 2)[0].trim())) {
-              kept.add(cookie);
+            List<String> rest = new ArrayList<>();
+            for (String part : piece.split("&")) {
+              String pair = part.trim();
+              if (!pair.isEmpty() && !names.contains(pair.split("=", 2)[0].trim())) {
+                rest.add(pair);
+              }
+            }
+            if (!rest.isEmpty()) {
+              kept.add(String.join("&", rest));
             }
           }
         }

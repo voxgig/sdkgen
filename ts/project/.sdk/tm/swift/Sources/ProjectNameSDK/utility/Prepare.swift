@@ -79,10 +79,14 @@ func prepareHeadersUtil(_ ctx: Context) -> VMap {
     for k in out.entries.keys where k.lowercased() == "cookie" {
       if let given = out.entries[k]?.asString {
         for piece in given.split(separator: ";", omittingEmptySubsequences: false) {
-          let cookie = piece.trimmingCharacters(in: .whitespaces)
-          let name = cookie.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
-            .first.map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
-          if !cookie.isEmpty && !names.contains(name) { kept.append(cookie) }
+          let rest = piece.split(separator: "&", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { pair in
+              let name = pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+                .first.map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+              return !pair.isEmpty && !names.contains(name)
+            }
+          if !rest.isEmpty { kept.append(rest.joined(separator: "&")) }
         }
       }
       _ = out.entries.removeValue(forKey: k)

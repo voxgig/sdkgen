@@ -92,16 +92,15 @@ function definitionPlan(ctx$) {
                 for (const arg of point.g?.query || []) {
                     if (false === arg.a || undefined !== selected[arg.n] || elsewhere.has(arg.n))
                         continue;
+                    const shared = cookies.find((c) => c.name === arg.n) ?? headers.find((h) => h.name === arg.n);
                     const def = params.find((p) => 'query' === p?.in && (arg.or || arg.n) === p?.name);
-                    selected[arg.n] = scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'v1';
+                    selected[arg.n] = shared?.value ?? scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'v1';
                 }
                 // Create and update send their input as the body: only a match has a query.
                 const queryArgs = 'create' === op || 'update' === op ? [] :
                     (point.g?.query || [])
                         .filter((arg) => undefined !== selected[arg.n] &&
-                        !args.some((a) => a.name === arg.n) &&
-                        !headers.some((h) => h.name === arg.n) &&
-                        !cookies.some((c) => c.name === arg.n))
+                        !args.some((a) => a.name === arg.n))
                         .map((arg) => ({ name: arg.n, wire: String(arg.or || arg.n) }))
                         .filter((q) => params.some((p) => 'query' === p?.in && q.wire === p?.name));
                 const success = successResponse(facts.responses);

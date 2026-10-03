@@ -161,8 +161,9 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
       val given = out.remove(key)
       if (given is String) {
         for (piece in given.split(";")) {
-          val cookie = piece.trim()
-          if (cookie.isNotEmpty() && cookie.substringBefore("=").trim() !in names) kept.add(cookie)
+          val rest = piece.split("&").map { it.trim() }
+            .filter { it.isNotEmpty() && it.substringBefore("=").trim() !in names }
+          if (rest.isNotEmpty()) kept.add(rest.joinToString("&"))
         }
       }
     }

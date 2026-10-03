@@ -187,8 +187,23 @@ voxgig_value* prepare_headers_util(Context* ctx) {
           char* piece = (char*)malloc(plen + 1);
           memcpy(piece, text, plen);
           piece[plen] = '\0';
-          char* cookie = trim_blank(piece);
-          if ('\0' != *cookie && !cookie_sent(cl, cookie)) join_part(&joined, &jlen, "; ", cookie);
+          char* rest = NULL;
+          size_t rlen = 0;
+          const char* sub = piece;
+          while ('\0' != *sub) {
+            size_t slen = strcspn(sub, "&");
+            char* part = (char*)malloc(slen + 1);
+            memcpy(part, sub, slen);
+            part[slen] = '\0';
+            char* pair = trim_blank(part);
+            if ('\0' != *pair && !cookie_sent(cl, pair)) join_part(&rest, &rlen, "&", pair);
+            free(part);
+            sub += slen + ('&' == sub[slen] ? 1 : 0);
+          }
+          if (NULL != rest) {
+            join_part(&joined, &jlen, "; ", rest);
+            free(rest);
+          }
           free(piece);
           text += plen + (';' == text[plen] ? 1 : 0);
         }

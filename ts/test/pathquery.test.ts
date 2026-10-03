@@ -334,6 +334,13 @@ describe('prepareHeaders', () => {
         { prefs: { 'x y': 'new' } }, { Cookie: 'x%20y=old; theme=dark' })),
       { cookie: 'theme=dark; SESSIONID=s1; x%20y=new' })
     })
+
+    // A default written in the same form style, `&`-joined, is replaced pair by pair.
+    test(lang + ': a map cookie argument replaces a default inside an &-joined cookie', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' },
+        { prefs: { 'x y': 'new' } }, { Cookie: 'lang=old&x%20y=old; theme=dark' })),
+      { cookie: 'lang=old; theme=dark; SESSIONID=s1; x%20y=new' })
+    })
   }
 
 

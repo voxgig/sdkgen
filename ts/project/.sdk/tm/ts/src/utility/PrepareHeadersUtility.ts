@@ -40,8 +40,9 @@ function prepareHeaders(ctx: Context) {
       if ('cookie' !== key.toLowerCase()) continue
       if ('string' === typeof out[key]) {
         for (const piece of out[key].split(';')) {
-          const cookie = piece.trim()
-          if ('' !== cookie && !names.includes(cookie.split('=')[0].trim())) kept.push(cookie)
+          const rest = piece.split('&').map((pair: string) => pair.trim())
+            .filter((pair: string) => '' !== pair && !names.includes(pair.split('=')[0].trim()))
+          if (0 < rest.length) kept.push(rest.join('&'))
         }
       }
       delete out[key]

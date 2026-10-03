@@ -714,9 +714,12 @@ let prepare_headers_util (ctx : ctx) : value =
         match getp out k with
         | Str s ->
           List.filter_map (fun piece ->
-              let cookie = String.trim piece in
-              let name = String.trim (List.hd (String.split_on_char '=' cookie)) in
-              if cookie = "" || List.mem name names then None else Some cookie)
+              let rest = List.filter_map (fun part ->
+                  let pair = String.trim part in
+                  let name = String.trim (List.hd (String.split_on_char '=' pair)) in
+                  if pair = "" || List.mem name names then None else Some pair)
+                  (String.split_on_char '&' piece) in
+              if rest = [] then None else Some (String.concat "&" rest))
             (String.split_on_char ';' s)
         | _ -> []) given) in
     List.iter (fun k -> ignore (delprop out (Str k))) given;

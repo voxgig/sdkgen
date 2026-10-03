@@ -1632,19 +1632,27 @@ pub fn prepare_headers_util(ctx: *Context) Value {
             if (removed.value != .string) continue;
             var pieces = std.mem.splitScalar(u8, removed.value.string, ';');
             while (pieces.next()) |piece| {
-                const cookie = std.mem.trim(u8, piece, " \t");
-                if (0 == cookie.len) continue;
-                const eq = std.mem.indexOfScalar(u8, cookie, '=') orelse cookie.len;
-                const name = std.mem.trim(u8, cookie[0..eq], " \t");
-                var replaced = false;
-                for (sent.items) |arg| {
-                    if (arg.val == .object) {
-                        for (h.keysof_vec(arg.val)) |key| {
-                            if (std.mem.eql(u8, h.esc_url(key), name)) replaced = true;
-                        }
-                    } else if (std.mem.eql(u8, arg.wire, name)) replaced = true;
+                var rest: std.ArrayList([]const u8) = .empty;
+                var parts = std.mem.splitScalar(u8, piece, '&');
+                while (parts.next()) |part| {
+                    const pair = std.mem.trim(u8, part, " \t");
+                    if (0 == pair.len) continue;
+                    const eq = std.mem.indexOfScalar(u8, pair, '=') orelse pair.len;
+                    const name = std.mem.trim(u8, pair[0..eq], " \t");
+                    var replaced = false;
+                    for (sent.items) |arg| {
+                        if (arg.val == .object) {
+                            for (h.keysof_vec(arg.val)) |key| {
+                                if (std.mem.eql(u8, h.esc_url(key), name)) replaced = true;
+                            }
+                        } else if (std.mem.eql(u8, arg.wire, name)) replaced = true;
+                    }
+                    if (!replaced) rest.append(h.A(), pair) catch {};
                 }
-                if (!replaced) kept.append(h.A(), cookie) catch {};
+                if (0 < rest.items.len) {
+                    const joined_rest = std.mem.join(h.A(), "&", rest.items) catch continue;
+                    kept.append(h.A(), joined_rest) catch {};
+                }
             }
         }
         for (sent.items) |arg| {

@@ -817,10 +817,13 @@
                               :let [v (.get ^java.util.Map out k)]
                               :when (string? v)
                               piece (str/split v #";")
-                              :let [cookie (str/trim piece)
-                                    name (str/trim (first (str/split cookie #"=" 2)))]
-                              :when (and (not= "" cookie) (not (contains? names name)))]
-                          cookie))
+                              :let [rest (vec (for [part (str/split piece #"&")
+                                                    :let [pair (str/trim part)
+                                                          name (str/trim (first (str/split pair #"=" 2)))]
+                                                    :when (and (not= "" pair) (not (contains? names name)))]
+                                                pair))]
+                              :when (seq rest)]
+                          (str/join "&" rest)))
               pairs (vec (for [[wire v] sent
                                :let [pair (cookie-pair wire v)]
                                :when (not= "" pair)]

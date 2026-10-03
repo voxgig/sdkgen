@@ -76,10 +76,16 @@ local function prepare_headers_util(ctx)
       if type(key) == "string" and string.lower(key) == "cookie" then
         if type(given) == "string" then
           for piece in string.gmatch(given .. ";", "([^;]*);") do
-            local cookie = piece:match("^%s*(.-)%s*$")
-            local name = cookie:match("^([^=]*)"):match("^%s*(.-)%s*$")
-            if cookie ~= "" and not names[name] then
-              kept[#kept + 1] = cookie
+            local rest = {}
+            for part in string.gmatch(piece .. "&", "([^&]*)&") do
+              local pair = part:match("^%s*(.-)%s*$")
+              local name = pair:match("^([^=]*)"):match("^%s*(.-)%s*$")
+              if pair ~= "" and not names[name] then
+                rest[#rest + 1] = pair
+              end
+            end
+            if #rest > 0 then
+              kept[#kept + 1] = table.concat(rest, "&")
             end
           end
         end

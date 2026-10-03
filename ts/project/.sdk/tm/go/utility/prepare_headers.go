@@ -55,9 +55,15 @@ func prepareHeadersUtil(ctx *core.Context) map[string]any {
 			}
 			if given, ok := val.(string); ok {
 				for _, piece := range strings.Split(given, ";") {
-					cookie := strings.TrimSpace(piece)
-					if "" != cookie && !names[strings.TrimSpace(strings.SplitN(cookie, "=", 2)[0])] {
-						kept = append(kept, cookie)
+					rest := []string{}
+					for _, part := range strings.Split(piece, "&") {
+						pair := strings.TrimSpace(part)
+						if "" != pair && !names[strings.TrimSpace(strings.SplitN(pair, "=", 2)[0])] {
+							rest = append(rest, pair)
+						}
+					}
+					if 0 < len(rest) {
+						kept = append(kept, strings.Join(rest, "&"))
 					}
 				}
 			}

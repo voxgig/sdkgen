@@ -174,8 +174,9 @@ object PrepareHeaders {
           e.getValue match {
             case s: String =>
               s.split(";").foreach { piece =>
-                val cookie = piece.trim
-                if (cookie.nonEmpty && !names.contains(cookie.split("=", 2)(0).trim)) kept += cookie
+                val rest = piece.split("&").map(_.trim)
+                  .filter(pair => pair.nonEmpty && !names.contains(pair.split("=", 2)(0).trim))
+                if (rest.nonEmpty) kept += rest.mkString("&")
               }
             case _ =>
           }

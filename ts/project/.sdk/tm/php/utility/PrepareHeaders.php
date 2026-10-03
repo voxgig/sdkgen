@@ -58,9 +58,10 @@ class ProjectNamePrepareHeaders
                     continue;
                 }
                 foreach (explode(';', $given) as $piece) {
-                    $cookie = trim($piece);
-                    if ('' !== $cookie && !in_array(trim(explode('=', $cookie, 2)[0]), $names, true)) {
-                        $kept[] = $cookie;
+                    $rest = array_values(array_filter(array_map('trim', explode('&', $piece)),
+                        fn($pair) => '' !== $pair && !in_array(trim(explode('=', $pair, 2)[0]), $names, true)));
+                    if (0 < count($rest)) {
+                        $kept[] = implode('&', $rest);
                     }
                 }
             }
