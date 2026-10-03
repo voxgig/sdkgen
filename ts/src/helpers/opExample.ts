@@ -1,7 +1,7 @@
 
 import { each } from 'jostraca'
 import { canonKey } from './canonType'
-import { opRequestShape, entityIdField } from './opShape'
+import { opRequestShape, opParams, entityIdField } from './opShape'
 
 import { phpEntityAccessor } from './naming'
 
@@ -82,15 +82,16 @@ function matchArg(
 }
 
 
-// An update whose only required member is its id also changes a field.
+// An update that only addresses its record, by id and route, also changes a field.
 function dataArg(lang: LiteralLang, ent: any, op: string, idF: string | null): string {
+  const routed = new Set(opParams(ent?.op?.[op]).map((p: any) => p.n))
+  const addresses = (it: any) => it.name === idF || it.name === 'id' || routed.has(it.name)
   const items = opRequestShape(ent, op).items
     .filter((it: any) =>
       (it.name !== idF && it.name !== 'id') || !it.optional)
   const required = items.filter((it: any) => !it.optional)
-  const changed = 'update' === op &&
-    required.every((it: any) => it.name === idF || it.name === 'id') ?
-    items.filter((it: any) => it.optional).slice(0, 1) : []
+  const changed = 'update' === op && required.every(addresses) ?
+    items.filter((it: any) => it.optional && !addresses(it)).slice(0, 1) : []
   const chosen = required.length ? [...required, ...changed] : items.slice(0, 3)
   const pairs = chosen.map((it: any) => litPair(lang, it.name, litFor(lang, it.type)))
   switch (lang) {

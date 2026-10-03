@@ -226,15 +226,23 @@ async function generateBeside(targets: string[], root: string, extra?: string): 
 
 
 // The tools a built MCP server lists over stdio, as an agent host asks.
-function mcpToolList(bin: string): Promise<any[]> {
+// The server's tools/list, and its answer to each tools/call given.
+function mcpSession(bin: string, calls: any[] = []): Promise<{ tools: any[], answers: any[] }> {
   const proc = spawn(bin, ['-transport', 'stdio'], { stdio: ['pipe', 'pipe', 'inherit'] })
   const send = (msg: any) => proc.stdin!.write(JSON.stringify(msg) + '\n')
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       proc.kill('SIGKILL')
-      reject(new Error('the MCP server did not answer tools/list'))
+      reject(new Error('the MCP server did not answer tools/list and each call'))
     }, RUN_TIMEOUT_MS)
     let seen = ''
+    let tools: any[] = []
+    const answers: any[] = []
+    const finish = () => {
+      clearTimeout(timer)
+      proc.kill('SIGKILL')
+      resolve({ tools, answers })
+    }
     proc.on('error', (err) => { clearTimeout(timer); reject(err) })
     proc.stdout!.on('data', (chunk) => {
       seen += String(chunk)
@@ -247,9 +255,13 @@ function mcpToolList(bin: string): Promise<any[]> {
           send({ jsonrpc: '2.0', id: 2, method: 'tools/list' })
         }
         else if (2 === msg.id) {
-          clearTimeout(timer)
-          proc.kill('SIGKILL')
-          resolve(msg.result.tools)
+          tools = msg.result.tools
+          calls.forEach((params, i) => send({ jsonrpc: '2.0', id: 3 + i, method: 'tools/call', params }))
+          if (0 === calls.length) finish()
+        }
+        else if (3 <= msg.id) {
+          answers[msg.id - 3] = msg
+          if (calls.length === answers.filter((a) => null != a).length) finish()
         }
       }
     })
@@ -589,30 +601,39 @@ describe('generated SDK compiles', () => {
       const built = run(go, ['build', '-o', bin, '.'], server)
       ok(built.ok, 'generated go-mcp does not build:\n' + tail(built.out))
 
-      const tools = Object.fromEntries((await mcpToolList(bin)).map((tool: any) => [tool.name, {
+      // moon has no update, so the update tool must refuse it before it runs.
+      const session = await mcpSession(bin, [
+        { name: 'demo_update', arguments: { entity: 'moon', data: { id: 'm01', title: 'x' } } },
+      ])
+      const tools = Object.fromEntries(session.tools.map((tool: any) => [tool.name, {
         hints: tool.annotations,
         required: tool.inputSchema.required,
         entity: tool.inputSchema.properties.entity.description,
+        enum: tool.inputSchema.properties.entity.enum,
       }]))
+      const served = (names: string[]) => ({ entity: 'one of: ' + names.join(' | '), enum: names })
       deepStrictEqual(tools, {
         demo_list: {
           hints: { readOnlyHint: true }, required: ['entity'],
-          entity: 'one of: console | graph_ql | history | moon | planet | record | utility',
+          ...served(['console', 'graph_ql', 'history', 'moon', 'planet', 'record', 'utility']),
         },
         demo_load: {
           hints: { readOnlyHint: true }, required: ['entity', 'query'],
-          entity: 'one of: ambient | moon | planet | signal',
+          ...served(['ambient', 'moon', 'planet', 'signal']),
         },
         demo_create: {
-          hints: { destructiveHint: false }, required: ['entity', 'data'], entity: 'one of: planet',
+          hints: { destructiveHint: false }, required: ['entity', 'data'], ...served(['planet']),
         },
         demo_update: {
-          hints: { destructiveHint: true }, required: ['entity', 'data'], entity: 'one of: planet',
+          hints: { destructiveHint: true }, required: ['entity', 'data'], ...served(['planet']),
         },
         demo_remove: {
-          hints: { destructiveHint: true }, required: ['entity', 'query'], entity: 'one of: planet',
+          hints: { destructiveHint: true }, required: ['entity', 'query'], ...served(['planet']),
         },
       })
+      const refused = JSON.stringify(session.answers[0])
+      ok(/enum/.test(refused) && /moon/.test(refused),
+        'go-mcp: the update tool did not refuse an entity it does not serve: ' + refused)
     })
 
 

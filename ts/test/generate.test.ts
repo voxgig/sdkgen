@@ -4340,6 +4340,29 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const update = JSON.parse(readme.match(/_update: change a record's fields\n(\{.*\})/)![1])
     ok(Object.keys(update.data).some((key) => 'id' !== key),
       'go-mcp: the update example changes no field: ' + JSON.stringify(update))
+
+    // Under its planet, moon's update needs planet_id too, which is routing
+    // as much as its id is: the example still changes a field.
+    const moonUpdate = `main: kit: entity: moon: op: update: {
+  name: "update"
+  points: [ {
+    g: { params: [
+      { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" }
+      { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "m01" }
+    ] }
+    m: "PUT", o: "/planet/{planet_id}/moon/{id}"
+    s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "moon" }, { var: "id" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  } ]
+}
+`
+    const nested = await generate(['go', 'go-mcp'], undefined,
+      ROUTING_MODEL + off + moonUpdate + "main: kit: target: 'go-mcp': tool: write: true")
+    const nestedUpdate = JSON.parse(findFile(nested, 'go-mcp/README.md')!
+      .match(/_update: change a record's fields\n(\{.*\})/)![1])
+    strictEqual(nestedUpdate.entity, 'moon')
+    ok(Object.keys(nestedUpdate.data).some((key) => !['id', 'planet_id'].includes(key)),
+      'go-mcp: the nested update example changes no field: ' + JSON.stringify(nestedUpdate))
   })
 
 

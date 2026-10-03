@@ -630,9 +630,9 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/go-mcp.aontu 8e5723cdb2fe
 model/target/target-index.aontu d043228b9b1a
-src/cmp/go-mcp/Main_go-mcp.ts 37e93220d059
+src/cmp/go-mcp/Main_go-mcp.ts e7107a3ee69f
 src/cmp/go-mcp/fragment/main.fragment.go 26cd4ae5eee2
-src/cmp/go-mcp/fragment/tools.fragment.go fd1e222e86d8
+src/cmp/go-mcp/fragment/tools.fragment.go e9b3532c5742
 tm/go-mcp/src/feature/README.md 2c5a3094a7ed
 tm/go-mcp/src/feature/base/.gitkeep e3b0c44298fc
 tm/go-mcp/src/feature/test/.gitkeep e3b0c44298fc

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	sdk "GOMODULE"
 )
@@ -14,6 +15,21 @@ import (
 
 func registerTools(server *mcp.Server, client *sdk.ProjectNameSDK) {
 	// <[SLOT:toolRegistrations]>
+}
+
+// entitySchema is the schema inferred from In, its entity limited to the
+// entities the tool serves.
+func entitySchema[In any](names ...string) *jsonschema.Schema {
+	schema, err := jsonschema.For[In](nil)
+	if err != nil {
+		panic(err)
+	}
+	enum := make([]any, len(names))
+	for i, name := range names {
+		enum[i] = name
+	}
+	schema.Properties["entity"].Enum = enum
+	return schema
 }
 
 func runOp(_ context.Context, client *sdk.ProjectNameSDK, op string, entity string, input map[string]any) (*mcp.CallToolResult, any, error) {
