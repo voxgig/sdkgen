@@ -13,10 +13,10 @@ import type { FeatureDoc } from './FeatureDocs'
 import {
   entityPrimaryOp, entityIdField, opRequestShape, entityPath, entityActions,
 } from '../helpers/opShape'
-import { matchArg, idLiteral, primaryOpCall } from '../helpers/opExample'
+import { EXAMPLE_LANGS, matchArg, idLiteral, primaryOpCall } from '../helpers/opExample'
 import { mcpTools, MCP_WRITE_OPS } from '../helpers/mcpTools'
 import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
-import { canonKey } from '../helpers/canonType'
+import { canonScalarKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName } from '../helpers/naming'
 
 import {
@@ -40,7 +40,8 @@ const VOXGIG_SDK = 'https://voxgig.com/sdk/'
 // type sentinel — mirrors the per-language `exampleValue`, but inline because
 // this neutral component renders the intro `ts` block directly.
 function tsExampleLiteral(type: any): string {
-  const k = canonKey(type)
+  const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '[]'
@@ -58,10 +59,6 @@ function pickLeadTarget(sdkTargets: any[]): any | undefined {
   return sdkTargets[0]
 }
 
-
-// The languages the example helpers can write, in the order a reader is
-// likeliest to want one.
-const EXAMPLE_LANGS: ExampleLang[] = ['ts', 'js', 'py', 'go', 'php', 'rb', 'lua']
 
 const EXAMPLE_FENCE: Record<string, string> = {
   ts: 'ts', js: 'js', py: 'python', go: 'go', php: 'php', rb: 'ruby', lua: 'lua',

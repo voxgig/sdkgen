@@ -74,7 +74,9 @@ import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityC
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
 import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools'
 import type { McpTool } from './helpers/mcpTools'
-import { primaryOpCall, idLiteral, requiredItems, matchArg, listMatchArg, dataArg, litFor } from './helpers/opExample'
+import {
+  primaryOpCall, idLiteral, requiredItems, matchArg, listMatchArg, dataArg, javaMap, javaMapOf, litFor,
+} from './helpers/opExample'
 import type { ExampleLang, LiteralLang } from './helpers/opExample'
 import { liveStrict, liveStrictNote, liveFlowNeeds } from './helpers/testPolicy'
 import type { LiveFlowNeeds } from './helpers/testPolicy'
@@ -1160,6 +1162,8 @@ export {
   requiredItems,
   matchArg,
   listMatchArg,
+  javaMap,
+  javaMapOf,
   dataArg,
   litFor,
   featureOf,

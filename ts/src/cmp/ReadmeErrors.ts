@@ -7,8 +7,8 @@ import {
 } from '../types'
 
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
-import { primaryOpCall } from '../helpers/opExample'
-import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
+import { helperLang, primaryOpCall } from '../helpers/opExample'
+import type { PrimaryCall } from '../helpers/opExample'
 import { safeVarName, exampleVarName } from '../helpers/naming'
 
 
@@ -226,7 +226,7 @@ const ReadmeErrors = cmp(function ReadmeErrors(props: any) {
     const eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))
     const eLower = exampleVarName(eName.toLowerCase(), target.name)
     const idF = entityIdField(ex)
-    const call = primaryOpCall(target.name as ExampleLang, eName, eLower, primaryOp, idF, ex)
+    const call = primaryOpCall(helperLang(target.name), eName, eLower, primaryOp, idF, ex)
     Content(lang.entity(call, primaryOp))
   }
 

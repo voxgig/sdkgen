@@ -6,6 +6,7 @@ import {
   camelify,
   canonScalarKey,
   requiredItems,
+  javaMapOf,
 } from '@voxgig/sdkgen'
 
 import {
@@ -116,7 +117,7 @@ function scalaListMatch(entity: any): string {
     (({ INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'java.util.List.of()', OBJECT: 'java.util.Map.of()' }) as any)[canonScalarKey(type)] ?? '"example"'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `java.util.Map.of(${items.map((it: any) => `"${it.name}", ${lit(it.type)}`).join(', ')})`
+    ? javaMapOf(items.map((it: any) => `"${it.name}", ${lit(it.type)}`), 'java.util.')
     : 'null'
 }
 

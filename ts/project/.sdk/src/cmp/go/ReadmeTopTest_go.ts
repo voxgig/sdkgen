@@ -11,6 +11,7 @@ import {
 // A type-correct Go literal for a field's canonical type.
 function goLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '[]any{}'

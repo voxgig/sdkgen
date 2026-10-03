@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { ocamlVarName } from './utility_ocaml'
+import { ocamlVarName, ocamlListMatch } from './utility_ocaml'
 
 
 // A type-correct OCaml `value` literal for a field's canonical type. Strings
@@ -153,7 +153,7 @@ let ${fn}_data = ${fn}.e_data_get ()
 
 \`\`\`ocaml
 (* One ENTITY per record. *)
-let ${fn}s = (Sdk_client.${fn} client Noval).e_list (empty_map ()) Noval
+let ${fn}s = (Sdk_client.${fn} client Noval).e_list ${ocamlListMatch(entity)} Noval
 let ${fn}_datas = List.map (fun e -> e.e_data_get ()) ${fn}s
 \`\`\`
 

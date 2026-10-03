@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -76,9 +76,9 @@ println(${eVar}List)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
-        ? `java.util.Map.of(${loadItems.map((it: any) =>
+        ? javaMapOf(loadItems.map((it: any) =>
           `"${it.name}", ${scalaLit(it.type,
-            it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')})`
+            it.name === idF ? 'example_id' : 'example_' + it.name)}`), 'java.util.')
         : 'null'
       Content(`
 // Load a specific ${eNameLower} (returns the record, raises on error)

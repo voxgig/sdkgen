@@ -11,6 +11,7 @@ import {
 // A type-correct PHP literal for a field's canonical type.
 function phpLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '[]'

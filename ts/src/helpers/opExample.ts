@@ -1,6 +1,6 @@
 
 import { each } from 'jostraca'
-import { canonKey } from './canonType'
+import { canonScalarKey } from './canonType'
 import { opRequestShape, opParams, entityIdField } from './opShape'
 
 import { phpEntityAccessor } from './naming'
@@ -11,15 +11,30 @@ type ExampleLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go'
 // The languages a literal is written in: the call languages, and JSON.
 type LiteralLang = ExampleLang | 'json'
 
+// The call languages, in the order a reader is likeliest to want one.
+const EXAMPLE_LANGS: ExampleLang[] = ['ts', 'js', 'py', 'go', 'php', 'rb', 'lua']
+
+
+// The language of a section shared by every target: its own, else TypeScript.
+function helperLang(target: string): ExampleLang {
+  return EXAMPLE_LANGS.includes(target as ExampleLang) ? target as ExampleLang : 'ts'
+}
+
 
 function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
 
+const NULL_LIT: Record<LiteralLang, string> = {
+  ts: 'null', js: 'null', py: 'None', php: 'null', rb: 'nil', lua: 'nil', go: 'nil', json: 'null',
+}
+
+
 // A type-correct literal for a canonical type sentinel, in the target language.
 function litFor(lang: LiteralLang, type: any): string {
-  const k = canonKey(type)
+  const k = canonScalarKey(type)
+  if ('NULL' === k) return NULL_LIT[lang]
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'py' === lang ? 'True' : ('rb' === lang ? 'true' : 'true')
   if ('ARRAY' === k) return ('lua' === lang) ? '{}' : ('go' === lang ? '[]any{}' : '[]')
@@ -43,7 +58,7 @@ function litFor(lang: LiteralLang, type: any): string {
 function idLiteral(ent: any, op: string, idF: string | null): string {
   if (null == idF) return '"example_id"'
   const item = opRequestShape(ent, op).items.find((it: any) => it.name === idF)
-  const k = canonKey(item && item.type)
+  const k = canonScalarKey(item && item.type)
   return ('INTEGER' === k || 'NUMBER' === k) ? '1' : '"example_id"'
 }
 
@@ -84,6 +99,22 @@ function matchArg(
     case 'go': return `map[string]any{${pairs.join(', ')}}`
     default: return `{ ${pairs.join(', ')} }`
   }
+}
+
+
+// Java's Map.of has an overload per pair count up to ten, and Map.ofEntries takes any.
+function javaMap(count: number, pkg = ''): { open: string, pair: (kv: string) => string } {
+  const many = 10 < count
+  return {
+    open: pkg + (many ? 'Map.ofEntries(' : 'Map.of('),
+    pair: (kv: string) => many ? pkg + 'Map.entry(' + kv + ')' : kv,
+  }
+}
+
+
+function javaMapOf(pairs: string[], pkg = ''): string {
+  const map = javaMap(pairs.length, pkg)
+  return map.open + pairs.map(map.pair).join(', ') + ')'
 }
 
 
@@ -170,12 +201,16 @@ function primaryOpCall(
 
 
 export {
+  EXAMPLE_LANGS,
+  helperLang,
   primaryOpCall,
   idLiteral,
   requiredItems,
   matchArg,
   listMatchArg,
   dataArg,
+  javaMap,
+  javaMapOf,
   litFor,
 }
 

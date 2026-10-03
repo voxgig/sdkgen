@@ -24,7 +24,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 
 import {
-  makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData, searchOnly,
+  makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData, searchOnly, listOnly,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
@@ -471,6 +471,8 @@ describe('generated SDK compiles', () => {
   for (const [what, dir, extra] of [
     ['the examples', 'ts-readme', undefined],
     ['a list example with its required parameters', 'ts-readme-search', searchOnly()],
+    ['a list example with a nullable and a null-only parameter', 'ts-readme-nullable',
+      listOnly('tally', [['n', '["`$ONE`", ["`$INTEGER`", "`$NULL`"]]'], ['z', '"`$NULL`"']])],
   ] as [string, string, string | undefined][]) {
     test('typescript: the README example tests type-check and run ' + what, async () => {
       ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')

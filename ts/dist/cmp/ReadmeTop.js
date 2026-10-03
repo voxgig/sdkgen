@@ -17,7 +17,9 @@ const VOXGIG_SDK = 'https://voxgig.com/sdk/';
 // type sentinel — mirrors the per-language `exampleValue`, but inline because
 // this neutral component renders the intro `ts` block directly.
 function tsExampleLiteral(type) {
-    const k = (0, canonType_1.canonKey)(type);
+    const k = (0, canonType_1.canonScalarKey)(type);
+    if ('NULL' === k)
+        return 'null';
     if ('INTEGER' === k || 'NUMBER' === k)
         return '1';
     if ('BOOLEAN' === k)
@@ -34,15 +36,12 @@ function installCommand(target, model) {
 function pickLeadTarget(sdkTargets) {
     return sdkTargets[0];
 }
-// The languages the example helpers can write, in the order a reader is
-// likeliest to want one.
-const EXAMPLE_LANGS = ['ts', 'js', 'py', 'go', 'php', 'rb', 'lua'];
 const EXAMPLE_FENCE = {
     ts: 'ts', js: 'js', py: 'python', go: 'go', php: 'php', rb: 'ruby', lua: 'lua',
 };
 function exampleLang(model, sdkTargets) {
     const langs = sdkTargets.map((t) => (0, packageMeta_1.originName)(model, t.name));
-    return EXAMPLE_LANGS.find((lang) => langs.includes(lang));
+    return opExample_1.EXAMPLE_LANGS.find((lang) => langs.includes(lang));
 }
 // A client and one call in a language other than ts, whose example
 // ReadmeTop builds itself.

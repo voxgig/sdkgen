@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, opNeedsAction, javaMap, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -123,9 +123,9 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
-        ? `java.util.Map.of(${loadItems.map((it: any) =>
+        ? javaMapOf(loadItems.map((it: any) =>
           `"${it.name}", ${scalaLit(it.type,
-            it.name === idF ? entity.name + '_id' : it.name)}`).join(', ')})`
+            it.name === idF ? entity.name + '_id' : it.name)}`), 'java.util.')
         : 'null'
       Content(`#### Example: Load
 
@@ -152,14 +152,15 @@ val ${eVar}List = client.${accessor}(null).list(${scalaListMatch(entity)}, null)
       // required id and parent keys like page_id — with a real literal.
       const createItems = opRequestShape(entity, 'create').items
         .filter((it: any) => !it.optional)
+      const createMap = javaMap(createItems.length, 'java.util.')
       Content(`#### Example: Create
 
 \`\`\`scala
-val ${eVar} = client.${accessor}(null).create(java.util.Map.of(
+val ${eVar} = client.${accessor}(null).create(${createMap.open}
 `)
       createItems.map((it: any, i: number) => {
         const comma = i < createItems.length - 1 ? ',' : ''
-        Content(`    "${it.name}", ${scalaLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, target.name)}
+        Content(`    ${createMap.pair(`"${it.name}", ${scalaLit(it.type, 'example_' + it.name)}`)}${comma}  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`), null)

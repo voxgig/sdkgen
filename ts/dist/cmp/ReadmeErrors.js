@@ -199,7 +199,7 @@ const ReadmeErrors = (0, jostraca_1.cmp)(function ReadmeErrors(props) {
         const eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1));
         const eLower = (0, naming_1.exampleVarName)(eName.toLowerCase(), target.name);
         const idF = (0, opShape_1.entityIdField)(ex);
-        const call = (0, opExample_1.primaryOpCall)(target.name, eName, eLower, primaryOp, idF, ex);
+        const call = (0, opExample_1.primaryOpCall)((0, opExample_1.helperLang)(target.name), eName, eLower, primaryOp, idF, ex);
         (0, jostraca_1.Content)(lang.entity(call, primaryOp));
     }
     (0, jostraca_1.Content)(lang.direct);

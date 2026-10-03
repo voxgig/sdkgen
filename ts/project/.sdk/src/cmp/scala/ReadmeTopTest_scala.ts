@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -48,16 +48,16 @@ val client = ${SDK}.testSDK(null, null)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
-        ? `java.util.Map.of(${items.map((it: any) =>
-          `"${it.name}", ${it.name === idF ? '"test01"' : scalaLit(it.type)}`).join(', ')})`
+        ? javaMapOf(items.map((it: any) =>
+          `"${it.name}", ${it.name === idF ? '"test01"' : scalaLit(it.type)}`), 'java.util.')
         : 'null'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
-      arg = `java.util.Map.of(${chosen.map((it: any) =>
-        `"${it.name}", ${scalaLit(it.type)}`).join(', ')})`
+      arg = javaMapOf(chosen.map((it: any) =>
+        `"${it.name}", ${scalaLit(it.type)}`), 'java.util.')
     }
     const eVar = scalaVarName(exampleEntity.name) + ('list' === primaryOp ? 'List' : '')
     const accessor = scalaVarName(exampleEntity.name)

@@ -17,7 +17,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, entityOnly,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity,
 } from './generateharness'
@@ -147,6 +147,21 @@ async function generate(
 // are exactly those under `<target>/`.
 function filesFor(out: Record<string, string>, target: string): [string, string][] {
   return Object.entries(out).filter(([p]) => p.startsWith(target + '/'))
+}
+
+
+// Every list call the docs of one target make on an entity, a call that breaks
+// after its open parenthesis read with its next line; comments and table rows
+// left out.
+function listCalls(out: Record<string, string>, target: string, entity: RegExp): string[] {
+  return Object.keys(out)
+    .filter((path: string) => path.startsWith(target + '/') && path.endsWith('.md'))
+    .flatMap((path: string) => out[path].split('\n')
+      .map((line: string, i: number, lines: string[]) =>
+        /\(\s*$/.test(line) ? line + ' ' + lines[i + 1] : line)
+      .filter((line: string) => /(\.|:|->|\/)(e_)?(list|List)\b/.test(line) && entity.test(line))
+      .filter((line: string) => !/^\s*(\/\/|#|--|\||-|\*|;|\(\*)/.test(line) && !/Value::List\(/.test(line))
+      .map((line: string) => path + ': ' + line.trim()))
 }
 
 
@@ -4468,26 +4483,120 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
     const out = await generate(targets, undefined, searchOnly())
 
-    const calls = (text: string) => text.split('\n')
-      .map((line: string, i: number, lines: string[]) =>
-        /\(\s*$/.test(line) ? line + ' ' + lines[i + 1] : line)
-      .filter((line: string) => /(\.|:|->|\/)(list|List)\b/.test(line) && /[Ss]earch/.test(line))
-      .filter((line: string) => !/^\s*(\/\/|#|--|\||-|\*|;|\(\*)/.test(line) && !/Value::List\(/.test(line))
-
     const bare: string[] = []
     for (const target of targets) {
-      const docs = Object.keys(out).filter((path: string) =>
-        path.startsWith(target + '/') && path.endsWith('.md'))
-      const found = docs.flatMap((path: string) => calls(out[path]).map((line) => path + ': ' + line.trim()))
+      const found = listCalls(out, target, /[Ss]earch/)
       ok(0 < found.length, target + ': no list example found')
       bare.push(...found.filter((line: string) => !/engine/.test(line) || !/\bq\b/.test(line)))
     }
-    bare.push(...calls(out['README.md']).filter((line: string) => !/engine/.test(line) || !/\bq\b/.test(line)))
+    bare.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Ss]earch/)
+      .filter((line: string) => !/engine/.test(line) || !/\bq\b/.test(line)))
     deepStrictEqual(bare, [], 'list examples without the required engine and q:\n' + bare.join('\n'))
 
     const seed = out['README.md'].slice(out['README.md'].indexOf('SDK.test({'))
     ok(/engine: 'example_engine', q: 'example_q'/.test(seed.slice(0, seed.indexOf('```'))),
       'ts: the mock seed lacks the values the list example matches on')
+  })
+
+
+  test('a Java or Scala map of more than ten pairs is built with Map.ofEntries', async () => {
+    const wide = Array.from({ length: 11 }, (_, i): [string, string] => ['p' + i, '"`$STRING`"'])
+    const out = await generate(['java', 'scala'], undefined, listOnly('wide', wide))
+
+    const argCounts = (text: string): number[] => {
+      const counts: number[] = []
+      for (const m of text.matchAll(/\bMap\.of\(/g)) {
+        let depth = 1
+        let args = 1
+        let quoted = false
+        for (let i = m.index! + m[0].length; i < text.length && 0 < depth; i++) {
+          const c = text[i]
+          if (quoted) quoted = '"' !== c || '\\' === text[i - 1]
+          else if ('"' === c) quoted = true
+          else if ('(' === c || '[' === c || '{' === c) depth++
+          else if (')' === c || ']' === c || '}' === c) depth--
+          else if (',' === c && 1 === depth) args++
+        }
+        counts.push(args)
+      }
+      return counts
+    }
+
+    for (const target of ['java', 'scala']) {
+      const docs = Object.keys(out).filter((path) => path.startsWith(target + '/') && path.endsWith('.md'))
+      const text = docs.map((path) => out[path]).join('\n')
+      deepStrictEqual(argCounts(text).filter((n) => 20 < n), [],
+        target + ': a Map.of call passes more than ten pairs')
+      ok(/Map\.ofEntries\((java\.util\.)?Map\.entry\("p0", "example"\)/.test(text) && /Map\.entry\("p10", "example"\)/.test(text),
+        target + ': the list example of eleven parameters is not built with Map.ofEntries')
+    }
+  })
+
+
+  test('a list example writes a nullable parameter as its type, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined,
+      listOnly('tally', [['n', '["`$ONE`", ["`$INTEGER`", "`$NULL`"]]']]))
+
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Tt]ally/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => /example|undefined/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'list examples that write an INTEGER | NULL parameter as a string:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('a list example writes a null-only parameter as null in a shared section', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, listOnly('tally', [['z', '"`$NULL`"']]))
+
+    // Every other target's shared sections are written in TypeScript.
+    const pair: Record<string, string> = {
+      ts: 'z: null', js: 'z: null', py: '"z": None', php: '"z" => null',
+      rb: '"z" => nil', lua: 'z = nil', go: '"z": nil',
+    }
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Tt]ally/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => /undefined/.test(line) || (null != pair[target]
+        ? !line.includes(pair[target])
+        : /\.list\(\{/.test(line) && !line.includes(pair.ts))))
+    }
+    deepStrictEqual(wrong, [], 'list examples that do not write a NULL parameter as null:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('the root README writes a nullable create field as its type, and a null-only one as null', async () => {
+    const out = await generate(['ts'], undefined, entityOnly(`
+main: kit: entity: note: {
+  alias: field: {}
+  name: "note"
+  fields: {
+    "n": { h: 'N', n: "n", r: true, t: ["\`$ONE\`", ["\`$INTEGER\`", "\`$NULL\`"]] }
+    "z": { h: 'Z', n: "z", r: true, t: "\`$NULL\`" }
+  }
+  op: create: {
+    name: "create"
+    points: [ {
+      g: {}, m: "POST", o: "/note", s: [{ lit: "note" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: BasicNoteFlow: {
+  entity: "note", kind: "basic", name: "BasicNoteFlow"
+  step: [ { o: "create", i: { ref: "note_ref01" } } ]
+}
+`))
+    ok(/client\.Note\(\)\.create\(\{\n  n: 1,\n  z: null,\n\}\)/.test(out['README.md']),
+      'the root README create example does not write n: 1 and z: null:\n' +
+      out['README.md'].split('\n').filter((line: string) => /\b[nz]: /.test(line)).join('\n'))
   })
 
 

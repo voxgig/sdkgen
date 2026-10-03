@@ -11,8 +11,7 @@ import {
 import { requirePath } from '../utility'
 
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
-import { idLiteral, matchArg, listMatchArg, dataArg } from '../helpers/opExample'
-import type { ExampleLang } from '../helpers/opExample'
+import { helperLang, idLiteral, matchArg, listMatchArg, dataArg } from '../helpers/opExample'
 import { safeVarName, exampleVarName, phpEntityAccessor } from '../helpers/naming'
 
 
@@ -231,7 +230,7 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   // skipped (a direct()-only SDK has no entity op to illustrate).
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   const { entity: ex, primaryOp } = pickExampleEntity(entity || {})
-  const lname = target.name as ExampleLang
+  const lname = helperLang(target.name)
   const hasEntityExample = !!(ex && primaryOp)
 
   let eName = 'Entity', eLower = 'entity', stateArg = '', matchIdF: string | null = null, idLit = ''

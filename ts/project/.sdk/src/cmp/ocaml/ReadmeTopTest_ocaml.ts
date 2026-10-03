@@ -1,12 +1,12 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
 
-import { ocamlVarName } from './utility_ocaml'
+import { ocamlVarName, ocamlListMatch } from './utility_ocaml'
 
 
 // A type-correct OCaml `value` literal for a field's canonical type.
@@ -45,11 +45,11 @@ let () =
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = 'Noval'
     if ('list' === primaryOp) {
-      arg = '(empty_map ())'
-    } else if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
+      arg = ocamlListMatch(exampleEntity)
+    } else if (isMatchOp) {
       // Every REQUIRED match key (id first).
       const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+        .filter((it: any) => !it.optional || it.name === idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length

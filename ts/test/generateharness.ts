@@ -484,7 +484,43 @@ main: kit: flow: BasicSearchFlow: {
 
 
 function searchOnly(): string {
-  return SEARCH_ENTITY + Object.keys(makeModel(['ts']).main[KIT].entity)
+  return entityOnly(SEARCH_ENTITY)
+}
+
+
+// A list-only entity requiring the given [name, type] query parameters.
+function listOnly(name: string, params: [string, string][]): string {
+  const flow = 'Basic' + name[0].toUpperCase() + name.slice(1) + 'Flow'
+  return entityOnly(`
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: list: {
+    name: "list"
+    points: [ {
+      g: { query: [${params.map(([n, t]) => `
+        { k: "query", n: "${n}", or: "${n}", r: true, t: ${t} }`).join('')}
+      ] }
+      m: "GET", o: "/${name}"
+      s: [{ lit: "${name}" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
+  step: [ { o: "list", m: {} } ]
+}
+`)
+}
+
+
+// The fixture's own entities made inactive, beside the given source.
+function entityOnly(source: string): string {
+  return source + Object.keys(makeModel(['ts']).main[KIT].entity)
     .map((name: string) => `main: kit: entity: ${name}: active: false\n`).join('')
 }
 
@@ -918,6 +954,8 @@ export {
   ROUTING_MODEL,
   SEARCH_ENTITY,
   searchOnly,
+  listOnly,
+  entityOnly,
   entityTestData,
   FOLD_ENTITY,
   BUILTIN_TYPE_ENTITY,

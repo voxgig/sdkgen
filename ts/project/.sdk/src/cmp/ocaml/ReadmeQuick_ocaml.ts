@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { ocamlVarName } from './utility_ocaml'
+import { ocamlVarName, ocamlListMatch } from './utility_ocaml'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -71,7 +71,7 @@ record with \`e_data_get\`.
 
 \`\`\`ocaml
 (try
-   let ${fn}s = (Sdk_client.${fn} client Noval).e_list (empty_map ()) Noval in
+   let ${fn}s = (Sdk_client.${fn} client Noval).e_list ${ocamlListMatch(exampleEntity)} Noval in
    List.iter (fun e -> print_endline (stringify (e.e_data_get ()))) ${fn}s
  with Sdk_error.E err -> Printf.eprintf "list failed: %s\\n" (Sdk_error.message err))
 \`\`\`

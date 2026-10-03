@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { ocamlVarName } from './utility_ocaml'
+import { ocamlVarName, ocamlListMatch } from './utility_ocaml'
 
 
 // A type-correct OCaml `value` literal. Strings render the quoted placeholder.
@@ -286,7 +286,7 @@ let result_data = result.e_data_get ()
           else if ('list' === opname) {
             Content(`\`\`\`ocaml
 (* One ENTITY per record; the record is reached with e_data_get. *)
-let results = (Sdk_client.${fn} client Noval).e_list (empty_map ()) Noval in
+let results = (Sdk_client.${fn} client Noval).e_list ${ocamlListMatch(ent)} Noval in
 List.iter (fun e -> print_endline (stringify (e.e_data_get ()))) results
 \`\`\`
 

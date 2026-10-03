@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { ocamlVarName } from './utility_ocaml'
+import { ocamlVarName, ocamlListMatch } from './utility_ocaml'
 
 
 // A type-correct OCaml `value` literal for a param: numeric/boolean/array/
@@ -50,7 +50,7 @@ let () =
 
     if (opnames.includes('list')) {
       Content(`  (* List all ${fn} records (one ENTITY per record; raises on error) *)
-  let ${fn}s = (Sdk_client.${fn} client Noval).e_list (empty_map ()) Noval in
+  let ${fn}s = (Sdk_client.${fn} client Noval).e_list ${ocamlListMatch(exampleEntity)} Noval in
   List.iter (fun e -> print_endline (stringify (e.e_data_get ()))) ${fn}s;
 `)
     }
