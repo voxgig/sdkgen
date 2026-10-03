@@ -13,6 +13,7 @@ declare function repoInfo(model: any): {
     path: string;
     repo: string;
     repoUrl: string;
+    hostName: string;
     issuesUrl: string;
     changelogUrl: string;
     releasesUrl: string;

@@ -122,10 +122,7 @@ function primaryOpCall(lang, eName, eLower, op, idF, ent) {
         sep = '.';
     }
     let arg;
-    if (isList) {
-        arg = 'go' === lang ? 'nil' : '';
-    }
-    else if (isMatch) {
+    if (isList || isMatch) {
         arg = matchArg(lang, ent, op, idF, idLit);
     }
     else if (isData) {

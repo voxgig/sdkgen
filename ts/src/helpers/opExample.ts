@@ -131,9 +131,7 @@ function primaryOpCall(
   else { factory = `client.${eName}()`; sep = '.' }
 
   let arg: string
-  if (isList) {
-    arg = 'go' === lang ? 'nil' : ''
-  } else if (isMatch) {
+  if (isList || isMatch) {
     arg = matchArg(lang, ent, op, idF, idLit)
   } else if (isData) {
     arg = dataArg(lang, ent, op, idF)

@@ -67,6 +67,7 @@ function repoInfo(model) {
     const seg = path.split('/');
     const repo = seg[seg.length - 1];
     const repoUrl = `https://${host}/${path}`;
+    const pages = repoPages(host, repoUrl);
     return {
         slug,
         origin,
@@ -74,10 +75,40 @@ function repoInfo(model) {
         path,
         repo,
         repoUrl,
-        issuesUrl: `${repoUrl}/issues`,
-        changelogUrl: `${repoUrl}/blob/main/CHANGELOG.md`,
-        releasesUrl: `${repoUrl}/releases`,
-        tagsUrl: `${repoUrl}/tags`,
+        hostName: pages.name,
+        issuesUrl: pages.issues,
+        changelogUrl: pages.changelog,
+        releasesUrl: pages.releases,
+        tagsUrl: pages.tags,
+    };
+}
+// GitLab keeps a project's pages under `/-/`, and Bitbucket lists its tags
+// among its downloads; any other host is laid out as GitHub is.
+function repoPages(host, repoUrl) {
+    if (host.includes('gitlab')) {
+        return {
+            name: 'GitLab',
+            issues: `${repoUrl}/-/issues`,
+            changelog: `${repoUrl}/-/blob/main/CHANGELOG.md`,
+            releases: `${repoUrl}/-/releases`,
+            tags: `${repoUrl}/-/tags`,
+        };
+    }
+    if ('bitbucket.org' === host) {
+        return {
+            name: 'Bitbucket',
+            issues: `${repoUrl}/issues`,
+            changelog: `${repoUrl}/src/main/CHANGELOG.md`,
+            releases: `${repoUrl}/downloads/?tab=tags`,
+            tags: `${repoUrl}/downloads/?tab=tags`,
+        };
+    }
+    return {
+        name: host.includes('github') ? 'GitHub' : host,
+        issues: `${repoUrl}/issues`,
+        changelog: `${repoUrl}/blob/main/CHANGELOG.md`,
+        releases: `${repoUrl}/releases`,
+        tags: `${repoUrl}/tags`,
     };
 }
 function docsSiteUrl(model) {
