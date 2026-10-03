@@ -1900,7 +1900,7 @@ src/cmp/swift/Schema_swift.ts de5a4a02dc8d
 src/cmp/swift/SdkError_swift.ts eb21c3a56459
 src/cmp/swift/TestClean_swift.ts b6b74422e75c
 src/cmp/swift/TestDirect_swift.ts 3c38c4dfe812
-src/cmp/swift/TestEntity_swift.ts 8ea9ae71eeb1
+src/cmp/swift/TestEntity_swift.ts 1d49c1ac1803
 src/cmp/swift/Test_swift.ts ab9d033258f1
 src/cmp/swift/fragment/Entity.fragment.swift de2d5b4a325f
 src/cmp/swift/fragment/EntityBase.fragment.swift 484745e99c7e
