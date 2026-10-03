@@ -33,9 +33,9 @@ mix deps.get
 
   // Publish pending: not yet on Hex. Install from the git release tag or a
   // local path checkout.
-  const { repoUrl, tagsUrl } = repoInfo(model)
+  const { hostName, repoUrl, tagsUrl } = repoInfo(model)
   Content(`This package is not yet published to [Hex](https://hex.pm). Install it from
-the GitHub release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl}))
+the ${hostName} release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl}))
 by adding a git dependency to your \`mix.exs\`:
 
 \`\`\`elixir

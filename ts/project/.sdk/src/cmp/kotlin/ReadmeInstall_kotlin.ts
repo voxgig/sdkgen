@@ -32,8 +32,8 @@ cd kotlin && gradle build
 
   // Publish pending: not yet on Maven Central. Install from the git release
   // tag or from a local source checkout built with Gradle.
-  const { tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to Maven Central. Install it from the GitHub
+  const { hostName, tagsUrl } = repoInfo(model)
+  Content(`This package is not yet published to Maven Central. Install it from the ${hostName}
 release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
 from a source checkout — build the library with Gradle:
 

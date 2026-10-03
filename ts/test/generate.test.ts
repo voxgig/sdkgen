@@ -4347,6 +4347,18 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
     const ts = section((await generate(['py', 'ts']))['README.md'])
     ok(ts.includes('```ts\nconst client = new '), 'ts: the example is no longer TypeScript')
+
+    // ROUTING_MODEL's moon lists under its planet, and is the first entity
+    // once those sorting before it are off.
+    const before = ['ambient', 'console', 'graph_ql', 'history']
+      .map((name) => `main: kit: entity: ${name}: active: false\n`).join('')
+    for (const [target, call] of [
+      ['py', 'client.Moon().list({"planet_id": "example"})'],
+      ['go', 'client.Moon(nil).List(map[string]any{"planet_id": "example"}, nil)'],
+    ]) {
+      const moon = section((await generate([target], undefined, ROUTING_MODEL + before))['README.md'])
+      ok(moon.includes(call), target + ': the list example does not fill the planet its route needs:\n' + moon)
+    }
   })
 
 
@@ -4377,6 +4389,25 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       if (readme!.includes('/releases)')) wrong.push(target + ': a releases link')
     }
     deepStrictEqual(wrong, [])
+  })
+
+
+  test('an install section links the tags of the repository host', async () => {
+    for (const [host, tags, name] of [
+      ['gitlab.com', '/-/tags)', 'GitLab'],
+      ['bitbucket.org', '/downloads/?tab=tags)', 'Bitbucket'],
+    ]) {
+      const out = await generate(['ts', 'go'], undefined, `main: kit: repo: host: '${host}'`)
+      for (const target of ['ts', 'go']) {
+        const readme = findFile(out, target + '/README.md')!
+        ok(readme.includes('https://' + host + '/voxgig-sdk/demo-sdk' + tags),
+          target + ': no ' + host + ' tags link')
+        ok(readme.includes(name + '\nrelease tag') || readme.includes(name + ' release tag'),
+          target + ': the install section does not name ' + name)
+        ok(!readme.includes('GitHub\nrelease tag') && !readme.includes('GitHub release tag'),
+          target + ': the install section calls a ' + host + ' repository GitHub')
+      }
+    }
   })
 
 })

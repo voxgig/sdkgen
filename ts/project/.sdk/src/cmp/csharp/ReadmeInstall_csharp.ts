@@ -23,8 +23,8 @@ dotnet add reference ../${model.const.Name}SDK/${model.const.Name}SDK.csproj
 
   // Publish pending: not yet on NuGet. Install from the git release tag or
   // from a local source checkout.
-  const { tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to NuGet. Install it from the GitHub
+  const { hostName, tagsUrl } = repoInfo(model)
+  Content(`This package is not yet published to NuGet. Install it from the ${hostName}
 release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
 from a source checkout — build the library and add a project reference:
 

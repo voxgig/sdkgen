@@ -31,8 +31,8 @@ cpanm .
   // Publish pending: not yet on CPAN. This is a pure-Perl SDK with zero
   // non-core runtime deps, so the simplest install is to add the SDK's
   // \`lib\` directory to Perl's module search path (\`@INC\`).
-  const { tagsUrl } = repoInfo(model)
-  Content(`This package is not yet published to CPAN. Install it from the GitHub
+  const { hostName, tagsUrl } = repoInfo(model)
+  Content(`This package is not yet published to CPAN. Install it from the ${hostName}
 release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
 from a source checkout.
 
