@@ -58,9 +58,9 @@ private:
 
     // The deadline runs from here, not from the wait below: a caller paused
     // between the two would otherwise find a late response complete and take
-    // it. The worker notes when the response arrived, so one that arrived
-    // after the deadline is a timeout however late the caller looks. The
-    // shared promise keeps the future's state alive after the loser resolves
+    // it. The worker notes when it finished, so a response or a failure after
+    // the deadline is a timeout however late the caller looks. The shared
+    // promise keeps the future's state alive after the loser resolves
     // unobserved on its detached thread.
     fopt::NowFn now = fopt::foptNow(options);
     const long long start = now();
@@ -73,6 +73,7 @@ private:
         arrived->store(now());
         prom->set_value(out);
       } catch (...) {
+        arrived->store(now());
         try {
           prom->set_exception(std::current_exception());
         } catch (...) {
@@ -84,11 +85,10 @@ private:
     if (fut.wait_for(std::chrono::milliseconds(remaining)) == std::future_status::timeout) {
       throw timeout(ctx, deadline);
     }
-    Value out = fut.get();
     if (deadline < arrived->load() - start) {
       throw timeout(ctx, deadline);
     }
-    return out;
+    return fut.get();
   }
 
   SdkErrorPtr timeout(CtxPtr ctx, int deadline) {

@@ -56,20 +56,32 @@ public class TimeoutFeature extends BaseFeature {
 
     // The deadline runs from here, not from the wait below: a caller paused
     // between the two would otherwise find a late response complete and take
-    // it. The worker notes when the response arrived, so one that arrived
-    // after the deadline is a timeout however late the caller looks.
+    // it. The worker notes when it finished, so a response or a failure after
+    // the deadline is a timeout however late the caller looks.
     final LongSupplier now = FeatureOptions.foptNow(this.options);
     final long start = now.getAsLong();
     final AtomicLong arrived = new AtomicLong(Long.MAX_VALUE);
     CompletableFuture<Object> fut = CompletableFuture.supplyAsync(() -> {
-      Object out = inner.fetch(ctx, url, fetchdef);
-      arrived.set(now.getAsLong());
-      return out;
+      try {
+        return inner.fetch(ctx, url, fetchdef);
+      }
+      finally {
+        arrived.set(now.getAsLong());
+      }
     });
 
     try {
       long remaining = Math.max(0L, deadline - (now.getAsLong() - start));
-      Object out = fut.get(remaining, TimeUnit.MILLISECONDS);
+      Object out;
+      try {
+        out = fut.get(remaining, TimeUnit.MILLISECONDS);
+      }
+      catch (java.util.concurrent.ExecutionException e) {
+        if (deadline < arrived.get() - start) {
+          throw timeout(ctx, deadline);
+        }
+        throw unwrap(e);
+      }
       if (deadline < arrived.get() - start) {
         throw timeout(ctx, deadline);
       }
@@ -78,23 +90,24 @@ public class TimeoutFeature extends BaseFeature {
     catch (TimeoutException e) {
       throw timeout(ctx, deadline);
     }
-    catch (java.util.concurrent.ExecutionException e) {
-      Throwable cause = e.getCause();
-      if (cause instanceof CompletionException && cause.getCause() != null) {
-        cause = cause.getCause();
-      }
-      if (cause instanceof RuntimeException) {
-        throw (RuntimeException) cause;
-      }
-      if (cause instanceof Error) {
-        throw (Error) cause;
-      }
-      throw new RuntimeException(cause);
-    }
     catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new RuntimeException(e);
     }
+  }
+
+  private static RuntimeException unwrap(java.util.concurrent.ExecutionException e) {
+    Throwable cause = e.getCause();
+    if (cause instanceof CompletionException && cause.getCause() != null) {
+      cause = cause.getCause();
+    }
+    if (cause instanceof RuntimeException) {
+      return (RuntimeException) cause;
+    }
+    if (cause instanceof Error) {
+      throw (Error) cause;
+    }
+    return new RuntimeException(cause);
   }
 
   private RuntimeException timeout(Context ctx, int deadline) {

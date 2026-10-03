@@ -45,42 +45,48 @@ class TimeoutFeature : BaseFeature("timeout", "0.0.1", true) {
 
     // The deadline runs from here, not from the wait below: a caller paused
     // between the two would otherwise find a late response complete and take
-    // it. The worker notes when the response arrived, so one that arrived
-    // after the deadline is a timeout however late the caller looks.
+    // it. The worker notes when it finished, so a response or a failure after
+    // the deadline is a timeout however late the caller looks.
     val now = FeatureOptions.foptNow(this.options)
     val start = now.asLong
     val arrived = AtomicLong(Long.MAX_VALUE)
     val fut: CompletableFuture<Any?> = CompletableFuture.supplyAsync {
-      val out = inner(ctx, url, fetchdef)
-      arrived.set(now.asLong)
-      out
+      try {
+        inner(ctx, url, fetchdef)
+      } finally {
+        arrived.set(now.asLong)
+      }
     }
 
     try {
       val remaining = maxOf(0L, deadline - (now.asLong - start))
-      val out = fut.get(remaining, TimeUnit.MILLISECONDS)
+      val out = try {
+        fut.get(remaining, TimeUnit.MILLISECONDS)
+      } catch (e: ExecutionException) {
+        if (deadline < arrived.get() - start) {
+          throw timeout(ctx, deadline)
+        }
+        throw unwrap(e)
+      }
       if (deadline < arrived.get() - start) {
         throw timeout(ctx, deadline)
       }
       return out
     } catch (e: TimeoutException) {
       throw timeout(ctx, deadline)
-    } catch (e: ExecutionException) {
-      var cause: Throwable? = e.cause
-      if (cause is CompletionException && cause.cause != null) {
-        cause = cause.cause
-      }
-      if (cause is RuntimeException) {
-        throw cause
-      }
-      if (cause is Error) {
-        throw cause
-      }
-      throw RuntimeException(cause)
     } catch (e: InterruptedException) {
       Thread.currentThread().interrupt()
       throw RuntimeException(e)
     }
+  }
+
+  private fun unwrap(e: ExecutionException): Throwable {
+    var cause: Throwable? = e.cause
+    if (cause is CompletionException && cause.cause != null) {
+      cause = cause.cause
+    }
+    val found = cause
+    return if (found is RuntimeException || found is Error) found else RuntimeException(found)
   }
 
   private fun timeout(ctx: Context, deadline: Int): Throwable {

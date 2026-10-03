@@ -225,9 +225,9 @@ tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 32327e3b999a
 tm/clojure/src/sdk/core.clj 52e75f53dd9e
-tm/clojure/src/sdk/features.clj 66f261f45a34
+tm/clojure/src/sdk/features.clj 1ca78ea4cd07
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
-tm/clojure/test/sdk/test/feature.clj c8409b8a2173
+tm/clojure/test/sdk/test/feature.clj b70684f4ddd3
 tm/clojure/test/sdk/test/feature/secrets.clj 6ab6b24e4eb5
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
@@ -1794,7 +1794,7 @@ tm/scala/feature/SecretsFeature.scala e9d5e814cd43
 tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala b1bf710a5667
 tm/scala/feature/TestFeature.scala d96c2e0f15db
-tm/scala/feature/TimeoutFeature.scala ac9f4f90d57e
+tm/scala/feature/TimeoutFeature.scala 007550fa7e00
 tm/scala/feature/ValidateFeature.scala 9b6d56f5f601
 tm/scala/feature/secrets/plugin/Capability.scala 9270bb49a022
 tm/scala/feature/secrets/plugin/Config.scala adb41e770842
@@ -1833,7 +1833,7 @@ tm/scala/feature/secrets/sekreto/plugins/Sigv4.scala 116d50af73ff
 tm/scala/sdktest/OmniResolver.scala 2bbd5639ca7c
 tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
 tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
-tm/scala/sdktest/SdkTestMain.scala df70de59b8c6
+tm/scala/sdktest/SdkTestMain.scala 0f0ab7d16d3f
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala c6be9c1da3bb

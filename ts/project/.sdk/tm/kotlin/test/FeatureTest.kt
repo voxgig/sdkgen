@@ -276,17 +276,34 @@ class FeatureTest {
 
   // The deadline runs from the request's start, not from the wait: a response
   // that arrives after it is a timeout even when the caller only looks once it
-  // is complete. The clock answers the start, then stands 300 ms later.
+  // is complete. The clock stands at the start for the caller and 300 ms
+  // later for the worker.
   @Test
   fun timeout_lateResponseTimesOutHoweverLateTheCallerLooks() {
     assumeFeatures("timeout")
-    val reads = java.util.concurrent.atomic.AtomicLong()
-    val now = LongSupplier { if (0L == reads.getAndIncrement()) 0L else 300L }
     val f = TimeoutFeature()
-    val h = fhMake(null, fhF(f, fhMap("ms", 20, "now", now)))
+    val h = fhMake(null, fhF(f, fhMap("ms", 20, "now", workerClock(300L))))
     val res = h.op(fhOp("load"))
     assertEquals("timeout", fhErrCode(res.err), "expected timeout error, got ${res.err}")
     assertEquals(1, f.count, "expected 1 timeout")
+  }
+
+  // A transport failure after the deadline is a timeout too, not the failure.
+  @Test
+  fun timeout_lateFailureTimesOut() {
+    assumeFeatures("timeout")
+    val f = TimeoutFeature()
+    val h = fhMake({ _, _, _ -> throw IllegalStateException("socket closed") },
+      fhF(f, fhMap("ms", 20, "now", workerClock(300L))))
+    val res = h.op(fhOp("load"))
+    assertEquals("timeout", fhErrCode(res.err), "expected timeout error, got ${res.err}")
+    assertEquals(1, f.count, "expected 1 timeout")
+  }
+
+  // A clock standing at 0 for the calling thread and at `later` for any other.
+  private fun workerClock(later: Long): LongSupplier {
+    val caller = Thread.currentThread()
+    return LongSupplier { if (Thread.currentThread() === caller) 0L else later }
   }
 
   @Test

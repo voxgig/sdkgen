@@ -1,7 +1,6 @@
 package feature
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -9,10 +8,10 @@ import (
 )
 
 // Per-request timeout. Wraps the active transport and races each attempt
-// against a context.WithTimeout deadline; if the deadline wins, the request
-// resolves to a `timeout` error instead of hanging. The inner transport is
-// left to finish in its own goroutine (its result is discarded), matching
-// how the ts feature lets the losing racer resolve unobserved.
+// against a deadline; if the deadline wins, the request resolves to a
+// `timeout` error instead of hanging. The inner transport is left to finish
+// in its own goroutine (its result is discarded), matching how the ts
+// feature lets the losing racer resolve unobserved.
 type TimeoutFeature struct {
 	BaseFeature
 	client  *core.ProjectNameSDK
@@ -57,34 +56,42 @@ func (f *TimeoutFeature) withTimeout(ctx *core.Context, url string, fetchdef map
 		return inner(ctx, url, fetchdef)
 	}
 
-	// A response after the deadline is a timeout, even when the select finds both ready.
+	// The deadline runs from here, not from the wait. Deadline and response land
+	// in one channel, first in first out: a response that arrived in time is
+	// taken however late the caller is scheduled, a late one is a timeout.
+	type landed struct {
+		res      any
+		err      error
+		at       int64
+		deadline bool
+	}
 	now := foptNow(f.options)
 	start := now()
-	tctx, cancel := context.WithTimeout(context.Background(), time.Duration(ms)*time.Millisecond)
-	defer cancel()
-
-	type fetched struct {
-		res     any
-		err     error
-		arrived int64
+	out := make(chan landed, 2)
+	remaining := int64(ms) - (now() - start)
+	if remaining < 0 {
+		remaining = 0
 	}
-
-	// Buffered so the inner transport never blocks after a timeout loss.
-	out := make(chan fetched, 1)
+	timer := time.AfterFunc(time.Duration(remaining)*time.Millisecond, func() {
+		out <- landed{deadline: true}
+	})
+	defer timer.Stop()
 	go func() {
 		res, err := inner(ctx, url, fetchdef)
-		out <- fetched{res: res, err: err, arrived: now()}
+		out <- landed{res: res, err: err, at: now()}
 	}()
 
-	select {
-	case got := <-out:
-		if int64(ms) < got.arrived-start {
-			return nil, f.timeout(ctx, ms)
+	got := <-out
+	if got.deadline {
+		select {
+		case got = <-out:
+		default:
 		}
-		return got.res, got.err
-	case <-tctx.Done():
+	}
+	if got.deadline || int64(ms) < got.at-start {
 		return nil, f.timeout(ctx, ms)
 	}
+	return got.res, got.err
 }
 
 func (f *TimeoutFeature) timeout(ctx *core.Context, ms int) error {

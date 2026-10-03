@@ -31,37 +31,43 @@ class TimeoutFeature extends BaseFeature("timeout", "0.0.1", true) {
 
     // The deadline runs from here, not from the wait below: a caller paused
     // between the two would otherwise find a late response complete and take
-    // it. The worker notes when the response arrived, so one that arrived
-    // after the deadline is a timeout however late the caller looks.
+    // it. The worker notes when it finished, so a response or a failure after
+    // the deadline is a timeout however late the caller looks.
     val now = FeatureOptions.foptNow(this.options)
     val start = now.getAsLong
     val arrived = new AtomicLong(Long.MaxValue)
     val sup: Supplier[Object] = () => {
-      val out = inner(ctx, url, fetchdef)
-      arrived.set(now.getAsLong)
-      out
+      try inner(ctx, url, fetchdef)
+      finally arrived.set(now.getAsLong)
     }
     val fut = CompletableFuture.supplyAsync(sup)
 
     try {
       val remaining = Math.max(0L, deadline - (now.getAsLong - start))
-      val out = fut.get(remaining, TimeUnit.MILLISECONDS)
+      val out = try fut.get(remaining, TimeUnit.MILLISECONDS)
+      catch {
+        case e: java.util.concurrent.ExecutionException =>
+          if (deadline < arrived.get - start) throw timeout(ctx, deadline)
+          throw unwrap(e)
+      }
       if (deadline < arrived.get - start) throw timeout(ctx, deadline)
       out
     }
     catch {
       case _: TimeoutException => throw timeout(ctx, deadline)
-      case e: java.util.concurrent.ExecutionException =>
-        var cause = e.getCause
-        cause match { case ce: CompletionException if ce.getCause != null => cause = ce.getCause; case _ => }
-        cause match {
-          case re: RuntimeException => throw re
-          case err: Error => throw err
-          case _ => throw new RuntimeException(cause)
-        }
       case _: InterruptedException =>
         Thread.currentThread().interrupt()
         throw new RuntimeException("interrupted")
+    }
+  }
+
+  private def unwrap(e: java.util.concurrent.ExecutionException): Throwable = {
+    var cause = e.getCause
+    cause match { case ce: CompletionException if ce.getCause != null => cause = ce.getCause; case _ => }
+    cause match {
+      case re: RuntimeException => re
+      case err: Error => err
+      case _ => new RuntimeException(cause)
     }
   }
 

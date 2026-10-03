@@ -51,29 +51,33 @@ public class TimeoutFeature : BaseFeature
 
         // The deadline runs from here, not from the wait below: a caller paused
         // between the two would otherwise find a late response complete and
-        // take it. The worker notes when the response arrived, so one that
-        // arrived after the deadline is a timeout however late the caller looks.
+        // take it. The worker notes when it finished, so a response or a
+        // failure after the deadline is a timeout however late the caller looks.
         var now = FoptNow(_options);
         var start = now();
         long arrived = long.MaxValue;
         var task = Task.Run(() =>
         {
-            var result = inner(ctx, url, fetchdef);
-            Interlocked.Exchange(ref arrived, now());
-            return result;
+            try
+            {
+                return inner(ctx, url, fetchdef);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref arrived, now());
+            }
         });
 
         var remaining = Math.Max(0L, ms - (now() - start));
         if (task == Task.WhenAny(task, Task.Delay(TimeSpan.FromMilliseconds(remaining)))
             .GetAwaiter().GetResult())
         {
-            // Unwraps any inner exception.
-            var result = task.GetAwaiter().GetResult();
             if (ms < Interlocked.Read(ref arrived) - start)
             {
                 throw TimedOut(ctx, ms);
             }
-            return result;
+            // Unwraps any inner exception.
+            return task.GetAwaiter().GetResult();
         }
 
         throw TimedOut(ctx, ms);
