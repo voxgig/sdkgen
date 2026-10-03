@@ -5,7 +5,7 @@ import {
   File, Content, Folder,
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, swiftSafeTypeName } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, swiftTypeName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -84,7 +84,7 @@ import Foundation
             const fields = (ent.fields ? each(ent.fields) : [])
               .filter((f: any) => f.a !== false)
 
-            const TypeName = swiftSafeTypeName(Name)
+            const TypeName = swiftTypeName(ent, entityCollection(model))
             emitStruct(
               `/// ${TypeName} is the typed data model for the ${ent.name} entity.`,
               TypeName,

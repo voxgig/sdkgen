@@ -1,4 +1,7 @@
 
+import { deriveEntityNames, opTypeName } from './opShape'
+
+
 const JS_RESERVED = new Set<string>([
   'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
   'default', 'delete', 'do', 'else', 'enum', 'export', 'extends', 'false',
@@ -40,6 +43,11 @@ const LUA_RESERVED = new Set<string>([
   'then', 'true', 'until', 'while',
 ])
 
+const ELIXIR_RESERVED = new Set<string>([
+  'after', 'and', 'catch', 'do', 'else', 'end', 'false', 'fn', 'in', 'nil',
+  'not', 'or', 'rescue', 'true', 'when',
+])
+
 const RESERVED: Record<string, Set<string>> = {
   ts: JS_RESERVED,
   js: JS_RESERVED,
@@ -47,6 +55,7 @@ const RESERVED: Record<string, Set<string>> = {
   rb: RB_RESERVED,
   py: PY_RESERVED,
   lua: LUA_RESERVED,
+  elixir: ELIXIR_RESERVED,
 }
 
 
@@ -214,11 +223,6 @@ const ELIXIR_BUILTIN_TYPES = new Set<string>([
   'struct', 'term', 'timeout', 'tuple', 'var',
 ])
 
-const ELIXIR_RESERVED = new Set<string>([
-  'after', 'and', 'catch', 'do', 'else', 'end', 'false', 'fn', 'in', 'nil',
-  'not', 'or', 'rescue', 'true', 'when',
-])
-
 
 function isElixirReservedType(name: string): boolean {
   return ELIXIR_BUILTIN_TYPES.has(name) || ELIXIR_RESERVED.has(name)
@@ -228,6 +232,37 @@ function isElixirReservedType(name: string): boolean {
 // As tsSafeTypeName, for the bare entity type alone.
 function elixirSafeTypeName(name: string): string {
   return isElixirReservedType(name) ? name + '_type' : name
+}
+
+
+// The name each entity takes over a whole collection: one the language
+// reserves takes `suffix`, and one that another entity already holds the
+// lowest free number from 2. `fold` compares as a case-insensitive language.
+function safeNames(all: string[], taken: string[], reserved: (name: string) => boolean,
+  suffix: string, fold = false): Record<string, string> {
+  const key = (name: string) => fold ? name.toLowerCase() : name
+  const held = new Set(taken.map(key))
+  const out: Record<string, string> = {}
+
+  for (const name of all) {
+    let safe = reserved(name) ? name + suffix : name
+    if (safe !== name) {
+      for (let n = 2; held.has(key(safe)); n++) {
+        safe = name + suffix + n
+      }
+      held.add(key(safe))
+    }
+    out[name] = safe
+  }
+  return out
+}
+
+
+function entityNames(entityColl: any): string[] {
+  return [...new Set(Object.values(entityColl || {})
+    .map((e: any) => e?.name)
+    .filter((n: any): n is string => 'string' === typeof n))]
+    .sort()
 }
 
 
@@ -242,24 +277,9 @@ function elixirTypeNames(entityColl: any): Record<string, string> {
     return cached
   }
 
-  const all = [...new Set(Object.values(entityColl || {})
-    .map((e: any) => e?.name)
-    .filter((n: any): n is string => 'string' === typeof n))]
-    .sort()
-
-  const taken = new Set(all.filter((n) => !isElixirReservedType(n)))
-  const out: Record<string, string> = {}
-
-  for (const name of all) {
-    let type = elixirSafeTypeName(name)
-    if (type !== name) {
-      for (let n = 2; taken.has(type); n++) {
-        type = name + '_type' + n
-      }
-      taken.add(type)
-    }
-    out[name] = type
-  }
+  const all = entityNames(entityColl)
+  const out = safeNames(all, all.filter((n) => !isElixirReservedType(n)),
+    isElixirReservedType, '_type')
 
   if (null != entityColl && 'object' === typeof entityColl) {
     _elixirTypeNames.set(entityColl, out)
@@ -270,6 +290,92 @@ function elixirTypeNames(entityColl: any): Record<string, string> {
 
 function elixirTypeName(ent: any, entityColl: any): string {
   return elixirTypeNames(entityColl)[ent?.name] ?? elixirSafeTypeName(ent?.name)
+}
+
+
+const _elixirAccessors = new WeakMap<object, Record<string, string>>()
+
+// The function the main module gives an entity (`Demo.widget(client)`). A
+// reserved word does not parse as one, so it takes `_entity`, numbered when
+// another entity already has that name.
+function elixirAccessorNames(entityColl: any): Record<string, string> {
+  const cached = _elixirAccessors.get(entityColl)
+  if (null != cached) {
+    return cached
+  }
+
+  const all = entityNames(entityColl)
+  const reserved = (name: string) => ELIXIR_RESERVED.has(name)
+  const out = safeNames(all, all.filter((n) => !reserved(n)), reserved, '_entity')
+
+  if (null != entityColl && 'object' === typeof entityColl) {
+    _elixirAccessors.set(entityColl, out)
+  }
+  return out
+}
+
+
+function elixirAccessor(ent: any, entityColl: any): string {
+  return elixirAccessorNames(entityColl)[ent?.name] ?? ent?.name
+}
+
+
+const TYPE_OPS = ['load', 'list', 'create', 'update', 'remove']
+
+const _typeNames = new WeakMap<object, Record<string, Record<string, string>>>()
+
+// The data type each entity declares, over the whole collection: an escaped
+// name never lands on a name another entity derives for a type or an op type.
+function typeNames(entityColl: any, lang: string, reserved: (Name: string) => boolean,
+  fold = false): Record<string, string> {
+  const byLang = _typeNames.get(entityColl) || {}
+  if (null != byLang[lang]) {
+    return byLang[lang]
+  }
+
+  const ents = deriveEntityNames(entityColl)
+  const all = [...new Set(ents.map((e: any) => String(e.Name)))].sort()
+  const taken: string[] = []
+  for (const e of ents) {
+    if (!reserved(e.Name)) {
+      taken.push(e.Name)
+    }
+    for (const op of TYPE_OPS) {
+      if (e.op && e.op[op]) {
+        taken.push(opTypeName(e.Name, op))
+      }
+    }
+  }
+
+  byLang[lang] = safeNames(all, taken, reserved, 'Type', fold)
+  if (null != entityColl && 'object' === typeof entityColl) {
+    _typeNames.set(entityColl, byLang)
+  }
+  return byLang[lang]
+}
+
+
+function tsTypeName(ent: any, entityColl: any): string {
+  return typeNames(entityColl, 'ts', (N) => isTsReservedType(N) || isTsSdkType(N))[ent?.Name] ??
+    tsSafeTypeName(ent?.Name)
+}
+
+
+function rbTypeName(ent: any, entityColl: any): string {
+  return typeNames(entityColl, 'rb', (N) => isRbCoreConstant(N) || isRbSdkConstant(N))[ent?.Name] ??
+    rbSafeTypeName(ent?.Name)
+}
+
+
+// PHP compares class names ignoring case.
+function phpTypeName(ent: any, entityColl: any): string {
+  return typeNames(entityColl, 'php', (N) => isPhpReservedType(N) || isPhpSdkClass(N), true)[ent?.Name] ??
+    phpSafeTypeName(ent?.Name)
+}
+
+
+function swiftTypeName(ent: any, entityColl: any): string {
+  return typeNames(entityColl, 'swift', isSwiftSdkType)[ent?.Name] ?? swiftSafeTypeName(ent?.Name)
 }
 
 
@@ -396,6 +502,12 @@ export {
   elixirSafeTypeName,
   elixirTypeNames,
   elixirTypeName,
+  elixirAccessorNames,
+  elixirAccessor,
+  tsTypeName,
+  rbTypeName,
+  phpTypeName,
+  swiftTypeName,
   jsProp,
   jsOptProp,
   jsKey,

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, opRequestShape, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -32,11 +32,12 @@ sdk = ${ctor}
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
-    const eVar = exampleEntity.name
+    const eVar = exampleVarName(exampleEntity.name, 'elixir')
+    const eCall = elixirAccessor(exampleEntity, entityCollection(model))
     const opnames = Object.keys(exampleEntity.op || {})
     const idF = entityIdField(exampleEntity)
 
-    Content(`${eVar} = ${Name}.${eVar}(sdk)
+    Content(`${eVar} = ${Name}.${eCall}(sdk)
 `)
 
     if (opnames.includes('list')) {

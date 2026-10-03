@@ -833,6 +833,44 @@ function makeRoot(): any {
 
 
 
+function namedEntity(name: string): string {
+  const Flow = 'Basic' + name.split('_').map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join('') + 'Flow'
+  return `
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: {}, m: "GET", o: "/${name}", s: [{ lit: "${name}" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: flow: ${Flow}: {
+  entity: "${name}", kind: "basic", name: "${Flow}"
+  step: [
+    { o: "list" }
+  ]
+}
+`
+}
+
+
+// Pairs meeting once a reserved name is escaped, plus PHP's one-class-name pair.
+const ESCAPED_TYPE_ENTITY = ['map', 'map_type', 'array', 'array_type',
+  'value', 'value_type', 'foo', 'fooentity'].map(namedEntity).join('')
+
+
+// elixir: a reserved word, beside the entity holding the name it would take.
+const KEYWORD_ACCESSOR_ENTITY = namedEntity('end') + namedEntity('end_entity')
+
+
 export {
   KIT,
   STAGE,
@@ -845,6 +883,8 @@ export {
   FOLD_ENTITY,
   BUILTIN_TYPE_ENTITY,
   SAFE_TYPE_ENTITY,
+  ESCAPED_TYPE_ENTITY,
+  KEYWORD_ACCESSOR_ENTITY,
   makeLog,
   layeredFs,
   makeModel,

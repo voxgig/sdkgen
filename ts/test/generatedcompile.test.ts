@@ -25,7 +25,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData,
-  FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
+  FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -388,6 +388,27 @@ describe('generated SDK compiles', () => {
 
     ok(Fs.existsSync(Path.join(sdkroot, 'src', 'entity', 'Contactsfield2Entity.ts')),
       'the renamed entity was not generated')
+
+    const src = tsc(sdkroot, 'src')
+    ok(src.ok, 'generated src does not compile:\n' + src.out)
+
+    const suite = tsc(sdkroot, 'test')
+    ok(suite.ok, 'the generated test suite does not compile:\n' + suite.out)
+  })
+
+
+  // tsc rejects a second `MapType` (TS2300), which is what `map` got beside
+  // `map_type` before the escaped name looked at the collection.
+  test('typescript: an escaped type name beside the entity that derives it type-checks', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-escaped')
+    const files = await generateTo('ts', sdkroot, ESCAPED_TYPE_ENTITY)
+    linkDeps(sdkroot)
+
+    const types = Object.entries(files).find(([p]) => p.endsWith('DemoTypes.ts'))
+    ok(null != types && /^export interface MapType2 \{/m.test(String(types![1])),
+      'the escaped type was not numbered')
 
     const src = tsc(sdkroot, 'src')
     ok(src.ok, 'generated src does not compile:\n' + src.out)
@@ -1510,7 +1531,7 @@ namespace {
       // case-insensitive, so are `Namespace` and `NAMESPACE`. A guard that
       // compares case-sensitively passes its own unit tests and still emits
       // an undeclarable class here.
-      const files = await generateTo('php', sdkroot, RESERVED_ENTITY)
+      const files = await generateTo('php', sdkroot, RESERVED_ENTITY + ESCAPED_TYPE_ENTITY)
 
       const phpfiles = Object.keys(files).filter((p) => p.endsWith('.php'))
       ok(5 < phpfiles.length,
@@ -1536,6 +1557,16 @@ namespace {
       ok(/^class NamespaceType$/m.test(String(types![1])),
         'the reserved-word entity was not renamed:\n' +
         (String(types![1]).match(/^class \w*Namespace\w*$/gm) || []).join('\n'))
+      ok(/^class ArrayType2$/m.test(String(types![1])), 'the escaped type was not numbered')
+
+      // `php -l` reads one file at a time; classes that are one name to PHP
+      // (`FooEntity`, `Fooentity`) fail only when both load.
+      const load = run(php, ['-r',
+        'require "demo_sdk.php"; echo count(get_declared_classes()), " classes\\n";'], sdkroot)
+      ok(load.ok && /\d+ classes/.test(load.out),
+        'the php SDK does not load:\n' + tail(load.out))
+      ok(Object.values(files).some((text) => /^class FooEntityClient\b/m.test(String(text))),
+        'the class that met a data type was not renamed')
     })
 
 
@@ -1593,7 +1624,7 @@ echo get_class($client->ContactsField(null)), ' ',
   test('elixir: built-in type names and a case-colliding pair compile', async (t) => {
     const sdkroot = Path.join(tmp, 'elixir-names')
     await generateTo('elixir', sdkroot,
-      BUILTIN_TYPE_ENTITY + SAFE_TYPE_ENTITY + FOLD_ENTITY)
+      BUILTIN_TYPE_ENTITY + SAFE_TYPE_ENTITY + FOLD_ENTITY + KEYWORD_ACCESSOR_ENTITY)
 
     const mix = toolchain('mix')
     const elixir = toolchain('elixir')
@@ -1617,6 +1648,21 @@ echo get_class($client->ContactsField(null)), ' ',
         ? Fs.readdirSync(Path.join(lib, app, 'ebin')) : [])
     ok(beams.includes('Elixir.Demo.Entity.Contactsfield2.beam'),
       'elixir: the renamed entity module was not compiled')
+    ok(beams.includes('Elixir.Demo.Entity.End.beam'),
+      'elixir: the reserved-word entity was not compiled')
+
+    // `mix compile` leaves test/ alone, and `Demo.end(sdk)` is a syntax error
+    // there: compile the reserved-word entity's test file as ExUnit would.
+    const suite = run(mix, ['run', '--no-start', '-e',
+      'ExUnit.start(autorun: false); Code.compile_file("test/end_entity_test.exs")'],
+      sdkroot, { ...process.env, MIX_ENV: 'test' })
+    ok(suite.ok, 'elixir: the reserved-word entity test does not compile:\n' + tail(suite.out))
+
+    // The documentation gate parses every fenced elixir block, so a reserved
+    // word bound as an example variable fails there, as `end = ...` does.
+    const examples = run(mix, ['test', '--no-color', 'test/readme_examples_test.exs'], sdkroot,
+      { ...process.env, MIX_ENV: 'test' })
+    ok(examples.ok, 'elixir: the documented examples do not parse:\n' + tail(examples.out))
     const folded = beams.filter((b: string, i: number) =>
       beams.findIndex((o: string) => o.toLowerCase() === b.toLowerCase()) !== i)
     deepStrictEqual(folded, [], 'elixir: modules that are one file on macOS')

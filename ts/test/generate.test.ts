@@ -18,6 +18,7 @@ import { SdkGen } from '../dist/sdkgen.js'
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
+  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
 } from './generateharness'
 
 
@@ -412,6 +413,81 @@ describe('generate', () => {
     ok(null != entity, 'no mfa entity module')
     ok(entity![1].includes('Demo.Types.mfa_type2/0'), 'the comment names another type')
     ok(!entity![1].includes('Demo.Types.mfa_type/0'), 'the comment names another type')
+  })
+
+
+  // The escaped type of a reserved name once landed on the type another entity
+  // derives: `map` became `MapType`, which is what `map_type` is.
+  test('ts, rb, php, swift: an escaped type name another entity derives takes the next number', async () => {
+    const want: Record<string, [RegExp, string[], string]> = {
+      ts: [/^export interface (\w+) \{/gm, ['MapType', 'MapType2', 'ArrayType', 'ArrayType2'], 'DemoTypes.ts'],
+      rb: [/^\s*(\w+) = Struct\.new/gm, ['ArrayType', 'ArrayType2', 'Map'], 'Demo_types.rb'],
+      php: [/^class (\w+)$/gm, ['ArrayType', 'ArrayType2', 'Map'], 'DemoTypes.php'],
+      swift: [/^public struct (\w+)/gm, ['ValueType', 'ValueType2', 'Map', 'Array'], 'DemoTypes.swift'],
+    }
+    for (const lang of Object.keys(want)) {
+      const [decl, expected, suffix] = want[lang]
+      const files = filesFor(await generate([lang], undefined, ESCAPED_TYPE_ENTITY), lang)
+      const types = files.find(([p]) => p.endsWith(suffix))
+      ok(null != types, lang + ': no types file among ' + files.map(([p]) => p).join(', '))
+      const declared = [...types![1].matchAll(decl)].map((m) => m[1])
+      deepStrictEqual(declared.filter((t, i) => declared.indexOf(t) !== i), [],
+        lang + ': a type is declared twice')
+      for (const type of expected) {
+        ok(declared.includes(type), lang + ': no type ' + type + ': ' + declared.join(', '))
+      }
+    }
+  })
+
+
+  test('ts: the entity of an escaped type imports the type it was given', async () => {
+    const files = filesFor(await generate(['ts'], undefined, ESCAPED_TYPE_ENTITY), 'ts')
+    const entity = files.find(([p]) => p.endsWith('/MapEntity.ts'))
+    ok(null != entity, 'no map entity')
+    ok(entity![1].includes('MapType2'), 'the entity does not import MapType2')
+    ok(!/\bMapType(?!\w)/.test(entity![1]), 'the entity still names MapType')
+    const other = files.find(([p]) => p.endsWith('/MapTypeEntity.ts'))
+    ok(null != other && /\bMapType(?!\w)/.test(other![1]) && !other![1].includes('MapType2'),
+      'map_type does not keep its own type')
+  })
+
+
+  test('php: a class that meets a data type once case is ignored takes the next name', async () => {
+    const files = filesFor(await generate(['php'], undefined, ESCAPED_TYPE_ENTITY), 'php')
+    const classes = files.flatMap(([, text]) => [...text.matchAll(/^class (\w+)/gm)].map((m) => m[1]))
+    ok(classes.includes('Fooentity'), 'fooentity keeps its data type: ' + classes.join(', '))
+    ok(classes.includes('FooEntityClient'), 'foo\'s class is not renamed: ' + classes.join(', '))
+    ok(!classes.includes('FooEntity'), 'foo\'s class still meets the Fooentity type')
+    deepStrictEqual(classes.map((c) => c.toLowerCase()).filter((c, i, all) => all.indexOf(c) !== i), [],
+      'two classes are one name to PHP')
+    ok(files.some(([, text]) => text.includes('new FooEntityClient(')), 'the SDK does not construct the renamed class')
+  })
+
+
+  test('elixir: an entity named after a reserved word gets an accessor that parses', async () => {
+    const files = filesFor(await generate(['elixir'], undefined, KEYWORD_ACCESSOR_ENTITY), 'elixir')
+    const main = files.find(([p]) => /lib\/[^/]+\.ex$/.test(p) && /def end_entity/.test(p[1] || '') || /lib\/demo\.ex$/.test(p))
+    ok(null != main, 'no main module among ' + files.map(([p]) => p).join(', '))
+    ok(main![1].includes('def end_entity2(client, entopts \\\\ nil) do'), 'end has no parsing accessor:\n' + main![1])
+    ok(main![1].includes('def end_entity(client, entopts \\\\ nil) do'), 'end_entity lost its own accessor')
+    ok(!/def end\(/.test(main![1]), 'the reserved word is still a function name')
+
+    const test = files.find(([p]) => p.endsWith('/end_entity_test.exs'))
+    ok(null != test, 'no test for the end entity')
+    ok(test![1].includes('Demo.end_entity2(client)'), 'the test calls the old accessor')
+    const ref = files.find(([p]) => p.endsWith('REFERENCE.md'))
+    ok(ref![1].includes('Demo.end_entity2(client, entopts'), 'the reference names the old accessor')
+
+    // Every emitted call, in the tests, the README and the reference alike.
+    const stale = files.filter(([, text]) => /\bDemo\.end\(/.test(text)).map(([p]) => p)
+    deepStrictEqual(stale, [], 'files still calling Demo.end(')
+
+    // The example variable is keyword-safe too: `end = ...` does not parse.
+    const readme = files.find(([p]) => 'elixir/README.md' === p)
+    ok(null != readme, 'no elixir README among ' + files.map(([p]) => p).join(', '))
+    ok(readme![1].includes('end_ = Demo.end_entity2(sdk)'), 'the example variable is still the reserved word')
+    const bound = files.filter(([, text]) => /^\s*end = /m.test(text)).map(([p]) => p)
+    deepStrictEqual(bound, [], 'files binding the reserved word as a variable')
   })
 
 

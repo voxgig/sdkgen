@@ -6,7 +6,7 @@ import {
   File, Content,
 } from '@voxgig/sdkgen'
 
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, rbSafeTypeName } from '@voxgig/sdkgen'
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, rbTypeName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -81,7 +81,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 
     entityList.forEach((ent: any) => {
       const Name = ent.Name
-      const TypeName = rbSafeTypeName(Name)
+      const TypeName = rbTypeName(ent, entityCollection(model))
       const fields = (ent.fields ? each(ent.fields) : [])
         .filter((f: any) => f.a !== false)
 

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -94,7 +94,7 @@ sdk = ${Name}.test()
 
     // Entity factory functions
     publishedEntities.map((ent: any) => {
-      Content(`#### \`${Name}.${ent.name}(client, entopts \\\\ nil)\`
+      Content(`#### \`${Name}.${elixirAccessor(ent, entityCollection(model))}(client, entopts \\\\ nil)\`
 
 Create a \`${Name}.Entity.${ent.Name}\` handle.
 
@@ -138,7 +138,8 @@ on error.
     // Entity reference sections
     publishedEntities.map((ent: any) => {
       const EName = ent.Name
-      const eVar = ent.name
+      const eVar = exampleVarName(ent.name, 'elixir')
+      const eCall = elixirAccessor(ent, entityCollection(model))
       const opnames = Object.keys(ent.op || {})
       const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
@@ -157,7 +158,7 @@ on error.
       }
 
       Content(`\`\`\`elixir
-${eVar} = ${Name}.${eVar}(sdk)
+${eVar} = ${Name}.${eCall}(sdk)
 \`\`\`
 
 `)
