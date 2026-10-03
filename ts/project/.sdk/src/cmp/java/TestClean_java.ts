@@ -880,13 +880,15 @@ public class CleanTest {
   }
 
   // An entity block, of per-entity settings or seeded records keyed by
-  // entity name and id, is not read at all.
+  // entity name and id, is not read at all, and nor are rbac's rules, keyed by
+  // entity and operation names.
   @Test
   public void aFeatureNameDoesNotMakeItsSettingsSecret() {
     ${sdk} sdk = construct(jm(
         "apikey", CANARY_APIKEY,
         "feature", jm(
             "secrets", jm("active", false, "kind", "SETTING-KIND-4829", "token", CANARY_SECRET),
+            "rbac", jm("active", false, "rules", jm("zztoken.load", "PLAINRULE-k7j5h3g1")),
             "test", jm("active", false, "entity",
                 jm("zztoken", jm("ZZTOKEN01", jm("note", "PLAINRECORD-t5r3e1w9"))))),
         "entity", jm("zztoken", jm("alias", jm("zzkey", "PLAINALIAS-m2n4b6v8")))));
@@ -897,6 +899,8 @@ public class CleanTest {
         sdk.getUtility().clean.apply(root, "record PLAINRECORD-t5r3e1w9"));
     assertEquals("alias PLAINALIAS-m2n4b6v8",
         sdk.getUtility().clean.apply(root, "alias PLAINALIAS-m2n4b6v8"));
+    assertEquals("rule PLAINRULE-k7j5h3g1",
+        sdk.getUtility().clean.apply(root, "rule PLAINRULE-k7j5h3g1"));
   }
 
   @Test

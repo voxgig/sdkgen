@@ -566,7 +566,8 @@ ${candidateLines}
 
     // A feature's name is not a field name: only the sensitive names inside
     // its settings register. An entity block, of entity settings or seeded
-    // records keyed by entity name and id, is not read at all.
+    // records keyed by entity name and id, is not read at all, and nor are
+    // rbac's rules, keyed by entity and operation names.
     let record = vm(("zztoken", .map(vm(("ZZTOKEN01", .map(vm(("note", .string("PLAINRECORD-t5r3e1w9")))))))))
     let alias = vm(("zztoken", .map(vm(("alias", .map(vm(("zzkey", .string("PLAINALIAS-m2n4b6v8")))))))))
     let featopts = VMap()
@@ -574,6 +575,8 @@ ${candidateLines}
     featopts.entries["feature"] = .map(vm(
       ("zzsecrets", .map(vm(("active", .bool(false)), ("kind", .string("PLAINSETTING-q8w2e4r6"))))),
       ("zzfeat", .map(vm(("active", .bool(false)), ("apitoken", .string("FEATTOKEN-z9y8x7w6"))))),
+      ("rbac", .map(vm(("active", .bool(false)),
+        ("rules", .map(vm(("zztoken.load", .string("PLAINRULE-k7j5h3g1")))))))),
       ("test", .map(vm(("active", .bool(false)), ("entity", .map(record)))))))
     featopts.entries["entity"] = .map(alias)
     let fctx = Context(["options": makeOptionsUtil(Context(["options": featopts], nil))], nil)
@@ -581,6 +584,7 @@ ${candidateLines}
     let ftoken = cleanUtil(fctx, .string("token FEATTOKEN-z9y8x7w6")).asString
     let frecord = cleanUtil(fctx, .string("record PLAINRECORD-t5r3e1w9")).asString
     let falias = cleanUtil(fctx, .string("alias PLAINALIAS-m2n4b6v8")).asString
+    let frule = cleanUtil(fctx, .string("rule PLAINRULE-k7j5h3g1")).asString
 
     // direct() returns its error rather than throwing it. Only the SDK's own
     // error can be cleaned in place, so the coded transport is the one used.
@@ -625,6 +629,7 @@ ${candidateLines}
     XCTAssertEqual(ftoken, "token " + mask)
     XCTAssertEqual(frecord, "record PLAINRECORD-t5r3e1w9")
     XCTAssertEqual(falias, "alias PLAINALIAS-m2n4b6v8")
+    XCTAssertEqual(frule, "rule PLAINRULE-k7j5h3g1")
     XCTAssertEqual(rawerr?.code, "denied_" + mask)
 
     let explained = explains["ok/explain"] ?? VMap()

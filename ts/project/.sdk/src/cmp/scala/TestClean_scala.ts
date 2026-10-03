@@ -560,13 +560,15 @@ object SdkCleanTestMain {
 
   // A feature's name is not a field name: only the sensitive names inside its
   // settings register. An entity block, of per-entity settings or seeded
-  // records keyed by entity name and id, is not read at all.
+  // records keyed by entity name and id, is not read at all, and nor are
+  // rbac's rules, keyed by entity and operation names.
   private def featureNames(rep: SdkTestReport): Unit = {
     val sdk = construct(om(
       "apikey" -> CANARY_APIKEY,
       "feature" -> om(
         "zzsecrets" -> om("active" -> B(false), "kind" -> "PLAINSETTING-q8w2e4r6"),
         "zzfeat" -> om("active" -> B(false), "apitoken" -> "FEATTOKEN-z9y8x7w6"),
+        "rbac" -> om("active" -> B(false), "rules" -> om("zztoken.load" -> "PLAINRULE-k7j5h3g1")),
         "test" -> om("active" -> B(false), "entity" -> om(
           "zztoken" -> om("ZZTOKEN01" -> om("note" -> "PLAINRECORD-t5r3e1w9"))))),
       "entity" -> om("zztoken" -> om("alias" -> om("zzkey" -> "PLAINALIAS-m2n4b6v8")))))
@@ -576,6 +578,7 @@ object SdkCleanTestMain {
     rep.eq("clean.feature.token", "token " + MASK, clean("token FEATTOKEN-z9y8x7w6"))
     rep.eq("clean.entity.record", "record PLAINRECORD-t5r3e1w9", clean("record PLAINRECORD-t5r3e1w9"))
     rep.eq("clean.entity.alias", "alias PLAINALIAS-m2n4b6v8", clean("alias PLAINALIAS-m2n4b6v8"))
+    rep.eq("clean.rbac.rule", "rule PLAINRULE-k7j5h3g1", clean("rule PLAINRULE-k7j5h3g1"))
   }
 
   private def configBlock(rep: SdkTestReport): Unit = {

@@ -220,7 +220,8 @@ fn clean_block(opts: &Value) -> Value {
 // The options to scan for secrets. The feature map is keyed by feature
 // names, not field names, so it is scanned as a list: `secrets` must not
 // make every setting of that feature a secret. Entity blocks hold entity
-// settings and seeded records, never a credential, so none is scanned.
+// settings and seeded records, never a credential, so none is scanned, and
+// nor are rbac's rules, keyed by entity and operation names.
 fn without(val: &Value, keys: &[&str]) -> Value {
     let out = Value::empty_map();
     if let Value::Map(m) = val {
@@ -230,9 +231,9 @@ fn without(val: &Value, keys: &[&str]) -> Value {
             }
             let v = match (k.as_str(), v) {
                 ("feature", Value::Map(fm)) => {
-                    Value::list(fm.borrow().iter().map(|(_, fv)| noentity(fv)).collect())
+                    Value::list(fm.borrow().iter().map(|(fk, fv)| plain(fv, fk)).collect())
                 }
-                ("test", _) => noentity(v),
+                ("test", _) => plain(v, ""),
                 _ => v.clone(),
             };
             setp(&out, k, v);
@@ -241,12 +242,12 @@ fn without(val: &Value, keys: &[&str]) -> Value {
     out
 }
 
-fn noentity(val: &Value) -> Value {
+fn plain(val: &Value, name: &str) -> Value {
     match val {
         Value::Map(m) => {
             let out = Value::empty_map();
             for (k, v) in m.borrow().iter() {
-                if "entity" != k.as_str() {
+                if "entity" != k.as_str() && !("rbac" == name && "rules" == k.as_str()) {
                     setp(&out, k, v.clone());
                 }
             }

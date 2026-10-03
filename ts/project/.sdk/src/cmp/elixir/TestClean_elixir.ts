@@ -627,7 +627,8 @@ ${candidates(Name, entity, model)}
 
   # A feature's name is not a field name: a feature called secrets does not
   # make its settings secret, though a sensitive field inside it still is. An
-  # entity block, of entity settings or seeded records, is not read at all.
+  # entity block, of entity settings or seeded records, is not read at all, and
+  # nor are rbac's rules, keyed by entity and operation names.
   test "a feature's name is read as a name" do
     record = S.jm(["zztoken", S.jm(["ZZTOKEN01", S.jm(["note", "PLAINRECORD-t5r3e1w9"])])])
 
@@ -638,6 +639,7 @@ ${candidates(Name, entity, model)}
           "feature",
           S.jm([
             "secrets", S.jm(["active", false, "name", "ZZNAME-feat123", "token", "ZZTOKEN-feat456"]),
+            "rbac", S.jm(["active", false, "rules", S.jm(["zztoken.load", "PLAINRULE-k7j5h3g1"])]),
             "test", S.jm(["active", false, "entity", record])
           ]),
           "entity", S.jm(["zztoken", S.jm(["alias", S.jm(["zzkey", "PLAINALIAS-m2n4b6v8"])])])
@@ -648,6 +650,7 @@ ${candidates(Name, entity, model)}
     assert ${Name}.Utility.clean_impl(ctx, "ZZNAME-feat123 ZZTOKEN-feat456") == "ZZNAME-feat123 " <> @mask
     assert ${Name}.Utility.clean_impl(ctx, "record PLAINRECORD-t5r3e1w9") == "record PLAINRECORD-t5r3e1w9"
     assert ${Name}.Utility.clean_impl(ctx, "alias PLAINALIAS-m2n4b6v8") == "alias PLAINALIAS-m2n4b6v8"
+    assert ${Name}.Utility.clean_impl(ctx, "rule PLAINRULE-k7j5h3g1") == "rule PLAINRULE-k7j5h3g1"
   end
 
   test "the generated config's own clean block is honoured" do

@@ -385,18 +385,21 @@ ${candidates(entity)}
             (t/is-some (drive bare target (vs/jm "explain" (vs/jm)) sinks) "the 404 should fail without a clean option"))
           ;; A feature's name is not a field name: only the sensitive names
           ;; inside its settings register. An entity block, of entity settings
-          ;; or seeded records keyed by entity name and id, is not read at all.
+          ;; or seeded records keyed by entity name and id, is not read at all,
+          ;; and nor are rbac's rules, keyed by entity and operation names.
           (let [record (vs/jm "zztoken" (vs/jm "ZZTOKEN01" (vs/jm "note" "PLAINRECORD-t5r3e1w9")))
                 sdk (construct (vs/jm "apikey" (:apikey CANARY)
                                       "feature" (vs/jm "zzsecrets" (vs/jm "active" false "kind" "PLAINSETTING-q8w2e4r6")
                                                        "zzfeat" (vs/jm "active" false "apitoken" "FEATTOKEN-z9y8x7w6")
+                                                       "rbac" (vs/jm "active" false "rules" (vs/jm "zztoken.load" "PLAINRULE-k7j5h3g1"))
                                                        "test" (vs/jm "active" false "entity" record))
                                       "entity" (vs/jm "zztoken" (vs/jm "alias" (vs/jm "zzkey" "PLAINALIAS-m2n4b6v8")))))
                 root (core/client-root-ctx sdk)]
             (reset! featured {:plain (core/u-clean root "kind PLAINSETTING-q8w2e4r6")
                               :token (core/u-clean root "token FEATTOKEN-z9y8x7w6")
                               :record (core/u-clean root "record PLAINRECORD-t5r3e1w9")
-                              :alias (core/u-clean root "alias PLAINALIAS-m2n4b6v8")}))
+                              :alias (core/u-clean root "alias PLAINALIAS-m2n4b6v8")
+                              :rule (core/u-clean root "rule PLAINRULE-k7j5h3g1")}))
           (let [leaked (filterv (fn [s] (seq (leaks (:text s)))) @sinks)]
             (println (str "clean: swept " (count @sinks) " surface(s), " (count leaked) " leak(s)"))
             (t/is-eq (count leaked) 0
@@ -433,6 +436,7 @@ ${candidates(entity)}
           (t/is-eq (:token @featured) (str "token " MASK) "a sensitive setting inside a feature registers")
           (t/is-eq (:record @featured) "record PLAINRECORD-t5r3e1w9" "a seeded record does not register")
           (t/is-eq (:alias @featured) "alias PLAINALIAS-m2n4b6v8" "an entity setting does not register")
+          (t/is-eq (:rule @featured) "rule PLAINRULE-k7j5h3g1" "an rbac rule keyed by entity and operation does not register")
           (let [explained (get @explains "ok/explain")
                 result (vs/getprop explained "result")]
             (t/is-some result "the explain record should carry the result")

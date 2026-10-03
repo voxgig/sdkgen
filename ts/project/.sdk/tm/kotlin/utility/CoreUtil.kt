@@ -159,7 +159,8 @@ fun cleanAdd(ctx: Context, value: Any?) {
 // shape: a credential mistyped as a map or a number is still one, and a
 // message can quote it. A key under `feature` names a feature, not a field,
 // so a feature called secrets does not make its settings secret.
-// Entity blocks (entity settings, seeded records) hold no credential.
+// Entity blocks (entity settings, seeded records) hold no credential, and nor
+// do rbac's rules, keyed by entity and operation names.
 internal fun registerSensitive(cfg: CleanConfig, opts: Map<String, Any?>) {
   val seen = mutableListOf<Any>()
   for ((k, v) in opts) {
@@ -168,19 +169,20 @@ internal fun registerSensitive(cfg: CleanConfig, opts: Map<String, Any?>) {
     }
     val under = sensitiveKey(cfg, k)
     when {
-      "feature" == k && v is Map<*, *> -> for (fopts in v.values) {
-        addSensitive(cfg, noEntity(fopts), under, 2, seen)
+      "feature" == k && v is Map<*, *> -> for ((name, fopts) in v) {
+        addSensitive(cfg, plainSettings(fopts, name?.toString()), under, 2, seen)
       }
       "feature" == k && v is List<*> -> for (fopts in v) {
-        addSensitive(cfg, noEntity(fopts), under, 2, seen)
+        addSensitive(cfg, plainSettings(fopts, (fopts as? Map<*, *>)?.get("name") as? String), under, 2, seen)
       }
-      else -> addSensitive(cfg, if ("test" == k) noEntity(v) else v, under, 1, seen)
+      else -> addSensitive(cfg, if ("test" == k) plainSettings(v, null) else v, under, 1, seen)
     }
   }
 }
 
-private fun noEntity(block: Any?): Any? =
-  if (block is Map<*, *>) block.filterKeys { it != "entity" } else block
+private fun plainSettings(block: Any?, name: String?): Any? =
+  if (block is Map<*, *>) block.filterKeys { it != "entity" && !("rbac" == name && it == "rules") }
+  else block
 
 private fun addSensitive(cfg: CleanConfig, v: Any?, under: Boolean, depth: Int, seen: MutableList<Any>) {
   if (v == null || MAXDEPTH <= depth) {

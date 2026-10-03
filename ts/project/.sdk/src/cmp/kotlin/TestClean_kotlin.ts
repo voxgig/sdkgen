@@ -624,7 +624,8 @@ class CleanTest {
   }
 
   // An entity block, of per-entity settings or seeded records keyed by
-  // entity name and id, is not read at all.
+  // entity name and id, is not read at all, and nor are rbac's rules, keyed by
+  // entity and operation names.
   @Test
   fun aFeatureNameDoesNotMakeItsSettingsSecret() {
     val sdk = construct(linkedMapOf<String, Any?>(
@@ -632,6 +633,8 @@ class CleanTest {
       "feature" to linkedMapOf<String, Any?>(
         "secrets" to linkedMapOf<String, Any?>(
           "active" to false, "kind" to "SETTING-KIND-4829", "token" to canarySecret),
+        "rbac" to linkedMapOf<String, Any?>(
+          "active" to false, "rules" to linkedMapOf<String, Any?>("zztoken.load" to "PLAINRULE-k7j5h3g1")),
         "test" to linkedMapOf<String, Any?>("active" to false, "entity" to linkedMapOf<String, Any?>(
           "zztoken" to linkedMapOf<String, Any?>(
             "ZZTOKEN01" to linkedMapOf<String, Any?>("note" to "PLAINRECORD-t5r3e1w9"))))),
@@ -644,6 +647,8 @@ class CleanTest {
       sdk.getUtility().clean(root, "record PLAINRECORD-t5r3e1w9"))
     assertEquals("alias PLAINALIAS-m2n4b6v8",
       sdk.getUtility().clean(root, "alias PLAINALIAS-m2n4b6v8"))
+    assertEquals("rule PLAINRULE-k7j5h3g1",
+      sdk.getUtility().clean(root, "rule PLAINRULE-k7j5h3g1"))
   }
 
   @Test

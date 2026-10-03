@@ -10,13 +10,15 @@ static int mo_cmp_cstr(const void* a, const void* b) {
   return strcmp(*(const char* const*)a, *(const char* const*)b);
 }
 
-static voxgig_value* mo_noentity(voxgig_value* val) {
+static voxgig_value* mo_plain(voxgig_value* val, const char* name) {
   if (!voxgig_is_map(val)) return voxgig_retain(val);
   voxgig_value* out = v_map();
   voxgig_map* m = voxgig_as_map(val);
+  int rbac = NULL != name && 0 == strcmp(name, "rbac");
   for (size_t i = 0; i < m->len; i++) {
-    if (0 != strcmp(m->entries[i].key, "entity")) {
-      setp(out, m->entries[i].key, voxgig_retain(m->entries[i].value));
+    const char* k = m->entries[i].key;
+    if (0 != strcmp(k, "entity") && !(rbac && 0 == strcmp(k, "rules"))) {
+      setp(out, k, voxgig_retain(m->entries[i].value));
     }
   }
   return out;
@@ -25,7 +27,8 @@ static voxgig_value* mo_noentity(voxgig_value* val) {
 // The options to scan for secrets. The feature map is keyed by feature
 // names, not field names, so it is scanned as a list: `secrets` must not
 // make every setting of that feature a secret. Entity blocks hold entity
-// settings and seeded records, never a credential, so none is scanned.
+// settings and seeded records, never a credential, so none is scanned, and
+// nor are rbac's rules, keyed by entity and operation names.
 static voxgig_value* mo_without(voxgig_value* val, const char* k1, const char* k2) {
   voxgig_value* out = v_map();
   if (!voxgig_is_map(val)) return out;
@@ -39,11 +42,11 @@ static voxgig_value* mo_without(voxgig_value* val, const char* k1, const char* k
       voxgig_value* list = v_list();
       voxgig_map* fm = voxgig_as_map(v);
       for (size_t f = 0; f < fm->len; f++) {
-        voxgig_list_push(voxgig_as_list(list), mo_noentity(fm->entries[f].value));
+        voxgig_list_push(voxgig_as_list(list), mo_plain(fm->entries[f].value, fm->entries[f].key));
       }
       v = list;
     } else if (0 == strcmp(k, "test")) {
-      v = mo_noentity(v);
+      v = mo_plain(v, NULL);
     } else {
       voxgig_retain(v);
     }

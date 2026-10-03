@@ -314,25 +314,30 @@ sub add_sensitive {
 
 # A feature's name is not a field name: only the sensitive names inside its
 # settings count, so `secrets` does not make every setting a secret. Entity
-# blocks (per-entity settings, seeded records) hold no credential.
+# blocks (per-entity settings, seeded records) hold no credential, and nor do
+# rbac's rules, keyed by entity and operation names.
 sub add_options {
   my ($ctx, $opts) = @_;
   my %scan = %$opts;
   my $feature = delete $scan{feature};
   delete $scan{entity};
-  $scan{test} = no_entity($scan{test}) if exists $scan{test};
+  $scan{test} = plain_settings($scan{test}) if exists $scan{test};
   add_sensitive($ctx, \%scan);
-  my @blocks = Voxgig::Struct::ismap($feature) ? values %$feature
-    : Voxgig::Struct::islist($feature) ? @$feature : ($feature);
-  add_sensitive($ctx, no_entity($_)) for @blocks;
+  my @blocks = Voxgig::Struct::ismap($feature)
+    ? map { [$_, $feature->{$_}] } sort keys %$feature
+    : Voxgig::Struct::islist($feature)
+    ? map { [Voxgig::Struct::ismap($_) ? $_->{name} : undef, $_] } @$feature
+    : ([undef, $feature]);
+  add_sensitive($ctx, plain_settings($_->[1], $_->[0])) for @blocks;
   return;
 }
 
-sub no_entity {
-  my ($block) = @_;
+sub plain_settings {
+  my ($block, $name) = @_;
   return $block unless Voxgig::Struct::ismap($block);
   my %copy = %$block;
   delete $copy{entity};
+  delete $copy{rules} if defined $name && 'rbac' eq $name;
   return \%copy;
 }
 
