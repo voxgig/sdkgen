@@ -187,8 +187,9 @@ function opParams(op: any): any[] {
     points = canonical
   }
 
-  const seen: Record<string, any> = {}
-  const requiredOnAll: Record<string, boolean> = {}
+  // Keyed by parameter name, which may be `__proto__`.
+  const seen: Record<string, any> = Object.create(null)
+  const requiredOnAll: Record<string, boolean> = Object.create(null)
   const out: any[] = []
 
   points.forEach((pt: any, pointIndex: number) => {
@@ -197,7 +198,7 @@ function opParams(op: any): any[] {
     const pathParams = pt && pt.g && pt.g.params ? each(pt.g.params) : []
     const queryParams = pt && pt.g && pt.g.query ? each(pt.g.query) : []
     const params = [...pathParams, ...queryParams]
-    const requiredHere: Record<string, boolean> = {}
+    const requiredHere: Record<string, boolean> = Object.create(null)
     params.forEach((p: any) => {
       if (p && null != p.n) {
         requiredHere[p.n] = false !== p.r

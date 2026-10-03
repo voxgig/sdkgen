@@ -244,7 +244,7 @@ ${aboutMd.trim()}
                     .filter((it) => (it.name !== exIdF && it.name !== 'id') || !it.optional);
                 const required = shapeItems.filter((it) => !it.optional);
                 const chosen = required.length ? required : shapeItems.slice(0, 3);
-                const bodyLines = chosen.map((it) => `  ${it.name}: ${tsExampleLiteral(it.type)},`);
+                const bodyLines = chosen.map((it) => `  ${(0, naming_1.jsKey)(it.name)}: ${tsExampleLiteral(it.type)},`);
                 const body = bodyLines.length ? `\n${bodyLines.join('\n')}\n` : '';
                 exCall = `const ${exLower} = await client.${ex}().${primaryOp}({${body}})`;
             }

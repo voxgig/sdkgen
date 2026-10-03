@@ -35,6 +35,10 @@ import {
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
 
 
+// A list requiring a Lua keyword and `__proto__`, which an object literal must compute.
+const KEYWORD_LIST = listOnly('crate', [['end', '"`$STRING`"'], ['__proto__', '"`$STRING`"']])
+
+
 function materialise(files: Record<string, string>, root: string) {
   for (const [rel, content] of Object.entries(files)) {
     const path = Path.join(root, rel)
@@ -474,6 +478,7 @@ describe('generated SDK compiles', () => {
     ['a list example with its required parameters', 'ts-readme-search', searchOnly()],
     ['a list example with a nullable and a null-only parameter', 'ts-readme-nullable',
       listOnly('tally', [['n', '["`$ONE`", ["`$INTEGER`", "`$NULL`"]]'], ['z', '"`$NULL`"']])],
+    ['a list example whose parameters are a keyword and __proto__', 'ts-readme-keys', KEYWORD_LIST],
   ] as [string, string, string | undefined][]) {
     test('typescript: the README example tests type-check and run ' + what, async () => {
       ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
@@ -5272,14 +5277,14 @@ describe('the README examples run for a slug carrying the word client', () => {
     if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
   })
 
-  const readmeLane = async (t: any, lane: any, dir: string, extra?: string) => {
+  const readmeLane = async (t: any, lane: any, dir: string, extra?: string, mark = /engine/) => {
     const sdkroot = Path.join(tmp, dir, lane.target)
     const files = await generateTo(lane.target, sdkroot, extra, undefined,
       { name: README_SLUG, top: true })
     ok(null != files[lane.runner], lane.target + ': ' + lane.runner + ' was not generated')
     ok(String(files['README.md']).includes(README_SLUG),
       lane.target + ': the README does not carry the slug, so it tests nothing')
-    ok(null == extra || /engine/.test(String(files['README.md'])),
+    ok(null == extra || mark.test(String(files['README.md'])),
       lane.target + ': the README has no list example with its required parameters')
 
     const cmd = lane.command()
@@ -5307,6 +5312,11 @@ describe('the README examples run for a slug carrying the word client', () => {
     test(lane.target + ': the README examples run where a list requires parameters', async (t) => {
       await readmeLane(t, lane, lane.target + '-search', searchOnly())
     })
+
+    test(lane.target + ': the README examples run where a list\'s parameters are a keyword and __proto__',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-keys', KEYWORD_LIST, /__proto__/)
+      })
   }
 })
 

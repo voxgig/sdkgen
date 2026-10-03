@@ -155,8 +155,9 @@ function opParams(op) {
     if (0 < canonical.length) {
         points = canonical;
     }
-    const seen = {};
-    const requiredOnAll = {};
+    // Keyed by parameter name, which may be `__proto__`.
+    const seen = Object.create(null);
+    const requiredOnAll = Object.create(null);
     const out = [];
     points.forEach((pt, pointIndex) => {
         // Path AND query: a path-param-only read misses e.g. GET /result?trace_id=,
@@ -164,7 +165,7 @@ function opParams(op) {
         const pathParams = pt && pt.g && pt.g.params ? (0, jostraca_1.each)(pt.g.params) : [];
         const queryParams = pt && pt.g && pt.g.query ? (0, jostraca_1.each)(pt.g.query) : [];
         const params = [...pathParams, ...queryParams];
-        const requiredHere = {};
+        const requiredHere = Object.create(null);
         params.forEach((p) => {
             if (p && null != p.n) {
                 requiredHere[p.n] = false !== p.r;

@@ -38,11 +38,8 @@ function litFor(lang, type) {
         return 'py' === lang ? 'True' : ('rb' === lang ? 'true' : 'true');
     if ('ARRAY' === k)
         return ('lua' === lang) ? '{}' : ('go' === lang ? '[]any{}' : '[]');
-    // PHP has no `{}` literal — `["data" => {}]` is a parse error, which took
-    // the whole generated README down for any entity with an object-typed
-    // writable field (dymo-api-introduction, html-creator). Arrays serve as both
-    // list and map, so `[]` is the empty object too. Ruby and Lua likewise want
-    // their own empty-hash/table spelling rather than JS's.
+    // PHP has no `{}` literal (`["data" => {}]` does not parse) and its arrays
+    // serve as maps; Ruby and Lua spell an empty map their own way too.
     if ('OBJECT' === k) {
         if ('go' === lang)
             return 'map[string]any{}';
@@ -65,8 +62,6 @@ function idLiteral(ent, op, idF) {
     const k = (0, canonType_1.canonScalarKey)(item && item.type);
     return ('INTEGER' === k || 'NUMBER' === k) ? '1' : '"example_id"';
 }
-const JS_IDENT = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
-const LUA_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
 function litPair(lang, name, value) {
     switch (lang) {
         case 'py': return `"${name}": ${value}`;
@@ -74,10 +69,8 @@ function litPair(lang, name, value) {
         case 'rb': return `"${name}" => ${value}`;
         case 'go': return `"${name}": ${value}`;
         case 'json': return `${JSON.stringify(name)}: ${value}`;
-        case 'lua': return LUA_IDENT.test(name) ?
-            `${name} = ${value}` : `["${name}"] = ${value}`;
-        default: return JS_IDENT.test(name) ?
-            `${name}: ${value}` : `'${name}': ${value}`;
+        case 'lua': return `${(0, naming_1.luaKey)(name)} = ${value}`;
+        default: return `${(0, naming_1.jsKey)(name)}: ${value}`;
     }
 }
 function requiredItems(ent, op) {

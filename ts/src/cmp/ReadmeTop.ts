@@ -17,7 +17,7 @@ import { EXAMPLE_LANGS, matchArg, listMatchArg, idLiteral, primaryOpCall } from 
 import { mcpTools, MCP_WRITE_OPS } from '../helpers/mcpTools'
 import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { canonScalarKey } from '../helpers/canonType'
-import { safeVarName, exampleVarName } from '../helpers/naming'
+import { safeVarName, exampleVarName, jsKey } from '../helpers/naming'
 
 import {
   installCommand as pkgInstall,
@@ -290,7 +290,7 @@ ${aboutMd.trim()}
             (it.name !== exIdF && it.name !== 'id') || !it.optional)
         const required = shapeItems.filter((it: any) => !it.optional)
         const chosen = required.length ? required : shapeItems.slice(0, 3)
-        const bodyLines = chosen.map((it: any) => `  ${it.name}: ${tsExampleLiteral(it.type)},`)
+        const bodyLines = chosen.map((it: any) => `  ${jsKey(it.name)}: ${tsExampleLiteral(it.type)},`)
         const body = bodyLines.length ? `\n${bodyLines.join('\n')}\n` : ''
         exCall = `const ${exLower} = await client.${ex}().${primaryOp}({${body}})`
       }

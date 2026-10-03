@@ -4615,6 +4615,56 @@ main: kit: flow: BasicBadgeFlow: {
   })
 
 
+  test('a list example writes a Lua keyword and __proto__ as keys of their own', async () => {
+    const out = await generate(['ts', 'js', 'lua'], undefined,
+      listOnly('crate', [['end', '"`$STRING`"'], ['__proto__', '"`$STRING`"']]))
+
+    // A bare or quoted __proto__ key sets the prototype, and a bare `end` does not parse.
+    const want: Record<string, string> = {
+      ts: "['__proto__']: \"example\"", js: "['__proto__']: \"example\"", lua: '["end"] = "example"',
+    }
+    const wrong: string[] = []
+    for (const target of ['ts', 'js', 'lua']) {
+      const found = listCalls(out, target, /[Cc]rate/)
+      ok(0 < found.length, target + ': no list example found')
+      ok(found.some((line: string) => line.includes(want[target])),
+        target + ': no list example writes ' + want[target] + ':\n' + found.join('\n'))
+      wrong.push(...found.filter((line: string) =>
+        /[{,]\s*'?__proto__'?\s*:/.test(line) || /[{,]\s*end\s*=/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'list examples with a key that sets the prototype or does not parse:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('the root README quotes a create field whose name is not an identifier', async () => {
+    const out = await generate(['ts'], undefined, entityOnly(`
+main: kit: entity: note: {
+  alias: field: {}
+  name: "note"
+  fields: {
+    "first-name": { h: 'First', n: "first-name", r: true, t: "\`$STRING\`" }
+  }
+  op: create: {
+    name: "create"
+    points: [ {
+      g: {}, m: "POST", o: "/note", s: [{ lit: "note" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: BasicNoteFlow: {
+  entity: "note", kind: "basic", name: "BasicNoteFlow"
+  step: [ { o: "create", i: { ref: "note_ref01" } } ]
+}
+`))
+    ok(/client\.Note\(\)\.create\(\{\n  'first-name': /.test(out['README.md']),
+      'the root README create example does not quote first-name:\n' +
+      out['README.md'].split('\n').filter((line: string) => /first-name/.test(line)).join('\n'))
+  })
+
+
   test('the root README writes a nullable create field as its type, and a null-only one as null', async () => {
     const out = await generate(['ts'], undefined, entityOnly(`
 main: kit: entity: note: {

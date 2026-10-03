@@ -459,8 +459,10 @@ function jsProp(obj: string, name: string): string {
 
 // A safe JS/TS OBJECT-LITERAL key for a spec-derived field name: bare when
 // the name is a valid identifier, single-quoted otherwise. `{ 3ds_session_id:
-// 1 }` is a syntax error (TS1351) — doc examples must quote such keys.
+// 1 }` is a syntax error (TS1351) — doc examples must quote such keys. A bare
+// or quoted `__proto__` sets the prototype, so it is computed.
 function jsKey(name: string): string {
+  if ('__proto__' === name) return `['__proto__']`
   return JS_IDENT.test(name) ? name : `'${name}'`
 }
 
