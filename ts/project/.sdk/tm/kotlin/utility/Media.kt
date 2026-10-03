@@ -1,5 +1,7 @@
 package KOTLINPACKAGE.utility
 
+import java.io.InputStream
+
 import KOTLINPACKAGE.utility.struct.Struct
 
 // The media types a point declares: `response` (the model's `rs`) for the
@@ -60,6 +62,11 @@ object Media {
     return headers
   }
 
-  // Bytes, an InputStream or a String, sent as they are.
-  fun rawBody(reqdata: Map<String, Any?>?): Any? = reqdata?.get(RAW_BODY)
+  // Bytes, an InputStream or a String, sent as they are. An InputStream can be
+  // read once, so it is read here, before the first attempt, and a retry sends
+  // the same bytes again.
+  fun rawBody(reqdata: Map<String, Any?>?): Any? {
+    val body = reqdata?.get(RAW_BODY)
+    return if (body is InputStream) body.readBytes() else body
+  }
 }

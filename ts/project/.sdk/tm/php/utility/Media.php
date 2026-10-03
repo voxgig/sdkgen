@@ -82,9 +82,12 @@ class ProjectNameMedia
         return $headers;
     }
 
-    // A string of bytes or text, or a stream, sent as it is.
+    // A string of bytes or text, or a stream, sent as it is. A stream can be
+    // read once, so it is read here, before the first attempt, and a retry
+    // sends the same bytes again.
     public static function rawBody(mixed $reqdata): mixed
     {
-        return is_array($reqdata) ? ($reqdata[self::RAW_BODY] ?? null) : null;
+        $body = is_array($reqdata) ? ($reqdata[self::RAW_BODY] ?? null) : null;
+        return is_resource($body) ? stream_get_contents($body) : $body;
     }
 }

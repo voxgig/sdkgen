@@ -64,6 +64,11 @@ def media_headers(point, headers):
     return headers
 
 
-# Bytes, a file object or a string, sent as they are.
+# Bytes, a file object or a string, sent as they are. A file object can be read
+# once, so it is read here, before the first attempt, and a retry sends the
+# same bytes again.
 def raw_body(reqdata):
-    return reqdata.get(RAW_BODY) if isinstance(reqdata, dict) else None
+    body = reqdata.get(RAW_BODY) if isinstance(reqdata, dict) else None
+    if body is not None and callable(getattr(body, "read", None)):
+        return body.read()
+    return body

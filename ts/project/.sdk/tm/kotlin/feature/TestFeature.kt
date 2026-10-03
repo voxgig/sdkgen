@@ -59,6 +59,15 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
   // and the response transform unwraps that key on the way back. Returning the
   // bare payload means the transform unwraps a property that is not there and
   // the caller gets nothing. Mirrors the go/ts/lua/php mocks.
+  // The record the mock keeps: the request data without `$body`, which only the
+  // wire carries.
+  private fun record(reqdata: Map<String, Any?>?): MutableMap<String, Any?>? {
+    if (reqdata == null) return null
+    val out = LinkedHashMap(reqdata)
+    out.remove("\$body")
+    return out
+  }
+
   private fun envelope(ctx: Context?, data: Any?): Any? {
     if (null == data || null == ctx) return data
     val tm = Struct.getprop(ctx.point, "transform")
@@ -166,7 +175,7 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
           return respond(ctx, 404, null, extra("statusText", "Not found"))
         }
         if (ent is MutableMap<*, *>) {
-          Struct.merge(Struct.jt(ent, reqdata))
+          Struct.merge(Struct.jt(ent, record(reqdata)))
         }
         Struct.delprop(ent, "\$KEY")
         val out = Struct.clone(ent)
@@ -195,7 +204,7 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
           )
         }
 
-        val ent = Struct.clone(ctx.reqdata)
+        val ent = Struct.clone(record(ctx.reqdata))
         if (ent is MutableMap<*, *>) {
           val entm = ent as MutableMap<String, Any?>
           entm["id"] = id

@@ -292,7 +292,10 @@ fn test_fetch(entity: Value, ctx: *Context, _: []const u8, _: Value) err.E!Value
             return respond(ctx, 404, h.vnull(), &.{.{ "statusText", h.vstr("Not found") }});
         }
         if (ent == .object and reqdata == .object) {
-            ent = h.merge(h.ja(&.{ ent, reqdata }));
+            // `$body` travels on the wire alone; the record is the rest.
+            const rec = h.clone(reqdata);
+            h.del_prop(rec, h.vstr("$body"));
+            ent = h.merge(h.ja(&.{ ent, rec }));
         }
         h.del_prop(ent, h.vstr("$KEY"));
         return respond(ctx, 200, h.clone(ent), &.{});
@@ -319,6 +322,7 @@ fn test_fetch(entity: Value, ctx: *Context, _: []const u8, _: Value) err.E!Value
         }
         const ent = h.clone(ctx.reqdata);
         if (ent == .object) {
+            h.del_prop(ent, h.vstr("$body"));
             h.setp(ent, "id", id);
             if (id == .string) h.setp(entmap, id.string, ent);
             h.del_prop(ent, h.vstr("$KEY"));

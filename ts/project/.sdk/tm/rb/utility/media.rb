@@ -53,8 +53,11 @@ module ProjectNameUtilities
     headers
   end
 
-  # A String, of bytes or text, or an IO, sent as it is.
+  # A String, of bytes or text, or an IO, sent as it is. An IO can be read
+  # once, so it is read here, before the first attempt, and a retry sends the
+  # same bytes again.
   def self.raw_body(reqdata)
-    reqdata.is_a?(Hash) ? reqdata[RAW_BODY] : nil
+    body = reqdata.is_a?(Hash) ? reqdata[RAW_BODY] : nil
+    body.respond_to?(:read) ? body.read : body
   end
 end

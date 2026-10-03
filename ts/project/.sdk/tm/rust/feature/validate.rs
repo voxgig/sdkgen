@@ -64,6 +64,8 @@ impl ValidateFeature {
 
         if let Some(m) = out.as_map() {
             m.borrow_mut().shift_remove("$action");
+            // Nor is `$body`, the raw request body.
+            m.borrow_mut().shift_remove("$body");
         }
 
         out

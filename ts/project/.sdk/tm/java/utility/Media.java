@@ -1,5 +1,8 @@
 package JAVAPACKAGE.utility;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -80,8 +83,19 @@ final class Media {
     return headers;
   }
 
-  // Bytes, an InputStream or a String, sent as they are.
+  // Bytes, an InputStream or a String, sent as they are. An InputStream can be
+  // read once, so it is read here, before the first attempt, and a retry sends
+  // the same bytes again.
   static Object rawBody(Map<String, Object> reqdata) {
-    return reqdata == null ? null : reqdata.get(RAW_BODY);
+    Object body = reqdata == null ? null : reqdata.get(RAW_BODY);
+    if (body instanceof InputStream) {
+      try {
+        return ((InputStream) body).readAllBytes();
+      }
+      catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
+    return body;
   }
 }

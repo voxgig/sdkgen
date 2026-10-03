@@ -13,21 +13,22 @@ import * as struct from '@voxgig/struct'
 import { SdkGen, configDefinition, bodyNote, opRawBody } from '../dist/sdkgen'
 
 import { STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot } from './generateharness'
+import { loadBase, loadFeature, sandboxLoad } from './featureharness'
 import { MEDIA_MODEL } from './mediaprobes'
 
 
 const TM = Path.resolve(__dirname, '..', 'project', '.sdk', 'tm')
 
 
-function loadTs(rel: string): any {
+function loadTs(rel: string, shims: Record<string, any> = {}): any {
   const file = Path.join(TM, rel)
   const js = transform(readFileSync(file, 'utf8'), {
     transforms: ['typescript', 'imports'],
     filePath: file,
   }).code
 
-  const req = (p: string) => '../types' === p ? {} : p.startsWith('.') ?
-    loadTs(Path.relative(TM, Path.resolve(Path.dirname(file), p)) + '.ts') : require(p)
+  const req = (p: string) => p in shims ? shims[p] : '../types' === p ? {} : p.startsWith('.') ?
+    loadTs(Path.relative(TM, Path.resolve(Path.dirname(file), p)) + '.ts', shims) : require(p)
 
   const mod: any = { exports: {} }
   const fn = new Function('exports', 'require', 'module', '__dirname', '__filename', js)
@@ -336,6 +337,22 @@ describe('media: the generator', () => {
       .includes('cannot send'), false)
   })
 
+  test('a raw body is found behind a multipart point', () => {
+    const multipart = { kind: 'multipart', media: 'multipart/form-data', fields: [{ name: 'file', binary: true }] }
+    const two = { points: [{ a: true, rb: multipart }, { a: true, rb: UPLOAD }] }
+    deepStrictEqual(opRawBody(two), UPLOAD)
+    const note = bodyNote(two, { values: 'bytes' })
+    ok(note.includes('pass it as `$body`, bytes.'), note)
+    ok(note.includes('Its other endpoints declare `multipart/form-data` bodies, which this SDK sends as JSON.'), note)
+    ok(!bodyNote(op(UPLOAD), { values: 'bytes' }).includes('other endpoints'))
+  })
+
+  test('the note says a stream is read in full, where a target accepts one', () => {
+    const note = bodyNote(op(UPLOAD), { values: 'bytes or a stream', once: 'a stream' })
+    ok(note.includes('bytes or a stream. A stream is read in full before the request is sent, so that a retry sends the same bytes.'), note)
+    ok(!bodyNote(op(UPLOAD), { values: 'bytes' }).includes('read in full'))
+  })
+
   test('a multipart body is noted as sent as JSON', () => {
     ok(bodyNote(op({ kind: 'multipart', media: 'multipart/form-data' }), { values: 'x' })
       .includes('as JSON'))
@@ -343,6 +360,10 @@ describe('media: the generator', () => {
     strictEqual(bodyNote(op(undefined), { values: 'x' }), '')
   })
 })
+
+
+// The targets whose `$body` may be a stream, which is read once.
+const STREAMS = ['csharp', 'go', 'java', 'js', 'kotlin', 'perl', 'php', 'py', 'rb', 'scala', 'ts']
 
 
 describe('media: every target documents a raw body', () => {
@@ -372,10 +393,168 @@ describe('media: every target documents a raw body', () => {
         Path.relative(STAGE, p).split(Path.sep).join('/') === target + '/REFERENCE.md')
       const text = String(ref?.[1] ?? '')
       const notes = text.split('\n').filter((line) => line.includes('pass it as `$body`'))
+      const once = notes.filter((n) => n.includes('is read in full before the request is sent')).length
       if (2 !== notes.length ||
         !notes.some((n) => n.includes('`application/pdf`') && n.includes('`image/png`')) ||
-        !notes.some((n) => n.includes('`text/plain`'))) {
+        !notes.some((n) => n.includes('`text/plain`')) ||
+        (STREAMS.includes(target) ? 2 : 0) !== once) {
         missing.push(target + ': ' + JSON.stringify(notes))
+      }
+    }
+    deepStrictEqual(missing, [])
+  })
+})
+
+
+describe('media: a stream body is read once', () => {
+
+  // What the SDK's own types module gives makeRequest.
+  const TYPES = {
+    Response: class { constructor(o: any) { Object.assign(this, o || {}) } },
+    Result: class { constructor(o: any) { Object.assign(this, o || {}) } },
+  }
+
+  const REQUEST: Record<string, any> = {
+    ts: loadTs('ts/src/utility/MakeRequestUtility.ts', { '../types': TYPES }),
+    js: require(Path.join(TM, 'js', 'src', 'utility', 'MakeRequestUtility.js')),
+  }
+
+  const RETRY: Record<string, any> = {
+    ts: loadFeature('retry'),
+    js: require(Path.join(TM, 'js', 'src', 'feature', 'retry', 'RetryFeature.js')).RetryFeature,
+  }
+
+  // A transport that consumes a stream body, as fetch does, and fails the
+  // first attempt so that retry makes a second.
+  function transport(seen: Buffer[]) {
+    let attempt = 0
+    return async (_ctx: any, _url: string, fetchdef: any) => {
+      let body = fetchdef.body
+      if (null != body && 'function' === typeof body[Symbol.asyncIterator]) {
+        const chunks: Buffer[] = []
+        for await (const chunk of body) {
+          chunks.push(Buffer.from(chunk))
+        }
+        body = Buffer.concat(chunks)
+      }
+      seen.push(Buffer.from(body))
+      return 0 === attempt++ ?
+        { status: 503, statusText: 'Unavailable', headers: {}, json: async () => null } :
+        { status: 200, statusText: 'OK', headers: {}, json: async () => ({}) }
+    }
+  }
+
+  for (const lang of Object.keys(PIPES)) {
+    test(lang + ': a retry sends the same bytes again', async () => {
+      const seen: Buffer[] = []
+      const utility: any = {
+        struct,
+        fetcher: transport(seen),
+        makeFetchDef: PIPES[lang].makeFetchDef,
+        makeUrl: () => 'https://api.test/cat/c1',
+      }
+      const retry = new RETRY[lang]()
+      retry.init({ client: {}, utility }, { active: true, retries: 1, minDelay: 1, jitter: false, sleep: async () => { } })
+
+      const stream = new ReadableStream({
+        start(c) { c.enqueue(BYTES.subarray(0, 3)); c.enqueue(BYTES.subarray(3)); c.close() },
+      })
+      const ctx: any = {
+        out: {}, ctrl: {}, utility,
+        spec: { method: 'POST', headers: { 'content-type': 'application/pdf' }, body: stream },
+        error: (code: string, msg: string) => Object.assign(new Error(msg), { code }),
+      }
+
+      const response = await REQUEST[lang].makeRequest(ctx)
+      strictEqual(response.err, undefined)
+      strictEqual(response.status, 200)
+      strictEqual(seen.length, 2, 'one failure, one retry')
+      deepStrictEqual(seen[0], BYTES)
+      deepStrictEqual(seen[1], BYTES, 'the retry sent the same bytes')
+    })
+
+    test(lang + ': bytes and text still go out as they are', async () => {
+      const seen: Buffer[] = []
+      const utility: any = {
+        struct, fetcher: transport(seen), makeFetchDef: PIPES[lang].makeFetchDef,
+        makeUrl: () => 'https://api.test/cat/c1',
+      }
+      const ctx: any = {
+        out: {}, ctrl: {}, utility,
+        spec: { method: 'POST', headers: {}, body: BYTES },
+        error: (code: string, msg: string) => Object.assign(new Error(msg), { code }),
+      }
+      await REQUEST[lang].makeRequest(ctx)
+      deepStrictEqual(seen, [BYTES])
+    })
+  }
+})
+
+
+// Where each target's validate and test features live.
+const VALIDATE_FEATURES = [
+  'c/feature/validate.c', 'clojure/src/sdk/features.clj', 'cpp/feature/validate.hpp',
+  'csharp/feature/ValidateFeature.cs', 'elixir/lib/projectname/feature/validate.ex',
+  'go/feature/validate_feature.go', 'java/feature/ValidateFeature.java',
+  'js/src/feature/validate/ValidateFeature.js', 'kotlin/feature/ValidateFeature.kt',
+  'lua/feature/validate_feature.lua', 'ocaml/sdk_features.ml', 'perl/feature/validate_feature.pm',
+  'php/feature/ValidateFeature.php', 'py/pkg/feature/validate_feature.py',
+  'rb/feature/validate_feature.rb', 'rust/feature/validate.rs', 'scala/feature/ValidateFeature.scala',
+  'swift/Sources/ProjectNameSDK/feature/ValidateFeature.swift',
+  'ts/src/feature/validate/ValidateFeature.ts', 'zig/feature/validate.zig',
+]
+
+const TEST_FEATURES = VALIDATE_FEATURES.map((rel) => rel
+  .replace('validate_feature', 'test_feature').replace('ValidateFeature', 'TestFeature')
+  .replace('/validate/', '/test/').replace('/validate.', '/test.'))
+
+const COMMENT = /^\s*(\/\/|#|--|;;|\(\*|\*)/
+
+
+describe('media: $body is not a record field', () => {
+
+  test('ts: validate strict accepts $body beside the fields', () => {
+    const { ValidateFeature } = sandboxLoad(Path.join(TM, 'ts/src/feature/validate/ValidateFeature.ts'), {
+      '../base/BaseFeature': { BaseFeature: loadBase() },
+      '../../types': {},
+      '../../ProjectNameSDK': {},
+      '../../Schema': { ENTITYSPEC: { cat: { op: { create: { name: '`$STRING`' } } } } },
+    })
+    const validate = new ValidateFeature()
+    validate.init({ client: {} }, { active: true, strict: true })
+
+    const ctx = (reqdata: any) => ({
+      op: { name: 'create', entity: 'cat' }, entity: { name: 'cat' }, out: {}, data: {}, reqdata,
+      utility: { struct },
+      error: (code: string, msg: string) => Object.assign(new Error(msg), { code }),
+    })
+    strictEqual(validate.PreSpec(ctx({ name: 'Tom', $body: BYTES })), undefined)
+    strictEqual(validate.PreSpec(ctx({ name: 'Tom', $action: 'feed', $body: BYTES })), undefined)
+
+    const err = validate.PreSpec(ctx({ name: 'Tom', extra: 1 }))
+    ok(err instanceof Error && err.message.includes('extra'), 'strict still rejects an unknown field: ' + err)
+  })
+
+  test('every validate feature drops $body where it drops $action', () => {
+    strictEqual(VALIDATE_FEATURES.length, 20)
+    const missing: string[] = []
+    for (const rel of VALIDATE_FEATURES) {
+      const lines = readFileSync(Path.join(TM, rel), 'utf8').split('\n')
+      const paired = lines.some((line, i) => line.includes('$action') && !COMMENT.test(line) &&
+        [lines[i + 1], lines[i + 2]].some((next) => null != next && next.includes('$body') && !COMMENT.test(next)))
+      if (!paired) {
+        missing.push(rel)
+      }
+    }
+    deepStrictEqual(missing, [])
+  })
+
+  test('every test feature keeps $body out of its records', () => {
+    const missing: string[] = []
+    for (const rel of TEST_FEATURES) {
+      const lines = readFileSync(Path.join(TM, rel), 'utf8').split('\n')
+      if (!lines.some((line) => line.includes('$body') && !COMMENT.test(line))) {
+        missing.push(rel)
       }
     }
     deepStrictEqual(missing, [])

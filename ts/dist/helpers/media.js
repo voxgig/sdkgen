@@ -6,18 +6,21 @@ exports.bodyNote = bodyNote;
 exports.opRawBody = opRawBody;
 exports.opRequestBody = opRequestBody;
 const jostraca_1 = require("jostraca");
-// The model records a point's request body as `rb` and its success response
-// as `rs`; the generated config carries them as `body` and `response`.
-// The data key a raw request body travels under, in every target.
+// A point's `rb` and `rs` reach the generated config as `body` and `response`.
 const RAW_BODY = '$body';
 exports.RAW_BODY = RAW_BODY;
-// The body an operation's active points declare when it is not JSON alone.
-function opRequestBody(op) {
+// The bodies an operation's active points declare that are not JSON.
+function opBodies(op) {
     const points = op?.points ? (0, jostraca_1.each)(op.points) : [];
     return points
         .filter((pt) => false !== pt?.a)
         .map((pt) => pt?.rb)
-        .find((rb) => null != rb && 'json' !== rb.kind);
+        .filter((rb) => null != rb && 'json' !== rb.kind);
+}
+// A raw body first: it is the one that needs the caller's `$body`.
+function opRequestBody(op) {
+    const bodies = opBodies(op);
+    return bodies.find((rb) => 'raw' === rb.kind) || bodies[0];
 }
 function opRawBody(op) {
     const rb = opRequestBody(op);
@@ -26,9 +29,9 @@ function opRawBody(op) {
 function codeList(types) {
     return types.map((t) => '`' + t + '`').join(', ');
 }
-// The reference note for an operation whose body is not JSON. `values` names
-// what the target accepts as `$body`; `binary: false` marks a target that
-// cannot send bytes yet.
+// The reference note for a body that is not JSON. `values` names what the
+// target accepts as `$body`, `once` the stream among them, which is read in
+// full before the request is sent, and `binary: false` a target without bytes.
 function bodyNote(op, target) {
     const rb = opRequestBody(op);
     if (null == rb || 'string' !== typeof rb.media) {
@@ -43,10 +46,16 @@ function bodyNote(op, target) {
     }
     const others = (Array.isArray(rb.alternatives) ? rb.alternatives : [])
         .map((alt) => alt?.media).filter((m) => 'string' === typeof m);
+    const encoded = opBodies(op).filter((b) => 'raw' !== b.kind)
+        .map((b) => b.media).filter((m) => 'string' === typeof m);
     return 'Sends its body unencoded, as `' + rb.media + '`: pass it as `' + RAW_BODY +
         '`, ' + target.values + '.' +
+        (null == target.once ? '' : ' ' + target.once.charAt(0).toUpperCase() + target.once.slice(1) +
+            ' is read in full before the request is sent, so that a retry sends the same bytes.') +
         (0 < others.length ? ' The operation also accepts ' + codeList(others) +
             ': a `content-type` header option that is not JSON replaces the declared one.' : '') +
+        (0 < encoded.length ? ' Its other endpoints declare ' + codeList(encoded) +
+            ' bodies, which this SDK sends as JSON.' : '') +
         '\n\n';
 }
 //# sourceMappingURL=media.js.map

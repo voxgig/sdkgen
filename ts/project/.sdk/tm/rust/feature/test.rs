@@ -269,7 +269,10 @@ fn test_fetch(
                 ));
             }
             if let (Value::Map(_), Value::Map(_)) = (&ent, &reqdata) {
-                vs::merge(&Value::list(vec![ent.clone(), reqdata.clone()]), None);
+                // `$body` travels on the wire alone; the record is the rest.
+                let rec = vs::clone(&reqdata);
+                vs::del_prop(rec.clone(), &Value::str("$body"));
+                vs::merge(&Value::list(vec![ent.clone(), rec]), None);
             }
             vs::del_prop(ent.clone(), &Value::str("$KEY"));
             Ok(respond(ctx, 200, vs::clone(&ent), vec![]))
@@ -304,6 +307,7 @@ fn test_fetch(
 
             let ent = vs::clone(&ctx.reqdata.borrow().clone());
             if let Value::Map(_) = &ent {
+                vs::del_prop(ent.clone(), &Value::str("$body"));
                 setp(&ent, "id", id.clone());
                 if let Value::Str(id_str) = &id {
                     setp(&entmap, id_str, ent.clone());

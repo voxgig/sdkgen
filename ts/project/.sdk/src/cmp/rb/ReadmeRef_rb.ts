@@ -330,6 +330,7 @@ ${updateLines}  # Fields to update
           if ('create' === opname || 'update' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a `String`, or an IO that responds to `read`',
+              once: 'an IO',
             })
             if ('' !== note) Content(note)
           }

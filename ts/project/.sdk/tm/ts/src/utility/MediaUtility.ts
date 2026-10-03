@@ -76,6 +76,47 @@ function isStream(value: any): boolean {
 }
 
 
+// A stream can be read once. makeRequest reads it before the first attempt,
+// so that a retry sends the same bytes again.
+async function readStream(stream: any): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = []
+  if ('undefined' !== typeof ReadableStream && stream instanceof ReadableStream) {
+    const reader = stream.getReader()
+    for (; ;) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
+      chunks.push(chunkBytes(value))
+    }
+  }
+  else {
+    for await (const chunk of stream) {
+      chunks.push(chunkBytes(chunk))
+    }
+  }
+
+  const out = new Uint8Array(chunks.reduce((n, c) => n + c.byteLength, 0))
+  let at = 0
+  for (const chunk of chunks) {
+    out.set(chunk, at)
+    at += chunk.byteLength
+  }
+  return out
+}
+
+
+function chunkBytes(chunk: any): Uint8Array {
+  if ('string' === typeof chunk) {
+    return new TextEncoder().encode(chunk)
+  }
+  if (chunk instanceof ArrayBuffer) {
+    return new Uint8Array(chunk)
+  }
+  return new Uint8Array(chunk.buffer, chunk.byteOffset, chunk.byteLength)
+}
+
+
 // Bytes, a Blob or a stream: fetch sends these as they are.
 function isRawValue(value: any): boolean {
   return value instanceof ArrayBuffer || ArrayBuffer.isView(value) ||
@@ -92,4 +133,5 @@ export {
   isStream,
   mediaHeaders,
   rawBody,
+  readStream,
 }

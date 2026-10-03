@@ -9,6 +9,13 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
   # ops unwrap body.data.<field>, not just one level.
   ENVELOPE_RES_RE = /\A`body\.(.+)`\z/
 
+  # The record the mock keeps: the request data without `$body`, which only the
+  # wire carries.
+  def self.record(reqdata)
+    return reqdata unless reqdata.is_a?(Hash)
+    reqdata.reject { |k, _v| k == "$body" }
+  end
+
   def initialize
     super
     @version = "0.0.1"
@@ -130,7 +137,7 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
         # update miss: 404, never another record
         return respond.call(404, nil, { "statusText" => "Not found" }) unless ent
         if ent.is_a?(Hash) && fctx.reqdata.is_a?(Hash)
-          VoxgigStruct.merge([ent, fctx.reqdata])
+          VoxgigStruct.merge([ent, ProjectNameTestFeature.record(fctx.reqdata)])
         end
         VoxgigStruct.delprop(ent, "$KEY")
         out = VoxgigStruct.clone(ent)
@@ -153,7 +160,7 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
         id = fctx.utility.param.call(fctx, "id")
         id ||= "%04x%04x%04x%04x" % [rand(0x10000), rand(0x10000), rand(0x10000), rand(0x10000)]
 
-        ent = VoxgigStruct.clone(fctx.reqdata)
+        ent = VoxgigStruct.clone(ProjectNameTestFeature.record(fctx.reqdata))
         if ent.is_a?(Hash)
           ent["id"] = id
           entmap[id.to_s] = ent if id.is_a?(String)

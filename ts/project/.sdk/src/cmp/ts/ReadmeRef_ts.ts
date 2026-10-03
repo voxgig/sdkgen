@@ -378,6 +378,7 @@ ${updateLines}  // Fields to update
           if ('create' === opname || 'update' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string',
+              once: 'a stream',
             })
             if ('' !== note) Content(note)
           }

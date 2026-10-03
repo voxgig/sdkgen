@@ -214,6 +214,8 @@ class ProjectNameValidateFeature extends ProjectNameBaseFeature
         // custom-action call would be rejected for the one key that made it
         // reachable.
         unset($out['$action']);
+        // Nor is `$body`, the raw request body.
+        unset($out['$body']);
 
         return $out;
     }

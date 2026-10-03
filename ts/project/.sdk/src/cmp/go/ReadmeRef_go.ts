@@ -339,6 +339,7 @@ fmt.Println(result)
           if ('create' === opname || 'update' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a `[]byte`, a `string` or an `io.Reader`',
+              once: 'an `io.Reader`',
             })
             if ('' !== note) Content(note)
           }

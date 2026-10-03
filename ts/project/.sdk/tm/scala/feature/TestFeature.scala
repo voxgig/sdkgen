@@ -45,6 +45,15 @@ class TestFeature extends BaseFeature("test", "0.0.1", true) {
   // and the response transform unwraps that key on the way back. Returning the
   // bare payload means the transform unwraps a property that is not there and
   // the caller gets nothing. Mirrors the go/ts/lua/php mocks.
+  // The record the mock keeps: the request data without `$body`, which only the
+  // wire carries.
+  private def record(reqdata: JMap[String, Object]): JMap[String, Object] = {
+    if (reqdata == null) return null
+    val out = new LinkedHashMap[String, Object](reqdata)
+    out.remove("$body")
+    out
+  }
+
   private def envelope(ctx: Context, data: Object): Object = {
     if (data == null || ctx == null || ctx.point == null) return data
     val tm = Struct.getprop(ctx.point, "transform")
@@ -141,7 +150,7 @@ class TestFeature extends BaseFeature("test", "0.0.1", true) {
       val ent = Struct.getelem(found, java.lang.Integer.valueOf(0))
       // update miss: 404, never another record
       if (ent == null) return respond(ctx, 404, null, extra("statusText", "Not found"))
-      ent match { case _: JMap[_, _] if ctx.reqdata != null => Struct.merge(Struct.jt(ent, ctx.reqdata)); case _ => }
+      ent match { case _: JMap[_, _] if ctx.reqdata != null => Struct.merge(Struct.jt(ent, record(ctx.reqdata))); case _ => }
       Struct.delprop(ent, "$KEY")
       val out = Struct.clone(ent)
       respond(ctx, 200, out, null)
@@ -166,7 +175,7 @@ class TestFeature extends BaseFeature("test", "0.0.1", true) {
           java.lang.Integer.valueOf(r.nextInt(0x10000)), java.lang.Integer.valueOf(r.nextInt(0x10000)))
       }
 
-      val ent = Struct.clone(ctx.reqdata)
+      val ent = Struct.clone(record(ctx.reqdata))
       ent match {
         case entm0: JMap[_, _] =>
           val entm = entm0.asInstanceOf[JMap[String, Object]]

@@ -72,7 +72,14 @@ object Media {
     headers
   }
 
-  // Bytes, an InputStream or a String, sent as they are.
-  def rawBody(reqdata: JMap[String, Object]): Object =
-    if (reqdata == null) null else reqdata.get(RawBody)
+  // Bytes, an InputStream or a String, sent as they are. An InputStream can be
+  // read once, so it is read here, before the first attempt, and a retry sends
+  // the same bytes again.
+  def rawBody(reqdata: JMap[String, Object]): Object = {
+    val body = if (reqdata == null) null else reqdata.get(RawBody)
+    body match {
+      case stream: java.io.InputStream => stream.readAllBytes()
+      case other => other
+    }
+  }
 }

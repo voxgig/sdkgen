@@ -173,7 +173,10 @@ private:
       // update miss: 404, never another record
       if (is_nullish(ent)) return respond(ctx, 404, Value(nullptr), extra1("statusText", Value("Not found")));
       if (ent.is_map() && ctx->reqdata.is_map()) {
-        Struct::merge(vlist({ent, ctx->reqdata}));
+        // `$body` travels on the wire alone; the record is the rest.
+        Value rec = Struct::clone(ctx->reqdata);
+        Struct::delprop(rec, Value("$body"));
+        Struct::merge(vlist({ent, rec}));
       }
       Struct::delprop(ent, Value("$KEY"));
       Value out = Struct::clone(ent);
@@ -203,6 +206,7 @@ private:
       }
       Value ent = Struct::clone(ctx->reqdata);
       if (ent.is_map()) {
+        Struct::delprop(ent, Value("$body"));
         map_put(ent, "id", id);
         if (id.is_string()) map_put(entmap, id.as_string(), ent);
         Struct::delprop(ent, Value("$KEY"));

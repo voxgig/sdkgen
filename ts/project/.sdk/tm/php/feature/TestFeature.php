@@ -12,6 +12,17 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
     private ?array $options;
     private int $_netcalls;
 
+    // The record the mock keeps: the request data without `$body`, which only the
+    // wire carries.
+    private static function record(mixed $reqdata): array
+    {
+        if (!is_array($reqdata)) {
+            return [];
+        }
+        unset($reqdata['$body']);
+        return $reqdata;
+    }
+
     public function __construct()
     {
         parent::__construct();
@@ -237,7 +248,7 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
                     return $respond(404, null, ['statusText' => 'Not found']);
                 }
                 if (is_array($fctx->reqdata)) {
-                    $ent = \Voxgig\Struct\Struct::merge([$ent, $fctx->reqdata]);
+                    $ent = \Voxgig\Struct\Struct::merge([$ent, self::record($fctx->reqdata)]);
                 }
                 $id = is_array($ent) ? ($ent['id'] ?? null) : null;
                 if ($id !== null) {
@@ -267,7 +278,7 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
                         random_int(0, 0xFFFF), random_int(0, 0xFFFF));
                 }
 
-                $ent = is_array($fctx->reqdata) ? $fctx->reqdata : [];
+                $ent = self::record($fctx->reqdata);
                 $ent['id'] = $id;
                 $entmap[$id] = $ent;
                 $entity->data[$entname] = $entmap;

@@ -5,6 +5,7 @@ use warnings;
 
 use File::Basename ();
 use Cwd ();
+use Scalar::Util ();
 
 my $__dir;
 BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
@@ -75,10 +76,18 @@ sub media_headers {
   return $headers;
 }
 
-# A string of bytes, a character string (sent as UTF-8), or a filehandle.
+# A string of bytes, a character string (sent as UTF-8), or a filehandle. A
+# filehandle can be read once, so it is read here, before the first attempt,
+# and a retry sends the same bytes again.
 sub raw_body {
   my ($reqdata) = @_;
-  return ref $reqdata eq 'HASH' ? $reqdata->{$RAW_BODY} : undef;
+  my $body = ref $reqdata eq 'HASH' ? $reqdata->{$RAW_BODY} : undef;
+  if (ref $body && Scalar::Util::openhandle($body)) {
+    local $/;
+    my $data = <$body>;
+    return defined $data ? $data : '';
+  }
+  return $body;
 }
 
 1;
