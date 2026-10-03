@@ -114,7 +114,7 @@ final class ${entity.Name}EntityTest: XCTestCase {
       override func preUnexpected(_ ctx: Context) { unexpected += 1 }
     }
     let hook = CountHook()
-    let sdk = ${Name}SDK.testSDK(vm(("net", .map(vm(("offline", .bool(true))))), nil)
+    let sdk = ${Name}SDK.testSDK(vm(("net", .map(vm(("offline", .bool(true)))))), nil)
     sdk.features.append(hook)
     var err: Error? = nil
     do { _ = try sdk.${entity.Name}().list(VMap(), nil) } catch { err = error }
