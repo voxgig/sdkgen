@@ -1653,6 +1653,12 @@ echo get_class($client->ContactsField(null)), ' ',
       'ExUnit.start(autorun: false); Code.compile_file("test/end_entity_test.exs")'],
       sdkroot, { ...process.env, MIX_ENV: 'test' })
     ok(suite.ok, 'elixir: the reserved-word entity test does not compile:\n' + tail(suite.out))
+
+    // The documentation gate parses every fenced elixir block, so a reserved
+    // word bound as an example variable fails there, as `end = ...` does.
+    const examples = run(mix, ['test', '--no-color', 'test/readme_examples_test.exs'], sdkroot,
+      { ...process.env, MIX_ENV: 'test' })
+    ok(examples.ok, 'elixir: the documented examples do not parse:\n' + tail(examples.out))
     const folded = beams.filter((b: string, i: number) =>
       beams.findIndex((o: string) => o.toLowerCase() === b.toLowerCase()) !== i)
     deepStrictEqual(folded, [], 'elixir: modules that are one file on macOS')

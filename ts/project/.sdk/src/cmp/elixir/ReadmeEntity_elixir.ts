@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, opRequestShape, opNeedsAction, elixirAccessor, entityCollection } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, opRequestShape, opNeedsAction, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -47,7 +47,7 @@ takes an entity handle built from the client:
 
   publishedEntities.map((entity: any) => {
     const EName = entity.Name
-    const eVar = entity.name
+    const eVar = exampleVarName(entity.name, 'elixir')
     const eCall = elixirAccessor(entity, entityCollection(model))
     const opnames = Object.keys(entity.op || {})
     // An op that needs an action has no plain call to show.

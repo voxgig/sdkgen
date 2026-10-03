@@ -68,6 +68,10 @@ const LUA_RESERVED = new Set([
     'goto', 'if', 'in', 'local', 'nil', 'not', 'or', 'repeat', 'return',
     'then', 'true', 'until', 'while',
 ]);
+const ELIXIR_RESERVED = new Set([
+    'after', 'and', 'catch', 'do', 'else', 'end', 'false', 'fn', 'in', 'nil',
+    'not', 'or', 'rescue', 'true', 'when',
+]);
 const RESERVED = {
     ts: JS_RESERVED,
     js: JS_RESERVED,
@@ -75,6 +79,7 @@ const RESERVED = {
     rb: RB_RESERVED,
     py: PY_RESERVED,
     lua: LUA_RESERVED,
+    elixir: ELIXIR_RESERVED,
 };
 const RB_CORE_CONSTANTS = new Set([
     'Array', 'Binding', 'Class', 'Comparable', 'Complex', 'Data', 'Dir',
@@ -202,10 +207,6 @@ const ELIXIR_BUILTIN_TYPES = new Set([
     'nonempty_list', 'nonempty_maybe_improper_list', 'nonempty_string',
     'number', 'pid', 'port', 'pos_integer', 'record', 'reference', 'string',
     'struct', 'term', 'timeout', 'tuple', 'var',
-]);
-const ELIXIR_RESERVED = new Set([
-    'after', 'and', 'catch', 'do', 'else', 'end', 'false', 'fn', 'in', 'nil',
-    'not', 'or', 'rescue', 'true', 'when',
 ]);
 function isElixirReservedType(name) {
     return ELIXIR_BUILTIN_TYPES.has(name) || ELIXIR_RESERVED.has(name);

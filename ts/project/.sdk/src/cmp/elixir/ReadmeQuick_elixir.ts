@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, elixirAccessor, entityCollection } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -46,7 +46,7 @@ sdk = ${ctor}
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? 'an' : 'a'
-    const eVar = exampleEntity.name
+    const eVar = exampleVarName(exampleEntity.name, 'elixir')
     const eCall = elixirAccessor(exampleEntity, entityCollection(model))
     const opnames = entityOps(exampleEntity)
     const idF = entityIdField(exampleEntity)
@@ -73,7 +73,7 @@ end
     if (nestedEntity) {
       const neName = nom(nestedEntity, 'Name')
       const neArticle = /^[aeiou]/i.test(neName) ? 'an' : 'a'
-      const neVar = nestedEntity.name
+      const neVar = exampleVarName(nestedEntity.name, 'elixir')
       const neCall = elixirAccessor(nestedEntity, entityCollection(model))
 
       const neIdF = entityIdField(nestedEntity)

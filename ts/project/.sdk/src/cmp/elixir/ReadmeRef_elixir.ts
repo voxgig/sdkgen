@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, elixirAccessor, entityCollection } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -138,7 +138,7 @@ on error.
     // Entity reference sections
     publishedEntities.map((ent: any) => {
       const EName = ent.Name
-      const eVar = ent.name
+      const eVar = exampleVarName(ent.name, 'elixir')
       const eCall = elixirAccessor(ent, entityCollection(model))
       const opnames = Object.keys(ent.op || {})
       const fields = Object.values(ent.fields || {})

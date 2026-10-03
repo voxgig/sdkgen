@@ -481,6 +481,13 @@ describe('generate', () => {
     // Every emitted call, in the tests, the README and the reference alike.
     const stale = files.filter(([, text]) => /\bDemo\.end\(/.test(text)).map(([p]) => p)
     deepStrictEqual(stale, [], 'files still calling Demo.end(')
+
+    // The example variable is keyword-safe too: `end = ...` does not parse.
+    const readme = files.find(([p]) => 'elixir/README.md' === p)
+    ok(null != readme, 'no elixir README among ' + files.map(([p]) => p).join(', '))
+    ok(readme![1].includes('end_ = Demo.end_entity2(sdk)'), 'the example variable is still the reserved word')
+    const bound = files.filter(([, text]) => /^\s*end = /m.test(text)).map(([p]) => p)
+    deepStrictEqual(bound, [], 'files binding the reserved word as a variable')
   })
 
 

@@ -43,6 +43,11 @@ const LUA_RESERVED = new Set<string>([
   'then', 'true', 'until', 'while',
 ])
 
+const ELIXIR_RESERVED = new Set<string>([
+  'after', 'and', 'catch', 'do', 'else', 'end', 'false', 'fn', 'in', 'nil',
+  'not', 'or', 'rescue', 'true', 'when',
+])
+
 const RESERVED: Record<string, Set<string>> = {
   ts: JS_RESERVED,
   js: JS_RESERVED,
@@ -50,6 +55,7 @@ const RESERVED: Record<string, Set<string>> = {
   rb: RB_RESERVED,
   py: PY_RESERVED,
   lua: LUA_RESERVED,
+  elixir: ELIXIR_RESERVED,
 }
 
 
@@ -215,11 +221,6 @@ const ELIXIR_BUILTIN_TYPES = new Set<string>([
   'nonempty_list', 'nonempty_maybe_improper_list', 'nonempty_string',
   'number', 'pid', 'port', 'pos_integer', 'record', 'reference', 'string',
   'struct', 'term', 'timeout', 'tuple', 'var',
-])
-
-const ELIXIR_RESERVED = new Set<string>([
-  'after', 'and', 'catch', 'do', 'else', 'end', 'false', 'fn', 'in', 'nil',
-  'not', 'or', 'rescue', 'true', 'when',
 ])
 
 
