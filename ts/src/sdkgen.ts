@@ -72,6 +72,8 @@ import { optionSpec, featureOptionSpec, entitySpecMap } from './helpers/optspec'
 import { OP_SUFFIX, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, deriveEntityNames, entityCollection } from './helpers/opShape'
 import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, isTsSdkType, tsSafeTypeName, isElixirReservedType, elixirSafeTypeName, elixirTypeNames, elixirTypeName, elixirAccessorNames, elixirAccessor, tsTypeName, rbTypeName, phpTypeName, swiftTypeName, jsProp, jsOptProp, jsKey, luaKey, prefixLeadingDigit } from './helpers/naming'
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
+import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools'
+import type { McpTool } from './helpers/mcpTools'
 import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
 import type { ExampleLang } from './helpers/opExample'
 import { liveStrict, liveStrictNote, liveFlowNeeds } from './helpers/testPolicy'
@@ -948,6 +950,7 @@ function clear(path: string) {
 export type {
   SdkGenOptions,
   ExampleLang,
+  McpTool,
   DepEntry,
   LiveFlowNeeds,
   PathSegment,
@@ -1141,6 +1144,9 @@ export {
   rbTypeName,
   phpTypeName,
   swiftTypeName,
+  mcpTools,
+  MCP_READ_OPS,
+  MCP_WRITE_OPS,
   serverVariables,
   hasServerVariables,
   serverVarEnv,

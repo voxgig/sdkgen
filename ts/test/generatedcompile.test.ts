@@ -200,6 +200,67 @@ async function generateTo(
 }
 
 
+// Several targets of one model, each in its own directory under root, as a
+// consumer target's `replace ../go` expects of the SDK it wraps.
+async function generateBeside(targets: string[], root: string, extra?: string): Promise<void> {
+  const { fs, vol } = memfs({})
+  const sdkgen = SdkGen({ fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog() })
+  const cwd = process.cwd()
+  process.chdir(SCAFFOLD)
+  try {
+    const res = await sdkgen.generate({ model: makeModel(targets, undefined, extra), root: makeRoot() })
+    strictEqual(res.ok, true, targets.join(', ') + ': generation did not report ok')
+  }
+  finally {
+    process.chdir(cwd)
+  }
+  const files: Record<string, string> = {}
+  for (const [path, content] of Object.entries(vol.toJSON() as Record<string, string>)) {
+    const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
+    if (!rel.includes('.jostraca/') && targets.some((target) => rel.startsWith(target + '/'))) {
+      files[rel] = content
+    }
+  }
+  materialise(files, root)
+}
+
+
+// The tools a built MCP server lists over stdio, as an agent host asks.
+function mcpToolList(bin: string): Promise<any[]> {
+  const proc = spawn(bin, ['-transport', 'stdio'], { stdio: ['pipe', 'pipe', 'inherit'] })
+  const send = (msg: any) => proc.stdin!.write(JSON.stringify(msg) + '\n')
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      proc.kill('SIGKILL')
+      reject(new Error('the MCP server did not answer tools/list'))
+    }, RUN_TIMEOUT_MS)
+    let seen = ''
+    proc.on('error', (err) => { clearTimeout(timer); reject(err) })
+    proc.stdout!.on('data', (chunk) => {
+      seen += String(chunk)
+      const lines = seen.split('\n')
+      seen = lines.pop()!
+      for (const line of lines.filter((l) => '' !== l.trim())) {
+        const msg = JSON.parse(line)
+        if (1 === msg.id) {
+          send({ jsonrpc: '2.0', method: 'notifications/initialized' })
+          send({ jsonrpc: '2.0', id: 2, method: 'tools/list' })
+        }
+        else if (2 === msg.id) {
+          clearTimeout(timer)
+          proc.kill('SIGKILL')
+          resolve(msg.result.tools)
+        }
+      }
+    })
+    send({
+      jsonrpc: '2.0', id: 1, method: 'initialize',
+      params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'lane', version: '0' } },
+    })
+  })
+}
+
+
 // One generated file, by the tail of its path: several template trees carry
 // a placeholder directory (py's `pkg`, swift's `Sources/<Name>SDK`) that the
 // generated tree spells with the project's own name.
@@ -505,6 +566,54 @@ describe('generated SDK compiles', () => {
     const vet = run(go, ['vet', './...'], sdkroot)
     ok(vet.ok, 'generated go does not vet clean:\n' + vet.out)
   })
+
+
+  // go-mcp builds on the go SDK it wraps, and an agent host reads each tool's
+  // schema and hints from tools/list. ROUTING_MODEL's signal and ambient load
+  // without a plain list, and planet alone creates, updates and removes.
+  test('go-mcp: the server builds, and lists each tool with its entities and hints',
+    async (t) => {
+      const go = toolchain('go')
+      if (null == go) {
+        return t.skip('no go toolchain here')
+      }
+
+      const root = Path.join(tmp, 'go-mcp')
+      await generateBeside(['go', 'go-mcp'], root,
+        ROUTING_MODEL + "main: kit: target: 'go-mcp': tool: write: true")
+      const server = Path.join(root, 'go-mcp')
+
+      const vet = run(go, ['vet', './...'], server)
+      ok(vet.ok, 'generated go-mcp does not vet clean:\n' + tail(vet.out))
+      const bin = Path.join(server, 'demo-mcp' + ('win32' === process.platform ? '.exe' : ''))
+      const built = run(go, ['build', '-o', bin, '.'], server)
+      ok(built.ok, 'generated go-mcp does not build:\n' + tail(built.out))
+
+      const tools = Object.fromEntries((await mcpToolList(bin)).map((tool: any) => [tool.name, {
+        hints: tool.annotations,
+        required: tool.inputSchema.required,
+        entity: tool.inputSchema.properties.entity.description,
+      }]))
+      deepStrictEqual(tools, {
+        demo_list: {
+          hints: { readOnlyHint: true }, required: ['entity'],
+          entity: 'one of: console | graph_ql | history | moon | planet | record | utility',
+        },
+        demo_load: {
+          hints: { readOnlyHint: true }, required: ['entity', 'query'],
+          entity: 'one of: ambient | moon | planet | signal',
+        },
+        demo_create: {
+          hints: { destructiveHint: false }, required: ['entity', 'data'], entity: 'one of: planet',
+        },
+        demo_update: {
+          hints: { destructiveHint: true }, required: ['entity', 'data'], entity: 'one of: planet',
+        },
+        demo_remove: {
+          hints: { destructiveHint: true }, required: ['entity', 'query'], entity: 'one of: planet',
+        },
+      })
+    })
 
 
   // go read a closed type switch and silently used the DEFAULT for any other

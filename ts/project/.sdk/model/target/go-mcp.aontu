@@ -25,6 +25,10 @@ main: kit: target: 'go-mcp': {
   # a relative replace to the sibling SDK at ../go and declares the
   # MCP Go SDK as a direct dep. See Main_go-mcp.ts.
   deps: {}
+
+  # The create, update and remove tools, beside list and load. A project
+  # turns them on in its own model, as an agent may then change its data.
+  tool: write: *false | boolean
 }
 
 

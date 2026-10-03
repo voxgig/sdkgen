@@ -6,7 +6,7 @@ import { opRequestShape, entityIdField } from './opShape'
 import { phpEntityAccessor } from './naming'
 
 
-type ExampleLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go'
+type ExampleLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go' | 'json'
 
 
 function cap(s: string): string {
@@ -54,6 +54,7 @@ function litPair(lang: ExampleLang, name: string, value: string): string {
     case 'php': return `"${name}" => ${value}`
     case 'rb': return `"${name}" => ${value}`
     case 'go': return `"${name}": ${value}`
+    case 'json': return `"${name}": ${value}`
     case 'lua': return LUA_IDENT.test(name) ?
       `${name} = ${value}` : `["${name}"] = ${value}`
     default: return JS_IDENT.test(name) ?
@@ -66,7 +67,7 @@ function matchArg(
   lang: ExampleLang, ent: any, op: string, idF: string | null, idLit: string
 ): string {
   const items = opRequestShape(ent, op).items.filter((it: any) => !it.optional)
-  if (0 === items.length) return 'go' === lang ? 'nil' : ''
+  if (0 === items.length) return 'go' === lang ? 'nil' : ('json' === lang ? '{}' : '')
   const pairs = items.map((it: any) =>
     litPair(lang, it.name, it.name === idF ? idLit : litFor(lang, it.type)))
   switch (lang) {

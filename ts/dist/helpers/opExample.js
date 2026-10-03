@@ -55,6 +55,7 @@ function litPair(lang, name, value) {
         case 'php': return `"${name}" => ${value}`;
         case 'rb': return `"${name}" => ${value}`;
         case 'go': return `"${name}": ${value}`;
+        case 'json': return `"${name}": ${value}`;
         case 'lua': return LUA_IDENT.test(name) ?
             `${name} = ${value}` : `["${name}"] = ${value}`;
         default: return JS_IDENT.test(name) ?
@@ -64,7 +65,7 @@ function litPair(lang, name, value) {
 function matchArg(lang, ent, op, idF, idLit) {
     const items = (0, opShape_1.opRequestShape)(ent, op).items.filter((it) => !it.optional);
     if (0 === items.length)
-        return 'go' === lang ? 'nil' : '';
+        return 'go' === lang ? 'nil' : ('json' === lang ? '{}' : '');
     const pairs = items.map((it) => litPair(lang, it.name, it.name === idF ? idLit : litFor(lang, it.type)));
     switch (lang) {
         case 'py': return `{${pairs.join(', ')}}`;

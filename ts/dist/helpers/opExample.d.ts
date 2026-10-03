@@ -1,4 +1,4 @@
-type ExampleLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go';
+type ExampleLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go' | 'json';
 declare function litFor(lang: ExampleLang, type: any): string;
 declare function idLiteral(ent: any, op: string, idF: string | null): string;
 declare function matchArg(lang: ExampleLang, ent: any, op: string, idF: string | null, idLit: string): string;

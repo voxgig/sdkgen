@@ -4261,6 +4261,64 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // ROUTING_MODEL's `signal` loads but lists only through actions, `ambient`
+  // only loads, and `planet` alone creates, updates and removes.
+  const mcpRegistered = (tools: string) =>
+    [...tools.matchAll(/Name:\s+"(demo_\w+)"/g)].map((m) => m[1])
+  const mcpEntities = (tools: string, type: string) =>
+    tools.match(new RegExp('type ' + type + ' struct \\{\\n\\tEntity string +`json:"entity" ' +
+      'jsonschema:"one of: ([^"]*)"`'))?.[1]
+
+  test('go-mcp: the server reads only, with a tool per operation its entities run', async () => {
+    const out = await generate(['go', 'go-mcp'], undefined, ROUTING_MODEL)
+    const tools = findFile(out, 'go-mcp/tools.go')!
+    deepStrictEqual(mcpRegistered(tools), ['demo_list', 'demo_load'])
+    strictEqual(mcpEntities(tools, 'ListArgs'),
+      'console | graph_ql | history | moon | planet | record | utility')
+    strictEqual(mcpEntities(tools, 'LoadArgs'), 'ambient | moon | planet | signal')
+    strictEqual(2, [...tools.matchAll(/Annotations: &mcp\.ToolAnnotations\{ReadOnlyHint: true\}/g)].length,
+      'go-mcp: list and load are not both marked read-only')
+
+    const readme = findFile(out, 'go-mcp/README.md')!
+    ok(readme.includes('2 agent tools, `demo_list` and `demo_load`,'),
+      'go-mcp: the README does not name the two tools it registers')
+    ok(readme.includes('The server only reads.'), 'go-mcp: the README does not say it only reads')
+    const top = out['README.md']
+    ok(top.includes("exposes this SDK's list and load operations"),
+      'the root README does not name the operations the MCP server exposes')
+    ok(top.includes('It only reads'), 'the root README does not say the MCP server only reads')
+    ok(!top.includes('exposes every operation'),
+      'the root README still says the MCP server exposes every operation')
+  })
+
+
+  test('go-mcp: the write tools are opt-in and carry the MCP hints', async () => {
+    const out = await generate(['go', 'go-mcp'], undefined,
+      ROUTING_MODEL + "main: kit: target: 'go-mcp': tool: write: true")
+    const tools = findFile(out, 'go-mcp/tools.go')!
+    deepStrictEqual(mcpRegistered(tools),
+      ['demo_list', 'demo_load', 'demo_create', 'demo_update', 'demo_remove'])
+    for (const type of ['CreateArgs', 'UpdateArgs', 'RemoveArgs']) {
+      strictEqual(mcpEntities(tools, type), 'planet', 'go-mcp: ' + type)
+    }
+    const hints = Object.fromEntries([...tools.matchAll(
+      /Name:\s+"demo_(\w+)",[^]*?Annotations: &mcp\.ToolAnnotations\{([^}]*)\}/g)]
+      .map((m) => [m[1], m[2]]))
+    deepStrictEqual(hints, {
+      list: 'ReadOnlyHint: true',
+      load: 'ReadOnlyHint: true',
+      create: 'DestructiveHint: hint(false)',
+      update: 'DestructiveHint: hint(true)',
+      remove: 'DestructiveHint: hint(true)',
+    })
+
+    const top = out['README.md']
+    ok(top.includes("exposes this SDK's list, load, create, update and remove operations"),
+      'the root README does not name the write operations the MCP server exposes')
+    ok(!top.includes('It only reads'), 'the root README says the MCP server only reads')
+  })
+
+
   test('go-mcp: the server reports the version the deploy tags it with', async () => {
     const declared = await generate(['go', 'go-mcp'], undefined,
       'main: kit: target: "go-mcp": publish: version: "2.3.4"')

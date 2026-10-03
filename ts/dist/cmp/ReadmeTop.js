@@ -7,6 +7,7 @@ const utility_1 = require("../utility");
 const FeatureDocs_1 = require("./FeatureDocs");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
+const mcpTools_1 = require("../helpers/mcpTools");
 const canonType_1 = require("../helpers/canonType");
 const naming_1 = require("../helpers/naming");
 const packageMeta_1 = require("../helpers/packageMeta");
@@ -374,11 +375,17 @@ See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full 
 `);
         }
         if (hasMcp) {
+            const mcpOps = (0, mcpTools_1.mcpTools)(model).map((tool) => tool.op);
+            const mcpWrite = true === model.main?.[types_1.KIT]?.target?.['go-mcp']?.tool?.write;
+            const opText = mcpOps.length < 2 ? mcpOps.join('') :
+                mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1];
             (0, jostraca_1.Content)(`## Use it from an AI agent (MCP)
 
-The generated MCP server exposes every operation in this SDK as an
-[MCP](https://modelcontextprotocol.io) tool that Claude, Cursor or Cline
-can call directly. Build and register it:
+The generated MCP server exposes this SDK's ${opText} operations as
+[MCP](https://modelcontextprotocol.io) tools that Claude, Cursor or Cline
+can call directly.${mcpWrite ? '' : ` It only reads: create, update and remove
+become tools when the SDK's model sets
+\`main: kit: target: 'go-mcp': tool: write: true\`.`} Build and register it:
 
 \`\`\`bash
 cd go-mcp && go build -o ${model.name}-mcp .
