@@ -18,7 +18,7 @@ import { SdkGen } from '../dist/sdkgen.js'
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
-  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
+  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity,
 } from './generateharness'
 
 
@@ -4202,6 +4202,81 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         'rust: feature/mod.rs declares ' + unselected + ', which the model ' +
         'never selected — the crate will not compile without its source')
     }
+  })
+
+
+  // `aardvark` sorts first and has list; `ambient`, the next entity, has not.
+  test('go-cli: a quick-start list names an entity that has list', async () => {
+    const out = await generate(['go', 'go-cli'], undefined, namedEntity('aardvark'))
+    const readme = findFile(out, 'go-cli/README.md')
+    ok(null != readme, 'go-cli: no README generated')
+
+    const listed = [...readme!.matchAll(/^\.\/\S+ list (\w+)/gm)].map((m) => m[1])
+    ok(listed.includes('aardvark'), 'go-cli: the quick start lost the first list: ' + listed)
+    ok(1 < listed.length, 'go-cli: the quick start shows no second list: ' + listed)
+    ok(!listed.includes('ambient'),
+      'go-cli: the quick start lists ambient, which has no list operation: ' + listed)
+  })
+
+
+  test('go-mcp: the server reports the version the deploy tags it with', async () => {
+    const declared = await generate(['go', 'go-mcp'], undefined,
+      'main: kit: target: "go-mcp": publish: version: "2.3.4"')
+    ok(/Version:\s+"2\.3\.4",/.test(findFile(declared, 'go-mcp/main.go')!),
+      'go-mcp: the server does not report its declared version')
+
+    const plain = await generate(['go', 'go-mcp'])
+    ok(/Version:\s+"0\.0\.1",/.test(findFile(plain, 'go-mcp/main.go')!),
+      'go-mcp: the server does not report the default publish version')
+  })
+
+
+  test('the root entities example is in a language the SDK has', async () => {
+    const section = (readme: string) => {
+      const at = readme.indexOf('## Entities, not endpoints')
+      ok(-1 !== at, 'the root README has no entities section')
+      return readme.slice(at, readme.indexOf('\n## ', at + 3))
+    }
+
+    const py = section((await generate(['py']))['README.md'])
+    ok(py.includes('```python\nclient = '), 'py: the example is not Python:\n' + py)
+    ok(!/new \w+SDK\(\)/.test(py), 'py: the example still builds a TypeScript client')
+
+    const java = section((await generate(['java']))['README.md'])
+    ok(!java.includes('```'), 'java: the example is in a language the SDK lacks:\n' + java)
+
+    const ts = section((await generate(['py', 'ts']))['README.md'])
+    ok(ts.includes('```ts\nconst client = new '), 'ts: the example is no longer TypeScript')
+  })
+
+
+  test('perl: the install section names the perl the SDK needs', async () => {
+    const plain = await generate(['perl'])
+    ok(findFile(plain, 'perl/README.md')!.includes('needs perl 5.18 or later'),
+      'perl: the README does not name perl 5.18')
+    ok(findFile(plain, 'perl/Makefile.PL')!.includes("'5.018'"),
+      'perl: Makefile.PL no longer asks for 5.018')
+
+    const secrets = await generate(['perl'], undefined,
+      'main: kit: feature: secrets: { active: true }', undefined, ['test', 'log', 'secrets'])
+    ok(findFile(secrets, 'perl/README.md')!.includes('needs perl 5.36 or later'),
+      'perl: the README of an SDK with secrets does not name perl 5.36')
+    ok(findFile(secrets, 'perl/Makefile.PL')!.includes("'5.036'"),
+      'perl: Makefile.PL of an SDK with secrets no longer asks for 5.036')
+  })
+
+
+  // The fleet cuts tags and no GitHub Releases, so a Releases link is empty.
+  test('every install section points at the tags, not the releases', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const wrong: string[] = []
+    for (const target of targets) {
+      const readme = findFile(await generate([target]), target + '/README.md')
+      ok(null != readme, target + ': no README generated')
+      if (!readme!.includes('/tags)')) wrong.push(target + ': no tags link')
+      if (readme!.includes('/releases)')) wrong.push(target + ': a releases link')
+    }
+    deepStrictEqual(wrong, [])
   })
 
 })

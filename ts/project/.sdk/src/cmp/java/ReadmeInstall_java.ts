@@ -34,9 +34,9 @@ cd java && mvn install
 
   // Publish pending: not yet on Maven Central. Install from the git release
   // tag or from a local source checkout built with Maven.
-  const { releasesUrl } = repoInfo(model)
+  const { tagsUrl } = repoInfo(model)
   Content(`This package is not yet published to Maven Central. Install it from the GitHub
-release tag (\`${target.name}/vX.Y.Z\`, see [Releases](${releasesUrl})) or
+release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})) or
 from a source checkout — build the library with Maven:
 
 \`\`\`bash

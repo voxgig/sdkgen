@@ -10,14 +10,14 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const gomodule = packageName(model, target.name)
   // `repo` is the directory a `git clone` of this project creates — not
   // `<slug>-sdk`, which is only the DEFAULT repo name.
-  const { releasesUrl, repo } = repoInfo(model)
+  const { tagsUrl, repo } = repoInfo(model)
 
   Content(`\`\`\`bash
 go get ${gomodule}@latest
 \`\`\`
 
 The Go module proxy resolves the version from the \`go/vX.Y.Z\` GitHub
-release tag — see [Releases](${releasesUrl}) for the available versions.
+release tag — see [Tags](${tagsUrl}) for the available versions.
 
 To vendor from a local checkout instead, clone this repo alongside your
 project and add a \`replace\` directive pointing at the checked-out

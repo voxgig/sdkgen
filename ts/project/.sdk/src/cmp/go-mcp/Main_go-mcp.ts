@@ -3,7 +3,7 @@ import * as Path from 'node:path'
 
 import {
   cmp, each, deriveEntityNames,
-  File, Content, Fragment, Slot, goModule, goVersion
+  File, Content, Fragment, Slot, goModule, goVersion, packageVersion
 } from '@voxgig/sdkgen'
 
 import type {
@@ -361,6 +361,8 @@ clean:
       },
       () => {
         Slot({ name: 'serverName' }, () => Content(slugLower))
+        // The version the deploy tags this port with.
+        Slot({ name: 'serverVersion' }, () => Content(packageVersion(model, target.name)))
       },
     )
   })

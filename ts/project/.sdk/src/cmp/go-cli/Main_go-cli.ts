@@ -85,19 +85,18 @@ const Main = cmp(function Main(props: any) {
     .map(op => CLI_VERB_ROWS[op])
     .join('\n')
 
-  // First / second active entity for concrete, truthful examples, gated on
-  // the FIRST entity's own ops so an example never shows a verb it lacks.
+  // Concrete examples, each gated on the ops of the entity it names, so an
+  // example never shows a verb that entity lacks.
   const activeEntityObjs: any[] =
     Object.values(entityMap).filter((e: any) => e && e.active !== false)
   const firstEntityObj: any = activeEntityObjs[0]
   const firstEntity = firstEntityObj
     ? String(firstEntityObj.name).toLowerCase()
     : (entityNames[0] || 'entity')
-  const secondEntity = activeEntityObjs.length > 1
-    ? String(activeEntityObjs[1].name).toLowerCase()
-    : firstEntity
-  const firstOps: any = (firstEntityObj && firstEntityObj.op) || {}
-  const firstHas = (op: string) => !!(firstOps[op] && firstOps[op].active !== false)
+  const hasOp = (entity: any, op: string) =>
+    !!(entity?.op?.[op] && entity.op[op].active !== false)
+  const firstHas = (op: string) => hasOp(firstEntityObj, op)
+  const otherLister = activeEntityObjs.slice(1).find((e: any) => hasOp(e, 'list'))
   const entityNoun = entityCount === 1 ? 'entity' : 'entities'
   // The best single example expression this SDK can actually run, for the
   // tutorial/REPL walkthroughs (never demonstrates an unsupported op).
@@ -127,8 +126,8 @@ const Main = cmp(function Main(props: any) {
     ex.push(`./${bin} load '{id:1}' ${firstEntity}       # explicit match map`)
   }
   if (firstHas('update')) ex.push(`./${bin} update '{name:"x"}' ${firstEntity}`)
-  if (firstHas('list') && secondEntity !== firstEntity) {
-    ex.push(`./${bin} list ${secondEntity}`)
+  if (null != otherLister) {
+    ex.push(`./${bin} list ${String(otherLister.name).toLowerCase()}`)
   }
   ex.push('')
   ex.push('# 5. Override the API base URL for a single call')
