@@ -116,13 +116,20 @@ static voxgig_value* entyvar_run_op(entyvar_entity* self, Context* ctx,
   return done_util(ctx, err);
 }
 
-// A step's error does not pass through make_error in stream, so it and the
-// explain record are cleaned on the way out.
-static voxgig_value* entyvar_stream_fail(Context* ctx, PNError* pe, PNError** err) {
-  clean_explain_util(ctx);
-  clean_error_util(ctx, pe);
-  *err = pe;
-  return NULL;
+// The items of what done or make_error hands back: NULL with *err set, or
+// under `throw: false` the data there is, as a List.
+static voxgig_value* entyvar_stream_items(voxgig_value* data, PNError** err) {
+  if (*err) return NULL;
+  voxgig_value* out = voxgig_new_list();
+  if (voxgig_is_list(data)) {
+    voxgig_list* l = voxgig_as_list(data);
+    for (size_t i = 0; i < l->len; i++) {
+      voxgig_list_push(voxgig_as_list(out), voxgig_retain(l->items[i]));
+    }
+  } else if (data && !v_is_noval(data) && !v_is_null(data)) {
+    voxgig_list_push(voxgig_as_list(out), voxgig_retain(data));
+  }
+  return out;
 }
 
 // Streaming operation. Runs `action` through the full pipeline and returns a
@@ -143,8 +150,15 @@ voxgig_value* entyvar_stream(Entity* e, const char* action, voxgig_value* args,
 
   voxgig_value* stream_opts = voxgig_is_map(callopts) ? callopts : voxgig_new_map();
 
-  voxgig_value* ctrl = to_map(getp(stream_opts, "ctrl"));
-  if (!voxgig_is_map(ctrl)) ctrl = voxgig_new_map();
+  // A copy: the caller's ctrl gains no key, and explain stays its own record.
+  voxgig_value* ctrl = voxgig_new_map();
+  voxgig_value* given = to_map(getp(stream_opts, "ctrl"));
+  if (voxgig_is_map(given)) {
+    voxgig_map* gm = voxgig_as_map(given);
+    for (size_t i = 0; i < gm->len; i++) {
+      setp(ctrl, gm->entries[i].key, voxgig_retain(gm->entries[i].value));
+    }
+  }
   setp(ctrl, "stream", v_share(stream_opts));
 
   voxgig_value* reqmatch = to_map(args);
@@ -171,27 +185,27 @@ voxgig_value* entyvar_stream(Entity* e, const char* action, voxgig_value* args,
 
   feature_hook_util(ctx, "PrePoint");
   voxgig_value* point = make_point_util(ctx, &pe);
-  if (pe) return entyvar_stream_fail(ctx, pe, err);
+  if (pe) return entyvar_stream_items(make_error_util(ctx, pe, err), err);
   ctx_out_set_point_val(ctx, point);
 
   feature_hook_util(ctx, "PreSpec");
   Spec* spec = make_spec_util(ctx, &pe);
-  if (pe) return entyvar_stream_fail(ctx, pe, err);
+  if (pe) return entyvar_stream_items(make_error_util(ctx, pe, err), err);
   ctx->out_spec = spec;
 
   feature_hook_util(ctx, "PreRequest");
   Response* resp = make_request_util(ctx, &pe);
-  if (pe) return entyvar_stream_fail(ctx, pe, err);
+  if (pe) return entyvar_stream_items(make_error_util(ctx, pe, err), err);
   ctx->out_request = resp;
 
   feature_hook_util(ctx, "PreResponse");
   Response* resp2 = make_response_util(ctx, &pe);
-  if (pe) return entyvar_stream_fail(ctx, pe, err);
+  if (pe) return entyvar_stream_items(make_error_util(ctx, pe, err), err);
   ctx->out_response = resp2;
 
   feature_hook_util(ctx, "PreResult");
   SdkResult* result = make_result_util(ctx, &pe);
-  if (pe) return entyvar_stream_fail(ctx, pe, err);
+  if (pe) return entyvar_stream_items(make_error_util(ctx, pe, err), err);
   ctx->out_result = result;
 
   feature_hook_util(ctx, "PreDone");
@@ -205,19 +219,7 @@ voxgig_value* entyvar_stream(Entity* e, const char* action, voxgig_value* args,
     return res->stream(res->stream_ud);
   }
 
-  voxgig_value* data = done_util(ctx, err);
-  if (*err) return NULL;
-
-  voxgig_value* out = voxgig_new_list();
-  if (voxgig_is_list(data)) {
-    voxgig_list* l = voxgig_as_list(data);
-    for (size_t i = 0; i < l->len; i++) {
-      voxgig_list_push(voxgig_as_list(out), voxgig_retain(l->items[i]));
-    }
-  } else if (!v_is_noval(data) && !v_is_null(data)) {
-    voxgig_list_push(voxgig_as_list(out), voxgig_retain(data));
-  }
-  return out;
+  return entyvar_stream_items(done_util(ctx, err), err);
 }
 
 static const char* entyvar_get_name(Entity* e) {

@@ -87,7 +87,7 @@ All entities share the same interface.
 | Method | Signature | Description |
 | --- | --- | --- |
 ${opRows}
-| \`stream\` | \`(action: []const u8, args: Value, callopts: Value) []Value\` | Run an op through the pipeline and materialise its result items. |
+| \`stream\` | \`(action: []const u8, args: Value, callopts: Value) StreamResult\` | Run an op through the pipeline: \`.ok\` with its result items, or \`.err\` with the error that failed it. |
 | \`data\` | \`(args: ?Value) Value\` | Get entity data (pass a map to set). |
 | \`matchv\` | \`(args: ?Value) Value\` | Get entity match criteria (pass a map to set). |
 | \`get_name\` | \`() []const u8\` | Return the entity name. |

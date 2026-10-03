@@ -11,6 +11,11 @@ import (
 
 func makeSpecUtil(ctx *core.Context) (*core.Spec, error) {
 	if ctx.Out["spec"] != nil {
+		// A PreSpec hook (validate) rejects the operation by placing its error
+		// here; the pipeline raises it, and ctx.Spec stays a request spec.
+		if err, ok := ctx.Out["spec"].(error); ok {
+			return nil, err
+		}
 		if sp, ok := ctx.Out["spec"].(*core.Spec); ok {
 			ctx.Spec = sp
 			return sp, nil

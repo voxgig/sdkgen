@@ -9,10 +9,19 @@ public static partial class SdkUtility
 {
     internal static Spec MakeSpecUtil(Context ctx)
     {
-        if (ctx.Out.TryGetValue("spec", out var outSpec) && outSpec is Spec cached)
+        if (ctx.Out.TryGetValue("spec", out var outSpec))
         {
-            ctx.Spec = cached;
-            return cached;
+            // A PreSpec hook (validate) rejects the operation by placing its
+            // error here; the pipeline raises it, and ctx.Spec stays a spec.
+            if (outSpec is Exception rejected)
+            {
+                throw rejected;
+            }
+            if (outSpec is Spec cached)
+            {
+                ctx.Spec = cached;
+                return cached;
+            }
         }
 
         var point = ctx.Point;

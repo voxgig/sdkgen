@@ -621,9 +621,9 @@ func TestCleanSweep(t *testing.T) {
 		}
 	}
 
-	// Stream has no error channel: a panic inside it must end the stream
-	// through MakeError, cleaned, and not crash the process. However it
-	// ends, the explain record the caller passed is left clean.
+	// A panic inside a stream must end it through MakeError, its cleaned
+	// error the last value sent, and not crash the process. However it ends,
+	// the explain record the caller passed is left clean.
 	for _, streamed := range []struct {
 		name  string
 		saw   string
@@ -646,8 +646,13 @@ func TestCleanSweep(t *testing.T) {
 			reflect.ValueOf(strings.ToLower(op.method)),
 			reflect.ValueOf(map[string]any{"reqmatch": reqmatch}),
 			reflect.ValueOf(map[string]any{"ctrl": map[string]any{"explain": explain}}),
-		})[0].Interface().(<-chan any)
-		for range items {
+		})[0].Interface().(<-chan core.StreamItem)
+		var streamerr error
+		for item := range items {
+			if item.Err != nil {
+				streamerr = item.Err
+				sinks = append(sinks, cleanSurfaces(streamed.name, item.Err)...)
+			}
 		}
 		sinks = append(sinks, cleanSurfaces(streamed.name+":explain", explain)...)
 		if 0 == len(explain) {
@@ -656,6 +661,9 @@ func TestCleanSweep(t *testing.T) {
 		msg, _ := core.ToMapAny(explain["err"])["message"].(string)
 		if ("" == streamed.saw) != (nil == explain["err"]) || !strings.Contains(msg, streamed.saw) {
 			t.Errorf("%s: only a failing stream ends as the SDK error, got %v", streamed.name, explain)
+		}
+		if ("" == streamed.saw) != (nil == streamerr) {
+			t.Errorf("%s: only a failing stream sends an error, got %v", streamed.name, streamerr)
 		}
 	}
 

@@ -26,6 +26,7 @@ const Test = cmp(function Test(props: any) {
 
 const std = @import("std");
 const sdk = @import("sdk");
+const fh = @import("fh.zig");
 const h = sdk.h;
 const Value = sdk.Value;
 

@@ -567,6 +567,11 @@ class CleanTest extends TestCase
 
     public function test_no_credential_leaves_the_sdk_in_any_form(): void
     {
+        // PHP records a frame's arguments unless the ini says otherwise, and
+        // they hold every context the failing frames were handed: clean strips
+        // them, which the sweep sees only with them recorded. A production ini
+        // switches them off, so the sweep switches them on.
+        $args = ini_set('zend.exception_ignore_args', '0');
         // Frameworks turn every notice into an exception (PHPUnit 8 did too);
         // one thrown mid-pipeline must still leave clean.
         set_error_handler(static function (int $no, string $str, string $file, int $line): bool {
@@ -576,6 +581,9 @@ class CleanTest extends TestCase
             $this->sweep();
         } finally {
             restore_error_handler();
+            if (false !== $args) {
+                ini_set('zend.exception_ignore_args', $args);
+            }
         }
     }
 
@@ -799,6 +807,22 @@ class CleanTest extends TestCase
     }
 
     public function test_the_sweep_can_see_a_leak_clean_switched_off_shows_the_credential(): void
+    {
+        // With clean off nothing strips the trace arguments, and var_export
+        // renders the whole context through them: 43 MB of text on a
+        // 31-operation API (#292). The control proves the sweep sees a raw
+        // value, which the arguments are not needed for.
+        $args = ini_set('zend.exception_ignore_args', '1');
+        try {
+            $this->leak_control();
+        } finally {
+            if (false !== $args) {
+                ini_set('zend.exception_ignore_args', $args);
+            }
+        }
+    }
+
+    private function leak_control(): void
     {
         $target = self::usable_op();
         if (null === $target) {
