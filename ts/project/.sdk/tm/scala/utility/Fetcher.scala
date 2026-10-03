@@ -48,6 +48,8 @@ object Fetcher {
     var bodyPublisher = HttpRequest.BodyPublishers.noBody()
     fetchdef.get("body") match {
       case b: String if b != "" => bodyPublisher = HttpRequest.BodyPublishers.ofString(b)
+      case b: Array[Byte] => bodyPublisher = HttpRequest.BodyPublishers.ofByteArray(b)
+      case b: java.io.InputStream => bodyPublisher = HttpRequest.BodyPublishers.ofInputStream(() => b)
       case _ =>
     }
 

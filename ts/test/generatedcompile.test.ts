@@ -5,7 +5,7 @@ import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 import Fs from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 
 import { memfs } from 'memfs'
 
@@ -28,6 +28,10 @@ import {
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
+import {
+  MEDIA_CASES, MEDIA_MODEL, MEDIA_PROBES, MEDIA_RAN, MEDIA_SERVER,
+  mediaFailures, mediaPrinted, mediaRecord,
+} from './mediaprobes'
 
 
 function materialise(files: Record<string, string>, root: string) {
@@ -5067,6 +5071,322 @@ describe('the README examples run for a slug carrying the word client', () => {
         README_SLUG + ':\n' + tail(ran.out, 60))
       ok(lane.ran.test(ran.out), lane.target + ': the README suite reported no full run:\n' +
         tail(ran.out))
+    })
+  }
+})
+
+
+// The media types a point declares, driven through a generated SDK. A probe
+// with a live transport sends every case to a local server, which records
+// what arrives; one without prints what its transport is given.
+type MediaLane = {
+  target: string
+  ready: () => string | null
+  // Writes the probe, builds what needs building, and runs the probe.
+  exec: (sdkroot: string, env: NodeJS.ProcessEnv,
+    write: (name: string, source: string) => void) => ReturnType<typeof run>
+  // The probe prints what its transport is given, for want of a live one.
+  seam?: () => boolean
+}
+
+
+const MEDIA_LANES: MediaLane[] = [
+  ...['ts', 'js'].map((target) => ({
+    target,
+    ready: () => 'ts' === target && !Fs.existsSync(TSC) ? 'typescript is not installed here' : null,
+    exec: (sdkroot: string, env: NodeJS.ProcessEnv, write: (name: string, source: string) => void) => {
+      linkDeps(sdkroot)
+      if ('ts' === target) {
+        const built = tsc(sdkroot, 'src')
+        if (!built.ok) return built
+      }
+      write('media-probe.cjs', MEDIA_PROBES.node.replace('SDK_MODULE', '.'))
+      return run(process.execPath, ['media-probe.cjs'], sdkroot, env)
+    },
+  })),
+  {
+    target: 'go',
+    ready: () => null == toolchain('go') ? 'no go toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      const mod = Fs.readFileSync(Path.join(sdkroot, 'go.mod'), 'utf8').match(/^module (.+)$/m)![1]
+      write('test/media_probe_test.go', MEDIA_PROBES.go.replace('GOMODULE', mod))
+      return run(toolchain('go')!,
+        ['test', '-v', '-count=1', './test', '-run', '^TestMediaProbe$'], sdkroot, env)
+    },
+  },
+  {
+    target: 'py',
+    ready: () => null == mediaPython() ? 'no python toolchain' : null,
+    seam: () => !probeOk(mediaPython()!, ['-c', 'import requests']),
+    exec: (sdkroot, env, write) => {
+      write('media_probe.py', MEDIA_PROBES.py)
+      return run(mediaPython()!, ['media_probe.py'], sdkroot, env)
+    },
+  },
+  {
+    target: 'rb',
+    ready: () => null == toolchain('ruby') ? 'no ruby toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('media_probe.rb', MEDIA_PROBES.rb)
+      return run(toolchain('ruby')!, ['media_probe.rb'], sdkroot, env)
+    },
+  },
+  {
+    target: 'php',
+    ready: () => null == toolchain('php') ? 'no php toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('media_probe.php', MEDIA_PROBES.php)
+      return run(toolchain('php')!, ['media_probe.php'], sdkroot, env)
+    },
+  },
+  {
+    target: 'perl',
+    ready: () => null == toolchain('perl') ? 'no perl toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('media_probe.pl', MEDIA_PROBES.perl)
+      return run(toolchain('perl')!, ['media_probe.pl'], sdkroot, env)
+    },
+  },
+  {
+    target: 'lua',
+    ready: () => null == mediaLua() ? 'no lua toolchain with the dkjson rock' : null,
+    seam: () => !probeOk(mediaLua()!, ['-e', 'require "socket.http"']),
+    exec: (sdkroot, env, write) => {
+      write('media_probe.lua', MEDIA_PROBES.lua)
+      return run(mediaLua()!, ['media_probe.lua'], sdkroot, env)
+    },
+  },
+  {
+    target: 'java',
+    ready: () => null == toolchain('javac') || null == toolchain('java') ? 'no Java toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('MediaProbe.java', MEDIA_PROBES.java)
+      const classes = Path.join(sdkroot, 'zz-classes')
+      Fs.mkdirSync(classes, { recursive: true })
+      const sources = listFiles(sdkroot, '.java').filter((f) => !f.split(Path.sep).includes('test'))
+      const built = run(toolchain('javac')!, ['-d', classes, ...sources], sdkroot)
+      if (!built.ok) return built
+      return run(toolchain('java')!, ['-cp', classes, 'MediaProbe'], sdkroot, env)
+    },
+  },
+  {
+    target: 'kotlin',
+    // gradle hangs on windows rather than failing, as the other kotlin lanes note.
+    ready: () => 'win32' === process.platform ? 'gradle hangs on windows'
+      : null == toolchain('gradle') ? 'no gradle toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('test/MediaProbe.kt', MEDIA_PROBES.kotlin)
+      return run(toolchain('gradle')!,
+        ['--console=plain', 'test', '--tests', '*MediaProbe*'], sdkroot, env)
+    },
+  },
+  {
+    target: 'scala',
+    ready: () => null == toolchain('scala-cli') ? 'no scala-cli toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('sdktest/MediaProbe.scala', MEDIA_PROBES.scala)
+      return run(toolchain('scala-cli')!, ['run', '.', '--main-class', 'MediaProbeMain'], sdkroot, env)
+    },
+  },
+  {
+    target: 'csharp',
+    ready: () => null == toolchain('dotnet') ? 'no .NET toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      const sdkproj = Fs.readdirSync(sdkroot).find((n) => n.endsWith('.csproj'))!
+      const tfm = Fs.readFileSync(Path.join(sdkroot, sdkproj), 'utf8')
+        .match(/<TargetFramework>([^<]+)<\/TargetFramework>/)![1]
+      write('test/MediaProbe.cs', MEDIA_PROBES.csharp)
+      write('zz-media/MediaProbe.csproj',
+        '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>' +
+        '<OutputType>Exe</OutputType><TargetFramework>' + tfm + '</TargetFramework>' +
+        '<Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>' +
+        '<EnableDefaultCompileItems>false</EnableDefaultCompileItems>' +
+        '</PropertyGroup><ItemGroup><Compile Include="../test/MediaProbe.cs" />' +
+        '<ProjectReference Include="../' + sdkproj + '" /></ItemGroup></Project>')
+      return run(toolchain('dotnet')!, ['run', '--project', 'zz-media/MediaProbe.csproj'], sdkroot, env)
+    },
+  },
+  {
+    target: 'swift',
+    ready: () => null == toolchain('swift') ? 'no swift toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      const tests = Fs.readdirSync(Path.join(sdkroot, 'Tests')).find((d) => d.endsWith('Tests'))!
+      write(Path.join('Tests', tests, 'MediaProbeTest.swift'), MEDIA_PROBES.swift)
+      return run(toolchain('swift')!, ['test', '-j', '2', '--filter', 'MediaProbeTest'], sdkroot,
+        { ...env, MEDIA_CASES: Path.join(sdkroot, 'media-cases.json') }, 30 * 60 * 1000)
+    },
+  },
+  {
+    target: 'elixir',
+    ready: () => null == toolchain('mix') || null == toolchain('elixir') ? 'no elixir toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('test/media_probe_test.exs', MEDIA_PROBES.elixir)
+      return run(toolchain('mix')!, ['test', '--no-color', Path.join('test', 'media_probe_test.exs')],
+        sdkroot, { ...env, MIX_ENV: 'test' })
+    },
+  },
+  {
+    target: 'clojure',
+    ready: () => null == toolchain('clojure') ? 'no clojure CLI' : null,
+    exec: (sdkroot, env, write) => {
+      write('media_probe.clj', MEDIA_PROBES.clojure)
+      return run(toolchain('clojure')!, ['-M', 'media_probe.clj'], sdkroot, env)
+    },
+  },
+  {
+    target: 'rust',
+    ready: () => null == toolchain('cargo') ? 'no Rust toolchain' : null,
+    exec: (sdkroot, env, write) => {
+      write('tests/media_probe.rs', MEDIA_PROBES.rust)
+      return run(toolchain('cargo')!, ['test', '--test', 'media_probe', '--', '--nocapture'],
+        sdkroot, env)
+    },
+  },
+  {
+    target: 'c',
+    ready: () => null == toolchain('make') || null == authProbeCc() ? 'no C toolchain' : null,
+    seam: () => true,
+    exec: (sdkroot, env, write) => {
+      write('tests/media_probe.c', MEDIA_PROBES.c)
+      const built = run(toolchain('make')!, ['CC=' + authProbeCc(), 'tests/media_probe.out'], sdkroot)
+      if (!built.ok) return built
+      return run(Path.join(sdkroot, 'tests', 'media_probe.out'), [], sdkroot, env)
+    },
+  },
+  {
+    target: 'cpp',
+    ready: () => null == toolchain('make') || null == cleanCxx() ? 'no C++ toolchain' : null,
+    seam: () => true,
+    exec: (sdkroot, env, write) => {
+      write('test/media_probe.cpp', MEDIA_PROBES.cpp)
+      const built = run(toolchain('make')!, ['CXX=' + cleanCxx(), 'test/media_probe.out'], sdkroot)
+      if (!built.ok) return built
+      return run(Path.join(sdkroot, 'test', 'media_probe.out'), [], sdkroot, env)
+    },
+  },
+  {
+    target: 'zig',
+    ready: () => {
+      const zig = toolchain('zig')
+      if (null == zig) return 'no zig toolchain'
+      const version = run(zig, ['version'], process.cwd())
+      return version.ok && /^0\.16\./.test(version.out.trim()) ? null : 'zig is not 0.16'
+    },
+    seam: () => true,
+    // build.zig names its test files, and `test-clean` builds this one alone.
+    exec: (sdkroot, env, write) => {
+      write('test/clean_test.zig', MEDIA_PROBES.zig)
+      return run(toolchain('zig')!, ['build', 'test-clean', '--summary', 'all'], sdkroot, env)
+    },
+  },
+  {
+    target: 'ocaml',
+    ready: () => null == toolchain('make') || null == toolchain('ocamlc') ? 'no OCaml toolchain' : null,
+    seam: () => true,
+    // A makefile beside the generated one links the probe against its module list.
+    exec: (sdkroot, env, write) => {
+      write('test/media_probe.ml', MEDIA_PROBES.ocaml)
+      write('media.mk', 'include Makefile\n' +
+        'run_media_probe: $(SDK) $(FEATURE_OBJ) test/media_probe.ml\n' +
+        '\t$(OCAMLC) $(INC) $(FEATURE_LIB) $(SDK) test/media_probe.ml ' +
+        '$(FEATURE_OBJ) $(FEATURE_LINK) -o run_media_probe\n')
+      const built = run(toolchain('make')!,
+        ['-f', 'media.mk', 'OCAMLC=' + toolchain('ocamlc'), 'run_media_probe'], sdkroot)
+      if (!built.ok) return built
+      return run(Path.join(sdkroot, 'run_media_probe'), [], sdkroot, env)
+    },
+  },
+]
+
+
+function mediaLua(): string | null {
+  const lua = toolchain('lua5.4') || toolchain('lua')
+  return null == lua || !probeOk(lua, ['-e', 'require "dkjson"']) ? null : lua
+}
+
+
+function mediaPython(): string | null {
+  return toolchain('python3') || toolchain('python')
+}
+
+
+function mediaServer(dir: string): Promise<{ port: number, log: string, stop: () => void }> {
+  const file = Path.join(dir, 'media-server.cjs')
+  const log = Path.join(dir, 'media-requests.jsonl')
+  Fs.writeFileSync(file, MEDIA_SERVER)
+  Fs.writeFileSync(log, '')
+  const proc = spawn(process.execPath, [file, log], { stdio: ['ignore', 'pipe', 'inherit'] })
+  return new Promise((resolve, reject) => {
+    let seen = ''
+    proc.on('error', reject)
+    proc.on('exit', (code) => reject(new Error('media server exited: ' + code)))
+    proc.stdout!.on('data', (chunk) => {
+      seen += String(chunk)
+      const m = /listening (\d+)/.exec(seen)
+      if (null != m) {
+        proc.removeAllListeners('exit')
+        resolve({ port: Number(m[1]), log, stop: () => proc.kill('SIGKILL') })
+      }
+    })
+  })
+}
+
+
+describe('the media types a point declares reach the wire', () => {
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-media-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of MEDIA_LANES) {
+    test(lane.target + ': Accept, content-type and a raw body', async (t) => {
+      const missing = lane.ready()
+      if (null != missing) return t.skip(missing)
+
+      const sdkroot = Path.join(tmp, lane.target)
+      await generateTo(lane.target, sdkroot, MEDIA_MODEL)
+      Fs.writeFileSync(Path.join(sdkroot, 'media-cases.json'), JSON.stringify(MEDIA_CASES))
+      const write = (name: string, source: string) => {
+        const path = Path.join(sdkroot, name)
+        Fs.mkdirSync(Path.dirname(path), { recursive: true })
+        Fs.writeFileSync(path, source)
+      }
+
+      const seam = null != lane.seam && lane.seam()
+      const server = seam ? null : await mediaServer(sdkroot)
+      let ran: ReturnType<typeof run>
+      try {
+        ran = lane.exec(sdkroot, {
+          ...nestedTestEnv(),
+          MEDIA_BASE: null == server ? 'http://media.test' : 'http://127.0.0.1:' + server.port,
+          ...(seam ? { MEDIA_SEAM: '1' } : {}),
+        }, write)
+      }
+      finally {
+        server?.stop()
+      }
+
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+      }
+
+      ok(ran.ok, lane.target + ': the media probe failed:\n' + tail(ran.out, 60))
+      const count = MEDIA_RAN.exec(ran.out)
+      strictEqual(Number(count?.[1]), MEDIA_CASES.length,
+        lane.target + ': the probe did not run every case:\n' + tail(ran.out))
+
+      const records = null == server ? mediaPrinted(ran.out) :
+        Fs.readFileSync(server.log, 'utf8').split('\n').filter((line) => '' !== line)
+          .map((line) => JSON.parse(line))
+          .map((r) => mediaRecord(r.method, r.url, r.headers, r.bodyHex))
+
+      deepStrictEqual(mediaFailures(MEDIA_CASES, records), [],
+        lane.target + ' probe output:\n' + tail(ran.out))
     })
   }
 })

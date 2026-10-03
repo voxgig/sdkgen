@@ -1,5 +1,6 @@
 package KOTLINPACKAGE.utility
 
+import java.io.InputStream
 import java.net.InetSocketAddress
 import java.net.ProxySelector
 import java.net.URI
@@ -55,6 +56,10 @@ fun defaultHttpFetch(fullurl: String, fetchdef: MutableMap<String, Any?>): Mutab
   val body = fetchdef["body"]
   if (body is String && "" != body) {
     bodyPublisher = HttpRequest.BodyPublishers.ofString(body)
+  } else if (body is ByteArray) {
+    bodyPublisher = HttpRequest.BodyPublishers.ofByteArray(body)
+  } else if (body is InputStream) {
+    bodyPublisher = HttpRequest.BodyPublishers.ofInputStream { body }
   }
 
   val reqb: HttpRequest.Builder

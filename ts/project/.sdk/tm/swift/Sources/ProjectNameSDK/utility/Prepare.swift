@@ -56,7 +56,7 @@ func callArgs(_ ctx: Context, _ kind: String) -> [(name: String, wire: String, v
 func prepareHeadersUtil(_ ctx: Context) -> VMap {
   let options = ctx.client!.optionsMap()
   let headers = gp(options, "headers")
-  let out = isNil(headers) ? VMap() : (clone(headers).asMap ?? VMap())
+  let out = mediaHeaders(ctx.point, isNil(headers) ? VMap() : (clone(headers).asMap ?? VMap()))
 
   // A header argument replaces a default of the same name, whatever its case.
   for arg in callArgs(ctx, "header") where !isNil(arg.val) {
@@ -140,6 +140,7 @@ private func containsStr(_ list: [Value], _ s: String) -> Bool {
 func prepareBodyUtil(_ ctx: Context) -> Value {
   let op = ctx.op!
   if op.input == "data" {
+    if isRawRequest(ctx.point) { return rawBodyOf(ctx.reqdata) }
     return ctx.utility!.transformRequest(ctx)
   }
   return .noval

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName , targetFeatures, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -325,6 +325,13 @@ ${updateLines}  # Fields to update
 \`\`\`
 
 `)
+          }
+
+          if ('create' === opname || 'update' === opname) {
+            const note = bodyNote(ent.op[opname], {
+              values: 'a `String`, or an IO that responds to `read`',
+            })
+            if ('' !== note) Content(note)
           }
         })
       }

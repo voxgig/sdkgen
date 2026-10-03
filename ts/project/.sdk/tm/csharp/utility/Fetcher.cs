@@ -72,9 +72,20 @@ public static partial class SdkUtility
 
         using var req = new HttpRequestMessage(new HttpMethod(method), fullurl);
 
-        if (fetchdef.TryGetValue("body", out var braw) && braw is string body && body != "")
+        if (fetchdef.TryGetValue("body", out var braw))
         {
-            req.Content = new StringContent(body, Encoding.UTF8, "application/json");
+            if (braw is string body && body != "")
+            {
+                req.Content = new StringContent(body, Encoding.UTF8, "application/json");
+            }
+            else if (braw is byte[] bytes)
+            {
+                req.Content = new ByteArrayContent(bytes);
+            }
+            else if (braw is Stream stream)
+            {
+                req.Content = new StreamContent(stream);
+            }
         }
 
         var hasUA = false;

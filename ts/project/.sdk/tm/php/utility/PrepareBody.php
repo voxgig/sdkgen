@@ -3,11 +3,16 @@ declare(strict_types=1);
 
 // ProjectName SDK utility: prepare_body
 
+require_once __DIR__ . '/Media.php';
+
 class ProjectNamePrepareBody
 {
     public static function call(ProjectNameContext $ctx): mixed
     {
         if ($ctx->op->input === 'data') {
+            if (ProjectNameMedia::isRawRequest($ctx->point)) {
+                return ProjectNameMedia::rawBody($ctx->reqdata);
+            }
             $body = ($ctx->utility->transform_request)($ctx);
             // PHP cannot tell an empty map from an empty list, and this
             // vendored struct answers [] where the canonical transform

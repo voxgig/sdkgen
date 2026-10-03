@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -328,6 +328,13 @@ voxgig_value* result = ${evar}->vt->update(${evar}, ${cmapExpr(updatePairs)}, NU
 \`\`\`
 
 `)
+          }
+
+          if ('create' === opname || 'update' === opname) {
+            const note = bodyNote(ent.op[opname], {
+              values: 'a string value holding the bytes, such as `voxgig_new_string_n`',
+            })
+            if ('' !== note) Content(note)
           }
         })
       }

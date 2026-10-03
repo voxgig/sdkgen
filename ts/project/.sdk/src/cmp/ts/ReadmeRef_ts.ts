@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, opRequestShape, safeVarName, exampleVarName, jsKey, matchArg, idLiteral, targetFeatures, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, opRequestShape, safeVarName, exampleVarName, jsKey, matchArg, idLiteral, targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -373,6 +373,13 @@ ${updateLines}  // Fields to update
 \`\`\`
 
 `)
+          }
+
+          if ('create' === opname || 'update' === opname) {
+            const note = bodyNote(ent.op[opname], {
+              values: 'a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string',
+            })
+            if ('' !== note) Content(note)
           }
         })
       }

@@ -721,11 +721,69 @@
                  (vec defs)))
       [])))
 
+;; ---- media -------------------------------------------------------------------
+;;
+;; The media types a point declares: `response` (the model's `rs`) for the
+;; Accept header, and `body` (the model's `rb`) for the request body.
+
+;; The data key holding a raw request body. Like `$action`, it can never be a
+;; declared argument name.
+(def RAW-BODY "$body")
+
+(defn json-media? [media]
+  (let [m (-> (if (string? media) media "") (str/split #";" 2) first (or "") str/trim str/lower-case)]
+    (or (= "application/json" m) (= "text/json" m) (str/ends-with? m "+json"))))
+
+;; The declared JSON type alone, else every declared type in the model's
+;; order; nil when no success response declares a body.
+(defn accept-of [point]
+  (let [res (when point (vs/getprop point "response"))
+        media (when (vs/ismap res) (vs/getprop res "media"))]
+    (when (and (string? media) (seq media))
+      (if (= "json" (vs/getprop res "kind"))
+        media
+        (let [alts (vs/getprop res "alternatives")
+              others (when (vs/islist alts)
+                       (keep (fn [alt]
+                               (let [m (when (vs/ismap alt) (vs/getprop alt "media"))]
+                                 (when (and (string? m) (seq m)) m)))
+                             (vec alts)))]
+          (str/join ", " (cons media others)))))))
+
+(defn raw-request? [point]
+  (let [body (when point (vs/getprop point "body"))]
+    (and (vs/ismap body) (= "raw" (vs/getprop body "kind")))))
+
+(defn- media-header? [^java.util.Map headers name]
+  (boolean (some (fn [k] (and (string? k) (= name (str/lower-case k)))) (vec (.keySet headers)))))
+
+;; A caller's accept wins. A declared request type replaces each JSON
+;; content-type, the SDK default, and leaves any other the caller set.
+(defn media-headers [point ^java.util.Map headers]
+  (let [accept (accept-of point)]
+    (when (and accept (not (media-header? headers "accept")))
+      (.put headers "accept" accept)))
+  (let [body (when point (vs/getprop point "body"))
+        kind (when (vs/ismap body) (vs/getprop body "kind"))
+        media (when (vs/ismap body) (vs/getprop body "media"))]
+    (when (and (contains? #{"raw" "json"} kind) (string? media) (seq media))
+      (doseq [k (vec (.keySet headers))]
+        (when (and (string? k) (= "content-type" (str/lower-case k)) (json-media? (.get headers k)))
+          (.remove headers k)))
+      (when-not (media-header? headers "content-type")
+        (.put headers "content-type" media))))
+  headers)
+
+;; A byte array, an InputStream or a string, sent as it is.
+(defn raw-body [reqdata]
+  (when (vs/ismap reqdata) (vs/getprop reqdata RAW-BODY)))
+
 (defn u-prepare-headers [ctx]
   (let [options (client-options-map (oget ctx :client))
         headers (vs/getprop options "headers")
-        out (if (nil? headers) (vs/jm)
-                (let [o (vs/clone headers)] (if (vs/ismap o) o (vs/jm))))]
+        out (media-headers (oget ctx :point)
+                           (if (nil? headers) (vs/jm)
+                               (let [o (vs/clone headers)] (if (vs/ismap o) o (vs/jm)))))]
     ;; A header argument replaces a default of the same name, whatever its case.
     (doseq [[_ wire v] (call-args ctx "header")]
       (when (some? v)
@@ -861,7 +919,10 @@
                  (vs/transform (vs/jm "reqdata" data) reqform))))))))
 
 (defn u-prepare-body [ctx]
-  (if (= "data" (op-input (oget ctx :op))) (ucall ctx :transform-request) nil))
+  (cond
+    (not= "data" (op-input (oget ctx :op))) nil
+    (raw-request? (oget ctx :point)) (raw-body (oget ctx :reqdata))
+    :else (ucall ctx :transform-request)))
 
 ;; ---- graphql ---------------------------------------------------------------
 ;;
@@ -1580,10 +1641,13 @@
           (when-not @has-ua
             (.setRequestProperty ^java.net.HttpURLConnection conn "User-Agent"
                                  (str "Mozilla/5.0 (compatible; " SDK-NAME "SDK/1.0)"))))
-        (when (string? body-str)
+        (when (or (string? body-str) (bytes? body-str) (instance? java.io.InputStream body-str))
           (.setDoOutput ^java.net.HttpURLConnection conn true)
           (with-open [os (.getOutputStream ^java.net.HttpURLConnection conn)]
-            (.write os (.getBytes ^String body-str "UTF-8"))))
+            (cond
+              (string? body-str) (.write os (.getBytes ^String body-str "UTF-8"))
+              (bytes? body-str) (.write os ^bytes body-str)
+              :else (.transferTo ^java.io.InputStream body-str os))))
         (let [code (.getResponseCode ^java.net.HttpURLConnection conn)
               is (try (.getInputStream ^java.net.HttpURLConnection conn) (catch Exception _ (.getErrorStream ^java.net.HttpURLConnection conn)))
               body (when is (slurp is))
