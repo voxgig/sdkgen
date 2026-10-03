@@ -13,7 +13,9 @@ import type { FeatureDoc } from './FeatureDocs'
 import {
   entityPrimaryOp, entityIdField, opRequestShape, entityPath, entityActions,
 } from '../helpers/opShape'
-import { matchArg, idLiteral } from '../helpers/opExample'
+import { matchArg, idLiteral, primaryOpCall } from '../helpers/opExample'
+import { mcpTools, MCP_WRITE_OPS } from '../helpers/mcpTools'
+import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { canonKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName } from '../helpers/naming'
 
@@ -25,6 +27,7 @@ import {
   apiName,
   nonAffiliation,
   docsSiteUrl,
+  originName,
   SECURITY_EMAIL,
 } from '../helpers/packageMeta'
 
@@ -53,6 +56,41 @@ function installCommand(target: any, model: any): string {
 
 function pickLeadTarget(sdkTargets: any[]): any | undefined {
   return sdkTargets[0]
+}
+
+
+// The languages the example helpers can write, in the order a reader is
+// likeliest to want one.
+const EXAMPLE_LANGS: ExampleLang[] = ['ts', 'js', 'py', 'go', 'php', 'rb', 'lua']
+
+const EXAMPLE_FENCE: Record<string, string> = {
+  ts: 'ts', js: 'js', py: 'python', go: 'go', php: 'php', rb: 'ruby', lua: 'lua',
+}
+
+function exampleLang(model: any, sdkTargets: any[]): ExampleLang | undefined {
+  const langs = sdkTargets.map((t: any) => originName(model, t.name))
+  return EXAMPLE_LANGS.find((lang) => langs.includes(lang))
+}
+
+
+// A client and one call in a language other than ts, whose example
+// ReadmeTop builds itself.
+function entityExample(lang: ExampleLang, Name: string, call: PrimaryCall | null): string {
+  switch (lang) {
+    case 'js': return `const client = new ${Name}SDK()` +
+      (call ? `\nconst ${call.resultVar} = await ${call.expr}` : '')
+    case 'py': return `client = ${Name}SDK()` +
+      (call ? `\n${call.resultVar} = ${call.expr}` : '')
+    case 'go': return `client := sdk.New${Name}SDK(nil)` +
+      (call ? `\n${call.resultVar}, err := ${call.expr}` : '')
+    case 'php': return `$client = new ${Name}SDK();` +
+      (call ? `\n$${call.resultVar} = ${call.expr};` : '')
+    case 'rb': return `client = ${Name}SDK.new` +
+      (call ? `\n${call.resultVar} = ${call.expr}` : '')
+    case 'lua': return `local client = sdk.new()` +
+      (call ? `\nlocal ${call.resultVar}, err = ${call.expr}` : '')
+    default: return ''
+  }
 }
 
 
@@ -266,16 +304,29 @@ ${aboutMd.trim()}
         .forEach((o: string) => { if ((e.op as any)[o] && (e.op as any)[o].active !== false) opSet.add(o) }))
       const opNames = CANON_OPS.filter((o) => opSet.has(o)).concat([...opSet].filter((o) => !CANON_OPS.includes(o)))
       const opList = (opNames.length ? opNames : ['list', 'load']).map((o) => '`' + o + '`').join(', ')
+
+      // In the SDK's own language: ts when it has one, else the first the
+      // example helpers can write, else no example at all.
+      const lang = exampleLang(model, sdkTargets)
+      let snippet = ''
+      if ('ts' === lang) {
+        snippet = `const client = new ${model.Name}SDK()${exCall ? '\n' + exCall : ''}`
+      }
+      else if (null != lang) {
+        const call = ['list', 'load', 'create', 'update'].includes(String(primaryOp))
+          ? primaryOpCall(lang, ex, exampleVarName(ex.toLowerCase(), lang), primaryOp!, exIdField, exEnt)
+          : null
+        snippet = entityExample(lang, model.Name, call)
+      }
+      const exBlock = '' === snippet ? '.' :
+        `:\n\n\`\`\`${EXAMPLE_FENCE[lang!]}\n${snippet}\n\`\`\``
+
       Content(`## Entities, not endpoints
 
 This SDK exposes the API as ${surface} that you
 call directly, instead of assembling URL paths and query strings.${seeEntities} Entities are
 **Capitalised** to mark them as the primary surface, each with the operations they
-support (${opList}):
-
-\`\`\`ts
-const client = new ${model.Name}SDK()${exCall ? '\n' + exCall : ''}
-\`\`\`
+support (${opList})${exBlock}
 
 Thinking in entities keeps the mental model small — for people and AI agents alike —
 rather than reasoning about raw HTTP routes and query parameters.
@@ -378,11 +429,28 @@ See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full 
     }
 
     if (hasMcp) {
-      Content(`## Use it from an AI agent (MCP)
+      const mcpOps = mcpTools(model).map((tool) => tool.op)
+      const mcpWrite = true === model.main?.[KIT]?.target?.['go-mcp']?.tool?.write
+      const toggle = "`main: kit: target: 'go-mcp': tool: write: true`"
+      const opText = mcpOps.length < 2 ? mcpOps.join('') :
+        mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1]
+      // What the server reads and writes is what it registers, not the flag.
+      const reads = mcpOps.some((op) => MCP_WRITE_OPS.includes(op)) ? '' : mcpWrite ?
+        ' It only reads, as no entity has a create, update or remove a plain call runs.' :
+        ` It only reads: create, update and remove become tools when the SDK's model sets
+${toggle}.`
+      Content(0 === mcpOps.length ? `## Use it from an AI agent (MCP)
 
-The generated MCP server exposes every operation in this SDK as an
-[MCP](https://modelcontextprotocol.io) tool that Claude, Cursor or Cline
-can call directly. Build and register it:
+The generated MCP server has no tools for this SDK: no entity has a list or
+load a plain call runs${mcpWrite ? ', or a create, update or remove' :
+          `, and create, update and remove are off until the SDK's model sets
+${toggle}`}.
+
+` : `## Use it from an AI agent (MCP)
+
+The generated MCP server exposes this SDK's ${opText} operations as
+[MCP](https://modelcontextprotocol.io) tools that Claude, Cursor or Cline
+can call directly.${reads} Build and register it:
 
 \`\`\`bash
 cd go-mcp && go build -o ${model.name}-mcp .

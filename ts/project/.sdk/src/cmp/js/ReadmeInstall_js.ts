@@ -17,9 +17,9 @@ npm install ${target.module.name}
 
   // Publish pending, as in the ts target: a tag may not exist, so a clone is
   // always offered. The js target needs no build.
-  const { releasesUrl, repoUrl, repo } = repoInfo(model)
-  Content(`This package is not yet published to npm. Install it from the GitHub
-release tag (\`${target.name}/vX.Y.Z\`, see [Releases](${releasesUrl})), or from a
+  const { hostName, tagsUrl, repoUrl, repo } = repoInfo(model)
+  Content(`This package is not yet published to npm. Install it from the ${hostName}
+release tag (\`${target.name}/vX.Y.Z\`, see [Tags](${tagsUrl})), or from a
 clone:
 
 \`\`\`bash

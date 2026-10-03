@@ -106,6 +106,7 @@ for that purpose:
 | `main.kit.target.<t>.publish.version` | The port's own release version. Every manifest emitter used to hardcode `0.0.1`, so a project that had published `0.0.2` got its manifest reset on the next run. |
 | `main.kit.target.<t>.publish.registry.package` | The published package name, when it is not the derived one. |
 | `main.kit.feature.<name>.active` | Which features ship. |
+| `main.kit.target.go-mcp.tool.write` | Whether the MCP server also registers create, update and remove tools. It is off by default, as an agent calling one changes the API's data. |
 
 A project extends a target's CODE the same way — by registering a
 component (`registerComponent('X')` → `.sdk/src/cmp/<t>/X_<t>.ts`), which

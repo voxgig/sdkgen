@@ -6,6 +6,8 @@ import {
   walk,
 } from '@voxgig/struct'
 
+import { targetFeatures } from '@voxgig/sdkgen'
+
 
 function projectPath(suffix?: string): string {
   return Path.normalize(Path.join(__dirname, '../../..', suffix ?? ''))
@@ -58,8 +60,22 @@ function perlStringLiteral(val: string): string {
 }
 
 
+// The secrets plugin needs builtin::is_bool, from perl 5.36.
+function minPerl(model: any, target: any): string {
+  return null != (targetFeatures(model, target) as any).secrets ? '5.036' : '5.018'
+}
+
+
+function perlVersionLabel(version: string): string {
+  const [major, minor] = version.split('.')
+  return major + '.' + Number(minor.slice(0, 3))
+}
+
+
 export {
   perlStringLiteral,
   clean,
   projectPath,
+  minPerl,
+  perlVersionLabel,
 }

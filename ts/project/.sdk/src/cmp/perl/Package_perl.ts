@@ -5,13 +5,14 @@ import {
   cmp,
   collectDeps,
   pkgDescription,
-  targetFeatures,
 } from '@voxgig/sdkgen'
 
 
 import type {
   Model,
 } from '@voxgig/apidef'
+
+import { minPerl } from './utility_perl'
 
 
 // Perl package manifest: a minimal ExtUtils::MakeMaker Makefile.PL,
@@ -28,8 +29,7 @@ const Package = cmp(async function Package(props: any) {
   // (e.g. "Voxgig::SDK::Solar" -> dist voxgig-sdk-solar).
   const Name = model.const.Name
 
-  const secrets = null != (targetFeatures(model, target) as any).secrets
-  const minperl = secrets ? '5.036' : '5.018'
+  const minperl = minPerl(model, target)
 
   const deps = collectDeps(model, target.name, target.deps, ctx$.log)
   const prereq = deps
