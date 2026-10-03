@@ -31,6 +31,11 @@ type DefinitionPoint = {
     sample: any;
     idField: string;
     ownQuery?: string;
+    responseMedia?: string[];
+    rawBody?: {
+        media: string[];
+        text: boolean;
+    };
 };
 declare function definitionPlan(ctx$: any): DefinitionPoint[];
 export type { DefinitionPoint, };

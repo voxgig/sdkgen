@@ -197,6 +197,8 @@ defmodule ProjectName.Feature.Validate do
     # fields will never name it - and under `strict` every custom-action call
     # would be rejected for the one key that made it reachable.
     S.delprop(out, "$action")
+    # Nor is `$body`, the raw request body.
+    S.delprop(out, "$body")
 
     out
   end

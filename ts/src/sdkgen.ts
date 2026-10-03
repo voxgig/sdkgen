@@ -57,6 +57,7 @@ import { registerComponent } from './cmp/Registered'
 
 import { resolvedFor, liveHint, pointFacts, boundedFacts, hasLiveScenarios } from './helpers/resolved'
 import { definitionPlan } from './helpers/definitionPlan'
+import { RAW_BODY, bodyNote, opRawBody, opRequestBody } from './helpers/media'
 import type { RegisterOptions } from './cmp/Registered'
 
 import { buildIdNames, entityRelationName, flowSteps } from './helpers/buildIdNames'
@@ -1038,6 +1039,10 @@ export {
   boundedFacts,
   hasLiveScenarios,
   definitionPlan,
+  RAW_BODY,
+  bodyNote,
+  opRawBody,
+  opRequestBody,
 
   Jostraca,
   SdkGen,

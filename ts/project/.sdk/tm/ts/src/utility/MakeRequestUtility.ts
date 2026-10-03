@@ -1,6 +1,8 @@
 
 import { Context, Response, Result } from '../types'
 
+import { isStream, readStream } from './MediaUtility'
+
 
 async function makeRequest(ctx: Context): Promise<Response | Error> {
   // PreRequest feature hook has already provided a result.
@@ -28,6 +30,12 @@ async function makeRequest(ctx: Context): Promise<Response | Error> {
     const fetchdef = makeFetchDef(ctx)
     if (fetchdef instanceof Error) {
       throw fetchdef
+    }
+
+    // A stream can be read once; read it now, so that a retry sends the same bytes.
+    if (isStream(fetchdef.body)) {
+      fetchdef.body = await readStream(fetchdef.body)
+      delete fetchdef.duplex
     }
 
     if (ctx.ctrl.explain) {

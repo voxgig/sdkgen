@@ -183,6 +183,8 @@ private:
     // fields will never name it — and under `strict` every custom-action call
     // would be rejected for the one key that made it reachable.
     map_remove(out, "$action");
+    // Nor is `$body`, the raw request body.
+    map_remove(out, "$body");
 
     return out;
   }

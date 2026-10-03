@@ -23,6 +23,7 @@ voxgig_value* prepare_headers_util(Context* ctx) {
     if (voxgig_is_map(cloned)) out = cloned;
   }
   if (NULL == out) out = voxgig_new_map();
+  media_headers(ctx->point, out);
 
   // A header argument replaces a default of the same name, whatever its case.
   voxgig_value* hargs = call_args(ctx, "header");

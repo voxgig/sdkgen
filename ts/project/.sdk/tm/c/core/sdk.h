@@ -523,6 +523,12 @@ voxgig_value* param_value(Context* ctx, voxgig_value* point, const char* key);
 voxgig_value* call_args(Context* ctx, const char* kind); // list of [name, wire, val]
 Spec* prepare_auth_util(Context* ctx, PNError** err);
 voxgig_value* prepare_body_util(Context* ctx);
+// The media types a point declares (utility/media.c).
+bool media_is_json(const char* media);
+char* media_accept_of(voxgig_value* point);
+bool media_is_raw_request(voxgig_value* point);
+void media_headers(voxgig_value* point, voxgig_value* headers);
+voxgig_value* media_raw_body(voxgig_value* reqdata);
 voxgig_value* prepare_headers_util(Context* ctx);
 const char* prepare_method_util(Context* ctx); // static string
 voxgig_value* prepare_params_util(Context* ctx);

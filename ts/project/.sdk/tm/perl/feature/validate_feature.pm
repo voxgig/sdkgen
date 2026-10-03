@@ -206,6 +206,8 @@ sub _payload {
   # fields will never name it - and under `strict` every custom-action call
   # would be rejected for the one key that made it reachable.
   delete $out{'$action'};
+  # Nor is `$body`, the raw request body.
+  delete $out{'$body'};
 
   return \%out;
 }

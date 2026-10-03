@@ -2,6 +2,7 @@
 import { Context } from '../types'
 
 import { callArgs } from './ParamUtility'
+import { mediaHeaders } from './MediaUtility'
 
 
 function prepareHeaders(ctx: Context) {
@@ -14,7 +15,7 @@ function prepareHeaders(ctx: Context) {
 
   const options = client.options()
 
-  let out = clone(getprop(options, 'headers', {}))
+  let out = mediaHeaders(ctx.point, clone(getprop(options, 'headers', {})))
 
   // A header argument replaces a default of the same name, whatever its case.
   for (const arg of callArgs(ctx, 'header')) {

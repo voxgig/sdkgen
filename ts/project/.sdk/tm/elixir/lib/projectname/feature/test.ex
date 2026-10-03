@@ -171,7 +171,12 @@ defmodule ProjectName.Feature.Test do
           # update miss: 404, never another record
           respond(fctx, 404, nil, S.jm(["statusText", "Not found"]))
         else
-          if S.ismap(ent) and S.ismap(reqdata), do: S.merge(S.jt([ent, reqdata]))
+          # `$body` travels on the wire alone; the record is the rest.
+          if S.ismap(ent) and S.ismap(reqdata) do
+            rec = S.clone(reqdata)
+            S.delprop(rec, "$body")
+            S.merge(S.jt([ent, rec]))
+          end
 
           S.delprop(ent, "$KEY")
           respond(fctx, 200, S.clone(ent))
@@ -196,6 +201,7 @@ defmodule ProjectName.Feature.Test do
         ent = S.clone(S.getprop(fctx, "reqdata"))
 
         if S.ismap(ent) do
+          S.delprop(ent, "$body")
           S.setprop(ent, "id", eid)
           if is_binary(eid), do: S.setprop(entmap, eid, ent)
           S.delprop(ent, "$KEY")

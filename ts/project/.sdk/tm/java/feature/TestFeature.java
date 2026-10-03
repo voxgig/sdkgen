@@ -30,6 +30,17 @@ public class TestFeature extends BaseFeature {
   // parameter — the rule makePoint uses to tell the entity's own route from a
   // cross-reference that also returns it.
   @SuppressWarnings("unchecked")
+  // The record the mock keeps: the request data without `$body`, which only the
+  // wire carries.
+  private static Map<String, Object> record(Map<String, Object> reqdata) {
+    if (reqdata == null) {
+      return null;
+    }
+    Map<String, Object> out = new LinkedHashMap<>(reqdata);
+    out.remove("$body");
+    return out;
+  }
+
   private static int pointPartsLen(Object point) {
     Object parts = Struct.getprop(point, "parts");
     return parts instanceof List ? ((List<Object>) parts).size() : 0;
@@ -233,7 +244,7 @@ public class TestFeature extends BaseFeature {
         return respond(ctx, 404, null, extra("statusText", "Not found"));
       }
       if (ent instanceof Map && ctx.reqdata != null) {
-        Struct.merge(Struct.jt(ent, ctx.reqdata));
+        Struct.merge(Struct.jt(ent, record(ctx.reqdata)));
       }
       Struct.delprop(ent, "$KEY");
       Object out = Struct.clone(ent);
@@ -261,7 +272,7 @@ public class TestFeature extends BaseFeature {
             r.nextInt(0x10000), r.nextInt(0x10000));
       }
 
-      Object ent = Struct.clone(ctx.reqdata);
+      Object ent = Struct.clone(record(ctx.reqdata));
       if (ent instanceof Map) {
         Map<String, Object> entm = (Map<String, Object>) ent;
         entm.put("id", id);

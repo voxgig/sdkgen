@@ -670,3 +670,219 @@ for (const [lang, runner] of [
     })
   })
 }
+
+
+// Media types: a negotiating load (cataas declares JPEG, PNG, HTML and JSON),
+// an image-only load, a binary upload, a text upload and a bodiless remove.
+const MEDIA_DEF: any = {
+  openapi: '3.0.3',
+  info: { title: 'cats', version: '1' },
+  paths: {
+    '/cats': {
+      get: { responses: { '200': { content: { 'application/json': { example: [{ id: 'c1' }] } } } } },
+      post: {
+        requestBody: { content: { 'text/plain': { schema: { type: 'string' } } } },
+        responses: { '201': { content: { 'application/json': { example: { id: 'c1' } } } } },
+      },
+    },
+    '/cats/{cat_id}': {
+      parameters: [{ in: 'path', name: 'cat_id', required: true, schema: { type: 'string' } }],
+      get: {
+        responses: { '200': { content: {
+          'image/jpeg': {}, 'image/png': {}, 'text/html': {},
+          'application/json': { example: { id: 'c1' } },
+        } } },
+      },
+      put: {
+        requestBody: { content: {
+          'image/png': { schema: { type: 'string', format: 'binary' } },
+          'image/jpeg': { schema: { type: 'string', format: 'binary' } },
+        } },
+        responses: { '200': { content: { 'image/png': {} } } },
+      },
+      delete: { responses: { '204': { description: 'gone' } } },
+    },
+  },
+}
+
+const MEDIA_POINT = (m: string, o: string, extra: any = {}) => ({
+  m, o, q: { exist: o.includes('{') ? ['id'] : [] },
+  g: o.includes('{') ? { params: [{ n: 'id', or: 'cat_id' }] } : {},
+  ...extra,
+})
+
+const MEDIA_MODEL: any = {
+  main: { kit: { entity: { cat: {
+    name: 'cat',
+    id: { field: 'id', name: 'id' },
+    op: {
+      list: { points: [MEDIA_POINT('GET', '/cats', { rs: { kind: 'json', media: 'application/json' } })] },
+      create: { points: [MEDIA_POINT('POST', '/cats', { rb: { kind: 'raw', media: 'text/plain' } })] },
+      load: { points: [MEDIA_POINT('GET', '/cats/{cat_id}')] },
+      update: { points: [MEDIA_POINT('PUT', '/cats/{cat_id}')] },
+      remove: { points: [MEDIA_POINT('DELETE', '/cats/{cat_id}')] },
+    },
+  } } } },
+}
+
+const mediaPlan = (def: any, model: any = MEDIA_MODEL) => definitionPlan({ model, meta: { apidef: {
+  operation: (m: string, o: string) => operationFacts(def, { m, o }),
+} } })
+
+
+describe('definitionPlan: media types', () => {
+
+  const plan = mediaPlan(MEDIA_DEF)
+  const point = (op: string) => plan.find((p: any) => op === p.op)!
+
+  test('every type a success response declares, and none for no body', () => {
+    deepStrictEqual(point('load').responseMedia,
+      ['image/jpeg', 'image/png', 'text/html', 'application/json'])
+    deepStrictEqual(point('list').responseMedia, ['application/json'])
+    deepStrictEqual(point('update').responseMedia, ['image/png'])
+    strictEqual(point('remove').responseMedia, undefined)
+  })
+
+  test('a body declared in raw types alone is a raw body', () => {
+    deepStrictEqual(point('update').rawBody, { media: ['image/png', 'image/jpeg'], text: false })
+    deepStrictEqual(point('create').rawBody, { media: ['text/plain'], text: true })
+    strictEqual(point('load').rawBody, undefined)
+  })
+
+  test('JSON, a form, multipart or a range beside it is not', () => {
+    for (const content of [
+      { 'image/png': {}, 'application/json': {} },
+      { 'multipart/form-data': {} },
+      { 'application/x-www-form-urlencoded': {} },
+      { '*/*': {} },
+    ]) {
+      const def = { ...MEDIA_DEF, paths: { ...MEDIA_DEF.paths, '/cats/{cat_id}': {
+        ...MEDIA_DEF.paths['/cats/{cat_id}'],
+        put: { ...MEDIA_DEF.paths['/cats/{cat_id}'].put, requestBody: { content } },
+      } } }
+      strictEqual(mediaPlan(def).find((p: any) => 'update' === p.op)!.rawBody, undefined,
+        JSON.stringify(content))
+    }
+  })
+
+  test('Swagger 2 reads produces and consumes', () => {
+    const def = {
+      swagger: '2.0', info: { title: 'cats', version: '1' },
+      produces: ['application/json'],
+      paths: { '/cats/{cat_id}': {
+        get: {
+          produces: ['image/png'],
+          parameters: [{ in: 'path', name: 'cat_id', required: true, type: 'string' }],
+          responses: { '200': { schema: { type: 'file' } } },
+        },
+        put: {
+          consumes: ['application/octet-stream'],
+          parameters: [{ in: 'path', name: 'cat_id', required: true, type: 'string' },
+            { in: 'body', name: 'body', schema: { type: 'string', format: 'binary' } }],
+          responses: { '200': { schema: { type: 'object' } } },
+        },
+      } },
+    }
+    const swagger = mediaPlan(def)
+    deepStrictEqual(swagger.find((p: any) => 'load' === p.op)!.responseMedia, ['image/png'])
+    const update = swagger.find((p: any) => 'update' === p.op)!
+    deepStrictEqual(update.responseMedia, ['application/json'])
+    deepStrictEqual(update.rawBody, { media: ['application/octet-stream'], text: false })
+  })
+
+  test('a model that records no media type is not checked for one', () => {
+    const model = JSON.parse(JSON.stringify(MEDIA_MODEL))
+    delete model.main.kit.entity.cat.op.list.points[0].rs
+    delete model.main.kit.entity.cat.op.create.points[0].rb
+    for (const p of mediaPlan(MEDIA_DEF, model)) {
+      strictEqual(p.responseMedia, undefined, p.op)
+      strictEqual(p.rawBody, undefined, p.op)
+    }
+  })
+})
+
+
+// A cat SDK stand-in that sends what the definition expects unless one defect is on.
+function mediaSDK(defect: '' | 'accept-none' | 'accept-any' | 'accept-all' |
+  'raw-json' | 'raw-type') {
+  return class {
+    opts: any
+    constructor(opts: any) { this.opts = opts }
+
+    Cat() {
+      const opts = this.opts
+      const send = async (method: string, path: string, headers: any, body?: any) => {
+        const res = await opts.system.fetch(opts.base + path, { method, headers, body })
+        const text = await res.text()
+        return '' === text ? {} : JSON.parse(text)
+      }
+      const accept = (declared: string) => 'accept-none' === defect ? {} :
+        { accept: 'accept-any' === defect ? '*/*' : declared }
+      const raw = (data: any, media: string) => ({
+        headers: { 'content-type': 'raw-type' === defect ? 'application/json' : media },
+        body: 'raw-json' === defect ? JSON.stringify(data.$body) : data.$body,
+      })
+      const wrap = (rec: any) => ({ data: () => rec })
+      return {
+        list: async () => (await send('GET', '/cats', accept('application/json'))).map(wrap),
+        load: async (m: any) => wrap(await send('GET', '/cats/' + m.id,
+          accept('accept-all' === defect ? 'image/jpeg, image/png, text/html, application/json' :
+            'application/json'))),
+        create: async (d: any) => {
+          const r = raw(d, 'text/plain')
+          return wrap(await send('POST', '/cats', { ...accept('application/json'), ...r.headers }, r.body))
+        },
+        update: async (d: any) => {
+          const r = raw(d, 'image/png')
+          return wrap(await send('PUT', '/cats/' + d.id, { ...accept('image/png'), ...r.headers }, r.body))
+        },
+        remove: async (m: any) => wrap(await send('DELETE', '/cats/' + m.id, {})),
+      }
+    }
+  }
+}
+
+
+for (const [lang, runner] of [
+  ['ts', loadRunner()],
+  ['js', require(Path.join(TM, 'js', 'test', 'definition-runner.js'))],
+] as [string, any][]) {
+  describe(lang + ' definition runner: media types', () => {
+
+    const { runDefinitionPoint } = runner
+    const plan = mediaPlan(MEDIA_DEF)
+    const point = (op: string) => plan.find((p: any) => op === p.op)!
+
+    test('a correct SDK passes every point', async () => {
+      for (const p of plan) {
+        await runDefinitionPoint(mediaSDK(''), p)
+      }
+    })
+
+    test('catches no Accept for a declared response body', async () => {
+      await rejects(runDefinitionPoint(mediaSDK('accept-none'), point('load')), /no Accept/)
+    })
+
+    test('catches an Accept for a type no response declares', async () => {
+      await rejects(runDefinitionPoint(mediaSDK('accept-any'), point('update')),
+        /Accept asks for a type no success response declares: \*\/\*/)
+    })
+
+    test('catches every type asked for beside the declared JSON', async () => {
+      await rejects(runDefinitionPoint(mediaSDK('accept-all'), point('load')),
+        /Accept is not the declared JSON type alone/)
+    })
+
+    test('catches a raw body sent as JSON', async () => {
+      await rejects(runDefinitionPoint(mediaSDK('raw-json'), point('update')),
+        /raw body not sent as given/)
+      await rejects(runDefinitionPoint(mediaSDK('raw-json'), point('create')),
+        /raw body not sent as given/)
+    })
+
+    test('catches a raw body sent under an undeclared type', async () => {
+      await rejects(runDefinitionPoint(mediaSDK('raw-type'), point('update')),
+        /raw body sent as a type the definition does not declare: application\/json/)
+    })
+  })
+}

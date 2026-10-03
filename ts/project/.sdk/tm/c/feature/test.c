@@ -254,7 +254,10 @@ static voxgig_value* test_fetch(voxgig_value* entity, Context* ctx, const char* 
       return r;
     }
     if (voxgig_is_map(ent) && voxgig_is_map(reqdata)) {
-      ent = voxgig_merge(clist(2, v_share(ent), v_share(reqdata)), VOXGIG_MAXDEPTH);
+      // `$body` travels on the wire alone; the record is the rest.
+      voxgig_value* rec = voxgig_clone(reqdata);
+      voxgig_delprop(rec, v_str("$body"));
+      ent = voxgig_merge(clist(2, v_share(ent), rec), VOXGIG_MAXDEPTH);
     }
     voxgig_delprop(ent, v_str("$KEY"));
     return respond(ctx, 200, voxgig_clone(ent));
@@ -289,6 +292,7 @@ static voxgig_value* test_fetch(voxgig_value* entity, Context* ctx, const char* 
 
     voxgig_value* ent = voxgig_clone(ctx->reqdata);
     if (voxgig_is_map(ent)) {
+      voxgig_delprop(ent, v_str("$body"));
       setp(ent, "id", id);
       if (voxgig_is_string(id)) {
         setp(entmap, voxgig_as_string(id), ent);

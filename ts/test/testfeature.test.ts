@@ -80,6 +80,26 @@ describe('feature:test mock semantics', () => {
   })
 
 
+  test('a raw body is not a record field', async () => {
+    const call = makeMock({ widget: { w1: { name: 'one' } } })
+    const bytes = Buffer.from([1, 2, 3])
+
+    const made = await call('create', { reqdata: { name: 'two', $body: bytes } })
+    strictEqual(made.status, 200)
+    strictEqual(made.data.name, 'two')
+    strictEqual('$body' in made.data, false, 'create stored the raw body')
+
+    const loaded = await call('load', { reqmatch: { id: made.data.id } })
+    strictEqual(loaded.data.name, 'two')
+    strictEqual('$body' in loaded.data, false)
+
+    const changed = await call('update', { reqdata: { id: 'w1', name: 'uno', $body: bytes } })
+    strictEqual(changed.status, 200)
+    strictEqual(changed.data.name, 'uno')
+    strictEqual('$body' in changed.data, false, 'update merged the raw body')
+  })
+
+
   test('an update merges deeply', async () => {
     const call = makeMock({ widget: { w1: { name: 'one', nested: { x: 1, y: 2 } } } })
 

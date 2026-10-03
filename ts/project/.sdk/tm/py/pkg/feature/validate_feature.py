@@ -184,6 +184,8 @@ class ProjectNameValidateFeature(ProjectNameBaseFeature):
         # custom-action call would be rejected for the one key that made it
         # reachable.
         out.pop("$action", None)
+        # Nor is `$body`, the raw request body.
+        out.pop("$body", None)
 
         return out
 

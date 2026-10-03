@@ -275,6 +275,7 @@ function withPointParts(op: any): any {
           active: pt.a, kind: pt.k, method: pt.m, orig: pt.o,
           segments: pt.s, parts: pointParts(pt), rename: pt.r,
           transform: pt.t, args, select: pt.q, live: pt.li, graphql: pt.gq,
+          body: pt.rb, response: pt.rs,
         }
       }),
     }

@@ -254,6 +254,8 @@ function ValidateFeature:_payload(ctx, opname)
   -- fields will never name it -- and under `strict` every custom-action call
   -- would be rejected for the one key that made it reachable.
   out["$action"] = nil
+  -- Nor is `$body`, the raw request body.
+  out["$body"] = nil
 
   return out
 end

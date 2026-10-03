@@ -1,6 +1,8 @@
 
 import { Context, Result } from '../types'
 
+import { isRawValue, isStream } from './MediaUtility'
+
 
 function makeFetchDef(ctx: Context): any | Error {
   const spec = ctx.spec
@@ -33,8 +35,13 @@ function makeFetchDef(ctx: Context): any | Error {
   }
 
   if (null != spec.body) {
-    fetchdef.body =
-      'object' === typeof spec.body ? jsonify(spec.body) : spec.body
+    const body = spec.body
+    fetchdef.body = 'object' !== typeof body || isRawValue(body) ? body : jsonify(body)
+
+    // Node's fetch refuses a stream body without it.
+    if (isStream(body)) {
+      fetchdef.duplex = 'half'
+    }
   }
 
   return fetchdef
