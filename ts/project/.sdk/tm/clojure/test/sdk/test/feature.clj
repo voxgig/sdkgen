@@ -51,6 +51,11 @@
 (defn clock-sleeper [c] (fn [ms] (swap! c + (or ms 0))))
 (defn clock-advance [c ms] (swap! c + ms))
 
+;; A clock standing at 0 for the calling thread and at `later` for any other.
+(defn worker-clock [later]
+  (let [caller (Thread/currentThread)]
+    (fn [] (if (identical? (Thread/currentThread) caller) 0 later))))
+
 (defn fake-entity [name] {:get-name (fn [] name)})
 
 (defn- merge-headers [base extra]
@@ -265,6 +270,21 @@
            (fn [] (let [c (make-clock)
                         h (make-harness [(fspec "timeout" "ms" 1000 "now" (clock-now c))])]
                     (t/is-eq (get (h-op h) "ok") true "ok"))))
+    ;; The deadline runs from the request's start, not from the wait: the
+    ;; clock stands at the start for the caller and 300 ms later for the worker.
+    (check "timeout-late-response-however-late-the-caller-looks" "timeout"
+           (fn [] (let [h (make-harness [(fspec "timeout" "ms" 20 "now" (worker-clock 300))])
+                        res (h-op h)]
+                    (t/is-eq (rcode res) "timeout" "timeout")
+                    (t/is-eq (mget (h-track h "_timeout") "count") 1 "count"))))
+    ;; A transport failure after the deadline is a timeout too, not the failure.
+    (check "timeout-late-failure-times-out" "timeout"
+           (fn [] (let [failing (fn [fctx _url _fetchdef]
+                                  (core/sdk-throw (core/ctx-error fctx "socket_closed" "socket closed")))
+                        h (make-harness [(fspec "timeout" "ms" 20 "now" (worker-clock 300))] :server failing)
+                        res (h-op h)]
+                    (t/is-eq (rcode res) "timeout" "timeout")
+                    (t/is-eq (mget (h-track h "_timeout") "count") 1 "count"))))
     (check "timeout-ms-zero-disables" "timeout"
            (fn [] (let [h (make-harness [(fspec "timeout" "ms" 0)])]
                     (t/is-eq (get (h-op h) "ok") true "ok"))))

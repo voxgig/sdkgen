@@ -187,7 +187,10 @@ function compileBatch(indices: number[], blocks: string[], key: string): {
     }
 
     const requireFrom = createRequire(__filename)
-    const tsc = requireFrom.resolve('typescript/bin/tsc')
+    // Every TypeScript exports its package.json; TypeScript 7 exports no
+    // ./bin/tsc, so the binary is found through the manifest's bin.
+    const tsPackage = requireFrom.resolve('typescript/package.json')
+    const tsc = Path.join(Path.dirname(tsPackage), requireFrom(tsPackage).bin.tsc)
 
     const res = spawnSync(process.execPath, [
       tsc,
@@ -286,7 +289,13 @@ function rewriteForRun(code: string): string {
 // test mode. Returns a list of failure descriptions (empty === all passed).
 async function executeBlocks(blocks: string[]): Promise<string[]> {
   const requireFrom = createRequire(__filename)
-  const ts = requireFrom('typescript')
+  // Node strips a snippet's types itself from 22.13; before that TypeScript 5
+  // does, through an API TypeScript 7 no longer ships.
+  const strip = requireFrom('node:module').stripTypeScriptTypes
+  const ts = 'function' === typeof strip ? null : requireFrom('typescript')
+  if (null == strip && 'function' !== typeof ts.transpileModule) {
+    throw new Error('running the examples needs node 22.13 or TypeScript 5 to strip their types')
+  }
 
   const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
   const silentConsole = { log() {}, error() {}, warn() {}, info() {} }
@@ -304,14 +313,16 @@ async function executeBlocks(blocks: string[]): Promise<string[]> {
       continue
     }
 
-    // Compile the snippet to JS (strips type annotations) so it runs under
-    // node exactly as a real caller would.
-    const js = ts.transpileModule(src, {
-      compilerOptions: {
-        target: ts.ScriptTarget.ES2020,
-        module: ts.ModuleKind.ESNext,
-      },
-    }).outputText
+    // Strip the snippet's types so it runs under node exactly as a real
+    // caller would.
+    const js = null != strip
+      ? strip(src, { mode: 'transform' })
+      : ts.transpileModule(src, {
+        compilerOptions: {
+          target: ts.ScriptTarget.ES2020,
+          module: ts.ModuleKind.ESNext,
+        },
+      }).outputText
 
     let runner: any
     try {

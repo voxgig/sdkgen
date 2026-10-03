@@ -225,9 +225,9 @@ tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 32327e3b999a
 tm/clojure/src/sdk/core.clj 3acc7e52cd9b
-tm/clojure/src/sdk/features.clj 5b0337a682c0
+tm/clojure/src/sdk/features.clj 1ca78ea4cd07
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
-tm/clojure/test/sdk/test/feature.clj 2aa105a4e17e
+tm/clojure/test/sdk/test/feature.clj b70684f4ddd3
 tm/clojure/test/sdk/test/feature/secrets.clj 6ab6b24e4eb5
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
@@ -1795,7 +1795,7 @@ tm/scala/feature/SecretsFeature.scala e9d5e814cd43
 tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala b1bf710a5667
 tm/scala/feature/TestFeature.scala d96c2e0f15db
-tm/scala/feature/TimeoutFeature.scala 1241410229ac
+tm/scala/feature/TimeoutFeature.scala 007550fa7e00
 tm/scala/feature/ValidateFeature.scala 9b6d56f5f601
 tm/scala/feature/secrets/plugin/Capability.scala 9270bb49a022
 tm/scala/feature/secrets/plugin/Config.scala adb41e770842
@@ -1834,7 +1834,7 @@ tm/scala/feature/secrets/sekreto/plugins/Sigv4.scala 116d50af73ff
 tm/scala/sdktest/OmniResolver.scala 2bbd5639ca7c
 tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
 tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
-tm/scala/sdktest/SdkTestMain.scala dae2e6ae02eb
+tm/scala/sdktest/SdkTestMain.scala 0f0ab7d16d3f
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala c6be9c1da3bb
@@ -1997,11 +1997,11 @@ src/cmp/ts/Entity_ts.ts b5a1cc3c820e
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
 src/cmp/ts/Main_ts.ts 1220d104f55d
-src/cmp/ts/Package_ts.ts 8f2b744f085e
+src/cmp/ts/Package_ts.ts da37fb78956e
 src/cmp/ts/PrepareAuth_ts.ts 13cc5f3c7f72
 src/cmp/ts/ReadmeEntity_ts.ts c35c4ebb6363
 src/cmp/ts/ReadmeExampleTest_ts.ts 5dfbe547c29e
-src/cmp/ts/ReadmeExamplesTest_ts.ts 3a76e44d7eee
+src/cmp/ts/ReadmeExamplesTest_ts.ts bacf8c5614de
 src/cmp/ts/ReadmeExplanation_ts.ts adae2c36cfde
 src/cmp/ts/ReadmeHowto_ts.ts 4abcad2306c3
 src/cmp/ts/ReadmeInstall_ts.ts 9dc4a0af5ea2
@@ -2033,7 +2033,7 @@ src/cmp/ts/fragment/EntityListOp.fragment.ts 79ab733822b8
 src/cmp/ts/fragment/EntityLoadOp.fragment.ts 3c2318284c02
 src/cmp/ts/fragment/EntityRemoveOp.fragment.ts 995341f96ebd
 src/cmp/ts/fragment/EntityUpdateOp.fragment.ts 2b6849b140d2
-src/cmp/ts/fragment/Main.fragment.ts bd424c3ad820
+src/cmp/ts/fragment/Main.fragment.ts 576e0f007236
 src/cmp/ts/fragment/MainStation.fragment.ts 87d629c6b32f
 src/cmp/ts/fragment/SdkError.fragment.ts cbfaeffafd6a
 src/cmp/ts/tsconfig.json 720a3f229019
@@ -2051,7 +2051,7 @@ tm/ts/src/Spec.ts 4cda481b4c0b
 tm/ts/src/feature/README.md 630422c5567f
 tm/ts/src/feature/base/BaseFeature.ts 4c0e468f5313
 tm/ts/src/feature/test/TestFeature.ts 89656654ef62
-tm/ts/src/tsconfig.json c1b52cc621fb
+tm/ts/src/tsconfig.json 8276b533f6e4
 tm/ts/src/types.ts 5e1f5518bba6
 tm/ts/src/utility/CleanUtility.ts 127a2d0fb150
 tm/ts/src/utility/DoneUtility.ts 228a75d46df4
@@ -2101,7 +2101,7 @@ tm/ts/test/omni.test.ts 3a59ba8a1d8c
 tm/ts/test/omni.ts 8ddc16d6c9ce
 tm/ts/test/pipeline.test.ts 9c2e400aec49
 tm/ts/test/sdk-test-control.json fc9f12dbb98c
-tm/ts/test/tsconfig.json 0da68e0cde47
+tm/ts/test/tsconfig.json 919b2e464c0b
 tm/ts/test/utility.ts 1ea0442912d3
 tm/ts/test/utility/Corpus.test.ts e7efaa88df0f
 tm/ts/test/utility/Custom.test.ts a8780a38b0ea

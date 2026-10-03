@@ -273,7 +273,7 @@ rather than sleeping. The conventional names:
 
 | Option | Replaces | Used by |
 | --- | --- | --- |
-| `now()` | the clock | `cache`, `metrics`, `audit`, `debug`, `telemetry`, `ratelimit` |
+| `now()` | the clock | `cache`, `metrics`, `audit`, `debug`, `telemetry`, `ratelimit`, `timeout` |
 | `sleep(ms)` | the wait | `retry`, `ratelimit`, `netsim`, `streaming` |
 | `idgen(kind)` / `keygen()` | id generation | `clienttrack`, `telemetry`, `idempotency` |
 | `setTimer` / `clearTimer` | timer scheduling | `timeout` |
@@ -343,9 +343,11 @@ before retrying writes.
 > Per-request timeout with transport abort
 
 Races each transport attempt against a deadline. If the deadline wins the
-call resolves to a `timeout` error instead of hanging. An `AbortController`
-signal is attached to the request, so a live `fetch` is genuinely
-cancelled rather than left running.
+call resolves to a `timeout` error instead of hanging. The deadline runs
+from the request's start in every target: a response, or a transport
+failure, after it is a `timeout` error however late the caller observes it. An
+`AbortController` signal is attached to the request, so a live `fetch` is
+genuinely cancelled rather than left running.
 
 **Seam:** transport wrapper. No pipeline hooks.
 
@@ -353,7 +355,8 @@ cancelled rather than left running.
 | --- | --- | --- |
 | `active` | `false` | Enable the feature. |
 | `ms` | `30000` | Deadline in ms. `0` or less disables the race. |
-| `setTimer` / `clearTimer` | `setTimeout` / `clearTimeout` | Injectable scheduling. |
+| `setTimer` / `clearTimer` | `setTimeout` / `clearTimeout` | Injectable scheduling, where the target races a timer. |
+| `now()` | the clock | Injectable clock, where the target measures the deadline and the arrival itself. |
 
 ```ts
 feature: { timeout: { active: true, ms: 10000 } }

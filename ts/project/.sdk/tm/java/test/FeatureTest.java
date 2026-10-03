@@ -297,6 +297,39 @@ public class FeatureTest {
     assertEquals(1, f.count, "expected 1 timeout");
   }
 
+  // The deadline runs from the request's start, not from the wait: a response
+  // that arrives after it is a timeout even when the caller only looks once it
+  // is complete, as a paused thread did on a loaded runner. The clock stands
+  // at the start for the caller and 300 ms later for the worker, so the
+  // response is instant in real time and late by the clock.
+  @Test
+  public void timeout_lateResponseTimesOutHoweverLateTheCallerLooks() {
+    assumeFeatures("timeout");
+    TimeoutFeature f = new TimeoutFeature();
+    FhHarness h = fhMake(null, fhF(f, fhMap("ms", 20, "now", workerClock(300L))));
+    FhOpResult res = h.op(fhOp("load"));
+    assertEquals("timeout", fhErrCode(res.err), "expected timeout error, got " + res.err);
+    assertEquals(1, f.count, "expected 1 timeout");
+  }
+
+  // A transport failure after the deadline is a timeout too, not the failure.
+  @Test
+  public void timeout_lateFailureTimesOut() {
+    assumeFeatures("timeout");
+    TimeoutFeature f = new TimeoutFeature();
+    FhHarness h = fhMake((ctx, url, fetchdef) -> { throw new IllegalStateException("socket closed"); },
+        fhF(f, fhMap("ms", 20, "now", workerClock(300L))));
+    FhOpResult res = h.op(fhOp("load"));
+    assertEquals("timeout", fhErrCode(res.err), "expected timeout error, got " + res.err);
+    assertEquals(1, f.count, "expected 1 timeout");
+  }
+
+  // A clock standing at 0 for the calling thread and at `later` for any other.
+  private static LongSupplier workerClock(long later) {
+    Thread caller = Thread.currentThread();
+    return () -> Thread.currentThread() == caller ? 0L : later;
+  }
+
   @Test
   public void timeout_fastRequestPasses() {
     assumeFeatures("timeout");

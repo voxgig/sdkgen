@@ -382,18 +382,24 @@
         (fn [ctx url fetchdef inner]
           (let [ms (opt fa "ms" 30000)]
             (if (<= ms 0) (inner ctx url fetchdef)
-                (let [now (opt fa "now")]
-                  (if (fn? now)
-                    (let [start (now) r (inner ctx url fetchdef)]
-                      (if (> (- (now) start) ms)
-                        (do (track! ms) [nil (core/ctx-error ctx "timeout" (str "Request exceeded timeout of " ms "ms"))])
-                        r))
-                    (let [fut (future (inner ctx url fetchdef))
-                          r (deref fut (long ms) ::timeout)]
-                      (if (= r ::timeout)
-                        (do (future-cancel fut) (track! ms)
-                            [nil (core/ctx-error ctx "timeout" (str "Request exceeded timeout of " ms "ms"))])
-                        r)))))))]
+                ;; The deadline runs from here, not from the deref below: a
+                ;; caller paused between the two would otherwise find a late
+                ;; response complete and take it. The future notes when it
+                ;; finished, so a response or a failure after the deadline is
+                ;; a timeout however late the caller looks.
+                (let [now (let [n (opt fa "now")] (if (fn? n) n #(System/currentTimeMillis)))
+                      start (now)
+                      arrived (atom Long/MAX_VALUE)
+                      fut (future (try (inner ctx url fetchdef) (finally (reset! arrived (now)))))
+                      remaining (max 0 (- ms (- (now) start)))
+                      late? (fn [] (< ms (- @arrived start)))
+                      r (try (deref fut (long remaining) ::timeout)
+                             (catch java.util.concurrent.ExecutionException e
+                               (if (late?) ::timeout (throw (or (.getCause e) e)))))]
+                  (if (or (= r ::timeout) (late?))
+                    (do (future-cancel fut) (track! ms)
+                        [nil (core/ctx-error ctx "timeout" (str "Request exceeded timeout of " ms "ms"))])
+                    r)))))]
     (swap! fa assoc
            "init" (fn [ctx options]
                     (swap! fa assoc :client (core/oget ctx :client)

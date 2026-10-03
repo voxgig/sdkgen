@@ -1679,6 +1679,17 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // The README example tests strip a snippet's types with node:module under
+  // TypeScript 7, which Node has from 22.13; the package says so.
+  test('ts: the package declares the Node its test suite needs', async () => {
+    const out = await generate(['ts'])
+    const pkgjson = findFile(out, 'ts/package.json')
+    ok(null != pkgjson, 'ts: no package.json generated')
+    strictEqual(JSON.parse(pkgjson!).engines?.node, '>=22.13',
+      'the generated package.json does not declare the Node floor')
+  })
+
+
   test('ts: example variables do not shadow language globals', async () => {
     const out = await generate(['ts'])
 
