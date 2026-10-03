@@ -50,11 +50,7 @@ def prepare_headers_util(ctx):
         for key in [k for k in out if isinstance(k, str) and k.lower() == "cookie"]:
             given = out.pop(key)
             if isinstance(given, str):
-                for piece in given.split(";"):
-                    rest = [pair.strip() for pair in piece.split("&")]
-                    rest = [pair for pair in rest if pair != "" and pair.split("=", 1)[0].strip() not in names]
-                    if rest:
-                        kept.append("&".join(rest))
+                kept.extend(cookie_keep(given, names))
         for orig, val in sent:
             pair = _cookie_pair(orig, val)
             if pair != "":
@@ -63,3 +59,28 @@ def prepare_headers_util(ctx):
             out["cookie"] = "; ".join(kept)
 
     return out
+
+
+def cookie_keep(header, names):
+    """The caller's cookie pieces with every named cookie removed.
+
+    A piece whose &-parts are all pairs is the exploded form _cookie_pair
+    writes, and loses only the pairs named; any other piece is one cookie,
+    kept or dropped whole.
+    """
+    def named(part):
+        return part.split("=", 1)[0].strip() in names
+
+    kept = []
+    for piece in header.split(";"):
+        parts = piece.split("&")
+        if all("=" in part for part in parts):
+            rest = [part for part in parts if not named(part)]
+        elif named(piece):
+            rest = []
+        else:
+            rest = parts
+        cookie = "&".join(rest).strip()
+        if cookie != "":
+            kept.append(cookie)
+    return kept

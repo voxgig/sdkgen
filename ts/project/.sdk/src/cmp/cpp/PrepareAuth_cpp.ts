@@ -77,9 +77,11 @@ function render(spec: AuthSpec): string {
 ${'header' === spec.where ? `#include <algorithm>
 ` : ''}${withBasic ? `#include <cstddef>
 ` : ''}#include <string>
-
+${'cookie' === spec.where ? `#include <vector>
+` : ''}
 #include "../core/types.hpp"
-
+${'cookie' === spec.where ? `#include "cookie.hpp"
+` : ''}
 namespace sdk {
 namespace util {
 
@@ -233,30 +235,11 @@ ${place(spec.where)}
 function cookieHelpers(): string {
   return `// The cookie header minus the named pair, every other cookie untouched.
 inline std::string authCookieRest(const Value& headers, const std::string& cred) {
-  std::string existing = as_str(getp(headers, "cookie"));
-  if (existing.empty()) return "";
-
   std::string kept;
-  size_t start = 0;
-  while (start <= existing.size()) {
-    size_t sep = existing.find(';', start);
-    std::string piece = (std::string::npos == sep)
-      ? existing.substr(start) : existing.substr(start, sep - start);
-
-    size_t a = piece.find_first_not_of(" \\t");
-    size_t b = piece.find_last_not_of(" \\t");
-    piece = (std::string::npos == a) ? "" : piece.substr(a, b - a + 1);
-
-    bool ours = piece == cred || 0 == piece.compare(0, cred.size() + 1, cred + "=");
-    if (!piece.empty() && !ours) {
-      if (!kept.empty()) kept += "; ";
-      kept += piece;
-    }
-
-    if (std::string::npos == sep) break;
-    start = sep + 1;
+  for (const auto& cookie : cookieKeep(as_str(getp(headers, "cookie")), std::vector<std::string>{cred})) {
+    if (!kept.empty()) kept += "; ";
+    kept += cookie;
   }
-
   return kept;
 }
 

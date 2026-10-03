@@ -84,7 +84,6 @@ final class PrepareAuth {
       'import java.nio.charset.StandardCharsets;',
       'import java.util.Base64;',
     ] : []),
-    ...(cookie ? ['import java.util.ArrayList;'] : []),
     'import java.util.List;',
     'import java.util.Map;',
   ].join('\n')
@@ -228,13 +227,7 @@ const COOKIE_HELPER = `
   static void applyCookie(Map<String, Object> headers, String name, String value) {
     Object existing = headers.get(COOKIE_HEADER);
     String cookie = existing instanceof String ? (String) existing : "";
-    List<String> kept = new ArrayList<>();
-    for (String part : cookie.split(";")) {
-      String piece = part.trim();
-      if (!piece.isEmpty() && !piece.equals(name) && !piece.startsWith(name + "=")) {
-        kept.add(piece);
-      }
-    }
+    List<String> kept = PrepareHeaders.cookieKeep(cookie, List.of(name));
     if (value != null) {
       kept.add(name + "=" + value);
     }

@@ -83,7 +83,8 @@ return prepare_auth_util
 
   return head + `
 local vs = require("utility.struct.struct")
-
+` + ('cookie' === where ? `local helpers = require("core.helpers")
+` : '') + `
 ` + consts + `
 
 -- The client's auth.name option, when set, replaces the name the API declares.
@@ -301,12 +302,7 @@ local function cookie_set(headers, name, value)
   local existing = headers[HEADER_COOKIE]
 
   if type(existing) == "string" then
-    for pair in string.gmatch(existing, "[^;]+") do
-      local one = string.match(pair, "^%s*(.-)%s*$")
-      if one ~= "" and string.match(one, "^[^=]*") ~= name then
-        kept[#kept + 1] = one
-      end
-    end
+    kept = helpers.cookie_keep(existing, { [name] = true })
   end
 
   if value ~= nil then

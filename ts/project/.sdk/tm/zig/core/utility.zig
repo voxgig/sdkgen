@@ -1622,6 +1622,14 @@ pub fn prepare_headers_util(ctx: *Context) Value {
         if (!h.is_noval(arg.val)) sent.append(h.A(), arg) catch {};
     }
     if (0 < sent.items.len) {
+        var names: std.ArrayList([]const u8) = .empty;
+        for (sent.items) |arg| {
+            if (arg.val == .object) {
+                for (h.keysof_vec(arg.val)) |key| names.append(h.A(), h.esc_url(key)) catch {};
+            } else {
+                names.append(h.A(), arg.wire) catch {};
+            }
+        }
         var kept: std.ArrayList([]const u8) = .empty;
         while (true) {
             var kit = out.object.iterator();
@@ -1630,30 +1638,7 @@ pub fn prepare_headers_util(ctx: *Context) Value {
             } else null;
             const removed = out.object.fetchOrderedRemove(same orelse break) orelse break;
             if (removed.value != .string) continue;
-            var pieces = std.mem.splitScalar(u8, removed.value.string, ';');
-            while (pieces.next()) |piece| {
-                var rest: std.ArrayList([]const u8) = .empty;
-                var parts = std.mem.splitScalar(u8, piece, '&');
-                while (parts.next()) |part| {
-                    const pair = std.mem.trim(u8, part, " \t");
-                    if (0 == pair.len) continue;
-                    const eq = std.mem.indexOfScalar(u8, pair, '=') orelse pair.len;
-                    const name = std.mem.trim(u8, pair[0..eq], " \t");
-                    var replaced = false;
-                    for (sent.items) |arg| {
-                        if (arg.val == .object) {
-                            for (h.keysof_vec(arg.val)) |key| {
-                                if (std.mem.eql(u8, h.esc_url(key), name)) replaced = true;
-                            }
-                        } else if (std.mem.eql(u8, arg.wire, name)) replaced = true;
-                    }
-                    if (!replaced) rest.append(h.A(), pair) catch {};
-                }
-                if (0 < rest.items.len) {
-                    const joined_rest = std.mem.join(h.A(), "&", rest.items) catch continue;
-                    kept.append(h.A(), joined_rest) catch {};
-                }
-            }
+            for (h.cookie_keep(removed.value.string, names.items)) |cookie| kept.append(h.A(), cookie) catch {};
         }
         for (sent.items) |arg| {
             const pair = cookie_pair(arg.wire, arg.val);

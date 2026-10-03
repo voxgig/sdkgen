@@ -19,6 +19,7 @@
 // (it includes only core/struct.hpp), so this cannot close a cycle with
 // core/config.hpp, which pulls in the feature headers.
 #include "../core/schema.hpp"
+#include "cookie.hpp"
 
 // prepareAuth is GENERATED, not templated: WHERE the credential goes -
 // header, query or cookie, and under what name - is a fact about THIS API
@@ -1548,39 +1549,21 @@ inline Value prepareHeaders(CtxPtr ctx) {
     if (!is_nullish(arg.val)) sent.push_back(arg);
   }
   if (!sent.empty()) {
+    std::vector<std::string> names;
+    for (const auto& arg : sent) {
+      if (arg.val.is_map()) {
+        for (const auto& item : Struct::items(arg.val)) names.push_back(Struct::escurl(pair_key(item)));
+      } else {
+        names.push_back(arg.wire);
+      }
+    }
     std::vector<std::string> kept;
     for (const auto& item : Struct::items(out)) {
       std::string key = as_str(pair_key(item));
       if (lower(key) != "cookie") continue;
       Value given = getp(out, key);
       if (given.is_string()) {
-        const std::string text = given.as_string();
-        size_t at = 0;
-        while (at <= text.size()) {
-          size_t end = text.find(';', at);
-          if (std::string::npos == end) end = text.size();
-          const std::string cookie = text.substr(at, end - at);
-          std::string rest;
-          size_t pat = 0;
-          while (pat <= cookie.size()) {
-            size_t pend = cookie.find('&', pat);
-            if (std::string::npos == pend) pend = cookie.size();
-            std::string pair = trimBlank(cookie.substr(pat, pend - pat));
-            std::string name = trimBlank(pair.substr(0, pair.find('=')));
-            bool replaced = false;
-            for (const auto& arg : sent) {
-              if (arg.val.is_map()) {
-                for (const auto& item : Struct::items(arg.val)) replaced = replaced || Struct::escurl(pair_key(item)) == name;
-              } else {
-                replaced = replaced || arg.wire == name;
-              }
-            }
-            if (!pair.empty() && !replaced) rest += (rest.empty() ? "" : "&") + pair;
-            pat = pend + 1;
-          }
-          if (!rest.empty()) kept.push_back(rest);
-          at = end + 1;
-        }
+        for (const auto& cookie : cookieKeep(given.as_string(), names)) kept.push_back(cookie);
       }
       out.as_map()->erase(key);
     }

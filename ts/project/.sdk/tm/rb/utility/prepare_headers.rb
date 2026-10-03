@@ -41,11 +41,7 @@ module ProjectNameUtilities
       out.keys.select { |k| k.is_a?(String) && k.downcase == "cookie" }.each do |k|
         given = out.delete(k)
         next unless given.is_a?(String)
-        given.split(";").each do |piece|
-          rest = piece.split("&").map(&:strip)
-            .reject { |pair| pair.empty? || names.include?(pair.split("=", 2)[0].strip) }
-          kept << rest.join("&") unless rest.empty?
-        end
+        kept.concat(ProjectNameUtilities.cookie_keep(given, names))
       end
       sent.each do |_name, orig, val|
         pair = ProjectNameUtilities.cookie_pair(orig, val)
@@ -55,4 +51,23 @@ module ProjectNameUtilities
     end
     out
   }
+
+  # The caller's cookie pieces with every named cookie removed. A piece whose
+  # &-parts are all pairs is the exploded form cookie_pair writes, and loses
+  # only the pairs named; any other piece is one cookie, kept or dropped whole.
+  def self.cookie_keep(header, names)
+    named = ->(part) { names.include?(part.split("=", 2)[0].to_s.strip) }
+    header.split(";", -1).each_with_object([]) do |piece, kept|
+      parts = piece.split("&", -1)
+      rest = if parts.all? { |part| part.include?("=") }
+        parts.reject { |part| named.call(part) }
+      elsif named.call(piece)
+        []
+      else
+        parts
+      end
+      cookie = rest.join("&").strip
+      kept << cookie unless cookie.empty?
+    end
+  end
 end

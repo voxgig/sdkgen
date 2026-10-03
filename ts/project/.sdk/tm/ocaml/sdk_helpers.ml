@@ -150,3 +150,21 @@ let num_opt (v : value) : float option =
 
 let int_opt (v : value) : int option =
   match v with Num n -> Some (int_of_float n) | _ -> None
+
+(* The caller's cookie pieces with every named cookie removed. A piece whose
+ * &-parts are all pairs is the exploded form cookie_pair writes, and loses
+ * only the pairs named; any other piece is one cookie, kept or dropped whole. *)
+let cookie_keep (header : string) (names : string list) : string list =
+  let named part =
+    List.mem (String.trim (List.hd (String.split_on_char '=' part))) names in
+  List.filter_map (fun piece ->
+      let parts = String.split_on_char '&' piece in
+      let rest =
+        if List.for_all (fun part -> String.contains part '=') parts then
+          List.filter (fun part -> not (named part)) parts
+        else if named piece then []
+        else parts in
+      match String.trim (String.concat "&" rest) with
+      | "" -> None
+      | cookie -> Some cookie)
+    (String.split_on_char ';' header)

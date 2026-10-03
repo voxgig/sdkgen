@@ -104,7 +104,8 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
             const wire = String(arg.or || arg.n)
             const def = params.find((p: any) => 'header' === p?.in &&
               wire.toLowerCase() === String(p?.name).toLowerCase())
-            return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) }
+            const shared = args.find((a: any) => a.name === arg.n)
+            return { name: arg.n, wire, value: shared?.value ?? scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) }
           })
 
         // A cookie argument is sent too, in the cookie header, never in the
@@ -114,7 +115,8 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           .map((arg: any, i: number) => {
             const wire = String(arg.or || arg.n)
             const def = params.find((p: any) => 'cookie' === p?.in && wire === p?.name)
-            return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'c' + (i + 1) }
+            const shared = args.find((a: any) => a.name === arg.n) ?? headers.find((h: any) => h.name === arg.n)
+            return { name: arg.n, wire, value: shared?.value ?? scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'c' + (i + 1) }
           })
 
         const selected: Record<string, any> = {}

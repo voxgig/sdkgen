@@ -36,7 +36,8 @@ function render(spec: {
 }): string {
   const head = `
 import { Context, Spec } from '../types'
-
+` + ('cookie' === spec.where && !spec.suppressed ? `import { cookieKeep } from './PrepareHeadersUtility'
+` : '') + `
 `
 
 
@@ -198,17 +199,7 @@ function cookieHelper(where: string): string {
   return `
   function cookieSet(headers: any, name: string, value: any) {
     const existing = getprop(headers, COOKIE_header, '')
-    const kept: string[] = []
-
-    if ('string' === typeof existing && '' !== existing) {
-      for (const part of existing.split(';')) {
-        const piece = part.trim()
-        if ('' === piece || piece === name || piece.startsWith(name + '=')) {
-          continue
-        }
-        kept.push(piece)
-      }
-    }
+    const kept: string[] = 'string' === typeof existing ? cookieKeep(existing, [name]) : []
 
     if (null != value) {
       kept.push(name + '=' + value)

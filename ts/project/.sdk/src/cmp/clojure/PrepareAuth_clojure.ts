@@ -179,12 +179,7 @@ ${authName('COOKIE-AUTH', false)}
   (let [existing (vs/getprop headers HEADER-COOKIE)]
     (if (or (not (string? existing)) (= "" existing))
       ""
-      (str/join "; "
-                (remove (fn [piece]
-                          (or (= "" piece)
-                              (= cred piece)
-                              (str/starts-with? piece (str cred "="))))
-                        (map str/trim (str/split existing #";")))))))
+      (str/join "; " (cookie-keep existing #{cred})))))
 
 ;; Set (a string) or remove (nil) the named pair, leaving the rest in place.
 (defn- apply-cookie! [headers cred value]

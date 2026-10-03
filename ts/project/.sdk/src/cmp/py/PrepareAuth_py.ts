@@ -238,6 +238,7 @@ def prepare_auth_util(ctx):
 
 function renderCookie(spec: AuthSpec, head: string): string {
   return head + `from ${spec.pkg}.utility.voxgig_struct import voxgig_struct as vs
+from ${spec.pkg}.utility.prepare_headers import cookie_keep
 
 COOKIE_HEADER = "cookie"
 COOKIE_AUTH = ${pystr(spec.name)}
@@ -251,14 +252,7 @@ def _cookies_without_cred(headers, name):
     if not isinstance(existing, str) or existing == "":
         return ""
 
-    kept = []
-    for part in existing.split(";"):
-        piece = part.strip()
-        if piece == "" or piece == name or piece.startswith(name + "="):
-            continue
-        kept.append(piece)
-
-    return "; ".join(kept)
+    return "; ".join(cookie_keep(existing, [name]))
 
 
 def _apply_cookie(headers, name, value):

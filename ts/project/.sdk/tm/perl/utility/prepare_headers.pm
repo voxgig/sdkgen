@@ -46,16 +46,7 @@ $REGISTRY{prepare_headers} = sub {
     for my $key (grep { lc $_ eq 'cookie' } keys %$out) {
       my $given = delete $out->{$key};
       next if !defined $given || ref $given;
-      for my $piece (split /;/, $given) {
-        my @rest;
-        for my $part (split /&/, $piece) {
-          (my $pair = $part) =~ s/^\s+|\s+$//g;
-          next if $pair eq '';
-          (my $name = (split /=/, $pair, 2)[0]) =~ s/^\s+|\s+$//g;
-          push @rest, $pair unless $names{$name};
-        }
-        push @kept, join('&', @rest) if @rest;
-      }
+      push @kept, @{ cookie_keep($given, \%names) };
     }
     for my $arg (@sent) {
       my $pair = ProjectNameUtilities::cookie_pair($arg->[1], $arg->[2]);
@@ -65,6 +56,26 @@ $REGISTRY{prepare_headers} = sub {
   }
   return $out;
 };
+
+# The caller's cookie pieces with every named cookie removed. A piece whose
+# &-parts are all pairs is the exploded form cookie_pair writes, and loses
+# only the pairs named; any other piece is one cookie, kept or dropped whole.
+sub cookie_keep {
+  my ($header, $names) = @_;
+  my $named = sub {
+    (my $name = (split /=/, $_[0], 2)[0] // '') =~ s/^\s+|\s+$//g;
+    return $names->{$name};
+  };
+  my @kept;
+  for my $piece (split /;/, $header, -1) {
+    my @parts = split /&/, $piece, -1;
+    my @rest = (grep { index($_, '=') < 0 } @parts) ? ($named->($piece) ? () : @parts)
+      : grep { !$named->($_) } @parts;
+    (my $cookie = join('&', @rest)) =~ s/^\s+|\s+$//g;
+    push @kept, $cookie if $cookie ne '';
+  }
+  return \@kept;
+}
 
 # The form style of a cookie parameter: a list repeats the name, a map sends
 # its own keys, and every value is percent-encoded.

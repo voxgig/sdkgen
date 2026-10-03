@@ -365,3 +365,40 @@ pub fn unsupported_op(opname: []const u8, entityname: []const u8) *SdkError {
     const msg = std.fmt.allocPrint(A(), "operation '{s}' not supported by entity '{s}'", .{ opname, entityname }) catch "unsupported op";
     return SdkError.make("unsupported_op", msg);
 }
+
+// The caller's cookie pieces with every named cookie removed. A piece whose
+// &-parts are all pairs is the exploded form cookie_pair writes, and loses
+// only the pairs named; any other piece is one cookie, kept or dropped whole.
+pub fn cookie_keep(header: []const u8, names: []const []const u8) []const []const u8 {
+    var kept: std.ArrayList([]const u8) = .empty;
+    var pieces = std.mem.splitScalar(u8, header, ';');
+    while (pieces.next()) |piece| {
+        var pairs = true;
+        var scan = std.mem.splitScalar(u8, piece, '&');
+        while (scan.next()) |part| {
+            if (std.mem.indexOfScalar(u8, part, '=') == null) pairs = false;
+        }
+        var rest: std.ArrayList([]const u8) = .empty;
+        if (pairs) {
+            var parts = std.mem.splitScalar(u8, piece, '&');
+            while (parts.next()) |part| {
+                if (!cookie_named(part, names)) rest.append(A(), part) catch {};
+            }
+        } else if (!cookie_named(piece, names)) {
+            rest.append(A(), piece) catch {};
+        }
+        const joined = std.mem.join(A(), "&", rest.items) catch continue;
+        const cookie = std.mem.trim(u8, joined, " \t");
+        if (0 < cookie.len) kept.append(A(), cookie) catch {};
+    }
+    return kept.items;
+}
+
+fn cookie_named(part: []const u8, names: []const []const u8) bool {
+    const eq = std.mem.indexOfScalar(u8, part, '=') orelse part.len;
+    const name = std.mem.trim(u8, part[0..eq], " \t");
+    for (names) |n| {
+        if (std.mem.eql(u8, n, name)) return true;
+    }
+    return false;
+}

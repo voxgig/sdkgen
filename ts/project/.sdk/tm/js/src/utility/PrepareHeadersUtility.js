@@ -35,13 +35,7 @@ function prepareHeaders(ctx) {
     const kept = []
     for (const key of Object.keys(out)) {
       if ('cookie' !== key.toLowerCase()) continue
-      if ('string' === typeof out[key]) {
-        for (const piece of out[key].split(';')) {
-          const rest = piece.split('&').map((pair) => pair.trim())
-            .filter((pair) => '' !== pair && !names.includes(pair.split('=')[0].trim()))
-          if (0 < rest.length) kept.push(rest.join('&'))
-        }
-      }
+      if ('string' === typeof out[key]) kept.push(...cookieKeep(out[key], names))
       delete out[key]
     }
     for (const arg of sent) {
@@ -64,6 +58,25 @@ function cookiePair(struct, wire, val) {
   return pairs.join('&')
 }
 
+
+// The caller's cookie pieces with every named cookie removed. A piece whose
+// &-parts are all pairs is the exploded form cookiePair writes, and loses
+// only the pairs named; any other piece is one cookie, kept or dropped whole.
+function cookieKeep(header, names) {
+  const named = (part) => names.includes(part.split('=')[0].trim())
+  const kept = []
+  for (const piece of header.split(';')) {
+    const parts = piece.split('&')
+    const rest = parts.every((part) => part.includes('=')) ? parts.filter((part) => !named(part)) :
+      named(piece) ? [] : parts
+    const cookie = rest.join('&').trim()
+    if ('' !== cookie) kept.push(cookie)
+  }
+  return kept
+}
+
+
 module.exports = {
-  prepareHeaders
+  prepareHeaders,
+  cookieKeep
 }

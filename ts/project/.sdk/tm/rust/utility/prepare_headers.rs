@@ -63,19 +63,7 @@ pub fn prepare_headers_util(ctx: &Rc<Context>) -> Value {
                 m.borrow().keys().filter(|k| k.to_lowercase() == "cookie").cloned().collect();
             for k in given {
                 if let Some(Value::Str(s)) = m.borrow_mut().shift_remove(&k) {
-                    for piece in s.split(';') {
-                        let rest: Vec<&str> = piece
-                            .split('&')
-                            .map(|part| part.trim())
-                            .filter(|pair| {
-                                let name = pair.split('=').next().unwrap_or("").trim();
-                                !pair.is_empty() && !names.iter().any(|n| n == name)
-                            })
-                            .collect();
-                        if !rest.is_empty() {
-                            kept.push(rest.join("&"));
-                        }
-                    }
+                    kept.extend(cookie_keep(&s, &names));
                 }
             }
         }
@@ -111,4 +99,30 @@ fn cookie_pair(wire: &str, val: &Value) -> String {
         _ => vec![format!("{}={}", wire, esc(val))],
     };
     pairs.join("&")
+}
+
+// The caller's cookie pieces with every named cookie removed. A piece whose
+// &-parts are all pairs is the exploded form cookie_pair writes, and loses
+// only the pairs named; any other piece is one cookie, kept or dropped whole.
+pub fn cookie_keep(header: &str, names: &[String]) -> Vec<String> {
+    let named = |part: &str| {
+        let name = part.split('=').next().unwrap_or("").trim();
+        names.iter().any(|n| n == name)
+    };
+    let mut kept: Vec<String> = Vec::new();
+    for piece in header.split(';') {
+        let parts: Vec<&str> = piece.split('&').collect();
+        let rest: Vec<&str> = if parts.iter().all(|part| part.contains('=')) {
+            parts.iter().copied().filter(|part| !named(part)).collect()
+        } else if named(piece) {
+            Vec::new()
+        } else {
+            parts
+        };
+        let cookie = rest.join("&").trim().to_string();
+        if !cookie.is_empty() {
+            kept.push(cookie);
+        }
+    }
+    kept
 }

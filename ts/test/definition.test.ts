@@ -300,6 +300,39 @@ describe('definitionPlan', () => {
     strictEqual(list.select.lang, 'fr')
   })
 
+  // The runner feeds the call one value per name, so a header or cookie that
+  // shares a call name with a path or header argument takes that sample.
+  test('a header or cookie that shares a path or header name takes its sample', () => {
+    const def = { ...DEF, paths: { '/uploads/{id}/items': { get: {
+      parameters: [
+        { in: 'path', name: 'id', example: 'up_1' },
+        { in: 'header', name: 'X-Id', example: 'h-ex' },
+        { in: 'header', name: 'X-Trace', example: 't-h' },
+        { in: 'cookie', name: 'uid', example: 'c-ex' },
+        { in: 'cookie', name: 'trace', example: 't-c' },
+      ],
+      responses: { '200': { content: { 'application/json': { example: [] } } } },
+    } } } }
+    const model = { main: { kit: { entity: { upload: {
+      name: 'upload', id: { field: 'id', name: 'id' }, op: { list: { points: [{
+        m: 'GET', o: '/uploads/{id}/items',
+        g: {
+          params: [{ n: 'id', or: 'id' }],
+          header: [{ n: 'id', or: 'X-Id' }, { n: 'trace', or: 'X-Trace' }],
+          cookie: [{ n: 'id', or: 'uid' }, { n: 'trace', or: 'trace' }],
+        },
+      }] } },
+    } } } } }
+    const [list] = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(list.args, [{ name: 'id', wire: 'id', value: 'up_1' }])
+    deepStrictEqual(list.headers, [
+      { name: 'id', wire: 'X-Id', value: 'up_1' }, { name: 'trace', wire: 'X-Trace', value: 't-h' }])
+    deepStrictEqual(list.cookies, [
+      { name: 'id', wire: 'uid', value: 'up_1' }, { name: 'trace', wire: 'trace', value: 't-h' }])
+  })
+
   test('the example is the sample, three items at most', () => {
     strictEqual(point('list').sample.data.length, 3)
     deepStrictEqual(point('list').query, ['limit'])

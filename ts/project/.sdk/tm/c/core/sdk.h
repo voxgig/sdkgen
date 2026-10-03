@@ -523,6 +523,8 @@ voxgig_value* param_value(Context* ctx, voxgig_value* point, const char* key);
 voxgig_value* call_args(Context* ctx, const char* kind); // list of [name, wire, val]
 Spec* prepare_auth_util(Context* ctx, PNError** err);
 voxgig_value* prepare_body_util(Context* ctx);
+// The caller's cookie pieces with every owned cookie removed (utility/prepare_headers.c).
+char* cookie_keep(const char* header, bool (*named)(const char* name, size_t nlen, void* ud), void* ud); // malloc'd, NULL when none
 // The media types a point declares (utility/media.c).
 bool media_is_json(const char* media);
 char* media_accept_of(voxgig_value* point);

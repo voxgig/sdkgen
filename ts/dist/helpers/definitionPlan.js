@@ -65,7 +65,8 @@ function definitionPlan(ctx$) {
                     const wire = String(arg.or || arg.n);
                     const def = params.find((p) => 'header' === p?.in &&
                         wire.toLowerCase() === String(p?.name).toLowerCase());
-                    return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) };
+                    const shared = args.find((a) => a.name === arg.n);
+                    return { name: arg.n, wire, value: shared?.value ?? scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) };
                 });
                 // A cookie argument is sent too, in the cookie header, never in the
                 // query; the credential cookie is left to the credential.
@@ -74,7 +75,8 @@ function definitionPlan(ctx$) {
                     .map((arg, i) => {
                     const wire = String(arg.or || arg.n);
                     const def = params.find((p) => 'cookie' === p?.in && wire === p?.name);
-                    return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'c' + (i + 1) };
+                    const shared = args.find((a) => a.name === arg.n) ?? headers.find((h) => h.name === arg.n);
+                    return { name: arg.n, wire, value: shared?.value ?? scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'c' + (i + 1) };
                 });
                 const selected = {};
                 for (const key of select.exist || []) {

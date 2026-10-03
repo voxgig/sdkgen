@@ -29,8 +29,7 @@ function prepareHeaders(ctx: Context) {
   }
 
   // A cookie argument travels in the cookie header, form serialized and
-  // percent-encoded, replacing a cookie of the same name among those the
-  // caller's headers already send.
+  // percent-encoded, replacing a same-named cookie the caller's headers send.
   const sent = callArgs(ctx, 'cookie').filter((arg) => null != arg.val)
   if (0 < sent.length) {
     const names = sent.flatMap((arg) => struct.ismap(arg.val) ?
@@ -38,13 +37,7 @@ function prepareHeaders(ctx: Context) {
     const kept: string[] = []
     for (const key of Object.keys(out)) {
       if ('cookie' !== key.toLowerCase()) continue
-      if ('string' === typeof out[key]) {
-        for (const piece of out[key].split(';')) {
-          const rest = piece.split('&').map((pair: string) => pair.trim())
-            .filter((pair: string) => '' !== pair && !names.includes(pair.split('=')[0].trim()))
-          if (0 < rest.length) kept.push(rest.join('&'))
-        }
-      }
+      if ('string' === typeof out[key]) kept.push(...cookieKeep(out[key], names))
       delete out[key]
     }
     for (const arg of sent) {
@@ -69,6 +62,23 @@ function cookiePair(struct: any, wire: string, val: any): string {
 }
 
 
+// The caller's cookie pieces with the named cookies removed: a piece of
+// &-joined pairs, as cookiePair writes a map, loses only those named.
+function cookieKeep(header: string, names: string[]): string[] {
+  const named = (part: string) => names.includes(part.split('=')[0].trim())
+  const kept: string[] = []
+  for (const piece of header.split(';')) {
+    const parts = piece.split('&')
+    const rest = parts.every((part: string) => part.includes('=')) ? parts.filter((part: string) => !named(part)) :
+      named(piece) ? [] : parts
+    const cookie = rest.join('&').trim()
+    if ('' !== cookie) kept.push(cookie)
+  }
+  return kept
+}
+
+
 export {
-  prepareHeaders
+  prepareHeaders,
+  cookieKeep
 }

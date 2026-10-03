@@ -159,13 +159,7 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
     val kept = mutableListOf<String>()
     for (key in out.keys.filter { it.lowercase() == "cookie" }) {
       val given = out.remove(key)
-      if (given is String) {
-        for (piece in given.split(";")) {
-          val rest = piece.split("&").map { it.trim() }
-            .filter { it.isNotEmpty() && it.substringBefore("=").trim() !in names }
-          if (rest.isNotEmpty()) kept.add(rest.joinToString("&"))
-        }
-      }
+      if (given is String) kept.addAll(cookieKeep(given, names))
     }
     for (arg in sent) {
       val pair = cookiePair(arg.wire, arg.v)
@@ -337,4 +331,23 @@ private fun containsStr(list: List<Any?>, s: String): Boolean {
     }
   }
   return false
+}
+
+// The caller's cookie pieces with every named cookie removed. A piece whose
+// &-parts are all pairs is the exploded form cookiePair writes, and loses
+// only the pairs named; any other piece is one cookie, kept or dropped whole.
+internal fun cookieKeep(header: String, names: List<String>): MutableList<String> {
+  val named = { part: String -> part.substringBefore("=").trim() in names }
+  val kept = mutableListOf<String>()
+  for (piece in header.split(";")) {
+    val parts = piece.split("&")
+    val rest = when {
+      parts.all { it.contains("=") } -> parts.filter { !named(it) }
+      named(piece) -> emptyList()
+      else -> parts
+    }
+    val cookie = rest.joinToString("&").trim()
+    if (cookie.isNotEmpty()) kept.add(cookie)
+  }
+  return kept
 }

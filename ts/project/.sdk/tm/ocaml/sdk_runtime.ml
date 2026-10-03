@@ -712,15 +712,7 @@ let prepare_headers_util (ctx : ctx) : value =
     let given = List.filter (fun k -> String.lowercase_ascii k = "cookie") (keysof out) in
     let kept = List.concat (List.map (fun k ->
         match getp out k with
-        | Str s ->
-          List.filter_map (fun piece ->
-              let rest = List.filter_map (fun part ->
-                  let pair = String.trim part in
-                  let name = String.trim (List.hd (String.split_on_char '=' pair)) in
-                  if pair = "" || List.mem name names then None else Some pair)
-                  (String.split_on_char '&' piece) in
-              if rest = [] then None else Some (String.concat "&" rest))
-            (String.split_on_char ';' s)
+        | Str s -> cookie_keep s names
         | _ -> []) given) in
     List.iter (fun k -> ignore (delprop out (Str k))) given;
     let pairs = List.filter_map (fun (_, wire, v) ->

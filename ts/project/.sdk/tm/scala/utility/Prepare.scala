@@ -172,12 +172,7 @@ object PrepareHeaders {
         val e = it.next()
         if (e.getKey != null && "cookie" == e.getKey.toLowerCase(java.util.Locale.ROOT)) {
           e.getValue match {
-            case s: String =>
-              s.split(";").foreach { piece =>
-                val rest = piece.split("&").map(_.trim)
-                  .filter(pair => pair.nonEmpty && !names.contains(pair.split("=", 2)(0).trim))
-                if (rest.nonEmpty) kept += rest.mkString("&")
-              }
+            case s: String => kept ++= cookieKeep(s, names)
             case _ =>
           }
           it.remove()
@@ -191,6 +186,24 @@ object PrepareHeaders {
     }
 
     out
+  }
+
+  // The caller's cookie pieces with every named cookie removed. A piece whose
+  // &-parts are all pairs is the exploded form cookiePair writes, and loses
+  // only the pairs named; any other piece is one cookie, kept or dropped whole.
+  def cookieKeep(header: String, names: Seq[String]): scala.collection.mutable.ArrayBuffer[String] = {
+    def named(part: String): Boolean = names.contains(part.split("=", 2)(0).trim)
+    val kept = scala.collection.mutable.ArrayBuffer[String]()
+    header.split(";", -1).foreach { piece =>
+      val parts = piece.split("&", -1).toSeq
+      val rest =
+        if (parts.forall(_.contains("="))) parts.filterNot(named)
+        else if (named(piece)) Seq.empty[String]
+        else parts
+      val cookie = rest.mkString("&").trim
+      if (cookie.nonEmpty) kept += cookie
+    }
+    kept
   }
 
   // The form style of a cookie parameter: a list repeats the name, a map sends

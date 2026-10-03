@@ -64,6 +64,8 @@ module.exports = {
   const preamble = `
 const CRED_name = '${jsstr(spec.name)}'
 ${'cookie' === spec.where ? `
+const { cookieKeep } = require('./PrepareHeadersUtility')
+
 const COOKIE_header = 'cookie'
 ` : ''}
 const OPTION_apikey = 'apikey'${spec.basic && 'header' === spec.where ? `
@@ -199,17 +201,7 @@ function cookieHelper(where: string): string {
   return `
   function cookieSet(headers, name, value) {
     const existing = getprop(headers, COOKIE_header, '')
-    const kept = []
-
-    if ('string' === typeof existing && '' !== existing) {
-      for (const part of existing.split(';')) {
-        const piece = part.trim()
-        if ('' === piece || piece === name || piece.startsWith(name + '=')) {
-          continue
-        }
-        kept.push(piece)
-      }
-    }
+    const kept = 'string' === typeof existing ? cookieKeep(existing, [name]) : []
 
     if (null != value) {
       kept.push(name + '=' + value)

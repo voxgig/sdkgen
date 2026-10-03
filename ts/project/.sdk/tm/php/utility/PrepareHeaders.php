@@ -57,13 +57,7 @@ class ProjectNamePrepareHeaders
                 if (!is_string($given)) {
                     continue;
                 }
-                foreach (explode(';', $given) as $piece) {
-                    $rest = array_values(array_filter(array_map('trim', explode('&', $piece)),
-                        fn($pair) => '' !== $pair && !in_array(trim(explode('=', $pair, 2)[0]), $names, true)));
-                    if (0 < count($rest)) {
-                        $kept[] = implode('&', $rest);
-                    }
-                }
+                $kept = array_merge($kept, self::cookieKeep($given, $names));
             }
             foreach ($sent as [$orig, $val]) {
                 $pair = self::cookiePair($orig, $val);
@@ -94,5 +88,29 @@ class ProjectNamePrepareHeaders
             $pairs = [$wire . '=' . $esc($val)];
         }
         return implode('&', $pairs);
+    }
+
+    // The caller's cookie pieces with every named cookie removed. A piece whose
+    // &-parts are all pairs is the exploded form cookiePair writes, and loses
+    // only the pairs named; any other piece is one cookie, kept or dropped whole.
+    public static function cookieKeep(string $header, array $names): array
+    {
+        $named = fn($part) => in_array(trim(explode('=', $part, 2)[0]), $names, true);
+        $kept = [];
+        foreach (explode(';', $header) as $piece) {
+            $parts = explode('&', $piece);
+            if (array_reduce($parts, fn($all, $part) => $all && str_contains($part, '='), true)) {
+                $rest = array_filter($parts, fn($part) => !$named($part));
+            } elseif ($named($piece)) {
+                $rest = [];
+            } else {
+                $rest = $parts;
+            }
+            $cookie = trim(implode('&', $rest));
+            if ('' !== $cookie) {
+                $kept[] = $cookie;
+            }
+        }
+        return $kept;
     }
 }

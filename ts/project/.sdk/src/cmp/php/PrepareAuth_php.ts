@@ -84,7 +84,7 @@ class ${Name}PrepareAuth
 
   const bag = bagVar(spec.where)
 
-  return head + `class ${Name}PrepareAuth
+  return head + `${'cookie' === spec.where ? "require_once __DIR__ . '/PrepareHeaders.php';\n\n" : ''}class ${Name}PrepareAuth
 {
 ${constants(spec)}${authName(spec)}${cookieHelper(spec)}
     public static function call(${Name}Context $ctx): array
@@ -177,19 +177,8 @@ function cookieHelper(spec: AuthSpec): string {
   return `
     private static function applyCookie(array &$headers, string $name, ?string $value): void
     {
-        $kept = [];
         $existing = $headers[self::HEADER_COOKIE] ?? '';
-
-        if (is_string($existing) && '' !== $existing) {
-            foreach (explode(';', $existing) as $part) {
-                $piece = trim($part);
-                if ('' === $piece || $piece === $name
-                    || str_starts_with($piece, $name . '=')) {
-                    continue;
-                }
-                $kept[] = $piece;
-            }
-        }
+        $kept = is_string($existing) ? ${spec.Name}PrepareHeaders::cookieKeep($existing, [$name]) : [];
 
         if (null !== $value) {
             $kept[] = $name . '=' . $value;

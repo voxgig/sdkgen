@@ -1768,23 +1768,7 @@ defmodule ProjectName.Utility do
       given =
         Enum.filter(H.entries(out), fn {k, _} -> is_binary(k) and String.downcase(k) == "cookie" end)
 
-      kept =
-        Enum.flat_map(given, fn {_, v} ->
-          if is_binary(v) do
-            v
-            |> String.split(";")
-            |> Enum.map(fn piece ->
-              piece
-              |> String.split("&")
-              |> Enum.map(&String.trim/1)
-              |> Enum.reject(fn pair -> pair == "" or cookie_name(pair) in names end)
-              |> Enum.join("&")
-            end)
-            |> Enum.reject(&(&1 == ""))
-          else
-            []
-          end
-        end)
+      kept = Enum.flat_map(given, fn {_, v} -> if is_binary(v), do: cookie_keep(v, names), else: [] end)
 
       Enum.each(given, fn {k, _} -> S.delprop(out, k) end)
 
@@ -1800,6 +1784,29 @@ defmodule ProjectName.Utility do
     end
 
     out
+  end
+
+  # The caller's cookie pieces with every named cookie removed. A piece whose
+  # &-parts are all pairs is the exploded form cookie_pair writes, and loses
+  # only the pairs named; any other piece is one cookie, kept or dropped whole.
+  def cookie_keep(header, names) do
+    header
+    |> String.split(";")
+    |> Enum.flat_map(fn piece ->
+      parts = String.split(piece, "&")
+
+      rest =
+        cond do
+          Enum.all?(parts, &String.contains?(&1, "=")) -> Enum.reject(parts, &(cookie_name(&1) in names))
+          cookie_name(piece) in names -> []
+          true -> parts
+        end
+
+      case String.trim(Enum.join(rest, "&")) do
+        "" -> []
+        cookie -> [cookie]
+      end
+    end)
   end
 
   defp cookie_name(cookie), do: cookie |> String.split("=", parts: 2) |> hd() |> String.trim()

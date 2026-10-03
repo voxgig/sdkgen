@@ -99,4 +99,32 @@ function helpers.call_args(ctx, kind)
 end
 
 
+-- The caller's cookie pieces with every named cookie removed. A piece whose
+-- &-parts are all pairs is the exploded form cookie_pair writes, and loses
+-- only the pairs named; any other piece is one cookie, kept or dropped whole.
+function helpers.cookie_keep(header, names)
+  local function named(part)
+    return names[part:match("^([^=]*)"):match("^%s*(.-)%s*$")] == true
+  end
+  local kept = {}
+  for piece in string.gmatch(header .. ";", "([^;]*);") do
+    local rest = {}
+    local pairs_only = true
+    for part in string.gmatch(piece .. "&", "([^&]*)&") do
+      if not part:find("=", 1, true) then pairs_only = false end
+    end
+    if pairs_only then
+      for part in string.gmatch(piece .. "&", "([^&]*)&") do
+        if not named(part) then rest[#rest + 1] = part end
+      end
+    elseif not named(piece) then
+      rest[#rest + 1] = piece
+    end
+    local cookie = table.concat(rest, "&"):match("^%s*(.-)%s*$")
+    if cookie ~= "" then kept[#kept + 1] = cookie end
+  end
+  return kept
+end
+
+
 return helpers

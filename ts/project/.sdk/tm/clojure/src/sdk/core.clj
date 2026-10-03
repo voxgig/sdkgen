@@ -791,6 +791,21 @@
                 (vs/ismap v) (map (fn [k] (str (vs/escurl k) "=" (esc (vs/getprop v k)))) (vs/keysof v))
                 :else [(str wire "=" (esc v))]))))
 
+;; The caller's cookie pieces with every named cookie removed. A piece whose
+;; &-parts are all pairs is the exploded form cookie-pair writes, and loses
+;; only the pairs named; any other piece is one cookie, kept or dropped whole.
+(defn- cookie-keep [header names]
+  (let [named? (fn [part] (contains? names (str/trim (first (str/split part #"=" 2)))))]
+    (vec (for [piece (str/split header #";" -1)
+               :let [parts (str/split piece #"&" -1)
+                     rest (cond
+                            (every? #(str/includes? % "=") parts) (remove named? parts)
+                            (named? piece) []
+                            :else parts)
+                     cookie (str/trim (str/join "&" rest))]
+               :when (not= "" cookie)]
+           cookie))))
+
 (defn u-prepare-headers [ctx]
   (let [options (client-options-map (oget ctx :client))
         headers (vs/getprop options "headers")
@@ -816,14 +831,8 @@
               kept (vec (for [k given
                               :let [v (.get ^java.util.Map out k)]
                               :when (string? v)
-                              piece (str/split v #";")
-                              :let [rest (vec (for [part (str/split piece #"&")
-                                                    :let [pair (str/trim part)
-                                                          name (str/trim (first (str/split pair #"=" 2)))]
-                                                    :when (and (not= "" pair) (not (contains? names name)))]
-                                                pair))]
-                              :when (seq rest)]
-                          (str/join "&" rest)))
+                              cookie (cookie-keep v names)]
+                          cookie))
               pairs (vec (for [[wire v] sent
                                :let [pair (cookie-pair wire v)]
                                :when (not= "" pair)]

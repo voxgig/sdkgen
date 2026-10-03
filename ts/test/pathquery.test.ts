@@ -341,6 +341,19 @@ describe('prepareHeaders', () => {
         { prefs: { 'x y': 'new' } }, { Cookie: 'lang=old&x%20y=old; theme=dark' })),
       { cookie: 'lang=old; theme=dark; SESSIONID=s1; x%20y=new' })
     })
+
+    // A value that merely holds & is one cookie: kept as it is, or replaced whole.
+    test(lang + ': an opaque default cookie value keeps its ampersands', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' }, {},
+        { Cookie: 'other=a&&b; theme=dark' })),
+      { cookie: 'other=a&&b; theme=dark; SESSIONID=s1' })
+    })
+
+    test(lang + ': a default cookie whose value has ampersands is replaced whole', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' }, {},
+        { Cookie: 'SESSIONID=a&&b; theme=dark' })),
+      { cookie: 'theme=dark; SESSIONID=s1' })
+    })
   }
 
 

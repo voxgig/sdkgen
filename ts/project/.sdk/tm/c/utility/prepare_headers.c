@@ -41,9 +41,8 @@ static bool same_text(const char* name, const char* text, size_t len) {
 // Whether a cookie the caller sends has a name a cookie argument sends: a
 // map's own keys as the pair sends them, percent-encoded, else the
 // argument's wire name.
-static bool cookie_sent(voxgig_list* cargs, const char* cookie) {
-  size_t nlen = strcspn(cookie, "=");
-  while (0 < nlen && isspace((unsigned char)cookie[nlen - 1])) nlen--;
+static bool sent_named(const char* name, size_t nlen, void* ud) {
+  voxgig_list* cargs = (voxgig_list*)ud;
   for (size_t i = 0; i < cargs->len; i++) {
     voxgig_list* arg = voxgig_as_list(cargs->items[i]);
     voxgig_value* val = arg->items[2];
@@ -53,14 +52,14 @@ static bool cookie_sent(voxgig_list* cargs, const char* cookie) {
       bool found = false;
       for (size_t k = 0; k < keys.len && !found; k++) {
         voxgig_value* kv = voxgig_new_string(keys.data[k]);
-        char* name = voxgig_escurl(kv);
-        found = same_text(name, cookie, nlen);
-        free(name);
+        char* key = voxgig_escurl(kv);
+        found = same_text(key, name, nlen);
+        free(key);
         voxgig_release(kv);
       }
       voxgig_strvec_free(&keys);
       if (found) return true;
-    } else if (same_text(voxgig_as_string(arg->items[1]), cookie, nlen)) {
+    } else if (same_text(voxgig_as_string(arg->items[1]), name, nlen)) {
       return true;
     }
   }
@@ -82,6 +81,61 @@ static char* name_value(const char* name, const char* value) {
   char* pair = (char*)malloc(len + 1);
   snprintf(pair, len + 1, "%s=%s", name, value);
   return pair;
+}
+
+// Whether a cookie pair's name, blanks aside, is one the predicate owns.
+static bool pair_named(const char* part, bool (*named)(const char* name, size_t nlen, void* ud), void* ud) {
+  while (isspace((unsigned char)*part)) part++;
+  size_t nlen = strcspn(part, "=");
+  while (0 < nlen && isspace((unsigned char)part[nlen - 1])) nlen--;
+  return named(part, nlen, ud);
+}
+
+// The caller's cookie pieces with every owned cookie removed, "; "-joined and
+// malloc'd, or NULL when none is kept. A piece whose &-parts are all pairs is
+// the exploded form cookie_pair writes, and loses only the pairs owned; any
+// other piece is one cookie, kept or dropped whole.
+char* cookie_keep(const char* header, bool (*named)(const char* name, size_t nlen, void* ud), void* ud) {
+  char* joined = NULL;
+  size_t jlen = 0;
+  const char* text = header;
+  while ('\0' != *text) {
+    size_t plen = strcspn(text, ";");
+    char* piece = (char*)malloc(plen + 1);
+    memcpy(piece, text, plen);
+    piece[plen] = '\0';
+    bool pairs = true;
+    for (const char* sub = piece;;) {
+      size_t slen = strcspn(sub, "&");
+      if (NULL == memchr(sub, '=', slen)) pairs = false;
+      if ('\0' == sub[slen]) break;
+      sub += slen + 1;
+    }
+    char* rest = NULL;
+    size_t rlen = 0;
+    if (pairs) {
+      for (const char* sub = piece;;) {
+        size_t slen = strcspn(sub, "&");
+        char* part = (char*)malloc(slen + 1);
+        memcpy(part, sub, slen);
+        part[slen] = '\0';
+        if (!pair_named(part, named, ud)) join_part(&rest, &rlen, "&", part);
+        free(part);
+        if ('\0' == sub[slen]) break;
+        sub += slen + 1;
+      }
+    } else if (!pair_named(piece, named, ud)) {
+      join_part(&rest, &rlen, "", piece);
+    }
+    if (NULL != rest) {
+      char* cookie = trim_blank(rest);
+      if ('\0' != *cookie) join_part(&joined, &jlen, "; ", cookie);
+      free(rest);
+    }
+    free(piece);
+    text += plen + (';' == text[plen] ? 1 : 0);
+  }
+  return joined;
 }
 
 // The form style of a cookie parameter: a list repeats the name, a map sends
@@ -181,31 +235,10 @@ voxgig_value* prepare_headers_util(Context* ctx) {
       if (!same_name(om->entries[j - 1].key, "cookie")) continue;
       voxgig_value* given = om->entries[j - 1].value;
       if (voxgig_is_string(given)) {
-        const char* text = voxgig_as_string(given);
-        while ('\0' != *text) {
-          size_t plen = strcspn(text, ";");
-          char* piece = (char*)malloc(plen + 1);
-          memcpy(piece, text, plen);
-          piece[plen] = '\0';
-          char* rest = NULL;
-          size_t rlen = 0;
-          const char* sub = piece;
-          while ('\0' != *sub) {
-            size_t slen = strcspn(sub, "&");
-            char* part = (char*)malloc(slen + 1);
-            memcpy(part, sub, slen);
-            part[slen] = '\0';
-            char* pair = trim_blank(part);
-            if ('\0' != *pair && !cookie_sent(cl, pair)) join_part(&rest, &rlen, "&", pair);
-            free(part);
-            sub += slen + ('&' == sub[slen] ? 1 : 0);
-          }
-          if (NULL != rest) {
-            join_part(&joined, &jlen, "; ", rest);
-            free(rest);
-          }
-          free(piece);
-          text += plen + (';' == text[plen] ? 1 : 0);
+        char* rest = cookie_keep(voxgig_as_string(given), sent_named, cl);
+        if (NULL != rest) {
+          join_part(&joined, &jlen, "; ", rest);
+          free(rest);
         }
       }
       voxgig_value* dk = voxgig_new_string(om->entries[j - 1].key);

@@ -268,16 +268,7 @@ private fun cookiesWithoutCred(headers: MutableMap<String, Any?>, name: String):
     return ""
   }
 
-  val kept = mutableListOf<String>()
-  for (part in existing.split(";")) {
-    val piece = part.trim()
-    if ("" == piece || name == piece || piece.startsWith("\$name=")) {
-      continue
-    }
-    kept.add(piece)
-  }
-
-  return kept.joinToString("; ")
+  return cookieKeep(existing, listOf(name)).joinToString("; ")
 }
 
 // Set (a value) or remove (null) the named pair, leaving every other cookie

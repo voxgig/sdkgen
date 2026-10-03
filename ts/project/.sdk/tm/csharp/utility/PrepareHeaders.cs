@@ -51,16 +51,7 @@ public static partial class SdkUtility
                 }
                 if (result[k] is string given)
                 {
-                    foreach (var piece in given.Split(';'))
-                    {
-                        var rest = piece.Split('&').Select(part => part.Trim())
-                            .Where(pair => "" != pair && !names.Contains(pair.Split('=', 2)[0].Trim()))
-                            .ToList();
-                        if (0 < rest.Count)
-                        {
-                            kept.Add(string.Join("&", rest));
-                        }
-                    }
+                    kept.AddRange(CookieKeep(given, names));
                 }
                 result.Remove(k);
             }
@@ -79,6 +70,27 @@ public static partial class SdkUtility
         }
 
         return result;
+    }
+
+    // The caller's cookie pieces with every named cookie removed. A piece whose
+    // &-parts are all pairs is the exploded form CookiePair writes, and loses
+    // only the pairs named; any other piece is one cookie, kept or dropped whole.
+    internal static List<string> CookieKeep(string header, List<string> names)
+    {
+        bool Named(string part) => names.Contains(part.Split('=', 2)[0].Trim());
+        var kept = new List<string>();
+        foreach (var piece in header.Split(';'))
+        {
+            var parts = piece.Split('&');
+            var rest = parts.All(part => part.Contains('=')) ? parts.Where(part => !Named(part))
+                : Named(piece) ? Enumerable.Empty<string>() : parts;
+            var cookie = string.Join("&", rest).Trim();
+            if ("" != cookie)
+            {
+                kept.Add(cookie);
+            }
+        }
+        return kept;
     }
 
     // The form style of a cookie parameter: a list repeats the name, a map
