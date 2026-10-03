@@ -156,7 +156,13 @@ class ProjectNameSDK implements \JsonSerializable
         $path = Struct::getprop($fetchargs, "path") ?? "";
         $path = is_string($path) ? $path : "";
         $method_val = Struct::getprop($fetchargs, "method") ?? "GET";
-        $method_val = is_string($method_val) ? $method_val : "GET";
+        $method_val = strtoupper(is_string($method_val) && '' !== $method_val ? $method_val : "GET");
+        $allow_method = Struct::getpath($opts, "allow.method");
+        if (!ProjectNamePrepareMethod::allowed($allow_method, $method_val)) {
+            return ($utility->make_error)($ctx, $ctx->make_error("spec_method_allow",
+                "Method \"" . $method_val . "\" not allowed by SDK option allow.method value: \"" .
+                (is_string($allow_method) ? $allow_method : "") . "\""));
+        }
         $params = ProjectNameHelpers::to_map(Struct::getprop($fetchargs, "params")) ?? [];
         $query = ProjectNameHelpers::to_map(Struct::getprop($fetchargs, "query")) ?? [];
         $headers = ($utility->prepare_headers)($ctx);
@@ -211,8 +217,7 @@ class ProjectNameSDK implements \JsonSerializable
     // Is this raw-access op permitted by the SDK's allow.op option?
     private function op_allowed(string $op): bool
     {
-        $allow_op = Struct::getpath($this->options, "allow.op");
-        return is_string($allow_op) && str_contains($allow_op, $op);
+        return ProjectNamePrepareMethod::allowed(Struct::getpath($this->options, "allow.op"), $op);
     }
 
     private function op_denied(string $op): array

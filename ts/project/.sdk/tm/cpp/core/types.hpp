@@ -11,6 +11,8 @@
 #ifndef SDK_CORE_TYPES_HPP
 #define SDK_CORE_TYPES_HPP
 
+#include <algorithm>
+#include <cctype>
 #include <functional>
 #include <map>
 #include <memory>
@@ -69,6 +71,26 @@ inline long long toLong(const Value& v, long long def) {
   return v.is_number() ? static_cast<long long>(v.as_int()) : def;
 }
 inline Value toMapAny(const Value& v) { return v.is_map() ? v : Value::undef(); }
+
+// Whether a comma-separated allow option names the item: whole names, any case.
+inline bool allowed(const Value& names, const std::string& item) {
+  if (!names.is_string() || item.empty()) return false;
+  const std::string list = names.as_string();
+  size_t start = 0;
+  for (;;) {
+    size_t end = list.find(',', start);
+    size_t s = start;
+    size_t e = std::string::npos == end ? list.size() : end;
+    while (s < e && std::isspace((unsigned char)list[s])) s++;
+    while (e > s && std::isspace((unsigned char)list[e - 1])) e--;
+    if (e - s == item.size() && std::equal(item.begin(), item.end(), list.begin() + s,
+          [](char a, char b) { return std::toupper((unsigned char)a) == std::toupper((unsigned char)b); })) {
+      return true;
+    }
+    if (std::string::npos == end) return false;
+    start = end + 1;
+  }
+}
 
 SdkErrorPtr unsupportedOp(const std::string& opname, const std::string& entityname);
 
@@ -957,6 +979,14 @@ inline Value SdkClient::prepare(const Value& fetchargs_) {
   Value methodRaw = getp(fetchargs, "method");
   std::string method = methodRaw.is_string() ? methodRaw.as_string() : "";
   if (method.empty()) method = "GET";
+  for (auto& ch : method) ch = (char)std::toupper((unsigned char)ch);
+
+  Value allowMethod = Struct::getpath(opts, {"allow", "method"});
+  if (!Helpers::allowed(allowMethod, method)) {
+    throw ctx->makeError("spec_method_allow",
+        "Method \"" + method + "\" not allowed by SDK option allow.method value: \"" +
+        (allowMethod.is_string() ? allowMethod.as_string() : std::string()) + "\"");
+  }
 
   Value params = Helpers::toMapAny(getp(fetchargs, "params"));
   if (!params.is_map()) params = vmap();
@@ -996,9 +1026,7 @@ inline Value SdkClient::prepare(const Value& fetchargs_) {
 
 // Is this raw-access op permitted by the SDK's allow.op option?
 inline bool SdkClient::opAllowed(const std::string& op) {
-  Value allow = Struct::getpath(options, {"allow", "op"});
-  if (!allow.is_string()) return false;
-  return std::string::npos != allow.as_string().find(op);
+  return Helpers::allowed(Struct::getpath(options, {"allow", "op"}), op);
 }
 
 inline Value SdkClient::opDenied(const std::string& op) {

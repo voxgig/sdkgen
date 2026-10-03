@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import JAVAPACKAGE.core.Context;
+import JAVAPACKAGE.core.Helpers;
 import JAVAPACKAGE.core.Spec;
 import JAVAPACKAGE.core.Utility;
 import JAVAPACKAGE.utility.struct.Struct;
@@ -54,7 +55,7 @@ final class MakeSpec {
     String allowMethod = allowMethodRaw instanceof String ? (String) allowMethodRaw : "";
     // null-safe: an op outside the convention resolves NO method (see
     // PrepareMethod), which the allow list can never contain.
-    if (null == ctx.spec.method || !allowMethod.contains(ctx.spec.method)) {
+    if (!Helpers.allowed(allowMethodRaw, ctx.spec.method)) {
       throw ctx.makeError("spec_method_allow",
           "Method \"" + ctx.spec.method
               + "\" not allowed by SDK option allow.method value: \"" + allowMethod + "\"");

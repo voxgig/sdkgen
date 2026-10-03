@@ -942,15 +942,16 @@ defmodule ProjectName.Utility do
       op = S.getprop(ctx, "op")
       options = S.getprop(ctx, "options")
       opname = S.getprop(op, "name")
-      allow_op = H.or_(S.getpath(options, "allow.op"), "")
+      allow_op = S.getpath(options, "allow.op")
       points = S.getprop(op, "points")
       npoints = S.size(points)
 
       cond do
-        is_binary(allow_op) and not String.contains?(allow_op, opname) ->
+        not allowed?(allow_op, opname) ->
           {nil,
            Context.make_error(ctx, "point_op_allow",
-             "Operation \"" <> opname <> "\" not allowed by SDK option allow.op value: \"" <> allow_op <> "\"")}
+             "Operation \"" <> opname <> "\" not allowed by SDK option allow.op value: \"" <>
+               H.str_or(allow_op, "") <> "\"")}
 
         npoints == 0 ->
           {nil,
@@ -1116,13 +1117,14 @@ defmodule ProjectName.Utility do
       S.setprop(ctx, "spec", spec)
       S.setprop(spec, "method", prepare_method(ctx))
 
-      allow_method = H.or_(S.getpath(options, "allow.method"), "")
+      allow_method = S.getpath(options, "allow.method")
       method = S.getprop(spec, "method")
 
-      if is_binary(allow_method) and not String.contains?(allow_method, method) do
+      if not allowed?(allow_method, method) do
         {nil,
          Context.make_error(ctx, "spec_method_allow",
-           "Method \"" <> method <> "\" not allowed by SDK option allow.method value: \"" <> allow_method <> "\"")}
+           "Method \"" <> H.str_or(method, "") <> "\" not allowed by SDK option allow.method value: \"" <>
+             H.str_or(allow_method, "") <> "\"")}
       else
         S.setprop(spec, "params", prepare_params(ctx))
         S.setprop(spec, "query", prepare_query(ctx))
@@ -1731,6 +1733,14 @@ defmodule ProjectName.Utility do
     "remove" => "DELETE",
     "patch" => "PATCH"
   }
+
+  # Whether a comma-separated allow option names the item: whole names, any case.
+  def allowed?(names, item) when is_binary(names) and is_binary(item) and item != "" do
+    want = String.upcase(item)
+    names |> String.split(",") |> Enum.any?(fn name -> String.upcase(String.trim(name)) == want end)
+  end
+
+  def allowed?(_names, _item), do: false
 
   def prepare_method_impl(ctx) do
     opname = S.getprop(S.getprop(ctx, "op"), "name")

@@ -4,6 +4,7 @@ from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.core.utility_type import ProjectNameUtility
 from projectname_sdk.core.spec import ProjectNameSpec
 from projectname_sdk.core import helpers
+from projectname_sdk.utility.prepare_method import allowed
 
 # Load utility registration (populates Utility._registrar)
 from projectname_sdk.utility import register
@@ -140,6 +141,13 @@ class ProjectNameSDK:
         method = vs.getprop(fetchargs, "method") or "GET"
         if not isinstance(method, str):
             method = "GET"
+        method = method.upper()
+
+        allow_method = vs.getpath(options, "allow.method")
+        if not allowed(allow_method, method):
+            raise ctx.make_error("spec_method_allow",
+                'Method "' + method +
+                '" not allowed by SDK option allow.method value: "' + str(allow_method) + '"')
 
         params = helpers.to_map(vs.getprop(fetchargs, "params"))
         if params is None:
@@ -200,8 +208,7 @@ class ProjectNameSDK:
 
     # Is this raw-access op permitted by the SDK's allow.op option?
     def _op_allowed(self, op):
-        allow_op = vs.getpath(self.options, "allow.op")
-        return isinstance(allow_op, str) and op in allow_op
+        return allowed(vs.getpath(self.options, "allow.op"), op)
 
     def _op_denied(self, op):
         allow_op = vs.getpath(self.options, "allow.op")

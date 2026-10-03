@@ -161,8 +161,21 @@ pub const ProjectNameSDK = struct {
         const path = h.get_str(fetchargs, "path") orelse "";
         const method: []const u8 = blk: {
             const m = h.get_str(fetchargs, "method");
-            break :blk if (m) |mm| (if (mm.len == 0) "GET" else mm) else "GET";
+            const given = if (m) |mm| (if (mm.len == 0) "GET" else mm) else "GET";
+            break :blk std.ascii.allocUpperString(h.A(), given) catch given;
         };
+
+        // The root context holds the failure, where direct() reads it.
+        const allow_method = h.getpath(&.{ "allow", "method" }, options);
+        if (!h.allow_list_has(allow_method, method)) {
+            const shown: []const u8 = switch (allow_method) {
+                .string => |text| text,
+                else => "",
+            };
+            return self.get_root_ctx().fail("spec_method_allow", std.fmt.allocPrint(h.A(),
+                "Method \"{s}\" not allowed by SDK option allow.method value: \"{s}\"",
+                .{ method, shown }) catch "");
+        }
 
         const params: Value = switch (h.to_map(h.getp(fetchargs, "params"))) {
             .object => h.to_map(h.getp(fetchargs, "params")),
@@ -213,11 +226,7 @@ pub const ProjectNameSDK = struct {
 
     // Is this raw-access op permitted by the SDK's allow.op option?
     fn op_allowed(self: *ProjectNameSDK, op: []const u8) bool {
-        const allow: []const u8 = switch (h.getpath(&.{ "allow", "op" }, self.options)) {
-            .string => |s| s,
-            else => "",
-        };
-        return std.mem.indexOf(u8, allow, op) != null;
+        return h.allow_list_has(h.getpath(&.{ "allow", "op" }, self.options), op);
     }
 
     fn op_denied(self: *ProjectNameSDK, op: []const u8) Value {

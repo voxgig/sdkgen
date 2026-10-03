@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../core/Helpers.php';
 require_once __DIR__ . '/Param.php';
+require_once __DIR__ . '/PrepareMethod.php';
 
 class ProjectNameMakePoint
 {
@@ -40,10 +41,11 @@ class ProjectNameMakePoint
         $op = $ctx->op;
         $options = $ctx->options;
 
-        $allow_op = \Voxgig\Struct\Struct::getpath($options, 'allow.op') ?? '';
-        if (strpos($allow_op, $op->name) === false) {
+        $allow_op = \Voxgig\Struct\Struct::getpath($options, 'allow.op');
+        if (!ProjectNamePrepareMethod::allowed($allow_op, $op->name)) {
+            $shown = is_string($allow_op) ? $allow_op : '';
             return [null, $ctx->make_error('point_op_allow',
-                "Operation \"{$op->name}\" not allowed by SDK option allow.op value: \"{$allow_op}\"")];
+                "Operation \"{$op->name}\" not allowed by SDK option allow.op value: \"{$shown}\"")];
         }
 
         if (empty($op->points)) {

@@ -94,7 +94,7 @@ final class MakePoint {
 
     Object allowOpRaw = Struct.getpath(options, List.of("allow", "op"));
     String allowOp = allowOpRaw instanceof String ? (String) allowOpRaw : "";
-    if (!allowOp.contains(op.name)) {
+    if (!Helpers.allowed(allowOpRaw, op.name)) {
       throw ctx.makeError("point_op_allow",
           "Operation \"" + op.name
               + "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"");

@@ -970,7 +970,7 @@ pub fn make_point_util(ctx: *Context) E!Value {
         .string => |s| s,
         else => "",
     };
-    if (std.mem.indexOf(u8, allow_op, op.name) == null) {
+    if (!h.allow_list_has(h.getpath(&.{ "allow", "op" }, options), op.name)) {
         return ctx.fail("point_op_allow", fmt("Operation \"{s}\" not allowed by SDK option allow.op value: \"{s}\"", .{ op.name, allow_op }));
     }
 
@@ -1120,7 +1120,7 @@ pub fn make_spec_util(ctx: *Context) E!*Spec {
         .string => |s| s,
         else => "",
     };
-    if (std.mem.indexOf(u8, allow_method, method) == null) {
+    if (!h.allow_list_has(h.getpath(&.{ "allow", "method" }, options), method)) {
         return ctx.fail("spec_method_allow", fmt("Method \"{s}\" not allowed by SDK option allow.method value: \"{s}\"", .{ method, allow_method }));
     }
 

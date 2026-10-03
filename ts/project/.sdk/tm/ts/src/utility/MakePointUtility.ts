@@ -2,6 +2,7 @@
 import { Context, Point } from '../types'
 
 import { paramValue } from './ParamUtility'
+import { allowed } from './PrepareMethodUtility'
 
 
 function terminalParam(point: any): boolean {
@@ -53,7 +54,7 @@ function makePoint(ctx: Context): Point | Error {
   const op = ctx.op
   const options = ctx.options
 
-  if (!options.allow.op.includes(op.name)) {
+  if (!allowed(options.allow.op, op.name)) {
     return ctx.error('point_op_allow', 'Operation "' + op.name +
       '" not allowed by SDK option allow.op value: "' + options.allow.op + '"')
   }

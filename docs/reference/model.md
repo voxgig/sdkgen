@@ -561,7 +561,7 @@ needs editing.
 | `auth.prefix`, `auth.basic` | Credential scheme. |
 | `auth.name` | The header, query parameter or cookie that carries the credential, in the placement the API declares. Read on every request; empty means the declared name, and a different name also removes a credential under the declared one. |
 | `headers` | Extra headers sent with every request. |
-| `allow.method`, `allow.op` | Comma-separated allow-lists. |
+| `allow.method`, `allow.op` | Comma-separated allow-lists. A name matches whole and in any case, so `PU` never allows `PUT`. `allow.method` also governs `direct()` and `prepare()`, which send the method in upper case. |
 | `entity` | Per-entity overrides. |
 | `extend` | Feature instances supplied at construction. |
 | `utility`, `system.fetch` | Platform seams. |

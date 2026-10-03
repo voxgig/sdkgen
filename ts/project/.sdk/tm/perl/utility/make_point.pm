@@ -12,6 +12,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/../core/error.pm"));
+require(Cwd::abs_path("$__dir/prepare_method.pm"));
 require(Cwd::abs_path("$__dir/param.pm"));
 
 package ProjectNameUtilities;
@@ -87,8 +88,9 @@ $REGISTRY{make_point} = sub {
   my $options = $ctx->{options};
 
   my $allow_op = ProjectNameHelpers::gpath($options, 'allow.op');
+  my $allow_ok = ProjectNameUtilities::allowed($allow_op, $op->{name});
   $allow_op = '' unless defined $allow_op && !ref $allow_op;
-  if (index($allow_op, $op->{name}) < 0) {
+  unless ($allow_ok) {
     return (undef, $ctx->make_error('point_op_allow',
       "Operation \"$op->{name}\" not allowed by SDK option allow.op value: \"$allow_op\""));
   }

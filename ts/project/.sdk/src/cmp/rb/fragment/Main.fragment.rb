@@ -121,7 +121,13 @@ class ProjectNameSDK
     path = VoxgigStruct.getprop(fetchargs, "path") || ""
     path = "" unless path.is_a?(String)
     method_val = VoxgigStruct.getprop(fetchargs, "method") || "GET"
-    method_val = "GET" unless method_val.is_a?(String)
+    method_val = "GET" unless method_val.is_a?(String) && "" != method_val
+    method_val = method_val.upcase
+    allow_method = VoxgigStruct.getpath(opts, "allow.method")
+    unless ProjectNameUtilities.allowed(allow_method, method_val)
+      raise ctx.make_error("spec_method_allow",
+        "Method \"#{method_val}\" not allowed by SDK option allow.method value: \"#{allow_method}\"")
+    end
     params = ProjectNameHelpers.to_map(VoxgigStruct.getprop(fetchargs, "params")) || {}
     query = ProjectNameHelpers.to_map(VoxgigStruct.getprop(fetchargs, "query")) || {}
     headers = utility.prepare_headers.call(ctx)
@@ -171,8 +177,7 @@ class ProjectNameSDK
 
   # Is this raw-access op permitted by the SDK's allow.op option?
   def op_allowed?(op)
-    allow_op = VoxgigStruct.getpath(@options, "allow.op")
-    allow_op.is_a?(String) && allow_op.include?(op)
+    ProjectNameUtilities.allowed(VoxgigStruct.getpath(@options, "allow.op"), op)
   end
 
   def op_denied(op)

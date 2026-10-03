@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
-use crate::core::helpers::{getp, getpath, setp};
+use crate::core::helpers::{allowed, getp, getpath, setp};
 use crate::core::spec::Spec;
 use crate::core::types::OutVal;
 use crate::utility::voxgigstruct::Value;
@@ -37,11 +37,12 @@ pub fn make_spec_util(ctx: &Rc<Context>) -> Result<Rc<RefCell<Spec>>, ProjectNam
     let method = crate::utility::prepare_method::prepare_method_util(ctx);
     spec.borrow_mut().method = method.clone();
 
-    let allow_method = match getpath(&["allow", "method"], &options) {
-        Value::Str(s) => s,
+    let allow_method_val = getpath(&["allow", "method"], &options);
+    let allow_method = match &allow_method_val {
+        Value::Str(s) => s.clone(),
         _ => String::new(),
     };
-    if !allow_method.contains(&method) {
+    if !allowed(&allow_method_val, &method) {
         return Err(ctx.make_error(
             "spec_method_allow",
             &format!(

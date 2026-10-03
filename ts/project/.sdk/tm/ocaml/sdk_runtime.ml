@@ -27,6 +27,15 @@ let substr_contains (hay : string) (needle : string) : bool =
     in
     go 0
 
+(* Whether a comma-separated allow option names the item: whole names, any case. *)
+let allow_list_has (names : value) (item : string) : bool =
+  match names with
+  | Str list when item <> "" ->
+    let want = String.uppercase_ascii item in
+    List.exists (fun name -> String.uppercase_ascii (String.trim name) = want)
+      (String.split_on_char ',' list)
+  | _ -> false
+
 let str_replace_all (s : string) (find : string) (repl : string) : string =
   if find = "" then s
   else begin
@@ -1093,7 +1102,7 @@ let make_point_util (ctx : ctx) : (value * sdk_error option) =
     let op = ctx.c_op in
     let options = ctx.c_options in
     let allow_op = match getpath_s options "allow.op" with Str s -> s | _ -> "" in
-    if not (substr_contains allow_op op.op_name) then
+    if not (allow_list_has (getpath_s options "allow.op") op.op_name) then
       (Noval, Some (ctx_make_error ctx "point_op_allow"
         ("Operation \"" ^ op.op_name ^ "\" not allowed by SDK option allow.op value: \"" ^ allow_op ^ "\"")))
     else begin
@@ -1214,7 +1223,7 @@ let make_spec_util (ctx : ctx) : (spec option * sdk_error option) =
     ctx.c_spec <- Some sp;
     sp.sp_method <- u.u_prepare_method ctx;
     let allow_method = match getpath_s options "allow.method" with Str s -> s | _ -> "" in
-    if not (substr_contains allow_method sp.sp_method) then
+    if not (allow_list_has (getpath_s options "allow.method") sp.sp_method) then
       (None, Some (ctx_make_error ctx "spec_method_allow"
         ("Method \"" ^ sp.sp_method ^ "\" not allowed by SDK option allow.method value: \"" ^ allow_method ^ "\"")))
     else begin

@@ -32,6 +32,7 @@ import {
   MEDIA_CASES, MEDIA_MODEL, MEDIA_PROBES, MEDIA_RAN, MEDIA_SERVER,
   mediaFailures, mediaPrinted, mediaRecord,
 } from './mediaprobes'
+import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
 
 
 function materialise(files: Record<string, string>, root: string) {
@@ -5293,97 +5294,103 @@ describe('the README examples run for a slug carrying the word client', () => {
 })
 
 
-// The media types a point declares, driven through a generated SDK. A probe
-// with a live transport sends every case to a local server, which records
-// what arrives; one without prints what its transport is given.
-type MediaLane = {
+// A probe program beside a generated SDK, built and run one way per target. A
+// probe with a live transport sends to a local server, which records what
+// arrives; one without prints what its transport is given.
+type ProbeLane = {
   target: string
   ready: () => string | null
   // Writes the probe, builds what needs building, and runs the probe.
   exec: (sdkroot: string, env: NodeJS.ProcessEnv,
-    write: (name: string, source: string) => void) => ReturnType<typeof run>
+    write: (name: string, source: string) => void, probe: Probe) => ReturnType<typeof run>
   // The probe prints what its transport is given, for want of a live one.
   seam?: () => boolean
 }
 
+// A probe's source per language, and the name its files and entry points take.
+type Probe = { name: string, source: Record<string, string> }
 
-const MEDIA_LANES: MediaLane[] = [
+const pascal = (name: string) => name.charAt(0).toUpperCase() + name.slice(1)
+
+
+const PROBE_LANES: ProbeLane[] = [
   ...['ts', 'js'].map((target) => ({
     target,
     ready: () => 'ts' === target && !Fs.existsSync(TSC) ? 'typescript is not installed here' : null,
-    exec: (sdkroot: string, env: NodeJS.ProcessEnv, write: (name: string, source: string) => void) => {
+    exec: (sdkroot: string, env: NodeJS.ProcessEnv, write: (name: string, source: string) => void,
+      probe: Probe) => {
       linkDeps(sdkroot)
       if ('ts' === target) {
         const built = tsc(sdkroot, 'src')
         if (!built.ok) return built
       }
-      write('media-probe.cjs', MEDIA_PROBES.node.replace('SDK_MODULE', '.'))
-      return run(process.execPath, ['media-probe.cjs'], sdkroot, env)
+      write(probe.name + '-probe.cjs', probe.source.node.replace('SDK_MODULE', '.'))
+      return run(process.execPath, [probe.name + '-probe.cjs'], sdkroot, env)
     },
   })),
   {
     target: 'go',
     ready: () => null == toolchain('go') ? 'no go toolchain' : null,
-    exec: (sdkroot, env, write) => {
+    exec: (sdkroot, env, write, probe) => {
       const mod = Fs.readFileSync(Path.join(sdkroot, 'go.mod'), 'utf8').match(/^module (.+)$/m)![1]
-      write('test/media_probe_test.go', MEDIA_PROBES.go.replace('GOMODULE', mod))
-      return run(toolchain('go')!,
-        ['test', '-v', '-count=1', './test', '-run', '^TestMediaProbe$'], sdkroot, env)
+      write('test/' + probe.name + '_probe_test.go', probe.source.go.replace('GOMODULE', mod))
+      return run(toolchain('go')!, ['test', '-v', '-count=1', './test', '-run',
+        '^Test' + pascal(probe.name) + 'Probe$'], sdkroot, env)
     },
   },
   {
     target: 'py',
     ready: () => null == mediaPython() ? 'no python toolchain' : null,
     seam: () => !probeOk(mediaPython()!, ['-c', 'import requests']),
-    exec: (sdkroot, env, write) => {
-      write('media_probe.py', MEDIA_PROBES.py)
-      return run(mediaPython()!, ['media_probe.py'], sdkroot, env)
+    exec: (sdkroot, env, write, probe) => {
+      write(probe.name + '_probe.py', probe.source.py)
+      return run(mediaPython()!, [probe.name + '_probe.py'], sdkroot, env)
     },
   },
   {
     target: 'rb',
     ready: () => null == toolchain('ruby') ? 'no ruby toolchain' : null,
-    exec: (sdkroot, env, write) => {
-      write('media_probe.rb', MEDIA_PROBES.rb)
-      return run(toolchain('ruby')!, ['media_probe.rb'], sdkroot, env)
+    exec: (sdkroot, env, write, probe) => {
+      write(probe.name + '_probe.rb', probe.source.rb)
+      return run(toolchain('ruby')!, [probe.name + '_probe.rb'], sdkroot, env)
     },
   },
   {
     target: 'php',
     ready: () => null == toolchain('php') ? 'no php toolchain' : null,
-    exec: (sdkroot, env, write) => {
-      write('media_probe.php', MEDIA_PROBES.php)
-      return run(toolchain('php')!, ['media_probe.php'], sdkroot, env)
+    exec: (sdkroot, env, write, probe) => {
+      write(probe.name + '_probe.php', probe.source.php)
+      return run(toolchain('php')!, [probe.name + '_probe.php'], sdkroot, env)
     },
   },
   {
     target: 'perl',
     ready: () => null == toolchain('perl') ? 'no perl toolchain' : null,
-    exec: (sdkroot, env, write) => {
-      write('media_probe.pl', MEDIA_PROBES.perl)
-      return run(toolchain('perl')!, ['media_probe.pl'], sdkroot, env)
+    exec: (sdkroot, env, write, probe) => {
+      write(probe.name + '_probe.pl', probe.source.perl)
+      return run(toolchain('perl')!, [probe.name + '_probe.pl'], sdkroot, env)
     },
   },
   {
     target: 'lua',
     ready: () => null == mediaLua() ? 'no lua toolchain with the dkjson rock' : null,
     seam: () => !probeOk(mediaLua()!, ['-e', 'require "socket.http"']),
-    exec: (sdkroot, env, write) => {
-      write('media_probe.lua', MEDIA_PROBES.lua)
-      return run(mediaLua()!, ['media_probe.lua'], sdkroot, env)
+    exec: (sdkroot, env, write, probe) => {
+      write(probe.name + '_probe.lua', probe.source.lua)
+      return run(mediaLua()!, [probe.name + '_probe.lua'], sdkroot, env)
     },
   },
   {
     target: 'java',
     ready: () => null == toolchain('javac') || null == toolchain('java') ? 'no Java toolchain' : null,
-    exec: (sdkroot, env, write) => {
-      write('MediaProbe.java', MEDIA_PROBES.java)
+    exec: (sdkroot, env, write, probe) => {
+      write(pascal(probe.name) + 'Probe.java', probe.source.java)
       const classes = Path.join(sdkroot, 'zz-classes')
       Fs.mkdirSync(classes, { recursive: true })
       const sources = listFiles(sdkroot, '.java').filter((f) => !f.split(Path.sep).includes('test'))
       const built = run(toolchain('javac')!, ['-d', classes, ...sources], sdkroot)
       if (!built.ok) return built
-      return run(toolchain('java')!, ['-cp', classes, 'MediaProbe'], sdkroot, env)
+      return run(toolchain('java')!, ['-cp', classes, pascal(probe.name) + 'Probe'], sdkroot, env)
     },
   },
   {
@@ -5391,71 +5398,77 @@ const MEDIA_LANES: MediaLane[] = [
     // gradle hangs on windows rather than failing, as the other kotlin lanes note.
     ready: () => 'win32' === process.platform ? 'gradle hangs on windows'
       : null == toolchain('gradle') ? 'no gradle toolchain' : null,
-    exec: (sdkroot, env, write) => {
-      write('test/MediaProbe.kt', MEDIA_PROBES.kotlin)
+    exec: (sdkroot, env, write, probe) => {
+      write('test/' + pascal(probe.name) + 'Probe.kt', probe.source.kotlin)
       return run(toolchain('gradle')!,
-        ['--console=plain', 'test', '--tests', '*MediaProbe*'], sdkroot, env)
+        ['--console=plain', 'test', '--tests', '*' + pascal(probe.name) + 'Probe*'], sdkroot, env)
     },
   },
   {
     target: 'scala',
     ready: () => null == toolchain('scala-cli') ? 'no scala-cli toolchain' : null,
-    exec: (sdkroot, env, write) => {
-      write('sdktest/MediaProbe.scala', MEDIA_PROBES.scala)
-      return run(toolchain('scala-cli')!, ['run', '.', '--main-class', 'MediaProbeMain'], sdkroot, env)
+    exec: (sdkroot, env, write, probe) => {
+      write('sdktest/' + pascal(probe.name) + 'Probe.scala', probe.source.scala)
+      return run(toolchain('scala-cli')!,
+        ['run', '.', '--main-class', pascal(probe.name) + 'ProbeMain'], sdkroot, env)
     },
   },
   {
     target: 'csharp',
     ready: () => null == toolchain('dotnet') ? 'no .NET toolchain' : null,
-    exec: (sdkroot, env, write) => {
+    // The probe project sits under test/, which the SDK project leaves out of
+    // its compile, so one probe's build output is never compiled into the SDK.
+    exec: (sdkroot, env, write, probe) => {
       const sdkproj = Fs.readdirSync(sdkroot).find((n) => n.endsWith('.csproj'))!
       const tfm = Fs.readFileSync(Path.join(sdkroot, sdkproj), 'utf8')
         .match(/<TargetFramework>([^<]+)<\/TargetFramework>/)![1]
-      write('test/MediaProbe.cs', MEDIA_PROBES.csharp)
-      write('zz-media/MediaProbe.csproj',
+      const name = pascal(probe.name) + 'Probe'
+      write('test/' + name + '.cs', probe.source.csharp)
+      write('test/zz-' + probe.name + '/' + name + '.csproj',
         '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>' +
         '<OutputType>Exe</OutputType><TargetFramework>' + tfm + '</TargetFramework>' +
         '<Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>' +
         '<EnableDefaultCompileItems>false</EnableDefaultCompileItems>' +
-        '</PropertyGroup><ItemGroup><Compile Include="../test/MediaProbe.cs" />' +
-        '<ProjectReference Include="../' + sdkproj + '" /></ItemGroup></Project>')
-      return run(toolchain('dotnet')!, ['run', '--project', 'zz-media/MediaProbe.csproj'], sdkroot, env)
+        '</PropertyGroup><ItemGroup><Compile Include="../' + name + '.cs" />' +
+        '<ProjectReference Include="../../' + sdkproj + '" /></ItemGroup></Project>')
+      return run(toolchain('dotnet')!,
+        ['run', '--project', 'test/zz-' + probe.name + '/' + name + '.csproj'], sdkroot, env)
     },
   },
   {
     target: 'swift',
     ready: () => null == toolchain('swift') ? 'no swift toolchain' : null,
-    exec: (sdkroot, env, write) => {
+    exec: (sdkroot, env, write, probe) => {
       const tests = Fs.readdirSync(Path.join(sdkroot, 'Tests')).find((d) => d.endsWith('Tests'))!
-      write(Path.join('Tests', tests, 'MediaProbeTest.swift'), MEDIA_PROBES.swift)
-      return run(toolchain('swift')!, ['test', '-j', '2', '--filter', 'MediaProbeTest'], sdkroot,
+      const name = pascal(probe.name) + 'ProbeTest'
+      write(Path.join('Tests', tests, name + '.swift'), probe.source.swift)
+      return run(toolchain('swift')!, ['test', '-j', '2', '--filter', name], sdkroot,
         { ...env, MEDIA_CASES: Path.join(sdkroot, 'media-cases.json') }, 30 * 60 * 1000)
     },
   },
   {
     target: 'elixir',
     ready: () => null == toolchain('mix') || null == toolchain('elixir') ? 'no elixir toolchain' : null,
-    exec: (sdkroot, env, write) => {
-      write('test/media_probe_test.exs', MEDIA_PROBES.elixir)
-      return run(toolchain('mix')!, ['test', '--no-color', Path.join('test', 'media_probe_test.exs')],
-        sdkroot, { ...env, MIX_ENV: 'test' })
+    exec: (sdkroot, env, write, probe) => {
+      const file = Path.join('test', probe.name + '_probe_test.exs')
+      write(file, probe.source.elixir)
+      return run(toolchain('mix')!, ['test', '--no-color', file], sdkroot, { ...env, MIX_ENV: 'test' })
     },
   },
   {
     target: 'clojure',
     ready: () => null == toolchain('clojure') ? 'no clojure CLI' : null,
-    exec: (sdkroot, env, write) => {
-      write('media_probe.clj', MEDIA_PROBES.clojure)
-      return run(toolchain('clojure')!, ['-M', 'media_probe.clj'], sdkroot, env)
+    exec: (sdkroot, env, write, probe) => {
+      write(probe.name + '_probe.clj', probe.source.clojure)
+      return run(toolchain('clojure')!, ['-M', probe.name + '_probe.clj'], sdkroot, env)
     },
   },
   {
     target: 'rust',
     ready: () => null == toolchain('cargo') ? 'no Rust toolchain' : null,
-    exec: (sdkroot, env, write) => {
-      write('tests/media_probe.rs', MEDIA_PROBES.rust)
-      return run(toolchain('cargo')!, ['test', '--test', 'media_probe', '--', '--nocapture'],
+    exec: (sdkroot, env, write, probe) => {
+      write('tests/' + probe.name + '_probe.rs', probe.source.rust)
+      return run(toolchain('cargo')!, ['test', '--test', probe.name + '_probe', '--', '--nocapture'],
         sdkroot, env)
     },
   },
@@ -5463,22 +5476,24 @@ const MEDIA_LANES: MediaLane[] = [
     target: 'c',
     ready: () => null == toolchain('make') || null == authProbeCc() ? 'no C toolchain' : null,
     seam: () => true,
-    exec: (sdkroot, env, write) => {
-      write('tests/media_probe.c', MEDIA_PROBES.c)
-      const built = run(toolchain('make')!, ['CC=' + authProbeCc(), 'tests/media_probe.out'], sdkroot)
+    exec: (sdkroot, env, write, probe) => {
+      write('tests/' + probe.name + '_probe.c', probe.source.c)
+      const out = 'tests/' + probe.name + '_probe.out'
+      const built = run(toolchain('make')!, ['CC=' + authProbeCc(), out], sdkroot)
       if (!built.ok) return built
-      return run(Path.join(sdkroot, 'tests', 'media_probe.out'), [], sdkroot, env)
+      return run(Path.join(sdkroot, out), [], sdkroot, env)
     },
   },
   {
     target: 'cpp',
     ready: () => null == toolchain('make') || null == cleanCxx() ? 'no C++ toolchain' : null,
     seam: () => true,
-    exec: (sdkroot, env, write) => {
-      write('test/media_probe.cpp', MEDIA_PROBES.cpp)
-      const built = run(toolchain('make')!, ['CXX=' + cleanCxx(), 'test/media_probe.out'], sdkroot)
+    exec: (sdkroot, env, write, probe) => {
+      write('test/' + probe.name + '_probe.cpp', probe.source.cpp)
+      const out = 'test/' + probe.name + '_probe.out'
+      const built = run(toolchain('make')!, ['CXX=' + cleanCxx(), out], sdkroot)
       if (!built.ok) return built
-      return run(Path.join(sdkroot, 'test', 'media_probe.out'), [], sdkroot, env)
+      return run(Path.join(sdkroot, out), [], sdkroot, env)
     },
   },
   {
@@ -5491,8 +5506,8 @@ const MEDIA_LANES: MediaLane[] = [
     },
     seam: () => true,
     // build.zig names its test files, and `test-clean` builds this one alone.
-    exec: (sdkroot, env, write) => {
-      write('test/clean_test.zig', MEDIA_PROBES.zig)
+    exec: (sdkroot, env, write, probe) => {
+      write('test/clean_test.zig', probe.source.zig)
       return run(toolchain('zig')!, ['build', 'test-clean', '--summary', 'all'], sdkroot, env)
     },
   },
@@ -5501,16 +5516,17 @@ const MEDIA_LANES: MediaLane[] = [
     ready: () => null == toolchain('make') || null == toolchain('ocamlc') ? 'no OCaml toolchain' : null,
     seam: () => true,
     // A makefile beside the generated one links the probe against its module list.
-    exec: (sdkroot, env, write) => {
-      write('test/media_probe.ml', MEDIA_PROBES.ocaml)
-      write('media.mk', 'include Makefile\n' +
-        'run_media_probe: $(SDK) $(FEATURE_OBJ) test/media_probe.ml\n' +
-        '\t$(OCAMLC) $(INC) $(FEATURE_LIB) $(SDK) test/media_probe.ml ' +
-        '$(FEATURE_OBJ) $(FEATURE_LINK) -o run_media_probe\n')
+    exec: (sdkroot, env, write, probe) => {
+      const name = probe.name + '_probe'
+      write('test/' + name + '.ml', probe.source.ocaml)
+      write(probe.name + '.mk', 'include Makefile\n' +
+        'run_' + name + ': $(SDK) $(FEATURE_OBJ) test/' + name + '.ml\n' +
+        '\t$(OCAMLC) $(INC) $(FEATURE_LIB) $(SDK) test/' + name + '.ml ' +
+        '$(FEATURE_OBJ) $(FEATURE_LINK) -o run_' + name + '\n')
       const built = run(toolchain('make')!,
-        ['-f', 'media.mk', 'OCAMLC=' + toolchain('ocamlc'), 'run_media_probe'], sdkroot)
+        ['-f', probe.name + '.mk', 'OCAMLC=' + toolchain('ocamlc'), 'run_' + name], sdkroot)
       if (!built.ok) return built
-      return run(Path.join(sdkroot, 'run_media_probe'), [], sdkroot, env)
+      return run(Path.join(sdkroot, 'run_' + name), [], sdkroot, env)
     },
   },
 ]
@@ -5549,30 +5565,40 @@ function mediaServer(dir: string): Promise<{ port: number, log: string, stop: ()
 }
 
 
-describe('the media types a point declares reach the wire', () => {
+// Each target's SDK is generated once, and every probe runs beside it.
+describe('probes driven through a generated SDK', () => {
   let tmp = ''
+  const generated = new Map<string, Promise<string>>()
+
+  const sdkFor = (target: string): Promise<string> => {
+    if (!generated.has(target)) {
+      const sdkroot = Path.join(tmp, target)
+      generated.set(target, generateTo(target, sdkroot, MEDIA_MODEL).then(() => sdkroot))
+    }
+    return generated.get(target)!
+  }
+
+  const writer = (sdkroot: string) => (name: string, source: string) => {
+    const path = Path.join(sdkroot, name)
+    Fs.mkdirSync(Path.dirname(path), { recursive: true })
+    Fs.writeFileSync(path, source)
+  }
 
   before(() => {
-    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-media-'))
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-probe-'))
   })
 
   after(() => {
     if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
   })
 
-  for (const lane of MEDIA_LANES) {
-    test(lane.target + ': Accept, content-type and a raw body', async (t) => {
+  for (const lane of PROBE_LANES) {
+    test(lane.target + ': the media types a point declares reach the wire', async (t) => {
       const missing = lane.ready()
       if (null != missing) return t.skip(missing)
 
-      const sdkroot = Path.join(tmp, lane.target)
-      await generateTo(lane.target, sdkroot, MEDIA_MODEL)
+      const sdkroot = await sdkFor(lane.target)
       Fs.writeFileSync(Path.join(sdkroot, 'media-cases.json'), JSON.stringify(MEDIA_CASES))
-      const write = (name: string, source: string) => {
-        const path = Path.join(sdkroot, name)
-        Fs.mkdirSync(Path.dirname(path), { recursive: true })
-        Fs.writeFileSync(path, source)
-      }
 
       const seam = null != lane.seam && lane.seam()
       const server = seam ? null : await mediaServer(sdkroot)
@@ -5582,7 +5608,7 @@ describe('the media types a point declares reach the wire', () => {
           ...nestedTestEnv(),
           MEDIA_BASE: null == server ? 'http://media.test' : 'http://127.0.0.1:' + server.port,
           ...(seam ? { MEDIA_SEAM: '1' } : {}),
-        }, write)
+        }, writer(sdkroot), { name: 'media', source: MEDIA_PROBES })
       }
       finally {
         server?.stop()
@@ -5603,6 +5629,34 @@ describe('the media types a point declares reach the wire', () => {
           .map((r) => mediaRecord(r.method, r.url, r.headers, r.bodyHex))
 
       deepStrictEqual(mediaFailures(MEDIA_CASES, records), [],
+        lane.target + ' probe output:\n' + tail(ran.out))
+    })
+
+    test(lane.target + ': an allow list names whole methods and operations, in any case', async (t) => {
+      const missing = lane.ready()
+      if (null != missing) return t.skip(missing)
+
+      const sdkroot = await sdkFor(lane.target)
+      const seam = null != lane.seam && lane.seam()
+      const server = seam ? null : await mediaServer(sdkroot)
+      let ran: ReturnType<typeof run>
+      try {
+        ran = lane.exec(sdkroot, {
+          ...nestedTestEnv(),
+          ALLOW_BASE: null == server ? 'http://allow.test' : 'http://127.0.0.1:' + server.port,
+          ...(seam ? { ALLOW_SEAM: '1' } : {}),
+        }, writer(sdkroot), { name: 'allow', source: ALLOW_PROBES })
+      }
+      finally {
+        server?.stop()
+      }
+
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+      }
+
+      ok(ran.ok, lane.target + ': the allow probe failed:\n' + tail(ran.out, 60))
+      deepStrictEqual(allowOutcomes(ran.out), ALLOW_OUTCOMES,
         lane.target + ' probe output:\n' + tail(ran.out))
     })
   }

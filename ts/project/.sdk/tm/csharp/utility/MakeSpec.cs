@@ -45,11 +45,11 @@ public static partial class SdkUtility
 
         ctx.Spec.Method = utility.PrepareMethod(ctx);
 
-        var allowMethod = StructUtils.GetPath(options, StructUtils.Jt("allow", "method"))
-            as string ?? "";
+        var allowMethodVal = StructUtils.GetPath(options, StructUtils.Jt("allow", "method"));
+        var allowMethod = allowMethodVal as string ?? "";
         // null-safe: an op outside the convention resolves NO method (see
         // PrepareMethod), which the allow list can never contain.
-        if (ctx.Spec.Method == null || !allowMethod.Contains(ctx.Spec.Method))
+        if (!global::ProjectNameSdk.Helpers.Allowed(allowMethodVal, ctx.Spec.Method))
         {
             throw ctx.MakeError("spec_method_allow",
                 "Method \"" + ctx.Spec.Method +

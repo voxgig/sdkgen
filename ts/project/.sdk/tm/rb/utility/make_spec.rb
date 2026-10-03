@@ -1,6 +1,7 @@
 # ProjectName SDK utility: make_spec
 require_relative 'struct/voxgig_struct'
 require_relative 'graphql'
+require_relative 'prepare_method'
 require_relative '../core/spec'
 module ProjectNameUtilities
   MakeSpec = ->(ctx) {
@@ -31,8 +32,8 @@ module ProjectNameUtilities
 
     ctx.spec.method = utility.prepare_method.call(ctx)
 
-    allow_method = VoxgigStruct.getpath(options, "allow.method") || ""
-    unless allow_method.include?(ctx.spec.method)
+    allow_method = VoxgigStruct.getpath(options, "allow.method")
+    unless ProjectNameUtilities.allowed(allow_method, ctx.spec.method)
       return nil, ctx.make_error("spec_method_allow",
         "Method \"#{ctx.spec.method}\" not allowed by SDK option allow.method value: \"#{allow_method}\"")
     end

@@ -1,5 +1,6 @@
 
 const { Spec } = require('../Spec')
+const { allowed } = require('./PrepareMethodUtility')
 
 // Create request specificaton.
 function makeSpec(ctx) {
@@ -35,7 +36,7 @@ function makeSpec(ctx) {
 
   ctx.spec.method = prepareMethod(ctx)
 
-  if (!options.allow.method.includes(ctx.spec.method)) {
+  if (!allowed(options.allow.method, ctx.spec.method)) {
     return ctx.error('spec_method_allow', 'Method "' + ctx.spec.method +
       '" not allowed by SDK option allow.method value: "' + options.allow.method + '"')
   }

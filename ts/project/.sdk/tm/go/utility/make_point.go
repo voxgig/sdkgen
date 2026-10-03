@@ -82,8 +82,9 @@ func makePointUtil(ctx *core.Context) (map[string]any, error) {
 	op := ctx.Op
 	options := ctx.Options
 
-	allowOp, _ := vs.GetPath(options, []any{"allow", "op"}).(string)
-	if !strings.Contains(allowOp, op.Name) {
+	allowOpVal := vs.GetPath(options, []any{"allow", "op"})
+	allowOp, _ := allowOpVal.(string)
+	if !core.Allowed(allowOpVal, op.Name) {
 		return nil, ctx.MakeError("point_op_allow",
 			"Operation \""+op.Name+
 				"\" not allowed by SDK option allow.op value: \""+allowOp+"\"")

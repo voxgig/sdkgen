@@ -78,7 +78,13 @@
         path0 (vs/getprop fetchargs "path")
         path (if (string? path0) path0 "")
         method0 (vs/getprop fetchargs "method")
-        method (if (string? method0) method0 "GET")
+        method (.toUpperCase ^String (if (and (string? method0) (not= "" method0)) method0 "GET")
+                             java.util.Locale/ROOT)
+        allow-method (vs/getpath opts "allow.method")
+        _ (when-not (core/allowed? allow-method method)
+            (core/sdk-throw (core/ctx-error ctx "spec_method_allow"
+                                            (str "Method \"" method "\" not allowed by SDK option allow.method value: \""
+                                                 (if (string? allow-method) allow-method "") "\""))))
         params (let [p (core/to-map (vs/getprop fetchargs "params"))] (if p p (vs/jm)))
         query (let [q (core/to-map (vs/getprop fetchargs "query"))] (if q q (vs/jm)))
         headers ((core/uget ctx :prepare-headers) ctx)
@@ -99,8 +105,7 @@
 
 ;; Is this raw-access op permitted by the SDK's allow.op option?
 (defn- op-allowed? [client op]
-  (let [allow (vs/getpath (core/client-options-map client) "allow.op")]
-    (and (string? allow) (str/includes? allow op))))
+  (core/allowed? (vs/getpath (core/client-options-map client) "allow.op") op))
 
 (defn- op-denied [client op]
   (let [allow (vs/getpath (core/client-options-map client) "allow.op")]
