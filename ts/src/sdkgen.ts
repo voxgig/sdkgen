@@ -75,7 +75,7 @@ import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/ser
 import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools'
 import type { McpTool } from './helpers/mcpTools'
 import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
-import type { ExampleLang } from './helpers/opExample'
+import type { ExampleLang, LiteralLang } from './helpers/opExample'
 import { liveStrict, liveStrictNote, liveFlowNeeds } from './helpers/testPolicy'
 import type { LiveFlowNeeds } from './helpers/testPolicy'
 import { pointSegments, pointParts, pointTerminalParam, pointPathKey }
@@ -950,6 +950,7 @@ function clear(path: string) {
 export type {
   SdkGenOptions,
   ExampleLang,
+  LiteralLang,
   McpTool,
   DepEntry,
   LiveFlowNeeds,

@@ -6,7 +6,10 @@ import { opRequestShape, entityIdField } from './opShape'
 import { phpEntityAccessor } from './naming'
 
 
-type ExampleLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go' | 'json'
+type ExampleLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go'
+
+// The languages a literal is written in: the call languages, and JSON.
+type LiteralLang = ExampleLang | 'json'
 
 
 function cap(s: string): string {
@@ -15,7 +18,7 @@ function cap(s: string): string {
 
 
 // A type-correct literal for a canonical type sentinel, in the target language.
-function litFor(lang: ExampleLang, type: any): string {
+function litFor(lang: LiteralLang, type: any): string {
   const k = canonKey(type)
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'py' === lang ? 'True' : ('rb' === lang ? 'true' : 'true')
@@ -48,13 +51,13 @@ function idLiteral(ent: any, op: string, idF: string | null): string {
 const JS_IDENT = /^[A-Za-z_$][A-Za-z0-9_$]*$/
 const LUA_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/
 
-function litPair(lang: ExampleLang, name: string, value: string): string {
+function litPair(lang: LiteralLang, name: string, value: string): string {
   switch (lang) {
     case 'py': return `"${name}": ${value}`
     case 'php': return `"${name}" => ${value}`
     case 'rb': return `"${name}" => ${value}`
     case 'go': return `"${name}": ${value}`
-    case 'json': return `"${name}": ${value}`
+    case 'json': return `${JSON.stringify(name)}: ${value}`
     case 'lua': return LUA_IDENT.test(name) ?
       `${name} = ${value}` : `["${name}"] = ${value}`
     default: return JS_IDENT.test(name) ?
@@ -64,7 +67,7 @@ function litPair(lang: ExampleLang, name: string, value: string): string {
 
 
 function matchArg(
-  lang: ExampleLang, ent: any, op: string, idF: string | null, idLit: string
+  lang: LiteralLang, ent: any, op: string, idF: string | null, idLit: string
 ): string {
   const items = opRequestShape(ent, op).items.filter((it: any) => !it.optional)
   if (0 === items.length) return 'go' === lang ? 'nil' : ('json' === lang ? '{}' : '')
@@ -80,7 +83,7 @@ function matchArg(
 
 
 // An update whose only required member is its id also changes a field.
-function dataArg(lang: ExampleLang, ent: any, op: string, idF: string | null): string {
+function dataArg(lang: LiteralLang, ent: any, op: string, idF: string | null): string {
   const items = opRequestShape(ent, op).items
     .filter((it: any) =>
       (it.name !== idF && it.name !== 'id') || !it.optional)
@@ -163,5 +166,6 @@ export {
 
 export type {
   ExampleLang,
+  LiteralLang,
   PrimaryCall,
 }

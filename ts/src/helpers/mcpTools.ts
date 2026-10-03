@@ -1,7 +1,7 @@
 import { each } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
 
-import type { SdkModel } from '../types'
+import type { ModelEntity, SdkModel } from '../types'
 
 import { entityOps } from './opShape'
 
@@ -9,7 +9,7 @@ import { entityOps } from './opShape'
 type McpTool = {
   op: string
   name: string
-  entities: any[]
+  entities: ModelEntity[]
 }
 
 
@@ -23,8 +23,8 @@ const MCP_WRITE_OPS = ['create', 'update', 'remove']
 function mcpTools(model: SdkModel, target: string = 'go-mcp'): McpTool[] {
   const write = true === model.main?.[KIT]?.target?.[target]?.tool?.write
   const slug = String(model.name ?? '').toLowerCase()
-  const entities: any[] = each(getModelPath(model, `main.${KIT}.entity`) || {})
-    .filter((ent: any) => null != ent && false !== ent.active)
+  const entities: ModelEntity[] = each(getModelPath(model, `main.${KIT}.entity`) || {})
+    .filter((ent: ModelEntity) => null != ent && false !== ent.active)
 
   return [...MCP_READ_OPS, ...(write ? MCP_WRITE_OPS : [])]
     .map((op) => ({

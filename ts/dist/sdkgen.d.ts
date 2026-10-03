@@ -50,7 +50,7 @@ import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/ser
 import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools';
 import type { McpTool } from './helpers/mcpTools';
 import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample';
-import type { ExampleLang } from './helpers/opExample';
+import type { ExampleLang, LiteralLang } from './helpers/opExample';
 import { liveStrict, liveStrictNote, liveFlowNeeds } from './helpers/testPolicy';
 import type { LiveFlowNeeds } from './helpers/testPolicy';
 import { pointSegments, pointParts, pointTerminalParam, pointPathKey } from './helpers/pointPath';
@@ -119,7 +119,7 @@ declare function SdkGen(opts: SdkGenOptions): {
 declare namespace SdkGen {
     var makeBuild: (opts: SdkGenOptions) => Promise<(model: any, build: any, ctx: any) => Promise<any>>;
 }
-export type { SdkGenOptions, ExampleLang, McpTool, DepEntry, LiveFlowNeeds, PathSegment, FeatureSource, DoctorReport, RegisterOptions, Manifest, ManifestRead, };
+export type { SdkGenOptions, ExampleLang, LiteralLang, McpTool, DepEntry, LiveFlowNeeds, PathSegment, FeatureSource, DoctorReport, RegisterOptions, Manifest, ManifestRead, };
 export type { SdkModel, ModelKit, ModelTarget, ModelFeature, ModelEntity, ModelDep, ModelHook, } from './types';
 type Component = (props: any, children?: any) => void;
 export declare const cmp: typeof JostracaModule.cmp;

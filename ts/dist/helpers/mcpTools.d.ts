@@ -1,8 +1,8 @@
-import type { SdkModel } from '../types';
+import type { ModelEntity, SdkModel } from '../types';
 type McpTool = {
     op: string;
     name: string;
-    entities: any[];
+    entities: ModelEntity[];
 };
 declare const MCP_READ_OPS: string[];
 declare const MCP_WRITE_OPS: string[];

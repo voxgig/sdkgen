@@ -4320,6 +4320,12 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  const readmeExample = (readme: string, label: string): any => {
+    const line = readme.split('\n')[readme.split('\n').findIndex((l) => l.includes(label)) + 1]
+    return JSON.parse(line)
+  }
+
+
   // `moon` lists under `/planet/{planet_id}`, and planet's update requires only
   // its id.
   test('go-mcp: a list example fills its route, and an update changes a field', async () => {
@@ -4367,8 +4373,21 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       'the root README does not say the MCP server has no tools')
     ok(!top.includes("exposes this SDK's  operations"), 'the root README names no operations')
     ok(!top.includes('Build and register it'), 'the root README registers a server with no tools')
-    ok(findFile(empty, 'go-mcp/README.md')!.includes('no agent tools'),
-      'go-mcp: the README does not say it has no tools')
+    const emptyMcp = findFile(empty, 'go-mcp/README.md')!
+    ok(emptyMcp.includes('no agent tools'), 'go-mcp: the README does not say it has no tools')
+    for (const text of ['now appear in new', '```jsonc\n\n```', '| Tool | Args |', '| Tool | Entities |']) {
+      ok(!emptyMcp.includes(text), 'go-mcp: the README of a server with no tools shows ' + text)
+    }
+  })
+
+
+  // A field name may hold any character JSON escapes.
+  test('go-mcp: a JSON example escapes its field names', async () => {
+    const out = await generate(['go', 'go-mcp'], undefined, ROUTING_MODEL +
+      "main: kit: target: 'go-mcp': tool: write: true\n" +
+      `main: kit: entity: planet: fields: { 'say"hi': { h: 'Say Hi', n: 'say"hi', r: true, t: "\`$STRING\`" } }\n`)
+    const create = readmeExample(findFile(out, 'go-mcp/README.md')!, '_create: a new record')
+    ok('say"hi' in create.data, 'go-mcp: the create example lost the field: ' + JSON.stringify(create))
   })
 
 

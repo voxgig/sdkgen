@@ -188,6 +188,47 @@ ${toolExample(tool)}
   const entityRows = tools.map((tool) =>
     `| \`${tool.name}\` | ${entityNames(tool).join(', ')} |`).join('\n')
 
+  // A server with no tool has nothing to call, list or look up.
+  const callText = null == first ? '' : `Tool-call arguments (what an agent sends):
+
+\`\`\`jsonc
+${exampleCalls}
+\`\`\`
+
+`
+
+  const restart = null == first ?
+    `4. **Restart Claude Code.** The server registers no tools for this SDK, so
+   none appear.` :
+    `4. **Restart Claude Code.** The ${toolNames} ${toolNoun} now appear in new
+   sessions. Ask the agent to *"${first.op} ${entityNames(first)[0]} using ${slugLower}"*
+   and it calls \`${first.name}\` with \`${toolExample(first).replace(/ /g, '')}\`.`
+
+  const toolRef = null == first ? `The server registers no tools for this SDK.
+
+` : `### Tools
+
+| Tool | Args | Returns | MCP hints |
+|------|------|---------|-----------|
+${toolRows}
+
+On error, a tool returns an MCP error result (\`isError: true\`) whose text is the
+failure message (e.g. unknown entity, or an API error).
+
+### Entities
+
+Each tool takes as its \`entity\` argument one of the entities that has its
+operation, of the ${entityCount} the SDK has:
+
+| Tool | Entities |
+|------|----------|
+${entityRows}
+
+JSON schemas are emitted by the SDK from each tool's argument struct's
+\`json\` / \`jsonschema\` tags — no schema is hand-written.
+
+`
+
   const smoke = null == first ? '' : `
 ### Smoke test via HTTP (raw JSON-RPC)
 
@@ -239,13 +280,7 @@ claude mcp add --scope user ${slugLower} \\
 ./${bin} -transport http -addr :8080
 \`\`\`
 
-Tool-call arguments (what an agent sends):
-
-\`\`\`jsonc
-${exampleCalls}
-\`\`\`
-
-> The rest of this guide follows the [Diátaxis](https://diataxis.fr) framework:
+${callText}> The rest of this guide follows the [Diátaxis](https://diataxis.fr) framework:
 > a hands-on **Tutorial**, task-focused **How-to guides**, a factual
 > **Reference**, and background **Explanation**.
 
@@ -270,9 +305,7 @@ ${exampleCalls}
      -- "$PWD"/dist/*/${bin} -transport stdio
    \`\`\`
 
-4. **Restart Claude Code.** The ${toolNames} ${toolNoun} now appear in new
-   sessions.${null == first ? '' : ` Ask the agent to *"${first.op} ${entityNames(first)[0]} using ${slugLower}"*
-   and it calls \`${first.name}\` with \`${toolExample(first).replace(/ /g, '')}\`.`}
+${restart}
 
 ## How-to guides
 
@@ -315,28 +348,7 @@ make build-all   # linux/darwin/windows x amd64/arm64, under dist/<os>-<arch>/
 
 ## Reference
 
-### Tools
-
-| Tool | Args | Returns | MCP hints |
-|------|------|---------|-----------|
-${toolRows}
-
-On error, a tool returns an MCP error result (\`isError: true\`) whose text is the
-failure message (e.g. unknown entity, or an API error).
-
-### Entities
-
-Each tool takes as its \`entity\` argument one of the entities that has its
-operation, of the ${entityCount} the SDK has:
-
-| Tool | Entities |
-|------|----------|
-${entityRows}
-
-JSON schemas are emitted by the SDK from each tool's argument struct's
-\`json\` / \`jsonschema\` tags — no schema is hand-written.
-
-### Transports & flags
+${toolRef}### Transports & flags
 
 | Flag | Default | Purpose |
 |------|---------|---------|

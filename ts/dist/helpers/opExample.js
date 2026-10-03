@@ -55,7 +55,7 @@ function litPair(lang, name, value) {
         case 'php': return `"${name}" => ${value}`;
         case 'rb': return `"${name}" => ${value}`;
         case 'go': return `"${name}": ${value}`;
-        case 'json': return `"${name}": ${value}`;
+        case 'json': return `${JSON.stringify(name)}: ${value}`;
         case 'lua': return LUA_IDENT.test(name) ?
             `${name} = ${value}` : `["${name}"] = ${value}`;
         default: return JS_IDENT.test(name) ?
