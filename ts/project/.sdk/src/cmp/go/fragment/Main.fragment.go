@@ -146,6 +146,14 @@ func (sdk *ProjectNameSDK) Prepare(fetchargs map[string]any) (map[string]any, er
 	if method == "" {
 		method = "GET"
 	}
+	method = strings.ToUpper(method)
+
+	allowMethodVal := vs.GetPath(options, []any{"allow", "method"})
+	if !Allowed(allowMethodVal, method) {
+		allowMethod, _ := allowMethodVal.(string)
+		return nil, ctx.MakeError("spec_method_allow",
+			"Method \""+method+"\" not allowed by SDK option allow.method value: \""+allowMethod+"\"")
+	}
 
 	params := ToMapAny(vs.GetProp(fetchargs, "params"))
 	if params == nil {
@@ -205,8 +213,7 @@ func (sdk *ProjectNameSDK) Direct(fetchargs map[string]any) (map[string]any, err
 
 // Is this raw-access op permitted by the SDK's allow.op option?
 func (sdk *ProjectNameSDK) opAllowed(op string) bool {
-	allowOp, _ := vs.GetPath(sdk.options, []any{"allow", "op"}).(string)
-	return strings.Contains(allowOp, op)
+	return Allowed(vs.GetPath(sdk.options, []any{"allow", "op"}), op)
 }
 
 func (sdk *ProjectNameSDK) opDenied(op string) map[string]any {

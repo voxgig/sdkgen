@@ -82,11 +82,11 @@ local function make_point_util(ctx)
   local op = ctx.op
   local options = ctx.options
 
-  local allow_op = vs.getpath(options, "allow.op") or ""
-  if type(allow_op) == "string" and not string.find(allow_op, op.name, 1, true) then
+  local allow_op = vs.getpath(options, "allow.op")
+  if not helpers.allowed(allow_op, op.name) then
     return nil, ctx:make_error("point_op_allow",
       'Operation "' .. op.name ..
-      '" not allowed by SDK option allow.op value: "' .. allow_op .. '"')
+      '" not allowed by SDK option allow.op value: "' .. tostring(allow_op or "") .. '"')
   end
 
   if #op.points == 0 then

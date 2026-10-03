@@ -114,4 +114,20 @@ function helpers.cookie_keep(header, names)
 end
 
 
+
+-- Whether a comma-separated allow option names the item: whole names, any case.
+function helpers.allowed(names, item)
+  if type(item) ~= "string" or item == "" or type(names) ~= "string" then
+    return false
+  end
+  local want = string.upper(item)
+  for name in string.gmatch(names, "[^,]+") do
+    if string.upper((name:gsub("^%s+", ""):gsub("%s+$", ""))) == want then
+      return true
+    end
+  end
+  return false
+end
+
+
 return helpers

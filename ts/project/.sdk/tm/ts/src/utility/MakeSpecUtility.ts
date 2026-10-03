@@ -1,6 +1,8 @@
 
 import { Context, Spec } from '../types'
 
+import { allowed } from './PrepareMethodUtility'
+
 
 function makeSpec(ctx: Context): Spec | Error {
   // A PreSpec hook's rejection, which the pipeline raises; ctx.spec stays a spec.
@@ -34,7 +36,7 @@ function makeSpec(ctx: Context): Spec | Error {
 
   ctx.spec.method = prepareMethod(ctx)
 
-  if (!options.allow.method.includes(ctx.spec.method)) {
+  if (!allowed(options.allow.method, ctx.spec.method)) {
     return ctx.error('spec_method_allow', 'Method "' + ctx.spec.method +
       '" not allowed by SDK option allow.method value: "' + options.allow.method + '"')
   }

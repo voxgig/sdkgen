@@ -12,6 +12,7 @@ BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 require(Cwd::abs_path("$__dir/../core/spec.pm"));
+require(Cwd::abs_path("$__dir/prepare_method.pm"));
 
 package ProjectNameUtilities;
 
@@ -53,10 +54,12 @@ $REGISTRY{make_spec} = sub {
   $ctx->{spec}{method} = $utility->{prepare_method}->($ctx);
 
   my $allow_method = ProjectNameHelpers::gpath($options, 'allow.method');
+  my $allow_ok = ProjectNameUtilities::allowed($allow_method, $ctx->{spec}{method});
   $allow_method = '' unless defined $allow_method && !ref $allow_method;
-  unless (index($allow_method, $ctx->{spec}{method}) >= 0) {
+  unless ($allow_ok) {
+    my $shown = $ctx->{spec}{method} // '';
     return (undef, $ctx->make_error('spec_method_allow',
-      "Method \"$ctx->{spec}{method}\" not allowed by SDK option allow.method value: \"$allow_method\""));
+      "Method \"$shown\" not allowed by SDK option allow.method value: \"$allow_method\""));
   }
 
   $ctx->{spec}{params} = $utility->{prepare_params}->($ctx);

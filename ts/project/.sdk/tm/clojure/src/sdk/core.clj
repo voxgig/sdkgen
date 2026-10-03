@@ -171,6 +171,12 @@
 ;; ctx.make_error(code, msg)
 (defn ctx-error [ctx code msg] (make-error-obj code msg ctx))
 
+;; Whether a comma-separated allow option names the item: whole names, any case.
+(defn allowed? [names item]
+  (and (string? names) (string? item) (not= "" item)
+       (boolean (some #(.equalsIgnoreCase ^String (str/trim %) ^String item)
+                      (str/split names #"," -1)))))
+
 ;; ---------------------------------------------------------------------------
 ;; Client accessors. A client is a plain map holding atoms (so it is shared by
 ;; reference; the atoms carry the mutable slots).
@@ -1134,11 +1140,12 @@
         (do (oset! ctx :point preset) [(oget ctx :point) nil]))
       (let [op (oget ctx :op)
             options (oget ctx :options)
-            allow-op (or (vs/getpath options "allow.op") "")]
+            allow-op (vs/getpath options "allow.op")]
         (cond
-          (not (str/includes? allow-op (op-name op)))
+          (not (allowed? allow-op (op-name op)))
           [nil (ctx-error ctx "point_op_allow"
-                          (str "Operation \"" (op-name op) "\" not allowed by SDK option allow.op value: \"" allow-op "\""))]
+                          (str "Operation \"" (op-name op) "\" not allowed by SDK option allow.op value: \""
+                               (if (string? allow-op) allow-op "") "\""))]
           (zero? (vs/size (op-points op)))
           [nil (ctx-error ctx "point_no_points"
                           (str "Operation \"" (op-name op) "\" has no endpoint definitions."))]
@@ -1253,10 +1260,11 @@
           spec (make-spec (vs/jm "base" base "prefix" prefix "parts" parts "suffix" suffix "step" "start"))]
       (oset! ctx :spec spec)
       (oset! spec :method (ucall ctx :prepare-method))
-      (let [allow-method (or (vs/getpath options "allow.method") "")]
-        (if (not (str/includes? allow-method (oget spec :method)))
+      (let [allow-method (vs/getpath options "allow.method")]
+        (if (not (allowed? allow-method (oget spec :method)))
           [nil (ctx-error ctx "spec_method_allow"
-                          (str "Method \"" (oget spec :method) "\" not allowed by SDK option allow.method value: \"" allow-method "\""))]
+                          (str "Method \"" (oget spec :method) "\" not allowed by SDK option allow.method value: \""
+                               (if (string? allow-method) allow-method "") "\""))]
           (do
             (oset! spec :params (ucall ctx :prepare-params))
             (oset! spec :query (ucall ctx :prepare-query))

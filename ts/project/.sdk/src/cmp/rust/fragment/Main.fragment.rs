@@ -6,7 +6,7 @@ use std::rc::Rc;
 use crate::core::config::{make_feature, shared_config};
 use crate::core::context::{Context, CtxSpec};
 use crate::core::error::ProjectNameError;
-use crate::core::helpers::{call_json, get_bool, get_str, getp, getpath, jo, setp, to_int, to_map};
+use crate::core::helpers::{allowed, call_json, get_bool, get_str, getp, getpath, jo, setp, to_int, to_map};
 use crate::core::spec::Spec;
 use crate::core::types::FeatureRef;
 use crate::core::utility_type::Utility;
@@ -134,7 +134,23 @@ impl ProjectNameSDK {
         let path = get_str(&fetchargs, "path").unwrap_or_default();
         let method = get_str(&fetchargs, "method")
             .filter(|m| !m.is_empty())
-            .unwrap_or_else(|| "GET".to_string());
+            .unwrap_or_else(|| "GET".to_string())
+            .to_uppercase();
+
+        let allow_method = getpath(&["allow", "method"], &options);
+        if !allowed(&allow_method, &method) {
+            return Err(ctx.make_error(
+                "spec_method_allow",
+                &format!(
+                    "Method \"{}\" not allowed by SDK option allow.method value: \"{}\"",
+                    method,
+                    match &allow_method {
+                        Value::Str(s) => s.as_str(),
+                        _ => "",
+                    }
+                ),
+            ));
+        }
 
         let params = match to_map(&getp(&fetchargs, "params")) {
             Value::Map(m) => Value::Map(m),
@@ -188,10 +204,7 @@ impl ProjectNameSDK {
 
     // Is this raw-access op permitted by the SDK's allow.op option?
     fn op_allowed(&self, op: &str) -> bool {
-        match getpath(&["allow", "op"], &self.options_map()) {
-            Value::Str(s) => s.contains(op),
-            _ => false,
-        }
+        allowed(&getpath(&["allow", "op"], &self.options_map()), op)
     }
 
     fn op_denied(&self, op: &str) -> Value {

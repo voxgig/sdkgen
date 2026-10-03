@@ -2,6 +2,7 @@
 
 #include "api.h"
 
+#include <ctype.h>
 #include <stdio.h>   // snprintf
 #include <stdlib.h>
 #include <string.h>
@@ -99,8 +100,24 @@ voxgig_value* sdk_prepare(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError*
 
   const char* path = get_str(fetchargs, "path");
   path = path ? path : "";
-  const char* method = get_str(fetchargs, "method");
-  if (!method || method[0] == '\0') method = "GET";
+  const char* given = get_str(fetchargs, "method");
+  if (!given || given[0] == '\0') given = "GET";
+  size_t mlen = strlen(given);
+  char* upper = (char*)malloc(mlen + 1);
+  for (size_t i = 0; i <= mlen; i++) upper[i] = (char)toupper((unsigned char)given[i]);
+  voxgig_value* method_v = v_str(upper);
+  free(upper);
+  const char* method = voxgig_as_string(method_v);
+
+  voxgig_value* allow_method_v = getpath2(options, "allow", "method");
+  if (!allow_list_has(allow_method_v, method)) {
+    char buf[512];
+    snprintf(buf, sizeof(buf),
+      "Method \"%s\" not allowed by SDK option allow.method value: \"%s\"", method,
+      voxgig_is_string(allow_method_v) ? voxgig_as_string(allow_method_v) : "");
+    *err = context_make_error(ctx, "spec_method_allow", buf);
+    return NULL;
+  }
 
   voxgig_value* params = to_map(getp(fetchargs, "params"));
   if (!voxgig_is_map(params)) params = voxgig_new_map();
@@ -144,9 +161,7 @@ static voxgig_value* err_map(const char* msg) {
 
 // Is this raw-access op permitted by the SDK's allow.op option?
 static bool sdk_op_allowed(ProjectNameSDK* sdk, const char* op) {
-  voxgig_value* allow_op = getpath2(sdk->options, "allow", "op");
-  if (!voxgig_is_string(allow_op)) return false;
-  return NULL != strstr(voxgig_as_string(allow_op), op);
+  return allow_list_has(getpath2(sdk->options, "allow", "op"), op);
 }
 
 static voxgig_value* sdk_op_denied(ProjectNameSDK* sdk, const char* op) {

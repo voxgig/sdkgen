@@ -109,8 +109,15 @@ defmodule ProjectName do
 
     path0 = H.or_(S.getprop(fetchargs, "path"), "")
     path = if is_binary(path0), do: path0, else: ""
-    method0 = H.or_(S.getprop(fetchargs, "method"), "GET")
-    method = if is_binary(method0), do: method0, else: "GET"
+    method = String.upcase(H.str_or(S.getprop(fetchargs, "method"), "GET"))
+    allow_method = S.getpath(options, "allow.method")
+
+    if not Utility.allowed?(allow_method, method) do
+      raise Context.make_error(ctx, "spec_method_allow",
+              "Method \"" <> method <> "\" not allowed by SDK option allow.method value: \"" <>
+                H.str_or(allow_method, "") <> "\"")
+    end
+
     params = H.or_(H.to_map(S.getprop(fetchargs, "params")), S.jm([]))
     query = H.or_(H.to_map(S.getprop(fetchargs, "query")), S.jm([]))
 
@@ -166,8 +173,7 @@ defmodule ProjectName do
 
   # Is this raw-access op permitted by the SDK's allow.op option?
   defp op_allowed?(client, op) do
-    allow = S.getpath(S.getprop(client, "options"), "allow.op")
-    is_binary(allow) and String.contains?(allow, op)
+    Utility.allowed?(S.getpath(S.getprop(client, "options"), "allow.op"), op)
   end
 
   defp op_denied(client, op) do

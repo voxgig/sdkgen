@@ -192,7 +192,15 @@ function ProjectNameSDK:prepare(fetchargs)
   if type(path) ~= "string" then path = "" end
 
   local method = vs.getprop(fetchargs, "method") or "GET"
-  if type(method) ~= "string" then method = "GET" end
+  if type(method) ~= "string" or method == "" then method = "GET" end
+  method = string.upper(method)
+
+  local allow_method = vs.getpath(options, "allow.method")
+  if not helpers.allowed(allow_method, method) then
+    return nil, ctx:make_error("spec_method_allow",
+      'Method "' .. method ..
+      '" not allowed by SDK option allow.method value: "' .. tostring(allow_method or "") .. '"')
+  end
 
   local params = helpers.to_map(vs.getprop(fetchargs, "params")) or {}
   local query = helpers.to_map(vs.getprop(fetchargs, "query")) or {}
@@ -250,8 +258,7 @@ end
 
 -- Is this raw-access op permitted by the SDK's allow.op option?
 function ProjectNameSDK:_op_allowed(op)
-  local allow = vs.getpath(self.options, "allow.op")
-  return type(allow) == "string" and allow:find(op, 1, true) ~= nil
+  return helpers.allowed(vs.getpath(self.options, "allow.op"), op)
 end
 
 

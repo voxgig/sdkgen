@@ -132,6 +132,20 @@ pub fn setp(val: Value, key: []const u8, newval: Value) void {
     }
 }
 
+// Whether a comma-separated allow option names the item: whole names, any case.
+pub fn allow_list_has(names: Value, item: []const u8) bool {
+    const list: []const u8 = switch (names) {
+        .string => |text| text,
+        else => return false,
+    };
+    if (item.len == 0) return false;
+    var it = std.mem.splitScalar(u8, list, ',');
+    while (it.next()) |name| {
+        if (std.ascii.eqlIgnoreCase(std.mem.trim(u8, name, " \t\r\n"), item)) return true;
+    }
+    return false;
+}
+
 // Path read on a Value store.
 pub fn getpath(path: []const []const u8, store: Value) Value {
     const pl = Value.makeList(A()) catch unreachable;

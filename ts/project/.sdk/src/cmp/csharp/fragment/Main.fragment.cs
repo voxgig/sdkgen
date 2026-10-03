@@ -133,6 +133,15 @@ public class ProjectNameSDK
         {
             method = "GET";
         }
+        method = method.ToUpperInvariant();
+
+        var allowMethod = global::Voxgig.Struct.StructUtils.GetPath(options, global::Voxgig.Struct.StructUtils.Jt("allow", "method"));
+        if (!global::ProjectNameSdk.Helpers.Allowed(allowMethod, method))
+        {
+            throw ctx.MakeError("spec_method_allow",
+                "Method \"" + method + "\" not allowed by SDK option allow.method value: \"" +
+                (allowMethod as string ?? "") + "\"");
+        }
 
         var pathParams = global::ProjectNameSdk.Helpers.ToMapAny(global::Voxgig.Struct.StructUtils.GetProp(fetchargs, "params"))
             ?? new Dictionary<string, object?>();
@@ -189,8 +198,8 @@ public class ProjectNameSDK
     // Is this raw-access op permitted by the SDK's allow.op option?
     private bool OpAllowed(string op)
     {
-        return global::Voxgig.Struct.StructUtils.GetPath(_options, global::Voxgig.Struct.StructUtils.Jt("allow", "op"))
-            is string allow && allow.Contains(op);
+        return global::ProjectNameSdk.Helpers.Allowed(
+            global::Voxgig.Struct.StructUtils.GetPath(_options, global::Voxgig.Struct.StructUtils.Jt("allow", "op")), op);
     }
 
     private Dictionary<string, object?> OpDenied(string op)

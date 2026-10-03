@@ -112,7 +112,7 @@ voxgig_value* make_point_util(Context* ctx, PNError** err) {
 
   voxgig_value* allow_op_v = getpath2(options, "allow", "op");
   const char* allow_op = voxgig_is_string(allow_op_v) ? voxgig_as_string(allow_op_v) : "";
-  if (!strstr(allow_op, op->name)) {
+  if (!allow_list_has(allow_op_v, op->name)) {
     char buf[512];
     snprintf(buf, sizeof(buf),
              "Operation \"%s\" not allowed by SDK option allow.op value: \"%s\"",

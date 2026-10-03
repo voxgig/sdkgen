@@ -106,6 +106,14 @@ abstract class SdkClient(options0: JMap[String, Object]) {
     val path = Struct.getprop(fetchargs, "path") match { case s: String => s; case _ => "" }
     var method = Struct.getprop(fetchargs, "method") match { case s: String => s; case _ => "" }
     if ("" == method) method = "GET"
+    method = method.toUpperCase(java.util.Locale.ROOT)
+
+    val allowMethod = Struct.getpath(opts, java.util.List.of("allow", "method"))
+    if (!Helpers.allowed(allowMethod, method)) {
+      throw ctx.makeError("spec_method_allow",
+        "Method \"" + method + "\" not allowed by SDK option allow.method value: \"" +
+          (allowMethod match { case s: String => s; case _ => "" }) + "\"")
+    }
 
     var params = Helpers.toMapAny(Struct.getprop(fetchargs, "params"))
     if (params == null) params = new LinkedHashMap[String, Object]()
@@ -149,10 +157,7 @@ abstract class SdkClient(options0: JMap[String, Object]) {
 
   // Is this raw-access op permitted by the SDK's allow.op option?
   private def opAllowed(op: String): Boolean =
-    Struct.getpath(this.options, java.util.List.of("allow", "op")) match {
-      case s: String => s.contains(op)
-      case _ => false
-    }
+    Helpers.allowed(Struct.getpath(this.options, java.util.List.of("allow", "op")), op)
 
   private def opDenied(op: String): JMap[String, Object] = {
     val allow = Struct.getpath(this.options, java.util.List.of("allow", "op")) match {
