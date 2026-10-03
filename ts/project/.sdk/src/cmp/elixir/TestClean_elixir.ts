@@ -7,6 +7,8 @@ import {
   isHttpBasicAuth,
   resolveAuthIn,
   resolveAuthName,
+  elixirAccessor,
+  entityCollection,
 } from '@voxgig/sdkgen'
 
 
@@ -54,14 +56,14 @@ function pointParams(opdef: any): string[] {
 
 // The operations to try, list and load first: a required path parameter is
 // what usually stops a candidate, and the read ops need none.
-function candidates(Name: string, entity: any[]): string {
+function candidates(Name: string, entity: any[], model: any): string {
   const rows: { rank: number, text: string }[] = []
   each(entity, (e: any) => {
     for (const op of Object.keys(e.op || {})) {
       if (!OPS.includes(op)) continue
       rows.push({
         rank: OP_ORDER[op] ?? 2,
-        text: `      {${elixirString(e.name + '.' + op)}, fn sdk -> ${Name}.${e.name}(sdk) end,
+        text: `      {${elixirString(e.name + '.' + op)}, fn sdk -> ${Name}.${elixirAccessor(e, entityCollection(model))}(sdk) end,
        fn ent, match, ctrl -> ${Name}.Entity.${e.Name}.${op}(ent, args(match), ctrl) end,
        [${pointParams(e.op[op]).map((p) => elixirString(p)).join(', ')}]}`,
       })
@@ -294,7 +296,7 @@ defmodule ${Name}.CleanTest do
   # The operations this SDK generated, read ops first.
   defp candidates do
     [
-${candidates(Name, entity)}
+${candidates(Name, entity, model)}
     ]
   end
 

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityDataIdField, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -46,7 +46,8 @@ sdk = ${ctor}
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
     const article = /^[aeiou]/i.test(eName) ? 'an' : 'a'
-    const eVar = exampleEntity.name
+    const eVar = exampleVarName(exampleEntity.name, 'elixir')
+    const eCall = elixirAccessor(exampleEntity, entityCollection(model))
     const opnames = entityOps(exampleEntity)
     const idF = entityIdField(exampleEntity)
     const dataIdF = entityDataIdField(exampleEntity)
@@ -58,7 +59,7 @@ sdk = ${ctor}
 
 \`\`\`elixir
 try do
-  ${eVar} = ${Name}.${eVar}(sdk)
+  ${eVar} = ${Name}.${eCall}(sdk)
   records = ${Name}.Entity.${eName}.list(${eVar})
   IO.inspect(records)
 rescue
@@ -72,7 +73,8 @@ end
     if (nestedEntity) {
       const neName = nom(nestedEntity, 'Name')
       const neArticle = /^[aeiou]/i.test(neName) ? 'an' : 'a'
-      const neVar = nestedEntity.name
+      const neVar = exampleVarName(nestedEntity.name, 'elixir')
+      const neCall = elixirAccessor(nestedEntity, entityCollection(model))
 
       const neIdF = entityIdField(nestedEntity)
       const neRequired = opRequestShape(nestedEntity, 'load').items
@@ -93,7 +95,7 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
 \`\`\`elixir
 try do
-  ${neVar} = ${Name}.${neVar}(sdk)
+  ${neVar} = ${Name}.${neCall}(sdk)
   record = ${Name}.Entity.${neName}.load(${neVar}, H.deep(%{${neMatch.join(', ')}}))
   IO.inspect(record)
 rescue
@@ -120,7 +122,7 @@ end
 
 \`\`\`elixir
 try do
-  ${eVar} = ${Name}.${eVar}(sdk)
+  ${eVar} = ${Name}.${eCall}(sdk)
   record = ${Name}.Entity.${eName}.load(${eVar}, ${loadArg})
   IO.inspect(record)
 rescue
@@ -157,7 +159,7 @@ end
       Content(`### 4. Create, update, and remove
 
 \`\`\`elixir
-${eVar} = ${Name}.${eVar}(sdk)
+${eVar} = ${Name}.${eCall}(sdk)
 
 `)
       if (opnames.includes('create')) {

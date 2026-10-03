@@ -59,11 +59,19 @@ the result.
      suffix where the language already owns its name: `Type` in ts
      (`Record`, `Context`), rb, php and swift, and `_type` in elixir, where
      a built-in type such as `mfa`, `node` or `port` cannot be redefined
-     (`@type mfa_type`). One elixir module declares every entity's type,
-     so when another entity, active or not, is already named `mfa_type`,
-     `mfa` takes the lowest free number instead (`mfa_type2`). The op
-     types keep the plain stem, since their suffix already sets them
-     apart.
+     (`@type mfa_type`). The suffixed name is assigned over the whole
+     entity collection, active or not, so it never lands on a name another
+     entity derives: when `map_type` already holds `MapType`, `map` takes
+     the lowest free number (`MapType2`), as `mfa` takes `mfa_type2` beside
+     an entity named `mfa_type`. PHP compares class names ignoring case, so
+     it folds case in that comparison, and in the one that keeps an
+     entity's class apart from another entity's data type: `FooEntity`
+     beside `Fooentity` becomes `FooEntityClient`. The op types keep the
+     plain stem, since their suffix already sets them apart.
+   - **An elixir accessor named after a reserved word** — `def end(client)`
+     does not parse, so the main module's function for such an entity takes
+     `_entity` (`end_entity`), numbered the same way when another entity
+     already has that name.
 
 4. **`EntityTypes_<lang>.ts`** (scaffold, `ts/project/.sdk/src/cmp/<lang>/`)
    renders the typed model file per target. Emitters fetch the entity

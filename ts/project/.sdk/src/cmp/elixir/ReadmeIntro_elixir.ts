@@ -1,5 +1,5 @@
 
-import { cmp, Content } from '@voxgig/sdkgen'
+import { cmp, Content, elixirAccessor, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -30,7 +30,7 @@ following idiomatic, functional Elixir conventions.
   const exampleEntity = Object.values(entity || {})
     .find((e: any) => e.active !== false) as any
   const example = exampleEntity
-    ? `for example \`${model.const.Name}.${exampleEntity.name}(sdk)\` — each`
+    ? `for example \`${model.const.Name}.${elixirAccessor(exampleEntity, entityCollection(model))}(sdk)\` — each`
     : 'each'
 
   // Model-driven op list — only the operations the active entities actually

@@ -388,18 +388,23 @@ function entityPrimaryOp(ent) {
     return ops[0] || null;
 }
 const _classNameCache = new WeakMap();
-function entityClassNames(entityColl) {
-    const cached = _classNameCache.get(entityColl);
+const _classNameCacheFold = new WeakMap();
+// `fold` compares names as PHP does, ignoring case: the data type `Fooentity`
+// and the class `FooEntity` are one name to it.
+function entityClassNames(entityColl, fold = false) {
+    const cache = fold ? _classNameCacheFold : _classNameCache;
+    const cached = cache.get(entityColl);
     if (null != cached) {
         return cached;
     }
+    const key = (name) => fold ? name.toLowerCase() : name;
     const ents = deriveEntityNames(entityColl);
-    const taken = {};
+    const taken = new Set();
     ents.forEach((e) => {
-        taken[e.Name] = true;
+        taken.add(key(e.Name));
         for (const op of ['load', 'list', 'create', 'update', 'remove']) {
             if (e.op && e.op[op]) {
-                taken[opTypeName(e.Name, op)] = true;
+                taken.add(key(opTypeName(e.Name, op)));
             }
         }
     });
@@ -407,38 +412,41 @@ function entityClassNames(entityColl) {
     const out = {};
     ents.forEach((e) => {
         let name = e.Name + 'Entity';
-        if (taken[name]) {
+        if (taken.has(key(name))) {
             const base = name + 'Client';
             name = base;
             let n = 1;
-            while (taken[name]) {
+            while (taken.has(key(name))) {
                 n++;
                 name = base + n;
             }
         }
-        taken[name] = true;
+        taken.add(key(name));
         out[e.name] = name;
     });
-    _classNameCache.set(entityColl, out);
+    cache.set(entityColl, out);
     return out;
 }
 // The collision-free class name for one entity (see entityClassNames).
 // `entityColl` is main.<KIT>.entity (the collection the entity belongs to).
-function entityClassName(ent, entityColl) {
+function entityClassName(ent, entityColl, fold = false) {
     if (null == ent) {
         return '';
     }
-    const map = entityClassNames(entityColl);
+    const map = entityClassNames(entityColl, fold);
     return map[ent.name] || (ent.Name + 'Entity');
 }
 const _typeCollisionCache = new WeakMap();
-function entityTypeCollisions(entityColl) {
-    const cached = _typeCollisionCache.get(entityColl);
+const _typeCollisionCacheFold = new WeakMap();
+function entityTypeCollisions(entityColl, fold = false) {
+    const cache = fold ? _typeCollisionCacheFold : _typeCollisionCache;
+    const cached = cache.get(entityColl);
     if (null != cached) {
         return cached;
     }
+    const key = (name) => fold ? name.toLowerCase() : name;
     const counts = {};
-    const bump = (n) => { counts[n] = (counts[n] || 0) + 1; };
+    const bump = (n) => { counts[key(n)] = (counts[key(n)] || 0) + 1; };
     deriveEntityNames(entityColl)
         .forEach((e) => {
         bump(e.Name);
@@ -449,13 +457,13 @@ function entityTypeCollisions(entityColl) {
         }
     });
     const out = Object.keys(counts).filter((n) => 1 < counts[n]).sort();
-    _typeCollisionCache.set(entityColl, out);
+    cache.set(entityColl, out);
     return out;
 }
 // Emitter convenience: warn (once per collection per target run) when the
 // generated typed model would contain duplicate top-level type names.
 function warnEntityTypeCollisions(entityColl, log, lang) {
-    const dups = entityTypeCollisions(entityColl);
+    const dups = entityTypeCollisions(entityColl, 'php' === lang);
     if (0 < dups.length && log && log.warn) {
         log.warn({
             point: 'entity-types-name-collision', lang, names: dups,

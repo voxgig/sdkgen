@@ -10,6 +10,8 @@ import {
   Content,
   File,
   cmp,
+  elixirAccessor,
+  entityCollection,
   invalidRequest,
   opReachable,
 } from '@voxgig/sdkgen'
@@ -26,6 +28,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const Name = model.const.Name
   const EName = entity.Name
   const ename = entity.name
+  const accessor = elixirAccessor(entity, entityCollection(model))
 
   // Each test calls with only what it shows, so a bare call must reach a
   // route: an id for load, nothing for list, a name for create.
@@ -64,7 +67,7 @@ defmodule ${Name}.${EName}EntityTest do
 
   test "should create instance" do
     sdk = ${Name}.test()
-    ent = ${Name}.${ename}(sdk)
+    ent = ${Name}.${accessor}(sdk)
     assert ent != nil
   end
 `)
@@ -73,7 +76,7 @@ defmodule ${Name}.${EName}EntityTest do
       Content(`
   test "should list records" do
     sdk = mk_sdk()
-    ent = ${Name}.${ename}(sdk)
+    ent = ${Name}.${accessor}(sdk)
     # The op resolves to one ENTITY per record; the record is reached with
     # data_get. See AGENTS.md "Entity operations return ENTITIES".
     result = ${Name}.Entity.${EName}.list(ent, S.jm([]))
@@ -94,7 +97,7 @@ defmodule ${Name}.${EName}EntityTest do
 
     if id != nil do
       sdk = mk_sdk()
-      ent = ${Name}.${ename}(sdk)
+      ent = ${Name}.${accessor}(sdk)
       loaded = ${Name}.Entity.${EName}.load(ent, S.jm(["id", id]))
       rec = ${Name}.EntityBase.data_get(loaded)
       assert S.ismap(rec)
@@ -108,7 +111,7 @@ defmodule ${Name}.${EName}EntityTest do
       Content(`
   test "should create then read back" do
     sdk = ${Name}.test(S.jm(["entity", S.jm(["${ename}", S.jm([])])]))
-    ent = ${Name}.${ename}(sdk)
+    ent = ${Name}.${accessor}(sdk)
     created = ${Name}.Entity.${EName}.create(ent, S.jm(["name", "test-create"]))
     made = ${Name}.EntityBase.data_get(created)
     assert S.ismap(made)
@@ -124,20 +127,20 @@ defmodule ${Name}.${EName}EntityTest do
 
     err =
       assert_raise ${Name}.Error, fn ->
-        Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(${Name}.test(offline)), "list"))
+        Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(${Name}.test(offline)), "list"))
       end
 
     assert String.contains?(Exception.message(err), "offline")
 
     quiet = S.jm(["ctrl", S.jm(["throw", false])])
-    Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(${Name}.test(offline)), "list", nil, quiet))
+    Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(${Name}.test(offline)), "list", nil, quiet))
 
     if ${Name}.FeatureHarness.has_feature("rbac") do
       denied = ${Name}.test(nil, S.jm(["feature", S.jm(["rbac", S.jm(["active", true, "deny", true])])]))
 
       err =
         assert_raise ${Name}.Error, fn ->
-          Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(denied), "list"))
+          Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(denied), "list"))
         end
 
       assert err.code == "rbac_denied"
@@ -147,7 +150,7 @@ defmodule ${Name}.${EName}EntityTest do
   test "should leave the caller's ctrl" do
     explain = S.jm([])
     ctrl = S.jm(["explain", explain])
-    Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(${Name}.test()), "list", nil, S.jm(["ctrl", ctrl])))
+    Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(${Name}.test()), "list", nil, S.jm(["ctrl", ctrl])))
     assert S.keysof(ctrl) == ["explain"]
     assert S.size(explain) > 0
   end
@@ -170,7 +173,7 @@ defmodule ${Name}.${EName}EntityTest do
 
     err =
       try do
-        Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(client), "list"))
+        Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(client), "list"))
         nil
       rescue
         e -> e
@@ -181,7 +184,7 @@ defmodule ${Name}.${EName}EntityTest do
 
     fired = S.getprop(seen, "n")
     quiet = S.jm(["ctrl", S.jm(["throw", false])])
-    assert Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(client), "list", nil, quiet)) == []
+    assert Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(client), "list", nil, quiet)) == []
     assert S.getprop(seen, "n") > fired
   end
 
@@ -200,7 +203,7 @@ defmodule ${Name}.${EName}EntityTest do
 
     err =
       try do
-        ${Name}.Entity.${EName}.list(${Name}.${ename}(client), S.jm([]))
+        ${Name}.Entity.${EName}.list(${Name}.${accessor}(client), S.jm([]))
         nil
       rescue
         e -> e
@@ -210,7 +213,7 @@ defmodule ${Name}.${EName}EntityTest do
     assert S.getprop(seen, "n") > 0
 
     fired = S.getprop(seen, "n")
-    assert ${Name}.Entity.${EName}.list(${Name}.${ename}(client), S.jm([]), S.jm(["throw", false])) == nil
+    assert ${Name}.Entity.${EName}.list(${Name}.${accessor}(client), S.jm([]), S.jm(["throw", false])) == nil
     assert S.getprop(seen, "n") > fired
   end
 `)
@@ -227,7 +230,7 @@ defmodule ${Name}.${EName}EntityTest do
 
       err =
         assert_raise ${Name}.Error, fn ->
-          ${Name}.Entity.${EName}.${bad.op}(${Name}.${ename}(client), S.jm([${args}]))
+          ${Name}.Entity.${EName}.${bad.op}(${Name}.${accessor}(client), S.jm([${args}]))
         end
 
       assert err.code == "validate_failed"

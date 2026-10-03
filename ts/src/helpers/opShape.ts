@@ -474,21 +474,26 @@ function entityPrimaryOp(ent: any): string | null {
 
 
 const _classNameCache = new WeakMap<object, Record<string, string>>()
+const _classNameCacheFold = new WeakMap<object, Record<string, string>>()
 
-function entityClassNames(entityColl: any): Record<string, string> {
-  const cached = _classNameCache.get(entityColl)
+// `fold` compares names as PHP does, ignoring case: the data type `Fooentity`
+// and the class `FooEntity` are one name to it.
+function entityClassNames(entityColl: any, fold = false): Record<string, string> {
+  const cache = fold ? _classNameCacheFold : _classNameCache
+  const cached = cache.get(entityColl)
   if (null != cached) {
     return cached
   }
 
+  const key = (name: string) => fold ? name.toLowerCase() : name
   const ents = deriveEntityNames(entityColl)
 
-  const taken: Record<string, boolean> = {}
+  const taken = new Set<string>()
   ents.forEach((e: any) => {
-    taken[e.Name] = true
+    taken.add(key(e.Name))
     for (const op of ['load', 'list', 'create', 'update', 'remove']) {
       if (e.op && e.op[op]) {
-        taken[opTypeName(e.Name, op)] = true
+        taken.add(key(opTypeName(e.Name, op)))
       }
     }
   })
@@ -497,45 +502,48 @@ function entityClassNames(entityColl: any): Record<string, string> {
   const out: Record<string, string> = {}
   ents.forEach((e: any) => {
     let name = e.Name + 'Entity'
-    if (taken[name]) {
+    if (taken.has(key(name))) {
       const base = name + 'Client'
       name = base
       let n = 1
-      while (taken[name]) {
+      while (taken.has(key(name))) {
         n++
         name = base + n
       }
     }
-    taken[name] = true
+    taken.add(key(name))
     out[e.name] = name
   })
 
-  _classNameCache.set(entityColl, out)
+  cache.set(entityColl, out)
   return out
 }
 
 
 // The collision-free class name for one entity (see entityClassNames).
 // `entityColl` is main.<KIT>.entity (the collection the entity belongs to).
-function entityClassName(ent: any, entityColl: any): string {
+function entityClassName(ent: any, entityColl: any, fold = false): string {
   if (null == ent) {
     return ''
   }
-  const map = entityClassNames(entityColl)
+  const map = entityClassNames(entityColl, fold)
   return map[ent.name] || (ent.Name + 'Entity')
 }
 
 
 const _typeCollisionCache = new WeakMap<object, string[]>()
+const _typeCollisionCacheFold = new WeakMap<object, string[]>()
 
-function entityTypeCollisions(entityColl: any): string[] {
-  const cached = _typeCollisionCache.get(entityColl)
+function entityTypeCollisions(entityColl: any, fold = false): string[] {
+  const cache = fold ? _typeCollisionCacheFold : _typeCollisionCache
+  const cached = cache.get(entityColl)
   if (null != cached) {
     return cached
   }
 
+  const key = (name: string) => fold ? name.toLowerCase() : name
   const counts: Record<string, number> = {}
-  const bump = (n: string) => { counts[n] = (counts[n] || 0) + 1 }
+  const bump = (n: string) => { counts[key(n)] = (counts[key(n)] || 0) + 1 }
 
   deriveEntityNames(entityColl)
     .forEach((e: any) => {
@@ -548,7 +556,7 @@ function entityTypeCollisions(entityColl: any): string[] {
     })
 
   const out = Object.keys(counts).filter((n) => 1 < counts[n]).sort()
-  _typeCollisionCache.set(entityColl, out)
+  cache.set(entityColl, out)
   return out
 }
 
@@ -556,7 +564,7 @@ function entityTypeCollisions(entityColl: any): string[] {
 // Emitter convenience: warn (once per collection per target run) when the
 // generated typed model would contain duplicate top-level type names.
 function warnEntityTypeCollisions(entityColl: any, log: any, lang: string): string[] {
-  const dups = entityTypeCollisions(entityColl)
+  const dups = entityTypeCollisions(entityColl, 'php' === lang)
   if (0 < dups.length && log && log.warn) {
     log.warn({
       point: 'entity-types-name-collision', lang, names: dups,

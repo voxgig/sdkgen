@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, pickExampleEntity, opRequestShape, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -20,7 +20,8 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // when NO entity exposes any op (a direct()-only SDK).
   const { entity: exampleEntity, primaryOp } = pickExampleEntity(entity)
   const eName = exampleEntity ? nom(exampleEntity, 'Name') : 'Entity'
-  const eVar = exampleEntity ? exampleEntity.name : 'entity'
+  const eVar = exampleEntity ? exampleVarName(exampleEntity.name, 'elixir') : 'entity'
+  const eCall = exampleEntity ? elixirAccessor(exampleEntity, entityCollection(model)) : 'entity'
   const idF = exampleEntity ? entityIdField(exampleEntity) : null
   const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
   let testArg = 'H.deep(%{})'
@@ -37,7 +38,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const resVar = 'list' === primaryOp ? 'records' : 'record'
   const testModeExample = primaryOp
     ? `# Entity ops return the bare record (raise on error).
-${eVar} = ${Name}.${eVar}(sdk)
+${eVar} = ${Name}.${eCall}(sdk)
 ${resVar} = ${Name}.Entity.${eName}.${primaryOp}(${eVar}, ${testArg})
 IO.inspect(${resVar})`
     : `result = ${Name}.direct(sdk, H.deep(%{"path" => "/api/resource", "method" => "GET"}))

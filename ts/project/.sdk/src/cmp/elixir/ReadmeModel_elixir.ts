@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, elixirAccessor, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -72,7 +72,7 @@ Creates a test-mode client with mock transport. Both arguments may be \`nil\`.
 
   each(entityList, (ent: any) => {
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${ent.name}\` | \`(client, entopts \\\\ nil) :: entity\` | Create ${article} ${ent.Name} entity handle. |
+    Content(`| \`${elixirAccessor(ent, entityCollection(model))}\` | \`(client, entopts \\\\ nil) :: entity\` | Create ${article} ${ent.Name} entity handle. |
 `)
   })
 
