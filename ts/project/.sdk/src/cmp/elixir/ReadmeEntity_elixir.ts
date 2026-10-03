@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, opRequestShape, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, opRequestShape, opNeedsAction, elixirAccessor, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -48,6 +48,7 @@ takes an entity handle built from the client:
   publishedEntities.map((entity: any) => {
     const EName = entity.Name
     const eVar = entity.name
+    const eCall = elixirAccessor(entity, entityCollection(model))
     const opnames = Object.keys(entity.op || {})
     // An op that needs an action has no plain call to show.
     const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
@@ -65,7 +66,7 @@ takes an entity handle built from the client:
 `)
     }
 
-    Content(`Create a handle: \`${eVar} = ${Name}.${eVar}(sdk)\`
+    Content(`Create a handle: \`${eVar} = ${Name}.${eCall}(sdk)\`
 
 `)
 
@@ -117,7 +118,7 @@ takes an entity handle built from the client:
       Content(`#### Example: Load
 
 \`\`\`elixir
-${eVar} = ${Name}.${eVar}(sdk)
+${eVar} = ${Name}.${eCall}(sdk)
 record = ${Name}.Entity.${EName}.load(${eVar}, ${loadArg})
 \`\`\`
 
@@ -128,7 +129,7 @@ record = ${Name}.Entity.${EName}.load(${eVar}, ${loadArg})
       Content(`#### Example: List
 
 \`\`\`elixir
-${eVar} = ${Name}.${eVar}(sdk)
+${eVar} = ${Name}.${eCall}(sdk)
 records = ${Name}.Entity.${EName}.list(${eVar})
 \`\`\`
 
@@ -144,7 +145,7 @@ records = ${Name}.Entity.${EName}.list(${eVar})
       Content(`#### Example: Create
 
 \`\`\`elixir
-${eVar} = ${Name}.${eVar}(sdk)
+${eVar} = ${Name}.${eCall}(sdk)
 record = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
       createItems.map((it: any) => {

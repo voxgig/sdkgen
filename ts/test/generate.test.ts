@@ -477,6 +477,10 @@ describe('generate', () => {
     ok(test![1].includes('Demo.end_entity2(client)'), 'the test calls the old accessor')
     const ref = files.find(([p]) => p.endsWith('REFERENCE.md'))
     ok(ref![1].includes('Demo.end_entity2(client, entopts'), 'the reference names the old accessor')
+
+    // Every emitted call, in the tests, the README and the reference alike.
+    const stale = files.filter(([, text]) => /\bDemo\.end\(/.test(text)).map(([p]) => p)
+    deepStrictEqual(stale, [], 'files still calling Demo.end(')
   })
 
 

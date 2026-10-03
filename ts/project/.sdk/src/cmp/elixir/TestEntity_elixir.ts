@@ -67,7 +67,7 @@ defmodule ${Name}.${EName}EntityTest do
 
   test "should create instance" do
     sdk = ${Name}.test()
-    ent = ${Name}.${ename}(sdk)
+    ent = ${Name}.${accessor}(sdk)
     assert ent != nil
   end
 `)
@@ -76,7 +76,7 @@ defmodule ${Name}.${EName}EntityTest do
       Content(`
   test "should list records" do
     sdk = mk_sdk()
-    ent = ${Name}.${ename}(sdk)
+    ent = ${Name}.${accessor}(sdk)
     # The op resolves to one ENTITY per record; the record is reached with
     # data_get. See AGENTS.md "Entity operations return ENTITIES".
     result = ${Name}.Entity.${EName}.list(ent, S.jm([]))
@@ -97,7 +97,7 @@ defmodule ${Name}.${EName}EntityTest do
 
     if id != nil do
       sdk = mk_sdk()
-      ent = ${Name}.${ename}(sdk)
+      ent = ${Name}.${accessor}(sdk)
       loaded = ${Name}.Entity.${EName}.load(ent, S.jm(["id", id]))
       rec = ${Name}.EntityBase.data_get(loaded)
       assert S.ismap(rec)
@@ -111,7 +111,7 @@ defmodule ${Name}.${EName}EntityTest do
       Content(`
   test "should create then read back" do
     sdk = ${Name}.test(S.jm(["entity", S.jm(["${ename}", S.jm([])])]))
-    ent = ${Name}.${ename}(sdk)
+    ent = ${Name}.${accessor}(sdk)
     created = ${Name}.Entity.${EName}.create(ent, S.jm(["name", "test-create"]))
     made = ${Name}.EntityBase.data_get(created)
     assert S.ismap(made)
@@ -127,20 +127,20 @@ defmodule ${Name}.${EName}EntityTest do
 
     err =
       assert_raise ${Name}.Error, fn ->
-        Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(${Name}.test(offline)), "list"))
+        Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(${Name}.test(offline)), "list"))
       end
 
     assert String.contains?(Exception.message(err), "offline")
 
     quiet = S.jm(["ctrl", S.jm(["throw", false])])
-    Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(${Name}.test(offline)), "list", nil, quiet))
+    Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(${Name}.test(offline)), "list", nil, quiet))
 
     if ${Name}.FeatureHarness.has_feature("rbac") do
       denied = ${Name}.test(nil, S.jm(["feature", S.jm(["rbac", S.jm(["active", true, "deny", true])])]))
 
       err =
         assert_raise ${Name}.Error, fn ->
-          Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(denied), "list"))
+          Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(denied), "list"))
         end
 
       assert err.code == "rbac_denied"
@@ -150,7 +150,7 @@ defmodule ${Name}.${EName}EntityTest do
   test "should leave the caller's ctrl" do
     explain = S.jm([])
     ctrl = S.jm(["explain", explain])
-    Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(${Name}.test()), "list", nil, S.jm(["ctrl", ctrl])))
+    Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(${Name}.test()), "list", nil, S.jm(["ctrl", ctrl])))
     assert S.keysof(ctrl) == ["explain"]
     assert S.size(explain) > 0
   end

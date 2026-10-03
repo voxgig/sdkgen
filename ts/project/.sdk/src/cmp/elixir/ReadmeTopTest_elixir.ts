@@ -1,5 +1,5 @@
 
-import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, elixirAccessor, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -29,6 +29,7 @@ sdk = ${Name}.test()
   if (exampleEntity && primaryOp) {
     const eName = nom(exampleEntity, 'Name')
     const eVar = exampleEntity.name
+    const eCall = elixirAccessor(exampleEntity, entityCollection(model))
     const idF = entityIdField(exampleEntity)
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = ''
@@ -51,7 +52,7 @@ sdk = ${Name}.test()
       arg = 'H.deep(%{})'
     }
     const resVar = 'list' === primaryOp ? 'records' : 'record'
-    Content(`${eVar} = ${Name}.${eVar}(sdk)
+    Content(`${eVar} = ${Name}.${eCall}(sdk)
 ${resVar} = ${Name}.Entity.${eName}.${primaryOp}(${eVar}, ${arg})
 IO.inspect(${resVar})
 `)

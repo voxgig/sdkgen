@@ -1646,6 +1646,13 @@ echo get_class($client->ContactsField(null)), ' ',
       'elixir: the renamed entity module was not compiled')
     ok(beams.includes('Elixir.Demo.Entity.End.beam'),
       'elixir: the reserved-word entity was not compiled')
+
+    // `mix compile` leaves test/ alone, and `Demo.end(sdk)` is a syntax error
+    // there: compile the reserved-word entity's test file as ExUnit would.
+    const suite = run(mix, ['run', '--no-start', '-e',
+      'ExUnit.start(autorun: false); Code.compile_file("test/end_entity_test.exs")'],
+      sdkroot, { ...process.env, MIX_ENV: 'test' })
+    ok(suite.ok, 'elixir: the reserved-word entity test does not compile:\n' + tail(suite.out))
     const folded = beams.filter((b: string, i: number) =>
       beams.findIndex((o: string) => o.toLowerCase() === b.toLowerCase()) !== i)
     deepStrictEqual(folded, [], 'elixir: modules that are one file on macOS')

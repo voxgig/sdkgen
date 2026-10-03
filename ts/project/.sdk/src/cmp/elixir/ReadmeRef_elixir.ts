@@ -139,6 +139,7 @@ on error.
     publishedEntities.map((ent: any) => {
       const EName = ent.Name
       const eVar = ent.name
+      const eCall = elixirAccessor(ent, entityCollection(model))
       const opnames = Object.keys(ent.op || {})
       const fields = Object.values(ent.fields || {})
       const idF = entityIdField(ent)
@@ -157,7 +158,7 @@ on error.
       }
 
       Content(`\`\`\`elixir
-${eVar} = ${Name}.${eVar}(sdk)
+${eVar} = ${Name}.${eCall}(sdk)
 \`\`\`
 
 `)
