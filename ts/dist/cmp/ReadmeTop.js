@@ -33,6 +33,35 @@ function installCommand(target, model) {
 function pickLeadTarget(sdkTargets) {
     return sdkTargets[0];
 }
+// The languages the example helpers can write, in the order a reader is
+// likeliest to want one.
+const EXAMPLE_LANGS = ['ts', 'js', 'py', 'go', 'php', 'rb', 'lua'];
+const EXAMPLE_FENCE = {
+    ts: 'ts', js: 'js', py: 'python', go: 'go', php: 'php', rb: 'ruby', lua: 'lua',
+};
+function exampleLang(model, sdkTargets) {
+    const langs = sdkTargets.map((t) => (0, packageMeta_1.originName)(model, t.name));
+    return EXAMPLE_LANGS.find((lang) => langs.includes(lang));
+}
+// A client and one call in a language other than ts, whose example
+// ReadmeTop builds itself.
+function entityExample(lang, Name, call) {
+    switch (lang) {
+        case 'js': return `const client = new ${Name}SDK()` +
+            (call ? `\nconst ${call.resultVar} = await ${call.expr}` : '');
+        case 'py': return `client = ${Name}SDK()` +
+            (call ? `\n${call.resultVar} = ${call.expr}` : '');
+        case 'go': return `client := sdk.New${Name}SDK(nil)` +
+            (call ? `\n${call.resultVar}, err := ${call.expr}` : '');
+        case 'php': return `$client = new ${Name}SDK();` +
+            (call ? `\n$${call.resultVar} = ${call.expr};` : '');
+        case 'rb': return `client = ${Name}SDK.new` +
+            (call ? `\n${call.resultVar} = ${call.expr}` : '');
+        case 'lua': return `local client = sdk.new()` +
+            (call ? `\nlocal ${call.resultVar}, err = ${call.expr}` : '');
+        default: return '';
+    }
+}
 const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
@@ -226,16 +255,27 @@ ${aboutMd.trim()}
                 opSet.add(o); }));
             const opNames = CANON_OPS.filter((o) => opSet.has(o)).concat([...opSet].filter((o) => !CANON_OPS.includes(o)));
             const opList = (opNames.length ? opNames : ['list', 'load']).map((o) => '`' + o + '`').join(', ');
+            // In the SDK's own language: ts when it has one, else the first the
+            // example helpers can write, else no example at all.
+            const lang = exampleLang(model, sdkTargets);
+            let snippet = '';
+            if ('ts' === lang) {
+                snippet = `const client = new ${model.Name}SDK()${exCall ? '\n' + exCall : ''}`;
+            }
+            else if (null != lang) {
+                const call = ['list', 'load', 'create', 'update'].includes(String(primaryOp))
+                    ? (0, opExample_1.primaryOpCall)(lang, ex, (0, naming_1.exampleVarName)(ex.toLowerCase(), lang), primaryOp, exIdField, exEnt)
+                    : null;
+                snippet = entityExample(lang, model.Name, call);
+            }
+            const exBlock = '' === snippet ? '.' :
+                `:\n\n\`\`\`${EXAMPLE_FENCE[lang]}\n${snippet}\n\`\`\``;
             (0, jostraca_1.Content)(`## Entities, not endpoints
 
 This SDK exposes the API as ${surface} that you
 call directly, instead of assembling URL paths and query strings.${seeEntities} Entities are
 **Capitalised** to mark them as the primary surface, each with the operations they
-support (${opList}):
-
-\`\`\`ts
-const client = new ${model.Name}SDK()${exCall ? '\n' + exCall : ''}
-\`\`\`
+support (${opList})${exBlock}
 
 Thinking in entities keeps the mental model small — for people and AI agents alike —
 rather than reasoning about raw HTTP routes and query parameters.

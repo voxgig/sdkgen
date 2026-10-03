@@ -889,4 +889,5 @@ export {
   layeredFs,
   makeModel,
   makeRoot,
+  namedEntity,
 }
