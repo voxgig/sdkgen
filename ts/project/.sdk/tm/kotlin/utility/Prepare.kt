@@ -153,7 +153,7 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
   // caller's headers already send.
   val sent = callArgs(ctx, "cookie").filter { it.v != null }
   if (sent.isNotEmpty()) {
-    val names = sent.map { it.wire }
+    val names = sent.flatMap { if (it.v is Map<*, *>) Struct.keysof(it.v) else listOf(it.wire) }
     val kept = mutableListOf<String>()
     for (key in out.keys.filter { it.lowercase() == "cookie" }) {
       val given = out.remove(key)

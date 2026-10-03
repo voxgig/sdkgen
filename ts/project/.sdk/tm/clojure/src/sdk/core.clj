@@ -810,7 +810,7 @@
     ;; caller's headers already send.
     (let [sent (vec (for [[_ wire v] (call-args ctx "cookie") :when (some? v)] [wire v]))]
       (when (seq sent)
-        (let [names (set (map first sent))
+        (let [names (set (mapcat (fn [[wire v]] (if (vs/ismap v) (vs/keysof v) [wire])) sent))
               given (vec (filter (fn [k] (and (string? k) (= "cookie" (str/lower-case k))))
                                  (vec (.keySet ^java.util.Map out))))
               kept (vec (for [k given

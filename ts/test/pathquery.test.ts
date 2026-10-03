@@ -309,6 +309,13 @@ describe('prepareHeaders', () => {
         { Cookie: 'SESSIONID=old; theme=dark ;lang=en' })),
       { cookie: 'theme=dark; lang=en; SESSIONID=s1' })
     })
+
+    // A map argument sends its own keys, so those are the names it replaces.
+    test(lang + ': a map cookie argument replaces the cookies its keys name', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' },
+        { prefs: { lang: 'en', size: 2 } }, { Cookie: 'lang=old; theme=dark' })),
+      { cookie: 'theme=dark; SESSIONID=s1; lang=en&size=2' })
+    })
   }
 
 

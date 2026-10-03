@@ -45,7 +45,11 @@ final class PrepareHeaders {
     if (!sent.isEmpty()) {
       List<String> names = new ArrayList<>();
       for (Param.CallArg arg : sent) {
-        names.add(arg.wire());
+        if (arg.val() instanceof Map<?, ?> map) {
+          names.addAll(Struct.keysof(map));
+        } else {
+          names.add(arg.wire());
+        }
       }
       List<String> kept = new ArrayList<>();
       for (String k : new ArrayList<>(out.keySet())) {

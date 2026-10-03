@@ -34,7 +34,12 @@ static char* trim_blank(char* s) {
   return s;
 }
 
-// Whether a cookie the caller sends has the name of a cookie argument.
+static bool same_text(const char* name, const char* text, size_t len) {
+  return strlen(name) == len && 0 == strncmp(name, text, len);
+}
+
+// Whether a cookie the caller sends has a name a cookie argument sends: a
+// map's own keys, else the argument's wire name.
 static bool cookie_sent(voxgig_list* cargs, const char* cookie) {
   size_t nlen = strcspn(cookie, "=");
   while (0 < nlen && isspace((unsigned char)cookie[nlen - 1])) nlen--;
@@ -42,8 +47,15 @@ static bool cookie_sent(voxgig_list* cargs, const char* cookie) {
     voxgig_list* arg = voxgig_as_list(cargs->items[i]);
     voxgig_value* val = arg->items[2];
     if (v_is_noval(val) || v_is_null(val)) continue;
-    const char* wire = voxgig_as_string(arg->items[1]);
-    if (strlen(wire) == nlen && 0 == strncmp(wire, cookie, nlen)) return true;
+    if (voxgig_is_map(val)) {
+      voxgig_strvec keys = voxgig_keysof(val);
+      bool found = false;
+      for (size_t k = 0; k < keys.len && !found; k++) found = same_text(keys.data[k], cookie, nlen);
+      voxgig_strvec_free(&keys);
+      if (found) return true;
+    } else if (same_text(voxgig_as_string(arg->items[1]), cookie, nlen)) {
+      return true;
+    }
   }
   return false;
 }

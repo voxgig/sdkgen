@@ -1562,7 +1562,13 @@ inline Value prepareHeaders(CtxPtr ctx) {
           std::string cookie = trimBlank(text.substr(at, end - at));
           std::string name = trimBlank(cookie.substr(0, cookie.find('=')));
           bool replaced = false;
-          for (const auto& arg : sent) replaced = replaced || arg.wire == name;
+          for (const auto& arg : sent) {
+            if (arg.val.is_map()) {
+              for (const auto& item : Struct::items(arg.val)) replaced = replaced || as_str(pair_key(item)) == name;
+            } else {
+              replaced = replaced || arg.wire == name;
+            }
+          }
           if (!cookie.empty() && !replaced) kept.push_back(cookie);
           at = end + 1;
         }

@@ -707,7 +707,8 @@ let prepare_headers_util (ctx : ctx) : value =
   let sent = List.filter (fun (_, _, v) -> match v with Noval | Null -> false | _ -> true)
       (call_args ctx "cookie") in
   if sent <> [] then begin
-    let names = List.map (fun (_, wire, _) -> wire) sent in
+    let names = List.concat (List.map (fun (_, wire, v) ->
+        match v with Map _ -> keysof v | _ -> [wire]) sent) in
     let given = List.filter (fun k -> String.lowercase_ascii k = "cookie") (keysof out) in
     let kept = List.concat (List.map (fun k ->
         match getp out k with

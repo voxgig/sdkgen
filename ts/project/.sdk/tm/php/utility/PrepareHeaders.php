@@ -40,7 +40,12 @@ class ProjectNamePrepareHeaders
             }
         }
         if (0 < count($sent)) {
-            $names = array_map(fn($arg) => $arg[0], $sent);
+            $names = array_merge(...array_map(
+                fn($arg) => \Voxgig\Struct\Struct::ismap($arg[1])
+                    ? array_map('strval', \Voxgig\Struct\Struct::keysof($arg[1]))
+                    : [$arg[0]],
+                $sent
+            ));
             $kept = [];
             foreach (array_keys($out) as $key) {
                 if (!is_string($key) || 'cookie' !== strtolower($key)) {

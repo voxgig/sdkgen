@@ -47,7 +47,13 @@ pub fn prepare_headers_util(ctx: &Rc<Context>) -> Value {
         .filter(|(_, _, val)| !val.is_noval() && !val.is_null())
         .collect();
     if !sent.is_empty() {
-        let names: Vec<&str> = sent.iter().map(|(_, wire, _)| wire.as_str()).collect();
+        let names: Vec<String> = sent
+            .iter()
+            .flat_map(|(_, wire, val)| match val {
+                Value::Map(_) => vs::keysof_vec(val),
+                _ => vec![wire.clone()],
+            })
+            .collect();
         let mut kept: Vec<String> = Vec::new();
         if let Value::Map(m) = &out {
             let given: Vec<String> =
@@ -57,7 +63,7 @@ pub fn prepare_headers_util(ctx: &Rc<Context>) -> Value {
                     for piece in s.split(';') {
                         let cookie = piece.trim();
                         let name = cookie.split('=').next().unwrap_or("").trim();
-                        if !cookie.is_empty() && !names.contains(&name) {
+                        if !cookie.is_empty() && !names.iter().any(|n| n == name) {
                             kept.push(cookie.to_string());
                         }
                     }

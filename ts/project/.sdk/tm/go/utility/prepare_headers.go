@@ -44,7 +44,9 @@ func prepareHeadersUtil(ctx *core.Context) map[string]any {
 	if 0 < len(sent) {
 		names := map[string]bool{}
 		for _, arg := range sent {
-			names[arg.wire] = true
+			for _, name := range cookieNames(arg) {
+				names[name] = true
+			}
 		}
 		kept := []string{}
 		for key, val := range out {
@@ -72,6 +74,14 @@ func prepareHeadersUtil(ctx *core.Context) map[string]any {
 	}
 
 	return out
+}
+
+// The cookie names an argument sends: a map's own keys, else its wire name.
+func cookieNames(arg callArg) []string {
+	if vs.IsMap(arg.val) {
+		return vs.KeysOf(arg.val)
+	}
+	return []string{arg.wire}
 }
 
 // The form style of a cookie parameter: a list repeats the name, a map sends

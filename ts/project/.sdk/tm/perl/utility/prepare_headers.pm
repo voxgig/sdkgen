@@ -37,7 +37,10 @@ $REGISTRY{prepare_headers} = sub {
   # caller's headers already send.
   my @sent = grep { defined $_->[2] } ProjectNameUtilities::call_args($ctx, 'cookie');
   if (@sent) {
-    my %names = map { ($_->[1] => 1) } @sent;
+    my %names = map {
+      my $arg = $_;
+      map { ($_ => 1) } (Voxgig::Struct::ismap($arg->[2]) ? @{ Voxgig::Struct::keysof($arg->[2]) } : ($arg->[1]));
+    } @sent;
     my @kept;
     for my $key (grep { lc $_ eq 'cookie' } keys %$out) {
       my $given = delete $out->{$key};

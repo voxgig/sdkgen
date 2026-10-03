@@ -34,7 +34,7 @@ module ProjectNameUtilities
     # caller's headers already send.
     sent = ProjectNameUtilities.call_args(ctx, "cookie").reject { |_name, _orig, val| val.nil? }
     unless sent.empty?
-      names = sent.map { |_name, orig, _val| orig }
+      names = sent.flat_map { |_name, orig, val| VoxgigStruct.ismap(val) ? VoxgigStruct.keysof(val) : [orig] }
       kept = []
       out.keys.select { |k| k.is_a?(String) && k.downcase == "cookie" }.each do |k|
         given = out.delete(k)

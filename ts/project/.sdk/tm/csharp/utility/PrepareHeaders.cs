@@ -39,7 +39,8 @@ public static partial class SdkUtility
         var sent = CallArgs(ctx, "cookie").Where(arg => arg.Val != null).ToList();
         if (0 < sent.Count)
         {
-            var names = sent.Select(arg => arg.Wire).ToList();
+            var names = sent.SelectMany(arg => arg.Val is Dictionary<string, object?>
+                ? StructUtils.KeysOf(arg.Val) : new List<string> { arg.Wire }).ToList();
             var kept = new List<string>();
             foreach (var k in new List<string>(result.Keys))
             {

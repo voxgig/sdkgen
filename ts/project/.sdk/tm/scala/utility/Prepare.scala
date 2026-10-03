@@ -155,7 +155,12 @@ object PrepareHeaders {
     // caller's headers already send.
     val sent = Param.callArgs(ctx, "cookie").filter { case (_, _, v) => v != null }
     if (sent.nonEmpty) {
-      val names = sent.map(_._2)
+      val names = sent.flatMap { case (_, wire, v) =>
+        v match {
+          case m: JMap[_, _] => Struct.keysof(m).toArray(Array.empty[String]).toSeq
+          case _ => Seq(wire)
+        }
+      }
       val kept = scala.collection.mutable.ArrayBuffer[String]()
       val it = out.entrySet().iterator()
       while (it.hasNext) {

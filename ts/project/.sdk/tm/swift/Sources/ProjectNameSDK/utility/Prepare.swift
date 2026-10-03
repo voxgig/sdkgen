@@ -72,7 +72,7 @@ func prepareHeadersUtil(_ ctx: Context) -> VMap {
   // caller's headers already send.
   let sent = callArgs(ctx, "cookie").filter { !isNil($0.val) }
   if !sent.isEmpty {
-    let names = sent.map { $0.wire }
+    let names = sent.flatMap { $0.val.asMap != nil ? keysof($0.val) : [$0.wire] }
     var kept: [String] = []
     for k in out.entries.keys where k.lowercased() == "cookie" {
       if let given = out.entries[k]?.asString {

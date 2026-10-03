@@ -44,7 +44,7 @@ def prepare_headers_util(ctx):
     # caller's headers already send.
     sent = [(orig, val) for _name, orig, val in call_args(ctx, "cookie") if val is not None]
     if sent:
-        names = [orig for orig, _val in sent]
+        names = [n for orig, val in sent for n in (vs.keysof(val) if vs.ismap(val) else [orig])]
         kept = []
         for key in [k for k in out if isinstance(k, str) and k.lower() == "cookie"]:
             given = out.pop(key)

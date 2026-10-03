@@ -1638,7 +1638,11 @@ pub fn prepare_headers_util(ctx: *Context) Value {
                 const name = std.mem.trim(u8, cookie[0..eq], " \t");
                 var replaced = false;
                 for (sent.items) |arg| {
-                    if (std.mem.eql(u8, arg.wire, name)) replaced = true;
+                    if (arg.val == .object) {
+                        for (h.keysof_vec(arg.val)) |key| {
+                            if (std.mem.eql(u8, key, name)) replaced = true;
+                        }
+                    } else if (std.mem.eql(u8, arg.wire, name)) replaced = true;
                 }
                 if (!replaced) kept.append(h.A(), cookie) catch {};
             }

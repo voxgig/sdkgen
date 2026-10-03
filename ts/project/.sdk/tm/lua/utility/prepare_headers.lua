@@ -63,7 +63,13 @@ local function prepare_headers_util(ctx)
   if #sent > 0 then
     local names = {}
     for _, arg in ipairs(sent) do
-      names[arg.wire] = true
+      if vs.ismap(arg.val) then
+        for _, key in ipairs(vs.keysof(arg.val)) do
+          names[key] = true
+        end
+      else
+        names[arg.wire] = true
+      end
     end
     local kept = {}
     for key, given in pairs(out) do

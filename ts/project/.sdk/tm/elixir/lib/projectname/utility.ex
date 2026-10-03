@@ -1760,7 +1760,8 @@ defmodule ProjectName.Utility do
     sent = Enum.filter(call_args(ctx, "cookie"), fn {_name, _wire, val} -> val != nil end)
 
     if sent != [] do
-      names = Enum.map(sent, fn {_name, wire, _val} -> wire end)
+      names =
+        Enum.flat_map(sent, fn {_name, wire, val} -> if S.ismap(val), do: S.keysof(val), else: [wire] end)
 
       given =
         Enum.filter(H.entries(out), fn {k, _} -> is_binary(k) and String.downcase(k) == "cookie" end)
