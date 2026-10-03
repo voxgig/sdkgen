@@ -17,7 +17,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, entityOnly,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity,
 } from './generateharness'
@@ -4634,6 +4634,41 @@ main: kit: flow: BasicBadgeFlow: {
     }
     deepStrictEqual(wrong, [], 'list examples with a key that sets the prototype or does not parse:\n' +
       wrong.join('\n'))
+  })
+
+
+  test('a list whose points each need a selector of their own passes one point\'s, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, selectorList('contact', ['email', 'phone']))
+
+    // No selector is needed by both points, so a bare call reaches neither.
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Cc]ontact/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => !/email/.test(line)))
+    }
+    wrong.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Cc]ontact/)
+      .filter((line: string) => !/email/.test(line)))
+    deepStrictEqual(wrong, [], 'list examples that pass no point\'s selector:\n' + wrong.join('\n'))
+  })
+
+
+  test('a list parameter whose name holds a quote and a backslash is escaped, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, listOnly('crate', [['a"b\\c', '"`$STRING`"']]))
+
+    // Double-quoted in most targets, single-quoted in ts, js and perl.
+    const escaped = (line: string) => line.includes('"a\\"b\\\\c"') || line.includes("'a\"b\\\\c'")
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Cc]rate/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => !escaped(line)))
+    }
+    wrong.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Cc]rate/)
+      .filter((line: string) => !escaped(line)))
+    deepStrictEqual(wrong, [], 'list examples that do not escape the name:\n' + wrong.join('\n'))
   })
 
 

@@ -104,24 +104,31 @@ function jsonAppendLines(value: any, bufname: string): string {
   return json
     .split('\n')
     .map((line) => {
-      const lit = JSON.stringify(line).replace(/\$/g, '\\$')
+      const lit = kotlinString(line)
       return `    ${bufname}.append(${lit})\n`
     })
     .join('')
 }
 
 // A list's required route and query parameters, as the match it is called with.
+// A Kotlin string literal, whose `$` would start a template.
+function kotlinString(s: string): string {
+  return JSON.stringify(s).replace(/\$/g, '\\$')
+}
+
+
 function kotlinListMatch(entity: any): string {
   const lit = (type: any): string =>
     (({ NULL: 'null', INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'listOf<Any?>()', OBJECT: 'mapOf<String, Any?>()' }) as any)[canonScalarKey(type)] ?? '"example"'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `mutableMapOf<String, Any?>(${items.map((it: any) => `"${it.name}" to ${lit(it.type)}`).join(', ')})`
+    ? `mutableMapOf<String, Any?>(${items.map((it: any) => `${kotlinString(it.name)} to ${lit(it.type)}`).join(', ')})`
     : 'null'
 }
 
 
 export {
+  kotlinString,
   kotlinListMatch,
   cleanModel,
   gradleGroup,

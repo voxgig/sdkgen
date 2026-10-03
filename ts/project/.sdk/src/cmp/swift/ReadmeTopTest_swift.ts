@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { swiftVarName } from './utility_swift'
+import { swiftVarName, swiftString } from './utility_swift'
 
 
 // A type-correct Swift `Value` literal for a field's canonical type.
@@ -45,13 +45,13 @@ let client = ${SDK}.testSDK(nil, nil)
     if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's request type, so the block stays honest.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `VMap([${items.map((it: any) =>
-          `("${it.name}", ${isMatchOp && it.name === idF ? '.string("test01")' : swiftLit(it.type)})`).join(', ')}])`
+          `(${swiftString(it.name)}, ${isMatchOp && it.name === idF ? '.string("test01")' : swiftLit(it.type)})`).join(', ')}])`
         : 'nil'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
@@ -59,7 +59,7 @@ let client = ${SDK}.testSDK(nil, nil)
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
       arg = `VMap([${chosen.map((it: any) =>
-        `("${it.name}", ${swiftLit(it.type)})`).join(', ')}])`
+        `(${swiftString(it.name)}, ${swiftLit(it.type)})`).join(', ')}])`
     }
     const eVar = swiftVarName(exampleEntity.name) + ('list' === primaryOp ? 'List' : '')
     Content(`let ${eVar} = try client.${eName}().${primaryOp}(${arg}, nil)

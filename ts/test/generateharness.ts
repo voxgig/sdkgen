@@ -501,12 +501,44 @@ main: kit: entity: ${name}: {
     name: "list"
     points: [ {
       g: { query: [${params.map(([n, t]) => `
-        { k: "query", n: "${n}", or: "${n}", r: true, t: ${t} }`).join('')}
+        { k: "query", n: ${JSON.stringify(n)}, or: ${JSON.stringify(n)}, r: true, t: ${t} }`).join('')}
       ] }
       m: "GET", o: "/${name}"
       s: [{ lit: "${name}" }]
       t: { req: "\`reqdata\`", res: "\`body\`" }
     } ]
+  }
+}
+
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
+  step: [ { o: "list", m: {} } ]
+}
+`)
+}
+
+
+// A list-only entity on one route whose points each require one of the
+// given query parameters.
+function selectorList(name: string, selectors: string[]): string {
+  const flow = 'Basic' + name[0].toUpperCase() + name.slice(1) + 'Flow'
+  return entityOnly(`
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: list: {
+    name: "list"
+    points: [${selectors.map((sel) => `
+      {
+        g: { query: [ { k: "query", n: "${sel}", or: "${sel}", r: true, t: "\`$STRING\`" } ] }
+        m: "GET", o: "/${name}"
+        s: [{ lit: "${name}" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+        q: { exist: ["${sel}"] }
+      }`).join('')}
+    ]
   }
 }
 
@@ -955,6 +987,7 @@ export {
   SEARCH_ENTITY,
   searchOnly,
   listOnly,
+  selectorList,
   entityOnly,
   entityTestData,
   FOLD_ENTITY,

@@ -41,7 +41,7 @@ function elixirLit(sentinel: unknown, placeholder: string = 'example'): string {
 function elixirListArgs(entity: any, name: string): string {
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `, ${name}.Helpers.deep(%{${items.map((it: any) => `"${it.name}" => ${elixirLit(it.type)}`).join(', ')}})`
+    ? `, ${name}.Helpers.deep(%{${items.map((it: any) => `${elixirString(it.name)} => ${elixirLit(it.type)}`).join(', ')}})`
     : ''
 }
 

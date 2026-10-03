@@ -42,14 +42,14 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
     const chosen = requiredItems(exampleEntity, 'list')
     testArg = javaMapOf(chosen.map((it: any) =>
-      `"${it.name}", ${scalaLit(it.type)}`), 'java.util.')
+      `${JSON.stringify(it.name)}, ${scalaLit(it.type)}`), 'java.util.')
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
     testArg = javaMapOf(chosen.map((it: any) =>
-      `"${it.name}", ${scalaLit(it.type)}`), 'java.util.')
+      `${JSON.stringify(it.name)}, ${scalaLit(it.type)}`), 'java.util.')
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.

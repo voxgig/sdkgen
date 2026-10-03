@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName } from './utility_c'
+import { cIdent, cVarName, cString } from './utility_c'
 
 
 // A type-correct C expression constructing a voxgig struct Value.
@@ -46,13 +46,13 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
     testArg = idF ? `cmap(1, "${idF}", v_str("test01"))` : 'NULL'
   } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
     const chosen = requiredItems(exampleEntity, 'list')
-    testArg = cmapExpr(chosen.map((it: any) => `"${it.name}", ${cLit(it.type)}`))
+    testArg = cmapExpr(chosen.map((it: any) => `${cString(it.name)}, ${cLit(it.type)}`))
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
-    testArg = cmapExpr(chosen.map((it: any) => `"${it.name}", ${cLit(it.type)}`))
+    testArg = cmapExpr(chosen.map((it: any) => `${cString(it.name)}, ${cLit(it.type)}`))
   }
 
   // The op-driven test-mode line. A direct()-only SDK shows a direct() call.

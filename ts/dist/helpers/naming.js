@@ -29,6 +29,7 @@ exports.swiftTypeName = swiftTypeName;
 exports.jsProp = jsProp;
 exports.jsOptProp = jsOptProp;
 exports.jsKey = jsKey;
+exports.jsQuote = jsQuote;
 exports.luaKey = luaKey;
 exports.prefixLeadingDigit = prefixLeadingDigit;
 const opShape_1 = require("./opShape");
@@ -391,13 +392,16 @@ function jsProp(obj, name) {
 function jsKey(name) {
     if ('__proto__' === name)
         return `['__proto__']`;
-    return JS_IDENT.test(name) ? name : `'${name}'`;
+    return JS_IDENT.test(name) ? name : jsQuote(name);
+}
+function jsQuote(s) {
+    return "'" + JSON.stringify(s).slice(1, -1).replace(/\\"/g, '"').replace(/'/g, "\\'") + "'";
 }
 const LUA_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
 function luaKey(name) {
     return LUA_IDENT.test(name) && !isReservedName(name, 'lua')
         ? name
-        : `["${name}"]`;
+        : `["${name.replace(/[\\"]/g, '\\$&').replace(/\n/g, '\\n').replace(/\r/g, '\\r')}"]`;
 }
 // As `jsProp`, but optional-chained: `obj?.name` / `obj?.["3ds_session_id"]`.
 function jsOptProp(obj, name) {

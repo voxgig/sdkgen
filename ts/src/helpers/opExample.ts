@@ -1,7 +1,7 @@
 
 import { each } from 'jostraca'
 import { canonScalarKey } from './canonType'
-import { opRequestShape, opParams } from './opShape'
+import { opRequestShape, opParams, selectablePoints, pointRequires } from './opShape'
 
 import { phpEntityAccessor, jsKey, luaKey } from './naming'
 
@@ -62,10 +62,10 @@ function idLiteral(ent: any, op: string, idF: string | null): string {
 
 function litPair(lang: LiteralLang, name: string, value: string): string {
   switch (lang) {
-    case 'py': return `"${name}": ${value}`
-    case 'php': return `"${name}" => ${value}`
-    case 'rb': return `"${name}" => ${value}`
-    case 'go': return `"${name}": ${value}`
+    case 'py': return `${JSON.stringify(name)}: ${value}`
+    case 'php': return `"${name.replace(/[\\"$]/g, '\\$&')}" => ${value}`
+    case 'rb': return `${JSON.stringify(name).replace(/#(?=[{$@])/g, '\\#')} => ${value}`
+    case 'go': return `${JSON.stringify(name)}: ${value}`
     case 'json': return `${JSON.stringify(name)}: ${value}`
     case 'lua': return `${luaKey(name)} = ${value}`
     default: return `${jsKey(name)}: ${value}`
@@ -73,8 +73,19 @@ function litPair(lang: LiteralLang, name: string, value: string): string {
 }
 
 
+// The members an example call must give. Points of one route that each need
+// a selector of their own share none, so the example takes the point that
+// needs fewest when no point is reached by those every point needs.
 function requiredItems(ent: any, op: string): any[] {
-  return opRequestShape(ent, op).items.filter((it: any) => !it.optional)
+  const needed = (e: any) => opRequestShape(e, op).items.filter((it: any) => !it.optional)
+  const items = needed(ent)
+  const given = items.map((it: any) => it.name)
+  const points = selectablePoints(ent?.op?.[op])
+  if (points.length < 2 || points.some((pt: any) => pointRequires(pt).every((n) => given.includes(n)))) {
+    return items
+  }
+  const fewest = points.reduce((a: any, b: any) => pointRequires(b).length < pointRequires(a).length ? b : a)
+  return needed({ ...ent, op: { ...ent.op, [op]: { ...ent.op[op], points: [fewest] } } })
 }
 
 
@@ -205,6 +216,7 @@ export {
   javaMap,
   javaMapOf,
   litFor,
+  litPair,
 }
 
 export type {

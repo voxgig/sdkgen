@@ -67,8 +67,8 @@ const client = ${model.const.Name}SDK.test({
     if (isMatchOp || 'list' === primaryOp) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's Match type, so the block type-checks.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length

@@ -76,7 +76,7 @@ function perlListArgs(entity: any): string {
     (({ NULL: 'undef', INTEGER: '1', NUMBER: '1', BOOLEAN: '1', ARRAY: '[]', OBJECT: '{}' }) as any)[canonScalarKey(type)] ?? "'example'"
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `({ ${items.map((it: any) => `'${it.name}' => ${lit(it.type)}`).join(', ')} })`
+    ? `({ ${items.map((it: any) => `${perlStringLiteral(it.name)} => ${lit(it.type)}`).join(', ')} })`
     : ''
 }
 

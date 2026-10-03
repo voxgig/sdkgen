@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, requiredItems, litPair } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -41,20 +41,20 @@ client = ${model.const.Name}SDK.test()
     if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's Match type, so the block also satisfies the mypy doc gate.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `{${items.map((it: any) =>
-          `"${it.name}": ${isMatchOp && it.name === idF ? '"test01"' : pyLit(it.type)}`).join(', ')}}`
+          litPair('py', it.name, isMatchOp && it.name === idF ? '"test01"' : pyLit(it.type))).join(', ')}}`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
-      arg = `{${chosen.map((it: any) => `"${it.name}": ${pyLit(it.type)}`).join(', ')}}`
+      arg = `{${chosen.map((it: any) => litPair('py', it.name, pyLit(it.type))).join(', ')}}`
     }
     // A list() result is a list — name the variable accordingly (the root
     // README doc gate concatenates blocks, so reusing the singular name for

@@ -205,7 +205,7 @@ function csListMatch(entity: any): string {
     (({ NULL: 'null', INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'new List<object?>()', OBJECT: 'new Dictionary<string, object?>()' }) as any)[canonScalarKey(type)] ?? '"example"'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `new Dictionary<string, object?> {${items.map((it: any) => ` ["${it.name}"] = ${lit(it.type)}`).join(',')} }`
+    ? `new Dictionary<string, object?> {${items.map((it: any) => ` [${csStringLiteral(it.name)}] = ${lit(it.type)}`).join(',')} }`
     : 'null'
 }
 

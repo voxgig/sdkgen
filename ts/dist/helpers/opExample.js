@@ -11,6 +11,7 @@ exports.dataArg = dataArg;
 exports.javaMap = javaMap;
 exports.javaMapOf = javaMapOf;
 exports.litFor = litFor;
+exports.litPair = litPair;
 const canonType_1 = require("./canonType");
 const opShape_1 = require("./opShape");
 const naming_1 = require("./naming");
@@ -64,17 +65,28 @@ function idLiteral(ent, op, idF) {
 }
 function litPair(lang, name, value) {
     switch (lang) {
-        case 'py': return `"${name}": ${value}`;
-        case 'php': return `"${name}" => ${value}`;
-        case 'rb': return `"${name}" => ${value}`;
-        case 'go': return `"${name}": ${value}`;
+        case 'py': return `${JSON.stringify(name)}: ${value}`;
+        case 'php': return `"${name.replace(/[\\"$]/g, '\\$&')}" => ${value}`;
+        case 'rb': return `${JSON.stringify(name).replace(/#(?=[{$@])/g, '\\#')} => ${value}`;
+        case 'go': return `${JSON.stringify(name)}: ${value}`;
         case 'json': return `${JSON.stringify(name)}: ${value}`;
         case 'lua': return `${(0, naming_1.luaKey)(name)} = ${value}`;
         default: return `${(0, naming_1.jsKey)(name)}: ${value}`;
     }
 }
+// The members an example call must give. Points of one route that each need
+// a selector of their own share none, so the example takes the point that
+// needs fewest when no point is reached by those every point needs.
 function requiredItems(ent, op) {
-    return (0, opShape_1.opRequestShape)(ent, op).items.filter((it) => !it.optional);
+    const needed = (e) => (0, opShape_1.opRequestShape)(e, op).items.filter((it) => !it.optional);
+    const items = needed(ent);
+    const given = items.map((it) => it.name);
+    const points = (0, opShape_1.selectablePoints)(ent?.op?.[op]);
+    if (points.length < 2 || points.some((pt) => (0, opShape_1.pointRequires)(pt).every((n) => given.includes(n)))) {
+        return items;
+    }
+    const fewest = points.reduce((a, b) => (0, opShape_1.pointRequires)(b).length < (0, opShape_1.pointRequires)(a).length ? b : a);
+    return needed({ ...ent, op: { ...ent.op, [op]: { ...ent.op[op], points: [fewest] } } });
 }
 function matchArg(lang, ent, op, idF, idLit) {
     const items = requiredItems(ent, op);

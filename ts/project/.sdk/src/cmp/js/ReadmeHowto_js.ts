@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, jsKey } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityDataIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, jsKey, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -31,8 +31,8 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const primaryArg = (idPlaceholder: string): string => {
     if (!exampleEntity || !primaryOp) return ''
     if (isMatchOp || 'list' === primaryOp) {
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       if (0 === items.length) return ''
       const pairs = items.map((it: any) =>

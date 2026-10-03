@@ -127,7 +127,7 @@ function cljListMatch(entity: any): string {
     (({ NULL: 'nil', INTEGER: '1', NUMBER: '1', BOOLEAN: 'true', ARRAY: '(vs/jt)', OBJECT: '(vs/jm)' }) as any)[canonScalarKey(type)] ?? '"example"'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `(vs/jm ${items.map((it: any) => `"${it.name}" ${lit(it.type)}`).join(' ')})`
+    ? `(vs/jm ${items.map((it: any) => `${cljString(it.name)} ${lit(it.type)}`).join(' ')})`
     : 'nil'
 }
 

@@ -105,7 +105,7 @@ function cppListMatch(entity: any): string {
     (({ NULL: 'Value(nullptr)', INTEGER: 'Value(1)', NUMBER: 'Value(1)', BOOLEAN: 'Value(true)', ARRAY: 'vlist()', OBJECT: 'vmap()' }) as any)[canonScalarKey(type)] ?? 'Value("example")'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `vmap({${items.map((it: any) => `{"${it.name}", ${lit(it.type)}}`).join(', ')}})`
+    ? `vmap({${items.map((it: any) => `{"${cppEscape(it.name)}", ${lit(it.type)}}`).join(', ')}})`
     : 'Value::undef()'
 }
 

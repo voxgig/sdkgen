@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName } from './utility_c'
+import { cIdent, cVarName, cString } from './utility_c'
 
 
 // A type-correct C expression constructing a voxgig struct Value for a field's
@@ -56,18 +56,18 @@ PNError* err = NULL;
     if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's request match.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = cmapExpr(items.map((it: any) =>
-        `"${it.name}", ${isMatchOp && it.name === idF ? 'v_str("test01")' : cLit(it.type)}`))
+        `${cString(it.name)}, ${isMatchOp && it.name === idF ? 'v_str("test01")' : cLit(it.type)}`))
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
-      arg = cmapExpr(chosen.map((it: any) => `"${it.name}", ${cLit(it.type)}`))
+      arg = cmapExpr(chosen.map((it: any) => `${cString(it.name)}, ${cLit(it.type)}`))
     }
     const resVar = cVarName(exampleEntity.name) + ('list' === primaryOp ? 's' : '_rec')
     Content(`Entity* ${evar} = ${acc}(client, NULL);

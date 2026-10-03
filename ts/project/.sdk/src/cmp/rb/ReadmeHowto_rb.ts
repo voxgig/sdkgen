@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, requiredItems, litPair } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -40,18 +40,18 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
     : `${model.const.Name}SDK.test`
   let testCallArg = ''
   if (exampleEntity && (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length))) {
-    const items = opRequestShape(exampleEntity, primaryOp).items
-      .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+    const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+      .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
       .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
     testCallArg = 0 < items.length
-      ? `{ ${items.map((it: any) => `"${it.name}" => ${isMatchOp && it.name === idF ? '"test01"' : rbLit(it.type)}`).join(', ')} }`
+      ? `{ ${items.map((it: any) => litPair('rb', it.name, isMatchOp && it.name === idF ? '"test01"' : rbLit(it.type))).join(', ')} }`
       : ''
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
-    testCallArg = `{ ${chosen.map((it: any) => `"${it.name}" => ${rbLit(it.type)}`).join(', ')} }`
+    testCallArg = `{ ${chosen.map((it: any) => litPair('rb', it.name, rbLit(it.type))).join(', ')} }`
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.

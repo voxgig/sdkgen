@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { kotlinVarName } from './utility_kotlin'
+import { kotlinVarName, kotlinString } from './utility_kotlin'
 
 
 // A type-correct Kotlin literal for a field's canonical type.
@@ -43,14 +43,14 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
     const chosen = requiredItems(exampleEntity, 'list')
     testArg = `mutableMapOf<String, Any?>(${chosen.map((it: any) =>
-      `"${it.name}" to ${kotlinLit(it.type)}`).join(', ')})`
+      `${kotlinString(it.name)} to ${kotlinLit(it.type)}`).join(', ')})`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
     testArg = `mutableMapOf<String, Any?>(${chosen.map((it: any) =>
-      `"${it.name}" to ${kotlinLit(it.type)}`).join(', ')})`
+      `${kotlinString(it.name)} to ${kotlinLit(it.type)}`).join(', ')})`
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.

@@ -156,7 +156,7 @@ function rustListMatch(entity: any): string {
     (({ NULL: 'Value::Null', INTEGER: 'Value::Num(1.0)', NUMBER: 'Value::Num(1.0)', BOOLEAN: 'Value::Bool(true)', ARRAY: 'Value::empty_list()', OBJECT: 'Value::empty_map()' }) as any)[canonScalarKey(type)] ?? 'Value::str("example")'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `jo(vec![${items.map((it: any) => `("${it.name}", ${lit(it.type)})`).join(', ')}])`
+    ? `jo(vec![${items.map((it: any) => `(${JSON.stringify(it.name)}, ${lit(it.type)})`).join(', ')}])`
     : 'Value::Noval'
 }
 

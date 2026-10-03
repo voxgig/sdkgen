@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { elixirLit } from './utility_elixir'
+import { elixirLit, elixirString } from './utility_elixir'
 
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
@@ -29,13 +29,13 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
     testArg = idF ? `H.deep(%{"${idF}" => "test01"})` : 'H.deep(%{})'
   } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
     const chosen = requiredItems(exampleEntity, 'list')
-    testArg = `H.deep(%{${chosen.map((it: any) => `"${it.name}" => ${elixirLit(it.type)}`).join(', ')}})`
+    testArg = `H.deep(%{${chosen.map((it: any) => `${elixirString(it.name)} => ${elixirLit(it.type)}`).join(', ')}})`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
-    testArg = `H.deep(%{${chosen.map((it: any) => `"${it.name}" => ${elixirLit(it.type)}`).join(', ')}})`
+    testArg = `H.deep(%{${chosen.map((it: any) => `${elixirString(it.name)} => ${elixirLit(it.type)}`).join(', ')}})`
   }
 
   const resVar = 'list' === primaryOp ? 'records' : 'record'

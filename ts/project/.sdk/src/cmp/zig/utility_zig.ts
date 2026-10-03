@@ -146,7 +146,7 @@ function zigListMatch(entity: any): string {
     (({ NULL: 'h.vnull()', INTEGER: 'h.vnum(1)', NUMBER: 'h.vnum(1)', BOOLEAN: 'h.vbool(true)', ARRAY: 'h.olist()', OBJECT: 'h.omap()' }) as any)[canonScalarKey(type)] ?? 'h.vstr("example")'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `h.jo(&.{${items.map((it: any) => `.{ "${it.name}", ${lit(it.type)} }`).join(', ')}})`
+    ? `h.jo(&.{${items.map((it: any) => `.{ ${JSON.stringify(it.name)}, ${lit(it.type)} }`).join(', ')}})`
     : 'h.vnull()'
 }
 

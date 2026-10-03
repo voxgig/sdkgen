@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { swiftVarName } from './utility_swift'
+import { swiftVarName, swiftString } from './utility_swift'
 
 
 // A type-correct Swift `Value` literal for a field's canonical type.
@@ -43,14 +43,14 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
     const chosen = requiredItems(exampleEntity, 'list')
     testArg = `VMap([${chosen.map((it: any) =>
-      `("${it.name}", ${swiftLit(it.type)})`).join(', ')}])`
+      `(${swiftString(it.name)}, ${swiftLit(it.type)})`).join(', ')}])`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
     testArg = `VMap([${chosen.map((it: any) =>
-      `("${it.name}", ${swiftLit(it.type)})`).join(', ')}])`
+      `(${swiftString(it.name)}, ${swiftLit(it.type)})`).join(', ')}])`
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.

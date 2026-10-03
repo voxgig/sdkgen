@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { perlStringLiteral } from './utility_perl'
+
 
 // A type-correct Perl literal for a field's canonical type.
 function perlLit(type: any): string {
@@ -45,20 +47,20 @@ my $client = ${model.const.Name}SDK->test(undef, undef);
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's match resolution, so the block runs offline against a seeded
       // fixture.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `{ ${items.map((it: any) =>
-          `'${it.name}' => ${isMatchOp && it.name === idF ? "'test01'" : perlLit(it.type)}`).join(', ')} }`
+          `${perlStringLiteral(it.name)} => ${isMatchOp && it.name === idF ? "'test01'" : perlLit(it.type)}`).join(', ')} }`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
-      arg = `{ ${chosen.map((it: any) => `'${it.name}' => ${perlLit(it.type)}`).join(', ')} }`
+      arg = `{ ${chosen.map((it: any) => `${perlStringLiteral(it.name)} => ${perlLit(it.type)}`).join(', ')} }`
     }
     // A list() result is an arrayref — name the variable accordingly.
     const eVar = eName.toLowerCase() + ('list' === primaryOp ? 's' : '')

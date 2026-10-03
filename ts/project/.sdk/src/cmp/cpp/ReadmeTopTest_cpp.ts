@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cppVarName } from './utility_cpp'
+import { cppVarName, cppEscape } from './utility_cpp'
 
 
 // A type-correct C++ literal for a field's canonical type.
@@ -39,20 +39,20 @@ auto client = ${model.const.Name}SDK::testSDK();
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = 'Value::undef()'
     if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `vmap({${items.map((it: any) =>
-          `{"${it.name}", ${isMatchOp && it.name === idF ? 'Value("test01")' : cppLit(it.type)}}`).join(', ')}})`
+          `{"${cppEscape(it.name)}", ${isMatchOp && it.name === idF ? 'Value("test01")' : cppLit(it.type)}}`).join(', ')}})`
         : 'Value::undef()'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
-      arg = `vmap({${chosen.map((it: any) => `{"${it.name}", ${cppLit(it.type)}}`).join(', ')}})`
+      arg = `vmap({${chosen.map((it: any) => `{"${cppEscape(it.name)}", ${cppLit(it.type)}}`).join(', ')}})`
     }
     const eVar = acc + ('list' === primaryOp ? 's' : '')
     Content(`Value ${eVar} = client->${acc}()->${primaryOp}(${arg}, Value::undef());

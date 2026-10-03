@@ -463,7 +463,12 @@ function jsProp(obj: string, name: string): string {
 // or quoted `__proto__` sets the prototype, so it is computed.
 function jsKey(name: string): string {
   if ('__proto__' === name) return `['__proto__']`
-  return JS_IDENT.test(name) ? name : `'${name}'`
+  return JS_IDENT.test(name) ? name : jsQuote(name)
+}
+
+
+function jsQuote(s: string): string {
+  return "'" + JSON.stringify(s).slice(1, -1).replace(/\\"/g, '"').replace(/'/g, "\\'") + "'"
 }
 
 
@@ -473,7 +478,7 @@ const LUA_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/
 function luaKey(name: string): string {
   return LUA_IDENT.test(name) && !isReservedName(name, 'lua')
     ? name
-    : `["${name}"]`
+    : `["${name.replace(/[\\"]/g, '\\$&').replace(/\n/g, '\\n').replace(/\r/g, '\\r')}"]`
 }
 
 
@@ -513,6 +518,7 @@ export {
   jsProp,
   jsOptProp,
   jsKey,
+  jsQuote,
   luaKey,
   prefixLeadingDigit,
 }

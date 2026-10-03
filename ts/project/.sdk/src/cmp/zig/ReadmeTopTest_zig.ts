@@ -47,13 +47,13 @@ const client = sdk.test_sdk(h.vnull(), h.vnull());
     if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's request match.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `h.jo(&.{${items.map((it: any) =>
-          `.{ "${it.name}", ${isMatchOp && it.name === idF ? 'h.vstr("test01")' : zigLit(it.type)} }`).join(', ')}})`
+          `.{ ${JSON.stringify(it.name)}, ${isMatchOp && it.name === idF ? 'h.vstr("test01")' : zigLit(it.type)} }`).join(', ')}})`
         : 'h.vnull()'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
@@ -61,7 +61,7 @@ const client = sdk.test_sdk(h.vnull(), h.vnull());
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
       arg = 0 < chosen.length
-        ? `h.jo(&.{${chosen.map((it: any) => `.{ "${it.name}", ${zigLit(it.type)} }`).join(', ')}})`
+        ? `h.jo(&.{${chosen.map((it: any) => `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type)} }`).join(', ')}})`
         : 'h.omap()'
     }
     const eVar = zigVarName(exampleEntity.name) + ('list' === primaryOp ? 's' : '')

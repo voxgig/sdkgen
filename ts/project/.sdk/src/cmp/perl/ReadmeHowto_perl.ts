@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { perlStringLiteral } from './utility_perl'
+
 
 // A type-correct Perl literal for a field's canonical type.
 function perlLit(type: any): string {
@@ -38,13 +40,13 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
     testArg = idF ? `{ '${idF}' => 'test01' }` : ''
   } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
     const chosen = requiredItems(exampleEntity, 'list')
-    testArg = `{ ${chosen.map((it: any) => `'${it.name}' => ${perlLit(it.type)}`).join(', ')} }`
+    testArg = `{ ${chosen.map((it: any) => `${perlStringLiteral(it.name)} => ${perlLit(it.type)}`).join(', ')} }`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
-    testArg = `{ ${chosen.map((it: any) => `'${it.name}' => ${perlLit(it.type)}`).join(', ')} }`
+    testArg = `{ ${chosen.map((it: any) => `${perlStringLiteral(it.name)} => ${perlLit(it.type)}`).join(', ')} }`
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.

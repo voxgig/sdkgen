@@ -178,14 +178,27 @@ function opNeedsAction(op: any): boolean {
 }
 
 
-function opParams(op: any): any[] {
-  let points: any[] = op && op.points ? each(op.points) : []
-
+// The points a call can select: an action's only where every point is one.
+function selectablePoints(op: any): any[] {
+  const points: any[] = op && op.points ? each(op.points) : []
   const canonical = points.filter((pt: any) =>
     null == (pt && pt.q && pt.q['$action']))
-  if (0 < canonical.length) {
-    points = canonical
-  }
+  return 0 < canonical.length ? canonical : points
+}
+
+
+// The route and query parameters a point requires.
+function pointRequires(pt: any): string[] {
+  const params = [
+    ...(pt && pt.g && pt.g.params ? each(pt.g.params) : []),
+    ...(pt && pt.g && pt.g.query ? each(pt.g.query) : []),
+  ]
+  return params.filter((p: any) => p && null != p.n && false !== p.r).map((p: any) => p.n)
+}
+
+
+function opParams(op: any): any[] {
+  const points = selectablePoints(op)
 
   // Keyed by parameter name, which may be `__proto__`.
   const seen: Record<string, any> = Object.create(null)
@@ -677,6 +690,8 @@ export {
   entityCollection,
   opTypeName,
   opParams,
+  selectablePoints,
+  pointRequires,
   opReachable,
   opNeedsAction,
   ownPoint,

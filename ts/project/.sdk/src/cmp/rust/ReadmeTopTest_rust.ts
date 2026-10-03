@@ -48,13 +48,13 @@ let client = test_sdk(Value::Noval, Value::Noval);
     if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's request match.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `jo(vec![${items.map((it: any) =>
-          `("${it.name}", ${isMatchOp && it.name === idF ? 'Value::str("test01")' : rustLit(it.type)})`).join(', ')}])`
+          `(${JSON.stringify(it.name)}, ${isMatchOp && it.name === idF ? 'Value::str("test01")' : rustLit(it.type)})`).join(', ')}])`
         : 'Value::Noval'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
@@ -62,7 +62,7 @@ let client = test_sdk(Value::Noval, Value::Noval);
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
       arg = 0 < chosen.length
-        ? `jo(vec![${chosen.map((it: any) => `("${it.name}", ${rustLit(it.type)})`).join(', ')}])`
+        ? `jo(vec![${chosen.map((it: any) => `(${JSON.stringify(it.name)}, ${rustLit(it.type)})`).join(', ')}])`
         : 'Value::empty_map()'
     }
     const eVar = rustVarName(exampleEntity.name) + ('list' === primaryOp ? 's' : '')

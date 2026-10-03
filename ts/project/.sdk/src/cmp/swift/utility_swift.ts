@@ -123,7 +123,7 @@ function swiftListMatch(entity: any): string {
     (({ NULL: '.null', INTEGER: '.int(1)', NUMBER: '.double(1.0)', BOOLEAN: '.bool(true)', ARRAY: '.list([])', OBJECT: '.map(VMap())' }) as any)[canonScalarKey(type)] ?? '.string("example")'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `VMap([${items.map((it: any) => `("${it.name}", ${lit(it.type)})`).join(', ')}])`
+    ? `VMap([${items.map((it: any) => `(${swiftString(it.name)}, ${lit(it.type)})`).join(', ')}])`
     : 'nil'
 }
 

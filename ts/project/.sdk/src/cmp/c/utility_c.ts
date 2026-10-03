@@ -123,6 +123,12 @@ function clean(o: any, dropDefaults?: boolean): any {
 
 
 
+// A C string literal.
+function cString(s: string): string {
+  return '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'
+}
+
+
 function cStringLiteral(json: string, chunkSize: number = 2000): string {
   const parts: string[] = []
   let i = 0
@@ -136,7 +142,7 @@ function cStringLiteral(json: string, chunkSize: number = 2000): string {
     i = end
   }
   return parts
-    .map((p) => '  "' + p.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"')
+    .map((p) => '  ' + cString(p))
     .join('\n')
 }
 
@@ -146,13 +152,14 @@ function cListMatch(entity: any): string {
     (({ NULL: 'v_null()', INTEGER: 'v_num(1)', NUMBER: 'v_num(1)', BOOLEAN: 'v_bool(true)', ARRAY: 'v_list()', OBJECT: 'v_map()' }) as any)[canonScalarKey(type)] ?? 'v_str("example")'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `cmap(${items.length}, ${items.map((it: any) => `"${it.name}", ${lit(it.type)}`).join(', ')})`
+    ? `cmap(${items.length}, ${items.map((it: any) => `${cString(it.name)}, ${lit(it.type)}`).join(', ')})`
     : 'NULL'
 }
 
 
 export {
   cListMatch,
+  cString,
   cStringLiteral,
   clean,
   cIdent,

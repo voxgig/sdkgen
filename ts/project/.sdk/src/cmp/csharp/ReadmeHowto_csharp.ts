@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { csVarName } from './utility_csharp'
+import { csVarName, csStringLiteral } from './utility_csharp'
 
 
 // A type-correct C# literal for a field's canonical type.
@@ -43,14 +43,14 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
     const chosen = requiredItems(exampleEntity, 'list')
     testArg = `new Dictionary<string, object?> {${chosen.map((it: any) =>
-      ` ["${it.name}"] = ${csLit(it.type)}`).join(',')} }`
+      ` [${csStringLiteral(it.name)}] = ${csLit(it.type)}`).join(',')} }`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
     testArg = `new Dictionary<string, object?> {${chosen.map((it: any) =>
-      ` ["${it.name}"] = ${csLit(it.type)}`).join(',')} }`
+      ` [${csStringLiteral(it.name)}] = ${csLit(it.type)}`).join(',')} }`
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.

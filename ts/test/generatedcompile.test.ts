@@ -36,7 +36,8 @@ import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
 
 
 // A list requiring a Lua keyword and `__proto__`, which an object literal must compute.
-const KEYWORD_LIST = listOnly('crate', [['end', '"`$STRING`"'], ['__proto__', '"`$STRING`"']])
+const KEYWORD_LIST = listOnly('crate',
+  [['end', '"`$STRING`"'], ['__proto__', '"`$STRING`"'], ['a"b\\c', '"`$STRING`"']])
 
 
 function materialise(files: Record<string, string>, root: string) {

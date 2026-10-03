@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { kotlinVarName } from './utility_kotlin'
+import { kotlinVarName, kotlinString } from './utility_kotlin'
 
 
 // A type-correct Kotlin literal for a field's canonical type.
@@ -44,13 +44,13 @@ val client = ${SDK}.testSDK(null, null)
     if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's request type, so the block stays honest.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `mutableMapOf<String, Any?>(${items.map((it: any) =>
-          `"${it.name}" to ${isMatchOp && it.name === idF ? '"test01"' : kotlinLit(it.type)}`).join(', ')})`
+          `${kotlinString(it.name)} to ${isMatchOp && it.name === idF ? '"test01"' : kotlinLit(it.type)}`).join(', ')})`
         : 'null'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
@@ -58,7 +58,7 @@ val client = ${SDK}.testSDK(null, null)
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
       arg = `mutableMapOf<String, Any?>(${chosen.map((it: any) =>
-        `"${it.name}" to ${kotlinLit(it.type)}`).join(', ')})`
+        `${kotlinString(it.name)} to ${kotlinLit(it.type)}`).join(', ')})`
     }
     const eVar = kotlinVarName(exampleEntity.name) + ('list' === primaryOp ? 'List' : '')
     const accessor = kotlinVarName(exampleEntity.name)

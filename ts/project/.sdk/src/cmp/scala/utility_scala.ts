@@ -117,7 +117,7 @@ function scalaListMatch(entity: any): string {
     (({ INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'java.util.List.of()', OBJECT: 'java.util.Map.of()' }) as any)[canonScalarKey(type)] ?? '"example"'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? javaMapOf(items.map((it: any) => `"${it.name}", ${lit(it.type)}`), 'java.util.')
+    ? javaMapOf(items.map((it: any) => `${JSON.stringify(it.name)}, ${lit(it.type)}`), 'java.util.')
     : 'null'
 }
 

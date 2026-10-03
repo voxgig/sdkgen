@@ -43,13 +43,13 @@ val client = ${SDK}.testSDK(null, null)
     if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's request type, so the block stays honest.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? javaMapOf(items.map((it: any) =>
-          `"${it.name}", ${isMatchOp && it.name === idF ? '"test01"' : scalaLit(it.type)}`), 'java.util.')
+          `${JSON.stringify(it.name)}, ${isMatchOp && it.name === idF ? '"test01"' : scalaLit(it.type)}`), 'java.util.')
         : 'null'
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
@@ -57,7 +57,7 @@ val client = ${SDK}.testSDK(null, null)
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
       arg = javaMapOf(chosen.map((it: any) =>
-        `"${it.name}", ${scalaLit(it.type)}`), 'java.util.')
+        `${JSON.stringify(it.name)}, ${scalaLit(it.type)}`), 'java.util.')
     }
     const eVar = scalaVarName(exampleEntity.name) + ('list' === primaryOp ? 'List' : '')
     const accessor = scalaVarName(exampleEntity.name)

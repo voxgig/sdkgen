@@ -151,7 +151,7 @@ function ocamlListMatch(entity: any): string {
     (({ NULL: 'Null', INTEGER: '(Num 1.)', NUMBER: '(Num 1.)', BOOLEAN: '(Bool true)', ARRAY: '(empty_list ())', OBJECT: '(empty_map ())' }) as any)[canonScalarKey(type)] ?? '(Str "example")'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? `(jo [${items.map((it: any) => `("${it.name}", ${lit(it.type)})`).join('; ')}])`
+    ? `(jo [${items.map((it: any) => `("${ocamlString(it.name)}", ${lit(it.type)})`).join('; ')}])`
     : '(empty_map ())'
 }
 

@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, phpEntityAccessor, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, phpEntityAccessor, requiredItems, litPair } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -39,20 +39,20 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
     if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first, then parent path params like
       // page_id) — the same shape the runtime resolves path params from.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       callArg = 0 < items.length
         ? `[${items.map((it: any) =>
-          `"${it.name}" => ${isMatchOp && it.name === idF ? '"test01"' : phpLit(it.type)}`).join(', ')}]`
+          litPair('php', it.name, isMatchOp && it.name === idF ? '"test01"' : phpLit(it.type))).join(', ')}]`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
-      callArg = `[${chosen.map((it: any) => `"${it.name}" => ${phpLit(it.type)}`).join(', ')}]`
+      callArg = `[${chosen.map((it: any) => litPair('php', it.name, phpLit(it.type))).join(', ')}]`
     }
     // A list result is an array — name the variable accordingly.
     const eVar = ename + ('list' === primaryOp ? 's' : '')
