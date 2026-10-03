@@ -112,7 +112,7 @@ my $__dir;
 BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
-
+${'cookie' === spec.where ? 'require(Cwd::abs_path("$__dir/prepare_headers.pm"));\n' : ''}
 package ${spec.Name}Utilities;
 
 our %REGISTRY;
@@ -190,14 +190,7 @@ function cookieHelper(spec: AuthSpec): string {
 my $set_cookie = sub {
   my ($headers, $name, $value) = @_;
   my $existing = $headers->{$COOKIE_HEADER};
-  my @kept;
-  if (defined $existing && !ref $existing) {
-    for my $part (split /;/, $existing) {
-      (my $piece = $part) =~ s/^\\s+|\\s+$//g;
-      next if '' eq $piece || $piece eq $name || 0 == index($piece, "$name=");
-      push @kept, $piece;
-    }
-  }
+  my @kept = defined $existing && !ref $existing ? @{ cookie_keep($existing, { $name => 1 }) } : ();
   push @kept, "$name=$value" if defined $value;
   if (@kept) {
     $headers->{$COOKIE_HEADER} = join('; ', @kept);

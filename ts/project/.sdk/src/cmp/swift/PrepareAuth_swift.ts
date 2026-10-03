@@ -252,16 +252,7 @@ private func cookiesWithoutCred(_ headers: VMap, _ name: String) -> String {
     return ""
   }
 
-  var kept: [String] = []
-  for part in existing.split(separator: ";", omittingEmptySubsequences: false) {
-    let piece = part.trimmingCharacters(in: .whitespaces)
-    if piece == "" || piece == name || piece.hasPrefix(name + "=") {
-      continue
-    }
-    kept.append(piece)
-  }
-
-  return kept.joined(separator: "; ")
+  return cookieKeep(existing, [name]).joined(separator: "; ")
 }
 
 // Set (non-nil) or remove (nil) the named pair, leaving every other cookie

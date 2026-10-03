@@ -73,6 +73,15 @@ const COOKIE_CASES: AuthCase[] = [
     cookieStep({ auth, apikey: 'K' }, 'other=' + 'x'.repeat(4096) + '; session=K'),
     cookieStep({ auth }, 'other=' + 'x'.repeat(4096)),
   ]),
+  // A cookie is one ;-delimited piece: nothing inside its value is read.
+  cookieCase('keep an opaque cookie whose value holds pairs', 'other=a=b&session=OLD; session=OLD2', [
+    cookieStep({ auth, apikey: 'K' }, 'other=a=b&session=OLD; session=K'),
+    cookieStep({ auth: null }, 'other=a=b&session=OLD'),
+  ]),
+  cookieCase('keep an opaque cookie value with ampersands', 'other=a&&b; session=OLD', [
+    cookieStep({ auth, apikey: 'K' }, 'other=a&&b; session=K'),
+    cookieStep({ auth: null }, 'other=a&&b'),
+  ]),
   cookieCase('a run-time name replaces the declared cookie', 'theme=dark; session=OLD', [
     cookieStep({ auth: renamed('token'), apikey: 'K' }, 'theme=dark; token=K'),
     cookieStep({ auth: renamed('token'), apikey: 'K' }, 'theme=dark; token=K'),

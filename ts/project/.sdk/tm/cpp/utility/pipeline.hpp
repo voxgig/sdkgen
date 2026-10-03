@@ -19,6 +19,7 @@
 // (it includes only core/struct.hpp), so this cannot close a cycle with
 // core/config.hpp, which pulls in the feature headers.
 #include "../core/schema.hpp"
+#include "cookie.hpp"
 
 // prepareAuth is GENERATED, not templated: WHERE the credential goes -
 // header, query or cookie, and under what name - is a fact about THIS API
@@ -1492,6 +1493,32 @@ inline std::vector<CallArg> callArgs(CtxPtr ctx, const std::string& kind) {
 
 // ---- prepareHeaders ---------------------------------------------------
 
+// Strips the blanks around a cookie piece.
+inline std::string trimBlank(const std::string& s) {
+  size_t from = s.find_first_not_of(" \t");
+  if (std::string::npos == from) return "";
+  return s.substr(from, s.find_last_not_of(" \t") - from + 1);
+}
+
+// The form style of a cookie parameter: a list repeats the name, a map sends
+// its own keys, and every value is percent-encoded.
+inline std::string cookiePair(const std::string& wire, const Value& val) {
+  auto esc = [](const Value& v) { return Struct::escurl(Value(Struct::stringify(v))); };
+  std::vector<std::string> pairs;
+  if (val.is_list()) {
+    for (const auto& item : *val.as_list()) pairs.push_back(wire + "=" + esc(item));
+  } else if (val.is_map()) {
+    for (const auto& item : Struct::items(val)) {
+      pairs.push_back(Struct::escurl(pair_key(item)) + "=" + esc(pair_val(item)));
+    }
+  } else {
+    pairs.push_back(wire + "=" + esc(val));
+  }
+  std::string joined;
+  for (size_t i = 0; i < pairs.size(); i++) joined += (0 < i ? "; " : "") + pairs[i];
+  return joined;
+}
+
 inline Value prepareHeaders(CtxPtr ctx) {
   Value options = ctx->client->optionsMap();
   Value headers = getp(options, "headers");
@@ -1512,6 +1539,43 @@ inline Value prepareHeaders(CtxPtr ctx) {
       if (lower(key) == wire) out.as_map()->erase(key);
     }
     map_put(out, wire, Value(Struct::stringify(arg.val)));
+  }
+
+  // A cookie argument travels in the cookie header, form serialized and
+  // percent-encoded, replacing a cookie of the same name among those the
+  // caller's headers already send.
+  std::vector<CallArg> sent;
+  for (const auto& arg : callArgs(ctx, "cookie")) {
+    if (!is_nullish(arg.val)) sent.push_back(arg);
+  }
+  if (!sent.empty()) {
+    std::vector<std::string> names;
+    for (const auto& arg : sent) {
+      if (arg.val.is_map()) {
+        for (const auto& item : Struct::items(arg.val)) names.push_back(Struct::escurl(pair_key(item)));
+      } else {
+        names.push_back(arg.wire);
+      }
+    }
+    std::vector<std::string> kept;
+    for (const auto& item : Struct::items(out)) {
+      std::string key = as_str(pair_key(item));
+      if (lower(key) != "cookie") continue;
+      Value given = getp(out, key);
+      if (given.is_string()) {
+        for (const auto& cookie : cookieKeep(given.as_string(), names)) kept.push_back(cookie);
+      }
+      out.as_map()->erase(key);
+    }
+    for (const auto& arg : sent) {
+      std::string pair = cookiePair(arg.wire, arg.val);
+      if (!pair.empty()) kept.push_back(pair);
+    }
+    if (!kept.empty()) {
+      std::string joined;
+      for (size_t i = 0; i < kept.size(); i++) joined += (0 < i ? "; " : "") + kept[i];
+      map_put(out, "cookie", Value(joined));
+    }
   }
   return out;
 }
@@ -1592,9 +1656,9 @@ inline Value prepareQuery(CtxPtr ctx) {
 
   // A path parameter travels in the path. The generated config lists them as
   // args.params, which prepareParams reads; params is the older list of names.
-  // A header parameter travels in the headers, which prepareHeaders fills.
   Value aparams = point.is_map() ? getp(getp(point, "args"), "params") : Value::undef();
   Value aheader = point.is_map() ? getp(getp(point, "args"), "header") : Value::undef();
+  Value acookie = point.is_map() ? getp(getp(point, "args"), "cookie") : Value::undef();
   auto named = [&](const Value& defs, const std::string& s) {
     if (!defs.is_list()) return false;
     for (const auto& pd : *defs.as_list()) {
@@ -1604,9 +1668,13 @@ inline Value prepareQuery(CtxPtr ctx) {
     return false;
   };
 
+  // A header or cookie parameter travels in the headers, which prepareHeaders
+  // fills, unless a query parameter shares its name: then both are sent.
+  Value aquery = point.is_map() ? getp(getp(point, "args"), "query") : Value::undef();
+  auto elsewhere = [&](const std::string& s) { return (named(aheader, s) || named(acookie, s)) && !named(aquery, s); };
+
   // A query parameter travels under the name the definition gives it, its
   // orig, which the model may have renamed for the caller.
-  Value aquery = point.is_map() ? getp(getp(point, "args"), "query") : Value::undef();
   auto wire_name = [&](const std::string& s) {
     if (aquery.is_list()) {
       for (const auto& qd : *aquery.as_list()) {
@@ -1626,7 +1694,7 @@ inline Value prepareQuery(CtxPtr ctx) {
     std::string key = as_str(pair_key(item));
     Value val = pair_val(item);
     if (!is_nullish(val) && "$action" != key && !contains_str(params, key) &&
-        !named(aparams, key) && !named(aheader, key)) {
+        !named(aparams, key) && !elsewhere(key)) {
       map_put(out, wire_name(key), val);
     }
   }
@@ -1634,7 +1702,7 @@ inline Value prepareQuery(CtxPtr ctx) {
   // A create or update passes its query arguments in its data.
   for (const auto& arg : callArgs(ctx, "query")) {
     if (!is_nullish(arg.val) && !contains_str(params, arg.name) &&
-        !named(aparams, arg.name) && !named(aheader, arg.name)) {
+        !named(aparams, arg.name) && !elsewhere(arg.name)) {
       map_put(out, arg.wire, arg.val);
     }
   }
@@ -1678,7 +1746,7 @@ inline Value stripAction(const Value& reqdata) { return omitKeys(reqdata, {"$act
 // sends it, so the body is built from the request data without it.
 inline std::vector<std::string> routedArgNames(CtxPtr ctx) {
   std::vector<std::string> names;
-  for (const char* kind : {"header", "query"}) {
+  for (const char* kind : {"header", "cookie", "query"}) {
     for (const auto& arg : callArgs(ctx, kind)) names.push_back(arg.name);
   }
   return names;

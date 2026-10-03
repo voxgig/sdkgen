@@ -40,7 +40,7 @@ class ProjectNameTransformRequest
     private static function routed_arg_names(ProjectNameContext $ctx): array
     {
         $args = array_merge(ProjectNameParam::callArgs($ctx, 'header'),
-            ProjectNameParam::callArgs($ctx, 'query'));
+            ProjectNameParam::callArgs($ctx, 'cookie'), ProjectNameParam::callArgs($ctx, 'query'));
         return array_map(fn($arg) => $arg[0], $args);
     }
 

@@ -781,6 +781,25 @@
   (let [body (when (vs/ismap reqdata) (vs/getprop reqdata RAW-BODY))]
     (if (instance? java.io.InputStream body) (.readAllBytes ^java.io.InputStream body) body)))
 
+;; The form style of a cookie parameter: a list repeats the name, a map sends
+;; its own keys, and every value is percent-encoded.
+(defn- cookie-pair [wire v]
+  (let [esc (fn [x] (vs/escurl (vs/stringify x)))]
+    (str/join "; "
+              (cond
+                (vs/islist v) (map (fn [item] (str wire "=" (esc item))) v)
+                (vs/ismap v) (map (fn [k] (str (vs/escurl k) "=" (esc (vs/getprop v k)))) (vs/keysof v))
+                :else [(str wire "=" (esc v))]))))
+
+;; The caller's cookie pieces with the named cookies removed: a cookie is one
+;; ;-delimited piece, whatever its value holds.
+(defn- cookie-keep [header names]
+  (vec (for [piece (str/split header #";")
+             :let [cookie (str/trim piece)
+                   name (str/trim (first (str/split cookie #"=" 2)))]
+             :when (and (not= "" cookie) (not (contains? names name)))]
+         cookie)))
+
 (defn u-prepare-headers [ctx]
   (let [options (client-options-map (oget ctx :client))
         headers (vs/getprop options "headers")
@@ -795,6 +814,26 @@
             (when (and (string? k) (= key (str/lower-case k)))
               (.remove ^java.util.Map out k)))
           (.put ^java.util.Map out key (vs/stringify v)))))
+    ;; A cookie argument travels in the cookie header, form serialized and
+    ;; percent-encoded, replacing a cookie of the same name among those the
+    ;; caller's headers already send.
+    (let [sent (vec (for [[_ wire v] (call-args ctx "cookie") :when (some? v)] [wire v]))]
+      (when (seq sent)
+        (let [names (set (mapcat (fn [[wire v]] (if (vs/ismap v) (map vs/escurl (vs/keysof v)) [wire])) sent))
+              given (vec (filter (fn [k] (and (string? k) (= "cookie" (str/lower-case k))))
+                                 (vec (.keySet ^java.util.Map out))))
+              kept (vec (for [k given
+                              :let [v (.get ^java.util.Map out k)]
+                              :when (string? v)
+                              cookie (cookie-keep v names)]
+                          cookie))
+              pairs (vec (for [[wire v] sent
+                               :let [pair (cookie-pair wire v)]
+                               :when (not= "" pair)]
+                           pair))]
+          (doseq [k given] (.remove ^java.util.Map out k))
+          (when (seq (concat kept pairs))
+            (.put ^java.util.Map out "cookie" (str/join "; " (concat kept pairs)))))))
     out))
 
 ;; The name a point gives a parameter in the call, if it renames it.
@@ -866,9 +905,22 @@
         aheader (let [args (when point (vs/getprop point "args"))
                       h (when (vs/ismap args) (vs/getprop args "header"))]
                   (if (vs/islist h) h (vs/jt)))
-        pset (into (into (into #{} (vec params))
-                         (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams)))
-                   (keep (fn [hd] (when (vs/ismap hd) (vs/getprop hd "name"))) (vec aheader)))
+        ;; A cookie parameter travels in the cookie header, which u-prepare-headers fills.
+        acookie (let [args (when point (vs/getprop point "args"))
+                      c (when (vs/ismap args) (vs/getprop args "cookie"))]
+                  (if (vs/islist c) c (vs/jt)))
+        ;; A header or cookie name leaves the query unless a query parameter
+        ;; shares it: then both are sent.
+        declared (let [args (when point (vs/getprop point "args"))
+                       q (when (vs/ismap args) (vs/getprop args "query"))]
+                   (into #{} (keep (fn [qd] (when (vs/ismap qd) (vs/getprop qd "name")))
+                                   (vec (if (vs/islist q) q (vs/jt))))))
+        routed (fn [d] (when (vs/ismap d)
+                         (let [n (vs/getprop d "name")] (when-not (contains? declared n) n))))
+        pset (into (into (into (into #{} (vec params))
+                               (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams)))
+                         (keep routed (vec aheader)))
+                   (keep routed (vec acookie)))
         ;; A query parameter travels under the name the definition gives it,
         ;; its orig, which the model may have renamed for the caller.
         aquery (let [args (when point (vs/getprop point "args"))
@@ -908,7 +960,7 @@
 ;; u-prepare-query sends it, so the body is built from the request data
 ;; without it.
 (defn- routed-arg-names [ctx]
-  (mapv first (concat (call-args ctx "header") (call-args ctx "query"))))
+  (mapv first (concat (call-args ctx "header") (call-args ctx "cookie") (call-args ctx "query"))))
 
 (defn u-transform-request [ctx]
   (let [spec (oget ctx :spec) point (oget ctx :point)

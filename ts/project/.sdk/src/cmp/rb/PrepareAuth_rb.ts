@@ -38,7 +38,7 @@ function render(spec: {
 }): string {
   const head = `# ${spec.Name} SDK utility: prepare_auth
 require_relative 'struct/voxgig_struct'
-module ${spec.Name}Utilities
+${'cookie' === spec.where ? "require_relative 'prepare_headers'\n" : ''}module ${spec.Name}Utilities
 `
 
   const guard = `  PrepareAuth = ->(ctx) {
@@ -97,9 +97,7 @@ end
     # The named pair, and only that one: another cookie the caller set survives.
     set_cookie = ->(hs, cname, value) {
       cookie = hs[HEADER_COOKIE]
-      rest = !cookie.is_a?(String) ? [] : cookie.split(";").map(&:strip).reject { |pair|
-        pair.empty? || pair == cname || pair.start_with?("#{cname}=")
-      }
+      rest = cookie.is_a?(String) ? ${spec.Name}Utilities.cookie_keep(cookie, [cname]) : []
       rest << "#{cname}=#{value}" unless value.nil?
       if rest.empty?
         hs.delete(HEADER_COOKIE)

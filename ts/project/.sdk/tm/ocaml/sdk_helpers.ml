@@ -150,3 +150,12 @@ let num_opt (v : value) : float option =
 
 let int_opt (v : value) : int option =
   match v with Num n -> Some (int_of_float n) | _ -> None
+
+(* The caller's cookie pieces with the named cookies removed: a cookie is one
+ * ;-delimited piece, whatever its value holds. *)
+let cookie_keep (header : string) (names : string list) : string list =
+  List.filter_map (fun piece ->
+      let cookie = String.trim piece in
+      let name = String.trim (List.hd (String.split_on_char '=' cookie)) in
+      if cookie = "" || List.mem name names then None else Some cookie)
+    (String.split_on_char ';' header)

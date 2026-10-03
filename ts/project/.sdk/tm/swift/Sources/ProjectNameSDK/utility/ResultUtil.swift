@@ -64,7 +64,7 @@ private func stripAction(_ reqdata: Value) -> Value {
 // prepareQueryUtil sends it, so the body is built from the request data
 // without it.
 private func routedArgNames(_ ctx: Context) -> [String] {
-  return (callArgs(ctx, "header") + callArgs(ctx, "query")).map { $0.name }
+  return (callArgs(ctx, "header") + callArgs(ctx, "cookie") + callArgs(ctx, "query")).map { $0.name }
 }
 
 private func omitKeys(_ reqdata: Value, _ names: [String]) -> Value {

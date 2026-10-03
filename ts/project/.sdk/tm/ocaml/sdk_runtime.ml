@@ -671,6 +671,16 @@ let media_headers (point : value) (headers : value) : unit =
 
 let raw_body (reqdata : value) : value = getp reqdata raw_body_key
 
+(* The form style of a cookie parameter: a list repeats the name, a map sends
+ * its own keys, and every value is percent-encoded. *)
+let cookie_pair (wire : string) (v : value) : string =
+  let esc x = escurl_s (stringify x) in
+  let pairs = match v with
+    | List items -> List.map (fun item -> wire ^ "=" ^ esc item) !items
+    | Map _ -> List.map (fun k -> escurl_s k ^ "=" ^ esc (getp v k)) (keysof v)
+    | _ -> [wire ^ "=" ^ esc v] in
+  String.concat "; " pairs
+
 let prepare_headers_util (ctx : ctx) : value =
   let options = client_options_map (cc ctx) in
   let out =
@@ -691,6 +701,24 @@ let prepare_headers_util (ctx : ctx) : value =
           (keysof out);
         setp out key (Str (stringify v)))
     (call_args ctx "header");
+  (* A cookie argument travels in the cookie header, form serialized and
+   * percent-encoded, replacing a cookie of the same name among those the
+   * caller's headers already send. *)
+  let sent = List.filter (fun (_, _, v) -> match v with Noval | Null -> false | _ -> true)
+      (call_args ctx "cookie") in
+  if sent <> [] then begin
+    let names = List.concat (List.map (fun (_, wire, v) ->
+        match v with Map _ -> List.map escurl_s (keysof v) | _ -> [wire]) sent) in
+    let given = List.filter (fun k -> String.lowercase_ascii k = "cookie") (keysof out) in
+    let kept = List.concat (List.map (fun k ->
+        match getp out k with
+        | Str s -> cookie_keep s names
+        | _ -> []) given) in
+    List.iter (fun k -> ignore (delprop out (Str k))) given;
+    let pairs = List.filter_map (fun (_, wire, v) ->
+        match cookie_pair wire v with "" -> None | pair -> Some pair) sent in
+    if kept @ pairs <> [] then setp out "cookie" (Str (String.concat "; " (kept @ pairs)))
+  end;
   out
 
 (* The name a point gives a parameter in the call, if it renames it. *)
@@ -756,13 +784,26 @@ let prepare_query_util (ctx : ctx) : value =
     | List r -> List.map (fun pd -> getp pd "name") !r
     | _ -> []
   in
-  (* A header parameter travels in the headers, which prepare_headers fills. *)
+  (* A header or cookie parameter travels in the headers, which
+   * prepare_headers fills, unless a query parameter shares its name: then
+   * both are sent. *)
+  let declared =
+    match getp (getp ctx.c_point "args") "query" with
+    | List r -> List.map (fun qd -> getp qd "name") !r
+    | _ -> []
+  in
   let header_names =
     match getp (getp ctx.c_point "args") "header" with
     | List r -> List.map (fun hd -> getp hd "name") !r
     | _ -> []
   in
-  let params = params @ arg_names @ header_names in
+  let cookie_names =
+    match getp (getp ctx.c_point "args") "cookie" with
+    | List r -> List.map (fun cd -> getp cd "name") !r
+    | _ -> []
+  in
+  let elsewhere = List.filter (fun n -> not (List.mem n declared)) (header_names @ cookie_names) in
+  let params = params @ arg_names @ elsewhere in
   let contains_param s = List.exists (fun v -> match v with Str x -> x = s | _ -> false) params in
   (* A query parameter travels under the name the definition gives it, its
    * orig, which the model may have renamed for the caller. *)
@@ -948,7 +989,8 @@ let strip_action (reqdata : value) : value = omit_keys reqdata ["$action"]
    prepare_query_util sends it, so the body is built from the request data
    without it. *)
 let routed_arg_names (ctx : ctx) : string list =
-  List.map (fun (name, _, _) -> name) (call_args ctx "header" @ call_args ctx "query")
+  List.map (fun (name, _, _) -> name)
+    (call_args ctx "header" @ call_args ctx "cookie" @ call_args ctx "query")
 
 let transform_request_util (ctx : ctx) : value =
   (match ctx.c_spec with Some s -> s.sp_step <- "reqform" | None -> ());

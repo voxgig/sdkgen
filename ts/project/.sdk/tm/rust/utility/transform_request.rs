@@ -17,7 +17,7 @@ fn strip_action(reqdata: Value) -> Value {
 // without it.
 fn routed_arg_names(ctx: &Rc<Context>) -> Vec<String> {
     let mut names = Vec::new();
-    for kind in ["header", "query"] {
+    for kind in ["header", "cookie", "query"] {
         for (name, _, _) in call_args(ctx, kind) {
             names.push(name);
         }

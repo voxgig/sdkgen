@@ -18,12 +18,15 @@ module ProjectNameUtilities
           params << name if name.is_a?(String)
         end
       end
-      # A header parameter travels in the headers, which prepare_headers fills.
-      hl = VoxgigStruct.getpath(point, "args.header")
-      if hl.is_a?(Array)
+      # A header or cookie parameter travels in the headers, which prepare_headers
+      # fills, unless a query parameter shares its name: then both are sent.
+      ql = VoxgigStruct.getpath(point, "args.query")
+      declared = ql.is_a?(Array) ? ql.map { |qd| VoxgigStruct.getprop(qd, "name") } : []
+      [VoxgigStruct.getpath(point, "args.header"), VoxgigStruct.getpath(point, "args.cookie")].each do |hl|
+        next unless hl.is_a?(Array)
         hl.each do |hd|
           name = VoxgigStruct.getprop(hd, "name")
-          params << name if name.is_a?(String)
+          params << name if name.is_a?(String) && !declared.include?(name)
         end
       end
     end

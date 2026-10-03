@@ -31,16 +31,37 @@ public static partial class SdkUtility
             }
         }
 
-        // A header parameter travels in the headers, which PrepareHeaders
-        // fills.
+        // A header or cookie parameter travels in the headers, which
+        // PrepareHeaders fills, unless a query parameter shares its name: then
+        // both are sent.
+        var declared = new List<object?>();
+        if (point != null &&
+            StructUtils.GetPath(point, StructUtils.Jt("args", "query")) is List<object?> dql)
+        {
+            foreach (var qd in dql)
+            {
+                declared.Add(StructUtils.GetProp(qd, "name"));
+            }
+        }
         if (point != null &&
             StructUtils.GetPath(point, StructUtils.Jt("args", "header")) is List<object?> ahl)
         {
             foreach (var hd in ahl)
             {
-                if (StructUtils.GetProp(hd, "name") is string hname)
+                if (StructUtils.GetProp(hd, "name") is string hname && !declared.Contains(hname))
                 {
                     paramnames.Add(hname);
+                }
+            }
+        }
+        if (point != null &&
+            StructUtils.GetPath(point, StructUtils.Jt("args", "cookie")) is List<object?> acl)
+        {
+            foreach (var cd in acl)
+            {
+                if (StructUtils.GetProp(cd, "name") is string cname && !declared.Contains(cname))
+                {
+                    paramnames.Add(cname);
                 }
             }
         }

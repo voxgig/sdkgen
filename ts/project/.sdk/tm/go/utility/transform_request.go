@@ -52,7 +52,7 @@ func stripAction(reqdata any) any {
 // without it.
 func routedArgNames(ctx *core.Context) []string {
 	names := []string{}
-	for _, arg := range append(callArgs(ctx, "header"), callArgs(ctx, "query")...) {
+	for _, arg := range append(append(callArgs(ctx, "header"), callArgs(ctx, "cookie")...), callArgs(ctx, "query")...) {
 		names = append(names, arg.name)
 	}
 	return names

@@ -97,6 +97,7 @@ use crate::core::error::${spec.errtype};
 use crate::core::helpers::{getp, getpath, setp};
 use crate::core::spec::Spec;
 ${withBasic ? `use crate::utility::clean::{base64_encode, clean_add};
+` : ''}${'cookie' === spec.where ? `use crate::utility::prepare_headers::cookie_keep;
 ` : ''}use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
 
@@ -254,15 +255,9 @@ fn set_cookie(headers: &Value, name: &str, value: Option<&str>) {
         Value::Str(s) => s,
         _ => String::new(),
     };
-    let lead = format!("{}=", name);
-    let mut kept: Vec<String> = existing
-        .split(';')
-        .map(|part| part.trim())
-        .filter(|piece| !piece.is_empty() && *piece != name && !piece.starts_with(&lead))
-        .map(|piece| piece.to_string())
-        .collect();
+    let mut kept = cookie_keep(&existing, &[name.to_string()]);
     if let Some(value) = value {
-        kept.push(format!("{}{}", lead, value));
+        kept.push(format!("{}={}", name, value));
     }
     if kept.is_empty() {
         vs::del_prop(headers.clone(), &Value::str(COOKIE_HEADER));

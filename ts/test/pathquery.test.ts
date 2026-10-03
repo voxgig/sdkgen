@@ -101,6 +101,25 @@ describe('prepareQuery', () => {
       } }
       deepStrictEqual(prepareQuery(ctx(point, { idempotency_key: 'k1', limit: 2 })), { limit: 2 })
     })
+
+    test(lang + ': a cookie argument stays out of the query', () => {
+      const point = { args: {
+        cookie: [{ name: 'session_id', orig: 'SESSIONID', kind: 'cookie' }],
+        query: [{ name: 'limit', orig: 'limit', kind: 'query' }],
+      } }
+      deepStrictEqual(prepareQuery(ctx(point, { session_id: 's1', limit: 2 })), { limit: 2 })
+    })
+
+    // A parameter is unique by name AND location, so a query parameter may
+    // share its name with a header or cookie: then the value goes to both.
+    test(lang + ': a query argument that shares a header or cookie name still goes out', () => {
+      const point = { args: {
+        header: [{ name: 'trace', orig: 'X-Trace', kind: 'header' }],
+        cookie: [{ name: 'lang', orig: 'lang', kind: 'cookie' }],
+        query: [{ name: 'lang', orig: 'lang', kind: 'query' }, { name: 'trace', orig: 'trace', kind: 'query' }],
+      } }
+      deepStrictEqual(prepareQuery(ctx(point, { lang: 'en', trace: 't1' })), { lang: 'en', trace: 't1' })
+    })
   }
 
 
@@ -158,6 +177,19 @@ describe('prepareQuery', () => {
     deepStrictEqual(missing, [], 'targets whose prepareQuery never reads args.header')
   })
 
+  test('every target keeps a cookie argument out of the query', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      ok(-1 !== at, lang + ': no prepareQuery definition in ' + rel)
+      if (!/\bargs\b\W{1,12}cookie\b/.test(src.slice(at, at + 4500))) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose prepareQuery never reads args.cookie')
+  })
+
   test('every target sends a query argument under its orig', () => {
     const missing: string[] = []
     for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
@@ -195,6 +227,10 @@ const headerStruct = {
   clone: (v: any) => JSON.parse(JSON.stringify(v)),
   getprop: (o: any, k: string) => null == o ? undefined : o[k],
   stringify: (v: any) => 'string' === typeof v ? v : JSON.stringify(v).replace(/"/g, ''),
+  escurl: (s: string) => encodeURIComponent(s),
+  islist: (v: any) => Array.isArray(v),
+  ismap: (v: any) => null != v && 'object' === typeof v && !Array.isArray(v),
+  keysof: (v: any) => Object.keys(v).sort(),
 }
 
 function hctx(point: any, reqmatch: any, reqdata: any, headers: any = {}) {
@@ -242,6 +278,83 @@ describe('prepareHeaders', () => {
         { 'Idempotency-Key': 'default', 'user-agent': 'sdk' })),
       { 'user-agent': 'sdk', 'idempotency-key': 'call' })
     })
+
+    // A cookie argument travels in the cookie header as name=value, after the
+    // cookies the caller's headers already send.
+    const cookiePoint = { args: {
+      header: [{ name: 'x_trace', orig: 'X-Trace', kind: 'header' }],
+      cookie: [
+        { name: 'session_id', orig: 'SESSIONID', kind: 'cookie' },
+        { name: 'theme', orig: 'theme', kind: 'cookie' },
+        { name: 'prefs', orig: 'prefs', kind: 'cookie' },
+      ],
+    } }
+
+    test(lang + ': a cookie argument goes out in the cookie header as name=value', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' }, { theme: 'dark', name: 'n' })),
+        { cookie: 'SESSIONID=s1; theme=dark' })
+    })
+
+    test(lang + ': a cookie argument follows the cookies the caller sends, whatever the header case', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' }, {},
+        { Cookie: 'lang=en', 'user-agent': 'sdk' })),
+      { 'user-agent': 'sdk', cookie: 'lang=en; SESSIONID=s1' })
+    })
+
+    test(lang + ': an absent or null cookie argument leaves the headers alone', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: null }, {}, { Cookie: 'lang=en' })),
+        { Cookie: 'lang=en' })
+    })
+
+    // The form style: a value is percent-encoded, so a space, a comma or a
+    // semicolon in it cannot split or end the cookie; a list repeats the name
+    // and a map sends its own keys, each pair a cookie of its own, since
+    // cookie-pairs are delimited by `; ` and never by `&` (RFC 6265).
+    test(lang + ': a cookie argument is form serialized and percent-encoded', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 'a b;c,d' },
+        { theme: ['dark', 'x y'], prefs: { size: 2, lang: 'en gb' } })),
+      { cookie: 'SESSIONID=a%20b%3Bc%2Cd; theme=dark; theme=x%20y; lang=en%20gb; size=2' })
+    })
+
+    test(lang + ': a cookie argument replaces a cookie of the same name the caller sends', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' }, {},
+        { Cookie: 'SESSIONID=old; theme=dark ;lang=en' })),
+      { cookie: 'theme=dark; lang=en; SESSIONID=s1' })
+    })
+
+    // A map argument sends its own keys, so those are the names it replaces.
+    test(lang + ': a map cookie argument replaces the cookies its keys name', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' },
+        { prefs: { lang: 'en', size: 2 } }, { Cookie: 'lang=old; theme=dark' })),
+      { cookie: 'theme=dark; SESSIONID=s1; lang=en; size=2' })
+    })
+
+    // ...and sends them percent-encoded, so that is the form it replaces.
+    test(lang + ': a map cookie argument replaces a default under its encoded key', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' },
+        { prefs: { 'x y': 'new' } }, { Cookie: 'x%20y=old; theme=dark' })),
+      { cookie: 'theme=dark; SESSIONID=s1; x%20y=new' })
+    })
+
+    // A default is one cookie whatever its value holds: nothing inside it is
+    // read, so pairs in the value are kept with it, and & is just a character.
+    test(lang + ': a default cookie whose value holds pairs is kept whole', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' },
+        { theme: 'dark' }, { Cookie: 'session=a=b&theme=old' })),
+      { cookie: 'session=a=b&theme=old; SESSIONID=s1; theme=dark' })
+    })
+
+    test(lang + ': an opaque default cookie value keeps its ampersands', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' }, {},
+        { Cookie: 'other=a&&b; theme=dark' })),
+      { cookie: 'other=a&&b; theme=dark; SESSIONID=s1' })
+    })
+
+    test(lang + ': a default cookie whose value has ampersands is replaced whole', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' }, {},
+        { Cookie: 'SESSIONID=a&&b; theme=dark' })),
+      { cookie: 'theme=dark; SESSIONID=s1' })
+    })
   }
 
 
@@ -285,6 +398,26 @@ describe('prepareHeaders', () => {
       }
     }
     deepStrictEqual(missing, [], 'targets whose prepareHeaders never sends a header argument')
+  })
+
+  // Source again: the cookie list is read, each argument goes through the
+  // pairing helper, which percent-encodes, and the pairs are joined into the
+  // cookie header with the separator the cookie syntax uses.
+  test('every target sends a cookie argument in the cookie header', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      const body = src.slice(at, at + 6000)
+      const reads = callsArgs('cookie').test(body) || /\bargs\b\W{1,12}cookie\b/.test(body)
+      const encodes = src.split(/cookie[_-]?pair/i).slice(1)
+        .some((after) => /esc_?url/i.test(after.slice(0, 1500)))
+      if (!reads || !/cookie[_-]?pair/i.test(body) || !encodes ||
+        !/["']cookie["']/.test(body) || !/["']; ["']/.test(body)) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose prepareHeaders never sends a cookie argument')
   })
 
   // Source again: a default of the same name, in another case, is removed

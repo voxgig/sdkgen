@@ -228,17 +228,7 @@ fn cookies_without_cred(headers: Value, name: []const u8) []const u8 {
     };
     if (existing.len == 0) return "";
 
-    var kept: []const u8 = "";
-    var it = std.mem.splitScalar(u8, existing, ';');
-    while (it.next()) |part| {
-        const piece = std.mem.trim(u8, part, " \\t");
-        if (piece.len == 0) continue;
-        if (std.mem.eql(u8, piece, name)) continue;
-        if (piece.len > name.len and std.mem.startsWith(u8, piece, name) and piece[name.len] == '=') continue;
-        kept = if (kept.len == 0) piece else fmt("{s}; {s}", .{ kept, piece });
-    }
-
-    return kept;
+    return std.mem.join(h.A(), "; ", h.cookie_keep(existing, &[_][]const u8{name})) catch "";
 }
 
 // Set (a value) or remove (null) the named pair, leaving every other cookie in place.

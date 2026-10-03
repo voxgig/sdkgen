@@ -208,28 +208,11 @@ let cookie_header = "cookie"
 let option_apikey = "apikey"
 let not_found = "__NOTFOUND__"
 ${authName(false)}
-(* Strip ASCII spaces and tabs from both ends of one cookie pair. *)
-let cookie_trim (s : string) : string =
-  let n = String.length s in
-  let b = ref 0 and e = ref n in
-  while !b < !e && (s.[!b] = ' ' || s.[!b] = '\\t') do incr b done;
-  while !e > !b && (s.[!e - 1] = ' ' || s.[!e - 1] = '\\t') do decr e done;
-  String.sub s !b (!e - !b)
-
-(* True for the named pair only: the bare name, or the name followed by
- * '='. A cookie called "${ocamlString(spec.name)}_backup" must survive. *)
-let cookie_is_cred (name : string) (pair : string) : bool =
-  let n = String.length name in
-  pair = name
-  || (String.length pair > n && String.sub pair 0 (n + 1) = name ^ "=")
-
 (* Rewrite the cookie header with the named pair set (Some v) or removed
  * (None), every other cookie kept in order. *)
 let cookie_set (headers : value) (name : string) (v : string option) : unit =
   let existing = match getp headers cookie_header with Str s -> s | _ -> "" in
-  let kept =
-    List.filter (fun p -> p <> "" && not (cookie_is_cred name p))
-      (List.map cookie_trim (String.split_on_char ';' existing)) in
+  let kept = cookie_keep existing [name] in
   let kept = match v with None -> kept | Some x -> kept @ [name ^ "=" ^ x] in
   if [] = kept then ignore (delprop headers (Str cookie_header))
   else setp headers cookie_header (Str (String.concat "; " kept))

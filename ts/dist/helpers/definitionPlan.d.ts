@@ -21,6 +21,11 @@ type DefinitionPoint = {
         wire: string;
         value: any;
     }[];
+    cookies: {
+        name: string;
+        wire: string;
+        value: any;
+    }[];
     query: string[];
     queryArgs: {
         name: string;

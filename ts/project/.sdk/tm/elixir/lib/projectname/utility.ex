@@ -1754,7 +1754,67 @@ defmodule ProjectName.Utility do
       end
     end)
 
+    # A cookie argument travels in the cookie header, form serialized and
+    # percent-encoded, replacing a cookie of the same name among those the
+    # caller's headers already send.
+    sent = Enum.filter(call_args(ctx, "cookie"), fn {_name, _wire, val} -> val != nil end)
+
+    if sent != [] do
+      names =
+        Enum.flat_map(sent, fn {_name, wire, val} ->
+          if S.ismap(val), do: Enum.map(S.keysof(val), &S.escurl/1), else: [wire]
+        end)
+
+      given =
+        Enum.filter(H.entries(out), fn {k, _} -> is_binary(k) and String.downcase(k) == "cookie" end)
+
+      kept = Enum.flat_map(given, fn {_, v} -> if is_binary(v), do: cookie_keep(v, names), else: [] end)
+
+      Enum.each(given, fn {k, _} -> S.delprop(out, k) end)
+
+      pairs =
+        Enum.flat_map(sent, fn {_name, wire, val} ->
+          case cookie_pair(wire, val) do
+            "" -> []
+            pair -> [pair]
+          end
+        end)
+
+      if kept ++ pairs != [], do: S.setprop(out, "cookie", Enum.join(kept ++ pairs, "; "))
+    end
+
     out
+  end
+
+  # The caller's cookie pieces with the named cookies removed: a cookie is one
+  # ;-delimited piece, whatever its value holds.
+  def cookie_keep(header, names) do
+    header
+    |> String.split(";")
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(fn cookie -> cookie == "" or cookie_name(cookie) in names end)
+  end
+
+  defp cookie_name(cookie), do: cookie |> String.split("=", parts: 2) |> hd() |> String.trim()
+
+  # The form style of a cookie parameter: a list repeats the name, a map sends
+  # its own keys, and every value is percent-encoded.
+  defp cookie_pair(wire, val) do
+    esc = fn v -> S.escurl(S.stringify(v)) end
+
+    pairs =
+      cond do
+        S.islist(val) ->
+          Enum.map(H.entries(val), fn {_i, item} -> wire <> "=" <> esc.(item) end)
+
+        S.ismap(val) ->
+          Enum.map(S.keysof(val), fn k -> S.escurl(k) <> "=" <> esc.(S.getprop(val, k)) end)
+
+        true ->
+          [wire <> "=" <> esc.(val)]
+      end
+
+    Enum.join(pairs, "; ")
   end
 
   def prepare_body_impl(ctx) do
@@ -1850,8 +1910,14 @@ defmodule ProjectName.Utility do
 
     # A path parameter travels in the path. The generated config lists them
     # as args.params, which prepare_params reads; params is the older list.
-    # A header parameter travels in the headers, which prepare_headers fills.
-    param_strs = param_strs ++ arg_names(point, "args.params") ++ arg_names(point, "args.header")
+    # A header or cookie parameter travels in the headers, which prepare_headers
+    # fills, unless a query parameter shares its name: then both are sent.
+    declared = arg_names(point, "args.query")
+
+    param_strs =
+      param_strs ++
+        arg_names(point, "args.params") ++
+        Enum.reject(arg_names(point, "args.header") ++ arg_names(point, "args.cookie"), &(&1 in declared))
 
     # A query parameter travels under the name the definition gives it, its
     # orig, which the model may have renamed for the caller.
@@ -2127,7 +2193,7 @@ defmodule ProjectName.Utility do
   # prepare_query_impl sends it, so the body is built from the request data
   # without it.
   defp routed_arg_names(ctx) do
-    Enum.map(call_args(ctx, "header") ++ call_args(ctx, "query"), &elem(&1, 0))
+    Enum.map(call_args(ctx, "header") ++ call_args(ctx, "cookie") ++ call_args(ctx, "query"), &elem(&1, 0))
   end
 
   defp omit_keys(reqdata, names) do

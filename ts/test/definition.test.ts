@@ -255,6 +255,84 @@ describe('definitionPlan', () => {
     deepStrictEqual(list.select, {})
   })
 
+  // A cookie argument is sent in the cookie header, under the definition's
+  // name, never as a selector in the query.
+  test('a cookie argument is planned under its definition name', () => {
+    const def = { ...DEF, paths: { '/uploads': { get: {
+      parameters: [{ in: 'cookie', name: 'SESSIONID', example: 's-1' }],
+      responses: { '200': { content: { 'application/json': { example: [] } } } },
+    } } } }
+    const model = { main: { kit: { entity: { upload: {
+      name: 'upload', id: { field: 'id', name: 'id' }, op: { list: { points: [{
+        m: 'GET', o: '/uploads', q: { exist: ['session_id'] },
+        g: { cookie: [{ n: 'session_id', or: 'SESSIONID' }] },
+      }] } },
+    } } } } }
+    const [list] = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(list.cookies, [{ name: 'session_id', wire: 'SESSIONID', value: 's-1' }])
+    deepStrictEqual(list.select, {})
+  })
+
+  // A query parameter may share its call name with a cookie: the SDK sends
+  // both from one value, so the query argument stays planned and the pair
+  // takes the cookie's value.
+  test('a query argument that shares a cookie name stays in the plan', () => {
+    const def = { ...DEF, paths: { '/uploads': { get: {
+      parameters: [
+        { in: 'query', name: 'lang', example: 'en' },
+        { in: 'cookie', name: 'lang', example: 'fr' },
+      ],
+      responses: { '200': { content: { 'application/json': { example: [] } } } },
+    } } } }
+    const model = { main: { kit: { entity: { upload: {
+      name: 'upload', id: { field: 'id', name: 'id' }, op: { list: { points: [{
+        m: 'GET', o: '/uploads',
+        g: { query: [{ n: 'lang', or: 'lang' }], cookie: [{ n: 'lang', or: 'lang' }] },
+      }] } },
+    } } } } }
+    const [list] = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(list.queryArgs, [{ name: 'lang', wire: 'lang' }])
+    deepStrictEqual(list.cookies, [{ name: 'lang', wire: 'lang', value: 'fr' }])
+    strictEqual(list.select.lang, 'fr')
+  })
+
+  // The runner feeds the call one value per name, so a header or cookie that
+  // shares a call name with a path or header argument takes that sample.
+  test('a header or cookie that shares a path or header name takes its sample', () => {
+    const def = { ...DEF, paths: { '/uploads/{id}/items': { get: {
+      parameters: [
+        { in: 'path', name: 'id', example: 'up_1' },
+        { in: 'header', name: 'X-Id', example: 'h-ex' },
+        { in: 'header', name: 'X-Trace', example: 't-h' },
+        { in: 'cookie', name: 'uid', example: 'c-ex' },
+        { in: 'cookie', name: 'trace', example: 't-c' },
+      ],
+      responses: { '200': { content: { 'application/json': { example: [] } } } },
+    } } } }
+    const model = { main: { kit: { entity: { upload: {
+      name: 'upload', id: { field: 'id', name: 'id' }, op: { list: { points: [{
+        m: 'GET', o: '/uploads/{id}/items',
+        g: {
+          params: [{ n: 'id', or: 'id' }],
+          header: [{ n: 'id', or: 'X-Id' }, { n: 'trace', or: 'X-Trace' }],
+          cookie: [{ n: 'id', or: 'uid' }, { n: 'trace', or: 'trace' }],
+        },
+      }] } },
+    } } } } }
+    const [list] = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(list.args, [{ name: 'id', wire: 'id', value: 'up_1' }])
+    deepStrictEqual(list.headers, [
+      { name: 'id', wire: 'X-Id', value: 'up_1' }, { name: 'trace', wire: 'X-Trace', value: 't-h' }])
+    deepStrictEqual(list.cookies, [
+      { name: 'id', wire: 'uid', value: 'up_1' }, { name: 'trace', wire: 'trace', value: 't-h' }])
+  })
+
   test('the example is the sample, three items at most', () => {
     strictEqual(point('list').sample.data.length, 3)
     deepStrictEqual(point('list').query, ['limit'])
@@ -337,6 +415,33 @@ describe('definitionPlan', () => {
       operation: (m: string, o: string) => operationFacts(def, { m, o }),
     } } })
     deepStrictEqual(list.headers, [{ name: 'lw_client', wire: 'Lw-Client', value: 'h1' }])
+  })
+
+  // An API that also declares its session cookie as a parameter: the SDK's
+  // credential goes in that cookie, replacing whatever the test would send.
+  test('a cookie parameter in the credential cookie is left to the credential', () => {
+    const def = { ...DEF, security: undefined,
+      components: { securitySchemes: { session: { type: 'apiKey', in: 'cookie', name: 'SESSIONID' } } },
+      paths: { '/uploads': { get: {
+        security: [{ session: [] }],
+        parameters: [
+          { in: 'cookie', name: 'SESSIONID', example: 's-1' },
+          { in: 'cookie', name: 'theme', example: 'dark' },
+        ],
+        responses: { '200': { content: { 'application/json': { example: [] } } } },
+      } } } }
+    const model = { main: { kit: {
+      info: { security: { scheme: 'session', type: 'apiKey', in: 'cookie', name: 'SESSIONID' } },
+      entity: { upload: {
+        name: 'upload', id: { field: 'id', name: 'id' }, op: { list: { points: [{
+          m: 'GET', o: '/uploads',
+          g: { cookie: [{ n: 'session_id', or: 'SESSIONID' }, { n: 'theme', or: 'theme' }] },
+        }] } },
+      } } } } }
+    const [list] = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(list.cookies, [{ name: 'theme', wire: 'theme', value: 'dark' }])
   })
 
   // Petstore secures its pets with OAuth and its store with an API key, and

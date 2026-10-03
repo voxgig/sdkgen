@@ -263,10 +263,7 @@ ${authName(false)}
     val existing = headers.get(COOKIE_HEADER) match { case s: String => s; case _ => "" }
     if ("" == existing) return ""
 
-    val kept = existing.split(";").map(_.trim).filter { piece =>
-      "" != piece && name != piece && !piece.startsWith(name + "=")
-    }
-    kept.mkString("; ")
+    PrepareHeaders.cookieKeep(existing, Seq(name)).mkString("; ")
   }
 
   // Set (a value) or remove (null) the named pair, leaving the rest in place.

@@ -66,7 +66,55 @@ func prepareHeadersUtil(_ ctx: Context) -> VMap {
     }
     out.entries[key] = .string(stringify(arg.val))
   }
+
+  // A cookie argument travels in the cookie header, form serialized and
+  // percent-encoded, replacing a cookie of the same name among those the
+  // caller's headers already send.
+  let sent = callArgs(ctx, "cookie").filter { !isNil($0.val) }
+  if !sent.isEmpty {
+    let names = sent.flatMap { arg in
+      arg.val.asMap != nil ? keysof(arg.val).map { escurl(.string($0)) } : [arg.wire]
+    }
+    var kept: [String] = []
+    for k in out.entries.keys where k.lowercased() == "cookie" {
+      if let given = out.entries[k]?.asString { kept.append(contentsOf: cookieKeep(given, names)) }
+      _ = out.entries.removeValue(forKey: k)
+    }
+    for arg in sent {
+      let pair = cookiePair(arg.wire, arg.val)
+      if !pair.isEmpty { kept.append(pair) }
+    }
+    if !kept.isEmpty { out.entries["cookie"] = .string(kept.joined(separator: "; ")) }
+  }
   return out
+}
+
+// The form style of a cookie parameter: a list repeats the name, a map sends
+// its own keys, and every value is percent-encoded.
+private func cookiePair(_ wire: String, _ val: Value) -> String {
+  let esc = { (v: Value) in escurl(.string(stringify(v))) }
+  var pairs: [String] = []
+  if let items = val.asList?.items {
+    for item in items { pairs.append(wire + "=" + esc(item)) }
+  } else if let entries = val.asMap?.entries {
+    for key in keysof(val) { pairs.append(escurl(.string(key)) + "=" + esc(entries[key] ?? .null)) }
+  } else {
+    pairs.append(wire + "=" + esc(val))
+  }
+  return pairs.joined(separator: "; ")
+}
+
+// The caller's cookie pieces with the named cookies removed: a cookie is one
+// ;-delimited piece, whatever its value holds.
+func cookieKeep(_ header: String, _ names: [String]) -> [String] {
+  var kept: [String] = []
+  for piece in header.split(separator: ";", omittingEmptySubsequences: false) {
+    let cookie = piece.trimmingCharacters(in: .whitespaces)
+    let name = cookie.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+      .first.map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+    if !cookie.isEmpty && !names.contains(name) { kept.append(cookie) }
+  }
+  return kept
 }
 
 func prepareParamsUtil(_ ctx: Context) -> VMap {
@@ -99,10 +147,21 @@ func prepareQueryUtil(_ ctx: Context) -> VMap {
       paramnames.append(gp(pd, "name"))
     }
   }
-  // A header parameter travels in the headers, which prepareHeaders fills.
-  if let ahl = gpath(ctx.point, "args", "header").asList {
-    for hd in ahl.items {
-      paramnames.append(gp(hd, "name"))
+  // A header or cookie parameter travels in the headers, which prepareHeaders
+  // fills, unless a query parameter shares its name: then both are sent.
+  var declared: [Value] = []
+  if let dql = gpath(ctx.point, "args", "query").asList {
+    for qd in dql.items {
+      declared.append(gp(qd, "name"))
+    }
+  }
+  for located in [gpath(ctx.point, "args", "header"), gpath(ctx.point, "args", "cookie")] {
+    guard let defs = located.asList else { continue }
+    for hd in defs.items {
+      let name = gp(hd, "name")
+      if let s = name.asString, !containsStr(declared, s) {
+        paramnames.append(name)
+      }
     }
   }
 

@@ -237,14 +237,7 @@ function cookieHelper(where: string): string {
 	kept := []string{}
 
 	if existing, ok := headers[cookieHeader].(string); ok && existing != "" {
-		for _, part := range strings.Split(existing, ";") {
-			piece := strings.TrimSpace(part)
-			if piece == "" || piece == name ||
-				strings.HasPrefix(piece, name+"=") {
-				continue
-			}
-			kept = append(kept, piece)
-		}
+		kept = cookieKeep(existing, map[string]bool{name: true})
 	}
 
 	if value != nil {

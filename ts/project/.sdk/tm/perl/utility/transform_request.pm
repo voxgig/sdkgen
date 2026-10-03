@@ -33,7 +33,7 @@ my $strip_action = sub { $omit->($_[0], '$action') };
 my $routed_arg_names = sub {
   my ($ctx) = @_;
   return map { $_->[0] } ProjectNameUtilities::call_args($ctx, 'header'),
-    ProjectNameUtilities::call_args($ctx, 'query');
+    ProjectNameUtilities::call_args($ctx, 'cookie'), ProjectNameUtilities::call_args($ctx, 'query');
 };
 
 $REGISTRY{transform_request} = sub {

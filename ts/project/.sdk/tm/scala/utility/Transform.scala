@@ -29,7 +29,7 @@ object TransformRequest {
   // A header or query argument travels where PrepareHeaders or PrepareQuery
   // sends it, so the body is built from the request data without it.
   private def routedArgNames(ctx: Context): Seq[String] =
-    (Param.callArgs(ctx, "header") ++ Param.callArgs(ctx, "query")).map(_._1)
+    (Param.callArgs(ctx, "header") ++ Param.callArgs(ctx, "cookie") ++ Param.callArgs(ctx, "query")).map(_._1)
 
   private def omit(reqdata: Object, names: Seq[String]): Object = {
     reqdata match {

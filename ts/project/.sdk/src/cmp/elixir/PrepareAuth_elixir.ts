@@ -258,14 +258,7 @@ function helpers(spec: AuthSpec): string {
     existing = S.getprop(headers, @cookie_header)
 
     if is_binary(existing) and existing != "" do
-      existing
-      |> String.split(";")
-      |> Enum.map(&String.trim/1)
-      |> Enum.reject(fn piece ->
-        piece == "" or piece == name or
-          String.starts_with?(piece, name <> "=")
-      end)
-      |> Enum.join("; ")
+      Enum.join(${spec.Name}.Utility.cookie_keep(existing, [name]), "; ")
     else
       ""
     end

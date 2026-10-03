@@ -17,6 +17,7 @@ type DefinitionPoint = {
   args: { name: string, wire: string, value: any }[]
   select: Record<string, any>
   headers?: { name: string, wire: string, value: any }[]
+  cookies?: { name: string, wire: string, value: any }[]
   responseMedia?: string[]
   rawBody?: { media: string[], text: boolean }
   query: string[]
@@ -58,6 +59,7 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
   const input: any = { ...point.select }
   for (const arg of point.args) input[arg.name] = arg.value
   for (const h of point.headers || []) input[h.name] = h.value
+  for (const c of point.cookies || []) input[c.name] = c.value
   if (null != point.action) input.$action = point.action
   if (null != point.rawBody) input.$body = rawSample(point)
 
@@ -115,8 +117,28 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
   for (const h of point.headers || []) {
     const wire = h.wire.toLowerCase()
     if (credentialHeaders.includes(wire) || 'content-type' === wire) continue
-    assert.equal(new Headers(init.headers).get(wire), String(h.value),
-      'header parameter not sent as a header: ' + h.wire)
+    const sentValue = new Headers(init.headers).get(wire)
+    // A Cookie header argument is cookie pieces, which the cookie arguments and
+    // the cookie credential join, each replacing the piece whose name it owns.
+    if ('cookie' === wire) {
+      const owned = (point.cookies || []).map((c) => c.wire).concat((point.auth || []).flat()
+        .filter((c) => 'cookie' === c.in).map((c) => c.name))
+      const pieces = String(sentValue ?? '').split(';').map((c) => c.trim())
+      for (const piece of String(h.value).split(';').map((c) => c.trim()).filter((c) => '' !== c)) {
+        if (owned.includes(piece.split('=')[0].trim())) continue
+        assert(pieces.includes(piece), 'header parameter not sent as a header: ' + h.wire)
+      }
+      continue
+    }
+    assert.equal(sentValue, String(h.value), 'header parameter not sent as a header: ' + h.wire)
+  }
+
+  // A cookie parameter goes out in the cookie header as name=value, percent-encoded.
+  const cookies = String(new Headers(init.headers).get('cookie') ?? '')
+    .split(';').map((c) => c.trim())
+  for (const c of point.cookies || []) {
+    assert(cookies.includes(c.wire + '=' + encodeURIComponent(String(c.value))),
+      'cookie parameter not sent in the cookie header: ' + c.wire)
   }
 
   // Accept asks only for what a success response declares: its JSON type

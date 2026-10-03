@@ -148,7 +148,39 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
     }
   }
 
+  // A cookie argument travels in the cookie header, form serialized and
+  // percent-encoded, replacing a cookie of the same name among those the
+  // caller's headers already send.
+  val sent = callArgs(ctx, "cookie").filter { it.v != null }
+  if (sent.isNotEmpty()) {
+    val names = sent.flatMap {
+      if (it.v is Map<*, *>) Struct.keysof(it.v).map { key -> Struct.escurl(key) } else listOf(it.wire)
+    }
+    val kept = mutableListOf<String>()
+    for (key in out.keys.filter { it.lowercase() == "cookie" }) {
+      val given = out.remove(key)
+      if (given is String) kept.addAll(cookieKeep(given, names))
+    }
+    for (arg in sent) {
+      val pair = cookiePair(arg.wire, arg.v)
+      if (pair.isNotEmpty()) kept.add(pair)
+    }
+    if (kept.isNotEmpty()) out["cookie"] = kept.joinToString("; ")
+  }
+
   return out
+}
+
+// The form style of a cookie parameter: a list repeats the name, a map sends
+// its own keys, and every value is percent-encoded.
+private fun cookiePair(wire: String, v: Any?): String {
+  val esc = { x: Any? -> Struct.escurl(Struct.stringify(x)) }
+  val pairs = when (v) {
+    is List<*> -> v.map { wire + "=" + esc(it) }
+    is Map<*, *> -> Struct.keysof(v).map { Struct.escurl(it) + "=" + esc(Struct.getprop(v, it)) }
+    else -> listOf(wire + "=" + esc(v))
+  }
+  return pairs.joinToString("; ")
 }
 
 fun prepareMethod(ctx: Context): String? {
@@ -239,13 +271,19 @@ fun prepareQuery(ctx: Context): MutableMap<String, Any?> {
         }
       }
     }
-    // A header parameter travels in the headers, which prepareHeaders fills.
-    val hl = Struct.getpath(point, listOf("args", "header"))
-    if (hl is List<*>) {
-      for (hd in hl) {
-        val name = Struct.getprop(hd, "name")
-        if (name is String) {
-          params.add(name)
+    // A header or cookie parameter travels in the headers, which prepareHeaders
+    // fills, unless a query parameter shares its name: then both are sent.
+    val declared = (Struct.getpath(point, listOf("args", "query")) as? List<*>)
+      ?.map { Struct.getprop(it, "name") } ?: emptyList()
+    val located = listOf(Struct.getpath(point, listOf("args", "header")),
+      Struct.getpath(point, listOf("args", "cookie")))
+    for (hl in located) {
+      if (hl is List<*>) {
+        for (hd in hl) {
+          val name = Struct.getprop(hd, "name")
+          if (name is String && name !in declared) {
+            params.add(name)
+          }
         }
       }
     }
@@ -293,4 +331,15 @@ private fun containsStr(list: List<Any?>, s: String): Boolean {
     }
   }
   return false
+}
+
+// The caller's cookie pieces with the named cookies removed: a cookie is one
+// ;-delimited piece, whatever its value holds.
+internal fun cookieKeep(header: String, names: List<String>): MutableList<String> {
+  val kept = mutableListOf<String>()
+  for (piece in header.split(";")) {
+    val cookie = piece.trim()
+    if (cookie.isNotEmpty() && cookie.substringBefore("=").trim() !in names) kept.add(cookie)
+  }
+  return kept
 }

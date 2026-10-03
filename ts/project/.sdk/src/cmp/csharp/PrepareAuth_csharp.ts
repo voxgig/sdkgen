@@ -285,16 +285,7 @@ ${authName('CookieAuth', false)}
     private static void PrepareAuthCookie(Dictionary<string, object?> headers, string name, string? value)
     {
         var existing = headers.TryGetValue(HeaderCookie, out var current) ? current as string : null;
-        var kept = new List<string>();
-        foreach (var part in (existing ?? "").Split(';'))
-        {
-            var piece = part.Trim();
-            if (piece == "" || piece == name || piece.StartsWith(name + "=", StringComparison.Ordinal))
-            {
-                continue;
-            }
-            kept.Add(piece);
-        }
+        var kept = CookieKeep(existing ?? "", new List<string> { name });
         if (value != null)
         {
             kept.Add(name + "=" + value);

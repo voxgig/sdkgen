@@ -125,6 +125,14 @@ describe('actionstrip: the $action selector never reaches the wire', () => {
     })
 
 
+    test(lang + ': transformRequest keeps a cookie argument out of the body', () => {
+      const reqdata = { name: 'n', session_id: 's1' }
+      const plain: any = bodyCtx(reqdata)
+      plain.point.args = { cookie: [{ name: 'session_id', orig: 'SESSIONID' }] }
+      deepStrictEqual(transformRequest(plain), { name: 'n' })
+    })
+
+
     test(lang + ': transformRequest keeps a query argument out of the body', () => {
       const reqdata = { name: 'n', api_key: 'x' }
       const before = JSON.stringify(reqdata)

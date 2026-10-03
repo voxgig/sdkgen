@@ -26,6 +26,8 @@ function definitionPlan(ctx$) {
         (0, utility_1.resolveAuthName)(model).toLowerCase() : null;
     const ownQuery = !(0, utility_1.isAuthSuppressed)(model) && 'query' === (0, utility_1.resolveAuthIn)(model) ?
         (0, utility_1.resolveAuthName)(model) : null;
+    const ownCookie = !(0, utility_1.isAuthSuppressed)(model) && 'cookie' === (0, utility_1.resolveAuthIn)(model) ?
+        (0, utility_1.resolveAuthName)(model) : null;
     // A model from before apidef recorded media types sends neither header.
     const recorded = recordsMedia(model);
     for (const entity of Object.values((0, opShape_1.entityCollection)(model))) {
@@ -63,11 +65,23 @@ function definitionPlan(ctx$) {
                     const wire = String(arg.or || arg.n);
                     const def = params.find((p) => 'header' === p?.in &&
                         wire.toLowerCase() === String(p?.name).toLowerCase());
-                    return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) };
+                    const shared = args.find((a) => a.name === arg.n);
+                    return { name: arg.n, wire, value: shared?.value ?? scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) };
+                });
+                // A cookie argument is sent too, in the cookie header, never in the
+                // query; the credential cookie is left to the credential.
+                const cookies = (point.g?.cookie || [])
+                    .filter((arg) => false !== arg.a && String(arg.or || arg.n) !== ownCookie)
+                    .map((arg, i) => {
+                    const wire = String(arg.or || arg.n);
+                    const def = params.find((p) => 'cookie' === p?.in && wire === p?.name);
+                    const shared = args.find((a) => a.name === arg.n) ?? headers.find((h) => h.name === arg.n);
+                    return { name: arg.n, wire, value: shared?.value ?? scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'c' + (i + 1) };
                 });
                 const selected = {};
                 for (const key of select.exist || []) {
-                    if (args.some((a) => a.name === key) || headers.some((h) => h.name === key))
+                    if (args.some((a) => a.name === key) || headers.some((h) => h.name === key) ||
+                        cookies.some((c) => c.name === key))
                         continue;
                     const def = params.find((p) => key === p?.name);
                     selected[key] = scalar(def?.example ?? def?.schema?.example) ?? 'v1';
@@ -80,15 +94,15 @@ function definitionPlan(ctx$) {
                 for (const arg of point.g?.query || []) {
                     if (false === arg.a || undefined !== selected[arg.n] || elsewhere.has(arg.n))
                         continue;
+                    const shared = cookies.find((c) => c.name === arg.n) ?? headers.find((h) => h.name === arg.n);
                     const def = params.find((p) => 'query' === p?.in && (arg.or || arg.n) === p?.name);
-                    selected[arg.n] = scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'v1';
+                    selected[arg.n] = shared?.value ?? scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'v1';
                 }
                 // Create and update send their input as the body: only a match has a query.
                 const queryArgs = 'create' === op || 'update' === op ? [] :
                     (point.g?.query || [])
                         .filter((arg) => undefined !== selected[arg.n] &&
-                        !args.some((a) => a.name === arg.n) &&
-                        !headers.some((h) => h.name === arg.n))
+                        !args.some((a) => a.name === arg.n))
                         .map((arg) => ({ name: arg.n, wire: String(arg.or || arg.n) }))
                         .filter((q) => params.some((p) => 'query' === p?.in && q.wire === p?.name));
                 const success = successResponse(facts.responses);
@@ -106,6 +120,7 @@ function definitionPlan(ctx$) {
                     args,
                     select: selected,
                     headers,
+                    cookies,
                     ...(0 === responseMedia.length ? {} : { responseMedia }),
                     ...(null == rawBody ? {} : { rawBody }),
                     query: params.filter((p) => 'query' === p?.in).map((p) => p.name),

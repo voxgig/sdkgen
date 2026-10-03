@@ -99,4 +99,19 @@ function helpers.call_args(ctx, kind)
 end
 
 
+-- The caller's cookie pieces with the named cookies removed: a cookie is one
+-- ;-delimited piece, whatever its value holds.
+function helpers.cookie_keep(header, names)
+  local kept = {}
+  for piece in string.gmatch(header .. ";", "([^;]*);") do
+    local cookie = piece:match("^%s*(.-)%s*$")
+    local name = cookie:match("^([^=]*)"):match("^%s*(.-)%s*$")
+    if cookie ~= "" and not names[name] then
+      kept[#kept + 1] = cookie
+    end
+  end
+  return kept
+end
+
+
 return helpers

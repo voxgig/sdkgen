@@ -38,7 +38,8 @@ function stripAction(reqdata: any) {
 // A header or query argument travels where prepareHeaders or prepareQuery
 // sends it, so the body is built from the request data without it.
 function routedArgNames(ctx: Context): string[] {
-  return [...callArgs(ctx, 'header'), ...callArgs(ctx, 'query')].map((arg) => arg.name)
+  return [...callArgs(ctx, 'header'), ...callArgs(ctx, 'cookie'), ...callArgs(ctx, 'query')]
+    .map((arg) => arg.name)
 }
 
 

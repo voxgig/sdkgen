@@ -263,34 +263,28 @@ static char* auth_join(const char* a, const char* sep, const char* b) {
 
 // Spliced rather than appended, in a buffer sized to fit the whole header.
 const COOKIE_HELPER = `
+static bool cred_named(const char* name, size_t nlen, void* ud) {
+  const char* cred = (const char*)ud;
+  return strlen(cred) == nlen && 0 == strncmp(cred, name, nlen);
+}
+
 // Rewrite the cookie header with the named pair removed, then set to value
 // when value is not NULL; every other cookie is kept in order. False only
 // when the new header could not be allocated.
 static bool auth_cookie_set(voxgig_value* headers, const char* name, const char* value) {
   const char* existing = get_str(headers, COOKIE_HEADER);
-  if (NULL == existing) existing = "";
+  char* kept = NULL == existing ? NULL : cookie_keep(existing, cred_named, (void*)name);
+  size_t klen = NULL == kept ? 0 : strlen(kept);
   size_t name_len = strlen(name);
   size_t value_len = NULL == value ? 0 : strlen(value);
-  // The rewrite never exceeds twice the old header plus the new pair.
-  char* out = (char*)malloc(2 * strlen(existing) + name_len + value_len + 4);
-  if (NULL == out) return false;
-  size_t used = 0;
-  for (const char* part = existing; '\\0' != *part;) {
-    const char* end = strchr(part, ';');
-    if (NULL == end) end = part + strlen(part);
-    const char* next = '\\0' == *end ? end : end + 1;
-    while (part < end && (' ' == *part || '\\t' == *part)) part++;
-    while (end > part && (' ' == end[-1] || '\\t' == end[-1])) end--;
-    size_t len = (size_t)(end - part);
-    bool owned = len >= name_len && 0 == strncmp(part, name, name_len)
-      && (len == name_len || '=' == part[name_len]);
-    if (0 != len && !owned) {
-      if (0 != used) { out[used++] = ';'; out[used++] = ' '; }
-      memcpy(out + used, part, len);
-      used += len;
-    }
-    part = next;
+  char* out = (char*)malloc(klen + name_len + value_len + 4);
+  if (NULL == out) {
+    free(kept);
+    return false;
   }
+  size_t used = klen;
+  if (0 != klen) memcpy(out, kept, klen);
+  free(kept);
   if (NULL != value) {
     if (0 != used) { out[used++] = ';'; out[used++] = ' '; }
     memcpy(out + used, name, name_len);
