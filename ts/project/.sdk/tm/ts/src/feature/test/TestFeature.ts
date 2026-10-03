@@ -66,6 +66,15 @@ function ownIdField(config: any, getpath: any, entityName: string): string {
 }
 
 
+// The record the mock keeps: the request data without `$body`, which only the
+// wire carries.
+function recordOf(reqdata: any): any {
+  const out = { ...(reqdata || {}) }
+  delete out.$body
+  return out
+}
+
+
 class TestFeature extends BaseFeature {
   version = '0.0.1'
   name = 'test'
@@ -189,7 +198,7 @@ class TestFeature extends BaseFeature {
         }
       }
       else if ('update' === op.name) {
-        const args = self.buildArgs(ctx, op, ctx.reqdata)
+        const args = self.buildArgs(ctx, op, recordOf(ctx.reqdata))
         const found = select(entmap, args)
         const ent = getelem(found, 0)
         if (null == ent) {
@@ -197,7 +206,7 @@ class TestFeature extends BaseFeature {
           return respond(404, undefined, { statusText: S_NOT_FOUND })
         }
         else {
-          merge([ent, (ctx.reqdata || {})])
+          merge([ent, recordOf(ctx.reqdata)])
           delprop(ent, '$KEY')
           const out = clone(ent)
           return respond(200, out)
@@ -215,13 +224,13 @@ class TestFeature extends BaseFeature {
         return respond(200)
       }
       else if ('create' === op.name) {
-        const args = self.buildArgs(ctx, op, ctx.reqdata)
+        const args = self.buildArgs(ctx, op, recordOf(ctx.reqdata))
         let id = param(ctx, 'id')
         if (null == id) {
           id = mintId()
         }
 
-        const ent = clone(ctx.reqdata)
+        const ent = clone(recordOf(ctx.reqdata))
         setprop(ent, 'id', id)
 
         // A record created during the run needs the same real-key seeding

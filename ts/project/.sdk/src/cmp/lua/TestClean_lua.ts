@@ -635,13 +635,13 @@ describe("clean", function()
 
     -- Iterating a stream runs inside the same catch path as the operation,
     -- and the explain record the caller passed is cleaned however it ends.
-    -- A step's error ends a stream without raising. The caller stops at the
-    -- first item, leaving the stream open.
+    -- A step's error raises from the stream, as it fails the operation. The
+    -- caller stops at the first item, leaving the stream open.
     for _, case in ipairs({
       { name = "stream", extra = { StreamThrowFeature.new() }, raises = true },
       { name = "stream-ok", extra = { StreamOkFeature.new() } },
       { name = "stream-plain", extra = {} },
-      { name = "stream-step", extra = { StepFailFeature.new() } },
+      { name = "stream-step", extra = { StepFailFeature.new() }, raises = true },
     }) do
       local streamed = make_sdk(SCENARIOS[1], sinks, nil, case.extra)
       local sent = streamed[target.accessor](streamed)

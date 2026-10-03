@@ -171,6 +171,8 @@ class ProjectNameValidateFeature < ProjectNameBaseFeature
     # fields will never name it - and under `strict` every custom-action call
     # would be rejected for the one key that made it reachable.
     out.delete("$action")
+    # Nor is `$body`, the raw request body.
+    out.delete("$body")
 
     out
   end
@@ -186,7 +188,7 @@ class ProjectNameValidateFeature < ProjectNameBaseFeature
   end
 
   def _entname(ctx)
-    name = ctx.entity.nil? ? nil : ctx.entity.name
+    name = ctx.entity.respond_to?(:get_name) ? ctx.entity.get_name : nil
     return name if name.is_a?(String) && !name.empty?
 
     entname = ctx.op.nil? ? nil : ctx.op.entity

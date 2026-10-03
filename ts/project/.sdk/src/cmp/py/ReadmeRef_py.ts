@@ -332,6 +332,7 @@ ${updateLines}    # Fields to update
           if ('create' === opname || 'update' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: '`bytes`, `bytearray`, `memoryview`, a `str` or a file object',
+              once: 'a file object',
             })
             if ('' !== note) Content(note)
           }

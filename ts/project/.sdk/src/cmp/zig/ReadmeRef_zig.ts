@@ -353,9 +353,13 @@ Get the entity data. Pass a map to set it.
 
 Get the entity match criteria. Pass a map to set it.
 
-#### \`stream(action: []const u8, args: Value, callopts: Value) []Value\`
+#### \`stream(action: []const u8, args: Value, callopts: Value) StreamResult\`
 
 Run an operation through the pipeline and materialise its result items.
+\`StreamResult\` is \`.ok\` with the items, or \`.err\` with the error that
+failed the operation, as an operation call reports it. Under \`throw: false\`
+in \`callopts.ctrl\`, a failed stream is \`.ok\` with whatever data the
+failure left.
 
 #### \`get_name() []const u8\`
 

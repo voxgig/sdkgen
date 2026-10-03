@@ -134,12 +134,11 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
         // A rejecting transport still costs an attempt. Without this, a run of
         // connection-level failures under `retry` (which catches and tries
         // again) would be charged nothing at all, and an onBudget 'deny'
-        // ceiling could never stop it.
-        $threw = null;
+        // ceiling could never stop it. Its error is answered as the pair the
+        // fetcher contract names, so make_error reports it as it does any.
         try {
             [$res, $err] = $inner($ctx, $url, $fetchdef);
         } catch (\Throwable $ex) {
-            $threw = $ex;
             $res = null;
             $err = $ex;
         }
@@ -182,10 +181,6 @@ class ProjectNameCostFeature extends ProjectNameBaseFeature
             if ($this->pending !== null) {
                 unset($this->pending[$ctx]);
             }
-        }
-
-        if ($threw !== null) {
-            throw $threw;
         }
 
         return [$res, $err];

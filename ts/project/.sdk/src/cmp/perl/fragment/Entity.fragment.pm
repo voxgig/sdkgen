@@ -149,8 +149,9 @@ sub stream {
   my $utility = $self->{_utility};
   $callopts = ProjectNameHelpers::to_map($callopts) || {};
   my $signal = ProjectNameHelpers::gp($callopts, 'signal');
-  my $ctrl = ProjectNameHelpers::to_map(
-    ProjectNameHelpers::gp($callopts, 'ctrl')) || {};
+  # A copy: the caller's ctrl gains no key, and explain stays its own record.
+  my $ctrl = { %{ ProjectNameHelpers::to_map(
+    ProjectNameHelpers::gp($callopts, 'ctrl')) || {} } };
   $ctrl->{stream} = $callopts;
 
   my $ctx = $utility->{make_context}->({
@@ -205,6 +206,17 @@ sub stream {
       if (my $operr = $@) {
         $src = sub { return undef };
         $ctx->{ctrl}{err} = $operr;
+
+        # What a hook dies with here must not escape the cleaning below.
+        my $fired = eval {
+          $utility->{feature_hook}->($ctx, 'PreUnexpected');
+          1;
+        };
+        if (!$fired) {
+          $operr = $@;
+          $ctx->{ctrl}{err} = $operr;
+        }
+
         my $e = $self->_unexpected($ctx, $operr);
         die $e if defined $e;
         return undef;

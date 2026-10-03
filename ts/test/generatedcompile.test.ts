@@ -4929,7 +4929,10 @@ describe('generated entity tests make only calls the runtime takes', () => {
     const res = run(process.execPath,
       ['--test', '--test-concurrency=1', '--test-reporter=tap', ...files], root, nestedTestEnv())
     ok(res.ok, 'ts: a generated entity test failed:\n' + tail(res.out))
-    ok(/# pass 6\b/.test(res.out), 'ts: expected six passing tests:\n' + tail(res.out))
+    // Instance and basic for each entity, and planet's stream and hook tests, since its
+    // list is reachable; each entity's validate test skips without the feature.
+    ok(/# pass 9\b/.test(res.out) && /# skipped 3\b/.test(res.out),
+      'ts: expected nine passing and three skipped tests:\n' + tail(res.out))
   })
 
 

@@ -1,6 +1,7 @@
 
 const { Response } = require('../Response')
 const { Result } = require('../Result')
+const { isStream, readStream } = require('./MediaUtility')
 
 async function makeRequest(ctx) {
   // PreRequest feature hook has already provided a result.
@@ -27,6 +28,12 @@ async function makeRequest(ctx) {
     const fetchdef = makeFetchDef(ctx)
     if (fetchdef instanceof Error) {
       throw fetchdef
+    }
+
+    // A stream can be read once; read it now, so that a retry sends the same bytes.
+    if (isStream(fetchdef.body)) {
+      fetchdef.body = await readStream(fetchdef.body)
+      delete fetchdef.duplex
     }
 
     if (ctx.ctrl.explain) {

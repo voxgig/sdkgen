@@ -325,6 +325,7 @@ ${updateLines}  // Fields to update
           if ('create' === opname || 'update' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a string or a stream resource',
+              once: 'a stream resource',
             })
             if ('' !== note) Content(note)
           }

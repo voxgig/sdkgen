@@ -108,7 +108,7 @@ fn ${name}(client: *sdk.SDK, mtch: Value, ctrl: Value) Outcome {
 
 function streamFn(c: Candidate): string {
   return `
-fn stream_${c.method}_${c.op}(client: *sdk.SDK, mtch: Value, callopts: Value) []Value {
+fn stream_${c.method}_${c.op}(client: *sdk.SDK, mtch: Value, callopts: Value) sdk.StreamResult {
     return client.${c.method}(vnull()).stream("${c.op}", mtch, callopts);
 }
 `
@@ -299,7 +299,7 @@ const ThrowFeature = struct {
 };
 
 // A stream that succeeds, so the pipeline's terminal step never runs. A zig
-// stream producer has no error channel, so no stream fails.
+// stream producer has no error channel; a stream fails only at a step.
 const StreamOkFeature = struct {
     var instance: u8 = 0;
 
@@ -500,7 +500,7 @@ const Outcome = struct {
 };
 
 const Candidate = *const fn (client: *sdk.SDK, mtch: Value, ctrl: Value) Outcome;
-const Streamer = *const fn (client: *sdk.SDK, mtch: Value, callopts: Value) []Value;
+const Streamer = *const fn (client: *sdk.SDK, mtch: Value, callopts: Value) sdk.StreamResult;
 ${candidates.map(candidateFn).join('')}${candidates.map(streamFn).join('')}
 const CandidateDef = struct { run: Candidate, stream: Streamer, params: []const []const u8 };
 
@@ -627,12 +627,22 @@ test "clean: no credential leaves the SDK in any form" {
     try testing.expect(hookerr != null);
 
     // The explain record a stream call is passed is cleaned however the
-    // stream ends: from a feature's producer, or materialised by done. A zig
-    // stream hands no error back, so the record is what is asserted on.
-    for ([_]?sdk.Feature{ StreamOkFeature.make(), null }, [_][]const u8{ "stream-ok", "stream-plain" }) |extra, name| {
+    // stream ends: from a feature's producer, materialised by done, or
+    // failed, when the error it returns is swept as well.
+    for (
+        [_]?sdk.Feature{ StreamOkFeature.make(), null, null },
+        [_]Scenario{ .ok, .ok, .notfound },
+        [_][]const u8{ "stream-ok", "stream-plain", "stream-fail" },
+    ) |extra, scenario, name| {
         const explain = h.omap();
         const callopts = h.jo(&.{.{ "ctrl", h.jo(&.{.{ "explain", explain }}) }});
-        _ = target.stream(makeSdk(.ok, &sinks, true, extra), h.clone(target.mtch), callopts);
+        switch (target.stream(makeSdk(scenario, &sinks, true, extra), h.clone(target.mtch), callopts)) {
+            .ok => try testing.expect(scenario == .ok),
+            .err => |e| {
+                try testing.expect(scenario != .ok);
+                sinks.err(fmt("{s}:error", .{name}), e);
+            },
+        }
         try testing.expect(0 < explain.object.count());
         sinks.value(fmt("{s}:explain", .{name}), explain);
     }

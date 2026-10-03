@@ -207,6 +207,8 @@ public class ValidateFeature : BaseFeature
         // custom-action call would be rejected for the one key that made it
         // reachable.
         outmap.Remove("$action");
+        // Nor is `$body`, the raw request body.
+        outmap.Remove("$body");
 
         return outmap;
     }

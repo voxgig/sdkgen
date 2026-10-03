@@ -774,9 +774,12 @@
         (.put headers "content-type" media))))
   headers)
 
-;; A byte array, an InputStream or a string, sent as it is.
+;; A byte array, an InputStream or a string, sent as it is. An InputStream is
+;; read here, once, before the first attempt, so that a retry sends the same
+;; bytes again.
 (defn raw-body [reqdata]
-  (when (vs/ismap reqdata) (vs/getprop reqdata RAW-BODY)))
+  (let [body (when (vs/ismap reqdata) (vs/getprop reqdata RAW-BODY))]
+    (if (instance? java.io.InputStream body) (.readAllBytes ^java.io.InputStream body) body)))
 
 (defn u-prepare-headers [ctx]
   (let [options (client-options-map (oget ctx :client))

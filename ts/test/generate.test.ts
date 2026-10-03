@@ -4157,8 +4157,8 @@ describe('generate: no test or example makes a call the runtime refuses', () => 
     deepStrictEqual(bare, [], 'a stream test lists a route a bare call cannot reach')
     // Planet's list is reachable, so the check sees every stream test there is.
     deepStrictEqual(targets.filter((t) => streams(t, 'planet')).sort(), ['c', 'clojure',
-      'cpp', 'csharp', 'go', 'java', 'kotlin', 'lua', 'ocaml', 'php', 'py', 'rb', 'rust',
-      'swift', 'zig'])
+      'cpp', 'csharp', 'elixir', 'go', 'java', 'kotlin', 'lua', 'ocaml', 'php', 'py', 'rb',
+      'rust', 'scala', 'swift', 'zig'])
   })
 
   // Each smoke test, as [file, the call a bare test must not make, the same
@@ -4171,7 +4171,7 @@ describe('generate: no test or example makes a call the runtime refuses', () => 
       [/planet_entity_test/, /^$/, /should list records/],
     ],
     ocaml: [
-      [/moon_entity_test/, /seeded_ops|e_list|e_load/, /./],
+      [/moon_entity_test/, /seeded_ops|e_list \(empty_map/, /./],
       [/signal_entity_test/, /e_list/, /./],
       [/planet_entity_test/, /^$/, /seeded_ops/],
     ],

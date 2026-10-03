@@ -14,6 +14,14 @@ from projectname_sdk.feature.base_feature import ProjectNameBaseFeature
 ENVELOPE_RES_RE = re.compile(r"^`body\.(.+)`$")
 
 
+# The record the mock keeps: the request data without `$body`, which only the
+# wire carries.
+def _record(reqdata):
+    if not isinstance(reqdata, dict):
+        return reqdata
+    return {k: v for k, v in reqdata.items() if k != "$body"}
+
+
 class ProjectNameTestFeature(ProjectNameBaseFeature):
     def __init__(self):
         super().__init__()
@@ -147,7 +155,7 @@ class ProjectNameTestFeature(ProjectNameBaseFeature):
                     # update miss: 404, never another record
                     return respond(404, None, {"statusText": "Not found"})
                 if isinstance(ent, dict) and isinstance(fctx.reqdata, dict):
-                    vs.merge([ent, fctx.reqdata])
+                    vs.merge([ent, _record(fctx.reqdata)])
                 vs.delprop(ent, "$KEY")
                 out = vs.clone(ent)
                 return respond(200, out)
@@ -171,7 +179,7 @@ class ProjectNameTestFeature(ProjectNameBaseFeature):
                         random.randint(0, 0xFFFF), random.randint(0, 0xFFFF),
                         random.randint(0, 0xFFFF), random.randint(0, 0xFFFF))
 
-                ent = vs.clone(fctx.reqdata)
+                ent = vs.clone(_record(fctx.reqdata))
                 if isinstance(ent, dict):
                     ent["id"] = eid
                     if isinstance(eid, str):

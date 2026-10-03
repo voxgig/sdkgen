@@ -158,7 +158,7 @@ sub init {
       return $respond->($fctx, 404, undef, { 'statusText' => 'Not found' })
         unless ProjectNameHelpers::rb_truthy($ent);
       if (Voxgig::Struct::ismap($ent) && Voxgig::Struct::ismap($fctx->{reqdata})) {
-        Voxgig::Struct::merge([$ent, $fctx->{reqdata}]);
+        Voxgig::Struct::merge([$ent, _record($fctx->{reqdata})]);
       }
       Voxgig::Struct::delprop($ent, '$KEY');
       my $out = Voxgig::Struct::clone($ent);
@@ -183,7 +183,7 @@ sub init {
         int(rand(0x10000)), int(rand(0x10000)),
         int(rand(0x10000)), int(rand(0x10000))) unless defined $id;
 
-      my $ent = Voxgig::Struct::clone($fctx->{reqdata});
+      my $ent = Voxgig::Struct::clone(_record($fctx->{reqdata}));
       if (Voxgig::Struct::ismap($ent)) {
         $ent->{id} = $id;
         $entmap->{"$id"} = $ent if defined $id && !ref $id;
@@ -214,6 +214,16 @@ sub init {
 # {min,max}), a budget of first-N failures ("failTimes" -> "failStatus"),
 # first-N connection errors ("errorTimes"), or a hard "offline" outage.
 # Counter-driven, so simulations are deterministic across a test.
+# The record the mock keeps: the request data without `$body`, which only the
+# wire carries.
+sub _record {
+  my ($reqdata) = @_;
+  return $reqdata unless ref $reqdata eq 'HASH';
+  my %out = %$reqdata;
+  delete $out{'$body'};
+  return \%out;
+}
+
 sub make_netsim {
   my ($self, $net, $inner) = @_;
   $self->{netcalls} = 0;

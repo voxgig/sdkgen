@@ -323,6 +323,7 @@ ${updateLines}), null);
           if ('create' === opname || 'update' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a `byte[]`, a `String` or an `InputStream`',
+              once: 'an `InputStream`',
             })
             if ('' !== note) Content(note)
           }

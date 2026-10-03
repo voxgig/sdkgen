@@ -1236,8 +1236,14 @@ inline std::vector<Value> EntityBase::stream(const std::string& action,
 
   Value streamOpts = callopts.is_map() ? callopts : vmap();
 
-  Value ctrl = Helpers::toMapAny(getp(streamOpts, "ctrl"));
-  if (!ctrl.is_map()) ctrl = vmap();
+  // A copy: the caller's ctrl gains no key, and explain stays its own record.
+  Value ctrl = vmap();
+  Value given = Helpers::toMapAny(getp(streamOpts, "ctrl"));
+  if (given.is_map()) {
+    for (const auto& kv : *given.as_map()) {
+      map_put(ctrl, kv.first, kv.second);
+    }
+  }
   map_put(ctrl, "stream", streamOpts);
 
   CtxSpec cs;

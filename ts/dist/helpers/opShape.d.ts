@@ -27,6 +27,11 @@ declare function opRequestShape(ent: any, opname: string): {
     fromParams: boolean;
 };
 declare function entityIdField(ent: any): string | null;
+declare function invalidRequest(ent: any): {
+    op: string;
+    field: string;
+    args: Record<string, any>;
+} | null;
 declare function entityOps(ent: any): string[];
 type UngeneratedOp = {
     entity: string;
@@ -44,5 +49,5 @@ declare function pickExampleEntity(entity: any): {
     primaryOp: string | null;
 };
 declare function entityDataIdField(ent: any): string | null;
-export { OP_SUFFIX, deriveEntityNames, entityCollection, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
+export { OP_SUFFIX, deriveEntityNames, entityCollection, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
 export type { OpShapeItem, UngeneratedOp, };

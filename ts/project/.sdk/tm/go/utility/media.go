@@ -1,6 +1,7 @@
 package utility
 
 import (
+	"io"
 	"strings"
 
 	vs "github.com/voxgig/struct"
@@ -75,10 +76,19 @@ func mediaHeaders(point map[string]any, headers map[string]any) map[string]any {
 	return headers
 }
 
-// Bytes, a reader or a string, sent as they are.
+// Bytes, a reader or a string, sent as they are. A reader is read here, once,
+// before the first attempt, so that a retry sends the same bytes again.
 func rawBody(reqdata map[string]any) any {
 	if nil == reqdata {
 		return nil
 	}
-	return reqdata[rawBodyKey]
+	body := reqdata[rawBodyKey]
+	if r, ok := body.(io.Reader); ok {
+		data, err := io.ReadAll(r)
+		if err != nil {
+			return err
+		}
+		return data
+	}
+	return body
 }

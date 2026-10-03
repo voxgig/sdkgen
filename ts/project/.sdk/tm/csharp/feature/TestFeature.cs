@@ -198,7 +198,7 @@ public class TestFeature : BaseFeature
                 }
                 if (ent is Dictionary<string, object?> && ctx2.Reqdata != null)
                 {
-                    StructUtils.Merge(new List<object?> { ent, ctx2.Reqdata });
+                    StructUtils.Merge(new List<object?> { ent, Record(ctx2.Reqdata) });
                 }
                 StructUtils.DelProp(ent, "$KEY");
                 var outval = StructUtils.Clone(ent);
@@ -226,7 +226,7 @@ public class TestFeature : BaseFeature
                     Random.Shared.Next(0x10000), Random.Shared.Next(0x10000),
                     Random.Shared.Next(0x10000), Random.Shared.Next(0x10000));
 
-                var ent = StructUtils.Clone(ctx2.Reqdata);
+                var ent = StructUtils.Clone(Record(ctx2.Reqdata));
                 if (ent is Dictionary<string, object?> entm)
                 {
                     entm["id"] = id;
@@ -326,6 +326,19 @@ public class TestFeature : BaseFeature
             SleepMs(PickLatency());
             return inner(ctx, url, fetchdef);
         };
+    }
+
+    // The record the mock keeps: the request data without `$body`, which only the
+    // wire carries.
+    private static Dictionary<string, object?>? Record(Dictionary<string, object?>? reqdata)
+    {
+        if (reqdata == null)
+        {
+            return null;
+        }
+        var rec = new Dictionary<string, object?>(reqdata);
+        rec.Remove("$body");
+        return rec;
     }
 
     private static object BuildArgs(Context ctx, Operation op, Dictionary<string, object?>? args)

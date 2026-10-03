@@ -87,9 +87,18 @@ public static partial class SdkUtility
         return headers;
     }
 
-    // Bytes, a Stream or a string, sent as they are.
+    // Bytes, a Stream or a string, sent as they are. A Stream can be read
+    // once, so it is read here, before the first attempt, and a retry sends
+    // the same bytes again.
     internal static object? RawBodyOf(Dictionary<string, object?>? reqdata)
     {
-        return reqdata != null && reqdata.TryGetValue(RawBody, out var body) ? body : null;
+        var body = reqdata != null && reqdata.TryGetValue(RawBody, out var found) ? found : null;
+        if (body is Stream stream)
+        {
+            using var buffer = new MemoryStream();
+            stream.CopyTo(buffer);
+            return buffer.ToArray();
+        }
+        return body;
     }
 }
