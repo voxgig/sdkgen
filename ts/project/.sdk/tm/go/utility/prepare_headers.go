@@ -76,10 +76,15 @@ func prepareHeadersUtil(ctx *core.Context) map[string]any {
 	return out
 }
 
-// The cookie names an argument sends: a map's own keys, else its wire name.
+// The cookie names an argument sends: a map's own keys as the pair sends
+// them, percent-encoded, else its wire name.
 func cookieNames(arg callArg) []string {
 	if vs.IsMap(arg.val) {
-		return vs.KeysOf(arg.val)
+		names := []string{}
+		for _, key := range vs.KeysOf(arg.val) {
+			names = append(names, vs.EscUrl(key))
+		}
+		return names
 	}
 	return []string{arg.wire}
 }

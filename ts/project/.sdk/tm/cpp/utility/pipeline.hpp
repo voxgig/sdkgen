@@ -1564,7 +1564,7 @@ inline Value prepareHeaders(CtxPtr ctx) {
           bool replaced = false;
           for (const auto& arg : sent) {
             if (arg.val.is_map()) {
-              for (const auto& item : Struct::items(arg.val)) replaced = replaced || as_str(pair_key(item)) == name;
+              for (const auto& item : Struct::items(arg.val)) replaced = replaced || Struct::escurl(pair_key(item)) == name;
             } else {
               replaced = replaced || arg.wire == name;
             }
@@ -1664,7 +1664,6 @@ inline Value prepareQuery(CtxPtr ctx) {
 
   // A path parameter travels in the path. The generated config lists them as
   // args.params, which prepareParams reads; params is the older list of names.
-  // A header or cookie parameter travels in the headers, which prepareHeaders fills.
   Value aparams = point.is_map() ? getp(getp(point, "args"), "params") : Value::undef();
   Value aheader = point.is_map() ? getp(getp(point, "args"), "header") : Value::undef();
   Value acookie = point.is_map() ? getp(getp(point, "args"), "cookie") : Value::undef();
@@ -1677,9 +1676,13 @@ inline Value prepareQuery(CtxPtr ctx) {
     return false;
   };
 
+  // A header or cookie parameter travels in the headers, which prepareHeaders
+  // fills, unless a query parameter shares its name: then both are sent.
+  Value aquery = point.is_map() ? getp(getp(point, "args"), "query") : Value::undef();
+  auto elsewhere = [&](const std::string& s) { return (named(aheader, s) || named(acookie, s)) && !named(aquery, s); };
+
   // A query parameter travels under the name the definition gives it, its
   // orig, which the model may have renamed for the caller.
-  Value aquery = point.is_map() ? getp(getp(point, "args"), "query") : Value::undef();
   auto wire_name = [&](const std::string& s) {
     if (aquery.is_list()) {
       for (const auto& qd : *aquery.as_list()) {
@@ -1699,7 +1702,7 @@ inline Value prepareQuery(CtxPtr ctx) {
     std::string key = as_str(pair_key(item));
     Value val = pair_val(item);
     if (!is_nullish(val) && "$action" != key && !contains_str(params, key) &&
-        !named(aparams, key) && !named(aheader, key) && !named(acookie, key)) {
+        !named(aparams, key) && !elsewhere(key)) {
       map_put(out, wire_name(key), val);
     }
   }
@@ -1707,7 +1710,7 @@ inline Value prepareQuery(CtxPtr ctx) {
   // A create or update passes its query arguments in its data.
   for (const auto& arg : callArgs(ctx, "query")) {
     if (!is_nullish(arg.val) && !contains_str(params, arg.name) &&
-        !named(aparams, arg.name) && !named(aheader, arg.name) && !named(acookie, arg.name)) {
+        !named(aparams, arg.name) && !elsewhere(arg.name)) {
       map_put(out, arg.wire, arg.val);
     }
   }

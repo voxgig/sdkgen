@@ -153,7 +153,9 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
   // caller's headers already send.
   val sent = callArgs(ctx, "cookie").filter { it.v != null }
   if (sent.isNotEmpty()) {
-    val names = sent.flatMap { if (it.v is Map<*, *>) Struct.keysof(it.v) else listOf(it.wire) }
+    val names = sent.flatMap {
+      if (it.v is Map<*, *>) Struct.keysof(it.v).map { key -> Struct.escurl(key) } else listOf(it.wire)
+    }
     val kept = mutableListOf<String>()
     for (key in out.keys.filter { it.lowercase() == "cookie" }) {
       val given = out.remove(key)
@@ -274,14 +276,17 @@ fun prepareQuery(ctx: Context): MutableMap<String, Any?> {
         }
       }
     }
-    // A header or cookie parameter travels in the headers, which prepareHeaders fills.
+    // A header or cookie parameter travels in the headers, which prepareHeaders
+    // fills, unless a query parameter shares its name: then both are sent.
+    val declared = (Struct.getpath(point, listOf("args", "query")) as? List<*>)
+      ?.map { Struct.getprop(it, "name") } ?: emptyList()
     val located = listOf(Struct.getpath(point, listOf("args", "header")),
       Struct.getpath(point, listOf("args", "cookie")))
     for (hl in located) {
       if (hl is List<*>) {
         for (hd in hl) {
           val name = Struct.getprop(hd, "name")
-          if (name is String) {
+          if (name is String && name !in declared) {
             params.add(name)
           }
         }

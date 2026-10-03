@@ -72,7 +72,9 @@ func prepareHeadersUtil(_ ctx: Context) -> VMap {
   // caller's headers already send.
   let sent = callArgs(ctx, "cookie").filter { !isNil($0.val) }
   if !sent.isEmpty {
-    let names = sent.flatMap { $0.val.asMap != nil ? keysof($0.val) : [$0.wire] }
+    let names = sent.flatMap { arg in
+      arg.val.asMap != nil ? keysof(arg.val).map { escurl(.string($0)) } : [arg.wire]
+    }
     var kept: [String] = []
     for k in out.entries.keys where k.lowercased() == "cookie" {
       if let given = out.entries[k]?.asString {
@@ -139,15 +141,21 @@ func prepareQueryUtil(_ ctx: Context) -> VMap {
       paramnames.append(gp(pd, "name"))
     }
   }
-  // A header or cookie parameter travels in the headers, which prepareHeaders fills.
-  if let ahl = gpath(ctx.point, "args", "header").asList {
-    for hd in ahl.items {
-      paramnames.append(gp(hd, "name"))
+  // A header or cookie parameter travels in the headers, which prepareHeaders
+  // fills, unless a query parameter shares its name: then both are sent.
+  var declared: [Value] = []
+  if let dql = gpath(ctx.point, "args", "query").asList {
+    for qd in dql.items {
+      declared.append(gp(qd, "name"))
     }
   }
-  if let acl = gpath(ctx.point, "args", "cookie").asList {
-    for cd in acl.items {
-      paramnames.append(gp(cd, "name"))
+  for located in [gpath(ctx.point, "args", "header"), gpath(ctx.point, "args", "cookie")] {
+    guard let defs = located.asList else { continue }
+    for hd in defs.items {
+      let name = gp(hd, "name")
+      if let s = name.asString, !containsStr(declared, s) {
+        paramnames.append(name)
+      }
     }
   }
 

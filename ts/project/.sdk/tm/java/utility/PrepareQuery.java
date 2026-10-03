@@ -37,12 +37,20 @@ final class PrepareQuery {
           }
         }
       }
-      // A header or cookie parameter travels in the headers, which prepareHeaders fills.
+      // A header or cookie parameter travels in the headers, which prepareHeaders
+      // fills, unless a query parameter shares its name: then both are sent.
+      List<Object> declared = new ArrayList<>();
+      Object dl = Struct.getpath(point, List.of("args", "query"));
+      if (dl instanceof List) {
+        for (Object qd : (List<Object>) dl) {
+          declared.add(Struct.getprop(qd, "name"));
+        }
+      }
       Object hl = Struct.getpath(point, List.of("args", "header"));
       if (hl instanceof List) {
         for (Object hd : (List<Object>) hl) {
           Object name = Struct.getprop(hd, "name");
-          if (name instanceof String) {
+          if (name instanceof String && !declared.contains(name)) {
             params.add(name);
           }
         }
@@ -51,7 +59,7 @@ final class PrepareQuery {
       if (cl instanceof List) {
         for (Object cd : (List<Object>) cl) {
           Object name = Struct.getprop(cd, "name");
-          if (name instanceof String) {
+          if (name instanceof String && !declared.contains(name)) {
             params.add(name);
           }
         }

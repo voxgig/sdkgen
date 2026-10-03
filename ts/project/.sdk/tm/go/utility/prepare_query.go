@@ -37,18 +37,27 @@ func prepareQueryUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
-	// A header or cookie parameter travels in the headers, which prepareHeaders fills.
+	// A header or cookie parameter travels in the headers, which prepareHeaders
+	// fills, unless a query parameter shares its name: then both are sent.
 	if point != nil {
+		declared := map[string]bool{}
+		if ql, ok := vs.GetPath(point, []any{"args", "query"}).([]any); ok {
+			for _, qd := range ql {
+				if name, ok := vs.GetProp(qd, "name").(string); ok {
+					declared[name] = true
+				}
+			}
+		}
 		if hl, ok := vs.GetPath(point, []any{"args", "header"}).([]any); ok {
 			for _, hd := range hl {
-				if name, ok := vs.GetProp(hd, "name").(string); ok {
+				if name, ok := vs.GetProp(hd, "name").(string); ok && !declared[name] {
 					params = append(params, name)
 				}
 			}
 		}
 		if cl, ok := vs.GetPath(point, []any{"args", "cookie"}).([]any); ok {
 			for _, cd := range cl {
-				if name, ok := vs.GetProp(cd, "name").(string); ok {
+				if name, ok := vs.GetProp(cd, "name").(string); ok && !declared[name] {
 					params = append(params, name)
 				}
 			}

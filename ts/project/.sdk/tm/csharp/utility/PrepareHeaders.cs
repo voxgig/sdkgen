@@ -40,7 +40,8 @@ public static partial class SdkUtility
         if (0 < sent.Count)
         {
             var names = sent.SelectMany(arg => arg.Val is Dictionary<string, object?>
-                ? StructUtils.KeysOf(arg.Val) : new List<string> { arg.Wire }).ToList();
+                ? StructUtils.KeysOf(arg.Val).Select(key => StructUtils.EscUrl(key))
+                : new List<string> { arg.Wire }).ToList();
             var kept = new List<string>();
             foreach (var k in new List<string>(result.Keys))
             {

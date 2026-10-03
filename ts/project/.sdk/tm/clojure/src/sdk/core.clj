@@ -810,7 +810,7 @@
     ;; caller's headers already send.
     (let [sent (vec (for [[_ wire v] (call-args ctx "cookie") :when (some? v)] [wire v]))]
       (when (seq sent)
-        (let [names (set (mapcat (fn [[wire v]] (if (vs/ismap v) (vs/keysof v) [wire])) sent))
+        (let [names (set (mapcat (fn [[wire v]] (if (vs/ismap v) (map vs/escurl (vs/keysof v)) [wire])) sent))
               given (vec (filter (fn [k] (and (string? k) (= "cookie" (str/lower-case k))))
                                  (vec (.keySet ^java.util.Map out))))
               kept (vec (for [k given
@@ -903,10 +903,18 @@
         acookie (let [args (when point (vs/getprop point "args"))
                       c (when (vs/ismap args) (vs/getprop args "cookie"))]
                   (if (vs/islist c) c (vs/jt)))
+        ;; A header or cookie name leaves the query unless a query parameter
+        ;; shares it: then both are sent.
+        declared (let [args (when point (vs/getprop point "args"))
+                       q (when (vs/ismap args) (vs/getprop args "query"))]
+                   (into #{} (keep (fn [qd] (when (vs/ismap qd) (vs/getprop qd "name")))
+                                   (vec (if (vs/islist q) q (vs/jt))))))
+        routed (fn [d] (when (vs/ismap d)
+                         (let [n (vs/getprop d "name")] (when-not (contains? declared n) n))))
         pset (into (into (into (into #{} (vec params))
                                (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams)))
-                         (keep (fn [hd] (when (vs/ismap hd) (vs/getprop hd "name"))) (vec aheader)))
-                   (keep (fn [cd] (when (vs/ismap cd) (vs/getprop cd "name"))) (vec acookie)))
+                         (keep routed (vec aheader)))
+                   (keep routed (vec acookie)))
         ;; A query parameter travels under the name the definition gives it,
         ;; its orig, which the model may have renamed for the caller.
         aquery (let [args (when point (vs/getprop point "args"))

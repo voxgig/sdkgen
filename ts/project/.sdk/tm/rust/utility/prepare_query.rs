@@ -46,10 +46,21 @@ pub fn prepare_query_util(ctx: &Rc<Context>) -> Value {
         false
     };
 
-    // A header or cookie parameter travels in the headers, which prepare_headers fills.
+    // A header or cookie parameter travels in the headers, which prepare_headers
+    // fills, unless a query parameter shares its name: then both are sent.
     let aheader = getp(&getp(&point, "args"), "header");
     let acookie = getp(&getp(&point, "args"), "cookie");
+    let declared = getp(&getp(&point, "args"), "query");
     let in_header = |key: &str| -> bool {
+        if let Value::List(ql) = &declared {
+            for qd in ql.borrow().iter() {
+                if let Value::Str(s) = getp(qd, "name") {
+                    if s == key {
+                        return false;
+                    }
+                }
+            }
+        }
         for located in [&aheader, &acookie] {
             if let Value::List(hl) = located {
                 for hd in hl.borrow().iter() {

@@ -42,7 +42,8 @@ class ProjectNamePrepareHeaders
         if (0 < count($sent)) {
             $names = array_merge(...array_map(
                 fn($arg) => \Voxgig\Struct\Struct::ismap($arg[1])
-                    ? array_map('strval', \Voxgig\Struct\Struct::keysof($arg[1]))
+                    ? array_map(fn($key) => \Voxgig\Struct\Struct::escurl((string) $key),
+                        \Voxgig\Struct\Struct::keysof($arg[1]))
                     : [$arg[0]],
                 $sent
             ));

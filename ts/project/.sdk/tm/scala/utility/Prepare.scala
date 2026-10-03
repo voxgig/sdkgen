@@ -80,13 +80,18 @@ object PrepareQuery {
           }
         case _ =>
       }
-      // A header or cookie parameter travels in the headers, which prepareHeaders fills.
+      // A header or cookie name leaves the query unless a query parameter shares it: then both are sent.
+      val declared = new ArrayList[Object]()
+      Struct.getpath(point, java.util.List.of("args", "query")) match {
+        case l: JList[_] => val dit = l.iterator(); while (dit.hasNext) declared.add(Struct.getprop(dit.next(), "name"))
+        case _ =>
+      }
       for (located <- Seq(Struct.getpath(point, java.util.List.of("args", "header")),
         Struct.getpath(point, java.util.List.of("args", "cookie")))) located match {
         case l: JList[_] =>
           val hit = l.iterator()
           while (hit.hasNext) {
-            Struct.getprop(hit.next(), "name") match { case s: String => params.add(s); case _ => }
+            Struct.getprop(hit.next(), "name") match { case s: String if !declared.contains(s) => params.add(s); case _ => }
           }
         case _ =>
       }
@@ -157,7 +162,7 @@ object PrepareHeaders {
     if (sent.nonEmpty) {
       val names = sent.flatMap { case (_, wire, v) =>
         v match {
-          case m: JMap[_, _] => Struct.keysof(m).toArray(Array.empty[String]).toSeq
+          case m: JMap[_, _] => Struct.keysof(m).toArray(Array.empty[String]).toSeq.map(k => Struct.escurl(k))
           case _ => Seq(wire)
         }
       }

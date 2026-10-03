@@ -50,7 +50,10 @@ pub fn prepare_headers_util(ctx: &Rc<Context>) -> Value {
         let names: Vec<String> = sent
             .iter()
             .flat_map(|(_, wire, val)| match val {
-                Value::Map(_) => vs::keysof_vec(val),
+                Value::Map(_) => vs::keysof_vec(val)
+                    .iter()
+                    .map(|k| vs::esc_url(&Value::Str(k.clone())))
+                    .collect::<Vec<String>>(),
                 _ => vec![wire.clone()],
             })
             .collect();

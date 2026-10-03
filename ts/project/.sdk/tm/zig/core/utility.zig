@@ -1640,7 +1640,7 @@ pub fn prepare_headers_util(ctx: *Context) Value {
                 for (sent.items) |arg| {
                     if (arg.val == .object) {
                         for (h.keysof_vec(arg.val)) |key| {
-                            if (std.mem.eql(u8, key, name)) replaced = true;
+                            if (std.mem.eql(u8, h.esc_url(key), name)) replaced = true;
                         }
                     } else if (std.mem.eql(u8, arg.wire, name)) replaced = true;
                 }
@@ -1761,7 +1761,8 @@ pub fn prepare_query_util(ctx: *Context) Value {
     // A path parameter travels in the path. The generated config lists them
     // as args.params, which prepare_params reads; params is the older list.
     const aparams: Value = h.getpath(&.{ "args", "params" }, point);
-    // A header or cookie parameter travels in the headers, which prepare_headers fills.
+    // A header or cookie parameter travels in the headers, which prepare_headers
+    // fills, unless a query parameter shares its name: then both are sent.
     const aheader: Value = h.getpath(&.{ "args", "header" }, point);
     const acookie: Value = h.getpath(&.{ "args", "cookie" }, point);
     // A query parameter travels under the name the definition gives it, its
@@ -1783,7 +1784,8 @@ pub fn prepare_query_util(ctx: *Context) Value {
                     }
                 }
             }
-            if (!contained) contained = names_key(aparams, key) or names_key(aheader, key) or names_key(acookie, key);
+            if (!contained) contained = names_key(aparams, key) or
+                ((names_key(aheader, key) or names_key(acookie, key)) and !names_key(aquery, key));
             var wire: []const u8 = key;
             if (aquery == .array) {
                 for (aquery.array.data.items) |qd| {
@@ -1803,7 +1805,8 @@ pub fn prepare_query_util(ctx: *Context) Value {
 
     // A create or update passes its query arguments in its data.
     for (call_args(ctx, "query")) |arg| {
-        var contained = h.is_noval(arg.val) or names_key(aparams, arg.name) or names_key(aheader, arg.name) or names_key(acookie, arg.name);
+        var contained = h.is_noval(arg.val) or names_key(aparams, arg.name) or
+            ((names_key(aheader, arg.name) or names_key(acookie, arg.name)) and !names_key(aquery, arg.name));
         if (params == .array) {
             for (params.array.data.items) |v| {
                 if (v == .string and std.mem.eql(u8, v.string, arg.name)) contained = true;

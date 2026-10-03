@@ -1761,7 +1761,9 @@ defmodule ProjectName.Utility do
 
     if sent != [] do
       names =
-        Enum.flat_map(sent, fn {_name, wire, val} -> if S.ismap(val), do: S.keysof(val), else: [wire] end)
+        Enum.flat_map(sent, fn {_name, wire, val} ->
+          if S.ismap(val), do: Enum.map(S.keysof(val), &S.escurl/1), else: [wire]
+        end)
 
       given =
         Enum.filter(H.entries(out), fn {k, _} -> is_binary(k) and String.downcase(k) == "cookie" end)
@@ -1909,11 +1911,14 @@ defmodule ProjectName.Utility do
 
     # A path parameter travels in the path. The generated config lists them
     # as args.params, which prepare_params reads; params is the older list.
-    # A header or cookie parameter travels in the headers, which prepare_headers fills.
+    # A header or cookie parameter travels in the headers, which prepare_headers
+    # fills, unless a query parameter shares its name: then both are sent.
+    declared = arg_names(point, "args.query")
+
     param_strs =
       param_strs ++
-        arg_names(point, "args.params") ++ arg_names(point, "args.header") ++
-        arg_names(point, "args.cookie")
+        arg_names(point, "args.params") ++
+        Enum.reject(arg_names(point, "args.header") ++ arg_names(point, "args.cookie"), &(&1 in declared))
 
     # A query parameter travels under the name the definition gives it, its
     # orig, which the model may have renamed for the caller.

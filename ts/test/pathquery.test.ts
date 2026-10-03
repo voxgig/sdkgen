@@ -109,6 +109,17 @@ describe('prepareQuery', () => {
       } }
       deepStrictEqual(prepareQuery(ctx(point, { session_id: 's1', limit: 2 })), { limit: 2 })
     })
+
+    // A parameter is unique by name AND location, so a query parameter may
+    // share its name with a header or cookie: then the value goes to both.
+    test(lang + ': a query argument that shares a header or cookie name still goes out', () => {
+      const point = { args: {
+        header: [{ name: 'trace', orig: 'X-Trace', kind: 'header' }],
+        cookie: [{ name: 'lang', orig: 'lang', kind: 'cookie' }],
+        query: [{ name: 'lang', orig: 'lang', kind: 'query' }, { name: 'trace', orig: 'trace', kind: 'query' }],
+      } }
+      deepStrictEqual(prepareQuery(ctx(point, { lang: 'en', trace: 't1' })), { lang: 'en', trace: 't1' })
+    })
   }
 
 
@@ -315,6 +326,13 @@ describe('prepareHeaders', () => {
       deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' },
         { prefs: { lang: 'en', size: 2 } }, { Cookie: 'lang=old; theme=dark' })),
       { cookie: 'theme=dark; SESSIONID=s1; lang=en&size=2' })
+    })
+
+    // ...and sends them percent-encoded, so that is the form it replaces.
+    test(lang + ': a map cookie argument replaces a default under its encoded key', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' },
+        { prefs: { 'x y': 'new' } }, { Cookie: 'x%20y=old; theme=dark' })),
+      { cookie: 'theme=dark; SESSIONID=s1; x%20y=new' })
     })
   }
 

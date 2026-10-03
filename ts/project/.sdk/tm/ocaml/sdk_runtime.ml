@@ -708,7 +708,7 @@ let prepare_headers_util (ctx : ctx) : value =
       (call_args ctx "cookie") in
   if sent <> [] then begin
     let names = List.concat (List.map (fun (_, wire, v) ->
-        match v with Map _ -> keysof v | _ -> [wire]) sent) in
+        match v with Map _ -> List.map escurl_s (keysof v) | _ -> [wire]) sent) in
     let given = List.filter (fun k -> String.lowercase_ascii k = "cookie") (keysof out) in
     let kept = List.concat (List.map (fun k ->
         match getp out k with
@@ -790,7 +790,13 @@ let prepare_query_util (ctx : ctx) : value =
     | _ -> []
   in
   (* A header or cookie parameter travels in the headers, which
-   * prepare_headers fills. *)
+   * prepare_headers fills, unless a query parameter shares its name: then
+   * both are sent. *)
+  let declared =
+    match getp (getp ctx.c_point "args") "query" with
+    | List r -> List.map (fun qd -> getp qd "name") !r
+    | _ -> []
+  in
   let header_names =
     match getp (getp ctx.c_point "args") "header" with
     | List r -> List.map (fun hd -> getp hd "name") !r
@@ -801,7 +807,8 @@ let prepare_query_util (ctx : ctx) : value =
     | List r -> List.map (fun cd -> getp cd "name") !r
     | _ -> []
   in
-  let params = params @ arg_names @ header_names @ cookie_names in
+  let elsewhere = List.filter (fun n -> not (List.mem n declared)) (header_names @ cookie_names) in
+  let params = params @ arg_names @ elsewhere in
   let contains_param s = List.exists (fun v -> match v with Str x -> x = s | _ -> false) params in
   (* A query parameter travels under the name the definition gives it, its
    * orig, which the model may have renamed for the caller. *)

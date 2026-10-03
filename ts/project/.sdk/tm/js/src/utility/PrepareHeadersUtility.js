@@ -30,7 +30,8 @@ function prepareHeaders(ctx) {
   // caller's headers already send.
   const sent = callArgs(ctx, 'cookie').filter((arg) => null != arg.val)
   if (0 < sent.length) {
-    const names = sent.flatMap((arg) => struct.ismap(arg.val) ? struct.keysof(arg.val) : [arg.wire])
+    const names = sent.flatMap((arg) => struct.ismap(arg.val) ?
+      struct.keysof(arg.val).map((key) => struct.escurl(key)) : [arg.wire])
     const kept = []
     for (const key of Object.keys(out)) {
       if ('cookie' !== key.toLowerCase()) continue

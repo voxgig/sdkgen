@@ -35,14 +35,25 @@ local function prepare_query_util(ctx)
         end
       end
     end
-    -- A header or cookie parameter travels in the headers, which prepare_headers fills.
+    -- A header or cookie parameter travels in the headers, which prepare_headers
+    -- fills, unless a query parameter shares its name: then both are sent.
+    local declared = {}
+    local ql = vs.getpath(point, "args.query")
+    if type(ql) == "table" then
+      for _, qd in ipairs(ql) do
+        local qname = vs.getprop(qd, "name")
+        if type(qname) == "string" then
+          declared[qname] = true
+        end
+      end
+    end
     local hl = vs.getpath(point, "args.header")
     local cl = vs.getpath(point, "args.cookie")
     for _, located in ipairs({ hl or {}, cl or {} }) do
       if type(located) == "table" then
         for _, hd in ipairs(located) do
           local name = vs.getprop(hd, "name")
-          if type(name) == "string" then
+          if type(name) == "string" and not declared[name] then
             table.insert(params, name)
           end
         end

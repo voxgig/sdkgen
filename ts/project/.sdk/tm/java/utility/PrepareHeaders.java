@@ -46,7 +46,9 @@ final class PrepareHeaders {
       List<String> names = new ArrayList<>();
       for (Param.CallArg arg : sent) {
         if (arg.val() instanceof Map<?, ?> map) {
-          names.addAll(Struct.keysof(map));
+          for (String key : Struct.keysof(map)) {
+            names.add(Struct.escurl(key));
+          }
         } else {
           names.add(arg.wire());
         }

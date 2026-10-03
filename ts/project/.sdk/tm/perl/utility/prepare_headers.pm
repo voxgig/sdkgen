@@ -39,7 +39,8 @@ $REGISTRY{prepare_headers} = sub {
   if (@sent) {
     my %names = map {
       my $arg = $_;
-      map { ($_ => 1) } (Voxgig::Struct::ismap($arg->[2]) ? @{ Voxgig::Struct::keysof($arg->[2]) } : ($arg->[1]));
+      map { ($_ => 1) } (Voxgig::Struct::ismap($arg->[2])
+        ? (map { Voxgig::Struct::escurl($_) } @{ Voxgig::Struct::keysof($arg->[2]) }) : ($arg->[1]));
     } @sent;
     my @kept;
     for my $key (grep { lc $_ eq 'cookie' } keys %$out) {

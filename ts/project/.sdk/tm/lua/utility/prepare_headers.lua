@@ -65,7 +65,7 @@ local function prepare_headers_util(ctx)
     for _, arg in ipairs(sent) do
       if vs.ismap(arg.val) then
         for _, key in ipairs(vs.keysof(arg.val)) do
-          names[key] = true
+          names[vs.escurl(key)] = true
         end
       else
         names[arg.wire] = true

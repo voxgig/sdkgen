@@ -30,13 +30,17 @@ class ProjectNamePrepareQuery
                 }
             }
             // A header or cookie parameter travels in the headers, which
-            // prepareHeaders fills.
+            // prepareHeaders fills, unless a query parameter shares its name:
+            // then both are sent.
+            $ql = \Voxgig\Struct\Struct::getpath($point, 'args.query');
+            $declared = is_array($ql)
+                ? array_map(fn($qd) => \Voxgig\Struct\Struct::getprop($qd, 'name'), $ql) : [];
             foreach ([\Voxgig\Struct\Struct::getpath($point, 'args.header'),
                 \Voxgig\Struct\Struct::getpath($point, 'args.cookie')] as $hl) {
                 if (is_array($hl)) {
                     foreach ($hl as $hd) {
                         $name = \Voxgig\Struct\Struct::getprop($hd, 'name');
-                        if (is_string($name)) {
+                        if (is_string($name) && !in_array($name, $declared, true)) {
                             $params[] = $name;
                         }
                     }

@@ -31,12 +31,15 @@ def prepare_query_util(ctx):
                 if isinstance(name, str):
                     params.append(name)
         # A header or cookie parameter travels in the headers, which
-        # prepare_headers fills.
+        # prepare_headers fills, unless a query parameter shares its name:
+        # then both are sent.
+        ql = vs.getpath(point, "args.query")
+        declared = [vs.getprop(qd, "name") for qd in ql] if isinstance(ql, list) else []
         for located in (vs.getpath(point, "args.header"), vs.getpath(point, "args.cookie")):
             if isinstance(located, list):
                 for hd in located:
                     name = vs.getprop(hd, "name")
-                    if isinstance(name, str):
+                    if isinstance(name, str) and name not in declared:
                         params.append(name)
 
     # A query parameter travels under the name the definition gives it, its
