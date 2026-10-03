@@ -573,7 +573,7 @@ tm/go/test/omni/util.go c14da650710c
 tm/go/test/omniresolver_test.go db219b844df1
 tm/go/test/omnismoke_test.go fb76d8db5060
 tm/go/test/pipeline_test.go be6b8f0ea616
-tm/go/test/primary_utility_test.go d10b6dc84030
+tm/go/test/primary_utility_test.go 4ec9b4407ac5
 tm/go/test/sdk-test-control.json acadc87764f6
 tm/go/test/struct_utility_test.go c3db5a84cdc1
 tm/go/test/testsupport_test.go 320d6f3af56e
@@ -597,7 +597,7 @@ tm/go/utility/make_url.go e1afd30fa729
 tm/go/utility/media.go 29c6f1a85664
 tm/go/utility/param.go 03774afe60e3
 tm/go/utility/prepare_body.go d136f162da2f
-tm/go/utility/prepare_headers.go f92b844999ef
+tm/go/utility/prepare_headers.go 50ab1fe80054
 tm/go/utility/prepare_method.go 1f56fb598c7f
 tm/go/utility/prepare_params.go cc1327507f18
 tm/go/utility/prepare_path.go 9abb91c60ce8

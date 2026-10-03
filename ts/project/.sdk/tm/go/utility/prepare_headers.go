@@ -79,14 +79,14 @@ func prepareHeadersUtil(ctx *core.Context) map[string]any {
 func cookiePair(wire string, val any) string {
 	esc := func(v any) string { return vs.EscUrl(vs.Stringify(v)) }
 	pairs := []string{}
-	switch v := val.(type) {
-	case []any:
-		for _, item := range v {
-			pairs = append(pairs, wire+"="+esc(item))
+	switch {
+	case vs.IsList(val):
+		for _, item := range vs.Items(val) {
+			pairs = append(pairs, wire+"="+esc(item[1]))
 		}
-	case map[string]any:
-		for _, key := range vs.KeysOf(v) {
-			pairs = append(pairs, vs.EscUrl(key)+"="+esc(v[key]))
+	case vs.IsMap(val):
+		for _, key := range vs.KeysOf(val) {
+			pairs = append(pairs, vs.EscUrl(key)+"="+esc(vs.GetProp(val, key)))
 		}
 	default:
 		pairs = append(pairs, wire+"="+esc(val))
