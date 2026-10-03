@@ -31,6 +31,20 @@ func isRawRequest(_ point: VMap?) -> Bool {
   gpath(point, "body", "kind").asString == "raw"
 }
 
+func isJsonRequest(_ point: VMap?) -> Bool {
+  gpath(point, "body", "kind").asString == "json"
+}
+
+// Bytes or a stream go as given. A map or a list is JSON, and so is a scalar
+// on a point that declares a JSON body.
+func requestBody(_ point: VMap?, _ body: Value) -> Value {
+  if case .native = body { return body }
+  if body.isNode || isJsonRequest(point) {
+    return .string(jsonify(body, indent: 0))
+  }
+  return body
+}
+
 private func hasMediaHeader(_ headers: VMap, _ name: String) -> Bool {
   headers.entries.keys.contains { $0.lowercased() == name }
 }

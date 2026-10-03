@@ -38,6 +38,17 @@ object Media {
   fun isRawRequest(point: Any?): Boolean =
     "raw" == Struct.getprop(Struct.getprop(point, "body", null), "kind", null)
 
+  fun isJsonRequest(point: Any?): Boolean =
+    "json" == Struct.getprop(Struct.getprop(point, "body", null), "kind", null)
+
+  // Bytes or a stream go as given. A map or a list is JSON, and so is a scalar
+  // on a point that declares a JSON body.
+  fun requestBody(point: Any?, body: Any): Any = when {
+    body is ByteArray || body is InputStream -> body
+    Struct.isnode(body) || isJsonRequest(point) -> Struct.jsonify(body)
+    else -> body
+  }
+
   private fun hasHeader(headers: Map<String, Any?>, name: String): Boolean =
     headers.keys.any { it.lowercase() == name }
 

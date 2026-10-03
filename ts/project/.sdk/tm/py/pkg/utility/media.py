@@ -40,6 +40,20 @@ def is_raw_request(point):
     return vs.getpath(point, "body.kind") == "raw"
 
 
+def is_json_request(point):
+    return vs.getpath(point, "body.kind") == "json"
+
+
+# Bytes or a file object go as given. A dict or a list is JSON, and so is a
+# scalar on a point that declares a JSON body.
+def request_body(point, body):
+    if isinstance(body, (bytes, bytearray, memoryview)) or callable(getattr(body, "read", None)):
+        return body
+    if vs.isnode(body) or is_json_request(point):
+        return vs.jsonify(body)
+    return body
+
+
 def _has_header(headers, name):
     return any(isinstance(k, str) and k.lower() == name for k in headers)
 

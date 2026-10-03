@@ -524,10 +524,7 @@ object MakeFetchDef {
     fetchdef.put("headers", spec.headers)
 
     if (spec.body != null) {
-      spec.body match {
-        case _: JMap[_, _] => fetchdef.put("body", Struct.jsonify(spec.body))
-        case _ => fetchdef.put("body", spec.body)
-      }
+      fetchdef.put("body", Media.requestBody(ctx.point, spec.body))
     }
 
     fetchdef

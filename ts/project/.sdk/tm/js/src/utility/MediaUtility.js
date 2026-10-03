@@ -36,6 +36,11 @@ function isRawRequest(point) {
 }
 
 
+function isJsonRequest(point) {
+  return null != point && null != point.body && 'json' === point.body.kind
+}
+
+
 function hasHeader(headers, name) {
   return Object.keys(headers).some((key) => name === key.toLowerCase())
 }
@@ -130,6 +135,7 @@ module.exports = {
   RAW_BODY,
   acceptOf,
   isJsonMedia,
+  isJsonRequest,
   isRawRequest,
   isRawValue,
   isStream,

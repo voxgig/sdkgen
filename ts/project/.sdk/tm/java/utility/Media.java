@@ -55,6 +55,22 @@ final class Media {
     return "raw".equals(Struct.getprop(Struct.getprop(point, "body"), "kind"));
   }
 
+  static boolean isJsonRequest(Object point) {
+    return "json".equals(Struct.getprop(Struct.getprop(point, "body"), "kind"));
+  }
+
+  // Bytes or a stream go as given. A map or a list is JSON, and so is a scalar
+  // on a point that declares a JSON body.
+  static Object requestBody(Object point, Object body) {
+    if (body instanceof byte[] || body instanceof InputStream) {
+      return body;
+    }
+    if (Struct.isnode(body) || isJsonRequest(point)) {
+      return Struct.jsonify(body);
+    }
+    return body;
+  }
+
   private static boolean hasHeader(Map<String, Object> headers, String name) {
     return headers.keySet().stream()
         .anyMatch(k -> k != null && k.toLowerCase(Locale.ROOT).equals(name));

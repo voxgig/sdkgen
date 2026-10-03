@@ -1,7 +1,7 @@
 
 import { Context, Result } from '../types'
 
-import { isRawValue, isStream } from './MediaUtility'
+import { isJsonRequest, isRawValue, isStream } from './MediaUtility'
 
 
 function makeFetchDef(ctx: Context): any | Error {
@@ -36,7 +36,9 @@ function makeFetchDef(ctx: Context): any | Error {
 
   if (null != spec.body) {
     const body = spec.body
-    fetchdef.body = 'object' !== typeof body || isRawValue(body) ? body : jsonify(body)
+    // A JSON point's body is JSON whatever its value; a scalar elsewhere goes as given.
+    fetchdef.body = isRawValue(body) || ('object' !== typeof body && !isJsonRequest(ctx.point)) ?
+      body : jsonify(body)
 
     // Node's fetch refuses a stream body without it.
     if (isStream(body)) {
