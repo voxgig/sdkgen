@@ -90,7 +90,7 @@ func allowed(_ names: Value, _ item: String?) -> Bool {
   guard let list = names.asString, let item = item, !item.isEmpty else { return false }
   let want = item.uppercased()
   return list.split(separator: ",", omittingEmptySubsequences: false)
-    .contains { $0.trimmingCharacters(in: .whitespaces).uppercased() == want }
+    .contains { $0.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == want }
 }
 
 // regexReplace replaces every match of `pattern` in `input` with the literal

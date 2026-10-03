@@ -1,6 +1,6 @@
 // The allow option, driven through a generated SDK: every probe makes the same
 // calls, and an allow list names whole methods and operations in any case, so
-// `PU` is not `PUT`, `load` is not `reload`, and `get` is GET.
+// `PU` is not `PUT`, `load` is not `reload`, and `get` after a newline is GET.
 const ALLOW_OUTCOMES: Record<string, string> = {
   'prepare get': 'GET',
   'prepare POST': 'refused allow.method',
@@ -45,7 +45,7 @@ const call = async (name, fn) => {
 }
 
 ;(async () => {
-  const a = new SDK({ base, allow: { method: 'get, PUT', op: 'direct,load' } })
+  const a = new SDK({ base, allow: { method: 'PUT,\\n get', op: 'direct,load' } })
   const b = new SDK({ base, allow: { op: 'indirect,reload' } })
 
   for (const method of ['get', 'POST', 'PU']) {
@@ -105,7 +105,7 @@ def client(allow):
     return DemoSDK(opts)
 
 
-a = client({'method': 'get, PUT', 'op': 'direct,load'})
+a = client({'method': 'PUT,\n get', 'op': 'direct,load'})
 b = client({'op': 'indirect,reload'})
 
 for method in ['get', 'POST', 'PU']:
@@ -159,7 +159,7 @@ func allowProbeCall(name string, res map[string]any, err error) {
 func TestAllowProbe(t *testing.T) {
 	base := os.Getenv("ALLOW_BASE")
 	a := sdk.NewDemoSDK(map[string]any{"base": base,
-		"allow": map[string]any{"method": "get, PUT", "op": "direct,load"}})
+		"allow": map[string]any{"method": "PUT,\n get", "op": "direct,load"}})
 	b := sdk.NewDemoSDK(map[string]any{"base": base,
 		"allow": map[string]any{"op": "indirect,reload"}})
 
@@ -209,7 +209,7 @@ rescue StandardError => e
   report(name, outcome(e))
 end
 
-a = DemoSDK.new({ 'base' => BASE, 'allow' => { 'method' => 'get, PUT', 'op' => 'direct,load' } })
+a = DemoSDK.new({ 'base' => BASE, 'allow' => { 'method' => "PUT,\n get", 'op' => 'direct,load' } })
 b = DemoSDK.new({ 'base' => BASE, 'allow' => { 'op' => 'indirect,reload' } })
 
 %w[get POST PU].each do |method|
@@ -258,7 +258,7 @@ function allow_call(string $name, callable $fn): void {
 }
 
 $base = getenv('ALLOW_BASE');
-$a = new DemoSDK(['base' => $base, 'allow' => ['method' => 'get, PUT', 'op' => 'direct,load']]);
+$a = new DemoSDK(['base' => $base, 'allow' => ['method' => "PUT,\n get", 'op' => 'direct,load']]);
 $b = new DemoSDK(['base' => $base, 'allow' => ['op' => 'indirect,reload']]);
 
 foreach (['get', 'POST', 'PU'] as $method) {
@@ -311,7 +311,7 @@ sub call {
 }
 
 my $base = $ENV{ALLOW_BASE};
-my $ca = DemoSDK->new({ base => $base, allow => { method => 'get, PUT', op => 'direct,load' } });
+my $ca = DemoSDK->new({ base => $base, allow => { method => "PUT,\n get", op => 'direct,load' } });
 my $cb = DemoSDK->new({ base => $base, allow => { op => 'indirect,reload' } });
 
 for my $method (qw(get POST PU)) {
@@ -372,7 +372,7 @@ local function client(allow)
   return sdk.new(opts)
 end
 
-local a = client({ method = "get, PUT", op = "direct,load" })
+local a = client({ method = "PUT,\n get", op = "direct,load" })
 local b = client({ op = "indirect,reload" })
 
 for _, method in ipairs({ "get", "POST", "PU" }) do
@@ -435,7 +435,7 @@ public class AllowProbe {
 
   public static void main(String[] args) {
     String base = System.getenv("ALLOW_BASE");
-    DemoSDK a = new DemoSDK(map("base", base, "allow", map("method", "get, PUT", "op", "direct,load")));
+    DemoSDK a = new DemoSDK(map("base", base, "allow", map("method", "PUT,\n get", "op", "direct,load")));
     DemoSDK b = new DemoSDK(map("base", base, "allow", map("op", "indirect,reload")));
     for (String method : List.of("get", "POST", "PU")) {
       try {
@@ -489,7 +489,7 @@ class AllowProbe {
   fun allowProbe() {
     val base = System.getenv("ALLOW_BASE")
     val a = DemoSDK(linkedMapOf<String, Any?>("base" to base,
-      "allow" to linkedMapOf<String, Any?>("method" to "get, PUT", "op" to "direct,load")))
+      "allow" to linkedMapOf<String, Any?>("method" to "PUT,\n get", "op" to "direct,load")))
     val b = DemoSDK(linkedMapOf<String, Any?>("base" to base,
       "allow" to linkedMapOf<String, Any?>("op" to "indirect,reload")))
     for (method in listOf("get", "POST", "PU")) {
@@ -546,7 +546,7 @@ object AllowProbeMain {
 
   def main(args: Array[String]): Unit = {
     val base = System.getenv("ALLOW_BASE")
-    val a = new DemoSDK(map("base" -> base, "allow" -> map("method" -> "get, PUT", "op" -> "direct,load")))
+    val a = new DemoSDK(map("base" -> base, "allow" -> map("method" -> "PUT,\n get", "op" -> "direct,load")))
     val b = new DemoSDK(map("base" -> base, "allow" -> map("op" -> "indirect,reload")))
     for (method <- Seq("get", "POST", "PU")) {
       try {
@@ -610,7 +610,7 @@ public static class AllowProbe
     public static void Main()
     {
         var abase = Environment.GetEnvironmentVariable("ALLOW_BASE");
-        var a = new DemoSDK(new Dictionary<string, object?> { ["base"] = abase, ["allow"] = Allow("get, PUT", "direct,load") });
+        var a = new DemoSDK(new Dictionary<string, object?> { ["base"] = abase, ["allow"] = Allow("PUT,\n get", "direct,load") });
         var b = new DemoSDK(new Dictionary<string, object?> { ["base"] = abase, ["allow"] = Allow(null, "indirect,reload") });
         foreach (var method in new[] { "get", "POST", "PU" })
         {
@@ -657,7 +657,7 @@ final class AllowProbeTest: XCTestCase {
 
   func testAllowProbe() throws {
     let la = VMap()
-    la.entries["method"] = .string("get, PUT")
+    la.entries["method"] = .string("PUT,\n get")
     la.entries["op"] = .string("direct,load")
     let lb = VMap()
     lb.entries["op"] = .string("indirect,reload")
@@ -744,7 +744,7 @@ defmodule Demo.AllowProbeTest do
 
   test "allow probe" do
     base = System.get_env("ALLOW_BASE")
-    a = Demo.new(S.jm(["base", base, "allow", S.jm(["method", "get, PUT", "op", "direct,load"])]))
+    a = Demo.new(S.jm(["base", base, "allow", S.jm(["method", "PUT,\n get", "op", "direct,load"])]))
     b = Demo.new(S.jm(["base", base, "allow", S.jm(["op", "indirect,reload"])]))
 
     Enum.each(["get", "POST", "PU"], fn method ->
@@ -791,7 +791,7 @@ const CLOJURE_PROBE = String.raw`
         (report name "sent")))
     (catch Throwable e (report name (outcome e)))))
 
-(def a (api/make-sdk (vs/jm "base" base "allow" (vs/jm "method" "get, PUT" "op" "direct,load"))))
+(def a (api/make-sdk (vs/jm "base" base "allow" (vs/jm "method" "PUT,\n get" "op" "direct,load"))))
 (def b (api/make-sdk (vs/jm "base" base "allow" (vs/jm "op" "indirect,reload"))))
 
 (doseq [method ["get" "POST" "PU"]]
@@ -829,7 +829,7 @@ fn allow_probe() {
     let base = std::env::var("ALLOW_BASE").unwrap();
     let a = DemoSDK::new(jo(vec![
         ("base", Value::str(base.clone())),
-        ("allow", jo(vec![("method", Value::str("get, PUT")), ("op", Value::str("direct,load"))])),
+        ("allow", jo(vec![("method", Value::str("PUT,\n get")), ("op", Value::str("direct,load"))])),
     ]));
     let b = DemoSDK::new(jo(vec![
         ("base", Value::str(base)),
@@ -915,7 +915,7 @@ static void load(const char* name, DemoSDK* sdk) {
 }
 
 int main(void) {
-  DemoSDK* a = client(cmap(2, "method", v_str("get, PUT"), "op", v_str("direct,load")));
+  DemoSDK* a = client(cmap(2, "method", v_str("PUT,\n get"), "op", v_str("direct,load")));
   DemoSDK* b = client(cmap(1, "op", v_str("indirect,reload")));
   const char* methods[] = {"get", "POST", "PU"};
   char name[64];
@@ -987,7 +987,7 @@ int main() {
       {"system", vmap({{"fetch", Value(fetch)}})},
     }));
   };
-  auto a = client(vmap({{"method", Value("get, PUT")}, {"op", Value("direct,load")}}));
+  auto a = client(vmap({{"method", Value("PUT,\n get")}, {"op", Value("direct,load")}}));
   auto b = client(vmap({{"op", Value("indirect,reload")}}));
 
   for (const std::string method : {"get", "POST", "PU"}) {
@@ -1063,7 +1063,7 @@ fn opts(allow: Value) Value {
 }
 
 test "allow probe" {
-    const a = sdk.SDK.new(opts(h.jo(&.{ .{ "method", h.vstr("get, PUT") }, .{ "op", h.vstr("direct,load") } })));
+    const a = sdk.SDK.new(opts(h.jo(&.{ .{ "method", h.vstr("PUT,\n get") }, .{ "op", h.vstr("direct,load") } })));
     const b = sdk.SDK.new(opts(h.jo(&.{.{ "op", h.vstr("indirect,reload") }})));
 
     for ([_][]const u8{ "get", "POST", "PU" }) |method| {
@@ -1127,7 +1127,7 @@ let client allow =
                        ("system", jo [("fetch", fetch)])])
 
 let () =
-  let a = client (jo [("method", Str "get, PUT"); ("op", Str "direct,load")]) in
+  let a = client (jo [("method", Str "PUT,\n get"); ("op", Str "direct,load")]) in
   let b = client (jo [("op", Str "indirect,reload")]) in
   List.iter (fun m ->
       let name = "prepare " ^ m in

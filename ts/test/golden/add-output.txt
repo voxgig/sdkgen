@@ -1949,7 +1949,7 @@ tm/swift/Sources/ProjectNameSDK/core/Point.swift a9edf1830201
 tm/swift/Sources/ProjectNameSDK/core/Response.swift d20a54c43d34
 tm/swift/Sources/ProjectNameSDK/core/Result.swift 903a2df8c22e
 tm/swift/Sources/ProjectNameSDK/core/Spec.swift b6c053c1d26b
-tm/swift/Sources/ProjectNameSDK/core/Support.swift d0bb2fc44231
+tm/swift/Sources/ProjectNameSDK/core/Support.swift 9ea090f17dbe
 tm/swift/Sources/ProjectNameSDK/core/Types.swift b9ccbf883682
 tm/swift/Sources/ProjectNameSDK/core/Utility.swift cd0aef211f89
 tm/swift/Sources/ProjectNameSDK/feature/BaseFeature.swift 37dd198da054
