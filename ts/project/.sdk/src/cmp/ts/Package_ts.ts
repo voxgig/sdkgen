@@ -103,6 +103,9 @@ const Package = cmp(async function Package(props: any) {
 
     license: 'MIT',
 
+    // node:module strips the README examples' types under TypeScript 7.
+    engines: { node: '>=22.13' },
+
     dependencies: deps.prod,
     peerDependencies: deps.peer,
     devDependencies: deps.dev,

@@ -1996,7 +1996,7 @@ src/cmp/ts/Entity_ts.ts b5a1cc3c820e
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
 src/cmp/ts/Main_ts.ts 1220d104f55d
-src/cmp/ts/Package_ts.ts 8f2b744f085e
+src/cmp/ts/Package_ts.ts da37fb78956e
 src/cmp/ts/PrepareAuth_ts.ts 7987802ded47
 src/cmp/ts/ReadmeEntity_ts.ts c35c4ebb6363
 src/cmp/ts/ReadmeExampleTest_ts.ts 5dfbe547c29e
