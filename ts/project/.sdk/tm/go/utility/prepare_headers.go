@@ -32,26 +32,64 @@ func prepareHeadersUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
-	// A cookie argument travels in the cookie header as name=value, after any
-	// cookies the caller's headers already send.
-	cookies := []string{}
+	// A cookie argument travels in the cookie header, form serialized and
+	// percent-encoded, replacing a cookie of the same name among those the
+	// caller's headers already send.
+	sent := []callArg{}
 	for _, arg := range callArgs(ctx, "cookie") {
 		if arg.val != nil {
-			cookies = append(cookies, arg.wire+"="+vs.Stringify(arg.val))
+			sent = append(sent, arg)
 		}
 	}
-	if 0 < len(cookies) {
-		sent := []string{}
+	if 0 < len(sent) {
+		names := map[string]bool{}
+		for _, arg := range sent {
+			names[arg.wire] = true
+		}
+		kept := []string{}
 		for key, val := range out {
-			if strings.ToLower(key) == "cookie" {
-				if s, ok := val.(string); ok && "" != s {
-					sent = append(sent, s)
+			if strings.ToLower(key) != "cookie" {
+				continue
+			}
+			if given, ok := val.(string); ok {
+				for _, piece := range strings.Split(given, ";") {
+					cookie := strings.TrimSpace(piece)
+					if "" != cookie && !names[strings.TrimSpace(strings.SplitN(cookie, "=", 2)[0])] {
+						kept = append(kept, cookie)
+					}
 				}
-				delete(out, key)
+			}
+			delete(out, key)
+		}
+		for _, arg := range sent {
+			if pair := cookiePair(arg.wire, arg.val); "" != pair {
+				kept = append(kept, pair)
 			}
 		}
-		out["cookie"] = strings.Join(append(sent, cookies...), "; ")
+		if 0 < len(kept) {
+			out["cookie"] = strings.Join(kept, "; ")
+		}
 	}
 
 	return out
+}
+
+// The form style of a cookie parameter: a list repeats the name, a map sends
+// its own keys, and every value is percent-encoded.
+func cookiePair(wire string, val any) string {
+	esc := func(v any) string { return vs.EscUrl(vs.Stringify(v)) }
+	pairs := []string{}
+	switch v := val.(type) {
+	case []any:
+		for _, item := range v {
+			pairs = append(pairs, wire+"="+esc(item))
+		}
+	case map[string]any:
+		for _, key := range vs.KeysOf(v) {
+			pairs = append(pairs, vs.EscUrl(key)+"="+esc(v[key]))
+		}
+	default:
+		pairs = append(pairs, wire+"="+esc(val))
+	}
+	return strings.Join(pairs, "&")
 }

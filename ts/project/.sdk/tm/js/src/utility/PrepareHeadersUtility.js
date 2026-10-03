@@ -25,19 +25,41 @@ function prepareHeaders(ctx) {
     }
   }
 
-  // A cookie argument travels in the cookie header as name=value, after any
-  // cookies the caller's headers already send.
-  const cookies = callArgs(ctx, 'cookie')
-    .filter((arg) => null != arg.val)
-    .map((arg) => arg.wire + '=' + stringify(arg.val))
-  if (0 < cookies.length) {
-    const given = Object.keys(out).filter((key) => 'cookie' === key.toLowerCase())
-    const sent = given.map((key) => String(out[key])).filter((v) => '' !== v)
-    for (const key of given) delete out[key]
-    out['cookie'] = sent.concat(cookies).join('; ')
+  // A cookie argument travels in the cookie header, form serialized and
+  // percent-encoded, replacing a cookie of the same name among those the
+  // caller's headers already send.
+  const sent = callArgs(ctx, 'cookie').filter((arg) => null != arg.val)
+  if (0 < sent.length) {
+    const names = sent.map((arg) => arg.wire)
+    const kept = []
+    for (const key of Object.keys(out)) {
+      if ('cookie' !== key.toLowerCase()) continue
+      if ('string' === typeof out[key]) {
+        for (const piece of out[key].split(';')) {
+          const cookie = piece.trim()
+          if ('' !== cookie && !names.includes(cookie.split('=')[0].trim())) kept.push(cookie)
+        }
+      }
+      delete out[key]
+    }
+    for (const arg of sent) {
+      const pair = cookiePair(struct, arg.wire, arg.val)
+      if ('' !== pair) kept.push(pair)
+    }
+    if (0 < kept.length) out['cookie'] = kept.join('; ')
   }
 
   return out
+}
+
+// The form style of a cookie parameter: a list repeats the name, a map sends
+// its own keys, and every value is percent-encoded.
+function cookiePair(struct, wire, val) {
+  const esc = (v) => struct.escurl(struct.stringify(v))
+  const pairs = struct.islist(val) ? val.map((item) => wire + '=' + esc(item)) :
+    struct.ismap(val) ? struct.keysof(val).map((key) => struct.escurl(key) + '=' + esc(val[key])) :
+      [wire + '=' + esc(val)]
+  return pairs.join('&')
 }
 
 module.exports = {

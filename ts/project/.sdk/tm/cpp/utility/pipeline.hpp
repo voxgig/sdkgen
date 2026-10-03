@@ -1492,6 +1492,32 @@ inline std::vector<CallArg> callArgs(CtxPtr ctx, const std::string& kind) {
 
 // ---- prepareHeaders ---------------------------------------------------
 
+// Strips the blanks around a cookie piece.
+inline std::string trimBlank(const std::string& s) {
+  size_t from = s.find_first_not_of(" \t");
+  if (std::string::npos == from) return "";
+  return s.substr(from, s.find_last_not_of(" \t") - from + 1);
+}
+
+// The form style of a cookie parameter: a list repeats the name, a map sends
+// its own keys, and every value is percent-encoded.
+inline std::string cookiePair(const std::string& wire, const Value& val) {
+  auto esc = [](const Value& v) { return Struct::escurl(Value(Struct::stringify(v))); };
+  std::vector<std::string> pairs;
+  if (val.is_list()) {
+    for (const auto& item : *val.as_list()) pairs.push_back(wire + "=" + esc(item));
+  } else if (val.is_map()) {
+    for (const auto& item : Struct::items(val)) {
+      pairs.push_back(Struct::escurl(pair_key(item)) + "=" + esc(pair_val(item)));
+    }
+  } else {
+    pairs.push_back(wire + "=" + esc(val));
+  }
+  std::string joined;
+  for (size_t i = 0; i < pairs.size(); i++) joined += (0 < i ? "&" : "") + pairs[i];
+  return joined;
+}
+
 inline Value prepareHeaders(CtxPtr ctx) {
   Value options = ctx->client->optionsMap();
   Value headers = getp(options, "headers");
@@ -1514,26 +1540,44 @@ inline Value prepareHeaders(CtxPtr ctx) {
     map_put(out, wire, Value(Struct::stringify(arg.val)));
   }
 
-  // A cookie argument travels in the cookie header as name=value, after any
-  // cookies the caller's headers already send.
-  std::vector<std::string> cookies;
+  // A cookie argument travels in the cookie header, form serialized and
+  // percent-encoded, replacing a cookie of the same name among those the
+  // caller's headers already send.
+  std::vector<CallArg> sent;
   for (const auto& arg : callArgs(ctx, "cookie")) {
-    if (is_nullish(arg.val)) continue;
-    cookies.push_back(arg.wire + "=" + Struct::stringify(arg.val));
+    if (!is_nullish(arg.val)) sent.push_back(arg);
   }
-  if (!cookies.empty()) {
-    std::vector<std::string> sent;
+  if (!sent.empty()) {
+    std::vector<std::string> kept;
     for (const auto& item : Struct::items(out)) {
       std::string key = as_str(pair_key(item));
       if (lower(key) != "cookie") continue;
       Value given = getp(out, key);
-      if (given.is_string() && !given.as_string().empty()) sent.push_back(given.as_string());
+      if (given.is_string()) {
+        const std::string text = given.as_string();
+        size_t at = 0;
+        while (at <= text.size()) {
+          size_t end = text.find(';', at);
+          if (std::string::npos == end) end = text.size();
+          std::string cookie = trimBlank(text.substr(at, end - at));
+          std::string name = trimBlank(cookie.substr(0, cookie.find('=')));
+          bool replaced = false;
+          for (const auto& arg : sent) replaced = replaced || arg.wire == name;
+          if (!cookie.empty() && !replaced) kept.push_back(cookie);
+          at = end + 1;
+        }
+      }
       out.as_map()->erase(key);
     }
-    sent.insert(sent.end(), cookies.begin(), cookies.end());
-    std::string joined;
-    for (size_t i = 0; i < sent.size(); i++) joined += (0 < i ? "; " : "") + sent[i];
-    map_put(out, "cookie", Value(joined));
+    for (const auto& arg : sent) {
+      std::string pair = cookiePair(arg.wire, arg.val);
+      if (!pair.empty()) kept.push_back(pair);
+    }
+    if (!kept.empty()) {
+      std::string joined;
+      for (size_t i = 0; i < kept.size(); i++) joined += (0 < i ? "; " : "") + kept[i];
+      map_put(out, "cookie", Value(joined));
+    }
   }
   return out;
 }

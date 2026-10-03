@@ -150,25 +150,56 @@ object PrepareHeaders {
       out.put(key, Struct.stringify(v))
     }
 
-    // A cookie argument travels in the cookie header as name=value, after any
-    // cookies the caller's headers already send.
-    val cookies = Param.callArgs(ctx, "cookie").collect {
-      case (_, wire, v) if v != null => wire + "=" + Struct.stringify(v)
-    }
-    if (cookies.nonEmpty) {
-      val sent = scala.collection.mutable.ArrayBuffer[String]()
+    // A cookie argument travels in the cookie header, form serialized and
+    // percent-encoded, replacing a cookie of the same name among those the
+    // caller's headers already send.
+    val sent = Param.callArgs(ctx, "cookie").filter { case (_, _, v) => v != null }
+    if (sent.nonEmpty) {
+      val names = sent.map(_._2)
+      val kept = scala.collection.mutable.ArrayBuffer[String]()
       val it = out.entrySet().iterator()
       while (it.hasNext) {
         val e = it.next()
         if (e.getKey != null && "cookie" == e.getKey.toLowerCase(java.util.Locale.ROOT)) {
-          e.getValue match { case s: String if s.nonEmpty => sent += s; case _ => }
+          e.getValue match {
+            case s: String =>
+              s.split(";").foreach { piece =>
+                val cookie = piece.trim
+                if (cookie.nonEmpty && !names.contains(cookie.split("=", 2)(0).trim)) kept += cookie
+              }
+            case _ =>
+          }
           it.remove()
         }
       }
-      out.put("cookie", (sent ++ cookies).mkString("; "))
+      sent.foreach { case (_, wire, v) =>
+        val pair = cookiePair(wire, v)
+        if (pair.nonEmpty) kept += pair
+      }
+      if (kept.nonEmpty) out.put("cookie", kept.mkString("; "))
     }
 
     out
+  }
+
+  // The form style of a cookie parameter: a list repeats the name, a map sends
+  // its own keys, and every value is percent-encoded.
+  private def cookiePair(wire: String, v: Object): String = {
+    def esc(x: Object): String = Struct.escurl(Struct.stringify(x))
+    val pairs = scala.collection.mutable.ArrayBuffer[String]()
+    v match {
+      case l: JList[_] =>
+        val it = l.iterator()
+        while (it.hasNext) pairs += wire + "=" + esc(it.next().asInstanceOf[Object])
+      case m: JMap[_, _] =>
+        val keys = Struct.keysof(m).iterator()
+        while (keys.hasNext) {
+          val k = keys.next()
+          pairs += Struct.escurl(k) + "=" + esc(Struct.getprop(m, k))
+        }
+      case _ => pairs += wire + "=" + esc(v)
+    }
+    pairs.mkString("&")
   }
 }
 

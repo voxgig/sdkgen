@@ -33,34 +33,74 @@ public static partial class SdkUtility
             }
         }
 
-        // A cookie argument travels in the cookie header as name=value, after
-        // any cookies the caller's headers already send.
-        var cookies = new List<string>();
-        foreach (var arg in CallArgs(ctx, "cookie"))
+        // A cookie argument travels in the cookie header, form serialized and
+        // percent-encoded, replacing a cookie of the same name among those the
+        // caller's headers already send.
+        var sent = CallArgs(ctx, "cookie").Where(arg => arg.Val != null).ToList();
+        if (0 < sent.Count)
         {
-            if (arg.Val != null)
-            {
-                cookies.Add(arg.Wire + "=" + StructUtils.Stringify(arg.Val));
-            }
-        }
-        if (0 < cookies.Count)
-        {
-            var sent = new List<string>();
+            var names = sent.Select(arg => arg.Wire).ToList();
+            var kept = new List<string>();
             foreach (var k in new List<string>(result.Keys))
             {
-                if (k.ToLowerInvariant() == "cookie")
+                if (k.ToLowerInvariant() != "cookie")
                 {
-                    if (result[k] is string given && "" != given)
+                    continue;
+                }
+                if (result[k] is string given)
+                {
+                    foreach (var piece in given.Split(';'))
                     {
-                        sent.Add(given);
+                        var cookie = piece.Trim();
+                        if ("" != cookie && !names.Contains(cookie.Split('=', 2)[0].Trim()))
+                        {
+                            kept.Add(cookie);
+                        }
                     }
-                    result.Remove(k);
+                }
+                result.Remove(k);
+            }
+            foreach (var arg in sent)
+            {
+                var pair = CookiePair(arg.Wire, arg.Val);
+                if ("" != pair)
+                {
+                    kept.Add(pair);
                 }
             }
-            sent.AddRange(cookies);
-            result["cookie"] = string.Join("; ", sent);
+            if (0 < kept.Count)
+            {
+                result["cookie"] = string.Join("; ", kept);
+            }
         }
 
         return result;
+    }
+
+    // The form style of a cookie parameter: a list repeats the name, a map
+    // sends its own keys, and every value is percent-encoded.
+    private static string CookiePair(string wire, object? val)
+    {
+        string Esc(object? v) => StructUtils.EscUrl(StructUtils.Stringify(v));
+        var pairs = new List<string>();
+        if (val is List<object?> items)
+        {
+            foreach (var item in items)
+            {
+                pairs.Add(wire + "=" + Esc(item));
+            }
+        }
+        else if (val is Dictionary<string, object?> map)
+        {
+            foreach (var key in StructUtils.KeysOf(map))
+            {
+                pairs.Add(StructUtils.EscUrl(key) + "=" + Esc(map[key]));
+            }
+        }
+        else
+        {
+            pairs.Add(wire + "=" + Esc(val));
+        }
+        return string.Join("&", pairs);
     }
 }

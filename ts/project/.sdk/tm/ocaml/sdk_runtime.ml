@@ -671,6 +671,16 @@ let media_headers (point : value) (headers : value) : unit =
 
 let raw_body (reqdata : value) : value = getp reqdata raw_body_key
 
+(* The form style of a cookie parameter: a list repeats the name, a map sends
+ * its own keys, and every value is percent-encoded. *)
+let cookie_pair (wire : string) (v : value) : string =
+  let esc x = escurl_s (stringify x) in
+  let pairs = match v with
+    | List items -> List.map (fun item -> wire ^ "=" ^ esc item) !items
+    | Map _ -> List.map (fun k -> escurl_s k ^ "=" ^ esc (getp v k)) (keysof v)
+    | _ -> [wire ^ "=" ^ esc v] in
+  String.concat "&" pairs
+
 let prepare_headers_util (ctx : ctx) : value =
   let options = client_options_map (cc ctx) in
   let out =
@@ -691,17 +701,27 @@ let prepare_headers_util (ctx : ctx) : value =
           (keysof out);
         setp out key (Str (stringify v)))
     (call_args ctx "header");
-  (* A cookie argument travels in the cookie header as name=value, after any
-   * cookies the caller's headers already send. *)
-  let cookies = List.filter_map (fun (_, wire, v) ->
-      match v with Noval | Null -> None | v -> Some (wire ^ "=" ^ stringify v))
+  (* A cookie argument travels in the cookie header, form serialized and
+   * percent-encoded, replacing a cookie of the same name among those the
+   * caller's headers already send. *)
+  let sent = List.filter (fun (_, _, v) -> match v with Noval | Null -> false | _ -> true)
       (call_args ctx "cookie") in
-  if cookies <> [] then begin
+  if sent <> [] then begin
+    let names = List.map (fun (_, wire, _) -> wire) sent in
     let given = List.filter (fun k -> String.lowercase_ascii k = "cookie") (keysof out) in
-    let sent = List.filter_map (fun k ->
-        match getp out k with Str s when s <> "" -> Some s | _ -> None) given in
+    let kept = List.concat (List.map (fun k ->
+        match getp out k with
+        | Str s ->
+          List.filter_map (fun piece ->
+              let cookie = String.trim piece in
+              let name = String.trim (List.hd (String.split_on_char '=' cookie)) in
+              if cookie = "" || List.mem name names then None else Some cookie)
+            (String.split_on_char ';' s)
+        | _ -> []) given) in
     List.iter (fun k -> ignore (delprop out (Str k))) given;
-    setp out "cookie" (Str (String.concat "; " (sent @ cookies)))
+    let pairs = List.filter_map (fun (_, wire, v) ->
+        match cookie_pair wire v with "" -> None | pair -> Some pair) sent in
+    if kept @ pairs <> [] then setp out "cookie" (Str (String.concat "; " (kept @ pairs)))
   end;
   out
 

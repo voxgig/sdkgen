@@ -67,19 +67,46 @@ func prepareHeadersUtil(_ ctx: Context) -> VMap {
     out.entries[key] = .string(stringify(arg.val))
   }
 
-  // A cookie argument travels in the cookie header as name=value, after any
-  // cookies the caller's headers already send.
-  let cookies = callArgs(ctx, "cookie").filter { !isNil($0.val) }
-    .map { $0.wire + "=" + stringify($0.val) }
-  if !cookies.isEmpty {
-    var sent: [String] = []
+  // A cookie argument travels in the cookie header, form serialized and
+  // percent-encoded, replacing a cookie of the same name among those the
+  // caller's headers already send.
+  let sent = callArgs(ctx, "cookie").filter { !isNil($0.val) }
+  if !sent.isEmpty {
+    let names = sent.map { $0.wire }
+    var kept: [String] = []
     for k in out.entries.keys where k.lowercased() == "cookie" {
-      if let given = out.entries[k]?.asString, !given.isEmpty { sent.append(given) }
+      if let given = out.entries[k]?.asString {
+        for piece in given.split(separator: ";", omittingEmptySubsequences: false) {
+          let cookie = piece.trimmingCharacters(in: .whitespaces)
+          let name = cookie.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            .first.map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+          if !cookie.isEmpty && !names.contains(name) { kept.append(cookie) }
+        }
+      }
       _ = out.entries.removeValue(forKey: k)
     }
-    out.entries["cookie"] = .string((sent + cookies).joined(separator: "; "))
+    for arg in sent {
+      let pair = cookiePair(arg.wire, arg.val)
+      if !pair.isEmpty { kept.append(pair) }
+    }
+    if !kept.isEmpty { out.entries["cookie"] = .string(kept.joined(separator: "; ")) }
   }
   return out
+}
+
+// The form style of a cookie parameter: a list repeats the name, a map sends
+// its own keys, and every value is percent-encoded.
+private func cookiePair(_ wire: String, _ val: Value) -> String {
+  let esc = { (v: Value) in escurl(.string(stringify(v))) }
+  var pairs: [String] = []
+  if let items = val.asList?.items {
+    for item in items { pairs.append(wire + "=" + esc(item)) }
+  } else if let entries = val.asMap?.entries {
+    for key in keysof(val) { pairs.append(escurl(.string(key)) + "=" + esc(entries[key] ?? .null)) }
+  } else {
+    pairs.append(wire + "=" + esc(val))
+  }
+  return pairs.joined(separator: "&")
 }
 
 func prepareParamsUtil(_ ctx: Context) -> VMap {

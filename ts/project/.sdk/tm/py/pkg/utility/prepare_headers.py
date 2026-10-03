@@ -6,6 +6,20 @@ from projectname_sdk.utility.param import call_args
 from projectname_sdk.utility.media import media_headers
 
 
+# The form style of a cookie parameter: a list repeats the name, a map sends
+# its own keys, and every value is percent-encoded.
+def _cookie_pair(wire, val):
+    def esc(v):
+        return vs.escurl(vs.stringify(v))
+    if vs.islist(val):
+        pairs = [wire + "=" + esc(item) for item in val]
+    elif vs.ismap(val):
+        pairs = [vs.escurl(key) + "=" + esc(val[key]) for key in vs.keysof(val)]
+    else:
+        pairs = [wire + "=" + esc(val)]
+    return "&".join(pairs)
+
+
 def prepare_headers_util(ctx):
     options = ctx.client.options_map()
     headers = vs.getprop(options, "headers")
@@ -25,15 +39,25 @@ def prepare_headers_util(ctx):
                 del out[key]
             out[wire] = vs.stringify(val)
 
-    # A cookie argument travels in the cookie header as name=value, after any
-    # cookies the caller's headers already send.
-    cookies = [orig + "=" + vs.stringify(val)
-               for _name, orig, val in call_args(ctx, "cookie") if val is not None]
-    if cookies:
-        given = [k for k in out if isinstance(k, str) and k.lower() == "cookie"]
-        sent = [out[k] for k in given if isinstance(out[k], str) and out[k] != ""]
-        for key in given:
-            del out[key]
-        out["cookie"] = "; ".join(sent + cookies)
+    # A cookie argument travels in the cookie header, form serialized and
+    # percent-encoded, replacing a cookie of the same name among those the
+    # caller's headers already send.
+    sent = [(orig, val) for _name, orig, val in call_args(ctx, "cookie") if val is not None]
+    if sent:
+        names = [orig for orig, _val in sent]
+        kept = []
+        for key in [k for k in out if isinstance(k, str) and k.lower() == "cookie"]:
+            given = out.pop(key)
+            if isinstance(given, str):
+                for piece in given.split(";"):
+                    cookie = piece.strip()
+                    if cookie != "" and cookie.split("=", 1)[0].strip() not in names:
+                        kept.append(cookie)
+        for orig, val in sent:
+            pair = _cookie_pair(orig, val)
+            if pair != "":
+                kept.append(pair)
+        if kept:
+            out["cookie"] = "; ".join(kept)
 
     return out

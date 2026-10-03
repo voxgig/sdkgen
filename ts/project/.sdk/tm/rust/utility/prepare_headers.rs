@@ -39,29 +39,61 @@ pub fn prepare_headers_util(ctx: &Rc<Context>) -> Value {
         }
     }
 
-    // A cookie argument travels in the cookie header as name=value, after any
-    // cookies the caller's headers already send.
-    let cookies: Vec<String> = call_args(ctx, "cookie")
+    // A cookie argument travels in the cookie header, form serialized and
+    // percent-encoded, replacing a cookie of the same name among those the
+    // caller's headers already send.
+    let sent: Vec<(String, String, Value)> = call_args(ctx, "cookie")
         .into_iter()
         .filter(|(_, _, val)| !val.is_noval() && !val.is_null())
-        .map(|(_, wire, val)| format!("{}={}", wire, vs::stringify(&val, None, false)))
         .collect();
-    if !cookies.is_empty() {
-        let mut sent: Vec<String> = Vec::new();
+    if !sent.is_empty() {
+        let names: Vec<&str> = sent.iter().map(|(_, wire, _)| wire.as_str()).collect();
+        let mut kept: Vec<String> = Vec::new();
         if let Value::Map(m) = &out {
             let given: Vec<String> =
                 m.borrow().keys().filter(|k| k.to_lowercase() == "cookie").cloned().collect();
             for k in given {
                 if let Some(Value::Str(s)) = m.borrow_mut().shift_remove(&k) {
-                    if !s.is_empty() {
-                        sent.push(s);
+                    for piece in s.split(';') {
+                        let cookie = piece.trim();
+                        let name = cookie.split('=').next().unwrap_or("").trim();
+                        if !cookie.is_empty() && !names.contains(&name) {
+                            kept.push(cookie.to_string());
+                        }
                     }
                 }
             }
         }
-        sent.extend(cookies);
-        setp(&out, "cookie", Value::Str(sent.join("; ")));
+        for (_, wire, val) in &sent {
+            let pair = cookie_pair(wire, val);
+            if !pair.is_empty() {
+                kept.push(pair);
+            }
+        }
+        if !kept.is_empty() {
+            setp(&out, "cookie", Value::Str(kept.join("; ")));
+        }
     }
 
     out
+}
+
+// The form style of a cookie parameter: a list repeats the name, a map sends
+// its own keys, and every value is percent-encoded.
+fn cookie_pair(wire: &str, val: &Value) -> String {
+    let esc = |v: &Value| vs::esc_url(&Value::Str(vs::stringify(v, None, false)));
+    let pairs: Vec<String> = match val {
+        Value::List(items) => {
+            items.borrow().iter().map(|item| format!("{}={}", wire, esc(item))).collect()
+        }
+        Value::Map(m) => vs::keysof_vec(val)
+            .iter()
+            .map(|k| {
+                let v = m.borrow().get(k).cloned().unwrap_or(Value::Null);
+                format!("{}={}", vs::esc_url(&Value::Str(k.clone())), esc(&v))
+            })
+            .collect(),
+        _ => vec![format!("{}={}", wire, esc(val))],
+    };
+    pairs.join("&")
 }

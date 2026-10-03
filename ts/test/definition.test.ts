@@ -359,6 +359,33 @@ describe('definitionPlan', () => {
     deepStrictEqual(list.headers, [{ name: 'lw_client', wire: 'Lw-Client', value: 'h1' }])
   })
 
+  // An API that also declares its session cookie as a parameter: the SDK's
+  // credential goes in that cookie, replacing whatever the test would send.
+  test('a cookie parameter in the credential cookie is left to the credential', () => {
+    const def = { ...DEF, security: undefined,
+      components: { securitySchemes: { session: { type: 'apiKey', in: 'cookie', name: 'SESSIONID' } } },
+      paths: { '/uploads': { get: {
+        security: [{ session: [] }],
+        parameters: [
+          { in: 'cookie', name: 'SESSIONID', example: 's-1' },
+          { in: 'cookie', name: 'theme', example: 'dark' },
+        ],
+        responses: { '200': { content: { 'application/json': { example: [] } } } },
+      } } } }
+    const model = { main: { kit: {
+      info: { security: { scheme: 'session', type: 'apiKey', in: 'cookie', name: 'SESSIONID' } },
+      entity: { upload: {
+        name: 'upload', id: { field: 'id', name: 'id' }, op: { list: { points: [{
+          m: 'GET', o: '/uploads',
+          g: { cookie: [{ n: 'session_id', or: 'SESSIONID' }, { n: 'theme', or: 'theme' }] },
+        }] } },
+      } } } } }
+    const [list] = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(list.cookies, [{ name: 'theme', wire: 'theme', value: 'dark' }])
+  })
+
   // Petstore secures its pets with OAuth and its store with an API key, and
   // its SDK sends the API key. A pet operation cannot be checked for OAuth.
   test('only the alternatives the SDK scheme meets are checked', () => {

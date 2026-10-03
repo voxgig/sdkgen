@@ -216,6 +216,10 @@ const headerStruct = {
   clone: (v: any) => JSON.parse(JSON.stringify(v)),
   getprop: (o: any, k: string) => null == o ? undefined : o[k],
   stringify: (v: any) => 'string' === typeof v ? v : JSON.stringify(v).replace(/"/g, ''),
+  escurl: (s: string) => encodeURIComponent(s),
+  islist: (v: any) => Array.isArray(v),
+  ismap: (v: any) => null != v && 'object' === typeof v && !Array.isArray(v),
+  keysof: (v: any) => Object.keys(v).sort(),
 }
 
 function hctx(point: any, reqmatch: any, reqdata: any, headers: any = {}) {
@@ -271,6 +275,7 @@ describe('prepareHeaders', () => {
       cookie: [
         { name: 'session_id', orig: 'SESSIONID', kind: 'cookie' },
         { name: 'theme', orig: 'theme', kind: 'cookie' },
+        { name: 'prefs', orig: 'prefs', kind: 'cookie' },
       ],
     } }
 
@@ -288,6 +293,21 @@ describe('prepareHeaders', () => {
     test(lang + ': an absent or null cookie argument leaves the headers alone', () => {
       deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: null }, {}, { Cookie: 'lang=en' })),
         { Cookie: 'lang=en' })
+    })
+
+    // The form style: a value is percent-encoded, so a space, a comma or a
+    // semicolon in it cannot split or end the cookie; a list repeats the name
+    // and a map sends its own keys.
+    test(lang + ': a cookie argument is form serialized and percent-encoded', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 'a b;c,d' },
+        { theme: ['dark', 'x y'], prefs: { size: 2, lang: 'en gb' } })),
+      { cookie: 'SESSIONID=a%20b%3Bc%2Cd; theme=dark&theme=x%20y; lang=en%20gb&size=2' })
+    })
+
+    test(lang + ': a cookie argument replaces a cookie of the same name the caller sends', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' }, {},
+        { Cookie: 'SESSIONID=old; theme=dark ;lang=en' })),
+      { cookie: 'theme=dark; lang=en; SESSIONID=s1' })
     })
   }
 
@@ -334,16 +354,20 @@ describe('prepareHeaders', () => {
     deepStrictEqual(missing, [], 'targets whose prepareHeaders never sends a header argument')
   })
 
-  // Source again: the cookie list is read, and the pairs are joined into the
+  // Source again: the cookie list is read, each argument goes through the
+  // pairing helper, which percent-encodes, and the pairs are joined into the
   // cookie header with the separator the cookie syntax uses.
   test('every target sends a cookie argument in the cookie header', () => {
     const missing: string[] = []
     for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
       const src = readFileSync(Path.join(TM, rel), 'utf8')
       const at = src.indexOf(def)
-      const body = src.slice(at, at + 5000)
+      const body = src.slice(at, at + 6000)
       const reads = callsArgs('cookie').test(body) || /\bargs\b\W{1,12}cookie\b/.test(body)
-      if (!reads || !/["']cookie["']/.test(body) || !/["']; ["']/.test(body)) {
+      const encodes = src.split(/cookie[_-]?pair/i).slice(1)
+        .some((after) => /esc_?url/i.test(after.slice(0, 1500)))
+      if (!reads || !/cookie[_-]?pair/i.test(body) || !encodes ||
+        !/["']cookie["']/.test(body) || !/["']; ["']/.test(body)) {
         missing.push(lang)
       }
     }

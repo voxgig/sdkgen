@@ -781,6 +781,16 @@
   (let [body (when (vs/ismap reqdata) (vs/getprop reqdata RAW-BODY))]
     (if (instance? java.io.InputStream body) (.readAllBytes ^java.io.InputStream body) body)))
 
+;; The form style of a cookie parameter: a list repeats the name, a map sends
+;; its own keys, and every value is percent-encoded.
+(defn- cookie-pair [wire v]
+  (let [esc (fn [x] (vs/escurl (vs/stringify x)))]
+    (str/join "&"
+              (cond
+                (vs/islist v) (map (fn [item] (str wire "=" (esc item))) v)
+                (vs/ismap v) (map (fn [k] (str (vs/escurl k) "=" (esc (vs/getprop v k)))) (vs/keysof v))
+                :else [(str wire "=" (esc v))]))))
+
 (defn u-prepare-headers [ctx]
   (let [options (client-options-map (oget ctx :client))
         headers (vs/getprop options "headers")
@@ -795,17 +805,29 @@
             (when (and (string? k) (= key (str/lower-case k)))
               (.remove ^java.util.Map out k)))
           (.put ^java.util.Map out key (vs/stringify v)))))
-    ;; A cookie argument travels in the cookie header as name=value, after any
-    ;; cookies the caller's headers already send.
-    (let [cookies (vec (for [[_ wire v] (call-args ctx "cookie") :when (some? v)]
-                         (str wire "=" (vs/stringify v))))]
-      (when (seq cookies)
-        (let [given (vec (filter (fn [k] (and (string? k) (= "cookie" (str/lower-case k))))
+    ;; A cookie argument travels in the cookie header, form serialized and
+    ;; percent-encoded, replacing a cookie of the same name among those the
+    ;; caller's headers already send.
+    (let [sent (vec (for [[_ wire v] (call-args ctx "cookie") :when (some? v)] [wire v]))]
+      (when (seq sent)
+        (let [names (set (map first sent))
+              given (vec (filter (fn [k] (and (string? k) (= "cookie" (str/lower-case k))))
                                  (vec (.keySet ^java.util.Map out))))
-              sent (vec (filter (fn [v] (and (string? v) (not= "" v)))
-                                (map (fn [k] (.get ^java.util.Map out k)) given)))]
+              kept (vec (for [k given
+                              :let [v (.get ^java.util.Map out k)]
+                              :when (string? v)
+                              piece (str/split v #";")
+                              :let [cookie (str/trim piece)
+                                    name (str/trim (first (str/split cookie #"=" 2)))]
+                              :when (and (not= "" cookie) (not (contains? names name)))]
+                          cookie))
+              pairs (vec (for [[wire v] sent
+                               :let [pair (cookie-pair wire v)]
+                               :when (not= "" pair)]
+                           pair))]
           (doseq [k given] (.remove ^java.util.Map out k))
-          (.put ^java.util.Map out "cookie" (str/join "; " (concat sent cookies))))))
+          (when (seq (concat kept pairs))
+            (.put ^java.util.Map out "cookie" (str/join "; " (concat kept pairs)))))))
     out))
 
 ;; The name a point gives a parameter in the call, if it renames it.

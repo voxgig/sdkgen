@@ -4,6 +4,27 @@ local vs = require("utility.struct.struct")
 local helpers = require("core.helpers")
 local media = require("utility.media")
 
+-- The form style of a cookie parameter: a list repeats the name, a map sends
+-- its own keys, and every value is percent-encoded.
+local function cookie_pair(wire, val)
+  local function esc(v)
+    return vs.escurl(vs.stringify(v))
+  end
+  local pairs_ = {}
+  if vs.islist(val) then
+    for _, item in ipairs(val) do
+      pairs_[#pairs_ + 1] = wire .. "=" .. esc(item)
+    end
+  elseif vs.ismap(val) then
+    for _, key in ipairs(vs.keysof(val)) do
+      pairs_[#pairs_ + 1] = vs.escurl(key) .. "=" .. esc(val[key])
+    end
+  else
+    pairs_[#pairs_ + 1] = wire .. "=" .. esc(val)
+  end
+  return table.concat(pairs_, "&")
+end
+
 local function prepare_headers_util(ctx)
   local options = ctx.client:options_map()
   local headers = vs.getprop(options, "headers")
@@ -30,28 +51,44 @@ local function prepare_headers_util(ctx)
     end
   end
 
-  -- A cookie argument travels in the cookie header as name=value, after any
-  -- cookies the caller's headers already send.
-  local cookies = {}
+  -- A cookie argument travels in the cookie header, form serialized and
+  -- percent-encoded, replacing a cookie of the same name among those the
+  -- caller's headers already send.
+  local sent = {}
   for _, arg in ipairs(helpers.call_args(ctx, "cookie")) do
     if arg.val ~= nil then
-      cookies[#cookies + 1] = arg.wire .. "=" .. vs.stringify(arg.val)
+      sent[#sent + 1] = arg
     end
   end
-  if #cookies > 0 then
-    local sent = {}
-    for key, val in pairs(out) do
+  if #sent > 0 then
+    local names = {}
+    for _, arg in ipairs(sent) do
+      names[arg.wire] = true
+    end
+    local kept = {}
+    for key, given in pairs(out) do
       if type(key) == "string" and string.lower(key) == "cookie" then
-        if type(val) == "string" and val ~= "" then
-          sent[#sent + 1] = val
+        if type(given) == "string" then
+          for piece in string.gmatch(given .. ";", "([^;]*);") do
+            local cookie = piece:match("^%s*(.-)%s*$")
+            local name = cookie:match("^([^=]*)"):match("^%s*(.-)%s*$")
+            if cookie ~= "" and not names[name] then
+              kept[#kept + 1] = cookie
+            end
+          end
         end
         out[key] = nil
       end
     end
-    for _, cookie in ipairs(cookies) do
-      sent[#sent + 1] = cookie
+    for _, arg in ipairs(sent) do
+      local pair = cookie_pair(arg.wire, arg.val)
+      if pair ~= "" then
+        kept[#kept + 1] = pair
+      end
     end
-    out["cookie"] = table.concat(sent, "; ")
+    if #kept > 0 then
+      out["cookie"] = table.concat(kept, "; ")
+    end
   end
 
   return out

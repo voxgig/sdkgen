@@ -1614,32 +1614,80 @@ pub fn prepare_headers_util(ctx: *Context) Value {
         h.setp(out, key, h.vstr(h.stringify(arg.val)));
     }
 
-    // A cookie argument travels in the cookie header as name=value, after any
-    // cookies the caller's headers already send.
-    var cookies: std.ArrayList([]const u8) = .empty;
+    // A cookie argument travels in the cookie header, form serialized and
+    // percent-encoded, replacing a cookie of the same name among those the
+    // caller's headers already send.
+    var sent: std.ArrayList(CallArg) = .empty;
     for (call_args(ctx, "cookie")) |arg| {
-        if (h.is_noval(arg.val)) continue;
-        const pair = std.fmt.allocPrint(h.A(), "{s}={s}", .{ arg.wire, h.stringify(arg.val) }) catch continue;
-        cookies.append(h.A(), pair) catch {};
+        if (!h.is_noval(arg.val)) sent.append(h.A(), arg) catch {};
     }
-    if (0 < cookies.items.len) {
-        var sent: std.ArrayList([]const u8) = .empty;
+    if (0 < sent.items.len) {
+        var kept: std.ArrayList([]const u8) = .empty;
         while (true) {
             var kit = out.object.iterator();
             const same: ?[]const u8 = while (kit.next()) |kv| {
                 if (std.ascii.eqlIgnoreCase(kv.key_ptr.*, "cookie")) break kv.key_ptr.*;
             } else null;
             const removed = out.object.fetchOrderedRemove(same orelse break) orelse break;
-            if (removed.value == .string and 0 < removed.value.string.len) {
-                sent.append(h.A(), removed.value.string) catch {};
+            if (removed.value != .string) continue;
+            var pieces = std.mem.splitScalar(u8, removed.value.string, ';');
+            while (pieces.next()) |piece| {
+                const cookie = std.mem.trim(u8, piece, " \t");
+                if (0 == cookie.len) continue;
+                const eq = std.mem.indexOfScalar(u8, cookie, '=') orelse cookie.len;
+                const name = std.mem.trim(u8, cookie[0..eq], " \t");
+                var replaced = false;
+                for (sent.items) |arg| {
+                    if (std.mem.eql(u8, arg.wire, name)) replaced = true;
+                }
+                if (!replaced) kept.append(h.A(), cookie) catch {};
             }
         }
-        for (cookies.items) |cookie| sent.append(h.A(), cookie) catch {};
-        const joined = std.mem.join(h.A(), "; ", sent.items) catch "";
-        h.setp(out, "cookie", h.vstr(joined));
+        for (sent.items) |arg| {
+            const pair = cookie_pair(arg.wire, arg.val);
+            if (0 < pair.len) kept.append(h.A(), pair) catch {};
+        }
+        if (0 < kept.items.len) {
+            const joined = std.mem.join(h.A(), "; ", kept.items) catch "";
+            h.setp(out, "cookie", h.vstr(joined));
+        }
     }
 
     return out;
+}
+
+fn keyLessThan(_: void, a: []const u8, b: []const u8) bool {
+    return std.mem.lessThan(u8, a, b);
+}
+
+// The form style of a cookie parameter: a list repeats the name, a map sends
+// its own keys, and every value is percent-encoded.
+fn cookie_pair(wire: []const u8, val: Value) []const u8 {
+    var pairs: std.ArrayList([]const u8) = .empty;
+    switch (val) {
+        .array => |items| {
+            for (items.items) |item| {
+                const text = h.esc_url(h.stringify(item));
+                const pair = std.fmt.allocPrint(h.A(), "{s}={s}", .{ wire, text }) catch continue;
+                pairs.append(h.A(), pair) catch {};
+            }
+        },
+        .object => {
+            const keys = h.keysof_vec(val);
+            std.mem.sort([]const u8, keys, {}, keyLessThan);
+            for (keys) |key| {
+                const text = h.esc_url(h.stringify(h.getp(val, key)));
+                const pair = std.fmt.allocPrint(h.A(), "{s}={s}", .{ h.esc_url(key), text }) catch continue;
+                pairs.append(h.A(), pair) catch {};
+            }
+        },
+        else => {
+            const text = h.esc_url(h.stringify(val));
+            const pair = std.fmt.allocPrint(h.A(), "{s}={s}", .{ wire, text }) catch return "";
+            pairs.append(h.A(), pair) catch {};
+        },
+    }
+    return std.mem.join(h.A(), "&", pairs.items) catch "";
 }
 
 pub fn prepare_body_util(ctx: *Context) Value {

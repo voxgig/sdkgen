@@ -3,6 +3,19 @@ require_relative 'struct/voxgig_struct'
 require_relative 'param'
 require_relative 'media'
 module ProjectNameUtilities
+  # The form style of a cookie parameter: a list repeats the name, a map sends
+  # its own keys, and every value is percent-encoded.
+  def self.cookie_pair(wire, val)
+    esc = ->(v) { VoxgigStruct.escurl(VoxgigStruct.stringify(v)) }
+    pairs = if VoxgigStruct.islist(val)
+      val.map { |item| "#{wire}=#{esc.call(item)}" }
+    elsif VoxgigStruct.ismap(val)
+      VoxgigStruct.keysof(val).map { |key| "#{VoxgigStruct.escurl(key)}=#{esc.call(val[key])}" }
+    else
+      ["#{wire}=#{esc.call(val)}"]
+    end
+    pairs.join("&")
+  end
   PrepareHeaders = ->(ctx) {
     options = ctx.client.options_map
     headers = VoxgigStruct.getprop(options, "headers")
@@ -16,15 +29,26 @@ module ProjectNameUtilities
       out.delete_if { |k, _| k.is_a?(String) && k.downcase == wire }
       out[wire] = VoxgigStruct.stringify(val)
     end
-    # A cookie argument travels in the cookie header as name=value, after any
-    # cookies the caller's headers already send.
-    cookies = ProjectNameUtilities.call_args(ctx, "cookie").reject { |_name, _orig, val| val.nil? }
-      .map { |_name, orig, val| "#{orig}=#{VoxgigStruct.stringify(val)}" }
-    unless cookies.empty?
-      given = out.keys.select { |k| k.is_a?(String) && k.downcase == "cookie" }
-      sent = given.map { |k| out[k] }.select { |v| v.is_a?(String) && !v.empty? }
-      given.each { |k| out.delete(k) }
-      out["cookie"] = (sent + cookies).join("; ")
+    # A cookie argument travels in the cookie header, form serialized and
+    # percent-encoded, replacing a cookie of the same name among those the
+    # caller's headers already send.
+    sent = ProjectNameUtilities.call_args(ctx, "cookie").reject { |_name, _orig, val| val.nil? }
+    unless sent.empty?
+      names = sent.map { |_name, orig, _val| orig }
+      kept = []
+      out.keys.select { |k| k.is_a?(String) && k.downcase == "cookie" }.each do |k|
+        given = out.delete(k)
+        next unless given.is_a?(String)
+        given.split(";").each do |piece|
+          cookie = piece.strip
+          kept << cookie unless cookie.empty? || names.include?(cookie.split("=", 2)[0].strip)
+        end
+      end
+      sent.each do |_name, orig, val|
+        pair = ProjectNameUtilities.cookie_pair(orig, val)
+        kept << pair unless pair.empty?
+      end
+      out["cookie"] = kept.join("; ") unless kept.empty?
     end
     out
   }

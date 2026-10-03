@@ -26,6 +26,8 @@ function definitionPlan(ctx$) {
         (0, utility_1.resolveAuthName)(model).toLowerCase() : null;
     const ownQuery = !(0, utility_1.isAuthSuppressed)(model) && 'query' === (0, utility_1.resolveAuthIn)(model) ?
         (0, utility_1.resolveAuthName)(model) : null;
+    const ownCookie = !(0, utility_1.isAuthSuppressed)(model) && 'cookie' === (0, utility_1.resolveAuthIn)(model) ?
+        (0, utility_1.resolveAuthName)(model) : null;
     // A model from before apidef recorded media types sends neither header.
     const recorded = recordsMedia(model);
     for (const entity of Object.values((0, opShape_1.entityCollection)(model))) {
@@ -65,10 +67,10 @@ function definitionPlan(ctx$) {
                         wire.toLowerCase() === String(p?.name).toLowerCase());
                     return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) };
                 });
-                // A cookie argument is sent too, and must arrive in the cookie header
-                // as name=value, never in the query.
+                // A cookie argument is sent too, in the cookie header, never in the
+                // query; the credential cookie is left to the credential.
                 const cookies = (point.g?.cookie || [])
-                    .filter((arg) => false !== arg.a)
+                    .filter((arg) => false !== arg.a && String(arg.or || arg.n) !== ownCookie)
                     .map((arg, i) => {
                     const wire = String(arg.or || arg.n);
                     const def = params.find((p) => 'cookie' === p?.in && wire === p?.name);

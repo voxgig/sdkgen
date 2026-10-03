@@ -32,17 +32,48 @@ $REGISTRY{prepare_headers} = sub {
     delete $out->{$_} for grep { lc $_ eq $wire } keys %$out;
     $out->{$wire} = Voxgig::Struct::stringify($val);
   }
-  # A cookie argument travels in the cookie header as name=value, after any
-  # cookies the caller's headers already send.
-  my @cookies = map { $_->[1] . '=' . Voxgig::Struct::stringify($_->[2]) }
-    grep { defined $_->[2] } ProjectNameUtilities::call_args($ctx, 'cookie');
-  if (@cookies) {
-    my @given = grep { lc $_ eq 'cookie' } keys %$out;
-    my @sent = grep { defined $_ && !ref $_ && $_ ne '' } map { $out->{$_} } @given;
-    delete $out->{$_} for @given;
-    $out->{cookie} = join('; ', @sent, @cookies);
+  # A cookie argument travels in the cookie header, form serialized and
+  # percent-encoded, replacing a cookie of the same name among those the
+  # caller's headers already send.
+  my @sent = grep { defined $_->[2] } ProjectNameUtilities::call_args($ctx, 'cookie');
+  if (@sent) {
+    my %names = map { ($_->[1] => 1) } @sent;
+    my @kept;
+    for my $key (grep { lc $_ eq 'cookie' } keys %$out) {
+      my $given = delete $out->{$key};
+      next if !defined $given || ref $given;
+      for my $piece (split /;/, $given) {
+        (my $cookie = $piece) =~ s/^\s+|\s+$//g;
+        next if $cookie eq '';
+        (my $name = (split /=/, $cookie, 2)[0]) =~ s/^\s+|\s+$//g;
+        push @kept, $cookie unless $names{$name};
+      }
+    }
+    for my $arg (@sent) {
+      my $pair = ProjectNameUtilities::cookie_pair($arg->[1], $arg->[2]);
+      push @kept, $pair if $pair ne '';
+    }
+    $out->{cookie} = join('; ', @kept) if @kept;
   }
   return $out;
 };
+
+# The form style of a cookie parameter: a list repeats the name, a map sends
+# its own keys, and every value is percent-encoded.
+sub cookie_pair {
+  my ($wire, $val) = @_;
+  my $esc = sub { Voxgig::Struct::escurl(Voxgig::Struct::stringify($_[0])) };
+  my @pairs;
+  if (Voxgig::Struct::islist($val)) {
+    @pairs = map { $wire . '=' . $esc->($_) } @$val;
+  }
+  elsif (Voxgig::Struct::ismap($val)) {
+    @pairs = map { Voxgig::Struct::escurl($_) . '=' . $esc->($val->{$_}) } @{ Voxgig::Struct::keysof($val) };
+  }
+  else {
+    @pairs = ($wire . '=' . $esc->($val));
+  }
+  return join('&', @pairs);
+}
 
 1;

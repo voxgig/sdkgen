@@ -33,28 +33,64 @@ final class PrepareHeaders {
       }
     }
 
-    // A cookie argument travels in the cookie header as name=value, after any
-    // cookies the caller's headers already send.
-    List<String> cookies = new ArrayList<>();
+    // A cookie argument travels in the cookie header, form serialized and
+    // percent-encoded, replacing a cookie of the same name among those the
+    // caller's headers already send.
+    List<Param.CallArg> sent = new ArrayList<>();
     for (Param.CallArg arg : Param.callArgs(ctx, "cookie")) {
       if (arg.val() != null) {
-        cookies.add(arg.wire() + "=" + Struct.stringify(arg.val()));
+        sent.add(arg);
       }
     }
-    if (!cookies.isEmpty()) {
-      List<String> sent = new ArrayList<>();
+    if (!sent.isEmpty()) {
+      List<String> names = new ArrayList<>();
+      for (Param.CallArg arg : sent) {
+        names.add(arg.wire());
+      }
+      List<String> kept = new ArrayList<>();
       for (String k : new ArrayList<>(out.keySet())) {
-        if (k != null && "cookie".equals(k.toLowerCase(Locale.ROOT))) {
-          Object given = out.remove(k);
-          if (given instanceof String && !((String) given).isEmpty()) {
-            sent.add((String) given);
+        if (k == null || !"cookie".equals(k.toLowerCase(Locale.ROOT))) {
+          continue;
+        }
+        Object given = out.remove(k);
+        if (given instanceof String) {
+          for (String piece : ((String) given).split(";")) {
+            String cookie = piece.trim();
+            if (!cookie.isEmpty() && !names.contains(cookie.split("=", 2)[0].trim())) {
+              kept.add(cookie);
+            }
           }
         }
       }
-      sent.addAll(cookies);
-      out.put("cookie", String.join("; ", sent));
+      for (Param.CallArg arg : sent) {
+        String pair = cookiePair(arg.wire(), arg.val());
+        if (!pair.isEmpty()) {
+          kept.add(pair);
+        }
+      }
+      if (!kept.isEmpty()) {
+        out.put("cookie", String.join("; ", kept));
+      }
     }
 
     return out;
+  }
+
+  // The form style of a cookie parameter: a list repeats the name, a map sends
+  // its own keys, and every value is percent-encoded.
+  private static String cookiePair(String wire, Object val) {
+    List<String> pairs = new ArrayList<>();
+    if (val instanceof List<?> items) {
+      for (Object item : items) {
+        pairs.add(wire + "=" + Struct.escurl(Struct.stringify(item)));
+      }
+    } else if (val instanceof Map<?, ?> map) {
+      for (String key : Struct.keysof(map)) {
+        pairs.add(Struct.escurl(key) + "=" + Struct.escurl(Struct.stringify(map.get(key))));
+      }
+    } else {
+      pairs.add(wire + "=" + Struct.escurl(Struct.stringify(val)));
+    }
+    return String.join("&", pairs);
   }
 }

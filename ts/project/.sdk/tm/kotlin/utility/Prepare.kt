@@ -148,17 +148,42 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
     }
   }
 
-  // A cookie argument travels in the cookie header as name=value, after any
-  // cookies the caller's headers already send.
-  val cookies = callArgs(ctx, "cookie").mapNotNull { arg -> arg.v?.let { arg.wire + "=" + Struct.stringify(it) } }
-  if (cookies.isNotEmpty()) {
-    val given = out.keys.filter { it.lowercase() == "cookie" }
-    val sent = given.mapNotNull { out[it] as? String }.filter { it.isNotEmpty() }
-    given.forEach { out.remove(it) }
-    out["cookie"] = (sent + cookies).joinToString("; ")
+  // A cookie argument travels in the cookie header, form serialized and
+  // percent-encoded, replacing a cookie of the same name among those the
+  // caller's headers already send.
+  val sent = callArgs(ctx, "cookie").filter { it.v != null }
+  if (sent.isNotEmpty()) {
+    val names = sent.map { it.wire }
+    val kept = mutableListOf<String>()
+    for (key in out.keys.filter { it.lowercase() == "cookie" }) {
+      val given = out.remove(key)
+      if (given is String) {
+        for (piece in given.split(";")) {
+          val cookie = piece.trim()
+          if (cookie.isNotEmpty() && cookie.substringBefore("=").trim() !in names) kept.add(cookie)
+        }
+      }
+    }
+    for (arg in sent) {
+      val pair = cookiePair(arg.wire, arg.v)
+      if (pair.isNotEmpty()) kept.add(pair)
+    }
+    if (kept.isNotEmpty()) out["cookie"] = kept.joinToString("; ")
   }
 
   return out
+}
+
+// The form style of a cookie parameter: a list repeats the name, a map sends
+// its own keys, and every value is percent-encoded.
+private fun cookiePair(wire: String, v: Any?): String {
+  val esc = { x: Any? -> Struct.escurl(Struct.stringify(x)) }
+  val pairs = when (v) {
+    is List<*> -> v.map { wire + "=" + esc(it) }
+    is Map<*, *> -> Struct.keysof(v).map { Struct.escurl(it) + "=" + esc(Struct.getprop(v, it)) }
+    else -> listOf(wire + "=" + esc(v))
+  }
+  return pairs.joinToString("&")
 }
 
 fun prepareMethod(ctx: Context): String? {

@@ -121,11 +121,11 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
       'header parameter not sent as a header: ' + h.wire)
   }
 
-  // A cookie parameter goes out in the cookie header as name=value.
+  // A cookie parameter goes out in the cookie header as name=value, percent-encoded.
   const cookies = String(new Headers(init.headers).get('cookie') ?? '')
     .split(';').map((c) => c.trim())
   for (const c of point.cookies || []) {
-    assert(cookies.includes(c.wire + '=' + String(c.value)),
+    assert(cookies.includes(c.wire + '=' + encodeURIComponent(String(c.value))),
       'cookie parameter not sent in the cookie header: ' + c.wire)
   }
 

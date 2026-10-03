@@ -1754,23 +1754,65 @@ defmodule ProjectName.Utility do
       end
     end)
 
-    # A cookie argument travels in the cookie header as name=value, after any
-    # cookies the caller's headers already send.
-    cookies =
-      call_args(ctx, "cookie")
-      |> Enum.filter(fn {_name, _wire, val} -> val != nil end)
-      |> Enum.map(fn {_name, wire, val} -> wire <> "=" <> S.stringify(val) end)
+    # A cookie argument travels in the cookie header, form serialized and
+    # percent-encoded, replacing a cookie of the same name among those the
+    # caller's headers already send.
+    sent = Enum.filter(call_args(ctx, "cookie"), fn {_name, _wire, val} -> val != nil end)
 
-    if cookies != [] do
+    if sent != [] do
+      names = Enum.map(sent, fn {_name, wire, _val} -> wire end)
+
       given =
         Enum.filter(H.entries(out), fn {k, _} -> is_binary(k) and String.downcase(k) == "cookie" end)
 
-      sent = Enum.flat_map(given, fn {_, v} -> if is_binary(v) and v != "", do: [v], else: [] end)
+      kept =
+        Enum.flat_map(given, fn {_, v} ->
+          if is_binary(v) do
+            v
+            |> String.split(";")
+            |> Enum.map(&String.trim/1)
+            |> Enum.reject(fn cookie -> cookie == "" or cookie_name(cookie) in names end)
+          else
+            []
+          end
+        end)
+
       Enum.each(given, fn {k, _} -> S.delprop(out, k) end)
-      S.setprop(out, "cookie", Enum.join(sent ++ cookies, "; "))
+
+      pairs =
+        Enum.flat_map(sent, fn {_name, wire, val} ->
+          case cookie_pair(wire, val) do
+            "" -> []
+            pair -> [pair]
+          end
+        end)
+
+      if kept ++ pairs != [], do: S.setprop(out, "cookie", Enum.join(kept ++ pairs, "; "))
     end
 
     out
+  end
+
+  defp cookie_name(cookie), do: cookie |> String.split("=", parts: 2) |> hd() |> String.trim()
+
+  # The form style of a cookie parameter: a list repeats the name, a map sends
+  # its own keys, and every value is percent-encoded.
+  defp cookie_pair(wire, val) do
+    esc = fn v -> S.escurl(S.stringify(v)) end
+
+    pairs =
+      cond do
+        S.islist(val) ->
+          Enum.map(H.entries(val), fn {_i, item} -> wire <> "=" <> esc.(item) end)
+
+        S.ismap(val) ->
+          Enum.map(S.keysof(val), fn k -> S.escurl(k) <> "=" <> esc.(S.getprop(val, k)) end)
+
+        true ->
+          [wire <> "=" <> esc.(val)]
+      end
+
+    Enum.join(pairs, "&")
   end
 
   def prepare_body_impl(ctx) do
