@@ -377,6 +377,44 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // The generated build script runs both projects in ONE `tsc --build`, and
+  // the test tree imports the package root, which resolves through the
+  // emitted dist/. TypeScript 5 happened to build src first; the projects
+  // declare the order now.
+  test('typescript: one tsc --build of src and test builds src first', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-build-order')
+    await generateTo('ts', sdkroot)
+    linkDeps(sdkroot)
+
+    const both = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
+    ok(both.ok, 'one `tsc --build src test` of the generated SDK fails:\n' + both.out)
+  })
+
+
+  // The README example tests find `tsc` and strip a snippet's types through
+  // the TypeScript installed beside the SDK, which here is sdkgen's own.
+  test('typescript: the README example tests type-check and run the examples', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-readme', 'ts')
+    await generateTo('ts', sdkroot, undefined, undefined, { top: true })
+    linkDeps(sdkroot)
+
+    const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
+    ok(built.ok, 'the generated SDK does not build:\n' + built.out)
+
+    const suite = run(process.execPath,
+      ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
+      sdkroot, nestedTestEnv())
+    ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 200))
+    ok(/^\s*ok \d+ - .*every example type-checks/m.test(suite.out) &&
+      /^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
+    'the README example tests did not run both checks:\n' + tail(suite.out, 40))
+  })
+
+
   // tsc refuses the pair on every OS (TS1149: file names that differ only in
   // casing), and on macOS and Windows the second file replaces the first.
   test('typescript: an entity pair whose names differ only in case type-checks', async () => {
