@@ -9,12 +9,15 @@
    without it. */
 static voxgig_value* routed_args(Context* ctx) {
   voxgig_value* routed = call_args(ctx, "header");
-  voxgig_value* qargs = call_args(ctx, "query");
-  voxgig_list* ql = voxgig_as_list(qargs);
-  for (size_t i = 0; i < ql->len; i++) {
-    voxgig_list_push(voxgig_as_list(routed), v_share(ql->items[i]));
+  const char* kinds[] = { "cookie", "query" };
+  for (size_t k = 0; k < 2; k++) {
+    voxgig_value* more = call_args(ctx, kinds[k]);
+    voxgig_list* ml = voxgig_as_list(more);
+    for (size_t i = 0; i < ml->len; i++) {
+      voxgig_list_push(voxgig_as_list(routed), v_share(ml->items[i]));
+    }
+    voxgig_release(more);
   }
-  voxgig_release(qargs);
   return routed;
 }
 

@@ -33,9 +33,10 @@ $REGISTRY{prepare_query} = sub {
         push @$params, $name if defined $name && !ref $name;
       }
     }
-    # A header parameter travels in the headers, which prepare_headers fills.
-    my $hl = ProjectNameHelpers::gpath($point, 'args.header');
-    if (Voxgig::Struct::islist($hl)) {
+    # A header or cookie parameter travels in the headers, which prepare_headers fills.
+    for my $hl (ProjectNameHelpers::gpath($point, 'args.header'),
+      ProjectNameHelpers::gpath($point, 'args.cookie')) {
+      next unless Voxgig::Struct::islist($hl);
       for my $hd (@$hl) {
         my $name = ProjectNameHelpers::gp($hd, 'name');
         push @$params, $name if defined $name && !ref $name;

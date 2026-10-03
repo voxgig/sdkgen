@@ -37,11 +37,20 @@ final class PrepareQuery {
           }
         }
       }
-      // A header parameter travels in the headers, which prepareHeaders fills.
+      // A header or cookie parameter travels in the headers, which prepareHeaders fills.
       Object hl = Struct.getpath(point, List.of("args", "header"));
       if (hl instanceof List) {
         for (Object hd : (List<Object>) hl) {
           Object name = Struct.getprop(hd, "name");
+          if (name instanceof String) {
+            params.add(name);
+          }
+        }
+      }
+      Object cl = Struct.getpath(point, List.of("args", "cookie"));
+      if (cl instanceof List) {
+        for (Object cd : (List<Object>) cl) {
+          Object name = Struct.getprop(cd, "name");
           if (name instanceof String) {
             params.add(name);
           }

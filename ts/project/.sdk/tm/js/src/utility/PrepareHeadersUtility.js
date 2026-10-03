@@ -25,6 +25,18 @@ function prepareHeaders(ctx) {
     }
   }
 
+  // A cookie argument travels in the cookie header as name=value, after any
+  // cookies the caller's headers already send.
+  const cookies = callArgs(ctx, 'cookie')
+    .filter((arg) => null != arg.val)
+    .map((arg) => arg.wire + '=' + stringify(arg.val))
+  if (0 < cookies.length) {
+    const given = Object.keys(out).filter((key) => 'cookie' === key.toLowerCase())
+    const sent = given.map((key) => String(out[key])).filter((v) => '' !== v)
+    for (const key of given) delete out[key]
+    out['cookie'] = sent.concat(cookies).join('; ')
+  }
+
   return out
 }
 

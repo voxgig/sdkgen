@@ -16,7 +16,8 @@ def _strip_action(reqdata):
 # prepare_query_util sends it, so the body is built from the request data
 # without it.
 def _routed_arg_names(ctx):
-    return [name for name, _orig, _val in call_args(ctx, "header") + call_args(ctx, "query")]
+    return [name for name, _orig, _val in
+            call_args(ctx, "header") + call_args(ctx, "cookie") + call_args(ctx, "query")]
 
 
 def _omit(reqdata, names):

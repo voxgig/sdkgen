@@ -65,7 +65,7 @@ private fun stripAction(reqdata: Any?): Any? = omitKeys(reqdata, listOf("\$actio
 // A header or query argument travels where prepareHeaders or prepareQuery
 // sends it, so the body is built from the request data without it.
 private fun routedArgNames(ctx: Context): List<String> =
-  (callArgs(ctx, "header") + callArgs(ctx, "query")).map { it.name }
+  (callArgs(ctx, "header") + callArgs(ctx, "cookie") + callArgs(ctx, "query")).map { it.name }
 
 private fun omitKeys(reqdata: Any?, names: List<String>): Any? {
   if (reqdata !is Map<*, *> || names.none { reqdata.containsKey(it) }) {

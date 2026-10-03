@@ -25,4 +25,15 @@ def prepare_headers_util(ctx):
                 del out[key]
             out[wire] = vs.stringify(val)
 
+    # A cookie argument travels in the cookie header as name=value, after any
+    # cookies the caller's headers already send.
+    cookies = [orig + "=" + vs.stringify(val)
+               for _name, orig, val in call_args(ctx, "cookie") if val is not None]
+    if cookies:
+        given = [k for k in out if isinstance(k, str) and k.lower() == "cookie"]
+        sent = [out[k] for k in given if isinstance(out[k], str) and out[k] != ""]
+        for key in given:
+            del out[key]
+        out["cookie"] = "; ".join(sent + cookies)
+
     return out

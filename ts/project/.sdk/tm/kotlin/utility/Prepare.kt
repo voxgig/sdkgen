@@ -148,6 +148,16 @@ fun prepareHeaders(ctx: Context): MutableMap<String, Any?> {
     }
   }
 
+  // A cookie argument travels in the cookie header as name=value, after any
+  // cookies the caller's headers already send.
+  val cookies = callArgs(ctx, "cookie").mapNotNull { arg -> arg.v?.let { arg.wire + "=" + Struct.stringify(it) } }
+  if (cookies.isNotEmpty()) {
+    val given = out.keys.filter { it.lowercase() == "cookie" }
+    val sent = given.mapNotNull { out[it] as? String }.filter { it.isNotEmpty() }
+    given.forEach { out.remove(it) }
+    out["cookie"] = (sent + cookies).joinToString("; ")
+  }
+
   return out
 }
 
@@ -239,13 +249,16 @@ fun prepareQuery(ctx: Context): MutableMap<String, Any?> {
         }
       }
     }
-    // A header parameter travels in the headers, which prepareHeaders fills.
-    val hl = Struct.getpath(point, listOf("args", "header"))
-    if (hl is List<*>) {
-      for (hd in hl) {
-        val name = Struct.getprop(hd, "name")
-        if (name is String) {
-          params.add(name)
+    // A header or cookie parameter travels in the headers, which prepareHeaders fills.
+    val located = listOf(Struct.getpath(point, listOf("args", "header")),
+      Struct.getpath(point, listOf("args", "cookie")))
+    for (hl in located) {
+      if (hl is List<*>) {
+        for (hd in hl) {
+          val name = Struct.getprop(hd, "name")
+          if (name is String) {
+            params.add(name)
+          }
         }
       }
     }

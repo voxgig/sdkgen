@@ -52,7 +52,8 @@ public static partial class SdkUtility
     // without it.
     private static List<string> RoutedArgNames(Context ctx)
     {
-        return CallArgs(ctx, "header").Concat(CallArgs(ctx, "query")).Select(arg => arg.Name).ToList();
+        return CallArgs(ctx, "header").Concat(CallArgs(ctx, "cookie")).Concat(CallArgs(ctx, "query"))
+            .Select(arg => arg.Name).ToList();
     }
 
     private static object? OmitKeys(object? reqdata, List<string> names)

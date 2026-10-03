@@ -37,11 +37,18 @@ func prepareQueryUtil(ctx *core.Context) map[string]any {
 		}
 	}
 
-	// A header parameter travels in the headers, which prepareHeaders fills.
+	// A header or cookie parameter travels in the headers, which prepareHeaders fills.
 	if point != nil {
 		if hl, ok := vs.GetPath(point, []any{"args", "header"}).([]any); ok {
 			for _, hd := range hl {
 				if name, ok := vs.GetProp(hd, "name").(string); ok {
+					params = append(params, name)
+				}
+			}
+		}
+		if cl, ok := vs.GetPath(point, []any{"args", "cookie"}).([]any); ok {
+			for _, cd := range cl {
+				if name, ok := vs.GetProp(cd, "name").(string); ok {
 					params = append(params, name)
 				}
 			}

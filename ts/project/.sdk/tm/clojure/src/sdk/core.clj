@@ -792,6 +792,17 @@
             (when (and (string? k) (= key (str/lower-case k)))
               (.remove ^java.util.Map out k)))
           (.put ^java.util.Map out key (vs/stringify v)))))
+    ;; A cookie argument travels in the cookie header as name=value, after any
+    ;; cookies the caller's headers already send.
+    (let [cookies (vec (for [[_ wire v] (call-args ctx "cookie") :when (some? v)]
+                         (str wire "=" (vs/stringify v))))]
+      (when (seq cookies)
+        (let [given (vec (filter (fn [k] (and (string? k) (= "cookie" (str/lower-case k))))
+                                 (vec (.keySet ^java.util.Map out))))
+              sent (vec (filter (fn [v] (and (string? v) (not= "" v)))
+                                (map (fn [k] (.get ^java.util.Map out k)) given)))]
+          (doseq [k given] (.remove ^java.util.Map out k))
+          (.put ^java.util.Map out "cookie" (str/join "; " (concat sent cookies))))))
     out))
 
 ;; The name a point gives a parameter in the call, if it renames it.
@@ -863,9 +874,14 @@
         aheader (let [args (when point (vs/getprop point "args"))
                       h (when (vs/ismap args) (vs/getprop args "header"))]
                   (if (vs/islist h) h (vs/jt)))
-        pset (into (into (into #{} (vec params))
-                         (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams)))
-                   (keep (fn [hd] (when (vs/ismap hd) (vs/getprop hd "name"))) (vec aheader)))
+        ;; A cookie parameter travels in the cookie header, which u-prepare-headers fills.
+        acookie (let [args (when point (vs/getprop point "args"))
+                      c (when (vs/ismap args) (vs/getprop args "cookie"))]
+                  (if (vs/islist c) c (vs/jt)))
+        pset (into (into (into (into #{} (vec params))
+                               (keep (fn [pd] (when (vs/ismap pd) (vs/getprop pd "name"))) (vec aparams)))
+                         (keep (fn [hd] (when (vs/ismap hd) (vs/getprop hd "name"))) (vec aheader)))
+                   (keep (fn [cd] (when (vs/ismap cd) (vs/getprop cd "name"))) (vec acookie)))
         ;; A query parameter travels under the name the definition gives it,
         ;; its orig, which the model may have renamed for the caller.
         aquery (let [args (when point (vs/getprop point "args"))
@@ -905,7 +921,7 @@
 ;; u-prepare-query sends it, so the body is built from the request data
 ;; without it.
 (defn- routed-arg-names [ctx]
-  (mapv first (concat (call-args ctx "header") (call-args ctx "query"))))
+  (mapv first (concat (call-args ctx "header") (call-args ctx "cookie") (call-args ctx "query"))))
 
 (defn u-transform-request [ctx]
   (let [spec (oget ctx :spec) point (oget ctx :point)

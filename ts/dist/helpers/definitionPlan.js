@@ -65,9 +65,19 @@ function definitionPlan(ctx$) {
                         wire.toLowerCase() === String(p?.name).toLowerCase());
                     return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) };
                 });
+                // A cookie argument is sent too, and must arrive in the cookie header
+                // as name=value, never in the query.
+                const cookies = (point.g?.cookie || [])
+                    .filter((arg) => false !== arg.a)
+                    .map((arg, i) => {
+                    const wire = String(arg.or || arg.n);
+                    const def = params.find((p) => 'cookie' === p?.in && wire === p?.name);
+                    return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'c' + (i + 1) };
+                });
                 const selected = {};
                 for (const key of select.exist || []) {
-                    if (args.some((a) => a.name === key) || headers.some((h) => h.name === key))
+                    if (args.some((a) => a.name === key) || headers.some((h) => h.name === key) ||
+                        cookies.some((c) => c.name === key))
                         continue;
                     const def = params.find((p) => key === p?.name);
                     selected[key] = scalar(def?.example ?? def?.schema?.example) ?? 'v1';
@@ -88,7 +98,8 @@ function definitionPlan(ctx$) {
                     (point.g?.query || [])
                         .filter((arg) => undefined !== selected[arg.n] &&
                         !args.some((a) => a.name === arg.n) &&
-                        !headers.some((h) => h.name === arg.n))
+                        !headers.some((h) => h.name === arg.n) &&
+                        !cookies.some((c) => c.name === arg.n))
                         .map((arg) => ({ name: arg.n, wire: String(arg.or || arg.n) }))
                         .filter((q) => params.some((p) => 'query' === p?.in && q.wire === p?.name));
                 const success = successResponse(facts.responses);
@@ -106,6 +117,7 @@ function definitionPlan(ctx$) {
                     args,
                     select: selected,
                     headers,
+                    cookies,
                     ...(0 === responseMedia.length ? {} : { responseMedia }),
                     ...(null == rawBody ? {} : { rawBody }),
                     query: params.filter((p) => 'query' === p?.in).map((p) => p.name),

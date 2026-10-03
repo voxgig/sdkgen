@@ -36,6 +36,7 @@ async function runDefinitionPoint(SDK, point) {
   const input = { ...point.select }
   for (const arg of point.args) input[arg.name] = arg.value
   for (const h of point.headers || []) input[h.name] = h.value
+  for (const c of point.cookies || []) input[c.name] = c.value
   if (null != point.action) input.$action = point.action
   if (null != point.rawBody) input.$body = rawSample(point)
 
@@ -95,6 +96,14 @@ async function runDefinitionPoint(SDK, point) {
     if (credentialHeaders.includes(wire) || 'content-type' === wire) continue
     assert.equal(new Headers(init.headers).get(wire), String(h.value),
       'header parameter not sent as a header: ' + h.wire)
+  }
+
+  // A cookie parameter goes out in the cookie header as name=value.
+  const cookies = String(new Headers(init.headers).get('cookie') ?? '')
+    .split(';').map((c) => c.trim())
+  for (const c of point.cookies || []) {
+    assert(cookies.includes(c.wire + '=' + String(c.value)),
+      'cookie parameter not sent in the cookie header: ' + c.wire)
   }
 
   // Accept asks only for what a success response declares: its JSON type

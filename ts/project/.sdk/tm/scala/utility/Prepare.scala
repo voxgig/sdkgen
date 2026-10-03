@@ -80,8 +80,9 @@ object PrepareQuery {
           }
         case _ =>
       }
-      // A header parameter travels in the headers, which prepareHeaders fills.
-      Struct.getpath(point, java.util.List.of("args", "header")) match {
+      // A header or cookie parameter travels in the headers, which prepareHeaders fills.
+      for (located <- Seq(Struct.getpath(point, java.util.List.of("args", "header")),
+        Struct.getpath(point, java.util.List.of("args", "cookie")))) located match {
         case l: JList[_] =>
           val hit = l.iterator()
           while (hit.hasNext) {
@@ -147,6 +148,24 @@ object PrepareHeaders {
       val key = wire.toLowerCase(java.util.Locale.ROOT)
       out.keySet().removeIf(k => k != null && k.toLowerCase(java.util.Locale.ROOT) == key)
       out.put(key, Struct.stringify(v))
+    }
+
+    // A cookie argument travels in the cookie header as name=value, after any
+    // cookies the caller's headers already send.
+    val cookies = Param.callArgs(ctx, "cookie").collect {
+      case (_, wire, v) if v != null => wire + "=" + Struct.stringify(v)
+    }
+    if (cookies.nonEmpty) {
+      val sent = scala.collection.mutable.ArrayBuffer[String]()
+      val it = out.entrySet().iterator()
+      while (it.hasNext) {
+        val e = it.next()
+        if (e.getKey != null && "cookie" == e.getKey.toLowerCase(java.util.Locale.ROOT)) {
+          e.getValue match { case s: String if s.nonEmpty => sent += s; case _ => }
+          it.remove()
+        }
+      }
+      out.put("cookie", (sent ++ cookies).mkString("; "))
     }
 
     out

@@ -30,6 +30,26 @@ class ProjectNamePrepareHeaders
                 $out[$wire] = \Voxgig\Struct\Struct::stringify($val);
             }
         }
+        // A cookie argument travels in the cookie header as name=value, after
+        // any cookies the caller's headers already send.
+        $cookies = [];
+        foreach (ProjectNameParam::callArgs($ctx, 'cookie') as [$name, $orig, $val]) {
+            if (null !== $val) {
+                $cookies[] = $orig . '=' . \Voxgig\Struct\Struct::stringify($val);
+            }
+        }
+        if (0 < count($cookies)) {
+            $sent = [];
+            foreach (array_keys($out) as $key) {
+                if (is_string($key) && 'cookie' === strtolower($key)) {
+                    if (is_string($out[$key]) && '' !== $out[$key]) {
+                        $sent[] = $out[$key];
+                    }
+                    unset($out[$key]);
+                }
+            }
+            $out['cookie'] = implode('; ', array_merge($sent, $cookies));
+        }
         return $out;
     }
 }

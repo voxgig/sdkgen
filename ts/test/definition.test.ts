@@ -255,6 +255,26 @@ describe('definitionPlan', () => {
     deepStrictEqual(list.select, {})
   })
 
+  // A cookie argument is sent in the cookie header, under the definition's
+  // name, never as a selector in the query.
+  test('a cookie argument is planned under its definition name', () => {
+    const def = { ...DEF, paths: { '/uploads': { get: {
+      parameters: [{ in: 'cookie', name: 'SESSIONID', example: 's-1' }],
+      responses: { '200': { content: { 'application/json': { example: [] } } } },
+    } } } }
+    const model = { main: { kit: { entity: { upload: {
+      name: 'upload', id: { field: 'id', name: 'id' }, op: { list: { points: [{
+        m: 'GET', o: '/uploads', q: { exist: ['session_id'] },
+        g: { cookie: [{ n: 'session_id', or: 'SESSIONID' }] },
+      }] } },
+    } } } } }
+    const [list] = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    deepStrictEqual(list.cookies, [{ name: 'session_id', wire: 'SESSIONID', value: 's-1' }])
+    deepStrictEqual(list.select, {})
+  })
+
   test('the example is the sample, three items at most', () => {
     strictEqual(point('list').sample.data.length, 3)
     deepStrictEqual(point('list').query, ['limit'])

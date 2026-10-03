@@ -37,7 +37,7 @@ end
 -- without it.
 local function routed_arg_names(ctx)
   local names = {}
-  for _, kind in ipairs({ "header", "query" }) do
+  for _, kind in ipairs({ "header", "cookie", "query" }) do
     for _, arg in ipairs(helpers.call_args(ctx, kind)) do
       names[#names + 1] = arg.name
     end

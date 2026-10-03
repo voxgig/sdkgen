@@ -31,8 +31,8 @@ public static partial class SdkUtility
             }
         }
 
-        // A header parameter travels in the headers, which PrepareHeaders
-        // fills.
+        // A header or cookie parameter travels in the headers, which
+        // PrepareHeaders fills.
         if (point != null &&
             StructUtils.GetPath(point, StructUtils.Jt("args", "header")) is List<object?> ahl)
         {
@@ -41,6 +41,17 @@ public static partial class SdkUtility
                 if (StructUtils.GetProp(hd, "name") is string hname)
                 {
                     paramnames.Add(hname);
+                }
+            }
+        }
+        if (point != null &&
+            StructUtils.GetPath(point, StructUtils.Jt("args", "cookie")) is List<object?> acl)
+        {
+            foreach (var cd in acl)
+            {
+                if (StructUtils.GetProp(cd, "name") is string cname)
+                {
+                    paramnames.Add(cname);
                 }
             }
         }

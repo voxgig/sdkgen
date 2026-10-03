@@ -33,6 +33,34 @@ public static partial class SdkUtility
             }
         }
 
+        // A cookie argument travels in the cookie header as name=value, after
+        // any cookies the caller's headers already send.
+        var cookies = new List<string>();
+        foreach (var arg in CallArgs(ctx, "cookie"))
+        {
+            if (arg.Val != null)
+            {
+                cookies.Add(arg.Wire + "=" + StructUtils.Stringify(arg.Val));
+            }
+        }
+        if (0 < cookies.Count)
+        {
+            var sent = new List<string>();
+            foreach (var k in new List<string>(result.Keys))
+            {
+                if (k.ToLowerInvariant() == "cookie")
+                {
+                    if (result[k] is string given && "" != given)
+                    {
+                        sent.Add(given);
+                    }
+                    result.Remove(k);
+                }
+            }
+            sent.AddRange(cookies);
+            result["cookie"] = string.Join("; ", sent);
+        }
+
         return result;
     }
 }

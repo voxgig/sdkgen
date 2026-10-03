@@ -32,6 +32,16 @@ $REGISTRY{prepare_headers} = sub {
     delete $out->{$_} for grep { lc $_ eq $wire } keys %$out;
     $out->{$wire} = Voxgig::Struct::stringify($val);
   }
+  # A cookie argument travels in the cookie header as name=value, after any
+  # cookies the caller's headers already send.
+  my @cookies = map { $_->[1] . '=' . Voxgig::Struct::stringify($_->[2]) }
+    grep { defined $_->[2] } ProjectNameUtilities::call_args($ctx, 'cookie');
+  if (@cookies) {
+    my @given = grep { lc $_ eq 'cookie' } keys %$out;
+    my @sent = grep { defined $_ && !ref $_ && $_ ne '' } map { $out->{$_} } @given;
+    delete $out->{$_} for @given;
+    $out->{cookie} = join('; ', @sent, @cookies);
+  }
   return $out;
 };
 

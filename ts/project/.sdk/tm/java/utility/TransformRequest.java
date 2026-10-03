@@ -47,7 +47,7 @@ final class TransformRequest {
   // sends it, so the body is built from the request data without it.
   private static List<String> routedArgNames(Context ctx) {
     List<String> names = new ArrayList<>();
-    for (String kind : List.of("header", "query")) {
+    for (String kind : List.of("header", "cookie", "query")) {
       for (Param.CallArg arg : Param.callArgs(ctx, kind)) {
         names.add(arg.name());
       }

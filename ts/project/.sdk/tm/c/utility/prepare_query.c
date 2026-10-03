@@ -52,8 +52,9 @@ voxgig_value* prepare_query_util(Context* ctx) {
   voxgig_value* params = getp(point, "params");
   if (!voxgig_is_list(params)) params = voxgig_new_list();
   voxgig_value* aparams = getpath2(point, "args", "params");
-  // A header parameter travels in the headers, which prepare_headers fills.
+  // A header or cookie parameter travels in the headers, which prepare_headers fills.
   voxgig_value* aheader = getpath2(point, "args", "header");
+  voxgig_value* acookie = getpath2(point, "args", "cookie");
   voxgig_value* aquery = getpath2(point, "args", "query");
 
   voxgig_value* out = voxgig_new_map();
@@ -64,7 +65,7 @@ voxgig_value* prepare_query_util(Context* ctx) {
       voxgig_value* val = rm->entries[i].value;
       if (!v_is_noval(val) && !v_is_null(val) && strcmp(key, "$action") != 0 &&
           !params_contains(params, key) && !args_params_contains(aparams, key) &&
-          !args_params_contains(aheader, key)) {
+          !args_params_contains(aheader, key) && !args_params_contains(acookie, key)) {
         setp(out, query_wire_name(aquery, key), v_share(val));
       }
     }
@@ -78,7 +79,8 @@ voxgig_value* prepare_query_util(Context* ctx) {
     const char* name = voxgig_as_string(arg->items[0]);
     voxgig_value* val = arg->items[2];
     if (!v_is_noval(val) && !v_is_null(val) && !params_contains(params, name) &&
-        !args_params_contains(aparams, name) && !args_params_contains(aheader, name)) {
+        !args_params_contains(aparams, name) && !args_params_contains(aheader, name) &&
+        !args_params_contains(acookie, name)) {
       setp(out, voxgig_as_string(arg->items[1]), v_share(val));
     }
   }

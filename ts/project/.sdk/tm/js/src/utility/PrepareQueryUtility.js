@@ -15,10 +15,11 @@ function prepareQuery(ctx) {
 
   // A path parameter travels in the path. The generated config lists them as
   // args.params, which prepareParams reads; params is the older list of names.
-  // A header parameter travels in the headers, which prepareHeaders fills.
+  // A header or cookie parameter travels in the headers, which prepareHeaders fills.
   const inpath = params.concat(
     ((point.args && point.args.params) || []).map((p) => p && p.name),
-    ((point.args && point.args.header) || []).map((h) => h && h.name))
+    ((point.args && point.args.header) || []).map((h) => h && h.name),
+    ((point.args && point.args.cookie) || []).map((c) => c && c.name))
 
   // A query parameter travels under the name the definition gives it, its
   // orig, which the model may have renamed for the caller.

@@ -35,13 +35,16 @@ local function prepare_query_util(ctx)
         end
       end
     end
-    -- A header parameter travels in the headers, which prepare_headers fills.
+    -- A header or cookie parameter travels in the headers, which prepare_headers fills.
     local hl = vs.getpath(point, "args.header")
-    if type(hl) == "table" then
-      for _, hd in ipairs(hl) do
-        local name = vs.getprop(hd, "name")
-        if type(name) == "string" then
-          table.insert(params, name)
+    local cl = vs.getpath(point, "args.cookie")
+    for _, located in ipairs({ hl or {}, cl or {} }) do
+      if type(located) == "table" then
+        for _, hd in ipairs(located) do
+          local name = vs.getprop(hd, "name")
+          if type(name) == "string" then
+            table.insert(params, name)
+          end
         end
       end
     end

@@ -25,6 +25,7 @@ type DefinitionPoint = {
   args: { name: string, wire: string, value: any }[]
   select: Record<string, any>
   headers: { name: string, wire: string, value: any }[]
+  cookies: { name: string, wire: string, value: any }[]
   query: string[]
   queryArgs: { name: string, wire: string }[]
   auth: Credential[][] | null
@@ -104,9 +105,20 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
             return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'h' + (i + 1) }
           })
 
+        // A cookie argument is sent too, and must arrive in the cookie header
+        // as name=value, never in the query.
+        const cookies = (point.g?.cookie || [])
+          .filter((arg: any) => false !== arg.a)
+          .map((arg: any, i: number) => {
+            const wire = String(arg.or || arg.n)
+            const def = params.find((p: any) => 'cookie' === p?.in && wire === p?.name)
+            return { name: arg.n, wire, value: scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'c' + (i + 1) }
+          })
+
         const selected: Record<string, any> = {}
         for (const key of select.exist || []) {
-          if (args.some((a: any) => a.name === key) || headers.some((h: any) => h.name === key)) continue
+          if (args.some((a: any) => a.name === key) || headers.some((h: any) => h.name === key) ||
+            cookies.some((c: any) => c.name === key)) continue
           const def = params.find((p: any) => key === p?.name)
           selected[key] = scalar(def?.example ?? def?.schema?.example) ?? 'v1'
         }
@@ -127,7 +139,8 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           (point.g?.query || [])
             .filter((arg: any) => undefined !== selected[arg.n] &&
               !args.some((a: any) => a.name === arg.n) &&
-              !headers.some((h: any) => h.name === arg.n))
+              !headers.some((h: any) => h.name === arg.n) &&
+              !cookies.some((c: any) => c.name === arg.n))
             .map((arg: any) => ({ name: arg.n, wire: String(arg.or || arg.n) }))
             .filter((q: any) => params.some((p: any) => 'query' === p?.in && q.wire === p?.name))
 
@@ -147,6 +160,7 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           args,
           select: selected,
           headers,
+          cookies,
           ...(0 === responseMedia.length ? {} : { responseMedia }),
           ...(null == rawBody ? {} : { rawBody }),
           query: params.filter((p: any) => 'query' === p?.in).map((p: any) => p.name),

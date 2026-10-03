@@ -66,6 +66,19 @@ func prepareHeadersUtil(_ ctx: Context) -> VMap {
     }
     out.entries[key] = .string(stringify(arg.val))
   }
+
+  // A cookie argument travels in the cookie header as name=value, after any
+  // cookies the caller's headers already send.
+  let cookies = callArgs(ctx, "cookie").filter { !isNil($0.val) }
+    .map { $0.wire + "=" + stringify($0.val) }
+  if !cookies.isEmpty {
+    var sent: [String] = []
+    for k in out.entries.keys where k.lowercased() == "cookie" {
+      if let given = out.entries[k]?.asString, !given.isEmpty { sent.append(given) }
+      _ = out.entries.removeValue(forKey: k)
+    }
+    out.entries["cookie"] = .string((sent + cookies).joined(separator: "; "))
+  }
   return out
 }
 
@@ -99,10 +112,15 @@ func prepareQueryUtil(_ ctx: Context) -> VMap {
       paramnames.append(gp(pd, "name"))
     }
   }
-  // A header parameter travels in the headers, which prepareHeaders fills.
+  // A header or cookie parameter travels in the headers, which prepareHeaders fills.
   if let ahl = gpath(ctx.point, "args", "header").asList {
     for hd in ahl.items {
       paramnames.append(gp(hd, "name"))
+    }
+  }
+  if let acl = gpath(ctx.point, "args", "cookie").asList {
+    for cd in acl.items {
+      paramnames.append(gp(cd, "name"))
     }
   }
 

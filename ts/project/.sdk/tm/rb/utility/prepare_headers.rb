@@ -16,6 +16,16 @@ module ProjectNameUtilities
       out.delete_if { |k, _| k.is_a?(String) && k.downcase == wire }
       out[wire] = VoxgigStruct.stringify(val)
     end
+    # A cookie argument travels in the cookie header as name=value, after any
+    # cookies the caller's headers already send.
+    cookies = ProjectNameUtilities.call_args(ctx, "cookie").reject { |_name, _orig, val| val.nil? }
+      .map { |_name, orig, val| "#{orig}=#{VoxgigStruct.stringify(val)}" }
+    unless cookies.empty?
+      given = out.keys.select { |k| k.is_a?(String) && k.downcase == "cookie" }
+      sent = given.map { |k| out[k] }.select { |v| v.is_a?(String) && !v.empty? }
+      given.each { |k| out.delete(k) }
+      out["cookie"] = (sent + cookies).join("; ")
+    end
     out
   }
 end

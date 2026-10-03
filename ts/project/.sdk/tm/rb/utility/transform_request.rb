@@ -12,7 +12,7 @@ module ProjectNameUtilities
   # A header or query argument travels where PrepareHeaders or PrepareQuery
   # sends it, so the body is built from the request data without it.
   def self.routed_arg_names(ctx)
-    (call_args(ctx, "header") + call_args(ctx, "query")).map(&:first)
+    (call_args(ctx, "header") + call_args(ctx, "cookie") + call_args(ctx, "query")).map(&:first)
   end
 
   def self.omit_keys(reqdata, names)

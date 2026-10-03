@@ -1754,6 +1754,22 @@ defmodule ProjectName.Utility do
       end
     end)
 
+    # A cookie argument travels in the cookie header as name=value, after any
+    # cookies the caller's headers already send.
+    cookies =
+      call_args(ctx, "cookie")
+      |> Enum.filter(fn {_name, _wire, val} -> val != nil end)
+      |> Enum.map(fn {_name, wire, val} -> wire <> "=" <> S.stringify(val) end)
+
+    if cookies != [] do
+      given =
+        Enum.filter(H.entries(out), fn {k, _} -> is_binary(k) and String.downcase(k) == "cookie" end)
+
+      sent = Enum.flat_map(given, fn {_, v} -> if is_binary(v) and v != "", do: [v], else: [] end)
+      Enum.each(given, fn {k, _} -> S.delprop(out, k) end)
+      S.setprop(out, "cookie", Enum.join(sent ++ cookies, "; "))
+    end
+
     out
   end
 
@@ -1850,8 +1866,11 @@ defmodule ProjectName.Utility do
 
     # A path parameter travels in the path. The generated config lists them
     # as args.params, which prepare_params reads; params is the older list.
-    # A header parameter travels in the headers, which prepare_headers fills.
-    param_strs = param_strs ++ arg_names(point, "args.params") ++ arg_names(point, "args.header")
+    # A header or cookie parameter travels in the headers, which prepare_headers fills.
+    param_strs =
+      param_strs ++
+        arg_names(point, "args.params") ++ arg_names(point, "args.header") ++
+        arg_names(point, "args.cookie")
 
     # A query parameter travels under the name the definition gives it, its
     # orig, which the model may have renamed for the caller.
@@ -2127,7 +2146,7 @@ defmodule ProjectName.Utility do
   # prepare_query_impl sends it, so the body is built from the request data
   # without it.
   defp routed_arg_names(ctx) do
-    Enum.map(call_args(ctx, "header") ++ call_args(ctx, "query"), &elem(&1, 0))
+    Enum.map(call_args(ctx, "header") ++ call_args(ctx, "cookie") ++ call_args(ctx, "query"), &elem(&1, 0))
   end
 
   defp omit_keys(reqdata, names) do

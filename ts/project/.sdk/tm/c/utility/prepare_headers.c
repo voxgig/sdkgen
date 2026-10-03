@@ -3,6 +3,7 @@
 #include "sdk.h"
 
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -11,6 +12,18 @@ static bool same_name(const char* a, const char* b) {
     if (tolower((unsigned char)*a) != tolower((unsigned char)*b)) return false;
   }
   return *a == *b;
+}
+
+// Appends a part to a joined string, growing it.
+static void join_part(char** text, size_t* len, const char* sep, const char* part) {
+  size_t plen = strlen(part);
+  size_t slen = 0 < *len ? strlen(sep) : 0;
+  char* grown = (char*)realloc(*text, *len + slen + plen + 1);
+  if (slen) memcpy(grown + *len, sep, slen);
+  memcpy(grown + *len + slen, part, plen);
+  *len += slen + plen;
+  grown[*len] = '\0';
+  *text = grown;
 }
 
 voxgig_value* prepare_headers_util(Context* ctx) {
@@ -51,6 +64,47 @@ voxgig_value* prepare_headers_util(Context* ctx) {
     free(key);
   }
   voxgig_release(hargs);
+
+  // A cookie argument travels in the cookie header as name=value, after any
+  // cookies the caller's headers already send.
+  voxgig_value* cargs = call_args(ctx, "cookie");
+  voxgig_list* cl = voxgig_as_list(cargs);
+  bool any = false;
+  for (size_t i = 0; i < cl->len; i++) {
+    voxgig_value* val = voxgig_as_list(cl->items[i])->items[2];
+    if (!v_is_noval(val) && !v_is_null(val)) any = true;
+  }
+  if (any) {
+    char* joined = NULL;
+    size_t jlen = 0;
+    voxgig_map* om = voxgig_as_map(out);
+    for (size_t j = om->len; j > 0; j--) {
+      if (same_name(om->entries[j - 1].key, "cookie")) {
+        voxgig_value* given = om->entries[j - 1].value;
+        if (voxgig_is_string(given) && '\0' != *voxgig_as_string(given)) {
+          join_part(&joined, &jlen, "; ", voxgig_as_string(given));
+        }
+        voxgig_value* dk = voxgig_new_string(om->entries[j - 1].key);
+        voxgig_delprop(out, dk);
+        voxgig_release(dk);
+      }
+    }
+    for (size_t i = 0; i < cl->len; i++) {
+      voxgig_list* arg = voxgig_as_list(cl->items[i]);
+      voxgig_value* val = arg->items[2];
+      if (v_is_noval(val) || v_is_null(val)) continue;
+      const char* wire = voxgig_as_string(arg->items[1]);
+      char* text = voxgig_stringify(val, -1);
+      size_t plen = strlen(wire) + 1 + strlen(text);
+      char* pair = (char*)malloc(plen + 1);
+      snprintf(pair, plen + 1, "%s=%s", wire, text);
+      join_part(&joined, &jlen, "; ", pair);
+      free(pair);
+      free(text);
+    }
+    setp(out, "cookie", voxgig_new_string_take(joined, jlen));
+  }
+  voxgig_release(cargs);
 
   return out;
 }

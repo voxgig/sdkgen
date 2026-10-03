@@ -39,5 +39,29 @@ pub fn prepare_headers_util(ctx: &Rc<Context>) -> Value {
         }
     }
 
+    // A cookie argument travels in the cookie header as name=value, after any
+    // cookies the caller's headers already send.
+    let cookies: Vec<String> = call_args(ctx, "cookie")
+        .into_iter()
+        .filter(|(_, _, val)| !val.is_noval() && !val.is_null())
+        .map(|(_, wire, val)| format!("{}={}", wire, vs::stringify(&val, None, false)))
+        .collect();
+    if !cookies.is_empty() {
+        let mut sent: Vec<String> = Vec::new();
+        if let Value::Map(m) = &out {
+            let given: Vec<String> =
+                m.borrow().keys().filter(|k| k.to_lowercase() == "cookie").cloned().collect();
+            for k in given {
+                if let Some(Value::Str(s)) = m.borrow_mut().shift_remove(&k) {
+                    if !s.is_empty() {
+                        sent.push(s);
+                    }
+                }
+            }
+        }
+        sent.extend(cookies);
+        setp(&out, "cookie", Value::Str(sent.join("; ")));
+    }
+
     out
 }

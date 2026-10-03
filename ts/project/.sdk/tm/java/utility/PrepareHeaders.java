@@ -1,6 +1,8 @@
 package JAVAPACKAGE.utility;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -29,6 +31,28 @@ final class PrepareHeaders {
         out.keySet().removeIf(k -> k != null && k.toLowerCase(Locale.ROOT).equals(key));
         out.put(key, Struct.stringify(arg.val()));
       }
+    }
+
+    // A cookie argument travels in the cookie header as name=value, after any
+    // cookies the caller's headers already send.
+    List<String> cookies = new ArrayList<>();
+    for (Param.CallArg arg : Param.callArgs(ctx, "cookie")) {
+      if (arg.val() != null) {
+        cookies.add(arg.wire() + "=" + Struct.stringify(arg.val()));
+      }
+    }
+    if (!cookies.isEmpty()) {
+      List<String> sent = new ArrayList<>();
+      for (String k : new ArrayList<>(out.keySet())) {
+        if (k != null && "cookie".equals(k.toLowerCase(Locale.ROOT))) {
+          Object given = out.remove(k);
+          if (given instanceof String && !((String) given).isEmpty()) {
+            sent.add((String) given);
+          }
+        }
+      }
+      sent.addAll(cookies);
+      out.put("cookie", String.join("; ", sent));
     }
 
     return out;

@@ -691,6 +691,18 @@ let prepare_headers_util (ctx : ctx) : value =
           (keysof out);
         setp out key (Str (stringify v)))
     (call_args ctx "header");
+  (* A cookie argument travels in the cookie header as name=value, after any
+   * cookies the caller's headers already send. *)
+  let cookies = List.filter_map (fun (_, wire, v) ->
+      match v with Noval | Null -> None | v -> Some (wire ^ "=" ^ stringify v))
+      (call_args ctx "cookie") in
+  if cookies <> [] then begin
+    let given = List.filter (fun k -> String.lowercase_ascii k = "cookie") (keysof out) in
+    let sent = List.filter_map (fun k ->
+        match getp out k with Str s when s <> "" -> Some s | _ -> None) given in
+    List.iter (fun k -> ignore (delprop out (Str k))) given;
+    setp out "cookie" (Str (String.concat "; " (sent @ cookies)))
+  end;
   out
 
 (* The name a point gives a parameter in the call, if it renames it. *)
@@ -756,13 +768,19 @@ let prepare_query_util (ctx : ctx) : value =
     | List r -> List.map (fun pd -> getp pd "name") !r
     | _ -> []
   in
-  (* A header parameter travels in the headers, which prepare_headers fills. *)
+  (* A header or cookie parameter travels in the headers, which
+   * prepare_headers fills. *)
   let header_names =
     match getp (getp ctx.c_point "args") "header" with
     | List r -> List.map (fun hd -> getp hd "name") !r
     | _ -> []
   in
-  let params = params @ arg_names @ header_names in
+  let cookie_names =
+    match getp (getp ctx.c_point "args") "cookie" with
+    | List r -> List.map (fun cd -> getp cd "name") !r
+    | _ -> []
+  in
+  let params = params @ arg_names @ header_names @ cookie_names in
   let contains_param s = List.exists (fun v -> match v with Str x -> x = s | _ -> false) params in
   (* A query parameter travels under the name the definition gives it, its
    * orig, which the model may have renamed for the caller. *)
@@ -948,7 +966,8 @@ let strip_action (reqdata : value) : value = omit_keys reqdata ["$action"]
    prepare_query_util sends it, so the body is built from the request data
    without it. *)
 let routed_arg_names (ctx : ctx) : string list =
-  List.map (fun (name, _, _) -> name) (call_args ctx "header" @ call_args ctx "query")
+  List.map (fun (name, _, _) -> name)
+    (call_args ctx "header" @ call_args ctx "cookie" @ call_args ctx "query")
 
 let transform_request_util (ctx : ctx) : value =
   (match ctx.c_spec with Some s -> s.sp_step <- "reqform" | None -> ());

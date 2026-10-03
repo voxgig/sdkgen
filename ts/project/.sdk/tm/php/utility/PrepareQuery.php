@@ -29,14 +29,16 @@ class ProjectNamePrepareQuery
                     }
                 }
             }
-            // A header parameter travels in the headers, which prepareHeaders
-            // fills.
-            $hl = \Voxgig\Struct\Struct::getpath($point, 'args.header');
-            if (is_array($hl)) {
-                foreach ($hl as $hd) {
-                    $name = \Voxgig\Struct\Struct::getprop($hd, 'name');
-                    if (is_string($name)) {
-                        $params[] = $name;
+            // A header or cookie parameter travels in the headers, which
+            // prepareHeaders fills.
+            foreach ([\Voxgig\Struct\Struct::getpath($point, 'args.header'),
+                \Voxgig\Struct\Struct::getpath($point, 'args.cookie')] as $hl) {
+                if (is_array($hl)) {
+                    foreach ($hl as $hd) {
+                        $name = \Voxgig\Struct\Struct::getprop($hd, 'name');
+                        if (is_string($name)) {
+                            $params[] = $name;
+                        }
                     }
                 }
             }

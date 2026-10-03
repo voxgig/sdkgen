@@ -101,6 +101,14 @@ describe('prepareQuery', () => {
       } }
       deepStrictEqual(prepareQuery(ctx(point, { idempotency_key: 'k1', limit: 2 })), { limit: 2 })
     })
+
+    test(lang + ': a cookie argument stays out of the query', () => {
+      const point = { args: {
+        cookie: [{ name: 'session_id', orig: 'SESSIONID', kind: 'cookie' }],
+        query: [{ name: 'limit', orig: 'limit', kind: 'query' }],
+      } }
+      deepStrictEqual(prepareQuery(ctx(point, { session_id: 's1', limit: 2 })), { limit: 2 })
+    })
   }
 
 
@@ -156,6 +164,19 @@ describe('prepareQuery', () => {
       }
     }
     deepStrictEqual(missing, [], 'targets whose prepareQuery never reads args.header')
+  })
+
+  test('every target keeps a cookie argument out of the query', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      ok(-1 !== at, lang + ': no prepareQuery definition in ' + rel)
+      if (!/\bargs\b\W{1,12}cookie\b/.test(src.slice(at, at + 4500))) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose prepareQuery never reads args.cookie')
   })
 
   test('every target sends a query argument under its orig', () => {
@@ -242,6 +263,32 @@ describe('prepareHeaders', () => {
         { 'Idempotency-Key': 'default', 'user-agent': 'sdk' })),
       { 'user-agent': 'sdk', 'idempotency-key': 'call' })
     })
+
+    // A cookie argument travels in the cookie header as name=value, after the
+    // cookies the caller's headers already send.
+    const cookiePoint = { args: {
+      header: [{ name: 'x_trace', orig: 'X-Trace', kind: 'header' }],
+      cookie: [
+        { name: 'session_id', orig: 'SESSIONID', kind: 'cookie' },
+        { name: 'theme', orig: 'theme', kind: 'cookie' },
+      ],
+    } }
+
+    test(lang + ': a cookie argument goes out in the cookie header as name=value', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' }, { theme: 'dark', name: 'n' })),
+        { cookie: 'SESSIONID=s1; theme=dark' })
+    })
+
+    test(lang + ': a cookie argument follows the cookies the caller sends, whatever the header case', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: 's1' }, {},
+        { Cookie: 'lang=en', 'user-agent': 'sdk' })),
+      { 'user-agent': 'sdk', cookie: 'lang=en; SESSIONID=s1' })
+    })
+
+    test(lang + ': an absent or null cookie argument leaves the headers alone', () => {
+      deepStrictEqual(prepareHeaders(hctx(cookiePoint, { session_id: null }, {}, { Cookie: 'lang=en' })),
+        { Cookie: 'lang=en' })
+    })
   }
 
 
@@ -285,6 +332,22 @@ describe('prepareHeaders', () => {
       }
     }
     deepStrictEqual(missing, [], 'targets whose prepareHeaders never sends a header argument')
+  })
+
+  // Source again: the cookie list is read, and the pairs are joined into the
+  // cookie header with the separator the cookie syntax uses.
+  test('every target sends a cookie argument in the cookie header', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      const body = src.slice(at, at + 5000)
+      const reads = callsArgs('cookie').test(body) || /\bargs\b\W{1,12}cookie\b/.test(body)
+      if (!reads || !/["']cookie["']/.test(body) || !/["']; ["']/.test(body)) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose prepareHeaders never sends a cookie argument')
   })
 
   // Source again: a default of the same name, in another case, is removed

@@ -30,14 +30,14 @@ def prepare_query_util(ctx):
                 name = vs.getprop(pd, "name")
                 if isinstance(name, str):
                     params.append(name)
-        # A header parameter travels in the headers, which prepare_headers
-        # fills.
-        hl = vs.getpath(point, "args.header")
-        if isinstance(hl, list):
-            for hd in hl:
-                name = vs.getprop(hd, "name")
-                if isinstance(name, str):
-                    params.append(name)
+        # A header or cookie parameter travels in the headers, which
+        # prepare_headers fills.
+        for located in (vs.getpath(point, "args.header"), vs.getpath(point, "args.cookie")):
+            if isinstance(located, list):
+                for hd in located:
+                    name = vs.getprop(hd, "name")
+                    if isinstance(name, str):
+                        params.append(name)
 
     # A query parameter travels under the name the definition gives it, its
     # orig, which the model may have renamed for the caller.

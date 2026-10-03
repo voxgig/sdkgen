@@ -1614,6 +1614,31 @@ pub fn prepare_headers_util(ctx: *Context) Value {
         h.setp(out, key, h.vstr(h.stringify(arg.val)));
     }
 
+    // A cookie argument travels in the cookie header as name=value, after any
+    // cookies the caller's headers already send.
+    var cookies: std.ArrayList([]const u8) = .empty;
+    for (call_args(ctx, "cookie")) |arg| {
+        if (h.is_noval(arg.val)) continue;
+        const pair = std.fmt.allocPrint(h.A(), "{s}={s}", .{ arg.wire, h.stringify(arg.val) }) catch continue;
+        cookies.append(h.A(), pair) catch {};
+    }
+    if (0 < cookies.items.len) {
+        var sent: std.ArrayList([]const u8) = .empty;
+        while (true) {
+            var kit = out.object.iterator();
+            const same: ?[]const u8 = while (kit.next()) |kv| {
+                if (std.ascii.eqlIgnoreCase(kv.key_ptr.*, "cookie")) break kv.key_ptr.*;
+            } else null;
+            const removed = out.object.fetchOrderedRemove(same orelse break) orelse break;
+            if (removed.value == .string and 0 < removed.value.string.len) {
+                sent.append(h.A(), removed.value.string) catch {};
+            }
+        }
+        for (cookies.items) |cookie| sent.append(h.A(), cookie) catch {};
+        const joined = std.mem.join(h.A(), "; ", sent.items) catch "";
+        h.setp(out, "cookie", h.vstr(joined));
+    }
+
     return out;
 }
 
@@ -1684,8 +1709,9 @@ pub fn prepare_query_util(ctx: *Context) Value {
     // A path parameter travels in the path. The generated config lists them
     // as args.params, which prepare_params reads; params is the older list.
     const aparams: Value = h.getpath(&.{ "args", "params" }, point);
-    // A header parameter travels in the headers, which prepare_headers fills.
+    // A header or cookie parameter travels in the headers, which prepare_headers fills.
     const aheader: Value = h.getpath(&.{ "args", "header" }, point);
+    const acookie: Value = h.getpath(&.{ "args", "cookie" }, point);
     // A query parameter travels under the name the definition gives it, its
     // orig, which the model may have renamed for the caller.
     const aquery: Value = h.getpath(&.{ "args", "query" }, point);
@@ -1705,7 +1731,7 @@ pub fn prepare_query_util(ctx: *Context) Value {
                     }
                 }
             }
-            if (!contained) contained = names_key(aparams, key) or names_key(aheader, key);
+            if (!contained) contained = names_key(aparams, key) or names_key(aheader, key) or names_key(acookie, key);
             var wire: []const u8 = key;
             if (aquery == .array) {
                 for (aquery.array.data.items) |qd| {
@@ -1725,7 +1751,7 @@ pub fn prepare_query_util(ctx: *Context) Value {
 
     // A create or update passes its query arguments in its data.
     for (call_args(ctx, "query")) |arg| {
-        var contained = h.is_noval(arg.val) or names_key(aparams, arg.name) or names_key(aheader, arg.name);
+        var contained = h.is_noval(arg.val) or names_key(aparams, arg.name) or names_key(aheader, arg.name) or names_key(acookie, arg.name);
         if (params == .array) {
             for (params.array.data.items) |v| {
                 if (v == .string and std.mem.eql(u8, v.string, arg.name)) contained = true;
@@ -1996,7 +2022,7 @@ fn strip_action(reqdata: Value) Value {
 // without it.
 fn routed_arg_names(ctx: *Context) [][]const u8 {
     var names: std.ArrayList([]const u8) = .empty;
-    for ([_][]const u8{ "header", "query" }) |kind| {
+    for ([_][]const u8{ "header", "cookie", "query" }) |kind| {
         for (call_args(ctx, kind)) |arg| names.append(h.A(), arg.name) catch {};
     }
     return names.toOwnedSlice(h.A()) catch &.{};
