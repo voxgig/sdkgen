@@ -44,6 +44,7 @@ class RetryFeature extends BaseFeature {
     const maxDelay = null == opts.maxDelay ? 2000 : opts.maxDelay
     const factor = null == opts.factor ? 2 : opts.factor
 
+    const signal = fetchdef?.signal
     let attempt = 0
     let last
 
@@ -70,9 +71,13 @@ class RetryFeature extends BaseFeature {
         return res
       }
 
+      if (true === signal?.aborted) {
+        throw signal.reason
+      }
+
       const wait = this._backoff(res, attempt, minDelay, maxDelay, factor)
       this._track(ctx, attempt + 1, res, wait)
-      await this._sleep(wait)
+      await this._sleep(wait, signal)
       attempt++
     }
   }
@@ -125,15 +130,17 @@ class RetryFeature extends BaseFeature {
   }
 
 
-  _sleep(ms) {
+  _sleep(ms, signal) {
     if (null == ms || 0 >= ms) {
       return Promise.resolve()
     }
     const sleep = this._options.sleep
     if ('function' === typeof sleep) {
-      return Promise.resolve(sleep(ms))
+      return this._untilAbort(Promise.resolve(sleep(ms)), signal)
     }
-    return new Promise((r) => setTimeout(r, ms))
+    let timer
+    return this._untilAbort(new Promise((r) => { timer = setTimeout(r, ms) }), signal,
+      () => clearTimeout(timer))
   }
 
 

@@ -6,11 +6,13 @@ class Control {
   throw?: boolean
   err?: any
   explain?: any
+  signal?: AbortSignal
 
   constructor(ctrlmap: Record<string, any>) {
     this.throw = getprop(ctrlmap, 'throw')
     this.err = getprop(ctrlmap, 'err')
     this.explain = getprop(ctrlmap, 'explain')
+    this.signal = getprop(ctrlmap, 'signal')
   }
 }
 
