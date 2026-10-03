@@ -143,7 +143,7 @@ src/cmp/clojure/ReadmeIntro_clojure.ts 65a7e010201d
 src/cmp/clojure/ReadmeModel_clojure.ts 42991fb4144e
 src/cmp/clojure/ReadmeOptions_clojure.ts 74c2c0adcce4
 src/cmp/clojure/ReadmeQuick_clojure.ts 2be718555ff7
-src/cmp/clojure/ReadmeRef_clojure.ts 79646a9671e3
+src/cmp/clojure/ReadmeRef_clojure.ts 69146babe656
 src/cmp/clojure/ReadmeTopHowto_clojure.ts e1494b86d033
 src/cmp/clojure/ReadmeTopQuick_clojure.ts 8ec041215dfd
 src/cmp/clojure/ReadmeTopTest_clojure.ts 0a72b8c41e8d
@@ -224,7 +224,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 32327e3b999a
-tm/clojure/src/sdk/core.clj ec5d8ee98b5b
+tm/clojure/src/sdk/core.clj 52e75f53dd9e
 tm/clojure/src/sdk/features.clj 5b0337a682c0
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 2aa105a4e17e

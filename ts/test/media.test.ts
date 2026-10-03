@@ -363,7 +363,7 @@ describe('media: the generator', () => {
 
 
 // The targets whose `$body` may be a stream, which is read once.
-const STREAMS = ['csharp', 'go', 'java', 'js', 'kotlin', 'perl', 'php', 'py', 'rb', 'scala', 'ts']
+const STREAMS = ['clojure', 'csharp', 'go', 'java', 'js', 'kotlin', 'perl', 'php', 'py', 'rb', 'scala', 'ts']
 
 
 describe('media: every target documents a raw body', () => {
