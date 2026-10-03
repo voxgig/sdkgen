@@ -1,9 +1,5 @@
 
-<<<<<<< HEAD
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
-=======
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
->>>>>>> origin/main
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {

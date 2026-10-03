@@ -6,11 +6,7 @@ import {
   File, Content,
 } from '@voxgig/sdkgen'
 
-<<<<<<< HEAD
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, opActions, tsTypeName, entityCollection } from '@voxgig/sdkgen'
-=======
-import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, opActions, tsSafeTypeName, opRawBody } from '@voxgig/sdkgen'
->>>>>>> origin/main
+import { canonToType, opTypeName, opRequestShape, warnEntityTypeCollisions , deriveEntityNames, opActions, opRawBody, tsTypeName, entityCollection } from '@voxgig/sdkgen'
 
 import {
   KIT,
