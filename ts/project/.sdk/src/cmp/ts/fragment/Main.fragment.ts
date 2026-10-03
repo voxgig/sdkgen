@@ -201,7 +201,7 @@ class ProjectNameSDK {
 
     const fetchdef = await this.prepare(fetchargs)
     if (fetchdef instanceof Error) {
-      return fetchdef
+      return { ok: false, err: utility.clean(this._rootctx, fetchdef) }
     }
 
     let ctx: Context = makeContext({
@@ -288,10 +288,6 @@ class ProjectNameSDK {
       body: { query, variables: variables || {} },
       ctrl,
     })
-
-    if (res instanceof Error) {
-      return res
-    }
 
     // Errors are read BEFORE any status check: a GraphQL parse or validation
     // failure comes back as HTTP 400 carrying the standard { errors: [...] }
