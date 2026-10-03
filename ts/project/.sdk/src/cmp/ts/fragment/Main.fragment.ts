@@ -16,6 +16,14 @@ import { BaseFeature } from './feature/base/BaseFeature'
 const stdutil = new Utility()
 
 
+// A request's outcome: ok is false alone on an error with no response, so a
+// caller narrowing on it reaches the status and the data.
+type DirectResult =
+  | Error
+  | { ok: false, err: any, status?: undefined, headers?: undefined, data?: undefined }
+  | { ok: boolean, status: number, headers: any, data: any, err?: any }
+
+
 class ProjectNameSDK {
   _mode: string = 'live'
   _options: any
@@ -161,7 +169,7 @@ class ProjectNameSDK {
   // Raw endpoint access is operator-controllable, like every entity op.
   // Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
   // either one reaches the same endpoint.
-  async direct(fetchargs?: any) {
+  async direct(fetchargs?: any): Promise<DirectResult> {
     if (!this._options.allow.op.includes('direct')) {
       return {
         ok: false,
@@ -178,7 +186,7 @@ class ProjectNameSDK {
   // checks its own allow.op token first. Private, rather than a flag on
   // fetchargs: a caller-supplied marker would let anyone opt straight back
   // out of the gate by passing it.
-  async _rawRequest(fetchargs?: any) {
+  async _rawRequest(fetchargs?: any): Promise<DirectResult> {
     const utility = this._utility
 
     const fetcher = utility.fetcher
@@ -357,3 +365,4 @@ export {
 }
 
 
+export type { DirectResult }
