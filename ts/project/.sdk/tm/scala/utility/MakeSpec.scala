@@ -35,8 +35,9 @@ object MakeSpec {
 
     ctx.spec.method = utility.prepareMethod(ctx)
 
-    val allowMethod = Struct.getpath(options, java.util.List.of("allow", "method")) match { case s: String => s; case _ => "" }
-    if (!allowMethod.contains(ctx.spec.method)) {
+    val allowMethodRaw = Struct.getpath(options, java.util.List.of("allow", "method"))
+    val allowMethod = allowMethodRaw match { case s: String => s; case _ => "" }
+    if (!Helpers.allowed(allowMethodRaw, ctx.spec.method)) {
       throw ctx.makeError("spec_method_allow",
         "Method \"" + ctx.spec.method + "\" not allowed by SDK option allow.method value: \"" + allowMethod + "\"")
     }

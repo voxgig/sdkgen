@@ -740,8 +740,9 @@ inline Value makePoint(CtxPtr ctx) {
   OperationPtr op = ctx->op;
   Value options = ctx->options;
 
-  std::string allowOp = as_str(Struct::getpath(options, {"allow", "op"}));
-  if (allowOp.find(op->name) == std::string::npos) {
+  Value allowOpVal = Struct::getpath(options, {"allow", "op"});
+  std::string allowOp = as_str(allowOpVal);
+  if (!Helpers::allowed(allowOpVal, op->name)) {
     throw ctx->makeError("point_op_allow",
         "Operation \"" + op->name + "\" not allowed by SDK option allow.op value: \"" + allowOp + "\"");
   }
@@ -1056,8 +1057,9 @@ inline SpecPtr makeSpec(CtxPtr ctx) {
 
   ctx->spec->method = utility->prepareMethod(ctx);
 
-  std::string allowMethod = as_str(Struct::getpath(options, {"allow", "method"}));
-  if (allowMethod.find(ctx->spec->method) == std::string::npos) {
+  Value allowMethodVal = Struct::getpath(options, {"allow", "method"});
+  std::string allowMethod = as_str(allowMethodVal);
+  if (!Helpers::allowed(allowMethodVal, ctx->spec->method)) {
     throw ctx->makeError("spec_method_allow",
         "Method \"" + ctx->spec->method + "\" not allowed by SDK option allow.method value: \"" + allowMethod + "\"");
   }

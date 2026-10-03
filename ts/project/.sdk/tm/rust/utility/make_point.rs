@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::error::ProjectNameError;
-use crate::core::helpers::{getp, getpath, to_map};
+use crate::core::helpers::{allowed, getp, getpath, to_map};
 use crate::core::types::OutVal;
 use crate::utility::make_url::placeholders;
 use crate::utility::param::param_value;
@@ -88,11 +88,12 @@ pub fn make_point_util(ctx: &Rc<Context>) -> Result<Value, ProjectNameError> {
     let op = ctx.op.borrow().clone();
     let options = ctx.options.borrow().clone();
 
-    let allow_op = match getpath(&["allow", "op"], &options) {
-        Value::Str(s) => s,
+    let allow_op_val = getpath(&["allow", "op"], &options);
+    let allow_op = match &allow_op_val {
+        Value::Str(s) => s.clone(),
         _ => String::new(),
     };
-    if !allow_op.contains(&op.name) {
+    if !allowed(&allow_op_val, &op.name) {
         return Err(ctx.make_error(
             "point_op_allow",
             &format!(

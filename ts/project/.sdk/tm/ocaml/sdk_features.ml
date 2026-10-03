@@ -1695,7 +1695,13 @@ let prepare (client : sdk_client) (fetchargs : value) : value =
   let ctx = u.u_make_context { (default_ctxspec ()) with cs_opname = Some "prepare"; cs_ctrl = Some ctrl } client.cl_rootctx in
   let options = client.cl_options in
   let path = match getp fetchargs "path" with Str s -> s | _ -> "" in
-  let method_ = match getp fetchargs "method" with Str s -> s | _ -> "GET" in
+  let method_ = String.uppercase_ascii
+      (match getp fetchargs "method" with Str s when s <> "" -> s | _ -> "GET") in
+  let allow_method = getpath_s options "allow.method" in
+  if not (allow_list_has allow_method method_) then
+    raise (Sdk_error_exc (ctx_make_error ctx "spec_method_allow"
+      ("Method \"" ^ method_ ^ "\" not allowed by SDK option allow.method value: \"" ^
+       (match allow_method with Str s -> s | _ -> "") ^ "\"")));
   let params = match to_map (getp fetchargs "params") with Map _ as m -> m | _ -> empty_map () in
   let query = match to_map (getp fetchargs "query") with Map _ as m -> m | _ -> empty_map () in
   let headers = u.u_prepare_headers ctx in
@@ -1713,9 +1719,7 @@ let prepare (client : sdk_client) (fetchargs : value) : value =
 
 (* Is this raw-access op permitted by the SDK's allow.op option? *)
 let op_allowed (client : sdk_client) (op : string) : bool =
-  match getpath_s client.cl_options "allow.op" with
-  | Str allow -> substr_contains allow op
-  | _ -> false
+  allow_list_has (getpath_s client.cl_options "allow.op") op
 
 let op_denied (client : sdk_client) (op : string) : value =
   let allow = match getpath_s client.cl_options "allow.op" with

@@ -94,8 +94,9 @@ public static partial class SdkUtility
         var op = ctx.Op!;
         var options = ctx.Options;
 
-        var allowOp = StructUtils.GetPath(options, StructUtils.Jt("allow", "op")) as string ?? "";
-        if (!allowOp.Contains(op.Name))
+        var allowOpVal = StructUtils.GetPath(options, StructUtils.Jt("allow", "op"));
+        var allowOp = allowOpVal as string ?? "";
+        if (!global::ProjectNameSdk.Helpers.Allowed(allowOpVal, op.Name))
         {
             throw ctx.MakeError("point_op_allow",
                 "Operation \"" + op.Name +

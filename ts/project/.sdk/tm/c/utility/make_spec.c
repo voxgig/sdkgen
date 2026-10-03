@@ -39,7 +39,7 @@ Spec* make_spec_util(Context* ctx, PNError** err) {
 
   voxgig_value* allow_method_v = getpath2(options, "allow", "method");
   const char* allow_method = voxgig_is_string(allow_method_v) ? voxgig_as_string(allow_method_v) : "";
-  if (!strstr(allow_method, method)) {
+  if (!allow_list_has(allow_method_v, method)) {
     char buf[512];
     snprintf(buf, sizeof(buf),
              "Method \"%s\" not allowed by SDK option allow.method value: \"%s\"",

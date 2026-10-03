@@ -126,6 +126,14 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
     if ("" == method) {
       method = "GET"
     }
+    method = method.uppercase()
+
+    val allowMethod = Struct.getpath(options, listOf("allow", "method"))
+    if (!Helpers.allowed(allowMethod, method)) {
+      throw ctx.makeError("spec_method_allow",
+        "Method \"" + method + "\" not allowed by SDK option allow.method value: \"" +
+          ((allowMethod as? String) ?: "") + "\"")
+    }
 
     var params = Helpers.toMapAny(Struct.getprop(fetchargs, "params"))
     if (params == null) {
@@ -179,8 +187,7 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
 
   // Is this raw-access op permitted by the SDK's allow.op option?
   private fun opAllowed(op: String): Boolean {
-    val allow = Struct.getpath(this.options, listOf("allow", "op"))
-    return allow is String && allow.contains(op)
+    return Helpers.allowed(Struct.getpath(this.options, listOf("allow", "op")), op)
   }
 
   private fun opDenied(op: String): MutableMap<String, Any?> {

@@ -87,6 +87,8 @@ voxgig_value* getpath_c(voxgig_value* store, const char** keys);
 // Convenience: up to a few string keys.
 voxgig_value* getpath2(voxgig_value* store, const char* a, const char* b);
 voxgig_value* getpath3(voxgig_value* store, const char* a, const char* b, const char* c);
+// Whether a comma-separated allow option names the item: whole names, any case.
+bool allow_list_has(voxgig_value* names, const char* item);
 // Property write (no-op when val is not a node). Borrows newval.
 void setp(voxgig_value* val, const char* key, voxgig_value* newval);
 

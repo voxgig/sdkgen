@@ -4,6 +4,7 @@ from __future__ import annotations
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.core.spec import ProjectNameSpec
 from projectname_sdk.utility.graphql import GRAPHQL_CONTENT_TYPE
+from projectname_sdk.utility.prepare_method import allowed
 
 
 def make_spec_util(ctx):
@@ -50,11 +51,11 @@ def make_spec_util(ctx):
 
     ctx.spec.method = utility.prepare_method(ctx)
 
-    allow_method = vs.getpath(options, "allow.method") or ""
-    if isinstance(allow_method, str) and ctx.spec.method not in allow_method:
+    allow_method = vs.getpath(options, "allow.method")
+    if not allowed(allow_method, ctx.spec.method):
         return None, ctx.make_error("spec_method_allow",
-            'Method "' + ctx.spec.method +
-            '" not allowed by SDK option allow.method value: "' + allow_method + '"')
+            'Method "' + str(ctx.spec.method) +
+            '" not allowed by SDK option allow.method value: "' + str(allow_method) + '"')
 
     ctx.spec.params = utility.prepare_params(ctx)
     ctx.spec.query = utility.prepare_query(ctx)

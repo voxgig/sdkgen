@@ -146,7 +146,14 @@ sub prepare {
   my $path = ProjectNameHelpers::gp($fetchargs, 'path');
   $path = '' unless defined $path && !ref $path;
   my $method_val = ProjectNameHelpers::gp($fetchargs, 'method');
-  $method_val = 'GET' unless defined $method_val && !ref $method_val;
+  $method_val = 'GET' unless defined $method_val && !ref $method_val && '' ne $method_val;
+  $method_val = uc $method_val;
+  my $allow_method = ProjectNameHelpers::gpath($opts, 'allow.method');
+  unless (ProjectNameUtilities::allowed($allow_method, $method_val)) {
+    $allow_method = '' unless defined $allow_method && !ref $allow_method;
+    die $ctx->make_error('spec_method_allow',
+      "Method \"$method_val\" not allowed by SDK option allow.method value: \"$allow_method\"");
+  }
   my $params = ProjectNameHelpers::to_map(
     ProjectNameHelpers::gp($fetchargs, 'params')) || {};
   my $query = ProjectNameHelpers::to_map(
@@ -201,8 +208,8 @@ sub direct {
 # Is this raw-access op permitted by the SDK's allow.op option?
 sub _op_allowed {
   my ($self, $op) = @_;
-  my $allow = ProjectNameHelpers::gpath($self->{options}, 'allow.op');
-  return (defined $allow && !ref $allow && index($allow, $op) >= 0) ? 1 : 0;
+  return ProjectNameUtilities::allowed(
+    ProjectNameHelpers::gpath($self->{options}, 'allow.op'), $op);
 }
 
 sub _op_denied {

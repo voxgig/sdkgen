@@ -73,6 +73,23 @@ describe('pipeline:makePoint + makeSpec', () => {
     strictEqual((stdutil as any).makePoint(base({ out: { point: preset } })), preset)
   })
 
+  test('an allow list names whole operations, in any case', () => {
+    const point = { method: 'GET', parts: ['a'] }
+    const op = { name: 'load', points: [point] }
+    strictEqual((stdutil as any).makePoint(base({ op, options: { allow: { op: 'reload,unload' } } })).code,
+      'point_op_allow')
+    strictEqual((stdutil as any).makePoint(base({ op, options: { allow: { op: 'list, LOAD' } } })), point)
+  })
+
+  test('an allow list names whole methods', () => {
+    const ctx = base({
+      op: { name: 'update', points: [] },
+      point: { method: 'pu', parts: ['a'] },
+      options: { allow: { method: 'GET,PUT' }, base: 'http://x' },
+    })
+    strictEqual((stdutil as any).makeSpec(ctx).code, 'spec_method_allow')
+  })
+
   test('makeSpec short-circuits a feature-supplied spec', () => {
     const preset = { method: 'GET' }
     strictEqual((stdutil as any).makeSpec(base({ out: { spec: preset } })), preset)

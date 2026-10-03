@@ -4,6 +4,7 @@ const { inspect } = require('node:util')
 const { config } = require('./Config')
 const { Utility } = require('./utility/Utility')
 const { unreadableBody } = require('./utility/ResultBodyUtility')
+const { allowed } = require('./utility/PrepareMethodUtility')
 const { ProjectNameEntityBase } = require('./ProjectNameEntityBase')
 
 
@@ -125,6 +126,12 @@ class ProjectNameSDK {
     }, this._rootctx)
 
     const options = this._options
+    const method = String(fetchargs.method || 'GET').toUpperCase()
+
+    if (!allowed(options.allow.method, method)) {
+      return ctx.error('spec_method_allow', 'Method "' + method +
+        '" not allowed by SDK option allow.method value: "' + options.allow.method + '"')
+    }
 
     // Build spec directly from SDK options + user-provided fetch args.
     const spec = {
@@ -132,7 +139,7 @@ class ProjectNameSDK {
       prefix: options.prefix,
       suffix: options.suffix,
       path: fetchargs.path || '',
-      method: fetchargs.method || 'GET',
+      method,
       params: fetchargs.params || {},
       query: fetchargs.query || {},
       headers: prepareHeaders(ctx),
@@ -166,7 +173,7 @@ class ProjectNameSDK {
   // Blocking it means denying BOTH the 'direct' and 'graphql' tokens, since
   // either one reaches the same endpoint.
   async direct(fetchargs) {
-    if (!this._options.allow.op.includes('direct')) {
+    if (!allowed(this._options.allow.op, 'direct')) {
       return {
         ok: false,
         err: new Error('ProjectNameSDK: direct: operation not allowed by' +
@@ -275,7 +282,7 @@ class ProjectNameSDK {
   async graphql(query, variables, ctrl) {
     const options = this._options
 
-    if (!options.allow.op.includes('graphql')) {
+    if (!allowed(options.allow.op, 'graphql')) {
       return {
         ok: false,
         err: new Error('ProjectNameSDK: graphql: operation not allowed by' +

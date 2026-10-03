@@ -107,6 +107,13 @@ public final class ProjectNameSDK {
     let path = gp(fetchargs, "path").asString ?? ""
     var method = gp(fetchargs, "method").asString ?? ""
     if method == "" { method = "GET" }
+    method = method.uppercased()
+
+    if !allowed(gpath(options, "allow", "method"), method) {
+      throw ctx.makeError("spec_method_allow",
+        "Method \"\(method)\" not allowed by SDK option allow.method value: \""
+          + (gpath(options, "allow", "method").asString ?? "") + "\"")
+    }
 
     let pathParams = gp(fetchargs, "params").asMap ?? ProjectNameSdk.VMap()
     let query = gp(fetchargs, "query").asMap ?? ProjectNameSdk.VMap()
@@ -155,8 +162,7 @@ public final class ProjectNameSDK {
 
   // Is this raw-access op permitted by the SDK's allow.op option?
   private func opAllowed(_ op: String) -> Bool {
-    guard let allow = gpath(options, "allow", "op").asString else { return false }
-    return allow.contains(op)
+    return allowed(gpath(options, "allow", "op"), op)
   }
 
   private func opDenied(_ op: String) -> ProjectNameSdk.VMap {

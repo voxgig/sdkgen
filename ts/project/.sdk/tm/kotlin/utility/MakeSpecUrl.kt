@@ -1,6 +1,7 @@
 package KOTLINPACKAGE.utility
 
 import KOTLINPACKAGE.core.Context
+import KOTLINPACKAGE.core.Helpers
 import KOTLINPACKAGE.core.Result
 import KOTLINPACKAGE.core.Spec
 import KOTLINPACKAGE.utility.struct.Struct
@@ -46,7 +47,7 @@ fun makeSpec(ctx: Context): Spec {
 
   val allowMethodRaw = Struct.getpath(options, listOf("allow", "method"))
   val allowMethod = if (allowMethodRaw is String) allowMethodRaw else ""
-  if (method == null || "" == method || !allowMethod.contains(method)) {
+  if (method == null || !Helpers.allowed(allowMethodRaw, method)) {
     throw ctx.makeError(
       "spec_method_allow",
       "Method \"" + (method ?: "") +

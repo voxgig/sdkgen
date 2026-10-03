@@ -4,6 +4,7 @@ declare(strict_types=1);
 // ProjectName SDK utility: make_spec
 
 require_once __DIR__ . '/Graphql.php';
+require_once __DIR__ . '/PrepareMethod.php';
 
 require_once __DIR__ . '/../core/Spec.php';
 
@@ -48,12 +49,12 @@ class ProjectNameMakeSpec
         // never a silently-allowed empty method.
         $method = ($utility->prepare_method)($ctx);
 
-        $allow_method = \Voxgig\Struct\Struct::getpath($options, 'allow.method') ?? '';
-        if (!is_string($method) || '' === $method
-            || strpos($allow_method, $method) === false) {
+        $allow_method = \Voxgig\Struct\Struct::getpath($options, 'allow.method');
+        if (!ProjectNamePrepareMethod::allowed($allow_method, $method)) {
             $shown = is_string($method) ? $method : '';
+            $list = is_string($allow_method) ? $allow_method : '';
             return [null, $ctx->make_error('spec_method_allow',
-                "Method \"{$shown}\" not allowed by SDK option allow.method value: \"{$allow_method}\"")];
+                "Method \"{$shown}\" not allowed by SDK option allow.method value: \"{$list}\"")];
         }
         $ctx->spec->method = $method;
 

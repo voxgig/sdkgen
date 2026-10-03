@@ -3,6 +3,7 @@
 local vs = require("utility.struct.struct")
 local graphql = require("utility.graphql")
 local Spec = require("core.spec")
+local helpers = require("core.helpers")
 
 local function make_spec_util(ctx)
   if ctx.out["spec"] ~= nil then
@@ -51,11 +52,11 @@ local function make_spec_util(ctx)
 
   ctx.spec.method = utility.prepare_method(ctx)
 
-  local allow_method = vs.getpath(options, "allow.method") or ""
-  if type(allow_method) == "string" and not string.find(allow_method, ctx.spec.method, 1, true) then
+  local allow_method = vs.getpath(options, "allow.method")
+  if not helpers.allowed(allow_method, ctx.spec.method) then
     return nil, ctx:make_error("spec_method_allow",
-      'Method "' .. ctx.spec.method ..
-      '" not allowed by SDK option allow.method value: "' .. allow_method .. '"')
+      'Method "' .. tostring(ctx.spec.method or "") ..
+      '" not allowed by SDK option allow.method value: "' .. tostring(allow_method or "") .. '"')
   end
 
   ctx.spec.params = utility.prepare_params(ctx)

@@ -46,7 +46,7 @@ func makePointUtil(_ ctx: Context) throws -> VMap? {
   let options = ctx.options
 
   let allowOp = gpath(options, "allow", "op").asString ?? ""
-  if !allowOp.contains(op.name) {
+  if !allowed(gpath(options, "allow", "op"), op.name) {
     throw ctx.makeError("point_op_allow",
       "Operation \"\(op.name)\" not allowed by SDK option allow.op value: \"\(allowOp)\"")
   }
@@ -211,7 +211,7 @@ func makeSpecUtil(_ ctx: Context) throws -> Spec {
   ctx.spec!.method = utility.prepareMethod(ctx)
 
   let allowMethod = gpath(options, "allow", "method").asString ?? ""
-  if !allowMethod.contains(ctx.spec!.method) {
+  if !allowed(gpath(options, "allow", "method"), ctx.spec!.method) {
     throw ctx.makeError("spec_method_allow",
       "Method \"\(ctx.spec!.method)\" not allowed by SDK option allow.method value: \"\(allowMethod)\"")
   }

@@ -138,6 +138,14 @@ public abstract class SdkClient {
     if ("".equals(method)) {
       method = "GET";
     }
+    method = method.toUpperCase(java.util.Locale.ROOT);
+
+    Object allowMethod = Struct.getpath(options, List.of("allow", "method"));
+    if (!Helpers.allowed(allowMethod, method)) {
+      throw ctx.makeError("spec_method_allow",
+          "Method \"" + method + "\" not allowed by SDK option allow.method value: \""
+              + (allowMethod instanceof String ? allowMethod : "") + "\"");
+    }
 
     Map<String, Object> params = Helpers.toMapAny(Struct.getprop(fetchargs, "params"));
     if (params == null) {
@@ -193,8 +201,7 @@ public abstract class SdkClient {
 
   /** Is this raw-access op permitted by the SDK's allow.op option? */
   private boolean opAllowed(String op) {
-    Object allow = Struct.getpath(this.options, List.of("allow", "op"));
-    return allow instanceof String && ((String) allow).contains(op);
+    return Helpers.allowed(Struct.getpath(this.options, List.of("allow", "op")), op);
   }
 
   private Map<String, Object> opDenied(String op) {

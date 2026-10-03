@@ -2,7 +2,6 @@ package utility
 
 import (
 	"reflect"
-	"strings"
 
 	vs "github.com/voxgig/struct"
 
@@ -47,8 +46,9 @@ func makeSpecUtil(ctx *core.Context) (*core.Spec, error) {
 
 	ctx.Spec.Method = utility.PrepareMethod(ctx)
 
-	allowMethod, _ := vs.GetPath(options, []any{"allow", "method"}).(string)
-	if !strings.Contains(allowMethod, ctx.Spec.Method) {
+	allowMethodVal := vs.GetPath(options, []any{"allow", "method"})
+	allowMethod, _ := allowMethodVal.(string)
+	if !core.Allowed(allowMethodVal, ctx.Spec.Method) {
 		return nil, ctx.MakeError("spec_method_allow",
 			"Method \""+ctx.Spec.Method+
 				"\" not allowed by SDK option allow.method value: \""+allowMethod+"\"")

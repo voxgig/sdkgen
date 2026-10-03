@@ -1,4 +1,5 @@
 const { paramValue } = require('./ParamUtility')
+const { allowed } = require('./PrepareMethodUtility')
 
 
 // The entity's OWN route among an op's points, as opposed to a
@@ -73,7 +74,7 @@ function makePoint(ctx) {
   const op = ctx.op
   const options = ctx.options
 
-  if (!options.allow.op.includes(op.name)) {
+  if (!allowed(options.allow.op, op.name)) {
     return ctx.error('point_op_allow', 'Operation "' + op.name +
       '" not allowed by SDK option allow.op value: "' + options.allow.op + '"')
   }
