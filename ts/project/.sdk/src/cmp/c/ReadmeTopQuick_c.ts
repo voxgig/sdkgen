@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName } from './utility_c'
+import { cIdent, cVarName, cListMatch } from './utility_c'
 
 
 // A type-correct C expression constructing a voxgig struct Value for a param.
@@ -62,7 +62,7 @@ PNError* err = NULL;
       Content(`Entity* ${evar} = ${acc}(client, NULL);
 
 // List all ${eName.toLowerCase()}s (returns a List, sets *err on failure)
-voxgig_value* ${evar}s = ${evar}->vt->list(${evar}, NULL, NULL, &err);
+voxgig_value* ${evar}s = ${evar}->vt->list(${evar}, ${cListMatch(exampleEntity)}, NULL, &err);
 for (size_t i = 0; i < (size_t)voxgig_size(${evar}s); i++) {
     printf("%s\\n", voxgig_to_json(voxgig_getelem(${evar}s, v_int(i), NULL)));
 }

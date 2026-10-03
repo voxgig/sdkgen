@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cppVarName } from './utility_cpp'
+import { cppVarName, cppListMatch } from './utility_cpp'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -84,7 +84,7 @@ on error — iterate it directly.
 
 \`\`\`cpp
 try {
-  Value ${eVar}s = client->${acc}()->list(Value::undef(), Value::undef());
+  Value ${eVar}s = client->${acc}()->list(${cppListMatch(exampleEntity)}, Value::undef());
   for (const auto& ${eVar} : *${eVar}s.as_list()) {
     std::cout << Struct::jsonify(${eVar}) << std::endl;
   }

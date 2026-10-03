@@ -6,6 +6,8 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { cljListMatch } from './utility_clojure'
+
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
@@ -77,7 +79,7 @@ iterate it directly.
 
 \`\`\`clojure
 (try
-  (doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) nil nil)]
+  (doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) ${cljListMatch(exampleEntity)} nil)]
     (println ${eLow}))
   (catch Exception err
     (println "list failed:" (.getMessage err))))

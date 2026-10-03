@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityOps, safeVarName, exampleVarName, jsKey, matchArg, idLiteral } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityOps, safeVarName, exampleVarName, jsKey, matchArg, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -8,12 +8,6 @@ import {
 } from '@voxgig/apidef'
 
 import { exampleValue } from './utility_js'
-
-
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('ts', ent, 'list', idF, idLiteral(ent, 'list', idF))
-}
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -94,7 +88,7 @@ console.log(${eVar})
 ### List ${eName} Records
 
 \`\`\`js
-const ${eVar}s = await client.${eName}().list(${listMatchArg(exampleEntity)})
+const ${eVar}s = await client.${eName}().list(${listMatchArg('js', exampleEntity)})
 for (const ${eVar} of ${eVar}s) {
   console.log(${eVar})
 }

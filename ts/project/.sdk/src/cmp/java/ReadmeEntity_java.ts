@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { javaVarName } from './utility_java'
+import { javaVarName, javaListMatch } from './utility_java'
 
 
 // Type names come from the shared canonToType 'java' column (single source of truth).
@@ -140,7 +140,7 @@ Object ${eVar} = client.${accessor}(null).load(${loadArg}, null);
       Content(`#### Example: List
 
 \`\`\`java
-Object ${eVar}List = client.${accessor}(null).list(null, null);
+Object ${eVar}List = client.${accessor}(null).list(${javaListMatch(entity)}, null);
 \`\`\`
 
 `)

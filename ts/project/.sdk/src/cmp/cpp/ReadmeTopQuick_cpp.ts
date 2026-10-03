@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cppVarName } from './utility_cpp'
+import { cppVarName, cppListMatch } from './utility_cpp'
 
 
 // A type-correct C++ literal for a param.
@@ -58,7 +58,7 @@ ${ctor}
 
     if (opnames.includes('list')) {
       Content(`// List all ${acc}s (returns a Value list, throws on error)
-Value ${eVar}s = client->${acc}()->list(Value::undef(), Value::undef());
+Value ${eVar}s = client->${acc}()->list(${cppListMatch(exampleEntity)}, Value::undef());
 for (const auto& ${eVar} : *${eVar}s.as_list()) {
   std::cout << Struct::jsonify(${eVar}) << std::endl;
 }

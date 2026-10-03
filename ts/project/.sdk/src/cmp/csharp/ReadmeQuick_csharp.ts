@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { csVarName } from './utility_csharp'
+import { csVarName, csListMatch } from './utility_csharp'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -74,7 +74,7 @@ on error.
 \`\`\`csharp
 try
 {
-    var ${eVar}List = client.${eName}().List(null);
+    var ${eVar}List = client.${eName}().List(${csListMatch(exampleEntity)});
     Console.WriteLine(${eVar}List);
 }
 catch (Exception err)

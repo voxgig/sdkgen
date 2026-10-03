@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, pickExampleEntity, opRequestShape, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, pickExampleEntity, opRequestShape, elixirAccessor, entityCollection, exampleVarName, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -27,6 +27,9 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'H.deep(%{})'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `H.deep(%{"${idF}" => "test01"})` : 'H.deep(%{})'
+  } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+    const chosen = requiredItems(exampleEntity, 'list')
+    testArg = `H.deep(%{${chosen.map((it: any) => `"${it.name}" => ${elixirLit(it.type)}`).join(', ')}})`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')

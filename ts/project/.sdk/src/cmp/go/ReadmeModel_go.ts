@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, goModule } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, goModule, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -61,7 +61,8 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const firstIsMatchOp = 'load' === firstPrimaryOp || 'remove' === firstPrimaryOp
   const firstOpArg = firstIsMatchOp
     ? (firstIdF ? `map[string]any{"${firstIdF}": "example_id"}` : 'nil')
-    : 'map[string]any{/* fields */}'
+    : 'list' === firstPrimaryOp ? listMatchArg('go', firstWithOp)
+      : 'map[string]any{/* fields */}'
 
   const resultCallExample = firstPrimaryOp
     ? `Check \`err\` first, then use the value directly (or the typed

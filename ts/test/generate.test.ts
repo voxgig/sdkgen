@@ -17,7 +17,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity,
 } from './generateharness'
@@ -66,6 +66,7 @@ const NON_SDK_SIBLING: Record<string, string> = {
 }
 
 const NON_SDK_TARGETS = Object.keys(NON_SDK_SIBLING)
+
 
 
 const DIGIT_ENTITY = `
@@ -4460,6 +4461,52 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const plain = await generate(['go', 'go-mcp'])
     ok(/Version:\s+"0\.0\.1",/.test(findFile(plain, 'go-mcp/main.go')!),
       'go-mcp: the server does not report the default publish version')
+  })
+
+
+  test('a list example passes the parameters the list requires, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, searchOnly())
+
+    const calls = (text: string) => text.split('\n')
+      .map((line: string, i: number, lines: string[]) =>
+        /\(\s*$/.test(line) ? line + ' ' + lines[i + 1] : line)
+      .filter((line: string) => /(\.|:|->|\/)(list|List)\b/.test(line) && /[Ss]earch/.test(line))
+      .filter((line: string) => !/^\s*(\/\/|#|--|\||-|\*|;|\(\*)/.test(line) && !/Value::List\(/.test(line))
+
+    const bare: string[] = []
+    for (const target of targets) {
+      const docs = Object.keys(out).filter((path: string) =>
+        path.startsWith(target + '/') && path.endsWith('.md'))
+      const found = docs.flatMap((path: string) => calls(out[path]).map((line) => path + ': ' + line.trim()))
+      ok(0 < found.length, target + ': no list example found')
+      bare.push(...found.filter((line: string) => !/engine/.test(line) || !/\bq\b/.test(line)))
+    }
+    bare.push(...calls(out['README.md']).filter((line: string) => !/engine/.test(line) || !/\bq\b/.test(line)))
+    deepStrictEqual(bare, [], 'list examples without the required engine and q:\n' + bare.join('\n'))
+
+    const seed = out['README.md'].slice(out['README.md'].indexOf('SDK.test({'))
+    ok(/engine: 'example_engine', q: 'example_q'/.test(seed.slice(0, seed.indexOf('```'))),
+      'ts: the mock seed lacks the values the list example matches on')
+  })
+
+
+  test('a README names where the API key goes when it is not the Authorization header', async () => {
+    const auth = (where: string) => `main: kit: config: auth: { active: true, ${where}, prefix: '' }\n`
+    for (const [where, sentence] of [
+      ['in: query, name: api_key', 'The client sends the API key as the `api_key` query parameter.'],
+      ['in: cookie, name: session', 'The client sends the API key as the `session` cookie.'],
+      ["in: header, name: 'X-Api-Key'", 'The client sends the API key in the `X-Api-Key` header.'],
+    ]) {
+      const out = await generate(['ts', 'py'], undefined, auth(where))
+      for (const path of ['README.md', 'ts/README.md', 'py/README.md']) {
+        ok(out[path].includes(sentence), path + ': does not say where the key goes, for ' + where)
+      }
+    }
+
+    const plain = await generate(['ts'], undefined, auth("in: header, name: 'Authorization'"))
+    ok(!/The client sends the API key/.test(plain['README.md'] + plain['ts/README.md']),
+      'the README names the default Authorization header')
   })
 
 

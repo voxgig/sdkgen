@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { elixirLit } from './utility_elixir'
+import { elixirLit, elixirListArgs } from './utility_elixir'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -60,7 +60,7 @@ sdk = ${ctor}
 \`\`\`elixir
 try do
   ${eVar} = ${Name}.${eCall}(sdk)
-  records = ${Name}.Entity.${eName}.list(${eVar})
+  records = ${Name}.Entity.${eName}.list(${eVar}${elixirListArgs(exampleEntity, Name)})
   IO.inspect(records)
 rescue
   err -> IO.puts("list failed: " <> inspect(err))

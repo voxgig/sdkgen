@@ -4,6 +4,8 @@ import * as Path from 'node:path'
 import {
   camelify,
   targetFeatures,
+  canonScalarKey,
+  requiredItems,
 } from '@voxgig/sdkgen'
 
 import {
@@ -115,8 +117,19 @@ function swiftSecretsActive(model: any, target: any): boolean {
   return null != targetFeatures(model, target)['secrets']
 }
 
+// A list's required route and query parameters, as the match it is called with.
+function swiftListMatch(entity: any): string {
+  const lit = (type: any): string =>
+    (({ INTEGER: '.int(1)', NUMBER: '.double(1.0)', BOOLEAN: '.bool(true)', ARRAY: '.list([])', OBJECT: '.map(VMap())' }) as any)[canonScalarKey(type)] ?? '.string("example")'
+  const items = requiredItems(entity, 'list')
+  return 0 < items.length
+    ? `VMap([${items.map((it: any) => `("${it.name}", ${lit(it.type)})`).join(', ')}])`
+    : 'nil'
+}
+
 
 export {
+  swiftListMatch,
   clean,
   projectPath,
   swiftPascalName,

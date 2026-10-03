@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { csVarName } from './utility_csharp'
+import { csVarName, csListMatch } from './utility_csharp'
 
 
 // Type names come from the shared canonToType 'csharp' column (single source of truth).
@@ -139,7 +139,7 @@ var ${eVar} = client.${entity.Name}().Load(${loadArg});
       Content(`#### Example: List
 
 \`\`\`csharp
-var ${eVar}List = client.${entity.Name}().List(null);
+var ${eVar}List = client.${entity.Name}().List(${csListMatch(entity)});
 \`\`\`
 
 `)

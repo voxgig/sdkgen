@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { swiftVarName } from './utility_swift'
+import { swiftVarName, swiftListMatch } from './utility_swift'
 
 
 // Type names come from the shared canonToType 'swift' column (single source of truth).
@@ -279,7 +279,7 @@ let result = try client.${accessor}().${opname}(${arg}, nil)
           }
           else if ('list' === opname) {
             Content(`\`\`\`swift
-let results = try client.${accessor}().list(nil, nil)
+let results = try client.${accessor}().list(${swiftListMatch(ent)}, nil)
 print(results)
 \`\`\`
 

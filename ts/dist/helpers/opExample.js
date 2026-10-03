@@ -2,7 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.primaryOpCall = primaryOpCall;
 exports.idLiteral = idLiteral;
+exports.requiredItems = requiredItems;
 exports.matchArg = matchArg;
+exports.listMatchArg = listMatchArg;
 exports.dataArg = dataArg;
 exports.litFor = litFor;
 const canonType_1 = require("./canonType");
@@ -62,8 +64,11 @@ function litPair(lang, name, value) {
             `${name}: ${value}` : `'${name}': ${value}`;
     }
 }
+function requiredItems(ent, op) {
+    return (0, opShape_1.opRequestShape)(ent, op).items.filter((it) => !it.optional);
+}
 function matchArg(lang, ent, op, idF, idLit) {
-    const items = (0, opShape_1.opRequestShape)(ent, op).items.filter((it) => !it.optional);
+    const items = requiredItems(ent, op);
     if (0 === items.length)
         return 'go' === lang ? 'nil' : ('json' === lang ? '{}' : '');
     const pairs = items.map((it) => litPair(lang, it.name, it.name === idF ? idLit : litFor(lang, it.type)));
@@ -73,6 +78,11 @@ function matchArg(lang, ent, op, idF, idLit) {
         case 'go': return `map[string]any{${pairs.join(', ')}}`;
         default: return `{ ${pairs.join(', ')} }`;
     }
+}
+// A list's required route and query parameters.
+function listMatchArg(lang, ent) {
+    const idF = (0, opShape_1.entityIdField)(ent);
+    return matchArg(lang, ent, 'list', idF, idLiteral(ent, 'list', idF));
 }
 // An update that only addresses its record, by id and route, also changes a field.
 function dataArg(lang, ent, op, idF) {

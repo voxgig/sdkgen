@@ -5,11 +5,12 @@ const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
 const ReadmeQuick = (0, jostraca_1.cmp)(function ReadmeQuick(props) {
     const { target, ctx$ } = props;
+    const placement = (0, utility_1.credentialPlacement)(ctx$.model);
     (0, jostraca_1.Content)(`
 ## Tutorial: your first API call
 
 This tutorial walks through creating a client, listing entities, and
-loading a specific record.
+loading a specific record.${'' === placement ? '' : ' ' + placement}
 
 `);
     const ReadmeQuick_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/ReadmeQuick_${target.name}`, { ignore: true });

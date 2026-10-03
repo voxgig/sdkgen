@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, phpEntityAccessor } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, phpEntityAccessor, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -79,7 +79,7 @@ $client = ${ctor};
 \`\`\`php
 try {
     // list() returns entity instances; data_get() reads each record.
-    $${eName.toLowerCase()}s = $client->${phpEntityAccessor(eName)}()->list();
+    $${eName.toLowerCase()}s = $client->${phpEntityAccessor(eName)}()->list(${listMatchArg('php', exampleEntity)});
     foreach ($${eName.toLowerCase()}s as $record) {
         $item = $record->data_get();
         echo ${itemPrint} . "\\n";

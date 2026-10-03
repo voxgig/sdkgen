@@ -6,7 +6,7 @@ import {
   getModelPath
 } from '../types'
 
-import { requirePath } from '../utility'
+import { requirePath, credentialPlacement } from '../utility'
 import { featureDocs } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
@@ -399,8 +399,9 @@ network, and no credentials:
       if (LeadQuick) {
         LeadQuick['ReadmeTopQuick']({ target: leadTarget })
       }
+      const placement = credentialPlacement(model)
       Content(`
-See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
+${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
 
 `)
     }

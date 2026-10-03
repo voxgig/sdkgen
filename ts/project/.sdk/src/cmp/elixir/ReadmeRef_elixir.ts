@@ -8,7 +8,7 @@ import {
 } from '@voxgig/apidef'
 
 // Type names come from the shared canonToType 'elixir' column (single source of truth).
-import { elixirLit } from './utility_elixir'
+import { elixirLit, elixirListArgs } from './utility_elixir'
 
 
 const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
@@ -221,7 +221,7 @@ record = ${Name}.Entity.${EName}.${opname}(${eVar}, ${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`elixir
-records = ${Name}.Entity.${EName}.list(${eVar})
+records = ${Name}.Entity.${EName}.list(${eVar}${elixirListArgs(ent, Name)})
 \`\`\`
 
 `)

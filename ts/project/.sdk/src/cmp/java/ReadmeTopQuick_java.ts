@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { javaVarName, javaPackage } from './utility_java'
+import { javaVarName, javaPackage, javaListMatch } from './utility_java'
 
 
 // A type-correct Java literal for a param: numeric/boolean/array/object params
@@ -76,7 +76,7 @@ ${javaServerLines}${SDK} client = new ${SDK}(options);
 
     if (opnames.includes('list')) {
       Content(`// List all ${eNameLower}s (returns Object, an aggregate list; raises on error)
-Object ${eVar}List = client.${accessor}(null).list(null, null);
+Object ${eVar}List = client.${accessor}(null).list(${javaListMatch(exampleEntity)}, null);
 System.out.println(${eVar}List);
 `)
     }

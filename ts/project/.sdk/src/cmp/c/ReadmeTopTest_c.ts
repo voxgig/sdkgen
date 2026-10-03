@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -52,11 +52,11 @@ PNError* err = NULL;
     const idF = entityIdField(exampleEntity)
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = 'NULL'
-    if (isMatchOp) {
+    if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's request match.
       const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF)
+        .filter((it: any) => !it.optional || (isMatchOp && it.name === idF))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = cmapExpr(items.map((it: any) =>

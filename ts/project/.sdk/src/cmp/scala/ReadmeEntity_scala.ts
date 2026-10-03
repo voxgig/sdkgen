@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { scalaVarName } from './utility_scala'
+import { scalaVarName, scalaListMatch } from './utility_scala'
 
 
 // Type names come from the shared canonToType 'scala' column (single source of truth).
@@ -140,7 +140,7 @@ val ${eVar} = client.${accessor}(null).load(${loadArg}, null)
       Content(`#### Example: List
 
 \`\`\`scala
-val ${eVar}List = client.${accessor}(null).list(null, null)
+val ${eVar}List = client.${accessor}(null).list(${scalaListMatch(entity)}, null)
 \`\`\`
 
 `)

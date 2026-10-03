@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -52,7 +52,7 @@ local client = ${ctor}
 
     if (opnames.includes('list')) {
       Content(`-- List all ${eName.toLowerCase()}s
-local ${eVar}s, err = client:${eName}():list()
+local ${eVar}s, err = client:${eName}():list(${listMatchArg('lua', exampleEntity)})
 print(${eVar}s)
 `)
       hasCall = true

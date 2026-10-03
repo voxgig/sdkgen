@@ -7,6 +7,8 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { perlListArgs } from './utility_perl'
+
 
 // A type-correct, executable Perl literal for a field's canonical type.
 function perlLit(type: any, placeholder: string = 'example'): string {
@@ -281,7 +283,7 @@ my $result = $client->${ent.Name}->${opname}(${arg});
           }
           else if ('list' === opname) {
             Content(`\`\`\`perl
-my $results = $client->${ent.Name}->list;
+my $results = $client->${ent.Name}->list${perlListArgs(ent)};
 for my $${eVar} (@$results) {
     print "$${eVar}->{id}\\n";
 }

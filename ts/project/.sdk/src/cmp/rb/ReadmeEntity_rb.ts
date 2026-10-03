@@ -6,6 +6,8 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { rbListArgs } from './utility_rb'
+
 
 function rbLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
@@ -133,7 +135,7 @@ ${eVar} = client.${entity.Name}.load(${loadArg})
 
 \`\`\`ruby
 # list returns an Array of ${entity.Name} records (raises on error).
-${eVar}s = client.${entity.Name}.list
+${eVar}s = client.${entity.Name}.list${rbListArgs(entity)}
 \`\`\`
 
 `)

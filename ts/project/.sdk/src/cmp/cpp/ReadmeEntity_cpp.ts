@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cppVarName } from './utility_cpp'
+import { cppVarName, cppListMatch } from './utility_cpp'
 
 
 // Type names come from the shared canonToType 'cpp' column (single source of truth).
@@ -138,7 +138,7 @@ Value ${eVar} = client->${acc}()->load(${loadArg}, Value::undef());
       Content(`#### Example: List
 
 \`\`\`cpp
-Value ${eVar}s = client->${acc}()->list(Value::undef(), Value::undef());
+Value ${eVar}s = client->${acc}()->list(${cppListMatch(entity)}, Value::undef());
 \`\`\`
 
 `)

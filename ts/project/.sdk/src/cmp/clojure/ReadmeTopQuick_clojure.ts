@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { cljListMatch } from './utility_clojure'
+
 
 // A type-correct Clojure literal for a param: numeric/boolean/array/object
 // params render a typed literal; strings render the quoted placeholder.
@@ -52,7 +54,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
     if (opnames.includes('list')) {
       Content(`;; List all ${eLow}s (returns a vector, raises on error)
-(doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) nil nil)]
+(doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) ${cljListMatch(exampleEntity)} nil)]
   (println ${eLow}))
 `)
     }

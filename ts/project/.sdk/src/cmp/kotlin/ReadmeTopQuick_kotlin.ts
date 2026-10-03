@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { kotlinVarName, kotlinPackage } from './utility_kotlin'
+import { kotlinVarName, kotlinPackage, kotlinListMatch } from './utility_kotlin'
 
 
 // A type-correct Kotlin literal for a param: numeric/boolean/array/object
@@ -62,7 +62,7 @@ import ${kotlinPackage(model)}.core.${SDK}
 
     if (opnames.includes('list')) {
       Content(`// List all ${eNameLower}s (returns Any?, an aggregate list; raises on error)
-val ${eVar}List = client.${accessor}(null).list(null, null)
+val ${eVar}List = client.${accessor}(null).list(${kotlinListMatch(exampleEntity)}, null)
 println(${eVar}List)
 `)
     }

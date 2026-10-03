@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { rustVarName, rustMethodName } from './utility_rust'
+import { rustVarName, rustMethodName, rustListMatch } from './utility_rust'
 
 
 // Type names come from the shared canonToType 'rust' column (single source of truth).
@@ -133,7 +133,7 @@ let ${eVar} = client.${method}(Value::Noval).load(${loadArg}, Value::Noval).unwr
       Content(`#### Example: List
 
 \`\`\`rust
-let ${eVar}s = client.${method}(Value::Noval).list(Value::Noval, Value::Noval).unwrap();
+let ${eVar}s = client.${method}(Value::Noval).list(${rustListMatch(entity)}, Value::Noval).unwrap();
 \`\`\`
 
 `)

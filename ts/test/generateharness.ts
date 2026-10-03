@@ -452,6 +452,43 @@ main: kit: flow: BasicMetricFlow: {
 
 // Calls the runtime refuses when made bare: moon lists and loads under its
 // planet, and every list route of signal is an action.
+// A list whose route requires the query parameters engine and q.
+const SEARCH_ENTITY = `
+main: kit: entity: search: {
+  alias: field: {}
+  name: "search"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: list: {
+    name: "list"
+    points: [ {
+      g: { query: [
+        { k: "query", n: "engine", or: "engine", r: true, t: "\`$STRING\`", ex: "google" }
+        { k: "query", n: "q", or: "q", r: true, t: "\`$STRING\`", ex: "coffee" }
+      ] }
+      m: "GET", o: "/search"
+      s: [{ lit: "search" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: BasicSearchFlow: {
+  entity: "search", kind: "basic", name: "BasicSearchFlow"
+  step: [ { o: "list", m: { engine: "google", q: "coffee" } } ]
+}
+`
+
+
+function searchOnly(): string {
+  return SEARCH_ENTITY + Object.keys(makeModel(['ts']).main[KIT].entity)
+    .map((name: string) => `main: kit: entity: ${name}: active: false\n`).join('')
+}
+
+
 const ROUTING_MODEL = `
 main: kit: entity: moon: {
   alias: field: {}
@@ -879,6 +916,8 @@ export {
   API_MODEL,
   CREATELESS_ENTITY,
   ROUTING_MODEL,
+  SEARCH_ENTITY,
+  searchOnly,
   entityTestData,
   FOLD_ENTITY,
   BUILTIN_TYPE_ENTITY,

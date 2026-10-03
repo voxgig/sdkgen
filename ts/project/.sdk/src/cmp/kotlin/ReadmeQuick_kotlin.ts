@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { kotlinVarName, kotlinPackage } from './utility_kotlin'
+import { kotlinVarName, kotlinPackage, kotlinListMatch } from './utility_kotlin'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -89,7 +89,7 @@ aggregate list) and raises on error.
 
 \`\`\`kotlin
 try {
-    val ${eVar}List = client.${accessor}(null).list(null, null)
+    val ${eVar}List = client.${accessor}(null).list(${kotlinListMatch(exampleEntity)}, null)
     println(${eVar}List)
 }
 catch (err: RuntimeException) {

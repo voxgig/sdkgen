@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName } from './utility_c'
+import { cIdent, cVarName, cListMatch } from './utility_c'
 
 
 // Canonical type sentinel -> a C type name for the field/param tables. The
@@ -153,7 +153,7 @@ voxgig_value* ${evar}_rec = ${evar}->vt->load(${evar}, ${loadArg}, NULL, &err);
 
 \`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-voxgig_value* ${evar}s = ${evar}->vt->list(${evar}, NULL, NULL, &err);
+voxgig_value* ${evar}s = ${evar}->vt->list(${evar}, ${cListMatch(entity)}, NULL, &err);
 \`\`\`
 
 `)

@@ -17,7 +17,7 @@ import type {
   ActionResult,
 } from './types'
 
-import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix, resolveAuthIn, resolveAuthName, isAuthSuppressed, isHttpBasicAuth,
+import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix, resolveAuthIn, resolveAuthName, credentialPlacement, isAuthSuppressed, isHttpBasicAuth,
   CONFIG_DATA_THRESHOLD, CONFIG_REPR_VALUES, isConfigData, configRepr,
   configReprSetting, configDefinition, clean, rawStringLiteral } from './utility'
 
@@ -74,7 +74,7 @@ import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityC
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
 import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools'
 import type { McpTool } from './helpers/mcpTools'
-import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
+import { primaryOpCall, idLiteral, requiredItems, matchArg, listMatchArg, dataArg, litFor } from './helpers/opExample'
 import type { ExampleLang, LiteralLang } from './helpers/opExample'
 import { liveStrict, liveStrictNote, liveFlowNeeds } from './helpers/testPolicy'
 import type { LiveFlowNeeds } from './helpers/testPolicy'
@@ -1056,6 +1056,7 @@ export {
   resolveAuthPrefix,
   resolveAuthIn,
   resolveAuthName,
+  credentialPlacement,
   isAuthSuppressed,
   isHttpBasicAuth,
   CONFIG_DATA_THRESHOLD,
@@ -1156,7 +1157,9 @@ export {
   liveFlowNeeds,
   primaryOpCall,
   idLiteral,
+  requiredItems,
   matchArg,
+  listMatchArg,
   dataArg,
   litFor,
   featureOf,

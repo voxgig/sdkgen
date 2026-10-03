@@ -347,8 +347,9 @@ network, and no credentials:
             if (LeadQuick) {
                 LeadQuick['ReadmeTopQuick']({ target: leadTarget });
             }
+            const placement = (0, utility_1.credentialPlacement)(model);
             (0, jostraca_1.Content)(`
-See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
+${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
 
 `);
         }

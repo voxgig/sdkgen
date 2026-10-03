@@ -84,6 +84,18 @@ function resolveAuthName(model: any): string {
 }
 
 
+// Where the client sends the API key, when that is not the Authorization header.
+function credentialPlacement(model: any): string {
+  if (!isAuthActive(model)) return ''
+  const where = resolveAuthIn(model)
+  const name = resolveAuthName(model)
+  if ('query' === where) return `The client sends the API key as the \`${name}\` query parameter.`
+  if ('cookie' === where) return `The client sends the API key as the \`${name}\` cookie.`
+  return 'authorization' === name.toLowerCase() ? '' :
+    `The client sends the API key in the \`${name}\` header.`
+}
+
+
 function isHttpBasicAuth(model: any): boolean {
   const auth = getModelPath(model, `main.${KIT}.config.auth`,
     { only_active: false, required: false })
@@ -147,6 +159,7 @@ export {
   resolveAuthPrefix,
   resolveAuthIn,
   resolveAuthName,
+  credentialPlacement,
   isAuthSuppressed,
   resolveAuthExchange,
   isHttpBasicAuth,

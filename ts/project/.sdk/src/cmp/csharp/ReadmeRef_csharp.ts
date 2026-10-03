@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { csVarName } from './utility_csharp'
+import { csVarName, csListMatch } from './utility_csharp'
 
 
 // Type names come from the shared canonToType 'csharp' column (single source of truth).
@@ -280,7 +280,7 @@ var result = client.${ent.Name}().${opname.charAt(0).toUpperCase() + opname.slic
           }
           else if ('list' === opname) {
             Content(`\`\`\`csharp
-var results = client.${ent.Name}().List(null);
+var results = client.${ent.Name}().List(${csListMatch(ent)});
 Console.WriteLine(results);
 \`\`\`
 

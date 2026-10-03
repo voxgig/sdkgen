@@ -7,6 +7,8 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { cljListMatch } from './utility_clojure'
+
 
 // A type-correct Clojure literal for a field's canonical type.
 function cljLit(type: any, placeholder: string = 'example'): string {
@@ -284,7 +286,7 @@ ${info.desc}
           }
           else if ('list' === opname) {
             Content(`\`\`\`clojure
-(doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) nil nil)]
+(doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) ${cljListMatch(ent)} nil)]
   (println ${eLow}))
 \`\`\`
 

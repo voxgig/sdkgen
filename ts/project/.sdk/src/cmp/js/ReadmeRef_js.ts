@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey , targetFeatures, opNeedsAction, bodyNote, listMatchArg } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -295,7 +295,7 @@ const result = await client.${ent.Name}().${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`ts
-const results = await client.${ent.Name}().${opname}()
+const results = await client.${ent.Name}().${opname}(${listMatchArg('js', ent)})
 \`\`\`
 
 `)

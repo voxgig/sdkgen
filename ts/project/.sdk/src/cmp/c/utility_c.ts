@@ -4,7 +4,7 @@ import {
   walk,
 } from '@voxgig/struct'
 
-import { sdkName } from '@voxgig/sdkgen'
+import { sdkName, canonScalarKey, requiredItems } from '@voxgig/sdkgen'
 
 
 // C reserved keywords illegal as identifiers.
@@ -140,7 +140,19 @@ function cStringLiteral(json: string, chunkSize: number = 2000): string {
     .join('\n')
 }
 
+// A list's required route and query parameters, as the match it is called with.
+function cListMatch(entity: any): string {
+  const lit = (type: any): string =>
+    (({ INTEGER: 'v_num(1)', NUMBER: 'v_num(1)', BOOLEAN: 'v_bool(true)', ARRAY: 'v_list()', OBJECT: 'v_map()' }) as any)[canonScalarKey(type)] ?? 'v_str("example")'
+  const items = requiredItems(entity, 'list')
+  return 0 < items.length
+    ? `cmap(${items.length}, ${items.map((it: any) => `"${it.name}", ${lit(it.type)}`).join(', ')})`
+    : 'NULL'
+}
+
+
 export {
+  cListMatch,
   cStringLiteral,
   clean,
   cIdent,

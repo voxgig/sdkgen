@@ -24,7 +24,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 
 import {
-  makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData,
+  makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData, searchOnly,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
@@ -468,24 +468,29 @@ describe('generated SDK compiles', () => {
 
   // The README example tests find `tsc` and strip a snippet's types through
   // the TypeScript installed beside the SDK, which here is sdkgen's own.
-  test('typescript: the README example tests type-check and run the examples', async () => {
-    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+  for (const [what, dir, extra] of [
+    ['the examples', 'ts-readme', undefined],
+    ['a list example with its required parameters', 'ts-readme-search', searchOnly()],
+  ] as [string, string, string | undefined][]) {
+    test('typescript: the README example tests type-check and run ' + what, async () => {
+      ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
 
-    const sdkroot = Path.join(tmp, 'ts-readme', 'ts')
-    await generateTo('ts', sdkroot, undefined, undefined, { top: true })
-    linkDeps(sdkroot)
+      const sdkroot = Path.join(tmp, dir, 'ts')
+      await generateTo('ts', sdkroot, extra, undefined, { top: true })
+      linkDeps(sdkroot)
 
-    const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
-    ok(built.ok, 'the generated SDK does not build:\n' + built.out)
+      const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
+      ok(built.ok, 'the generated SDK does not build:\n' + built.out)
 
-    const suite = run(process.execPath,
-      ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
-      sdkroot, nestedTestEnv())
-    ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 200))
-    ok(/^\s*ok \d+ - .*every example type-checks/m.test(suite.out) &&
-      /^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
-    'the README example tests did not run both checks:\n' + tail(suite.out, 40))
-  })
+      const suite = run(process.execPath,
+        ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
+        sdkroot, nestedTestEnv())
+      ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 200))
+      ok(/^\s*ok \d+ - .*every example type-checks/m.test(suite.out) &&
+        /^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
+      'the README example tests did not run both checks:\n' + tail(suite.out, 40))
+    })
+  }
 
 
   // tsc refuses the pair on every OS (TS1149: file names that differ only in
@@ -5264,30 +5269,40 @@ describe('the README examples run for a slug carrying the word client', () => {
     if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
   })
 
+  const readmeLane = async (t: any, lane: any, dir: string, extra?: string) => {
+    const sdkroot = Path.join(tmp, dir, lane.target)
+    const files = await generateTo(lane.target, sdkroot, extra, undefined,
+      { name: README_SLUG, top: true })
+    ok(null != files[lane.runner], lane.target + ': ' + lane.runner + ' was not generated')
+    ok(String(files['README.md']).includes(README_SLUG),
+      lane.target + ': the README does not carry the slug, so it tests nothing')
+    ok(null == extra || /engine/.test(String(files['README.md'])),
+      lane.target + ': the README has no list example with its required parameters')
+
+    const cmd = lane.command()
+    if (null == cmd) {
+      return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+    }
+
+    const ran = run(cmd.bin, cmd.args, sdkroot)
+    if (ran.unlaunchable) {
+      return t.skip(lane.target + ': the toolchain could not be started here: ' +
+        tail(ran.out, 3))
+    }
+
+    ok(ran.ok, 'the README examples FAILED for the generated ' + lane.target + ' SDK ' +
+      README_SLUG + ':\n' + tail(ran.out, 60))
+    ok(lane.ran.test(ran.out), lane.target + ': the README suite reported no full run:\n' +
+      tail(ran.out))
+  }
+
   for (const lane of README_LANES) {
     test(lane.target + ': every README example is classified, and run', async (t) => {
-      const sdkroot = Path.join(tmp, lane.target, lane.target)
-      const files = await generateTo(lane.target, sdkroot, undefined, undefined,
-        { name: README_SLUG, top: true })
-      ok(null != files[lane.runner], lane.target + ': ' + lane.runner + ' was not generated')
-      ok(String(files['README.md']).includes(README_SLUG),
-        lane.target + ': the README does not carry the slug, so it tests nothing')
+      await readmeLane(t, lane, lane.target)
+    })
 
-      const cmd = lane.command()
-      if (null == cmd) {
-        return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
-      }
-
-      const ran = run(cmd.bin, cmd.args, sdkroot)
-      if (ran.unlaunchable) {
-        return t.skip(lane.target + ': the toolchain could not be started here: ' +
-          tail(ran.out, 3))
-      }
-
-      ok(ran.ok, 'the README examples FAILED for the generated ' + lane.target + ' SDK ' +
-        README_SLUG + ':\n' + tail(ran.out, 60))
-      ok(lane.ran.test(ran.out), lane.target + ': the README suite reported no full run:\n' +
-        tail(ran.out))
+    test(lane.target + ': the README examples run where a list requires parameters', async (t) => {
+      await readmeLane(t, lane, lane.target + '-search', searchOnly())
     })
   }
 })

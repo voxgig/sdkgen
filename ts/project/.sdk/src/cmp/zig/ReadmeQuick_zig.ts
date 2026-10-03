@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { zigVarName } from './utility_zig'
+import { zigVarName, zigListMatch } from './utility_zig'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -70,7 +70,7 @@ const client = ${ctor};
 \`switch\` on it.
 
 \`\`\`zig
-switch (client.${method}(h.vnull()).list(h.vnull(), h.vnull())) {
+switch (client.${method}(h.vnull()).list(${zigListMatch(exampleEntity)}, h.vnull())) {
     .ok => |${eVar}s| std.debug.print("{s}\\n", .{h.stringify(${eVar}s)}),
     .err => |e| std.debug.print("list failed: {s}\\n", .{e.msg}),
 }

@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { javaVarName, javaPackage } from './utility_java'
+import { javaVarName, javaPackage, javaListMatch } from './utility_java'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -101,7 +101,7 @@ aggregate list) and raises on error.
 
 \`\`\`java
 try {
-    Object ${eVar}List = client.${accessor}(null).list(null, null);
+    Object ${eVar}List = client.${accessor}(null).list(${javaListMatch(exampleEntity)}, null);
     System.out.println(${eVar}List);
 }
 catch (RuntimeException err) {

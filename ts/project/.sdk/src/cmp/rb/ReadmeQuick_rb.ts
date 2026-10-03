@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { rbListArgs } from './utility_rb'
+
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
@@ -81,7 +83,7 @@ client = ${ctor}
 \`\`\`ruby
 begin
   # list returns an Array of ${eName} records — iterate directly.
-  ${eVar}s = client.${eName}.list
+  ${eVar}s = client.${eName}.list${rbListArgs(exampleEntity)}
   ${eVar}s.each do |item|
     puts "${itemPrint}"
   end

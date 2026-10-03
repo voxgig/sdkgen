@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -32,6 +32,9 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'nil'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `(vs/jm "${idF}" "test01")` : 'nil'
+  } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+    const chosen = requiredItems(exampleEntity, 'list')
+    testArg = `(vs/jm ${chosen.map((it: any) => `"${it.name}" ${cljLit(it.type)}`).join(' ')})`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
