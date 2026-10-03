@@ -50,6 +50,26 @@ public static partial class SdkUtility
         return "raw".Equals(StructUtils.GetProp(StructUtils.GetProp(point, "body"), "kind"));
     }
 
+    internal static bool IsJsonRequest(object? point)
+    {
+        return "json".Equals(StructUtils.GetProp(StructUtils.GetProp(point, "body"), "kind"));
+    }
+
+    // Bytes or a stream go as given. A map or a list is JSON, and so is a
+    // scalar on a point that declares a JSON body.
+    internal static object RequestBody(object? point, object body)
+    {
+        if (body is byte[] || body is Stream)
+        {
+            return body;
+        }
+        if (StructUtils.IsNode(body) || IsJsonRequest(point))
+        {
+            return StructUtils.Jsonify(body);
+        }
+        return body;
+    }
+
     private static bool HasHeader(Dictionary<string, object?> headers, string name)
     {
         return headers.Keys.Any(k => k.ToLowerInvariant() == name);

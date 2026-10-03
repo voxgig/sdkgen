@@ -329,11 +329,7 @@ func makeFetchDefUtil(_ ctx: Context) throws -> VMap {
   fetchdef.entries["headers"] = .map(spec.headers)
 
   if !isNil(spec.body) {
-    if spec.body.isMap {
-      fetchdef.entries["body"] = .string(jsonify(spec.body, indent: 0))
-    } else {
-      fetchdef.entries["body"] = spec.body
-    }
+    fetchdef.entries["body"] = requestBody(ctx.point, spec.body)
   }
 
   return fetchdef

@@ -45,6 +45,24 @@ class ProjectNameMedia
         return 'raw' === \Voxgig\Struct\Struct::getprop(\Voxgig\Struct\Struct::getprop($point, 'body'), 'kind');
     }
 
+    public static function isJsonRequest(mixed $point): bool
+    {
+        return 'json' === \Voxgig\Struct\Struct::getprop(\Voxgig\Struct\Struct::getprop($point, 'body'), 'kind');
+    }
+
+    // A stream goes as given. An array or an object is JSON, and so is a
+    // scalar on a point that declares a JSON body.
+    public static function requestBody(mixed $point, mixed $body): mixed
+    {
+        if (is_resource($body)) {
+            return $body;
+        }
+        if (\Voxgig\Struct\Struct::isnode($body) || self::isJsonRequest($point)) {
+            return \Voxgig\Struct\Struct::jsonify($body);
+        }
+        return $body;
+    }
+
     private static function hasHeader(array $headers, string $name): bool
     {
         foreach (array_keys($headers) as $key) {

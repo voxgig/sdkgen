@@ -55,7 +55,7 @@ tm/c/core/operation.c fb16ed309ed9
 tm/c/core/point.c 1539404e1bcc
 tm/c/core/response.c 4b4096708714
 tm/c/core/result.c 60bde846d061
-tm/c/core/sdk.h 4de263cfa082
+tm/c/core/sdk.h 72bf872ff0eb
 tm/c/core/spec.c cb3f60193af1
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
@@ -87,7 +87,7 @@ tm/c/utility/graphql.c a21a86e03521
 tm/c/utility/jsonparse.c cffd3f2ac8b1
 tm/c/utility/make_context.c 615156796cbb
 tm/c/utility/make_error.c 8b7d2f39fd5c
-tm/c/utility/make_fetch_def.c 08c73a9454ed
+tm/c/utility/make_fetch_def.c 119fd99fde45
 tm/c/utility/make_options.c 02a0e841ef11
 tm/c/utility/make_point.c 60d3426dd3bf
 tm/c/utility/make_request.c b5887e3fd94c
@@ -95,7 +95,7 @@ tm/c/utility/make_response.c 5cb2535aec54
 tm/c/utility/make_result.c 1a912f59bee6
 tm/c/utility/make_spec.c 9bee408a3aaf
 tm/c/utility/make_url.c 9412cffcb815
-tm/c/utility/media.c 4a702f78d681
+tm/c/utility/media.c 324d1b12930f
 tm/c/utility/param.c c400d75563ef
 tm/c/utility/prepare_body.c b265506c51e9
 tm/c/utility/prepare_headers.c 274875e0b133
@@ -224,7 +224,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 32327e3b999a
-tm/clojure/src/sdk/core.clj 55f96cc652a2
+tm/clojure/src/sdk/core.clj 2d8d11cdeafb
 tm/clojure/src/sdk/features.clj 1ca78ea4cd07
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj b70684f4ddd3
@@ -313,7 +313,7 @@ tm/cpp/test/vendor/omni/json.hpp 8e36b1f58d52
 tm/cpp/test/vendor/omni/omni.hpp 6d8f1d38f39e
 tm/cpp/test/vendor/omni/util.hpp 7737f6997c2b
 tm/cpp/utility/cookie.hpp d2b5fb5f0264
-tm/cpp/utility/pipeline.hpp 8ca7394c5d64
+tm/cpp/utility/pipeline.hpp 99a99c6d0dfa
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp f3832db06d59
@@ -405,7 +405,7 @@ tm/csharp/utility/Fetcher.cs 94cd0b219e7d
 tm/csharp/utility/Graphql.cs 6b8bdb457f11
 tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs 6900c189af67
-tm/csharp/utility/MakeFetchDef.cs 89aca56837ef
+tm/csharp/utility/MakeFetchDef.cs 5b3c25f3ffd6
 tm/csharp/utility/MakeOptions.cs 2620949f77dc
 tm/csharp/utility/MakePoint.cs 7bc2644252e5
 tm/csharp/utility/MakeRequest.cs 32657a32522e
@@ -413,7 +413,7 @@ tm/csharp/utility/MakeResponse.cs 86cf8db8ebd2
 tm/csharp/utility/MakeResult.cs c8c17a3334d3
 tm/csharp/utility/MakeSpec.cs ad28f65fcdea
 tm/csharp/utility/MakeUrl.cs 7669d0b88a26
-tm/csharp/utility/Media.cs 5f2b58cca2f0
+tm/csharp/utility/Media.cs d67f7d1ac920
 tm/csharp/utility/Param.cs a2e585c9d675
 tm/csharp/utility/PrepareBody.cs aa92aad85e16
 tm/csharp/utility/PrepareHeaders.cs 7e744feda4af
@@ -483,7 +483,7 @@ tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex 42569ce903d2
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex 8d2fbe33805b
+tm/elixir/lib/projectname/utility.ex 24e2fef0c354
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -587,7 +587,7 @@ tm/go/utility/fetcher.go 9ce303891027
 tm/go/utility/graphql.go f0e6b8fef4a8
 tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go b10a3c94eeae
-tm/go/utility/make_fetch_def.go 1b2ecd1822cf
+tm/go/utility/make_fetch_def.go 9ab2b29a9b00
 tm/go/utility/make_options.go 1f06ce9fa4b3
 tm/go/utility/make_point.go 8335fccc487a
 tm/go/utility/make_request.go cf4d4f55e911
@@ -595,7 +595,7 @@ tm/go/utility/make_response.go 57ad84a7b3be
 tm/go/utility/make_result.go a9ddaa230b15
 tm/go/utility/make_spec.go b3a761364a4c
 tm/go/utility/make_url.go e1afd30fa729
-tm/go/utility/media.go 29c6f1a85664
+tm/go/utility/media.go a64e81ddb3ec
 tm/go/utility/param.go 03774afe60e3
 tm/go/utility/prepare_body.go d136f162da2f
 tm/go/utility/prepare_headers.go 8d3f43784987
@@ -731,7 +731,7 @@ tm/java/utility/Graphql.java 375386544b43
 tm/java/utility/Json.java 319781c3f5ca
 tm/java/utility/MakeContext.java c7789b287936
 tm/java/utility/MakeError.java ee3ecdd4e5d8
-tm/java/utility/MakeFetchDef.java b83d2aed69b6
+tm/java/utility/MakeFetchDef.java 3a319b012f00
 tm/java/utility/MakeOptions.java 8e7c2110e23e
 tm/java/utility/MakePoint.java c5fb5cd6c72e
 tm/java/utility/MakeRequest.java b326d47c077d
@@ -739,7 +739,7 @@ tm/java/utility/MakeResponse.java bce6807c2f70
 tm/java/utility/MakeResult.java cb3522d54432
 tm/java/utility/MakeSpec.java f5ebd089f864
 tm/java/utility/MakeUrl.java 5da204033077
-tm/java/utility/Media.java 0fb8be0c0a9e
+tm/java/utility/Media.java 7edd07e42b55
 tm/java/utility/Param.java 5948cea07ff9
 tm/java/utility/PrepareBody.java 1cc4f2aff083
 tm/java/utility/PrepareHeaders.java 8438c95565f8
@@ -831,7 +831,7 @@ tm/js/src/utility/FetcherUtility.js ff6878dc1bf3
 tm/js/src/utility/GraphqlUtility.js e8aed31713c4
 tm/js/src/utility/MakeContextUtility.js bbc1c9839da2
 tm/js/src/utility/MakeErrorUtility.js cbc545744541
-tm/js/src/utility/MakeFetchDefUtility.js be9da0754159
+tm/js/src/utility/MakeFetchDefUtility.js 2df81f196a98
 tm/js/src/utility/MakeOptionsUtility.js 8d7da586ed7d
 tm/js/src/utility/MakePointUtility.js 9f8c3a73e6c3
 tm/js/src/utility/MakeRequestUtility.js c45a8195df2e
@@ -839,7 +839,7 @@ tm/js/src/utility/MakeResponseUtility.js 8e24747b5152
 tm/js/src/utility/MakeResultUtility.js 762de0f9d1b7
 tm/js/src/utility/MakeSpecUtility.js 638537619fc9
 tm/js/src/utility/MakeUrlUtility.js aa29990df80c
-tm/js/src/utility/MediaUtility.js ccdc3c1a46ac
+tm/js/src/utility/MediaUtility.js 015c8d0f2d46
 tm/js/src/utility/ParamUtility.js a537a0dae300
 tm/js/src/utility/PrepareBodyUtility.js 62941f7df27b
 tm/js/src/utility/PrepareHeadersUtility.js 9e983acc1d4b
@@ -968,8 +968,8 @@ tm/kotlin/utility/Json.kt 300cfa023e24
 tm/kotlin/utility/MakeOptions.kt dffd4d4c5f9a
 tm/kotlin/utility/MakePoint.kt f48e8143bce2
 tm/kotlin/utility/MakeReqRes.kt a745863aa7aa
-tm/kotlin/utility/MakeSpecUrl.kt 07ede6bb2636
-tm/kotlin/utility/Media.kt 683a92f218b6
+tm/kotlin/utility/MakeSpecUrl.kt 8ac2fec391e4
+tm/kotlin/utility/Media.kt ef8fb4b14bf3
 tm/kotlin/utility/Prepare.kt c56d164547ef
 tm/kotlin/utility/Register.kt b81ff2deff00
 tm/kotlin/utility/ResultTransform.kt 44bb2eb04d99
@@ -1059,7 +1059,7 @@ tm/lua/utility/fetcher.lua f6a9c157b3ca
 tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua c5d011c7799e
-tm/lua/utility/make_fetch_def.lua f7057db76504
+tm/lua/utility/make_fetch_def.lua 5c1ffc7e67de
 tm/lua/utility/make_options.lua 977ef0556cbf
 tm/lua/utility/make_point.lua b5f90cf8bdfa
 tm/lua/utility/make_request.lua 4ba90ee83ff3
@@ -1067,7 +1067,7 @@ tm/lua/utility/make_response.lua 6255f621011a
 tm/lua/utility/make_result.lua d9eae1b6119e
 tm/lua/utility/make_spec.lua a46b22f02a27
 tm/lua/utility/make_url.lua 2c95a6e96992
-tm/lua/utility/media.lua fc79810b5d11
+tm/lua/utility/media.lua 3efe949176a2
 tm/lua/utility/param.lua 77de052718f0
 tm/lua/utility/prepare_body.lua 0f0603e74487
 tm/lua/utility/prepare_headers.lua 0851bcdc7a07
@@ -1126,7 +1126,7 @@ tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml 937b866207a6
 tm/ocaml/sdk_helpers.ml 24933d1c5031
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml 195e7a921d68
+tm/ocaml/sdk_runtime.ml 9bde5652bc46
 tm/ocaml/sdk_types.ml 802e2ff60388
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
@@ -1228,7 +1228,7 @@ tm/perl/utility/fetcher.pm 05a48a22aff3
 tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm 70a5bbc759c2
-tm/perl/utility/make_fetch_def.pm ebb77b54060c
+tm/perl/utility/make_fetch_def.pm b47d78ab2a73
 tm/perl/utility/make_options.pm 113f6b2b0a30
 tm/perl/utility/make_point.pm 64f74a122af7
 tm/perl/utility/make_request.pm d4b1ec8cf30d
@@ -1236,7 +1236,7 @@ tm/perl/utility/make_response.pm 51a842fc584b
 tm/perl/utility/make_result.pm 1665a30e56a4
 tm/perl/utility/make_spec.pm 266a3bd04dcb
 tm/perl/utility/make_url.pm 862bb0a179cb
-tm/perl/utility/media.pm 593cebfccfb5
+tm/perl/utility/media.pm 5ce64c1409f2
 tm/perl/utility/param.pm 890556ba5f72
 tm/perl/utility/prepare_body.pm a55521dbfb1b
 tm/perl/utility/prepare_headers.pm fe5d132d8a13
@@ -1332,7 +1332,7 @@ tm/php/utility/Fetcher.php 234146119e07
 tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php a32f039c2a85
-tm/php/utility/MakeFetchDef.php c76cc8f6f00e
+tm/php/utility/MakeFetchDef.php 8f8141558539
 tm/php/utility/MakeOptions.php 65763d374aa8
 tm/php/utility/MakePoint.php 325778e029cb
 tm/php/utility/MakeRequest.php 0d5c61684da6
@@ -1340,7 +1340,7 @@ tm/php/utility/MakeResponse.php 84a420b02660
 tm/php/utility/MakeResult.php f30434dbc6ba
 tm/php/utility/MakeSpec.php 382d896188c8
 tm/php/utility/MakeUrl.php 508aa2081316
-tm/php/utility/Media.php aef6e50c7c02
+tm/php/utility/Media.php 858e9b55f1cc
 tm/php/utility/Param.php 9040137e8d48
 tm/php/utility/PrepareBody.php d401d3455d62
 tm/php/utility/PrepareHeaders.php d7d6a7c38839
@@ -1425,7 +1425,7 @@ tm/py/pkg/utility/fetcher.py e2db6840fce4
 tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py f34170896d99
-tm/py/pkg/utility/make_fetch_def.py 0ad63d779a4e
+tm/py/pkg/utility/make_fetch_def.py 76c9da656a32
 tm/py/pkg/utility/make_options.py a703b07d470f
 tm/py/pkg/utility/make_point.py d93577342b95
 tm/py/pkg/utility/make_request.py 9835b18e665b
@@ -1433,7 +1433,7 @@ tm/py/pkg/utility/make_response.py a0912bcd9cff
 tm/py/pkg/utility/make_result.py cc36137e3e1d
 tm/py/pkg/utility/make_spec.py a547c3f0d429
 tm/py/pkg/utility/make_url.py 1fcf63b23d71
-tm/py/pkg/utility/media.py 373c3125102c
+tm/py/pkg/utility/media.py b9371692a3ce
 tm/py/pkg/utility/param.py f49ed6811d0c
 tm/py/pkg/utility/prepare_body.py 4ae0266ba22d
 tm/py/pkg/utility/prepare_headers.py d51b1c5b5895
@@ -1572,7 +1572,7 @@ tm/rb/utility/fetcher.rb 057fc4d95336
 tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb 619849e17933
-tm/rb/utility/make_fetch_def.rb b0cbc0f3b381
+tm/rb/utility/make_fetch_def.rb 752e08f7a762
 tm/rb/utility/make_options.rb bff653d9c622
 tm/rb/utility/make_point.rb 23c93b128f5a
 tm/rb/utility/make_request.rb a4ef373194d8
@@ -1580,7 +1580,7 @@ tm/rb/utility/make_response.rb 0ca41a876f23
 tm/rb/utility/make_result.rb 144c21f62388
 tm/rb/utility/make_spec.rb 78de899f1949
 tm/rb/utility/make_url.rb 3efadde6ef7d
-tm/rb/utility/media.rb f35efbaacdf9
+tm/rb/utility/media.rb 58f043762d6d
 tm/rb/utility/param.rb 2dabbb11a048
 tm/rb/utility/prepare_body.rb 8ad5181a6e84
 tm/rb/utility/prepare_headers.rb d0e1b02c7497
@@ -1685,7 +1685,7 @@ tm/rust/utility/graphql.rs 5115a012964e
 tm/rust/utility/jsonparse.rs 17f7ee7b908a
 tm/rust/utility/make_context.rs 04f34b592c9c
 tm/rust/utility/make_error.rs dedff607fa15
-tm/rust/utility/make_fetch_def.rs e824dd0144e0
+tm/rust/utility/make_fetch_def.rs 8d1180855fe9
 tm/rust/utility/make_options.rs 024ecb8beb5c
 tm/rust/utility/make_point.rs f81f003bd465
 tm/rust/utility/make_request.rs fa9eeee6d176
@@ -1693,7 +1693,7 @@ tm/rust/utility/make_response.rs 87ae886eda3b
 tm/rust/utility/make_result.rs 0a9846aa446c
 tm/rust/utility/make_spec.rs 015d4906d980
 tm/rust/utility/make_url.rs c224c84f3e2e
-tm/rust/utility/media.rs 706e521d02d2
+tm/rust/utility/media.rs 41daf5295f0b
 tm/rust/utility/mod.rs a07dd606c939
 tm/rust/utility/param.rs f11f048e9156
 tm/rust/utility/prepare_body.rs b1c6978263a6
@@ -1869,9 +1869,9 @@ tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
 tm/scala/utility/Fetcher.scala c51b5b6102b8
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
-tm/scala/utility/Make.scala e25c3f9b33b3
+tm/scala/utility/Make.scala 2602a55c7e8e
 tm/scala/utility/MakeSpec.scala 710f9c42337c
-tm/scala/utility/Media.scala 9e6fee9e2282
+tm/scala/utility/Media.scala 8453000252c4
 tm/scala/utility/Misc.scala c701e8463ca8
 tm/scala/utility/Prepare.scala d9ceec1220ae
 tm/scala/utility/Register.scala 12658a8e9bd5
@@ -1958,10 +1958,10 @@ tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift dd6910a354cd
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
 tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 9bb33c3229b9
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
-tm/swift/Sources/ProjectNameSDK/utility/Make.swift 44fc6537aa9d
+tm/swift/Sources/ProjectNameSDK/utility/Make.swift 04c88d992741
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 0ce0c9bc0652
 tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 59809fdb32e3
-tm/swift/Sources/ProjectNameSDK/utility/Media.swift 703ac5e1e6e7
+tm/swift/Sources/ProjectNameSDK/utility/Media.swift 7434119f2756
 tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift 85051aa74d02
 tm/swift/Sources/ProjectNameSDK/utility/Register.swift b680c8e1d6bc
 tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 93bb89c88002
@@ -2062,7 +2062,7 @@ tm/ts/src/utility/FetcherUtility.ts d57b99ddb31a
 tm/ts/src/utility/GraphqlUtility.ts bd8ce7cadbad
 tm/ts/src/utility/MakeContextUtility.ts 50caf1a75850
 tm/ts/src/utility/MakeErrorUtility.ts f0f90c81d7ce
-tm/ts/src/utility/MakeFetchDefUtility.ts 6c8fbad61f49
+tm/ts/src/utility/MakeFetchDefUtility.ts 3fc1f28bb90a
 tm/ts/src/utility/MakeOptionsUtility.ts 784fa1cd92d5
 tm/ts/src/utility/MakePointUtility.ts a11e755a970e
 tm/ts/src/utility/MakeRequestUtility.ts e2f970b82615
@@ -2070,7 +2070,7 @@ tm/ts/src/utility/MakeResponseUtility.ts a294cf7183ee
 tm/ts/src/utility/MakeResultUtility.ts 35a8c1404935
 tm/ts/src/utility/MakeSpecUtility.ts 3793030897f2
 tm/ts/src/utility/MakeUrlUtility.ts ce79a4d79f1f
-tm/ts/src/utility/MediaUtility.ts d47d2c597a43
+tm/ts/src/utility/MediaUtility.ts 1d8524423fef
 tm/ts/src/utility/ParamUtility.ts e4e7866b92af
 tm/ts/src/utility/PrepareBodyUtility.ts 2b3e78a0b1ae
 tm/ts/src/utility/PrepareHeadersUtility.ts 100bf122e42d
@@ -2169,7 +2169,7 @@ tm/zig/core/response.zig 4df235df5674
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 25a014ab27fa
 tm/zig/core/types.zig 3a8f6e7a08f9
-tm/zig/core/utility.zig b1f5a93b870a
+tm/zig/core/utility.zig f09ed49adbad
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig d7352c80c34e

@@ -43,6 +43,23 @@ func isRawRequest(point map[string]any) bool {
 	return "raw" == vs.GetPath(point, []any{"body", "kind"})
 }
 
+func isJSONRequest(point map[string]any) bool {
+	return "json" == vs.GetPath(point, []any{"body", "kind"})
+}
+
+// Bytes or a reader go as given. A map or a list is JSON, and so is a scalar
+// on a point that declares a JSON body.
+func requestBody(point map[string]any, body any) any {
+	switch body.(type) {
+	case []byte, io.Reader:
+		return body
+	}
+	if vs.IsNode(body) || isJSONRequest(point) {
+		return vs.Jsonify(body)
+	}
+	return body
+}
+
 func hasHeader(headers map[string]any, name string) bool {
 	for key := range headers {
 		if name == strings.ToLower(key) {

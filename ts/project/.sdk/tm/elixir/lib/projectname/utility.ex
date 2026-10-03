@@ -1450,11 +1450,19 @@ defmodule ProjectName.Utility do
           ])
 
         body = S.getprop(spec, "body")
+        scalar = is_binary(body) or is_number(body) or is_boolean(body)
 
+        # A map or a list is JSON, and so is a scalar on a point that declares
+        # a JSON body. Anything else goes as given.
         cond do
-          body == nil -> :ok
-          S.ismap(body) -> S.setprop(fetchdef, "body", S.jsonify(body))
-          true -> S.setprop(fetchdef, "body", body)
+          body == nil ->
+            :ok
+
+          S.isnode(body) or (scalar and json_request?(S.getprop(ctx, "point"))) ->
+            S.setprop(fetchdef, "body", S.jsonify(body))
+
+          true ->
+            S.setprop(fetchdef, "body", body)
         end
 
         {fetchdef, nil}
@@ -1670,6 +1678,7 @@ defmodule ProjectName.Utility do
   end
 
   def raw_request?(point), do: S.getprop(S.getprop(point, "body"), "kind") == "raw"
+  def json_request?(point), do: S.getprop(S.getprop(point, "body"), "kind") == "json"
 
   defp media_header?(headers, name) do
     Enum.any?(H.entries(headers), fn {k, _} -> is_binary(k) and String.downcase(k) == name end)

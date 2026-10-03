@@ -580,6 +580,8 @@ inline Value fetcher(CtxPtr ctx, const std::string& fullurl, const Value& fetchd
 
 // ---- makeFetchDef -----------------------------------------------------
 
+inline bool isJsonRequest(const Value& point);
+
 inline Value makeFetchDef(CtxPtr ctx) {
   SpecPtr spec = ctx->spec;
   if (!spec) {
@@ -598,11 +600,15 @@ inline Value makeFetchDef(CtxPtr ctx) {
   map_put(fetchdef, "method", Value(spec->method));
   map_put(fetchdef, "headers", spec->headers);
 
+  // A map or a list is JSON, and so is a scalar on a point that declares a
+  // JSON body. Anything else goes as given.
   if (!is_nullish(spec->body)) {
-    if (spec->body.is_map()) {
-      map_put(fetchdef, "body", Value(Struct::jsonify(spec->body)));
+    const Value& body = spec->body;
+    bool scalar = body.is_string() || body.is_number() || body.is_bool();
+    if (body.is_map() || body.is_list() || (scalar && isJsonRequest(ctx->point))) {
+      map_put(fetchdef, "body", Value(Struct::jsonify(body)));
     } else {
-      map_put(fetchdef, "body", spec->body);
+      map_put(fetchdef, "body", body);
     }
   }
 
@@ -1416,6 +1422,11 @@ inline std::string acceptOf(const Value& point) {
 inline bool isRawRequest(const Value& point) {
   Value kind = getp(getp(point, "body"), "kind");
   return kind.is_string() && kind.as_string() == "raw";
+}
+
+inline bool isJsonRequest(const Value& point) {
+  Value kind = getp(getp(point, "body"), "kind");
+  return kind.is_string() && kind.as_string() == "json";
 }
 
 inline bool hasMediaHeader(const Value& headers, const std::string& name) {
