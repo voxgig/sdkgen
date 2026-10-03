@@ -181,24 +181,44 @@ defmodule ProjectName.EntityBase do
     e -> Pipeline.unexpected(ctx, e, __STACKTRACE__) || []
   end
 
+  # A reducer's own exception, told apart from the stream's.
+  defmodule CallerRaised do
+    defexception [:error, :stack]
+
+    @impl true
+    def message(%{error: e}), do: Exception.message(e)
+  end
+
   # The caller iterates after run_op has returned, so what the stream raises
-  # is cleaned here, as run_op's rescue would clean it. The caller's own
-  # reducer runs inside the reduce, so what it raises is cleaned too.
-  defp cleaned(ctx, step) do
-    step.()
-  rescue
-    e -> reraise(Utility.clean_exception(ctx, e), __STACKTRACE__)
-  end
-
+  # leaves as an operation's failure would: PreUnexpected fires, and under
+  # throw: false the stream ends. The caller's own reducer runs inside the
+  # same reduce; what it raises is only cleaned, as run_op's rescue would.
   defp guarded(enum, ctx) do
-    fn acc, fun -> reduce_step(ctx, fn -> Enumerable.reduce(enum, acc, fun) end) end
+    fn acc, fun -> reduce_step(ctx, acc, fn -> Enumerable.reduce(enum, acc, callers(fun)) end) end
   end
 
-  defp reduce_step(ctx, step) do
-    case cleaned(ctx, step) do
-      {:suspended, acc, cont} -> {:suspended, acc, fn a -> reduce_step(ctx, fn -> cont.(a) end) end}
+  defp callers(fun) do
+    fn item, acc ->
+      try do
+        fun.(item, acc)
+      rescue
+        e -> reraise(%CallerRaised{error: e, stack: __STACKTRACE__}, __STACKTRACE__)
+      end
+    end
+  end
+
+  defp reduce_step(ctx, acc, step) do
+    case stream_step(ctx, acc, step) do
+      {:suspended, acc2, cont} -> {:suspended, acc2, fn a -> reduce_step(ctx, a, fn -> cont.(a) end) end}
       done -> done
     end
+  end
+
+  defp stream_step(ctx, {_, value}, step) do
+    step.()
+  rescue
+    e in CallerRaised -> reraise(Utility.clean_exception(ctx, e.error), e.stack)
+    e -> Pipeline.unexpected(ctx, e, __STACKTRACE__) || {:done, value}
   end
 
   # Unwrap an entity node to its bare record; recurse into chunk lists.

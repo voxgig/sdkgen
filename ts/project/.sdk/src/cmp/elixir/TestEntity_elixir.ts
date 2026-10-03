@@ -152,6 +152,39 @@ defmodule ${Name}.${EName}EntityTest do
     assert S.size(explain) > 0
   end
 
+  test "should end a stream whose source fails as the operation would" do
+    seen = S.jm(["n", 0])
+
+    hook =
+      S.jm([
+        "name", "lazyhook", "version", "0.0.1", "active", true, "options", S.jm([]),
+        "init", fn _ctx, _opts -> nil end,
+        "PreDone", fn ctx ->
+          S.setprop(S.getprop(ctx, "result"), "stream",
+            fn -> Stream.map([1], fn _ -> raise "${ename} source failed" end) end)
+        end,
+        "PreUnexpected", fn _ctx -> S.setprop(seen, "n", S.getprop(seen, "n") + 1) end
+      ])
+
+    client = ${Name}.new(S.jm(["feature", S.jm(["test", S.jm(["active", true])]), "extend", S.jt([hook])]))
+
+    err =
+      try do
+        Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(client), "list"))
+        nil
+      rescue
+        e -> e
+      end
+
+    assert err != nil and String.contains?(Exception.message(err), "source failed")
+    assert S.getprop(seen, "n") > 0
+
+    fired = S.getprop(seen, "n")
+    quiet = S.jm(["ctrl", S.jm(["throw", false])])
+    assert Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(client), "list", nil, quiet)) == []
+    assert S.getprop(seen, "n") > fired
+  end
+
   test "should fire PreUnexpected" do
     seen = S.jm(["n", 0])
 

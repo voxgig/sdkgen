@@ -149,7 +149,7 @@ src/cmp/clojure/ReadmeTopTest_clojure.ts 0a72b8c41e8d
 src/cmp/clojure/Schema_clojure.ts 173cdd00d273
 src/cmp/clojure/TestClean_clojure.ts 6b7205400bfb
 src/cmp/clojure/TestDirect_clojure.ts ebfe781a958d
-src/cmp/clojure/TestEntity_clojure.ts 833cd4efdfb2
+src/cmp/clojure/TestEntity_clojure.ts 33f904127339
 src/cmp/clojure/Test_clojure.ts 56abfa732719
 src/cmp/clojure/featureextra_clojure.ts 9327232c64f7
 src/cmp/clojure/fragment/Entity.fragment.clj f58140ba841b
@@ -457,7 +457,7 @@ src/cmp/elixir/ReadmeTopTest_elixir.ts 5f12260e03e2
 src/cmp/elixir/Schema_elixir.ts a2d61dba669a
 src/cmp/elixir/TestClean_elixir.ts a45080a5efb1
 src/cmp/elixir/TestDirect_elixir.ts 2ee44de0d1a9
-src/cmp/elixir/TestEntity_elixir.ts cc704d3fe97f
+src/cmp/elixir/TestEntity_elixir.ts 67a08b6a8ee9
 src/cmp/elixir/Test_elixir.ts 66686f882ff1
 src/cmp/elixir/fragment/Entity.fragment.ex 0b31d658ff1d
 src/cmp/elixir/fragment/EntityCreateOp.fragment.ex 801356a77819
@@ -474,7 +474,7 @@ tm/elixir/Makefile 411daea82111
 tm/elixir/VERSION e6635045e1d2
 tm/elixir/lib/projectname/context.ex 9a3585bb5f37
 tm/elixir/lib/projectname/core.ex 6b5e41add8f7
-tm/elixir/lib/projectname/entity_base.ex 70ab4eb7c200
+tm/elixir/lib/projectname/entity_base.ex 60a9bfea001c
 tm/elixir/lib/projectname/error.ex 3817e946f99d
 tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex 2de50e8b1581
@@ -1107,7 +1107,7 @@ src/cmp/ocaml/Schema_ocaml.ts b079f590abc8
 src/cmp/ocaml/SdkError_ocaml.ts fa425e8da4bd
 src/cmp/ocaml/TestClean_ocaml.ts 05fcee93a78c
 src/cmp/ocaml/TestDirect_ocaml.ts 216a29066541
-src/cmp/ocaml/TestEntity_ocaml.ts 4c58f8de077a
+src/cmp/ocaml/TestEntity_ocaml.ts f3f71fdefa4f
 src/cmp/ocaml/Test_ocaml.ts 97451223ef72
 src/cmp/ocaml/fragment/RunOp.fragment.ml 720d6938191c
 src/cmp/ocaml/tsconfig.json 720a3f229019
@@ -1271,7 +1271,7 @@ src/cmp/php/ReadmeTopHowto_php.ts a0a90593a80f
 src/cmp/php/ReadmeTopQuick_php.ts f52705d06444
 src/cmp/php/ReadmeTopTest_php.ts e602ef0b983e
 src/cmp/php/Schema_php.ts 9750487a267a
-src/cmp/php/TestClean_php.ts c3497d8dc2ab
+src/cmp/php/TestClean_php.ts 84eac8500833
 src/cmp/php/TestDirect_php.ts 3425c8e01f2e
 src/cmp/php/TestEntity_php.ts 6621c775f469
 src/cmp/php/Test_php.ts 4b04d7202c7a
@@ -1900,7 +1900,7 @@ src/cmp/swift/Schema_swift.ts de5a4a02dc8d
 src/cmp/swift/SdkError_swift.ts eb21c3a56459
 src/cmp/swift/TestClean_swift.ts b6b74422e75c
 src/cmp/swift/TestDirect_swift.ts 3c38c4dfe812
-src/cmp/swift/TestEntity_swift.ts 117bb2796fdd
+src/cmp/swift/TestEntity_swift.ts 8ea9ae71eeb1
 src/cmp/swift/Test_swift.ts ab9d033258f1
 src/cmp/swift/fragment/Entity.fragment.swift de2d5b4a325f
 src/cmp/swift/fragment/EntityBase.fragment.swift 484745e99c7e
