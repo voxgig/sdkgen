@@ -506,7 +506,8 @@ let () =
 (* A feature's name is not a field name: a feature called secrets does not
  * make its settings secret, though a sensitive field inside it still is. An
  * entity block, of per-entity settings or seeded records keyed by entity name
- * and id, is not read at all. *)
+ * and id, is not read at all, and nor are rbac's rules, keyed by entity and
+ * operation names. *)
 let () =
   test "clean.a_feature_name_is_read_as_a_name" (fun () ->
       let seeded = jo [("zztoken", jo [("ZZTOKEN01", jo [("note", Str "PLAINRECORD-t5r3e1w9")])])] in
@@ -515,6 +516,8 @@ let () =
           ("feature", jo [
               ("secrets", jo [("active", Bool false); ("name", Str "ZZNAME-feat123");
                               ("token", Str "ZZTOKEN-feat456")]);
+              ("rbac", jo [("active", Bool false);
+                           ("rules", jo [("zztoken.load", Str "PLAINRULE-k7j5h3g1")])]);
               ("test", jo [("active", Bool false); ("entity", seeded)])]);
           ("entity", jo [("zztoken", jo [("alias", jo [("zzkey", Str "PLAINALIAS-m2n4b6v8")])])])]) in
       match client.cl_rootctx with
@@ -524,7 +527,9 @@ let () =
         check_vstr "a record seeded under an entity block is not registered"
           (clean_util ctx (Str "record PLAINRECORD-t5r3e1w9")) "record PLAINRECORD-t5r3e1w9";
         check_vstr "an entity's own settings are not registered"
-          (clean_util ctx (Str "alias PLAINALIAS-m2n4b6v8")) "alias PLAINALIAS-m2n4b6v8"
+          (clean_util ctx (Str "alias PLAINALIAS-m2n4b6v8")) "alias PLAINALIAS-m2n4b6v8";
+        check_vstr "an rbac rule keyed by entity and operation is not registered"
+          (clean_util ctx (Str "rule PLAINRULE-k7j5h3g1")) "rule PLAINRULE-k7j5h3g1"
       | None -> failwith "the client has no root context")
 
 let () =

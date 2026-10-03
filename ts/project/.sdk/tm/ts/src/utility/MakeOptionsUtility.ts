@@ -124,16 +124,16 @@ function makeOptions(ctx: Context) {
 }
 
 
-// Registration skips entity blocks: entity settings and seed records hold no credential.
+// Registration skips entity blocks, and rbac's rules, keyed by entity and op names.
 function settings(opts: any): any {
-  const noent = (b: any) => null != b && 'object' === typeof b && !Array.isArray(b)
-    ? { ...b, entity: undefined } : b
-  const feature = Array.isArray(opts.feature) ? opts.feature.map(noent)
+  const plain = (b: any, name?: string) => null != b && 'object' === typeof b && !Array.isArray(b)
+    ? { ...b, entity: undefined, ...('rbac' === name ? { rules: undefined } : {}) } : b
+  const feature = Array.isArray(opts.feature) ? opts.feature.map((b: any) => plain(b, b?.name))
     : null != opts.feature && 'object' === typeof opts.feature
-      ? Object.fromEntries(Object.entries(opts.feature).map(([k, v]) => [k, noent(v)]))
+      ? Object.fromEntries(Object.entries(opts.feature).map(([k, v]) => [k, plain(v, k)]))
       : opts.feature
   return { ...opts, clean: undefined, __derived__: undefined, entity: undefined,
-    test: noent(opts.test), feature }
+    test: plain(opts.test), feature }
 }
 
 

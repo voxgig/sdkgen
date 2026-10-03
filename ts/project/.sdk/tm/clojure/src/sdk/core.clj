@@ -1532,16 +1532,20 @@
 
 ;; A feature's name is not a field name: only the sensitive names inside its
 ;; settings count, so `secrets` does not make every setting a secret. Entity
-;; blocks hold entity settings and seeded records, never a credential.
+;; blocks hold entity settings and seeded records, never a credential, and
+;; rbac's rules are keyed by entity and operation names.
 (defn- clean-add-options [ctx opts]
-  (let [noent #(omit-keys % ["entity"])
+  (let [plain (fn [block fname]
+                (omit-keys block (if (= "rbac" fname) ["entity" "rules"] ["entity"])))
         top (dissoc (into {} opts) "feature" "entity")
         feature (vs/getprop opts "feature")]
-    (u-clean-add-sensitive ctx (cond-> top (contains? top "test") (update "test" noent)))
-    (doseq [fopts (cond (vs/ismap feature) (map #(vs/getprop feature %) (vs/keysof feature))
-                        (vs/islist feature) (vec feature)
-                        :else [feature])]
-      (u-clean-add-sensitive ctx (noent fopts)))))
+    (u-clean-add-sensitive ctx (cond-> top (contains? top "test") (update "test" plain nil)))
+    (doseq [[fname fopts] (cond (vs/ismap feature)
+                                (map #(vector % (vs/getprop feature %)) (vs/keysof feature))
+                                (vs/islist feature)
+                                (map #(vector (when (vs/ismap %) (vs/getprop % "name")) %) feature)
+                                :else [[nil feature]])]
+      (u-clean-add-sensitive ctx (plain fopts fname)))))
 
 (defn u-make-options [ctx]
   (let [options (or (oget ctx :options) (vs/jm))

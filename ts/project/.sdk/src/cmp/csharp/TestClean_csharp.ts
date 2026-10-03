@@ -821,7 +821,8 @@ ${candidateLines}
 
     // A feature's name is not a field name: only the sensitive names inside
     // its settings register. An entity block, of per-entity settings or
-    // seeded records keyed by entity name and id, is not read at all.
+    // seeded records keyed by entity name and id, is not read at all, and nor
+    // are rbac's rules, keyed by entity and operation names.
     [Fact]
     public void AFeatureNameDoesNotMakeItsSettingsSecret()
     {
@@ -837,6 +838,11 @@ ${candidateLines}
                 ["zzfeat"] = new Dictionary<string, object?>
                 {
                     ["active"] = false, ["apitoken"] = "FEATTOKEN-z9y8x7w6",
+                },
+                ["rbac"] = new Dictionary<string, object?>
+                {
+                    ["active"] = false,
+                    ["rules"] = new Dictionary<string, object?> { ["zztoken.load"] = "PLAINRULE-k7j5h3g1" },
                 },
                 ["test"] = new Dictionary<string, object?>
                 {
@@ -864,6 +870,7 @@ ${candidateLines}
         Assert.Equal("token " + Mask, Cleaned("token FEATTOKEN-z9y8x7w6"));
         Assert.Equal("record PLAINRECORD-t5r3e1w9", Cleaned("record PLAINRECORD-t5r3e1w9"));
         Assert.Equal("alias PLAINALIAS-m2n4b6v8", Cleaned("alias PLAINALIAS-m2n4b6v8"));
+        Assert.Equal("rule PLAINRULE-k7j5h3g1", Cleaned("rule PLAINRULE-k7j5h3g1"));
     }
 
     [Fact]

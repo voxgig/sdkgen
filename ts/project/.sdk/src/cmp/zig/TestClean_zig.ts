@@ -785,7 +785,8 @@ test "clean: the generated config's own clean block is honoured" {
 // A feature's name is not a field name: a feature called secrets does not
 // make its settings secret, though a sensitive field inside it still is. An
 // entity block, of per-entity settings or seeded records keyed by entity name
-// and id, is not read at all.
+// and id, is not read at all, and nor are rbac's rules, keyed by entity and
+// operation names.
 test "clean: a feature's name is read as a name" {
     const client = sdk.SDK.new(offline(h.jo(&.{
         .{ "apikey", h.vstr(CANARY_APIKEY) },
@@ -794,6 +795,10 @@ test "clean: a feature's name is read as a name" {
                 .{ "active", h.vbool(false) },
                 .{ "name", h.vstr("ZZNAME-feat123") },
                 .{ "token", h.vstr("ZZTOKEN-feat456") },
+            }) },
+            .{ "rbac", h.jo(&.{
+                .{ "active", h.vbool(false) },
+                .{ "rules", h.jo(&.{.{ "zztoken.load", h.vstr("PLAINRULE-k7j5h3g1") }}) },
             }) },
             .{ "test", h.jo(&.{
                 .{ "active", h.vbool(false) },
@@ -813,6 +818,8 @@ test "clean: a feature's name is read as a name" {
         sdk.utilmod.clean_str_util(ctx, "record PLAINRECORD-t5r3e1w9"));
     try testing.expectEqualStrings("alias PLAINALIAS-m2n4b6v8",
         sdk.utilmod.clean_str_util(ctx, "alias PLAINALIAS-m2n4b6v8"));
+    try testing.expectEqualStrings("rule PLAINRULE-k7j5h3g1",
+        sdk.utilmod.clean_str_util(ctx, "rule PLAINRULE-k7j5h3g1"));
 }
 `
 }

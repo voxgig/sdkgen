@@ -385,6 +385,24 @@ describe('clean: the registry makeOptions builds', () => {
   })
 
 
+  test('rbac\'s rules are not read: their keys name an entity and an operation', () => {
+    const { cleanmod, makeOptions } = loadOptions({ feature: { '`$OPEN`': true } })
+    const rules = { 'token.load': 'RULE-PERMISSION-1', 'secret.remove': 'RULE-PERMISSION-2' }
+    const other = { 'token.load': 'OTHER-RULE-3' }
+    const plain = 'RULE-PERMISSION-1 RULE-PERMISSION-2'
+    for (const feature of [
+      { rbac: { active: true, permissions: ['reader'], rules }, zzfeat: { rules: other } },
+      [{ name: 'rbac', active: true, permissions: ['reader'], rules }, { name: 'zzfeat', rules: other }],
+    ]) {
+      const ctx: any = { utility: { struct }, config: {}, options: { apikey: 'RBAC-KEY-12345', feature } }
+      ctx.options = makeOptions(ctx)
+      strictEqual(cleanmod.clean(ctx, plain), plain)
+      strictEqual(cleanmod.clean(ctx, 'b OTHER-RULE-3'), 'b ' + MASK)
+      strictEqual(cleanmod.clean(ctx, 'a RBAC-KEY-12345'), 'a ' + MASK)
+    }
+  })
+
+
   test('done cleans the caller\'s explain record in place, and prunes err from a copy', () => {
     const cleanmod = loadClean()
     const { done } = sandboxLoad(Path.join(TM, 'ts', 'src', 'utility', 'DoneUtility.ts'), {

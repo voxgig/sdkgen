@@ -760,15 +760,19 @@ int main(void) {
   // A feature's name is not a field name: a feature called secrets does not
   // make its settings secret, though a sensitive field inside it still is. An
   // entity block, of per-entity settings or seeded records keyed by entity
-  // name and id, is not read at all.
+  // name and id, is not read at all, and nor are rbac's rules, keyed by entity
+  // and operation names.
   {
     ${Name}SDK* featured = ${ident}_sdk_new(offline(cmap(3,
       "apikey", v_str(CANARY_APIKEY),
-      "feature", cmap(2,
+      "feature", cmap(3,
         "secrets", cmap(3,
           "active", v_bool(false),
           "name", v_str("ZZNAME-feat123"),
           "token", v_str("ZZTOKEN-feat456")),
+        "rbac", cmap(2,
+          "active", v_bool(false),
+          "rules", cmap(1, "zztoken.load", v_str("PLAINRULE-k7j5h3g1"))),
         "test", cmap(2,
           "active", v_bool(false),
           "entity", cmap(1, "zztoken", cmap(1, "ZZTOKEN01",
@@ -784,6 +788,8 @@ int main(void) {
                  "a record seeded under an entity block is not registered");
     CHECK_STR_EQ(clean_str(fctx, "alias PLAINALIAS-m2n4b6v8"), "alias PLAINALIAS-m2n4b6v8",
                  "an entity's own settings are not registered");
+    CHECK_STR_EQ(clean_str(fctx, "rule PLAINRULE-k7j5h3g1"), "rule PLAINRULE-k7j5h3g1",
+                 "an rbac rule keyed by entity and operation is not registered");
   }
 
   TEST_SUMMARY("clean");

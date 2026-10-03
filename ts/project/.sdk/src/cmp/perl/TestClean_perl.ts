@@ -546,12 +546,14 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
 
   # A feature's name is not a field name: only the sensitive names inside
   # its settings register. An entity block, of per-entity settings or seeded
-  # records keyed by entity name and id, is not read at all.
+  # records keyed by entity name and id, is not read at all, and nor are
+  # rbac's rules, keyed by entity and operation names.
   my $featured = construct({
     'apikey' => $CANARY{apikey},
     'feature' => {
       'zzsecrets' => { 'active' => 0, 'kind' => 'PLAINSETTING-q8w2e4r6' },
       'zzfeat' => { 'active' => 0, 'apitoken' => 'FEATTOKEN-z9y8x7w6' },
+      'rbac' => { 'active' => 0, 'rules' => { 'zztoken.load' => 'PLAINRULE-k7j5h3g1' } },
       'test' => { 'active' => 0, 'entity' => {
         'zztoken' => { 'ZZTOKEN01' => { 'note' => 'PLAINRECORD-t5r3e1w9' } } } },
     },
@@ -562,6 +564,7 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
   my $ftoken = $fclean->($featured->get_root_ctx(), 'token FEATTOKEN-z9y8x7w6');
   my $frecord = $fclean->($featured->get_root_ctx(), 'record PLAINRECORD-t5r3e1w9');
   my $falias = $fclean->($featured->get_root_ctx(), 'alias PLAINALIAS-m2n4b6v8');
+  my $frule = $fclean->($featured->get_root_ctx(), 'rule PLAINRULE-k7j5h3g1');
 
   my @leaked = grep { @{ $_->{found} } }
     map { { 'name' => $_->{name}, 'found' => [ leaks($_->{text}) ] } } @sinks;
@@ -605,6 +608,7 @@ plan skip_all => 'no operation of this SDK completes against a plain 200; nothin
   is($ftoken, "token $MASK", 'a sensitive setting inside a feature registers');
   is($frecord, 'record PLAINRECORD-t5r3e1w9', 'the records a test entity block seeds do not register');
   is($falias, 'alias PLAINALIAS-m2n4b6v8', 'a per-entity setting does not register');
+  is($frule, 'rule PLAINRULE-k7j5h3g1', 'an rbac rule keyed by entity and operation does not register');
 
   my $explained = $explains{'ok/explain'} || {};
   ok(defined $explained->{result}, 'the explain record carries the result');

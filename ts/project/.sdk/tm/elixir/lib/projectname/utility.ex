@@ -826,7 +826,8 @@ defmodule ProjectName.Utility do
   # The options to scan for secrets. The feature map is keyed by feature
   # names, not field names, so it is scanned as a list: `secrets` must not
   # make every setting of that feature a secret. Entity blocks hold entity
-  # settings and seeded records, never a credential, so they are skipped.
+  # settings and seeded records, never a credential, so they are skipped, and
+  # so are rbac's rules, keyed by entity and operation names.
   defp secret_scan(opts, names) do
     out = S.jm([])
 
@@ -836,10 +837,15 @@ defmodule ProjectName.Utility do
           nil
 
         k == "feature" and (S.ismap(v) or S.islist(v)) ->
-          S.setprop(out, k, S.jt(Enum.map(H.entries(v), fn {_, f} -> without(f, "entity") end)))
+          blocks =
+            Enum.map(H.entries(v), fn {fk, f} ->
+              plain(f, if(S.ismap(v), do: fk, else: S.getprop(f, "name")))
+            end)
+
+          S.setprop(out, k, S.jt(blocks))
 
         k == "test" ->
-          S.setprop(out, k, without(v, "entity"))
+          S.setprop(out, k, plain(v, nil))
 
         true ->
           S.setprop(out, k, v)
@@ -847,6 +853,10 @@ defmodule ProjectName.Utility do
     end)
 
     out
+  end
+
+  defp plain(node, name) do
+    if name == "rbac", do: without(without(node, "entity"), "rules"), else: without(node, "entity")
   end
 
   defp without(node, key) do

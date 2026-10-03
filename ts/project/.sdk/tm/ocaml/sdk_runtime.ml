@@ -1452,25 +1452,29 @@ let fetcher_util (ctx : ctx) (fullurl : string) (fetchdef : value) : (value * sd
 (* ------------------------------------------------------------------ *)
 
 
-let noentity (settings : value) : value =
+let plain_settings (settings : value) (name : string) : value =
   match settings with
   | Map _ ->
     let out = empty_map () in
-    List.iter (fun k -> if k <> "entity" then setp out k (getp settings k)) (keysof settings);
+    List.iter (fun k ->
+        if k <> "entity" && not (name = "rbac" && k = "rules") then
+          setp out k (getp settings k)) (keysof settings);
     out
   | v -> v
 
 (* The options to scan for secrets. The feature map is keyed by feature
  * names, not field names, so it is scanned as a list: `secrets` must not
  * make every setting of that feature a secret. Entity blocks hold entity
- * settings and seeded records, never a credential, so none is scanned. *)
+ * settings and seeded records, never a credential, so none is scanned, and
+ * nor are rbac's rules, keyed by entity and operation names. *)
 let secret_scan (opts : value) (names : string list) : value =
   let out = empty_map () in
   List.iter (fun k ->
       if k <> "entity" && not (List.mem k names) then
         match k, getp opts k with
-        | "feature", (Map _ as fm) -> setp out k (ja (List.map (fun f -> noentity (getp fm f)) (keysof fm)))
-        | "test", v -> setp out k (noentity v)
+        | "feature", (Map _ as fm) ->
+          setp out k (ja (List.map (fun f -> plain_settings (getp fm f) f) (keysof fm)))
+        | "test", v -> setp out k (plain_settings v "")
         | _, v -> setp out k v) (keysof opts);
   out
 

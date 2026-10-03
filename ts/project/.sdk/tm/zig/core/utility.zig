@@ -622,12 +622,15 @@ fn mo_str_less(_: void, a: []const u8, b: []const u8) bool {
     return std.mem.order(u8, a, b) == .lt;
 }
 
-fn mo_noentity(val: Value) Value {
+fn mo_plain(val: Value, name: ?[]const u8) Value {
     if (val != .object) return val;
+    const rbac = if (name) |n| std.mem.eql(u8, n, "rbac") else false;
     const out = h.omap();
     var it = val.object.iterator();
     while (it.next()) |kv| {
-        if (!std.mem.eql(u8, kv.key_ptr.*, "entity")) h.setp(out, kv.key_ptr.*, kv.value_ptr.*);
+        const k = kv.key_ptr.*;
+        if (std.mem.eql(u8, k, "entity") or (rbac and std.mem.eql(u8, k, "rules"))) continue;
+        h.setp(out, k, kv.value_ptr.*);
     }
     return out;
 }
@@ -635,8 +638,9 @@ fn mo_noentity(val: Value) Value {
 // The options to scan for secrets. The feature map is keyed by feature
 // names, not field names, so it is scanned as a list: `secrets` must not
 // make every setting of that feature a secret. Entity blocks hold entity
-// settings and seeded records, never a credential, so none is scanned. The
-// raw scan still sees the feature list form, whose entries each carry `name`.
+// settings and seeded records, never a credential, so none is scanned, and
+// nor are rbac's rules, keyed by entity and operation names. The raw scan
+// still sees the feature list form, whose entries each carry `name`.
 fn mo_without(opts: Value, keys: []const []const u8) Value {
     const out = h.omap();
     if (opts != .object) return out;
@@ -652,13 +656,13 @@ fn mo_without(opts: Value, keys: []const []const u8) Value {
             const list = h.olist();
             if (v == .object) {
                 var fit = v.object.iterator();
-                while (fit.next()) |f| list.array.append(mo_noentity(f.value_ptr.*)) catch {};
+                while (fit.next()) |f| list.array.append(mo_plain(f.value_ptr.*, f.key_ptr.*)) catch {};
             } else {
-                for (v.array.data.items) |f| list.array.append(mo_noentity(f)) catch {};
+                for (v.array.data.items) |f| list.array.append(mo_plain(f, h.get_str(f, "name"))) catch {};
             }
             h.setp(out, key, list);
         } else if (std.mem.eql(u8, key, "test")) {
-            h.setp(out, key, mo_noentity(v));
+            h.setp(out, key, mo_plain(v, null));
         } else {
             h.setp(out, key, v);
         }
