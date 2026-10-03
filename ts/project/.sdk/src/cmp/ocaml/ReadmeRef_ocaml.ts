@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -324,6 +324,13 @@ let result_data = result.e_data_get ()
 \`\`\`
 
 `)
+          }
+
+          if ('create' === opname || 'update' === opname) {
+            const note = bodyNote(ent.op[opname], {
+              values: 'a `Str` holding the bytes',
+            })
+            if ('' !== note) Content(note)
           }
         })
       }

@@ -205,6 +205,8 @@ public class ValidateFeature extends BaseFeature {
     // fields will never name it - and under `strict` every custom-action call
     // would be rejected for the one key that made it reachable.
     out.remove("$action");
+    // Nor is `$body`, the raw request body.
+    out.remove("$body");
 
     return out;
   }

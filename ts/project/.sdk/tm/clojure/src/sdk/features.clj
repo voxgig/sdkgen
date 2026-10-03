@@ -194,7 +194,8 @@
                                ;; update miss: 404, never another record
                                (if (nil? ent) (respond 404 nil (vs/jm "statusText" "Not found"))
                                    (do (when (and (vs/ismap ent) (vs/ismap reqdata))
-                                         (vs/merge (vs/jt ent reqdata)))
+                                         ;; `$body` travels on the wire alone; the record is the rest.
+                                         (vs/merge (vs/jt ent (doto (vs/clone reqdata) (vs/delprop "$body")))))
                                        (vs/delprop ent "$KEY")
                                        (respond 200 (vs/clone ent) nil)))))
                            (= opn "remove")
@@ -209,7 +210,8 @@
                                             (format "%04x%04x%04x%04x" (rand-int 0x10000) (rand-int 0x10000) (rand-int 0x10000) (rand-int 0x10000)))
                                      ent (vs/clone (core/oget fctx :reqdata))]
                                  (if (vs/ismap ent)
-                                   (do (.put ^java.util.Map ent "id" id)
+                                   (do (vs/delprop ent "$body")
+                                       (.put ^java.util.Map ent "id" id)
                                        (when (string? id) (.put ^java.util.Map entmap (str id) ent))
                                        (vs/delprop ent "$KEY")
                                        (respond 200 (vs/clone ent) nil))
@@ -1471,6 +1473,8 @@
                     ;; call would be rejected for the one key that made it
                     ;; reachable.
                     (.remove ^java.util.Map out "$action")
+                    ;; Nor is `$body`, the raw request body.
+                    (.remove ^java.util.Map out "$body")
                     out))]
     (swap! fa assoc :spec (vs/jm) :request true :response false :mode "throw")
     (swap! fa assoc

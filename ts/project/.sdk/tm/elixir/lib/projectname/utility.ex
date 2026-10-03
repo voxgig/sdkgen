@@ -1618,6 +1618,90 @@ defmodule ProjectName.Utility do
     end
   end
 
+  # ---- media ---------------------------------------------------------------
+
+  # The media types a point declares: `response` (the model's `rs`) for the
+  # Accept header, and `body` (the model's `rb`) for the request body.
+
+  # The data key holding a raw request body. Like `$action`, it can never be
+  # a declared argument name.
+  @raw_body "$body"
+
+  def json_media?(media) do
+    m =
+      if(is_binary(media), do: media, else: "")
+      |> String.split(";", parts: 2)
+      |> hd()
+      |> String.trim()
+      |> String.downcase()
+
+    m == "application/json" or m == "text/json" or String.ends_with?(m, "+json")
+  end
+
+  # The declared JSON type alone, else every declared type in the model's
+  # order; nil when no success response declares a body.
+  def accept_of(point) do
+    res = S.getprop(point, "response")
+    media = S.getprop(res, "media")
+
+    cond do
+      not is_binary(media) or media == "" ->
+        nil
+
+      S.getprop(res, "kind") == "json" ->
+        media
+
+      true ->
+        alts = S.getprop(res, "alternatives")
+        n = if S.islist(alts), do: S.size(alts), else: 0
+
+        others =
+          if n == 0 do
+            []
+          else
+            Enum.flat_map(0..(n - 1), fn i ->
+              m = S.getprop(S.getelem(alts, i), "media")
+              if is_binary(m) and m != "", do: [m], else: []
+            end)
+          end
+
+        Enum.join([media | others], ", ")
+    end
+  end
+
+  def raw_request?(point), do: S.getprop(S.getprop(point, "body"), "kind") == "raw"
+
+  defp media_header?(headers, name) do
+    Enum.any?(H.entries(headers), fn {k, _} -> is_binary(k) and String.downcase(k) == name end)
+  end
+
+  # A caller's accept wins. A declared request type replaces each JSON
+  # content-type, the SDK default, and leaves any other the caller set.
+  def media_headers(point, headers) do
+    accept = accept_of(point)
+
+    if accept != nil and not media_header?(headers, "accept"),
+      do: S.setprop(headers, "accept", accept)
+
+    body = S.getprop(point, "body")
+    media = S.getprop(body, "media")
+
+    if S.getprop(body, "kind") in ["raw", "json"] and is_binary(media) and media != "" do
+      Enum.each(H.entries(headers), fn {k, v} ->
+        if is_binary(k) and String.downcase(k) == "content-type" and json_media?(v),
+          do: S.delprop(headers, k)
+      end)
+
+      if not media_header?(headers, "content-type"),
+        do: S.setprop(headers, "content-type", media)
+    end
+
+    headers
+  end
+
+  # A binary, of bytes or text, sent as it is.
+  def raw_body(reqdata), do: if(S.ismap(reqdata), do: S.getprop(reqdata, @raw_body), else: nil)
+
   # ---- prepare_* -----------------------------------------------------------
 
   @method_map %{
@@ -1655,6 +1739,8 @@ defmodule ProjectName.Utility do
         if S.ismap(cloned), do: cloned, else: S.jm([])
       end
 
+    out = media_headers(S.getprop(ctx, "point"), out)
+
     # A header argument replaces a default of the same name, whatever its case.
     Enum.each(call_args(ctx, "header"), fn {_name, wire, val} ->
       if val != nil do
@@ -1673,7 +1759,12 @@ defmodule ProjectName.Utility do
 
   def prepare_body_impl(ctx) do
     op = S.getprop(ctx, "op")
-    if S.getprop(op, "input") == "data", do: transform_request(ctx), else: nil
+
+    cond do
+      S.getprop(op, "input") != "data" -> nil
+      raw_request?(S.getprop(ctx, "point")) -> raw_body(S.getprop(ctx, "reqdata"))
+      true -> transform_request(ctx)
+    end
   end
 
   def prepare_params_impl(ctx) do
@@ -2160,8 +2251,23 @@ defmodule ProjectName.Utility do
     has_ua =
       Enum.any?(H.entries(headers_node), fn {k, _v} -> String.downcase(to_string(k)) == "user-agent" end)
 
+    with_body = method in [:post, :put, :patch, :delete] and is_binary(body)
+    content_type? = fn {k, _v} -> String.downcase(to_string(k)) == "content-type" end
+
+    # :httpc takes a body's content type beside the headers, not among them.
+    ctype =
+      case Enum.find(H.entries(headers_node), content_type?) do
+        {_k, v} -> to_string(v)
+        nil -> "application/json"
+      end
+
+    pairs =
+      if with_body,
+        do: Enum.reject(H.entries(headers_node), content_type?),
+        else: H.entries(headers_node)
+
     hlist0 =
-      Enum.map(H.entries(headers_node), fn {k, v} ->
+      Enum.map(pairs, fn {k, v} ->
         {String.to_charlist(to_string(k)), String.to_charlist(to_string(v))}
       end)
 
@@ -2171,8 +2277,8 @@ defmodule ProjectName.Utility do
     url = String.to_charlist(fullurl)
 
     request =
-      if method in [:post, :put, :patch, :delete] and is_binary(body) do
-        {url, hlist, ~c"application/json", body}
+      if with_body do
+        {url, hlist, String.to_charlist(ctype), body}
       else
         {url, hlist}
       end

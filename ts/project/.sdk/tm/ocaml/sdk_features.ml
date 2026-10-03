@@ -477,6 +477,8 @@ let validate_feature () : feature =
      * and under `strict` every custom-action call would be rejected for the
      * one key that made it reachable. *)
     ignore (delprop out (Str "$action"));
+    (* Nor is `$body`, the raw request body. *)
+    ignore (delprop out (Str "$body"));
     out in
 
   (* One validate call. Errors are COLLECTED, never raised: validate raises on
@@ -1583,7 +1585,13 @@ let test_feature () : feature =
          (* update miss: 404, never another record *)
          if is_nullish ent then respond fctx 404 Noval (Some (jo [("statusText", Str "Not found")]))
          else begin
-           (match ent, fctx.c_reqdata with Map _, Map _ -> ignore (merge (ja [ent; fctx.c_reqdata])) | _ -> ());
+           (* `$body` travels on the wire alone; the record is the rest. *)
+           (match ent, fctx.c_reqdata with
+            | Map _, Map _ ->
+              let rest = clone fctx.c_reqdata in
+              ignore (delprop rest (Str "$body"));
+              ignore (merge (ja [ent; rest]))
+            | _ -> ());
            ignore (delprop ent (Str "$KEY"));
            respond fctx 200 (clone ent) None
          end
@@ -1598,6 +1606,7 @@ let test_feature () : feature =
          let ent = clone fctx.c_reqdata in
          (match ent with
           | Map _ ->
+            ignore (delprop ent (Str "$body"));
             setp ent "id" eid;
             (match eid with Str s -> setp entmap s ent | _ -> ());
             ignore (delprop ent (Str "$KEY"));

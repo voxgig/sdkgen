@@ -11,8 +11,9 @@ public static partial class SdkUtility
         var options = ctx.Client!.OptionsMap();
 
         var headers = StructUtils.GetProp(options, "headers");
-        var result = (headers == null ? null : StructUtils.Clone(headers) as Dictionary<string, object?>)
-            ?? new Dictionary<string, object?>();
+        var result = MediaHeaders(ctx.Point,
+            (headers == null ? null : StructUtils.Clone(headers) as Dictionary<string, object?>)
+            ?? new Dictionary<string, object?>());
 
         // A header argument replaces a default of the same name, whatever its
         // case.

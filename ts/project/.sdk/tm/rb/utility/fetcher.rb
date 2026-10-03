@@ -70,7 +70,16 @@ module ProjectNameUtilities
       # Default User-Agent — Net::HTTP sets "Ruby" which some CDNs block.
       # Use a Mozilla-shaped UA unless the caller already set one.
       request['User-Agent'] = 'Mozilla/5.0 (compatible; ProjectNameSDK/1.0)' unless has_ua
-      request.body = body_str if body_str.is_a?(String)
+      if body_str.is_a?(String)
+        request.body = body_str
+      elsif body_str.respond_to?(:read)
+        request.body_stream = body_str
+        if body_str.respond_to?(:size)
+          request['Content-Length'] = body_str.size.to_s
+        else
+          request['Transfer-Encoding'] = 'chunked'
+        end
+      end
 
       http = ProjectNameUtilities.http_checkout(key, uri, proxy)
       begin

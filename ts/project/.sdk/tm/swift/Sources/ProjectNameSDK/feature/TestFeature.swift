@@ -58,6 +58,16 @@ private func testResolveMatch(_ ctx2: Context, _ explicitMatch: VMap) -> VMap {
   return VMap()
 }
 
+// The record the mock keeps: the request data without `$body`, which only the
+// wire carries.
+private func testRecord(_ reqdata: VMap) -> VMap {
+  let out = VMap()
+  for (k, v) in reqdata.entries where k != "$body" {
+    out.entries[k] = v
+  }
+  return out
+}
+
 private func testBuildArgs(_ ctx: Context, _ op: Operation, _ args: VMap?) -> Value {
   let opname = op.name
 
@@ -219,7 +229,7 @@ public final class TestFeature: BaseFeature {
           return testRespond(ctx2, 404, .noval, extra)
         }
         if ent.isMap {
-          _ = merge(.list(VList([ent, .map(ctx2.reqdata)])))
+          _ = merge(.list(VList([ent, .map(testRecord(ctx2.reqdata))])))
         }
         delprop(ent, .string("$KEY"))
         return testRespond(ctx2, 200, clone(ent), nil)
@@ -241,7 +251,7 @@ public final class TestFeature: BaseFeature {
             Int.random(in: 0..<0x10000), Int.random(in: 0..<0x10000),
             Int.random(in: 0..<0x10000), Int.random(in: 0..<0x10000)))
         }
-        let ent = clone(.map(ctx2.reqdata))
+        let ent = clone(.map(testRecord(ctx2.reqdata)))
         if let entm = ent.asMap {
           entm.entries["id"] = id
           if let idStr = id.asString { entmap.entries[idStr] = .map(entm) }

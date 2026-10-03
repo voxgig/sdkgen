@@ -32,6 +32,8 @@ type DefinitionPoint = {
   sample: any
   idField: string
   ownQuery?: string
+  responseMedia?: string[]
+  rawBody?: { media: string[], text: boolean }
 }
 
 
@@ -57,6 +59,9 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
     resolveAuthName(model).toLowerCase() : null
   const ownQuery = !isAuthSuppressed(model) && 'query' === resolveAuthIn(model) ?
     resolveAuthName(model) : null
+
+  // A model from before apidef recorded media types sends neither header.
+  const recorded = recordsMedia(model)
 
   for (const entity of Object.values(entityCollection(model)) as any[]) {
     if (false === entity.active) continue
@@ -128,6 +133,9 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
 
         const success = successResponse(facts.responses)
         const media = null == success ? undefined : jsonMedia(success.response)
+        const responseMedia = recorded ? successMedia(facts) : []
+        const rawBody = recorded && ('create' === op || 'update' === op) ?
+          rawRequestBody(facts) : undefined
 
         plan.push({
           entity: entity.name,
@@ -139,6 +147,8 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           args,
           select: selected,
           headers,
+          ...(0 === responseMedia.length ? {} : { responseMedia }),
+          ...(null == rawBody ? {} : { rawBody }),
           query: params.filter((p: any) => 'query' === p?.in).map((p: any) => p.name),
           queryArgs,
           auth: unchecked ? null : credentialSets(facts, own),
@@ -196,6 +206,49 @@ function jsonMedia(response: any): any {
     return { schema: response.schema, example: response.examples?.['application/json'] }
   }
   return undefined
+}
+
+
+function recordsMedia(model: any): boolean {
+  return Object.values(entityCollection(model)).some((entity: any) =>
+    Object.values(entity?.op || {}).some((operation: any) =>
+      (operation?.points || []).some((p: any) => null != p.rs || null != p.rb)))
+}
+
+
+// Every type a success response declares: OpenAPI 3 content, or Swagger's
+// `produces` (else JSON) for a response with a schema.
+function successMedia(facts: any): string[] {
+  const out: string[] = []
+  const add = (types: string[]) => types.forEach((t) => out.includes(t) || out.push(t))
+  for (const [code, res] of Object.entries(facts.responses || {}) as [string, any][]) {
+    if (!/^2(\d\d|XX)$/i.test(code)) continue
+    if (null != res?.content && 'object' === typeof res.content) {
+      add(Object.keys(res.content))
+    }
+    else if (null != res?.schema) {
+      add(Array.isArray(facts.produces) && 0 < facts.produces.length ?
+        facts.produces : ['application/json'])
+    }
+  }
+  return out
+}
+
+
+// A request body declared in concrete raw types alone, which no SDK may
+// encode: no JSON, form, multipart or range.
+function rawRequestBody(facts: any): { media: string[], text: boolean } | undefined {
+  const content = facts.requestBody?.content
+  const types: string[] = null != content && 'object' === typeof content ? Object.keys(content) :
+    (facts.parameters || []).some((p: any) => 'body' === p?.in) && Array.isArray(facts.consumes) ?
+      facts.consumes : []
+  const raw = (t: string) => !/json|^application\/x-www-form-urlencoded|^multipart\/|\*/i
+    .test(t.split(';')[0].trim())
+  if (0 === types.length || !types.every(raw)) return undefined
+  return {
+    media: types,
+    text: types.every((t) => /^text\/|^application\/xml|\+xml/i.test(t.split(';')[0].trim())),
+  }
 }
 
 

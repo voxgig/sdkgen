@@ -20,6 +20,7 @@ final class PrepareHeaders {
     if (out == null) {
       out = new LinkedHashMap<>();
     }
+    out = Media.headers(ctx.point, out);
 
     // A header argument replaces a default of the same name, whatever its case.
     for (Param.CallArg arg : Param.callArgs(ctx, "header")) {

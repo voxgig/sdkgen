@@ -32,15 +32,22 @@ def _session():
     return _SESSION
 
 
+# Text as UTF-8, and bytes or a file object as they are.
+def _request_data(body):
+    if isinstance(body, str):
+        return body.encode("utf-8")
+    if isinstance(body, (bytearray, memoryview)):
+        return bytes(body)
+    if isinstance(body, bytes) or hasattr(body, "read"):
+        return body
+    return None
+
+
 def _default_http_fetch(fullurl, fetchdef):
     method = fetchdef.get("method", "GET")
-    body_str = fetchdef.get("body")
     headers = fetchdef.get("headers", {})
 
-    if not isinstance(body_str, str):
-        body_str = None
-
-    data = body_str.encode("utf-8") if body_str is not None else None
+    data = _request_data(fetchdef.get("body"))
 
     req_headers = {}
     has_ua = False

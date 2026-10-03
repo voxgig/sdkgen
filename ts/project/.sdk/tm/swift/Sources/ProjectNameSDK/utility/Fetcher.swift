@@ -56,9 +56,16 @@ func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
   var req = URLRequest(url: url)
   req.httpMethod = gp(fetchdef, "method").asString ?? "GET"
 
-  if let body = gp(fetchdef, "body").asString, body != "" {
-    req.httpBody = body.data(using: .utf8)
+  let body = gp(fetchdef, "body")
+  if let text = body.asString, text != "" {
+    req.httpBody = text.data(using: .utf8)
     req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+  } else if case .native(let ref) = body {
+    if let data = ref.value as? Data {
+      req.httpBody = data
+    } else if let bytes = ref.value as? [UInt8] {
+      req.httpBody = Data(bytes)
+    }
   }
 
   var hasUA = false

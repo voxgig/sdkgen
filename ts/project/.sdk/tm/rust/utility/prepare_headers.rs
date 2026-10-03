@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use crate::core::context::Context;
 use crate::core::helpers::{getp, setp};
+use crate::utility::media::media_headers;
 use crate::utility::param::call_args;
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
@@ -21,6 +22,7 @@ pub fn prepare_headers_util(ctx: &Rc<Context>) -> Value {
             _ => Value::empty_map(),
         }
     };
+    let out = media_headers(&ctx.point.borrow(), out);
 
     // A header argument replaces a default of the same name, whatever its case.
     for (_, wire, val) in call_args(ctx, "header") {

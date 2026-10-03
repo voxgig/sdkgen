@@ -139,7 +139,8 @@ object PrepareHeaders {
     val options = ctx.client.optionsMap()
     val headers = Struct.getprop(options, "headers")
     val cloned = if (headers == null) null else Helpers.toMapAny(Struct.clone(headers))
-    val out: JMap[String, Object] = if (cloned != null) cloned else new LinkedHashMap[String, Object]()
+    val out: JMap[String, Object] = Media.headers(ctx.point,
+      if (cloned != null) cloned else new LinkedHashMap[String, Object]())
 
     // A header argument replaces a default of the same name, whatever its case.
     for ((_, wire, v) <- Param.callArgs(ctx, "header") if v != null) {
@@ -154,7 +155,9 @@ object PrepareHeaders {
 
 object PrepareBody {
   def prepareBody(ctx: Context): Object =
-    if ("data" == ctx.op.input) ctx.utility.transformRequest(ctx) else null
+    if ("data" != ctx.op.input) null
+    else if (Media.isRawRequest(ctx.point)) Media.rawBody(ctx.reqdata)
+    else ctx.utility.transformRequest(ctx)
 }
 
 // NO `object PrepareAuth` HERE, and its absence is the point.

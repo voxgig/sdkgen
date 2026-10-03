@@ -6,6 +6,7 @@ use warnings;
 use File::Basename ();
 use Cwd ();
 use HTTP::Tiny ();
+use Scalar::Util ();
 
 my $__dir;
 BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
@@ -46,8 +47,19 @@ our $DefaultHttpFetch = sub {
   # Mozilla-shaped UA unless the caller already set one.
   $hdrs{'User-Agent'} = 'Mozilla/5.0 (compatible; ProjectNameSDK/1.0)' unless $has_ua;
 
+  # HTTP::Tiny sends bytes: a character string goes out as UTF-8, and a
+  # filehandle is read.
+  if (ref $body eq 'GLOB' || (Scalar::Util::blessed($body) && $body->can('read'))) {
+    local $/;
+    my $fh = $body;
+    $body = <$fh>;
+  }
   my $opts = { headers => \%hdrs };
-  $opts->{content} = "$body" if defined $body && !ref $body;
+  if (defined $body && !ref $body) {
+    my $content = "$body";
+    utf8::encode($content) if utf8::is_utf8($content);
+    $opts->{content} = $content;
+  }
 
   # fetchdef.redirect 'manual' (the ts fetch vocabulary): return a 3xx
   # as-is instead of following it. HTTP::Tiny follows redirects by

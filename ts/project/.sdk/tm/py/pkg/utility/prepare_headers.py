@@ -3,6 +3,7 @@
 from __future__ import annotations
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
 from projectname_sdk.utility.param import call_args
+from projectname_sdk.utility.media import media_headers
 
 
 def prepare_headers_util(ctx):
@@ -14,6 +15,7 @@ def prepare_headers_util(ctx):
         cloned = vs.clone(headers)
         if isinstance(cloned, dict):
             out = cloned
+    out = media_headers(ctx.point, out)
 
     # A header argument replaces a default of the same name, whatever its case.
     for _name, orig, val in call_args(ctx, "header"):

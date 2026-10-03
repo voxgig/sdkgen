@@ -19,6 +19,17 @@ function TestFeature.new()
 end
 
 
+-- The record the mock keeps: the request data without `$body`, which only the
+-- wire carries.
+local function record(reqdata)
+  if type(reqdata) ~= "table" then return reqdata end
+  local out = {}
+  for k, v in pairs(reqdata) do
+    if k ~= "$body" then out[k] = v end
+  end
+  return out
+end
+
 function TestFeature:init(ctx, options)
   self.client = ctx.client
   self.options = options
@@ -172,7 +183,7 @@ function TestFeature:init(ctx, options)
         return respond(404, nil, { statusText = "Not found" })
       end
       if type(ent) == "table" and type(fctx.reqdata) == "table" then
-        vs.merge({ ent, fctx.reqdata })
+        vs.merge({ ent, record(fctx.reqdata) })
       end
       vs.delprop(ent, "$KEY")
       local out = vs.clone(ent)
@@ -199,7 +210,7 @@ function TestFeature:init(ctx, options)
           math.random(0, 0xFFFF), math.random(0, 0xFFFF))
       end
 
-      local ent = vs.clone(fctx.reqdata)
+      local ent = vs.clone(record(fctx.reqdata))
       if type(ent) == "table" then
         ent["id"] = id
         if type(id) == "string" then

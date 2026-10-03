@@ -70,11 +70,10 @@ fn default_http_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectN
         req = req.set("User-Agent", "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)");
     }
 
-    let body = get_str(fetchdef, "body").filter(|b| !b.is_empty());
-
-    let sent = match body {
-        Some(b) => req.send_string(&b),
-        None => req.call(),
+    let body = getp(fetchdef, "body");
+    let sent = match crate::utility::media::body_bytes(&body) {
+        Some(bytes) if !bytes.is_empty() => req.send_bytes(&bytes),
+        _ => req.call(),
     };
 
     // ureq reports non-2xx as Err(Status) — unwrap those back into normal

@@ -1,5 +1,6 @@
 
 const { callArgs } = require('./ParamUtility')
+const { mediaHeaders } = require('./MediaUtility')
 
 function prepareHeaders(ctx) {
   const struct = ctx.utility.struct
@@ -11,7 +12,7 @@ function prepareHeaders(ctx) {
 
   const options = client.options()
 
-  let out = clone(getprop(options, 'headers', {}))
+  let out = mediaHeaders(ctx.point, clone(getprop(options, 'headers', {})))
 
   // A header argument replaces a default of the same name, whatever its case.
   for (const arg of callArgs(ctx, 'header')) {
