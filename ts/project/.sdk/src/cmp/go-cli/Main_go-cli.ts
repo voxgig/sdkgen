@@ -2,7 +2,7 @@
 import * as Path from 'node:path'
 
 import {
-  cmp, each, deriveEntityNames,
+  cmp, each, deriveEntityNames, entityOps,
   File, Content, Fragment, Slot, goModule, goVersion
 } from '@voxgig/sdkgen'
 
@@ -85,16 +85,15 @@ const Main = cmp(function Main(props: any) {
     .map(op => CLI_VERB_ROWS[op])
     .join('\n')
 
-  // Concrete examples, each gated on the ops of the entity it names, so an
-  // example never shows a verb that entity lacks.
+  // Concrete examples, each gated on the ops the entity it names can run
+  // without an action, so no example is refused.
   const activeEntityObjs: any[] =
     Object.values(entityMap).filter((e: any) => e && e.active !== false)
   const firstEntityObj: any = activeEntityObjs[0]
   const firstEntity = firstEntityObj
     ? String(firstEntityObj.name).toLowerCase()
     : (entityNames[0] || 'entity')
-  const hasOp = (entity: any, op: string) =>
-    !!(entity?.op?.[op] && entity.op[op].active !== false)
+  const hasOp = (entity: any, op: string) => entityOps(entity).includes(op)
   const firstHas = (op: string) => hasOp(firstEntityObj, op)
   const otherLister = activeEntityObjs.slice(1).find((e: any) => hasOp(e, 'list'))
   const entityNoun = entityCount === 1 ? 'entity' : 'entities'

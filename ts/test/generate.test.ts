@@ -4219,6 +4219,48 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // ROUTING_MODEL's `signal` lists only through its actions, so a plain list
+  // of it is refused. With the entities between it and `ambient` off, it is
+  // the next entity holding a list operation.
+  test('go-cli: a quick-start command runs without an action', async () => {
+    const off = (names: string[]) =>
+      names.map((name) => `main: kit: entity: ${name}: active: false\n`).join('')
+    const between = ['console', 'graph_ql', 'history', 'moon', 'planet', 'record']
+    const commands = async (extra: string) => {
+      const out = await generate(['go', 'go-cli'], undefined, ROUTING_MODEL + extra)
+      const readme = findFile(out, 'go-cli/README.md')
+      ok(null != readme, 'go-cli: no README generated')
+      return [...readme!.matchAll(/^\.\/\S+ ((?:list|load|update) .*)$/gm)].map((m) => m[1])
+    }
+
+    const second = await commands(off(between))
+    ok(!second.some((c) => c.startsWith('list signal')),
+      'go-cli: the quick start lists signal, which lists only by action: ' + second)
+    ok(second.some((c) => c.startsWith('list utility')),
+      'go-cli: the quick start shows no list of utility: ' + second)
+
+    const first = await commands(off(['ambient', ...between]))
+    ok(!first.some((c) => c.startsWith('list signal')),
+      'go-cli: the quick start lists signal first, which lists only by action: ' + first)
+    ok(first.some((c) => c.startsWith('load 1 signal')),
+      'go-cli: the quick start does not fall back to loading signal: ' + first)
+  })
+
+
+  // The same arrangement for the MCP server: `signal` would be the first entity
+  // holding a list operation.
+  test('go-mcp: a tool-call example runs without an action', async () => {
+    const off = ['console', 'graph_ql', 'history', 'moon', 'planet', 'record']
+      .map((name) => `main: kit: entity: ${name}: active: false\n`).join('')
+    const out = await generate(['go', 'go-mcp'], undefined, ROUTING_MODEL + off)
+    const readme = findFile(out, 'go-mcp/README.md')
+    ok(null != readme, 'go-mcp: no README generated')
+    const listed = readme!.match(/_list: first page of records\n\{ "entity": "(\w+)" \}/)?.[1]
+    ok('utility' === listed,
+      'go-mcp: the list example names ' + listed + ', not utility, the first entity a plain list runs on')
+  })
+
+
   test('go-mcp: the server reports the version the deploy tags it with', async () => {
     const declared = await generate(['go', 'go-mcp'], undefined,
       'main: kit: target: "go-mcp": publish: version: "2.3.4"')

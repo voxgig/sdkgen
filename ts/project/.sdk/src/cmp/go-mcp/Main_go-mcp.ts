@@ -2,7 +2,7 @@
 import * as Path from 'node:path'
 
 import {
-  cmp, each, deriveEntityNames,
+  cmp, each, deriveEntityNames, entityOps,
   File, Content, Fragment, Slot, goModule, goVersion, packageVersion
 } from '@voxgig/sdkgen'
 
@@ -78,13 +78,12 @@ const Main = cmp(function Main(props: any) {
   const firstEntity = entityNames[0] || 'entity'
 
   // Example entities chosen per-op so a doc example never shows an entity that
-  // doesn't support the op being demonstrated (both tools are always
-  // registered, but a given entity only responds to the ops it exposes).
+  // cannot run the op without an action (both tools are always registered,
+  // but a given entity only responds to the ops it exposes).
   const activeEntityObjs: any[] =
     Object.values(entityMap).filter((e: any) => e && e.active !== false)
   const entWithOp = (op: string) => {
-    const e = activeEntityObjs.find(
-      (x: any) => x.op && x.op[op] && x.op[op].active !== false)
+    const e = activeEntityObjs.find((x: any) => entityOps(x).includes(op))
     return e ? String(e.name).toLowerCase() : firstEntity
   }
   const listEntity = entWithOp('list')
