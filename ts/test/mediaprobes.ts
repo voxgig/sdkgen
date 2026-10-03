@@ -380,7 +380,7 @@ const PY_PROBE = String.raw`
 import json, os
 from demo_sdk import DemoSDK
 
-with open('media-cases.json') as f:
+with open('media-cases.json', encoding='utf-8') as f:
     cases = json.load(f)
 base = os.environ['MEDIA_BASE']
 seam = 'MEDIA_SEAM' in os.environ
