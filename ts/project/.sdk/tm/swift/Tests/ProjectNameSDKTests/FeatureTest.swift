@@ -428,6 +428,36 @@ final class FeatureTimeoutTest: XCTestCase {
     XCTAssertEqual(f.count, 1)
   }
 
+  // The deadline runs from the request's start, not from the wait: a response
+  // that arrives after it is a timeout even when the caller only looks once it
+  // is complete. The clock stands at the start for the caller and 300 ms later
+  // for the worker.
+  func testLateResponseTimesOutHoweverLateTheCallerLooks() {
+    if Fh.skipWithout("timeout") { return }
+    let f = TimeoutFeature()
+    let h = Fh.make(nil, (f, vm(("ms", .int(20)), ("now", .nat(workerClock(300))))))
+    let res = h.op(FhOpSpec(op: "load"))
+    XCTAssertEqual(Fh.errCode(res.err), "timeout")
+    XCTAssertEqual(f.count, 1)
+  }
+
+  // A transport failure after the deadline is a timeout too, not the failure.
+  func testLateFailureTimesOut() {
+    if Fh.skipWithout("timeout") { return }
+    let f = TimeoutFeature()
+    let failing: FetcherFunc = { ctx, _, _ in throw ctx.makeError("socket_closed", "socket closed") }
+    let h = Fh.make(failing, (f, vm(("ms", .int(20)), ("now", .nat(workerClock(300))))))
+    let res = h.op(FhOpSpec(op: "load"))
+    XCTAssertEqual(Fh.errCode(res.err), "timeout")
+    XCTAssertEqual(f.count, 1)
+  }
+
+  // A clock standing at 0 for the calling thread and at `later` for any other.
+  private func workerClock(_ later: Int64) -> () -> Int64 {
+    let caller = Thread.current
+    return { Thread.current == caller ? 0 : later }
+  }
+
   func testFastRequestPasses() {
     if Fh.skipWithout("timeout") { return }
     let h = Fh.make(nil, (TimeoutFeature(), vm(("ms", .int(1000)))))

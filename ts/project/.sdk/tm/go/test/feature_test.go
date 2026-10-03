@@ -2,17 +2,40 @@ package sdktest
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	sdk "GOMODULE"
 	feat "GOMODULE/feature"
 )
+
+// fhWorkerClock is a clock standing at 0 until the transport has run and at
+// later from then on, with a server that runs it: the caller reads the start,
+// the worker reads the arrival. A failure makes the server fail with it.
+func fhWorkerClock(later int64, failure error) (func() int64, sdk.FetcherFunc) {
+	var fetched int32
+	now := func() int64 {
+		if 1 == atomic.LoadInt32(&fetched) {
+			return later
+		}
+		return 0
+	}
+	server := func(ctx *sdk.Context, url string, fetchdef map[string]any) (any, error) {
+		atomic.StoreInt32(&fetched, 1)
+		if failure != nil {
+			return nil, failure
+		}
+		return fhResponse(200, map[string]any{"ok": true}, nil), nil
+	}
+	return now, server
+}
 
 // --- option coercion --------------------------------------------------------
 
@@ -376,6 +399,69 @@ func TestFeatureTimeout(t *testing.T) {
 		}
 		if f.Count != 1 {
 			t.Errorf("expected 1 timeout, got %d", f.Count)
+		}
+	})
+
+	// The deadline runs from the request's start, not from the wait: a
+	// response that arrives after it is a timeout even when the caller only
+	// looks once it is complete. The clock stands at the start until the
+	// transport has run, then 300 ms later, so the response is instant in
+	// real time and late by the clock.
+	t.Run("late-response-times-out-however-late-the-caller-looks", func(t *testing.T) {
+		now, server := fhWorkerClock(300, nil)
+		f := feat.NewTimeoutFeature()
+		h := fhMake(server, fhF(f, map[string]any{"ms": 20, "now": now}))
+		res := h.op(fhOpSpec{op: "load"})
+		if fhErrCode(res.err) != "timeout" {
+			t.Errorf("expected timeout error, got %v", res.err)
+		}
+		if f.Count != 1 {
+			t.Errorf("expected 1 timeout, got %d", f.Count)
+		}
+	})
+
+	// A transport failure after the deadline is a timeout too, not the failure.
+	t.Run("late-failure-times-out", func(t *testing.T) {
+		now, server := fhWorkerClock(300, errors.New("socket closed"))
+		f := feat.NewTimeoutFeature()
+		h := fhMake(server, fhF(f, map[string]any{"ms": 20, "now": now}))
+		res := h.op(fhOpSpec{op: "load"})
+		if fhErrCode(res.err) != "timeout" {
+			t.Errorf("expected timeout error, got %v", res.err)
+		}
+		if f.Count != 1 {
+			t.Errorf("expected 1 timeout, got %d", f.Count)
+		}
+	})
+
+	// A deadline already spent when the request is armed times out at once,
+	// not after another full period: the clock stands at the start, then
+	// past the deadline for every later read, and the transport never answers
+	// until the verdict is in.
+	t.Run("a-spent-deadline-times-out-at-once", func(t *testing.T) {
+		var reads int64
+		now := func() int64 {
+			if 1 == atomic.AddInt64(&reads, 1) {
+				return 0
+			}
+			return 2001
+		}
+		release := make(chan struct{})
+		server := func(ctx *sdk.Context, url string, fetchdef map[string]any) (any, error) {
+			<-release
+			return fhResponse(200, map[string]any{"ok": true}, nil), nil
+		}
+		f := feat.NewTimeoutFeature()
+		h := fhMake(server, fhF(f, map[string]any{"ms": 2000, "now": now}))
+		began := time.Now()
+		res := h.op(fhOpSpec{op: "load"})
+		took := time.Since(began)
+		close(release)
+		if fhErrCode(res.err) != "timeout" {
+			t.Errorf("expected timeout error, got %v", res.err)
+		}
+		if time.Second < took {
+			t.Errorf("expected the spent deadline to time out at once, took %v", took)
 		}
 	})
 
