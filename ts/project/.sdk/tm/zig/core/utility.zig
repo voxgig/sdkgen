@@ -1666,7 +1666,7 @@ fn cookie_pair(wire: []const u8, val: Value) []const u8 {
     var pairs: std.ArrayList([]const u8) = .empty;
     switch (val) {
         .array => |items| {
-            for (items.items) |item| {
+            for (items.data.items) |item| {
                 const text = h.esc_url(h.stringify(item));
                 const pair = std.fmt.allocPrint(h.A(), "{s}={s}", .{ wire, text }) catch continue;
                 pairs.append(h.A(), pair) catch {};
