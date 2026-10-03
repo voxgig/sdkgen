@@ -808,7 +808,7 @@ func (f *testInitFeature) Init(ctx *sdk.Context, options map[string]any) {
 
 // A typed slice in the call's match is a list to the struct port, so a cookie
 // argument repeats its name for each item rather than sending the slice's
-// text (#221).
+// text.
 func TestPrepareHeadersCookieTypedSlice(t *testing.T) {
 	client := sdk.TestSDK(nil, nil)
 	utility := client.GetUtility()
