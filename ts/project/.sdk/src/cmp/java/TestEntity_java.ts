@@ -1,4 +1,4 @@
-import { flowSteps, opReachable } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -154,6 +154,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -167,9 +168,13 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
+import ${javapackage}.core.Config;
+import ${javapackage}.core.Context;
 import ${javapackage}.core.Helpers;
 import ${javapackage}.core.SdkEntity;
+import ${javapackage}.core.SdkError;
 import ${javapackage}.core.${SDK};
+import ${javapackage}.feature.BaseFeature;
 import ${javapackage}.utility.Json;
 import ${javapackage}.utility.struct.Struct;
 
@@ -275,6 +280,9 @@ ${liveFlowGate(entity, needs, entidEnvVar, accessor, SDK, strict, allSteps.lengt
 
 `)
     }
+
+    const hasList = opReachable((entity.op as any)?.list, [])
+    Content(failureTests(SDK, entity, accessor, hasList))
 
     // Generate setup function
     Content(`  static RunnerSupport.EntityTestSetup ${accessor}BasicSetup(Map<String, Object> extra) {
@@ -664,6 +672,114 @@ const GENERATE_OP: Record<string, OpGen> = {
   update: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
+}
+
+
+// A failed operation throws from a stream as it does from the operation: a
+// transport failure, and a hook that rejects the call. A throwing hook fires
+// PreUnexpected, under throw false too. The caller's ctrl stays its own. An
+// invalid request fails with validate's own error, before it is sent.
+function failureTests(SDK: string, entity: ModelEntity, accessor: string, hasList: boolean): string {
+  const bad = invalidRequest(entity)
+  if (!hasList && null == bad) {
+    return ''
+  }
+
+  let out = `  static boolean hasFeature(String name) {
+    Map<String, Object> fm = Helpers.toMapAny(Config.makeConfig().get("feature"));
+    return fm != null && fm.get(name) != null;
+  }
+
+`
+
+  if (hasList) {
+    out += `  public static final class FailHook extends BaseFeature {
+    int unexpected = 0;
+
+    FailHook() {
+      super("failhook", "0.0.1", true);
+    }
+
+    @Override
+    public void preSpec(Context ctx) {
+      throw new RuntimeException("${entity.name} hook failed");
+    }
+
+    @Override
+    public void preUnexpected(Context ctx) {
+      this.unexpected++;
+    }
+  }
+
+  @Test
+  public void streamError() {
+    Map<String, Object> offline = Struct.jm("net", Struct.jm("offline", true));
+    RuntimeException err = assertThrows(RuntimeException.class, () ->
+        ${SDK}.testSDK(offline, null).${accessor}(null).stream("list", null, null)
+            .collect(Collectors.toList()));
+    assertTrue(err.getMessage().contains("offline"), err.getMessage());
+
+    ${SDK}.testSDK(offline, null).${accessor}(null)
+        .stream("list", null, Struct.jm("ctrl", Struct.jm("throw", false)))
+        .collect(Collectors.toList());
+
+    if (hasFeature("rbac")) {
+      ${SDK} denied = ${SDK}.testSDK(null,
+          Struct.jm("feature", Struct.jm("rbac", Struct.jm("active", true, "deny", true))));
+      SdkError denyerr = assertThrows(SdkError.class, () ->
+          denied.${accessor}(null).stream("list", null, null).collect(Collectors.toList()));
+      assertEquals("rbac_denied", denyerr.code);
+    }
+  }
+
+  @Test
+  public void streamCtrl() {
+    Map<String, Object> explain = new LinkedHashMap<>();
+    Map<String, Object> ctrl = new LinkedHashMap<>();
+    ctrl.put("explain", explain);
+    ${SDK}.testSDK().${accessor}(null).stream("list", null, Struct.jm("ctrl", ctrl))
+        .collect(Collectors.toList());
+    assertEquals(List.of("explain"), new ArrayList<>(ctrl.keySet()));
+    assertTrue(explain == ctrl.get("explain") && !explain.isEmpty());
+  }
+
+  @Test
+  public void unexpected() {
+    FailHook hook = new FailHook();
+    ${SDK} client = new ${SDK}(Struct.jm(
+        "feature", Struct.jm("test", Struct.jm("active", true)),
+        "extend", Struct.jt(hook)));
+
+    RuntimeException err = assertThrows(RuntimeException.class, () ->
+        client.${accessor}(null).list(null, null));
+    assertTrue(err.getMessage().contains("hook failed"), err.getMessage());
+    assertTrue(0 < hook.unexpected);
+
+    int fired = hook.unexpected;
+    client.${accessor}(null).list(null, Struct.jm("throw", false));
+    assertTrue(fired < hook.unexpected);
+  }
+
+`
+  }
+
+  if (null != bad) {
+    const args = Object.entries(bad.args)
+      .map(([k, v]) => JSON.stringify(k) + ', ' + JSON.stringify(v)).join(', ')
+    out += `  @Test
+  public void validate() {
+    Assumptions.assumeTrue(hasFeature("validate"), "feature not present in this SDK: validate");
+    ${SDK} client = ${SDK}.testSDK(null,
+        Struct.jm("feature", Struct.jm("validate", Struct.jm("active", true))));
+    SdkError err = assertThrows(SdkError.class, () ->
+        client.${accessor}(null).${bad.op}(Struct.jm(${args}), null));
+    assertEquals("validate_failed", err.code);
+  }
+
+`
+  }
+
+  return out
 }
 
 

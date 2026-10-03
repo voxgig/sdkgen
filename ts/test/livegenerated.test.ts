@@ -359,7 +359,8 @@ describe('generated live tests continue after failures', () => {
         result.output)
       assert(result.output.includes('The account has no metric record to load'), result.output)
       assert(result.output.includes('The account has no planet record to load'), result.output)
-      assert.equal(skipped(result.output), 3, result.output)
+      // The live skips, and each entity's validate test, which skips without the feature.
+      assert.equal(skipped(result.output), 5, result.output)
     })
 
     test(target + ': a lenient run skips a failed live test with the reason', async () => {
@@ -373,7 +374,7 @@ describe('generated live tests continue after failures', () => {
       assert(/planet\.list\.\d+ failed \(Request failed: request_status\)/.test(result.output), result.output)
       assert(result.output.includes('Live list failed'), result.output)
       assert(result.output.includes('Live list discovery failed'), result.output)
-      assert.equal(skipped(result.output), 3, result.output)
+      assert.equal(skipped(result.output), 5, result.output)
 
       const strict = await runTests(target, 'GET /planet', ['planet/PlanetDirect'], true)
       assert.notEqual(strict.code, 0, strict.output)

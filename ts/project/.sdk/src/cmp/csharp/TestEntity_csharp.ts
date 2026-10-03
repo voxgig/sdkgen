@@ -1,4 +1,4 @@
-import { flowSteps, opReachable } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -178,6 +178,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
 using System.Text.Json;
 
+using ${Name}Sdk.Feature;
 using Voxgig.Struct;
 using Xunit;
 
@@ -283,6 +284,8 @@ ${skipBlock}${liveFlowGate(entity, needs, entidEnvVar, strict, allSteps.length >
 
 `)
     }
+
+    Content(failureTests(Name, entity, opReachable((entity.op as any)?.list, [])))
 
     // Generate setup function
     Content(`    private static EntityTestSetup ${entity.Name}BasicSetup(
@@ -694,6 +697,119 @@ const GENERATE_OP: Record<string, OpGen> = {
   update: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
+}
+
+
+// A failed operation throws from a stream as it does from the operation: a
+// transport failure, and a hook that rejects the call. A throwing hook fires
+// PreUnexpected, under throw false too. The caller's ctrl stays its own. An
+// invalid request fails with validate's own error, before it is sent.
+function failureTests(Name: string, entity: ModelEntity, hasList: boolean): string {
+  const Entity = entity.Name
+  const map = (body: string) => 'new Dictionary<string, object?> { ' + body + ' }'
+  let out = ''
+
+  if (hasList) {
+    out += `    private sealed class FailHook : BaseFeature
+    {
+        public int Unexpected;
+
+        public FailHook()
+        {
+            Name = "failhook";
+            Version = "0.0.1";
+            Active = true;
+        }
+
+        public override void PreSpec(Context ctx) =>
+            throw new Exception("${entity.name} hook failed");
+
+        public override void PreUnexpected(Context ctx) => Unexpected++;
+    }
+
+    [Fact]
+    public async Task StreamError()
+    {
+        var offline = ${map('["net"] = ' + map('["offline"] = true'))};
+        var err = await Assert.ThrowsAnyAsync<Exception>(async () =>
+        {
+            await foreach (var _ in ${Name}SDK.TestSDK(offline, null).${Entity}().Stream("list", null, null)) { }
+        });
+        Assert.Contains("offline", err.Message);
+
+        await foreach (var _ in ${Name}SDK.TestSDK(offline, null).${Entity}().Stream("list", null,
+            ${map('["ctrl"] = ' + map('["throw"] = false'))})) { }
+
+        if (Fh.HasFeature("rbac"))
+        {
+            var denied = ${Name}SDK.TestSDK(null,
+                ${map('["feature"] = ' + map('["rbac"] = ' + map('["active"] = true, ["deny"] = true')))});
+            var denyerr = await Assert.ThrowsAnyAsync<${Name}Error>(async () =>
+            {
+                await foreach (var _ in denied.${Entity}().Stream("list", null, null)) { }
+            });
+            Assert.Equal("rbac_denied", denyerr.Code);
+        }
+    }
+
+    [Fact]
+    public async Task StreamCtrl()
+    {
+        var explain = new Dictionary<string, object?>();
+        var ctrl = new Dictionary<string, object?> { ["explain"] = explain };
+        await foreach (var _ in ${Name}SDK.TestSDK(null, null).${Entity}().Stream("list", null,
+            ${map('["ctrl"] = ctrl')})) { }
+        Assert.Equal(new[] { "explain" }, ctrl.Keys.ToArray());
+        Assert.Same(explain, ctrl["explain"]);
+        Assert.NotEmpty(explain);
+    }
+
+    [Fact]
+    public void Unexpected()
+    {
+        var hook = new FailHook();
+        var client = new ${Name}SDK(new Dictionary<string, object?>
+        {
+            ["feature"] = ${map('["test"] = ' + map('["active"] = true'))},
+            ["extend"] = new List<object?> { hook },
+        });
+
+        var err = Assert.ThrowsAny<Exception>(() => client.${Entity}().List(null, null));
+        Assert.Contains("hook failed", err.Message);
+        Assert.True(hook.Unexpected > 0);
+
+        var fired = hook.Unexpected;
+        client.${Entity}().List(null, ${map('["throw"] = false')});
+        Assert.True(hook.Unexpected > fired);
+    }
+
+`
+  }
+
+  const bad = invalidRequest(entity)
+  if (null != bad) {
+    const args = Object.entries(bad.args)
+      .map(([k, v]) => '[' + JSON.stringify(k) + '] = ' + JSON.stringify(v)).join(', ')
+    const Op = bad.op[0].toUpperCase() + bad.op.slice(1)
+    out += `    [Fact]
+    public void Validate()
+    {
+        if (!Fh.HasFeature("validate"))
+        {
+            Console.WriteLine("skip: feature not present in this SDK: validate");
+            return;
+        }
+        var client = ${Name}SDK.TestSDK(null,
+            ${map('["feature"] = ' + map('["validate"] = ' + map('["active"] = true')))});
+        var err = Assert.ThrowsAny<${Name}Error>(() => client.${Entity}().${Op}(
+            ${map(args)}, null));
+        Assert.Equal("validate_failed", err.Code);
+    }
+
+`
+  }
+
+  return out
 }
 
 

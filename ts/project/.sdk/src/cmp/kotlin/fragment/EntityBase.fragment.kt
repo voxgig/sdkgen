@@ -186,7 +186,8 @@ abstract class EntityBase(nm: String, clientIn: SdkClient, entoptsIn: MutableMap
 
     val signal = opts["signal"]
 
-    val ctrl = Helpers.toMapAny(opts["ctrl"]) ?: linkedMapOf()
+    // A copy: the caller's ctrl gains no key, and explain stays its own record.
+    val ctrl: MutableMap<String, Any?> = LinkedHashMap(Helpers.toMapAny(opts["ctrl"]) ?: linkedMapOf())
     ctrl["stream"] = opts
 
     val ctxmap = linkedMapOf<String, Any?>()

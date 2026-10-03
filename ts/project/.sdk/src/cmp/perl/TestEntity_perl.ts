@@ -1,4 +1,4 @@
-import { flowSteps } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -146,6 +146,9 @@ const TestEntity = cmp(function TestEntity(props: any) {
 
   const strict = liveStrict(model, target.name)
   const needs = liveFlowNeeds(entity, basicflow)
+  // The failure tests stream and list with no match, so they need a list a
+  // bare call can reach.
+  const hasList = opReachable((entity.op as any)?.list, [])
 
   File({ name: entity.name + '_entity.t' }, () => {
 
@@ -170,7 +173,7 @@ use constant LIVE_STRICT => ${strict ? 1 : 0};
   my $ent = $testsdk->${entity.Name}(undef);
   ok(defined $ent, '${entity.name}: create instance');
 }
-
+${hasList ? failureTests(N, entity) : ''}${validateTest(N, entity)}
 BASIC_FLOW: {
   my $setup = ${entity.name}_basic_setup(undef);
   my $_live = $setup->{live} ? 1 : 0;
@@ -576,6 +579,110 @@ const GENERATE_OP: Record<string, OpGen> = {
   update: generateUpdate,
   load: generateLoad,
   remove: generateRemove,
+}
+
+
+// A failed operation raises from a stream as it does from the operation: a
+// transport failure, and a hook that rejects the call. A dying hook fires
+// PreUnexpected, and under throw false the call returns undef. The caller's
+// ctrl stays its own.
+function failureTests(N: string, entity: ModelEntity): string {
+  const Entity = entity.Name
+  const Hook = N + 'EntityTest' + Entity + 'FailHook'
+  return `
+{
+  package ${Hook};
+  our @ISA = ('${N}BaseFeature');
+
+  sub new {
+    my ($class) = @_;
+    my $self = ${N}BaseFeature::new($class);
+    $self->{name} = 'failhook';
+    $self->{unexpected} = 0;
+    return $self;
+  }
+
+  sub init { }
+  sub PreSpec { die "${entity.name} hook failed\\n" }
+  sub PreUnexpected { $_[0]->{unexpected}++; return }
+}
+
+{
+  my $offline = { net => { offline => 1 } };
+  my $died = !eval {
+    my $next = ${N}SDK->test($offline, undef)->${Entity}(undef)->stream('list', undef, undef);
+    1 while defined $next->();
+    1;
+  };
+  like($died ? "$@" : '', qr/offline/, '${entity.name}: a failed stream raises');
+
+  ok(eval {
+    my $next = ${N}SDK->test($offline, undef)->${Entity}(undef)
+      ->stream('list', undef, { ctrl => { throw => 0 } });
+    1 while defined $next->();
+    1;
+  }, '${entity.name}: under throw false a failed stream ends');
+
+  if (${N}Config::shared_config()->{feature}{rbac}) {
+    my $denied = ${N}SDK->test(undef, { feature => { rbac => { active => 1, deny => 1 } } });
+    my $denyerr = eval {
+      my $next = $denied->${Entity}(undef)->stream('list', undef, undef);
+      1 while defined $next->();
+      undef;
+    } // $@;
+    is(ref $denyerr ? $denyerr->{code} : undef, 'rbac_denied',
+      '${entity.name}: a denied stream raises');
+  }
+}
+
+{
+  my $explain = {};
+  my $ctrl = { explain => $explain };
+  my $next = ${N}SDK->test(undef, undef)->${Entity}(undef)
+    ->stream('list', undef, { ctrl => $ctrl });
+  1 while defined $next->();
+  is_deeply([sort keys %$ctrl], ['explain'], '${entity.name}: the stream leaves the caller ctrl');
+  ok($explain == $ctrl->{explain} && 0 < keys %$explain,
+    '${entity.name}: the caller explain record is filled');
+}
+
+{
+  my $hook = ${Hook}->new;
+  my $client = ${N}SDK->new({ feature => { test => { active => 1 } }, extend => [$hook] });
+
+  my $err = eval { $client->${Entity}(undef)->list(undef, undef); undef } // $@;
+  like("$err", qr/hook failed/, '${entity.name}: a dying hook fails the operation');
+  ok(0 < $hook->{unexpected}, '${entity.name}: PreUnexpected fired');
+
+  my $fired = $hook->{unexpected};
+  my $out = eval { $client->${Entity}(undef)->list(undef, { throw => 0 }) };
+  ok(!$@ && !defined $out, '${entity.name}: under throw false the call returns undef');
+  ok($fired < $hook->{unexpected}, '${entity.name}: PreUnexpected fired under throw false');
+}
+`
+}
+
+
+// An invalid request fails with validate's own error, before it is sent.
+function validateTest(N: string, entity: ModelEntity): string {
+  const bad = invalidRequest(entity)
+  if (null == bad) {
+    return ''
+  }
+  const args = Object.entries(bad.args)
+    .map(([k, v]) => perlStringLiteral(k) + ' => ' +
+      ('string' === typeof v ? perlStringLiteral(v) : true === v ? '1' : String(v)))
+    .join(', ')
+  return `
+SKIP: {
+  skip('feature not present in this SDK: validate', 1)
+    unless ${N}Config::shared_config()->{feature}{validate};
+  my $client = ${N}SDK->test(undef, { feature => { validate => { active => 1 } } });
+  my $err = eval { $client->${entity.Name}(undef)->${bad.op}({ ${args} }, undef); undef } // $@;
+  is(ref $err ? $err->{code} : undef, 'validate_failed',
+    '${entity.name}: an invalid request fails with validate_failed');
+}
+`
 }
 
 
