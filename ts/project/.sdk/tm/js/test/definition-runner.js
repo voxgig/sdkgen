@@ -94,8 +94,16 @@ async function runDefinitionPoint(SDK, point) {
   for (const h of point.headers || []) {
     const wire = h.wire.toLowerCase()
     if (credentialHeaders.includes(wire) || 'content-type' === wire) continue
-    assert.equal(new Headers(init.headers).get(wire), String(h.value),
-      'header parameter not sent as a header: ' + h.wire)
+    const sentValue = new Headers(init.headers).get(wire)
+    // A Cookie header argument is cookie pieces, which the cookie arguments join.
+    if ('cookie' === wire) {
+      const pieces = String(sentValue ?? '').split(';').map((c) => c.trim())
+      for (const piece of String(h.value).split(';').map((c) => c.trim()).filter((c) => '' !== c)) {
+        assert(pieces.includes(piece), 'header parameter not sent as a header: ' + h.wire)
+      }
+      continue
+    }
+    assert.equal(sentValue, String(h.value), 'header parameter not sent as a header: ' + h.wire)
   }
 
   // A cookie parameter goes out in the cookie header as name=value, percent-encoded.
