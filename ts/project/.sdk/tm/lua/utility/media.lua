@@ -44,6 +44,19 @@ function M.is_raw_request(point)
   return vs.getpath(point, "body.kind") == "raw"
 end
 
+function M.is_json_request(point)
+  return vs.getpath(point, "body.kind") == "json"
+end
+
+-- A table is JSON, and so is a scalar on a point that declares a JSON body.
+-- Anything else goes as given.
+function M.request_body(point, body)
+  if type(body) == "table" or (type(body) ~= "userdata" and M.is_json_request(point)) then
+    return vs.jsonify(body)
+  end
+  return body
+end
+
 local function has_header(headers, name)
   for key in pairs(headers) do
     if type(key) == "string" and string.lower(key) == name then

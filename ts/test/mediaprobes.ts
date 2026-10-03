@@ -20,6 +20,8 @@ type MediaCase = {
     contentType?: string
     bodyHex?: string
     json?: Record<string, any>
+    // The whole body as JSON, whatever its type.
+    jsonValue?: any
   }
 }
 
@@ -32,7 +34,7 @@ type MediaRecord = {
 }
 
 
-const point = (method: string, path: string, extra: string) => {
+const point = (method: string, path: string, extra: string, req = '`reqdata`') => {
   const segs = path.split('/').filter((s) => '' !== s)
   const params = segs.filter((s) => s.startsWith('{')).map((s) => s.slice(1, -1))
   return `{
@@ -41,7 +43,7 @@ const point = (method: string, path: string, extra: string) => {
         m: "${method}", o: "${path}"
         s: [${segs.map((s) => s.startsWith('{') ?
     `{ var: "${s.slice(1, -1)}" }` : `{ lit: "${s}" }`).join(', ')}]
-        t: { req: "\`reqdata\`", res: "\`body\`" }
+        t: { req: "${req}", res: "\`body\`" }
         ${extra}
       }`
 }
@@ -93,6 +95,9 @@ const MEDIA_MODEL =
     load: point('GET', '/picture/{id}', `rs: { kind: "raw", media: "image/jpeg", binary: true,
           alternatives: [ { kind: "raw", media: "image/png", binary: true } ] }`),
     update: point('PUT', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }'),
+    // A request transform that selects one field, so the body is that field's value.
+    create: point('POST', '/picture', 'rb: { kind: "json", media: "application/json" }',
+      '`reqdata.payload`'),
   })
 
 
@@ -158,6 +163,22 @@ const MEDIA_CASES: MediaCase[] = [
     },
   },
   {
+    name: 'a JSON body that is a list goes out as a JSON array',
+    entity: 'picture', op: 'create', input: { payload: ['red', 'dusty'] },
+    expect: {
+      method: 'POST', path: '/picture', accept: null,
+      contentType: 'application/json', jsonValue: ['red', 'dusty'],
+    },
+  },
+  {
+    name: 'a JSON body that is a string goes out as a JSON string',
+    entity: 'picture', op: 'create', input: { payload: 'a moon' },
+    expect: {
+      method: 'POST', path: '/picture', accept: null,
+      contentType: 'application/json', jsonValue: 'a moon',
+    },
+  },
+  {
     name: 'a body with no declared type is JSON, as before',
     entity: 'planet', op: 'create', input: { title: 'Mars' },
     expect: {
@@ -205,6 +226,16 @@ function mediaFailures(cases: MediaCase[], records: MediaRecord[]): string[] {
 
     if (null != c.expect.bodyHex && c.expect.bodyHex !== r.bodyHex) {
       fail('body', r.bodyHex, c.expect.bodyHex)
+    }
+
+    if (undefined !== c.expect.jsonValue) {
+      const text = Buffer.from(r.bodyHex, 'hex').toString('utf8')
+      let value: any
+      try { value = JSON.parse(text) }
+      catch (_e) { value = undefined }
+      if (JSON.stringify(value) !== JSON.stringify(c.expect.jsonValue)) {
+        fail('body text', text, JSON.stringify(c.expect.jsonValue))
+      }
     }
 
     if (null != c.expect.json) {
@@ -888,6 +919,7 @@ const CLOJURE_PROBE = String.raw`
                 ["cat" "remove"] e-cat/remove
                 ["picture" "load"] e-picture/load
                 ["picture" "update"] e-picture/update
+                ["picture" "create"] e-picture/create
                 e-planet/create)]
         (f ent data (vs/jm)))
       (catch Throwable e (println (str "media-probe: case " i ": " (.getMessage e)))))))
@@ -945,6 +977,7 @@ fn media_probe() {
             ("cat", "remove") => call!(client.cat(Value::Noval), remove, data),
             ("picture", "load") => call!(client.picture(Value::Noval), load, data),
             ("picture", "update") => call!(client.picture(Value::Noval), update, data),
+            ("picture", "create") => call!(client.picture(Value::Noval), create, data),
             _ => call!(client.planet(Value::Noval), create, data),
         };
         if let Err(e) = res {
@@ -1203,6 +1236,7 @@ test "media probe" {
         if (is(u8, entity, "cat") and is(u8, op, "remove")) report(i, client.cat(vnull()).remove(data, h.omap()));
         if (is(u8, entity, "picture") and is(u8, op, "load")) report(i, client.picture(vnull()).load(data, h.omap()));
         if (is(u8, entity, "picture") and is(u8, op, "update")) report(i, client.picture(vnull()).update(data, h.omap()));
+        if (is(u8, entity, "picture") and is(u8, op, "create")) report(i, client.picture(vnull()).create(data, h.omap()));
         if (is(u8, entity, "planet")) report(i, client.planet(vnull()).create(data, h.omap()));
     }
     std.debug.print("media-probe: ran {d} cases\n", .{cases.array.data.items.len});

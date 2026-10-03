@@ -529,6 +529,7 @@ char* cookie_keep(const char* header, bool (*named)(const char* name, size_t nle
 bool media_is_json(const char* media);
 char* media_accept_of(voxgig_value* point);
 bool media_is_raw_request(voxgig_value* point);
+bool media_is_json_request(voxgig_value* point);
 void media_headers(voxgig_value* point, voxgig_value* headers);
 voxgig_value* media_raw_body(voxgig_value* reqdata);
 voxgig_value* prepare_headers_util(Context* ctx);

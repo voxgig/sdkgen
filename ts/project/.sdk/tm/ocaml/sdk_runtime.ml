@@ -646,6 +646,9 @@ let accept_of (point : value) : string option =
 let is_raw_request (point : value) : bool =
   match getp (getp point "body") "kind" with Str "raw" -> true | _ -> false
 
+let is_json_request (point : value) : bool =
+  match getp (getp point "body") "kind" with Str "json" -> true | _ -> false
+
 let has_media_header (headers : value) (name : string) : bool =
   List.exists (fun k -> String.lowercase_ascii k = name) (keysof headers)
 
@@ -1307,9 +1310,13 @@ let make_fetch_def_util (ctx : ctx) : (value * sdk_error option) =
      | (url, None) ->
        spec.sp_url <- url;
        let fetchdef = jo [("url", Str url); ("method", Str spec.sp_method); ("headers", spec.sp_headers)] in
+       (* A map or a list is JSON, and so is a scalar on a point that declares
+          a JSON body. Anything else goes as given. *)
        (match spec.sp_body with
         | Noval -> ()
-        | Map _ -> setp fetchdef "body" (Str (jsonify spec.sp_body))
+        | (Map _ | List _) as b -> setp fetchdef "body" (Str (jsonify b))
+        | (Str _ | Num _ | Bool _) as b when is_json_request ctx.c_point ->
+          setp fetchdef "body" (Str (jsonify b))
         | b -> setp fetchdef "body" b);
        (fetchdef, None))
 

@@ -46,6 +46,17 @@ object Media {
   def isRawRequest(point: Object): Boolean =
     "raw" == Struct.getprop(Struct.getprop(point, "body"), "kind")
 
+  def isJsonRequest(point: Object): Boolean =
+    "json" == Struct.getprop(Struct.getprop(point, "body"), "kind")
+
+  // Bytes or a stream go as given. A map or a list is JSON, and so is a scalar
+  // on a point that declares a JSON body.
+  def requestBody(point: Object, body: Object): Object = body match {
+    case _: Array[Byte] | _: java.io.InputStream => body
+    case _ if Struct.isnode(body) || isJsonRequest(point) => Struct.jsonify(body)
+    case _ => body
+  }
+
   private def hasHeader(headers: JMap[String, Object], name: String): Boolean =
     headers.keySet().stream().anyMatch(k => k != null && k.toLowerCase(Locale.ROOT) == name)
 

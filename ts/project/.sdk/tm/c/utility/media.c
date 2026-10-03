@@ -59,6 +59,10 @@ bool media_is_raw_request(voxgig_value* point) {
   return v_str_eq(getp(getp(point, "body"), "kind"), "raw");
 }
 
+bool media_is_json_request(voxgig_value* point) {
+  return v_str_eq(getp(getp(point, "body"), "kind"), "json");
+}
+
 static bool has_header(voxgig_value* headers, const char* name) {
   voxgig_map* hm = voxgig_as_map(headers);
   for (size_t j = 0; j < hm->len; j++) {

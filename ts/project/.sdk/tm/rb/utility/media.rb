@@ -33,6 +33,18 @@ module ProjectNameUtilities
     VoxgigStruct.getpath(point, "body.kind") == "raw"
   end
 
+  def self.json_request?(point)
+    VoxgigStruct.getpath(point, "body.kind") == "json"
+  end
+
+  # Bytes or a stream go as given. A hash or an array is JSON, and so is a
+  # scalar on a point that declares a JSON body.
+  def self.request_body(point, body)
+    return body if body.respond_to?(:read) || (body.is_a?(String) && body.encoding == Encoding::BINARY)
+    return VoxgigStruct.jsonify(body) if VoxgigStruct.isnode(body) || json_request?(point)
+    body
+  end
+
   def self.header?(headers, name)
     headers.keys.any? { |k| k.is_a?(String) && k.downcase == name }
   end

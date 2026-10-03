@@ -1,6 +1,6 @@
 
 const { Result } = require('../Result')
-const { isRawValue, isStream } = require('./MediaUtility')
+const { isJsonRequest, isRawValue, isStream } = require('./MediaUtility')
 
 function makeFetchDef(ctx) {
   const spec = ctx.spec
@@ -34,7 +34,9 @@ function makeFetchDef(ctx) {
 
   if (null != spec.body) {
     const body = spec.body
-    fetchdef.body = 'object' !== typeof body || isRawValue(body) ? body : jsonify(body)
+    // A JSON point's body is JSON whatever its value; a scalar elsewhere goes as given.
+    fetchdef.body = isRawValue(body) || ('object' !== typeof body && !isJsonRequest(ctx.point)) ?
+      body : jsonify(body)
 
     // Node's fetch refuses a stream body without it.
     if (isStream(body)) {

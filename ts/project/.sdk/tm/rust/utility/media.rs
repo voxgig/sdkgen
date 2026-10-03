@@ -43,6 +43,10 @@ pub fn is_raw_request(point: &Value) -> bool {
     text_of(&getp(&getp(point, "body"), "kind")).as_deref() == Some("raw")
 }
 
+pub fn is_json_request(point: &Value) -> bool {
+    text_of(&getp(&getp(point, "body"), "kind")).as_deref() == Some("json")
+}
+
 fn has_header(headers: &Value, name: &str) -> bool {
     match headers {
         Value::Map(m) => m.borrow().keys().any(|k| k.to_lowercase() == name),

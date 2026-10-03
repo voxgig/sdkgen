@@ -34,6 +34,11 @@ function isRawRequest(point: any): boolean {
 }
 
 
+function isJsonRequest(point: any): boolean {
+  return 'json' === point?.body?.kind
+}
+
+
 function hasHeader(headers: Record<string, any>, name: string): boolean {
   return Object.keys(headers).some((key) => name === key.toLowerCase())
 }
@@ -128,6 +133,7 @@ export {
   RAW_BODY,
   acceptOf,
   isJsonMedia,
+  isJsonRequest,
   isRawRequest,
   isRawValue,
   isStream,

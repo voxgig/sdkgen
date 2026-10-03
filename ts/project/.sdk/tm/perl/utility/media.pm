@@ -9,6 +9,7 @@ use Scalar::Util ();
 
 my $__dir;
 BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
+require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
 
 # The media types a point declares: `response` (the model's `rs`) for the
@@ -49,6 +50,21 @@ sub is_raw_request {
   my ($point) = @_;
   my $kind = ProjectNameHelpers::gp(ProjectNameHelpers::gp($point, 'body'), 'kind');
   return defined $kind && 'raw' eq $kind;
+}
+
+sub is_json_request {
+  my ($point) = @_;
+  my $kind = ProjectNameHelpers::gp(ProjectNameHelpers::gp($point, 'body'), 'kind');
+  return defined $kind && 'json' eq $kind;
+}
+
+# A stream goes as given. A hash or an array is JSON, and so is a scalar on a
+# point that declares a JSON body.
+sub request_body {
+  my ($point, $body) = @_;
+  return $body if ref $body eq 'GLOB' || (Scalar::Util::blessed($body) && $body->can('read'));
+  return Voxgig::Struct::jsonify($body) if Voxgig::Struct::isnode($body) || is_json_request($point);
+  return $body;
 }
 
 sub _has_header {

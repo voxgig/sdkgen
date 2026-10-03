@@ -754,6 +754,18 @@
   (let [body (when point (vs/getprop point "body"))]
     (and (vs/ismap body) (= "raw" (vs/getprop body "kind")))))
 
+(defn json-request? [point]
+  (let [body (when point (vs/getprop point "body"))]
+    (and (vs/ismap body) (= "json" (vs/getprop body "kind")))))
+
+;; Bytes or a stream go as given. A map or a list is JSON, and so is a scalar
+;; on a point that declares a JSON body.
+(defn request-body [point body]
+  (cond
+    (or (bytes? body) (instance? java.io.InputStream body)) body
+    (or (vs/isnode body) (json-request? point)) (vs/jsonify body)
+    :else body))
+
 (defn- media-header? [^java.util.Map headers name]
   (boolean (some (fn [k] (and (string? k) (= name (str/lower-case k)))) (vec (.keySet headers)))))
 
@@ -1338,7 +1350,7 @@
                   (let [fetchdef (vs/jm "url" url "method" (oget spec :method) "headers" (oget spec :headers))
                         body (oget spec :body)]
                     (when (some? body)
-                      (.put ^java.util.Map fetchdef "body" (if (vs/ismap body) (vs/jsonify body) body)))
+                      (.put ^java.util.Map fetchdef "body" (request-body (oget ctx :point) body)))
                     [fetchdef nil]))))))))
 
 (defn u-make-request [ctx]

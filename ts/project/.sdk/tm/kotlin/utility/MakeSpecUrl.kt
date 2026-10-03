@@ -185,11 +185,7 @@ fun makeFetchDef(ctx: Context): MutableMap<String, Any?> {
 
   val body = spec.body
   if (body != null) {
-    if (body is MutableMap<*, *>) {
-      fetchdef["body"] = Struct.jsonify(body)
-    } else {
-      fetchdef["body"] = body
-    }
+    fetchdef["body"] = Media.requestBody(ctx.point, body)
   }
 
   return fetchdef

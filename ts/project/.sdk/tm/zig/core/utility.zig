@@ -1252,9 +1252,16 @@ pub fn make_fetch_def_util(ctx: *Context) E!Value {
     h.setp(fetchdef, "method", h.vstr(spec.method));
     h.setp(fetchdef, "headers", spec.headers);
 
+    // A map or a list is JSON, and so is a scalar on a point that declares a
+    // JSON body. Anything else goes as given.
     const body = spec.body;
     if (!h.is_noval(body)) {
-        if (body == .object) {
+        const encode = switch (body) {
+            .object, .array => true,
+            .string, .integer, .float, .number_string, .bool => is_json_request(ctx.point),
+            else => false,
+        };
+        if (encode) {
             h.setp(fetchdef, "body", h.vstr(h.jsonify_compact(body)));
         } else {
             h.setp(fetchdef, "body", body);
@@ -1551,6 +1558,11 @@ pub fn accept_of(point: Value) ?[]const u8 {
 pub fn is_raw_request(point: Value) bool {
     const kind = media_text(h.getp(h.getp(point, "body"), "kind")) orelse return false;
     return std.mem.eql(u8, kind, "raw");
+}
+
+pub fn is_json_request(point: Value) bool {
+    const kind = media_text(h.getp(h.getp(point, "body"), "kind")) orelse return false;
+    return std.mem.eql(u8, kind, "json");
 }
 
 fn has_media_header(headers: Value, name: []const u8) bool {
