@@ -11,7 +11,8 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools } from '../dist/sdkgen.js'
+import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
@@ -4258,6 +4259,195 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const listed = readme!.match(/_list: first page of records\n\{ "entity": "(\w+)" \}/)?.[1]
     ok('utility' === listed,
       'go-mcp: the list example names ' + listed + ', not utility, the first entity a plain list runs on')
+  })
+
+
+  // ROUTING_MODEL's `signal` loads but lists only through actions, `ambient`
+  // only loads, and `planet` alone creates, updates and removes.
+  const mcpRegistered = (tools: string) =>
+    [...tools.matchAll(/Name:\s+"(demo_\w+)"/g)].map((m) => m[1])
+  const mcpEntities = (tools: string, type: string) =>
+    tools.match(new RegExp('type ' + type + ' struct \\{\\n\\tEntity string +`json:"entity" ' +
+      'jsonschema:"one of: ([^"]*)"`'))?.[1]
+
+  test('go-mcp: the server reads only, with a tool per operation its entities run', async () => {
+    const out = await generate(['go', 'go-mcp'], undefined, ROUTING_MODEL)
+    const tools = findFile(out, 'go-mcp/tools.go')!
+    deepStrictEqual(mcpRegistered(tools), ['demo_list', 'demo_load'])
+    strictEqual(mcpEntities(tools, 'ListArgs'),
+      'console | graph_ql | history | moon | planet | record | utility')
+    strictEqual(mcpEntities(tools, 'LoadArgs'), 'ambient | moon | planet | signal')
+    strictEqual(2, [...tools.matchAll(/Annotations: &mcp\.ToolAnnotations\{ReadOnlyHint: true\}/g)].length,
+      'go-mcp: list and load are not both marked read-only')
+
+    const readme = findFile(out, 'go-mcp/README.md')!
+    ok(readme.includes('2 agent tools, `demo_list` and `demo_load`,'),
+      'go-mcp: the README does not name the two tools it registers')
+    ok(readme.includes('The server only reads.'), 'go-mcp: the README does not say it only reads')
+    const top = out['README.md']
+    ok(top.includes("exposes this SDK's list and load operations"),
+      'the root README does not name the operations the MCP server exposes')
+    ok(top.includes('It only reads'), 'the root README does not say the MCP server only reads')
+    ok(!top.includes('exposes every operation'),
+      'the root README still says the MCP server exposes every operation')
+  })
+
+
+  test('go-mcp: the write tools are opt-in and carry the MCP hints', async () => {
+    const out = await generate(['go', 'go-mcp'], undefined,
+      ROUTING_MODEL + "main: kit: target: 'go-mcp': tool: write: true")
+    const tools = findFile(out, 'go-mcp/tools.go')!
+    deepStrictEqual(mcpRegistered(tools),
+      ['demo_list', 'demo_load', 'demo_create', 'demo_update', 'demo_remove'])
+    for (const type of ['CreateArgs', 'UpdateArgs', 'RemoveArgs']) {
+      strictEqual(mcpEntities(tools, type), 'planet', 'go-mcp: ' + type)
+    }
+    const hints = Object.fromEntries([...tools.matchAll(
+      /Name:\s+"demo_(\w+)",[^]*?Annotations: &mcp\.ToolAnnotations\{([^}]*)\}/g)]
+      .map((m) => [m[1], m[2]]))
+    deepStrictEqual(hints, {
+      list: 'ReadOnlyHint: true',
+      load: 'ReadOnlyHint: true',
+      create: 'DestructiveHint: hint(false)',
+      update: 'DestructiveHint: hint(true)',
+      remove: 'DestructiveHint: hint(true)',
+    })
+
+    const top = out['README.md']
+    ok(top.includes("exposes this SDK's list, load, create, update and remove operations"),
+      'the root README does not name the write operations the MCP server exposes')
+    ok(!top.includes('It only reads'), 'the root README says the MCP server only reads')
+  })
+
+
+  const readmeExample = (readme: string, label: string): any => {
+    const line = readme.split('\n')[readme.split('\n').findIndex((l) => l.includes(label)) + 1]
+    return JSON.parse(line)
+  }
+
+
+  // `moon` lists under `/planet/{planet_id}`, and planet's update requires only
+  // its id.
+  test('go-mcp: a list example fills its route, and an update changes a field', async () => {
+    const off = ['console', 'graph_ql', 'history']
+      .map((name) => `main: kit: entity: ${name}: active: false\n`).join('')
+    const out = await generate(['go', 'go-mcp'], undefined,
+      ROUTING_MODEL + off + "main: kit: target: 'go-mcp': tool: write: true")
+    const readme = findFile(out, 'go-mcp/README.md')!
+    const list = JSON.parse(readme.match(/_list: first page of records\n(\{.*\})/)![1])
+    strictEqual(list.entity, 'moon')
+    ok(null != list.query?.planet_id, 'go-mcp: the moon list example omits its planet')
+    const update = JSON.parse(readme.match(/_update: change a record's fields\n(\{.*\})/)![1])
+    ok(Object.keys(update.data).some((key) => 'id' !== key),
+      'go-mcp: the update example changes no field: ' + JSON.stringify(update))
+
+    // Under its planet, moon's update needs planet_id too, which is routing
+    // as much as its id is: the example still changes a field.
+    const moonUpdate = `main: kit: entity: moon: op: update: {
+  name: "update"
+  points: [ {
+    g: { params: [
+      { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" }
+      { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "m01" }
+    ] }
+    m: "PUT", o: "/planet/{planet_id}/moon/{id}"
+    s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "moon" }, { var: "id" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  } ]
+}
+`
+    const nested = await generate(['go', 'go-mcp'], undefined,
+      ROUTING_MODEL + off + moonUpdate + "main: kit: target: 'go-mcp': tool: write: true")
+    const nestedUpdate = JSON.parse(findFile(nested, 'go-mcp/README.md')!
+      .match(/_update: change a record's fields\n(\{.*\})/)![1])
+    strictEqual(nestedUpdate.entity, 'moon')
+    ok(Object.keys(nestedUpdate.data).some((key) => !['id', 'planet_id'].includes(key)),
+      'go-mcp: the nested update example changes no field: ' + JSON.stringify(nestedUpdate))
+  })
+
+
+  test('go-mcp: both READMEs describe the tools the server registers', async () => {
+    const write = "main: kit: target: 'go-mcp': tool: write: true\n"
+    // One block: a line per op does not unify.
+    const opOff = (ent: string, ops: string[]) =>
+      `main: kit: entity: ${ent}: op: { ${ops.map((op) => op + ': { active: false }').join(', ')} }\n`
+
+    const partial = await generate(['go', 'go-mcp'], undefined,
+      ROUTING_MODEL + write + opOff('planet', ['remove']))
+    const partialMcp = findFile(partial, 'go-mcp/README.md')!
+    ok(partialMcp.includes('Create and update are on'),
+      'go-mcp: the README does not name the write tools it registers')
+    ok(!partialMcp.includes('remove are on'), 'go-mcp: the README claims a remove tool')
+    ok(!partial['README.md'].includes('It only reads'), 'the root README says a writing server only reads')
+
+    const none = await generate(['go', 'go-mcp'], undefined,
+      ROUTING_MODEL + write + opOff('planet', ['create', 'update', 'remove']))
+    ok(findFile(none, 'go-mcp/README.md')!.includes('The server only reads: the SDK'),
+      'go-mcp: the README does not say a server with no write tools only reads')
+    ok(none['README.md'].includes('It only reads, as no entity has a create, update or remove'),
+      'the root README does not say why the server only reads')
+
+    const others = ['ambient', 'console', 'graph_ql', 'history', 'moon', 'record', 'signal', 'utility']
+      .map((name) => `main: kit: entity: ${name}: active: false\n`).join('')
+    const empty = await generate(['go', 'go-mcp'], undefined,
+      ROUTING_MODEL + others + opOff('planet', ['list', 'load']))
+    const top = empty['README.md']
+    ok(top.includes('The generated MCP server has no tools for this SDK'),
+      'the root README does not say the MCP server has no tools')
+    ok(!top.includes("exposes this SDK's  operations"), 'the root README names no operations')
+    ok(!top.includes('Build and register it'), 'the root README registers a server with no tools')
+    const emptyMcp = findFile(empty, 'go-mcp/README.md')!
+    ok(emptyMcp.includes('no agent tools'), 'go-mcp: the README does not say it has no tools')
+    for (const text of ['now appear in new', '```jsonc\n\n```', '| Tool | Args |', '| Tool | Entities |']) {
+      ok(!emptyMcp.includes(text), 'go-mcp: the README of a server with no tools shows ' + text)
+    }
+  })
+
+
+  // A field name may hold any character JSON escapes.
+  test('go-mcp: a JSON example escapes its field names', async () => {
+    const out = await generate(['go', 'go-mcp'], undefined, ROUTING_MODEL +
+      "main: kit: target: 'go-mcp': tool: write: true\n" +
+      `main: kit: entity: planet: fields: { 'say"hi': { h: 'Say Hi', n: 'say"hi', r: true, t: "\`$STRING\`" } }\n`)
+    const create = readmeExample(findFile(out, 'go-mcp/README.md')!, '_create: a new record')
+    ok('say"hi' in create.data, 'go-mcp: the create example lost the field: ' + JSON.stringify(create))
+  })
+
+
+  // A compiled model keeps its entities in key order, so this one is reversed.
+  test('go-mcp: each tool lists its entities in name order', () => {
+    const model = makeModel(['go', 'go-mcp'], undefined, ROUTING_MODEL)
+    model.main[KIT].entity = Object.fromEntries(Object.entries(model.main[KIT].entity).reverse())
+    deepStrictEqual(mcpTools(model)[0].entities.map((ent: any) => ent.name),
+      ['console', 'graph_ql', 'history', 'moon', 'planet', 'record', 'utility'])
+  })
+
+
+  // Staged as `target add go-mcp~mcpalias` copies it: the model keyed by the
+  // alias, and the component renamed to match.
+  test('go-mcp: an aliased server names its own target in the write toggle', async () => {
+    const sdk = Path.join(STAGE, '.sdk')
+    const cmpDir = Path.join(sdk, 'dist', 'cmp', 'mcpalias')
+    const srcDir = Path.join(sdk, 'src', 'cmp', 'mcpalias')
+    try {
+      Fs.mkdirSync(cmpDir, { recursive: true })
+      writeFileSync(Path.join(cmpDir, 'Main_mcpalias.js'), aliasCmpText(
+        readFileSync(Path.join(sdk, 'dist', 'cmp', 'go-mcp', 'Main_go-mcp.js'), 'utf8'),
+        'go-mcp', 'mcpalias'))
+      Fs.cpSync(Path.join(sdk, 'src', 'cmp', 'go-mcp', 'fragment'),
+        Path.join(srcDir, 'fragment'), { recursive: true })
+      const aliased = readFileSync(Path.join(SCAFFOLD, 'model', 'target', 'go-mcp.aontu'), 'utf8')
+        .split("target: 'go-mcp':").join('target: mcpalias:')
+      const out = await generate(['go'], undefined, ROUTING_MODEL + aliased)
+      const readme = findFile(out, 'mcpalias/README.md')!
+      ok(readme.includes("main: kit: target: 'mcpalias': tool: write: true"),
+        'go-mcp: the aliased README does not toggle its own target')
+      ok(!readme.includes("target: 'go-mcp'"), 'go-mcp: the aliased README names go-mcp')
+    }
+    finally {
+      Fs.rmSync(cmpDir, { recursive: true, force: true })
+      Fs.rmSync(srcDir, { recursive: true, force: true })
+    }
   })
 
 

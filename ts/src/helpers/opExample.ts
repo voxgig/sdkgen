@@ -1,12 +1,15 @@
 
 import { each } from 'jostraca'
 import { canonKey } from './canonType'
-import { opRequestShape, entityIdField } from './opShape'
+import { opRequestShape, opParams, entityIdField } from './opShape'
 
 import { phpEntityAccessor } from './naming'
 
 
 type ExampleLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go'
+
+// The languages a literal is written in: the call languages, and JSON.
+type LiteralLang = ExampleLang | 'json'
 
 
 function cap(s: string): string {
@@ -15,7 +18,7 @@ function cap(s: string): string {
 
 
 // A type-correct literal for a canonical type sentinel, in the target language.
-function litFor(lang: ExampleLang, type: any): string {
+function litFor(lang: LiteralLang, type: any): string {
   const k = canonKey(type)
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'py' === lang ? 'True' : ('rb' === lang ? 'true' : 'true')
@@ -48,12 +51,13 @@ function idLiteral(ent: any, op: string, idF: string | null): string {
 const JS_IDENT = /^[A-Za-z_$][A-Za-z0-9_$]*$/
 const LUA_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/
 
-function litPair(lang: ExampleLang, name: string, value: string): string {
+function litPair(lang: LiteralLang, name: string, value: string): string {
   switch (lang) {
     case 'py': return `"${name}": ${value}`
     case 'php': return `"${name}" => ${value}`
     case 'rb': return `"${name}" => ${value}`
     case 'go': return `"${name}": ${value}`
+    case 'json': return `${JSON.stringify(name)}: ${value}`
     case 'lua': return LUA_IDENT.test(name) ?
       `${name} = ${value}` : `["${name}"] = ${value}`
     default: return JS_IDENT.test(name) ?
@@ -63,10 +67,10 @@ function litPair(lang: ExampleLang, name: string, value: string): string {
 
 
 function matchArg(
-  lang: ExampleLang, ent: any, op: string, idF: string | null, idLit: string
+  lang: LiteralLang, ent: any, op: string, idF: string | null, idLit: string
 ): string {
   const items = opRequestShape(ent, op).items.filter((it: any) => !it.optional)
-  if (0 === items.length) return 'go' === lang ? 'nil' : ''
+  if (0 === items.length) return 'go' === lang ? 'nil' : ('json' === lang ? '{}' : '')
   const pairs = items.map((it: any) =>
     litPair(lang, it.name, it.name === idF ? idLit : litFor(lang, it.type)))
   switch (lang) {
@@ -78,12 +82,17 @@ function matchArg(
 }
 
 
-function dataArg(lang: ExampleLang, ent: any, op: string, idF: string | null): string {
+// An update that only addresses its record, by id and route, also changes a field.
+function dataArg(lang: LiteralLang, ent: any, op: string, idF: string | null): string {
+  const routed = new Set(opParams(ent?.op?.[op]).map((p: any) => p.n))
+  const addresses = (it: any) => it.name === idF || it.name === 'id' || routed.has(it.name)
   const items = opRequestShape(ent, op).items
     .filter((it: any) =>
       (it.name !== idF && it.name !== 'id') || !it.optional)
   const required = items.filter((it: any) => !it.optional)
-  const chosen = required.length ? required : items.slice(0, 3)
+  const changed = 'update' === op && required.every(addresses) ?
+    items.filter((it: any) => it.optional && !addresses(it)).slice(0, 1) : []
+  const chosen = required.length ? [...required, ...changed] : items.slice(0, 3)
   const pairs = chosen.map((it: any) => litPair(lang, it.name, litFor(lang, it.type)))
   switch (lang) {
     case 'php': return `[${pairs.join(', ')}]`
@@ -158,5 +167,6 @@ export {
 
 export type {
   ExampleLang,
+  LiteralLang,
   PrimaryCall,
 }

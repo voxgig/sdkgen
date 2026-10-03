@@ -7,6 +7,7 @@ const utility_1 = require("../utility");
 const FeatureDocs_1 = require("./FeatureDocs");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
+const mcpTools_1 = require("../helpers/mcpTools");
 const canonType_1 = require("../helpers/canonType");
 const naming_1 = require("../helpers/naming");
 const packageMeta_1 = require("../helpers/packageMeta");
@@ -374,11 +375,28 @@ See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full 
 `);
         }
         if (hasMcp) {
-            (0, jostraca_1.Content)(`## Use it from an AI agent (MCP)
+            const mcpOps = (0, mcpTools_1.mcpTools)(model).map((tool) => tool.op);
+            const mcpWrite = true === model.main?.[types_1.KIT]?.target?.['go-mcp']?.tool?.write;
+            const toggle = "`main: kit: target: 'go-mcp': tool: write: true`";
+            const opText = mcpOps.length < 2 ? mcpOps.join('') :
+                mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1];
+            // What the server reads and writes is what it registers, not the flag.
+            const reads = mcpOps.some((op) => mcpTools_1.MCP_WRITE_OPS.includes(op)) ? '' : mcpWrite ?
+                ' It only reads, as no entity has a create, update or remove a plain call runs.' :
+                ` It only reads: create, update and remove become tools when the SDK's model sets
+${toggle}.`;
+            (0, jostraca_1.Content)(0 === mcpOps.length ? `## Use it from an AI agent (MCP)
 
-The generated MCP server exposes every operation in this SDK as an
-[MCP](https://modelcontextprotocol.io) tool that Claude, Cursor or Cline
-can call directly. Build and register it:
+The generated MCP server has no tools for this SDK: no entity has a list or
+load a plain call runs${mcpWrite ? ', or a create, update or remove' :
+                `, and create, update and remove are off until the SDK's model sets
+${toggle}`}.
+
+` : `## Use it from an AI agent (MCP)
+
+The generated MCP server exposes this SDK's ${opText} operations as
+[MCP](https://modelcontextprotocol.io) tools that Claude, Cursor or Cline
+can call directly.${reads} Build and register it:
 
 \`\`\`bash
 cd go-mcp && go build -o ${model.name}-mcp .
