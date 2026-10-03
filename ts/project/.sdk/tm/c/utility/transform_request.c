@@ -4,16 +4,38 @@
 
 #include <string.h>
 
-/* A header or query argument travels where prepare_headers_util or
+static const char* ROUTED_KINDS[] = { "header", "cookie", "query" };
+
+static bool field_arg(Context* ctx, const char* name) {
+  bool found = false;
+  for (size_t k = 0; k < 3 && !found; k++) {
+    voxgig_value* defs = getpath2(ctx->point, "args", ROUTED_KINDS[k]);
+    if (voxgig_is_list(defs)) {
+      voxgig_list* dl = voxgig_as_list(defs);
+      for (size_t i = 0; i < dl->len && !found; i++) {
+        voxgig_value* n = getp(dl->items[i], "name");
+        voxgig_value* f = getp(dl->items[i], "field");
+        found = v_str_eq(n, name) && voxgig_is_bool(f) && voxgig_as_bool(f);
+        voxgig_release(n);
+        voxgig_release(f);
+      }
+    }
+    voxgig_release(defs);
+  }
+  return found;
+}
+
+/* A header, cookie or query argument travels where prepare_headers_util or
    prepare_query_util sends it, so the body is built from the request data
-   without it. */
+   without it, unless the entity declares it as a field too. */
 static voxgig_value* routed_args(Context* ctx) {
-  voxgig_value* routed = call_args(ctx, "header");
-  const char* kinds[] = { "cookie", "query" };
-  for (size_t k = 0; k < 2; k++) {
-    voxgig_value* more = call_args(ctx, kinds[k]);
+  voxgig_value* routed = voxgig_new_list();
+  for (size_t k = 0; k < 3; k++) {
+    voxgig_value* more = call_args(ctx, ROUTED_KINDS[k]);
     voxgig_list* ml = voxgig_as_list(more);
     for (size_t i = 0; i < ml->len; i++) {
+      voxgig_list* arg = voxgig_as_list(ml->items[i]);
+      if (field_arg(ctx, voxgig_as_string(arg->items[0]))) continue;
       voxgig_list_push(voxgig_as_list(routed), v_share(ml->items[i]));
     }
     voxgig_release(more);
