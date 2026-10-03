@@ -10,6 +10,8 @@ import {
   Content,
   File,
   cmp,
+  elixirAccessor,
+  entityCollection,
   invalidRequest,
   opReachable,
 } from '@voxgig/sdkgen'
@@ -26,6 +28,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const Name = model.const.Name
   const EName = entity.Name
   const ename = entity.name
+  const accessor = elixirAccessor(entity, entityCollection(model))
 
   // Each test calls with only what it shows, so a bare call must reach a
   // route: an id for load, nothing for list, a name for create.
@@ -170,7 +173,7 @@ defmodule ${Name}.${EName}EntityTest do
 
     err =
       try do
-        Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(client), "list"))
+        Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(client), "list"))
         nil
       rescue
         e -> e
@@ -181,7 +184,7 @@ defmodule ${Name}.${EName}EntityTest do
 
     fired = S.getprop(seen, "n")
     quiet = S.jm(["ctrl", S.jm(["throw", false])])
-    assert Enum.to_list(${Name}.EntityBase.stream(${Name}.${ename}(client), "list", nil, quiet)) == []
+    assert Enum.to_list(${Name}.EntityBase.stream(${Name}.${accessor}(client), "list", nil, quiet)) == []
     assert S.getprop(seen, "n") > fired
   end
 
@@ -200,7 +203,7 @@ defmodule ${Name}.${EName}EntityTest do
 
     err =
       try do
-        ${Name}.Entity.${EName}.list(${Name}.${ename}(client), S.jm([]))
+        ${Name}.Entity.${EName}.list(${Name}.${accessor}(client), S.jm([]))
         nil
       rescue
         e -> e
@@ -210,7 +213,7 @@ defmodule ${Name}.${EName}EntityTest do
     assert S.getprop(seen, "n") > 0
 
     fired = S.getprop(seen, "n")
-    assert ${Name}.Entity.${EName}.list(${Name}.${ename}(client), S.jm([]), S.jm(["throw", false])) == nil
+    assert ${Name}.Entity.${EName}.list(${Name}.${accessor}(client), S.jm([]), S.jm(["throw", false])) == nil
     assert S.getprop(seen, "n") > fired
   end
 `)
@@ -227,7 +230,7 @@ defmodule ${Name}.${EName}EntityTest do
 
       err =
         assert_raise ${Name}.Error, fn ->
-          ${Name}.Entity.${EName}.${bad.op}(${Name}.${ename}(client), S.jm([${args}]))
+          ${Name}.Entity.${EName}.${bad.op}(${Name}.${accessor}(client), S.jm([${args}]))
         end
 
       assert err.code == "validate_failed"

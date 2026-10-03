@@ -41,8 +41,8 @@ type UngeneratedOp = {
 declare function ungeneratedOps(model: any): UngeneratedOp[];
 declare function warnUngeneratedOps(model: any, log: any, origins: TargetOrigins): UngeneratedOp[];
 declare function entityPrimaryOp(ent: any): string | null;
-declare function entityClassName(ent: any, entityColl: any): string;
-declare function entityTypeCollisions(entityColl: any): string[];
+declare function entityClassName(ent: any, entityColl: any, fold?: boolean): string;
+declare function entityTypeCollisions(entityColl: any, fold?: boolean): string[];
 declare function warnEntityTypeCollisions(entityColl: any, log: any, lang: string): string[];
 declare function pickExampleEntity(entity: any): {
     entity: any;

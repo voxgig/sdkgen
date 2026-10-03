@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, elixirAccessor, entityCollection } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -94,7 +94,7 @@ sdk = ${Name}.test()
 
     // Entity factory functions
     publishedEntities.map((ent: any) => {
-      Content(`#### \`${Name}.${ent.name}(client, entopts \\\\ nil)\`
+      Content(`#### \`${Name}.${elixirAccessor(ent, entityCollection(model))}(client, entopts \\\\ nil)\`
 
 Create a \`${Name}.Entity.${ent.Name}\` handle.
 
