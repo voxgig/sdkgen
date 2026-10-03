@@ -490,12 +490,14 @@ class TestClean:
 
         # A feature's name is not a field name: only the sensitive names
         # inside its settings register. An entity block, of per-entity
-        # settings or seeded records keyed by entity name and id, is not read.
+        # settings or seeded records keyed by entity name and id, is not read,
+        # and nor are rbac's rules, keyed by entity and operation names.
         featured = _construct({
             "apikey": CANARY["apikey"],
             "feature": {
                 "zzsecrets": {"active": False, "kind": "PLAINSETTING-q8w2e4r6"},
                 "zzfeat": {"active": False, "apitoken": "FEATTOKEN-z9y8x7w6"},
+                "rbac": {"active": False, "rules": {"zztoken.load": "PLAINRULE-k7j5h3g1"}},
                 "test": {"active": False, "entity": {
                     "zztoken": {"ZZTOKEN01": {"note": "PLAINRECORD-t5r3e1w9"}}}},
             },
@@ -507,6 +509,7 @@ class TestClean:
         ftoken = fclean(froot, "token FEATTOKEN-z9y8x7w6")
         frecord = fclean(froot, "record PLAINRECORD-t5r3e1w9")
         falias = fclean(froot, "alias PLAINALIAS-m2n4b6v8")
+        frule = fclean(froot, "rule PLAINRULE-k7j5h3g1")
 
         leaked = [(name, _leaks(text)) for name, text in sinks]
         leaked = [(name, found) for name, found in leaked if 0 < len(found)]
@@ -540,6 +543,7 @@ class TestClean:
         assert ftoken == "token " + MASK, ftoken
         assert frecord == "record PLAINRECORD-t5r3e1w9", frecord
         assert falias == "alias PLAINALIAS-m2n4b6v8", falias
+        assert frule == "rule PLAINRULE-k7j5h3g1", frule
 
         explained = explains.get("ok/explain") or {}
         assert explained.get("result") is not None, "the explain record should carry the result"

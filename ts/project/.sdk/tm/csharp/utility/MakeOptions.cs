@@ -366,14 +366,15 @@ public static partial class SdkUtility
 
     // A feature's name is not a field name: a feature called `secrets` does
     // not make every one of its options a secret. Entity blocks (entity
-    // settings, seeded records) hold no credential.
+    // settings, seeded records) hold no credential, and nor do rbac's rules,
+    // keyed by entity and operation names.
     private static void CleanAddOptions(Context cleanctx, Dictionary<string, object?> opts,
         params string[] omit)
     {
         var top = CleanOmit(opts, omit.Append("feature").Append("entity").ToArray());
         if (top.ContainsKey("test"))
         {
-            top["test"] = CleanNoEntity(top["test"]);
+            top["test"] = CleanPlain(top["test"], null);
         }
         CleanAddSensitive(cleanctx, top);
         var feature = opts.GetValueOrDefault("feature");
@@ -381,14 +382,15 @@ public static partial class SdkUtility
         {
             foreach (DictionaryEntry kv in fmap)
             {
-                CleanAddSensitive(cleanctx, CleanNoEntity(kv.Value));
+                CleanAddSensitive(cleanctx, CleanPlain(kv.Value, Convert.ToString(kv.Key)));
             }
         }
         else if (feature is IList flist)
         {
             foreach (var entry in flist)
             {
-                CleanAddSensitive(cleanctx, CleanNoEntity(entry));
+                var name = entry is IDictionary e && e.Contains("name") ? e["name"] as string : null;
+                CleanAddSensitive(cleanctx, CleanPlain(entry, name));
             }
         }
         else
@@ -397,7 +399,7 @@ public static partial class SdkUtility
         }
     }
 
-    private static object? CleanNoEntity(object? block)
+    private static object? CleanPlain(object? block, string? name)
     {
         if (block is not IDictionary dict)
         {
@@ -407,7 +409,7 @@ public static partial class SdkUtility
         foreach (DictionaryEntry kv in dict)
         {
             var key = Convert.ToString(kv.Key) ?? "";
-            if (key != "entity")
+            if (key != "entity" && !("rbac" == name && key == "rules"))
             {
                 out_[key] = kv.Value;
             }

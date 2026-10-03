@@ -717,12 +717,14 @@ func TestCleanSweep(t *testing.T) {
 
 	// A feature's name is not a field name: only the sensitive names inside
 	// its settings register. An entity block, of per-entity settings or seeded
-	// records keyed by entity name and id, is not read at all.
+	// records keyed by entity name and id, is not read at all, and nor are
+	// rbac's rules, keyed by entity and operation names.
 	featured := cleanNew(map[string]any{
 		"apikey": cleanCanary["apikey"],
 		"feature": map[string]any{
 			"zzsecrets": map[string]any{"active": false, "kind": "PLAINSETTING-q8w2e4r6"},
 			"zzfeat":    map[string]any{"active": false, "apitoken": "FEATTOKEN-z9y8x7w6"},
+			"rbac":      map[string]any{"active": false, "rules": map[string]any{"zztoken.load": "PLAINRULE-k7j5h3g1"}},
 			"test": map[string]any{"active": false, "entity": map[string]any{
 				"zztoken": map[string]any{"ZZTOKEN01": map[string]any{"note": "PLAINRECORD-t5r3e1w9"}},
 			}},
@@ -740,6 +742,9 @@ func TestCleanSweep(t *testing.T) {
 		if got, _ := fclean(featured.GetRootCtx(), plain).(string); got != plain {
 			t.Errorf("an entity block was registered: %q", got)
 		}
+	}
+	if got, _ := fclean(featured.GetRootCtx(), "rule PLAINRULE-k7j5h3g1").(string); got != "rule PLAINRULE-k7j5h3g1" {
+		t.Errorf("an rbac rule keyed by entity and operation was registered: %q", got)
 	}
 
 	leaked := []string{}

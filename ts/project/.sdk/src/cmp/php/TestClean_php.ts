@@ -732,12 +732,14 @@ class CleanTest extends TestCase
 
         // A feature's name is not a field name: only the sensitive names
         // inside its settings register. An entity block, of per-entity
-        // settings or seeded records keyed by entity name and id, is not read.
+        // settings or seeded records keyed by entity name and id, is not read,
+        // and nor are rbac's rules, keyed by entity and operation names.
         $featured = self::construct([
             'apikey' => self::CANARY['apikey'],
             'feature' => [
                 'zzsecrets' => ['active' => false, 'kind' => 'PLAINSETTING-q8w2e4r6'],
                 'zzfeat' => ['active' => false, 'apitoken' => 'FEATTOKEN-z9y8x7w6'],
+                'rbac' => ['active' => false, 'rules' => ['zztoken.load' => 'PLAINRULE-k7j5h3g1']],
                 'test' => ['active' => false, 'entity' => [
                     'zztoken' => ['ZZTOKEN01' => ['note' => 'PLAINRECORD-t5r3e1w9']]]],
             ],
@@ -748,6 +750,7 @@ class CleanTest extends TestCase
         $ftoken = $fclean($featured->get_root_ctx(), 'token FEATTOKEN-z9y8x7w6');
         $frecord = $fclean($featured->get_root_ctx(), 'record PLAINRECORD-t5r3e1w9');
         $falias = $fclean($featured->get_root_ctx(), 'alias PLAINALIAS-m2n4b6v8');
+        $frule = $fclean($featured->get_root_ctx(), 'rule PLAINRULE-k7j5h3g1');
 
         $leaked = [];
         $excerpt = '';
@@ -799,6 +802,7 @@ class CleanTest extends TestCase
         $this->assertSame('token ' . self::MASK, $ftoken);
         $this->assertSame('record PLAINRECORD-t5r3e1w9', $frecord);
         $this->assertSame('alias PLAINALIAS-m2n4b6v8', $falias);
+        $this->assertSame('rule PLAINRULE-k7j5h3g1', $frule);
 
         $explained = $explains['ok/explain'] ?? [];
         $this->assertNotNull($explained['result'] ?? null, 'the explain record should carry the result');

@@ -758,12 +758,14 @@ describe("clean", function()
   -- A feature's name is not a field name: a feature called secrets does not
   -- make its settings secret, though a sensitive field inside it still is. An
   -- entity block, of per-entity settings or seeded records keyed by entity
-  -- name and id, is not read at all.
+  -- name and id, is not read at all, and nor are rbac's rules, keyed by entity
+  -- and operation names.
   it("a feature's name is read as a name", function()
     local client = construct({
       apikey = CANARY.apikey,
       feature = {
         secrets = { active = false, name = "ZZNAME-feat123", token = "ZZTOKEN-feat456" },
+        rbac = { active = false, rules = { ["zztoken.load"] = "PLAINRULE-k7j5h3g1" } },
         test = { active = false, entity = { zztoken = { ZZTOKEN01 = { note = "PLAINRECORD-t5r3e1w9" } } } },
       },
       entity = { zztoken = { alias = { zzkey = "PLAINALIAS-m2n4b6v8" } } },
@@ -773,6 +775,7 @@ describe("clean", function()
     assert.are.equal("ZZNAME-feat123 " .. MASK, clean(ctx, "ZZNAME-feat123 ZZTOKEN-feat456"))
     assert.are.equal("record PLAINRECORD-t5r3e1w9", clean(ctx, "record PLAINRECORD-t5r3e1w9"))
     assert.are.equal("alias PLAINALIAS-m2n4b6v8", clean(ctx, "alias PLAINALIAS-m2n4b6v8"))
+    assert.are.equal("rule PLAINRULE-k7j5h3g1", clean(ctx, "rule PLAINRULE-k7j5h3g1"))
   end)
 
 

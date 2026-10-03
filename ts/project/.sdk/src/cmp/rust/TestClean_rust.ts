@@ -841,7 +841,8 @@ fn clean_masks_a_registered_value_used_as_a_name() {
 // A feature's name is not a field name: a feature called secrets does not
 // make its settings secret, though a sensitive field inside it still is. An
 // entity block, of per-entity settings or seeded records keyed by entity name
-// and id, is not read at all.
+// and id, is not read at all, and nor are rbac's rules, keyed by entity and
+// operation names.
 #[test]
 fn clean_reads_a_feature_name_as_a_name() {
     let seeded = jo(vec![(
@@ -859,6 +860,13 @@ fn clean_reads_a_feature_name_as_a_name() {
                         ("active", Value::Bool(false)),
                         ("name", Value::str("ZZNAME-feat123")),
                         ("token", Value::str("ZZTOKEN-feat456")),
+                    ]),
+                ),
+                (
+                    "rbac",
+                    jo(vec![
+                        ("active", Value::Bool(false)),
+                        ("rules", jo(vec![("zztoken.load", Value::str("PLAINRULE-k7j5h3g1"))])),
                     ]),
                 ),
                 ("test", jo(vec![("active", Value::Bool(false)), ("entity", seeded)])),
@@ -879,6 +887,7 @@ fn clean_reads_a_feature_name_as_a_name() {
     );
     assert_eq!(clean::clean_str(&ctx, "record PLAINRECORD-t5r3e1w9"), "record PLAINRECORD-t5r3e1w9");
     assert_eq!(clean::clean_str(&ctx, "alias PLAINALIAS-m2n4b6v8"), "alias PLAINALIAS-m2n4b6v8");
+    assert_eq!(clean::clean_str(&ctx, "rule PLAINRULE-k7j5h3g1"), "rule PLAINRULE-k7j5h3g1");
 }
 
 #[test]

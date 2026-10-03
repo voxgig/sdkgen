@@ -464,12 +464,14 @@ class ${Name}CleanTest < Minitest::Test
 
     # A feature's name is not a field name: only the sensitive names inside
     # its settings register. An entity block, of per-entity settings or
-    # seeded records keyed by entity name and id, is not read at all.
+    # seeded records keyed by entity name and id, is not read at all, and nor
+    # are rbac's rules, keyed by entity and operation names.
     featured = construct({
       "apikey" => CANARY["apikey"],
       "feature" => {
         "zzsecrets" => { "active" => false, "kind" => "PLAINSETTING-q8w2e4r6" },
         "zzfeat" => { "active" => false, "apitoken" => "FEATTOKEN-z9y8x7w6" },
+        "rbac" => { "active" => false, "rules" => { "zztoken.load" => "PLAINRULE-k7j5h3g1" } },
         "test" => { "active" => false, "entity" => {
           "zztoken" => { "ZZTOKEN01" => { "note" => "PLAINRECORD-t5r3e1w9" } } } },
       },
@@ -480,6 +482,7 @@ class ${Name}CleanTest < Minitest::Test
     ftoken = fclean.call(featured.get_root_ctx, "token FEATTOKEN-z9y8x7w6")
     frecord = fclean.call(featured.get_root_ctx, "record PLAINRECORD-t5r3e1w9")
     falias = fclean.call(featured.get_root_ctx, "alias PLAINALIAS-m2n4b6v8")
+    frule = fclean.call(featured.get_root_ctx, "rule PLAINRULE-k7j5h3g1")
 
     leaked = sinks
       .map { |s| [s["name"], Sweep.leaks(s["text"])] }
@@ -516,6 +519,7 @@ class ${Name}CleanTest < Minitest::Test
     assert_equal "token #{MASK}", ftoken
     assert_equal "record PLAINRECORD-t5r3e1w9", frecord
     assert_equal "alias PLAINALIAS-m2n4b6v8", falias
+    assert_equal "rule PLAINRULE-k7j5h3g1", frule
 
     explained = explains["ok/explain"] || {}
     refute_nil explained["result"], "the explain record should carry the result"

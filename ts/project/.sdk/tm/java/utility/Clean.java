@@ -219,7 +219,8 @@ final class Clean {
   // any shape: a credential mistyped as a map or a number is still one, and
   // a message can quote it. A key under `feature` names a feature, not a
   // field, so a feature called secrets does not make its settings secret.
-  // Entity blocks (entity settings, seeded records) hold no credential.
+  // Entity blocks (entity settings, seeded records) hold no credential, and
+  // nor do rbac's rules, keyed by entity and operation names.
   static void addSensitiveOptions(Map<String, Object> cfg, Map<String, Object> opts) {
     IdentityHashMap<Object, Boolean> seen = new IdentityHashMap<>();
     for (Map.Entry<String, Object> e : opts.entrySet()) {
@@ -229,24 +230,33 @@ final class Clean {
       if ("entity".equals(key)) {
         continue;
       }
-      if ("feature".equals(key) && (val instanceof Map || val instanceof List)) {
-        Collection<?> fsets = val instanceof Map ? ((Map<?, ?>) val).values() : (List<?>) val;
-        for (Object fopts : fsets) {
-          addSensitive(cfg, noEntity(fopts), under, 2, seen);
+      if ("feature".equals(key) && val instanceof Map) {
+        for (Map.Entry<?, ?> f : ((Map<?, ?>) val).entrySet()) {
+          addSensitive(cfg, plain(f.getValue(), String.valueOf(f.getKey())), under, 2, seen);
+        }
+      }
+      else if ("feature".equals(key) && val instanceof List) {
+        for (Object fopts : (List<?>) val) {
+          Object name = fopts instanceof Map ? ((Map<?, ?>) fopts).get("name") : null;
+          addSensitive(cfg, plain(fopts, name instanceof String ? (String) name : null),
+              under, 2, seen);
         }
       }
       else {
-        addSensitive(cfg, "test".equals(key) ? noEntity(val) : val, under, 1, seen);
+        addSensitive(cfg, "test".equals(key) ? plain(val, null) : val, under, 1, seen);
       }
     }
   }
 
-  private static Object noEntity(Object block) {
+  private static Object plain(Object block, String name) {
     if (!(block instanceof Map)) {
       return block;
     }
     Map<Object, Object> out = new LinkedHashMap<>((Map<?, ?>) block);
     out.remove("entity");
+    if ("rbac".equals(name)) {
+      out.remove("rules");
+    }
     return out;
   }
 

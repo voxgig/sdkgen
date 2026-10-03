@@ -777,13 +777,17 @@ static void the_generated_configs_own_clean_block_is_honoured() {
 // A feature's name is not a field name: a feature called secrets does not
 // make its settings secret, though a sensitive field inside it still is. An
 // entity block, of per-entity settings or seeded records keyed by entity name
-// and id, is not read at all.
+// and id, is not read at all, and nor are rbac's rules, keyed by entity and
+// operation names.
 static void a_feature_name_is_read_as_a_name() {
   auto client = construct(vmap({
     {"apikey", Value(CANARY_APIKEY)},
     {"feature", vmap({
       {"secrets", vmap({
         {"active", Value(false)}, {"name", Value("ZZNAME-feat123")}, {"token", Value("ZZTOKEN-feat456")},
+      })},
+      {"rbac", vmap({
+        {"active", Value(false)}, {"rules", vmap({{"zztoken.load", Value("PLAINRULE-k7j5h3g1")}})},
       })},
       {"test", vmap({
         {"active", Value(false)},
@@ -799,6 +803,8 @@ static void a_feature_name_is_read_as_a_name() {
                 Value("record PLAINRECORD-t5r3e1w9"), "a record seeded under an entity block is not registered");
   ASSERT_EQ_VAL(util::clean(ctx, Value("alias PLAINALIAS-m2n4b6v8")),
                 Value("alias PLAINALIAS-m2n4b6v8"), "an entity's own settings are not registered");
+  ASSERT_EQ_VAL(util::clean(ctx, Value("rule PLAINRULE-k7j5h3g1")),
+                Value("rule PLAINRULE-k7j5h3g1"), "an rbac rule keyed by entity and operation is not registered");
 }
 
 

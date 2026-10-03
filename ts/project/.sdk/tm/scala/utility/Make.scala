@@ -482,19 +482,28 @@ object MakeOptions {
 
   // A feature's name is not a field name: a feature called `secrets` does not
   // make every one of its options a secret. Entity blocks (entity settings,
-  // seeded records) hold no credential.
+  // seeded records) hold no credential, and nor do rbac's rules, keyed by
+  // entity and operation names.
   private def addSensitiveOptions(cfg: CleanConfig, m: JMap[String, Object], keys: String*): Unit = {
     val top = omit(m, (keys :+ "feature" :+ "entity")*)
-    if (top.containsKey("test")) top.put("test", noEntity(top.get("test")))
+    if (top.containsKey("test")) top.put("test", plain(top.get("test"), null))
     Clean.addSensitiveWith(cfg, top)
     m.get("feature") match {
-      case fm: JMap[_, _] => fm.values().forEach(v => Clean.addSensitiveWith(cfg, noEntity(v.asInstanceOf[Object])))
-      case fl: JList[_] => fl.forEach(v => Clean.addSensitiveWith(cfg, noEntity(v.asInstanceOf[Object])))
+      case fm: JMap[_, _] =>
+        fm.asInstanceOf[JMap[Object, Object]].forEach((k, v) => Clean.addSensitiveWith(cfg, plain(v, String.valueOf(k))))
+      case fl: JList[_] => fl.forEach { v =>
+        val name = v match {
+          case vm: JMap[_, _] => vm.get("name") match { case s: String => s; case _ => null }
+          case _ => null
+        }
+        Clean.addSensitiveWith(cfg, plain(v.asInstanceOf[Object], name))
+      }
       case other => Clean.addSensitiveWith(cfg, other)
     }
   }
 
-  private def noEntity(block: Object): Object = block match {
+  private def plain(block: Object, name: String): Object = block match {
+    case bm: JMap[_, _] if "rbac" == name => omit(bm.asInstanceOf[JMap[String, Object]], "entity", "rules")
     case bm: JMap[_, _] => omit(bm.asInstanceOf[JMap[String, Object]], "entity")
     case other => other
   }
