@@ -5571,13 +5571,15 @@ const DOC_LANES: {
         const file = Path.join(dir, 'example_' + i + '.c')
         Fs.writeFileSync(file, cExample(block,
           pageImports(blocks, block.doc, /^#include\b/)))
-        // Errors by default in newer GCC, so an older compiler agrees.
+        // Errors by default in newer GCC, so an older compiler agrees. The
+        // root goes on the quote path only: a case-insensitive filesystem
+        // would let its VERSION file stand in for a standard header.
         return {
           label: block.doc + ':' + block.line, bin: cc,
           args: ['-fsyntax-only', '-std=c11', '-D_GNU_SOURCE',
             '-Werror=incompatible-pointer-types', '-Werror=int-conversion',
             '-Werror=implicit-function-declaration',
-            '-I', '.', '-I', 'core', '-I', 'utility/struct', '-I', 'feature', file],
+            '-iquote', '.', '-I', 'core', '-I', 'utility/struct', '-I', 'feature', file],
         }
       })
     },
@@ -5599,9 +5601,10 @@ const DOC_LANES: {
       const file = Path.join(sdkroot, '_readme', 'examples.cpp')
       Fs.mkdirSync(Path.dirname(file), { recursive: true })
       Fs.writeFileSync(file, cppExamples(blocks, imports))
+      // -iquote, as for c: libc++ includes <version>, which on macOS is VERSION.
       return [{
         label: 'every cpp example', bin: cxx,
-        args: ['-fsyntax-only', '-std=c++17', '-I', '.', file],
+        args: ['-fsyntax-only', '-std=c++17', '-iquote', '.', file],
       }]
     },
   },
