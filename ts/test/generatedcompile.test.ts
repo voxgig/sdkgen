@@ -26,6 +26,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
+  OPLESS_ENTITY, CREATE_ONLY_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -1835,6 +1836,76 @@ echo get_class($client->ContactsField(null)), ' ',
     const folded = beams.filter((b: string, i: number) =>
       beams.findIndex((o: string) => o.toLowerCase() === b.toLowerCase()) !== i)
     deepStrictEqual(folded, [], 'elixir: modules that are one file on macOS')
+  })
+
+
+  // An alias or private function nothing calls is a warning in a consumer's
+  // build. The fixture's list-only and load-only entities, one with no
+  // operations and one that only creates each leave a different set unused.
+  test('elixir: an entity with any set of operations compiles without a warning', async (t) => {
+    const mix = toolchain('mix')
+    const elixir = toolchain('elixir')
+    if (null == mix || null == elixir) {
+      return t.skip('no usable elixir toolchain here (elixir + mix)')
+    }
+
+    const sdkroot = Path.join(tmp, 'elixir-warnings')
+    await generateTo('elixir', sdkroot, OPLESS_ENTITY + CREATE_ONLY_ENTITY)
+
+    // Each warning with the lines after it, which name where it is.
+    const entityWarnings = (out: string) => out.split(/\n(?=\s*warning:)/)
+      .filter((chunk: string) => /^\s*warning:/.test(chunk) &&
+        /(lib\/entity\/\w+_entity\.ex|test\/\w+_entity_test\.exs):\d+/.test(chunk))
+
+    const env = { ...process.env, MIX_ENV: 'test' }
+    const built = run(mix, ['compile'], sdkroot, env)
+    if (built.unlaunchable || built.timedOut) {
+      return t.skip('elixir: ' + tail(built.out, 3))
+    }
+    ok(built.ok, 'elixir: mix compile failed:\n' + tail(built.out))
+    deepStrictEqual(entityWarnings(built.out), [], 'elixir: an entity module warns')
+
+    const tests = Fs.readdirSync(Path.join(sdkroot, 'test'))
+      .filter((file: string) => file.endsWith('_entity_test.exs')).sort()
+    ok(tests.includes('zone_entity_test.exs') && tests.includes('zinc_entity_test.exs'),
+      'elixir: the fixture entities have no tests: ' + tests.join(', '))
+
+    const suite = run(mix, ['run', '--no-start', '-e', 'ExUnit.start(autorun: false); ' +
+      tests.map((file: string) => 'Code.compile_file("test/' + file + '")').join('; ')],
+    sdkroot, env)
+    ok(suite.ok, 'elixir: an entity test does not compile:\n' + tail(suite.out))
+    deepStrictEqual(entityWarnings(suite.out), [], 'elixir: an entity test warns')
+  })
+
+
+  // The timeout feature runs each fetch in a future, whose pool keeps the JVM
+  // alive for a minute after its last task unless the run exits.
+  test('clojure: a passing run exits as soon as it reports', async (t) => {
+    const clj = toolchain('clojure')
+    if (null == clj) {
+      return t.skip('no clojure toolchain here')
+    }
+
+    const sdkroot = Path.join(tmp, 'clojure-exit')
+    await generateTo('clojure', sdkroot, undefined, ['test', 'log', 'timeout'])
+
+    const child = spawn(clj, ['-M:test', '--sdk-only'], { cwd: sdkroot })
+    const killer = setTimeout(() => child.kill('SIGKILL'), RUN_TIMEOUT_MS)
+    let out = ''
+    let green = 0
+    child.stdout.on('data', (chunk: Buffer) => {
+      out += chunk
+      if (0 === green && out.includes('ALL GREEN')) green = Date.now()
+    })
+    child.stderr.on('data', (chunk: Buffer) => { out += chunk })
+    const code = await new Promise((resolve) => child.on('close', resolve))
+    const exited = Date.now()
+    clearTimeout(killer)
+
+    strictEqual(code, 0, 'clojure: the run failed:\n' + tail(out))
+    ok(0 < green, 'clojure: the run never reported ALL GREEN:\n' + tail(out))
+    ok(exited - green < 20000,
+      'clojure: the run exited ' + (exited - green) + 'ms after reporting ALL GREEN')
   })
 
 
@@ -4452,6 +4523,8 @@ type CleanLane = {
   needs: string,
   prepare?: (sdkroot: string) => string | null,
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // Output that is noise in a consumer's run, from the sweep or the SDK.
+  quiet?: RegExp,
 }
 
 // phpunit is a dev dependency of the generated SDK, not a system tool: when
@@ -4651,6 +4724,7 @@ const CLEAN_LANES: CleanLane[] = [
       return null == cargo ? null
         : { bin: cargo, args: ['test', '--test', 'clean_test', '--', '--nocapture'] }
     },
+    quiet: /warning: [^\n]*\n\s*--> \S*utility[\\/]clean\.rs/,
   },
   {
     target: 'lua',
@@ -4859,6 +4933,9 @@ describe('the canary sweep runs from a generated SDK', () => {
             tail(ran.out))
           ok(0 < Number(swept![1]), 'the ' + lane.target + ' sweep swept nothing')
           strictEqual(Number(swept![2]), 0, 'the ' + lane.target + ' sweep found leaks')
+
+          const noise = null == lane.quiet ? null : ran.out.match(lane.quiet)
+          strictEqual(noise?.[0], undefined, 'the ' + lane.target + ' sweep run printed noise')
         })
     }
   }

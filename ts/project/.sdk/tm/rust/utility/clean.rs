@@ -22,7 +22,6 @@ struct CleanConfig {
     values: Vec<String>,
     mask: String,
     hint: usize,
-    min: usize,
 }
 
 fn normkey(key: &str) -> String {
@@ -126,7 +125,6 @@ fn read_config(block: &Value) -> CleanConfig {
             _ => DEFAULT_MASK.to_string(),
         },
         hint: count(&getp(block, "hint"), 0),
-        min: count(&getp(block, "min"), 4).max(1),
     }
 }
 

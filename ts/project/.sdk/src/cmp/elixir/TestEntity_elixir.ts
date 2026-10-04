@@ -38,18 +38,14 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const hasCreate = opReachable(ops.create, ['name'])
 
   const fixture = `../.sdk/test/entity/${ename}/${EName}TestData.json`
+  const bad = invalidRequest(entity)
 
-  File({ name: ename + '_entity_test.exs' }, () => {
-
-    Content(`# ${EName} entity test (offline, mock transport)
-
-defmodule ${Name}.${EName}EntityTest do
-  use ExUnit.Case
-
-  alias Voxgig.Struct, as: S
-  alias ${Name}.Helpers, as: H
-  alias ${Name}.Json
-
+  // Only what the emitted tests call: elixir warns on an unused alias or
+  // private function.
+  const seeded = hasList || hasLoad
+  const head = [
+    ...(seeded || hasCreate || null != bad ? ['  alias Voxgig.Struct, as: S'] : []),
+    ...(seeded ? [`  alias ${Name}.Helpers, as: H`, `  alias ${Name}.Json`, `
   defp fixture do
     Json.parse(File.read!(${JSON.stringify(fixture)}))
   end
@@ -57,14 +53,22 @@ defmodule ${Name}.${EName}EntityTest do
   defp mk_sdk do
     existing = H.or_(S.getpath(fixture(), "existing"), S.jm([]))
     ${Name}.test(S.jm(["entity", existing]))
-  end
-
+  end`] : []),
+    ...(hasLoad ? [`
   defp first_id do
     existing = H.or_(S.getpath(fixture(), "existing.${ename}"), S.jm([]))
     keys = S.keysof(existing)
     if keys == [], do: nil, else: hd(keys)
-  end
+  end`] : []),
+  ]
 
+  File({ name: ename + '_entity_test.exs' }, () => {
+
+    Content(`# ${EName} entity test (offline, mock transport)
+
+defmodule ${Name}.${EName}EntityTest do
+  use ExUnit.Case
+${0 < head.length ? '\n' + head.join('\n') + '\n' : ''}
   test "should create instance" do
     sdk = ${Name}.test()
     ent = ${Name}.${accessor}(sdk)
@@ -219,7 +223,6 @@ defmodule ${Name}.${EName}EntityTest do
 `)
     }
 
-    const bad = invalidRequest(entity)
     if (null != bad) {
       const args = Object.entries(bad.args)
         .map(([k, v]) => JSON.stringify(k) + ', ' + JSON.stringify(v)).join(', ')
