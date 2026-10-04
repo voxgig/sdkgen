@@ -301,6 +301,21 @@ pub const ProjectNameSDK = struct {
                 break :blk if (jf == .function) h.call_json(jf) else h.vnull();
             };
 
+            if (!no_body and (h.get_bool(fetched, "unreadable") orelse false)) {
+                const failed: ?*errmod.ProjectNameError = if (200 <= status and status < 300) null else ctx.make_error(
+                    "request_status",
+                    std.fmt.allocPrint(h.A(), "request: {d}: {s}", .{ status, h.get_str(fetched, "statusText") orelse "" }) catch "",
+                );
+                const body_err = utility_mod.unreadable_body(ctx, status, headers, h.getp(fetched, "body"), h.getp(fetchdef, "headers"), failed);
+                return h.jo(&.{
+                    .{ "ok", h.vbool(false) },
+                    .{ "status", h.vnum(status) },
+                    .{ "headers", headers },
+                    .{ "data", json_data },
+                    .{ "err", h.vstr(self.sdkUtility.clean_str(ctx, body_err.msg)) },
+                });
+            }
+
             return h.jo(&.{
                 .{ "ok", h.vbool(200 <= status and status < 300) },
                 .{ "status", h.vnum(status) },

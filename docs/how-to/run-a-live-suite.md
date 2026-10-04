@@ -136,9 +136,9 @@ local HTTP server to check continuation, cleanup, and failure outcomes.
 ## Responses that are not JSON
 
 A service can answer a client it does not recognise with an HTML page, often a
-bot challenge, instead of the JSON its API returns. The TS and JS SDKs report
-such a body as an error giving the HTTP status, the content type, the user
-agent sent, and the start of the body, with credentials masked:
+bot challenge, instead of the JSON its API returns. Every SDK reports such a
+body as an error giving the HTTP status, the content type, the user agent
+sent, and the start of the body, with credentials masked:
 
 | `err.code` | Meaning |
 | --- | --- |
@@ -146,7 +146,14 @@ agent sent, and the start of the body, with credentials masked:
 | `response_json_invalid` | A body labelled as JSON, or not labelled at all, that does not parse. |
 | `request_status` | An HTTP failure; its message also describes a body that is not JSON. |
 
-`direct()` returns the same error as `err`, with `ok` set to `false`.
+`direct()` returns the same error as `err`, with `ok` set to `false`. The
+Rust, C, C++ and Zig SDKs return a plain value from `direct()`, so there `err`
+holds the error's message alone.
+
+The C, C++, Zig and OCaml SDKs have no transport of their own. The function
+given as `system.fetch` reports a body it could not read as JSON by setting
+`unreadable: true` on the response it returns, and the SDK then raises the
+same errors.
 
 Unless the client configures one, the SDKs of most targets send a
 browser-shaped `User-Agent`; the TS and JS SDKs do so under Node and leave the

@@ -228,9 +228,17 @@ struct Response {
   voxgig_value* json;
   voxgig_value* body;
   PNError* err;
+  // Set by a transport that could not read a non-blank body as JSON.
+  bool unreadable;
 };
 
 Response* response_new(voxgig_value* resmap);
+
+// A body that is not JSON. An HTTP failure keeps its own error (failed, whose
+// message is extended in place), with the response described; otherwise the
+// code tells a wrong content type from malformed JSON.
+PNError* unreadable_body(Context* ctx, int64_t status, voxgig_value* headers,
+                         voxgig_value* text, voxgig_value* sent, PNError* failed);
 
 // ===========================================================================
 // SdkResult (mirrors core/result.rs)

@@ -232,11 +232,29 @@ static voxgig_value* sdk_raw_request(
       json_data = voxgig_is_func(jf) ? call_json(jf) : voxgig_new_undef();
     }
 
-    return cmap(4,
-      "ok", v_bool(status >= 200 && status < 300),
+    PNError* body_err = NULL;
+    bool unreadable = false;
+    if (!no_body && get_bool(fetched, "unreadable", &unreadable) && unreadable) {
+      PNError* failed = NULL;
+      if (status < 200 || status >= 300) {
+        const char* st = get_str(fetched, "statusText");
+        char msg[160];
+        snprintf(msg, sizeof(msg), "request: %lld: %s", (long long)status, st ? st : "");
+        failed = context_make_error(ctx, "request_status", msg);
+      }
+      body_err = unreadable_body(ctx, status, headers, getp(fetched, "body"),
+        getp(fetchdef, "headers"), failed);
+    }
+
+    voxgig_value* out = cmap(4,
+      "ok", v_bool(NULL == body_err && status >= 200 && status < 300),
       "status", v_num((double)status),
       "headers", v_share(headers),
       "data", json_data);
+    if (body_err) {
+      setp(out, "err", v_str(clean_str(ctx, body_err->msg)));
+    }
+    return out;
   }
 
   return err_map("invalid response type");

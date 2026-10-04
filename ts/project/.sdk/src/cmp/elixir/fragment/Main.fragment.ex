@@ -246,7 +246,25 @@ defmodule ProjectName do
                 end
               end
 
-            S.jm(["ok", status >= 200 and status < 300, "status", status, "headers", headers, "data", json_data])
+            body_err =
+              if not no_body and S.getprop(fetched, "unreadable") == true do
+                failed =
+                  if status >= 200 and status < 300,
+                    do: nil,
+                    else:
+                      Context.make_error(ctx, "request_status",
+                        "request: " <> to_string(status) <> ": " <> to_string(H.or_(S.getprop(fetched, "statusText"), "")))
+
+                Utility.unreadable_body(ctx, status, headers, S.getprop(fetched, "body"),
+                  S.getprop(fetchdef, "headers"), failed)
+              end
+
+            out =
+              S.jm(["ok", body_err == nil and status >= 200 and status < 300,
+                    "status", status, "headers", headers, "data", json_data])
+
+            if body_err != nil, do: S.setprop(out, "err", Utility.clean(ctx, body_err))
+            out
 
           true ->
             S.jm(["ok", false, "err", Context.make_error(ctx, "direct_invalid", "invalid response type")])
