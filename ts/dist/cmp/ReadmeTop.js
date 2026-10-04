@@ -144,9 +144,12 @@ ${tagline}
         }
         (0, jostraca_1.Content)(`${(0, packageMeta_1.nonAffiliation)(model)}
 
-Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
+`);
+        if ((0, packageMeta_1.isDefaultPublisher)(model)) {
+            (0, jostraca_1.Content)(`Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
 
 `);
+        }
         // THE GENERATED SITE, LINKED FROM THE TOP, because the repository was the
         // one place it could not be found from. `docs_url` further down is the
         // UPSTREAM API's documentation, not this, and a reader who lands on the
@@ -598,7 +601,7 @@ The OpenAPI spec(s) this SDK was generated from are kept in the
 `);
         (0, jostraca_1.Content)(`## Security
 
-Please report security issues to ${packageMeta_1.SECURITY_EMAIL}. See [SECURITY.md](SECURITY.md).
+Please report security issues ${(0, packageMeta_1.securityContact)(model)}. See [SECURITY.md](SECURITY.md).
 Do not open public issues for suspected vulnerabilities.
 
 `);
