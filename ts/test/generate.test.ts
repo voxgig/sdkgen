@@ -1882,8 +1882,9 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         const out = await generate(['ts', 'perl', 'csharp'])
         const bad: string[] = []
 
+        // A Windows checkout gives the LICENSE templates CRLF line endings.
         for (const t of ['', 'ts/', 'perl/', 'csharp/']) {
-          if (!String(out[t + 'LICENSE']).includes('Copyright (c) 2026 Voxgig\n')) {
+          if (!/^Copyright \(c\) 2026 Voxgig\r?$/m.test(String(out[t + 'LICENSE']))) {
             bad.push(`${t}LICENSE does not name Voxgig`)
           }
         }
