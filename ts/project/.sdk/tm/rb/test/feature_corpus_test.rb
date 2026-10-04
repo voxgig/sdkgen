@@ -29,7 +29,7 @@ class FeatureCorpusTest < Minitest::Test
 
   def corpus
     @corpus ||= JSON.parse(
-      File.read(File.join(__dir__, "..", "..", ".sdk", "test", "test.json")))
+      File.read(File.join(__dir__, "..", "..", ".sdk", "test", "test.json"), encoding: "UTF-8"))
   end
 
   # A scripted transport built from a case's `res` list. Responses are

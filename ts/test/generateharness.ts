@@ -66,6 +66,12 @@ function toolchain(name: string, searchPath = process.env.PATH ?? ''): string | 
 }
 
 
+// The C locale, where Ruby reads files as ASCII unless told their encoding.
+function rubyEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return { ...env, LANG: 'C', LC_ALL: 'C' }
+}
+
+
 function runnable(file: string, win: boolean): boolean {
   try {
     if (!Fs.statSync(file).isFile()) {
@@ -876,6 +882,7 @@ export {
   STAGE,
   SCAFFOLD,
   toolchain,
+  rubyEnv,
   API_MODEL,
   CREATELESS_ENTITY,
   ROUTING_MODEL,

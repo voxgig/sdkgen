@@ -214,7 +214,7 @@ require_relative 'utility/prepare_auth'
 ProbeSpec = Struct.new(:headers, :query)
 ProbeClient = Struct.new(:options_map)
 ProbeCtx = Struct.new(:spec, :client)
-cases = JSON.parse(File.read('auth-cases.json'))
+cases = JSON.parse(File.read('auth-cases.json', encoding: 'UTF-8'))
 cases.each do |c|
   spec = ProbeSpec.new(c['headers'], c['query'])
   c['steps'].each do |s|

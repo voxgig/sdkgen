@@ -268,7 +268,7 @@ ${entityLines}
         puts
         puts "@@VOXBEGIN \\#{i}"
         begin
-          Module.new.module_eval(File.read(path), path)
+          Module.new.module_eval(File.read(path, encoding: "UTF-8"), path)
         rescue Exception => e
           puts "FATAL: \\#{e.class}: \\#{e.message}"
         end

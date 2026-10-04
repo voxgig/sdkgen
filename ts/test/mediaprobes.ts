@@ -455,7 +455,7 @@ const RB_PROBE = String.raw`
 require 'json'
 require_relative 'Demo_sdk'
 
-cases = JSON.parse(File.read('media-cases.json'))
+cases = JSON.parse(File.read('media-cases.json', encoding: 'UTF-8'))
 base = ENV['MEDIA_BASE']
 cases.each_with_index do |c, i|
   opts = { 'base' => "#{base}/c#{i}" }
