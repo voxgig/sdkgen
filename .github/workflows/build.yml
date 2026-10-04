@@ -59,6 +59,28 @@ jobs:
           -r ../.github/zig-requirements.txt
         python -c 'import os, ziglang; print(os.path.dirname(ziglang.__file__))' >> "$GITHUB_PATH"
 
+    # gh-actions-lua and luarocks compile with MSVC, which the Windows image
+    # installs without setting its environment. Platform stays out: dotnet
+    # reads it as a build property and the csharp lanes would build for it.
+    - name: MSVC environment (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+        $bat = Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat'
+        $out = Join-Path $env:RUNNER_TEMP 'vcvars.txt'
+        cmd.exe /c "call `"$bat`" >nul && set > `"$out`""
+        $path = $env:Path -split ';'
+        foreach ($line in Get-Content $out) {
+          if ($line -notmatch '^([^=]+)=(.*)$') { continue }
+          $name = $Matches[1]; $value = $Matches[2]
+          if ($name -ieq 'Path') {
+            $value -split ';' | Where-Object { $_ -and ($path -notcontains $_) } | Add-Content $env:GITHUB_PATH
+          } elseif ($name -ine 'Platform' -and [Environment]::GetEnvironmentVariable($name) -ne $value) {
+            Add-Content $env:GITHUB_ENV "$name=$value"
+          }
+        }
+
     - name: Lua
       uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13
       with:
