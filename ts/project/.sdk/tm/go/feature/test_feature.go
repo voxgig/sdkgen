@@ -142,7 +142,7 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			}
 			out := vs.Clone(found)
 			return respond(200, out, nil), nil
-		} else if op.Name == "update" {
+		} else if op.Name == "update" || op.Name == "patch" {
 			updateMatch := map[string]any{}
 			if ctx.Reqdata != nil {
 				if v, has := ctx.Reqdata["id"]; has {

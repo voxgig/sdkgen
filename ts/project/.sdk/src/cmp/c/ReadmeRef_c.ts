@@ -68,6 +68,10 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
       sig: 'vt->update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
       desc: 'Update an existing entity. The data must include the entity id. Returns the updated entity data.',
     },
+    patch: {
+      sig: 'vt->patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
+      desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity id. Returns the patched entity data.',
+    },
     remove: {
       sig: 'vt->remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
       desc: 'Remove the entity matching the given criteria. Sets `*err` on failure.',
@@ -219,7 +223,7 @@ Entity* ${evar} = ${acc}(client, NULL);
         // Field operations breakdown
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
@@ -314,8 +318,8 @@ Entity* ${evar} = ${acc}(client, NULL);
 
 `)
           }
-          else if ('update' === opname) {
-            const updateItems = opRequestShape(ent, 'update').items
+          else if ('update' === opname || 'patch' === opname) {
+            const updateItems = opRequestShape(ent, opname).items
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -324,13 +328,13 @@ Entity* ${evar} = ${acc}(client, NULL);
                 it.name === idF ? ent.name + '_id' : it.name)}`)
             Content(`\`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-voxgig_value* result = ${evar}->vt->update(${evar}, ${cmapExpr(updatePairs)}, NULL, &err);
+voxgig_value* result = ${evar}->vt->${opname}(${evar}, ${cmapExpr(updatePairs)}, NULL, &err);
 \`\`\`
 
 `)
           }
 
-          if ('create' === opname || 'update' === opname) {
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a string value holding the bytes, such as `voxgig_new_string_n`',
             })

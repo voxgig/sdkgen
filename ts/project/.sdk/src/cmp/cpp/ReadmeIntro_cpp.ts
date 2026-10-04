@@ -37,7 +37,7 @@ entity-oriented client following idiomatic modern C++ (C++17) conventions.
   // Model-driven op list — only the operations the active entities actually
   // expose (a read-only entity has just list+load); never claim
   // create/update/remove exist when no entity has them.
-  const CANON_OPS = ['list', 'load', 'create', 'update', 'remove']
+  const CANON_OPS = ['list', 'load', 'create', 'update', 'patch', 'remove']
   const opSet = new Set<string>()
   Object.values(entity || {}).forEach((e: any) => {
     if (!e || e.active === false) return

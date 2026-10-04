@@ -1,7 +1,7 @@
 # ProjectName SDK EntityName entity
 #
 # Per-entity module. Generic construction/data/match operations delegate to
-# EntityBase; each active op (load/list/create/update/remove) builds a ctx
+# EntityBase; each active op (load/list/create/update/patch/remove) builds a ctx
 # and drives it through ProjectName.Pipeline.run_op.
 
 defmodule ProjectName.Entity.EntityName do
@@ -32,6 +32,8 @@ defmodule ProjectName.Entity.EntityName do
   # #CreateOp
 
   # #UpdateOp
+
+  # #PatchOp
 
   # #RemoveOp
 end

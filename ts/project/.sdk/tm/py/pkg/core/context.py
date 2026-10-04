@@ -186,7 +186,7 @@ class ProjectNameContext:
         opcfg = vs.getpath(self.config, "entity." + entname + ".op." + opname)
 
         inpt = "match"
-        if opname == "update" or opname == "create":
+        if opname == "update" or opname == "create" or opname == "patch":
             inpt = "data"
 
         points = []

@@ -5,9 +5,9 @@ exports.guardFlowSteps = guardFlowSteps;
 const apidef_1 = require("@voxgig/apidef");
 const opShape_1 = require("./opShape");
 // Ops whose generated call names the record it acts on.
-const BY_ID = ['load', 'update', 'remove'];
+const BY_ID = ['load', 'update', 'patch', 'remove'];
 // Ops after which the entity instance holds a record for later steps to read.
-const STORES = ['create', 'load', 'update'];
+const STORES = ['create', 'load', 'update', 'patch'];
 // A generated flow test calls each step's op with its own match and data,
 // the record's id where the op acts on one, and what the entity instance
 // holds. A step whose call reaches no route is switched off, as the runtime

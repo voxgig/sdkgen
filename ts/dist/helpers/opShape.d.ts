@@ -32,6 +32,7 @@ declare function invalidRequest(ent: any): {
     field: string;
     args: Record<string, any>;
 } | null;
+declare const CANON_OP_ORDER: string[];
 declare function entityOps(ent: any): string[];
 type UngeneratedOp = {
     entity: string;
@@ -49,5 +50,5 @@ declare function pickExampleEntity(entity: any): {
     primaryOp: string | null;
 };
 declare function entityDataIdField(ent: any): string | null;
-export { OP_SUFFIX, deriveEntityNames, entityCollection, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
+export { CANON_OP_ORDER, OP_SUFFIX, deriveEntityNames, entityCollection, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
 export type { OpShapeItem, UngeneratedOp, };

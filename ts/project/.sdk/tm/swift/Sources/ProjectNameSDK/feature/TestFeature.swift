@@ -207,7 +207,7 @@ public final class TestFeature: BaseFeature {
           for item in fl.items { delprop(item, .string("$KEY")) }
         }
         return testRespond(ctx2, 200, clone(found), nil)
-      } else if op.name == "update" {
+      } else if op.name == "update" || op.name == "patch" {
         var updateMatch = VMap()
         if let idv = ctx2.reqdata.entries["id"] {
           updateMatch.entries["id"] = idv

@@ -167,7 +167,7 @@ let resolve_op (ctx : ctx) (opname : string) : operation =
     if opname = "" then new_operation (empty_map ())
     else begin
       let opcfg = getpath_s ctx.c_config ("entity." ^ entname ^ ".op." ^ opname) in
-      let inpt = if opname = "update" || opname = "create" then "data" else "match" in
+      let inpt = if opname = "update" || opname = "create" || opname = "patch" then "data" else "match" in
       let points =
         match to_map opcfg with
         | Map _ -> (match getp opcfg "points" with List _ as l -> l | _ -> empty_list ())

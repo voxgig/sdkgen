@@ -238,7 +238,7 @@ fn test_fetch(
             Ok(respond(ctx, 200, vs::clone(&found), vec![]))
         }
 
-        "update" => {
+        "update" | "patch" => {
             let reqdata = ctx.reqdata.borrow().clone();
             let update_match = Value::empty_map();
             if let Value::Map(_) = reqdata {

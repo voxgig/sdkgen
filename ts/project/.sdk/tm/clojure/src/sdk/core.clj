@@ -378,7 +378,7 @@
       (or (nil? opname) (= "" opname)) (make-operation (vs/jm))
       :else
       (let [opcfg (vs/getpath config (str "entity." entname ".op." opname))
-            input (if (or (= opname "update") (= opname "create")) "data" "match")
+            input (if (or (= opname "update") (= opname "create") (= opname "patch")) "data" "match")
             points (let [t (when (vs/ismap opcfg) (vs/getprop opcfg "points"))]
                      (if (vs/islist t) t (vs/jt)))
             op (make-operation (vs/jm "entity" entname "name" opname "input" input "points" points))]

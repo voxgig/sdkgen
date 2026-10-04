@@ -21,6 +21,7 @@ const CONFIG = {
       op: {
         load: { points: [point()] },
         update: { points: [point()] },
+        patch: { points: [point()] },
         remove: { points: [point()] },
         list: { points: [{ parts: ['widget'], args: { params: [], query: [] } }] },
       },
@@ -107,6 +108,25 @@ describe('feature:test mock semantics', () => {
     strictEqual(hit.status, 200)
     deepStrictEqual(hit.data.nested, { x: 1, y: 3 })
     strictEqual(hit.data.name, 'one')
+  })
+
+
+  // A patch changes the fields it sends and keeps the rest; one that matches
+  // nothing is a 404, as an update is.
+  test('a patch merges the fields it sends, and a miss is a 404', async () => {
+    const call = makeMock({ widget: { w1: { name: 'one', size: 2, nested: { x: 1, y: 2 } } } })
+
+    const hit = await call('patch', { reqdata: { id: 'w1', size: 3, nested: { y: 4 } } })
+    strictEqual(hit.status, 200)
+    strictEqual(hit.data.name, 'one')
+    strictEqual(hit.data.size, 3)
+    deepStrictEqual(hit.data.nested, { x: 1, y: 4 })
+
+    const loaded = await call('load', { reqmatch: { id: 'w1' } })
+    strictEqual(loaded.data.size, 3, 'the patch was not stored')
+
+    const miss = await call('patch', { reqdata: { id: 'nope', size: 9 } })
+    strictEqual(miss.status, 404)
   })
 
 

@@ -214,7 +214,7 @@ class Context(ctxmap: MutableMap<String, Any?>?, basectx: Context?) {
     val opcfg = Struct.getpath(this.config, listOf("entity", entname, "op", opname))
 
     var input = "match"
-    if ("update" == opname || "create" == opname) {
+    if ("update" == opname || "create" == opname || "patch" == opname) {
       input = "data"
     }
 

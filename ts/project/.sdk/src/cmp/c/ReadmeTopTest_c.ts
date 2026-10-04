@@ -61,7 +61,7 @@ PNError* err = NULL;
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = cmapExpr(items.map((it: any) =>
         `"${it.name}", ${it.name === idF ? 'v_str("test01")' : cLit(it.type)}`))
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)

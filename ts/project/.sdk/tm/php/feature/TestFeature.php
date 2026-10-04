@@ -221,7 +221,7 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
                 $out = \Voxgig\Struct\Struct::clone($cleaned);
                 return $respond(200, $out);
 
-            } elseif ($op->name === 'update') {
+            } elseif ($op->name === 'update' || $op->name === 'patch') {
                 // Match the existing entity by id only (or its alias). reqdata
                 // also contains the new field values, which would otherwise
                 // cause find_first to filter out the entity we want to update.

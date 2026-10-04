@@ -148,7 +148,7 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
         val out = Struct.clone(found)
         return respond(ctx, 200, out, null)
       }
-      "update" -> {
+      "update", "patch" -> {
         // Match the existing entity by id only (or its alias).
         var updateMatch: MutableMap<String, Any?> = linkedMapOf()
         val reqdata = ctx.reqdata

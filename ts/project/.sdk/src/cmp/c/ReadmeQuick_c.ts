@@ -179,7 +179,8 @@ if (err) {
       ? `getp(created, "${dataIdF}")`
       : cLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       const acquire = (opnames.includes('list') || opnames.includes('load'))
         ? ''
         : `Entity* ${evar} = ${acc}(client, NULL);\n`
@@ -197,6 +198,13 @@ voxgig_value* created = ${evar}->vt->create(${evar}, ${cmapExpr(examplePairs('cr
         const updatePairs = (idF ? [`"${idF}", ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`// Update
 ${evar}->vt->update(${evar}, ${cmapExpr(updatePairs)}, NULL, &err);
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`"${idF}", ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+${evar}->vt->patch(${evar}, ${cmapExpr(patchPairs)}, NULL, &err);
 
 `)
       }

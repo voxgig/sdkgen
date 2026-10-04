@@ -160,7 +160,7 @@ public class TestFeature : BaseFeature
                 var outval = StructUtils.Clone(found);
                 return Respond(200, outval, null);
             }
-            else if (op.Name == "update")
+            else if (op.Name == "update" || op.Name == "patch")
             {
                 // Match the existing entity by id only (or its alias).
                 // Reqdata also contains the new field values, which would

@@ -7,7 +7,7 @@ const apidef_1 = require("@voxgig/apidef");
 const opShape_1 = require("./opShape");
 const MCP_READ_OPS = ['list', 'load'];
 exports.MCP_READ_OPS = MCP_READ_OPS;
-const MCP_WRITE_OPS = ['create', 'update', 'remove'];
+const MCP_WRITE_OPS = ['create', 'update', 'patch', 'remove'];
 exports.MCP_WRITE_OPS = MCP_WRITE_OPS;
 // The tools the go-mcp server registers, each for the entities a plain call of
 // its operation runs on, in name order. A tool no entity can serve is left

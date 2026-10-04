@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL,
-  FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
+  FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity,
 } from './generateharness'
 
@@ -323,6 +323,13 @@ describe('generate', () => {
   })
 
 
+  const foldOut = new Map<string, Promise<Record<string, string>>>()
+  const generateFold = (target: string) => {
+    if (!foldOut.has(target)) foldOut.set(target, generate([target], undefined, FOLD_ENTITY))
+    return foldOut.get(target)!
+  }
+
+
   // Both files of such a pair exist on Linux; on macOS and Windows the second
   // write replaces the first.
   test('a case-colliding entity pair generates no path that differs only in case', async () => {
@@ -332,7 +339,7 @@ describe('generate', () => {
     const missing: string[] = []
 
     for (const target of targets) {
-      const files = filesFor(await generate([target], undefined, FOLD_ENTITY), target)
+      const files = filesFor(await generateFold(target), target)
       ok(0 < files.length, target + ': generated no files')
 
       folded.push(...foldedPaths(files.map(([path]) => path)))
@@ -345,6 +352,21 @@ describe('generate', () => {
 
     deepStrictEqual(folded, [], 'paths that differ only in case')
     deepStrictEqual(missing, [], 'targets that lost the renamed entity')
+  })
+
+
+  // contacts_field has a PATCH beside its PUT. The operation builds its own
+  // context, named for it, rather than reusing the update.
+  test('an entity with a patch gets a patch operation in every target', async () => {
+    const missing: string[] = []
+    for (const target of allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))) {
+      const files = filesFor(await generateFold(target), target)
+      if (!files.some(([, content]) => content.includes('contacts_field') &&
+        /opname[^\n]{0,24}["']patch["']/i.test(content))) {
+        missing.push(target)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets with no patch operation for contacts_field')
   })
 
 
@@ -365,7 +387,7 @@ describe('generate', () => {
   test('the rename and the ungenerated op are each reported once per run', async () => {
     const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
     const sink: any[] = []
-    await generate(targets, undefined, FOLD_ENTITY, sink)
+    await generate(targets, undefined, FOLD_ENTITY + UNGENERATED_OP, sink)
 
     const guard = sink.filter((e: any) => 'entity-name-case-guard' === e?.point)
     strictEqual(guard.length, 1, 'case guard warnings: ' + guard.length)
@@ -375,7 +397,7 @@ describe('generate', () => {
     const dropped = sink.filter((e: any) => 'entity-op-ungenerated' === e?.point)
     strictEqual(dropped.length, 1, 'ungenerated-op warnings: ' + dropped.length)
     deepStrictEqual(dropped[0].ops, [{
-      entity: 'contacts_field', op: 'patch', points: ['PATCH /contacts/fields/{id}'],
+      entity: 'contacts_field', op: 'copy', points: ['POST /contacts/fields/{id}/copy'],
     }])
   })
 
@@ -498,7 +520,7 @@ describe('generate', () => {
     const LANGPACK = 'node_modules/@voxgig/sdkgen-langpack/.sdk'
     const warned = async (external: string[]) => {
       const sink: any[] = []
-      const model = makeModel(['go', 'ts'], undefined, FOLD_ENTITY)
+      const model = makeModel(['go', 'ts'], undefined, FOLD_ENTITY + UNGENERATED_OP)
       for (const name of external) {
         Object.assign(model.main[KIT].target[name],
           { base: LANGPACK, package: '@voxgig/sdkgen-langpack' })
@@ -4320,6 +4342,21 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // contacts_field has a PATCH beside its PUT.
+  test('go-mcp: a patch is a write tool of its own', async () => {
+    const out = await generate(['go', 'go-mcp'], undefined,
+      ROUTING_MODEL + FOLD_ENTITY + "main: kit: target: 'go-mcp': tool: write: true")
+    const tools = findFile(out, 'go-mcp/tools.go')!
+    ok(mcpRegistered(tools).includes('demo_patch'), 'go-mcp: no patch tool: ' + mcpRegistered(tools))
+    strictEqual(mcpEntities(tools, 'PatchArgs'), 'contacts_field', 'go-mcp: PatchArgs')
+    ok(/case "patch":\s+result, err = ent\.Patch\(input, nil\)/.test(tools),
+      'go-mcp: the patch tool does not call Patch')
+    const hint = tools.match(/Name:\s+"demo_patch",[^]*?Annotations: &mcp\.ToolAnnotations\{([^}]*)\}/)?.[1]
+    strictEqual(hint, 'DestructiveHint: hint(true)', 'go-mcp: the patch hint')
+    ok(findFile(out, 'go-mcp/README.md')!.includes('`demo_patch`'), 'go-mcp: the README omits the patch tool')
+  })
+
+
   const readmeExample = (readme: string, label: string): any => {
     const line = readme.split('\n')[readme.split('\n').findIndex((l) => l.includes(label)) + 1]
     return JSON.parse(line)
@@ -4384,7 +4421,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       ROUTING_MODEL + write + opOff('planet', ['create', 'update', 'remove']))
     ok(findFile(none, 'go-mcp/README.md')!.includes('The server only reads: the SDK'),
       'go-mcp: the README does not say a server with no write tools only reads')
-    ok(none['README.md'].includes('It only reads, as no entity has a create, update or remove'),
+    ok(none['README.md'].includes('It only reads, as no entity has a create, update, patch or remove'),
       'the root README does not say why the server only reads')
 
     const others = ['ambient', 'console', 'graph_ql', 'history', 'moon', 'record', 'signal', 'utility']

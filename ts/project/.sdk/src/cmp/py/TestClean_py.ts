@@ -276,7 +276,7 @@ def _usable_op():
     safe = {"list": 0, "load": 1}
     for name in sorted(found):
         accessor, ent = found[name]
-        ops = [op for op in ["list", "load", "create", "update", "remove"]
+        ops = [op for op in ["list", "load", "create", "update", "patch", "remove"]
                if callable(getattr(ent, op, None))]
         ops.sort(key=lambda o: safe.get(o, 2))
         opdefs = (entities.get(name) or {}).get("op") or {}

@@ -675,6 +675,7 @@ public:
   virtual std::vector<SdkEntityPtr> list(const Value& reqmatch, const Value& ctrl) = 0;
   virtual SdkEntityPtr create(const Value& reqdata, const Value& ctrl) = 0;
   virtual SdkEntityPtr update(const Value& reqdata, const Value& ctrl) = 0;
+  virtual SdkEntityPtr patch(const Value& reqdata, const Value& ctrl) = 0;
   virtual SdkEntityPtr remove(const Value& reqmatch, const Value& ctrl) = 0;
 };
 
@@ -831,7 +832,7 @@ inline OperationPtr Context::resolveOp(const std::string& opname) {
   Value opcfg = Struct::getpath(config, {"entity", entname, "op", opname});
 
   std::string input = "match";
-  if (opname == "update" || opname == "create") input = "data";
+  if (opname == "update" || opname == "create" || opname == "patch") input = "data";
 
   Value points = Value::undef();
   if (opcfg.is_map()) {

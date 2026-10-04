@@ -152,7 +152,7 @@ class TestFeature extends BaseFeature {
           return respond(200, out)
         }
       }
-      else if ('update' === op.name) {
+      else if ('update' === op.name || 'patch' === op.name) {
         const args = self.buildArgs(ctx, op, recordOf(ctx.reqdata))
         const found = select(entmap, args)
         const ent = getelem(found, 0)

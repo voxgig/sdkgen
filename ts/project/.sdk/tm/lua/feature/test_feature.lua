@@ -155,7 +155,7 @@ function TestFeature:init(ctx, options)
       local out = vs.clone(found)
       return respond(200, out, nil)
 
-    elseif op.name == "update" then
+    elseif op.name == "update" or op.name == "patch" then
       -- Match the existing entity by id only (or its alias). reqdata also
       -- contains the new field values, which would otherwise cause select
       -- to filter out the entity we want to update. When reqdata has no id,

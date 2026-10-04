@@ -210,7 +210,7 @@ public class TestFeature extends BaseFeature {
       Object out = Struct.clone(found);
       return respond(ctx, 200, out, null);
     }
-    else if ("update".equals(op.name)) {
+    else if ("update".equals(op.name) || "patch".equals(op.name)) {
       // Match the existing entity by id only (or its alias). Reqdata
       // also contains the new field values, which would otherwise
       // cause select to filter out the entity we want to update.

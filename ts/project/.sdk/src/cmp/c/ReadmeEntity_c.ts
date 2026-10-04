@@ -47,6 +47,7 @@ const OP_DESC: Record<string, { method: string, desc: string }> = {
   list:   { method: 'vt->list(e, reqmatch, ctrl, &err)',   desc: 'List entities, optionally matching the given criteria.' },
   create: { method: 'vt->create(e, reqdata, ctrl, &err)',  desc: 'Create a new entity with the given data.' },
   update: { method: 'vt->update(e, reqdata, ctrl, &err)',  desc: 'Update an existing entity.' },
+  patch:  { method: 'vt->patch(e, reqdata, ctrl, &err)',   desc: 'Change part of an existing entity.' },
   remove: { method: 'vt->remove(e, reqmatch, ctrl, &err)', desc: 'Remove the matching entity.' },
 }
 

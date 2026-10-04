@@ -8,15 +8,16 @@ definition suite reads the API definition instead.
 ## What it checks
 
 `test/definition.test.ts` (`test/definition.test.js` in the js target) holds
-one test per HTTP operation that the SDK has a method for, so a model's
-`patch` beside an `update` has none. Each test builds the client with an
+one test per HTTP operation that the SDK has a method for: a `load`, `list`,
+`create`, `update`, `patch` or `remove`. An operation under any other name
+has no method, so it has no test. Each test builds the client with an
 `apikey` alone, answers the one request it sends from a mock transport, and
 checks these against the definition:
 
 | Check | Fails when |
 | --- | --- |
 | Route and method | the request goes to a path or method the definition does not declare for the operation, including a path that drops the trailing slash a Django REST server's routes carry. The path is compared as the URL parser reads it, so a backslash in the definition, as in GitLab's `Packages\(\)`, is the slash every client sends |
-| Query | a query parameter is not one the definition declares, such as a path parameter sent twice, a header parameter sent as a query parameter, or a model name sent in place of the definition's (`resource_id` for Lob's `resource_ids`), or a declared query parameter that the test passes to a list, load or remove does not arrive. A create or update sends its input as the body, so it is not checked for one. The query parameter the SDK's own key goes in passes on every operation, as the SDK sends the key whether or not the definition applies its scheme there |
+| Query | a query parameter is not one the definition declares, such as a path parameter sent twice, a header parameter sent as a query parameter, or a model name sent in place of the definition's (`resource_id` for Lob's `resource_ids`), or a declared query parameter that the test passes to a list, load or remove does not arrive. A create, update or patch sends its input as the body, so it is not checked for one. The query parameter the SDK's own key goes in passes on every operation, as the SDK sends the key whether or not the definition applies its scheme there |
 | Headers | a header parameter the test passes does not arrive as a header under the definition's name. The credential check owns the header the security scheme names and the header the SDK's own credential goes in, and the SDK sets the content type from the body it sends |
 | Cookies | a cookie parameter the test passes does not arrive in the `Cookie` header as `name=value`, percent-encoded, beside the cookies the client's own headers send |
 | Credential | the request lacks the credential the security scheme names: an HTTP Basic pair with the key as the user, a bearer token, or an API key in its header, query or cookie. A generated SDK sends one credential, under the scheme its model chose, so an operation secured only by another scheme is not checked for one |

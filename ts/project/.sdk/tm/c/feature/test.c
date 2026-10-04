@@ -226,7 +226,7 @@ static voxgig_value* test_fetch(voxgig_value* entity, Context* ctx, const char* 
     return respond(ctx, 200, voxgig_clone(found));
   }
 
-  if (strcmp(opname, "update") == 0) {
+  if (strcmp(opname, "update") == 0 || strcmp(opname, "patch") == 0) {
     // Match the existing entity by id only (or its alias); reqdata's new
     // field values would otherwise cause select to filter it out.
     voxgig_value* reqdata = ctx->reqdata;

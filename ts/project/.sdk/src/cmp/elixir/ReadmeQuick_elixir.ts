@@ -155,7 +155,8 @@ end
       ? `Voxgig.Struct.getprop(created, "${dataIdF}")`
       : elixirLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`elixir
@@ -172,6 +173,13 @@ created = ${Name}.Entity.${eName}.create(${eVar}, H.deep(%{${examplePairs('creat
         const updatePairs = (idF ? [`"${idF}" => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`# Update
 ${Name}.Entity.${eName}.update(${eVar}, H.deep(%{${updatePairs.join(', ')}}))
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`"${idF}" => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        Content(`# Patch — sends only the fields given
+${Name}.Entity.${eName}.patch(${eVar}, H.deep(%{${patchPairs.join(', ')}}))
 
 `)
       }

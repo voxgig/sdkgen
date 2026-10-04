@@ -9,10 +9,10 @@ import { opReachable } from './opShape'
 type Unreachable = { flow: string, step: number, op: string }
 
 // Ops whose generated call names the record it acts on.
-const BY_ID = ['load', 'update', 'remove']
+const BY_ID = ['load', 'update', 'patch', 'remove']
 
 // Ops after which the entity instance holds a record for later steps to read.
-const STORES = ['create', 'load', 'update']
+const STORES = ['create', 'load', 'update', 'patch']
 
 
 // A generated flow test calls each step's op with its own match and data,

@@ -31,6 +31,12 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     returns: '(any, error)',
     desc: 'Update an existing entity. The data must include the entity `id`.',
   },
+  patch: {
+    sig: 'Patch(reqdata, ctrl map[string]any) (any, error)',
+    returns: '(any, error)',
+    desc: 'Change part of an existing entity: only the fields given are sent. ' +
+      'The data must include the entity `id`.',
+  },
   remove: {
     sig: 'Remove(reqmatch, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
@@ -210,7 +216,7 @@ fmt.Println(${eVar}.GetName()) // "${ent.name}"
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks
           // (opnames already carries active ops only).
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op))
           Content(`### Field Usage by Operation
 
@@ -312,20 +318,20 @@ fmt.Println(result)
 
 `)
           }
-          else if ('update' === opname) {
+          else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape
             // that generates the op's request data — then the patch-fields
             // note.
-            const updateItems = opRequestShape(ent, 'update').items
+            const updateItems = opRequestShape(ent, opname).items
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `    "${it.name}": ${exampleValue(ent, ent.op && ent.op.update, it.name,
+              `    "${it.name}": ${exampleValue(ent, ent.op && ent.op[opname], it.name,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`go
-result, err := client.${ent.Name}(nil).Update(map[string]any{
-${updateLines}    // Fields to update
+result, err := client.${ent.Name}(nil).${'patch' === opname ? 'Patch' : 'Update'}(map[string]any{
+${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 }, nil)
 if err != nil {
     panic(err)
@@ -336,7 +342,7 @@ fmt.Println(result)
 `)
           }
 
-          if ('create' === opname || 'update' === opname) {
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a `[]byte`, a `string` or an `io.Reader`',
               once: 'an `io.Reader`',

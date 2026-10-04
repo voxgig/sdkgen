@@ -55,7 +55,7 @@ let client = test_sdk(Value::Noval, Value::Noval);
         ? `jo(vec![${items.map((it: any) =>
           `("${it.name}", ${it.name === idF ? 'Value::str("test01")' : rustLit(it.type)})`).join(', ')}])`
         : 'Value::Noval'
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
