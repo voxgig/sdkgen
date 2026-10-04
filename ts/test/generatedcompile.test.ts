@@ -469,24 +469,34 @@ describe('generated SDK compiles', () => {
 
   // The README example tests find `tsc` and strip a snippet's types through
   // the TypeScript installed beside the SDK, which here is sdkgen's own.
-  test('typescript: the README example tests type-check and run the examples', async () => {
-    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+  // FOLD_ENTITY's contacts_field has a PATCH beside its PUT.
+  for (const [label, dir, extra] of [
+    ['', 'ts-readme', undefined],
+    [', with a patch', 'ts-readme-patch', FOLD_ENTITY],
+  ]) {
+    test('typescript: the README example tests type-check and run the examples' + label, async () => {
+      ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
 
-    const sdkroot = Path.join(tmp, 'ts-readme', 'ts')
-    await generateTo('ts', sdkroot, undefined, undefined, { top: true })
-    linkDeps(sdkroot)
+      const sdkroot = Path.join(tmp, dir!, 'ts')
+      await generateTo('ts', sdkroot, extra, undefined, { top: true })
+      linkDeps(sdkroot)
+      if (null != extra) {
+        ok(Fs.readFileSync(Path.join(sdkroot, 'REFERENCE.md'), 'utf8').includes('.patch({'),
+          'the reference has no patch example')
+      }
 
-    const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
-    ok(built.ok, 'the generated SDK does not build:\n' + built.out)
+      const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
+      ok(built.ok, 'the generated SDK does not build:\n' + built.out)
 
-    const suite = run(process.execPath,
-      ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
-      sdkroot, nestedTestEnv())
-    ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 200))
-    ok(/^\s*ok \d+ - .*every example type-checks/m.test(suite.out) &&
-      /^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
-    'the README example tests did not run both checks:\n' + tail(suite.out, 40))
-  })
+      const suite = run(process.execPath,
+        ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
+        sdkroot, nestedTestEnv())
+      ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 200))
+      ok(/^\s*ok \d+ - .*every example type-checks/m.test(suite.out) &&
+        /^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
+      'the README example tests did not run both checks:\n' + tail(suite.out, 40))
+    })
+  }
 
 
   // tsc refuses the pair on every OS (TS1149: file names that differ only in
