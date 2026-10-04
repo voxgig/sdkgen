@@ -112,6 +112,16 @@
 
 (declare test-build-args make-netsim)
 
+;; The key a list's response transform
+;; ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record under.
+(defn- item-envelope-key [spec]
+  (when (and (vs/islist spec) (= 3 (count spec))
+             (= "`$EACH`" (first spec)) (= "body" (second spec))
+             (vs/ismap (nth spec 2)))
+    (let [merge (vs/getprop (nth spec 2) "`$MERGE`")]
+      (when (string? merge)
+        (second (re-matches #"`\.([^.`$]+)`" merge))))))
+
 (defn test-feature []
   (let [fa (new-feature "test" true "0.0.1")]
     (swap! fa assoc
@@ -136,16 +146,20 @@
                        ;; scope here, so the point is the one being served.
                        (let [envelope (fn [data]
                                         (let [tm (vs/getprop (core/oget fctx :point) "transform")
-                                              spec (vs/getprop tm "res")]
-                                          ;; Rebuild whatever nesting the transform unwraps;
-                                          ;; GraphQL ops unwrap `body.data.<field>`.
-                                          (if (and (some? data) (string? spec))
+                                              spec (vs/getprop tm "res")
+                                              ikey (item-envelope-key spec)]
+                                          (cond
+                                            (and (some? ikey) (vs/islist data))
+                                            (apply vs/jt (map (fn [item] (vs/jm ikey item)) data))
+                                            ;; Rebuild whatever nesting the transform unwraps;
+                                            ;; GraphQL ops unwrap `body.data.<field>`.
+                                            (and (some? data) (string? spec))
                                             (if-let [m (re-matches #"`body\.(.+)`" spec)]
                                               (reduce (fn [out seg] (vs/jm seg out))
                                                       data
                                                       (reverse (str/split (second m) #"\." -1)))
                                               data)
-                                            data)))
+                                            :else data)))
                              respond (fn [status data extra]
                                        (let [payload (envelope data)
                                              out (vs/jm "status" status "statusText" "OK"

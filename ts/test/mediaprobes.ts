@@ -34,7 +34,8 @@ type MediaRecord = {
 }
 
 
-const point = (method: string, path: string, extra: string, req = '`reqdata`') => {
+const point = (method: string, path: string, extra: string, req = '`reqdata`',
+  res = '"`body`"') => {
   const segs = path.split('/').filter((s) => '' !== s)
   const params = segs.filter((s) => s.startsWith('{')).map((s) => s.slice(1, -1))
   return `{
@@ -43,7 +44,7 @@ const point = (method: string, path: string, extra: string, req = '`reqdata`') =
         m: "${method}", o: "${path}"
         s: [${segs.map((s) => s.startsWith('{') ?
     `{ var: "${s.slice(1, -1)}" }` : `{ lit: "${s}" }`).join(', ')}]
-        t: { req: "${req}", res: "\`body\`" }
+        t: { req: "${req}", res: ${res} }
         ${extra}
       }`
 }
@@ -98,6 +99,12 @@ const MEDIA_MODEL =
     // A request transform that selects one field, so the body is that field's value.
     create: point('POST', '/picture', 'rb: { kind: "json", media: "application/json" }',
       '`reqdata.payload`'),
+  }) +
+  // A list whose items each wrap the record under the entity's name.
+  entity('badge', {
+    list: point('GET', '/badge', JSON_RS, '`reqdata`',
+      '["`$EACH`", "body", { "`$MERGE`": "`.badge`" }]'),
+    load: point('GET', '/badge/{id}', JSON_RS),
   })
 
 

@@ -28,11 +28,34 @@ impl TestFeature {
     }
 }
 
+/// The key a list's response transform
+/// ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record under.
+fn item_envelope_key(restf: &Value) -> Option<String> {
+    let spec = restf.as_list()?.borrow();
+    if spec.len() != 3 || spec[0].as_str() != Some("`$EACH`") || spec[1].as_str() != Some("body") {
+        return None;
+    }
+    let merge = vs::get_prop(&spec[2], &Value::str("`$MERGE`"), Value::Noval);
+    let key = merge.as_str()?.strip_prefix("`.")?.strip_suffix('`')?;
+    if key.is_empty() || key.contains(|c: char| c == '.' || c == '`' || c == '$') {
+        return None;
+    }
+    Some(key.to_string())
+}
+
 fn envelope(ctx: &Rc<Context>, data: Value) -> Value {
     if data.is_noval() || data.is_null() {
         return data;
     }
     let restf = crate::core::helpers::getpath(&["transform", "res"], &ctx.point.borrow());
+    if let (Some(key), Value::List(items)) = (item_envelope_key(&restf), &data) {
+        let wrapped: Vec<Value> = items
+            .borrow()
+            .iter()
+            .map(|item| jo(vec![(key.as_str(), item.clone())]))
+            .collect();
+        return Value::list(wrapped);
+    }
     if let Value::Str(spec) = restf {
         // Rebuild whatever nesting the transform unwraps: a GraphQL op unwraps
         // `body.data.<field>`, not just one envelope property.
