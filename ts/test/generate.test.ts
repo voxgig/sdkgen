@@ -539,6 +539,30 @@ describe('generate', () => {
   })
 
 
+  // A bundled target leaves some optional components to a shared default, and
+  // that is no news to a consumer: a warning there is noise in every run.
+  test('a bundled target generates with no optional component warning', async () => {
+    const sdks = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const runs = [sdks, ...NON_SDK_TARGETS.map((t) => [NON_SDK_SIBLING[t], t])]
+
+    for (const targets of runs) {
+      const warnings: any[] = []
+      const { fs } = memfs({})
+      const sdkgen = SdkGen({
+        fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(undefined, warnings),
+      })
+      strictEqual((await sdkgen.generate({
+        model: makeModel(targets), root: makeRoot(),
+      })).ok, true)
+
+      const optional = warnings
+        .filter((w: any) => /^(require-missing|optional-component)/.test(w?.point))
+        .map((w: any) => w.point + ': ' + w.note)
+      deepStrictEqual(optional, [], targets.join(', '))
+    }
+  })
+
+
   test('a full SDK generates on the data path when repr is pinned', async () => {
     const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 

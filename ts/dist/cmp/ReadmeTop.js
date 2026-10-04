@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeTop = void 0;
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
-const utility_1 = require("../utility");
+const optional_1 = require("../helpers/optional");
 const FeatureDocs_1 = require("./FeatureDocs");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
@@ -121,11 +121,13 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
         .filter((t) => t.name !== 'go-cli' && t.name !== 'go-mcp')
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
+    // A target with its readme phase off (py-data) has no README components.
+    const readmeTargets = sdkTargets.filter((t) => false !== t.phase?.readme?.active);
     const pkgTargets = activeTargets
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
     const langList = sdkTargets.map((t) => t.title).join(', ');
-    const leadTarget = pickLeadTarget(sdkTargets);
+    const leadTarget = pickLeadTarget(readmeTargets);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
         (0, jostraca_1.Content)(`# ${model.Name} SDK
 
@@ -291,8 +293,8 @@ an in-memory mock, so your unit tests run fully offline — no server, no
 network, and no credentials:
 
 `);
-            sdkTargets.forEach((tgt) => {
-                const Test = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopTest_${tgt.name}`, { ignore: true });
+            readmeTargets.forEach((tgt) => {
+                const Test = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopTest');
                 if (Test) {
                     (0, jostraca_1.Content)(`### ${tgt.title}
 
@@ -343,7 +345,7 @@ network, and no credentials:
 ### ${leadTarget.title}
 
 `);
-            const LeadQuick = (0, utility_1.requirePath)(ctx$, `./cmp/${leadTarget.name}/ReadmeTopQuick_${leadTarget.name}`, { ignore: true });
+            const LeadQuick = (0, optional_1.optionalComponent)(ctx$, leadTarget, 'ReadmeTopQuick');
             if (LeadQuick) {
                 LeadQuick['ReadmeTopQuick']({ target: leadTarget });
             }
@@ -445,13 +447,13 @@ own list above for exactly which it supports.
 
 `);
         }
-        const otherTargets = sdkTargets.filter((t) => leadTarget && t.name !== leadTarget.name);
+        const otherTargets = readmeTargets.filter((t) => leadTarget && t.name !== leadTarget.name);
         if (otherTargets.length > 0) {
             (0, jostraca_1.Content)(`## Quickstart in other languages
 
 `);
             otherTargets.forEach((tgt) => {
-                const Quick = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopQuick_${tgt.name}`, { ignore: true });
+                const Quick = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopQuick');
                 if (Quick) {
                     (0, jostraca_1.Content)(`### ${tgt.title}
 
@@ -480,8 +482,8 @@ Both accept a map with \`path\`, \`method\`, \`params\`, \`query\`,
 When the entity interface does not cover an endpoint, use \`direct\`:
 
 `);
-        sdkTargets.forEach((tgt) => {
-            const Howto = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopHowto_${tgt.name}`, { ignore: true });
+        readmeTargets.forEach((tgt) => {
+            const Howto = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopHowto');
             if (Howto) {
                 Howto['ReadmeTopHowto']({ target: tgt });
             }

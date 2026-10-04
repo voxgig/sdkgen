@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CONFIG_REPR_VALUES = exports.CONFIG_DATA_THRESHOLD = exports.SdkGenError = void 0;
 exports.resolvePath = resolvePath;
+exports.loadOptional = loadOptional;
 exports.requirePath = requirePath;
 exports.isAuthActive = isAuthActive;
 exports.resolveAuthPrefix = resolveAuthPrefix;
@@ -89,24 +90,32 @@ function resolveAuthExchange(model) {
     }
     return exchange;
 }
-function requirePath(ctx$, path, flags) {
+// Only a failure to RESOLVE counts as absent. A module that resolves and then
+// throws, from a syntax error, a bug or a missing nested dependency, must
+// propagate, or a broken optional component renders nothing unseen.
+function loadOptional(ctx$, path) {
     const fullpath = resolvePath(ctx$, path);
-    const ignore = null == flags?.ignore ? false : flags.ignore;
-    // When `ignore` is set, only swallow a genuine "module not found"
-    // resolution failure. A module that resolves but throws while loading
-    // (syntax error, runtime bug, or a missing *nested* dependency) must
-    // propagate — otherwise the optional component silently renders nothing
-    // and the real failure is invisible.
-    if (ignore) {
-        try {
-            require.resolve(fullpath);
-        }
-        catch (err) {
-            ctx$.log.warn({ point: 'require-missing', path, note: path });
-            return undefined;
-        }
+    try {
+        require.resolve(fullpath);
+    }
+    catch (err) {
+        return undefined;
     }
     return require(fullpath);
+}
+function requirePath(ctx$, path, flags) {
+    if (!flags?.ignore) {
+        return require(resolvePath(ctx$, path));
+    }
+    const found = loadOptional(ctx$, path);
+    if (undefined === found) {
+        ctx$.log.warn({
+            point: 'require-missing', path,
+            note: path + ': not found at ' + resolvePath(ctx$, path) +
+                ', so generation continued without it',
+        });
+    }
+    return found;
 }
 class SdkGenError extends Error {
     constructor(...args) {

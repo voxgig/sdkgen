@@ -6,7 +6,8 @@ import {
   getModelPath
 } from '../types'
 
-import { requirePath, isAuthActive } from '../utility'
+import { isAuthActive } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 
 
 const ReadmeModel = cmp(function ReadmeModel(props: any) {
@@ -27,7 +28,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 
   // Delegate to target-specific reference summary
   const ReadmeModel_sdk =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeModel_${target.name}`, { ignore: true })
+    optionalComponent(ctx$, target, 'ReadmeModel')
 
   if (ReadmeModel_sdk) {
     ReadmeModel_sdk['ReadmeModel']({ target })

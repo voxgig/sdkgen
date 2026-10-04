@@ -6,7 +6,7 @@ import {
   getModelPath
 } from '../types'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 import { featureDocs } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
@@ -163,12 +163,15 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     .slice()
     .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
+  // A target with its readme phase off (py-data) has no README components.
+  const readmeTargets = sdkTargets.filter((t: any) => false !== t.phase?.readme?.active)
+
   const pkgTargets = activeTargets
     .slice()
     .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
   const langList = sdkTargets.map((t: any) => t.title).join(', ')
-  const leadTarget = pickLeadTarget(sdkTargets)
+  const leadTarget = pickLeadTarget(readmeTargets)
 
   File({ name: 'README.md' }, () => {
 
@@ -342,9 +345,9 @@ an in-memory mock, so your unit tests run fully offline — no server, no
 network, and no credentials:
 
 `)
-      sdkTargets.forEach((tgt: any) => {
+      readmeTargets.forEach((tgt: any) => {
         const Test =
-          requirePath(ctx$, `./cmp/${tgt.name}/ReadmeTopTest_${tgt.name}`, { ignore: true })
+          optionalComponent(ctx$, tgt, 'ReadmeTopTest')
         if (Test) {
           Content(`### ${tgt.title}
 
@@ -395,7 +398,7 @@ network, and no credentials:
 
 `)
       const LeadQuick =
-        requirePath(ctx$, `./cmp/${leadTarget.name}/ReadmeTopQuick_${leadTarget.name}`, { ignore: true })
+        optionalComponent(ctx$, leadTarget, 'ReadmeTopQuick')
       if (LeadQuick) {
         LeadQuick['ReadmeTopQuick']({ target: leadTarget })
       }
@@ -502,14 +505,14 @@ own list above for exactly which it supports.
 `)
     }
 
-    const otherTargets = sdkTargets.filter((t: any) => leadTarget && t.name !== leadTarget.name)
+    const otherTargets = readmeTargets.filter((t: any) => leadTarget && t.name !== leadTarget.name)
     if (otherTargets.length > 0) {
       Content(`## Quickstart in other languages
 
 `)
       otherTargets.forEach((tgt: any) => {
         const Quick =
-          requirePath(ctx$, `./cmp/${tgt.name}/ReadmeTopQuick_${tgt.name}`, { ignore: true })
+          optionalComponent(ctx$, tgt, 'ReadmeTopQuick')
         if (Quick) {
           Content(`### ${tgt.title}
 
@@ -541,9 +544,9 @@ When the entity interface does not cover an endpoint, use \`direct\`:
 
 `)
 
-    sdkTargets.forEach((tgt: any) => {
+    readmeTargets.forEach((tgt: any) => {
       const Howto =
-        requirePath(ctx$, `./cmp/${tgt.name}/ReadmeTopHowto_${tgt.name}`, { ignore: true })
+        optionalComponent(ctx$, tgt, 'ReadmeTopHowto')
       if (Howto) {
         Howto['ReadmeTopHowto']({ target: tgt })
       }
