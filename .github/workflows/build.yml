@@ -86,19 +86,39 @@ jobs:
       with:
         luaVersion: '5.4'
     - name: LuaRocks
+      if: runner.os != 'Windows'
       uses: leafo/gh-actions-luarocks@35d062def313a7699a0d513e996bcf4352f05389 # v6
     # The lanes run `lua5.4`, the name Debian and Homebrew install.
     - name: busted, dkjson and lua5.4
+      if: runner.os != 'Windows'
       shell: bash
       run: |
         luarocks install busted
         luarocks install dkjson
-        bin="$(dirname "$(command -v lua)")"
-        if [ "$RUNNER_OS" = Windows ]; then
-          cp "$bin/lua.exe" "$bin/lua5.4.exe"
-        else
-          ln -sf lua "$bin/lua5.4"
-        fi
+        ln -sf lua "$(dirname "$(command -v lua)")/lua5.4"
+    # gh-actions-luarocks builds from source with a POSIX configure script,
+    # so Windows takes LuaRocks' own standalone build, pinned by digest.
+    - name: LuaRocks, busted, dkjson and lua5.4 (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $zip = Join-Path $env:RUNNER_TEMP 'luarocks.zip'
+        Invoke-WebRequest -Uri 'https://luarocks.github.io/luarocks/releases/luarocks-3.13.0-windows-64.zip' -OutFile $zip
+        $sum = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+        if ($sum -ne '0897ade5d459d55cd1962a948153745a6749feb345403c68aaa9207388557ab9') { throw "luarocks: unexpected digest $sum" }
+        Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
+        $luarocks = Join-Path $env:RUNNER_TEMP 'luarocks-3.13.0-windows-64\luarocks.exe'
+        $lua = Join-Path $env:GITHUB_WORKSPACE '.lua'
+        $tree = Join-Path $env:GITHUB_WORKSPACE '.luarocks'
+        $flags = @("--lua-dir=$lua", '--lua-version=5.4', "--tree=$tree")
+        foreach ($rock in 'busted', 'dkjson') {
+          & $luarocks @flags install $rock
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+        }
+        Add-Content $env:GITHUB_PATH (Join-Path $tree 'bin')
+        Add-Content $env:GITHUB_ENV "LUA_PATH=$(& $luarocks @flags path --lr-path);;"
+        Add-Content $env:GITHUB_ENV "LUA_CPATH=$(& $luarocks @flags path --lr-cpath);;"
+        Copy-Item (Join-Path $lua 'bin\lua.exe') (Join-Path $lua 'bin\lua5.4.exe')
 
     # setup-beam has no macOS build.
     - name: Elixir
