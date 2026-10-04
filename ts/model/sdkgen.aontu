@@ -40,6 +40,20 @@ main: kit: author: {
 }
 
 
+# The project's README wording, over the spec's info. Closed: a misspelt slot fails.
+main: kit: text: close({
+  title: *'' | string
+  summary: *'' | string
+  website: *'' | string
+  tagline: *'' | string
+  about_md: *'' | string
+  homepage: *'' | string
+  docs_url: *'' | string
+  meta_source: *'' | string
+  entity_desc: *{} | {&: string}
+})
+
+
 # What the project's Root writes besides its targets.
 main: kit: phase: {
   top: active: *true | boolean

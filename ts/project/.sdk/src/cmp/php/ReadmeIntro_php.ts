@@ -1,5 +1,5 @@
 
-import { cmp, Content, phpEntityAccessor } from '@voxgig/sdkgen'
+import { cmp, Content, phpEntityAccessor, modelText } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -10,7 +10,7 @@ import {
 
 const ReadmeIntro = cmp(function ReadmeIntro(props: any) {
   const { target, ctx$: { model } } = props
-  const info = (model.main && model.main.kit && model.main.kit.info) || {}
+  const info = modelText(model)
   const tagline = info.tagline || ''
 
   // Derive a representative entity (and its operations) from the model so the

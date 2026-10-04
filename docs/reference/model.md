@@ -74,6 +74,7 @@ create-sdkgen over it), and an item from a package that still ships
 | `main.kit.repo` | object | Where the SDK's source repository lives (see below). |
 | `main.kit.author` | object | Manifest `author` (see below). |
 | `main.kit.contributor.<key>` | object | Manifest `contributors` entries (see below). |
+| `main.kit.text` | object | The project's own wording for the generated README files (see below). |
 | `main.kit.test` | object | How the generated test suites behave (see below). |
 | `main.kit.target.<name>` | object | A language target. |
 | `main.kit.entity.<name>` | object | An API entity. |
@@ -98,6 +99,7 @@ for that purpose:
 | `main.kit.repo.path` / `.host` | Repo identity. The repo is NOT always `<origin>/<name>-sdk`; deriving it from the slug produced a go module path that returns 404 and homepage/bugs URLs for a repo that does not exist. |
 | `main.kit.author` / `main.kit.contributor.<key>` | Manifest attribution. Hand-edited credit in a `package.json` is DELETED by the next regeneration — which is what happened to a hand-written provider repo the first time it was regenerated. |
 | `main.kit.target.<t>.author` | Attribution for ONE target, overriding the model-wide value. A generated SDK is an artefact of the publisher; a Seneca provider is independently released by named people. One model produces both. |
+| `main.kit.text` | The README wording: tagline, summary, the About section, entity descriptions. Text edited into `README.md` is lost on the next `generate`, and text in `config.aontu` on the next re-scaffold. |
 | `main.kit.test.live.strict` | Whether a live test that does not succeed fails or skips. |
 | `main.kit.target.<t>.module.path` / `.package` / `.goversion` | Go-family module identity and the `go` directive. |
 | `main.kit.target.<t>.output.path` / `.repo` / `.create` | Generate this target into ANOTHER repo and optionally require that repo to exist already (see [below](#generating-outside-the-sdk-repo-output)). |
@@ -138,6 +140,36 @@ render it in sorted-key order, so the manifest stays byte-stable.
 ```jsonic
 main: kit: author: { name: 'Ada Lovelace', url: 'https://example.com' }
 main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: 'https://example.com' }
+```
+
+## `main.kit.text`
+
+The project's own wording for the generated README files, kept in
+`.sdk/model/text.aontu`, or in `.sdk/model/project.aontu` for a project
+scaffolded before `text.aontu` existed. A slot left empty falls back to the
+same slot of `main.kit.info`, where the spec supplies `title`, `summary` and
+`website`. So the spec's wording is the default, and a project's wording
+replaces it without a unification conflict. The branch is closed: a slot not
+listed here, such as a misspelled `taglin`, fails the model build.
+
+| Path | Type | Default | Description |
+| --- | --- | --- | --- |
+| `text.title` | string | `''` | The API's name in the README files and the package descriptions. |
+| `text.summary` | string | `''` | The paragraph under the README's tagline. |
+| `text.website` | string | `''` | The API's own site, linked from the README. |
+| `text.tagline` | string | `''` | The line under each README's title. |
+| `text.about_md` | string | `''` | Markdown for the README's "About" section, which otherwise shows `main.def.desc`. |
+| `text.homepage` | string | `''` | The upstream API's home page, linked when the spec names no contact or server. |
+| `text.docs_url` | string | `''` | The upstream API's documentation, linked under "Upstream API". |
+| `text.meta_source` | string | `''` | The catalogue the API's metadata came from, credited in the README. |
+| `text.entity_desc.<entity>` | string | — | An entity's description in the README's entity table. |
+
+```jsonic
+main: kit: text: {
+  tagline: 'Payments, invoices and refunds from TypeScript, Go and Python.'
+  summary: 'Acme Pay is a payments API for marketplaces.'
+  entity_desc: { invoice: 'A bill sent to a customer.' }
+}
 ```
 
 ## `main.kit.test`
@@ -578,10 +610,12 @@ feature, which needs a per-target implementation on top of the module.
 
 ## `main.kit.info` (from apidef)
 
-Fields the README components read (all optional): `title`, `tagline`,
-`about_md`, `license_md`, `license_short`, `homepage`, `docs_url`,
-`entity_desc` (a map of `entity → description`), and `auth` (set to
-`false` to mark the API as needing no authentication).
+The spec's metadata. The README components read their wording through
+[`main.kit.text`](#mainkittext), which falls back to the same slots here:
+`title`, `summary`, `website`, `tagline`, `about_md`, `homepage`,
+`docs_url`, `meta_source` and `entity_desc` (a map of
+`entity → description`). `info.auth` set to `false` marks the API as
+needing no authentication.
 
 ## `main.kit.config` (from apidef)
 
