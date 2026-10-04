@@ -468,7 +468,9 @@ describe('generated SDK compiles', () => {
 
 
   // The README example tests find `tsc` and strip a snippet's types through
-  // the TypeScript installed beside the SDK, which here is sdkgen's own.
+  // the TypeScript installed beside the SDK, which here is sdkgen's own. They
+  // compile the snippets in the OS temp directory: adding or removing a file
+  // there moves the directory's mtime, and the SDK's own folders keep theirs.
   test('typescript: the README example tests type-check and run the examples', async () => {
     ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
 
@@ -479,13 +481,26 @@ describe('generated SDK compiles', () => {
     const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
     ok(built.ok, 'the generated SDK does not build:\n' + built.out)
 
+    const scratch = Path.join(tmp, 'ts-readme-tmp')
+    Fs.mkdirSync(scratch)
+    const own = [sdkroot, Path.join(sdkroot, 'test')]
+    const mtimes = (dirs: string[]) => dirs.map((dir) => Fs.statSync(dir).mtimeMs)
+    const before = mtimes([...own, scratch])
+
     const suite = run(process.execPath,
       ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
-      sdkroot, nestedTestEnv())
+      sdkroot, { ...nestedTestEnv(), TMPDIR: scratch, TMP: scratch, TEMP: scratch })
     ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 200))
     ok(/^\s*ok \d+ - .*every example type-checks/m.test(suite.out) &&
       /^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
     'the README example tests did not run both checks:\n' + tail(suite.out, 40))
+
+    const after = mtimes([...own, scratch])
+    deepStrictEqual(after.slice(0, 2), before.slice(0, 2),
+      'the README example tests added or removed a file in the SDK\'s own folders')
+    ok(after[2] !== before[2], 'the README example tests compiled nothing in the temp directory')
+    deepStrictEqual(Fs.readdirSync(scratch), [],
+      'the README example tests left their temp directory behind')
   })
 
 
