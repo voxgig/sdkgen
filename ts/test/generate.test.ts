@@ -2102,8 +2102,8 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const out = await generate(['ts', 'js'])
 
     for (const [target, wanted] of [
-      ['ts', ['dist', 'src', 'README.md']],
-      ['js', ['src', 'README.md']],
+      ['ts', ['dist', '!dist/**/*.tsbuildinfo', 'src', 'README.md', 'REFERENCE.md']],
+      ['js', ['src', 'README.md', 'REFERENCE.md']],
     ] as [string, string[]][]) {
       const manifest = findFile(out, target + '/package.json')
       ok(null != manifest, target + ': no package.json generated')
@@ -2113,8 +2113,10 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         target + ': package.json has no `files` entry — npm would publish ' +
         'the test suite and build scaffolding')
       deepStrictEqual(pkg.files, wanted, target + ': unexpected `files` entry')
-      ok(null != out[target + '/README.md'],
-        target + ': `files` lists a README.md that is not generated')
+      for (const doc of ['README.md', 'REFERENCE.md']) {
+        ok(null != out[target + '/' + doc],
+          target + ': `files` lists a ' + doc + ' that is not generated')
+      }
 
       for (const never of ['test', 'dist-test']) {
         ok(!pkg.files.includes(never),

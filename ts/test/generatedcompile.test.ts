@@ -467,6 +467,39 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // What npm would publish. The README links REFERENCE.md beside it, and the
+  // build info tsc writes into dist/ is bookkeeping, not package.
+  for (const target of ['ts', 'js']) {
+    test(target + ': npm packs the reference and no build info', async (t) => {
+      if (null == toolchain('npm')) return t.skip('needs npm')
+
+      const sdkroot = Path.join(tmp, target + '-pack')
+      await generateTo(target, sdkroot)
+      linkDeps(sdkroot)
+
+      if ('ts' === target) {
+        const built = tsc(sdkroot, 'src')
+        ok(built.ok, 'generated src does not compile:\n' + built.out)
+        ok(Fs.readdirSync(Path.join(sdkroot, 'dist')).some((f) => f.endsWith('.tsbuildinfo')),
+          'tsc wrote no build info into dist/, so nothing here is excluded')
+      }
+
+      const res = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+        cwd: sdkroot, encoding: 'utf8', shell: true, maxBuffer: 64 * 1024 * 1024,
+      })
+      strictEqual(res.status, 0, 'npm pack failed: ' + res.stderr)
+
+      const report = JSON.parse(res.stdout)
+      const entry: any = Array.isArray(report) ? report[0] : Object.values(report)[0]
+      const packed: string[] = entry.files.map((f: any) => f.path.split(Path.sep).join('/'))
+
+      const main = JSON.parse(Fs.readFileSync(Path.join(sdkroot, 'package.json'), 'utf8')).main
+      deepStrictEqual(['README.md', 'REFERENCE.md', main].filter((f) => !packed.includes(f)), [])
+      deepStrictEqual(packed.filter((f) => f.endsWith('.tsbuildinfo')), [])
+    })
+  }
+
+
   // The README example tests find `tsc` and strip a snippet's types through
   // the TypeScript installed beside the SDK, which here is sdkgen's own.
   test('typescript: the README example tests type-check and run the examples', async () => {
