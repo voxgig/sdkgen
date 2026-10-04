@@ -152,7 +152,8 @@ my-sdk/
 │   ├── src/cmp/<lang>/        # components copied from sdkgen by `target add`
 │   ├── tm/<lang>/             # templates copied from sdkgen by `target add`
 │   ├── log/
-│   │   └── copies.jsonl       # append-only record of what every add copied (commit it)
+│   │   ├── copies.jsonl       # append-only record of what every add copied (commit it)
+│   │   └── generated.jsonl    # append-only record of what every generate wrote (commit it)
 │   └── dist/                  # compiled components (the `generate` step requires these)
 ├── ts/                        # ← generated TypeScript SDK
 ├── go/                        # ← generated Go SDK
@@ -162,6 +163,14 @@ my-sdk/
 The `generate` step compiles `.sdk/src/cmp/<lang>` to `.sdk/dist`, runs
 the component tree, and writes/merges the result into the per-target
 directories (`ts/`, `go/`, …).
+
+It also removes what the model no longer produces. `.sdk/log/generated.jsonl`
+records the files each run wrote, per output folder, and a file an earlier run
+wrote and this run did not is deleted, with any directory it leaves empty. A
+target switched off keeps its directory, because the run writes nothing there.
+A file a component writes only when it is absent, such as
+`sdk-test-control.json`, is the project's from its first write and is never
+recorded. A dry run lists what it would remove.
 
 ### Repository administration
 

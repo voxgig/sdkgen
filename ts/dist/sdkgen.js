@@ -159,6 +159,7 @@ const modelNames_1 = require("./helpers/modelNames");
 Object.defineProperty(exports, "guardModelNames", { enumerable: true, get: function () { return modelNames_1.guardModelNames; } });
 const flowGuard_1 = require("./helpers/flowGuard");
 Object.defineProperty(exports, "guardFlowSteps", { enumerable: true, get: function () { return flowGuard_1.guardFlowSteps; } });
+const generated_1 = require("./helpers/generated");
 const canonType_1 = require("./helpers/canonType");
 Object.defineProperty(exports, "canonToType", { enumerable: true, get: function () { return canonType_1.canonToType; } });
 Object.defineProperty(exports, "canonToDtype", { enumerable: true, get: function () { return canonType_1.canonToDtype; } });
@@ -313,6 +314,16 @@ const kind_1 = require("./action/kind");
 const resolve_1 = require("./action/resolve");
 const { Jostraca } = JostracaModule;
 exports.Jostraca = Jostraca;
+// Keeps the define phase's tree, whose File nodes name what a run claims.
+const TreeRoot = JostracaModule.cmp(function TreeRoot(props) {
+    props.holder.root = props.ctx$.root;
+});
+function keepingTree(define, holder) {
+    return async () => {
+        await define();
+        TreeRoot({ holder });
+    };
+}
 // The `const` block every action's model carries, and so what an add
 // substitutes into the copies it writes.
 function projectConst(model) {
@@ -412,8 +423,13 @@ function SdkGen(opts) {
         const external = externalItems(model, root, ['target'], externalOverride)
             .map((ext) => ({ ...ext, skip: externalSkipReason(ext, fs) }));
         checkExternalFolders(external, root, fs);
-        const jres = await jostraca.generate(jopts, () => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }));
+        const tree = {};
+        const jres = await jostraca.generate(jopts, keepingTree(() => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree));
         (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));
+        (0, generated_1.pruneGenerated)({
+            fs, log, project: root, out: root, jres, claims: (0, generated_1.claimedFiles)(tree.root),
+            dryrun: !!opts.dryrun,
+        });
         // Docgen owns editions, destinations, templates, text QA and deployment.
         if (model?.main?.[apidef_1.KIT]?.doc?.active !== false && Object.values(model?.main?.[apidef_1.KIT]?.doc?.edition ?? {})
             .some((item) => item.active !== false)) {
@@ -437,15 +453,20 @@ function SdkGen(opts) {
                 note: ext.name + ' -> ' + ext.folder
             });
             const sdkrelpath = externalSdkRel(ext, root, log);
-            const eres = await jostraca.generate({ ...jopts, folder: ext.folder }, () => (0, ExternalTarget_1.ExternalTarget)({
+            const etree = {};
+            const eres = await jostraca.generate({ ...jopts, folder: ext.folder }, keepingTree(() => (0, ExternalTarget_1.ExternalTarget)({
                 model, target: ext.target, cmpfolder: folder,
                 // How to walk BACK to the SDK project from the destination. An
                 // item generating out of tree usually sits beside the SDK in a
                 // known layout, and its own docs, scripts and live tests need to
                 // name that path.
                 sdkrelpath,
-            }));
+            }), etree));
             (0, util_2.showChanges)(jopts.log, 'generate-result', eres, node_path_1.default.dirname(process.cwd()));
+            (0, generated_1.pruneGenerated)({
+                fs, log, project: root, out: ext.folder, jres: eres, claims: (0, generated_1.claimedFiles)(etree.root),
+                dryrun: !!opts.dryrun,
+            });
         }
         log.info({ point: 'generate-end' });
         return { ok: true, name: 'sdkgen' };

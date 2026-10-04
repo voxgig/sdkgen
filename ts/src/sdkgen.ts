@@ -65,6 +65,7 @@ import { getMatchEntries } from './helpers/getMatchEntries'
 import { collectDeps } from './helpers/collectDeps'
 import { guardModelNames } from './helpers/modelNames'
 import { guardFlowSteps } from './helpers/flowGuard'
+import { claimedFiles, pruneGenerated } from './helpers/generated'
 import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonToDtype, canonKey, canonScalarKey } from './helpers/canonType'
 import { canonToSpec, entityDataSpec, entityOpSpec, entitySpecs } from './helpers/canonSpec'
@@ -210,6 +211,19 @@ type ExternalOverride = {
 const { Jostraca } = JostracaModule
 
 
+// Keeps the define phase's tree, whose File nodes name what a run claims.
+const TreeRoot = JostracaModule.cmp(function TreeRoot(props: any) {
+  props.holder.root = props.ctx$.root
+})
+
+function keepingTree(define: () => any, holder: { root?: any }) {
+  return async () => {
+    await define()
+    TreeRoot({ holder })
+  }
+}
+
+
 // The `const` block every action's model carries, and so what an add
 // substitutes into the copies it writes.
 function projectConst(model: any): any {
@@ -337,10 +351,15 @@ function SdkGen(opts: SdkGenOptions) {
 
     checkExternalFolders(external, root, fs)
 
-    const jres = await jostraca.generate(
-      jopts, () => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }))
+    const tree: { root?: any } = {}
+    const jres = await jostraca.generate(jopts, keepingTree(
+      () => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree))
 
     showChanges(jopts.log, 'generate-result', jres, Path.dirname(process.cwd()))
+    pruneGenerated({
+      fs, log, project: root, out: root, jres, claims: claimedFiles(tree.root),
+      dryrun: !!opts.dryrun,
+    })
 
     // Docgen owns editions, destinations, templates, text QA and deployment.
     if (model?.main?.[KIT]?.doc?.active !== false && Object.values(model?.main?.[KIT]?.doc?.edition ?? {})
@@ -370,19 +389,24 @@ function SdkGen(opts: SdkGenOptions) {
 
       const sdkrelpath = externalSdkRel(ext, root, log)
 
+      const etree: { root?: any } = {}
       const eres =
         await jostraca.generate(
         { ...jopts, folder: ext.folder },
-        () => ExternalTarget({
+        keepingTree(() => ExternalTarget({
           model, target: ext.target, cmpfolder: folder,
           // How to walk BACK to the SDK project from the destination. An
           // item generating out of tree usually sits beside the SDK in a
           // known layout, and its own docs, scripts and live tests need to
           // name that path.
           sdkrelpath,
-        }))
+        }), etree))
 
       showChanges(jopts.log, 'generate-result', eres, Path.dirname(process.cwd()))
+      pruneGenerated({
+        fs, log, project: root, out: ext.folder, jres: eres, claims: claimedFiles(etree.root),
+        dryrun: !!opts.dryrun,
+      })
     }
 
     log.info({ point: 'generate-end' })

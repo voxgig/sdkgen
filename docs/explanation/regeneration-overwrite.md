@@ -50,6 +50,16 @@ enterprise-feature work produced non-compiling Go (`undefined: Gon2`,
   and regenerate. (Already the rule — overwrite now enforces it.)
 - **Regeneration is safe and idempotent.** No need to wipe output dirs or clear
   `.jostraca` before regenerating to dislodge stale merges — overwrite handles it.
+- **A file the model no longer produces is removed.** Overwrite alone leaves it
+  behind: an entity renamed or dropped from the API kept its old class, and a
+  typed target then failed to build. Each run records the files it wrote in
+  `.sdk/log/generated.jsonl`, one record per output folder, and removes a file an
+  earlier run wrote and this run did not. A part of the output the run writes
+  nothing into, such as a target switched off, keeps its files. A file a
+  component writes only when it is absent, such as `sdk-test-control.json` or the
+  root `CHANGELOG.md`, belongs to the project from its first write, so the record
+  never holds it. The first run after an upgrade records and removes nothing, so
+  a file left over from before the record stays until it is deleted by hand.
 - **Adding/removing a target is clean.** `target add` overwrites the target
   files and rewrites `target-index.aontu` without diff3 markers. (A dedicated
   `target remove` is still worth adding so the index is never hand-edited.)
