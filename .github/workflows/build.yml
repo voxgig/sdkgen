@@ -9,6 +9,10 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  # The setup actions below still bundle the deprecated Node 20 runtime.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
 
@@ -32,6 +36,75 @@ jobs:
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
       with:
         node-version: ${{ matrix.node-version }}
+
+    # The lanes in test/generatedcompile.test.ts skip a target whose
+    # toolchain is missing, and the runners have none of the seven below
+    # (#256). The pins and setups are voxgig/struct's, whose CI builds the
+    # same languages.
+    - name: Python
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+      with:
+        python-version: '3.13'
+        cache: pip
+        cache-dependency-path: .github/*-requirements.txt
+    - name: pytest
+      run: python -m pip install --disable-pip-version-check -r ../.github/py-requirements.txt
+
+    # ziglang on PyPI, pinned by wheel digest. Its package directory holds
+    # the zig executable itself, which the lanes spawn directly.
+    - name: Zig
+      shell: bash
+      run: |
+        python -m pip install --disable-pip-version-check --require-hashes \
+          -r ../.github/zig-requirements.txt
+        python -c 'import os, ziglang; print(os.path.dirname(ziglang.__file__))' >> "$GITHUB_PATH"
+
+    - name: Lua
+      uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13
+      with:
+        luaVersion: '5.4'
+    - name: LuaRocks
+      uses: leafo/gh-actions-luarocks@35d062def313a7699a0d513e996bcf4352f05389 # v6
+    # The lanes run `lua5.4`, the name Debian and Homebrew install.
+    - name: busted, dkjson and lua5.4
+      shell: bash
+      run: |
+        luarocks install busted
+        luarocks install dkjson
+        bin="$(dirname "$(command -v lua)")"
+        if [ "$RUNNER_OS" = Windows ]; then
+          cp "$bin/lua.exe" "$bin/lua5.4.exe"
+        else
+          ln -sf lua "$bin/lua5.4"
+        fi
+
+    # setup-beam has no macOS build.
+    - name: Elixir
+      if: runner.os != 'macOS'
+      uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1
+      with:
+        otp-version: '27'
+        elixir-version: '1.18'
+    - name: Elixir (macOS)
+      if: runner.os == 'macOS'
+      run: brew install elixir
+
+    - name: OCaml
+      uses: ocaml/setup-ocaml@605a7e998e76e035b82c14d618a6e1010732c4ce # v3
+      with:
+        ocaml-compiler: '5'
+    - name: ocamlc on PATH
+      shell: bash
+      run: opam var bin >> "$GITHUB_PATH"
+
+    - name: Scala
+      uses: VirtusLab/scala-cli-setup@c2c917d5764319353961bc4e53885c62d3a95db1 # v1
+
+    - name: Clojure
+      uses: DeLaGuardo/setup-clojure@4c7a6f613e5089821bb3bb2a33a3ee115578580d # 13
+      with:
+        cli: latest
+
     - run: npm ci
     - run: npm run build --if-present
     - run: npm test
