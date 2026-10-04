@@ -1,8 +1,8 @@
 // A list whose items each wrap the record, driven through a generated SDK in
 // test mode: the mock answers the wrappers its point's response transform
 // names, and the transform reads the records back out of them.
-// Each record names its id, as not every mock derives one from its key.
-const ITEMS_SEED = { badge: { b1: { id: 'b1', title: 'one' }, b2: { id: 'b2', title: 'two' }, b3: { id: 'b3', title: 'three' } } }
+// The seed keys each record by its id alone, which the mock copies into it.
+const ITEMS_SEED = { badge: { b1: { title: 'one' }, b2: { title: 'two' }, b3: { title: 'three' } } }
 
 // Each probe prints the records it lists, as `<id>=<title>`, sorted by id.
 const ITEMS_EXPECT = 'b1=one,b2=two,b3=three'
@@ -30,7 +30,7 @@ const PY_PROBE = String.raw`
 from demo_sdk import DemoSDK
 
 seed = {'entity': {'badge': {
-    'b1': {'id': 'b1', 'title': 'one'}, 'b2': {'id': 'b2', 'title': 'two'}, 'b3': {'id': 'b3', 'title': 'three'}}}}
+    'b1': {'title': 'one'}, 'b2': {'title': 'two'}, 'b3': {'title': 'three'}}}}
 
 listed = DemoSDK.test(seed, None).Badge(None).list(None, None)
 recs = [ent.data_get() if hasattr(ent, 'data_get') else ent for ent in listed]
@@ -51,9 +51,9 @@ import (
 
 func TestItemsProbe(t *testing.T) {
 	seed := map[string]any{"entity": map[string]any{"badge": map[string]any{
-		"b1": map[string]any{"id": "b1", "title": "one"},
-		"b2": map[string]any{"id": "b2", "title": "two"},
-		"b3": map[string]any{"id": "b3", "title": "three"},
+		"b1": map[string]any{"title": "one"},
+		"b2": map[string]any{"title": "two"},
+		"b3": map[string]any{"title": "three"},
 	}}}
 	res, err := sdk.TestSDK(seed, nil).Badge(nil).List(nil, nil)
 	if err != nil {
@@ -78,7 +78,7 @@ const RB_PROBE = String.raw`
 require_relative 'Demo_sdk'
 
 seed = { 'entity' => { 'badge' => {
-  'b1' => { 'id' => 'b1', 'title' => 'one' }, 'b2' => { 'id' => 'b2', 'title' => 'two' }, 'b3' => { 'id' => 'b3', 'title' => 'three' },
+  'b1' => { 'title' => 'one' }, 'b2' => { 'title' => 'two' }, 'b3' => { 'title' => 'three' },
 } } }
 
 listed = DemoSDK.test(seed, nil).Badge(nil).list(nil, nil)
@@ -91,7 +91,7 @@ const PHP_PROBE = String.raw`<?php
 require_once __DIR__ . '/demo_sdk.php';
 
 $seed = ['entity' => ['badge' => [
-    'b1' => ['id' => 'b1', 'title' => 'one'], 'b2' => ['id' => 'b2', 'title' => 'two'], 'b3' => ['id' => 'b3', 'title' => 'three'],
+    'b1' => ['title' => 'one'], 'b2' => ['title' => 'two'], 'b3' => ['title' => 'three'],
 ]]];
 
 $listed = DemoSDK::test($seed, null)->Badge(null)->list(null, null);
@@ -113,7 +113,7 @@ use Scalar::Util qw(blessed);
 use DemoSDK;
 
 my $seed = { entity => { badge => {
-  b1 => { id => 'b1', title => 'one' }, b2 => { id => 'b2', title => 'two' }, b3 => { id => 'b3', title => 'three' },
+  b1 => { title => 'one' }, b2 => { title => 'two' }, b3 => { title => 'three' },
 } } };
 
 my $listed = DemoSDK->test($seed, undef)->Badge(undef)->list(undef, undef);
@@ -129,7 +129,7 @@ const LUA_PROBE = String.raw`
 local sdk = require("demo_sdk")
 
 local seed = { entity = { badge = {
-  b1 = { id = "b1", title = "one" }, b2 = { id = "b2", title = "two" }, b3 = { id = "b3", title = "three" },
+  b1 = { title = "one" }, b2 = { title = "two" }, b3 = { title = "three" },
 } } }
 
 local listed, err = sdk.test(seed, nil):Badge(nil):list(nil, nil)
@@ -158,9 +158,9 @@ public class ItemsProbe {
   @SuppressWarnings("unchecked")
   public static void main(String[] args) {
     Map<String, Object> seed = map("entity", map("badge", map(
-        "b1", map("id", "b1", "title", "one"),
-        "b2", map("id", "b2", "title", "two"),
-        "b3", map("id", "b3", "title", "three"))));
+        "b1", map("title", "one"),
+        "b2", map("title", "two"),
+        "b3", map("title", "three"))));
     Object listed = DemoSDK.testSDK(seed, null).badge(null).list(null, null);
     List<String> out = new ArrayList<>();
     for (Object item : (List<Object>) listed) {
@@ -186,9 +186,9 @@ class ItemsProbe {
   fun itemsProbe() {
     val seed = linkedMapOf<String, Any?>("entity" to linkedMapOf<String, Any?>(
       "badge" to linkedMapOf<String, Any?>(
-        "b1" to linkedMapOf<String, Any?>("id" to "b1", "title" to "one"),
-        "b2" to linkedMapOf<String, Any?>("id" to "b2", "title" to "two"),
-        "b3" to linkedMapOf<String, Any?>("id" to "b3", "title" to "three"))))
+        "b1" to linkedMapOf<String, Any?>("title" to "one"),
+        "b2" to linkedMapOf<String, Any?>("title" to "two"),
+        "b3" to linkedMapOf<String, Any?>("title" to "three"))))
     val listed = DemoSDK.testSDK(seed, null).badge(null).list(null, null) as List<*>
     val out = listed.map { item ->
       val rec = (if (item is Entity) item.data() else item) as Map<*, *>
@@ -213,9 +213,9 @@ object ItemsProbeMain {
 
   def main(args: Array[String]): Unit = {
     val seed = map("entity" -> map("badge" -> map(
-      "b1" -> map("id" -> "b1", "title" -> "one"),
-      "b2" -> map("id" -> "b2", "title" -> "two"),
-      "b3" -> map("id" -> "b3", "title" -> "three"))))
+      "b1" -> map("title" -> "one"),
+      "b2" -> map("title" -> "two"),
+      "b3" -> map("title" -> "three"))))
     val listed = DemoSDK.testSDK(seed, null).badge(null).list(null, null).asInstanceOf[JList[Object]]
     val out = new ArrayList[String]()
     listed.forEach { item =>
@@ -238,7 +238,7 @@ using DemoSdk;
 public static class ItemsProbe
 {
     static Dictionary<string, object?> Rec(string id, string title) =>
-        new Dictionary<string, object?> { ["id"] = id, ["title"] = title };
+        new Dictionary<string, object?> { ["title"] = title };
 
     public static void Main()
     {
@@ -273,7 +273,6 @@ import XCTest
 final class ItemsProbeTest: XCTestCase {
   func rec(_ id: String, _ title: String) -> Value {
     let m = VMap()
-    m.entries["id"] = .string(id)
     m.entries["title"] = .string(title)
     return .map(m)
   }
@@ -310,7 +309,7 @@ defmodule Demo.ItemsProbeTest do
   alias Voxgig.Struct, as: S
 
   test "items probe" do
-    rec = fn id, title -> S.jm(["id", id, "title", title]) end
+    rec = fn _id, title -> S.jm(["title", title]) end
     badges = S.jm(["b1", rec.("b1", "one"), "b2", rec.("b2", "two"), "b3", rec.("b3", "three")])
     sdk = Demo.test(S.jm(["entity", S.jm(["badge", badges])]), nil)
     result = Demo.Entity.Badge.list(Demo.badge(sdk), S.jm([]))
@@ -333,7 +332,7 @@ const CLOJURE_PROBE = String.raw`
          '[clojure.string :as cstr]
          '[sdk.entity.badge :as e-badge])
 
-(defn rec [id title] (vs/jm "id" id "title" title))
+(defn rec [id title] (vs/jm "title" title))
 
 (def sdk (api/test-sdk (vs/jm "entity" (vs/jm "badge" (vs/jm "b1" (rec "b1" "one")
                                                                  "b2" (rec "b2" "two")
@@ -356,7 +355,7 @@ use demo_sdk::{test_sdk, DemoEntity, Entity, Value};
 
 #[test]
 fn items_probe() {
-    let rec = |id: &str, title: &str| jo(vec![("id", Value::str(id)), ("title", Value::str(title))]);
+    let rec = |_id: &str, title: &str| jo(vec![("title", Value::str(title))]);
     let seed = jo(vec![("entity", jo(vec![("badge", jo(vec![
         ("b1", rec("b1", "one")),
         ("b2", rec("b2", "two")),
@@ -383,7 +382,8 @@ const C_PROBE = String.raw`
 #include <string.h>
 
 static voxgig_value* rec(const char* id, const char* title) {
-  return cmap(2, "id", v_str(id), "title", v_str(title));
+  (void)id;
+  return cmap(1, "title", v_str(title));
 }
 
 static int byrow(const void* a, const void* b) {
@@ -431,7 +431,8 @@ const CPP_PROBE = String.raw`
 using namespace sdk;
 
 static Value record(const std::string& id, const std::string& title) {
-  return vmap({{"id", Value(id)}, {"title", Value(title)}});
+  (void)id;
+  return vmap({{"title", Value(title)}});
 }
 
 int main() {
@@ -462,7 +463,8 @@ const h = sdk.h;
 const Value = sdk.Value;
 
 fn record(id: []const u8, title: []const u8) Value {
-    return h.jo(&.{ .{ "id", h.vstr(id) }, .{ "title", h.vstr(title) } });
+    _ = id;
+    return h.jo(&.{.{ "title", h.vstr(title) }});
 }
 
 fn before(_: void, a: []const u8, b: []const u8) bool {
@@ -502,7 +504,7 @@ open Voxgig_struct
 open Sdk_types
 open Sdk_helpers
 
-let record id title = jo [("id", Str id); ("title", Str title)]
+let record id title = ignore id; jo [("title", Str title)]
 
 let () =
   let seed = jo [("entity", jo [("badge", jo [("b1", record "b1" "one");

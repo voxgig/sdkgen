@@ -1546,7 +1546,7 @@ tm/rb/core/result.rb c5a2738849ce
 tm/rb/core/spec.rb ef2d2977fec2
 tm/rb/core/utility_type.rb 7b18e66203b4
 tm/rb/feature/base_feature.rb 9d4c4d6ec5a8
-tm/rb/feature/test_feature.rb 19c1b7696d01
+tm/rb/feature/test_feature.rb 1b6eca5b9d5e
 tm/rb/src/feature/README.md 74fc01b8a34f
 tm/rb/src/feature/base/.gitkeep e3b0c44298fc
 tm/rb/src/feature/test/.gitkeep e3b0c44298fc

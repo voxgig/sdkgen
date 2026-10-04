@@ -47,12 +47,10 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
     @client.mode = "test"
 
     # Ensure entity ids are correct.
-    VoxgigStruct.walk(entity) do |key, val, parent, path|
-      if path.length == 2 && val.is_a?(Hash) && key
-        val["id"] = key
-      end
+    VoxgigStruct.walk(entity, ->(key, val, _parent, path) {
+      val["id"] = key if path.length == 2 && val.is_a?(Hash) && key
       val
-    end
+    })
 
     test_self = self
 
