@@ -53,24 +53,24 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
 
   const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
     load: {
-      sig: 'vt->load(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
-      desc: 'Load a single entity matching the given criteria. Returns the entity data and sets `*err` on failure.',
+      sig: 'Entity* vt->load(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
+      desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `vt->data` reads, or `NULL` with `*err` set on failure.',
     },
     list: {
-      sig: 'vt->list(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
-      desc: 'List entities matching the given criteria. The match is optional — pass `NULL` to list all records. Returns a List.',
+      sig: 'Entity** vt->list(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
+      desc: 'List entities matching the given criteria. The match is optional — pass `NULL` to list all records. Returns a `NULL`-terminated array of entities, one per record, or `NULL` with `*err` set on failure.',
     },
     create: {
-      sig: 'vt->create(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
-      desc: 'Create a new entity with the given data. Returns the created entity data and sets `*err` on failure.',
+      sig: 'Entity* vt->create(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
+      desc: 'Create a new entity with the given data. Returns the created entity, or `NULL` with `*err` set on failure.',
     },
     update: {
-      sig: 'vt->update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
-      desc: 'Update an existing entity. The data must include the entity id. Returns the updated entity data.',
+      sig: 'Entity* vt->update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
+      desc: 'Update an existing entity. The data must include the entity id. Returns the updated entity, or `NULL` with `*err` set on failure.',
     },
     remove: {
-      sig: 'vt->remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
-      desc: 'Remove the entity matching the given criteria. Sets `*err` on failure.',
+      sig: 'Entity* vt->remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
+      desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, or `NULL` with `*err` set on failure.',
     },
   }
 
@@ -274,7 +274,10 @@ ${info.desc}
                 it.name === idF ? ent.name + '_id' : it.name)}`))
             Content(`\`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-voxgig_value* result = ${evar}->vt->${opname}(${evar}, ${arg}, NULL, &err);
+Entity* result = ${evar}->vt->${opname}(${evar}, ${arg}, NULL, &err);
+if (result) {
+    printf("%s\\n", voxgig_to_json(result->vt->data(result, NULL)));
+}
 \`\`\`
 
 `)
@@ -282,9 +285,9 @@ voxgig_value* result = ${evar}->vt->${opname}(${evar}, ${arg}, NULL, &err);
           else if ('list' === opname) {
             Content(`\`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-voxgig_value* results = ${evar}->vt->list(${evar}, NULL, NULL, &err);
-for (size_t i = 0; i < (size_t)voxgig_size(results); i++) {
-    printf("%s\\n", voxgig_to_json(voxgig_getelem(results, v_int(i), NULL)));
+Entity** results = ${evar}->vt->list(${evar}, NULL, NULL, &err);
+for (size_t i = 0; results && results[i]; i++) {
+    printf("%s\\n", voxgig_to_json(results[i]->vt->data(results[i], NULL)));
 }
 \`\`\`
 
@@ -297,10 +300,10 @@ for (size_t i = 0; i < (size_t)voxgig_size(results); i++) {
 Entity* ${evar} = ${acc}(client, NULL);
 `)
             if (0 === createItems.length) {
-              Content(`voxgig_value* result = ${evar}->vt->create(${evar}, NULL, NULL, &err);
+              Content(`Entity* result = ${evar}->vt->create(${evar}, NULL, NULL, &err);
 `)
             } else {
-              Content(`voxgig_value* result = ${evar}->vt->create(${evar}, cmap(${createItems.length},
+              Content(`Entity* result = ${evar}->vt->create(${evar}, cmap(${createItems.length},
 `)
               createItems.map((it: any, i: number) => {
                 const comma = i < createItems.length - 1 ? ',' : ')'
@@ -324,7 +327,7 @@ Entity* ${evar} = ${acc}(client, NULL);
                 it.name === idF ? ent.name + '_id' : it.name)}`)
             Content(`\`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-voxgig_value* result = ${evar}->vt->update(${evar}, ${cmapExpr(updatePairs)}, NULL, &err);
+Entity* result = ${evar}->vt->update(${evar}, ${cmapExpr(updatePairs)}, NULL, &err);
 \`\`\`
 
 `)

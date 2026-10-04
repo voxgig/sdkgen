@@ -103,8 +103,9 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       })
 
       Content(`
-Each operation returns an \`OpResult\` — \`switch\` on it: \`.ok => |data|\`
-carries the result \`Value\`, \`.err => |e|\` carries the branded error.
+Each operation returns a result union — \`switch\` on it: \`.ok\` carries the
+entity (for \`list\`, a slice of entities, one per record), whose record
+\`asEntity().data(null)\` reads, and \`.err => |e|\` the branded error.
 
 `)
     }
@@ -140,7 +141,7 @@ carries the result \`Value\`, \`.err => |e|\` carries the branded error.
 
 \`\`\`zig
 switch (client.${method}(h.vnull()).load(${loadArg}, h.vnull())) {
-    .ok => |${eVar}| std.debug.print("{s}\\n", .{h.stringify(${eVar})}),
+    .ok => |${eVar}| std.debug.print("{s}\\n", .{h.stringify(${eVar}.asEntity().data(null))}),
     .err => |e| std.debug.print("load failed: {s}\\n", .{e.msg}),
 }
 \`\`\`
@@ -153,7 +154,11 @@ switch (client.${method}(h.vnull()).load(${loadArg}, h.vnull())) {
 
 \`\`\`zig
 switch (client.${method}(h.vnull()).list(h.vnull(), h.vnull())) {
-    .ok => |${eVar}s| std.debug.print("{s}\\n", .{h.stringify(${eVar}s)}),
+    .ok => |${eVar}s| {
+        for (${eVar}s) |${eVar}| {
+            std.debug.print("{s}\\n", .{h.stringify(${eVar}.asEntity().data(null))});
+        }
+    },
     .err => |e| std.debug.print("list failed: {s}\\n", .{e.msg}),
 }
 \`\`\`
@@ -174,7 +179,7 @@ switch (client.${method}(h.vnull()).create(h.jo(&.{
 `)
       })
       Content(`}), h.vnull())) {
-    .ok => |${eVar}| std.debug.print("{s}\\n", .{h.stringify(${eVar})}),
+    .ok => |${eVar}| std.debug.print("{s}\\n", .{h.stringify(${eVar}.asEntity().data(null))}),
     .err => |e| std.debug.print("create failed: {s}\\n", .{e.msg}),
 }
 \`\`\`

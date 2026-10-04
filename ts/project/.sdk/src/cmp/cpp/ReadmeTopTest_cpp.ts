@@ -53,10 +53,17 @@ auto client = ${model.const.Name}SDK::testSDK();
       const chosen = required.length ? required : items.slice(0, 3)
       arg = `vmap({${chosen.map((it: any) => `{"${it.name}", ${cppLit(it.type)}}`).join(', ')}})`
     }
-    const eVar = acc + ('list' === primaryOp ? 's' : '')
-    Content(`Value ${eVar} = client->${acc}()->${primaryOp}(${arg}, Value::undef());
-std::cout << Struct::jsonify(${eVar}) << std::endl;
+    if ('list' === primaryOp) {
+      Content(`for (const auto& ${acc} : client->${acc}()->list(${arg}, Value::undef())) {
+  std::cout << Struct::jsonify(${acc}->data()) << std::endl;
+}
 `)
+    }
+    else {
+      Content(`SdkEntityPtr ${acc} = client->${acc}()->${primaryOp}(${arg}, Value::undef());
+std::cout << Struct::jsonify(${acc}->data()) << std::endl;
+`)
+    }
   }
 
   Content(`\`\`\`

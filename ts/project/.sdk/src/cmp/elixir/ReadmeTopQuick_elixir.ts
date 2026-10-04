@@ -65,7 +65,7 @@ IO.inspect(records)
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}})`
         : eVar
       Content(`
-# Load a specific ${eName.toLowerCase()} (returns the record, raises on error)
+# Load a specific ${eName.toLowerCase()} (returns the entity, raises on error)
 record = ${Name}.Entity.${eName}.load(${loadArgs})
 IO.inspect(record)
 `)

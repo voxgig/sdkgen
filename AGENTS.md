@@ -834,6 +834,13 @@ emitted broken source reached the fleet unchallenged.
   own route — never a custom action folded into `create`. Custom actions are
   reachable only through `$action`, so `ReadmeRef` documents them; an
   undocumented action is an endpoint no reader can call.
+- **A documented example in c, cpp, rust or zig must COMPILE.** Their ops
+  return entity handles, so an example that treats the result as a record is
+  a type error, and their own README suites only check structure.
+  `generatedcompile.test.ts` compiles every block in those languages from the
+  README, REFERENCE and root README against a generated SDK, under four
+  models that each lead with a different entity, since a quick start shows
+  the first. A section's numbered steps compile as one program.
 - **A project decision belongs in the MODEL, never in a forked component.**
   `target add` overwrites `.sdk/src/cmp/**`, `.sdk/tm/**` AND
   `.sdk/model/target/<t>.aontu`, so any hand-edit in those three is silently

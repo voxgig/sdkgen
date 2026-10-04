@@ -24,11 +24,11 @@ function rustLit(type: any, placeholder: string = 'example'): string {
 
 // Operation method descriptions (language-agnostic wording, rust signatures).
 const OP_DESC: Record<string, { method: string, desc: string }> = {
-  load:   { method: 'load(reqmatch, ctrl)',   desc: 'Load a single entity by match criteria.' },
-  list:   { method: 'list(reqmatch, ctrl)',   desc: 'List entities, optionally matching the given criteria.' },
-  create: { method: 'create(reqdata, ctrl)',  desc: 'Create a new entity with the given data.' },
-  update: { method: 'update(reqdata, ctrl)',  desc: 'Update an existing entity.' },
-  remove: { method: 'remove(reqmatch, ctrl)', desc: 'Remove the matching entity.' },
+  load:   { method: 'load(reqmatch, ctrl)',   desc: 'Load a single entity by match criteria. `Ok` is the entity.' },
+  list:   { method: 'list(reqmatch, ctrl)',   desc: 'List entities, optionally matching the given criteria. `Ok` is a `Vec` of entities, one per record.' },
+  create: { method: 'create(reqdata, ctrl)',  desc: 'Create a new entity with the given data. `Ok` is the entity.' },
+  update: { method: 'update(reqdata, ctrl)',  desc: 'Update an existing entity. `Ok` is the entity.' },
+  remove: { method: 'remove(reqmatch, ctrl)', desc: 'Remove the matching entity. `Ok` is the entity, marked as deleted.' },
 }
 
 
@@ -124,6 +124,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
 \`\`\`rust
 let ${eVar} = client.${method}(Value::Noval).load(${loadArg}, Value::Noval).unwrap();
+println!("{:?}", ${eVar}.data(None));
 \`\`\`
 
 `)
@@ -134,6 +135,9 @@ let ${eVar} = client.${method}(Value::Noval).load(${loadArg}, Value::Noval).unwr
 
 \`\`\`rust
 let ${eVar}s = client.${method}(Value::Noval).list(Value::Noval, Value::Noval).unwrap();
+for ${eVar} in &${eVar}s {
+    println!("{:?}", ${eVar}.data(None));
+}
 \`\`\`
 
 `)
