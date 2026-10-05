@@ -110,6 +110,13 @@ function definitionPlan(ctx$) {
                 const responseMedia = recorded ? successMedia(facts) : [];
                 const rawBody = recorded && ('create' === op || 'update' === op) ?
                     rawRequestBody(facts) : undefined;
+                // An argument the request body declares too goes out in both, from one value.
+                const declared = ('create' === op || 'update' === op) && null == rawBody ?
+                    bodyProperties(facts) : [];
+                const bodyArgs = [...new Set([...headers, ...cookies].map((a) => a.name)
+                        .concat((point.g?.query || []).map((a) => a.n)
+                        .filter((name) => undefined !== selected[name])))]
+                    .filter((name) => declared.includes(name));
                 plan.push({
                     entity: entity.name,
                     accessor: (0, apidef_1.nom)(entity, 'Name'),
@@ -125,6 +132,7 @@ function definitionPlan(ctx$) {
                     ...(null == rawBody ? {} : { rawBody }),
                     query: params.filter((p) => 'query' === p?.in).map((p) => p.name),
                     queryArgs,
+                    ...(0 === bodyArgs.length ? {} : { bodyArgs }),
                     auth: unchecked ? null : credentialSets(facts, own),
                     status: success?.status ?? 200,
                     sample: null == media ? null : boundedSample(fitting(sampleOf(media), media.schema)),
@@ -211,6 +219,15 @@ function rawRequestBody(facts) {
         media: types,
         text: types.every((t) => /^text\/|^application\/xml|\+xml/i.test(t.split(';')[0].trim())),
     };
+}
+// The top-level properties a JSON request body declares, an allOf's parts included.
+function bodyProperties(facts) {
+    const content = facts.requestBody?.content;
+    const schema = null != content && 'object' === typeof content ?
+        content[Object.keys(content).find((t) => /json/i.test(t)) ?? '']?.schema :
+        (facts.parameters || []).find((p) => 'body' === p?.in)?.schema;
+    return [schema, ...(Array.isArray(schema?.allOf) ? schema.allOf : [])]
+        .flatMap((part) => Object.keys(part?.properties || {}));
 }
 function sampleOf(media) {
     if (undefined !== media.example)

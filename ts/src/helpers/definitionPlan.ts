@@ -28,6 +28,7 @@ type DefinitionPoint = {
   cookies: { name: string, wire: string, value: any }[]
   query: string[]
   queryArgs: { name: string, wire: string }[]
+  bodyArgs?: string[]
   auth: Credential[][] | null
   status: number
   sample: any
@@ -153,6 +154,14 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
         const rawBody = recorded && ('create' === op || 'update' === op) ?
           rawRequestBody(facts) : undefined
 
+        // An argument the request body declares too goes out in both, from one value.
+        const declared = ('create' === op || 'update' === op) && null == rawBody ?
+          bodyProperties(facts) : []
+        const bodyArgs = [...new Set([...headers, ...cookies].map((a: any) => a.name)
+          .concat((point.g?.query || []).map((a: any) => a.n)
+            .filter((name: string) => undefined !== selected[name])))]
+          .filter((name) => declared.includes(name))
+
         plan.push({
           entity: entity.name,
           accessor: nom(entity, 'Name'),
@@ -168,6 +177,7 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           ...(null == rawBody ? {} : { rawBody }),
           query: params.filter((p: any) => 'query' === p?.in).map((p: any) => p.name),
           queryArgs,
+          ...(0 === bodyArgs.length ? {} : { bodyArgs }),
           auth: unchecked ? null : credentialSets(facts, own),
           status: success?.status ?? 200,
           sample: null == media ? null : boundedSample(fitting(sampleOf(media), media.schema)),
@@ -266,6 +276,17 @@ function rawRequestBody(facts: any): { media: string[], text: boolean } | undefi
     media: types,
     text: types.every((t) => /^text\/|^application\/xml|\+xml/i.test(t.split(';')[0].trim())),
   }
+}
+
+
+// The top-level properties a JSON request body declares, an allOf's parts included.
+function bodyProperties(facts: any): string[] {
+  const content = facts.requestBody?.content
+  const schema = null != content && 'object' === typeof content ?
+    content[Object.keys(content).find((t) => /json/i.test(t)) ?? '']?.schema :
+    (facts.parameters || []).find((p: any) => 'body' === p?.in)?.schema
+  return [schema, ...(Array.isArray(schema?.allOf) ? schema.allOf : [])]
+    .flatMap((part: any) => Object.keys(part?.properties || {}))
 }
 
 
