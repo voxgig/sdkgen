@@ -343,7 +343,7 @@ src/cmp/csharp/ReadmeIntro_csharp.ts 527240a9b026
 src/cmp/csharp/ReadmeModel_csharp.ts b3c7be20c445
 src/cmp/csharp/ReadmeOptions_csharp.ts 5d00eb866c0c
 src/cmp/csharp/ReadmeQuick_csharp.ts dbd6923edb1f
-src/cmp/csharp/ReadmeRef_csharp.ts 80736f1fb045
+src/cmp/csharp/ReadmeRef_csharp.ts 0c077fd83e22
 src/cmp/csharp/ReadmeTopHowto_csharp.ts 8c938ccb8691
 src/cmp/csharp/ReadmeTopQuick_csharp.ts c3ae94487969
 src/cmp/csharp/ReadmeTopTest_csharp.ts a4e7d74be219
@@ -453,7 +453,7 @@ src/cmp/elixir/ReadmeIntro_elixir.ts b462e9ace64b
 src/cmp/elixir/ReadmeModel_elixir.ts 1d00ed6d1eae
 src/cmp/elixir/ReadmeOptions_elixir.ts eb3b2b997109
 src/cmp/elixir/ReadmeQuick_elixir.ts 0a435b79983f
-src/cmp/elixir/ReadmeRef_elixir.ts f944fca1ef95
+src/cmp/elixir/ReadmeRef_elixir.ts 7eb125d8696c
 src/cmp/elixir/ReadmeTopHowto_elixir.ts 90ecb763e0ad
 src/cmp/elixir/ReadmeTopQuick_elixir.ts be134e7e41c1
 src/cmp/elixir/ReadmeTopTest_elixir.ts bde42ec11345
