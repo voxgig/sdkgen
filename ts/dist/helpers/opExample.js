@@ -7,6 +7,7 @@ exports.idLiteral = idLiteral;
 exports.requiredItems = requiredItems;
 exports.matchArg = matchArg;
 exports.listMatchArg = listMatchArg;
+exports.seededList = seededList;
 exports.dataArg = dataArg;
 exports.javaMap = javaMap;
 exports.javaMapOf = javaMapOf;
@@ -29,7 +30,7 @@ const NULL_LIT = {
     ts: 'null', js: 'null', py: 'None', php: 'null', rb: 'nil', lua: 'nil', go: 'nil', json: 'null',
 };
 // A type-correct literal for a canonical type sentinel, in the target language.
-function litFor(lang, type) {
+function litFor(lang, type, text = 'example') {
     const k = (0, canonType_1.canonScalarKey)(type);
     if ('NULL' === k)
         return NULL_LIT[lang];
@@ -54,7 +55,7 @@ function litFor(lang, type) {
             return '{}';
         return '{}';
     }
-    return '"example"';
+    return `"${text}"`;
 }
 function idLiteral(ent, op, idF) {
     if (null == idF)
@@ -115,6 +116,19 @@ function javaMapOf(pairs, pkg = '') {
 // A list's required route and query parameters.
 function listMatchArg(lang, ent) {
     return matchArg(lang, ent, 'list', null, '');
+}
+// A test-mode list call's pairs and the record seeded for it: the mock gives a
+// seeded record its key as `id`, so `id` and the load key are sent as that key.
+function seededList(lang, ent, idF, key) {
+    const items = [...requiredItems(ent, 'list')]
+        .sort((a, b) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1));
+    const lit = (it) => litFor(lang, it.type, it.name === idF || 'id' === it.name ? key : 'example');
+    const record = new Map(null == idF ? [] : [[idF, `"${key}"`]]);
+    items.forEach((it) => record.set(it.name, 'id' === it.name ? `"${key}"` : lit(it)));
+    return {
+        call: items.map((it) => litPair(lang, it.name, lit(it))),
+        record: [...record].map(([name, value]) => litPair(lang, name, value)),
+    };
 }
 // An update or patch addressed only by id and route also changes a field.
 function dataArg(lang, ent, op, idF) {

@@ -567,11 +567,13 @@ main: kit: flow: ${flow}: {
 
 
 // A list requiring string id, q and tag, whose create requires q as an integer.
-function retypedList(): string {
+// With `load`, a load by id too, which every test-mode block seeds.
+function retypedList(name: string = 'crate', load: boolean = false): string {
+  const flow = 'Basic' + name.split('_').map((w: string) => w[0].toUpperCase() + w.slice(1)).join('') + 'Flow'
   return entityOnly(`
-main: kit: entity: crate: {
+main: kit: entity: ${name}: {
   alias: field: {}
-  name: "crate"
+  name: "${name}"
   id: { field: "id", name: "id" }
   fields: {
     "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
@@ -584,19 +586,29 @@ main: kit: entity: crate: {
         { k: "query", n: "q", or: "q", r: true, t: "\`$STRING\`" }
         { k: "query", n: "tag", or: "tag", r: true, t: "\`$STRING\`" }
       ] }
-      m: "GET", o: "/crate", s: [{ lit: "crate" }]
+      m: "GET", o: "/${name}", s: [{ lit: "${name}" }]
       t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
     create: { name: "create", points: [ {
-      g: {}, m: "POST", o: "/crate", s: [{ lit: "crate" }]
+      g: {}, m: "POST", o: "/${name}", s: [{ lit: "${name}" }]
       t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
-  }
+${load ? `    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/${name}/{id}", s: [{ lit: "${name}" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+` : ''}  }
 }
 
-main: kit: flow: BasicCrateFlow: {
-  entity: "crate", kind: "basic", name: "BasicCrateFlow"
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
   step: [ { o: "list", m: {} } ]
 }
 `)
+}
+
+
+// A snake_case retypedList with a load, so every block that seeds the mock seeds it.
+function seedableList(): string {
+  return retypedList('crate_box', true)
 }
 
 
@@ -1056,6 +1068,7 @@ export {
   listOnly,
   selectorList,
   retypedList,
+  seedableList,
   entityOnly,
   entityTestData,
   FOLD_ENTITY,

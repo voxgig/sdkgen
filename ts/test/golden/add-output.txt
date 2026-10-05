@@ -1000,7 +1000,7 @@ src/cmp/lua/Main_lua.ts 12d209201ab5
 src/cmp/lua/Package_lua.ts ad22ea96b732
 src/cmp/lua/PrepareAuth_lua.ts cc49fb94005b
 src/cmp/lua/ReadmeEntity_lua.ts c4437d4dcecd
-src/cmp/lua/ReadmeExamplesTest_lua.ts 9db724ff4430
+src/cmp/lua/ReadmeExamplesTest_lua.ts 260bc16a05b4
 src/cmp/lua/ReadmeExplanation_lua.ts 74936c6ce867
 src/cmp/lua/ReadmeHowto_lua.ts ae68407726d8
 src/cmp/lua/ReadmeInstall_lua.ts 8edbb24fb530
@@ -1281,7 +1281,7 @@ src/cmp/php/PrepareAuth_php.ts c1c0ed41ade8
 src/cmp/php/ReadmeEntity_php.ts e1cdaa1cc31c
 src/cmp/php/ReadmeExamplesTest_php.ts 4cefb6086f6a
 src/cmp/php/ReadmeExplanation_php.ts 452c1e096b54
-src/cmp/php/ReadmeHowto_php.ts f27514ed928f
+src/cmp/php/ReadmeHowto_php.ts 501a3bbee3d8
 src/cmp/php/ReadmeInstall_php.ts a67ef3f9bffe
 src/cmp/php/ReadmeIntro_php.ts 8f244bf382e6
 src/cmp/php/ReadmeModel_php.ts 0f1f1f236fc7
@@ -1290,7 +1290,7 @@ src/cmp/php/ReadmeQuick_php.ts 6ef8515b65b0
 src/cmp/php/ReadmeRef_php.ts fca46ca2dda8
 src/cmp/php/ReadmeTopHowto_php.ts a0a90593a80f
 src/cmp/php/ReadmeTopQuick_php.ts e5ebf403fcc5
-src/cmp/php/ReadmeTopTest_php.ts 0195a44b56b3
+src/cmp/php/ReadmeTopTest_php.ts b5cdc8ea8988
 src/cmp/php/Schema_php.ts 9750487a267a
 src/cmp/php/TestClean_php.ts 72ebbaa3ffa5
 src/cmp/php/TestDirect_php.ts 3425c8e01f2e
@@ -1512,7 +1512,7 @@ model/target/rb.aontu 97eac8c271e4
 model/target/target-index.aontu 96fa2666bdd8
 src/cmp/rb/Config_rb.ts 348c35fc178c
 src/cmp/rb/EntityOperation_rb.ts 43ad5a64b0c9
-src/cmp/rb/EntityTypes_rb.ts 6d8d9db6ab26
+src/cmp/rb/EntityTypes_rb.ts 632232bd2ef4
 src/cmp/rb/Entity_rb.ts a7ca2f61dccf
 src/cmp/rb/Gitignore_rb.ts d6ab9def4134
 src/cmp/rb/MainEntity_rb.ts a88eedc19290
@@ -1520,9 +1520,9 @@ src/cmp/rb/Main_rb.ts d92e24cb896b
 src/cmp/rb/Package_rb.ts 4008859a052c
 src/cmp/rb/PrepareAuth_rb.ts 7db3c548fb09
 src/cmp/rb/ReadmeEntity_rb.ts 5e532acdb91a
-src/cmp/rb/ReadmeExamplesTest_rb.ts 40efdb16eecf
+src/cmp/rb/ReadmeExamplesTest_rb.ts ff618b1e3e11
 src/cmp/rb/ReadmeExplanation_rb.ts 324138dd35be
-src/cmp/rb/ReadmeHowto_rb.ts 2ccac8e7aabb
+src/cmp/rb/ReadmeHowto_rb.ts 81b5ebb18b77
 src/cmp/rb/ReadmeInstall_rb.ts e3cdcd29853e
 src/cmp/rb/ReadmeIntro_rb.ts a7dc34f0a7a0
 src/cmp/rb/ReadmeModel_rb.ts 11d074e2287e
@@ -1531,7 +1531,7 @@ src/cmp/rb/ReadmeQuick_rb.ts 0dafc99b4042
 src/cmp/rb/ReadmeRef_rb.ts 4e3c4cf4b276
 src/cmp/rb/ReadmeTopHowto_rb.ts d4c1341f730d
 src/cmp/rb/ReadmeTopQuick_rb.ts a9ca887491b2
-src/cmp/rb/ReadmeTopTest_rb.ts d0ece6a51717
+src/cmp/rb/ReadmeTopTest_rb.ts 3c1a33a29b8a
 src/cmp/rb/Schema_rb.ts 7aac619fae8d
 src/cmp/rb/TestClean_rb.ts 24fcac8ed64c
 src/cmp/rb/TestDirect_rb.ts cbfe01a7ed3d
@@ -1740,7 +1740,7 @@ model/target/target-index.aontu e1085548f758
 src/cmp/scala/Config_scala.ts 12ed6618ad10
 src/cmp/scala/EntityBase_scala.ts 95d5e61aa06f
 src/cmp/scala/EntityOperation_scala.ts 5de61f269ee2
-src/cmp/scala/EntityTypes_scala.ts 811f575b9a69
+src/cmp/scala/EntityTypes_scala.ts 3c495d07e70b
 src/cmp/scala/Entity_scala.ts db47d209fd9d
 src/cmp/scala/Gitignore_scala.ts 4c75b5801ca5
 src/cmp/scala/MainEntity_scala.ts 911328e9d2ca
@@ -1907,7 +1907,7 @@ model/target/target-index.aontu 92d61f40cdbf
 src/cmp/swift/Config_swift.ts f817ebfadf3e
 src/cmp/swift/EntityBase_swift.ts 0e11e207fb56
 src/cmp/swift/EntityOperation_swift.ts fbacfffd3076
-src/cmp/swift/EntityTypes_swift.ts 4c3a837d657e
+src/cmp/swift/EntityTypes_swift.ts d5ff1cf4a57c
 src/cmp/swift/Entity_swift.ts 4d27dc352489
 src/cmp/swift/Gitignore_swift.ts 335a862c06a8
 src/cmp/swift/MainEntity_swift.ts a077a33118e1
@@ -1944,7 +1944,7 @@ src/cmp/swift/fragment/EntityUpdateOp.fragment.swift 1aa90240964b
 src/cmp/swift/fragment/Main.fragment.swift 9850aec0bb2c
 src/cmp/swift/fragment/SdkError.fragment.swift 927b9a03be0d
 src/cmp/swift/tsconfig.json 720a3f229019
-src/cmp/swift/utility_swift.ts 654c23b47d58
+src/cmp/swift/utility_swift.ts 9e76972fbb77
 tm/swift/LICENSE 52acd47c245f
 tm/swift/Makefile ecf6dd47f95f
 tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift ed5ff2870004

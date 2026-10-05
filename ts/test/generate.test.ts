@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, retypedList, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, seedableList, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity, toolchain,
 } from './generateharness'
@@ -4924,22 +4924,43 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
-  test('the root README seeds the record its list example sends, in each block that seeds one', async () => {
-    const out = await generate(['ts', 'rb'], undefined, retypedList())
-    const section = out['README.md'].slice(out['README.md'].indexOf('## Offline unit testing'))
-    const pairs = (line: string) =>
-      [...line.matchAll(/([\w'"]+)\s*(?::|=>)\s*('[^']*'|"[^"]*"|[^\s,{}()]+)/g)].map((m) => m[1] + ' ' + m[2])
+  // Every README component that seeds the mock, read from its source, writes
+  // a block that seeds the record its list call sends.
+  test('each README block that seeds the mock seeds the record its list example sends, under the entity\'s name', async () => {
+    const cmpdir = Path.join(SCAFFOLD, 'src', 'cmp')
+    const seeding = readdirSync(cmpdir).flatMap((lang: string) => readdirSync(Path.join(cmpdir, lang))
+      .filter((file: string) => /^Readme(?!Examples?Test)\w*\.ts$/.test(file) &&
+        /["']?entity["']?\s*(?::|=>)\s*[{[]/.test(readFileSync(Path.join(cmpdir, lang, file), 'utf8')))
+      .map((file: string) => lang + '/' + file))
+    ok(0 < seeding.length, 'no README component seeds the mock')
 
-    for (const fence of ['ts', 'ruby']) {
-      const at = section.indexOf('```' + fence + '\n')
-      ok(-1 < at, fence + ': the root README has no offline test block')
-      const lines = section.slice(at, section.indexOf('\n```', at)).split('\n')
-      const seed = lines.find((line: string) => /test01['"]?\s*(?::|=>)\s*\{/.test(line)) || ''
-      const call = lines.find((line: string) => /\.list\b/.test(line)) || ''
-      const sent = pairs(call)
-      strictEqual(sent.length, 3, fence + ': the list call does not send its parameters: ' + call)
-      deepStrictEqual(sent.filter((pair: string) => !pairs(seed).includes(pair)), [],
-        fence + ': the list call sends values the seeded record lacks:\n' + seed + '\n' + call)
+    const out = await generate([...new Set(seeding.map((c: string) => c.split('/')[0]))], undefined, seedableList())
+    const seeded = /["']?(\w+)["']?\s*(?::|=>)\s*[{[]\s*["']?test01["']?\s*(?::|=>)\s*[{[]/
+    const blocks = Object.keys(out).filter((doc: string) => /^(?:[^/]+\/)?(?:README|REFERENCE)\.md$/.test(doc))
+      .flatMap((doc: string) => [...out[doc].matchAll(/```\w+\n([\s\S]*?)\n```/g)]
+        .filter((m) => seeded.test(m[1])).map((m) => ({ doc, code: m[1] })))
+    strictEqual(blocks.length, seeding.length, 'the components that seed the mock (' + seeding.join(', ') +
+      ') do not write one seeded block each:\n' + blocks.map((b) => b.doc + ':\n' + b.code).join('\n'))
+
+    const inside = (text: string, at: number): string => {
+      let depth = 0
+      for (let i = at; i < text.length; i++) {
+        if ('([{'.includes(text[i])) depth++
+        else if (')]}'.includes(text[i]) && 0 === --depth) return text.slice(at + 1, i)
+      }
+      return ''
+    }
+    const pairs = (text: string) => [...text.matchAll(
+      /["']?([\w$]+)["']?\s*(?::|=>)\s*('[^']*'|"[^"]*"|\[\]|\{\}|[^\s,{}()[\]]+)/g)].map((m) => m[1] + ' ' + m[2])
+
+    for (const { doc, code } of blocks) {
+      const seed = seeded.exec(code)!
+      strictEqual(seed[1], 'crate_box', doc + ': the mock is seeded under another name than the entity\'s:\n' + code)
+      const record = pairs(inside(code, seed.index + seed[0].length - 1))
+      const sent = pairs(inside(code, code.indexOf('(', code.search(/(?:\.|->)list\(/))))
+      strictEqual(sent.length, 3, doc + ': the list call does not send its parameters:\n' + code)
+      deepStrictEqual(sent.filter((pair: string) => !record.includes(pair)), [],
+        doc + ': the list call sends values the seeded record lacks:\n' + code)
     }
   })
 
@@ -5130,6 +5151,20 @@ main: kit: flow: BasicBadgeFlow: {
     wrong.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Cc]rate/)
       .filter((line: string) => !escaped(line)))
     deepStrictEqual(wrong, [], 'list examples that do not escape the name:\n' + wrong.join('\n'))
+  })
+
+
+  // The swift build lane needs a swift toolchain, which this check does not.
+  test('a swift entity type writes each member name as an identifier', async () => {
+    const out = await generate(['swift'], undefined, listOnly('crate',
+      [['end', '"`$STRING`"'], ['__proto__', '"`$STRING`"'], ['a"b\\c', '"`$STRING`"']]))
+    const types = Object.entries(out).find(([path, text]) =>
+      /^swift\/.*Types\.swift$/.test(path) && text.includes('struct CrateListMatch'))
+    ok(null != types, 'swift: no type for the list match was generated')
+    const names = [...types![1].matchAll(/^\s*public var ([^:]+):/gm)].map((m) => m[1])
+    ok(names.includes('end'), 'swift: the list match lost its members:\n' + names.join('\n'))
+    deepStrictEqual(names.filter((name: string) => !/^[\p{L}_][\p{L}\p{N}_]*$/u.test(name)), [],
+      'swift: member names that are not identifiers')
   })
 
 

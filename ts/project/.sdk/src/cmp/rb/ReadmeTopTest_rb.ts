@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, requiredItems, litPair } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, seededList, litPair } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -8,14 +8,14 @@ import {
 } from '@voxgig/apidef'
 
 
-function rbLit(type: any, placeholder: string = 'example'): string {
+function rbLit(type: any): string {
   const k = canonScalarKey(type)
   if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
-  return `"${placeholder}"`
+  return '"example"'
 }
 
 
@@ -32,27 +32,22 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
     // Model-driven id key: null when the entity has no id-like field.
     const idF = entityIdField(exampleEntity)
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
-    // The seed record carries what the list call sends, and an id is its key.
-    const listItems = 'list' === primaryOp ? requiredItems(exampleEntity, 'list') : []
-    const listLit = (it: any): string =>
-      rbLit(it.type, it.name === idF || 'id' === it.name ? 'test01' : 'example')
-    const recPairs = [
-      ...(idF ? [`"${idF}" => "test01"`] : []),
-      ...listItems.filter((it: any) => it.name !== idF)
-        .map((it: any) => litPair('rb', it.name, listLit(it))),
-    ]
+    const listed = 'list' === primaryOp ? seededList('rb', exampleEntity, idF, 'test01') : null
+    const recPairs = listed ? listed.record : idF ? [litPair('rb', idF, '"test01"')] : []
     const recBody = 0 < recPairs.length ? `{ ${recPairs.join(', ')} }` : '{}'
     let callArg = ''
-    if (isMatchOp || 0 < listItems.length) {
+    if (listed) {
+      callArg = 0 < listed.call.length ? `{ ${listed.call.join(', ')} }` : ''
+    } else if (isMatchOp) {
       // Every REQUIRED match key (id first, then parent path params like
       // page_id) — the same shape the runtime resolves path params from.
-      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF) : [...listItems])
+      const items = opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       callArg = 0 < items.length
-        ? `{ ${items.map((it: any) => litPair('rb', it.name, !isMatchOp ? listLit(it)
-          : it.name === idF ? '"test01"' : rbLit(it.type))).join(', ')} }`
+        ? `{ ${items.map((it: any) =>
+          litPair('rb', it.name, it.name === idF ? '"test01"' : rbLit(it.type))).join(', ')} }`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
@@ -63,13 +58,13 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
     }
     // A list result is an Array — name the variable accordingly. Sanitise the
     // base name — an entity whose lowercased name is a Ruby keyword (e.g.
-    // `self`) would otherwise emit uncompilable code. The fixture KEY (`ename`)
-    // stays raw so the mock lookup resolves.
+    // `self`) would otherwise emit uncompilable code. The fixture key is the
+    // model name, which the mock looks the entity up by.
     const eVar = exampleVarName(ename, 'rb') + ('list' === primaryOp ? 's' : '')
     Content(`\`\`\`ruby
 # Seed fixture data so offline calls resolve without a live server.
 client = ${model.const.Name}SDK.test({
-  "entity" => { "${ename}" => { "test01" => ${recBody} } },
+  "entity" => { "${exampleEntity.name}" => { "test01" => ${recBody} } },
 })
 ${eVar} = client.${eName}.${primaryOp}(${callArg})
 \`\`\`

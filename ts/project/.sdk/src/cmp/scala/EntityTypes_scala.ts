@@ -30,8 +30,9 @@ const SCALA_KEYWORDS = new Set<string>([
 ])
 
 
+// A bare `_` is the wildcard, backquoted or not.
 function scalaIdent(name: string): boolean {
-  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name) && !SCALA_KEYWORDS.has(name)
+  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name) && !SCALA_KEYWORDS.has(name) && '_' !== name
 }
 
 
@@ -66,8 +67,10 @@ function emitCaseClass(typeName: string, items: any[], log?: any): void {
     return
   }
 
+  // A name ending in `_` lexes with the colon after it as one identifier.
   const params = usable
-    .map((it: any) => `${it.name}: ${canonToType(it.type, LANG)}`)
+    .map((it: any) => `${it.name.endsWith('_') ? '`' + it.name + '`' : it.name}: ` +
+      canonToType(it.type, LANG))
     .join(', ')
   Content(`  final case class ${typeName}(${params})
 

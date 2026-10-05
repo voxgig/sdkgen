@@ -32,7 +32,7 @@ const NULL_LIT: Record<LiteralLang, string> = {
 
 
 // A type-correct literal for a canonical type sentinel, in the target language.
-function litFor(lang: LiteralLang, type: any): string {
+function litFor(lang: LiteralLang, type: any, text: string = 'example'): string {
   const k = canonScalarKey(type)
   if ('NULL' === k) return NULL_LIT[lang]
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
@@ -48,7 +48,7 @@ function litFor(lang: LiteralLang, type: any): string {
     if ('py' === lang) return '{}'
     return '{}'
   }
-  return '"example"'
+  return `"${text}"`
 }
 
 
@@ -124,6 +124,23 @@ function javaMapOf(pairs: string[], pkg = ''): string {
 // A list's required route and query parameters.
 function listMatchArg(lang: LiteralLang, ent: any): string {
   return matchArg(lang, ent, 'list', null, '')
+}
+
+
+// A test-mode list call's pairs and the record seeded for it: the mock gives a
+// seeded record its key as `id`, so `id` and the load key are sent as that key.
+function seededList(lang: LiteralLang, ent: any, idF: string | null, key: string):
+  { call: string[], record: string[] } {
+  const items = [...requiredItems(ent, 'list')]
+    .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+  const lit = (it: any): string =>
+    litFor(lang, it.type, it.name === idF || 'id' === it.name ? key : 'example')
+  const record = new Map<string, string>(null == idF ? [] : [[idF, `"${key}"`]])
+  items.forEach((it: any) => record.set(it.name, 'id' === it.name ? `"${key}"` : lit(it)))
+  return {
+    call: items.map((it: any) => litPair(lang, it.name, lit(it))),
+    record: [...record].map(([name, value]) => litPair(lang, name, value)),
+  }
 }
 
 
@@ -212,6 +229,7 @@ export {
   requiredItems,
   matchArg,
   listMatchArg,
+  seededList,
   dataArg,
   javaMap,
   javaMapOf,

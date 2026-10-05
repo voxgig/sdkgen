@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, phpEntityAccessor, requiredItems, litPair } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, phpEntityAccessor, seededList, litPair } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -34,18 +34,22 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
     // Model-driven id key: null when the entity has no id-like field.
     const idF = entityIdField(exampleEntity)
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
-    const recBody = idF ? `["${idF}" => "test01"]` : '[]'
+    const listed = 'list' === primaryOp ? seededList('php', exampleEntity, idF, 'test01') : null
+    const recPairs = listed ? listed.record : idF ? [litPair('php', idF, '"test01"')] : []
+    const recBody = `[${recPairs.join(', ')}]`
     let callArg = ''
-    if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
+    if (listed) {
+      callArg = 0 < listed.call.length ? `[${listed.call.join(', ')}]` : ''
+    } else if (isMatchOp) {
       // Every REQUIRED match key (id first, then parent path params like
       // page_id) — the same shape the runtime resolves path params from.
-      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
+      const items = opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       callArg = 0 < items.length
         ? `[${items.map((it: any) =>
-          litPair('php', it.name, isMatchOp && it.name === idF ? '"test01"' : phpLit(it.type))).join(', ')}]`
+          litPair('php', it.name, it.name === idF ? '"test01"' : phpLit(it.type))).join(', ')}]`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
@@ -54,12 +58,13 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
       const chosen = required.length ? required : items.slice(0, 3)
       callArg = `[${chosen.map((it: any) => litPair('php', it.name, phpLit(it.type))).join(', ')}]`
     }
-    // A list result is an array — name the variable accordingly.
+    // A list result is an array — name the variable accordingly. The fixture
+    // key is the model name, which the mock looks the entity up by.
     const eVar = ename + ('list' === primaryOp ? 's' : '')
     Content(`\`\`\`php
 // Seed fixture data so offline calls resolve without a live server.
 $client = ${model.const.Name}SDK::test([
-    "entity" => ["${ename}" => ["test01" => ${recBody}]],
+    "entity" => ["${exampleEntity.name}" => ["test01" => ${recBody}]],
 ]);
 $${eVar} = $client->${phpEntityAccessor(eName)}()->${primaryOp}(${callArg});
 \`\`\`

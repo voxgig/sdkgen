@@ -26,7 +26,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
-  searchOnly, listOnly, retypedList, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
+  searchOnly, listOnly, retypedList, seedableList, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
   KEYWORD_ACCESSOR_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
@@ -308,13 +308,54 @@ function mcpSession(bin: string, calls: any[] = []): Promise<{ tools: any[], ans
 }
 
 
-// The body of the root README's offline test block in one language.
-function offlineBlock(readmeDir: string, fence: string): string {
-  const readme = Fs.readFileSync(Path.join(readmeDir, 'README.md'), 'utf8')
-  const section = readme.slice(readme.indexOf('## Offline unit testing'))
+// The body of the first block in one language under a heading of a README.
+function readmeBlock(file: string, heading: string, fence: string): string {
+  const readme = Fs.readFileSync(file, 'utf8')
+  const section = readme.slice(Math.max(0, readme.indexOf(heading)))
   const at = section.indexOf('```' + fence + '\n')
-  ok(-1 < at, fence + ': the root README has no offline test block')
+  ok(readme.includes(heading) && -1 < at, file + ': no ' + fence + ' block under ' + heading)
   return section.slice(at + fence.length + 4, section.indexOf('\n```', at))
+}
+
+
+// Runs a README block that seeds the mock, printing `listed <n>` for its list
+// call; null when this machine has no toolchain for it.
+const SEEDED_RUN: Record<string, (sdkroot: string, block: string) => ReturnType<typeof run> | null> = {
+  ts: (sdkroot, block) => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+    linkDeps(sdkroot)
+    const built = tsc(sdkroot, 'src')
+    ok(built.ok, 'generated src does not compile:\n' + built.out)
+    const sdk = /const client = (\w+)\.test\(/.exec(block)
+    const listed = /const (\w+) = await client\.\w+\(\)\.list\(/.exec(block)
+    ok(null != sdk && null != listed, 'the block makes no list call:\n' + block)
+    Fs.writeFileSync(Path.join(sdkroot, 'seeded.cjs'),
+      `const { ${sdk![1]} } = require('./dist/${sdk![1]}')\n` +
+      `;(async () => {\n${block}\nconsole.log('listed ' + ${listed![1]}.length)\n})()` +
+      `.catch((err) => { console.error(err); process.exit(1) })\n`)
+    return run(process.execPath, ['seeded.cjs'], sdkroot)
+  },
+  rb: (sdkroot, block) => {
+    const ruby = toolchain('ruby')
+    if (null == ruby) return null
+    const sdk = /client = (\w+)SDK\.test\(/.exec(block)
+    const listed = /^(\w+) = client\.\w+\.list\b/m.exec(block)
+    ok(null != sdk && null != listed, 'the block makes no list call:\n' + block)
+    Fs.writeFileSync(Path.join(sdkroot, 'seeded.rb'),
+      `require_relative '${sdk![1]}_sdk'\n${block}\nputs "listed #{${listed![1]}.length}"\n`)
+    return run(ruby, ['seeded.rb'], sdkroot)
+  },
+  php: (sdkroot, block) => {
+    const php = toolchain('php')
+    if (null == php) return null
+    const sdk = /\$client = (\w+)SDK::test\(/.exec(block)
+    const listed = /^\$(\w+) = \$client->\w+\(\)->list\(/m.exec(block)
+    ok(null != sdk && null != listed, 'the block makes no list call:\n' + block)
+    Fs.writeFileSync(Path.join(sdkroot, 'seeded.php'),
+      `<?php\nrequire __DIR__ . '/${sdk![1].toLowerCase()}_sdk.php';\n${block}\n` +
+      `echo "listed " . count($${listed![1]}) . "\\n";\n`)
+    return run(php, ['seeded.php'], sdkroot)
+  },
 }
 
 
@@ -724,49 +765,57 @@ pub fn main() void {
 
 
   // Run as written: the README suites above replace a block's seed with their own.
-  test('typescript: the root README test block lists the record it seeds', async () => {
-    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+  for (const [what, target, fence, howto] of [
+    ['typescript: the root README test block', 'ts', 'ts', false],
+    ['ruby: the root README test block', 'rb', 'ruby', false],
+    ['php: the root README test block', 'php', 'php', false],
+    ['ruby: the README test-mode block', 'rb', 'ruby', true],
+    ['php: the README test-mode block', 'php', 'php', true],
+  ] as [string, string, string, boolean][]) {
+    test(what + ' lists the record it seeds', async (t) => {
+      const sdkroot = Path.join(tmp, target + '-readme-seeded' + (howto ? '-howto' : ''), target)
+      await generateTo(target, sdkroot, seedableList(), undefined, { top: true })
+      const block = howto
+        ? readmeBlock(Path.join(sdkroot, 'README.md'), '### Use test mode', fence)
+        : readmeBlock(Path.join(Path.dirname(sdkroot), 'README.md'), '## Offline unit testing', fence)
 
-    const sdkroot = Path.join(tmp, 'ts-readme-seeded', 'ts')
-    await generateTo('ts', sdkroot, retypedList(), undefined, { top: true })
-    linkDeps(sdkroot)
-    const built = tsc(sdkroot, 'src')
-    ok(built.ok, 'generated src does not compile:\n' + built.out)
-
-    const block = offlineBlock(Path.dirname(sdkroot), 'ts')
-    const sdk = /const client = (\w+)\.test\(/.exec(block)
-    const listed = /const (\w+) = await client\.\w+\(\)\.list\(/.exec(block)
-    ok(null != sdk && null != listed, 'the root README test block makes no list call:\n' + block)
-    Fs.writeFileSync(Path.join(sdkroot, 'seeded.cjs'),
-      `const { ${sdk![1]} } = require('./dist/${sdk![1]}')\n` +
-      `;(async () => {\n${block}\nconsole.log('listed ' + ${listed![1]}.length)\n})()` +
-      `.catch((err) => { console.error(err); process.exit(1) })\n`)
-    const ran = run(process.execPath, ['seeded.cjs'], sdkroot)
-    ok(ran.ok, 'the root README test block failed:\n' + tail(ran.out))
-    ok(/^listed 1$/m.test(ran.out),
-      'the root README test block lists no record it seeds:\n' + block + '\n' + tail(ran.out))
-  })
+      const ran = SEEDED_RUN[target](sdkroot, block)
+      if (null == ran) return t.skip('no ' + target + ' toolchain here')
+      if (ran.unlaunchable) return t.skip(target + ' could not be started here: ' + tail(ran.out, 3))
+      ok(ran.ok, 'the block failed:\n' + block + '\n' + tail(ran.out))
+      ok(/^listed 1$/m.test(ran.out), 'the block lists no record it seeds:\n' + block + '\n' + tail(ran.out))
+    })
+  }
 
 
-  test('ruby: the root README test block lists the record it seeds', async (t) => {
-    const ruby = toolchain('ruby')
-    if (null == ruby) return t.skip('no ruby here')
-
-    const sdkroot = Path.join(tmp, 'rb-readme-seeded', 'rb')
-    await generateTo('rb', sdkroot, retypedList(), undefined, { top: true })
-
-    const block = offlineBlock(Path.dirname(sdkroot), 'ruby')
-    const sdk = /client = (\w+)SDK\.test\(/.exec(block)
-    const listed = /^(\w+) = client\.\w+\.list\b/m.exec(block)
-    ok(null != sdk && null != listed, 'the root README test block makes no list call:\n' + block)
-    Fs.writeFileSync(Path.join(sdkroot, 'seeded.rb'),
-      `require_relative '${sdk![1]}_sdk'\n${block}\nputs "listed #{${listed![1]}.length}"\n`)
-    const ran = run(ruby, ['seeded.rb'], sdkroot)
-    if (ran.unlaunchable) return t.skip('ruby could not be started here: ' + tail(ran.out, 3))
-    ok(ran.ok, 'the root README test block failed:\n' + tail(ran.out))
-    ok(/^listed 1$/m.test(ran.out),
-      'the root README test block lists no record it seeds:\n' + block + '\n' + tail(ran.out))
-  })
+  // KEYWORD_LIST names a member `__proto__`, which scala lexes with the colon
+  // after it, and `a"b\c`, which a ruby symbol must escape and no identifier holds.
+  for (const [target, build] of [
+    ['rb', (sdkroot: string, files: string[]) => {
+      const ruby = toolchain('ruby')
+      const sdk = files.find((path: string) => /^[^/]+_sdk\.rb$/.test(path))
+      ok(null != sdk, 'rb: no SDK entry file was generated')
+      return null == ruby ? null : run(ruby, ['-e', `require './${sdk}'`], sdkroot)
+    }],
+    ['scala', (sdkroot: string) => {
+      const scalacli = toolchain('scala-cli')
+      return null == scalacli ? null : run(scalacli, ['compile', '.'], sdkroot)
+    }],
+    ['swift', (sdkroot: string) => {
+      const swift = toolchain('swift')
+      return null == swift ? null : run(swift, ['build', '-j', '2'], sdkroot, undefined, 30 * 60 * 1000)
+    }],
+  ] as [string, (sdkroot: string, files: string[]) => ReturnType<typeof run> | null][]) {
+    test(target + ': the SDK builds where a list\'s parameters are a keyword, __proto__ and a quoted name',
+      async (t) => {
+        const sdkroot = Path.join(tmp, target + '-keys-build')
+        const files = await generateTo(target, sdkroot, KEYWORD_LIST)
+        const built = build(sdkroot, Object.keys(files))
+        if (null == built) return t.skip('no ' + target + ' toolchain here')
+        if (built.unlaunchable || built.timedOut) return t.skip(target + ': ' + tail(built.out, 3))
+        ok(built.ok, target + ': the SDK does not build:\n' + tail(built.out))
+      })
+  }
 
 
   // tsc refuses the pair on every OS (TS1149: file names that differ only in
@@ -5601,6 +5650,9 @@ const README_LANES: {
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
   // A runnable block added to the README, whose output is not ASCII.
   example?: string,
+  // The module every example loads, and what the suite reports when it does not parse.
+  entry: RegExp,
+  unloaded: RegExp,
 }[] = [
   {
     target: 'rb',
@@ -5609,6 +5661,8 @@ const README_LANES: {
     ran: /\d+ runs, \d+ assertions, 0 failures, 0 errors, 0 skips/,
     command: () => minitest(['test/readme_examples_test.rb']),
     example: '```ruby\nputs "naïve café — #{client.class}"\n```',
+    entry: /^[^/]+_sdk\.rb$/,
+    unloaded: /SyntaxError/,
   },
   {
     target: 'go',
@@ -5621,6 +5675,8 @@ const README_LANES: {
         ? null
         : { bin: go, args: ['test', './test/', '-run', 'TestReadmeGoSnippets', '-v'] }
     },
+    entry: /^[^/]+(?<!_test)\.go$/,
+    unloaded: /syntax error/,
   },
   {
     target: 'lua',
@@ -5632,6 +5688,8 @@ const README_LANES: {
       if (null == lua || !probeOk(lua, ['-e', 'require "dkjson"'])) return null
       return busted(['test/readme_examples_test.lua'])
     },
+    entry: /^[^/]+_sdk\.lua$/,
+    unloaded: /error loading module/,
   },
   {
     target: 'py',
@@ -5640,6 +5698,8 @@ const README_LANES: {
     ran: /[1-9]\d* passed/,
     command: () => pytest(['test/test_readme_examples.py', '-q']),
     example: '```python\nprint("naïve café — " + client.__class__.__name__)\n```',
+    entry: /^(?!test\/)[^/]+\/__init__\.py$/,
+    unloaded: /SyntaxError/,
   },
 ]
 
@@ -5699,6 +5759,29 @@ describe('the README examples run for a slug carrying the word client', () => {
       async (t) => {
         await readmeLane(t, lane, lane.target + '-keys', KEYWORD_LIST, /__proto__/)
       })
+
+    // `)(` parses in no target.
+    test(lane.target + ': the README examples fail for an SDK that does not load', async (t) => {
+      const sdkroot = Path.join(tmp, lane.target + '-unloadable', lane.target)
+      const files = await generateTo(lane.target, sdkroot, undefined, undefined,
+        { name: README_SLUG, top: true })
+      const entry = Object.keys(files).filter((path: string) => lane.entry.test(path))
+      strictEqual(entry.length, 1, lane.target + ': expected one entry module, got ' + JSON.stringify(entry))
+      Fs.appendFileSync(Path.join(sdkroot, entry[0]), '\n)(\n')
+
+      const cmd = lane.command()
+      if (null == cmd) {
+        return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+      }
+      const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+      }
+      ok(!ran.ok, lane.target + ': the README examples passed for an SDK that does not load:\n' +
+        tail(ran.out))
+      ok(lane.unloaded.test(ran.out), lane.target + ': the README examples failed, but not on the SDK ' +
+        'that does not load:\n' + tail(ran.out, 60))
+    })
   }
 })
 

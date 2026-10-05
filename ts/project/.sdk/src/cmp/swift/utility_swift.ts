@@ -20,7 +20,7 @@ function projectPath(suffix?: string): string {
 
 
 function swiftVarName(name: string): string {
-  const pascal = camelify(name)
+  const pascal = camelify(name.replace(/[^\p{L}\p{N}_]/gu, '_'))
   const lower = pascal.charAt(0).toLowerCase() + pascal.slice(1)
   if (SWIFT_RESERVED.has(lower)) {
     return lower + '_'
