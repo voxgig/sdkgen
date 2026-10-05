@@ -9,6 +9,10 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  # The setup actions below still bundle the deprecated Node 20 runtime.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
 
@@ -32,6 +36,117 @@ jobs:
       uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
       with:
         node-version: ${{ matrix.node-version }}
+
+    # The lanes in test/generatedcompile.test.ts skip a target whose
+    # toolchain is missing, and the runners have none of the seven below
+    # (#256). The pins and setups are voxgig/struct's, whose CI builds the
+    # same languages.
+    - name: Python
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+      with:
+        python-version: '3.13'
+        cache: pip
+        cache-dependency-path: .github/*-requirements.txt
+    - name: pytest
+      run: python -m pip install --disable-pip-version-check -r ../.github/py-requirements.txt
+
+    # ziglang on PyPI, pinned by wheel digest. Its package directory holds
+    # the zig executable itself, which the lanes spawn directly.
+    - name: Zig
+      shell: bash
+      run: |
+        python -m pip install --disable-pip-version-check --require-hashes \
+          -r ../.github/zig-requirements.txt
+        python -c 'import os, ziglang; print(os.path.dirname(ziglang.__file__))' >> "$GITHUB_PATH"
+
+    # gh-actions-lua and luarocks compile with MSVC, which the Windows image
+    # installs without setting its environment. Platform stays out: dotnet
+    # reads it as a build property and the csharp lanes would build for it.
+    - name: MSVC environment (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+        $bat = Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat'
+        $out = Join-Path $env:RUNNER_TEMP 'vcvars.txt'
+        cmd.exe /c "call `"$bat`" >nul && set > `"$out`""
+        $path = $env:Path -split ';'
+        foreach ($line in Get-Content $out) {
+          if ($line -notmatch '^([^=]+)=(.*)$') { continue }
+          $name = $Matches[1]; $value = $Matches[2]
+          if ($name -ieq 'Path') {
+            $value -split ';' | Where-Object { $_ -and ($path -notcontains $_) } | Add-Content $env:GITHUB_PATH
+          } elseif ($name -ine 'Platform' -and [Environment]::GetEnvironmentVariable($name) -ne $value) {
+            Add-Content $env:GITHUB_ENV "$name=$value"
+          }
+        }
+
+    - name: Lua
+      uses: leafo/gh-actions-lua@6919171ccf181b826f44b9bca76307b577217377 # v13
+      with:
+        luaVersion: '5.4'
+    - name: LuaRocks
+      if: runner.os != 'Windows'
+      uses: leafo/gh-actions-luarocks@35d062def313a7699a0d513e996bcf4352f05389 # v6
+    # The lanes run `lua5.4`, the name Debian and Homebrew install.
+    - name: busted, dkjson and lua5.4
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        luarocks install busted
+        luarocks install dkjson
+        ln -sf lua "$(dirname "$(command -v lua)")/lua5.4"
+    # gh-actions-luarocks builds from source with a POSIX configure script,
+    # so Windows takes LuaRocks' own standalone build, pinned by digest.
+    - name: LuaRocks, busted, dkjson and lua5.4 (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $zip = Join-Path $env:RUNNER_TEMP 'luarocks.zip'
+        Invoke-WebRequest -Uri 'https://luarocks.github.io/luarocks/releases/luarocks-3.13.0-windows-64.zip' -OutFile $zip
+        $sum = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+        if ($sum -ne '0897ade5d459d55cd1962a948153745a6749feb345403c68aaa9207388557ab9') { throw "luarocks: unexpected digest $sum" }
+        Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
+        $luarocks = Join-Path $env:RUNNER_TEMP 'luarocks-3.13.0-windows-64\luarocks.exe'
+        $lua = Join-Path $env:GITHUB_WORKSPACE '.lua'
+        $tree = Join-Path $env:GITHUB_WORKSPACE '.luarocks'
+        $flags = @("--lua-dir=$lua", '--lua-version=5.4', "--tree=$tree")
+        foreach ($rock in 'busted', 'dkjson') {
+          & $luarocks @flags install $rock
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+        }
+        Add-Content $env:GITHUB_PATH (Join-Path $tree 'bin')
+        Add-Content $env:GITHUB_ENV "LUA_PATH=$(& $luarocks @flags path --lr-path);;"
+        Add-Content $env:GITHUB_ENV "LUA_CPATH=$(& $luarocks @flags path --lr-cpath);;"
+        Copy-Item (Join-Path $lua 'bin\lua.exe') (Join-Path $lua 'bin\lua5.4.exe')
+
+    # setup-beam has no macOS build.
+    - name: Elixir
+      if: runner.os != 'macOS'
+      uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1
+      with:
+        otp-version: '27'
+        elixir-version: '1.18'
+    - name: Elixir (macOS)
+      if: runner.os == 'macOS'
+      run: brew install elixir
+
+    - name: OCaml
+      uses: ocaml/setup-ocaml@605a7e998e76e035b82c14d618a6e1010732c4ce # v3
+      with:
+        ocaml-compiler: '5'
+    - name: ocamlc on PATH
+      shell: bash
+      run: opam var bin >> "$GITHUB_PATH"
+
+    - name: Scala
+      uses: VirtusLab/scala-cli-setup@c2c917d5764319353961bc4e53885c62d3a95db1 # v1
+
+    - name: Clojure
+      uses: DeLaGuardo/setup-clojure@4c7a6f613e5089821bb3bb2a33a3ee115578580d # 13
+      with:
+        cli: latest
+
     - run: npm ci
     - run: npm run build --if-present
     - run: npm test
