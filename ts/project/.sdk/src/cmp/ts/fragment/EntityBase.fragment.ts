@@ -117,8 +117,11 @@ class ProjectNameEntityBase<D = any> {
     } = utility
 
     callopts = callopts || {}
-    const signal = callopts.signal
     const ctrl: any = { ...(callopts.ctrl || {}), stream: callopts }
+    if (null != callopts.signal) {
+      ctrl.signal = callopts.signal
+    }
+    const signal = ctrl.signal
 
     const ctx: Context = makeContext({
       opname: action,
@@ -169,8 +172,9 @@ class ProjectNameEntityBase<D = any> {
         err = hookerr
       }
 
+      // An abort ends the stream quietly, whenever it lands.
       const e = this._unexpected(ctx, err)
-      if (e) { throw e }
+      if (e && true !== signal?.aborted) { throw e }
     }
   }
 

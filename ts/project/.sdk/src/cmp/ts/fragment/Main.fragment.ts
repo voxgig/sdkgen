@@ -7,6 +7,7 @@ import { config } from './Config'
 import { ProjectNameEntityBase } from './ProjectNameEntityBase'
 import { Utility } from './utility/Utility'
 import { unreadableBody } from './utility/ResultBodyUtility'
+import { abortError } from './utility/MakeRequestUtility'
 import { allowed } from './utility/PrepareMethodUtility'
 
 
@@ -209,13 +210,17 @@ class ProjectNameSDK {
     }, this._rootctx)
 
     try {
+      if (true === fetchdef.signal?.aborted) {
+        throw fetchdef.signal.reason
+      }
+
       const fetched = await fetcher(ctx, fetchdef.url, fetchdef)
 
       if (null == fetched) {
         return { ok: false, err: ctx.error('direct_no_response', 'response: undefined') }
       }
       else if (fetched instanceof Error) {
-        return { ok: false, err: utility.clean(ctx, fetched) }
+        return { ok: false, err: utility.clean(ctx, abortError(ctx, fetched)) }
       }
 
       const status = fetched.status
@@ -264,7 +269,7 @@ class ProjectNameSDK {
       }
     }
     catch (err: any) {
-      return { ok: false, err: utility.clean(ctx, err) }
+      return { ok: false, err: utility.clean(ctx, abortError(ctx, err)) }
     }
   }
 

@@ -294,10 +294,12 @@ class TestFeature extends BaseFeature {
       return max <= min ? min : min + ((max - min) >> 1)
     }
 
-    function sleep(ms: number): Promise<void> {
+    function sleep(ms: number, signal?: any): Promise<void> {
       if (null == ms || 0 >= ms) { return Promise.resolve() }
-      if ('function' === typeof net.sleep) { return Promise.resolve(net.sleep(ms)) }
-      return new Promise((r) => setTimeout(r, ms))
+      if ('function' === typeof net.sleep) { return self._untilAbort(Promise.resolve(net.sleep(ms)), signal) }
+      let timer: any
+      return self._untilAbort(new Promise((r) => { timer = setTimeout(r, ms) }), signal,
+        () => clearTimeout(timer))
     }
 
     return async function netsimFetcher(ctx: any, url: string, fetchdef: any) {
@@ -305,15 +307,15 @@ class TestFeature extends BaseFeature {
       const call = self._netcalls
 
       if (true === net.offline) {
-        await sleep(pickLatency())
+        await sleep(pickLatency(), fetchdef?.signal)
         return ctx.error('netsim_offline', 'Simulated network offline (URL was: "' + url + '")')
       }
       if (call <= (net.errorTimes | 0)) {
-        await sleep(pickLatency())
+        await sleep(pickLatency(), fetchdef?.signal)
         return ctx.error('netsim_conn', 'Simulated connection error (call ' + call + ')')
       }
       if (call <= (net.failTimes | 0)) {
-        await sleep(pickLatency())
+        await sleep(pickLatency(), fetchdef?.signal)
         const status = null == net.failStatus ? 503 : net.failStatus
         return {
           status,
@@ -323,7 +325,7 @@ class TestFeature extends BaseFeature {
           headers: { forEach(_cb: any) { }, get(_k: string) { return undefined } },
         }
       }
-      await sleep(pickLatency())
+      await sleep(pickLatency(), fetchdef?.signal)
       return inner(ctx, url, fetchdef)
     }
   }
