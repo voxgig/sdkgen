@@ -33,6 +33,7 @@ import {
   mediaFailures, mediaPrinted, mediaRecord,
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
+import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
 
 
 function materialise(files: Record<string, string>, root: string) {
@@ -5124,6 +5125,10 @@ const FEATURE_SUITE_LANES: { target: string, runner: string }[] = [
 // or a generation that left one out would pass the lane.
 const FEATURE_SUITE_SUBJECTS = ['audit', 'debug', 'proxy', 'telemetry']
 
+// The abort block drives every transport wrapper that waits, and the lane
+// generates each of them, so none of its tests may skip.
+const FEATURE_SUITE_ABORT_TESTS = 8
+
 // How many tests a TAP subtest block ran without skipping.
 function tapRan(out: string, name: string): number {
   const lines = out.split('\n')
@@ -5161,7 +5166,7 @@ describe('the feature suite runs from a generated SDK', () => {
       const sdkroot = Path.join(tmp, lane.target)
       // netsim too: the audit test, and the failure-path tests, skip without it.
       await generateTo(lane.target, sdkroot, undefined,
-        [...CLEAN_FEATURES, 'netsim', 'proxy', 'retry', 'timeout'])
+        [...CLEAN_FEATURES, 'netsim', 'proxy', 'ratelimit', 'retry', 'timeout'])
       const notready = null == clean.prepare ? null : clean.prepare(sdkroot)
       ok(null == notready, lane.target + ': ' + notready)
 
@@ -5172,6 +5177,8 @@ describe('the feature suite runs from a generated SDK', () => {
         ok(0 < tapRan(ran.out, name), lane.target + ': no ' + name +
           ' test ran in the generated feature suite:\n' + tail(ran.out))
       }
+      strictEqual(tapRan(ran.out, 'abort'), FEATURE_SUITE_ABORT_TESTS,
+        lane.target + ': not every abort test ran in the generated feature suite:\n' + tail(ran.out))
     })
   }
 })
@@ -5772,5 +5779,24 @@ describe('probes driven through a generated SDK', () => {
       deepStrictEqual(allowOutcomes(ran.out), ALLOW_OUTCOMES,
         lane.target + ' probe output:\n' + tail(ran.out))
     })
+
+    // A signal is the TypeScript and JavaScript targets' own seam.
+    if (['ts', 'js'].includes(lane.target)) {
+      test(lane.target + ': a caller\'s AbortSignal cancels a request in flight', async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+
+        const sdkroot = await sdkFor(lane.target)
+        const ran = lane.exec(sdkroot, nestedTestEnv(), writer(sdkroot), { name: 'abort', source: ABORT_PROBES })
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, lane.target + ': the abort probe failed:\n' + tail(ran.out, 60))
+        deepStrictEqual(abortOutcomes(ran.out), ABORT_OUTCOMES,
+          lane.target + ' probe output:\n' + tail(ran.out))
+      })
+    }
   }
 })

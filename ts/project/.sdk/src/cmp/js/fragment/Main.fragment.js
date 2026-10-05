@@ -4,6 +4,7 @@ const { inspect } = require('node:util')
 const { config } = require('./Config')
 const { Utility } = require('./utility/Utility')
 const { unreadableBody } = require('./utility/ResultBodyUtility')
+const { abortError } = require('./utility/MakeRequestUtility')
 const { allowed } = require('./utility/PrepareMethodUtility')
 const { ProjectNameEntityBase } = require('./ProjectNameEntityBase')
 
@@ -206,13 +207,17 @@ class ProjectNameSDK {
     }, this._rootctx)
 
     try {
+      if (true === fetchdef.signal?.aborted) {
+        throw fetchdef.signal.reason
+      }
+
       const fetched = await fetcher(ctx, fetchdef.url, fetchdef)
 
       if (null == fetched) {
         return { ok: false, err: ctx.error('direct_no_response', 'response: undefined') }
       }
       else if (fetched instanceof Error) {
-        return { ok: false, err: utility.clean(ctx, fetched) }
+        return { ok: false, err: utility.clean(ctx, abortError(ctx, fetched)) }
       }
 
       const status = fetched.status
@@ -261,7 +266,7 @@ class ProjectNameSDK {
       }
     }
     catch (err) {
-      return { ok: false, err: utility.clean(ctx, err) }
+      return { ok: false, err: utility.clean(ctx, abortError(ctx, err)) }
     }
   }
 
