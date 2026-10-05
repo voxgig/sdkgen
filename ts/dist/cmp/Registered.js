@@ -1,17 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.registerComponent = registerComponent;
-const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const utility_1 = require("../utility");
 const stdrep_1 = require("../helpers/stdrep");
 function registerComponent(name, options = {}) {
     const member = options.export || name;
     const optional = false !== options.optional;
-    return (0, jostraca_1.cmp)(function Registered(props) {
+    return (0, component_1.cmp)(function Registered(props) {
         const { target, ctx$ } = props;
         const { model, log } = ctx$;
         const stdrep = (0, stdrep_1.ensureStdrep)(ctx$);
-        const mod = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/${name}_${target.name}`, { ignore: optional });
+        const path = `./cmp/${target.name}/${name}_${target.name}`;
+        const mod = optional ? (0, utility_1.loadOptional)(ctx$, path) : (0, utility_1.requirePath)(ctx$, path);
         if (null == mod) {
             log.debug({
                 point: 'generate-registered-absent', component: name, target: target.name,

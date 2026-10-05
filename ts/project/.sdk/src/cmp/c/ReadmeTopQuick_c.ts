@@ -62,10 +62,10 @@ PNError* err = NULL;
     if (opnames.includes('list')) {
       Content(`Entity* ${evar} = ${acc}(client, NULL);
 
-// List all ${eName.toLowerCase()}s (returns a List, sets *err on failure)
-voxgig_value* ${evar}s = ${evar}->vt->list(${evar}, ${cListMatch(exampleEntity)}, NULL, &err);
-for (size_t i = 0; i < (size_t)voxgig_size(${evar}s); i++) {
-    printf("%s\\n", voxgig_to_json(voxgig_getelem(${evar}s, v_int(i), NULL)));
+// List all ${eName.toLowerCase()}s (one entity per record, sets *err on failure)
+Entity** ${evar}s = ${evar}->vt->list(${evar}, ${cListMatch(exampleEntity)}, NULL, &err);
+for (size_t i = 0; ${evar}s && ${evar}s[i]; i++) {
+    printf("%s\\n", voxgig_to_json(${evar}s[i]->vt->data(${evar}s[i], NULL)));
 }
 `)
     }
@@ -85,9 +85,11 @@ for (size_t i = 0; i < (size_t)voxgig_size(${evar}s); i++) {
         ? ''
         : `Entity* ${evar} = ${acc}(client, NULL);\n`
       Content(`
-${acquire}// Load a specific ${eName.toLowerCase()} (returns the record, sets *err on failure)
-voxgig_value* ${evar}_rec = ${evar}->vt->load(${evar}, ${loadArg}, NULL, &err);
-printf("%s\\n", voxgig_to_json(${evar}_rec));
+${acquire}// Load a specific ${eName.toLowerCase()} (returns the entity, sets *err on failure)
+Entity* loaded = ${evar}->vt->load(${evar}, ${loadArg}, NULL, &err);
+if (loaded) {
+    printf("%s\\n", voxgig_to_json(loaded->vt->data(loaded, NULL)));
+}
 `)
     }
   }

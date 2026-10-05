@@ -1,11 +1,13 @@
-import { cmp, Content, File } from 'jostraca'
+import { Content, File } from 'jostraca'
+import { cmp } from '../helpers/component'
 
-import { PUBLISHER, nonAffiliation } from '../helpers/packageMeta'
+import { nonAffiliation, publisherInfo } from '../helpers/packageMeta'
 
 
 // Root MIT LICENSE for the generated SDK repo. The copyright holder is the
-// PUBLISHER (Voxgig): this is an unofficial, generated SDK, so it is NOT
-// attributed to the upstream API owner.
+// publisher (`main.kit.publisher`, Voxgig unless the model names another):
+// this is an unofficial, generated SDK, so it is NOT attributed to the
+// upstream API owner.
 //
 // THE LICENSE FILE IS THE MIT TEXT AND NOTHING ELSE. The non-affiliation note
 // used to be appended after a rule, so that the licence file itself carried
@@ -28,7 +30,7 @@ const License = cmp(function License(props: any) {
   File({ name: 'LICENSE' }, () => {
     Content(`MIT License
 
-Copyright (c) ${year} ${PUBLISHER}
+Copyright (c) ${year} ${publisherInfo(model).name}
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -1,5 +1,5 @@
 
-import { deriveEntityNames, opTypeName } from './opShape'
+import { CANON_OP_ORDER, deriveEntityNames, opTypeName } from './opShape'
 
 
 const JS_RESERVED = new Set<string>([
@@ -320,7 +320,7 @@ function elixirAccessor(ent: any, entityColl: any): string {
 }
 
 
-const TYPE_OPS = ['load', 'list', 'create', 'update', 'remove']
+const TYPE_OPS = CANON_OP_ORDER
 
 const _typeNames = new WeakMap<object, Record<string, Record<string, string>>>()
 

@@ -38,7 +38,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
     const chosen = requiredItems(exampleEntity, 'list')
     testArg = `(vs/jm ${chosen.map((it: any) => `${cljString(it.name)} ${cljLit(it.type)}`).join(' ')})`
-  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
+  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)

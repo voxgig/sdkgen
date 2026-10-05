@@ -34,6 +34,12 @@ function entityModule(name: string): string {
 }
 
 
+// The entity_obj field holding an operation's closure.
+function ocamlOpField(opname: string): string {
+  return 'e_' + opname
+}
+
+
 // The opam / distribution package name, e.g. voxgig-solar-sdk (mirrors the go
 // module naming: org prefix from model.origin).
 function packageName(model: any): string {
@@ -161,6 +167,7 @@ export {
   entityModule,
   formatOcamlValue,
   ocamlListMatch,
+  ocamlOpField,
   ocamlString,
   ocamlVarName,
   packageName,

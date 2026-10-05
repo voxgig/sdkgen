@@ -18,6 +18,7 @@ const OP_DESC: Record<string, { method: string, desc: string }> = {
   list:   { method: 'list(null, null)',    desc: 'List entities, optionally matching the given criteria.' },
   create: { method: 'create(data, null)',  desc: 'Create a new entity with the given data.' },
   update: { method: 'update(data, null)',  desc: 'Update an existing entity.' },
+  patch:  { method: 'patch(data, null)',   desc: 'Change part of an existing entity.' },
   remove: { method: 'remove(match, null)', desc: 'Remove the matching entity.' },
 }
 

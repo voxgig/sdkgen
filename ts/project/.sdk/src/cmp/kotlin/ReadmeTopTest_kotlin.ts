@@ -52,7 +52,7 @@ val client = ${SDK}.testSDK(null, null)
         ? `mutableMapOf<String, Any?>(${items.map((it: any) =>
           `${kotlinString(it.name)} to ${isMatchOp && it.name === idF ? '"test01"' : kotlinLit(it.type)}`).join(', ')})`
         : 'null'
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)

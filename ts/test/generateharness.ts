@@ -5,9 +5,10 @@ import Path from 'node:path'
 import { strictEqual } from 'node:assert'
 
 import { Aontu } from 'aontu'
-import { cmp, each, names, Project, Folder } from 'jostraca'
+import { each, names, Project, Folder } from 'jostraca'
 
 import {
+  cmp,
   Main, Entity, Feature, Readme, Test as TestCmp, AgentGuide,
   ReadmeTop, AgentGuideTop, License, Security, Changelog, Deploy,
   registerComponent,
@@ -29,10 +30,14 @@ const SCAFFOLD = Path.resolve(__dirname, '..', 'project', '.sdk')
 // prettyPino, which hands back `opts.pino` when one is supplied — so a silent
 // stub here replaces the whole log tree (sdkgen's own child and jostraca's).
 const noop = () => { }
-const makeLog = (sink?: any[]): any => {
+const makeLog = (sink?: any[], warnings?: any[]): any => {
   const record = (entry: any) => { if (sink) sink.push(entry) }
+  const warn = (entry: any) => {
+    record(entry)
+    if (warnings) warnings.push(entry)
+  }
   const log: any = {
-    info: record, debug: record, warn: record, error: record,
+    info: record, debug: record, warn, error: record,
     trace: noop, fatal: noop,
   }
   log.child = () => log
@@ -63,6 +68,17 @@ function toolchain(name: string, searchPath = process.env.PATH ?? ''): string | 
   }
 
   return null
+}
+
+
+// The C locale, where Ruby, and Python with UTF-8 mode off, read files as ASCII.
+function rubyEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return { ...env, LANG: 'C', LC_ALL: 'C' }
+}
+
+
+function pythonEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return { ...rubyEnv(env), PYTHONUTF8: '0' }
 }
 
 
@@ -679,15 +695,15 @@ main: kit: flow: BasicSignalFlow: {
 `
 
 
-// The entity test data create-sdkgen writes to .sdk/test/entity/<name>/:
-// existing records with every field and path parameter, and a new one.
+// The entity test data create-sdkgen writes to .sdk/test/entity/<name>/: existing
+// records with every field and path parameter, and a new one; strings are not ASCII.
 function entityTestData(entity: any): any {
   const fields: any[] = Object.values(entity.fields || {})
   const fill = (start: number, rec: any) => {
     let num = start * fields.length * 10
     for (const f of fields) {
       rec[f.n] = f.n.endsWith('_id') ? f.n.slice(0, -3).toUpperCase() + '01' :
-        ['`$NUMBER`', '`$INTEGER`'].includes(f.t) ? num : 's' + num.toString(16)
+        ['`$NUMBER`', '`$INTEGER`'].includes(f.t) ? num : 's' + num.toString(16) + '—'
       num++
     }
     return rec
@@ -718,6 +734,21 @@ function entityTestData(entity: any): any {
     requests: {},
   }
 }
+
+
+const UNGENERATED_OP = `
+main: kit: entity: contacts_field: op: copy: {
+  name: "copy"
+  points: [ {
+    g: { params: [
+      { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "cf01" }
+    ] }
+    m: "POST", o: "/contacts/fields/{id}/copy"
+    s: [{ lit: "contacts" }, { lit: "fields" }, { var: "id" }, { lit: "copy" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  } ]
+}
+`
 
 
 // SMSAPI's pair, whose classes differ only in case, and a PATCH beside a PUT.
@@ -1015,6 +1046,8 @@ export {
   STAGE,
   SCAFFOLD,
   toolchain,
+  rubyEnv,
+  pythonEnv,
   API_MODEL,
   CREATELESS_ENTITY,
   ROUTING_MODEL,
@@ -1026,6 +1059,7 @@ export {
   entityOnly,
   entityTestData,
   FOLD_ENTITY,
+  UNGENERATED_OP,
   BUILTIN_TYPE_ENTITY,
   SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY,

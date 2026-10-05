@@ -1,7 +1,7 @@
 
-import { cmp } from 'jostraca'
+import { cmp } from '../helpers/component'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 
 
 // Per-language Options block lives in
@@ -12,7 +12,7 @@ const ReadmeOptions = cmp(function ReadmeOptions(props: any) {
   const { target, ctx$ } = props
 
   const ReadmeOptions_sdk =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeOptions_${target.name}`, { ignore: true })
+    optionalComponent(ctx$, target, 'ReadmeOptions')
 
   if (ReadmeOptions_sdk) {
     ReadmeOptions_sdk['ReadmeOptions']({ target })

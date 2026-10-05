@@ -188,7 +188,8 @@ catch {
       return it && it.type
     }
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`swift
@@ -204,6 +205,14 @@ let created = try client.${accessor}().create(VMap([${examplePairs('create').joi
           .concat(examplePairs('update'))
         Content(`// Update — supply the id in the match/data
 _ = try client.${accessor}().update(VMap([${updatePairs.join(', ')}]), nil)
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`("${idF}", ${swiftLit(idParamType('patch'), 'example_id')})`] : [])
+          .concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+_ = try client.${accessor}().patch(VMap([${patchPairs.join(', ')}]), nil)
 
 `)
       }

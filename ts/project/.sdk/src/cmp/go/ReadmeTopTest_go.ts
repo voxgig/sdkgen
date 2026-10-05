@@ -49,7 +49,7 @@ client := sdk.Test()
     } else if ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
       const chosen = requiredItems(exampleEntity, 'list')
       arg = `map[string]any{${chosen.map((it: any) => litPair('go', it.name, goLit(it.type))).join(', ')}}`
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)

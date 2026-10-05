@@ -25,9 +25,10 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     list: '| `list` | `(?array $reqmatch = null, $ctrl): array` | List entities matching the criteria (call with no argument to list all). |',
     create: '| `create` | `($reqdata, $ctrl): array` | Create a new entity. |',
     update: '| `update` | `($reqdata, $ctrl): array` | Update an existing entity. |',
+    patch: '| `patch` | `($reqdata, $ctrl): array` | Change part of an existing entity. |',
     remove: '| `remove` | `($reqmatch, $ctrl): array` | Remove an entity. |',
   }
-  const opRows = ['load', 'list', 'create', 'update', 'remove']
+  const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
   const apikeyOptionRow = isAuthActive(model)

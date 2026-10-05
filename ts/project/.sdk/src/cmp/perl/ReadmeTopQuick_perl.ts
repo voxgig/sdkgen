@@ -52,10 +52,10 @@ my $client = ${ctor};
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`# List all ${eName.toLowerCase()}s (returns an arrayref; dies on error)
+      Content(`# List all ${eName.toLowerCase()}s (an arrayref of entities, one per record; dies on error)
 my $${eVar}s = $client->${eName}->list${perlListArgs(exampleEntity)};
 for my $${eVar} (@$${eVar}s) {
-    print "$${eVar}->{id}\\n";
+    print $${eVar}->data_get->{id}, "\\n";
 }
 `)
     }

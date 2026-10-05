@@ -127,7 +127,7 @@ function listMatchArg(lang: LiteralLang, ent: any): string {
 }
 
 
-// An update that only addresses its record, by id and route, also changes a field.
+// An update or patch addressed only by id and route also changes a field.
 function dataArg(lang: LiteralLang, ent: any, op: string, idF: string | null): string {
   const routed = new Set(opParams(ent?.op?.[op]).map((p: any) => p.n))
   const addresses = (it: any) => it.name === idF || it.name === 'id' || routed.has(it.name)
@@ -135,7 +135,7 @@ function dataArg(lang: LiteralLang, ent: any, op: string, idF: string | null): s
     .filter((it: any) =>
       (it.name !== idF && it.name !== 'id') || !it.optional)
   const required = items.filter((it: any) => !it.optional)
-  const changed = 'update' === op && required.every(addresses) ?
+  const changed = ('update' === op || 'patch' === op) && required.every(addresses) ?
     items.filter((it: any) => it.optional && !addresses(it)).slice(0, 1) : []
   const chosen = required.length ? [...required, ...changed] : items.slice(0, 3)
   const pairs = chosen.map((it: any) => litPair(lang, it.name, litFor(lang, it.type)))
@@ -169,7 +169,7 @@ function primaryOpCall(
 ): PrimaryCall {
   const isMatch = 'load' === op || 'remove' === op
   const isList = 'list' === op
-  const isData = 'create' === op || 'update' === op
+  const isData = 'create' === op || 'update' === op || 'patch' === op
   const idLit = idLiteral(ent, op, idF)
 
   const method = 'go' === lang ? cap(op) : op

@@ -8,8 +8,9 @@ const pointPath_1 = require("./pointPath");
 const resolved_1 = require("./resolved");
 const utility_1 = require("../utility");
 // The operations every target generates a method for. The model may hold
-// others, such as a patch beside an update, which no SDK can be called with.
-const GENERATED_OPS = ['load', 'list', 'create', 'update', 'remove'];
+// others, which no SDK can be called with.
+const GENERATED_OPS = opShape_1.CANON_OP_ORDER;
+const BODY_OPS = ['create', 'update', 'patch'];
 const MAX_ITEMS = 3;
 const MAX_DEPTH = 8;
 const MAX_SAMPLE = 32 * 1024;
@@ -98,8 +99,8 @@ function definitionPlan(ctx$) {
                     const def = params.find((p) => 'query' === p?.in && (arg.or || arg.n) === p?.name);
                     selected[arg.n] = shared?.value ?? scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'v1';
                 }
-                // Create and update send their input as the body: only a match has a query.
-                const queryArgs = 'create' === op || 'update' === op ? [] :
+                // A create, update or patch sends its input as the body: only a match has a query.
+                const queryArgs = BODY_OPS.includes(op) ? [] :
                     (point.g?.query || [])
                         .filter((arg) => undefined !== selected[arg.n] &&
                         !args.some((a) => a.name === arg.n))
@@ -108,8 +109,15 @@ function definitionPlan(ctx$) {
                 const success = successResponse(facts.responses);
                 const media = null == success ? undefined : jsonMedia(success.response);
                 const responseMedia = recorded ? successMedia(facts) : [];
-                const rawBody = recorded && ('create' === op || 'update' === op) ?
+                const rawBody = recorded && BODY_OPS.includes(op) ?
                     rawRequestBody(facts) : undefined;
+                // An argument the request body declares too goes out in both, from one value.
+                const declared = ('create' === op || 'update' === op) && null == rawBody ?
+                    bodyProperties(facts) : [];
+                const bodyArgs = [...new Set([...headers, ...cookies].map((a) => a.name)
+                        .concat((point.g?.query || []).map((a) => a.n)
+                        .filter((name) => undefined !== selected[name])))]
+                    .filter((name) => declared.includes(name));
                 plan.push({
                     entity: entity.name,
                     accessor: (0, apidef_1.nom)(entity, 'Name'),
@@ -125,6 +133,7 @@ function definitionPlan(ctx$) {
                     ...(null == rawBody ? {} : { rawBody }),
                     query: params.filter((p) => 'query' === p?.in).map((p) => p.name),
                     queryArgs,
+                    ...(0 === bodyArgs.length ? {} : { bodyArgs }),
                     auth: unchecked ? null : credentialSets(facts, own),
                     status: success?.status ?? 200,
                     sample: null == media ? null : boundedSample(fitting(sampleOf(media), media.schema)),
@@ -211,6 +220,15 @@ function rawRequestBody(facts) {
         media: types,
         text: types.every((t) => /^text\/|^application\/xml|\+xml/i.test(t.split(';')[0].trim())),
     };
+}
+// The top-level properties a JSON request body declares, an allOf's parts included.
+function bodyProperties(facts) {
+    const content = facts.requestBody?.content;
+    const schema = null != content && 'object' === typeof content ?
+        content[Object.keys(content).find((t) => /json/i.test(t)) ?? '']?.schema :
+        (facts.parameters || []).find((p) => 'body' === p?.in)?.schema;
+    return [schema, ...(Array.isArray(schema?.allOf) ? schema.allOf : [])]
+        .flatMap((part) => Object.keys(part?.properties || {}));
 }
 function sampleOf(media) {
     if (undefined !== media.example)

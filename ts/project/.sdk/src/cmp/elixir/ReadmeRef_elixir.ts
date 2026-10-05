@@ -14,23 +14,27 @@ import { elixirLit, elixirListArgs } from './utility_elixir'
 const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
   load: {
     sig: 'load(entity, reqmatch, ctrl \\\\ nil) :: map()',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and raises on error.',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get/1` reads, and raises on error.',
   },
   list: {
     sig: 'list(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: list()',
-    desc: 'List entities matching the given criteria. The match is optional — call `list(entity)` to list all records. Returns a list and raises on error.',
+    desc: 'List entities matching the given criteria. The match is optional — call `list(entity)` to list all records. Returns a list of entities, one per record, and raises on error.',
   },
   create: {
     sig: 'create(entity, reqdata, ctrl \\\\ nil) :: map()',
-    desc: 'Create a new entity with the given data. Returns the created entity data and raises on error.',
+    desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
     sig: 'update(entity, reqdata, ctrl \\\\ nil) :: map()',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and raises on error.',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
+  },
+  patch: {
+    sig: 'patch(entity, reqdata, ctrl \\\\ nil) :: map()',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and raises on error.',
   },
   remove: {
     sig: 'remove(entity, reqmatch, ctrl \\\\ nil) :: map()',
-    desc: 'Remove the entity matching the given criteria. Raises on error.',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },
 }
 
@@ -241,8 +245,8 @@ record = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 
 `)
           }
-          else if ('update' === opname) {
-            const updateItems = opRequestShape(ent, 'update').items
+          else if ('update' === opname || 'patch' === opname) {
+            const updateItems = opRequestShape(ent, opname).items
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -250,15 +254,15 @@ record = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
               `  "${it.name}" => ${elixirLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`elixir
-record = ${Name}.Entity.${EName}.update(${eVar}, ${Name}.Helpers.deep(%{
-${updateLines}  # Fields to update
+record = ${Name}.Entity.${EName}.${opname}(${eVar}, ${Name}.Helpers.deep(%{
+${updateLines}  # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 }))
 \`\`\`
 
 `)
           }
 
-          if ('create' === opname || 'update' === opname) {
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a binary',
             })

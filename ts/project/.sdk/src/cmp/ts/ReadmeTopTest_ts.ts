@@ -79,7 +79,7 @@ const client = ${model.const.Name}SDK.test({
       arg = 0 < items.length
         ? `{ ${items.map((it: any) => `${jsKey(it.name)}: ${lit(it)}`).join(', ')} }`
         : ''
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => !isIdField(it) || !it.optional)
       const required = items.filter((it: any) => !it.optional)

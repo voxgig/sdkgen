@@ -35,13 +35,29 @@ class ProjectNameTransformRequest
         return self::omit($reqdata, ['$action']);
     }
 
-    // A header or query argument travels where PrepareHeaders or PrepareQuery
-    // sends it, so the body is built from the request data without it.
+    // A header, cookie or query argument travels where PrepareHeaders or
+    // PrepareQuery sends it, so the body is built from the request data
+    // without it, unless the entity declares it as a field too.
     private static function routed_arg_names(ProjectNameContext $ctx): array
     {
         $args = array_merge(ProjectNameParam::callArgs($ctx, 'header'),
             ProjectNameParam::callArgs($ctx, 'cookie'), ProjectNameParam::callArgs($ctx, 'query'));
-        return array_map(fn($arg) => $arg[0], $args);
+        return array_values(array_filter(array_map(fn($arg) => $arg[0], $args),
+            fn($name) => !self::field_arg($ctx, $name)));
+    }
+
+    private static function field_arg(ProjectNameContext $ctx, string $name): bool
+    {
+        foreach (['header', 'cookie', 'query'] as $kind) {
+            $defs = $ctx->point ? \Voxgig\Struct\Struct::getpath($ctx->point, 'args.' . $kind) : null;
+            foreach (is_array($defs) ? $defs : [] as $ad) {
+                if ($name === \Voxgig\Struct\Struct::getprop($ad, 'name') &&
+                    true === \Voxgig\Struct\Struct::getprop($ad, 'field')) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static function omit(mixed $reqdata, array $names): mixed

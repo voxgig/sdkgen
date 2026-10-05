@@ -1,10 +1,10 @@
 import Path from 'node:path'
 
 import {
-  cmp,
   File,
   Fragment,
 } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 
 const TEST_CONTROL_FILE = 'sdk-test-control.json'

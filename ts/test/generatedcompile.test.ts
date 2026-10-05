@@ -3,6 +3,7 @@ import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
 import Fs from 'node:fs'
+import Net from 'node:net'
 import Os from 'node:os'
 import Path from 'node:path'
 import { spawn, spawnSync } from 'node:child_process'
@@ -24,15 +25,21 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 
 import {
-  makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData, searchOnly, listOnly,
-  retypedList, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
+  makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
+  searchOnly, listOnly, retypedList, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
+  KEYWORD_ACCESSOR_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
-  MEDIA_CASES, MEDIA_MODEL, MEDIA_PROBES, MEDIA_RAN, MEDIA_SERVER,
-  mediaFailures, mediaPrinted, mediaRecord,
+  MEDIA_CASES, MEDIA_MODEL, MEDIA_PROBES, MEDIA_RAN, MEDIA_SERVER, UNSENT_CASES,
+  mediaFailures, mediaPrinted, mediaRaised, mediaRecord,
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
+import { ITEMS_EXPECT, ITEMS_PROBES, itemsListed } from './itemprobes'
+import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
+import {
+  NONJSON_CASES, NONJSON_PROBES, NONJSON_SERVER, nonjsonFailures, nonjsonTsv,
+} from './nonjsonprobes'
 
 
 // A list requiring a Lua keyword and `__proto__`, which an object literal must compute.
@@ -101,6 +108,28 @@ function exunitCount(out: string): { total: number, failed: number } | null {
   }
 
   return null
+}
+
+
+// Each failed test's report from `dotnet test`: its result line, message and
+// stack. xUnit's own progress lines can land inside one, so they are dropped.
+function dotnetFailures(out: string): string {
+  const blocks: string[][] = []
+  let block: string[] | null = null
+  for (const line of out.split(/\r?\n/)) {
+    if (/^\[xUnit\.net /.test(line)) {
+      continue
+    }
+    const result = /^\s*(Passed|Failed|Skipped) .* \[[^\]]+\]\s*$/.exec(line)
+    if (null != result || /^\s*(Passed|Failed)!\s+-/.test(line) || /^Test Run /.test(line)) {
+      block = 'Failed' === result?.[1] ? [line] : null
+      if (null != block) blocks.push(block)
+    }
+    else if (null != block) {
+      block.push(line)
+    }
+  }
+  return blocks.map((b) => b.join('\n').trimEnd()).join('\n')
 }
 
 
@@ -302,6 +331,41 @@ function pick(
 }
 
 
+describe('dotnet test failure reports', () => {
+
+  test('carry each failed test message and stack, and nothing that passed', () => {
+    const out = [
+      'Test run for /x/DemoSDKTest.dll (.NETCoreApp,Version=v8.0)',
+      '[xUnit.net 00:00:00.48]     Demo.T.Bad [FAIL]',
+      '  Failed Demo.T.Bad [1 ms]',
+      '  Error Message:',
+      '   saw 2 - calls: [a] [b]',
+      'Passed or not, this is message text',
+      '[xUnit.net 00:00:00.50]   Finished:    DemoSDKTest',
+      '  Stack Trace:',
+      '     at Demo.T.Bad() in T.cs:line 9',
+      '  Passed Demo.T.Good [2 ms]',
+      '  Failed Demo.T.Worse(n: 1) [< 1 ms]',
+      '  Error Message:',
+      '   saw 0',
+      'Failed!  - Failed:     2, Passed:    1, Skipped:     0, Total:    3, Duration: 3 ms',
+    ].join('\n')
+
+    strictEqual(dotnetFailures(out), [
+      '  Failed Demo.T.Bad [1 ms]',
+      '  Error Message:',
+      '   saw 2 - calls: [a] [b]',
+      'Passed or not, this is message text',
+      '  Stack Trace:',
+      '     at Demo.T.Bad() in T.cs:line 9',
+      '  Failed Demo.T.Worse(n: 1) [< 1 ms]',
+      '  Error Message:',
+      '   saw 0',
+    ].join('\n'))
+  })
+})
+
+
 describe('generated SDK compiles', () => {
 
   let tmp = ''
@@ -483,9 +547,13 @@ describe('generated SDK compiles', () => {
 
 
   // The README example tests find `tsc` and strip a snippet's types through
-  // the TypeScript installed beside the SDK, which here is sdkgen's own.
+  // the TypeScript installed beside the SDK, which here is sdkgen's own. They
+  // compile the snippets in the OS temp directory: adding or removing a file
+  // there moves the directory's mtime, and the SDK's own folders keep theirs.
+  // FOLD_ENTITY's contacts_field has a PATCH beside its PUT.
   for (const [what, dir, extra] of [
     ['the examples', 'ts-readme', undefined],
+    ['the examples, with a patch', 'ts-readme-patch', FOLD_ENTITY],
     ['a list example with its required parameters', 'ts-readme-search', searchOnly()],
     ['a list example with a nullable and a null-only parameter', 'ts-readme-nullable',
       listOnly('tally', [['n', '["`$ONE`", ["`$INTEGER`", "`$NULL`"]]'], ['z', '"`$NULL`"']])],
@@ -498,17 +566,34 @@ describe('generated SDK compiles', () => {
       const sdkroot = Path.join(tmp, dir, 'ts')
       await generateTo('ts', sdkroot, extra, undefined, { top: true })
       linkDeps(sdkroot)
+      if (FOLD_ENTITY === extra) {
+        ok(Fs.readFileSync(Path.join(sdkroot, 'REFERENCE.md'), 'utf8').includes('.patch({'),
+          'the reference has no patch example')
+      }
 
       const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
       ok(built.ok, 'the generated SDK does not build:\n' + built.out)
 
+      const scratch = Path.join(tmp, dir + '-tmp')
+      Fs.mkdirSync(scratch)
+      const own = [sdkroot, Path.join(sdkroot, 'test')]
+      const mtimes = (dirs: string[]) => dirs.map((d) => Fs.statSync(d).mtimeMs)
+      const before = mtimes([...own, scratch])
+
       const suite = run(process.execPath,
         ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
-        sdkroot, nestedTestEnv())
+        sdkroot, { ...nestedTestEnv(), TMPDIR: scratch, TMP: scratch, TEMP: scratch })
       ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 200))
       ok(/^\s*ok \d+ - .*every example type-checks/m.test(suite.out) &&
         /^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
       'the README example tests did not run both checks:\n' + tail(suite.out, 40))
+
+      const after = mtimes([...own, scratch])
+      deepStrictEqual(after.slice(0, 2), before.slice(0, 2),
+        'the README example tests added or removed a file in the SDK\'s own folders')
+      ok(after[2] !== before[2], 'the README example tests compiled nothing in the temp directory')
+      deepStrictEqual(Fs.readdirSync(scratch), [],
+        'the README example tests left their temp directory behind')
     })
   }
 
@@ -1617,9 +1702,11 @@ func TestTypesProbe(t *testing.T) {
 
     // `dotnet test` builds the library through the project reference, so
     // a broken vendored file fails HERE, naming the file - which is also
-    // why the build is not run separately first.
+    // why the build is not run separately first. `-v quiet` silences the
+    // console logger as well, so the logger asks for failure messages back.
     const probe = run(dotnet,
       ['test', '--nologo', '-v', 'quiet',
+        '--logger', 'console;verbosity=minimal',
         '--filter', 'FullyQualifiedName~SecretsFeatureTest',
         Path.join('test', testproj[0])],
       sdkroot)
@@ -1628,9 +1715,7 @@ func TestTypesProbe(t *testing.T) {
       return t.skip('csharp: ' + probe.out)
     }
 
-    const lines = probe.out.split(/\r?\n/)
-    const failed = lines.filter((l: string) => /^\s*(Failed|\[FAIL\])\s+\S/.test(l))
-    ok(probe.ok, 'csharp secrets suite failed:\n' + failed.join('\n') +
+    ok(probe.ok, 'csharp secrets suite failed:\n' + dotnetFailures(probe.out) +
       '\n' + tail(probe.out))
 
     const summary = /Passed!\s+-\s+Failed:\s+(\d+),\s+Passed:\s+(\d+),\s+Skipped:\s+(\d+),\s+Total:\s+(\d+)/
@@ -2189,7 +2274,8 @@ const CORPUS_LANES: CorpusLane[] = [
       const py = toolchain('python3') || toolchain('python')
       if (null == py) return null
       if (!probeOk(py, ['-m', 'pytest', '--version'])) return null
-      return { bin: py, args: ['-m', 'pytest', 'test/test_feature_corpus.py', '-q', '-s'] }
+      return { bin: py, args: ['-m', 'pytest', 'test/test_feature_corpus.py', '-q', '-s'],
+        env: pythonEnv() }
     },
   },
   {
@@ -2200,7 +2286,7 @@ const CORPUS_LANES: CorpusLane[] = [
       const rb = toolchain('ruby')
       if (null == rb) return null
       if (!probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
-      return { bin: rb, args: ['test/feature_corpus_test.rb'] }
+      return { bin: rb, args: ['test/feature_corpus_test.rb'], env: rubyEnv() }
     },
   },
   {
@@ -3674,12 +3760,13 @@ describe('the feature corpus runs from a generated SDK', () => {
 // the section and fails on the missing ran line.
 const CORPUS_FIXTURE: { feature: Record<string, any> } = {
   feature: {
-    // Not generated by the lane (see CORPUS_INERT): pins the inert line.
+    // Not generated by the lane (see CORPUS_INERT): pins the inert line. Its
+    // name is not ASCII, so every runner must read the corpus as UTF-8.
     audit: {
       basic: {
         set: [
           {
-            name: 'an operation is recorded',
+            name: 'an operation is recorded — every one',
             feature: [{ name: 'audit', active: true }],
             op: [{ op: '#OP1' }],
             out: {},
@@ -3902,7 +3989,8 @@ const AUTH_PROBE_LANES: {
       ready: () => null == toolchain(command) ? 'no ' + command + ' toolchain' : null,
       probe: (sdkroot: string, write: (name: string, source: string) => void) => {
         write(file, AUTH_PROBES[target])
-        return run(toolchain(command)!, [file], sdkroot)
+        return run(toolchain(command)!, [file], sdkroot,
+          'rb' === target ? rubyEnv() : 'py' === target ? pythonEnv() : undefined)
       },
     })),
   {
@@ -4360,7 +4448,7 @@ function pytest(args: string[]) {
   const py = toolchain('python3') || toolchain('python')
   if (null == py) return null
   if (!probeOk(py, ['-m', 'pytest', '--version'])) return null
-  return { bin: py, args: ['-m', 'pytest', ...args] }
+  return { bin: py, args: ['-m', 'pytest', ...args], env: pythonEnv() }
 }
 
 
@@ -4368,7 +4456,7 @@ function minitest(args: string[]) {
   const rb = toolchain('ruby')
   if (null == rb) return null
   if (!probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
-  return { bin: rb, args }
+  return { bin: rb, args, env: rubyEnv() }
 }
 
 
@@ -4638,7 +4726,7 @@ const CLEAN_LANES: CleanLane[] = [
       const rb = toolchain('ruby')
       if (null == rb) return null
       if (!probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
-      return { bin: rb, args: ['test/clean_test.rb'] }
+      return { bin: rb, args: ['test/clean_test.rb'], env: rubyEnv() }
     },
   },
   {
@@ -5122,6 +5210,10 @@ const FEATURE_SUITE_LANES: { target: string, runner: string }[] = [
 // or a generation that left one out would pass the lane.
 const FEATURE_SUITE_SUBJECTS = ['audit', 'debug', 'proxy', 'telemetry']
 
+// The abort block drives every transport wrapper that waits, and the lane
+// generates each of them, so none of its tests may skip.
+const FEATURE_SUITE_ABORT_TESTS = 8
+
 // How many tests a TAP subtest block ran without skipping.
 function tapRan(out: string, name: string): number {
   const lines = out.split('\n')
@@ -5159,7 +5251,7 @@ describe('the feature suite runs from a generated SDK', () => {
       const sdkroot = Path.join(tmp, lane.target)
       // netsim too: the audit test, and the failure-path tests, skip without it.
       await generateTo(lane.target, sdkroot, undefined,
-        [...CLEAN_FEATURES, 'netsim', 'proxy', 'retry', 'timeout'])
+        [...CLEAN_FEATURES, 'netsim', 'proxy', 'ratelimit', 'retry', 'timeout'])
       const notready = null == clean.prepare ? null : clean.prepare(sdkroot)
       ok(null == notready, lane.target + ': ' + notready)
 
@@ -5170,6 +5262,8 @@ describe('the feature suite runs from a generated SDK', () => {
         ok(0 < tapRan(ran.out, name), lane.target + ': no ' + name +
           ' test ran in the generated feature suite:\n' + tail(ran.out))
       }
+      strictEqual(tapRan(ran.out, 'abort'), FEATURE_SUITE_ABORT_TESTS,
+        lane.target + ': not every abort test ran in the generated feature suite:\n' + tail(ran.out))
     })
   }
 })
@@ -5193,6 +5287,7 @@ describe('generated entity tests make only calls the runtime takes', () => {
       Fs.mkdirSync(dir, { recursive: true })
       Fs.writeFileSync(Path.join(dir, Name + 'TestData.json'), JSON.stringify(entityTestData(entity)))
     }
+    Fs.writeFileSync(Path.join(tmp, '.env.local'), '# Not ASCII — read as UTF-8.\n')
   })
 
   after(() => {
@@ -5239,6 +5334,103 @@ describe('generated entity tests make only calls the runtime takes', () => {
   })
 
 
+  // A runner that cannot decode the control file falls back to skipping nothing.
+  const MOON_SKIP = JSON.stringify({
+    version: 1,
+    test: { skip: { unit: { direct: [], entityOp: [
+      { entity: 'moon', op: 'load', reason: 'moon — skipped by the control file' },
+    ] } } },
+  })
+
+
+  // Run from test/, where the runner reads the project's own .env.local.
+  test('py: the moon, signal and planet entity tests pass', async (t) => {
+    const files = ['test_moon_entity.py', 'test_signal_entity.py', 'test_planet_entity.py']
+    const cmd = pytest(files)
+    if (null == cmd) return t.skip('needs python3 with pytest')
+
+    const root = Path.join(tmp, 'py')
+    await generateTo('py', root, ROUTING_MODEL)
+    const testdir = Path.join(root, 'test')
+    const res = run(cmd.bin, cmd.args, testdir, cmd.env)
+    if (res.timedOut) return t.skip('py: ' + res.out)
+    ok(res.ok, 'py: a generated entity test failed:\n' + tail(res.out))
+    ok(/\b10 passed, 3 skipped\b/.test(res.out),
+      'py: expected ten passing and three skipped tests:\n' + tail(res.out))
+
+    Fs.writeFileSync(Path.join(testdir, 'sdk-test-control.json'), MOON_SKIP)
+    const skip = pytest(['-rs', files[0]])!
+    const skipped = run(skip.bin, skip.args, testdir, skip.env)
+    ok(skipped.ok, 'py: the moon entity test failed under a control file:\n' + tail(skipped.out))
+    ok(skipped.out.includes('skipped by the control file'),
+      'py: the control file did not skip the moon flow:\n' + tail(skipped.out))
+  })
+
+
+  test('rb: the entity tests pass, and the control file skips a flow', async (t) => {
+    const load = (names: string) => '%w[' + names +
+      '].each { |n| require File.expand_path("test/" + n + "_entity_test.rb") }'
+    const cmd = minitest(['-e', load('moon signal planet')])
+    if (null == cmd) return t.skip('needs ruby with minitest')
+
+    const root = Path.join(tmp, 'rb')
+    await generateTo('rb', root, ROUTING_MODEL)
+    const res = run(cmd.bin, cmd.args, root, cmd.env)
+    if (res.timedOut) return t.skip('rb: ' + res.out)
+    ok(res.ok, 'rb: a generated entity test failed:\n' + tail(res.out))
+    ok(/\b14 runs, \d+ assertions, 0 failures, 0 errors, 3 skips\b/.test(res.out),
+      'rb: expected fourteen runs and three skips:\n' + tail(res.out))
+
+    Fs.writeFileSync(Path.join(root, 'test', 'sdk-test-control.json'), MOON_SKIP)
+    const skip = minitest(['-e', load('moon'), '--', '-v'])!
+    const skipped = run(skip.bin, skip.args, root, skip.env)
+    ok(skipped.ok, 'rb: the moon entity test failed under a control file:\n' + tail(skipped.out))
+    ok(skipped.out.includes('skipped by the control file'),
+      'rb: the control file did not skip the moon flow:\n' + tail(skipped.out))
+  })
+
+
+  // rb and perl list one entity per record, as every target does; planet's
+  // reachable list runs the check, moon's and signal's do not.
+  test('rb: the moon, signal and planet entity tests pass', async (t) => {
+    const rb = minitest([])
+    if (null == rb) return t.skip('no usable rb toolchain here (ruby with minitest)')
+
+    const root = Path.join(tmp, 'rb')
+    await generateTo('rb', root, ROUTING_MODEL)
+    const ran: Record<string, boolean> = {}
+    for (const name of ['moon', 'signal', 'planet']) {
+      const res = run(rb.bin, ['test/' + name + '_entity_test.rb', '-v'], root)
+      if (res.timedOut) return t.skip('rb: ' + res.out)
+      ok(res.ok, 'rb: the ' + name + ' entity test failed:\n' + tail(res.out))
+      ok(/\d+ runs, \d+ assertions, 0 failures, 0 errors\b/.test(res.out),
+        'rb: the ' + name + ' entity test printed no clean summary:\n' + tail(res.out))
+      ran[name] = /test_list_entities = /.test(res.out)
+    }
+    ok(ran.planet && !ran.moon && !ran.signal,
+      'rb: the list test ran for the wrong entities: ' + JSON.stringify(ran))
+  })
+
+
+  test('perl: the moon, signal and planet entity tests pass', async (t) => {
+    const perl = toolchain('perl')
+    if (null == perl) return t.skip('needs perl')
+    if (!probeOk(perl, ['-MTest::More', '-e', '1'])) return t.skip('perl is here but Test::More is not')
+
+    const root = Path.join(tmp, 'perl')
+    await generateTo('perl', root, ROUTING_MODEL)
+    const ran: Record<string, boolean> = {}
+    for (const name of ['moon', 'signal', 'planet']) {
+      const res = run(perl, ['-Ilib', 't/' + name + '_entity.t'], root)
+      if (res.timedOut) return t.skip('perl: ' + res.out)
+      ok(res.ok && !/^not ok/m.test(res.out), 'perl: the ' + name + ' entity test failed:\n' + tail(res.out))
+      ran[name] = /list answers each seeded record/.test(res.out)
+    }
+    ok(ran.planet && !ran.moon && !ran.signal,
+      'perl: the list test ran for the wrong entities: ' + JSON.stringify(ran))
+  })
+
+
   test('c: the moon, signal and planet entity tests pass', async (t) => {
     const make = toolchain('make')
     const configured = process.env.CC
@@ -5281,7 +5473,9 @@ const README_LANES: {
   runner: string,
   needs: string,
   ran: RegExp,
-  command: () => { bin: string, args: string[] } | null,
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // A runnable block added to the README, whose output is not ASCII.
+  example?: string,
 }[] = [
   {
     target: 'rb',
@@ -5289,6 +5483,7 @@ const README_LANES: {
     needs: 'ruby with minitest',
     ran: /\d+ runs, \d+ assertions, 0 failures, 0 errors, 0 skips/,
     command: () => minitest(['test/readme_examples_test.rb']),
+    example: '```ruby\nputs "naïve café — #{client.class}"\n```',
   },
   {
     target: 'go',
@@ -5319,6 +5514,7 @@ const README_LANES: {
     needs: 'python3 with pytest',
     ran: /[1-9]\d* passed/,
     command: () => pytest(['test/test_readme_examples.py', '-q']),
+    example: '```python\nprint("naïve café — " + client.__class__.__name__)\n```',
   },
 ]
 
@@ -5344,13 +5540,16 @@ describe('the README examples run for a slug carrying the word client', () => {
       lane.target + ': the README does not carry the slug, so it tests nothing')
     ok(null == extra || mark.test(String(files['README.md'])),
       lane.target + ': the README has no list example with its required parameters')
+    if (null != lane.example) {
+      Fs.appendFileSync(Path.join(sdkroot, 'README.md'), '\n' + lane.example + '\n')
+    }
 
     const cmd = lane.command()
     if (null == cmd) {
       return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
     }
 
-    const ran = run(cmd.bin, cmd.args, sdkroot)
+    const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
     if (ran.unlaunchable) {
       return t.skip(lane.target + ': the toolchain could not be started here: ' +
         tail(ran.out, 3))
@@ -5379,11 +5578,414 @@ describe('the README examples run for a slug carrying the word client', () => {
 })
 
 
+// The examples the docs of c, cpp, rust and zig show, compiled against the
+// generated SDK: each block in the target's language in its README, its
+// REFERENCE and the root README. A fragment is compiled inside a function, with
+// the client and the arguments a signature names in scope, and with the first
+// imports its page shows when it has none of its own.
+type DocBlock = { doc: string, line: number, code: string }
+
+const DOC_PAGES = ['../README.md', 'README.md', 'REFERENCE.md']
+
+// The numbered steps of one section build on each other, as a tutorial's do,
+// so they are one program.
+function docBlocks(sdkroot: string, fence: string): DocBlock[] {
+  const blocks: DocBlock[] = []
+  for (const doc of DOC_PAGES) {
+    const path = Path.join(sdkroot, doc)
+    if (!Fs.existsSync(path)) continue
+    const lines = Fs.readFileSync(path, 'utf8').split(/\r?\n/)
+    let open = -1
+    let lang = ''
+    let section = 0
+    let step = false
+    let steps: DocBlock | null = null
+    let stepsIn = -1
+    lines.forEach((line, i) => {
+      const mark = /^\s*```\s*(\S*)\s*$/.exec(line)
+      if (null == mark) {
+        if (open < 0 && /^## /.test(line)) section = i
+        if (open < 0 && /^### /.test(line)) step = /^### \d+\./.test(line)
+        return
+      }
+      if (open < 0) {
+        open = i
+        lang = mark[1]
+        return
+      }
+      if (fence === lang) {
+        const code = lines.slice(open + 1, i).join('\n')
+        if (step && null != steps && section === stepsIn) {
+          steps.code += '\n' + code
+        }
+        else {
+          const block = { doc, line: open + 1, code }
+          blocks.push(block)
+          steps = step ? block : null
+          stepsIn = section
+        }
+      }
+      open = -1
+    })
+  }
+  return blocks
+}
+
+// The import lines of the first block on a page that has any.
+function pageImports(blocks: DocBlock[], doc: string, isImport: RegExp): string[] {
+  const first = blocks.find((b) => b.doc === doc && b.code.split('\n').some((l) => isImport.test(l)))
+  return null == first ? [] : first.code.split('\n').filter((l) => isImport.test(l))
+}
+
+// A C or C++ block's file-scope lines: its includes, and each function it
+// defines, from the signature to the brace closing it in the first column.
+function fileScope(code: string): { top: string[], body: string[] } {
+  const top: string[] = []
+  const body: string[] = []
+  let inFn = false
+  for (const line of code.split('\n')) {
+    if (inFn) {
+      top.push(line)
+      inFn = '}' !== line
+    }
+    else if (/^#include\b/.test(line)) {
+      top.push(line)
+    }
+    else if (/^[A-Za-z_][\w:<>\s*&]*[\s*&]\w+\s*\([^=;]*\)\s*\{\s*$/.test(line)) {
+      top.push(line)
+      inFn = true
+    }
+    else {
+      body.push(line)
+    }
+  }
+  return { top, body }
+}
+
+function cExample(block: DocBlock, imports: string[]): string {
+  const { top, body } = fileScope(block.code)
+  return [
+    '#include <stdio.h>',
+    ...(top.some((l) => l.startsWith('#include')) ? [] : imports),
+    ...top,
+    '',
+    '// ' + block.doc + ':' + block.line,
+    'void readme_example(void) {',
+    '  DemoSDK* client = test_sdk(NULL, NULL);',
+    '  PNError* err = NULL;',
+    '  voxgig_value* options = NULL;',
+    '  voxgig_value* testopts = NULL;',
+    '  voxgig_value* sdkopts = NULL;',
+    '  (void)client; (void)err; (void)options; (void)testopts; (void)sdkopts;',
+    '  {',
+    ...body,
+    '  }',
+    '}',
+    '',
+  ].join('\n')
+}
+
+// A page's includes are shared, and its using-directives come from the first
+// block that has any, as the quick start's do.
+function cppExamples(blocks: DocBlock[], imports: Record<string, string[]>): string {
+  const includes = new Set(['#include <iostream>'])
+  const parts: string[] = []
+  blocks.forEach((block, i) => {
+    const { top, body } = fileScope(block.code)
+    const own = block.code.split('\n').some((l) => /^using namespace\b/.test(l))
+    const using = own ? [] : imports[block.doc].filter((l) => !l.startsWith('#include'))
+    for (const line of [...imports[block.doc], ...top]) {
+      if (line.startsWith('#include')) includes.add(line)
+    }
+    parts.push(
+      '// ' + block.doc + ':' + block.line,
+      'namespace readme_example_' + i + ' {',
+      ...using,
+      ...top.filter((l) => !l.startsWith('#include')),
+      'void run() {',
+      '  auto client = sdk::DemoSDK::testSDK();',
+      '  sdk::Value options = sdk::Value::undef();',
+      '  sdk::Value testopts = sdk::Value::undef();',
+      '  sdk::Value sdkopts = sdk::Value::undef();',
+      '  (void)client; (void)options; (void)testopts; (void)sdkopts;',
+      '  {',
+      ...body,
+      '  }',
+      '}',
+      '}',
+      '')
+  })
+  return [...includes, '', ...parts].join('\n')
+}
+
+function rustExample(block: DocBlock, imports: string[]): string {
+  const own = block.code.split('\n').some((l) => /^use\s/.test(l))
+  return [
+    '#![allow(unused)]',
+    '// ' + block.doc + ':' + block.line,
+    'fn main() {',
+    '    let client = demo_sdk::test_sdk(demo_sdk::Value::Noval, demo_sdk::Value::Noval);',
+    '    let options = demo_sdk::Value::Noval;',
+    '    let testopts = demo_sdk::Value::Noval;',
+    '    let sdkopts = demo_sdk::Value::Noval;',
+    '    {',
+    ...(own ? [] : imports),
+    ...block.code.split('\n'),
+    '    }',
+    '}',
+    '',
+  ].join('\n')
+}
+
+// zig rejects an unused local and a pointless discard, so a block is given
+// only the names it uses, and what it declares at its top level is kept used.
+function zigExamples(blocks: DocBlock[]): string {
+  const parts: string[] = []
+  const calls: string[] = []
+  blocks.forEach((block, i) => {
+    const body = block.code.split('\n').filter((l) => !/^const (std|sdk|h) = /.test(l))
+    const code = body.map((l) => l.replace(/\/\/.*$/, '')).join('\n')
+    const declared = [...code.matchAll(/^(?:const|var) (\w+)\b/gm)].map((m) => m[1])
+    const given = ['client', 'options', 'testopts', 'sdkopts']
+      .filter((n) => !declared.includes(n) && new RegExp('\\b' + n + '\\b').test(code))
+    parts.push(
+      '// ' + block.doc + ':' + block.line,
+      'fn example' + i + '() !void {',
+      ...given.map((n) => '    const ' + n + ' = ' +
+        ('client' === n ? 'sdk.test_sdk(h.vnull(), h.vnull())' : 'h.vnull()') + ';'),
+      ...body,
+      ...declared.map((n) => '    _ = &' + n + ';'),
+      '}',
+      '')
+    calls.push('    try example' + i + '();')
+  })
+  return [
+    'const std = @import("std");',
+    'const sdk = @import("sdk");',
+    'const h = sdk.h;',
+    '',
+    ...parts,
+    'pub fn main() !void {',
+    ...calls,
+    '}',
+    '',
+  ].join('\n')
+}
+
+type DocCompile = { label: string, bin: string, args: string[], env?: NodeJS.ProcessEnv }
+
+// A quick start shows the first active entity, so each model leads with a
+// different one: the fixture's load-only singleton, a list-only entity, an
+// entity with every operation, and that entity with another nested under it.
+const PLANET_FIRST = ['ambient', 'console', 'graph_ql', 'history']
+  .map((name) => 'main: kit: entity: ' + name + ': active: false').join('\n')
+
+const SATELLITE = `
+main: kit: entity: satellite: {
+  alias: field: {}
+  name: "satellite"
+  id: { field: "id", name: "id" }
+  relations: ancestors: [[path($.main.kit.entity.planet)]]
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "planet_id": { h: 'PlanetId', n: "planet_id", r: false, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: { params: [ { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" } ] }
+        m: "GET", o: "/planet/{planet_id}/satellite"
+        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    load: {
+      name: "load"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" }
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
+        ] }
+        m: "GET", o: "/planet/{planet_id}/satellite/{id}"
+        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: flow: BasicSatelliteFlow: {
+  entity: "satellite", kind: "basic", name: "BasicSatelliteFlow"
+  step: [
+    { o: "list", m: { planet_id: "planet01" } }
+    { o: "load", m: { planet_id: "planet01" }, i: { ref: "satellite_ref01", srcdatavar: "satellite_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
+const DOC_MODELS: [string, string | undefined][] = [
+  ['singleton', undefined],
+  ['list', 'main: kit: entity: ambient: active: false'],
+  ['crud', PLANET_FIRST],
+  ['nested', PLANET_FIRST + SATELLITE],
+]
+
+const DOC_LANES: {
+  target: string,
+  fence: string,
+  needs: string,
+  // A build.zig.zon entry is shown in a zig block, and is not zig source.
+  manifest?: (block: DocBlock) => boolean,
+  // Writes the examples into the SDK, and returns how to compile them, or
+  // null when this machine has no toolchain for them.
+  compile: (sdkroot: string, blocks: DocBlock[]) => DocCompile[] | null,
+}[] = [
+  {
+    target: 'c',
+    fence: 'c',
+    needs: 'C compiler',
+    compile: (sdkroot, blocks) => {
+      const cc = cCompiler()
+      if (null == cc) return null
+      const dir = Path.join(sdkroot, '_readme')
+      Fs.mkdirSync(dir, { recursive: true })
+      return blocks.map((block, i) => {
+        const file = Path.join(dir, 'example_' + i + '.c')
+        Fs.writeFileSync(file, cExample(block,
+          pageImports(blocks, block.doc, /^#include\b/)))
+        // Errors by default in newer GCC, so an older compiler agrees. The
+        // root goes on the quote path only: a case-insensitive filesystem
+        // would let its VERSION file stand in for a standard header.
+        return {
+          label: block.doc + ':' + block.line, bin: cc,
+          args: ['-fsyntax-only', '-std=c11', '-D_GNU_SOURCE',
+            '-Werror=incompatible-pointer-types', '-Werror=int-conversion',
+            '-Werror=implicit-function-declaration',
+            '-iquote', '.', '-I', 'core', '-I', 'utility/struct', '-I', 'feature', file],
+        }
+      })
+    },
+  },
+  {
+    target: 'cpp',
+    fence: 'cpp',
+    needs: 'C++ compiler',
+    compile: (sdkroot, blocks) => {
+      const cxx = cleanCxx()
+      if (null == cxx) return null
+      const imports: Record<string, string[]> = {}
+      for (const doc of DOC_PAGES) {
+        imports[doc] = [
+          ...pageImports(blocks, doc, /^#include\b/),
+          ...pageImports(blocks, doc, /^using namespace\b/),
+        ]
+      }
+      const file = Path.join(sdkroot, '_readme', 'examples.cpp')
+      Fs.mkdirSync(Path.dirname(file), { recursive: true })
+      Fs.writeFileSync(file, cppExamples(blocks, imports))
+      // -iquote, as for c: libc++ includes <version>, which on macOS is VERSION.
+      return [{
+        label: 'every cpp example', bin: cxx,
+        args: ['-fsyntax-only', '-std=c++17', '-iquote', '.', file],
+      }]
+    },
+  },
+  {
+    target: 'rust',
+    fence: 'rust',
+    needs: 'cargo',
+    compile: (sdkroot, blocks) => {
+      const cargo = toolchain('cargo')
+      if (null == cargo) return null
+      const dir = Path.join(sdkroot, 'examples')
+      Fs.mkdirSync(dir, { recursive: true })
+      blocks.forEach((block, i) => {
+        Fs.writeFileSync(Path.join(dir, 'readme_' + i + '.rs'), rustExample(block,
+          pageImports(blocks, block.doc, /^use\s/)))
+      })
+      // One target directory for every model, so the dependencies build once.
+      const env = { ...process.env, CARGO_TARGET_DIR: Path.join(sdkroot, '..', '..', 'cargo-target') }
+      return [{
+        label: 'every rust example', bin: cargo, env,
+        args: ['check', '--examples', '--keep-going', '--quiet'],
+      }]
+    },
+  },
+  {
+    target: 'zig',
+    fence: 'zig',
+    needs: 'zig 0.16',
+    manifest: (block) => /^\s*\./.test(block.code.replace(/^\s*\n/, '')),
+    compile: (sdkroot, blocks) => {
+      const zig = toolchain('zig')
+      if (null == zig) return null
+      const version = run(zig, ['version'], sdkroot)
+      if (!version.ok || !/^0\.16\./.test(version.out.trim())) return null
+      const file = Path.join(sdkroot, '_readme', 'examples.zig')
+      Fs.mkdirSync(Path.dirname(file), { recursive: true })
+      Fs.writeFileSync(file, zigExamples(blocks))
+      return [{
+        label: 'every zig example', bin: zig,
+        args: ['build-exe', '-fno-emit-bin',
+          '--dep', 'sdk', '-Mroot=' + file,
+          '--dep', 'voxgig-struct', '-Msdk=root.zig',
+          '-Mvoxgig-struct=utility/voxgigstruct/struct.zig'],
+      }]
+    },
+  },
+]
+
+
+describe('the documented c, cpp, rust and zig examples compile', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-docex-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of DOC_LANES) for (const [shape, extra] of DOC_MODELS) {
+    test(lane.target + ': every documented example compiles, ' + shape + ' first', async (t) => {
+      const sdkroot = Path.join(tmp, lane.target + '-' + shape, lane.target)
+      await generateTo(lane.target, sdkroot, extra, undefined, { top: true })
+
+      const blocks = docBlocks(sdkroot, lane.fence).filter((b) => !lane.manifest?.(b))
+      for (const doc of DOC_PAGES) {
+        ok(blocks.some((b) => b.doc === doc),
+          lane.target + ': ' + doc + ' shows no ' + lane.fence + ' example, so nothing checks it')
+      }
+
+      const compiles = lane.compile(sdkroot, blocks)
+      if (null == compiles) return t.skip('no ' + lane.needs + ' here')
+
+      const failed: string[] = []
+      for (const c of compiles) {
+        const res = run(c.bin, c.args, sdkroot, c.env)
+        if (res.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(res.out, 3))
+        }
+        if (!res.ok) failed.push(c.label + ':\n' + tail(res.out, 40))
+      }
+      ok(0 === failed.length, lane.target + ': ' + failed.length + ' of ' + compiles.length +
+        ' compile(s) of ' + blocks.length + ' documented example(s) failed:\n' + failed.join('\n'))
+    })
+  }
+})
+
+
 // A probe program beside a generated SDK, built and run one way per target. A
 // probe with a live transport sends to a local server, which records what
 // arrives; one without prints what its transport is given.
 type ProbeLane = {
   target: string
+  // The name its tests take, where a target has more than one lane.
+  label?: string
   ready: () => string | null
   // Writes the probe, builds what needs building, and runs the probe.
   exec: (sdkroot: string, env: NodeJS.ProcessEnv,
@@ -5429,7 +6031,7 @@ const PROBE_LANES: ProbeLane[] = [
     seam: () => !probeOk(mediaPython()!, ['-c', 'import requests']),
     exec: (sdkroot, env, write, probe) => {
       write(probe.name + '_probe.py', probe.source.py)
-      return run(mediaPython()!, [probe.name + '_probe.py'], sdkroot, env)
+      return run(mediaPython()!, [probe.name + '_probe.py'], sdkroot, pythonEnv(env))
     },
   },
   {
@@ -5437,7 +6039,7 @@ const PROBE_LANES: ProbeLane[] = [
     ready: () => null == toolchain('ruby') ? 'no ruby toolchain' : null,
     exec: (sdkroot, env, write, probe) => {
       write(probe.name + '_probe.rb', probe.source.rb)
-      return run(toolchain('ruby')!, [probe.name + '_probe.rb'], sdkroot, env)
+      return run(toolchain('ruby')!, [probe.name + '_probe.rb'], sdkroot, rubyEnv(env))
     },
   },
   {
@@ -5446,6 +6048,21 @@ const PROBE_LANES: ProbeLane[] = [
     exec: (sdkroot, env, write, probe) => {
       write(probe.name + '_probe.php', probe.source.php)
       return run(toolchain('php')!, [probe.name + '_probe.php'], sdkroot, env)
+    },
+  },
+  {
+    // php -n reads no php.ini, so curl is not loaded and the stream-wrapper transport runs.
+    target: 'php',
+    label: 'php without curl',
+    ready: () => {
+      const php = toolchain('php')
+      if (null == php) return 'no php toolchain'
+      return probeOk(php, ['-n', '-r', 'exit(function_exists("curl_init") ? 1 : 0);'])
+        ? null : 'php -n still loads curl here'
+    },
+    exec: (sdkroot, env, write, probe) => {
+      write(probe.name + '_probe.php', probe.source.php)
+      return run(toolchain('php')!, ['-n', probe.name + '_probe.php'], sdkroot, env)
     },
   },
   {
@@ -5483,10 +6100,12 @@ const PROBE_LANES: ProbeLane[] = [
     // gradle hangs on windows rather than failing, as the other kotlin lanes note.
     ready: () => 'win32' === process.platform ? 'gradle hangs on windows'
       : null == toolchain('gradle') ? 'no gradle toolchain' : null,
+    // cleanTest: gradle does not count the environment as a test input, so a
+    // probe run again against another base would be skipped as up to date.
     exec: (sdkroot, env, write, probe) => {
       write('test/' + pascal(probe.name) + 'Probe.kt', probe.source.kotlin)
-      return run(toolchain('gradle')!,
-        ['--console=plain', 'test', '--tests', '*' + pascal(probe.name) + 'Probe*'], sdkroot, env)
+      return run(toolchain('gradle')!, ['--console=plain', 'cleanTest', 'test',
+        '--tests', '*' + pascal(probe.name) + 'Probe*'], sdkroot, env)
     },
   },
   {
@@ -5650,6 +6269,36 @@ function mediaServer(dir: string): Promise<{ port: number, log: string, stop: ()
 }
 
 
+// A base URL nothing listens on: a port the system handed out, then closed.
+async function refusedBase(): Promise<string> {
+  const server = Net.createServer()
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()))
+  const port = (server.address() as Net.AddressInfo).port
+  await new Promise<void>((resolve) => server.close(() => resolve()))
+  return 'http://127.0.0.1:' + port
+}
+
+
+function nonjsonServer(dir: string, cases: string): Promise<{ port: number, stop: () => void }> {
+  const file = Path.join(dir, 'nonjson-server.cjs')
+  Fs.writeFileSync(file, NONJSON_SERVER)
+  const proc = spawn(process.execPath, [file, cases], { stdio: ['ignore', 'pipe', 'inherit'] })
+  return new Promise((resolve, reject) => {
+    let seen = ''
+    proc.on('error', reject)
+    proc.on('exit', (code) => reject(new Error('nonjson server exited: ' + code)))
+    proc.stdout!.on('data', (chunk) => {
+      seen += String(chunk)
+      const m = /listening (\d+)/.exec(seen)
+      if (null != m) {
+        proc.removeAllListeners('exit')
+        resolve({ port: Number(m[1]), stop: () => proc.kill('SIGKILL') })
+      }
+    })
+  })
+}
+
+
 // Each target's SDK is generated once, and every probe runs beside it.
 describe('probes driven through a generated SDK', () => {
   let tmp = ''
@@ -5678,7 +6327,9 @@ describe('probes driven through a generated SDK', () => {
   })
 
   for (const lane of PROBE_LANES) {
-    test(lane.target + ': the media types a point declares reach the wire', async (t) => {
+    const name = lane.label ?? lane.target
+
+    test(name + ': the media types a point declares reach the wire', async (t) => {
       const missing = lane.ready()
       if (null != missing) return t.skip(missing)
 
@@ -5700,13 +6351,13 @@ describe('probes driven through a generated SDK', () => {
       }
 
       if (ran.unlaunchable) {
-        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        return t.skip(name + ': the toolchain could not be started here: ' + tail(ran.out, 3))
       }
 
-      ok(ran.ok, lane.target + ': the media probe failed:\n' + tail(ran.out, 60))
+      ok(ran.ok, name + ': the media probe failed:\n' + tail(ran.out, 60))
       const count = MEDIA_RAN.exec(ran.out)
       strictEqual(Number(count?.[1]), MEDIA_CASES.length,
-        lane.target + ': the probe did not run every case:\n' + tail(ran.out))
+        name + ': the probe did not run every case:\n' + tail(ran.out))
 
       const records = null == server ? mediaPrinted(ran.out) :
         Fs.readFileSync(server.log, 'utf8').split('\n').filter((line) => '' !== line)
@@ -5714,10 +6365,56 @@ describe('probes driven through a generated SDK', () => {
           .map((r) => mediaRecord(r.method, r.url, r.headers, r.bodyHex))
 
       deepStrictEqual(mediaFailures(MEDIA_CASES, records), [],
-        lane.target + ' probe output:\n' + tail(ran.out))
+        name + ' probe output:\n' + tail(ran.out))
     })
 
-    test(lane.target + ': an allow list names whole methods and operations, in any case', async (t) => {
+    test(name + ': an operation whose request cannot be sent raises', async (t) => {
+      const missing = lane.ready()
+      if (null != missing) return t.skip(missing)
+      if (null != lane.seam && lane.seam()) {
+        return t.skip(name + ': the probe has no live transport here')
+      }
+
+      const sdkroot = await sdkFor(lane.target)
+      Fs.writeFileSync(Path.join(sdkroot, 'media-cases.json'), JSON.stringify(UNSENT_CASES))
+      const probe = (base: string) => lane.exec(sdkroot, { ...nestedTestEnv(), MEDIA_BASE: base },
+        writer(sdkroot), { name: 'media', source: MEDIA_PROBES })
+      const ran = (out: string) => Number(MEDIA_RAN.exec(out)?.[1])
+
+      const server = await mediaServer(sdkroot)
+      let sent: ReturnType<typeof run>
+      try {
+        sent = probe('http://127.0.0.1:' + server.port)
+      }
+      finally {
+        server.stop()
+      }
+
+      if (sent.unlaunchable) {
+        return t.skip(name + ': the toolchain could not be started here: ' + tail(sent.out, 3))
+      }
+
+      ok(sent.ok, name + ': the probe failed:\n' + tail(sent.out, 60))
+      strictEqual(ran(sent.out), UNSENT_CASES.length,
+        name + ': the probe did not run every case:\n' + tail(sent.out))
+      const records = Fs.readFileSync(server.log, 'utf8').split('\n').filter((line) => '' !== line)
+        .map((line) => JSON.parse(line))
+        .map((r) => mediaRecord(r.method, r.url, r.headers, r.bodyHex))
+      deepStrictEqual(mediaFailures(UNSENT_CASES, records), [],
+        name + ' probe output:\n' + tail(sent.out))
+      deepStrictEqual(mediaRaised(UNSENT_CASES, sent.out).filter((line) => null != line), [],
+        name + ': an operation raised although the server answered')
+
+      const unsent = probe(await refusedBase())
+      ok(unsent.ok, name + ': the probe failed:\n' + tail(unsent.out, 60))
+      strictEqual(ran(unsent.out), UNSENT_CASES.length,
+        name + ': the probe did not run every case:\n' + tail(unsent.out))
+      const raised = mediaRaised(UNSENT_CASES, unsent.out)
+      deepStrictEqual(UNSENT_CASES.filter((_c, i) => null == raised[i]).map((c) => c.op), [],
+        name + ': these operations returned although nothing answered:\n' + tail(unsent.out))
+    })
+
+    test(name + ': an allow list names whole methods and operations, in any case', async (t) => {
       const missing = lane.ready()
       if (null != missing) return t.skip(missing)
 
@@ -5737,12 +6434,85 @@ describe('probes driven through a generated SDK', () => {
       }
 
       if (ran.unlaunchable) {
+        return t.skip(name + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+      }
+
+      ok(ran.ok, name + ': the allow probe failed:\n' + tail(ran.out, 60))
+      deepStrictEqual(allowOutcomes(ran.out), ALLOW_OUTCOMES,
+        name + ' probe output:\n' + tail(ran.out))
+    })
+
+    test(lane.target + ': a list reads the record each of its items wraps', async (t) => {
+      const missing = lane.ready()
+      if (null != missing) return t.skip(missing)
+
+      const sdkroot = await sdkFor(lane.target)
+      const ran = lane.exec(sdkroot, nestedTestEnv(), writer(sdkroot),
+        { name: 'items', source: ITEMS_PROBES })
+
+      if (ran.unlaunchable) {
         return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
       }
 
-      ok(ran.ok, lane.target + ': the allow probe failed:\n' + tail(ran.out, 60))
-      deepStrictEqual(allowOutcomes(ran.out), ALLOW_OUTCOMES,
+      ok(ran.ok, lane.target + ': the items probe failed:\n' + tail(ran.out, 60))
+      strictEqual(itemsListed(ran.out), ITEMS_EXPECT,
         lane.target + ' probe output:\n' + tail(ran.out))
     })
+
+    test(lane.target + ': a body that is not JSON names its status, type, agent and preview',
+      async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+        const key = 'ts' === lane.target || 'js' === lane.target ? 'node' : lane.target
+        ok(null != NONJSON_PROBES[key], lane.target + ': no non-JSON probe')
+
+        const sdkroot = await sdkFor(lane.target)
+        const cases = Path.join(sdkroot, 'nonjson-cases.json')
+        Fs.writeFileSync(cases, JSON.stringify(NONJSON_CASES))
+        const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
+        Fs.writeFileSync(tsv, nonjsonTsv())
+        const seam = null != lane.seam && lane.seam()
+        const server = seam ? null : await nonjsonServer(sdkroot, cases)
+        let ran: ReturnType<typeof run>
+        try {
+          ran = lane.exec(sdkroot, {
+            ...nestedTestEnv(),
+            NONJSON_BASE: null == server ? 'http://nonjson.test' : 'http://127.0.0.1:' + server.port,
+            NONJSON_CASES: cases,
+            NONJSON_TSV: tsv,
+            ...(seam ? { NONJSON_SEAM: '1' } : {}),
+          }, writer(sdkroot), { name: 'nonjson', source: NONJSON_PROBES })
+        }
+        finally {
+          server?.stop()
+        }
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, lane.target + ': the non-JSON probe failed:\n' + tail(ran.out, 60))
+        deepStrictEqual(nonjsonFailures(ran.out, lane.target, seam), [],
+          lane.target + ' probe output:\n' + tail(ran.out))
+      })
+
+    // A signal is the TypeScript and JavaScript targets' own seam.
+    if (['ts', 'js'].includes(lane.target)) {
+      test(lane.target + ': a caller\'s AbortSignal cancels a request in flight', async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+
+        const sdkroot = await sdkFor(lane.target)
+        const ran = lane.exec(sdkroot, nestedTestEnv(), writer(sdkroot), { name: 'abort', source: ABORT_PROBES })
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, lane.target + ': the abort probe failed:\n' + tail(ran.out, 60))
+        deepStrictEqual(abortOutcomes(ran.out), ABORT_OUTCOMES,
+          lane.target + ' probe output:\n' + tail(ran.out))
+      })
+    }
   }
 })

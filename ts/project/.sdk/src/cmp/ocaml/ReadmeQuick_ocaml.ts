@@ -162,7 +162,8 @@ record.
       ? `(getp created "${dataIdF}")`
       : ocamlLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`ocaml
@@ -178,6 +179,13 @@ print_endline (stringify (created.e_data_get ()));
         const updatePairs = (idF ? [`("${idF}", ${idValueFor('update')})`] : []).concat(examplePairs('update'))
         Content(`(* Update *)
 ignore ((Sdk_client.${fn} client Noval).e_update (jo [${updatePairs.join('; ')}]) Noval);
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`("${idF}", ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
+        Content(`(* Patch — sends only the fields given *)
+ignore ((Sdk_client.${fn} client Noval).e_patch (jo [${patchPairs.join('; ')}]) Noval);
 
 `)
       }

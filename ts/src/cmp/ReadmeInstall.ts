@@ -1,8 +1,9 @@
 
 
-import { cmp, Content } from 'jostraca'
+import { Content } from 'jostraca'
+import { cmp } from '../helpers/component'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
@@ -14,7 +15,7 @@ const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
 
   // Optional
   const ReadmeInstall_sdk =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeInstall_${target.name}`, { ignore: true })
+    optionalComponent(ctx$, target, 'ReadmeInstall')
 
   if (ReadmeInstall_sdk) {
     ReadmeInstall_sdk['ReadmeInstall']({ target })

@@ -2,14 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentGuide = void 0;
 const jostraca_1 = require("jostraca");
-const utility_1 = require("../utility");
+const component_1 = require("../helpers/component");
+const optional_1 = require("../helpers/optional");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 const AgentGuideFeature_1 = require("./AgentGuideFeature");
 // Per-language agent guide. Emitted inside the ambient target folder (the Root
 // enters `Folder({ name: target.name })` before calling this, exactly as for
 // Readme), so it lands at `<lang>/AGENTS.md`. Then it drives the co-located
 // per-feature guides for this target.
-const AgentGuide = (0, jostraca_1.cmp)(function AgentGuide(props) {
+const AgentGuide = (0, component_1.cmp)(function AgentGuide(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
     const Name = (0, AgentGuideContent_1.projectName)(model);
@@ -89,7 +90,7 @@ the runtime under \`.sdk/tm/${lang}/feature/\` and regenerate.
 `);
             }
         }
-        const AgentGuide_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${lang}/AgentGuide_${lang}`, { ignore: true });
+        const AgentGuide_sdk = (0, optional_1.optionalComponent)(ctx$, target, 'AgentGuide');
         if (AgentGuide_sdk) {
             AgentGuide_sdk['AgentGuide']({ target });
         }

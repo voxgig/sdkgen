@@ -137,7 +137,7 @@ public final class Context {
     let store: Value = config == nil ? .noval : .map(config!)
     let opcfg = getpath(store, jtp("entity", entname, "op", opname))
 
-    let input = (opname == "update" || opname == "create") ? "data" : "match"
+    let input = (opname == "update" || opname == "create" || opname == "patch") ? "data" : "match"
 
     var points: VList = VList()
     if let ocm = opcfg.asMap, let tl = ocm.entries["points"]?.asList {

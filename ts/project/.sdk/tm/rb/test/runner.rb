@@ -9,7 +9,7 @@ module ProjectNameTestRunner
     env_file = File.join(File.dirname(__FILE__), '..', '..', '.env.local')
     return unless File.exist?(env_file)
 
-    File.readlines(env_file).each do |line|
+    File.readlines(env_file, encoding: 'UTF-8').each do |line|
       line = line.strip
       next if line.empty? || line.start_with?('#')
       key, val = line.split('=', 2)
@@ -71,7 +71,7 @@ module ProjectNameTestRunner
     return @test_control unless @test_control.nil?
     ctrl_path = File.join(File.dirname(__FILE__), 'sdk-test-control.json')
     @test_control = begin
-      JSON.parse(File.read(ctrl_path))
+      JSON.parse(File.read(ctrl_path, encoding: 'UTF-8'))
     rescue StandardError
       {
         'version' => 1,

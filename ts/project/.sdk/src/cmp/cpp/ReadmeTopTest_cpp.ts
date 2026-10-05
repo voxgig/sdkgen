@@ -47,17 +47,24 @@ auto client = ${model.const.Name}SDK::testSDK();
         ? `vmap({${items.map((it: any) =>
           `{"${cppEscape(it.name)}", ${isMatchOp && it.name === idF ? 'Value("test01")' : cppLit(it.type)}}`).join(', ')}})`
         : 'Value::undef()'
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
       arg = `vmap({${chosen.map((it: any) => `{"${cppEscape(it.name)}", ${cppLit(it.type)}}`).join(', ')}})`
     }
-    const eVar = acc + ('list' === primaryOp ? 's' : '')
-    Content(`Value ${eVar} = client->${acc}()->${primaryOp}(${arg}, Value::undef());
-std::cout << Struct::jsonify(${eVar}) << std::endl;
+    if ('list' === primaryOp) {
+      Content(`for (const auto& ${acc} : client->${acc}()->list(${arg}, Value::undef())) {
+  std::cout << Struct::jsonify(${acc}->data()) << std::endl;
+}
 `)
+    }
+    else {
+      Content(`SdkEntityPtr ${acc} = client->${acc}()->${primaryOp}(${arg}, Value::undef());
+std::cout << Struct::jsonify(${acc}->data()) << std::endl;
+`)
+    }
   }
 
   Content(`\`\`\`

@@ -9,6 +9,18 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
   # ops unwrap body.data.<field>, not just one level.
   ENVELOPE_RES_RE = /\A`body\.(.+)`\z/
 
+  # The key a list's response transform
+  # ["`$EACH`", "body", { "`$MERGE`" => "`.<key>`" }] reads each item's record under.
+  ITEM_ENVELOPE_RE = /\A`\.([^.`$]+)`\z/
+
+  def self.item_envelope_key(restf)
+    return nil unless restf.is_a?(Array) && 3 == restf.length &&
+      '`$EACH`' == restf[0] && 'body' == restf[1] && restf[2].is_a?(Hash)
+    merge = restf[2]['`$MERGE`']
+    m = merge.is_a?(String) ? ITEM_ENVELOPE_RE.match(merge) : nil
+    m.nil? ? nil : m[1]
+  end
+
   # The record the mock keeps: the request data without `$body`, which only the
   # wire carries.
   def self.record(reqdata)
@@ -35,12 +47,10 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
     @client.mode = "test"
 
     # Ensure entity ids are correct.
-    VoxgigStruct.walk(entity) do |key, val, parent, path|
-      if path.length == 2 && val.is_a?(Hash) && key
-        val["id"] = key
-      end
+    VoxgigStruct.walk(entity, ->(key, val, _parent, path) {
+      val["id"] = key if path.length == 2 && val.is_a?(Hash) && key
       val
-    end
+    })
 
     test_self = self
 
@@ -58,6 +68,8 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
         transform = point["transform"]
         next data unless transform.is_a?(Hash)
         restf = transform["res"]
+        key = ProjectNameTestFeature.item_envelope_key(restf)
+        next data.map { |item| { key => item } } if !key.nil? && data.is_a?(Array)
         next data unless restf.is_a?(String)
         m = ENVELOPE_RES_RE.match(restf)
         next data if m.nil?
@@ -113,7 +125,7 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
         out = VoxgigStruct.clone(found)
         respond.call(200, out, nil)
 
-      elsif op.name == "update"
+      elsif op.name == "update" || op.name == "patch"
         # Match the existing entity by id only (or its alias). reqdata also
         # contains the new field values, which would otherwise cause select
         # to filter out the entity we want to update. When reqdata has no id,

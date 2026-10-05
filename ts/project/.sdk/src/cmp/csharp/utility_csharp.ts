@@ -100,6 +100,11 @@ function formatCsString(val: string): string {
 }
 
 
+function xmlText(s: string): string {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+
 // The whole config JSON as a C# string literal.
 //
 // JSON.stringify output is otherwise a valid C# literal - every escape it
@@ -220,4 +225,5 @@ export {
   formatCsValue,
   formatCsString,
   projectPath,
+  xmlText,
 }

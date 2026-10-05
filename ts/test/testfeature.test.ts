@@ -21,6 +21,7 @@ const CONFIG = {
       op: {
         load: { points: [point()] },
         update: { points: [point()] },
+        patch: { points: [point()] },
         remove: { points: [point()] },
         list: { points: [{ parts: ['widget'], args: { params: [], query: [] } }] },
       },
@@ -33,7 +34,7 @@ function point() {
 }
 
 
-function makeMock(entity: any) {
+function makeMock(entity: any, restf?: any) {
   const client: any = { _mode: 'live' }
   const utility: any = {
     struct,
@@ -56,7 +57,7 @@ function makeMock(entity: any) {
       reqmatch: args.reqmatch || {},
       match: {},
       data: {},
-      point: { transform: {} },
+      point: { transform: null == restf ? {} : { res: restf } },
     }
     const res = await utility.fetcher(ctx, 'http://api.test/widget', {})
     return { status: res.status, statusText: res.statusText, data: await res.json() }
@@ -110,6 +111,25 @@ describe('feature:test mock semantics', () => {
   })
 
 
+  // A patch changes the fields it sends and keeps the rest; one that matches
+  // nothing is a 404, as an update is.
+  test('a patch merges the fields it sends, and a miss is a 404', async () => {
+    const call = makeMock({ widget: { w1: { name: 'one', size: 2, nested: { x: 1, y: 2 } } } })
+
+    const hit = await call('patch', { reqdata: { id: 'w1', size: 3, nested: { y: 4 } } })
+    strictEqual(hit.status, 200)
+    strictEqual(hit.data.name, 'one')
+    strictEqual(hit.data.size, 3)
+    deepStrictEqual(hit.data.nested, { x: 1, y: 4 })
+
+    const loaded = await call('load', { reqmatch: { id: 'w1' } })
+    strictEqual(loaded.data.size, 3, 'the patch was not stored')
+
+    const miss = await call('patch', { reqdata: { id: 'nope', size: 9 } })
+    strictEqual(miss.status, 404)
+  })
+
+
   test('a remove that matches nothing is a 200 no-op', async () => {
     const call = makeMock({ widget: { w1: { name: 'one' } } })
 
@@ -127,6 +147,17 @@ describe('feature:test mock semantics', () => {
     const res = await call('archive', { reqmatch: { id: 'w1' } })
     strictEqual(res.status, 404)
     strictEqual(res.statusText, 'Unknown operation')
+  })
+
+
+  test('a list whose items each wrap the record answers the wrappers', async () => {
+    const res = ['`$EACH`', 'body', { '`$MERGE`': '`.widget`' }]
+    const call = makeMock({ widget: { w1: { name: 'one' } } }, res)
+
+    const list = await call('list')
+    strictEqual(list.status, 200)
+    deepStrictEqual(list.data, [{ widget: { id: 'w1', name: 'one' } }])
+    deepStrictEqual(struct.transform({ body: list.data }, res), [{ id: 'w1', name: 'one' }])
   })
 
 

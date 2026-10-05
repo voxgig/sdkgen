@@ -26,11 +26,12 @@ function cppLit(type: any, placeholder: string = 'example'): string {
 // Operation method spellings for the C++ target: lowercase methods that take a
 // request Value plus the ctrl Value, returning sdk::Value.
 const OP_DESC: Record<string, { method: string, desc: string }> = {
-  load:   { method: 'load(match, ctrl)',   desc: 'Load a single entity by match criteria.' },
-  list:   { method: 'list(match, ctrl)',   desc: 'List entities, optionally matching the given criteria.' },
-  create: { method: 'create(data, ctrl)',  desc: 'Create a new entity with the given data.' },
-  update: { method: 'update(data, ctrl)',  desc: 'Update an existing entity.' },
-  remove: { method: 'remove(match, ctrl)', desc: 'Remove the matching entity.' },
+  load:   { method: 'load(match, ctrl) -> SdkEntityPtr',   desc: 'Load a single entity by match criteria.' },
+  list:   { method: 'list(match, ctrl) -> std::vector<SdkEntityPtr>', desc: 'List entities, optionally matching the given criteria: one entity per record.' },
+  create: { method: 'create(data, ctrl) -> SdkEntityPtr',  desc: 'Create a new entity with the given data.' },
+  update: { method: 'update(data, ctrl) -> SdkEntityPtr',  desc: 'Update an existing entity.' },
+  patch:  { method: 'patch(data, ctrl) -> SdkEntityPtr',  desc: 'Change part of an existing entity.' },
+  remove: { method: 'remove(match, ctrl) -> SdkEntityPtr', desc: 'Remove the matching entity, which is returned marked as deleted.' },
 }
 
 
@@ -129,7 +130,8 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       Content(`#### Example: Load
 
 \`\`\`cpp
-Value ${eVar} = client->${acc}()->load(${loadArg}, Value::undef());
+SdkEntityPtr ${eVar} = client->${acc}()->load(${loadArg}, Value::undef());
+std::cout << Struct::jsonify(${eVar}->data()) << std::endl;
 \`\`\`
 
 `)
@@ -139,7 +141,10 @@ Value ${eVar} = client->${acc}()->load(${loadArg}, Value::undef());
       Content(`#### Example: List
 
 \`\`\`cpp
-Value ${eVar}s = client->${acc}()->list(${cppListMatch(entity)}, Value::undef());
+std::vector<SdkEntityPtr> ${eVar}s = client->${acc}()->list(${cppListMatch(entity)}, Value::undef());
+for (const auto& ${eVar} : ${eVar}s) {
+  std::cout << Struct::jsonify(${eVar}->data()) << std::endl;
+}
 \`\`\`
 
 `)
@@ -153,7 +158,7 @@ Value ${eVar}s = client->${acc}()->list(${cppListMatch(entity)}, Value::undef())
       Content(`#### Example: Create
 
 \`\`\`cpp
-Value ${eVar} = client->${acc}()->create(vmap({
+SdkEntityPtr ${eVar} = client->${acc}()->create(vmap({
 `)
       createItems.map((it: any) => {
         Content(`    {"${it.name}", ${cppLit(it.type, 'example_' + it.name)}},  // ${canonToType(it.type, target.name)}

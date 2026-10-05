@@ -54,9 +54,9 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`;; List all ${eLow}s (returns a vector, raises on error)
+      Content(`;; List all ${eLow}s (a vector of entities, one per record; raises on error)
 (doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) ${cljListMatch(exampleEntity)} nil)]
-  (println ${eLow}))
+  (println ((:data-get ${eLow}))))
 `)
     }
 

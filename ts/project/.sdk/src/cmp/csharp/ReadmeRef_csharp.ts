@@ -28,28 +28,33 @@ function csLit(type: any, placeholder: string = 'example'): string {
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'Load(reqmatch, ctrl = null) -> object?',
-    returns: 'the entity data',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and raises on error.',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `Data()` reads, and raises on error.',
   },
   list: {
     sig: 'List(reqmatch, ctrl = null) -> object?',
-    returns: 'an aggregate list of entities',
-    desc: 'List entities matching the given criteria. The match is optional — call `List(null)` to list all records. Returns an aggregate list and raises on error.',
+    returns: 'a list of entities, one per record',
+    desc: 'List entities matching the given criteria. The match is optional — call `List(null)` to list all records. Returns a list of entities, one per record, and raises on error.',
   },
   create: {
     sig: 'Create(reqdata, ctrl = null) -> object?',
-    returns: 'the created entity data',
-    desc: 'Create a new entity with the given data. Returns the created entity data and raises on error.',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
     sig: 'Update(reqdata, ctrl = null) -> object?',
-    returns: 'the updated entity data',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and raises on error.',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
+  },
+  patch: {
+    sig: 'Patch(reqdata, ctrl = null) -> object?',
+    returns: 'the patched entity data',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and raises on error.',
   },
   remove: {
     sig: 'Remove(reqmatch, ctrl = null) -> object?',
-    returns: 'the removed entity data',
-    desc: 'Remove the entity matching the given criteria. Raises on error.',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },
 }
 
@@ -218,7 +223,7 @@ var ${eVar} = client.${ent.Name}();
         // Field operations breakdown
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
@@ -303,8 +308,8 @@ var result = client.${ent.Name}().Create(new Dictionary<string, object?>
 
 `)
           }
-          else if ('update' === opname) {
-            const updateItems = opRequestShape(ent, 'update').items
+          else if ('update' === opname || 'patch' === opname) {
+            const updateItems = opRequestShape(ent, opname).items
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -312,16 +317,16 @@ var result = client.${ent.Name}().Create(new Dictionary<string, object?>
               `    ["${it.name}"] = ${csLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`csharp
-var result = client.${ent.Name}().Update(new Dictionary<string, object?>
+var result = client.${ent.Name}().${'patch' === opname ? 'Patch' : 'Update'}(new Dictionary<string, object?>
 {
-${updateLines}    // Fields to update
+${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 });
 \`\`\`
 
 `)
           }
 
-          if ('create' === opname || 'update' === opname) {
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a `byte[]`, a `string` or a `Stream`',
               once: 'a `Stream`',

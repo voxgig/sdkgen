@@ -42,7 +42,7 @@ const TestClean = cmp(function TestClean(props: any) {
     .filter((e: any) => false !== e.active)
     .forEach((entity: any) => {
       const ops = Object.keys(entity.op || {})
-        .filter((op) => ['list', 'load', 'create', 'update', 'remove'].includes(op))
+        .filter((op) => ['list', 'load', 'create', 'update', 'patch', 'remove'].includes(op))
         .sort((a, b) => (rank[a] ?? 2) - (rank[b] ?? 2))
       for (const op of ops) {
         candidates.push({

@@ -42,7 +42,7 @@ sdk = ${Name}.test()
         ? `H.deep(%{${items.map((it: any) =>
           `${elixirString(it.name)} => ${isMatchOp && it.name === idF ? '"test01"' : elixirLit(it.type)}`).join(', ')}})`
         : 'H.deep(%{})'
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)

@@ -1,6 +1,7 @@
-import { cmp, Content } from 'jostraca'
+import { Content } from 'jostraca'
+import { cmp } from '../helpers/component'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 import { featureDocs, honoursActivationOrder } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
@@ -10,7 +11,7 @@ const ReadmeFeatures = cmp(function ReadmeFeatures(props: any) {
   const { model } = ctx$
 
   const override =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeFeatures_${target.name}`, { ignore: true })
+    optionalComponent(ctx$, target, 'ReadmeFeatures')
 
   if (override) {
     override['ReadmeFeatures']({ target })

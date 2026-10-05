@@ -37,7 +37,8 @@ const cookieCase = (name: string, cookie: string | null, steps: AuthStep[]): Aut
   ({ name, headers: cookieHeaders(cookie), query: { ...cookieQuery }, steps })
 
 const COOKIE_CASES: AuthCase[] = [
-  cookieCase('replace and clear on the same spec', 'theme=dark', [
+  // Its name is not ASCII, so every probe must read the cases as UTF-8.
+  cookieCase('replace and clear on the same spec — six calls', 'theme=dark', [
     cookieStep({ auth, apikey: 'FIRST' }, 'theme=dark; session=FIRST'),
     cookieStep({ auth, apikey: 'FIRST' }, 'theme=dark; session=FIRST'),
     cookieStep({ auth, apikey: 'SECOND' }, 'theme=dark; session=SECOND'),
@@ -195,7 +196,7 @@ import json
 from types import SimpleNamespace
 from demo_sdk.utility.prepare_auth import prepare_auth_util
 
-with open('auth-cases.json') as f:
+with open('auth-cases.json', encoding='utf-8') as f:
     cases = json.load(f)
 for c in cases:
     spec = SimpleNamespace(headers=c['headers'], query=c['query'])
@@ -214,7 +215,7 @@ require_relative 'utility/prepare_auth'
 ProbeSpec = Struct.new(:headers, :query)
 ProbeClient = Struct.new(:options_map)
 ProbeCtx = Struct.new(:spec, :client)
-cases = JSON.parse(File.read('auth-cases.json'))
+cases = JSON.parse(File.read('auth-cases.json', encoding: 'UTF-8'))
 cases.each do |c|
   spec = ProbeSpec.new(c['headers'], c['query'])
   c['steps'].each do |s|

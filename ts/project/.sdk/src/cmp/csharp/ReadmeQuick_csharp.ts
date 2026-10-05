@@ -69,8 +69,8 @@ var client = ${ctor};
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`List(null)\` returns an aggregate list of records (as \`object?\`) and raises
-on error.
+\`List(null)\` returns a list of entities, one per record (as \`object?\`), and
+raises on error.
 
 \`\`\`csharp
 try
@@ -109,7 +109,8 @@ catch (Exception err)
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`Load()\` returns the bare record (as \`object?\`) and raises on error.
+\`Load()\` returns the entity (as \`object?\`) and raises on error; an entity's
+\`Data()\` reads its record.
 
 \`\`\`csharp
 try
@@ -139,7 +140,8 @@ catch (Exception err)
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`Load()\` returns the bare record (as \`object?\`) and raises on error.
+\`Load()\` returns the entity (as \`object?\`) and raises on error; an entity's
+\`Data()\` reads its record.
 
 \`\`\`csharp
 try
@@ -175,13 +177,14 @@ catch (Exception err)
       return it && it.type
     }
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`csharp
 `)
       if (opnames.includes('create')) {
-        Content(`// Create — returns the bare created record (as object?)
+        Content(`// Create — returns the created entity (as object?)
 var created = client.${eName}().Create(new Dictionary<string, object?> { ${examplePairs('create').join(', ')} });
 
 `)
@@ -191,6 +194,14 @@ var created = client.${eName}().Create(new Dictionary<string, object?> { ${examp
           .concat(examplePairs('update'))
         Content(`// Update — supply the id in the match/data
 client.${eName}().Update(new Dictionary<string, object?> { ${updatePairs.join(', ')} });
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`["${idF}"] = ${csLit(idParamType('patch'), 'example_id')}`] : [])
+          .concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+client.${eName}().Patch(new Dictionary<string, object?> { ${patchPairs.join(', ')} });
 
 `)
       }

@@ -45,7 +45,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
     testCallArg = 0 < items.length
       ? `[${items.map((it: any) => litPair('php', it.name, isMatchOp && it.name === idF ? '"test01"' : phpLit(it.type))).join(', ')}]`
       : ''
-  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
+  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)

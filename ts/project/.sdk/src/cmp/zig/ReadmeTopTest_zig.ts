@@ -55,7 +55,7 @@ const client = sdk.test_sdk(h.vnull(), h.vnull());
         ? `h.jo(&.{${items.map((it: any) =>
           `.{ ${JSON.stringify(it.name)}, ${isMatchOp && it.name === idF ? 'h.vstr("test01")' : zigLit(it.type)} }`).join(', ')}})`
         : 'h.vnull()'
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
@@ -64,9 +64,16 @@ const client = sdk.test_sdk(h.vnull(), h.vnull());
         ? `h.jo(&.{${chosen.map((it: any) => `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type)} }`).join(', ')}})`
         : 'h.omap()'
     }
-    const eVar = zigVarName(exampleEntity.name) + ('list' === primaryOp ? 's' : '')
+    const eVar = zigVarName(exampleEntity.name)
+    const ok = 'list' === primaryOp
+      ? `.ok => |${eVar}s| {
+        for (${eVar}s) |${eVar}| {
+            std.debug.print("{s}\\n", .{h.stringify(${eVar}.asEntity().data(null))});
+        }
+    },`
+      : `.ok => |${eVar}| std.debug.print("{s}\\n", .{h.stringify(${eVar}.asEntity().data(null))}),`
     Content(`switch (client.${method}(h.vnull()).${primaryOp}(${arg}, h.vnull())) {
-    .ok => |${eVar}| std.debug.print("{s}\\n", .{h.stringify(${eVar})}),
+    ${ok}
     .err => |e| std.debug.print("${primaryOp} failed: {s}\\n", .{e.msg}),
 }
 `)

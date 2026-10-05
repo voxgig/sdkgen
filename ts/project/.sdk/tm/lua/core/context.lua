@@ -189,7 +189,7 @@ function Context:resolve_op(opname)
   local opcfg = vs.getpath(self.config, "entity." .. entname .. ".op." .. opname)
 
   local input = "match"
-  if opname == "update" or opname == "create" then
+  if opname == "update" or opname == "create" or opname == "patch" then
     input = "data"
   end
 

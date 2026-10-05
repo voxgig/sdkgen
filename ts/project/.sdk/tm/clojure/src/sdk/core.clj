@@ -15,7 +15,10 @@
 (ns sdk.core
   (:require [voxgig.struct :as vs]
             [sdk.schema :as schema]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:import [java.net URI]
+           [java.net.http HttpClient HttpClient$Redirect HttpClient$Version
+            HttpRequest HttpRequest$BodyPublishers HttpResponse$BodyHandlers]))
 
 (def SDK-NAME "ProjectName")
 
@@ -35,22 +38,29 @@
               (let [c (peek-c)]
                 (cond (= c \{) (parse-obj) (= c \[) (parse-arr) (= c \") (parse-str)
                       (or (= c \t) (= c \f)) (parse-bool) (= c \n) (parse-null) :else (parse-num))))
+            (fail [] (throw (ex-info (str "json: unexpected input at " (aget pos 0)) {})))
+            (expect [^String word value]
+              (if (.startsWith s word (aget pos 0))
+                (do (aset pos 0 (+ (aget pos 0) (count word))) value)
+                (fail)))
             (parse-obj []
               (next-c)
               (let [m (java.util.LinkedHashMap.)]
                 (skip-ws)
                 (if (= (peek-c) \}) (do (next-c) m)
                     (loop [] (skip-ws)
-                      (let [k (parse-str)] (skip-ws) (next-c)
+                      (when-not (= (peek-c) \") (fail))
+                      (let [k (parse-str)] (skip-ws)
+                        (when-not (= (next-c) \:) (fail))
                         (.put m k (parse-val)) (skip-ws)
-                        (if (= (next-c) \,) (recur) m))))))
+                        (let [c (next-c)] (cond (= c \,) (recur) (= c \}) m :else (fail))))))))
             (parse-arr []
               (next-c)
               (let [a (java.util.ArrayList.)]
                 (skip-ws)
                 (if (= (peek-c) \]) (do (next-c) a)
                     (loop [] (.add a (parse-val)) (skip-ws)
-                      (if (= (next-c) \,) (recur) a)))))
+                      (let [c (next-c)] (cond (= c \,) (recur) (= c \]) a :else (fail)))))))
             (parse-str []
               (next-c)
               (let [sb (StringBuilder.)]
@@ -69,10 +79,8 @@
                                    (.append sb e))
                                  (recur))
                       :else (do (.append sb c) (recur)))))))
-            (parse-bool []
-              (if (= (peek-c) \t) (do (aset pos 0 (+ (aget pos 0) 4)) true)
-                  (do (aset pos 0 (+ (aget pos 0) 5)) false)))
-            (parse-null [] (aset pos 0 (+ (aget pos 0) 4)) nil)
+            (parse-bool [] (if (= (peek-c) \t) (expect "true" true) (expect "false" false)))
+            (parse-null [] (expect "null" nil))
             (parse-num []
               (let [start (aget pos 0)]
                 (while (and (< (aget pos 0) n)
@@ -91,7 +99,10 @@
                     (try (Long/parseLong tok)
                          (catch NumberFormatException _
                            (bigint (java.math.BigInteger. tok))))))))]
-      (parse-val))))
+      (let [v (parse-val)]
+        (skip-ws)
+        (when (< (aget pos 0) n) (fail))
+        v))))
 
 ;; The option spec, parsed ONCE. sdk.schema holds the raw JSON and nothing
 ;; else — it cannot parse its own data without requiring this namespace,
@@ -300,7 +311,9 @@
            :headers (g "headers")
            :json (when (vs/isfunc jf) jf)
            :body (g "body")
-           :err (g "err")})))
+           :err (g "err")
+           ;; Set by a transport that could not read a non-blank body as JSON.
+           :unreadable (true? (g "unreadable"))})))
 
 ;; ---------------------------------------------------------------------------
 ;; Control (atom-map). Shared with the base context when not overridden.
@@ -378,7 +391,7 @@
       (or (nil? opname) (= "" opname)) (make-operation (vs/jm))
       :else
       (let [opcfg (vs/getpath config (str "entity." entname ".op." opname))
-            input (if (or (= opname "update") (= opname "create")) "data" "match")
+            input (if (or (= opname "update") (= opname "create") (= opname "patch")) "data" "match")
             points (let [t (when (vs/ismap opcfg) (vs/getprop opcfg "points"))]
                      (if (vs/islist t) t (vs/jt)))
             op (make-operation (vs/jm "entity" entname "name" opname "input" input "points" points))]
@@ -974,11 +987,28 @@
 ;; so the body is a copy without it. The caller's map is left untouched.
 (defn- strip-action [reqdata] (omit-keys reqdata ["$action"]))
 
-;; A header or query argument travels where u-prepare-headers or
+(defn- field-arg? [ctx name]
+  (let [point (oget ctx :point)
+        args (when point (vs/getprop point "args"))]
+    (boolean
+     (some (fn [kind]
+             (let [defs (when (vs/ismap args) (vs/getprop args kind))]
+               (when (vs/islist defs)
+                 (some (fn [ad]
+                         (and (vs/ismap ad)
+                              (= name (vs/getprop ad "name"))
+                              (true? (vs/getprop ad "field"))))
+                       (vec defs)))))
+           ["header" "cookie" "query"]))))
+
+;; A header, cookie or query argument travels where u-prepare-headers or
 ;; u-prepare-query sends it, so the body is built from the request data
-;; without it.
+;; without it, unless the entity declares it as a field too.
 (defn- routed-arg-names [ctx]
-  (mapv first (concat (call-args ctx "header") (call-args ctx "cookie") (call-args ctx "query"))))
+  (->> (concat (call-args ctx "header") (call-args ctx "cookie") (call-args ctx "query"))
+       (map first)
+       (remove (partial field-arg? ctx))
+       vec))
 
 (defn u-transform-request [ctx]
   (let [spec (oget ctx :spec) point (oget ctx :point)
@@ -1406,10 +1436,47 @@
       (oset! result :headers (if (and response (vs/ismap (oget response :headers))) (oget response :headers) (vs/jm))))
     result))
 
+(def ^:private preview-length 160)
+
+(defn- header-value [headers name]
+  (or (some (fn [item]
+              (when (= name (str/lower-case (str (vs/getprop item 0)))) (str (vs/getprop item 1))))
+            (or (when (vs/ismap headers) (vs/items headers)) []))
+      ""))
+
+;; Cleaned whole: a secret the bound would split could leave its prefix.
+(defn- body-preview [ctx text]
+  (let [^String flat (str (ucall ctx :clean (str/trim (str/replace (str text) #"\s+" " "))))]
+    (if (> (.codePointCount flat 0 (count flat)) preview-length)
+      (str (subs flat 0 (.offsetByCodePoints flat 0 (int preview-length))) "...")
+      flat)))
+
+;; A body that is not JSON. An HTTP failure keeps its own error, with the
+;; response described; otherwise the code tells a wrong content type from
+;; malformed JSON.
+(defn unreadable-body [ctx status headers text sent failed]
+  (let [ctype (header-value headers "content-type")
+        ua (str (ucall ctx :clean (header-value sent "user-agent")))
+        detail (str "HTTP " status ", content-type " (if (= "" ctype) "none" ctype)
+                    ", user-agent " (if (= "" ua) "transport default" ua)
+                    (if (nil? text) "" (str ", body: " (body-preview ctx text))))]
+    (cond
+      (sdk-error? failed) (assoc failed :msg (str (:msg failed) " (" detail ")"))
+      (some? failed) (ctx-error ctx (or (err-code failed) "") (str (err-msg failed) " (" detail ")"))
+      (or (= "" ctype) (str/includes? (str/lower-case ctype) "json"))
+      (ctx-error ctx "response_json_invalid" (str "response: body is not valid JSON (" detail ")"))
+      :else
+      (ctx-error ctx "response_content_type" (str "response: expected JSON, got " ctype " (" detail ")")))))
+
 (defn u-result-body [ctx]
   (let [response (oget ctx :response) result (oget ctx :result)]
     (when (and result response (oget response :json) (oget response :body))
       (oset! result :body ((oget response :json))))
+    (when (and result response (oget response :unreadable))
+      (let [spec (oget ctx :spec)]
+        (oset! result :err (unreadable-body ctx (oget result :status) (oget result :headers)
+                                            (oget response :body) (when spec (oget spec :headers))
+                                            (oget result :err)))))
     result))
 
 (defn u-transform-response [ctx]
@@ -1703,42 +1770,55 @@
 ;; Default transport + fetcher gate.
 ;; ---------------------------------------------------------------------------
 
+;; java.net.http rather than HttpURLConnection, which refuses PATCH. HTTP/1.1,
+;; as the vendored sekreto client: over cleartext, HTTP/2 opens with an h2c
+;; upgrade that holds the body back, and some servers refuse that request.
+(def ^:private http-client
+  (delay (-> (HttpClient/newBuilder)
+             (.version HttpClient$Version/HTTP_1_1)
+             (.followRedirects HttpClient$Redirect/NORMAL)
+             (.build))))
+
+(defn- body-publisher [body]
+  (cond
+    (string? body) (HttpRequest$BodyPublishers/ofString body)
+    (bytes? body) (HttpRequest$BodyPublishers/ofByteArray body)
+    (instance? java.io.InputStream body)
+    (HttpRequest$BodyPublishers/ofByteArray (.readAllBytes ^java.io.InputStream body))
+    :else (HttpRequest$BodyPublishers/noBody)))
+
 (defn default-http-fetch [fullurl fetchdef]
   (let [method-str (or (vs/getprop fetchdef "method") "GET")
-        body-str (vs/getprop fetchdef "body")
         headers (or (vs/getprop fetchdef "headers") (vs/jm))]
     (try
-      (let [url (java.net.URL. fullurl)
-            conn (.openConnection url)]
-        (.setRequestMethod ^java.net.HttpURLConnection conn (str/upper-case method-str))
-        (let [has-ua (atom false)]
-          (doseq [item (or (vs/items headers) [])]
-            (let [k (vs/getprop item 0) v (vs/getprop item 1)]
-              (when (string? v)
-                (when (= (str/lower-case (str k)) "user-agent") (reset! has-ua true))
-                (.setRequestProperty ^java.net.HttpURLConnection conn (str k) v))))
-          (when-not @has-ua
-            (.setRequestProperty ^java.net.HttpURLConnection conn "User-Agent"
-                                 (str "Mozilla/5.0 (compatible; " SDK-NAME "SDK/1.0)"))))
-        (when (or (string? body-str) (bytes? body-str) (instance? java.io.InputStream body-str))
-          (.setDoOutput ^java.net.HttpURLConnection conn true)
-          (with-open [os (.getOutputStream ^java.net.HttpURLConnection conn)]
-            (cond
-              (string? body-str) (.write os (.getBytes ^String body-str "UTF-8"))
-              (bytes? body-str) (.write os ^bytes body-str)
-              :else (.transferTo ^java.io.InputStream body-str os))))
-        (let [code (.getResponseCode ^java.net.HttpURLConnection conn)
-              is (try (.getInputStream ^java.net.HttpURLConnection conn) (catch Exception _ (.getErrorStream ^java.net.HttpURLConnection conn)))
-              body (when is (slurp is))
+      (let [builder (HttpRequest/newBuilder (URI/create fullurl))
+            has-ua (atom false)]
+        (.method builder (str/upper-case method-str) (body-publisher (vs/getprop fetchdef "body")))
+        (doseq [item (or (vs/items headers) [])]
+          (let [k (vs/getprop item 0) v (vs/getprop item 1)]
+            (when (string? v)
+              (when (= (str/lower-case (str k)) "user-agent") (reset! has-ua true))
+              (.setHeader builder (str k) v))))
+        ;; The default User-Agent is recorded with the headers the request sent.
+        (when-not @has-ua
+          (let [ua (str "Mozilla/5.0 (compatible; " SDK-NAME "SDK/1.0)")]
+            (.setHeader builder "User-Agent" ua)
+            (vs/setprop headers "user-agent" ua)))
+        (let [resp (.send ^HttpClient @http-client (.build builder) (HttpResponse$BodyHandlers/ofByteArray))
+              body (String. ^bytes (.body resp) "UTF-8")
               resp-headers (vs/jm)]
-          (doseq [[k vlist] (.getHeaderFields ^java.net.HttpURLConnection conn)]
-            (when k (.put ^java.util.Map resp-headers (str/lower-case k) (str/join "," vlist))))
-          (let [json-body (try (when (and body (seq body)) (json-parse body)) (catch Exception _ nil))]
-            [(vs/jm "status" code "statusText" "" "headers" resp-headers
-                    "json" (fn [] json-body) "body" body) nil])))
+          (doseq [[k vlist] (.map (.headers resp))]
+            (.put ^java.util.Map resp-headers (str/lower-case k) (str/join "," vlist)))
+          (let [[json-body unreadable] (if (str/blank? body)
+                                         [nil false]
+                                         (try [(json-parse body) false] (catch Exception _ [nil true])))]
+            [(vs/jm "status" (.statusCode resp) "statusText" "" "headers" resp-headers
+                    "json" (fn [] json-body) "body" body "unreadable" unreadable) nil])))
+      ;; A request that got no answer fails the operation.
       (catch Throwable e
-        [(vs/jm "status" 0 "statusText" (str (.getName (class e)) ": " (.getMessage e))
-                "headers" (vs/jm) "json" (fn [] nil) "body" nil) nil]))))
+        (when (instance? InterruptedException e) (.interrupt (Thread/currentThread)))
+        [nil (make-error-obj "fetch_transport"
+                             (str (.getName (class e)) (when-let [m (.getMessage e)] (str ": " m))))]))))
 
 (defn u-fetcher [ctx fullurl fetchdef]
   (let [client (oget ctx :client)]

@@ -1470,16 +1470,37 @@ let netsim_feature () : feature =
 let test_feature () : feature =
   let f = { f_name = "test"; f_version = "0.0.1"; f_active = true; f_options = Noval;
             f_init = (fun _ _ -> ()); f_hook = (fun _ _ -> ()) } in
+  (* The key a list's response transform
+     ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record
+     under. *)
+  let item_envelope_key restf =
+    match restf with
+    | List r ->
+      (match !r with
+       | [Str "`$EACH`"; Str "body"; merge] ->
+         (match getp merge "`$MERGE`" with
+          | Str m ->
+            let n = String.length m in
+            if n >= 4 && String.sub m 0 2 = "`." && m.[n - 1] = '`' then
+              let key = String.sub m 2 (n - 3) in
+              if String.contains key '.' || String.contains key '`' || String.contains key '$'
+              then None else Some key
+            else None
+          | _ -> None)
+       | _ -> None)
+    | _ -> None in
   (* THE MOCK HAS TO AGREE WITH THE MODEL. A point carrying
      `transform.res: `body.item`` describes an API that answers {"item": {...}}
      and the response transform unwraps that key on the way back. Returning the
      bare payload means the transform unwraps a property that is not there and
      the caller gets nothing. Mirrors the go/ts/lua/php mocks. *)
   let envelope ctx data =
+    let restf = getp (getp ctx.c_point "transform") "res" in
     if is_nullish data then data
     else
-      match getp (getp ctx.c_point "transform") "res" with
-      | Str spec ->
+      match item_envelope_key restf, restf, data with
+      | Some key, _, List items -> ja (List.map (fun item -> jo [(key, item)]) !items)
+      | _, Str spec, _ ->
         let n = String.length spec in
         (* Rebuild whatever nesting the transform unwraps. Multi-segment on
            purpose: GraphQL ops unwrap `body.data.<field>`. *)
@@ -1570,7 +1591,7 @@ let test_feature () : feature =
            (match found with List r -> List.iter (fun item -> ignore (delprop item (Str "$KEY"))) !r | _ -> ());
            respond fctx 200 (clone found) None
          end
-       | "update" ->
+       | "update" | "patch" ->
          let update_match = empty_map () in
          (match fctx.c_reqdata with
           | Map _ ->
@@ -1755,8 +1776,20 @@ let raw_request (client : sdk_client) (fetchargs : value) : value =
            let no_body = status = 204 || status = 304 || content_length = "0" in
            let json_data = if no_body then Noval
              else (match getp fetched "json" with Func _ as jf -> (try call_json jf with _ -> Noval) | _ -> Noval) in
-           jo [("ok", Bool (status >= 200 && status < 300)); ("status", vint_of status);
-               ("headers", headers); ("data", json_data)]
+           let body_err =
+             if not no_body && getp fetched "unreadable" = Bool true then begin
+               let failed = if status >= 200 && status < 300 then None
+                 else Some (ctx_make_error ctx "request_status"
+                              ("request: " ^ string_of_int status ^ ": " ^ vstring (getp fetched "statusText"))) in
+               Some (unreadable_body ctx status headers (getp fetched "body") (getp fetchdef "headers") failed)
+             end else None in
+           (match body_err with
+            | Some e ->
+              jo [("ok", Bool false); ("status", vint_of status); ("headers", headers);
+                  ("data", json_data); ("err", u.u_clean ctx (err_to_value e))]
+            | None ->
+              jo [("ok", Bool (status >= 200 && status < 300)); ("status", vint_of status);
+                  ("headers", headers); ("data", json_data)])
          | _ -> jo [("ok", Bool false); ("err", err_to_value (ctx_make_error ctx "direct_invalid" "invalid response type"))]))
 
 (* Raw endpoint access is operator-controllable, like every entity op.

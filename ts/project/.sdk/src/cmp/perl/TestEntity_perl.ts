@@ -659,6 +659,17 @@ function failureTests(N: string, entity: ModelEntity): string {
   ok(!$@ && !defined $out, '${entity.name}: under throw false the call returns undef');
   ok($fired < $hook->{unexpected}, '${entity.name}: PreUnexpected fired under throw false');
 }
+
+{
+  my $seed = { entity => { '${entity.name}' => { l1 => { id => 'l1' }, l2 => { id => 'l2' } } } };
+  my $items = ${N}SDK->test($seed, undef)->${Entity}(undef)->list(undef, undef);
+  # list resolves to one entity per record; data_get reads the record.
+  is(scalar(@$items), 2, '${entity.name}: list answers each seeded record');
+  my $entities = grep {
+    Scalar::Util::blessed($_) && $_->can('data_get') && Voxgig::Struct::ismap($_->data_get)
+  } @$items;
+  is($entities, 2, '${entity.name}: each listed item is an entity carrying its record');
+}
 `
 }
 

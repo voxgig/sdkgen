@@ -33,7 +33,7 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
 #   1. SYNTAX — 'ruby -c' on every block. Every documented ruby example must
 #      parse.
 #   2. RUN — every RUNNABLE block (one that constructs the SDK, drives client.,
-#      or performs an entity op load/list/create/update/remove) is EXECUTED
+#      or performs an entity op load/list/create/update/patch/remove) is EXECUTED
 #      offline in seeded test mode (${model.const.Name}SDK.test) against the real
 #      SDK. The captured output is scanned for a real Ruby-level error (undefined
 #      method, wrong number of arguments, NameError, ...) REGARDLESS of exit
@@ -107,7 +107,7 @@ ${entityLines}
   def runnable?(b)
     b =~ /#{Regexp.escape(SDK_CLASS)}\\.(?:new|test)\\b/ ||
       b =~ /#{CLIENT}\\./ ||
-      b =~ /\\.(?:load|list|create|update|remove)\\b/ ? true : false
+      b =~ /\\.(?:load|list|create|update|patch|remove)\\b/ ? true : false
   end
 
   # A block "mentions the SDK" when it references the client variable, the SDK
@@ -117,7 +117,7 @@ ${entityLines}
   def looks_sdk?(b)
     return true if b =~ CLIENT
     return true if b =~ /\\b#{Regexp.escape(SDK_CLASS)}\\b/
-    return true if b =~ /\\.(?:load|list|create|update|remove)\\b/
+    return true if b =~ /\\.(?:load|list|create|update|patch|remove)\\b/
     ENTITIES.each_key { |name| return true if b =~ /\\.#{Regexp.escape(name)}\\b/ }
     false
   end
@@ -156,6 +156,7 @@ ${entityLines}
         f.write(blk[:code])
         f.flush
         out, status = Open3.capture2e("ruby", "-c", f.path)
+        out.force_encoding(Encoding::UTF_8)
         failures << "#{blk[:doc]} ##{blk[:n]}:\\n#{out}\\n#{blk[:code]}" unless status.success?
       end
     end
@@ -228,12 +229,15 @@ ${entityLines}
         driver = File.join(dir, "_driver.rb")
         File.write(driver, batch_driver(paths))
         out, status = Open3.capture2e("ruby", driver)
+        # A pipe is tagged with the locale's encoding; the snippets wrote UTF-8.
+        out.force_encoding(Encoding::UTF_8)
 
         runnable.each_with_index do |blk, i|
           seg = batch_segment(out, i)
           code = status.exitstatus
           if seg.nil?
             solo, sstatus = Open3.capture2e("ruby", paths[i])
+            solo.force_encoding(Encoding::UTF_8)
             seg = solo
             code = sstatus.exitstatus
           end
@@ -268,7 +272,7 @@ ${entityLines}
         puts
         puts "@@VOXBEGIN \\#{i}"
         begin
-          Module.new.module_eval(File.read(path), path)
+          Module.new.module_eval(File.read(path, encoding: "UTF-8"), path)
         rescue Exception => e
           puts "FATAL: \\#{e.class}: \\#{e.message}"
         end

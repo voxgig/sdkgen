@@ -44,7 +44,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
     const chosen = requiredItems(exampleEntity, 'list')
     testArg = `new Dictionary<string, object?> {${chosen.map((it: any) =>
       ` [${csStringLiteral(it.name)}] = ${csLit(it.type)}`).join(',')} }`
-  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
+  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
@@ -56,9 +56,9 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // The op-driven test-mode line, shown only when the SDK has an entity op.
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
   const testModeExample = primaryOp
-    ? `// Entity ops return the bare record and raise on error.
+    ? `// Entity ops return the entity, and List one per record; they raise on error.
 var ${eVar} = client.${eName}().${opMethod}(${testArg});
-// ${eVar} holds the mock response record
+// Data() on an entity reads its mock response record
 Console.WriteLine(${eVar});`
     : `var result = client.Direct(new Dictionary<string, object?>
 {

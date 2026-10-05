@@ -58,10 +58,10 @@ ${ctor}
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`// List all ${acc}s (returns a Value list, throws on error)
-Value ${eVar}s = client->${acc}()->list(${cppListMatch(exampleEntity)}, Value::undef());
-for (const auto& ${eVar} : *${eVar}s.as_list()) {
-  std::cout << Struct::jsonify(${eVar}) << std::endl;
+      Content(`// List all ${acc}s (one entity per record, throws on error)
+std::vector<SdkEntityPtr> ${eVar}s = client->${acc}()->list(${cppListMatch(exampleEntity)}, Value::undef());
+for (const auto& ${eVar} : ${eVar}s) {
+  std::cout << Struct::jsonify(${eVar}->data()) << std::endl;
 }
 `)
     }
@@ -78,9 +78,9 @@ for (const auto& ${eVar} : *${eVar}s.as_list()) {
             it.name === idF ? 'example_id' : 'example_' + it.name)}}`).join(', ')}})`
         : 'Value::undef()'
       Content(`
-// Load a specific ${acc} (returns the record, throws on error)
-Value ${eVar} = client->${acc}()->load(${loadArg}, Value::undef());
-std::cout << Struct::jsonify(${eVar}) << std::endl;
+// Load a specific ${acc} (returns the entity, throws on error)
+SdkEntityPtr ${eVar} = client->${acc}()->load(${loadArg}, Value::undef());
+std::cout << Struct::jsonify(${eVar}->data()) << std::endl;
 `)
     }
   }

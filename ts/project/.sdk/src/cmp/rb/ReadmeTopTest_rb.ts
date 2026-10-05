@@ -54,7 +54,7 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
         ? `{ ${items.map((it: any) => litPair('rb', it.name, !isMatchOp ? listLit(it)
           : it.name === idF ? '"test01"' : rbLit(it.type))).join(', ')} }`
         : ''
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)

@@ -2070,9 +2070,90 @@ pub fn result_body_util(ctx: *Context) ?*SdkResult {
             if (json == .function and !h.is_noval(body)) {
                 res.body = h.call_json(json);
             }
+            if (resp.unreadable) {
+                const sent: Value = if (ctx.spec) |sp| sp.headers else h.vnull();
+                res.err = unreadable_body(ctx, res.status, res.headers, body, sent, res.err);
+            }
         }
     }
     return result;
+}
+
+const PREVIEW_LENGTH = 160;
+
+// A body that is not JSON. An HTTP failure keeps its own error, with the
+// response described; otherwise the code tells a wrong content type from
+// malformed JSON.
+pub fn unreadable_body(
+    ctx: *Context,
+    status: i64,
+    headers: Value,
+    text: Value,
+    sent: Value,
+    failed: ?*err.ProjectNameError,
+) *err.ProjectNameError {
+    const ctype = body_header(headers, "content-type");
+    const agent = clean_str_util(ctx, body_header(sent, "user-agent"));
+    const detail = fmt("HTTP {d}, content-type {s}, user-agent {s}{s}", .{
+        status,
+        if (ctype.len == 0) "none" else ctype,
+        if (agent.len == 0) "transport default" else agent,
+        if (h.is_noval(text) or text == .null) "" else fmt(", body: {s}", .{body_preview(ctx, text)}),
+    });
+
+    if (failed) |f| {
+        f.msg = fmt("{s} ({s})", .{ f.msg, detail });
+        return f;
+    }
+    if (ctype.len == 0 or std.ascii.indexOfIgnoreCase(ctype, "json") != null) {
+        return ctx.make_error("response_json_invalid", fmt("response: body is not valid JSON ({s})", .{detail}));
+    }
+    return ctx.make_error("response_content_type", fmt("response: expected JSON, got {s} ({s})", .{ ctype, detail }));
+}
+
+fn body_header(headers: Value, name: []const u8) []const u8 {
+    if (headers == .object) {
+        var it = headers.object.iterator();
+        while (it.next()) |kv| {
+            if (std.ascii.eqlIgnoreCase(kv.key_ptr.*, name)) {
+                return switch (kv.value_ptr.*) {
+                    .string => |sv| sv,
+                    else => h.stringify(kv.value_ptr.*),
+                };
+            }
+        }
+    }
+    return "";
+}
+
+// Cleaned whole: a secret the bound would split could leave its prefix.
+fn body_preview(ctx: *Context, text: Value) []const u8 {
+    const raw: []const u8 = switch (text) {
+        .string => |sv| sv,
+        else => h.stringify(text),
+    };
+    var spaced: std.ArrayList(u8) = .empty;
+    var space = false;
+    for (raw) |c| {
+        if (std.ascii.isWhitespace(c)) {
+            space = spaced.items.len > 0;
+            continue;
+        }
+        if (space) {
+            spaced.append(h.A(), ' ') catch {};
+            space = false;
+        }
+        spaced.append(h.A(), c) catch {};
+    }
+    const flat = clean_str_util(ctx, spaced.items);
+    var points: usize = 0;
+    var end: usize = 0;
+    while (end < flat.len) : (end += 1) {
+        if ((flat[end] & 0xC0) == 0x80) continue;
+        if (points == PREVIEW_LENGTH) return fmt("{s}...", .{flat[0..end]});
+        points += 1;
+    }
+    return flat;
 }
 
 // `$action` selects the point (see make_point_util); it is never an API
@@ -2081,13 +2162,15 @@ fn strip_action(reqdata: Value) Value {
     return omit_keys(reqdata, &.{}, true);
 }
 
-// A header or query argument travels where prepare_headers_util or
+// A header, cookie or query argument travels where prepare_headers_util or
 // prepare_query_util sends it, so the body is built from the request data
-// without it.
+// without it, unless the entity declares it as a field too.
 fn routed_arg_names(ctx: *Context) [][]const u8 {
     var names: std.ArrayList([]const u8) = .empty;
     for ([_][]const u8{ "header", "cookie", "query" }) |kind| {
-        for (call_args(ctx, kind)) |arg| names.append(h.A(), arg.name) catch {};
+        for (call_args(ctx, kind)) |arg| {
+            if (!field_arg(ctx, arg.name)) names.append(h.A(), arg.name) catch {};
+        }
     }
     return names.toOwnedSlice(h.A()) catch &.{};
 }
@@ -2134,6 +2217,19 @@ pub fn transform_request_util(ctx: *Context) Value {
     // is what it used to return on its own, errors or not.
     const tres = vs.transform(h.A(), store, reqform) catch return strip_action(reqdata);
     return strip_action(tres.out);
+}
+
+fn field_arg(ctx: *Context, name: []const u8) bool {
+    for ([_][]const u8{ "header", "cookie", "query" }) |kind| {
+        const defs: Value = h.getpath(&.{ "args", kind }, ctx.point);
+        if (defs != .array) continue;
+        for (defs.array.data.items) |ad| {
+            const n = h.getp(ad, "name");
+            const f = h.getp(ad, "field");
+            if (n == .string and std.mem.eql(u8, n.string, name) and f == .bool and f.bool) return true;
+        }
+    }
+    return false;
 }
 
 pub fn transform_response_util(ctx: *Context) Value {

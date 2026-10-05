@@ -49,7 +49,7 @@ client = ${model.const.Name}SDK.test()
         ? `{${items.map((it: any) =>
           litPair('py', it.name, isMatchOp && it.name === idF ? '"test01"' : pyLit(it.type))).join(', ')}}`
         : ''
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)

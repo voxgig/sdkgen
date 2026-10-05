@@ -2,9 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeModel = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
-const ReadmeModel = (0, jostraca_1.cmp)(function ReadmeModel(props) {
+const optional_1 = require("../helpers/optional");
+const ReadmeModel = (0, component_1.cmp)(function ReadmeModel(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
     // Guard the Name case variant so the reference header never renders
@@ -18,7 +20,7 @@ const ReadmeModel = (0, jostraca_1.cmp)(function ReadmeModel(props) {
 
 `);
     // Delegate to target-specific reference summary
-    const ReadmeModel_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/ReadmeModel_${target.name}`, { ignore: true });
+    const ReadmeModel_sdk = (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeModel');
     if (ReadmeModel_sdk) {
         ReadmeModel_sdk['ReadmeModel']({ target });
     }
@@ -28,7 +30,7 @@ const ReadmeModel = (0, jostraca_1.cmp)(function ReadmeModel(props) {
     }
 });
 exports.ReadmeModel = ReadmeModel;
-const ReadmeModelGeneric = (0, jostraca_1.cmp)(function ReadmeModelGeneric(props) {
+const ReadmeModelGeneric = (0, component_1.cmp)(function ReadmeModelGeneric(props) {
     const { target, model, entityList, authActive } = props;
     const apikeyRow = authActive
         ? '| `apikey` | `string` | API key for authentication. |\n'
@@ -77,6 +79,7 @@ All entities share the same interface.
 | \`list(reqmatch?, ctrl?)\` | List entities matching the criteria. |
 | \`create(reqdata?, ctrl?)\` | Create a new entity. |
 | \`update(reqdata?, ctrl?)\` | Update an existing entity. |
+| \`patch(reqdata?, ctrl?)\` | Change part of an existing entity. |
 | \`remove(reqmatch?, ctrl?)\` | Remove an entity. |
 | \`data(data?)\` | Get or set entity data. |
 | \`match(match?)\` | Get or set entity match criteria. |

@@ -48,7 +48,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   Content(`### 1. Create a client
 
 \`\`\`rust
-use ${rustcrate}::{getp, jo, ${model.const.Name}SDK, Value};
+use ${rustcrate}::{getp, jo, ${model.const.Name}Entity, ${model.const.Name}SDK, Entity, Value};
 
 let client = ${ctor};
 \`\`\`
@@ -69,16 +69,14 @@ let client = ${ctor};
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list()\` returns a \`Value::List\` of records and returns \`Err\` on
-failure — match on the \`Result\`.
+\`list()\` returns one entity per record, and \`Err\` on failure — match on
+the \`Result\`. \`data(None)\` reads an entity's record.
 
 \`\`\`rust
 match client.${method}(Value::Noval).list(${rustListMatch(exampleEntity)}, Value::Noval) {
     Ok(${eVar}s) => {
-        if let Value::List(items) = &${eVar}s {
-            for ${eVar} in items.borrow().iter() {
-                println!("{:?}", ${eVar});
-            }
+        for ${eVar} in &${eVar}s {
+            println!("{:?}", ${eVar}.data(None));
         }
     }
     Err(err) => eprintln!("list failed: {}", err),
@@ -109,11 +107,12 @@ match client.${method}(Value::Noval).list(${rustListMatch(exampleEntity)}, Value
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`load()\` returns the bare record and returns \`Err\` on failure.
+\`load()\` returns the entity, and \`Err\` on failure; \`data(None)\` reads its
+record.
 
 \`\`\`rust
 match client.${neMethod}(Value::Noval).load(jo(vec![${neMatch.join(', ')}]), Value::Noval) {
-    Ok(${neVar}) => println!("{:?}", ${neVar}),
+    Ok(${neVar}) => println!("{:?}", ${neVar}.data(None)),
     Err(err) => eprintln!("load failed: {}", err),
 }
 \`\`\`
@@ -133,11 +132,12 @@ match client.${neMethod}(Value::Noval).load(jo(vec![${neMatch.join(', ')}]), Val
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`load()\` returns the bare record and returns \`Err\` on failure.
+\`load()\` returns the entity, and \`Err\` on failure; \`data(None)\` reads its
+record.
 
 \`\`\`rust
 match client.${method}(Value::Noval).load(${loadArg}, Value::Noval) {
-    Ok(${eVar}) => println!("{:?}", ${eVar}),
+    Ok(${eVar}) => println!("{:?}", ${eVar}.data(None)),
     Err(err) => eprintln!("load failed: {}", err),
 }
 \`\`\`
@@ -163,20 +163,21 @@ match client.${method}(Value::Noval).load(${loadArg}, Value::Noval) {
       const it = opRequestShape(exampleEntity, opname).items.find((x: any) => x.name === idF)
       return it && it.type
     }
-    // The id VALUE for an update/remove match: read it off the returned
-    // `created` record with getp when its data type carries the id AND a
-    // create ran; otherwise a type-correct literal.
+    // The id VALUE for an update/remove match: read it off the created
+    // entity's record with getp when its data type carries the id AND a create
+    // ran; otherwise a type-correct literal.
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `getp(&created, "${dataIdF}")`
+      ? `getp(&created.data(None), "${dataIdF}")`
       : rustLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`rust
 `)
       if (opnames.includes('create')) {
-        Content(`// Create — returns the bare created record
+        Content(`// Create — returns the created entity
 let created = client.${method}(Value::Noval).create(jo(vec![${examplePairs('create').join(', ')}]), Value::Noval).unwrap();
 
 `)
@@ -185,6 +186,13 @@ let created = client.${method}(Value::Noval).create(jo(vec![${examplePairs('crea
         const updatePairs = (idF ? [`("${idF}", ${idValueFor('update')})`] : []).concat(examplePairs('update'))
         Content(`// Update
 client.${method}(Value::Noval).update(jo(vec![${updatePairs.join(', ')}]), Value::Noval).unwrap();
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`("${idF}", ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+client.${method}(Value::Noval).patch(jo(vec![${patchPairs.join(', ')}]), Value::Noval).unwrap();
 
 `)
       }

@@ -37,24 +37,28 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const errType = `${model.const.Name}Error`
   const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
     load: {
-      sig: `load(reqmatch: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'Load a single entity matching the given criteria. Returns the entity data on `Ok` and `Err` on failure.',
+      sig: `load(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
+      desc: 'Load a single entity matching the given criteria. `Ok` is the entity, whose record `data(None)` reads, and `Err` a failure.',
     },
     list: {
-      sig: `list(reqmatch: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'List entities matching the given criteria. The match is optional — pass `Value::Noval` to list all records. `Ok` is a `Value::List`.',
+      sig: `list(reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, ${errType}>`,
+      desc: 'List entities matching the given criteria. The match is optional — pass `Value::Noval` to list all records. `Ok` is a `Vec` of entities, one per record.',
     },
     create: {
-      sig: `create(reqdata: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'Create a new entity with the given data. Returns the created entity data on `Ok` and `Err` on failure.',
+      sig: `create(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
+      desc: 'Create a new entity with the given data. `Ok` is the created entity, and `Err` a failure.',
     },
     update: {
-      sig: `update(reqdata: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'Update an existing entity. The data must include the entity id. Returns the updated entity data on `Ok`.',
+      sig: `update(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
+      desc: 'Update an existing entity. The data must include the entity id. `Ok` is the updated entity.',
+    },
+    patch: {
+      sig: `patch(reqdata: Value, ctrl: Value) -> Result<Value, ${errType}>`,
+      desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity id. Returns the patched entity data on `Ok`.',
     },
     remove: {
-      sig: `remove(reqmatch: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'Remove the entity matching the given criteria. `Err` on failure.',
+      sig: `remove(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
+      desc: 'Remove the entity matching the given criteria. `Ok` is the entity, marked as deleted, and `Err` a failure.',
     },
   }
 
@@ -73,7 +77,7 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 `)
 
     Content(`\`\`\`rust
-use ${rustcrate}::{${model.const.Name}SDK, Value};
+use ${rustcrate}::{jo, ${model.const.Name}Entity, ${model.const.Name}SDK, Entity, Value};
 
 let client = ${model.const.Name}SDK::new(options);
 \`\`\`
@@ -212,7 +216,7 @@ let ${eVar} = client.${method}(Value::Noval);
         // Field operations breakdown
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
@@ -269,6 +273,7 @@ ${info.desc}
               : 'Value::Noval'
             Content(`\`\`\`rust
 let result = client.${method}(Value::Noval).${opname}(${arg}, Value::Noval).unwrap();
+println!("{:?}", result.data(None));
 \`\`\`
 
 `)
@@ -276,10 +281,8 @@ let result = client.${method}(Value::Noval).${opname}(${arg}, Value::Noval).unwr
           else if ('list' === opname) {
             Content(`\`\`\`rust
 let results = client.${method}(Value::Noval).list(${rustListMatch(ent)}, Value::Noval).unwrap();
-if let Value::List(items) = &results {
-    for ${eVar} in items.borrow().iter() {
-        println!("{:?}", ${eVar});
-    }
+for ${eVar} in &results {
+    println!("{:?}", ${eVar}.data(None));
 }
 \`\`\`
 
@@ -300,8 +303,8 @@ let result = client.${method}(Value::Noval).create(jo(vec![
 
 `)
           }
-          else if ('update' === opname) {
-            const updateItems = opRequestShape(ent, 'update').items
+          else if ('update' === opname || 'patch' === opname) {
+            const updateItems = opRequestShape(ent, opname).items
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -309,15 +312,15 @@ let result = client.${method}(Value::Noval).create(jo(vec![
               `    ("${it.name}", ${rustLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}),\n`).join('')
             Content(`\`\`\`rust
-let result = client.${method}(Value::Noval).update(jo(vec![
-${updateLines}    // Fields to update
+let result = client.${method}(Value::Noval).${opname}(jo(vec![
+${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 ]), Value::Noval).unwrap();
 \`\`\`
 
 `)
           }
 
-          if ('create' === opname || 'update' === opname) {
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a string, or bytes as `bytes_value(&[u8])`',
             })

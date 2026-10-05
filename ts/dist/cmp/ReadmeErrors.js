@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeErrors = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
@@ -20,7 +21,8 @@ try {
 
 `,
     direct: `The low-level \`direct()\` method does **not** throw — it returns the
-value or an \`Error\`, so check the result before using it:
+result envelope. Branch on \`ok\`; on failure \`status\` holds the HTTP status
+(for error responses) and \`err\` holds the error:
 
 \`\`\`ts
 const result = await client.direct({
@@ -29,8 +31,8 @@ const result = await client.direct({
   params: { id: 'example_id' },
 })
 
-if (result instanceof Error) {
-  throw result
+if (!result.ok) {
+  console.error('request failed:', result.status, result.err)
 }
 \`\`\`
 
@@ -180,7 +182,7 @@ _ = result
 `,
     },
 };
-const ReadmeErrors = (0, jostraca_1.cmp)(function ReadmeErrors(props) {
+const ReadmeErrors = (0, component_1.cmp)(function ReadmeErrors(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
     const lang = LANGS[target.name] || DEFAULT_LANG;

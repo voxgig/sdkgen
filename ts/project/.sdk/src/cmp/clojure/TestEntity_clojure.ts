@@ -41,7 +41,16 @@ const TestEntity = cmp(function TestEntity(props: any) {
   }
 
   if (hasList) {
-    Content(`  (t/run-check rec "gen-stream-${e.name}"
+    Content(`  (t/run-check rec "gen-list-${e.name}"
+    (fn [] (let [seed (vs/jm "${e.name}" (vs/jm "L1" (vs/jm "id" "L1" "name" "a")
+                                                "L2" (vs/jm "id" "L2" "name" "b")))
+                 items (e-${e.name}/list (api/${e.name} (api/test-sdk (vs/jm "entity" seed) nil) nil)
+                                         (vs/jm) nil)]
+             ;; list resolves to one entity per record; data-get reads the record.
+             (t/is-eq (count items) 2 "list answers each seeded record")
+             (t/is-true (every? (fn [item] (and (map? item) (vs/ismap ((:data-get item))))) items)
+                        "each listed item is an entity carrying its record"))))
+  (t/run-check rec "gen-stream-${e.name}"
     (fn [] (let [seed (vs/jm "${e.name}" (vs/jm "S1" (vs/jm "id" "S1" "name" "a")
                                                 "S2" (vs/jm "id" "S2" "name" "b")
                                                 "S3" (vs/jm "id" "S3" "name" "c")))]

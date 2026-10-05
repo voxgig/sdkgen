@@ -5,6 +5,7 @@ from projectname_sdk.core.utility_type import ProjectNameUtility
 from projectname_sdk.core.spec import ProjectNameSpec
 from projectname_sdk.core import helpers
 from projectname_sdk.utility.prepare_method import allowed
+from projectname_sdk.utility.result_body import unreadable_body
 
 # Load utility registration (populates Utility._registrar)
 from projectname_sdk.utility import register
@@ -269,6 +270,7 @@ class ProjectNameSDK:
             no_body = status in (204, 304) or str(content_length) == "0"
 
             json_data = None
+            body_err = None
             if not no_body:
                 jf = vs.getprop(fetched, "json")
                 if callable(jf):
@@ -278,13 +280,22 @@ class ProjectNameSDK:
                         # Non-JSON body (e.g. text/plain, text/html). Surface
                         # status + headers but leave data as None.
                         json_data = None
+                if vs.getprop(fetched, "unreadable") is True:
+                    failed = None if 200 <= status < 300 else ctx.make_error(
+                        "request_status",
+                        "request: " + str(status) + ": " + str(vs.getprop(fetched, "statusText")))
+                    body_err = unreadable_body(ctx, status, headers, vs.getprop(fetched, "body"),
+                                               fetchdef.get("headers"), failed)
 
-            return {
-                "ok": status >= 200 and status < 300,
+            out = {
+                "ok": body_err is None and status >= 200 and status < 300,
                 "status": status,
                 "headers": headers,
                 "data": json_data,
             }
+            if body_err is not None:
+                out["err"] = utility.clean(ctx, body_err)
+            return out
 
         return {
             "ok": False,

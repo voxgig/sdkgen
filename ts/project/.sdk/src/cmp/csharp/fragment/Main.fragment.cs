@@ -295,13 +295,28 @@ public class ProjectNameSDK
                 jsonData = jf();
             }
 
-            return new Dictionary<string, object?>
+            Exception? bodyErr = null;
+            if (!noBody && global::Voxgig.Struct.StructUtils.GetProp(fm, "unreadable") is true)
             {
-                ["ok"] = status >= 200 && status < 300,
+                var failed = status >= 200 && status < 300 ? null : ctx.MakeError("request_status",
+                    "request: " + status + ": " + global::Voxgig.Struct.StructUtils.GetProp(fm, "statusText"));
+                bodyErr = global::ProjectNameSdk.Response.UnreadableBody(ctx, status, headers,
+                    global::Voxgig.Struct.StructUtils.GetProp(fm, "body"),
+                    fetchdef.TryGetValue("headers", out var sent) ? sent : null, failed);
+            }
+
+            var direct = new Dictionary<string, object?>
+            {
+                ["ok"] = bodyErr == null && status >= 200 && status < 300,
                 ["status"] = status,
                 ["headers"] = headers,
                 ["data"] = jsonData,
             };
+            if (bodyErr != null)
+            {
+                direct["err"] = CleanErr(ctx, bodyErr);
+            }
+            return direct;
         }
 
         return new Dictionary<string, object?>

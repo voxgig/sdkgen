@@ -158,6 +158,24 @@ ${liveStrictNote(strict, '#', '  ')}
     assert !ent.nil?
   end
 ${hasList ? `
+  def test_list_entities
+    seed = {
+      "entity" => {
+        "${entity.name}" => {
+          "l1" => { "id" => "l1" },
+          "l2" => { "id" => "l2" },
+        },
+      },
+    }
+    items = ${model.const.Name}SDK.test(seed, nil).${entity.Name}(nil).list(nil, nil)
+    # list resolves to one entity per record; data_get reads the record.
+    assert_equal 2, items.length
+    items.each do |item|
+      assert item.respond_to?(:data_get)
+      assert item.data_get.is_a?(Hash)
+    end
+  end
+
   # Feature #4: the entity stream(action, ...) method runs the op pipeline and
   # returns an Enumerator over result items. With the streaming feature active
   # it yields the feature's incremental output; otherwise it falls back to the
@@ -253,7 +271,7 @@ end
   Runner.load_env_local
 
   entity_data_file = File.join(__dir__, "..", "..", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json")
-  entity_data_source = File.read(entity_data_file)
+  entity_data_source = File.read(entity_data_file, encoding: "UTF-8")
   entity_data = JSON.parse(entity_data_source)
 
   options = {}

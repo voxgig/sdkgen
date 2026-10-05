@@ -184,7 +184,8 @@ catch (RuntimeException err) {
       return it && it.type
     }
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`java
@@ -200,6 +201,14 @@ Object created = client.${accessor}(null).create(${javaMapOf(examplePairs('creat
           .concat(examplePairs('update'))
         Content(`// Update — supply the id in the match/data
 client.${accessor}(null).update(${javaMapOf(updatePairs)}, null);
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`"${idF}", ${javaLit(idParamType('patch'), 'example_id')}`] : [])
+          .concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+client.${accessor}(null).patch(${javaMapOf(patchPairs)}, null);
 
 `)
       }

@@ -124,6 +124,23 @@ console.log(updated)
 `)
     }
 
+    if (opnames.includes('patch')) {
+      const patchLines = (idF
+        ? [`  ${idF}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.patch, idF, exampleEntity.name + '_id')},`]
+        : []).concat(exampleFields('patch'))
+      const patchBody = patchLines.length ? '\n' + patchLines.join('\n') + '\n' : ''
+      Content(`
+### Patch a ${eName}
+
+Sends only the fields given.
+
+\`\`\`js
+const patched = await client.${eName}().patch({${patchBody}})
+console.log(patched)
+\`\`\`
+`)
+    }
+
     if (opnames.includes('remove')) {
       Content(`
 ### Remove a ${eName}

@@ -45,6 +45,11 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     returns: 'any, err',
     desc: 'Update an existing entity. The data must include the entity `id`.',
   },
+  patch: {
+    sig: 'patch(reqdata, ctrl) -> any, err',
+    returns: 'any, err',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`.',
+  },
   remove: {
     sig: 'remove(reqmatch, ctrl) -> any, err',
     returns: 'any, err',
@@ -216,7 +221,7 @@ local ${eVar} = client:${ent.Name}(nil)
         if (hasFieldOps) {
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
@@ -306,10 +311,10 @@ local result, err = client:${ent.Name}():create({
 
 `)
           }
-          else if ('update' === opname) {
+          else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape the
             // runtime validates — then the patch-fields note.
-            const updateItems = opRequestShape(ent, 'update').items
+            const updateItems = opRequestShape(ent, opname).items
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -317,15 +322,15 @@ local result, err = client:${ent.Name}():create({
               `  ${luaKey(it.name)} = ${luaLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`lua
-local result, err = client:${ent.Name}():update({
-${updateLines}  -- Fields to update
+local result, err = client:${ent.Name}():${opname}({
+${updateLines}  -- ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 })
 \`\`\`
 
 `)
           }
 
-          if ('create' === opname || 'update' === opname) {
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a string',
             })

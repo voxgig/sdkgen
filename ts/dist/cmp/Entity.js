@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Entity = void 0;
-const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const utility_1 = require("../utility");
 const stdrep_1 = require("../helpers/stdrep");
 const types_1 = require("../types");
-const Entity = (0, jostraca_1.cmp)(function Entity(props) {
+const Entity = (0, component_1.cmp)(function Entity(props) {
     const { target, entity, ctx$ } = props;
     const { log } = ctx$;
     // Entity_<lang> components pull stdrep off ctx$ for their fragments, and

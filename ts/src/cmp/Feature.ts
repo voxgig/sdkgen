@@ -1,5 +1,6 @@
 
-import { cmp, Copy, Folder } from 'jostraca'
+import { Copy, Folder } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 import { ensureStdrep } from '../helpers/stdrep'
 import { featureApplies, featureTags } from '../helpers/applicability'

@@ -31,6 +31,7 @@ const OP_DESC: Record<string, { method: string, desc: string }> = {
   list:   { method: 'list(nil, nil)',     desc: 'List entities, optionally matching the given criteria.' },
   create: { method: 'create(data, nil)',  desc: 'Create a new entity with the given data.' },
   update: { method: 'update(data, nil)',  desc: 'Update an existing entity.' },
+  patch:  { method: 'patch(data, nil)',   desc: 'Change part of an existing entity.' },
   remove: { method: 'remove(match, nil)', desc: 'Remove the matching entity.' },
 }
 

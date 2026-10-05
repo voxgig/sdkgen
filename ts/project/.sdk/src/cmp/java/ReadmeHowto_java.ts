@@ -31,7 +31,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
     const chosen = requiredItems(exampleEntity, 'list')
     testArg = javaMapOf(chosen.map((it: any) =>
       `${JSON.stringify(it.name)}, ${javaLit(it.type)}`))
-  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
+  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)

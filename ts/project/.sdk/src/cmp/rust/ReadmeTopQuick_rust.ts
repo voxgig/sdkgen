@@ -38,7 +38,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
     : `${model.const.Name}SDK::new(Value::Noval)`
 
   Content(`\`\`\`rust
-use ${rustcrate}::{jo, ${model.const.Name}SDK, Value};
+use ${rustcrate}::{jo, ${model.const.Name}Entity, ${model.const.Name}SDK, Entity, Value};
 
 let client = ${ctor};
 
@@ -54,12 +54,10 @@ let client = ${ctor};
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eName.toLowerCase()}s (returns a Value::List, Err on failure)
+      Content(`// List all ${eName.toLowerCase()}s (one entity per record, Err on failure)
 let ${eVar}s = client.${method}(Value::Noval).list(${rustListMatch(exampleEntity)}, Value::Noval).unwrap();
-if let Value::List(items) = &${eVar}s {
-    for ${eVar} in items.borrow().iter() {
-        println!("{:?}", ${eVar});
-    }
+for ${eVar} in &${eVar}s {
+    println!("{:?}", ${eVar}.data(None));
 }
 `)
     }
@@ -78,9 +76,9 @@ if let Value::List(items) = &${eVar}s {
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join(', ')}])`
         : 'Value::Noval'
       Content(`
-// Load a specific ${eName.toLowerCase()} (returns the record, Err on failure)
+// Load a specific ${eName.toLowerCase()} (returns the entity, Err on failure)
 let ${eVar} = client.${method}(Value::Noval).load(${loadArg}, Value::Noval).unwrap();
-println!("{:?}", ${eVar});
+println!("{:?}", ${eVar}.data(None));
 `)
     }
   }

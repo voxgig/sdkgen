@@ -1,14 +1,15 @@
 
 import { targetFeatures } from '../helpers/applicability'
 
-import { cmp, each, names, Content } from 'jostraca'
+import { each, names, Content } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 import {
   KIT,
   getModelPath
 } from '../types'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
 import { helperLang, idLiteral, matchArg, listMatchArg, dataArg } from '../helpers/opExample'
@@ -315,7 +316,7 @@ were added, so later features can override earlier ones.
 
 
   const ReadmeExplanation_sdk =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeExplanation_${target.name}`, { ignore: true })
+    optionalComponent(ctx$, target, 'ReadmeExplanation')
 
   if (ReadmeExplanation_sdk) {
     ReadmeExplanation_sdk['ReadmeExplanation']({ target })

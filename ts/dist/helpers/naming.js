@@ -280,7 +280,7 @@ function elixirAccessorNames(entityColl) {
 function elixirAccessor(ent, entityColl) {
     return elixirAccessorNames(entityColl)[ent?.name] ?? ent?.name;
 }
-const TYPE_OPS = ['load', 'list', 'create', 'update', 'remove'];
+const TYPE_OPS = opShape_1.CANON_OP_ORDER;
 const _typeNames = new WeakMap();
 // The data type each entity declares, over the whole collection: an escaped
 // name never lands on a name another entity derives for a type or an op type.
