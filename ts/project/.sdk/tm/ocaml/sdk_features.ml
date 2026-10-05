@@ -1470,16 +1470,37 @@ let netsim_feature () : feature =
 let test_feature () : feature =
   let f = { f_name = "test"; f_version = "0.0.1"; f_active = true; f_options = Noval;
             f_init = (fun _ _ -> ()); f_hook = (fun _ _ -> ()) } in
+  (* The key a list's response transform
+     ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record
+     under. *)
+  let item_envelope_key restf =
+    match restf with
+    | List r ->
+      (match !r with
+       | [Str "`$EACH`"; Str "body"; merge] ->
+         (match getp merge "`$MERGE`" with
+          | Str m ->
+            let n = String.length m in
+            if n >= 4 && String.sub m 0 2 = "`." && m.[n - 1] = '`' then
+              let key = String.sub m 2 (n - 3) in
+              if String.contains key '.' || String.contains key '`' || String.contains key '$'
+              then None else Some key
+            else None
+          | _ -> None)
+       | _ -> None)
+    | _ -> None in
   (* THE MOCK HAS TO AGREE WITH THE MODEL. A point carrying
      `transform.res: `body.item`` describes an API that answers {"item": {...}}
      and the response transform unwraps that key on the way back. Returning the
      bare payload means the transform unwraps a property that is not there and
      the caller gets nothing. Mirrors the go/ts/lua/php mocks. *)
   let envelope ctx data =
+    let restf = getp (getp ctx.c_point "transform") "res" in
     if is_nullish data then data
     else
-      match getp (getp ctx.c_point "transform") "res" with
-      | Str spec ->
+      match item_envelope_key restf, restf, data with
+      | Some key, _, List items -> ja (List.map (fun item -> jo [(key, item)]) !items)
+      | _, Str spec, _ ->
         let n = String.length spec in
         (* Rebuild whatever nesting the transform unwraps. Multi-segment on
            purpose: GraphQL ops unwrap `body.data.<field>`. *)

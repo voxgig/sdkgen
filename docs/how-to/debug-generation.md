@@ -26,8 +26,12 @@ voxgig-sdkgen -g debug -y target add <lang>
 ```
 
 During generation (in the consumer `.sdk/`), a higher debug level surfaces
-per-file merge results and warnings. Watch for `require-missing` warnings:
-they mean an *optional* per-language component wasn't found. A genuine
+per-file merge results and warnings. An `optional-component-missing`
+warning means a target has no component for one documentation section:
+it names the section left empty and the file that would fill it, and the
+SDK's code is complete without it. An optional component that replaces a
+shared default reports its absence at debug level only, as
+`optional-component-default`. A genuine
 load error (syntax error, bad import) in such a component now propagates
 rather than being swallowed, so a stack trace pointing into
 `cmp/<lang>/Readme*_<lang>` is a real bug to fix, not a missing file.
@@ -88,7 +92,7 @@ reference implementation.
 | Symptom | Likely cause | Where to look |
 | --- | --- | --- |
 | Literal `ProjectName`/`GOMODULE` in output | merge skipped substitution | delete file, regenerate |
-| A README section silently missing | optional component returned `undefined` | confirm the `cmp/<lang>/Readme*_<lang>` exists/compiles |
+| A README section empty or missing | the target has no component for it | the `optional-component-missing` warning names the file to write |
 | A README section throws during generate | bug in an optional component (no longer swallowed) | the stack trace names the file |
 | Entity method missing | component didn't emit it for that op | `cmp/<lang>/Entity*_<lang>` |
 | Feature hook not firing | hook not `active` in the model, or not implemented | feature `.aontu` + the target's feature source (`tm/<lang>/**/feature/`) |

@@ -4,7 +4,7 @@ exports.ReadmeExplanation = void 0;
 const applicability_1 = require("../helpers/applicability");
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
-const utility_1 = require("../utility");
+const optional_1 = require("../helpers/optional");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
 const naming_1 = require("../helpers/naming");
@@ -274,7 +274,7 @@ Features are initialized in order. Hooks fire in the order features
 were added, so later features can override earlier ones.
 
 `);
-    const ReadmeExplanation_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/ReadmeExplanation_${target.name}`, { ignore: true });
+    const ReadmeExplanation_sdk = (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeExplanation');
     if (ReadmeExplanation_sdk) {
         ReadmeExplanation_sdk['ReadmeExplanation']({ target });
     }

@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeTop = void 0;
 const jostraca_1 = require("jostraca");
 const types_1 = require("../types");
-const utility_1 = require("../utility");
+const optional_1 = require("../helpers/optional");
 const FeatureDocs_1 = require("./FeatureDocs");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
@@ -33,6 +33,11 @@ function installCommand(target, model) {
 }
 function pickLeadTarget(sdkTargets) {
     return sdkTargets[0];
+}
+const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test'];
+// A consumer (py-data) switches every phase off and has no ReadmeTop components.
+function isConsumer(target) {
+    return PHASES.every((name) => false === target.phase?.[name]?.active);
 }
 // The languages the example helpers can write, in the order a reader is
 // likeliest to want one.
@@ -121,11 +126,12 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
         .filter((t) => t.name !== 'go-cli' && t.name !== 'go-mcp')
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
+    const exampleTargets = sdkTargets.filter((t) => !isConsumer(t));
     const pkgTargets = activeTargets
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
     const langList = sdkTargets.map((t) => t.title).join(', ');
-    const leadTarget = pickLeadTarget(sdkTargets);
+    const leadTarget = pickLeadTarget(exampleTargets);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
         (0, jostraca_1.Content)(`# ${model.Name} SDK
 
@@ -286,7 +292,7 @@ rather than reasoning about raw HTTP routes and query parameters.
 
 `);
         }
-        if (sdkTargets.length > 0) {
+        if (exampleTargets.length > 0) {
             (0, jostraca_1.Content)(`## Offline unit testing
 
 Every SDK ships a built-in **test mode** that swaps the HTTP transport for
@@ -294,8 +300,8 @@ an in-memory mock, so your unit tests run fully offline — no server, no
 network, and no credentials:
 
 `);
-            sdkTargets.forEach((tgt) => {
-                const Test = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopTest_${tgt.name}`, { ignore: true });
+            exampleTargets.forEach((tgt) => {
+                const Test = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopTest');
                 if (Test) {
                     (0, jostraca_1.Content)(`### ${tgt.title}
 
@@ -346,7 +352,7 @@ network, and no credentials:
 ### ${leadTarget.title}
 
 `);
-            const LeadQuick = (0, utility_1.requirePath)(ctx$, `./cmp/${leadTarget.name}/ReadmeTopQuick_${leadTarget.name}`, { ignore: true });
+            const LeadQuick = (0, optional_1.optionalComponent)(ctx$, leadTarget, 'ReadmeTopQuick');
             if (LeadQuick) {
                 LeadQuick['ReadmeTopQuick']({ target: leadTarget });
             }
@@ -448,13 +454,13 @@ own list above for exactly which it supports.
 
 `);
         }
-        const otherTargets = sdkTargets.filter((t) => leadTarget && t.name !== leadTarget.name);
+        const otherTargets = exampleTargets.filter((t) => leadTarget && t.name !== leadTarget.name);
         if (otherTargets.length > 0) {
             (0, jostraca_1.Content)(`## Quickstart in other languages
 
 `);
             otherTargets.forEach((tgt) => {
-                const Quick = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopQuick_${tgt.name}`, { ignore: true });
+                const Quick = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopQuick');
                 if (Quick) {
                     (0, jostraca_1.Content)(`### ${tgt.title}
 
@@ -483,8 +489,8 @@ Both accept a map with \`path\`, \`method\`, \`params\`, \`query\`,
 When the entity interface does not cover an endpoint, use \`direct\`:
 
 `);
-        sdkTargets.forEach((tgt) => {
-            const Howto = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopHowto_${tgt.name}`, { ignore: true });
+        exampleTargets.forEach((tgt) => {
+            const Howto = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopHowto');
             if (Howto) {
                 Howto['ReadmeTopHowto']({ target: tgt });
             }

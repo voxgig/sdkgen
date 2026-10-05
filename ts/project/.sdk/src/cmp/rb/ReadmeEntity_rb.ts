@@ -132,8 +132,9 @@ ${eVar} = client.${entity.Name}.load(${loadArg})
       Content(`#### Example: List
 
 \`\`\`ruby
-# list returns an Array of ${entity.Name} records (raises on error).
+# list returns an Array of ${entity.Name} entities, one per record (raises on error).
 ${eVar}s = client.${entity.Name}.list
+${eVar}s.each { |item| puts item.data_get }
 \`\`\`
 
 `)

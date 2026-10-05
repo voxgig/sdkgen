@@ -68,11 +68,22 @@ PNError* err = NULL;
       const chosen = required.length ? required : items.slice(0, 3)
       arg = cmapExpr(chosen.map((it: any) => `"${it.name}", ${cLit(it.type)}`))
     }
-    const resVar = cVarName(exampleEntity.name) + ('list' === primaryOp ? 's' : '_rec')
     Content(`Entity* ${evar} = ${acc}(client, NULL);
-voxgig_value* ${resVar} = ${evar}->vt->${primaryOp}(${evar}, ${arg}, NULL, &err);
-printf("%s\\n", voxgig_to_json(${resVar}));
 `)
+    if ('list' === primaryOp) {
+      Content(`Entity** ${evar}s = ${evar}->vt->list(${evar}, ${arg}, NULL, &err);
+for (size_t i = 0; ${evar}s && ${evar}s[i]; i++) {
+    printf("%s\\n", voxgig_to_json(${evar}s[i]->vt->data(${evar}s[i], NULL)));
+}
+`)
+    }
+    else {
+      Content(`Entity* result = ${evar}->vt->${primaryOp}(${evar}, ${arg}, NULL, &err);
+if (result) {
+    printf("%s\\n", voxgig_to_json(result->vt->data(result, NULL)));
+}
+`)
+    }
   }
 
   Content(`\`\`\`

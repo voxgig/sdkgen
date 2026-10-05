@@ -140,6 +140,11 @@ import {
   SECURITY_EMAIL,
   GENERATOR_URL,
 } from './helpers/packageMeta'
+import {
+  npmScriptRm,
+  npmScriptEnv,
+  npmScriptTestSome,
+} from './helpers/npmScripts'
 
 
 import {
@@ -1223,4 +1228,7 @@ export {
   PUBLISHER_URL,
   SECURITY_EMAIL,
   GENERATOR_URL,
+  npmScriptRm,
+  npmScriptEnv,
+  npmScriptTestSome,
 }

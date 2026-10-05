@@ -6,7 +6,7 @@ import {
   getModelPath
 } from '../types'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 import { featureDocs } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
@@ -57,6 +57,14 @@ function installCommand(target: any, model: any): string {
 
 function pickLeadTarget(sdkTargets: any[]): any | undefined {
   return sdkTargets[0]
+}
+
+
+const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test']
+
+// A consumer (py-data) switches every phase off and has no ReadmeTop components.
+function isConsumer(target: any): boolean {
+  return PHASES.every((name: string) => false === target.phase?.[name]?.active)
 }
 
 
@@ -164,12 +172,14 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     .slice()
     .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
+  const exampleTargets = sdkTargets.filter((t: any) => !isConsumer(t))
+
   const pkgTargets = activeTargets
     .slice()
     .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
   const langList = sdkTargets.map((t: any) => t.title).join(', ')
-  const leadTarget = pickLeadTarget(sdkTargets)
+  const leadTarget = pickLeadTarget(exampleTargets)
 
   File({ name: 'README.md' }, () => {
 
@@ -338,7 +348,7 @@ rather than reasoning about raw HTTP routes and query parameters.
 `)
     }
 
-    if (sdkTargets.length > 0) {
+    if (exampleTargets.length > 0) {
       Content(`## Offline unit testing
 
 Every SDK ships a built-in **test mode** that swaps the HTTP transport for
@@ -346,9 +356,9 @@ an in-memory mock, so your unit tests run fully offline — no server, no
 network, and no credentials:
 
 `)
-      sdkTargets.forEach((tgt: any) => {
+      exampleTargets.forEach((tgt: any) => {
         const Test =
-          requirePath(ctx$, `./cmp/${tgt.name}/ReadmeTopTest_${tgt.name}`, { ignore: true })
+          optionalComponent(ctx$, tgt, 'ReadmeTopTest')
         if (Test) {
           Content(`### ${tgt.title}
 
@@ -399,7 +409,7 @@ network, and no credentials:
 
 `)
       const LeadQuick =
-        requirePath(ctx$, `./cmp/${leadTarget.name}/ReadmeTopQuick_${leadTarget.name}`, { ignore: true })
+        optionalComponent(ctx$, leadTarget, 'ReadmeTopQuick')
       if (LeadQuick) {
         LeadQuick['ReadmeTopQuick']({ target: leadTarget })
       }
@@ -506,14 +516,14 @@ own list above for exactly which it supports.
 `)
     }
 
-    const otherTargets = sdkTargets.filter((t: any) => leadTarget && t.name !== leadTarget.name)
+    const otherTargets = exampleTargets.filter((t: any) => leadTarget && t.name !== leadTarget.name)
     if (otherTargets.length > 0) {
       Content(`## Quickstart in other languages
 
 `)
       otherTargets.forEach((tgt: any) => {
         const Quick =
-          requirePath(ctx$, `./cmp/${tgt.name}/ReadmeTopQuick_${tgt.name}`, { ignore: true })
+          optionalComponent(ctx$, tgt, 'ReadmeTopQuick')
         if (Quick) {
           Content(`### ${tgt.title}
 
@@ -545,9 +555,9 @@ When the entity interface does not cover an endpoint, use \`direct\`:
 
 `)
 
-    sdkTargets.forEach((tgt: any) => {
+    exampleTargets.forEach((tgt: any) => {
       const Howto =
-        requirePath(ctx$, `./cmp/${tgt.name}/ReadmeTopHowto_${tgt.name}`, { ignore: true })
+        optionalComponent(ctx$, tgt, 'ReadmeTopHowto')
       if (Howto) {
         Howto['ReadmeTopHowto']({ target: tgt })
       }

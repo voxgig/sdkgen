@@ -27,28 +27,28 @@ function csLit(type: any, placeholder: string = 'example'): string {
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'Load(reqmatch, ctrl = null) -> object?',
-    returns: 'the entity data',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and raises on error.',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `Data()` reads, and raises on error.',
   },
   list: {
     sig: 'List(reqmatch, ctrl = null) -> object?',
-    returns: 'an aggregate list of entities',
-    desc: 'List entities matching the given criteria. The match is optional — call `List(null)` to list all records. Returns an aggregate list and raises on error.',
+    returns: 'a list of entities, one per record',
+    desc: 'List entities matching the given criteria. The match is optional — call `List(null)` to list all records. Returns a list of entities, one per record, and raises on error.',
   },
   create: {
     sig: 'Create(reqdata, ctrl = null) -> object?',
-    returns: 'the created entity data',
-    desc: 'Create a new entity with the given data. Returns the created entity data and raises on error.',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
     sig: 'Update(reqdata, ctrl = null) -> object?',
-    returns: 'the updated entity data',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and raises on error.',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
   },
   remove: {
     sig: 'Remove(reqmatch, ctrl = null) -> object?',
-    returns: 'the removed entity data',
-    desc: 'Remove the entity matching the given criteria. Raises on error.',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },
 }
 

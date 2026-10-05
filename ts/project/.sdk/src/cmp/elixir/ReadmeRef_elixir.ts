@@ -14,23 +14,23 @@ import { elixirLit } from './utility_elixir'
 const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
   load: {
     sig: 'load(entity, reqmatch, ctrl \\\\ nil) :: map()',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and raises on error.',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get/1` reads, and raises on error.',
   },
   list: {
     sig: 'list(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: list()',
-    desc: 'List entities matching the given criteria. The match is optional — call `list(entity)` to list all records. Returns a list and raises on error.',
+    desc: 'List entities matching the given criteria. The match is optional — call `list(entity)` to list all records. Returns a list of entities, one per record, and raises on error.',
   },
   create: {
     sig: 'create(entity, reqdata, ctrl \\\\ nil) :: map()',
-    desc: 'Create a new entity with the given data. Returns the created entity data and raises on error.',
+    desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
     sig: 'update(entity, reqdata, ctrl \\\\ nil) :: map()',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and raises on error.',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
   },
   remove: {
     sig: 'remove(entity, reqmatch, ctrl \\\\ nil) :: map()',
-    desc: 'Remove the entity matching the given criteria. Raises on error.',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },
 }
 

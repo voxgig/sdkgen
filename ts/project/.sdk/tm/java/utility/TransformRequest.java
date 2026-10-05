@@ -43,16 +43,34 @@ final class TransformRequest {
     return omit(reqdata, List.of("$action"));
   }
 
-  // A header or query argument travels where PrepareHeaders or PrepareQuery
-  // sends it, so the body is built from the request data without it.
+  // A header, cookie or query argument travels where PrepareHeaders or
+  // PrepareQuery sends it, so the body is built from the request data without
+  // it, unless the entity declares it as a field too.
   private static List<String> routedArgNames(Context ctx) {
     List<String> names = new ArrayList<>();
     for (String kind : List.of("header", "cookie", "query")) {
       for (Param.CallArg arg : Param.callArgs(ctx, kind)) {
-        names.add(arg.name());
+        if (!fieldArg(ctx, arg.name())) {
+          names.add(arg.name());
+        }
       }
     }
     return names;
+  }
+
+  private static boolean fieldArg(Context ctx, String name) {
+    for (String kind : List.of("header", "cookie", "query")) {
+      Object defs = ctx.point == null ? null : Struct.getpath(ctx.point, List.of("args", kind));
+      if (defs instanceof List) {
+        for (Object ad : (List<?>) defs) {
+          if (name.equals(Struct.getprop(ad, "name", null)) &&
+              Boolean.TRUE.equals(Struct.getprop(ad, "field", null))) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   private static Object omit(Object reqdata, List<String> names) {
