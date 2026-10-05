@@ -2,7 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Changelog = void 0;
 const jostraca_1 = require("jostraca");
-const Changelog = (0, jostraca_1.cmp)(function Changelog(props) {
+const component_1 = require("../helpers/component");
+const Changelog = (0, component_1.cmp)(function Changelog(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
     const name = model.Name || model.name;

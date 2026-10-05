@@ -2,8 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FeatureHook = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const types_1 = require("../types");
-const FeatureHook = (0, jostraca_1.cmp)(function FeatureHook(props, children) {
+const FeatureHook = (0, component_1.cmp)(function FeatureHook(props, children) {
     const { ctx$: { model } } = props;
     const feature = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`);
     // A feature need not implement every pipeline stage; only fire the hook

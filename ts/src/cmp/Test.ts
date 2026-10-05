@@ -1,7 +1,8 @@
 
 import {
-  cmp, File, Content,
+  File, Content,
 } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 import { requirePath } from '../utility'
 

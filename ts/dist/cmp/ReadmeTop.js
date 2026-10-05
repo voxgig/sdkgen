@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeTop = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const optional_1 = require("../helpers/optional");
 const FeatureDocs_1 = require("./FeatureDocs");
@@ -69,7 +70,7 @@ function entityExample(lang, Name, call) {
         default: return '';
     }
 }
-const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
+const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
     if (model.name && !model.Name)

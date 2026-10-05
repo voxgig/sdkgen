@@ -137,6 +137,7 @@ async function generate(
   for (const [path, content] of Object.entries(raw)) {
     const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
     if (rel.startsWith('.jostraca/') || rel.includes('/.jostraca/')) continue
+    if (rel.startsWith('.sdk/log/')) continue
     out[rel] = content
   }
   return out

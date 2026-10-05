@@ -2,8 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Security = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const packageMeta_1 = require("../helpers/packageMeta");
-const Security = (0, jostraca_1.cmp)(function Security(props) {
+const Security = (0, component_1.cmp)(function Security(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
     const { issuesUrl } = (0, packageMeta_1.repoInfo)(model);
