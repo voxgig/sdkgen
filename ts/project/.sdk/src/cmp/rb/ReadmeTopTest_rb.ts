@@ -8,14 +8,14 @@ import {
 } from '@voxgig/apidef'
 
 
-function rbLit(type: any): string {
+function rbLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
   if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
-  return '"example"'
+  return `"${placeholder}"`
 }
 
 
@@ -29,22 +29,30 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
   if (exampleEntity && primaryOp) {
     const eName = nom(exampleEntity, 'Name')
     const ename = eName.toLowerCase()
-    // Model-driven id key: null when the entity has no id-like field, so the
-    // seeded record carries no id and a match op takes no argument.
+    // Model-driven id key: null when the entity has no id-like field.
     const idF = entityIdField(exampleEntity)
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
-    const recBody = idF ? `{ "${idF}" => "test01" }` : '{}'
+    // The seed record carries what the list call sends, and an id is its key.
+    const listItems = 'list' === primaryOp ? requiredItems(exampleEntity, 'list') : []
+    const listLit = (it: any): string =>
+      rbLit(it.type, it.name === idF || 'id' === it.name ? 'test01' : 'example')
+    const recPairs = [
+      ...(idF ? [`"${idF}" => "test01"`] : []),
+      ...listItems.filter((it: any) => it.name !== idF)
+        .map((it: any) => litPair('rb', it.name, listLit(it))),
+    ]
+    const recBody = 0 < recPairs.length ? `{ ${recPairs.join(', ')} }` : '{}'
     let callArg = ''
-    if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
+    if (isMatchOp || 0 < listItems.length) {
       // Every REQUIRED match key (id first, then parent path params like
       // page_id) — the same shape the runtime resolves path params from.
       const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
+        .filter((it: any) => !it.optional || it.name === idF) : [...listItems])
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       callArg = 0 < items.length
-        ? `{ ${items.map((it: any) =>
-          litPair('rb', it.name, isMatchOp && it.name === idF ? '"test01"' : rbLit(it.type))).join(', ')} }`
+        ? `{ ${items.map((it: any) => litPair('rb', it.name, !isMatchOp ? listLit(it)
+          : it.name === idF ? '"test01"' : rbLit(it.type))).join(', ')} }`
         : ''
     } else if ('create' === primaryOp || 'update' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items

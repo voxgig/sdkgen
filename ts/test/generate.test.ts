@@ -17,7 +17,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, retypedList, entityOnly,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity,
 } from './generateharness'
@@ -4499,6 +4499,26 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  test('the root README seeds the record its list example sends, in each block that seeds one', async () => {
+    const out = await generate(['ts', 'rb'], undefined, retypedList())
+    const section = out['README.md'].slice(out['README.md'].indexOf('## Offline unit testing'))
+    const pairs = (line: string) =>
+      [...line.matchAll(/([\w'"]+)\s*(?::|=>)\s*('[^']*'|"[^"]*"|[^\s,{}()]+)/g)].map((m) => m[1] + ' ' + m[2])
+
+    for (const fence of ['ts', 'ruby']) {
+      const at = section.indexOf('```' + fence + '\n')
+      ok(-1 < at, fence + ': the root README has no offline test block')
+      const lines = section.slice(at, section.indexOf('\n```', at)).split('\n')
+      const seed = lines.find((line: string) => /test01['"]?\s*(?::|=>)\s*\{/.test(line)) || ''
+      const call = lines.find((line: string) => /\.list\b/.test(line)) || ''
+      const sent = pairs(call)
+      strictEqual(sent.length, 3, fence + ': the list call does not send its parameters: ' + call)
+      deepStrictEqual(sent.filter((pair: string) => !pairs(seed).includes(pair)), [],
+        fence + ': the list call sends values the seeded record lacks:\n' + seed + '\n' + call)
+    }
+  })
+
+
   test('a Java or Scala map of more than ten pairs is built with Map.ofEntries', async () => {
     const wide = Array.from({ length: 11 }, (_, i): [string, string] => ['p' + i, '"`$STRING`"'])
     const out = await generate(['java', 'scala'], undefined, listOnly('wide', wide))
@@ -4575,6 +4595,22 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     }
     deepStrictEqual(wrong, [], 'list examples that do not write a NULL parameter as null:\n' +
       wrong.join('\n'))
+  })
+
+
+  test('java and scala write example literals from one table each, which says why NULL keeps the placeholder', () => {
+    for (const lang of ['java', 'scala']) {
+      const dir = Path.join(SCAFFOLD, 'src', 'cmp', lang)
+      const tables = readdirSync(dir).filter((file: string) => file.endsWith('.ts') &&
+        /'(?:java\.util\.)?List\.of\(\)'/.test(readFileSync(Path.join(dir, file), 'utf8')))
+      deepStrictEqual(tables, ['utility_' + lang + '.ts'], lang + ': an example literal table outside the utility module')
+
+      const src = readFileSync(Path.join(dir, 'utility_' + lang + '.ts'), 'utf8')
+      const at = src.indexOf('function ' + lang + 'Lit(')
+      ok(-1 < at, lang + ': the utility module declares no ' + lang + 'Lit')
+      ok(/^\/\/.*\bnull\b/i.test(src.slice(0, at).trimEnd().split('\n').pop()!),
+        lang + ': the literal table does not say why NULL keeps the placeholder')
+    }
   })
 
 

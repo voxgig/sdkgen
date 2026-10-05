@@ -25,7 +25,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData, searchOnly, listOnly,
-  FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
+  retypedList, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -279,6 +279,16 @@ function mcpSession(bin: string, calls: any[] = []): Promise<{ tools: any[], ans
 }
 
 
+// The body of the root README's offline test block in one language.
+function offlineBlock(readmeDir: string, fence: string): string {
+  const readme = Fs.readFileSync(Path.join(readmeDir, 'README.md'), 'utf8')
+  const section = readme.slice(readme.indexOf('## Offline unit testing'))
+  const at = section.indexOf('```' + fence + '\n')
+  ok(-1 < at, fence + ': the root README has no offline test block')
+  return section.slice(at + fence.length + 4, section.indexOf('\n```', at))
+}
+
+
 // One generated file, by the tail of its path: several template trees carry
 // a placeholder directory (py's `pkg`, swift's `Sources/<Name>SDK`) that the
 // generated tree spells with the project's own name.
@@ -480,6 +490,7 @@ describe('generated SDK compiles', () => {
     ['a list example with a nullable and a null-only parameter', 'ts-readme-nullable',
       listOnly('tally', [['n', '["`$ONE`", ["`$INTEGER`", "`$NULL`"]]'], ['z', '"`$NULL`"']])],
     ['a list example whose parameters are a keyword and __proto__', 'ts-readme-keys', KEYWORD_LIST],
+    ['a list example whose parameter its create types otherwise', 'ts-readme-retyped', retypedList()],
   ] as [string, string, string | undefined][]) {
     test('typescript: the README example tests type-check and run ' + what, async () => {
       ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
@@ -500,6 +511,52 @@ describe('generated SDK compiles', () => {
       'the README example tests did not run both checks:\n' + tail(suite.out, 40))
     })
   }
+
+
+  // Run as written: the README suites above replace a block's seed with their own.
+  test('typescript: the root README test block lists the record it seeds', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-readme-seeded', 'ts')
+    await generateTo('ts', sdkroot, retypedList(), undefined, { top: true })
+    linkDeps(sdkroot)
+    const built = tsc(sdkroot, 'src')
+    ok(built.ok, 'generated src does not compile:\n' + built.out)
+
+    const block = offlineBlock(Path.dirname(sdkroot), 'ts')
+    const sdk = /const client = (\w+)\.test\(/.exec(block)
+    const listed = /const (\w+) = await client\.\w+\(\)\.list\(/.exec(block)
+    ok(null != sdk && null != listed, 'the root README test block makes no list call:\n' + block)
+    Fs.writeFileSync(Path.join(sdkroot, 'seeded.cjs'),
+      `const { ${sdk![1]} } = require('./dist/${sdk![1]}')\n` +
+      `;(async () => {\n${block}\nconsole.log('listed ' + ${listed![1]}.length)\n})()` +
+      `.catch((err) => { console.error(err); process.exit(1) })\n`)
+    const ran = run(process.execPath, ['seeded.cjs'], sdkroot)
+    ok(ran.ok, 'the root README test block failed:\n' + tail(ran.out))
+    ok(/^listed 1$/m.test(ran.out),
+      'the root README test block lists no record it seeds:\n' + block + '\n' + tail(ran.out))
+  })
+
+
+  test('ruby: the root README test block lists the record it seeds', async (t) => {
+    const ruby = toolchain('ruby')
+    if (null == ruby) return t.skip('no ruby here')
+
+    const sdkroot = Path.join(tmp, 'rb-readme-seeded', 'rb')
+    await generateTo('rb', sdkroot, retypedList(), undefined, { top: true })
+
+    const block = offlineBlock(Path.dirname(sdkroot), 'ruby')
+    const sdk = /client = (\w+)SDK\.test\(/.exec(block)
+    const listed = /^(\w+) = client\.\w+\.list\b/m.exec(block)
+    ok(null != sdk && null != listed, 'the root README test block makes no list call:\n' + block)
+    Fs.writeFileSync(Path.join(sdkroot, 'seeded.rb'),
+      `require_relative '${sdk![1]}_sdk'\n${block}\nputs "listed #{${listed![1]}.length}"\n`)
+    const ran = run(ruby, ['seeded.rb'], sdkroot)
+    if (ran.unlaunchable) return t.skip('ruby could not be started here: ' + tail(ran.out, 3))
+    ok(ran.ok, 'the root README test block failed:\n' + tail(ran.out))
+    ok(/^listed 1$/m.test(ran.out),
+      'the root README test block lists no record it seeds:\n' + block + '\n' + tail(ran.out))
+  })
 
 
   // tsc refuses the pair on every OS (TS1149: file names that differ only in

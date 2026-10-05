@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps , serverVariables, javaMapOf } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps , serverVariables, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { javaVarName, javaPackage, javaListMatch } from './utility_java'
+import { javaVarName, javaPackage, javaListMatch, javaLit } from './utility_java'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -43,18 +43,6 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
       `server.put("${v.name}", "<${v.name}>");\n`).join('') +
     'options.put("server", server);\n'
 
-
-  // A type-correct Java literal for a param — the loose object model means
-  // all values live in a Map<String, Object>.
-  const javaLit = (type: any, placeholder: string = 'example'): string => {
-    const k = canonScalarKey(type)
-    if ('INTEGER' === k) return '1L'
-    if ('NUMBER' === k) return '1.0'
-    if ('BOOLEAN' === k) return 'true'
-    if ('ARRAY' === k) return 'List.of()'
-    if ('OBJECT' === k) return 'Map.of()'
-    return `"${placeholder}"`
-  }
 
   if (authActive) {
     Content(`### 1. Create a client

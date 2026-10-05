@@ -1,24 +1,12 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems, javaMapOf } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
 
-import { scalaVarName } from './utility_scala'
-
-
-// A type-correct Scala literal for a field's canonical type.
-function scalaLit(type: any): string {
-  const k = canonScalarKey(type)
-  if ('INTEGER' === k) return '1L'
-  if ('NUMBER' === k) return '1.0'
-  if ('BOOLEAN' === k) return 'true'
-  if ('ARRAY' === k) return 'java.util.List.of()'
-  if ('OBJECT' === k) return 'java.util.Map.of()'
-  return '"example"'
-}
+import { scalaVarName, scalaLit } from './utility_scala'
 
 
 const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {

@@ -1,26 +1,15 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, opNeedsAction, javaMap, javaMapOf } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape, opNeedsAction, javaMap, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
 
-import { scalaVarName, scalaListMatch } from './utility_scala'
+import { scalaVarName, scalaListMatch, scalaLit } from './utility_scala'
 
 
 // Type names come from the shared canonToType 'scala' column (single source of truth).
-
-function scalaLit(type: any, placeholder: string = 'example'): string {
-  const k = canonScalarKey(type)
-  if ('INTEGER' === k) return '1L'
-  if ('NUMBER' === k) return '1.0'
-  if ('BOOLEAN' === k) return 'true'
-  if ('ARRAY' === k) return 'java.util.List.of()'
-  if ('OBJECT' === k) return 'java.util.Map.of()'
-  return `"${placeholder}"`
-}
-
 
 // Operation method spelling for Scala: camelCase methods over the loose object
 // model. The op descriptions are language-agnostic.
@@ -57,7 +46,6 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     // An op that needs an action has no plain call to show.
     const callable = opnames.filter((o: string) => !opNeedsAction(entity.op[o]))
     const fields = Object.values(entity.fields || {})
-    // Model-driven id key: null when this entity has no id-like field.
     const idF = entityIdField(entity)
     // Sanitise the local variable name — a camelCased Scala keyword gets a
     // trailing underscore (scalaVarName) so the snippet compiles.

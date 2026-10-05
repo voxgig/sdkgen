@@ -1,27 +1,15 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, opNeedsAction, javaMap, javaMapOf } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape, opNeedsAction, javaMap, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
 
-import { javaVarName, javaListMatch } from './utility_java'
+import { javaVarName, javaListMatch, javaLit } from './utility_java'
 
 
 // Type names come from the shared canonToType 'java' column (single source of truth).
-
-// A type-correct, JSON-serialisable Java literal for a field's canonical type.
-function javaLit(type: any, placeholder: string = 'example'): string {
-  const k = canonScalarKey(type)
-  if ('INTEGER' === k) return '1L'
-  if ('NUMBER' === k) return '1.0'
-  if ('BOOLEAN' === k) return 'true'
-  if ('ARRAY' === k) return 'List.of()'
-  if ('OBJECT' === k) return 'Map.of()'
-  return `"${placeholder}"`
-}
-
 
 // Operation method spelling for Java: camelCase methods over the loose object
 // model. The op descriptions are language-agnostic.

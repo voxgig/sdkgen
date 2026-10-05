@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, javaMapOf } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { scalaVarName, scalaPackage, scalaListMatch } from './utility_scala'
+import { scalaVarName, scalaPackage, scalaListMatch, scalaLit } from './utility_scala'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -31,18 +31,6 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   ) as any
 
   const authActive = isAuthActive(model)
-
-  // A type-correct Scala literal for a param — the loose object model means
-  // all values live in a java.util.Map[String, Object].
-  const scalaLit = (type: any, placeholder: string = 'example'): string => {
-    const k = canonScalarKey(type)
-    if ('INTEGER' === k) return '1L'
-    if ('NUMBER' === k) return '1.0'
-    if ('BOOLEAN' === k) return 'true'
-    if ('ARRAY' === k) return 'java.util.List.of()'
-    if ('OBJECT' === k) return 'java.util.Map.of()'
-    return `"${placeholder}"`
-  }
 
   if (authActive) {
     Content(`### 1. Create a client

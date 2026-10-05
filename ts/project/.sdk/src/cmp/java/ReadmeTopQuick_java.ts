@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape , serverVariables, javaMapOf } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape , serverVariables, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -7,21 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { javaVarName, javaPackage, javaListMatch } from './utility_java'
-
-
-// A type-correct Java literal for a param: numeric/boolean/array/object params
-// render a typed literal; strings render the quoted placeholder. The SDK's
-// loose object model means all values live in Map<String, Object>.
-function javaLit(type: any, placeholder: string = 'example'): string {
-  const k = canonScalarKey(type)
-  if ('INTEGER' === k) return '1L'
-  if ('NUMBER' === k) return '1.0'
-  if ('BOOLEAN' === k) return 'true'
-  if ('ARRAY' === k) return 'List.of()'
-  if ('OBJECT' === k) return 'Map.of()'
-  return `"${placeholder}"`
-}
+import { javaVarName, javaPackage, javaListMatch, javaLit } from './utility_java'
 
 
 const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {

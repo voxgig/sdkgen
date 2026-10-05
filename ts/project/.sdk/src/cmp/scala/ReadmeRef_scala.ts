@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, javaMap, javaMapOf } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, javaMap, javaMapOf } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -7,22 +7,10 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { scalaVarName, scalaListMatch } from './utility_scala'
+import { scalaVarName, scalaListMatch, scalaLit } from './utility_scala'
 
 
 // Type names come from the shared canonToType 'scala' column (single source of truth).
-
-// A type-correct Scala literal for a field's canonical type.
-function scalaLit(type: any, placeholder: string = 'example'): string {
-  const k = canonScalarKey(type)
-  if ('INTEGER' === k) return '1L'
-  if ('NUMBER' === k) return '1.0'
-  if ('BOOLEAN' === k) return 'true'
-  if ('ARRAY' === k) return 'java.util.List.of()'
-  if ('OBJECT' === k) return 'java.util.Map.of()'
-  return `"${placeholder}"`
-}
-
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {

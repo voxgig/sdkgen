@@ -550,6 +550,40 @@ main: kit: flow: ${flow}: {
 }
 
 
+// A list requiring string id, q and tag, whose create requires q as an integer.
+function retypedList(): string {
+  return entityOnly(`
+main: kit: entity: crate: {
+  alias: field: {}
+  name: "crate"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "q": { h: 'Q', n: "q", r: true, t: "\`$INTEGER\`" }
+  }
+  op: {
+    list: { name: "list", points: [ {
+      g: { query: [
+        { k: "query", n: "id", or: "id", r: true, t: "\`$STRING\`" }
+        { k: "query", n: "q", or: "q", r: true, t: "\`$STRING\`" }
+        { k: "query", n: "tag", or: "tag", r: true, t: "\`$STRING\`" }
+      ] }
+      m: "GET", o: "/crate", s: [{ lit: "crate" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    create: { name: "create", points: [ {
+      g: {}, m: "POST", o: "/crate", s: [{ lit: "crate" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: flow: BasicCrateFlow: {
+  entity: "crate", kind: "basic", name: "BasicCrateFlow"
+  step: [ { o: "list", m: {} } ]
+}
+`)
+}
+
+
 // The fixture's own entities made inactive, beside the given source.
 function entityOnly(source: string): string {
   return source + Object.keys(makeModel(['ts']).main[KIT].entity)
@@ -988,6 +1022,7 @@ export {
   searchOnly,
   listOnly,
   selectorList,
+  retypedList,
   entityOnly,
   entityTestData,
   FOLD_ENTITY,

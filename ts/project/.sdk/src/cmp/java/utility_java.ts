@@ -112,18 +112,29 @@ function jsonAppendLines(value: any, bufname: string): string {
     .join('')
 }
 
-// A list's required parameters as its match; Map.of rejects null, so NULL keeps the placeholder.
+// Map.of and Map.entry reject a null value, so NULL keeps the placeholder.
+function javaLit(type: any, placeholder: string = 'example'): string {
+  const k = canonScalarKey(type)
+  if ('INTEGER' === k) return '1L'
+  if ('NUMBER' === k) return '1.0'
+  if ('BOOLEAN' === k) return 'true'
+  if ('ARRAY' === k) return 'List.of()'
+  if ('OBJECT' === k) return 'Map.of()'
+  return `"${placeholder}"`
+}
+
+
+// A list's required parameters as its match.
 function javaListMatch(entity: any): string {
-  const lit = (type: any): string =>
-    (({ INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'List.of()', OBJECT: 'Map.of()' }) as any)[canonScalarKey(type)] ?? '"example"'
   const items = requiredItems(entity, 'list')
   return 0 < items.length
-    ? javaMapOf(items.map((it: any) => `${JSON.stringify(it.name)}, ${lit(it.type)}`))
+    ? javaMapOf(items.map((it: any) => `${JSON.stringify(it.name)}, ${javaLit(it.type)}`))
     : 'null'
 }
 
 
 export {
+  javaLit,
   javaListMatch,
   cleanModel,
   javaPackage,
