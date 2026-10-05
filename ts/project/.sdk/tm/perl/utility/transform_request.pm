@@ -28,11 +28,26 @@ my $omit = sub {
 
 my $strip_action = sub { $omit->($_[0], '$action') };
 
-# A header or query argument travels where prepare_headers or prepare_query
-# sends it, so the body is built from the request data without it.
+my $field_arg = sub {
+  my ($ctx, $name) = @_;
+  for my $kind (qw(header cookie query)) {
+    my $defs = $ctx->{point} ? ProjectNameHelpers::gpath($ctx->{point}, "args.$kind") : undef;
+    next unless Voxgig::Struct::islist($defs);
+    for my $ad (@$defs) {
+      my $n = ProjectNameHelpers::gp($ad, 'name');
+      return 1 if defined $n && !ref $n && $n eq $name &&
+        ProjectNameHelpers::rb_truthy(ProjectNameHelpers::gp($ad, 'field'));
+    }
+  }
+  return 0;
+};
+
+# A header, cookie or query argument travels where prepare_headers or
+# prepare_query sends it, so the body is built from the request data without
+# it, unless the entity declares it as a field too.
 my $routed_arg_names = sub {
   my ($ctx) = @_;
-  return map { $_->[0] } ProjectNameUtilities::call_args($ctx, 'header'),
+  return grep { !$field_arg->($ctx, $_) } map { $_->[0] } ProjectNameUtilities::call_args($ctx, 'header'),
     ProjectNameUtilities::call_args($ctx, 'cookie'), ProjectNameUtilities::call_args($ctx, 'query');
 };
 

@@ -505,6 +505,7 @@ ${candidateLines}
             "load" => ent.Load(args, ctrl),
             "create" => ent.Create(args, ctrl),
             "update" => ent.Update(args, ctrl),
+            "patch" => ent.Patch(args, ctrl),
             "remove" => ent.Remove(args, ctrl),
             _ => throw new InvalidOperationException("unknown operation: " + op),
         };

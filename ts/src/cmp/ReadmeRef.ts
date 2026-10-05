@@ -1,7 +1,7 @@
 
 import { cmp } from 'jostraca'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 
 
 // Per-language REFERENCE.md generator lives in
@@ -12,7 +12,7 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const { target, ctx$ } = props
 
   const ReadmeRef_sdk =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeRef_${target.name}`, { ignore: true })
+    optionalComponent(ctx$, target, 'ReadmeRef')
 
   if (ReadmeRef_sdk) {
     // The per-language component owns the REFERENCE.md File, so anything

@@ -23,6 +23,21 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
         return $reqdata;
     }
 
+    // The key a list's response transform
+    // ["`$EACH`", "body", ["`$MERGE`" => "`.<key>`"]] reads each item's record under.
+    private static function itemEnvelopeKey(mixed $restf): ?string
+    {
+        if (!is_array($restf) || !array_is_list($restf) || 3 !== count($restf) ||
+            '`$EACH`' !== $restf[0] || 'body' !== $restf[1] || !is_array($restf[2])) {
+            return null;
+        }
+        $merge = $restf[2]['`$MERGE`'] ?? null;
+        if (!is_string($merge) || !preg_match('/^`\.([^.`$]+)`$/', $merge, $m)) {
+            return null;
+        }
+        return $m[1];
+    }
+
     public function __construct()
     {
         parent::__construct();
@@ -77,6 +92,10 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
                     return $data;
                 }
                 $restf = $transform['res'] ?? null;
+                $key = self::itemEnvelopeKey($restf);
+                if ($key !== null && is_array($data) && array_is_list($data)) {
+                    return array_map(fn($item) => [$key => $item], $data);
+                }
                 if (!is_string($restf)) {
                     return $data;
                 }
@@ -221,7 +240,7 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
                 $out = \Voxgig\Struct\Struct::clone($cleaned);
                 return $respond(200, $out);
 
-            } elseif ($op->name === 'update') {
+            } elseif ($op->name === 'update' || $op->name === 'patch') {
                 // Match the existing entity by id only (or its alias). reqdata
                 // also contains the new field values, which would otherwise
                 // cause find_first to filter out the entity we want to update.

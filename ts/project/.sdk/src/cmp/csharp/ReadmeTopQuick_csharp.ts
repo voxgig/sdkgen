@@ -72,7 +72,7 @@ Console.WriteLine(${eVar}List);
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(',')} }`
         : 'null'
       Content(`
-// Load a specific ${eName.toLowerCase()} (returns the record, raises on error)
+// Load a specific ${eName.toLowerCase()} (returns the entity, raises on error)
 var ${eVar} = client.${eName}().Load(${loadArg});
 Console.WriteLine(${eVar});
 `)

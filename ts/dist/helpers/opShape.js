@@ -47,14 +47,15 @@ function deriveEntityNames(entityColl) {
         (0, jostraca_1.names)(e, e.name); });
     return ents;
 }
-// The five ops, and whether their request payload is a `Match` (query/id) or
-// `Data` (body) — this fixes the generated type-name suffix per op.
+// The generated ops, and whether their request payload is a `Match`
+// (query/id) or `Data` (body) — this fixes the generated type-name suffix per op.
 const OP_SUFFIX = {
     load: 'Match',
     list: 'Match',
     remove: 'Match',
     create: 'Data',
     update: 'Data',
+    patch: 'Data',
 };
 exports.OP_SUFFIX = OP_SUFFIX;
 function cap(s) {
@@ -82,7 +83,7 @@ function entityActions(entity) {
 }
 function entityPath(entity) {
     const ops = (entity && entity.op) || {};
-    for (const opname of ['list', 'load', 'create', 'update', 'remove']) {
+    for (const opname of CANON_OP_ORDER) {
         const op = ops[opname];
         if (null == op) {
             continue;
@@ -198,6 +199,7 @@ function fieldOptional(field, opname) {
         case 'create':
             return false === field.r;
         case 'update':
+        case 'patch':
             return true;
         case 'load':
         case 'remove':
@@ -304,7 +306,7 @@ function invalidRequest(ent) {
 // `Object.keys(ent.op)`: an `active: false` op generates no method, and an op
 // whose every route is an action is refused without one, so a plain example
 // of either would fail.
-const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'remove'];
+const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'patch', 'remove'];
 exports.CANON_OP_ORDER = CANON_OP_ORDER;
 function entityOps(ent) {
     const ops = (ent && ent.op) || {};
@@ -403,7 +405,7 @@ function entityClassNames(entityColl, fold = false) {
     const taken = new Set();
     ents.forEach((e) => {
         taken.add(key(e.Name));
-        for (const op of ['load', 'list', 'create', 'update', 'remove']) {
+        for (const op of CANON_OP_ORDER) {
             if (e.op && e.op[op]) {
                 taken.add(key(opTypeName(e.Name, op)));
             }
@@ -451,7 +453,7 @@ function entityTypeCollisions(entityColl, fold = false) {
     deriveEntityNames(entityColl)
         .forEach((e) => {
         bump(e.Name);
-        for (const op of ['load', 'list', 'create', 'update', 'remove']) {
+        for (const op of CANON_OP_ORDER) {
             if (e.op && e.op[op]) {
                 bump(opTypeName(e.Name, op));
             }

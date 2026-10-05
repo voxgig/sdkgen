@@ -88,7 +88,7 @@ class ProjectNameContext
 
     opcfg = VoxgigStruct.getpath(@config, "entity.#{entname}.op.#{opname}")
 
-    input = (opname == "update" || opname == "create") ? "data" : "match"
+    input = (opname == "update" || opname == "create" || opname == "patch") ? "data" : "match"
 
     points = []
     if opcfg.is_a?(Hash)

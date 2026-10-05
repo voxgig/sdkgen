@@ -361,6 +361,7 @@ class CleanTest {
       "load" -> ent.load(arg, ctrl)
       "create" -> ent.create(arg, ctrl)
       "update" -> ent.update(arg, ctrl)
+      "patch" -> ent.patch(arg, ctrl)
       "remove" -> ent.remove(arg, ctrl)
       else -> throw IllegalArgumentException("no such op: " + op)
     }

@@ -35,7 +35,7 @@ const TestClean = cmp(function TestClean(props: any) {
 
 
 const OP_ORDER: Record<string, number> = { list: 0, load: 1 }
-const OPS = ['list', 'load', 'create', 'update', 'remove']
+const OPS = ['list', 'load', 'create', 'update', 'patch', 'remove']
 
 
 // The path parameters an operation's points declare, as the runtime config

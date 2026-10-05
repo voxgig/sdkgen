@@ -237,7 +237,7 @@ public class Context {
         List.of("entity", entname, "op", opname));
 
     String input = "match";
-    if ("update".equals(opname) || "create".equals(opname)) {
+    if ("update".equals(opname) || "create".equals(opname) || "patch".equals(opname)) {
       input = "data";
     }
 

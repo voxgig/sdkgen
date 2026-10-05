@@ -143,6 +143,19 @@ describe('actionstrip: the $action selector never reaches the wire', () => {
     })
 
 
+    test(lang + ': transformRequest keeps an argument the entity declares as a field', () => {
+      const reqdata = { name: 'n', locale: 'en', session_id: 's1' }
+      for (const kind of ['header', 'cookie', 'query']) {
+        const ctx: any = bodyCtx(reqdata)
+        ctx.point.args = { [kind]: [
+          { name: 'locale', orig: 'Locale', field: true },
+          { name: 'session_id', orig: 'SESSIONID' },
+        ] }
+        deepStrictEqual(transformRequest(ctx), { name: 'n', locale: 'en' }, kind)
+      }
+    })
+
+
     test(lang + ': transformRequest leaves a body without $action alone', () => {
       const same = (ctx: any) => ctx.reqdata
       const reqdata = { name: 'n' }
@@ -282,6 +295,11 @@ describe('actionstrip: every SDK target strips the selector', () => {
       const text = siteText(SITES[lang].body)
       ok(/call[_-]?args/i.test(text) && /["']query["']/.test(text),
         lang + ': ' + SITES[lang].body[0] + ' never leaves the query arguments out')
+    })
+
+    test(lang + ': transform-request keeps an argument the entity declares as a field', () => {
+      ok(/["']field["']|\.field\b/.test(siteText(SITES[lang].body)),
+        lang + ': ' + SITES[lang].body[0] + ' never reads the field marker on an argument')
     })
 
     test(lang + ': prepare-query and transform-request both mention $action', () => {

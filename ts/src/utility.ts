@@ -109,26 +109,39 @@ function resolveAuthExchange(model: any): Record<string, any> | null {
 }
 
 
-function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean }): any {
+// Only a failure to RESOLVE counts as absent. A module that resolves and then
+// throws, from a syntax error, a bug or a missing nested dependency, must
+// propagate, or a broken optional component renders nothing unseen.
+function loadOptional(ctx$: any, path: string): any {
   const fullpath = resolvePath(ctx$, path)
-  const ignore = null == flags?.ignore ? false : flags.ignore
 
-  // When `ignore` is set, only swallow a genuine "module not found"
-  // resolution failure. A module that resolves but throws while loading
-  // (syntax error, runtime bug, or a missing *nested* dependency) must
-  // propagate — otherwise the optional component silently renders nothing
-  // and the real failure is invisible.
-  if (ignore) {
-    try {
-      require.resolve(fullpath)
-    }
-    catch (err: any) {
-      ctx$.log.warn({ point: 'require-missing', path, note: path })
-      return undefined
-    }
+  try {
+    require.resolve(fullpath)
+  }
+  catch (err: any) {
+    return undefined
   }
 
   return require(fullpath)
+}
+
+
+function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean }): any {
+  if (!flags?.ignore) {
+    return require(resolvePath(ctx$, path))
+  }
+
+  const found = loadOptional(ctx$, path)
+
+  if (undefined === found) {
+    ctx$.log.warn({
+      point: 'require-missing', path,
+      note: path + ': not found at ' + resolvePath(ctx$, path) +
+        ', so generation continued without it',
+    })
+  }
+
+  return found
 }
 
 
@@ -142,6 +155,7 @@ class SdkGenError extends Error {
 
 export {
   resolvePath,
+  loadOptional,
   requirePath,
   isAuthActive,
   resolveAuthPrefix,
@@ -254,7 +268,11 @@ const SPEC_FACTS: Record<string, (model: any) => any> = {
 }
 
 
-function withPointParts(op: any): any {
+// The argument kinds a call routes outside the body.
+const ROUTED_KINDS = ['header', 'cookie', 'query']
+
+
+function withPointParts(op: any, fields: string[] = []): any {
   if (null == op) {
     return op
   }
@@ -269,6 +287,8 @@ function withPointParts(op: any): any {
           [kind, each(values as any).filter((arg: any) => false !== arg.a).map((arg: any) => ({
             name: arg.n, orig: arg.or, type: arg.t, kind: arg.k,
             reqd: arg.r, example: arg.ex,
+            // Also a field of the entity, so the body keeps it.
+            ...(ROUTED_KINDS.includes(kind) && fields.includes(arg.n) ? { field: true } : {}),
           }))]))
         // Runtime hooks expose descriptive names independently of the model schema.
         return {
@@ -304,14 +324,15 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
   const entityDefs: any = {}
   const entityStubs: any = {}
   each(entity, (e: any) => {
+    const fields = each(e.fields || {}).filter((f: any) => false !== f.a)
     entityDefs[e.name] = clean({
-      fields: each(e.fields || {}).filter((f: any) => false !== f.a).map((f: any) => ({
+      fields: fields.map((f: any) => ({
         name: f.n, title: f.h, type: f.t, req: f.r, op: f.op,
         short: f.sh, readOnly: f.ro, writeOnly: f.wo, deprecated: f.de, format: f.fo,
       })),
       id: e.id,
       name: e.name,
-      op: withPointParts(e.op),
+      op: withPointParts(e.op, fields.map((f: any) => f.n)),
       relations: e.relations,
     }, true)
     entityStubs[e.name] = {}

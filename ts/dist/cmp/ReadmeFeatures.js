@@ -2,12 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeFeatures = void 0;
 const jostraca_1 = require("jostraca");
-const utility_1 = require("../utility");
+const optional_1 = require("../helpers/optional");
 const FeatureDocs_1 = require("./FeatureDocs");
 const ReadmeFeatures = (0, jostraca_1.cmp)(function ReadmeFeatures(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
-    const override = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/ReadmeFeatures_${target.name}`, { ignore: true });
+    const override = (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeFeatures');
     if (override) {
         override['ReadmeFeatures']({ target });
         return;

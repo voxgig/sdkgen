@@ -72,13 +72,13 @@ ${requireLines.join('\n')}
     if (opnames.includes('list')) {
       Content(`### 2. List ${eLow} records
 
-\`list\` returns a vector of records (each a map) and raises on error —
-iterate it directly.
+\`list\` returns a vector of entities, one per record, and raises on error.
+Read each record with \`((:data-get ${eLow}))\`.
 
 \`\`\`clojure
 (try
   (doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) nil nil)]
-    (println ${eLow}))
+    (println ((:data-get ${eLow}))))
   (catch Exception err
     (println "list failed:" (.getMessage err))))
 \`\`\`
@@ -166,7 +166,8 @@ ${nestedEntity.Name} is nested under ${parentName}, so provide the
       ? `(vs/getprop created "${dataIdF}")`
       : cljLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`clojure
@@ -182,6 +183,13 @@ ${nestedEntity.Name} is nested under ${parentName}, so provide the
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`;; Update${fromCreated ? " — the created record's id is a plain map key" : ''}
 (e-${eLow}/update (api/${eLow} client nil) (vs/jm ${updatePairs.join(' ')}) nil)
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`"${idF}" ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        Content(`;; Patch — sends only the fields given
+(e-${eLow}/patch (api/${eLow} client nil) (vs/jm ${patchPairs.join(' ')}) nil)
 
 `)
       }

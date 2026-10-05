@@ -33,14 +33,15 @@ function deriveEntityNames(entityColl: any): any[] {
 }
 
 
-// The five ops, and whether their request payload is a `Match` (query/id) or
-// `Data` (body) — this fixes the generated type-name suffix per op.
+// The generated ops, and whether their request payload is a `Match`
+// (query/id) or `Data` (body) — this fixes the generated type-name suffix per op.
 const OP_SUFFIX: Record<string, 'Match' | 'Data'> = {
   load: 'Match',
   list: 'Match',
   remove: 'Match',
   create: 'Data',
   update: 'Data',
+  patch: 'Data',
 }
 
 
@@ -88,7 +89,7 @@ function entityActions(entity: any): { op: string, action: string, path: string 
 function entityPath(entity: any): string {
   const ops: any = (entity && entity.op) || {}
 
-  for (const opname of ['list', 'load', 'create', 'update', 'remove']) {
+  for (const opname of CANON_OP_ORDER) {
     const op = ops[opname]
     if (null == op) {
       continue
@@ -238,6 +239,7 @@ function fieldOptional(field: any, opname: string): boolean {
     case 'create':
       return false === field.r
     case 'update':
+    case 'patch':
       return true
     case 'load':
     case 'remove':
@@ -369,7 +371,7 @@ function invalidRequest(ent: any):
 // `Object.keys(ent.op)`: an `active: false` op generates no method, and an op
 // whose every route is an action is refused without one, so a plain example
 // of either would fail.
-const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'remove']
+const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'patch', 'remove']
 
 function entityOps(ent: any): string[] {
   const ops = (ent && ent.op) || {}
@@ -491,7 +493,7 @@ function entityClassNames(entityColl: any, fold = false): Record<string, string>
   const taken = new Set<string>()
   ents.forEach((e: any) => {
     taken.add(key(e.Name))
-    for (const op of ['load', 'list', 'create', 'update', 'remove']) {
+    for (const op of CANON_OP_ORDER) {
       if (e.op && e.op[op]) {
         taken.add(key(opTypeName(e.Name, op)))
       }
@@ -548,7 +550,7 @@ function entityTypeCollisions(entityColl: any, fold = false): string[] {
   deriveEntityNames(entityColl)
     .forEach((e: any) => {
       bump(e.Name)
-      for (const op of ['load', 'list', 'create', 'update', 'remove']) {
+      for (const op of CANON_OP_ORDER) {
         if (e.op && e.op[op]) {
           bump(opTypeName(e.Name, op))
         }

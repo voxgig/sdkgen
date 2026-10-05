@@ -10,7 +10,7 @@ import {
 import { EntityOperation } from './EntityOperation_elixir'
 
 
-const OPS = ['load', 'list', 'create', 'update', 'remove']
+const OPS = ['load', 'list', 'create', 'update', 'patch', 'remove']
 
 
 const Entity = cmp(function Entity(props: any) {
