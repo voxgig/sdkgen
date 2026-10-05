@@ -1901,7 +1901,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
-  // The targets whose operations return an entity handle the reference names.
+  // The targets whose reference names the entity each operation returns.
   test('the reference says each operation returns the entity', async () => {
     const targets = ['c', 'cpp', 'csharp', 'elixir', 'rust', 'zig']
     const expect: Record<string, RegExp> = {
