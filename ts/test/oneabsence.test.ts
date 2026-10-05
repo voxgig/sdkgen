@@ -7,7 +7,7 @@ import Os from 'node:os'
 import Path from 'node:path'
 import { spawnSync } from 'node:child_process'
 
-import { rubyEnv } from './generateharness'
+import { rubyEnv, pythonEnv } from './generateharness'
 
 
 const TM = Path.resolve(__dirname, '..', 'project', '.sdk', 'tm')
@@ -108,14 +108,14 @@ console.log('supplied=' + keys({feature: {log: {active: true}}}))
 import sys, json
 sys.path.insert(0, ${JSON.stringify(Path.join(TM, 'py', 'pkg', 'utility'))})
 from voxgig_struct import validate
-SRC = open(${JSON.stringify(spec)}).read()
+SRC = open(${JSON.stringify(spec)}, encoding='utf-8').read()
 def keys(d):
     out = validate(d, json.loads(SRC))
     f = (out or {}).get('feature') or {}
     return ','.join(sorted(f.keys()))
 print('absent=' + keys({}))
 print('supplied=' + keys({'feature': {'log': {'active': True}}}))
-`])
+`], undefined, pythonEnv())
     },
   },
   {

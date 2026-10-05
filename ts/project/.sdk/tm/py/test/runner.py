@@ -13,7 +13,7 @@ class ProjectNameTestRunner:
     @staticmethod
     def load_env_local():
         try:
-            with open("../../.env.local", "r") as f:
+            with open("../../.env.local", "r", encoding="utf-8") as f:
                 content = f.read()
         except (FileNotFoundError, IOError):
             return
@@ -74,7 +74,7 @@ class ProjectNameTestRunner:
             return ProjectNameTestRunner._test_control
         ctrl_path = os.path.join(os.path.dirname(__file__), "sdk-test-control.json")
         try:
-            with open(ctrl_path, "r") as f:
+            with open(ctrl_path, "r", encoding="utf-8") as f:
                 ProjectNameTestRunner._test_control = json.load(f)
         except (FileNotFoundError, IOError, ValueError):
             ProjectNameTestRunner._test_control = {

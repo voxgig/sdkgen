@@ -24,7 +24,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 
 import {
-  makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, ROUTING_MODEL, entityTestData,
+  makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
@@ -2119,7 +2119,8 @@ const CORPUS_LANES: CorpusLane[] = [
       const py = toolchain('python3') || toolchain('python')
       if (null == py) return null
       if (!probeOk(py, ['-m', 'pytest', '--version'])) return null
-      return { bin: py, args: ['-m', 'pytest', 'test/test_feature_corpus.py', '-q', '-s'] }
+      return { bin: py, args: ['-m', 'pytest', 'test/test_feature_corpus.py', '-q', '-s'],
+        env: pythonEnv() }
     },
   },
   {
@@ -3833,7 +3834,8 @@ const AUTH_PROBE_LANES: {
       ready: () => null == toolchain(command) ? 'no ' + command + ' toolchain' : null,
       probe: (sdkroot: string, write: (name: string, source: string) => void) => {
         write(file, AUTH_PROBES[target])
-        return run(toolchain(command)!, [file], sdkroot, 'rb' === target ? rubyEnv() : undefined)
+        return run(toolchain(command)!, [file], sdkroot,
+          'rb' === target ? rubyEnv() : 'py' === target ? pythonEnv() : undefined)
       },
     })),
   {
@@ -4291,7 +4293,7 @@ function pytest(args: string[]) {
   const py = toolchain('python3') || toolchain('python')
   if (null == py) return null
   if (!probeOk(py, ['-m', 'pytest', '--version'])) return null
-  return { bin: py, args: ['-m', 'pytest', ...args] }
+  return { bin: py, args: ['-m', 'pytest', ...args], env: pythonEnv() }
 }
 
 
@@ -5124,6 +5126,7 @@ describe('generated entity tests make only calls the runtime takes', () => {
       Fs.mkdirSync(dir, { recursive: true })
       Fs.writeFileSync(Path.join(dir, Name + 'TestData.json'), JSON.stringify(entityTestData(entity)))
     }
+    Fs.writeFileSync(Path.join(tmp, '.env.local'), '# Not ASCII — read as UTF-8.\n')
   })
 
   after(() => {
@@ -5170,6 +5173,62 @@ describe('generated entity tests make only calls the runtime takes', () => {
   })
 
 
+  // A runner that cannot decode the control file falls back to skipping nothing.
+  const MOON_SKIP = JSON.stringify({
+    version: 1,
+    test: { skip: { unit: { direct: [], entityOp: [
+      { entity: 'moon', op: 'load', reason: 'moon — skipped by the control file' },
+    ] } } },
+  })
+
+
+  // Run from test/, where the runner reads the project's own .env.local.
+  test('py: the moon, signal and planet entity tests pass', async (t) => {
+    const files = ['test_moon_entity.py', 'test_signal_entity.py', 'test_planet_entity.py']
+    const cmd = pytest(files)
+    if (null == cmd) return t.skip('needs python3 with pytest')
+
+    const root = Path.join(tmp, 'py')
+    await generateTo('py', root, ROUTING_MODEL)
+    const testdir = Path.join(root, 'test')
+    const res = run(cmd.bin, cmd.args, testdir, cmd.env)
+    if (res.timedOut) return t.skip('py: ' + res.out)
+    ok(res.ok, 'py: a generated entity test failed:\n' + tail(res.out))
+    ok(/\b10 passed, 3 skipped\b/.test(res.out),
+      'py: expected ten passing and three skipped tests:\n' + tail(res.out))
+
+    Fs.writeFileSync(Path.join(testdir, 'sdk-test-control.json'), MOON_SKIP)
+    const skip = pytest(['-rs', files[0]])!
+    const skipped = run(skip.bin, skip.args, testdir, skip.env)
+    ok(skipped.ok, 'py: the moon entity test failed under a control file:\n' + tail(skipped.out))
+    ok(skipped.out.includes('skipped by the control file'),
+      'py: the control file did not skip the moon flow:\n' + tail(skipped.out))
+  })
+
+
+  test('rb: the moon, signal and planet entity tests pass', async (t) => {
+    const load = (names: string) => '%w[' + names +
+      '].each { |n| require File.expand_path("test/" + n + "_entity_test.rb") }'
+    const cmd = minitest(['-e', load('moon signal planet')])
+    if (null == cmd) return t.skip('needs ruby with minitest')
+
+    const root = Path.join(tmp, 'rb')
+    await generateTo('rb', root, ROUTING_MODEL)
+    const res = run(cmd.bin, cmd.args, root, cmd.env)
+    if (res.timedOut) return t.skip('rb: ' + res.out)
+    ok(res.ok, 'rb: a generated entity test failed:\n' + tail(res.out))
+    ok(/\b13 runs, \d+ assertions, 0 failures, 0 errors, 3 skips\b/.test(res.out),
+      'rb: expected thirteen runs and three skips:\n' + tail(res.out))
+
+    Fs.writeFileSync(Path.join(root, 'test', 'sdk-test-control.json'), MOON_SKIP)
+    const skip = minitest(['-e', load('moon'), '--', '-v'])!
+    const skipped = run(skip.bin, skip.args, root, skip.env)
+    ok(skipped.ok, 'rb: the moon entity test failed under a control file:\n' + tail(skipped.out))
+    ok(skipped.out.includes('skipped by the control file'),
+      'rb: the control file did not skip the moon flow:\n' + tail(skipped.out))
+  })
+
+
   test('c: the moon, signal and planet entity tests pass', async (t) => {
     const make = toolchain('make')
     const configured = process.env.CC
@@ -5213,6 +5272,8 @@ const README_LANES: {
   needs: string,
   ran: RegExp,
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // A runnable block added to the README, whose output is not ASCII.
+  example?: string,
 }[] = [
   {
     target: 'rb',
@@ -5220,6 +5281,7 @@ const README_LANES: {
     needs: 'ruby with minitest',
     ran: /\d+ runs, \d+ assertions, 0 failures, 0 errors, 0 skips/,
     command: () => minitest(['test/readme_examples_test.rb']),
+    example: '```ruby\nputs "naïve café — #{client.class}"\n```',
   },
   {
     target: 'go',
@@ -5250,6 +5312,7 @@ const README_LANES: {
     needs: 'python3 with pytest',
     ran: /[1-9]\d* passed/,
     command: () => pytest(['test/test_readme_examples.py', '-q']),
+    example: '```python\nprint("naïve café — " + client.__class__.__name__)\n```',
   },
 ]
 
@@ -5274,6 +5337,9 @@ describe('the README examples run for a slug carrying the word client', () => {
       ok(null != files[lane.runner], lane.target + ': ' + lane.runner + ' was not generated')
       ok(String(files['README.md']).includes(README_SLUG),
         lane.target + ': the README does not carry the slug, so it tests nothing')
+      if (null != lane.example) {
+        Fs.appendFileSync(Path.join(sdkroot, 'README.md'), '\n' + lane.example + '\n')
+      }
 
       const cmd = lane.command()
       if (null == cmd) {
@@ -5345,7 +5411,7 @@ const PROBE_LANES: ProbeLane[] = [
     seam: () => !probeOk(mediaPython()!, ['-c', 'import requests']),
     exec: (sdkroot, env, write, probe) => {
       write(probe.name + '_probe.py', probe.source.py)
-      return run(mediaPython()!, [probe.name + '_probe.py'], sdkroot, env)
+      return run(mediaPython()!, [probe.name + '_probe.py'], sdkroot, pythonEnv(env))
     },
   },
   {

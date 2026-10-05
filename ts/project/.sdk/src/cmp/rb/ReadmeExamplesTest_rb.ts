@@ -156,6 +156,7 @@ ${entityLines}
         f.write(blk[:code])
         f.flush
         out, status = Open3.capture2e("ruby", "-c", f.path)
+        out.force_encoding(Encoding::UTF_8)
         failures << "#{blk[:doc]} ##{blk[:n]}:\\n#{out}\\n#{blk[:code]}" unless status.success?
       end
     end
@@ -228,12 +229,15 @@ ${entityLines}
         driver = File.join(dir, "_driver.rb")
         File.write(driver, batch_driver(paths))
         out, status = Open3.capture2e("ruby", driver)
+        # A pipe is tagged with the locale's encoding; the snippets wrote UTF-8.
+        out.force_encoding(Encoding::UTF_8)
 
         runnable.each_with_index do |blk, i|
           seg = batch_segment(out, i)
           code = status.exitstatus
           if seg.nil?
             solo, sstatus = Open3.capture2e("ruby", paths[i])
+            solo.force_encoding(Encoding::UTF_8)
             seg = solo
             code = sstatus.exitstatus
           end
