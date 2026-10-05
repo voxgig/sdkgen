@@ -2,8 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeQuick = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const utility_1 = require("../utility");
-const ReadmeQuick = (0, jostraca_1.cmp)(function ReadmeQuick(props) {
+const ReadmeQuick = (0, component_1.cmp)(function ReadmeQuick(props) {
     const { target, ctx$ } = props;
     (0, jostraca_1.Content)(`
 ## Tutorial: your first API call

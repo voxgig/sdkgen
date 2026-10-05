@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeExplanation = void 0;
 const applicability_1 = require("../helpers/applicability");
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
 const opShape_1 = require("../helpers/opShape");
@@ -182,7 +183,7 @@ for debugging or custom transport.
 `,
     },
 };
-const ReadmeExplanation = (0, jostraca_1.cmp)(function ReadmeExplanation(props) {
+const ReadmeExplanation = (0, component_1.cmp)(function ReadmeExplanation(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
     // Gated: this section describes a TARGET's features.

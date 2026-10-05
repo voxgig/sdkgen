@@ -9,6 +9,7 @@ exports.claimedFiles = claimedFiles;
 exports.pruneGenerated = pruneGenerated;
 const node_path_1 = __importDefault(require("node:path"));
 const copies_1 = require("../action/copies");
+const component_1 = require("./component");
 // Every file each generate run emitted, by output root: the only record that
 // tells a file the model stopped producing from one nothing generated.
 const GENERATED_LOG = 'log/generated.jsonl';
@@ -17,6 +18,9 @@ exports.GENERATED_LOG = GENERATED_LOG;
 const EMITTED = [
     'written', 'unchanged', 'merged', 'presented', 'diffed', 'preserved', 'conflicted',
 ];
+// jostraca leaves a file holding this marker as it is.
+const PROTECT = 'JOSTRACA_PROTECT';
+const SHOWN = 5;
 function logPath(project) {
     return node_path_1.default.join(project, '.sdk', ...GENERATED_LOG.split('/'));
 }
@@ -33,12 +37,12 @@ function readGenerated(fs, project) {
         if (null == entry) {
             continue;
         }
-        const files = record[entry.root] ?? (record[entry.root] = new Set());
-        for (const [rel, present] of Object.entries(entry.files)) {
-            if (true === present) {
-                files.add(rel);
+        const files = record[entry.root] ?? (record[entry.root] = new Map());
+        for (const [rel, owner] of Object.entries(entry.files)) {
+            if ('string' === typeof owner) {
+                files.set(rel, owner);
             }
-            else if (null === present) {
+            else if (null === owner) {
                 files.delete(rel);
             }
         }
@@ -58,10 +62,18 @@ function parseEntry(line) {
         return undefined;
     }
 }
-// Relative to root with forward slashes, or undefined for a path outside it.
+// A path jostraca reported or a claim names, relative to the root with
+// forward slashes, or undefined outside it. Such a path is absolute, or
+// relative to the working directory when the output folder is.
 function inside(root, path) {
-    const rel = node_path_1.default.relative(node_path_1.default.resolve(root), node_path_1.default.resolve(root, path))
-        .split(node_path_1.default.sep).join('/');
+    return under(root, node_path_1.default.resolve(path));
+}
+// A recorded path, relative to the root it was recorded under.
+function canonical(root, rel) {
+    return under(root, node_path_1.default.resolve(root, rel));
+}
+function under(root, abs) {
+    const rel = node_path_1.default.relative(node_path_1.default.resolve(root), abs).split(node_path_1.default.sep).join('/');
     return ('' === rel || '..' === rel || rel.startsWith('../') || node_path_1.default.isAbsolute(rel)) ?
         undefined : rel;
 }
@@ -69,24 +81,64 @@ function rootKey(project, out) {
     return node_path_1.default.relative(node_path_1.default.resolve(project), node_path_1.default.resolve(out))
         .split(node_path_1.default.sep).join('/') || '.';
 }
-function within(out, paths) {
+function within(out, paths, outside) {
     const found = new Set();
     for (const path of paths) {
         const rel = inside(out, path);
-        if (null != rel && !rel.startsWith('.jostraca/')) {
+        if (null == rel) {
+            outside.add(path);
+        }
+        else if (!rel.startsWith('.jostraca/')) {
             found.add(rel);
         }
     }
     return found;
 }
-// What the run's component tree claims: each File node's output path, written
-// or not, and each Inject's target. A file written only when absent is the
-// project's once it exists, and an Inject edits a region of a file it does
-// not own, so neither is ever the record's.
-function claimedFiles(node, claims = { files: [], once: [], injected: [] }) {
-    if ('string' === typeof node?.fullpath) {
+// Every path a save decided on, written or not. A file jostraca declined to
+// write, protected or by its `existing` option, is in no result list.
+function savedPaths(jres) {
+    const audit = 'function' === typeof jres?.audit ? jres.audit() : [];
+    return (Array.isArray(audit) ? audit : [])
+        .map((entry) => entry?.[1])
+        .filter((meta) => 'string' === typeof meta?.action && 'string' === typeof meta?.path)
+        .map((meta) => meta.path);
+}
+// Each File node's output path, written or not, and each Inject's target. A
+// file written only when absent is the project's once it exists, and an
+// Inject edits a region of a file it does not own, so neither is ever the
+// record's. A Copy's files are owned by the scope that copied them, found by
+// destination, as the tree holds no node per copied file.
+function claimedFiles(node, folder) {
+    const claims = { files: {}, once: [], injected: [], copies: [], scopes: [] };
+    claimTree(node, folder, [], '', claims);
+    return claims;
+}
+// `base` follows the folder stack jostraca builds from Project and Folder
+// nodes; a component's own `name` prop joins its path but makes no folder.
+function claimTree(node, base, chain, owner, claims) {
+    if (null == node) {
+        return;
+    }
+    const name = node.meta?.[component_1.COMPONENT];
+    if ('string' === typeof name && '' !== name) {
+        chain = [...chain, name];
+        owner = chain.join('/') + (0 < (node.path?.length ?? 0) ? '@' + node.path.join('/') : '');
+        claims.scopes.push(owner);
+    }
+    if ('project' === node.kind && 'string' === typeof node.folder) {
+        base = node.folder;
+    }
+    else if ('folder' === node.kind && 'string' === typeof node.name) {
+        base = base + '/' + node.name;
+    }
+    else if ('copy' === node.kind) {
+        claims.copies.push({
+            to: 'string' === typeof node.name ? base + '/' + node.name : base, owner,
+        });
+    }
+    else if ('string' === typeof node.fullpath) {
         if ('file' === node.kind) {
-            claims.files.push(node.fullpath);
+            claims.files[node.fullpath] = owner;
             if (writtenOnce(node)) {
                 claims.once.push(node.fullpath);
             }
@@ -95,10 +147,9 @@ function claimedFiles(node, claims = { files: [], once: [], injected: [] }) {
             claims.injected.push(node.fullpath);
         }
     }
-    for (const child of node?.children ?? []) {
-        claimedFiles(child, claims);
+    for (const child of node.children ?? []) {
+        claimTree(child, base, chain, owner, claims);
     }
-    return claims;
 }
 // As jostraca's FileOp reads `exclude` for an existing file.
 function writtenOnce(node) {
@@ -107,10 +158,40 @@ function writtenOnce(node) {
         ('string' === typeof exclude ? [exclude] : Array.isArray(exclude) ? exclude : [])
             .includes(node.path?.join('/'));
 }
-// The top-level directory, or '' for a file at the root.
-function part(rel) {
-    const at = rel.indexOf('/');
-    return -1 === at ? '' : rel.slice(0, at);
+// The owner of an emitted file: its File claim, else the deepest Copy whose
+// destination holds it, else '' for a file no scope accounts for.
+function claimOwners(out, claims, outside) {
+    const files = new Map();
+    for (const [path, owner] of Object.entries(claims?.files ?? {})) {
+        const rel = inside(out, path);
+        if (null != rel) {
+            files.set(rel, owner);
+        }
+    }
+    const copies = [];
+    for (const copy of claims?.copies ?? []) {
+        const prefix = node_path_1.default.resolve(copy.to) === node_path_1.default.resolve(out) ? '' : inside(out, copy.to);
+        if (null == prefix) {
+            outside.add(copy.to);
+        }
+        else {
+            copies.push({ prefix, owner: copy.owner });
+        }
+    }
+    return (rel) => {
+        const direct = files.get(rel);
+        if (null != direct) {
+            return direct;
+        }
+        let best;
+        for (const copy of copies) {
+            if (('' === copy.prefix || rel === copy.prefix || rel.startsWith(copy.prefix + '/')) &&
+                (null == best || best.prefix.length < copy.prefix.length)) {
+                best = copy;
+            }
+        }
+        return best?.owner ?? '';
+    };
 }
 function isFile(fs, abs) {
     try {
@@ -118,6 +199,14 @@ function isFile(fs, abs) {
     }
     catch (err) {
         return undefined;
+    }
+}
+function protectedFile(fs, abs) {
+    try {
+        return fs.readFileSync(abs).includes(PROTECT);
+    }
+    catch (err) {
+        return false;
     }
 }
 // Whether a directory between `out` and the file is a symbolic link, through
@@ -155,24 +244,40 @@ function removeEmptyDirs(fs, out, abs) {
 }
 // Why a recorded file this run did not emit is not this record's to delete.
 function keptBecause(fs, out, rel, folded) {
+    const abs = node_path_1.default.resolve(out, rel);
     return folded.has(rel.toLowerCase()) ? 'a generated file has its name in another case' :
         linked(fs, out, rel) ? 'a folder above it is a symbolic link' :
-            true !== isFile(fs, node_path_1.default.resolve(out, rel)) ? 'it is not a plain file' :
-                undefined;
+            true !== isFile(fs, abs) ? 'it is not a plain file' :
+                protectedFile(fs, abs) ? 'it carries the ' + PROTECT + ' marker' :
+                    undefined;
 }
-// After a run into `out`: delete each recorded file this run did not emit,
-// then record what changed. The first run into a root prunes nothing, and a
-// part of the output this run emitted nothing into (a target switched off)
-// is left as it is.
+function shown(paths) {
+    return paths.slice(0, SHOWN).join(', ') + (SHOWN < paths.length ? ', ...' : '');
+}
+// After a run into `out`: delete each recorded file this run did not emit
+// whose scope ran again, then record what changed. The first run into a root
+// prunes nothing. A file whose scope did not run (a target or a phase
+// switched off), one jostraca saw and declined to write, and one carrying
+// the protect marker are left as they are.
 function pruneGenerated(ctx) {
     const { fs, log, out } = ctx;
     const root = rootKey(ctx.project, out);
     const record = readGenerated(fs, ctx.project);
     const known = record[root];
-    const emitted = within(out, EMITTED.flatMap((list) => ctx.jres?.files?.[list] ?? []));
-    const declared = within(out, ctx.claims?.files ?? []);
-    const once = within(out, ctx.claims?.once ?? []);
-    const injected = within(out, ctx.claims?.injected ?? []);
+    const outside = new Set();
+    const emitted = within(out, EMITTED.flatMap((list) => ctx.jres?.files?.[list] ?? []), outside);
+    const seen = within(out, savedPaths(ctx.jres), outside);
+    const declared = within(out, Object.keys(ctx.claims?.files ?? {}), outside);
+    const once = within(out, ctx.claims?.once ?? [], outside);
+    const injected = within(out, ctx.claims?.injected ?? [], outside);
+    const ownerOf = claimOwners(out, ctx.claims, outside);
+    const scopes = new Set(ctx.claims?.scopes ?? []);
+    if (0 < outside.size) {
+        const paths = Array.from(outside).sort();
+        log.warn({ point: 'generate-record-outside', folder: out, files: paths,
+            note: paths.length + ' path(s) resolve outside ' + out +
+                ', so they are not recorded: ' + shown(paths) });
+    }
     for (const rel of once) {
         emitted.delete(rel);
     }
@@ -181,25 +286,35 @@ function pruneGenerated(ctx) {
             emitted.delete(rel);
         }
     }
-    const parts = new Set(Array.from(emitted).map(part));
     const folded = new Set(Array.from(emitted).map((rel) => rel.toLowerCase()));
     const files = {};
     const pruned = [];
+    const unowned = [];
     for (const rel of emitted) {
-        if (!known?.has(rel)) {
-            files[rel] = true;
+        const owner = ownerOf(rel);
+        if ('' === owner) {
+            unowned.push(rel);
+        }
+        if (known?.get(rel) !== owner) {
+            files[rel] = owner;
         }
     }
-    for (const rel of known ?? []) {
-        if (emitted.has(rel) || declared.has(rel) || injected.has(rel) ||
-            inside(out, rel) !== rel) {
+    if (0 < unowned.length) {
+        unowned.sort();
+        log.warn({ point: 'generate-record-unowned', folder: out, files: unowned,
+            note: unowned.length + ' generated file(s) came from no component made with ' +
+                'sdkgen\'s cmp, so they are recorded but never removed: ' + shown(unowned) });
+    }
+    for (const [rel, owner] of known ?? []) {
+        if (emitted.has(rel) || seen.has(rel) || declared.has(rel) || injected.has(rel) ||
+            canonical(out, rel) !== rel) {
             continue;
         }
         if (!fs.existsSync(node_path_1.default.resolve(out, rel))) {
             files[rel] = null;
             continue;
         }
-        if (!parts.has(part(rel))) {
+        if (!scopes.has(owner)) {
             continue;
         }
         const why = keptBecause(fs, out, rel, folded);

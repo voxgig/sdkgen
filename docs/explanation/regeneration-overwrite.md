@@ -53,13 +53,20 @@ enterprise-feature work produced non-compiling Go (`undefined: Gon2`,
 - **A file the model no longer produces is removed.** Overwrite alone leaves it
   behind: an entity renamed or dropped from the API kept its old class, and a
   typed target then failed to build. Each run records the files it wrote in
-  `.sdk/log/generated.jsonl`, one record per output folder, and removes a file an
-  earlier run wrote and this run did not. A part of the output the run writes
-  nothing into, such as a target switched off, keeps its files. A file a
-  component writes only when it is absent, such as `sdk-test-control.json` or the
-  root `CHANGELOG.md`, belongs to the project from its first write, so the record
-  never holds it. The first run after an upgrade records and removes nothing, so
-  a file left over from before the record stays until it is deleted by hand.
+  `.sdk/log/generated.jsonl`, one record per output folder, each file with the
+  component that produced it, and removes a file an earlier run wrote when that
+  component ran again and did not produce it. A file whose component did not
+  run keeps its place: a target switched off, or a phase switched off, such as
+  `phase.build` for the test data under `.sdk/test/entity/` or a target's
+  `phase.readme`. A file jostraca visited and declined to write, because it
+  carries `JOSTRACA_PROTECT` or `existing.txt.write` is off, is kept, and a
+  file carrying that marker is never removed. A file a component writes only
+  when it is absent, such as `sdk-test-control.json` or the root
+  `CHANGELOG.md`, belongs to the project from its first write, so the record
+  never holds it. The first run after an upgrade records and removes nothing,
+  so a file left over from before the record stays until it is deleted by
+  hand. A path that resolves outside the output folder is reported and not
+  recorded.
 - **Adding/removing a target is clean.** `target add` overwrites the target
   files and rewrites `target-index.aontu` without diff3 markers. (A dedicated
   `target remove` is still worth adding so the index is never hand-edited.)

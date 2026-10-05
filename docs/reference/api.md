@@ -88,7 +88,7 @@ import everything from one place.
 
 | Export | Purpose |
 | --- | --- |
-| `cmp(fn)` | Wrap a function as a component. The wrapper injects `ctx$` (carrying `model`, `log`, `fs`, …) into `props`, and passes a single function child as `[child]`. |
+| `cmp(fn)` | Wrap a function as a component. The wrapper injects `ctx$` (carrying `model`, `log`, `fs`, …) into `props`, and passes a single function child as `[child]`. It also names the node after `fn`, which is how `generate` traces each file it writes to the component that wrote it, and so removes the file once that component runs and no longer writes it. A file a component made with jostraca's own `cmp` writes is traced to the nearest component made with this one. |
 | `each(subject, spec?, fn?)` | Iterate arrays/objects deterministically (sorted by key). Injects `key$`/`val$`/`index$`. |
 | `names(base, name)` | Populate case variants (`Name`, `NAME`, …) on `base`. |
 | `snakify` / `camelify` / `kebabify` | Case conversions. |

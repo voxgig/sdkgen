@@ -160,6 +160,7 @@ Object.defineProperty(exports, "guardModelNames", { enumerable: true, get: funct
 const flowGuard_1 = require("./helpers/flowGuard");
 Object.defineProperty(exports, "guardFlowSteps", { enumerable: true, get: function () { return flowGuard_1.guardFlowSteps; } });
 const generated_1 = require("./helpers/generated");
+const component_1 = require("./helpers/component");
 const canonType_1 = require("./helpers/canonType");
 Object.defineProperty(exports, "canonToType", { enumerable: true, get: function () { return canonType_1.canonToType; } });
 Object.defineProperty(exports, "canonToDtype", { enumerable: true, get: function () { return canonType_1.canonToDtype; } });
@@ -427,7 +428,7 @@ function SdkGen(opts) {
         const jres = await jostraca.generate(jopts, keepingTree(() => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree));
         (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));
         (0, generated_1.pruneGenerated)({
-            fs, log, project: root, out: root, jres, claims: (0, generated_1.claimedFiles)(tree.root),
+            fs, log, project: root, out: root, jres, claims: (0, generated_1.claimedFiles)(tree.root, folder),
             dryrun: !!opts.dryrun,
         });
         // Docgen owns editions, destinations, templates, text QA and deployment.
@@ -464,7 +465,8 @@ function SdkGen(opts) {
             }), etree));
             (0, util_2.showChanges)(jopts.log, 'generate-result', eres, node_path_1.default.dirname(process.cwd()));
             (0, generated_1.pruneGenerated)({
-                fs, log, project: root, out: ext.folder, jres: eres, claims: (0, generated_1.claimedFiles)(etree.root),
+                fs, log, project: root, out: ext.folder, jres: eres,
+                claims: (0, generated_1.claimedFiles)(etree.root, ext.folder),
                 dryrun: !!opts.dryrun,
             });
         }
@@ -871,7 +873,7 @@ function clear(path) {
         }
     }
 }
-exports.cmp = JostracaModule.cmp;
+exports.cmp = component_1.cmp;
 exports.names = JostracaModule.names;
 exports.each = JostracaModule.each;
 exports.snakify = JostracaModule.snakify;

@@ -1,5 +1,6 @@
 
-import { cmp, each, Content, File, Folder } from 'jostraca'
+import { each, Content, File, Folder } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 import { claudePointer } from './AgentGuideContent'
 

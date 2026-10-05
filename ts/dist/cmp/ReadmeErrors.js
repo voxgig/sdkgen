@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeErrors = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
@@ -180,7 +181,7 @@ _ = result
 `,
     },
 };
-const ReadmeErrors = (0, jostraca_1.cmp)(function ReadmeErrors(props) {
+const ReadmeErrors = (0, component_1.cmp)(function ReadmeErrors(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
     const lang = LANGS[target.name] || DEFAULT_LANG;

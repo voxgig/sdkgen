@@ -3,10 +3,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PublishWorkflow = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const packageMeta_1 = require("../helpers/packageMeta");
 const npm_trust_1 = require("../admin/npm-trust");
-const PublishWorkflow = (0, jostraca_1.cmp)(function PublishWorkflow(props) {
+const PublishWorkflow = (0, component_1.cmp)(function PublishWorkflow(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
     const targetMap = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`) || {};

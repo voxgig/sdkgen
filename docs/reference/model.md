@@ -150,7 +150,9 @@ main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: 'https://example.com
 
 What the project's `Root` writes besides its targets. The standard `Root`
 that create-sdkgen scaffolds reads these; a project turns them off in
-`.sdk/model/project.aontu`.
+`.sdk/model/project.aontu`. A phase switched off keeps the files it
+generated: `generate` removes only what a component that ran stopped
+producing.
 
 | Path | Type | Default | Description |
 | --- | --- | --- | --- |
@@ -248,7 +250,8 @@ main: kit: target: ts: {
 
 A target declares `phase.<name>.active: false` to skip a standard
 generation phase; the phases are `entity`, `feature`, `readme`,
-`agentguide` and `test`, and all default to on. The CONSUMER targets
+`agentguide` and `test`, and all default to on. A phase switched off keeps
+the files it generated. The CONSUMER targets
 (`go-cli`, `go-mcp`, `py-data`, and `seneca-provider` from its package)
 switch every one of them off and emit their whole package from `Main`: they wrap another
 target's SDK rather than being one, so the standard components — which

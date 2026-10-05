@@ -1,5 +1,6 @@
 
-import { cmp, File, Content } from 'jostraca'
+import { File, Content } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 
 import { ReadmeIntro } from './ReadmeIntro'

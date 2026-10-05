@@ -66,6 +66,7 @@ import { collectDeps } from './helpers/collectDeps'
 import { guardModelNames } from './helpers/modelNames'
 import { guardFlowSteps } from './helpers/flowGuard'
 import { claimedFiles, pruneGenerated } from './helpers/generated'
+import { cmp as labelledCmp } from './helpers/component'
 import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonToDtype, canonKey, canonScalarKey } from './helpers/canonType'
 import { canonToSpec, entityDataSpec, entityOpSpec, entitySpecs } from './helpers/canonSpec'
@@ -357,7 +358,7 @@ function SdkGen(opts: SdkGenOptions) {
 
     showChanges(jopts.log, 'generate-result', jres, Path.dirname(process.cwd()))
     pruneGenerated({
-      fs, log, project: root, out: root, jres, claims: claimedFiles(tree.root),
+      fs, log, project: root, out: root, jres, claims: claimedFiles(tree.root, folder),
       dryrun: !!opts.dryrun,
     })
 
@@ -404,7 +405,8 @@ function SdkGen(opts: SdkGenOptions) {
 
       showChanges(jopts.log, 'generate-result', eres, Path.dirname(process.cwd()))
       pruneGenerated({
-        fs, log, project: root, out: ext.folder, jres: eres, claims: claimedFiles(etree.root),
+        fs, log, project: root, out: ext.folder, jres: eres,
+        claims: claimedFiles(etree.root, ext.folder),
         dryrun: !!opts.dryrun,
       })
     }
@@ -1001,7 +1003,7 @@ export type {
 type Component = (props: any, children?: any) => void
 
 
-export const cmp: typeof JostracaModule.cmp = JostracaModule.cmp
+export const cmp: typeof JostracaModule.cmp = labelledCmp
 export const names: (base: any, name: string, prop?: string) => any = JostracaModule.names
 export const each: (subject?: any, apply?: any) => any = JostracaModule.each
 export const snakify: (input: any[] | string) => string = JostracaModule.snakify

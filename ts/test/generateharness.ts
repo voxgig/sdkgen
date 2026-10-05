@@ -5,9 +5,10 @@ import Path from 'node:path'
 import { strictEqual } from 'node:assert'
 
 import { Aontu } from 'aontu'
-import { cmp, each, names, Project, Folder } from 'jostraca'
+import { each, names, Project, Folder } from 'jostraca'
 
 import {
+  cmp,
   Main, Entity, Feature, Readme, Test as TestCmp, AgentGuide,
   ReadmeTop, AgentGuideTop, License, Security, Changelog, Deploy,
   registerComponent,

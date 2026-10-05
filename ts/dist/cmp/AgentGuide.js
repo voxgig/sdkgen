@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentGuide = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const utility_1 = require("../utility");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 const AgentGuideFeature_1 = require("./AgentGuideFeature");
@@ -9,7 +10,7 @@ const AgentGuideFeature_1 = require("./AgentGuideFeature");
 // enters `Folder({ name: target.name })` before calling this, exactly as for
 // Readme), so it lands at `<lang>/AGENTS.md`. Then it drives the co-located
 // per-feature guides for this target.
-const AgentGuide = (0, jostraca_1.cmp)(function AgentGuide(props) {
+const AgentGuide = (0, component_1.cmp)(function AgentGuide(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
     const Name = (0, AgentGuideContent_1.projectName)(model);

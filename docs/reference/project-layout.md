@@ -165,12 +165,14 @@ the component tree, and writes/merges the result into the per-target
 directories (`ts/`, `go/`, …).
 
 It also removes what the model no longer produces. `.sdk/log/generated.jsonl`
-records the files each run wrote, per output folder, and a file an earlier run
-wrote and this run did not is deleted, with any directory it leaves empty. A
-target switched off keeps its directory, because the run writes nothing there.
-A file a component writes only when it is absent, such as
-`sdk-test-control.json`, is the project's from its first write and is never
-recorded. A dry run lists what it would remove.
+records the files each run wrote, per output folder and with the component that
+produced each, and a file an earlier run wrote is deleted when that component
+ran again and did not produce it, with any directory it leaves empty. A target
+or a phase switched off keeps its files, because its component did not run. A
+file jostraca declined to write, protected by `JOSTRACA_PROTECT` or by the
+`existing` policy, is kept. A file a component writes only when it is absent,
+such as `sdk-test-control.json`, is the project's from its first write and is
+never recorded. A dry run lists what it would remove.
 
 ### Repository administration
 

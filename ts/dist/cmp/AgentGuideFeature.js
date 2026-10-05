@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentGuideFeature = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 function cap(s) {
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -9,7 +10,7 @@ function cap(s) {
 // Per-feature agent guide, co-located with the feature's generated runtime.
 // Invoked from AgentGuide inside the ambient target folder, so it lands at
 // `<lang>/src/feature/<name>/AGENTS.md`.
-const AgentGuideFeature = (0, jostraca_1.cmp)(function AgentGuideFeature(props) {
+const AgentGuideFeature = (0, component_1.cmp)(function AgentGuideFeature(props) {
     const { target, feature, ctx$ } = props;
     const name = feature.name;
     const Name = feature.Name || cap(name);

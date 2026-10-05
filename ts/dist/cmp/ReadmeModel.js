@@ -2,9 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeModel = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
-const ReadmeModel = (0, jostraca_1.cmp)(function ReadmeModel(props) {
+const ReadmeModel = (0, component_1.cmp)(function ReadmeModel(props) {
     const { target, ctx$ } = props;
     const { model } = ctx$;
     // Guard the Name case variant so the reference header never renders
@@ -28,7 +29,7 @@ const ReadmeModel = (0, jostraca_1.cmp)(function ReadmeModel(props) {
     }
 });
 exports.ReadmeModel = ReadmeModel;
-const ReadmeModelGeneric = (0, jostraca_1.cmp)(function ReadmeModelGeneric(props) {
+const ReadmeModelGeneric = (0, component_1.cmp)(function ReadmeModelGeneric(props) {
     const { target, model, entityList, authActive } = props;
     const apikeyRow = authActive
         ? '| `apikey` | `string` | API key for authentication. |\n'

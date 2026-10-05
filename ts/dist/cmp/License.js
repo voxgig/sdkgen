@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.License = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const packageMeta_1 = require("../helpers/packageMeta");
 // Root MIT LICENSE for the generated SDK repo. The copyright holder is the
 // PUBLISHER (Voxgig): this is an unofficial, generated SDK, so it is NOT
@@ -19,7 +20,7 @@ const packageMeta_1 = require("../helpers/packageMeta");
 // The disclosure is not lost. It leads the README, and it now has its own
 // NOTICE file, which is the conventional home for exactly this and is not
 // parsed as a licence.
-const License = (0, jostraca_1.cmp)(function License(props) {
+const License = (0, component_1.cmp)(function License(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
     const year = (model.const && model.const.year) || new Date().getFullYear();
