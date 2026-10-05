@@ -6,7 +6,7 @@ class Control {
   throw?: boolean
   err?: any
   explain?: any
-  // Cancels the request in flight; the other targets follow in #351.
+  // Cancels the request in flight, which ts and js alone do so far.
   signal?: AbortSignal
 
   constructor(ctrlmap: Record<string, any>) {
