@@ -71,9 +71,9 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(' ')})`
         : 'nil'
       Content(`
-;; Load a specific ${eLow} (returns the record, raises on error)
+;; Load a specific ${eLow} (returns the entity, raises on error)
 (def ${eLow} (e-${eLow}/load (api/${eLow} client nil) ${loadArg} nil))
-(println ${eLow})
+(println ((:data-get ${eLow})))
 `)
     }
 

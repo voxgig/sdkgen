@@ -67,7 +67,7 @@ my $client = ${model.const.Name}SDK->test(undef, undef);
       Content(`print scalar(@$${eVar}), " records\\n";
 `)
     } else {
-      Content(`print "$${eVar}->{id}\\n";
+      Content(`print $${eVar}->data_get->{id}, "\\n";
 `)
     }
   }

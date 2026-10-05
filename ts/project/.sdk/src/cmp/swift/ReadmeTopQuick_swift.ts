@@ -65,10 +65,12 @@ let client = ${SDK}(options)
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eNameLower}s (returns a Value list, throws on error)
+      Content(`// List all ${eNameLower}s (a Value list of entities, one per record; throws on error)
 let ${eVar}List = try client.${eName}().list(nil, nil)
-for ${eVar} in ${eVar}List.asList?.items ?? [] {
-    print(${eVar})
+for ${eVar}Item in ${eVar}List.asList?.items ?? [] {
+    if let ${eVar}Entity = ${eVar}Item.asNative as? Entity {
+        print(${eVar}Entity.data())
+    }
 }
 `)
     }
@@ -87,9 +89,11 @@ for ${eVar} in ${eVar}List.asList?.items ?? [] {
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join(', ')}])`
         : 'nil'
       Content(`
-// Load a specific ${eNameLower} (returns the record, throws on error)
+// Load a specific ${eNameLower} (returns the entity, throws on error)
 let ${eVar} = try client.${eName}().load(${loadArg}, nil)
-print(${eVar})
+if let ${eVar}Entity = ${eVar}.asNative as? Entity {
+    print(${eVar}Entity.data())
+}
 `)
     }
   }

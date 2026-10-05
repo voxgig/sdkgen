@@ -117,7 +117,7 @@ ${eVar}, err := client.${entity.Name}(nil).Load(${loadArg}, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(${eVar}) // the loaded record
+fmt.Println(${eVar}.(sdk.Entity).Data()) // the loaded entity's record
 \`\`\`
 
 `)
@@ -131,7 +131,7 @@ ${eVar}s, err := client.${entity.Name}(nil).List(nil, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(${eVar}s) // the array of records
+fmt.Println(${eVar}s) // a []any of entities, one per record
 \`\`\`
 
 `)

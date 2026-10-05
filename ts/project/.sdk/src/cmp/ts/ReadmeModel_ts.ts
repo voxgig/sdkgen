@@ -21,12 +21,12 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `load` | `load(reqmatch?, ctrl?): Promise<Entity>` | Load a single entity by match criteria. |',
-    list: '| `list` | `list(reqmatch?, ctrl?): Promise<Entity[]>` | List entities matching the criteria. |',
-    create: '| `create` | `create(reqdata?, ctrl?): Promise<Entity>` | Create a new entity. |',
-    update: '| `update` | `update(reqdata?, ctrl?): Promise<Entity>` | Update an existing entity. |',
-    patch: '| `patch` | `patch(reqdata?, ctrl?): Promise<Entity>` | Change part of an existing entity. |',
-    remove: '| `remove` | `remove(reqmatch?, ctrl?): Promise<void>` | Remove an entity. |',
+    load: '| `load` | `load(reqmatch?, ctrl?): Promise<Entity>` | Load a single entity by match criteria, and return it. |',
+    list: '| `list` | `list(reqmatch?, ctrl?): Promise<Entity[]>` | List entities matching the criteria, one per record. |',
+    create: '| `create` | `create(reqdata?, ctrl?): Promise<Entity>` | Create a new entity, and return it. |',
+    update: '| `update` | `update(reqdata?, ctrl?): Promise<Entity>` | Update an existing entity, and return it. |',
+    patch: '| `patch` | `patch(reqdata?, ctrl?): Promise<Entity>` | Change part of an existing entity, and return it. |',
+    remove: '| `remove` | `remove(reqmatch?, ctrl?): Promise<Entity>` | Remove an entity, and return it marked as deleted. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')

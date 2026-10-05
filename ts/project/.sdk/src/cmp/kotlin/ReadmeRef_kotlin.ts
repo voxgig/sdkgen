@@ -27,33 +27,33 @@ function kotlinLit(type: any, placeholder: string = 'example'): string {
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(reqmatch, ctrl) -> Any?',
-    returns: 'the entity data',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and raises on error.',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data()` reads, and raises on error.',
   },
   list: {
     sig: 'list(reqmatch, ctrl) -> Any?',
-    returns: 'an aggregate list of entities',
-    desc: 'List entities matching the given criteria. The match is optional — call `list(null, null)` to list all records. Returns an aggregate list and raises on error.',
+    returns: 'a list of entities, one per record',
+    desc: 'List entities matching the given criteria. The match is optional — call `list(null, null)` to list all records. Returns a list of entities, one per record, and raises on error.',
   },
   create: {
     sig: 'create(reqdata, ctrl) -> Any?',
-    returns: 'the created entity data',
-    desc: 'Create a new entity with the given data. Returns the created entity data and raises on error.',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
     sig: 'update(reqdata, ctrl) -> Any?',
-    returns: 'the updated entity data',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and raises on error.',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
   },
   patch: {
     sig: 'patch(reqdata, ctrl) -> Any?',
-    returns: 'the patched entity data',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and raises on error.',
+    returns: 'the patched entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and raises on error.',
   },
   remove: {
     sig: 'remove(reqmatch, ctrl) -> Any?',
-    returns: 'the removed entity data',
-    desc: 'Remove the entity matching the given criteria. Raises on error.',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },
 }
 

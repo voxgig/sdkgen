@@ -84,8 +84,8 @@ let client = ${SDK}()
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list(nil, nil)\` returns a \`Value\` list of records and throws on error —
-iterate its items.
+\`list(nil, nil)\` returns a \`Value\` list of entities, one per record, and
+throws on error — iterate its items.
 
 \`\`\`swift
 do {

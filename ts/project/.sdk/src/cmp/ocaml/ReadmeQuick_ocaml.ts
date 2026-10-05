@@ -158,7 +158,7 @@ record.
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `(getp created "${dataIdF}")`
+      ? `(getp (created.e_data_get ()) "${dataIdF}")`
       : ocamlLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||

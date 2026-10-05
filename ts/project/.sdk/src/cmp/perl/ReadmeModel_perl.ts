@@ -19,12 +19,12 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `load` | `($reqmatch, $ctrl) -> hashref` | Load a single entity by match criteria. Dies on error. |',
-    list: '| `list` | `($reqmatch, $ctrl) -> arrayref` | List entities matching the criteria. Resolves to one entity per record. Dies on error. |',
-    create: '| `create` | `($reqdata, $ctrl) -> hashref` | Create a new entity. Dies on error. |',
-    update: '| `update` | `($reqdata, $ctrl) -> hashref` | Update an existing entity. Dies on error. |',
-    patch: '| `patch` | `($reqdata, $ctrl) -> hashref` | Change part of an existing entity. Dies on error. |',
-    remove: '| `remove` | `($reqmatch, $ctrl) -> hashref` | Remove an entity. Dies on error. |',
+    load: '| `load` | `($reqmatch, $ctrl) -> hashref` | Load a single entity by match criteria, and return it. Dies on error. |',
+    list: '| `list` | `($reqmatch, $ctrl) -> arrayref` | List entities matching the criteria, one per record. Dies on error. |',
+    create: '| `create` | `($reqdata, $ctrl) -> hashref` | Create a new entity, and return it. Dies on error. |',
+    update: '| `update` | `($reqdata, $ctrl) -> hashref` | Update an existing entity, and return it. Dies on error. |',
+    patch: '| `patch` | `($reqdata, $ctrl) -> hashref` | Change part of an existing entity, and return it. Dies on error. |',
+    remove: '| `remove` | `($reqmatch, $ctrl) -> hashref` | Remove an entity, and return it marked as deleted. Dies on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')

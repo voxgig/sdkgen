@@ -30,7 +30,7 @@ const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
   },
   patch: {
     sig: 'patch(entity, reqdata, ctrl \\\\ nil) :: map()',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and raises on error.',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and raises on error.',
   },
   remove: {
     sig: 'remove(entity, reqmatch, ctrl \\\\ nil) :: map()',
@@ -218,14 +218,14 @@ ${info.desc}
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')}})`
               : `${Name}.Helpers.deep(%{})`
             Content(`\`\`\`elixir
-record = ${Name}.Entity.${EName}.${opname}(${eVar}, ${arg})
+${eVar} = ${Name}.Entity.${EName}.${opname}(${eVar}, ${arg})
 \`\`\`
 
 `)
           }
           else if ('list' === opname) {
             Content(`\`\`\`elixir
-records = ${Name}.Entity.${EName}.list(${eVar})
+${eVar}s = ${Name}.Entity.${EName}.list(${eVar})
 \`\`\`
 
 `)
@@ -234,7 +234,7 @@ records = ${Name}.Entity.${EName}.list(${eVar})
             const createItems = opRequestShape(ent, 'create').items
               .filter((it: any) => !it.optional)
             Content(`\`\`\`elixir
-record = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
+${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
             createItems.map((it: any) => {
               Content(`  "${it.name}" => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
@@ -254,7 +254,7 @@ record = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
               `  "${it.name}" => ${elixirLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`elixir
-record = ${Name}.Entity.${EName}.${opname}(${eVar}, ${Name}.Helpers.deep(%{
+${eVar} = ${Name}.Entity.${EName}.${opname}(${eVar}, ${Name}.Helpers.deep(%{
 ${updateLines}  # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 }))
 \`\`\`

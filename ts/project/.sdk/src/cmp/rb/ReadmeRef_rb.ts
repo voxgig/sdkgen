@@ -24,8 +24,8 @@ function rbLit(type: any, placeholder: string = 'example'): string {
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(reqmatch, ctrl = nil) -> result',
-    returns: 'result',
-    desc: 'Load a single entity matching the given criteria. Raises on error.',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get` reads, and raises on error.',
   },
   list: {
     sig: 'list(reqmatch = nil, ctrl = nil) -> Array',
@@ -34,23 +34,23 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   },
   create: {
     sig: 'create(reqdata, ctrl = nil) -> result',
-    returns: 'result',
-    desc: 'Create a new entity with the given data. Raises on error.',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
     sig: 'update(reqdata, ctrl = nil) -> result',
-    returns: 'result',
-    desc: 'Update an existing entity. The data must include the entity `id`. Raises on error.',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
   },
   patch: {
     sig: 'patch(reqdata, ctrl = nil) -> result',
-    returns: 'result',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Raises on error.',
+    returns: 'the patched entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and raises on error.',
   },
   remove: {
     sig: 'remove(reqmatch, ctrl = nil) -> result',
-    returns: 'result',
-    desc: 'Remove the entity matching the given criteria. Raises on error.',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },
 }
 

@@ -96,8 +96,8 @@ ${'' === javaServerLines
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list(null, null)\` returns an aggregate list of records (as \`Object\`, an
-aggregate list) and raises on error.
+\`list(null, null)\` returns a list of entities, one per record (as \`Object\`),
+and raises on error; an entity's \`data()\` reads its record.
 
 \`\`\`java
 try {

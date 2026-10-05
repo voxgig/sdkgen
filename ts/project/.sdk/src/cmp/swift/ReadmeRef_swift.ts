@@ -27,33 +27,33 @@ function swiftLit(type: any, placeholder: string = 'example'): string {
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(reqmatch, ctrl) throws -> Value',
-    returns: 'the entity data',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and throws on error.',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data()` reads, as a native `Value` that `asNative as? Entity` unwraps, and throws on error.',
   },
   list: {
     sig: 'list(reqmatch, ctrl) throws -> Value',
-    returns: 'a Value list of entities',
-    desc: 'List entities matching the given criteria. The match is optional — call `list(nil, nil)` to list all records. Returns a Value list and throws on error.',
+    returns: 'a `Value` list of entities, one per record',
+    desc: 'List entities matching the given criteria. The match is optional — call `list(nil, nil)` to list all records. Returns a `Value` list of entities, one per record, and throws on error.',
   },
   create: {
     sig: 'create(reqdata, ctrl) throws -> Value',
-    returns: 'the created entity data',
-    desc: 'Create a new entity with the given data. Returns the created entity data and throws on error.',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Returns the created entity and throws on error.',
   },
   update: {
     sig: 'update(reqdata, ctrl) throws -> Value',
-    returns: 'the updated entity data',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and throws on error.',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and throws on error.',
   },
   patch: {
     sig: 'patch(reqdata, ctrl) throws -> Value',
-    returns: 'the patched entity data',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and throws on error.',
+    returns: 'the patched entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and throws on error.',
   },
   remove: {
     sig: 'remove(reqmatch, ctrl) throws -> Value',
-    returns: 'the removed entity data',
-    desc: 'Remove the entity matching the given criteria. Throws on error.',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and throws on error.',
   },
 }
 

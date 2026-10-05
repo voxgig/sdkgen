@@ -33,8 +33,8 @@ function perlType(type: any): string {
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load($reqmatch, $ctrl) -> hashref',
-    returns: 'the entity data',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and dies on error.',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get` reads, and dies on error.',
   },
   list: {
     sig: 'list($reqmatch, $ctrl) -> arrayref',
@@ -43,23 +43,23 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   },
   create: {
     sig: 'create($reqdata, $ctrl) -> hashref',
-    returns: 'the created entity data',
-    desc: 'Create a new entity with the given data. Returns the created entity data and dies on error.',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Returns the created entity and dies on error.',
   },
   update: {
     sig: 'update($reqdata, $ctrl) -> hashref',
-    returns: 'the updated entity data',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and dies on error.',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and dies on error.',
   },
   patch: {
     sig: 'patch($reqdata, $ctrl) -> hashref',
-    returns: 'the patched entity data',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and dies on error.',
+    returns: 'the patched entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and dies on error.',
   },
   remove: {
     sig: 'remove($reqmatch, $ctrl) -> hashref',
-    returns: 'the removed entity data',
-    desc: 'Remove the entity matching the given criteria. Dies on error.',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and dies on error.',
   },
 }
 

@@ -120,7 +120,7 @@ takes an entity handle built from the client:
 
 \`\`\`elixir
 ${eVar} = ${Name}.${eCall}(sdk)
-record = ${Name}.Entity.${EName}.load(${eVar}, ${loadArg})
+${eVar} = ${Name}.Entity.${EName}.load(${eVar}, ${loadArg})
 \`\`\`
 
 `)
@@ -131,7 +131,7 @@ record = ${Name}.Entity.${EName}.load(${eVar}, ${loadArg})
 
 \`\`\`elixir
 ${eVar} = ${Name}.${eCall}(sdk)
-records = ${Name}.Entity.${EName}.list(${eVar})
+${eVar}s = ${Name}.Entity.${EName}.list(${eVar})
 \`\`\`
 
 `)
@@ -147,7 +147,7 @@ records = ${Name}.Entity.${EName}.list(${eVar})
 
 \`\`\`elixir
 ${eVar} = ${Name}.${eCall}(sdk)
-record = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
+${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
       createItems.map((it: any) => {
         Content(`  "${it.name}" => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}

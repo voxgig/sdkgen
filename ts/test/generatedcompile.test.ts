@@ -27,6 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
+  DOC_MODELS,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -5621,64 +5622,6 @@ function zigExamples(blocks: DocBlock[]): string {
 }
 
 type DocCompile = { label: string, bin: string, args: string[], env?: NodeJS.ProcessEnv }
-
-// A quick start shows the first active entity, so each model leads with a
-// different one: the fixture's load-only singleton, a list-only entity, an
-// entity with every operation, and that entity with another nested under it.
-const PLANET_FIRST = ['ambient', 'console', 'graph_ql', 'history']
-  .map((name) => 'main: kit: entity: ' + name + ': active: false').join('\n')
-
-const SATELLITE = `
-main: kit: entity: satellite: {
-  alias: field: {}
-  name: "satellite"
-  id: { field: "id", name: "id" }
-  relations: ancestors: [[path($.main.kit.entity.planet)]]
-  fields: {
-    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
-    "planet_id": { h: 'PlanetId', n: "planet_id", r: false, t: "\`$STRING\`" }
-    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
-  }
-  op: {
-    list: {
-      name: "list"
-      points: [ {
-        g: { params: [ { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" } ] }
-        m: "GET", o: "/planet/{planet_id}/satellite"
-        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }]
-        t: { req: "\`reqdata\`", res: "\`body\`" }
-      } ]
-    }
-    load: {
-      name: "load"
-      points: [ {
-        g: { params: [
-          { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" }
-          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
-        ] }
-        m: "GET", o: "/planet/{planet_id}/satellite/{id}"
-        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }, { var: "id" }]
-        t: { req: "\`reqdata\`", res: "\`body\`" }
-      } ]
-    }
-  }
-}
-
-main: kit: flow: BasicSatelliteFlow: {
-  entity: "satellite", kind: "basic", name: "BasicSatelliteFlow"
-  step: [
-    { o: "list", m: { planet_id: "planet01" } }
-    { o: "load", m: { planet_id: "planet01" }, i: { ref: "satellite_ref01", srcdatavar: "satellite_ref01_data", suffix: "_dt0" } }
-  ]
-}
-`
-
-const DOC_MODELS: [string, string | undefined][] = [
-  ['singleton', undefined],
-  ['list', 'main: kit: entity: ambient: active: false'],
-  ['crud', PLANET_FIRST],
-  ['nested', PLANET_FIRST + SATELLITE],
-]
 
 const DOC_LANES: {
   target: string,

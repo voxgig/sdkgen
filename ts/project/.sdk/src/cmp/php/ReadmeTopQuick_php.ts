@@ -50,7 +50,7 @@ $client = ${ctor};
     let hasCall = false
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eName.toLowerCase()}s (returns an array; throws on error)
+      Content(`// List all ${eName.toLowerCase()}s (an array of entities, one per record; throws on error)
 $${eName.toLowerCase()}s = $client->${phpEntityAccessor(eName)}()->list();
 print_r(array_map(fn($item) => $item->data_get(), $${eName.toLowerCase()}s));
 `)
@@ -71,7 +71,7 @@ print_r(array_map(fn($item) => $item->data_get(), $${eName.toLowerCase()}s));
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}]`
         : ''
       Content(`
-// Load a specific ${eName.toLowerCase()} (returns the ENTITY; call data_get() for the record; throws on error)
+// Load a specific ${eName.toLowerCase()} (returns the entity; data_get() reads its record; throws on error)
 $${eName.toLowerCase()} = $client->${phpEntityAccessor(eName)}()->load(${loadArg});
 print_r($${eName.toLowerCase()}->data_get());
 `)

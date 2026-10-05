@@ -52,8 +52,8 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
       desc: 'Update an existing entity. The data must include the entity id. `Ok` is the updated entity.',
     },
     patch: {
-      sig: `patch(reqdata: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity id. Returns the patched entity data on `Ok`.',
+      sig: `patch(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
+      desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity id. `Ok` is the patched entity.',
     },
     remove: {
       sig: `remove(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,

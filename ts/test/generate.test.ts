@@ -20,7 +20,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
-  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity, toolchain,
+  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
 } from './generateharness'
 
 
@@ -49,6 +49,61 @@ function allTargets(): string[] {
     .filter((f: string) => f.endsWith('.aontu') && 'target-index.aontu' !== f)
     .map((f: string) => f.replace(/\.aontu$/, ''))
     .sort()
+}
+
+
+// Every bundled SDK target has an entity layer.
+function sdkTargets(): string[] {
+  return allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+}
+
+
+function targetTitle(target: string): string {
+  const file = Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'target', target + '.aontu')
+  const title = /^\s*title:\s*(['"]?)(.+?)\1\s*$/m.exec(readFileSync(file, 'utf8'))
+  ok(null != title, target + ': its target model has no title')
+  return title![2]
+}
+
+
+// Each heading under a reference's `### Operations`, with the paragraph below it.
+function operationDocs(ref: string): { heading: string, desc: string }[] {
+  const docs: { heading: string, desc: string }[] = []
+  const lines = ref.split('\n')
+  let inOps = false
+  lines.forEach((line: string, i: number) => {
+    if (/^#{2,3} /.test(line)) {
+      inOps = /^### Operations\s*$/.test(line)
+    }
+    else if (inOps && line.startsWith('#### ')) {
+      const rest = lines.slice(i + 1)
+      const start = rest.findIndex((l: string) => '' !== l.trim())
+      const end = rest.findIndex((l: string, j: number) => start < j && '' === l.trim())
+      docs.push({ heading: line, desc: rest.slice(start, end < 0 ? undefined : end).join(' ') })
+    }
+  })
+  return docs
+}
+
+
+// The quick start each target shows in a root README, keyed by target title.
+function quickStarts(readme: string): Record<string, string> {
+  const starts: Record<string, string> = {}
+  let section = ''
+  let title = ''
+  for (const m of readme.matchAll(/^(##|###) (.+)$|^```\w*\n([\s\S]*?)^```$/gm)) {
+    if ('##' === m[1]) {
+      section = m[2]
+      title = ''
+    }
+    else if ('###' === m[1]) {
+      title = m[2]
+    }
+    else if (/^Quickstart\b/.test(section) && '' !== title && null == starts[title]) {
+      starts[title] = m[3]
+    }
+  }
+  return starts
 }
 
 
@@ -2158,34 +2213,178 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
-  // The targets whose reference names the entity each operation returns.
+  // Every SDK target is checked, under the fold fixture, whose contacts_field
+  // brings a patch operation.
   test('the reference says each operation returns the entity', async () => {
-    const targets = ['c', 'cpp', 'csharp', 'elixir', 'rust', 'zig']
     const expect: Record<string, RegExp> = {
       load: /\bthe entity, whose record `[^`]+` reads\b/,
       list: /\bentities, one per record\b|\bone entity per record\b/,
       create: /\bthe created entity\b(?! data)/,
       update: /\bthe updated entity\b(?! data)/,
+      patch: /\bthe patched entity\b(?! data)/,
       remove: /\bthe entity, marked as deleted\b/,
     }
-    const out = await generate(targets)
 
     const wrong: string[] = []
-    for (const target of targets) {
-      const ref = out[target + '/REFERENCE.md']
+    for (const target of sdkTargets()) {
+      const ref = (await generateFold(target))[target + '/REFERENCE.md']
       ok(null != ref, target + ': no REFERENCE.md generated')
-      for (const [op, says] of Object.entries(expect)) {
-        const heading = new RegExp('^#### `[^`\\n]*\\b' + op + '\\(.*\\n\\n(.*)$', 'gim')
-        const descs = [...ref.matchAll(heading)].map((m) => m[1])
-        ok(0 < descs.length, target + ': the reference documents no ' + op)
-        for (const desc of descs) {
-          if (!says.test(desc) || /\bentity data\b|\baggregate list\b/.test(desc)) {
-            wrong.push(target + ' ' + op + ': ' + desc)
-          }
+      const documented = new Set<string>()
+      for (const { heading, desc } of operationDocs(ref)) {
+        const named = /(?:^|[^a-z])(?:e_)?(load|list|create|update|patch|remove)\b/i.exec(heading)
+        ok(null != named, target + ': an operation heading names no operation: ' + heading)
+        const op = named![1].toLowerCase()
+        documented.add(op)
+        if (!expect[op].test(desc) || /\bentity data\b|\baggregate list\b/.test(desc)) {
+          wrong.push(target + ' ' + op + ': ' + desc)
+        }
+      }
+      deepStrictEqual([...documented].sort(), Object.keys(expect).sort(),
+        target + ': the operations its reference documents')
+    }
+    deepStrictEqual([...new Set(wrong)], [], 'operations the reference says return a record')
+  })
+
+
+  // A type checker reads an operation's result through its annotation, so it
+  // names the entity class, as the reference heading does.
+  test('py: each operation is declared to return its entity class', async () => {
+    const out = await generateFold('py')
+    const wrong: string[] = []
+    let ops = 0
+    for (const [path, src] of Object.entries(out)) {
+      if (!/^py\/[^/]+\/entity\/\w+_entity\.py$/.test(path)) continue
+      const cls = /^class (\w+):/m.exec(src)
+      ok(null != cls, path + ': no entity class')
+      for (const m of src.matchAll(/def (load|list|create|update|patch|remove)\(.*\) -> (.+):$/gm)) {
+        ops++
+        if (m[2] !== ('list' === m[1] ? 'list[' + cls![1] + ']' : cls![1])) {
+          wrong.push(path + ' ' + m[1] + ' -> ' + m[2])
         }
       }
     }
-    deepStrictEqual([...new Set(wrong)], [], 'operations the reference says return a record')
+    ok(0 < ops, 'no py operation found')
+    for (const { heading } of operationDocs(out['py/REFERENCE.md'])) {
+      if (!/ -> (?:list\[)?\w+Entity\]?`$/.test(heading)) wrong.push('py/REFERENCE.md ' + heading)
+    }
+    deepStrictEqual(wrong, [], 'py operations declared to return a record')
+  })
+
+
+  // A quick start leads with the first active entity, so each model shows a
+  // different operation.
+  const modelOut = new Map<string, Promise<Record<string, string>>>()
+  const generateModel = (shape: string, extra: string | undefined) => {
+    if (!modelOut.has(shape)) modelOut.set(shape, generate(sdkTargets(), undefined, extra))
+    return modelOut.get(shape)!
+  }
+
+  const RECORD_ACCESSOR: Record<string, RegExp> = {
+    c: /->vt->data\(/,
+    clojure: /\(\(:data-get /,
+    cpp: /->data\(\)/,
+    csharp: /\.Data\(\)/,
+    elixir: /\.data_get\(/,
+    go: /\.Data\(\)/,
+    java: /\.data\(\)/,
+    js: /\.data\(\)/,
+    kotlin: /\.data\(\)/,
+    lua: /:data_get\(\)/,
+    ocaml: /\.e_data_get \(\)/,
+    perl: /->data_get\b/,
+    php: /->data_get\(\)/,
+    py: /\.data_get\(\)/,
+    rb: /\.data_get\b/,
+    rust: /\.data\(None\)/,
+    scala: /\.data\(\)/,
+    swift: /\.data\(\)/,
+    ts: /\.data\(\)/,
+    zig: /\.asEntity\(\)\.data\(null\)/,
+  }
+
+  test('every quick start reads the record off the entity an operation returns', async () => {
+    const targets = sdkTargets()
+    deepStrictEqual(targets.filter((t: string) => null == RECORD_ACCESSOR[t]), [],
+      'targets with no record accessor listed')
+
+    const OP_CALL = /(?:\.|->|:|\/)(?:e_)?(?:load|list)\b/i
+    const COMMENT = /^\s*(?:\/\/|#(?!include|!)|--|;;|\(\*)/
+
+    const wrong: string[] = []
+    for (const [shape, extra] of DOC_MODELS) {
+      const starts = quickStarts((await generateModel(shape, extra))['README.md'])
+      for (const target of targets) {
+        const block = starts[targetTitle(target)]
+        if (null == block) {
+          wrong.push(shape + ' ' + target + ': no quick start')
+          continue
+        }
+        const lines = block.split('\n')
+        const calls = lines
+          .map((l: string, i: number) =>
+            !COMMENT.test(l) && !/^\s*import\b/.test(l) && OP_CALL.test(l) ? i : -1)
+          .filter((i: number) => -1 < i)
+        if (0 === calls.length) wrong.push(shape + ' ' + target + ': calls no operation')
+        calls.forEach((at: number, n: number) => {
+          if (!RECORD_ACCESSOR[target].test(lines.slice(at, calls[n + 1]).join('\n'))) {
+            wrong.push(shape + ' ' + target + ': no record read after ' + lines[at].trim())
+          }
+        })
+        for (const line of lines.filter((l: string) => COMMENT.test(l) && /\b(load|list)\b/i.test(l))) {
+          if (!/\bentit(y|ies)\b/i.test(line)) wrong.push(shape + ' ' + target + ': ' + line.trim())
+        }
+      }
+    }
+    deepStrictEqual(wrong, [], 'quick starts that show a record where the entity is returned')
+  })
+
+
+  const RECORD_RESULT = [
+    /\(returns the record\b/i,
+    /\bthe value is the loaded record\b/i,
+    /\bbare (?:created )?record\b/i,
+    /\baggregate list\b/i,
+    /\bValue list\b(?! of entities)/,
+    /\bfor single-entity ops\b/i,
+    /\bresult data directly\b/i,
+    /\boperation's data\b/i,
+    /\bentity records?\b/i,
+    /\b(?:holds|contains) the mock response record\b/i,
+    /\breturns the (?:created |updated |patched |removed )?entity data\b/i,
+  ]
+
+  // A field read straight off what an operation returned, by fence language.
+  const ENTITY_AS_RECORD: Record<string, RegExp> = {
+    clojure: /\(vs\/getprop created "/,
+    elixir: /Voxgig\.Struct\.getprop\(created,/,
+    lua: /\bitem\["/,
+    ocaml: /\(getp created "/,
+    perl: /"\$\w+->\{\w+\}|\$created->\{/,
+  }
+
+  test('no page says an entity operation returns a record', async () => {
+    const said: string[] = []
+    for (const [shape, extra] of DOC_MODELS) {
+      const out = await generateModel(shape, extra)
+      for (const [path, text] of Object.entries(out)) {
+        if (!/^(?:README\.md|[^/]+\/(?:README|REFERENCE)\.md)$/.test(path)) continue
+        const flat = text.replace(/`/g, '').replace(/\s+/g, ' ')
+        for (const re of RECORD_RESULT) {
+          const m = re.exec(flat)
+          if (null != m) said.push(shape + ' ' + path + ': ' + flat.substr(Math.max(0, m.index - 40), 100))
+        }
+        for (const m of text.matchAll(/^```(\w+)\n([\s\S]*?)^```$/gm)) {
+          const reads = ENTITY_AS_RECORD[m[1]]?.exec(m[2])
+          if (null != reads) said.push(shape + ' ' + path + ': ' + m[1] + ': ' + reads[0])
+        }
+        // An operation resolves to the entity, so its result takes the entity's name.
+        for (const m of text.matchAll(
+          /^\s*(records?) = [\w.]+\.(?:load|list|create|update|patch|remove)\((\w+)/gm)) {
+          if ('record' !== m[2]) said.push(shape + ' ' + path + ': ' + m[0].trim())
+        }
+      }
+    }
+    deepStrictEqual(said, [], 'pages that say an operation returns a record')
   })
 
 

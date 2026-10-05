@@ -71,9 +71,9 @@ for my $${eVar} (@$${eVar}s) {
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')} }`
         : ''
       Content(`
-# Load a specific ${eName.toLowerCase()} (returns the ENTITY; call data_get for the record; dies on error)
+# Load a specific ${eName.toLowerCase()} (returns the entity; data_get reads its record; dies on error)
 my $${eVar} = $client->${eName}->load(${loadArg});
-print "$${eVar}->{id}\\n";
+print $${eVar}->data_get->{id}, "\\n";
 `)
     }
   }

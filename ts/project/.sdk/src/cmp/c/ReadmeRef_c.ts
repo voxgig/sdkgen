@@ -69,8 +69,8 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
       desc: 'Update an existing entity. The data must include the entity id. Returns the updated entity, or `NULL` with `*err` set on failure.',
     },
     patch: {
-      sig: 'vt->patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
-      desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity id. Returns the patched entity data.',
+      sig: 'Entity* vt->patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
+      desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity id. Returns the patched entity, or `NULL` with `*err` set on failure.',
     },
     remove: {
       sig: 'Entity* vt->remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',

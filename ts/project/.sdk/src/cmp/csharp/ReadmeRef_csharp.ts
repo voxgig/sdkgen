@@ -47,8 +47,8 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   },
   patch: {
     sig: 'Patch(reqdata, ctrl = null) -> object?',
-    returns: 'the patched entity data',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and raises on error.',
+    returns: 'the patched entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and raises on error.',
   },
   remove: {
     sig: 'Remove(reqmatch, ctrl = null) -> object?',

@@ -84,8 +84,8 @@ val client = ${SDK}()
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list(null, null)\` returns an aggregate list of records (as \`Any?\`, an
-aggregate list) and raises on error.
+\`list(null, null)\` returns a list of entities, one per record (as \`Any?\`),
+and raises on error; an entity's \`data()\` reads its record.
 
 \`\`\`kotlin
 try {
