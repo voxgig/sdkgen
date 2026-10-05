@@ -12,12 +12,13 @@ import { CANON_OP_ORDER } from '../dist/helpers/opShape.js'
 const CMP = Path.resolve(__dirname, '..', 'project', '.sdk', 'src', 'cmp')
 
 const OP_STEMS = CANON_OP_ORDER.map((op: string) => 'Entity' + camelify(op) + 'Op')
-const OP_BUILDER = /'\/?Entity'\s*\+\s*camelify\(\w+\)\s*\+\s*'Op\.fragment/
+const OP_BUILDER = /'\/?Entity'\s*\+\s*camelify\(\w+\)\s*\+\s*'Op\.fragment\.(\w+)'/g
 
 
-// A fragment no component of its language names is never generated, and is
-// copied into every project as source nobody reads. Operation fragments are
-// named by a built string, and only for the ops in `CANON_OP_ORDER`.
+// A fragment no component of its language names, extension included, is never
+// generated, and is copied into every project as source nobody reads.
+// Operation fragments are named by a built string, and only for the ops in
+// `CANON_OP_ORDER`.
 function unnamedFragments(cmp: string = CMP): string[] {
   const found: string[] = []
 
@@ -31,13 +32,14 @@ function unnamedFragments(cmp: string = CMP): string[] {
       .filter((file: string) => file.endsWith('.ts'))
       .map((file: string) => Fs.readFileSync(Path.join(cmp, lang, file), 'utf8'))
       .join('\n')
-    const literal = new Set([...source.matchAll(/([A-Za-z][\w.]*)\.fragment\b/g)]
-      .map((m) => m[1]))
-    const built = OP_BUILDER.test(source)
+    const named = new Set([...source.matchAll(/[A-Za-z][\w.]*\.fragment\.\w+/g)]
+      .map((m) => m[0]))
+    for (const [, ext] of source.matchAll(OP_BUILDER)) {
+      OP_STEMS.forEach((stem: string) => named.add(stem + '.fragment.' + ext))
+    }
 
     for (const file of Fs.readdirSync(folder).sort()) {
-      const stem = file.replace(/\.fragment\..*$/, '')
-      if (!literal.has(stem) && !(built && OP_STEMS.includes(stem))) {
+      if (!named.has(file)) {
         found.push(lang + '/fragment/' + file)
       }
     }
@@ -63,12 +65,16 @@ describe('scaffold fragments', () => {
     }
 
     try {
-      plant('go', 'EntityPatchOp.fragment.go')
+      plant('go', 'EntityPurgeOp.fragment.go')
+      plant('go', 'EntityLoadOp.fragment.ts')
+      plant('js', 'Config.fragment.ts')
       plant('ocaml', 'EntityLoadOp.fragment.ml')
       plant('ts', 'Error.fragment.ts')
 
       deepStrictEqual(unnamedFragments(tmp), [
-        'go/fragment/EntityPatchOp.fragment.go',
+        'go/fragment/EntityLoadOp.fragment.ts',
+        'go/fragment/EntityPurgeOp.fragment.go',
+        'js/fragment/Config.fragment.ts',
         'ocaml/fragment/EntityLoadOp.fragment.ml',
         'ts/fragment/Error.fragment.ts',
       ])

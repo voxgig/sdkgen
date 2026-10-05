@@ -27,7 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
-  OPLESS_ENTITY, CREATE_ONLY_ENTITY,
+  OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -161,21 +161,28 @@ function run(
 }
 
 
+type Watched = Run & { marked: number, exited: number }
+
+
 // run(), reading the output as it arrives: `marked` is when `mark` first
 // appeared in it and `exited` when the process ended, both from Date.now().
 function runWatched(
   cmd: string, args: string[], cwd: string, mark: string,
   env?: NodeJS.ProcessEnv, timeoutMs: number = RUN_TIMEOUT_MS,
-): Promise<Run & { marked: number, exited: number }> {
+): Promise<Watched> {
   const [file, opts] = launch(cmd, env)
   let out = ''
   let marked = 0
+  let expired = false
   let killer: NodeJS.Timeout | undefined
 
   return new Promise((resolve) => {
     const done = (status: number | null, signal: string | null, error?: Error) => {
       clearTimeout(killer)
-      resolve({ ...outcome(cmd, timeoutMs, out, status, signal, error), marked, exited: Date.now() })
+      resolve({
+        ...outcome(cmd, timeoutMs, out, status, signal, error, expired),
+        marked, exited: Date.now(),
+      })
     }
     const seen = (chunk: string) => {
       out += chunk
@@ -190,7 +197,14 @@ function runWatched(
       return done(null, null, error)
     }
 
-    killer = setTimeout(() => child.kill('SIGKILL'), timeoutMs)
+    // A grandchild can hold the pipes open after the kill, so close them, as
+    // spawnSync does at its timeout.
+    killer = setTimeout(() => {
+      expired = true
+      child.kill('SIGKILL')
+      child.stdout!.destroy()
+      child.stderr!.destroy()
+    }, timeoutMs)
     child.stdout!.setEncoding('utf8').on('data', seen)
     child.stderr!.setEncoding('utf8').on('data', seen)
     child.on('error', (error: Error) => done(null, null, error))
@@ -201,9 +215,9 @@ function runWatched(
 
 function outcome(
   cmd: string, timeoutMs: number, out: string,
-  status: number | null, signal: string | null, error?: Error,
+  status: number | null, signal: string | null, error?: Error, expired = false,
 ): Run {
-  const timedOut = 'SIGKILL' === signal
+  const timedOut = expired || 'SIGKILL' === signal
     || 'ETIMEDOUT' === (error as any)?.code
 
   if (timedOut) {
@@ -229,6 +243,51 @@ function outcome(
   }
 
   return { ok: 0 === status, out, unlaunchable: false, timedOut: false }
+}
+
+
+const EXIT_MARK = 'ALL GREEN'
+const EXIT_LIMIT_MS = 20000
+
+type ExitVerdict = { skip?: string, fail?: string }
+
+
+// The clojure fast-exit lane's run and verdict. A run killed before it
+// reports is a slow machine; one killed after it reports is the hang the
+// lane exists to catch.
+async function clojureExit(
+  clj: string, sdkroot: string, timeoutMs: number = RUN_TIMEOUT_MS,
+): Promise<ExitVerdict> {
+  return exitVerdict(await runWatched(clj, ['-M:test', '--sdk-only'], sdkroot, EXIT_MARK,
+    undefined, timeoutMs))
+}
+
+
+function exitVerdict(probe: Watched): ExitVerdict {
+  if (probe.unlaunchable) {
+    return { skip: 'the toolchain could not be started here: ' + tail(probe.out, 3) }
+  }
+  if (probe.timedOut && 0 === probe.marked) {
+    return { skip: tail(probe.out, 3) }
+  }
+
+  const since = probe.exited - probe.marked
+  if (probe.timedOut) {
+    return {
+      fail: 'the run reported ' + EXIT_MARK + ' and was still running ' + since +
+        'ms later, when it was killed:\n' + tail(probe.out),
+    }
+  }
+  if (!probe.ok) {
+    return { fail: 'the run failed:\n' + tail(probe.out) }
+  }
+  if (0 === probe.marked) {
+    return { fail: 'the run never reported ' + EXIT_MARK + ':\n' + tail(probe.out) }
+  }
+  if (EXIT_LIMIT_MS <= since) {
+    return { fail: 'the run exited ' + since + 'ms after reporting ' + EXIT_MARK }
+  }
+  return {}
 }
 
 
@@ -409,6 +468,92 @@ describe('runWatched classifies a run as run() does', () => {
       ok(0 < watched.marked && watched.marked <= watched.exited,
         'exit ' + code + ': the mark was not seen before the exit')
     }
+  })
+
+
+  // The command's own child holds the pipes open after the command is killed,
+  // or after it exits, as the clojure launcher's classpath step can.
+  test('a command whose child holds its output past the timeout', async (t) => {
+    if ('win32' === process.platform) {
+      return t.skip('needs a POSIX shell')
+    }
+    const reap = (out: string) => {
+      for (const [, pid] of out.matchAll(/started (\d+)/g)) {
+        try { process.kill(Number(pid)) }
+        catch { }
+      }
+    }
+
+    for (const script of ['sleep 20 & echo started $!; wait', 'sleep 20 & echo started $!']) {
+      const args = ['-c', script]
+      const start = Date.now()
+      const watched = await runWatched('/bin/sh', args, tmp, 'started', undefined, 1000)
+      const took = Date.now() - start
+      const ran = run('/bin/sh', args, tmp, undefined, 1000)
+      reap(watched.out + ran.out)
+
+      ok(took < 5000, script + ': returned ' + took + 'ms after its start, past its 1000ms timeout')
+      ok(0 < watched.marked, script + ': the output read before the timeout was lost')
+      deepStrictEqual(verdict(watched), { ok: false, unlaunchable: false, timedOut: true })
+      deepStrictEqual(verdict(watched), verdict(ran))
+    }
+  })
+})
+
+
+describe('the clojure fast-exit lane verdict', () => {
+
+  const probe = (over: Partial<Watched>): Watched => ({
+    ok: true, out: EXIT_MARK + '\n', unlaunchable: false, timedOut: false,
+    marked: 1000, exited: 1500, ...over,
+  })
+  let tmp = ''
+
+  before(() => { tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-exit-')) })
+  after(() => Fs.rmSync(tmp, { recursive: true, force: true }))
+
+
+  test('skips only a run that could not start or was killed before it reported', () => {
+    ok(null != exitVerdict(probe({ ok: false, unlaunchable: true, marked: 0 })).skip)
+    ok(null != exitVerdict(probe({ ok: false, timedOut: true, marked: 0 })).skip)
+    deepStrictEqual(exitVerdict(probe({})), {})
+  })
+
+
+  test('fails a run killed after it reported, with the time since the report', () => {
+    const verdict = exitVerdict(probe({ ok: false, timedOut: true, exited: 301000 }))
+    strictEqual(verdict.skip, undefined, 'skipped: ' + verdict.skip)
+    ok(/reported ALL GREEN and was still running 300000ms later/.test(String(verdict.fail)),
+      String(verdict.fail))
+  })
+
+
+  test('fails a run that failed, never reported, or exited late', () => {
+    ok(/the run failed/.test(String(exitVerdict(probe({ ok: false })).fail)))
+    ok(/never reported ALL GREEN/.test(String(exitVerdict(probe({ marked: 0 })).fail)))
+    ok(/exited 25000ms after/.test(String(exitVerdict(probe({ exited: 26000 })).fail)))
+  })
+
+
+  // The lane's own run against a stand-in clojure on the search path, killed
+  // at a short timeout in place of the lane's.
+  test('a stand-in clojure that hangs fails the lane after its report, and skips it before', async (t) => {
+    if ('win32' === process.platform) {
+      return t.skip('the stand-in is a POSIX shell script')
+    }
+    const standIn = (dir: string, body: string): string => {
+      Fs.mkdirSync(Path.join(tmp, dir))
+      Fs.writeFileSync(Path.join(tmp, dir, 'clojure'), '#!/bin/sh\n' + body, { mode: 0o755 })
+      return toolchain('clojure', Path.join(tmp, dir)) as string
+    }
+
+    const hung = await clojureExit(standIn('hung', 'echo "ALL GREEN"\nexec sleep 900\n'), tmp, 1000)
+    strictEqual(hung.skip, undefined, 'skipped: ' + hung.skip)
+    ok(/reported ALL GREEN and was still running \d+ms later/.test(String(hung.fail)),
+      String(hung.fail))
+
+    const slow = await clojureExit(standIn('slow', 'exec sleep 900\n'), tmp, 1000)
+    deepStrictEqual(Object.keys(slow), ['skip'], JSON.stringify(slow))
   })
 })
 
@@ -2025,8 +2170,9 @@ echo get_class($client->ContactsField(null)), ' ',
 
 
   // An alias or private function nothing calls is a warning in a consumer's
-  // build. The fixture's list-only and load-only entities, one with no
-  // operations and one that only creates each leave a different set unused.
+  // build, so each operation set is generated: the fixture's list-only and
+  // load-only entities, and ones with no operations, only a create or only a
+  // patch.
   test('elixir: an entity with any set of operations compiles without a warning', async (t) => {
     const mix = toolchain('mix')
     const elixir = toolchain('elixir')
@@ -2035,7 +2181,9 @@ echo get_class($client->ContactsField(null)), ' ',
     }
 
     const sdkroot = Path.join(tmp, 'elixir-warnings')
-    await generateTo('elixir', sdkroot, OPLESS_ENTITY + CREATE_ONLY_ENTITY)
+    await generateTo('elixir', sdkroot, OPLESS_ENTITY + CREATE_ONLY_ENTITY + PATCH_ONLY_ENTITY)
+    ok(Fs.readFileSync(Path.join(sdkroot, 'lib', 'entity', 'zest_entity.ex'), 'utf8')
+      .includes('def patch('), 'elixir: the patch-only entity has no patch operation')
 
     // Each warning with the lines after it, which name where it is.
     const entityWarnings = (out: string) => out.split(/\n(?=\s*warning:)/)
@@ -2052,7 +2200,7 @@ echo get_class($client->ContactsField(null)), ' ',
 
     const tests = Fs.readdirSync(Path.join(sdkroot, 'test'))
       .filter((file: string) => file.endsWith('_entity_test.exs')).sort()
-    ok(tests.includes('zone_entity_test.exs') && tests.includes('zinc_entity_test.exs'),
+    ok(['zone', 'zinc', 'zest'].every((name) => tests.includes(name + '_entity_test.exs')),
       'elixir: the fixture entities have no tests: ' + tests.join(', '))
 
     const suite = run(mix, ['run', '--no-start', '-e', 'ExUnit.start(autorun: false); ' +
@@ -2074,21 +2222,11 @@ echo get_class($client->ContactsField(null)), ' ',
     const sdkroot = Path.join(tmp, 'clojure-exit')
     await generateTo('clojure', sdkroot, undefined, ['test', 'log', 'timeout'])
 
-    const probe = await runWatched(clj, ['-M:test', '--sdk-only'], sdkroot, 'ALL GREEN')
-
-    if (probe.unlaunchable) {
-      return t.skip('clojure: the toolchain could not be started here: ' +
-        tail(probe.out, 3))
+    const verdict = await clojureExit(clj, sdkroot)
+    if (null != verdict.skip) {
+      return t.skip('clojure: ' + verdict.skip)
     }
-    if (probe.timedOut) {
-      return t.skip('clojure: ' + tail(probe.out, 3))
-    }
-
-    ok(probe.ok, 'clojure: the run failed:\n' + tail(probe.out))
-    ok(0 < probe.marked, 'clojure: the run never reported ALL GREEN:\n' + tail(probe.out))
-    ok(probe.exited - probe.marked < 20000,
-      'clojure: the run exited ' + (probe.exited - probe.marked) +
-      'ms after reporting ALL GREEN')
+    ok(null == verdict.fail, 'clojure: ' + verdict.fail)
   })
 
 

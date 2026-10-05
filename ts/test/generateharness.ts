@@ -913,6 +913,21 @@ main: kit: entity: zinc: {
 }
 `
 
+const PATCH_ONLY_ENTITY = `
+main: kit: entity: zest: {
+  alias: field: {}
+  name: "zest"
+  field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    patch: { name: "patch", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "zest01" } ] }
+      m: "PATCH", o: "/zest/{id}", s: [{ lit: "zest" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+`
+
 
 export {
   KIT,
@@ -931,6 +946,7 @@ export {
   KEYWORD_ACCESSOR_ENTITY,
   OPLESS_ENTITY,
   CREATE_ONLY_ENTITY,
+  PATCH_ONLY_ENTITY,
   makeLog,
   layeredFs,
   makeModel,
