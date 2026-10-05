@@ -295,12 +295,29 @@ impl ProjectNameSDK {
                 }
             };
 
-            return Ok(jo(vec![
-                ("ok", Value::Bool((200..300).contains(&status))),
+            let body_err = if !no_body && getp(&fetched, "unreadable") == Value::Bool(true) {
+                let failed = if (200..300).contains(&status) {
+                    None
+                } else {
+                    Some(ctx.make_error("request_status", &format!("request: {}: {}", status,
+                        get_str(&fetched, "statusText").unwrap_or_default())))
+                };
+                Some(crate::core::response::unreadable_body(&ctx, status, &headers,
+                    &getp(&fetched, "body"), &getp(&fetchdef, "headers"), failed))
+            } else {
+                None
+            };
+
+            let mut out = vec![
+                ("ok", Value::Bool(body_err.is_none() && (200..300).contains(&status))),
                 ("status", Value::Num(status as f64)),
                 ("headers", headers),
                 ("data", json_data),
-            ]));
+            ];
+            if let Some(err) = body_err {
+                out.push(("err", Value::str(utility.clean_str(&ctx, &err.msg))));
+            }
+            return Ok(jo(out));
         }
 
         Ok(jo(vec![

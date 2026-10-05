@@ -1224,6 +1224,11 @@ inline ResultPtr resultBody(CtxPtr ctx) {
     if (response && response->jsonFunc && !is_nullish(response->body)) {
       result->body = response->jsonFunc();
     }
+    if (response && response->unreadable) {
+      Value sent = ctx->spec ? ctx->spec->headers : Value::undef();
+      result->err = unreadableBody(ctx, result->status, result->headers, response->body, sent,
+        result->err);
+    }
   }
   return result;
 }

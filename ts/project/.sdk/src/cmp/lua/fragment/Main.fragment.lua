@@ -5,6 +5,7 @@ local vs = require("utility.struct.struct")
 local Utility = require("core.utility_type")
 local Spec = require("core.spec")
 local helpers = require("core.helpers")
+local unreadable_body = require("utility.unreadable_body")
 
 -- Load utility registration (populates Utility._registrar)
 require("utility.register")
@@ -320,6 +321,7 @@ function ProjectNameSDK:_raw_request(fetchargs)
     local no_body = status == 204 or status == 304 or tostring(content_length) == "0"
 
     local json_data = nil
+    local body_err = nil
     if not no_body then
       local jf = vs.getprop(fetched, "json")
       if type(jf) == "function" then
@@ -329,14 +331,27 @@ function ProjectNameSDK:_raw_request(fetchargs)
         end
         -- Non-JSON body: json_data stays nil, status/headers preserved.
       end
+      if vs.getprop(fetched, "unreadable") == true then
+        local failed = nil
+        if status < 200 or status >= 300 then
+          failed = ctx:make_error("request_status",
+            "request: " .. tostring(status) .. ": " .. tostring(vs.getprop(fetched, "statusText")))
+        end
+        body_err = unreadable_body(ctx, status, headers, vs.getprop(fetched, "body"),
+          fetchdef["headers"], failed)
+      end
     end
 
-    return {
-      ok = status >= 200 and status < 300,
+    local out = {
+      ok = body_err == nil and status >= 200 and status < 300,
       status = status,
       headers = headers,
       data = json_data,
-    }, nil
+    }
+    if body_err ~= nil then
+      out.err = utility.clean(ctx, body_err)
+    end
+    return out, nil
   end
 
   return {

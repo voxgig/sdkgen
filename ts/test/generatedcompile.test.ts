@@ -36,6 +36,9 @@ import {
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
 import { ITEMS_EXPECT, ITEMS_PROBES, itemsListed } from './itemprobes'
 import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
+import {
+  NONJSON_CASES, NONJSON_PROBES, NONJSON_SERVER, nonjsonFailures, nonjsonTsv,
+} from './nonjsonprobes'
 
 
 function materialise(files: Record<string, string>, root: string) {
@@ -6194,6 +6197,26 @@ async function refusedBase(): Promise<string> {
 }
 
 
+function nonjsonServer(dir: string, cases: string): Promise<{ port: number, stop: () => void }> {
+  const file = Path.join(dir, 'nonjson-server.cjs')
+  Fs.writeFileSync(file, NONJSON_SERVER)
+  const proc = spawn(process.execPath, [file, cases], { stdio: ['ignore', 'pipe', 'inherit'] })
+  return new Promise((resolve, reject) => {
+    let seen = ''
+    proc.on('error', reject)
+    proc.on('exit', (code) => reject(new Error('nonjson server exited: ' + code)))
+    proc.stdout!.on('data', (chunk) => {
+      seen += String(chunk)
+      const m = /listening (\d+)/.exec(seen)
+      if (null != m) {
+        proc.removeAllListeners('exit')
+        resolve({ port: Number(m[1]), stop: () => proc.kill('SIGKILL') })
+      }
+    })
+  })
+}
+
+
 // Each target's SDK is generated once, and every probe runs beside it.
 describe('probes driven through a generated SDK', () => {
   let tmp = ''
@@ -6353,6 +6376,43 @@ describe('probes driven through a generated SDK', () => {
       strictEqual(itemsListed(ran.out), ITEMS_EXPECT,
         lane.target + ' probe output:\n' + tail(ran.out))
     })
+
+    test(lane.target + ': a body that is not JSON names its status, type, agent and preview',
+      async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+        const key = 'ts' === lane.target || 'js' === lane.target ? 'node' : lane.target
+        ok(null != NONJSON_PROBES[key], lane.target + ': no non-JSON probe')
+
+        const sdkroot = await sdkFor(lane.target)
+        const cases = Path.join(sdkroot, 'nonjson-cases.json')
+        Fs.writeFileSync(cases, JSON.stringify(NONJSON_CASES))
+        const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
+        Fs.writeFileSync(tsv, nonjsonTsv())
+        const seam = null != lane.seam && lane.seam()
+        const server = seam ? null : await nonjsonServer(sdkroot, cases)
+        let ran: ReturnType<typeof run>
+        try {
+          ran = lane.exec(sdkroot, {
+            ...nestedTestEnv(),
+            NONJSON_BASE: null == server ? 'http://nonjson.test' : 'http://127.0.0.1:' + server.port,
+            NONJSON_CASES: cases,
+            NONJSON_TSV: tsv,
+            ...(seam ? { NONJSON_SEAM: '1' } : {}),
+          }, writer(sdkroot), { name: 'nonjson', source: NONJSON_PROBES })
+        }
+        finally {
+          server?.stop()
+        }
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, lane.target + ': the non-JSON probe failed:\n' + tail(ran.out, 60))
+        deepStrictEqual(nonjsonFailures(ran.out, lane.target, seam), [],
+          lane.target + ' probe output:\n' + tail(ran.out))
+      })
 
     // A signal is the TypeScript and JavaScript targets' own seam.
     if (['ts', 'js'].includes(lane.target)) {

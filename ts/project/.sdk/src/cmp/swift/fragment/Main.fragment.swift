@@ -236,11 +236,25 @@ public final class ProjectNameSDK {
         jsonData = jf()
       }
 
+      var bodyErr: Swift.Error? = nil
+      if !noBody, gp(fm, "unreadable") == .bool(true) {
+        var failed: Swift.Error? = nil
+        if status < 200 || status >= 300 {
+          failed = ctx.makeError(
+            "request_status", "request: \(status): \(gp(fm, "statusText").asString ?? "")")
+        }
+        bodyErr = ProjectNameSdk.Response.unreadableBody(
+          ctx, status, headers, gp(fm, "body"), gp(fetchdef, "headers"), failed)
+      }
+
       let r = ProjectNameSdk.VMap()
-      r.entries["ok"] = .bool(status >= 200 && status < 300)
+      r.entries["ok"] = .bool(bodyErr == nil && status >= 200 && status < 300)
       r.entries["status"] = .int(Int64(status))
       r.entries["headers"] = headers
       r.entries["data"] = jsonData
+      if let bodyErr = bodyErr {
+        r.entries["err"] = utility.clean(ctx, .nat(bodyErr))
+      }
       return r
     }
 
