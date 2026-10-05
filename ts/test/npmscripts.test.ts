@@ -110,6 +110,18 @@ const PROBE: Record<string, Record<string, string>> = {
 }
 
 
+// What the generated scripts read, cleared of what an enclosing runner set:
+// node --test its context, and `npm run test-some --pattern=<name>` its
+// npm_config_pattern, which a nested npm passes on. Windows names ignore case.
+const INHERITED = ['NODE_TEST_CONTEXT', 'npm_config_pattern', 'TEST_PATTERN', 'DEMO_TEST_LIVE']
+
+function scriptEnv(base: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const drop = INHERITED.map((name) => name.toLowerCase())
+  return Object.fromEntries(
+    Object.entries(base).filter(([name]) => !drop.includes(name.toLowerCase())))
+}
+
+
 // The generated tests need the project's .sdk data, so probes stand in for
 // them: each records its name in ran.txt.
 function useProbes(target: string, root: string) {
@@ -159,10 +171,8 @@ describe('npm scripts', () => {
       Fs.symlinkSync(Path.join(PKG, 'node_modules'), Path.join(root, 'node_modules'), 'dir')
       useProbes(target, root)
 
-      const env: NodeJS.ProcessEnv = { ...process.env }
-      delete env.NODE_TEST_CONTEXT
-      delete env.TEST_PATTERN
-      delete env.DEMO_TEST_LIVE
+      // As under `npm run test-some --pattern=<name>`.
+      const env = scriptEnv({ ...process.env, npm_config_pattern: 'outer' })
 
       const ran = Path.join(root, 'ran.txt')
       const npm = (args: string[], extra: NodeJS.ProcessEnv = {}) => {
@@ -189,6 +199,7 @@ describe('npm scripts', () => {
       }
 
       deepStrictEqual(npm(['test']), ['alpha', 'beta', 'live:undefined', 'utility'])
+      deepStrictEqual(npm(['test-some']), ['alpha', 'beta', 'live:undefined', 'utility'])
       deepStrictEqual(npm(['test-some', '--pattern=alpha']), ['alpha'])
       deepStrictEqual(npm(['test-some'], { TEST_PATTERN: 'beta' }), ['beta'])
       deepStrictEqual(npm(['test:live']), ['live:TRUE'])
