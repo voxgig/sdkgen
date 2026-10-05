@@ -1737,21 +1737,21 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   test('a declared author reaches every manifest, and a target may override', async () => {
     const TARGETS = ['ts', 'js', 'rb', 'php', 'ocaml', 'perl', 'csharp']
 
-    const declared = [
-      "main: kit: author: { name: 'Ada Lovelace', url: 'https://example.com' }",
-      "main: kit: target: ts: author: { name: 'Someone Else', url: 'https://elsewhere.example' }",
-      "main: kit: target: perl: author: { name: 'Grace Hopper', url: 'https://hopper.example' }",
-    ].join('\n')
-
-    const out = await generate(TARGETS, undefined, declared)
-
     const MANIFEST: Record<string, string> = {
       ts: 'package.json', js: 'package.json', rb: 'Demo_sdk.gemspec',
       php: 'composer.json', ocaml: 'voxgig-demo-sdk.opam',
       perl: 'Makefile.PL', csharp: 'DemoSDK.csproj',
     }
 
-    const OVERRIDE: Record<string, string> = { ts: 'Someone Else', perl: 'Grace Hopper' }
+    // Each target is checked once with the model-wide author and once with
+    // its own.
+    const RUNS: Record<string, string>[] = [
+      { ts: 'Someone Else', perl: 'Grace Hopper' },
+      {
+        js: 'Someone Else', rb: 'Grace Hopper', php: 'Someone Else',
+        ocaml: 'Grace Hopper', csharp: 'Grace Hopper',
+      },
+    ]
 
     // The hardcoded publisher must be gone from the author position. It is
     // still legitimate elsewhere in a manifest (keywords, the npm scope),
@@ -1762,20 +1762,30 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     ]
 
     const bad: string[] = []
-    for (const t of TARGETS) {
-      const file = findFile(out, t + '/' + MANIFEST[t])
-      if (null == file) { bad.push(`${t}: no ${MANIFEST[t]} generated`); continue }
+    for (const [run, OVERRIDE] of RUNS.entries()) {
+      const declared = [
+        "main: kit: author: { name: 'Ada Lovelace', url: 'https://example.com' }",
+        ...Object.entries(OVERRIDE).map(([t, name]) =>
+          `main: kit: target: ${t}: author: { name: '${name}', url: 'https://${t}.example' }`),
+      ].join('\n')
 
-      const expected = OVERRIDE[t] || 'Ada Lovelace'
-      if (!file.includes(expected)) {
-        bad.push(`${t}: ${MANIFEST[t]} does not carry "${expected}"`)
-      }
-      if (null != OVERRIDE[t] && file.includes('Ada Lovelace')) {
-        bad.push(`${t}: ${MANIFEST[t]} carries the model-wide author over its own`)
-      }
+      const out = await generate(TARGETS, undefined, declared)
 
-      if (AUTHOR_VOXGIG.some((re) => re.test(file))) {
-        bad.push(`${t}: ${MANIFEST[t]} still hardcodes the publisher as author`)
+      for (const t of TARGETS) {
+        const file = findFile(out, t + '/' + MANIFEST[t])
+        if (null == file) { bad.push(`run ${run} ${t}: no ${MANIFEST[t]} generated`); continue }
+
+        const expected = OVERRIDE[t] || 'Ada Lovelace'
+        if (!file.includes(expected)) {
+          bad.push(`run ${run} ${t}: ${MANIFEST[t]} does not carry "${expected}"`)
+        }
+        if (null != OVERRIDE[t] && file.includes('Ada Lovelace')) {
+          bad.push(`run ${run} ${t}: ${MANIFEST[t]} carries the model-wide author over its own`)
+        }
+
+        if (AUTHOR_VOXGIG.some((re) => re.test(file))) {
+          bad.push(`run ${run} ${t}: ${MANIFEST[t]} still hardcodes the publisher as author`)
+        }
       }
     }
 
