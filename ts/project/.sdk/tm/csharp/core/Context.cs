@@ -1,5 +1,7 @@
 // ProjectName SDK - operation context.
 
+using System.Collections.Concurrent;
+
 using Voxgig.Struct;
 
 namespace ProjectNameSdk;
@@ -17,7 +19,7 @@ public class Context
     public Dictionary<string, object?>? Config;
     public Dictionary<string, object?>? Entopts;
     public Dictionary<string, object?>? Options;
-    public Dictionary<string, Operation> Opmap = new();
+    public ConcurrentDictionary<string, Operation> Opmap = new();
     public Response? Response;
     public Result? Result;
     public Spec? Spec;
@@ -145,7 +147,7 @@ public class Context
         }
 
         // Opmap
-        if (Helpers.GetCtxProp(ctxmap, "opmap") is Dictionary<string, Operation> opm)
+        if (Helpers.GetCtxProp(ctxmap, "opmap") is ConcurrentDictionary<string, Operation> opm)
         {
             Opmap = opm;
         }
@@ -153,7 +155,7 @@ public class Context
         {
             Opmap = basectx.Opmap;
         }
-        Opmap ??= new Dictionary<string, Operation>();
+        Opmap ??= new ConcurrentDictionary<string, Operation>();
 
         // Data maps
         Data = Helpers.ToMapAny(Helpers.GetCtxProp(ctxmap, "data")) ?? new Dictionary<string, object?>();
@@ -246,8 +248,9 @@ public class Context
             ["points"] = points,
         });
 
-        Opmap[cacheKey] = op;
-        return op;
+        // Requests on other threads share this cache; every one of them gets
+        // the Operation stored first.
+        return Opmap.GetOrAdd(cacheKey, op);
     }
 
     public ProjectNameError MakeError(string code, string msg)

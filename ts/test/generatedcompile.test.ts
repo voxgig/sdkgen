@@ -5115,6 +5115,183 @@ describe('a templated server URL is resolved by the generated SDK', () => {
 })
 
 
+// Every request on one client resolves its operation through the cache the
+// client's root context shares. The suite each of these SDKs ships races first
+// requests on one client, and checks every racer gets the one cached Operation;
+// go runs it under the race detector.
+type ConcurrencyLane = {
+  target: string,
+  runner: string,
+  needs: string,
+  prepare?: (sdkroot: string) => string | null,
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // Exit zero is not enough: a filter that matches nothing passes in every one
+  // of these frameworks.
+  ran: RegExp[],
+  report?: (sdkroot: string) => string,
+  // A failure that names a missing toolchain capability rather than the SDK.
+  unsupported?: RegExp,
+}
+
+const CONCURRENCY_LANES: ConcurrencyLane[] = [
+  {
+    target: 'csharp',
+    runner: 'test/ConcurrencyTest.cs',
+    needs: 'dotnet',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('dotnet')!, ['build', '--nologo', '-v', 'quiet', 'test'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated csharp test project does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const dotnet = toolchain('dotnet')
+      return null == dotnet ? null : {
+        bin: dotnet,
+        args: ['test', '--nologo', '--no-build', '-v', 'quiet',
+          '--logger', 'console;verbosity=normal',
+          '--filter', 'FullyQualifiedName~ConcurrencyTest', 'test'],
+      }
+    },
+    ran: [
+      /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentFirstRequestsSucceed\b/m,
+      /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentResolutionsShareOneCachedOperation\b/m,
+      /^\s*Total tests: 2\b/m,
+    ],
+  },
+  {
+    target: 'go',
+    runner: 'test/concurrency_test.go',
+    needs: 'go, with cgo and a C compiler for the race detector',
+    command: () => {
+      const go = toolchain('go')
+      return null == go ? null : {
+        bin: go,
+        args: ['test', '-race', '-count=1', '-run', '^TestConcurrent', '-v', './test/'],
+      }
+    },
+    ran: [
+      /^--- PASS: TestConcurrentFirstRequests /m,
+      /^--- PASS: TestConcurrentOperationResolution /m,
+    ],
+    unsupported: /-race requires cgo|cgo: C compiler .* not found|-race is not supported/,
+  },
+  {
+    target: 'java',
+    runner: 'test/ConcurrencyTest.java',
+    needs: 'java and maven',
+    command: () => {
+      const mvn = toolchain('mvn')
+      if (null == mvn || null == toolchain('java')) return null
+      return {
+        bin: mvn,
+        args: ['-B', 'test', '-Dtest=ConcurrencyTest', '-DfailIfNoSpecifiedTests=false'],
+      }
+    },
+    ran: [/Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: .* in [\w.]*\.ConcurrencyTest$/m],
+  },
+  {
+    target: 'kotlin',
+    runner: 'test/ConcurrencyTest.kt',
+    needs: 'gradle (which resolves the Kotlin plugin from the network)',
+    command: () => {
+      // gradle hangs on windows rather than failing, as the clean lane says.
+      if ('win32' === process.platform) return null
+      const gradle = toolchain('gradle')
+      return null == gradle ? null
+        : { bin: gradle, args: ['--console=plain', 'test', '--tests', '*ConcurrencyTest*'] }
+    },
+    ran: [/<testsuite name="[^"]*ConcurrencyTest" tests="2" skipped="0" failures="0" errors="0"/],
+    report: (sdkroot) => {
+      const dir = Path.join(sdkroot, 'build', 'test-results', 'test')
+      return Fs.existsSync(dir)
+        ? Fs.readdirSync(dir).filter((f) => f.endsWith('ConcurrencyTest.xml'))
+          .map((f) => Fs.readFileSync(Path.join(dir, f), 'utf8')).join('\n')
+        : ''
+    },
+  },
+  {
+    target: 'scala',
+    runner: 'sdktest/ConcurrencyTest.scala',
+    needs: 'scala-cli (which resolves the Scala compiler from the network)',
+    command: () => {
+      const scalacli = toolchain('scala-cli')
+      return null == scalacli ? null
+        : { bin: scalacli, args: ['run', '.', '--main-class', 'SdkConcurrencyTestMain'] }
+    },
+    ran: [/CONCURRENCY PASS 2 {2}FAIL 0/],
+  },
+  {
+    target: 'cpp',
+    runner: 'test/concurrency_test.cpp',
+    needs: 'make and a C++ compiler',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('make')!, ['CXX=' + cleanCxx(), 'test/concurrency_test.out'],
+        sdkroot)
+      return built.ok ? null : 'the generated test does not build:\n' + tail(built.out)
+    },
+    command: () => null == toolchain('make') || null == cleanCxx() ? null
+      : { bin: Path.join('test', 'concurrency_test.out'), args: [] },
+    ran: [/concurrency_test: 2 tests, 2 checks, 0 failures/],
+  },
+]
+
+
+describe('concurrent requests on one client share its operation cache', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-concurrency-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of CONCURRENCY_LANES) {
+    test(lane.target + ': concurrent first requests on one client share its operation cache',
+      async (t) => {
+        const sdkroot = Path.join(tmp, lane.target)
+        const files = await generateTo(lane.target, sdkroot)
+
+        ok(null != files[lane.runner],
+          'the concurrency test was not generated into the SDK: expected ' + lane.runner)
+
+        const cmd = lane.command()
+        if (null == cmd) {
+          return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+        }
+
+        const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+        ok(null == notready, lane.target + ': ' + notready)
+
+        const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' +
+            tail(ran.out, 3))
+        }
+
+        const gap = [...UNUSABLE, ...(null == lane.unsupported ? [] : [lane.unsupported])]
+          .find((re) => re.test(ran.out))
+        if (null != gap && !ran.ok) {
+          return t.skip(lane.target + ': toolchain present but not usable (' +
+            gap.source + '):\n' + tail(ran.out))
+        }
+
+        ok(ran.ok, 'the concurrency test FAILED against the generated ' + lane.target +
+          ' SDK:\n' + tail(ran.out, 60))
+
+        const seen = ran.out + (null == lane.report ? '' : '\n' + lane.report(sdkroot))
+        for (const line of lane.ran) {
+          ok(line.test(seen), lane.target + ': the concurrency test did not report (' +
+            line.source + '):\n' + tail(seen))
+        }
+      })
+  }
+})
+
+
 // The feature suite a generated SDK ships drives each present feature through
 // the SDK's own offline harness, which no other lane runs.
 const FEATURE_SUITE_LANES: { target: string, runner: string }[] = [

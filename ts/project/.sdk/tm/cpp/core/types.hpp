@@ -12,10 +12,12 @@
 #define SDK_CORE_TYPES_HPP
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <functional>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <ostream>
 #include <stdexcept>
 #include <string>
@@ -51,7 +53,11 @@ using FeaturePtr = std::shared_ptr<Feature>;
 using UtilityPtr = std::shared_ptr<Utility>;
 using CtxPtr = std::shared_ptr<Context>;
 
-using OpMap = std::map<std::string, OperationPtr>;
+// Shared by every context of one client, so by requests on several threads.
+struct OpMap {
+  std::mutex lock;
+  std::map<std::string, OperationPtr> ops;
+};
 using OpMapPtr = std::shared_ptr<OpMap>;
 
 // Generated (core/config.hpp) — the embedded API config + feature factory.
@@ -739,7 +745,7 @@ inline SdkErrorPtr Helpers::unsupportedOp(const std::string& opname,
 
 // ---- Context ----
 inline Context::Context(const CtxSpec& cs, const CtxPtr& basectx) {
-  static long long counter = 10000000;
+  static std::atomic<long long> counter{10000000};
   id = "C" + std::to_string(++counter);
 
   // Client
@@ -821,8 +827,11 @@ inline OperationPtr Context::resolveOp(const std::string& opname) {
   if (entity) entname = entity->getName();
   std::string cacheKey = entname + ":" + opname;
 
-  auto it = opmap->find(cacheKey);
-  if (it != opmap->end()) return it->second;
+  {
+    std::lock_guard<std::mutex> guard(opmap->lock);
+    auto it = opmap->ops.find(cacheKey);
+    if (it != opmap->ops.end()) return it->second;
+  }
 
   if (opname.empty()) {
     return std::make_shared<Operation>(vmap());
@@ -847,8 +856,9 @@ inline OperationPtr Context::resolveOp(const std::string& opname) {
   map_put(opdef, "points", points);
 
   auto op_ = std::make_shared<Operation>(opdef);
-  (*opmap)[cacheKey] = op_;
-  return op_;
+  // Every request racing to build this Operation gets the one stored first.
+  std::lock_guard<std::mutex> guard(opmap->lock);
+  return opmap->ops.emplace(cacheKey, op_).first->second;
 }
 
 inline SdkErrorPtr Context::makeError(const std::string& code, const std::string& msg) {

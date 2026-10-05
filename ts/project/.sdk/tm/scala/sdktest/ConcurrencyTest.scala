@@ -1,0 +1,99 @@
+// Requests in flight at once on one client. Each resolves its operation
+// through the cache the client's root context shares with every request.
+
+import java.util.concurrent.{ConcurrentLinkedQueue, CyclicBarrier}
+import java.util.function.{BiFunction, Supplier}
+import java.util.{Map => JMap}
+
+import SCALAPACKAGE.core.{Operation, ProjectNameSDK}
+
+object SdkConcurrencyTestMain {
+
+  private val Rounds = 200
+  private val Width = 8
+  private val Ops = 32
+
+  private def om(kv: (String, Object)*): JMap[String, Object] = SdkTestSupport.om(kv*)
+
+  // A live client whose transport answers at once.
+  private def liveClient(): ProjectNameSDK = {
+    val json: Supplier[Object] = () => om("ok" -> SdkTestSupport.B(true))
+    val fetch: BiFunction[String, JMap[String, Object], Object] = (_, _) =>
+      om("status" -> SdkTestSupport.I(200), "statusText" -> "OK", "headers" -> om(), "json" -> json)
+    new ProjectNameSDK(om(
+      "base" -> "http://concurrency.test/api",
+      "allow" -> om("op" -> "direct"),
+      "system" -> om("fetch" -> fetch)))
+  }
+
+  // Runs body on Width threads released together, and returns what they threw.
+  private def atOnce(body: Int => Unit): List[Throwable] = {
+    val start = new CyclicBarrier(Width)
+    val thrown = new ConcurrentLinkedQueue[Throwable]()
+    val threads = (0 until Width).map { n =>
+      val runner: Runnable = () =>
+        try {
+          start.await()
+          body(n)
+        }
+        catch { case e: Throwable => thrown.add(e); () }
+      val thread = new Thread(runner)
+      thread.start()
+      thread
+    }
+    threads.foreach(_.join())
+    thrown.toArray(new Array[Throwable](0)).toList
+  }
+
+  // The first failure across the rounds, or null.
+  private def firstFailure(round: Int => String): String = {
+    var failure: String = null
+    var n = 0
+    while (failure == null && n < Rounds) {
+      failure = round(n)
+      n += 1
+    }
+    failure
+  }
+
+  def main(args: Array[String]): Unit = {
+    val rep = new SdkTestReport()
+
+    rep.scope("concurrency.requests") {
+      val failure = firstFailure { round =>
+        // A fresh client each round, so every request in it is a first request.
+        val client = liveClient()
+        val results = new Array[JMap[String, Object]](Width)
+        val thrown = atOnce(n => results(n) = client.direct(om("path" -> ("p" + n))))
+        val failed = (0 until Width).find(n =>
+          results(n) == null || java.lang.Boolean.TRUE != results(n).get("ok"))
+        if (thrown.nonEmpty) "round " + round + " threw: " + thrown
+        else failed.map(n => "round " + round + ", request " + n + " failed: " + results(n)).orNull
+      }
+      rep.check("concurrency.requests", failure == null, failure)
+    }
+
+    rep.scope("concurrency.operations") {
+      val failure = firstFailure { round =>
+        val client = liveClient()
+        val utility = client.getUtility()
+        val root = client.getRootCtx()
+        val got = Array.ofDim[Operation](Width, Ops)
+        val thrown = atOnce { n =>
+          for (k <- 0 until Ops) {
+            got(n)(k) = utility.makeContext(om("opname" -> ("op" + k)), root).op
+          }
+        }
+        val split = (0 until Ops).find { k =>
+          val cached = utility.makeContext(om("opname" -> ("op" + k)), root).op
+          (0 until Width).exists(n => !(got(n)(k) eq cached))
+        }
+        if (thrown.nonEmpty) "round " + round + " threw: " + thrown
+        else split.map(k => "round " + round + ": op" + k + " resolved to more than one Operation").orNull
+      }
+      rep.check("concurrency.operations", failure == null, failure)
+    }
+
+    rep.finish("CONCURRENCY")
+  }
+}

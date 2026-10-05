@@ -289,13 +289,14 @@ tm/cpp/Makefile 0d6ce97980bb
 tm/cpp/VERSION e6635045e1d2
 tm/cpp/core/sdk.hpp 29180a8846ed
 tm/cpp/core/struct.hpp 0be0006d1389
-tm/cpp/core/types.hpp 7bab1d00c678
+tm/cpp/core/types.hpp e97962270a79
 tm/cpp/feature/base.hpp 09bbe326cadb
 tm/cpp/feature/options.hpp 74561793d626
 tm/cpp/feature/test.hpp fa41b1530c3f
 tm/cpp/src/feature/README.md 3f39917d4bcf
 tm/cpp/src/feature/base/.gitkeep e3b0c44298fc
 tm/cpp/src/feature/test/.gitkeep e3b0c44298fc
+tm/cpp/test/concurrency_test.cpp 2dda3b518cb3
 tm/cpp/test/custom_utility_test.cpp 2b69801ad71d
 tm/cpp/test/exists_test.cpp 9e03ef43cc67
 tm/cpp/test/harness.hpp aef3645c6f6f
@@ -367,7 +368,7 @@ src/cmp/csharp/utility_csharp.ts 0f589be03efc
 tm/csharp/LICENSE ed2f88b0aab8
 tm/csharp/Makefile 9e4110d7eafd
 tm/csharp/VERSION e6635045e1d2
-tm/csharp/core/Context.cs 0be1f0257265
+tm/csharp/core/Context.cs 7f9ba3bc5e66
 tm/csharp/core/Control.cs eac6511c1bd1
 tm/csharp/core/Helpers.cs c4fc14005a8f
 tm/csharp/core/Operation.cs 518c7424a8a9
@@ -383,6 +384,7 @@ tm/csharp/feature/TestFeature.cs 89b8e3bde028
 tm/csharp/src/feature/README.md ddb1daf8f8fe
 tm/csharp/src/feature/base/.gitkeep e3b0c44298fc
 tm/csharp/src/feature/test/.gitkeep e3b0c44298fc
+tm/csharp/test/ConcurrencyTest.cs 86bee4ae858e
 tm/csharp/test/CustomUtilityTest.cs a909ed678d84
 tm/csharp/test/ExistsTest.cs 3d458c790b7c
 tm/csharp/test/FeatureHarness.cs 740ed27e3234
@@ -548,7 +550,7 @@ src/cmp/go/utility_go.ts 91ead607f691
 tm/go/LICENSE ed2f88b0aab8
 tm/go/Makefile 72a251a943a5
 tm/go/VERSION e6635045e1d2
-tm/go/core/context.go 2e96c0469963
+tm/go/core/context.go 1bceb2c30b49
 tm/go/core/control.go e5f055beb2f1
 tm/go/core/error.go 7e6170903ed4
 tm/go/core/helpers.go 11cc9f557d10
@@ -565,6 +567,7 @@ tm/go/feature/test_feature.go 87e7802d6698
 tm/go/src/feature/README.md efebfaa50be0
 tm/go/src/feature/base/.gitkeep e3b0c44298fc
 tm/go/src/feature/test/.gitkeep e3b0c44298fc
+tm/go/test/concurrency_test.go de68a7043903
 tm/go/test/custom_utility_test.go 34f8ce224b2e
 tm/go/test/feature_corpus_test.go ef5a414942c1
 tm/go/test/feature_harness_test.go b408114ef8b6
@@ -686,7 +689,7 @@ src/cmp/java/utility_java.ts 19662d345ec3
 tm/java/LICENSE ed2f88b0aab8
 tm/java/Makefile def672a803b0
 tm/java/VERSION e6635045e1d2
-tm/java/core/Context.java eb0dc537ea48
+tm/java/core/Context.java a8d327c4ff35
 tm/java/core/Control.java 565185ed2b10
 tm/java/core/Entity.java 50d3208bc31e
 tm/java/core/Feature.java 41a6d3c2ba09
@@ -706,6 +709,7 @@ tm/java/feature/TestFeature.java 7075460550e6
 tm/java/src/feature/README.md fe95b0698ffe
 tm/java/src/feature/base/.gitkeep e3b0c44298fc
 tm/java/src/feature/test/.gitkeep e3b0c44298fc
+tm/java/test/ConcurrencyTest.java 78f44fa638c4
 tm/java/test/CustomUtilityTest.java 92703abdc486
 tm/java/test/ExistsTest.java 6b1f749bac90
 tm/java/test/FeatureCorpusTest.java c6483abf9640
@@ -928,7 +932,7 @@ src/cmp/kotlin/utility_kotlin.ts 6f2c66003df3
 tm/kotlin/LICENSE ed2f88b0aab8
 tm/kotlin/Makefile 5102e29f09a6
 tm/kotlin/VERSION e6635045e1d2
-tm/kotlin/core/Context.kt e6769b3e53b9
+tm/kotlin/core/Context.kt 2b2d368ef0aa
 tm/kotlin/core/Control.kt 49fe61178ad1
 tm/kotlin/core/Helpers.kt 8648bcb75c20
 tm/kotlin/core/Interfaces.kt 36f2ce7f02ff
@@ -945,6 +949,7 @@ tm/kotlin/feature/TestFeature.kt ebbd3bbbc4f8
 tm/kotlin/src/feature/README.md 9f8bde3f12e0
 tm/kotlin/src/feature/base/.gitkeep e3b0c44298fc
 tm/kotlin/src/feature/test/.gitkeep e3b0c44298fc
+tm/kotlin/test/ConcurrencyTest.kt 5c8d4d3e6883
 tm/kotlin/test/CustomUtilityTest.kt 38682251b430
 tm/kotlin/test/ExistsTest.kt 8305e0fa71e5
 tm/kotlin/test/FeatureHarness.kt 32cf2c92ebaa
@@ -1760,9 +1765,9 @@ src/cmp/scala/fragment/Main.fragment.scala 48af9dfdab50
 src/cmp/scala/tsconfig.json 720a3f229019
 src/cmp/scala/utility_scala.ts 0f8b6c6f8f64
 tm/scala/LICENSE ed2f88b0aab8
-tm/scala/Makefile c8ec788f756e
+tm/scala/Makefile 53420e3d4296
 tm/scala/VERSION e6635045e1d2
-tm/scala/core/Context.scala 6491a917aced
+tm/scala/core/Context.scala bf6d95dd8f21
 tm/scala/core/Contracts.scala caa9f20bf5be
 tm/scala/core/Control.scala 1adcb3343fe0
 tm/scala/core/Helpers.scala 46cff0707ade
@@ -1831,6 +1836,7 @@ tm/scala/feature/secrets/sekreto/plugins/Minivault.scala eded964a61b3
 tm/scala/feature/secrets/sekreto/plugins/Onepassword.scala 292e7c1ac82f
 tm/scala/feature/secrets/sekreto/plugins/Secretspec.scala 0e7dea70feee
 tm/scala/feature/secrets/sekreto/plugins/Sigv4.scala 116d50af73ff
+tm/scala/sdktest/ConcurrencyTest.scala 514a4143e4b5
 tm/scala/sdktest/OmniResolver.scala 2bbd5639ca7c
 tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
 tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
