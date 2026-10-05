@@ -442,7 +442,7 @@ src/cmp/elixir/Entity_elixir.ts c30a8cfd1fee
 src/cmp/elixir/Gitignore_elixir.ts d98ec8dd42b0
 src/cmp/elixir/MainEntity_elixir.ts 9a4a93d98814
 src/cmp/elixir/Main_elixir.ts d12f5e9c14a6
-src/cmp/elixir/Package_elixir.ts d1da632e37fe
+src/cmp/elixir/Package_elixir.ts cfb9b797088f
 src/cmp/elixir/PrepareAuth_elixir.ts 60ef10da18e2
 src/cmp/elixir/ReadmeEntity_elixir.ts 11a025da3f35
 src/cmp/elixir/ReadmeExamplesTest_elixir.ts 12baaaa2aaee
@@ -1369,7 +1369,7 @@ src/cmp/py/Entity_py.ts 882145a9c936
 src/cmp/py/Gitignore_py.ts 07f7135b0381
 src/cmp/py/MainEntity_py.ts 853d7533f8fb
 src/cmp/py/Main_py.ts 5630f0feb88c
-src/cmp/py/Package_py.ts f64acebbf344
+src/cmp/py/Package_py.ts f9cff3352ab6
 src/cmp/py/PrepareAuth_py.ts 43f26508d49b
 src/cmp/py/ReadmeEntity_py.ts 2e584cfcd659
 src/cmp/py/ReadmeExamplesTest_py.ts 2a1f8a65b371
@@ -2124,7 +2124,7 @@ src/cmp/zig/Entity_zig.ts 0740088c5f9a
 src/cmp/zig/Gitignore_zig.ts ec49760abeae
 src/cmp/zig/MainEntity_zig.ts d0d2ec1fe12a
 src/cmp/zig/Main_zig.ts 8f91bc6af36f
-src/cmp/zig/Package_zig.ts 3e14e57fa638
+src/cmp/zig/Package_zig.ts 34a84ffff31b
 src/cmp/zig/PrepareAuth_zig.ts ff18ef091eeb
 src/cmp/zig/ReadmeEntity_zig.ts 838c17330f00
 src/cmp/zig/ReadmeExamplesTest_zig.ts 297a208374be
