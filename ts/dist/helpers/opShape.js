@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OP_SUFFIX = void 0;
+exports.OP_SUFFIX = exports.CANON_OP_ORDER = void 0;
 exports.deriveEntityNames = deriveEntityNames;
 exports.entityCollection = entityCollection;
 exports.opTypeName = opTypeName;
@@ -305,6 +305,7 @@ function invalidRequest(ent) {
 // whose every route is an action is refused without one, so a plain example
 // of either would fail.
 const CANON_OP_ORDER = ['list', 'load', 'create', 'update', 'remove'];
+exports.CANON_OP_ORDER = CANON_OP_ORDER;
 function entityOps(ent) {
     const ops = (ent && ent.op) || {};
     const active = Object.keys(ops).filter((o) => ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]));

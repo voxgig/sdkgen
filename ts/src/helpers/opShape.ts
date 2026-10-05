@@ -671,6 +671,7 @@ function entityDataIdField(ent: any): string | null {
 
 
 export {
+  CANON_OP_ORDER,
   OP_SUFFIX,
   deriveEntityNames,
   entityCollection,
