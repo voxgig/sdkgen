@@ -97,9 +97,14 @@ final class Fetcher {
       }
     }
     // Default User-Agent — some CDNs block Java's default. Use a
-    // Mozilla-shaped UA unless the caller already set one.
+    // Mozilla-shaped UA unless the caller already set one, and record it with
+    // the headers the request sent.
     if (!hasUA) {
-      reqb.setHeader("User-Agent", "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)");
+      String agent = "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)";
+      reqb.setHeader("User-Agent", agent);
+      if (headersRaw instanceof Map) {
+        ((Map<String, Object>) headersRaw).put("user-agent", agent);
+      }
     }
 
     HttpResponse<String> resp;
@@ -122,7 +127,17 @@ final class Fetcher {
     }
 
     String bodyText = resp.body() == null ? "" : resp.body();
-    final Object jsonBody = bodyText.isEmpty() ? null : Json.parseOrNull(bodyText);
+    Object parsed = null;
+    boolean unreadable = false;
+    if (!bodyText.isBlank()) {
+      try {
+        parsed = Json.parse(bodyText);
+      }
+      catch (RuntimeException e) {
+        unreadable = true;
+      }
+    }
+    final Object jsonBody = parsed;
 
     Map<String, Object> out = new LinkedHashMap<>();
     out.put("status", resp.statusCode());
@@ -130,6 +145,7 @@ final class Fetcher {
     out.put("headers", headers);
     out.put("json", (Supplier<Object>) () -> jsonBody);
     out.put("body", bodyText);
+    out.put("unreadable", unreadable);
     return out;
   }
 

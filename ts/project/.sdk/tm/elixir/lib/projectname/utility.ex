@@ -2190,9 +2190,69 @@ defmodule ProjectName.Utility do
       jf = S.getprop(response, "json_func")
       body = S.getprop(response, "body")
       if jf != nil and body != nil and S.isfunc(jf), do: S.setprop(result, "body", jf.())
+
+      if S.getprop(response, "unreadable") == true do
+        spec = S.getprop(ctx, "spec")
+        sent = if spec != nil, do: S.getprop(spec, "headers")
+
+        S.setprop(result, "err",
+          unreadable_body(ctx, S.getprop(result, "status"), S.getprop(result, "headers"), body, sent,
+            S.getprop(result, "err")))
+      end
     end
 
     result
+  end
+
+  @body_preview_length 160
+
+  # A body that is not JSON. An HTTP failure keeps its own error, with the
+  # response described; otherwise the code tells a wrong content type from
+  # malformed JSON.
+  def unreadable_body(ctx, status, headers, text, sent, failed) do
+    type = body_header(headers, "content-type")
+    agent = to_string(clean(ctx, body_header(sent, "user-agent")))
+
+    detail =
+      "HTTP " <> to_string(status) <> ", content-type " <> if(type == "", do: "none", else: type) <>
+        ", user-agent " <> if(agent == "", do: "transport default", else: agent) <>
+        if(text == nil, do: "", else: ", body: " <> body_preview(ctx, text))
+
+    cond do
+      match?(%ProjectName.Error{}, failed) ->
+        %{failed | msg: failed.msg <> " (" <> detail <> ")"}
+
+      failed != nil ->
+        %RuntimeError{message: err_msg(failed) <> " (" <> detail <> ")"}
+
+      type == "" or String.contains?(String.downcase(type), "json") ->
+        Context.make_error(ctx, "response_json_invalid", "response: body is not valid JSON (" <> detail <> ")")
+
+      true ->
+        Context.make_error(ctx, "response_content_type",
+          "response: expected JSON, got " <> type <> " (" <> detail <> ")")
+    end
+  end
+
+  defp body_header(headers, name) do
+    if S.ismap(headers) do
+      case Enum.find(H.entries(headers), fn {k, _v} -> String.downcase(to_string(k)) == name end) do
+        {_k, v} -> to_string(v)
+        nil -> ""
+      end
+    else
+      ""
+    end
+  end
+
+  # Cleaned whole: a secret the bound would split could leave its prefix.
+  defp body_preview(ctx, text) do
+    flat = to_string(clean(ctx, String.trim(Regex.replace(~r/\s+/, to_string(text), " "))))
+    points = String.codepoints(flat)
+
+    if length(points) > @body_preview_length,
+      do: Enum.join(Enum.take(points, @body_preview_length)) <> "...",
+      else: flat
   end
 
   def result_headers_impl(ctx) do
@@ -2386,6 +2446,9 @@ defmodule ProjectName.Utility do
     hlist =
       if has_ua, do: hlist0, else: [{~c"User-Agent", String.to_charlist(@default_user_agent)} | hlist0]
 
+    # The default User-Agent is recorded with the headers the request sent.
+    if not has_ua, do: S.setprop(headers_node, "user-agent", @default_user_agent)
+
     url = String.to_charlist(fullurl)
 
     request =
@@ -2413,14 +2476,14 @@ defmodule ProjectName.Utility do
 
         body_str = if is_binary(resp_body), do: resp_body, else: to_string(resp_body)
 
-        json_body =
-          if String.length(body_str) > 0 do
+        {json_body, unreadable} =
+          if String.trim(body_str) != "" do
             case safe_json(body_str) do
-              {:ok, v} -> v
-              _ -> nil
+              {:ok, v} -> {v, false}
+              _ -> {nil, true}
             end
           else
-            nil
+            {nil, false}
           end
 
         status_text = if status < 400, do: "OK", else: "Error"
@@ -2430,7 +2493,8 @@ defmodule ProjectName.Utility do
            "statusText", status_text,
            "headers", rh,
            "json", fn -> json_body end,
-           "body", body_str
+           "body", body_str,
+           "unreadable", unreadable
          ]), nil}
 
       {:error, reason} ->

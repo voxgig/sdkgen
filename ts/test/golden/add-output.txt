@@ -42,7 +42,7 @@ src/cmp/c/fragment/EntityLoadOp.fragment.c 75edd325b5b8
 src/cmp/c/fragment/EntityPatchOp.fragment.c bce265762099
 src/cmp/c/fragment/EntityRemoveOp.fragment.c 4c45a19d2616
 src/cmp/c/fragment/EntityUpdateOp.fragment.c e458ce724b0a
-src/cmp/c/fragment/Main.fragment.c ebacb86d967a
+src/cmp/c/fragment/Main.fragment.c 86f9e0dff0b5
 src/cmp/c/tsconfig.json 720a3f229019
 src/cmp/c/utility_c.ts 1574d3533873
 tm/c/LICENSE 52acd47c245f
@@ -54,9 +54,9 @@ tm/c/core/error.c 196f062bc190
 tm/c/core/helpers.c 8aa4c5c9510e
 tm/c/core/operation.c fb16ed309ed9
 tm/c/core/point.c 1539404e1bcc
-tm/c/core/response.c 4b4096708714
+tm/c/core/response.c 735acc3c1292
 tm/c/core/result.c 60bde846d061
-tm/c/core/sdk.h 04cc350706a1
+tm/c/core/sdk.h 2d7296b95e10
 tm/c/core/spec.c cb3f60193af1
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
@@ -105,7 +105,7 @@ tm/c/utility/prepare_params.c 0f1d76eee944
 tm/c/utility/prepare_path.c e9d7ffaa4851
 tm/c/utility/prepare_query.c 7e43f62290cd
 tm/c/utility/result_basic.c 0f1b53dd5eb9
-tm/c/utility/result_body.c 7080de45ae8d
+tm/c/utility/result_body.c bd42f2c05ace
 tm/c/utility/result_headers.c 3eaca35dfcb8
 tm/c/utility/struct/inject.c 2de233f64a5d
 tm/c/utility/struct/re_util.c 28c8890dd517
@@ -225,8 +225,8 @@ tm/clojure/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
-tm/clojure/src/sdk/client.clj 95a6ecd1a79c
-tm/clojure/src/sdk/core.clj 3deaebdf2097
+tm/clojure/src/sdk/client.clj 5978c081353b
+tm/clojure/src/sdk/core.clj 27b7d9fd7886
 tm/clojure/src/sdk/features.clj bf69cbc11b36
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 590d662e1233
@@ -292,7 +292,7 @@ tm/cpp/Makefile 0d6ce97980bb
 tm/cpp/VERSION e6635045e1d2
 tm/cpp/core/sdk.hpp 29180a8846ed
 tm/cpp/core/struct.hpp 0be0006d1389
-tm/cpp/core/types.hpp d174d66583f9
+tm/cpp/core/types.hpp 98e3c95c58be
 tm/cpp/feature/base.hpp 09bbe326cadb
 tm/cpp/feature/options.hpp 74561793d626
 tm/cpp/feature/test.hpp 22af5d5ffbf4
@@ -316,7 +316,7 @@ tm/cpp/test/vendor/omni/json.hpp 8e36b1f58d52
 tm/cpp/test/vendor/omni/omni.hpp 6d8f1d38f39e
 tm/cpp/test/vendor/omni/util.hpp 7737f6997c2b
 tm/cpp/utility/cookie.hpp d2b5fb5f0264
-tm/cpp/utility/pipeline.hpp 315e68abcd6a
+tm/cpp/utility/pipeline.hpp a059d43ff1b5
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp f3832db06d59
@@ -364,7 +364,7 @@ src/cmp/csharp/fragment/EntityLoadOp.fragment.cs 3d8bdbd27972
 src/cmp/csharp/fragment/EntityPatchOp.fragment.cs 4aee84e49afa
 src/cmp/csharp/fragment/EntityRemoveOp.fragment.cs 31ef15229ea0
 src/cmp/csharp/fragment/EntityUpdateOp.fragment.cs bced8d6613a6
-src/cmp/csharp/fragment/Main.fragment.cs 14f306353868
+src/cmp/csharp/fragment/Main.fragment.cs 2ef75e787678
 src/cmp/csharp/fragment/SdkError.fragment.cs f10488189e97
 src/cmp/csharp/tsconfig.json 720a3f229019
 src/cmp/csharp/utility_csharp.ts 842d345c8faf
@@ -376,7 +376,7 @@ tm/csharp/core/Control.cs eac6511c1bd1
 tm/csharp/core/Helpers.cs c4fc14005a8f
 tm/csharp/core/Operation.cs 518c7424a8a9
 tm/csharp/core/Point.cs aaadff9ae8c5
-tm/csharp/core/Response.cs 596d3e5173bd
+tm/csharp/core/Response.cs 92bad3866b51
 tm/csharp/core/Result.cs 80713129722e
 tm/csharp/core/Spec.cs c0bd7bec8261
 tm/csharp/core/Types.cs d3790b5cfad6
@@ -405,7 +405,7 @@ tm/csharp/utility/Done.cs 0106c22118b7
 tm/csharp/utility/FeatureAdd.cs 5a5f0fd34beb
 tm/csharp/utility/FeatureHook.cs 923e6654ee06
 tm/csharp/utility/FeatureInit.cs 8e81f5a41870
-tm/csharp/utility/Fetcher.cs 94cd0b219e7d
+tm/csharp/utility/Fetcher.cs 864a82910849
 tm/csharp/utility/Graphql.cs 6b8bdb457f11
 tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs 6900c189af67
@@ -427,7 +427,7 @@ tm/csharp/utility/PreparePath.cs 231686f6cd6b
 tm/csharp/utility/PrepareQuery.cs 4431f303db34
 tm/csharp/utility/Register.cs 889da749423f
 tm/csharp/utility/ResultBasic.cs d1a00426fafd
-tm/csharp/utility/ResultBody.cs 5e641c84a4fa
+tm/csharp/utility/ResultBody.cs a42bdf77aeb6
 tm/csharp/utility/ResultHeaders.cs e593a27709b5
 tm/csharp/utility/TransformRequest.cs 9194b9b0b173
 tm/csharp/utility/TransformResponse.cs 01583a33873e
@@ -446,7 +446,7 @@ src/cmp/elixir/Entity_elixir.ts 184381df5efb
 src/cmp/elixir/Gitignore_elixir.ts d98ec8dd42b0
 src/cmp/elixir/MainEntity_elixir.ts 9a4a93d98814
 src/cmp/elixir/Main_elixir.ts d12f5e9c14a6
-src/cmp/elixir/Package_elixir.ts d1da632e37fe
+src/cmp/elixir/Package_elixir.ts cfb9b797088f
 src/cmp/elixir/PrepareAuth_elixir.ts 60ef10da18e2
 src/cmp/elixir/ReadmeEntity_elixir.ts 1a8296f0299e
 src/cmp/elixir/ReadmeExamplesTest_elixir.ts 12baaaa2aaee
@@ -473,7 +473,7 @@ src/cmp/elixir/fragment/EntityLoadOp.fragment.ex b81370317230
 src/cmp/elixir/fragment/EntityPatchOp.fragment.ex 050e6fdad1df
 src/cmp/elixir/fragment/EntityRemoveOp.fragment.ex 535abcc38964
 src/cmp/elixir/fragment/EntityUpdateOp.fragment.ex c9cb692d45a8
-src/cmp/elixir/fragment/Main.fragment.ex 64cd1a36009f
+src/cmp/elixir/fragment/Main.fragment.ex 40c114123f83
 src/cmp/elixir/fragment/Pipeline.fragment.ex 5df8ee54763f
 src/cmp/elixir/tsconfig.json 720a3f229019
 src/cmp/elixir/utility_elixir.ts d2ac9a3d5427
@@ -481,14 +481,14 @@ tm/elixir/LICENSE 7a036af3f8a4
 tm/elixir/Makefile 411daea82111
 tm/elixir/VERSION e6635045e1d2
 tm/elixir/lib/projectname/context.ex 7b7862f05c1b
-tm/elixir/lib/projectname/core.ex 6b5e41add8f7
+tm/elixir/lib/projectname/core.ex 2c5a27f9ef03
 tm/elixir/lib/projectname/entity_base.ex 60a9bfea001c
 tm/elixir/lib/projectname/error.ex 3817e946f99d
 tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex a6ab3f6305f6
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex 417085321b91
+tm/elixir/lib/projectname/utility.ex 2de46b0e470a
 tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -547,7 +547,7 @@ src/cmp/go/fragment/EntityLoadOp.fragment.go 02b334dc6c9c
 src/cmp/go/fragment/EntityPatchOp.fragment.go 40f62b6ed1d4
 src/cmp/go/fragment/EntityRemoveOp.fragment.go 1343a5dce0b6
 src/cmp/go/fragment/EntityUpdateOp.fragment.go a698a4b6490a
-src/cmp/go/fragment/Main.fragment.go 60d152090d3f
+src/cmp/go/fragment/Main.fragment.go 8ad6d889d98a
 src/cmp/go/tsconfig.json 720a3f229019
 src/cmp/go/utility_go.ts 91ead607f691
 tm/go/LICENSE 52acd47c245f
@@ -558,7 +558,7 @@ tm/go/core/control.go e5f055beb2f1
 tm/go/core/error.go 7e6170903ed4
 tm/go/core/helpers.go 11cc9f557d10
 tm/go/core/operation.go aef48c3c0f8c
-tm/go/core/response.go b8a02d61e0f6
+tm/go/core/response.go b140b7dcb32c
 tm/go/core/result.go fe380e071ac1
 tm/go/core/spec.go fcd32dc862ab
 tm/go/core/target.go 535cbde898dc
@@ -588,7 +588,7 @@ tm/go/utility/done.go 829dd26164b3
 tm/go/utility/feature_add.go 0b62e5d1c8db
 tm/go/utility/feature_hook.go 7efab96be0c6
 tm/go/utility/feature_init.go e2d9a7381261
-tm/go/utility/fetcher.go 9ce303891027
+tm/go/utility/fetcher.go 28aed7c9ffd4
 tm/go/utility/graphql.go f0e6b8fef4a8
 tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go b10a3c94eeae
@@ -610,7 +610,7 @@ tm/go/utility/prepare_path.go 9abb91c60ce8
 tm/go/utility/prepare_query.go bdeff4b6feef
 tm/go/utility/register.go b3a4e6404b1c
 tm/go/utility/result_basic.go 6621fff8681d
-tm/go/utility/result_body.go 26a11991a96c
+tm/go/utility/result_body.go 4f2adb05c626
 tm/go/utility/result_headers.go 1bf8bf65b390
 tm/go/utility/struct/voxgigstruct.go 49fd9fd6a075
 tm/go/utility/transform_request.go f465a317c6b1
@@ -700,9 +700,9 @@ tm/java/core/FeaturePlacement.java 08f4997fc9bc
 tm/java/core/Helpers.java f6c974ac27bb
 tm/java/core/Operation.java 92ea00341c90
 tm/java/core/Point.java 22562b9d89bf
-tm/java/core/Response.java 55b9c705aab6
+tm/java/core/Response.java aca4c1e3ccb1
 tm/java/core/Result.java f2ecf0700e92
-tm/java/core/SdkClient.java 1f7eddcb1d17
+tm/java/core/SdkClient.java 0e285829f209
 tm/java/core/SdkEntity.java d4b4e352fdc4
 tm/java/core/Spec.java 047caf212074
 tm/java/core/Utility.java d9c31b28e3de
@@ -732,7 +732,7 @@ tm/java/utility/Done.java 539e95bb155a
 tm/java/utility/FeatureAdd.java 77fd1ce39d5a
 tm/java/utility/FeatureHookUtil.java c0a61e00148f
 tm/java/utility/FeatureInit.java b7ee152fc808
-tm/java/utility/Fetcher.java 9b117e6fa778
+tm/java/utility/Fetcher.java 31c3e05bc7bb
 tm/java/utility/Graphql.java 375386544b43
 tm/java/utility/Json.java 319781c3f5ca
 tm/java/utility/MakeContext.java c7789b287936
@@ -755,7 +755,7 @@ tm/java/utility/PreparePath.java 023b8a22f18e
 tm/java/utility/PrepareQuery.java ae786fdac74b
 tm/java/utility/Register.java fadcdd834f27
 tm/java/utility/ResultBasic.java ef96b4823075
-tm/java/utility/ResultBody.java d462ac5d1c65
+tm/java/utility/ResultBody.java 2bbd84dffff9
 tm/java/utility/ResultHeaders.java 9fab31e3503b
 tm/java/utility/TransformRequest.java ee769e5627e3
 tm/java/utility/TransformResponse.java 1cd65d69d927
@@ -775,7 +775,7 @@ src/cmp/js/Entity_js.ts debbc06d5c79
 src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
 src/cmp/js/Main_js.ts 5964cdac192d
-src/cmp/js/Package_js.ts e4d1cd5e3e1c
+src/cmp/js/Package_js.ts bf2c5d8163f2
 src/cmp/js/PrepareAuth_js.ts 9742af3eb16d
 src/cmp/js/ReadmeEntity_js.ts 26be8ea82a8e
 src/cmp/js/ReadmeExplanation_js.ts e35423942ff1
@@ -942,9 +942,9 @@ tm/kotlin/core/Helpers.kt 8648bcb75c20
 tm/kotlin/core/Interfaces.kt 974e287e6bc4
 tm/kotlin/core/Operation.kt 9537ef6d0c07
 tm/kotlin/core/Point.kt 9377461e3cc9
-tm/kotlin/core/Response.kt 66d452262809
+tm/kotlin/core/Response.kt c26045fd82b5
 tm/kotlin/core/Result.kt 88d2f8f40eed
-tm/kotlin/core/SdkClient.kt 19b22e4d82b9
+tm/kotlin/core/SdkClient.kt e40b0e223bdc
 tm/kotlin/core/Spec.kt ccff6a998f67
 tm/kotlin/core/Utility.kt e58c52ea77eb
 tm/kotlin/feature/BaseFeature.kt 7c6e6ca6dbb1
@@ -970,7 +970,7 @@ tm/kotlin/test/vendor/omni/Runner.kt 1e2b8d8940b6
 tm/kotlin/test/vendor/omni/Util.kt c55143b89ae6
 tm/kotlin/utility/CoreUtil.kt f717028692de
 tm/kotlin/utility/FeatureUtil.kt 0afe6596ecdb
-tm/kotlin/utility/Fetcher.kt 14675e0082ad
+tm/kotlin/utility/Fetcher.kt 1d027b839872
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
 tm/kotlin/utility/MakeOptions.kt dffd4d4c5f9a
@@ -980,7 +980,7 @@ tm/kotlin/utility/MakeSpecUrl.kt 1b84146a0377
 tm/kotlin/utility/Media.kt ef8fb4b14bf3
 tm/kotlin/utility/Prepare.kt c56d164547ef
 tm/kotlin/utility/Register.kt b81ff2deff00
-tm/kotlin/utility/ResultTransform.kt b4b48ee0452b
+tm/kotlin/utility/ResultTransform.kt 04607364dd17
 tm/kotlin/utility/struct/Struct.kt f30b76cbf9b3
 
 ## target lua
@@ -1023,7 +1023,7 @@ src/cmp/lua/fragment/EntityLoadOp.fragment.lua ed6539cffa52
 src/cmp/lua/fragment/EntityPatchOp.fragment.lua 48cdc2a2ae53
 src/cmp/lua/fragment/EntityRemoveOp.fragment.lua ff08a9bba7c0
 src/cmp/lua/fragment/EntityUpdateOp.fragment.lua 668f8234ca35
-src/cmp/lua/fragment/Main.fragment.lua eac385d20f8b
+src/cmp/lua/fragment/Main.fragment.lua 06ee29f43e63
 src/cmp/lua/tsconfig.json 720a3f229019
 src/cmp/lua/utility_lua.ts 216f2c0aab05
 tm/lua/LICENSE 52acd47c245f
@@ -1033,7 +1033,7 @@ tm/lua/core/control.lua bcd4e848f7f2
 tm/lua/core/error.lua 173328848578
 tm/lua/core/helpers.lua 161160598358
 tm/lua/core/operation.lua dc1ee0de0695
-tm/lua/core/response.lua 620b12926c67
+tm/lua/core/response.lua 34910f9e35fb
 tm/lua/core/result.lua 62e6251e1970
 tm/lua/core/spec.lua e323438a86ab
 tm/lua/core/utility_type.lua f233b369e60f
@@ -1063,7 +1063,7 @@ tm/lua/utility/done.lua c1c77faea694
 tm/lua/utility/feature_add.lua f6a951686474
 tm/lua/utility/feature_hook.lua 117392b0b027
 tm/lua/utility/feature_init.lua 97c94b7fa38f
-tm/lua/utility/fetcher.lua f6a9c157b3ca
+tm/lua/utility/fetcher.lua ec6dd0e3e083
 tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua c5d011c7799e
@@ -1085,12 +1085,13 @@ tm/lua/utility/prepare_path.lua fce3455e363c
 tm/lua/utility/prepare_query.lua 1e98fd048810
 tm/lua/utility/register.lua 535ad5e4ca0f
 tm/lua/utility/result_basic.lua 891e11848ea9
-tm/lua/utility/result_body.lua 53d05debf9f2
+tm/lua/utility/result_body.lua e61618b29a84
 tm/lua/utility/result_headers.lua 33df8d29e12f
 tm/lua/utility/struct/regex.lua 258150868570
 tm/lua/utility/struct/struct.lua 18bc0a249e2d
 tm/lua/utility/transform_request.lua 2b9cbb86d040
 tm/lua/utility/transform_response.lua 37d0bb1f1d1f
+tm/lua/utility/unreadable_body.lua 384782606ccc
 
 ## target ocaml
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1131,11 +1132,11 @@ src/cmp/ocaml/utility_ocaml.ts d6e63489997b
 tm/ocaml/LICENSE 7a036af3f8a4
 tm/ocaml/Makefile 2b80ff703054
 tm/ocaml/VERSION e6635045e1d2
-tm/ocaml/sdk_features.ml 7d5297722c30
+tm/ocaml/sdk_features.ml 6f9ef9361376
 tm/ocaml/sdk_helpers.ml 24933d1c5031
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml fcdc71240d0a
-tm/ocaml/sdk_types.ml e28134556565
+tm/ocaml/sdk_runtime.ml 9a5cff5e0402
+tm/ocaml/sdk_types.ml 031b535d9000
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/test/.gitkeep e3b0c44298fc
@@ -1192,7 +1193,7 @@ src/cmp/perl/fragment/EntityLoadOp.fragment.pm c27aeaa54c09
 src/cmp/perl/fragment/EntityPatchOp.fragment.pm afcce3d58b47
 src/cmp/perl/fragment/EntityRemoveOp.fragment.pm 8283e51bac15
 src/cmp/perl/fragment/EntityUpdateOp.fragment.pm 48613e826a1f
-src/cmp/perl/fragment/Main.fragment.pm 062aaf682c52
+src/cmp/perl/fragment/Main.fragment.pm ffd29fb7526e
 src/cmp/perl/tsconfig.json 720a3f229019
 src/cmp/perl/utility_perl.ts e21042f45ac5
 tm/perl/LICENSE 52acd47c245f
@@ -1202,7 +1203,7 @@ tm/perl/core/control.pm cb6185bbc19f
 tm/perl/core/error.pm 1fee6e6ebe52
 tm/perl/core/helpers.pm 8f2c49fcbb46
 tm/perl/core/operation.pm c15d6df50079
-tm/perl/core/response.pm 307c55efd2a6
+tm/perl/core/response.pm 64d699bb70d4
 tm/perl/core/result.pm c8daeffb69ad
 tm/perl/core/spec.pm c0abea4855e4
 tm/perl/core/utility_type.pm ae99fdaaf3fb
@@ -1232,7 +1233,7 @@ tm/perl/utility/done.pm 543780c62fb8
 tm/perl/utility/feature_add.pm 1904c2689cad
 tm/perl/utility/feature_hook.pm e28b546e5fd1
 tm/perl/utility/feature_init.pm 669f03c56f25
-tm/perl/utility/fetcher.pm 70802bdd88e0
+tm/perl/utility/fetcher.pm 02d820951fb3
 tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm 70a5bbc759c2
@@ -1254,7 +1255,7 @@ tm/perl/utility/prepare_path.pm b0e6082fd75b
 tm/perl/utility/prepare_query.pm b9be48ac64d6
 tm/perl/utility/register.pm 25d6ab80f137
 tm/perl/utility/result_basic.pm 6dcc7e8f1dd2
-tm/perl/utility/result_body.pm e4a5cfea71a3
+tm/perl/utility/result_body.pm 4e74d6ded990
 tm/perl/utility/result_headers.pm 79b7d0f73ff3
 tm/perl/utility/transform_request.pm 47355c53d779
 tm/perl/utility/transform_response.pm 035accca42c2
@@ -1299,7 +1300,7 @@ src/cmp/php/fragment/EntityLoadOp.fragment.php 04feea0267ef
 src/cmp/php/fragment/EntityPatchOp.fragment.php ee2a2fa38fb8
 src/cmp/php/fragment/EntityRemoveOp.fragment.php c177612eab5f
 src/cmp/php/fragment/EntityUpdateOp.fragment.php 1138a8a5e61e
-src/cmp/php/fragment/Main.fragment.php 29a9175f3a83
+src/cmp/php/fragment/Main.fragment.php 0dce63e7cf25
 src/cmp/php/tsconfig.json 720a3f229019
 src/cmp/php/utility_php.ts c65bddbe5deb
 tm/php/LICENSE 52acd47c245f
@@ -1310,7 +1311,7 @@ tm/php/core/Control.php 6cb0e03bea15
 tm/php/core/Error.php 452c398a5739
 tm/php/core/Helpers.php 75cc7fb2f06c
 tm/php/core/Operation.php dde7df1447a3
-tm/php/core/Response.php 4bd0e492f940
+tm/php/core/Response.php d3755dc0a931
 tm/php/core/Result.php b64c27a0b2ea
 tm/php/core/Spec.php fa1a0f00a842
 tm/php/core/UtilityType.php db9bbfcd0871
@@ -1336,7 +1337,7 @@ tm/php/utility/Done.php dd5e686391dd
 tm/php/utility/FeatureAdd.php 7729798603cf
 tm/php/utility/FeatureHook.php 7f333010aba1
 tm/php/utility/FeatureInit.php d2ae3102173f
-tm/php/utility/Fetcher.php 4759c57d8d94
+tm/php/utility/Fetcher.php 13a7346d9d19
 tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php a32f039c2a85
@@ -1358,7 +1359,7 @@ tm/php/utility/PreparePath.php cb65b1f7db12
 tm/php/utility/PrepareQuery.php 04ec7dc654b6
 tm/php/utility/Register.php cffefb559733
 tm/php/utility/ResultBasic.php d87abb6e80d7
-tm/php/utility/ResultBody.php d37f74dc5d41
+tm/php/utility/ResultBody.php cd1ef6dc2a6c
 tm/php/utility/ResultHeaders.php 378a2c5bfdd9
 tm/php/utility/TransformRequest.php 65398272ad9d
 tm/php/utility/TransformResponse.php 4dc432711490
@@ -1377,10 +1378,10 @@ src/cmp/py/Entity_py.ts 4cd98dd60bc0
 src/cmp/py/Gitignore_py.ts 07f7135b0381
 src/cmp/py/MainEntity_py.ts 853d7533f8fb
 src/cmp/py/Main_py.ts 5630f0feb88c
-src/cmp/py/Package_py.ts f64acebbf344
+src/cmp/py/Package_py.ts f9cff3352ab6
 src/cmp/py/PrepareAuth_py.ts 43f26508d49b
 src/cmp/py/ReadmeEntity_py.ts c528ac5d230a
-src/cmp/py/ReadmeExamplesTest_py.ts 2a1f8a65b371
+src/cmp/py/ReadmeExamplesTest_py.ts d5ddfcfa68be
 src/cmp/py/ReadmeExplanation_py.ts d7c6b57925cf
 src/cmp/py/ReadmeHowto_py.ts 55110cf258e5
 src/cmp/py/ReadmeInstall_py.ts 1b6d219a6182
@@ -1395,7 +1396,7 @@ src/cmp/py/ReadmeTopTest_py.ts 008d85a69016
 src/cmp/py/Schema_py.ts ff45f83e6ff4
 src/cmp/py/TestClean_py.ts 8ff4b3331fac
 src/cmp/py/TestDirect_py.ts 7e70b0707633
-src/cmp/py/TestEntity_py.ts 9e529833177a
+src/cmp/py/TestEntity_py.ts c3f12963fbcc
 src/cmp/py/Test_py.ts 637c586815a4
 src/cmp/py/fragment/Entity.fragment.py 2c90385f930e
 src/cmp/py/fragment/EntityCreateOp.fragment.py 3ef9f87c0cbd
@@ -1404,7 +1405,7 @@ src/cmp/py/fragment/EntityLoadOp.fragment.py 90057a5dd9c6
 src/cmp/py/fragment/EntityPatchOp.fragment.py 8eb0422e6732
 src/cmp/py/fragment/EntityRemoveOp.fragment.py c3feaa5c31b7
 src/cmp/py/fragment/EntityUpdateOp.fragment.py 021721990b01
-src/cmp/py/fragment/Main.fragment.py 0c36659bb0ba
+src/cmp/py/fragment/Main.fragment.py 023148fa1340
 src/cmp/py/tsconfig.json 720a3f229019
 src/cmp/py/utility_py.ts dcadf423b5da
 tm/py/LICENSE 52acd47c245f
@@ -1415,7 +1416,7 @@ tm/py/pkg/core/control.py a446b5eeb88b
 tm/py/pkg/core/error.py cc4e9bdcbf95
 tm/py/pkg/core/helpers.py afe9d5c57fcc
 tm/py/pkg/core/operation.py fa13ae54fdb6
-tm/py/pkg/core/response.py da5609a4eed2
+tm/py/pkg/core/response.py afff2539936f
 tm/py/pkg/core/result.py bf94c7a8a47a
 tm/py/pkg/core/spec.py 563b64fddb68
 tm/py/pkg/core/utility_type.py 7418a6215444
@@ -1429,7 +1430,7 @@ tm/py/pkg/utility/done.py c8768dd1d36f
 tm/py/pkg/utility/feature_add.py f85e86961cec
 tm/py/pkg/utility/feature_hook.py a77281b3d944
 tm/py/pkg/utility/feature_init.py 56df64ac9bd6
-tm/py/pkg/utility/fetcher.py e2db6840fce4
+tm/py/pkg/utility/fetcher.py 8e3064d348df
 tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py f34170896d99
@@ -1451,7 +1452,7 @@ tm/py/pkg/utility/prepare_path.py 1a91e58bfbed
 tm/py/pkg/utility/prepare_query.py 353bbdaa1d82
 tm/py/pkg/utility/register.py 896a7692ee42
 tm/py/pkg/utility/result_basic.py 1c73ca93f75e
-tm/py/pkg/utility/result_body.py c4b44160f9d8
+tm/py/pkg/utility/result_body.py af88e0ccb7b2
 tm/py/pkg/utility/result_headers.py 682e8c1eb0b7
 tm/py/pkg/utility/transform_request.py 0aa1908b9020
 tm/py/pkg/utility/transform_response.py b695fb4ac29d
@@ -1464,10 +1465,10 @@ tm/py/test/__init__.py e3b0c44298fc
 tm/py/test/feature/__init__.py e3b0c44298fc
 tm/py/test/feature_harness.py d0500966bdc0
 tm/py/test/omni.py 96a115b97dbe
-tm/py/test/runner.py 62f0df47a348
+tm/py/test/runner.py 0b1b87346718
 tm/py/test/sdk-test-control.json ea9bf9046c8a
 tm/py/test/test_feature.py a005b5017a7c
-tm/py/test/test_feature_corpus.py a8ef4a4f8a3b
+tm/py/test/test_feature_corpus.py 89c579b1ece5
 tm/py/test/test_netsim.py 1583f97d2c84
 tm/py/test/test_omni_smoke.py abeaa5fc717b
 tm/py/test/test_pipeline.py 205f8bfd32b5
@@ -1514,7 +1515,7 @@ src/cmp/rb/Main_rb.ts d92e24cb896b
 src/cmp/rb/Package_rb.ts 4008859a052c
 src/cmp/rb/PrepareAuth_rb.ts 7db3c548fb09
 src/cmp/rb/ReadmeEntity_rb.ts 34ad3d5750d0
-src/cmp/rb/ReadmeExamplesTest_rb.ts 53acb9255d26
+src/cmp/rb/ReadmeExamplesTest_rb.ts 40efdb16eecf
 src/cmp/rb/ReadmeExplanation_rb.ts 324138dd35be
 src/cmp/rb/ReadmeHowto_rb.ts b7ffc973f342
 src/cmp/rb/ReadmeInstall_rb.ts e3cdcd29853e
@@ -1529,7 +1530,7 @@ src/cmp/rb/ReadmeTopTest_rb.ts 8f29cc99cd78
 src/cmp/rb/Schema_rb.ts 7aac619fae8d
 src/cmp/rb/TestClean_rb.ts 24fcac8ed64c
 src/cmp/rb/TestDirect_rb.ts cbfe01a7ed3d
-src/cmp/rb/TestEntity_rb.ts 95cd0413b43d
+src/cmp/rb/TestEntity_rb.ts 1cdc3cbb388f
 src/cmp/rb/Test_rb.ts a98c4dcbd2fb
 src/cmp/rb/fragment/Entity.fragment.rb 5f8724cbcfb7
 src/cmp/rb/fragment/EntityCreateOp.fragment.rb a53282d1b5c0
@@ -1538,7 +1539,7 @@ src/cmp/rb/fragment/EntityLoadOp.fragment.rb 826c021cd3fc
 src/cmp/rb/fragment/EntityPatchOp.fragment.rb 8606c7db38e7
 src/cmp/rb/fragment/EntityRemoveOp.fragment.rb b6045051fc68
 src/cmp/rb/fragment/EntityUpdateOp.fragment.rb 8f6fc4a2f9be
-src/cmp/rb/fragment/Main.fragment.rb 65e864dd66b6
+src/cmp/rb/fragment/Main.fragment.rb 150b85967610
 src/cmp/rb/tsconfig.json 720a3f229019
 src/cmp/rb/utility_rb.ts 1ac35bdc3695
 tm/rb/Gemfile 2cf46ddd24ec
@@ -1549,7 +1550,7 @@ tm/rb/core/control.rb 14d11fa63c1f
 tm/rb/core/error.rb 460231f6e63c
 tm/rb/core/helpers.rb 2c5a92707620
 tm/rb/core/operation.rb 2057392541cd
-tm/rb/core/response.rb 26bf01febbe8
+tm/rb/core/response.rb 7b1a4d2f8cb3
 tm/rb/core/result.rb c5a2738849ce
 tm/rb/core/spec.rb ef2d2977fec2
 tm/rb/core/utility_type.rb 7b18e66203b4
@@ -1558,14 +1559,14 @@ tm/rb/feature/test_feature.rb b8813015fa1d
 tm/rb/src/feature/README.md 74fc01b8a34f
 tm/rb/src/feature/base/.gitkeep e3b0c44298fc
 tm/rb/src/feature/test/.gitkeep e3b0c44298fc
-tm/rb/test/feature_corpus_test.rb 9e75da9648bf
+tm/rb/test/feature_corpus_test.rb b7b484a425de
 tm/rb/test/feature_test.rb 10fa47623244
 tm/rb/test/netsim_test.rb bc7d9265bec9
 tm/rb/test/omni.rb 55153c959df6
 tm/rb/test/omni_smoke_test.rb b39afea20e26
 tm/rb/test/pipeline_test.rb 303bfa0a2144
 tm/rb/test/primary_utility_test.rb 1d6a98ee1ec4
-tm/rb/test/runner.rb 8ef4503140ee
+tm/rb/test/runner.rb d2f115f21614
 tm/rb/test/sdk-test-control.json 9b96054952f6
 tm/rb/test/struct_utility_test.rb 53ba3c8608b5
 tm/rb/test/vendor/omni/runner.rb 26ce17d24a0b
@@ -1576,7 +1577,7 @@ tm/rb/utility/done.rb 748be3d441f3
 tm/rb/utility/feature_add.rb 56c05f79aaf6
 tm/rb/utility/feature_hook.rb ae80d8f1f9c8
 tm/rb/utility/feature_init.rb 025a7a843acb
-tm/rb/utility/fetcher.rb aa8964fa2696
+tm/rb/utility/fetcher.rb ceb64c2e7375
 tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb 619849e17933
@@ -1598,7 +1599,7 @@ tm/rb/utility/prepare_path.rb 09b8af0293bc
 tm/rb/utility/prepare_query.rb 5e1deafaca95
 tm/rb/utility/register.rb 5a1b1e2d26aa
 tm/rb/utility/result_basic.rb 90d9f4bfb77a
-tm/rb/utility/result_body.rb 3f5453c189c1
+tm/rb/utility/result_body.rb a60b44e6ad7f
 tm/rb/utility/result_headers.rb ee4460e396f5
 tm/rb/utility/struct/voxgig_struct.rb fcd08965f4bd
 tm/rb/utility/transform_request.rb a7749384b666
@@ -1646,7 +1647,7 @@ src/cmp/rust/fragment/EntityLoadOp.fragment.rs dd7981962cdd
 src/cmp/rust/fragment/EntityPatchOp.fragment.rs 37d460b31b8b
 src/cmp/rust/fragment/EntityRemoveOp.fragment.rs 9c2aaaec1dda
 src/cmp/rust/fragment/EntityUpdateOp.fragment.rs 50e37dff8075
-src/cmp/rust/fragment/Main.fragment.rs e1c022fcb16c
+src/cmp/rust/fragment/Main.fragment.rs 794bc553ddf1
 src/cmp/rust/fragment/SdkError.fragment.rs f7b9f189768a
 src/cmp/rust/tsconfig.json 720a3f229019
 src/cmp/rust/utility_rust.ts ee5eea209172
@@ -1659,7 +1660,7 @@ tm/rust/core/helpers.rs b9d6a38c4e7f
 tm/rust/core/mod.rs 88b87556e1a9
 tm/rust/core/operation.rs eee6bf650c8a
 tm/rust/core/point.rs 7bf6c67e5767
-tm/rust/core/response.rs 248d123fa68a
+tm/rust/core/response.rs fea9d9783fdc
 tm/rust/core/result.rs 6b675ba029a7
 tm/rust/core/spec.rs e8ecb6a484a6
 tm/rust/core/types.rs d9b0cc40bb34
@@ -1689,7 +1690,7 @@ tm/rust/utility/done.rs b15d29a24839
 tm/rust/utility/feature_add.rs 17f2d1fcb7c3
 tm/rust/utility/feature_hook.rs 6d794f025b57
 tm/rust/utility/feature_init.rs 66f96bd2cf0d
-tm/rust/utility/fetcher.rs e8ba98a63544
+tm/rust/utility/fetcher.rs 6dbcda9cf3af
 tm/rust/utility/graphql.rs 5115a012964e
 tm/rust/utility/jsonparse.rs 17f7ee7b908a
 tm/rust/utility/make_context.rs 04f34b592c9c
@@ -1712,7 +1713,7 @@ tm/rust/utility/prepare_params.rs f12962afea3a
 tm/rust/utility/prepare_path.rs 0d867b7b42aa
 tm/rust/utility/prepare_query.rs 8564e5fe8b92
 tm/rust/utility/result_basic.rs 0e0124bdde99
-tm/rust/utility/result_body.rs 00dd87d051bc
+tm/rust/utility/result_body.rs d32b6b82fb7d
 tm/rust/utility/result_headers.rs 58e9bdefa347
 tm/rust/utility/transform_request.rs 6aaa73c15baf
 tm/rust/utility/transform_response.rs 236bdb7a35a5
@@ -1778,9 +1779,9 @@ tm/scala/core/Control.scala 1adcb3343fe0
 tm/scala/core/Helpers.scala 46cff0707ade
 tm/scala/core/Operation.scala 0010d42accb3
 tm/scala/core/Point.scala ef199bf59853
-tm/scala/core/Response.scala 21d459961d52
+tm/scala/core/Response.scala 0d5b44d1495e
 tm/scala/core/Result.scala 7d45eefe7847
-tm/scala/core/SdkClient.scala 33f454ee7ec8
+tm/scala/core/SdkClient.scala 83d7bad7e591
 tm/scala/core/SdkError.scala 428cfdf49186
 tm/scala/core/Spec.scala 82b6987995f5
 tm/scala/core/Types.scala 931d5c55babc
@@ -1876,7 +1877,7 @@ tm/scala/src/feature/test/.gitkeep e3b0c44298fc
 tm/scala/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/scala/src/feature/validate/.gitkeep e3b0c44298fc
 tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
-tm/scala/utility/Fetcher.scala c51b5b6102b8
+tm/scala/utility/Fetcher.scala 97224a53d044
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
 tm/scala/utility/Make.scala dad10524bfdd
@@ -1885,7 +1886,7 @@ tm/scala/utility/Media.scala 8453000252c4
 tm/scala/utility/Misc.scala c701e8463ca8
 tm/scala/utility/Prepare.scala 918d6262bddd
 tm/scala/utility/Register.scala 12658a8e9bd5
-tm/scala/utility/Results.scala eaf1c9bb3189
+tm/scala/utility/Results.scala 474c78263b3a
 tm/scala/utility/StructUtility.scala 2dc27377f838
 tm/scala/utility/Transform.scala ba7cc6de67a2
 tm/scala/utility/struct/Struct.java 5e1cee8646e5
@@ -1934,7 +1935,7 @@ src/cmp/swift/fragment/EntityLoadOp.fragment.swift 3628aa13f1fd
 src/cmp/swift/fragment/EntityPatchOp.fragment.swift 6c82f3c2f272
 src/cmp/swift/fragment/EntityRemoveOp.fragment.swift 4a4dcca1691f
 src/cmp/swift/fragment/EntityUpdateOp.fragment.swift 1aa90240964b
-src/cmp/swift/fragment/Main.fragment.swift f1ce2df9cae1
+src/cmp/swift/fragment/Main.fragment.swift 9850aec0bb2c
 src/cmp/swift/fragment/SdkError.fragment.swift 927b9a03be0d
 src/cmp/swift/tsconfig.json 720a3f229019
 src/cmp/swift/utility_swift.ts 2f94c741a269
@@ -1957,7 +1958,7 @@ tm/swift/Sources/ProjectNameSDK/core/Context.swift a8ae9e5eae3f
 tm/swift/Sources/ProjectNameSDK/core/Control.swift 0a8b7e2e8afd
 tm/swift/Sources/ProjectNameSDK/core/Operation.swift a4a46f1b329e
 tm/swift/Sources/ProjectNameSDK/core/Point.swift a9edf1830201
-tm/swift/Sources/ProjectNameSDK/core/Response.swift d20a54c43d34
+tm/swift/Sources/ProjectNameSDK/core/Response.swift 9d67ce3ea39e
 tm/swift/Sources/ProjectNameSDK/core/Result.swift 903a2df8c22e
 tm/swift/Sources/ProjectNameSDK/core/Spec.swift b6c053c1d26b
 tm/swift/Sources/ProjectNameSDK/core/Support.swift 9ea090f17dbe
@@ -1967,7 +1968,7 @@ tm/swift/Sources/ProjectNameSDK/feature/BaseFeature.swift 37dd198da054
 tm/swift/Sources/ProjectNameSDK/feature/FeatureOptions.swift 954574861e32
 tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift a372e73cf9d2
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
-tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift b970ffee30d9
+tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift d57d8d7e844c
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift 31aa873dd440
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 0ce0c9bc0652
@@ -1975,7 +1976,7 @@ tm/swift/Sources/ProjectNameSDK/utility/MakeOptions.swift 08902bc8ddd9
 tm/swift/Sources/ProjectNameSDK/utility/Media.swift 7434119f2756
 tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift 85051aa74d02
 tm/swift/Sources/ProjectNameSDK/utility/Register.swift b680c8e1d6bc
-tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 30ead70b4c99
+tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 37a66f09830b
 tm/swift/Tests/ProjectNameSDKTests/CustomUtilityTest.swift d761ef0813c8
 tm/swift/Tests/ProjectNameSDKTests/ExistsTest.swift b003ca8c07eb
 tm/swift/Tests/ProjectNameSDKTests/NetsimTest.swift e290a72e79ed
@@ -2008,7 +2009,7 @@ src/cmp/ts/Entity_ts.ts 866beb700dc7
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
 src/cmp/ts/Main_ts.ts 1220d104f55d
-src/cmp/ts/Package_ts.ts 08db3d12bad7
+src/cmp/ts/Package_ts.ts 61d52a361614
 src/cmp/ts/PrepareAuth_ts.ts 13cc5f3c7f72
 src/cmp/ts/ReadmeEntity_ts.ts 858535fe6405
 src/cmp/ts/ReadmeExampleTest_ts.ts 5dfbe547c29e
@@ -2136,7 +2137,7 @@ src/cmp/zig/Entity_zig.ts 5e0f147b7e57
 src/cmp/zig/Gitignore_zig.ts ec49760abeae
 src/cmp/zig/MainEntity_zig.ts d0d2ec1fe12a
 src/cmp/zig/Main_zig.ts 8f91bc6af36f
-src/cmp/zig/Package_zig.ts 3e14e57fa638
+src/cmp/zig/Package_zig.ts 34a84ffff31b
 src/cmp/zig/PrepareAuth_zig.ts ff18ef091eeb
 src/cmp/zig/ReadmeEntity_zig.ts 3ac9546a8a50
 src/cmp/zig/ReadmeExamplesTest_zig.ts 297a208374be
@@ -2164,7 +2165,7 @@ src/cmp/zig/fragment/EntityLoadOp.fragment.zig 6eec03e0eb48
 src/cmp/zig/fragment/EntityPatchOp.fragment.zig 5b74556c54b8
 src/cmp/zig/fragment/EntityRemoveOp.fragment.zig fc13ab36c538
 src/cmp/zig/fragment/EntityUpdateOp.fragment.zig 4d8af6feaad0
-src/cmp/zig/fragment/Main.fragment.zig 49e6287036e6
+src/cmp/zig/fragment/Main.fragment.zig b728b41e7e78
 src/cmp/zig/fragment/Root.fragment.zig 7ab6408a7808
 src/cmp/zig/tsconfig.json 720a3f229019
 src/cmp/zig/utility_zig.ts 7506671de1bc
@@ -2178,11 +2179,11 @@ tm/zig/core/helpers.zig ccf660b94869
 tm/zig/core/mem.zig e89c73647973
 tm/zig/core/operation.zig cf42eb51f4ea
 tm/zig/core/point.zig e44bda57ea57
-tm/zig/core/response.zig 4df235df5674
+tm/zig/core/response.zig bc91112131b7
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 25a014ab27fa
 tm/zig/core/types.zig 3a8f6e7a08f9
-tm/zig/core/utility.zig d8f75ecb4391
+tm/zig/core/utility.zig 288d2ff8b40f
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig d7352c80c34e

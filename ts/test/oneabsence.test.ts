@@ -7,6 +7,8 @@ import Os from 'node:os'
 import Path from 'node:path'
 import { spawnSync } from 'node:child_process'
 
+import { rubyEnv, pythonEnv } from './generateharness'
+
 
 const TM = Path.resolve(__dirname, '..', 'project', '.sdk', 'tm')
 
@@ -17,9 +19,9 @@ function toolchain(name: string): string | null {
 }
 
 
-function run(cmd: string, args: string[], cwd?: string) {
+function run(cmd: string, args: string[], cwd?: string, env?: NodeJS.ProcessEnv) {
   const res = spawnSync(cmd, args,
-    { encoding: 'utf8', cwd, timeout: 120000, killSignal: 'SIGKILL' })
+    { encoding: 'utf8', cwd, env, timeout: 120000, killSignal: 'SIGKILL' })
   return {
     ok: 0 === res.status,
     out: (res.stdout || '') + (res.stderr || ''),
@@ -106,14 +108,14 @@ console.log('supplied=' + keys({feature: {log: {active: true}}}))
 import sys, json
 sys.path.insert(0, ${JSON.stringify(Path.join(TM, 'py', 'pkg', 'utility'))})
 from voxgig_struct import validate
-SRC = open(${JSON.stringify(spec)}).read()
+SRC = open(${JSON.stringify(spec)}, encoding='utf-8').read()
 def keys(d):
     out = validate(d, json.loads(SRC))
     f = (out or {}).get('feature') or {}
     return ','.join(sorted(f.keys()))
 print('absent=' + keys({}))
 print('supplied=' + keys({'feature': {'log': {'active': True}}}))
-`])
+`], undefined, pythonEnv())
     },
   },
   {
@@ -148,7 +150,7 @@ print 'supplied=', keys_of({feature => {log => {active => Voxgig::Struct::JTRUE(
       return run(rb, ['-e', `
 require 'json'
 require ${JSON.stringify(Path.join(TM, 'rb', 'utility', 'struct', 'voxgig_struct'))}
-SRC = File.read(${JSON.stringify(spec)})
+SRC = File.read(${JSON.stringify(spec)}, encoding: 'UTF-8')
 def keys_of(d)
   out = VoxgigStruct.validate(d, JSON.parse(SRC))
   f = (out.is_a?(Hash) && out['feature'].is_a?(Hash)) ? out['feature'] : {}
@@ -156,7 +158,7 @@ def keys_of(d)
 end
 puts 'absent=' + keys_of({})
 puts 'supplied=' + keys_of({'feature' => {'log' => {'active' => true}}})
-`])
+`], undefined, rubyEnv())
     },
   },
   {

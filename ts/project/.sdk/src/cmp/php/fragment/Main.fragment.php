@@ -280,6 +280,7 @@ class ProjectNameSDK implements \JsonSerializable
             $no_body = $status === 204 || $status === 304 || (string)$content_length === "0";
 
             $json_data = null;
+            $body_err = null;
             if (!$no_body) {
                 $jf = Struct::getprop($fetched, "json");
                 if (is_callable($jf)) {
@@ -290,14 +291,29 @@ class ProjectNameSDK implements \JsonSerializable
                         $json_data = null;
                     }
                 }
+                if (true === Struct::getprop($fetched, "unreadable")) {
+                    $failed = ($status >= 200 && $status < 300) ? null : $ctx->make_error(
+                        "request_status",
+                        "request: {$status}: " . (string)Struct::getprop($fetched, "statusText"));
+                    $sent = $fetchdef["headers"] ?? [];
+                    if (ProjectNameFetcher::usesDefault($ctx)) {
+                        $sent = ProjectNameFetcher::sentHeaders($sent);
+                    }
+                    $body_err = ProjectNameResultBody::unreadable($ctx, $status, $headers,
+                        Struct::getprop($fetched, "body"), $sent, $failed);
+                }
             }
 
-            return [
-                "ok" => $status >= 200 && $status < 300,
+            $out = [
+                "ok" => null === $body_err && $status >= 200 && $status < 300,
                 "status" => $status,
                 "headers" => Struct::getprop($fetched, "headers"),
                 "data" => $json_data,
             ];
+            if (null !== $body_err) {
+                $out["err"] = ($utility->clean)($ctx, $body_err);
+            }
+            return $out;
         }
 
         return [

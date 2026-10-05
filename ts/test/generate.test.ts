@@ -137,6 +137,7 @@ async function generate(
   for (const [path, content] of Object.entries(raw)) {
     const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
     if (rel.startsWith('.jostraca/') || rel.includes('/.jostraca/')) continue
+    if (rel.startsWith('.sdk/log/')) continue
     out[rel] = content
   }
   return out
@@ -2390,8 +2391,8 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const out = await generate(['ts', 'js'])
 
     for (const [target, wanted] of [
-      ['ts', ['dist', 'src', 'README.md']],
-      ['js', ['src', 'README.md']],
+      ['ts', ['dist', '!dist/**/*.tsbuildinfo', 'src', 'README.md', 'REFERENCE.md']],
+      ['js', ['src', 'README.md', 'REFERENCE.md']],
     ] as [string, string[]][]) {
       const manifest = findFile(out, target + '/package.json')
       ok(null != manifest, target + ': no package.json generated')
@@ -2401,14 +2402,84 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         target + ': package.json has no `files` entry — npm would publish ' +
         'the test suite and build scaffolding')
       deepStrictEqual(pkg.files, wanted, target + ': unexpected `files` entry')
-      ok(null != out[target + '/README.md'],
-        target + ': `files` lists a README.md that is not generated')
+      for (const doc of ['README.md', 'REFERENCE.md']) {
+        ok(null != out[target + '/' + doc],
+          target + ': `files` lists a ' + doc + ' that is not generated')
+      }
 
       for (const never of ['test', 'dist-test']) {
         ok(!pkg.files.includes(never),
           target + ': `files` ships ' + never)
       }
     }
+  })
+
+
+  // A package manager that ships only listed files has to list the README and
+  // the REFERENCE.md it links. SHIPPED_LISTS reads each such list from the
+  // generated manifest, and NO_SHIPPED_LIST names the targets without one.
+  const SHIPPED_LISTS: Record<string, [RegExp, (text: string) => string[]]> = {
+    ts: [/^ts\/package\.json$/, (text) => JSON.parse(text).files],
+    js: [/^js\/package\.json$/, (text) => JSON.parse(text).files],
+    rb: [/^rb\/[^/]+\.gemspec$/, (text) => quoted(/spec\.files\s*=\s*Dir\[([^\]]*)\]/.exec(text))],
+    elixir: [/^elixir\/mix\.exs$/, (text) => quoted(/\bfiles:\s*\[([^\]]*)\]/.exec(text))],
+    py: [/^py\/MANIFEST\.in$/, (text) => text.split('\n')
+      .filter((line) => /^include\s/.test(line))
+      .flatMap((line) => line.trim().split(/\s+/).slice(1))],
+    zig: [/^zig\/build\.zig\.zon$/, (text) => quoted(/\.paths\s*=\s*\.\{([^}]*)\}/.exec(text))],
+  }
+
+  const NO_SHIPPED_LIST = [
+    'c', 'clojure', 'cpp', 'csharp', 'go', 'java', 'kotlin', 'lua', 'ocaml',
+    'perl', 'php', 'rust', 'scala', 'swift',
+  ]
+
+  function quoted(match: RegExpExecArray | null): string[] {
+    return null == match ? [] : [...match[1].matchAll(/"([^"]*)"/g)].map((m) => m[1])
+  }
+
+  function shippedList(out: Record<string, string>, target: string): string[] {
+    const [file, read] = SHIPPED_LISTS[target]
+    const found = Object.keys(out).filter((path) => file.test(path))
+    return 1 === found.length ? read(out[found[0]]) : []
+  }
+
+
+  test('every shipped-file list carries the README and the reference it links', async () => {
+    deepStrictEqual([...Object.keys(SHIPPED_LISTS), ...NO_SHIPPED_LIST].sort(),
+      allTargets().filter((t) => !NON_SDK_TARGETS.includes(t)),
+      'classify every SDK target: SHIPPED_LISTS reads its shipped-file list, ' +
+      'or NO_SHIPPED_LIST records that its manifest has none')
+
+    const out = await generate(Object.keys(SHIPPED_LISTS))
+
+    const missing: string[] = []
+    for (const target of Object.keys(SHIPPED_LISTS)) {
+      const listed = shippedList(out, target)
+      for (const doc of ['README.md', 'REFERENCE.md']) {
+        ok(null != out[target + '/' + doc], target + ': ' + doc + ' is not generated')
+        if (!listed.includes(doc)) missing.push(target + ': ' + doc)
+      }
+    }
+    deepStrictEqual(missing, [], 'a shipped-file list leaves out a doc the README links')
+  })
+
+
+  // zig keeps only what `.paths` names when it fetches a package, so the list
+  // has to name the module source as generated, and nothing that is not.
+  test('zig: the package paths cover the module source', async () => {
+    const out = await generate(['zig'])
+    const files = Object.keys(out)
+      .filter((path) => path.startsWith('zig/'))
+      .map((path) => path.slice('zig/'.length))
+    const paths = shippedList(out, 'zig')
+    const under = (file: string, path: string) => file === path || file.startsWith(path + '/')
+
+    deepStrictEqual({
+      stale: paths.filter((path) => !files.some((file) => under(file, path))),
+      unshipped: files.filter((file) =>
+        file.endsWith('.zig') && !paths.some((path) => under(file, path))),
+    }, { stale: [], unshipped: [] }, 'build.zig.zon `.paths` does not match the generated layout')
   })
 
 

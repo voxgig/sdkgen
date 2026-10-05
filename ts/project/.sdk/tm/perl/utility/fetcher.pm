@@ -44,8 +44,12 @@ our $DefaultHttpFetch = sub {
     $hdrs{$k} = "$v";
   }
   # Default User-Agent - some CDNs block library defaults. Use a
-  # Mozilla-shaped UA unless the caller already set one.
-  $hdrs{'User-Agent'} = 'Mozilla/5.0 (compatible; ProjectNameSDK/1.0)' unless $has_ua;
+  # Mozilla-shaped UA unless the caller already set one, and record it with
+  # the headers the request sent.
+  unless ($has_ua) {
+    $hdrs{'User-Agent'} = 'Mozilla/5.0 (compatible; ProjectNameSDK/1.0)';
+    $headers->{'user-agent'} = $hdrs{'User-Agent'};
+  }
 
   # HTTP::Tiny sends bytes: a character string goes out as UTF-8, and a
   # filehandle is read.
@@ -100,8 +104,10 @@ our $DefaultHttpFetch = sub {
   }
 
   my $json_body;
-  if (defined $res->{content} && length $res->{content}) {
-    $json_body = eval { Voxgig::Struct::parse_json($res->{content}) };
+  my $unreadable = 0;
+  if (defined $res->{content} && $res->{content} =~ /\S/) {
+    my $parsed = eval { $json_body = Voxgig::Struct::parse_json($res->{content}); 1 };
+    $unreadable = 1 unless $parsed;
   }
   my $captured = $json_body;
 
@@ -111,6 +117,7 @@ our $DefaultHttpFetch = sub {
     'headers' => $resp_headers,
     'json' => sub { $captured },
     'body' => $res->{content},
+    'unreadable' => $unreadable,
   }, undef);
 };
 

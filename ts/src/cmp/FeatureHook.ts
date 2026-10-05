@@ -1,5 +1,6 @@
 
-import { each, cmp } from 'jostraca'
+import { each } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 import {
   KIT,

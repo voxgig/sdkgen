@@ -2,10 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Feature = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const stdrep_1 = require("../helpers/stdrep");
 const applicability_1 = require("../helpers/applicability");
 const featureSource_1 = require("../helpers/featureSource");
-const Feature = (0, jostraca_1.cmp)(function Feature(props) {
+const Feature = (0, component_1.cmp)(function Feature(props) {
     const { target, feature, ctx$ } = props;
     const { log } = ctx$;
     // A feature the target cannot take generates NOTHING for it — not the

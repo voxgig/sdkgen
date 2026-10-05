@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExternalTarget = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const jostraca_2 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
 const Main_1 = require("./Main");
@@ -10,7 +11,7 @@ const Feature_1 = require("./Feature");
 const Readme_1 = require("./Readme");
 const Test_1 = require("./Test");
 const AgentGuide_1 = require("./AgentGuide");
-const ExternalTarget = (0, jostraca_1.cmp)(function ExternalTarget(props) {
+const ExternalTarget = (0, component_1.cmp)(function ExternalTarget(props) {
     const { model, target, cmpfolder, sdkrelpath } = props;
     const ctx$ = props.ctx$;
     ctx$.model = model;

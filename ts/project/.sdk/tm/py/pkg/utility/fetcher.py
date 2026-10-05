@@ -57,6 +57,7 @@ def _default_http_fetch(fullurl, fetchdef):
         req_headers[k] = v
     if not has_ua:
         req_headers["User-Agent"] = _DEFAULT_USER_AGENT
+        headers["user-agent"] = _DEFAULT_USER_AGENT
 
     # Manual redirects: fetchdef["redirect"] == "manual" surfaces a 3xx as
     # an ordinary response instead of auto-following it, which would replay
@@ -84,11 +85,12 @@ def _default_http_fetch(fullurl, fetchdef):
         resp_headers[k.lower()] = v
 
     json_body = None
-    if len(body) > 0:
+    unreadable = False
+    if body.strip():
         try:
             json_body = json.loads(body)
         except Exception:
-            pass
+            unreadable = True
 
     status = resp.status_code
     status_text = resp.reason or ("OK" if status < 400 else "Error")
@@ -99,6 +101,7 @@ def _default_http_fetch(fullurl, fetchdef):
         "headers": resp_headers,
         "json": lambda: json_body,
         "body": body,
+        "unreadable": unreadable,
     }, None
 
 

@@ -1,4 +1,5 @@
-import { cmp, each, Content, File } from 'jostraca'
+import { each, Content, File } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 import { packageVersion } from '../helpers/packageMeta'
 
