@@ -66,8 +66,8 @@ my $client = ${ctor};
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list()\` returns an \`arrayref\` of records (each a \`hashref\`) and dies on
-error — iterate it directly.
+\`list()\` returns an \`arrayref\` of entities, one per record, and dies on
+error; \`data_get\` reads each record.
 
 \`\`\`perl
 my $${eVar}s = eval { $client->${eName}->list };
@@ -76,7 +76,7 @@ if (my $err = $@) {
 }
 else {
     for my $${eVar} (@$${eVar}s) {
-        print "$${eVar}->{id}\\n";
+        print $${eVar}->data_get->{id}, "\\n";
     }
 }
 \`\`\`

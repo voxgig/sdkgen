@@ -22,7 +22,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `(reqmatch, ctrl) -> any` | Load a single entity by match criteria. Raises on error. |',
-    list: '| `list` | `(reqmatch = nil, ctrl) -> Array` | List entities matching the criteria (call with no argument to list all). Raises on error. |',
+    list: '| `list` | `(reqmatch = nil, ctrl) -> Array` | List entities matching the criteria (call with no argument to list all). Resolves to one entity per record. Raises on error. |',
     create: '| `create` | `(reqdata, ctrl) -> any` | Create a new entity. Raises on error. |',
     update: '| `update` | `(reqdata, ctrl) -> any` | Update an existing entity. Raises on error. |',
     patch: '| `patch` | `(reqdata, ctrl) -> any` | Change part of an existing entity. Raises on error. |',

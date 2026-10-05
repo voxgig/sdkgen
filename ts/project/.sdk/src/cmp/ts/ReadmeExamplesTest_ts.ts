@@ -52,6 +52,7 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
 import { describe, it } from 'node:test'
 import assert from 'node:assert'
 import * as Fs from 'node:fs'
+import * as Os from 'node:os'
 import * as Path from 'node:path'
 import { createRequire } from 'node:module'
 import { spawnSync } from 'node:child_process'
@@ -60,6 +61,9 @@ import { ${Name}SDK } from '..'
 
 
 const SDK_NAME = '${Name}SDK'
+
+// The package root, by absolute path: the snippets compile outside the SDK.
+const SDK_ROOT = Path.join(__dirname, '..').split(Path.sep).join('/')
 
 // A fixture for every entity, so list()/load() resolve offline with no
 // network. Snippet client construction is rewritten to seed this.
@@ -147,7 +151,7 @@ function isRunnable(code: string): boolean {
 function buildSnippetModule(block: string): string {
   const inner = stripImports(block).split('\\n').map((l) => '    ' + l).join('\\n')
   return [
-    "import { " + SDK_NAME + " } from '..'",
+    'import { ' + SDK_NAME + ' } from ' + JSON.stringify(SDK_ROOT),
     '',
     'async function __ex() {',
     // Shared client for snippets that reference \`client\` without constructing
@@ -174,14 +178,14 @@ function compileBatch(indices: number[], blocks: string[], key: string): {
   errored: Set<number>; raw: string; unattributed: boolean
 } {
   const tsDir = Path.join(__dirname, '..')
-  const testDir = Path.join(tsDir, 'test')
-  // Leading dot: TypeScript wildcard includes skip dot-files, so these temp
-  // files are never swept into the normal build.
+  // Outside the SDK's tree, so a run leaves nothing there even when it is
+  // interrupted. \`.cts\` keeps them CommonJS whatever package.json is above.
+  const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'readme-examples-'))
   const files: string[] = []
 
   try {
     for (const i of indices) {
-      const f = Path.join(testDir, '.examples_' + key + '_snippet' + i + '.gen.ts')
+      const f = Path.join(dir, 'examples_' + key + '_snippet' + i + '.gen.cts')
       Fs.writeFileSync(f, buildSnippetModule(blocks[i]), 'utf8')
       files.push(f)
     }
@@ -213,7 +217,7 @@ function compileBatch(indices: number[], blocks: string[], key: string): {
 
     if (0 !== res.status) {
       for (const line of raw.split('\\n')) {
-        const m = /_snippet(\\d+)\\.gen\\.ts\\(\\d+,\\d+\\):\\s*error/.exec(line)
+        const m = /_snippet(\\d+)\\.gen\\.cts\\(\\d+,\\d+\\):\\s*error/.exec(line)
         if (null == m) {
           // A genuine error diagnostic not attributable to a snippet file
           // (e.g. inside the SDK itself) is an anomaly.
@@ -228,9 +232,7 @@ function compileBatch(indices: number[], blocks: string[], key: string): {
 
     return { errored, raw, unattributed }
   } finally {
-    for (const f of files) {
-      Fs.rmSync(f, { force: true })
-    }
+    Fs.rmSync(dir, { recursive: true, force: true })
   }
 }
 

@@ -290,7 +290,7 @@ ${info.desc}
           else if ('list' === opname) {
             Content(`\`\`\`clojure
 (doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) nil nil)]
-  (println ${eLow}))
+  (println ((:data-get ${eLow}))))
 \`\`\`
 
 `)

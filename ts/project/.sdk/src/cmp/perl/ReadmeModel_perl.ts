@@ -20,7 +20,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
     load: '| `load` | `($reqmatch, $ctrl) -> hashref` | Load a single entity by match criteria. Dies on error. |',
-    list: '| `list` | `($reqmatch, $ctrl) -> arrayref` | List entities matching the criteria. Dies on error. |',
+    list: '| `list` | `($reqmatch, $ctrl) -> arrayref` | List entities matching the criteria. Resolves to one entity per record. Dies on error. |',
     create: '| `create` | `($reqdata, $ctrl) -> hashref` | Create a new entity. Dies on error. |',
     update: '| `update` | `($reqdata, $ctrl) -> hashref` | Update an existing entity. Dies on error. |',
     patch: '| `patch` | `($reqdata, $ctrl) -> hashref` | Change part of an existing entity. Dies on error. |',
@@ -94,9 +94,10 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the ENTITY (call data_get for the record) (a \`hashref\` for single-entity
-ops, an \`arrayref\` for \`list\`) and die on error. Wrap calls in
-\`eval { ... }\` and inspect \`$@\` to handle failures.
+Entity operations return the entity, and \`list\` an \`arrayref\` of
+entities, one per record; \`data_get\` reads an entity's record (a
+\`hashref\`). They die on error, so wrap calls in \`eval { ... }\` and
+inspect \`$@\` to handle failures.
 
 The \`direct()\` escape hatch never dies — it returns a result \`hashref\`
 you branch on via \`$result->{ok}\`:

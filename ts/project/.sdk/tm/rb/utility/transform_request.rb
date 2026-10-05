@@ -9,10 +9,21 @@ module ProjectNameUtilities
     omit_keys(reqdata, ["$action"])
   end
 
-  # A header or query argument travels where PrepareHeaders or PrepareQuery
-  # sends it, so the body is built from the request data without it.
+  # A header, cookie or query argument travels where PrepareHeaders or
+  # PrepareQuery sends it, so the body is built from the request data without
+  # it, unless the entity declares it as a field too.
   def self.routed_arg_names(ctx)
     (call_args(ctx, "header") + call_args(ctx, "cookie") + call_args(ctx, "query")).map(&:first)
+      .reject { |name| field_arg?(ctx, name) }
+  end
+
+  def self.field_arg?(ctx, name)
+    ["header", "cookie", "query"].any? do |kind|
+      defs = ctx.point ? VoxgigStruct.getpath(ctx.point, "args.#{kind}") : nil
+      defs.is_a?(Array) && defs.any? do |ad|
+        VoxgigStruct.getprop(ad, "name") == name && true == VoxgigStruct.getprop(ad, "field")
+      end
+    end
   end
 
   def self.omit_keys(reqdata, names)

@@ -20,7 +20,8 @@ try {
 
 `,
     direct: `The low-level \`direct()\` method does **not** throw — it returns the
-value or an \`Error\`, so check the result before using it:
+result envelope. Branch on \`ok\`; on failure \`status\` holds the HTTP status
+(for error responses) and \`err\` holds the error:
 
 \`\`\`ts
 const result = await client.direct({
@@ -29,8 +30,8 @@ const result = await client.direct({
   params: { id: 'example_id' },
 })
 
-if (result instanceof Error) {
-  throw result
+if (!result.ok) {
+  console.error('request failed:', result.status, result.err)
 }
 \`\`\`
 

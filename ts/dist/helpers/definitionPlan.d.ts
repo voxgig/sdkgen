@@ -31,6 +31,7 @@ type DefinitionPoint = {
         name: string;
         wire: string;
     }[];
+    bodyArgs?: string[];
     auth: Credential[][] | null;
     status: number;
     sample: any;

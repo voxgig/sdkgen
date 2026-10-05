@@ -172,7 +172,8 @@ Make a direct HTTP request to any API endpoint.
 | \`fetchargs.body\` | \`any\` | Request body (objects are JSON-serialized). |
 | \`fetchargs.ctrl\` | \`object\` | Control options (e.g. \`{ explain: true }\`). |
 
-**Returns:** \`Promise<{ ok, status, headers, data } | Error>\`
+**Returns:** \`Promise<{ ok, status, headers, data }>\`. On a failure
+\`ok\` is \`false\` and \`err\` holds the error.
 
 #### \`prepare(fetchargs?: object)\`
 

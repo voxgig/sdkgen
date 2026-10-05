@@ -974,11 +974,28 @@
 ;; so the body is a copy without it. The caller's map is left untouched.
 (defn- strip-action [reqdata] (omit-keys reqdata ["$action"]))
 
-;; A header or query argument travels where u-prepare-headers or
+(defn- field-arg? [ctx name]
+  (let [point (oget ctx :point)
+        args (when point (vs/getprop point "args"))]
+    (boolean
+     (some (fn [kind]
+             (let [defs (when (vs/ismap args) (vs/getprop args kind))]
+               (when (vs/islist defs)
+                 (some (fn [ad]
+                         (and (vs/ismap ad)
+                              (= name (vs/getprop ad "name"))
+                              (true? (vs/getprop ad "field"))))
+                       (vec defs)))))
+           ["header" "cookie" "query"]))))
+
+;; A header, cookie or query argument travels where u-prepare-headers or
 ;; u-prepare-query sends it, so the body is built from the request data
-;; without it.
+;; without it, unless the entity declares it as a field too.
 (defn- routed-arg-names [ctx]
-  (mapv first (concat (call-args ctx "header") (call-args ctx "cookie") (call-args ctx "query"))))
+  (->> (concat (call-args ctx "header") (call-args ctx "cookie") (call-args ctx "query"))
+       (map first)
+       (remove (partial field-arg? ctx))
+       vec))
 
 (defn u-transform-request [ctx]
   (let [spec (oget ctx :spec) point (oget ctx :point)

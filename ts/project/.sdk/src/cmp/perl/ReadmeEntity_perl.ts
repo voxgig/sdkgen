@@ -145,7 +145,9 @@ my $${eVar} = $client->${entity.Name}->load(${loadArg});
       Content(`#### Example: List
 
 \`\`\`perl
+# an arrayref of entities, one per record; data_get reads each record
 my $${eVar}s = $client->${entity.Name}->list;
+print $_->data_get->{id}, "\\n" for @$${eVar}s;
 \`\`\`
 
 `)

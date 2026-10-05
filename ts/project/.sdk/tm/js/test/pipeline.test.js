@@ -9,7 +9,7 @@
 const { test, describe } = require('node:test')
 const { strictEqual, ok, deepStrictEqual } = require('node:assert')
 
-const { stdutil } = require('..')
+const { ProjectNameSDK, stdutil } = require('..')
 
 
 const struct = stdutil.struct
@@ -99,6 +99,20 @@ describe('pipeline:makePoint + makeSpec', () => {
   test('makeSpec short-circuits a feature-supplied spec', () => {
     const preset = { method: 'GET' }
     strictEqual(stdutil.makeSpec(base({ out: { spec: preset } })), preset)
+  })
+})
+
+
+describe('pipeline:direct', () => {
+
+  test('direct and graphql answer a method allow.method refuses with a result map', async () => {
+    const sdk = ProjectNameSDK.test({}, { allow: { method: 'GET' } })
+    const direct = await sdk.direct({ path: '/a', method: 'POST' })
+    strictEqual(direct.ok, false)
+    strictEqual(direct.err.code, 'spec_method_allow')
+    const graphql = await sdk.graphql('{ a }')
+    strictEqual(graphql.ok, false)
+    strictEqual(graphql.err.code, 'spec_method_allow')
   })
 })
 

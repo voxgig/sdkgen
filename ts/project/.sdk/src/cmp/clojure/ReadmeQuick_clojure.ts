@@ -72,13 +72,13 @@ ${requireLines.join('\n')}
     if (opnames.includes('list')) {
       Content(`### 2. List ${eLow} records
 
-\`list\` returns a vector of records (each a map) and raises on error —
-iterate it directly.
+\`list\` returns a vector of entities, one per record, and raises on error.
+Read each record with \`((:data-get ${eLow}))\`.
 
 \`\`\`clojure
 (try
   (doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) nil nil)]
-    (println ${eLow}))
+    (println ((:data-get ${eLow}))))
   (catch Exception err
     (println "list failed:" (.getMessage err))))
 \`\`\`
