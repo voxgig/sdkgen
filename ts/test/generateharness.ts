@@ -706,8 +706,7 @@ main: kit: flow: BasicContactsfieldFlow: {
 
 
 // A quick start shows the first active entity: a load-only singleton, a
-// list-only entity, one with every operation, patch included, and one nested
-// under that.
+// list-only one, one with every operation (patch too), and one nested in it.
 const PLANET_FIRST = ['ambient', 'console', 'graph_ql', 'history']
   .map((name) => 'main: kit: entity: ' + name + ': active: false').join('\n')
 
@@ -976,6 +975,45 @@ const ESCAPED_TYPE_ENTITY = ['map', 'map_type', 'array', 'array_type',
 const KEYWORD_ACCESSOR_ENTITY = namedEntity('end') + namedEntity('end_entity')
 
 
+// Named to sort after the fixture's own entities.
+const OPLESS_ENTITY = `
+main: kit: entity: zone: {
+  alias: field: {}
+  name: "zone"
+  field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+}
+`
+
+const CREATE_ONLY_ENTITY = `
+main: kit: entity: zinc: {
+  alias: field: {}
+  name: "zinc"
+  field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    create: { name: "create", points: [ { g: {}, m: "POST", o: "/zinc", s: [{ lit: "zinc" }],
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+`
+
+const PATCH_ONLY_ENTITY = `
+main: kit: entity: zest: {
+  alias: field: {}
+  name: "zest"
+  field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    patch: { name: "patch", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "zest01" } ] }
+      m: "PATCH", o: "/zest/{id}", s: [{ lit: "zest" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+`
+
+
 export {
   KIT,
   STAGE,
@@ -995,6 +1033,9 @@ export {
   KEYWORD_ACCESSOR_ENTITY,
   CRUD_MODEL,
   DOC_MODELS,
+  OPLESS_ENTITY,
+  CREATE_ONLY_ENTITY,
+  PATCH_ONLY_ENTITY,
   makeLog,
   layeredFs,
   makeModel,

@@ -5,9 +5,7 @@
 # and drives it through ProjectName.Pipeline.run_op.
 
 defmodule ProjectName.Entity.EntityName do
-  alias Voxgig.Struct, as: S
-  alias ProjectName.Helpers, as: H
-  alias ProjectName.{EntityBase, Context, Pipeline}
+  # #Aliases
 
   def new(client, entopts \\ nil) do
     EntityBase.construct(__MODULE__, client, "entityname", entopts)
