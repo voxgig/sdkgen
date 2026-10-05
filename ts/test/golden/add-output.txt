@@ -354,7 +354,7 @@ src/cmp/csharp/TestDirect_csharp.ts 5ae3ba03d63c
 src/cmp/csharp/TestEntity_csharp.ts 29ed0a9601f5
 src/cmp/csharp/Test_csharp.ts 881ebab279a4
 src/cmp/csharp/fragment/Entity.fragment.cs ccdd760779fe
-src/cmp/csharp/fragment/EntityBase.fragment.cs edf2bfd3abec
+src/cmp/csharp/fragment/EntityBase.fragment.cs 20cf93a7af0c
 src/cmp/csharp/fragment/EntityCreateOp.fragment.cs 872a578961dc
 src/cmp/csharp/fragment/EntityListOp.fragment.cs d016cce5eafa
 src/cmp/csharp/fragment/EntityLoadOp.fragment.cs 3d8bdbd27972
@@ -858,7 +858,7 @@ tm/js/src/utility/Utility.js e127745be793
 tm/js/test/README.md e621bcce9282
 tm/js/test/definition-runner.js ac22b444d68e
 tm/js/test/exists.test.js ba7655664d5c
-tm/js/test/feature.test.js 4e633794cdde
+tm/js/test/feature.test.js c862538059ba
 tm/js/test/feature/Corpus.test.js 326d68928695
 tm/js/test/feature/harness.js 3b175bd1d54b
 tm/js/test/live-contract.js 348bc8916e69
@@ -2041,7 +2041,7 @@ src/cmp/ts/utility_ts.ts 41f452fb44f7
 tm/ts/LICENSE ed2f88b0aab8
 tm/ts/Makefile bc2ea6423c83
 tm/ts/src/Context.ts ddc4e819fa35
-tm/ts/src/Control.ts 3ac6e07c5c04
+tm/ts/src/Control.ts 7e8448264396
 tm/ts/src/Operation.ts ca7fe2dc17d6
 tm/ts/src/Point.ts 7c23cad045dc
 tm/ts/src/README.md 595588a11ce3
@@ -2089,7 +2089,7 @@ tm/ts/src/utility/Utility.ts 287130464808
 tm/ts/test/README.md 087d364e7b4f
 tm/ts/test/definition-runner.ts 141792a09085
 tm/ts/test/exists.test.ts 0b0e94cf2d76
-tm/ts/test/feature.test.ts 4888206e9f16
+tm/ts/test/feature.test.ts 35d521e4b0c3
 tm/ts/test/feature/Corpus.test.ts f4a7c6022700
 tm/ts/test/feature/harness.ts e3c3a4b513a9
 tm/ts/test/live-contract.ts 54ee4d2e6fe6
