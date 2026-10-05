@@ -164,10 +164,10 @@ The `generate` step compiles `.sdk/src/cmp/<lang>` to `.sdk/dist`, runs
 the component tree, and writes/merges the result into the per-target
 directories (`ts/`, `go/`, …).
 
-It also removes what the model no longer produces. `.sdk/log/generated.jsonl`
-records the files each run wrote, per output folder and with the component that
-produced each, and a file an earlier run wrote is deleted when that component
-ran again and did not produce it, with any directory it leaves empty. A target
+It also removes what the model no longer produces. For each output folder,
+`.sdk/log/generated.jsonl` records the files each run wrote and the component
+that produced each. A file an earlier run wrote is deleted, with any directory
+it leaves empty, when that component ran again and did not produce it. A target
 or a phase switched off keeps its files, because its component did not run. A
 file jostraca declined to write, protected by `JOSTRACA_PROTECT` or by the
 `existing` policy, is kept. A file a component writes only when it is absent,
