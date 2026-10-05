@@ -315,5 +315,7 @@ impl ProjectNameEntity for EntyClass {
 
     // #UpdateOp
 
+    // #PatchOp
+
     // #RemoveOp
 }

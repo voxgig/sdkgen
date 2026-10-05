@@ -311,6 +311,7 @@ object SdkCleanTestMain {
       case "load" => ent.load(args, ctrl)
       case "create" => ent.create(args, ctrl)
       case "update" => ent.update(args, ctrl)
+      case "patch" => ent.patch(args, ctrl)
       case "remove" => ent.remove(args, ctrl)
       case _ => throw new IllegalArgumentException("no such op: " + op)
     }

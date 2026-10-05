@@ -1591,7 +1591,7 @@ let test_feature () : feature =
            (match found with List r -> List.iter (fun item -> ignore (delprop item (Str "$KEY"))) !r | _ -> ());
            respond fctx 200 (clone found) None
          end
-       | "update" ->
+       | "update" | "patch" ->
          let update_match = empty_map () in
          (match fctx.c_reqdata with
           | Map _ ->

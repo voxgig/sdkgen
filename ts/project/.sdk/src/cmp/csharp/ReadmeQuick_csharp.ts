@@ -176,7 +176,8 @@ catch (Exception err)
       return it && it.type
     }
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`csharp
@@ -192,6 +193,14 @@ var created = client.${eName}().Create(new Dictionary<string, object?> { ${examp
           .concat(examplePairs('update'))
         Content(`// Update — supply the id in the match/data
 client.${eName}().Update(new Dictionary<string, object?> { ${updatePairs.join(', ')} });
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`["${idF}"] = ${csLit(idParamType('patch'), 'example_id')}`] : [])
+          .concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+client.${eName}().Patch(new Dictionary<string, object?> { ${patchPairs.join(', ')} });
 
 `)
       }

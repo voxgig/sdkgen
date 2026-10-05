@@ -252,7 +252,7 @@ main: kit: optspec: {
 
   allow: {
     method: 'GET,PUT,POST,PATCH,DELETE,OPTIONS'
-    op: 'create,update,load,list,remove,command,direct,graphql'
+    op: 'create,update,patch,load,list,remove,command,direct,graphql'
   }
 
   # Per-entity overrides. `$OPEN` because an entity entry carries

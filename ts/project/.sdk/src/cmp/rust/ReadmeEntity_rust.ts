@@ -28,6 +28,7 @@ const OP_DESC: Record<string, { method: string, desc: string }> = {
   list:   { method: 'list(reqmatch, ctrl)',   desc: 'List entities, optionally matching the given criteria. `Ok` is a `Vec` of entities, one per record.' },
   create: { method: 'create(reqdata, ctrl)',  desc: 'Create a new entity with the given data. `Ok` is the entity.' },
   update: { method: 'update(reqdata, ctrl)',  desc: 'Update an existing entity. `Ok` is the entity.' },
+  patch:  { method: 'patch(reqdata, ctrl)',  desc: 'Change part of an existing entity. `Ok` is the entity.' },
   remove: { method: 'remove(reqmatch, ctrl)', desc: 'Remove the matching entity. `Ok` is the entity, marked as deleted.' },
 }
 

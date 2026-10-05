@@ -214,25 +214,33 @@ describe('definitionPlan', () => {
     deepStrictEqual(uploads({ active: false, points: [{ m: 'GET', o: '/uploads' }] }), [])
   })
 
-  // Novu's workflow has a patch beside its update, and no target generates a
-  // patch method to call.
-  test('an operation no target generates is left out', () => {
-    const def = { ...DEF, paths: { '/workflows/{id}': {
-      parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
-      put: { responses: { '200': { content: { 'application/json': { example: { id: 'w1' } } } } } },
-      patch: { responses: { '200': { content: { 'application/json': { example: { id: 'w1' } } } } } },
-    } } }
+  // Novu's workflow has a patch beside its update, and every target generates
+  // both. An op outside the six has no method to call, so it is left out.
+  test('a patch is planned, and an operation no target generates is left out', () => {
+    const response = { responses: { '200': { content: { 'application/json': { example: { id: 'w1' } } } } } }
+    const def = { ...DEF, paths: {
+      '/workflows/{id}': {
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        put: response,
+        patch: response,
+      },
+      '/workflows/{id}/copy': {
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        post: response,
+      },
+    } }
     const g = { params: [{ n: 'id', or: 'id' }] }
     const model = { main: { kit: { entity: { workflow: {
       name: 'workflow', id: { field: 'id', name: 'id' }, op: {
         update: { points: [{ m: 'PUT', o: '/workflows/{id}', q: { exist: ['id'] }, g }] },
         patch: { points: [{ m: 'PATCH', o: '/workflows/{id}', q: { exist: ['id'] }, g }] },
+        copy: { points: [{ m: 'POST', o: '/workflows/{id}/copy', q: { exist: ['id'] }, g }] },
       },
     } } } } }
     const plan = definitionPlan({ model, meta: { apidef: {
       operation: (m: string, o: string) => operationFacts(def, { m, o }),
     } } })
-    deepStrictEqual(plan.map((p: any) => p.op), ['update'])
+    deepStrictEqual(plan.map((p: any) => p.op + ' ' + p.method), ['update PUT', 'patch PATCH'])
   })
 
   // Novu selects every point on its `idempotency-key` header. The argument

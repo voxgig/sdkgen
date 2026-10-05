@@ -35,14 +35,14 @@ the result.
 3. **`opShape.ts`** owns the language-neutral policy:
    - **Type names** — `opTypeName(Name, op)`: `<Name>LoadMatch`,
      `<Name>ListMatch`, `<Name>RemoveMatch`, `<Name>CreateData`,
-     `<Name>UpdateData` (`OP_SUFFIX`). The entity data type is plain
+     `<Name>UpdateData`, `<Name>PatchData` (`OP_SUFFIX`). The entity data type is plain
      `<Name>`. Elixir renders the same scheme snake_cased
      (`<ename>_load_match`, …) derived from the shared `OP_SUFFIX`.
    - **Partiality** — `opRequestShape(ent, op)` decides an op's request
      members and their optionality: op-declared params win (required =
      intersection across alternative points; `$action` points excluded);
      otherwise entity fields with per-op policy (create respects `req`,
-     update/list all-optional, load/remove require the `id` field).
+     update/patch/list all-optional, load/remove require the `id` field).
    - **Collision handling** — two entity names whose PascalCase forms
      meet once case is ignored never reach an emitter: generation renames
      one of them on the model first (see

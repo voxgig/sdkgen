@@ -60,7 +60,7 @@ function defaultServer(): ServerFn {
 
 function defaultMethod(op: string): string {
   if ('create' === op) return 'POST'
-  if ('update' === op) return 'PATCH'
+  if ('update' === op || 'patch' === op) return 'PATCH'
   if ('remove' === op) return 'DELETE'
   return 'GET'
 }

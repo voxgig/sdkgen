@@ -231,7 +231,7 @@ class FtHarness
         if ($op === 'create') {
             return 'POST';
         }
-        if ($op === 'update') {
+        if ($op === 'update' || $op === 'patch') {
             return 'PATCH';
         }
         if ($op === 'remove') {

@@ -30,7 +30,7 @@ sub has_feature {
 sub default_method {
   my ($opname) = @_;
   return 'POST' if 'create' eq $opname;
-  return 'PATCH' if 'update' eq $opname;
+  return 'PATCH' if 'update' eq $opname || 'patch' eq $opname;
   return 'DELETE' if 'remove' eq $opname;
   return 'GET';
 }

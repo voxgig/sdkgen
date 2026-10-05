@@ -66,7 +66,7 @@ final class FhHarness {
   private static func defaultMethod(_ op: String) -> String {
     switch op {
     case "create": return "POST"
-    case "update": return "PATCH"
+    case "update", "patch": return "PATCH"
     case "remove": return "DELETE"
     default: return "GET"
     }

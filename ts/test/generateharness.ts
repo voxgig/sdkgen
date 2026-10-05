@@ -585,6 +585,21 @@ function entityTestData(entity: any): any {
 }
 
 
+const UNGENERATED_OP = `
+main: kit: entity: contacts_field: op: copy: {
+  name: "copy"
+  points: [ {
+    g: { params: [
+      { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "cf01" }
+    ] }
+    m: "POST", o: "/contacts/fields/{id}/copy"
+    s: [{ lit: "contacts" }, { lit: "fields" }, { var: "id" }, { lit: "copy" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  } ]
+}
+`
+
+
 // SMSAPI's pair, whose classes differ only in case, and a PATCH beside a PUT.
 const FOLD_ENTITY = `
 main: kit: entity: contacts_field: {
@@ -885,6 +900,7 @@ export {
   ROUTING_MODEL,
   entityTestData,
   FOLD_ENTITY,
+  UNGENERATED_OP,
   BUILTIN_TYPE_ENTITY,
   SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY,

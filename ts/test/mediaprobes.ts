@@ -117,6 +117,7 @@ const MEDIA_MODEL =
           alternatives: [ { kind: "raw", media: "image/png", binary: true } ] }`),
     update: point('PUT', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }',
       undefined, ROUTED_ARGS),
+    patch: point('PATCH', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }'),
     // A request transform that selects one field, so the body is that field's value.
     create: point('POST', '/picture', 'rb: { kind: "json", media: "application/json" }',
       '`reqdata.payload`'),
@@ -191,6 +192,14 @@ const MEDIA_CASES: MediaCase[] = [
     },
   },
   {
+    name: 'a patch goes out as a PATCH, with only the fields given',
+    entity: 'picture', op: 'patch', input: { id: 'p01', title: 'Phobos' },
+    expect: {
+      method: 'PATCH', path: '/picture/p01', accept: null,
+      contentType: 'application/merge-patch+json', json: { title: 'Phobos' },
+    },
+  },
+  {
     name: 'an argument that is also a field goes out in the body too',
     entity: 'picture', op: 'update',
     input: {
@@ -235,6 +244,27 @@ const MEDIA_CASES: MediaCase[] = [
 
 
 const MEDIA_RAN = /media-probe: ran (\d+) cases/
+
+
+// One case per operation: each sends one request when the server answers, and
+// must raise when nothing does.
+const UNSENT_CASES: MediaCase[] = [
+  'JSON beside images and HTML asks for JSON alone',
+  'a JSON-only response asks for JSON',
+  'a body with no declared type is JSON, as before',
+  'a declared JSON type replaces the default',
+  'a patch goes out as a PATCH, with only the fields given',
+  'no declared response body sends no Accept',
+].map((name) => MEDIA_CASES.find((c) => name === c.name)!)
+
+
+// The error line each case's operation printed, or null where it returned. A
+// test runner may indent what a test prints.
+function mediaRaised(cases: MediaCase[], out: string): (string | null)[] {
+  const lines = out.split(/\r?\n/).map((line) => line.trim())
+  return cases.map((_c, i) =>
+    lines.find((line) => line.startsWith('media-probe: case ' + i + ': ')) ?? null)
+}
 
 
 function baseMedia(type: string | undefined): string {
@@ -458,6 +488,8 @@ func TestMediaProbe(t *testing.T) {
 			_, cerr = ent.Create(input, nil)
 		case "update":
 			_, cerr = ent.Update(input, nil)
+		case "patch":
+			_, cerr = ent.Patch(input, nil)
 		case "remove":
 			_, cerr = ent.Remove(input, nil)
 		}
@@ -679,6 +711,7 @@ public class MediaProbe {
           case "list" -> ent.list(data, null);
           case "create" -> ent.create(data, null);
           case "update" -> ent.update(data, null);
+          case "patch" -> ent.patch(data, null);
           default -> ent.remove(data, null);
         }
       }
@@ -729,6 +762,7 @@ class MediaProbe {
           "list" -> ent.list(data, null)
           "create" -> ent.create(data, null)
           "update" -> ent.update(data, null)
+          "patch" -> ent.patch(data, null)
           else -> ent.remove(data, null)
         }
       } catch (e: Exception) {
@@ -778,6 +812,7 @@ object MediaProbeMain {
           case "list" => ent.list(data, null)
           case "create" => ent.create(data, null)
           case "update" => ent.update(data, null)
+          case "patch" => ent.patch(data, null)
           case _ => ent.remove(data, null)
         }
       }
@@ -836,6 +871,7 @@ public static class MediaProbe
                     case "list": ent.List(data); break;
                     case "create": ent.Create(data); break;
                     case "update": ent.Update(data); break;
+                    case "patch": ent.Patch(data); break;
                     default: ent.Remove(data); break;
                 }
             }
@@ -891,6 +927,7 @@ final class MediaProbeTest: XCTestCase {
         case "list": _ = try ent.list(data, nil)
         case "create": _ = try ent.create(data, nil)
         case "update": _ = try ent.update(data, nil)
+        case "patch": _ = try ent.patch(data, nil)
         default: _ = try ent.remove(data, nil)
         }
       } catch {
@@ -984,6 +1021,7 @@ const CLOJURE_PROBE = String.raw`
                 ["cat" "remove"] e-cat/remove
                 ["picture" "load"] e-picture/load
                 ["picture" "update"] e-picture/update
+                ["picture" "patch"] e-picture/patch
                 ["picture" "create"] e-picture/create
                 e-planet/create)]
         (f ent data (vs/jm)))
@@ -1042,6 +1080,7 @@ fn media_probe() {
             ("cat", "remove") => call!(client.cat(Value::Noval), remove, data),
             ("picture", "load") => call!(client.picture(Value::Noval), load, data),
             ("picture", "update") => call!(client.picture(Value::Noval), update, data),
+            ("picture", "patch") => call!(client.picture(Value::Noval), patch, data),
             ("picture", "create") => call!(client.picture(Value::Noval), create, data),
             _ => call!(client.planet(Value::Noval), create, data),
         };
@@ -1119,6 +1158,7 @@ int main(void) {
     else if (0 == strcmp(op, "list")) e->vt->list(e, input, v_map(), &err);
     else if (0 == strcmp(op, "create")) e->vt->create(e, input, v_map(), &err);
     else if (0 == strcmp(op, "update")) e->vt->update(e, input, v_map(), &err);
+    else if (0 == strcmp(op, "patch")) e->vt->patch(e, input, v_map(), &err);
     else e->vt->remove(e, input, v_map(), &err);
     if (err) printf("media-probe: case %zu: %s\n", i, pn_error_str(err));
   }
@@ -1201,6 +1241,7 @@ int main() {
       else if ("list" == op) ent->list(data, vmap());
       else if ("create" == op) ent->create(data, vmap());
       else if ("update" == op) ent->update(data, vmap());
+      else if ("patch" == op) ent->patch(data, vmap());
       else ent->remove(data, vmap());
     }
     catch (const std::exception& e) {
@@ -1301,6 +1342,7 @@ test "media probe" {
         if (is(u8, entity, "cat") and is(u8, op, "remove")) report(i, client.cat(vnull()).remove(data, h.omap()));
         if (is(u8, entity, "picture") and is(u8, op, "load")) report(i, client.picture(vnull()).load(data, h.omap()));
         if (is(u8, entity, "picture") and is(u8, op, "update")) report(i, client.picture(vnull()).update(data, h.omap()));
+        if (is(u8, entity, "picture") and is(u8, op, "patch")) report(i, client.picture(vnull()).patch(data, h.omap()));
         if (is(u8, entity, "picture") and is(u8, op, "create")) report(i, client.picture(vnull()).create(data, h.omap()));
         if (is(u8, entity, "planet")) report(i, client.planet(vnull()).create(data, h.omap()));
     }
@@ -1339,6 +1381,7 @@ let run (ent : entity_obj) (op : value) (input : value) : unit =
   | Str "list" -> ignore (ent.e_list input (empty_map ()))
   | Str "create" -> ignore (ent.e_create input (empty_map ()))
   | Str "update" -> ignore (ent.e_update input (empty_map ()))
+  | Str "patch" -> ignore (ent.e_patch input (empty_map ()))
   | _ -> ignore (ent.e_remove input (empty_map ()))
 
 let () =
@@ -1395,8 +1438,10 @@ export {
   MEDIA_PROBES,
   MEDIA_RAN,
   MEDIA_SERVER,
+  UNSENT_CASES,
   mediaFailures,
   mediaPrinted,
+  mediaRaised,
   mediaRecord,
 }
 

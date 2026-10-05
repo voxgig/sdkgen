@@ -162,7 +162,8 @@ switch (client.${method}(h.vnull()).load(${loadArg}, h.vnull())) {
     }
     const idValueFor = (opname: string): string => zigLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`zig
@@ -182,6 +183,16 @@ switch (client.${method}(h.vnull()).create(h.jo(&.{${examplePairs('create').join
 switch (client.${method}(h.vnull()).update(h.jo(&.{${updatePairs.join(', ')}}), h.vnull())) {
     .ok => |updated| std.debug.print("{s}\\n", .{h.stringify(updated.asEntity().data(null))}),
     .err => |e| std.debug.print("update failed: {s}\\n", .{e.msg}),
+}
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`.{ "${idF}", ${idValueFor('patch')} }`] : []).concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+switch (client.${method}(h.vnull()).patch(h.jo(&.{${patchPairs.join(', ')}}), h.vnull())) {
+    .ok => |patched| std.debug.print("{s}\\n", .{h.stringify(patched)}),
+    .err => |e| std.debug.print("patch failed: {s}\\n", .{e.msg}),
 }
 
 `)

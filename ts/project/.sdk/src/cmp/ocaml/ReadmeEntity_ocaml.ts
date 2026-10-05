@@ -43,6 +43,7 @@ const OP_DESC: Record<string, { method: string, desc: string }> = {
   list:   { method: 'e_list reqmatch ctrl',   desc: 'List entities, optionally matching the given criteria. Resolves to one entity per record.' },
   create: { method: 'e_create reqdata ctrl',  desc: 'Create a new entity with the given data. Resolves to the entity.' },
   update: { method: 'e_update reqdata ctrl',  desc: 'Update an existing entity. Resolves to the entity.' },
+  patch:  { method: 'e_patch reqdata ctrl',   desc: 'Change part of an existing entity. Resolves to the entity.' },
   remove: { method: 'e_remove reqmatch ctrl', desc: 'Remove the matching entity. Resolves to the entity, marked deleted.' },
 }
 

@@ -48,6 +48,11 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     returns: 'the updated entity data',
     desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and raises on error.',
   },
+  patch: {
+    sig: 'patch(reqdata, ctrl=None) -> dict',
+    returns: 'the patched entity data',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and raises on error.',
+  },
   remove: {
     sig: 'remove(reqmatch, ctrl=None) -> dict',
     returns: 'the removed entity data',
@@ -216,7 +221,7 @@ ${eVar} = client.${ent.Name}()
         if (hasFieldOps) {
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
@@ -310,10 +315,10 @@ result = client.${ent.Name}().create({
 
 `)
           }
-          else if ('update' === opname) {
+          else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape the
             // runtime validates — then the patch-fields note.
-            const updateItems = opRequestShape(ent, 'update').items
+            const updateItems = opRequestShape(ent, opname).items
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -321,15 +326,15 @@ result = client.${ent.Name}().create({
               `    "${it.name}": ${pyLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`python
-result = client.${ent.Name}().update({
-${updateLines}    # Fields to update
+result = client.${ent.Name}().${opname}({
+${updateLines}    # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 })
 \`\`\`
 
 `)
           }
 
-          if ('create' === opname || 'update' === opname) {
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: '`bytes`, `bytearray`, `memoryview`, a `str` or a file object',
               once: 'a file object',

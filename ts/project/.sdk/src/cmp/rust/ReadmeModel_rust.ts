@@ -26,9 +26,10 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     list: '| `list` | `(reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, ' + model.const.Name + 'Error>` | List entities matching the criteria, one per record. |',
     create: '| `create` | `(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ' + model.const.Name + 'Error>` | Create a new entity. |',
     update: '| `update` | `(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ' + model.const.Name + 'Error>` | Update an existing entity. |',
+    patch: '| `patch` | `(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ' + model.const.Name + 'Error>` | Change part of an existing entity. |',
     remove: '| `remove` | `(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ' + model.const.Name + 'Error>` | Remove an entity, which is returned marked as deleted. |',
   }
-  const opRows = ['load', 'list', 'create', 'update', 'remove']
+  const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
   const apikeyOptionRow = isAuthActive(model)

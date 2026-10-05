@@ -255,7 +255,7 @@ func (ctx *Context) resolveOp(opname string) *Operation {
 	opcfg := vs.GetPath(ctx.Config, []any{"entity", entname, "op", opname})
 
 	input := "match"
-	if opname == "update" || opname == "create" {
+	if opname == "update" || opname == "create" || opname == "patch" {
 		input = "data"
 	}
 

@@ -67,7 +67,7 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 `)
 
       const ops = ent.op || {}
-      ;['load', 'list', 'create', 'update', 'remove'].forEach((opname: string) => {
+      ;['load', 'list', 'create', 'update', 'patch', 'remove'].forEach((opname: string) => {
         if (null == ops[opname]) {
           return
         }
@@ -83,7 +83,8 @@ const EntityTypes = cmp(function EntityTypes(props: any) {
 `)
         })
 
-        if (('create' === opname || 'update' === opname) && null != opRawBody(ops[opname])) {
+        if (('create' === opname || 'update' === opname || 'patch' === opname) &&
+          null != opRawBody(ops[opname])) {
           Content(`  $body?: Uint8Array | ArrayBuffer | Blob | ReadableStream | AsyncIterable<Uint8Array> | string
 `)
         }

@@ -51,7 +51,7 @@ val client = ${SDK}.testSDK(null, null)
         ? `java.util.Map.of(${items.map((it: any) =>
           `"${it.name}", ${it.name === idF ? '"test01"' : scalaLit(it.type)}`).join(', ')})`
         : 'null'
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)

@@ -418,6 +418,7 @@ ${candidateLines}
     case "load": return try ent.load(args, ctrl)
     case "create": return try ent.create(args, ctrl)
     case "update": return try ent.update(args, ctrl)
+    case "patch": return try ent.patch(args, ctrl)
     case "remove": return try ent.remove(args, ctrl)
     default: throw TransportError(message: "unknown operation: " + op)
     }
