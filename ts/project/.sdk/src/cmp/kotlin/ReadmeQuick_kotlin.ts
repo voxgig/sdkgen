@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { kotlinVarName, kotlinPackage } from './utility_kotlin'
+import { kotlinVarName, kotlinPackage, kotlinListMatch } from './utility_kotlin'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -36,6 +36,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // all values live in a MutableMap<String, Any?>.
   const kotlinLit = (type: any, placeholder: string = 'example'): string => {
     const k = canonScalarKey(type)
+    if ('NULL' === k) return 'null'
     if ('INTEGER' === k) return '1L'
     if ('NUMBER' === k) return '1.0'
     if ('BOOLEAN' === k) return 'true'
@@ -91,7 +92,7 @@ and raises on error; an entity's \`data()\` reads its record.
 
 \`\`\`kotlin
 try {
-    val ${eVar}List = client.${accessor}(null).list(null, null) as List<*>
+    val ${eVar}List = client.${accessor}(null).list(${kotlinListMatch(exampleEntity)}, null) as List<*>
     for (${eVar}Item in ${eVar}List) {
         println((${eVar}Item as SdkEntity).data())
     }

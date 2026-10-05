@@ -1,5 +1,5 @@
 
-import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, jsKey } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, jsKey, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -30,11 +30,12 @@ const client = ${model.const.Name}SDK.test()
     const primaryOpDef = exampleEntity.op && exampleEntity.op[primaryOp]
     const idF = entityIdField(exampleEntity)
     let arg = ''
-    if ('load' === primaryOp || 'remove' === primaryOp) {
+    const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
+    if (isMatchOp || 'list' === primaryOp) {
       // Every REQUIRED match key (id first, then parent path params like
       // page_id) — the same shape the runtime resolves path params from.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length

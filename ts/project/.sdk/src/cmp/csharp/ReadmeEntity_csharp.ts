@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { csVarName } from './utility_csharp'
+import { csVarName, csListMatch } from './utility_csharp'
 
 
 // Type names come from the shared canonToType 'csharp' column (single source of truth).
@@ -14,6 +14,7 @@ import { csVarName } from './utility_csharp'
 // A type-correct, JSON-serialisable C# literal for a field's canonical type.
 function csLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k) return '1L'
   if ('NUMBER' === k) return '1.0'
   if ('BOOLEAN' === k) return 'true'
@@ -140,7 +141,7 @@ var ${eVar} = client.${entity.Name}().Load(${loadArg});
       Content(`#### Example: List
 
 \`\`\`csharp
-var ${eVar}List = client.${entity.Name}().List(null);
+var ${eVar}List = client.${entity.Name}().List(${csListMatch(entity)});
 \`\`\`
 
 `)

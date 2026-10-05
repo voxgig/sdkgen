@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -119,7 +119,7 @@ ${resultShapeRows}
 Check \`err\` first (it is non-\`nil\` on failure), then use \`value\`:
 
     local ${eLower}, err = client:${eName}():${hasLoad ? 'load' : 'list'}(${
-      hasLoad && idF ? `{ ${idF} = "example_id" }` : ''})
+      hasLoad ? (idF ? `{ ${idF} = "example_id" }` : '') : listMatchArg('lua', exEnt)})
     if err then error(err) end
     -- ${eLower} is ${hasLoad ? 'the loaded entity' : 'an array of entities, one per record'}
 

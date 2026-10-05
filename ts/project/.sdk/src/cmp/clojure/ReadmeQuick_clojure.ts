@@ -6,6 +6,8 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { cljListMatch } from './utility_clojure'
+
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
@@ -32,6 +34,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // A type-correct Clojure literal for a param.
   const cljLit = (type: any, placeholder: string = 'example'): string => {
     const k = canonScalarKey(type)
+    if ('NULL' === k) return 'nil'
     if ('INTEGER' === k || 'NUMBER' === k) return '1'
     if ('BOOLEAN' === k) return 'true'
     if ('ARRAY' === k) return '(vs/jt)'
@@ -77,7 +80,7 @@ Read each record with \`((:data-get ${eLow}))\`.
 
 \`\`\`clojure
 (try
-  (doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) nil nil)]
+  (doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) ${cljListMatch(exampleEntity)} nil)]
     (println ((:data-get ${eLow}))))
   (catch Exception err
     (println "list failed:" (.getMessage err))))

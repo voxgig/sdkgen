@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { csVarName } from './utility_csharp'
+import { csVarName, csListMatch } from './utility_csharp'
 
 
 // A type-correct C# literal for a param: numeric/boolean/array/object params
@@ -15,6 +15,7 @@ import { csVarName } from './utility_csharp'
 // loose object model means all values live in Dictionary<string, object?>.
 function csLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k) return '1L'
   if ('NUMBER' === k) return '1.0'
   if ('BOOLEAN' === k) return 'true'
@@ -56,7 +57,7 @@ var client = ${ctor};
 
     if (opnames.includes('list')) {
       Content(`// List all ${eName.toLowerCase()}s (a list of entities, one per record, as object?; raises on error)
-var ${eVar}List = (List<object?>)client.${eName}().List(null)!;
+var ${eVar}List = (List<object?>)client.${eName}().List(${csListMatch(exampleEntity)})!;
 foreach (var ${eVar}Item in ${eVar}List)
 {
     Console.WriteLine(StructUtils.Jsonify(((IEntity)${eVar}Item!).Data()));

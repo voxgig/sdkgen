@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, opNeedsAction, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,6 +13,7 @@ import {
 // parse).
 function luaLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '{}'
@@ -133,7 +134,7 @@ local ${eVar}, err = client:${entity.Name}():load(${loadArg})
       Content(`#### Example: List
 
 \`\`\`lua
-local ${eVar}s, err = client:${entity.Name}():list()
+local ${eVar}s, err = client:${entity.Name}():list(${listMatchArg('lua', entity)})
 \`\`\`
 
 `)

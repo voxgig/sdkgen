@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { elixirLit } from './utility_elixir'
+import { elixirLit, elixirListArgs } from './utility_elixir'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -62,7 +62,7 @@ an entity's record.
 \`\`\`elixir
 try do
   ${eVar} = ${Name}.${eCall}(sdk)
-  ${eVar}s = ${Name}.Entity.${eName}.list(${eVar})
+  ${eVar}s = ${Name}.Entity.${eName}.list(${eVar}${elixirListArgs(exampleEntity, Name)})
   for i <- 0..(Voxgig.Struct.size(${eVar}s) - 1)//1 do
     IO.puts(Voxgig.Struct.jsonify(${Name}.Entity.${eName}.data_get(Voxgig.Struct.getelem(${eVar}s, i))))
   end

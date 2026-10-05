@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { swiftVarName } from './utility_swift'
+import { swiftVarName, swiftListMatch } from './utility_swift'
 
 
 // Type names come from the shared canonToType 'swift' column (single source of truth).
@@ -15,6 +15,7 @@ import { swiftVarName } from './utility_swift'
 // A type-correct Swift `Value` literal for a field's canonical type.
 function swiftLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return '.null'
   if ('INTEGER' === k) return '.int(1)'
   if ('NUMBER' === k) return '.double(1.0)'
   if ('BOOLEAN' === k) return '.bool(true)'
@@ -284,7 +285,7 @@ let result = try client.${accessor}().${opname}(${arg}, nil)
           }
           else if ('list' === opname) {
             Content(`\`\`\`swift
-let results = try client.${accessor}().list(nil, nil)
+let results = try client.${accessor}().list(${swiftListMatch(ent)}, nil)
 for item in results.asList?.items ?? [] {
     if let entity = item.asNative as? Entity {
         print(entity.data())

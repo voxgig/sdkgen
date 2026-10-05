@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -14,6 +14,7 @@ import { crateIdent, rustVarName, rustMethodName } from './utility_rust'
 // field's canonical type.
 function rustLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'Value::Null'
   if ('INTEGER' === k || 'NUMBER' === k) return 'Value::Num(1.0)'
   if ('BOOLEAN' === k) return 'Value::Bool(true)'
   if ('ARRAY' === k) return 'Value::empty_list()'
@@ -44,16 +45,16 @@ let client = test_sdk(Value::Noval, Value::Noval);
     const idF = entityIdField(exampleEntity)
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = 'Value::Noval'
-    if (isMatchOp) {
+    if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
       // Every REQUIRED match key (id first) — the same shape that generates
       // the op's request match.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `jo(vec![${items.map((it: any) =>
-          `("${it.name}", ${it.name === idF ? 'Value::str("test01")' : rustLit(it.type)})`).join(', ')}])`
+          `(${JSON.stringify(it.name)}, ${isMatchOp && it.name === idF ? 'Value::str("test01")' : rustLit(it.type)})`).join(', ')}])`
         : 'Value::Noval'
     } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
@@ -61,7 +62,7 @@ let client = test_sdk(Value::Noval, Value::Noval);
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
       arg = 0 < chosen.length
-        ? `jo(vec![${chosen.map((it: any) => `("${it.name}", ${rustLit(it.type)})`).join(', ')}])`
+        ? `jo(vec![${chosen.map((it: any) => `(${JSON.stringify(it.name)}, ${rustLit(it.type)})`).join(', ')}])`
         : 'Value::empty_map()'
     }
     const eVar = rustVarName(exampleEntity.name)

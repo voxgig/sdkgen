@@ -19,7 +19,8 @@ const LANG = 'rb'
 
 // A Ruby symbol literal for a member name: bare for identifiers, quoted otherwise.
 function symName(name: string): string {
-  return /^[A-Za-z_][A-Za-z0-9_]*[?!=]?$/.test(name) ? ':' + name : ':"' + name + '"'
+  return /^[A-Za-z_][A-Za-z0-9_]*[?!=]?$/.test(name) ? ':' + name
+    : ':' + JSON.stringify(name).replace(/#(?=[{$@])/g, '\\#')
 }
 
 

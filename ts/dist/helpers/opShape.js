@@ -5,6 +5,8 @@ exports.deriveEntityNames = deriveEntityNames;
 exports.entityCollection = entityCollection;
 exports.opTypeName = opTypeName;
 exports.opParams = opParams;
+exports.selectablePoints = selectablePoints;
+exports.pointRequires = pointRequires;
 exports.opReachable = opReachable;
 exports.opNeedsAction = opNeedsAction;
 exports.ownPoint = ownPoint;
@@ -150,14 +152,25 @@ function opNeedsAction(op) {
     return 1 < points.length &&
         points.every((pt) => null != (pt && pt.q && pt.q['$action']));
 }
-function opParams(op) {
-    let points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
+// The points a call can select: an action's only where every point is one.
+function selectablePoints(op) {
+    const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
     const canonical = points.filter((pt) => null == (pt && pt.q && pt.q['$action']));
-    if (0 < canonical.length) {
-        points = canonical;
-    }
-    const seen = {};
-    const requiredOnAll = {};
+    return 0 < canonical.length ? canonical : points;
+}
+// The route and query parameters a point requires.
+function pointRequires(pt) {
+    const params = [
+        ...(pt && pt.g && pt.g.params ? (0, jostraca_1.each)(pt.g.params) : []),
+        ...(pt && pt.g && pt.g.query ? (0, jostraca_1.each)(pt.g.query) : []),
+    ];
+    return params.filter((p) => p && null != p.n && false !== p.r).map((p) => p.n);
+}
+function opParams(op) {
+    const points = selectablePoints(op);
+    // Keyed by parameter name, which may be `__proto__`.
+    const seen = Object.create(null);
+    const requiredOnAll = Object.create(null);
     const out = [];
     points.forEach((pt, pointIndex) => {
         // Path AND query: a path-param-only read misses e.g. GET /result?trace_id=,
@@ -165,7 +178,7 @@ function opParams(op) {
         const pathParams = pt && pt.g && pt.g.params ? (0, jostraca_1.each)(pt.g.params) : [];
         const queryParams = pt && pt.g && pt.g.query ? (0, jostraca_1.each)(pt.g.query) : [];
         const params = [...pathParams, ...queryParams];
-        const requiredHere = {};
+        const requiredHere = Object.create(null);
         params.forEach((p) => {
             if (p && null != p.n) {
                 requiredHere[p.n] = false !== p.r;

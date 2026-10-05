@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, opRequestShape , targetFeatures, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, opRequestShape, targetFeatures, bodyNote, listMatchArg } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -284,7 +284,7 @@ fmt.Println(result.(sdk.Entity).Data())
           }
           else if ('list' === opname) {
             Content(`\`\`\`go
-results, err := client.${ent.Name}(nil).List(nil, nil)
+results, err := client.${ent.Name}(nil).List(${listMatchArg('go', ent)}, nil)
 if err != nil {
     panic(err)
 }

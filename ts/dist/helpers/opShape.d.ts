@@ -21,6 +21,8 @@ declare function entityPath(entity: any): string;
 declare function ownPoint(points: any[]): any;
 declare function opReachable(op: any, given: string[]): boolean;
 declare function opNeedsAction(op: any): boolean;
+declare function selectablePoints(op: any): any[];
+declare function pointRequires(pt: any): string[];
 declare function opParams(op: any): any[];
 declare function opRequestShape(ent: any, opname: string): {
     items: OpShapeItem[];
@@ -50,5 +52,5 @@ declare function pickExampleEntity(entity: any): {
     primaryOp: string | null;
 };
 declare function entityDataIdField(ent: any): string | null;
-export { CANON_OP_ORDER, OP_SUFFIX, deriveEntityNames, entityCollection, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
+export { CANON_OP_ORDER, OP_SUFFIX, deriveEntityNames, entityCollection, opTypeName, opParams, selectablePoints, pointRequires, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
 export type { OpShapeItem, UngeneratedOp, };

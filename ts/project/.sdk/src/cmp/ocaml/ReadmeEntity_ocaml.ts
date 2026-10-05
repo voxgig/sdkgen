@@ -6,13 +6,14 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { ocamlVarName } from './utility_ocaml'
+import { ocamlVarName, ocamlListMatch } from './utility_ocaml'
 
 
 // A type-correct OCaml `value` literal for a field's canonical type. Strings
 // render the quoted placeholder.
 function ocamlLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'Null'
   if ('INTEGER' === k || 'NUMBER' === k) return '(Num 1.)'
   if ('BOOLEAN' === k) return '(Bool true)'
   if ('ARRAY' === k) return '(empty_list ())'
@@ -154,7 +155,7 @@ let ${fn}_data = ${fn}.e_data_get ()
 
 \`\`\`ocaml
 (* One ENTITY per record. *)
-let ${fn}s = (Sdk_client.${fn} client Noval).e_list (empty_map ()) Noval
+let ${fn}s = (Sdk_client.${fn} client Noval).e_list ${ocamlListMatch(entity)} Noval
 let ${fn}_datas = List.map (fun e -> e.e_data_get ()) ${fn}s
 \`\`\`
 

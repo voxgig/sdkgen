@@ -7,10 +7,13 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { cljListMatch } from './utility_clojure'
+
 
 // A type-correct Clojure literal for a field's canonical type.
 function cljLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '(vs/jt)'
@@ -289,7 +292,7 @@ ${info.desc}
           }
           else if ('list' === opname) {
             Content(`\`\`\`clojure
-(doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) nil nil)]
+(doseq [${eLow} (e-${eLow}/list (api/${eLow} client nil) ${cljListMatch(ent)} nil)]
   (println ((:data-get ${eLow}))))
 \`\`\`
 

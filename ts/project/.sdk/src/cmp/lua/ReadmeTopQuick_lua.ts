@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,6 +13,7 @@ import {
 // doc test EXECUTES this block, so a comment placeholder would break it).
 function luaLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '{}'
@@ -55,7 +56,7 @@ local client = ${ctor}
 
     if (opnames.includes('list')) {
       Content(`-- List all ${eName.toLowerCase()}s (an array of entities, one per record; err on failure)
-local ${eVar}s, err = client:${eName}():list()
+local ${eVar}s, err = client:${eName}():list(${listMatchArg('lua', exampleEntity)})
 if err then error(err) end
 for _, ${eVar} in ipairs(${eVar}s) do
   print(json.encode(${eVar}:data_get()))

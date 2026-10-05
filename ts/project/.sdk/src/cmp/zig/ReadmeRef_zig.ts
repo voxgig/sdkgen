@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { zigVarName } from './utility_zig'
+import { zigVarName, zigListMatch } from './utility_zig'
 
 
 // Canonical type sentinel -> a zig type name for the field/param tables.
@@ -26,6 +26,7 @@ function zigType(type: any): string {
 // A type-correct zig expression constructing a voxgig struct Value.
 function zigLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'h.vnull()'
   if ('INTEGER' === k || 'NUMBER' === k) return 'h.vnum(1)'
   if ('BOOLEAN' === k) return 'h.vbool(true)'
   if ('ARRAY' === k) return 'h.olist()'
@@ -290,7 +291,7 @@ switch (client.${method}(h.vnull()).${opname}(${arg}, h.vnull())) {
           }
           else if ('list' === opname) {
             Content(`\`\`\`zig
-switch (client.${method}(h.vnull()).list(h.vnull(), h.vnull())) {
+switch (client.${method}(h.vnull()).list(${zigListMatch(ent)}, h.vnull())) {
     .ok => |results| {
         for (results) |result| {
             std.debug.print("{s}\\n", .{h.stringify(result.asEntity().data(null))});

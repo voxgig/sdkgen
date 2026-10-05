@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityOps, goModule , serverVariables} from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityOps, goModule, serverVariables, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -81,7 +81,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
     if (opnames.includes('list')) {
       body.push(`    // List ${eLower} records — the value is a []any of entities, one per record.`)
-      body.push(`    ${eLower}s, err := client.${eName}(nil).List(nil, nil)`)
+      body.push(`    ${eLower}s, err := client.${eName}(nil).List(${listMatchArg('go', exampleEntity)}, nil)`)
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)

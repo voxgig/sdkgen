@@ -6,12 +6,15 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { perlListArgs } from './utility_perl'
+
 
 // A type-correct, executable Perl literal for a field's canonical type. The
 // create example is EXECUTED by the doc test, so a placeholder must be a real
 // value. Strings render the quoted placeholder.
 function perlLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'undef'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return '1'
   if ('ARRAY' === k) return '[]'
@@ -146,7 +149,7 @@ my $${eVar} = $client->${entity.Name}->load(${loadArg});
 
 \`\`\`perl
 # an arrayref of entities, one per record; data_get reads each record
-my $${eVar}s = $client->${entity.Name}->list;
+my $${eVar}s = $client->${entity.Name}->list${perlListArgs(entity)};
 print $_->data_get->{id}, "\\n" for @$${eVar}s;
 \`\`\`
 

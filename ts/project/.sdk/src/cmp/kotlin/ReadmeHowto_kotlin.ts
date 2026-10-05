@@ -1,17 +1,18 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
 
-import { kotlinVarName } from './utility_kotlin'
+import { kotlinVarName, kotlinString } from './utility_kotlin'
 
 
 // A type-correct Kotlin literal for a field's canonical type.
 function kotlinLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k) return '1L'
   if ('NUMBER' === k) return '1.0'
   if ('BOOLEAN' === k) return 'true'
@@ -39,13 +40,17 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'null'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `mutableMapOf<String, Any?>("${idF}" to "test01")` : 'null'
+  } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+    const chosen = requiredItems(exampleEntity, 'list')
+    testArg = `mutableMapOf<String, Any?>(${chosen.map((it: any) =>
+      `${kotlinString(it.name)} to ${kotlinLit(it.type)}`).join(', ')})`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
     testArg = `mutableMapOf<String, Any?>(${chosen.map((it: any) =>
-      `"${it.name}" to ${kotlinLit(it.type)}`).join(', ')})`
+      `${kotlinString(it.name)} to ${kotlinLit(it.type)}`).join(', ')})`
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.

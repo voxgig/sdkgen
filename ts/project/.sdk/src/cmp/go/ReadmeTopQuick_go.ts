@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityOps, opRequestShape, goModule , serverVariables} from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityOps, opRequestShape, goModule, serverVariables, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -52,7 +52,7 @@ client := ${ctor}
 
     if (opnames.includes('list')) {
       Content(`// List all ${eName.toLowerCase()}s (one entity per record; err is non-nil on failure)
-${eVar}s, err := client.${eName}(nil).List(nil, nil)
+${eVar}s, err := client.${eName}(nil).List(${listMatchArg('go', exampleEntity)}, nil)
 if err != nil {
     panic(err)
 }

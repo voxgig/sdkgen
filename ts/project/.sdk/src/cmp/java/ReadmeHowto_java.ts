@@ -1,24 +1,12 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
 
-import { javaVarName } from './utility_java'
-
-
-// A type-correct Java literal for a field's canonical type.
-function javaLit(type: any): string {
-  const k = canonScalarKey(type)
-  if ('INTEGER' === k) return '1L'
-  if ('NUMBER' === k) return '1.0'
-  if ('BOOLEAN' === k) return 'true'
-  if ('ARRAY' === k) return 'List.of()'
-  if ('OBJECT' === k) return 'Map.of()'
-  return '"example"'
-}
+import { javaVarName, javaLit } from './utility_java'
 
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
@@ -39,13 +27,17 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'null'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `Map.of("${idF}", "test01")` : 'null'
+  } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+    const chosen = requiredItems(exampleEntity, 'list')
+    testArg = javaMapOf(chosen.map((it: any) =>
+      `${JSON.stringify(it.name)}, ${javaLit(it.type)}`))
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
-    testArg = `Map.of(${chosen.map((it: any) =>
-      `"${it.name}", ${javaLit(it.type)}`).join(', ')})`
+    testArg = javaMapOf(chosen.map((it: any) =>
+      `${JSON.stringify(it.name)}, ${javaLit(it.type)}`))
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.

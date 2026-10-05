@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { elixirLit } from './utility_elixir'
+import { elixirLit, elixirListArgs } from './utility_elixir'
 
 
 const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
@@ -43,7 +43,7 @@ sdk = ${ctor}
     if (opnames.includes('list')) {
       Content(`
 # List all ${eName.toLowerCase()}s (a list of entities, one per record; raises on error)
-${eVar}s = ${Name}.Entity.${eName}.list(${eVar})
+${eVar}s = ${Name}.Entity.${eName}.list(${eVar}${elixirListArgs(exampleEntity, Name)})
 for i <- 0..(Voxgig.Struct.size(${eVar}s) - 1)//1 do
   IO.puts(Voxgig.Struct.jsonify(${Name}.Entity.${eName}.data_get(Voxgig.Struct.getelem(${eVar}s, i))))
 end

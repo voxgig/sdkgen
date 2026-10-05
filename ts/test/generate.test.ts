@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, seedableList, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
 } from './generateharness'
@@ -124,6 +124,7 @@ const NON_SDK_SIBLING: Record<string, string> = {
 const NON_SDK_TARGETS = Object.keys(NON_SDK_SIBLING)
 
 
+
 const DIGIT_ENTITY = `
 main: kit: entity: 3ds_session: {
   alias: field: {}
@@ -203,6 +204,21 @@ async function generate(
 // are exactly those under `<target>/`.
 function filesFor(out: Record<string, string>, target: string): [string, string][] {
   return Object.entries(out).filter(([p]) => p.startsWith(target + '/'))
+}
+
+
+// Every list call the docs of one target make on an entity, a call that breaks
+// after its open parenthesis read with its next line; comments and table rows
+// left out.
+function listCalls(out: Record<string, string>, target: string, entity: RegExp): string[] {
+  return Object.keys(out)
+    .filter((path: string) => path.startsWith(target + '/') && path.endsWith('.md'))
+    .flatMap((path: string) => out[path].split('\n')
+      .map((line: string, i: number, lines: string[]) =>
+        /\(\s*$/.test(line) ? line + ' ' + lines[i + 1] : line)
+      .filter((line: string) => /(\.|:|->|\/)(e_)?(list|List)\b/.test(line) && entity.test(line))
+      .filter((line: string) => !/^\s*(\/\/|#|--|\||-|\*|;|\(\*)/.test(line) && !/Value::List\(/.test(line))
+      .map((line: string) => path + ': ' + line.trim()))
 }
 
 
@@ -5454,6 +5470,346 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const plain = await generate(['go', 'go-mcp'])
     ok(/Version:\s+"0\.0\.1",/.test(findFile(plain, 'go-mcp/main.go')!),
       'go-mcp: the server does not report the default publish version')
+  })
+
+
+  test('a list example passes the parameters the list requires, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, searchOnly())
+
+    const bare: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Ss]earch/)
+      ok(0 < found.length, target + ': no list example found')
+      bare.push(...found.filter((line: string) => !/engine/.test(line) || !/\bq\b/.test(line)))
+    }
+    bare.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Ss]earch/)
+      .filter((line: string) => !/engine/.test(line) || !/\bq\b/.test(line)))
+    deepStrictEqual(bare, [], 'list examples without the required engine and q:\n' + bare.join('\n'))
+
+    const seed = out['README.md'].slice(out['README.md'].indexOf('SDK.test({'))
+    ok(/engine: 'example_engine', q: 'example_q'/.test(seed.slice(0, seed.indexOf('```'))),
+      'ts: the mock seed lacks the values the list example matches on')
+  })
+
+
+  // Every README component that seeds the mock, read from its source, writes
+  // a block that seeds the record its list call sends.
+  test('each README block that seeds the mock seeds the record its list example sends, under the entity\'s name', async () => {
+    const cmpdir = Path.join(SCAFFOLD, 'src', 'cmp')
+    const seeding = readdirSync(cmpdir).flatMap((lang: string) => readdirSync(Path.join(cmpdir, lang))
+      .filter((file: string) => /^Readme(?!Examples?Test)\w*\.ts$/.test(file) &&
+        /["']?entity["']?\s*(?::|=>)\s*[{[]/.test(readFileSync(Path.join(cmpdir, lang, file), 'utf8')))
+      .map((file: string) => lang + '/' + file))
+    ok(0 < seeding.length, 'no README component seeds the mock')
+
+    const out = await generate([...new Set(seeding.map((c: string) => c.split('/')[0]))], undefined, seedableList())
+    const seeded = /["']?(\w+)["']?\s*(?::|=>)\s*[{[]\s*["']?test01["']?\s*(?::|=>)\s*[{[]/
+    const blocks = Object.keys(out).filter((doc: string) => /^(?:[^/]+\/)?(?:README|REFERENCE)\.md$/.test(doc))
+      .flatMap((doc: string) => [...out[doc].matchAll(/```\w+\n([\s\S]*?)\n```/g)]
+        .filter((m) => seeded.test(m[1])).map((m) => ({ doc, code: m[1] })))
+    strictEqual(blocks.length, seeding.length, 'the components that seed the mock (' + seeding.join(', ') +
+      ') do not write one seeded block each:\n' + blocks.map((b) => b.doc + ':\n' + b.code).join('\n'))
+
+    const inside = (text: string, at: number): string => {
+      let depth = 0
+      for (let i = at; i < text.length; i++) {
+        if ('([{'.includes(text[i])) depth++
+        else if (')]}'.includes(text[i]) && 0 === --depth) return text.slice(at + 1, i)
+      }
+      return ''
+    }
+    const pairs = (text: string) => [...text.matchAll(
+      /["']?([\w$]+)["']?\s*(?::|=>)\s*('[^']*'|"[^"]*"|\[\]|\{\}|[^\s,{}()[\]]+)/g)].map((m) => m[1] + ' ' + m[2])
+
+    for (const { doc, code } of blocks) {
+      const seed = seeded.exec(code)!
+      strictEqual(seed[1], 'crate_box', doc + ': the mock is seeded under another name than the entity\'s:\n' + code)
+      const record = pairs(inside(code, seed.index + seed[0].length - 1))
+      const sent = pairs(inside(code, code.indexOf('(', code.search(/(?:\.|->)list\(/))))
+      strictEqual(sent.length, 3, doc + ': the list call does not send its parameters:\n' + code)
+      deepStrictEqual(sent.filter((pair: string) => !record.includes(pair)), [],
+        doc + ': the list call sends values the seeded record lacks:\n' + code)
+    }
+  })
+
+
+  test('a Java or Scala map of more than ten pairs is built with Map.ofEntries', async () => {
+    const wide = Array.from({ length: 11 }, (_, i): [string, string] => ['p' + i, '"`$STRING`"'])
+    const out = await generate(['java', 'scala'], undefined, listOnly('wide', wide))
+
+    const argCounts = (text: string): number[] => {
+      const counts: number[] = []
+      for (const m of text.matchAll(/\bMap\.of\(/g)) {
+        let depth = 1
+        let args = 1
+        let quoted = false
+        for (let i = m.index! + m[0].length; i < text.length && 0 < depth; i++) {
+          const c = text[i]
+          if (quoted) quoted = '"' !== c || '\\' === text[i - 1]
+          else if ('"' === c) quoted = true
+          else if ('(' === c || '[' === c || '{' === c) depth++
+          else if (')' === c || ']' === c || '}' === c) depth--
+          else if (',' === c && 1 === depth) args++
+        }
+        counts.push(args)
+      }
+      return counts
+    }
+
+    for (const target of ['java', 'scala']) {
+      const docs = Object.keys(out).filter((path) => path.startsWith(target + '/') && path.endsWith('.md'))
+      const text = docs.map((path) => out[path]).join('\n')
+      deepStrictEqual(argCounts(text).filter((n) => 20 < n), [],
+        target + ': a Map.of call passes more than ten pairs')
+      ok(/Map\.ofEntries\((java\.util\.)?Map\.entry\("p0", "example"\)/.test(text) && /Map\.entry\("p10", "example"\)/.test(text),
+        target + ': the list example of eleven parameters is not built with Map.ofEntries')
+    }
+  })
+
+
+  test('a list example writes a nullable parameter as its type, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined,
+      listOnly('tally', [['n', '["`$ONE`", ["`$INTEGER`", "`$NULL`"]]']]))
+
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Tt]ally/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => /example|undefined/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'list examples that write an INTEGER | NULL parameter as a string:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('a list example writes a null-only parameter as its language\'s null', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, listOnly('tally', [['z', '"`$NULL`"']]))
+
+    // Shared sections are written in TypeScript for the targets the shared
+    // helper does not write. Java and Scala keep the placeholder: Map.of
+    // rejects a null value.
+    const pair: Record<string, string> = {
+      ts: 'z: null', js: 'z: null', py: '"z": None', php: '"z" => null', rb: '"z" => nil',
+      lua: 'z = nil', go: '"z": nil', c: '"z", v_null()', cpp: '{"z", Value(nullptr)}',
+      csharp: '["z"] = null', kotlin: '"z" to null', perl: "'z' => undef", rust: '("z", Value::Null)',
+      swift: '("z", .null)', zig: '.{ "z", h.vnull() }', ocaml: '("z", Null)', clojure: '"z" nil',
+      elixir: '"z" => nil',
+    }
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Tt]ally/)
+      ok(0 < found.length, target + ': no list example found')
+      if ('java' === target || 'scala' === target) continue
+      ok(null != pair[target], target + ': no null pair declared')
+      ok(found.some((line: string) => line.includes(pair[target])),
+        target + ': no list example writes ' + pair[target] + ':\n' + found.join('\n'))
+      wrong.push(...found.filter((line: string) => /undefined|example/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'list examples that do not write a NULL parameter as null:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('java and scala write example literals from one table each, which says why NULL keeps the placeholder', () => {
+    for (const lang of ['java', 'scala']) {
+      const dir = Path.join(SCAFFOLD, 'src', 'cmp', lang)
+      const tables = readdirSync(dir).filter((file: string) => file.endsWith('.ts') &&
+        /'(?:java\.util\.)?List\.of\(\)'/.test(readFileSync(Path.join(dir, file), 'utf8')))
+      deepStrictEqual(tables, ['utility_' + lang + '.ts'], lang + ': an example literal table outside the utility module')
+
+      const src = readFileSync(Path.join(dir, 'utility_' + lang + '.ts'), 'utf8')
+      const at = src.indexOf('function ' + lang + 'Lit(')
+      ok(-1 < at, lang + ': the utility module declares no ' + lang + 'Lit')
+      ok(/^\/\/.*\bnull\b/i.test(src.slice(0, at).trimEnd().split('\n').pop()!),
+        lang + ': the literal table does not say why NULL keeps the placeholder')
+    }
+  })
+
+
+  test('a list parameter named like the load id takes its own type\'s literal', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, entityOnly(`
+main: kit: entity: badge: {
+  alias: field: {}
+  name: "badge"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    list: { name: "list", points: [ {
+      g: { query: [ { k: "query", n: "id", or: "id", r: true, t: "\`$BOOLEAN\`" } ] }
+      m: "GET", o: "/badge", s: [{ lit: "badge" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/badge/{id}", s: [{ lit: "badge" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: flow: BasicBadgeFlow: {
+  entity: "badge", kind: "basic", name: "BasicBadgeFlow"
+  step: [ { o: "list", m: { id: true } } ]
+}
+`))
+
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Bb]adge/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => /example_id|test01|\bid\b[^,)]*example/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'list examples that write the load id literal for a BOOLEAN list parameter:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('a list example writes a Lua keyword and __proto__ as keys of their own', async () => {
+    const out = await generate(['ts', 'js', 'lua'], undefined,
+      listOnly('crate', [['end', '"`$STRING`"'], ['__proto__', '"`$STRING`"']]))
+
+    // A bare or quoted __proto__ key sets the prototype, and a bare `end` does not parse.
+    const want: Record<string, string> = {
+      ts: "['__proto__']: \"example\"", js: "['__proto__']: \"example\"", lua: '["end"] = "example"',
+    }
+    const wrong: string[] = []
+    for (const target of ['ts', 'js', 'lua']) {
+      const found = listCalls(out, target, /[Cc]rate/)
+      ok(0 < found.length, target + ': no list example found')
+      ok(found.some((line: string) => line.includes(want[target])),
+        target + ': no list example writes ' + want[target] + ':\n' + found.join('\n'))
+      wrong.push(...found.filter((line: string) =>
+        /[{,]\s*'?__proto__'?\s*:/.test(line) || /[{,]\s*end\s*=/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'list examples with a key that sets the prototype or does not parse:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('a list whose points each need a selector of their own passes one point\'s, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, selectorList('contact', ['email', 'phone']))
+
+    // No selector is needed by both points, so a bare call reaches neither.
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Cc]ontact/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => !/email/.test(line)))
+    }
+    wrong.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Cc]ontact/)
+      .filter((line: string) => !/email/.test(line)))
+    deepStrictEqual(wrong, [], 'list examples that pass no point\'s selector:\n' + wrong.join('\n'))
+  })
+
+
+  test('a list parameter whose name holds a quote and a backslash is escaped, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, listOnly('crate', [['a"b\\c', '"`$STRING`"']]))
+
+    // Double-quoted in most targets, single-quoted in ts, js and perl.
+    const escaped = (line: string) => line.includes('"a\\"b\\\\c"') || line.includes("'a\"b\\\\c'")
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Cc]rate/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => !escaped(line)))
+    }
+    wrong.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Cc]rate/)
+      .filter((line: string) => !escaped(line)))
+    deepStrictEqual(wrong, [], 'list examples that do not escape the name:\n' + wrong.join('\n'))
+  })
+
+
+  // The swift build lane needs a swift toolchain, which this check does not.
+  test('a swift entity type writes each member name as an identifier', async () => {
+    const out = await generate(['swift'], undefined, listOnly('crate',
+      [['end', '"`$STRING`"'], ['__proto__', '"`$STRING`"'], ['a"b\\c', '"`$STRING`"']]))
+    const types = Object.entries(out).find(([path, text]) =>
+      /^swift\/.*Types\.swift$/.test(path) && text.includes('struct CrateListMatch'))
+    ok(null != types, 'swift: no type for the list match was generated')
+    const names = [...types![1].matchAll(/^\s*public var ([^:]+):/gm)].map((m) => m[1])
+    ok(names.includes('end'), 'swift: the list match lost its members:\n' + names.join('\n'))
+    deepStrictEqual(names.filter((name: string) => !/^[\p{L}_][\p{L}\p{N}_]*$/u.test(name)), [],
+      'swift: member names that are not identifiers')
+  })
+
+
+  test('the root README quotes a create field whose name is not an identifier', async () => {
+    const out = await generate(['ts'], undefined, entityOnly(`
+main: kit: entity: note: {
+  alias: field: {}
+  name: "note"
+  fields: {
+    "first-name": { h: 'First', n: "first-name", r: true, t: "\`$STRING\`" }
+  }
+  op: create: {
+    name: "create"
+    points: [ {
+      g: {}, m: "POST", o: "/note", s: [{ lit: "note" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: BasicNoteFlow: {
+  entity: "note", kind: "basic", name: "BasicNoteFlow"
+  step: [ { o: "create", i: { ref: "note_ref01" } } ]
+}
+`))
+    ok(/client\.Note\(\)\.create\(\{\n  'first-name': /.test(out['README.md']),
+      'the root README create example does not quote first-name:\n' +
+      out['README.md'].split('\n').filter((line: string) => /first-name/.test(line)).join('\n'))
+  })
+
+
+  test('the root README writes a nullable create field as its type, and a null-only one as null', async () => {
+    const out = await generate(['ts'], undefined, entityOnly(`
+main: kit: entity: note: {
+  alias: field: {}
+  name: "note"
+  fields: {
+    "n": { h: 'N', n: "n", r: true, t: ["\`$ONE\`", ["\`$INTEGER\`", "\`$NULL\`"]] }
+    "z": { h: 'Z', n: "z", r: true, t: "\`$NULL\`" }
+  }
+  op: create: {
+    name: "create"
+    points: [ {
+      g: {}, m: "POST", o: "/note", s: [{ lit: "note" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: BasicNoteFlow: {
+  entity: "note", kind: "basic", name: "BasicNoteFlow"
+  step: [ { o: "create", i: { ref: "note_ref01" } } ]
+}
+`))
+    ok(/client\.Note\(\)\.create\(\{\n  n: 1,\n  z: null,\n\}\)/.test(out['README.md']),
+      'the root README create example does not write n: 1 and z: null:\n' +
+      out['README.md'].split('\n').filter((line: string) => /\b[nz]: /.test(line)).join('\n'))
+  })
+
+
+  test('a README names where the API key goes when it is not the Authorization header', async () => {
+    const auth = (where: string) => `main: kit: config: auth: { active: true, ${where}, prefix: '' }\n`
+    for (const [where, sentence] of [
+      ['in: query, name: api_key', 'The client sends the API key as the `api_key` query parameter.'],
+      ['in: cookie, name: session', 'The client sends the API key as the `session` cookie.'],
+      ["in: header, name: 'X-Api-Key'", 'The client sends the API key in the `X-Api-Key` header.'],
+    ]) {
+      const out = await generate(['ts', 'py'], undefined, auth(where))
+      for (const path of ['README.md', 'ts/README.md', 'py/README.md']) {
+        ok(out[path].includes(sentence), path + ': does not say where the key goes, for ' + where)
+      }
+    }
+
+    const plain = await generate(['ts'], undefined, auth("in: header, name: 'Authorization'"))
+    ok(!/The client sends the API key/.test(plain['README.md'] + plain['ts/README.md']),
+      'the README names the default Authorization header')
   })
 
 

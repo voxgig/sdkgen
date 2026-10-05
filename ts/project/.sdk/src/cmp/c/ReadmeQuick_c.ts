@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName } from './utility_c'
+import { cIdent, cVarName, cListMatch } from './utility_c'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -37,6 +37,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // A type-correct C expression constructing a voxgig struct Value.
   const cLit = (type: any, placeholder: string = 'example'): string => {
     const k = canonScalarKey(type)
+    if ('NULL' === k) return 'v_null()'
     if ('INTEGER' === k || 'NUMBER' === k) return 'v_num(1)'
     if ('BOOLEAN' === k) return 'v_bool(true)'
     if ('ARRAY' === k) return 'v_list()'
@@ -79,7 +80,7 @@ reads an entity's record.
 
 \`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-Entity** ${evar}s = ${evar}->vt->list(${evar}, NULL, NULL, &err);
+Entity** ${evar}s = ${evar}->vt->list(${evar}, ${cListMatch(exampleEntity)}, NULL, &err);
 if (err) {
     fprintf(stderr, "list failed: %s\\n", err->msg);
 } else {

@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { kotlinVarName, kotlinPackage } from './utility_kotlin'
+import { kotlinVarName, kotlinPackage, kotlinListMatch } from './utility_kotlin'
 
 
 // A type-correct Kotlin literal for a param: numeric/boolean/array/object
@@ -15,6 +15,7 @@ import { kotlinVarName, kotlinPackage } from './utility_kotlin'
 // SDK's loose object model means all values live in MutableMap<String, Any?>.
 function kotlinLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k) return '1L'
   if ('NUMBER' === k) return '1.0'
   if ('BOOLEAN' === k) return 'true'
@@ -65,7 +66,7 @@ ${shown ? `import ${kotlinPackage(model)}.core.SdkEntity\n` : ''}
 
     if (opnames.includes('list')) {
       Content(`// List all ${eNameLower}s (a list of entities, one per record; raises on error)
-val ${eVar}List = client.${accessor}(null).list(null, null) as List<*>
+val ${eVar}List = client.${accessor}(null).list(${kotlinListMatch(exampleEntity)}, null) as List<*>
 for (${eVar}Item in ${eVar}List) {
     println((${eVar}Item as SdkEntity).data())
 }

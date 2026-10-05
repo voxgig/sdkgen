@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, isHttpBasicAuth, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, matchArg, idLiteral , serverVariables} from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, isHttpBasicAuth, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, serverVariables, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -8,12 +8,6 @@ import {
 } from '@voxgig/apidef'
 
 import { exampleValue } from './utility_ts'
-
-
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('ts', ent, 'list', idF, idLiteral(ent, 'list', idF))
-}
 
 
 const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
@@ -58,7 +52,7 @@ const client = ${ctor}
 
     if (opnames.includes('list')) {
       Content(`// List all ${eName.toLowerCase()}s (returns ${eName}Entity[], one entity per record)
-const ${eVar}s = await client.${eName}().list(${listMatchArg(exampleEntity)})
+const ${eVar}s = await client.${eName}().list(${listMatchArg('ts', exampleEntity)})
 for (const ${eVar} of ${eVar}s) {
   console.log(${eVar}.data())
 }

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -7,10 +7,13 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { perlStringLiteral } from './utility_perl'
+
 
 // A type-correct Perl literal for a field's canonical type.
 function perlLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'undef'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return '1'
   if ('ARRAY' === k) return '[]'
@@ -35,12 +38,15 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = ''
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `{ '${idF}' => 'test01' }` : ''
+  } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+    const chosen = requiredItems(exampleEntity, 'list')
+    testArg = `{ ${chosen.map((it: any) => `${perlStringLiteral(it.name)} => ${perlLit(it.type)}`).join(', ')} }`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
-    testArg = `{ ${chosen.map((it: any) => `'${it.name}' => ${perlLit(it.type)}`).join(', ')} }`
+    testArg = `{ ${chosen.map((it: any) => `${perlStringLiteral(it.name)} => ${perlLit(it.type)}`).join(', ')} }`
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.

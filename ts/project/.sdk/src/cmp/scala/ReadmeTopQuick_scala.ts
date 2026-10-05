@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -7,21 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { scalaVarName, scalaPackage } from './utility_scala'
-
-
-// A type-correct Scala literal for a param: numeric/boolean/array/object params
-// render a typed literal; strings render the quoted placeholder. The SDK's
-// loose object model means all values live in java.util.Map[String, Object].
-function scalaLit(type: any, placeholder: string = 'example'): string {
-  const k = canonScalarKey(type)
-  if ('INTEGER' === k) return '1L'
-  if ('NUMBER' === k) return '1.0'
-  if ('BOOLEAN' === k) return 'true'
-  if ('ARRAY' === k) return 'java.util.List.of()'
-  if ('OBJECT' === k) return 'java.util.Map.of()'
-  return `"${placeholder}"`
-}
+import { scalaVarName, scalaPackage, scalaListMatch, scalaLit } from './utility_scala'
 
 
 const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
@@ -65,7 +51,7 @@ val client = new ${SDK}(options)
 
     if (opnames.includes('list')) {
       Content(`// List all ${eNameLower}s (a list of entities, one per record; raises on error)
-val ${eVar}List = client.${accessor}(null).list(null, null).asInstanceOf[java.util.List[SdkEntity]]
+val ${eVar}List = client.${accessor}(null).list(${scalaListMatch(exampleEntity)}, null).asInstanceOf[java.util.List[SdkEntity]]
 ${eVar}List.forEach(${eVar}Item => println(${eVar}Item.data()))
 `)
     }
@@ -79,9 +65,9 @@ ${eVar}List.forEach(${eVar}Item => println(${eVar}Item.data()))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
-        ? `java.util.Map.of(${loadItems.map((it: any) =>
+        ? javaMapOf(loadItems.map((it: any) =>
           `"${it.name}", ${scalaLit(it.type,
-            it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')})`
+            it.name === idF ? 'example_id' : 'example_' + it.name)}`), 'java.util.')
         : 'null'
       Content(`
 // Load a specific ${eNameLower} (returns the entity, raises on error)

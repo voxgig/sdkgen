@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey, matchArg, idLiteral, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey, opNeedsAction, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -7,12 +7,6 @@ import {
 } from '@voxgig/apidef'
 
 import { exampleValue } from './utility_js'
-
-
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('ts', ent, 'list', idF, idLiteral(ent, 'list', idF))
-}
 
 
 const OP_DESC: Record<string, { method: string, desc: string }> = {
@@ -129,7 +123,7 @@ const ${eVar} = await client.${entity.Name}().load(${loadArg})
       Content(`#### Example: List
 
 \`\`\`ts
-const ${eVar}s = await client.${entity.Name}().list(${listMatchArg(entity)})
+const ${eVar}s = await client.${entity.Name}().list(${listMatchArg('js', entity)})
 \`\`\`
 
 `)

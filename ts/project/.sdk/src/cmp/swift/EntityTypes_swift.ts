@@ -36,7 +36,7 @@ public struct ${typeName} {
   items.forEach((it: any) => {
     if (null == it || null == it.name) return
     const ident = swiftVarName(it.name)
-    if (seen.has(ident)) return
+    if ('' === ident || seen.has(ident)) return
     seen.add(ident)
     Content(propLine(it.name, it.type, !!it.optional))
   })
