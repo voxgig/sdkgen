@@ -1,6 +1,6 @@
 
 import { test, describe, before, after } from 'node:test'
-import { ok, strictEqual, deepStrictEqual } from 'node:assert'
+import { ok, strictEqual, deepStrictEqual, throws } from 'node:assert'
 
 import Fs from 'node:fs'
 import Net from 'node:net'
@@ -5598,6 +5598,9 @@ describe('a templated server URL is resolved by the generated SDK', () => {
 })
 
 
+type Command = { bin: string, args: string[], env?: NodeJS.ProcessEnv }
+
+
 // Every request on one client resolves its operation through the cache its
 // root context shares, and registers, cleans and copies the client's one
 // secret registry. The suite each of these SDKs ships races requests on one
@@ -5609,8 +5612,12 @@ type ConcurrencyLane = {
   needs: string,
   // What the suite races, when it is not both the cache and the registry.
   shares?: string,
+  // Model source generated beside the fixture's.
+  extra?: string,
   prepare?: (sdkroot: string) => string | null,
-  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  command: () => Command | null,
+  // Builds and runs the suite with the command's toolchain, naming the build.
+  exec?: (sdkroot: string, cmd: Command) => CppSuite,
   // Exit zero is not enough: a filter that matches nothing passes in every one
   // of these frameworks.
   ran: RegExp[],
@@ -5621,7 +5628,14 @@ type ConcurrencyLane = {
 
 // ThreadSanitizer reports an unordered read and write wherever they fall in a
 // run, where a plain build crashes only if freed memory is reused in time.
-const CPP_TSAN_FLAGS = '-std=c++17 -O0 -g -pthread -fsanitize=thread'
+const CPP_TSAN_FLAGS = '-std=c++17 -O1 -g -pthread -fsanitize=thread'
+
+// ThreadSanitizer needs one unordered pair where a plain build must lose a
+// race, so only its run takes fewer rounds.
+const CPP_ROUNDS_ENV = 'DEMO_TEST_CONCURRENCY_ROUNDS'
+const CPP_TSAN_ROUNDS = '40'
+
+const CPP_CONCURRENCY_TIMEOUT_MS = 10 * 60 * 1000
 
 // Every thread that builds a std::regex fills libstdc++'s narrow cache with
 // the same bytes.
@@ -5630,6 +5644,61 @@ const CPP_TSAN_SUPPRESSIONS = 'race:std::ctype<char>::narrow\n'
 // A compiler or linker that has no ThreadSanitizer.
 const CPP_NO_TSAN =
   /cannot find -ltsan|libtsan|(unrecognized|unsupported)[^\n]*-fsanitize=thread|-fsanitize=thread[^\n]*not supported/
+
+// A report on the code carries the pid; a runtime that cannot start here
+// names itself instead.
+const CPP_TSAN_REPORT = /WARNING: ThreadSanitizer: [^\n]*\(pid=\d+\)/
+const CPP_TSAN_RUNTIME = /FATAL: ThreadSanitizer|ThreadSanitizer: CHECK failed/
+
+type CppSuite = { build: 'tsan' | 'plain', why?: string, ran: Run }
+
+
+// The line naming why a ThreadSanitizer run says nothing about the SDK, or
+// null where its verdict stands.
+function cppTsanUnusable(ran: Run): string | null {
+  if (ran.ok || ran.timedOut || CPP_TSAN_REPORT.test(ran.out)) return null
+  return ran.out.split(/\r?\n/).find((line) => CPP_TSAN_RUNTIME.test(line))?.trim() ?? null
+}
+
+
+// The suite under ThreadSanitizer, else built and run plainly where the
+// compiler has none or its runtime cannot start here.
+function cppConcurrency(sdkroot: string, make: Command): CppSuite {
+  const target = 'test/concurrency_test.out'
+  const bin = Path.join('test', 'concurrency_test.out')
+  // glibc writes a heap-corruption abort to the terminal unless told otherwise.
+  const env = { ...process.env, LIBC_FATAL_STDERR_: '1' }
+  Fs.writeFileSync(Path.join(sdkroot, 'tsan.supp'), CPP_TSAN_SUPPRESSIONS)
+
+  const tsan = run(make.bin, [...make.args, 'CXXFLAGS=' + CPP_TSAN_FLAGS, target], sdkroot,
+    make.env, CPP_CONCURRENCY_TIMEOUT_MS)
+  let why = 'the compiler has no ThreadSanitizer'
+  if (tsan.ok) {
+    const ran = run(bin, [], sdkroot, {
+      ...env,
+      TSAN_OPTIONS: 'halt_on_error=1 suppressions=tsan.supp',
+      [CPP_ROUNDS_ENV]: CPP_TSAN_ROUNDS,
+    }, CPP_CONCURRENCY_TIMEOUT_MS)
+    const unusable = cppTsanUnusable(ran)
+    if (null == unusable) return { build: 'tsan', ran }
+    why = unusable
+  }
+  else {
+    ok(CPP_NO_TSAN.test(tsan.out),
+      'cpp: the generated test does not build under ThreadSanitizer:\n' + tail(tsan.out))
+  }
+
+  // make would take the sanitized binary as current: flags are no prerequisite.
+  Fs.rmSync(Path.join(sdkroot, bin), { force: true })
+  const plain = run(make.bin, [...make.args, target], sdkroot, make.env, CPP_CONCURRENCY_TIMEOUT_MS)
+  ok(plain.ok, 'cpp: the generated test does not build:\n' + tail(plain.out))
+  return { build: 'plain', why, ran: run(bin, [], sdkroot, env, CPP_CONCURRENCY_TIMEOUT_MS) }
+}
+
+// HTTP Basic, whose prepareAuth registers the encoded pair on every request.
+const BASIC_AUTH_MODEL = `
+main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'Authorization' }
+`
 
 const CONCURRENCY_LANES: ConcurrencyLane[] = [
   {
@@ -5726,29 +5795,21 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
     target: 'cpp',
     runner: 'test/concurrency_test.cpp',
     needs: 'make and a C++ compiler',
-    // Under ThreadSanitizer where the compiler has it, else a plain build.
-    prepare: (sdkroot) => {
-      const make = toolchain('make')!
-      const bin = 'test/concurrency_test.out'
-      Fs.writeFileSync(Path.join(sdkroot, 'tsan.supp'), CPP_TSAN_SUPPRESSIONS)
-      const tsan = run(make, ['CXX=' + cleanCxx(), 'CXXFLAGS=' + CPP_TSAN_FLAGS, bin], sdkroot)
-      const built = tsan.ok || !CPP_NO_TSAN.test(tsan.out) ? tsan
-        : run(make, ['CXX=' + cleanCxx(), bin], sdkroot)
-      return built.ok ? null : 'the generated test does not build:\n' + tail(built.out)
+    extra: BASIC_AUTH_MODEL,
+    command: () => {
+      const make = toolchain('make')
+      const cxx = cleanCxx()
+      return null == make || null == cxx ? null : { bin: make, args: ['CXX=' + cxx] }
     },
-    // glibc writes a heap-corruption abort to the terminal unless told otherwise.
-    command: () => null == toolchain('make') || null == cleanCxx() ? null
-      : {
-        bin: Path.join('test', 'concurrency_test.out'),
-        args: [],
-        env: {
-          ...process.env,
-          LIBC_FATAL_STDERR_: '1',
-          TSAN_OPTIONS: 'halt_on_error=1 suppressions=tsan.supp',
-        },
-      },
-    ran: [/concurrency_test: 4 tests, 4 checks, 0 failures/],
-    unsupported: /ThreadSanitizer: unexpected memory mapping/,
+    exec: (sdkroot, make) => {
+      ok(Fs.readFileSync(Path.join(sdkroot, 'test', 'concurrency_test.cpp'), 'utf8')
+        .includes('"' + CPP_ROUNDS_ENV + '"'), 'cpp: the generated test reads no ' + CPP_ROUNDS_ENV)
+      return cppConcurrency(sdkroot, make)
+    },
+    ran: [
+      /concurrency_test: 5 tests, 5 checks, 0 failures/,
+      /concurrency_test: ([1-9]\d*) of \1 requests carried the Basic pair/,
+    ],
   },
   {
     target: 'py',
@@ -5855,7 +5916,7 @@ describe('concurrent requests on one client share its state', () => {
       (lane.shares ?? 'its operation cache and secret registry'),
       async (t) => {
         const sdkroot = Path.join(tmp, lane.target)
-        const files = await generateTo(lane.target, sdkroot)
+        const files = await generateTo(lane.target, sdkroot, lane.extra)
 
         ok(null != files[lane.runner],
           'the concurrency test was not generated into the SDK: expected ' + lane.runner)
@@ -5868,7 +5929,16 @@ describe('concurrent requests on one client share its state', () => {
         const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
         ok(null == notready, lane.target + ': ' + notready)
 
-        const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+        let ran: Run
+        if (null == lane.exec) {
+          ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+        }
+        else {
+          const suite = lane.exec(sdkroot, cmd)
+          t.diagnostic(lane.target + ': ran the ' + suite.build + ' build' +
+            (null == suite.why ? '' : ': ' + suite.why))
+          ran = suite.ran
+        }
 
         if (ran.unlaunchable) {
           return t.skip(lane.target + ': the toolchain could not be started here: ' +
@@ -5892,6 +5962,89 @@ describe('concurrent requests on one client share its state', () => {
         }
       })
   }
+})
+
+
+describe('the cpp concurrency lane', () => {
+
+  const MAPPING = 'FATAL: ThreadSanitizer: unexpected memory mapping 0x5d2f4e5c1000-0x5d2f4e5c2000'
+  const CHECK = 'ThreadSanitizer: CHECK failed: sanitizer_allocator_primary64.h:131 ' +
+    '"((kSpaceBeg)) == ((address_range.Init(TotalSpaceSize, PrimaryAllocatorName, kSpaceBeg)))" ' +
+    '(0x720000000000, 0xfffffffffffffff4) (tid=29873)'
+  const RACE = 'WARNING: ThreadSanitizer: data race (pid=8672)'
+  const ASLR = 'WARNING: ThreadSanitizer: memory layout is incompatible, possibly due to ' +
+    'high-entropy ASLR.'
+  const PASSED = 'concurrency_test: 5 tests, 5 checks, 0 failures'
+  const failed = (out: string): Run => ({ ok: false, out, unlaunchable: false, timedOut: false })
+  let tmp = ''
+
+  before(() => { tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cpp-lane-')) })
+  after(() => Fs.rmSync(tmp, { recursive: true, force: true }))
+
+
+  test('sets a ThreadSanitizer run aside only where its runtime names the platform', () => {
+    strictEqual(cppTsanUnusable(failed(MAPPING + '\n')), MAPPING)
+    strictEqual(cppTsanUnusable(failed(CHECK + '\ntest/concurrency_test.out was killed by SIGSEGV')),
+      CHECK)
+    strictEqual(cppTsanUnusable(failed(ASLR + '\n' + MAPPING)), MAPPING)
+
+    strictEqual(cppTsanUnusable(failed(RACE + '\n  Write of size 8 by thread T76:')), null)
+    strictEqual(cppTsanUnusable(failed(RACE + '\n' + CHECK)), null)
+    strictEqual(cppTsanUnusable(failed('  FAIL [x]: round 0 threw: boom')), null)
+    strictEqual(cppTsanUnusable({ ...failed(MAPPING), timedOut: true }), null)
+    strictEqual(cppTsanUnusable({ ...failed(PASSED), ok: true }), null)
+  })
+
+
+  // Stand-ins for make write a shell script in place of the binary:
+  // `sanitized` for a ThreadSanitizer build once `onTsan` has run, and a
+  // passing one otherwise.
+  test('runs the plain build where the sanitized one cannot start, and not on a report', (t) => {
+    if ('win32' === process.platform) {
+      return t.skip('the stand-ins are POSIX shell scripts')
+    }
+    const plain = 'echo "rounds=${' + CPP_ROUNDS_ENV + ':-200}"; echo "' + PASSED + '"'
+    const standIn = (name: string, sanitized: string, onTsan = ''): [string, Command] => {
+      const root = Path.join(tmp, name)
+      const make = Path.join(tmp, name + '-make')
+      Fs.mkdirSync(root)
+      Fs.writeFileSync(make, [
+        '#!/bin/sh',
+        'out=test/concurrency_test.out',
+        'case "$*" in',
+        '  *-fsanitize=thread*) ' + onTsan + ' body=\'' + sanitized + '\' ;;',
+        '  *) body=\'' + plain + '\' ;;',
+        'esac',
+        '[ -e "$out" ] && exit 0',
+        'mkdir -p test',
+        'printf \'#!/bin/sh\\n%s\\n\' "$body" > "$out"',
+        'chmod +x "$out"',
+        '',
+      ].join('\n'), { mode: 0o755 })
+      return [root, { bin: make, args: ['CXX=c++'] }]
+    }
+
+    const unmapped = cppConcurrency(...standIn('unmapped', 'echo "' + MAPPING + '" >&2; exit 66'))
+    deepStrictEqual([unmapped.build, unmapped.why, unmapped.ran.ok], ['plain', MAPPING, true],
+      unmapped.ran.out)
+    ok(unmapped.ran.out.includes('rounds=200\n' + PASSED), unmapped.ran.out)
+
+    const bare = cppConcurrency(...standIn('bare', 'exit 0',
+      'echo "/usr/bin/ld: cannot find -ltsan" >&2; exit 2;'))
+    deepStrictEqual([bare.build, bare.ran.ok], ['plain', true], bare.ran.out)
+
+    const sound = cppConcurrency(...standIn('sound',
+      'echo "rounds=$' + CPP_ROUNDS_ENV + '"; echo "' + PASSED + '"'))
+    deepStrictEqual([sound.build, sound.ran.ok], ['tsan', true], sound.ran.out)
+    ok(sound.ran.out.includes('rounds=' + CPP_TSAN_ROUNDS + '\n'), sound.ran.out)
+
+    const raced = cppConcurrency(...standIn('raced', 'echo "' + RACE + '" >&2; exit 66'))
+    deepStrictEqual([raced.build, raced.ran.ok], ['tsan', false], raced.ran.out)
+
+    throws(() => cppConcurrency(...standIn('broken', 'exit 0',
+      'echo "error: expected primary-expression" >&2; exit 2;')),
+    /does not build under ThreadSanitizer/)
+  })
 })
 
 

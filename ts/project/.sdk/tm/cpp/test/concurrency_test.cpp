@@ -5,25 +5,46 @@
 
 #include "testlib.hpp"
 
+#include <algorithm>
 #include <atomic>
+#include <cstdlib>
+#include <functional>
 #include <mutex>
 #include <thread>
 #include <vector>
 
 using namespace sdk;
 
-static const int ROUNDS = 200;
+// PROJECTENV_TEST_CONCURRENCY_ROUNDS sets the rounds: fewer where each costs
+// more, as under ThreadSanitizer.
+static int envRounds() {
+  const char* set = std::getenv("PROJECTENV_TEST_CONCURRENCY_ROUNDS");
+  int rounds = nullptr == set ? 0 : std::atoi(set);
+  return 0 < rounds ? rounds : 200;
+}
+
+static const int ROUNDS = envRounds();
+static const int QUARTER = std::max(1, ROUNDS / 4);
 static const int WIDTH = 8;
 static const int OPS = 32;
 
-// A live client whose transport answers at once.
-static std::shared_ptr<ProjectNameSDK> liveClient() {
-  auto client = std::make_shared<ProjectNameSDK>(vmap({
-      {"base", Value(std::string("http://concurrency.test/api"))},
-      {"allow", vmap({{"op", Value(std::string("direct"))}})}}));
+static const std::string BASIC_USER = "CONCURRENCY-BASIC-USER";
+static const std::string BASIC_PASS = "CONCURRENCY-BASIC-PASS";
+
+static Value liveOptions() {
+  return vmap({{"base", Value(std::string("http://concurrency.test/api"))},
+               {"allow", vmap({{"op", Value(std::string("direct"))}})}});
+}
+
+// A live client whose transport answers at once, showing `seen` the headers
+// of each request.
+static std::shared_ptr<ProjectNameSDK> liveClient(
+    const Value& options = liveOptions(), std::function<void(const Value&)> seen = nullptr) {
+  auto client = std::make_shared<ProjectNameSDK>(options);
   // Through the base: an entity accessor may share the member's name.
   SdkClient& base = *client;
-  base.utility->fetcher = [](CtxPtr, const std::string&, const Value&) -> Value {
+  base.utility->fetcher = [seen](CtxPtr, const std::string&, const Value& fetchdef) -> Value {
+    if (seen) seen(getp(fetchdef, "headers"));
     vs::Injector json = [](vs::Injection&, const Value&, const std::string&, const Value&) -> Value {
       return vmap({{"ok", Value(true)}});
     };
@@ -129,14 +150,16 @@ static void registerSecrets(UtilityPtr utility, CtxPtr root, const std::string& 
   for (int k = 0; k < OPS; k++) utility->cleanAdd(root, Value(addedSecret(r, n, k)));
 }
 
-// The first secret registered in round r that a clean leaves raw, or "".
-static std::string unmaskedSecret(UtilityPtr utility, CtxPtr root, const std::string& r) {
-  for (int n = 0; n < WIDTH / 2; n++) {
-    for (int k = 0; k < OPS; k++) {
-      std::string added = addedSecret(r, n, k);
-      Value got = utility->clean(root, Value(added));
-      if (!got.is_string() || "[redacted]" != got.as_string()) return added;
-    }
+// The first of `known` and the secrets `registrars` threads registered in
+// round r that a clean leaves raw, or "".
+static std::string unmaskedSecret(UtilityPtr utility, CtxPtr root, const std::string& r,
+                                  int registrars, std::vector<std::string> known = {}) {
+  for (int n = 0; n < registrars; n++) {
+    for (int k = 0; k < OPS; k++) known.push_back(addedSecret(r, n, k));
+  }
+  for (const auto& secret : known) {
+    Value got = utility->clean(root, Value(secret));
+    if (!got.is_string() || "[redacted]" != got.as_string()) return secret;
   }
   return "";
 }
@@ -146,7 +169,7 @@ static std::string unmaskedSecret(UtilityPtr utility, CtxPtr root, const std::st
 // registration is lost.
 static void concurrent_registration_keeps_every_secret_masked() {
   const std::string masked = "a [redacted] b [redacted] c";
-  for (int round = 0; round < ROUNDS / 4; round++) {
+  for (int round = 0; round < QUARTER; round++) {
     auto client = liveClient();
     auto utility = client->getUtility();
     auto root = client->getRootCtx();
@@ -186,7 +209,7 @@ static void concurrent_registration_keeps_every_secret_masked() {
       ASSERT_TRUE(false, "round " + r + " cleaned to: " + wrong[0]);
       return;
     }
-    std::string raw = unmaskedSecret(utility, root, r);
+    std::string raw = unmaskedSecret(utility, root, r, WIDTH / 2);
     if (!raw.empty()) {
       ASSERT_TRUE(false, "round " + r + ": " + raw + " was registered but not masked");
       return;
@@ -198,7 +221,7 @@ static void concurrent_registration_keeps_every_secret_masked() {
 // Requests on one client while secrets register on it: each request copies
 // the client's options, the registry among them.
 static void concurrent_requests_survive_registration() {
-  for (int round = 0; round < ROUNDS / 4; round++) {
+  for (int round = 0; round < QUARTER; round++) {
     auto client = liveClient();
     auto utility = client->getUtility();
     auto root = client->getRootCtx();
@@ -228,7 +251,7 @@ static void concurrent_requests_survive_registration() {
       ASSERT_TRUE(false, "round " + r + ", a request failed: " + failed[0]);
       return;
     }
-    std::string raw = unmaskedSecret(utility, root, r);
+    std::string raw = unmaskedSecret(utility, root, r, WIDTH / 2);
     if (!raw.empty()) {
       ASSERT_TRUE(false, "round " + r + ": " + raw + " was registered but not masked");
       return;
@@ -237,10 +260,89 @@ static void concurrent_requests_survive_registration() {
   ASSERT_TRUE(true, "every request succeeded while secrets registered");
 }
 
+// Whether a header value holds `text`.
+static bool carries(const Value& headers, const std::string& text) {
+  if (!headers.is_map()) return false;
+  for (const auto& kv : *headers.as_map()) {
+    if (kv.second.is_string() && std::string::npos != kv.second.as_string().find(text)) return true;
+  }
+  return false;
+}
+
+// First requests on a client carrying Basic credentials while secrets
+// register on it: where the API takes HTTP Basic, prepareAuth registers the
+// encoded pair as the other requests copy the options.
+static void concurrent_basic_requests_survive_registration() {
+  const std::string pair = util::cleanBase64(BASIC_USER + ":" + BASIC_PASS);
+  int sent = 0;
+  int paired = 0;
+  for (int round = 0; round < QUARTER; round++) {
+    std::atomic<int> roundSent{0};
+    std::atomic<int> roundPaired{0};
+    Value options = liveOptions();
+    map_put(options, "apikey", Value(BASIC_USER));
+    map_put(options, "secret", Value(BASIC_PASS));
+    auto client = liveClient(options, [&](const Value& headers) {
+      roundSent.fetch_add(1);
+      if (carries(headers, pair)) roundPaired.fetch_add(1);
+    });
+    auto utility = client->getUtility();
+    auto root = client->getRootCtx();
+    std::string r = "basic-" + std::to_string(round);
+    std::atomic<int> registering{1};
+    std::mutex mu;
+    std::vector<std::string> failed;
+    auto thrown = atOnce([&](int n) {
+      if (0 == n) {
+        registerSecrets(utility, root, r, n, registering);
+        return;
+      }
+      // Bounded, as requests that never pause can hold off a registration.
+      int made = 0;
+      do {
+        Value got = client->direct(vmap({{"path", Value("p" + std::to_string(n))}}));
+        if (!is_true(getp(got, "ok"))) {
+          std::lock_guard<std::mutex> lk(mu);
+          failed.push_back(sdktest::vstr(got));
+          return;
+        }
+      } while (0 < registering.load() && ++made < OPS);
+    });
+    if (!thrown.empty()) {
+      ASSERT_TRUE(false, "round " + r + " threw: " + thrown[0]);
+      return;
+    }
+    if (!failed.empty()) {
+      ASSERT_TRUE(false, "round " + r + ", a request failed: " + failed[0]);
+      return;
+    }
+    int rsent = roundSent.load();
+    int rpaired = roundPaired.load();
+    if (0 < rpaired && rpaired != rsent) {
+      ASSERT_TRUE(false, "round " + r + ": " + std::to_string(rpaired) + " of " +
+                  std::to_string(rsent) + " requests carried the Basic pair");
+      return;
+    }
+    std::vector<std::string> known{BASIC_USER, BASIC_PASS};
+    if (0 < rpaired) known.push_back(pair);
+    std::string raw = unmaskedSecret(utility, root, r, 1, known);
+    if (!raw.empty()) {
+      ASSERT_TRUE(false, "round " + r + ": " + raw + " was registered but not masked");
+      return;
+    }
+    sent += rsent;
+    paired += rpaired;
+  }
+  std::cout << "concurrency_test: " << paired << " of " << sent
+            << " requests carried the Basic pair\n";
+  ASSERT_TRUE(true, "every request succeeded while the Basic pair and secrets registered");
+}
+
 int main() {
   T_RUN(concurrent_first_requests_succeed);
   T_RUN(concurrent_resolutions_share_one_cached_operation);
   T_RUN(concurrent_registration_keeps_every_secret_masked);
   T_RUN(concurrent_requests_survive_registration);
+  T_RUN(concurrent_basic_requests_survive_registration);
   return sdktest::summary("concurrency_test");
 }
