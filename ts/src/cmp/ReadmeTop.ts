@@ -20,6 +20,7 @@ import { mcpTools, MCP_WRITE_OPS } from '../helpers/mcpTools'
 import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { canonScalarKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName, jsKey } from '../helpers/naming'
+import { modelText } from '../helpers/text'
 
 import {
   installCommand as pkgInstall,
@@ -108,7 +109,7 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
 
   if (model.name && !model.Name) names(model, model.name)
 
-  const info = (model.main && model.main[KIT] && model.main[KIT].info) || {}
+  const info = modelText(model)
   const def = (model.main && model.main.def) || {}
 
   const productName = info.title || `${model.Name} API`
@@ -118,8 +119,6 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     || `${productName} client, generated from the OpenAPI spec.`
 
   const aboutMd = info.about_md || ''
-  const licenseMd = info.license_md || ''
-  const licenseShort = info.license_short || ''
   const homepage = info.homepage || ''
   const docsUrl = info.docs_url || ''
   const entityDesc = info.entity_desc || {}

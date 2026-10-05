@@ -12,6 +12,7 @@ const opExample_1 = require("../helpers/opExample");
 const mcpTools_1 = require("../helpers/mcpTools");
 const canonType_1 = require("../helpers/canonType");
 const naming_1 = require("../helpers/naming");
+const text_1 = require("../helpers/text");
 const packageMeta_1 = require("../helpers/packageMeta");
 const SDKGEN_REPO = 'https://github.com/voxgig/sdkgen';
 const VOXGIG_SDK = 'https://voxgig.com/sdk/';
@@ -74,15 +75,13 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
     const { model } = ctx$;
     if (model.name && !model.Name)
         (0, jostraca_1.names)(model, model.name);
-    const info = (model.main && model.main[types_1.KIT] && model.main[types_1.KIT].info) || {};
+    const info = (0, text_1.modelText)(model);
     const def = (model.main && model.main.def) || {};
     const productName = info.title || `${model.Name} API`;
     const tagline = info.tagline
         || def.tagline
         || `${productName} client, generated from the OpenAPI spec.`;
     const aboutMd = info.about_md || '';
-    const licenseMd = info.license_md || '';
-    const licenseShort = info.license_short || '';
     const homepage = info.homepage || '';
     const docsUrl = info.docs_url || '';
     const entityDesc = info.entity_desc || {};

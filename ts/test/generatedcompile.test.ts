@@ -546,6 +546,131 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // What npm would publish. The README links REFERENCE.md beside it, and the
+  // build info tsc writes into dist/ is bookkeeping, not package.
+  for (const target of ['ts', 'js']) {
+    test(target + ': npm packs the reference and no build info', async (t) => {
+      if (null == toolchain('npm')) return t.skip('needs npm')
+
+      const sdkroot = Path.join(tmp, target + '-pack')
+      await generateTo(target, sdkroot)
+      linkDeps(sdkroot)
+
+      if ('ts' === target) {
+        const built = tsc(sdkroot, 'src')
+        ok(built.ok, 'generated src does not compile:\n' + built.out)
+        ok(Fs.readdirSync(Path.join(sdkroot, 'dist')).some((f) => f.endsWith('.tsbuildinfo')),
+          'tsc wrote no build info into dist/, so nothing here is excluded')
+      }
+
+      const res = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+        cwd: sdkroot, encoding: 'utf8', shell: true, maxBuffer: 64 * 1024 * 1024,
+      })
+      strictEqual(res.status, 0, 'npm pack failed: ' + res.stderr)
+
+      const report = JSON.parse(res.stdout)
+      const entry: any = Array.isArray(report) ? report[0] : Object.values(report)[0]
+      const packed: string[] = entry.files.map((f: any) => f.path.split(Path.sep).join('/'))
+
+      const main = JSON.parse(Fs.readFileSync(Path.join(sdkroot, 'package.json'), 'utf8')).main
+      deepStrictEqual(['README.md', 'REFERENCE.md', main].filter((f) => !packed.includes(f)), [])
+      deepStrictEqual(packed.filter((f) => f.endsWith('.tsbuildinfo')), [])
+    })
+  }
+
+
+  // What `mix hex.publish` would upload: Hex packs only the files mix.exs lists.
+  test('elixir: hex packs the README and the reference', async (t) => {
+    const mix = toolchain('mix')
+    if (null == mix) return t.skip('no elixir toolchain here (mix)')
+
+    const sdkroot = Path.join(tmp, 'elixir-pack')
+    await generateTo('elixir', sdkroot)
+
+    const unpacked = Path.join(tmp, 'elixir-pack-unpacked')
+    const built = run(mix, ['hex.build', '--unpack', '--output', unpacked], sdkroot,
+      { ...process.env, MIX_ENV: 'prod' })
+    if (built.unlaunchable) return t.skip('mix could not be started here: ' + tail(built.out, 3))
+    if (/The task "hex\.build" could not be found/.test(built.out)) {
+      return t.skip('needs the Hex archive (mix local.hex)')
+    }
+    ok(built.ok, 'mix hex.build failed:\n' + tail(built.out))
+
+    deepStrictEqual(['README.md', 'REFERENCE.md', 'LICENSE', 'mix.exs', 'lib']
+      .filter((f) => !Fs.existsSync(Path.join(unpacked, f))), [],
+      'the Hex package leaves these out')
+  })
+
+
+  // A consumer set up as the zig README says: the package fetched into its
+  // build.zig.zon and the `sdk` module imported. zig keeps only what the
+  // package's `.paths` names, so a missing module root or doc shows here.
+  test('zig: a consumer builds against the fetched package', async (t) => {
+    const zig = toolchain('zig')
+    if (null == zig) return t.skip('no zig toolchain here (zig)')
+    const version = run(zig, ['version'], tmp)
+    const found = version.out.trim().split(/\r?\n/)[0] || ''
+    if (!version.ok || !/^0\.16\./.test(found)) {
+      return t.skip('zig 0.16 is required by the generated build.zig; found: ' +
+        (found || tail(version.out, 3)))
+    }
+
+    const sdkroot = Path.join(tmp, 'zig-pack')
+    await generateTo('zig', sdkroot)
+
+    const consumer = Path.join(tmp, 'zig-consumer')
+    materialise({
+      'build.zig.zon': `.{
+    .name = .consumer,
+    .version = "0.0.0",
+    .fingerprint = 0x705b37279050bbd8,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{},
+    .paths = .{ "build.zig", "build.zig.zon", "src" },
+}
+`,
+      'build.zig': `const std = @import("std");
+
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+    const sdk = b.dependency("sdk", .{ .target = target, .optimize = optimize });
+    const exe = b.addExecutable(.{
+        .name = "consumer",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "sdk", .module = sdk.module("sdk") }},
+        }),
+    });
+    b.installArtifact(exe);
+}
+`,
+      'src/main.zig': `const sdk = @import("sdk");
+
+pub fn main() void {
+    _ = sdk.SDK.new(sdk.h.vnull());
+}
+`,
+    }, consumer)
+
+    const cache = ['--global-cache-dir', Path.join(tmp, 'zig-consumer-cache')]
+    const fetched = run(zig, ['fetch', ...cache, '--save=sdk', sdkroot], consumer)
+    ok(fetched.ok, 'zig fetch failed:\n' + tail(fetched.out))
+
+    const pkgs = Fs.readdirSync(Path.join(consumer, 'zig-pkg'))
+    strictEqual(pkgs.length, 1, 'zig fetch unpacked ' + JSON.stringify(pkgs))
+    const pkg = Path.join(consumer, 'zig-pkg', pkgs[0])
+    deepStrictEqual(['README.md', 'REFERENCE.md', 'LICENSE', 'root.zig']
+      .filter((f) => !Fs.existsSync(Path.join(pkg, f))), [],
+      'the fetched package leaves these out')
+
+    const built = run(zig, ['build', ...cache], consumer)
+    ok(built.ok, 'a consumer of the fetched package does not build:\n' + tail(built.out))
+  })
+
+
   // The README example tests find `tsc` and strip a snippet's types through
   // the TypeScript installed beside the SDK, which here is sdkgen's own. They
   // compile the snippets in the OS temp directory: adding or removing a file
