@@ -47,13 +47,31 @@ public static partial class SdkUtility
         return OmitKeys(reqdata, new List<string> { "$action" });
     }
 
-    // A header or query argument travels where PrepareHeadersUtil or
+    // A header, cookie or query argument travels where PrepareHeadersUtil or
     // PrepareQueryUtil sends it, so the body is built from the request data
-    // without it.
+    // without it, unless the entity declares it as a field too.
     private static List<string> RoutedArgNames(Context ctx)
     {
         return CallArgs(ctx, "header").Concat(CallArgs(ctx, "cookie")).Concat(CallArgs(ctx, "query"))
-            .Select(arg => arg.Name).ToList();
+            .Select(arg => arg.Name).Where(name => !FieldArg(ctx, name)).ToList();
+    }
+
+    private static bool FieldArg(Context ctx, string name)
+    {
+        if (ctx.Point == null)
+        {
+            return false;
+        }
+        foreach (var kind in new[] { "header", "cookie", "query" })
+        {
+            if (StructUtils.GetPath(ctx.Point, StructUtils.Jt("args", kind)) is List<object?> defs &&
+                defs.Any(ad => name == StructUtils.GetProp(ad, "name") as string &&
+                    StructUtils.GetProp(ad, "field") is true))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static object? OmitKeys(object? reqdata, List<string> names)

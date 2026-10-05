@@ -22,6 +22,13 @@ type MediaCase = {
     json?: Record<string, any>
     // The whole body as JSON, whatever its type.
     jsonValue?: any
+    // Keys the JSON body must not hold.
+    absent?: string[]
+    // Header values, by lowercased name.
+    headers?: Record<string, string>
+    // Pieces the cookie header must hold.
+    cookies?: string[]
+    query?: Record<string, string>
   }
 }
 
@@ -29,17 +36,18 @@ type MediaRecord = {
   case: number
   method: string
   path: string
+  query: Record<string, string>
   headers: Record<string, string>
   bodyHex: string
 }
 
 
-const point = (method: string, path: string, extra: string, req = '`reqdata`') => {
+const point = (method: string, path: string, extra: string, req = '`reqdata`', args = '') => {
   const segs = path.split('/').filter((s) => '' !== s)
   const params = segs.filter((s) => s.startsWith('{')).map((s) => s.slice(1, -1))
   return `{
         g: { params: [${params.map((p) =>
-    `{ k: "param", n: "${p}", or: "${p}", r: true, t: "\`$STRING\`", ex: "${p}01" }`).join(' ')}] }
+    `{ k: "param", n: "${p}", or: "${p}", r: true, t: "\`$STRING\`", ex: "${p}01" }`).join(' ')}] ${args} }
         m: "${method}", o: "${path}"
         s: [${segs.map((s) => s.startsWith('{') ?
     `{ var: "${s.slice(1, -1)}" }` : `{ lit: "${s}" }`).join(', ')}]
@@ -48,18 +56,20 @@ const point = (method: string, path: string, extra: string, req = '`reqdata`') =
       }`
 }
 
-const entity = (name: string, ops: Record<string, string>) => `
+const entity = (name: string, ops: Record<string, string>, more: string[] = []) => `
 main: kit: entity: ${name}: {
   alias: field: {}
   name: "${name}"
   id: { field: "id", name: "id" }
   field: {
     id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
-    title: { name: "title", kind: "field", type: "\`$STRING\`" }
+    title: { name: "title", kind: "field", type: "\`$STRING\`" }${more.map((f) => `
+    ${f}: { name: "${f}", kind: "field", type: "\`$STRING\`" }`).join('')}
   }
   fields: {
     "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
-    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }${more.map((f) => `
+    "${f}": { h: '${f}', n: "${f}", r: false, t: "\`$STRING\`" }`).join('')}
   }
   op: {${Object.entries(ops).map(([op, pt]) => `
     ${op}: { name: "${op}", points: [ ${pt} ] }`).join('')}
@@ -73,6 +83,16 @@ main: kit: flow: Basic${name.charAt(0).toUpperCase() + name.slice(1)}Flow: {
 `
 
 const JSON_RS = 'rs: { kind: "json", media: "application/json" }'
+
+const arg = (kind: string, name: string, orig: string) =>
+  `{ k: "${kind}", n: "${name}", or: "${orig}", t: "\`$STRING\`" }`
+
+// A header, a cookie and a query argument that share a name with a field of
+// the entity, each beside one that does not.
+const ROUTED_ARGS = `
+        header: [${arg('header', 'locale', 'X-Locale')} ${arg('header', 'trace', 'X-Trace')}]
+        cookie: [${arg('cookie', 'theme', 'theme')} ${arg('cookie', 'session_id', 'SESSIONID')}]
+        query: [${arg('query', 'lang', 'lang')} ${arg('query', 'verbose', 'verbose')}]`
 
 // cataas: JPEG, PNG, HTML and JSON, which the server picks between by Accept.
 const CATAAS_RS = `rs: { kind: "json", media: "application/json", alternatives: [
@@ -94,11 +114,12 @@ const MEDIA_MODEL =
   entity('picture', {
     load: point('GET', '/picture/{id}', `rs: { kind: "raw", media: "image/jpeg", binary: true,
           alternatives: [ { kind: "raw", media: "image/png", binary: true } ] }`),
-    update: point('PUT', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }'),
+    update: point('PUT', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }',
+      undefined, ROUTED_ARGS),
     // A request transform that selects one field, so the body is that field's value.
     create: point('POST', '/picture', 'rb: { kind: "json", media: "application/json" }',
       '`reqdata.payload`'),
-  })
+  }, ['locale', 'theme', 'lang'])
 
 
 const BYTES = '89504e470d0a1a0a00ff'
@@ -160,6 +181,23 @@ const MEDIA_CASES: MediaCase[] = [
     expect: {
       method: 'PUT', path: '/picture/p01', accept: null,
       contentType: 'application/merge-patch+json', json: { title: 'Mars' },
+    },
+  },
+  {
+    name: 'an argument that is also a field goes out in the body too',
+    entity: 'picture', op: 'update',
+    input: {
+      id: 'p01', title: 'Mars', locale: 'en', theme: 'dark', lang: 'fr',
+      trace: 't1', session_id: 's1', verbose: 'yes',
+    },
+    expect: {
+      method: 'PUT', path: '/picture/p01', accept: null,
+      contentType: 'application/merge-patch+json',
+      json: { title: 'Mars', locale: 'en', theme: 'dark', lang: 'fr' },
+      absent: ['trace', 'session_id', 'verbose'],
+      headers: { 'x-locale': 'en', 'x-trace': 't1' },
+      cookies: ['theme=dark', 'SESSIONID=s1'],
+      query: { lang: 'fr', verbose: 'yes' },
     },
   },
   {
@@ -238,13 +276,31 @@ function mediaFailures(cases: MediaCase[], records: MediaRecord[]): string[] {
       }
     }
 
-    if (null != c.expect.json) {
+    if (null != c.expect.json || null != c.expect.absent) {
       let json: any
       try { json = JSON.parse(Buffer.from(r.bodyHex, 'hex').toString('utf8')) }
       catch (_e) { json = undefined }
-      for (const [key, value] of Object.entries(c.expect.json)) {
+      for (const [key, value] of Object.entries(c.expect.json || {})) {
         if (value !== json?.[key]) fail('JSON body ' + key, json, c.expect.json)
       }
+      for (const key of c.expect.absent || []) {
+        if (null == json || 'object' !== typeof json || key in json) {
+          fail('JSON body without ' + key, json, c.expect.absent)
+        }
+      }
+    }
+
+    for (const [name, value] of Object.entries(c.expect.headers || {})) {
+      if (value !== r.headers[name]) fail('header ' + name, r.headers[name], value)
+    }
+
+    const cookies = String(r.headers.cookie ?? '').split(';').map((piece) => piece.trim())
+    for (const piece of c.expect.cookies || []) {
+      if (!cookies.includes(piece)) fail('cookie ' + piece, r.headers.cookie, c.expect.cookies)
+    }
+
+    for (const [name, value] of Object.entries(c.expect.query || {})) {
+      if (value !== r.query[name]) fail('query ' + name, r.query[name], value)
     }
   })
 
@@ -256,7 +312,8 @@ function mediaFailures(cases: MediaCase[], records: MediaRecord[]): string[] {
 // put in front of every route.
 function mediaRecord(method: string, url: string, headers: Record<string, any>,
   bodyHex: string): MediaRecord {
-  const path = new URL(url, 'http://media.test').pathname
+  const parsed = new URL(url, 'http://media.test')
+  const path = parsed.pathname
   const m = /^\/c(\d+)(\/.*)$/.exec(path)
   const lower: Record<string, string> = {}
   for (const [k, v] of Object.entries(headers || {})) {
@@ -266,6 +323,7 @@ function mediaRecord(method: string, url: string, headers: Record<string, any>,
     case: null == m ? -1 : Number(m[1]),
     method: String(method || 'GET'),
     path: null == m ? path : m[2],
+    query: Object.fromEntries(parsed.searchParams),
     headers: lower,
     bodyHex: String(bodyHex || '').toLowerCase(),
   }

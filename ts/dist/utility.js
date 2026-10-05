@@ -194,7 +194,9 @@ function rawStringLiteral(s) {
 const SPEC_FACTS = {
     authexchange: resolveAuthExchange,
 };
-function withPointParts(op) {
+// The argument kinds a call routes outside the body.
+const ROUTED_KINDS = ['header', 'cookie', 'query'];
+function withPointParts(op, fields = []) {
     if (null == op) {
         return op;
     }
@@ -208,6 +210,8 @@ function withPointParts(op) {
                 const args = Object.fromEntries(Object.entries(pt.g || {}).map(([kind, values]) => [kind, (0, jostraca_1.each)(values).filter((arg) => false !== arg.a).map((arg) => ({
                         name: arg.n, orig: arg.or, type: arg.t, kind: arg.k,
                         reqd: arg.r, example: arg.ex,
+                        // Also a field of the entity, so the body keeps it.
+                        ...(ROUTED_KINDS.includes(kind) && fields.includes(arg.n) ? { field: true } : {}),
                     }))]));
                 // Runtime hooks expose descriptive names independently of the model schema.
                 return {
@@ -237,14 +241,15 @@ function configDefinition(model, targetname) {
     const entityDefs = {};
     const entityStubs = {};
     (0, jostraca_1.each)(entity, (e) => {
+        const fields = (0, jostraca_1.each)(e.fields || {}).filter((f) => false !== f.a);
         entityDefs[e.name] = clean({
-            fields: (0, jostraca_1.each)(e.fields || {}).filter((f) => false !== f.a).map((f) => ({
+            fields: fields.map((f) => ({
                 name: f.n, title: f.h, type: f.t, req: f.r, op: f.op,
                 short: f.sh, readOnly: f.ro, writeOnly: f.wo, deprecated: f.de, format: f.fo,
             })),
             id: e.id,
             name: e.name,
-            op: withPointParts(e.op),
+            op: withPointParts(e.op, fields.map((f) => f.n)),
             relations: e.relations,
         }, true);
         entityStubs[e.name] = {};
