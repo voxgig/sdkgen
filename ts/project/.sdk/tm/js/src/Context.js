@@ -96,7 +96,7 @@ class Context {
       const opcfg = getpath(this.config, ['entity', entname, 'op', opname])
       let input = 'match'
 
-      if ('update' === opname || 'create' === opname) {
+      if ('update' === opname || 'create' === opname || 'patch' === opname) {
         input = 'data'
       }
 

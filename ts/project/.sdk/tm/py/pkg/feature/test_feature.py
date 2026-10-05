@@ -145,7 +145,7 @@ class ProjectNameTestFeature(ProjectNameBaseFeature):
                 out = vs.clone(found)
                 return respond(200, out)
 
-            elif op.name == "update":
+            elif op.name == "update" or op.name == "patch":
                 # Match the existing entity by id only (or its alias). reqdata
                 # also contains the new field values, which would otherwise
                 # cause select to filter out the entity we want to update.

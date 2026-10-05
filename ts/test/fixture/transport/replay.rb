@@ -33,12 +33,16 @@ require_relative 'utility/fetcher'
         "http://127.0.0.1:#{server.addr[1]}/charge",
         { 'method' => method, 'body' => '{"amount":100}' })
     end
-    raise error unless error.nil?
     expected = method == 'GET' ? 2 : 1
     raise "#{method} sent #{seen.length} requests: #{seen.inspect}" unless seen.length == expected
     raise 'request body was not received' unless seen.all? { |row| row[1] == '{"amount":100}' }
-    status = method == 'GET' ? 200 : 0
-    raise "#{method}: #{response.inspect}" unless response['status'] == status
+    if method == 'GET'
+      raise error unless error.nil?
+      raise "#{method}: #{response.inspect}" unless response['status'] == 200
+    elsif error.nil? || !response.nil?
+      # A request the server closed without answering is a failure, not a response.
+      raise "#{method}: expected a transport error, got #{response.inspect}"
+    end
     puts "#{method}: #{seen.length} request(s)"
   ensure
     worker.kill

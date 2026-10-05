@@ -301,6 +301,8 @@ func (e *EntyClass) streamSteps(ctx *core.Context) error {
 
 // #UpdateOp
 
+// #PatchOp
+
 // #RemoveOp
 
 func (e *EntyClass) runOp(ctx *core.Context, postDone func()) (out any, err error) {

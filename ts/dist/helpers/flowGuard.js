@@ -5,9 +5,11 @@ exports.guardFlowSteps = guardFlowSteps;
 const apidef_1 = require("@voxgig/apidef");
 const opShape_1 = require("./opShape");
 // Ops whose generated call names the record it acts on.
-const BY_ID = ['load', 'update', 'remove'];
+const BY_ID = ['load', 'update', 'patch', 'remove'];
 // Ops after which the entity instance holds a record for later steps to read.
-const STORES = ['create', 'load', 'update'];
+const STORES = ['create', 'load', 'update', 'patch'];
+// Ops a generated flow test can call; every TestEntity emits these alone.
+const GENERATED = ['create', 'list', 'load', 'update', 'remove'];
 // A generated flow test calls each step's op with its own match and data,
 // the record's id where the op acts on one, and what the entity instance
 // holds. A step whose call reaches no route is switched off, as the runtime
@@ -20,6 +22,7 @@ function guardFlowSteps(model, log) {
         return [];
     }
     const out = [];
+    const ungenerated = [];
     for (const name of Object.keys(flows).sort()) {
         const flow = flows[name];
         const ent = entities[flow?.entity];
@@ -31,6 +34,13 @@ function guardFlowSteps(model, log) {
         let stored = false;
         Object.values(flow.step).forEach((step, index) => {
             if (null == step || false === step.a) {
+                return;
+            }
+            // A step no emitter has a call for would vanish from the test unseen.
+            if ('string' === typeof step.o && !GENERATED.includes(step.o)) {
+                step.a = false;
+                step.ungenerated = true;
+                ungenerated.push({ flow: name, step: index, op: step.o });
                 return;
             }
             // A create sends the test's new record, which has no id yet.
@@ -50,6 +60,14 @@ function guardFlowSteps(model, log) {
             }
             held.push(...own);
             stored = stored || STORES.includes(step.o);
+        });
+    }
+    if (0 < ungenerated.length && log?.warn) {
+        log.warn({
+            point: 'flow-step-ungenerated',
+            steps: ungenerated.map((s) => s.flow + '.' + s.step + ':' + s.op),
+            note: 'flow step(s) ' + ungenerated.map((s) => s.flow + '#' + s.step + ' (' + s.op + ')').join(', ') +
+                ' switched off: a generated flow test calls ' + GENERATED.join(', ') + ' and no other operation.',
         });
     }
     if (0 < out.length && log?.warn) {

@@ -157,7 +157,7 @@ class TestFeature extends BaseFeature("test", "0.0.1", true) {
       while (it.hasNext) Struct.delprop(it.next(), "$KEY")
       val out = Struct.clone(found)
       respond(ctx, 200, out, null)
-    } else if ("update" == op.name) {
+    } else if ("update" == op.name || "patch" == op.name) {
       var updateMatch = new LinkedHashMap[String, Object]()
       if (ctx.reqdata != null) {
         if (ctx.reqdata.containsKey("id")) updateMatch.put("id", ctx.reqdata.get("id"))

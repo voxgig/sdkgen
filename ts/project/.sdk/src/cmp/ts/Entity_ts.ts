@@ -39,7 +39,7 @@ const Entity = cmp(function Entity(props: any) {
 
   const typeNames = [dataType]
   const opnamesAll = Object.keys(entity.op || {})
-  ;['load', 'list', 'create', 'update', 'remove'].forEach((opname: string) => {
+  ;['load', 'list', 'create', 'update', 'patch', 'remove'].forEach((opname: string) => {
     if (opnamesAll.includes(opname)) {
       typeNames.push(opTypeName(entity.Name, opname))
     }
@@ -57,7 +57,7 @@ const Entity = cmp(function Entity(props: any) {
       const opnames = Object.keys(entity.op || {})
 
       const opfrags =
-        (['load', 'list', 'create', 'update', 'remove']
+        (['load', 'list', 'create', 'update', 'patch', 'remove']
           .reduce((a: any, opname: string) =>
           (a['#' + camelify(opname) + 'Op'] =
             !opnames.includes(opname) ? '' : ({ indent }: any) => {

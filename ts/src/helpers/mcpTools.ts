@@ -14,7 +14,7 @@ type McpTool = {
 
 
 const MCP_READ_OPS = ['list', 'load']
-const MCP_WRITE_OPS = ['create', 'update', 'remove']
+const MCP_WRITE_OPS = ['create', 'update', 'patch', 'remove']
 
 
 // The tools the go-mcp server registers, each for the entities a plain call of

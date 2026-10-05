@@ -46,7 +46,7 @@ auto client = ${model.const.Name}SDK::testSDK();
         ? `vmap({${items.map((it: any) =>
           `{"${it.name}", ${it.name === idF ? 'Value("test01")' : cppLit(it.type)}}`).join(', ')}})`
         : 'Value::undef()'
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)

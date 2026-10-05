@@ -21,7 +21,7 @@ const ReadmeIntro = cmp(function ReadmeIntro(props: any) {
   // Model-driven op list — union of the operations the active entities
   // actually expose (a read-only entity has just list+load), in canonical
   // order; never claim create/update/remove exist when no entity has them.
-  const CANON_OPS = ['list', 'load', 'create', 'update', 'remove']
+  const CANON_OPS = ['list', 'load', 'create', 'update', 'patch', 'remove']
   const opSet = new Set<string>()
   Object.values(entity || {}).forEach((e: any) => {
     if (!e || e.active === false) return

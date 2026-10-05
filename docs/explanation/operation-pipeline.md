@@ -7,7 +7,7 @@ section. For the exact hook list, see the [hooks reference](../reference/hooks.m
 
 ## Every operation is a pipeline
 
-Each entity operation (`load`, `list`, `create`, `update`, `remove`)
+Each entity operation (`load`, `list`, `create`, `update`, `patch`, `remove`)
 runs the same staged pipeline. Each stage fires a **feature hook** before
 it executes, so behaviour can be observed or altered without forking the
 SDK:

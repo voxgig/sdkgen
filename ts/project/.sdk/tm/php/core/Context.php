@@ -125,7 +125,7 @@ class ProjectNameContext implements \JsonSerializable
 
         $opcfg = \Voxgig\Struct\Struct::getpath($this->config, "entity.{$entname}.op.{$opname}");
 
-        $input = ($opname === 'update' || $opname === 'create') ? 'data' : 'match';
+        $input = ($opname === 'update' || $opname === 'create' || $opname === 'patch') ? 'data' : 'match';
 
         $points = [];
         if (is_array($opcfg)) {

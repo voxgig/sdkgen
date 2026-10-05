@@ -42,6 +42,11 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     returns: 'mixed — the result data; throws on error',
     desc: 'Update an existing entity. The data must include the entity `id`. Throws on error.',
   },
+  patch: {
+    sig: 'patch(array $reqdata, ?array $ctrl = null): mixed',
+    returns: 'mixed — the result data; throws on error',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Throws on error.',
+  },
   remove: {
     sig: 'remove(array $reqmatch, ?array $ctrl = null): mixed',
     returns: 'mixed — the result data; throws on error',
@@ -214,7 +219,7 @@ $${ent.name} = $client->${phpEntityAccessor(ent.Name)}();
         if (hasFieldOps) {
           // Only emit columns for operations this entity actually exposes —
           // never advertise a create/update/remove column the entity lacks.
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
@@ -303,10 +308,10 @@ $result = $client->${phpEntityAccessor(ent.Name)}()->create([
 
 `)
           }
-          else if ('update' === opname) {
+          else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape the
             // runtime validates — then the patch-fields note.
-            const updateItems = opRequestShape(ent, 'update').items
+            const updateItems = opRequestShape(ent, opname).items
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -314,15 +319,15 @@ $result = $client->${phpEntityAccessor(ent.Name)}()->create([
               `  "${it.name}" => ${phpLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`php
-$result = $client->${phpEntityAccessor(ent.Name)}()->update([
-${updateLines}  // Fields to update
+$result = $client->${phpEntityAccessor(ent.Name)}()->${opname}([
+${updateLines}  // ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 ]);
 \`\`\`
 
 `)
           }
 
-          if ('create' === opname || 'update' === opname) {
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a string or a stream resource',
               once: 'a stream resource',

@@ -158,7 +158,8 @@ try {
     // (opRequestShape), so the snippet always type-checks. Prefer writable
     // non-id fields and render a type-correct literal per field via
     // exampleValue — never a hardcoded field the entity may not have.
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       const exampleFields = (opname: string): string[] => {
         const items = opRequestShape(exampleEntity, opname).items
           .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
@@ -213,6 +214,14 @@ const created = await client.${eName}().create({${createBody}})
         const updateBody = updateLines.length ? '\n' + updateLines.join('\n') + '\n' : ''
         Content(`// Update${usesCreatedId('update') ? ' — the id comes off the returned entity\'s data()' : ''}
 const updated = await client.${eName}().update({${updateBody}})
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchLines = (idF ? [`  ${idF}: ${idValueFor('patch')},`] : []).concat(exampleFields('patch'))
+        const patchBody = patchLines.length ? '\n' + patchLines.join('\n') + '\n' : ''
+        Content(`// Patch — sends only the fields given${usesCreatedId('patch') ? '; the id comes off the returned entity\'s data()' : ''}
+const patched = await client.${eName}().patch({${patchBody}})
 
 `)
       }

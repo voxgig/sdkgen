@@ -80,6 +80,10 @@ open class ProjectNameEntityBase: Entity {
     throw unsupportedOp("update", name)
   }
 
+  open func patch(_ reqdata: VMap?, _ ctrl: VMap?) throws -> Value {
+    throw unsupportedOp("patch", name)
+  }
+
   open func remove(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value {
     throw unsupportedOp("remove", name)
   }

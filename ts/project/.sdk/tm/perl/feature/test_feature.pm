@@ -146,7 +146,7 @@ sub init {
       my $out = Voxgig::Struct::clone($found);
       return $respond->($fctx, 200, $out, undef);
     }
-    elsif ('update' eq $op->{name}) {
+    elsif ('update' eq $op->{name} || 'patch' eq $op->{name}) {
       # Match the existing entity by id only (or its alias). reqdata also
       # contains the new field values, which would otherwise cause select
       # to filter out the entity we want to update. When reqdata has no id,

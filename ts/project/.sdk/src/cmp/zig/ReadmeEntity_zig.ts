@@ -41,6 +41,7 @@ const OP_DESC: Record<string, { method: string, desc: string }> = {
   list:   { method: 'list(reqmatch, ctrl)',   desc: 'List entities, optionally matching the given criteria.' },
   create: { method: 'create(reqdata, ctrl)',  desc: 'Create a new entity with the given data.' },
   update: { method: 'update(reqdata, ctrl)',  desc: 'Update an existing entity.' },
+  patch:  { method: 'patch(reqdata, ctrl)',   desc: 'Change part of an existing entity.' },
   remove: { method: 'remove(reqmatch, ctrl)', desc: 'Remove the matching entity.' },
 }
 

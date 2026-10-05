@@ -125,7 +125,7 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
         out = VoxgigStruct.clone(found)
         respond.call(200, out, nil)
 
-      elsif op.name == "update"
+      elsif op.name == "update" || op.name == "patch"
         # Match the existing entity by id only (or its alias). reqdata also
         # contains the new field values, which would otherwise cause select
         # to filter out the entity we want to update. When reqdata has no id,

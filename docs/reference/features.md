@@ -541,8 +541,8 @@ directly for the common cases. See
 
 Replaces the transport with a mock API served from seed data, so a
 generated SDK's test suite runs with no server, no fixtures on disk, and
-no network. `load`, `list`, `create`, `update` and `remove` are all served
-from the seed map, including writes: a `create` is readable by a following
+no network. `load`, `list`, `create`, `update`, `patch` and `remove` are all
+served from the seed map, including writes: a `create` is readable by a following
 `load` in the same test.
 
 The mock is **model-aware**, which is the part that makes it worth using.

@@ -546,6 +546,18 @@ describe('guardFlowSteps — a generated flow test makes only calls the runtime 
     deepStrictEqual(guardFlowSteps(upsert), [{ flow: 'BasicMoonFlow', step: 0, op: 'create' }])
   })
 
+  test('a step whose op no generated test calls is switched off and reported', () => {
+    const m = model({ patch: { points: [pt('/moon')] } }, [{ o: 'patch' }, { o: 'list' }])
+    const sink: any[] = []
+    const log = { warn: (e: any) => sink.push(e) }
+    deepStrictEqual(guardFlowSteps(m, log), [])
+    deepStrictEqual(m.main.kit.flow.BasicMoonFlow.step.map((s: any) => s.a), [false, undefined])
+    strictEqual(m.main.kit.flow.BasicMoonFlow.step[0].ungenerated, true)
+    strictEqual(sink.length, 1)
+    strictEqual(sink[0].point, 'flow-step-ungenerated')
+    deepStrictEqual(sink[0].steps, ['BasicMoonFlow.0:patch'])
+  })
+
   test('a step already off, or an op the entity lacks, is left alone', () => {
     const m = model({ list: { points: [pt('/a', 'x'), pt('/b', 'y')] } },
       [{ o: 'list', a: false }, { o: 'remove' }])
@@ -555,9 +567,8 @@ describe('guardFlowSteps — a generated flow test makes only calls the runtime 
 })
 
 
-// Novu's workflow keeps its PUT as update and its PATCH as a sixth op, which
-// no bundled target generates a method for.
-function patchModel(): any {
+// An op no bundled target generates, on routes of its own.
+function extraOpModel(): any {
   return {
     main: {
       kit: {
@@ -566,30 +577,30 @@ function patchModel(): any {
             name: 'workflow',
             op: {
               update: { name: 'update', points: [{ m: 'PUT', o: '/v2/workflows/{workflowId}' }] },
-              patch: { name: 'patch', points: [{ m: 'PATCH', o: '/v2/workflows/{workflowId}' }] },
+              copy: { name: 'copy', points: [{ m: 'POST', o: '/v2/workflows/{workflowId}/copy' }] },
             },
           },
           project: {
             name: 'project',
             op: {
               load: { name: 'load', points: [{ m: 'GET', o: '/projects/{id}' }] },
-              patch: {
-                name: 'patch', points: [
-                  { m: 'PATCH', o: '/projects/{project_id}' },
-                  { m: 'PATCH', o: '/projects/{project_id}/off', a: false },
+              copy: {
+                name: 'copy', points: [
+                  { m: 'POST', o: '/projects/{project_id}/copy' },
+                  { m: 'POST', o: '/projects/{project_id}/off', a: false },
                 ],
               },
             },
           },
           archived: {
             name: 'archived', active: false,
-            op: { patch: { name: 'patch', points: [{ m: 'PATCH', o: '/archived/{id}' }] } },
+            op: { copy: { name: 'copy', points: [{ m: 'POST', o: '/archived/{id}/copy' }] } },
           },
           planet: {
             name: 'planet',
             op: {
               list: { name: 'list', points: [{ m: 'GET', o: '/planet' }] },
-              patch: { name: 'patch', active: false, points: [{ m: 'PATCH', o: '/planet/{id}' }] },
+              copy: { name: 'copy', active: false, points: [{ m: 'POST', o: '/planet/{id}/copy' }] },
             },
           },
           ambient: { name: 'ambient' },
@@ -602,15 +613,24 @@ function patchModel(): any {
 
 describe('ungeneratedOps — operations the bundled targets do not generate', () => {
 
-  test('names each active op outside the five, with its active points', () => {
-    deepStrictEqual(ungeneratedOps(patchModel()), [
-      { entity: 'project', op: 'patch', points: ['PATCH /projects/{project_id}'] },
-      { entity: 'workflow', op: 'patch', points: ['PATCH /v2/workflows/{workflowId}'] },
+  test('names each active op outside the six, with its active points', () => {
+    deepStrictEqual(ungeneratedOps(extraOpModel()), [
+      { entity: 'project', op: 'copy', points: ['POST /projects/{project_id}/copy'] },
+      { entity: 'workflow', op: 'copy', points: ['POST /v2/workflows/{workflowId}/copy'] },
     ])
   })
 
+  // Novu keeps its PUT as update and its PATCH as patch: both are generated.
+  test('a patch beside an update is generated, so it is not reported', () => {
+    const model = extraOpModel()
+    model.main.kit.entity.workflow.op.patch =
+      { name: 'patch', points: [{ m: 'PATCH', o: '/v2/workflows/{workflowId}' }] }
+    deepStrictEqual(ungeneratedOps(model).map((d: any) => d.entity + '.' + d.op),
+      ['project.copy', 'workflow.copy'])
+  })
+
   test('an inactive entity or op is switched off, not dropped', () => {
-    const found = ungeneratedOps(patchModel()).map((d: any) => d.entity)
+    const found = ungeneratedOps(extraOpModel()).map((d: any) => d.entity)
     ok(!found.includes('archived'), 'inactive entity reported')
     ok(!found.includes('planet'), 'inactive op reported')
   })
@@ -622,7 +642,7 @@ describe('ungeneratedOps — operations the bundled targets do not generate', ()
 
   test('warns once, listing every entity and op', () => {
     const warns: any[] = []
-    const dropped = warnUngeneratedOps(patchModel(),
+    const dropped = warnUngeneratedOps(extraOpModel(),
       { warn: (e: any) => warns.push(e) }, BUNDLED_ONLY)
 
     strictEqual(dropped.length, 2)
@@ -630,9 +650,9 @@ describe('ungeneratedOps — operations the bundled targets do not generate', ()
     strictEqual(warns[0].point, 'entity-op-ungenerated')
     for (const part of [
       'the bundled targets do not generate',
-      'project.patch (PATCH /projects/{project_id})',
-      'workflow.patch (PATCH /v2/workflows/{workflowId})',
-      'list, load, create, update and remove',
+      'project.copy (POST /projects/{project_id}/copy)',
+      'workflow.copy (POST /v2/workflows/{workflowId}/copy)',
+      'list, load, create, update, patch and remove',
       '.sdk/model/guide/guide.aontu',
       'op: <name>: active: false',
     ]) {
@@ -643,9 +663,9 @@ describe('ungeneratedOps — operations the bundled targets do not generate', ()
 
   test('stays quiet when every op is generated', () => {
     const warns: any[] = []
-    const model = patchModel()
-    delete model.main.kit.entity.workflow.op.patch
-    delete model.main.kit.entity.project.op.patch
+    const model = extraOpModel()
+    delete model.main.kit.entity.workflow.op.copy
+    delete model.main.kit.entity.project.op.copy
     deepStrictEqual(warnUngeneratedOps(model,
       { warn: (e: any) => warns.push(e) }, BUNDLED_ONLY), [])
     strictEqual(warns.length, 0)
@@ -655,7 +675,7 @@ describe('ungeneratedOps — operations the bundled targets do not generate', ()
   // not say the op is out of reach, nor advise switching it off for all.
   test('a target from another package is named outside the claim', () => {
     const warns: any[] = []
-    const dropped = warnUngeneratedOps(patchModel(),
+    const dropped = warnUngeneratedOps(extraOpModel(),
       { warn: (e: any) => warns.push(e) }, MIXED)
 
     strictEqual(dropped.length, 2)
@@ -666,7 +686,7 @@ describe('ungeneratedOps — operations the bundled targets do not generate', ()
     for (const part of [
       'the bundled targets (go, ts) do not generate',
       'so their SDKs have no method for them',
-      'workflow.patch (PATCH /v2/workflows/{workflowId})',
+      'workflow.copy (POST /v2/workflows/{workflowId}/copy)',
       'dart from node_modules/@voxgig/sdkgen-langpack/.sdk',
     ]) {
       ok(note.includes(part), 'note names ' + part + ': ' + note)
@@ -679,9 +699,9 @@ describe('ungeneratedOps — operations the bundled targets do not generate', ()
   test('says nothing when no bundled target is generated', () => {
     const warns: any[] = []
     const external = { bundled: [], external: MIXED.external }
-    deepStrictEqual(warnUngeneratedOps(patchModel(),
+    deepStrictEqual(warnUngeneratedOps(extraOpModel(),
       { warn: (e: any) => warns.push(e) }, external), [])
-    deepStrictEqual(warnUngeneratedOps(patchModel(),
+    deepStrictEqual(warnUngeneratedOps(extraOpModel(),
       { warn: (e: any) => warns.push(e) }, { bundled: [], external: [] }), [])
     strictEqual(warns.length, 0)
   })

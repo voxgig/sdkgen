@@ -100,7 +100,7 @@ the loop.
 ## What a generated SDK gives you
 
 - One entity class per API entity, with `load` / `list` / `create` /
-  `update` / `remove` where supported.
+  `update` / `patch` / `remove` where supported.
 - A staged operation pipeline (`PrePoint → PreSpec → PreRequest →
   PreResponse → PreResult → PreDone`) that **features** plug into —
   without forking the SDK.

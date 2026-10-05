@@ -22,7 +22,7 @@ function mintId(): string {
 function ownIdField(config: any, getpath: any, entityName: string): string {
   let fallback = ''
 
-  for (const opname of ['load', 'remove', 'update']) {
+  for (const opname of ['load', 'remove', 'update', 'patch']) {
     const points = getpath(config, ['entity', entityName, 'op', opname, 'points']) || []
     const canonical = points.filter((pt: any) =>
       null == (pt && pt.select && pt.select['$action']))
@@ -214,7 +214,7 @@ class TestFeature extends BaseFeature {
           return respond(200, out)
         }
       }
-      else if ('update' === op.name) {
+      else if ('update' === op.name || 'patch' === op.name) {
         const args = self.buildArgs(ctx, op, recordOf(ctx.reqdata))
         const found = select(entmap, args)
         const ent = getelem(found, 0)

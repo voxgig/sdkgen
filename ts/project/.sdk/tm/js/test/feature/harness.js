@@ -66,7 +66,7 @@ function defaultServer() {
 
 function defaultMethod(op) {
   if ('create' === op) return 'POST'
-  if ('update' === op) return 'PATCH'
+  if ('update' === op || 'patch' === op) return 'PATCH'
   if ('remove' === op) return 'DELETE'
   return 'GET'
 }
