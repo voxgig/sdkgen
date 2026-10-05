@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentGuide = void 0;
 const jostraca_1 = require("jostraca");
-const utility_1 = require("../utility");
+const optional_1 = require("../helpers/optional");
 const AgentGuideContent_1 = require("./AgentGuideContent");
 const AgentGuideFeature_1 = require("./AgentGuideFeature");
 // Per-language agent guide. Emitted inside the ambient target folder (the Root
@@ -89,7 +89,7 @@ the runtime under \`.sdk/tm/${lang}/feature/\` and regenerate.
 `);
             }
         }
-        const AgentGuide_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${lang}/AgentGuide_${lang}`, { ignore: true });
+        const AgentGuide_sdk = (0, optional_1.optionalComponent)(ctx$, target, 'AgentGuide');
         if (AgentGuide_sdk) {
             AgentGuide_sdk['AgentGuide']({ target });
         }

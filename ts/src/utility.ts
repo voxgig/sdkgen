@@ -109,26 +109,39 @@ function resolveAuthExchange(model: any): Record<string, any> | null {
 }
 
 
-function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean }): any {
+// Only a failure to RESOLVE counts as absent. A module that resolves and then
+// throws, from a syntax error, a bug or a missing nested dependency, must
+// propagate, or a broken optional component renders nothing unseen.
+function loadOptional(ctx$: any, path: string): any {
   const fullpath = resolvePath(ctx$, path)
-  const ignore = null == flags?.ignore ? false : flags.ignore
 
-  // When `ignore` is set, only swallow a genuine "module not found"
-  // resolution failure. A module that resolves but throws while loading
-  // (syntax error, runtime bug, or a missing *nested* dependency) must
-  // propagate — otherwise the optional component silently renders nothing
-  // and the real failure is invisible.
-  if (ignore) {
-    try {
-      require.resolve(fullpath)
-    }
-    catch (err: any) {
-      ctx$.log.warn({ point: 'require-missing', path, note: path })
-      return undefined
-    }
+  try {
+    require.resolve(fullpath)
+  }
+  catch (err: any) {
+    return undefined
   }
 
   return require(fullpath)
+}
+
+
+function requirePath(ctx$: any, path: string, flags?: { ignore?: boolean }): any {
+  if (!flags?.ignore) {
+    return require(resolvePath(ctx$, path))
+  }
+
+  const found = loadOptional(ctx$, path)
+
+  if (undefined === found) {
+    ctx$.log.warn({
+      point: 'require-missing', path,
+      note: path + ': not found at ' + resolvePath(ctx$, path) +
+        ', so generation continued without it',
+    })
+  }
+
+  return found
 }
 
 
@@ -142,6 +155,7 @@ class SdkGenError extends Error {
 
 export {
   resolvePath,
+  loadOptional,
   requirePath,
   isAuthActive,
   resolveAuthPrefix,

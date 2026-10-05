@@ -1,7 +1,7 @@
 
 import { cmp, Content } from 'jostraca'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -16,7 +16,7 @@ loading a specific record.
 `)
 
   const ReadmeQuick_sdk =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeQuick_${target.name}`, { ignore: true })
+    optionalComponent(ctx$, target, 'ReadmeQuick')
 
   if (ReadmeQuick_sdk) {
     ReadmeQuick_sdk['ReadmeQuick']({ target })
