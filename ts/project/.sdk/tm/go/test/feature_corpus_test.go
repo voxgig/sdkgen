@@ -18,7 +18,7 @@ import (
 // added under .sdk/test/feature/ — runs without editing this file. An
 // SDK generated without a listed feature still skips, not fails.
 
-var featureCorpusOps = []string{"Load", "List", "Create", "Update", "Remove"}
+var featureCorpusOps = []string{"Load", "List", "Create", "Update", "Patch", "Remove"}
 
 // One operation this SDK can actually perform.
 type fcOp struct {

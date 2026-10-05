@@ -172,7 +172,8 @@ print(${eVar})
       ? `created:data_get()["${dataIdF}"]`
       : luaLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`lua
@@ -188,6 +189,13 @@ if err then error(err) end
         const updatePairs = (idF ? [`${idF} = ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`-- Update
 client:${eName}():update({ ${updatePairs.join(', ')} })
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`${idF} = ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        Content(`-- Patch — sends only the fields given
+client:${eName}():patch({ ${patchPairs.join(', ')} })
 
 `)
       }

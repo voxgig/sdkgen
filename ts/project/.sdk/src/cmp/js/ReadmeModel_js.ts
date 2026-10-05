@@ -14,7 +14,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const entityList = each(entity).filter((e: any) => e.active !== false)
 
   // Model-driven op rows for the shared entity interface: emit a
-  // load/list/create/update/remove row only for operations at least one active
+  // load/list/create/update/patch/remove row only for operations at least one active
   // entity actually exposes (a read-only entity has just list+load) — never
   // document an operation no entity has.
   const opUnion = new Set<string>()
@@ -25,15 +25,16 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     list: '| `list` | `list(reqmatch?, ctrl?): Promise<Entity[]>` | List entities matching the criteria. |',
     create: '| `create` | `create(reqdata?, ctrl?): Promise<Entity>` | Create a new entity. |',
     update: '| `update` | `update(reqdata?, ctrl?): Promise<Entity>` | Update an existing entity. |',
+    patch: '| `patch` | `patch(reqdata?, ctrl?): Promise<Entity>` | Change part of an existing entity. |',
     remove: '| `remove` | `remove(reqmatch?, ctrl?): Promise<void>` | Remove an entity. |',
   }
-  const opRows = ['load', 'list', 'create', 'update', 'remove']
+  const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
   // Model-driven return-value bullets: describe only the operations that
   // actually exist (single-object ops among load/create/update, plus
   // list/remove) — never document return semantics for a missing op.
-  const singleOps = ['load', 'create', 'update'].filter((o) => opUnion.has(o))
+  const singleOps = ['load', 'create', 'update', 'patch'].filter((o) => opUnion.has(o))
     .map((o) => '`' + o + '`')
   const retBullets: string[] = []
   if (singleOps.length) {

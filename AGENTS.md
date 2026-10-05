@@ -260,7 +260,7 @@ Full explanation: [components-and-templates](./docs/explanation/components-and-t
 ## Entity operations return ENTITIES — a fundamental design
 
 **Every entity operation resolves to the Entity INSTANCE**, never to plain
-data: `load`, `list`, `create`, `update` and `remove` alike. `remove` returns
+data: `load`, `list`, `create`, `update`, `patch` and `remove` alike. `remove` returns
 the entity marked as deleted. `.data()` on an instance gives back the entity
 data container instance.
 
@@ -795,22 +795,23 @@ emitted broken source reached the fleet unchallenged.
   it from `entity.name` per target. Do not add a second guard on a derived
   form. The wire is untouched — a path comes from the point's `orig`, never
   the name. Right after it, `warnUngeneratedOps()` names, once per run, every
-  op of an active entity outside the five the bundled targets generate —
-  apidef's `patch` beside a PUT is the one that occurs. It speaks for those
+  op of an active entity outside the six the bundled targets generate
+  (`CANON_OP_ORDER`, `patch` among them since #211). It speaks for those
   targets alone: `targetOrigins()` (`action/resolve`) splits the active
   targets by the provenance `resolveSource` would follow, and one installed
   from another package is named as not judged, never as unable to reach it.
 - **An entity need not declare `op`.** Read it as `entity.op || {}` /
   `entity.op?.load`; an unguarded `Object.keys(entity.op)` aborts generation
   for every target. `ts/test/entityname.test.ts` fails if one is reintroduced.
-- **Every entity operation resolves to PLAIN records.** `list` used to wrap
-  each record in an entity instance, so the same record came back with a
-  different type, key order and marker depending on which call produced it —
-  and the marker (`entity$`) collided with Seneca's own, silently producing
-  wrong entities. The wrap is gone from every language's `make_result`; the
-  marker on `toJSON()` is namespaced `voxgig$entity`. Pinned by
-  `ts/test/resultcontract.test.ts`, which transpiles and RUNS the shipped
-  template.
+- **`list` resolves to one ENTITY per record, never to bare records.**
+  `make_result` wraps each record (see "Entity operations return ENTITIES"
+  above), and an op must not unwrap them again: clojure's, rb's and perl's
+  `list` did, so the same record came back as an entity from `load` and as a
+  plain map from `list`. The marker on `toJSON()` is namespaced
+  `voxgig$entity`, because Seneca's own `entity$` silently produced wrong
+  entities. Pinned by `ts/test/resultcontract.test.ts`, which transpiles and
+  RUNS the shipped template, and for clojure, rb and perl by their generated
+  entity tests.
 - **Everything that leaves the pipeline is CLEANED; inside it, data is raw.**
   `clean` (one per target, in the utility registry) masks every registered
   secret value with its encoded forms and every value under a sensitive key
@@ -834,6 +835,13 @@ emitted broken source reached the fleet unchallenged.
   own route — never a custom action folded into `create`. Custom actions are
   reachable only through `$action`, so `ReadmeRef` documents them; an
   undocumented action is an endpoint no reader can call.
+- **A documented example in c, cpp, rust or zig must COMPILE.** Their ops
+  return entity handles, so an example that treats the result as a record is
+  a type error, and their own README suites only check structure.
+  `generatedcompile.test.ts` compiles every block in those languages from the
+  README, REFERENCE and root README against a generated SDK, under four
+  models that each lead with a different entity, since a quick start shows
+  the first. A section's numbered steps compile as one program.
 - **A project decision belongs in the MODEL, never in a forked component.**
   `target add` overwrites `.sdk/src/cmp/**`, `.sdk/tm/**` AND
   `.sdk/model/target/<t>.aontu`, so any hand-edit in those three is silently
@@ -844,6 +852,8 @@ emitted broken source reached the fleet unchallenged.
   `<origin>/<slug>-sdk`), `main.kit.author` / `main.kit.contributor.<key>`
   (manifest attribution — hand-edited credit is DELETED by the next
   regeneration), `main.kit.text` (the README wording, in `text.aontu`),
+  `main.kit.publisher` (every LICENSE's copyright holder, the default author
+  and the security contact; Voxgig when unset),
   `main.kit.test.live.strict`, `main.kit.feature` (which feature
   source ships), and per target `module.{path,package,goversion}`,
   `publish.{version,registry.package}`, `output.{path,repo,create,adopt,sdkrel}`

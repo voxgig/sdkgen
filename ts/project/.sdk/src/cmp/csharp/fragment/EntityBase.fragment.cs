@@ -114,6 +114,10 @@ public abstract class ProjectNameEntityBase : IEntity
         Dictionary<string, object?>? ctrl = null)
         => throw Helpers.UnsupportedOp("update", name);
 
+    public virtual object? Patch(Dictionary<string, object?>? reqdata,
+        Dictionary<string, object?>? ctrl = null)
+        => throw Helpers.UnsupportedOp("patch", name);
+
     public virtual object? Remove(Dictionary<string, object?>? reqmatch,
         Dictionary<string, object?>? ctrl = null)
         => throw Helpers.UnsupportedOp("remove", name);
@@ -258,6 +262,8 @@ public abstract class ProjectNameEntityBase : IEntity
     {
         callopts ??= new Dictionary<string, object?>();
 
+        // Read between yields only: the request itself is not cancelled,
+        // where ts and js cancel it in flight.
         var signal =
             StructUtils.GetProp(callopts, "signal") is CancellationToken sigTok
                 ? sigTok

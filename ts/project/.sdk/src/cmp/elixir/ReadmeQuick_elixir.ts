@@ -55,7 +55,8 @@ sdk = ${ctor}
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list/2\` returns a list value node and raises on error.
+\`list/2\` returns a list of entities, one per record, and raises on error;
+\`data_get/1\` reads an entity's record.
 
 \`\`\`elixir
 try do
@@ -91,7 +92,8 @@ end
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`load/2\` returns the bare record and raises on error.
+\`load/2\` returns the entity and raises on error; \`data_get/1\` reads its
+record.
 
 \`\`\`elixir
 try do
@@ -118,7 +120,8 @@ end
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`load/2\` returns the bare record and raises on error.
+\`load/2\` returns the entity and raises on error; \`data_get/1\` reads its
+record.
 
 \`\`\`elixir
 try do
@@ -155,7 +158,8 @@ end
       ? `Voxgig.Struct.getprop(created, "${dataIdF}")`
       : elixirLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`elixir
@@ -163,7 +167,7 @@ ${eVar} = ${Name}.${eCall}(sdk)
 
 `)
       if (opnames.includes('create')) {
-        Content(`# Create — returns the bare created record
+        Content(`# Create — returns the created entity
 created = ${Name}.Entity.${eName}.create(${eVar}, H.deep(%{${examplePairs('create').join(', ')}}))
 
 `)
@@ -172,6 +176,13 @@ created = ${Name}.Entity.${eName}.create(${eVar}, H.deep(%{${examplePairs('creat
         const updatePairs = (idF ? [`"${idF}" => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`# Update
 ${Name}.Entity.${eName}.update(${eVar}, H.deep(%{${updatePairs.join(', ')}}))
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`"${idF}" => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        Content(`# Patch — sends only the fields given
+${Name}.Entity.${eName}.patch(${eVar}, H.deep(%{${patchPairs.join(', ')}}))
 
 `)
       }

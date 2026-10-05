@@ -120,6 +120,9 @@ import {
   pkgDescription,
   nonAffiliation,
   keywords,
+  publisherInfo,
+  isDefaultPublisher,
+  securityContact,
   authorInfo,
   contributorList,
   envName,
@@ -138,6 +141,11 @@ import {
   GENERATOR_URL,
 } from './helpers/packageMeta'
 import { modelText } from './helpers/text'
+import {
+  npmScriptRm,
+  npmScriptEnv,
+  npmScriptTestSome,
+} from './helpers/npmScripts'
 
 
 import {
@@ -1202,6 +1210,9 @@ export {
   pkgDescription,
   nonAffiliation,
   keywords,
+  publisherInfo,
+  isDefaultPublisher,
+  securityContact,
   authorInfo,
   contributorList,
   envName,
@@ -1219,4 +1230,7 @@ export {
   SECURITY_EMAIL,
   GENERATOR_URL,
   modelText,
+  npmScriptRm,
+  npmScriptEnv,
+  npmScriptTestSome,
 }

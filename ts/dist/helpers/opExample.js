@@ -74,14 +74,14 @@ function matchArg(lang, ent, op, idF, idLit) {
         default: return `{ ${pairs.join(', ')} }`;
     }
 }
-// An update that only addresses its record, by id and route, also changes a field.
+// An update or patch addressed only by id and route also changes a field.
 function dataArg(lang, ent, op, idF) {
     const routed = new Set((0, opShape_1.opParams)(ent?.op?.[op]).map((p) => p.n));
     const addresses = (it) => it.name === idF || it.name === 'id' || routed.has(it.name);
     const items = (0, opShape_1.opRequestShape)(ent, op).items
         .filter((it) => (it.name !== idF && it.name !== 'id') || !it.optional);
     const required = items.filter((it) => !it.optional);
-    const changed = 'update' === op && required.every(addresses) ?
+    const changed = ('update' === op || 'patch' === op) && required.every(addresses) ?
         items.filter((it) => it.optional && !addresses(it)).slice(0, 1) : [];
     const chosen = required.length ? [...required, ...changed] : items.slice(0, 3);
     const pairs = chosen.map((it) => litPair(lang, it.name, litFor(lang, it.type)));
@@ -99,7 +99,7 @@ function dataArg(lang, ent, op, idF) {
 function primaryOpCall(lang, eName, eLower, op, idF, ent) {
     const isMatch = 'load' === op || 'remove' === op;
     const isList = 'list' === op;
-    const isData = 'create' === op || 'update' === op;
+    const isData = 'create' === op || 'update' === op || 'patch' === op;
     const idLit = idLiteral(ent, op, idF);
     const method = 'go' === lang ? cap(op) : op;
     let factory;

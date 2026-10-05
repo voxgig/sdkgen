@@ -35,7 +35,7 @@ unless (defined $TEST_JSON && -e $TEST_JSON) {
 # without a listed feature still skips, not fails.
 
 # The standard operation names, in the order the runner prefers them.
-my @FEATURE_CORPUS_OPS = qw(load list create update remove);
+my @FEATURE_CORPUS_OPS = qw(load list create update patch remove);
 
 my $CORPUS = do {
   open my $fh, '<', $TEST_JSON or die "cannot read $TEST_JSON: $!";

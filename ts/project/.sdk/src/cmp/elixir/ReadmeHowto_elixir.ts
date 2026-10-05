@@ -27,7 +27,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'H.deep(%{})'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `H.deep(%{"${idF}" => "test01"})` : 'H.deep(%{})'
-  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
+  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
@@ -37,7 +37,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
 
   const resVar = 'list' === primaryOp ? 'records' : 'record'
   const testModeExample = primaryOp
-    ? `# Entity ops return the bare record (raise on error).
+    ? `# Entity ops return the entity, and list one per record (raise on error).
 ${eVar} = ${Name}.${eCall}(sdk)
 ${resVar} = ${Name}.Entity.${eName}.${primaryOp}(${eVar}, ${testArg})
 IO.inspect(${resVar})`

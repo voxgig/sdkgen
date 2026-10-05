@@ -203,6 +203,8 @@ class EntyClass:
 
     # #UpdateOp
 
+    # #PatchOp
+
     # #RemoveOp
 
     def _run_op(self, ctx, post_done):

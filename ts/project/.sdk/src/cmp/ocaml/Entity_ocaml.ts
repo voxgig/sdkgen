@@ -22,7 +22,7 @@ const Entity = cmp(function Entity(props: any) {
 
   const opnames = Object.keys(entity.op || {})
 
-  const ops = ['load', 'list', 'create', 'update', 'remove']
+  const ops = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .map((opname: string) => entityOp(opname, opnames.includes(opname), entity.name))
     .join('')
 
@@ -83,6 +83,7 @@ let rec make (client : sdk_client) (entopts_in : value) : entity_obj =
     e_list = (fun _ _ -> failwith "op not installed");
     e_create = (fun _ _ -> failwith "op not installed");
     e_update = (fun _ _ -> failwith "op not installed");
+    e_patch = (fun _ _ -> failwith "op not installed");
     e_remove = (fun _ _ -> failwith "op not installed");
     e_deleted = false;
     e_mark_deleted = (fun () -> ());

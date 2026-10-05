@@ -87,14 +87,27 @@ are loaded *without* `ignore`, so a missing one is a hard error):
 
 ### Optional README components
 
-Loaded with `{ ignore: true }`, so you can add them incrementally. If
-absent, the neutral README still renders its shared scaffolding:
+A target may leave these out and add them one at a time. Generation
+carries on without each one, and the SDK's code is complete either way.
+Only its documentation differs.
+
+Each of these fills one section, so generation warns when a target lacks
+it, naming the section left empty and the file to write:
 
 `ReadmeIntro_<lang>`, `ReadmeInstall_<lang>`, `ReadmeQuick_<lang>`,
-`ReadmeModel_<lang>`, `ReadmeOptions_<lang>`, `ReadmeEntity_<lang>`,
-`ReadmeHowto_<lang>`, `ReadmeExplanation_<lang>`, `ReadmeRef_<lang>`,
-and for the top-level README: `ReadmeTopQuick_<lang>`,
+`ReadmeOptions_<lang>`, `ReadmeEntity_<lang>`, `ReadmeHowto_<lang>`,
+`ReadmeExplanation_<lang>`, `ReadmeRef_<lang>` (which writes
+`REFERENCE.md`), and for the top-level README: `ReadmeTopQuick_<lang>`,
 `ReadmeTopTest_<lang>`, `ReadmeTopHowto_<lang>`.
+
+These replace or extend a shared default, so a target without them gets
+the default and no warning: `ReadmeModel_<lang>` and
+`ReadmeFeatures_<lang>` replace the README's model summary and features
+section, and `AgentGuide_<lang>` adds a section to the target's agent
+guide.
+
+Each is a file `<Name>_<lang>.ts` in the target's components folder,
+exporting a component named `<Name>`.
 
 ### Component skeleton
 

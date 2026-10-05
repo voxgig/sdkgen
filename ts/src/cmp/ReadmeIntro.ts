@@ -1,7 +1,7 @@
 
 import { cmp } from 'jostraca'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 
 
 // Per-language intro lives in `project/.sdk/src/cmp/<lang>/ReadmeIntro_<lang>.ts`.
@@ -11,7 +11,7 @@ const ReadmeIntro = cmp(function ReadmeIntro(props: any) {
   const { target, ctx$ } = props
 
   const ReadmeIntro_sdk =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeIntro_${target.name}`, { ignore: true })
+    optionalComponent(ctx$, target, 'ReadmeIntro')
 
   if (ReadmeIntro_sdk) {
     ReadmeIntro_sdk['ReadmeIntro']({ target })

@@ -236,9 +236,6 @@
         (throw (sekreto/sekretoerror
                 (str "secrets: token exchange failed: " (core/err-msg err) " from " url))))
 
-      ;; core/default-http-fetch NEVER returns an err - a connection failure
-      ;; comes back as status 0 with the exception in statusText - so the
-      ;; STATUS is what decides, not a nil error.
       (let [status (core/to-int (vs/getprop res "status"))]
         (when (or (< status 200) (>= status 300))
           (throw (sekreto/sekretoerror

@@ -38,8 +38,8 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   },
   list: {
     sig: 'list($reqmatch, $ctrl) -> arrayref',
-    returns: 'an arrayref of entities',
-    desc: 'List entities matching the given criteria. The match is optional — call `list` with no argument to list all records. Returns an arrayref and dies on error.',
+    returns: 'an arrayref of entities, one per record',
+    desc: 'List entities matching the given criteria. The match is optional — call `list` with no argument to list all records. Returns an arrayref of entities, one per record (`data_get` reads each record), and dies on error.',
   },
   create: {
     sig: 'create($reqdata, $ctrl) -> hashref',
@@ -50,6 +50,11 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     sig: 'update($reqdata, $ctrl) -> hashref',
     returns: 'the updated entity data',
     desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and dies on error.',
+  },
+  patch: {
+    sig: 'patch($reqdata, $ctrl) -> hashref',
+    returns: 'the patched entity data',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and dies on error.',
   },
   remove: {
     sig: 'remove($reqmatch, $ctrl) -> hashref',
@@ -218,7 +223,7 @@ my $${eVar} = $client->${ent.Name};
         // Field operations breakdown
         const hasFieldOps = fields.some((f: any) => f.op && Object.keys(f.op).length > 0)
         if (hasFieldOps) {
-          const opcols = ['load', 'list', 'create', 'update', 'remove']
+          const opcols = ['load', 'list', 'create', 'update', 'patch', 'remove']
             .filter((op: string) => opnames.includes(op) && ent.op[op]?.active !== false)
           Content(`### Field Usage by Operation
 
@@ -283,7 +288,7 @@ my $result = $client->${ent.Name}->${opname}(${arg});
             Content(`\`\`\`perl
 my $results = $client->${ent.Name}->list;
 for my $${eVar} (@$results) {
-    print "$${eVar}->{id}\\n";
+    print $${eVar}->data_get->{id}, "\\n";
 }
 \`\`\`
 
@@ -304,8 +309,8 @@ my $result = $client->${ent.Name}->create({
 
 `)
           }
-          else if ('update' === opname) {
-            const updateItems = opRequestShape(ent, 'update').items
+          else if ('update' === opname || 'patch' === opname) {
+            const updateItems = opRequestShape(ent, opname).items
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
@@ -313,15 +318,15 @@ my $result = $client->${ent.Name}->create({
               `    '${it.name}' => ${perlLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`perl
-my $result = $client->${ent.Name}->update({
-${updateLines}    # Fields to update
+my $result = $client->${ent.Name}->${opname}({
+${updateLines}    # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 });
 \`\`\`
 
 `)
           }
 
-          if ('create' === opname || 'update' === opname) {
+          if ('create' === opname || 'update' === opname || 'patch' === opname) {
             const note = bodyNote(ent.op[opname], {
               values: 'a byte string, a character string, sent as UTF-8, or a filehandle',
               once: 'a filehandle',
