@@ -2298,28 +2298,157 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
-  // A type checker reads an operation's result through its annotation, so it
+  // Where each target declares what an operation returns. `cls` finds the
+  // entity class an entity file declares; `returns` is the declaration for one
+  // operation, and what it must be. A target whose declared types are generic
+  // must still declare no data type. perl and elixir say it in a comment.
+  const ENTITY_COMMENT = /^(?![\s\S]*\b(?:entity maps?|data \(hashref\))\b)[\s\S]*\bReturns\b[^.;]*\bentit(?:y|ies)\b/
+  const OP = '(?<op>load|list|create|update|patch|remove)'
+  const OP_RETURNS: Record<string, null | {
+    file: RegExp,
+    cls?: RegExp,
+    decl: RegExp,
+    returns: (op: string, cls: string) => string | RegExp,
+  }> = {
+    c: {
+      file: /^c\/entity\/\w+\.c$/,
+      decl: new RegExp('^static (?<type>Entity\\*+) \\w+_' + OP + '\\(Entity\\* e,', 'gm'),
+      returns: (op) => 'list' === op ? 'Entity**' : 'Entity*',
+    },
+    clojure: null,
+    cpp: {
+      file: /^cpp\/entity\/\w+\.hpp$/,
+      decl: new RegExp('^\\s*(?<type>\\S+) ' + OP + '\\(const Value& req', 'gm'),
+      returns: (op) => 'list' === op ? 'std::vector<SdkEntityPtr>' : 'SdkEntityPtr',
+    },
+    csharp: {
+      file: /^csharp\/entity\/\w+\.cs$/,
+      decl: /public override (?<type>\S+) (?<op>Load|List|Create|Update|Patch|Remove)\(/g,
+      returns: () => 'object?',
+    },
+    elixir: {
+      file: /^elixir\/lib\/entity\/\w+_entity\.ex$/,
+      decl: new RegExp('^(?<type>(?:[ \\t]*#[^\\n]*\\n)+)[ \\t]*@spec ' + OP + '\\(', 'gm'),
+      returns: () => ENTITY_COMMENT,
+    },
+    go: {
+      file: /^go\/entity\/\w+_entity\.go$/,
+      decl: /^func \(e \*\w+\) (?<op>Load|List|Create|Update|Patch|Remove)\([^)]*\) \((?<type>[^)]*)\)/gm,
+      returns: () => 'any, error',
+    },
+    java: {
+      file: /^java\/entity\/\w+\.java$/,
+      decl: new RegExp('^\\s*public (?<type>\\S+) ' + OP + '\\(Map<', 'gm'),
+      returns: () => 'Object',
+    },
+    js: {
+      file: /^js\/src\/entity\/\w+\.js$/,
+      cls: /^class (\w+) extends/m,
+      decl: new RegExp('@returns \\{(?<type>[^}]+)\\}\\s*\\*\\/\\s*async ' + OP + '\\(', 'g'),
+      returns: (op, cls) => 'Promise<' + cls + ('list' === op ? '[]>' : '>'),
+    },
+    kotlin: {
+      file: /^kotlin\/entity\/\w+\.kt$/,
+      decl: new RegExp('override fun ' + OP + '\\([^)]*\\): (?<type>\\S+) \\{', 'g'),
+      returns: () => 'Any?',
+    },
+    lua: {
+      file: /^lua\/entity\/\w+_entity\.lua$/,
+      cls: /^local (\w+) = \{\}$/m,
+      decl: new RegExp('---@return (?<type>\\S+)\\n---@return string\\? err\\nfunction \\w+:' + OP + '\\(', 'g'),
+      returns: (op, cls) => cls + ('list' === op ? '[]' : ''),
+    },
+    ocaml: {
+      file: /^ocaml\/sdk_types\.ml$/,
+      decl: new RegExp('mutable e_' + OP + ' : (?<type>[^;]+);', 'g'),
+      returns: (op) => 'value -> value -> entity_obj' + ('list' === op ? ' list' : ''),
+    },
+    perl: {
+      file: /^perl\/entity\/\w+_entity\.pm$/,
+      decl: new RegExp('^(?<type>(?:#[^\\n]*\\n)+)sub ' + OP + ' \\{', 'gm'),
+      returns: () => ENTITY_COMMENT,
+    },
+    php: {
+      file: /^php\/entity\/\w+_entity\.php$/,
+      cls: /^class (\w+)/m,
+      decl: new RegExp('@return (?<type>\\S+)(?:(?!\\*\\/)[\\s\\S])*\\*\\/\\s*public function ' + OP + '\\(', 'g'),
+      returns: (op, cls) => cls + ('list' === op ? '[]' : ''),
+    },
+    py: {
+      file: /^py\/[^/]+\/entity\/\w+_entity\.py$/,
+      cls: /^class (\w+):/m,
+      decl: new RegExp('def ' + OP + '\\(.*\\) -> (?<type>.+):$', 'gm'),
+      returns: (op, cls) => 'list' === op ? 'list[' + cls + ']' : cls,
+    },
+    rb: {
+      file: /^rb\/entity\/\w+_entity\.rb$/,
+      cls: /^class (\w+)/m,
+      decl: new RegExp('# @return \\[(?<type>[^\\]]+)\\][^\\n]*(?:\\n\\s*#[^\\n]*)*\\n\\s*def ' + OP + '\\b', 'g'),
+      returns: (op, cls) => 'list' === op ? 'Array<' + cls + '>' : cls,
+    },
+    rust: {
+      file: /^rust\/entity\/\w+\.rs$/,
+      decl: new RegExp('fn ' + OP + '\\(self: &Rc<Self>[^)]*\\) -> Result<(?<type>[^,]+),', 'g'),
+      returns: (op) => 'list' === op ? 'Vec<Rc<Self>>' : 'Rc<Self>',
+    },
+    scala: {
+      file: /^scala\/entity\/\w+\.scala$/,
+      decl: new RegExp('override def ' + OP + '\\([^)]*\\): (?<type>\\w+)', 'g'),
+      returns: () => 'Object',
+    },
+    swift: {
+      file: /^swift\/Sources\/[^/]+\/entity\/\w+\.swift$/,
+      decl: new RegExp('override func ' + OP + '\\([^)]*\\) throws -> (?<type>\\w+)', 'g'),
+      returns: () => 'Value',
+    },
+    ts: {
+      file: /^ts\/src\/entity\/\w+\.ts$/,
+      cls: /^class (\w+) extends/m,
+      decl: new RegExp('async ' + OP + '\\([^)]*\\): (?<type>Promise<[^>]+>)', 'g'),
+      returns: (op, cls) => 'Promise<' + cls + ('list' === op ? '[]>' : '>'),
+    },
+    zig: {
+      file: /^zig\/entity\/\w+\.zig$/,
+      decl: new RegExp('pub fn ' + OP + '\\(self: \\*\\w+, [^)]*\\) (?<type>\\w+) \\{', 'g'),
+      returns: (op) => 'list' === op ? 'EntListResult' : 'EntResult',
+    },
+  }
+
+  // A type checker reads an operation's result through its declaration, so it
   // names the entity class, as the reference heading does.
-  test('py: each operation is declared to return its entity class', async () => {
-    const out = await generateFold('py')
+  test('every target declares that each operation returns its entity class', async () => {
+    deepStrictEqual(sdkTargets().filter((t: string) => undefined === OP_RETURNS[t]), [],
+      'targets with no declared return listed')
+
     const wrong: string[] = []
-    let ops = 0
-    for (const [path, src] of Object.entries(out)) {
-      if (!/^py\/[^/]+\/entity\/\w+_entity\.py$/.test(path)) continue
-      const cls = /^class (\w+):/m.exec(src)
-      ok(null != cls, path + ': no entity class')
-      for (const m of src.matchAll(/def (load|list|create|update|patch|remove)\(.*\) -> (.+):$/gm)) {
-        ops++
-        if (m[2] !== ('list' === m[1] ? 'list[' + cls![1] + ']' : cls![1])) {
-          wrong.push(path + ' ' + m[1] + ' -> ' + m[2])
+    for (const target of sdkTargets()) {
+      const where = OP_RETURNS[target]
+      if (null == where) continue
+      const out = await generateFold(target)
+      const ops = new Set<string>()
+      for (const [path, src] of Object.entries(out)) {
+        if (!where.file.test(path)) continue
+        const cls: string | undefined = null == where.cls ? '' : where.cls.exec(src)?.[1]
+        ok(null != cls, path + ': no entity class')
+        for (const m of src.matchAll(where.decl)) {
+          const op = m.groups!.op.toLowerCase()
+          const declared = m.groups!.type.replace(/\s+/g, ' ').trim()
+          const says = where.returns(op, cls!)
+          ops.add(op)
+          if ('string' === typeof says ? declared !== says : !says.test(declared)) {
+            wrong.push(path + ' ' + op + ': ' + declared)
+          }
         }
       }
+      const missing = ['create', 'list', 'load', 'patch', 'remove', 'update'].filter((op) => !ops.has(op))
+      if (0 < missing.length) wrong.push(target + ': no declared return found for ' + missing.join(', '))
     }
-    ok(0 < ops, 'no py operation found')
-    for (const { heading } of operationDocs(out['py/REFERENCE.md'])) {
+
+    const pyref = (await generateFold('py'))['py/REFERENCE.md']
+    for (const { heading } of operationDocs(pyref)) {
       if (!/ -> (?:list\[)?\w+Entity\]?`$/.test(heading)) wrong.push('py/REFERENCE.md ' + heading)
     }
-    deepStrictEqual(wrong, [], 'py operations declared to return a record')
+    deepStrictEqual(wrong, [], 'operations declared to return a record')
   })
 
 
@@ -2354,40 +2483,146 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     zig: /\.asEntity\(\)\.data\(null\)/,
   }
 
-  test('every quick start reads the record off the entity an operation returns', async () => {
+  // The fences a target's examples are written in, and how it prints. The root
+  // README is read by the first fence alone, which no other target uses there.
+  const DOC_PRINT: Record<string, { fences: string[], print: RegExp }> = {
+    c: { fences: ['c'], print: /\b(?:printf|puts)\(/ },
+    clojure: { fences: ['clojure'], print: /\((?:println|prn|pprint)\b/ },
+    cpp: { fences: ['cpp'], print: /\bstd::cout\b/ },
+    csharp: { fences: ['csharp'], print: /\bConsole\.Write/ },
+    elixir: { fences: ['elixir'], print: /\bIO\.(?:puts|inspect)\b/ },
+    go: { fences: ['go'], print: /\bfmt\.Print/ },
+    java: { fences: ['java'], print: /\bSystem\.out\.print/ },
+    js: { fences: ['js', 'ts'], print: /\bconsole\.log\(/ },
+    kotlin: { fences: ['kotlin'], print: /\bprintln\(/ },
+    lua: { fences: ['lua'], print: /\bprint\(/ },
+    ocaml: { fences: ['ocaml'], print: /\b(?:print_endline|print_string|Printf\.printf)\b/ },
+    perl: { fences: ['perl'], print: /\b(?:print|say)\b/ },
+    php: { fences: ['php'], print: /\b(?:echo|print_r|var_dump|print)\b/ },
+    py: { fences: ['python'], print: /\bprint\(/ },
+    rb: { fences: ['ruby'], print: /^\s*(?:puts|p|pp|print)\b|\{ \|\w+\| (?:puts|p|pp)\b/ },
+    rust: { fences: ['rust'], print: /\b(?:println|print|dbg)!/ },
+    scala: { fences: ['scala'], print: /\bprintln\(/ },
+    swift: { fences: ['swift'], print: /\bprint\(/ },
+    ts: { fences: ['ts'], print: /\bconsole\.log\(/ },
+    zig: { fences: ['zig'], print: /\bstd\.debug\.print\(/ },
+  }
+
+  // A quick start's or tutorial's problems: a load or list with no record read
+  // after it, and a comment on one that does not name the entity.
+  function quickProblems(target: string, block: string): { calls: number, wrong: string[] } {
+    const OP_CALL = /(?:\.|->|:|\/)(?:e_)?(?:load|list)\b/i
+    const COMMENT = /^\s*(?:\/\/|#(?!include|!)|--|;;|\(\*)/
+    const wrong: string[] = []
+    const lines = block.split('\n')
+    const calls = lines
+      .map((l: string, i: number) =>
+        !COMMENT.test(l) && !/^\s*import\b/.test(l) && OP_CALL.test(l) ? i : -1)
+      .filter((i: number) => -1 < i)
+    calls.forEach((at: number, n: number) => {
+      if (!RECORD_ACCESSOR[target].test(lines.slice(at, calls[n + 1]).join('\n'))) {
+        wrong.push('no record read after ' + lines[at].trim())
+      }
+    })
+    for (const line of lines.filter((l: string) => COMMENT.test(l) && /\b(load|list)\b/i.test(l))) {
+      if (!/\bentit(y|ies)\b/i.test(line)) wrong.push(line.trim())
+    }
+    return { calls: calls.length, wrong }
+  }
+
+  // The blocks of the tutorial a target's README opens with.
+  function tutorialBlocks(readme: string, fence: string): string[] {
+    const section = /^## Tutorial\b[^\n]*\n([\s\S]*?)(?=^## )/m.exec(readme)
+    return null == section ? [] : [...section[1].matchAll(/^```(\w+)\n([\s\S]*?)^```$/gm)]
+      .filter((m) => fence === m[1]).map((m) => m[2])
+  }
+
+  test('every quick start and tutorial reads the record off the entity an operation returns', async () => {
     const targets = sdkTargets()
     deepStrictEqual(targets.filter((t: string) => null == RECORD_ACCESSOR[t]), [],
       'targets with no record accessor listed')
 
-    const OP_CALL = /(?:\.|->|:|\/)(?:e_)?(?:load|list)\b/i
-    const COMMENT = /^\s*(?:\/\/|#(?!include|!)|--|;;|\(\*)/
-
     const wrong: string[] = []
     for (const [shape, extra] of DOC_MODELS) {
-      const starts = quickStarts((await generateModel(shape, extra))['README.md'])
+      const out = await generateModel(shape, extra)
+      const starts = quickStarts(out['README.md'])
       for (const target of targets) {
-        const block = starts[targetTitle(target)]
-        if (null == block) {
-          wrong.push(shape + ' ' + target + ': no quick start')
-          continue
-        }
-        const lines = block.split('\n')
-        const calls = lines
-          .map((l: string, i: number) =>
-            !COMMENT.test(l) && !/^\s*import\b/.test(l) && OP_CALL.test(l) ? i : -1)
-          .filter((i: number) => -1 < i)
-        if (0 === calls.length) wrong.push(shape + ' ' + target + ': calls no operation')
-        calls.forEach((at: number, n: number) => {
-          if (!RECORD_ACCESSOR[target].test(lines.slice(at, calls[n + 1]).join('\n'))) {
-            wrong.push(shape + ' ' + target + ': no record read after ' + lines[at].trim())
+        const pages: [string, string[]][] = [
+          ['README.md', null == starts[targetTitle(target)] ? [] : [starts[targetTitle(target)]]],
+          [target + '/README.md', tutorialBlocks(out[target + '/README.md'], DOC_PRINT[target].fences[0])],
+        ]
+        for (const [path, blocks] of pages) {
+          let calls = 0
+          for (const block of blocks) {
+            const found = quickProblems(target, block)
+            calls += found.calls
+            wrong.push(...found.wrong.map((w: string) => shape + ' ' + target + ' ' + path + ': ' + w))
           }
-        })
-        for (const line of lines.filter((l: string) => COMMENT.test(l) && /\b(load|list)\b/i.test(l))) {
-          if (!/\bentit(y|ies)\b/i.test(line)) wrong.push(shape + ' ' + target + ': ' + line.trim())
+          if (0 === calls) wrong.push(shape + ' ' + target + ' ' + path + ': calls no operation')
         }
       }
     }
-    deepStrictEqual(wrong, [], 'quick starts that show a record where the entity is returned')
+    deepStrictEqual(wrong, [], 'quick starts and tutorials that show a record where the entity is returned')
+  })
+
+
+  // Each print after an operation other than remove, up to the next one, that
+  // shows neither the record nor a name bound to it.
+  function entityPrints(target: string, code: string): string[] {
+    const OP_CALL = /(?:\.|->|:|\/)(?:e_)?(load|list|create|update|patch|remove)\b/i
+    const COMMENT = /^\s*(?:\/\/|#(?!include|!)|--|;;|\(\*)/
+    const FAILED = /fail|\berr\b|\berror\b/i
+    const BOUND = /(?:^|[\s(;])(?:const|let|var|local|my|val|auto)?\s*\$?([A-Za-z_]\w*)\s*:?=(?!=)/
+    const reads = RECORD_ACCESSOR[target]
+    const found: string[] = []
+    let op = ''
+    let bound: string[] = []
+    for (const line of code.split('\n')) {
+      if (COMMENT.test(line)) continue
+      const call = OP_CALL.exec(line)
+      if (null != call) {
+        op = call[1].toLowerCase()
+        bound = []
+      }
+      if ('' === op || 'remove' === op) continue
+      if (reads.test(line)) {
+        const name = BOUND.exec(line)
+        if (null != name) bound.push(name[1])
+      }
+      else if (DOC_PRINT[target].print.test(line) && !FAILED.test(line) &&
+        !bound.some((name: string) => new RegExp('\\b' + name + '\\b').test(line))) {
+        found.push(op + ': ' + line.trim())
+      }
+    }
+    return found
+  }
+
+  test('every example prints the record of the entity an operation returns', async () => {
+    deepStrictEqual(sdkTargets().filter((t: string) => null == DOC_PRINT[t]), [],
+      'targets with no print listed')
+
+    const wrong: string[] = []
+    for (const [shape, extra] of DOC_MODELS) {
+      const out = await generateModel(shape, extra)
+      for (const target of sdkTargets()) {
+        const { fences } = DOC_PRINT[target]
+        const pages: [string, string[]][] = [
+          ['README.md', fences.slice(0, 1)],
+          [target + '/README.md', fences],
+          [target + '/REFERENCE.md', fences],
+        ]
+        for (const [path, langs] of pages) {
+          ok(null != out[path], shape + ' ' + target + ': no ' + path)
+          for (const m of out[path].matchAll(/^```(\w+)\n([\s\S]*?)^```$/gm)) {
+            if (!langs.includes(m[1])) continue
+            for (const line of entityPrints(target, m[2])) {
+              wrong.push(shape + ' ' + target + ' ' + path + ': ' + line)
+            }
+          }
+        }
+      }
+    }
+    deepStrictEqual([...new Set(wrong)], [], 'examples that print the entity, not its record')
   })
 
 
@@ -2403,6 +2638,11 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     /\bentity records?\b/i,
     /\b(?:holds|contains) the mock response record\b/i,
     /\breturns the (?:created |updated |patched |removed )?entity data\b/i,
+    /\bentity data directly\b/i,
+    /\bresolves to (?:void|undefined|nil|None|null)\b/i,
+    /\blist of records\b/i,
+    /\breturned mock data\b/i,
+    /\bis the returned data\b/i,
   ]
 
   // A field read straight off what an operation returned, by fence language.

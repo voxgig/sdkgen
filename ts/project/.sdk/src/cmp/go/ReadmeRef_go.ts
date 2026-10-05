@@ -277,7 +277,7 @@ result, err := client.${ent.Name}(nil).${goOpName}(${arg}, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(result)
+fmt.Println(result.(sdk.Entity).Data())
 \`\`\`
 
 `)
@@ -288,7 +288,9 @@ results, err := client.${ent.Name}(nil).List(nil, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(results)
+for _, item := range results.([]any) {
+    fmt.Println(item.(sdk.Entity).Data())
+}
 \`\`\`
 
 `)
@@ -312,7 +314,7 @@ result, err := client.${ent.Name}(nil).Create(map[string]any{
 if err != nil {
     panic(err)
 }
-fmt.Println(result)
+fmt.Println(result.(sdk.Entity).Data())
 \`\`\`
 
 `)
@@ -335,7 +337,7 @@ ${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Field
 if err != nil {
     panic(err)
 }
-fmt.Println(result)
+fmt.Println(result.(sdk.Entity).Data())
 \`\`\`
 
 `)

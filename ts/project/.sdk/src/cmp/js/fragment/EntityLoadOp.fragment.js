@@ -7,7 +7,7 @@ class EntityOperation {
   /**
    * @param {EntityNameLoadMatch} [reqmatch]
    * @param {Object} [ctrl]
-   * @returns {Promise<EntityName>}
+   * @returns {Promise<EntyClass>}
    */
   async load(reqmatch, ctrl) {
 

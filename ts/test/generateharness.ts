@@ -706,7 +706,8 @@ main: kit: flow: BasicContactsfieldFlow: {
 
 
 // A quick start shows the first active entity: a load-only singleton, a
-// list-only entity, one with every operation, and one nested under that.
+// list-only entity, one with every operation, patch included, and one nested
+// under that.
 const PLANET_FIRST = ['ambient', 'console', 'graph_ql', 'history']
   .map((name) => 'main: kit: entity: ' + name + ': active: false').join('\n')
 
@@ -755,10 +756,25 @@ main: kit: flow: BasicSatelliteFlow: {
 }
 `
 
+const PLANET_PATCH = `
+main: kit: entity: planet: op: patch: {
+  name: "patch"
+  points: [ {
+    g: { params: [
+      { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "p01" }
+    ] }
+    m: "PATCH", o: "/planet/{id}", s: [{ lit: "planet" }, { var: "id" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  } ]
+}
+`
+
+const CRUD_MODEL = PLANET_FIRST + PLANET_PATCH
+
 const DOC_MODELS: [string, string | undefined][] = [
   ['singleton', undefined],
   ['list', 'main: kit: entity: ambient: active: false'],
-  ['crud', PLANET_FIRST],
+  ['crud', CRUD_MODEL],
   ['nested', PLANET_FIRST + SATELLITE],
 ]
 
@@ -977,6 +993,7 @@ export {
   SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY,
   KEYWORD_ACCESSOR_ENTITY,
+  CRUD_MODEL,
   DOC_MODELS,
   makeLog,
   layeredFs,

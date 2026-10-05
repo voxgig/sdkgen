@@ -290,7 +290,7 @@ result = client.${ent.Name}().${opname}(${arg})
             Content(`\`\`\`python
 results = client.${ent.Name}().list(${listMatchArg(ent)})
 for ${eVar} in results:
-    print(${eVar})
+    print(${eVar}.data_get())
 \`\`\`
 
 `)

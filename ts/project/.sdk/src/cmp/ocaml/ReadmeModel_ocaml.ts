@@ -40,6 +40,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 \`\`\`ocaml
 open Voxgig_struct
 open Sdk_helpers
+open Sdk_types
 
 let client = Sdk_client.make options
 \`\`\`

@@ -36,6 +36,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   Content(`\`\`\`ocaml
 open Voxgig_struct
 open Sdk_helpers
+open Sdk_types
 
 let () =
   let client = ${ctor} in

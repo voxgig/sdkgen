@@ -50,11 +50,18 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
-  const testModeExample = primaryOp
-    ? `// Entity ops return the entity, and List one per record; they raise on error.
-var ${eVar} = client.${eName}().${opMethod}(${testArg});
-// Data() on an entity reads its mock response record
-Console.WriteLine(${eVar});`
+  const testModeExample = 'list' === primaryOp
+    ? `// List returns a list of entities, one per mock record; it raises on error.
+var ${eVar}List = (List<object?>)client.${eName}().List(${testArg})!;
+foreach (var ${eVar}Item in ${eVar}List)
+{
+    Console.WriteLine(StructUtils.Jsonify(((IEntity)${eVar}Item!).Data()));
+}`
+    : primaryOp
+    ? `// Entity ops return the entity; they raise on error.
+var ${eVar} = (IEntity)client.${eName}().${opMethod}(${testArg})!;
+// Data() reads the entity's mock record
+Console.WriteLine(StructUtils.Jsonify(${eVar}.Data()));`
     : `var result = client.Direct(new Dictionary<string, object?>
 {
     ["path"] = "/api/resource",

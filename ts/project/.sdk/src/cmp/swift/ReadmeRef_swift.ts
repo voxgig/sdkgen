@@ -285,7 +285,11 @@ let result = try client.${accessor}().${opname}(${arg}, nil)
           else if ('list' === opname) {
             Content(`\`\`\`swift
 let results = try client.${accessor}().list(nil, nil)
-print(results)
+for item in results.asList?.items ?? [] {
+    if let entity = item.asNative as? Entity {
+        print(entity.data())
+    }
+}
 \`\`\`
 
 `)

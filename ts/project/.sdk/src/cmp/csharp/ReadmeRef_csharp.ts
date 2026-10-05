@@ -83,6 +83,7 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
     Content(`\`\`\`csharp
 using ${model.const.Name}Sdk;
+using Voxgig.Struct;
 
 var client = new ${model.const.Name}SDK(options);
 \`\`\`
@@ -285,8 +286,11 @@ var result = client.${ent.Name}().${opname.charAt(0).toUpperCase() + opname.slic
           }
           else if ('list' === opname) {
             Content(`\`\`\`csharp
-var results = client.${ent.Name}().List(null);
-Console.WriteLine(results);
+var results = (List<object?>)client.${ent.Name}().List(null)!;
+foreach (var item in results)
+{
+    Console.WriteLine(StructUtils.Jsonify(((IEntity)item!).Data()));
+}
 \`\`\`
 
 `)

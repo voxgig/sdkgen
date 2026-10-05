@@ -49,6 +49,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
 \`\`\`kotlin
 import ${kotlinPackage(model)}.core.${SDK}
+import ${kotlinPackage(model)}.core.SdkEntity
 
 val client = ${SDK}(mutableMapOf<String, Any?>(
     "apikey" to System.getenv("${envName(model)}_APIKEY"),
@@ -62,6 +63,7 @@ val client = ${SDK}(mutableMapOf<String, Any?>(
 
 \`\`\`kotlin
 import ${kotlinPackage(model)}.core.${SDK}
+import ${kotlinPackage(model)}.core.SdkEntity
 
 val client = ${SDK}()
 \`\`\`
@@ -89,8 +91,10 @@ and raises on error; an entity's \`data()\` reads its record.
 
 \`\`\`kotlin
 try {
-    val ${eVar}List = client.${accessor}(null).list(null, null)
-    println(${eVar}List)
+    val ${eVar}List = client.${accessor}(null).list(null, null) as List<*>
+    for (${eVar}Item in ${eVar}List) {
+        println((${eVar}Item as SdkEntity).data())
+    }
 }
 catch (err: RuntimeException) {
     println("list failed: " + err.message)
@@ -127,8 +131,8 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
 \`\`\`kotlin
 try {
-    val ${neVar} = client.${neAccessor}(null).load(mutableMapOf<String, Any?>(${neMatch.join(', ')}), null)
-    println(${neVar})
+    val ${neVar} = client.${neAccessor}(null).load(mutableMapOf<String, Any?>(${neMatch.join(', ')}), null) as SdkEntity
+    println(${neVar}.data())
 }
 catch (err: RuntimeException) {
     println("load failed: " + err.message)
@@ -155,8 +159,8 @@ catch (err: RuntimeException) {
 
 \`\`\`kotlin
 try {
-    val ${eVar} = client.${accessor}(null).load(${loadArg}, null)
-    println(${eVar})
+    val ${eVar} = client.${accessor}(null).load(${loadArg}, null) as SdkEntity
+    println(${eVar}.data())
 }
 catch (err: RuntimeException) {
     println("load failed: " + err.message)

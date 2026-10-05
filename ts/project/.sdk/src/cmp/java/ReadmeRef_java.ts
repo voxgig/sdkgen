@@ -285,8 +285,10 @@ Object result = client.${accessor}(null).${opname}(${arg}, null);
           }
           else if ('list' === opname) {
             Content(`\`\`\`java
-Object results = client.${accessor}(null).list(null, null);
-System.out.println(results);
+List<?> results = (List<?>) client.${accessor}(null).list(null, null);
+for (Object item : results) {
+    System.out.println(((SdkEntity) item).data());
+}
 \`\`\`
 
 `)

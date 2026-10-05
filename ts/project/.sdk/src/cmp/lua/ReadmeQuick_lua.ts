@@ -80,9 +80,11 @@ local client = ${ctor}
     const idCol = dataIdF ? `rec["${dataIdF}"]` : null
     const dispCol = displayField ? `rec["${displayField}"]` : null
     const printCols = [idCol, dispCol].filter(Boolean).join(', ')
-    const printLine = printCols
-      ? `  local rec = item:data_get()\n  print(${printCols})`
-      : `  print(item)`
+    // A record with neither column prints every field it holds.
+    const printRecord = (v: string, cols: string, pad: string): string => cols
+      ? `${pad}local rec = ${v}:data_get()\n${pad}print(${cols})`
+      : `${pad}for k, val in pairs(${v}:data_get()) do print(k, val) end`
+    const printLine = printRecord('item', printCols, '  ')
 
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
@@ -107,6 +109,7 @@ end
       const neName = nom(nestedEntity, 'Name')
       const neArticle = /^[aeiou]/i.test(neName) ? "an" : "a"
       const neVar = exampleVarName(neName.toLowerCase(), 'lua')
+      const neDataIdF = entityDataIdField(nestedEntity)
 
       const neIdF = entityIdField(nestedEntity)
       const neRequired = opRequestShape(nestedEntity, 'load').items
@@ -124,10 +127,12 @@ end
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
+\`load\` returns the entity; \`data_get()\` reads its record.
+
 \`\`\`lua
 local ${neVar}, err = client:${neName}():load({ ${neMatch.join(', ')} })
 if err then error(err) end
-print(${neVar})
+${printRecord(neVar, neDataIdF ? `rec["${neDataIdF}"]` : '', '')}
 \`\`\`
 
 `)
@@ -145,10 +150,12 @@ print(${neVar})
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
+\`load\` returns the entity; \`data_get()\` reads its record.
+
 \`\`\`lua
 local ${eVar}, err = client:${eName}():load(${loadArg})
 if err then error(err) end
-print(${eVar})
+${printRecord(eVar, printCols, '')}
 \`\`\`
 
 `)

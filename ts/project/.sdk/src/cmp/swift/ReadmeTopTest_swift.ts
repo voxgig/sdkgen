@@ -60,9 +60,19 @@ let client = ${SDK}.testSDK(nil, nil)
       arg = `VMap([${chosen.map((it: any) =>
         `("${it.name}", ${swiftLit(it.type)})`).join(', ')}])`
     }
-    const eVar = swiftVarName(exampleEntity.name) + ('list' === primaryOp ? 'List' : '')
-    Content(`let ${eVar} = try client.${eName}().${primaryOp}(${arg}, nil)
-print(${eVar})
+    const eVar = swiftVarName(exampleEntity.name)
+    Content('list' === primaryOp
+      ? `let ${eVar}List = try client.${eName}().list(${arg}, nil)
+for ${eVar}Item in ${eVar}List.asList?.items ?? [] {
+    if let ${eVar}Entity = ${eVar}Item.asNative as? Entity {
+        print(${eVar}Entity.data())
+    }
+}
+`
+      : `let ${eVar} = try client.${eName}().${primaryOp}(${arg}, nil)
+if let ${eVar}Entity = ${eVar}.asNative as? Entity {
+    print(${eVar}Entity.data())
+}
 `)
   }
 

@@ -50,11 +50,15 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
-  const testModeExample = primaryOp
-    ? `// Entity ops return the entity, and list one per record; they raise on error.
-val ${eVar} = client.${accessor}(null).${primaryOp}(${testArg}, null)
-// data() on an entity reads its mock response record
-println(${eVar})`
+  const testModeExample = 'list' === primaryOp
+    ? `// list returns a list of entities, one per mock record; it raises on error.
+val ${eVar}List = client.${accessor}(null).list(${testArg}, null).asInstanceOf[java.util.List[SdkEntity]]
+${eVar}List.forEach(${eVar}Item => println(${eVar}Item.data()))`
+    : primaryOp
+    ? `// Entity ops return the entity; they raise on error.
+val ${eVar} = client.${accessor}(null).${primaryOp}(${testArg}, null).asInstanceOf[SdkEntity]
+// data() reads the entity's mock record
+println(${eVar}.data())`
     : `val result = client.direct(java.util.Map.of(
     "path", "/api/resource",
     "method", "GET"))

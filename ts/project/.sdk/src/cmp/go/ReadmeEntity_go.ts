@@ -131,7 +131,10 @@ ${eVar}s, err := client.${entity.Name}(nil).List(nil, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(${eVar}s) // a []any of entities, one per record
+// A []any of entities, one per record.
+for _, item := range ${eVar}s.([]any) {
+    fmt.Println(item.(sdk.Entity).Data())
+}
 \`\`\`
 
 `)
@@ -158,7 +161,7 @@ result, err := client.${entity.Name}(nil).Create(map[string]any{
 if err != nil {
     panic(err)
 }
-fmt.Println(result)
+fmt.Println(result.(sdk.Entity).Data()) // the created entity's record
 \`\`\`
 
 `)

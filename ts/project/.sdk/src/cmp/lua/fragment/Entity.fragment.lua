@@ -4,6 +4,7 @@ local json = require("dkjson")
 local vs = require("utility.struct.struct")
 local helpers = require("core.helpers")
 
+---@class EntyClass
 local EntyClass = {}
 EntyClass.__index = EntyClass
 

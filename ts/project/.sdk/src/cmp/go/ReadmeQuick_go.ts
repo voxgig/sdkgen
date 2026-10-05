@@ -109,7 +109,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)
-      body.push(`    fmt.Println(created)`)
+      body.push(`    fmt.Println(created.(sdk.Entity).Data())`)
       body.push(``)
       usesFmt = true
     }
@@ -125,7 +125,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)
-      body.push(`    fmt.Println(updated)`)
+      body.push(`    fmt.Println(updated.(sdk.Entity).Data())`)
       body.push(``)
       usesFmt = true
     }
@@ -139,7 +139,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)
-      body.push(`    fmt.Println(patched)`)
+      body.push(`    fmt.Println(patched.(sdk.Entity).Data())`)
       body.push(``)
       usesFmt = true
     }
@@ -150,7 +150,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
       body.push(`    if err != nil {`)
       body.push(`        panic(err)`)
       body.push(`    }`)
-      body.push(`    fmt.Println(removed)`)
+      body.push(`    fmt.Println(removed.(sdk.Entity).Data())`)
       body.push(``)
       usesFmt = true
     }

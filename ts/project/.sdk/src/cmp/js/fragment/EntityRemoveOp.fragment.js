@@ -7,7 +7,7 @@ class EntityOperation {
   /**
    * @param {EntityNameRemoveMatch} [reqmatch]
    * @param {Object} [ctrl]
-   * @returns {Promise<EntityName>}
+   * @returns {Promise<EntyClass>}
    */
   async remove(reqmatch, ctrl) {
 

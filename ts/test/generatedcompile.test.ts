@@ -27,7 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
-  DOC_MODELS,
+  CRUD_MODEL, DOC_MODELS,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -658,12 +658,13 @@ pub fn main() void {
 
   // The README example tests find `tsc` and strip a snippet's types through
   // the TypeScript installed beside the SDK, which here is sdkgen's own. They
-  // compile the snippets in the OS temp directory: adding or removing a file
-  // there moves the directory's mtime, and the SDK's own folders keep theirs.
-  // FOLD_ENTITY's contacts_field has a PATCH beside its PUT.
+  // compile the snippets in the OS temp directory, whose mtime moves while the
+  // SDK's own folders keep theirs. FOLD_ENTITY's contacts_field has a PATCH
+  // beside its PUT, and the crud model's tutorial patches its first entity.
   for (const [label, dir, extra] of [
     ['', 'ts-readme', undefined],
     [', with a patch', 'ts-readme-patch', FOLD_ENTITY],
+    [', with a patch in the tutorial', 'ts-readme-crud', CRUD_MODEL],
   ]) {
     test('typescript: the README example tests type-check and run the examples' + label, async () => {
       ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
@@ -5590,10 +5591,11 @@ describe('the README examples run for a slug carrying the word client', () => {
     if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
   })
 
-  for (const lane of README_LANES) {
-    test(lane.target + ': every README example is classified, and run', async (t) => {
-      const sdkroot = Path.join(tmp, lane.target, lane.target)
-      const files = await generateTo(lane.target, sdkroot, undefined, undefined,
+  // The crud model's tutorial patches an entity as well.
+  for (const lane of README_LANES) for (const [label, extra] of [['', undefined], [', with a patch', CRUD_MODEL]]) {
+    test(lane.target + ': every README example is classified, and run' + label, async (t) => {
+      const sdkroot = Path.join(tmp, lane.target + (null == extra ? '' : '-patch'), lane.target)
+      const files = await generateTo(lane.target, sdkroot, extra, undefined,
         { name: README_SLUG, top: true })
       ok(null != files[lane.runner], lane.target + ': ' + lane.runner + ' was not generated')
       ok(String(files['README.md']).includes(README_SLUG),
@@ -5622,8 +5624,8 @@ describe('the README examples run for a slug carrying the word client', () => {
 })
 
 
-// The examples the docs of c, cpp, rust and zig show, compiled against the
-// generated SDK: each block in the target's language in its README, its
+// The examples the docs of c, cpp, rust, zig and ocaml show, compiled against
+// the generated SDK: each block in the target's language in its README, its
 // REFERENCE and the root README. A fragment is compiled inside a function, with
 // the client and the arguments a signature names in scope, and with the first
 // imports its page shows when it has none of its own.
@@ -5632,8 +5634,8 @@ type DocBlock = { doc: string, line: number, code: string }
 const DOC_PAGES = ['../README.md', 'README.md', 'REFERENCE.md']
 
 // The numbered steps of one section build on each other, as a tutorial's do,
-// so they are one program.
-function docBlocks(sdkroot: string, fence: string): DocBlock[] {
+// so they are one program, each step joined to the last by `join`.
+function docBlocks(sdkroot: string, fence: string, join = '\n'): DocBlock[] {
   const blocks: DocBlock[] = []
   for (const doc of DOC_PAGES) {
     const path = Path.join(sdkroot, doc)
@@ -5660,7 +5662,7 @@ function docBlocks(sdkroot: string, fence: string): DocBlock[] {
       if (fence === lang) {
         const code = lines.slice(open + 1, i).join('\n')
         if (step && null != steps && section === stepsIn) {
-          steps.code += '\n' + code
+          steps.code += join + code
         }
         else {
           const block = { doc, line: open + 1, code }
@@ -5816,6 +5818,23 @@ function zigExamples(blocks: DocBlock[]): string {
   ].join('\n')
 }
 
+// An OCaml block is a run of toplevel phrases: after the names a signature
+// gives, and the opens its page shows first when it has none of its own.
+function ocamlExample(block: DocBlock, imports: string[]): string {
+  const own = block.code.split('\n').some((l) => /^open\s/.test(l))
+  return [
+    '(* ' + block.doc + ':' + block.line + ' *)',
+    'let client = Sdk_client.test ()',
+    'let options = Voxgig_struct.Noval',
+    'let testopts = Voxgig_struct.Noval',
+    'let sdkopts = Voxgig_struct.Noval',
+    ...(own ? [] : imports),
+    ';;',
+    block.code,
+    '',
+  ].join('\n')
+}
+
 type DocCompile = { label: string, bin: string, args: string[], env?: NodeJS.ProcessEnv }
 
 const DOC_LANES: {
@@ -5824,6 +5843,8 @@ const DOC_LANES: {
   needs: string,
   // A build.zig.zon entry is shown in a zig block, and is not zig source.
   manifest?: (block: DocBlock) => boolean,
+  // How the steps of one section join into one program.
+  join?: string,
   // Writes the examples into the SDK, and returns how to compile them, or
   // null when this machine has no toolchain for them.
   compile: (sdkroot: string, blocks: DocBlock[]) => DocCompile[] | null,
@@ -5921,10 +5942,31 @@ const DOC_LANES: {
       }]
     },
   },
+  {
+    target: 'ocaml',
+    fence: 'ocaml',
+    needs: 'ocamlc and make',
+    join: '\n;;\n',
+    compile: (sdkroot, blocks) => {
+      const ocamlc = toolchain('ocamlc')
+      const make = toolchain('make')
+      if (null == ocamlc || null == make) return null
+      const dir = Path.join(sdkroot, '_readme')
+      Fs.mkdirSync(dir, { recursive: true })
+      return [
+        { label: 'the SDK', bin: make, args: ['OCAMLC=' + ocamlc, 'build'] },
+        ...blocks.map((block, i) => {
+          const file = Path.join(dir, 'readme_' + i + '.ml')
+          Fs.writeFileSync(file, ocamlExample(block, pageImports(blocks, block.doc, /^open\s/)))
+          return { label: block.doc + ':' + block.line, bin: ocamlc, args: ['-I', '.', '-I', 'utility', '-c', file] }
+        }),
+      ]
+    },
+  },
 ]
 
 
-describe('the documented c, cpp, rust and zig examples compile', () => {
+describe('the documented c, cpp, rust, zig and ocaml examples compile', () => {
 
   let tmp = ''
 
@@ -5941,7 +5983,7 @@ describe('the documented c, cpp, rust and zig examples compile', () => {
       const sdkroot = Path.join(tmp, lane.target + '-' + shape, lane.target)
       await generateTo(lane.target, sdkroot, extra, undefined, { top: true })
 
-      const blocks = docBlocks(sdkroot, lane.fence).filter((b) => !lane.manifest?.(b))
+      const blocks = docBlocks(sdkroot, lane.fence, lane.join).filter((b) => !lane.manifest?.(b))
       for (const doc of DOC_PAGES) {
         ok(blocks.some((b) => b.doc === doc),
           lane.target + ': ' + doc + ' shows no ' + lane.fence + ' example, so nothing checks it')

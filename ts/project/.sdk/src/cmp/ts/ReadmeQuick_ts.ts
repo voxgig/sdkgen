@@ -83,7 +83,7 @@ resolves to entities, not raw records. Iterate them directly, and call
 const ${eVar}s = await client.${eName}().list(${listMatchArg(exampleEntity)})
 
 for (const ${eVar} of ${eVar}s) {
-  console.log(${eVar})
+  console.log(${eVar}.data())
 }
 \`\`\`
 
@@ -111,14 +111,14 @@ for (const ${eVar} of ${eVar}s) {
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`load()\` returns the entity directly and throws on failure:
+\`load()\` returns the entity and throws on failure; \`.data()\` reads its record:
 
 \`\`\`ts
 try {
   const ${neVar} = await client.${neName}().load({
 ${neMatchLines.join('\n')}
   })
-  console.log(${neVar})
+  console.log(${neVar}.data())
 } catch (err) {
   console.error('load failed:', err)
 }
@@ -139,12 +139,12 @@ ${neMatchLines.join('\n')}
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`load()\` returns the entity directly and throws on failure:
+\`load()\` returns the entity and throws on failure; \`.data()\` reads its record:
 
 \`\`\`ts
 try {
   const ${eVar} = await client.${eName}().load(${loadArg})
-  console.log(${eVar})
+  console.log(${eVar}.data())
 } catch (err) {
   console.error('load failed:', err)
 }

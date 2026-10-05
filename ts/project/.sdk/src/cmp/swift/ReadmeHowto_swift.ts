@@ -50,11 +50,21 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
-  const testModeExample = primaryOp
-    ? `// Entity ops return the entity, and list one per record; they throw on error.
+  const testModeExample = 'list' === primaryOp
+    ? `// list returns a Value list of entities, one per mock record; it throws on error.
+let ${eVar}List = try client.${eName}().list(${testArg}, nil)
+for ${eVar}Item in ${eVar}List.asList?.items ?? [] {
+    if let ${eVar}Entity = ${eVar}Item.asNative as? Entity {
+        print(${eVar}Entity.data())
+    }
+}`
+    : primaryOp
+    ? `// Entity ops return the entity, wrapped in a Value; they throw on error.
 let ${eVar} = try client.${eName}().${primaryOp}(${testArg}, nil)
-// data() on an entity reads its mock response record
-print(${eVar})`
+// data() reads the entity's mock record
+if let ${eVar}Entity = ${eVar}.asNative as? Entity {
+    print(${eVar}Entity.data())
+}`
     : `let result = client.direct(VMap([
     ("path", .string("/api/resource")),
     ("method", .string("GET")),

@@ -44,7 +44,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     retBullets.push('- `list` resolves to an **array** of entity objects (iterate it directly;\n  there is no `.data` and no `.ok`).')
   }
   if (opUnion.has('remove')) {
-    retBullets.push('- `remove` resolves to `void`.')
+    retBullets.push('- `remove` resolves to the entity, marked as deleted.')
   }
   const returnBullets = retBullets.join('\n')
 
@@ -134,8 +134,8 @@ ${opRows}
 
 #### Return values
 
-Entity operations resolve to the entity data directly — there is no
-result envelope:
+Entity operations resolve to the entity itself — there is no result
+envelope, and an entity's \`data()\` reads its record:
 
 ${returnBullets}
 

@@ -59,10 +59,16 @@ val client = ${SDK}.testSDK(null, null)
       arg = `mutableMapOf<String, Any?>(${chosen.map((it: any) =>
         `"${it.name}" to ${kotlinLit(it.type)}`).join(', ')})`
     }
-    const eVar = kotlinVarName(exampleEntity.name) + ('list' === primaryOp ? 'List' : '')
+    const eVar = kotlinVarName(exampleEntity.name)
     const accessor = kotlinVarName(exampleEntity.name)
-    Content(`val ${eVar} = client.${accessor}(null).${primaryOp}(${arg}, null)
-println(${eVar})
+    Content('list' === primaryOp
+      ? `val ${eVar}List = client.${accessor}(null).list(${arg}, null) as List<*>
+for (${eVar}Item in ${eVar}List) {
+    println((${eVar}Item as SdkEntity).data())
+}
+`
+      : `val ${eVar} = client.${accessor}(null).${primaryOp}(${arg}, null) as SdkEntity
+println(${eVar}.data())
 `)
   }
 

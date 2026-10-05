@@ -59,10 +59,14 @@ val client = ${SDK}.testSDK(null, null)
       arg = `java.util.Map.of(${chosen.map((it: any) =>
         `"${it.name}", ${scalaLit(it.type)}`).join(', ')})`
     }
-    const eVar = scalaVarName(exampleEntity.name) + ('list' === primaryOp ? 'List' : '')
+    const eVar = scalaVarName(exampleEntity.name)
     const accessor = scalaVarName(exampleEntity.name)
-    Content(`val ${eVar} = client.${accessor}(null).${primaryOp}(${arg}, null)
-println(${eVar})
+    Content('list' === primaryOp
+      ? `val ${eVar}List = client.${accessor}(null).list(${arg}, null).asInstanceOf[java.util.List[SdkEntity]]
+${eVar}List.forEach(${eVar}Item => println(${eVar}Item.data()))
+`
+      : `val ${eVar} = client.${accessor}(null).${primaryOp}(${arg}, null).asInstanceOf[SdkEntity]
+println(${eVar}.data())
 `)
   }
 

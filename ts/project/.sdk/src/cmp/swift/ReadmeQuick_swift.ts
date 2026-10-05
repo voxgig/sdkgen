@@ -85,13 +85,16 @@ let client = ${SDK}()
       Content(`### 2. List ${eName.toLowerCase()} records
 
 \`list(nil, nil)\` returns a \`Value\` list of entities, one per record, and
-throws on error — iterate its items.
+throws on error; \`asNative as? Entity\` unwraps an item, and its \`data()\`
+reads the record.
 
 \`\`\`swift
 do {
     let ${eVar}List = try client.${accessor}().list(nil, nil)
-    for ${eVar} in ${eVar}List.asList?.items ?? [] {
-        print(${eVar})
+    for ${eVar}Item in ${eVar}List.asList?.items ?? [] {
+        if let ${eVar}Entity = ${eVar}Item.asNative as? Entity {
+            print(${eVar}Entity.data())
+        }
     }
 }
 catch {
@@ -130,7 +133,9 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`\`\`swift
 do {
     let ${neVar} = try client.${neAccessor}().load(VMap([${neMatch.join(', ')}]), nil)
-    print(${neVar})
+    if let ${neVar}Entity = ${neVar}.asNative as? Entity {
+        print(${neVar}Entity.data())
+    }
 }
 catch {
     print("load failed: \\(error)")
@@ -158,7 +163,9 @@ catch {
 \`\`\`swift
 do {
     let ${eVar} = try client.${accessor}().load(${loadArg}, nil)
-    print(${eVar})
+    if let ${eVar}Entity = ${eVar}.asNative as? Entity {
+        print(${eVar}Entity.data())
+    }
 }
 catch {
     print("load failed: \\(error)")

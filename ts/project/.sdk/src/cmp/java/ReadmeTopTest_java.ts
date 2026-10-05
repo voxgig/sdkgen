@@ -59,10 +59,16 @@ ${SDK} client = ${SDK}.testSDK(null, null);
       arg = `Map.of(${chosen.map((it: any) =>
         `"${it.name}", ${javaLit(it.type)}`).join(', ')})`
     }
-    const eVar = javaVarName(exampleEntity.name) + ('list' === primaryOp ? 'List' : '')
+    const eVar = javaVarName(exampleEntity.name)
     const accessor = javaVarName(exampleEntity.name)
-    Content(`Object ${eVar} = client.${accessor}(null).${primaryOp}(${arg}, null);
-System.out.println(${eVar});
+    Content('list' === primaryOp
+      ? `List<?> ${eVar}List = (List<?>) client.${accessor}(null).list(${arg}, null);
+for (Object ${eVar}Item : ${eVar}List) {
+    System.out.println(((SdkEntity) ${eVar}Item).data());
+}
+`
+      : `SdkEntity ${eVar} = (SdkEntity) client.${accessor}(null).${primaryOp}(${arg}, null);
+System.out.println(${eVar}.data());
 `)
   }
 

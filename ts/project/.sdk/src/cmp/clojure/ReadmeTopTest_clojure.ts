@@ -61,9 +61,13 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
       const chosen = required.length ? required : items.slice(0, 3)
       arg = `(vs/jm ${chosen.map((it: any) => `"${it.name}" ${cljLit(it.type)}`).join(' ')})`
     }
-    const eVar = eLow + ('list' === primaryOp ? 's' : '')
-    Content(`(def ${eVar} (e-${eLow}/${primaryOp} (api/${eLow} client nil) ${arg} nil))
-(println ${eVar})
+    Content('list' === primaryOp
+      ? `(def ${eLow}s (e-${eLow}/list (api/${eLow} client nil) ${arg} nil))
+(doseq [item ${eLow}s]
+  (println ((:data-get item))))
+`
+      : `(def ${eLow} (e-${eLow}/${primaryOp} (api/${eLow} client nil) ${arg} nil))
+(println ((:data-get ${eLow})))
 `)
   }
 

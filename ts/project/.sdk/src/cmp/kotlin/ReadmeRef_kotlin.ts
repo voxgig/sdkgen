@@ -285,8 +285,10 @@ val result = client.${accessor}(null).${opname}(${arg}, null)
           }
           else if ('list' === opname) {
             Content(`\`\`\`kotlin
-val results = client.${accessor}(null).list(null, null)
-println(results)
+val results = client.${accessor}(null).list(null, null) as List<*>
+for (item in results) {
+    println((item as SdkEntity).data())
+}
 \`\`\`
 
 `)

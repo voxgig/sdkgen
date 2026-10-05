@@ -191,7 +191,7 @@ switch (client.${method}(h.vnull()).update(h.jo(&.{${updatePairs.join(', ')}}), 
         const patchPairs = (idF ? [`.{ "${idF}", ${idValueFor('patch')} }`] : []).concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 switch (client.${method}(h.vnull()).patch(h.jo(&.{${patchPairs.join(', ')}}), h.vnull())) {
-    .ok => |patched| std.debug.print("{s}\\n", .{h.stringify(patched)}),
+    .ok => |patched| std.debug.print("{s}\\n", .{h.stringify(patched.asEntity().data(null))}),
     .err => |e| std.debug.print("patch failed: {s}\\n", .{e.msg}),
 }
 

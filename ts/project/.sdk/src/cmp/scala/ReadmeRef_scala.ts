@@ -285,8 +285,8 @@ val result = client.${accessor}(null).${opname}(${arg}, null)
           }
           else if ('list' === opname) {
             Content(`\`\`\`scala
-val results = client.${accessor}(null).list(null, null)
-println(results)
+val results = client.${accessor}(null).list(null, null).asInstanceOf[java.util.List[SdkEntity]]
+results.forEach(item => println(item.data()))
 \`\`\`
 
 `)

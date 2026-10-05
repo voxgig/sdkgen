@@ -95,6 +95,7 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
     Content(`\`\`\`ocaml
 open Voxgig_struct
 open Sdk_helpers
+open Sdk_types
 
 let client = Sdk_client.make options
 \`\`\`
