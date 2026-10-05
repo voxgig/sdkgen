@@ -10,6 +10,36 @@
 #include <stdlib.h>
 #include <string.h>
 
+// The key a list's response transform
+// ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record under,
+// copied into buf; NULL for any other transform.
+static const char* item_envelope_key(voxgig_value* restf, char* buf, size_t cap) {
+  if (!voxgig_is_list(restf)) {
+    return NULL;
+  }
+  voxgig_list* spec = voxgig_as_list(restf);
+  if (3 != spec->len || !v_str_eq(spec->items[0], "`$EACH`") ||
+      !v_str_eq(spec->items[1], "body")) {
+    return NULL;
+  }
+  const char* merge = get_str(spec->items[2], "`$MERGE`");
+  if (NULL == merge) {
+    return NULL;
+  }
+  size_t n = strlen(merge);
+  if (n < 4 || 0 != strncmp(merge, "`.", 2) || '`' != merge[n - 1] || n - 3 >= cap) {
+    return NULL;
+  }
+  for (size_t i = 2; i < n - 1; i++) {
+    if ('.' == merge[i] || '`' == merge[i] || '$' == merge[i]) {
+      return NULL;
+    }
+  }
+  memcpy(buf, merge + 2, n - 3);
+  buf[n - 3] = '\0';
+  return buf;
+}
+
 // THE MOCK HAS TO AGREE WITH THE MODEL.
 //
 // A point carrying `transform.res: `body.item`` describes an API that answers
@@ -26,6 +56,16 @@ static voxgig_value* envelope(Context* ctx, voxgig_value* data) {
     return data;
   }
   voxgig_value* tm = getp(ctx->point, "transform");
+  char keybuf[256];
+  const char* key = item_envelope_key(getp(tm, "res"), keybuf, sizeof(keybuf));
+  if (NULL != key && voxgig_is_list(data)) {
+    voxgig_list* items = voxgig_as_list(data);
+    voxgig_value* out = v_list();
+    for (size_t i = 0; i < items->len; i++) {
+      voxgig_list_push(voxgig_as_list(out), cmap(1, key, items->items[i]));
+    }
+    return out;
+  }
   const char* spec = get_str(tm, "res");
   if (NULL == spec) {
     return data;

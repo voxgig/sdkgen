@@ -93,6 +93,24 @@ fn fixIds(_: Allocator, key: ?[]const u8, val: Value, _: Value, path: []const []
     return val;
 }
 
+// The key a list's response transform
+// ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record
+// under; null for any other transform.
+fn item_envelope_key(restf: Value) ?[]const u8 {
+    if (restf != .array) return null;
+    const spec = restf.array.data.items;
+    if (spec.len != 3) return null;
+    if (spec[0] != .string or !std.mem.eql(u8, spec[0].string, "`$EACH`")) return null;
+    if (spec[1] != .string or !std.mem.eql(u8, spec[1].string, "body")) return null;
+    const merge = h.getp(spec[2], "`$MERGE`");
+    if (merge != .string) return null;
+    const m = merge.string;
+    if (m.len < 4 or !std.mem.startsWith(u8, m, "`.") or !std.mem.endsWith(u8, m, "`")) return null;
+    const key = m[2 .. m.len - 1];
+    if (std.mem.indexOfAny(u8, key, ".`$") != null) return null;
+    return key;
+}
+
 // THE MOCK HAS TO AGREE WITH THE MODEL.
 //
 // A point carrying `transform.res: `body.item`` describes an API that answers
@@ -107,6 +125,13 @@ fn fixIds(_: Allocator, key: ?[]const u8, val: Value, _: Value, path: []const []
 fn envelope(ctx: *Context, data: Value) Value {
     if (data == .null) return data;
     const restf = h.getpath(&.{ "transform", "res" }, ctx.point);
+    if (item_envelope_key(restf)) |key| {
+        if (data == .array) {
+            const out = h.olist();
+            for (data.array.data.items) |item| out.array.append(h.jo(&.{.{ key, item }})) catch {};
+            return out;
+        }
+    }
     if (restf != .string) return data;
     const spec = restf.string;
     // Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:

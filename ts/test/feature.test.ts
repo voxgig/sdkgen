@@ -938,6 +938,49 @@ describe('feature:test-envelope', () => {
       'every SDK target synthesises the envelope: add the new one to this guard')
   })
 
+  test('every target wraps each listed record under the key its transform reads', () => {
+    // A list read by ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] expects
+    // items of the form {<key>: record}; bare records give it nothing to read.
+    const TM = Path.join(__dirname, '..', 'project', '.sdk', 'tm')
+    const sites: [string, string, string][] = [
+      ['c', 'feature/test.c', String.raw`cmap(1, key, items->items[i])`],
+      ['clojure', 'src/sdk/features.clj', String.raw`(map (fn [item] (vs/jm ikey item)) data)`],
+      ['cpp', 'feature/test.hpp', String.raw`map_put(wrapped, key, item)`],
+      ['csharp', 'feature/TestFeature.cs', String.raw`new Dictionary<string, object?> { [key] = item }`],
+      ['elixir', 'lib/projectname/feature/test.ex', String.raw`S.jm([key, S.getelem(data, i)])`],
+      ['go', 'feature/test_feature.go', String.raw`map[string]any{key: item}`],
+      ['java', 'feature/TestFeature.java', String.raw`wrapped.put(key, item)`],
+      ['js', 'src/feature/test/TestFeature.js', String.raw`data.map((item) => ({ [itemkey]: item }))`],
+      ['kotlin', 'feature/TestFeature.kt', String.raw`linkedMapOf<String, Any?>(key to it)`],
+      ['lua', 'feature/test_feature.lua', String.raw`out[i] = { [key] = item }`],
+      ['ocaml', 'sdk_features.ml', String.raw`jo [(key, item)]`],
+      ['perl', 'feature/test_feature.pm', String.raw`map { +{ $key => $_ } } @$data`],
+      ['php', 'feature/TestFeature.php', String.raw`fn($item) => [$key => $item]`],
+      ['py', 'pkg/feature/test_feature.py', String.raw`[{key: item} for item in data]`],
+      ['rb', 'feature/test_feature.rb', String.raw`data.map { |item| { key => item } }`],
+      ['rust', 'feature/test.rs', String.raw`jo(vec![(key.as_str(), item.clone())])`],
+      ['scala', 'feature/TestFeature.scala', String.raw`wrapped.put(key, item)`],
+      ['swift', 'Sources/ProjectNameSDK/feature/TestFeature.swift', String.raw`wrapped.entries[key] = item`],
+      ['ts', 'src/feature/test/TestFeature.ts', String.raw`data.map((item: any) => ({ [itemkey]: item }))`],
+      ['zig', 'feature/test.zig', String.raw`h.jo(&.{.{ key, item }})`],
+    ]
+
+    for (const [target, rel, form] of sites) {
+      const file = Path.join(TM, target, rel)
+      ok(Fs.existsSync(file), target + ': ' + rel + ' is gone — repoint this guard')
+      ok(Fs.readFileSync(file, 'utf8').includes(form),
+        target + ' no longer wraps each listed record under its key (' + rel + ')')
+    }
+
+    const NON_SDK = ['go-cli', 'go-mcp', 'py-data']
+    const shipped = Fs.readdirSync(TM)
+      .filter((n) => Fs.statSync(Path.join(TM, n)).isDirectory())
+      .filter((n) => !NON_SDK.includes(n))
+      .sort()
+    deepStrictEqual(sites.map(([t]) => t).sort(), shipped,
+      'every SDK target wraps listed records: add the new one to this guard')
+  })
+
 })
 
 

@@ -33,6 +33,7 @@ import {
   mediaFailures, mediaPrinted, mediaRecord,
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
+import { ITEMS_EXPECT, ITEMS_PROBES, itemsListed } from './itemprobes'
 import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
 
 
@@ -5777,6 +5778,23 @@ describe('probes driven through a generated SDK', () => {
 
       ok(ran.ok, lane.target + ': the allow probe failed:\n' + tail(ran.out, 60))
       deepStrictEqual(allowOutcomes(ran.out), ALLOW_OUTCOMES,
+        lane.target + ' probe output:\n' + tail(ran.out))
+    })
+
+    test(lane.target + ': a list reads the record each of its items wraps', async (t) => {
+      const missing = lane.ready()
+      if (null != missing) return t.skip(missing)
+
+      const sdkroot = await sdkFor(lane.target)
+      const ran = lane.exec(sdkroot, nestedTestEnv(), writer(sdkroot),
+        { name: 'items', source: ITEMS_PROBES })
+
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+      }
+
+      ok(ran.ok, lane.target + ': the items probe failed:\n' + tail(ran.out, 60))
+      strictEqual(itemsListed(ran.out), ITEMS_EXPECT,
         lane.target + ' probe output:\n' + tail(ran.out))
     })
 

@@ -548,7 +548,10 @@ from the seed map, including writes: a `create` is readable by a following
 The mock is **model-aware**, which is the part that makes it worth using.
 It rebuilds whatever envelope the operation's response transform unwraps,
 so an API that answers `{ item: {...} }` is simulated as such rather than
-as a bare entity. It also seeds each record under the entity's real
+as a bare entity. A list whose response transform is
+`` ["`$EACH`", "body", { "`$MERGE`": "`.customer`" }] `` reads each record
+out of an item of its own, so the mock answers it with each record wrapped
+as `{ customer: {...} }`. It also seeds each record under the entity's real
 identifier as the API names it, not a hardcoded `id`, so an API keyed on
 `record_id` behaves like itself.
 

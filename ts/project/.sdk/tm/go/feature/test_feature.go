@@ -15,6 +15,23 @@ import (
 // payload in <key> so the transform can unwrap it again.
 var envelopeResRe = regexp.MustCompile("^`body\\.(.+)`$")
 
+// The key a list's response transform
+// ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record under.
+var itemEnvelopeRe = regexp.MustCompile("^`\\.([^.`$]+)`$")
+
+func itemEnvelopeKey(restf any) string {
+	list, ok := restf.([]any)
+	if !ok || len(list) != 3 || list[0] != "`$EACH`" || list[1] != "body" {
+		return ""
+	}
+	child, _ := list[2].(map[string]any)
+	merge, _ := child["`$MERGE`"].(string)
+	if m := itemEnvelopeRe.FindStringSubmatch(merge); m != nil {
+		return m[1]
+	}
+	return ""
+}
+
 type TestFeature struct {
 	BaseFeature
 	client   *core.ProjectNameSDK
@@ -62,6 +79,15 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			tm, ok := ctx.Point["transform"].(map[string]any)
 			if !ok {
 				return data
+			}
+			if key := itemEnvelopeKey(tm["res"]); key != "" {
+				if items, isList := data.([]any); isList {
+					out := make([]any, len(items))
+					for i, item := range items {
+						out[i] = map[string]any{key: item}
+					}
+					return out
+				}
 			}
 			restf, ok := tm["res"].(string)
 			if !ok {
