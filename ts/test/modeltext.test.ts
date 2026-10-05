@@ -4,6 +4,7 @@ import { deepStrictEqual, strictEqual } from 'node:assert'
 import Fs from 'node:fs'
 import Path from 'node:path'
 
+import { compileModel } from '../dist/helpers/modelcheck.js'
 import { modelText } from '../dist/helpers/text.js'
 
 
@@ -22,6 +23,13 @@ function sources(dir: string): string[] {
   return Fs.readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
     d.isDirectory() ? sources(Path.join(dir, d.name)) :
       d.name.endsWith('.ts') ? [Path.join(dir, d.name)] : [])
+}
+
+
+// aontu stats the path: an existing file that is not the schema.
+function compiledText(src: string): { text: any, errors: string[] } {
+  const { model, errors } = compileModel(src, __filename, { schema: true })
+  return { text: model?.main?.kit?.text, errors }
 }
 
 
@@ -59,5 +67,26 @@ describe('modelText', () => {
       return slot.test(src) && !src.includes('modelText(')
     }).map((file) => Path.relative(ROOT, file))
     deepStrictEqual(offenders, [])
+  })
+})
+
+
+describe('main.kit.text in the schema', () => {
+
+  test('entity_desc defaults to empty and keeps a string description', () => {
+    const absent = compiledText('')
+    deepStrictEqual(absent.errors, [])
+    deepStrictEqual(absent.text.entity_desc, {})
+
+    const worded = compiledText("main: kit: text: entity_desc: planet: 'A planet.'")
+    deepStrictEqual(worded.errors, [])
+    deepStrictEqual(worded.text.entity_desc, { planet: 'A planet.' })
+  })
+
+  test('a non-string entity description fails the model', () => {
+    const accepted = ['123', 'true', "{ short: 'A planet.' }", "['A planet.']"]
+      .filter((value) => !compiledText('main: kit: text: entity_desc: planet: ' + value)
+        .errors.some((err) => err.includes('entity_desc.planet')))
+    deepStrictEqual(accepted, [])
   })
 })

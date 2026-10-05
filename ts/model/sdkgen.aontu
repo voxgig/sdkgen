@@ -50,7 +50,7 @@ main: kit: text: close({
   homepage: *'' | string
   docs_url: *'' | string
   meta_source: *'' | string
-  entity_desc: *{} | {&: string}
+  entity_desc: {&: string}
 })
 
 
