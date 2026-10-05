@@ -61,18 +61,29 @@ PNError* err = NULL;
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = cmapExpr(items.map((it: any) =>
         `"${it.name}", ${it.name === idF ? 'v_str("test01")' : cLit(it.type)}`))
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
       arg = cmapExpr(chosen.map((it: any) => `"${it.name}", ${cLit(it.type)}`))
     }
-    const resVar = cVarName(exampleEntity.name) + ('list' === primaryOp ? 's' : '_rec')
     Content(`Entity* ${evar} = ${acc}(client, NULL);
-voxgig_value* ${resVar} = ${evar}->vt->${primaryOp}(${evar}, ${arg}, NULL, &err);
-printf("%s\\n", voxgig_to_json(${resVar}));
 `)
+    if ('list' === primaryOp) {
+      Content(`Entity** ${evar}s = ${evar}->vt->list(${evar}, ${arg}, NULL, &err);
+for (size_t i = 0; ${evar}s && ${evar}s[i]; i++) {
+    printf("%s\\n", voxgig_to_json(${evar}s[i]->vt->data(${evar}s[i], NULL)));
+}
+`)
+    }
+    else {
+      Content(`Entity* result = ${evar}->vt->${primaryOp}(${evar}, ${arg}, NULL, &err);
+if (result) {
+    printf("%s\\n", voxgig_to_json(result->vt->data(result, NULL)));
+}
+`)
+    }
   }
 
   Content(`\`\`\`

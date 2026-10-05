@@ -86,7 +86,15 @@ class ProjectNameFetcher
         }
 
         $context = stream_context_create($opts);
+        error_clear_last();
         $response_body = @file_get_contents($fullurl, false, $context);
+
+        // A request that got no answer fails the operation. The stream
+        // wrapper's warning names the URL, which is left out.
+        if ($response_body === false) {
+            $warning = error_get_last()['message'] ?? 'request failed';
+            return [null, preg_replace('/^file_get_contents\(.*?\):\s*/', '', $warning)];
+        }
 
         $status = 0;
         $status_text = '';
@@ -112,7 +120,7 @@ class ProjectNameFetcher
 
         $json_body = null;
         $unreadable = false;
-        if ($response_body !== false && trim((string)$response_body) !== '') {
+        if (trim($response_body) !== '') {
             $decoded = json_decode($response_body, true);
             if (json_last_error() === JSON_ERROR_NONE) {
                 $json_body = $decoded;
@@ -127,7 +135,7 @@ class ProjectNameFetcher
                 'statusText' => $status_text,
                 'headers' => $resp_headers,
                 'json' => function () use ($json_body) { return $json_body; },
-                'body' => $response_body !== false ? $response_body : '',
+                'body' => $response_body,
                 'unreadable' => $unreadable,
             ],
             null,

@@ -65,11 +65,19 @@ private func stripAction(_ reqdata: Value) -> Value {
   return omitKeys(reqdata, ["$action"])
 }
 
-// A header or query argument travels where prepareHeadersUtil or
+// A header, cookie or query argument travels where prepareHeadersUtil or
 // prepareQueryUtil sends it, so the body is built from the request data
-// without it.
+// without it, unless the entity declares it as a field too.
 private func routedArgNames(_ ctx: Context) -> [String] {
   return (callArgs(ctx, "header") + callArgs(ctx, "cookie") + callArgs(ctx, "query")).map { $0.name }
+    .filter { !fieldArg(ctx, $0) }
+}
+
+private func fieldArg(_ ctx: Context, _ name: String) -> Bool {
+  return ["header", "cookie", "query"].contains { kind in
+    guard let defs = gpath(ctx.point, "args", kind).asList else { return false }
+    return defs.items.contains { gp($0, "name").asString == name && gp($0, "field").asBool == true }
+  }
 }
 
 private func omitKeys(_ reqdata: Value, _ names: [String]) -> Value {

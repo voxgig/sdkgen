@@ -127,6 +127,8 @@ sub match_get {
 
 # #UpdateOp
 
+# #PatchOp
+
 # #RemoveOp
 
 # Streaming operation. Runs `action` (an op name, e.g. 'list') through the

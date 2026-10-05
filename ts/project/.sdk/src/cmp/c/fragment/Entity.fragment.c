@@ -31,6 +31,7 @@ static Entity* entyvar_load(Entity* e, voxgig_value* reqmatch, voxgig_value* ctr
 static Entity** entyvar_list(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
 static Entity* entyvar_create(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
 static Entity* entyvar_update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
+static Entity* entyvar_patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
 static Entity* entyvar_remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
 static void entyvar_mark_deleted(Entity* e);
 static bool entyvar_deleted(Entity* e);
@@ -268,6 +269,8 @@ static voxgig_value* entyvar_matchv(Entity* e, voxgig_value* args) {
 
 // #UpdateOp
 
+// #PatchOp
+
 // #RemoveOp
 
 // `remove` resolves to the entity, marked. The instance KEEPS the data it
@@ -292,5 +295,6 @@ static const EntityVT entyvar_VT = {
   entyvar_list,
   entyvar_create,
   entyvar_update,
+  entyvar_patch,
   entyvar_remove,
 };

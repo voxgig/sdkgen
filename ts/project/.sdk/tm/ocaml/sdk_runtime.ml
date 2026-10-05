@@ -168,7 +168,7 @@ let resolve_op (ctx : ctx) (opname : string) : operation =
     if opname = "" then new_operation (empty_map ())
     else begin
       let opcfg = getpath_s ctx.c_config ("entity." ^ entname ^ ".op." ^ opname) in
-      let inpt = if opname = "update" || opname = "create" then "data" else "match" in
+      let inpt = if opname = "update" || opname = "create" || opname = "patch" then "data" else "match" in
       let points =
         match to_map opcfg with
         | Map _ -> (match getp opcfg "points" with List _ as l -> l | _ -> empty_list ())
@@ -998,12 +998,24 @@ let omit_keys (reqdata : value) (names : string list) : value =
    untouched. *)
 let strip_action (reqdata : value) : value = omit_keys reqdata ["$action"]
 
-(* A header or query argument travels where prepare_headers_util or
+let field_arg (ctx : ctx) (name : string) : bool =
+  List.exists (fun kind ->
+      match getp (getp ctx.c_point "args") kind with
+      | List r ->
+        List.exists (fun ad ->
+            match getp ad "name", getp ad "field" with
+            | Str n, Bool true -> n = name
+            | _ -> false) !r
+      | _ -> false)
+    ["header"; "cookie"; "query"]
+
+(* A header, cookie or query argument travels where prepare_headers_util or
    prepare_query_util sends it, so the body is built from the request data
-   without it. *)
+   without it, unless the entity declares it as a field too. *)
 let routed_arg_names (ctx : ctx) : string list =
-  List.map (fun (name, _, _) -> name)
-    (call_args ctx "header" @ call_args ctx "cookie" @ call_args ctx "query")
+  List.filter (fun name -> not (field_arg ctx name))
+    (List.map (fun (name, _, _) -> name)
+       (call_args ctx "header" @ call_args ctx "cookie" @ call_args ctx "query"))
 
 let transform_request_util (ctx : ctx) : value =
   (match ctx.c_spec with Some s -> s.sp_step <- "reqform" | None -> ());

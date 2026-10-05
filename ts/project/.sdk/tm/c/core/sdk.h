@@ -347,6 +347,7 @@ typedef struct EntityVT {
   Entity** (*list)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
   Entity* (*create)(Entity*, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
   Entity* (*update)(Entity*, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
+  Entity* (*patch)(Entity*, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err);
   Entity* (*remove)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
 } EntityVT;
 

@@ -8,6 +8,7 @@ import Path from 'node:path'
 
 import {
   resolvePath,
+  loadOptional,
   requirePath,
   isAuthActive,
   resolveAuthPrefix,
@@ -260,6 +261,16 @@ describe('utility', () => {
       strictEqual(requirePath(ctx$, 'nope', { ignore: true }), undefined)
       strictEqual(warns.length, 1)
       strictEqual(warns[0].point, 'require-missing')
+      strictEqual(warns[0].note, 'nope: not found at ' + resolvePath(ctx$, 'nope') +
+        ', so generation continued without it')
+    })
+
+    test('loadOptional leaves reporting a missing module to its caller', () => {
+      const { ctx$, warns } = makeCtx()
+      strictEqual(loadOptional(ctx$, 'nope'), undefined)
+      deepStrictEqual(loadOptional(ctx$, 'good'), { hello: 'world' })
+      throws(() => loadOptional(ctx$, 'boom'), /load failure/)
+      strictEqual(warns.length, 0)
     })
 
     test('missing module without ignore throws', () => {

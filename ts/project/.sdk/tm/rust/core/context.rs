@@ -251,7 +251,7 @@ impl Context {
 
         let opcfg = getpath(&["entity", &entname, "op", opname], &self.config.borrow());
 
-        let input = if opname == "update" || opname == "create" {
+        let input = if opname == "update" || opname == "create" || opname == "patch" {
             "data"
         } else {
             "match"

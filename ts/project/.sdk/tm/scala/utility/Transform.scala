@@ -26,10 +26,21 @@ object TransformRequest {
   // the body is a copy without it. The caller's map is left untouched.
   private def stripAction(reqdata: Object): Object = omit(reqdata, Seq("$action"))
 
-  // A header or query argument travels where PrepareHeaders or PrepareQuery
-  // sends it, so the body is built from the request data without it.
+  // A header, cookie or query argument travels where PrepareHeaders or
+  // PrepareQuery sends it, so the body is built from the request data without
+  // it, unless the entity declares it as a field too.
   private def routedArgNames(ctx: Context): Seq[String] =
     (Param.callArgs(ctx, "header") ++ Param.callArgs(ctx, "cookie") ++ Param.callArgs(ctx, "query")).map(_._1)
+      .filterNot(name => fieldArg(ctx, name))
+
+  private def fieldArg(ctx: Context, name: String): Boolean =
+    ctx.point != null && Seq("header", "cookie", "query").exists { kind =>
+      Struct.getpath(ctx.point, java.util.List.of("args", kind)) match {
+        case l: java.util.List[_] =>
+          l.toArray.exists(ad => name == Struct.getprop(ad, "name") && java.lang.Boolean.TRUE == Struct.getprop(ad, "field"))
+        case _ => false
+      }
+    }
 
   private def omit(reqdata: Object, names: Seq[String]): Object = {
     reqdata match {

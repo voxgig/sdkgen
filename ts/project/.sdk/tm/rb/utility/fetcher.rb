@@ -115,16 +115,8 @@ module ProjectNameUtilities
         "unreadable" => unreadable,
       }, nil
     rescue StandardError => e
-      # Network-level failures (DNS, TCP, TLS, timeouts) — return a synthesized
-      # response with status 0 so callers can branch on result.ok like any
-      # other failed request, instead of seeing an unhandled exception.
-      return {
-        "status" => 0,
-        "statusText" => "#{e.class}: #{e.message}",
-        "headers" => {},
-        "json" => -> { nil },
-        "body" => nil,
-      }, nil
+      # A request that got no answer (DNS, TCP, TLS, a timeout) fails the operation.
+      return nil, "#{e.class}: #{e.message}"
     end
   }
 

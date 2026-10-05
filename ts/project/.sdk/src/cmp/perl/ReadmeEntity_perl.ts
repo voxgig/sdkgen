@@ -37,6 +37,7 @@ const OP_DESC: Record<string, { method: string, desc: string }> = {
   list:   { method: 'list()',        desc: 'List entities, optionally matching the given criteria.' },
   create: { method: 'create($data)', desc: 'Create a new entity with the given data.' },
   update: { method: 'update($data)', desc: 'Update an existing entity.' },
+  patch:  { method: 'patch($data)',  desc: 'Change part of an existing entity.' },
   remove: { method: 'remove($match)', desc: 'Remove the matching entity.' },
 }
 
@@ -144,7 +145,9 @@ my $${eVar} = $client->${entity.Name}->load(${loadArg});
       Content(`#### Example: List
 
 \`\`\`perl
+# an arrayref of entities, one per record; data_get reads each record
 my $${eVar}s = $client->${entity.Name}->list;
+print $_->data_get->{id}, "\\n" for @$${eVar}s;
 \`\`\`
 
 `)

@@ -1760,12 +1760,29 @@ inline Value omitKeys(const Value& reqdata, const std::vector<std::string>& name
 // the body is a copy without it. The caller's map is left untouched.
 inline Value stripAction(const Value& reqdata) { return omitKeys(reqdata, {"$action"}); }
 
-// A header or query argument travels where prepareHeaders or prepareQuery
-// sends it, so the body is built from the request data without it.
+inline bool fieldArg(CtxPtr ctx, const std::string& name) {
+  if (!ctx->point.is_map()) return false;
+  for (const char* kind : {"header", "cookie", "query"}) {
+    Value defs = getp(getp(ctx->point, "args"), kind);
+    if (!defs.is_list()) continue;
+    for (const auto& ad : *defs.as_list()) {
+      Value n = getp(ad, "name");
+      Value f = getp(ad, "field");
+      if (n.is_string() && n.as_string() == name && f.is_bool() && f.as_bool()) return true;
+    }
+  }
+  return false;
+}
+
+// A header, cookie or query argument travels where prepareHeaders or
+// prepareQuery sends it, so the body is built from the request data without
+// it, unless the entity declares it as a field too.
 inline std::vector<std::string> routedArgNames(CtxPtr ctx) {
   std::vector<std::string> names;
   for (const char* kind : {"header", "cookie", "query"}) {
-    for (const auto& arg : callArgs(ctx, kind)) names.push_back(arg.name);
+    for (const auto& arg : callArgs(ctx, kind)) {
+      if (!fieldArg(ctx, arg.name)) names.push_back(arg.name);
+    }
   }
   return names;
 }

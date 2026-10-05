@@ -194,7 +194,8 @@ pub const Context = struct {
 
         const opcfg = h.getpath(&.{ "entity", entname, "op", opname }, self.config);
 
-        const input: []const u8 = if (std.mem.eql(u8, opname, "update") or std.mem.eql(u8, opname, "create")) "data" else "match";
+        const input: []const u8 = if (std.mem.eql(u8, opname, "update") or std.mem.eql(u8, opname, "create") or
+            std.mem.eql(u8, opname, "patch")) "data" else "match";
 
         const targets: Value = switch (h.getp(opcfg, "points")) {
             .array => h.getp(opcfg, "points"),

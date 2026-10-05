@@ -2162,13 +2162,15 @@ fn strip_action(reqdata: Value) Value {
     return omit_keys(reqdata, &.{}, true);
 }
 
-// A header or query argument travels where prepare_headers_util or
+// A header, cookie or query argument travels where prepare_headers_util or
 // prepare_query_util sends it, so the body is built from the request data
-// without it.
+// without it, unless the entity declares it as a field too.
 fn routed_arg_names(ctx: *Context) [][]const u8 {
     var names: std.ArrayList([]const u8) = .empty;
     for ([_][]const u8{ "header", "cookie", "query" }) |kind| {
-        for (call_args(ctx, kind)) |arg| names.append(h.A(), arg.name) catch {};
+        for (call_args(ctx, kind)) |arg| {
+            if (!field_arg(ctx, arg.name)) names.append(h.A(), arg.name) catch {};
+        }
     }
     return names.toOwnedSlice(h.A()) catch &.{};
 }
@@ -2215,6 +2217,19 @@ pub fn transform_request_util(ctx: *Context) Value {
     // is what it used to return on its own, errors or not.
     const tres = vs.transform(h.A(), store, reqform) catch return strip_action(reqdata);
     return strip_action(tres.out);
+}
+
+fn field_arg(ctx: *Context, name: []const u8) bool {
+    for ([_][]const u8{ "header", "cookie", "query" }) |kind| {
+        const defs: Value = h.getpath(&.{ "args", kind }, ctx.point);
+        if (defs != .array) continue;
+        for (defs.array.data.items) |ad| {
+            const n = h.getp(ad, "name");
+            const f = h.getp(ad, "field");
+            if (n == .string and std.mem.eql(u8, n.string, name) and f == .bool and f.bool) return true;
+        }
+    }
+    return false;
 }
 
 pub fn transform_response_util(ctx: *Context) Value {

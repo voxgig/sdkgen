@@ -43,14 +43,9 @@ private let manualRedirectSession = URLSession(
   delegate: ManualRedirectDelegate(), delegateQueue: nil)
 
 func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
+  // A request that cannot be sent fails the operation.
   guard let url = URL(string: fullurl) else {
-    let m = VMap()
-    m.entries["status"] = .int(0)
-    m.entries["statusText"] = .string("bad url")
-    m.entries["headers"] = .map(VMap())
-    m.entries["json"] = .nat({ () -> Value in .noval } as NativeCall0)
-    m.entries["body"] = .string("")
-    return .map(m)
+    throw ProjectNameError("fetch_transport", "the URL could not be parsed", nil)
   }
 
   var req = URLRequest(url: url)

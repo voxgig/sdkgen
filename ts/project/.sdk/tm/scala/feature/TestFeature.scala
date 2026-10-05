@@ -54,9 +54,33 @@ class TestFeature extends BaseFeature("test", "0.0.1", true) {
     out
   }
 
+  // The key a list's response transform
+  // ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record under.
+  private def itemEnvelopeKey(restf: Object): String = restf match {
+    case spec: JList[_] if 3 == spec.size && "`$EACH`" == spec.get(0) && "body" == spec.get(1) =>
+      spec.get(2) match {
+        case m: JMap[_, _] => m.get("`$MERGE`") match {
+          case merge: String => "^`\\.([^.`$]+)`$".r.findFirstMatchIn(merge).map(_.group(1)).orNull
+          case _ => null
+        }
+        case _ => null
+      }
+    case _ => null
+  }
+
   private def envelope(ctx: Context, data: Object): Object = {
     if (data == null || ctx == null || ctx.point == null) return data
     val tm = Struct.getprop(ctx.point, "transform")
+    val key = itemEnvelopeKey(Struct.getprop(tm, "res"))
+    if (null != key && data.isInstanceOf[JList[_]]) {
+      val items = new java.util.ArrayList[Object]()
+      data.asInstanceOf[JList[Object]].forEach { item =>
+        val wrapped = new LinkedHashMap[String, Object]()
+        wrapped.put(key, item)
+        items.add(wrapped)
+      }
+      return items
+    }
     Struct.getprop(tm, "res") match {
       case spec: String =>
         // Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
@@ -133,7 +157,7 @@ class TestFeature extends BaseFeature("test", "0.0.1", true) {
       while (it.hasNext) Struct.delprop(it.next(), "$KEY")
       val out = Struct.clone(found)
       respond(ctx, 200, out, null)
-    } else if ("update" == op.name) {
+    } else if ("update" == op.name || "patch" == op.name) {
       var updateMatch = new LinkedHashMap[String, Object]()
       if (ctx.reqdata != null) {
         if (ctx.reqdata.containsKey("id")) updateMatch.put("id", ctx.reqdata.get("id"))

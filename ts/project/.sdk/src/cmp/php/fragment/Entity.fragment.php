@@ -294,6 +294,8 @@ class EntyClass
 
     // #UpdateOp
 
+    // #PatchOp
+
     // #RemoveOp
 
     private function _run_op($ctx, callable $post_done): mixed

@@ -78,27 +78,21 @@ our $DefaultHttpFetch = sub {
     if defined $fetchdef->{proxy} && !ref $fetchdef->{proxy}
       && length $fetchdef->{proxy};
 
+  # A request that got no answer fails the operation.
   my $res = eval { _http_client(%new_args)->request($method, $fullurl, $opts) };
   if (!$res) {
-    my $e = defined $@ ? "$@" : 'request failed';
+    my $e = (defined $@ && length $@) ? "$@" : 'request failed';
     $e =~ s/\s+\z//;
-    return ({
-      'status' => 0, 'statusText' => $e, 'headers' => {},
-      'json' => sub { undef }, 'body' => undef,
-    }, undef);
+    return (undef, $e);
   }
 
-  # Network-level failures (DNS, TCP, TLS, timeouts) - HTTP::Tiny signals
-  # these with a synthesized 599 + the error text as content. Return a
-  # status-0 response so callers can branch on result.ok like any other
-  # failed request, instead of seeing an unhandled exception.
+  # HTTP::Tiny reports a network failure (DNS, TCP, TLS, a timeout) as a
+  # synthesized 599 carrying the error text.
   if (599 == ($res->{status} || 0) && !$res->{success}) {
-    my $reason = defined $res->{content} ? "$res->{content}" : 'network error';
+    my $reason = (defined $res->{content} && length $res->{content})
+      ? "$res->{content}" : 'network error';
     $reason =~ s/\s+\z//;
-    return ({
-      'status' => 0, 'statusText' => $reason, 'headers' => {},
-      'json' => sub { undef }, 'body' => undef,
-    }, undef);
+    return (undef, $reason);
   }
 
   my $resp_headers = {};

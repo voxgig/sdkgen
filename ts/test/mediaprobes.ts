@@ -22,6 +22,13 @@ type MediaCase = {
     json?: Record<string, any>
     // The whole body as JSON, whatever its type.
     jsonValue?: any
+    // Keys the JSON body must not hold.
+    absent?: string[]
+    // Header values, by lowercased name.
+    headers?: Record<string, string>
+    // Pieces the cookie header must hold.
+    cookies?: string[]
+    query?: Record<string, string>
   }
 }
 
@@ -29,37 +36,41 @@ type MediaRecord = {
   case: number
   method: string
   path: string
+  query: Record<string, string>
   headers: Record<string, string>
   bodyHex: string
 }
 
 
-const point = (method: string, path: string, extra: string, req = '`reqdata`') => {
+const point = (method: string, path: string, extra: string, req = '`reqdata`', args = '',
+  res = '"`body`"') => {
   const segs = path.split('/').filter((s) => '' !== s)
   const params = segs.filter((s) => s.startsWith('{')).map((s) => s.slice(1, -1))
   return `{
         g: { params: [${params.map((p) =>
-    `{ k: "param", n: "${p}", or: "${p}", r: true, t: "\`$STRING\`", ex: "${p}01" }`).join(' ')}] }
+    `{ k: "param", n: "${p}", or: "${p}", r: true, t: "\`$STRING\`", ex: "${p}01" }`).join(' ')}] ${args} }
         m: "${method}", o: "${path}"
         s: [${segs.map((s) => s.startsWith('{') ?
     `{ var: "${s.slice(1, -1)}" }` : `{ lit: "${s}" }`).join(', ')}]
-        t: { req: "${req}", res: "\`body\`" }
+        t: { req: "${req}", res: ${res} }
         ${extra}
       }`
 }
 
-const entity = (name: string, ops: Record<string, string>) => `
+const entity = (name: string, ops: Record<string, string>, more: string[] = []) => `
 main: kit: entity: ${name}: {
   alias: field: {}
   name: "${name}"
   id: { field: "id", name: "id" }
   field: {
     id:    { name: "id",    kind: "field", type: "\`$STRING\`", required: true }
-    title: { name: "title", kind: "field", type: "\`$STRING\`" }
+    title: { name: "title", kind: "field", type: "\`$STRING\`" }${more.map((f) => `
+    ${f}: { name: "${f}", kind: "field", type: "\`$STRING\`" }`).join('')}
   }
   fields: {
     "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
-    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }${more.map((f) => `
+    "${f}": { h: '${f}', n: "${f}", r: false, t: "\`$STRING\`" }`).join('')}
   }
   op: {${Object.entries(ops).map(([op, pt]) => `
     ${op}: { name: "${op}", points: [ ${pt} ] }`).join('')}
@@ -73,6 +84,16 @@ main: kit: flow: Basic${name.charAt(0).toUpperCase() + name.slice(1)}Flow: {
 `
 
 const JSON_RS = 'rs: { kind: "json", media: "application/json" }'
+
+const arg = (kind: string, name: string, orig: string) =>
+  `{ k: "${kind}", n: "${name}", or: "${orig}", t: "\`$STRING\`" }`
+
+// A header, a cookie and a query argument that share a name with a field of
+// the entity, each beside one that does not.
+const ROUTED_ARGS = `
+        header: [${arg('header', 'locale', 'X-Locale')} ${arg('header', 'trace', 'X-Trace')}]
+        cookie: [${arg('cookie', 'theme', 'theme')} ${arg('cookie', 'session_id', 'SESSIONID')}]
+        query: [${arg('query', 'lang', 'lang')} ${arg('query', 'verbose', 'verbose')}]`
 
 // cataas: JPEG, PNG, HTML and JSON, which the server picks between by Accept.
 const CATAAS_RS = `rs: { kind: "json", media: "application/json", alternatives: [
@@ -94,10 +115,18 @@ const MEDIA_MODEL =
   entity('picture', {
     load: point('GET', '/picture/{id}', `rs: { kind: "raw", media: "image/jpeg", binary: true,
           alternatives: [ { kind: "raw", media: "image/png", binary: true } ] }`),
-    update: point('PUT', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }'),
+    update: point('PUT', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }',
+      undefined, ROUTED_ARGS),
+    patch: point('PATCH', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }'),
     // A request transform that selects one field, so the body is that field's value.
     create: point('POST', '/picture', 'rb: { kind: "json", media: "application/json" }',
       '`reqdata.payload`'),
+  }, ['locale', 'theme', 'lang']) +
+  // A list whose items each wrap the record under the entity's name.
+  entity('badge', {
+    list: point('GET', '/badge', JSON_RS, '`reqdata`', '',
+      '["`$EACH`", "body", { "`$MERGE`": "`.badge`" }]'),
+    load: point('GET', '/badge/{id}', JSON_RS),
   })
 
 
@@ -163,6 +192,31 @@ const MEDIA_CASES: MediaCase[] = [
     },
   },
   {
+    name: 'a patch goes out as a PATCH, with only the fields given',
+    entity: 'picture', op: 'patch', input: { id: 'p01', title: 'Phobos' },
+    expect: {
+      method: 'PATCH', path: '/picture/p01', accept: null,
+      contentType: 'application/merge-patch+json', json: { title: 'Phobos' },
+    },
+  },
+  {
+    name: 'an argument that is also a field goes out in the body too',
+    entity: 'picture', op: 'update',
+    input: {
+      id: 'p01', title: 'Mars', locale: 'en', theme: 'dark', lang: 'fr',
+      trace: 't1', session_id: 's1', verbose: 'yes',
+    },
+    expect: {
+      method: 'PUT', path: '/picture/p01', accept: null,
+      contentType: 'application/merge-patch+json',
+      json: { title: 'Mars', locale: 'en', theme: 'dark', lang: 'fr' },
+      absent: ['trace', 'session_id', 'verbose'],
+      headers: { 'x-locale': 'en', 'x-trace': 't1' },
+      cookies: ['theme=dark', 'SESSIONID=s1'],
+      query: { lang: 'fr', verbose: 'yes' },
+    },
+  },
+  {
     name: 'a JSON body that is a list goes out as a JSON array',
     entity: 'picture', op: 'create', input: { payload: ['red', 'dusty'] },
     expect: {
@@ -190,6 +244,27 @@ const MEDIA_CASES: MediaCase[] = [
 
 
 const MEDIA_RAN = /media-probe: ran (\d+) cases/
+
+
+// One case per operation: each sends one request when the server answers, and
+// must raise when nothing does.
+const UNSENT_CASES: MediaCase[] = [
+  'JSON beside images and HTML asks for JSON alone',
+  'a JSON-only response asks for JSON',
+  'a body with no declared type is JSON, as before',
+  'a declared JSON type replaces the default',
+  'a patch goes out as a PATCH, with only the fields given',
+  'no declared response body sends no Accept',
+].map((name) => MEDIA_CASES.find((c) => name === c.name)!)
+
+
+// The error line each case's operation printed, or null where it returned. A
+// test runner may indent what a test prints.
+function mediaRaised(cases: MediaCase[], out: string): (string | null)[] {
+  const lines = out.split(/\r?\n/).map((line) => line.trim())
+  return cases.map((_c, i) =>
+    lines.find((line) => line.startsWith('media-probe: case ' + i + ': ')) ?? null)
+}
 
 
 function baseMedia(type: string | undefined): string {
@@ -238,13 +313,31 @@ function mediaFailures(cases: MediaCase[], records: MediaRecord[]): string[] {
       }
     }
 
-    if (null != c.expect.json) {
+    if (null != c.expect.json || null != c.expect.absent) {
       let json: any
       try { json = JSON.parse(Buffer.from(r.bodyHex, 'hex').toString('utf8')) }
       catch (_e) { json = undefined }
-      for (const [key, value] of Object.entries(c.expect.json)) {
+      for (const [key, value] of Object.entries(c.expect.json || {})) {
         if (value !== json?.[key]) fail('JSON body ' + key, json, c.expect.json)
       }
+      for (const key of c.expect.absent || []) {
+        if (null == json || 'object' !== typeof json || key in json) {
+          fail('JSON body without ' + key, json, c.expect.absent)
+        }
+      }
+    }
+
+    for (const [name, value] of Object.entries(c.expect.headers || {})) {
+      if (value !== r.headers[name]) fail('header ' + name, r.headers[name], value)
+    }
+
+    const cookies = String(r.headers.cookie ?? '').split(';').map((piece) => piece.trim())
+    for (const piece of c.expect.cookies || []) {
+      if (!cookies.includes(piece)) fail('cookie ' + piece, r.headers.cookie, c.expect.cookies)
+    }
+
+    for (const [name, value] of Object.entries(c.expect.query || {})) {
+      if (value !== r.query[name]) fail('query ' + name, r.query[name], value)
     }
   })
 
@@ -256,7 +349,8 @@ function mediaFailures(cases: MediaCase[], records: MediaRecord[]): string[] {
 // put in front of every route.
 function mediaRecord(method: string, url: string, headers: Record<string, any>,
   bodyHex: string): MediaRecord {
-  const path = new URL(url, 'http://media.test').pathname
+  const parsed = new URL(url, 'http://media.test')
+  const path = parsed.pathname
   const m = /^\/c(\d+)(\/.*)$/.exec(path)
   const lower: Record<string, string> = {}
   for (const [k, v] of Object.entries(headers || {})) {
@@ -266,6 +360,7 @@ function mediaRecord(method: string, url: string, headers: Record<string, any>,
     case: null == m ? -1 : Number(m[1]),
     method: String(method || 'GET'),
     path: null == m ? path : m[2],
+    query: Object.fromEntries(parsed.searchParams),
     headers: lower,
     bodyHex: String(bodyHex || '').toLowerCase(),
   }
@@ -393,6 +488,8 @@ func TestMediaProbe(t *testing.T) {
 			_, cerr = ent.Create(input, nil)
 		case "update":
 			_, cerr = ent.Update(input, nil)
+		case "patch":
+			_, cerr = ent.Patch(input, nil)
 		case "remove":
 			_, cerr = ent.Remove(input, nil)
 		}
@@ -614,6 +711,7 @@ public class MediaProbe {
           case "list" -> ent.list(data, null);
           case "create" -> ent.create(data, null);
           case "update" -> ent.update(data, null);
+          case "patch" -> ent.patch(data, null);
           default -> ent.remove(data, null);
         }
       }
@@ -664,6 +762,7 @@ class MediaProbe {
           "list" -> ent.list(data, null)
           "create" -> ent.create(data, null)
           "update" -> ent.update(data, null)
+          "patch" -> ent.patch(data, null)
           else -> ent.remove(data, null)
         }
       } catch (e: Exception) {
@@ -713,6 +812,7 @@ object MediaProbeMain {
           case "list" => ent.list(data, null)
           case "create" => ent.create(data, null)
           case "update" => ent.update(data, null)
+          case "patch" => ent.patch(data, null)
           case _ => ent.remove(data, null)
         }
       }
@@ -771,6 +871,7 @@ public static class MediaProbe
                     case "list": ent.List(data); break;
                     case "create": ent.Create(data); break;
                     case "update": ent.Update(data); break;
+                    case "patch": ent.Patch(data); break;
                     default: ent.Remove(data); break;
                 }
             }
@@ -826,6 +927,7 @@ final class MediaProbeTest: XCTestCase {
         case "list": _ = try ent.list(data, nil)
         case "create": _ = try ent.create(data, nil)
         case "update": _ = try ent.update(data, nil)
+        case "patch": _ = try ent.patch(data, nil)
         default: _ = try ent.remove(data, nil)
         }
       } catch {
@@ -919,6 +1021,7 @@ const CLOJURE_PROBE = String.raw`
                 ["cat" "remove"] e-cat/remove
                 ["picture" "load"] e-picture/load
                 ["picture" "update"] e-picture/update
+                ["picture" "patch"] e-picture/patch
                 ["picture" "create"] e-picture/create
                 e-planet/create)]
         (f ent data (vs/jm)))
@@ -977,6 +1080,7 @@ fn media_probe() {
             ("cat", "remove") => call!(client.cat(Value::Noval), remove, data),
             ("picture", "load") => call!(client.picture(Value::Noval), load, data),
             ("picture", "update") => call!(client.picture(Value::Noval), update, data),
+            ("picture", "patch") => call!(client.picture(Value::Noval), patch, data),
             ("picture", "create") => call!(client.picture(Value::Noval), create, data),
             _ => call!(client.planet(Value::Noval), create, data),
         };
@@ -1054,6 +1158,7 @@ int main(void) {
     else if (0 == strcmp(op, "list")) e->vt->list(e, input, v_map(), &err);
     else if (0 == strcmp(op, "create")) e->vt->create(e, input, v_map(), &err);
     else if (0 == strcmp(op, "update")) e->vt->update(e, input, v_map(), &err);
+    else if (0 == strcmp(op, "patch")) e->vt->patch(e, input, v_map(), &err);
     else e->vt->remove(e, input, v_map(), &err);
     if (err) printf("media-probe: case %zu: %s\n", i, pn_error_str(err));
   }
@@ -1136,6 +1241,7 @@ int main() {
       else if ("list" == op) ent->list(data, vmap());
       else if ("create" == op) ent->create(data, vmap());
       else if ("update" == op) ent->update(data, vmap());
+      else if ("patch" == op) ent->patch(data, vmap());
       else ent->remove(data, vmap());
     }
     catch (const std::exception& e) {
@@ -1236,6 +1342,7 @@ test "media probe" {
         if (is(u8, entity, "cat") and is(u8, op, "remove")) report(i, client.cat(vnull()).remove(data, h.omap()));
         if (is(u8, entity, "picture") and is(u8, op, "load")) report(i, client.picture(vnull()).load(data, h.omap()));
         if (is(u8, entity, "picture") and is(u8, op, "update")) report(i, client.picture(vnull()).update(data, h.omap()));
+        if (is(u8, entity, "picture") and is(u8, op, "patch")) report(i, client.picture(vnull()).patch(data, h.omap()));
         if (is(u8, entity, "picture") and is(u8, op, "create")) report(i, client.picture(vnull()).create(data, h.omap()));
         if (is(u8, entity, "planet")) report(i, client.planet(vnull()).create(data, h.omap()));
     }
@@ -1274,6 +1381,7 @@ let run (ent : entity_obj) (op : value) (input : value) : unit =
   | Str "list" -> ignore (ent.e_list input (empty_map ()))
   | Str "create" -> ignore (ent.e_create input (empty_map ()))
   | Str "update" -> ignore (ent.e_update input (empty_map ()))
+  | Str "patch" -> ignore (ent.e_patch input (empty_map ()))
   | _ -> ignore (ent.e_remove input (empty_map ()))
 
 let () =
@@ -1330,8 +1438,10 @@ export {
   MEDIA_PROBES,
   MEDIA_RAN,
   MEDIA_SERVER,
+  UNSENT_CASES,
   mediaFailures,
   mediaPrinted,
+  mediaRaised,
   mediaRecord,
 }
 

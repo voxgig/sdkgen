@@ -98,7 +98,7 @@ defmodule ${Name}.Types do
         )
 
         const ops = ent.op || {}
-        ;['load', 'list', 'create', 'update', 'remove'].forEach((opname: string) => {
+        ;['load', 'list', 'create', 'update', 'patch', 'remove'].forEach((opname: string) => {
           if (null == ops[opname]) {
             return
           }

@@ -8,8 +8,8 @@ import { memfs } from 'memfs'
 import { ReadmeExplanation, ReadmeErrors } from '../dist/sdkgen.js'
 
 
-// A logger stub keeps requirePath's "optional template missing" warning
-// out of the test output (the per-language ReadmeExplanation_<lang> file
+// A logger stub keeps the optional-component warning out of the test
+// output (the per-language ReadmeExplanation_<lang> file
 // does not exist under the in-memory folder, which is expected).
 const noop = () => {}
 const log: any = {
@@ -175,14 +175,15 @@ describe('ReadmeErrors', () => {
   })
 
   test('direct() convention is documented per language', async () => {
-    // ts/js: direct() returns the value or an Error. py: returns the result
-    // envelope — branch on `ok`, read `err` on failure (never index a
-    // failure-only key on the success shape).
-    ok((await renderErrors('ts')).includes('result instanceof Error'))
+    // direct() returns the result envelope in every language: branch on `ok`,
+    // read `err` on failure (never index a failure-only key on the success
+    // shape).
+    ok((await renderErrors('ts')).includes('if (!result.ok) {'))
+    ok(!(await renderErrors('ts')).includes('instanceof Error'))
     ok((await renderErrors('py')).includes('if not result["ok"]'))
     ok((await renderErrors('py')).includes('result.get("err")'))
     // js and an unmodelled language fall back to the ts default.
     strictEqual(await renderErrors('js'), await renderErrors('ts'))
-    ok((await renderErrors('cobol')).includes('result instanceof Error'))
+    ok((await renderErrors('cobol')).includes('if (!result.ok) {'))
   })
 })

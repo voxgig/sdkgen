@@ -85,7 +85,7 @@ function call(
   base = 'https://api.test',
 ) {
   const pipe = PIPES[lang]
-  const input = 'create' === opname || 'update' === opname ? 'data' : 'match'
+  const input = 'create' === opname || 'update' === opname || 'patch' === opname ? 'data' : 'match'
 
   const ctx: any = {
     out: {},

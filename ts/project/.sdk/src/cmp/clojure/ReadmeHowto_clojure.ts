@@ -32,7 +32,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'nil'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `(vs/jm "${idF}" "test01")` : 'nil'
-  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp)) {
+  } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)

@@ -198,7 +198,7 @@ pub use crate::core::context::{Context, CtxSpec, OpMap};
 pub use crate::core::control::Control;
 pub use crate::core::error::${model.const.Name}Error;
 pub use crate::core::helpers::{
-    call_json, call_vfn, ja, jo, json_thunk, unsupported_op, vfn,
+    call_json, call_vfn, getp, ja, jo, json_thunk, to_map, unsupported_op, vfn,
 };
 pub use crate::core::operation::Operation;
 pub use crate::core::point::Point;
