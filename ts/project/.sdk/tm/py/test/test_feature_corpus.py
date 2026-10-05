@@ -39,7 +39,7 @@ def _corpus_feature_names():
 FEATURE_CORPUS_NAMES = _corpus_feature_names()
 
 # The standard operation names, in the order the runner prefers them.
-FEATURE_CORPUS_OPS = ["load", "list", "create", "update", "remove"]
+FEATURE_CORPUS_OPS = ["load", "list", "create", "update", "patch", "remove"]
 
 
 def _load_corpus():

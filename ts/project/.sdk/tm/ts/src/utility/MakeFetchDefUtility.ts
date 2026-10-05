@@ -34,6 +34,10 @@ function makeFetchDef(ctx: Context): any | Error {
     headers: spec.headers,
   }
 
+  if (null != ctx.ctrl?.signal) {
+    fetchdef.signal = ctx.ctrl.signal
+  }
+
   if (null != spec.body) {
     const body = spec.body
     // A JSON point's body is JSON whatever its value; a scalar elsewhere goes as given.

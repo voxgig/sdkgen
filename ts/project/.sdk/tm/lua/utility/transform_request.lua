@@ -32,14 +32,30 @@ local function strip_action(reqdata)
   return omit(reqdata, { "$action" })
 end
 
--- A header or query argument travels where prepare_headers_util or
+local function field_arg(ctx, name)
+  for _, kind in ipairs({ "header", "cookie", "query" }) do
+    local defs = ctx.point ~= nil and vs.getpath(ctx.point, "args." .. kind) or nil
+    if type(defs) == "table" then
+      for _, ad in ipairs(defs) do
+        if vs.getprop(ad, "name") == name and vs.getprop(ad, "field") == true then
+          return true
+        end
+      end
+    end
+  end
+  return false
+end
+
+-- A header, cookie or query argument travels where prepare_headers_util or
 -- prepare_query_util sends it, so the body is built from the request data
--- without it.
+-- without it, unless the entity declares it as a field too.
 local function routed_arg_names(ctx)
   local names = {}
   for _, kind in ipairs({ "header", "cookie", "query" }) do
     for _, arg in ipairs(helpers.call_args(ctx, kind)) do
-      names[#names + 1] = arg.name
+      if not field_arg(ctx, arg.name) then
+        names[#names + 1] = arg.name
+      end
     end
   end
   return names

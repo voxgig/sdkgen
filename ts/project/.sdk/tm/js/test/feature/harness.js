@@ -66,7 +66,7 @@ function defaultServer() {
 
 function defaultMethod(op) {
   if ('create' === op) return 'POST'
-  if ('update' === op) return 'PATCH'
+  if ('update' === op || 'patch' === op) return 'PATCH'
   if ('remove' === op) return 'DELETE'
   return 'GET'
 }
@@ -242,6 +242,9 @@ function makeClient(spec) {
           method: ctx.spec.method,
           headers: ctx.spec.headers,
           body: ctx.spec.body,
+        }
+        if (null != ctx.ctrl.signal) {
+          fetchdef.signal = ctx.ctrl.signal
         }
         response = await utility.fetcher(ctx, fetchdef.url, fetchdef)
       }

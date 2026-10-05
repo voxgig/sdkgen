@@ -130,6 +130,20 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
       usesFmt = true
     }
 
+    if (opnames.includes('patch')) {
+      const patchMembers = (idF
+        ? [`"${idF}": ${exampleValue(exampleEntity, exampleEntity.op.patch, idF, 'example_id')}`]
+        : []).concat(exampleFields('patch'))
+      body.push(`    // Patch a ${eLower}: only the fields given are sent.`)
+      body.push(`    patched, err := client.${eName}(nil).Patch(map[string]any{${patchMembers.join(', ')}}, nil)`)
+      body.push(`    if err != nil {`)
+      body.push(`        panic(err)`)
+      body.push(`    }`)
+      body.push(`    fmt.Println(patched)`)
+      body.push(``)
+      usesFmt = true
+    }
+
     if (opnames.includes('remove')) {
       body.push(`    // Remove a ${eLower}.`)
       body.push(`    removed, err := client.${eName}(nil).Remove(${matchArg('remove')}, nil)`)

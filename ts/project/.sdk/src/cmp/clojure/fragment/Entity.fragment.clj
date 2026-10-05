@@ -191,4 +191,6 @@
 
 ; #UpdateOp
 
+; #PatchOp
+
 ; #RemoveOp

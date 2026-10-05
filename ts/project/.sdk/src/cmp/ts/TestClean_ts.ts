@@ -148,6 +148,11 @@ const SCENARIOS: Scenario[] = [
   { name: 'coded', respond: (_url: string, _fetchdef: any, ctx: any) => {
     throw ctx.error('denied_' + CANARY.apikey, 'coded failure')
   } },
+  // fetch rejects a timed-out or aborted request with a DOMException, whose
+  // message is a getter with no setter.
+  { name: 'timeout', respond: (url: string) => {
+    throw new DOMException('timed out sending ' + CANARY.apikey + ' (URL was: "' + url + '")', 'TimeoutError')
+  } },
 ]
 
 
@@ -407,7 +412,12 @@ describe('clean', () => {
     }, entity: { zztoken: { alias: { zzkey: 'PLAINALIAS-m2n4b6v8' } } } })
     const fctx = { options: featured._options }
 
-    // The raw path returns its failure rather than throwing it.
+    // The raw path returns its failure rather than throwing it, a
+    // DOMException's included.
+    const timedout = await makeSdk(SCENARIOS[SCENARIOS.length - 1], sinks).direct({ path: 'raw' })
+    ok(false === timedout.ok && 'TimeoutError' === timedout.err?.name,
+      'a timed-out transport should fail direct() with its own error')
+    sinks.push(...forms('direct:timeout', timedout.err))
     const raw = await makeSdk(SCENARIOS[3], sinks).direct({ path: 'raw' })
     ok(false === raw.ok && null != raw.err, 'a transport failure should fail direct()')
     sinks.push(...forms('direct', raw.err))
@@ -420,6 +430,9 @@ describe('clean', () => {
 
     equal(leaked.length, 0, 'credential leaked through: ' +
       leaked.map((l) => l.name + ' [' + l.found.join(', ') + ']').join('; '))
+
+    // A DOMException is masked in place, and stays the error it was.
+    equal(errors['timeout/throw']?.name, 'TimeoutError', 'a timed-out operation should throw its own error')
 
     // The positive half: the slot the credential travelled in is masked,
     // and an unregistered token in a response header is masked by name.

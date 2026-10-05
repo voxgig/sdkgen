@@ -418,7 +418,7 @@ func cleanUsableOp() (cleanOp, bool) {
 	sort.Strings(accessors)
 
 	for _, accessor := range accessors {
-		for _, method := range []string{"List", "Load", "Create", "Update", "Remove"} {
+		for _, method := range []string{"List", "Load", "Create", "Update", "Patch", "Remove"} {
 			om := cleanEntity(probe, accessor).MethodByName(method)
 			if !om.IsValid() || om.Type().NumIn() != 2 || om.Type().NumOut() != 2 {
 				continue

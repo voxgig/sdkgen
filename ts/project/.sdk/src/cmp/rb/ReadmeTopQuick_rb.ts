@@ -52,9 +52,9 @@ client = ${ctor}
     let hasCall = false
 
     if (opnames.includes('list')) {
-      Content(`# List all ${eName.toLowerCase()}s (returns an Array; raises on error)
+      Content(`# List all ${eName.toLowerCase()}s (an Array of entities, one per record; raises on error)
 ${eVar}s = client.${eName}.list
-puts ${eVar}s
+${eVar}s.each { |item| puts item.data_get }
 `)
       hasCall = true
     }

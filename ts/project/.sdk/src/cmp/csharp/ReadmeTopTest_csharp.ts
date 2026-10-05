@@ -52,7 +52,7 @@ var client = ${model.const.Name}SDK.TestSDK(null, null);
         ? `new Dictionary<string, object?> {${items.map((it: any) =>
           ` ["${it.name}"] = ${it.name === idF ? '"test01"' : csLit(it.type)}`).join(',')} }`
         : 'null'
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)

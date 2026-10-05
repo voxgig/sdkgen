@@ -12,17 +12,32 @@ fn strip_action(reqdata: Value) -> Value {
     omit_keys(reqdata, &["$action".to_string()])
 }
 
-// A header or query argument travels where prepare_headers_util or
+// A header, cookie or query argument travels where prepare_headers_util or
 // prepare_query_util sends it, so the body is built from the request data
-// without it.
+// without it, unless the entity declares it as a field too.
 fn routed_arg_names(ctx: &Rc<Context>) -> Vec<String> {
     let mut names = Vec::new();
     for kind in ["header", "cookie", "query"] {
         for (name, _, _) in call_args(ctx, kind) {
-            names.push(name);
+            if !field_arg(ctx, &name) {
+                names.push(name);
+            }
         }
     }
     names
+}
+
+fn field_arg(ctx: &Rc<Context>, name: &str) -> bool {
+    let point = ctx.point.borrow().clone();
+    ["header", "cookie", "query"].iter().any(|kind| {
+        match getp(&getp(&point, "args"), kind) {
+            Value::List(al) => al.borrow().iter().any(|ad| {
+                matches!(getp(ad, "name"), Value::Str(ref n) if n == name)
+                    && matches!(getp(ad, "field"), Value::Bool(true))
+            }),
+            _ => false,
+        }
+    })
 }
 
 fn omit_keys(reqdata: Value, names: &[String]) -> Value {

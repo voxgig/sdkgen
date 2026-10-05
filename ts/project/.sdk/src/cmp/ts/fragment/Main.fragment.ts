@@ -7,6 +7,7 @@ import { config } from './Config'
 import { ProjectNameEntityBase } from './ProjectNameEntityBase'
 import { Utility } from './utility/Utility'
 import { unreadableBody } from './utility/ResultBodyUtility'
+import { abortError } from './utility/MakeRequestUtility'
 import { allowed } from './utility/PrepareMethodUtility'
 
 
@@ -20,7 +21,6 @@ const stdutil = new Utility()
 // A request's outcome: ok is false alone on an error with no response, so a
 // caller narrowing on it reaches the status and the data.
 type DirectResult =
-  | Error
   | { ok: false, err: any, status?: undefined, headers?: undefined, data?: undefined }
   | { ok: boolean, status: number, headers: any, data: any, err?: any }
 
@@ -201,7 +201,7 @@ class ProjectNameSDK {
 
     const fetchdef = await this.prepare(fetchargs)
     if (fetchdef instanceof Error) {
-      return fetchdef
+      return { ok: false, err: utility.clean(this._rootctx, fetchdef) }
     }
 
     let ctx: Context = makeContext({
@@ -210,13 +210,17 @@ class ProjectNameSDK {
     }, this._rootctx)
 
     try {
+      if (true === fetchdef.signal?.aborted) {
+        throw fetchdef.signal.reason
+      }
+
       const fetched = await fetcher(ctx, fetchdef.url, fetchdef)
 
       if (null == fetched) {
         return { ok: false, err: ctx.error('direct_no_response', 'response: undefined') }
       }
       else if (fetched instanceof Error) {
-        return { ok: false, err: utility.clean(ctx, fetched) }
+        return { ok: false, err: utility.clean(ctx, abortError(ctx, fetched)) }
       }
 
       const status = fetched.status
@@ -265,7 +269,7 @@ class ProjectNameSDK {
       }
     }
     catch (err: any) {
-      return { ok: false, err: utility.clean(ctx, err) }
+      return { ok: false, err: utility.clean(ctx, abortError(ctx, err)) }
     }
   }
 
@@ -288,10 +292,6 @@ class ProjectNameSDK {
       body: { query, variables: variables || {} },
       ctrl,
     })
-
-    if (res instanceof Error) {
-      return res
-    }
 
     // Errors are read BEFORE any status check: a GraphQL parse or validation
     // failure comes back as HTTP 400 carrying the standard { errors: [...] }

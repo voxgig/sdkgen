@@ -50,7 +50,7 @@ public class FeatureCorpusTest {
 
   // The standard operation names, in the order the runner prefers them.
   private static final List<String> FEATURE_CORPUS_OPS =
-      List.of("load", "list", "create", "update", "remove");
+      List.of("load", "list", "create", "update", "patch", "remove");
 
   /** One discovered operation: the client accessor plus the entity method. */
   private static final class Op {
