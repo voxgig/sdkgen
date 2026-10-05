@@ -89,6 +89,14 @@
   (first (filter (fn [p] (.exists (java.io.File. ^String p)))
                  ["../.sdk/test/test.json" ".sdk/test/test.json" "../../.sdk/test/test.json" "test/test.json"])))
 
+;; The agent pool keeps the JVM alive for a minute after the last task, so a
+;; run that passes exits as one that fails does.
+(defn- all-green []
+  (println "ALL GREEN")
+  (flush)
+  (shutdown-agents)
+  (System/exit 0))
+
 ;; `--sdk-only` runs the SDK's OWN suites and skips the three steps that read
 ;; the shared corpus (.sdk/test/test.json): the omni smoke test, the primary
 ;; corpus and the struct corpus. create-sdkgen compiles that corpus into
@@ -126,7 +134,7 @@
             (flush)
             (if (pos? nf)
               (System/exit 1)
-              (println "ALL GREEN")))
+              (all-green)))
         (let [cf (find-corpus-file)]
           (if (nil? cf)
             (do (println "STRUCT CORPUS: test.json not found on any candidate path") (flush) (System/exit 1))
@@ -136,4 +144,4 @@
               (flush)
               (if (or (pos? nf) (pos? cfail))
                 (System/exit 1)
-                (println "ALL GREEN")))))))))
+                (all-green)))))))))

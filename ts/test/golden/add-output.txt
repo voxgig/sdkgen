@@ -237,7 +237,7 @@ tm/clojure/test/sdk/test/omni_smoke.clj eb96d122a518
 tm/clojure/test/sdk/test/pipeline.clj 6c40203b1a22
 tm/clojure/test/sdk/test/primary.clj f306427e725e
 tm/clojure/test/sdk/test/struct_corpus.clj 7bc252602c61
-tm/clojure/test/sdk/test_runner.clj 8532e550fe17
+tm/clojure/test/sdk/test_runner.clj 34c7bf1b7c9f
 tm/clojure/test/sdk/testutil.clj 389d40fa6cbc
 tm/clojure/test/vendor/omni/voxgig/omni/json.clj 12b05718cc7d
 tm/clojure/test/vendor/omni/voxgig/omni/runner.clj 8695b5bb129b
@@ -442,7 +442,7 @@ model/target/target-index.aontu 40e30f8962fd
 src/cmp/elixir/Config_elixir.ts a2d76b98acda
 src/cmp/elixir/EntityOperation_elixir.ts a8cc83998c86
 src/cmp/elixir/EntityTypes_elixir.ts 1be156fafb80
-src/cmp/elixir/Entity_elixir.ts de8184f02dff
+src/cmp/elixir/Entity_elixir.ts 184381df5efb
 src/cmp/elixir/Gitignore_elixir.ts d98ec8dd42b0
 src/cmp/elixir/MainEntity_elixir.ts 9a4a93d98814
 src/cmp/elixir/Main_elixir.ts d12f5e9c14a6
@@ -464,9 +464,9 @@ src/cmp/elixir/ReadmeTopTest_elixir.ts fa93f86083a2
 src/cmp/elixir/Schema_elixir.ts a2d61dba669a
 src/cmp/elixir/TestClean_elixir.ts 9119b5fc16e7
 src/cmp/elixir/TestDirect_elixir.ts 2ee44de0d1a9
-src/cmp/elixir/TestEntity_elixir.ts 6c102b4ad391
+src/cmp/elixir/TestEntity_elixir.ts 0fa82f90ced3
 src/cmp/elixir/Test_elixir.ts 66686f882ff1
-src/cmp/elixir/fragment/Entity.fragment.ex 4f448294de7b
+src/cmp/elixir/fragment/Entity.fragment.ex 5a5a1e2bf7af
 src/cmp/elixir/fragment/EntityCreateOp.fragment.ex 801356a77819
 src/cmp/elixir/fragment/EntityListOp.fragment.ex 68274e2beb0b
 src/cmp/elixir/fragment/EntityLoadOp.fragment.ex b81370317230
@@ -548,7 +548,6 @@ src/cmp/go/fragment/EntityPatchOp.fragment.go 40f62b6ed1d4
 src/cmp/go/fragment/EntityRemoveOp.fragment.go 1343a5dce0b6
 src/cmp/go/fragment/EntityUpdateOp.fragment.go a698a4b6490a
 src/cmp/go/fragment/Main.fragment.go 8ad6d889d98a
-src/cmp/go/fragment/SdkError.fragment.go 36c2cc9cf558
 src/cmp/go/tsconfig.json 720a3f229019
 src/cmp/go/utility_go.ts 7373c070ad75
 tm/go/LICENSE 52acd47c245f
@@ -1025,7 +1024,6 @@ src/cmp/lua/fragment/EntityPatchOp.fragment.lua 48cdc2a2ae53
 src/cmp/lua/fragment/EntityRemoveOp.fragment.lua ff08a9bba7c0
 src/cmp/lua/fragment/EntityUpdateOp.fragment.lua 668f8234ca35
 src/cmp/lua/fragment/Main.fragment.lua 06ee29f43e63
-src/cmp/lua/fragment/SdkError.fragment.lua dd1669f801e7
 src/cmp/lua/tsconfig.json 720a3f229019
 src/cmp/lua/utility_lua.ts 216f2c0aab05
 tm/lua/LICENSE 52acd47c245f
@@ -1196,7 +1194,6 @@ src/cmp/perl/fragment/EntityPatchOp.fragment.pm afcce3d58b47
 src/cmp/perl/fragment/EntityRemoveOp.fragment.pm 8283e51bac15
 src/cmp/perl/fragment/EntityUpdateOp.fragment.pm 48613e826a1f
 src/cmp/perl/fragment/Main.fragment.pm ffd29fb7526e
-src/cmp/perl/fragment/SdkError.fragment.pm 315041c5422f
 src/cmp/perl/tsconfig.json 720a3f229019
 src/cmp/perl/utility_perl.ts 30622889a579
 tm/perl/LICENSE 52acd47c245f
@@ -1304,7 +1301,6 @@ src/cmp/php/fragment/EntityPatchOp.fragment.php ee2a2fa38fb8
 src/cmp/php/fragment/EntityRemoveOp.fragment.php c177612eab5f
 src/cmp/php/fragment/EntityUpdateOp.fragment.php 1138a8a5e61e
 src/cmp/php/fragment/Main.fragment.php 0dce63e7cf25
-src/cmp/php/fragment/SdkError.fragment.php 0c73a9a0251d
 src/cmp/php/tsconfig.json 720a3f229019
 src/cmp/php/utility_php.ts c65bddbe5deb
 tm/php/LICENSE 52acd47c245f
@@ -1410,7 +1406,6 @@ src/cmp/py/fragment/EntityPatchOp.fragment.py 8eb0422e6732
 src/cmp/py/fragment/EntityRemoveOp.fragment.py c3feaa5c31b7
 src/cmp/py/fragment/EntityUpdateOp.fragment.py 021721990b01
 src/cmp/py/fragment/Main.fragment.py 023148fa1340
-src/cmp/py/fragment/SdkError.fragment.py d1c40bae885a
 src/cmp/py/tsconfig.json 720a3f229019
 src/cmp/py/utility_py.ts dcadf423b5da
 tm/py/LICENSE 52acd47c245f
@@ -1545,7 +1540,6 @@ src/cmp/rb/fragment/EntityPatchOp.fragment.rb 8606c7db38e7
 src/cmp/rb/fragment/EntityRemoveOp.fragment.rb b6045051fc68
 src/cmp/rb/fragment/EntityUpdateOp.fragment.rb 8f6fc4a2f9be
 src/cmp/rb/fragment/Main.fragment.rb 150b85967610
-src/cmp/rb/fragment/SdkError.fragment.rb 951c6e5bc8b2
 src/cmp/rb/tsconfig.json 720a3f229019
 src/cmp/rb/utility_rb.ts 4cbd0b86307b
 tm/rb/Gemfile 2cf46ddd24ec
@@ -1691,7 +1685,7 @@ tm/rust/tests/vendor/omni/mod.rs 23c7539442bd
 tm/rust/tests/vendor/omni/regex.rs d6601dd5334d
 tm/rust/tests/vendor/omni/runner.rs 4764724087ae
 tm/rust/tests/vendor/omni/util.rs a28f17130190
-tm/rust/utility/clean.rs 52997e38df86
+tm/rust/utility/clean.rs cbd5c2744822
 tm/rust/utility/done.rs b15d29a24839
 tm/rust/utility/feature_add.rs 17f2d1fcb7c3
 tm/rust/utility/feature_hook.rs 6d794f025b57
