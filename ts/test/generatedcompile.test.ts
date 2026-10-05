@@ -174,7 +174,10 @@ function run(
     }
   }
 
-  return { ok: 0 === res.status, out, unlaunchable: false, timedOut: false }
+  // A process killed by a signal prints nothing about it itself.
+  const killed = null == res.signal ? '' : '\n' + cmd + ' was killed by ' + res.signal
+
+  return { ok: 0 === res.status, out: out + killed, unlaunchable: false, timedOut: false }
 }
 
 
@@ -5258,13 +5261,16 @@ describe('a templated server URL is resolved by the generated SDK', () => {
 
 
 // Every request on one client resolves its operation through the cache the
-// client's root context shares. The suite each of these SDKs ships races first
-// requests on one client, and checks every racer gets the one cached Operation;
-// go runs it under the race detector.
+// client's root context shares, and registers and cleans secrets through the
+// client's one registry. The suite each of these SDKs ships races requests on
+// one client: every racer gets the one cached Operation, and every registered
+// secret stays masked; go runs it under the race detector.
 type ConcurrencyLane = {
   target: string,
   runner: string,
   needs: string,
+  // What the suite races, when it is not both the cache and the registry.
+  shares?: string,
   prepare?: (sdkroot: string) => string | null,
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
   // Exit zero is not enough: a filter that matches nothing passes in every one
@@ -5297,7 +5303,8 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
     ran: [
       /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentFirstRequestsSucceed\b/m,
       /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentResolutionsShareOneCachedOperation\b/m,
-      /^\s*Total tests: 2\b/m,
+      /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentRegistrationKeepsEverySecretMasked\b/m,
+      /^\s*Total tests: 3\b/m,
     ],
   },
   {
@@ -5314,6 +5321,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
     ran: [
       /^--- PASS: TestConcurrentFirstRequests /m,
       /^--- PASS: TestConcurrentOperationResolution /m,
+      /^--- PASS: TestConcurrentCleanRegistry /m,
     ],
     unsupported: /-race requires cgo|cgo: C compiler .* not found|-race is not supported/,
   },
@@ -5329,7 +5337,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
         args: ['-B', 'test', '-Dtest=ConcurrencyTest', '-DfailIfNoSpecifiedTests=false'],
       }
     },
-    ran: [/Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: .* in [\w.]*\.ConcurrencyTest$/m],
+    ran: [/Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: .* in [\w.]*\.ConcurrencyTest$/m],
   },
   {
     target: 'kotlin',
@@ -5342,7 +5350,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
       return null == gradle ? null
         : { bin: gradle, args: ['--console=plain', 'test', '--tests', '*ConcurrencyTest*'] }
     },
-    ran: [/<testsuite name="[^"]*ConcurrencyTest" tests="2" skipped="0" failures="0" errors="0"/],
+    ran: [/<testsuite name="[^"]*ConcurrencyTest" tests="3" skipped="0" failures="0" errors="0"/],
     report: (sdkroot) => {
       const dir = Path.join(sdkroot, 'build', 'test-results', 'test')
       return Fs.existsSync(dir)
@@ -5360,7 +5368,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
       return null == scalacli ? null
         : { bin: scalacli, args: ['run', '.', '--main-class', 'SdkConcurrencyTestMain'] }
     },
-    ran: [/CONCURRENCY PASS 2 {2}FAIL 0/],
+    ran: [/CONCURRENCY PASS 3 {2}FAIL 0/],
   },
   {
     target: 'cpp',
@@ -5371,14 +5379,84 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
         sdkroot)
       return built.ok ? null : 'the generated test does not build:\n' + tail(built.out)
     },
+    // glibc writes a heap-corruption abort to the terminal unless told otherwise.
     command: () => null == toolchain('make') || null == cleanCxx() ? null
-      : { bin: Path.join('test', 'concurrency_test.out'), args: [] },
-    ran: [/concurrency_test: 2 tests, 2 checks, 0 failures/],
+      : {
+        bin: Path.join('test', 'concurrency_test.out'),
+        args: [],
+        env: { ...process.env, LIBC_FATAL_STDERR_: '1' },
+      },
+    ran: [/concurrency_test: 3 tests, 3 checks, 0 failures/],
+  },
+  {
+    target: 'py',
+    runner: 'test/test_concurrency.py',
+    needs: 'python3 with pytest',
+    command: () => pytest(['test/test_concurrency.py', '-v', '-p', 'no:cacheprovider']),
+    ran: [
+      /::test_concurrent_resolutions_share_one_cached_operation PASSED/,
+      /::test_concurrent_registration_keeps_every_secret_masked PASSED/,
+    ],
+  },
+  {
+    target: 'rb',
+    runner: 'test/concurrency_test.rb',
+    needs: 'ruby with minitest',
+    command: () => minitest(['test/concurrency_test.rb', '-v']),
+    ran: [
+      /ConcurrencyTest#test_concurrent_resolutions_share_one_cached_operation = [\d.]+ s = \./,
+      /ConcurrencyTest#test_concurrent_registration_keeps_every_secret_masked = [\d.]+ s = \./,
+      /^2 runs, \d+ assertions, 0 failures, 0 errors, 0 skips$/m,
+    ],
+  },
+  {
+    target: 'clojure',
+    runner: 'test/sdk/test/concurrency.clj',
+    needs: 'the clojure CLI (`clojure`)',
+    // The suite runs within the SDK's own runner; --sdk-only skips the corpus.
+    command: () => {
+      const clj = toolchain('clojure')
+      return null == clj ? null : { bin: clj, args: ['-M:test', '--sdk-only'] }
+    },
+    ran: [/^concurrency: 2 check\(s\), 0 failed$/m],
+  },
+  {
+    target: 'elixir',
+    runner: 'test/concurrency_test.exs',
+    needs: 'elixir + mix',
+    shares: 'its secret registry',
+    command: () => {
+      const mix = toolchain('mix')
+      return null == mix || null == toolchain('elixir') ? null
+        : {
+          bin: mix,
+          args: ['test', '--no-color', '--trace', Path.join('test', 'concurrency_test.exs')],
+          env: { ...process.env, MIX_ENV: 'test' },
+        }
+    },
+    ran: [
+      /\* test concurrent registration keeps every secret masked \(/,
+      /^1 test, 0 failures$/m,
+    ],
+  },
+  {
+    target: 'ocaml',
+    runner: 'test/concurrency_test.ml',
+    needs: 'ocamlc with its threads library, make and a C compiler',
+    command: () => {
+      const ocamlc = toolchain('ocamlc')
+      const make = toolchain('make')
+      const cc = toolchain('cc') || toolchain('gcc')
+      return null == ocamlc || null == make || null == cc ? null
+        : { bin: make, args: ['CC=' + cc, 'OCAMLC=' + ocamlc, 'test-concurrency'] }
+    },
+    ran: [/concurrency_test: 2 passed, 0 failed/],
+    unsupported: /Cannot find file .*threads\.cma/,
   },
 ]
 
 
-describe('concurrent requests on one client share its operation cache', () => {
+describe('concurrent requests on one client share its state', () => {
 
   let tmp = ''
 
@@ -5391,7 +5469,8 @@ describe('concurrent requests on one client share its operation cache', () => {
   })
 
   for (const lane of CONCURRENCY_LANES) {
-    test(lane.target + ': concurrent first requests on one client share its operation cache',
+    test(lane.target + ': concurrent requests on one client share ' +
+      (lane.shares ?? 'its operation cache and secret registry'),
       async (t) => {
         const sdkroot = Path.join(tmp, lane.target)
         const files = await generateTo(lane.target, sdkroot)

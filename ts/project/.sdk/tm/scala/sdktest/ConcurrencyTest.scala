@@ -1,7 +1,8 @@
 // Requests in flight at once on one client. Each resolves its operation
-// through the cache the client's root context shares with every request.
+// through the cache the client's root context shares with every request, and
+// registers and cleans secrets through the one registry the client holds.
 
-import java.util.concurrent.{ConcurrentLinkedQueue, CyclicBarrier}
+import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, CyclicBarrier}
 import java.util.function.{BiFunction, Supplier}
 import java.util.{Map => JMap}
 
@@ -92,6 +93,50 @@ object SdkConcurrencyTestMain {
         else split.map(k => "round " + round + ": op" + k + " resolved to more than one Operation").orNull
       }
       rep.check("concurrency.operations", failure == null, failure)
+    }
+
+    // Secrets registered on some threads while others clean: every clean
+    // masks what was registered before it, the longer secret whole, and no
+    // registration is lost.
+    rep.scope("concurrency.registry") {
+      val masked = "a [redacted] b [redacted] c"
+      val failure = firstFailure { round =>
+        if (round >= Rounds / 4) null
+        else {
+          val client = liveClient()
+          val utility = client.getUtility()
+          val root = client.getRootCtx()
+          val inner = "INNER-SECRET-" + round
+          utility.cleanAdd(root, inner)
+          utility.cleanAdd(root, "OUTER-" + inner + "-TAIL")
+          val text = "a " + inner + " b OUTER-" + inner + "-TAIL c"
+          val before = utility.clean(root, text)
+          val registering = new CountDownLatch(Width / 2)
+          val wrong = new ConcurrentLinkedQueue[Object]()
+          val thrown = atOnce { n =>
+            if (n < Width / 2) {
+              try {
+                for (k <- 0 until Ops) utility.cleanAdd(root, "ADDED-SECRET-" + round + "-" + n + "-" + k)
+              }
+              finally registering.countDown()
+            }
+            else {
+              while (0L < registering.getCount) {
+                val got = utility.clean(root, text)
+                if (masked != got) wrong.add(got)
+              }
+            }
+          }
+          val lost = (for (n <- 0 until Width / 2; k <- 0 until Ops)
+            yield "ADDED-SECRET-" + round + "-" + n + "-" + k)
+            .find(added => "[redacted]" != utility.clean(root, added))
+          if (masked != before) "round " + round + " cleaned to: " + before
+          else if (thrown.nonEmpty) "round " + round + " threw: " + thrown
+          else if (!wrong.isEmpty) "round " + round + " cleaned to: " + wrong
+          else lost.map(added => "round " + round + ": " + added + " was registered but not masked").orNull
+        }
+      }
+      rep.check("concurrency.registry", failure == null, failure)
     }
 
     rep.finish("CONCURRENCY")

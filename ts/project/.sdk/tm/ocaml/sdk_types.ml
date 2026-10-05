@@ -17,6 +17,8 @@
 
 open Voxgig_struct
 
+module OpMap = Map.Make (String)
+
 (* Branded SDK error. Raised as `Sdk_error_exc` on the throwing path; carried
  * as `sdk_error option` on the (value, err) pipeline return tuples. *)
 type sdk_error = {
@@ -238,7 +240,7 @@ and ctxspec = {
   mutable cs_options : value option;
   mutable cs_entity : entity_obj option;
   mutable cs_shared : value option;
-  mutable cs_opmap : (string, operation) Hashtbl.t option;
+  mutable cs_opmap : operation OpMap.t Atomic.t option;
   mutable cs_data : value option;
   mutable cs_reqdata : value option;
   mutable cs_match : value option;
@@ -261,7 +263,9 @@ and ctx = {
   mutable c_config : value;
   mutable c_entopts : value;
   mutable c_options : value;
-  mutable c_opmap : (string, operation) Hashtbl.t;
+  (* Shared by every context of one client, so by requests on other domains:
+   * a map replaced whole, never changed in place. *)
+  mutable c_opmap : operation OpMap.t Atomic.t;
   mutable c_response : response option;
   mutable c_result : result option;
   mutable c_spec : spec option;

@@ -9,7 +9,8 @@ import (
 )
 
 // Requests in flight at once on one client. Each resolves its operation
-// through the cache the client's root context shares with every request.
+// through the cache the client's root context shares with every request, and
+// registers and cleans secrets through the one registry the client holds.
 
 const concurrencyRounds = 200
 const concurrencyWidth = 8
@@ -86,6 +87,68 @@ func TestConcurrentOperationResolution(t *testing.T) {
 			for n := range ops {
 				if ops[n][k] != cached {
 					t.Fatalf("round %d: op%d resolved to more than one Operation", round, k)
+				}
+			}
+		}
+	}
+}
+
+// Secrets registered on some goroutines while others clean: every clean masks
+// what was registered before it, the longer secret whole, and no registration
+// is lost.
+func TestConcurrentCleanRegistry(t *testing.T) {
+	const masked = "a [redacted] b [redacted] c"
+	for round := 0; round < concurrencyRounds/4; round++ {
+		client := concurrencyClient()
+		utility := client.GetUtility()
+		root := client.GetRootCtx()
+		inner := fmt.Sprintf("INNER-SECRET-%d", round)
+		utility.CleanAdd(root, inner)
+		utility.CleanAdd(root, "OUTER-"+inner+"-TAIL")
+		text := "a " + inner + " b OUTER-" + inner + "-TAIL c"
+		if got := utility.Clean(root, text); got != masked {
+			t.Fatalf("round %d cleaned to: %v", round, got)
+		}
+
+		var registering sync.WaitGroup
+		registering.Add(concurrencyWidth / 2)
+		registered := make(chan struct{})
+		go func() {
+			registering.Wait()
+			close(registered)
+		}()
+		wrong := make([]any, concurrencyWidth)
+		atOnce(func(n int) {
+			if n < concurrencyWidth/2 {
+				defer registering.Done()
+				for k := 0; k < concurrencyOps; k++ {
+					utility.CleanAdd(root, fmt.Sprintf("ADDED-SECRET-%d-%d-%d", round, n, k))
+				}
+				return
+			}
+			for {
+				select {
+				case <-registered:
+					return
+				default:
+				}
+				if got := utility.Clean(root, text); got != masked {
+					wrong[n] = got
+					return
+				}
+			}
+		})
+
+		for n, got := range wrong {
+			if got != nil {
+				t.Fatalf("round %d, cleaner %d cleaned to: %v", round, n, got)
+			}
+		}
+		for n := 0; n < concurrencyWidth/2; n++ {
+			for k := 0; k < concurrencyOps; k++ {
+				added := fmt.Sprintf("ADDED-SECRET-%d-%d-%d", round, n, k)
+				if got := utility.Clean(root, added); got != "[redacted]" {
+					t.Fatalf("round %d: %s was registered but not masked: %v", round, added, got)
 				}
 			}
 		}

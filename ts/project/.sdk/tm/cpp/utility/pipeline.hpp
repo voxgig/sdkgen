@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <mutex>
 #include <cctype>
 #include <string>
 #include <vector>
@@ -176,6 +177,18 @@ inline std::vector<std::string> cleanForms(const std::string& value) {
   return out;
 }
 
+// Requests on other threads clean while one registers, so a registration
+// publishes a new list under this lock and never changes a published one.
+inline std::mutex& cleanRegistryLock() {
+  static std::mutex lock;
+  return lock;
+}
+
+inline Value cleanValues(const Value& cfg) {
+  std::lock_guard<std::mutex> guard(cleanRegistryLock());
+  return getp(cfg, "values");
+}
+
 // Register a secret value. Idempotent; shorter than `min` is not a secret
 // the SDK can mask without blanking ordinary text.
 inline void cleanAddCfg(const Value& cfg, const Value& value) {
@@ -183,12 +196,11 @@ inline void cleanAddCfg(const Value& cfg, const Value& value) {
   size_t min = static_cast<size_t>(cleanCount(getp(cfg, "min"), 4));
   const std::string& raw = value.as_string();
   if (raw.size() < min) return;
+  std::lock_guard<std::mutex> guard(cleanRegistryLock());
   Value values = getp(cfg, "values");
-  if (!values.is_list()) {
-    values = vlist();
-    map_put(cfg, "values", values);
-  }
-  auto& list = *values.as_list();
+  Value next = vlist();
+  if (values.is_list()) *next.as_list() = *values.as_list();
+  auto& list = *next.as_list();
   bool changed = false;
   for (const auto& form : cleanForms(raw)) {
     if (form.size() < min) continue;
@@ -205,6 +217,7 @@ inline void cleanAddCfg(const Value& cfg, const Value& value) {
     std::stable_sort(list.begin(), list.end(), [](const Value& a, const Value& b) {
       return a.as_string().size() > b.as_string().size();
     });
+    map_put(cfg, "values", next);
   }
 }
 
@@ -221,7 +234,7 @@ inline std::string cleanMaskValue(const Value& cfg, const std::string& value) {
 
 inline std::string cleanString(const Value& cfg, const std::string& text) {
   std::string out = text;
-  Value values = getp(cfg, "values");
+  Value values = cleanValues(cfg);
   if (!values.is_list()) return out;
   for (const auto& v : *values.as_list()) {
     if (!v.is_string() || v.as_string().empty()) continue;

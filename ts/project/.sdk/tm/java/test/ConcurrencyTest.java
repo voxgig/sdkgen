@@ -1,7 +1,8 @@
 package JAVAPACKAGE.sdktest;
 
 // Requests in flight at once on one client. Each resolves its operation
-// through the cache the client's root context shares with every request.
+// through the cache the client's root context shares with every request, and
+// registers and cleans secrets through the one registry the client holds.
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -12,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.function.BiFunction;
 import java.util.function.IntConsumer;
@@ -116,6 +118,57 @@ public class ConcurrencyTest {
         for (int n = 0; n < WIDTH; n++) {
           assertSame(cached, ops[n][k],
               "round " + round + ": op" + k + " resolved to more than one Operation");
+        }
+      }
+    }
+  }
+
+  // Secrets registered on some threads while others clean: every clean masks
+  // what was registered before it, the longer secret whole, and no
+  // registration is lost.
+  @Test
+  public void concurrentRegistrationKeepsEverySecretMasked() throws InterruptedException {
+    for (int round = 0; round < ROUNDS / 4; round++) {
+      final int r = round;
+      ProjectNameSDK client = liveClient();
+      Utility utility = client.getUtility();
+      Context root = client.getRootCtx();
+      String inner = "INNER-SECRET-" + round;
+      utility.cleanAdd.apply(root, inner);
+      utility.cleanAdd.apply(root, "OUTER-" + inner + "-TAIL");
+      String text = "a " + inner + " b OUTER-" + inner + "-TAIL c";
+      String masked = "a [redacted] b [redacted] c";
+      assertEquals(masked, utility.clean.apply(root, text));
+
+      CountDownLatch registering = new CountDownLatch(WIDTH / 2);
+      ConcurrentLinkedQueue<Object> wrong = new ConcurrentLinkedQueue<>();
+      List<Throwable> thrown = atOnce(n -> {
+        if (n < WIDTH / 2) {
+          try {
+            for (int k = 0; k < OPS; k++) {
+              utility.cleanAdd.apply(root, "ADDED-SECRET-" + r + "-" + n + "-" + k);
+            }
+          }
+          finally {
+            registering.countDown();
+          }
+          return;
+        }
+        while (0 < registering.getCount()) {
+          Object got = utility.clean.apply(root, text);
+          if (!masked.equals(got)) {
+            wrong.add(String.valueOf(got));
+          }
+        }
+      });
+
+      assertTrue(thrown.isEmpty(), "round " + round + " threw: " + thrown);
+      assertTrue(wrong.isEmpty(), "round " + round + " cleaned to: " + wrong);
+      for (int n = 0; n < WIDTH / 2; n++) {
+        for (int k = 0; k < OPS; k++) {
+          String added = "ADDED-SECRET-" + round + "-" + n + "-" + k;
+          assertEquals("[redacted]", utility.clean.apply(root, added),
+              "round " + round + ": " + added + " was registered but not masked");
         }
       }
     }

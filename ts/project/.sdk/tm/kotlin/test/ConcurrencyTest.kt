@@ -1,9 +1,11 @@
 package KOTLINPACKAGE.sdktest
 
 // Requests in flight at once on one client. Each resolves its operation
-// through the cache the client's root context shares with every request.
+// through the cache the client's root context shares with every request, and
+// registers and cleans secrets through the one registry the client holds.
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CyclicBarrier
 import java.util.function.BiFunction
 import java.util.function.Supplier
@@ -90,6 +92,55 @@ class ConcurrencyTest {
         val cached = utility.makeContext(linkedMapOf<String, Any?>("opname" to "op$k"), root).op
         for (n in 0 until width) {
           assertSame(cached, got[n][k], "round $round: op$k resolved to more than one Operation")
+        }
+      }
+    }
+  }
+
+  // Secrets registered on some threads while others clean: every clean masks
+  // what was registered before it, the longer secret whole, and no
+  // registration is lost.
+  @Test
+  fun concurrentRegistrationKeepsEverySecretMasked() {
+    repeat(rounds / 4) { round ->
+      val client = liveClient()
+      val utility = client.getUtility()
+      val root = client.getRootCtx()
+      val inner = "INNER-SECRET-$round"
+      utility.cleanAdd(root, inner)
+      utility.cleanAdd(root, "OUTER-$inner-TAIL")
+      val text = "a $inner b OUTER-$inner-TAIL c"
+      val masked = "a [redacted] b [redacted] c"
+      assertEquals(masked, utility.clean(root, text))
+
+      val registering = CountDownLatch(width / 2)
+      val wrong = ConcurrentLinkedQueue<Any?>()
+      val thrown = atOnce { n ->
+        if (n < width / 2) {
+          try {
+            for (k in 0 until ops) {
+              utility.cleanAdd(root, "ADDED-SECRET-$round-$n-$k")
+            }
+          } finally {
+            registering.countDown()
+          }
+        } else {
+          while (0L < registering.count) {
+            val cleaned = utility.clean(root, text)
+            if (masked != cleaned) {
+              wrong.add(cleaned)
+            }
+          }
+        }
+      }
+
+      assertTrue(thrown.isEmpty(), "round $round threw: $thrown")
+      assertTrue(wrong.isEmpty(), "round $round cleaned to: $wrong")
+      for (n in 0 until width / 2) {
+        for (k in 0 until ops) {
+          val added = "ADDED-SECRET-$round-$n-$k"
+          assertEquals("[redacted]", utility.clean(root, added),
+            "round $round: $added was registered but not masked")
         }
       }
     }

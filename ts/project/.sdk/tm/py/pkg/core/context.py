@@ -202,8 +202,8 @@ class ProjectNameContext:
             "points": points,
         })
 
-        self.opmap[cache_key] = op
-        return op
+        # Every request racing to build this Operation gets the one stored first.
+        return self.opmap.setdefault(cache_key, op)
 
     def make_error(self, code, msg):
         return ProjectNameError(code, msg, self)

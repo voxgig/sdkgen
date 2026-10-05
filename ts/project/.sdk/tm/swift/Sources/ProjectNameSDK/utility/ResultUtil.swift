@@ -143,11 +143,43 @@ extension Utility {
   public final class CleanConfig {
     public var active = true
     public var keys: [String] = []
-    public var values: [String] = []
     public var mask = "[redacted]"
     public var hint = 0
     public var min = 4
+
+    // Requests on other threads clean while one registers, so the registry
+    // is read and written under its own lock.
+    private let lock = NSLock()
+    private var registry: [String] = []
+
+    public var values: [String] {
+      get {
+        lock.lock()
+        defer { lock.unlock() }
+        return registry
+      }
+      set {
+        lock.lock()
+        defer { lock.unlock() }
+        registry = newValue
+      }
+    }
+
     public init() {}
+
+    // The forms not yet registered are added, longest first, in one step.
+    func register(_ forms: [String]) {
+      lock.lock()
+      defer { lock.unlock() }
+      var changed = false
+      for form in forms where form.count >= min && !registry.contains(form) {
+        registry.append(form)
+        changed = true
+      }
+      if changed {
+        registry.sort { $0.count > $1.count }
+      }
+    }
   }
 }
 
@@ -228,16 +260,7 @@ private func cleanForms(_ value: String) -> [String] {
 func cleanAddUtil(_ ctx: Context, _ value: Value) {
   let cfg = cleanConfigOf(ctx)
   guard let s = value.asString, s.count >= cfg.min else { return }
-  var changed = false
-  for form in cleanForms(s) {
-    if form.count >= cfg.min && !cfg.values.contains(form) {
-      cfg.values.append(form)
-      changed = true
-    }
-  }
-  if changed {
-    cfg.values.sort { $0.count > $1.count }
-  }
+  cfg.register(cleanForms(s))
 }
 
 // Every scalar under a sensitive name, at any depth and of any shape: a

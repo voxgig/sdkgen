@@ -159,10 +159,19 @@ let default_ctxspec () : ctxspec =
     cs_reqdata = None; cs_match = None; cs_reqmatch = None; cs_point = None;
     cs_spec = None; cs_result = None; cs_response = None }
 
+(* Every request racing to build this Operation gets the one stored first. *)
+let rec store_op (opmap : operation OpMap.t Atomic.t) (key : string) (op : operation) : operation =
+  let seen = Atomic.get opmap in
+  match OpMap.find_opt key seen with
+  | Some stored -> stored
+  | None ->
+    if Atomic.compare_and_set opmap seen (OpMap.add key op seen) then op
+    else store_op opmap key op
+
 let resolve_op (ctx : ctx) (opname : string) : operation =
   let entname = match ctx.c_entity with Some e -> e.e_name | None -> "_" in
   let cache_key = entname ^ ":" ^ opname in
-  match Hashtbl.find_opt ctx.c_opmap cache_key with
+  match OpMap.find_opt cache_key (Atomic.get ctx.c_opmap) with
   | Some op -> op
   | None ->
     if opname = "" then new_operation (empty_map ())
@@ -177,8 +186,7 @@ let resolve_op (ctx : ctx) (opname : string) : operation =
       let op = new_operation
           (jo [("entity", Str entname); ("name", Str opname);
                ("input", Str inpt); ("points", points)]) in
-      Hashtbl.replace ctx.c_opmap cache_key op;
-      op
+      store_op ctx.c_opmap cache_key op
     end
 
 let make_context_impl (cs : ctxspec) (basectx : ctx option) : ctx =
@@ -226,7 +234,7 @@ let make_context_impl (cs : ctxspec) (basectx : ctx option) : ctx =
     | _ -> (match basectx with Some b -> b.c_shared | None -> Noval) in
   let opmap =
     match cs.cs_opmap with Some h -> h
-    | None -> (match basectx with Some b -> b.c_opmap | None -> Hashtbl.create 16) in
+    | None -> (match basectx with Some b -> b.c_opmap | None -> Atomic.make OpMap.empty) in
   let mapof = function Some d -> (match to_map d with Map _ as m -> m | _ -> empty_map ()) | None -> empty_map () in
   let data = mapof cs.cs_data and reqdata = mapof cs.cs_reqdata
   and mtch = mapof cs.cs_match and reqmatch = mapof cs.cs_reqmatch in
@@ -321,18 +329,25 @@ let clean_forms (value : string) : string list =
    if String.length j >= 2 then add (String.sub j 1 (String.length j - 2)));
   !out
 
+(* A registration reads the registry list and writes a new one, so requests
+ * on other domains registering at once take turns, or one would be dropped.
+ * Cleaning reads the list whole and needs no turn. *)
+let clean_registering = Atomic.make false
+
 let clean_add_util (ctx : ctx) (value : string) : unit =
   let cfg = clean_config ctx in
   let minlen = match getp cfg "min" with Num n -> int_of_float n | _ -> 4 in
   match getp cfg "values" with
   | List r when String.length value >= minlen ->
-    let have = str_values (List r) in
-    let add = List.filter (fun f -> String.length f >= minlen && not (List.mem f have))
-        (clean_forms value) in
-    (* Longest first, so a value is never masked by a substring of itself. *)
-    if add <> [] then
-      r := List.map (fun s -> Str s)
-          (List.stable_sort (fun a b -> compare (String.length b) (String.length a)) (have @ add))
+    while not (Atomic.compare_and_set clean_registering false true) do () done;
+    Fun.protect ~finally:(fun () -> Atomic.set clean_registering false) (fun () ->
+        let have = str_values (List r) in
+        let add = List.filter (fun f -> String.length f >= minlen && not (List.mem f have))
+            (clean_forms value) in
+        (* Longest first, so a value is never masked by a substring of itself. *)
+        if add <> [] then
+          r := List.map (fun s -> Str s)
+              (List.stable_sort (fun a b -> compare (String.length b) (String.length a)) (have @ add)))
   | _ -> ()
 
 let mask_value (cfg : value) (value : string) : string =

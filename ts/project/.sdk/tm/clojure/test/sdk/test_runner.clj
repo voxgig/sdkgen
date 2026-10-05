@@ -1,6 +1,6 @@
 ;; ProjectName SDK test runner (tools.deps main entry point).
 ;; Runs the vendored omni runner's smoke test, the API-agnostic suites
-;; (primary utility, pipeline, features, netsim), the generated API-specific
+;; (primary utility, pipeline, features, netsim, concurrency), the generated API-specific
 ;; suite, and the vendored struct corpus, then reports counts and exits
 ;; non-zero on any failure. `--sdk-only` skips the corpus steps (see -main).
 (ns sdk.test-runner
@@ -11,6 +11,7 @@
             [sdk.test.struct-corpus :as corpus]
             [sdk.test.omni-smoke :as omnismoke]
             [sdk.test.clean :as clean]
+            [sdk.test.concurrency :as concurrency]
             [sdk.gentest :as gentest]
             [clojure.java.io :as io]))
 
@@ -111,6 +112,7 @@
     (feature/run rec)
     (run-feature-suites rec)
     (netsim/run rec)
+    (concurrency/run rec)
     (gentest/run rec)
     ;; The canary sweep (generated: sdk/test/clean.clj) prints its own
     ;; `clean: swept N surface(s), M leak(s)` line, which sdkgen's lane reads.

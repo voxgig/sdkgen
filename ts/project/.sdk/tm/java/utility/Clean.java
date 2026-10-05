@@ -148,10 +148,8 @@ final class Clean {
   }
 
   private static List<String> values(Map<String, Object> cfg) {
-    if (!(cfg.get("values") instanceof List)) {
-      cfg.put("values", new ArrayList<String>());
-    }
-    return (List<String>) cfg.get("values");
+    Object values = cfg.get("values");
+    return values instanceof List ? (List<String>) values : List.of();
   }
 
   private static String mask(Map<String, Object> cfg) {
@@ -193,21 +191,25 @@ final class Clean {
   }
 
   // Register a secret value. Idempotent; shorter than `min` is not a secret
-  // the SDK can mask without blanking ordinary text.
+  // the SDK can mask without blanking ordinary text. Requests on other
+  // threads clean while one registers, so a registration publishes a new
+  // list and never changes a published one.
   static void add(Map<String, Object> cfg, Object value) {
     if (!(value instanceof String) || ((String) value).length() < min(cfg)) {
       return;
     }
-    List<String> values = values(cfg);
-    boolean changed = false;
-    for (String form : forms((String) value)) {
-      if (form.length() >= min(cfg) && !values.contains(form)) {
-        values.add(form);
-        changed = true;
+    synchronized (cfg) {
+      List<String> values = new ArrayList<>(values(cfg));
+      int had = values.size();
+      for (String form : forms((String) value)) {
+        if (form.length() >= min(cfg) && !values.contains(form)) {
+          values.add(form);
+        }
       }
-    }
-    if (changed) {
-      values.sort((a, b) -> b.length() - a.length());
+      if (had < values.size()) {
+        values.sort((a, b) -> b.length() - a.length());
+        cfg.put("values", List.copyOf(values));
+      }
     }
   }
 

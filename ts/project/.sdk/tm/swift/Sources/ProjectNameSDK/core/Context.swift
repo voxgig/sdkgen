@@ -150,6 +150,8 @@ public final class Context {
     opm.entries["input"] = .string(input)
     opm.entries["points"] = .list(points)
 
+    // Each context holds its own copy of the cache, so a request racing
+    // another builds its own Operation, a read-only descriptor.
     let op = Operation(opm)
     opmap[cacheKey] = op
     return op

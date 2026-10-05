@@ -102,8 +102,9 @@ class ProjectNameContext
       "input" => input,
       "points" => points,
     })
-    @opmap[cache_key] = op
-    op
+    # Racing requests get the Operation stored first. On a Ruby without a GVL
+    # racers may each keep their own, which is harmless: it is read-only.
+    @opmap[cache_key] ||= op
   end
 
   def make_error(code, msg)

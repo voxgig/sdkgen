@@ -21,10 +21,13 @@ public sealed class CleanConfig
 {
     public bool Active = true;
     public List<string> Keys = new();
+    // Requests on other threads clean while one registers, so a registration
+    // publishes a new list and never changes a published one.
     public List<string> Values = new();
     public string Mask = "[redacted]";
     public int Hint;
     public int Min = 4;
+    internal readonly object Registering = new();
 }
 
 public static partial class SdkUtility
@@ -152,18 +155,17 @@ public static partial class SdkUtility
         {
             return;
         }
-        var changed = false;
-        foreach (var form in CleanForms(s))
+        lock (cfg.Registering)
         {
-            if (form.Length >= cfg.Min && !cfg.Values.Contains(form))
+            var added = CleanForms(s).Where(f => f.Length >= cfg.Min && !cfg.Values.Contains(f)).ToList();
+            if (0 == added.Count)
             {
-                cfg.Values.Add(form);
-                changed = true;
+                return;
             }
-        }
-        if (changed)
-        {
-            cfg.Values.Sort((a, b) => b.Length.CompareTo(a.Length));
+            var values = new List<string>(cfg.Values);
+            values.AddRange(added);
+            values.Sort((a, b) => b.Length.CompareTo(a.Length));
+            Volatile.Write(ref cfg.Values, values);
         }
     }
 
@@ -179,7 +181,7 @@ public static partial class SdkUtility
     private static string CleanString(CleanConfig cfg, string text)
     {
         var out_ = text;
-        foreach (var value in cfg.Values)
+        foreach (var value in Volatile.Read(ref cfg.Values))
         {
             if (out_.Contains(value))
             {

@@ -1,5 +1,6 @@
 // Requests in flight at once on one client. Each resolves its operation
-// through the cache the client's root context shares with every request.
+// through the cache the client's root context shares with every request, and
+// registers and cleans secrets through the one registry the client holds.
 
 using System.Collections.Concurrent;
 
@@ -117,6 +118,66 @@ public class ConcurrencyTest
                 {
                     Assert.True(ReferenceEquals(cached, ops[n, k]),
                         "round " + round + ": op" + k + " resolved to more than one Operation");
+                }
+            }
+        }
+    }
+
+    // Secrets registered on some threads while others clean: every clean
+    // masks what was registered before it, the longer secret whole, and no
+    // registration is lost.
+    [Fact]
+    public void ConcurrentRegistrationKeepsEverySecretMasked()
+    {
+        for (var round = 0; round < Rounds / 4; round++)
+        {
+            var client = LiveClient();
+            var utility = client.GetUtility();
+            var root = client.GetRootCtx();
+            var inner = "INNER-SECRET-" + round;
+            utility.CleanAdd(root, inner);
+            utility.CleanAdd(root, "OUTER-" + inner + "-TAIL");
+            var text = "a " + inner + " b OUTER-" + inner + "-TAIL c";
+            Assert.Equal("a [redacted] b [redacted] c", utility.Clean(root, text));
+
+            var registering = new CountdownEvent(Width / 2);
+            var wrong = new ConcurrentQueue<string>();
+            var thrown = AtOnce(n =>
+            {
+                if (n < Width / 2)
+                {
+                    try
+                    {
+                        for (var k = 0; k < Ops; k++)
+                        {
+                            utility.CleanAdd(root, "ADDED-SECRET-" + round + "-" + n + "-" + k);
+                        }
+                    }
+                    finally
+                    {
+                        registering.Signal();
+                    }
+                    return;
+                }
+                while (!registering.IsSet)
+                {
+                    var got = utility.Clean(root, text) as string;
+                    if ("a [redacted] b [redacted] c" != got)
+                    {
+                        wrong.Enqueue(got ?? "null");
+                    }
+                }
+            });
+
+            Assert.True(0 == thrown.Count, "round " + round + " threw:\n" + string.Join("\n", thrown));
+            Assert.True(wrong.IsEmpty, "round " + round + " cleaned to: " + string.Join(" | ", wrong));
+            for (var n = 0; n < Width / 2; n++)
+            {
+                for (var k = 0; k < Ops; k++)
+                {
+                    var added = "ADDED-SECRET-" + round + "-" + n + "-" + k;
+                    Assert.True("[redacted]" == utility.Clean(root, added) as string,
+                        "round " + round + ": " + added + " was registered but not masked");
                 }
             }
         }
