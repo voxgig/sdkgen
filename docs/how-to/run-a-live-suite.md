@@ -147,8 +147,10 @@ sent, and the start of the body, with credentials masked:
 | `request_status` | An HTTP failure; its message also describes a body that is not JSON. |
 
 `direct()` returns the same error as `err`, with `ok` set to `false`. The
-Rust, C, C++ and Zig SDKs return a plain value from `direct()`, so there `err`
-holds the error's message alone.
+Rust, C and Zig SDKs return a plain value from `direct()`, so there `err`
+holds the error's message alone. The C++ SDK also returns a plain value, but
+its `err` is a map holding the message under `message`, as every other
+failure of its `direct()` returns.
 
 The C, C++, Zig and OCaml SDKs have no transport of their own. The function
 given as `system.fetch` reports a body it could not read as JSON by setting

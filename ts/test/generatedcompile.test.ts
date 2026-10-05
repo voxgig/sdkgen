@@ -5716,7 +5716,7 @@ describe('probes driven through a generated SDK', () => {
         }
 
         ok(ran.ok, lane.target + ': the non-JSON probe failed:\n' + tail(ran.out, 60))
-        deepStrictEqual(nonjsonFailures(ran.out, lane.target), [],
+        deepStrictEqual(nonjsonFailures(ran.out, lane.target, seam), [],
           lane.target + ' probe output:\n' + tail(ran.out))
       })
   }

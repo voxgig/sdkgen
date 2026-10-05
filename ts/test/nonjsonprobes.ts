@@ -3,6 +3,10 @@
 
 const NONJSON_SECRET = 'NONJSON-PROBE-SECRET-7f2c'
 
+// What a built-in transport sends and records when the client sets no agent.
+const NONJSON_DEFAULT_AGENT = 'Mozilla/5.0 (compatible; DemoSDK/1.0)'
+const NONJSON_NO_AGENT = 'transport default'
+
 const CHALLENGE = '<!DOCTYPE html><html><head><title>Just a moment...</title></head>' +
   '<body>key ' + NONJSON_SECRET + ' ' + 'x'.repeat(300) + '</body></html>'
 
@@ -34,7 +38,7 @@ const NONJSON_EXPECT: Record<string, { code: string, parts: string[], absent: st
   html: {
     code: 'response_content_type',
     parts: ['expected JSON, got text/html; charset=utf-8', 'HTTP 200',
-      'content-type text/html; charset=utf-8', 'user-agent NonjsonProbe/1.0',
+      'content-type text/html; charset=utf-8',
       'body: <!DOCTYPE html><html><head><title>Just a moment...</title></head><body>key ', '...'],
     absent: [NONJSON_SECRET, 'x'.repeat(200)],
   },
@@ -75,9 +79,9 @@ function nonjsonOutcomes(out: string, path: string): Record<string, { code: stri
 const NONJSON_MESSAGE_ONLY = ['rust', 'c', 'cpp', 'zig']
 
 
-// Each case that did not get its code, or whose message lacks a part or holds
-// one it must not, by both paths.
-function nonjsonFailures(out: string, target: string): string[] {
+// Each case that did not get its code, or whose message lacks a part, the agent
+// it must name among them, or holds one it must not, by both paths.
+function nonjsonFailures(out: string, target: string, seam: boolean): string[] {
   const fails: string[] = []
   for (const path of ['probe', 'direct']) {
     const found = nonjsonOutcomes(out, path)
@@ -94,7 +98,9 @@ function nonjsonFailures(out: string, target: string): string[] {
       if (code !== got.code) {
         fails.push(name + ': code ' + got.code + ', expected ' + code + ' (' + got.message + ')')
       }
-      for (const part of want.parts) {
+      const agent = 'ok' === want.code ? [] :
+        ['user-agent ' + (c.agent ?? (seam ? NONJSON_NO_AGENT : NONJSON_DEFAULT_AGENT))]
+      for (const part of [...want.parts, ...agent]) {
         if (!got.message.includes(part)) fails.push(name + ': message lacks ' + JSON.stringify(part))
       }
       for (const part of want.absent) {
