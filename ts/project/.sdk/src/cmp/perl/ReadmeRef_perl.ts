@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, entityClassName, entityCollection } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -32,7 +32,7 @@ function perlType(type: any): string {
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
-    sig: 'load($reqmatch, $ctrl) -> hashref',
+    sig: 'load($reqmatch, $ctrl) -> EntyClass',
     returns: 'the entity',
     desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get` reads, and dies on error.',
   },
@@ -42,22 +42,22 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     desc: 'List entities matching the given criteria. The match is optional — call `list` with no argument to list all records. Returns an arrayref of entities, one per record (`data_get` reads each record), and dies on error.',
   },
   create: {
-    sig: 'create($reqdata, $ctrl) -> hashref',
+    sig: 'create($reqdata, $ctrl) -> EntyClass',
     returns: 'the created entity',
     desc: 'Create a new entity with the given data. Returns the created entity and dies on error.',
   },
   update: {
-    sig: 'update($reqdata, $ctrl) -> hashref',
+    sig: 'update($reqdata, $ctrl) -> EntyClass',
     returns: 'the updated entity',
     desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and dies on error.',
   },
   patch: {
-    sig: 'patch($reqdata, $ctrl) -> hashref',
+    sig: 'patch($reqdata, $ctrl) -> EntyClass',
     returns: 'the patched entity',
     desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and dies on error.',
   },
   remove: {
-    sig: 'remove($reqmatch, $ctrl) -> hashref',
+    sig: 'remove($reqmatch, $ctrl) -> EntyClass',
     returns: 'the removed entity',
     desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and dies on error.',
   },
@@ -258,7 +258,7 @@ my $${eVar} = $client->${ent.Name};
           const info = OP_SIGNATURES[opname]
           if (!info) return
 
-          Content(`#### \`${info.sig}\`
+          Content(`#### \`${info.sig.replace('EntyClass', entityClassName(ent, entityCollection(model)))}\`
 
 ${info.desc}
 

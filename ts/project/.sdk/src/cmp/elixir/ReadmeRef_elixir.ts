@@ -13,7 +13,7 @@ import { elixirLit } from './utility_elixir'
 
 const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
   load: {
-    sig: 'load(entity, reqmatch, ctrl \\\\ nil) :: map()',
+    sig: 'load(entity, reqmatch, ctrl \\\\ nil) :: entity',
     desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get/1` reads, and raises on error.',
   },
   list: {
@@ -21,19 +21,19 @@ const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
     desc: 'List entities matching the given criteria. The match is optional — call `list(entity)` to list all records. Returns a list of entities, one per record, and raises on error.',
   },
   create: {
-    sig: 'create(entity, reqdata, ctrl \\\\ nil) :: map()',
+    sig: 'create(entity, reqdata, ctrl \\\\ nil) :: entity',
     desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
-    sig: 'update(entity, reqdata, ctrl \\\\ nil) :: map()',
+    sig: 'update(entity, reqdata, ctrl \\\\ nil) :: entity',
     desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
   },
   patch: {
-    sig: 'patch(entity, reqdata, ctrl \\\\ nil) :: map()',
+    sig: 'patch(entity, reqdata, ctrl \\\\ nil) :: entity',
     desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and raises on error.',
   },
   remove: {
-    sig: 'remove(entity, reqmatch, ctrl \\\\ nil) :: map()',
+    sig: 'remove(entity, reqmatch, ctrl \\\\ nil) :: entity',
     desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },
 }

@@ -34,7 +34,7 @@ function cljType(type: any): string {
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
-    sig: '(load ent reqmatch ctrl) -> map',
+    sig: '(load ent reqmatch ctrl) -> entity',
     returns: 'the entity',
     desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `((:data-get ent))` reads, and raises on error.',
   },
@@ -44,22 +44,22 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     desc: 'List entities matching the given criteria. The match is optional — call with `nil` to list all records. Returns a vector of entities, one per record, and raises on error.',
   },
   create: {
-    sig: '(create ent reqdata ctrl) -> map',
+    sig: '(create ent reqdata ctrl) -> entity',
     returns: 'the created entity',
     desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
-    sig: '(update ent reqdata ctrl) -> map',
+    sig: '(update ent reqdata ctrl) -> entity',
     returns: 'the updated entity',
     desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
   },
   patch: {
-    sig: '(patch ent reqdata ctrl) -> map',
+    sig: '(patch ent reqdata ctrl) -> entity',
     returns: 'the patched entity',
     desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and raises on error.',
   },
   remove: {
-    sig: '(remove ent reqmatch ctrl) -> map',
+    sig: '(remove ent reqmatch ctrl) -> entity',
     returns: 'the removed entity',
     desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },

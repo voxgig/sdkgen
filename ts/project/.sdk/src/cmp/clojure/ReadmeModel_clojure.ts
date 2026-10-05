@@ -20,12 +20,12 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `load` | `(ent reqmatch ctrl) -> map` | Load a single entity by match criteria, and return it. Raises on error. |',
+    load: '| `load` | `(ent reqmatch ctrl) -> entity` | Load a single entity by match criteria, and return it. Raises on error. |',
     list: '| `list` | `(ent reqmatch ctrl) -> vector` | List entities matching the criteria, one per record. Raises on error. |',
-    create: '| `create` | `(ent reqdata ctrl) -> map` | Create a new entity, and return it. Raises on error. |',
-    update: '| `update` | `(ent reqdata ctrl) -> map` | Update an existing entity, and return it. Raises on error. |',
-    patch: '| `patch` | `(ent reqdata ctrl) -> map` | Change part of an existing entity, and return it. Raises on error. |',
-    remove: '| `remove` | `(ent reqmatch ctrl) -> map` | Remove an entity, and return it marked as deleted. Raises on error. |',
+    create: '| `create` | `(ent reqdata ctrl) -> entity` | Create a new entity, and return it. Raises on error. |',
+    update: '| `update` | `(ent reqdata ctrl) -> entity` | Update an existing entity, and return it. Raises on error. |',
+    patch: '| `patch` | `(ent reqdata ctrl) -> entity` | Change part of an existing entity, and return it. Raises on error. |',
+    remove: '| `remove` | `(ent reqmatch ctrl) -> entity` | Remove an entity, and return it marked as deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')

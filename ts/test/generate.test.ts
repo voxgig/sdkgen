@@ -2302,7 +2302,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   // entity class an entity file declares; `returns` is the declaration for one
   // operation, and what it must be. A target whose declared types are generic
   // must still declare no data type. perl and elixir say it in a comment.
-  const ENTITY_COMMENT = /^(?![\s\S]*\b(?:entity maps?|data \(hashref\))\b)[\s\S]*\bReturns\b[^.;]*\bentit(?:y|ies)\b/
+  const ENTITY_COMMENT = /^(?![\s\S]*(?:\bentity maps?\b|\bdata \(hashref\)))[\s\S]*\bReturns\b[^.;]*\bentit(?:y|ies)\b/
   const OP = '(?<op>load|list|create|update|patch|remove)'
   const OP_RETURNS: Record<string, null | {
     file: RegExp,
@@ -2365,6 +2365,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     },
     perl: {
       file: /^perl\/entity\/\w+_entity\.pm$/,
+      cls: /^package (\w+);$/m,
       decl: new RegExp('^(?<type>(?:#[^\\n]*\\n)+)sub ' + OP + ' \\{', 'gm'),
       returns: () => ENTITY_COMMENT,
     },
@@ -2414,6 +2415,51 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     },
   }
 
+  // The operations one entity file declares, and each declaration that does
+  // not say the operation returns the entity.
+  function declarations(target: string, path: string, src: string): { ops: string[], wrong: string[] } {
+    const where = OP_RETURNS[target]!
+    const cls: string | undefined = null == where.cls ? '' : where.cls.exec(src)?.[1]
+    ok(null != cls, path + ': no entity class')
+    const ops: string[] = []
+    const wrong: string[] = []
+    for (const m of src.matchAll(where.decl)) {
+      const op = m.groups!.op.toLowerCase()
+      const declared = m.groups!.type.replace(/\s+/g, ' ').trim()
+      const says = where.returns(op, cls!)
+      ops.push(op)
+      if ('string' === typeof says ? declared !== says : !says.test(declared)) {
+        wrong.push(path + ' ' + op + ': ' + declared)
+      }
+    }
+    return { ops, wrong }
+  }
+
+  // A reference heading and a README entity-interface row name a type that no
+  // compiler reads. `ref` and `readme` give the type each must name for an
+  // operation: the entity class `cls` finds, or the name the page gives the
+  // entity `make` returns.
+  const DOC_RETURNS: Record<string, {
+    ref: (op: string, cls: string) => string,
+    readme?: (op: string) => string,
+  }> = {
+    clojure: {
+      ref: (op) => 'list' === op ? 'vector' : 'entity',
+      readme: (op) => 'list' === op ? 'vector' : 'entity',
+    },
+    elixir: {
+      ref: (op) => 'list' === op ? 'list()' : 'entity',
+      readme: (op) => 'list' === op ? 'list()' : 'entity',
+    },
+    perl: {
+      ref: (op, cls) => 'list' === op ? 'arrayref' : cls,
+      readme: (op) => 'list' === op ? 'arrayref' : 'entity',
+    },
+    py: {
+      ref: (op, cls) => 'list' === op ? 'list[' + cls + ']' : cls,
+    },
+  }
+
   // A type checker reads an operation's result through its declaration, so it
   // names the entity class, as the reference heading does.
   test('every target declares that each operation returns its entity class', async () => {
@@ -2424,31 +2470,67 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     for (const target of sdkTargets()) {
       const where = OP_RETURNS[target]
       if (null == where) continue
-      const out = await generateFold(target)
       const ops = new Set<string>()
-      for (const [path, src] of Object.entries(out)) {
+      for (const [path, src] of Object.entries(await generateFold(target))) {
         if (!where.file.test(path)) continue
-        const cls: string | undefined = null == where.cls ? '' : where.cls.exec(src)?.[1]
-        ok(null != cls, path + ': no entity class')
-        for (const m of src.matchAll(where.decl)) {
-          const op = m.groups!.op.toLowerCase()
-          const declared = m.groups!.type.replace(/\s+/g, ' ').trim()
-          const says = where.returns(op, cls!)
-          ops.add(op)
-          if ('string' === typeof says ? declared !== says : !says.test(declared)) {
-            wrong.push(path + ' ' + op + ': ' + declared)
-          }
-        }
+        const found = declarations(target, path, src)
+        found.ops.forEach((op: string) => ops.add(op))
+        wrong.push(...found.wrong)
       }
       const missing = ['create', 'list', 'load', 'patch', 'remove', 'update'].filter((op) => !ops.has(op))
       if (0 < missing.length) wrong.push(target + ': no declared return found for ' + missing.join(', '))
     }
 
-    const pyref = (await generateFold('py'))['py/REFERENCE.md']
-    for (const { heading } of operationDocs(pyref)) {
-      if (!/ -> (?:list\[)?\w+Entity\]?`$/.test(heading)) wrong.push('py/REFERENCE.md ' + heading)
+    for (const [target, says] of Object.entries(DOC_RETURNS)) {
+      const out = await generateFold(target)
+      const where = OP_RETURNS[target]
+      const classes = null == where?.cls ? [''] : Object.entries(out)
+        .filter(([path]) => where.file.test(path)).map(([, src]) => where.cls!.exec(src)?.[1] ?? '')
+      const pages: [string, RegExp, string[], (op: string, cls: string) => string][] = [
+        [target + '/REFERENCE.md', /^#### `[^`]*?\b(load|list|create|update|patch|remove)\b[^`]* (?:->|::) ([^`]+)`$/,
+          operationDocs(out[target + '/REFERENCE.md']).map((doc) => doc.heading), says.ref],
+      ]
+      if (null != says.readme) {
+        pages.push([target + '/README.md', /^\| `(load|list|create|update|patch|remove)` \| `[^`]* (?:->|::) ([^`]+)` \|/,
+          out[target + '/README.md'].split('\n').filter((line: string) => line.startsWith('| `')), says.readme])
+      }
+      for (const [path, entry, lines, want] of pages) {
+        const ops = new Set<string>()
+        for (const line of lines) {
+          const m = entry.exec(line)
+          if (null == m) {
+            if (path.endsWith('REFERENCE.md')) wrong.push(path + ' ' + line)
+            continue
+          }
+          ops.add(m[1])
+          if (!classes.some((cls: string) => want(m[1], cls) === m[2])) wrong.push(path + ' ' + line)
+        }
+        if (6 !== ops.size) wrong.push(path + ': documents ' + [...ops].sort().join(', '))
+      }
     }
     deepStrictEqual(wrong, [], 'operations declared to return a record')
+  })
+
+  test('a declaration comment that names the record does not say it returns the entity', () => {
+    const perl = declarations('perl', 'perl/entity/planet_entity.pm', [
+      'package PlanetEntity;',
+      '',
+      '# per-call control. Returns the created Planet entity data (hashref); dies',
+      '# with DemoError on failure.',
+      'sub create {',
+      '}',
+      '',
+      '# per-call control. Returns the updated Planet entity (data_get reads its',
+      '# record); dies with DemoError on failure.',
+      'sub update {',
+    ].join('\n'))
+    const elixir = declarations('elixir', 'elixir/lib/entity/planet_entity.ex', [
+      '  # Returns the created planet entity map, typed as the record.',
+      '  @spec create(map(), map(), map() | nil) :: term()',
+    ].join('\n'))
+    deepStrictEqual([perl.ops, elixir.ops], [['create', 'update'], ['create']])
+    deepStrictEqual([...perl.wrong, ...elixir.wrong].map((w: string) => w.slice(0, w.indexOf(':'))),
+      ['perl/entity/planet_entity.pm create', 'elixir/lib/entity/planet_entity.ex create'])
   })
 
 
@@ -2566,6 +2648,23 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // A line without the arguments of the operation it calls, which begin at
+  // `at`: its parenthesised list, or else the rest of the enclosing form. A
+  // record read there is an argument, not what the operation returns.
+  function withoutArgs(line: string, at: number): string {
+    const own = '(' === line.slice(at).trimStart()[0]
+    let depth = 0
+    let end = at
+    for (; end < line.length; end++) {
+      if ('(' === line[end]) depth++
+      else if (')' === line[end]) {
+        if (0 === depth) break
+        if (0 === --depth && own) { end++; break }
+      }
+    }
+    return line.slice(0, at) + line.slice(end)
+  }
+
   // Each print after an operation other than remove, up to the next one, that
   // shows neither the record nor a name bound to it.
   function entityPrints(target: string, code: string): string[] {
@@ -2585,7 +2684,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         bound = []
       }
       if ('' === op || 'remove' === op) continue
-      if (reads.test(line)) {
+      if (reads.test(null == call ? line : withoutArgs(line, call.index + call[0].length))) {
         const name = BOUND.exec(line)
         if (null != name) bound.push(name[1])
       }
@@ -2625,6 +2724,25 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     deepStrictEqual([...new Set(wrong)], [], 'examples that print the entity, not its record')
   })
 
+  test('a record read in an operation\'s arguments is not what it returns', () => {
+    deepStrictEqual(entityPrints('py', [
+      'updated = client.Planet().update({"id": created.data_get()["id"], "radius": 1})',
+      'print(updated)',
+      'print(client.Planet().patch({"id": created.data_get()["id"], "radius": 2}))',
+    ].join('\n')), [
+      'update: print(updated)',
+      'patch: print(client.Planet().patch({"id": created.data_get()["id"], "radius": 2}))',
+    ])
+    deepStrictEqual(entityPrints('ts', [
+      'const updated = await client.Planet().update({ id: created.data().id, radius: 1 })',
+      'console.log(updated)',
+    ].join('\n')), ['update: console.log(updated)'])
+    deepStrictEqual(entityPrints('py', [
+      'record = client.Planet().load({"id": "p1"}).data_get()',
+      'print(record)',
+    ].join('\n')), [])
+  })
+
 
   const RECORD_RESULT = [
     /\(returns the record\b/i,
@@ -2643,6 +2761,8 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     /\blist of records\b/i,
     /\breturned mock data\b/i,
     /\bis the returned data\b/i,
+    /\bcast results\b/i,
+    /\bread fields off results\b/i,
   ]
 
   // A field read straight off what an operation returned, by fence language.
@@ -2677,6 +2797,16 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       }
     }
     deepStrictEqual(said, [], 'pages that say an operation returns a record')
+  })
+
+  test('no stream comment says list returns records', async () => {
+    const said: string[] = []
+    for (const target of sdkTargets()) {
+      for (const [path, src] of filesFor(await generateFold(target), target)) {
+        for (const m of src.matchAll(/^.*\bmatching list\b.*$/gm)) said.push(path + ': ' + m[0].trim())
+      }
+    }
+    deepStrictEqual(said, [], 'comments that say list returns what stream yields')
   })
 
 
