@@ -333,6 +333,48 @@ describe('definitionPlan', () => {
       { name: 'id', wire: 'uid', value: 'up_1' }, { name: 'trace', wire: 'trace', value: 't-h' }])
   })
 
+  // A header, cookie or query argument whose name the request body declares
+  // too goes out in both, so the runner checks the body for it.
+  test('an argument the request body declares too is checked in the body', () => {
+    const body = { properties: {
+      name: { type: 'string' }, locale: { type: 'string' }, theme: { type: 'string' },
+      lang: { type: 'string' },
+    } }
+    const parameters = [
+      { in: 'header', name: 'X-Locale', example: 'en' }, { in: 'header', name: 'X-Trace' },
+      { in: 'cookie', name: 'theme' }, { in: 'query', name: 'lang' }, { in: 'query', name: 'verbose' },
+    ]
+    const responses = { '200': { content: { 'application/json': { example: {} } } } }
+    const def = { ...DEF, paths: {
+      '/uploads': {
+        post: { parameters, requestBody: { content: { 'application/json': { schema: body } } }, responses },
+        get: { parameters, responses },
+      },
+      '/uploads/{id}': { put: { parameters: [{ in: 'path', name: 'id' }, ...parameters,
+        { in: 'body', name: 'body', schema: { allOf: [{ properties: { locale: {} } }] } }], responses } },
+    } }
+    const g = {
+      header: [{ n: 'locale', or: 'X-Locale' }, { n: 'trace', or: 'X-Trace' }],
+      cookie: [{ n: 'theme', or: 'theme' }],
+      query: [{ n: 'lang', or: 'lang' }, { n: 'verbose', or: 'verbose' }],
+    }
+    const model = { main: { kit: { entity: { upload: {
+      name: 'upload', id: { field: 'id', name: 'id' }, op: {
+        create: { points: [{ m: 'POST', o: '/uploads', g }] },
+        list: { points: [{ m: 'GET', o: '/uploads', g }] },
+        update: { points: [{ m: 'PUT', o: '/uploads/{id}', q: { exist: ['id'] },
+          g: { ...g, params: [{ n: 'id', or: 'id' }] } }] },
+      },
+    } } } } }
+    const plan = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    const of = (op: string) => plan.find((p: any) => op === p.op)!
+    deepStrictEqual(of('create').bodyArgs, ['locale', 'theme', 'lang'])
+    deepStrictEqual(of('update').bodyArgs, ['locale'])
+    strictEqual(of('list').bodyArgs, undefined)
+  })
+
   test('the example is the sample, three items at most', () => {
     strictEqual(point('list').sample.data.length, 3)
     deepStrictEqual(point('list').query, ['limit'])

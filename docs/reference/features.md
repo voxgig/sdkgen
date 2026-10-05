@@ -232,7 +232,30 @@ to a function taking `(url, fetchdef)` and returning the response map
 goes through that function and the SDK opens no connection of its own. The
 `fetchdef` carries `method`, `headers` and `body`, plus the `proxy` and
 `redirect` annotations a transport feature adds, which a supplied client
-is expected to honour the same way the default one does.
+is expected to honour the same way the default one does. In `ts` and `js`
+it also carries the caller's `signal`, described next.
+
+### Cancelling a request
+
+In `ts` and `js` a call takes an `AbortSignal`: as `ctrl.signal` on an
+entity operation, `fetchargs.ctrl.signal` on `direct()`, and
+`callopts.signal` on `stream()`. The signal goes to the transport as
+`fetchdef.signal`, so aborting it cancels the request in flight, and a
+request whose signal has already aborted is never sent.
+
+An aborted operation fails with an error whose `code` is `request_aborted`
+and whose `cause` is the signal's reason. Each call gets an error of its
+own, so one signal can abort several calls at once. `direct()` returns
+that error as `err`, with `ok: false`, and `stream()` ends without one, as
+it does when the signal aborts between two items.
+
+The transport wrappers that wait stop when the signal aborts. `timeout`
+aborts its own request with it, `retry` makes no further attempt and ends
+its backoff, `ratelimit` ends the wait for a token, and the simulated
+latency of `netsim` and of the `test` feature's `net` block ends with it.
+A client supplied as `system.fetch` receives the signal in
+`fetchdef.signal`, and is expected to reject with `signal.reason` when it
+aborts, as `fetch` does.
 
 ---
 
@@ -336,7 +359,8 @@ feature: { retry: { active: true, retries: 4, minDelay: 100, maxDelay: 5000 } }
 **Notes.** When the budget is exhausted, a *thrown* error is rethrown and a
 failed *response* is returned, which preserves whatever the pipeline would
 have done without retry. Pair `retry` with [`idempotency`](#idempotency)
-before retrying writes.
+before retrying writes. In `ts` and `js` a request whose signal has
+aborted is not retried, and an abort ends the backoff at once.
 
 ## `timeout`
 
@@ -347,7 +371,9 @@ call resolves to a `timeout` error instead of hanging. The deadline runs
 from the request's start in every target: a response, or a transport
 failure, after it is a `timeout` error however late the caller observes it. An
 `AbortController` signal is attached to the request, so a live `fetch` is
-genuinely cancelled rather than left running.
+genuinely cancelled rather than left running. In `ts` and `js` that
+controller also follows the caller's own signal, so either one aborts the
+request: see [Cancelling a request](#cancelling-a-request).
 
 **Seam:** transport wrapper. No pipeline hooks.
 
@@ -860,8 +886,9 @@ for await (const product of client.Product().stream('list')) {
 }
 ```
 
-**Notes.** The entity-level `stream()` also honours an `AbortSignal` and,
-for uploads, an async-iterable `body` in `callopts`.
+**Notes.** The entity-level `stream()` also takes an `AbortSignal` in
+`callopts.signal`, which cancels the request as well as ending the
+iteration, and for uploads an async-iterable `body`.
 
 ## `rbac`
 

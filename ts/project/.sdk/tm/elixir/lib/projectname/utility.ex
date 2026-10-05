@@ -2218,11 +2218,28 @@ defmodule ProjectName.Utility do
   # untouched.
   defp strip_action(reqdata), do: omit_keys(reqdata, ["$action"])
 
-  # A header or query argument travels where prepare_headers_impl or
+  # A header, cookie or query argument travels where prepare_headers_impl or
   # prepare_query_impl sends it, so the body is built from the request data
-  # without it.
+  # without it, unless the entity declares it as a field too.
   defp routed_arg_names(ctx) do
-    Enum.map(call_args(ctx, "header") ++ call_args(ctx, "cookie") ++ call_args(ctx, "query"), &elem(&1, 0))
+    (call_args(ctx, "header") ++ call_args(ctx, "cookie") ++ call_args(ctx, "query"))
+    |> Enum.map(&elem(&1, 0))
+    |> Enum.reject(&field_arg?(ctx, &1))
+  end
+
+  defp field_arg?(ctx, name) do
+    point = S.getprop(ctx, "point")
+
+    point != nil and
+      Enum.any?(["header", "cookie", "query"], fn kind ->
+        defs = S.getpath(point, "args." <> kind)
+
+        S.islist(defs) and S.size(defs) > 0 and
+          Enum.any?(0..(S.size(defs) - 1), fn i ->
+            ad = S.getelem(defs, i)
+            name == S.getprop(ad, "name") and true == S.getprop(ad, "field")
+          end)
+      end)
   end
 
   defp omit_keys(reqdata, names) do

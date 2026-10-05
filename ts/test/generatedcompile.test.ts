@@ -33,6 +33,7 @@ import {
   mediaFailures, mediaPrinted, mediaRecord,
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
+import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
 
 
 function materialise(files: Record<string, string>, root: string) {
@@ -96,6 +97,28 @@ function exunitCount(out: string): { total: number, failed: number } | null {
   }
 
   return null
+}
+
+
+// Each failed test's report from `dotnet test`: its result line, message and
+// stack. xUnit's own progress lines can land inside one, so they are dropped.
+function dotnetFailures(out: string): string {
+  const blocks: string[][] = []
+  let block: string[] | null = null
+  for (const line of out.split(/\r?\n/)) {
+    if (/^\[xUnit\.net /.test(line)) {
+      continue
+    }
+    const result = /^\s*(Passed|Failed|Skipped) .* \[[^\]]+\]\s*$/.exec(line)
+    if (null != result || /^\s*(Passed|Failed)!\s+-/.test(line) || /^Test Run /.test(line)) {
+      block = 'Failed' === result?.[1] ? [line] : null
+      if (null != block) blocks.push(block)
+    }
+    else if (null != block) {
+      block.push(line)
+    }
+  }
+  return blocks.map((b) => b.join('\n').trimEnd()).join('\n')
 }
 
 
@@ -287,6 +310,41 @@ function pick(
 }
 
 
+describe('dotnet test failure reports', () => {
+
+  test('carry each failed test message and stack, and nothing that passed', () => {
+    const out = [
+      'Test run for /x/DemoSDKTest.dll (.NETCoreApp,Version=v8.0)',
+      '[xUnit.net 00:00:00.48]     Demo.T.Bad [FAIL]',
+      '  Failed Demo.T.Bad [1 ms]',
+      '  Error Message:',
+      '   saw 2 - calls: [a] [b]',
+      'Passed or not, this is message text',
+      '[xUnit.net 00:00:00.50]   Finished:    DemoSDKTest',
+      '  Stack Trace:',
+      '     at Demo.T.Bad() in T.cs:line 9',
+      '  Passed Demo.T.Good [2 ms]',
+      '  Failed Demo.T.Worse(n: 1) [< 1 ms]',
+      '  Error Message:',
+      '   saw 0',
+      'Failed!  - Failed:     2, Passed:    1, Skipped:     0, Total:    3, Duration: 3 ms',
+    ].join('\n')
+
+    strictEqual(dotnetFailures(out), [
+      '  Failed Demo.T.Bad [1 ms]',
+      '  Error Message:',
+      '   saw 2 - calls: [a] [b]',
+      'Passed or not, this is message text',
+      '  Stack Trace:',
+      '     at Demo.T.Bad() in T.cs:line 9',
+      '  Failed Demo.T.Worse(n: 1) [< 1 ms]',
+      '  Error Message:',
+      '   saw 0',
+    ].join('\n'))
+  })
+})
+
+
 describe('generated SDK compiles', () => {
 
   let tmp = ''
@@ -468,7 +526,9 @@ describe('generated SDK compiles', () => {
 
 
   // The README example tests find `tsc` and strip a snippet's types through
-  // the TypeScript installed beside the SDK, which here is sdkgen's own.
+  // the TypeScript installed beside the SDK, which here is sdkgen's own. They
+  // compile the snippets in the OS temp directory: adding or removing a file
+  // there moves the directory's mtime, and the SDK's own folders keep theirs.
   test('typescript: the README example tests type-check and run the examples', async () => {
     ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
 
@@ -479,13 +539,26 @@ describe('generated SDK compiles', () => {
     const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
     ok(built.ok, 'the generated SDK does not build:\n' + built.out)
 
+    const scratch = Path.join(tmp, 'ts-readme-tmp')
+    Fs.mkdirSync(scratch)
+    const own = [sdkroot, Path.join(sdkroot, 'test')]
+    const mtimes = (dirs: string[]) => dirs.map((dir) => Fs.statSync(dir).mtimeMs)
+    const before = mtimes([...own, scratch])
+
     const suite = run(process.execPath,
       ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
-      sdkroot, nestedTestEnv())
+      sdkroot, { ...nestedTestEnv(), TMPDIR: scratch, TMP: scratch, TEMP: scratch })
     ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 200))
     ok(/^\s*ok \d+ - .*every example type-checks/m.test(suite.out) &&
       /^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
     'the README example tests did not run both checks:\n' + tail(suite.out, 40))
+
+    const after = mtimes([...own, scratch])
+    deepStrictEqual(after.slice(0, 2), before.slice(0, 2),
+      'the README example tests added or removed a file in the SDK\'s own folders')
+    ok(after[2] !== before[2], 'the README example tests compiled nothing in the temp directory')
+    deepStrictEqual(Fs.readdirSync(scratch), [],
+      'the README example tests left their temp directory behind')
   })
 
 
@@ -1547,9 +1620,11 @@ func TestTypesProbe(t *testing.T) {
 
     // `dotnet test` builds the library through the project reference, so
     // a broken vendored file fails HERE, naming the file - which is also
-    // why the build is not run separately first.
+    // why the build is not run separately first. `-v quiet` silences the
+    // console logger as well, so the logger asks for failure messages back.
     const probe = run(dotnet,
       ['test', '--nologo', '-v', 'quiet',
+        '--logger', 'console;verbosity=minimal',
         '--filter', 'FullyQualifiedName~SecretsFeatureTest',
         Path.join('test', testproj[0])],
       sdkroot)
@@ -1558,9 +1633,7 @@ func TestTypesProbe(t *testing.T) {
       return t.skip('csharp: ' + probe.out)
     }
 
-    const lines = probe.out.split(/\r?\n/)
-    const failed = lines.filter((l: string) => /^\s*(Failed|\[FAIL\])\s+\S/.test(l))
-    ok(probe.ok, 'csharp secrets suite failed:\n' + failed.join('\n') +
+    ok(probe.ok, 'csharp secrets suite failed:\n' + dotnetFailures(probe.out) +
       '\n' + tail(probe.out))
 
     const summary = /Passed!\s+-\s+Failed:\s+(\d+),\s+Passed:\s+(\d+),\s+Skipped:\s+(\d+),\s+Total:\s+(\d+)/
@@ -5052,6 +5125,10 @@ const FEATURE_SUITE_LANES: { target: string, runner: string }[] = [
 // or a generation that left one out would pass the lane.
 const FEATURE_SUITE_SUBJECTS = ['audit', 'debug', 'proxy', 'telemetry']
 
+// The abort block drives every transport wrapper that waits, and the lane
+// generates each of them, so none of its tests may skip.
+const FEATURE_SUITE_ABORT_TESTS = 8
+
 // How many tests a TAP subtest block ran without skipping.
 function tapRan(out: string, name: string): number {
   const lines = out.split('\n')
@@ -5089,7 +5166,7 @@ describe('the feature suite runs from a generated SDK', () => {
       const sdkroot = Path.join(tmp, lane.target)
       // netsim too: the audit test, and the failure-path tests, skip without it.
       await generateTo(lane.target, sdkroot, undefined,
-        [...CLEAN_FEATURES, 'netsim', 'proxy', 'retry', 'timeout'])
+        [...CLEAN_FEATURES, 'netsim', 'proxy', 'ratelimit', 'retry', 'timeout'])
       const notready = null == clean.prepare ? null : clean.prepare(sdkroot)
       ok(null == notready, lane.target + ': ' + notready)
 
@@ -5100,6 +5177,8 @@ describe('the feature suite runs from a generated SDK', () => {
         ok(0 < tapRan(ran.out, name), lane.target + ': no ' + name +
           ' test ran in the generated feature suite:\n' + tail(ran.out))
       }
+      strictEqual(tapRan(ran.out, 'abort'), FEATURE_SUITE_ABORT_TESTS,
+        lane.target + ': not every abort test ran in the generated feature suite:\n' + tail(ran.out))
     })
   }
 })
@@ -5166,6 +5245,47 @@ describe('generated entity tests make only calls the runtime takes', () => {
     }
     ok(res.out.includes('--- PASS: TestPlanetEntity/stream'), 'go: planet\'s stream test did not run:\n' + tail(res.out))
     ok(!/Test(Moon|Signal)Entity\/stream/.test(res.out), 'go: a stream test lists a refused route:\n' + tail(res.out))
+  })
+
+
+  // rb and perl list one entity per record, as every target does; planet's
+  // reachable list runs the check, moon's and signal's do not.
+  test('rb: the moon, signal and planet entity tests pass', async (t) => {
+    const rb = minitest([])
+    if (null == rb) return t.skip('no usable rb toolchain here (ruby with minitest)')
+
+    const root = Path.join(tmp, 'rb')
+    await generateTo('rb', root, ROUTING_MODEL)
+    const ran: Record<string, boolean> = {}
+    for (const name of ['moon', 'signal', 'planet']) {
+      const res = run(rb.bin, ['test/' + name + '_entity_test.rb', '-v'], root)
+      if (res.timedOut) return t.skip('rb: ' + res.out)
+      ok(res.ok, 'rb: the ' + name + ' entity test failed:\n' + tail(res.out))
+      ok(/\d+ runs, \d+ assertions, 0 failures, 0 errors\b/.test(res.out),
+        'rb: the ' + name + ' entity test printed no clean summary:\n' + tail(res.out))
+      ran[name] = /test_list_entities = /.test(res.out)
+    }
+    ok(ran.planet && !ran.moon && !ran.signal,
+      'rb: the list test ran for the wrong entities: ' + JSON.stringify(ran))
+  })
+
+
+  test('perl: the moon, signal and planet entity tests pass', async (t) => {
+    const perl = toolchain('perl')
+    if (null == perl) return t.skip('needs perl')
+    if (!probeOk(perl, ['-MTest::More', '-e', '1'])) return t.skip('perl is here but Test::More is not')
+
+    const root = Path.join(tmp, 'perl')
+    await generateTo('perl', root, ROUTING_MODEL)
+    const ran: Record<string, boolean> = {}
+    for (const name of ['moon', 'signal', 'planet']) {
+      const res = run(perl, ['-Ilib', 't/' + name + '_entity.t'], root)
+      if (res.timedOut) return t.skip('perl: ' + res.out)
+      ok(res.ok && !/^not ok/m.test(res.out), 'perl: the ' + name + ' entity test failed:\n' + tail(res.out))
+      ran[name] = /list answers each seeded record/.test(res.out)
+    }
+    ok(ran.planet && !ran.moon && !ran.signal,
+      'perl: the list test ran for the wrong entities: ' + JSON.stringify(ran))
   })
 
 
@@ -6060,5 +6180,24 @@ describe('probes driven through a generated SDK', () => {
       deepStrictEqual(allowOutcomes(ran.out), ALLOW_OUTCOMES,
         lane.target + ' probe output:\n' + tail(ran.out))
     })
+
+    // A signal is the TypeScript and JavaScript targets' own seam.
+    if (['ts', 'js'].includes(lane.target)) {
+      test(lane.target + ': a caller\'s AbortSignal cancels a request in flight', async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+
+        const sdkroot = await sdkFor(lane.target)
+        const ran = lane.exec(sdkroot, nestedTestEnv(), writer(sdkroot), { name: 'abort', source: ABORT_PROBES })
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, lane.target + ': the abort probe failed:\n' + tail(ran.out, 60))
+        deepStrictEqual(abortOutcomes(ran.out), ABORT_OUTCOMES,
+          lane.target + ' probe output:\n' + tail(ran.out))
+      })
+    }
   }
 })
