@@ -5308,8 +5308,8 @@ describe('generated entity tests make only calls the runtime takes', () => {
     const res = run(cmd.bin, cmd.args, root, cmd.env)
     if (res.timedOut) return t.skip('rb: ' + res.out)
     ok(res.ok, 'rb: a generated entity test failed:\n' + tail(res.out))
-    ok(/\b13 runs, \d+ assertions, 0 failures, 0 errors, 3 skips\b/.test(res.out),
-      'rb: expected thirteen runs and three skips:\n' + tail(res.out))
+    ok(/\b14 runs, \d+ assertions, 0 failures, 0 errors, 3 skips\b/.test(res.out),
+      'rb: expected fourteen runs and three skips:\n' + tail(res.out))
 
     Fs.writeFileSync(Path.join(root, 'test', 'sdk-test-control.json'), MOON_SKIP)
     const skip = minitest(['-e', load('moon'), '--', '-v'])!
