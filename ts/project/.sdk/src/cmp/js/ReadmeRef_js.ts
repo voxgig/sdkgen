@@ -161,7 +161,8 @@ Make a direct HTTP request to any API endpoint.
 | \`fetchargs.ctrl\` | \`object\` | Control options (e.g. \`{ explain: true }\`). |
 | \`fetchargs.ctrl.signal\` | \`AbortSignal\` | Aborts the request in flight: \`ok\` is then \`false\` and \`err.code\` is \`request_aborted\`. |
 
-**Returns:** \`Promise<{ ok, status, headers, data } | Error>\`
+**Returns:** \`Promise<{ ok, status, headers, data }>\`. On a failure
+\`ok\` is \`false\` and \`err\` holds the error.
 
 #### \`prepare(fetchargs?: object)\`
 

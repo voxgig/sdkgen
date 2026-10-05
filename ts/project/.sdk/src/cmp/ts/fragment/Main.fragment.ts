@@ -21,7 +21,6 @@ const stdutil = new Utility()
 // A request's outcome: ok is false alone on an error with no response, so a
 // caller narrowing on it reaches the status and the data.
 type DirectResult =
-  | Error
   | { ok: false, err: any, status?: undefined, headers?: undefined, data?: undefined }
   | { ok: boolean, status: number, headers: any, data: any, err?: any }
 
@@ -202,7 +201,7 @@ class ProjectNameSDK {
 
     const fetchdef = await this.prepare(fetchargs)
     if (fetchdef instanceof Error) {
-      return fetchdef
+      return { ok: false, err: utility.clean(this._rootctx, fetchdef) }
     }
 
     let ctx: Context = makeContext({
@@ -293,10 +292,6 @@ class ProjectNameSDK {
       body: { query, variables: variables || {} },
       ctrl,
     })
-
-    if (res instanceof Error) {
-      return res
-    }
 
     // Errors are read BEFORE any status check: a GraphQL parse or validation
     // failure comes back as HTTP 400 carrying the standard { errors: [...] }
