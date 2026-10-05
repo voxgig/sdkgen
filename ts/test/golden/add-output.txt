@@ -446,7 +446,7 @@ src/cmp/elixir/Entity_elixir.ts de8184f02dff
 src/cmp/elixir/Gitignore_elixir.ts d98ec8dd42b0
 src/cmp/elixir/MainEntity_elixir.ts 9a4a93d98814
 src/cmp/elixir/Main_elixir.ts d12f5e9c14a6
-src/cmp/elixir/Package_elixir.ts d1da632e37fe
+src/cmp/elixir/Package_elixir.ts cfb9b797088f
 src/cmp/elixir/PrepareAuth_elixir.ts 60ef10da18e2
 src/cmp/elixir/ReadmeEntity_elixir.ts 1a8296f0299e
 src/cmp/elixir/ReadmeExamplesTest_elixir.ts 12baaaa2aaee
@@ -776,7 +776,7 @@ src/cmp/js/Entity_js.ts debbc06d5c79
 src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
 src/cmp/js/Main_js.ts 5964cdac192d
-src/cmp/js/Package_js.ts e4d1cd5e3e1c
+src/cmp/js/Package_js.ts bf2c5d8163f2
 src/cmp/js/PrepareAuth_js.ts 9742af3eb16d
 src/cmp/js/ReadmeEntity_js.ts 26be8ea82a8e
 src/cmp/js/ReadmeExplanation_js.ts e35423942ff1
@@ -1382,7 +1382,7 @@ src/cmp/py/Entity_py.ts 4cd98dd60bc0
 src/cmp/py/Gitignore_py.ts 07f7135b0381
 src/cmp/py/MainEntity_py.ts 853d7533f8fb
 src/cmp/py/Main_py.ts 5630f0feb88c
-src/cmp/py/Package_py.ts f64acebbf344
+src/cmp/py/Package_py.ts f9cff3352ab6
 src/cmp/py/PrepareAuth_py.ts 43f26508d49b
 src/cmp/py/ReadmeEntity_py.ts c528ac5d230a
 src/cmp/py/ReadmeExamplesTest_py.ts d5ddfcfa68be
@@ -2015,7 +2015,7 @@ src/cmp/ts/Entity_ts.ts 866beb700dc7
 src/cmp/ts/Gitignore_ts.ts e445d077a3ac
 src/cmp/ts/MainEntity_ts.ts 17072010d850
 src/cmp/ts/Main_ts.ts 1220d104f55d
-src/cmp/ts/Package_ts.ts 08db3d12bad7
+src/cmp/ts/Package_ts.ts 61d52a361614
 src/cmp/ts/PrepareAuth_ts.ts 13cc5f3c7f72
 src/cmp/ts/ReadmeEntity_ts.ts 858535fe6405
 src/cmp/ts/ReadmeExampleTest_ts.ts 5dfbe547c29e
@@ -2143,7 +2143,7 @@ src/cmp/zig/Entity_zig.ts 5e0f147b7e57
 src/cmp/zig/Gitignore_zig.ts ec49760abeae
 src/cmp/zig/MainEntity_zig.ts d0d2ec1fe12a
 src/cmp/zig/Main_zig.ts 8f91bc6af36f
-src/cmp/zig/Package_zig.ts 3e14e57fa638
+src/cmp/zig/Package_zig.ts 34a84ffff31b
 src/cmp/zig/PrepareAuth_zig.ts ff18ef091eeb
 src/cmp/zig/ReadmeEntity_zig.ts 3ac9546a8a50
 src/cmp/zig/ReadmeExamplesTest_zig.ts 297a208374be
