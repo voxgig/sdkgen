@@ -2,10 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MIN_REPORTED_BRANCHES = exports.ReadmeUnions = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const MIN_REPORTED_BRANCHES = 3;
 exports.MIN_REPORTED_BRANCHES = MIN_REPORTED_BRANCHES;
-const ReadmeUnions = (0, jostraca_1.cmp)(function ReadmeUnions(props) {
+const ReadmeUnions = (0, component_1.cmp)(function ReadmeUnions(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`);

@@ -2,8 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentGuideTop = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const AgentGuideContent_1 = require("./AgentGuideContent");
-const AgentGuideTop = (0, jostraca_1.cmp)(function AgentGuideTop(props) {
+const AgentGuideTop = (0, component_1.cmp)(function AgentGuideTop(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
     if (model.name && !model.Name)

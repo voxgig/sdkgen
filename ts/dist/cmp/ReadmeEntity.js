@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeEntity = void 0;
-const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const optional_1 = require("../helpers/optional");
 // Per-language Entities section lives in
 // `project/.sdk/src/cmp/<lang>/ReadmeEntity_<lang>.ts`.
 // Each language emits its own create-instance call style and
 // op-method spelling (Go's `Load(match, ctrl)` vs TS's `load(match)`).
-const ReadmeEntity = (0, jostraca_1.cmp)(function ReadmeEntity(props) {
+const ReadmeEntity = (0, component_1.cmp)(function ReadmeEntity(props) {
     const { target, ctx$ } = props;
     const ReadmeEntity_sdk = (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeEntity');
     if (ReadmeEntity_sdk) {

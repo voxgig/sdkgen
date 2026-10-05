@@ -1,5 +1,6 @@
 
-import { cmp, each, names } from 'jostraca'
+import { each, names } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 import { Project } from 'jostraca'
 

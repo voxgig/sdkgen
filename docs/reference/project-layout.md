@@ -152,7 +152,8 @@ my-sdk/
 │   ├── src/cmp/<lang>/        # components copied from sdkgen by `target add`
 │   ├── tm/<lang>/             # templates copied from sdkgen by `target add`
 │   ├── log/
-│   │   └── copies.jsonl       # append-only record of what every add copied (commit it)
+│   │   ├── copies.jsonl       # append-only record of what every add copied (commit it)
+│   │   └── generated.jsonl    # append-only record of what every generate wrote (commit it)
 │   └── dist/                  # compiled components (the `generate` step requires these)
 ├── ts/                        # ← generated TypeScript SDK
 ├── go/                        # ← generated Go SDK
@@ -162,6 +163,16 @@ my-sdk/
 The `generate` step compiles `.sdk/src/cmp/<lang>` to `.sdk/dist`, runs
 the component tree, and writes/merges the result into the per-target
 directories (`ts/`, `go/`, …).
+
+It also removes what the model no longer produces. For each output folder,
+`.sdk/log/generated.jsonl` records the files each run wrote and the component
+that produced each. A file an earlier run wrote is deleted, with any directory
+it leaves empty, when that component ran again and did not produce it. A target
+or a phase switched off keeps its files, because its component did not run. A
+file jostraca declined to write, protected by `JOSTRACA_PROTECT` or by the
+`existing` policy, is kept. A file a component writes only when it is absent,
+such as `sdk-test-control.json`, is the project's from its first write and is
+never recorded. A dry run lists what it would remove.
 
 ### Repository administration
 
