@@ -6,14 +6,21 @@ import { Aontu } from 'aontu'
 import { memfs } from 'memfs'
 
 
-import { cmp, each, Project, Folder, File, Content } from 'jostraca'
+import { each, Project, Folder, File, Content } from 'jostraca'
 
 import {
+  cmp,
   SdkGen
 } from '../dist/sdkgen.js'
 
 
 const START_TIME = 1735689600000
+
+// The first run's record of the files it wrote, each owned by the Root that
+// made them. The file set never changes after it, so no later run adds a line.
+const GENERATED_LOG = '{"at":"2025-01-01T00:01:00.000Z","op":"record","root":".",' +
+  '"files":{"foo/java/README.md":"Root","foo/js/README.md":"Root",' +
+  '"foo/python/README.md":"Root"}}\n'
 
 
 const aontu = new Aontu()
@@ -97,7 +104,8 @@ describe('sdkgen', () => {
         '    }\n' +
         '  }\n' +
         '}',
-      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
+      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n',
+      '/top/.sdk/log/generated.jsonl': GENERATED_LOG,
     })
 
     // Modify a generated file
@@ -158,7 +166,8 @@ describe('sdkgen', () => {
         '    }\n' +
         '  }\n' +
         '}',
-      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
+      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n',
+      '/top/.sdk/log/generated.jsonl': GENERATED_LOG,
     })
 
 
@@ -218,7 +227,8 @@ describe('sdkgen', () => {
         '    }\n' +
         '  }\n' +
         '}',
-      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
+      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n',
+      '/top/.sdk/log/generated.jsonl': GENERATED_LOG,
     })
 
 
@@ -287,7 +297,8 @@ describe('sdkgen', () => {
         '    }\n' +
         '  }\n' +
         '}',
-      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
+      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n',
+      '/top/.sdk/log/generated.jsonl': GENERATED_LOG,
     })
 
 
@@ -350,7 +361,8 @@ describe('sdkgen', () => {
         '    }\n' +
         '  }\n' +
         '}',
-      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
+      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n',
+      '/top/.sdk/log/generated.jsonl': GENERATED_LOG,
     })
 
 
@@ -411,7 +423,8 @@ describe('sdkgen', () => {
         '    }\n' +
         '  }\n' +
         '}',
-      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n'
+      '/top/.jostraca/.gitignore': '\njostraca.meta.log\ngenerated\n',
+      '/top/.sdk/log/generated.jsonl': GENERATED_LOG,
     })
 
   })

@@ -82,9 +82,14 @@ fun defaultHttpFetch(fullurl: String, fetchdef: MutableMap<String, Any?>): Mutab
       }
     }
   }
-  // Default User-Agent — some CDNs block Java's default.
+  // Default User-Agent — some CDNs block Java's default. It is recorded with
+  // the headers the request sent.
   if (!hasUA) {
-    reqb.setHeader("User-Agent", "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)")
+    val agent = "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)"
+    reqb.setHeader("User-Agent", agent)
+    if (headersRaw is MutableMap<*, *>) {
+      (headersRaw as MutableMap<String, Any?>)["user-agent"] = agent
+    }
   }
 
   val resp: HttpResponse<String>
@@ -104,14 +109,24 @@ fun defaultHttpFetch(fullurl: String, fetchdef: MutableMap<String, Any?>): Mutab
   }
 
   val bodyText = resp.body() ?: ""
-  val jsonBody: Any? = if (bodyText.isEmpty()) null else Json.parseOrNull(bodyText)
+  var jsonBody: Any? = null
+  var unreadable = false
+  if (bodyText.isNotBlank()) {
+    try {
+      jsonBody = Json.parse(bodyText)
+    } catch (e: RuntimeException) {
+      unreadable = true
+    }
+  }
+  val parsed = jsonBody
 
   val out = linkedMapOf<String, Any?>()
   out["status"] = resp.statusCode()
   out["statusText"] = statusText(resp.statusCode())
   out["headers"] = headers
-  out["json"] = Supplier<Any?> { jsonBody }
+  out["json"] = Supplier<Any?> { parsed }
   out["body"] = bodyText
+  out["unreadable"] = unreadable
   return out
 }
 

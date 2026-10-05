@@ -4,6 +4,7 @@ import { each } from 'jostraca'
 import { KIT, nom } from '@voxgig/apidef'
 
 import { kindCollection } from './kindCollection'
+import { modelText } from './text'
 
 const PUBLISHER = 'Voxgig'
 const PUBLISHER_URL = 'https://voxgig.com'
@@ -219,7 +220,7 @@ function vendorCommand(model: any, target: string): string {
 }
 
 function apiName(model: any): string {
-  const info = (model.main && model.main[KIT] && model.main[KIT].info) || {}
+  const info = modelText(model)
   const raw = (null != info.title ? String(info.title) : '').trim()
   const stripped = raw.replace(/\s*API\s*$/i, '').trim()
   return stripped || nom(model, 'Name') || model.name

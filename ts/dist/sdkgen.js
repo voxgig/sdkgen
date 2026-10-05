@@ -41,7 +41,7 @@ exports.ReadmeExplanation = exports.ReadmeHowto = exports.ReadmeEntity = exports
 exports.canonKey = exports.canonToDtype = exports.entitySpecMap = exports.featureOptionSpec = exports.optionSpec = exports.entitySpecs = exports.entityOpSpec = exports.entityDataSpec = exports.canonToSpec = exports.canonToType = exports.pointPathKey = exports.pointTerminalParam = exports.pointParts = exports.pointSegments = exports.collectDeps = exports.getMatchEntries = exports.flowSteps = exports.entityRelationName = exports.buildIdNames = exports.SdkGenError = exports.rawStringLiteral = exports.clean = exports.configDefinition = exports.configReprSetting = exports.configRepr = exports.isConfigData = exports.CONFIG_REPR_VALUES = exports.CONFIG_DATA_THRESHOLD = exports.isHttpBasicAuth = exports.isAuthSuppressed = exports.resolveAuthName = exports.resolveAuthIn = exports.resolveAuthPrefix = exports.isAuthActive = exports.requirePath = exports.Jostraca = exports.opRequestBody = exports.opRawBody = exports.bodyNote = exports.RAW_BODY = exports.definitionPlan = exports.hasLiveScenarios = exports.boundedFacts = exports.pointFacts = exports.liveHint = exports.resolvedFor = exports.registerComponent = exports.FeatureHook = exports.ReadmeRefFeatures = exports.ReadmeRef = void 0;
 exports.rbTypeName = exports.tsTypeName = exports.elixirAccessor = exports.elixirAccessorNames = exports.elixirTypeName = exports.elixirTypeNames = exports.elixirSafeTypeName = exports.isElixirReservedType = exports.tsSafeTypeName = exports.isTsSdkType = exports.isTsReservedType = exports.phpSafeTypeName = exports.isPhpSdkClass = exports.isPhpReservedType = exports.swiftSafeTypeName = exports.isSwiftSdkType = exports.rbSafeTypeName = exports.isRbSdkConstant = exports.isRbCoreConstant = exports.entityCacheField = exports.phpEntityAccessor = exports.exampleVarName = exports.safeVarName = exports.isReservedName = exports.guardFlowSteps = exports.guardModelNames = exports.entityCollection = exports.deriveEntityNames = exports.warnUngeneratedOps = exports.ungeneratedOps = exports.warnEntityTypeCollisions = exports.entityTypeCollisions = exports.entityClassName = exports.pickExampleEntity = exports.entityPrimaryOp = exports.entityOps = exports.entityDataIdField = exports.entityIdField = exports.opRequestShape = exports.entityPath = exports.entityActions = exports.opActions = exports.ownPoint = exports.opNeedsAction = exports.invalidRequest = exports.opReachable = exports.opParams = exports.opTypeName = exports.OP_SUFFIX = exports.canonScalarKey = void 0;
 exports.vendorCommand = exports.registryName = exports.isPublished = exports.registryState = exports.installCommand = exports.sdkName = exports.packageName = exports.prefixLeadingDigit = exports.luaKey = exports.jsKey = exports.jsOptProp = exports.jsProp = exports.validateManifest = exports.readManifest = exports.manifestPath = exports.MANIFEST = exports.definitionNames = exports.definitionFolder = exports.definitionPath = exports.TAGS = exports.unknownTags = exports.featureTags = exports.targetFeatures = exports.featureApplies = exports.stationLibrary = exports.pluginExcludesFor = exports.pluginExcludes = exports.inactiveFeatureExcludes = exports.srcFeatureExcludes = exports.fullsetExcludes = exports.featureExcludes = exports.findFeatureSources = exports.availableFeatures = exports.featureOf = exports.litFor = exports.dataArg = exports.matchArg = exports.idLiteral = exports.primaryOpCall = exports.liveFlowNeeds = exports.liveStrictNote = exports.liveStrict = exports.serverVarEnv = exports.hasServerVariables = exports.serverVariables = exports.MCP_WRITE_OPS = exports.MCP_READ_OPS = exports.mcpTools = exports.swiftTypeName = exports.phpTypeName = void 0;
-exports.npmScriptTestSome = exports.npmScriptEnv = exports.npmScriptRm = exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.originName = exports.langLabel = exports.apiName = exports.repoInfo = exports.packageVersion = exports.goPackageIdent = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.contributorList = exports.authorInfo = exports.securityContact = exports.isDefaultPublisher = exports.publisherInfo = exports.keywords = exports.nonAffiliation = exports.pkgDescription = void 0;
+exports.npmScriptTestSome = exports.npmScriptEnv = exports.npmScriptRm = exports.modelText = exports.GENERATOR_URL = exports.SECURITY_EMAIL = exports.PUBLISHER_URL = exports.PUBLISHER = exports.originName = exports.langLabel = exports.apiName = exports.repoInfo = exports.packageVersion = exports.goPackageIdent = exports.goVersion = exports.goModule = exports.envToken = exports.envName = exports.contributorList = exports.authorInfo = exports.securityContact = exports.isDefaultPublisher = exports.publisherInfo = exports.keywords = exports.nonAffiliation = exports.pkgDescription = void 0;
 exports.SdkGen = SdkGen;
 exports.projectConst = projectConst;
 const node_fs_1 = __importDefault(require("node:fs"));
@@ -159,6 +159,8 @@ const modelNames_1 = require("./helpers/modelNames");
 Object.defineProperty(exports, "guardModelNames", { enumerable: true, get: function () { return modelNames_1.guardModelNames; } });
 const flowGuard_1 = require("./helpers/flowGuard");
 Object.defineProperty(exports, "guardFlowSteps", { enumerable: true, get: function () { return flowGuard_1.guardFlowSteps; } });
+const generated_1 = require("./helpers/generated");
+const component_1 = require("./helpers/component");
 const canonType_1 = require("./helpers/canonType");
 Object.defineProperty(exports, "canonToType", { enumerable: true, get: function () { return canonType_1.canonToType; } });
 Object.defineProperty(exports, "canonToDtype", { enumerable: true, get: function () { return canonType_1.canonToDtype; } });
@@ -304,6 +306,8 @@ Object.defineProperty(exports, "PUBLISHER", { enumerable: true, get: function ()
 Object.defineProperty(exports, "PUBLISHER_URL", { enumerable: true, get: function () { return packageMeta_1.PUBLISHER_URL; } });
 Object.defineProperty(exports, "SECURITY_EMAIL", { enumerable: true, get: function () { return packageMeta_1.SECURITY_EMAIL; } });
 Object.defineProperty(exports, "GENERATOR_URL", { enumerable: true, get: function () { return packageMeta_1.GENERATOR_URL; } });
+const text_1 = require("./helpers/text");
+Object.defineProperty(exports, "modelText", { enumerable: true, get: function () { return text_1.modelText; } });
 const npmScripts_1 = require("./helpers/npmScripts");
 Object.defineProperty(exports, "npmScriptRm", { enumerable: true, get: function () { return npmScripts_1.npmScriptRm; } });
 Object.defineProperty(exports, "npmScriptEnv", { enumerable: true, get: function () { return npmScripts_1.npmScriptEnv; } });
@@ -320,6 +324,16 @@ const kind_1 = require("./action/kind");
 const resolve_1 = require("./action/resolve");
 const { Jostraca } = JostracaModule;
 exports.Jostraca = Jostraca;
+// Keeps the define phase's tree, whose File nodes name what a run claims.
+const TreeRoot = JostracaModule.cmp(function TreeRoot(props) {
+    props.holder.root = props.ctx$.root;
+});
+function keepingTree(define, holder) {
+    return async () => {
+        await define();
+        TreeRoot({ holder });
+    };
+}
 // The `const` block every action's model carries, and so what an add
 // substitutes into the copies it writes.
 function projectConst(model) {
@@ -419,8 +433,13 @@ function SdkGen(opts) {
         const external = externalItems(model, root, ['target'], externalOverride)
             .map((ext) => ({ ...ext, skip: externalSkipReason(ext, fs) }));
         checkExternalFolders(external, root, fs);
-        const jres = await jostraca.generate(jopts, () => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }));
+        const tree = {};
+        const jres = await jostraca.generate(jopts, keepingTree(() => Root({ model: 0 === external.length ? model : withoutExternal(model, external) }), tree));
         (0, util_2.showChanges)(jopts.log, 'generate-result', jres, node_path_1.default.dirname(process.cwd()));
+        (0, generated_1.pruneGenerated)({
+            fs, log, project: root, out: root, jres, claims: (0, generated_1.claimedFiles)(tree.root, folder),
+            dryrun: !!opts.dryrun,
+        });
         // Docgen owns editions, destinations, templates, text QA and deployment.
         if (model?.main?.[apidef_1.KIT]?.doc?.active !== false && Object.values(model?.main?.[apidef_1.KIT]?.doc?.edition ?? {})
             .some((item) => item.active !== false)) {
@@ -444,15 +463,21 @@ function SdkGen(opts) {
                 note: ext.name + ' -> ' + ext.folder
             });
             const sdkrelpath = externalSdkRel(ext, root, log);
-            const eres = await jostraca.generate({ ...jopts, folder: ext.folder }, () => (0, ExternalTarget_1.ExternalTarget)({
+            const etree = {};
+            const eres = await jostraca.generate({ ...jopts, folder: ext.folder }, keepingTree(() => (0, ExternalTarget_1.ExternalTarget)({
                 model, target: ext.target, cmpfolder: folder,
                 // How to walk BACK to the SDK project from the destination. An
                 // item generating out of tree usually sits beside the SDK in a
                 // known layout, and its own docs, scripts and live tests need to
                 // name that path.
                 sdkrelpath,
-            }));
+            }), etree));
             (0, util_2.showChanges)(jopts.log, 'generate-result', eres, node_path_1.default.dirname(process.cwd()));
+            (0, generated_1.pruneGenerated)({
+                fs, log, project: root, out: ext.folder, jres: eres,
+                claims: (0, generated_1.claimedFiles)(etree.root, ext.folder),
+                dryrun: !!opts.dryrun,
+            });
         }
         log.info({ point: 'generate-end' });
         return { ok: true, name: 'sdkgen' };
@@ -857,7 +882,7 @@ function clear(path) {
         }
     }
 }
-exports.cmp = JostracaModule.cmp;
+exports.cmp = component_1.cmp;
 exports.names = JostracaModule.names;
 exports.each = JostracaModule.each;
 exports.snakify = JostracaModule.snakify;

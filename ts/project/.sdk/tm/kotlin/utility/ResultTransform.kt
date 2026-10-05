@@ -37,6 +37,10 @@ fun resultBody(ctx: Context): KOTLINPACKAGE.core.Result {
     if (response != null && response.jsonFunc != null && response.body != null) {
       result.body = response.jsonFunc!!.get()
     }
+    if (response != null && response.unreadable) {
+      result.err = KOTLINPACKAGE.core.Response.unreadableBody(ctx, result.status, result.headers,
+        response.body, ctx.spec?.headers, result.err)
+    }
   }
 
   return result!!

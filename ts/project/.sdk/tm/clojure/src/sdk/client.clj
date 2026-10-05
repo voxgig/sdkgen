@@ -141,8 +141,17 @@
                 no-body (or (= status 204) (= status 304) (= (str content-length) "0"))
                 json-data (when-not no-body
                             (let [jf (vs/getprop fetched "json")]
-                              (when (fn? jf) (try (jf) (catch Throwable _ nil)))))]
-            (vs/jm "ok" (and (>= status 200) (< status 300)) "status" status "headers" headers "data" json-data))
+                              (when (fn? jf) (try (jf) (catch Throwable _ nil)))))
+                body-err (when (and (not no-body) (true? (vs/getprop fetched "unreadable")))
+                           (core/unreadable-body
+                             ctx status headers (vs/getprop fetched "body") (vs/getprop fetchdef "headers")
+                             (when-not (and (>= status 200) (< status 300))
+                               (core/ctx-error ctx "request_status"
+                                               (str "request: " status ": " (or (vs/getprop fetched "statusText") ""))))))
+                out (vs/jm "ok" (and (nil? body-err) (>= status 200) (< status 300))
+                           "status" status "headers" headers "data" json-data)]
+            (when body-err (vs/setprop out "err" (core/ucall ctx :clean body-err)))
+            out)
           :else (vs/jm "ok" false "err" (core/ctx-error ctx "direct_invalid" "invalid response type")))))))
 
 ;; Raw endpoint access is operator-controllable, like every entity op.

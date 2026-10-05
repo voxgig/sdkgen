@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Main = void 0;
-const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const utility_1 = require("../utility");
 const stdrep_1 = require("../helpers/stdrep");
-const Main = (0, jostraca_1.cmp)(function Main(props) {
+const Main = (0, component_1.cmp)(function Main(props) {
     const { target, ctx$ } = props;
     const { model, log } = ctx$;
     // Generator-owned placeholders (PROJECTENV) that the project's frozen

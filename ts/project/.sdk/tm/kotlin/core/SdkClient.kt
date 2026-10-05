@@ -318,18 +318,28 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
       val noBody = status == 204 || status == 304 || "0" == contentLength
 
       var jsonData: Any? = null
+      var bodyErr: RuntimeException? = null
       if (!noBody) {
         val jf = Struct.getprop(fm, "json")
         if (jf is Supplier<*>) {
           // The supplier returns null on parse error in our fetcher.
           jsonData = (jf as Supplier<Any?>).get()
         }
+        if (true == Struct.getprop(fm, "unreadable")) {
+          val failed = if (status in 200..299) null else ctx.makeError(
+            "request_status", "request: " + status + ": " + Struct.getprop(fm, "statusText"))
+          bodyErr = Response.unreadableBody(ctx, status, headers, Struct.getprop(fm, "body"),
+            fetchdef["headers"], failed)
+        }
       }
 
-      out["ok"] = status in 200..299
+      out["ok"] = bodyErr == null && status in 200..299
       out["status"] = status
       out["headers"] = headers
       out["data"] = jsonData
+      if (bodyErr != null) {
+        out["err"] = utility.clean(ctx, bodyErr)
+      }
       return out
     }
 

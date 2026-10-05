@@ -80,6 +80,8 @@ and response = {
   mutable rs_json : value;        (* Func thunk or Noval *)
   mutable rs_body : value;
   mutable rs_err : sdk_error option;
+  (* Set by a transport that could not read a non-blank body as JSON. *)
+  mutable rs_unreadable : bool;
 }
 
 and result = {

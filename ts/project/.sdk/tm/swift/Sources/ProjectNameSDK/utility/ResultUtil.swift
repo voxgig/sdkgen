@@ -34,6 +34,11 @@ func resultBodyUtil(_ ctx: Context) -> Result {
     if let jf = response?.jsonFunc, let resp = response, !isNil(resp.body) {
       result.body = jf()
     }
+    if let resp = response, resp.unreadable {
+      let sent: Value = ctx.spec == nil ? .noval : .map(ctx.spec!.headers)
+      result.err = Response.unreadableBody(
+        ctx, result.status, .map(result.headers), resp.body, sent, result.err)
+    }
   }
 
   return result!

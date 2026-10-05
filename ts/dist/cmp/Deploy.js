@@ -2,9 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Deploy = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const packageMeta_1 = require("../helpers/packageMeta");
 const types_1 = require("../types");
-const Deploy = (0, jostraca_1.cmp)(function Deploy(props) {
+const Deploy = (0, component_1.cmp)(function Deploy(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
     const targetMap = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.target`) || {};
