@@ -40,6 +40,19 @@ main: kit: author: {
 }
 
 
+# The project's README wording, over the spec's info. Closed: a misspelt slot fails.
+main: kit: text: close({
+  title: *'' | string
+  summary: *'' | string
+  website: *'' | string
+  tagline: *'' | string
+  about_md: *'' | string
+  homepage: *'' | string
+  docs_url: *'' | string
+  meta_source: *'' | string
+  entity_desc: {&: string}
+})
+
 # Who publishes the SDK: the LICENSE copyright holder, the default package
 # author, and where SECURITY.md sends a vulnerability report. An empty name
 # is Voxgig, whose url and security contact then apply.

@@ -1589,6 +1589,57 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  test('main.kit.text words the readmes over main.kit.info', async () => {
+    const TARGETS = readdirSync(Path.join(SCAFFOLD, 'src', 'cmp'))
+      .filter((t) => existsSync(Path.join(SCAFFOLD, 'src', 'cmp', t, `ReadmeIntro_${t}.ts`)))
+
+    const declared = [
+      "main: kit: info: { tagline: 'Spec tagline.', about_md: 'Spec about.' }",
+      "main: kit: info: { summary: 'Spec summary.' }",
+      "main: kit: text: { title: 'Worded API', tagline: 'Worded tagline.' }",
+      "main: kit: text: { summary: 'Worded summary.', entity_desc: { planet: 'Worded planet.' } }",
+    ].join('\n')
+
+    const out = await generate(TARGETS, undefined, declared)
+    const bad: string[] = []
+
+    const readme = String(out['README.md'])
+    const wanted = ['Worded tagline.', 'Worded summary.', 'Worded planet.', 'Spec about.',
+      'Generated from the Worded API OpenAPI spec']
+    for (const want of wanted) {
+      if (!readme.includes(want)) bad.push('README.md lacks ' + want)
+    }
+    for (const gone of ['Spec tagline.', 'Spec summary.', 'Generated from the Demo OpenAPI']) {
+      if (readme.includes(gone)) bad.push('README.md keeps ' + gone)
+    }
+
+    for (const t of TARGETS) {
+      const intro = String(out[t + '/README.md'])
+      if (!intro.includes('Worded tagline.')) bad.push(t + '/README.md lacks the tagline')
+      if (intro.includes('Spec tagline.')) bad.push(t + '/README.md keeps the spec tagline')
+    }
+
+    if (!JSON.parse(out['ts/package.json']).description.includes('the Worded public API')) {
+      bad.push('ts/package.json does not name the worded API')
+    }
+
+    deepStrictEqual(bad, [])
+  })
+
+
+  test('a misspelt main.kit.text slot fails the model', async () => {
+    let failure = ''
+    try {
+      await generate(['ts'], undefined, "main: kit: text: { taglin: 'Typo.' }")
+    }
+    catch (err: any) {
+      failure = String(err?.message ?? err)
+    }
+    ok(/closed/i.test(failure) && failure.includes('taglin'),
+      'the misspelt slot was accepted: ' + (failure || 'no error'))
+  })
+
+
   test('elixir: no empty argument in a singleton load example', async () => {
     const out = await generate(['elixir'])
 
