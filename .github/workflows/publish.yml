@@ -62,7 +62,9 @@ jobs:
   publish:
     name: npm publish
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Room for the whole suite on a slow runner. The build workflow sets no
+    # limit on the same suite, so nothing warns as the suite grows.
+    timeout-minutes: 45
 
     # Deliberately NOT contents: write — see the header. This job runs
     # dependency lifecycle scripts.
