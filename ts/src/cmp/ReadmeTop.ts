@@ -28,7 +28,8 @@ import {
   nonAffiliation,
   docsSiteUrl,
   originName,
-  SECURITY_EMAIL,
+  isDefaultPublisher,
+  securityContact,
 } from '../helpers/packageMeta'
 
 
@@ -199,9 +200,12 @@ ${tagline}
     }
     Content(`${nonAffiliation(model)}
 
-Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
+`)
+    if (isDefaultPublisher(model)) {
+      Content(`Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
 
 `)
+    }
 
     // THE GENERATED SITE, LINKED FROM THE TOP, because the repository was the
     // one place it could not be found from. `docs_url` further down is the
@@ -676,7 +680,7 @@ The OpenAPI spec(s) this SDK was generated from are kept in the
 
     Content(`## Security
 
-Please report security issues to ${SECURITY_EMAIL}. See [SECURITY.md](SECURITY.md).
+Please report security issues ${securityContact(model)}. See [SECURITY.md](SECURITY.md).
 Do not open public issues for suspected vulnerabilities.
 
 `)

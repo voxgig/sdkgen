@@ -45,7 +45,7 @@ src/cmp/c/fragment/EntityUpdateOp.fragment.c e458ce724b0a
 src/cmp/c/fragment/Main.fragment.c ebacb86d967a
 src/cmp/c/tsconfig.json 720a3f229019
 src/cmp/c/utility_c.ts 1574d3533873
-tm/c/LICENSE ed2f88b0aab8
+tm/c/LICENSE 52acd47c245f
 tm/c/Makefile ab2d345ce24f
 tm/c/VERSION e6635045e1d2
 tm/c/core/context.c 3d02628a07f0
@@ -163,7 +163,7 @@ src/cmp/clojure/fragment/EntityRemoveOp.fragment.clj 3c87bd0a68f1
 src/cmp/clojure/fragment/EntityUpdateOp.fragment.clj 0245cb72c0ee
 src/cmp/clojure/tsconfig.json 720a3f229019
 src/cmp/clojure/utility_clojure.ts 5da98934ec0e
-tm/clojure/LICENSE ed2f88b0aab8
+tm/clojure/LICENSE 52acd47c245f
 tm/clojure/Makefile d3ac03fe6a52
 tm/clojure/VERSION e6635045e1d2
 tm/clojure/feature/secrets/sdk/feature/secrets.clj fb72d36fd60d
@@ -287,7 +287,7 @@ src/cmp/cpp/fragment/EntityUpdateOp.fragment.cpp bb008751959b
 src/cmp/cpp/fragment/Main.fragment.cpp 202d212074c2
 src/cmp/cpp/tsconfig.json 720a3f229019
 src/cmp/cpp/utility_cpp.ts 00d2c1d4ac93
-tm/cpp/LICENSE ed2f88b0aab8
+tm/cpp/LICENSE 52acd47c245f
 tm/cpp/Makefile 0d6ce97980bb
 tm/cpp/VERSION e6635045e1d2
 tm/cpp/core/sdk.hpp 29180a8846ed
@@ -335,7 +335,7 @@ src/cmp/csharp/Entity_csharp.ts 5deffffa349f
 src/cmp/csharp/Gitignore_csharp.ts bd603cc2c5c7
 src/cmp/csharp/MainEntity_csharp.ts 1c24807ab2fe
 src/cmp/csharp/Main_csharp.ts 45456e223adc
-src/cmp/csharp/Package_csharp.ts 403c86c3e8f8
+src/cmp/csharp/Package_csharp.ts 8419fac2401e
 src/cmp/csharp/PrepareAuth_csharp.ts 31a115d93de8
 src/cmp/csharp/ReadmeEntity_csharp.ts f37b03a611c2
 src/cmp/csharp/ReadmeExamplesTest_csharp.ts ee7a79c93f15
@@ -367,8 +367,8 @@ src/cmp/csharp/fragment/EntityUpdateOp.fragment.cs bced8d6613a6
 src/cmp/csharp/fragment/Main.fragment.cs 14f306353868
 src/cmp/csharp/fragment/SdkError.fragment.cs f10488189e97
 src/cmp/csharp/tsconfig.json 720a3f229019
-src/cmp/csharp/utility_csharp.ts 0f589be03efc
-tm/csharp/LICENSE ed2f88b0aab8
+src/cmp/csharp/utility_csharp.ts 842d345c8faf
+tm/csharp/LICENSE 52acd47c245f
 tm/csharp/Makefile 9e4110d7eafd
 tm/csharp/VERSION e6635045e1d2
 tm/csharp/core/Context.cs 5c1d29c6ee2b
@@ -477,7 +477,7 @@ src/cmp/elixir/fragment/Main.fragment.ex 64cd1a36009f
 src/cmp/elixir/fragment/Pipeline.fragment.ex 5df8ee54763f
 src/cmp/elixir/tsconfig.json 720a3f229019
 src/cmp/elixir/utility_elixir.ts d2ac9a3d5427
-tm/elixir/LICENSE c92ad97f8812
+tm/elixir/LICENSE 7a036af3f8a4
 tm/elixir/Makefile 411daea82111
 tm/elixir/VERSION e6635045e1d2
 tm/elixir/lib/projectname/context.ex 7b7862f05c1b
@@ -551,7 +551,7 @@ src/cmp/go/fragment/Main.fragment.go 60d152090d3f
 src/cmp/go/fragment/SdkError.fragment.go 36c2cc9cf558
 src/cmp/go/tsconfig.json 720a3f229019
 src/cmp/go/utility_go.ts 91ead607f691
-tm/go/LICENSE ed2f88b0aab8
+tm/go/LICENSE 52acd47c245f
 tm/go/Makefile 72a251a943a5
 tm/go/VERSION e6635045e1d2
 tm/go/core/context.go f11e3b5509dd
@@ -690,7 +690,7 @@ src/cmp/java/fragment/Main.fragment.java a2f2bdda49f5
 src/cmp/java/fragment/SdkError.fragment.java 4a0e738dbcc0
 src/cmp/java/tsconfig.json 720a3f229019
 src/cmp/java/utility_java.ts 19662d345ec3
-tm/java/LICENSE ed2f88b0aab8
+tm/java/LICENSE 52acd47c245f
 tm/java/Makefile def672a803b0
 tm/java/VERSION e6635045e1d2
 tm/java/core/Context.java c6acf0a88e96
@@ -815,7 +815,7 @@ src/cmp/js/fragment/Main.fragment.js e55626d12c84
 src/cmp/js/fragment/MainStation.fragment.js c19757d85e46
 src/cmp/js/fragment/SdkError.fragment.js 22b5a9cd3050
 src/cmp/js/utility_js.ts 5e5e18cd0239
-tm/js/LICENSE ed2f88b0aab8
+tm/js/LICENSE 52acd47c245f
 tm/js/Makefile 52c2788fd05a
 tm/js/jsconfig.json 2a568c53a9fc
 tm/js/src/Context.js fd83a5c7df3b
@@ -934,7 +934,7 @@ src/cmp/kotlin/fragment/Main.fragment.kt da2bcd732d11
 src/cmp/kotlin/fragment/SdkError.fragment.kt c7864044bb8d
 src/cmp/kotlin/tsconfig.json 720a3f229019
 src/cmp/kotlin/utility_kotlin.ts 6f2c66003df3
-tm/kotlin/LICENSE ed2f88b0aab8
+tm/kotlin/LICENSE 52acd47c245f
 tm/kotlin/Makefile 5102e29f09a6
 tm/kotlin/VERSION e6635045e1d2
 tm/kotlin/core/Context.kt f45b94d1b2bc
@@ -1028,7 +1028,7 @@ src/cmp/lua/fragment/Main.fragment.lua eac385d20f8b
 src/cmp/lua/fragment/SdkError.fragment.lua dd1669f801e7
 src/cmp/lua/tsconfig.json 720a3f229019
 src/cmp/lua/utility_lua.ts 216f2c0aab05
-tm/lua/LICENSE ed2f88b0aab8
+tm/lua/LICENSE 52acd47c245f
 tm/lua/Makefile 2687d4bd2f37
 tm/lua/core/context.lua 050b44cc7883
 tm/lua/core/control.lua bcd4e848f7f2
@@ -1106,7 +1106,7 @@ src/cmp/ocaml/Entity_ocaml.ts 4db91fb5c6f7
 src/cmp/ocaml/Gitignore_ocaml.ts 17f97d494254
 src/cmp/ocaml/MainEntity_ocaml.ts ab4c2d6c3549
 src/cmp/ocaml/Main_ocaml.ts 017cbbaf15a1
-src/cmp/ocaml/Package_ocaml.ts 88cb9d73a295
+src/cmp/ocaml/Package_ocaml.ts a25fd00bbd6f
 src/cmp/ocaml/PrepareAuth_ocaml.ts 4faf9c4284b6
 src/cmp/ocaml/ReadmeEntity_ocaml.ts 0b85acbb2eea
 src/cmp/ocaml/ReadmeExamplesTest_ocaml.ts fa124db31217
@@ -1130,7 +1130,7 @@ src/cmp/ocaml/Test_ocaml.ts 97451223ef72
 src/cmp/ocaml/fragment/RunOp.fragment.ml 720d6938191c
 src/cmp/ocaml/tsconfig.json 720a3f229019
 src/cmp/ocaml/utility_ocaml.ts d6e63489997b
-tm/ocaml/LICENSE c92ad97f8812
+tm/ocaml/LICENSE 7a036af3f8a4
 tm/ocaml/Makefile 2b80ff703054
 tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml 7d5297722c30
@@ -1167,7 +1167,7 @@ src/cmp/perl/Entity_perl.ts 7f52bce83f14
 src/cmp/perl/Gitignore_perl.ts cef200d91d8f
 src/cmp/perl/MainEntity_perl.ts 49d50e77add8
 src/cmp/perl/Main_perl.ts dbbd7bcdcdde
-src/cmp/perl/Package_perl.ts d746014c3011
+src/cmp/perl/Package_perl.ts 9438763f90a1
 src/cmp/perl/PrepareAuth_perl.ts f6a9d71e3a11
 src/cmp/perl/ReadmeEntity_perl.ts 87ba15be073c
 src/cmp/perl/ReadmeExamplesTest_perl.ts 253f5ff5172d
@@ -1198,7 +1198,7 @@ src/cmp/perl/fragment/Main.fragment.pm 062aaf682c52
 src/cmp/perl/fragment/SdkError.fragment.pm 315041c5422f
 src/cmp/perl/tsconfig.json 720a3f229019
 src/cmp/perl/utility_perl.ts e21042f45ac5
-tm/perl/LICENSE ed2f88b0aab8
+tm/perl/LICENSE 52acd47c245f
 tm/perl/Makefile fa0c8f05682c
 tm/perl/core/context.pm c1e8841d3da4
 tm/perl/core/control.pm cb6185bbc19f
@@ -1275,7 +1275,7 @@ src/cmp/php/Entity_php.ts 11d4cc8b9dae
 src/cmp/php/Gitignore_php.ts e6379c0edbe7
 src/cmp/php/MainEntity_php.ts 63d270027217
 src/cmp/php/Main_php.ts 7cf40a8baf83
-src/cmp/php/Package_php.ts 807fc4e5a993
+src/cmp/php/Package_php.ts 513b6cb0ed42
 src/cmp/php/PrepareAuth_php.ts c1c0ed41ade8
 src/cmp/php/ReadmeEntity_php.ts efc6bd8e6b5a
 src/cmp/php/ReadmeExamplesTest_php.ts 4cefb6086f6a
@@ -1306,7 +1306,7 @@ src/cmp/php/fragment/Main.fragment.php 29a9175f3a83
 src/cmp/php/fragment/SdkError.fragment.php 0c73a9a0251d
 src/cmp/php/tsconfig.json 720a3f229019
 src/cmp/php/utility_php.ts c65bddbe5deb
-tm/php/LICENSE ed2f88b0aab8
+tm/php/LICENSE 52acd47c245f
 tm/php/Makefile 1df8eadc6f78
 tm/php/VERSION e6635045e1d2
 tm/php/core/Context.php 260179f4d5e9
@@ -1412,7 +1412,7 @@ src/cmp/py/fragment/Main.fragment.py 0c36659bb0ba
 src/cmp/py/fragment/SdkError.fragment.py d1c40bae885a
 src/cmp/py/tsconfig.json 720a3f229019
 src/cmp/py/utility_py.ts dcadf423b5da
-tm/py/LICENSE ed2f88b0aab8
+tm/py/LICENSE 52acd47c245f
 tm/py/Makefile 6f02e3364cd8
 tm/py/pkg/core/__init__.py e3b0c44298fc
 tm/py/pkg/core/context.py 7030e56d1105
@@ -1489,7 +1489,7 @@ model/sdk.aontu deb90c7d4659
 model/target/py-data.aontu 255883bf8af3
 model/target/target-index.aontu fab6a58fafb8
 src/cmp/py-data/Main_py-data.ts d72a81b2ade0
-tm/py-data/LICENSE ed2f88b0aab8
+tm/py-data/LICENSE 52acd47c245f
 tm/py-data/Makefile e9b508ae41a7
 tm/py-data/pkg/auth.py a84c020b8eb1
 tm/py-data/pkg/fetch.py 5a3573da5894
@@ -1516,7 +1516,7 @@ src/cmp/rb/Entity_rb.ts a7ca2f61dccf
 src/cmp/rb/Gitignore_rb.ts d6ab9def4134
 src/cmp/rb/MainEntity_rb.ts a88eedc19290
 src/cmp/rb/Main_rb.ts d92e24cb896b
-src/cmp/rb/Package_rb.ts d24de8455ef7
+src/cmp/rb/Package_rb.ts 4008859a052c
 src/cmp/rb/PrepareAuth_rb.ts 7db3c548fb09
 src/cmp/rb/ReadmeEntity_rb.ts 34ad3d5750d0
 src/cmp/rb/ReadmeExamplesTest_rb.ts 53acb9255d26
@@ -1548,7 +1548,7 @@ src/cmp/rb/fragment/SdkError.fragment.rb 951c6e5bc8b2
 src/cmp/rb/tsconfig.json 720a3f229019
 src/cmp/rb/utility_rb.ts 1ac35bdc3695
 tm/rb/Gemfile 2cf46ddd24ec
-tm/rb/LICENSE ed2f88b0aab8
+tm/rb/LICENSE 52acd47c245f
 tm/rb/Makefile 89567ce533f0
 tm/rb/core/context.rb c0c3663595e4
 tm/rb/core/control.rb 14d11fa63c1f
@@ -1656,7 +1656,7 @@ src/cmp/rust/fragment/Main.fragment.rs e1c022fcb16c
 src/cmp/rust/fragment/SdkError.fragment.rs f7b9f189768a
 src/cmp/rust/tsconfig.json 720a3f229019
 src/cmp/rust/utility_rust.ts ee5eea209172
-tm/rust/LICENSE ed2f88b0aab8
+tm/rust/LICENSE 52acd47c245f
 tm/rust/Makefile 9c20bdb47565
 tm/rust/VERSION e6635045e1d2
 tm/rust/core/context.rs ccbcb67e5f81
@@ -1775,7 +1775,7 @@ src/cmp/scala/fragment/EntityUpdateOp.fragment.scala e7b5cdee3a50
 src/cmp/scala/fragment/Main.fragment.scala 48af9dfdab50
 src/cmp/scala/tsconfig.json 720a3f229019
 src/cmp/scala/utility_scala.ts 0f8b6c6f8f64
-tm/scala/LICENSE ed2f88b0aab8
+tm/scala/LICENSE 52acd47c245f
 tm/scala/Makefile c8ec788f756e
 tm/scala/VERSION e6635045e1d2
 tm/scala/core/Context.scala cdc2bb459d2f
@@ -1944,7 +1944,7 @@ src/cmp/swift/fragment/Main.fragment.swift f1ce2df9cae1
 src/cmp/swift/fragment/SdkError.fragment.swift 927b9a03be0d
 src/cmp/swift/tsconfig.json 720a3f229019
 src/cmp/swift/utility_swift.ts 2f94c741a269
-tm/swift/LICENSE ed2f88b0aab8
+tm/swift/LICENSE 52acd47c245f
 tm/swift/Makefile ecf6dd47f95f
 tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift ed5ff2870004
 tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift 28a6f4a6a47b
@@ -2056,7 +2056,7 @@ src/cmp/ts/fragment/MainStation.fragment.ts 87d629c6b32f
 src/cmp/ts/fragment/SdkError.fragment.ts cbfaeffafd6a
 src/cmp/ts/tsconfig.json 720a3f229019
 src/cmp/ts/utility_ts.ts 41f452fb44f7
-tm/ts/LICENSE ed2f88b0aab8
+tm/ts/LICENSE 52acd47c245f
 tm/ts/Makefile bc2ea6423c83
 tm/ts/src/Context.ts 9043c5e3febc
 tm/ts/src/Control.ts 7e8448264396
@@ -2174,7 +2174,7 @@ src/cmp/zig/fragment/Main.fragment.zig 49e6287036e6
 src/cmp/zig/fragment/Root.fragment.zig 7ab6408a7808
 src/cmp/zig/tsconfig.json 720a3f229019
 src/cmp/zig/utility_zig.ts 7506671de1bc
-tm/zig/LICENSE 0f0188120aad
+tm/zig/LICENSE 7a036af3f8a4
 tm/zig/Makefile 623289c8876a
 tm/zig/VERSION e6635045e1d2
 tm/zig/core/context.zig b980c8f20fda

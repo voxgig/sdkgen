@@ -851,7 +851,9 @@ emitted broken source reached the fleet unchallenged.
   `main.kit.repo.{path,host}` (repo identity — the repo is NOT always
   `<origin>/<slug>-sdk`), `main.kit.author` / `main.kit.contributor.<key>`
   (manifest attribution — hand-edited credit is DELETED by the next
-  regeneration), `main.kit.test.live.strict`, `main.kit.feature` (which feature
+  regeneration), `main.kit.publisher` (every LICENSE's copyright holder, the
+  default author and the security contact; Voxgig when unset),
+  `main.kit.test.live.strict`, `main.kit.feature` (which feature
   source ships), and per target `module.{path,package,goversion}`,
   `publish.{version,registry.package}`, `output.{path,repo,create,adopt,sdkrel}`
   (generate into another repo). `output.path` is COMMITTED and describes one

@@ -5,6 +5,7 @@ import { ok, strictEqual, deepStrictEqual, fail } from 'node:assert'
 import Fs, { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
+import { spawnSync } from 'node:child_process'
 
 import { Aontu } from 'aontu'
 import { memfs } from 'memfs'
@@ -19,7 +20,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
-  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity,
+  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity, toolchain,
 } from './generateharness'
 
 
@@ -1824,39 +1825,205 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
 
   test('a declared author reaches every manifest, and a target may override', async () => {
-    const TARGETS = ['ts', 'js', 'rb', 'php', 'ocaml']
-
-    const declared = [
-      "main: kit: author: { name: 'Ada Lovelace', url: 'https://example.com' }",
-      "main: kit: target: ts: author: { name: 'Someone Else', url: 'https://elsewhere.example' }",
-    ].join('\n')
-
-    const out = await generate(TARGETS, undefined, declared)
+    const TARGETS = ['ts', 'js', 'rb', 'php', 'ocaml', 'perl', 'csharp']
 
     const MANIFEST: Record<string, string> = {
       ts: 'package.json', js: 'package.json', rb: 'Demo_sdk.gemspec',
       php: 'composer.json', ocaml: 'voxgig-demo-sdk.opam',
+      perl: 'Makefile.PL', csharp: 'DemoSDK.csproj',
     }
 
+    // Each target is checked once with the model-wide author and once with
+    // its own.
+    const RUNS: Record<string, string>[] = [
+      { ts: 'Someone Else', perl: 'Grace Hopper' },
+      {
+        js: 'Someone Else', rb: 'Grace Hopper', php: 'Someone Else',
+        ocaml: 'Grace Hopper', csharp: 'Grace Hopper',
+      },
+    ]
+
+    // The hardcoded publisher must be gone from the author position. It is
+    // still legitimate elsewhere in a manifest (keywords, the npm scope),
+    // so only an author-shaped occurrence counts.
+    const AUTHOR_VOXGIG = [
+      /"name"\s*:\s*"Voxgig"/, /authors\s*[:=]\s*\[?"?[Vv]oxgig/,
+      /AUTHOR\s*=>\s*'Voxgig'/, /<Authors>Voxgig</,
+    ]
+
     const bad: string[] = []
-    for (const t of TARGETS) {
-      const file = findFile(out, t + '/' + MANIFEST[t])
-      if (null == file) { bad.push(`${t}: no ${MANIFEST[t]} generated`); continue }
+    for (const [run, OVERRIDE] of RUNS.entries()) {
+      const declared = [
+        "main: kit: author: { name: 'Ada Lovelace', url: 'https://example.com' }",
+        ...Object.entries(OVERRIDE).map(([t, name]) =>
+          `main: kit: target: ${t}: author: { name: '${name}', url: 'https://${t}.example' }`),
+      ].join('\n')
 
-      const expected = 'ts' === t ? 'Someone Else' : 'Ada Lovelace'
-      if (!file.includes(expected)) {
-        bad.push(`${t}: ${MANIFEST[t]} does not carry "${expected}"`)
-      }
+      const out = await generate(TARGETS, undefined, declared)
 
-      // The hardcoded publisher must be gone from the author position. It is
-      // still legitimate elsewhere in a manifest (keywords, the npm scope),
-      // so only an author-shaped occurrence counts.
-      if (/(?:"name"\s*:\s*"Voxgig"|authors\s*[:=]\s*\[?"?[Vv]oxgig)/.test(file)) {
-        bad.push(`${t}: ${MANIFEST[t]} still hardcodes the publisher as author`)
+      for (const t of TARGETS) {
+        const file = findFile(out, t + '/' + MANIFEST[t])
+        if (null == file) { bad.push(`run ${run} ${t}: no ${MANIFEST[t]} generated`); continue }
+
+        const expected = OVERRIDE[t] || 'Ada Lovelace'
+        if (!file.includes(expected)) {
+          bad.push(`run ${run} ${t}: ${MANIFEST[t]} does not carry "${expected}"`)
+        }
+        if (null != OVERRIDE[t] && file.includes('Ada Lovelace')) {
+          bad.push(`run ${run} ${t}: ${MANIFEST[t]} carries the model-wide author over its own`)
+        }
+
+        if (AUTHOR_VOXGIG.some((re) => re.test(file))) {
+          bad.push(`run ${run} ${t}: ${MANIFEST[t]} still hardcodes the publisher as author`)
+        }
       }
     }
 
     deepStrictEqual(bad, [])
+  })
+
+
+  describe('the publisher', () => {
+    const tmDir = Path.join(SCAFFOLD, 'tm')
+    const licensed = readdirSync(tmDir)
+      .filter((t) => existsSync(Path.join(tmDir, t, 'LICENSE')))
+
+    // Each consumer target generates beside the target it wraps.
+    const targets = [...licensed.filter((t) => !NON_SDK_TARGETS.includes(t)),
+      ...licensed.filter((t) => NON_SDK_TARGETS.includes(t))]
+
+    const NAME = 'O\'Neil "Labs" & Co'
+    const SITE = 'https://oneil.example'
+    const CONTACT = 'security@oneil.example'
+
+    const declared =
+      "main: kit: publisher: { name: 'O\\'Neil \"Labs\" & Co', " +
+      `url: '${SITE}', security: '${CONTACT}' }`
+
+    test('a declared publisher names itself in every LICENSE, notice and manifest',
+      async () => {
+        const out = await generate(targets, undefined, declared)
+        const bad: string[] = []
+        const copyright = 'Copyright (c) 2026 ' + NAME
+
+        for (const t of targets) {
+          const license = out[t + '/LICENSE']
+          if (null == license) { bad.push(`${t}: no LICENSE`); continue }
+          if (!license.includes(copyright)) bad.push(`${t}: LICENSE does not name it`)
+          if (/voxgig|PROJECTPUBLISHER/i.test(license)) bad.push(`${t}: LICENSE keeps Voxgig`)
+        }
+
+        if (!String(out['LICENSE']).includes(copyright)) bad.push('LICENSE does not name it')
+        if (!String(out['NOTICE']).includes('generated by ' + NAME)) {
+          bad.push('NOTICE does not name it')
+        }
+
+        const security = String(out['SECURITY.md'])
+        if (!security.includes(`report security issues to ${CONTACT}.`)) {
+          bad.push('SECURITY.md does not send reports to its contact')
+        }
+        // The repository URL still derives from the model's origin.
+        if (/\bVoxgig\b|security@voxgig\.com|business days/.test(security)) {
+          bad.push('SECURITY.md keeps Voxgig or its commitment')
+        }
+
+        const readme = String(out['README.md'])
+        if (!readme.includes(`Please report security issues to ${CONTACT}.`)) {
+          bad.push('README.md does not send reports to its contact')
+        }
+        if (/Learn more about Voxgig SDKs|security@voxgig\.com/.test(readme)) {
+          bad.push('README.md keeps Voxgig contacts')
+        }
+
+        const json = (file: string): any => {
+          try { return JSON.parse(out[file]) }
+          catch (err: any) { bad.push(`${file} is not JSON: ${err.message}`) }
+        }
+
+        for (const t of ['ts', 'js']) {
+          const pkg = json(t + '/package.json')
+          if (pkg && (NAME !== pkg.author.name || SITE !== pkg.author.url)) {
+            bad.push(`${t}: package.json author is ${JSON.stringify(pkg.author)}`)
+          }
+          if (pkg?.keywords.includes('voxgig')) bad.push(`${t}: keywords keep voxgig`)
+        }
+
+        const composer = json('php/composer.json')
+        if (composer &&
+          (NAME !== composer.authors[0].name || SITE !== composer.authors[0].homepage)) {
+          bad.push('php: composer.json author is ' + JSON.stringify(composer.authors))
+        }
+
+        const literal: [string, string][] = [
+          ['rb/Demo_sdk.gemspec', 'spec.authors       = ["O\'Neil \\"Labs\\" & Co"]'],
+          ['perl/Makefile.PL', 'AUTHOR           => \'O\\\'Neil "Labs" & Co\','],
+          ['csharp/DemoSDK.csproj', '<Authors>O\'Neil "Labs" &amp; Co</Authors>'],
+          ['ocaml/voxgig-demo-sdk.opam', 'authors: "O\'Neil \\"Labs\\" & Co"'],
+        ]
+        for (const [file, text] of literal) {
+          if (!String(out[file]).includes(text)) bad.push(`${file} lacks ${text}`)
+        }
+        if (/"https:\/\/voxgig\.com"/.test(out['ocaml/voxgig-demo-sdk.opam'])) {
+          bad.push('ocaml: opam links voxgig.com')
+        }
+
+        deepStrictEqual(bad, [])
+
+        // Each language reads its own literal back as the declared name.
+        const readBack: [string, string, RegExp][] = [
+          ['ruby', 'rb/Demo_sdk.gemspec', /spec\.authors\s+= \[(.+)\]\n/],
+          ['perl', 'perl/Makefile.PL', /AUTHOR\s+=> (.+),\n/],
+        ]
+        const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-publisher-'))
+        try {
+          for (const [tool, file, pattern] of readBack) {
+            if (null == toolchain(tool)) continue
+            const script = Path.join(dir, tool)
+            writeFileSync(script, 'print ' + String(out[file]).match(pattern)![1] + '\n')
+            const run = spawnSync(tool, [script], { encoding: 'utf8' })
+            strictEqual(run.stdout, NAME, `${tool} reads ${file}'s author as: ${run.stderr}`)
+          }
+        }
+        finally {
+          Fs.rmSync(dir, { recursive: true, force: true })
+        }
+      })
+
+    test('without one, the publisher is Voxgig, with its contact and commitment',
+      async () => {
+        const out = await generate(['ts', 'perl', 'csharp'])
+        const bad: string[] = []
+
+        // A Windows checkout gives the LICENSE templates CRLF line endings.
+        for (const t of ['', 'ts/', 'perl/', 'csharp/']) {
+          if (!/^Copyright \(c\) 2026 Voxgig\r?$/m.test(String(out[t + 'LICENSE']))) {
+            bad.push(`${t}LICENSE does not name Voxgig`)
+          }
+        }
+
+        const security = String(out['SECURITY.md'])
+        if (!security.includes('report security issues to security@voxgig.com.') ||
+          !security.includes('within 3 business days')) {
+          bad.push('SECURITY.md lost the Voxgig contact or commitment')
+        }
+        if (!String(out['README.md']).includes('Learn more about Voxgig SDKs')) {
+          bad.push('README.md lost the Voxgig link')
+        }
+
+        const pkg = JSON.parse(out['ts/package.json'])
+        if ('Voxgig' !== pkg.author.name || 'https://voxgig.com' !== pkg.author.url ||
+          !pkg.keywords.includes('voxgig')) {
+          bad.push('ts: package.json no longer credits Voxgig')
+        }
+        if (!String(out['perl/Makefile.PL']).includes("AUTHOR           => 'Voxgig',")) {
+          bad.push('perl: Makefile.PL no longer credits Voxgig')
+        }
+        if (!String(out['csharp/DemoSDK.csproj']).includes('<Authors>Voxgig</Authors>')) {
+          bad.push('csharp: csproj no longer credits Voxgig')
+        }
+
+        deepStrictEqual(bad, [])
+      })
   })
 
 

@@ -1,5 +1,5 @@
 
-import { envName, packageVersion } from './packageMeta'
+import { envName, packageVersion, publisherInfo } from './packageMeta'
 
 
 function ensureStdrep(ctx$: any): any {
@@ -7,6 +7,10 @@ function ensureStdrep(ctx$: any): any {
 
   if (null == stdrep.PROJECTENV) {
     stdrep.PROJECTENV = envName(ctx$.model)
+  }
+
+  if (null == stdrep.PROJECTPUBLISHER) {
+    stdrep.PROJECTPUBLISHER = publisherInfo(ctx$.model).name
   }
 
   return stdrep
