@@ -254,7 +254,11 @@ const SPEC_FACTS: Record<string, (model: any) => any> = {
 }
 
 
-function withPointParts(op: any): any {
+// The argument kinds a call routes outside the body.
+const ROUTED_KINDS = ['header', 'cookie', 'query']
+
+
+function withPointParts(op: any, fields: string[] = []): any {
   if (null == op) {
     return op
   }
@@ -269,6 +273,8 @@ function withPointParts(op: any): any {
           [kind, each(values as any).filter((arg: any) => false !== arg.a).map((arg: any) => ({
             name: arg.n, orig: arg.or, type: arg.t, kind: arg.k,
             reqd: arg.r, example: arg.ex,
+            // Also a field of the entity, so the body keeps it.
+            ...(ROUTED_KINDS.includes(kind) && fields.includes(arg.n) ? { field: true } : {}),
           }))]))
         // Runtime hooks expose descriptive names independently of the model schema.
         return {
@@ -304,14 +310,15 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
   const entityDefs: any = {}
   const entityStubs: any = {}
   each(entity, (e: any) => {
+    const fields = each(e.fields || {}).filter((f: any) => false !== f.a)
     entityDefs[e.name] = clean({
-      fields: each(e.fields || {}).filter((f: any) => false !== f.a).map((f: any) => ({
+      fields: fields.map((f: any) => ({
         name: f.n, title: f.h, type: f.t, req: f.r, op: f.op,
         short: f.sh, readOnly: f.ro, writeOnly: f.wo, deprecated: f.de, format: f.fo,
       })),
       id: e.id,
       name: e.name,
-      op: withPointParts(e.op),
+      op: withPointParts(e.op, fields.map((f: any) => f.n)),
       relations: e.relations,
     }, true)
     entityStubs[e.name] = {}
