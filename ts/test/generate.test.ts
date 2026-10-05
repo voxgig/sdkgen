@@ -1735,11 +1735,12 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
 
   test('a declared author reaches every manifest, and a target may override', async () => {
-    const TARGETS = ['ts', 'js', 'rb', 'php', 'ocaml']
+    const TARGETS = ['ts', 'js', 'rb', 'php', 'ocaml', 'perl', 'csharp']
 
     const declared = [
       "main: kit: author: { name: 'Ada Lovelace', url: 'https://example.com' }",
       "main: kit: target: ts: author: { name: 'Someone Else', url: 'https://elsewhere.example' }",
+      "main: kit: target: perl: author: { name: 'Grace Hopper', url: 'https://hopper.example' }",
     ].join('\n')
 
     const out = await generate(TARGETS, undefined, declared)
@@ -1747,22 +1748,33 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const MANIFEST: Record<string, string> = {
       ts: 'package.json', js: 'package.json', rb: 'Demo_sdk.gemspec',
       php: 'composer.json', ocaml: 'voxgig-demo-sdk.opam',
+      perl: 'Makefile.PL', csharp: 'DemoSDK.csproj',
     }
+
+    const OVERRIDE: Record<string, string> = { ts: 'Someone Else', perl: 'Grace Hopper' }
+
+    // The hardcoded publisher must be gone from the author position. It is
+    // still legitimate elsewhere in a manifest (keywords, the npm scope),
+    // so only an author-shaped occurrence counts.
+    const AUTHOR_VOXGIG = [
+      /"name"\s*:\s*"Voxgig"/, /authors\s*[:=]\s*\[?"?[Vv]oxgig/,
+      /AUTHOR\s*=>\s*'Voxgig'/, /<Authors>Voxgig</,
+    ]
 
     const bad: string[] = []
     for (const t of TARGETS) {
       const file = findFile(out, t + '/' + MANIFEST[t])
       if (null == file) { bad.push(`${t}: no ${MANIFEST[t]} generated`); continue }
 
-      const expected = 'ts' === t ? 'Someone Else' : 'Ada Lovelace'
+      const expected = OVERRIDE[t] || 'Ada Lovelace'
       if (!file.includes(expected)) {
         bad.push(`${t}: ${MANIFEST[t]} does not carry "${expected}"`)
       }
+      if (null != OVERRIDE[t] && file.includes('Ada Lovelace')) {
+        bad.push(`${t}: ${MANIFEST[t]} carries the model-wide author over its own`)
+      }
 
-      // The hardcoded publisher must be gone from the author position. It is
-      // still legitimate elsewhere in a manifest (keywords, the npm scope),
-      // so only an author-shaped occurrence counts.
-      if (/(?:"name"\s*:\s*"Voxgig"|authors\s*[:=]\s*\[?"?[Vv]oxgig)/.test(file)) {
+      if (AUTHOR_VOXGIG.some((re) => re.test(file))) {
         bad.push(`${t}: ${MANIFEST[t]} still hardcodes the publisher as author`)
       }
     }
