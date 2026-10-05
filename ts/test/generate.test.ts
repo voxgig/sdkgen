@@ -2371,7 +2371,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     lua: {
       file: /^lua\/entity\/\w+_entity\.lua$/,
       cls: /^local (\w+) = \{\}$/m,
-      decl: new RegExp('---@return (?<type>\\S+)\\n---@return string\\? err\\nfunction \\w+:' + OP + '\\(', 'g'),
+      decl: new RegExp('---@return (?<type>\\S+)\\r?\\n---@return string\\? err\\r?\\nfunction \\w+:' + OP + '\\(', 'g'),
       returns: (op, cls) => cls + ('list' === op ? '[]' : ''),
     },
     ocaml: {
