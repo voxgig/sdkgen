@@ -76,7 +76,7 @@ const Package = cmp(async function Package(props: any) {
     type: 'commonjs',
     types: `dist/${SdkName}SDK.d.ts`,
 
-    files: ['dist', 'src', 'README.md'],
+    files: ['dist', '!dist/**/*.tsbuildinfo', 'src', 'README.md', 'REFERENCE.md'],
     scripts: {
       ...(hasLiveScenarios(model) ? {
         'test:live': 'npm run build && node ' +

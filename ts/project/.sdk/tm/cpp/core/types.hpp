@@ -245,6 +245,8 @@ public:
   JsonFunc jsonFunc;
   Value body = Value::undef();
   SdkErrorPtr err;
+  // Set by a transport that could not read a non-blank body as JSON.
+  bool unreadable = false;
 
   Response() = default;
 
@@ -268,6 +270,8 @@ public:
       };
     }
     body = getp(m, "body");
+    Value ur = getp(m, "unreadable");
+    unreadable = ur.is_bool() && ur.as_bool();
   }
 };
 
@@ -681,6 +685,7 @@ public:
   virtual std::vector<SdkEntityPtr> list(const Value& reqmatch, const Value& ctrl) = 0;
   virtual SdkEntityPtr create(const Value& reqdata, const Value& ctrl) = 0;
   virtual SdkEntityPtr update(const Value& reqdata, const Value& ctrl) = 0;
+  virtual SdkEntityPtr patch(const Value& reqdata, const Value& ctrl) = 0;
   virtual SdkEntityPtr remove(const Value& reqmatch, const Value& ctrl) = 0;
 };
 
@@ -840,7 +845,7 @@ inline OperationPtr Context::resolveOp(const std::string& opname) {
   Value opcfg = Struct::getpath(config, {"entity", entname, "op", opname});
 
   std::string input = "match";
-  if (opname == "update" || opname == "create") input = "data";
+  if (opname == "update" || opname == "create" || opname == "patch") input = "data";
 
   Value points = Value::undef();
   if (opcfg.is_map()) {
@@ -1102,6 +1107,74 @@ inline Value SdkClient::graphql(const std::string& query, const Value& variables
   return res;
 }
 
+// A body that is not JSON. An HTTP failure keeps its own error, with the
+// response described; otherwise the code tells a wrong content type from
+// malformed JSON.
+inline SdkErrorPtr unreadableBody(CtxPtr ctx, int status, const Value& headers, const Value& text,
+                                  const Value& sent, SdkErrorPtr failed) {
+  auto lower = [](std::string s) {
+    for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return s;
+  };
+  auto headerValue = [&lower](const Value& h, const std::string& name) -> std::string {
+    if (!h.is_map()) return "";
+    for (const auto& kv : *h.as_map()) {
+      if (lower(kv.first) == name) {
+        return kv.second.is_string() ? kv.second.as_string() : Struct::stringify(kv.second);
+      }
+    }
+    return "";
+  };
+  auto clean = [&ctx](const std::string& s) -> std::string {
+    if (!ctx->utility || !ctx->utility->clean) return s;
+    Value v = ctx->utility->clean(ctx, Value(s));
+    return v.is_string() ? v.as_string() : s;
+  };
+
+  std::string type = headerValue(headers, "content-type");
+  std::string agent = clean(headerValue(sent, "user-agent"));
+  std::string detail = "HTTP " + std::to_string(status) + ", content-type " +
+    (type.empty() ? std::string("none") : type) + ", user-agent " +
+    (agent.empty() ? std::string("transport default") : agent);
+
+  if (!is_nullish(text)) {
+    // Cleaned whole: a secret the bound would split could leave its prefix.
+    std::string raw = text.is_string() ? text.as_string() : Struct::stringify(text);
+    std::string flat;
+    bool space = false;
+    for (unsigned char c : raw) {
+      if (std::isspace(c)) {
+        space = !flat.empty();
+        continue;
+      }
+      if (space) {
+        flat += ' ';
+        space = false;
+      }
+      flat += static_cast<char>(c);
+    }
+    flat = clean(flat);
+    size_t points = 0;
+    size_t end = 0;
+    for (; end < flat.size(); end++) {
+      if ((static_cast<unsigned char>(flat[end]) & 0xC0) == 0x80) continue;
+      if (160 == points) break;
+      points++;
+    }
+    detail += ", body: " + (end < flat.size() ? flat.substr(0, end) + "..." : flat);
+  }
+
+  if (failed) {
+    failed->msg += " (" + detail + ")";
+    return failed;
+  }
+  if (type.empty() || lower(type).find("json") != std::string::npos) {
+    return ctx->makeError("response_json_invalid", "response: body is not valid JSON (" + detail + ")");
+  }
+  return ctx->makeError("response_content_type",
+    "response: expected JSON, got " + type + " (" + detail + ")");
+}
+
 // Ungated request path shared by direct and graphql, each of which checks its
 // own allow.op token first. Private, rather than a flag on fetchargs: a
 // caller-supplied marker would let anyone opt straight back out of the gate
@@ -1166,10 +1239,24 @@ inline Value SdkClient::rawRequest(const Value& fetchargs_) {
       }
     }
 
-    map_put(out, "ok", Value(status >= 200 && status < 300));
+    SdkErrorPtr bodyErr;
+    Value ur = getp(fetched, "unreadable");
+    if (!noBody && ur.is_bool() && ur.as_bool()) {
+      SdkErrorPtr failed;
+      if (status < 200 || status >= 300) {
+        Value st = getp(fetched, "statusText");
+        failed = ctx->makeError("request_status", "request: " + std::to_string(status) + ": " +
+          (st.is_string() ? st.as_string() : std::string("")));
+      }
+      bodyErr = unreadableBody(ctx, status, headers, getp(fetched, "body"),
+        getp(fetchdef, "headers"), failed);
+    }
+
+    map_put(out, "ok", Value(!bodyErr && status >= 200 && status < 300));
     map_put(out, "status", Value(status));
     map_put(out, "headers", headers);
     map_put(out, "data", jsonData);
+    if (bodyErr) map_put(out, "err", vmap({{"message", u->clean(ctx, Value(bodyErr->msg))}}));
     return out;
   }
 

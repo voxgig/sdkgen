@@ -116,7 +116,7 @@ const DEFAULT_HEADERS = { 'content-type': 'application/json' }
 // stopping at the definition the fetcher would be given.
 function call(lang: string, opname: string, pt: any, args: any, headers: any = DEFAULT_HEADERS) {
   const pipe = PIPES[lang]
-  const input = 'create' === opname || 'update' === opname ? 'data' : 'match'
+  const input = 'create' === opname || 'update' === opname || 'patch' === opname ? 'data' : 'match'
 
   const ctx: any = {
     out: {},

@@ -638,7 +638,7 @@ pub struct FhOpResult {
 pub fn fh_default_method(op: &str) -> &'static str {
     match op {
         "create" => "POST",
-        "update" => "PATCH",
+        "update" | "patch" => "PATCH",
         "remove" => "DELETE",
         _ => "GET",
     }

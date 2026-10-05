@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Readme = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const ReadmeIntro_1 = require("./ReadmeIntro");
 const ReadmeInstall_1 = require("./ReadmeInstall");
 const ReadmeQuick_1 = require("./ReadmeQuick");
@@ -15,7 +16,7 @@ const ReadmeHowto_1 = require("./ReadmeHowto");
 const ReadmeExplanation_1 = require("./ReadmeExplanation");
 const ReadmeFeatures_1 = require("./ReadmeFeatures");
 const ReadmeRef_1 = require("./ReadmeRef");
-const Readme = (0, jostraca_1.cmp)(function Readme(props) {
+const Readme = (0, component_1.cmp)(function Readme(props) {
     const { target } = props;
     const { model } = props.ctx$;
     (0, jostraca_1.File)({ name: 'README.md' }, () => {

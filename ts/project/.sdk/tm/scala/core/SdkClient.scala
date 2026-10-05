@@ -283,17 +283,25 @@ abstract class SdkClient(options0: JMap[String, Object]) {
         val noBody = status == 204 || status == 304 || "0" == contentLength
 
         var jsonData: Object = null
+        var bodyErr: RuntimeException = null
         if (!noBody) {
           Struct.getprop(fm, "json") match {
             case jf: Supplier[_] => jsonData = jf.asInstanceOf[Supplier[Object]].get()
             case _ =>
           }
+          if (java.lang.Boolean.TRUE == Struct.getprop(fm, "unreadable")) {
+            val failed = if (status >= 200 && status < 300) null else ctx.makeError(
+              "request_status", "request: " + status + ": " + Struct.getprop(fm, "statusText"))
+            bodyErr = Response.unreadableBody(ctx, status, headers, Struct.getprop(fm, "body"),
+              fetchdef.get("headers"), failed)
+          }
         }
 
-        out.put("ok", java.lang.Boolean.valueOf(status >= 200 && status < 300))
+        out.put("ok", java.lang.Boolean.valueOf(bodyErr == null && status >= 200 && status < 300))
         out.put("status", java.lang.Integer.valueOf(status))
         out.put("headers", headers)
         out.put("data", jsonData)
+        if (bodyErr != null) out.put("err", cleanErr(ctx, bodyErr))
         out
       case _ =>
         out.put("ok", java.lang.Boolean.FALSE)

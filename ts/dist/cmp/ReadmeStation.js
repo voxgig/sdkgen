@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeStation = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const packageMeta_1 = require("../helpers/packageMeta");
 // Targets where station.connect(SDK) is the idiomatic binding; everything
@@ -9,7 +10,7 @@ const packageMeta_1 = require("../helpers/packageMeta");
 const CONNECT_TARGETS = ['ts', 'js', 'py', 'rb', 'php', 'lua', 'perl'];
 const SELF_REGISTER_TARGETS = ['ts', 'js', 'go', 'py', 'rb', 'php', 'lua', 'perl', 'elixir', 'clojure'];
 const ERROR_CATALOG_URL = 'https://github.com/voxgig/sdkgen/blob/main/docs/reference/station-errors.md';
-const ReadmeStation = (0, jostraca_1.cmp)(function ReadmeStation(props) {
+const ReadmeStation = (0, component_1.cmp)(function ReadmeStation(props) {
     const { target } = props;
     const { model } = props.ctx$;
     const features = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.feature`, { only_active: false, required: false }) || {};

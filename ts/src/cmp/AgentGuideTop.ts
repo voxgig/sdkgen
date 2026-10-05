@@ -1,5 +1,6 @@
 
-import { cmp, names, Content, File } from 'jostraca'
+import { names, Content, File } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 import {
   activeTargets,

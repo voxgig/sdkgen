@@ -47,6 +47,7 @@ const OP_DESC: Record<string, { method: string, desc: string }> = {
   list:   { method: 'Entity** vt->list(e, reqmatch, ctrl, &err)',  desc: 'List entities, optionally matching the given criteria: a `NULL`-terminated array, one per record.' },
   create: { method: 'Entity* vt->create(e, reqdata, ctrl, &err)',  desc: 'Create a new entity with the given data.' },
   update: { method: 'Entity* vt->update(e, reqdata, ctrl, &err)',  desc: 'Update an existing entity.' },
+  patch:  { method: 'Entity* vt->patch(e, reqdata, ctrl, &err)',  desc: 'Change part of an existing entity.' },
   remove: { method: 'Entity* vt->remove(e, reqmatch, ctrl, &err)', desc: 'Remove the matching entity, which is returned marked as deleted.' },
 }
 

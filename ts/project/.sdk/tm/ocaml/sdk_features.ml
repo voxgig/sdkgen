@@ -1591,7 +1591,7 @@ let test_feature () : feature =
            (match found with List r -> List.iter (fun item -> ignore (delprop item (Str "$KEY"))) !r | _ -> ());
            respond fctx 200 (clone found) None
          end
-       | "update" ->
+       | "update" | "patch" ->
          let update_match = empty_map () in
          (match fctx.c_reqdata with
           | Map _ ->
@@ -1776,8 +1776,20 @@ let raw_request (client : sdk_client) (fetchargs : value) : value =
            let no_body = status = 204 || status = 304 || content_length = "0" in
            let json_data = if no_body then Noval
              else (match getp fetched "json" with Func _ as jf -> (try call_json jf with _ -> Noval) | _ -> Noval) in
-           jo [("ok", Bool (status >= 200 && status < 300)); ("status", vint_of status);
-               ("headers", headers); ("data", json_data)]
+           let body_err =
+             if not no_body && getp fetched "unreadable" = Bool true then begin
+               let failed = if status >= 200 && status < 300 then None
+                 else Some (ctx_make_error ctx "request_status"
+                              ("request: " ^ string_of_int status ^ ": " ^ vstring (getp fetched "statusText"))) in
+               Some (unreadable_body ctx status headers (getp fetched "body") (getp fetchdef "headers") failed)
+             end else None in
+           (match body_err with
+            | Some e ->
+              jo [("ok", Bool false); ("status", vint_of status); ("headers", headers);
+                  ("data", json_data); ("err", u.u_clean ctx (err_to_value e))]
+            | None ->
+              jo [("ok", Bool (status >= 200 && status < 300)); ("status", vint_of status);
+                  ("headers", headers); ("data", json_data)])
          | _ -> jo [("ok", Bool false); ("err", err_to_value (ctx_make_error ctx "direct_invalid" "invalid response type"))]))
 
 (* Raw endpoint access is operator-controllable, like every entity op.

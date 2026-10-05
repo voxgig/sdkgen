@@ -183,7 +183,8 @@ try {
       ? `getp(created->data(), "${dataIdF}")`
       : cppLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`cpp
@@ -199,6 +200,13 @@ SdkEntityPtr created = client->${acc}()->create(vmap({${examplePairs('create').j
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`// Update${fromCreated ? " — reuse the created record's id" : ''}
 client->${acc}()->update(vmap({${updatePairs.join(', ')}}), Value::undef());
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`{"${idF}", ${idValueFor('patch')}}`] : []).concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+client->${acc}()->patch(vmap({${patchPairs.join(', ')}}), Value::undef());
 
 `)
       }

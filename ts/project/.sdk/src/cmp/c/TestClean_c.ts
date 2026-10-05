@@ -21,7 +21,7 @@ import { cIdent, cVarName } from './utility_c'
 
 
 // A custom action is not a vtable slot the sweep can call by name.
-const CRUD = ['list', 'load', 'create', 'update', 'remove']
+const CRUD = ['list', 'load', 'create', 'update', 'patch', 'remove']
 
 const DIAGNOSTIC = ['log', 'debug', 'audit', 'telemetry', 'cost', 'metrics', 'clienttrack']
 

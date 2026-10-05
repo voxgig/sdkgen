@@ -2,10 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Test = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const utility_1 = require("../utility");
 const stdrep_1 = require("../helpers/stdrep");
 const resolved_1 = require("../helpers/resolved");
-const Test = (0, jostraca_1.cmp)(function Test(props) {
+const Test = (0, component_1.cmp)(function Test(props) {
     const { target, ctx$ } = props;
     const { model, log } = ctx$;
     const stdrep = (0, stdrep_1.ensureStdrep)(ctx$);

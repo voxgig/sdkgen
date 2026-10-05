@@ -48,6 +48,8 @@ func runOp(_ context.Context, client *sdk.ProjectNameSDK, op string, entity stri
 		result, err = ent.Create(input, nil)
 	case "update":
 		result, err = ent.Update(input, nil)
+	case "patch":
+		result, err = ent.Patch(input, nil)
 	case "remove":
 		result, err = ent.Remove(input, nil)
 	default:

@@ -54,7 +54,7 @@ const client = sdk.test_sdk(h.vnull(), h.vnull());
         ? `h.jo(&.{${items.map((it: any) =>
           `.{ "${it.name}", ${it.name === idF ? 'h.vstr("test01")' : zigLit(it.type)} }`).join(', ')}})`
         : 'h.vnull()'
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)

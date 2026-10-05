@@ -273,20 +273,31 @@ sub _raw_request {
       || (defined $content_length && '0' eq "$content_length")) ? 1 : 0;
 
     my $json_data;
+    my $body_err;
     unless ($no_body) {
       my $jf = ProjectNameHelpers::gp($fetched, 'json');
       if (ref $jf eq 'CODE') {
         # Non-JSON body - leave data undef, keep status/headers.
         $json_data = eval { $jf->() };
       }
+      if (ProjectNameHelpers::gp($fetched, 'unreadable')) {
+        my $reason = ProjectNameHelpers::gp($fetched, 'statusText');
+        my $failed = ($status >= 200 && $status < 300) ? undef
+          : $ctx->make_error('request_status',
+            "request: $status: " . (defined $reason ? $reason : ''));
+        $body_err = ProjectNameUtilities::unreadable_body($ctx, $status, $headers,
+          ProjectNameHelpers::gp($fetched, 'body'), $fetchdef->{headers}, $failed);
+      }
     }
 
-    return {
-      'ok' => ($status >= 200 && $status < 300) ? 1 : 0,
+    my $out = {
+      'ok' => (!defined $body_err && $status >= 200 && $status < 300) ? 1 : 0,
       'status' => $status,
       'headers' => $headers,
       'data' => $json_data,
     };
+    $out->{err} = $utility->{clean}->($ctx, $body_err) if defined $body_err;
+    return $out;
   }
 
   return {

@@ -1,7 +1,8 @@
 
 import { targetFeatures } from '../helpers/applicability'
 
-import { cmp, each, names, Content } from 'jostraca'
+import { each, names, Content } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 import {
   KIT,

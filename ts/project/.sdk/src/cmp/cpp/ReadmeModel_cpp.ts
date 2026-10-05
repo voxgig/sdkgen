@@ -26,9 +26,10 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     list: '| `list` | `(reqmatch, ctrl) -> std::vector<SdkEntityPtr>` | List entities matching the criteria, one per record. Throws on error. |',
     create: '| `create` | `(reqdata, ctrl) -> SdkEntityPtr` | Create a new entity. Throws on error. |',
     update: '| `update` | `(reqdata, ctrl) -> SdkEntityPtr` | Update an existing entity. Throws on error. |',
+    patch: '| `patch` | `(reqdata, ctrl) -> SdkEntityPtr` | Change part of an existing entity. Throws on error. |',
     remove: '| `remove` | `(reqmatch, ctrl) -> SdkEntityPtr` | Remove an entity, which is returned marked as deleted. Throws on error. |',
   }
-  const opRows = ['load', 'list', 'create', 'update', 'remove']
+  const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
   const apikeyOptionRow = isAuthActive(model)

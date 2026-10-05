@@ -1,5 +1,6 @@
 
-import { cmp, each, names, Content, File } from 'jostraca'
+import { each, names, Content, File } from 'jostraca'
+import { cmp } from '../helpers/component'
 
 import {
   KIT,
@@ -18,6 +19,7 @@ import { mcpTools, MCP_WRITE_OPS } from '../helpers/mcpTools'
 import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { canonKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName } from '../helpers/naming'
+import { modelText } from '../helpers/text'
 
 import {
   installCommand as pkgInstall,
@@ -28,7 +30,8 @@ import {
   nonAffiliation,
   docsSiteUrl,
   originName,
-  SECURITY_EMAIL,
+  isDefaultPublisher,
+  securityContact,
 } from '../helpers/packageMeta'
 
 
@@ -108,7 +111,7 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
 
   if (model.name && !model.Name) names(model, model.name)
 
-  const info = (model.main && model.main[KIT] && model.main[KIT].info) || {}
+  const info = modelText(model)
   const def = (model.main && model.main.def) || {}
 
   const productName = info.title || `${model.Name} API`
@@ -118,8 +121,6 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     || `${productName} client, generated from the OpenAPI spec.`
 
   const aboutMd = info.about_md || ''
-  const licenseMd = info.license_md || ''
-  const licenseShort = info.license_short || ''
   const homepage = info.homepage || ''
   const docsUrl = info.docs_url || ''
   const entityDesc = info.entity_desc || {}
@@ -199,9 +200,12 @@ ${tagline}
     }
     Content(`${nonAffiliation(model)}
 
-Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
+`)
+    if (isDefaultPublisher(model)) {
+      Content(`Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
 
 `)
+    }
 
     // THE GENERATED SITE, LINKED FROM THE TOP, because the repository was the
     // one place it could not be found from. `docs_url` further down is the
@@ -293,7 +297,7 @@ ${aboutMd.trim()}
         exCall = `const items = await client.${ex}().list(${exListArg})`
       } else if ('load' === primaryOp) {
         exCall = `const ${exLower} = await client.${ex}().load(${exLoadArg})`
-      } else if ('create' === primaryOp || 'update' === primaryOp) {
+      } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
         const exIdF = entityIdField(exEnt)
         // Drop the id only when the request shape says it is OPTIONAL. It is
         // server-assigned on a normal create, but an op whose id comes from a
@@ -308,7 +312,7 @@ ${aboutMd.trim()}
         const body = bodyLines.length ? `\n${bodyLines.join('\n')}\n` : ''
         exCall = `const ${exLower} = await client.${ex}().${primaryOp}({${body}})`
       }
-      const CANON_OPS = ['list', 'load', 'create', 'update', 'remove']
+      const CANON_OPS = ['list', 'load', 'create', 'update', 'patch', 'remove']
       const opSet = new Set<string>()
       activeEntities.forEach((e: any) => Object.keys(e.op || {})
         .forEach((o: string) => { if ((e.op as any)[o] && (e.op as any)[o].active !== false) opSet.add(o) }))
@@ -323,7 +327,7 @@ ${aboutMd.trim()}
         snippet = `const client = new ${model.Name}SDK()${exCall ? '\n' + exCall : ''}`
       }
       else if (null != lang) {
-        const call = ['list', 'load', 'create', 'update'].includes(String(primaryOp))
+        const call = ['list', 'load', 'create', 'update', 'patch'].includes(String(primaryOp))
           ? primaryOpCall(lang, ex, exampleVarName(ex.toLowerCase(), lang), primaryOp!, exIdField, exEnt)
           : null
         snippet = entityExample(lang, model.Name, call)
@@ -446,14 +450,14 @@ See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full 
         mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1]
       // What the server reads and writes is what it registers, not the flag.
       const reads = mcpOps.some((op) => MCP_WRITE_OPS.includes(op)) ? '' : mcpWrite ?
-        ' It only reads, as no entity has a create, update or remove a plain call runs.' :
-        ` It only reads: create, update and remove become tools when the SDK's model sets
+        ' It only reads, as no entity has a create, update, patch or remove a plain call runs.' :
+        ` It only reads: create, update, patch and remove become tools when the SDK's model sets
 ${toggle}.`
       Content(0 === mcpOps.length ? `## Use it from an AI agent (MCP)
 
 The generated MCP server has no tools for this SDK: no entity has a list or
-load a plain call runs${mcpWrite ? ', or a create, update or remove' :
-          `, and create, update and remove are off until the SDK's model sets
+load a plain call runs${mcpWrite ? ', or a create, update, patch or remove' :
+          `, and create, update, patch and remove are off until the SDK's model sets
 ${toggle}`}.
 
 ` : `## Use it from an AI agent (MCP)
@@ -503,7 +507,7 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
       const opUnion = new Set<string>()
       activeEntities.forEach((e: any) => Object.keys(e.op || {})
         .forEach((o: string) => { if ((e.op as any)[o]?.active !== false) opUnion.add(o) }))
-      const opAvail = ['load', 'list', 'create', 'update', 'remove'].filter((o) => opUnion.has(o))
+      const opAvail = ['load', 'list', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o))
       const opBold = (opAvail.length ? opAvail : ['load', 'list']).map((o) => '**' + o + '**').join(', ')
       Content(`
 The operations available across these entities are ${opBold} — see each entity's
@@ -676,7 +680,7 @@ The OpenAPI spec(s) this SDK was generated from are kept in the
 
     Content(`## Security
 
-Please report security issues to ${SECURITY_EMAIL}. See [SECURITY.md](SECURITY.md).
+Please report security issues ${securityContact(model)}. See [SECURITY.md](SECURITY.md).
 Do not open public issues for suspected vulnerabilities.
 
 `)

@@ -121,6 +121,12 @@ tweak wording in the generated README's explanation section.
    [Customize templates and propagate the change](./how-to/customize-and-propagate-templates.md)
    for why.
 
+Wording that belongs to your SDK alone, such as its tagline, its summary or
+an entity's description, needs no change to the generator. Set it under
+`main.kit.text` in `.sdk/model/text.aontu`, or in `.sdk/model/project.aontu`
+where the project has no `text.aontu`, and run `npm run generate`; see
+[`main.kit.text`](./reference/model.md#mainkittext).
+
 ## What you learned
 
 - A project is scaffolded by `create-sdkgen` and built from its `.sdk/`.

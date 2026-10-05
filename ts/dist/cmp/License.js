@@ -2,10 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.License = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const packageMeta_1 = require("../helpers/packageMeta");
 // Root MIT LICENSE for the generated SDK repo. The copyright holder is the
-// PUBLISHER (Voxgig): this is an unofficial, generated SDK, so it is NOT
-// attributed to the upstream API owner.
+// publisher (`main.kit.publisher`, Voxgig unless the model names another):
+// this is an unofficial, generated SDK, so it is NOT attributed to the
+// upstream API owner.
 //
 // THE LICENSE FILE IS THE MIT TEXT AND NOTHING ELSE. The non-affiliation note
 // used to be appended after a rule, so that the licence file itself carried
@@ -19,14 +21,14 @@ const packageMeta_1 = require("../helpers/packageMeta");
 // The disclosure is not lost. It leads the README, and it now has its own
 // NOTICE file, which is the conventional home for exactly this and is not
 // parsed as a licence.
-const License = (0, jostraca_1.cmp)(function License(props) {
+const License = (0, component_1.cmp)(function License(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
     const year = (model.const && model.const.year) || new Date().getFullYear();
     (0, jostraca_1.File)({ name: 'LICENSE' }, () => {
         (0, jostraca_1.Content)(`MIT License
 
-Copyright (c) ${year} ${packageMeta_1.PUBLISHER}
+Copyright (c) ${year} ${(0, packageMeta_1.publisherInfo)(model).name}
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

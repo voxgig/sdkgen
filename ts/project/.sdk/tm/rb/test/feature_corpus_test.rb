@@ -25,11 +25,11 @@ class FeatureCorpusTest < Minitest::Test
   # generated without a listed feature still skips, not fails.
 
   # The standard operation names, in the order the runner prefers them.
-  FEATURE_CORPUS_OPS = %w[load list create update remove].freeze
+  FEATURE_CORPUS_OPS = %w[load list create update patch remove].freeze
 
   def corpus
     @corpus ||= JSON.parse(
-      File.read(File.join(__dir__, "..", "..", ".sdk", "test", "test.json")))
+      File.read(File.join(__dir__, "..", "..", ".sdk", "test", "test.json"), encoding: "UTF-8"))
   end
 
   # A scripted transport built from a case's `res` list. Responses are

@@ -5,6 +5,7 @@ import { ok, strictEqual, deepStrictEqual, fail } from 'node:assert'
 import Fs, { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import Os from 'node:os'
 import Path from 'node:path'
+import { spawnSync } from 'node:child_process'
 
 import { Aontu } from 'aontu'
 import { memfs } from 'memfs'
@@ -18,8 +19,8 @@ import { aliasCmpText } from '../dist/action/target.js'
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL,
-  FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
-  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity,
+  FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
+  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity, toolchain,
 } from './generateharness'
 
 
@@ -136,6 +137,7 @@ async function generate(
   for (const [path, content] of Object.entries(raw)) {
     const rel = Path.relative(STAGE, path).split(Path.sep).join('/')
     if (rel.startsWith('.jostraca/') || rel.includes('/.jostraca/')) continue
+    if (rel.startsWith('.sdk/log/')) continue
     out[rel] = content
   }
   return out
@@ -323,6 +325,13 @@ describe('generate', () => {
   })
 
 
+  const foldOut = new Map<string, Promise<Record<string, string>>>()
+  const generateFold = (target: string) => {
+    if (!foldOut.has(target)) foldOut.set(target, generate([target], undefined, FOLD_ENTITY))
+    return foldOut.get(target)!
+  }
+
+
   // Both files of such a pair exist on Linux; on macOS and Windows the second
   // write replaces the first.
   test('a case-colliding entity pair generates no path that differs only in case', async () => {
@@ -332,7 +341,7 @@ describe('generate', () => {
     const missing: string[] = []
 
     for (const target of targets) {
-      const files = filesFor(await generate([target], undefined, FOLD_ENTITY), target)
+      const files = filesFor(await generateFold(target), target)
       ok(0 < files.length, target + ': generated no files')
 
       folded.push(...foldedPaths(files.map(([path]) => path)))
@@ -345,6 +354,21 @@ describe('generate', () => {
 
     deepStrictEqual(folded, [], 'paths that differ only in case')
     deepStrictEqual(missing, [], 'targets that lost the renamed entity')
+  })
+
+
+  // contacts_field has a PATCH beside its PUT. The operation builds its own
+  // context, named for it, rather than reusing the update.
+  test('an entity with a patch gets a patch operation in every target', async () => {
+    const missing: string[] = []
+    for (const target of allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))) {
+      const files = filesFor(await generateFold(target), target)
+      if (!files.some(([, content]) => content.includes('contacts_field') &&
+        /opname[^\n]{0,24}["']patch["']/i.test(content))) {
+        missing.push(target)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets with no patch operation for contacts_field')
   })
 
 
@@ -365,7 +389,7 @@ describe('generate', () => {
   test('the rename and the ungenerated op are each reported once per run', async () => {
     const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
     const sink: any[] = []
-    await generate(targets, undefined, FOLD_ENTITY, sink)
+    await generate(targets, undefined, FOLD_ENTITY + UNGENERATED_OP, sink)
 
     const guard = sink.filter((e: any) => 'entity-name-case-guard' === e?.point)
     strictEqual(guard.length, 1, 'case guard warnings: ' + guard.length)
@@ -375,7 +399,7 @@ describe('generate', () => {
     const dropped = sink.filter((e: any) => 'entity-op-ungenerated' === e?.point)
     strictEqual(dropped.length, 1, 'ungenerated-op warnings: ' + dropped.length)
     deepStrictEqual(dropped[0].ops, [{
-      entity: 'contacts_field', op: 'patch', points: ['PATCH /contacts/fields/{id}'],
+      entity: 'contacts_field', op: 'copy', points: ['POST /contacts/fields/{id}/copy'],
     }])
   })
 
@@ -498,7 +522,7 @@ describe('generate', () => {
     const LANGPACK = 'node_modules/@voxgig/sdkgen-langpack/.sdk'
     const warned = async (external: string[]) => {
       const sink: any[] = []
-      const model = makeModel(['go', 'ts'], undefined, FOLD_ENTITY)
+      const model = makeModel(['go', 'ts'], undefined, FOLD_ENTITY + UNGENERATED_OP)
       for (const name of external) {
         Object.assign(model.main[KIT].target[name],
           { base: LANGPACK, package: '@voxgig/sdkgen-langpack' })
@@ -1565,6 +1589,57 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  test('main.kit.text words the readmes over main.kit.info', async () => {
+    const TARGETS = readdirSync(Path.join(SCAFFOLD, 'src', 'cmp'))
+      .filter((t) => existsSync(Path.join(SCAFFOLD, 'src', 'cmp', t, `ReadmeIntro_${t}.ts`)))
+
+    const declared = [
+      "main: kit: info: { tagline: 'Spec tagline.', about_md: 'Spec about.' }",
+      "main: kit: info: { summary: 'Spec summary.' }",
+      "main: kit: text: { title: 'Worded API', tagline: 'Worded tagline.' }",
+      "main: kit: text: { summary: 'Worded summary.', entity_desc: { planet: 'Worded planet.' } }",
+    ].join('\n')
+
+    const out = await generate(TARGETS, undefined, declared)
+    const bad: string[] = []
+
+    const readme = String(out['README.md'])
+    const wanted = ['Worded tagline.', 'Worded summary.', 'Worded planet.', 'Spec about.',
+      'Generated from the Worded API OpenAPI spec']
+    for (const want of wanted) {
+      if (!readme.includes(want)) bad.push('README.md lacks ' + want)
+    }
+    for (const gone of ['Spec tagline.', 'Spec summary.', 'Generated from the Demo OpenAPI']) {
+      if (readme.includes(gone)) bad.push('README.md keeps ' + gone)
+    }
+
+    for (const t of TARGETS) {
+      const intro = String(out[t + '/README.md'])
+      if (!intro.includes('Worded tagline.')) bad.push(t + '/README.md lacks the tagline')
+      if (intro.includes('Spec tagline.')) bad.push(t + '/README.md keeps the spec tagline')
+    }
+
+    if (!JSON.parse(out['ts/package.json']).description.includes('the Worded public API')) {
+      bad.push('ts/package.json does not name the worded API')
+    }
+
+    deepStrictEqual(bad, [])
+  })
+
+
+  test('a misspelt main.kit.text slot fails the model', async () => {
+    let failure = ''
+    try {
+      await generate(['ts'], undefined, "main: kit: text: { taglin: 'Typo.' }")
+    }
+    catch (err: any) {
+      failure = String(err?.message ?? err)
+    }
+    ok(/closed/i.test(failure) && failure.includes('taglin'),
+      'the misspelt slot was accepted: ' + (failure || 'no error'))
+  })
+
+
   test('elixir: no empty argument in a singleton load example', async () => {
     const out = await generate(['elixir'])
 
@@ -1802,39 +1877,205 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
 
   test('a declared author reaches every manifest, and a target may override', async () => {
-    const TARGETS = ['ts', 'js', 'rb', 'php', 'ocaml']
-
-    const declared = [
-      "main: kit: author: { name: 'Ada Lovelace', url: 'https://example.com' }",
-      "main: kit: target: ts: author: { name: 'Someone Else', url: 'https://elsewhere.example' }",
-    ].join('\n')
-
-    const out = await generate(TARGETS, undefined, declared)
+    const TARGETS = ['ts', 'js', 'rb', 'php', 'ocaml', 'perl', 'csharp']
 
     const MANIFEST: Record<string, string> = {
       ts: 'package.json', js: 'package.json', rb: 'Demo_sdk.gemspec',
       php: 'composer.json', ocaml: 'voxgig-demo-sdk.opam',
+      perl: 'Makefile.PL', csharp: 'DemoSDK.csproj',
     }
 
+    // Each target is checked once with the model-wide author and once with
+    // its own.
+    const RUNS: Record<string, string>[] = [
+      { ts: 'Someone Else', perl: 'Grace Hopper' },
+      {
+        js: 'Someone Else', rb: 'Grace Hopper', php: 'Someone Else',
+        ocaml: 'Grace Hopper', csharp: 'Grace Hopper',
+      },
+    ]
+
+    // The hardcoded publisher must be gone from the author position. It is
+    // still legitimate elsewhere in a manifest (keywords, the npm scope),
+    // so only an author-shaped occurrence counts.
+    const AUTHOR_VOXGIG = [
+      /"name"\s*:\s*"Voxgig"/, /authors\s*[:=]\s*\[?"?[Vv]oxgig/,
+      /AUTHOR\s*=>\s*'Voxgig'/, /<Authors>Voxgig</,
+    ]
+
     const bad: string[] = []
-    for (const t of TARGETS) {
-      const file = findFile(out, t + '/' + MANIFEST[t])
-      if (null == file) { bad.push(`${t}: no ${MANIFEST[t]} generated`); continue }
+    for (const [run, OVERRIDE] of RUNS.entries()) {
+      const declared = [
+        "main: kit: author: { name: 'Ada Lovelace', url: 'https://example.com' }",
+        ...Object.entries(OVERRIDE).map(([t, name]) =>
+          `main: kit: target: ${t}: author: { name: '${name}', url: 'https://${t}.example' }`),
+      ].join('\n')
 
-      const expected = 'ts' === t ? 'Someone Else' : 'Ada Lovelace'
-      if (!file.includes(expected)) {
-        bad.push(`${t}: ${MANIFEST[t]} does not carry "${expected}"`)
-      }
+      const out = await generate(TARGETS, undefined, declared)
 
-      // The hardcoded publisher must be gone from the author position. It is
-      // still legitimate elsewhere in a manifest (keywords, the npm scope),
-      // so only an author-shaped occurrence counts.
-      if (/(?:"name"\s*:\s*"Voxgig"|authors\s*[:=]\s*\[?"?[Vv]oxgig)/.test(file)) {
-        bad.push(`${t}: ${MANIFEST[t]} still hardcodes the publisher as author`)
+      for (const t of TARGETS) {
+        const file = findFile(out, t + '/' + MANIFEST[t])
+        if (null == file) { bad.push(`run ${run} ${t}: no ${MANIFEST[t]} generated`); continue }
+
+        const expected = OVERRIDE[t] || 'Ada Lovelace'
+        if (!file.includes(expected)) {
+          bad.push(`run ${run} ${t}: ${MANIFEST[t]} does not carry "${expected}"`)
+        }
+        if (null != OVERRIDE[t] && file.includes('Ada Lovelace')) {
+          bad.push(`run ${run} ${t}: ${MANIFEST[t]} carries the model-wide author over its own`)
+        }
+
+        if (AUTHOR_VOXGIG.some((re) => re.test(file))) {
+          bad.push(`run ${run} ${t}: ${MANIFEST[t]} still hardcodes the publisher as author`)
+        }
       }
     }
 
     deepStrictEqual(bad, [])
+  })
+
+
+  describe('the publisher', () => {
+    const tmDir = Path.join(SCAFFOLD, 'tm')
+    const licensed = readdirSync(tmDir)
+      .filter((t) => existsSync(Path.join(tmDir, t, 'LICENSE')))
+
+    // Each consumer target generates beside the target it wraps.
+    const targets = [...licensed.filter((t) => !NON_SDK_TARGETS.includes(t)),
+      ...licensed.filter((t) => NON_SDK_TARGETS.includes(t))]
+
+    const NAME = 'O\'Neil "Labs" & Co'
+    const SITE = 'https://oneil.example'
+    const CONTACT = 'security@oneil.example'
+
+    const declared =
+      "main: kit: publisher: { name: 'O\\'Neil \"Labs\" & Co', " +
+      `url: '${SITE}', security: '${CONTACT}' }`
+
+    test('a declared publisher names itself in every LICENSE, notice and manifest',
+      async () => {
+        const out = await generate(targets, undefined, declared)
+        const bad: string[] = []
+        const copyright = 'Copyright (c) 2026 ' + NAME
+
+        for (const t of targets) {
+          const license = out[t + '/LICENSE']
+          if (null == license) { bad.push(`${t}: no LICENSE`); continue }
+          if (!license.includes(copyright)) bad.push(`${t}: LICENSE does not name it`)
+          if (/voxgig|PROJECTPUBLISHER/i.test(license)) bad.push(`${t}: LICENSE keeps Voxgig`)
+        }
+
+        if (!String(out['LICENSE']).includes(copyright)) bad.push('LICENSE does not name it')
+        if (!String(out['NOTICE']).includes('generated by ' + NAME)) {
+          bad.push('NOTICE does not name it')
+        }
+
+        const security = String(out['SECURITY.md'])
+        if (!security.includes(`report security issues to ${CONTACT}.`)) {
+          bad.push('SECURITY.md does not send reports to its contact')
+        }
+        // The repository URL still derives from the model's origin.
+        if (/\bVoxgig\b|security@voxgig\.com|business days/.test(security)) {
+          bad.push('SECURITY.md keeps Voxgig or its commitment')
+        }
+
+        const readme = String(out['README.md'])
+        if (!readme.includes(`Please report security issues to ${CONTACT}.`)) {
+          bad.push('README.md does not send reports to its contact')
+        }
+        if (/Learn more about Voxgig SDKs|security@voxgig\.com/.test(readme)) {
+          bad.push('README.md keeps Voxgig contacts')
+        }
+
+        const json = (file: string): any => {
+          try { return JSON.parse(out[file]) }
+          catch (err: any) { bad.push(`${file} is not JSON: ${err.message}`) }
+        }
+
+        for (const t of ['ts', 'js']) {
+          const pkg = json(t + '/package.json')
+          if (pkg && (NAME !== pkg.author.name || SITE !== pkg.author.url)) {
+            bad.push(`${t}: package.json author is ${JSON.stringify(pkg.author)}`)
+          }
+          if (pkg?.keywords.includes('voxgig')) bad.push(`${t}: keywords keep voxgig`)
+        }
+
+        const composer = json('php/composer.json')
+        if (composer &&
+          (NAME !== composer.authors[0].name || SITE !== composer.authors[0].homepage)) {
+          bad.push('php: composer.json author is ' + JSON.stringify(composer.authors))
+        }
+
+        const literal: [string, string][] = [
+          ['rb/Demo_sdk.gemspec', 'spec.authors       = ["O\'Neil \\"Labs\\" & Co"]'],
+          ['perl/Makefile.PL', 'AUTHOR           => \'O\\\'Neil "Labs" & Co\','],
+          ['csharp/DemoSDK.csproj', '<Authors>O\'Neil "Labs" &amp; Co</Authors>'],
+          ['ocaml/voxgig-demo-sdk.opam', 'authors: "O\'Neil \\"Labs\\" & Co"'],
+        ]
+        for (const [file, text] of literal) {
+          if (!String(out[file]).includes(text)) bad.push(`${file} lacks ${text}`)
+        }
+        if (/"https:\/\/voxgig\.com"/.test(out['ocaml/voxgig-demo-sdk.opam'])) {
+          bad.push('ocaml: opam links voxgig.com')
+        }
+
+        deepStrictEqual(bad, [])
+
+        // Each language reads its own literal back as the declared name.
+        const readBack: [string, string, RegExp][] = [
+          ['ruby', 'rb/Demo_sdk.gemspec', /spec\.authors\s+= \[(.+)\]\n/],
+          ['perl', 'perl/Makefile.PL', /AUTHOR\s+=> (.+),\n/],
+        ]
+        const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-publisher-'))
+        try {
+          for (const [tool, file, pattern] of readBack) {
+            if (null == toolchain(tool)) continue
+            const script = Path.join(dir, tool)
+            writeFileSync(script, 'print ' + String(out[file]).match(pattern)![1] + '\n')
+            const run = spawnSync(tool, [script], { encoding: 'utf8' })
+            strictEqual(run.stdout, NAME, `${tool} reads ${file}'s author as: ${run.stderr}`)
+          }
+        }
+        finally {
+          Fs.rmSync(dir, { recursive: true, force: true })
+        }
+      })
+
+    test('without one, the publisher is Voxgig, with its contact and commitment',
+      async () => {
+        const out = await generate(['ts', 'perl', 'csharp'])
+        const bad: string[] = []
+
+        // A Windows checkout gives the LICENSE templates CRLF line endings.
+        for (const t of ['', 'ts/', 'perl/', 'csharp/']) {
+          if (!/^Copyright \(c\) 2026 Voxgig\r?$/m.test(String(out[t + 'LICENSE']))) {
+            bad.push(`${t}LICENSE does not name Voxgig`)
+          }
+        }
+
+        const security = String(out['SECURITY.md'])
+        if (!security.includes('report security issues to security@voxgig.com.') ||
+          !security.includes('within 3 business days')) {
+          bad.push('SECURITY.md lost the Voxgig contact or commitment')
+        }
+        if (!String(out['README.md']).includes('Learn more about Voxgig SDKs')) {
+          bad.push('README.md lost the Voxgig link')
+        }
+
+        const pkg = JSON.parse(out['ts/package.json'])
+        if ('Voxgig' !== pkg.author.name || 'https://voxgig.com' !== pkg.author.url ||
+          !pkg.keywords.includes('voxgig')) {
+          bad.push('ts: package.json no longer credits Voxgig')
+        }
+        if (!String(out['perl/Makefile.PL']).includes("AUTHOR           => 'Voxgig',")) {
+          bad.push('perl: Makefile.PL no longer credits Voxgig')
+        }
+        if (!String(out['csharp/DemoSDK.csproj']).includes('<Authors>Voxgig</Authors>')) {
+          bad.push('csharp: csproj no longer credits Voxgig')
+        }
+
+        deepStrictEqual(bad, [])
+      })
   })
 
 
@@ -2201,8 +2442,8 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const out = await generate(['ts', 'js'])
 
     for (const [target, wanted] of [
-      ['ts', ['dist', 'src', 'README.md']],
-      ['js', ['src', 'README.md']],
+      ['ts', ['dist', '!dist/**/*.tsbuildinfo', 'src', 'README.md', 'REFERENCE.md']],
+      ['js', ['src', 'README.md', 'REFERENCE.md']],
     ] as [string, string[]][]) {
       const manifest = findFile(out, target + '/package.json')
       ok(null != manifest, target + ': no package.json generated')
@@ -2212,14 +2453,84 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         target + ': package.json has no `files` entry — npm would publish ' +
         'the test suite and build scaffolding')
       deepStrictEqual(pkg.files, wanted, target + ': unexpected `files` entry')
-      ok(null != out[target + '/README.md'],
-        target + ': `files` lists a README.md that is not generated')
+      for (const doc of ['README.md', 'REFERENCE.md']) {
+        ok(null != out[target + '/' + doc],
+          target + ': `files` lists a ' + doc + ' that is not generated')
+      }
 
       for (const never of ['test', 'dist-test']) {
         ok(!pkg.files.includes(never),
           target + ': `files` ships ' + never)
       }
     }
+  })
+
+
+  // A package manager that ships only listed files has to list the README and
+  // the REFERENCE.md it links. SHIPPED_LISTS reads each such list from the
+  // generated manifest, and NO_SHIPPED_LIST names the targets without one.
+  const SHIPPED_LISTS: Record<string, [RegExp, (text: string) => string[]]> = {
+    ts: [/^ts\/package\.json$/, (text) => JSON.parse(text).files],
+    js: [/^js\/package\.json$/, (text) => JSON.parse(text).files],
+    rb: [/^rb\/[^/]+\.gemspec$/, (text) => quoted(/spec\.files\s*=\s*Dir\[([^\]]*)\]/.exec(text))],
+    elixir: [/^elixir\/mix\.exs$/, (text) => quoted(/\bfiles:\s*\[([^\]]*)\]/.exec(text))],
+    py: [/^py\/MANIFEST\.in$/, (text) => text.split('\n')
+      .filter((line) => /^include\s/.test(line))
+      .flatMap((line) => line.trim().split(/\s+/).slice(1))],
+    zig: [/^zig\/build\.zig\.zon$/, (text) => quoted(/\.paths\s*=\s*\.\{([^}]*)\}/.exec(text))],
+  }
+
+  const NO_SHIPPED_LIST = [
+    'c', 'clojure', 'cpp', 'csharp', 'go', 'java', 'kotlin', 'lua', 'ocaml',
+    'perl', 'php', 'rust', 'scala', 'swift',
+  ]
+
+  function quoted(match: RegExpExecArray | null): string[] {
+    return null == match ? [] : [...match[1].matchAll(/"([^"]*)"/g)].map((m) => m[1])
+  }
+
+  function shippedList(out: Record<string, string>, target: string): string[] {
+    const [file, read] = SHIPPED_LISTS[target]
+    const found = Object.keys(out).filter((path) => file.test(path))
+    return 1 === found.length ? read(out[found[0]]) : []
+  }
+
+
+  test('every shipped-file list carries the README and the reference it links', async () => {
+    deepStrictEqual([...Object.keys(SHIPPED_LISTS), ...NO_SHIPPED_LIST].sort(),
+      allTargets().filter((t) => !NON_SDK_TARGETS.includes(t)),
+      'classify every SDK target: SHIPPED_LISTS reads its shipped-file list, ' +
+      'or NO_SHIPPED_LIST records that its manifest has none')
+
+    const out = await generate(Object.keys(SHIPPED_LISTS))
+
+    const missing: string[] = []
+    for (const target of Object.keys(SHIPPED_LISTS)) {
+      const listed = shippedList(out, target)
+      for (const doc of ['README.md', 'REFERENCE.md']) {
+        ok(null != out[target + '/' + doc], target + ': ' + doc + ' is not generated')
+        if (!listed.includes(doc)) missing.push(target + ': ' + doc)
+      }
+    }
+    deepStrictEqual(missing, [], 'a shipped-file list leaves out a doc the README links')
+  })
+
+
+  // zig keeps only what `.paths` names when it fetches a package, so the list
+  // has to name the module source as generated, and nothing that is not.
+  test('zig: the package paths cover the module source', async () => {
+    const out = await generate(['zig'])
+    const files = Object.keys(out)
+      .filter((path) => path.startsWith('zig/'))
+      .map((path) => path.slice('zig/'.length))
+    const paths = shippedList(out, 'zig')
+    const under = (file: string, path: string) => file === path || file.startsWith(path + '/')
+
+    deepStrictEqual({
+      stale: paths.filter((path) => !files.some((file) => under(file, path))),
+      unshipped: files.filter((file) =>
+        file.endsWith('.zig') && !paths.some((path) => under(file, path))),
+    }, { stale: [], unshipped: [] }, 'build.zig.zon `.paths` does not match the generated layout')
   })
 
 
@@ -4419,6 +4730,21 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // contacts_field has a PATCH beside its PUT.
+  test('go-mcp: a patch is a write tool of its own', async () => {
+    const out = await generate(['go', 'go-mcp'], undefined,
+      ROUTING_MODEL + FOLD_ENTITY + "main: kit: target: 'go-mcp': tool: write: true")
+    const tools = findFile(out, 'go-mcp/tools.go')!
+    ok(mcpRegistered(tools).includes('demo_patch'), 'go-mcp: no patch tool: ' + mcpRegistered(tools))
+    strictEqual(mcpEntities(tools, 'PatchArgs'), 'contacts_field', 'go-mcp: PatchArgs')
+    ok(/case "patch":\s+result, err = ent\.Patch\(input, nil\)/.test(tools),
+      'go-mcp: the patch tool does not call Patch')
+    const hint = tools.match(/Name:\s+"demo_patch",[^]*?Annotations: &mcp\.ToolAnnotations\{([^}]*)\}/)?.[1]
+    strictEqual(hint, 'DestructiveHint: hint(true)', 'go-mcp: the patch hint')
+    ok(findFile(out, 'go-mcp/README.md')!.includes('`demo_patch`'), 'go-mcp: the README omits the patch tool')
+  })
+
+
   const readmeExample = (readme: string, label: string): any => {
     const line = readme.split('\n')[readme.split('\n').findIndex((l) => l.includes(label)) + 1]
     return JSON.parse(line)
@@ -4483,7 +4809,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       ROUTING_MODEL + write + opOff('planet', ['create', 'update', 'remove']))
     ok(findFile(none, 'go-mcp/README.md')!.includes('The server only reads: the SDK'),
       'go-mcp: the README does not say a server with no write tools only reads')
-    ok(none['README.md'].includes('It only reads, as no entity has a create, update or remove'),
+    ok(none['README.md'].includes('It only reads, as no entity has a create, update, patch or remove'),
       'the root README does not say why the server only reads')
 
     const others = ['ambient', 'console', 'graph_ql', 'history', 'moon', 'record', 'signal', 'utility']

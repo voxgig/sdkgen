@@ -169,7 +169,8 @@ match client.${method}(Value::Noval).load(${loadArg}, Value::Noval) {
       ? `getp(&created.data(None), "${dataIdF}")`
       : rustLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`rust
@@ -184,6 +185,13 @@ let created = client.${method}(Value::Noval).create(jo(vec![${examplePairs('crea
         const updatePairs = (idF ? [`("${idF}", ${idValueFor('update')})`] : []).concat(examplePairs('update'))
         Content(`// Update
 client.${method}(Value::Noval).update(jo(vec![${updatePairs.join(', ')}]), Value::Noval).unwrap();
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`("${idF}", ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+client.${method}(Value::Noval).patch(jo(vec![${patchPairs.join(', ')}]), Value::Noval).unwrap();
 
 `)
       }

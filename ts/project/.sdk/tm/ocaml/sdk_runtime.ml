@@ -110,7 +110,8 @@ let new_response (m : value) : response =
     rs_headers = getp m "headers";
     rs_json = (match getp m "json" with Func _ as f -> f | _ -> Noval);
     rs_body = getp m "body";
-    rs_err = None }
+    rs_err = None;
+    rs_unreadable = (getp m "unreadable" = Bool true) }
 
 let new_result (m : value) : result =
   { rt_ok = (getp m "ok" = Bool true);
@@ -167,7 +168,7 @@ let resolve_op (ctx : ctx) (opname : string) : operation =
     if opname = "" then new_operation (empty_map ())
     else begin
       let opcfg = getpath_s ctx.c_config ("entity." ^ entname ^ ".op." ^ opname) in
-      let inpt = if opname = "update" || opname = "create" then "data" else "match" in
+      let inpt = if opname = "update" || opname = "create" || opname = "patch" then "data" else "match" in
       let points =
         match to_map opcfg with
         | Map _ -> (match getp opcfg "points" with List _ as l -> l | _ -> empty_list ())
@@ -1062,11 +1063,64 @@ let result_basic_util (ctx : ctx) : unit =
     end else (match response.rs_err with Some e -> result.rt_err <- Some e | None -> ())
   | _ -> ()
 
+let preview_length = 160
+
+(* Whitespace runs as one space, trimmed. *)
+let flatten_space (s : string) : string =
+  let b = Buffer.create (String.length s) in
+  let space = ref false in
+  String.iter (fun c ->
+      match c with
+      | ' ' | '\t' | '\n' | '\r' | '\011' | '\012' -> space := Buffer.length b > 0
+      | _ ->
+        if !space then (Buffer.add_char b ' '; space := false);
+        Buffer.add_char b c) s;
+  Buffer.contents b
+
+(* Cleaned whole: a secret the bound would split could leave its prefix. *)
+let body_preview (ctx : ctx) (text : value) : string =
+  let flat = vstring (clean_util ctx (Str (flatten_space (vstring text)))) in
+  let n = String.length flat in
+  let rec cut i points =
+    if i >= n then flat
+    else if Char.code flat.[i] land 0xC0 = 0x80 then cut (i + 1) points
+    else if points = preview_length then String.sub flat 0 i ^ "..."
+    else cut (i + 1) (points + 1) in
+  cut 0 0
+
+(* A body that is not JSON. An HTTP failure keeps its own error, with the
+ * response described; otherwise the code tells a wrong content type from
+ * malformed JSON. *)
+let unreadable_body (ctx : ctx) (status : int) (headers : value) (text : value) (sent : value)
+    (failed : sdk_error option) : sdk_error =
+  let ctype = vstring (header_ci headers "content-type") in
+  let agent = vstring (clean_util ctx (Str (vstring (header_ci sent "user-agent")))) in
+  let detail = "HTTP " ^ string_of_int status ^ ", content-type " ^
+               (if ctype = "" then "none" else ctype) ^ ", user-agent " ^
+               (if agent = "" then "transport default" else agent) ^
+               (match text with Noval | Null -> "" | _ -> ", body: " ^ body_preview ctx text) in
+  match failed with
+  | Some e -> e.err_msg <- e.err_msg ^ " (" ^ detail ^ ")"; e
+  | None ->
+    let lower = String.lowercase_ascii ctype in
+    let rec has_json i =
+      i + 4 <= String.length lower && (String.sub lower i 4 = "json" || has_json (i + 1)) in
+    if ctype = "" || has_json 0 then
+      ctx_make_error ctx "response_json_invalid" ("response: body is not valid JSON (" ^ detail ^ ")")
+    else
+      ctx_make_error ctx "response_content_type"
+        ("response: expected JSON, got " ^ ctype ^ " (" ^ detail ^ ")")
+
 let result_body_util (ctx : ctx) : unit =
   match ctx.c_response, ctx.c_result with
   | Some response, Some result ->
     if is_callable response.rs_json && not (is_noval response.rs_body) then
-      result.rt_body <- call_json response.rs_json
+      result.rt_body <- call_json response.rs_json;
+    if response.rs_unreadable then begin
+      let sent = match ctx.c_spec with Some sp -> sp.sp_headers | None -> Noval in
+      result.rt_err <- Some (unreadable_body ctx result.rt_status result.rt_headers
+                               response.rs_body sent result.rt_err)
+    end
   | _ -> ()
 
 let result_headers_util (ctx : ctx) : unit =

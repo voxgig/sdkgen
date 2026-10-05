@@ -228,7 +228,7 @@ public class Context
         var opcfg = StructUtils.GetPath(Config,
             StructUtils.Jt("entity", entname, "op", opname));
 
-        var input = (opname == "update" || opname == "create") ? "data" : "match";
+        var input = (opname == "update" || opname == "create" || opname == "patch") ? "data" : "match";
 
         List<object?>? points = null;
         if (opcfg is Dictionary<string, object?> ocm)

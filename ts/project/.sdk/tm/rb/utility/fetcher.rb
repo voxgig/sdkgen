@@ -68,8 +68,12 @@ module ProjectNameUtilities
         request[k] = v.to_s
       end
       # Default User-Agent — Net::HTTP sets "Ruby" which some CDNs block.
-      # Use a Mozilla-shaped UA unless the caller already set one.
-      request['User-Agent'] = 'Mozilla/5.0 (compatible; ProjectNameSDK/1.0)' unless has_ua
+      # Use a Mozilla-shaped UA unless the caller already set one, and record
+      # it with the headers the request sent.
+      unless has_ua
+        request['User-Agent'] = 'Mozilla/5.0 (compatible; ProjectNameSDK/1.0)'
+        fetchdef["headers"]['user-agent'] = request['User-Agent'] if fetchdef["headers"].is_a?(Hash)
+      end
       if body_str.is_a?(String)
         request.body = body_str
       elsif body_str.respond_to?(:read)
@@ -95,9 +99,11 @@ module ProjectNameUtilities
       resp.each_header { |k, v| resp_headers[k.downcase] = v }
 
       json_body = nil
+      unreadable = false
       begin
-        json_body = JSON.parse(resp.body) if resp.body && !resp.body.empty?
+        json_body = JSON.parse(resp.body) if resp.body && !resp.body.strip.empty?
       rescue JSON::ParserError
+        unreadable = true
       end
 
       return {
@@ -106,18 +112,11 @@ module ProjectNameUtilities
         "headers" => resp_headers,
         "json" => -> { json_body },
         "body" => resp.body,
+        "unreadable" => unreadable,
       }, nil
     rescue StandardError => e
-      # Network-level failures (DNS, TCP, TLS, timeouts) — return a synthesized
-      # response with status 0 so callers can branch on result.ok like any
-      # other failed request, instead of seeing an unhandled exception.
-      return {
-        "status" => 0,
-        "statusText" => "#{e.class}: #{e.message}",
-        "headers" => {},
-        "json" => -> { nil },
-        "body" => nil,
-      }, nil
+      # A request that got no answer (DNS, TCP, TLS, a timeout) fails the operation.
+      return nil, "#{e.class}: #{e.message}"
     end
   }
 

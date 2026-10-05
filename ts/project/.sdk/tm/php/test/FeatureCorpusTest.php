@@ -29,7 +29,7 @@ class FeatureCorpusTest extends TestCase
     // SDK generated without a listed feature still skips, not fails.
 
     // The standard operation names, in the order the runner prefers them.
-    private const FEATURE_CORPUS_OPS = ['load', 'list', 'create', 'update', 'remove'];
+    private const FEATURE_CORPUS_OPS = ['load', 'list', 'create', 'update', 'patch', 'remove'];
 
     private static function corpus(): array
     {

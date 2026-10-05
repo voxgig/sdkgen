@@ -29,6 +29,7 @@ const OP_DESC: Record<string, { method: string, desc: string }> = {
   list:   { method: 'list(match, ctrl) -> std::vector<SdkEntityPtr>', desc: 'List entities, optionally matching the given criteria: one entity per record.' },
   create: { method: 'create(data, ctrl) -> SdkEntityPtr',  desc: 'Create a new entity with the given data.' },
   update: { method: 'update(data, ctrl) -> SdkEntityPtr',  desc: 'Update an existing entity.' },
+  patch:  { method: 'patch(data, ctrl) -> SdkEntityPtr',  desc: 'Change part of an existing entity.' },
   remove: { method: 'remove(match, ctrl) -> SdkEntityPtr', desc: 'Remove the matching entity, which is returned marked as deleted.' },
 }
 

@@ -296,7 +296,7 @@ fn test_fetch(entity: Value, ctx: *Context, _: []const u8, _: Value) err.E!Value
             for (found.array.data.items) |item| h.del_prop(item, h.vstr("$KEY"));
         }
         return respond(ctx, 200, h.clone(found), &.{});
-    } else if (std.mem.eql(u8, op.name, "update")) {
+    } else if (std.mem.eql(u8, op.name, "update") or std.mem.eql(u8, op.name, "patch")) {
         const reqdata = ctx.reqdata;
         var update_match = h.omap();
         if (reqdata == .object) {

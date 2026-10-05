@@ -133,7 +133,7 @@ class Context(ctxmap: JMap[String, Object], basectx: Context) {
     val opcfg = Struct.getpath(config, java.util.List.of("entity", entname, "op", opname))
 
     var input = "match"
-    if ("update" == opname || "create" == opname) input = "data"
+    if ("update" == opname || "create" == opname || "patch" == opname) input = "data"
 
     var points: JList[Object] = null
     opcfg match {

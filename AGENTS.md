@@ -260,7 +260,7 @@ Full explanation: [components-and-templates](./docs/explanation/components-and-t
 ## Entity operations return ENTITIES — a fundamental design
 
 **Every entity operation resolves to the Entity INSTANCE**, never to plain
-data: `load`, `list`, `create`, `update` and `remove` alike. `remove` returns
+data: `load`, `list`, `create`, `update`, `patch` and `remove` alike. `remove` returns
 the entity marked as deleted. `.data()` on an instance gives back the entity
 data container instance.
 
@@ -795,8 +795,8 @@ emitted broken source reached the fleet unchallenged.
   it from `entity.name` per target. Do not add a second guard on a derived
   form. The wire is untouched — a path comes from the point's `orig`, never
   the name. Right after it, `warnUngeneratedOps()` names, once per run, every
-  op of an active entity outside the five the bundled targets generate —
-  apidef's `patch` beside a PUT is the one that occurs. It speaks for those
+  op of an active entity outside the six the bundled targets generate
+  (`CANON_OP_ORDER`, `patch` among them since #211). It speaks for those
   targets alone: `targetOrigins()` (`action/resolve`) splits the active
   targets by the provenance `resolveSource` would follow, and one installed
   from another package is named as not judged, never as unable to reach it.
@@ -851,7 +851,10 @@ emitted broken source reached the fleet unchallenged.
   `main.kit.repo.{path,host}` (repo identity — the repo is NOT always
   `<origin>/<slug>-sdk`), `main.kit.author` / `main.kit.contributor.<key>`
   (manifest attribution — hand-edited credit is DELETED by the next
-  regeneration), `main.kit.test.live.strict`, `main.kit.feature` (which feature
+  regeneration), `main.kit.text` (the README wording, in `text.aontu`),
+  `main.kit.publisher` (every LICENSE's copyright holder, the default author
+  and the security contact; Voxgig when unset),
+  `main.kit.test.live.strict`, `main.kit.feature` (which feature
   source ships), and per target `module.{path,package,goversion}`,
   `publish.{version,registry.package}`, `output.{path,repo,create,adopt,sdkrel}`
   (generate into another repo). `output.path` is COMMITTED and describes one

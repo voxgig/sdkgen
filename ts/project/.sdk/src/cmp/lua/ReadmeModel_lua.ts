@@ -21,12 +21,13 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     list: '| `list` | `(reqmatch, ctrl) -> any, err` | List entities matching the criteria. |',
     create: '| `create` | `(reqdata, ctrl) -> any, err` | Create a new entity. |',
     update: '| `update` | `(reqdata, ctrl) -> any, err` | Update an existing entity. |',
+    patch: '| `patch` | `(reqdata, ctrl) -> any, err` | Change part of an existing entity. |',
     remove: '| `remove` | `(reqmatch, ctrl) -> any, err` | Remove an entity. |',
   }
-  const opRows = ['load', 'list', 'create', 'update', 'remove']
+  const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
-  const recordOps = ['load', 'create', 'update', 'remove'].filter((o) => opUnion.has(o))
+  const recordOps = ['load', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o))
     .map((o) => '`' + o + '`')
   const resultRows: string[] = []
   if (recordOps.length) resultRows.push('| ' + recordOps.join(' / ') + ' | the entity record (a `table`) |')

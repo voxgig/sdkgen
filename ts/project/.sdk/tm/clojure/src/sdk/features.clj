@@ -191,7 +191,7 @@
                              (if (nil? found) (respond 404 nil (vs/jm "statusText" "Not found"))
                                  (do (when (vs/islist found) (doseq [item (vec found)] (vs/delprop item "$KEY")))
                                      (respond 200 (vs/clone found) nil))))
-                           (= opn "update")
+                           (or (= opn "update") (= opn "patch"))
                            (let [update-match (vs/jm)
                                  reqdata (core/oget fctx :reqdata)]
                              (when (vs/ismap reqdata)

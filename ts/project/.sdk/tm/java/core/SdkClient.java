@@ -344,18 +344,29 @@ public abstract class SdkClient {
       boolean noBody = status == 204 || status == 304 || "0".equals(contentLength);
 
       Object jsonData = null;
+      RuntimeException bodyErr = null;
       if (!noBody) {
         Object jf = Struct.getprop(fm, "json");
         if (jf instanceof Supplier) {
           // The supplier returns null on parse error in our fetcher.
           jsonData = ((Supplier<Object>) jf).get();
         }
+        if (Boolean.TRUE.equals(Struct.getprop(fm, "unreadable"))) {
+          RuntimeException failed = status >= 200 && status < 300 ? null
+              : ctx.makeError("request_status",
+                  "request: " + status + ": " + Struct.getprop(fm, "statusText"));
+          bodyErr = Response.unreadableBody(ctx, status, headers, Struct.getprop(fm, "body"),
+              fetchdef.get("headers"), failed);
+        }
       }
 
-      out.put("ok", status >= 200 && status < 300);
+      out.put("ok", bodyErr == null && status >= 200 && status < 300);
       out.put("status", status);
       out.put("headers", headers);
       out.put("data", jsonData);
+      if (bodyErr != null) {
+        out.put("err", utility.clean.apply(ctx, bodyErr));
+      }
       return out;
     }
 

@@ -66,7 +66,7 @@ const client = ${model.const.Name}SDK.test({
           `${jsKey(it.name)}: ${exampleValue(exampleEntity, primaryOpDef, it.name,
             it.name === idF ? 'test01' : 'example_' + it.name)}`).join(', ')} }`
         : ''
-    } else if ('create' === primaryOp || 'update' === primaryOp) {
+    } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const isIdField = (it: any) => it.name === idF || it.name === 'id'
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => !isIdField(it) || !it.optional)

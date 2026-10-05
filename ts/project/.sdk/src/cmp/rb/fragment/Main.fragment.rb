@@ -237,6 +237,7 @@ class ProjectNameSDK
       no_body = status == 204 || status == 304 || content_length.to_s == "0"
 
       json_data = nil
+      body_err = nil
       unless no_body
         jf = VoxgigStruct.getprop(fetched, "json")
         if jf.is_a?(Proc)
@@ -247,14 +248,22 @@ class ProjectNameSDK
             json_data = nil
           end
         end
+        if true == VoxgigStruct.getprop(fetched, "unreadable")
+          failed = status >= 200 && status < 300 ? nil : ctx.make_error("request_status",
+            "request: #{status}: #{VoxgigStruct.getprop(fetched, 'statusText')}")
+          body_err = ProjectNameUtilities::UnreadableBody.call(ctx, status, headers,
+            VoxgigStruct.getprop(fetched, "body"), fetchdef["headers"], failed)
+        end
       end
 
-      return {
-        "ok" => status >= 200 && status < 300,
+      out = {
+        "ok" => body_err.nil? && status >= 200 && status < 300,
         "status" => status,
         "headers" => headers,
         "data" => json_data,
       }
+      out["err"] = utility.clean.call(ctx, body_err) unless body_err.nil?
+      return out
     end
 
     return {

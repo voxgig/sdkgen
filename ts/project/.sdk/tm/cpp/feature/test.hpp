@@ -174,7 +174,7 @@ private:
       }
       Value out = Struct::clone(outlist);
       return respond(ctx, 200, out, Value::undef());
-    } else if (op->name == "update") {
+    } else if (op->name == "update" || op->name == "patch") {
       Value updateMatch = vmap();
       if (ctx->reqdata.is_map()) {
         if (map_contains(ctx->reqdata, "id")) {

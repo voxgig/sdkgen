@@ -30,7 +30,7 @@ _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 # without a listed feature still skips, not fails.
 def _corpus_feature_names():
     try:
-        with open(os.path.join(_TEST_DIR, "../../.sdk/test/test.json"), "r") as f:
+        with open(os.path.join(_TEST_DIR, "../../.sdk/test/test.json"), "r", encoding="utf-8") as f:
             return sorted((json.loads(f.read()).get("feature") or {}).keys())
     except OSError:
         return []
@@ -39,11 +39,11 @@ def _corpus_feature_names():
 FEATURE_CORPUS_NAMES = _corpus_feature_names()
 
 # The standard operation names, in the order the runner prefers them.
-FEATURE_CORPUS_OPS = ["load", "list", "create", "update", "remove"]
+FEATURE_CORPUS_OPS = ["load", "list", "create", "update", "patch", "remove"]
 
 
 def _load_corpus():
-    with open(os.path.join(_TEST_DIR, "../../.sdk/test/test.json"), "r") as f:
+    with open(os.path.join(_TEST_DIR, "../../.sdk/test/test.json"), "r", encoding="utf-8") as f:
         return json.loads(f.read())
 
 

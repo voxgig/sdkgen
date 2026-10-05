@@ -3,6 +3,7 @@ import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
 import Fs from 'node:fs'
+import Net from 'node:net'
 import Os from 'node:os'
 import Path from 'node:path'
 import { spawn, spawnSync } from 'node:child_process'
@@ -24,17 +25,20 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 
 import {
-  makeModel, makeRoot, layeredFs, makeLog, toolchain, ROUTING_MODEL, entityTestData,
+  makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
-  MEDIA_CASES, MEDIA_MODEL, MEDIA_PROBES, MEDIA_RAN, MEDIA_SERVER,
-  mediaFailures, mediaPrinted, mediaRecord,
+  MEDIA_CASES, MEDIA_MODEL, MEDIA_PROBES, MEDIA_RAN, MEDIA_SERVER, UNSENT_CASES,
+  mediaFailures, mediaPrinted, mediaRaised, mediaRecord,
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
 import { ITEMS_EXPECT, ITEMS_PROBES, itemsListed } from './itemprobes'
 import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
+import {
+  NONJSON_CASES, NONJSON_PROBES, NONJSON_SERVER, nonjsonFailures, nonjsonTsv,
+} from './nonjsonprobes'
 
 
 function materialise(files: Record<string, string>, root: string) {
@@ -526,41 +530,176 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // What npm would publish. The README links REFERENCE.md beside it, and the
+  // build info tsc writes into dist/ is bookkeeping, not package.
+  for (const target of ['ts', 'js']) {
+    test(target + ': npm packs the reference and no build info', async (t) => {
+      if (null == toolchain('npm')) return t.skip('needs npm')
+
+      const sdkroot = Path.join(tmp, target + '-pack')
+      await generateTo(target, sdkroot)
+      linkDeps(sdkroot)
+
+      if ('ts' === target) {
+        const built = tsc(sdkroot, 'src')
+        ok(built.ok, 'generated src does not compile:\n' + built.out)
+        ok(Fs.readdirSync(Path.join(sdkroot, 'dist')).some((f) => f.endsWith('.tsbuildinfo')),
+          'tsc wrote no build info into dist/, so nothing here is excluded')
+      }
+
+      const res = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+        cwd: sdkroot, encoding: 'utf8', shell: true, maxBuffer: 64 * 1024 * 1024,
+      })
+      strictEqual(res.status, 0, 'npm pack failed: ' + res.stderr)
+
+      const report = JSON.parse(res.stdout)
+      const entry: any = Array.isArray(report) ? report[0] : Object.values(report)[0]
+      const packed: string[] = entry.files.map((f: any) => f.path.split(Path.sep).join('/'))
+
+      const main = JSON.parse(Fs.readFileSync(Path.join(sdkroot, 'package.json'), 'utf8')).main
+      deepStrictEqual(['README.md', 'REFERENCE.md', main].filter((f) => !packed.includes(f)), [])
+      deepStrictEqual(packed.filter((f) => f.endsWith('.tsbuildinfo')), [])
+    })
+  }
+
+
+  // What `mix hex.publish` would upload: Hex packs only the files mix.exs lists.
+  test('elixir: hex packs the README and the reference', async (t) => {
+    const mix = toolchain('mix')
+    if (null == mix) return t.skip('no elixir toolchain here (mix)')
+
+    const sdkroot = Path.join(tmp, 'elixir-pack')
+    await generateTo('elixir', sdkroot)
+
+    const unpacked = Path.join(tmp, 'elixir-pack-unpacked')
+    const built = run(mix, ['hex.build', '--unpack', '--output', unpacked], sdkroot,
+      { ...process.env, MIX_ENV: 'prod' })
+    if (built.unlaunchable) return t.skip('mix could not be started here: ' + tail(built.out, 3))
+    if (/The task "hex\.build" could not be found/.test(built.out)) {
+      return t.skip('needs the Hex archive (mix local.hex)')
+    }
+    ok(built.ok, 'mix hex.build failed:\n' + tail(built.out))
+
+    deepStrictEqual(['README.md', 'REFERENCE.md', 'LICENSE', 'mix.exs', 'lib']
+      .filter((f) => !Fs.existsSync(Path.join(unpacked, f))), [],
+      'the Hex package leaves these out')
+  })
+
+
+  // A consumer set up as the zig README says: the package fetched into its
+  // build.zig.zon and the `sdk` module imported. zig keeps only what the
+  // package's `.paths` names, so a missing module root or doc shows here.
+  test('zig: a consumer builds against the fetched package', async (t) => {
+    const zig = toolchain('zig')
+    if (null == zig) return t.skip('no zig toolchain here (zig)')
+    const version = run(zig, ['version'], tmp)
+    const found = version.out.trim().split(/\r?\n/)[0] || ''
+    if (!version.ok || !/^0\.16\./.test(found)) {
+      return t.skip('zig 0.16 is required by the generated build.zig; found: ' +
+        (found || tail(version.out, 3)))
+    }
+
+    const sdkroot = Path.join(tmp, 'zig-pack')
+    await generateTo('zig', sdkroot)
+
+    const consumer = Path.join(tmp, 'zig-consumer')
+    materialise({
+      'build.zig.zon': `.{
+    .name = .consumer,
+    .version = "0.0.0",
+    .fingerprint = 0x705b37279050bbd8,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{},
+    .paths = .{ "build.zig", "build.zig.zon", "src" },
+}
+`,
+      'build.zig': `const std = @import("std");
+
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+    const sdk = b.dependency("sdk", .{ .target = target, .optimize = optimize });
+    const exe = b.addExecutable(.{
+        .name = "consumer",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "sdk", .module = sdk.module("sdk") }},
+        }),
+    });
+    b.installArtifact(exe);
+}
+`,
+      'src/main.zig': `const sdk = @import("sdk");
+
+pub fn main() void {
+    _ = sdk.SDK.new(sdk.h.vnull());
+}
+`,
+    }, consumer)
+
+    const cache = ['--global-cache-dir', Path.join(tmp, 'zig-consumer-cache')]
+    const fetched = run(zig, ['fetch', ...cache, '--save=sdk', sdkroot], consumer)
+    ok(fetched.ok, 'zig fetch failed:\n' + tail(fetched.out))
+
+    const pkgs = Fs.readdirSync(Path.join(consumer, 'zig-pkg'))
+    strictEqual(pkgs.length, 1, 'zig fetch unpacked ' + JSON.stringify(pkgs))
+    const pkg = Path.join(consumer, 'zig-pkg', pkgs[0])
+    deepStrictEqual(['README.md', 'REFERENCE.md', 'LICENSE', 'root.zig']
+      .filter((f) => !Fs.existsSync(Path.join(pkg, f))), [],
+      'the fetched package leaves these out')
+
+    const built = run(zig, ['build', ...cache], consumer)
+    ok(built.ok, 'a consumer of the fetched package does not build:\n' + tail(built.out))
+  })
+
+
   // The README example tests find `tsc` and strip a snippet's types through
   // the TypeScript installed beside the SDK, which here is sdkgen's own. They
   // compile the snippets in the OS temp directory: adding or removing a file
   // there moves the directory's mtime, and the SDK's own folders keep theirs.
-  test('typescript: the README example tests type-check and run the examples', async () => {
-    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+  // FOLD_ENTITY's contacts_field has a PATCH beside its PUT.
+  for (const [label, dir, extra] of [
+    ['', 'ts-readme', undefined],
+    [', with a patch', 'ts-readme-patch', FOLD_ENTITY],
+  ]) {
+    test('typescript: the README example tests type-check and run the examples' + label, async () => {
+      ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
 
-    const sdkroot = Path.join(tmp, 'ts-readme', 'ts')
-    await generateTo('ts', sdkroot, undefined, undefined, { top: true })
-    linkDeps(sdkroot)
+      const sdkroot = Path.join(tmp, dir!, 'ts')
+      await generateTo('ts', sdkroot, extra, undefined, { top: true })
+      linkDeps(sdkroot)
+      if (null != extra) {
+        ok(Fs.readFileSync(Path.join(sdkroot, 'REFERENCE.md'), 'utf8').includes('.patch({'),
+          'the reference has no patch example')
+      }
 
-    const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
-    ok(built.ok, 'the generated SDK does not build:\n' + built.out)
+      const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
+      ok(built.ok, 'the generated SDK does not build:\n' + built.out)
 
-    const scratch = Path.join(tmp, 'ts-readme-tmp')
-    Fs.mkdirSync(scratch)
-    const own = [sdkroot, Path.join(sdkroot, 'test')]
-    const mtimes = (dirs: string[]) => dirs.map((dir) => Fs.statSync(dir).mtimeMs)
-    const before = mtimes([...own, scratch])
+      const scratch = Path.join(tmp, dir + '-tmp')
+      Fs.mkdirSync(scratch)
+      const own = [sdkroot, Path.join(sdkroot, 'test')]
+      const mtimes = (dirs: string[]) => dirs.map((d) => Fs.statSync(d).mtimeMs)
+      const before = mtimes([...own, scratch])
 
-    const suite = run(process.execPath,
-      ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
-      sdkroot, { ...nestedTestEnv(), TMPDIR: scratch, TMP: scratch, TEMP: scratch })
-    ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 200))
-    ok(/^\s*ok \d+ - .*every example type-checks/m.test(suite.out) &&
-      /^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
-    'the README example tests did not run both checks:\n' + tail(suite.out, 40))
+      const suite = run(process.execPath,
+        ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
+        sdkroot, { ...nestedTestEnv(), TMPDIR: scratch, TMP: scratch, TEMP: scratch })
+      ok(suite.ok, 'the README example tests failed:\n' + tail(suite.out, 200))
+      ok(/^\s*ok \d+ - .*every example type-checks/m.test(suite.out) &&
+        /^\s*ok \d+ - .*every runnable example executes/m.test(suite.out),
+      'the README example tests did not run both checks:\n' + tail(suite.out, 40))
 
-    const after = mtimes([...own, scratch])
-    deepStrictEqual(after.slice(0, 2), before.slice(0, 2),
-      'the README example tests added or removed a file in the SDK\'s own folders')
-    ok(after[2] !== before[2], 'the README example tests compiled nothing in the temp directory')
-    deepStrictEqual(Fs.readdirSync(scratch), [],
-      'the README example tests left their temp directory behind')
-  })
+      const after = mtimes([...own, scratch])
+      deepStrictEqual(after.slice(0, 2), before.slice(0, 2),
+        'the README example tests added or removed a file in the SDK\'s own folders')
+      ok(after[2] !== before[2], 'the README example tests compiled nothing in the temp directory')
+      deepStrictEqual(Fs.readdirSync(scratch), [],
+        'the README example tests left their temp directory behind')
+    })
+  }
 
 
   // tsc refuses the pair on every OS (TS1149: file names that differ only in
@@ -2193,7 +2332,8 @@ const CORPUS_LANES: CorpusLane[] = [
       const py = toolchain('python3') || toolchain('python')
       if (null == py) return null
       if (!probeOk(py, ['-m', 'pytest', '--version'])) return null
-      return { bin: py, args: ['-m', 'pytest', 'test/test_feature_corpus.py', '-q', '-s'] }
+      return { bin: py, args: ['-m', 'pytest', 'test/test_feature_corpus.py', '-q', '-s'],
+        env: pythonEnv() }
     },
   },
   {
@@ -2204,7 +2344,7 @@ const CORPUS_LANES: CorpusLane[] = [
       const rb = toolchain('ruby')
       if (null == rb) return null
       if (!probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
-      return { bin: rb, args: ['test/feature_corpus_test.rb'] }
+      return { bin: rb, args: ['test/feature_corpus_test.rb'], env: rubyEnv() }
     },
   },
   {
@@ -3678,12 +3818,13 @@ describe('the feature corpus runs from a generated SDK', () => {
 // the section and fails on the missing ran line.
 const CORPUS_FIXTURE: { feature: Record<string, any> } = {
   feature: {
-    // Not generated by the lane (see CORPUS_INERT): pins the inert line.
+    // Not generated by the lane (see CORPUS_INERT): pins the inert line. Its
+    // name is not ASCII, so every runner must read the corpus as UTF-8.
     audit: {
       basic: {
         set: [
           {
-            name: 'an operation is recorded',
+            name: 'an operation is recorded — every one',
             feature: [{ name: 'audit', active: true }],
             op: [{ op: '#OP1' }],
             out: {},
@@ -3906,7 +4047,8 @@ const AUTH_PROBE_LANES: {
       ready: () => null == toolchain(command) ? 'no ' + command + ' toolchain' : null,
       probe: (sdkroot: string, write: (name: string, source: string) => void) => {
         write(file, AUTH_PROBES[target])
-        return run(toolchain(command)!, [file], sdkroot)
+        return run(toolchain(command)!, [file], sdkroot,
+          'rb' === target ? rubyEnv() : 'py' === target ? pythonEnv() : undefined)
       },
     })),
   {
@@ -4364,7 +4506,7 @@ function pytest(args: string[]) {
   const py = toolchain('python3') || toolchain('python')
   if (null == py) return null
   if (!probeOk(py, ['-m', 'pytest', '--version'])) return null
-  return { bin: py, args: ['-m', 'pytest', ...args] }
+  return { bin: py, args: ['-m', 'pytest', ...args], env: pythonEnv() }
 }
 
 
@@ -4372,7 +4514,7 @@ function minitest(args: string[]) {
   const rb = toolchain('ruby')
   if (null == rb) return null
   if (!probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
-  return { bin: rb, args }
+  return { bin: rb, args, env: rubyEnv() }
 }
 
 
@@ -4642,7 +4784,7 @@ const CLEAN_LANES: CleanLane[] = [
       const rb = toolchain('ruby')
       if (null == rb) return null
       if (!probeOk(rb, ['-e', 'require "minitest/autorun"'])) return null
-      return { bin: rb, args: ['test/clean_test.rb'] }
+      return { bin: rb, args: ['test/clean_test.rb'], env: rubyEnv() }
     },
   },
   {
@@ -5380,6 +5522,7 @@ describe('generated entity tests make only calls the runtime takes', () => {
       Fs.mkdirSync(dir, { recursive: true })
       Fs.writeFileSync(Path.join(dir, Name + 'TestData.json'), JSON.stringify(entityTestData(entity)))
     }
+    Fs.writeFileSync(Path.join(tmp, '.env.local'), '# Not ASCII — read as UTF-8.\n')
   })
 
   after(() => {
@@ -5423,6 +5566,62 @@ describe('generated entity tests make only calls the runtime takes', () => {
     }
     ok(res.out.includes('--- PASS: TestPlanetEntity/stream'), 'go: planet\'s stream test did not run:\n' + tail(res.out))
     ok(!/Test(Moon|Signal)Entity\/stream/.test(res.out), 'go: a stream test lists a refused route:\n' + tail(res.out))
+  })
+
+
+  // A runner that cannot decode the control file falls back to skipping nothing.
+  const MOON_SKIP = JSON.stringify({
+    version: 1,
+    test: { skip: { unit: { direct: [], entityOp: [
+      { entity: 'moon', op: 'load', reason: 'moon — skipped by the control file' },
+    ] } } },
+  })
+
+
+  // Run from test/, where the runner reads the project's own .env.local.
+  test('py: the moon, signal and planet entity tests pass', async (t) => {
+    const files = ['test_moon_entity.py', 'test_signal_entity.py', 'test_planet_entity.py']
+    const cmd = pytest(files)
+    if (null == cmd) return t.skip('needs python3 with pytest')
+
+    const root = Path.join(tmp, 'py')
+    await generateTo('py', root, ROUTING_MODEL)
+    const testdir = Path.join(root, 'test')
+    const res = run(cmd.bin, cmd.args, testdir, cmd.env)
+    if (res.timedOut) return t.skip('py: ' + res.out)
+    ok(res.ok, 'py: a generated entity test failed:\n' + tail(res.out))
+    ok(/\b10 passed, 3 skipped\b/.test(res.out),
+      'py: expected ten passing and three skipped tests:\n' + tail(res.out))
+
+    Fs.writeFileSync(Path.join(testdir, 'sdk-test-control.json'), MOON_SKIP)
+    const skip = pytest(['-rs', files[0]])!
+    const skipped = run(skip.bin, skip.args, testdir, skip.env)
+    ok(skipped.ok, 'py: the moon entity test failed under a control file:\n' + tail(skipped.out))
+    ok(skipped.out.includes('skipped by the control file'),
+      'py: the control file did not skip the moon flow:\n' + tail(skipped.out))
+  })
+
+
+  test('rb: the entity tests pass, and the control file skips a flow', async (t) => {
+    const load = (names: string) => '%w[' + names +
+      '].each { |n| require File.expand_path("test/" + n + "_entity_test.rb") }'
+    const cmd = minitest(['-e', load('moon signal planet')])
+    if (null == cmd) return t.skip('needs ruby with minitest')
+
+    const root = Path.join(tmp, 'rb')
+    await generateTo('rb', root, ROUTING_MODEL)
+    const res = run(cmd.bin, cmd.args, root, cmd.env)
+    if (res.timedOut) return t.skip('rb: ' + res.out)
+    ok(res.ok, 'rb: a generated entity test failed:\n' + tail(res.out))
+    ok(/\b14 runs, \d+ assertions, 0 failures, 0 errors, 3 skips\b/.test(res.out),
+      'rb: expected fourteen runs and three skips:\n' + tail(res.out))
+
+    Fs.writeFileSync(Path.join(root, 'test', 'sdk-test-control.json'), MOON_SKIP)
+    const skip = minitest(['-e', load('moon'), '--', '-v'])!
+    const skipped = run(skip.bin, skip.args, root, skip.env)
+    ok(skipped.ok, 'rb: the moon entity test failed under a control file:\n' + tail(skipped.out))
+    ok(skipped.out.includes('skipped by the control file'),
+      'rb: the control file did not skip the moon flow:\n' + tail(skipped.out))
   })
 
 
@@ -5509,7 +5708,9 @@ const README_LANES: {
   runner: string,
   needs: string,
   ran: RegExp,
-  command: () => { bin: string, args: string[] } | null,
+  command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // A runnable block added to the README, whose output is not ASCII.
+  example?: string,
 }[] = [
   {
     target: 'rb',
@@ -5517,6 +5718,7 @@ const README_LANES: {
     needs: 'ruby with minitest',
     ran: /\d+ runs, \d+ assertions, 0 failures, 0 errors, 0 skips/,
     command: () => minitest(['test/readme_examples_test.rb']),
+    example: '```ruby\nputs "naïve café — #{client.class}"\n```',
   },
   {
     target: 'go',
@@ -5547,6 +5749,7 @@ const README_LANES: {
     needs: 'python3 with pytest',
     ran: /[1-9]\d* passed/,
     command: () => pytest(['test/test_readme_examples.py', '-q']),
+    example: '```python\nprint("naïve café — " + client.__class__.__name__)\n```',
   },
 ]
 
@@ -5571,13 +5774,16 @@ describe('the README examples run for a slug carrying the word client', () => {
       ok(null != files[lane.runner], lane.target + ': ' + lane.runner + ' was not generated')
       ok(String(files['README.md']).includes(README_SLUG),
         lane.target + ': the README does not carry the slug, so it tests nothing')
+      if (null != lane.example) {
+        Fs.appendFileSync(Path.join(sdkroot, 'README.md'), '\n' + lane.example + '\n')
+      }
 
       const cmd = lane.command()
       if (null == cmd) {
         return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
       }
 
-      const ran = run(cmd.bin, cmd.args, sdkroot)
+      const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
       if (ran.unlaunchable) {
         return t.skip(lane.target + ': the toolchain could not be started here: ' +
           tail(ran.out, 3))
@@ -5998,6 +6204,8 @@ describe('the documented c, cpp, rust and zig examples compile', () => {
 // arrives; one without prints what its transport is given.
 type ProbeLane = {
   target: string
+  // The name its tests take, where a target has more than one lane.
+  label?: string
   ready: () => string | null
   // Writes the probe, builds what needs building, and runs the probe.
   exec: (sdkroot: string, env: NodeJS.ProcessEnv,
@@ -6043,7 +6251,7 @@ const PROBE_LANES: ProbeLane[] = [
     seam: () => !probeOk(mediaPython()!, ['-c', 'import requests']),
     exec: (sdkroot, env, write, probe) => {
       write(probe.name + '_probe.py', probe.source.py)
-      return run(mediaPython()!, [probe.name + '_probe.py'], sdkroot, env)
+      return run(mediaPython()!, [probe.name + '_probe.py'], sdkroot, pythonEnv(env))
     },
   },
   {
@@ -6051,7 +6259,7 @@ const PROBE_LANES: ProbeLane[] = [
     ready: () => null == toolchain('ruby') ? 'no ruby toolchain' : null,
     exec: (sdkroot, env, write, probe) => {
       write(probe.name + '_probe.rb', probe.source.rb)
-      return run(toolchain('ruby')!, [probe.name + '_probe.rb'], sdkroot, env)
+      return run(toolchain('ruby')!, [probe.name + '_probe.rb'], sdkroot, rubyEnv(env))
     },
   },
   {
@@ -6060,6 +6268,21 @@ const PROBE_LANES: ProbeLane[] = [
     exec: (sdkroot, env, write, probe) => {
       write(probe.name + '_probe.php', probe.source.php)
       return run(toolchain('php')!, [probe.name + '_probe.php'], sdkroot, env)
+    },
+  },
+  {
+    // php -n reads no php.ini, so curl is not loaded and the stream-wrapper transport runs.
+    target: 'php',
+    label: 'php without curl',
+    ready: () => {
+      const php = toolchain('php')
+      if (null == php) return 'no php toolchain'
+      return probeOk(php, ['-n', '-r', 'exit(function_exists("curl_init") ? 1 : 0);'])
+        ? null : 'php -n still loads curl here'
+    },
+    exec: (sdkroot, env, write, probe) => {
+      write(probe.name + '_probe.php', probe.source.php)
+      return run(toolchain('php')!, ['-n', probe.name + '_probe.php'], sdkroot, env)
     },
   },
   {
@@ -6097,10 +6320,12 @@ const PROBE_LANES: ProbeLane[] = [
     // gradle hangs on windows rather than failing, as the other kotlin lanes note.
     ready: () => 'win32' === process.platform ? 'gradle hangs on windows'
       : null == toolchain('gradle') ? 'no gradle toolchain' : null,
+    // cleanTest: gradle does not count the environment as a test input, so a
+    // probe run again against another base would be skipped as up to date.
     exec: (sdkroot, env, write, probe) => {
       write('test/' + pascal(probe.name) + 'Probe.kt', probe.source.kotlin)
-      return run(toolchain('gradle')!,
-        ['--console=plain', 'test', '--tests', '*' + pascal(probe.name) + 'Probe*'], sdkroot, env)
+      return run(toolchain('gradle')!, ['--console=plain', 'cleanTest', 'test',
+        '--tests', '*' + pascal(probe.name) + 'Probe*'], sdkroot, env)
     },
   },
   {
@@ -6264,6 +6489,36 @@ function mediaServer(dir: string): Promise<{ port: number, log: string, stop: ()
 }
 
 
+// A base URL nothing listens on: a port the system handed out, then closed.
+async function refusedBase(): Promise<string> {
+  const server = Net.createServer()
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()))
+  const port = (server.address() as Net.AddressInfo).port
+  await new Promise<void>((resolve) => server.close(() => resolve()))
+  return 'http://127.0.0.1:' + port
+}
+
+
+function nonjsonServer(dir: string, cases: string): Promise<{ port: number, stop: () => void }> {
+  const file = Path.join(dir, 'nonjson-server.cjs')
+  Fs.writeFileSync(file, NONJSON_SERVER)
+  const proc = spawn(process.execPath, [file, cases], { stdio: ['ignore', 'pipe', 'inherit'] })
+  return new Promise((resolve, reject) => {
+    let seen = ''
+    proc.on('error', reject)
+    proc.on('exit', (code) => reject(new Error('nonjson server exited: ' + code)))
+    proc.stdout!.on('data', (chunk) => {
+      seen += String(chunk)
+      const m = /listening (\d+)/.exec(seen)
+      if (null != m) {
+        proc.removeAllListeners('exit')
+        resolve({ port: Number(m[1]), stop: () => proc.kill('SIGKILL') })
+      }
+    })
+  })
+}
+
+
 // Each target's SDK is generated once, and every probe runs beside it.
 describe('probes driven through a generated SDK', () => {
   let tmp = ''
@@ -6292,7 +6547,9 @@ describe('probes driven through a generated SDK', () => {
   })
 
   for (const lane of PROBE_LANES) {
-    test(lane.target + ': the media types a point declares reach the wire', async (t) => {
+    const name = lane.label ?? lane.target
+
+    test(name + ': the media types a point declares reach the wire', async (t) => {
       const missing = lane.ready()
       if (null != missing) return t.skip(missing)
 
@@ -6314,13 +6571,13 @@ describe('probes driven through a generated SDK', () => {
       }
 
       if (ran.unlaunchable) {
-        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        return t.skip(name + ': the toolchain could not be started here: ' + tail(ran.out, 3))
       }
 
-      ok(ran.ok, lane.target + ': the media probe failed:\n' + tail(ran.out, 60))
+      ok(ran.ok, name + ': the media probe failed:\n' + tail(ran.out, 60))
       const count = MEDIA_RAN.exec(ran.out)
       strictEqual(Number(count?.[1]), MEDIA_CASES.length,
-        lane.target + ': the probe did not run every case:\n' + tail(ran.out))
+        name + ': the probe did not run every case:\n' + tail(ran.out))
 
       const records = null == server ? mediaPrinted(ran.out) :
         Fs.readFileSync(server.log, 'utf8').split('\n').filter((line) => '' !== line)
@@ -6328,10 +6585,56 @@ describe('probes driven through a generated SDK', () => {
           .map((r) => mediaRecord(r.method, r.url, r.headers, r.bodyHex))
 
       deepStrictEqual(mediaFailures(MEDIA_CASES, records), [],
-        lane.target + ' probe output:\n' + tail(ran.out))
+        name + ' probe output:\n' + tail(ran.out))
     })
 
-    test(lane.target + ': an allow list names whole methods and operations, in any case', async (t) => {
+    test(name + ': an operation whose request cannot be sent raises', async (t) => {
+      const missing = lane.ready()
+      if (null != missing) return t.skip(missing)
+      if (null != lane.seam && lane.seam()) {
+        return t.skip(name + ': the probe has no live transport here')
+      }
+
+      const sdkroot = await sdkFor(lane.target)
+      Fs.writeFileSync(Path.join(sdkroot, 'media-cases.json'), JSON.stringify(UNSENT_CASES))
+      const probe = (base: string) => lane.exec(sdkroot, { ...nestedTestEnv(), MEDIA_BASE: base },
+        writer(sdkroot), { name: 'media', source: MEDIA_PROBES })
+      const ran = (out: string) => Number(MEDIA_RAN.exec(out)?.[1])
+
+      const server = await mediaServer(sdkroot)
+      let sent: ReturnType<typeof run>
+      try {
+        sent = probe('http://127.0.0.1:' + server.port)
+      }
+      finally {
+        server.stop()
+      }
+
+      if (sent.unlaunchable) {
+        return t.skip(name + ': the toolchain could not be started here: ' + tail(sent.out, 3))
+      }
+
+      ok(sent.ok, name + ': the probe failed:\n' + tail(sent.out, 60))
+      strictEqual(ran(sent.out), UNSENT_CASES.length,
+        name + ': the probe did not run every case:\n' + tail(sent.out))
+      const records = Fs.readFileSync(server.log, 'utf8').split('\n').filter((line) => '' !== line)
+        .map((line) => JSON.parse(line))
+        .map((r) => mediaRecord(r.method, r.url, r.headers, r.bodyHex))
+      deepStrictEqual(mediaFailures(UNSENT_CASES, records), [],
+        name + ' probe output:\n' + tail(sent.out))
+      deepStrictEqual(mediaRaised(UNSENT_CASES, sent.out).filter((line) => null != line), [],
+        name + ': an operation raised although the server answered')
+
+      const unsent = probe(await refusedBase())
+      ok(unsent.ok, name + ': the probe failed:\n' + tail(unsent.out, 60))
+      strictEqual(ran(unsent.out), UNSENT_CASES.length,
+        name + ': the probe did not run every case:\n' + tail(unsent.out))
+      const raised = mediaRaised(UNSENT_CASES, unsent.out)
+      deepStrictEqual(UNSENT_CASES.filter((_c, i) => null == raised[i]).map((c) => c.op), [],
+        name + ': these operations returned although nothing answered:\n' + tail(unsent.out))
+    })
+
+    test(name + ': an allow list names whole methods and operations, in any case', async (t) => {
       const missing = lane.ready()
       if (null != missing) return t.skip(missing)
 
@@ -6351,12 +6654,12 @@ describe('probes driven through a generated SDK', () => {
       }
 
       if (ran.unlaunchable) {
-        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        return t.skip(name + ': the toolchain could not be started here: ' + tail(ran.out, 3))
       }
 
-      ok(ran.ok, lane.target + ': the allow probe failed:\n' + tail(ran.out, 60))
+      ok(ran.ok, name + ': the allow probe failed:\n' + tail(ran.out, 60))
       deepStrictEqual(allowOutcomes(ran.out), ALLOW_OUTCOMES,
-        lane.target + ' probe output:\n' + tail(ran.out))
+        name + ' probe output:\n' + tail(ran.out))
     })
 
     test(lane.target + ': a list reads the record each of its items wraps', async (t) => {
@@ -6375,6 +6678,43 @@ describe('probes driven through a generated SDK', () => {
       strictEqual(itemsListed(ran.out), ITEMS_EXPECT,
         lane.target + ' probe output:\n' + tail(ran.out))
     })
+
+    test(lane.target + ': a body that is not JSON names its status, type, agent and preview',
+      async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+        const key = 'ts' === lane.target || 'js' === lane.target ? 'node' : lane.target
+        ok(null != NONJSON_PROBES[key], lane.target + ': no non-JSON probe')
+
+        const sdkroot = await sdkFor(lane.target)
+        const cases = Path.join(sdkroot, 'nonjson-cases.json')
+        Fs.writeFileSync(cases, JSON.stringify(NONJSON_CASES))
+        const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
+        Fs.writeFileSync(tsv, nonjsonTsv())
+        const seam = null != lane.seam && lane.seam()
+        const server = seam ? null : await nonjsonServer(sdkroot, cases)
+        let ran: ReturnType<typeof run>
+        try {
+          ran = lane.exec(sdkroot, {
+            ...nestedTestEnv(),
+            NONJSON_BASE: null == server ? 'http://nonjson.test' : 'http://127.0.0.1:' + server.port,
+            NONJSON_CASES: cases,
+            NONJSON_TSV: tsv,
+            ...(seam ? { NONJSON_SEAM: '1' } : {}),
+          }, writer(sdkroot), { name: 'nonjson', source: NONJSON_PROBES })
+        }
+        finally {
+          server?.stop()
+        }
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, lane.target + ': the non-JSON probe failed:\n' + tail(ran.out, 60))
+        deepStrictEqual(nonjsonFailures(ran.out, lane.target, seam), [],
+          lane.target + ' probe output:\n' + tail(ran.out))
+      })
 
     // A signal is the TypeScript and JavaScript targets' own seam.
     if (['ts', 'js'].includes(lane.target)) {

@@ -194,7 +194,8 @@ async function runDefinitionPoint(SDK: any, point: DefinitionPoint): Promise<voi
         records.length)
     }
   }
-  else if ('load' === point.op || 'create' === point.op || 'update' === point.op) {
+  else if ('load' === point.op || 'create' === point.op || 'update' === point.op ||
+    'patch' === point.op) {
     const record = recordOf(point.sample, point.idField, point.entity)
     if (null != record) {
       assert.equal(result?.data?.()?.[point.idField], record[point.idField],

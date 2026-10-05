@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeTop = void 0;
 const jostraca_1 = require("jostraca");
+const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const optional_1 = require("../helpers/optional");
 const FeatureDocs_1 = require("./FeatureDocs");
@@ -10,6 +11,7 @@ const opExample_1 = require("../helpers/opExample");
 const mcpTools_1 = require("../helpers/mcpTools");
 const canonType_1 = require("../helpers/canonType");
 const naming_1 = require("../helpers/naming");
+const text_1 = require("../helpers/text");
 const packageMeta_1 = require("../helpers/packageMeta");
 const SDKGEN_REPO = 'https://github.com/voxgig/sdkgen';
 const VOXGIG_SDK = 'https://voxgig.com/sdk/';
@@ -68,20 +70,18 @@ function entityExample(lang, Name, call) {
         default: return '';
     }
 }
-const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
+const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
     const { ctx$ } = props;
     const { model } = ctx$;
     if (model.name && !model.Name)
         (0, jostraca_1.names)(model, model.name);
-    const info = (model.main && model.main[types_1.KIT] && model.main[types_1.KIT].info) || {};
+    const info = (0, text_1.modelText)(model);
     const def = (model.main && model.main.def) || {};
     const productName = info.title || `${model.Name} API`;
     const tagline = info.tagline
         || def.tagline
         || `${productName} client, generated from the OpenAPI spec.`;
     const aboutMd = info.about_md || '';
-    const licenseMd = info.license_md || '';
-    const licenseShort = info.license_short || '';
     const homepage = info.homepage || '';
     const docsUrl = info.docs_url || '';
     const entityDesc = info.entity_desc || {};
@@ -150,9 +150,12 @@ ${tagline}
         }
         (0, jostraca_1.Content)(`${(0, packageMeta_1.nonAffiliation)(model)}
 
-Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
+`);
+        if ((0, packageMeta_1.isDefaultPublisher)(model)) {
+            (0, jostraca_1.Content)(`Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
 
 `);
+        }
         // THE GENERATED SITE, LINKED FROM THE TOP, because the repository was the
         // one place it could not be found from. `docs_url` further down is the
         // UPSTREAM API's documentation, not this, and a reader who lands on the
@@ -241,7 +244,7 @@ ${aboutMd.trim()}
             else if ('load' === primaryOp) {
                 exCall = `const ${exLower} = await client.${ex}().load(${exLoadArg})`;
             }
-            else if ('create' === primaryOp || 'update' === primaryOp) {
+            else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
                 const exIdF = (0, opShape_1.entityIdField)(exEnt);
                 // Drop the id only when the request shape says it is OPTIONAL. It is
                 // server-assigned on a normal create, but an op whose id comes from a
@@ -255,7 +258,7 @@ ${aboutMd.trim()}
                 const body = bodyLines.length ? `\n${bodyLines.join('\n')}\n` : '';
                 exCall = `const ${exLower} = await client.${ex}().${primaryOp}({${body}})`;
             }
-            const CANON_OPS = ['list', 'load', 'create', 'update', 'remove'];
+            const CANON_OPS = ['list', 'load', 'create', 'update', 'patch', 'remove'];
             const opSet = new Set();
             activeEntities.forEach((e) => Object.keys(e.op || {})
                 .forEach((o) => { if (e.op[o] && e.op[o].active !== false)
@@ -270,7 +273,7 @@ ${aboutMd.trim()}
                 snippet = `const client = new ${model.Name}SDK()${exCall ? '\n' + exCall : ''}`;
             }
             else if (null != lang) {
-                const call = ['list', 'load', 'create', 'update'].includes(String(primaryOp))
+                const call = ['list', 'load', 'create', 'update', 'patch'].includes(String(primaryOp))
                     ? (0, opExample_1.primaryOpCall)(lang, ex, (0, naming_1.exampleVarName)(ex.toLowerCase(), lang), primaryOp, exIdField, exEnt)
                     : null;
                 snippet = entityExample(lang, model.Name, call);
@@ -388,14 +391,14 @@ See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full 
                 mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1];
             // What the server reads and writes is what it registers, not the flag.
             const reads = mcpOps.some((op) => mcpTools_1.MCP_WRITE_OPS.includes(op)) ? '' : mcpWrite ?
-                ' It only reads, as no entity has a create, update or remove a plain call runs.' :
-                ` It only reads: create, update and remove become tools when the SDK's model sets
+                ' It only reads, as no entity has a create, update, patch or remove a plain call runs.' :
+                ` It only reads: create, update, patch and remove become tools when the SDK's model sets
 ${toggle}.`;
             (0, jostraca_1.Content)(0 === mcpOps.length ? `## Use it from an AI agent (MCP)
 
 The generated MCP server has no tools for this SDK: no entity has a list or
-load a plain call runs${mcpWrite ? ', or a create, update or remove' :
-                `, and create, update and remove are off until the SDK's model sets
+load a plain call runs${mcpWrite ? ', or a create, update, patch or remove' :
+                `, and create, update, patch and remove are off until the SDK's model sets
 ${toggle}`}.
 
 ` : `## Use it from an AI agent (MCP)
@@ -443,7 +446,7 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
             activeEntities.forEach((e) => Object.keys(e.op || {})
                 .forEach((o) => { if (e.op[o]?.active !== false)
                 opUnion.add(o); }));
-            const opAvail = ['load', 'list', 'create', 'update', 'remove'].filter((o) => opUnion.has(o));
+            const opAvail = ['load', 'list', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o));
             const opBold = (opAvail.length ? opAvail : ['load', 'list']).map((o) => '**' + o + '**').join(', ');
             (0, jostraca_1.Content)(`
 The operations available across these entities are ${opBold} — see each entity's
@@ -604,7 +607,7 @@ The OpenAPI spec(s) this SDK was generated from are kept in the
 `);
         (0, jostraca_1.Content)(`## Security
 
-Please report security issues to ${packageMeta_1.SECURITY_EMAIL}. See [SECURITY.md](SECURITY.md).
+Please report security issues ${(0, packageMeta_1.securityContact)(model)}. See [SECURITY.md](SECURITY.md).
 Do not open public issues for suspected vulnerabilities.
 
 `);

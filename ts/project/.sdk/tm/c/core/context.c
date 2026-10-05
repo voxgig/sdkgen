@@ -81,7 +81,8 @@ static Operation* resolve_op(Context* ctx, const char* opname) {
   }
 
   const char* input =
-      (strcmp(opname, "update") == 0 || strcmp(opname, "create") == 0) ? "data" : "match";
+      (strcmp(opname, "update") == 0 || strcmp(opname, "create") == 0 ||
+       strcmp(opname, "patch") == 0) ? "data" : "match";
 
   voxgig_value* targets = getp(opcfg, "points");
   if (!voxgig_is_list(targets)) targets = voxgig_new_list();

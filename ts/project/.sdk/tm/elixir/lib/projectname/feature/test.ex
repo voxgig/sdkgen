@@ -160,7 +160,7 @@ defmodule ProjectName.Feature.Test do
           respond(fctx, 200, S.clone(found))
         end
 
-      "update" ->
+      opn when opn in ["update", "patch"] ->
         reqdata = S.getprop(fctx, "reqdata")
 
         update_match =

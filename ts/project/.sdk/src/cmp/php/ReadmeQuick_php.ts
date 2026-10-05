@@ -174,7 +174,8 @@ try {
       ? `$created->data_get()["${dataIdF}"]`
       : phpLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`php
@@ -190,6 +191,13 @@ $created = $client->${phpEntityAccessor(eName)}()->create([${examplePairs('creat
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`// Update${fromCreated ? ` — index the record via data_get() ($created->data_get()["${dataIdF}"]).` : ''}
 $client->${phpEntityAccessor(eName)}()->update([${updatePairs.join(', ')}]);
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`"${idF}" => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+$client->${phpEntityAccessor(eName)}()->patch([${patchPairs.join(', ')}]);
 
 `)
       }
