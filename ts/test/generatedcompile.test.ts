@@ -99,6 +99,28 @@ function exunitCount(out: string): { total: number, failed: number } | null {
 }
 
 
+// Each failed test's report from `dotnet test`: its result line, message and
+// stack. xUnit's own progress lines can land inside one, so they are dropped.
+function dotnetFailures(out: string): string {
+  const blocks: string[][] = []
+  let block: string[] | null = null
+  for (const line of out.split(/\r?\n/)) {
+    if (/^\[xUnit\.net /.test(line)) {
+      continue
+    }
+    const result = /^\s*(Passed|Failed|Skipped) .* \[[^\]]+\]\s*$/.exec(line)
+    if (null != result || /^\s*(Passed|Failed)!\s+-/.test(line) || /^Test Run /.test(line)) {
+      block = 'Failed' === result?.[1] ? [line] : null
+      if (null != block) blocks.push(block)
+    }
+    else if (null != block) {
+      block.push(line)
+    }
+  }
+  return blocks.map((b) => b.join('\n').trimEnd()).join('\n')
+}
+
+
 function run(
   cmd: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv,
   timeoutMs: number = RUN_TIMEOUT_MS,
@@ -285,6 +307,41 @@ function pick(
     target + ': expected one ' + tail + ', got ' + JSON.stringify(found))
   return out[found[0]]
 }
+
+
+describe('dotnet test failure reports', () => {
+
+  test('carry each failed test message and stack, and nothing that passed', () => {
+    const out = [
+      'Test run for /x/DemoSDKTest.dll (.NETCoreApp,Version=v8.0)',
+      '[xUnit.net 00:00:00.48]     Demo.T.Bad [FAIL]',
+      '  Failed Demo.T.Bad [1 ms]',
+      '  Error Message:',
+      '   saw 2 - calls: [a] [b]',
+      'Passed or not, this is message text',
+      '[xUnit.net 00:00:00.50]   Finished:    DemoSDKTest',
+      '  Stack Trace:',
+      '     at Demo.T.Bad() in T.cs:line 9',
+      '  Passed Demo.T.Good [2 ms]',
+      '  Failed Demo.T.Worse(n: 1) [< 1 ms]',
+      '  Error Message:',
+      '   saw 0',
+      'Failed!  - Failed:     2, Passed:    1, Skipped:     0, Total:    3, Duration: 3 ms',
+    ].join('\n')
+
+    strictEqual(dotnetFailures(out), [
+      '  Failed Demo.T.Bad [1 ms]',
+      '  Error Message:',
+      '   saw 2 - calls: [a] [b]',
+      'Passed or not, this is message text',
+      '  Stack Trace:',
+      '     at Demo.T.Bad() in T.cs:line 9',
+      '  Failed Demo.T.Worse(n: 1) [< 1 ms]',
+      '  Error Message:',
+      '   saw 0',
+    ].join('\n'))
+  })
+})
 
 
 describe('generated SDK compiles', () => {
@@ -1547,9 +1604,11 @@ func TestTypesProbe(t *testing.T) {
 
     // `dotnet test` builds the library through the project reference, so
     // a broken vendored file fails HERE, naming the file - which is also
-    // why the build is not run separately first.
+    // why the build is not run separately first. `-v quiet` silences the
+    // console logger as well, so the logger asks for failure messages back.
     const probe = run(dotnet,
       ['test', '--nologo', '-v', 'quiet',
+        '--logger', 'console;verbosity=minimal',
         '--filter', 'FullyQualifiedName~SecretsFeatureTest',
         Path.join('test', testproj[0])],
       sdkroot)
@@ -1558,9 +1617,7 @@ func TestTypesProbe(t *testing.T) {
       return t.skip('csharp: ' + probe.out)
     }
 
-    const lines = probe.out.split(/\r?\n/)
-    const failed = lines.filter((l: string) => /^\s*(Failed|\[FAIL\])\s+\S/.test(l))
-    ok(probe.ok, 'csharp secrets suite failed:\n' + failed.join('\n') +
+    ok(probe.ok, 'csharp secrets suite failed:\n' + dotnetFailures(probe.out) +
       '\n' + tail(probe.out))
 
     const summary = /Passed!\s+-\s+Failed:\s+(\d+),\s+Passed:\s+(\d+),\s+Skipped:\s+(\d+),\s+Total:\s+(\d+)/
