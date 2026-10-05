@@ -22,7 +22,7 @@ function mintId(): string {
 function ownIdField(config: any, getpath: any, entityName: string): string {
   let fallback = ''
 
-  for (const opname of ['load', 'remove', 'update']) {
+  for (const opname of ['load', 'remove', 'update', 'patch']) {
     const points = getpath(config, ['entity', entityName, 'op', opname, 'points']) || []
     const canonical = points.filter((pt: any) =>
       null == (pt && pt.select && pt.select['$action']))
@@ -72,6 +72,19 @@ function recordOf(reqdata: any): any {
   const out = { ...(reqdata || {}) }
   delete out.$body
   return out
+}
+
+
+// The key a list response wraps each record under, where the response
+// transform is `["`$EACH`", "body", { "`$MERGE`": "`.<key>`" }]`.
+function itemEnvelopeKey(restf: any): string | null {
+  if (!Array.isArray(restf) || 3 !== restf.length ||
+    '`$EACH`' !== restf[0] || 'body' !== restf[1]) {
+    return null
+  }
+  const merge = restf[2]?.['`$MERGE`']
+  const m = 'string' === typeof merge ? merge.match(/^`\.([^.`$]+)`$/) : null
+  return null == m ? null : m[1]
 }
 
 
@@ -127,6 +140,10 @@ class TestFeature extends BaseFeature {
 
       function envelope(data: any) {
         const restf = getprop(getprop(ctx.point, 'transform', {}), 'res')
+        const itemkey = itemEnvelopeKey(restf)
+        if (null != itemkey && Array.isArray(data)) {
+          return data.map((item: any) => ({ [itemkey]: item }))
+        }
         if (null == data || 'string' !== typeof restf) {
           return data
         }
@@ -197,7 +214,7 @@ class TestFeature extends BaseFeature {
           return respond(200, out)
         }
       }
-      else if ('update' === op.name) {
+      else if ('update' === op.name || 'patch' === op.name) {
         const args = self.buildArgs(ctx, op, recordOf(ctx.reqdata))
         const found = select(entmap, args)
         const ent = getelem(found, 0)
@@ -277,10 +294,12 @@ class TestFeature extends BaseFeature {
       return max <= min ? min : min + ((max - min) >> 1)
     }
 
-    function sleep(ms: number): Promise<void> {
+    function sleep(ms: number, signal?: any): Promise<void> {
       if (null == ms || 0 >= ms) { return Promise.resolve() }
-      if ('function' === typeof net.sleep) { return Promise.resolve(net.sleep(ms)) }
-      return new Promise((r) => setTimeout(r, ms))
+      if ('function' === typeof net.sleep) { return self._untilAbort(Promise.resolve(net.sleep(ms)), signal) }
+      let timer: any
+      return self._untilAbort(new Promise((r) => { timer = setTimeout(r, ms) }), signal,
+        () => clearTimeout(timer))
     }
 
     return async function netsimFetcher(ctx: any, url: string, fetchdef: any) {
@@ -288,15 +307,15 @@ class TestFeature extends BaseFeature {
       const call = self._netcalls
 
       if (true === net.offline) {
-        await sleep(pickLatency())
+        await sleep(pickLatency(), fetchdef?.signal)
         return ctx.error('netsim_offline', 'Simulated network offline (URL was: "' + url + '")')
       }
       if (call <= (net.errorTimes | 0)) {
-        await sleep(pickLatency())
+        await sleep(pickLatency(), fetchdef?.signal)
         return ctx.error('netsim_conn', 'Simulated connection error (call ' + call + ')')
       }
       if (call <= (net.failTimes | 0)) {
-        await sleep(pickLatency())
+        await sleep(pickLatency(), fetchdef?.signal)
         const status = null == net.failStatus ? 503 : net.failStatus
         return {
           status,
@@ -306,7 +325,7 @@ class TestFeature extends BaseFeature {
           headers: { forEach(_cb: any) { }, get(_k: string) { return undefined } },
         }
       }
-      await sleep(pickLatency())
+      await sleep(pickLatency(), fetchdef?.signal)
       return inner(ctx, url, fetchdef)
     }
   }

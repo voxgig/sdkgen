@@ -34,6 +34,13 @@ declare function installCommand(model: any, target: string): string;
 declare function pkgDescription(model: any, target: string): string;
 declare function nonAffiliation(model: any): string;
 declare function keywords(model: any): string[];
+declare function publisherInfo(model: any): {
+    name: string;
+    url: string;
+    security: string;
+};
+declare function isDefaultPublisher(model: any): boolean;
+declare function securityContact(model: any): string;
 declare function authorInfo(model: any, target?: string): {
     name: string;
     url: string;
@@ -44,4 +51,4 @@ declare function contributorList(model: any): {
 }[];
 declare function envToken(name: any): string;
 declare function envName(model: any): string;
-export { sdkName, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, apiName, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, docsSiteUrl, };
+export { sdkName, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, apiName, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, publisherInfo, isDefaultPublisher, securityContact, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, docsSiteUrl, };

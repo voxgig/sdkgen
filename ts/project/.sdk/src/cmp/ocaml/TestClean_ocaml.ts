@@ -62,6 +62,7 @@ function candidates(entity: any[]): string {
         : 'load' === op ? `(ent.e_load m ctrl).e_data_get ()`
           : 'create' === op ? `(ent.e_create m ctrl).e_data_get ()`
             : 'update' === op ? `(ent.e_update m ctrl).e_data_get ()`
+            : 'patch' === op ? `(ent.e_patch m ctrl).e_data_get ()`
               : 'remove' === op ? `(ent.e_remove m ctrl).e_data_get ()`
                 : null
       if (null == run) continue

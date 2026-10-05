@@ -9,6 +9,9 @@ function ensureStdrep(ctx$) {
     if (null == stdrep.PROJECTENV) {
         stdrep.PROJECTENV = (0, packageMeta_1.envName)(ctx$.model);
     }
+    if (null == stdrep.PROJECTPUBLISHER) {
+        stdrep.PROJECTPUBLISHER = (0, packageMeta_1.publisherInfo)(ctx$.model).name;
+    }
     return stdrep;
 }
 function templateReplacements(model, tname) {

@@ -133,7 +133,8 @@ Require a module resolved at `<ctx$.folder>/.sdk/dist/<path>`.
 
 - With no flags, a missing module throws.
 - With `{ ignore: true }`, a **genuinely missing** module logs a
-  `require-missing` warning and returns `undefined`. A module that
+  `require-missing` warning, naming the path it looked for, and returns
+  `undefined`. A module that
   resolves but throws while loading (syntax error, bug, missing nested
   dependency) still propagates — so a broken optional template is never
   silently skipped.

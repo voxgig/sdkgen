@@ -66,8 +66,8 @@ my $client = ${ctor};
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list()\` returns an \`arrayref\` of records (each a \`hashref\`) and dies on
-error — iterate it directly.
+\`list()\` returns an \`arrayref\` of entities, one per record, and dies on
+error; \`data_get\` reads each record.
 
 \`\`\`perl
 my $${eVar}s = eval { $client->${eName}->list };
@@ -76,7 +76,7 @@ if (my $err = $@) {
 }
 else {
     for my $${eVar} (@$${eVar}s) {
-        print "$${eVar}->{id}\\n";
+        print $${eVar}->data_get->{id}, "\\n";
     }
 }
 \`\`\`
@@ -172,7 +172,8 @@ else {
       ? `$created->{${dataIdF}}`
       : perlLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`perl
@@ -188,6 +189,13 @@ my $created = $client->${eName}->create({ ${examplePairs('create').join(', ')} }
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`# Update${fromCreated ? " — the created record's id is a plain hash key" : ''}
 $client->${eName}->update({ ${updatePairs.join(', ')} });
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`'${idF}' => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        Content(`# Patch — sends only the fields given
+$client->${eName}->patch({ ${patchPairs.join(', ')} });
 
 `)
       }

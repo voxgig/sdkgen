@@ -330,5 +330,7 @@ pub const EntyClass = struct {
 
     // #UpdateOp
 
+    // #PatchOp
+
     // #RemoveOp
 };

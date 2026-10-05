@@ -40,6 +40,16 @@ main: kit: author: {
 }
 
 
+# Who publishes the SDK: the LICENSE copyright holder, the default package
+# author, and where SECURITY.md sends a vulnerability report. An empty name
+# is Voxgig, whose url and security contact then apply.
+main: kit: publisher: {
+  name: *'' | string
+  url: *'' | string
+  security: *'' | string
+}
+
+
 # What the project's Root writes besides its targets.
 main: kit: phase: {
   top: active: *true | boolean
@@ -252,7 +262,7 @@ main: kit: optspec: {
 
   allow: {
     method: 'GET,PUT,POST,PATCH,DELETE,OPTIONS'
-    op: 'create,update,load,list,remove,command,direct,graphql'
+    op: 'create,update,patch,load,list,remove,command,direct,graphql'
   }
 
   # Per-entity overrides. `$OPEN` because an entity entry carries

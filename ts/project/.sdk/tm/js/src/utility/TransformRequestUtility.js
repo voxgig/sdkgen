@@ -48,11 +48,19 @@ function stripAction(reqdata) {
 }
 
 
-// A header or query argument travels where prepareHeaders or prepareQuery
-// sends it, so the body is built from the request data without it.
+// A header, cookie or query argument travels where prepareHeaders or
+// prepareQuery sends it, so the body is built from the request data without
+// it, unless the entity declares it as a field too.
 function routedArgNames(ctx) {
   return callArgs(ctx, 'header').concat(callArgs(ctx, 'cookie'), callArgs(ctx, 'query'))
     .map((arg) => arg.name)
+    .filter((name) => !fieldArg(ctx, name))
+}
+
+
+function fieldArg(ctx, name) {
+  return ['header', 'cookie', 'query'].some((kind) =>
+    (ctx.point?.args?.[kind] || []).some((arg) => name === arg?.name && true === arg?.field))
 }
 
 

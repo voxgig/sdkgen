@@ -313,7 +313,7 @@ class ${Name}CleanTest < Minitest::Test
     entities = ${Name}Config.shared_config["entity"] || {}
     found.keys.sort.each do |entname|
       accessor = found[entname]
-      %w[list load create update remove].each do |op|
+      %w[list load create update patch remove].each do |op|
         next unless plain.public_send(accessor).respond_to?(op)
         filled = {}
         points = entities.dig(entname, "op", op, "points")

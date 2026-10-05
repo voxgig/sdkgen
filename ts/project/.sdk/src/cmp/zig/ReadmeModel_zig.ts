@@ -21,13 +21,14 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `load` | `(reqmatch: Value, ctrl: Value) OpResult` | Load a single entity by match criteria. |',
-    list: '| `list` | `(reqmatch: Value, ctrl: Value) OpResult` | List entities matching the criteria (`.ok` is a `Value` array). |',
-    create: '| `create` | `(reqdata: Value, ctrl: Value) OpResult` | Create a new entity. |',
-    update: '| `update` | `(reqdata: Value, ctrl: Value) OpResult` | Update an existing entity. |',
-    remove: '| `remove` | `(reqmatch: Value, ctrl: Value) OpResult` | Remove an entity. |',
+    load: '| `load` | `(reqmatch: Value, ctrl: Value) EntResult` | Load a single entity by match criteria. |',
+    list: '| `list` | `(reqmatch: Value, ctrl: Value) EntListResult` | List entities matching the criteria (`.ok` is a slice of entities, one per record). |',
+    create: '| `create` | `(reqdata: Value, ctrl: Value) EntResult` | Create a new entity. |',
+    update: '| `update` | `(reqdata: Value, ctrl: Value) EntResult` | Update an existing entity. |',
+    patch: '| `patch` | `(reqdata: Value, ctrl: Value) EntResult` | Change part of an existing entity. |',
+    remove: '| `remove` | `(reqmatch: Value, ctrl: Value) EntResult` | Remove an entity, which is returned marked as deleted. |',
   }
-  const opRows = ['load', 'list', 'create', 'update', 'remove']
+  const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
 
   const apikeyOptionRow = isAuthActive(model)
@@ -94,9 +95,10 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return an \`OpResult\` union — \`switch\` on it: \`.ok\`
-carries the bare result data (a \`Value\` object for single-entity ops, a
-\`Value\` array for \`list\`), \`.err\` carries the branded error pointer.
+Entity operations return a result union — \`switch\` on it: \`.ok\` carries
+the entity (\`EntResult\`), or for \`list\` a slice of entities, one per record
+(\`EntListResult\`), and \`asEntity().data(null)\` reads an entity's record;
+\`.err\` carries the branded error pointer.
 
 The \`direct()\` escape hatch returns a result \`Value\` map directly (no
 error union) — even on a non-2xx response — that you branch on via

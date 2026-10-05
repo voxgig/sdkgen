@@ -391,7 +391,7 @@ sub usable_op {
   my $entities = ${Name}Config::shared_config()->{entity} || {};
   for my $entname (sort keys %found) {
     my $accessor = $found{$entname};
-    for my $op (qw(list load create update remove)) {
+    for my $op (qw(list load create update patch remove)) {
       next unless $plain->$accessor()->can($op);
       my %filled;
       my $opdef = eval { $entities->{$entname}{op}{$op} };

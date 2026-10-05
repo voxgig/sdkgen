@@ -181,7 +181,8 @@ except Exception as err:
       ? `created.data_get()["${dataIdF}"]`
       : pyLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`python
@@ -197,6 +198,13 @@ created = client.${eName}().create({${examplePairs('create').join(', ')}})
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`# Update${fromCreated ? " — the created record's id is a plain dict key" : ''}
 client.${eName}().update({${updatePairs.join(', ')}})
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`"${idF}": ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        Content(`# Patch — sends only the fields given
+client.${eName}().patch({${patchPairs.join(', ')}})
 
 `)
       }

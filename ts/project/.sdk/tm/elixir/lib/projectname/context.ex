@@ -135,7 +135,7 @@ defmodule ProjectName.Context do
       true ->
         config = S.getprop(ctx, "config")
         opcfg = S.getpath(config, "entity." <> entname <> ".op." <> opname)
-        inpt = if opname == "update" or opname == "create", do: "data", else: "match"
+        inpt = if opname in ["update", "create", "patch"], do: "data", else: "match"
 
         points =
           if S.ismap(opcfg) do

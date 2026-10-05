@@ -143,6 +143,16 @@ async function runDefinitionPoint(SDK, point) {
     assert.deepEqual(bytesOf(init.body), bytesOf(rawSample(point)), 'raw body not sent as given')
   }
 
+  // An argument the request body declares too goes out in the body as well.
+  if (0 < (point.bodyArgs || []).length) {
+    let sentBody
+    try { sentBody = JSON.parse(String(init.body)) }
+    catch (_e) { sentBody = undefined }
+    for (const name of point.bodyArgs) {
+      assert.deepEqual(sentBody?.[name], input[name], 'argument not sent in the body as well: ' + name)
+    }
+  }
+
   if (null != error) {
     throw error
   }
@@ -160,7 +170,8 @@ async function runDefinitionPoint(SDK, point) {
         records.length)
     }
   }
-  else if ('load' === point.op || 'create' === point.op || 'update' === point.op) {
+  else if ('load' === point.op || 'create' === point.op || 'update' === point.op ||
+    'patch' === point.op) {
     const record = recordOf(point.sample, point.idField, point.entity)
     if (null != record) {
       assert.equal(result?.data?.()?.[point.idField], record[point.idField],

@@ -23,7 +23,8 @@ const SDKGEN_ROOT = Path.resolve(__dirname, '..')
 
 
 const PLACEHOLDERS = [
-  'ProjectName', 'PROJECTNAME', 'PROJECTENV', 'PROJECTVERSION', 'GOMODULE',
+  'ProjectName', 'PROJECTNAME', 'PROJECTENV', 'PROJECTVERSION', 'PROJECTPUBLISHER',
+  'GOMODULE',
 ]
 
 

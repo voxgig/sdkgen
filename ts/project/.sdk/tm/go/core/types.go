@@ -39,6 +39,7 @@ type ProjectNameEntity interface {
 	List(reqmatch map[string]any, ctrl map[string]any) (any, error)
 	Create(reqdata map[string]any, ctrl map[string]any) (any, error)
 	Update(reqdata map[string]any, ctrl map[string]any) (any, error)
+	Patch(reqdata map[string]any, ctrl map[string]any) (any, error)
 	Remove(reqmatch map[string]any, ctrl map[string]any) (any, error)
 	Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem
 }

@@ -617,7 +617,7 @@ public class CleanTest {
       catch (Exception ex) {
         continue;
       }
-      for (String opname : List.of("list", "load", "create", "update", "remove")) {
+      for (String opname : List.of("list", "load", "create", "update", "patch", "remove")) {
         Method call;
         try {
           call = ent.getClass().getMethod(opname, Map.class, Map.class);
