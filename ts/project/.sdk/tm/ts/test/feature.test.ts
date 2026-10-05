@@ -849,6 +849,24 @@ describe('feature', () => {
       strictEqual(h.client._retry, undefined, 'no retry was scheduled')
     })
 
+    test('an abort whose reason is not an Error is not retried either', { skip: skipWithout('retry') }, async () => {
+      // fetch rejects with the reason itself, so a string or a number reaches
+      // retry as a non-Error: it must still end the request, not become a response.
+      const server = slowServer(2000)
+      const h = makeClient({
+        features: [{ name: 'retry', options: { retries: 3, minDelay: 10, jitter: false } }],
+        server,
+      })
+      const ac = new AbortController()
+      setTimeout(() => ac.abort('user cancelled'), 20)
+      const start = Date.now()
+      const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+      ok(Date.now() - start < 1000, 'the request ended at the abort')
+      strictEqual(res.ok, false)
+      strictEqual(res.error, 'user cancelled')
+      strictEqual(h.client._retry, undefined, 'no retry was scheduled')
+    })
+
     test('an abort during the retry backoff ends it', { skip: skipWithout('retry') }, async () => {
       const ac = new AbortController()
       const rec = recordingServer(() => makeResponse(503))

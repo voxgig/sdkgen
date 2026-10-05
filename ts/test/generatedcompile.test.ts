@@ -5055,7 +5055,7 @@ const FEATURE_SUITE_SUBJECTS = ['audit', 'debug', 'proxy', 'telemetry']
 
 // The abort block drives every transport wrapper that waits, and the lane
 // generates each of them, so none of its tests may skip.
-const FEATURE_SUITE_ABORT_TESTS = 7
+const FEATURE_SUITE_ABORT_TESTS = 8
 
 // How many tests a TAP subtest block ran without skipping.
 function tapRan(out: string, name: string): number {

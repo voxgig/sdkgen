@@ -57,6 +57,12 @@ class RetryFeature extends BaseFeature {
 
       last = res
 
+      // An abort is never retried, whatever the transport threw for it: the
+      // reason need not be an Error, so decide before the retryable test.
+      if (threw && true === signal?.aborted) {
+        throw signal.reason
+      }
+
       const retryable = this._retryable(res)
       if (!retryable || attempt >= max) {
         // Out of attempts: rethrow a thrown error to preserve pipeline
