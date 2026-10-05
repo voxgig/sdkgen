@@ -5169,6 +5169,47 @@ describe('generated entity tests make only calls the runtime takes', () => {
   })
 
 
+  // rb and perl list one entity per record, as every target does; planet's
+  // reachable list runs the check, moon's and signal's do not.
+  test('rb: the moon, signal and planet entity tests pass', async (t) => {
+    const rb = minitest([])
+    if (null == rb) return t.skip('no usable rb toolchain here (ruby with minitest)')
+
+    const root = Path.join(tmp, 'rb')
+    await generateTo('rb', root, ROUTING_MODEL)
+    const ran: Record<string, boolean> = {}
+    for (const name of ['moon', 'signal', 'planet']) {
+      const res = run(rb.bin, ['test/' + name + '_entity_test.rb', '-v'], root)
+      if (res.timedOut) return t.skip('rb: ' + res.out)
+      ok(res.ok, 'rb: the ' + name + ' entity test failed:\n' + tail(res.out))
+      ok(/\d+ runs, \d+ assertions, 0 failures, 0 errors\b/.test(res.out),
+        'rb: the ' + name + ' entity test printed no clean summary:\n' + tail(res.out))
+      ran[name] = /test_list_entities = /.test(res.out)
+    }
+    ok(ran.planet && !ran.moon && !ran.signal,
+      'rb: the list test ran for the wrong entities: ' + JSON.stringify(ran))
+  })
+
+
+  test('perl: the moon, signal and planet entity tests pass', async (t) => {
+    const perl = toolchain('perl')
+    if (null == perl) return t.skip('needs perl')
+    if (!probeOk(perl, ['-MTest::More', '-e', '1'])) return t.skip('perl is here but Test::More is not')
+
+    const root = Path.join(tmp, 'perl')
+    await generateTo('perl', root, ROUTING_MODEL)
+    const ran: Record<string, boolean> = {}
+    for (const name of ['moon', 'signal', 'planet']) {
+      const res = run(perl, ['-Ilib', 't/' + name + '_entity.t'], root)
+      if (res.timedOut) return t.skip('perl: ' + res.out)
+      ok(res.ok && !/^not ok/m.test(res.out), 'perl: the ' + name + ' entity test failed:\n' + tail(res.out))
+      ran[name] = /list answers each seeded record/.test(res.out)
+    }
+    ok(ran.planet && !ran.moon && !ran.signal,
+      'perl: the list test ran for the wrong entities: ' + JSON.stringify(ran))
+  })
+
+
   test('c: the moon, signal and planet entity tests pass', async (t) => {
     const make = toolchain('make')
     const configured = process.env.CC

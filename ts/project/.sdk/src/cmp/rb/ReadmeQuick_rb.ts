@@ -71,18 +71,19 @@ client = ${ctor}
       fields.find((f: any) => f && f.n !== 'id' && f.t === '$STRING') ||
       fields.find((f: any) => f && f.n !== 'id') ||
       null
-    const idCol = dataIdF ? `#{item[${JSON.stringify(dataIdF)}]}` : null
-    const dispCol = displayField ? `#{item[${JSON.stringify(displayField.n)}]}` : null
-    const itemPrint = [idCol, dispCol].filter(Boolean).join(' ') || '#{item}'
+    const idCol = dataIdF ? `#{record[${JSON.stringify(dataIdF)}]}` : null
+    const dispCol = displayField ? `#{record[${JSON.stringify(displayField.n)}]}` : null
+    const itemPrint = [idCol, dispCol].filter(Boolean).join(' ') || '#{record}'
 
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
 \`\`\`ruby
 begin
-  # list returns an Array of ${eName} records — iterate directly.
+  # list returns an Array of ${eName} entities, one per record; data_get reads the record.
   ${eVar}s = client.${eName}.list
   ${eVar}s.each do |item|
+    record = item.data_get
     puts "${itemPrint}"
   end
 rescue => err

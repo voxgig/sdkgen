@@ -805,12 +805,13 @@ emitted broken source reached the fleet unchallenged.
   for every target. `ts/test/entityname.test.ts` fails if one is reintroduced.
 - **`list` resolves to one ENTITY per record, never to bare records.**
   `make_result` wraps each record (see "Entity operations return ENTITIES"
-  above), and an op must not unwrap them again: clojure's `list` did, so the
-  same record came back as an entity from `load` and as a plain map from
-  `list`. The marker on `toJSON()` is namespaced `voxgig$entity`, because
-  Seneca's own `entity$` silently produced wrong entities. Pinned by
-  `ts/test/resultcontract.test.ts`, which transpiles and RUNS the shipped
-  template, and for clojure by its generated entity test.
+  above), and an op must not unwrap them again: clojure's, rb's and perl's
+  `list` did, so the same record came back as an entity from `load` and as a
+  plain map from `list`. The marker on `toJSON()` is namespaced
+  `voxgig$entity`, because Seneca's own `entity$` silently produced wrong
+  entities. Pinned by `ts/test/resultcontract.test.ts`, which transpiles and
+  RUNS the shipped template, and for clojure, rb and perl by their generated
+  entity tests.
 - **Everything that leaves the pipeline is CLEANED; inside it, data is raw.**
   `clean` (one per target, in the utility registry) masks every registered
   secret value with its encoded forms and every value under a sensitive key
