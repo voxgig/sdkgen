@@ -214,25 +214,33 @@ describe('definitionPlan', () => {
     deepStrictEqual(uploads({ active: false, points: [{ m: 'GET', o: '/uploads' }] }), [])
   })
 
-  // Novu's workflow has a patch beside its update, and no target generates a
-  // patch method to call.
-  test('an operation no target generates is left out', () => {
-    const def = { ...DEF, paths: { '/workflows/{id}': {
-      parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
-      put: { responses: { '200': { content: { 'application/json': { example: { id: 'w1' } } } } } },
-      patch: { responses: { '200': { content: { 'application/json': { example: { id: 'w1' } } } } } },
-    } } }
+  // Novu's workflow has a patch beside its update, and every target generates
+  // both. An op outside the six has no method to call, so it is left out.
+  test('a patch is planned, and an operation no target generates is left out', () => {
+    const response = { responses: { '200': { content: { 'application/json': { example: { id: 'w1' } } } } } }
+    const def = { ...DEF, paths: {
+      '/workflows/{id}': {
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        put: response,
+        patch: response,
+      },
+      '/workflows/{id}/copy': {
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        post: response,
+      },
+    } }
     const g = { params: [{ n: 'id', or: 'id' }] }
     const model = { main: { kit: { entity: { workflow: {
       name: 'workflow', id: { field: 'id', name: 'id' }, op: {
         update: { points: [{ m: 'PUT', o: '/workflows/{id}', q: { exist: ['id'] }, g }] },
         patch: { points: [{ m: 'PATCH', o: '/workflows/{id}', q: { exist: ['id'] }, g }] },
+        copy: { points: [{ m: 'POST', o: '/workflows/{id}/copy', q: { exist: ['id'] }, g }] },
       },
     } } } } }
     const plan = definitionPlan({ model, meta: { apidef: {
       operation: (m: string, o: string) => operationFacts(def, { m, o }),
     } } })
-    deepStrictEqual(plan.map((p: any) => p.op), ['update'])
+    deepStrictEqual(plan.map((p: any) => p.op + ' ' + p.method), ['update PUT', 'patch PATCH'])
   })
 
   // Novu selects every point on its `idempotency-key` header. The argument
@@ -331,6 +339,48 @@ describe('definitionPlan', () => {
       { name: 'id', wire: 'X-Id', value: 'up_1' }, { name: 'trace', wire: 'X-Trace', value: 't-h' }])
     deepStrictEqual(list.cookies, [
       { name: 'id', wire: 'uid', value: 'up_1' }, { name: 'trace', wire: 'trace', value: 't-h' }])
+  })
+
+  // A header, cookie or query argument whose name the request body declares
+  // too goes out in both, so the runner checks the body for it.
+  test('an argument the request body declares too is checked in the body', () => {
+    const body = { properties: {
+      name: { type: 'string' }, locale: { type: 'string' }, theme: { type: 'string' },
+      lang: { type: 'string' },
+    } }
+    const parameters = [
+      { in: 'header', name: 'X-Locale', example: 'en' }, { in: 'header', name: 'X-Trace' },
+      { in: 'cookie', name: 'theme' }, { in: 'query', name: 'lang' }, { in: 'query', name: 'verbose' },
+    ]
+    const responses = { '200': { content: { 'application/json': { example: {} } } } }
+    const def = { ...DEF, paths: {
+      '/uploads': {
+        post: { parameters, requestBody: { content: { 'application/json': { schema: body } } }, responses },
+        get: { parameters, responses },
+      },
+      '/uploads/{id}': { put: { parameters: [{ in: 'path', name: 'id' }, ...parameters,
+        { in: 'body', name: 'body', schema: { allOf: [{ properties: { locale: {} } }] } }], responses } },
+    } }
+    const g = {
+      header: [{ n: 'locale', or: 'X-Locale' }, { n: 'trace', or: 'X-Trace' }],
+      cookie: [{ n: 'theme', or: 'theme' }],
+      query: [{ n: 'lang', or: 'lang' }, { n: 'verbose', or: 'verbose' }],
+    }
+    const model = { main: { kit: { entity: { upload: {
+      name: 'upload', id: { field: 'id', name: 'id' }, op: {
+        create: { points: [{ m: 'POST', o: '/uploads', g }] },
+        list: { points: [{ m: 'GET', o: '/uploads', g }] },
+        update: { points: [{ m: 'PUT', o: '/uploads/{id}', q: { exist: ['id'] },
+          g: { ...g, params: [{ n: 'id', or: 'id' }] } }] },
+      },
+    } } } } }
+    const plan = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    const of = (op: string) => plan.find((p: any) => op === p.op)!
+    deepStrictEqual(of('create').bodyArgs, ['locale', 'theme', 'lang'])
+    deepStrictEqual(of('update').bodyArgs, ['locale'])
+    strictEqual(of('list').bodyArgs, undefined)
   })
 
   test('the example is the sample, three items at most', () => {

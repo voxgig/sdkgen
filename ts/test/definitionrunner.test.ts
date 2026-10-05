@@ -46,6 +46,29 @@ function fakeSdk(headers: Record<string, string>) {
 }
 
 
+// A client whose one operation creates, sending the body `body` builds from
+// the call's data, as the generated client sends what transformRequest built.
+function bodySdk(body: (input: any) => any) {
+  return class FakeSDK {
+    fetch: any
+    constructor(options: any) {
+      this.fetch = options.system.fetch
+    }
+    thing() {
+      const fetch = this.fetch
+      return {
+        create: async (input: any) => {
+          await fetch('http://definition.test/things', {
+            method: 'POST', headers: { 'x-locale': input.locale }, body: JSON.stringify(body(input)),
+          })
+          return { data: () => ({}) }
+        },
+      }
+    }
+  }
+}
+
+
 function point(headers: any[], cookies: any[], auth: any = null) {
   return {
     entity: 'thing', accessor: 'thing', op: 'list', method: 'GET', path: '/things',
@@ -92,6 +115,19 @@ describe('definition runner', () => {
       const trace = [{ name: 'x_trace', wire: 'X-Trace', value: 't1' }]
       await doesNotReject(run(fakeSdk({ 'x-trace': 't1' }), point(trace, [])))
       await rejects(run(fakeSdk({ 'x-trace': 't1; t2' }), point(trace, [])))
+    })
+
+    // A header the request body declares too goes out in both, with one value.
+    test(lang + ': an argument the request body declares is checked in the body too', async () => {
+      const create = { ...point([{ name: 'locale', wire: 'X-Locale', value: 'en' }], []),
+        op: 'create', method: 'POST', bodyArgs: ['locale'] }
+      await doesNotReject(run(bodySdk((input) => input), create))
+      await rejects(run(bodySdk(({ locale: _locale, ...rest }) => rest), create),
+        /argument not sent in the body as well: locale/)
+      await rejects(run(bodySdk((input) => ({ ...input, locale: 'fr' })), create),
+        /argument not sent in the body as well: locale/)
+      await doesNotReject(run(bodySdk(({ locale: _locale, ...rest }) => rest),
+        { ...create, bodyArgs: undefined }))
     })
   }
 })

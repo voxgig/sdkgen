@@ -79,14 +79,14 @@ ${ctor}
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list()\` returns an \`sdk::Value\` list and throws \`sdk::SdkErrorPtr\`
-on error — iterate it directly.
+\`list()\` returns a \`std::vector\` of entities, one per record, and throws
+\`sdk::SdkErrorPtr\` on error; \`data()\` reads an entity's record.
 
 \`\`\`cpp
 try {
-  Value ${eVar}s = client->${acc}()->list(Value::undef(), Value::undef());
-  for (const auto& ${eVar} : *${eVar}s.as_list()) {
-    std::cout << Struct::jsonify(${eVar}) << std::endl;
+  std::vector<SdkEntityPtr> ${eVar}s = client->${acc}()->list(Value::undef(), Value::undef());
+  for (const auto& ${eVar} : ${eVar}s) {
+    std::cout << Struct::jsonify(${eVar}->data()) << std::endl;
   }
 } catch (const SdkErrorPtr& err) {
   std::cerr << "list failed: " << err->msg << std::endl;
@@ -120,12 +120,12 @@ try {
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`load()\` returns the bare record and throws on error.
+\`load()\` returns the entity and throws on error; \`data()\` reads its record.
 
 \`\`\`cpp
 try {
-  Value ${neVar} = client->${neAcc}()->load(vmap({${neMatch.join(', ')}}), Value::undef());
-  std::cout << Struct::jsonify(${neVar}) << std::endl;
+  SdkEntityPtr ${neVar} = client->${neAcc}()->load(vmap({${neMatch.join(', ')}}), Value::undef());
+  std::cout << Struct::jsonify(${neVar}->data()) << std::endl;
 } catch (const SdkErrorPtr& err) {
   std::cerr << "load failed: " << err->msg << std::endl;
 }
@@ -146,12 +146,12 @@ try {
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`load()\` returns the bare record and throws on error.
+\`load()\` returns the entity and throws on error; \`data()\` reads its record.
 
 \`\`\`cpp
 try {
-  Value ${eVar} = client->${acc}()->load(${loadArg}, Value::undef());
-  std::cout << Struct::jsonify(${eVar}) << std::endl;
+  SdkEntityPtr ${eVar} = client->${acc}()->load(${loadArg}, Value::undef());
+  std::cout << Struct::jsonify(${eVar}->data()) << std::endl;
 } catch (const SdkErrorPtr& err) {
   std::cerr << "load failed: " << err->msg << std::endl;
 }
@@ -172,25 +172,26 @@ try {
       return chosen.map((it: any) => `{"${it.name}", ${cppLit(it.type, 'example_' + it.name)}}`)
     }
 
-    // The id VALUE for an update/remove match: read off the returned `created`
-    // record only when its data type carries the id AND a create ran; otherwise
-    // a type-correct literal.
+    // The id VALUE for an update/remove match: read off the created entity's
+    // record only when its data type carries the id AND a create ran;
+    // otherwise a type-correct literal.
     const idParamType = (opname: string): any => {
       const it = opRequestShape(exampleEntity, opname).items.find((x: any) => x.name === idF)
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `getp(created, "${dataIdF}")`
+      ? `getp(created->data(), "${dataIdF}")`
       : cppLit(idParamType(opname), 'example_id')
 
-    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('remove')) {
+    if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
+      opnames.includes('remove')) {
       Content(`### 4. Create, update, and remove
 
 \`\`\`cpp
 `)
       if (opnames.includes('create')) {
-        Content(`// Create — returns the bare created record.
-Value created = client->${acc}()->create(vmap({${examplePairs('create').join(', ')}}), Value::undef());
+        Content(`// Create — returns the created entity.
+SdkEntityPtr created = client->${acc}()->create(vmap({${examplePairs('create').join(', ')}}), Value::undef());
 
 `)
       }
@@ -199,6 +200,13 @@ Value created = client->${acc}()->create(vmap({${examplePairs('create').join(', 
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`// Update${fromCreated ? " — reuse the created record's id" : ''}
 client->${acc}()->update(vmap({${updatePairs.join(', ')}}), Value::undef());
+
+`)
+      }
+      if (opnames.includes('patch')) {
+        const patchPairs = (idF ? [`{"${idF}", ${idValueFor('patch')}}`] : []).concat(examplePairs('patch'))
+        Content(`// Patch — sends only the fields given
+client->${acc}()->patch(vmap({${patchPairs.join(', ')}}), Value::undef());
 
 `)
       }

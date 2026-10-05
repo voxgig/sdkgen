@@ -11,7 +11,8 @@ function registerComponent(name, options = {}) {
         const { target, ctx$ } = props;
         const { model, log } = ctx$;
         const stdrep = (0, stdrep_1.ensureStdrep)(ctx$);
-        const mod = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/${name}_${target.name}`, { ignore: optional });
+        const path = `./cmp/${target.name}/${name}_${target.name}`;
+        const mod = optional ? (0, utility_1.loadOptional)(ctx$, path) : (0, utility_1.requirePath)(ctx$, path);
         if (null == mod) {
             log.debug({
                 point: 'generate-registered-absent', component: name, target: target.name,

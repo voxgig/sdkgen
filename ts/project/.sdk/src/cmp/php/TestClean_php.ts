@@ -488,7 +488,7 @@ class CleanTest extends TestCase
         $entities = ${Name}Config::shared_config()['entity'] ?? [];
         foreach ($found as $entname => $accessor) {
             $ent = $plain->$accessor();
-            $ops = array_values(array_filter(['list', 'load', 'create', 'update', 'remove'],
+            $ops = array_values(array_filter(['list', 'load', 'create', 'update', 'patch', 'remove'],
                 function (string $op) use ($ent): bool {
                     return method_exists($ent, $op);
                 }));

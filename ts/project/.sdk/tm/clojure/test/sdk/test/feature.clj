@@ -21,7 +21,7 @@
 (defn fspec [name & kvs] {"name" name "options" (if (seq kvs) (apply vs/jm kvs) (vs/jm))})
 
 (defn default-method [opname]
-  (cond (= opname "create") "POST" (= opname "update") "PATCH" (= opname "remove") "DELETE" :else "GET"))
+  (cond (= opname "create") "POST" (or (= opname "update") (= opname "patch")) "PATCH" (= opname "remove") "DELETE" :else "GET"))
 
 (defn make-response [status data headers]
   (let [h (vs/jm)]

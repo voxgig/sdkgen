@@ -113,7 +113,7 @@ sub resolve_op {
 
   my $opcfg = ProjectNameHelpers::gpath($self->{config}, "entity.$entname.op.$opname");
 
-  my $input = ($opname eq 'update' || $opname eq 'create') ? 'data' : 'match';
+  my $input = ($opname eq 'update' || $opname eq 'create' || $opname eq 'patch') ? 'data' : 'match';
 
   my $points = [];
   if (Voxgig::Struct::ismap($opcfg)) {

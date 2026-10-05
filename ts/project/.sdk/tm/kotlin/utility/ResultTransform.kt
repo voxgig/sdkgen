@@ -62,10 +62,20 @@ fun resultHeaders(ctx: Context): KOTLINPACKAGE.core.Result {
 // the body is a copy without it. The caller's map is left untouched.
 private fun stripAction(reqdata: Any?): Any? = omitKeys(reqdata, listOf("\$action"))
 
-// A header or query argument travels where prepareHeaders or prepareQuery
-// sends it, so the body is built from the request data without it.
+// A header, cookie or query argument travels where prepareHeaders or
+// prepareQuery sends it, so the body is built from the request data without
+// it, unless the entity declares it as a field too.
 private fun routedArgNames(ctx: Context): List<String> =
   (callArgs(ctx, "header") + callArgs(ctx, "cookie") + callArgs(ctx, "query")).map { it.name }
+    .filter { !fieldArg(ctx, it) }
+
+private fun fieldArg(ctx: Context, name: String): Boolean {
+  val point = ctx.point ?: return false
+  return listOf("header", "cookie", "query").any { kind ->
+    val defs = Struct.getpath(point, listOf("args", kind)) as? List<*> ?: emptyList<Any?>()
+    defs.any { name == Struct.getprop(it, "name") && true == Struct.getprop(it, "field") }
+  }
+}
 
 private fun omitKeys(reqdata: Any?, names: List<String>): Any? {
   if (reqdata !is Map<*, *> || names.none { reqdata.containsKey(it) }) {

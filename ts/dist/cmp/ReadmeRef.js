@@ -2,14 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeRef = void 0;
 const component_1 = require("../helpers/component");
-const utility_1 = require("../utility");
+const optional_1 = require("../helpers/optional");
 // Per-language REFERENCE.md generator lives in
 // `project/.sdk/src/cmp/<lang>/ReadmeRef_<lang>.ts`. Each language emits
 // its own constructor signature, op spelling, and code-block fence — a
 // shared template would have to inline-switch on every line.
 const ReadmeRef = (0, component_1.cmp)(function ReadmeRef(props) {
     const { target, ctx$ } = props;
-    const ReadmeRef_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/ReadmeRef_${target.name}`, { ignore: true });
+    const ReadmeRef_sdk = (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeRef');
     if (ReadmeRef_sdk) {
         // The per-language component owns the REFERENCE.md File, so anything
         // appended out here lands outside it and silently vanishes. The shared

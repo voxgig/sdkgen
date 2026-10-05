@@ -74,6 +74,7 @@ create-sdkgen over it), and an item from a package that still ships
 | `main.kit.repo` | object | Where the SDK's source repository lives (see below). |
 | `main.kit.author` | object | Manifest `author` (see below). |
 | `main.kit.contributor.<key>` | object | Manifest `contributors` entries (see below). |
+| `main.kit.publisher` | object | Who publishes the SDK (see below). |
 | `main.kit.test` | object | How the generated test suites behave (see below). |
 | `main.kit.target.<name>` | object | A language target. |
 | `main.kit.entity.<name>` | object | An API entity. |
@@ -98,6 +99,7 @@ for that purpose:
 | `main.kit.repo.path` / `.host` | Repo identity. The repo is NOT always `<origin>/<name>-sdk`; deriving it from the slug produced a go module path that returns 404 and homepage/bugs URLs for a repo that does not exist. |
 | `main.kit.author` / `main.kit.contributor.<key>` | Manifest attribution. Hand-edited credit in a `package.json` is DELETED by the next regeneration — which is what happened to a hand-written provider repo the first time it was regenerated. |
 | `main.kit.target.<t>.author` | Attribution for ONE target, overriding the model-wide value. A generated SDK is an artefact of the publisher; a Seneca provider is independently released by named people. One model produces both. |
+| `main.kit.publisher` | The copyright holder in every LICENSE, the default package author, and the security contact. An SDK published by anyone but Voxgig otherwise carried Voxgig's name in its licence and Voxgig's address in its security policy. |
 | `main.kit.test.live.strict` | Whether a live test that does not succeed fails or skips. |
 | `main.kit.target.<t>.module.path` / `.package` / `.goversion` | Go-family module identity and the `go` directive. |
 | `main.kit.target.<t>.output.path` / `.repo` / `.create` | Generate this target into ANOTHER repo and optionally require that repo to exist already (see [below](#generating-outside-the-sdk-repo-output)). |
@@ -106,7 +108,7 @@ for that purpose:
 | `main.kit.target.<t>.publish.version` | The port's own release version. Every manifest emitter used to hardcode `0.0.1`, so a project that had published `0.0.2` got its manifest reset on the next run. |
 | `main.kit.target.<t>.publish.registry.package` | The published package name, when it is not the derived one. |
 | `main.kit.feature.<name>.active` | Which features ship. |
-| `main.kit.target.go-mcp.tool.write` | Whether the MCP server also registers create, update and remove tools. It is off by default, as an agent calling one changes the API's data. |
+| `main.kit.target.go-mcp.tool.write` | Whether the MCP server also registers create, update, patch and remove tools. It is off by default, as an agent calling one changes the API's data. |
 
 A project extends a target's CODE the same way — by registering a
 component (`registerComponent('X')` → `.sdk/src/cmp/<t>/X_<t>.ts`), which
@@ -125,7 +127,7 @@ both, because `target add` will revert both.
 
 | Path | Type | Default | Description |
 | --- | --- | --- | --- |
-| `author.name` | string | `''` | `''` means the publisher (Voxgig), which is what a generated SDK carries. |
+| `author.name` | string | `''` | `''` means the publisher (`main.kit.publisher`), which is what a generated SDK carries. |
 | `author.url` | string | `''` | |
 | `contributor.<key>.name` | string | — | |
 | `contributor.<key>.url` | string | `''` | |
@@ -139,6 +141,31 @@ render it in sorted-key order, so the manifest stays byte-stable.
 main: kit: author: { name: 'Ada Lovelace', url: 'https://example.com' }
 main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: 'https://example.com' }
 ```
+
+## `main.kit.publisher`
+
+| Path | Type | Default | Description |
+| --- | --- | --- | --- |
+| `publisher.name` | string | `''` | The copyright holder in the root LICENSE and in every target's LICENSE, the name in NOTICE and SECURITY.md, and the default package author. `''` means Voxgig. |
+| `publisher.url` | string | `''` | The default author URL. `''` is `https://voxgig.com` when the publisher is Voxgig, and no URL otherwise. |
+| `publisher.security` | string | `''` | Where SECURITY.md and the README send a vulnerability report: an email address or a URL. `''` is `security@voxgig.com` when the publisher is Voxgig. Another publisher with no contact asks for a private report to the publisher by name. |
+
+Voxgig's own lines follow the publisher too. The README's link to Voxgig
+SDKs, the `voxgig` package keyword and SECURITY.md's response commitment
+appear only when Voxgig publishes the SDK.
+
+```jsonic
+main: kit: publisher: {
+  name: 'Acme Ltd'
+  url: 'https://acme.example'
+  security: 'security@acme.example'
+}
+```
+
+A target's LICENSE carries the name through the `PROJECTPUBLISHER`
+placeholder, which `generate` fills in. A project re-adds its targets once
+(`voxgig-sdkgen target add <t>`) to pick up the placeholder; until then,
+its copied `.sdk/tm/<t>/LICENSE` keeps the name it was copied with.
 
 ## `main.kit.test`
 
@@ -384,17 +411,17 @@ main: kit: target: 'seneca-provider': output: root: true
 Entities are largely populated by `@voxgig/apidef`: each carries its
 operations (`op`), endpoint points, `relations` (ancestors), fields, and
 the `Name` case variants. The SDK generates one entity class per active
-entity, with `load` / `list` / `create` / `update` / `remove` where the
-API supports them.
+entity, with `load` / `list` / `create` / `update` / `patch` / `remove`
+where the API supports them. apidef keeps a PATCH beside a PUT as the
+sixth, `patch`, which sends only the fields the call gives, with the
+method its route declares.
 
-No bundled target generates an operation under any other name. apidef
-keeps a PATCH beside a PUT as a sixth operation, `patch`, which then has
-no method in their SDKs. Each generation names every such operation of an
-active entity, with its method and path, in one warning
-(`entity-op-ungenerated`). Reclassify the operation in the guide to reach
-it, or switch it off there (`op: patch: active: false` on its path) to
-accept the gap. An inactive entity, or an operation already switched off,
-is not reported.
+No bundled target generates an operation under any other name. Each
+generation names every such operation of an active entity, with its
+method and path, in one warning (`entity-op-ungenerated`). Reclassify the
+operation in the guide to reach it, or switch it off there (`active:
+false` on the operation, on its path) to accept the gap. An inactive
+entity, or an operation already switched off, is not reported.
 
 The warning covers the bundled targets only, identified by the provenance
 each target's model file records. A target installed from another package

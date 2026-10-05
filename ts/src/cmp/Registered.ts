@@ -1,7 +1,7 @@
 
 import { cmp } from '../helpers/component'
 
-import { requirePath } from '../utility'
+import { loadOptional, requirePath } from '../utility'
 
 import { ensureStdrep } from '../helpers/stdrep'
 
@@ -27,8 +27,8 @@ function registerComponent(name: string, options: RegisterOptions = {}) {
 
     const stdrep = ensureStdrep(ctx$)
 
-    const mod: any = requirePath(
-      ctx$, `./cmp/${target.name}/${name}_${target.name}`, { ignore: optional })
+    const path = `./cmp/${target.name}/${name}_${target.name}`
+    const mod: any = optional ? loadOptional(ctx$, path) : requirePath(ctx$, path)
 
     if (null == mod) {
       log.debug({

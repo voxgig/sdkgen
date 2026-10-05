@@ -2,14 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeEntity = void 0;
 const component_1 = require("../helpers/component");
-const utility_1 = require("../utility");
+const optional_1 = require("../helpers/optional");
 // Per-language Entities section lives in
 // `project/.sdk/src/cmp/<lang>/ReadmeEntity_<lang>.ts`.
 // Each language emits its own create-instance call style and
 // op-method spelling (Go's `Load(match, ctrl)` vs TS's `load(match)`).
 const ReadmeEntity = (0, component_1.cmp)(function ReadmeEntity(props) {
     const { target, ctx$ } = props;
-    const ReadmeEntity_sdk = (0, utility_1.requirePath)(ctx$, `./cmp/${target.name}/ReadmeEntity_${target.name}`, { ignore: true });
+    const ReadmeEntity_sdk = (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeEntity');
     if (ReadmeEntity_sdk) {
         ReadmeEntity_sdk['ReadmeEntity']({ target });
     }

@@ -7,7 +7,7 @@ import {
   getModelPath
 } from '../types'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 import { featureDocs } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
@@ -29,7 +29,8 @@ import {
   nonAffiliation,
   docsSiteUrl,
   originName,
-  SECURITY_EMAIL,
+  isDefaultPublisher,
+  securityContact,
 } from '../helpers/packageMeta'
 
 
@@ -57,6 +58,14 @@ function installCommand(target: any, model: any): string {
 
 function pickLeadTarget(sdkTargets: any[]): any | undefined {
   return sdkTargets[0]
+}
+
+
+const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test']
+
+// A consumer (py-data) switches every phase off and has no ReadmeTop components.
+function isConsumer(target: any): boolean {
+  return PHASES.every((name: string) => false === target.phase?.[name]?.active)
 }
 
 
@@ -164,12 +173,14 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     .slice()
     .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
+  const exampleTargets = sdkTargets.filter((t: any) => !isConsumer(t))
+
   const pkgTargets = activeTargets
     .slice()
     .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
   const langList = sdkTargets.map((t: any) => t.title).join(', ')
-  const leadTarget = pickLeadTarget(sdkTargets)
+  const leadTarget = pickLeadTarget(exampleTargets)
 
   File({ name: 'README.md' }, () => {
 
@@ -190,9 +201,12 @@ ${tagline}
     }
     Content(`${nonAffiliation(model)}
 
-Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
+`)
+    if (isDefaultPublisher(model)) {
+      Content(`Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
 
 `)
+    }
 
     // THE GENERATED SITE, LINKED FROM THE TOP, because the repository was the
     // one place it could not be found from. `docs_url` further down is the
@@ -284,7 +298,7 @@ ${aboutMd.trim()}
         exCall = `const items = await client.${ex}().list(${exListArg})`
       } else if ('load' === primaryOp) {
         exCall = `const ${exLower} = await client.${ex}().load(${exLoadArg})`
-      } else if ('create' === primaryOp || 'update' === primaryOp) {
+      } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
         const exIdF = entityIdField(exEnt)
         // Drop the id only when the request shape says it is OPTIONAL. It is
         // server-assigned on a normal create, but an op whose id comes from a
@@ -299,7 +313,7 @@ ${aboutMd.trim()}
         const body = bodyLines.length ? `\n${bodyLines.join('\n')}\n` : ''
         exCall = `const ${exLower} = await client.${ex}().${primaryOp}({${body}})`
       }
-      const CANON_OPS = ['list', 'load', 'create', 'update', 'remove']
+      const CANON_OPS = ['list', 'load', 'create', 'update', 'patch', 'remove']
       const opSet = new Set<string>()
       activeEntities.forEach((e: any) => Object.keys(e.op || {})
         .forEach((o: string) => { if ((e.op as any)[o] && (e.op as any)[o].active !== false) opSet.add(o) }))
@@ -314,7 +328,7 @@ ${aboutMd.trim()}
         snippet = `const client = new ${model.Name}SDK()${exCall ? '\n' + exCall : ''}`
       }
       else if (null != lang) {
-        const call = ['list', 'load', 'create', 'update'].includes(String(primaryOp))
+        const call = ['list', 'load', 'create', 'update', 'patch'].includes(String(primaryOp))
           ? primaryOpCall(lang, ex, exampleVarName(ex.toLowerCase(), lang), primaryOp!, exIdField, exEnt)
           : null
         snippet = entityExample(lang, model.Name, call)
@@ -335,7 +349,7 @@ rather than reasoning about raw HTTP routes and query parameters.
 `)
     }
 
-    if (sdkTargets.length > 0) {
+    if (exampleTargets.length > 0) {
       Content(`## Offline unit testing
 
 Every SDK ships a built-in **test mode** that swaps the HTTP transport for
@@ -343,9 +357,9 @@ an in-memory mock, so your unit tests run fully offline — no server, no
 network, and no credentials:
 
 `)
-      sdkTargets.forEach((tgt: any) => {
+      exampleTargets.forEach((tgt: any) => {
         const Test =
-          requirePath(ctx$, `./cmp/${tgt.name}/ReadmeTopTest_${tgt.name}`, { ignore: true })
+          optionalComponent(ctx$, tgt, 'ReadmeTopTest')
         if (Test) {
           Content(`### ${tgt.title}
 
@@ -396,7 +410,7 @@ network, and no credentials:
 
 `)
       const LeadQuick =
-        requirePath(ctx$, `./cmp/${leadTarget.name}/ReadmeTopQuick_${leadTarget.name}`, { ignore: true })
+        optionalComponent(ctx$, leadTarget, 'ReadmeTopQuick')
       if (LeadQuick) {
         LeadQuick['ReadmeTopQuick']({ target: leadTarget })
       }
@@ -437,14 +451,14 @@ See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full 
         mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1]
       // What the server reads and writes is what it registers, not the flag.
       const reads = mcpOps.some((op) => MCP_WRITE_OPS.includes(op)) ? '' : mcpWrite ?
-        ' It only reads, as no entity has a create, update or remove a plain call runs.' :
-        ` It only reads: create, update and remove become tools when the SDK's model sets
+        ' It only reads, as no entity has a create, update, patch or remove a plain call runs.' :
+        ` It only reads: create, update, patch and remove become tools when the SDK's model sets
 ${toggle}.`
       Content(0 === mcpOps.length ? `## Use it from an AI agent (MCP)
 
 The generated MCP server has no tools for this SDK: no entity has a list or
-load a plain call runs${mcpWrite ? ', or a create, update or remove' :
-          `, and create, update and remove are off until the SDK's model sets
+load a plain call runs${mcpWrite ? ', or a create, update, patch or remove' :
+          `, and create, update, patch and remove are off until the SDK's model sets
 ${toggle}`}.
 
 ` : `## Use it from an AI agent (MCP)
@@ -494,7 +508,7 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
       const opUnion = new Set<string>()
       activeEntities.forEach((e: any) => Object.keys(e.op || {})
         .forEach((o: string) => { if ((e.op as any)[o]?.active !== false) opUnion.add(o) }))
-      const opAvail = ['load', 'list', 'create', 'update', 'remove'].filter((o) => opUnion.has(o))
+      const opAvail = ['load', 'list', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o))
       const opBold = (opAvail.length ? opAvail : ['load', 'list']).map((o) => '**' + o + '**').join(', ')
       Content(`
 The operations available across these entities are ${opBold} — see each entity's
@@ -503,14 +517,14 @@ own list above for exactly which it supports.
 `)
     }
 
-    const otherTargets = sdkTargets.filter((t: any) => leadTarget && t.name !== leadTarget.name)
+    const otherTargets = exampleTargets.filter((t: any) => leadTarget && t.name !== leadTarget.name)
     if (otherTargets.length > 0) {
       Content(`## Quickstart in other languages
 
 `)
       otherTargets.forEach((tgt: any) => {
         const Quick =
-          requirePath(ctx$, `./cmp/${tgt.name}/ReadmeTopQuick_${tgt.name}`, { ignore: true })
+          optionalComponent(ctx$, tgt, 'ReadmeTopQuick')
         if (Quick) {
           Content(`### ${tgt.title}
 
@@ -542,9 +556,9 @@ When the entity interface does not cover an endpoint, use \`direct\`:
 
 `)
 
-    sdkTargets.forEach((tgt: any) => {
+    exampleTargets.forEach((tgt: any) => {
       const Howto =
-        requirePath(ctx$, `./cmp/${tgt.name}/ReadmeTopHowto_${tgt.name}`, { ignore: true })
+        optionalComponent(ctx$, tgt, 'ReadmeTopHowto')
       if (Howto) {
         Howto['ReadmeTopHowto']({ target: tgt })
       }
@@ -667,7 +681,7 @@ The OpenAPI spec(s) this SDK was generated from are kept in the
 
     Content(`## Security
 
-Please report security issues to ${SECURITY_EMAIL}. See [SECURITY.md](SECURITY.md).
+Please report security issues ${securityContact(model)}. See [SECURITY.md](SECURITY.md).
 Do not open public issues for suspected vulnerabilities.
 
 `)

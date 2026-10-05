@@ -5,7 +5,8 @@
 // project/.sdk/tm/ts/src/feature/** is caught here.
 
 import { test, describe } from 'node:test'
-import { strictEqual, ok, deepStrictEqual } from 'node:assert'
+import { strictEqual, ok, deepStrictEqual, rejects } from 'node:assert'
+import { getEventListeners } from 'node:events'
 
 import Path from 'node:path'
 import Fs from 'node:fs'
@@ -173,6 +174,134 @@ describe('feature:ratelimit', () => {
     await h.op({ op: 'load' }) // must wait for refill
     strictEqual(h.client._ratelimit.throttled, 1)
     ok(clock.time > 0, 'the third call waited for a token')
+  })
+})
+
+
+// A transport that answers after `ms` unless the request's signal aborts first,
+// when it rejects with the signal's reason, as fetch does.
+function slowServer(ms: number) {
+  const calls: any[] = []
+  const server = (_ctx: any, url: string, fetchdef: any) => {
+    calls.push({ url, fetchdef })
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => resolve(makeResponse(200, { ok: true })), ms)
+      const signal = fetchdef.signal
+      if (null == signal) return
+      const abort = () => {
+        clearTimeout(timer)
+        reject(signal.reason)
+      }
+      if (signal.aborted) return abort()
+      signal.addEventListener('abort', abort, { once: true })
+    })
+  }
+  return { server, calls }
+}
+
+
+// Each wait below is far longer than the abort, so a request that ignored the
+// signal would take seconds where these take milliseconds.
+describe('feature:abort', () => {
+
+  test('a caller abort cancels a request the timeout feature wraps', async () => {
+    const { server } = slowServer(2000)
+    const h = makeClient({ features: [{ name: 'timeout', options: { ms: 5000 } }], server })
+    const ac = new AbortController()
+    const reason = new Error('stop')
+    setTimeout(() => ac.abort(reason), 20)
+    const start = Date.now()
+    const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+    ok(Date.now() - start < 1000, 'the request ended at the abort')
+    strictEqual(res.ok, false)
+    strictEqual(res.error, reason)
+    strictEqual(h.client._timeout, undefined, 'an abort is not a timeout')
+  })
+
+  test('the deadline still fires while the caller signal stays live', async () => {
+    const { server } = slowServer(2000)
+    const h = makeClient({ features: [{ name: 'timeout', options: { ms: 20 } }], server })
+    const ac = new AbortController()
+    const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+    strictEqual(res.error.code, 'timeout')
+    strictEqual(getEventListeners(ac.signal, 'abort').length, 0,
+      'the timeout leaves no listener on the caller signal')
+  })
+
+  test('an aborted request is not retried', async () => {
+    const ac = new AbortController()
+    const { server, calls } = recordingServer(() => {
+      ac.abort()
+      return makeResponse(503)
+    })
+    const clock = makeClock()
+    const h = makeClient({
+      features: [{ name: 'retry', options: { retries: 3, minDelay: 10, jitter: false, sleep: clock.sleep } }],
+      server,
+    })
+    const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+    strictEqual(calls.length, 1)
+    strictEqual(res.error, ac.signal.reason)
+    strictEqual(h.client._retry, undefined, 'no retry was scheduled')
+  })
+
+  test('an abort whose reason is not an Error is not retried either', async () => {
+    // fetch rejects with the reason itself, so a string or a number reaches
+    // retry as a non-Error: it must still end the request, not become a response.
+    const { server, calls } = slowServer(2000)
+    const h = makeClient({
+      features: [{ name: 'retry', options: { retries: 3, minDelay: 10, jitter: false } }],
+      server,
+    })
+    const ac = new AbortController()
+    setTimeout(() => ac.abort('user cancelled'), 20)
+    const start = Date.now()
+    const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+    ok(Date.now() - start < 1000, 'the request ended at the abort')
+    strictEqual(res.ok, false)
+    strictEqual(res.error, 'user cancelled')
+    strictEqual(calls.length, 1)
+    strictEqual(h.client._retry, undefined, 'no retry was scheduled')
+  })
+
+  test('an abort during the retry backoff ends it', async () => {
+    const ac = new AbortController()
+    const { server, calls } = recordingServer(() => makeResponse(503))
+    const h = makeClient({
+      features: [{ name: 'retry', options: { retries: 3, minDelay: 2000, jitter: false } }],
+      server,
+    })
+    setTimeout(() => ac.abort(), 20)
+    const start = Date.now()
+    const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+    ok(Date.now() - start < 1000, 'the backoff ended at the abort')
+    strictEqual(calls.length, 1)
+    strictEqual(res.error, ac.signal.reason)
+  })
+
+  test('an abort during simulated latency ends the request before the transport', async () => {
+    const ac = new AbortController()
+    const { server, calls } = recordingServer()
+    const h = makeClient({ features: [{ name: 'netsim', options: { latency: 2000 } }], server })
+    setTimeout(() => ac.abort(), 20)
+    const start = Date.now()
+    const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+    ok(Date.now() - start < 1000, 'the latency ended at the abort')
+    strictEqual(calls.length, 0)
+    strictEqual(res.error, ac.signal.reason)
+  })
+
+  test('an abort while waiting for a rate-limit token ends the wait', async () => {
+    const ac = new AbortController()
+    const { server, calls } = recordingServer()
+    const h = makeClient({ features: [{ name: 'ratelimit', options: { rate: 0.5, burst: 1 } }], server })
+    await h.op({ op: 'load' })
+    setTimeout(() => ac.abort(), 20)
+    const start = Date.now()
+    const res = await h.op({ op: 'load', ctrl: { signal: ac.signal } })
+    ok(Date.now() - start < 1000, 'the wait ended at the abort')
+    strictEqual(calls.length, 1)
+    strictEqual(res.error, ac.signal.reason)
   })
 })
 
@@ -809,6 +938,49 @@ describe('feature:test-envelope', () => {
       'every SDK target synthesises the envelope: add the new one to this guard')
   })
 
+  test('every target wraps each listed record under the key its transform reads', () => {
+    // A list read by ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] expects
+    // items of the form {<key>: record}; bare records give it nothing to read.
+    const TM = Path.join(__dirname, '..', 'project', '.sdk', 'tm')
+    const sites: [string, string, string][] = [
+      ['c', 'feature/test.c', String.raw`cmap(1, key, items->items[i])`],
+      ['clojure', 'src/sdk/features.clj', String.raw`(map (fn [item] (vs/jm ikey item)) data)`],
+      ['cpp', 'feature/test.hpp', String.raw`map_put(wrapped, key, item)`],
+      ['csharp', 'feature/TestFeature.cs', String.raw`new Dictionary<string, object?> { [key] = item }`],
+      ['elixir', 'lib/projectname/feature/test.ex', String.raw`S.jm([key, S.getelem(data, i)])`],
+      ['go', 'feature/test_feature.go', String.raw`map[string]any{key: item}`],
+      ['java', 'feature/TestFeature.java', String.raw`wrapped.put(key, item)`],
+      ['js', 'src/feature/test/TestFeature.js', String.raw`data.map((item) => ({ [itemkey]: item }))`],
+      ['kotlin', 'feature/TestFeature.kt', String.raw`linkedMapOf<String, Any?>(key to it)`],
+      ['lua', 'feature/test_feature.lua', String.raw`out[i] = { [key] = item }`],
+      ['ocaml', 'sdk_features.ml', String.raw`jo [(key, item)]`],
+      ['perl', 'feature/test_feature.pm', String.raw`map { +{ $key => $_ } } @$data`],
+      ['php', 'feature/TestFeature.php', String.raw`fn($item) => [$key => $item]`],
+      ['py', 'pkg/feature/test_feature.py', String.raw`[{key: item} for item in data]`],
+      ['rb', 'feature/test_feature.rb', String.raw`data.map { |item| { key => item } }`],
+      ['rust', 'feature/test.rs', String.raw`jo(vec![(key.as_str(), item.clone())])`],
+      ['scala', 'feature/TestFeature.scala', String.raw`wrapped.put(key, item)`],
+      ['swift', 'Sources/ProjectNameSDK/feature/TestFeature.swift', String.raw`wrapped.entries[key] = item`],
+      ['ts', 'src/feature/test/TestFeature.ts', String.raw`data.map((item: any) => ({ [itemkey]: item }))`],
+      ['zig', 'feature/test.zig', String.raw`h.jo(&.{.{ key, item }})`],
+    ]
+
+    for (const [target, rel, form] of sites) {
+      const file = Path.join(TM, target, rel)
+      ok(Fs.existsSync(file), target + ': ' + rel + ' is gone — repoint this guard')
+      ok(Fs.readFileSync(file, 'utf8').includes(form),
+        target + ' no longer wraps each listed record under its key (' + rel + ')')
+    }
+
+    const NON_SDK = ['go-cli', 'go-mcp', 'py-data']
+    const shipped = Fs.readdirSync(TM)
+      .filter((n) => Fs.statSync(Path.join(TM, n)).isDirectory())
+      .filter((n) => !NON_SDK.includes(n))
+      .sort()
+    deepStrictEqual(sites.map(([t]) => t).sort(), shipped,
+      'every SDK target wraps listed records: add the new one to this guard')
+  })
+
 })
 
 
@@ -919,6 +1091,21 @@ describe('feature:test-netsim', () => {
     const inst: any = new (loadFeature('test'))()
     const f = inst.makeNetsim({ errorTimes: 1 }, async () => makeResponse(200, {}))
     strictEqual((await f(errCtx, 'u', {})).code, 'netsim_conn')
+  })
+
+  test('an abort during the simulated latency ends the request', async () => {
+    const inst: any = new (loadFeature('test'))()
+    let called = 0
+    const f = inst.makeNetsim({ latency: 2000 }, async () => {
+      called++
+      return makeResponse(200, {})
+    })
+    const ac = new AbortController()
+    setTimeout(() => ac.abort(), 20)
+    const start = Date.now()
+    await rejects(f(errCtx, 'u', { signal: ac.signal }), (err: any) => err === ac.signal.reason)
+    ok(Date.now() - start < 1000, 'the latency ended at the abort')
+    strictEqual(called, 0)
   })
 
   test('latency delays via the injectable sleep', async () => {

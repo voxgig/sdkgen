@@ -7,7 +7,8 @@ import {
   getModelPath
 } from '../types'
 
-import { requirePath, isAuthActive } from '../utility'
+import { isAuthActive } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 
 
 const ReadmeModel = cmp(function ReadmeModel(props: any) {
@@ -28,7 +29,7 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
 
   // Delegate to target-specific reference summary
   const ReadmeModel_sdk =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeModel_${target.name}`, { ignore: true })
+    optionalComponent(ctx$, target, 'ReadmeModel')
 
   if (ReadmeModel_sdk) {
     ReadmeModel_sdk['ReadmeModel']({ target })
@@ -92,6 +93,7 @@ All entities share the same interface.
 | \`list(reqmatch?, ctrl?)\` | List entities matching the criteria. |
 | \`create(reqdata?, ctrl?)\` | Create a new entity. |
 | \`update(reqdata?, ctrl?)\` | Update an existing entity. |
+| \`patch(reqdata?, ctrl?)\` | Change part of an existing entity. |
 | \`remove(reqmatch?, ctrl?)\` | Remove an entity. |
 | \`data(data?)\` | Get or set entity data. |
 | \`match(match?)\` | Get or set entity match criteria. |

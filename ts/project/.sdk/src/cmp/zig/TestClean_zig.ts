@@ -40,7 +40,7 @@ const TestClean = cmp(function TestClean(props: any) {
       const method = zigVarName(e.name)
       const cls = entityClassName(e, entityColl)
       Object.keys(e.op || {})
-        .filter((op) => ['list', 'load', 'create', 'update', 'remove'].includes(op))
+        .filter((op) => ['list', 'load', 'create', 'update', 'patch', 'remove'].includes(op))
         .sort((a, b) => ((rank[a] ?? 2) - (rank[b] ?? 2)) || a.localeCompare(b))
         .forEach((op) => candidates.push({
           method, mod: method, cls, op, params: pointParams(configEntity[e.name]?.op?.[op]),

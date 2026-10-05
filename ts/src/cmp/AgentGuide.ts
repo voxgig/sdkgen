@@ -2,7 +2,7 @@
 import { Content, File } from 'jostraca'
 import { cmp } from '../helpers/component'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 
 import {
   activeFeatures,
@@ -109,7 +109,7 @@ the runtime under \`.sdk/tm/${lang}/feature/\` and regenerate.
     }
 
     const AgentGuide_sdk =
-      requirePath(ctx$, `./cmp/${lang}/AgentGuide_${lang}`, { ignore: true })
+      optionalComponent(ctx$, target, 'AgentGuide')
     if (AgentGuide_sdk) {
       AgentGuide_sdk['AgentGuide']({ target })
     }

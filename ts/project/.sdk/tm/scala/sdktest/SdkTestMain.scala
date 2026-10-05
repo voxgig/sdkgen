@@ -130,7 +130,7 @@ object SdkTestMain {
   }
 
   def fhDefaultMethod(op: String): String = op match {
-    case "create" => "POST"; case "update" => "PATCH"; case "remove" => "DELETE"; case _ => "GET"
+    case "create" => "POST"; case "update" | "patch" => "PATCH"; case "remove" => "DELETE"; case _ => "GET"
   }
 
   def fhBuildUrl(spec: Spec): String = {

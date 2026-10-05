@@ -9,7 +9,7 @@ import {
   getModelPath
 } from '../types'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
 import { idLiteral, matchArg, dataArg } from '../helpers/opExample'
@@ -317,7 +317,7 @@ were added, so later features can override earlier ones.
 
 
   const ReadmeExplanation_sdk =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeExplanation_${target.name}`, { ignore: true })
+    optionalComponent(ctx$, target, 'ReadmeExplanation')
 
   if (ReadmeExplanation_sdk) {
     ReadmeExplanation_sdk['ReadmeExplanation']({ target })

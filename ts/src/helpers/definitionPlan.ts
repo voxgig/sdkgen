@@ -2,7 +2,7 @@
 
 import { KIT, nom } from '@voxgig/apidef'
 
-import { entityCollection } from './opShape'
+import { CANON_OP_ORDER, entityCollection } from './opShape'
 import { pointSegments } from './pointPath'
 import { pointFacts } from './resolved'
 import { isAuthSuppressed, resolveAuthIn, resolveAuthName } from '../utility'
@@ -28,6 +28,7 @@ type DefinitionPoint = {
   cookies: { name: string, wire: string, value: any }[]
   query: string[]
   queryArgs: { name: string, wire: string }[]
+  bodyArgs?: string[]
   auth: Credential[][] | null
   status: number
   sample: any
@@ -39,8 +40,10 @@ type DefinitionPoint = {
 
 
 // The operations every target generates a method for. The model may hold
-// others, such as a patch beside an update, which no SDK can be called with.
-const GENERATED_OPS = ['load', 'list', 'create', 'update', 'remove']
+// others, which no SDK can be called with.
+const GENERATED_OPS = CANON_OP_ORDER
+
+const BODY_OPS = ['create', 'update', 'patch']
 
 const MAX_ITEMS = 3
 const MAX_DEPTH = 8
@@ -139,8 +142,8 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           selected[arg.n] = shared?.value ?? scalar(arg.ex ?? def?.example ?? def?.schema?.example) ?? 'v1'
         }
 
-        // Create and update send their input as the body: only a match has a query.
-        const queryArgs = 'create' === op || 'update' === op ? [] :
+        // A create, update or patch sends its input as the body: only a match has a query.
+        const queryArgs = BODY_OPS.includes(op) ? [] :
           (point.g?.query || [])
             .filter((arg: any) => undefined !== selected[arg.n] &&
               !args.some((a: any) => a.name === arg.n))
@@ -150,8 +153,16 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
         const success = successResponse(facts.responses)
         const media = null == success ? undefined : jsonMedia(success.response)
         const responseMedia = recorded ? successMedia(facts) : []
-        const rawBody = recorded && ('create' === op || 'update' === op) ?
+        const rawBody = recorded && BODY_OPS.includes(op) ?
           rawRequestBody(facts) : undefined
+
+        // An argument the request body declares too goes out in both, from one value.
+        const declared = ('create' === op || 'update' === op) && null == rawBody ?
+          bodyProperties(facts) : []
+        const bodyArgs = [...new Set([...headers, ...cookies].map((a: any) => a.name)
+          .concat((point.g?.query || []).map((a: any) => a.n)
+            .filter((name: string) => undefined !== selected[name])))]
+          .filter((name) => declared.includes(name))
 
         plan.push({
           entity: entity.name,
@@ -168,6 +179,7 @@ function definitionPlan(ctx$: any): DefinitionPoint[] {
           ...(null == rawBody ? {} : { rawBody }),
           query: params.filter((p: any) => 'query' === p?.in).map((p: any) => p.name),
           queryArgs,
+          ...(0 === bodyArgs.length ? {} : { bodyArgs }),
           auth: unchecked ? null : credentialSets(facts, own),
           status: success?.status ?? 200,
           sample: null == media ? null : boundedSample(fitting(sampleOf(media), media.schema)),
@@ -266,6 +278,17 @@ function rawRequestBody(facts: any): { media: string[], text: boolean } | undefi
     media: types,
     text: types.every((t) => /^text\/|^application\/xml|\+xml/i.test(t.split(';')[0].trim())),
   }
+}
+
+
+// The top-level properties a JSON request body declares, an allOf's parts included.
+function bodyProperties(facts: any): string[] {
+  const content = facts.requestBody?.content
+  const schema = null != content && 'object' === typeof content ?
+    content[Object.keys(content).find((t) => /json/i.test(t)) ?? '']?.schema :
+    (facts.parameters || []).find((p: any) => 'body' === p?.in)?.schema
+  return [schema, ...(Array.isArray(schema?.allOf) ? schema.allOf : [])]
+    .flatMap((part: any) => Object.keys(part?.properties || {}))
 }
 
 

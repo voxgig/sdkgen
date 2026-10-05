@@ -47,15 +47,29 @@ func stripAction(reqdata any) any {
 	return omitKeys(reqdata, []string{"$action"})
 }
 
-// A header or query argument travels where prepareHeadersUtil or
+// A header, cookie or query argument travels where prepareHeadersUtil or
 // prepareQueryUtil sends it, so the body is built from the request data
-// without it.
+// without it, unless the entity declares it as a field too.
 func routedArgNames(ctx *core.Context) []string {
 	names := []string{}
 	for _, arg := range append(append(callArgs(ctx, "header"), callArgs(ctx, "cookie")...), callArgs(ctx, "query")...) {
-		names = append(names, arg.name)
+		if !fieldArg(ctx, arg.name) {
+			names = append(names, arg.name)
+		}
 	}
 	return names
+}
+
+func fieldArg(ctx *core.Context, name string) bool {
+	for _, kind := range []string{"header", "cookie", "query"} {
+		al, _ := vs.GetPath(ctx.Point, []any{"args", kind}).([]any)
+		for _, ad := range al {
+			if n, _ := vs.GetProp(ad, "name").(string); n == name && true == vs.GetProp(ad, "field") {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func omitKeys(reqdata any, names []string) any {

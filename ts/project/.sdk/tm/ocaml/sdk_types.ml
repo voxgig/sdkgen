@@ -211,6 +211,7 @@ and entity_obj = {
   mutable e_list : value -> value -> entity_obj list;
   mutable e_create : value -> value -> entity_obj;
   mutable e_update : value -> value -> entity_obj;
+  mutable e_patch : value -> value -> entity_obj;
   mutable e_remove : value -> value -> entity_obj;
   (* e_remove resolves to the entity, marked. The instance KEEPS the data it
    * held - a caller can still read what was deleted - but it is no longer a

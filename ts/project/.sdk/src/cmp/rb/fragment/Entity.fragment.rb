@@ -229,6 +229,8 @@ class EntyClass
 
   # #UpdateOp
 
+  # #PatchOp
+
   # #RemoveOp
 
   private

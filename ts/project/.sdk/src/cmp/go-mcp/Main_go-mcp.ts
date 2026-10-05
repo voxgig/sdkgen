@@ -76,6 +76,12 @@ const TOOL_SPEC: Record<string, {
     summary: "change a record's fields", verb: 'Update a record in',
     returns: 'the updated record', annotations: 'DestructiveHint: hint(true)',
   },
+  patch: {
+    type: 'PatchArgs', field: 'Data', key: 'data', optional: false,
+    help: "the record's id and only the fields to change",
+    summary: "change some of a record's fields", verb: 'Patch a record in',
+    returns: 'the patched record', annotations: 'DestructiveHint: hint(true)',
+  },
   remove: {
     type: 'RemoveArgs', field: 'Query', key: 'query', optional: false,
     help: 'match map naming the record, such as {"id":1}',
@@ -157,8 +163,8 @@ const Main = cmp(function Main(props: any) {
 ${toggle}. Each tool carries the MCP hints an agent host reads before calling
 it, listed in the reference below.` : write ?
       `The server only reads: the SDK's model sets ${toggle}, but no entity
-has a create, update or remove a plain call runs.` :
-      `The server only reads. Create, update and remove become tools too when the
+has a create, update, patch or remove a plain call runs.` :
+      `The server only reads. Create, update, patch and remove become tools too when the
 SDK's own model sets ${toggle}; they are off by default, as an agent calling
 them changes the API's data.`
 

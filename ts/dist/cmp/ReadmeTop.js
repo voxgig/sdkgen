@@ -4,7 +4,7 @@ exports.ReadmeTop = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const types_1 = require("../types");
-const utility_1 = require("../utility");
+const optional_1 = require("../helpers/optional");
 const FeatureDocs_1 = require("./FeatureDocs");
 const opShape_1 = require("../helpers/opShape");
 const opExample_1 = require("../helpers/opExample");
@@ -34,6 +34,11 @@ function installCommand(target, model) {
 }
 function pickLeadTarget(sdkTargets) {
     return sdkTargets[0];
+}
+const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test'];
+// A consumer (py-data) switches every phase off and has no ReadmeTop components.
+function isConsumer(target) {
+    return PHASES.every((name) => false === target.phase?.[name]?.active);
 }
 // The languages the example helpers can write, in the order a reader is
 // likeliest to want one.
@@ -122,11 +127,12 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
         .filter((t) => t.name !== 'go-cli' && t.name !== 'go-mcp')
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
+    const exampleTargets = sdkTargets.filter((t) => !isConsumer(t));
     const pkgTargets = activeTargets
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
     const langList = sdkTargets.map((t) => t.title).join(', ');
-    const leadTarget = pickLeadTarget(sdkTargets);
+    const leadTarget = pickLeadTarget(exampleTargets);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
         (0, jostraca_1.Content)(`# ${model.Name} SDK
 
@@ -145,9 +151,12 @@ ${tagline}
         }
         (0, jostraca_1.Content)(`${(0, packageMeta_1.nonAffiliation)(model)}
 
-Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
+`);
+        if ((0, packageMeta_1.isDefaultPublisher)(model)) {
+            (0, jostraca_1.Content)(`Learn more about Voxgig SDKs at [voxgig.com/sdk](${VOXGIG_SDK}).
 
 `);
+        }
         // THE GENERATED SITE, LINKED FROM THE TOP, because the repository was the
         // one place it could not be found from. `docs_url` further down is the
         // UPSTREAM API's documentation, not this, and a reader who lands on the
@@ -236,7 +245,7 @@ ${aboutMd.trim()}
             else if ('load' === primaryOp) {
                 exCall = `const ${exLower} = await client.${ex}().load(${exLoadArg})`;
             }
-            else if ('create' === primaryOp || 'update' === primaryOp) {
+            else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
                 const exIdF = (0, opShape_1.entityIdField)(exEnt);
                 // Drop the id only when the request shape says it is OPTIONAL. It is
                 // server-assigned on a normal create, but an op whose id comes from a
@@ -250,7 +259,7 @@ ${aboutMd.trim()}
                 const body = bodyLines.length ? `\n${bodyLines.join('\n')}\n` : '';
                 exCall = `const ${exLower} = await client.${ex}().${primaryOp}({${body}})`;
             }
-            const CANON_OPS = ['list', 'load', 'create', 'update', 'remove'];
+            const CANON_OPS = ['list', 'load', 'create', 'update', 'patch', 'remove'];
             const opSet = new Set();
             activeEntities.forEach((e) => Object.keys(e.op || {})
                 .forEach((o) => { if (e.op[o] && e.op[o].active !== false)
@@ -265,7 +274,7 @@ ${aboutMd.trim()}
                 snippet = `const client = new ${model.Name}SDK()${exCall ? '\n' + exCall : ''}`;
             }
             else if (null != lang) {
-                const call = ['list', 'load', 'create', 'update'].includes(String(primaryOp))
+                const call = ['list', 'load', 'create', 'update', 'patch'].includes(String(primaryOp))
                     ? (0, opExample_1.primaryOpCall)(lang, ex, (0, naming_1.exampleVarName)(ex.toLowerCase(), lang), primaryOp, exIdField, exEnt)
                     : null;
                 snippet = entityExample(lang, model.Name, call);
@@ -284,7 +293,7 @@ rather than reasoning about raw HTTP routes and query parameters.
 
 `);
         }
-        if (sdkTargets.length > 0) {
+        if (exampleTargets.length > 0) {
             (0, jostraca_1.Content)(`## Offline unit testing
 
 Every SDK ships a built-in **test mode** that swaps the HTTP transport for
@@ -292,8 +301,8 @@ an in-memory mock, so your unit tests run fully offline — no server, no
 network, and no credentials:
 
 `);
-            sdkTargets.forEach((tgt) => {
-                const Test = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopTest_${tgt.name}`, { ignore: true });
+            exampleTargets.forEach((tgt) => {
+                const Test = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopTest');
                 if (Test) {
                     (0, jostraca_1.Content)(`### ${tgt.title}
 
@@ -344,7 +353,7 @@ network, and no credentials:
 ### ${leadTarget.title}
 
 `);
-            const LeadQuick = (0, utility_1.requirePath)(ctx$, `./cmp/${leadTarget.name}/ReadmeTopQuick_${leadTarget.name}`, { ignore: true });
+            const LeadQuick = (0, optional_1.optionalComponent)(ctx$, leadTarget, 'ReadmeTopQuick');
             if (LeadQuick) {
                 LeadQuick['ReadmeTopQuick']({ target: leadTarget });
             }
@@ -383,14 +392,14 @@ See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full 
                 mcpOps.slice(0, -1).join(', ') + ' and ' + mcpOps[mcpOps.length - 1];
             // What the server reads and writes is what it registers, not the flag.
             const reads = mcpOps.some((op) => mcpTools_1.MCP_WRITE_OPS.includes(op)) ? '' : mcpWrite ?
-                ' It only reads, as no entity has a create, update or remove a plain call runs.' :
-                ` It only reads: create, update and remove become tools when the SDK's model sets
+                ' It only reads, as no entity has a create, update, patch or remove a plain call runs.' :
+                ` It only reads: create, update, patch and remove become tools when the SDK's model sets
 ${toggle}.`;
             (0, jostraca_1.Content)(0 === mcpOps.length ? `## Use it from an AI agent (MCP)
 
 The generated MCP server has no tools for this SDK: no entity has a list or
-load a plain call runs${mcpWrite ? ', or a create, update or remove' :
-                `, and create, update and remove are off until the SDK's model sets
+load a plain call runs${mcpWrite ? ', or a create, update, patch or remove' :
+                `, and create, update, patch and remove are off until the SDK's model sets
 ${toggle}`}.
 
 ` : `## Use it from an AI agent (MCP)
@@ -438,7 +447,7 @@ The API exposes ${activeEntities.length === 1 ? 'one entity' : activeEntities.le
             activeEntities.forEach((e) => Object.keys(e.op || {})
                 .forEach((o) => { if (e.op[o]?.active !== false)
                 opUnion.add(o); }));
-            const opAvail = ['load', 'list', 'create', 'update', 'remove'].filter((o) => opUnion.has(o));
+            const opAvail = ['load', 'list', 'create', 'update', 'patch', 'remove'].filter((o) => opUnion.has(o));
             const opBold = (opAvail.length ? opAvail : ['load', 'list']).map((o) => '**' + o + '**').join(', ');
             (0, jostraca_1.Content)(`
 The operations available across these entities are ${opBold} — see each entity's
@@ -446,13 +455,13 @@ own list above for exactly which it supports.
 
 `);
         }
-        const otherTargets = sdkTargets.filter((t) => leadTarget && t.name !== leadTarget.name);
+        const otherTargets = exampleTargets.filter((t) => leadTarget && t.name !== leadTarget.name);
         if (otherTargets.length > 0) {
             (0, jostraca_1.Content)(`## Quickstart in other languages
 
 `);
             otherTargets.forEach((tgt) => {
-                const Quick = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopQuick_${tgt.name}`, { ignore: true });
+                const Quick = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopQuick');
                 if (Quick) {
                     (0, jostraca_1.Content)(`### ${tgt.title}
 
@@ -481,8 +490,8 @@ Both accept a map with \`path\`, \`method\`, \`params\`, \`query\`,
 When the entity interface does not cover an endpoint, use \`direct\`:
 
 `);
-        sdkTargets.forEach((tgt) => {
-            const Howto = (0, utility_1.requirePath)(ctx$, `./cmp/${tgt.name}/ReadmeTopHowto_${tgt.name}`, { ignore: true });
+        exampleTargets.forEach((tgt) => {
+            const Howto = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopHowto');
             if (Howto) {
                 Howto['ReadmeTopHowto']({ target: tgt });
             }
@@ -599,7 +608,7 @@ The OpenAPI spec(s) this SDK was generated from are kept in the
 `);
         (0, jostraca_1.Content)(`## Security
 
-Please report security issues to ${packageMeta_1.SECURITY_EMAIL}. See [SECURITY.md](SECURITY.md).
+Please report security issues ${(0, packageMeta_1.securityContact)(model)}. See [SECURITY.md](SECURITY.md).
 Do not open public issues for suspected vulnerabilities.
 
 `);
