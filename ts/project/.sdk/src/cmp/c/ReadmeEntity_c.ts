@@ -43,12 +43,12 @@ function cmapExpr(pairs: string[]): string {
 
 // Operation vtable descriptions (language-agnostic wording, C signatures).
 const OP_DESC: Record<string, { method: string, desc: string }> = {
-  load:   { method: 'vt->load(e, reqmatch, ctrl, &err)',   desc: 'Load a single entity by match criteria.' },
-  list:   { method: 'vt->list(e, reqmatch, ctrl, &err)',   desc: 'List entities, optionally matching the given criteria.' },
-  create: { method: 'vt->create(e, reqdata, ctrl, &err)',  desc: 'Create a new entity with the given data.' },
-  update: { method: 'vt->update(e, reqdata, ctrl, &err)',  desc: 'Update an existing entity.' },
-  patch:  { method: 'vt->patch(e, reqdata, ctrl, &err)',   desc: 'Change part of an existing entity.' },
-  remove: { method: 'vt->remove(e, reqmatch, ctrl, &err)', desc: 'Remove the matching entity.' },
+  load:   { method: 'Entity* vt->load(e, reqmatch, ctrl, &err)',   desc: 'Load a single entity by match criteria.' },
+  list:   { method: 'Entity** vt->list(e, reqmatch, ctrl, &err)',  desc: 'List entities, optionally matching the given criteria: a `NULL`-terminated array, one per record.' },
+  create: { method: 'Entity* vt->create(e, reqdata, ctrl, &err)',  desc: 'Create a new entity with the given data.' },
+  update: { method: 'Entity* vt->update(e, reqdata, ctrl, &err)',  desc: 'Update an existing entity.' },
+  patch:  { method: 'Entity* vt->patch(e, reqdata, ctrl, &err)',  desc: 'Change part of an existing entity.' },
+  remove: { method: 'Entity* vt->remove(e, reqmatch, ctrl, &err)', desc: 'Remove the matching entity, which is returned marked as deleted.' },
 }
 
 
@@ -143,7 +143,10 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
 
 \`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-voxgig_value* ${evar}_rec = ${evar}->vt->load(${evar}, ${loadArg}, NULL, &err);
+Entity* loaded = ${evar}->vt->load(${evar}, ${loadArg}, NULL, &err);
+if (loaded) {
+    printf("%s\\n", voxgig_to_json(loaded->vt->data(loaded, NULL)));
+}
 \`\`\`
 
 `)
@@ -154,7 +157,10 @@ voxgig_value* ${evar}_rec = ${evar}->vt->load(${evar}, ${loadArg}, NULL, &err);
 
 \`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-voxgig_value* ${evar}s = ${evar}->vt->list(${evar}, NULL, NULL, &err);
+Entity** ${evar}s = ${evar}->vt->list(${evar}, NULL, NULL, &err);
+for (size_t i = 0; ${evar}s && ${evar}s[i]; i++) {
+    printf("%s\\n", voxgig_to_json(${evar}s[i]->vt->data(${evar}s[i], NULL)));
+}
 \`\`\`
 
 `)
@@ -169,10 +175,10 @@ voxgig_value* ${evar}s = ${evar}->vt->list(${evar}, NULL, NULL, &err);
 Entity* ${evar} = ${acc}(client, NULL);
 `)
       if (0 === createItems.length) {
-        Content(`voxgig_value* ${evar}_rec = ${evar}->vt->create(${evar}, NULL, NULL, &err);
+        Content(`Entity* created = ${evar}->vt->create(${evar}, NULL, NULL, &err);
 `)
       } else {
-        Content(`voxgig_value* ${evar}_rec = ${evar}->vt->create(${evar}, cmap(${createItems.length},
+        Content(`Entity* created = ${evar}->vt->create(${evar}, cmap(${createItems.length},
 `)
         createItems.map((it: any, i: number) => {
           const comma = i < createItems.length - 1 ? ',' : ')'

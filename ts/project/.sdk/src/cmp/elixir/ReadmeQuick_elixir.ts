@@ -55,7 +55,8 @@ sdk = ${ctor}
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list/2\` returns a list value node and raises on error.
+\`list/2\` returns a list of entities, one per record, and raises on error;
+\`data_get/1\` reads an entity's record.
 
 \`\`\`elixir
 try do
@@ -91,7 +92,8 @@ end
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`load/2\` returns the bare record and raises on error.
+\`load/2\` returns the entity and raises on error; \`data_get/1\` reads its
+record.
 
 \`\`\`elixir
 try do
@@ -118,7 +120,8 @@ end
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`load/2\` returns the bare record and raises on error.
+\`load/2\` returns the entity and raises on error; \`data_get/1\` reads its
+record.
 
 \`\`\`elixir
 try do
@@ -164,7 +167,7 @@ ${eVar} = ${Name}.${eCall}(sdk)
 
 `)
       if (opnames.includes('create')) {
-        Content(`# Create — returns the bare created record
+        Content(`# Create — returns the created entity
 created = ${Name}.Entity.${eName}.create(${eVar}, H.deep(%{${examplePairs('create').join(', ')}}))
 
 `)

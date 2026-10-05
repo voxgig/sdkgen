@@ -15,6 +15,17 @@ require(Cwd::abs_path("$__dir/base_feature.pm"));
 
 package ProjectNameTestFeature;
 
+# The key a list's response transform
+# ["`$EACH`", "body", { "`$MERGE`" => "`.<key>`" }] reads each item's record under.
+sub item_envelope_key {
+  my ($spec) = @_;
+  return undef unless ref($spec) eq 'ARRAY' && 3 == @$spec &&
+    '`$EACH`' eq ($spec->[0] // '') && 'body' eq ($spec->[1] // '') && ref($spec->[2]) eq 'HASH';
+  my $merge = $spec->[2]{'`$MERGE`'};
+  return undef unless defined $merge && !ref($merge) && $merge =~ /^`\.([^.`\$]+)`$/;
+  return $1;
+}
+
 our @ISA = ('ProjectNameBaseFeature');
 
 sub new {
@@ -65,6 +76,8 @@ sub init {
     return $data unless defined $fctx && defined $fctx->{point};
     my $tm = ProjectNameHelpers::gp($fctx->{point}, 'transform');
     my $spec = ProjectNameHelpers::gp($tm, 'res');
+    my $key = item_envelope_key($spec);
+    return [ map { +{ $key => $_ } } @$data ] if defined $key && ref($data) eq 'ARRAY';
     return $data unless defined $spec && !ref($spec);
     # Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
     # GraphQL ops unwrap `body.data.<field>`, not just one envelope property.

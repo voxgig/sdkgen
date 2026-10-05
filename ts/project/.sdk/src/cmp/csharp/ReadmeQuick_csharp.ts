@@ -68,8 +68,8 @@ var client = ${ctor};
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`List(null)\` returns an aggregate list of records (as \`object?\`) and raises
-on error.
+\`List(null)\` returns a list of entities, one per record (as \`object?\`), and
+raises on error.
 
 \`\`\`csharp
 try
@@ -108,7 +108,8 @@ catch (Exception err)
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
-\`Load()\` returns the bare record (as \`object?\`) and raises on error.
+\`Load()\` returns the entity (as \`object?\`) and raises on error; an entity's
+\`Data()\` reads its record.
 
 \`\`\`csharp
 try
@@ -138,7 +139,8 @@ catch (Exception err)
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
-\`Load()\` returns the bare record (as \`object?\`) and raises on error.
+\`Load()\` returns the entity (as \`object?\`) and raises on error; an entity's
+\`Data()\` reads its record.
 
 \`\`\`csharp
 try
@@ -181,7 +183,7 @@ catch (Exception err)
 \`\`\`csharp
 `)
       if (opnames.includes('create')) {
-        Content(`// Create — returns the bare created record (as object?)
+        Content(`// Create — returns the created entity (as object?)
 var created = client.${eName}().Create(new Dictionary<string, object?> { ${examplePairs('create').join(', ')} });
 
 `)

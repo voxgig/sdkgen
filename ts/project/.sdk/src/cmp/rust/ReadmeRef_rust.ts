@@ -36,28 +36,28 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
   const errType = `${model.const.Name}Error`
   const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
     load: {
-      sig: `load(reqmatch: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'Load a single entity matching the given criteria. Returns the entity data on `Ok` and `Err` on failure.',
+      sig: `load(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
+      desc: 'Load a single entity matching the given criteria. `Ok` is the entity, whose record `data(None)` reads, and `Err` a failure.',
     },
     list: {
-      sig: `list(reqmatch: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'List entities matching the given criteria. The match is optional — pass `Value::Noval` to list all records. `Ok` is a `Value::List`.',
+      sig: `list(reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, ${errType}>`,
+      desc: 'List entities matching the given criteria. The match is optional — pass `Value::Noval` to list all records. `Ok` is a `Vec` of entities, one per record.',
     },
     create: {
-      sig: `create(reqdata: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'Create a new entity with the given data. Returns the created entity data on `Ok` and `Err` on failure.',
+      sig: `create(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
+      desc: 'Create a new entity with the given data. `Ok` is the created entity, and `Err` a failure.',
     },
     update: {
-      sig: `update(reqdata: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'Update an existing entity. The data must include the entity id. Returns the updated entity data on `Ok`.',
+      sig: `update(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
+      desc: 'Update an existing entity. The data must include the entity id. `Ok` is the updated entity.',
     },
     patch: {
       sig: `patch(reqdata: Value, ctrl: Value) -> Result<Value, ${errType}>`,
       desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity id. Returns the patched entity data on `Ok`.',
     },
     remove: {
-      sig: `remove(reqmatch: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'Remove the entity matching the given criteria. `Err` on failure.',
+      sig: `remove(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
+      desc: 'Remove the entity matching the given criteria. `Ok` is the entity, marked as deleted, and `Err` a failure.',
     },
   }
 
@@ -76,7 +76,7 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 `)
 
     Content(`\`\`\`rust
-use ${rustcrate}::{${model.const.Name}SDK, Value};
+use ${rustcrate}::{jo, ${model.const.Name}Entity, ${model.const.Name}SDK, Entity, Value};
 
 let client = ${model.const.Name}SDK::new(options);
 \`\`\`
@@ -272,6 +272,7 @@ ${info.desc}
               : 'Value::Noval'
             Content(`\`\`\`rust
 let result = client.${method}(Value::Noval).${opname}(${arg}, Value::Noval).unwrap();
+println!("{:?}", result.data(None));
 \`\`\`
 
 `)
@@ -279,10 +280,8 @@ let result = client.${method}(Value::Noval).${opname}(${arg}, Value::Noval).unwr
           else if ('list' === opname) {
             Content(`\`\`\`rust
 let results = client.${method}(Value::Noval).list(Value::Noval, Value::Noval).unwrap();
-if let Value::List(items) = &results {
-    for ${eVar} in items.borrow().iter() {
-        println!("{:?}", ${eVar});
-    }
+for ${eVar} in &results {
+    println!("{:?}", ${eVar}.data(None));
 }
 \`\`\`
 

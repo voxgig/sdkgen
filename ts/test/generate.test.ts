@@ -561,6 +561,74 @@ describe('generate', () => {
   })
 
 
+  // A bundled target leaves some optional components to a shared default, and
+  // that is no news to a consumer: a warning there is noise in every run.
+  test('a bundled target generates with no optional component warning', async () => {
+    const sdks = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const runs = [sdks, ...NON_SDK_TARGETS.map((t) => [NON_SDK_SIBLING[t], t])]
+
+    for (const targets of runs) {
+      const warnings: any[] = []
+      const { fs } = memfs({})
+      const sdkgen = SdkGen({
+        fs: layeredFs(fs), folder: STAGE, root: '', pino: makeLog(undefined, warnings),
+      })
+      strictEqual((await sdkgen.generate({
+        model: makeModel(targets), root: makeRoot(),
+      })).ok, true)
+
+      const optional = warnings
+        .filter((w: any) => /^(require-missing|optional-component)/.test(w?.point))
+        .map((w: any) => w.point + ': ' + w.note)
+      deepStrictEqual(optional, [], targets.join(', '))
+    }
+  })
+
+
+  const topSections = (readme: string): Record<string, string> =>
+    Object.fromEntries(readme.split(/^## /m).slice(1)
+      .map((part) => [part.slice(0, part.indexOf('\n')), part.slice(part.indexOf('\n') + 1)]))
+
+  const subheads = (body: string | undefined): string[] =>
+    [...(body || '').matchAll(/^### (.+)$/gm)].map((m) => m[1])
+
+  const phasesOff = (target: string): string =>
+    ['entity', 'feature', 'readme', 'agentguide', 'test']
+      .map((p) => 'main: kit: target: ' + target + ': phase: ' + p + ': active: false')
+      .join('\n')
+
+
+  test('the root readme keeps the examples of a target with its readme off', async () => {
+    const sink: any[] = []
+    const out = await generate(['go', 'rb'], undefined,
+      'main: kit: target: go: phase: readme: active: false', sink)
+    ok(null == out['go/README.md'], 'go: the readme phase did not switch off go/README.md')
+    ok(null != out['rb/README.md'], 'rb: no README.md')
+
+    const top = topSections(out['README.md'])
+    deepStrictEqual(subheads(top['Quickstart']), ['Golang'], 'the lead quickstart')
+    deepStrictEqual(subheads(top['Quickstart in other languages']), ['Ruby'])
+    deepStrictEqual(subheads(top['Offline unit testing']), ['Golang', 'Ruby'])
+    ok(top['How-to guides'].includes('client.Direct('),
+      'the direct call guide has no go example')
+    deepStrictEqual(sink.filter((e: any) => 'optional-component-missing' === e?.point), [])
+  })
+
+
+  test('the root readme carries no example for a consumer-shaped target', async () => {
+    const sink: any[] = []
+    const both = topSections((await generate(['go', 'rb'], undefined, phasesOff('go'), sink))['README.md'])
+    deepStrictEqual(subheads(both['Quickstart']), ['Ruby'], 'the lead quickstart')
+    strictEqual(both['Quickstart in other languages'], undefined)
+    deepStrictEqual(subheads(both['Offline unit testing']), ['Ruby'])
+    deepStrictEqual(sink.filter((e: any) => 'optional-component-missing' === e?.point), [])
+
+    const alone = topSections((await generate(['go'], undefined, phasesOff('go')))['README.md'])
+    deepStrictEqual(Object.keys(alone).filter((h) => /Quickstart|Offline/.test(h)), [],
+      'a root readme section heads examples it has none of')
+  })
+
+
   test('a full SDK generates on the data path when repr is pinned', async () => {
     const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 
@@ -1920,6 +1988,37 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       'the reference does not name the terraform action')
     ok(ref!.includes('/planet/{id}/terraform'),
       'the reference does not give the action route')
+  })
+
+
+  // The targets whose reference names the entity each operation returns.
+  test('the reference says each operation returns the entity', async () => {
+    const targets = ['c', 'cpp', 'csharp', 'elixir', 'rust', 'zig']
+    const expect: Record<string, RegExp> = {
+      load: /\bthe entity, whose record `[^`]+` reads\b/,
+      list: /\bentities, one per record\b|\bone entity per record\b/,
+      create: /\bthe created entity\b(?! data)/,
+      update: /\bthe updated entity\b(?! data)/,
+      remove: /\bthe entity, marked as deleted\b/,
+    }
+    const out = await generate(targets)
+
+    const wrong: string[] = []
+    for (const target of targets) {
+      const ref = out[target + '/REFERENCE.md']
+      ok(null != ref, target + ': no REFERENCE.md generated')
+      for (const [op, says] of Object.entries(expect)) {
+        const heading = new RegExp('^#### `[^`\\n]*\\b' + op + '\\(.*\\n\\n(.*)$', 'gim')
+        const descs = [...ref.matchAll(heading)].map((m) => m[1])
+        ok(0 < descs.length, target + ': the reference documents no ' + op)
+        for (const desc of descs) {
+          if (!says.test(desc) || /\bentity data\b|\baggregate list\b/.test(desc)) {
+            wrong.push(target + ' ' + op + ': ' + desc)
+          }
+        }
+      }
+    }
+    deepStrictEqual([...new Set(wrong)], [], 'operations the reference says return a record')
   })
 
 

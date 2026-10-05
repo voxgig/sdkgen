@@ -37,7 +37,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
 
   const resVar = 'list' === primaryOp ? 'records' : 'record'
   const testModeExample = primaryOp
-    ? `# Entity ops return the bare record (raise on error).
+    ? `# Entity ops return the entity, and list one per record (raise on error).
 ${eVar} = ${Name}.${eCall}(sdk)
 ${resVar} = ${Name}.Entity.${eName}.${primaryOp}(${eVar}, ${testArg})
 IO.inspect(${resVar})`

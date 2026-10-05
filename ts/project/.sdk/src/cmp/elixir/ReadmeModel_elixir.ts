@@ -21,12 +21,12 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   entityList.forEach((e: any) => Object.keys(e.op || {})
     .forEach((o: string) => { if (e.op[o] && e.op[o].active !== false) opUnion.add(o) }))
   const opRowDefs: Record<string, string> = {
-    load: '| `load` | `(entity, reqmatch, ctrl \\\\ nil) :: map()` | Load a single entity by match criteria. Raises on error. |',
-    list: '| `list` | `(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: list()` | List entities matching the criteria. Raises on error. |',
-    create: '| `create` | `(entity, reqdata, ctrl \\\\ nil) :: map()` | Create a new entity. Raises on error. |',
-    update: '| `update` | `(entity, reqdata, ctrl \\\\ nil) :: map()` | Update an existing entity. Raises on error. |',
-    patch: '| `patch` | `(entity, reqdata, ctrl \\\\ nil) :: map()` | Change part of an existing entity. Raises on error. |',
-    remove: '| `remove` | `(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: map()` | Remove an entity. Raises on error. |',
+    load: '| `load` | `(entity, reqmatch, ctrl \\\\ nil) :: map()` | Load a single entity by match criteria, and return it. Raises on error. |',
+    list: '| `list` | `(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: list()` | List entities matching the criteria, one per record. Raises on error. |',
+    create: '| `create` | `(entity, reqdata, ctrl \\\\ nil) :: map()` | Create a new entity, and return it. Raises on error. |',
+    update: '| `update` | `(entity, reqdata, ctrl \\\\ nil) :: map()` | Update an existing entity, and return it. Raises on error. |',
+    patch: '| `patch` | `(entity, reqdata, ctrl \\\\ nil) :: map()` | Change part of an existing entity, and return it. Raises on error. |',
+    remove: '| `remove` | `(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: map()` | Remove an entity, and return it marked as deleted. Raises on error. |',
   }
   const opRows = ['load', 'list', 'create', 'update', 'patch', 'remove']
     .filter((o) => opUnion.has(o)).map((o) => opRowDefs[o]).join('\n')
@@ -94,9 +94,10 @@ ${opRows}
 
 ### Result shape
 
-Entity operations return the bare result data (a value node — a map for
-single-entity ops, a list for \`list\`) and raise a \`${Name}.Error\` on
-failure. Wrap calls in \`try\`/\`rescue\` to handle errors.
+Entity operations return the entity, and \`list\` a list of entities, one per
+record; an entity module's \`data_get/1\` reads an entity's record. They raise
+a \`${Name}.Error\` on failure, so wrap calls in \`try\`/\`rescue\` to handle
+errors.
 
 The \`direct/2\` escape hatch never raises — it returns a result node you
 branch on via \`Voxgig.Struct.getprop(result, "ok")\`:

@@ -15,6 +15,9 @@ import {
   authorInfo,
   targetFeatures, envName,
   hasLiveScenarios,
+  npmScriptRm,
+  npmScriptEnv,
+  npmScriptTestSome,
 } from '@voxgig/sdkgen'
 
 
@@ -78,15 +81,15 @@ const Package = cmp(async function Package(props: any) {
     files: ['src', 'README.md'],
     scripts: {
       ...(hasLiveScenarios(model) ? {
-        'test:live': `${envName(model)}_TEST_LIVE=TRUE node --test test/live.test.js`,
+        'test:live': 'node ' + npmScriptEnv(envName(model) + '_TEST_LIVE', 'TRUE') +
+          ' --test test/live.test.js',
       } : {}),
 
-      'test': 'node --test \'test/**/*.test.js\'',
-      'test-some': 'node --experimental-test-isolation=none ' +
-        '--test-name-pattern=\"$TEST_PATTERN\" --test \'test/**/*.test.js\'',
-      'test-utility': 'node --test test/utility/*.test.js',
+      'test': 'node --test "test/**/*.test.js"',
+      'test-some': npmScriptTestSome(['--experimental-test-isolation=none'], 'test/**/*.test.js'),
+      'test-utility': 'node --test "test/utility/*.test.js"',
 
-      "clean": "rm -rf node_modules yarn.lock package-lock.json",
+      "clean": npmScriptRm(['node_modules', 'yarn.lock', 'package-lock.json']),
       "reset": "npm run clean && npm i && npm test",
     },
     author,

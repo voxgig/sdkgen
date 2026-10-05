@@ -34,7 +34,7 @@ function point() {
 }
 
 
-function makeMock(entity: any) {
+function makeMock(entity: any, restf?: any) {
   const client: any = { _mode: 'live' }
   const utility: any = {
     struct,
@@ -57,7 +57,7 @@ function makeMock(entity: any) {
       reqmatch: args.reqmatch || {},
       match: {},
       data: {},
-      point: { transform: {} },
+      point: { transform: null == restf ? {} : { res: restf } },
     }
     const res = await utility.fetcher(ctx, 'http://api.test/widget', {})
     return { status: res.status, statusText: res.statusText, data: await res.json() }
@@ -147,6 +147,17 @@ describe('feature:test mock semantics', () => {
     const res = await call('archive', { reqmatch: { id: 'w1' } })
     strictEqual(res.status, 404)
     strictEqual(res.statusText, 'Unknown operation')
+  })
+
+
+  test('a list whose items each wrap the record answers the wrappers', async () => {
+    const res = ['`$EACH`', 'body', { '`$MERGE`': '`.widget`' }]
+    const call = makeMock({ widget: { w1: { name: 'one' } } }, res)
+
+    const list = await call('list')
+    strictEqual(list.status, 200)
+    deepStrictEqual(list.data, [{ widget: { id: 'w1', name: 'one' } }])
+    deepStrictEqual(struct.transform({ body: list.data }, res), [{ id: 'w1', name: 'one' }])
   })
 
 

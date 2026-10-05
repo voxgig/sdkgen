@@ -252,6 +252,9 @@ function makeClient(spec: {
           headers: ctx.spec.headers,
           body: ctx.spec.body,
         }
+        if (null != ctx.ctrl.signal) {
+          fetchdef.signal = ctx.ctrl.signal
+        }
         response = await utility.fetcher(ctx, fetchdef.url, fetchdef)
       }
       ctx.response = response

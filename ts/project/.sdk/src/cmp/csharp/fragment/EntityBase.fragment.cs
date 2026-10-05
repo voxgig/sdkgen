@@ -262,6 +262,8 @@ public abstract class ProjectNameEntityBase : IEntity
     {
         callopts ??= new Dictionary<string, object?>();
 
+        // Read between yields only: the request itself is not cancelled,
+        // where ts and js cancel it in flight.
         var signal =
             StructUtils.GetProp(callopts, "signal") is CancellationToken sigTok
                 ? sigTok

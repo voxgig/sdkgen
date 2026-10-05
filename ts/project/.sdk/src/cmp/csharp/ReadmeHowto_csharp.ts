@@ -51,9 +51,9 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // The op-driven test-mode line, shown only when the SDK has an entity op.
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
   const testModeExample = primaryOp
-    ? `// Entity ops return the bare record and raise on error.
+    ? `// Entity ops return the entity, and List one per record; they raise on error.
 var ${eVar} = client.${eName}().${opMethod}(${testArg});
-// ${eVar} holds the mock response record
+// Data() on an entity reads its mock response record
 Console.WriteLine(${eVar});`
     : `var result = client.Direct(new Dictionary<string, object?>
 {

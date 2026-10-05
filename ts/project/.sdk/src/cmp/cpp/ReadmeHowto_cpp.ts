@@ -46,11 +46,16 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
-  const testModeExample = primaryOp
-    ? `// Entity ops return the bare record and throw on error.
-Value ${eVar} = client->${acc}()->${primaryOp}(${testArg}, Value::undef());
-// ${eVar} contains the mock response record
-std::cout << Struct::jsonify(${eVar}) << std::endl;`
+  const testModeExample = 'list' === primaryOp
+    ? `// list returns one entity per mock record, and throws on error.
+for (const auto& ${eVar} : client->${acc}()->list(${testArg}, Value::undef())) {
+  std::cout << Struct::jsonify(${eVar}->data()) << std::endl;
+}`
+    : primaryOp
+    ? `// Entity ops return the entity and throw on error.
+SdkEntityPtr ${eVar} = client->${acc}()->${primaryOp}(${testArg}, Value::undef());
+// ${eVar}->data() is the mock response record
+std::cout << Struct::jsonify(${eVar}->data()) << std::endl;`
     : `Value result = client->direct(vmap({
     {"path", Value("/api/resource")},
     {"method", Value("GET")},

@@ -102,7 +102,8 @@ class ProjectNameEntityBase {
   //     streaming feature when active, else the materialised items);
   //   - outbound (upload): pass an async-iterable `body` to stream a request
   //     payload — it is attached to the request so the transport can send it;
-  //   - `ctrl` (pipeline control) and `signal` (AbortSignal) are honoured.
+  //   - `ctrl` (pipeline control) and `signal` (AbortSignal) are honoured:
+  //     an abort cancels the request and ends the iteration.
   async *stream(action, args, callopts) {
     const utility = this._utility
     const {
@@ -112,8 +113,11 @@ class ProjectNameEntityBase {
     } = utility
 
     callopts = callopts || {}
-    const signal = callopts.signal
     const ctrl = { ...(callopts.ctrl || {}), stream: callopts }
+    if (null != callopts.signal) {
+      ctrl.signal = callopts.signal
+    }
+    const signal = ctrl.signal
 
     const ctx = makeContext({
       opname: action,
@@ -164,8 +168,9 @@ class ProjectNameEntityBase {
         err = hookerr
       }
 
+      // An abort ends the stream quietly, whenever it lands.
       const e = this._unexpected(ctx, err)
-      if (e) { throw e }
+      if (e && true !== signal?.aborted) { throw e }
     }
   }
 

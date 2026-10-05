@@ -1,7 +1,7 @@
 
 import { cmp } from 'jostraca'
 
-import { requirePath } from '../utility'
+import { optionalComponent } from '../helpers/optional'
 
 
 // Per-language Entities section lives in
@@ -12,7 +12,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
   const { target, ctx$ } = props
 
   const ReadmeEntity_sdk =
-    requirePath(ctx$, `./cmp/${target.name}/ReadmeEntity_${target.name}`, { ignore: true })
+    optionalComponent(ctx$, target, 'ReadmeEntity')
 
   if (ReadmeEntity_sdk) {
     ReadmeEntity_sdk['ReadmeEntity']({ target })

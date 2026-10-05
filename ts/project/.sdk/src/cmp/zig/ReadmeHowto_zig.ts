@@ -47,10 +47,20 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   }
 
   // The op-driven test-mode line. A direct()-only SDK shows a direct() call.
-  const testModeExample = primaryOp
-    ? `// Entity ops return an OpResult — .ok carries the record, .err the error.
+  const testModeExample = 'list' === primaryOp
+    ? `// list's .ok is one entity per mock record, .err the error.
+switch (client.${method}(h.vnull()).list(${testArg}, h.vnull())) {
+    .ok => |${eVar}s| {
+        for (${eVar}s) |${eVar}| {
+            std.debug.print("{s}\\n", .{h.stringify(${eVar}.asEntity().data(null))});
+        }
+    },
+    .err => |e| std.debug.print("list failed: {s}\\n", .{e.msg}),
+}`
+    : primaryOp
+    ? `// Entity ops return a result union — .ok carries the entity, .err the error.
 switch (client.${method}(h.vnull()).${primaryOp}(${testArg}, h.vnull())) {
-    .ok => |${eVar}| std.debug.print("{s}\\n", .{h.stringify(${eVar})}), // the mock record
+    .ok => |${eVar}| std.debug.print("{s}\\n", .{h.stringify(${eVar}.asEntity().data(null))}), // the mock record
     .err => |e| std.debug.print("${primaryOp} failed: {s}\\n", .{e.msg}),
 }`
     : `const result = client.direct(h.jo(&.{

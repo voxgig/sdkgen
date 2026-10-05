@@ -8,8 +8,8 @@ import { memfs } from 'memfs'
 import { ReadmeExplanation, ReadmeErrors } from '../dist/sdkgen.js'
 
 
-// A logger stub keeps requirePath's "optional template missing" warning
-// out of the test output (the per-language ReadmeExplanation_<lang> file
+// A logger stub keeps the optional-component warning out of the test
+// output (the per-language ReadmeExplanation_<lang> file
 // does not exist under the in-memory folder, which is expected).
 const noop = () => {}
 const log: any = {

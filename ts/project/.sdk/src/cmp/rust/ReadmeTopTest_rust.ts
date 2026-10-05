@@ -33,7 +33,7 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
   const { entity: exampleEntity, primaryOp } = pickExampleEntity(entity)
 
   Content(`\`\`\`rust
-use ${rustcrate}::{jo, test_sdk, Value};
+use ${rustcrate}::{jo, test_sdk, ${model.const.Name}Entity, Entity, Value};
 
 let client = test_sdk(Value::Noval, Value::Noval);
 `)
@@ -64,10 +64,18 @@ let client = test_sdk(Value::Noval, Value::Noval);
         ? `jo(vec![${chosen.map((it: any) => `("${it.name}", ${rustLit(it.type)})`).join(', ')}])`
         : 'Value::empty_map()'
     }
-    const eVar = rustVarName(exampleEntity.name) + ('list' === primaryOp ? 's' : '')
-    Content(`let ${eVar} = client.${method}(Value::Noval).${primaryOp}(${arg}, Value::Noval).unwrap();
-println!("{:?}", ${eVar});
+    const eVar = rustVarName(exampleEntity.name)
+    if ('list' === primaryOp) {
+      Content(`for ${eVar} in client.${method}(Value::Noval).list(${arg}, Value::Noval).unwrap() {
+    println!("{:?}", ${eVar}.data(None));
+}
 `)
+    }
+    else {
+      Content(`let ${eVar} = client.${method}(Value::Noval).${primaryOp}(${arg}, Value::Noval).unwrap();
+println!("{:?}", ${eVar}.data(None));
+`)
+    }
   }
 
   Content(`\`\`\`

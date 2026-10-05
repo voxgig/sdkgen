@@ -68,9 +68,20 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
     return out
   }
 
+  // The key a list's response transform
+  // ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record under.
+  private fun itemEnvelopeKey(restf: Any?): String? {
+    val spec = restf as? List<*> ?: return null
+    if (3 != spec.size || "`\$EACH`" != spec[0] || "body" != spec[1]) return null
+    val merge = (spec[2] as? Map<*, *>)?.get("`\$MERGE`") as? String ?: return null
+    return Regex("^`\\.([^.`\$]+)`\$").matchEntire(merge)?.groupValues?.get(1)
+  }
+
   private fun envelope(ctx: Context?, data: Any?): Any? {
     if (null == data || null == ctx) return data
     val tm = Struct.getprop(ctx.point, "transform")
+    val key = itemEnvelopeKey(Struct.getprop(tm, "res"))
+    if (null != key && data is List<*>) return data.map { linkedMapOf<String, Any?>(key to it) }
     val restf = Struct.getprop(tm, "res") as? String ?: return data
     // Rebuild whatever nesting the transform unwraps. Multi-segment on purpose:
     // GraphQL ops unwrap `body.data.<field>`, not just one envelope property.

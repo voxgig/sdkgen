@@ -1,0 +1,20 @@
+declare const OPTIONAL_COMPONENTS: {
+    AgentGuide: null;
+    ReadmeFeatures: null;
+    ReadmeModel: null;
+    ReadmeIntro: (t: string) => string;
+    ReadmeInstall: (t: string) => string;
+    ReadmeQuick: (t: string) => string;
+    ReadmeHowto: (t: string) => string;
+    ReadmeOptions: (t: string) => string;
+    ReadmeEntity: (t: string) => string;
+    ReadmeExplanation: (t: string) => string;
+    ReadmeRef: (t: string) => string;
+    ReadmeTopQuick: (t: string) => string;
+    ReadmeTopTest: (t: string) => string;
+    ReadmeTopHowto: (t: string) => string;
+};
+type OptionalComponent = keyof typeof OPTIONAL_COMPONENTS;
+declare function optionalComponent(ctx$: any, target: any, name: OptionalComponent): any;
+export type { OptionalComponent, };
+export { OPTIONAL_COMPONENTS, optionalComponent, };
