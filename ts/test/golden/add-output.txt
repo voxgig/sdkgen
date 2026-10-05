@@ -166,7 +166,7 @@ src/cmp/clojure/utility_clojure.ts 5da98934ec0e
 tm/clojure/LICENSE ed2f88b0aab8
 tm/clojure/Makefile d3ac03fe6a52
 tm/clojure/VERSION e6635045e1d2
-tm/clojure/feature/secrets/sdk/feature/secrets.clj ab019262f003
+tm/clojure/feature/secrets/sdk/feature/secrets.clj fb72d36fd60d
 tm/clojure/feature/secrets/voxgig/plugin.clj 990d6650c7be
 tm/clojure/feature/secrets/voxgig/plugin/capability.clj ccc6148ccb49
 tm/clojure/feature/secrets/voxgig/plugin/catalog.clj d5561993b34c
@@ -226,7 +226,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 95a6ecd1a79c
-tm/clojure/src/sdk/core.clj e178bc043d13
+tm/clojure/src/sdk/core.clj 3deaebdf2097
 tm/clojure/src/sdk/features.clj 984a5f6be8cf
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/feature.clj 590d662e1233
@@ -1235,7 +1235,7 @@ tm/perl/utility/done.pm 543780c62fb8
 tm/perl/utility/feature_add.pm 1904c2689cad
 tm/perl/utility/feature_hook.pm e28b546e5fd1
 tm/perl/utility/feature_init.pm 669f03c56f25
-tm/perl/utility/fetcher.pm 05a48a22aff3
+tm/perl/utility/fetcher.pm 70802bdd88e0
 tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm 70a5bbc759c2
@@ -1340,7 +1340,7 @@ tm/php/utility/Done.php dd5e686391dd
 tm/php/utility/FeatureAdd.php 7729798603cf
 tm/php/utility/FeatureHook.php 7f333010aba1
 tm/php/utility/FeatureInit.php d2ae3102173f
-tm/php/utility/Fetcher.php 234146119e07
+tm/php/utility/Fetcher.php 4759c57d8d94
 tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php a32f039c2a85
@@ -1582,7 +1582,7 @@ tm/rb/utility/done.rb 748be3d441f3
 tm/rb/utility/feature_add.rb 56c05f79aaf6
 tm/rb/utility/feature_hook.rb ae80d8f1f9c8
 tm/rb/utility/feature_init.rb 025a7a843acb
-tm/rb/utility/fetcher.rb 057fc4d95336
+tm/rb/utility/fetcher.rb aa8964fa2696
 tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb 619849e17933
@@ -1973,7 +1973,7 @@ tm/swift/Sources/ProjectNameSDK/feature/BaseFeature.swift 37dd198da054
 tm/swift/Sources/ProjectNameSDK/feature/FeatureOptions.swift 954574861e32
 tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 30d49ae88279
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
-tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 9bb33c3229b9
+tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift b970ffee30d9
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift 31aa873dd440
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 0ce0c9bc0652

@@ -239,6 +239,27 @@ const MEDIA_CASES: MediaCase[] = [
 const MEDIA_RAN = /media-probe: ran (\d+) cases/
 
 
+// One case per operation: each sends one request when the server answers, and
+// must raise when nothing does.
+const UNSENT_CASES: MediaCase[] = [
+  'JSON beside images and HTML asks for JSON alone',
+  'a JSON-only response asks for JSON',
+  'a body with no declared type is JSON, as before',
+  'a declared JSON type replaces the default',
+  'a patch goes out as a PATCH, with only the fields given',
+  'no declared response body sends no Accept',
+].map((name) => MEDIA_CASES.find((c) => name === c.name)!)
+
+
+// The error line each case's operation printed, or null where it returned. A
+// test runner may indent what a test prints.
+function mediaRaised(cases: MediaCase[], out: string): (string | null)[] {
+  const lines = out.split(/\r?\n/).map((line) => line.trim())
+  return cases.map((_c, i) =>
+    lines.find((line) => line.startsWith('media-probe: case ' + i + ': ')) ?? null)
+}
+
+
 function baseMedia(type: string | undefined): string {
   return String(type ?? '').split(';')[0].trim().toLowerCase()
 }
@@ -1410,8 +1431,10 @@ export {
   MEDIA_PROBES,
   MEDIA_RAN,
   MEDIA_SERVER,
+  UNSENT_CASES,
   mediaFailures,
   mediaPrinted,
+  mediaRaised,
   mediaRecord,
 }
 

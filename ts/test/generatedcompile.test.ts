@@ -3,6 +3,7 @@ import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
 import Fs from 'node:fs'
+import Net from 'node:net'
 import Os from 'node:os'
 import Path from 'node:path'
 import { spawn, spawnSync } from 'node:child_process'
@@ -29,8 +30,8 @@ import {
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
-  MEDIA_CASES, MEDIA_MODEL, MEDIA_PROBES, MEDIA_RAN, MEDIA_SERVER,
-  mediaFailures, mediaPrinted, mediaRecord,
+  MEDIA_CASES, MEDIA_MODEL, MEDIA_PROBES, MEDIA_RAN, MEDIA_SERVER, UNSENT_CASES,
+  mediaFailures, mediaPrinted, mediaRaised, mediaRecord,
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
 
@@ -5422,6 +5423,8 @@ describe('the README examples run for a slug carrying the word client', () => {
 // arrives; one without prints what its transport is given.
 type ProbeLane = {
   target: string
+  // The name its tests take, where a target has more than one lane.
+  label?: string
   ready: () => string | null
   // Writes the probe, builds what needs building, and runs the probe.
   exec: (sdkroot: string, env: NodeJS.ProcessEnv,
@@ -5487,6 +5490,21 @@ const PROBE_LANES: ProbeLane[] = [
     },
   },
   {
+    // php -n reads no php.ini, so curl is not loaded and the stream-wrapper transport runs.
+    target: 'php',
+    label: 'php without curl',
+    ready: () => {
+      const php = toolchain('php')
+      if (null == php) return 'no php toolchain'
+      return probeOk(php, ['-n', '-r', 'exit(function_exists("curl_init") ? 1 : 0);'])
+        ? null : 'php -n still loads curl here'
+    },
+    exec: (sdkroot, env, write, probe) => {
+      write(probe.name + '_probe.php', probe.source.php)
+      return run(toolchain('php')!, ['-n', probe.name + '_probe.php'], sdkroot, env)
+    },
+  },
+  {
     target: 'perl',
     ready: () => null == toolchain('perl') ? 'no perl toolchain' : null,
     exec: (sdkroot, env, write, probe) => {
@@ -5521,10 +5539,12 @@ const PROBE_LANES: ProbeLane[] = [
     // gradle hangs on windows rather than failing, as the other kotlin lanes note.
     ready: () => 'win32' === process.platform ? 'gradle hangs on windows'
       : null == toolchain('gradle') ? 'no gradle toolchain' : null,
+    // cleanTest: gradle does not count the environment as a test input, so a
+    // probe run again against another base would be skipped as up to date.
     exec: (sdkroot, env, write, probe) => {
       write('test/' + pascal(probe.name) + 'Probe.kt', probe.source.kotlin)
-      return run(toolchain('gradle')!,
-        ['--console=plain', 'test', '--tests', '*' + pascal(probe.name) + 'Probe*'], sdkroot, env)
+      return run(toolchain('gradle')!, ['--console=plain', 'cleanTest', 'test',
+        '--tests', '*' + pascal(probe.name) + 'Probe*'], sdkroot, env)
     },
   },
   {
@@ -5688,6 +5708,16 @@ function mediaServer(dir: string): Promise<{ port: number, log: string, stop: ()
 }
 
 
+// A base URL nothing listens on: a port the system handed out, then closed.
+async function refusedBase(): Promise<string> {
+  const server = Net.createServer()
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()))
+  const port = (server.address() as Net.AddressInfo).port
+  await new Promise<void>((resolve) => server.close(() => resolve()))
+  return 'http://127.0.0.1:' + port
+}
+
+
 // Each target's SDK is generated once, and every probe runs beside it.
 describe('probes driven through a generated SDK', () => {
   let tmp = ''
@@ -5716,7 +5746,9 @@ describe('probes driven through a generated SDK', () => {
   })
 
   for (const lane of PROBE_LANES) {
-    test(lane.target + ': the media types a point declares reach the wire', async (t) => {
+    const name = lane.label ?? lane.target
+
+    test(name + ': the media types a point declares reach the wire', async (t) => {
       const missing = lane.ready()
       if (null != missing) return t.skip(missing)
 
@@ -5738,13 +5770,13 @@ describe('probes driven through a generated SDK', () => {
       }
 
       if (ran.unlaunchable) {
-        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        return t.skip(name + ': the toolchain could not be started here: ' + tail(ran.out, 3))
       }
 
-      ok(ran.ok, lane.target + ': the media probe failed:\n' + tail(ran.out, 60))
+      ok(ran.ok, name + ': the media probe failed:\n' + tail(ran.out, 60))
       const count = MEDIA_RAN.exec(ran.out)
       strictEqual(Number(count?.[1]), MEDIA_CASES.length,
-        lane.target + ': the probe did not run every case:\n' + tail(ran.out))
+        name + ': the probe did not run every case:\n' + tail(ran.out))
 
       const records = null == server ? mediaPrinted(ran.out) :
         Fs.readFileSync(server.log, 'utf8').split('\n').filter((line) => '' !== line)
@@ -5752,10 +5784,56 @@ describe('probes driven through a generated SDK', () => {
           .map((r) => mediaRecord(r.method, r.url, r.headers, r.bodyHex))
 
       deepStrictEqual(mediaFailures(MEDIA_CASES, records), [],
-        lane.target + ' probe output:\n' + tail(ran.out))
+        name + ' probe output:\n' + tail(ran.out))
     })
 
-    test(lane.target + ': an allow list names whole methods and operations, in any case', async (t) => {
+    test(name + ': an operation whose request cannot be sent raises', async (t) => {
+      const missing = lane.ready()
+      if (null != missing) return t.skip(missing)
+      if (null != lane.seam && lane.seam()) {
+        return t.skip(name + ': the probe has no live transport here')
+      }
+
+      const sdkroot = await sdkFor(lane.target)
+      Fs.writeFileSync(Path.join(sdkroot, 'media-cases.json'), JSON.stringify(UNSENT_CASES))
+      const probe = (base: string) => lane.exec(sdkroot, { ...nestedTestEnv(), MEDIA_BASE: base },
+        writer(sdkroot), { name: 'media', source: MEDIA_PROBES })
+      const ran = (out: string) => Number(MEDIA_RAN.exec(out)?.[1])
+
+      const server = await mediaServer(sdkroot)
+      let sent: ReturnType<typeof run>
+      try {
+        sent = probe('http://127.0.0.1:' + server.port)
+      }
+      finally {
+        server.stop()
+      }
+
+      if (sent.unlaunchable) {
+        return t.skip(name + ': the toolchain could not be started here: ' + tail(sent.out, 3))
+      }
+
+      ok(sent.ok, name + ': the probe failed:\n' + tail(sent.out, 60))
+      strictEqual(ran(sent.out), UNSENT_CASES.length,
+        name + ': the probe did not run every case:\n' + tail(sent.out))
+      const records = Fs.readFileSync(server.log, 'utf8').split('\n').filter((line) => '' !== line)
+        .map((line) => JSON.parse(line))
+        .map((r) => mediaRecord(r.method, r.url, r.headers, r.bodyHex))
+      deepStrictEqual(mediaFailures(UNSENT_CASES, records), [],
+        name + ' probe output:\n' + tail(sent.out))
+      deepStrictEqual(mediaRaised(UNSENT_CASES, sent.out).filter((line) => null != line), [],
+        name + ': an operation raised although the server answered')
+
+      const unsent = probe(await refusedBase())
+      ok(unsent.ok, name + ': the probe failed:\n' + tail(unsent.out, 60))
+      strictEqual(ran(unsent.out), UNSENT_CASES.length,
+        name + ': the probe did not run every case:\n' + tail(unsent.out))
+      const raised = mediaRaised(UNSENT_CASES, unsent.out)
+      deepStrictEqual(UNSENT_CASES.filter((_c, i) => null == raised[i]).map((c) => c.op), [],
+        name + ': these operations returned although nothing answered:\n' + tail(unsent.out))
+    })
+
+    test(name + ': an allow list names whole methods and operations, in any case', async (t) => {
       const missing = lane.ready()
       if (null != missing) return t.skip(missing)
 
@@ -5775,12 +5853,12 @@ describe('probes driven through a generated SDK', () => {
       }
 
       if (ran.unlaunchable) {
-        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        return t.skip(name + ': the toolchain could not be started here: ' + tail(ran.out, 3))
       }
 
-      ok(ran.ok, lane.target + ': the allow probe failed:\n' + tail(ran.out, 60))
+      ok(ran.ok, name + ': the allow probe failed:\n' + tail(ran.out, 60))
       deepStrictEqual(allowOutcomes(ran.out), ALLOW_OUTCOMES,
-        lane.target + ' probe output:\n' + tail(ran.out))
+        name + ' probe output:\n' + tail(ran.out))
     })
   }
 })
