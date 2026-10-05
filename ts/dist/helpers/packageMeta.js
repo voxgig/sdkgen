@@ -30,6 +30,7 @@ exports.docsSiteUrl = docsSiteUrl;
 const jostraca_1 = require("jostraca");
 const apidef_1 = require("@voxgig/apidef");
 const kindCollection_1 = require("./kindCollection");
+const text_1 = require("./text");
 const PUBLISHER = 'Voxgig';
 exports.PUBLISHER = PUBLISHER;
 const PUBLISHER_URL = 'https://voxgig.com';
@@ -213,7 +214,7 @@ function vendorCommand(model, target) {
     }
 }
 function apiName(model) {
-    const info = (model.main && model.main[apidef_1.KIT] && model.main[apidef_1.KIT].info) || {};
+    const info = (0, text_1.modelText)(model);
     const raw = (null != info.title ? String(info.title) : '').trim();
     const stripped = raw.replace(/\s*API\s*$/i, '').trim();
     return stripped || (0, apidef_1.nom)(model, 'Name') || model.name;

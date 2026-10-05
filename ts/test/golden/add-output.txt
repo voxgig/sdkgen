@@ -22,7 +22,7 @@ src/cmp/c/ReadmeExamplesTest_c.ts 2e899b115aaa
 src/cmp/c/ReadmeExplanation_c.ts 193fa2c194dd
 src/cmp/c/ReadmeHowto_c.ts b9c452e5fe81
 src/cmp/c/ReadmeInstall_c.ts 2da234817e64
-src/cmp/c/ReadmeIntro_c.ts ff67316d3654
+src/cmp/c/ReadmeIntro_c.ts 75d0f4c82317
 src/cmp/c/ReadmeModel_c.ts a28efdaa99f9
 src/cmp/c/ReadmeOptions_c.ts f305d6f87635
 src/cmp/c/ReadmeQuick_c.ts 3e8965ea87a1
@@ -140,7 +140,7 @@ src/cmp/clojure/ReadmeExamplesTest_clojure.ts 845d633b4210
 src/cmp/clojure/ReadmeExplanation_clojure.ts 2f6eac715762
 src/cmp/clojure/ReadmeHowto_clojure.ts ab80fcf4b627
 src/cmp/clojure/ReadmeInstall_clojure.ts be41896688cd
-src/cmp/clojure/ReadmeIntro_clojure.ts 1b4a2e0bc688
+src/cmp/clojure/ReadmeIntro_clojure.ts 0b38ff4f1908
 src/cmp/clojure/ReadmeModel_clojure.ts ddf90be1590a
 src/cmp/clojure/ReadmeOptions_clojure.ts 74c2c0adcce4
 src/cmp/clojure/ReadmeQuick_clojure.ts 5d85a64f0970
@@ -264,7 +264,7 @@ src/cmp/cpp/ReadmeExamplesTest_cpp.ts 76497cfc63d1
 src/cmp/cpp/ReadmeExplanation_cpp.ts beb3014070b4
 src/cmp/cpp/ReadmeHowto_cpp.ts 2d1585254b4f
 src/cmp/cpp/ReadmeInstall_cpp.ts 615f9f586fad
-src/cmp/cpp/ReadmeIntro_cpp.ts a251092214d6
+src/cmp/cpp/ReadmeIntro_cpp.ts acc4924e8530
 src/cmp/cpp/ReadmeModel_cpp.ts 93f050aec32e
 src/cmp/cpp/ReadmeOptions_cpp.ts 460af294815f
 src/cmp/cpp/ReadmeQuick_cpp.ts 34c4ec0e02f7
@@ -342,7 +342,7 @@ src/cmp/csharp/ReadmeExamplesTest_csharp.ts ee7a79c93f15
 src/cmp/csharp/ReadmeExplanation_csharp.ts 007d1a894315
 src/cmp/csharp/ReadmeHowto_csharp.ts 02aa30164302
 src/cmp/csharp/ReadmeInstall_csharp.ts 51a168916cd3
-src/cmp/csharp/ReadmeIntro_csharp.ts f62bcd995595
+src/cmp/csharp/ReadmeIntro_csharp.ts e0ac7d9099e6
 src/cmp/csharp/ReadmeModel_csharp.ts 4f0c0d4867ee
 src/cmp/csharp/ReadmeOptions_csharp.ts 5d00eb866c0c
 src/cmp/csharp/ReadmeQuick_csharp.ts 015ade91496a
@@ -453,7 +453,7 @@ src/cmp/elixir/ReadmeExamplesTest_elixir.ts 12baaaa2aaee
 src/cmp/elixir/ReadmeExplanation_elixir.ts bff81f1dd55a
 src/cmp/elixir/ReadmeHowto_elixir.ts f6d554e54d6d
 src/cmp/elixir/ReadmeInstall_elixir.ts 3acf9fdebf84
-src/cmp/elixir/ReadmeIntro_elixir.ts 34cf09395ed2
+src/cmp/elixir/ReadmeIntro_elixir.ts bf30ab6076da
 src/cmp/elixir/ReadmeModel_elixir.ts 0f4300343300
 src/cmp/elixir/ReadmeOptions_elixir.ts eb3b2b997109
 src/cmp/elixir/ReadmeQuick_elixir.ts bad17ea8d0b2
@@ -527,7 +527,7 @@ src/cmp/go/ReadmeExamplesTest_go.ts a4d939c3d7cf
 src/cmp/go/ReadmeExplanation_go.ts 702c211cf5bb
 src/cmp/go/ReadmeHowto_go.ts 9bab145fba5a
 src/cmp/go/ReadmeInstall_go.ts f77e8b14f711
-src/cmp/go/ReadmeIntro_go.ts 855257896237
+src/cmp/go/ReadmeIntro_go.ts ea163f9970ed
 src/cmp/go/ReadmeModel_go.ts b2d1cbe5dbd7
 src/cmp/go/ReadmeOptions_go.ts 47c8f1e458b1
 src/cmp/go/ReadmeQuick_go.ts f7068f50e6e3
@@ -664,7 +664,7 @@ src/cmp/java/ReadmeExamplesTest_java.ts 40e3f79a3fa0
 src/cmp/java/ReadmeExplanation_java.ts e2c006f92e81
 src/cmp/java/ReadmeHowto_java.ts f10482f9d12e
 src/cmp/java/ReadmeInstall_java.ts cf2a01ac4bb8
-src/cmp/java/ReadmeIntro_java.ts 12048321eda8
+src/cmp/java/ReadmeIntro_java.ts 0b48ae69e7cc
 src/cmp/java/ReadmeModel_java.ts 158aa17bc92a
 src/cmp/java/ReadmeOptions_java.ts c90bce878518
 src/cmp/java/ReadmeQuick_java.ts a8e9333839f6
@@ -782,7 +782,7 @@ src/cmp/js/ReadmeEntity_js.ts 26be8ea82a8e
 src/cmp/js/ReadmeExplanation_js.ts e35423942ff1
 src/cmp/js/ReadmeHowto_js.ts 531db5fd4a44
 src/cmp/js/ReadmeInstall_js.ts b32a0d558675
-src/cmp/js/ReadmeIntro_js.ts e57aaf23b952
+src/cmp/js/ReadmeIntro_js.ts e8466a112bc3
 src/cmp/js/ReadmeModel_js.ts 3fffb6d563ce
 src/cmp/js/ReadmeOptions_js.ts 6a3950ed95f9
 src/cmp/js/ReadmeQuick_js.ts ffe1bd82cd2d
@@ -908,7 +908,7 @@ src/cmp/kotlin/ReadmeExamplesTest_kotlin.ts 6304f45cb224
 src/cmp/kotlin/ReadmeExplanation_kotlin.ts 7a3e0bc261d0
 src/cmp/kotlin/ReadmeHowto_kotlin.ts c144b38b23cd
 src/cmp/kotlin/ReadmeInstall_kotlin.ts 46d9c5adddc6
-src/cmp/kotlin/ReadmeIntro_kotlin.ts a530db08b7cc
+src/cmp/kotlin/ReadmeIntro_kotlin.ts d9580217f2c1
 src/cmp/kotlin/ReadmeModel_kotlin.ts 099a226a7295
 src/cmp/kotlin/ReadmeOptions_kotlin.ts cfce450043b8
 src/cmp/kotlin/ReadmeQuick_kotlin.ts c69bb191a3e2
@@ -1004,7 +1004,7 @@ src/cmp/lua/ReadmeExamplesTest_lua.ts 9db724ff4430
 src/cmp/lua/ReadmeExplanation_lua.ts 74936c6ce867
 src/cmp/lua/ReadmeHowto_lua.ts f63b19d094da
 src/cmp/lua/ReadmeInstall_lua.ts 8edbb24fb530
-src/cmp/lua/ReadmeIntro_lua.ts bb50c178115f
+src/cmp/lua/ReadmeIntro_lua.ts 43b26ec598f8
 src/cmp/lua/ReadmeModel_lua.ts 5730ba3eeb28
 src/cmp/lua/ReadmeOptions_lua.ts 5e609fb40675
 src/cmp/lua/ReadmeQuick_lua.ts 569f94610a12
@@ -1114,7 +1114,7 @@ src/cmp/ocaml/ReadmeExamplesTest_ocaml.ts fa124db31217
 src/cmp/ocaml/ReadmeExplanation_ocaml.ts a25d52a901d2
 src/cmp/ocaml/ReadmeHowto_ocaml.ts 1a4833fbb92f
 src/cmp/ocaml/ReadmeInstall_ocaml.ts 71fdf7f8309e
-src/cmp/ocaml/ReadmeIntro_ocaml.ts 256967a80335
+src/cmp/ocaml/ReadmeIntro_ocaml.ts fd340f56411d
 src/cmp/ocaml/ReadmeModel_ocaml.ts 812b1d7c1695
 src/cmp/ocaml/ReadmeOptions_ocaml.ts c005aac47258
 src/cmp/ocaml/ReadmeQuick_ocaml.ts 2a449eb1b604
@@ -1175,7 +1175,7 @@ src/cmp/perl/ReadmeExamplesTest_perl.ts 253f5ff5172d
 src/cmp/perl/ReadmeExplanation_perl.ts 92641c9d1f5c
 src/cmp/perl/ReadmeHowto_perl.ts eb6578b91349
 src/cmp/perl/ReadmeInstall_perl.ts 6ae7b2078d0b
-src/cmp/perl/ReadmeIntro_perl.ts 84a728b12f31
+src/cmp/perl/ReadmeIntro_perl.ts c81b9f3177d4
 src/cmp/perl/ReadmeModel_perl.ts ff4e1ca1a8e2
 src/cmp/perl/ReadmeOptions_perl.ts 4afa7ae879d0
 src/cmp/perl/ReadmeQuick_perl.ts efed28976d57
@@ -1283,7 +1283,7 @@ src/cmp/php/ReadmeExamplesTest_php.ts 4cefb6086f6a
 src/cmp/php/ReadmeExplanation_php.ts 452c1e096b54
 src/cmp/php/ReadmeHowto_php.ts 226760ab055a
 src/cmp/php/ReadmeInstall_php.ts a67ef3f9bffe
-src/cmp/php/ReadmeIntro_php.ts 5b4405894def
+src/cmp/php/ReadmeIntro_php.ts 8f244bf382e6
 src/cmp/php/ReadmeModel_php.ts 0f1f1f236fc7
 src/cmp/php/ReadmeOptions_php.ts 8e01f70c9171
 src/cmp/php/ReadmeQuick_php.ts 869f4315a80b
@@ -1389,7 +1389,7 @@ src/cmp/py/ReadmeExamplesTest_py.ts d5ddfcfa68be
 src/cmp/py/ReadmeExplanation_py.ts d7c6b57925cf
 src/cmp/py/ReadmeHowto_py.ts 55110cf258e5
 src/cmp/py/ReadmeInstall_py.ts 1b6d219a6182
-src/cmp/py/ReadmeIntro_py.ts 3fc4bff43a98
+src/cmp/py/ReadmeIntro_py.ts 1c31c1512948
 src/cmp/py/ReadmeModel_py.ts 979a1599eee2
 src/cmp/py/ReadmeOptions_py.ts 6984e3568866
 src/cmp/py/ReadmeQuick_py.ts aba72365ef26
@@ -1489,7 +1489,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/py-data.aontu 255883bf8af3
 model/target/target-index.aontu fab6a58fafb8
-src/cmp/py-data/Main_py-data.ts d72a81b2ade0
+src/cmp/py-data/Main_py-data.ts 590076e61986
 tm/py-data/LICENSE 52acd47c245f
 tm/py-data/Makefile e9b508ae41a7
 tm/py-data/pkg/auth.py a84c020b8eb1
@@ -1524,7 +1524,7 @@ src/cmp/rb/ReadmeExamplesTest_rb.ts 40efdb16eecf
 src/cmp/rb/ReadmeExplanation_rb.ts 324138dd35be
 src/cmp/rb/ReadmeHowto_rb.ts b7ffc973f342
 src/cmp/rb/ReadmeInstall_rb.ts e3cdcd29853e
-src/cmp/rb/ReadmeIntro_rb.ts fd2f23d659dd
+src/cmp/rb/ReadmeIntro_rb.ts a7dc34f0a7a0
 src/cmp/rb/ReadmeModel_rb.ts 11d074e2287e
 src/cmp/rb/ReadmeOptions_rb.ts 1d371d839786
 src/cmp/rb/ReadmeQuick_rb.ts 70f969f8737d
@@ -1632,7 +1632,7 @@ src/cmp/rust/ReadmeExamplesTest_rust.ts fe0bd437773e
 src/cmp/rust/ReadmeExplanation_rust.ts c5fc0dca76a9
 src/cmp/rust/ReadmeHowto_rust.ts c71768b3d4b1
 src/cmp/rust/ReadmeInstall_rust.ts 912b9bd72f54
-src/cmp/rust/ReadmeIntro_rust.ts a5f82556f966
+src/cmp/rust/ReadmeIntro_rust.ts 02f870ac80b4
 src/cmp/rust/ReadmeModel_rust.ts 9c4f2a087ca3
 src/cmp/rust/ReadmeOptions_rust.ts 3ced16eb7ae4
 src/cmp/rust/ReadmeQuick_rust.ts df4f3f489ba0
@@ -1752,7 +1752,7 @@ src/cmp/scala/ReadmeExamplesTest_scala.ts 29ebfa47559d
 src/cmp/scala/ReadmeExplanation_scala.ts 4aeff743d451
 src/cmp/scala/ReadmeHowto_scala.ts 639c07408a0d
 src/cmp/scala/ReadmeInstall_scala.ts 0e22bad14e50
-src/cmp/scala/ReadmeIntro_scala.ts 368ff67e5659
+src/cmp/scala/ReadmeIntro_scala.ts 4dafbb0c3739
 src/cmp/scala/ReadmeModel_scala.ts 7f6899b2f6f1
 src/cmp/scala/ReadmeOptions_scala.ts 6c961d32294b
 src/cmp/scala/ReadmeQuick_scala.ts 70d86831512b
@@ -1919,7 +1919,7 @@ src/cmp/swift/ReadmeExamplesTest_swift.ts ce2a5ee1841a
 src/cmp/swift/ReadmeExplanation_swift.ts 9d20df0c92d9
 src/cmp/swift/ReadmeHowto_swift.ts a96820009ae2
 src/cmp/swift/ReadmeInstall_swift.ts 875706f869b4
-src/cmp/swift/ReadmeIntro_swift.ts e87b590ac10c
+src/cmp/swift/ReadmeIntro_swift.ts eee91c4ae716
 src/cmp/swift/ReadmeModel_swift.ts 506e4d6b716d
 src/cmp/swift/ReadmeOptions_swift.ts 6b19e9a71414
 src/cmp/swift/ReadmeQuick_swift.ts e544c4f417c2
@@ -2023,7 +2023,7 @@ src/cmp/ts/ReadmeExamplesTest_ts.ts 04de6556e88f
 src/cmp/ts/ReadmeExplanation_ts.ts adae2c36cfde
 src/cmp/ts/ReadmeHowto_ts.ts db98c20e3a5b
 src/cmp/ts/ReadmeInstall_ts.ts 2fd8f46f6491
-src/cmp/ts/ReadmeIntro_ts.ts 4073fc824831
+src/cmp/ts/ReadmeIntro_ts.ts 77023d108dec
 src/cmp/ts/ReadmeModel_ts.ts 2b36d24eb53c
 src/cmp/ts/ReadmeOptions_ts.ts 30073e38a603
 src/cmp/ts/ReadmeQuick_ts.ts f6f6549ac29c
@@ -2150,7 +2150,7 @@ src/cmp/zig/ReadmeExamplesTest_zig.ts 297a208374be
 src/cmp/zig/ReadmeExplanation_zig.ts b1c49bcd7f93
 src/cmp/zig/ReadmeHowto_zig.ts e4b751a5d451
 src/cmp/zig/ReadmeInstall_zig.ts 52b119944d2c
-src/cmp/zig/ReadmeIntro_zig.ts 478d81b7763f
+src/cmp/zig/ReadmeIntro_zig.ts f2677505ff8b
 src/cmp/zig/ReadmeModel_zig.ts 957ed3c603bf
 src/cmp/zig/ReadmeOptions_zig.ts 737426363d4e
 src/cmp/zig/ReadmeQuick_zig.ts 627253f0065c
