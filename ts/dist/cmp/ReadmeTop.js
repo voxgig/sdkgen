@@ -34,6 +34,11 @@ function installCommand(target, model) {
 function pickLeadTarget(sdkTargets) {
     return sdkTargets[0];
 }
+const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test'];
+// A consumer (py-data) switches every phase off and has no ReadmeTop components.
+function isConsumer(target) {
+    return PHASES.every((name) => false === target.phase?.[name]?.active);
+}
 // The languages the example helpers can write, in the order a reader is
 // likeliest to want one.
 const EXAMPLE_LANGS = ['ts', 'js', 'py', 'go', 'php', 'rb', 'lua'];
@@ -121,13 +126,12 @@ const ReadmeTop = (0, jostraca_1.cmp)(function ReadmeTop(props) {
         .filter((t) => t.name !== 'go-cli' && t.name !== 'go-mcp')
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
-    // A target with its readme phase off (py-data) has no README components.
-    const readmeTargets = sdkTargets.filter((t) => false !== t.phase?.readme?.active);
+    const exampleTargets = sdkTargets.filter((t) => !isConsumer(t));
     const pkgTargets = activeTargets
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
     const langList = sdkTargets.map((t) => t.title).join(', ');
-    const leadTarget = pickLeadTarget(readmeTargets);
+    const leadTarget = pickLeadTarget(exampleTargets);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
         (0, jostraca_1.Content)(`# ${model.Name} SDK
 
@@ -285,7 +289,7 @@ rather than reasoning about raw HTTP routes and query parameters.
 
 `);
         }
-        if (sdkTargets.length > 0) {
+        if (exampleTargets.length > 0) {
             (0, jostraca_1.Content)(`## Offline unit testing
 
 Every SDK ships a built-in **test mode** that swaps the HTTP transport for
@@ -293,7 +297,7 @@ an in-memory mock, so your unit tests run fully offline — no server, no
 network, and no credentials:
 
 `);
-            readmeTargets.forEach((tgt) => {
+            exampleTargets.forEach((tgt) => {
                 const Test = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopTest');
                 if (Test) {
                     (0, jostraca_1.Content)(`### ${tgt.title}
@@ -447,7 +451,7 @@ own list above for exactly which it supports.
 
 `);
         }
-        const otherTargets = readmeTargets.filter((t) => leadTarget && t.name !== leadTarget.name);
+        const otherTargets = exampleTargets.filter((t) => leadTarget && t.name !== leadTarget.name);
         if (otherTargets.length > 0) {
             (0, jostraca_1.Content)(`## Quickstart in other languages
 
@@ -482,7 +486,7 @@ Both accept a map with \`path\`, \`method\`, \`params\`, \`query\`,
 When the entity interface does not cover an endpoint, use \`direct\`:
 
 `);
-        readmeTargets.forEach((tgt) => {
+        exampleTargets.forEach((tgt) => {
             const Howto = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopHowto');
             if (Howto) {
                 Howto['ReadmeTopHowto']({ target: tgt });

@@ -59,6 +59,14 @@ function pickLeadTarget(sdkTargets: any[]): any | undefined {
 }
 
 
+const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test']
+
+// A consumer (py-data) switches every phase off and has no ReadmeTop components.
+function isConsumer(target: any): boolean {
+  return PHASES.every((name: string) => false === target.phase?.[name]?.active)
+}
+
+
 // The languages the example helpers can write, in the order a reader is
 // likeliest to want one.
 const EXAMPLE_LANGS: ExampleLang[] = ['ts', 'js', 'py', 'go', 'php', 'rb', 'lua']
@@ -163,15 +171,14 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     .slice()
     .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
-  // A target with its readme phase off (py-data) has no README components.
-  const readmeTargets = sdkTargets.filter((t: any) => false !== t.phase?.readme?.active)
+  const exampleTargets = sdkTargets.filter((t: any) => !isConsumer(t))
 
   const pkgTargets = activeTargets
     .slice()
     .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
   const langList = sdkTargets.map((t: any) => t.title).join(', ')
-  const leadTarget = pickLeadTarget(readmeTargets)
+  const leadTarget = pickLeadTarget(exampleTargets)
 
   File({ name: 'README.md' }, () => {
 
@@ -337,7 +344,7 @@ rather than reasoning about raw HTTP routes and query parameters.
 `)
     }
 
-    if (sdkTargets.length > 0) {
+    if (exampleTargets.length > 0) {
       Content(`## Offline unit testing
 
 Every SDK ships a built-in **test mode** that swaps the HTTP transport for
@@ -345,7 +352,7 @@ an in-memory mock, so your unit tests run fully offline — no server, no
 network, and no credentials:
 
 `)
-      readmeTargets.forEach((tgt: any) => {
+      exampleTargets.forEach((tgt: any) => {
         const Test =
           optionalComponent(ctx$, tgt, 'ReadmeTopTest')
         if (Test) {
@@ -505,7 +512,7 @@ own list above for exactly which it supports.
 `)
     }
 
-    const otherTargets = readmeTargets.filter((t: any) => leadTarget && t.name !== leadTarget.name)
+    const otherTargets = exampleTargets.filter((t: any) => leadTarget && t.name !== leadTarget.name)
     if (otherTargets.length > 0) {
       Content(`## Quickstart in other languages
 
@@ -544,7 +551,7 @@ When the entity interface does not cover an endpoint, use \`direct\`:
 
 `)
 
-    readmeTargets.forEach((tgt: any) => {
+    exampleTargets.forEach((tgt: any) => {
       const Howto =
         optionalComponent(ctx$, tgt, 'ReadmeTopHowto')
       if (Howto) {

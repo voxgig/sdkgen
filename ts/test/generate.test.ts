@@ -563,6 +563,50 @@ describe('generate', () => {
   })
 
 
+  const topSections = (readme: string): Record<string, string> =>
+    Object.fromEntries(readme.split(/^## /m).slice(1)
+      .map((part) => [part.slice(0, part.indexOf('\n')), part.slice(part.indexOf('\n') + 1)]))
+
+  const subheads = (body: string | undefined): string[] =>
+    [...(body || '').matchAll(/^### (.+)$/gm)].map((m) => m[1])
+
+  const phasesOff = (target: string): string =>
+    ['entity', 'feature', 'readme', 'agentguide', 'test']
+      .map((p) => 'main: kit: target: ' + target + ': phase: ' + p + ': active: false')
+      .join('\n')
+
+
+  test('the root readme keeps the examples of a target with its readme off', async () => {
+    const sink: any[] = []
+    const out = await generate(['go', 'rb'], undefined,
+      'main: kit: target: go: phase: readme: active: false', sink)
+    ok(null == out['go/README.md'], 'go: the readme phase did not switch off go/README.md')
+    ok(null != out['rb/README.md'], 'rb: no README.md')
+
+    const top = topSections(out['README.md'])
+    deepStrictEqual(subheads(top['Quickstart']), ['Golang'], 'the lead quickstart')
+    deepStrictEqual(subheads(top['Quickstart in other languages']), ['Ruby'])
+    deepStrictEqual(subheads(top['Offline unit testing']), ['Golang', 'Ruby'])
+    ok(top['How-to guides'].includes('client.Direct('),
+      'the direct call guide has no go example')
+    deepStrictEqual(sink.filter((e: any) => 'optional-component-missing' === e?.point), [])
+  })
+
+
+  test('the root readme carries no example for a consumer-shaped target', async () => {
+    const sink: any[] = []
+    const both = topSections((await generate(['go', 'rb'], undefined, phasesOff('go'), sink))['README.md'])
+    deepStrictEqual(subheads(both['Quickstart']), ['Ruby'], 'the lead quickstart')
+    strictEqual(both['Quickstart in other languages'], undefined)
+    deepStrictEqual(subheads(both['Offline unit testing']), ['Ruby'])
+    deepStrictEqual(sink.filter((e: any) => 'optional-component-missing' === e?.point), [])
+
+    const alone = topSections((await generate(['go'], undefined, phasesOff('go')))['README.md'])
+    deepStrictEqual(Object.keys(alone).filter((h) => /Quickstart|Offline/.test(h)), [],
+      'a root readme section heads examples it has none of')
+  })
+
+
   test('a full SDK generates on the data path when repr is pinned', async () => {
     const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 
