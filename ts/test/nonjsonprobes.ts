@@ -75,7 +75,8 @@ function nonjsonOutcomes(out: string, path: string): Record<string, { code: stri
 
 
 // direct() in these targets returns a plain value with no slot for an error
-// object, so err is the message alone; their probes print the code `error`.
+// object: err is the message alone in rust, c and zig, and a map holding it
+// under `message` in cpp. Their probes print the code `error`.
 const NONJSON_MESSAGE_ONLY = ['rust', 'c', 'cpp', 'zig']
 
 
