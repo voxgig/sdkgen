@@ -71,6 +71,17 @@ function toolchain(name: string, searchPath = process.env.PATH ?? ''): string | 
 }
 
 
+// The C locale, where Ruby, and Python with UTF-8 mode off, read files as ASCII.
+function rubyEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return { ...env, LANG: 'C', LC_ALL: 'C' }
+}
+
+
+function pythonEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return { ...rubyEnv(env), PYTHONUTF8: '0' }
+}
+
+
 function runnable(file: string, win: boolean): boolean {
   try {
     if (!Fs.statSync(file).isFile()) {
@@ -545,15 +556,15 @@ main: kit: flow: BasicSignalFlow: {
 `
 
 
-// The entity test data create-sdkgen writes to .sdk/test/entity/<name>/:
-// existing records with every field and path parameter, and a new one.
+// The entity test data create-sdkgen writes to .sdk/test/entity/<name>/: existing
+// records with every field and path parameter, and a new one; strings are not ASCII.
 function entityTestData(entity: any): any {
   const fields: any[] = Object.values(entity.fields || {})
   const fill = (start: number, rec: any) => {
     let num = start * fields.length * 10
     for (const f of fields) {
       rec[f.n] = f.n.endsWith('_id') ? f.n.slice(0, -3).toUpperCase() + '01' :
-        ['`$NUMBER`', '`$INTEGER`'].includes(f.t) ? num : 's' + num.toString(16)
+        ['`$NUMBER`', '`$INTEGER`'].includes(f.t) ? num : 's' + num.toString(16) + '—'
       num++
     }
     return rec
@@ -896,6 +907,8 @@ export {
   STAGE,
   SCAFFOLD,
   toolchain,
+  rubyEnv,
+  pythonEnv,
   API_MODEL,
   CREATELESS_ENTITY,
   ROUTING_MODEL,
