@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName } from './utility_c'
+import { cIdent, cVarName, cListMatch } from './utility_c'
 
 
 // Canonical type sentinel -> a C type name for the field/param tables. The
@@ -27,6 +27,7 @@ function cType(type: any): string {
 // A type-correct C expression constructing a voxgig struct Value.
 function cLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'v_null()'
   if ('INTEGER' === k || 'NUMBER' === k) return 'v_num(1)'
   if ('BOOLEAN' === k) return 'v_bool(true)'
   if ('ARRAY' === k) return 'v_list()'
@@ -157,7 +158,7 @@ if (loaded) {
 
 \`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-Entity** ${evar}s = ${evar}->vt->list(${evar}, NULL, NULL, &err);
+Entity** ${evar}s = ${evar}->vt->list(${evar}, ${cListMatch(entity)}, NULL, &err);
 for (size_t i = 0; ${evar}s && ${evar}s[i]; i++) {
     printf("%s\\n", voxgig_to_json(${evar}s[i]->vt->data(${evar}s[i], NULL)));
 }

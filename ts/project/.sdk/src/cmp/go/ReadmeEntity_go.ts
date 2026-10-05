@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, entityOps, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, entityOps, opRequestShape, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -127,7 +127,7 @@ fmt.Println(${eVar}) // the loaded record
       Content(`#### Example: List
 
 \`\`\`go
-${eVar}s, err := client.${entity.Name}(nil).List(nil, nil)
+${eVar}s, err := client.${entity.Name}(nil).List(${listMatchArg('go', entity)}, nil)
 if err != nil {
     panic(err)
 }

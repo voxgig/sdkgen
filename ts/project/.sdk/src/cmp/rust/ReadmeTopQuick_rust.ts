@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { crateIdent, rustVarName, rustMethodName } from './utility_rust'
+import { crateIdent, rustVarName, rustMethodName, rustListMatch } from './utility_rust'
 
 
 // A type-correct rust expression constructing a voxgig struct Value for a
@@ -15,6 +15,7 @@ import { crateIdent, rustVarName, rustMethodName } from './utility_rust'
 // render a typed literal.
 function rustLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'Value::Null'
   if ('INTEGER' === k || 'NUMBER' === k) return 'Value::Num(1.0)'
   if ('BOOLEAN' === k) return 'Value::Bool(true)'
   if ('ARRAY' === k) return 'Value::empty_list()'
@@ -54,7 +55,7 @@ let client = ${ctor};
 
     if (opnames.includes('list')) {
       Content(`// List all ${eName.toLowerCase()}s (one entity per record, Err on failure)
-let ${eVar}s = client.${method}(Value::Noval).list(Value::Noval, Value::Noval).unwrap();
+let ${eVar}s = client.${method}(Value::Noval).list(${rustListMatch(exampleEntity)}, Value::Noval).unwrap();
 for ${eVar} in &${eVar}s {
     println!("{:?}", ${eVar}.data(None));
 }

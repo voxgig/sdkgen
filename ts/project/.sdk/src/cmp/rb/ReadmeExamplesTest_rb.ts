@@ -80,8 +80,9 @@ ${entityLines}
   CLIENT = /(?<![\\w\\-.\\/"'])client(?![\\w\\-\\/"'])/
 
   # Ruby-level errors that indicate a real bug in a documented example (as
-  # opposed to an expected not-found / domain error, which is tolerated).
-  FATAL = /NoMethodError|NameError|ArgumentError|undefined method|undefined local variable|uninitialized constant|wrong number of arguments/
+  # opposed to an expected not-found / domain error, which is tolerated), and
+  # the ScriptError classes an SDK that does not load raises.
+  FATAL = /NoMethodError|NameError|ArgumentError|SyntaxError|LoadError|NotImplementedError|undefined method|undefined local variable|uninitialized constant|wrong number of arguments/
 
   # Extract every fenced ruby block from all three docs, each tagged with its
   # source doc label and its index within that doc.

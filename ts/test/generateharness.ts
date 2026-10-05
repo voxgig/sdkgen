@@ -468,6 +468,157 @@ main: kit: flow: BasicMetricFlow: {
 
 // Calls the runtime refuses when made bare: moon lists and loads under its
 // planet, and every list route of signal is an action.
+// A list whose route requires the query parameters engine and q.
+const SEARCH_ENTITY = `
+main: kit: entity: search: {
+  alias: field: {}
+  name: "search"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: list: {
+    name: "list"
+    points: [ {
+      g: { query: [
+        { k: "query", n: "engine", or: "engine", r: true, t: "\`$STRING\`", ex: "google" }
+        { k: "query", n: "q", or: "q", r: true, t: "\`$STRING\`", ex: "coffee" }
+      ] }
+      m: "GET", o: "/search"
+      s: [{ lit: "search" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: BasicSearchFlow: {
+  entity: "search", kind: "basic", name: "BasicSearchFlow"
+  step: [ { o: "list", m: { engine: "google", q: "coffee" } } ]
+}
+`
+
+
+function searchOnly(): string {
+  return entityOnly(SEARCH_ENTITY)
+}
+
+
+// A list-only entity requiring the given [name, type] query parameters.
+function listOnly(name: string, params: [string, string][]): string {
+  const flow = 'Basic' + name[0].toUpperCase() + name.slice(1) + 'Flow'
+  return entityOnly(`
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: list: {
+    name: "list"
+    points: [ {
+      g: { query: [${params.map(([n, t]) => `
+        { k: "query", n: ${JSON.stringify(n)}, or: ${JSON.stringify(n)}, r: true, t: ${t} }`).join('')}
+      ] }
+      m: "GET", o: "/${name}"
+      s: [{ lit: "${name}" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
+  step: [ { o: "list", m: {} } ]
+}
+`)
+}
+
+
+// A list-only entity on one route whose points each require one of the
+// given query parameters.
+function selectorList(name: string, selectors: string[]): string {
+  const flow = 'Basic' + name[0].toUpperCase() + name.slice(1) + 'Flow'
+  return entityOnly(`
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: list: {
+    name: "list"
+    points: [${selectors.map((sel) => `
+      {
+        g: { query: [ { k: "query", n: "${sel}", or: "${sel}", r: true, t: "\`$STRING\`" } ] }
+        m: "GET", o: "/${name}"
+        s: [{ lit: "${name}" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+        q: { exist: ["${sel}"] }
+      }`).join('')}
+    ]
+  }
+}
+
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
+  step: [ { o: "list", m: {} } ]
+}
+`)
+}
+
+
+// A list requiring string id, q and tag, whose create requires q as an integer.
+// With `load`, a load by id too, which every test-mode block seeds.
+function retypedList(name: string = 'crate', load: boolean = false): string {
+  const flow = 'Basic' + name.split('_').map((w: string) => w[0].toUpperCase() + w.slice(1)).join('') + 'Flow'
+  return entityOnly(`
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "q": { h: 'Q', n: "q", r: true, t: "\`$INTEGER\`" }
+  }
+  op: {
+    list: { name: "list", points: [ {
+      g: { query: [
+        { k: "query", n: "id", or: "id", r: true, t: "\`$STRING\`" }
+        { k: "query", n: "q", or: "q", r: true, t: "\`$STRING\`" }
+        { k: "query", n: "tag", or: "tag", r: true, t: "\`$STRING\`" }
+      ] }
+      m: "GET", o: "/${name}", s: [{ lit: "${name}" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    create: { name: "create", points: [ {
+      g: {}, m: "POST", o: "/${name}", s: [{ lit: "${name}" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+${load ? `    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/${name}/{id}", s: [{ lit: "${name}" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+` : ''}  }
+}
+
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
+  step: [ { o: "list", m: {} } ]
+}
+`)
+}
+
+
+// A snake_case retypedList with a load, so every block that seeds the mock seeds it.
+function seedableList(): string {
+  return retypedList('crate_box', true)
+}
+
+
+// The fixture's own entities made inactive, beside the given source.
+function entityOnly(source: string): string {
+  return source + Object.keys(makeModel(['ts']).main[KIT].entity)
+    .map((name: string) => `main: kit: entity: ${name}: active: false\n`).join('')
+}
+
+
 const ROUTING_MODEL = `
 main: kit: entity: moon: {
   alias: field: {}
@@ -951,6 +1102,13 @@ export {
   API_MODEL,
   CREATELESS_ENTITY,
   ROUTING_MODEL,
+  SEARCH_ENTITY,
+  searchOnly,
+  listOnly,
+  selectorList,
+  retypedList,
+  seedableList,
+  entityOnly,
   entityTestData,
   FOLD_ENTITY,
   UNGENERATED_OP,

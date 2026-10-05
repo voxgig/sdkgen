@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, goModule } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, goModule, requiredItems, litPair } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -12,6 +12,7 @@ import { goVarName } from './utility_go'
 
 function goLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '[]any{}'
@@ -41,19 +42,19 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const idF = exampleEntity ? entityIdField(exampleEntity) : null
   const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
   let testArg = 'nil'
-  if (exampleEntity && isMatchOp) {
-    const items = opRequestShape(exampleEntity, primaryOp).items
-      .filter((it: any) => !it.optional || it.name === idF)
+  if (exampleEntity && (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length))) {
+    const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
+      .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
       .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
     testArg = 0 < items.length
-      ? `map[string]any{${items.map((it: any) => `"${it.name}": ${it.name === idF ? '"test01"' : goLit(it.type)}`).join(', ')}}`
+      ? `map[string]any{${items.map((it: any) => litPair('go', it.name, isMatchOp && it.name === idF ? '"test01"' : goLit(it.type))).join(', ')}}`
       : 'nil'
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
-    testArg = `map[string]any{${chosen.map((it: any) => `"${it.name}": ${goLit(it.type)}`).join(', ')}}`
+    testArg = `map[string]any{${chosen.map((it: any) => litPair('go', it.name, goLit(it.type))).join(', ')}}`
   }
 
   // The op-driven test-mode block, shown only when the SDK has an entity op.

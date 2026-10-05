@@ -7,12 +7,15 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { rbListArgs } from './utility_rb'
+
 
 // A type-correct Ruby literal for a field's canonical type — the create body
 // is EXECUTED by the doc test, so it must carry a real value per field.
 // Strings render the quoted placeholder.
 function rbLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '[]'
@@ -288,7 +291,7 @@ result = client.${ent.Name}.${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`ruby
-results = client.${ent.Name}.list
+results = client.${ent.Name}.list${rbListArgs(ent)}
 results.each { |item| puts item.data_get }
 \`\`\`
 

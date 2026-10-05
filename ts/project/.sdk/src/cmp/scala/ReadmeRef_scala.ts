@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, javaMap, javaMapOf } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -7,22 +7,10 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { scalaVarName } from './utility_scala'
+import { scalaVarName, scalaListMatch, scalaLit } from './utility_scala'
 
 
 // Type names come from the shared canonToType 'scala' column (single source of truth).
-
-// A type-correct Scala literal for a field's canonical type.
-function scalaLit(type: any, placeholder: string = 'example'): string {
-  const k = canonScalarKey(type)
-  if ('INTEGER' === k) return '1L'
-  if ('NUMBER' === k) return '1.0'
-  if ('BOOLEAN' === k) return 'true'
-  if ('ARRAY' === k) return 'java.util.List.of()'
-  if ('OBJECT' === k) return 'java.util.Map.of()'
-  return `"${placeholder}"`
-}
-
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
@@ -273,9 +261,9 @@ ${info.desc}
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
-              ? `java.util.Map.of(${matchItems.map((it: any) =>
+              ? javaMapOf(matchItems.map((it: any) =>
                 `"${it.name}", ${scalaLit(it.type,
-                  it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')})`
+                  it.name === idF ? ent.name + '_id' : it.name)}`), 'java.util.')
               : 'null'
             Content(`\`\`\`scala
 val result = client.${accessor}(null).${opname}(${arg}, null)
@@ -285,7 +273,7 @@ val result = client.${accessor}(null).${opname}(${arg}, null)
           }
           else if ('list' === opname) {
             Content(`\`\`\`scala
-val results = client.${accessor}(null).list(null, null)
+val results = client.${accessor}(null).list(${scalaListMatch(ent)}, null)
 println(results)
 \`\`\`
 
@@ -294,12 +282,13 @@ println(results)
           else if ('create' === opname) {
             const createItems = opRequestShape(ent, 'create').items
               .filter((it: any) => !it.optional)
+            const createMap = javaMap(createItems.length, 'java.util.')
             Content(`\`\`\`scala
-val result = client.${accessor}(null).create(java.util.Map.of(
+val result = client.${accessor}(null).create(${createMap.open}
 `)
             createItems.map((it: any, i: number) => {
               const comma = i < createItems.length - 1 ? ',' : ''
-              Content(`    "${it.name}", ${scalaLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, target.name)}
+              Content(`    ${createMap.pair(`"${it.name}", ${scalaLit(it.type, 'example_' + it.name)}`)}${comma}  // ${canonToType(it.type, target.name)}
 `)
             })
             Content(`), null)
@@ -312,13 +301,14 @@ val result = client.${accessor}(null).create(java.util.Map.of(
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+            const updateMap = javaMap(updateItems.length, 'java.util.')
             const updateLines = updateItems.map((it: any, i: number) => {
               const comma = i < updateItems.length - 1 ? ',' : ''
-              return `    "${it.name}", ${scalaLit(it.type,
-                it.name === idF ? ent.name + '_id' : it.name)}${comma}\n`
+              return `    ${updateMap.pair(`"${it.name}", ${scalaLit(it.type,
+                it.name === idF ? ent.name + '_id' : it.name)}`)}${comma}\n`
             }).join('')
             Content(`\`\`\`scala
-val result = client.${accessor}(null).${opname}(java.util.Map.of(
+val result = client.${accessor}(null).${opname}(${updateMap.open}
 ${updateLines}), null)
 \`\`\`
 

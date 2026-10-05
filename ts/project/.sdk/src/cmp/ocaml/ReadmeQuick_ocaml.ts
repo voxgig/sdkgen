@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { ocamlVarName } from './utility_ocaml'
+import { ocamlVarName, ocamlListMatch } from './utility_ocaml'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -56,6 +56,7 @@ let client = ${ctor}
     // A type-correct OCaml `value` literal for a param.
     const ocamlLit = (type: any, placeholder: string = 'example'): string => {
       const k = canonScalarKey(type)
+      if ('NULL' === k) return 'Null'
       if ('INTEGER' === k || 'NUMBER' === k) return '(Num 1.)'
       if ('BOOLEAN' === k) return '(Bool true)'
       if ('ARRAY' === k) return '(empty_list ())'
@@ -71,7 +72,7 @@ record with \`e_data_get\`.
 
 \`\`\`ocaml
 (try
-   let ${fn}s = (Sdk_client.${fn} client Noval).e_list (empty_map ()) Noval in
+   let ${fn}s = (Sdk_client.${fn} client Noval).e_list ${ocamlListMatch(exampleEntity)} Noval in
    List.iter (fun e -> print_endline (stringify (e.e_data_get ()))) ${fn}s
  with Sdk_error.E err -> Printf.eprintf "list failed: %s\\n" (Sdk_error.message err))
 \`\`\`

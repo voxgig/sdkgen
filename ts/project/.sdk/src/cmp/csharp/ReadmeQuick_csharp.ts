@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { csVarName } from './utility_csharp'
+import { csVarName, csListMatch } from './utility_csharp'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -57,6 +57,7 @@ var client = ${ctor};
     // A type-correct C# literal for a param.
     const csLit = (type: any, placeholder: string = 'example'): string => {
       const k = canonScalarKey(type)
+      if ('NULL' === k) return 'null'
       if ('INTEGER' === k) return '1L'
       if ('NUMBER' === k) return '1.0'
       if ('BOOLEAN' === k) return 'true'
@@ -74,7 +75,7 @@ raises on error.
 \`\`\`csharp
 try
 {
-    var ${eVar}List = client.${eName}().List(null);
+    var ${eVar}List = client.${eName}().List(${csListMatch(exampleEntity)});
     Console.WriteLine(${eVar}List);
 }
 catch (Exception err)

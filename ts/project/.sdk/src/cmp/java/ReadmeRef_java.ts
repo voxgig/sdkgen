@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, javaMap, javaMapOf } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -7,22 +7,10 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { javaVarName } from './utility_java'
+import { javaVarName, javaListMatch, javaLit } from './utility_java'
 
 
 // Type names come from the shared canonToType 'java' column (single source of truth).
-
-// A type-correct Java literal for a field's canonical type.
-function javaLit(type: any, placeholder: string = 'example'): string {
-  const k = canonScalarKey(type)
-  if ('INTEGER' === k) return '1L'
-  if ('NUMBER' === k) return '1.0'
-  if ('BOOLEAN' === k) return 'true'
-  if ('ARRAY' === k) return 'List.of()'
-  if ('OBJECT' === k) return 'Map.of()'
-  return `"${placeholder}"`
-}
-
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
@@ -273,9 +261,9 @@ ${info.desc}
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
-              ? `Map.of(${matchItems.map((it: any) =>
+              ? javaMapOf(matchItems.map((it: any) =>
                 `"${it.name}", ${javaLit(it.type,
-                  it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')})`
+                  it.name === idF ? ent.name + '_id' : it.name)}`))
               : 'null'
             Content(`\`\`\`java
 Object result = client.${accessor}(null).${opname}(${arg}, null);
@@ -285,7 +273,7 @@ Object result = client.${accessor}(null).${opname}(${arg}, null);
           }
           else if ('list' === opname) {
             Content(`\`\`\`java
-Object results = client.${accessor}(null).list(null, null);
+Object results = client.${accessor}(null).list(${javaListMatch(ent)}, null);
 System.out.println(results);
 \`\`\`
 
@@ -294,12 +282,13 @@ System.out.println(results);
           else if ('create' === opname) {
             const createItems = opRequestShape(ent, 'create').items
               .filter((it: any) => !it.optional)
+            const createMap = javaMap(createItems.length)
             Content(`\`\`\`java
-Object result = client.${accessor}(null).create(Map.of(
+Object result = client.${accessor}(null).create(${createMap.open}
 `)
             createItems.map((it: any, i: number) => {
               const comma = i < createItems.length - 1 ? ',' : ''
-              Content(`    "${it.name}", ${javaLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, target.name)}
+              Content(`    ${createMap.pair(`"${it.name}", ${javaLit(it.type, 'example_' + it.name)}`)}${comma}  // ${canonToType(it.type, target.name)}
 `)
             })
             Content(`), null);
@@ -312,13 +301,14 @@ Object result = client.${accessor}(null).create(Map.of(
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+            const updateMap = javaMap(updateItems.length)
             const updateLines = updateItems.map((it: any, i: number) => {
               const comma = i < updateItems.length - 1 ? ',' : ''
-              return `    "${it.name}", ${javaLit(it.type,
-                it.name === idF ? ent.name + '_id' : it.name)}${comma}\n`
+              return `    ${updateMap.pair(`"${it.name}", ${javaLit(it.type,
+                it.name === idF ? ent.name + '_id' : it.name)}`)}${comma}\n`
             }).join('')
             Content(`\`\`\`java
-Object result = client.${accessor}(null).${opname}(Map.of(
+Object result = client.${accessor}(null).${opname}(${updateMap.open}
 ${updateLines}), null);
 \`\`\`
 

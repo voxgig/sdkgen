@@ -7,10 +7,13 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { perlListArgs } from './utility_perl'
+
 
 // A type-correct, executable Perl literal for a field's canonical type.
 function perlLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'undef'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return '1'
   if ('ARRAY' === k) return '[]'
@@ -286,7 +289,7 @@ my $result = $client->${ent.Name}->${opname}(${arg});
           }
           else if ('list' === opname) {
             Content(`\`\`\`perl
-my $results = $client->${ent.Name}->list;
+my $results = $client->${ent.Name}->list${perlListArgs(ent)};
 for my $${eVar} (@$results) {
     print $${eVar}->data_get->{id}, "\\n";
 }

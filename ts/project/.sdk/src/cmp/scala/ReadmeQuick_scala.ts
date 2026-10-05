@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { scalaVarName, scalaPackage } from './utility_scala'
+import { scalaVarName, scalaPackage, scalaListMatch, scalaLit } from './utility_scala'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -31,18 +31,6 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   ) as any
 
   const authActive = isAuthActive(model)
-
-  // A type-correct Scala literal for a param — the loose object model means
-  // all values live in a java.util.Map[String, Object].
-  const scalaLit = (type: any, placeholder: string = 'example'): string => {
-    const k = canonScalarKey(type)
-    if ('INTEGER' === k) return '1L'
-    if ('NUMBER' === k) return '1.0'
-    if ('BOOLEAN' === k) return 'true'
-    if ('ARRAY' === k) return 'java.util.List.of()'
-    if ('OBJECT' === k) return 'java.util.Map.of()'
-    return `"${placeholder}"`
-  }
 
   if (authActive) {
     Content(`### 1. Create a client
@@ -89,7 +77,7 @@ aggregate list) and raises on error.
 
 \`\`\`scala
 try {
-    val ${eVar}List = client.${accessor}(null).list(null, null)
+    val ${eVar}List = client.${accessor}(null).list(${scalaListMatch(exampleEntity)}, null)
     println(${eVar}List)
 }
 catch {
@@ -127,7 +115,7 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
 \`\`\`scala
 try {
-    val ${neVar} = client.${neAccessor}(null).load(java.util.Map.of(${neMatch.join(', ')}), null)
+    val ${neVar} = client.${neAccessor}(null).load(${javaMapOf(neMatch, 'java.util.')}, null)
     println(${neVar})
 }
 catch {
@@ -144,9 +132,9 @@ catch {
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
-        ? `java.util.Map.of(${loadRequired.map((it: any) =>
+        ? javaMapOf(loadRequired.map((it: any) =>
           `"${it.name}", ${scalaLit(it.type,
-            it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')})`
+            it.name === idF ? 'example_id' : 'example_' + it.name)}`), 'java.util.')
         : 'null'
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
@@ -193,7 +181,7 @@ catch {
 `)
       if (opnames.includes('create')) {
         Content(`// Create — returns the ENTITY (call data() for the record)
-val created = client.${accessor}(null).create(java.util.Map.of(${examplePairs('create').join(', ')}), null)
+val created = client.${accessor}(null).create(${javaMapOf(examplePairs('create'), 'java.util.')}, null)
 
 `)
       }
@@ -201,7 +189,7 @@ val created = client.${accessor}(null).create(java.util.Map.of(${examplePairs('c
         const updatePairs = (idF ? [`"${idF}", ${scalaLit(idParamType('update'), 'example_id')}`] : [])
           .concat(examplePairs('update'))
         Content(`// Update — supply the id in the match/data
-client.${accessor}(null).update(java.util.Map.of(${updatePairs.join(', ')}), null)
+client.${accessor}(null).update(${javaMapOf(updatePairs, 'java.util.')}, null)
 
 `)
       }
@@ -209,7 +197,7 @@ client.${accessor}(null).update(java.util.Map.of(${updatePairs.join(', ')}), nul
         const patchPairs = (idF ? [`"${idF}", ${scalaLit(idParamType('patch'), 'example_id')}`] : [])
           .concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
-client.${accessor}(null).patch(java.util.Map.of(${patchPairs.join(', ')}), null)
+client.${accessor}(null).patch(${javaMapOf(patchPairs, 'java.util.')}, null)
 
 `)
       }
@@ -223,7 +211,7 @@ client.${accessor}(null).patch(java.util.Map.of(${patchPairs.join(', ')}), null)
             ? `"${it.name}", ${scalaLit(idParamType('remove'), 'example_id')}`
             : `"${it.name}", ${scalaLit(it.type, 'example_' + it.name)}`)
         Content(`// Remove
-client.${accessor}(null).remove(${removePairs.length ? `java.util.Map.of(${removePairs.join(', ')})` : 'null'}, null)
+client.${accessor}(null).remove(${removePairs.length ? javaMapOf(removePairs, 'java.util.') : 'null'}, null)
 `)
       }
       Content(`\`\`\`

@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { perlListArgs } from './utility_perl'
+
 
 // A type-correct, executable Perl literal for a param: numeric/boolean/
 // array/hash params render a typed literal; strings render the quoted
@@ -14,6 +16,7 @@ import {
 // would break it).
 function perlLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'undef'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return '1'
   if ('ARRAY' === k) return '[]'
@@ -50,7 +53,7 @@ my $client = ${ctor};
 
     if (opnames.includes('list')) {
       Content(`# List all ${eName.toLowerCase()}s (an arrayref of entities, one per record; dies on error)
-my $${eVar}s = $client->${eName}->list;
+my $${eVar}s = $client->${eName}->list${perlListArgs(exampleEntity)};
 for my $${eVar} (@$${eVar}s) {
     print $${eVar}->data_get->{id}, "\\n";
 }

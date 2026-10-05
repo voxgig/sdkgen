@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { zigVarName } from './utility_zig'
+import { zigVarName, zigListMatch } from './utility_zig'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -36,6 +36,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // A type-correct zig expression constructing a voxgig struct Value.
   const zigLit = (type: any, placeholder: string = 'example'): string => {
     const k = canonScalarKey(type)
+    if ('NULL' === k) return 'h.vnull()'
     if ('INTEGER' === k || 'NUMBER' === k) return 'h.vnum(1)'
     if ('BOOLEAN' === k) return 'h.vbool(true)'
     if ('ARRAY' === k) return 'h.olist()'
@@ -70,7 +71,7 @@ const client = ${ctor};
 it. \`asEntity().data(null)\` reads an entity's record.
 
 \`\`\`zig
-switch (client.${method}(h.vnull()).list(h.vnull(), h.vnull())) {
+switch (client.${method}(h.vnull()).list(${zigListMatch(exampleEntity)}, h.vnull())) {
     .ok => |${eVar}s| {
         for (${eVar}s) |${eVar}| {
             std.debug.print("{s}\\n", .{h.stringify(${eVar}.asEntity().data(null))});

@@ -179,17 +179,31 @@ function opNeedsAction(op: any): boolean {
 }
 
 
-function opParams(op: any): any[] {
-  let points: any[] = op && op.points ? each(op.points) : []
-
+// The points a call can select: an action's only where every point is one.
+function selectablePoints(op: any): any[] {
+  const points: any[] = op && op.points ? each(op.points) : []
   const canonical = points.filter((pt: any) =>
     null == (pt && pt.q && pt.q['$action']))
-  if (0 < canonical.length) {
-    points = canonical
-  }
+  return 0 < canonical.length ? canonical : points
+}
 
-  const seen: Record<string, any> = {}
-  const requiredOnAll: Record<string, boolean> = {}
+
+// The route and query parameters a point requires.
+function pointRequires(pt: any): string[] {
+  const params = [
+    ...(pt && pt.g && pt.g.params ? each(pt.g.params) : []),
+    ...(pt && pt.g && pt.g.query ? each(pt.g.query) : []),
+  ]
+  return params.filter((p: any) => p && null != p.n && false !== p.r).map((p: any) => p.n)
+}
+
+
+function opParams(op: any): any[] {
+  const points = selectablePoints(op)
+
+  // Keyed by parameter name, which may be `__proto__`.
+  const seen: Record<string, any> = Object.create(null)
+  const requiredOnAll: Record<string, boolean> = Object.create(null)
   const out: any[] = []
 
   points.forEach((pt: any, pointIndex: number) => {
@@ -198,7 +212,7 @@ function opParams(op: any): any[] {
     const pathParams = pt && pt.g && pt.g.params ? each(pt.g.params) : []
     const queryParams = pt && pt.g && pt.g.query ? each(pt.g.query) : []
     const params = [...pathParams, ...queryParams]
-    const requiredHere: Record<string, boolean> = {}
+    const requiredHere: Record<string, boolean> = Object.create(null)
     params.forEach((p: any) => {
       if (p && null != p.n) {
         requiredHere[p.n] = false !== p.r
@@ -679,6 +693,8 @@ export {
   entityCollection,
   opTypeName,
   opParams,
+  selectablePoints,
+  pointRequires,
   opReachable,
   opNeedsAction,
   ownPoint,

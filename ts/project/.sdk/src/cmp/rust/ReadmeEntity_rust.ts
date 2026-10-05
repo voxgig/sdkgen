@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { rustVarName, rustMethodName } from './utility_rust'
+import { rustVarName, rustMethodName, rustListMatch } from './utility_rust'
 
 
 // Type names come from the shared canonToType 'rust' column (single source of truth).
@@ -14,6 +14,7 @@ import { rustVarName, rustMethodName } from './utility_rust'
 // A type-correct rust expression constructing a voxgig struct Value.
 function rustLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'Value::Null'
   if ('INTEGER' === k || 'NUMBER' === k) return 'Value::Num(1.0)'
   if ('BOOLEAN' === k) return 'Value::Bool(true)'
   if ('ARRAY' === k) return 'Value::empty_list()'
@@ -135,7 +136,7 @@ println!("{:?}", ${eVar}.data(None));
       Content(`#### Example: List
 
 \`\`\`rust
-let ${eVar}s = client.${method}(Value::Noval).list(Value::Noval, Value::Noval).unwrap();
+let ${eVar}s = client.${method}(Value::Noval).list(${rustListMatch(entity)}, Value::Noval).unwrap();
 for ${eVar} in &${eVar}s {
     println!("{:?}", ${eVar}.data(None));
 }

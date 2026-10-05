@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, opNeedsAction, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,6 +13,7 @@ import {
 // parse).
 function phpLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '[]'
@@ -134,7 +135,7 @@ $${entity.name} = $client->${phpEntityAccessor(entity.Name)}()->load(${loadArg})
 
 \`\`\`php
 // list() returns an array of ${entity.Name} records (throws on error).
-$${entity.name}s = $client->${phpEntityAccessor(entity.Name)}()->list();
+$${entity.name}s = $client->${phpEntityAccessor(entity.Name)}()->list(${listMatchArg('php', entity)});
 \`\`\`
 
 `)

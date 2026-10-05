@@ -1,17 +1,18 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
   getModelPath,
 } from '@voxgig/apidef'
 
-import { swiftVarName } from './utility_swift'
+import { swiftVarName, swiftString } from './utility_swift'
 
 
 // A type-correct Swift `Value` literal for a field's canonical type.
 function swiftLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return '.null'
   if ('INTEGER' === k) return '.int(1)'
   if ('NUMBER' === k) return '.double(1.0)'
   if ('BOOLEAN' === k) return '.bool(true)'
@@ -39,13 +40,17 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'nil'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `VMap([("${idF}", .string("test01"))])` : 'nil'
+  } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+    const chosen = requiredItems(exampleEntity, 'list')
+    testArg = `VMap([${chosen.map((it: any) =>
+      `(${swiftString(it.name)}, ${swiftLit(it.type)})`).join(', ')}])`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
     testArg = `VMap([${chosen.map((it: any) =>
-      `("${it.name}", ${swiftLit(it.type)})`).join(', ')}])`
+      `(${swiftString(it.name)}, ${swiftLit(it.type)})`).join(', ')}])`
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.

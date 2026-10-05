@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cppVarName } from './utility_cpp'
+import { cppVarName, cppListMatch } from './utility_cpp'
 
 
 // Type names come from the shared canonToType 'cpp' column (single source of truth).
@@ -14,6 +14,7 @@ import { cppVarName } from './utility_cpp'
 // A type-correct C++ literal for a field's canonical type.
 function cppLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'Value(nullptr)'
   if ('INTEGER' === k || 'NUMBER' === k) return 'Value(1)'
   if ('BOOLEAN' === k) return 'Value(true)'
   if ('ARRAY' === k) return 'vlist()'
@@ -140,7 +141,7 @@ std::cout << Struct::jsonify(${eVar}->data()) << std::endl;
       Content(`#### Example: List
 
 \`\`\`cpp
-std::vector<SdkEntityPtr> ${eVar}s = client->${acc}()->list(Value::undef(), Value::undef());
+std::vector<SdkEntityPtr> ${eVar}s = client->${acc}()->list(${cppListMatch(entity)}, Value::undef());
 for (const auto& ${eVar} : ${eVar}s) {
   std::cout << Struct::jsonify(${eVar}->data()) << std::endl;
 }

@@ -7,7 +7,7 @@ import {
 } from '@voxgig/apidef'
 
 // Type names come from the shared canonToType 'elixir' column (single source of truth).
-import { elixirLit } from './utility_elixir'
+import { elixirLit, elixirListArgs } from './utility_elixir'
 
 
 // Operation method spelling for the Elixir target: each op is a function on
@@ -131,7 +131,7 @@ record = ${Name}.Entity.${EName}.load(${eVar}, ${loadArg})
 
 \`\`\`elixir
 ${eVar} = ${Name}.${eCall}(sdk)
-records = ${Name}.Entity.${EName}.list(${eVar})
+records = ${Name}.Entity.${EName}.list(${eVar}${elixirListArgs(entity, Name)})
 \`\`\`
 
 `)

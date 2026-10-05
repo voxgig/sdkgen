@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, matchArg, idLiteral, targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, targetFeatures, opNeedsAction, bodyNote, listMatchArg } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -13,17 +13,12 @@ import {
 // test. Strings render the quoted placeholder.
 function pyLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'None'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'True'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
   return `"${placeholder}"`
-}
-
-
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('py', ent, 'list', idF, idLiteral(ent, 'list', idF))
 }
 
 
@@ -288,7 +283,7 @@ result = client.${ent.Name}().${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`python
-results = client.${ent.Name}().list(${listMatchArg(ent)})
+results = client.${ent.Name}().list(${listMatchArg('py', ent)})
 for ${eVar} in results:
     print(${eVar})
 \`\`\`
@@ -415,8 +410,6 @@ client = ${model.const.Name}SDK({
 
   })
 })
-
-
 
 
 export {

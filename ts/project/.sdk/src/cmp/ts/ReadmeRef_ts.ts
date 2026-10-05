@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, opRequestShape, safeVarName, exampleVarName, jsKey, matchArg, idLiteral, targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, opRequestShape, safeVarName, exampleVarName, jsKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -8,12 +8,6 @@ import {
 } from '@voxgig/apidef'
 
 import { exampleValue } from './utility_ts'
-
-
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('ts', ent, 'list', idF, idLiteral(ent, 'list', idF))
-}
 
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
@@ -349,7 +343,7 @@ const result = await client.${ent.Name}().${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`ts
-const results = await client.${ent.Name}().${opname}(${listMatchArg(ent)})
+const results = await client.${ent.Name}().${opname}(${listMatchArg('ts', ent)})
 \`\`\`
 
 `)
@@ -474,8 +468,6 @@ const client = new ${model.Name}SDK({
 
   })
 })
-
-
 
 
 export {

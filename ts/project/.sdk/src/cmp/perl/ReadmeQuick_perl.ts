@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { perlListArgs } from './utility_perl'
+
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
@@ -56,6 +58,7 @@ my $client = ${ctor};
     // A type-correct, executable Perl literal for a param.
     const perlLit = (type: any, placeholder: string = 'example'): string => {
       const k = canonScalarKey(type)
+      if ('NULL' === k) return 'undef'
       if ('INTEGER' === k || 'NUMBER' === k) return '1'
       if ('BOOLEAN' === k) return '1'
       if ('ARRAY' === k) return '[]'
@@ -70,7 +73,7 @@ my $client = ${ctor};
 error; \`data_get\` reads each record.
 
 \`\`\`perl
-my $${eVar}s = eval { $client->${eName}->list };
+my $${eVar}s = eval { $client->${eName}->list${perlListArgs(exampleEntity)} };
 if (my $err = $@) {
     print "list failed: $err\\n";
 }
