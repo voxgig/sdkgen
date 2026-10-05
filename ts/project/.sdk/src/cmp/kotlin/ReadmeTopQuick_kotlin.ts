@@ -36,9 +36,12 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const authActive = isAuthActive(model)
 
+  const shown = null != exampleEntity &&
+    ['list', 'load'].some((op: string) => Object.keys(exampleEntity.op || {}).includes(op))
+
   Content(`\`\`\`kotlin
 import ${kotlinPackage(model)}.core.${SDK}
-
+${shown ? `import ${kotlinPackage(model)}.core.SdkEntity\n` : ''}
 `)
 
   if (authActive) {
@@ -62,9 +65,11 @@ import ${kotlinPackage(model)}.core.${SDK}
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eNameLower}s (returns Any?, an aggregate list; raises on error)
-val ${eVar}List = client.${accessor}(null).list(${kotlinListMatch(exampleEntity)}, null)
-println(${eVar}List)
+      Content(`// List all ${eNameLower}s (a list of entities, one per record; raises on error)
+val ${eVar}List = client.${accessor}(null).list(${kotlinListMatch(exampleEntity)}, null) as List<*>
+for (${eVar}Item in ${eVar}List) {
+    println((${eVar}Item as SdkEntity).data())
+}
 `)
     }
 
@@ -82,9 +87,9 @@ println(${eVar}List)
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')})`
         : 'null'
       Content(`
-// Load a specific ${eNameLower} (returns the record, raises on error)
-val ${eVar} = client.${accessor}(null).load(${loadArg}, null)
-println(${eVar})
+// Load a specific ${eNameLower} (returns the entity, raises on error)
+val ${eVar} = client.${accessor}(null).load(${loadArg}, null) as SdkEntity
+println(${eVar}.data())
 `)
     }
   }

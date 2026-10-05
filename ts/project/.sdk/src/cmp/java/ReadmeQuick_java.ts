@@ -48,7 +48,10 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     Content(`### 1. Create a client
 
 \`\`\`java
+import java.util.List;
+import java.util.Map;
 import ${javaPackage(model)}.core.${SDK};
+import ${javaPackage(model)}.core.SdkEntity;
 
 Map<String, Object> options = new java.util.LinkedHashMap<>();
 options.put("apikey", System.getenv("${envName(model)}_APIKEY"));
@@ -61,7 +64,10 @@ ${javaServerLines}${SDK} client = new ${SDK}(options);
     Content(`### 1. Create a client
 
 \`\`\`java
+import java.util.List;
+import java.util.Map;
 import ${javaPackage(model)}.core.${SDK};
+import ${javaPackage(model)}.core.SdkEntity;
 
 ${'' === javaServerLines
       ? `${SDK} client = new ${SDK}();`
@@ -84,13 +90,15 @@ ${'' === javaServerLines
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list(null, null)\` returns an aggregate list of records (as \`Object\`, an
-aggregate list) and raises on error.
+\`list(null, null)\` returns a list of entities, one per record (as \`Object\`),
+and raises on error; an entity's \`data()\` reads its record.
 
 \`\`\`java
 try {
-    Object ${eVar}List = client.${accessor}(null).list(${javaListMatch(exampleEntity)}, null);
-    System.out.println(${eVar}List);
+    List<?> ${eVar}List = (List<?>) client.${accessor}(null).list(${javaListMatch(exampleEntity)}, null);
+    for (Object ${eVar}Item : ${eVar}List) {
+        System.out.println(((SdkEntity) ${eVar}Item).data());
+    }
 }
 catch (RuntimeException err) {
     System.out.println("list failed: " + err.getMessage());
@@ -127,8 +135,8 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
 \`\`\`java
 try {
-    Object ${neVar} = client.${neAccessor}(null).load(${javaMapOf(neMatch)}, null);
-    System.out.println(${neVar});
+    SdkEntity ${neVar} = (SdkEntity) client.${neAccessor}(null).load(${javaMapOf(neMatch)}, null);
+    System.out.println(${neVar}.data());
 }
 catch (RuntimeException err) {
     System.out.println("load failed: " + err.getMessage());
@@ -154,8 +162,8 @@ catch (RuntimeException err) {
 
 \`\`\`java
 try {
-    Object ${eVar} = client.${accessor}(null).load(${loadArg}, null);
-    System.out.println(${eVar});
+    SdkEntity ${eVar} = (SdkEntity) client.${accessor}(null).load(${loadArg}, null);
+    System.out.println(${eVar}.data());
 }
 catch (RuntimeException err) {
     System.out.println("load failed: " + err.getMessage());

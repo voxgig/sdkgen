@@ -48,8 +48,8 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   },
   patch: {
     sig: 'Patch(reqdata, ctrl = null) -> object?',
-    returns: 'the patched entity data',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and raises on error.',
+    returns: 'the patched entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and raises on error.',
   },
   remove: {
     sig: 'Remove(reqmatch, ctrl = null) -> object?',
@@ -84,6 +84,7 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 
     Content(`\`\`\`csharp
 using ${model.const.Name}Sdk;
+using Voxgig.Struct;
 
 var client = new ${model.const.Name}SDK(options);
 \`\`\`
@@ -286,8 +287,11 @@ var result = client.${ent.Name}().${opname.charAt(0).toUpperCase() + opname.slic
           }
           else if ('list' === opname) {
             Content(`\`\`\`csharp
-var results = client.${ent.Name}().List(${csListMatch(ent)});
-Console.WriteLine(results);
+var results = (List<object?>)client.${ent.Name}().List(${csListMatch(ent)})!;
+foreach (var item in results)
+{
+    Console.WriteLine(StructUtils.Jsonify(((IEntity)item!).Data()));
+}
 \`\`\`
 
 `)

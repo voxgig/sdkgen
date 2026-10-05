@@ -73,9 +73,9 @@ ${eVar}s.each { |item| puts item.data_get }
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')} }`
         : ''
       Content(`
-# Load a specific ${eName.toLowerCase()} (returns the ENTITY; call data_get for the record)
+# Load a specific ${eName.toLowerCase()} (returns the entity; data_get reads its record; raises on error)
 ${eVar} = client.${eName}.load(${loadArg})
-puts ${eVar}
+puts ${eVar}.data_get
 `)
       hasCall = true
     }

@@ -110,12 +110,13 @@ Read each record with \`((:data-get ${eLow}))\`.
       Content(`### 3. Load ${neArticle} ${neLow}
 
 ${nestedEntity.Name} is nested under ${parentName}, so provide the
-\`${parentParam}\`. \`load\` returns the bare record (a map) and raises on error.
+\`${parentParam}\`. \`load\` returns the entity and raises on error;
+\`((:data-get ${neLow}))\` reads its record.
 
 \`\`\`clojure
 (try
   (let [${neLow} (e-${neLow}/load (api/${neLow} client nil) (vs/jm ${neMatch.join(' ')}) nil)]
-    (println ${neLow}))
+    (println ((:data-get ${neLow}))))
   (catch Exception err
     (println "load failed:" (.getMessage err))))
 \`\`\`
@@ -135,12 +136,13 @@ ${nestedEntity.Name} is nested under ${parentName}, so provide the
 
       Content(`### 3. Load ${article} ${eLow}
 
-\`load\` returns the bare record (a map) and raises on error.
+\`load\` returns the entity and raises on error; \`((:data-get ${eLow}))\` reads
+its record.
 
 \`\`\`clojure
 (try
   (let [${eLow} (e-${eLow}/load (api/${eLow} client nil) ${loadArg} nil)]
-    (println ${eLow}))
+    (println ((:data-get ${eLow}))))
   (catch Exception err
     (println "load failed:" (.getMessage err))))
 \`\`\`
@@ -166,7 +168,7 @@ ${nestedEntity.Name} is nested under ${parentName}, so provide the
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `(vs/getprop created "${dataIdF}")`
+      ? `(vs/getprop ((:data-get created)) "${dataIdF}")`
       : cljLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
@@ -176,7 +178,7 @@ ${nestedEntity.Name} is nested under ${parentName}, so provide the
 \`\`\`clojure
 `)
       if (opnames.includes('create')) {
-        Content(`;; Create — returns the bare created record (a map)
+        Content(`;; Create — returns the created entity
 (def created (e-${eLow}/create (api/${eLow} client nil) (vs/jm ${examplePairs('create').join(' ')}) nil))
 
 `)
@@ -184,7 +186,7 @@ ${nestedEntity.Name} is nested under ${parentName}, so provide the
       if (opnames.includes('update')) {
         const updatePairs = (idF ? [`"${idF}" ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
-        Content(`;; Update${fromCreated ? " — the created record's id is a plain map key" : ''}
+        Content(`;; Update${fromCreated ? " — the created entity's record holds its id" : ''}
 (e-${eLow}/update (api/${eLow} client nil) (vs/jm ${updatePairs.join(' ')}) nil)
 
 `)

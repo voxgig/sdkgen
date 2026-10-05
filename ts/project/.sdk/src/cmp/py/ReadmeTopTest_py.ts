@@ -61,7 +61,7 @@ client = ${model.const.Name}SDK.test()
     // a different type is a mypy assignment error).
     const eVar = exampleVarName(eName.toLowerCase(), 'py') + ('list' === primaryOp ? 's' : '')
     Content(`${eVar} = client.${eName}().${primaryOp}(${arg})
-print(${eVar})
+print(${'list' === primaryOp ? '[item.data_get() for item in ' + eVar + ']' : eVar + '.data_get()'})
 `)
   }
 

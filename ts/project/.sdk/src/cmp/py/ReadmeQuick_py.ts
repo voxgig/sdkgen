@@ -80,14 +80,14 @@ client = ${ctor}
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list()\` returns a \`list\` of records (each a \`dict\`) and raises on
-error — iterate it directly.
+\`list()\` returns a \`list\` of entities, one per record, and raises on
+error; an entity's \`data_get()\` reads its record (a \`dict\`).
 
 \`\`\`python
 try:
     ${eVar}s = client.${eName}().list(${listMatchArg('py', exampleEntity)})
     for ${eVar} in ${eVar}s:
-        print(${eVar})
+        print(${eVar}.data_get())
 except Exception as err:
     print(f"list failed: {err}")
 \`\`\`
@@ -120,7 +120,7 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`\`\`python
 try:
     ${neVar} = client.${neName}().load({${neMatch.join(', ')}})
-    print(${neVar})
+    print(${neVar}.data_get())
 except Exception as err:
     print(f"load failed: {err}")
 \`\`\`
@@ -145,7 +145,7 @@ except Exception as err:
 \`\`\`python
 try:
     ${eVar} = client.${eName}().load(${loadArg})
-    print(${eVar})
+    print(${eVar}.data_get())
 except Exception as err:
     print(f"load failed: {err}")
 \`\`\`
@@ -191,7 +191,7 @@ created = client.${eName}().create({${examplePairs('create').join(', ')}})
       if (opnames.includes('update')) {
         const updatePairs = (idF ? [`"${idF}": ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
-        Content(`# Update${fromCreated ? " — the created record's id is a plain dict key" : ''}
+        Content(`# Update${fromCreated ? " — the created entity's record holds its id" : ''}
 client.${eName}().update({${updatePairs.join(', ')}})
 
 `)

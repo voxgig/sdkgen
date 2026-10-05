@@ -90,10 +90,13 @@ const client = ${model.const.Name}SDK.test({
         `${jsKey(it.name)}: ${exampleValue(exampleEntity, primaryOpDef, it.name,
           isIdField(it) ? seedId : 'example_' + it.name)}`).join(', ')} }`
     }
+    const one = exampleVarName(eName.toLowerCase(), 'ts')
     Content(`const ${eVar} = await client.${eName}().${primaryOp}(${arg})
-// ${eVar} is ${'list' === primaryOp ? `an array of ${eName} entities` : `the ${eName} entity`}, populated with mock data
-// — call ${eVar}${'list' === primaryOp ? '[0]' : ''}.data() for the record itself
-console.log(${eVar})
+${'list' === primaryOp
+    ? `// ${eVar} is an array of ${eName} entities, one per mock record
+console.log(${eVar}.map((${one}) => ${one}.data()))`
+    : `// ${eVar} is the ${eName} entity; .data() reads its mock record
+console.log(${eVar}.data())`}
 `)
   }
 

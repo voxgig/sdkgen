@@ -37,6 +37,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
 \`\`\`csharp
 using ${model.const.Name}Sdk;
+using Voxgig.Struct;
 
 var client = ${ctor};
 \`\`\`
@@ -70,13 +71,16 @@ var client = ${ctor};
       Content(`### 2. List ${eName.toLowerCase()} records
 
 \`List(null)\` returns a list of entities, one per record (as \`object?\`), and
-raises on error.
+raises on error; an entity's \`Data()\` reads its record.
 
 \`\`\`csharp
 try
 {
-    var ${eVar}List = client.${eName}().List(${csListMatch(exampleEntity)});
-    Console.WriteLine(${eVar}List);
+    var ${eVar}List = (List<object?>)client.${eName}().List(${csListMatch(exampleEntity)})!;
+    foreach (var ${eVar}Item in ${eVar}List)
+    {
+        Console.WriteLine(StructUtils.Jsonify(((IEntity)${eVar}Item!).Data()));
+    }
 }
 catch (Exception err)
 {
@@ -115,8 +119,8 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`\`\`csharp
 try
 {
-    var ${neVar} = client.${neName}().Load(new Dictionary<string, object?> { ${neMatch.join(', ')} });
-    Console.WriteLine(${neVar});
+    var ${neVar} = (IEntity)client.${neName}().Load(new Dictionary<string, object?> { ${neMatch.join(', ')} })!;
+    Console.WriteLine(StructUtils.Jsonify(${neVar}.Data()));
 }
 catch (Exception err)
 {
@@ -146,8 +150,8 @@ catch (Exception err)
 \`\`\`csharp
 try
 {
-    var ${eVar} = client.${eName}().Load(${loadArg});
-    Console.WriteLine(${eVar});
+    var ${eVar} = (IEntity)client.${eName}().Load(${loadArg})!;
+    Console.WriteLine(StructUtils.Jsonify(${eVar}.Data()));
 }
 catch (Exception err)
 {

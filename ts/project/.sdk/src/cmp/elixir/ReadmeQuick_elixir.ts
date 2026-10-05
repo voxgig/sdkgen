@@ -55,14 +55,17 @@ sdk = ${ctor}
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list/2\` returns a list of entities, one per record, and raises on error;
-\`data_get/1\` reads an entity's record.
+\`list/2\` returns a \`Voxgig.Struct\` list of entities, one per record, and
+raises on error; \`Voxgig.Struct.getelem/2\` reads an item, and \`data_get/1\`
+an entity's record.
 
 \`\`\`elixir
 try do
   ${eVar} = ${Name}.${eCall}(sdk)
-  records = ${Name}.Entity.${eName}.list(${eVar}${elixirListArgs(exampleEntity, Name)})
-  IO.inspect(records)
+  ${eVar}s = ${Name}.Entity.${eName}.list(${eVar}${elixirListArgs(exampleEntity, Name)})
+  for i <- 0..(Voxgig.Struct.size(${eVar}s) - 1)//1 do
+    IO.puts(Voxgig.Struct.jsonify(${Name}.Entity.${eName}.data_get(Voxgig.Struct.getelem(${eVar}s, i))))
+  end
 rescue
   err -> IO.puts("list failed: " <> inspect(err))
 end
@@ -98,8 +101,8 @@ record.
 \`\`\`elixir
 try do
   ${neVar} = ${Name}.${neCall}(sdk)
-  record = ${Name}.Entity.${neName}.load(${neVar}, H.deep(%{${neMatch.join(', ')}}))
-  IO.inspect(record)
+  ${neVar} = ${Name}.Entity.${neName}.load(${neVar}, H.deep(%{${neMatch.join(', ')}}))
+  IO.puts(Voxgig.Struct.jsonify(${Name}.Entity.${neName}.data_get(${neVar})))
 rescue
   err -> IO.puts("load failed: " <> inspect(err))
 end
@@ -126,8 +129,8 @@ record.
 \`\`\`elixir
 try do
   ${eVar} = ${Name}.${eCall}(sdk)
-  record = ${Name}.Entity.${eName}.load(${eVar}, ${loadArg})
-  IO.inspect(record)
+  ${eVar} = ${Name}.Entity.${eName}.load(${eVar}, ${loadArg})
+  IO.puts(Voxgig.Struct.jsonify(${Name}.Entity.${eName}.data_get(${eVar})))
 rescue
   err -> IO.puts("load failed: " <> inspect(err))
 end
@@ -155,7 +158,7 @@ end
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `Voxgig.Struct.getprop(created, "${dataIdF}")`
+      ? `Voxgig.Struct.getprop(${Name}.Entity.${eName}.data_get(created), "${dataIdF}")`
       : elixirLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||

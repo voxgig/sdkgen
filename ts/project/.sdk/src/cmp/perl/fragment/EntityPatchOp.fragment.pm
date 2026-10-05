@@ -3,8 +3,8 @@
 # Change part of an existing EntityName: only the fields given are sent.
 #
 # reqdata: body data hashref (EntityNamePatchData shape). ctrl: optional
-# per-call control. Returns the patched EntityName data (hashref); dies
-# with ProjectNameError on failure.
+# per-call control. Returns the patched EntityName entity (data_get reads
+# its record); dies with ProjectNameError on failure.
 sub patch {
   my ($self, $reqdata, $ctrl) = @_;
   my $utility = $self->{_utility};

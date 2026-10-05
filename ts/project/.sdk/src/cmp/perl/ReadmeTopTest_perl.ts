@@ -67,10 +67,10 @@ my $client = ${model.const.Name}SDK->test(undef, undef);
     Content(`my $${eVar} = $client->${eName}->${primaryOp}(${arg});
 `)
     if ('list' === primaryOp) {
-      Content(`print scalar(@$${eVar}), " records\\n";
+      Content(`print $_->data_get->{id}, "\\n" for @$${eVar};
 `)
     } else {
-      Content(`print "$${eVar}->{id}\\n";
+      Content(`print $${eVar}->data_get->{id}, "\\n";
 `)
     }
   }

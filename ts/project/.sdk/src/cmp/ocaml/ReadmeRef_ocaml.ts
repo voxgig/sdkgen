@@ -40,32 +40,32 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   load: {
     sig: 'e_load reqmatch ctrl : entity_obj',
     returns: 'the entity',
-    desc: 'Load a single entity matching the given criteria. Resolves to the ENTITY (read the record with `e_data_get`) and raises on error.',
+    desc: 'Load a single entity matching the given criteria. Resolves to the entity, whose record `e_data_get` reads, and raises on error.',
   },
   list: {
     sig: 'e_list reqmatch ctrl : entity_obj list',
     returns: 'one entity per record',
-    desc: 'List entities matching the given criteria. The match is optional \u2014 pass `(empty_map ())` to list all records. Resolves to one ENTITY per record and raises on error.',
+    desc: 'List entities matching the given criteria. The match is optional \u2014 pass `(empty_map ())` to list all records. Resolves to one entity per record and raises on error.',
   },
   create: {
     sig: 'e_create reqdata ctrl : entity_obj',
     returns: 'the created entity',
-    desc: 'Create a new entity with the given data. Resolves to the ENTITY (read the record with `e_data_get`) and raises on error.',
+    desc: 'Create a new entity with the given data. Resolves to the created entity and raises on error.',
   },
   update: {
     sig: 'e_update reqdata ctrl : entity_obj',
     returns: 'the updated entity',
-    desc: 'Update an existing entity. The data must include the entity `id`. Resolves to the ENTITY (read the record with `e_data_get`) and raises on error.',
+    desc: 'Update an existing entity. The data must include the entity `id`. Resolves to the updated entity and raises on error.',
   },
   patch: {
     sig: 'e_patch reqdata ctrl : entity_obj',
     returns: 'the patched entity',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Resolves to the ENTITY (read the record with `e_data_get`) and raises on error.',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Resolves to the patched entity and raises on error.',
   },
   remove: {
     sig: 'e_remove reqmatch ctrl : entity_obj',
     returns: 'the removed entity',
-    desc: 'Remove the entity matching the given criteria. Resolves to the ENTITY, marked deleted (`e_deleted`); it keeps the data it held. Raises on error.',
+    desc: 'Remove the entity matching the given criteria. Resolves to the entity, marked as deleted (`e_deleted`); it keeps the data it held. Raises on error.',
   },
 }
 
@@ -96,6 +96,7 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
     Content(`\`\`\`ocaml
 open Voxgig_struct
 open Sdk_helpers
+open Sdk_types
 
 let client = Sdk_client.make options
 \`\`\`

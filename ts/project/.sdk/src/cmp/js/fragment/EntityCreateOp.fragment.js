@@ -7,7 +7,7 @@ class EntityOperation {
   /**
    * @param {EntityNameCreateData} [reqdata]
    * @param {Object} [ctrl]
-   * @returns {Promise<EntityName>}
+   * @returns {Promise<EntyClass>}
    */
   async create(reqdata, ctrl) {
 

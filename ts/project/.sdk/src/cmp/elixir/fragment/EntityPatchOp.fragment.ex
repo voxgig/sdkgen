@@ -1,8 +1,9 @@
 # EJECT-START
 
-  # Returns the patched entityname entity map (ProjectName.Types.entityname/0)
-  # on success; pipeline errors surface as the error value built by
-  # Utility.make_error (shape is utility-configurable), hence term().
+  # Returns the patched entityname entity, whose data_get/1 reads its record
+  # (ProjectName.Types.entityname/0), on success; pipeline errors surface as
+  # the error value built by Utility.make_error (shape is
+  # utility-configurable), hence term().
   @spec patch(map(), ProjectName.Types.entityname_patch_data() | nil, map() | nil) :: term()
   def patch(ent, reqdata, ctrl \\ nil) do
     ctx =

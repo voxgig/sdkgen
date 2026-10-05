@@ -138,7 +138,7 @@ sub match_get {
 # result). When the streaming feature is active the result carries a `stream`
 # coderef and this yields from it (honouring chunkSize / chunkDelay); else it
 # falls back to yielding the materialised items so stream() always yields.
-# Yielded records are unwrapped to bare hashrefs (matching list()).
+# An entity is yielded as its record, the hashref its data_get returns.
 #
 # $callopts parameterises the call:
 #   - ctrl:   per-call pipeline control (threaded onto the op ctx);

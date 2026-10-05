@@ -51,10 +51,14 @@ sdk = ${Name}.test()
     } else {
       arg = 'H.deep(%{})'
     }
-    const resVar = 'list' === primaryOp ? 'records' : 'record'
     Content(`${eVar} = ${Name}.${eCall}(sdk)
-${resVar} = ${Name}.Entity.${eName}.${primaryOp}(${eVar}, ${arg})
-IO.inspect(${resVar})
+${'list' === primaryOp
+  ? `${eVar}s = ${Name}.Entity.${eName}.list(${eVar}, ${arg})
+for i <- 0..(Voxgig.Struct.size(${eVar}s) - 1)//1 do
+  IO.puts(Voxgig.Struct.jsonify(${Name}.Entity.${eName}.data_get(Voxgig.Struct.getelem(${eVar}s, i))))
+end`
+  : `${eVar} = ${Name}.Entity.${eName}.${primaryOp}(${eVar}, ${arg})
+IO.puts(Voxgig.Struct.jsonify(${Name}.Entity.${eName}.data_get(${eVar})))`}
 `)
   }
 

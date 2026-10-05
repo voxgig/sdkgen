@@ -63,10 +63,10 @@ client = ${ctor}
     let hasCall = false
 
     if (opnames.includes('list')) {
-      Content(`# List all ${eName.toLowerCase()}s (returns a list, raises on error)
+      Content(`# List all ${eName.toLowerCase()}s (a list of entities, one per record; raises on error)
 ${eVar}s = client.${eName}().list(${listMatchArg('py', exampleEntity)})
 for ${eVar} in ${eVar}s:
-    print(${eVar})
+    print(${eVar}.data_get())
 `)
       hasCall = true
     }
@@ -82,9 +82,9 @@ for ${eVar} in ${eVar}s:
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}}`
         : ''
       Content(`
-# Load a specific ${eName.toLowerCase()} (returns the record, raises on error)
+# Load a specific ${eName.toLowerCase()} (returns the entity, raises on error)
 ${eVar} = client.${eName}().load(${loadArg})
-print(${eVar})
+print(${eVar}.data_get())
 `)
       hasCall = true
     }

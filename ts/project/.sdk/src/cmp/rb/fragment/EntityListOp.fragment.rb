@@ -5,7 +5,7 @@
   # @param reqmatch [EntityNameListMatch, Hash, nil] match filter (any subset of
   #   EntityName fields); defaults to nil, treated as an empty match that lists all.
   # @param ctrl [Object, nil] optional per-call control
-  # @return [Array<EntityName>] the matching EntityName items, one entity per
+  # @return [Array<EntyClass>] the matching EntityName items, one entity per
   #   record (data_get reads the record); raises ProjectNameError on failure
   def list(reqmatch = nil, ctrl = nil)
     utility = @_utility

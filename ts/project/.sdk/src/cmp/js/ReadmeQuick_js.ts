@@ -78,7 +78,7 @@ const client = ${ctor}
 
 \`\`\`js
 const ${eVar} = await client.${eName}().load(${matchArg('load')})
-console.log(${eVar})
+console.log(${eVar}.data())
 \`\`\`
 `)
     }
@@ -90,7 +90,7 @@ console.log(${eVar})
 \`\`\`js
 const ${eVar}s = await client.${eName}().list(${listMatchArg('js', exampleEntity)})
 for (const ${eVar} of ${eVar}s) {
-  console.log(${eVar})
+  console.log(${eVar}.data())
 }
 \`\`\`
 `)
@@ -104,7 +104,7 @@ for (const ${eVar} of ${eVar}s) {
 
 \`\`\`js
 const created = await client.${eName}().create({${createBody}})
-console.log(created)
+console.log(created.data())
 \`\`\`
 `)
     }
@@ -119,7 +119,7 @@ console.log(created)
 
 \`\`\`js
 const updated = await client.${eName}().update({${updateBody}})
-console.log(updated)
+console.log(updated.data())
 \`\`\`
 `)
     }
@@ -136,7 +136,7 @@ Sends only the fields given.
 
 \`\`\`js
 const patched = await client.${eName}().patch({${patchBody}})
-console.log(patched)
+console.log(patched.data())
 \`\`\`
 `)
     }

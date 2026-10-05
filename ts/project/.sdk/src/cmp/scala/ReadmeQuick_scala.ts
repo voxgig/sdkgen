@@ -37,6 +37,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
 \`\`\`scala
 import ${scalaPackage(model)}.core.${SDK}
+import ${scalaPackage(model)}.core.SdkEntity
 
 val options = new java.util.LinkedHashMap[String, Object]()
 options.put("apikey", System.getenv("${envName(model)}_APIKEY"))
@@ -50,6 +51,7 @@ val client = new ${SDK}(options)
 
 \`\`\`scala
 import ${scalaPackage(model)}.core.${SDK}
+import ${scalaPackage(model)}.core.SdkEntity
 
 val client = new ${SDK}()
 \`\`\`
@@ -72,13 +74,13 @@ val client = new ${SDK}()
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list(null, null)\` returns an aggregate list of records (as \`Object\`, an
-aggregate list) and raises on error.
+\`list(null, null)\` returns a list of entities, one per record (as \`Object\`),
+and raises on error; an entity's \`data()\` reads its record.
 
 \`\`\`scala
 try {
-    val ${eVar}List = client.${accessor}(null).list(${scalaListMatch(exampleEntity)}, null)
-    println(${eVar}List)
+    val ${eVar}List = client.${accessor}(null).list(${scalaListMatch(exampleEntity)}, null).asInstanceOf[java.util.List[SdkEntity]]
+    ${eVar}List.forEach(${eVar}Item => println(${eVar}Item.data()))
 }
 catch {
     case err: RuntimeException => println("list failed: " + err.getMessage)
@@ -115,8 +117,8 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
 \`\`\`scala
 try {
-    val ${neVar} = client.${neAccessor}(null).load(${javaMapOf(neMatch, 'java.util.')}, null)
-    println(${neVar})
+    val ${neVar} = client.${neAccessor}(null).load(${javaMapOf(neMatch, 'java.util.')}, null).asInstanceOf[SdkEntity]
+    println(${neVar}.data())
 }
 catch {
     case err: RuntimeException => println("load failed: " + err.getMessage)
@@ -143,8 +145,8 @@ catch {
 
 \`\`\`scala
 try {
-    val ${eVar} = client.${accessor}(null).load(${loadArg}, null)
-    println(${eVar})
+    val ${eVar} = client.${accessor}(null).load(${loadArg}, null).asInstanceOf[SdkEntity]
+    println(${eVar}.data())
 }
 catch {
     case err: RuntimeException => println("load failed: " + err.getMessage)

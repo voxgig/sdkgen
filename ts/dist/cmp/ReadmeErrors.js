@@ -13,7 +13,7 @@ const DEFAULT_LANG = {
 \`\`\`ts
 try {
   const ${call.resultVar} = await ${call.expr}
-  console.log(${call.resultVar})
+  console.log(${'list' === op ? call.resultVar + '.map((item) => item.data())' : call.resultVar + '.data()'})
 } catch (err) {
   console.error('${op} failed:', err)
 }
@@ -45,7 +45,7 @@ const LANGS = {
 \`\`\`python
 try:
     ${call.resultVar} = ${call.expr}
-    print(${call.resultVar})
+    print(${'list' === op ? '[item.data_get() for item in ' + call.resultVar + ']' : call.resultVar + '.data_get()'})
 except Exception as err:
     print(f"${op} failed: {err}")
 \`\`\`

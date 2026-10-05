@@ -51,9 +51,10 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // A direct()-only SDK (no ops anywhere) shows a direct() call instead.
   const testModeExample = primaryOp
     ? `local result, err = client:${eName}():${primaryOp}(${testCallArg})
--- result is the returned data; err is set on failure`
+-- ${'list' === primaryOp ? 'result is an array of entities, one per mock record'
+    : 'result is the entity; data_get() reads its mock record'}; err is set on failure`
     : `local result, err = client:direct({ path = "/api/resource", method = "GET" })
--- result is the returned data; err is set on failure`
+-- result holds ok, status, headers and data; err is set on failure`
 
   const apikeyEnvLine = isAuthActive(model)
     ? `\n${envName(model)}_APIKEY=<your-key>`

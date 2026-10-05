@@ -51,10 +51,10 @@ const client = ${ctor}
     let hasCall = false
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eName.toLowerCase()}s (returns ${eName}Entity[] — .data() for the record)
+      Content(`// List all ${eName.toLowerCase()}s (returns ${eName}Entity[], one entity per record)
 const ${eVar}s = await client.${eName}().list(${listMatchArg('ts', exampleEntity)})
 for (const ${eVar} of ${eVar}s) {
-  console.log(${eVar})
+  console.log(${eVar}.data())
 }
 `)
       hasCall = true
@@ -86,19 +86,19 @@ for (const ${eVar} of ${eVar}s) {
             it.name === neIdF ? 'example_id' : 'example_' + it.name)},`)
 
       Content(`
-// Load a specific ${neName.toLowerCase()} (returns a ${neName})
+// Load a specific ${neName.toLowerCase()} (returns the entity, ${/^[aeiou]/i.test(neName) ? 'an' : 'a'} ${neName}Entity)
 const ${neVar} = await client.${neName}().load({
 ${neMatchLines.join('\n')}
 })
-console.log(${neVar})
+console.log(${neVar}.data())
 `)
       hasCall = true
     }
 
     if (!hasCall && opnames.includes('load')) {
-      Content(`// Load ${eName.toLowerCase()} data (returns a ${eName})
+      Content(`// Load a specific ${eName.toLowerCase()} (returns the entity, ${/^[aeiou]/i.test(eName) ? 'an' : 'a'} ${eName}Entity)
 const ${eVar} = await client.${eName}().load()
-console.log(${eVar})
+console.log(${eVar}.data())
 `)
       hasCall = true
     }

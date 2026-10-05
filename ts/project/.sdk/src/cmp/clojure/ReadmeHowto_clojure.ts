@@ -47,11 +47,16 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   }
 
   // The op-driven test-mode line, shown only when the SDK has an entity op.
-  const testModeExample = primaryOp
-    ? `;; Entity ops return the bare record and raise on error.
+  const testModeExample = 'list' === primaryOp
+    ? `;; list returns a vector of entities, one per mock record; it raises on error.
+(def ${eLow}s (e-${eLow}/list (api/${eLow} client nil) ${testArg} nil))
+(doseq [item ${eLow}s]
+  (println ((:data-get item))))`
+    : primaryOp
+    ? `;; Entity ops return the entity; they raise on error.
 (def ${eLow} (e-${eLow}/${primaryOp} (api/${eLow} client nil) ${testArg} nil))
-;; ${eLow} contains the mock response record
-(println ${eLow})`
+;; ((:data-get ${eLow})) reads the entity's mock record
+(println ((:data-get ${eLow})))`
     : `(def result (api/direct client (vs/jm "path" "/api/resource" "method" "GET")))
 (println result)`
 

@@ -134,7 +134,7 @@ $${entity.name} = $client->${phpEntityAccessor(entity.Name)}()->load(${loadArg})
       Content(`#### Example: List
 
 \`\`\`php
-// list() returns an array of ${entity.Name} records (throws on error).
+// list() returns an array of ${entity.Name} entities, one per record (throws on error).
 $${entity.name}s = $client->${phpEntityAccessor(entity.Name)}()->list(${listMatchArg('php', entity)});
 \`\`\`
 

@@ -7,7 +7,7 @@ class EntityOperation {
   /**
    * @param {EntityNameUpdateData} [reqdata]
    * @param {Object} [ctrl]
-   * @returns {Promise<EntityName>}
+   * @returns {Promise<EntyClass>}
    */
   async update(reqdata, ctrl) {
 

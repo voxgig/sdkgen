@@ -34,9 +34,12 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
     ? `sdk.new({\n  apikey = os.getenv("${envName(model)}_APIKEY"),\n})`
     : `sdk.new()`
 
+  const shown = null != exampleEntity &&
+    ['list', 'load'].some((op: string) => Object.keys(exampleEntity.op || {}).includes(op))
+
   Content(`\`\`\`lua
 local sdk = require("${model.name}_sdk")
-
+${shown ? 'local json = require("dkjson")\n' : ''}
 local client = ${ctor}
 
 `)
@@ -52,9 +55,12 @@ local client = ${ctor}
     let hasCall = false
 
     if (opnames.includes('list')) {
-      Content(`-- List all ${eName.toLowerCase()}s
+      Content(`-- List all ${eName.toLowerCase()}s (an array of entities, one per record; err on failure)
 local ${eVar}s, err = client:${eName}():list(${listMatchArg('lua', exampleEntity)})
-print(${eVar}s)
+if err then error(err) end
+for _, ${eVar} in ipairs(${eVar}s) do
+  print(json.encode(${eVar}:data_get()))
+end
 `)
       hasCall = true
     }
@@ -73,9 +79,10 @@ print(${eVar}s)
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')} }`
         : ''
       Content(`
--- Load a specific ${eName.toLowerCase()}
+-- Load a specific ${eName.toLowerCase()} (returns the entity; err on failure)
 local ${eVar}, err = client:${eName}():load(${loadArg})
-print(${eVar})
+if err then error(err) end
+print(json.encode(${eVar}:data_get()))
 `)
       hasCall = true
     }

@@ -33,8 +33,17 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
     'options.put("server", server);\n'
 
 
+  const shown = null == exampleEntity ? [] :
+    ['list', 'load'].filter((op: string) => Object.keys(exampleEntity.op || {}).includes(op))
+  const imports = [
+    ...(shown.includes('list') ? ['java.util.List'] : []),
+    ...(authActive || '' !== javaServerLines || shown.includes('load') ? ['java.util.Map'] : []),
+    `${javaPackage(model)}.core.${SDK}`,
+    ...(0 < shown.length ? [`${javaPackage(model)}.core.SdkEntity`] : []),
+  ]
+
   Content(`\`\`\`java
-import ${javaPackage(model)}.core.${SDK};
+${imports.map((i: string) => 'import ' + i + ';').join('\n')}
 
 `)
 
@@ -61,9 +70,11 @@ ${javaServerLines}${SDK} client = new ${SDK}(options);
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eNameLower}s (returns Object, an aggregate list; raises on error)
-Object ${eVar}List = client.${accessor}(null).list(${javaListMatch(exampleEntity)}, null);
-System.out.println(${eVar}List);
+      Content(`// List all ${eNameLower}s (a list of entities, one per record; raises on error)
+List<?> ${eVar}List = (List<?>) client.${accessor}(null).list(${javaListMatch(exampleEntity)}, null);
+for (Object ${eVar}Item : ${eVar}List) {
+    System.out.println(((SdkEntity) ${eVar}Item).data());
+}
 `)
     }
 
@@ -78,9 +89,9 @@ System.out.println(${eVar}List);
             it.name === idF ? 'example_id' : 'example_' + it.name)}`))
         : 'null'
       Content(`
-// Load a specific ${eNameLower} (returns the record, raises on error)
-Object ${eVar} = client.${accessor}(null).load(${loadArg}, null);
-System.out.println(${eVar});
+// Load a specific ${eNameLower} (returns the entity, raises on error)
+SdkEntity ${eVar} = (SdkEntity) client.${accessor}(null).load(${loadArg}, null);
+System.out.println(${eVar}.data());
 `)
     }
   }

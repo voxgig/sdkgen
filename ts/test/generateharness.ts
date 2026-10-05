@@ -466,8 +466,6 @@ main: kit: flow: BasicMetricFlow: {
 `
 
 
-// Calls the runtime refuses when made bare: moon lists and loads under its
-// planet, and every list route of signal is an action.
 // A list whose route requires the query parameters engine and q.
 const SEARCH_ENTITY = `
 main: kit: entity: search: {
@@ -534,8 +532,7 @@ main: kit: flow: ${flow}: {
 }
 
 
-// A list-only entity on one route whose points each require one of the
-// given query parameters.
+// A list-only entity on one route whose points each require one of the given query parameters.
 function selectorList(name: string, selectors: string[]): string {
   const flow = 'Basic' + name[0].toUpperCase() + name.slice(1) + 'Flow'
   return entityOnly(`
@@ -619,6 +616,8 @@ function entityOnly(source: string): string {
 }
 
 
+// Calls the runtime refuses when made bare: moon lists and loads under its
+// planet, and every list route of signal is an action.
 const ROUTING_MODEL = `
 main: kit: entity: moon: {
   alias: field: {}
@@ -854,6 +853,79 @@ main: kit: flow: BasicContactsfieldFlow: {
   step: [ { o: "create", i: { ref: "contactsfield_ref01" } } ]
 }
 `
+
+
+// A quick start shows the first active entity: a load-only singleton, a
+// list-only one, one with every operation (patch too), and one nested in it.
+const PLANET_FIRST = ['ambient', 'console', 'graph_ql', 'history']
+  .map((name) => 'main: kit: entity: ' + name + ': active: false').join('\n')
+
+const SATELLITE = `
+main: kit: entity: satellite: {
+  alias: field: {}
+  name: "satellite"
+  id: { field: "id", name: "id" }
+  relations: ancestors: [[path($.main.kit.entity.planet)]]
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "planet_id": { h: 'PlanetId', n: "planet_id", r: false, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: { params: [ { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" } ] }
+        m: "GET", o: "/planet/{planet_id}/satellite"
+        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    load: {
+      name: "load"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" }
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
+        ] }
+        m: "GET", o: "/planet/{planet_id}/satellite/{id}"
+        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: flow: BasicSatelliteFlow: {
+  entity: "satellite", kind: "basic", name: "BasicSatelliteFlow"
+  step: [
+    { o: "list", m: { planet_id: "planet01" } }
+    { o: "load", m: { planet_id: "planet01" }, i: { ref: "satellite_ref01", srcdatavar: "satellite_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
+const PLANET_PATCH = `
+main: kit: entity: planet: op: patch: {
+  name: "patch"
+  points: [ {
+    g: { params: [
+      { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "p01" }
+    ] }
+    m: "PATCH", o: "/planet/{id}", s: [{ lit: "planet" }, { var: "id" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  } ]
+}
+`
+
+const CRUD_MODEL = PLANET_FIRST + PLANET_PATCH
+
+const DOC_MODELS: [string, string | undefined][] = [
+  ['singleton', undefined],
+  ['list', 'main: kit: entity: ambient: active: false'],
+  ['crud', CRUD_MODEL],
+  ['nested', PLANET_FIRST + SATELLITE],
+]
 
 
 const BUILTIN_TYPE_ENTITY = `
@@ -1116,6 +1188,8 @@ export {
   SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY,
   KEYWORD_ACCESSOR_ENTITY,
+  CRUD_MODEL,
+  DOC_MODELS,
   OPLESS_ENTITY,
   CREATE_ONLY_ENTITY,
   PATCH_ONLY_ENTITY,

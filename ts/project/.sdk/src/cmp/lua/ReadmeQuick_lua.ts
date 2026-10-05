@@ -78,16 +78,21 @@ local client = ${ctor}
       fields.find((f: any) => f && !idNames.has(f.n) && isStringField(f)) ||
       fields.find((f: any) => f && !idNames.has(f.n))
     const displayField = displayFieldObj ? displayFieldObj.name : null
-    const idCol = dataIdF ? `item["${dataIdF}"]` : null
-    const dispCol = displayField ? `item["${displayField}"]` : null
+    const idCol = dataIdF ? `rec["${dataIdF}"]` : null
+    const dispCol = displayField ? `rec["${displayField}"]` : null
     const printCols = [idCol, dispCol].filter(Boolean).join(', ')
-    const printLine = printCols ? `  print(${printCols})` : `  print(item)`
+    // A record with neither column prints every field it holds.
+    const printRecord = (v: string, cols: string, pad: string): string => cols
+      ? `${pad}local rec = ${v}:data_get()\n${pad}print(${cols})`
+      : `${pad}for k, val in pairs(${v}:data_get()) do print(k, val) end`
+    const printLine = printRecord('item', printCols, '  ')
 
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-Entity operations return \`(value, err)\`. For \`list\`, \`value\` is the
-array of records itself — iterate it directly (there is no wrapper).
+Entity operations return \`(value, err)\`. For \`list\`, \`value\` is an
+array of entities, one per record — iterate it directly (there is no
+wrapper), and read each record with \`data_get()\`.
 
 \`\`\`lua
 local ${eVar}s, err = client:${eName}():list(${listMatchArg('lua', exampleEntity)})
@@ -105,6 +110,7 @@ end
       const neName = nom(nestedEntity, 'Name')
       const neArticle = /^[aeiou]/i.test(neName) ? "an" : "a"
       const neVar = exampleVarName(neName.toLowerCase(), 'lua')
+      const neDataIdF = entityDataIdField(nestedEntity)
 
       const neIdF = entityIdField(nestedEntity)
       const neRequired = opRequestShape(nestedEntity, 'load').items
@@ -122,10 +128,12 @@ end
 
 ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 
+\`load\` returns the entity; \`data_get()\` reads its record.
+
 \`\`\`lua
 local ${neVar}, err = client:${neName}():load({ ${neMatch.join(', ')} })
 if err then error(err) end
-print(${neVar})
+${printRecord(neVar, neDataIdF ? `rec["${neDataIdF}"]` : '', '')}
 \`\`\`
 
 `)
@@ -143,10 +151,12 @@ print(${neVar})
 
       Content(`### 3. Load ${article} ${eName.toLowerCase()}
 
+\`load\` returns the entity; \`data_get()\` reads its record.
+
 \`\`\`lua
 local ${eVar}, err = client:${eName}():load(${loadArg})
 if err then error(err) end
-print(${eVar})
+${printRecord(eVar, printCols, '')}
 \`\`\`
 
 `)

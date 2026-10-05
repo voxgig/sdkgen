@@ -61,9 +61,16 @@ var client = ${model.const.Name}SDK.TestSDK(null, null);
       arg = `new Dictionary<string, object?> {${chosen.map((it: any) =>
         ` [${csStringLiteral(it.name)}] = ${csLit(it.type)}`).join(',')} }`
     }
-    const eVar = csVarName(exampleEntity.name) + ('list' === primaryOp ? 'List' : '')
-    Content(`var ${eVar} = client.${eName}().${opMethod}(${arg});
-Console.WriteLine(${eVar});
+    const eVar = csVarName(exampleEntity.name)
+    Content('list' === primaryOp
+      ? `var ${eVar}List = (List<object?>)client.${eName}().List(${arg})!;
+foreach (var ${eVar}Item in ${eVar}List)
+{
+    Console.WriteLine(StructUtils.Jsonify(((IEntity)${eVar}Item!).Data()));
+}
+`
+      : `var ${eVar} = (IEntity)client.${eName}().${opMethod}(${arg})!;
+Console.WriteLine(StructUtils.Jsonify(${eVar}.Data()));
 `)
   }
 

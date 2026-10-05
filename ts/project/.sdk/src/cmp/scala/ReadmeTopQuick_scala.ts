@@ -21,9 +21,12 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
   const authActive = isAuthActive(model)
 
+  const shown = null != exampleEntity &&
+    ['list', 'load'].some((op: string) => Object.keys(exampleEntity.op || {}).includes(op))
+
   Content(`\`\`\`scala
 import ${scalaPackage(model)}.core.${SDK}
-
+${shown ? `import ${scalaPackage(model)}.core.SdkEntity\n` : ''}
 `)
 
   if (authActive) {
@@ -47,9 +50,9 @@ val client = new ${SDK}(options)
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eNameLower}s (returns Object, an aggregate list; raises on error)
-val ${eVar}List = client.${accessor}(null).list(${scalaListMatch(exampleEntity)}, null)
-println(${eVar}List)
+      Content(`// List all ${eNameLower}s (a list of entities, one per record; raises on error)
+val ${eVar}List = client.${accessor}(null).list(${scalaListMatch(exampleEntity)}, null).asInstanceOf[java.util.List[SdkEntity]]
+${eVar}List.forEach(${eVar}Item => println(${eVar}Item.data()))
 `)
     }
 
@@ -67,9 +70,9 @@ println(${eVar}List)
             it.name === idF ? 'example_id' : 'example_' + it.name)}`), 'java.util.')
         : 'null'
       Content(`
-// Load a specific ${eNameLower} (returns the record, raises on error)
-val ${eVar} = client.${accessor}(null).load(${loadArg}, null)
-println(${eVar})
+// Load a specific ${eNameLower} (returns the entity, raises on error)
+val ${eVar} = client.${accessor}(null).load(${loadArg}, null).asInstanceOf[SdkEntity]
+println(${eVar}.data())
 `)
     }
   }

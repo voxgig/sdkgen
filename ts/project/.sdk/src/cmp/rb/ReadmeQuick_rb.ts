@@ -125,7 +125,7 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 begin
   # load returns the ENTITY — call data_get for the ${neName} record (raises on error).
   ${neVar} = client.${neName}.load({ ${neMatch.join(', ')} })
-  puts ${neVar}
+  puts ${neVar}.data_get
 rescue => err
   warn "load failed: #{err}"
 end
@@ -150,7 +150,7 @@ end
 begin
   # load returns the ENTITY — call data_get for the ${eName} record (raises on error).
   ${eVar} = client.${eName}.load(${loadArg})
-  puts ${eVar}
+  puts ${eVar}.data_get
 rescue => err
   warn "load failed: #{err}"
 end

@@ -60,14 +60,25 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   // The op-driven test-mode block, shown only when the SDK has an entity op.
   // A direct()-only SDK (no ops anywhere) shows a Direct() call instead — never
   // a fabricated method (`cap(primaryOp)` would also fail on a null op).
-  const testModeExample = primaryOp
+  const testModeExample = 'list' === primaryOp
+    ? `${eLower}s, err := client.${eName}(nil).List(
+    ${testArg}, nil,
+)
+if err != nil {
+    panic(err)
+}
+// A []any of entities, one per mock record.
+for _, item := range ${eLower}s.([]any) {
+    fmt.Println(item.(sdk.Entity).Data())
+}`
+    : primaryOp
     ? `${eLower}, err := client.${eName}(nil).${cap(primaryOp)}(
     ${testArg}, nil,
 )
 if err != nil {
     panic(err)
 }
-fmt.Println(${eLower}) // the returned mock data`
+fmt.Println(${eLower}.(sdk.Entity).Data()) // the entity's mock record`
     : `result, err := client.Direct(map[string]any{"path": "/api/resource", "method": "GET"})
 if err != nil {
     panic(err)

@@ -9,8 +9,8 @@ require_once __DIR__ . '/../core/Helpers.php';
      * @param EntityNamePatchData|array|null $reqdata Body data as an assoc-array;
      *   a typed EntityNamePatchData names the shape.
      * @param mixed $ctrl Optional per-call control overrides.
-     * @return EntityName|array The patched EntityName as an assoc-array at the
-     *   SDK boundary; throws ProjectNameError on failure (item-5 convention).
+     * @return EntyClass The patched EntityName entity, whose data_get() reads
+     *   its record; throws ProjectNameError on failure (item-5 convention).
      */
     public function patch(?array $reqdata = null, $ctrl = null): mixed
     {

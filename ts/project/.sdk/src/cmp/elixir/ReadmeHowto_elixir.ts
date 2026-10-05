@@ -38,12 +38,16 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
     testArg = `H.deep(%{${chosen.map((it: any) => `${elixirString(it.name)} => ${elixirLit(it.type)}`).join(', ')}})`
   }
 
-  const resVar = 'list' === primaryOp ? 'records' : 'record'
   const testModeExample = primaryOp
     ? `# Entity ops return the entity, and list one per record (raise on error).
 ${eVar} = ${Name}.${eCall}(sdk)
-${resVar} = ${Name}.Entity.${eName}.${primaryOp}(${eVar}, ${testArg})
-IO.inspect(${resVar})`
+${'list' === primaryOp
+  ? `${eVar}s = ${Name}.Entity.${eName}.list(${eVar}, ${testArg})
+for i <- 0..(Voxgig.Struct.size(${eVar}s) - 1)//1 do
+  IO.puts(Voxgig.Struct.jsonify(${Name}.Entity.${eName}.data_get(Voxgig.Struct.getelem(${eVar}s, i))))
+end`
+  : `${eVar} = ${Name}.Entity.${eName}.${primaryOp}(${eVar}, ${testArg})
+IO.puts(Voxgig.Struct.jsonify(${Name}.Entity.${eName}.data_get(${eVar})))`}`
     : `result = ${Name}.direct(sdk, H.deep(%{"path" => "/api/resource", "method" => "GET"}))
 IO.inspect(result)`
 

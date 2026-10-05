@@ -37,34 +37,34 @@ function cljType(type: any): string {
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
-    sig: '(load ent reqmatch ctrl) -> map',
-    returns: 'the entity data',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and raises on error.',
+    sig: '(load ent reqmatch ctrl) -> entity',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `((:data-get ent))` reads, and raises on error.',
   },
   list: {
     sig: '(list ent reqmatch ctrl) -> vector',
-    returns: 'a vector of entities',
-    desc: 'List entities matching the given criteria. The match is optional — call with `nil` to list all records. Returns a vector and raises on error.',
+    returns: 'a vector of entities, one per record',
+    desc: 'List entities matching the given criteria. The match is optional — call with `nil` to list all records. Returns a vector of entities, one per record, and raises on error.',
   },
   create: {
-    sig: '(create ent reqdata ctrl) -> map',
-    returns: 'the created entity data',
-    desc: 'Create a new entity with the given data. Returns the created entity data and raises on error.',
+    sig: '(create ent reqdata ctrl) -> entity',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
-    sig: '(update ent reqdata ctrl) -> map',
-    returns: 'the updated entity data',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and raises on error.',
+    sig: '(update ent reqdata ctrl) -> entity',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
   },
   patch: {
-    sig: '(patch ent reqdata ctrl) -> map',
-    returns: 'the patched entity data',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and raises on error.',
+    sig: '(patch ent reqdata ctrl) -> entity',
+    returns: 'the patched entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and raises on error.',
   },
   remove: {
-    sig: '(remove ent reqmatch ctrl) -> map',
-    returns: 'the removed entity data',
-    desc: 'Remove the entity matching the given criteria. Raises on error.',
+    sig: '(remove ent reqmatch ctrl) -> entity',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },
 }
 
