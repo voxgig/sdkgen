@@ -5415,6 +5415,407 @@ describe('the README examples run for a slug carrying the word client', () => {
 })
 
 
+// The examples the docs of c, cpp, rust and zig show, compiled against the
+// generated SDK: each block in the target's language in its README, its
+// REFERENCE and the root README. A fragment is compiled inside a function, with
+// the client and the arguments a signature names in scope, and with the first
+// imports its page shows when it has none of its own.
+type DocBlock = { doc: string, line: number, code: string }
+
+const DOC_PAGES = ['../README.md', 'README.md', 'REFERENCE.md']
+
+// The numbered steps of one section build on each other, as a tutorial's do,
+// so they are one program.
+function docBlocks(sdkroot: string, fence: string): DocBlock[] {
+  const blocks: DocBlock[] = []
+  for (const doc of DOC_PAGES) {
+    const path = Path.join(sdkroot, doc)
+    if (!Fs.existsSync(path)) continue
+    const lines = Fs.readFileSync(path, 'utf8').split(/\r?\n/)
+    let open = -1
+    let lang = ''
+    let section = 0
+    let step = false
+    let steps: DocBlock | null = null
+    let stepsIn = -1
+    lines.forEach((line, i) => {
+      const mark = /^\s*```\s*(\S*)\s*$/.exec(line)
+      if (null == mark) {
+        if (open < 0 && /^## /.test(line)) section = i
+        if (open < 0 && /^### /.test(line)) step = /^### \d+\./.test(line)
+        return
+      }
+      if (open < 0) {
+        open = i
+        lang = mark[1]
+        return
+      }
+      if (fence === lang) {
+        const code = lines.slice(open + 1, i).join('\n')
+        if (step && null != steps && section === stepsIn) {
+          steps.code += '\n' + code
+        }
+        else {
+          const block = { doc, line: open + 1, code }
+          blocks.push(block)
+          steps = step ? block : null
+          stepsIn = section
+        }
+      }
+      open = -1
+    })
+  }
+  return blocks
+}
+
+// The import lines of the first block on a page that has any.
+function pageImports(blocks: DocBlock[], doc: string, isImport: RegExp): string[] {
+  const first = blocks.find((b) => b.doc === doc && b.code.split('\n').some((l) => isImport.test(l)))
+  return null == first ? [] : first.code.split('\n').filter((l) => isImport.test(l))
+}
+
+// A C or C++ block's file-scope lines: its includes, and each function it
+// defines, from the signature to the brace closing it in the first column.
+function fileScope(code: string): { top: string[], body: string[] } {
+  const top: string[] = []
+  const body: string[] = []
+  let inFn = false
+  for (const line of code.split('\n')) {
+    if (inFn) {
+      top.push(line)
+      inFn = '}' !== line
+    }
+    else if (/^#include\b/.test(line)) {
+      top.push(line)
+    }
+    else if (/^[A-Za-z_][\w:<>\s*&]*[\s*&]\w+\s*\([^=;]*\)\s*\{\s*$/.test(line)) {
+      top.push(line)
+      inFn = true
+    }
+    else {
+      body.push(line)
+    }
+  }
+  return { top, body }
+}
+
+function cExample(block: DocBlock, imports: string[]): string {
+  const { top, body } = fileScope(block.code)
+  return [
+    '#include <stdio.h>',
+    ...(top.some((l) => l.startsWith('#include')) ? [] : imports),
+    ...top,
+    '',
+    '// ' + block.doc + ':' + block.line,
+    'void readme_example(void) {',
+    '  DemoSDK* client = test_sdk(NULL, NULL);',
+    '  PNError* err = NULL;',
+    '  voxgig_value* options = NULL;',
+    '  voxgig_value* testopts = NULL;',
+    '  voxgig_value* sdkopts = NULL;',
+    '  (void)client; (void)err; (void)options; (void)testopts; (void)sdkopts;',
+    '  {',
+    ...body,
+    '  }',
+    '}',
+    '',
+  ].join('\n')
+}
+
+// A page's includes are shared, and its using-directives come from the first
+// block that has any, as the quick start's do.
+function cppExamples(blocks: DocBlock[], imports: Record<string, string[]>): string {
+  const includes = new Set(['#include <iostream>'])
+  const parts: string[] = []
+  blocks.forEach((block, i) => {
+    const { top, body } = fileScope(block.code)
+    const own = block.code.split('\n').some((l) => /^using namespace\b/.test(l))
+    const using = own ? [] : imports[block.doc].filter((l) => !l.startsWith('#include'))
+    for (const line of [...imports[block.doc], ...top]) {
+      if (line.startsWith('#include')) includes.add(line)
+    }
+    parts.push(
+      '// ' + block.doc + ':' + block.line,
+      'namespace readme_example_' + i + ' {',
+      ...using,
+      ...top.filter((l) => !l.startsWith('#include')),
+      'void run() {',
+      '  auto client = sdk::DemoSDK::testSDK();',
+      '  sdk::Value options = sdk::Value::undef();',
+      '  sdk::Value testopts = sdk::Value::undef();',
+      '  sdk::Value sdkopts = sdk::Value::undef();',
+      '  (void)client; (void)options; (void)testopts; (void)sdkopts;',
+      '  {',
+      ...body,
+      '  }',
+      '}',
+      '}',
+      '')
+  })
+  return [...includes, '', ...parts].join('\n')
+}
+
+function rustExample(block: DocBlock, imports: string[]): string {
+  const own = block.code.split('\n').some((l) => /^use\s/.test(l))
+  return [
+    '#![allow(unused)]',
+    '// ' + block.doc + ':' + block.line,
+    'fn main() {',
+    '    let client = demo_sdk::test_sdk(demo_sdk::Value::Noval, demo_sdk::Value::Noval);',
+    '    let options = demo_sdk::Value::Noval;',
+    '    let testopts = demo_sdk::Value::Noval;',
+    '    let sdkopts = demo_sdk::Value::Noval;',
+    '    {',
+    ...(own ? [] : imports),
+    ...block.code.split('\n'),
+    '    }',
+    '}',
+    '',
+  ].join('\n')
+}
+
+// zig rejects an unused local and a pointless discard, so a block is given
+// only the names it uses, and what it declares at its top level is kept used.
+function zigExamples(blocks: DocBlock[]): string {
+  const parts: string[] = []
+  const calls: string[] = []
+  blocks.forEach((block, i) => {
+    const body = block.code.split('\n').filter((l) => !/^const (std|sdk|h) = /.test(l))
+    const code = body.map((l) => l.replace(/\/\/.*$/, '')).join('\n')
+    const declared = [...code.matchAll(/^(?:const|var) (\w+)\b/gm)].map((m) => m[1])
+    const given = ['client', 'options', 'testopts', 'sdkopts']
+      .filter((n) => !declared.includes(n) && new RegExp('\\b' + n + '\\b').test(code))
+    parts.push(
+      '// ' + block.doc + ':' + block.line,
+      'fn example' + i + '() !void {',
+      ...given.map((n) => '    const ' + n + ' = ' +
+        ('client' === n ? 'sdk.test_sdk(h.vnull(), h.vnull())' : 'h.vnull()') + ';'),
+      ...body,
+      ...declared.map((n) => '    _ = &' + n + ';'),
+      '}',
+      '')
+    calls.push('    try example' + i + '();')
+  })
+  return [
+    'const std = @import("std");',
+    'const sdk = @import("sdk");',
+    'const h = sdk.h;',
+    '',
+    ...parts,
+    'pub fn main() !void {',
+    ...calls,
+    '}',
+    '',
+  ].join('\n')
+}
+
+type DocCompile = { label: string, bin: string, args: string[], env?: NodeJS.ProcessEnv }
+
+// A quick start shows the first active entity, so each model leads with a
+// different one: the fixture's load-only singleton, a list-only entity, an
+// entity with every operation, and that entity with another nested under it.
+const PLANET_FIRST = ['ambient', 'console', 'graph_ql', 'history']
+  .map((name) => 'main: kit: entity: ' + name + ': active: false').join('\n')
+
+const SATELLITE = `
+main: kit: entity: satellite: {
+  alias: field: {}
+  name: "satellite"
+  id: { field: "id", name: "id" }
+  relations: ancestors: [[path($.main.kit.entity.planet)]]
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "planet_id": { h: 'PlanetId', n: "planet_id", r: false, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: { params: [ { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" } ] }
+        m: "GET", o: "/planet/{planet_id}/satellite"
+        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    load: {
+      name: "load"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" }
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
+        ] }
+        m: "GET", o: "/planet/{planet_id}/satellite/{id}"
+        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: flow: BasicSatelliteFlow: {
+  entity: "satellite", kind: "basic", name: "BasicSatelliteFlow"
+  step: [
+    { o: "list", m: { planet_id: "planet01" } }
+    { o: "load", m: { planet_id: "planet01" }, i: { ref: "satellite_ref01", srcdatavar: "satellite_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
+const DOC_MODELS: [string, string | undefined][] = [
+  ['singleton', undefined],
+  ['list', 'main: kit: entity: ambient: active: false'],
+  ['crud', PLANET_FIRST],
+  ['nested', PLANET_FIRST + SATELLITE],
+]
+
+const DOC_LANES: {
+  target: string,
+  fence: string,
+  needs: string,
+  // A build.zig.zon entry is shown in a zig block, and is not zig source.
+  manifest?: (block: DocBlock) => boolean,
+  // Writes the examples into the SDK, and returns how to compile them, or
+  // null when this machine has no toolchain for them.
+  compile: (sdkroot: string, blocks: DocBlock[]) => DocCompile[] | null,
+}[] = [
+  {
+    target: 'c',
+    fence: 'c',
+    needs: 'C compiler',
+    compile: (sdkroot, blocks) => {
+      const cc = cCompiler()
+      if (null == cc) return null
+      const dir = Path.join(sdkroot, '_readme')
+      Fs.mkdirSync(dir, { recursive: true })
+      return blocks.map((block, i) => {
+        const file = Path.join(dir, 'example_' + i + '.c')
+        Fs.writeFileSync(file, cExample(block,
+          pageImports(blocks, block.doc, /^#include\b/)))
+        // Errors by default in newer GCC, so an older compiler agrees. The
+        // root goes on the quote path only: a case-insensitive filesystem
+        // would let its VERSION file stand in for a standard header.
+        return {
+          label: block.doc + ':' + block.line, bin: cc,
+          args: ['-fsyntax-only', '-std=c11', '-D_GNU_SOURCE',
+            '-Werror=incompatible-pointer-types', '-Werror=int-conversion',
+            '-Werror=implicit-function-declaration',
+            '-iquote', '.', '-I', 'core', '-I', 'utility/struct', '-I', 'feature', file],
+        }
+      })
+    },
+  },
+  {
+    target: 'cpp',
+    fence: 'cpp',
+    needs: 'C++ compiler',
+    compile: (sdkroot, blocks) => {
+      const cxx = cleanCxx()
+      if (null == cxx) return null
+      const imports: Record<string, string[]> = {}
+      for (const doc of DOC_PAGES) {
+        imports[doc] = [
+          ...pageImports(blocks, doc, /^#include\b/),
+          ...pageImports(blocks, doc, /^using namespace\b/),
+        ]
+      }
+      const file = Path.join(sdkroot, '_readme', 'examples.cpp')
+      Fs.mkdirSync(Path.dirname(file), { recursive: true })
+      Fs.writeFileSync(file, cppExamples(blocks, imports))
+      // -iquote, as for c: libc++ includes <version>, which on macOS is VERSION.
+      return [{
+        label: 'every cpp example', bin: cxx,
+        args: ['-fsyntax-only', '-std=c++17', '-iquote', '.', file],
+      }]
+    },
+  },
+  {
+    target: 'rust',
+    fence: 'rust',
+    needs: 'cargo',
+    compile: (sdkroot, blocks) => {
+      const cargo = toolchain('cargo')
+      if (null == cargo) return null
+      const dir = Path.join(sdkroot, 'examples')
+      Fs.mkdirSync(dir, { recursive: true })
+      blocks.forEach((block, i) => {
+        Fs.writeFileSync(Path.join(dir, 'readme_' + i + '.rs'), rustExample(block,
+          pageImports(blocks, block.doc, /^use\s/)))
+      })
+      // One target directory for every model, so the dependencies build once.
+      const env = { ...process.env, CARGO_TARGET_DIR: Path.join(sdkroot, '..', '..', 'cargo-target') }
+      return [{
+        label: 'every rust example', bin: cargo, env,
+        args: ['check', '--examples', '--keep-going', '--quiet'],
+      }]
+    },
+  },
+  {
+    target: 'zig',
+    fence: 'zig',
+    needs: 'zig 0.16',
+    manifest: (block) => /^\s*\./.test(block.code.replace(/^\s*\n/, '')),
+    compile: (sdkroot, blocks) => {
+      const zig = toolchain('zig')
+      if (null == zig) return null
+      const version = run(zig, ['version'], sdkroot)
+      if (!version.ok || !/^0\.16\./.test(version.out.trim())) return null
+      const file = Path.join(sdkroot, '_readme', 'examples.zig')
+      Fs.mkdirSync(Path.dirname(file), { recursive: true })
+      Fs.writeFileSync(file, zigExamples(blocks))
+      return [{
+        label: 'every zig example', bin: zig,
+        args: ['build-exe', '-fno-emit-bin',
+          '--dep', 'sdk', '-Mroot=' + file,
+          '--dep', 'voxgig-struct', '-Msdk=root.zig',
+          '-Mvoxgig-struct=utility/voxgigstruct/struct.zig'],
+      }]
+    },
+  },
+]
+
+
+describe('the documented c, cpp, rust and zig examples compile', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-docex-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of DOC_LANES) for (const [shape, extra] of DOC_MODELS) {
+    test(lane.target + ': every documented example compiles, ' + shape + ' first', async (t) => {
+      const sdkroot = Path.join(tmp, lane.target + '-' + shape, lane.target)
+      await generateTo(lane.target, sdkroot, extra, undefined, { top: true })
+
+      const blocks = docBlocks(sdkroot, lane.fence).filter((b) => !lane.manifest?.(b))
+      for (const doc of DOC_PAGES) {
+        ok(blocks.some((b) => b.doc === doc),
+          lane.target + ': ' + doc + ' shows no ' + lane.fence + ' example, so nothing checks it')
+      }
+
+      const compiles = lane.compile(sdkroot, blocks)
+      if (null == compiles) return t.skip('no ' + lane.needs + ' here')
+
+      const failed: string[] = []
+      for (const c of compiles) {
+        const res = run(c.bin, c.args, sdkroot, c.env)
+        if (res.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(res.out, 3))
+        }
+        if (!res.ok) failed.push(c.label + ':\n' + tail(res.out, 40))
+      }
+      ok(0 === failed.length, lane.target + ': ' + failed.length + ' of ' + compiles.length +
+        ' compile(s) of ' + blocks.length + ' documented example(s) failed:\n' + failed.join('\n'))
+    })
+  }
+})
+
+
 // A probe program beside a generated SDK, built and run one way per target. A
 // probe with a live transport sends to a local server, which records what
 // arrives; one without prints what its transport is given.

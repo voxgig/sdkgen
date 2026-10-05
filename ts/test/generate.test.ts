@@ -1901,6 +1901,37 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // The targets whose reference names the entity each operation returns.
+  test('the reference says each operation returns the entity', async () => {
+    const targets = ['c', 'cpp', 'csharp', 'elixir', 'rust', 'zig']
+    const expect: Record<string, RegExp> = {
+      load: /\bthe entity, whose record `[^`]+` reads\b/,
+      list: /\bentities, one per record\b|\bone entity per record\b/,
+      create: /\bthe created entity\b(?! data)/,
+      update: /\bthe updated entity\b(?! data)/,
+      remove: /\bthe entity, marked as deleted\b/,
+    }
+    const out = await generate(targets)
+
+    const wrong: string[] = []
+    for (const target of targets) {
+      const ref = out[target + '/REFERENCE.md']
+      ok(null != ref, target + ': no REFERENCE.md generated')
+      for (const [op, says] of Object.entries(expect)) {
+        const heading = new RegExp('^#### `[^`\\n]*\\b' + op + '\\(.*\\n\\n(.*)$', 'gim')
+        const descs = [...ref.matchAll(heading)].map((m) => m[1])
+        ok(0 < descs.length, target + ': the reference documents no ' + op)
+        for (const desc of descs) {
+          if (!says.test(desc) || /\bentity data\b|\baggregate list\b/.test(desc)) {
+            wrong.push(target + ' ' + op + ': ' + desc)
+          }
+        }
+      }
+    }
+    deepStrictEqual([...new Set(wrong)], [], 'operations the reference says return a record')
+  })
+
+
   test('the entity table never shows a custom action as the entity path', async () => {
     const out = await generate(['ts'])
 

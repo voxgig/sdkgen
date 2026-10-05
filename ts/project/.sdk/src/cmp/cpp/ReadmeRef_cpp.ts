@@ -25,29 +25,29 @@ function cppLit(type: any, placeholder: string = 'example'): string {
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
-    sig: 'load(reqmatch, ctrl) -> Value',
-    returns: 'the entity data',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and throws on error.',
+    sig: 'load(reqmatch, ctrl) -> SdkEntityPtr',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data()` reads, and throws on error.',
   },
   list: {
-    sig: 'list(reqmatch, ctrl) -> Value',
+    sig: 'list(reqmatch, ctrl) -> std::vector<SdkEntityPtr>',
     returns: 'a list of entities',
-    desc: 'List entities matching the given criteria. The match is optional — pass `Value::undef()` to list all records. Returns a Value list and throws on error.',
+    desc: 'List entities matching the given criteria. The match is optional — pass `Value::undef()` to list all records. Returns one entity per record and throws on error.',
   },
   create: {
-    sig: 'create(reqdata, ctrl) -> Value',
-    returns: 'the created entity data',
-    desc: 'Create a new entity with the given data. Returns the created entity data and throws on error.',
+    sig: 'create(reqdata, ctrl) -> SdkEntityPtr',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Returns the created entity and throws on error.',
   },
   update: {
-    sig: 'update(reqdata, ctrl) -> Value',
-    returns: 'the updated entity data',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and throws on error.',
+    sig: 'update(reqdata, ctrl) -> SdkEntityPtr',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and throws on error.',
   },
   remove: {
-    sig: 'remove(reqmatch, ctrl) -> Value',
-    returns: 'the removed entity data',
-    desc: 'Remove the entity matching the given criteria. Throws on error.',
+    sig: 'remove(reqmatch, ctrl) -> SdkEntityPtr',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and throws on error.',
   },
 }
 
@@ -270,16 +270,17 @@ ${info.desc}
                   it.name === idF ? ent.name + '_id' : it.name)}}`).join(', ')}})`
               : 'Value::undef()'
             Content(`\`\`\`cpp
-Value result = client->${acc}()->${opname}(${arg}, Value::undef());
+SdkEntityPtr result = client->${acc}()->${opname}(${arg}, Value::undef());
+std::cout << Struct::jsonify(result->data()) << std::endl;
 \`\`\`
 
 `)
           }
           else if ('list' === opname) {
             Content(`\`\`\`cpp
-Value results = client->${acc}()->list(Value::undef(), Value::undef());
-for (const auto& ${acc} : *results.as_list()) {
-  std::cout << Struct::jsonify(${acc}) << std::endl;
+std::vector<SdkEntityPtr> results = client->${acc}()->list(Value::undef(), Value::undef());
+for (const auto& ${acc} : results) {
+  std::cout << Struct::jsonify(${acc}->data()) << std::endl;
 }
 \`\`\`
 
@@ -289,7 +290,7 @@ for (const auto& ${acc} : *results.as_list()) {
             const createItems = opRequestShape(ent, 'create').items
               .filter((it: any) => !it.optional)
             Content(`\`\`\`cpp
-Value result = client->${acc}()->create(vmap({
+SdkEntityPtr result = client->${acc}()->create(vmap({
 `)
             createItems.map((it: any) => {
               Content(`    {"${it.name}", ${cppLit(it.type, 'example_' + it.name)}},  // ${canonToType(it.type, target.name)}
@@ -309,7 +310,7 @@ Value result = client->${acc}()->create(vmap({
               `    {"${it.name}", ${cppLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}},\n`).join('')
             Content(`\`\`\`cpp
-Value result = client->${acc}()->update(vmap({
+SdkEntityPtr result = client->${acc}()->update(vmap({
 ${updateLines}    // Fields to update
 }), Value::undef());
 \`\`\`

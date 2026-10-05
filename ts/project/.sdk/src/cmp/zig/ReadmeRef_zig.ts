@@ -45,24 +45,24 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
 
   const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
     load: {
-      sig: 'load(reqmatch: Value, ctrl: Value) OpResult',
-      desc: 'Load a single entity matching the given criteria. `.ok` carries the entity data, `.err` the branded error.',
+      sig: 'load(reqmatch: Value, ctrl: Value) EntResult',
+      desc: 'Load a single entity matching the given criteria. `.ok` carries the entity, whose record `asEntity().data(null)` reads, and `.err` the branded error.',
     },
     list: {
-      sig: 'list(reqmatch: Value, ctrl: Value) OpResult',
-      desc: 'List entities matching the given criteria. The match is optional — pass `h.vnull()` to list all records. `.ok` is a `Value` array.',
+      sig: 'list(reqmatch: Value, ctrl: Value) EntListResult',
+      desc: 'List entities matching the given criteria. The match is optional — pass `h.vnull()` to list all records. `.ok` is a slice of entities, one per record.',
     },
     create: {
-      sig: 'create(reqdata: Value, ctrl: Value) OpResult',
-      desc: 'Create a new entity with the given data. `.ok` carries the created entity data.',
+      sig: 'create(reqdata: Value, ctrl: Value) EntResult',
+      desc: 'Create a new entity with the given data. `.ok` carries the created entity.',
     },
     update: {
-      sig: 'update(reqdata: Value, ctrl: Value) OpResult',
-      desc: 'Update an existing entity. The data must include the entity id. `.ok` carries the updated entity data.',
+      sig: 'update(reqdata: Value, ctrl: Value) EntResult',
+      desc: 'Update an existing entity. The data must include the entity id. `.ok` carries the updated entity.',
     },
     remove: {
-      sig: 'remove(reqmatch: Value, ctrl: Value) OpResult',
-      desc: 'Remove the entity matching the given criteria. `.err` on failure.',
+      sig: 'remove(reqmatch: Value, ctrl: Value) EntResult',
+      desc: 'Remove the entity matching the given criteria. `.ok` carries the entity, marked as deleted, and `.err` the branded error.',
     },
   }
 
@@ -277,7 +277,7 @@ ${info.desc}
               : 'h.vnull()'
             Content(`\`\`\`zig
 switch (client.${method}(h.vnull()).${opname}(${arg}, h.vnull())) {
-    .ok => |result| std.debug.print("{s}\\n", .{h.stringify(result)}),
+    .ok => |result| std.debug.print("{s}\\n", .{h.stringify(result.asEntity().data(null))}),
     .err => |e| std.debug.print("${opname} failed: {s}\\n", .{e.msg}),
 }
 \`\`\`
@@ -287,7 +287,11 @@ switch (client.${method}(h.vnull()).${opname}(${arg}, h.vnull())) {
           else if ('list' === opname) {
             Content(`\`\`\`zig
 switch (client.${method}(h.vnull()).list(h.vnull(), h.vnull())) {
-    .ok => |results| std.debug.print("{s}\\n", .{h.stringify(results)}),
+    .ok => |results| {
+        for (results) |result| {
+            std.debug.print("{s}\\n", .{h.stringify(result.asEntity().data(null))});
+        }
+    },
     .err => |e| std.debug.print("list failed: {s}\\n", .{e.msg}),
 }
 \`\`\`
@@ -305,7 +309,7 @@ switch (client.${method}(h.vnull()).create(h.jo(&.{
 `)
             })
             Content(`}), h.vnull())) {
-    .ok => |result| std.debug.print("{s}\\n", .{h.stringify(result)}),
+    .ok => |result| std.debug.print("{s}\\n", .{h.stringify(result.asEntity().data(null))}),
     .err => |e| std.debug.print("create failed: {s}\\n", .{e.msg}),
 }
 \`\`\`
@@ -324,7 +328,7 @@ switch (client.${method}(h.vnull()).create(h.jo(&.{
 switch (client.${method}(h.vnull()).update(h.jo(&.{
 ${updateLines}    // Fields to update
 }), h.vnull())) {
-    .ok => |result| std.debug.print("{s}\\n", .{h.stringify(result)}),
+    .ok => |result| std.debug.print("{s}\\n", .{h.stringify(result.asEntity().data(null))}),
     .err => |e| std.debug.print("update failed: {s}\\n", .{e.msg}),
 }
 \`\`\`

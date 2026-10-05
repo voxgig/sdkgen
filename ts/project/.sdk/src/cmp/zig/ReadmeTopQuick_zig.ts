@@ -54,9 +54,13 @@ const client = ${ctor};
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {
-      Content(`// List all ${eName.toLowerCase()}s (Ok is a Value array, .err on failure)
+      Content(`// List all ${eName.toLowerCase()}s (one entity per record, .err on failure)
 switch (client.${method}(h.vnull()).list(h.vnull(), h.vnull())) {
-    .ok => |${eVar}s| std.debug.print("{s}\\n", .{h.stringify(${eVar}s)}),
+    .ok => |${eVar}s| {
+        for (${eVar}s) |${eVar}| {
+            std.debug.print("{s}\\n", .{h.stringify(${eVar}.asEntity().data(null))});
+        }
+    },
     .err => |e| std.debug.print("list failed: {s}\\n", .{e.msg}),
 }
 `)
@@ -76,9 +80,9 @@ switch (client.${method}(h.vnull()).list(h.vnull(), h.vnull())) {
             it.name === idF ? 'example_id' : 'example_' + it.name)} }`).join(', ')}})`
         : 'h.vnull()'
       Content(`
-// Load a specific ${eName.toLowerCase()} (Ok is the record, .err on failure)
+// Load a specific ${eName.toLowerCase()} (.ok is the entity, .err on failure)
 switch (client.${method}(h.vnull()).load(${loadArg}, h.vnull())) {
-    .ok => |${eVar}| std.debug.print("{s}\\n", .{h.stringify(${eVar})}),
+    .ok => |${eVar}| std.debug.print("{s}\\n", .{h.stringify(${eVar}.asEntity().data(null))}),
     .err => |e| std.debug.print("load failed: {s}\\n", .{e.msg}),
 }
 `)
