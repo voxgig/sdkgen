@@ -6,7 +6,7 @@ import Fs from 'node:fs'
 import Net from 'node:net'
 import Os from 'node:os'
 import Path from 'node:path'
-import { spawn, spawnSync } from 'node:child_process'
+import { spawn, spawnSync, ChildProcess } from 'node:child_process'
 
 import { memfs } from 'memfs'
 
@@ -27,6 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
   FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
+  OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -105,6 +106,23 @@ function exunitCount(out: string): { total: number, failed: number } | null {
 }
 
 
+type Run = { ok: boolean, out: string, unlaunchable: boolean, timedOut: boolean }
+
+
+// A windows toolchain shim is a BATCH FILE - `mvn.cmd`, `phpunit.bat` - and
+// node refuses to spawn one without a shell (CVE-2024-27980). Quote the
+// path rather than pass it bare: `shell: true` builds one command line, so
+// an unquoted `C:\Program Files\...` would split at the space. Everything
+// else spawns directly, which needs no quoting and cannot be shell-injected.
+function launch(
+  cmd: string, env?: NodeJS.ProcessEnv,
+): [string, { shell?: boolean, env?: NodeJS.ProcessEnv }] {
+  const shim = 'win32' === process.platform && /\.(cmd|bat)$/i.test(cmd)
+  return [shim ? '"' + cmd + '"' : cmd,
+    { ...(shim ? { shell: true } : {}), ...(env ? { env } : {}) }]
+}
+
+
 // Each failed test's report from `dotnet test`: its result line, message and
 // stack. xUnit's own progress lines can land inside one, so they are dropped.
 function dotnetFailures(out: string): string {
@@ -130,28 +148,81 @@ function dotnetFailures(out: string): string {
 function run(
   cmd: string, args: string[], cwd: string, env?: NodeJS.ProcessEnv,
   timeoutMs: number = RUN_TIMEOUT_MS,
-): { ok: boolean, out: string, unlaunchable: boolean, timedOut: boolean } {
-  // A windows toolchain shim is a BATCH FILE - `mvn.cmd`, `phpunit.bat` - and
-  // node refuses to spawn one without a shell (CVE-2024-27980). Quote the
-  // path rather than pass it bare: `shell: true` builds one command line, so
-  // an unquoted `C:\Program Files\...` would split at the space. Everything
-  // else spawns directly, which needs no quoting and cannot be shell-injected.
-  const shim = 'win32' === process.platform && /\.(cmd|bat)$/i.test(cmd)
+): Run {
+  const [file, opts] = launch(cmd, env)
 
-  const res = spawnSync(shim ? '"' + cmd + '"' : cmd, args,
+  const res = spawnSync(file, args,
     {
       cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
       timeout: timeoutMs,
       killSignal: 'SIGKILL',
-      ...(shim ? { shell: true } : {}),
-      ...(env ? { env } : {}),
+      ...opts,
     })
 
-  const out = String(res.stdout || '') + String(res.stderr || '')
+  return outcome(cmd, timeoutMs, String(res.stdout || '') + String(res.stderr || ''),
+    res.status, res.signal, res.error)
+}
 
-  // Node marks a kill for its own timeout ETIMEDOUT; a kill from outside,
-  // such as the OOM killer's, has the same signal and no error.
-  if ('ETIMEDOUT' === (res.error as any)?.code) {
+
+type Watched = Run & { marked: number, exited: number }
+
+
+// run(), reading the output as it arrives: `marked` is when `mark` first
+// appeared in it and `exited` when the process ended, both from Date.now().
+function runWatched(
+  cmd: string, args: string[], cwd: string, mark: string,
+  env?: NodeJS.ProcessEnv, timeoutMs: number = RUN_TIMEOUT_MS,
+): Promise<Watched> {
+  const [file, opts] = launch(cmd, env)
+  let out = ''
+  let marked = 0
+  let expired = false
+  let killer: NodeJS.Timeout | undefined
+
+  return new Promise((resolve) => {
+    const done = (status: number | null, signal: string | null, error?: Error) => {
+      clearTimeout(killer)
+      resolve({
+        ...outcome(cmd, timeoutMs, out, status, signal, error, expired),
+        marked, exited: Date.now(),
+      })
+    }
+    const seen = (chunk: string) => {
+      out += chunk
+      if (0 === marked && out.includes(mark)) marked = Date.now()
+    }
+
+    let child: ChildProcess
+    try {
+      child = spawn(file, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'], ...opts })
+    }
+    catch (error: any) {
+      return done(null, null, error)
+    }
+
+    // A grandchild can hold the pipes open after the kill, so close them, as
+    // spawnSync does at its timeout.
+    killer = setTimeout(() => {
+      expired = true
+      child.kill('SIGKILL')
+      child.stdout!.destroy()
+      child.stderr!.destroy()
+    }, timeoutMs)
+    child.stdout!.setEncoding('utf8').on('data', seen)
+    child.stderr!.setEncoding('utf8').on('data', seen)
+    child.on('error', (error: Error) => done(null, null, error))
+    child.on('close', (status: number | null, signal: string | null) => done(status, signal))
+  })
+}
+
+
+function outcome(
+  cmd: string, timeoutMs: number, out: string,
+  status: number | null, signal: string | null, error?: Error, expired = false,
+): Run {
+  // The run's own timeout is `expired` or node's ETIMEDOUT; a kill from
+  // outside, such as the OOM killer's, has the same signal and neither.
+  if (expired || 'ETIMEDOUT' === (error as any)?.code) {
     return {
       ok: false,
       out: cmd + ' did not finish within ' + Math.round(timeoutMs / 1000) +
@@ -165,21 +236,66 @@ function run(
   // report, and says nothing about what it would have run: that is an
   // environment gap, which callers report as a skip rather than a failure.
   // A process node killed for overflowing maxBuffer (ENOBUFS) did launch.
-  if (null != res.error && null == res.signal) {
+  if (null != error && null == signal) {
     return {
       ok: false,
-      out: '' === out.trim() ? String(res.error.message) : out,
+      out: '' === out.trim() ? String(error.message) : out,
       unlaunchable: true,
       timedOut: false,
     }
   }
 
   // A process killed by a signal prints nothing about it itself.
-  const killed = null == res.signal ? ''
-    : '\n' + cmd + ' was killed by ' + res.signal +
-      (null == res.error ? '' : ' (' + res.error.message + ')')
+  const killed = null == signal ? ''
+    : '\n' + cmd + ' was killed by ' + signal +
+      (null == error ? '' : ' (' + error.message + ')')
 
-  return { ok: 0 === res.status, out: out + killed, unlaunchable: false, timedOut: false }
+  return { ok: 0 === status, out: out + killed, unlaunchable: false, timedOut: false }
+}
+
+
+const EXIT_MARK = 'ALL GREEN'
+const EXIT_LIMIT_MS = 20000
+
+type ExitVerdict = { skip?: string, fail?: string }
+
+
+// The clojure fast-exit lane's run and verdict. A run killed before it
+// reports is a slow machine; one killed after it reports is the hang the
+// lane exists to catch.
+async function clojureExit(
+  clj: string, sdkroot: string, timeoutMs: number = RUN_TIMEOUT_MS,
+): Promise<ExitVerdict> {
+  return exitVerdict(await runWatched(clj, ['-M:test', '--sdk-only'], sdkroot, EXIT_MARK,
+    undefined, timeoutMs))
+}
+
+
+function exitVerdict(probe: Watched): ExitVerdict {
+  if (probe.unlaunchable) {
+    return { skip: 'the toolchain could not be started here: ' + tail(probe.out, 3) }
+  }
+  if (probe.timedOut && 0 === probe.marked) {
+    return { skip: tail(probe.out, 3) }
+  }
+
+  const since = probe.exited - probe.marked
+  if (probe.timedOut) {
+    return {
+      fail: 'the run reported ' + EXIT_MARK + ' and was still running ' + since +
+        'ms later, when it was killed:\n' + tail(probe.out),
+    }
+  }
+  if (!probe.ok) {
+    return { fail: 'the run failed:\n' + tail(probe.out) }
+  }
+  if (0 === probe.marked) {
+    return { fail: 'the run never reported ' + EXIT_MARK + ':\n' + tail(probe.out) }
+  }
+  if (EXIT_LIMIT_MS <= since) {
+    return { fail: 'the run exited ' + since + 'ms after reporting ' + EXIT_MARK }
+  }
+  return {}
 }
 
 
@@ -339,6 +455,136 @@ describe('run', () => {
       undefined, 1000)
     strictEqual(ran.timedOut, true, ran.out)
     ok(ran.out.startsWith(process.execPath + ' did not finish within 1s on this machine'), ran.out)
+  })
+})
+
+
+describe('runWatched classifies a run as run() does', () => {
+
+  const verdict = (res: Run) =>
+    ({ ok: res.ok, unlaunchable: res.unlaunchable, timedOut: res.timedOut })
+  let tmp = ''
+
+  before(() => { tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-run-')) })
+  after(() => Fs.rmSync(tmp, { recursive: true, force: true }))
+
+
+  test('a command that cannot be launched', async (t) => {
+    if ('win32' === process.platform) {
+      return t.skip('an interpreter line launches only on POSIX')
+    }
+    const dead = Path.join(tmp, 'dead')
+    Fs.writeFileSync(dead, '#!/nonexistent/interpreter\n', { mode: 0o755 })
+
+    const watched = await runWatched(dead, [], tmp, 'ALL GREEN')
+    deepStrictEqual(verdict(watched), { ok: false, unlaunchable: true, timedOut: false })
+    deepStrictEqual(verdict(watched), verdict(run(dead, [], tmp)))
+  })
+
+
+  test('a command that outlives its timeout', async () => {
+    const args = ['-e', 'setTimeout(() => {}, 60000)']
+    const watched = await runWatched(process.execPath, args, tmp, 'ALL GREEN', undefined, 500)
+    deepStrictEqual(verdict(watched), { ok: false, unlaunchable: false, timedOut: true })
+    deepStrictEqual(verdict(watched), verdict(run(process.execPath, args, tmp, undefined, 500)))
+  })
+
+
+  test('a command that exits, with its mark seen first', async () => {
+    for (const code of [0, 3]) {
+      const args = ['-e', `console.log('ALL GREEN'); process.exitCode = ${code}`]
+      const watched = await runWatched(process.execPath, args, tmp, 'ALL GREEN')
+      deepStrictEqual(verdict(watched), { ok: 0 === code, unlaunchable: false, timedOut: false })
+      deepStrictEqual(verdict(watched), verdict(run(process.execPath, args, tmp)))
+      ok(0 < watched.marked && watched.marked <= watched.exited,
+        'exit ' + code + ': the mark was not seen before the exit')
+    }
+  })
+
+
+  // The command's own child holds the pipes open after the command is killed,
+  // or after it exits, as the clojure launcher's classpath step can.
+  test('a command whose child holds its output past the timeout', async (t) => {
+    if ('win32' === process.platform) {
+      return t.skip('needs a POSIX shell')
+    }
+    const reap = (out: string) => {
+      for (const [, pid] of out.matchAll(/started (\d+)/g)) {
+        try { process.kill(Number(pid)) }
+        catch { }
+      }
+    }
+
+    for (const script of ['sleep 20 & echo started $!; wait', 'sleep 20 & echo started $!']) {
+      const args = ['-c', script]
+      const start = Date.now()
+      const watched = await runWatched('/bin/sh', args, tmp, 'started', undefined, 1000)
+      const took = Date.now() - start
+      const ran = run('/bin/sh', args, tmp, undefined, 1000)
+      reap(watched.out + ran.out)
+
+      ok(took < 5000, script + ': returned ' + took + 'ms after its start, past its 1000ms timeout')
+      ok(0 < watched.marked, script + ': the output read before the timeout was lost')
+      deepStrictEqual(verdict(watched), { ok: false, unlaunchable: false, timedOut: true })
+      deepStrictEqual(verdict(watched), verdict(ran))
+    }
+  })
+})
+
+
+describe('the clojure fast-exit lane verdict', () => {
+
+  const probe = (over: Partial<Watched>): Watched => ({
+    ok: true, out: EXIT_MARK + '\n', unlaunchable: false, timedOut: false,
+    marked: 1000, exited: 1500, ...over,
+  })
+  let tmp = ''
+
+  before(() => { tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-exit-')) })
+  after(() => Fs.rmSync(tmp, { recursive: true, force: true }))
+
+
+  test('skips only a run that could not start or was killed before it reported', () => {
+    ok(null != exitVerdict(probe({ ok: false, unlaunchable: true, marked: 0 })).skip)
+    ok(null != exitVerdict(probe({ ok: false, timedOut: true, marked: 0 })).skip)
+    deepStrictEqual(exitVerdict(probe({})), {})
+  })
+
+
+  test('fails a run killed after it reported, with the time since the report', () => {
+    const verdict = exitVerdict(probe({ ok: false, timedOut: true, exited: 301000 }))
+    strictEqual(verdict.skip, undefined, 'skipped: ' + verdict.skip)
+    ok(/reported ALL GREEN and was still running 300000ms later/.test(String(verdict.fail)),
+      String(verdict.fail))
+  })
+
+
+  test('fails a run that failed, never reported, or exited late', () => {
+    ok(/the run failed/.test(String(exitVerdict(probe({ ok: false })).fail)))
+    ok(/never reported ALL GREEN/.test(String(exitVerdict(probe({ marked: 0 })).fail)))
+    ok(/exited 25000ms after/.test(String(exitVerdict(probe({ exited: 26000 })).fail)))
+  })
+
+
+  // The lane's own run against a stand-in clojure on the search path, killed
+  // at a short timeout in place of the lane's.
+  test('a stand-in clojure that hangs fails the lane after its report, and skips it before', async (t) => {
+    if ('win32' === process.platform) {
+      return t.skip('the stand-in is a POSIX shell script')
+    }
+    const standIn = (dir: string, body: string): string => {
+      Fs.mkdirSync(Path.join(tmp, dir))
+      Fs.writeFileSync(Path.join(tmp, dir, 'clojure'), '#!/bin/sh\n' + body, { mode: 0o755 })
+      return toolchain('clojure', Path.join(tmp, dir)) as string
+    }
+
+    const hung = await clojureExit(standIn('hung', 'echo "ALL GREEN"\nexec sleep 900\n'), tmp, 1000)
+    strictEqual(hung.skip, undefined, 'skipped: ' + hung.skip)
+    ok(/reported ALL GREEN and was still running \d+ms later/.test(String(hung.fail)),
+      String(hung.fail))
+
+    const slow = await clojureExit(standIn('slow', 'exec sleep 900\n'), tmp, 1000)
+    deepStrictEqual(Object.keys(slow), ['skip'], JSON.stringify(slow))
   })
 })
 
@@ -2076,6 +2322,67 @@ echo get_class($client->ContactsField(null)), ' ',
     const folded = beams.filter((b: string, i: number) =>
       beams.findIndex((o: string) => o.toLowerCase() === b.toLowerCase()) !== i)
     deepStrictEqual(folded, [], 'elixir: modules that are one file on macOS')
+  })
+
+
+  // An alias or private function nothing calls is a warning in a consumer's
+  // build, so each operation set is generated: the fixture's list-only and
+  // load-only entities, and ones with no operations, only a create or only a
+  // patch.
+  test('elixir: an entity with any set of operations compiles without a warning', async (t) => {
+    const mix = toolchain('mix')
+    const elixir = toolchain('elixir')
+    if (null == mix || null == elixir) {
+      return t.skip('no usable elixir toolchain here (elixir + mix)')
+    }
+
+    const sdkroot = Path.join(tmp, 'elixir-warnings')
+    await generateTo('elixir', sdkroot, OPLESS_ENTITY + CREATE_ONLY_ENTITY + PATCH_ONLY_ENTITY)
+    ok(Fs.readFileSync(Path.join(sdkroot, 'lib', 'entity', 'zest_entity.ex'), 'utf8')
+      .includes('def patch('), 'elixir: the patch-only entity has no patch operation')
+
+    // Each warning with the lines after it, which name where it is.
+    const entityWarnings = (out: string) => out.split(/\n(?=\s*warning:)/)
+      .filter((chunk: string) => /^\s*warning:/.test(chunk) &&
+        /(lib\/entity\/\w+_entity\.ex|test\/\w+_entity_test\.exs):\d+/.test(chunk))
+
+    const env = { ...process.env, MIX_ENV: 'test' }
+    const built = run(mix, ['compile'], sdkroot, env)
+    if (built.unlaunchable || built.timedOut) {
+      return t.skip('elixir: ' + tail(built.out, 3))
+    }
+    ok(built.ok, 'elixir: mix compile failed:\n' + tail(built.out))
+    deepStrictEqual(entityWarnings(built.out), [], 'elixir: an entity module warns')
+
+    const tests = Fs.readdirSync(Path.join(sdkroot, 'test'))
+      .filter((file: string) => file.endsWith('_entity_test.exs')).sort()
+    ok(['zone', 'zinc', 'zest'].every((name) => tests.includes(name + '_entity_test.exs')),
+      'elixir: the fixture entities have no tests: ' + tests.join(', '))
+
+    const suite = run(mix, ['run', '--no-start', '-e', 'ExUnit.start(autorun: false); ' +
+      tests.map((file: string) => 'Code.compile_file("test/' + file + '")').join('; ')],
+    sdkroot, env)
+    ok(suite.ok, 'elixir: an entity test does not compile:\n' + tail(suite.out))
+    deepStrictEqual(entityWarnings(suite.out), [], 'elixir: an entity test warns')
+  })
+
+
+  // The timeout feature runs each fetch in a future, whose pool keeps the JVM
+  // alive for a minute after its last task unless the run exits.
+  test('clojure: a passing run exits as soon as it reports', async (t) => {
+    const clj = toolchain('clojure')
+    if (null == clj) {
+      return t.skip('no clojure toolchain here')
+    }
+
+    const sdkroot = Path.join(tmp, 'clojure-exit')
+    await generateTo('clojure', sdkroot, undefined, ['test', 'log', 'timeout'])
+
+    const verdict = await clojureExit(clj, sdkroot)
+    if (null != verdict.skip) {
+      return t.skip('clojure: ' + verdict.skip)
+    }
+    ok(null == verdict.fail, 'clojure: ' + verdict.fail)
   })
 
 
@@ -4696,6 +5003,8 @@ type CleanLane = {
   needs: string,
   prepare?: (sdkroot: string) => string | null,
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  // Output that is noise in a consumer's run, from the sweep or the SDK.
+  quiet?: RegExp,
 }
 
 // phpunit is a dev dependency of the generated SDK, not a system tool: when
@@ -4895,6 +5204,7 @@ const CLEAN_LANES: CleanLane[] = [
       return null == cargo ? null
         : { bin: cargo, args: ['test', '--test', 'clean_test', '--', '--nocapture'] }
     },
+    quiet: /warning: [^\n]*\n\s*--> \S*utility[\\/]clean\.rs/,
   },
   {
     target: 'lua',
@@ -5103,6 +5413,9 @@ describe('the canary sweep runs from a generated SDK', () => {
             tail(ran.out))
           ok(0 < Number(swept![1]), 'the ' + lane.target + ' sweep swept nothing')
           strictEqual(Number(swept![2]), 0, 'the ' + lane.target + ' sweep found leaks')
+
+          const noise = null == lane.quiet ? null : ran.out.match(lane.quiet)
+          strictEqual(noise?.[0], undefined, 'the ' + lane.target + ' sweep run printed noise')
         })
     }
   }
