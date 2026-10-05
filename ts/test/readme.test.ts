@@ -175,14 +175,15 @@ describe('ReadmeErrors', () => {
   })
 
   test('direct() convention is documented per language', async () => {
-    // ts/js: direct() returns the value or an Error. py: returns the result
-    // envelope — branch on `ok`, read `err` on failure (never index a
-    // failure-only key on the success shape).
-    ok((await renderErrors('ts')).includes('result instanceof Error'))
+    // direct() returns the result envelope in every language: branch on `ok`,
+    // read `err` on failure (never index a failure-only key on the success
+    // shape).
+    ok((await renderErrors('ts')).includes('if (!result.ok) {'))
+    ok(!(await renderErrors('ts')).includes('instanceof Error'))
     ok((await renderErrors('py')).includes('if not result["ok"]'))
     ok((await renderErrors('py')).includes('result.get("err")'))
     // js and an unmodelled language fall back to the ts default.
     strictEqual(await renderErrors('js'), await renderErrors('ts'))
-    ok((await renderErrors('cobol')).includes('result instanceof Error'))
+    ok((await renderErrors('cobol')).includes('if (!result.ok) {'))
   })
 })

@@ -38,8 +38,8 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   },
   list: {
     sig: 'list($reqmatch, $ctrl) -> arrayref',
-    returns: 'an arrayref of entities',
-    desc: 'List entities matching the given criteria. The match is optional — call `list` with no argument to list all records. Returns an arrayref and dies on error.',
+    returns: 'an arrayref of entities, one per record',
+    desc: 'List entities matching the given criteria. The match is optional — call `list` with no argument to list all records. Returns an arrayref of entities, one per record (`data_get` reads each record), and dies on error.',
   },
   create: {
     sig: 'create($reqdata, $ctrl) -> hashref',
@@ -283,7 +283,7 @@ my $result = $client->${ent.Name}->${opname}(${arg});
             Content(`\`\`\`perl
 my $results = $client->${ent.Name}->list;
 for my $${eVar} (@$results) {
-    print "$${eVar}->{id}\\n";
+    print $${eVar}->data_get->{id}, "\\n";
 }
 \`\`\`
 
