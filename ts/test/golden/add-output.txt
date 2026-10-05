@@ -149,7 +149,7 @@ src/cmp/clojure/ReadmeTopHowto_clojure.ts e1494b86d033
 src/cmp/clojure/ReadmeTopQuick_clojure.ts de9d83438a1a
 src/cmp/clojure/ReadmeTopTest_clojure.ts d0b3c515ded4
 src/cmp/clojure/Schema_clojure.ts 173cdd00d273
-src/cmp/clojure/TestClean_clojure.ts 691f15121b4c
+src/cmp/clojure/TestClean_clojure.ts db091badfd02
 src/cmp/clojure/TestDirect_clojure.ts ebfe781a958d
 src/cmp/clojure/TestEntity_clojure.ts 9d5860060f5f
 src/cmp/clojure/Test_clojure.ts 56abfa732719
@@ -226,10 +226,10 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 5978c081353b
-tm/clojure/src/sdk/core.clj 28b00396613e
+tm/clojure/src/sdk/core.clj 8a464a7340bf
 tm/clojure/src/sdk/features.clj bf69cbc11b36
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
-tm/clojure/test/sdk/test/concurrency.clj 32cb811c0992
+tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 590d662e1233
 tm/clojure/test/sdk/test/feature/secrets.clj 6ab6b24e4eb5
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
@@ -293,14 +293,14 @@ tm/cpp/Makefile 0d6ce97980bb
 tm/cpp/VERSION e6635045e1d2
 tm/cpp/core/sdk.hpp 29180a8846ed
 tm/cpp/core/struct.hpp 0be0006d1389
-tm/cpp/core/types.hpp 7b5e9ad8b55d
+tm/cpp/core/types.hpp a93c602208f8
 tm/cpp/feature/base.hpp 09bbe326cadb
 tm/cpp/feature/options.hpp 74561793d626
 tm/cpp/feature/test.hpp 22af5d5ffbf4
 tm/cpp/src/feature/README.md 3f39917d4bcf
 tm/cpp/src/feature/base/.gitkeep e3b0c44298fc
 tm/cpp/src/feature/test/.gitkeep e3b0c44298fc
-tm/cpp/test/concurrency_test.cpp e50651fddfed
+tm/cpp/test/concurrency_test.cpp f46991abd19d
 tm/cpp/test/custom_utility_test.cpp 2b69801ad71d
 tm/cpp/test/exists_test.cpp 9e03ef43cc67
 tm/cpp/test/harness.hpp 47bca05ee167
@@ -318,7 +318,7 @@ tm/cpp/test/vendor/omni/json.hpp 8e36b1f58d52
 tm/cpp/test/vendor/omni/omni.hpp 6d8f1d38f39e
 tm/cpp/test/vendor/omni/util.hpp 7737f6997c2b
 tm/cpp/utility/cookie.hpp d2b5fb5f0264
-tm/cpp/utility/pipeline.hpp 869469d98473
+tm/cpp/utility/pipeline.hpp c494e7412547
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp f3832db06d59
@@ -389,7 +389,7 @@ tm/csharp/feature/TestFeature.cs 5dc2f50946e5
 tm/csharp/src/feature/README.md ddb1daf8f8fe
 tm/csharp/src/feature/base/.gitkeep e3b0c44298fc
 tm/csharp/src/feature/test/.gitkeep e3b0c44298fc
-tm/csharp/test/ConcurrencyTest.cs 1d1fa4840954
+tm/csharp/test/ConcurrencyTest.cs a2210d8f24f0
 tm/csharp/test/CustomUtilityTest.cs a909ed678d84
 tm/csharp/test/ExistsTest.cs 3d458c790b7c
 tm/csharp/test/FeatureHarness.cs cbdc6a80fc7a
@@ -496,7 +496,7 @@ tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
 tm/elixir/src/feature/test/.gitkeep e3b0c44298fc
-tm/elixir/test/concurrency_test.exs 868b5cbf9997
+tm/elixir/test/concurrency_test.exs c52df74eb8da
 tm/elixir/test/feature_test.exs b7c442542d7e
 tm/elixir/test/netsim_test.exs d9459f10a6c7
 tm/elixir/test/omni_smoke_test.exs d79d4e7faab8
@@ -575,7 +575,7 @@ tm/go/feature/test_feature.go aee79c4e8938
 tm/go/src/feature/README.md efebfaa50be0
 tm/go/src/feature/base/.gitkeep e3b0c44298fc
 tm/go/src/feature/test/.gitkeep e3b0c44298fc
-tm/go/test/concurrency_test.go 2b525ebff2da
+tm/go/test/concurrency_test.go e795151c64fc
 tm/go/test/custom_utility_test.go 34f8ce224b2e
 tm/go/test/feature_corpus_test.go b776e53f7a8a
 tm/go/test/feature_harness_test.go 3be4a16626d6
@@ -718,7 +718,7 @@ tm/java/feature/TestFeature.java a73d288c8e24
 tm/java/src/feature/README.md fe95b0698ffe
 tm/java/src/feature/base/.gitkeep e3b0c44298fc
 tm/java/src/feature/test/.gitkeep e3b0c44298fc
-tm/java/test/ConcurrencyTest.java 180e31012de6
+tm/java/test/ConcurrencyTest.java a8f187138c32
 tm/java/test/CustomUtilityTest.java 92703abdc486
 tm/java/test/ExistsTest.java 6b1f749bac90
 tm/java/test/FeatureCorpusTest.java dec987f86acf
@@ -960,7 +960,7 @@ tm/kotlin/feature/TestFeature.kt 4feb1349dddc
 tm/kotlin/src/feature/README.md 9f8bde3f12e0
 tm/kotlin/src/feature/base/.gitkeep e3b0c44298fc
 tm/kotlin/src/feature/test/.gitkeep e3b0c44298fc
-tm/kotlin/test/ConcurrencyTest.kt 885e269b2c9c
+tm/kotlin/test/ConcurrencyTest.kt dfb2ba7e1a11
 tm/kotlin/test/CustomUtilityTest.kt 38682251b430
 tm/kotlin/test/ExistsTest.kt 8305e0fa71e5
 tm/kotlin/test/FeatureHarness.kt ead959d80931
@@ -1149,7 +1149,7 @@ tm/ocaml/sdk_types.ml 86a465e4b66d
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
 tm/ocaml/src/feature/test/.gitkeep e3b0c44298fc
-tm/ocaml/test/concurrency_test.ml 4964e7c03a1b
+tm/ocaml/test/concurrency_test.ml 59881e8c8047
 tm/ocaml/test/custom_utility.ml 1fe63d9d65af
 tm/ocaml/test/harness.ml 366332912de1
 tm/ocaml/test/omni_resolver.ml d4b483a5a08d
@@ -1480,7 +1480,7 @@ tm/py/test/feature_harness.py d0500966bdc0
 tm/py/test/omni.py 96a115b97dbe
 tm/py/test/runner.py 0b1b87346718
 tm/py/test/sdk-test-control.json ea9bf9046c8a
-tm/py/test/test_concurrency.py 5cc18099bd54
+tm/py/test/test_concurrency.py 884ffdf859a2
 tm/py/test/test_feature.py a005b5017a7c
 tm/py/test/test_feature_corpus.py 89c579b1ece5
 tm/py/test/test_netsim.py 1583f97d2c84
@@ -1560,7 +1560,7 @@ src/cmp/rb/utility_rb.ts 1ac35bdc3695
 tm/rb/Gemfile 2cf46ddd24ec
 tm/rb/LICENSE 52acd47c245f
 tm/rb/Makefile 89567ce533f0
-tm/rb/core/context.rb 8eb6385bd7ea
+tm/rb/core/context.rb 9f071bc5da45
 tm/rb/core/control.rb 14d11fa63c1f
 tm/rb/core/error.rb 460231f6e63c
 tm/rb/core/helpers.rb 2c5a92707620
@@ -1574,7 +1574,7 @@ tm/rb/feature/test_feature.rb b8813015fa1d
 tm/rb/src/feature/README.md 74fc01b8a34f
 tm/rb/src/feature/base/.gitkeep e3b0c44298fc
 tm/rb/src/feature/test/.gitkeep e3b0c44298fc
-tm/rb/test/concurrency_test.rb f500d3a6a0e3
+tm/rb/test/concurrency_test.rb 74b4e968b6a8
 tm/rb/test/feature_corpus_test.rb b7b484a425de
 tm/rb/test/feature_test.rb 10fa47623244
 tm/rb/test/netsim_test.rb bc7d9265bec9
@@ -1858,7 +1858,7 @@ tm/scala/feature/secrets/sekreto/plugins/Minivault.scala eded964a61b3
 tm/scala/feature/secrets/sekreto/plugins/Onepassword.scala 292e7c1ac82f
 tm/scala/feature/secrets/sekreto/plugins/Secretspec.scala 0e7dea70feee
 tm/scala/feature/secrets/sekreto/plugins/Sigv4.scala 116d50af73ff
-tm/scala/sdktest/ConcurrencyTest.scala b6c47b11d3ab
+tm/scala/sdktest/ConcurrencyTest.scala f27840bb67d8
 tm/scala/sdktest/OmniResolver.scala 2bbd5639ca7c
 tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
 tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
@@ -1994,6 +1994,7 @@ tm/swift/Sources/ProjectNameSDK/utility/Media.swift 7434119f2756
 tm/swift/Sources/ProjectNameSDK/utility/Prepare.swift 85051aa74d02
 tm/swift/Sources/ProjectNameSDK/utility/Register.swift b680c8e1d6bc
 tm/swift/Sources/ProjectNameSDK/utility/ResultUtil.swift 39264cdd3fb9
+tm/swift/Tests/ProjectNameSDKTests/ConcurrencyTest.swift 7c1b2f4dcba7
 tm/swift/Tests/ProjectNameSDKTests/CustomUtilityTest.swift d761ef0813c8
 tm/swift/Tests/ProjectNameSDKTests/ExistsTest.swift b003ca8c07eb
 tm/swift/Tests/ProjectNameSDKTests/NetsimTest.swift e290a72e79ed

@@ -489,8 +489,8 @@
     (if (and n (<= 0 n)) n dflt)))
 
 ;; The derived clean block: a struct map so it lives in options.__derived__
-;; and its `values` list stays MUTABLE after make-options - features register
-;; what they resolve later.
+;; and its `values` list can be replaced after make-options - features
+;; register what they resolve later.
 (defn make-clean-config [cleanopts]
   (let [o (fn [k] (mget cleanopts k))
         keys (vs/jt)]
@@ -521,27 +521,24 @@
 
 (defn u-clean-add [ctx value]
   (let [cfg (clean-config ctx)
-        minlen (long (or (mget cfg "min") 4))
-        values (mget cfg "values")]
-    (when (and (string? value) (>= (count value) minlen) (instance? java.util.List values))
-      (locking values
-        (let [changed (atom false)]
-          (doseq [form (clean-forms value)]
-            (when (and (>= (count form) minlen) (not (.contains ^java.util.List values form)))
-              (.add ^java.util.List values form)
-              (reset! changed true)))
-          ;; Longest first, so a value is never masked by a substring of itself.
-          (when @changed
-            (let [sorted (sort-by (fn [^String s] (- (count s))) (vec values))]
-              (.clear ^java.util.List values)
-              (doseq [s sorted] (.add ^java.util.List values s)))))))
+        minlen (long (or (mget cfg "min") 4))]
+    (when (and (string? value) (>= (count value) minlen)
+               (instance? java.util.List (mget cfg "values")))
+      (let [forms (filterv #(>= (count %) minlen) (clean-forms value))]
+        ;; Every request copies the options, the registry among them, so a
+        ;; registration publishes a new vector and never changes a published one.
+        (locking cfg
+          (let [values (vec (mget cfg "values"))
+                added (remove #(.contains ^java.util.List values %) forms)]
+            ;; Longest first, so a value is never masked by a substring of itself.
+            (when (seq added)
+              (.put ^java.util.Map cfg "values"
+                    (vec (sort-by (fn [^String s] (- (count s))) (into values added)))))))))
     nil))
 
-;; Requests on other threads clean while one registers, so the registry is
-;; read and written under its own lock.
 (defn- registered [cfg]
   (let [values (mget cfg "values")]
-    (if (instance? java.util.List values) (locking values (vec values)) [])))
+    (if (instance? java.util.List values) values [])))
 
 (defn- mask-value [cfg ^String value]
   (let [hint (long (or (mget cfg "hint") 0))

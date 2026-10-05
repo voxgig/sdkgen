@@ -15,8 +15,10 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+import KOTLINPACKAGE.core.Context
 import KOTLINPACKAGE.core.Operation
 import KOTLINPACKAGE.core.ProjectNameSDK
+import KOTLINPACKAGE.core.Utility
 
 class ConcurrencyTest {
 
@@ -97,6 +99,31 @@ class ConcurrencyTest {
     }
   }
 
+  private fun addedSecret(round: Int, n: Int, k: Int) = "ADDED-SECRET-$round-$n-$k"
+
+  // Registers thread n's secrets, then counts the thread out of registering.
+  private fun registerSecrets(
+    utility: Utility, root: Context, round: Int, n: Int, registering: CountDownLatch,
+  ) {
+    try {
+      for (k in 0 until ops) {
+        utility.cleanAdd(root, addedSecret(round, n, k))
+      }
+    } finally {
+      registering.countDown()
+    }
+  }
+
+  private fun assertEverySecretMasked(utility: Utility, root: Context, round: Int) {
+    for (n in 0 until width / 2) {
+      for (k in 0 until ops) {
+        val added = addedSecret(round, n, k)
+        assertEquals("[redacted]", utility.clean(root, added),
+          "round $round: $added was registered but not masked")
+      }
+    }
+  }
+
   // Secrets registered on some threads while others clean: every clean masks
   // what was registered before it, the longer secret whole, and no
   // registration is lost.
@@ -117,13 +144,7 @@ class ConcurrencyTest {
       val wrong = ConcurrentLinkedQueue<Any?>()
       val thrown = atOnce { n ->
         if (n < width / 2) {
-          try {
-            for (k in 0 until ops) {
-              utility.cleanAdd(root, "ADDED-SECRET-$round-$n-$k")
-            }
-          } finally {
-            registering.countDown()
-          }
+          registerSecrets(utility, root, round, n, registering)
         } else {
           while (0L < registering.count) {
             val cleaned = utility.clean(root, text)
@@ -136,13 +157,37 @@ class ConcurrencyTest {
 
       assertTrue(thrown.isEmpty(), "round $round threw: $thrown")
       assertTrue(wrong.isEmpty(), "round $round cleaned to: $wrong")
-      for (n in 0 until width / 2) {
-        for (k in 0 until ops) {
-          val added = "ADDED-SECRET-$round-$n-$k"
-          assertEquals("[redacted]", utility.clean(root, added),
-            "round $round: $added was registered but not masked")
+      assertEverySecretMasked(utility, root, round)
+    }
+  }
+
+  // Requests on one client while secrets register on it: each request copies
+  // the client's options, the registry among them.
+  @Test
+  fun concurrentRequestsSurviveRegistration() {
+    repeat(rounds / 4) { round ->
+      val client = liveClient()
+      val utility = client.getUtility()
+      val root = client.getRootCtx()
+      val registering = CountDownLatch(width / 2)
+      val failed = ConcurrentLinkedQueue<Any?>()
+      val thrown = atOnce { n ->
+        if (n < width / 2) {
+          registerSecrets(utility, root, round, n, registering)
+        } else {
+          while (0L < registering.count) {
+            val res = client.direct(linkedMapOf<String, Any?>("path" to "p$n"))
+            if (true != res["ok"]) {
+              failed.add(res)
+              break
+            }
+          }
         }
       }
+
+      assertTrue(thrown.isEmpty(), "round $round threw: $thrown")
+      assertTrue(failed.isEmpty(), "round $round, a request failed: $failed")
+      assertEverySecretMasked(utility, root, round)
     }
   }
 }

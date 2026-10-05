@@ -149,10 +149,9 @@ function run(
 
   const out = String(res.stdout || '') + String(res.stderr || '')
 
-  const timedOut = 'SIGKILL' === res.signal
-    || 'ETIMEDOUT' === (res.error as any)?.code
-
-  if (timedOut) {
+  // Node marks a kill for its own timeout ETIMEDOUT; a kill from outside,
+  // such as the OOM killer's, has the same signal and no error.
+  if ('ETIMEDOUT' === (res.error as any)?.code) {
     return {
       ok: false,
       out: cmd + ' did not finish within ' + Math.round(timeoutMs / 1000) +
@@ -165,7 +164,8 @@ function run(
   // A command that could not be LAUNCHED (ENOENT, EINVAL) has no output to
   // report, and says nothing about what it would have run: that is an
   // environment gap, which callers report as a skip rather than a failure.
-  if (null != res.error) {
+  // A process node killed for overflowing maxBuffer (ENOBUFS) did launch.
+  if (null != res.error && null == res.signal) {
     return {
       ok: false,
       out: '' === out.trim() ? String(res.error.message) : out,
@@ -175,7 +175,9 @@ function run(
   }
 
   // A process killed by a signal prints nothing about it itself.
-  const killed = null == res.signal ? '' : '\n' + cmd + ' was killed by ' + res.signal
+  const killed = null == res.signal ? ''
+    : '\n' + cmd + ' was killed by ' + res.signal +
+      (null == res.error ? '' : ' (' + res.error.message + ')')
 
   return { ok: 0 === res.status, out: out + killed, unlaunchable: false, timedOut: false }
 }
@@ -316,6 +318,29 @@ function pick(
     target + ': expected one ' + tail + ', got ' + JSON.stringify(found))
   return out[found[0]]
 }
+
+
+describe('run', () => {
+
+  test('reports a kill from outside as that signal, not as a timeout',
+    { skip: 'win32' === process.platform && 'a kill from outside needs POSIX signals' }, () => {
+      // The child's own child kills it, as the OOM killer would.
+      const killer = 'require("node:child_process").spawn(process.execPath, ["-e", ' +
+        '"process.kill(" + process.pid + ", \'SIGKILL\')"], { stdio: "ignore" }); ' +
+        'setTimeout(() => {}, 60000)'
+      const ran = run(process.execPath, ['-e', killer], process.cwd(), undefined, 30 * 1000)
+      strictEqual(ran.timedOut, false, ran.out)
+      strictEqual(ran.ok, false, ran.out)
+      ok(ran.out.endsWith(process.execPath + ' was killed by SIGKILL'), ran.out)
+    })
+
+  test('reports its own timeout as a timeout', () => {
+    const ran = run(process.execPath, ['-e', 'setTimeout(() => {}, 60000)'], process.cwd(),
+      undefined, 1000)
+    strictEqual(ran.timedOut, true, ran.out)
+    ok(ran.out.startsWith(process.execPath + ' did not finish within 1s on this machine'), ran.out)
+  })
+})
 
 
 describe('dotnet test failure reports', () => {
@@ -5260,11 +5285,11 @@ describe('a templated server URL is resolved by the generated SDK', () => {
 })
 
 
-// Every request on one client resolves its operation through the cache the
-// client's root context shares, and registers and cleans secrets through the
-// client's one registry. The suite each of these SDKs ships races requests on
-// one client: every racer gets the one cached Operation, and every registered
-// secret stays masked; go runs it under the race detector.
+// Every request on one client resolves its operation through the cache its
+// root context shares, and registers, cleans and copies the client's one
+// secret registry. The suite each of these SDKs ships races requests on one
+// client: every racer gets the one cached Operation, and every registered
+// secret stays masked; go runs it under -race, cpp under ThreadSanitizer.
 type ConcurrencyLane = {
   target: string,
   runner: string,
@@ -5280,6 +5305,18 @@ type ConcurrencyLane = {
   // A failure that names a missing toolchain capability rather than the SDK.
   unsupported?: RegExp,
 }
+
+// ThreadSanitizer reports an unordered read and write wherever they fall in a
+// run, where a plain build crashes only if freed memory is reused in time.
+const CPP_TSAN_FLAGS = '-std=c++17 -O0 -g -pthread -fsanitize=thread'
+
+// Every thread that builds a std::regex fills libstdc++'s narrow cache with
+// the same bytes.
+const CPP_TSAN_SUPPRESSIONS = 'race:std::ctype<char>::narrow\n'
+
+// A compiler or linker that has no ThreadSanitizer.
+const CPP_NO_TSAN =
+  /cannot find -ltsan|libtsan|(unrecognized|unsupported)[^\n]*-fsanitize=thread|-fsanitize=thread[^\n]*not supported/
 
 const CONCURRENCY_LANES: ConcurrencyLane[] = [
   {
@@ -5304,7 +5341,8 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
       /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentFirstRequestsSucceed\b/m,
       /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentResolutionsShareOneCachedOperation\b/m,
       /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentRegistrationKeepsEverySecretMasked\b/m,
-      /^\s*Total tests: 3\b/m,
+      /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentRequestsSurviveRegistration\b/m,
+      /^\s*Total tests: 4\b/m,
     ],
   },
   {
@@ -5322,6 +5360,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
       /^--- PASS: TestConcurrentFirstRequests /m,
       /^--- PASS: TestConcurrentOperationResolution /m,
       /^--- PASS: TestConcurrentCleanRegistry /m,
+      /^--- PASS: TestConcurrentRequestsWhileRegistering /m,
     ],
     unsupported: /-race requires cgo|cgo: C compiler .* not found|-race is not supported/,
   },
@@ -5337,7 +5376,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
         args: ['-B', 'test', '-Dtest=ConcurrencyTest', '-DfailIfNoSpecifiedTests=false'],
       }
     },
-    ran: [/Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: .* in [\w.]*\.ConcurrencyTest$/m],
+    ran: [/Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: .* in [\w.]*\.ConcurrencyTest$/m],
   },
   {
     target: 'kotlin',
@@ -5350,7 +5389,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
       return null == gradle ? null
         : { bin: gradle, args: ['--console=plain', 'test', '--tests', '*ConcurrencyTest*'] }
     },
-    ran: [/<testsuite name="[^"]*ConcurrencyTest" tests="3" skipped="0" failures="0" errors="0"/],
+    ran: [/<testsuite name="[^"]*ConcurrencyTest" tests="4" skipped="0" failures="0" errors="0"/],
     report: (sdkroot) => {
       const dir = Path.join(sdkroot, 'build', 'test-results', 'test')
       return Fs.existsSync(dir)
@@ -5368,15 +5407,20 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
       return null == scalacli ? null
         : { bin: scalacli, args: ['run', '.', '--main-class', 'SdkConcurrencyTestMain'] }
     },
-    ran: [/CONCURRENCY PASS 3 {2}FAIL 0/],
+    ran: [/CONCURRENCY PASS 4 {2}FAIL 0/],
   },
   {
     target: 'cpp',
     runner: 'test/concurrency_test.cpp',
     needs: 'make and a C++ compiler',
+    // Under ThreadSanitizer where the compiler has it, else a plain build.
     prepare: (sdkroot) => {
-      const built = run(toolchain('make')!, ['CXX=' + cleanCxx(), 'test/concurrency_test.out'],
-        sdkroot)
+      const make = toolchain('make')!
+      const bin = 'test/concurrency_test.out'
+      Fs.writeFileSync(Path.join(sdkroot, 'tsan.supp'), CPP_TSAN_SUPPRESSIONS)
+      const tsan = run(make, ['CXX=' + cleanCxx(), 'CXXFLAGS=' + CPP_TSAN_FLAGS, bin], sdkroot)
+      const built = tsan.ok || !CPP_NO_TSAN.test(tsan.out) ? tsan
+        : run(make, ['CXX=' + cleanCxx(), bin], sdkroot)
       return built.ok ? null : 'the generated test does not build:\n' + tail(built.out)
     },
     // glibc writes a heap-corruption abort to the terminal unless told otherwise.
@@ -5384,9 +5428,14 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
       : {
         bin: Path.join('test', 'concurrency_test.out'),
         args: [],
-        env: { ...process.env, LIBC_FATAL_STDERR_: '1' },
+        env: {
+          ...process.env,
+          LIBC_FATAL_STDERR_: '1',
+          TSAN_OPTIONS: 'halt_on_error=1 suppressions=tsan.supp',
+        },
       },
-    ran: [/concurrency_test: 3 tests, 3 checks, 0 failures/],
+    ran: [/concurrency_test: 4 tests, 4 checks, 0 failures/],
+    unsupported: /ThreadSanitizer: unexpected memory mapping/,
   },
   {
     target: 'py',
@@ -5396,6 +5445,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
     ran: [
       /::test_concurrent_resolutions_share_one_cached_operation PASSED/,
       /::test_concurrent_registration_keeps_every_secret_masked PASSED/,
+      /::test_concurrent_requests_survive_registration PASSED/,
     ],
   },
   {
@@ -5406,7 +5456,8 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
     ran: [
       /ConcurrencyTest#test_concurrent_resolutions_share_one_cached_operation = [\d.]+ s = \./,
       /ConcurrencyTest#test_concurrent_registration_keeps_every_secret_masked = [\d.]+ s = \./,
-      /^2 runs, \d+ assertions, 0 failures, 0 errors, 0 skips$/m,
+      /ConcurrencyTest#test_concurrent_requests_survive_registration = [\d.]+ s = \./,
+      /^3 runs, \d+ assertions, 0 failures, 0 errors, 0 skips$/m,
     ],
   },
   {
@@ -5418,7 +5469,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
       const clj = toolchain('clojure')
       return null == clj ? null : { bin: clj, args: ['-M:test', '--sdk-only'] }
     },
-    ran: [/^concurrency: 2 check\(s\), 0 failed$/m],
+    ran: [/^concurrency: 3 check\(s\), 0 failed$/m],
   },
   {
     target: 'elixir',
@@ -5436,8 +5487,26 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
     },
     ran: [
       /\* test concurrent registration keeps every secret masked \(/,
-      /^1 test, 0 failures$/m,
+      /\* test concurrent requests survive registration \(/,
+      /^2 tests, 0 failures$/m,
     ],
+  },
+  {
+    target: 'swift',
+    runner: 'Tests/DemoSdkTests/ConcurrencyTest.swift',
+    needs: 'swift',
+    shares: 'its secret registry',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('swift')!, ['build', '--build-tests', '-j', '2'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated swift package does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const swift = toolchain('swift')
+      return null == swift ? null
+        : { bin: swift, args: ['test', '-j', '2', '--skip-build', '--filter', 'ConcurrencyTest'] }
+    },
+    ran: [/Executed 3 tests, with 0 failures/],
   },
   {
     target: 'ocaml',
@@ -5450,7 +5519,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
       return null == ocamlc || null == make || null == cc ? null
         : { bin: make, args: ['CC=' + cc, 'OCAMLC=' + ocamlc, 'test-concurrency'] }
     },
-    ran: [/concurrency_test: 2 passed, 0 failed/],
+    ran: [/concurrency_test: 3 passed, 0 failed/],
     unsupported: /Cannot find file .*threads\.cma/,
   },
 ]

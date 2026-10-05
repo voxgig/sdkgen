@@ -66,6 +66,33 @@ let () = test "concurrent resolutions share one cached operation" (fun () ->
 let clean_str (cl : sdk_client) (text : string) : string =
   match cl.cl_utility.u_clean (root_of cl) (Str text) with Str s -> s | v -> stringify v
 
+(* A live client whose transport answers at once. *)
+let live_client () : sdk_client =
+  let fetch = Func (fun _ _ _ _ ->
+      Sdk_helpers.jo [
+        ("status", Num 200.); ("statusText", Str "OK"); ("headers", Sdk_helpers.jo []);
+        ("json", Sdk_helpers.json_thunk (Sdk_helpers.jo [("ok", Bool true)]))]) in
+  Sdk_client.make (Sdk_helpers.jo [
+      ("base", Str "http://concurrency.test/api");
+      ("allow", Sdk_helpers.jo [("op", Str "direct")]);
+      ("system", Sdk_helpers.jo [("fetch", fetch)])])
+
+(* Registers thread n's secrets, then counts the thread out of registering. *)
+let register_secrets (cl : sdk_client) (round : int) (n : int) (registering : int Atomic.t) : unit =
+  Fun.protect ~finally:(fun () -> Atomic.decr registering) (fun () ->
+      for k = 1 to added do
+        cl.cl_utility.u_clean_add (root_of cl) (Printf.sprintf "ADDED-SECRET-%d-%d-%d" round n k)
+      done)
+
+let every_secret_masked (cl : sdk_client) (round : int) : unit =
+  for n = 0 to width / 2 - 1 do
+    for k = 1 to added do
+      let secret = Printf.sprintf "ADDED-SECRET-%d-%d-%d" round n k in
+      check_str (Printf.sprintf "round %d: %s was registered but not masked" round secret)
+        (clean_str cl secret) "[redacted]"
+    done
+  done
+
 (* Secrets registered on some threads while others clean: every clean masks
  * what was registered before it, the longer secret whole, and no
  * registration is lost. *)
@@ -81,9 +108,7 @@ let () = test "concurrent registration keeps every secret masked" (fun () ->
       check_str (Printf.sprintf "round %d" round) (clean_str cl text) masked;
       let registering = Atomic.make (width / 2) in
       let raised = at_once (fun n ->
-          if n < width / 2 then
-            Fun.protect ~finally:(fun () -> Atomic.decr registering) (fun () ->
-                for k = 1 to added do add (Printf.sprintf "ADDED-SECRET-%d-%d-%d" round n k) done)
+          if n < width / 2 then register_secrets cl round n registering
           else
             while 0 < Atomic.get registering do
               let got = clean_str cl text in
@@ -91,13 +116,30 @@ let () = test "concurrent registration keeps every secret masked" (fun () ->
               Thread.yield ()
             done) in
       check (Printf.sprintf "round %d raised: %s" round (String.concat "; " raised)) (raised = []);
-      for n = 0 to width / 2 - 1 do
-        for k = 1 to added do
-          let secret = Printf.sprintf "ADDED-SECRET-%d-%d-%d" round n k in
-          check_str (Printf.sprintf "round %d: %s was registered but not masked" round secret)
-            (clean_str cl secret) "[redacted]"
-        done
-      done
+      every_secret_masked cl round
+    done)
+
+(* Requests on one client while secrets register on it: each request copies
+ * the client's options, the registry among them. *)
+let () = test "concurrent requests survive registration" (fun () ->
+    for round = 1 to rounds do
+      let cl = live_client () in
+      for k = 1 to seeded do
+        cl.cl_utility.u_clean_add (root_of cl) (Printf.sprintf "SEEDED-SECRET-%d-%d" round k)
+      done;
+      let registering = Atomic.make (width / 2) in
+      let raised = at_once (fun n ->
+          if n < width / 2 then register_secrets cl round n registering
+          else
+            while 0 < Atomic.get registering do
+              let res = Sdk_client.direct cl
+                  (Sdk_helpers.jo [("path", Str (Printf.sprintf "p%d" n))]) in
+              if Sdk_helpers.getp res "ok" <> Bool true then
+                failwith ("a request failed: " ^ stringify res);
+              Thread.yield ()
+            done) in
+      check (Printf.sprintf "round %d raised: %s" round (String.concat "; " raised)) (raised = []);
+      every_secret_masked cl round
     done)
 
 let () =

@@ -123,6 +123,33 @@ public class ConcurrencyTest {
     }
   }
 
+  static String addedSecret(int round, int n, int k) {
+    return "ADDED-SECRET-" + round + "-" + n + "-" + k;
+  }
+
+  // Registers thread n's secrets, then counts the thread out of registering.
+  static void registerSecrets(Utility utility, Context root, int round, int n,
+      CountDownLatch registering) {
+    try {
+      for (int k = 0; k < OPS; k++) {
+        utility.cleanAdd.apply(root, addedSecret(round, n, k));
+      }
+    }
+    finally {
+      registering.countDown();
+    }
+  }
+
+  static void assertEverySecretMasked(Utility utility, Context root, int round) {
+    for (int n = 0; n < WIDTH / 2; n++) {
+      for (int k = 0; k < OPS; k++) {
+        String added = addedSecret(round, n, k);
+        assertEquals("[redacted]", utility.clean.apply(root, added),
+            "round " + round + ": " + added + " was registered but not masked");
+      }
+    }
+  }
+
   // Secrets registered on some threads while others clean: every clean masks
   // what was registered before it, the longer secret whole, and no
   // registration is lost.
@@ -144,14 +171,7 @@ public class ConcurrencyTest {
       ConcurrentLinkedQueue<Object> wrong = new ConcurrentLinkedQueue<>();
       List<Throwable> thrown = atOnce(n -> {
         if (n < WIDTH / 2) {
-          try {
-            for (int k = 0; k < OPS; k++) {
-              utility.cleanAdd.apply(root, "ADDED-SECRET-" + r + "-" + n + "-" + k);
-            }
-          }
-          finally {
-            registering.countDown();
-          }
+          registerSecrets(utility, root, r, n, registering);
           return;
         }
         while (0 < registering.getCount()) {
@@ -164,13 +184,38 @@ public class ConcurrencyTest {
 
       assertTrue(thrown.isEmpty(), "round " + round + " threw: " + thrown);
       assertTrue(wrong.isEmpty(), "round " + round + " cleaned to: " + wrong);
-      for (int n = 0; n < WIDTH / 2; n++) {
-        for (int k = 0; k < OPS; k++) {
-          String added = "ADDED-SECRET-" + round + "-" + n + "-" + k;
-          assertEquals("[redacted]", utility.clean.apply(root, added),
-              "round " + round + ": " + added + " was registered but not masked");
+      assertEverySecretMasked(utility, root, round);
+    }
+  }
+
+  // Requests on one client while secrets register on it: each request copies
+  // the client's options, the registry among them.
+  @Test
+  public void concurrentRequestsSurviveRegistration() throws InterruptedException {
+    for (int round = 0; round < ROUNDS / 4; round++) {
+      final int r = round;
+      ProjectNameSDK client = liveClient();
+      Utility utility = client.getUtility();
+      Context root = client.getRootCtx();
+      CountDownLatch registering = new CountDownLatch(WIDTH / 2);
+      ConcurrentLinkedQueue<Object> failed = new ConcurrentLinkedQueue<>();
+      List<Throwable> thrown = atOnce(n -> {
+        if (n < WIDTH / 2) {
+          registerSecrets(utility, root, r, n, registering);
+          return;
         }
-      }
+        while (0 < registering.getCount()) {
+          Map<String, Object> res = client.direct(map("path", "p" + n));
+          if (!Boolean.TRUE.equals(res.get("ok"))) {
+            failed.add(String.valueOf(res));
+            return;
+          }
+        }
+      });
+
+      assertTrue(thrown.isEmpty(), "round " + round + " threw: " + thrown);
+      assertTrue(failed.isEmpty(), "round " + round + ", a request failed: " + failed);
+      assertEverySecretMasked(utility, root, round);
     }
   }
 }

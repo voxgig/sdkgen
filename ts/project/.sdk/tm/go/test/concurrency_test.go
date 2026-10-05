@@ -93,6 +93,60 @@ func TestConcurrentOperationResolution(t *testing.T) {
 	}
 }
 
+func addedSecret(round, n, k int) string {
+	return fmt.Sprintf("ADDED-SECRET-%d-%d-%d", round, n, k)
+}
+
+// registerSecrets registers goroutine n's secrets.
+func registerSecrets(utility *sdk.Utility, root *sdk.Context, round, n int) {
+	for k := 0; k < concurrencyOps; k++ {
+		utility.CleanAdd(root, addedSecret(round, n, k))
+	}
+}
+
+// unmaskedSecret is the first secret registered in the round that a clean
+// leaves raw, or "".
+func unmaskedSecret(utility *sdk.Utility, root *sdk.Context, round int) string {
+	for n := 0; n < concurrencyWidth/2; n++ {
+		for k := 0; k < concurrencyOps; k++ {
+			added := addedSecret(round, n, k)
+			if got := utility.Clean(root, added); got != "[redacted]" {
+				return added
+			}
+		}
+	}
+	return ""
+}
+
+// whileRegistering has half the goroutines register their secrets, and the
+// rest run body until those are done or body returns false.
+func whileRegistering(utility *sdk.Utility, root *sdk.Context, round int, body func(n int) bool) {
+	var registering sync.WaitGroup
+	registering.Add(concurrencyWidth / 2)
+	registered := make(chan struct{})
+	go func() {
+		registering.Wait()
+		close(registered)
+	}()
+	atOnce(func(n int) {
+		if n < concurrencyWidth/2 {
+			defer registering.Done()
+			registerSecrets(utility, root, round, n)
+			return
+		}
+		for {
+			select {
+			case <-registered:
+				return
+			default:
+			}
+			if !body(n) {
+				return
+			}
+		}
+	})
+}
+
 // Secrets registered on some goroutines while others clean: every clean masks
 // what was registered before it, the longer secret whole, and no registration
 // is lost.
@@ -110,33 +164,13 @@ func TestConcurrentCleanRegistry(t *testing.T) {
 			t.Fatalf("round %d cleaned to: %v", round, got)
 		}
 
-		var registering sync.WaitGroup
-		registering.Add(concurrencyWidth / 2)
-		registered := make(chan struct{})
-		go func() {
-			registering.Wait()
-			close(registered)
-		}()
 		wrong := make([]any, concurrencyWidth)
-		atOnce(func(n int) {
-			if n < concurrencyWidth/2 {
-				defer registering.Done()
-				for k := 0; k < concurrencyOps; k++ {
-					utility.CleanAdd(root, fmt.Sprintf("ADDED-SECRET-%d-%d-%d", round, n, k))
-				}
-				return
+		whileRegistering(utility, root, round, func(n int) bool {
+			if got := utility.Clean(root, text); got != masked {
+				wrong[n] = got
+				return false
 			}
-			for {
-				select {
-				case <-registered:
-					return
-				default:
-				}
-				if got := utility.Clean(root, text); got != masked {
-					wrong[n] = got
-					return
-				}
-			}
+			return true
 		})
 
 		for n, got := range wrong {
@@ -144,13 +178,37 @@ func TestConcurrentCleanRegistry(t *testing.T) {
 				t.Fatalf("round %d, cleaner %d cleaned to: %v", round, n, got)
 			}
 		}
-		for n := 0; n < concurrencyWidth/2; n++ {
-			for k := 0; k < concurrencyOps; k++ {
-				added := fmt.Sprintf("ADDED-SECRET-%d-%d-%d", round, n, k)
-				if got := utility.Clean(root, added); got != "[redacted]" {
-					t.Fatalf("round %d: %s was registered but not masked: %v", round, added, got)
-				}
+		if raw := unmaskedSecret(utility, root, round); raw != "" {
+			t.Fatalf("round %d: %s was registered but not masked", round, raw)
+		}
+	}
+}
+
+// Requests on one client while secrets register on it: each request copies
+// the client's options, the registry among them.
+func TestConcurrentRequestsWhileRegistering(t *testing.T) {
+	for round := 0; round < concurrencyRounds/4; round++ {
+		client := concurrencyClient()
+		utility := client.GetUtility()
+		root := client.GetRootCtx()
+
+		failed := make([]any, concurrencyWidth)
+		whileRegistering(utility, root, round, func(n int) bool {
+			res, err := client.Direct(map[string]any{"path": fmt.Sprintf("p%d", n)})
+			if err != nil || res["ok"] != true {
+				failed[n] = fmt.Sprint(err, res)
+				return false
 			}
+			return true
+		})
+
+		for n, got := range failed {
+			if got != nil {
+				t.Fatalf("round %d, request %d failed: %v", round, n, got)
+			}
+		}
+		if raw := unmaskedSecret(utility, root, round); raw != "" {
+			t.Fatalf("round %d: %s was registered but not masked", round, raw)
 		}
 	}
 }

@@ -123,6 +123,41 @@ public class ConcurrencyTest
         }
     }
 
+    private static string AddedSecret(int round, int n, int k)
+    {
+        return "ADDED-SECRET-" + round + "-" + n + "-" + k;
+    }
+
+    // Registers thread n's secrets, then counts the thread out of registering.
+    private static void RegisterSecrets(Utility utility, Context root, int round, int n,
+        CountdownEvent registering)
+    {
+        try
+        {
+            for (var k = 0; k < Ops; k++)
+            {
+                utility.CleanAdd(root, AddedSecret(round, n, k));
+            }
+        }
+        finally
+        {
+            registering.Signal();
+        }
+    }
+
+    private static void AssertEverySecretMasked(Utility utility, Context root, int round)
+    {
+        for (var n = 0; n < Width / 2; n++)
+        {
+            for (var k = 0; k < Ops; k++)
+            {
+                var added = AddedSecret(round, n, k);
+                Assert.True("[redacted]" == utility.Clean(root, added) as string,
+                    "round " + round + ": " + added + " was registered but not masked");
+            }
+        }
+    }
+
     // Secrets registered on some threads while others clean: every clean
     // masks what was registered before it, the longer secret whole, and no
     // registration is lost.
@@ -146,17 +181,7 @@ public class ConcurrencyTest
             {
                 if (n < Width / 2)
                 {
-                    try
-                    {
-                        for (var k = 0; k < Ops; k++)
-                        {
-                            utility.CleanAdd(root, "ADDED-SECRET-" + round + "-" + n + "-" + k);
-                        }
-                    }
-                    finally
-                    {
-                        registering.Signal();
-                    }
+                    RegisterSecrets(utility, root, round, n, registering);
                     return;
                 }
                 while (!registering.IsSet)
@@ -171,15 +196,43 @@ public class ConcurrencyTest
 
             Assert.True(0 == thrown.Count, "round " + round + " threw:\n" + string.Join("\n", thrown));
             Assert.True(wrong.IsEmpty, "round " + round + " cleaned to: " + string.Join(" | ", wrong));
-            for (var n = 0; n < Width / 2; n++)
+            AssertEverySecretMasked(utility, root, round);
+        }
+    }
+
+    // Requests on one client while secrets register on it: each request
+    // copies the client's options, the registry among them.
+    [Fact]
+    public void ConcurrentRequestsSurviveRegistration()
+    {
+        for (var round = 0; round < Rounds / 4; round++)
+        {
+            var client = LiveClient();
+            var utility = client.GetUtility();
+            var root = client.GetRootCtx();
+            var registering = new CountdownEvent(Width / 2);
+            var failed = new ConcurrentQueue<string>();
+            var thrown = AtOnce(n =>
             {
-                for (var k = 0; k < Ops; k++)
+                if (n < Width / 2)
                 {
-                    var added = "ADDED-SECRET-" + round + "-" + n + "-" + k;
-                    Assert.True("[redacted]" == utility.Clean(root, added) as string,
-                        "round " + round + ": " + added + " was registered but not masked");
+                    RegisterSecrets(utility, root, round, n, registering);
+                    return;
                 }
-            }
+                while (!registering.IsSet)
+                {
+                    var res = client.Direct(new Dictionary<string, object?> { ["path"] = "p" + n });
+                    if (!Equals(true, res.GetValueOrDefault("ok")))
+                    {
+                        failed.Enqueue(Convert.ToString(res.GetValueOrDefault("err")) ?? "no error");
+                        return;
+                    }
+                }
+            });
+
+            Assert.True(0 == thrown.Count, "round " + round + " threw:\n" + string.Join("\n", thrown));
+            Assert.True(failed.IsEmpty, "round " + round + ", a request failed: " + string.Join(" | ", failed));
+            AssertEverySecretMasked(utility, root, round);
         }
     }
 }

@@ -6,7 +6,7 @@ import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, CyclicBarrie
 import java.util.function.{BiFunction, Supplier}
 import java.util.{Map => JMap}
 
-import SCALAPACKAGE.core.{Operation, ProjectNameSDK}
+import SCALAPACKAGE.core.{Context, Operation, ProjectNameSDK, Utility}
 
 object SdkConcurrencyTestMain {
 
@@ -45,6 +45,22 @@ object SdkConcurrencyTestMain {
     threads.foreach(_.join())
     thrown.toArray(new Array[Throwable](0)).toList
   }
+
+  private def addedSecret(round: Int, n: Int, k: Int): String =
+    "ADDED-SECRET-" + round + "-" + n + "-" + k
+
+  // Registers thread n's secrets, then counts the thread out of registering.
+  private def registerSecrets(utility: Utility, root: Context, round: Int, n: Int,
+      registering: CountDownLatch): Unit =
+    try {
+      for (k <- 0 until Ops) utility.cleanAdd(root, addedSecret(round, n, k))
+    }
+    finally registering.countDown()
+
+  // The first secret registered in the round that a clean leaves raw.
+  private def unmasked(utility: Utility, root: Context, round: Int): Option[String] =
+    (for (n <- 0 until Width / 2; k <- 0 until Ops) yield addedSecret(round, n, k))
+      .find(added => "[redacted]" != utility.clean(root, added))
 
   // The first failure across the rounds, or null.
   private def firstFailure(round: Int => String): String = {
@@ -114,12 +130,7 @@ object SdkConcurrencyTestMain {
           val registering = new CountDownLatch(Width / 2)
           val wrong = new ConcurrentLinkedQueue[Object]()
           val thrown = atOnce { n =>
-            if (n < Width / 2) {
-              try {
-                for (k <- 0 until Ops) utility.cleanAdd(root, "ADDED-SECRET-" + round + "-" + n + "-" + k)
-              }
-              finally registering.countDown()
-            }
+            if (n < Width / 2) registerSecrets(utility, root, round, n, registering)
             else {
               while (0L < registering.getCount) {
                 val got = utility.clean(root, text)
@@ -127,16 +138,47 @@ object SdkConcurrencyTestMain {
               }
             }
           }
-          val lost = (for (n <- 0 until Width / 2; k <- 0 until Ops)
-            yield "ADDED-SECRET-" + round + "-" + n + "-" + k)
-            .find(added => "[redacted]" != utility.clean(root, added))
           if (masked != before) "round " + round + " cleaned to: " + before
           else if (thrown.nonEmpty) "round " + round + " threw: " + thrown
           else if (!wrong.isEmpty) "round " + round + " cleaned to: " + wrong
-          else lost.map(added => "round " + round + ": " + added + " was registered but not masked").orNull
+          else unmasked(utility, root, round)
+            .map(added => "round " + round + ": " + added + " was registered but not masked").orNull
         }
       }
       rep.check("concurrency.registry", failure == null, failure)
+    }
+
+    // Requests on one client while secrets register on it: each request
+    // copies the client's options, the registry among them.
+    rep.scope("concurrency.registry.requests") {
+      val failure = firstFailure { round =>
+        if (round >= Rounds / 4) null
+        else {
+          val client = liveClient()
+          val utility = client.getUtility()
+          val root = client.getRootCtx()
+          val registering = new CountDownLatch(Width / 2)
+          val failed = new ConcurrentLinkedQueue[Object]()
+          val thrown = atOnce { n =>
+            if (n < Width / 2) registerSecrets(utility, root, round, n, registering)
+            else {
+              var going = true
+              while (going && 0L < registering.getCount) {
+                val res = client.direct(om("path" -> ("p" + n)))
+                if (java.lang.Boolean.TRUE != res.get("ok")) {
+                  failed.add(res)
+                  going = false
+                }
+              }
+            }
+          }
+          if (thrown.nonEmpty) "round " + round + " threw: " + thrown
+          else if (!failed.isEmpty) "round " + round + ", a request failed: " + failed
+          else unmasked(utility, root, round)
+            .map(added => "round " + round + ": " + added + " was registered but not masked").orNull
+        }
+      }
+      rep.check("concurrency.registry.requests", failure == null, failure)
     }
 
     rep.finish("CONCURRENCY")

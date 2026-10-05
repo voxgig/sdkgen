@@ -479,11 +479,11 @@ ${candidates(entity)}
     (fn []
       (let [cfg (core/make-clean-config (vs/jm "keys" "key,secret,token"))
             ctx (atom {:options (vs/jm "__derived__" (vs/jm "clean" cfg))})
+            _ (core/u-clean-add-sensitive ctx (vs/jm "apikey" (vs/jm "value" "NESTED-SECRET-1")
+                                                     "headers" (vs/jm "X-Api-Token" (vs/jt "LISTED-SECRET-2"))
+                                                     "secret" 123456789
+                                                     "name" "not-a-secret"))
             values (vs/getprop cfg "values")]
-        (core/u-clean-add-sensitive ctx (vs/jm "apikey" (vs/jm "value" "NESTED-SECRET-1")
-                                               "headers" (vs/jm "X-Api-Token" (vs/jt "LISTED-SECRET-2"))
-                                               "secret" 123456789
-                                               "name" "not-a-secret"))
         (t/is-true (.contains ^java.util.List values "NESTED-SECRET-1") "nested under apikey")
         (t/is-true (.contains ^java.util.List values "LISTED-SECRET-2") "listed under a token header")
         (t/is-true (.contains ^java.util.List values "123456789") "a number, as its text")

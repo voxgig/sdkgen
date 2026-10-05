@@ -56,6 +56,50 @@ class ConcurrencyTest < Minitest::Test
     end
   end
 
+  # A live client whose transport answers at once.
+  def live_client
+    ProjectNameSDK.new({
+      "base" => "http://concurrency.test/api",
+      "allow" => { "op" => "direct" },
+      "system" => {
+        "fetch" => lambda { |_url, _fetchdef|
+          [{ "status" => 200, "statusText" => "OK", "headers" => {},
+             "json" => lambda { { "ok" => true } } }, nil]
+        },
+      },
+    })
+  end
+
+  # Half the threads register their secrets; the rest run body until those
+  # are done or it returns false. Returns what the threads raised.
+  def while_registering(utility, root, &body)
+    lock = Mutex.new
+    registering = WIDTH / 2
+    at_once do |n|
+      if n < WIDTH / 2
+        begin
+          ADDED.times { |k| utility.clean_add.call(root, "ADDED-SECRET-#{n}-#{k}") }
+        ensure
+          lock.synchronize { registering -= 1 }
+        end
+      else
+        while 0 < lock.synchronize { registering }
+          break unless body.call(n)
+          Thread.pass
+        end
+      end
+    end
+  end
+
+  def assert_every_secret_masked(utility, root)
+    (WIDTH / 2).times do |n|
+      ADDED.times do |k|
+        added = "ADDED-SECRET-#{n}-#{k}"
+        assert_equal "[redacted]", utility.clean.call(root, added), "#{added} was registered but not masked"
+      end
+    end
+  end
+
   # Secrets registered on some threads while others clean: every clean masks
   # what was registered before it, the longer secret whole, and no
   # registration is lost.
@@ -69,36 +113,37 @@ class ConcurrencyTest < Minitest::Test
     text = "a INNER-SECRET b OUTER-INNER-SECRET-TAIL c"
     assert_equal MASKED, utility.clean.call(root, text)
 
-    lock = Mutex.new
-    registering = WIDTH / 2
     wrong = Queue.new
-    raised = at_once do |n|
-      if n < WIDTH / 2
-        begin
-          ADDED.times { |k| utility.clean_add.call(root, "ADDED-SECRET-#{n}-#{k}") }
-        ensure
-          lock.synchronize { registering -= 1 }
-        end
-      else
-        while 0 < lock.synchronize { registering }
-          got = utility.clean.call(root, text)
-          if MASKED != got
-            wrong << got
-            break
-          end
-          Thread.pass
-        end
-      end
+    raised = while_registering(utility, root) do
+      got = utility.clean.call(root, text)
+      wrong << got if MASKED != got
+      MASKED == got
     end
 
     cleaned = Array.new(wrong.size) { wrong.pop }
     assert_empty raised, "raised: #{raised.inspect}"
     assert_empty cleaned, "cleaned to: #{cleaned.inspect}"
-    (WIDTH / 2).times do |n|
-      ADDED.times do |k|
-        added = "ADDED-SECRET-#{n}-#{k}"
-        assert_equal "[redacted]", utility.clean.call(root, added), "#{added} was registered but not masked"
-      end
+    assert_every_secret_masked(utility, root)
+  end
+
+  # Requests on one client while secrets register on it: each request copies
+  # the client's options, the registry among them.
+  def test_concurrent_requests_survive_registration
+    client = live_client
+    utility = client.get_utility
+    root = client.get_root_ctx
+    SEEDED.times { |k| utility.clean_add.call(root, "SEEDED-SECRET-#{k}") }
+
+    failed = Queue.new
+    raised = while_registering(utility, root) do |n|
+      res = client.direct({ "path" => "p#{n}" })
+      failed << res unless true == res["ok"]
+      true == res["ok"]
     end
+
+    requests = Array.new(failed.size) { failed.pop }
+    assert_empty raised, "raised: #{raised.inspect}"
+    assert_empty requests, "a request failed: #{requests.inspect}"
+    assert_every_secret_masked(utility, root)
   end
 end

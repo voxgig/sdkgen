@@ -114,6 +114,33 @@ static void concurrent_resolutions_share_one_cached_operation() {
   ASSERT_TRUE(true, "every operation resolved to one cached Operation");
 }
 
+// The k-th secret registering thread n adds in round r.
+static std::string addedSecret(const std::string& r, int n, int k) {
+  return "ADDED-SECRET-" + r + "-" + std::to_string(n) + "-" + std::to_string(k);
+}
+
+// Registers thread n's secrets, then counts the thread out of `left`.
+static void registerSecrets(UtilityPtr utility, CtxPtr root, const std::string& r, int n,
+                            std::atomic<int>& left) {
+  struct Done {
+    std::atomic<int>& left;
+    ~Done() { left.fetch_sub(1); }
+  } done{left};
+  for (int k = 0; k < OPS; k++) utility->cleanAdd(root, Value(addedSecret(r, n, k)));
+}
+
+// The first secret registered in round r that a clean leaves raw, or "".
+static std::string unmaskedSecret(UtilityPtr utility, CtxPtr root, const std::string& r) {
+  for (int n = 0; n < WIDTH / 2; n++) {
+    for (int k = 0; k < OPS; k++) {
+      std::string added = addedSecret(r, n, k);
+      Value got = utility->clean(root, Value(added));
+      if (!got.is_string() || "[redacted]" != got.as_string()) return added;
+    }
+  }
+  return "";
+}
+
 // Secrets registered on some threads while others clean: every clean masks
 // what was registered before it, the longer secret whole, and no
 // registration is lost.
@@ -139,14 +166,7 @@ static void concurrent_registration_keeps_every_secret_masked() {
     std::vector<std::string> wrong;
     auto thrown = atOnce([&](int n) {
       if (n < WIDTH / 2) {
-        struct Done {
-          std::atomic<int>& left;
-          ~Done() { left.fetch_sub(1); }
-        } done{registering};
-        for (int k = 0; k < OPS; k++) {
-          utility->cleanAdd(root, Value("ADDED-SECRET-" + r + "-" + std::to_string(n) + "-" +
-                                        std::to_string(k)));
-        }
+        registerSecrets(utility, root, r, n, registering);
         return;
       }
       while (0 < registering.load()) {
@@ -166,23 +186,61 @@ static void concurrent_registration_keeps_every_secret_masked() {
       ASSERT_TRUE(false, "round " + r + " cleaned to: " + wrong[0]);
       return;
     }
-    for (int n = 0; n < WIDTH / 2; n++) {
-      for (int k = 0; k < OPS; k++) {
-        std::string added = "ADDED-SECRET-" + r + "-" + std::to_string(n) + "-" + std::to_string(k);
-        Value got = utility->clean(root, Value(added));
-        if (!got.is_string() || "[redacted]" != got.as_string()) {
-          ASSERT_TRUE(false, "round " + r + ": " + added + " was registered but not masked");
-          return;
-        }
-      }
+    std::string raw = unmaskedSecret(utility, root, r);
+    if (!raw.empty()) {
+      ASSERT_TRUE(false, "round " + r + ": " + raw + " was registered but not masked");
+      return;
     }
   }
   ASSERT_TRUE(true, "every secret stayed masked");
+}
+
+// Requests on one client while secrets register on it: each request copies
+// the client's options, the registry among them.
+static void concurrent_requests_survive_registration() {
+  for (int round = 0; round < ROUNDS / 4; round++) {
+    auto client = liveClient();
+    auto utility = client->getUtility();
+    auto root = client->getRootCtx();
+    std::string r = std::to_string(round);
+    std::atomic<int> registering{WIDTH / 2};
+    std::mutex mu;
+    std::vector<std::string> failed;
+    auto thrown = atOnce([&](int n) {
+      if (n < WIDTH / 2) {
+        registerSecrets(utility, root, r, n, registering);
+        return;
+      }
+      while (0 < registering.load()) {
+        Value got = client->direct(vmap({{"path", Value("p" + std::to_string(n))}}));
+        if (!is_true(getp(got, "ok"))) {
+          std::lock_guard<std::mutex> lk(mu);
+          failed.push_back(sdktest::vstr(got));
+          return;
+        }
+      }
+    });
+    if (!thrown.empty()) {
+      ASSERT_TRUE(false, "round " + r + " threw: " + thrown[0]);
+      return;
+    }
+    if (!failed.empty()) {
+      ASSERT_TRUE(false, "round " + r + ", a request failed: " + failed[0]);
+      return;
+    }
+    std::string raw = unmaskedSecret(utility, root, r);
+    if (!raw.empty()) {
+      ASSERT_TRUE(false, "round " + r + ": " + raw + " was registered but not masked");
+      return;
+    }
+  }
+  ASSERT_TRUE(true, "every request succeeded while secrets registered");
 }
 
 int main() {
   T_RUN(concurrent_first_requests_succeed);
   T_RUN(concurrent_resolutions_share_one_cached_operation);
   T_RUN(concurrent_registration_keeps_every_secret_masked);
+  T_RUN(concurrent_requests_survive_registration);
   return sdktest::summary("concurrency_test");
 }

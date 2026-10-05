@@ -19,6 +19,7 @@
 #include <memory>
 #include <mutex>
 #include <ostream>
+#include <shared_mutex>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -629,6 +630,14 @@ public:
 
 // ---- SdkClient --------------------------------------------------------
 
+// A registration replaces the secret registry (options.__derived__.clean
+// .values) while requests copy the options: it holds this lock exclusively,
+// and every read of that slot holds it shared.
+inline std::shared_mutex& cleanRegistryLock() {
+  static std::shared_mutex lock;
+  return lock;
+}
+
 class SdkClient {
 public:
   std::string mode = "live";
@@ -961,6 +970,7 @@ inline SdkClient::SdkClient(const Value& options_) {
 }
 
 inline Value SdkClient::optionsMap() {
+  std::shared_lock<std::shared_mutex> guard(cleanRegistryLock());
   Value out = Struct::clone(options);
   return out.is_map() ? out : vmap();
 }

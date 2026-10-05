@@ -45,6 +45,31 @@
             (t/is-true (identical? cached (aget ^objects (got n) k))
                        (str "round " round ": op" k " resolved to more than one Operation"))))))))
 
+;; A live client whose transport answers at once.
+(defn- live-sdk []
+  (client/make-sdk
+   (vs/jm "base" "http://concurrency.test/api"
+          "allow" (vs/jm "op" "direct")
+          "system" (vs/jm "fetch" (fn [_url _fetchdef]
+                                    [(vs/jm "status" 200 "statusText" "OK" "headers" (vs/jm)
+                                            "json" (fn [] (vs/jm "ok" true)))
+                                     nil])))))
+
+(defn- added-secret [round n k] (str "ADDED-SECRET-" round "-" n "-" k))
+
+;; Registers thread n's secrets, then counts the thread out of registering.
+(defn- register-secrets [clean-add ^CountDownLatch registering round n]
+  (try
+    (dotimes [k ops] (clean-add (added-secret round n k)))
+    (finally (.countDown registering))))
+
+(defn- every-secret-masked [clean round]
+  (dotimes [n (quot width 2)]
+    (dotimes [k ops]
+      (let [added (added-secret round n k)]
+        (t/is-eq (clean added) "[redacted]"
+                 (str "round " round ": " added " was registered but not masked"))))))
+
 ;; Secrets registered on some threads while others clean: every clean masks
 ;; what was registered before it, the longer secret whole, and no
 ;; registration is lost.
@@ -64,20 +89,36 @@
           thrown (at-once
                   (fn [n]
                     (if (< n (quot width 2))
-                      (try
-                        (dotimes [k ops] (clean-add (str "ADDED-SECRET-" round "-" n "-" k)))
-                        (finally (.countDown registering)))
+                      (register-secrets clean-add registering round n)
                       (loop []
                         (when (pos? (.getCount registering))
                           (let [got (clean text)]
                             (if (= masked got) (recur) (.add wrong got))))))))]
       (t/is-true (empty? thrown) (str "round " round " threw: " (pr-str thrown)))
       (t/is-true (.isEmpty wrong) (str "round " round " cleaned to: " (pr-str (vec wrong))))
-      (dotimes [n (quot width 2)]
-        (dotimes [k ops]
-          (let [added (str "ADDED-SECRET-" round "-" n "-" k)]
-            (t/is-eq (clean added) "[redacted]"
-                     (str "round " round ": " added " was registered but not masked"))))))))
+      (every-secret-masked clean round))))
+
+;; Requests on one client while secrets register on it: each request copies
+;; the client's options, the registry among them.
+(defn- requests-survive-registration []
+  (dotimes [round (quot rounds 4)]
+    (let [sdk (live-sdk)
+          root @(:root-ctx sdk)
+          clean (fn [v] ((core/uget root :clean) root v))
+          clean-add (fn [v] ((core/uget root :clean-add) root v))
+          registering (CountDownLatch. (quot width 2))
+          failed (ConcurrentLinkedQueue.)
+          thrown (at-once
+                  (fn [n]
+                    (if (< n (quot width 2))
+                      (register-secrets clean-add registering round n)
+                      (loop []
+                        (when (pos? (.getCount registering))
+                          (let [res (client/direct sdk (vs/jm "path" (str "p" n)))]
+                            (if (true? (vs/getprop res "ok")) (recur) (.add failed res))))))))]
+      (t/is-true (empty? thrown) (str "round " round " threw: " (pr-str thrown)))
+      (t/is-true (.isEmpty failed) (str "round " round ", a request failed: " (pr-str (vec failed))))
+      (every-secret-masked clean round))))
 
 (defn run [rec]
   (let [ran (atom 0)
@@ -90,4 +131,6 @@
                  resolutions-share-one-cached-operation)
     (t/run-check counting "concurrency-registration-keeps-every-secret-masked"
                  registration-keeps-every-secret-masked)
+    (t/run-check counting "concurrency-requests-survive-registration"
+                 requests-survive-registration)
     (println (str "concurrency: " @ran " check(s), " @failed " failed"))))
