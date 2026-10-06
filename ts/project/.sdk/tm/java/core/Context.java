@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 import JAVAPACKAGE.utility.struct.Struct;
@@ -151,7 +152,7 @@ public class Context {
       this.opmap = basectx.opmap;
     }
     if (this.opmap == null) {
-      this.opmap = new LinkedHashMap<>();
+      this.opmap = new ConcurrentHashMap<>();
     }
 
     // Data
@@ -260,8 +261,10 @@ public class Context {
 
     Operation op = new Operation(opdef);
 
-    this.opmap.put(cacheKey, op);
-    return op;
+    // Requests on other threads share this cache; every one of them gets
+    // the Operation stored first.
+    Operation stored = this.opmap.putIfAbsent(cacheKey, op);
+    return null == stored ? op : stored;
   }
 
   public SdkError makeError(String code, String msg) {

@@ -83,19 +83,20 @@ module ProjectNameUtilities
       out
     end
 
+    # Requests on other threads clean while one registers, so a registration
+    # publishes a new list and never changes a published one.
+    REGISTERING = Mutex.new
+
     # Register a secret value. Idempotent; shorter than `min` is not a secret
     # the SDK can mask without blanking ordinary text.
     def self.add(ctx, value)
       cfg = config(ctx)
       return unless value.is_a?(String) && value.length >= cfg["min"]
-      values = cfg["values"]
-      changed = false
-      forms(value).each do |form|
-        next if form.length < cfg["min"] || values.include?(form)
-        values << form
-        changed = true
+      REGISTERING.synchronize do
+        values = cfg["values"]
+        added = forms(value).reject { |form| form.length < cfg["min"] || values.include?(form) }
+        cfg["values"] = (values + added).sort_by { |v| -v.length } unless added.empty?
       end
-      values.sort_by! { |v| -v.length } if changed
       nil
     end
 

@@ -150,6 +150,9 @@ defmodule ProjectName.Context do
             S.jm(["entity", entname, "name", opname, "input", inpt, "points", points])
           )
 
+        # Racing processes may each build and store an Operation, and an entry
+        # lost to a concurrent write is rebuilt; an Operation is a read-only
+        # descriptor, so a duplicate is harmless.
         S.setprop(opmap, cache_key, op)
         op
     end

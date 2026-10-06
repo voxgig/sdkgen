@@ -204,22 +204,43 @@ defmodule ProjectName.Utility do
   def clean_add_impl(ctx, value) do
     cfg = clean_config(ctx)
     minlen = numof(S.getprop(cfg, "min"), 4)
-    values = S.getprop(cfg, "values")
 
-    if is_binary(value) and String.length(value) >= minlen and S.islist(values) do
-      have = list_values(values)
+    if is_binary(value) and String.length(value) >= minlen and S.islist(S.getprop(cfg, "values")) do
+      forms = Enum.filter(clean_forms(value), &(String.length(&1) >= minlen))
 
-      add =
-        clean_forms(value)
-        |> Enum.filter(fn f -> String.length(f) >= minlen and f not in have end)
+      # A registration reads the registry and writes a new one, so a request
+      # in another process registering at once would drop it; they take turns.
+      have = list_values(S.getprop(cfg, "values"))
 
-      # Longest first, so a value is never masked by a substring of itself.
-      if add != [] do
-        S.setprop(cfg, "values", S.jt(Enum.sort_by(have ++ add, &(-String.length(&1)))))
+      if Enum.any?(forms, &(&1 not in have)) do
+        registering(fn -> publish(cfg, forms) end)
       end
     end
 
     nil
+  end
+
+  # Retried after a millisecond rather than after global's back-off sleep,
+  # which grows to seconds; the lock is released if its holder dies.
+  defp registering(fun) do
+    case :global.trans({{__MODULE__, :clean_registry}, self()}, fun, [node()], 0) do
+      :aborted ->
+        Process.sleep(1)
+        registering(fun)
+
+      done ->
+        done
+    end
+  end
+
+  defp publish(cfg, forms) do
+    have = list_values(S.getprop(cfg, "values"))
+    add = Enum.reject(forms, &(&1 in have))
+
+    # Longest first, so a value is never masked by a substring of itself.
+    if add != [] do
+      S.setprop(cfg, "values", S.jt(Enum.sort_by(have ++ add, &(-String.length(&1)))))
+    end
   end
 
   defp mask_value(cfg, value) do

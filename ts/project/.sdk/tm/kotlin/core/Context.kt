@@ -1,5 +1,6 @@
 package KOTLINPACKAGE.core
 
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ThreadLocalRandom
 
 import KOTLINPACKAGE.utility.struct.Struct
@@ -143,7 +144,7 @@ class Context(ctxmap: MutableMap<String, Any?>?, basectx: Context?) {
       this.opmap = basectx.opmap
     }
     if (this.opmap == null) {
-      this.opmap = linkedMapOf()
+      this.opmap = ConcurrentHashMap()
     }
 
     // Data
@@ -237,8 +238,9 @@ class Context(ctxmap: MutableMap<String, Any?>?, basectx: Context?) {
 
     val op = Operation(opdef)
 
-    this.opmap!![cacheKey] = op
-    return op
+    // Requests on other threads share this cache; every one of them gets
+    // the Operation stored first.
+    return this.opmap!!.putIfAbsent(cacheKey, op) ?: op
   }
 
   fun makeError(code: String, msg: String): SdkError {

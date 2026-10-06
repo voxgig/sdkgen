@@ -1,7 +1,7 @@
 package SCALAPACKAGE.core
 
 import java.util.{ArrayList, LinkedHashMap, List => JList, Map => JMap}
-import java.util.concurrent.ThreadLocalRandom
+import java.util.concurrent.{ConcurrentHashMap, ThreadLocalRandom}
 import SCALAPACKAGE.utility.struct.Struct
 
 // Per-operation context threaded through the pipeline and feature hooks.
@@ -85,7 +85,7 @@ class Context(ctxmap: JMap[String, Object], basectx: Context) {
     // Opmap
     Helpers.getCtxProp(ctxmap, "opmap") match { case om: JMap[_, _] => opmap = om.asInstanceOf[JMap[String, Operation]]; case _ => }
     if (opmap == null && basectx != null) opmap = basectx.opmap
-    if (opmap == null) opmap = new LinkedHashMap[String, Operation]()
+    if (opmap == null) opmap = new ConcurrentHashMap[String, Operation]()
 
     // Data
     data = Helpers.toMapAny(Helpers.getCtxProp(ctxmap, "data"))
@@ -153,8 +153,10 @@ class Context(ctxmap: JMap[String, Object], basectx: Context) {
     opdef.put("points", points)
 
     val newop = new Operation(opdef)
-    opmap.put(cacheKey, newop)
-    newop
+    // Requests on other threads share this cache; every one of them gets
+    // the Operation stored first.
+    val stored = opmap.putIfAbsent(cacheKey, newop)
+    if (stored != null) stored else newop
   }
 
   def makeError(code: String, msg: String): SdkError = new SdkError(code, msg, this)

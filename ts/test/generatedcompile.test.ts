@@ -1,6 +1,6 @@
 
 import { test, describe, before, after } from 'node:test'
-import { ok, strictEqual, deepStrictEqual } from 'node:assert'
+import { ok, strictEqual, deepStrictEqual, throws } from 'node:assert'
 
 import Fs from 'node:fs'
 import Net from 'node:net'
@@ -225,10 +225,9 @@ function outcome(
   cmd: string, timeoutMs: number, out: string,
   status: number | null, signal: string | null, error?: Error, expired = false,
 ): Run {
-  const timedOut = expired || 'SIGKILL' === signal
-    || 'ETIMEDOUT' === (error as any)?.code
-
-  if (timedOut) {
+  // The run's own timeout is `expired` or node's ETIMEDOUT; a kill from
+  // outside, such as the OOM killer's, has the same signal and neither.
+  if (expired || 'ETIMEDOUT' === (error as any)?.code) {
     return {
       ok: false,
       out: cmd + ' did not finish within ' + Math.round(timeoutMs / 1000) +
@@ -241,7 +240,8 @@ function outcome(
   // A command that could not be LAUNCHED (ENOENT, EINVAL) has no output to
   // report, and says nothing about what it would have run: that is an
   // environment gap, which callers report as a skip rather than a failure.
-  if (null != error) {
+  // A process node killed for overflowing maxBuffer (ENOBUFS) did launch.
+  if (null != error && null == signal) {
     return {
       ok: false,
       out: '' === out.trim() ? String(error.message) : out,
@@ -250,7 +250,12 @@ function outcome(
     }
   }
 
-  return { ok: 0 === status, out, unlaunchable: false, timedOut: false }
+  // A process killed by a signal prints nothing about it itself.
+  const killed = null == signal ? ''
+    : '\n' + cmd + ' was killed by ' + signal +
+      (null == error ? '' : ' (' + error.message + ')')
+
+  return { ok: 0 === status, out: out + killed, unlaunchable: false, timedOut: false }
 }
 
 
@@ -485,6 +490,29 @@ function pick(
     target + ': expected one ' + tail + ', got ' + JSON.stringify(found))
   return out[found[0]]
 }
+
+
+describe('run', () => {
+
+  test('reports a kill from outside as that signal, not as a timeout',
+    { skip: 'win32' === process.platform && 'a kill from outside needs POSIX signals' }, () => {
+      // The child's own child kills it, as the OOM killer would.
+      const killer = 'require("node:child_process").spawn(process.execPath, ["-e", ' +
+        '"process.kill(" + process.pid + ", \'SIGKILL\')"], { stdio: "ignore" }); ' +
+        'setTimeout(() => {}, 60000)'
+      const ran = run(process.execPath, ['-e', killer], process.cwd(), undefined, 30 * 1000)
+      strictEqual(ran.timedOut, false, ran.out)
+      strictEqual(ran.ok, false, ran.out)
+      ok(ran.out.endsWith(process.execPath + ' was killed by SIGKILL'), ran.out)
+    })
+
+  test('reports its own timeout as a timeout', () => {
+    const ran = run(process.execPath, ['-e', 'setTimeout(() => {}, 60000)'], process.cwd(),
+      undefined, 1000)
+    strictEqual(ran.timedOut, true, ran.out)
+    ok(ran.out.startsWith(process.execPath + ' did not finish within 1s on this machine'), ran.out)
+  })
+})
 
 
 describe('runWatched classifies a run as run() does', () => {
@@ -5683,6 +5711,710 @@ describe('a templated server URL is resolved by the generated SDK', () => {
         }
       })
   }
+})
+
+
+type Command = { bin: string, args: string[], env?: NodeJS.ProcessEnv }
+
+
+// Every request on one client resolves its operation through the cache its
+// root context shares, and registers, cleans and copies the client's one
+// secret registry. The suite each of these SDKs ships races requests on one
+// client: every racer gets the one cached Operation, and every registered
+// secret stays masked; go and cpp run it under a race detector where they can.
+type ConcurrencyLane = {
+  target: string,
+  runner: string,
+  needs: string,
+  // What the suite races, when it is not both the cache and the registry.
+  shares?: string,
+  // Model source generated beside the fixture's.
+  extra?: string,
+  prepare?: (sdkroot: string) => string | null,
+  command: () => Command | null,
+  // Builds and runs the suite with the command's toolchain, naming the build.
+  exec?: (sdkroot: string, cmd: Command) => SuiteRun,
+  // Exit zero is not enough: a filter that matches nothing passes in every one
+  // of these frameworks.
+  ran: RegExp[],
+  report?: (sdkroot: string) => string,
+  // A failure that names a missing toolchain capability rather than the SDK.
+  unsupported?: RegExp,
+  // The first line of a race report, where a failure's message starts.
+  race?: RegExp,
+}
+
+type SuiteRun = { build?: 'tsan' | 'race' | 'plain', why?: string, ran: Run }
+
+// Room for a report's access, location, mutex and thread-creation stacks.
+const RACE_REPORT_LINES = 200
+
+
+// A failed run's first race report, which its tail can miss, else that tail.
+function laneFailure(lane: ConcurrencyLane, out: string): string {
+  const race = lane.race
+  const lines = out.split(/\r?\n/)
+  const at = null == race ? -1 : lines.findIndex((line) => race.test(line))
+  return at < 0 ? tail(out, 60) : lines.slice(at, at + RACE_REPORT_LINES).join('\n')
+}
+
+
+// The lane's suite, prepared and then run through its exec where it has one.
+function laneSuite(lane: ConcurrencyLane, sdkroot: string, cmd: Command): SuiteRun {
+  const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+  ok(null == notready, lane.target + ': ' + notready)
+  return null == lane.exec ? { ran: run(cmd.bin, cmd.args, sdkroot, cmd.env) }
+    : lane.exec(sdkroot, cmd)
+}
+
+
+// Why a run says nothing about the SDK, or null where it passed; a failed run
+// throws.
+function laneVerdict(lane: ConcurrencyLane, ran: Run): string | null {
+  if (ran.unlaunchable) {
+    return lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3)
+  }
+
+  const gap = [...UNUSABLE, ...(null == lane.unsupported ? [] : [lane.unsupported])]
+    .find((re) => re.test(ran.out))
+  if (null != gap && !ran.ok) {
+    return lane.target + ': toolchain present but not usable (' +
+      gap.source + '):\n' + tail(ran.out)
+  }
+
+  ok(ran.ok, 'the concurrency test FAILED against the generated ' + lane.target +
+    ' SDK:\n' + laneFailure(lane, ran.out))
+  return null
+}
+
+// ThreadSanitizer reports an unordered read and write wherever they fall in a
+// run, where a plain build crashes only if freed memory is reused in time.
+const CPP_TSAN_FLAGS = '-std=c++17 -O1 -g -pthread -fsanitize=thread'
+
+// ThreadSanitizer needs one unordered pair where a plain build must lose a
+// race, so only its run takes fewer rounds.
+const CPP_ROUNDS_ENV = 'DEMO_TEST_CONCURRENCY_ROUNDS'
+const CPP_TSAN_ROUNDS = '40'
+
+const CPP_CONCURRENCY_TIMEOUT_MS = 10 * 60 * 1000
+
+// Every thread that builds a std::regex fills libstdc++'s narrow cache with
+// the same bytes.
+const CPP_TSAN_SUPPRESSIONS = 'race:std::ctype<char>::narrow\n'
+
+// A compiler or linker that has no ThreadSanitizer, or no runtime for it.
+const CPP_NO_TSAN =
+  /libtsan|libclang_rt\.tsan|cannot find [^\n]*tsan|(unrecognized|unsupported)[^\n]*-fsanitize=thread|-fsanitize=thread[^\n]*not supported/
+
+// A report on the code carries the pid; a runtime that cannot start here
+// names itself instead.
+const CPP_TSAN_REPORT = /WARNING: ThreadSanitizer: [^\n]*\(pid=\d+\)/
+const CPP_TSAN_RUNTIME = /FATAL: ThreadSanitizer|ThreadSanitizer: CHECK failed/
+
+
+// The line naming why a ThreadSanitizer run says nothing about the SDK, or
+// null where its verdict stands.
+function cppTsanUnusable(ran: Run): string | null {
+  if (ran.ok || ran.timedOut || CPP_TSAN_REPORT.test(ran.out)) return null
+  return ran.out.split(/\r?\n/).find((line) => CPP_TSAN_RUNTIME.test(line))?.trim() ?? null
+}
+
+
+// The suite under ThreadSanitizer, else built and run plainly where the
+// compiler has none or its runtime cannot start here.
+function cppConcurrency(sdkroot: string, make: Command): SuiteRun {
+  const target = 'test/concurrency_test.out'
+  const bin = Path.join('test', 'concurrency_test.out')
+  // glibc writes a heap-corruption abort to the terminal unless told otherwise.
+  const env = { ...process.env, LIBC_FATAL_STDERR_: '1' }
+  Fs.writeFileSync(Path.join(sdkroot, 'tsan.supp'), CPP_TSAN_SUPPRESSIONS)
+
+  const tsan = run(make.bin, [...make.args, 'CXXFLAGS=' + CPP_TSAN_FLAGS, target], sdkroot,
+    make.env, CPP_CONCURRENCY_TIMEOUT_MS)
+  let why = 'the compiler has no ThreadSanitizer'
+  if (tsan.ok) {
+    const ran = run(bin, [], sdkroot, {
+      ...env,
+      TSAN_OPTIONS: 'halt_on_error=1 suppressions=tsan.supp',
+      [CPP_ROUNDS_ENV]: CPP_TSAN_ROUNDS,
+    }, CPP_CONCURRENCY_TIMEOUT_MS)
+    const unusable = cppTsanUnusable(ran)
+    if (null == unusable) return { build: 'tsan', ran }
+    why = unusable
+  }
+  else {
+    ok(CPP_NO_TSAN.test(tsan.out),
+      'cpp: the generated test does not build under ThreadSanitizer:\n' + tail(tsan.out))
+  }
+
+  // make would take the sanitized binary as current: flags are no prerequisite.
+  Fs.rmSync(Path.join(sdkroot, bin), { force: true })
+  const plain = run(make.bin, [...make.args, target], sdkroot, make.env, CPP_CONCURRENCY_TIMEOUT_MS)
+  ok(plain.ok, 'cpp: the generated test does not build:\n' + tail(plain.out))
+  return { build: 'plain', why, ran: run(bin, [], sdkroot, env, CPP_CONCURRENCY_TIMEOUT_MS) }
+}
+
+const GO_CONCURRENCY_ARGS = ['-count=1', '-run', '^TestConcurrent', '-v', './test/']
+
+// What the race detector needs that a go toolchain can lack: cgo, a C
+// compiler, a supported platform.
+const GO_NO_RACE = /-race requires cgo|cgo: C compiler .* not found|-race is not supported/
+
+// The race detector's report, or the fatal error a plain build still stops on
+// for a map written concurrently.
+const GO_RACE_REPORT = /^(WARNING: DATA RACE|fatal error: )/
+
+
+// The suite under the race detector, else run plainly where go cannot build it.
+function goConcurrency(sdkroot: string, go: Command): SuiteRun {
+  const race = run(go.bin, ['test', '-race', ...go.args], sdkroot, go.env)
+  const why = race.ok ? undefined
+    : race.out.split(/\r?\n/).find((line) => GO_NO_RACE.test(line))?.trim()
+  return null == why ? { build: 'race', ran: race }
+    : { build: 'plain', why, ran: run(go.bin, ['test', ...go.args], sdkroot, go.env) }
+}
+
+// HTTP Basic, whose prepareAuth registers the encoded pair on every request.
+const BASIC_AUTH_MODEL = `
+main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'header', name: 'Authorization' }
+`
+
+const CONCURRENCY_LANES: ConcurrencyLane[] = [
+  {
+    target: 'csharp',
+    runner: 'test/ConcurrencyTest.cs',
+    needs: 'dotnet',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('dotnet')!, ['build', '--nologo', '-v', 'quiet', 'test'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated csharp test project does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const dotnet = toolchain('dotnet')
+      return null == dotnet ? null : {
+        bin: dotnet,
+        args: ['test', '--nologo', '--no-build', '-v', 'quiet',
+          '--logger', 'console;verbosity=normal',
+          '--filter', 'FullyQualifiedName~ConcurrencyTest', 'test'],
+      }
+    },
+    ran: [
+      /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentFirstRequestsSucceed\b/m,
+      /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentResolutionsShareOneCachedOperation\b/m,
+      /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentRegistrationKeepsEverySecretMasked\b/m,
+      /^\s*Passed \S*\.ConcurrencyTest\.ConcurrentRequestsSurviveRegistration\b/m,
+      /^\s*Total tests: 4\b/m,
+    ],
+  },
+  {
+    target: 'go',
+    runner: 'test/concurrency_test.go',
+    needs: 'go',
+    command: () => {
+      const go = toolchain('go')
+      return null == go ? null : { bin: go, args: GO_CONCURRENCY_ARGS }
+    },
+    exec: goConcurrency,
+    ran: [
+      /^--- PASS: TestConcurrentFirstRequests /m,
+      /^--- PASS: TestConcurrentOperationResolution /m,
+      /^--- PASS: TestConcurrentCleanRegistry /m,
+      /^--- PASS: TestConcurrentRequestsWhileRegistering /m,
+    ],
+    race: GO_RACE_REPORT,
+  },
+  {
+    target: 'java',
+    runner: 'test/ConcurrencyTest.java',
+    needs: 'java and maven',
+    command: () => {
+      const mvn = toolchain('mvn')
+      if (null == mvn || null == toolchain('java')) return null
+      return {
+        bin: mvn,
+        args: ['-B', 'test', '-Dtest=ConcurrencyTest', '-DfailIfNoSpecifiedTests=false'],
+      }
+    },
+    ran: [/Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: .* in [\w.]*\.ConcurrencyTest$/m],
+  },
+  {
+    target: 'kotlin',
+    runner: 'test/ConcurrencyTest.kt',
+    needs: 'gradle (which resolves the Kotlin plugin from the network)',
+    command: () => {
+      // gradle hangs on windows rather than failing, as the clean lane says.
+      if ('win32' === process.platform) return null
+      const gradle = toolchain('gradle')
+      return null == gradle ? null
+        : { bin: gradle, args: ['--console=plain', 'test', '--tests', '*ConcurrencyTest*'] }
+    },
+    ran: [/<testsuite name="[^"]*ConcurrencyTest" tests="4" skipped="0" failures="0" errors="0"/],
+    report: (sdkroot) => {
+      const dir = Path.join(sdkroot, 'build', 'test-results', 'test')
+      return Fs.existsSync(dir)
+        ? Fs.readdirSync(dir).filter((f) => f.endsWith('ConcurrencyTest.xml'))
+          .map((f) => Fs.readFileSync(Path.join(dir, f), 'utf8')).join('\n')
+        : ''
+    },
+  },
+  {
+    target: 'scala',
+    runner: 'sdktest/ConcurrencyTest.scala',
+    needs: 'scala-cli (which resolves the Scala compiler from the network)',
+    command: () => {
+      const scalacli = toolchain('scala-cli')
+      return null == scalacli ? null
+        : { bin: scalacli, args: ['run', '.', '--main-class', 'SdkConcurrencyTestMain'] }
+    },
+    ran: [/CONCURRENCY PASS 4 {2}FAIL 0/],
+  },
+  {
+    target: 'cpp',
+    runner: 'test/concurrency_test.cpp',
+    needs: 'make and a C++ compiler',
+    extra: BASIC_AUTH_MODEL,
+    command: () => {
+      const make = toolchain('make')
+      const cxx = cleanCxx()
+      return null == make || null == cxx ? null : { bin: make, args: ['CXX=' + cxx] }
+    },
+    exec: (sdkroot, make) => {
+      ok(Fs.readFileSync(Path.join(sdkroot, 'test', 'concurrency_test.cpp'), 'utf8')
+        .includes('"' + CPP_ROUNDS_ENV + '"'), 'cpp: the generated test reads no ' + CPP_ROUNDS_ENV)
+      return cppConcurrency(sdkroot, make)
+    },
+    ran: [
+      /concurrency_test: 5 tests, 5 checks, 0 failures/,
+      /concurrency_test: ([1-9]\d*) of \1 requests carried the Basic pair/,
+    ],
+    race: CPP_TSAN_REPORT,
+  },
+  {
+    target: 'py',
+    runner: 'test/test_concurrency.py',
+    needs: 'python3 with pytest',
+    command: () => pytest(['test/test_concurrency.py', '-v', '-p', 'no:cacheprovider']),
+    ran: [
+      /::test_concurrent_resolutions_share_one_cached_operation PASSED/,
+      /::test_concurrent_registration_keeps_every_secret_masked PASSED/,
+      /::test_concurrent_requests_survive_registration PASSED/,
+    ],
+  },
+  {
+    target: 'rb',
+    runner: 'test/concurrency_test.rb',
+    needs: 'ruby with minitest',
+    command: () => minitest(['test/concurrency_test.rb', '-v']),
+    ran: [
+      /ConcurrencyTest#test_concurrent_resolutions_share_one_cached_operation = [\d.]+ s = \./,
+      /ConcurrencyTest#test_concurrent_registration_keeps_every_secret_masked = [\d.]+ s = \./,
+      /ConcurrencyTest#test_concurrent_requests_survive_registration = [\d.]+ s = \./,
+      /^3 runs, \d+ assertions, 0 failures, 0 errors, 0 skips$/m,
+    ],
+  },
+  {
+    target: 'clojure',
+    runner: 'test/sdk/test/concurrency.clj',
+    needs: 'the clojure CLI (`clojure`)',
+    // The suite runs within the SDK's own runner; --sdk-only skips the corpus.
+    command: () => {
+      const clj = toolchain('clojure')
+      return null == clj ? null : { bin: clj, args: ['-M:test', '--sdk-only'] }
+    },
+    ran: [/^concurrency: 3 check\(s\), 0 failed$/m],
+  },
+  {
+    target: 'elixir',
+    runner: 'test/concurrency_test.exs',
+    needs: 'elixir + mix',
+    shares: 'its secret registry',
+    command: () => {
+      const mix = toolchain('mix')
+      return null == mix || null == toolchain('elixir') ? null
+        : {
+          bin: mix,
+          args: ['test', '--no-color', '--trace', Path.join('test', 'concurrency_test.exs')],
+          env: { ...process.env, MIX_ENV: 'test' },
+        }
+    },
+    ran: [
+      /\* test concurrent registration keeps every secret masked \(/,
+      /\* test concurrent requests survive registration \(/,
+      /^2 tests, 0 failures$/m,
+    ],
+  },
+  {
+    target: 'swift',
+    runner: 'Tests/DemoSdkTests/ConcurrencyTest.swift',
+    needs: 'swift',
+    shares: 'its secret registry',
+    prepare: (sdkroot) => {
+      const built = run(toolchain('swift')!, ['build', '--build-tests', '-j', '2'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated swift package does not build:\n' + tail(built.out)
+    },
+    command: () => {
+      const swift = toolchain('swift')
+      return null == swift ? null
+        : { bin: swift, args: ['test', '-j', '2', '--skip-build', '--filter', 'ConcurrencyTest'] }
+    },
+    ran: [/Executed 3 tests, with 0 failures/],
+  },
+  {
+    target: 'ocaml',
+    runner: 'test/concurrency_test.ml',
+    needs: 'ocamlc with its threads library, make and a C compiler',
+    command: () => {
+      const ocamlc = toolchain('ocamlc')
+      const make = toolchain('make')
+      const cc = toolchain('cc') || toolchain('gcc')
+      return null == ocamlc || null == make || null == cc ? null
+        : { bin: make, args: ['CC=' + cc, 'OCAMLC=' + ocamlc, 'test-concurrency'] }
+    },
+    ran: [/concurrency_test: 3 passed, 0 failed/],
+    unsupported: /Cannot find file .*threads\.cma/,
+  },
+]
+
+
+describe('concurrent requests on one client share its state', () => {
+
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-concurrency-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  for (const lane of CONCURRENCY_LANES) {
+    test(lane.target + ': concurrent requests on one client share ' +
+      (lane.shares ?? 'its operation cache and secret registry'),
+      async (t) => {
+        const sdkroot = Path.join(tmp, lane.target)
+        const files = await generateTo(lane.target, sdkroot, lane.extra)
+
+        ok(null != files[lane.runner],
+          'the concurrency test was not generated into the SDK: expected ' + lane.runner)
+
+        const cmd = lane.command()
+        if (null == cmd) {
+          return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+        }
+
+        const suite = laneSuite(lane, sdkroot, cmd)
+        if (null != suite.build) {
+          t.diagnostic(lane.target + ': ran the ' + suite.build + ' build' +
+            (null == suite.why ? '' : ': ' + suite.why))
+        }
+
+        const skip = laneVerdict(lane, suite.ran)
+        if (null != skip) {
+          return t.skip(skip)
+        }
+
+        const seen = suite.ran.out + (null == lane.report ? '' : '\n' + lane.report(sdkroot))
+        for (const line of lane.ran) {
+          ok(line.test(seen), lane.target + ': the concurrency test did not report (' +
+            line.source + '):\n' + tail(seen))
+        }
+      })
+  }
+})
+
+
+// The lane's command as the loop takes it, where the search path holds only
+// the stand-ins in `dir`.
+function standInCommand(lane: ConcurrencyLane, dir: string): Command {
+  const env = process.env
+  process.env = { PATH: dir }
+  try {
+    const cmd = lane.command()
+    ok(null != cmd, lane.target + ': the lane found no toolchain among the stand-ins in ' + dir)
+    return cmd
+  }
+  finally {
+    process.env = env
+  }
+}
+
+
+// What the loop fails with on a run that failed with `out`.
+function failureShown(lane: ConcurrencyLane, out: string): string {
+  let skip: string | null = null
+  try {
+    skip = laneVerdict(lane, { ok: false, out, unlaunchable: false, timedOut: false })
+  }
+  catch (err) {
+    return (err as Error).message
+  }
+  throw new Error(lane.target + ': the lane skipped a failed run: ' + skip)
+}
+
+
+describe('the cpp concurrency lane', () => {
+
+  const MAPPING = 'FATAL: ThreadSanitizer: unexpected memory mapping 0x5d2f4e5c1000-0x5d2f4e5c2000'
+  const CHECK = 'ThreadSanitizer: CHECK failed: sanitizer_allocator_primary64.h:131 ' +
+    '"((kSpaceBeg)) == ((address_range.Init(TotalSpaceSize, PrimaryAllocatorName, kSpaceBeg)))" ' +
+    '(0x720000000000, 0xfffffffffffffff4) (tid=29873)'
+  const RACE = 'WARNING: ThreadSanitizer: data race (pid=8672)'
+  const ASLR = 'WARNING: ThreadSanitizer: memory layout is incompatible, possibly due to ' +
+    'high-entropy ASLR.'
+  const PASSED = 'concurrency_test: 5 tests, 5 checks, 0 failures'
+  const FAILED = 'the concurrency test FAILED against the generated cpp SDK:'
+  const failed = (out: string): Run => ({ ok: false, out, unlaunchable: false, timedOut: false })
+  const cpp = CONCURRENCY_LANES.find((lane) => 'cpp' === lane.target)!
+  let tmp = ''
+
+  before(() => { tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cpp-lane-')) })
+  after(() => Fs.rmSync(tmp, { recursive: true, force: true }))
+
+
+  test('sets a ThreadSanitizer run aside only where its runtime names the platform', () => {
+    strictEqual(cppTsanUnusable(failed(MAPPING + '\n')), MAPPING)
+    strictEqual(cppTsanUnusable(failed(CHECK + '\ntest/concurrency_test.out was killed by SIGSEGV')),
+      CHECK)
+    strictEqual(cppTsanUnusable(failed(ASLR + '\n' + MAPPING)), MAPPING)
+
+    strictEqual(cppTsanUnusable(failed(RACE + '\n  Write of size 8 by thread T76:')), null)
+    strictEqual(cppTsanUnusable(failed(RACE + '\n' + CHECK)), null)
+    strictEqual(cppTsanUnusable(failed('  FAIL [x]: round 0 threw: boom')), null)
+    strictEqual(cppTsanUnusable({ ...failed(MAPPING), timedOut: true }), null)
+    strictEqual(cppTsanUnusable({ ...failed(PASSED), ok: true }), null)
+  })
+
+
+  // Stand-ins for make write a shell script in place of the binary:
+  // `sanitized` for a ThreadSanitizer build once `onTsan` has run, and a
+  // passing one otherwise. The lane's own command and exec run them.
+  test('runs the plain build where the sanitized one cannot start, and not on a report', (t) => {
+    if ('win32' === process.platform) {
+      return t.skip('the stand-ins are POSIX shell scripts')
+    }
+    const plain = 'echo "rounds=${' + CPP_ROUNDS_ENV + ':-200}"; echo "' + PASSED + '"'
+    const standIn = (name: string, sanitized: string, onTsan = ''): SuiteRun => {
+      const root = Path.join(tmp, name)
+      const bin = Path.join(tmp, name + '-bin')
+      Fs.mkdirSync(Path.join(root, 'test'), { recursive: true })
+      Fs.mkdirSync(bin)
+      Fs.writeFileSync(Path.join(root, 'test', 'concurrency_test.cpp'), '"' + CPP_ROUNDS_ENV + '"\n')
+      Fs.writeFileSync(Path.join(bin, 'c++'), '', { mode: 0o755 })
+      Fs.writeFileSync(Path.join(bin, 'make'), [
+        '#!/bin/sh',
+        'out=test/concurrency_test.out',
+        'case "$*" in',
+        '  *-fsanitize=thread*) ' + onTsan + ' body=\'' + sanitized + '\' ;;',
+        '  *) body=\'' + plain + '\' ;;',
+        'esac',
+        '[ -e "$out" ] && exit 0',
+        'mkdir -p test',
+        'printf \'#!/bin/sh\\n%s\\n\' "$body" > "$out"',
+        'chmod +x "$out"',
+        '',
+      ].join('\n'), { mode: 0o755 })
+      return laneSuite(cpp, root, standInCommand(cpp, bin))
+    }
+
+    const unmapped = standIn('unmapped', 'echo "' + MAPPING + '" >&2; exit 66')
+    deepStrictEqual([unmapped.build, unmapped.why, unmapped.ran.ok], ['plain', MAPPING, true],
+      unmapped.ran.out)
+    ok(unmapped.ran.out.includes('rounds=200\n' + PASSED), unmapped.ran.out)
+
+    const unlinked = [
+      '/usr/bin/ld: cannot find -ltsan',
+      '/usr/bin/ld: cannot find /usr/lib/llvm-18/lib/clang/18/lib/linux/libclang_rt.tsan-x86_64.a: ' +
+        'No such file or directory',
+    ]
+    unlinked.forEach((line, i) => {
+      const bare = standIn('bare' + i, 'exit 0', 'echo "' + line + '" >&2; exit 2;')
+      deepStrictEqual([bare.build, bare.ran.ok], ['plain', true], line + '\n' + bare.ran.out)
+    })
+
+    const sound = standIn('sound', 'echo "rounds=$' + CPP_ROUNDS_ENV + '"; echo "' + PASSED + '"')
+    deepStrictEqual([sound.build, sound.ran.ok], ['tsan', true], sound.ran.out)
+    ok(sound.ran.out.includes('rounds=' + CPP_TSAN_ROUNDS + '\n'), sound.ran.out)
+
+    const raced = standIn('raced', 'echo "' + RACE + '" >&2; exit 66')
+    deepStrictEqual([raced.build, raced.ran.ok], ['tsan', false], raced.ran.out)
+
+    const broken = [
+      'error: expected primary-expression',
+      '/usr/bin/ld: cannot find -lcurl: No such file or directory',
+    ]
+    broken.forEach((line, i) => throws(() => standIn('broken' + i, 'exit 0',
+      'echo "' + line + '" >&2; exit 2;'), /does not build under ThreadSanitizer/, line))
+
+    strictEqual(cpp.unsupported, undefined, 'cpp: a run the fallback covers is not a skip')
+  })
+
+
+  // The suite's report on optionsMap racing cleanAddCfg, each stack at its
+  // recorded size and each frame elided but the SDK's.
+  test('shows a failure from its ThreadSanitizer report, which the tail misses', () => {
+    const frames = (size: number, named: Record<number, string> = {}) =>
+      Array.from({ length: size }, (_, i) => '    #' + i + ' ' + (named[i] ?? '<elided>'))
+    const report = [
+      'WARNING: ThreadSanitizer: data race (pid=8978)',
+      '  Write of size 8 at 0x725400002130 by thread T724 (mutexes: write M0):',
+      ...frames(31, { 16: 'sdk::util::cleanAddCfg(voxgig::structlib::Value const&, ' +
+        'voxgig::structlib::Value const&) test/../core/../utility/pipeline.hpp:220 ' +
+        '(concurrency_test.out+0x8c0a1)' }),
+      '',
+      '  Previous read of size 8 at 0x725400002130 by thread T727:',
+      ...frames(28,
+        { 11: 'sdk::SdkClient::optionsMap() test/../core/types.hpp:964 (concurrency_test.out+0xa4e2c)' }),
+      '',
+      '  Location is heap block of size 576 at 0x725400002080 allocated by main thread:',
+      ...frames(26),
+      '',
+      '  Mutex M0 (0x556af2f7b820) created at:',
+      ...frames(12),
+      '',
+      '  Thread T724 (tid=9703, running) created by main thread at:',
+      ...frames(3),
+      '',
+      '  Thread T727 (tid=9706, running) created by main thread at:',
+      ...frames(3),
+      '',
+      'SUMMARY: ThreadSanitizer: data race /usr/include/c++/13/bits/move.h:199 in std::swap',
+      '==================',
+    ]
+    const out = ['==================', ...report].join('\n')
+    ok(!tail(out, 60).includes(report[0]), 'the recorded report fits within the tail')
+
+    strictEqual(failureShown(cpp, out), [FAILED, ...report].join('\n'))
+
+    const endless = [report[0], ...frames(3 * RACE_REPORT_LINES)]
+    strictEqual(failureShown(cpp, endless.join('\n')),
+      [FAILED, ...endless.slice(0, RACE_REPORT_LINES)].join('\n'))
+
+    const unreported = [...frames(70), '  FAIL [x]: round 0 threw: boom'].join('\n')
+    strictEqual(failureShown(cpp, unreported), FAILED + '\n' + tail(unreported, 60))
+  })
+})
+
+
+describe('the go concurrency lane', () => {
+
+  const REFUSALS = [
+    'go: -race requires cgo; enable cgo by setting CGO_ENABLED=1',
+    'cgo: C compiler "/nonexistent-cc" not found: exec: "/nonexistent-cc": ' +
+      'stat /nonexistent-cc: no such file or directory',
+    '-race is not supported on linux/386',
+  ]
+  const PASSED = '--- PASS: TestConcurrentFirstRequests (0.01s)'
+  const FAILED = 'the concurrency test FAILED against the generated go SDK:'
+  const go = CONCURRENCY_LANES.find((lane) => 'go' === lane.target)!
+  let tmp = ''
+
+  before(() => { tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-go-lane-')) })
+  after(() => Fs.rmSync(tmp, { recursive: true, force: true }))
+
+
+  // A stand-in for go prints its arguments, runs `onRace` when given -race,
+  // and passes. The lane's own command and exec run it.
+  test('runs the suite without -race only where go cannot build the race detector', (t) => {
+    if ('win32' === process.platform) {
+      return t.skip('the stand-ins are POSIX shell scripts')
+    }
+    const standIn = (name: string, onRace: string): SuiteRun => {
+      const bin = Path.join(tmp, name)
+      Fs.mkdirSync(bin)
+      Fs.writeFileSync(Path.join(bin, 'go'), [
+        '#!/bin/sh',
+        'echo "args: $*"',
+        'case " $* " in',
+        '  *" -race "*) ' + onRace + ' ;;',
+        'esac',
+        'echo "' + PASSED + '"',
+        '',
+      ].join('\n'), { mode: 0o755 })
+      return laneSuite(go, tmp, standInCommand(go, bin))
+    }
+
+    REFUSALS.forEach((refusal, i) => {
+      const plain = standIn('refused' + i, 'printf \'%s\\n\' \'' + refusal + '\' >&2; exit 2')
+      deepStrictEqual([plain.build, plain.why, plain.ran.ok], ['plain', refusal, true], plain.ran.out)
+      ok(plain.ran.out.startsWith('args: test ' + GO_CONCURRENCY_ARGS.join(' ') + '\n' + PASSED),
+        plain.ran.out)
+    })
+
+    const sound = standIn('sound', ':')
+    deepStrictEqual([sound.build, sound.ran.ok], ['race', true], sound.ran.out)
+    ok(sound.ran.out.startsWith('args: test -race ' + GO_CONCURRENCY_ARGS.join(' ')), sound.ran.out)
+
+    const raced = standIn('raced', 'echo "WARNING: DATA RACE"; exit 1')
+    deepStrictEqual([raced.build, raced.ran.ok], ['race', false], raced.ran.out)
+
+    strictEqual(go.unsupported, undefined, 'go: a run the fallback covers is not a skip')
+  })
+
+
+  test('runs the suite plainly where a real go has cgo turned off', (t) => {
+    const cmd = go.command()
+    if (null == cmd) {
+      return t.skip('no go toolchain here')
+    }
+    if ('darwin' === process.platform) {
+      return t.skip('go builds -race on macOS without cgo')
+    }
+    const root = Path.join(tmp, 'real')
+    Fs.mkdirSync(Path.join(root, 'test'), { recursive: true })
+    Fs.writeFileSync(Path.join(root, 'go.mod'), 'module probe\n\ngo 1.18\n')
+    Fs.writeFileSync(Path.join(root, 'test', 'probe_test.go'),
+      'package probe\n\nimport "testing"\n\nfunc TestConcurrentProbe(t *testing.T) {}\n')
+
+    const suite = laneSuite(go, root,
+      { ...cmd, env: { ...(cmd.env ?? process.env), CGO_ENABLED: '0' } })
+    deepStrictEqual([suite.build, suite.why, suite.ran.ok], ['plain', REFUSALS[0], true],
+      suite.ran.out)
+    ok(/^--- PASS: TestConcurrentProbe /m.test(suite.ran.out), suite.ran.out)
+  })
+
+
+  // The suite's output with the operation cache read unlocked, each stack at
+  // its recorded size and each frame elided but the SDK's.
+  test('shows a failure from its race report or fatal error, which the tail misses', () => {
+    const frames = (size: number, named: Record<number, string> = {}) => Array.from({ length: size },
+      (_, i) => ['  ' + (named[i] ?? 'elided()'), '      /src/elided.go:1 +0x0']).flat()
+    const resolveOp = 'github.com/voxgig-sdk/demo-sdk/go/core.(*Context).resolveOp()'
+    const dump = Array.from({ length: 12 },
+      (_, i) => ['', 'goroutine ' + (1600 + i) + ' [runnable]:', ...frames(3)]).flat()
+    const head = (text: string, lines: number) => text.split('\n').slice(0, lines).join('\n')
+
+    const report = [
+      'WARNING: DATA RACE',
+      'Read at 0x00c000244750 by goroutine 18:',
+      ...frames(10, { 1: resolveOp }),
+      '',
+      'Previous write at 0x00c000244750 by goroutine 20:',
+      ...frames(9, { 1: resolveOp }),
+      '',
+      'Goroutine 18 (running) created at:',
+      ...frames(4),
+      '',
+      'Goroutine 20 (finished) created at:',
+      ...frames(4),
+      '==================',
+    ]
+    const ending = ['FAIL\tgithub.com/voxgig-sdk/demo-sdk/go/test\t0.437s', 'FAIL']
+    const raced = ['=== RUN   TestConcurrentFirstRequests', '==================', ...report,
+      'fatal error: concurrent map read and map write', ...dump, ...ending].join('\n')
+    ok(!tail(raced, 60).includes(report[0]), 'the recorded report fits within the tail')
+    strictEqual(head(failureShown(go, raced), report.length + 2),
+      [FAILED, ...report, 'fatal error: concurrent map read and map write'].join('\n'))
+
+    const fatal = ['fatal error: concurrent map read and map write', '',
+      'goroutine 1628 [running]:', ...frames(7, { 1: resolveOp })]
+    const plain = ['=== RUN   TestConcurrentFirstRequests',
+      '--- PASS: TestConcurrentFirstRequests (0.64s)',
+      '=== RUN   TestConcurrentOperationResolution', ...fatal, ...dump, ...ending].join('\n')
+    ok(!tail(plain, 60).includes(fatal[0]), 'the recorded fatal error fits within the tail')
+    strictEqual(head(failureShown(go, plain), fatal.length + 1), [FAILED, ...fatal].join('\n'))
+  })
 })
 
 

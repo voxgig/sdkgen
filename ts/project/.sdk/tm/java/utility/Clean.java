@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -37,8 +38,8 @@ import JAVAPACKAGE.utility.struct.Struct;
 //
 // The configuration is the derived block MakeOptions builds
 // (`options.__derived__.clean`): active, keys, values, mask, hint, min. It
-// is a plain map so the registry stays MUTABLE after construction - the
-// auth step and the features register what they handle later.
+// is a map so the registry can grow after construction - the auth step and
+// the features register what they handle later.
 @SuppressWarnings({"unchecked"})
 final class Clean {
 
@@ -67,7 +68,9 @@ final class Clean {
 
   static Map<String, Object> makeCleanConfig(Map<String, Object> cleanopts) {
     Map<String, Object> opts = cleanopts == null ? new LinkedHashMap<>() : cleanopts;
-    Map<String, Object> cfg = new LinkedHashMap<>();
+    // Read without the monitor add() holds, by a clean or a request copying
+    // the options: each read sees the list the last registration put.
+    Map<String, Object> cfg = new ConcurrentHashMap<>();
     cfg.put("active", !Boolean.FALSE.equals(opts.get("active")));
     cfg.put("keys", splitkeys(opts.get("keys")));
     cfg.put("values", new ArrayList<String>());
@@ -148,10 +151,8 @@ final class Clean {
   }
 
   private static List<String> values(Map<String, Object> cfg) {
-    if (!(cfg.get("values") instanceof List)) {
-      cfg.put("values", new ArrayList<String>());
-    }
-    return (List<String>) cfg.get("values");
+    Object values = cfg.get("values");
+    return values instanceof List ? (List<String>) values : List.of();
   }
 
   private static String mask(Map<String, Object> cfg) {
@@ -193,21 +194,25 @@ final class Clean {
   }
 
   // Register a secret value. Idempotent; shorter than `min` is not a secret
-  // the SDK can mask without blanking ordinary text.
+  // the SDK can mask without blanking ordinary text. Requests on other
+  // threads clean while one registers, so a registration publishes a new
+  // list and never changes a published one.
   static void add(Map<String, Object> cfg, Object value) {
     if (!(value instanceof String) || ((String) value).length() < min(cfg)) {
       return;
     }
-    List<String> values = values(cfg);
-    boolean changed = false;
-    for (String form : forms((String) value)) {
-      if (form.length() >= min(cfg) && !values.contains(form)) {
-        values.add(form);
-        changed = true;
+    synchronized (cfg) {
+      List<String> values = new ArrayList<>(values(cfg));
+      int had = values.size();
+      for (String form : forms((String) value)) {
+        if (form.length() >= min(cfg) && !values.contains(form)) {
+          values.add(form);
+        }
       }
-    }
-    if (changed) {
-      values.sort((a, b) -> b.length() - a.length());
+      if (had < values.size()) {
+        values.sort((a, b) -> b.length() - a.length());
+        cfg.put("values", List.copyOf(values));
+      }
     }
   }
 

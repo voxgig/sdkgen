@@ -9,6 +9,8 @@
 
 #include <algorithm>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <cctype>
 #include <string>
 #include <vector>
@@ -66,7 +68,7 @@ inline CtxPtr makeContext(const CtxSpec& cs, CtxPtr basectx) {
 //
 // The configuration is the derived clean block makeOptions builds
 // (`options.__derived__.clean`): a plain map, so the registry list inside
-// it stays mutable after construction - features register later.
+// it can be replaced after construction - features register later.
 
 constexpr int CLEAN_MAXDEPTH = 32;
 
@@ -176,36 +178,51 @@ inline std::vector<std::string> cleanForms(const std::string& value) {
   return out;
 }
 
+inline Value cleanValues(const Value& cfg) {
+  std::shared_lock<std::shared_mutex> guard(cleanRegistryLock());
+  return getp(cfg, "values");
+}
+
+inline bool cleanKnown(const Value& values, const std::string& form) {
+  if (!values.is_list()) return false;
+  for (const auto& v : *values.as_list()) {
+    if (v.is_string() && v.as_string() == form) return true;
+  }
+  return false;
+}
+
 // Register a secret value. Idempotent; shorter than `min` is not a secret
-// the SDK can mask without blanking ordinary text.
+// the SDK can mask without blanking ordinary text. A registration publishes
+// a new list and never changes a published one.
 inline void cleanAddCfg(const Value& cfg, const Value& value) {
   if (!cfg.is_map() || !value.is_string()) return;
   size_t min = static_cast<size_t>(cleanCount(getp(cfg, "min"), 4));
   const std::string& raw = value.as_string();
   if (raw.size() < min) return;
-  Value values = getp(cfg, "values");
-  if (!values.is_list()) {
-    values = vlist();
-    map_put(cfg, "values", values);
-  }
-  auto& list = *values.as_list();
-  bool changed = false;
+  std::vector<std::string> forms;
   for (const auto& form : cleanForms(raw)) {
-    if (form.size() < min) continue;
-    bool known = false;
-    for (const auto& v : list) {
-      if (v.is_string() && v.as_string() == form) { known = true; break; }
-    }
-    if (!known) {
-      list.push_back(Value(form));
-      changed = true;
-    }
+    if (min <= form.size()) forms.push_back(form);
   }
-  if (changed) {
-    std::stable_sort(list.begin(), list.end(), [](const Value& a, const Value& b) {
-      return a.as_string().size() > b.as_string().size();
-    });
-  }
+  auto unknown = [&forms](const Value& values) {
+    std::vector<std::string> out;
+    for (const auto& form : forms) {
+      if (!cleanKnown(values, form)) out.push_back(form);
+    }
+    return out;
+  };
+  if (unknown(cleanValues(cfg)).empty()) return;
+  std::unique_lock<std::shared_mutex> guard(cleanRegistryLock());
+  Value values = getp(cfg, "values");
+  std::vector<std::string> added = unknown(values);
+  if (added.empty()) return;
+  Value next = vlist();
+  if (values.is_list()) *next.as_list() = *values.as_list();
+  auto& list = *next.as_list();
+  for (const auto& form : added) list.push_back(Value(form));
+  std::stable_sort(list.begin(), list.end(), [](const Value& a, const Value& b) {
+    return a.as_string().size() > b.as_string().size();
+  });
+  map_put(cfg, "values", next);
 }
 
 inline void cleanAdd(CtxPtr ctx, const Value& value) {
@@ -221,7 +238,7 @@ inline std::string cleanMaskValue(const Value& cfg, const std::string& value) {
 
 inline std::string cleanString(const Value& cfg, const std::string& text) {
   std::string out = text;
-  Value values = getp(cfg, "values");
+  Value values = cleanValues(cfg);
   if (!values.is_list()) return out;
   for (const auto& v : *values.as_list()) {
     if (!v.is_string() || v.as_string().empty()) continue;

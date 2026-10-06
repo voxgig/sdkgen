@@ -107,7 +107,7 @@ const RB_SDK_CONSTANTS = new Set([
     // shipped only when that feature is selected, but declared at the top
     // level when it is
     'VoxgigSekreto', 'VoxgigPlugin',
-    'ExistsTest', 'FeatureCorpusTest', 'FeatureTest', 'NetsimTest',
+    'ConcurrencyTest', 'ExistsTest', 'FeatureCorpusTest', 'FeatureTest', 'NetsimTest',
     'PipelineTest', 'PrimaryUtilityTest', 'ReadmeExamplesTest',
     'SecretsFeatureTest',
     'TestHookFeature', 'TestInitFeature',
