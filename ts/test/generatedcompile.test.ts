@@ -5721,7 +5721,7 @@ type Command = { bin: string, args: string[], env?: NodeJS.ProcessEnv }
 // root context shares, and registers, cleans and copies the client's one
 // secret registry. The suite each of these SDKs ships races requests on one
 // client: every racer gets the one cached Operation, and every registered
-// secret stays masked; go runs it under -race, cpp under ThreadSanitizer.
+// secret stays masked; go and cpp run it under a race detector where they can.
 type ConcurrencyLane = {
   target: string,
   runner: string,
@@ -5733,13 +5733,29 @@ type ConcurrencyLane = {
   prepare?: (sdkroot: string) => string | null,
   command: () => Command | null,
   // Builds and runs the suite with the command's toolchain, naming the build.
-  exec?: (sdkroot: string, cmd: Command) => CppSuite,
+  exec?: (sdkroot: string, cmd: Command) => SuiteRun,
   // Exit zero is not enough: a filter that matches nothing passes in every one
   // of these frameworks.
   ran: RegExp[],
   report?: (sdkroot: string) => string,
   // A failure that names a missing toolchain capability rather than the SDK.
   unsupported?: RegExp,
+  // The first line of a race report, where a failure's message starts.
+  race?: RegExp,
+}
+
+type SuiteRun = { build: 'tsan' | 'race' | 'plain', why?: string, ran: Run }
+
+// Room for a report's access, location, mutex and thread-creation stacks.
+const RACE_REPORT_LINES = 200
+
+
+// A failed run's first race report, which its tail can miss, else that tail.
+function laneFailure(lane: ConcurrencyLane, out: string): string {
+  const race = lane.race
+  const lines = out.split(/\r?\n/)
+  const at = null == race ? -1 : lines.findIndex((line) => race.test(line))
+  return at < 0 ? tail(out, 60) : lines.slice(at, at + RACE_REPORT_LINES).join('\n')
 }
 
 // ThreadSanitizer reports an unordered read and write wherever they fall in a
@@ -5757,16 +5773,14 @@ const CPP_CONCURRENCY_TIMEOUT_MS = 10 * 60 * 1000
 // the same bytes.
 const CPP_TSAN_SUPPRESSIONS = 'race:std::ctype<char>::narrow\n'
 
-// A compiler or linker that has no ThreadSanitizer.
+// A compiler or linker that has no ThreadSanitizer, or no runtime for it.
 const CPP_NO_TSAN =
-  /cannot find -ltsan|libtsan|(unrecognized|unsupported)[^\n]*-fsanitize=thread|-fsanitize=thread[^\n]*not supported/
+  /libtsan|libclang_rt\.tsan|cannot find [^\n]*tsan|(unrecognized|unsupported)[^\n]*-fsanitize=thread|-fsanitize=thread[^\n]*not supported/
 
 // A report on the code carries the pid; a runtime that cannot start here
 // names itself instead.
 const CPP_TSAN_REPORT = /WARNING: ThreadSanitizer: [^\n]*\(pid=\d+\)/
 const CPP_TSAN_RUNTIME = /FATAL: ThreadSanitizer|ThreadSanitizer: CHECK failed/
-
-type CppSuite = { build: 'tsan' | 'plain', why?: string, ran: Run }
 
 
 // The line naming why a ThreadSanitizer run says nothing about the SDK, or
@@ -5779,7 +5793,7 @@ function cppTsanUnusable(ran: Run): string | null {
 
 // The suite under ThreadSanitizer, else built and run plainly where the
 // compiler has none or its runtime cannot start here.
-function cppConcurrency(sdkroot: string, make: Command): CppSuite {
+function cppConcurrency(sdkroot: string, make: Command): SuiteRun {
   const target = 'test/concurrency_test.out'
   const bin = Path.join('test', 'concurrency_test.out')
   // glibc writes a heap-corruption abort to the terminal unless told otherwise.
@@ -5809,6 +5823,26 @@ function cppConcurrency(sdkroot: string, make: Command): CppSuite {
   const plain = run(make.bin, [...make.args, target], sdkroot, make.env, CPP_CONCURRENCY_TIMEOUT_MS)
   ok(plain.ok, 'cpp: the generated test does not build:\n' + tail(plain.out))
   return { build: 'plain', why, ran: run(bin, [], sdkroot, env, CPP_CONCURRENCY_TIMEOUT_MS) }
+}
+
+const GO_CONCURRENCY_ARGS = ['-count=1', '-run', '^TestConcurrent', '-v', './test/']
+
+// What the race detector needs that a go toolchain can lack: cgo, a C
+// compiler, a supported platform.
+const GO_NO_RACE = /-race requires cgo|cgo: C compiler .* not found|-race is not supported/
+
+// The race detector's report, or the fatal error a plain build still stops on
+// for a map written concurrently.
+const GO_RACE_REPORT = /^(WARNING: DATA RACE|fatal error: )/
+
+
+// The suite under the race detector, else run plainly where go cannot build it.
+function goConcurrency(sdkroot: string, go: Command): SuiteRun {
+  const race = run(go.bin, ['test', '-race', ...go.args], sdkroot, go.env)
+  const why = race.ok ? undefined
+    : race.out.split(/\r?\n/).find((line) => GO_NO_RACE.test(line))?.trim()
+  return null == why ? { build: 'race', ran: race }
+    : { build: 'plain', why, ran: run(go.bin, ['test', ...go.args], sdkroot, go.env) }
 }
 
 // HTTP Basic, whose prepareAuth registers the encoded pair on every request.
@@ -5846,21 +5880,19 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
   {
     target: 'go',
     runner: 'test/concurrency_test.go',
-    needs: 'go, with cgo and a C compiler for the race detector',
+    needs: 'go',
     command: () => {
       const go = toolchain('go')
-      return null == go ? null : {
-        bin: go,
-        args: ['test', '-race', '-count=1', '-run', '^TestConcurrent', '-v', './test/'],
-      }
+      return null == go ? null : { bin: go, args: GO_CONCURRENCY_ARGS }
     },
+    exec: goConcurrency,
     ran: [
       /^--- PASS: TestConcurrentFirstRequests /m,
       /^--- PASS: TestConcurrentOperationResolution /m,
       /^--- PASS: TestConcurrentCleanRegistry /m,
       /^--- PASS: TestConcurrentRequestsWhileRegistering /m,
     ],
-    unsupported: /-race requires cgo|cgo: C compiler .* not found|-race is not supported/,
+    race: GO_RACE_REPORT,
   },
   {
     target: 'java',
@@ -5926,6 +5958,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
       /concurrency_test: 5 tests, 5 checks, 0 failures/,
       /concurrency_test: ([1-9]\d*) of \1 requests carried the Basic pair/,
     ],
+    race: CPP_TSAN_REPORT,
   },
   {
     target: 'py',
@@ -6069,7 +6102,7 @@ describe('concurrent requests on one client share its state', () => {
         }
 
         ok(ran.ok, 'the concurrency test FAILED against the generated ' + lane.target +
-          ' SDK:\n' + tail(ran.out, 60))
+          ' SDK:\n' + laneFailure(lane, ran.out))
 
         const seen = ran.out + (null == lane.report ? '' : '\n' + lane.report(sdkroot))
         for (const line of lane.ran) {
@@ -6145,9 +6178,15 @@ describe('the cpp concurrency lane', () => {
       unmapped.ran.out)
     ok(unmapped.ran.out.includes('rounds=200\n' + PASSED), unmapped.ran.out)
 
-    const bare = cppConcurrency(...standIn('bare', 'exit 0',
-      'echo "/usr/bin/ld: cannot find -ltsan" >&2; exit 2;'))
-    deepStrictEqual([bare.build, bare.ran.ok], ['plain', true], bare.ran.out)
+    const unlinked = [
+      '/usr/bin/ld: cannot find -ltsan',
+      '/usr/bin/ld: cannot find /usr/lib/llvm-18/lib/clang/18/lib/linux/libclang_rt.tsan-x86_64.a: ' +
+        'No such file or directory',
+    ]
+    unlinked.forEach((line, i) => {
+      const bare = cppConcurrency(...standIn('bare' + i, 'exit 0', 'echo "' + line + '" >&2; exit 2;'))
+      deepStrictEqual([bare.build, bare.ran.ok], ['plain', true], line + '\n' + bare.ran.out)
+    })
 
     const sound = cppConcurrency(...standIn('sound',
       'echo "rounds=$' + CPP_ROUNDS_ENV + '"; echo "' + PASSED + '"'))
@@ -6157,9 +6196,175 @@ describe('the cpp concurrency lane', () => {
     const raced = cppConcurrency(...standIn('raced', 'echo "' + RACE + '" >&2; exit 66'))
     deepStrictEqual([raced.build, raced.ran.ok], ['tsan', false], raced.ran.out)
 
-    throws(() => cppConcurrency(...standIn('broken', 'exit 0',
-      'echo "error: expected primary-expression" >&2; exit 2;')),
-    /does not build under ThreadSanitizer/)
+    const broken = [
+      'error: expected primary-expression',
+      '/usr/bin/ld: cannot find -lcurl: No such file or directory',
+    ]
+    broken.forEach((line, i) => throws(() => cppConcurrency(...standIn('broken' + i, 'exit 0',
+      'echo "' + line + '" >&2; exit 2;')), /does not build under ThreadSanitizer/, line))
+  })
+
+
+  // The suite's report on optionsMap racing cleanAddCfg, each stack at its
+  // recorded size and each frame elided but the SDK's.
+  test('shows a failure from its ThreadSanitizer report, which the tail misses', () => {
+    const frames = (size: number, named: Record<number, string> = {}) =>
+      Array.from({ length: size }, (_, i) => '    #' + i + ' ' + (named[i] ?? '<elided>'))
+    const report = [
+      'WARNING: ThreadSanitizer: data race (pid=8978)',
+      '  Write of size 8 at 0x725400002130 by thread T724 (mutexes: write M0):',
+      ...frames(31, { 16: 'sdk::util::cleanAddCfg(voxgig::structlib::Value const&, ' +
+        'voxgig::structlib::Value const&) test/../core/../utility/pipeline.hpp:220 ' +
+        '(concurrency_test.out+0x8c0a1)' }),
+      '',
+      '  Previous read of size 8 at 0x725400002130 by thread T727:',
+      ...frames(28,
+        { 11: 'sdk::SdkClient::optionsMap() test/../core/types.hpp:964 (concurrency_test.out+0xa4e2c)' }),
+      '',
+      '  Location is heap block of size 576 at 0x725400002080 allocated by main thread:',
+      ...frames(26),
+      '',
+      '  Mutex M0 (0x556af2f7b820) created at:',
+      ...frames(12),
+      '',
+      '  Thread T724 (tid=9703, running) created by main thread at:',
+      ...frames(3),
+      '',
+      '  Thread T727 (tid=9706, running) created by main thread at:',
+      ...frames(3),
+      '',
+      'SUMMARY: ThreadSanitizer: data race /usr/include/c++/13/bits/move.h:199 in std::swap',
+      '==================',
+    ]
+    const cpp = CONCURRENCY_LANES.find((lane) => 'cpp' === lane.target)!
+    const out = ['==================', ...report].join('\n')
+    ok(!tail(out, 60).includes(report[0]), 'the recorded report fits within the tail')
+
+    strictEqual(laneFailure(cpp, out), report.join('\n'))
+
+    const endless = [report[0], ...frames(3 * RACE_REPORT_LINES)].join('\n')
+    strictEqual(laneFailure(cpp, endless).split('\n').length, RACE_REPORT_LINES)
+
+    const unreported = [...frames(70), '  FAIL [x]: round 0 threw: boom'].join('\n')
+    strictEqual(laneFailure(cpp, unreported), tail(unreported, 60))
+  })
+})
+
+
+describe('the go concurrency lane', () => {
+
+  const REFUSALS = [
+    'go: -race requires cgo; enable cgo by setting CGO_ENABLED=1',
+    'cgo: C compiler "/nonexistent-cc" not found: exec: "/nonexistent-cc": ' +
+      'stat /nonexistent-cc: no such file or directory',
+    '-race is not supported on linux/386',
+  ]
+  const PASSED = '--- PASS: TestConcurrentFirstRequests (0.01s)'
+  let tmp = ''
+
+  before(() => { tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-go-lane-')) })
+  after(() => Fs.rmSync(tmp, { recursive: true, force: true }))
+
+
+  // A stand-in for go prints its arguments, runs `onRace` when given -race,
+  // and passes.
+  test('runs the suite without -race only where go cannot build the race detector', (t) => {
+    if ('win32' === process.platform) {
+      return t.skip('the stand-ins are POSIX shell scripts')
+    }
+    const standIn = (name: string, onRace: string): Command => {
+      const go = Path.join(tmp, name + '-go')
+      Fs.writeFileSync(go, [
+        '#!/bin/sh',
+        'echo "args: $*"',
+        'case " $* " in',
+        '  *" -race "*) ' + onRace + ' ;;',
+        'esac',
+        'echo "' + PASSED + '"',
+        '',
+      ].join('\n'), { mode: 0o755 })
+      return { bin: go, args: GO_CONCURRENCY_ARGS }
+    }
+
+    REFUSALS.forEach((refusal, i) => {
+      const plain = goConcurrency(tmp,
+        standIn('refused' + i, 'printf \'%s\\n\' \'' + refusal + '\' >&2; exit 2'))
+      deepStrictEqual([plain.build, plain.why, plain.ran.ok], ['plain', refusal, true], plain.ran.out)
+      ok(plain.ran.out.startsWith('args: test ' + GO_CONCURRENCY_ARGS.join(' ') + '\n' + PASSED),
+        plain.ran.out)
+    })
+
+    const sound = goConcurrency(tmp, standIn('sound', ':'))
+    deepStrictEqual([sound.build, sound.ran.ok], ['race', true], sound.ran.out)
+    ok(sound.ran.out.startsWith('args: test -race ' + GO_CONCURRENCY_ARGS.join(' ')), sound.ran.out)
+
+    const raced = goConcurrency(tmp, standIn('raced', 'echo "WARNING: DATA RACE"; exit 1'))
+    deepStrictEqual([raced.build, raced.ran.ok], ['race', false], raced.ran.out)
+  })
+
+
+  test('runs the suite plainly where a real go has cgo turned off', (t) => {
+    const go = toolchain('go')
+    if (null == go) {
+      return t.skip('no go toolchain here')
+    }
+    if ('darwin' === process.platform) {
+      return t.skip('go builds -race on macOS without cgo')
+    }
+    const root = Path.join(tmp, 'real')
+    Fs.mkdirSync(Path.join(root, 'test'), { recursive: true })
+    Fs.writeFileSync(Path.join(root, 'go.mod'), 'module probe\n\ngo 1.18\n')
+    Fs.writeFileSync(Path.join(root, 'test', 'probe_test.go'),
+      'package probe\n\nimport "testing"\n\nfunc TestConcurrentProbe(t *testing.T) {}\n')
+
+    const suite = goConcurrency(root,
+      { bin: go, args: GO_CONCURRENCY_ARGS, env: { ...process.env, CGO_ENABLED: '0' } })
+    deepStrictEqual([suite.build, suite.why, suite.ran.ok], ['plain', REFUSALS[0], true],
+      suite.ran.out)
+    ok(/^--- PASS: TestConcurrentProbe /m.test(suite.ran.out), suite.ran.out)
+  })
+
+
+  // The suite's output with the operation cache read unlocked, each stack at
+  // its recorded size and each frame elided but the SDK's.
+  test('shows a failure from its race report or fatal error, which the tail misses', () => {
+    const frames = (size: number, named: Record<number, string> = {}) => Array.from({ length: size },
+      (_, i) => ['  ' + (named[i] ?? 'elided()'), '      /src/elided.go:1 +0x0']).flat()
+    const resolveOp = 'github.com/voxgig-sdk/demo-sdk/go/core.(*Context).resolveOp()'
+    const dump = Array.from({ length: 12 },
+      (_, i) => ['', 'goroutine ' + (1600 + i) + ' [runnable]:', ...frames(3)]).flat()
+    const go = CONCURRENCY_LANES.find((lane) => 'go' === lane.target)!
+    const head = (text: string, lines: number) => text.split('\n').slice(0, lines).join('\n')
+
+    const report = [
+      'WARNING: DATA RACE',
+      'Read at 0x00c000244750 by goroutine 18:',
+      ...frames(10, { 1: resolveOp }),
+      '',
+      'Previous write at 0x00c000244750 by goroutine 20:',
+      ...frames(9, { 1: resolveOp }),
+      '',
+      'Goroutine 18 (running) created at:',
+      ...frames(4),
+      '',
+      'Goroutine 20 (finished) created at:',
+      ...frames(4),
+      '==================',
+    ]
+    const ending = ['FAIL\tgithub.com/voxgig-sdk/demo-sdk/go/test\t0.437s', 'FAIL']
+    const raced = ['=== RUN   TestConcurrentFirstRequests', '==================', ...report,
+      'fatal error: concurrent map read and map write', ...dump, ...ending].join('\n')
+    ok(!tail(raced, 60).includes(report[0]), 'the recorded report fits within the tail')
+    strictEqual(head(laneFailure(go, raced), report.length + 1),
+      [...report, 'fatal error: concurrent map read and map write'].join('\n'))
+
+    const fatal = ['fatal error: concurrent map read and map write', '',
+      'goroutine 1628 [running]:', ...frames(7, { 1: resolveOp })]
+    const plain = ['=== RUN   TestConcurrentFirstRequests',
+      '--- PASS: TestConcurrentFirstRequests (0.64s)',
+      '=== RUN   TestConcurrentOperationResolution', ...fatal, ...dump, ...ending].join('\n')
+    ok(!tail(plain, 60).includes(fatal[0]), 'the recorded fatal error fits within the tail')
+    strictEqual(head(laneFailure(go, plain), fatal.length), fatal.join('\n'))
   })
 })
 
