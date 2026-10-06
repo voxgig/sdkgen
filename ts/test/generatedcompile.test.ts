@@ -5744,7 +5744,7 @@ type ConcurrencyLane = {
   race?: RegExp,
 }
 
-type SuiteRun = { build: 'tsan' | 'race' | 'plain', why?: string, ran: Run }
+type SuiteRun = { build?: 'tsan' | 'race' | 'plain', why?: string, ran: Run }
 
 // Room for a report's access, location, mutex and thread-creation stacks.
 const RACE_REPORT_LINES = 200
@@ -5756,6 +5756,35 @@ function laneFailure(lane: ConcurrencyLane, out: string): string {
   const lines = out.split(/\r?\n/)
   const at = null == race ? -1 : lines.findIndex((line) => race.test(line))
   return at < 0 ? tail(out, 60) : lines.slice(at, at + RACE_REPORT_LINES).join('\n')
+}
+
+
+// The lane's suite, prepared and then run through its exec where it has one.
+function laneSuite(lane: ConcurrencyLane, sdkroot: string, cmd: Command): SuiteRun {
+  const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
+  ok(null == notready, lane.target + ': ' + notready)
+  return null == lane.exec ? { ran: run(cmd.bin, cmd.args, sdkroot, cmd.env) }
+    : lane.exec(sdkroot, cmd)
+}
+
+
+// Why a run says nothing about the SDK, or null where it passed; a failed run
+// throws.
+function laneVerdict(lane: ConcurrencyLane, ran: Run): string | null {
+  if (ran.unlaunchable) {
+    return lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3)
+  }
+
+  const gap = [...UNUSABLE, ...(null == lane.unsupported ? [] : [lane.unsupported])]
+    .find((re) => re.test(ran.out))
+  if (null != gap && !ran.ok) {
+    return lane.target + ': toolchain present but not usable (' +
+      gap.source + '):\n' + tail(ran.out)
+  }
+
+  ok(ran.ok, 'the concurrency test FAILED against the generated ' + lane.target +
+    ' SDK:\n' + laneFailure(lane, ran.out))
+  return null
 }
 
 // ThreadSanitizer reports an unordered read and write wherever they fall in a
@@ -6075,36 +6104,18 @@ describe('concurrent requests on one client share its state', () => {
           return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
         }
 
-        const notready = null == lane.prepare ? null : lane.prepare(sdkroot)
-        ok(null == notready, lane.target + ': ' + notready)
-
-        let ran: Run
-        if (null == lane.exec) {
-          ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
-        }
-        else {
-          const suite = lane.exec(sdkroot, cmd)
+        const suite = laneSuite(lane, sdkroot, cmd)
+        if (null != suite.build) {
           t.diagnostic(lane.target + ': ran the ' + suite.build + ' build' +
             (null == suite.why ? '' : ': ' + suite.why))
-          ran = suite.ran
         }
 
-        if (ran.unlaunchable) {
-          return t.skip(lane.target + ': the toolchain could not be started here: ' +
-            tail(ran.out, 3))
+        const skip = laneVerdict(lane, suite.ran)
+        if (null != skip) {
+          return t.skip(skip)
         }
 
-        const gap = [...UNUSABLE, ...(null == lane.unsupported ? [] : [lane.unsupported])]
-          .find((re) => re.test(ran.out))
-        if (null != gap && !ran.ok) {
-          return t.skip(lane.target + ': toolchain present but not usable (' +
-            gap.source + '):\n' + tail(ran.out))
-        }
-
-        ok(ran.ok, 'the concurrency test FAILED against the generated ' + lane.target +
-          ' SDK:\n' + laneFailure(lane, ran.out))
-
-        const seen = ran.out + (null == lane.report ? '' : '\n' + lane.report(sdkroot))
+        const seen = suite.ran.out + (null == lane.report ? '' : '\n' + lane.report(sdkroot))
         for (const line of lane.ran) {
           ok(line.test(seen), lane.target + ': the concurrency test did not report (' +
             line.source + '):\n' + tail(seen))
@@ -6112,6 +6123,35 @@ describe('concurrent requests on one client share its state', () => {
       })
   }
 })
+
+
+// The lane's command as the loop takes it, where the search path holds only
+// the stand-ins in `dir`.
+function standInCommand(lane: ConcurrencyLane, dir: string): Command {
+  const env = process.env
+  process.env = { PATH: dir }
+  try {
+    const cmd = lane.command()
+    ok(null != cmd, lane.target + ': the lane found no toolchain among the stand-ins in ' + dir)
+    return cmd
+  }
+  finally {
+    process.env = env
+  }
+}
+
+
+// What the loop fails with on a run that failed with `out`.
+function failureShown(lane: ConcurrencyLane, out: string): string {
+  let skip: string | null = null
+  try {
+    skip = laneVerdict(lane, { ok: false, out, unlaunchable: false, timedOut: false })
+  }
+  catch (err) {
+    return (err as Error).message
+  }
+  throw new Error(lane.target + ': the lane skipped a failed run: ' + skip)
+}
 
 
 describe('the cpp concurrency lane', () => {
@@ -6124,7 +6164,9 @@ describe('the cpp concurrency lane', () => {
   const ASLR = 'WARNING: ThreadSanitizer: memory layout is incompatible, possibly due to ' +
     'high-entropy ASLR.'
   const PASSED = 'concurrency_test: 5 tests, 5 checks, 0 failures'
+  const FAILED = 'the concurrency test FAILED against the generated cpp SDK:'
   const failed = (out: string): Run => ({ ok: false, out, unlaunchable: false, timedOut: false })
+  const cpp = CONCURRENCY_LANES.find((lane) => 'cpp' === lane.target)!
   let tmp = ''
 
   before(() => { tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cpp-lane-')) })
@@ -6147,17 +6189,20 @@ describe('the cpp concurrency lane', () => {
 
   // Stand-ins for make write a shell script in place of the binary:
   // `sanitized` for a ThreadSanitizer build once `onTsan` has run, and a
-  // passing one otherwise.
+  // passing one otherwise. The lane's own command and exec run them.
   test('runs the plain build where the sanitized one cannot start, and not on a report', (t) => {
     if ('win32' === process.platform) {
       return t.skip('the stand-ins are POSIX shell scripts')
     }
     const plain = 'echo "rounds=${' + CPP_ROUNDS_ENV + ':-200}"; echo "' + PASSED + '"'
-    const standIn = (name: string, sanitized: string, onTsan = ''): [string, Command] => {
+    const standIn = (name: string, sanitized: string, onTsan = ''): SuiteRun => {
       const root = Path.join(tmp, name)
-      const make = Path.join(tmp, name + '-make')
-      Fs.mkdirSync(root)
-      Fs.writeFileSync(make, [
+      const bin = Path.join(tmp, name + '-bin')
+      Fs.mkdirSync(Path.join(root, 'test'), { recursive: true })
+      Fs.mkdirSync(bin)
+      Fs.writeFileSync(Path.join(root, 'test', 'concurrency_test.cpp'), '"' + CPP_ROUNDS_ENV + '"\n')
+      Fs.writeFileSync(Path.join(bin, 'c++'), '', { mode: 0o755 })
+      Fs.writeFileSync(Path.join(bin, 'make'), [
         '#!/bin/sh',
         'out=test/concurrency_test.out',
         'case "$*" in',
@@ -6170,10 +6215,10 @@ describe('the cpp concurrency lane', () => {
         'chmod +x "$out"',
         '',
       ].join('\n'), { mode: 0o755 })
-      return [root, { bin: make, args: ['CXX=c++'] }]
+      return laneSuite(cpp, root, standInCommand(cpp, bin))
     }
 
-    const unmapped = cppConcurrency(...standIn('unmapped', 'echo "' + MAPPING + '" >&2; exit 66'))
+    const unmapped = standIn('unmapped', 'echo "' + MAPPING + '" >&2; exit 66')
     deepStrictEqual([unmapped.build, unmapped.why, unmapped.ran.ok], ['plain', MAPPING, true],
       unmapped.ran.out)
     ok(unmapped.ran.out.includes('rounds=200\n' + PASSED), unmapped.ran.out)
@@ -6184,24 +6229,25 @@ describe('the cpp concurrency lane', () => {
         'No such file or directory',
     ]
     unlinked.forEach((line, i) => {
-      const bare = cppConcurrency(...standIn('bare' + i, 'exit 0', 'echo "' + line + '" >&2; exit 2;'))
+      const bare = standIn('bare' + i, 'exit 0', 'echo "' + line + '" >&2; exit 2;')
       deepStrictEqual([bare.build, bare.ran.ok], ['plain', true], line + '\n' + bare.ran.out)
     })
 
-    const sound = cppConcurrency(...standIn('sound',
-      'echo "rounds=$' + CPP_ROUNDS_ENV + '"; echo "' + PASSED + '"'))
+    const sound = standIn('sound', 'echo "rounds=$' + CPP_ROUNDS_ENV + '"; echo "' + PASSED + '"')
     deepStrictEqual([sound.build, sound.ran.ok], ['tsan', true], sound.ran.out)
     ok(sound.ran.out.includes('rounds=' + CPP_TSAN_ROUNDS + '\n'), sound.ran.out)
 
-    const raced = cppConcurrency(...standIn('raced', 'echo "' + RACE + '" >&2; exit 66'))
+    const raced = standIn('raced', 'echo "' + RACE + '" >&2; exit 66')
     deepStrictEqual([raced.build, raced.ran.ok], ['tsan', false], raced.ran.out)
 
     const broken = [
       'error: expected primary-expression',
       '/usr/bin/ld: cannot find -lcurl: No such file or directory',
     ]
-    broken.forEach((line, i) => throws(() => cppConcurrency(...standIn('broken' + i, 'exit 0',
-      'echo "' + line + '" >&2; exit 2;')), /does not build under ThreadSanitizer/, line))
+    broken.forEach((line, i) => throws(() => standIn('broken' + i, 'exit 0',
+      'echo "' + line + '" >&2; exit 2;'), /does not build under ThreadSanitizer/, line))
+
+    strictEqual(cpp.unsupported, undefined, 'cpp: a run the fallback covers is not a skip')
   })
 
 
@@ -6236,17 +6282,17 @@ describe('the cpp concurrency lane', () => {
       'SUMMARY: ThreadSanitizer: data race /usr/include/c++/13/bits/move.h:199 in std::swap',
       '==================',
     ]
-    const cpp = CONCURRENCY_LANES.find((lane) => 'cpp' === lane.target)!
     const out = ['==================', ...report].join('\n')
     ok(!tail(out, 60).includes(report[0]), 'the recorded report fits within the tail')
 
-    strictEqual(laneFailure(cpp, out), report.join('\n'))
+    strictEqual(failureShown(cpp, out), [FAILED, ...report].join('\n'))
 
-    const endless = [report[0], ...frames(3 * RACE_REPORT_LINES)].join('\n')
-    strictEqual(laneFailure(cpp, endless).split('\n').length, RACE_REPORT_LINES)
+    const endless = [report[0], ...frames(3 * RACE_REPORT_LINES)]
+    strictEqual(failureShown(cpp, endless.join('\n')),
+      [FAILED, ...endless.slice(0, RACE_REPORT_LINES)].join('\n'))
 
     const unreported = [...frames(70), '  FAIL [x]: round 0 threw: boom'].join('\n')
-    strictEqual(laneFailure(cpp, unreported), tail(unreported, 60))
+    strictEqual(failureShown(cpp, unreported), FAILED + '\n' + tail(unreported, 60))
   })
 })
 
@@ -6260,6 +6306,8 @@ describe('the go concurrency lane', () => {
     '-race is not supported on linux/386',
   ]
   const PASSED = '--- PASS: TestConcurrentFirstRequests (0.01s)'
+  const FAILED = 'the concurrency test FAILED against the generated go SDK:'
+  const go = CONCURRENCY_LANES.find((lane) => 'go' === lane.target)!
   let tmp = ''
 
   before(() => { tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-go-lane-')) })
@@ -6267,14 +6315,15 @@ describe('the go concurrency lane', () => {
 
 
   // A stand-in for go prints its arguments, runs `onRace` when given -race,
-  // and passes.
+  // and passes. The lane's own command and exec run it.
   test('runs the suite without -race only where go cannot build the race detector', (t) => {
     if ('win32' === process.platform) {
       return t.skip('the stand-ins are POSIX shell scripts')
     }
-    const standIn = (name: string, onRace: string): Command => {
-      const go = Path.join(tmp, name + '-go')
-      Fs.writeFileSync(go, [
+    const standIn = (name: string, onRace: string): SuiteRun => {
+      const bin = Path.join(tmp, name)
+      Fs.mkdirSync(bin)
+      Fs.writeFileSync(Path.join(bin, 'go'), [
         '#!/bin/sh',
         'echo "args: $*"',
         'case " $* " in',
@@ -6283,29 +6332,30 @@ describe('the go concurrency lane', () => {
         'echo "' + PASSED + '"',
         '',
       ].join('\n'), { mode: 0o755 })
-      return { bin: go, args: GO_CONCURRENCY_ARGS }
+      return laneSuite(go, tmp, standInCommand(go, bin))
     }
 
     REFUSALS.forEach((refusal, i) => {
-      const plain = goConcurrency(tmp,
-        standIn('refused' + i, 'printf \'%s\\n\' \'' + refusal + '\' >&2; exit 2'))
+      const plain = standIn('refused' + i, 'printf \'%s\\n\' \'' + refusal + '\' >&2; exit 2')
       deepStrictEqual([plain.build, plain.why, plain.ran.ok], ['plain', refusal, true], plain.ran.out)
       ok(plain.ran.out.startsWith('args: test ' + GO_CONCURRENCY_ARGS.join(' ') + '\n' + PASSED),
         plain.ran.out)
     })
 
-    const sound = goConcurrency(tmp, standIn('sound', ':'))
+    const sound = standIn('sound', ':')
     deepStrictEqual([sound.build, sound.ran.ok], ['race', true], sound.ran.out)
     ok(sound.ran.out.startsWith('args: test -race ' + GO_CONCURRENCY_ARGS.join(' ')), sound.ran.out)
 
-    const raced = goConcurrency(tmp, standIn('raced', 'echo "WARNING: DATA RACE"; exit 1'))
+    const raced = standIn('raced', 'echo "WARNING: DATA RACE"; exit 1')
     deepStrictEqual([raced.build, raced.ran.ok], ['race', false], raced.ran.out)
+
+    strictEqual(go.unsupported, undefined, 'go: a run the fallback covers is not a skip')
   })
 
 
   test('runs the suite plainly where a real go has cgo turned off', (t) => {
-    const go = toolchain('go')
-    if (null == go) {
+    const cmd = go.command()
+    if (null == cmd) {
       return t.skip('no go toolchain here')
     }
     if ('darwin' === process.platform) {
@@ -6317,8 +6367,8 @@ describe('the go concurrency lane', () => {
     Fs.writeFileSync(Path.join(root, 'test', 'probe_test.go'),
       'package probe\n\nimport "testing"\n\nfunc TestConcurrentProbe(t *testing.T) {}\n')
 
-    const suite = goConcurrency(root,
-      { bin: go, args: GO_CONCURRENCY_ARGS, env: { ...process.env, CGO_ENABLED: '0' } })
+    const suite = laneSuite(go, root,
+      { ...cmd, env: { ...(cmd.env ?? process.env), CGO_ENABLED: '0' } })
     deepStrictEqual([suite.build, suite.why, suite.ran.ok], ['plain', REFUSALS[0], true],
       suite.ran.out)
     ok(/^--- PASS: TestConcurrentProbe /m.test(suite.ran.out), suite.ran.out)
@@ -6333,7 +6383,6 @@ describe('the go concurrency lane', () => {
     const resolveOp = 'github.com/voxgig-sdk/demo-sdk/go/core.(*Context).resolveOp()'
     const dump = Array.from({ length: 12 },
       (_, i) => ['', 'goroutine ' + (1600 + i) + ' [runnable]:', ...frames(3)]).flat()
-    const go = CONCURRENCY_LANES.find((lane) => 'go' === lane.target)!
     const head = (text: string, lines: number) => text.split('\n').slice(0, lines).join('\n')
 
     const report = [
@@ -6355,8 +6404,8 @@ describe('the go concurrency lane', () => {
     const raced = ['=== RUN   TestConcurrentFirstRequests', '==================', ...report,
       'fatal error: concurrent map read and map write', ...dump, ...ending].join('\n')
     ok(!tail(raced, 60).includes(report[0]), 'the recorded report fits within the tail')
-    strictEqual(head(laneFailure(go, raced), report.length + 1),
-      [...report, 'fatal error: concurrent map read and map write'].join('\n'))
+    strictEqual(head(failureShown(go, raced), report.length + 2),
+      [FAILED, ...report, 'fatal error: concurrent map read and map write'].join('\n'))
 
     const fatal = ['fatal error: concurrent map read and map write', '',
       'goroutine 1628 [running]:', ...frames(7, { 1: resolveOp })]
@@ -6364,7 +6413,7 @@ describe('the go concurrency lane', () => {
       '--- PASS: TestConcurrentFirstRequests (0.64s)',
       '=== RUN   TestConcurrentOperationResolution', ...fatal, ...dump, ...ending].join('\n')
     ok(!tail(plain, 60).includes(fatal[0]), 'the recorded fatal error fits within the tail')
-    strictEqual(head(laneFailure(go, plain), fatal.length), fatal.join('\n'))
+    strictEqual(head(failureShown(go, plain), fatal.length + 1), [FAILED, ...fatal].join('\n'))
   })
 })
 
