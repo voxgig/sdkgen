@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -37,8 +38,8 @@ import JAVAPACKAGE.utility.struct.Struct;
 //
 // The configuration is the derived block MakeOptions builds
 // (`options.__derived__.clean`): active, keys, values, mask, hint, min. It
-// is a plain map so the registry stays MUTABLE after construction - the
-// auth step and the features register what they handle later.
+// is a map so the registry can grow after construction - the auth step and
+// the features register what they handle later.
 @SuppressWarnings({"unchecked"})
 final class Clean {
 
@@ -67,7 +68,9 @@ final class Clean {
 
   static Map<String, Object> makeCleanConfig(Map<String, Object> cleanopts) {
     Map<String, Object> opts = cleanopts == null ? new LinkedHashMap<>() : cleanopts;
-    Map<String, Object> cfg = new LinkedHashMap<>();
+    // Read without the monitor add() holds, by a clean or a request copying
+    // the options: each read sees the list the last registration put.
+    Map<String, Object> cfg = new ConcurrentHashMap<>();
     cfg.put("active", !Boolean.FALSE.equals(opts.get("active")));
     cfg.put("keys", splitkeys(opts.get("keys")));
     cfg.put("values", new ArrayList<String>());

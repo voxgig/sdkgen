@@ -18,20 +18,31 @@ class ConcurrencyTest < Minitest::Test
   ADDED = 400
   MASKED = "a [redacted] b [redacted] c"
 
-  # Runs the block on WIDTH threads released together, and returns what they raised.
+  # Runs the block on WIDTH threads, released once every one is waiting, and
+  # returns what they raised.
   def at_once
+    lock = Mutex.new
+    waiting = 0
+    ready = Queue.new
     gate = Queue.new
+    seen = Queue.new
     raised = Queue.new
     threads = (0...WIDTH).map do |n|
       Thread.new do
+        lock.synchronize { waiting += 1 }
+        ready << n
         gate.pop
+        seen << lock.synchronize { waiting }
         yield n
       rescue Exception => e
         raised << e
       end
     end
+    WIDTH.times { ready.pop }
     WIDTH.times { gate << true }
     threads.each(&:join)
+    released = Array.new(seen.size) { seen.pop }
+    assert_equal [WIDTH] * WIDTH, released, "threads released before #{WIDTH} were waiting"
     Array.new(raised.size) { raised.pop }
   end
 

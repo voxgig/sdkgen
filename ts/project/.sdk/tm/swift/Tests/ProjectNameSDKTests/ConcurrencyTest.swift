@@ -64,13 +64,16 @@ final class ConcurrencyTest: XCTestCase {
       ("utility", .map(vm(("fetcher", .nat(fetcher)))))))
   }
 
-  // Runs body on width threads released together; a thread's error is noted.
+  // Runs body on width threads, released once every one is waiting; a
+  // thread's error is noted.
   private static func atOnce(_ outcome: Outcome, _ body: @escaping (Int) throws -> Void) {
+    let ready = DispatchSemaphore(value: 0)
     let start = DispatchSemaphore(value: 0)
     let done = DispatchGroup()
     for n in 0..<width {
       done.enter()
       let thread = Thread {
+        ready.signal()
         start.wait()
         do {
           try body(n)
@@ -80,6 +83,9 @@ final class ConcurrencyTest: XCTestCase {
         done.leave()
       }
       thread.start()
+    }
+    for _ in 0..<width {
+      ready.wait()
     }
     for _ in 0..<width {
       start.signal()

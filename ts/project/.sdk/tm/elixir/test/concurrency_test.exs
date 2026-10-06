@@ -14,35 +14,48 @@ defmodule ProjectName.ConcurrencyTest do
   @added 16
   @masked "a [redacted] b [redacted] c"
 
-  # Runs body in @width processes released together, and returns what they raised.
+  # Runs body in @width processes, released once every one is waiting, and
+  # returns what they raised.
   defp at_once(body) do
     parent = self()
+    waiting = :counters.new(1, [:atomics])
 
     tasks =
       for n <- 0..(@width - 1) do
         Task.async(fn ->
+          :counters.add(waiting, 1, 1)
           send(parent, {:ready, self()})
 
           receive do
             :go -> :ok
           end
 
+          seen = :counters.get(waiting, 1)
+
           try do
             body.(n)
-            nil
+            {seen, nil}
           rescue
-            err -> err
+            err -> {seen, err}
           end
         end)
       end
 
-    for _ <- tasks do
-      receive do
-        {:ready, pid} -> send(pid, :go)
+    ready =
+      for _ <- tasks do
+        receive do
+          {:ready, pid} -> pid
+        end
       end
+
+    Enum.each(ready, &send(&1, :go))
+    outcomes = Task.await_many(tasks, :infinity)
+
+    for {seen, _} <- outcomes do
+      assert @width == seen, "a process was released with #{seen} of #{@width} waiting"
     end
 
-    tasks |> Task.await_many(:infinity) |> Enum.reject(&is_nil/1)
+    for {_, err} <- outcomes, nil != err, do: err
   end
 
   # A live client whose transport answers at once.

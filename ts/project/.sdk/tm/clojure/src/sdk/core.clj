@@ -488,19 +488,21 @@
   (let [n (try (long (Math/floor (Double/parseDouble (str v)))) (catch Exception _ nil))]
     (if (and n (<= 0 n)) n dflt)))
 
-;; The derived clean block: a struct map so it lives in options.__derived__
+;; The derived clean block: a java.util.Map so it lives in options.__derived__
 ;; and its `values` list can be replaced after make-options - features
-;; register what they resolve later.
+;; register what they resolve later. Concurrent, so a clean or a request
+;; copying the options reads it without the lock and sees the last put.
 (defn make-clean-config [cleanopts]
   (let [o (fn [k] (mget cleanopts k))
         keys (vs/jt)]
     (doseq [k (splitkeys (o "keys"))] (.add ^java.util.List keys k))
-    (vs/jm "active" (not= false (o "active"))
-           "keys" keys
-           "values" (vs/jt)
-           "mask" (let [m (o "mask")] (if (string? m) m "[redacted]"))
-           "hint" (count-opt (o "hint") 0)
-           "min" (max 1 (count-opt (o "min") 4)))))
+    (doto (java.util.concurrent.ConcurrentHashMap.)
+      (.put "active" (not= false (o "active")))
+      (.put "keys" keys)
+      (.put "values" (vs/jt))
+      (.put "mask" (let [m (o "mask")] (if (string? m) m "[redacted]")))
+      (.put "hint" (count-opt (o "hint") 0))
+      (.put "min" (max 1 (count-opt (o "min") 4))))))
 
 ;; A context without options (make-error accepts a bare one) still masks by
 ;; the schema defaults.
