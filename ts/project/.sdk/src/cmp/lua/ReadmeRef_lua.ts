@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -14,6 +14,7 @@ import {
 // parse).
 function luaLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '{}'
@@ -27,32 +28,32 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   load: {
     sig: 'load(reqmatch, ctrl) -> any, err',
     returns: 'any, err',
-    desc: 'Load a single entity matching the given criteria.',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get()` reads, or `nil` and an error on failure.',
   },
   list: {
     sig: 'list(reqmatch, ctrl) -> any, err',
     returns: 'any, err',
-    desc: 'List entities matching the given criteria. Returns an array.',
+    desc: 'List entities matching the given criteria. Returns an array of entities, one per record, or `nil` and an error on failure.',
   },
   create: {
     sig: 'create(reqdata, ctrl) -> any, err',
     returns: 'any, err',
-    desc: 'Create a new entity with the given data.',
+    desc: 'Create a new entity with the given data. Returns the created entity, or `nil` and an error on failure.',
   },
   update: {
     sig: 'update(reqdata, ctrl) -> any, err',
     returns: 'any, err',
-    desc: 'Update an existing entity. The data must include the entity `id`.',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity, or `nil` and an error on failure.',
   },
   patch: {
     sig: 'patch(reqdata, ctrl) -> any, err',
     returns: 'any, err',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`.',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity, or `nil` and an error on failure.',
   },
   remove: {
     sig: 'remove(reqmatch, ctrl) -> any, err',
     returns: 'any, err',
-    desc: 'Remove the entity matching the given criteria.',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, or `nil` and an error on failure.',
   },
 }
 
@@ -285,7 +286,7 @@ local result, err = client:${ent.Name}():${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`lua
-local results, err = client:${ent.Name}():list()
+local results, err = client:${ent.Name}():list(${listMatchArg('lua', ent)})
 \`\`\`
 
 `)

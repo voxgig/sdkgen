@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName } from './utility_c'
+import { cIdent, cVarName, cListMatch } from './utility_c'
 
 
 // Canonical type sentinel -> a C type name for the field/param tables.
@@ -26,6 +26,7 @@ function cType(type: any): string {
 // A type-correct C expression constructing a voxgig struct Value.
 function cLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'v_null()'
   if ('INTEGER' === k || 'NUMBER' === k) return 'v_num(1)'
   if ('BOOLEAN' === k) return 'v_bool(true)'
   if ('ARRAY' === k) return 'v_list()'
@@ -69,8 +70,8 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
       desc: 'Update an existing entity. The data must include the entity id. Returns the updated entity, or `NULL` with `*err` set on failure.',
     },
     patch: {
-      sig: 'vt->patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
-      desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity id. Returns the patched entity data.',
+      sig: 'Entity* vt->patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
+      desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity id. Returns the patched entity, or `NULL` with `*err` set on failure.',
     },
     remove: {
       sig: 'Entity* vt->remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
@@ -289,7 +290,7 @@ if (result) {
           else if ('list' === opname) {
             Content(`\`\`\`c
 Entity* ${evar} = ${acc}(client, NULL);
-Entity** results = ${evar}->vt->list(${evar}, NULL, NULL, &err);
+Entity** results = ${evar}->vt->list(${evar}, ${cListMatch(ent)}, NULL, &err);
 for (size_t i = 0; results && results[i]; i++) {
     printf("%s\\n", voxgig_to_json(results[i]->vt->data(results[i], NULL)));
 }

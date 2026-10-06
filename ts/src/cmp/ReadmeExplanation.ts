@@ -12,8 +12,7 @@ import {
 import { optionalComponent } from '../helpers/optional'
 
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
-import { idLiteral, matchArg, dataArg } from '../helpers/opExample'
-import type { ExampleLang } from '../helpers/opExample'
+import { helperLang, idLiteral, matchArg, listMatchArg, dataArg } from '../helpers/opExample'
 import { safeVarName, exampleVarName, phpEntityAccessor } from '../helpers/naming'
 
 
@@ -232,7 +231,7 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
   // skipped (a direct()-only SDK has no entity op to illustrate).
   const entity = getModelPath(model, `main.${KIT}.entity`, { only_active: false, required: false })
   const { entity: ex, primaryOp } = pickExampleEntity(entity || {})
-  const lname = target.name as ExampleLang
+  const lname = helperLang(target.name)
   const hasEntityExample = !!(ex && primaryOp)
 
   let eName = 'Entity', eLower = 'entity', stateArg = '', matchIdF: string | null = null, idLit = ''
@@ -246,9 +245,9 @@ const ReadmeExplanation = cmp(function ReadmeExplanation(props: any) {
     // match compiles.
     idLit = idLiteral(ex, primaryOp as string, idF)
     // Language-correct call argument for the primary op: a match for
-    // load/remove, a required-field body for create/update, nothing for list.
+    // load/remove/list, a required-field body for create/update.
     if ('list' === primaryOp) {
-      stateArg = 'go' === target.name ? 'nil' : ''
+      stateArg = listMatchArg(lname, ex)
     } else if (isMatchOp) {
       stateArg = matchArg(lname, ex, primaryOp as string, idF, idLit)
     } else {

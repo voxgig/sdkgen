@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { rbListArgs } from './utility_rb'
+
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$: { model } } = props
@@ -56,6 +58,7 @@ client = ${ctor}
     // placeholder would not parse).
     const rbLit = (type: any, placeholder: string = 'example'): string => {
       const k = canonScalarKey(type)
+      if ('NULL' === k) return 'nil'
       if ('INTEGER' === k || 'NUMBER' === k) return '1'
       if ('BOOLEAN' === k) return 'true'
       if ('ARRAY' === k) return '[]'
@@ -81,7 +84,7 @@ client = ${ctor}
 \`\`\`ruby
 begin
   # list returns an Array of ${eName} entities, one per record; data_get reads the record.
-  ${eVar}s = client.${eName}.list
+  ${eVar}s = client.${eName}.list${rbListArgs(exampleEntity)}
   ${eVar}s.each do |item|
     record = item.data_get
     puts "${itemPrint}"
@@ -122,7 +125,7 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 begin
   # load returns the ENTITY — call data_get for the ${neName} record (raises on error).
   ${neVar} = client.${neName}.load({ ${neMatch.join(', ')} })
-  puts ${neVar}
+  puts ${neVar}.data_get
 rescue => err
   warn "load failed: #{err}"
 end
@@ -147,7 +150,7 @@ end
 begin
   # load returns the ENTITY — call data_get for the ${eName} record (raises on error).
   ${eVar} = client.${eName}.load(${loadArg})
-  puts ${eVar}
+  puts ${eVar}.data_get
 rescue => err
   warn "load failed: #{err}"
 end

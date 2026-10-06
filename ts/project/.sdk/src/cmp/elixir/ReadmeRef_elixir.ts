@@ -8,12 +8,12 @@ import {
 } from '@voxgig/apidef'
 
 // Type names come from the shared canonToType 'elixir' column (single source of truth).
-import { elixirLit } from './utility_elixir'
+import { elixirLit, elixirListArgs } from './utility_elixir'
 
 
 const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
   load: {
-    sig: 'load(entity, reqmatch, ctrl \\\\ nil) :: map()',
+    sig: 'load(entity, reqmatch, ctrl \\\\ nil) :: entity',
     desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get/1` reads, and raises on error.',
   },
   list: {
@@ -21,19 +21,19 @@ const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
     desc: 'List entities matching the given criteria. The match is optional — call `list(entity)` to list all records. Returns a list of entities, one per record, and raises on error.',
   },
   create: {
-    sig: 'create(entity, reqdata, ctrl \\\\ nil) :: map()',
+    sig: 'create(entity, reqdata, ctrl \\\\ nil) :: entity',
     desc: 'Create a new entity with the given data. Returns the created entity and raises on error.',
   },
   update: {
-    sig: 'update(entity, reqdata, ctrl \\\\ nil) :: map()',
+    sig: 'update(entity, reqdata, ctrl \\\\ nil) :: entity',
     desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and raises on error.',
   },
   patch: {
-    sig: 'patch(entity, reqdata, ctrl \\\\ nil) :: map()',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and raises on error.',
+    sig: 'patch(entity, reqdata, ctrl \\\\ nil) :: entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and raises on error.',
   },
   remove: {
-    sig: 'remove(entity, reqmatch, ctrl \\\\ nil) :: map()',
+    sig: 'remove(entity, reqmatch, ctrl \\\\ nil) :: entity',
     desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and raises on error.',
   },
 }
@@ -218,14 +218,14 @@ ${info.desc}
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')}})`
               : `${Name}.Helpers.deep(%{})`
             Content(`\`\`\`elixir
-record = ${Name}.Entity.${EName}.${opname}(${eVar}, ${arg})
+${eVar} = ${Name}.Entity.${EName}.${opname}(${eVar}, ${arg})
 \`\`\`
 
 `)
           }
           else if ('list' === opname) {
             Content(`\`\`\`elixir
-records = ${Name}.Entity.${EName}.list(${eVar})
+${eVar}s = ${Name}.Entity.${EName}.list(${eVar}${elixirListArgs(ent, Name)})
 \`\`\`
 
 `)
@@ -234,7 +234,7 @@ records = ${Name}.Entity.${EName}.list(${eVar})
             const createItems = opRequestShape(ent, 'create').items
               .filter((it: any) => !it.optional)
             Content(`\`\`\`elixir
-record = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
+${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
             createItems.map((it: any) => {
               Content(`  "${it.name}" => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
@@ -254,7 +254,7 @@ record = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
               `  "${it.name}" => ${elixirLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`elixir
-record = ${Name}.Entity.${EName}.${opname}(${eVar}, ${Name}.Helpers.deep(%{
+${eVar} = ${Name}.Entity.${EName}.${opname}(${eVar}, ${Name}.Helpers.deep(%{
 ${updateLines}  # ${'patch' === opname ? 'Only the fields to change' : 'Fields to update'}
 }))
 \`\`\`

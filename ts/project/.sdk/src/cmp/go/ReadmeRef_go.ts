@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, opRequestShape , targetFeatures, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, opRequestShape, targetFeatures, bodyNote, listMatchArg } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -14,33 +14,32 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
   load: {
     sig: 'Load(reqmatch, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
-    desc: 'Load a single entity matching the given criteria.',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `Data()` reads; `err` is non-nil on failure.',
   },
   list: {
     sig: 'List(reqmatch, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
-    desc: 'List entities matching the given criteria. Returns an array.',
+    desc: 'List entities matching the given criteria. Returns a `[]any` of entities, one per record; `err` is non-nil on failure.',
   },
   create: {
     sig: 'Create(reqdata, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
-    desc: 'Create a new entity with the given data.',
+    desc: 'Create a new entity with the given data. Returns the created entity; `err` is non-nil on failure.',
   },
   update: {
     sig: 'Update(reqdata, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
-    desc: 'Update an existing entity. The data must include the entity `id`.',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity; `err` is non-nil on failure.',
   },
   patch: {
     sig: 'Patch(reqdata, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
-    desc: 'Change part of an existing entity: only the fields given are sent. ' +
-      'The data must include the entity `id`.',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity; `err` is non-nil on failure.',
   },
   remove: {
     sig: 'Remove(reqmatch, ctrl map[string]any) (any, error)',
     returns: '(any, error)',
-    desc: 'Remove the entity matching the given criteria.',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted; `err` is non-nil on failure.',
   },
 }
 
@@ -278,18 +277,20 @@ result, err := client.${ent.Name}(nil).${goOpName}(${arg}, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(result)
+fmt.Println(result.(sdk.Entity).Data())
 \`\`\`
 
 `)
           }
           else if ('list' === opname) {
             Content(`\`\`\`go
-results, err := client.${ent.Name}(nil).List(nil, nil)
+results, err := client.${ent.Name}(nil).List(${listMatchArg('go', ent)}, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(results)
+for _, item := range results.([]any) {
+    fmt.Println(item.(sdk.Entity).Data())
+}
 \`\`\`
 
 `)
@@ -313,7 +314,7 @@ result, err := client.${ent.Name}(nil).Create(map[string]any{
 if err != nil {
     panic(err)
 }
-fmt.Println(result)
+fmt.Println(result.(sdk.Entity).Data())
 \`\`\`
 
 `)
@@ -336,7 +337,7 @@ ${updateLines}    // ${'patch' === opname ? 'Only the fields to change' : 'Field
 if err != nil {
     panic(err)
 }
-fmt.Println(result)
+fmt.Println(result.(sdk.Entity).Data())
 \`\`\`
 
 `)

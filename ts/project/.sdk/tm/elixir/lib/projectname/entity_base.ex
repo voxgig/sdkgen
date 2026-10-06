@@ -108,7 +108,8 @@ defmodule ProjectName.EntityBase do
   # materialises the whole result). When the streaming feature is active the
   # result carries a `stream` closure and this yields from it (honouring
   # chunkSize); otherwise it falls back to the materialised items, so stream
-  # always yields. Records are unwrapped to bare struct maps (matching list).
+  # always yields. An entity is yielded as its record, the struct map its
+  # data_get/1 returns.
   # `callopts` parameterises the call:
   #   - ctrl:   per-call pipeline control (threaded onto the op ctx);
   #   - body:   an enumerable/list payload for outbound (upload) streaming,

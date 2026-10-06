@@ -459,9 +459,16 @@ function jsProp(obj: string, name: string): string {
 
 // A safe JS/TS OBJECT-LITERAL key for a spec-derived field name: bare when
 // the name is a valid identifier, single-quoted otherwise. `{ 3ds_session_id:
-// 1 }` is a syntax error (TS1351) — doc examples must quote such keys.
+// 1 }` is a syntax error (TS1351) — doc examples must quote such keys. A bare
+// or quoted `__proto__` sets the prototype, so it is computed.
 function jsKey(name: string): string {
-  return JS_IDENT.test(name) ? name : `'${name}'`
+  if ('__proto__' === name) return `['__proto__']`
+  return JS_IDENT.test(name) ? name : jsQuote(name)
+}
+
+
+function jsQuote(s: string): string {
+  return "'" + JSON.stringify(s).slice(1, -1).replace(/\\"/g, '"').replace(/'/g, "\\'") + "'"
 }
 
 
@@ -471,7 +478,7 @@ const LUA_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/
 function luaKey(name: string): string {
   return LUA_IDENT.test(name) && !isReservedName(name, 'lua')
     ? name
-    : `["${name}"]`
+    : `["${name.replace(/[\\"]/g, '\\$&').replace(/\n/g, '\\n').replace(/\r/g, '\\r')}"]`
 }
 
 
@@ -511,6 +518,7 @@ export {
   jsProp,
   jsOptProp,
   jsKey,
+  jsQuote,
   luaKey,
   prefixLeadingDigit,
 }

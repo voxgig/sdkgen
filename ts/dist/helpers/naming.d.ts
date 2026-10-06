@@ -32,6 +32,7 @@ declare function exampleVarName(name: string, lang: string): string;
 declare function prefixLeadingDigit(s: string): string;
 declare function jsProp(obj: string, name: string): string;
 declare function jsKey(name: string): string;
+declare function jsQuote(s: string): string;
 declare function luaKey(name: string): string;
 declare function jsOptProp(obj: string, name: string): string;
-export { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, isTsSdkType, tsSafeTypeName, isElixirReservedType, elixirSafeTypeName, elixirTypeNames, elixirTypeName, elixirAccessorNames, elixirAccessor, tsTypeName, rbTypeName, phpTypeName, swiftTypeName, jsProp, jsOptProp, jsKey, luaKey, prefixLeadingDigit, };
+export { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, isTsSdkType, tsSafeTypeName, isElixirReservedType, elixirSafeTypeName, elixirTypeNames, elixirTypeName, elixirAccessorNames, elixirAccessor, tsTypeName, rbTypeName, phpTypeName, swiftTypeName, jsProp, jsOptProp, jsKey, jsQuote, luaKey, prefixLeadingDigit, };

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, pickExampleEntity, opRequestShape, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, pickExampleEntity, opRequestShape, elixirAccessor, entityCollection, exampleVarName, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { elixirLit } from './utility_elixir'
+import { elixirLit, elixirString } from './utility_elixir'
 
 
 const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
@@ -27,20 +27,27 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'H.deep(%{})'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `H.deep(%{"${idF}" => "test01"})` : 'H.deep(%{})'
+  } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+    const chosen = requiredItems(exampleEntity, 'list')
+    testArg = `H.deep(%{${chosen.map((it: any) => `${elixirString(it.name)} => ${elixirLit(it.type)}`).join(', ')}})`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
-    testArg = `H.deep(%{${chosen.map((it: any) => `"${it.name}" => ${elixirLit(it.type)}`).join(', ')}})`
+    testArg = `H.deep(%{${chosen.map((it: any) => `${elixirString(it.name)} => ${elixirLit(it.type)}`).join(', ')}})`
   }
 
-  const resVar = 'list' === primaryOp ? 'records' : 'record'
   const testModeExample = primaryOp
     ? `# Entity ops return the entity, and list one per record (raise on error).
 ${eVar} = ${Name}.${eCall}(sdk)
-${resVar} = ${Name}.Entity.${eName}.${primaryOp}(${eVar}, ${testArg})
-IO.inspect(${resVar})`
+${'list' === primaryOp
+  ? `${eVar}s = ${Name}.Entity.${eName}.list(${eVar}, ${testArg})
+for i <- 0..(Voxgig.Struct.size(${eVar}s) - 1)//1 do
+  IO.puts(Voxgig.Struct.jsonify(${Name}.Entity.${eName}.data_get(Voxgig.Struct.getelem(${eVar}s, i))))
+end`
+  : `${eVar} = ${Name}.Entity.${eName}.${primaryOp}(${eVar}, ${testArg})
+IO.puts(Voxgig.Struct.jsonify(${Name}.Entity.${eName}.data_get(${eVar})))`}`
     : `result = ${Name}.direct(sdk, H.deep(%{"path" => "/api/resource", "method" => "GET"}))
 IO.inspect(result)`
 

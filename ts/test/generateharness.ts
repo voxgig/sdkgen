@@ -466,6 +466,156 @@ main: kit: flow: BasicMetricFlow: {
 `
 
 
+// A list whose route requires the query parameters engine and q.
+const SEARCH_ENTITY = `
+main: kit: entity: search: {
+  alias: field: {}
+  name: "search"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: list: {
+    name: "list"
+    points: [ {
+      g: { query: [
+        { k: "query", n: "engine", or: "engine", r: true, t: "\`$STRING\`", ex: "google" }
+        { k: "query", n: "q", or: "q", r: true, t: "\`$STRING\`", ex: "coffee" }
+      ] }
+      m: "GET", o: "/search"
+      s: [{ lit: "search" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: BasicSearchFlow: {
+  entity: "search", kind: "basic", name: "BasicSearchFlow"
+  step: [ { o: "list", m: { engine: "google", q: "coffee" } } ]
+}
+`
+
+
+function searchOnly(): string {
+  return entityOnly(SEARCH_ENTITY)
+}
+
+
+// A list-only entity requiring the given [name, type] query parameters.
+function listOnly(name: string, params: [string, string][]): string {
+  const flow = 'Basic' + name[0].toUpperCase() + name.slice(1) + 'Flow'
+  return entityOnly(`
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: list: {
+    name: "list"
+    points: [ {
+      g: { query: [${params.map(([n, t]) => `
+        { k: "query", n: ${JSON.stringify(n)}, or: ${JSON.stringify(n)}, r: true, t: ${t} }`).join('')}
+      ] }
+      m: "GET", o: "/${name}"
+      s: [{ lit: "${name}" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
+  step: [ { o: "list", m: {} } ]
+}
+`)
+}
+
+
+// A list-only entity on one route whose points each require one of the given query parameters.
+function selectorList(name: string, selectors: string[]): string {
+  const flow = 'Basic' + name[0].toUpperCase() + name.slice(1) + 'Flow'
+  return entityOnly(`
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: list: {
+    name: "list"
+    points: [${selectors.map((sel) => `
+      {
+        g: { query: [ { k: "query", n: "${sel}", or: "${sel}", r: true, t: "\`$STRING\`" } ] }
+        m: "GET", o: "/${name}"
+        s: [{ lit: "${name}" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+        q: { exist: ["${sel}"] }
+      }`).join('')}
+    ]
+  }
+}
+
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
+  step: [ { o: "list", m: {} } ]
+}
+`)
+}
+
+
+// A list requiring string id, q and tag, whose create requires q as an integer.
+// With `load`, a load by id too, which every test-mode block seeds.
+function retypedList(name: string = 'crate', load: boolean = false): string {
+  const flow = 'Basic' + name.split('_').map((w: string) => w[0].toUpperCase() + w.slice(1)).join('') + 'Flow'
+  return entityOnly(`
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "q": { h: 'Q', n: "q", r: true, t: "\`$INTEGER\`" }
+  }
+  op: {
+    list: { name: "list", points: [ {
+      g: { query: [
+        { k: "query", n: "id", or: "id", r: true, t: "\`$STRING\`" }
+        { k: "query", n: "q", or: "q", r: true, t: "\`$STRING\`" }
+        { k: "query", n: "tag", or: "tag", r: true, t: "\`$STRING\`" }
+      ] }
+      m: "GET", o: "/${name}", s: [{ lit: "${name}" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    create: { name: "create", points: [ {
+      g: {}, m: "POST", o: "/${name}", s: [{ lit: "${name}" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+${load ? `    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/${name}/{id}", s: [{ lit: "${name}" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+` : ''}  }
+}
+
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
+  step: [ { o: "list", m: {} } ]
+}
+`)
+}
+
+
+// A snake_case retypedList with a load, so every block that seeds the mock seeds it.
+function seedableList(): string {
+  return retypedList('crate_box', true)
+}
+
+
+// The fixture's own entities made inactive, beside the given source.
+function entityOnly(source: string): string {
+  return source + Object.keys(makeModel(['ts']).main[KIT].entity)
+    .map((name: string) => `main: kit: entity: ${name}: active: false\n`).join('')
+}
+
+
 // Calls the runtime refuses when made bare: moon lists and loads under its
 // planet, and every list route of signal is an action.
 const ROUTING_MODEL = `
@@ -703,6 +853,79 @@ main: kit: flow: BasicContactsfieldFlow: {
   step: [ { o: "create", i: { ref: "contactsfield_ref01" } } ]
 }
 `
+
+
+// A quick start shows the first active entity: a load-only singleton, a
+// list-only one, one with every operation (patch too), and one nested in it.
+const PLANET_FIRST = ['ambient', 'console', 'graph_ql', 'history']
+  .map((name) => 'main: kit: entity: ' + name + ': active: false').join('\n')
+
+const SATELLITE = `
+main: kit: entity: satellite: {
+  alias: field: {}
+  name: "satellite"
+  id: { field: "id", name: "id" }
+  relations: ancestors: [[path($.main.kit.entity.planet)]]
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "planet_id": { h: 'PlanetId', n: "planet_id", r: false, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: {
+      name: "list"
+      points: [ {
+        g: { params: [ { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" } ] }
+        m: "GET", o: "/planet/{planet_id}/satellite"
+        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+    load: {
+      name: "load"
+      points: [ {
+        g: { params: [
+          { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" }
+          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
+        ] }
+        m: "GET", o: "/planet/{planet_id}/satellite/{id}"
+        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+      } ]
+    }
+  }
+}
+
+main: kit: flow: BasicSatelliteFlow: {
+  entity: "satellite", kind: "basic", name: "BasicSatelliteFlow"
+  step: [
+    { o: "list", m: { planet_id: "planet01" } }
+    { o: "load", m: { planet_id: "planet01" }, i: { ref: "satellite_ref01", srcdatavar: "satellite_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
+const PLANET_PATCH = `
+main: kit: entity: planet: op: patch: {
+  name: "patch"
+  points: [ {
+    g: { params: [
+      { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "p01" }
+    ] }
+    m: "PATCH", o: "/planet/{id}", s: [{ lit: "planet" }, { var: "id" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" }
+  } ]
+}
+`
+
+const CRUD_MODEL = PLANET_FIRST + PLANET_PATCH
+
+const DOC_MODELS: [string, string | undefined][] = [
+  ['singleton', undefined],
+  ['list', 'main: kit: entity: ambient: active: false'],
+  ['crud', CRUD_MODEL],
+  ['nested', PLANET_FIRST + SATELLITE],
+]
 
 
 const BUILTIN_TYPE_ENTITY = `
@@ -951,6 +1174,13 @@ export {
   API_MODEL,
   CREATELESS_ENTITY,
   ROUTING_MODEL,
+  SEARCH_ENTITY,
+  searchOnly,
+  listOnly,
+  selectorList,
+  retypedList,
+  seedableList,
+  entityOnly,
   entityTestData,
   FOLD_ENTITY,
   UNGENERATED_OP,
@@ -958,6 +1188,8 @@ export {
   SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY,
   KEYWORD_ACCESSOR_ENTITY,
+  CRUD_MODEL,
+  DOC_MODELS,
   OPLESS_ENTITY,
   CREATE_ONLY_ENTITY,
   PATCH_ONLY_ENTITY,

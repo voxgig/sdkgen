@@ -18,9 +18,9 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, seedableList, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
-  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, namedEntity, toolchain,
+  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
 } from './generateharness'
 
 
@@ -52,6 +52,61 @@ function allTargets(): string[] {
 }
 
 
+// Every bundled SDK target has an entity layer.
+function sdkTargets(): string[] {
+  return allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+}
+
+
+function targetTitle(target: string): string {
+  const file = Path.resolve(__dirname, '..', 'project', '.sdk', 'model', 'target', target + '.aontu')
+  const title = /^\s*title:\s*(['"]?)(.+?)\1\s*$/m.exec(readFileSync(file, 'utf8'))
+  ok(null != title, target + ': its target model has no title')
+  return title![2]
+}
+
+
+// Each heading under a reference's `### Operations`, with the paragraph below it.
+function operationDocs(ref: string): { heading: string, desc: string }[] {
+  const docs: { heading: string, desc: string }[] = []
+  const lines = ref.split('\n')
+  let inOps = false
+  lines.forEach((line: string, i: number) => {
+    if (/^#{2,3} /.test(line)) {
+      inOps = /^### Operations\s*$/.test(line)
+    }
+    else if (inOps && line.startsWith('#### ')) {
+      const rest = lines.slice(i + 1)
+      const start = rest.findIndex((l: string) => '' !== l.trim())
+      const end = rest.findIndex((l: string, j: number) => start < j && '' === l.trim())
+      docs.push({ heading: line, desc: rest.slice(start, end < 0 ? undefined : end).join(' ') })
+    }
+  })
+  return docs
+}
+
+
+// The quick start each target shows in a root README, keyed by target title.
+function quickStarts(readme: string): Record<string, string> {
+  const starts: Record<string, string> = {}
+  let section = ''
+  let title = ''
+  for (const m of readme.matchAll(/^(##|###) (.+)$|^```\w*\n([\s\S]*?)^```$/gm)) {
+    if ('##' === m[1]) {
+      section = m[2]
+      title = ''
+    }
+    else if ('###' === m[1]) {
+      title = m[2]
+    }
+    else if (/^Quickstart\b/.test(section) && '' !== title && null == starts[title]) {
+      starts[title] = m[3]
+    }
+  }
+  return starts
+}
+
+
 const PLACEHOLDER_PINNED = [
   /^swift\/Package\.swift$/,
   /^swift\/README\.md$/,
@@ -67,6 +122,7 @@ const NON_SDK_SIBLING: Record<string, string> = {
 }
 
 const NON_SDK_TARGETS = Object.keys(NON_SDK_SIBLING)
+
 
 
 const DIGIT_ENTITY = `
@@ -148,6 +204,21 @@ async function generate(
 // are exactly those under `<target>/`.
 function filesFor(out: Record<string, string>, target: string): [string, string][] {
   return Object.entries(out).filter(([p]) => p.startsWith(target + '/'))
+}
+
+
+// Every list call the docs of one target make on an entity, a call that breaks
+// after its open parenthesis read with its next line; comments and table rows
+// left out.
+function listCalls(out: Record<string, string>, target: string, entity: RegExp): string[] {
+  return Object.keys(out)
+    .filter((path: string) => path.startsWith(target + '/') && path.endsWith('.md'))
+    .flatMap((path: string) => out[path].split('\n')
+      .map((line: string, i: number, lines: string[]) =>
+        /\(\s*$/.test(line) ? line + ' ' + lines[i + 1] : line)
+      .filter((line: string) => /(\.|:|->|\/)(e_)?(list|List)\b/.test(line) && entity.test(line))
+      .filter((line: string) => !/^\s*(\/\/|#|--|\||-|\*|;|\(\*)/.test(line) && !/Value::List\(/.test(line))
+      .map((line: string) => path + ': ' + line.trim()))
 }
 
 
@@ -2210,34 +2281,548 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
-  // The targets whose reference names the entity each operation returns.
+  // Every SDK target is checked, under the fold fixture, whose contacts_field
+  // brings a patch operation.
   test('the reference says each operation returns the entity', async () => {
-    const targets = ['c', 'cpp', 'csharp', 'elixir', 'rust', 'zig']
     const expect: Record<string, RegExp> = {
       load: /\bthe entity, whose record `[^`]+` reads\b/,
       list: /\bentities, one per record\b|\bone entity per record\b/,
       create: /\bthe created entity\b(?! data)/,
       update: /\bthe updated entity\b(?! data)/,
+      patch: /\bthe patched entity\b(?! data)/,
       remove: /\bthe entity, marked as deleted\b/,
     }
-    const out = await generate(targets)
 
     const wrong: string[] = []
-    for (const target of targets) {
-      const ref = out[target + '/REFERENCE.md']
+    for (const target of sdkTargets()) {
+      const ref = (await generateFold(target))[target + '/REFERENCE.md']
       ok(null != ref, target + ': no REFERENCE.md generated')
-      for (const [op, says] of Object.entries(expect)) {
-        const heading = new RegExp('^#### `[^`\\n]*\\b' + op + '\\(.*\\n\\n(.*)$', 'gim')
-        const descs = [...ref.matchAll(heading)].map((m) => m[1])
-        ok(0 < descs.length, target + ': the reference documents no ' + op)
-        for (const desc of descs) {
-          if (!says.test(desc) || /\bentity data\b|\baggregate list\b/.test(desc)) {
-            wrong.push(target + ' ' + op + ': ' + desc)
+      const documented = new Set<string>()
+      for (const { heading, desc } of operationDocs(ref)) {
+        const named = /(?:^|[^a-z])(?:e_)?(load|list|create|update|patch|remove)\b/i.exec(heading)
+        ok(null != named, target + ': an operation heading names no operation: ' + heading)
+        const op = named![1].toLowerCase()
+        documented.add(op)
+        if (!expect[op].test(desc) || /\bentity data\b|\baggregate list\b/.test(desc)) {
+          wrong.push(target + ' ' + op + ': ' + desc)
+        }
+      }
+      deepStrictEqual([...documented].sort(), Object.keys(expect).sort(),
+        target + ': the operations its reference documents')
+    }
+    deepStrictEqual([...new Set(wrong)], [], 'operations the reference says return a record')
+  })
+
+
+  // Where each target declares what an operation returns. `cls` finds the
+  // entity class an entity file declares; `returns` is the declaration for one
+  // operation, and what it must be. A target whose declared types are generic
+  // must still declare no data type. perl and elixir say it in a comment.
+  const ENTITY_COMMENT = /^(?![\s\S]*(?:\bentity maps?\b|\bdata \(hashref\)))[\s\S]*\bReturns\b[^.;]*\bentit(?:y|ies)\b/
+  const OP = '(?<op>load|list|create|update|patch|remove)'
+  const OP_RETURNS: Record<string, null | {
+    file: RegExp,
+    cls?: RegExp,
+    decl: RegExp,
+    returns: (op: string, cls: string) => string | RegExp,
+  }> = {
+    c: {
+      file: /^c\/entity\/\w+\.c$/,
+      decl: new RegExp('^static (?<type>Entity\\*+) \\w+_' + OP + '\\(Entity\\* e,', 'gm'),
+      returns: (op) => 'list' === op ? 'Entity**' : 'Entity*',
+    },
+    clojure: null,
+    cpp: {
+      file: /^cpp\/entity\/\w+\.hpp$/,
+      decl: new RegExp('^\\s*(?<type>\\S+) ' + OP + '\\(const Value& req', 'gm'),
+      returns: (op) => 'list' === op ? 'std::vector<SdkEntityPtr>' : 'SdkEntityPtr',
+    },
+    csharp: {
+      file: /^csharp\/entity\/\w+\.cs$/,
+      decl: /public override (?<type>\S+) (?<op>Load|List|Create|Update|Patch|Remove)\(/g,
+      returns: () => 'object?',
+    },
+    elixir: {
+      file: /^elixir\/lib\/entity\/\w+_entity\.ex$/,
+      decl: new RegExp('^(?<type>(?:[ \\t]*#[^\\n]*\\n)+)[ \\t]*@spec ' + OP + '\\(', 'gm'),
+      returns: () => ENTITY_COMMENT,
+    },
+    go: {
+      file: /^go\/entity\/\w+_entity\.go$/,
+      decl: /^func \(e \*\w+\) (?<op>Load|List|Create|Update|Patch|Remove)\([^)]*\) \((?<type>[^)]*)\)/gm,
+      returns: () => 'any, error',
+    },
+    java: {
+      file: /^java\/entity\/\w+\.java$/,
+      decl: new RegExp('^\\s*public (?<type>\\S+) ' + OP + '\\(Map<', 'gm'),
+      returns: () => 'Object',
+    },
+    js: {
+      file: /^js\/src\/entity\/\w+\.js$/,
+      cls: /^class (\w+) extends/m,
+      decl: new RegExp('@returns \\{(?<type>[^}]+)\\}\\s*\\*\\/\\s*async ' + OP + '\\(', 'g'),
+      returns: (op, cls) => 'Promise<' + cls + ('list' === op ? '[]>' : '>'),
+    },
+    kotlin: {
+      file: /^kotlin\/entity\/\w+\.kt$/,
+      decl: new RegExp('override fun ' + OP + '\\([^)]*\\): (?<type>\\S+) \\{', 'g'),
+      returns: () => 'Any?',
+    },
+    lua: {
+      file: /^lua\/entity\/\w+_entity\.lua$/,
+      cls: /^local (\w+) = \{\}$/m,
+      decl: new RegExp('---@return (?<type>\\S+)\\r?\\n---@return string\\? err\\r?\\nfunction \\w+:' + OP + '\\(', 'g'),
+      returns: (op, cls) => cls + ('list' === op ? '[]' : ''),
+    },
+    ocaml: {
+      file: /^ocaml\/sdk_types\.ml$/,
+      decl: new RegExp('mutable e_' + OP + ' : (?<type>[^;]+);', 'g'),
+      returns: (op) => 'value -> value -> entity_obj' + ('list' === op ? ' list' : ''),
+    },
+    perl: {
+      file: /^perl\/entity\/\w+_entity\.pm$/,
+      cls: /^package (\w+);$/m,
+      decl: new RegExp('^(?<type>(?:#[^\\n]*\\n)+)sub ' + OP + ' \\{', 'gm'),
+      returns: () => ENTITY_COMMENT,
+    },
+    php: {
+      file: /^php\/entity\/\w+_entity\.php$/,
+      cls: /^class (\w+)/m,
+      decl: new RegExp('@return (?<type>\\S+)(?:(?!\\*\\/)[\\s\\S])*\\*\\/\\s*public function ' + OP + '\\(', 'g'),
+      returns: (op, cls) => cls + ('list' === op ? '[]' : ''),
+    },
+    py: {
+      file: /^py\/[^/]+\/entity\/\w+_entity\.py$/,
+      cls: /^class (\w+):/m,
+      decl: new RegExp('def ' + OP + '\\(.*\\) -> (?<type>.+):$', 'gm'),
+      returns: (op, cls) => 'list' === op ? 'list[' + cls + ']' : cls,
+    },
+    rb: {
+      file: /^rb\/entity\/\w+_entity\.rb$/,
+      cls: /^class (\w+)/m,
+      decl: new RegExp('# @return \\[(?<type>[^\\]]+)\\][^\\n]*(?:\\n\\s*#[^\\n]*)*\\n\\s*def ' + OP + '\\b', 'g'),
+      returns: (op, cls) => 'list' === op ? 'Array<' + cls + '>' : cls,
+    },
+    rust: {
+      file: /^rust\/entity\/\w+\.rs$/,
+      decl: new RegExp('fn ' + OP + '\\(self: &Rc<Self>[^)]*\\) -> Result<(?<type>[^,]+),', 'g'),
+      returns: (op) => 'list' === op ? 'Vec<Rc<Self>>' : 'Rc<Self>',
+    },
+    scala: {
+      file: /^scala\/entity\/\w+\.scala$/,
+      decl: new RegExp('override def ' + OP + '\\([^)]*\\): (?<type>\\w+)', 'g'),
+      returns: () => 'Object',
+    },
+    swift: {
+      file: /^swift\/Sources\/[^/]+\/entity\/\w+\.swift$/,
+      decl: new RegExp('override func ' + OP + '\\([^)]*\\) throws -> (?<type>\\w+)', 'g'),
+      returns: () => 'Value',
+    },
+    ts: {
+      file: /^ts\/src\/entity\/\w+\.ts$/,
+      cls: /^class (\w+) extends/m,
+      decl: new RegExp('async ' + OP + '\\([^)]*\\): (?<type>Promise<[^>]+>)', 'g'),
+      returns: (op, cls) => 'Promise<' + cls + ('list' === op ? '[]>' : '>'),
+    },
+    zig: {
+      file: /^zig\/entity\/\w+\.zig$/,
+      decl: new RegExp('pub fn ' + OP + '\\(self: \\*\\w+, [^)]*\\) (?<type>\\w+) \\{', 'g'),
+      returns: (op) => 'list' === op ? 'EntListResult' : 'EntResult',
+    },
+  }
+
+  // The operations one entity file declares, and each declaration that does
+  // not say the operation returns the entity.
+  function declarations(target: string, path: string, src: string): { ops: string[], wrong: string[] } {
+    const where = OP_RETURNS[target]!
+    const cls: string | undefined = null == where.cls ? '' : where.cls.exec(src)?.[1]
+    ok(null != cls, path + ': no entity class')
+    const ops: string[] = []
+    const wrong: string[] = []
+    for (const m of src.matchAll(where.decl)) {
+      const op = m.groups!.op.toLowerCase()
+      const declared = m.groups!.type.replace(/\s+/g, ' ').trim()
+      const says = where.returns(op, cls!)
+      ops.push(op)
+      if ('string' === typeof says ? declared !== says : !says.test(declared)) {
+        wrong.push(path + ' ' + op + ': ' + declared)
+      }
+    }
+    return { ops, wrong }
+  }
+
+  // A reference heading and a README entity-interface row name a type that no
+  // compiler reads. `ref` and `readme` give the type each must name for an
+  // operation: the entity class `cls` finds, or the name the page gives the
+  // entity `make` returns.
+  const DOC_RETURNS: Record<string, {
+    ref: (op: string, cls: string) => string,
+    readme?: (op: string) => string,
+  }> = {
+    clojure: {
+      ref: (op) => 'list' === op ? 'vector' : 'entity',
+      readme: (op) => 'list' === op ? 'vector' : 'entity',
+    },
+    elixir: {
+      ref: (op) => 'list' === op ? 'list()' : 'entity',
+      readme: (op) => 'list' === op ? 'list()' : 'entity',
+    },
+    perl: {
+      ref: (op, cls) => 'list' === op ? 'arrayref' : cls,
+      readme: (op) => 'list' === op ? 'arrayref' : 'entity',
+    },
+    py: {
+      ref: (op, cls) => 'list' === op ? 'list[' + cls + ']' : cls,
+    },
+  }
+
+  // A type checker reads an operation's result through its declaration, so it
+  // names the entity class, as the reference heading does.
+  test('every target declares that each operation returns its entity class', async () => {
+    deepStrictEqual(sdkTargets().filter((t: string) => undefined === OP_RETURNS[t]), [],
+      'targets with no declared return listed')
+
+    const wrong: string[] = []
+    for (const target of sdkTargets()) {
+      const where = OP_RETURNS[target]
+      if (null == where) continue
+      const ops = new Set<string>()
+      for (const [path, src] of Object.entries(await generateFold(target))) {
+        if (!where.file.test(path)) continue
+        const found = declarations(target, path, src)
+        found.ops.forEach((op: string) => ops.add(op))
+        wrong.push(...found.wrong)
+      }
+      const missing = ['create', 'list', 'load', 'patch', 'remove', 'update'].filter((op) => !ops.has(op))
+      if (0 < missing.length) wrong.push(target + ': no declared return found for ' + missing.join(', '))
+    }
+
+    for (const [target, says] of Object.entries(DOC_RETURNS)) {
+      const out = await generateFold(target)
+      const where = OP_RETURNS[target]
+      const classes = null == where?.cls ? [''] : Object.entries(out)
+        .filter(([path]) => where.file.test(path)).map(([, src]) => where.cls!.exec(src)?.[1] ?? '')
+      const pages: [string, RegExp, string[], (op: string, cls: string) => string][] = [
+        [target + '/REFERENCE.md', /^#### `[^`]*?\b(load|list|create|update|patch|remove)\b[^`]* (?:->|::) ([^`]+)`$/,
+          operationDocs(out[target + '/REFERENCE.md']).map((doc) => doc.heading), says.ref],
+      ]
+      if (null != says.readme) {
+        pages.push([target + '/README.md', /^\| `(load|list|create|update|patch|remove)` \| `[^`]* (?:->|::) ([^`]+)` \|/,
+          out[target + '/README.md'].split('\n').filter((line: string) => line.startsWith('| `')), says.readme])
+      }
+      for (const [path, entry, lines, want] of pages) {
+        const ops = new Set<string>()
+        for (const line of lines) {
+          const m = entry.exec(line)
+          if (null == m) {
+            if (path.endsWith('REFERENCE.md')) wrong.push(path + ' ' + line)
+            continue
+          }
+          ops.add(m[1])
+          if (!classes.some((cls: string) => want(m[1], cls) === m[2])) wrong.push(path + ' ' + line)
+        }
+        if (6 !== ops.size) wrong.push(path + ': documents ' + [...ops].sort().join(', '))
+      }
+    }
+    deepStrictEqual(wrong, [], 'operations declared to return a record')
+  })
+
+  test('a declaration comment that names the record does not say it returns the entity', () => {
+    const perl = declarations('perl', 'perl/entity/planet_entity.pm', [
+      'package PlanetEntity;',
+      '',
+      '# per-call control. Returns the created Planet entity data (hashref); dies',
+      '# with DemoError on failure.',
+      'sub create {',
+      '}',
+      '',
+      '# per-call control. Returns the updated Planet entity (data_get reads its',
+      '# record); dies with DemoError on failure.',
+      'sub update {',
+    ].join('\n'))
+    const elixir = declarations('elixir', 'elixir/lib/entity/planet_entity.ex', [
+      '  # Returns the created planet entity map, typed as the record.',
+      '  @spec create(map(), map(), map() | nil) :: term()',
+    ].join('\n'))
+    deepStrictEqual([perl.ops, elixir.ops], [['create', 'update'], ['create']])
+    deepStrictEqual([...perl.wrong, ...elixir.wrong].map((w: string) => w.slice(0, w.indexOf(':'))),
+      ['perl/entity/planet_entity.pm create', 'elixir/lib/entity/planet_entity.ex create'])
+  })
+
+
+  // A quick start leads with the first active entity, so each model shows a
+  // different operation.
+  const modelOut = new Map<string, Promise<Record<string, string>>>()
+  const generateModel = (shape: string, extra: string | undefined) => {
+    if (!modelOut.has(shape)) modelOut.set(shape, generate(sdkTargets(), undefined, extra))
+    return modelOut.get(shape)!
+  }
+
+  const RECORD_ACCESSOR: Record<string, RegExp> = {
+    c: /->vt->data\(/,
+    clojure: /\(\(:data-get /,
+    cpp: /->data\(\)/,
+    csharp: /\.Data\(\)/,
+    elixir: /\.data_get\(/,
+    go: /\.Data\(\)/,
+    java: /\.data\(\)/,
+    js: /\.data\(\)/,
+    kotlin: /\.data\(\)/,
+    lua: /:data_get\(\)/,
+    ocaml: /\.e_data_get \(\)/,
+    perl: /->data_get\b/,
+    php: /->data_get\(\)/,
+    py: /\.data_get\(\)/,
+    rb: /\.data_get\b/,
+    rust: /\.data\(None\)/,
+    scala: /\.data\(\)/,
+    swift: /\.data\(\)/,
+    ts: /\.data\(\)/,
+    zig: /\.asEntity\(\)\.data\(null\)/,
+  }
+
+  // The fences a target's examples are written in, and how it prints. The root
+  // README is read by the first fence alone, which no other target uses there.
+  const DOC_PRINT: Record<string, { fences: string[], print: RegExp }> = {
+    c: { fences: ['c'], print: /\b(?:printf|puts)\(/ },
+    clojure: { fences: ['clojure'], print: /\((?:println|prn|pprint)\b/ },
+    cpp: { fences: ['cpp'], print: /\bstd::cout\b/ },
+    csharp: { fences: ['csharp'], print: /\bConsole\.Write/ },
+    elixir: { fences: ['elixir'], print: /\bIO\.(?:puts|inspect)\b/ },
+    go: { fences: ['go'], print: /\bfmt\.Print/ },
+    java: { fences: ['java'], print: /\bSystem\.out\.print/ },
+    js: { fences: ['js', 'ts'], print: /\bconsole\.log\(/ },
+    kotlin: { fences: ['kotlin'], print: /\bprintln\(/ },
+    lua: { fences: ['lua'], print: /\bprint\(/ },
+    ocaml: { fences: ['ocaml'], print: /\b(?:print_endline|print_string|Printf\.printf)\b/ },
+    perl: { fences: ['perl'], print: /\b(?:print|say)\b/ },
+    php: { fences: ['php'], print: /\b(?:echo|print_r|var_dump|print)\b/ },
+    py: { fences: ['python'], print: /\bprint\(/ },
+    rb: { fences: ['ruby'], print: /^\s*(?:puts|p|pp|print)\b|\{ \|\w+\| (?:puts|p|pp)\b/ },
+    rust: { fences: ['rust'], print: /\b(?:println|print|dbg)!/ },
+    scala: { fences: ['scala'], print: /\bprintln\(/ },
+    swift: { fences: ['swift'], print: /\bprint\(/ },
+    ts: { fences: ['ts'], print: /\bconsole\.log\(/ },
+    zig: { fences: ['zig'], print: /\bstd\.debug\.print\(/ },
+  }
+
+  // A quick start's or tutorial's problems: a load or list with no record read
+  // after it, and a comment on one that does not name the entity.
+  function quickProblems(target: string, block: string): { calls: number, wrong: string[] } {
+    const OP_CALL = /(?:\.|->|:|\/)(?:e_)?(?:load|list)\b/i
+    const COMMENT = /^\s*(?:\/\/|#(?!include|!)|--|;;|\(\*)/
+    const wrong: string[] = []
+    const lines = block.split('\n')
+    const calls = lines
+      .map((l: string, i: number) =>
+        !COMMENT.test(l) && !/^\s*import\b/.test(l) && OP_CALL.test(l) ? i : -1)
+      .filter((i: number) => -1 < i)
+    calls.forEach((at: number, n: number) => {
+      if (!RECORD_ACCESSOR[target].test(lines.slice(at, calls[n + 1]).join('\n'))) {
+        wrong.push('no record read after ' + lines[at].trim())
+      }
+    })
+    for (const line of lines.filter((l: string) => COMMENT.test(l) && /\b(load|list)\b/i.test(l))) {
+      if (!/\bentit(y|ies)\b/i.test(line)) wrong.push(line.trim())
+    }
+    return { calls: calls.length, wrong }
+  }
+
+  // The blocks of the tutorial a target's README opens with.
+  function tutorialBlocks(readme: string, fence: string): string[] {
+    const section = /^## Tutorial\b[^\n]*\n([\s\S]*?)(?=^## )/m.exec(readme)
+    return null == section ? [] : [...section[1].matchAll(/^```(\w+)\n([\s\S]*?)^```$/gm)]
+      .filter((m) => fence === m[1]).map((m) => m[2])
+  }
+
+  test('every quick start and tutorial reads the record off the entity an operation returns', async () => {
+    const targets = sdkTargets()
+    deepStrictEqual(targets.filter((t: string) => null == RECORD_ACCESSOR[t]), [],
+      'targets with no record accessor listed')
+
+    const wrong: string[] = []
+    for (const [shape, extra] of DOC_MODELS) {
+      const out = await generateModel(shape, extra)
+      const starts = quickStarts(out['README.md'])
+      for (const target of targets) {
+        const pages: [string, string[]][] = [
+          ['README.md', null == starts[targetTitle(target)] ? [] : [starts[targetTitle(target)]]],
+          [target + '/README.md', tutorialBlocks(out[target + '/README.md'], DOC_PRINT[target].fences[0])],
+        ]
+        for (const [path, blocks] of pages) {
+          let calls = 0
+          for (const block of blocks) {
+            const found = quickProblems(target, block)
+            calls += found.calls
+            wrong.push(...found.wrong.map((w: string) => shape + ' ' + target + ' ' + path + ': ' + w))
+          }
+          if (0 === calls) wrong.push(shape + ' ' + target + ' ' + path + ': calls no operation')
+        }
+      }
+    }
+    deepStrictEqual(wrong, [], 'quick starts and tutorials that show a record where the entity is returned')
+  })
+
+
+  // A line without the arguments of the operation it calls, which begin at
+  // `at`: its parenthesised list, or else the rest of the enclosing form. A
+  // record read there is an argument, not what the operation returns.
+  function withoutArgs(line: string, at: number): string {
+    const own = '(' === line.slice(at).trimStart()[0]
+    let depth = 0
+    let end = at
+    for (; end < line.length; end++) {
+      if ('(' === line[end]) depth++
+      else if (')' === line[end]) {
+        if (0 === depth) break
+        if (0 === --depth && own) { end++; break }
+      }
+    }
+    return line.slice(0, at) + line.slice(end)
+  }
+
+  // Each print after an operation other than remove, up to the next one, that
+  // shows neither the record nor a name bound to it.
+  function entityPrints(target: string, code: string): string[] {
+    const OP_CALL = /(?:\.|->|:|\/)(?:e_)?(load|list|create|update|patch|remove)\b/i
+    const COMMENT = /^\s*(?:\/\/|#(?!include|!)|--|;;|\(\*)/
+    const FAILED = /fail|\berr\b|\berror\b/i
+    const BOUND = /(?:^|[\s(;])(?:const|let|var|local|my|val|auto)?\s*\$?([A-Za-z_]\w*)\s*:?=(?!=)/
+    const reads = RECORD_ACCESSOR[target]
+    const found: string[] = []
+    let op = ''
+    let bound: string[] = []
+    for (const line of code.split('\n')) {
+      if (COMMENT.test(line)) continue
+      const call = OP_CALL.exec(line)
+      if (null != call) {
+        op = call[1].toLowerCase()
+        bound = []
+      }
+      if ('' === op || 'remove' === op) continue
+      if (reads.test(null == call ? line : withoutArgs(line, call.index + call[0].length))) {
+        const name = BOUND.exec(line)
+        if (null != name) bound.push(name[1])
+      }
+      else if (DOC_PRINT[target].print.test(line) && !FAILED.test(line) &&
+        !bound.some((name: string) => new RegExp('\\b' + name + '\\b').test(line))) {
+        found.push(op + ': ' + line.trim())
+      }
+    }
+    return found
+  }
+
+  test('every example prints the record of the entity an operation returns', async () => {
+    deepStrictEqual(sdkTargets().filter((t: string) => null == DOC_PRINT[t]), [],
+      'targets with no print listed')
+
+    const wrong: string[] = []
+    for (const [shape, extra] of DOC_MODELS) {
+      const out = await generateModel(shape, extra)
+      for (const target of sdkTargets()) {
+        const { fences } = DOC_PRINT[target]
+        const pages: [string, string[]][] = [
+          ['README.md', fences.slice(0, 1)],
+          [target + '/README.md', fences],
+          [target + '/REFERENCE.md', fences],
+        ]
+        for (const [path, langs] of pages) {
+          ok(null != out[path], shape + ' ' + target + ': no ' + path)
+          for (const m of out[path].matchAll(/^```(\w+)\n([\s\S]*?)^```$/gm)) {
+            if (!langs.includes(m[1])) continue
+            for (const line of entityPrints(target, m[2])) {
+              wrong.push(shape + ' ' + target + ' ' + path + ': ' + line)
+            }
           }
         }
       }
     }
-    deepStrictEqual([...new Set(wrong)], [], 'operations the reference says return a record')
+    deepStrictEqual([...new Set(wrong)], [], 'examples that print the entity, not its record')
+  })
+
+  test('a record read in an operation\'s arguments is not what it returns', () => {
+    deepStrictEqual(entityPrints('py', [
+      'updated = client.Planet().update({"id": created.data_get()["id"], "radius": 1})',
+      'print(updated)',
+      'print(client.Planet().patch({"id": created.data_get()["id"], "radius": 2}))',
+    ].join('\n')), [
+      'update: print(updated)',
+      'patch: print(client.Planet().patch({"id": created.data_get()["id"], "radius": 2}))',
+    ])
+    deepStrictEqual(entityPrints('ts', [
+      'const updated = await client.Planet().update({ id: created.data().id, radius: 1 })',
+      'console.log(updated)',
+    ].join('\n')), ['update: console.log(updated)'])
+    deepStrictEqual(entityPrints('py', [
+      'record = client.Planet().load({"id": "p1"}).data_get()',
+      'print(record)',
+    ].join('\n')), [])
+  })
+
+
+  const RECORD_RESULT = [
+    /\(returns the record\b/i,
+    /\bthe value is the loaded record\b/i,
+    /\bbare (?:created )?record\b/i,
+    /\baggregate list\b/i,
+    /\bValue list\b(?! of entities)/,
+    /\bfor single-entity ops\b/i,
+    /\bresult data directly\b/i,
+    /\boperation's data\b/i,
+    /\bentity records?\b/i,
+    /\b(?:holds|contains) the mock response record\b/i,
+    /\breturns the (?:created |updated |patched |removed )?entity data\b/i,
+    /\bentity data directly\b/i,
+    /\bresolves to (?:void|undefined|nil|None|null)\b/i,
+    /\blist of records\b/i,
+    /\breturned mock data\b/i,
+    /\bis the returned data\b/i,
+    /\bcast results\b/i,
+    /\bread fields off results\b/i,
+  ]
+
+  // A field read straight off what an operation returned, by fence language.
+  const ENTITY_AS_RECORD: Record<string, RegExp> = {
+    clojure: /\(vs\/getprop created "/,
+    elixir: /Voxgig\.Struct\.getprop\(created,/,
+    lua: /\bitem\["/,
+    ocaml: /\(getp created "/,
+    perl: /"\$\w+->\{\w+\}|\$created->\{/,
+  }
+
+  test('no page says an entity operation returns a record', async () => {
+    const said: string[] = []
+    for (const [shape, extra] of DOC_MODELS) {
+      const out = await generateModel(shape, extra)
+      for (const [path, text] of Object.entries(out)) {
+        if (!/^(?:README\.md|[^/]+\/(?:README|REFERENCE)\.md)$/.test(path)) continue
+        const flat = text.replace(/`/g, '').replace(/\s+/g, ' ')
+        for (const re of RECORD_RESULT) {
+          const m = re.exec(flat)
+          if (null != m) said.push(shape + ' ' + path + ': ' + flat.substr(Math.max(0, m.index - 40), 100))
+        }
+        for (const m of text.matchAll(/^```(\w+)\n([\s\S]*?)^```$/gm)) {
+          const reads = ENTITY_AS_RECORD[m[1]]?.exec(m[2])
+          if (null != reads) said.push(shape + ' ' + path + ': ' + m[1] + ': ' + reads[0])
+        }
+        // An operation resolves to the entity, so its result takes the entity's name.
+        for (const m of text.matchAll(
+          /^\s*(records?) = [\w.]+\.(?:load|list|create|update|patch|remove)\((\w+)/gm)) {
+          if ('record' !== m[2]) said.push(shape + ' ' + path + ': ' + m[0].trim())
+        }
+      }
+    }
+    deepStrictEqual(said, [], 'pages that say an operation returns a record')
+  })
+
+  test('no stream comment says list returns records', async () => {
+    const said: string[] = []
+    for (const target of sdkTargets()) {
+      for (const [path, src] of filesFor(await generateFold(target), target)) {
+        for (const m of src.matchAll(/^.*\bmatching list\b.*$/gm)) said.push(path + ': ' + m[0].trim())
+      }
+    }
+    deepStrictEqual(said, [], 'comments that say list returns what stream yields')
   })
 
 
@@ -4885,6 +5470,346 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const plain = await generate(['go', 'go-mcp'])
     ok(/Version:\s+"0\.0\.1",/.test(findFile(plain, 'go-mcp/main.go')!),
       'go-mcp: the server does not report the default publish version')
+  })
+
+
+  test('a list example passes the parameters the list requires, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, searchOnly())
+
+    const bare: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Ss]earch/)
+      ok(0 < found.length, target + ': no list example found')
+      bare.push(...found.filter((line: string) => !/engine/.test(line) || !/\bq\b/.test(line)))
+    }
+    bare.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Ss]earch/)
+      .filter((line: string) => !/engine/.test(line) || !/\bq\b/.test(line)))
+    deepStrictEqual(bare, [], 'list examples without the required engine and q:\n' + bare.join('\n'))
+
+    const seed = out['README.md'].slice(out['README.md'].indexOf('SDK.test({'))
+    ok(/engine: 'example_engine', q: 'example_q'/.test(seed.slice(0, seed.indexOf('```'))),
+      'ts: the mock seed lacks the values the list example matches on')
+  })
+
+
+  // Every README component that seeds the mock, read from its source, writes
+  // a block that seeds the record its list call sends.
+  test('each README block that seeds the mock seeds the record its list example sends, under the entity\'s name', async () => {
+    const cmpdir = Path.join(SCAFFOLD, 'src', 'cmp')
+    const seeding = readdirSync(cmpdir).flatMap((lang: string) => readdirSync(Path.join(cmpdir, lang))
+      .filter((file: string) => /^Readme(?!Examples?Test)\w*\.ts$/.test(file) &&
+        /["']?entity["']?\s*(?::|=>)\s*[{[]/.test(readFileSync(Path.join(cmpdir, lang, file), 'utf8')))
+      .map((file: string) => lang + '/' + file))
+    ok(0 < seeding.length, 'no README component seeds the mock')
+
+    const out = await generate([...new Set(seeding.map((c: string) => c.split('/')[0]))], undefined, seedableList())
+    const seeded = /["']?(\w+)["']?\s*(?::|=>)\s*[{[]\s*["']?test01["']?\s*(?::|=>)\s*[{[]/
+    const blocks = Object.keys(out).filter((doc: string) => /^(?:[^/]+\/)?(?:README|REFERENCE)\.md$/.test(doc))
+      .flatMap((doc: string) => [...out[doc].matchAll(/```\w+\n([\s\S]*?)\n```/g)]
+        .filter((m) => seeded.test(m[1])).map((m) => ({ doc, code: m[1] })))
+    strictEqual(blocks.length, seeding.length, 'the components that seed the mock (' + seeding.join(', ') +
+      ') do not write one seeded block each:\n' + blocks.map((b) => b.doc + ':\n' + b.code).join('\n'))
+
+    const inside = (text: string, at: number): string => {
+      let depth = 0
+      for (let i = at; i < text.length; i++) {
+        if ('([{'.includes(text[i])) depth++
+        else if (')]}'.includes(text[i]) && 0 === --depth) return text.slice(at + 1, i)
+      }
+      return ''
+    }
+    const pairs = (text: string) => [...text.matchAll(
+      /["']?([\w$]+)["']?\s*(?::|=>)\s*('[^']*'|"[^"]*"|\[\]|\{\}|[^\s,{}()[\]]+)/g)].map((m) => m[1] + ' ' + m[2])
+
+    for (const { doc, code } of blocks) {
+      const seed = seeded.exec(code)!
+      strictEqual(seed[1], 'crate_box', doc + ': the mock is seeded under another name than the entity\'s:\n' + code)
+      const record = pairs(inside(code, seed.index + seed[0].length - 1))
+      const sent = pairs(inside(code, code.indexOf('(', code.search(/(?:\.|->)list\(/))))
+      strictEqual(sent.length, 3, doc + ': the list call does not send its parameters:\n' + code)
+      deepStrictEqual(sent.filter((pair: string) => !record.includes(pair)), [],
+        doc + ': the list call sends values the seeded record lacks:\n' + code)
+    }
+  })
+
+
+  test('a Java or Scala map of more than ten pairs is built with Map.ofEntries', async () => {
+    const wide = Array.from({ length: 11 }, (_, i): [string, string] => ['p' + i, '"`$STRING`"'])
+    const out = await generate(['java', 'scala'], undefined, listOnly('wide', wide))
+
+    const argCounts = (text: string): number[] => {
+      const counts: number[] = []
+      for (const m of text.matchAll(/\bMap\.of\(/g)) {
+        let depth = 1
+        let args = 1
+        let quoted = false
+        for (let i = m.index! + m[0].length; i < text.length && 0 < depth; i++) {
+          const c = text[i]
+          if (quoted) quoted = '"' !== c || '\\' === text[i - 1]
+          else if ('"' === c) quoted = true
+          else if ('(' === c || '[' === c || '{' === c) depth++
+          else if (')' === c || ']' === c || '}' === c) depth--
+          else if (',' === c && 1 === depth) args++
+        }
+        counts.push(args)
+      }
+      return counts
+    }
+
+    for (const target of ['java', 'scala']) {
+      const docs = Object.keys(out).filter((path) => path.startsWith(target + '/') && path.endsWith('.md'))
+      const text = docs.map((path) => out[path]).join('\n')
+      deepStrictEqual(argCounts(text).filter((n) => 20 < n), [],
+        target + ': a Map.of call passes more than ten pairs')
+      ok(/Map\.ofEntries\((java\.util\.)?Map\.entry\("p0", "example"\)/.test(text) && /Map\.entry\("p10", "example"\)/.test(text),
+        target + ': the list example of eleven parameters is not built with Map.ofEntries')
+    }
+  })
+
+
+  test('a list example writes a nullable parameter as its type, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined,
+      listOnly('tally', [['n', '["`$ONE`", ["`$INTEGER`", "`$NULL`"]]']]))
+
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Tt]ally/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => /example|undefined/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'list examples that write an INTEGER | NULL parameter as a string:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('a list example writes a null-only parameter as its language\'s null', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, listOnly('tally', [['z', '"`$NULL`"']]))
+
+    // Shared sections are written in TypeScript for the targets the shared
+    // helper does not write. Java and Scala keep the placeholder: Map.of
+    // rejects a null value.
+    const pair: Record<string, string> = {
+      ts: 'z: null', js: 'z: null', py: '"z": None', php: '"z" => null', rb: '"z" => nil',
+      lua: 'z = nil', go: '"z": nil', c: '"z", v_null()', cpp: '{"z", Value(nullptr)}',
+      csharp: '["z"] = null', kotlin: '"z" to null', perl: "'z' => undef", rust: '("z", Value::Null)',
+      swift: '("z", .null)', zig: '.{ "z", h.vnull() }', ocaml: '("z", Null)', clojure: '"z" nil',
+      elixir: '"z" => nil',
+    }
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Tt]ally/)
+      ok(0 < found.length, target + ': no list example found')
+      if ('java' === target || 'scala' === target) continue
+      ok(null != pair[target], target + ': no null pair declared')
+      ok(found.some((line: string) => line.includes(pair[target])),
+        target + ': no list example writes ' + pair[target] + ':\n' + found.join('\n'))
+      wrong.push(...found.filter((line: string) => /undefined|example/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'list examples that do not write a NULL parameter as null:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('java and scala write example literals from one table each, which says why NULL keeps the placeholder', () => {
+    for (const lang of ['java', 'scala']) {
+      const dir = Path.join(SCAFFOLD, 'src', 'cmp', lang)
+      const tables = readdirSync(dir).filter((file: string) => file.endsWith('.ts') &&
+        /'(?:java\.util\.)?List\.of\(\)'/.test(readFileSync(Path.join(dir, file), 'utf8')))
+      deepStrictEqual(tables, ['utility_' + lang + '.ts'], lang + ': an example literal table outside the utility module')
+
+      const src = readFileSync(Path.join(dir, 'utility_' + lang + '.ts'), 'utf8')
+      const at = src.indexOf('function ' + lang + 'Lit(')
+      ok(-1 < at, lang + ': the utility module declares no ' + lang + 'Lit')
+      ok(/^\/\/.*\bnull\b/i.test(src.slice(0, at).trimEnd().split('\n').pop()!),
+        lang + ': the literal table does not say why NULL keeps the placeholder')
+    }
+  })
+
+
+  test('a list parameter named like the load id takes its own type\'s literal', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, entityOnly(`
+main: kit: entity: badge: {
+  alias: field: {}
+  name: "badge"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    list: { name: "list", points: [ {
+      g: { query: [ { k: "query", n: "id", or: "id", r: true, t: "\`$BOOLEAN\`" } ] }
+      m: "GET", o: "/badge", s: [{ lit: "badge" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/badge/{id}", s: [{ lit: "badge" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: flow: BasicBadgeFlow: {
+  entity: "badge", kind: "basic", name: "BasicBadgeFlow"
+  step: [ { o: "list", m: { id: true } } ]
+}
+`))
+
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Bb]adge/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => /example_id|test01|\bid\b[^,)]*example/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'list examples that write the load id literal for a BOOLEAN list parameter:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('a list example writes a Lua keyword and __proto__ as keys of their own', async () => {
+    const out = await generate(['ts', 'js', 'lua'], undefined,
+      listOnly('crate', [['end', '"`$STRING`"'], ['__proto__', '"`$STRING`"']]))
+
+    // A bare or quoted __proto__ key sets the prototype, and a bare `end` does not parse.
+    const want: Record<string, string> = {
+      ts: "['__proto__']: \"example\"", js: "['__proto__']: \"example\"", lua: '["end"] = "example"',
+    }
+    const wrong: string[] = []
+    for (const target of ['ts', 'js', 'lua']) {
+      const found = listCalls(out, target, /[Cc]rate/)
+      ok(0 < found.length, target + ': no list example found')
+      ok(found.some((line: string) => line.includes(want[target])),
+        target + ': no list example writes ' + want[target] + ':\n' + found.join('\n'))
+      wrong.push(...found.filter((line: string) =>
+        /[{,]\s*'?__proto__'?\s*:/.test(line) || /[{,]\s*end\s*=/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'list examples with a key that sets the prototype or does not parse:\n' +
+      wrong.join('\n'))
+  })
+
+
+  test('a list whose points each need a selector of their own passes one point\'s, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, selectorList('contact', ['email', 'phone']))
+
+    // No selector is needed by both points, so a bare call reaches neither.
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Cc]ontact/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => !/email/.test(line)))
+    }
+    wrong.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Cc]ontact/)
+      .filter((line: string) => !/email/.test(line)))
+    deepStrictEqual(wrong, [], 'list examples that pass no point\'s selector:\n' + wrong.join('\n'))
+  })
+
+
+  test('a list parameter whose name holds a quote and a backslash is escaped, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, listOnly('crate', [['a"b\\c', '"`$STRING`"']]))
+
+    // Double-quoted in most targets, single-quoted in ts, js and perl.
+    const escaped = (line: string) => line.includes('"a\\"b\\\\c"') || line.includes("'a\"b\\\\c'")
+    const wrong: string[] = []
+    for (const target of targets) {
+      const found = listCalls(out, target, /[Cc]rate/)
+      ok(0 < found.length, target + ': no list example found')
+      wrong.push(...found.filter((line: string) => !escaped(line)))
+    }
+    wrong.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Cc]rate/)
+      .filter((line: string) => !escaped(line)))
+    deepStrictEqual(wrong, [], 'list examples that do not escape the name:\n' + wrong.join('\n'))
+  })
+
+
+  // The swift build lane needs a swift toolchain, which this check does not.
+  test('a swift entity type writes each member name as an identifier', async () => {
+    const out = await generate(['swift'], undefined, listOnly('crate',
+      [['end', '"`$STRING`"'], ['__proto__', '"`$STRING`"'], ['a"b\\c', '"`$STRING`"']]))
+    const types = Object.entries(out).find(([path, text]) =>
+      /^swift\/.*Types\.swift$/.test(path) && text.includes('struct CrateListMatch'))
+    ok(null != types, 'swift: no type for the list match was generated')
+    const names = [...types![1].matchAll(/^\s*public var ([^:]+):/gm)].map((m) => m[1])
+    ok(names.includes('end'), 'swift: the list match lost its members:\n' + names.join('\n'))
+    deepStrictEqual(names.filter((name: string) => !/^[\p{L}_][\p{L}\p{N}_]*$/u.test(name)), [],
+      'swift: member names that are not identifiers')
+  })
+
+
+  test('the root README quotes a create field whose name is not an identifier', async () => {
+    const out = await generate(['ts'], undefined, entityOnly(`
+main: kit: entity: note: {
+  alias: field: {}
+  name: "note"
+  fields: {
+    "first-name": { h: 'First', n: "first-name", r: true, t: "\`$STRING\`" }
+  }
+  op: create: {
+    name: "create"
+    points: [ {
+      g: {}, m: "POST", o: "/note", s: [{ lit: "note" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: BasicNoteFlow: {
+  entity: "note", kind: "basic", name: "BasicNoteFlow"
+  step: [ { o: "create", i: { ref: "note_ref01" } } ]
+}
+`))
+    ok(/client\.Note\(\)\.create\(\{\n  'first-name': /.test(out['README.md']),
+      'the root README create example does not quote first-name:\n' +
+      out['README.md'].split('\n').filter((line: string) => /first-name/.test(line)).join('\n'))
+  })
+
+
+  test('the root README writes a nullable create field as its type, and a null-only one as null', async () => {
+    const out = await generate(['ts'], undefined, entityOnly(`
+main: kit: entity: note: {
+  alias: field: {}
+  name: "note"
+  fields: {
+    "n": { h: 'N', n: "n", r: true, t: ["\`$ONE\`", ["\`$INTEGER\`", "\`$NULL\`"]] }
+    "z": { h: 'Z', n: "z", r: true, t: "\`$NULL\`" }
+  }
+  op: create: {
+    name: "create"
+    points: [ {
+      g: {}, m: "POST", o: "/note", s: [{ lit: "note" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: BasicNoteFlow: {
+  entity: "note", kind: "basic", name: "BasicNoteFlow"
+  step: [ { o: "create", i: { ref: "note_ref01" } } ]
+}
+`))
+    ok(/client\.Note\(\)\.create\(\{\n  n: 1,\n  z: null,\n\}\)/.test(out['README.md']),
+      'the root README create example does not write n: 1 and z: null:\n' +
+      out['README.md'].split('\n').filter((line: string) => /\b[nz]: /.test(line)).join('\n'))
+  })
+
+
+  test('a README names where the API key goes when it is not the Authorization header', async () => {
+    const auth = (where: string) => `main: kit: config: auth: { active: true, ${where}, prefix: '' }\n`
+    for (const [where, sentence] of [
+      ['in: query, name: api_key', 'The client sends the API key as the `api_key` query parameter.'],
+      ['in: cookie, name: session', 'The client sends the API key as the `session` cookie.'],
+      ["in: header, name: 'X-Api-Key'", 'The client sends the API key in the `X-Api-Key` header.'],
+    ]) {
+      const out = await generate(['ts', 'py'], undefined, auth(where))
+      for (const path of ['README.md', 'ts/README.md', 'py/README.md']) {
+        ok(out[path].includes(sentence), path + ': does not say where the key goes, for ' + where)
+      }
+    }
+
+    const plain = await generate(['ts'], undefined, auth("in: header, name: 'Authorization'"))
+    ok(!/The client sends the API key/.test(plain['README.md'] + plain['ts/README.md']),
+      'the README names the default Authorization header')
   })
 
 

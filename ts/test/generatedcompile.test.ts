@@ -26,8 +26,8 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
-  FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY,
-  OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
+  searchOnly, listOnly, retypedList, seedableList, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
+  KEYWORD_ACCESSOR_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -40,6 +40,11 @@ import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
 import {
   NONJSON_CASES, NONJSON_PROBES, NONJSON_SERVER, nonjsonFailures, nonjsonTsv,
 } from './nonjsonprobes'
+
+
+// A list requiring a Lua keyword and `__proto__`, which an object literal must compute.
+const KEYWORD_LIST = listOnly('crate',
+  [['end', '"`$STRING`"'], ['__proto__', '"`$STRING`"'], ['a"b\\c', '"`$STRING`"']])
 
 
 function materialise(files: Record<string, string>, root: string) {
@@ -420,6 +425,57 @@ function mcpSession(bin: string, calls: any[] = []): Promise<{ tools: any[], ans
       params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'lane', version: '0' } },
     })
   })
+}
+
+
+// The body of the first block in one language under a heading of a README.
+function readmeBlock(file: string, heading: string, fence: string): string {
+  const readme = Fs.readFileSync(file, 'utf8')
+  const section = readme.slice(Math.max(0, readme.indexOf(heading)))
+  const at = section.indexOf('```' + fence + '\n')
+  ok(readme.includes(heading) && -1 < at, file + ': no ' + fence + ' block under ' + heading)
+  return section.slice(at + fence.length + 4, section.indexOf('\n```', at))
+}
+
+
+// Runs a README block that seeds the mock, printing `listed <n>` for its list
+// call; null when this machine has no toolchain for it.
+const SEEDED_RUN: Record<string, (sdkroot: string, block: string) => ReturnType<typeof run> | null> = {
+  ts: (sdkroot, block) => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+    linkDeps(sdkroot)
+    const built = tsc(sdkroot, 'src')
+    ok(built.ok, 'generated src does not compile:\n' + built.out)
+    const sdk = /const client = (\w+)\.test\(/.exec(block)
+    const listed = /const (\w+) = await client\.\w+\(\)\.list\(/.exec(block)
+    ok(null != sdk && null != listed, 'the block makes no list call:\n' + block)
+    Fs.writeFileSync(Path.join(sdkroot, 'seeded.cjs'),
+      `const { ${sdk![1]} } = require('./dist/${sdk![1]}')\n` +
+      `;(async () => {\n${block}\nconsole.log('listed ' + ${listed![1]}.length)\n})()` +
+      `.catch((err) => { console.error(err); process.exit(1) })\n`)
+    return run(process.execPath, ['seeded.cjs'], sdkroot)
+  },
+  rb: (sdkroot, block) => {
+    const ruby = toolchain('ruby')
+    if (null == ruby) return null
+    const sdk = /client = (\w+)SDK\.test\(/.exec(block)
+    const listed = /^(\w+) = client\.\w+\.list\b/m.exec(block)
+    ok(null != sdk && null != listed, 'the block makes no list call:\n' + block)
+    Fs.writeFileSync(Path.join(sdkroot, 'seeded.rb'),
+      `require_relative '${sdk![1]}_sdk'\n${block}\nputs "listed #{${listed![1]}.length}"\n`)
+    return run(ruby, ['seeded.rb'], sdkroot)
+  },
+  php: (sdkroot, block) => {
+    const php = toolchain('php')
+    if (null == php) return null
+    const sdk = /\$client = (\w+)SDK::test\(/.exec(block)
+    const listed = /^\$(\w+) = \$client->\w+\(\)->list\(/m.exec(block)
+    ok(null != sdk && null != listed, 'the block makes no list call:\n' + block)
+    Fs.writeFileSync(Path.join(sdkroot, 'seeded.php'),
+      `<?php\nrequire __DIR__ . '/${sdk![1].toLowerCase()}_sdk.php';\n${block}\n` +
+      `echo "listed " . count($${listed![1]}) . "\\n";\n`)
+    return run(php, ['seeded.php'], sdkroot)
+  },
 }
 
 
@@ -931,20 +987,26 @@ pub fn main() void {
 
   // The README example tests find `tsc` and strip a snippet's types through
   // the TypeScript installed beside the SDK, which here is sdkgen's own. They
-  // compile the snippets in the OS temp directory: adding or removing a file
-  // there moves the directory's mtime, and the SDK's own folders keep theirs.
-  // FOLD_ENTITY's contacts_field has a PATCH beside its PUT.
-  for (const [label, dir, extra] of [
-    ['', 'ts-readme', undefined],
-    [', with a patch', 'ts-readme-patch', FOLD_ENTITY],
-  ]) {
-    test('typescript: the README example tests type-check and run the examples' + label, async () => {
+  // compile the snippets in the OS temp directory, whose mtime moves while the
+  // SDK's own folders keep theirs. FOLD_ENTITY's contacts_field has a PATCH
+  // beside its PUT, and the crud model's tutorial patches its first entity.
+  for (const [what, dir, extra] of [
+    ['the examples', 'ts-readme', undefined],
+    ['the examples, with a patch', 'ts-readme-patch', FOLD_ENTITY],
+    ['the examples, with a patch in the tutorial', 'ts-readme-crud', CRUD_MODEL],
+    ['a list example with its required parameters', 'ts-readme-search', searchOnly()],
+    ['a list example with a nullable and a null-only parameter', 'ts-readme-nullable',
+      listOnly('tally', [['n', '["`$ONE`", ["`$INTEGER`", "`$NULL`"]]'], ['z', '"`$NULL`"']])],
+    ['a list example whose parameters are a keyword and __proto__', 'ts-readme-keys', KEYWORD_LIST],
+    ['a list example whose parameter its create types otherwise', 'ts-readme-retyped', retypedList()],
+  ] as [string, string, string | undefined][]) {
+    test('typescript: the README example tests type-check and run ' + what, async () => {
       ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
 
-      const sdkroot = Path.join(tmp, dir!, 'ts')
+      const sdkroot = Path.join(tmp, dir, 'ts')
       await generateTo('ts', sdkroot, extra, undefined, { top: true })
       linkDeps(sdkroot)
-      if (null != extra) {
+      if (FOLD_ENTITY === extra || CRUD_MODEL === extra) {
         ok(Fs.readFileSync(Path.join(sdkroot, 'REFERENCE.md'), 'utf8').includes('.patch({'),
           'the reference has no patch example')
       }
@@ -973,6 +1035,60 @@ pub fn main() void {
       deepStrictEqual(Fs.readdirSync(scratch), [],
         'the README example tests left their temp directory behind')
     })
+  }
+
+
+  // Run as written: the README suites above replace a block's seed with their own.
+  for (const [what, target, fence, howto] of [
+    ['typescript: the root README test block', 'ts', 'ts', false],
+    ['ruby: the root README test block', 'rb', 'ruby', false],
+    ['php: the root README test block', 'php', 'php', false],
+    ['ruby: the README test-mode block', 'rb', 'ruby', true],
+    ['php: the README test-mode block', 'php', 'php', true],
+  ] as [string, string, string, boolean][]) {
+    test(what + ' lists the record it seeds', async (t) => {
+      const sdkroot = Path.join(tmp, target + '-readme-seeded' + (howto ? '-howto' : ''), target)
+      await generateTo(target, sdkroot, seedableList(), undefined, { top: true })
+      const block = howto
+        ? readmeBlock(Path.join(sdkroot, 'README.md'), '### Use test mode', fence)
+        : readmeBlock(Path.join(Path.dirname(sdkroot), 'README.md'), '## Offline unit testing', fence)
+
+      const ran = SEEDED_RUN[target](sdkroot, block)
+      if (null == ran) return t.skip('no ' + target + ' toolchain here')
+      if (ran.unlaunchable) return t.skip(target + ' could not be started here: ' + tail(ran.out, 3))
+      ok(ran.ok, 'the block failed:\n' + block + '\n' + tail(ran.out))
+      ok(/^listed 1$/m.test(ran.out), 'the block lists no record it seeds:\n' + block + '\n' + tail(ran.out))
+    })
+  }
+
+
+  // KEYWORD_LIST names a member `__proto__`, which scala lexes with the colon
+  // after it, and `a"b\c`, which a ruby symbol must escape and no identifier holds.
+  for (const [target, build] of [
+    ['rb', (sdkroot: string, files: string[]) => {
+      const ruby = toolchain('ruby')
+      const sdk = files.find((path: string) => /^[^/]+_sdk\.rb$/.test(path))
+      ok(null != sdk, 'rb: no SDK entry file was generated')
+      return null == ruby ? null : run(ruby, ['-e', `require './${sdk}'`], sdkroot)
+    }],
+    ['scala', (sdkroot: string) => {
+      const scalacli = toolchain('scala-cli')
+      return null == scalacli ? null : run(scalacli, ['compile', '.'], sdkroot)
+    }],
+    ['swift', (sdkroot: string) => {
+      const swift = toolchain('swift')
+      return null == swift ? null : run(swift, ['build', '-j', '2'], sdkroot, undefined, 30 * 60 * 1000)
+    }],
+  ] as [string, (sdkroot: string, files: string[]) => ReturnType<typeof run> | null][]) {
+    test(target + ': the SDK builds where a list\'s parameters are a keyword, __proto__ and a quoted name',
+      async (t) => {
+        const sdkroot = Path.join(tmp, target + '-keys-build')
+        const files = await generateTo(target, sdkroot, KEYWORD_LIST)
+        const built = build(sdkroot, Object.keys(files))
+        if (null == built) return t.skip('no ' + target + ' toolchain here')
+        if (built.unlaunchable || built.timedOut) return t.skip(target + ': ' + tail(built.out, 3))
+        ok(built.ok, target + ': the SDK does not build:\n' + tail(built.out))
+      })
   }
 
 
@@ -6325,6 +6441,9 @@ const README_LANES: {
   command: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
   // A runnable block added to the README, whose output is not ASCII.
   example?: string,
+  // The module every example loads, and what the suite reports when it does not parse.
+  entry: RegExp,
+  unloaded: RegExp,
 }[] = [
   {
     target: 'rb',
@@ -6333,6 +6452,8 @@ const README_LANES: {
     ran: /\d+ runs, \d+ assertions, 0 failures, 0 errors, 0 skips/,
     command: () => minitest(['test/readme_examples_test.rb']),
     example: '```ruby\nputs "naïve café — #{client.class}"\n```',
+    entry: /^[^/]+_sdk\.rb$/,
+    unloaded: /SyntaxError/,
   },
   {
     target: 'go',
@@ -6345,6 +6466,8 @@ const README_LANES: {
         ? null
         : { bin: go, args: ['test', './test/', '-run', 'TestReadmeGoSnippets', '-v'] }
     },
+    entry: /^[^/]+(?<!_test)\.go$/,
+    unloaded: /syntax error/,
   },
   {
     target: 'lua',
@@ -6356,6 +6479,8 @@ const README_LANES: {
       if (null == lua || !probeOk(lua, ['-e', 'require "dkjson"'])) return null
       return busted(['test/readme_examples_test.lua'])
     },
+    entry: /^[^/]+_sdk\.lua$/,
+    unloaded: /error loading module/,
   },
   {
     target: 'py',
@@ -6364,6 +6489,8 @@ const README_LANES: {
     ran: /[1-9]\d* passed/,
     command: () => pytest(['test/test_readme_examples.py', '-q']),
     example: '```python\nprint("naïve café — " + client.__class__.__name__)\n```',
+    entry: /^(?!test\/)[^/]+\/__init__\.py$/,
+    unloaded: /SyntaxError/,
   },
 ]
 
@@ -6380,40 +6507,84 @@ describe('the README examples run for a slug carrying the word client', () => {
     if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
   })
 
+  const readmeLane = async (t: any, lane: any, dir: string, extra?: string, mark = /engine/,
+    shows = 'list example with its required parameters') => {
+    const sdkroot = Path.join(tmp, dir, lane.target)
+    const files = await generateTo(lane.target, sdkroot, extra, undefined,
+      { name: README_SLUG, top: true })
+    ok(null != files[lane.runner], lane.target + ': ' + lane.runner + ' was not generated')
+    ok(String(files['README.md']).includes(README_SLUG),
+      lane.target + ': the README does not carry the slug, so it tests nothing')
+    ok(null == extra || mark.test(String(files['README.md'])),
+      lane.target + ': the README has no ' + shows)
+    if (null != lane.example) {
+      Fs.appendFileSync(Path.join(sdkroot, 'README.md'), '\n' + lane.example + '\n')
+    }
+
+    const cmd = lane.command()
+    if (null == cmd) {
+      return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
+    }
+
+    const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
+    if (ran.unlaunchable) {
+      return t.skip(lane.target + ': the toolchain could not be started here: ' +
+        tail(ran.out, 3))
+    }
+
+    ok(ran.ok, 'the README examples FAILED for the generated ' + lane.target + ' SDK ' +
+      README_SLUG + ':\n' + tail(ran.out, 60))
+    ok(lane.ran.test(ran.out), lane.target + ': the README suite reported no full run:\n' +
+      tail(ran.out))
+  }
+
   for (const lane of README_LANES) {
     test(lane.target + ': every README example is classified, and run', async (t) => {
-      const sdkroot = Path.join(tmp, lane.target, lane.target)
+      await readmeLane(t, lane, lane.target)
+    })
+
+    // The crud model's tutorial patches an entity as well.
+    test(lane.target + ': every README example is classified, and run, with a patch', async (t) => {
+      await readmeLane(t, lane, lane.target + '-patch', CRUD_MODEL, /patch\(/i, 'patch example')
+    })
+
+    test(lane.target + ': the README examples run where a list requires parameters', async (t) => {
+      await readmeLane(t, lane, lane.target + '-search', searchOnly())
+    })
+
+    test(lane.target + ': the README examples run where a list\'s parameters are a keyword and __proto__',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-keys', KEYWORD_LIST, /__proto__/)
+      })
+
+    // `)(` parses in no target.
+    test(lane.target + ': the README examples fail for an SDK that does not load', async (t) => {
+      const sdkroot = Path.join(tmp, lane.target + '-unloadable', lane.target)
       const files = await generateTo(lane.target, sdkroot, undefined, undefined,
         { name: README_SLUG, top: true })
-      ok(null != files[lane.runner], lane.target + ': ' + lane.runner + ' was not generated')
-      ok(String(files['README.md']).includes(README_SLUG),
-        lane.target + ': the README does not carry the slug, so it tests nothing')
-      if (null != lane.example) {
-        Fs.appendFileSync(Path.join(sdkroot, 'README.md'), '\n' + lane.example + '\n')
-      }
+      const entry = Object.keys(files).filter((path: string) => lane.entry.test(path))
+      strictEqual(entry.length, 1, lane.target + ': expected one entry module, got ' + JSON.stringify(entry))
+      Fs.appendFileSync(Path.join(sdkroot, entry[0]), '\n)(\n')
 
       const cmd = lane.command()
       if (null == cmd) {
         return t.skip('no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
       }
-
       const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
       if (ran.unlaunchable) {
-        return t.skip(lane.target + ': the toolchain could not be started here: ' +
-          tail(ran.out, 3))
+        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
       }
-
-      ok(ran.ok, 'the README examples FAILED for the generated ' + lane.target + ' SDK ' +
-        README_SLUG + ':\n' + tail(ran.out, 60))
-      ok(lane.ran.test(ran.out), lane.target + ': the README suite reported no full run:\n' +
+      ok(!ran.ok, lane.target + ': the README examples passed for an SDK that does not load:\n' +
         tail(ran.out))
+      ok(lane.unloaded.test(ran.out), lane.target + ': the README examples failed, but not on the SDK ' +
+        'that does not load:\n' + tail(ran.out, 60))
     })
   }
 })
 
 
-// The examples the docs of c, cpp, rust and zig show, compiled against the
-// generated SDK: each block in the target's language in its README, its
+// The examples the docs of c, cpp, rust, zig and ocaml show, compiled against
+// the generated SDK: each block in the target's language in its README, its
 // REFERENCE and the root README. A fragment is compiled inside a function, with
 // the client and the arguments a signature names in scope, and with the first
 // imports its page shows when it has none of its own.
@@ -6422,8 +6593,8 @@ type DocBlock = { doc: string, line: number, code: string }
 const DOC_PAGES = ['../README.md', 'README.md', 'REFERENCE.md']
 
 // The numbered steps of one section build on each other, as a tutorial's do,
-// so they are one program.
-function docBlocks(sdkroot: string, fence: string): DocBlock[] {
+// so they are one program, each step joined to the last by `join`.
+function docBlocks(sdkroot: string, fence: string, join = '\n'): DocBlock[] {
   const blocks: DocBlock[] = []
   for (const doc of DOC_PAGES) {
     const path = Path.join(sdkroot, doc)
@@ -6450,7 +6621,7 @@ function docBlocks(sdkroot: string, fence: string): DocBlock[] {
       if (fence === lang) {
         const code = lines.slice(open + 1, i).join('\n')
         if (step && null != steps && section === stepsIn) {
-          steps.code += '\n' + code
+          steps.code += join + code
         }
         else {
           const block = { doc, line: open + 1, code }
@@ -6606,65 +6777,24 @@ function zigExamples(blocks: DocBlock[]): string {
   ].join('\n')
 }
 
+// An OCaml block is a run of toplevel phrases: after the names a signature
+// gives, and the opens its page shows first when it has none of its own.
+function ocamlExample(block: DocBlock, imports: string[]): string {
+  const own = block.code.split('\n').some((l) => /^open\s/.test(l))
+  return [
+    '(* ' + block.doc + ':' + block.line + ' *)',
+    'let client = Sdk_client.test ()',
+    'let options = Voxgig_struct.Noval',
+    'let testopts = Voxgig_struct.Noval',
+    'let sdkopts = Voxgig_struct.Noval',
+    ...(own ? [] : imports),
+    ';;',
+    block.code,
+    '',
+  ].join('\n')
+}
+
 type DocCompile = { label: string, bin: string, args: string[], env?: NodeJS.ProcessEnv }
-
-// A quick start shows the first active entity, so each model leads with a
-// different one: the fixture's load-only singleton, a list-only entity, an
-// entity with every operation, and that entity with another nested under it.
-const PLANET_FIRST = ['ambient', 'console', 'graph_ql', 'history']
-  .map((name) => 'main: kit: entity: ' + name + ': active: false').join('\n')
-
-const SATELLITE = `
-main: kit: entity: satellite: {
-  alias: field: {}
-  name: "satellite"
-  id: { field: "id", name: "id" }
-  relations: ancestors: [[path($.main.kit.entity.planet)]]
-  fields: {
-    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
-    "planet_id": { h: 'PlanetId', n: "planet_id", r: false, t: "\`$STRING\`" }
-    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
-  }
-  op: {
-    list: {
-      name: "list"
-      points: [ {
-        g: { params: [ { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" } ] }
-        m: "GET", o: "/planet/{planet_id}/satellite"
-        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }]
-        t: { req: "\`reqdata\`", res: "\`body\`" }
-      } ]
-    }
-    load: {
-      name: "load"
-      points: [ {
-        g: { params: [
-          { k: "param", n: "planet_id", or: "planet_id", r: true, t: "\`$STRING\`", ex: "p01" }
-          { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "s01" }
-        ] }
-        m: "GET", o: "/planet/{planet_id}/satellite/{id}"
-        s: [{ lit: "planet" }, { var: "planet_id" }, { lit: "satellite" }, { var: "id" }]
-        t: { req: "\`reqdata\`", res: "\`body\`" }
-      } ]
-    }
-  }
-}
-
-main: kit: flow: BasicSatelliteFlow: {
-  entity: "satellite", kind: "basic", name: "BasicSatelliteFlow"
-  step: [
-    { o: "list", m: { planet_id: "planet01" } }
-    { o: "load", m: { planet_id: "planet01" }, i: { ref: "satellite_ref01", srcdatavar: "satellite_ref01_data", suffix: "_dt0" } }
-  ]
-}
-`
-
-const DOC_MODELS: [string, string | undefined][] = [
-  ['singleton', undefined],
-  ['list', 'main: kit: entity: ambient: active: false'],
-  ['crud', PLANET_FIRST],
-  ['nested', PLANET_FIRST + SATELLITE],
-]
 
 const DOC_LANES: {
   target: string,
@@ -6672,6 +6802,8 @@ const DOC_LANES: {
   needs: string,
   // A build.zig.zon entry is shown in a zig block, and is not zig source.
   manifest?: (block: DocBlock) => boolean,
+  // How the steps of one section join into one program.
+  join?: string,
   // Writes the examples into the SDK, and returns how to compile them, or
   // null when this machine has no toolchain for them.
   compile: (sdkroot: string, blocks: DocBlock[]) => DocCompile[] | null,
@@ -6769,10 +6901,31 @@ const DOC_LANES: {
       }]
     },
   },
+  {
+    target: 'ocaml',
+    fence: 'ocaml',
+    needs: 'ocamlc and make',
+    join: '\n;;\n',
+    compile: (sdkroot, blocks) => {
+      const ocamlc = toolchain('ocamlc')
+      const make = toolchain('make')
+      if (null == ocamlc || null == make) return null
+      const dir = Path.join(sdkroot, '_readme')
+      Fs.mkdirSync(dir, { recursive: true })
+      return [
+        { label: 'the SDK', bin: make, args: ['OCAMLC=' + ocamlc, 'build'] },
+        ...blocks.map((block, i) => {
+          const file = Path.join(dir, 'readme_' + i + '.ml')
+          Fs.writeFileSync(file, ocamlExample(block, pageImports(blocks, block.doc, /^open\s/)))
+          return { label: block.doc + ':' + block.line, bin: ocamlc, args: ['-I', '.', '-I', 'utility', '-c', file] }
+        }),
+      ]
+    },
+  },
 ]
 
 
-describe('the documented c, cpp, rust and zig examples compile', () => {
+describe('the documented c, cpp, rust, zig and ocaml examples compile', () => {
 
   let tmp = ''
 
@@ -6789,7 +6942,7 @@ describe('the documented c, cpp, rust and zig examples compile', () => {
       const sdkroot = Path.join(tmp, lane.target + '-' + shape, lane.target)
       await generateTo(lane.target, sdkroot, extra, undefined, { top: true })
 
-      const blocks = docBlocks(sdkroot, lane.fence).filter((b) => !lane.manifest?.(b))
+      const blocks = docBlocks(sdkroot, lane.fence, lane.join).filter((b) => !lane.manifest?.(b))
       for (const doc of DOC_PAGES) {
         ok(blocks.some((b) => b.doc === doc),
           lane.target + ': ' + doc + ' shows no ' + lane.fence + ' example, so nothing checks it')

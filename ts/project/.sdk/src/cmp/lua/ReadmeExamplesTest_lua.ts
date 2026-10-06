@@ -35,7 +35,8 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
 --      network). Each client constructor is rewritten to the seeded
 --      test-mode form, and fragments that only use \`client\` get a seeded
 --      test client injected. A call to a method that does not exist raises
---      "call a nil value" and FAILS the test. A seeded-fixture miss surfaces
+--      "call a nil value" and FAILS the test, as does an SDK module that
+--      does not load. A seeded-fixture miss surfaces
 --      as a tolerated (nil, err) not-found domain error, not a raised error.
 --   3. Completeness: total == executed + illustration per doc. A block that
 --      is neither runnable nor an explicit comment-only placeholder FAILS
@@ -219,12 +220,14 @@ for _, doc in ipairs(DOCS) do
           if not ok then
             local msg = tostring(e)
             -- A nil accessor / missing method / bad index is a real doc bug:
-            -- the documented call does not exist.
+            -- the documented call does not exist. A module that does not
+            -- load is an SDK that does not load.
             if msg:find("nil value") or msg:find("attempt to call")
-              or msg:find("attempt to index") then
+              or msg:find("attempt to index") or msg:find("error loading module")
+              or msg:find("module '[^']*' not found") then
               assert.is_true(false,
                 doc.label .. " runnable block #" .. i .. " hit a runtime " ..
-                "error (missing method / nil call): " .. msg ..
+                "error (missing method / nil call / module load): " .. msg ..
                 "\\n----\\n" .. src .. "\\n----")
             end
             -- Other runtime errors (a seeded-fixture miss surfaces as a

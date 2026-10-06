@@ -4,6 +4,7 @@ exports.ReadmeTop = void 0;
 const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const types_1 = require("../types");
+const utility_1 = require("../utility");
 const optional_1 = require("../helpers/optional");
 const FeatureDocs_1 = require("./FeatureDocs");
 const opShape_1 = require("../helpers/opShape");
@@ -19,7 +20,9 @@ const VOXGIG_SDK = 'https://voxgig.com/sdk/';
 // type sentinel — mirrors the per-language `exampleValue`, but inline because
 // this neutral component renders the intro `ts` block directly.
 function tsExampleLiteral(type) {
-    const k = (0, canonType_1.canonKey)(type);
+    const k = (0, canonType_1.canonScalarKey)(type);
+    if ('NULL' === k)
+        return 'null';
     if ('INTEGER' === k || 'NUMBER' === k)
         return '1';
     if ('BOOLEAN' === k)
@@ -41,15 +44,12 @@ const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test'];
 function isConsumer(target) {
     return PHASES.every((name) => false === target.phase?.[name]?.active);
 }
-// The languages the example helpers can write, in the order a reader is
-// likeliest to want one.
-const EXAMPLE_LANGS = ['ts', 'js', 'py', 'go', 'php', 'rb', 'lua'];
 const EXAMPLE_FENCE = {
     ts: 'ts', js: 'js', py: 'python', go: 'go', php: 'php', rb: 'ruby', lua: 'lua',
 };
 function exampleLang(model, sdkTargets) {
     const langs = sdkTargets.map((t) => (0, packageMeta_1.originName)(model, t.name));
-    return EXAMPLE_LANGS.find((lang) => langs.includes(lang));
+    return opExample_1.EXAMPLE_LANGS.find((lang) => langs.includes(lang));
 }
 // A client and one call in a language other than ts, whose example
 // ReadmeTop builds itself.
@@ -236,7 +236,7 @@ ${aboutMd.trim()}
             const primaryOp = (0, opShape_1.entityPrimaryOp)(exEnt);
             let exCall = '';
             const exIdField = (0, opShape_1.entityIdField)(exEnt);
-            const exListArg = (0, opExample_1.matchArg)('ts', exEnt, 'list', exIdField, (0, opExample_1.idLiteral)(exEnt, 'list', exIdField));
+            const exListArg = (0, opExample_1.listMatchArg)('ts', exEnt);
             const exLoadArg = (0, opExample_1.matchArg)('ts', exEnt, 'load', exIdField, (0, opExample_1.idLiteral)(exEnt, 'load', exIdField));
             if ('list' === primaryOp) {
                 exCall = `const items = await client.${ex}().list(${exListArg})`;
@@ -254,7 +254,7 @@ ${aboutMd.trim()}
                     .filter((it) => (it.name !== exIdF && it.name !== 'id') || !it.optional);
                 const required = shapeItems.filter((it) => !it.optional);
                 const chosen = required.length ? required : shapeItems.slice(0, 3);
-                const bodyLines = chosen.map((it) => `  ${it.name}: ${tsExampleLiteral(it.type)},`);
+                const bodyLines = chosen.map((it) => `  ${(0, naming_1.jsKey)(it.name)}: ${tsExampleLiteral(it.type)},`);
                 const body = bodyLines.length ? `\n${bodyLines.join('\n')}\n` : '';
                 exCall = `const ${exLower} = await client.${ex}().${primaryOp}({${body}})`;
             }
@@ -356,8 +356,9 @@ network, and no credentials:
             if (LeadQuick) {
                 LeadQuick['ReadmeTopQuick']({ target: leadTarget });
             }
+            const placement = (0, utility_1.credentialPlacement)(model);
             (0, jostraca_1.Content)(`
-See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
+${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
 
 `);
         }

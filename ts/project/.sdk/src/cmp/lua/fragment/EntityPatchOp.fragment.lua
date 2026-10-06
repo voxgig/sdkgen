@@ -7,7 +7,7 @@ local entityPatchOp = {}
 
 ---@param reqdata EntityNamePatchData
 ---@param ctrl? table
----@return EntityName
+---@return EntyClass
 ---@return string? err
 function EntyClass:patch(reqdata, ctrl)
   local utility = self._utility

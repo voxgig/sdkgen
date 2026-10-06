@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, entityOps, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, entityOps, opRequestShape, listMatchArg } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -117,7 +117,7 @@ ${eVar}, err := client.${entity.Name}(nil).Load(${loadArg}, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(${eVar}) // the loaded record
+fmt.Println(${eVar}.(sdk.Entity).Data()) // the loaded entity's record
 \`\`\`
 
 `)
@@ -127,11 +127,14 @@ fmt.Println(${eVar}) // the loaded record
       Content(`#### Example: List
 
 \`\`\`go
-${eVar}s, err := client.${entity.Name}(nil).List(nil, nil)
+${eVar}s, err := client.${entity.Name}(nil).List(${listMatchArg('go', entity)}, nil)
 if err != nil {
     panic(err)
 }
-fmt.Println(${eVar}s) // the array of records
+// A []any of entities, one per record.
+for _, item := range ${eVar}s.([]any) {
+    fmt.Println(item.(sdk.Entity).Data())
+}
 \`\`\`
 
 `)
@@ -158,7 +161,7 @@ result, err := client.${entity.Name}(nil).Create(map[string]any{
 if err != nil {
     panic(err)
 }
-fmt.Println(result)
+fmt.Println(result.(sdk.Entity).Data()) // the created entity's record
 \`\`\`
 
 `)

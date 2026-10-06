@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, opRequestShape, safeVarName, exampleVarName, jsKey, matchArg, idLiteral, targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, opRequestShape, safeVarName, exampleVarName, jsKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -10,43 +10,36 @@ import {
 import { exampleValue } from './utility_ts'
 
 
-function listMatchArg(ent: any): string {
-  const idF = entityIdField(ent)
-  return matchArg('ts', ent, 'list', idF, idLiteral(ent, 'list', idF))
-}
-
-
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
     sig: 'load(match: object, ctrl?: object)',
-    returns: 'Promise<object>',
-    desc: 'Load a single entity matching the given criteria.',
+    returns: 'Promise<Entity>',
+    desc: 'Load a single entity matching the given criteria. Resolves to the entity, whose record `data()` reads.',
   },
   list: {
     sig: 'list(match: object, ctrl?: object)',
-    returns: 'Promise<object[]>',
-    desc: 'List entities matching the given criteria. Returns an array.',
+    returns: 'Promise<Entity[]>',
+    desc: 'List entities matching the given criteria. Resolves to an array of entities, one per record.',
   },
   create: {
     sig: 'create(data: object, ctrl?: object)',
-    returns: 'Promise<object>',
-    desc: 'Create a new entity with the given data.',
+    returns: 'Promise<Entity>',
+    desc: 'Create a new entity with the given data. Resolves to the created entity.',
   },
   update: {
     sig: 'update(data: object, ctrl?: object)',
-    returns: 'Promise<object>',
-    desc: 'Update an existing entity. The data must include the entity `id`.',
+    returns: 'Promise<Entity>',
+    desc: 'Update an existing entity. The data must include the entity `id`. Resolves to the updated entity.',
   },
   patch: {
     sig: 'patch(data: object, ctrl?: object)',
-    returns: 'Promise<object>',
-    desc: 'Change part of an existing entity: only the fields given are sent. ' +
-      'The data must include the entity `id`.',
+    returns: 'Promise<Entity>',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Resolves to the patched entity.',
   },
   remove: {
     sig: 'remove(match: object, ctrl?: object)',
-    returns: 'Promise<void>',
-    desc: 'Remove the entity matching the given criteria.',
+    returns: 'Promise<Entity>',
+    desc: 'Remove the entity matching the given criteria. Resolves to the entity, marked as deleted.',
   },
 }
 
@@ -349,7 +342,7 @@ const result = await client.${ent.Name}().${opname}(${arg})
           }
           else if ('list' === opname) {
             Content(`\`\`\`ts
-const results = await client.${ent.Name}().${opname}(${listMatchArg(ent)})
+const results = await client.${ent.Name}().${opname}(${listMatchArg('ts', ent)})
 \`\`\`
 
 `)
@@ -474,8 +467,6 @@ const client = new ${model.Name}SDK({
 
   })
 })
-
-
 
 
 export {

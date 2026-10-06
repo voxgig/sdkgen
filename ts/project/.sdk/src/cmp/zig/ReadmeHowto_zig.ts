@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,6 +13,7 @@ import { zigVarName } from './utility_zig'
 // A type-correct zig expression constructing a voxgig struct Value.
 function zigLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'h.vnull()'
   if ('INTEGER' === k || 'NUMBER' === k) return 'h.vnum(1)'
   if ('BOOLEAN' === k) return 'h.vbool(true)'
   if ('ARRAY' === k) return 'h.olist()'
@@ -36,13 +37,16 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'h.vnull()'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `h.jo(&.{.{ "${idF}", h.vstr("test01") }})` : 'h.vnull()'
+  } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+    const chosen = requiredItems(exampleEntity, 'list')
+    testArg = `h.jo(&.{${chosen.map((it: any) => `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type)} }`).join(', ')}})`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
     testArg = 0 < chosen.length
-      ? `h.jo(&.{${chosen.map((it: any) => `.{ "${it.name}", ${zigLit(it.type)} }`).join(', ')}})`
+      ? `h.jo(&.{${chosen.map((it: any) => `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type)} }`).join(', ')}})`
       : 'h.omap()'
   }
 

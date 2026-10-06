@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { swiftVarName } from './utility_swift'
+import { swiftVarName, swiftListMatch } from './utility_swift'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -37,6 +37,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   // means all values live in a `VMap` of `Value`.
   const swiftLit = (type: any, placeholder: string = 'example'): string => {
     const k = canonScalarKey(type)
+    if ('NULL' === k) return '.null'
     if ('INTEGER' === k) return '.int(1)'
     if ('NUMBER' === k) return '.double(1.0)'
     if ('BOOLEAN' === k) return '.bool(true)'
@@ -84,14 +85,17 @@ let client = ${SDK}()
     if (opnames.includes('list')) {
       Content(`### 2. List ${eName.toLowerCase()} records
 
-\`list(nil, nil)\` returns a \`Value\` list of records and throws on error —
-iterate its items.
+\`list(nil, nil)\` returns a \`Value\` list of entities, one per record, and
+throws on error; \`asNative as? Entity\` unwraps an item, and its \`data()\`
+reads the record.
 
 \`\`\`swift
 do {
-    let ${eVar}List = try client.${accessor}().list(nil, nil)
-    for ${eVar} in ${eVar}List.asList?.items ?? [] {
-        print(${eVar})
+    let ${eVar}List = try client.${accessor}().list(${swiftListMatch(exampleEntity)}, nil)
+    for ${eVar}Item in ${eVar}List.asList?.items ?? [] {
+        if let ${eVar}Entity = ${eVar}Item.asNative as? Entity {
+            print(${eVar}Entity.data())
+        }
     }
 }
 catch {
@@ -130,7 +134,9 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`\`\`swift
 do {
     let ${neVar} = try client.${neAccessor}().load(VMap([${neMatch.join(', ')}]), nil)
-    print(${neVar})
+    if let ${neVar}Entity = ${neVar}.asNative as? Entity {
+        print(${neVar}Entity.data())
+    }
 }
 catch {
     print("load failed: \\(error)")
@@ -158,7 +164,9 @@ catch {
 \`\`\`swift
 do {
     let ${eVar} = try client.${accessor}().load(${loadArg}, nil)
-    print(${eVar})
+    if let ${eVar}Entity = ${eVar}.asNative as? Entity {
+        print(${eVar}Entity.data())
+    }
 }
 catch {
     print("load failed: \\(error)")

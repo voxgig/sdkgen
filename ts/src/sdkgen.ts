@@ -17,7 +17,7 @@ import type {
   ActionResult,
 } from './types'
 
-import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix, resolveAuthIn, resolveAuthName, isAuthSuppressed, isHttpBasicAuth,
+import { SdkGenError, requirePath, isAuthActive, resolveAuthPrefix, resolveAuthIn, resolveAuthName, credentialPlacement, isAuthSuppressed, isHttpBasicAuth,
   CONFIG_DATA_THRESHOLD, CONFIG_REPR_VALUES, isConfigData, configRepr,
   configReprSetting, configDefinition, clean, rawStringLiteral } from './utility'
 
@@ -72,11 +72,14 @@ import { canonToType, canonToDtype, canonKey, canonScalarKey } from './helpers/c
 import { canonToSpec, entityDataSpec, entityOpSpec, entitySpecs } from './helpers/canonSpec'
 import { optionSpec, featureOptionSpec, entitySpecMap } from './helpers/optspec'
 import { OP_SUFFIX, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, deriveEntityNames, entityCollection } from './helpers/opShape'
-import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, isTsSdkType, tsSafeTypeName, isElixirReservedType, elixirSafeTypeName, elixirTypeNames, elixirTypeName, elixirAccessorNames, elixirAccessor, tsTypeName, rbTypeName, phpTypeName, swiftTypeName, jsProp, jsOptProp, jsKey, luaKey, prefixLeadingDigit } from './helpers/naming'
+import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, isTsSdkType, tsSafeTypeName, isElixirReservedType, elixirSafeTypeName, elixirTypeNames, elixirTypeName, elixirAccessorNames, elixirAccessor, tsTypeName, rbTypeName, phpTypeName, swiftTypeName, jsProp, jsOptProp, jsKey, jsQuote, luaKey, prefixLeadingDigit } from './helpers/naming'
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
 import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools'
 import type { McpTool } from './helpers/mcpTools'
-import { primaryOpCall, idLiteral, matchArg, dataArg, litFor } from './helpers/opExample'
+import {
+  primaryOpCall, idLiteral, requiredItems, matchArg, listMatchArg, seededList, dataArg, javaMap, javaMapOf, litFor,
+  litPair,
+} from './helpers/opExample'
 import type { ExampleLang, LiteralLang } from './helpers/opExample'
 import { liveStrict, liveStrictNote, liveFlowNeeds } from './helpers/testPolicy'
 import type { LiveFlowNeeds } from './helpers/testPolicy'
@@ -1091,6 +1094,7 @@ export {
   resolveAuthPrefix,
   resolveAuthIn,
   resolveAuthName,
+  credentialPlacement,
   isAuthSuppressed,
   isHttpBasicAuth,
   CONFIG_DATA_THRESHOLD,
@@ -1191,9 +1195,15 @@ export {
   liveFlowNeeds,
   primaryOpCall,
   idLiteral,
+  requiredItems,
   matchArg,
+  listMatchArg,
+  seededList,
+  javaMap,
+  javaMapOf,
   dataArg,
   litFor,
+  litPair,
   featureOf,
   availableFeatures,
   findFeatureSources,
@@ -1223,6 +1233,7 @@ export {
   jsProp,
   jsOptProp,
   jsKey,
+  jsQuote,
   luaKey,
   prefixLeadingDigit,
 

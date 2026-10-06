@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { crateIdent, rustVarName, rustMethodName } from './utility_rust'
+import { crateIdent, rustVarName, rustMethodName, rustListMatch } from './utility_rust'
 
 
 // Type names come from the shared canonToType 'rust' column (single source of truth).
@@ -15,6 +15,7 @@ import { crateIdent, rustVarName, rustMethodName } from './utility_rust'
 // A type-correct rust expression constructing a voxgig struct Value.
 function rustLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'Value::Null'
   if ('INTEGER' === k || 'NUMBER' === k) return 'Value::Num(1.0)'
   if ('BOOLEAN' === k) return 'Value::Bool(true)'
   if ('ARRAY' === k) return 'Value::empty_list()'
@@ -52,8 +53,8 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
       desc: 'Update an existing entity. The data must include the entity id. `Ok` is the updated entity.',
     },
     patch: {
-      sig: `patch(reqdata: Value, ctrl: Value) -> Result<Value, ${errType}>`,
-      desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity id. Returns the patched entity data on `Ok`.',
+      sig: `patch(reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
+      desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity id. `Ok` is the patched entity.',
     },
     remove: {
       sig: `remove(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ${errType}>`,
@@ -279,7 +280,7 @@ println!("{:?}", result.data(None));
           }
           else if ('list' === opname) {
             Content(`\`\`\`rust
-let results = client.${method}(Value::Noval).list(Value::Noval, Value::Noval).unwrap();
+let results = client.${method}(Value::Noval).list(${rustListMatch(ent)}, Value::Noval).unwrap();
 for ${eVar} in &results {
     println!("{:?}", ${eVar}.data(None));
 }

@@ -13,7 +13,7 @@ const DEFAULT_LANG = {
 \`\`\`ts
 try {
   const ${call.resultVar} = await ${call.expr}
-  console.log(${call.resultVar})
+  console.log(${'list' === op ? call.resultVar + '.map((item) => item.data())' : call.resultVar + '.data()'})
 } catch (err) {
   console.error('${op} failed:', err)
 }
@@ -45,7 +45,7 @@ const LANGS = {
 \`\`\`python
 try:
     ${call.resultVar} = ${call.expr}
-    print(${call.resultVar})
+    print(${'list' === op ? '[item.data_get() for item in ' + call.resultVar + ']' : call.resultVar + '.data_get()'})
 except Exception as err:
     print(f"${op} failed: {err}")
 \`\`\`
@@ -201,7 +201,7 @@ const ReadmeErrors = (0, component_1.cmp)(function ReadmeErrors(props) {
         const eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1));
         const eLower = (0, naming_1.exampleVarName)(eName.toLowerCase(), target.name);
         const idF = (0, opShape_1.entityIdField)(ex);
-        const call = (0, opExample_1.primaryOpCall)(target.name, eName, eLower, primaryOp, idF, ex);
+        const call = (0, opExample_1.primaryOpCall)((0, opExample_1.helperLang)(target.name), eName, eLower, primaryOp, idF, ex);
         (0, jostraca_1.Content)(lang.entity(call, primaryOp));
     }
     (0, jostraca_1.Content)(lang.direct);

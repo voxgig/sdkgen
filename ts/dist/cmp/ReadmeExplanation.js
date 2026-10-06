@@ -196,7 +196,7 @@ const ReadmeExplanation = (0, component_1.cmp)(function ReadmeExplanation(props)
     // skipped (a direct()-only SDK has no entity op to illustrate).
     const entity = (0, types_1.getModelPath)(model, `main.${types_1.KIT}.entity`, { only_active: false, required: false });
     const { entity: ex, primaryOp } = (0, opShape_1.pickExampleEntity)(entity || {});
-    const lname = target.name;
+    const lname = (0, opExample_1.helperLang)(target.name);
     const hasEntityExample = !!(ex && primaryOp);
     let eName = 'Entity', eLower = 'entity', stateArg = '', matchIdF = null, idLit = '';
     if (hasEntityExample) {
@@ -209,9 +209,9 @@ const ReadmeExplanation = (0, component_1.cmp)(function ReadmeExplanation(props)
         // match compiles.
         idLit = (0, opExample_1.idLiteral)(ex, primaryOp, idF);
         // Language-correct call argument for the primary op: a match for
-        // load/remove, a required-field body for create/update, nothing for list.
+        // load/remove/list, a required-field body for create/update.
         if ('list' === primaryOp) {
-            stateArg = 'go' === target.name ? 'nil' : '';
+            stateArg = (0, opExample_1.listMatchArg)(lname, ex);
         }
         else if (isMatchOp) {
             stateArg = (0, opExample_1.matchArg)(lname, ex, primaryOp, idF, idLit);

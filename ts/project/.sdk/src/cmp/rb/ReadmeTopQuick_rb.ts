@@ -7,6 +7,8 @@ import {
   nom,
 } from '@voxgig/apidef'
 
+import { rbListArgs } from './utility_rb'
+
 
 // A type-correct, executable Ruby literal for a param: numeric/boolean/
 // array/hash params render a typed literal; strings render the quoted
@@ -14,6 +16,7 @@ import {
 // would break it).
 function rbLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'nil'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '[]'
@@ -53,7 +56,7 @@ client = ${ctor}
 
     if (opnames.includes('list')) {
       Content(`# List all ${eName.toLowerCase()}s (an Array of entities, one per record; raises on error)
-${eVar}s = client.${eName}.list
+${eVar}s = client.${eName}.list${rbListArgs(exampleEntity)}
 ${eVar}s.each { |item| puts item.data_get }
 `)
       hasCall = true
@@ -70,9 +73,9 @@ ${eVar}s.each { |item| puts item.data_get }
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')} }`
         : ''
       Content(`
-# Load a specific ${eName.toLowerCase()} (returns the ENTITY; call data_get for the record)
+# Load a specific ${eName.toLowerCase()} (returns the entity; data_get reads its record; raises on error)
 ${eVar} = client.${eName}.load(${loadArg})
-puts ${eVar}
+puts ${eVar}.data_get
 `)
       hasCall = true
     }

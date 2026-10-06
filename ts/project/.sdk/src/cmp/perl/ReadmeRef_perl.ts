@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, entityClassName, entityCollection } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -7,10 +7,13 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { perlListArgs } from './utility_perl'
+
 
 // A type-correct, executable Perl literal for a field's canonical type.
 function perlLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'undef'
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return '1'
   if ('ARRAY' === k) return '[]'
@@ -32,9 +35,9 @@ function perlType(type: any): string {
 
 const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string }> = {
   load: {
-    sig: 'load($reqmatch, $ctrl) -> hashref',
-    returns: 'the entity data',
-    desc: 'Load a single entity matching the given criteria. Returns the entity data and dies on error.',
+    sig: 'load($reqmatch, $ctrl) -> EntyClass',
+    returns: 'the entity',
+    desc: 'Load a single entity matching the given criteria. Returns the entity, whose record `data_get` reads, and dies on error.',
   },
   list: {
     sig: 'list($reqmatch, $ctrl) -> arrayref',
@@ -42,24 +45,24 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     desc: 'List entities matching the given criteria. The match is optional — call `list` with no argument to list all records. Returns an arrayref of entities, one per record (`data_get` reads each record), and dies on error.',
   },
   create: {
-    sig: 'create($reqdata, $ctrl) -> hashref',
-    returns: 'the created entity data',
-    desc: 'Create a new entity with the given data. Returns the created entity data and dies on error.',
+    sig: 'create($reqdata, $ctrl) -> EntyClass',
+    returns: 'the created entity',
+    desc: 'Create a new entity with the given data. Returns the created entity and dies on error.',
   },
   update: {
-    sig: 'update($reqdata, $ctrl) -> hashref',
-    returns: 'the updated entity data',
-    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity data and dies on error.',
+    sig: 'update($reqdata, $ctrl) -> EntyClass',
+    returns: 'the updated entity',
+    desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and dies on error.',
   },
   patch: {
-    sig: 'patch($reqdata, $ctrl) -> hashref',
-    returns: 'the patched entity data',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and dies on error.',
+    sig: 'patch($reqdata, $ctrl) -> EntyClass',
+    returns: 'the patched entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and dies on error.',
   },
   remove: {
-    sig: 'remove($reqmatch, $ctrl) -> hashref',
-    returns: 'the removed entity data',
-    desc: 'Remove the entity matching the given criteria. Dies on error.',
+    sig: 'remove($reqmatch, $ctrl) -> EntyClass',
+    returns: 'the removed entity',
+    desc: 'Remove the entity matching the given criteria. Returns the entity, marked as deleted, and dies on error.',
   },
 }
 
@@ -258,7 +261,7 @@ my $${eVar} = $client->${ent.Name};
           const info = OP_SIGNATURES[opname]
           if (!info) return
 
-          Content(`#### \`${info.sig}\`
+          Content(`#### \`${info.sig.replace('EntyClass', entityClassName(ent, entityCollection(model)))}\`
 
 ${info.desc}
 
@@ -286,7 +289,7 @@ my $result = $client->${ent.Name}->${opname}(${arg});
           }
           else if ('list' === opname) {
             Content(`\`\`\`perl
-my $results = $client->${ent.Name}->list;
+my $results = $client->${ent.Name}->list${perlListArgs(ent)};
 for my $${eVar} (@$results) {
     print $${eVar}->data_get->{id}, "\\n";
 }

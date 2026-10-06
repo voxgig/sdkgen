@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cppVarName } from './utility_cpp'
+import { cppVarName, cppListMatch } from './utility_cpp'
 
 
 // Type names come from the shared canonToType 'cpp' column (single source of truth).
@@ -15,6 +15,7 @@ import { cppVarName } from './utility_cpp'
 // A type-correct C++ literal for a field's canonical type.
 function cppLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'Value(nullptr)'
   if ('INTEGER' === k || 'NUMBER' === k) return 'Value(1)'
   if ('BOOLEAN' === k) return 'Value(true)'
   if ('ARRAY' === k) return 'vlist()'
@@ -45,9 +46,9 @@ const OP_SIGNATURES: Record<string, { sig: string, returns: string, desc: string
     desc: 'Update an existing entity. The data must include the entity `id`. Returns the updated entity and throws on error.',
   },
   patch: {
-    sig: 'patch(reqdata, ctrl) -> Value',
-    returns: 'the patched entity data',
-    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity data and throws on error.',
+    sig: 'patch(reqdata, ctrl) -> SdkEntityPtr',
+    returns: 'the patched entity',
+    desc: 'Change part of an existing entity: only the fields given are sent. The data must include the entity `id`. Returns the patched entity and throws on error.',
   },
   remove: {
     sig: 'remove(reqmatch, ctrl) -> SdkEntityPtr',
@@ -283,7 +284,7 @@ std::cout << Struct::jsonify(result->data()) << std::endl;
           }
           else if ('list' === opname) {
             Content(`\`\`\`cpp
-std::vector<SdkEntityPtr> results = client->${acc}()->list(Value::undef(), Value::undef());
+std::vector<SdkEntityPtr> results = client->${acc}()->list(${cppListMatch(ent)}, Value::undef());
 for (const auto& ${acc} : results) {
   std::cout << Struct::jsonify(${acc}->data()) << std::endl;
 }

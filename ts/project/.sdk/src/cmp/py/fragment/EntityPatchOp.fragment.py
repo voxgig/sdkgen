@@ -5,7 +5,7 @@ entity_patch_op = None
 
 # EJECT-START
 
-    def patch(self, reqdata: EntityNamePatchData, ctrl=None) -> EntityName:
+    def patch(self, reqdata: EntityNamePatchData, ctrl=None) -> EntyClass:
         utility = self._utility
         ctx = utility.make_context({
             "opname": "patch",

@@ -6,12 +6,13 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { ocamlOpField, ocamlVarName } from './utility_ocaml'
+import { ocamlListMatch, ocamlOpField, ocamlVarName } from './utility_ocaml'
 
 
 // A type-correct OCaml `value` literal for a field's canonical type.
 function ocamlLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'Null'
   if ('INTEGER' === k || 'NUMBER' === k) return '(Num 1.)'
   if ('BOOLEAN' === k) return '(Bool true)'
   if ('ARRAY' === k) return '(empty_list ())'
@@ -41,7 +42,7 @@ let () =
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = 'Noval'
     if ('list' === primaryOp) {
-      arg = '(empty_map ())'
+      arg = ocamlListMatch(exampleEntity)
     } else if (isMatchOp) {
       // Every REQUIRED match key (id first).
       const items = opRequestShape(exampleEntity, primaryOp).items

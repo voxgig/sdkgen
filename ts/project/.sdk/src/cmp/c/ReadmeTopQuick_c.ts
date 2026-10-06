@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName } from './utility_c'
+import { cIdent, cVarName, cListMatch } from './utility_c'
 
 
 // A type-correct C expression constructing a voxgig struct Value for a param.
@@ -15,6 +15,7 @@ import { cIdent, cVarName } from './utility_c'
 // typed builder call.
 function cLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'v_null()'
   if ('INTEGER' === k || 'NUMBER' === k) return 'v_num(1)'
   if ('BOOLEAN' === k) return 'v_bool(true)'
   if ('ARRAY' === k) return 'v_list()'
@@ -62,7 +63,7 @@ PNError* err = NULL;
       Content(`Entity* ${evar} = ${acc}(client, NULL);
 
 // List all ${eName.toLowerCase()}s (one entity per record, sets *err on failure)
-Entity** ${evar}s = ${evar}->vt->list(${evar}, NULL, NULL, &err);
+Entity** ${evar}s = ${evar}->vt->list(${evar}, ${cListMatch(exampleEntity)}, NULL, &err);
 for (size_t i = 0; ${evar}s && ${evar}s[i]; i++) {
     printf("%s\\n", voxgig_to_json(${evar}s[i]->vt->data(${evar}s[i], NULL)));
 }

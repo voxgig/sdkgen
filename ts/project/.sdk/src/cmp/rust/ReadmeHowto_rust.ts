@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -13,6 +13,7 @@ import { crateIdent, rustVarName, rustMethodName } from './utility_rust'
 // A type-correct rust expression constructing a voxgig struct Value.
 function rustLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'Value::Null'
   if ('INTEGER' === k || 'NUMBER' === k) return 'Value::Num(1.0)'
   if ('BOOLEAN' === k) return 'Value::Bool(true)'
   if ('ARRAY' === k) return 'Value::empty_list()'
@@ -37,13 +38,16 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'Value::Noval'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `jo(vec![("${idF}", Value::str("test01"))])` : 'Value::Noval'
+  } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+    const chosen = requiredItems(exampleEntity, 'list')
+    testArg = `jo(vec![${chosen.map((it: any) => `(${JSON.stringify(it.name)}, ${rustLit(it.type)})`).join(', ')}])`
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
     testArg = 0 < chosen.length
-      ? `jo(vec![${chosen.map((it: any) => `("${it.name}", ${rustLit(it.type)})`).join(', ')}])`
+      ? `jo(vec![${chosen.map((it: any) => `(${JSON.stringify(it.name)}, ${rustLit(it.type)})`).join(', ')}])`
       : 'Value::empty_map()'
   }
 

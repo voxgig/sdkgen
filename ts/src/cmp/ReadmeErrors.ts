@@ -8,8 +8,8 @@ import {
 } from '../types'
 
 import { entityIdField, pickExampleEntity } from '../helpers/opShape'
-import { primaryOpCall } from '../helpers/opExample'
-import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
+import { helperLang, primaryOpCall } from '../helpers/opExample'
+import type { PrimaryCall } from '../helpers/opExample'
 import { safeVarName, exampleVarName } from '../helpers/naming'
 
 
@@ -28,7 +28,7 @@ const DEFAULT_LANG: LangErrors = {
 \`\`\`ts
 try {
   const ${call.resultVar} = await ${call.expr}
-  console.log(${call.resultVar})
+  console.log(${'list' === op ? call.resultVar + '.map((item) => item.data())' : call.resultVar + '.data()'})
 } catch (err) {
   console.error('${op} failed:', err)
 }
@@ -62,7 +62,7 @@ const LANGS: Record<string, LangErrors> = {
 \`\`\`python
 try:
     ${call.resultVar} = ${call.expr}
-    print(${call.resultVar})
+    print(${'list' === op ? '[item.data_get() for item in ' + call.resultVar + ']' : call.resultVar + '.data_get()'})
 except Exception as err:
     print(f"${op} failed: {err}")
 \`\`\`
@@ -228,7 +228,7 @@ const ReadmeErrors = cmp(function ReadmeErrors(props: any) {
     const eName = ex.Name || (ex.name[0].toUpperCase() + ex.name.slice(1))
     const eLower = exampleVarName(eName.toLowerCase(), target.name)
     const idF = entityIdField(ex)
-    const call = primaryOpCall(target.name as ExampleLang, eName, eLower, primaryOp, idF, ex)
+    const call = primaryOpCall(helperLang(target.name), eName, eLower, primaryOp, idF, ex)
     Content(lang.entity(call, primaryOp))
   }
 

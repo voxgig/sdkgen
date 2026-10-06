@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -7,12 +7,13 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName } from './utility_c'
+import { cIdent, cVarName, cString } from './utility_c'
 
 
 // A type-correct C expression constructing a voxgig struct Value.
 function cLit(type: any): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'v_null()'
   if ('INTEGER' === k || 'NUMBER' === k) return 'v_num(1)'
   if ('BOOLEAN' === k) return 'v_bool(true)'
   if ('ARRAY' === k) return 'v_list()'
@@ -43,12 +44,15 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   let testArg = 'NULL'
   if (exampleEntity && isMatchOp) {
     testArg = idF ? `cmap(1, "${idF}", v_str("test01"))` : 'NULL'
+  } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
+    const chosen = requiredItems(exampleEntity, 'list')
+    testArg = cmapExpr(chosen.map((it: any) => `${cString(it.name)}, ${cLit(it.type)}`))
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)
-    testArg = cmapExpr(chosen.map((it: any) => `"${it.name}", ${cLit(it.type)}`))
+    testArg = cmapExpr(chosen.map((it: any) => `${cString(it.name)}, ${cLit(it.type)}`))
   }
 
   // The op-driven test-mode line. A direct()-only SDK shows a direct() call.
