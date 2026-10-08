@@ -634,8 +634,18 @@ public:
 // .values) while requests copy the options: it holds this lock exclusively,
 // and every read of that slot holds it shared.
 inline std::shared_mutex& cleanRegistryLock() {
-  static std::shared_mutex lock;
-  return lock;
+  // winpthreads sets up a static rwlock on its first lock, failing threads
+  // that race it with EINVAL; that first lock runs in this static's
+  // initialization, which every other caller waits for.
+  struct Warmed {
+    std::shared_mutex lock;
+    Warmed() {
+      lock.lock();
+      lock.unlock();
+    }
+  };
+  static Warmed warmed;
+  return warmed.lock;
 }
 
 class SdkClient {
