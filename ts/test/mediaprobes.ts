@@ -134,6 +134,11 @@ const MEDIA_MODEL =
     list: point('GET', '/badge', JSON_RS, '`reqdata`', '',
       '["`$EACH`", "body", { "`$MERGE`": "`.badge`" }]'),
     load: point('GET', '/badge/{id}', JSON_RS),
+  }) +
+  // A list whose route requires a path and a query parameter, which the test mock matches.
+  entity('search', {
+    list: point('GET', '/engine/{engine}/search', JSON_RS, '`reqdata`',
+      'query: [{ k: "query", n: "q", or: "q", r: true, t: "`$STRING`" }]'),
   })
 
 

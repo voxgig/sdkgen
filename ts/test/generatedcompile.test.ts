@@ -36,6 +36,7 @@ import {
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
 import { ITEMS_EXPECT, ITEMS_PROBES, itemsListed } from './itemprobes'
+import { REQD_EXPECT, REQD_PROBES, reqdListed } from './reqdprobes'
 import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
 import {
   NONJSON_CASES, NONJSON_PROBES, NONJSON_SERVER, nonjsonFailures, nonjsonTsv,
@@ -1046,18 +1047,40 @@ pub fn main() void {
     ['ruby: the README test-mode block', 'rb', 'ruby', true],
     ['php: the README test-mode block', 'php', 'php', true],
   ] as [string, string, string, boolean][]) {
-    test(what + ' lists the record it seeds', async (t) => {
-      const sdkroot = Path.join(tmp, target + '-readme-seeded' + (howto ? '-howto' : ''), target)
+    const written = async (dir: string) => {
+      const sdkroot = Path.join(tmp, target + '-readme-' + dir + (howto ? '-howto' : ''), target)
       await generateTo(target, sdkroot, seedableList(), undefined, { top: true })
       const block = howto
         ? readmeBlock(Path.join(sdkroot, 'README.md'), '### Use test mode', fence)
         : readmeBlock(Path.join(Path.dirname(sdkroot), 'README.md'), '## Offline unit testing', fence)
+      return { sdkroot, block }
+    }
+
+    test(what + ' lists the record it seeds', async (t) => {
+      const { sdkroot, block } = await written('seeded')
 
       const ran = SEEDED_RUN[target](sdkroot, block)
       if (null == ran) return t.skip('no ' + target + ' toolchain here')
       if (ran.unlaunchable) return t.skip(target + ' could not be started here: ' + tail(ran.out, 3))
       ok(ran.ok, 'the block failed:\n' + block + '\n' + tail(ran.out))
       ok(/^listed 1$/m.test(ran.out), 'the block lists no record it seeds:\n' + block + '\n' + tail(ran.out))
+    })
+
+    // The list requires tag, so a seed whose tag the call does not send is no match.
+    test(what + ' lists no seed whose required parameter differs from its call', async (t) => {
+      const { sdkroot, block } = await written('unmatched')
+      const at = block.search(/(\.|->)list\(/)
+      const seed = block.slice(0, at)
+        .replace(/(\btag['"]?\s*(?:=>|:)\s*)(['"])(.*?)\2/, '$1$2$3_other$2')
+      ok(-1 < at && seed !== block.slice(0, at), 'the block seeds no tag before its list call:\n' + block)
+      const unmatched = seed + block.slice(at)
+
+      const ran = SEEDED_RUN[target](sdkroot, unmatched)
+      if (null == ran) return t.skip('no ' + target + ' toolchain here')
+      if (ran.unlaunchable) return t.skip(target + ' could not be started here: ' + tail(ran.out, 3))
+      ok(ran.ok, 'the block failed:\n' + unmatched + '\n' + tail(ran.out))
+      ok(/^listed 0$/m.test(ran.out),
+        'the block lists a seed whose tag its call does not send:\n' + unmatched + '\n' + tail(ran.out))
     })
   }
 
@@ -7699,6 +7722,23 @@ describe('probes driven through a generated SDK', () => {
       strictEqual(itemsListed(ran.out), ITEMS_EXPECT,
         lane.target + ' probe output:\n' + tail(ran.out))
     })
+
+    test(name + ': a test-mode list answers only the seeds its required parameters match',
+      async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+
+        const sdkroot = await sdkFor(lane.target)
+        const ran = lane.exec(sdkroot, nestedTestEnv(), writer(sdkroot),
+          { name: 'reqd', source: REQD_PROBES })
+
+        if (ran.unlaunchable) {
+          return t.skip(name + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, name + ': the required-parameter probe failed:\n' + tail(ran.out, 60))
+        strictEqual(reqdListed(ran.out), REQD_EXPECT, name + ' probe output:\n' + tail(ran.out))
+      })
 
     test(lane.target + ': a body that is not JSON names its status, type, agent and preview',
       async (t) => {

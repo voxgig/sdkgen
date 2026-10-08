@@ -392,7 +392,7 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
 
     /**
      * Build a structured `$AND` query from the request match/data dict,
-     * matching the TS test feature's buildArgs. Mirrors ts/src/feature/test/TestFeature.ts:158-204.
+     * matching the TS test feature's buildArgs in ts/src/feature/test/TestFeature.ts.
      *
      * For each key in $args that is 'id' OR a required-param key on the
      * current operation point, emit a `$OR` clause matching the key (and
@@ -409,12 +409,12 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
         }
 
         $opname = is_object($op) ? ($op->name ?? null) : (\Voxgig\Struct\Struct::getprop($op, 'name'));
-        $entityName = null;
-        if (isset($ctx->entity)) {
-            $entityName = is_object($ctx->entity)
-                ? ($ctx->entity->name ?? null)
-                : (is_array($ctx->entity) ? ($ctx->entity['name'] ?? null) : null);
-        }
+
+        // An entity keeps its name private, behind get_name(); a context
+        // with no entity has the name its operation was resolved for.
+        $entityName = (is_object($ctx->entity) && method_exists($ctx->entity, 'get_name'))
+            ? $ctx->entity->get_name()
+            : (is_object($op) ? ($op->entity ?? null) : \Voxgig\Struct\Struct::getprop($op, 'entity'));
 
         // Resolve required-param names from the op's last point. Defensive:
         // any missing piece falls back to "no required params".
@@ -427,8 +427,8 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
             // `{id}` marks a record route, and failing that the shallower
             // path wins.
             $points = \Voxgig\Struct\Struct::getpath(
-                ['entity', $entityName, 'op', $opname, 'points'],
-                $ctx->config
+                $ctx->config,
+                ['entity', $entityName, 'op', $opname, 'points']
             );
             $point = \Voxgig\Struct\Struct::getelem($points, 0);
             if (is_array($points)) {

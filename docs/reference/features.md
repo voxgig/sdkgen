@@ -555,6 +555,11 @@ as `{ customer: {...} }`. It also seeds each record under the entity's real
 identifier as the API names it, not a hardcoded `id`, so an API keyed on
 `record_id` behaves like itself.
 
+A `load`, `list` or `remove` answers only the seeded records that match the
+call on `id` and on each parameter the operation's route requires, in its
+path or its query. A seed for a list that requires `q` must carry the `q`
+the call sends; a parameter the route does not require is not compared.
+
 While `test` is active, the live transport refuses to send anything
 (`fetch_test_block`), so a mis-seeded test fails loudly instead of silently
 calling production.
