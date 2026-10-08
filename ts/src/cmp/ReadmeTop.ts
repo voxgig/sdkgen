@@ -370,8 +370,8 @@ network, and no credentials:
     // 3. Packages — real published package name + install command per
     // ecosystem. A package that is NOT yet live on its registry (the fleet
     // default: 'pending') must NOT advertise a `npm install ...` that 404s —
-    // its Install cell links to the target README's install section instead.
-    // The go family resolves from the default branch (`go get <mod>@latest`).
+    // its Install cell links to the target README's install section instead,
+    // as do go-cli and go-mcp, which the Go proxy cannot install.
     if (pkgTargets.length > 0) {
       Content(`## Packages
 
@@ -386,7 +386,10 @@ network, and no credentials:
           if (!cmd) return
           cell = '`' + cmd + '`'
         } else if ('tag' === state) {
-          cell = '`' + vendorCommand(model, tgt.name) + '`'
+          const cmd = vendorCommand(model, tgt.name)
+          cell = cmd
+            ? '`' + cmd + '`'
+            : `build from source — [${tgt.name}/README.md](${tgt.name}/README.md)`
         } else {
           // The target README always gives a route that works without a
           // tag, which a repository may not have.

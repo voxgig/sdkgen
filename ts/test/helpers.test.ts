@@ -697,6 +697,18 @@ describe('helpers', () => {
     })
 
 
+    test('vendorCommand gives go-cli and go-mcp no proxy command', () => {
+      // Both modules reach the SDK through `replace => ../go`, which the Go
+      // proxy cannot install, and go-cli has no `cmd/<name>` package.
+      const model: any = makeModel()
+
+      strictEqual(vendorCommand(model, 'go-cli'), '')
+      strictEqual(vendorCommand(model, 'go-mcp'), '')
+      strictEqual(vendorCommand(model, 'go'),
+        'go get github.com/acme/demo-sdk/go@latest')
+    })
+
+
     test('goPackageIdent follows the alias', () => {
       // Missed by the first sweep because that sweep listed the helpers by
       // hand. The list now comes from the module's exports.

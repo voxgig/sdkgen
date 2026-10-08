@@ -191,8 +191,8 @@ function registryName(model, target) {
     return (reg && reg.name) ? String(reg.name) : '';
 }
 // The vendor / git-tag install pointer for a NOT-yet-published target. For
-// the go family this is the canonical install (`go get <module>@latest`,
-// which the Go proxy resolves from the `<subdir>/vX.Y.Z` tag). For registry
+// go this is the canonical install (`go get <module>@latest`, which the Go
+// proxy resolves from the `go/vX.Y.Z` tag); go-cli and go-mcp get ''. For registry
 // ports it is a short "not yet on <registry> — install from the git tag"
 // pointer carrying the tags URL.
 function vendorCommand(model, target) {
@@ -203,10 +203,13 @@ function vendorCommand(model, target) {
         // the switch above exists to fix, one level down, which is exactly what
         // the first cut of this change did.
         case 'go':
-        case 'go-mcp':
             return `go get ${packageName(model, target)}@latest`;
+        // go-cli and go-mcp reach the SDK through `replace => ../go`, and the Go
+        // proxy cannot install a module that needs one. There is no command to
+        // give, so the caller links to the target README's build steps.
         case 'go-cli':
-            return `go install ${packageName(model, target)}/cmd/${model.name}@latest`;
+        case 'go-mcp':
+            return '';
         default: {
             const reg = registryName(model, target);
             return `not yet on ${reg || 'the registry'} — install from the git tag: ${tagsUrl}`;
@@ -290,8 +293,6 @@ function installCommand(model, target) {
             return `luarocks install ${packageName(model, target)}`;
         case 'go':
             return `go get ${packageName(model, target)}`;
-        case 'go-cli':
-            return `go install ${packageName(model, target)}/cmd/${model.name}@latest`;
         default:
             return '';
     }
