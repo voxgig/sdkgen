@@ -206,17 +206,19 @@ fn pick_point(points: Value) Value {
     return point;
 }
 
+// Each name is read from its arg: this struct port's `$EACH` transform answers
+// null for every `$KEY.name`, where the other ports answer the names.
 fn reqd_names(point: Value, kind: []const u8) Value {
     const args_path = h.getpath(&.{ "args", kind }, point);
     const reqd_args = vs.select(h.A(), args_path, h.jo(&.{.{ "reqd", h.vbool(true) }})) catch return h.olist();
-    // transform reports collected injection errors beside the value; .out is
-    // the value itself, errors or not.
-    const tres = vs.transform(h.A(), reqd_args, h.ja(&.{
-        h.vstr("`$EACH`"),
-        h.vstr(""),
-        h.vstr("`$KEY.name`"),
-    })) catch return h.olist();
-    return tres.out;
+    const names = h.olist();
+    if (reqd_args == .array) {
+        for (reqd_args.array.data.items) |arg| {
+            const name = h.getp(arg, "name");
+            if (name == .string) names.array.append(name) catch {};
+        }
+    }
+    return names;
 }
 
 fn build_args(ctx: *Context, args: Value) Value {
