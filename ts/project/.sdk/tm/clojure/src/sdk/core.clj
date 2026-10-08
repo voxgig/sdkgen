@@ -1009,7 +1009,7 @@
 
 ;; A header, cookie or query argument travels where u-prepare-headers or
 ;; u-prepare-query sends it, so the body is built from the request data
-;; without it, unless the entity declares it as a field too.
+;; without it, unless the point marks it as a field the body keeps.
 (defn- routed-arg-names [ctx]
   (->> (concat (call-args ctx "header") (call-args ctx "cookie") (call-args ctx "query"))
        (map first)

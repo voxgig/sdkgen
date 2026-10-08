@@ -68,7 +68,7 @@ private fun stripAction(reqdata: Any?): Any? = omitKeys(reqdata, listOf("\$actio
 
 // A header, cookie or query argument travels where prepareHeaders or
 // prepareQuery sends it, so the body is built from the request data without
-// it, unless the entity declares it as a field too.
+// it, unless the point marks it as a field the body keeps.
 private fun routedArgNames(ctx: Context): List<String> =
   (callArgs(ctx, "header") + callArgs(ctx, "cookie") + callArgs(ctx, "query")).map { it.name }
     .filter { !fieldArg(ctx, it) }

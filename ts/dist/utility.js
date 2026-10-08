@@ -219,6 +219,18 @@ const SPEC_FACTS = {
 };
 // The argument kinds a call routes outside the body.
 const ROUTED_KINDS = ['header', 'cookie', 'query'];
+// The names a point's body keeps when a routed argument shares one: those its
+// JSON request body declares (`bf`), every active field where the model
+// records no `bf`, and never a field the entity marks read-only.
+function bodyFieldNames(pt, fields) {
+    if (false === pt.bf) {
+        return [];
+    }
+    const readOnly = fields.filter((f) => true === f.ro).map((f) => f.n);
+    const names = Array.isArray(pt.bf) ? pt.bf :
+        fields.filter((f) => false !== f.a).map((f) => f.n);
+    return names.filter((name) => !readOnly.includes(name));
+}
 function withPointParts(op, fields = []) {
     if (null == op) {
         return op;
@@ -230,11 +242,11 @@ function withPointParts(op, fields = []) {
             points: (0, jostraca_1.each)(o.points).filter((pt) => false !== pt?.a).map((pt) => {
                 if (null == pt)
                     return pt;
+                const kept = bodyFieldNames(pt, fields);
                 const args = Object.fromEntries(Object.entries(pt.g || {}).map(([kind, values]) => [kind, (0, jostraca_1.each)(values).filter((arg) => false !== arg.a).map((arg) => ({
                         name: arg.n, orig: arg.or, type: arg.t, kind: arg.k,
                         reqd: arg.r, example: arg.ex,
-                        // Also a field of the entity, so the body keeps it.
-                        ...(ROUTED_KINDS.includes(kind) && fields.includes(arg.n) ? { field: true } : {}),
+                        ...(ROUTED_KINDS.includes(kind) && kept.includes(arg.n) ? { field: true } : {}),
                     }))]));
                 // Runtime hooks expose descriptive names independently of the model schema.
                 return {
@@ -272,7 +284,7 @@ function configDefinition(model, targetname) {
             })),
             id: e.id,
             name: e.name,
-            op: withPointParts(e.op, fields.map((f) => f.n)),
+            op: withPointParts(e.op, (0, jostraca_1.each)(e.fields || {})),
             relations: e.relations,
         }, true);
         entityStubs[e.name] = {};

@@ -2164,7 +2164,7 @@ fn strip_action(reqdata: Value) Value {
 
 // A header, cookie or query argument travels where prepare_headers_util or
 // prepare_query_util sends it, so the body is built from the request data
-// without it, unless the entity declares it as a field too.
+// without it, unless the point marks it as a field the body keeps.
 fn routed_arg_names(ctx: *Context) [][]const u8 {
     var names: std.ArrayList([]const u8) = .empty;
     for ([_][]const u8{ "header", "cookie", "query" }) |kind| {

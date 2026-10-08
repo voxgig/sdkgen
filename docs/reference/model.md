@@ -23,8 +23,10 @@ read-only, write-only, deprecated, and format.
 Operation points use `a` (active), `k` (transport), `m` (method), `o` (source
 path), `s` (segments), `r` (renames), `t` (transforms), `g` (arguments), and
 `q` (selectors). Optional `co` identifies the source operation, `li` supplies
-live-test hints, and `gq` describes GraphQL. Arguments use `a`, `k`, `n`, `r`,
-and `t`; `or` preserves the original name and `ex` supplies an example.
+live-test hints, and `gq` describes GraphQL. Optional `bf` lists the
+properties the point's JSON request body declares, or is `false` for a JSON
+body that declares none. Arguments use `a`, `k`, `n`, `r`, and `t`; `or`
+preserves the original name and `ex` supplies an example.
 
 Flow steps use `a`, `o`, `i`, `m`, `d`, `s`, and `v` for activation,
 operation, inputs, match, data, mutations, and assertions. Inactive steps
@@ -41,6 +43,16 @@ it into the descriptive attribute names used by runtime hooks. Live-test
 schema facts come from the resolved specification supplied by Apidef;
 points contain no embedded JSON contracts. Regenerate older API models
 before using these templates.
+
+A header, cookie or query argument goes out where its kind puts it, and a
+create, update or patch leaves its name out of the body, unless the body
+keeps that name too. `configDefinition` marks such an argument
+`field: true`, and the SDK then sends the call's one value in both places.
+The body keeps a name that `bf` lists, every active field's name on a point
+with no `bf`, and none on a point whose `bf` is `false`. It never keeps the
+name of a field marked `ro`. Pinned by `ts/test/actionstrip.test.ts`, and
+through every target's own SDK by the media probe in
+`ts/test/generatedcompile.test.ts`.
 
 ## `.aontu` / aontu syntax primer
 

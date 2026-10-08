@@ -67,7 +67,7 @@ private func stripAction(_ reqdata: Value) -> Value {
 
 // A header, cookie or query argument travels where prepareHeadersUtil or
 // prepareQueryUtil sends it, so the body is built from the request data
-// without it, unless the entity declares it as a field too.
+// without it, unless the point marks it as a field the body keeps.
 private func routedArgNames(_ ctx: Context) -> [String] {
   return (callArgs(ctx, "header") + callArgs(ctx, "cookie") + callArgs(ctx, "query")).map { $0.name }
     .filter { !fieldArg(ctx, $0) }

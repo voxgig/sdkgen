@@ -383,6 +383,50 @@ describe('definitionPlan', () => {
     strictEqual(of('list').bodyArgs, undefined)
   })
 
+  // The SDK leaves a read-only property out of the body, so the runner does
+  // not look for it there.
+  test('a read-only property the request body declares is not checked in the body', () => {
+    const body = {
+      properties: {
+        name: { type: 'string' }, locale: { type: 'string' },
+        version: { type: 'string', readOnly: true },
+      },
+      allOf: [{ properties: { theme: { type: 'string', readOnly: true } } }],
+    }
+    const parameters = [
+      { in: 'header', name: 'X-Locale' }, { in: 'cookie', name: 'theme' },
+      { in: 'query', name: 'version' },
+    ]
+    const responses = { '200': { content: { 'application/json': { example: {} } } } }
+    const def = { ...DEF, paths: {
+      '/uploads': {
+        post: { parameters, requestBody: { content: { 'application/json': { schema: body } } }, responses },
+      },
+      '/uploads/{id}': { put: { parameters: [{ in: 'path', name: 'id' }, ...parameters,
+        { in: 'body', name: 'body', schema: { properties: {
+          locale: {}, version: { readOnly: true },
+        } } }], responses } },
+    } }
+    const g = {
+      header: [{ n: 'locale', or: 'X-Locale' }],
+      cookie: [{ n: 'theme', or: 'theme' }],
+      query: [{ n: 'version', or: 'version' }],
+    }
+    const model = { main: { kit: { entity: { upload: {
+      name: 'upload', id: { field: 'id', name: 'id' }, op: {
+        create: { points: [{ m: 'POST', o: '/uploads', g }] },
+        update: { points: [{ m: 'PUT', o: '/uploads/{id}', q: { exist: ['id'] },
+          g: { ...g, params: [{ n: 'id', or: 'id' }] } }] },
+      },
+    } } } } }
+    const plan = definitionPlan({ model, meta: { apidef: {
+      operation: (m: string, o: string) => operationFacts(def, { m, o }),
+    } } })
+    const of = (op: string) => plan.find((p: any) => op === p.op)!
+    deepStrictEqual(of('create').bodyArgs, ['locale'])
+    deepStrictEqual(of('update').bodyArgs, ['locale'])
+  })
+
   test('the example is the sample, three items at most', () => {
     strictEqual(point('list').sample.data.length, 3)
     deepStrictEqual(point('list').query, ['limit'])

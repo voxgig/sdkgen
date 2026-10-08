@@ -27,7 +27,7 @@ static bool field_arg(Context* ctx, const char* name) {
 
 /* A header, cookie or query argument travels where prepare_headers_util or
    prepare_query_util sends it, so the body is built from the request data
-   without it, unless the entity declares it as a field too. */
+   without it, unless the point marks it as a field the body keeps. */
 static voxgig_value* routed_args(Context* ctx) {
   voxgig_value* routed = voxgig_new_list();
   for (size_t k = 0; k < 3; k++) {

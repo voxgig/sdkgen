@@ -45,7 +45,7 @@ final class TransformRequest {
 
   // A header, cookie or query argument travels where PrepareHeaders or
   // PrepareQuery sends it, so the body is built from the request data without
-  // it, unless the entity declares it as a field too.
+  // it, unless the point marks it as a field the body keeps.
   private static List<String> routedArgNames(Context ctx) {
     List<String> names = new ArrayList<>();
     for (String kind : List.of("header", "cookie", "query")) {

@@ -2301,7 +2301,7 @@ defmodule ProjectName.Utility do
 
   # A header, cookie or query argument travels where prepare_headers_impl or
   # prepare_query_impl sends it, so the body is built from the request data
-  # without it, unless the entity declares it as a field too.
+  # without it, unless the point marks it as a field the body keeps.
   defp routed_arg_names(ctx) do
     (call_args(ctx, "header") ++ call_args(ctx, "cookie") ++ call_args(ctx, "query"))
     |> Enum.map(&elem(&1, 0))
