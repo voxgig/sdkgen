@@ -6320,6 +6320,270 @@ describe('the cpp concurrency lane', () => {
 })
 
 
+// libstdc++ backs std::shared_mutex with a pthread_rwlock_t, which winpthreads
+// sets up on its first lock, failing the threads that race it with EINVAL.
+// Each run is a fresh process, so its racing locks are the lock's first.
+const REGISTRY_LOCK_RUNS = 100
+const REGISTRY_LOCK_COLD_RUNS = 5
+const REGISTRY_LOCK_RUN_MS = 60 * 1000
+const REGISTRY_LOCK_HELD = 'registry lock probe: 32 of 32 racing first locks held'
+const REGISTRY_LOCK_RWLOCK = '(std::shared_mutex on pthread_rwlock_t)'
+const LOCK_SHARED_REFUSED = /lock_shared\(\): Assertion '__ret == 0' failed/
+
+const REGISTRY_LOCK_PROBE = `// Threads released together each take the secret registry lock shared, its
+// first locks in this process; with "cold" they race a plain static
+// shared_mutex instead. _GLIBCXX_ASSERTIONS makes lock_shared assert on a
+// refused lock in every build mode.
+#define _GLIBCXX_ASSERTIONS 1
+
+#include "../core/sdk.hpp"
+
+#include <atomic>
+#include <cstdio>
+#include <cstring>
+#include <shared_mutex>
+#include <thread>
+#include <vector>
+
+static const int WIDTH = 32;
+
+static std::shared_mutex& coldLock() {
+  static std::shared_mutex lock;
+  return lock;
+}
+
+int main(int argc, char** argv) {
+  const bool cold = 1 < argc && 0 == std::strcmp(argv[1], "cold");
+  std::atomic<int> ready{0};
+  std::atomic<int> held{0};
+  std::vector<std::thread> threads;
+  for (int n = 0; n < WIDTH; n++) {
+    threads.emplace_back([&]() {
+      ready.fetch_add(1);
+      while (ready.load() < WIDTH) std::this_thread::yield();
+      std::shared_lock<std::shared_mutex> guard(cold ? coldLock() : sdk::cleanRegistryLock());
+      held.fetch_add(1);
+    });
+  }
+  for (auto& t : threads) t.join();
+#if _GLIBCXX_USE_PTHREAD_RWLOCK_T
+  const char* backing = "pthread_rwlock_t";
+#else
+  const char* backing = "no pthread_rwlock_t";
+#endif
+  std::printf("registry lock probe: %d of %d racing first locks held (std::shared_mutex on %s)\\n",
+              held.load(), WIDTH, backing);
+  return WIDTH == held.load() ? 0 : 1;
+}
+`
+
+const RWLOCK_CONTROL = `// A static rwlock that threads released together each lock for the first
+// time, without the SDK, counting the locks refused.
+#if __has_include(<pthread.h>)
+#include <pthread.h>
+
+#include <atomic>
+#include <cerrno>
+#include <cstdio>
+#include <thread>
+#include <vector>
+
+static pthread_rwlock_t lock = PTHREAD_RWLOCK_INITIALIZER;
+
+int main() {
+  const int WIDTH = 32;
+  std::atomic<int> ready{0};
+  std::atomic<int> refused{0};
+  std::atomic<int> einval{0};
+  std::vector<std::thread> threads;
+  for (int n = 0; n < WIDTH; n++) {
+    threads.emplace_back([&]() {
+      ready.fetch_add(1);
+      while (ready.load() < WIDTH) std::this_thread::yield();
+      int ret = pthread_rwlock_rdlock(&lock);
+      if (0 == ret) {
+        pthread_rwlock_unlock(&lock);
+        return;
+      }
+      refused.fetch_add(1);
+      if (EINVAL == ret) einval.fetch_add(1);
+    });
+  }
+  for (auto& t : threads) t.join();
+  std::printf("rwlock control: %d refused, %d EINVAL\\n", refused.load(), einval.load());
+  return 0;
+}
+#else
+#include <cstdio>
+
+int main() {
+  std::printf("rwlock control: no pthread.h\\n");
+  return 0;
+}
+#endif
+`
+
+// Preloaded over glibc, where a refused lock aborts the probe with the
+// assertion the windows-latest runner shows.
+const RWLOCK_WINPTHREADS = `// winpthreads' first lock of a statically initialized rwlock, over glibc's:
+// rwl_ref looks at the lock unlocked, then rwlock_static_init fails with
+// EINVAL a racer that saw it cold once another thread initialized it.
+#include <dlfcn.h>
+#include <pthread.h>
+#include <time.h>
+
+#include <atomic>
+#include <cerrno>
+
+namespace {
+
+typedef int (*Lock)(pthread_rwlock_t*);
+
+const Lock rdlock = reinterpret_cast<Lock>(dlsym(RTLD_NEXT, "pthread_rwlock_rdlock"));
+const Lock wrlock = reinterpret_cast<Lock>(dlsym(RTLD_NEXT, "pthread_rwlock_wrlock"));
+
+std::atomic<pthread_rwlock_t*> warm[64];
+pthread_mutex_t init = PTHREAD_MUTEX_INITIALIZER;
+
+bool warmed(pthread_rwlock_t* rw) {
+  for (auto& slot : warm) {
+    pthread_rwlock_t* at = slot.load();
+    if (rw == at) return true;
+    if (nullptr == at) return false;
+  }
+  return false;
+}
+
+// The wait stands for the initialization winpthreads runs under its spinlock.
+int first(pthread_rwlock_t* rw) {
+  if (warmed(rw)) return 0;
+  pthread_mutex_lock(&init);
+  const int ret = warmed(rw) ? EINVAL : 0;
+  if (0 == ret) {
+    timespec spent{0, 1000000};
+    nanosleep(&spent, nullptr);
+    for (auto& slot : warm) {
+      pthread_rwlock_t* none = nullptr;
+      if (slot.compare_exchange_strong(none, rw)) break;
+    }
+  }
+  pthread_mutex_unlock(&init);
+  return ret;
+}
+
+}  // namespace
+
+extern "C" int pthread_rwlock_rdlock(pthread_rwlock_t* rw) {
+  const int ret = first(rw);
+  return 0 == ret ? rdlock(rw) : ret;
+}
+
+extern "C" int pthread_rwlock_wrlock(pthread_rwlock_t* rw) {
+  const int ret = first(rw);
+  return 0 == ret ? wrlock(rw) : ret;
+}
+`
+
+
+// Runs of `bin`, each in a process of its own, up to the first that hangs.
+function freshRuns(
+  bin: string, args: string[], cwd: string, runs: number, env?: NodeJS.ProcessEnv,
+): Run[] {
+  const ran: Run[] = []
+  while (ran.length < runs && !ran.some((one) => one.timedOut)) {
+    ran.push(run(bin, args, cwd, env, REGISTRY_LOCK_RUN_MS))
+  }
+  return ran
+}
+
+
+// The probe's runs that did not hold every lock, as the failure, else null.
+function registryLockFailure(runs: Run[], under: string): string | null {
+  const failed = runs.filter((ran) => !ran.ok || !ran.out.includes(REGISTRY_LOCK_HELD))
+  return 0 === failed.length ? null
+    : 'the registry lock probe FAILED against the generated cpp SDK' + under + ' in ' +
+      failed.length + ' of ' + runs.length + ' runs; the first:\n' + tail(failed[0].out, 60)
+}
+
+
+// How often the control saw a cold static rwlock refuse a racing first lock.
+function rwlockControl(runs: Run[]): string {
+  if (runs.some((ran) => ran.out.includes('rwlock control: no pthread.h'))) {
+    return 'cpp rwlock control: not run, there is no pthread.h here'
+  }
+  const counts = runs.map((ran) => /rwlock control: (\d+) refused, (\d+) EINVAL/.exec(ran.out))
+  const bad = runs.findIndex((ran, i) => !ran.ok || null == counts[i])
+  if (0 <= bad) {
+    return 'cpp rwlock control: run ' + (bad + 1) + ' did not report:\n' + tail(runs[bad].out)
+  }
+  const refused = counts.map((m) => Number(m![1]))
+  const einval = counts.reduce((sum, m) => sum + Number(m![2]), 0)
+  return 'cpp rwlock control: ' + refused.filter((n) => 0 < n).length + ' of ' + runs.length +
+    ' runs saw a cold static rwlock refuse a racing first lock (' +
+    refused.reduce((sum, n) => sum + n, 0) + ' refused, ' + einval + ' with EINVAL)'
+}
+
+
+describe('the cpp secret registry lock takes its first lock alone', () => {
+
+  let tmp = ''
+
+  before(() => { tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cpp-lock-')) })
+  after(() => Fs.rmSync(tmp, { recursive: true, force: true }))
+
+
+  test('cpp: racing first locks of the secret registry lock all hold it', async (t) => {
+    const sdkroot = Path.join(tmp, 'cpp')
+    await generateTo('cpp', sdkroot)
+
+    const make = toolchain('make')
+    const cxx = cleanCxx()
+    if (null == make || null == cxx) {
+      return t.skip('no usable cpp toolchain here (make and a C++ compiler)')
+    }
+
+    Fs.writeFileSync(Path.join(sdkroot, 'test', 'registry_lock_probe.cpp'), REGISTRY_LOCK_PROBE)
+    Fs.writeFileSync(Path.join(sdkroot, 'test', 'rwlock_control.cpp'), RWLOCK_CONTROL)
+    const built = run(make, ['CXX=' + cxx, 'test/registry_lock_probe.out', 'test/rwlock_control.out'],
+      sdkroot, undefined, CPP_CONCURRENCY_TIMEOUT_MS)
+    ok(built.ok, 'cpp: the registry lock probe does not build:\n' + tail(built.out))
+
+    const control = freshRuns(Path.join('test', 'rwlock_control.out'), [], sdkroot, REGISTRY_LOCK_RUNS)
+    if (control[0].unlaunchable) {
+      return t.skip('cpp: the rwlock control could not be started here: ' + tail(control[0].out, 3))
+    }
+    t.diagnostic(rwlockControl(control))
+
+    const probe = Path.join('test', 'registry_lock_probe.out')
+    const held = freshRuns(probe, [], sdkroot, REGISTRY_LOCK_RUNS)
+    const failure = registryLockFailure(held, '')
+    ok(null == failure, failure!)
+
+    if ('linux' !== process.platform || !held[0].out.includes(REGISTRY_LOCK_RWLOCK)) {
+      return t.diagnostic('cpp winpthreads model: not run, it needs LD_PRELOAD on Linux and a ' +
+        'std::shared_mutex on pthread_rwlock_t')
+    }
+    Fs.writeFileSync(Path.join(sdkroot, 'winpthreads_rwlock.cpp'), RWLOCK_WINPTHREADS)
+    const shim = run(cxx, ['-std=c++17', '-pthread', '-shared', '-fPIC', '-o', 'winpthreads_rwlock.so',
+      'winpthreads_rwlock.cpp', '-ldl'], sdkroot)
+    ok(shim.ok, 'cpp: the winpthreads model does not build:\n' + tail(shim.out))
+    const env = { ...process.env, LD_PRELOAD: Path.join(sdkroot, 'winpthreads_rwlock.so') }
+
+    const cold = freshRuns(probe, ['cold'], sdkroot, REGISTRY_LOCK_COLD_RUNS, env)
+    const refused = cold.filter((ran) => !ran.ok && LOCK_SHARED_REFUSED.test(ran.out)).length
+    ok(0 < refused, 'cpp: the winpthreads model refused no racing first lock of a plain static ' +
+      'shared_mutex, so it shows nothing of the registry lock:\n' + tail(cold[0].out))
+
+    const modelled = registryLockFailure(freshRuns(probe, [], sdkroot, REGISTRY_LOCK_RUNS, env),
+      ' under the winpthreads model')
+    ok(null == modelled, modelled!)
+    t.diagnostic('cpp winpthreads model: ' + refused + ' of ' + cold.length +
+      ' runs of a plain static shared_mutex refused a racing first lock; every run of the ' +
+      'registry lock held it')
+  })
+})
+
+
 describe('the go concurrency lane', () => {
 
   const REFUSALS = [
