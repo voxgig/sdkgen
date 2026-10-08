@@ -28,7 +28,7 @@ object TransformRequest {
 
   // A header, cookie or query argument travels where PrepareHeaders or
   // PrepareQuery sends it, so the body is built from the request data without
-  // it, unless the entity declares it as a field too.
+  // it, unless the point marks it as a field the body keeps.
   private def routedArgNames(ctx: Context): Seq[String] =
     (Param.callArgs(ctx, "header") ++ Param.callArgs(ctx, "cookie") ++ Param.callArgs(ctx, "query")).map(_._1)
       .filterNot(name => fieldArg(ctx, name))

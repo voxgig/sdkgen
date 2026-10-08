@@ -9,6 +9,8 @@ import { transform } from 'sucrase'
 
 import * as struct from '@voxgig/struct'
 
+import { configDefinition } from '../dist/sdkgen'
+
 
 const TM = Path.resolve(__dirname, '..', 'project', '.sdk', 'tm')
 
@@ -143,7 +145,7 @@ describe('actionstrip: the $action selector never reaches the wire', () => {
     })
 
 
-    test(lang + ': transformRequest keeps an argument the entity declares as a field', () => {
+    test(lang + ': transformRequest keeps an argument its point marks as a field', () => {
       const reqdata = { name: 'n', locale: 'en', session_id: 's1' }
       for (const kind of ['header', 'cookie', 'query']) {
         const ctx: any = bodyCtx(reqdata)
@@ -163,6 +165,88 @@ describe('actionstrip: the $action selector never reaches the wire', () => {
       deepStrictEqual(transformRequest(bodyCtx({ name: 'n' })), { name: 'n' })
       deepStrictEqual(transformRequest(bodyCtx([1, 2], same)), [1, 2])
       strictEqual(transformRequest(bodyCtx('s', same)), 's')
+    })
+  }
+})
+
+
+// An update whose `version` is read-only and `hidden` inactive, beside the
+// writable `title`, `locale`, `theme` and `lang`, several of them routed too.
+function updatePoint(bf?: any): any {
+  const arg = (k: string, n: string, or = n) => ({ k, n, or, t: '`$STRING`' })
+  const model = {
+    const: { Name: 'Marker' },
+    main: {
+      kit: {
+        config: { headers: {} },
+        info: { servers: [{ url: 'https://api.test' }] },
+        entity: {
+          thing: {
+            name: 'thing',
+            fields: {
+              id: { n: 'id' }, title: { n: 'title' }, locale: { n: 'locale' },
+              theme: { n: 'theme' }, lang: { n: 'lang' },
+              version: { n: 'version', ro: true }, hidden: { n: 'hidden', a: false },
+            },
+            op: {
+              update: {
+                name: 'update', points: [{
+                  m: 'PUT', o: '/things/{id}', s: [{ lit: 'things' }, { var: 'id' }],
+                  g: {
+                    params: [arg('param', 'id')],
+                    header: [arg('header', 'locale', 'X-Locale'), arg('header', 'trace', 'X-Trace')],
+                    cookie: [arg('cookie', 'theme')],
+                    query: [arg('query', 'lang'), arg('query', 'version'), arg('query', 'hidden')],
+                  },
+                  t: { req: '`reqdata`', res: '`body`' },
+                  ...(undefined === bf ? {} : { bf }),
+                }],
+              },
+            },
+          },
+        },
+      },
+    },
+  }
+  return configDefinition(model as any).def.entity.thing.op.update.points[0]
+}
+
+
+function marked(point: any): string[] {
+  return ['header', 'cookie', 'query'].flatMap((kind) =>
+    (point.args[kind] || []).filter((arg: any) => true === arg.field).map((arg: any) => arg.name))
+}
+
+
+describe('actionstrip: the config marks a routed argument the body keeps', () => {
+
+  test('a bf list marks what the JSON body declares, less a read-only field', () => {
+    deepStrictEqual(marked(updatePoint(['lang', 'title', 'trace', 'version'])), ['trace', 'lang'])
+  })
+
+
+  test('a bf list marks a name it lists, an inactive field included', () => {
+    deepStrictEqual(marked(updatePoint(['hidden', 'title'])), ['hidden'])
+  })
+
+
+  test('bf false marks no routed argument', () => {
+    deepStrictEqual(marked(updatePoint(false)), [])
+  })
+
+
+  test('without bf every active field is marked, less a read-only one', () => {
+    deepStrictEqual(marked(updatePoint()), ['locale', 'theme', 'lang'])
+  })
+
+
+  for (const [lang, , transformRequest] of IMPL) {
+    test(lang + ': a field the body does not keep goes out as its argument alone', () => {
+      const ctx: any = bodyCtx({
+        id: 't1', title: 'x', locale: 'en', theme: 'dark', lang: 'fr', version: '2', trace: 't1',
+      })
+      ctx.point.args = updatePoint(['lang', 'title', 'version']).args
+      deepStrictEqual(transformRequest(ctx), { id: 't1', title: 'x', lang: 'fr' })
     })
   }
 })
@@ -297,7 +381,7 @@ describe('actionstrip: every SDK target strips the selector', () => {
         lang + ': ' + SITES[lang].body[0] + ' never leaves the query arguments out')
     })
 
-    test(lang + ': transform-request keeps an argument the entity declares as a field', () => {
+    test(lang + ': transform-request keeps an argument its point marks as a field', () => {
       ok(/["']field["']|\.field\b/.test(siteText(SITES[lang].body)),
         lang + ': ' + SITES[lang].body[0] + ' never reads the field marker on an argument')
     })

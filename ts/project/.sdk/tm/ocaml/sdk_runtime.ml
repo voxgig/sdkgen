@@ -1026,7 +1026,7 @@ let field_arg (ctx : ctx) (name : string) : bool =
 
 (* A header, cookie or query argument travels where prepare_headers_util or
    prepare_query_util sends it, so the body is built from the request data
-   without it, unless the entity declares it as a field too. *)
+   without it, unless the point marks it as a field the body keeps. *)
 let routed_arg_names (ctx : ctx) : string list =
   List.filter (fun name -> not (field_arg ctx name))
     (List.map (fun (name, _, _) -> name)

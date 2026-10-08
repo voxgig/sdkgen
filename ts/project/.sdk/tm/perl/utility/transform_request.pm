@@ -44,7 +44,7 @@ my $field_arg = sub {
 
 # A header, cookie or query argument travels where prepare_headers or
 # prepare_query sends it, so the body is built from the request data without
-# it, unless the entity declares it as a field too.
+# it, unless the point marks it as a field the body keeps.
 my $routed_arg_names = sub {
   my ($ctx) = @_;
   return grep { !$field_arg->($ctx, $_) } map { $_->[0] } ProjectNameUtilities::call_args($ctx, 'header'),

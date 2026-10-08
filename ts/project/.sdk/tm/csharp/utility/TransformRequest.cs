@@ -49,7 +49,7 @@ public static partial class SdkUtility
 
     // A header, cookie or query argument travels where PrepareHeadersUtil or
     // PrepareQueryUtil sends it, so the body is built from the request data
-    // without it, unless the entity declares it as a field too.
+    // without it, unless the point marks it as a field the body keeps.
     private static List<string> RoutedArgNames(Context ctx)
     {
         return CallArgs(ctx, "header").Concat(CallArgs(ctx, "cookie")).Concat(CallArgs(ctx, "query"))

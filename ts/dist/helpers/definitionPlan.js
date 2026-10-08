@@ -111,7 +111,7 @@ function definitionPlan(ctx$) {
                 const responseMedia = recorded ? successMedia(facts) : [];
                 const rawBody = recorded && BODY_OPS.includes(op) ?
                     rawRequestBody(facts) : undefined;
-                // An argument the request body declares too goes out in both, from one value.
+                // An argument the request body declares writable goes out in both, from one value.
                 const declared = ('create' === op || 'update' === op) && null == rawBody ?
                     bodyProperties(facts) : [];
                 const bodyArgs = [...new Set([...headers, ...cookies].map((a) => a.name)
@@ -221,14 +221,18 @@ function rawRequestBody(facts) {
         text: types.every((t) => /^text\/|^application\/xml|\+xml/i.test(t.split(';')[0].trim())),
     };
 }
-// The top-level properties a JSON request body declares, an allOf's parts included.
+// The top-level properties a JSON request body declares, an allOf's parts
+// included, less any that a declaration marks read-only.
 function bodyProperties(facts) {
     const content = facts.requestBody?.content;
     const schema = null != content && 'object' === typeof content ?
         content[Object.keys(content).find((t) => /json/i.test(t)) ?? '']?.schema :
         (facts.parameters || []).find((p) => 'body' === p?.in)?.schema;
-    return [schema, ...(Array.isArray(schema?.allOf) ? schema.allOf : [])]
-        .flatMap((part) => Object.keys(part?.properties || {}));
+    const props = [schema, ...(Array.isArray(schema?.allOf) ? schema.allOf : [])]
+        .flatMap((part) => Object.entries(part?.properties || {}));
+    const readOnly = new Set(props.filter(([, prop]) => true === prop?.readOnly)
+        .map(([name]) => name));
+    return props.map(([name]) => name).filter((name) => !readOnly.has(name));
 }
 function sampleOf(media) {
     if (undefined !== media.example)

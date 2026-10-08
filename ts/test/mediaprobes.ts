@@ -57,7 +57,9 @@ const point = (method: string, path: string, extra: string, req = '`reqdata`', a
       }`
 }
 
-const entity = (name: string, ops: Record<string, string>, more: string[] = []) => `
+// `readOnly` names fields of `more` that the entity marks read-only.
+const entity = (name: string, ops: Record<string, string>, more: string[] = [],
+  readOnly: string[] = []) => `
 main: kit: entity: ${name}: {
   alias: field: {}
   name: "${name}"
@@ -70,7 +72,7 @@ main: kit: entity: ${name}: {
   fields: {
     "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
     "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }${more.map((f) => `
-    "${f}": { h: '${f}', n: "${f}", r: false, t: "\`$STRING\`" }`).join('')}
+    "${f}": { h: '${f}', n: "${f}", r: false, t: "\`$STRING\`"${readOnly.includes(f) ? ', ro: true' : ''} }`).join('')}
   }
   op: {${Object.entries(ops).map(([op, pt]) => `
     ${op}: { name: "${op}", points: [ ${pt} ] }`).join('')}
@@ -88,12 +90,17 @@ const JSON_RS = 'rs: { kind: "json", media: "application/json" }'
 const arg = (kind: string, name: string, orig: string) =>
   `{ k: "${kind}", n: "${name}", or: "${orig}", t: "\`$STRING\`" }`
 
-// A header, a cookie and a query argument that share a name with a field of
-// the entity, each beside one that does not.
+// A header, a cookie and a query argument that the body declares as a field
+// too, each beside one that is no field, and query arguments named like a
+// field the body does not keep: `tag`, which it does not declare, and the
+// read-only `version`, which it does.
 const ROUTED_ARGS = `
         header: [${arg('header', 'locale', 'X-Locale')} ${arg('header', 'trace', 'X-Trace')}]
         cookie: [${arg('cookie', 'theme', 'theme')} ${arg('cookie', 'session_id', 'SESSIONID')}]
-        query: [${arg('query', 'lang', 'lang')} ${arg('query', 'verbose', 'verbose')}]`
+        query: [${arg('query', 'lang', 'lang')} ${arg('query', 'verbose', 'verbose')}
+          ${arg('query', 'tag', 'tag')} ${arg('query', 'version', 'version')}]`
+
+const ROUTED_BODY = 'bf: ["lang", "locale", "theme", "title", "version"]'
 
 // cataas: JPEG, PNG, HTML and JSON, which the server picks between by Accept.
 const CATAAS_RS = `rs: { kind: "json", media: "application/json", alternatives: [
@@ -115,13 +122,13 @@ const MEDIA_MODEL =
   entity('picture', {
     load: point('GET', '/picture/{id}', `rs: { kind: "raw", media: "image/jpeg", binary: true,
           alternatives: [ { kind: "raw", media: "image/png", binary: true } ] }`),
-    update: point('PUT', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }',
-      undefined, ROUTED_ARGS),
+    update: point('PUT', '/picture/{id}', `rb: { kind: "json", media: "application/merge-patch+json" }
+        ${ROUTED_BODY}`, undefined, ROUTED_ARGS),
     patch: point('PATCH', '/picture/{id}', 'rb: { kind: "json", media: "application/merge-patch+json" }'),
     // A request transform that selects one field, so the body is that field's value.
     create: point('POST', '/picture', 'rb: { kind: "json", media: "application/json" }',
       '`reqdata.payload`'),
-  }, ['locale', 'theme', 'lang']) +
+  }, ['locale', 'theme', 'lang', 'tag', 'version'], ['version']) +
   // A list whose items each wrap the record under the entity's name.
   entity('badge', {
     list: point('GET', '/badge', JSON_RS, '`reqdata`', '',
@@ -219,6 +226,18 @@ const MEDIA_CASES: MediaCase[] = [
       headers: { 'x-locale': 'en', 'x-trace': 't1' },
       cookies: ['theme=dark', 'SESSIONID=s1'],
       query: { lang: 'fr', verbose: 'yes' },
+    },
+  },
+  {
+    name: 'an argument named like a field the body does not keep goes out alone',
+    entity: 'picture', op: 'update',
+    input: { id: 'p01', title: 'Mars', tag: 'red', version: '2' },
+    expect: {
+      method: 'PUT', path: '/picture/p01', accept: null,
+      contentType: 'application/merge-patch+json',
+      json: { title: 'Mars' },
+      absent: ['tag', 'version'],
+      query: { tag: 'red', version: '2' },
     },
   },
   {

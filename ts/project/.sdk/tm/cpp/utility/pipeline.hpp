@@ -1793,7 +1793,7 @@ inline bool fieldArg(CtxPtr ctx, const std::string& name) {
 
 // A header, cookie or query argument travels where prepareHeaders or
 // prepareQuery sends it, so the body is built from the request data without
-// it, unless the entity declares it as a field too.
+// it, unless the point marks it as a field the body keeps.
 inline std::vector<std::string> routedArgNames(CtxPtr ctx) {
   std::vector<std::string> names;
   for (const char* kind : {"header", "cookie", "query"}) {
