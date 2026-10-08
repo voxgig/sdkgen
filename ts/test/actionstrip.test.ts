@@ -225,6 +225,11 @@ describe('actionstrip: the config marks a routed argument the body keeps', () =>
   })
 
 
+  test('a bf list marks a name it lists, an inactive field included', () => {
+    deepStrictEqual(marked(updatePoint(['hidden', 'title'])), ['hidden'])
+  })
+
+
   test('bf false marks no routed argument', () => {
     deepStrictEqual(marked(updatePoint(false)), [])
   })
