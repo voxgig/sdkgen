@@ -1,4 +1,4 @@
-// VENDORED: @voxgig/omni sdk-20261009-0906-0 (rust/src/lib.rs)
+// VENDORED: @voxgig/omni 0.1.0 (rust/src/lib.rs)
 // Source: https://github.com/voxgig/omni @ 5ab24080fb06b45bbbbc3814522bda7da30b520b  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 pub mod json;

@@ -1,4 +1,4 @@
-// VENDORED: @voxgig/sekreto sdk-20261009-0906-0 (javascript/src/Sekreto.js)
+// VENDORED: @voxgig/sekreto 0.2.0 (javascript/src/Sekreto.js)
 // Source: https://github.com/voxgig/sekreto @ 83396df4f1c3d579af17e152b7a55fdade307ab1  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // sekreto: one interface for secrets, wherever they live.

@@ -1690,11 +1690,11 @@ tm/rust/tests/pipeline_test.rs b9c530c3d8ab
 tm/rust/tests/primary_utility_test.rs 289d1d1cd976
 tm/rust/tests/sdk-test-control.json 8e1530378d2f
 tm/rust/tests/struct_utility_test.rs e19a58dc8fad
-tm/rust/tests/vendor/omni/json.rs 83f658561579
-tm/rust/tests/vendor/omni/mod.rs 91294a2b167a
-tm/rust/tests/vendor/omni/regex.rs ef786c0fa1b5
-tm/rust/tests/vendor/omni/runner.rs 99b9c4e7c4de
-tm/rust/tests/vendor/omni/util.rs 0fb6f6e8fec6
+tm/rust/tests/vendor/omni/json.rs f0575ec5cc01
+tm/rust/tests/vendor/omni/mod.rs 94160591c924
+tm/rust/tests/vendor/omni/regex.rs 69fd5e2ada31
+tm/rust/tests/vendor/omni/runner.rs 85fc482b45ac
+tm/rust/tests/vendor/omni/util.rs 8928de005c81
 tm/rust/utility/clean.rs cbd5c2744822
 tm/rust/utility/done.rs b15d29a24839
 tm/rust/utility/feature_add.rs 17f2d1fcb7c3
@@ -2285,8 +2285,8 @@ tm/zig/test/struct_corpus.zig c02971515919
 tm/zig/test/vendor/omni/omni.zig c364f3483f07
 tm/zig/test/vendor/omni/regex.zig 0ffb6426054e
 tm/zig/utility/jsonparse.zig 3bf825b60025
-tm/zig/utility/voxgigstruct/regex.zig 1d0925dc1695
-tm/zig/utility/voxgigstruct/struct.zig b5b20c1ac0b7
+tm/zig/utility/voxgigstruct/regex.zig 99840187d075
+tm/zig/utility/voxgigstruct/struct.zig 96b7333b46c2
 
 ## feature audit
 

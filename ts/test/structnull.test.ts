@@ -322,8 +322,8 @@ describe('vendored struct null semantics', () => {
         }),
         JSON.stringify(port.answers),
         port.target + ' (vendored ' + port.stamp + ') changed how it treats a ' +
-        'STORED null. That moves it between auth-null failure modes - see the ' +
-        'table at the top of this file. If the change is an intended resync, ' +
+        'STORED null. That moves it between auth-null failure modes - compare ' +
+        'its row in PORTS with the others. If the change is an intended resync, ' +
         'update the row AND check makeOptions/prepareAuth for that target ' +
         'still suppress. Probe output:\n' + ran.out)
     })

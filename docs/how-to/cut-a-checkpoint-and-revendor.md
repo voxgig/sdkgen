@@ -87,15 +87,17 @@ Do **not** write the tag into a route's `version`. A port that declares a
 version of its own carries it by hand, so check each hand-set `version`
 against what its port declares at the new tag, and update the ones that
 moved. A port that declares none omits the field and is stamped with the tag
-automatically. Writing the tag out per route is what let 52 of 70 routes
-drift a checkpoint behind, and `vendor.js` now refuses a `version` that looks
-like a tag.
+automatically, so also add the field to any route whose port has started
+declaring one. A version counts when it is in the port's own manifest or
+source, such as `package.json`, `Cargo.toml` or a perl `$VERSION`. Writing
+the tag out per route is what let 52 of 70 routes drift a checkpoint behind,
+and `vendor.js` now refuses a `version` that looks like a tag.
 
 ## 3. Resync
 
 ```bash
 make vendor          # rewrites the templates and ts/test/vendored.json
-make vendor-check    # the no-write form CI runs
+make vendor-check    # the same checks, writing nothing
 ```
 
 `vendor.js` reads content with `git show <tag>:<path>` — never a working

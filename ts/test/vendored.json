@@ -301,11 +301,11 @@
   "omni/rust": {
    "repo": "https://github.com/voxgig/omni",
    "commit": "5ab24080fb06b45bbbbc3814522bda7da30b520b",
-   "version": "sdk-20261009-0906-0",
+   "version": "0.1.0",
    "tag": "sdk-20261009-0906-0",
    "file": {
     "tm/rust/tests/vendor/omni/json.rs": {
-     "sha256": "83f6585615795b5d1d67e6090894fcd7cbc583b5b69f69c2eed7173495de2b51",
+     "sha256": "f0575ec5cc01d0f7404eb8f84d87eb3eef3ab1e83836b11127e8f3105bc12ba3",
      "upstream": "rust/src/json.rs",
      "adapt": [
       {
@@ -315,15 +315,15 @@
      ]
     },
     "tm/rust/tests/vendor/omni/mod.rs": {
-     "sha256": "91294a2b167af77abb7abfd7b44509c4e7bd22812c0567dd865aea21bf457cab",
+     "sha256": "94160591c9248a115dd6c2b2bd0f05196b676aca98a0f24daa5d2d234d8554d2",
      "upstream": "rust/src/lib.rs"
     },
     "tm/rust/tests/vendor/omni/regex.rs": {
-     "sha256": "ef786c0fa1b503da71a975748903d6114feacb04554e5d1bdf2db7b19a89f28a",
+     "sha256": "69fd5e2ada313d28e1e7de711c089bf382b6a14221669a6bfb2eec9fa1789cd3",
      "upstream": "rust/src/regex.rs"
     },
     "tm/rust/tests/vendor/omni/runner.rs": {
-     "sha256": "99b9c4e7c4de0955579ac9ff29bd806f5a4b50fd261f22ce2c542b967ad0dfff",
+     "sha256": "85fc482b45ac31f878f0b2e55da1e50ed169c135daadea6e47232fa7fe453664",
      "upstream": "rust/src/runner.rs",
      "adapt": [
       {
@@ -341,7 +341,7 @@
      ]
     },
     "tm/rust/tests/vendor/omni/util.rs": {
-     "sha256": "0fb6f6e8fec6c723f64ea81dab9eb7c175715416130f3e5cdc7eaaf0d4674ccd",
+     "sha256": "8928de005c81b7368a95015141b2f557add1164d7f7d0d90c3f91be7e43b6a89",
      "upstream": "rust/src/util.rs",
      "adapt": [
       {
@@ -923,67 +923,67 @@
   "plugin/go": {
    "repo": "https://github.com/voxgig/plugin",
    "commit": "43acbf266b0dbcf52e5ab5463d85c822da9cd234",
-   "version": "0.2.0",
+   "version": "sdk-20261009-0906-0",
    "tag": "sdk-20261009-0906-0",
    "file": {
     "tm/go/feature/secrets/plugin/capability.go": {
-     "sha256": "e79fc904d4418e51c54415456645da7c32b32b6b6fb6b0d4ce0ff5d8eda047dc",
+     "sha256": "4ee7f1d56599d466d61ce427a714538b6566c5f6a85fb2b7685167e1f39bed6c",
      "upstream": "go/plugin/capability.go"
     },
     "tm/go/feature/secrets/plugin/catalog.go": {
-     "sha256": "0d87d5ea7021ec937bfeb8e157fbe8df51bf855134dbcde73b3b706485fb737e",
+     "sha256": "2845137a2d87376badf2a19fe0ceb6683e22d12451f5fcb7a76f374c638258bf",
      "upstream": "go/plugin/catalog.go"
     },
     "tm/go/feature/secrets/plugin/config.go": {
-     "sha256": "3d718be0caaca59b0708596b58c99ae6a318f241efa802c54037bd4a6179efb2",
+     "sha256": "887060ab679ae73cffb4ebbb2a3ee3928f1e18917ca3f1aae074fabf134170a2",
      "upstream": "go/plugin/config.go"
     },
     "tm/go/feature/secrets/plugin/depend.go": {
-     "sha256": "14a5022a06cc8b693e93d04d7341e0dfaa29501f843de0708f596e72cc731af1",
+     "sha256": "33cb4b09fb505dc69c0744f944b7133f730d9521b919edd3473eb2286d289ad6",
      "upstream": "go/plugin/depend.go"
     },
     "tm/go/feature/secrets/plugin/env.go": {
-     "sha256": "6508fcea59899c6258f317fd6023dfec94e10479d5ea9d127297e30d4052044e",
+     "sha256": "a250f3059ab2f6d62fe2c1c4024da4e21b30c07cc5c08cdb87c0b073e9d41dff",
      "upstream": "go/plugin/env.go"
     },
     "tm/go/feature/secrets/plugin/export.go": {
-     "sha256": "e8d2ad2f5a74a735fa6786200328ddabbc091afe6212f288e2d4eb6d64f10ea0",
+     "sha256": "82dfda081851e3227f9fb2c9933c0f309e4631bfde998935ca56275a326b3714",
      "upstream": "go/plugin/export.go"
     },
     "tm/go/feature/secrets/plugin/graph.go": {
-     "sha256": "c96150a75e5cf277c6f7aac6131282274b72795c9376655b81861f60643c0b32",
+     "sha256": "1f5ac3605f5f49ebf5ba997e8d041d8ca4a2f7fca5ad9d2055459cd4718c8a0a",
      "upstream": "go/plugin/graph.go"
     },
     "tm/go/feature/secrets/plugin/host.go": {
-     "sha256": "73a7942b52e4e35c1557eb10fedd2aebc488cd7e4289b41d0d1bf32138f1eccf",
+     "sha256": "74b1b3bc3d6ce23a075290a35a8fbf4362cb0c5a8a062bcb78e5c467737dd084",
      "upstream": "go/plugin/host.go"
     },
     "tm/go/feature/secrets/plugin/order.go": {
-     "sha256": "40cd5abada27165ca13c5bf059c6ea719cd42b758de7e652a90e8c5508126c5d",
+     "sha256": "30d055c98f471b28a38298be163838a2bbdaf24bb723224de8ecd36c558acbeb",
      "upstream": "go/plugin/order.go"
     },
     "tm/go/feature/secrets/plugin/point.go": {
-     "sha256": "ada353955b18d45b5a7682823613a0fd7c8e913aa7400c4e717b8b974e93c533",
+     "sha256": "202e06c57464aadb8434e583e09cbb35da9b6ed488e410f88cc6a0ce1315405b",
      "upstream": "go/plugin/point.go"
     },
     "tm/go/feature/secrets/plugin/ref.go": {
-     "sha256": "ca2722ff30ac1baa3c0c2888e7601e03e665dc67aec09aea799bb4efb560a599",
+     "sha256": "e8d89adc649095b19f884dbcebe2dc20bd3a46da3aa75154a102bd50fbe585dd",
      "upstream": "go/plugin/ref.go"
     },
     "tm/go/feature/secrets/plugin/resolve.go": {
-     "sha256": "bfb5bf44c862d30ff52751f35c470fef907d06f398e8b4b80bc4ce5975cfe89b",
+     "sha256": "ac205e13eeddc384309f6829ccda8f81fd48d45a455bc8ffb6869f5b8240c645",
      "upstream": "go/plugin/resolve.go"
     },
     "tm/go/feature/secrets/plugin/types.go": {
-     "sha256": "a6cf0fa2b7f67ad2bef63a723accb52c0b00f8046cb69724dfda87e08edffe91",
+     "sha256": "b893ad4650d05e1b121df189ffb1178c582382a890fb1fdb4bfb6f76a93a5ee0",
      "upstream": "go/plugin/types.go"
     },
     "tm/go/feature/secrets/plugin/util.go": {
-     "sha256": "9389f66b6a608ba1582999712e0d6050470bff255fb143e625e7bd4dc53f059e",
+     "sha256": "fd91bca4e43b51ec2a87120877091bc37428c2bfd3e1ad22ca1dbcf00eb1b229",
      "upstream": "go/plugin/util.go"
     },
     "tm/go/feature/secrets/plugin/version.go": {
-     "sha256": "3763dc60bda8867cfa5e667926b3a66a58375aad8955617aa23841ca7986bf92",
+     "sha256": "d72ed5e8fb41541c8012e603b226634ae9c162c6d3afafbc95bb20439bb543a7",
      "upstream": "go/plugin/version.go"
     }
    }
@@ -1199,67 +1199,67 @@
   "plugin/javascript": {
    "repo": "https://github.com/voxgig/plugin",
    "commit": "43acbf266b0dbcf52e5ab5463d85c822da9cd234",
-   "version": "sdk-20261009-0906-0",
+   "version": "0.2.0",
    "tag": "sdk-20261009-0906-0",
    "file": {
     "tm/js/src/feature/secrets/plugin/capability.js": {
-     "sha256": "c2d8f5f0bff12969341470f7dd1d370922e779f5ac3ee061a967e9adaea8fcad",
+     "sha256": "9d362b0f53ac285b0ddb751efaee6ba681994907749546592b7776db2b367a85",
      "upstream": "javascript/src/capability.js"
     },
     "tm/js/src/feature/secrets/plugin/catalog.js": {
-     "sha256": "6382d2c736b1450eac027619b5540ecec170955a46d7da391671b58bc8c50678",
+     "sha256": "f400ff6fe761a298aef89795e0c3a5cd3fecf11328eed7e3c386fe5a8842d892",
      "upstream": "javascript/src/catalog.js"
     },
     "tm/js/src/feature/secrets/plugin/config.js": {
-     "sha256": "f00080af7062567b7914cea9f438416ebf83aa5f2bd606ce93c4c8590887a640",
+     "sha256": "81207344b89420505d46fd6cb6cdc4b575a27a9179bd5a6f32d357177debf6b1",
      "upstream": "javascript/src/config.js"
     },
     "tm/js/src/feature/secrets/plugin/depend.js": {
-     "sha256": "7b90fe7c8b8137fcd8c9676a1ed03b4051a1db1d4d411b39aeb281c5ea9c6128",
+     "sha256": "5adbdd82fd9c431316260d4047f0bed0afc5c59f28dd25eebcb36d0971da5554",
      "upstream": "javascript/src/depend.js"
     },
     "tm/js/src/feature/secrets/plugin/env.js": {
-     "sha256": "622c2a0801838f3de9bf4c536dbba832e9b39beeb36359f2207cf92864830a8d",
+     "sha256": "2c5e0ab65e4ce64bb0fbec7948290eabb2c435df564d056ca638b410ad0b7f40",
      "upstream": "javascript/src/env.js"
     },
     "tm/js/src/feature/secrets/plugin/export.js": {
-     "sha256": "066a3f0c7afda60402b233e72af533a466da6f6f23fffa00b8db1537fb9990cf",
+     "sha256": "2e6cfd5813bf8894fbf5159acfcd3732f0658e7099c1de410b7d9d8ccf033a4d",
      "upstream": "javascript/src/export.js"
     },
     "tm/js/src/feature/secrets/plugin/graph.js": {
-     "sha256": "6e4c26b36eab33ba45c2d59ef09b96ce03eafb37712cd55f8f080bc31e94c86c",
+     "sha256": "17a55dc63fb9c5eb67d343ccc15564a0f83e79e780e09b3c1cd0ddf054d2d82e",
      "upstream": "javascript/src/graph.js"
     },
     "tm/js/src/feature/secrets/plugin/host.js": {
-     "sha256": "24dd0da2afdc15061e563d839ed246d80ba7af5773fa5e4d94395b2509781566",
+     "sha256": "da4499b5118c105a8e08050dc5fbca37cb938610411a8aeb69b5c978f2906223",
      "upstream": "javascript/src/host.js"
     },
     "tm/js/src/feature/secrets/plugin/index.js": {
-     "sha256": "d04d8ce89df9170fa69e93e3ef7c7259a664b0a3c6c9de9abb6a0badef05c58f",
+     "sha256": "14448dc064b93f935ed8f5738610bda39262c810dbc4975981a03d5748db8f36",
      "upstream": "javascript/src/index.js"
     },
     "tm/js/src/feature/secrets/plugin/order.js": {
-     "sha256": "fda0e70ebffe99839db85253aae1be42dbecdff5947ae2002168c9f4a81631de",
+     "sha256": "228b8002a79fd5e1aeb8b2f17b39173cc8655bdf9d301f1a112e4365e3983a02",
      "upstream": "javascript/src/order.js"
     },
     "tm/js/src/feature/secrets/plugin/point.js": {
-     "sha256": "8f5daf3e6c1e73e20ccfaf58d30dc941d96ac23f02a3de127654de7b2b2b8000",
+     "sha256": "50c4fd1d90eb6c704f35c04d278b93fb10a935e78db5cb17895c7c33f682b258",
      "upstream": "javascript/src/point.js"
     },
     "tm/js/src/feature/secrets/plugin/ref.js": {
-     "sha256": "b323a21644f6134b1a46a825638a6b580b375494a3a69c93f8ac31a6dd7cdbaa",
+     "sha256": "1db7a0b407c17979fc4cee0bbc0f2361b6c68e2a635aeba7167fcb2a0f3a52fb",
      "upstream": "javascript/src/ref.js"
     },
     "tm/js/src/feature/secrets/plugin/resolve.js": {
-     "sha256": "52af43b53eedce2b3e3a509e570b4eb6a96e850594ad7143d3f8435f13627205",
+     "sha256": "22d255835da36cb9e84cc39a89ce3bfb3fc0f3e93021fd97f1da9fa083f2f866",
      "upstream": "javascript/src/resolve.js"
     },
     "tm/js/src/feature/secrets/plugin/types.js": {
-     "sha256": "81209e75636e00ef27772399eb2c357db0242c4b1949727d90fce48fe54ab135",
+     "sha256": "a706ab05ad67effc8a39c0152590c135b64cdb5e2bb8f06e26c23911d32e721a",
      "upstream": "javascript/src/types.js"
     },
     "tm/js/src/feature/secrets/plugin/version.js": {
-     "sha256": "a88ca4d68962dc01743f64e9b7dfef4f4354ebc9c54201afa7991d27c0e20edd",
+     "sha256": "7442780bc278c39a773c7bed60bca5c8a8685cbe72d0e6604cd1134c9ca1635b",
      "upstream": "javascript/src/version.js"
     }
    }
@@ -1941,11 +1941,11 @@
   "plugin/rust": {
    "repo": "https://github.com/voxgig/plugin",
    "commit": "43acbf266b0dbcf52e5ab5463d85c822da9cd234",
-   "version": "sdk-20261009-0906-0",
+   "version": "0.2.0",
    "tag": "sdk-20261009-0906-0",
    "file": {
     "tm/rust/feature/secrets/plugin/capability.rs": {
-     "sha256": "9ea098f2c26a3ec0f7da501b9fbd78ed667a351375973b3cdf0b8fbfcc93f849",
+     "sha256": "dc747df6bb41ffcb51a95320552c4849e6da29467d685f4b3ec166527a161dca",
      "upstream": "rust/src/capability.rs",
      "adapt": [
       {
@@ -1955,7 +1955,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/catalog.rs": {
-     "sha256": "eb7b9540ae1cba5f7814955909df4007f47bd120414970def7c04751a2579be1",
+     "sha256": "4129b4ecc19b2c27d4af3902f5f3b6a02188b2c8fb5aa3374e2106ed36bad9ce",
      "upstream": "rust/src/catalog.rs",
      "adapt": [
       {
@@ -1965,7 +1965,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/config.rs": {
-     "sha256": "ff742e092041dad6b5d9900090430b7d310a8b7b10bbfe5fd0567a1004eec722",
+     "sha256": "a00f66c7edf28bca49b9ec3c2a9600fcdf3a5b964f83ac66bae840941ae285d0",
      "upstream": "rust/src/config.rs",
      "adapt": [
       {
@@ -1975,7 +1975,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/depend.rs": {
-     "sha256": "ed3d3b7c24aae716c9e7e3fc07e9bde28a5fcef136fe2530363e94bff1ed22a1",
+     "sha256": "a06189ae60ea667a62f44c5782be46d48f009ac07e4edc399d697eca6dd0d6a5",
      "upstream": "rust/src/depend.rs",
      "adapt": [
       {
@@ -1985,7 +1985,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/env.rs": {
-     "sha256": "0bf3f3eba428155ee00b894c307949e7fd3aed52c3f7613fc5f6b41d2cea9516",
+     "sha256": "a90302137e36392a767a8a37a9e6f7d68fb6b61ba8fc2e872e648623dcb297c8",
      "upstream": "rust/src/env.rs",
      "adapt": [
       {
@@ -1995,7 +1995,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/export.rs": {
-     "sha256": "ad73a92666e4e9538cbcd5d12062776d9dee3846b45d519351468583ebee39b3",
+     "sha256": "17f37de4ec0e84f36a1ff71bd7de5bd01374d64d8ea40eae673a873ef29c1fbc",
      "upstream": "rust/src/export.rs",
      "adapt": [
       {
@@ -2005,7 +2005,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/graph.rs": {
-     "sha256": "b51dae07a36739d472e8518e3783756247b66a9620dd8d7c66a019ad9044ed83",
+     "sha256": "0a55f0dd951bc4e2976f5375ce3744146d7e9d25c8c3ef9f160c9ac9c93087c5",
      "upstream": "rust/src/graph.rs",
      "adapt": [
       {
@@ -2015,7 +2015,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/host.rs": {
-     "sha256": "57a72df312c9ac22e780cf269d79c5e8d1e17fd9f4319cd6de4f7ff5fcd418b0",
+     "sha256": "39fb3cadd97099ff8aae25bfba811b6618c8aa99b301f13ec6549c8f40b61fbc",
      "upstream": "rust/src/host.rs",
      "adapt": [
       {
@@ -2025,11 +2025,11 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/mod.rs": {
-     "sha256": "79e9cea40c957a342672df17c4f8f91fc10cc409fa72e73000c99e05d8581b12",
+     "sha256": "8d20d010a452b3965464d0151f67cecfb7a6405353e0c64aa2b1cc64ac4cf671",
      "upstream": "rust/src/lib.rs"
     },
     "tm/rust/feature/secrets/plugin/order.rs": {
-     "sha256": "27a2cf6e514b44b84973daa74291c8b2d7f7ad514e82117a55f82d5ace2f1dea",
+     "sha256": "ea955c294540c2ac27e122e5f3ec69a135c275098fb851cb0590bb55c7664cd9",
      "upstream": "rust/src/order.rs",
      "adapt": [
       {
@@ -2039,7 +2039,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/point.rs": {
-     "sha256": "209caf505a0ac76c48aca4bad858bb768dac001773647428202532caac43c1b8",
+     "sha256": "b8a9b9b09ef94e816ab1822d847aa27835a108f47f620b41451e141d7e24f1db",
      "upstream": "rust/src/point.rs",
      "adapt": [
       {
@@ -2049,7 +2049,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/refs.rs": {
-     "sha256": "b22dad26a55dcb9269c641bcea5bebaeb11b7ce38f5f4e88b7a4f2ad62998411",
+     "sha256": "96e81c006d2db892d842ae870b0710b89ecb2b9d457b14bfa30fe99d2261fd81",
      "upstream": "rust/src/refs.rs",
      "adapt": [
       {
@@ -2059,7 +2059,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/resolve.rs": {
-     "sha256": "6ed16a454f3ffa82c40e15a68aca64263d799f1aa7eaac635b88253087aa718b",
+     "sha256": "4e805e3302a9a6209aa782bca89d74c034c116cb4a1ec967f251dbf82f3fbc7a",
      "upstream": "rust/src/resolve.rs",
      "adapt": [
       {
@@ -2069,7 +2069,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/types.rs": {
-     "sha256": "0d486b10ed4b22492e0212de92db3215ee24e63e4c7263b8518d664601440d81",
+     "sha256": "fd526d8725422d69a74631727da2ec91c00d024b56958a0e379711b597c53b56",
      "upstream": "rust/src/types.rs",
      "adapt": [
       {
@@ -2079,11 +2079,11 @@
      ]
     },
     "tm/rust/feature/secrets/plugin/value.rs": {
-     "sha256": "56c8d47be630014b374056b53835ca8062584a5c13b047ec857bcefa5b236f1b",
+     "sha256": "ff97da65acaa78158ad9ba8607d01995ce348e59f626e144250906c0f45ac606",
      "upstream": "rust/src/value.rs"
     },
     "tm/rust/feature/secrets/plugin/version.rs": {
-     "sha256": "7ba19f207d681f2f3098f378b4f0de3129a1b8877487e3432c1eb7adca228af3",
+     "sha256": "da31db373081ce96d8863eef4ad05e6b76a54dc313f0b6a0819f9b5043444b15",
      "upstream": "rust/src/version.rs",
      "adapt": [
       {
@@ -3559,15 +3559,15 @@
   "sekreto/javascript": {
    "repo": "https://github.com/voxgig/sekreto",
    "commit": "83396df4f1c3d579af17e152b7a55fdade307ab1",
-   "version": "sdk-20261009-0906-0",
+   "version": "0.2.0",
    "tag": "sdk-20261009-0906-0",
    "file": {
     "tm/js/src/feature/secrets/sekreto/index.js": {
-     "sha256": "8766c8fd5eb647b28c7b1aa6725a929a51abd15fd7aeb36ab2fba35e7c315259",
+     "sha256": "0eba9fadc85c6607653a11ae5c5fe6e8b1a2e972a7224f1a4305d3a68e2989eb",
      "upstream": "javascript/src/index.js"
     },
     "tm/js/src/feature/secrets/sekreto/plugins/aws.js": {
-     "sha256": "9ee01d100639cf47af31343327c797ade9974aa697069e5e8a2c24237c8264f9",
+     "sha256": "c34385331e76c4a101a1b7ed88cba6e0f63b46e07f1908e387ac8b2df45972ab",
      "upstream": "javascript/plugins/aws.js",
      "adapt": [
       {
@@ -3577,7 +3577,7 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/plugins/azuresecrets.js": {
-     "sha256": "580e66e03289db469f3e16fa5ac74145c221be0abb55fd674e4bf3a2fec8caba",
+     "sha256": "80cc26034aa1512279b05a769208a846bdabd851baf5ae8bb042f8a244ae7885",
      "upstream": "javascript/plugins/azuresecrets.js",
      "adapt": [
       {
@@ -3587,7 +3587,7 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/plugins/boru.js": {
-     "sha256": "073da303676ee58c8503d41edbfc828f717ad8d03920a3d8c57a17624a327ce7",
+     "sha256": "1ac7f7d14f540da5b31de6870e120da82a8aade063e4fbb64f44a9906a04fb7d",
      "upstream": "javascript/plugins/boru.js",
      "adapt": [
       {
@@ -3597,7 +3597,7 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/plugins/doppler.js": {
-     "sha256": "ef4f00e6631f05c7e942aa509d45d7c623d2697f79e6e275108e56d0ca8235ff",
+     "sha256": "0835351b79f011a630efa3fdca8674424a18ac22f96cefe26ce89f3b42958e15",
      "upstream": "javascript/plugins/doppler.js",
      "adapt": [
       {
@@ -3607,7 +3607,7 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/plugins/gcpsecrets.js": {
-     "sha256": "dd156164438e55efa74ed48882c6f512d920de4bf0d39c7b2546586fa7bf2c47",
+     "sha256": "7433e50449d6950fb78e8299b20baf663e756d04e78b437e811c8b27c2d0304d",
      "upstream": "javascript/plugins/gcpsecrets.js",
      "adapt": [
       {
@@ -3617,7 +3617,7 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/plugins/hashicorp.js": {
-     "sha256": "b6d376bcc17393d128407bf5abfd7dcb2ec93b8bfc1b391df838f74179783a44",
+     "sha256": "c558b63a222b5155204f132f20e3af6819b8ae4118af7b2fb8ba15756915e381",
      "upstream": "javascript/plugins/hashicorp.js",
      "adapt": [
       {
@@ -3627,7 +3627,7 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/plugins/httpjson.js": {
-     "sha256": "e76fca5119aa63afaf9fbab255d277c4be62e8355ed7538a78c0ba4327086b8b",
+     "sha256": "6eb4b75e11d183eb8046deb85a0a8e9f01e77ad4cf45d88e9755b8945efc812c",
      "upstream": "javascript/plugins/httpjson.js",
      "adapt": [
       {
@@ -3637,7 +3637,7 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/plugins/infisical.js": {
-     "sha256": "c036d5aa541df4c972b7eb2ce34c211b4ecd4bbdc2767812943a6d715c8887f1",
+     "sha256": "038a3fa4e65c5b18b6e39d34e03ffe0069687b14c4ac0ab945cd98543fa82c63",
      "upstream": "javascript/plugins/infisical.js",
      "adapt": [
       {
@@ -3647,7 +3647,7 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/plugins/minivault.js": {
-     "sha256": "3d3ed565a409a9cdc7814541110eb4619407120ee218d15aa49b5ddaeff1e771",
+     "sha256": "a015e8dee4258ee430846d0059a7c6b98479027f0360e5fc550d17ff91fd4da6",
      "upstream": "javascript/plugins/minivault.js",
      "adapt": [
       {
@@ -3657,7 +3657,7 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/plugins/onepassword.js": {
-     "sha256": "e34ab6a2e7bec48326c9036635c6b3740478bcff014c8d3d5c1608376c9149f2",
+     "sha256": "3b432cc12cf5992e25d51194b44ead83902b904373e572ebbaa0e28929eb5529",
      "upstream": "javascript/plugins/onepassword.js",
      "adapt": [
       {
@@ -3667,7 +3667,7 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/plugins/secretspec.js": {
-     "sha256": "ebf4a4430221745819ceaeb84d1c5c7313934c9628693f0385adf8587485fa40",
+     "sha256": "32a0f279c0cfd8b9fdd993fa8cb3e91dffb073a4c1e63a3483eee1e25095f1e6",
      "upstream": "javascript/plugins/secretspec.js",
      "adapt": [
       {
@@ -3677,35 +3677,35 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/plugins/sigv4.js": {
-     "sha256": "127a68878b361e2574170b795b148f3bcf1e39393a8b5a4bb8fc7ad39a1d7b3a",
+     "sha256": "f3e16cb6cf40d5b5bfd979dc98b373e523badc47b7c0bc4c55a78cd5d69065f6",
      "upstream": "javascript/plugins/sigv4.js"
     },
     "tm/js/src/feature/secrets/sekreto/provider/addr.js": {
-     "sha256": "17d265fd84cd2a01628233349d6ed7b882418123a224142d504b5a954cd1e10c",
+     "sha256": "e989b814c038b23014c54eae946dcd244da7bbc0276be072a31e484e631476a3",
      "upstream": "javascript/src/provider/addr.js"
     },
     "tm/js/src/feature/secrets/sekreto/provider/builtin.js": {
-     "sha256": "c5c97fdbe8bd2139d1ed20115f99d8f6c848714aaa48136d2bc77671c6944dba",
+     "sha256": "0c3a68769111f54a8ec4847a5306a2634e671763188cbcf4b1a916ce94a0d963",
      "upstream": "javascript/src/provider/builtin.js"
     },
     "tm/js/src/feature/secrets/sekreto/provider/dotenv.js": {
-     "sha256": "f944e50e06050d40a3437fa2a439125d4afc8175e8b09f920727bbeb077d4245",
+     "sha256": "49481d9127fe1d724dc137a509d29c16ef6a3427741a3e14dd6217016e5afa2f",
      "upstream": "javascript/src/provider/dotenv.js"
     },
     "tm/js/src/feature/secrets/sekreto/provider/env.js": {
-     "sha256": "e945f4b7caf6fafe3b9ef608161d2c632905f52dc30cf3c5ced994c7e2ef90ff",
+     "sha256": "468c01ed8bb5c43a3f6b8eef9dfef55cfe11d5d1fb69b6eef2c88b0e0c2f755f",
      "upstream": "javascript/src/provider/env.js"
     },
     "tm/js/src/feature/secrets/sekreto/provider/file.js": {
-     "sha256": "29ac60052bf678bd0f5434ec36f7b671adc2edfd99588d2cb05806d79fd5e9be",
+     "sha256": "1c9a4a75a404fab53518d01ef7fda38db05e540da059945d62503a17c3c71833",
      "upstream": "javascript/src/provider/file.js"
     },
     "tm/js/src/feature/secrets/sekreto/provider/memory.js": {
-     "sha256": "5a6017a6d44fdaa43029bbc1f780d03e2a1add93da0d3dd993224581891895b1",
+     "sha256": "5439f2ecc6accff45467a2795f09bd12f6cb1b6b24a9be9bd5801818a1e2d299",
      "upstream": "javascript/src/provider/memory.js"
     },
     "tm/js/src/feature/secrets/sekreto/provider/support.js": {
-     "sha256": "ef5738830e74fc138a5fcf7afc83561c99a8be9f8d42f16a7c5cf98b4a57d4a4",
+     "sha256": "43e6656dc32b73fc2971685f715ae8d478e67518a80d5272ec272de060acb609",
      "upstream": "javascript/src/provider/support.js",
      "adapt": [
       {
@@ -3715,7 +3715,7 @@
      ]
     },
     "tm/js/src/feature/secrets/sekreto/Sekreto.js": {
-     "sha256": "4d2cff4f8694436025a792ef6cc52370b01f84b9c4307bfb92e816adaaafdacf",
+     "sha256": "3ba30297bb4659598c260e124b2aaa2a5050bd3ba13bc4e46f09b2a51d01b4a1",
      "upstream": "javascript/src/Sekreto.js",
      "adapt": [
       {
@@ -4251,71 +4251,71 @@
   "sekreto/perl": {
    "repo": "https://github.com/voxgig/sekreto",
    "commit": "83396df4f1c3d579af17e152b7a55fdade307ab1",
-   "version": "sdk-20261009-0906-0",
+   "version": "0.1.0",
    "tag": "sdk-20261009-0906-0",
    "file": {
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Aws.pm": {
-     "sha256": "663e07a406ffe0d6965fec0fe6244d7b94fa2d9846f50d59d5ec815de2d4f1a3",
+     "sha256": "5255b79639005b6dac862737fa298e59a90ff5c2bdf926d68c7fa720f3427c5e",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Aws.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Azuresecrets.pm": {
-     "sha256": "8b51ce2827e8ce7a540283e1ba08eff713954975f1e2a2561dfe1f6e736afe1d",
+     "sha256": "14f0b714aad600347a0c047f8880327cfaad90a9d38931d598610ec98904490e",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Azuresecrets.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Boru.pm": {
-     "sha256": "9e3f12cd13ce99aa00ec002d91b26a8e1fa17fb001939c7d14c869a46e58efc4",
+     "sha256": "aba592c73277ebdc0aae6bf5fd42d529a008d5d20b6fdf3c5bcb62e52fed7b0c",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Boru.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Doppler.pm": {
-     "sha256": "8a97ee8d2d52c95c49b461f9e43c648d4d87d214bb23964996338e8fd8c97f4e",
+     "sha256": "ce0d54a4a4321d3da8a1687da5167bf06e612e8d86d42e0da988a8144bba9691",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Doppler.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Gcpsecrets.pm": {
-     "sha256": "379c4e335bceaa1e204aa6c57230e154384b8a1cd76e7c47a428f60771b311e8",
+     "sha256": "339d1ca09981f8eed819d065adda41adfbc62dd9075b366e4ce0a0cac6faf7ba",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Gcpsecrets.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Hashicorp.pm": {
-     "sha256": "aacd28b805719580fc0a880fcbadd24854b8e808361515cda3479599c522c232",
+     "sha256": "71fd3c52abced352913fc94587cea8c63fac123cda0b55b0d4739013c19fb419",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Hashicorp.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Httpjson.pm": {
-     "sha256": "6f657d2bf659ea1f176c1e5ecc6ef505b5d38c7ac1fddd33cb2fbc813cc5c1c9",
+     "sha256": "153a1f884140f37ae46afe1ddd1a8b7593bf8c7138c2f6730bf1fa88f0a47603",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Httpjson.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Infisical.pm": {
-     "sha256": "3b5b25b1c716c35517f4e134a097493841d4250cfb58809bc2d0a5b90fd5d1da",
+     "sha256": "87f956b19f763a2cbb571caf1c7f084d5e104b40022ae167263fb471acd32a82",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Infisical.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Minivault.pm": {
-     "sha256": "1e808eaf9fc3bea5d348bf044488dc67ed550cebbd76657df16aedc5413a1653",
+     "sha256": "4424a7512fe7f3b1bba42e06138262b4344d812e17325b4e4ba3a9c859a0c2a3",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Minivault.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Onepassword.pm": {
-     "sha256": "fab61124dc23404f60c6ce0edab0a033f90b39f1b584d7e596c6e1d987d78cbc",
+     "sha256": "88bc1394b91b5a8e51d1be2b51c2d0eb623cd02f9019166627142a92ad04cfd3",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Onepassword.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Proc.pm": {
-     "sha256": "e2bd349643cec8a0c758932d179a9889b5b3c8478ba0f35f0ebbea30a82ab898",
+     "sha256": "1fd5e64e791a7c49288a45d66eaef83203c81d6debfbe20127c199f945830801",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Proc.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Secretspec.pm": {
-     "sha256": "adc6487bdd83ab9cce2188090ed9be31102b1c5eb13e265cae65d36039e46852",
+     "sha256": "b7b63f9104cecd550e564d0525e7d6677cde347d47cbc68850de055a7af51d0a",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Secretspec.pm"
     },
     "tm/perl/feature/secrets/plugins/Voxgig/Sekreto/Plugins/Sigv4.pm": {
-     "sha256": "44822f98f1d1a9919f36899c30909aa0686ca5723b70073d6eccfa70210684cd",
+     "sha256": "54232672335571b09df5059e57cb12bdf42771bad0076ab1e4df4eeddb63807a",
      "upstream": "perl/plugins/Voxgig/Sekreto/Plugins/Sigv4.pm"
     },
     "tm/perl/feature/secrets/sekreto/Voxgig/Sekreto.pm": {
-     "sha256": "4a07134e2def62d8f574deac9769eac4dcc6c3d505ac9667ef9d70d2a3dda84e",
+     "sha256": "43d327a9ac527e0b6e4b75597e56794583bcd6b324d8a215eab1379f92512dbd",
      "upstream": "perl/lib/Voxgig/Sekreto.pm"
     },
     "tm/perl/feature/secrets/sekreto/Voxgig/Sekreto/Addr.pm": {
-     "sha256": "394825d33f459d4e6cc6dfc9ac4def92c8b8f231d33f37d535bdb65642c68dd6",
+     "sha256": "3960f4e17c330b46322445f321a64d27c476f4b95d75393421fb04cb8dec9a6a",
      "upstream": "perl/lib/Voxgig/Sekreto/Addr.pm"
     },
     "tm/perl/feature/secrets/sekreto/Voxgig/Sekreto/Providers.pm": {
-     "sha256": "835c5b4d14d0769611121c8638dcf1642456126ed733aab5c100916b230966a4",
+     "sha256": "ad1f20bf1419d4ec15fad590547f4062e309942764892ab9de50ceda5785a3e6",
      "upstream": "perl/lib/Voxgig/Sekreto/Providers.pm"
     }
    }
@@ -4575,11 +4575,11 @@
   "sekreto/rust": {
    "repo": "https://github.com/voxgig/sekreto",
    "commit": "83396df4f1c3d579af17e152b7a55fdade307ab1",
-   "version": "sdk-20261009-0906-0",
+   "version": "0.1.0",
    "tag": "sdk-20261009-0906-0",
    "file": {
     "tm/rust/feature/secrets/plugins/aws.rs": {
-     "sha256": "737fd524ecbf3cc4251cb5d79936b0ac862e4199683cb3739bbf9e1167c96b88",
+     "sha256": "c1b64db39043321a882879bd722a58fec7a93ef9edf0563720eb4339baf24dbc",
      "upstream": "rust/plugins/aws/src/lib.rs",
      "adapt": [
       {
@@ -4601,11 +4601,11 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/aws/crypto.rs": {
-     "sha256": "6e162fbc66a43c5d607293a340da85cf8777329b8c79c3fd540b168004ad981f",
+     "sha256": "1e6f5014be0761cdfae38a8b33e55da7e65e02e7ea5762e4a5a0456cb9cecb28",
      "upstream": "rust/plugins/aws/src/crypto.rs"
     },
     "tm/rust/feature/secrets/plugins/aws/sigv4.rs": {
-     "sha256": "9529fd270e56e55860e8669c83e6df937e8fdbf4d2deca25c2f427bf1a919772",
+     "sha256": "a2881f321f7a813ebc2595496a85d86cbe6354d92fffb77cac06094a9b86eeac",
      "upstream": "rust/plugins/aws/src/sigv4.rs",
      "adapt": [
       {
@@ -4619,7 +4619,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/azuresecrets.rs": {
-     "sha256": "5d734c325c6354c484bd97848c346555cd92fff7dc16349644a573261c9f711c",
+     "sha256": "d1eac98d9489b004e48c4d007ee06004629db23458f49df5ce404452fe2b9d8e",
      "upstream": "rust/plugins/azuresecrets/src/lib.rs",
      "adapt": [
       {
@@ -4637,7 +4637,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/boru.rs": {
-     "sha256": "925db93cbbff04192a95249936c47855aa83f2135ba4727a2608619b5d76601b",
+     "sha256": "c1fa4c8fe843745a354b9e208770117f0d7b6366c6b5c9647cdd32a1415c65fa",
      "upstream": "rust/plugins/boru/src/lib.rs",
      "adapt": [
       {
@@ -4655,7 +4655,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/doppler.rs": {
-     "sha256": "998ef3e0d64df7c6415d76169b9b7d23f7a17ccfd1ee4fb8218d609d24421a05",
+     "sha256": "f5d661603e5d7c686b37443e413b2658f2d84dd462e106d0c5ade5804ffba9fb",
      "upstream": "rust/plugins/doppler/src/lib.rs",
      "adapt": [
       {
@@ -4673,7 +4673,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/gcpsecrets.rs": {
-     "sha256": "2051b9f23ee14cc6dbc420b3da657787f9a555b444221ea267eb3fe251861789",
+     "sha256": "9c684ec981a097b6bec84a1450740676e91a4c968c1152e964810fcbb42094a6",
      "upstream": "rust/plugins/gcpsecrets/src/lib.rs",
      "adapt": [
       {
@@ -4691,7 +4691,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/hashicorp.rs": {
-     "sha256": "8a5ce5b912d0a30df3ef088b76c1927ba9916db51dafcfa2829c265743bd20cb",
+     "sha256": "a72ce3ef7156f37e9486f56e728e6ca69e5f2c1a0718c2f2a774ad7addebf5ce",
      "upstream": "rust/plugins/hashicorp/src/lib.rs",
      "adapt": [
       {
@@ -4709,7 +4709,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/httpjson.rs": {
-     "sha256": "7be1d63bf1be825faea4ad96b6e240aca5392d16a962812ad92b5797471d8651",
+     "sha256": "16fc09771869253aad959fc8ea989d929d36f9254ce7c83d110929120c54ccef",
      "upstream": "rust/plugins/httpjson/src/lib.rs",
      "adapt": [
       {
@@ -4723,15 +4723,15 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/httpjson/http.rs": {
-     "sha256": "11f7f0afd1c3ae63d4178f268b58f3bf5b48794893915c203a3b0a5b107b242b",
+     "sha256": "c92c1a296395f3021ed0e9a38a9430f90d11f5adbe461c241f0563ffc2e4302b",
      "upstream": "rust/plugins/httpjson/src/http.rs"
     },
     "tm/rust/feature/secrets/plugins/httpjson/json.rs": {
-     "sha256": "46555d838a98da533ff4efd8e09a8dfa6221561ec228a10c67886457340af140",
+     "sha256": "a6e05217301001e6dc79b8bcb9ae2ca24499d4350f40157e01e3dd6f2f846e7a",
      "upstream": "rust/plugins/httpjson/src/json.rs"
     },
     "tm/rust/feature/secrets/plugins/infisical.rs": {
-     "sha256": "c66f8e4280dd4ff8762b4f3cadabaafb1400224d2f65dac4dc5354d5b4fdce19",
+     "sha256": "c58efb4f46e661be88c99fe4fd63f33c727ef9c3df41d27446dbe9b8a15c9e35",
      "upstream": "rust/plugins/infisical/src/lib.rs",
      "adapt": [
       {
@@ -4749,7 +4749,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/minivault.rs": {
-     "sha256": "b34b9b524c1425e7c36210f0aaa746a837cde079ed35389a35ead82c1e9ca1d1",
+     "sha256": "719f4f10fee55a4f4a57f7505d221b8f1afad50223dcd2fda4075b0130940c47",
      "upstream": "rust/plugins/minivault/src/lib.rs",
      "adapt": [
       {
@@ -4767,7 +4767,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/minivault/format.rs": {
-     "sha256": "2b40c456441582c7640a6e34a78c69254f2f6131623d508068b20843225ffa3e",
+     "sha256": "f36ff8c226d49e8cca010639c56483e0d4a33eb4c549f1d5e1431e196606fe3f",
      "upstream": "rust/plugins/minivault/src/format.rs",
      "adapt": [
       {
@@ -4777,7 +4777,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/onepassword.rs": {
-     "sha256": "9c62df0634083e14c2a9b4448f1ade5ab307e2b529918b394671ec81cb4d54e8",
+     "sha256": "919f72962492ee11676828ca498a27133a494f36d7a06396675550be5aa4a9e8",
      "upstream": "rust/plugins/onepassword/src/lib.rs",
      "adapt": [
       {
@@ -4795,7 +4795,7 @@
      ]
     },
     "tm/rust/feature/secrets/plugins/secretspec.rs": {
-     "sha256": "5dee8274a02c6ef4e1f558301f14bbdc6084046f64da623f2a96c51043e18fa1",
+     "sha256": "74b7d6ef1ed0f91293b2bb547dc74746b7e836c0e8d5dde7cec5b0b66741c50e",
      "upstream": "rust/plugins/secretspec/src/lib.rs",
      "adapt": [
       {
@@ -4809,7 +4809,7 @@
      ]
     },
     "tm/rust/feature/secrets/sekreto/addr.rs": {
-     "sha256": "0821e921dafd92a39077f65302fea1271b49aa973c429bcee3379d6ef0194125",
+     "sha256": "5545a3743513cda80b43fcd7426e7801afe18f7b377ac4c309819775ea5e0050",
      "upstream": "rust/src/addr.rs",
      "adapt": [
       {
@@ -4819,7 +4819,7 @@
      ]
     },
     "tm/rust/feature/secrets/sekreto/mod.rs": {
-     "sha256": "748e2ebcf0cd60d4c9b9b35648523098fe5e15e0f0d54c2be06f547faf31fab9",
+     "sha256": "559176923aae7b7254950403d1a4ce2f6aeae466724096f3e6edbbcb0eecff46",
      "upstream": "rust/src/lib.rs",
      "adapt": [
       {
@@ -4833,7 +4833,7 @@
      ]
     },
     "tm/rust/feature/secrets/sekreto/providers.rs": {
-     "sha256": "b4edf33f51f04668cfd14a88edd6a4756718a47c0d5b16415b3485460ccaea63",
+     "sha256": "468c6502a6d0adf8f75d8e2cb23a5e981278b4040c1f85b78a5dd1da37b4624c",
      "upstream": "rust/src/providers.rs",
      "adapt": [
       {
@@ -4847,7 +4847,7 @@
      ]
     },
     "tm/rust/feature/secrets/sekreto/sekreto.rs": {
-     "sha256": "e34965dc55927b536045983da143dd9009910b2139b9f2ed4ba066d4f242cdaa",
+     "sha256": "2a95380d30f958ba1658b17265be89335ec93458ef129bba91d0698197531455",
      "upstream": "rust/src/sekreto.rs",
      "adapt": [
       {
@@ -5407,15 +5407,15 @@
   "struct/zig": {
    "repo": "https://github.com/voxgig/struct",
    "commit": "3ab807cc2ae74b2b1b02863a15dad3aa40f15725",
-   "version": "sdk-20261009-0906-0",
+   "version": "0.0.3",
    "tag": "sdk-20261009-0906-0",
    "file": {
     "tm/zig/utility/voxgigstruct/regex.zig": {
-     "sha256": "1d0925dc169593823588f0c84241b7246f9ec7a1784c866f7a82374c553f0381",
+     "sha256": "99840187d075c1d79309f93bbc733fbcf7941952405a2daa9410a5cc3ac0dae6",
      "upstream": "zig/src/regex.zig"
     },
     "tm/zig/utility/voxgigstruct/struct.zig": {
-     "sha256": "b5b20c1ac0b7947375186a46e822ad3320c4b390999b3fe5beefe09d81663eba",
+     "sha256": "96b7333b46c22f59fecb9711a8a154928dfda08b90f034e6bfbe8304f83735de",
      "upstream": "zig/src/struct.zig"
     }
    }

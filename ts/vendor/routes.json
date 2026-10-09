@@ -405,6 +405,7 @@
    "lib": "omni",
    "port": "rust",
    "lang": "rust",
+   "version": "0.1.0",
    "dir": [
     "tm/rust/tests/vendor/omni"
    ],
@@ -663,7 +664,6 @@
    "lib": "plugin",
    "port": "go",
    "lang": "go",
-   "version": "0.2.0",
    "dir": [
     "tm/go/feature/secrets/plugin"
    ],
@@ -726,6 +726,7 @@
    "lib": "plugin",
    "port": "javascript",
    "lang": "js",
+   "version": "0.2.0",
    "dir": [
     "tm/js/src/feature/secrets/plugin"
    ],
@@ -947,6 +948,7 @@
    "lib": "plugin",
    "port": "rust",
    "lang": "rust",
+   "version": "0.2.0",
    "dir": [
     "tm/rust/feature/secrets/plugin"
    ],
@@ -1417,6 +1419,7 @@
    "lib": "sekreto",
    "port": "javascript",
    "lang": "js",
+   "version": "0.2.0",
    "dir": [
     "tm/js/src/feature/secrets/sekreto",
     "tm/js/src/feature/secrets/sekreto/provider",
@@ -1612,6 +1615,7 @@
    "lib": "sekreto",
    "port": "perl",
    "lang": "perl",
+   "version": "0.1.0",
    "dir": [
     "tm/perl/feature/secrets/sekreto",
     "tm/perl/feature/secrets/sekreto/Voxgig",
@@ -1773,6 +1777,7 @@
    "lib": "sekreto",
    "port": "rust",
    "lang": "rust",
+   "version": "0.1.0",
    "dir": [
     "tm/rust/feature/secrets/sekreto",
     "tm/rust/feature/secrets/plugins",
@@ -2132,6 +2137,7 @@
    "lib": "struct",
    "port": "zig",
    "lang": "zig",
+   "version": "0.0.3",
    "dir": [
     "tm/zig/utility/voxgigstruct"
    ],

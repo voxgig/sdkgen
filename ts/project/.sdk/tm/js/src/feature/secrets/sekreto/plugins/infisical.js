@@ -1,4 +1,4 @@
-// VENDORED: @voxgig/sekreto sdk-20261009-0906-0 (javascript/plugins/infisical.js)
+// VENDORED: @voxgig/sekreto 0.2.0 (javascript/plugins/infisical.js)
 // Source: https://github.com/voxgig/sekreto @ 83396df4f1c3d579af17e152b7a55fdade307ab1  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025 Voxgig Ltd, MIT License */

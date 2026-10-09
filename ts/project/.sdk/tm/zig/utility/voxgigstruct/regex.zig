@@ -1,4 +1,4 @@
-// VENDORED: @voxgig/struct sdk-20261009-0906-0 (zig/src/regex.zig)
+// VENDORED: @voxgig/struct 0.0.3 (zig/src/regex.zig)
 // Source: https://github.com/voxgig/struct @ 3ab807cc2ae74b2b1b02863a15dad3aa40f15725  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 // Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.

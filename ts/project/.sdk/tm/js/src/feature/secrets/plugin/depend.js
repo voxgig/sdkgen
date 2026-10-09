@@ -1,4 +1,4 @@
-// VENDORED: @voxgig/plugin sdk-20261009-0906-0 (javascript/src/depend.js)
+// VENDORED: @voxgig/plugin 0.2.0 (javascript/src/depend.js)
 // Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Dependency cardinality, policy, and the restart graph (§11.3).
