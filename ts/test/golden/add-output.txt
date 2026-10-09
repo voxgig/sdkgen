@@ -112,11 +112,11 @@ tm/c/utility/struct/re_util.c 28c8890dd517
 tm/c/utility/struct/regex.c 0a81b2adc525
 tm/c/utility/struct/regex.h 9795eff5d46c
 tm/c/utility/struct/transform.c 0ea5d525f5f7
-tm/c/utility/struct/utility.c 6c7c9adc683a
+tm/c/utility/struct/utility.c fc6e64b9eb38
 tm/c/utility/struct/value.c d6230f447a6d
 tm/c/utility/struct/value.h b38fb4ce4dfb
-tm/c/utility/struct/value_io.c ad154dab653a
-tm/c/utility/struct/value_io.h d322b6e9d6d8
+tm/c/utility/struct/value_io.c 69826c9b72dc
+tm/c/utility/struct/value_io.h 077258b6a8cc
 tm/c/utility/struct/voxgig_struct.h 71de4f01ea7b
 tm/c/utility/transform_request.c 54340294b211
 tm/c/utility/transform_response.c 51ac106169eb
@@ -228,7 +228,7 @@ tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 5978c081353b
 tm/clojure/src/sdk/core.clj 7ca217064696
 tm/clojure/src/sdk/features.clj bf69cbc11b36
-tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
+tm/clojure/src/voxgig/struct.clj e11f03d1c544
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 590d662e1233
 tm/clojure/test/sdk/test/feature/secrets.clj 6ab6b24e4eb5
@@ -320,8 +320,8 @@ tm/cpp/test/vendor/omni/util.hpp 310f529bd1b9
 tm/cpp/utility/cookie.hpp d2b5fb5f0264
 tm/cpp/utility/pipeline.hpp efe7ec50993f
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
-tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
-tm/cpp/utility/voxgigstruct/voxgig_struct.hpp f3832db06d59
+tm/cpp/utility/voxgigstruct/value_io.hpp 5fe5c8199dfc
+tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 2fd1e8054158
 
 ## target csharp
 model/feature/feature-index.aontu 0351fe150e6a
@@ -492,7 +492,7 @@ tm/elixir/lib/projectname/feature/test.ex a6ab3f6305f6
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
 tm/elixir/lib/projectname/utility.ex 5a7670960cad
-tm/elixir/lib/utility/struct/voxgig_struct.ex a11986dc0505
+tm/elixir/lib/utility/struct/voxgig_struct.ex 6cf834c5da52
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
 tm/elixir/src/feature/test/.gitkeep e3b0c44298fc
@@ -1159,7 +1159,7 @@ tm/ocaml/test/t_main.ml a468eae08da5
 tm/ocaml/test/t_pipeline.ml 44ac6ce943b5
 tm/ocaml/test/testutil.ml d06c690245b6
 tm/ocaml/test/vendor/omni/omni.ml 221b3e7f0594
-tm/ocaml/utility/voxgig_struct.ml ff6cc38a45cc
+tm/ocaml/utility/voxgig_struct.ml a0a616198901
 tm/ocaml/utility/vregex.ml 8720dd560814
 
 ## target perl
@@ -1336,7 +1336,7 @@ tm/php/test/OmniSmokeTest.php cad939a73897
 tm/php/test/PipelineTest.php c089cea66406
 tm/php/test/PrimaryUtilityTest.php 2cf1ca929598
 tm/php/test/Runner.php ce56f8fce3d0
-tm/php/test/StructUtilityTest.php a566f84b9955
+tm/php/test/StructUtilityTest.php 8cf4251dbd8f
 tm/php/test/sdk-test-control.json 0ef7278caec2
 tm/php/test/vendor/omni/Runner.php 6ef1c8d39baa
 tm/php/test/vendor/omni/Util.php f6633b49c119
@@ -1371,7 +1371,7 @@ tm/php/utility/ResultBody.php cd1ef6dc2a6c
 tm/php/utility/ResultHeaders.php 378a2c5bfdd9
 tm/php/utility/TransformRequest.php 6532e5142cc8
 tm/php/utility/TransformResponse.php 4dc432711490
-tm/php/utility/struct/Struct.php 90b0f13e12c5
+tm/php/utility/struct/Struct.php de1d4f5ae7d7
 
 ## target py
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1611,7 +1611,7 @@ tm/rb/utility/register.rb 5a1b1e2d26aa
 tm/rb/utility/result_basic.rb 90d9f4bfb77a
 tm/rb/utility/result_body.rb a60b44e6ad7f
 tm/rb/utility/result_headers.rb ee4460e396f5
-tm/rb/utility/struct/voxgig_struct.rb fcd08965f4bd
+tm/rb/utility/struct/voxgig_struct.rb c40c9e5bea78
 tm/rb/utility/transform_request.rb 0f21de00236b
 tm/rb/utility/transform_response.rb 13e4100890d3
 
@@ -1728,7 +1728,7 @@ tm/rust/utility/result_headers.rs 58e9bdefa347
 tm/rust/utility/transform_request.rs d20d4efbaedb
 tm/rust/utility/transform_response.rs 236bdb7a35a5
 tm/rust/utility/voxgigstruct/consts.rs ce664523dacf
-tm/rust/utility/voxgigstruct/major.rs 7aae2b4153ce
+tm/rust/utility/voxgigstruct/major.rs 2bdf90322047
 tm/rust/utility/voxgigstruct/mini.rs 38d8506e2392
 tm/rust/utility/voxgigstruct/mod.rs ccc1407a713f
 tm/rust/utility/voxgigstruct/ordered_map.rs 682acae7891f
@@ -1900,8 +1900,8 @@ tm/scala/utility/Register.scala 12658a8e9bd5
 tm/scala/utility/Results.scala 474c78263b3a
 tm/scala/utility/StructUtility.scala 2dc27377f838
 tm/scala/utility/Transform.scala 9a1ca6db6e2d
-tm/scala/utility/struct/Struct.java 5e1cee8646e5
-tm/scala/utility/struct/voxgig_struct.scala 8fc853fd8f03
+tm/scala/utility/struct/Struct.java 4f10a791c9d9
+tm/scala/utility/struct/voxgig_struct.scala fe4a27b50088
 
 ## target swift
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1956,8 +1956,8 @@ tm/swift/Sources/ProjectNameSDK/Struct/Constants.swift ed5ff2870004
 tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift 28a6f4a6a47b
 tm/swift/Sources/ProjectNameSDK/Struct/Injection.swift abe69d38fdac
 tm/swift/Sources/ProjectNameSDK/Struct/JSON.swift 8fed8a544bb1
-tm/swift/Sources/ProjectNameSDK/Struct/Merge.swift b469d91f37e7
-tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift 46094eff1c42
+tm/swift/Sources/ProjectNameSDK/Struct/Merge.swift 9d8c95721c4e
+tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift 16a02eb173ae
 tm/swift/Sources/ProjectNameSDK/Struct/OrderedDictionary.swift 4279501d973f
 tm/swift/Sources/ProjectNameSDK/Struct/Path.swift b0aff66bf8da
 tm/swift/Sources/ProjectNameSDK/Struct/Select.swift 3a24dd2468bd
