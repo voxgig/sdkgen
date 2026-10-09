@@ -270,6 +270,12 @@ function entityIdField(ent) {
     if (loadItems.some((it) => it.name === 'id')) {
         return 'id';
     }
+    // An entity with no load at all is still matched by its id where its
+    // remove route names it, as Umbrella's permission is.
+    if (null == (ent.op && ent.op.load) &&
+        opRequestShape(ent, 'remove').items.some((it) => it.name === idName)) {
+        return idName;
+    }
     // NO fallback to entity.fields: this is the load-MATCH key. An entity whose
     // DATA type has an `id` field but whose load match does NOT (a query-param
     // load, e.g. playstation-store's StoreLoadMatch { age, country, ... }) must

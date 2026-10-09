@@ -5980,6 +5980,58 @@ describe('generate: no test or example makes a call the runtime refuses', () => 
     deepStrictEqual(bad, [])
   })
 
+  // A load on a child route needs the parent id, and a flow whose entity no
+  // earlier step filled must pass it in the match, or the URL keeps its
+  // {planet_id} and the runtime refuses it (url_param_missing).
+  test('a flow load gives the parent ids its route names', () => {
+    const missing: string[] = []
+    const covered: string[] = []
+    for (const target of targets) {
+      for (const [path, content] of filesFor(out, target)) {
+        if (!/test/i.test(path) || !path.toLowerCase().includes('moon')) continue
+        const lines = content.split('\n')
+        const decl = lines.findIndex((l) => /match_?dt0/i.test(l))
+        if (decl < 0) continue
+        const call = lines.findIndex((l, i) => decl < i && /match_?dt0/i.test(l) && /\bload\b/i.test(l))
+        if (call < 0) continue
+        covered.push(target)
+        if (!lines.slice(decl, call + 1).some((l) => l.includes('planet_id'))) {
+          missing.push(target + ' ' + path)
+        }
+      }
+    }
+    deepStrictEqual(missing, [], 'a flow load leaves its parent id out of the match')
+    for (const t of ['ts', 'js', 'go', 'py', 'php', 'lua', 'rb']) {
+      ok(covered.includes(t), t + ': no moon flow load found to check')
+    }
+  })
+
+  test('a quick start that only loads gives the id the route names', async () => {
+    const readme = (await generate(['ts', 'js'], undefined, entityOnly(`
+main: kit: entity: batch: {
+  alias: field: {}
+  name: "batch"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\\\`$STRING\\\`" } }
+  op: load: {
+    name: "load"
+    points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\\\`$STRING\\\`" } ] }
+      m: "GET", o: "/batch/{id}", s: [{ lit: "batch" }, { var: "id" }]
+      t: { req: "\\\`reqdata\\\`", res: "\\\`body\\\`" }
+    } ]
+  }
+}
+
+main: kit: flow: BasicBatchFlow: {
+  entity: "batch", kind: "basic", name: "BasicBatchFlow"
+  step: [ { o: "load", i: { ref: "batch_ref01", srcdatavar: "batch_ref01_data", suffix: "_dt0" } } ]
+}
+`)))['README.md']
+    ok(/Batch\(\)\.load\(\{\s*id: /.test(readme), 'the quick start loads without the id:\n' + readme)
+    ok(!/\.load\(\)/.test(readme), 'the quick start still calls load()')
+  })
+
   test('the flow switches off the step whose routes all need an action', () => {
     const ts = filesFor(out, 'ts').find(([p]) => p.endsWith('SignalEntity.test.ts'))
     ok(null != ts, 'ts: no signal entity test generated')

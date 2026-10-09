@@ -9,6 +9,7 @@ import Path from 'node:path'
 import {
   opRequestShape, opTypeName, OP_SUFFIX, entityClassName, pickExampleEntity,
   opReachable, opNeedsAction, entityOps, guardFlowSteps, ungeneratedOps, warnUngeneratedOps,
+  entityIdField,
 } from '../dist/sdkgen.js'
 import { targetOrigins, resolvesBundled, resolveSource, BUNDLED } from '../dist/action/resolve.js'
 
@@ -791,6 +792,38 @@ describe('targetOrigins — which targets the ungenerated-op warning speaks for'
   })
 })
 
+
+describe('entityIdField', () => {
+
+  function child(op: any) {
+    return {
+      name: 'permission',
+      id: { field: 'id', name: 'id' },
+      fields: { id: { n: 'id', t: '`$STRING`', r: false } },
+      op,
+    }
+  }
+
+  const removePoint = {
+    points: [{ g: { params: [
+      { k: 'param', n: 'database_id', t: '`$STRING`', r: true },
+      { k: 'param', n: 'id', t: '`$STRING`', r: true },
+    ] } }],
+  }
+
+  test('an entity with no load takes its id from its remove route', () => {
+    strictEqual(entityIdField(child({ remove: removePoint })), 'id')
+  })
+
+  test('a load whose match has no id still has none', () => {
+    const load = { points: [{ g: { query: [{ k: 'query', n: 'country', t: '`$STRING`', r: true }] } }] }
+    strictEqual(entityIdField(child({ load, remove: removePoint })), null)
+  })
+
+  test('an entity with neither load nor remove has none', () => {
+    strictEqual(entityIdField(child({ create: {} })), null)
+  })
+})
 
 function makeQuietLog(): any {
   const noop = () => { }
