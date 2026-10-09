@@ -458,10 +458,11 @@ before step 3.
 ```bash
 cd my-sdk/.sdk
 voxgig-sdkgen target add ts        # or: npm run add-target ts
-voxgig-sdkgen feature add test     # or: npm run add-feature test
-npm run build                      # compile .sdk components
 npm run generate                   # emit the SDK into ../ts
 ```
+
+`target add` adds the `test` feature as well, and `generate` compiles the
+`.sdk` components before it emits.
 
 See the [Tutorial](../tutorial.md) for the full walkthrough and
 [Add a language target](../how-to/add-a-target.md) for variations.

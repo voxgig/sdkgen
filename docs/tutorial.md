@@ -54,24 +54,27 @@ otherwise.
 
 ## Step 2 — add a language target
 
-Add the TypeScript target. This copies the `ts` model, components, and
-templates into your project, and adds the `test` feature, which swaps the
-HTTP transport for an in-memory mock so the generated SDK's unit tests run
-offline:
+Add the TypeScript target, which copies the `ts` model, components and
+templates into your project:
 
 ```bash
 npm run add-target ts
 # equivalently: voxgig-sdkgen target add ts
 ```
 
+It also adds the `test` feature, which swaps the HTTP transport for an
+in-memory mock so the generated SDK's unit tests run offline.
+
 ## Step 3 — generate the SDK
 
+Compile the generator components and run generation, in one command:
+
 ```bash
-npm run generate    # compile .sdk/src/cmp, then emit the SDK into ../ts
+npm run generate    # emit the SDK into ../ts
 ```
 
-`generate` compiles the generator components, walks the unified model and
-writes the SDK source into the `ts/` directory next to `.sdk/`. Open `solardemo-sdk/ts/` and look around:
+`generate` walks the unified model and writes the SDK source into the
+`ts/` directory next to `.sdk/`. Open `solardemo-sdk/ts/` and look around:
 you'll find one class per entity, a generated `README.md` and
 `REFERENCE.md`, the feature runtime, and a test suite.
 
@@ -90,9 +93,14 @@ running. You now have a working SDK.
 ## Step 5 — make a change and regenerate
 
 The model is the only input to generation, so a change to the SDK starts
-there. Give the README a tagline: from `solardemo-sdk/.sdk`, add this line
-to the end of `model/project.aontu`, or of `model/text.aontu` where the
-project has one:
+there. Go back to the build folder:
+
+```bash
+cd ../.sdk
+```
+
+Give the README a tagline by adding this line to the end of
+`model/project.aontu`, the project's own model file:
 
 ```jsonic
 main: kit: text: tagline: 'Planets and moons, from TypeScript.'
@@ -112,21 +120,31 @@ The tagline now sits under the title of `../ts/README.md`:
 Planets and moons, from TypeScript.
 ```
 
+The other wording slots, such as the summary and an entity's description,
+are listed under [`main.kit.text`](./reference/model.md#mainkittext).
+
 Leave the generated files alone: the next `generate` overwrites
-`ts/README.md`. The copies under `.sdk/src/cmp/` and `.sdk/tm/` belong to
-`target add`, which overwrites them, and `voxgig-sdkgen doctor` reports an
-edit there as drift. The slots a project sets about itself are listed in
-[What a project declares about itself](./reference/model.md#what-a-project-declares-about-itself),
-and a change to the generator itself is
+`ts/README.md`. The copies under `.sdk/src/cmp/ts/` and `.sdk/tm/ts/`
+belong to `target add` and `feature add`, which overwrite them, and
+`voxgig-sdkgen doctor` reports an edit there as drift. The slots a project
+sets about itself are listed in
+[What a project declares about itself](./reference/model.md#what-a-project-declares-about-itself).
+
+To change the generator itself, edit an sdkgen checkout instead. A
+scaffolded project runs the published `@voxgig/sdkgen` from
+`.sdk/node_modules`, so the edit reaches the project only once that
+checkout is linked there and built; the steps are in
 [Customize templates and propagate the change](./how-to/customize-and-propagate-templates.md).
 
 ## What you learned
 
 - A project is scaffolded by `create-sdkgen` and built from its `.sdk/`.
-- `target add` / `feature add` bring a language and features into the
-  project; `generate` turns the model into SDK source.
-- The generated output is disposable — the **model** in `.sdk/model/` is
-  its only input, so a change to the SDK is a change there.
+- `target add` brings a language into the project, with the `test`
+  feature; `feature add` brings in others. `generate` turns the model into
+  SDK source.
+- The generated output is disposable — the **model** is its only input, so
+  a change to the SDK is a change to the project's own model file,
+  `.sdk/model/project.aontu`.
 
 ## Where to go next
 

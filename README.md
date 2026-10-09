@@ -70,9 +70,8 @@ npm create @voxgig/sdkgen@latest -- mysdk -o mysdk -d ./openapi.yaml
 
 # add a language and generate
 cd mysdk/.sdk
-voxgig-sdkgen target add ts
-voxgig-sdkgen feature add test
-npm run build && npm run generate      # → ../ts
+voxgig-sdkgen target add ts            # adds the test feature too
+npm run generate                       # → ../ts
 
 # build and test the generated SDK
 cd ../ts && npm install && npm run build && npm test
