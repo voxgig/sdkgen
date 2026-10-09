@@ -1900,7 +1900,7 @@ tm/scala/utility/Register.scala 12658a8e9bd5
 tm/scala/utility/Results.scala 474c78263b3a
 tm/scala/utility/StructUtility.scala 2dc27377f838
 tm/scala/utility/Transform.scala 9a1ca6db6e2d
-tm/scala/utility/struct/Struct.java 5e1cee8646e5
+tm/scala/utility/struct/Struct.java 4f10a791c9d9
 tm/scala/utility/struct/voxgig_struct.scala fe4a27b50088
 
 ## target swift
