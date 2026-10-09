@@ -6032,6 +6032,19 @@ main: kit: flow: BasicBatchFlow: {
     ok(!/\.load\(\)/.test(readme), 'the quick start still calls load()')
   })
 
+  // A swift Value wrapping a map is not the VMap the context reads, so a
+  // stream given its match as `.map(...)` sent the bare route.
+  test('a swift stream hands its match to the pipeline', () => {
+    const files = filesFor(out, 'swift')
+    const base = files.find(([p]) => p.endsWith('EntityBase.swift'))
+    ok(null != base, 'swift: no entity base generated')
+    ok(base![1].includes('ctxmap[k] = v.asMap ?? v'), 'swift: stream passes its args on as Values')
+    const clean = files.find(([p]) => p.endsWith('CleanTest.swift'))
+    ok(null != clean, 'swift: no clean test generated')
+    ok(/\.stream\(\s*target\.op, vm\(\("reqmatch"/.test(clean![1]),
+      'swift: the clean test streams without the params its op needs')
+  })
+
   test('the flow switches off the step whose routes all need an action', () => {
     const ts = filesFor(out, 'ts').find(([p]) => p.endsWith('SignalEntity.test.ts'))
     ok(null != ts, 'ts: no signal entity test generated')
