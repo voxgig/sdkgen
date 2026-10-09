@@ -321,7 +321,7 @@ tm/cpp/utility/cookie.hpp d2b5fb5f0264
 tm/cpp/utility/pipeline.hpp efe7ec50993f
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
-tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 0e58b18bb701
+tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 2fd1e8054158
 
 ## target csharp
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1371,7 +1371,7 @@ tm/php/utility/ResultBody.php cd1ef6dc2a6c
 tm/php/utility/ResultHeaders.php 378a2c5bfdd9
 tm/php/utility/TransformRequest.php 6532e5142cc8
 tm/php/utility/TransformResponse.php 4dc432711490
-tm/php/utility/struct/Struct.php 99aea06520b5
+tm/php/utility/struct/Struct.php de1d4f5ae7d7
 
 ## target py
 model/feature/feature-index.aontu 0351fe150e6a
@@ -1611,7 +1611,7 @@ tm/rb/utility/register.rb 5a1b1e2d26aa
 tm/rb/utility/result_basic.rb 90d9f4bfb77a
 tm/rb/utility/result_body.rb a60b44e6ad7f
 tm/rb/utility/result_headers.rb ee4460e396f5
-tm/rb/utility/struct/voxgig_struct.rb c5bfa06001f8
+tm/rb/utility/struct/voxgig_struct.rb c40c9e5bea78
 tm/rb/utility/transform_request.rb 0f21de00236b
 tm/rb/utility/transform_response.rb 13e4100890d3
 
@@ -1957,7 +1957,7 @@ tm/swift/Sources/ProjectNameSDK/Struct/Inject.swift 28a6f4a6a47b
 tm/swift/Sources/ProjectNameSDK/Struct/Injection.swift abe69d38fdac
 tm/swift/Sources/ProjectNameSDK/Struct/JSON.swift 8fed8a544bb1
 tm/swift/Sources/ProjectNameSDK/Struct/Merge.swift 9d8c95721c4e
-tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift 46094eff1c42
+tm/swift/Sources/ProjectNameSDK/Struct/Minor.swift 16a02eb173ae
 tm/swift/Sources/ProjectNameSDK/Struct/OrderedDictionary.swift 4279501d973f
 tm/swift/Sources/ProjectNameSDK/Struct/Path.swift b0aff66bf8da
 tm/swift/Sources/ProjectNameSDK/Struct/Select.swift 3a24dd2468bd
