@@ -115,8 +115,8 @@ tm/c/utility/struct/transform.c 0ea5d525f5f7
 tm/c/utility/struct/utility.c fc6e64b9eb38
 tm/c/utility/struct/value.c d6230f447a6d
 tm/c/utility/struct/value.h b38fb4ce4dfb
-tm/c/utility/struct/value_io.c ad154dab653a
-tm/c/utility/struct/value_io.h d322b6e9d6d8
+tm/c/utility/struct/value_io.c 69826c9b72dc
+tm/c/utility/struct/value_io.h 077258b6a8cc
 tm/c/utility/struct/voxgig_struct.h 71de4f01ea7b
 tm/c/utility/transform_request.c 54340294b211
 tm/c/utility/transform_response.c 51ac106169eb
@@ -320,7 +320,7 @@ tm/cpp/test/vendor/omni/util.hpp 310f529bd1b9
 tm/cpp/utility/cookie.hpp d2b5fb5f0264
 tm/cpp/utility/pipeline.hpp efe7ec50993f
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
-tm/cpp/utility/voxgigstruct/value_io.hpp a24c7c4b2b79
+tm/cpp/utility/voxgigstruct/value_io.hpp 5fe5c8199dfc
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 2fd1e8054158
 
 ## target csharp
