@@ -1,9 +1,9 @@
 # Tutorial: generate your first SDK
 
 By the end of this tutorial you will have generated a working TypeScript
-SDK from an OpenAPI specification, run its tests, and made a change to the
-generator and seen it flow through. Follow the steps in order — no
-decisions are required.
+SDK from an OpenAPI specification, run its tests, and changed the SDK
+through its model and seen the change flow through. Follow the steps in
+order — no decisions are required.
 
 > This walkthrough uses the `solardemo` example API. Substitute your own
 > name and OpenAPI file anywhere you see `solardemo`.
@@ -55,37 +55,27 @@ otherwise.
 ## Step 2 — add a language target
 
 Add the TypeScript target. This copies the `ts` model, components, and
-templates into your project (and ensures the `test` feature is present):
+templates into your project, and adds the `test` feature, which swaps the
+HTTP transport for an in-memory mock so the generated SDK's unit tests run
+offline:
 
 ```bash
 npm run add-target ts
 # equivalently: voxgig-sdkgen target add ts
 ```
 
-## Step 3 — add the test feature
+## Step 3 — generate the SDK
 
 ```bash
-npm run add-feature test
+npm run generate    # compile .sdk/src/cmp, then emit the SDK into ../ts
 ```
 
-The `test` feature swaps the HTTP transport for an in-memory mock so the
-generated SDK's unit tests run offline.
-
-## Step 4 — generate the SDK
-
-Compile the generator components, then run generation:
-
-```bash
-npm run build       # compile .sdk/src/cmp → .sdk/dist
-npm run generate    # emit the SDK into ../ts
-```
-
-`generate` walks the unified model and writes the SDK source into the
-`ts/` directory next to `.sdk/`. Open `solardemo-sdk/ts/` and look around:
+`generate` compiles the generator components, walks the unified model and
+writes the SDK source into the `ts/` directory next to `.sdk/`. Open `solardemo-sdk/ts/` and look around:
 you'll find one class per entity, a generated `README.md` and
 `REFERENCE.md`, the feature runtime, and a test suite.
 
-## Step 5 — build and test the generated SDK
+## Step 4 — build and test the generated SDK
 
 ```bash
 cd ../ts
@@ -97,43 +87,46 @@ npm test
 The tests run against the in-memory mock, so they pass with no server
 running. You now have a working SDK.
 
-## Step 6 — make a change and regenerate
+## Step 5 — make a change and regenerate
 
-Let's prove the generator is the source of truth. Suppose you want to
-tweak wording in the generated README's explanation section.
+The model is the only input to generation, so a change to the SDK starts
+there. Give the README a tagline: from `solardemo-sdk/.sdk`, add this line
+to the end of `model/project.aontu`, or of `model/text.aontu` where the
+project has one:
 
-1. In the **sdkgen** repo, the explanation prose lives in
-   `ts/src/cmp/ReadmeExplanation.ts` (language-neutral) and
-   `ts/project/.sdk/src/cmp/<lang>/ReadmeExplanation_<lang>.ts`
-   (language-specific). Edit there — **never** edit the generated
-   `ts/README.md`, which is overwritten on the next generate.
+```jsonic
+main: kit: text: tagline: 'Planets and moons, from TypeScript.'
+```
 
-2. Propagate the change into your project:
+Regenerate:
 
-   ```bash
-   cd solardemo-sdk/.sdk
-   npm run add-target ts     # copy the updated components in
-   npm run generate          # regenerate
-   ```
+```bash
+npm run generate
+```
 
-3. If a generated file shows a literal placeholder (like `ProjectName`)
-   after a merge, delete that file and regenerate it fresh — see
-   [Customize templates and propagate the change](./how-to/customize-and-propagate-templates.md)
-   for why.
+The tagline now sits under the title of `../ts/README.md`:
 
-Wording that belongs to your SDK alone, such as its tagline, its summary or
-an entity's description, needs no change to the generator. Set it under
-`main.kit.text` in `.sdk/model/text.aontu`, or in `.sdk/model/project.aontu`
-where the project has no `text.aontu`, and run `npm run generate`; see
-[`main.kit.text`](./reference/model.md#mainkittext).
+```markdown
+# Solardemo TypeScript SDK
+
+Planets and moons, from TypeScript.
+```
+
+Leave the generated files alone: the next `generate` overwrites
+`ts/README.md`. The copies under `.sdk/src/cmp/` and `.sdk/tm/` belong to
+`target add`, which overwrites them, and `voxgig-sdkgen doctor` reports an
+edit there as drift. The slots a project sets about itself are listed in
+[What a project declares about itself](./reference/model.md#what-a-project-declares-about-itself),
+and a change to the generator itself is
+[Customize templates and propagate the change](./how-to/customize-and-propagate-templates.md).
 
 ## What you learned
 
 - A project is scaffolded by `create-sdkgen` and built from its `.sdk/`.
 - `target add` / `feature add` bring a language and features into the
   project; `generate` turns the model into SDK source.
-- The generated output is disposable — the **generator** (`ts/project/.sdk/`
-  templates and components) is the source of truth.
+- The generated output is disposable — the **model** in `.sdk/model/` is
+  its only input, so a change to the SDK is a change there.
 
 ## Where to go next
 
