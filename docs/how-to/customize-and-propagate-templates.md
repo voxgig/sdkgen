@@ -43,30 +43,31 @@ The pipeline is:
 ```
 edit sdkgen template/component
    └─▶ (consumer .sdk) npm run add-target <lang>   # copy updated files in
-        └─▶ npm run generate                        # substitute + merge into target dir
+        └─▶ npm run generate                        # substitute, overwrite the target dir
 ```
 
-From the consumer project's `.sdk/`:
+A scaffolded project runs the published `@voxgig/sdkgen` from
+`.sdk/node_modules`, so `add-target` copies from that, not from your
+checkout. Link the checkout's package root there first, and build it:
 
 ```bash
-npm run add-target <lang>     # re-copies templates/components from sdkgen
-npm run generate              # applies placeholder replacement + merges
+cd <project>/.sdk
+rm -rf node_modules/@voxgig/sdkgen
+ln -s /path/to/sdkgen/ts node_modules/@voxgig/sdkgen
+(cd /path/to/sdkgen/ts && npm run build)
 ```
 
-## The merge gotcha (read this)
-
-`generate` uses a **merge** strategy. If a target file already exists,
-changed lines may merge in, **but placeholder replacements
-(`ProjectName`, `GOMODULE`, …) are *not* re-applied to merged content.**
-The result is a file with literal `ProjectName` left in it.
-
-To force a clean copy with full substitution, delete the specific
-generated file first, then regenerate:
+The link lives in `node_modules`, which git ignores, so nothing about it
+is committed. Then, from the consumer project's `.sdk/`:
 
 ```bash
-rm <project>/go/feature/log_feature.go
-npm run generate              # recreates it fresh, with all replacements
+npm run add-target <lang>     # re-copies templates/components from the linked sdkgen
+npm run generate              # substitutes placeholders and overwrites each file
 ```
+
+`generate` overwrites every file it writes, so a regenerated file always
+has its placeholders replaced; see
+[Regeneration is overwrite, not merge](../explanation/regeneration-overwrite.md).
 
 ## Step 4 — keep languages consistent
 
