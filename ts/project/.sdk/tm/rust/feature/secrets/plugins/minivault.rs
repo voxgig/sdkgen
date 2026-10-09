@@ -1,8 +1,6 @@
-// VENDORED: @voxgig/sekreto sdk-20260925-1316-0 (rust/plugins/minivault/src/lib.rs)
-// Source: https://github.com/voxgig/sekreto @ 163f537960de6813cc393b89843949ca3afa8cfc  [tag: sdk-20260925-1316-0]
+// VENDORED: @voxgig/sekreto sdk-20261009-0906-0 (rust/plugins/minivault/src/lib.rs)
+// Source: https://github.com/voxgig/sekreto @ 83396df4f1c3d579af17e152b7a55fdade307ab1  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
-#![doc = include_str!("../COMMENT-NOTES.md")]
-
 mod format;
 
 use std::cell::RefCell;
@@ -17,7 +15,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use crate::feature::secrets::plugin::catalog::Definition;
 use crate::feature::secrets::plugin::host::Inst;
 use crate::feature::secrets::plugin::types::{details, PluginError};
-use crate::feature::secrets::plugin::value::Value;
+use crate::feature::secrets::plugin::value::{parse, Value};
 
 use crate::feature::secrets::sekreto::{
     checkname, specof, Answer, Provider, Sekreto, ERROR_CODE, PROVIDER_EXPORT,
@@ -150,7 +148,7 @@ fn metaof(master: bool, write: bool, names: &[String]) -> String {
 
 fn jsonof(plain: &[u8], what: &str) -> Answer<Value> {
     let text = String::from_utf8_lossy(plain);
-    match voxgig_plugin::value::parse(&text) {
+    match parse(&text) {
         Ok(held) if held.as_map().is_some() => Ok(held),
         _ => fail(&format!("unreadable {}", what)),
     }

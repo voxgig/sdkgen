@@ -83,11 +83,13 @@ One field, in `ts/vendor/routes.json`:
 "tag": "sdk-20260917-1042-0",
 ```
 
-Do **not** touch the per-route `version`. A port that declares a version of
-its own carries it by hand; a port that declares none omits the field and is
-stamped with the tag automatically. Writing the tag out per route is what let
-52 of 70 routes drift a checkpoint behind, and `vendor.js` now refuses a
-`version` that looks like a tag.
+Do **not** write the tag into a route's `version`. A port that declares a
+version of its own carries it by hand, so check each hand-set `version`
+against what its port declares at the new tag, and update the ones that
+moved. A port that declares none omits the field and is stamped with the tag
+automatically. Writing the tag out per route is what let 52 of 70 routes
+drift a checkpoint behind, and `vendor.js` now refuses a `version` that looks
+like a tag.
 
 ## 3. Resync
 

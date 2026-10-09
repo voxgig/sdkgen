@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/omni sdk-20260925-1316-0 (zig/src/omni.zig)
-// Source: https://github.com/voxgig/omni @ b909ff51fc644e4955c850e30cc65e74be076df2  [tag: sdk-20260925-1316-0]
+// VENDORED: @voxgig/omni sdk-20261009-0906-0 (zig/src/omni.zig)
+// Source: https://github.com/voxgig/omni @ 5ab24080fb06b45bbbbc3814522bda7da30b520b  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 //! Omni: the shared multi-language test runner (Zig port).
 //!

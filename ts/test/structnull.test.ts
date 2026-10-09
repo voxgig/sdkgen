@@ -138,7 +138,7 @@ catch (\\Throwable $e) { echo 'validate=throws' . PHP_EOL; }
     target: 'csharp',
     stamp: '0.1.1',
     needs: 'dotnet',
-    answers: { getprop: 'alt', haskey: 'false', validate: 'throws' },
+    answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: (tmp) => {
       const dotnet = toolchain('dotnet')
       if (null == dotnet) return null
@@ -186,7 +186,7 @@ catch (Exception)
     // here. TypeScript is transpiled in-process with the repo's own
     // compiler; no toolchain beyond node is needed.
     target: 'ts',
-    stamp: '0.3.4',
+    stamp: '0.3.7',
     needs: 'node (always present - this suite runs on it)',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: (tmp) => {
@@ -210,7 +210,7 @@ catch (e) { console.log('validate=throws') }
   },
   {
     target: 'js',
-    stamp: '0.1.4 (0.3.x behaviour)',
+    stamp: '0.1.7 (0.3.x behaviour)',
     needs: 'node (always present - this suite runs on it)',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: () => {
@@ -228,7 +228,7 @@ catch (e) { console.log('validate=throws') }
   },
   {
     target: 'go',
-    stamp: '0.1.0',
+    stamp: '0.1.6',
     needs: 'go',
     answers: { getprop: 'alt', haskey: 'false', validate: 'default' },
     exec: (tmp) => {

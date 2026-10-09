@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20260925-1316-0 (javascript/src/index.js)
-// Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20260925-1316-0]
+// VENDORED: @voxgig/plugin sdk-20261009-0906-0 (javascript/src/index.js)
+// Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* The canonical surface `make parity` checks (AGENTS.md §4). Small on
  * purpose (§19): everything else is methods on the host and instance

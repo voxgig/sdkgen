@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (csharp/Struct.cs)
-// Source: https://github.com/voxgig/struct @ 3a42881b1d26c75ebbed9f1897f0ba94cf3cf780  [tag: sdk-20260925-1316-0]
+// Source: https://github.com/voxgig/struct @ 3ab807cc2ae74b2b1b02863a15dad3aa40f15725  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE. */
 
@@ -821,10 +821,12 @@ namespace Voxgig.Struct
             return EscRe(s);
         }
 
-        // URL-encode a string.
+        // URL-encode a string, keeping what encodeURIComponent keeps.
         public static string EscUrl(string? s)
         {
-            return s == null ? S_MT : Uri.EscapeDataString(s);
+            return s == null ? S_MT : Uri.EscapeDataString(s)
+                .Replace("%21", "!").Replace("%2A", "*").Replace("%27", "'")
+                .Replace("%28", "(").Replace("%29", ")");
         }
 
         // Replace in a string (all occurrences).
@@ -1623,21 +1625,23 @@ namespace Voxgig.Struct
 
                             object? tval = dst[pI];
 
-                            if (tval == null && 0 == (T.Instance & Typify(mval)))
-                            {
-                                // Destination absent → create empty node.
-                                cur[pI] = IsList(mval)
-                                    ? (object?)new List<object?>()
-                                    : new Dictionary<string, object?>();
-                            }
-                            else if (Typify(mval) == Typify(tval))
+                            if (Typify(mval) == Typify(tval))
                             {
                                 // Same type → merge into existing destination node.
                                 cur[pI] = tval;
                             }
+                            else if (0 == (T.Instance & Typify(mval)))
+                            {
+                                // Otherwise the override wins: a plain node is copied, taking
+                                // nothing from the destination, so no later merge writes into it.
+                                cur[pI] = IsList(mval)
+                                    ? (object?)new List<object?>()
+                                    : new Dictionary<string, object?>();
+                                dst[pI] = null;
+                            }
                             else
                             {
-                                // Type mismatch → override wins, skip descending.
+                                // A class instance is kept as is, so there is nothing to descend.
                                 cur[pI] = mval;
                                 mval = null;
                             }
@@ -1646,7 +1650,7 @@ namespace Voxgig.Struct
                         return mval;
                     }
 
-                    object? mergeAfter(object? key, object? _, object? _parent, List<object?> path)
+                    object? mergeAfter(object? key, object? _, object? parent, List<object?> path)
                     {
                         int cI = path.Count;
                         if (key == null || cI <= 0)
@@ -1654,9 +1658,11 @@ namespace Voxgig.Struct
                             return cur[0];
                         }
 
-                        object? value = cur[cI];
-                        cur[cI - 1] = SetProp(cur[cI - 1], key, value) ?? cur[cI - 1];
-                        return value;
+                        cur[cI - 1] = SetProp(cur[cI - 1], key, cur[cI]) ?? cur[cI - 1];
+
+                        // Walk writes this back into the override, so it is the
+                        // override's own child, leaving the override unchanged.
+                        return Lookup(parent, key);
                     }
 
                     Walk(obj, mergeBefore, mergeAfter, md);
@@ -3106,9 +3112,10 @@ namespace Voxgig.Struct
 
             bool cKeyExists = TryGetDataValue(inj.DParent, key, out object? cval);
 
-            // PATCH (scalar defaults, pending upstream fix): null scalar values
-            // keep the default, matching GetProp in the reference validator.
-            if (!exact && (!cKeyExists || (cval == null && !IsNode(pval))))
+            // TS's getprop answers NONE for a null value too, so a null keeps
+            // the spec default exactly as an absent key does, and so does a
+            // NONE that a $ONE alternative passes down.
+            if (!exact && (!cKeyExists || cval == null || ReferenceEquals(cval, NONE)))
             {
                 return null;
             }
