@@ -43,8 +43,7 @@ This copies the target's model, components, and templates into `.sdk/`
 and ensures the `test` feature is present. Then generate:
 
 ```bash
-npm run build        # compile the .sdk components
-npm run generate     # emit the SDK into ../ts
+npm run generate     # compile the .sdk components, then emit ../ts
 ```
 
 ## Add several at once
