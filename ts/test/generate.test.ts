@@ -1258,6 +1258,36 @@ main: kit: target: js: phase: feature: active: false
   })
 
 
+  // prepareAuth base64-encodes `key:secret` only when the config marks the
+  // scheme as HTTP Basic. A literal config that drops the mark sends the raw
+  // key after `Basic `, which no Basic-auth API accepts.
+  test('every SDK target marks HTTP Basic in its config', async () => {
+    const targets = allTargets().filter((t) => !NON_SDK_TARGETS.includes(t))
+    const BASIC = /\bbasic\b[\\"'\]]*(\.to_string\(\))?\s*(:|=>|=|,)?\s*(\(?\s*Bool\s+|h\.vbool\(|Value::[Bb]ool\(|v_bool\()?\(?(true|True|#t)\b/
+    const configOf = (out: any, target: string) => filesFor(out, target).filter(([path]) =>
+      /(^|\/)(sdk_)?config\.[a-z]+$/i.test(path) && !/(^|\/)feature\//.test(path))
+
+    const basic = await generate(targets, undefined,
+      "main: kit: config: auth: { active: true, prefix: 'Basic', basic: true }")
+    const bearer = await generate(targets, undefined,
+      "main: kit: config: auth: { active: true, prefix: 'Bearer' }")
+
+    const gaps: string[] = []
+    for (const target of targets) {
+      const [withBasic] = configOf(basic, target)
+      const [withBearer] = configOf(bearer, target)
+      if (null == withBasic || null == withBearer) {
+        gaps.push(target + ': no config file')
+        continue
+      }
+      if (!BASIC.test(withBasic[1])) gaps.push(withBasic[0] + ' drops auth.basic')
+      if (BASIC.test(withBearer[1])) gaps.push(withBearer[0] + ' marks a Bearer scheme as Basic')
+    }
+
+    deepStrictEqual(gaps, [], 'HTTP Basic is not marked in every config')
+  })
+
+
   test('an edited sdk-test-control.json survives regeneration', async () => {
     const TARGETS = ['ts', 'go', 'py', 'rust', 'perl', 'scala']
 
