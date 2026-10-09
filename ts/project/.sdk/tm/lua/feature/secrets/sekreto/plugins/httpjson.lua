@@ -1,5 +1,5 @@
--- VENDORED: @voxgig/sekreto sdk-20260925-1316-0 (lua/src/sekreto/plugins/httpjson.lua)
--- Source: https://github.com/voxgig/sekreto @ 163f537960de6813cc393b89843949ca3afa8cfc  [tag: sdk-20260925-1316-0]
+-- VENDORED: @voxgig/sekreto sdk-20261009-0906-0 (lua/src/sekreto/plugins/httpjson.lua)
+-- Source: https://github.com/voxgig/sekreto @ 83396df4f1c3d579af17e152b7a55fdade307ab1  [tag: sdk-20261009-0906-0]
 -- License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 -- HTTP/1.1, framed by hand, plus the one JSON round-trip every store
 -- client makes - the HTTP half of the plugins, in one place and OUTSIDE

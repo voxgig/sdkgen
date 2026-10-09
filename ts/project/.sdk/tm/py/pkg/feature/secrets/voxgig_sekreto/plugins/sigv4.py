@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/sekreto 0.2.0 (python/voxgig_sekreto/plugins/sigv4.py)
-# Source: https://github.com/voxgig/sekreto @ 163f537960de6813cc393b89843949ca3afa8cfc  [tag: sdk-20260925-1316-0]
+# Source: https://github.com/voxgig/sekreto @ 83396df4f1c3d579af17e152b7a55fdade307ab1  [tag: sdk-20261009-0906-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # AWS Signature Version 4, hand-rolled.
 #

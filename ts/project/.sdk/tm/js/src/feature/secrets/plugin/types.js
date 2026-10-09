@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20260925-1316-0 (javascript/src/types.js)
-// Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20260925-1316-0]
+// VENDORED: @voxgig/plugin 0.2.0 (javascript/src/types.js)
+// Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Shared types. Deliberately small: the design's §19 budget says the
  * library owns naming, configuration, lifecycle, ordering, binding and

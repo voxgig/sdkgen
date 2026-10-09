@@ -1,5 +1,5 @@
--- VENDORED: @voxgig/plugin sdk-20260925-1316-0 (lua/src/plugin/graph.lua)
--- Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20260925-1316-0]
+-- VENDORED: @voxgig/plugin sdk-20261009-0906-0 (lua/src/plugin/graph.lua)
+-- Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20261009-0906-0]
 -- License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 -- Whole-graph resolution (section 11.4) - a phase, not a discovery.
 --

@@ -40,7 +40,7 @@
   "routed cannot see it. Declared, not derived - deriving it swept each",
   "port's CLI and tests in too."
  ],
- "tag": "sdk-20260925-1316-0",
+ "tag": "sdk-20261009-0906-0",
  "ignorenote": [
   "What a routed directory is EXPECTED to hold that is not vendored.",
   "--audit reports every OTHER unrouted file, so this list is what keeps a",
@@ -286,7 +286,7 @@
    "lib": "omni",
    "port": "javascript",
    "lang": "js",
-   "version": "0.1.4",
+   "version": "0.1.5",
    "dir": [
     "tm/js/test/vendor/omni"
    ],
@@ -405,6 +405,7 @@
    "lib": "omni",
    "port": "rust",
    "lang": "rust",
+   "version": "0.1.0",
    "dir": [
     "tm/rust/tests/vendor/omni"
    ],
@@ -473,7 +474,7 @@
    "lib": "omni",
    "port": "typescript",
    "lang": "ts",
-   "version": "0.1.4",
+   "version": "0.1.5",
    "dir": [
     "tm/ts/test/vendor/omni"
    ],
@@ -663,7 +664,6 @@
    "lib": "plugin",
    "port": "go",
    "lang": "go",
-   "version": "0.1.6",
    "dir": [
     "tm/go/feature/secrets/plugin"
    ],
@@ -726,6 +726,7 @@
    "lib": "plugin",
    "port": "javascript",
    "lang": "js",
+   "version": "0.2.0",
    "dir": [
     "tm/js/src/feature/secrets/plugin"
    ],
@@ -896,7 +897,7 @@
    "lib": "plugin",
    "port": "python",
    "lang": "py",
-   "version": "0.1.6",
+   "version": "0.2.0",
    "dir": [
     "tm/py/pkg/feature/secrets/voxgig_plugin"
    ],
@@ -947,6 +948,7 @@
    "lib": "plugin",
    "port": "rust",
    "lang": "rust",
+   "version": "0.2.0",
    "dir": [
     "tm/rust/feature/secrets/plugin"
    ],
@@ -1032,7 +1034,7 @@
    "lib": "plugin",
    "port": "typescript",
    "lang": "ts",
-   "version": "0.1.6",
+   "version": "0.2.0",
    "dir": [
     "tm/ts/src/feature/secrets/plugin"
    ],
@@ -1417,6 +1419,7 @@
    "lib": "sekreto",
    "port": "javascript",
    "lang": "js",
+   "version": "0.2.0",
    "dir": [
     "tm/js/src/feature/secrets/sekreto",
     "tm/js/src/feature/secrets/sekreto/provider",
@@ -1612,6 +1615,7 @@
    "lib": "sekreto",
    "port": "perl",
    "lang": "perl",
+   "version": "0.1.0",
    "dir": [
     "tm/perl/feature/secrets/sekreto",
     "tm/perl/feature/secrets/sekreto/Voxgig",
@@ -1773,6 +1777,7 @@
    "lib": "sekreto",
    "port": "rust",
    "lang": "rust",
+   "version": "0.1.0",
    "dir": [
     "tm/rust/feature/secrets/sekreto",
     "tm/rust/feature/secrets/plugins",
@@ -1932,7 +1937,7 @@
    "lib": "sekreto",
    "port": "typescript",
    "lang": "ts",
-   "version": "0.2.0",
+   "version": "0.3.0",
    "dir": [
     "tm/ts/src/feature/secrets/sekreto",
     "tm/ts/src/feature/secrets/sekreto/provider",
@@ -2029,7 +2034,7 @@
    "lib": "struct",
    "port": "go",
    "lang": "go",
-   "version": "0.1.0",
+   "version": "0.1.6",
    "file": {
     "go/voxgigstruct.go": "tm/go/utility/struct/voxgigstruct.go"
    }
@@ -2057,7 +2062,7 @@
    "lib": "struct",
    "port": "javascript",
    "lang": "js",
-   "version": "0.1.4",
+   "version": "0.1.7",
    "file": {
     "javascript/src/struct.js": "tm/js/src/utility/StructUtility.js"
    }
@@ -2123,7 +2128,7 @@
    "lib": "struct",
    "port": "typescript",
    "lang": "ts",
-   "version": "0.3.4",
+   "version": "0.3.7",
    "file": {
     "typescript/src/StructUtility.ts": "tm/ts/src/utility/StructUtility.ts"
    }
@@ -2132,6 +2137,7 @@
    "lib": "struct",
    "port": "zig",
    "lang": "zig",
+   "version": "0.0.3",
    "dir": [
     "tm/zig/utility/voxgigstruct"
    ],
