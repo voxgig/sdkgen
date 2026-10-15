@@ -12,6 +12,8 @@ import {
   cmp,
   snakify,
   pointParts,
+  pointIsGraphql,
+  graphqlDirectSkip,
 } from '@voxgig/sdkgen'
 
 
@@ -99,6 +101,9 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) : ''
   const listParams = listPoint?.g?.params || []
 
+  const listRest = hasList && null != listPoint && !pointIsGraphql(listPoint)
+  const loadRest = hasLoad && null != loadPoint && !pointIsGraphql(loadPoint)
+
   File({ name: entity.name + '_direct_test.c' }, () => {
 
     Content(`// Generated direct-call test for the ${entity.name} entity (mirrors the
@@ -108,7 +113,10 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
 #include <stdlib.h>
 #include <string.h>
+`)
 
+    if (listRest || loadRest) {
+      Content(`
 static int CALLS = 0;
 static char LAST_URL[1024];
 
@@ -133,12 +141,20 @@ static ${Name}SDK* ${evar}_direct_setup(voxgig_value* mockres) {
     "system", cmap(1, "fetch", vfn(${evar}_mock, mockres)));
   return ${ident}_sdk_new(opts);
 }
+`)
+    }
 
+    Content(`
 int main(void) {
 `)
 
     // ---- list test ----
-    if (hasList && listPoint) {
+    if (hasList && pointIsGraphql(listPoint)) {
+      Content(`
+  printf("skip: %s\\n", "${graphqlDirectSkip('list', entity.name)}");
+`)
+    }
+    else if (listRest) {
       Content(`
   // LIST
   {
@@ -177,7 +193,12 @@ int main(void) {
     }
 
     // ---- load test ----
-    if (hasLoad && loadPoint) {
+    if (hasLoad && pointIsGraphql(loadPoint)) {
+      Content(`
+  printf("skip: %s\\n", "${graphqlDirectSkip('load', entity.name)}");
+`)
+    }
+    else if (loadRest) {
       Content(`
   // LOAD
   {

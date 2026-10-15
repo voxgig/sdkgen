@@ -17,6 +17,8 @@ import {
   pointParts,
   liveStrict,
   liveStrictNote,
+  pointIsGraphql,
+  graphqlDirectSkip,
 } from '@voxgig/sdkgen'
 
 import { formatCsValue } from './utility_csharp'
@@ -170,7 +172,15 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '    ')}
 `)
 
     // Generate list test first (load needs list results in live mode)
-    if (hasList && listPoint) {
+    if (hasList && pointIsGraphql(listPoint)) {
+      Content(`    [Fact(Skip = "${graphqlDirectSkip('list', entity.name)}")]
+    public void DirectList()
+    {
+    }
+
+`)
+    }
+    else if (hasList && listPoint) {
       // Build live params for list
       const listLiveParams = listParams.map((p: any) => {
         const key = p.n === 'id'
@@ -299,7 +309,15 @@ ${listSkipBlock}        var client = setup.Client;
     }
 
     // Generate load test - in live mode, first list to get a real entity ID
-    if (hasLoad && loadPoint) {
+    if (hasLoad && pointIsGraphql(loadPoint)) {
+      Content(`    [Fact(Skip = "${graphqlDirectSkip('load', entity.name)}")]
+    public void DirectLoad()
+    {
+    }
+
+`)
+    }
+    else if (hasLoad && loadPoint) {
       // Identify ancestor params (not 'id') for live mode
       const ancestorParams = loadParams.filter((p: any) => p.n !== 'id')
 

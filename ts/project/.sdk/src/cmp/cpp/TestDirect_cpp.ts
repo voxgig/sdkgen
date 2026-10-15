@@ -12,6 +12,8 @@ import {
   cmp,
   snakify,
   pointParts,
+  pointIsGraphql,
+  graphqlDirectSkip,
 } from '@voxgig/sdkgen'
 
 
@@ -97,6 +99,9 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const evar = cppVarName(entity.name)
 
+  const listRest = hasList && null != listPoint && !pointIsGraphql(listPoint)
+  const loadRest = hasLoad && null != loadPoint && !pointIsGraphql(loadPoint)
+
   File({ name: entity.name + '_direct_test.cpp' }, () => {
 
     Content(`// Generated direct-call tests for the ${entity.name} entity (unit mode;
@@ -106,7 +111,10 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
 using namespace sdk;
 using namespace sdk::rs;
+`)
 
+    if (listRest || loadRest) {
+      Content(`
 struct ${entity.Name}DirectSetup {
   std::shared_ptr<${ProjectName}SDK> client;
   Value calls;
@@ -143,9 +151,17 @@ static ${entity.Name}DirectSetup ${evar}_direct_setup(const Value& mockres) {
   return s;
 }
 `)
+    }
 
     // ---- list test ----
-    if (hasList && listPoint) {
+    if (hasList && pointIsGraphql(listPoint)) {
+      Content(`
+static void ${evar}_direct_list() {
+  std::cerr << "skip: ${graphqlDirectSkip('list', entity.name)}\\n";
+}
+`)
+    }
+    else if (listRest) {
       Content(`
 static void ${evar}_direct_list() {
   auto setup = ${evar}_direct_setup(vlist({
@@ -195,7 +211,14 @@ static void ${evar}_direct_list() {
     }
 
     // ---- load test ----
-    if (hasLoad && loadPoint) {
+    if (hasLoad && pointIsGraphql(loadPoint)) {
+      Content(`
+static void ${evar}_direct_load() {
+  std::cerr << "skip: ${graphqlDirectSkip('load', entity.name)}\\n";
+}
+`)
+    }
+    else if (loadRest) {
       Content(`
 static void ${evar}_direct_load() {
   auto setup = ${evar}_direct_setup(vmap({{"id", Value("direct01")}}));

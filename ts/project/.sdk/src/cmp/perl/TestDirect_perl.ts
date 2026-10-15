@@ -17,6 +17,8 @@ import {
   pointParts,
   liveStrict,
   liveStrictNote,
+  pointIsGraphql,
+  graphqlDirectSkip,
 } from '@voxgig/sdkgen'
 
 import { perlStringLiteral } from './utility_perl'
@@ -199,7 +201,14 @@ sub live_ok {
 
 `)
 
-    if (hasList && listPoint) {
+    if (hasList && pointIsGraphql(listPoint)) {
+      Content(`SKIP: {
+  skip('${graphqlDirectSkip('list', entity.name)}', 1);
+}
+
+`)
+    }
+    else if (hasList && listPoint) {
       const label = 'direct-list-' + entity.name
       Content(`DIRECT_LIST: {
   my $setup = ${entity.name}_direct_setup([
@@ -251,7 +260,14 @@ ${liveKeysBlock(N, label, 'DIRECT_LIST', listParams.map(liveKey), entidEnvVar)} 
 `)
     }
 
-    if (hasLoad && loadPoint) {
+    if (hasLoad && pointIsGraphql(loadPoint)) {
+      Content(`SKIP: {
+  skip('${graphqlDirectSkip('load', entity.name)}', 1);
+}
+
+`)
+    }
+    else if (hasLoad && loadPoint) {
       const label = 'direct-load-' + entity.name
       const discover = !loadAllHaveExamples && hasList && 0 < loadParams.length
       const idParam = loadParams.find((p: any) => 'id' === p.n)?.n ?? loadParams[0]?.n ?? 'id'

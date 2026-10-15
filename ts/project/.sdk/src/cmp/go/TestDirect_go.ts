@@ -15,6 +15,7 @@ import {
   serverVarEnv,
   serverVariables, envName, envToken, liveStrict, liveStrictNote,
   pointParts,
+  pointIsGraphql,
 } from '@voxgig/sdkgen'
 
 
@@ -107,7 +108,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listOp = entity.op?.list
 
   const loadPoint = loadOp?.points?.[0]
-  const loadIsGraphql = 'graphql' === (loadPoint as any)?.kind
+  const loadIsGraphql = pointIsGraphql(loadPoint)
   const loadPath = loadPoint ? normalizePathParams(pointParts(loadPoint), loadPoint?.g?.params || [], loadPoint?.r?.param) : ''
   const allLoadParams = loadPoint?.g?.params || []
   // Some upstream OpenAPI specs declare a parameter as `in: path` even when
@@ -133,7 +134,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
     _renamedPlaceholders.has(p.n) || _renamedPlaceholders.has(p.or))
 
   const listPoint = listOp?.points?.[0]
-  const listIsGraphql = 'graphql' === (listPoint as any)?.kind
+  const listIsGraphql = pointIsGraphql(listPoint)
   const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) : ''
   const listParams = listPoint?.g?.params || []
 
@@ -627,13 +628,16 @@ function generateDirectGraphqlGo(
   const mockVarLines = vars.map((v: any, i: number) =>
     `\t\tvariables["${v.name}"] = "direct0${i + 1}"`).join('\n')
 
-  const liveVarLines = vars.map((v: any) => {
+  // A live call sends only the variables the document cannot run without.
+  const liveVars = vars.filter((v: any) => String(v.gqltype || '').endsWith('!'))
+
+  const liveVarLines = liveVars.map((v: any) => {
     const from = v.from || v.name
     const key = ('id' === from ? entity.name : from.replace(/_id$/, '')) + '01'
     return `\t\tvariables["${v.name}"] = setup.idmap["${key}"]`
   }).join('\n')
 
-  const liveIdKeys = vars.map((v: any) => {
+  const liveIdKeys = liveVars.map((v: any) => {
     const from = v.from || v.name
     return ('id' === from ? entity.name : from.replace(/_id$/, '')) + '01'
   })
@@ -654,9 +658,9 @@ function generateDirectGraphqlGo(
   // response-shape correctness is the entity-level tests' job. The mock
   // JSON-encodes a map body to a string (see makeFetchDefUtil), so this
   // is a substring check, same as the ts/js mocks.
-  const varAsserts = vars.map((_v: any, i: number) =>
-    `\t\t\tif !strings.Contains(bodyStr, "direct0${i + 1}") {\n` +
-    `\t\t\t\tt.Fatalf("expected body to contain direct0${i + 1}, got %v", bodyStr)\n` +
+  const varAsserts = vars.map((v: any, i: number) =>
+    `\t\t\tif sentVars[${JSON.stringify(v.name)}] != "direct0${i + 1}" {\n` +
+    `\t\t\t\tt.Fatalf("expected variable ${v.name} to be direct0${i + 1}, got %v", sentVars[${JSON.stringify(v.name)}])\n` +
     `\t\t\t}`).join('\n')
 
   Content(`	t.Run("direct-${opname}-${entity.name}", func(t *testing.T) {
@@ -715,6 +719,15 @@ ${mockVarLines || '\t\t// no variables'}
 				t.Fatalf("expected method POST, got %v", initMap["method"])
 			}
 			bodyStr, _ := initMap["body"].(string)
+			var sent map[string]any
+			if err := json.Unmarshal([]byte(bodyStr), &sent); err != nil {
+				t.Fatalf("expected a JSON body, got %v", bodyStr)
+			}
+			if sent["query"] != ${JSON.stringify(doc)} {
+				t.Fatalf("expected the operation document, got %v", sent["query"])
+			}
+			sentVars, _ := sent["variables"].(map[string]any)
+			_ = sentVars
 ${varAsserts}
 		}
 	})

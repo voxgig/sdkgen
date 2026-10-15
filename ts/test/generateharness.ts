@@ -688,6 +688,78 @@ function seedableList(): string {
 }
 
 
+function gqlPoint(field: string, opname: string, args: [string, string, boolean][],
+  page: boolean, exist?: string): string {
+  const doc = 'query Issue' + opname[0].toUpperCase() + opname.slice(1) +
+    (0 < args.length ? '(' + args.map(([n, g]) => '$' + n + ': ' + g).join(', ') + ')' : '') +
+    ' { ' + field + (0 < args.length ? '(' + args.map(([n]) => n + ': $' + n).join(', ') + ')' : '') +
+    (page ? ' { nodes { id title } pageInfo { endCursor hasNextPage } }' : ' { id title }') + ' }'
+  return `
+      {
+        g: { params: [${args.map(([n, g, r]) => `
+          { k: "param", n: "${n}", or: "${n}", r: ${r}, t: "\`${'Int' === g ? '$INTEGER' : '$STRING'}\`" }`).join('')}
+        ] }
+        gq: {
+          doc: ${JSON.stringify(doc)}
+          field: "${field}"
+          optype: "query"
+          vars: [${args.map(([n, g]) => `
+            { from: "${n}", gqltype: "${g}", name: "${n}" }`).join('')}
+          ]${page ? `
+          page: { cursor: "pageInfo.endCursor", more: "pageInfo.hasNextPage", nodes: "nodes", style: "relay" }` : ''}
+        }
+        k: "graphql", m: "POST", o: "${field}"${null == exist ? '' : `
+        q: { exist: ["${exist}"] }`}
+        t: { req: "\`reqdata\`", res: "\`body.data.${field}${page ? '.nodes' : ''}\`" }
+      }`
+}
+
+
+// A GraphQL API whose own collection and record fields sort after a search,
+// a cross-entity lookup and a narrower collection, as Linear's do.
+const GRAPHQL_ENTITY = `
+main: kit: entity: issue: {
+  alias: field: {}
+  name: "issue"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: { name: "list", points: [${gqlPoint('issueSearch', 'list', [['query', 'String', false]], true)}${gqlPoint('issues', 'list', [['after', 'String', false], ['first', 'Int', false]], true)}
+    ] }
+    load: { name: "load", points: [${gqlPoint('attachmentIssue', 'load', [['id', 'String!', true]], false, 'id')}${gqlPoint('issue', 'load', [['id', 'String!', true]], false, 'id')}
+    ] }
+  }
+}
+
+main: kit: entity: team: {
+  alias: field: {}
+  name: "team"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: list: { name: "list", points: [${gqlPoint('administrableTeams', 'list', [], true)}${gqlPoint('teams', 'list', [], true)}
+  ] }
+}
+
+main: kit: flow: BasicIssueFlow: {
+  entity: "issue", kind: "basic", name: "BasicIssueFlow"
+  step: [ { o: "list", m: {} } ]
+}
+
+main: kit: flow: BasicTeamFlow: {
+  entity: "team", kind: "basic", name: "BasicTeamFlow"
+  step: [ { o: "list", m: {} } ]
+}
+`
+
+
+function graphqlOnly(): string {
+  return entityOnly(GRAPHQL_ENTITY)
+}
+
+
 // The fixture's own entities made inactive, beside the given source.
 function entityOnly(source: string): string {
   return source + Object.keys(makeModel(['ts']).main[KIT].entity)
@@ -1297,6 +1369,7 @@ export {
   namedFieldEntity,
   retypedList,
   seedableList,
+  graphqlOnly,
   entityOnly,
   entityTestData,
   FOLD_ENTITY,

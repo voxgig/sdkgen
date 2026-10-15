@@ -12,6 +12,8 @@ import {
   cmp,
   snakify,
   pointParts,
+  pointIsGraphql,
+  graphqlDirectSkip,
 } from '@voxgig/sdkgen'
 
 
@@ -148,7 +150,12 @@ object ${EntityName}DirectTest {
 `)
 
     // ---- list test ----
-    if (hasList && listPoint) {
+    if (hasList && pointIsGraphql(listPoint)) {
+      Content(`    println("SKIP ${graphqlDirectSkip('list', entity.name)}")
+
+`)
+    }
+    else if (hasList && listPoint) {
       Content(`    rep.scope("direct-list-${ENTLOWER}") {
       val setup = directSetup(SdkTestSupport.jl(
           SdkTestSupport.om("id" -> "direct01"),
@@ -187,7 +194,12 @@ object ${EntityName}DirectTest {
     }
 
     // ---- load test ----
-    if (hasLoad && loadPoint) {
+    if (hasLoad && pointIsGraphql(loadPoint)) {
+      Content(`    println("SKIP ${graphqlDirectSkip('load', entity.name)}")
+
+`)
+    }
+    else if (hasLoad && loadPoint) {
       Content(`    rep.scope("direct-load-${ENTLOWER}") {
       val setup = directSetup(SdkTestSupport.om("id" -> "direct01"))
       val client = setup.client

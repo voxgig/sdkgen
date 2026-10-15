@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, namedFieldEntity, seedableList, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY,
@@ -5942,6 +5942,47 @@ main: kit: flow: BasicBadgeFlow: {
         .filter((line: string) => !/email/.test(line)).map((line) => shape + ' ' + line))
     }
     deepStrictEqual(wrong, [], 'load examples that pass no point\'s selector:\n' + wrong.join('\n'))
+  })
+
+
+  test('a GraphQL point\'s direct test checks its document and variables, or skips and says why', async () => {
+    const out = await generate(sdkTargets(), undefined, graphqlOnly())
+    const doc = (field: string) =>
+      JSON.stringify(`query IssueLoad($id: String!) { ${field}(id: $id) { id title } }`)
+    const loadDoc = doc('attachmentIssue')
+
+    for (const [target, file, sent] of [
+      ['ts', 'ts/test/entity/issue/IssueDirect.test.ts', `assert(sent.query === ${loadDoc})`],
+      ['js', 'js/test/entity/issue/IssueDirect.test.js', `assert(sent.query === ${loadDoc})`],
+      ['go', 'go/test/issue_direct_test.go', `if sent["query"] != ${loadDoc} {`],
+    ]) {
+      const text = findFile(out, file)
+      ok(null != text, target + ': no direct test for the GraphQL entity')
+      ok(text!.includes(sent), target + ': the direct load does not check the document it sent')
+      ok(/\bvariables?\b.*\["?id"?\].*direct01|sentVars\["id"\] != "direct01"/.test(text!),
+        target + ': the direct load does not check its variables')
+      ok(!/\.url\.includes\(|strings\.Contains\(url,/.test(text!),
+        target + ': a GraphQL direct test asserts a REST URL')
+    }
+
+    const cmpdir = Path.join(SCAFFOLD, 'src', 'cmp')
+    const pointed = sdkTargets().filter((t: string) =>
+      existsSync(Path.join(cmpdir, t, 'TestDirect_' + t + '.ts')) &&
+      /\bpoints\b/.test(readFileSync(Path.join(cmpdir, t, 'TestDirect_' + t + '.ts'), 'utf8')))
+    const skipping = pointed.filter((t: string) => !['ts', 'js', 'go'].includes(t))
+    ok(10 < skipping.length, 'the targets whose direct test reads a point were not found')
+
+    const silent: string[] = []
+    for (const target of skipping) {
+      const direct = Object.entries(out).filter(([path]) =>
+        path.startsWith(target + '/') && /issue_?direct/i.test(path)).map(([, text]) => text).join('\n')
+      for (const opname of ['list', 'load']) {
+        if (!direct.includes(`direct-${opname}-issue: a GraphQL point, which this direct test does not cover`)) {
+          silent.push(target + ' ' + opname)
+        }
+      }
+    }
+    deepStrictEqual(silent, [], 'direct tests that neither cover a GraphQL point nor skip it with the reason')
   })
 
 

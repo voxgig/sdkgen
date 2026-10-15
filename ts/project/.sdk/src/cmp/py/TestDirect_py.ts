@@ -17,6 +17,8 @@ import {
   pointParts,
   liveStrict,
   liveStrictNote,
+  pointIsGraphql,
+  graphqlDirectSkip,
 } from '@voxgig/sdkgen'
 
 
@@ -188,7 +190,13 @@ class Test${entity.Name}Direct:
 
 `)
 
-    if (hasList && listPoint) {
+    if (hasList && pointIsGraphql(listPoint)) {
+      Content(`    def test_should_direct_list_${entity.name}(self):
+        pytest.skip("${graphqlDirectSkip('list', entity.name)}")
+
+`)
+    }
+    else if (hasList && listPoint) {
       const listLiveIdKeys: string[] = listParams.map(liveKey)
       Content(`    def test_should_direct_list_${entity.name}(self):
         setup = _${entity.name}_direct_setup([
@@ -231,7 +239,13 @@ ${liveKeysBlock(listLiveIdKeys, entidEnvVar)}        client = setup["client"]
 `)
     }
 
-    if (hasLoad && loadPoint) {
+    if (hasLoad && pointIsGraphql(loadPoint)) {
+      Content(`    def test_should_direct_load_${entity.name}(self):
+        pytest.skip("${graphqlDirectSkip('load', entity.name)}")
+
+`)
+    }
+    else if (hasLoad && loadPoint) {
       const discover = !loadAllHaveExamples && hasList && 0 < loadParams.length
       const idParam = loadParams.find((p: any) => 'id' === p.n)?.n ?? loadParams[0]?.n ?? 'id'
       const loadLiveIdKeys: string[] = loadAllHaveExamples ? [] :

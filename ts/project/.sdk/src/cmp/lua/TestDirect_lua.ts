@@ -17,6 +17,8 @@ import {
   pointParts,
   liveStrict,
   liveStrictNote,
+  pointIsGraphql,
+  graphqlDirectSkip,
 } from '@voxgig/sdkgen'
 
 import { formatLuaValue } from './utility_lua'
@@ -188,7 +190,14 @@ end
 describe("${entity.Name}Direct", function()
 `)
 
-    if (hasList && listPoint) {
+    if (hasList && pointIsGraphql(listPoint)) {
+      Content(`  it("should direct-list-${entity.name}", function()
+    pending("${graphqlDirectSkip('list', entity.name)}")
+  end)
+
+`)
+    }
+    else if (hasList && listPoint) {
       Content(`  it("should direct-list-${entity.name}", function()
     local setup = ${entity.name}_direct_setup({
       { id = "direct01" },
@@ -238,7 +247,14 @@ ${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    local client = setup.c
 `)
     }
 
-    if (hasLoad && loadPoint) {
+    if (hasLoad && pointIsGraphql(loadPoint)) {
+      Content(`  it("should direct-load-${entity.name}", function()
+    pending("${graphqlDirectSkip('load', entity.name)}")
+  end)
+
+`)
+    }
+    else if (hasLoad && loadPoint) {
       const discover = !loadAllHaveExamples && hasList && 0 < loadParams.length
       const idParam = loadParams.find((p: any) => 'id' === p.n)?.n ?? loadParams[0]?.n ?? 'id'
       const loadLiveIdKeys: string[] = loadAllHaveExamples ? [] :

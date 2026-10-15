@@ -15,6 +15,8 @@ import {
   pointParts,
   liveStrict,
   liveStrictNote,
+  pointIsGraphql,
+  graphqlDirectSkip,
 } from '@voxgig/sdkgen'
 
 
@@ -156,7 +158,15 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '  ')}
 
 `)
 
-    if (hasList && listPoint) {
+    if (hasList && pointIsGraphql(listPoint)) {
+      Content(`  @Test
+  fun directList${entity.Name}() {
+    Assumptions.assumeTrue(false, "${graphqlDirectSkip('list', entity.name)}")
+  }
+
+`)
+    }
+    else if (hasList && listPoint) {
       const listLiveParams = listParams.map((p: any) => {
         const key = p.n === 'id'
           ? entity.name + '01'
@@ -262,7 +272,15 @@ ${listSkipBlock}    val client = setup.client
 `)
     }
 
-    if (hasLoad && loadPoint) {
+    if (hasLoad && pointIsGraphql(loadPoint)) {
+      Content(`  @Test
+  fun directLoad${entity.Name}() {
+    Assumptions.assumeTrue(false, "${graphqlDirectSkip('load', entity.name)}")
+  }
+
+`)
+    }
+    else if (hasLoad && loadPoint) {
       const ancestorParams = loadParams.filter((p: any) => p.n !== 'id')
 
       const liveKey = (p: any) => p.n === 'id' ? entity.name + '01' : p.n.replace(/_id$/, '') + '01'

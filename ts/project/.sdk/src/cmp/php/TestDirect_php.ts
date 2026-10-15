@@ -17,6 +17,8 @@ import {
   pointParts,
   liveStrict,
   liveStrictNote,
+  pointIsGraphql,
+  graphqlDirectSkip,
 } from '@voxgig/sdkgen'
 
 import { formatPhpValue } from './utility_php'
@@ -189,7 +191,15 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '    ')}
 
 `)
 
-    if (hasList && listPoint) {
+    if (hasList && pointIsGraphql(listPoint)) {
+      Content(`    public function test_direct_list_${entity.name}(): void
+    {
+        $this->markTestSkipped("${graphqlDirectSkip('list', entity.name)}");
+    }
+
+`)
+    }
+    else if (hasList && listPoint) {
       Content(`    public function test_direct_list_${entity.name}(): void
     {
         $setup = ${entity.name}_direct_setup([
@@ -236,7 +246,15 @@ ${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}        $client = $setup["
 `)
     }
 
-    if (hasLoad && loadPoint) {
+    if (hasLoad && pointIsGraphql(loadPoint)) {
+      Content(`    public function test_direct_load_${entity.name}(): void
+    {
+        $this->markTestSkipped("${graphqlDirectSkip('load', entity.name)}");
+    }
+
+`)
+    }
+    else if (hasLoad && loadPoint) {
       const discover = !loadAllHaveExamples && hasList && 0 < loadParams.length
       const idParam = loadParams.find((p: any) => 'id' === p.n)?.n ?? loadParams[0]?.n ?? 'id'
       const loadLiveIdKeys: string[] = loadAllHaveExamples ? [] :

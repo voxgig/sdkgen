@@ -17,6 +17,8 @@ import {
   pointParts,
   liveStrict,
   liveStrictNote,
+  pointIsGraphql,
+  graphqlDirectSkip,
 } from '@voxgig/sdkgen'
 
 
@@ -244,7 +246,14 @@ fn ${evar}_direct_setup(mockres: Value) -> ${entity.Name}DirectSetup {
 `)
 
     // ---- list test ----
-    if (hasList && listPoint) {
+    if (hasList && pointIsGraphql(listPoint)) {
+      Content(`
+#[test]
+#[ignore = "${graphqlDirectSkip('list', entity.name)}"]
+fn ${evar}_direct_list() {}
+`)
+    }
+    else if (hasList && listPoint) {
       const listLiveParams = listParams.map((p: any) => ({ name: p.n, key: liveKey(p) }))
 
       Content(`
@@ -346,7 +355,14 @@ ${liveKeysBlock(listLiveParams.map((lp: any) => lp.key), entidEnvVar)}    let cl
     }
 
     // ---- load test ----
-    if (hasLoad && loadPoint) {
+    if (hasLoad && pointIsGraphql(loadPoint)) {
+      Content(`
+#[test]
+#[ignore = "${graphqlDirectSkip('load', entity.name)}"]
+fn ${evar}_direct_load() {}
+`)
+    }
+    else if (hasLoad && loadPoint) {
       const examples = 0 < loadParams.length &&
         loadParams.every((p: any) => undefined !== p.ex && null !== p.ex)
       const discover = !examples && hasList && 0 < loadParams.length

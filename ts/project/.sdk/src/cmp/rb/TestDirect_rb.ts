@@ -17,6 +17,8 @@ import {
   pointParts,
   liveStrict,
   liveStrictNote,
+  pointIsGraphql,
+  graphqlDirectSkip,
 } from '@voxgig/sdkgen'
 
 import { formatRubyValue } from './utility_rb'
@@ -184,7 +186,14 @@ ${liveStrictNote(liveStrict(model, target.name), '#', '  ')}
 
 `)
 
-    if (hasList && listPoint) {
+    if (hasList && pointIsGraphql(listPoint)) {
+      Content(`  def test_direct_list_${entity.name}
+    skip("${graphqlDirectSkip('list', entity.name)}")
+  end
+
+`)
+    }
+    else if (hasList && listPoint) {
       Content(`  def test_direct_list_${entity.name}
     setup = ${entity.name}_direct_setup([
       { "id" => "direct01" },
@@ -230,7 +239,14 @@ ${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    client = setup[:client
 `)
     }
 
-    if (hasLoad && loadPoint) {
+    if (hasLoad && pointIsGraphql(loadPoint)) {
+      Content(`  def test_direct_load_${entity.name}
+    skip("${graphqlDirectSkip('load', entity.name)}")
+  end
+
+`)
+    }
+    else if (hasLoad && loadPoint) {
       const discover = !loadAllHaveExamples && hasList && 0 < loadParams.length
       const idParam = loadParams.find((p: any) => 'id' === p.n)?.n ?? loadParams[0]?.n ?? 'id'
       const loadLiveIdKeys: string[] = loadAllHaveExamples ? [] :

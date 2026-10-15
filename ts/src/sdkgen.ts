@@ -85,6 +85,7 @@ import { liveStrict, liveStrictNote, liveFlowNeeds } from './helpers/testPolicy'
 import type { LiveFlowNeeds } from './helpers/testPolicy'
 import { pointSegments, pointParts, pointTerminalParam, pointPathKey }
   from './helpers/pointPath'
+import { pointIsGraphql, graphqlDirectSkip } from './helpers/graphqlPoint'
 import type { PathSegment } from './helpers/pointPath'
 import {
   featureOf,
@@ -1121,6 +1122,8 @@ export {
   pointParts,
   pointTerminalParam,
   pointPathKey,
+  pointIsGraphql,
+  graphqlDirectSkip,
   canonToType,
   canonToSpec,
   entityDataSpec,

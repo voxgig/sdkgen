@@ -22,6 +22,7 @@ import {
   jsProp, envName, envToken,
   jsKey,
   pointParts,
+  pointIsGraphql,
   hasLiveScenarios,
   liveStrict,
   liveStrictNote,
@@ -164,7 +165,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
     return
   }
 
-  if ('graphql' === (loadPoint as any).kind) {
+  if (pointIsGraphql(loadPoint)) {
     generateDirectGraphqlJs('load', entity, loadPoint)
     return
   }
@@ -273,7 +274,7 @@ function generateDirectList(model: Model, entity: ModelEntity) {
     return
   }
 
-  if ('graphql' === (listPoint as any).kind) {
+  if (pointIsGraphql(listPoint)) {
     generateDirectGraphqlJs('list', entity, listPoint)
     return
   }
@@ -348,8 +349,10 @@ function generateDirectGraphqlJs(
   const mockVarLines = vars.map((v: any, i: number) =>
     `      variables[${JSON.stringify(v.name)}] = 'direct0${i + 1}'`).join('\n')
 
-  const liveKeys = vars.map((v: any) => liveIdKey(entity, { n: v.from || v.name }))
-  const liveVarLines = vars.map((v: any, i: number) =>
+  // A live call sends only the variables the document cannot run without.
+  const liveVars = vars.filter((v: any) => String(v.gqltype || '').endsWith('!'))
+  const liveKeys = liveVars.map((v: any) => liveIdKey(entity, { n: v.from || v.name }))
+  const liveVarLines = liveVars.map((v: any, i: number) =>
     `      variables[${JSON.stringify(v.name)}] = setup.idmap['${liveKeys[i]}']`).join('\n')
   const skipMissingLine = 0 < liveKeys.length
     ? `    if (skipIfMissingIds(t, setup, ${JSON.stringify(liveKeys)}, LIVE_STRICT)) return\n`
@@ -357,8 +360,8 @@ function generateDirectGraphqlJs(
 
   // Asserted against the OUTGOING request body, not the mocked response —
   // response-shape correctness is the entity-level tests' job.
-  const varAsserts = vars.map((_v: any, i: number) =>
-    '      assert(calls[0].init.body.includes(\'direct0' + (i + 1) + '\'))\n').join('')
+  const varAsserts = vars.map((v: any, i: number) =>
+    `      assert(sent.variables[${JSON.stringify(v.name)}] === 'direct0${i + 1}')\n`).join('')
 
   Content(`
   test('direct-${opname}-${entity.name}', async (t) => {
@@ -380,6 +383,8 @@ ${liveChecks(opname, 'null != result.data', 'no data', `      assert(result.ok =
       assert(null != result.data)
       assert(calls.length === 1)
       assert(calls[0].init.method === 'POST')
+      const sent = JSON.parse(calls[0].init.body)
+      assert(sent.query === ${JSON.stringify(doc)})
 ${varAsserts}`)}
   })
 `)
