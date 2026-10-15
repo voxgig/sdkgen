@@ -55,9 +55,14 @@ final class MakeUrl {
       String key = item.get(0) instanceof String ? (String) item.get(0) : "";
       Object val = item.get(1);
       if (val != null) {
+        // A whole . or .. is a dot segment, which moves the request to another route.
+        String text = Struct.stringify(val);
+        if (".".equals(text) || "..".equals(text)) {
+          throw ctx.makeError("url_param_invalid",
+              "URL path parameter " + key + " cannot be \"" + text + "\".");
+        }
         url = url.replaceAll("\\{" + Struct.escre(key) + "\\}",
-            java.util.regex.Matcher.quoteReplacement(
-                Struct.escurl(Struct.stringify(val))));
+            java.util.regex.Matcher.quoteReplacement(Struct.escurl(text)));
         resmatch.put(key, val);
       }
     }

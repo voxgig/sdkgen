@@ -81,8 +81,16 @@ pub fn make_url_util(ctx: &Rc<Context>) -> Result<String, ProjectNameError> {
             .collect();
         for (key, val) in entries {
             if !val.is_noval() && !val.is_null() {
+                // A whole . or .. is a dot segment, which moves the request to another route.
+                let text = vs::stringify(&val, None, false);
+                if text == "." || text == ".." {
+                    return Err(ctx.make_error(
+                        "url_param_invalid",
+                        &format!("URL path parameter {} cannot be \"{}\".", key, text),
+                    ));
+                }
                 let pat = format!("\\{{{}\\}}", vs::esc_re(&Value::str(key.clone())));
-                let sub = vs::esc_url(&Value::str(vs::stringify(&val, None, false)));
+                let sub = vs::esc_url(&Value::str(text));
                 url = vs::re_replace(&pat, &url, &sub);
                 setp(&resmatch, &key, val);
             }

@@ -84,6 +84,15 @@ char* make_url_util(Context* ctx, PNError** err) {
         snprintf(pat, sizeof(pat), "\\{%s\\}", esc_key ? esc_key : key);
         free(esc_key);
         char* valstr = voxgig_stringify(val, -1);
+        // A whole . or .. is a dot segment, which moves the request to another route.
+        if (NULL != valstr && (0 == strcmp(valstr, ".") || 0 == strcmp(valstr, ".."))) {
+          char buf[512];
+          snprintf(buf, sizeof(buf), "URL path parameter %s cannot be \"%s\".", key, valstr);
+          free(valstr);
+          free(url);
+          *err = context_make_error(ctx, "url_param_invalid", buf);
+          return NULL;
+        }
         char* sub = voxgig_escurl(v_str(valstr ? valstr : ""));
         free(valstr);
         char* newurl = voxgig_re_replace(pat, url, sub ? sub : "");

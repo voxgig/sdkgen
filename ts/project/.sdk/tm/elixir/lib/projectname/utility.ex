@@ -1541,6 +1541,18 @@ defmodule ProjectName.Utility do
         # Sent with the request, never recorded as the entity's match.
         authquery = for {_, name} <- H.entries(S.getprop(spec, "authquery")), do: name
 
+        # A whole . or .. is a dot segment, which moves the request to another route.
+        dot =
+          Enum.find_value(H.entries(S.getprop(spec, "params")), fn {key, val} ->
+            vstr = cond do
+              val == nil -> nil
+              is_binary(val) -> val
+              true -> S.stringify(val)
+            end
+
+            if is_binary(key) and vstr in [".", ".."], do: {key, vstr}
+          end)
+
         url1 =
           Enum.reduce(H.entries(S.getprop(spec, "params")), url0, fn {key, val}, acc ->
             if val != nil and is_binary(key) do
@@ -1571,12 +1583,19 @@ defmodule ProjectName.Utility do
             end
           end)
 
-        if unfilled != [] do
-          {"", Context.make_error(ctx, "url_param_missing",
-            "URL path has no value for " <> Enum.join(unfilled, ", ") <> ".")}
-        else
-          S.setprop(result, "resmatch", resmatch)
-          {url2, nil}
+        cond do
+          dot != nil ->
+            {key, vstr} = dot
+            {"", Context.make_error(ctx, "url_param_invalid",
+              "URL path parameter " <> key <> " cannot be \"" <> vstr <> "\".")}
+
+          unfilled != [] ->
+            {"", Context.make_error(ctx, "url_param_missing",
+              "URL path has no value for " <> Enum.join(unfilled, ", ") <> ".")}
+
+          true ->
+            S.setprop(result, "resmatch", resmatch)
+            {url2, nil}
         end
     end
   end

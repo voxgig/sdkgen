@@ -277,8 +277,13 @@ func makeUrlUtil(_ ctx: Context) throws -> String {
     let key = item[0].asString ?? ""
     let val = item[1]
     if !isNil(val) {
+      // A whole . or .. is a dot segment, which moves the request to another route.
+      let text = stringify(val)
+      if text == "." || text == ".." {
+        throw ctx.makeError("url_param_invalid", "URL path parameter " + key + " cannot be \"" + text + "\".")
+      }
       let pattern = "\\{" + escre(.string(key)) + "\\}"
-      url = regexReplace(url, pattern, escurl(.string(stringify(val))))
+      url = regexReplace(url, pattern, escurl(.string(text)))
       resmatch.entries[key] = val
     }
   }

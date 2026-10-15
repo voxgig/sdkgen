@@ -38,6 +38,11 @@ class ProjectNameMakeUrl
                 if ($val !== null && is_string($key)) {
                     $placeholder = '{' . $key . '}';
                     $val_str = is_string($val) ? $val : (string)$val;
+                    // A whole . or .. is a dot segment, which moves the request to another route.
+                    if ('.' === $val_str || '..' === $val_str) {
+                        return ['', $ctx->make_error('url_param_invalid',
+                            'URL path parameter ' . $key . ' cannot be "' . $val_str . '".')];
+                    }
                     $encoded = \Voxgig\Struct\Struct::escurl($val_str);
                     $url = str_replace($placeholder, $encoded, $url);
                     $resmatch[$key] = $val;

@@ -1338,6 +1338,15 @@
                                   k)))
                     (oset! ctx :spec s) [s nil])))))))))
 
+;; A whole . or .. is a dot segment, which moves the request to another
+;; route: the first such [key value], or nil.
+(defn- dot-param [params]
+  (some (fn [item]
+          (let [k (vs/getprop item 0) v (vs/getprop item 1)
+                s (when (some? v) (if (string? v) v (vs/stringify v)))]
+            (when (and (string? k) (contains? #{"." ".."} s)) [k s])))
+        (or (vs/items params) [])))
+
 (defn u-make-url [ctx]
   (let [spec (oget ctx :spec) result (oget ctx :result)]
     (cond
@@ -1366,23 +1375,25 @@
         ;; A placeholder left in the route would send the request to the wrong
         ;; route. The base's own placeholders are server variables, resolved
         ;; with the options.
-        (if-let [unfilled (let [base (str/replace (str (or (oget spec :base) "")) #"/+$" "")]
-                            (seq (re-seq #"\{[^{}/]+\}"
-                                         (if (str/starts-with? @url base) (subs @url (count base)) @url))))]
-          ["" (ctx-error ctx "url_param_missing"
-                         (str "URL path has no value for " (str/join ", " unfilled) "."))]
-          (do
-            (let [qsep (atom "?")]
-              (doseq [item (or (vs/items (oget spec :query)) [])]
-                (let [k (vs/getprop item 0) v (vs/getprop item 1)]
-                  (when (and (some? v) (string? k))
-                    (let [val-str (if (string? v) v (vs/stringify v))]
-                      (reset! url (str @url @qsep (vs/escurl k) "=" (vs/escurl val-str)))
-                      (reset! qsep "&")
-                      (when-not (contains? authquery k)
-                        (.put ^java.util.Map resmatch k v)))))))
-            (oset! result :resmatch resmatch)
-            [@url nil]))))))
+        (if-let [[dk dv] (dot-param (oget spec :params))]
+          ["" (ctx-error ctx "url_param_invalid" (str "URL path parameter " dk " cannot be \"" dv "\"."))]
+          (if-let [unfilled (let [base (str/replace (str (or (oget spec :base) "")) #"/+$" "")]
+                              (seq (re-seq #"\{[^{}/]+\}"
+                                           (if (str/starts-with? @url base) (subs @url (count base)) @url))))]
+            ["" (ctx-error ctx "url_param_missing"
+                           (str "URL path has no value for " (str/join ", " unfilled) "."))]
+            (do
+              (let [qsep (atom "?")]
+                (doseq [item (or (vs/items (oget spec :query)) [])]
+                  (let [k (vs/getprop item 0) v (vs/getprop item 1)]
+                    (when (and (some? v) (string? k))
+                      (let [val-str (if (string? v) v (vs/stringify v))]
+                        (reset! url (str @url @qsep (vs/escurl k) "=" (vs/escurl val-str)))
+                        (reset! qsep "&")
+                        (when-not (contains? authquery k)
+                          (.put ^java.util.Map resmatch k v)))))))
+              (oset! result :resmatch resmatch)
+              [@url nil])))))))
 
 (defn u-make-fetch-def [ctx]
   (let [spec (oget ctx :spec)]

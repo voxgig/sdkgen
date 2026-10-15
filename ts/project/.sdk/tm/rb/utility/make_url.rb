@@ -29,6 +29,10 @@ module ProjectNameUtilities
         if val && key.is_a?(String)
           placeholder = "{#{key}}"
           val_str = val.is_a?(String) ? val : val.to_s
+          # A whole . or .. is a dot segment, which moves the request to another route.
+          if [".", ".."].include?(val_str)
+            return "", ctx.make_error("url_param_invalid", "URL path parameter #{key} cannot be \"#{val_str}\".")
+          end
           encoded = VoxgigStruct.escurl(val_str)
           url = url.gsub(placeholder, encoded)
           resmatch[key] = val

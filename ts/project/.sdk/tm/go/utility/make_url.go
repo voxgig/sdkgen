@@ -39,8 +39,14 @@ func makeUrlUtil(ctx *core.Context) (string, error) {
 		key, _ := item[0].(string)
 		val := item[1]
 		if val != nil {
+			// A whole . or .. is a dot segment, which moves the request to another route.
+			text := vs.Stringify(val)
+			if text == "." || text == ".." {
+				return "", ctx.MakeError("url_param_invalid",
+					"URL path parameter "+key+" cannot be \""+text+"\".")
+			}
 			re := regexp.MustCompile("\\{" + vs.EscRe(key) + "\\}")
-			url = re.ReplaceAllString(url, vs.EscUrl(vs.Stringify(val)))
+			url = re.ReplaceAllString(url, vs.EscUrl(text))
 			resmatch[key] = val
 		}
 	}

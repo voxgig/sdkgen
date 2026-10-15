@@ -1,16 +1,19 @@
-// A load that fails, driven through a generated SDK in test mode: each probe
-// prints the code, the status and the not-found predicate of every case's
-// error. `missing` names a record the mock does not hold, and `unsent` names
-// no id, so its request is never made.
+// Loads that fail, driven through a generated SDK in test mode: `missing` names
+// a record the mock does not hold; `unsent` names no id, and `dotdot` and `dot`
+// a dot segment, so none of those requests is made.
 const LOAD_CASES: [string, string | null][] = [
   ['missing', 'nope'],
   ['unsent', null],
+  ['dotdot', '..'],
+  ['dot', '.'],
 ]
+
+// With LOAD_BASE set, these probes send to it instead of running in test mode.
+const LOAD_LIVE = ['node', 'go']
 
 type LoadOutcome = { code: string, status: number, notfound: string }
 
-// `load-probe: <case> <code> <status> <notfound>`, where notfound is
-// true or false, and the code `ok` when the load did not fail.
+// `load-probe: <case> <code> <status> <notfound>`, the code `ok` for a success.
 function loadOutcomes(out: string): Record<string, LoadOutcome> {
   const found: Record<string, LoadOutcome> = {}
   for (const m of out.matchAll(/load-probe: ([a-z]+) (\S+) (-?\d+) (true|false)/g)) {
@@ -26,7 +29,8 @@ const { SDK } = require('SDK_MODULE')
 ;(async () => {
   for (const [name, id] of ${JSON.stringify(LOAD_CASES)}) {
     try {
-      await SDK.test().Cat().load(null == id ? {} : { id })
+      const client = null == process.env.LOAD_BASE ? SDK.test() : new SDK({ base: process.env.LOAD_BASE })
+      await client.Cat().load(null == id ? {} : { id })
       console.log('load-probe: ' + name + ' ok -1 false')
     }
     catch (e) {
@@ -42,19 +46,24 @@ const GO_PROBE = String.raw`package sdktest
 import (
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 
 	sdk "GOMODULE"
 )
 
 func TestLoadProbe(t *testing.T) {
-	cases := [][2]string{{"missing", "nope"}, {"unsent", ""}}
+	cases := [][2]string{{"missing", "nope"}, {"unsent", ""}, {"dotdot", ".."}, {"dot", "."}}
 	for _, c := range cases {
 		match := map[string]any{}
 		if "" != c[1] {
 			match["id"] = c[1]
 		}
-		_, err := sdk.TestSDK(nil, nil).Cat(nil).Load(match, nil)
+		client := sdk.TestSDK(nil, nil)
+		if base := os.Getenv("LOAD_BASE"); "" != base {
+			client = sdk.NewDemoSDK(map[string]any{"base": base})
+		}
+		_, err := client.Cat(nil).Load(match, nil)
 		var se *sdk.DemoError
 		if nil == err {
 			fmt.Printf("load-probe: %s ok -1 false\n", c[0])
@@ -71,7 +80,7 @@ func TestLoadProbe(t *testing.T) {
 const PY_PROBE = String.raw`
 from demo_sdk import DemoSDK
 
-for name, eid in [('missing', 'nope'), ('unsent', None)]:
+for name, eid in [('missing', 'nope'), ('unsent', None), ('dotdot', '..'), ('dot', '.')]:
     try:
         DemoSDK.test(None, None).Cat(None).load({} if eid is None else {'id': eid}, None)
         print('load-probe: %s ok -1 false' % name)
@@ -83,7 +92,7 @@ for name, eid in [('missing', 'nope'), ('unsent', None)]:
 const RB_PROBE = String.raw`
 require_relative 'Demo_sdk'
 
-[['missing', 'nope'], ['unsent', nil]].each do |name, id|
+[['missing', 'nope'], ['unsent', nil], ['dotdot', '..'], ['dot', '.']].each do |name, id|
   begin
     DemoSDK.test(nil, nil).Cat(nil).load(id.nil? ? {} : { 'id' => id }, nil)
     puts "load-probe: #{name} ok -1 false"
@@ -97,7 +106,7 @@ end
 const PHP_PROBE = String.raw`<?php
 require_once __DIR__ . '/demo_sdk.php';
 
-foreach ([['missing', 'nope'], ['unsent', null]] as [$name, $id]) {
+foreach ([['missing', 'nope'], ['unsent', null], ['dotdot', '..'], ['dot', '.']] as [$name, $id]) {
     try {
         DemoSDK::test(null, null)->Cat(null)->load(null === $id ? [] : ['id' => $id], null);
         echo 'load-probe: ' . $name . " ok -1 false\n";
@@ -115,7 +124,7 @@ use warnings;
 use lib 'lib';
 use DemoSDK;
 
-for my $c (['missing', 'nope'], ['unsent', undef]) {
+for my $c (['missing', 'nope'], ['unsent', undef], ['dotdot', '..'], ['dot', '.']) {
   my ($name, $id) = @$c;
   if (eval { DemoSDK->test(undef, undef)->Cat(undef)->load(defined $id ? { id => $id } : {}, undef); 1 }) {
     print "load-probe: $name ok -1 false\n";
@@ -132,7 +141,7 @@ for my $c (['missing', 'nope'], ['unsent', undef]) {
 const LUA_PROBE = String.raw`
 local sdk = require("demo_sdk")
 
-for _, c in ipairs({ { "missing", "nope" }, { "unsent", nil } }) do
+for _, c in ipairs({ { "missing", "nope" }, { "unsent", nil }, { "dotdot", ".." }, { "dot", "." } }) do
   local match = {}
   if c[2] ~= nil then match.id = c[2] end
   local _, err = sdk.test(nil, nil):Cat(nil):load(match, nil)
@@ -175,7 +184,7 @@ public class LoadProbe {
   }
 
   public static void main(String[] args) {
-    String[][] cases = { { "missing", "nope" }, { "unsent", null } };
+    String[][] cases = { { "missing", "nope" }, { "unsent", null }, { "dotdot", ".." }, { "dot", "." } };
     for (String[] c : cases) {
       Map<String, Object> match = new LinkedHashMap<>();
       if (c[1] != null) match.put("id", c[1]);
@@ -202,7 +211,7 @@ import voxgig.demosdk.core.SdkError
 class LoadProbe {
   @Test
   fun loadProbe() {
-    for ((name, id) in listOf("missing" to "nope", "unsent" to null)) {
+    for ((name, id) in listOf("missing" to "nope", "unsent" to null, "dotdot" to "..", "dot" to ".")) {
       val match = linkedMapOf<String, Any?>()
       if (id != null) match["id"] = id
       try {
@@ -245,7 +254,7 @@ object LoadProbeMain {
   }
 
   def main(args: Array[String]): Unit = {
-    for ((name, id) <- Seq("missing" -> "nope", "unsent" -> null)) {
+    for ((name, id) <- Seq("missing" -> "nope", "unsent" -> null, "dotdot" -> "..", "dot" -> ".")) {
       val matcher = new LinkedHashMap[String, Object]()
       if (id != null) matcher.put("id", id)
       try {
@@ -269,7 +278,7 @@ public static class LoadProbe
 {
     public static void Main()
     {
-        foreach (var (name, id) in new[] { ("missing", (string?)"nope"), ("unsent", (string?)null) })
+        foreach (var (name, id) in new[] { ("missing", (string?)"nope"), ("unsent", (string?)null), ("dotdot", (string?)".."), ("dot", (string?)".") })
         {
             var match = new Dictionary<string, object?>();
             if (id != null) match["id"] = id;
@@ -295,7 +304,7 @@ import XCTest
 
 final class LoadProbeTest: XCTestCase {
   func testLoadProbe() throws {
-    for (name, id) in [("missing", "nope"), ("unsent", nil)] as [(String, String?)] {
+    for (name, id) in [("missing", "nope"), ("unsent", nil), ("dotdot", ".."), ("dot", ".")] as [(String, String?)] {
       let match = VMap()
       if let id = id { match.entries["id"] = .string(id) }
       do {
@@ -317,7 +326,7 @@ defmodule Demo.LoadProbeTest do
   alias Voxgig.Struct, as: S
 
   test "load probe" do
-    for {name, id} <- [{"missing", "nope"}, {"unsent", nil}] do
+    for {name, id} <- [{"missing", "nope"}, {"unsent", nil}, {"dotdot", ".."}, {"dot", "."}] do
       match = if id == nil, do: S.jm([]), else: S.jm(["id", id])
 
       try do
@@ -339,7 +348,7 @@ const CLOJURE_PROBE = String.raw`
          '[voxgig.struct :as vs]
          '[sdk.entity.cat :as e-cat])
 
-(doseq [[name id] [["missing" "nope"] ["unsent" nil]]]
+(doseq [[name id] [["missing" "nope"] ["unsent" nil] ["dotdot" ".."] ["dot" "."]]]
   (try
     (e-cat/load (api/cat (api/test-sdk nil nil) nil) (if (nil? id) (vs/jm) (vs/jm "id" id)) nil)
     (println (str "load-probe: " name " ok -1 false"))
@@ -356,7 +365,7 @@ use demo_sdk::{test_sdk, DemoEntity, Value};
 
 #[test]
 fn load_probe() {
-    for (name, id) in [("missing", Some("nope")), ("unsent", None)] {
+    for (name, id) in [("missing", Some("nope")), ("unsent", None), ("dotdot", Some("..")), ("dot", Some("."))] {
         let matcher = match id {
             Some(id) => jo(vec![("id", Value::str(id))]),
             None => jo(vec![]),
@@ -376,9 +385,9 @@ const C_PROBE = String.raw`
 #include <stdio.h>
 
 int main(void) {
-  const char* names[] = { "missing", "unsent" };
-  const char* ids[] = { "nope", NULL };
-  for (int i = 0; i < 2; i++) {
+  const char* names[] = { "missing", "unsent", "dotdot", "dot" };
+  const char* ids[] = { "nope", NULL, "..", "." };
+  for (int i = 0; i < 4; i++) {
     Entity* e = demo_cat(test_sdk(NULL, NULL), NULL);
     PNError* err = NULL;
     e->vt->load(e, ids[i] ? cmap(1, "id", v_str(ids[i])) : v_map(), v_map(), &err);
@@ -400,9 +409,9 @@ const CPP_PROBE = String.raw`
 using namespace sdk;
 
 int main() {
-  const char* names[] = { "missing", "unsent" };
-  const char* ids[] = { "nope", nullptr };
-  for (int i = 0; i < 2; i++) {
+  const char* names[] = { "missing", "unsent", "dotdot", "dot" };
+  const char* ids[] = { "nope", nullptr, "..", "." };
+  for (int i = 0; i < 4; i++) {
     Value match = ids[i] ? vmap({{"id", Value(std::string(ids[i]))}}) : vmap();
     try {
       DemoSDK::testSDK(Value::undef(), Value::undef())->cat()->load(match, vmap());
@@ -425,8 +434,8 @@ const h = sdk.h;
 const Value = sdk.Value;
 
 test "load probe" {
-    const names = [_][]const u8{ "missing", "unsent" };
-    const ids = [_]?[]const u8{ "nope", null };
+    const names = [_][]const u8{ "missing", "unsent", "dotdot", "dot" };
+    const ids = [_]?[]const u8{ "nope", null, "..", "." };
     for (names, ids) |name, id| {
         const match = if (id) |v| h.jo(&.{.{ "id", h.vstr(v) }}) else h.omap();
         const client = sdk.test_sdk(Value{ .null = {} }, Value{ .null = {} });
@@ -453,7 +462,7 @@ let () =
     | exception Sdk_error_exc e ->
       Printf.printf "load-probe: %s %s %d %b\n%!" name (Sdk_error.code e)
         (Sdk_error.status e) (Sdk_error.not_found e))
-    [("missing", Some "nope"); ("unsent", None)]
+    [("missing", Some "nope"); ("unsent", None); ("dotdot", Some ".."); ("dot", Some ".")]
 `
 
 
@@ -482,6 +491,7 @@ const LOAD_PROBES: Record<string, string> = {
 
 export {
   LOAD_CASES,
+  LOAD_LIVE,
   LOAD_PROBES,
   loadOutcomes,
 }

@@ -39,8 +39,15 @@ public static partial class SdkUtility
             var val = item[1];
             if (val != null)
             {
+                // A whole . or .. is a dot segment, which moves the request to another route.
+                var text = StructUtils.Stringify(val);
+                if (text == "." || text == "..")
+                {
+                    throw ctx.MakeError("url_param_invalid",
+                        "URL path parameter " + key + " cannot be \"" + text + "\".");
+                }
                 var re = new Regex("\\{" + StructUtils.EscRe(key) + "\\}");
-                url = re.Replace(url, StructUtils.EscUrl(StructUtils.Stringify(val)));
+                url = re.Replace(url, StructUtils.EscUrl(text));
                 resmatch[key] = val;
             }
         }

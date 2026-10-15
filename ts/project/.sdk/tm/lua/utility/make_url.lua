@@ -40,6 +40,11 @@ local function make_url_util(ctx)
       if val ~= nil and type(key) == "string" then
         local placeholder = "{" .. key .. "}"
         local val_str = type(val) == "string" and val or tostring(val)
+        -- A whole . or .. is a dot segment, which moves the request to another route.
+        if val_str == "." or val_str == ".." then
+          return "", ctx:make_error("url_param_invalid",
+            "URL path parameter " .. key .. " cannot be \"" .. val_str .. "\".")
+        end
         local encoded = vs.escurl(val_str)
         -- Plain string replacement (not pattern-based)
         local i, j = url:find(placeholder, 1, true)

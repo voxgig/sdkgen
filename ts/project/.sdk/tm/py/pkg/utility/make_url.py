@@ -40,6 +40,10 @@ def make_url_util(ctx):
             val = item[1]
             if val is not None and isinstance(key, str):
                 val_str = val if isinstance(val, str) else str(val)
+                # A whole . or .. is a dot segment, which moves the request to another route.
+                if val_str in (".", ".."):
+                    return "", ctx.make_error("url_param_invalid",
+                        "URL path parameter " + key + " cannot be \"" + val_str + "\".")
                 encoded = vs.escurl(val_str)
                 url = url.replace("{" + key + "}", encoded)
                 resmatch[key] = val

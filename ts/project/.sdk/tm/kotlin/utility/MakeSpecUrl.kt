@@ -132,7 +132,12 @@ fun makeUrl(ctx: Context): String {
     val key = if (item[0] is String) item[0] as String else ""
     val v = item[1]
     if (v != null) {
-      val replacement = Struct.escurl(Struct.stringify(v))
+      // A whole . or .. is a dot segment, which moves the request to another route.
+      val text = Struct.stringify(v)
+      if (text == "." || text == "..") {
+        throw ctx.makeError("url_param_invalid", "URL path parameter " + key + " cannot be \"" + text + "\".")
+      }
+      val replacement = Struct.escurl(text)
       url = Regex("\\{" + Struct.escre(key) + "\\}").replace(url) { replacement }
       resmatch[key] = v
     }

@@ -44,6 +44,10 @@ $REGISTRY{make_url} = sub {
       my ($key, $val) = @$item;
       if (ProjectNameHelpers::rb_truthy($val) && defined $key && !ref $key) {
         my $placeholder = '{' . $key . '}';
+        # A whole . or .. is a dot segment, which moves the request to another route.
+        return ('', $ctx->make_error('url_param_invalid',
+          'URL path parameter ' . $key . ' cannot be "' . $val . '".'))
+          if '.' eq "$val" || '..' eq "$val";
         my $encoded = Voxgig::Struct::escurl("$val");
         $url =~ s/\Q$placeholder\E/$encoded/g;
         $resmatch->{$key} = $val;

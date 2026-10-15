@@ -699,8 +699,13 @@ object MakeUrl {
       val key = item.get(0) match { case s: String => s; case _ => "" }
       val v = item.get(1)
       if (v != null) {
+        // A whole . or .. is a dot segment, which moves the request to another route.
+        val text = Struct.stringify(v)
+        if (text == "." || text == "..") {
+          throw ctx.makeError("url_param_invalid", "URL path parameter " + key + " cannot be \"" + text + "\".")
+        }
         url = url.replaceAll("\\{" + Struct.escre(key) + "\\}",
-          java.util.regex.Matcher.quoteReplacement(Struct.escurl(Struct.stringify(v))))
+          java.util.regex.Matcher.quoteReplacement(Struct.escurl(text)))
         resmatch.put(key, v)
       }
     }

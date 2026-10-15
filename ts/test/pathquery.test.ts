@@ -493,6 +493,19 @@ describe('makeUrl', () => {
       deepStrictEqual(makeUrl(uctx('/ability/', { path: 'ability', query: { limit: 5 } })),
         'https://api.test/ability/?limit=5')
     })
+
+    // A URL resolver removes a dot segment, and `..` the segment before it too.
+    test(lang + ': a path parameter that is a dot segment is refused', () => {
+      for (const id of ['.', '..']) {
+        const url = makeUrl(uctx('/notes/{id}', { path: 'notes/{id}', params: { id } }))
+        ok(url instanceof Error, lang + ': ' + JSON.stringify(id) + ' made ' + url)
+        deepStrictEqual(url.message, 'url_param_invalid')
+      }
+      for (const id of ['...', '.a', 'a..b']) {
+        deepStrictEqual(makeUrl(uctx('/notes/{id}', { path: 'notes/{id}', params: { id } })),
+          'https://api.test/notes/' + id)
+      }
+    })
   }
 
 
@@ -549,6 +562,20 @@ describe('makeUrl', () => {
       }
     }
     deepStrictEqual(missing, [], 'targets whose makeUrl sends an unfilled placeholder')
+  })
+
+  // The generated probe lane runs it; this names the target that drops it.
+  test('every target refuses a path parameter that is a dot segment', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const at = src.indexOf(def)
+      ok(-1 !== at, lang + ': no makeUrl definition in ' + rel)
+      if (!src.slice(at, at + 4500).includes('url_param_invalid')) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose makeUrl sends a dot segment')
   })
 
   // A server variable the options leave in the base is not a path parameter,

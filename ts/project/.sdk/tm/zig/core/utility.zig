@@ -1205,8 +1205,13 @@ pub fn make_url_util(ctx: *Context) E![]const u8 {
             const key = kv.key_ptr.*;
             const val = kv.value_ptr.*;
             if (!h.is_noval(val)) {
+                // A whole . or .. is a dot segment, which moves the request to another route.
+                const text = h.scalar_str(val);
+                if (std.mem.eql(u8, text, ".") or std.mem.eql(u8, text, "..")) {
+                    return ctx.fail("url_param_invalid", fmt("URL path parameter {s} cannot be \"{s}\".", .{ key, text }));
+                }
                 const needle = fmt("{{{s}}}", .{key});
-                const sub = h.esc_url(h.scalar_str(val));
+                const sub = h.esc_url(text);
                 url = std.mem.replaceOwned(u8, h.A(), url, needle, sub) catch url;
                 h.setp(resmatch, key, val);
             }

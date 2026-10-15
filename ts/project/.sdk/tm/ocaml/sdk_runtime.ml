@@ -1374,6 +1374,15 @@ let make_url_util (ctx : ctx) : (string * sdk_error option) =
     let route =
       if String.length !url >= blen && String.sub !url 0 blen = base
       then String.sub !url blen (String.length !url - blen) else !url in
+    (* A whole . or .. is a dot segment, which moves the request to another route. *)
+    let dot = List.find_opt (fun key ->
+        let v = getp spec.sp_params key in
+        not (is_noval v) && List.mem (vstring v) ["."; ".."]) (keysof spec.sp_params) in
+    match dot with
+    | Some key ->
+      ("", Some (ctx_make_error ctx "url_param_invalid"
+         ("URL path parameter " ^ key ^ " cannot be \"" ^ vstring (getp spec.sp_params key) ^ "\".")))
+    | None ->
     match placeholders route with
     | _ :: _ as unfilled ->
       ("", Some (ctx_make_error ctx "url_param_missing"

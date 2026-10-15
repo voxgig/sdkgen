@@ -42,7 +42,7 @@ import {
   NONJSON_CASES, NONJSON_PROBES, NONJSON_SERVER, nonjsonFailures, nonjsonTsv,
 } from './nonjsonprobes'
 import { HOOK_KINDS, HOOK_PROBES, hookCounts } from './hookprobes'
-import { LOAD_PROBES, loadOutcomes } from './loadprobes'
+import { LOAD_LIVE, LOAD_PROBES, loadOutcomes } from './loadprobes'
 
 
 // A list requiring a Lua keyword and `__proto__`, which an object literal must compute.
@@ -8084,6 +8084,48 @@ describe('probes driven through a generated SDK', () => {
           missing: { code: 'request_status', status: 404, notfound: 'true' },
           unsent: { code: 'url_param_missing', status: -1, notfound: 'false' },
         }, lane.target + ' probe output:\n' + tail(ran.out))
+      })
+    }
+
+    if (null == lane.label) {
+      test(lane.target + ': a path parameter of . or .. is refused before the transport', async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+
+        const sdkroot = await sdkFor(lane.target)
+        const probe = { name: 'load', source: LOAD_PROBES }
+        const refused = { code: 'url_param_invalid', status: -1, notfound: 'false' }
+        const ran = lane.exec(sdkroot, nestedTestEnv(), writer(sdkroot), probe)
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, lane.target + ': the load probe failed:\n' + tail(ran.out, 60))
+        const found = loadOutcomes(ran.out)
+        deepStrictEqual({ dotdot: found.dotdot, dot: found.dot }, { dotdot: refused, dot: refused },
+          lane.target + ' probe output:\n' + tail(ran.out))
+
+        // Over a live transport the server sees the one load it should.
+        if (!LOAD_LIVE.includes(probeKey)) return
+
+        const server = await mediaServer(sdkroot)
+        let live: ReturnType<typeof run>
+        try {
+          live = lane.exec(sdkroot, { ...nestedTestEnv(), LOAD_BASE: 'http://127.0.0.1:' + server.port },
+            writer(sdkroot), probe)
+        }
+        finally {
+          server.stop()
+        }
+
+        ok(live.ok, lane.target + ': the live load probe failed:\n' + tail(live.out, 60))
+        const sent = Fs.readFileSync(server.log, 'utf8').split('\n').filter((line) => '' !== line)
+          .map((line) => JSON.parse(line)).map((r) => r.method + ' ' + r.url)
+        deepStrictEqual(sent, ['GET /cat/nope'], lane.target + ' probe output:\n' + tail(live.out))
+        const livefound = loadOutcomes(live.out)
+        deepStrictEqual({ dotdot: livefound.dotdot, dot: livefound.dot }, { dotdot: refused, dot: refused },
+          lane.target + ' probe output:\n' + tail(live.out))
       })
     }
 

@@ -657,7 +657,12 @@ inline std::string makeUrl(CtxPtr ctx) {
     std::string key = as_str(pair_key(item));
     Value val = pair_val(item);
     if (!is_nullish(val)) {
-      url = replace_all(url, "{" + key + "}", Struct::escurl(Value(Struct::stringify(val))));
+      // A whole . or .. is a dot segment, which moves the request to another route.
+      std::string text = Struct::stringify(val);
+      if ("." == text || ".." == text) {
+        throw ctx->makeError("url_param_invalid", "URL path parameter " + key + " cannot be \"" + text + "\".");
+      }
+      url = replace_all(url, "{" + key + "}", Struct::escurl(Value(text)));
       map_put(resmatch, key, val);
     }
   }
