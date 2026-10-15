@@ -611,19 +611,20 @@ Pass custom features via the \`extend\` option at construction time.
 
 `)
 
-    // 11c. Customization — the generator's whole story for "the output is
-    // not quite right": model-driven declarations, in-repo templates and
-    // components, regeneration that overwrites, and packages for custom
-    // targets and features. Every SDK repo carries its own generator, so this
-    // belongs in every README.
+    // 11c. Customization: model-driven declarations, in-repo templates and
+    // components, regeneration that overwrites, packages, and a map of which
+    // paths are the project's to edit. Every SDK repo carries its own
+    // generator, so this belongs in every README.
+    const mapTarget = sdkTargets[0] || docTargets[0]
+    const targetDir = mapTarget ? `\`<target>/\`, such as \`${mapTarget.name}/\`` : `\`<target>/\``
     Content(`## Customizing this SDK
 
 This repository contains its own generator (\`.sdk/\`), so the SDK is
 customizable without forking any upstream tool:
 
-- **The model** (\`.sdk/model/\`) declares everything this project owns:
-  package names, versions, active features, per-target settings. It is
-  written in [aontu](https://aontu.dev), a JSON-based
+- **The model** (\`.sdk/model/\`) is what generation reads: the API's
+  entities and operations, the targets, the features, and this project's
+  own settings. It is written in [aontu](https://aontu.dev), a JSON-based
   specification language designed for building ontologies: easy to edit
   by hand, and files unify rather than override, so small declarations
   compose into one model. Regeneration re-reads it every time.
@@ -633,13 +634,39 @@ customizable without forking any upstream tool:
 - **Regeneration overwrites.** Each run rewrites every generated file from
   the model, the templates and the components, so an edit made to
   generated output is lost. Say what this project needs in its own model
-  (\`.sdk/model/sdk.aontu\`), or extend a target with a component of its
+  (\`.sdk/model/project.aontu\`), or extend a target with a component of its
   own in \`.sdk/src/cmp/<target>/\`, registered with \`registerComponent\`,
   which \`voxgig-sdkgen doctor\` reports as an addition rather than drift.
 - **Custom features and entire custom targets** arrive through sdkgen
   packages (\`voxgig-sdkgen package add\`), on the same rails as the
   bundled languages, and \`voxgig-sdkgen doctor\` reports any drift from
   what a resync would write.
+
+### Project map
+
+| Path | What it holds | Edit it? |
+| --- | --- | --- |
+| \`.sdk/model/project.aontu\` | This project's own decisions: package names, versions, features, per-target settings and README wording in \`main.kit.text\` | Yes. The scaffold writes it once and never again. |
+| \`.sdk/model/guide/guide.aontu\` | How the spec's paths map onto entities and operations | Yes. The scaffold writes it once and never again. |
+| \`.sdk/model/\`, the rest | The API model built from the spec, and the target and feature definitions | Not by hand. Generation, \`target add\` and a new scaffold run rewrite it. |
+| \`.sdk/def/\` | The OpenAPI spec | Replace it when the API changes. Generation rebuilds the model from it. |
+| \`.sdk/src/cmp/<target>/\`, \`.sdk/tm/<target>/\` | The components and templates that generate each target | Only to add a component of your own. \`target add\` overwrites the copies. |
+| \`.sdk/test/\` | The shared test cases the generated tests run | No. |
+| ${targetDir} | One generated SDK per target, with its own tests | No. Generation overwrites it. |
+| \`README.md\`, \`LICENSE\`, \`Makefile\` and the other root files | The repository's generated files | No. Generation overwrites them. |
+
+### Common commands
+
+Run these from \`.sdk/\`:
+
+\`\`\`bash
+npm run generate               # regenerate every target from the model
+npm run add-target <target>    # add a target, or resync one after an sdkgen update
+npm run add-feature <feature>  # add a feature to every target
+npx voxgig-sdkgen doctor       # report where .sdk/ differs from what a resync writes
+\`\`\`
+
+In an SDK directory, \`make test\` runs that SDK's tests.
 
 How-to: [customize and propagate templates](https://github.com/voxgig/sdkgen/blob/main/docs/how-to/customize-and-propagate-templates.md).
 The full story: [voxgig.com/sdk/custom](https://voxgig.com/sdk/custom).
