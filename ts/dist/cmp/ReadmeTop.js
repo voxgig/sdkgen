@@ -122,16 +122,19 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
             return docsOrder.length + 2;
         return docsOrder.length;
     };
-    const sdkTargets = activeTargets
-        .filter((t) => t.name !== 'go-cli' && t.name !== 'go-mcp')
+    const ordered = activeTargets
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
-    const exampleTargets = sdkTargets.filter((t) => !isConsumer(t));
+    const isCliOrMcp = (t) => t.name === 'go-cli' || t.name === 'go-mcp';
+    const sdkTargets = ordered.filter((t) => !isConsumer(t));
+    // The CLI and the MCP server have surfaces of their own below.
+    const consumerTargets = ordered.filter((t) => isConsumer(t) && !isCliOrMcp(t));
+    const docTargets = ordered.filter((t) => !isCliOrMcp(t));
     const pkgTargets = activeTargets
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
     const langList = sdkTargets.map((t) => t.title).join(', ');
-    const leadTarget = pickLeadTarget(exampleTargets);
+    const leadTarget = pickLeadTarget(sdkTargets);
     (0, jostraca_1.File)({ name: 'README.md' }, () => {
         (0, jostraca_1.Content)(`# ${model.Name} SDK
 
@@ -179,6 +182,7 @@ ${tagline}
                 surfaces.push('a CLI with an interactive REPL');
             if (hasMcp)
                 surfaces.push('an MCP server for AI agents');
+            consumerTargets.forEach((t) => surfaces.push(`the ${t.title} package`));
             const surfaceList = surfaces.length > 1
                 ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
                 : surfaces[0];
@@ -292,7 +296,7 @@ rather than reasoning about raw HTTP routes and query parameters.
 
 `);
         }
-        if (exampleTargets.length > 0) {
+        if (sdkTargets.length > 0) {
             (0, jostraca_1.Content)(`## Offline unit testing
 
 Every SDK ships a built-in **test mode** that swaps the HTTP transport for
@@ -300,7 +304,7 @@ an in-memory mock, so your unit tests run fully offline — no server, no
 network, and no credentials:
 
 `);
-            exampleTargets.forEach((tgt) => {
+            sdkTargets.forEach((tgt) => {
                 const Test = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopTest');
                 if (Test) {
                     (0, jostraca_1.Content)(`### ${tgt.title}
@@ -365,7 +369,7 @@ ${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README
 
 `);
         }
-        if (sdkTargets.length > 0 || hasCli || hasMcp) {
+        if (sdkTargets.length > 0 || hasCli || hasMcp || consumerTargets.length > 0) {
             (0, jostraca_1.Content)(`## Surfaces
 
 | Surface | Path |
@@ -384,6 +388,10 @@ ${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README
                 (0, jostraca_1.Content)(`| **MCP server** | \`go-mcp/\` |
 `);
             }
+            consumerTargets.forEach((t) => {
+                (0, jostraca_1.Content)(`| **${t.title}** | \`${t.name}/\` |
+`);
+            });
             (0, jostraca_1.Content)(`
 `);
         }
@@ -458,7 +466,7 @@ own list above for exactly which it supports.
 
 `);
         }
-        const otherTargets = exampleTargets.filter((t) => leadTarget && t.name !== leadTarget.name);
+        const otherTargets = sdkTargets.filter((t) => leadTarget && t.name !== leadTarget.name);
         if (otherTargets.length > 0) {
             (0, jostraca_1.Content)(`## Quickstart in other languages
 
@@ -493,7 +501,7 @@ Both accept a map with \`path\`, \`method\`, \`params\`, \`query\`,
 When the entity interface does not cover an endpoint, use \`direct\`:
 
 `);
-        exampleTargets.forEach((tgt) => {
+        sdkTargets.forEach((tgt) => {
             const Howto = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopHowto');
             if (Howto) {
                 Howto['ReadmeTopHowto']({ target: tgt });
@@ -567,11 +575,11 @@ How-to: [customize and propagate templates](https://github.com/voxgig/sdkgen/blo
 The full story: [voxgig.com/sdk/custom](https://voxgig.com/sdk/custom).
 
 `);
-        if (sdkTargets.length > 0) {
+        if (docTargets.length > 0) {
             (0, jostraca_1.Content)(`## Per-language documentation
 
 `);
-            sdkTargets.forEach((tgt) => {
+            docTargets.forEach((tgt) => {
                 (0, jostraca_1.Content)(`- [${tgt.title}](${tgt.name}/README.md)
 `);
             });

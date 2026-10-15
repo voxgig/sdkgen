@@ -704,6 +704,22 @@ describe('generate', () => {
   })
 
 
+  test('the root readme names a consumer target as a surface of its own, never an SDK', async () => {
+    const readme = (await generate(['py', 'py-data', 'rb']))['README.md']
+    const tagline = readme.split('\n').find((line: string) => /all generated from one OpenAPI spec/.test(line))
+    ok(null != tagline && tagline.startsWith('> Python, Ruby SDKs, and the Python Data package — '),
+      'the tagline: ' + tagline)
+
+    const surfaces = topSections(readme)['Surfaces'].split('\n').filter((line: string) => line.startsWith('| **'))
+    deepStrictEqual(surfaces, ['| **SDK** (Python, Ruby) | `py/` `rb/` |', '| **Python Data** | `py-data/` |'])
+
+    const alone = topSections((await generate(['py', 'py-data']))['README.md'])
+    ok(!/Python Data SDK|SDK\*\* \([^)]*Python Data/.test(Object.values(alone).join('\n')),
+      'a root readme calls py-data an SDK')
+    ok(alone['Surfaces'].includes('| **Python Data** | `py-data/` |'), 'py-data has no surface row of its own')
+  })
+
+
   test('a full SDK generates on the data path when repr is pinned', async () => {
     const out = await generate(['go'], undefined, "main: kit: config: repr: 'data'\n" + 'main: kit: config: headers: ' + JSON.stringify({ 'X-Contract': '\ufeffdescription\nline' }))
 

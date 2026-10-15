@@ -165,19 +165,25 @@ const ReadmeTop = cmp(function ReadmeTop(props: any) {
     return docsOrder.length
   }
 
-  const sdkTargets = activeTargets
-    .filter((t: any) => t.name !== 'go-cli' && t.name !== 'go-mcp')
+  const ordered = activeTargets
     .slice()
     .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
-  const exampleTargets = sdkTargets.filter((t: any) => !isConsumer(t))
+  const isCliOrMcp = (t: any) => t.name === 'go-cli' || t.name === 'go-mcp'
+
+  const sdkTargets = ordered.filter((t: any) => !isConsumer(t))
+
+  // The CLI and the MCP server have surfaces of their own below.
+  const consumerTargets = ordered.filter((t: any) => isConsumer(t) && !isCliOrMcp(t))
+
+  const docTargets = ordered.filter((t: any) => !isCliOrMcp(t))
 
   const pkgTargets = activeTargets
     .slice()
     .sort((a: any, b: any) => orderOf(a.name) - orderOf(b.name))
 
   const langList = sdkTargets.map((t: any) => t.title).join(', ')
-  const leadTarget = pickLeadTarget(exampleTargets)
+  const leadTarget = pickLeadTarget(sdkTargets)
 
   File({ name: 'README.md' }, () => {
 
@@ -227,6 +233,7 @@ ${tagline}
       surfaces.push(`${langList} SDKs`)
       if (hasCli) surfaces.push('a CLI with an interactive REPL')
       if (hasMcp) surfaces.push('an MCP server for AI agents')
+      consumerTargets.forEach((t: any) => surfaces.push(`the ${t.title} package`))
       const surfaceList = surfaces.length > 1
         ? surfaces.slice(0, -1).join(', ') + ', and ' + surfaces[surfaces.length - 1]
         : surfaces[0]
@@ -345,7 +352,7 @@ rather than reasoning about raw HTTP routes and query parameters.
 `)
     }
 
-    if (exampleTargets.length > 0) {
+    if (sdkTargets.length > 0) {
       Content(`## Offline unit testing
 
 Every SDK ships a built-in **test mode** that swaps the HTTP transport for
@@ -353,7 +360,7 @@ an in-memory mock, so your unit tests run fully offline — no server, no
 network, and no credentials:
 
 `)
-      exampleTargets.forEach((tgt: any) => {
+      sdkTargets.forEach((tgt: any) => {
         const Test =
           optionalComponent(ctx$, tgt, 'ReadmeTopTest')
         if (Test) {
@@ -420,7 +427,7 @@ ${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README
 `)
     }
 
-    if (sdkTargets.length > 0 || hasCli || hasMcp) {
+    if (sdkTargets.length > 0 || hasCli || hasMcp || consumerTargets.length > 0) {
       Content(`## Surfaces
 
 | Surface | Path |
@@ -439,6 +446,10 @@ ${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README
         Content(`| **MCP server** | \`go-mcp/\` |
 `)
       }
+      consumerTargets.forEach((t: any) => {
+        Content(`| **${t.title}** | \`${t.name}/\` |
+`)
+      })
       Content(`
 `)
     }
@@ -517,7 +528,7 @@ own list above for exactly which it supports.
 `)
     }
 
-    const otherTargets = exampleTargets.filter((t: any) => leadTarget && t.name !== leadTarget.name)
+    const otherTargets = sdkTargets.filter((t: any) => leadTarget && t.name !== leadTarget.name)
     if (otherTargets.length > 0) {
       Content(`## Quickstart in other languages
 
@@ -556,7 +567,7 @@ When the entity interface does not cover an endpoint, use \`direct\`:
 
 `)
 
-    exampleTargets.forEach((tgt: any) => {
+    sdkTargets.forEach((tgt: any) => {
       const Howto =
         optionalComponent(ctx$, tgt, 'ReadmeTopHowto')
       if (Howto) {
@@ -635,11 +646,11 @@ The full story: [voxgig.com/sdk/custom](https://voxgig.com/sdk/custom).
 
 `)
 
-    if (sdkTargets.length > 0) {
+    if (docTargets.length > 0) {
       Content(`## Per-language documentation
 
 `)
-      sdkTargets.forEach((tgt: any) => {
+      docTargets.forEach((tgt: any) => {
         Content(`- [${tgt.title}](${tgt.name}/README.md)
 `)
       })
