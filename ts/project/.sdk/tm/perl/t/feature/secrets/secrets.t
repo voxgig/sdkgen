@@ -209,7 +209,15 @@ sub listable_op {
   my ($sdk) = @_;
   my $entities = ProjectNameHelpers::to_map(
     ProjectNameHelpers::gp($sdk->options_map, 'entity')) || {};
+  my $config = ProjectNameConfig::make_config();
   for my $name (sort keys %$entities) {
+    # A list called with no match can take only a route naming no path
+    # parameter.
+    my $points = ProjectNameHelpers::gpath($config, "entity.$name.op.list.points");
+    next unless 'ARRAY' eq ref($points) && grep {
+      my $ps = 'HASH' eq ref($_) ? ProjectNameHelpers::gpath($_, 'args.params') : undef;
+      'ARRAY' ne ref($ps) || 0 == scalar(@$ps)
+    } @$points;
     my $accessor = ucfirst($name);
     next unless $sdk->can($accessor);
     my $ent = eval { $sdk->$accessor() };

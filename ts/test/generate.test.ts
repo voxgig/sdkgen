@@ -3149,6 +3149,23 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // zig refuses an over-long package name, which failed a real SDK's build.
+  test('a zig package name stays within the 32 bytes zig allows', async () => {
+    const NAME = /^\s*\.name = \.([a-z0-9_]+),$/m
+
+    const long = findFile(await generate(['zig'], 'a-rather-long-merchant-services'), 'zig/build.zig.zon')
+    const name = long?.match(NAME)?.[1]
+    ok(null != name, 'build.zig.zon declares no .name')
+    ok(name!.length <= 32, 'the zig package name is ' + name!.length + ' bytes: ' + name)
+    ok(name!.startsWith('a_rather_long_merchant_'), 'the long name lost its head: ' + name)
+    ok(name !== findFile(await generate(['zig'], 'a-rather-long-merchant-servicez'),
+      'zig/build.zig.zon')?.match(NAME)?.[1], 'two long names that differ only in the tail collide')
+
+    const short = findFile(await generate(['zig']), 'zig/build.zig.zon')
+    strictEqual(short?.match(NAME)?.[1], 'demo_sdk', 'a name within the limit was changed')
+  })
+
+
   test('go.mod carries the modelled go version', async () => {
     const stock = findFile(await generate(['go']), 'go/go.mod')
     ok(null != stock, 'no go.mod generated')
