@@ -2,7 +2,7 @@
 import { test, describe } from 'node:test'
 import { ok, strictEqual, deepStrictEqual } from 'node:assert'
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import Path from 'node:path'
 
 import { transform } from 'sucrase'
@@ -223,4 +223,60 @@ describe('error contract', () => {
     strictEqual(err.status, -1)
     strictEqual(err.notFound, false)
   })
+})
+
+
+// Each target's error answers the not-found question from its own status, in
+// that language's idiom. The probe lane in generatedcompile.test.ts runs it
+// on a real 404 and on an unsent request.
+describe('not-found predicate', () => {
+
+  const SDK = Path.resolve(TM, '..')
+
+  const PREDICATE: Record<string, [string, string]> = {
+    c: ['tm/c/core/error.c',
+      'bool pn_error_not_found(const PNError* e) { return e && 404 == e->status;'],
+    clojure: ['tm/clojure/src/sdk/core.clj', '(defn not-found? [e] (= 404 (err-status e)))'],
+    cpp: ['tm/cpp/core/types.hpp', 'bool notFound() const { return 404 == status; }'],
+    csharp: ['src/cmp/csharp/fragment/SdkError.fragment.cs', 'public bool NotFound => 404 == Status;'],
+    elixir: ['tm/elixir/lib/projectname/error.ex',
+      'def not_found?(%__MODULE__{} = e), do: 404 == status(e)'],
+    go: ['tm/go/core/error.go', 'func (e *ProjectNameError) NotFound() bool { return 404 == e.Status'],
+    java: ['src/cmp/java/fragment/SdkError.fragment.java',
+      'public boolean notFound() { return 404 == this.status;'],
+    js: ['src/cmp/js/fragment/SdkError.fragment.js', 'get notFound() { return 404 === this.status }'],
+    kotlin: ['src/cmp/kotlin/fragment/SdkError.fragment.kt',
+      'val notFound: Boolean get() = 404 == this.status'],
+    lua: ['tm/lua/core/error.lua', 'function ProjectNameError:not_found() return 404 == self.status'],
+    ocaml: ['src/cmp/ocaml/SdkError_ocaml.ts', 'let not_found (e : t) : bool = 404 = status e'],
+    perl: ['tm/perl/core/error.pm', 'sub not_found { return 404 == ($_[0]->{status} // -1)'],
+    php: ['tm/php/core/Error.php',
+      'public function notFound(): bool { return 404 === $this->status;'],
+    py: ['tm/py/pkg/core/error.py', 'def not_found(self): return 404 == self.status'],
+    rb: ['tm/rb/core/error.rb', 'def not_found? 404 == @status'],
+    rust: ['src/cmp/rust/fragment/SdkError.fragment.rs',
+      'pub fn not_found(&self) -> bool { 404 == self.status'],
+    scala: ['tm/scala/core/SdkError.scala', 'def notFound: Boolean = 404 == this.status'],
+    swift: ['src/cmp/swift/fragment/SdkError.fragment.swift',
+      'public var notFound: Bool { 404 == status }'],
+    ts: ['src/cmp/ts/fragment/SdkError.fragment.ts',
+      'get notFound(): boolean { return 404 === this.status }'],
+    zig: ['tm/zig/core/error.zig',
+      'pub fn not_found(self: *const ProjectNameError) bool { return 404 == self.status;'],
+  }
+
+  const flat = (text: string) => text.replace(/\s+/g, ' ')
+
+  test('every SDK target defines it', () => {
+    const consumers = ['go-cli', 'go-mcp', 'py-data']
+    const targets = readdirSync(TM).filter((name) => !consumers.includes(name)).sort()
+    deepStrictEqual(Object.keys(PREDICATE).sort(), targets)
+  })
+
+  for (const [target, [file, source]] of Object.entries(PREDICATE)) {
+    test(target + ': 404 == status', () => {
+      ok(flat(readFileSync(Path.join(SDK, file), 'utf8')).includes(flat(source)),
+        target + ': ' + file + ' does not define the predicate as ' + source)
+    })
+  }
 })

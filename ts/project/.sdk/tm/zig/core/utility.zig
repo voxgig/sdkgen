@@ -540,6 +540,7 @@ pub fn make_error_util(ctx: *Context) E!Value {
     sdk_err.code = clean_str_util(ctx, the_err.code);
     sdk_err.result = clean_util(ctx, result.to_value());
     sdk_err.spec = clean_util(ctx, spec_val);
+    sdk_err.status = result.status;
 
     c.err = sdk_err;
 

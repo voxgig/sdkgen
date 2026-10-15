@@ -42,6 +42,7 @@ import {
   NONJSON_CASES, NONJSON_PROBES, NONJSON_SERVER, nonjsonFailures, nonjsonTsv,
 } from './nonjsonprobes'
 import { HOOK_KINDS, HOOK_PROBES, hookCounts } from './hookprobes'
+import { LOAD_PROBES, loadOutcomes } from './loadprobes'
 
 
 // A list requiring a Lua keyword and `__proto__`, which an object literal must compute.
@@ -8060,6 +8061,29 @@ describe('probes driven through a generated SDK', () => {
         ok(ran.ok, lane.target + ': the hook probe failed:\n' + tail(ran.out, 60))
         deepStrictEqual(hookCounts(ran.out), Object.fromEntries(HOOK_KINDS.map((k) => [k, 1])),
           lane.target + ' probe output:\n' + tail(ran.out))
+      })
+    }
+
+    if (null == lane.label) {
+      test(lane.target + ': a failed load\'s error says whether it was a 404', async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+        ok(null != LOAD_PROBES[probeKey], lane.target + ': no load probe')
+
+        const sdkroot = await sdkFor(lane.target)
+        const ran = lane.exec(sdkroot, nestedTestEnv(), writer(sdkroot),
+          { name: 'load', source: LOAD_PROBES })
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, lane.target + ': the load probe failed:\n' + tail(ran.out, 60))
+        const found = loadOutcomes(ran.out)
+        deepStrictEqual({ missing: found.missing, unsent: found.unsent }, {
+          missing: { code: 'request_status', status: 404, notfound: 'true' },
+          unsent: { code: 'url_param_missing', status: -1, notfound: 'false' },
+        }, lane.target + ' probe output:\n' + tail(ran.out))
       })
     }
 

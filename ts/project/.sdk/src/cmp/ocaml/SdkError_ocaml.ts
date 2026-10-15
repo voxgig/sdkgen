@@ -28,6 +28,14 @@ exception E = Sdk_error_exc
 
 let code (e : t) : string = e.err_code
 let message (e : t) : string = e.err_msg
+
+(* The HTTP status make_error recorded on the result, -1 without a response. *)
+let status (e : t) : int =
+  match Sdk_helpers.getp e.err_result "status" with
+  | Voxgig_struct.Num n -> int_of_float n
+  | _ -> -1
+
+let not_found (e : t) : bool = 404 = status e
 `)
   })
 })

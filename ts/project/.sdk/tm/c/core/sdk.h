@@ -52,9 +52,11 @@ typedef struct PNError {
   char* msg;   // human message
   voxgig_value* result; // cleaned snapshot (NULL until makeError)
   voxgig_value* spec;   // cleaned snapshot (NULL until makeError)
+  int status;           // HTTP status, -1 when there was no response
 } PNError;
 
 PNError* pn_error_new(const char* code, const char* msg);
+bool pn_error_not_found(const PNError* e);
 // The error as a record and as its default print: the message and the
 // cleaned snapshots, nothing the pipeline holds live. Malloc'd string.
 voxgig_value* pn_error_to_value(PNError* e);

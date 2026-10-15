@@ -153,7 +153,7 @@
   ([code msg] (make-error-obj code msg nil))
   ([code msg ctx]
    (with-meta {:sdk-error true :sdk SDK-NAME :code (or code "") :msg (or msg "")
-               :result nil :spec nil}
+               :result nil :spec nil :status -1}
      {:ctx ctx})))
 
 (defn sdk-error? [x] (and (map? x) (true? (:sdk-error x))))
@@ -176,6 +176,9 @@
       (if (and (some? m) (not= "" (str m))) (str m) "unknown error"))
     :else (str e)))
 (defn err-code [e] (when (sdk-error? e) (:code e)))
+;; The HTTP status, -1 when there was no response.
+(defn err-status [e] (if (and (sdk-error? e) (number? (:status e))) (long (:status e)) -1))
+(defn not-found? [e] (= 404 (err-status e)))
 (defn sdk-throw [e] (throw (ex-info (err-msg e) {::sdk-error (if (sdk-error? e) e (make-error-obj "" (str e)))})))
 (defn ex->sdk [t] (::sdk-error (ex-data t)))
 
@@ -1574,7 +1577,8 @@
       (let [code (when (sdk-error? err) (ucall ctx :clean (:code err)))
             sdk-err (assoc (make-error-obj code msg ctx)
                            :result (ucall ctx :clean result)
-                           :spec (ucall ctx :clean spec))]
+                           :spec (ucall ctx :clean spec)
+                           :status (to-int (oget result :status)))]
         (oset! (oget ctx :ctrl) :err sdk-err)
         ;; Fire PreUnexpected so observability features (metrics, telemetry,
         ;; audit, debug) close/record error paths that never reach PreDone

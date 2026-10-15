@@ -55,6 +55,8 @@ sub msg    { $_[0]->{msg} }
 sub error  { $_[0]->{msg} }
 sub status { $_[0]->{status} }
 
+sub not_found { return 404 == ($_[0]->{status} // -1) ? 1 : 0 }
+
 # What make_error attached is already cleaned; the context is not part of
 # the record.
 sub to_h {

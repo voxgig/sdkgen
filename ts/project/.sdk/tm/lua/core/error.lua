@@ -18,6 +18,7 @@ function ProjectNameError.new(code, msg, ctx)
   self.msg = msg or ""
   self.result = nil
   self.spec = nil
+  self.status = -1
   CONTEXT[self] = ctx
   return self
 end
@@ -30,6 +31,11 @@ end
 
 function ProjectNameError:error()
   return self.msg
+end
+
+
+function ProjectNameError:not_found()
+  return 404 == self.status
 end
 
 

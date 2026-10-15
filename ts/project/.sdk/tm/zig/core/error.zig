@@ -16,6 +16,8 @@ pub const ProjectNameError = struct {
     // is not on the error at all, so what prints is what makeError cleaned.
     result: Value = .{ .null = {} },
     spec: Value = .{ .null = {} },
+    // The HTTP status, -1 when there was no response.
+    status: i64 = -1,
 
     // Heap-allocate a fresh error on the SDK arena (so it can be pointed at
     // from ctx.pending_err / ctrl.err and outlive the call frame).
@@ -25,11 +27,16 @@ pub const ProjectNameError = struct {
         return e;
     }
 
+    pub fn not_found(self: *const ProjectNameError) bool {
+        return 404 == self.status;
+    }
+
     pub fn to_json(self: *const ProjectNameError) []const u8 {
         const out = Value.makeMap(mem.a()) catch return "{}";
         out.object.put("sdk", .{ .string = self.sdk }) catch {};
         out.object.put("code", .{ .string = self.code }) catch {};
         out.object.put("msg", .{ .string = self.msg }) catch {};
+        out.object.put("status", .{ .integer = self.status }) catch {};
         out.object.put("result", self.result) catch {};
         out.object.put("spec", self.spec) catch {};
         return vs.jsonifyCompact(mem.a(), out) catch "{}";

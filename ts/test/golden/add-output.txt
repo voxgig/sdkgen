@@ -50,13 +50,13 @@ tm/c/Makefile ab2d345ce24f
 tm/c/VERSION e6635045e1d2
 tm/c/core/context.c 3d02628a07f0
 tm/c/core/control.c acb5a3790b08
-tm/c/core/error.c 196f062bc190
+tm/c/core/error.c af8a13c8bcce
 tm/c/core/helpers.c 8aa4c5c9510e
 tm/c/core/operation.c fb16ed309ed9
 tm/c/core/point.c 1539404e1bcc
 tm/c/core/response.c 735acc3c1292
 tm/c/core/result.c 60bde846d061
-tm/c/core/sdk.h 2d7296b95e10
+tm/c/core/sdk.h f9725128aedf
 tm/c/core/spec.c cb3f60193af1
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
@@ -87,7 +87,7 @@ tm/c/utility/fetcher.c 675b6ce6a4c2
 tm/c/utility/graphql.c a21a86e03521
 tm/c/utility/jsonparse.c cffd3f2ac8b1
 tm/c/utility/make_context.c 615156796cbb
-tm/c/utility/make_error.c 8b7d2f39fd5c
+tm/c/utility/make_error.c 024d4ebdb064
 tm/c/utility/make_fetch_def.c 119fd99fde45
 tm/c/utility/make_options.c e2a84ad1253c
 tm/c/utility/make_point.c 5b0ea7229eea
@@ -226,7 +226,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 5978c081353b
-tm/clojure/src/sdk/core.clj e481b981a4dc
+tm/clojure/src/sdk/core.clj 42f539211a67
 tm/clojure/src/sdk/features.clj bf69cbc11b36
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
@@ -559,7 +559,7 @@ tm/go/Makefile 72a251a943a5
 tm/go/VERSION e6635045e1d2
 tm/go/core/context.go 2927b6340012
 tm/go/core/control.go e5f055beb2f1
-tm/go/core/error.go 7e6170903ed4
+tm/go/core/error.go e2bc537a8ccc
 tm/go/core/helpers.go 11cc9f557d10
 tm/go/core/operation.go aef48c3c0f8c
 tm/go/core/response.go b140b7dcb32c
@@ -596,7 +596,7 @@ tm/go/utility/feature_init.go e2d9a7381261
 tm/go/utility/fetcher.go 28aed7c9ffd4
 tm/go/utility/graphql.go f0e6b8fef4a8
 tm/go/utility/make_context.go c30482d43cbb
-tm/go/utility/make_error.go b10a3c94eeae
+tm/go/utility/make_error.go 413cfa42a432
 tm/go/utility/make_fetch_def.go 9ab2b29a9b00
 tm/go/utility/make_options.go bed3408a4cea
 tm/go/utility/make_point.go 55a97ce61d34
@@ -1037,7 +1037,7 @@ tm/lua/LICENSE 52acd47c245f
 tm/lua/Makefile 2687d4bd2f37
 tm/lua/core/context.lua 461608869e61
 tm/lua/core/control.lua bcd4e848f7f2
-tm/lua/core/error.lua 173328848578
+tm/lua/core/error.lua be896a848984
 tm/lua/core/helpers.lua 161160598358
 tm/lua/core/operation.lua dc1ee0de0695
 tm/lua/core/response.lua 34910f9e35fb
@@ -1073,7 +1073,7 @@ tm/lua/utility/feature_init.lua 97c94b7fa38f
 tm/lua/utility/fetcher.lua ec6dd0e3e083
 tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
-tm/lua/utility/make_error.lua 0c41f2e1fb8e
+tm/lua/utility/make_error.lua e47317140bb3
 tm/lua/utility/make_fetch_def.lua 5c1ffc7e67de
 tm/lua/utility/make_options.lua 6e4b5c99228b
 tm/lua/utility/make_point.lua 921bedf47a07
@@ -1128,7 +1128,7 @@ src/cmp/ocaml/ReadmeTopHowto_ocaml.ts f283dca429a5
 src/cmp/ocaml/ReadmeTopQuick_ocaml.ts 2fd9002bc592
 src/cmp/ocaml/ReadmeTopTest_ocaml.ts ecfa05f4ca1d
 src/cmp/ocaml/Schema_ocaml.ts b079f590abc8
-src/cmp/ocaml/SdkError_ocaml.ts fa425e8da4bd
+src/cmp/ocaml/SdkError_ocaml.ts b810d6ced5f3
 src/cmp/ocaml/TestClean_ocaml.ts e42cb36cb87a
 src/cmp/ocaml/TestDirect_ocaml.ts 216a29066541
 src/cmp/ocaml/TestEntity_ocaml.ts f3f71fdefa4f
@@ -1208,7 +1208,7 @@ tm/perl/LICENSE 52acd47c245f
 tm/perl/Makefile fa0c8f05682c
 tm/perl/core/context.pm 44f4c0eaa3f0
 tm/perl/core/control.pm cb6185bbc19f
-tm/perl/core/error.pm 1fee6e6ebe52
+tm/perl/core/error.pm d1bec69c8ee7
 tm/perl/core/helpers.pm 8f2c49fcbb46
 tm/perl/core/operation.pm c15d6df50079
 tm/perl/core/response.pm 64d699bb70d4
@@ -1316,7 +1316,7 @@ tm/php/Makefile 1df8eadc6f78
 tm/php/VERSION e6635045e1d2
 tm/php/core/Context.php 1d48cfbe8e57
 tm/php/core/Control.php 6cb0e03bea15
-tm/php/core/Error.php 452c398a5739
+tm/php/core/Error.php d3ddfe0c0238
 tm/php/core/Helpers.php 75cc7fb2f06c
 tm/php/core/Operation.php dde7df1447a3
 tm/php/core/Response.php d3755dc0a931
@@ -1556,7 +1556,7 @@ tm/rb/LICENSE 52acd47c245f
 tm/rb/Makefile 89567ce533f0
 tm/rb/core/context.rb 0d69497d92a7
 tm/rb/core/control.rb 14d11fa63c1f
-tm/rb/core/error.rb 460231f6e63c
+tm/rb/core/error.rb cef8d53c8115
 tm/rb/core/helpers.rb 2c5a92707620
 tm/rb/core/operation.rb 2057392541cd
 tm/rb/core/response.rb 7b1a4d2f8cb3
@@ -2186,7 +2186,7 @@ tm/zig/Makefile 623289c8876a
 tm/zig/VERSION e6635045e1d2
 tm/zig/core/context.zig b980c8f20fda
 tm/zig/core/control.zig 6b36b44b2ee7
-tm/zig/core/error.zig 43c5dab5a7cd
+tm/zig/core/error.zig 4fd51e9b0765
 tm/zig/core/helpers.zig ccf660b94869
 tm/zig/core/mem.zig e89c73647973
 tm/zig/core/operation.zig cf42eb51f4ea
@@ -2195,7 +2195,7 @@ tm/zig/core/response.zig bc91112131b7
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 25a014ab27fa
 tm/zig/core/types.zig 3a8f6e7a08f9
-tm/zig/core/utility.zig 71214bd5287b
+tm/zig/core/utility.zig 5b1117d654c8
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig d7352c80c34e

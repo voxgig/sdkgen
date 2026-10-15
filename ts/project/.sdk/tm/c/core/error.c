@@ -20,17 +20,23 @@ PNError* pn_error_new(const char* code, const char* msg) {
   e->msg = dup_str(msg);
   e->result = NULL;
   e->spec = NULL;
+  e->status = -1;
   return e;
+}
+
+bool pn_error_not_found(const PNError* e) {
+  return e && 404 == e->status;
 }
 
 // What make_error attached is already cleaned; the error carries no
 // context.
 voxgig_value* pn_error_to_value(PNError* e) {
   if (!e) return voxgig_new_undef();
-  return cmap(5,
+  return cmap(6,
     "sdk", v_str(e->sdk),
     "code", v_str(e->code),
     "message", v_str(e->msg),
+    "status", v_num((double)e->status),
     "result", e->result ? v_share(e->result) : voxgig_new_undef(),
     "spec", e->spec ? v_share(e->spec) : voxgig_new_undef());
 }
