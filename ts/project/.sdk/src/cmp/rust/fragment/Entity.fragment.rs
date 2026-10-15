@@ -276,11 +276,7 @@ impl Entity for EntyClass {
     fn data(&self, args: Option<&Value>) -> Value {
         if let Some(arg) = args {
             if !arg.is_noval() && !arg.is_null() {
-                let cloned = to_map(&vs::clone(arg));
-                *self.data.borrow_mut() = match cloned {
-                    Value::Map(m) => Value::Map(m),
-                    _ => Value::empty_map(),
-                };
+                *self.data.borrow_mut() = vs::clone(arg);
                 self.utility.feature_hook(&self.ent_ctx(), "SetData");
             }
         }

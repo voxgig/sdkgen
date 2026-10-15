@@ -30,9 +30,7 @@ fn list(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, 
     if let Value::List(list) = &out {
         for entry in list.borrow().iter() {
             let ent = EntyClass::new(&self.client, vs::clone(&self.entopts));
-            if let Value::Map(_) = entry {
-                ent.data(Some(entry));
-            }
+            ent.data(Some(entry));
             items.push(ent);
         }
     }

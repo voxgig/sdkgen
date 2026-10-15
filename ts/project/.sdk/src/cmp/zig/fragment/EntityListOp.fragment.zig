@@ -20,9 +20,7 @@ pub fn list(self: *EntyClass, reqmatch: Value, ctrl: Value) EntListResult {
     if (out == .array) {
         for (out.array.data.items) |entry| {
             const ent = EntyClass.new(self.client, h.clone(self.entopts));
-            if (entry == .object) {
-                _ = ent.data_impl(entry);
-            }
+            _ = ent.data_impl(entry);
             items.append(h.A(), ent) catch {};
         }
     }

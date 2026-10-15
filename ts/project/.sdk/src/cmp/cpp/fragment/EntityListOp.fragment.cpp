@@ -24,9 +24,7 @@
     if (out.is_list()) {
       for (const auto& entry : *out.as_list()) {
         SdkEntityPtr ent = std::static_pointer_cast<SdkEntity>(this->make());
-        if (entry.is_map()) {
-          ent->data(entry);
-        }
+        ent->data(entry);
         items.push_back(ent);
       }
     }

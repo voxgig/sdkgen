@@ -649,7 +649,7 @@ object MakeResult {
           while (it.hasNext) {
             val entry = it.next()
             val ent = entity.make()
-            entry match { case m: JMap[_, _] => ent.data(m); case _ => }
+            ent.data(entry)
             entities.add(ent)
           }
           result.resdata = entities

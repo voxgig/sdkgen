@@ -95,7 +95,7 @@ let rec make (client : sdk_client) (entopts_in : value) : entity_obj =
   utility.u_feature_hook entctx "PostConstructEntity";
   ent.e_data_set <- (fun args ->
       if not (is_nullish args) then begin
-        ent.e_data <- (match to_map (clone args) with Map _ as m -> m | _ -> empty_map ());
+        ent.e_data <- clone args;
         utility.u_feature_hook entctx "SetData"
       end);
   ent.e_data_get <- (fun () -> utility.u_feature_hook entctx "GetData"; clone ent.e_data);

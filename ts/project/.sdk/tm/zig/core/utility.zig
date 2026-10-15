@@ -1397,7 +1397,7 @@ pub fn make_result_util(ctx: *Context) E!*SdkResult {
                 const entities = h.olist();
                 for (resdata.array.data.items) |entry| {
                     const e = ent.makeEnt();
-                    const out = if (entry == .object) e.data(entry) else e.data(null);
+                    const out = e.data(entry);
                     entities.array.append(out) catch {};
                 }
                 result.resdata = entities;

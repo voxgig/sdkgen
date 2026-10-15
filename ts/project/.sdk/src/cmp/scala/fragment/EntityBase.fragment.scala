@@ -14,7 +14,7 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
   protected var client: SdkClient = client0
   protected var utility: Utility = null
   protected var entopts: JMap[String, Object] = null
-  protected var dataState: JMap[String, Object] = new LinkedHashMap[String, Object]()
+  protected var dataState: Object = new LinkedHashMap[String, Object]()
   protected var matchState: JMap[String, Object] = new LinkedHashMap[String, Object]()
   protected var entctx: Context = null
 
@@ -40,8 +40,9 @@ abstract class EntityBase(name0: String, client0: SdkClient, entopts0: JMap[Stri
 
   override def data(args: Object*): Object = {
     if (args.length > 0 && args(0) != null) {
-      val d = Helpers.toMapAny(Struct.clone(args(0)))
-      this.dataState = if (d == null) new LinkedHashMap[String, Object]() else d
+      val cloned = Struct.clone(args(0))
+      val d = Helpers.toMapAny(cloned)
+      this.dataState = if (d == null) cloned else d
       this.utility.featureHook(this.entctx, "SetData")
     }
     this.utility.featureHook(this.entctx, "GetData")

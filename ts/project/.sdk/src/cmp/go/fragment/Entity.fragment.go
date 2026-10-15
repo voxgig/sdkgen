@@ -14,7 +14,7 @@ type EntyClass struct {
 	client  *core.ProjectNameSDK
 	utility *core.Utility
 	entopts map[string]any
-	data    map[string]any
+	data    any
 	match   map[string]any
 	entctx  *core.Context
 	deleted bool
@@ -64,8 +64,12 @@ func (e *EntyClass) GoString() string {
 }
 
 func (e *EntyClass) MarshalJSON() ([]byte, error) {
+	data, ok := e.data.(map[string]any)
+	if !ok {
+		return json.Marshal(e.data)
+	}
 	out := map[string]any{}
-	for k, v := range e.data {
+	for k, v := range data {
 		out[k] = v
 	}
 	out["voxgig$entity"] = "EntityName"
@@ -93,10 +97,7 @@ func (e *EntyClass) Make() core.Entity {
 
 func (e *EntyClass) Data(args ...any) any {
 	if len(args) > 0 && args[0] != nil {
-		e.data = core.ToMapAny(vs.Clone(args[0]))
-		if e.data == nil {
-			e.data = map[string]any{}
-		}
+		e.data = vs.Clone(args[0])
 		e.utility.FeatureHook(e.entctx, "SetData")
 	}
 

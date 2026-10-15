@@ -242,8 +242,7 @@ static Entity* entyvar_make(Entity* e) {
 static voxgig_value* entyvar_data(Entity* e, voxgig_value* args) {
   entyvar_entity* self = (entyvar_entity*)e;
   if (args && !v_is_noval(args) && !v_is_null(args)) {
-    voxgig_value* cloned = to_map(voxgig_clone(args));
-    self->data = voxgig_is_map(cloned) ? cloned : voxgig_new_map();
+    self->data = voxgig_clone(args);
     feature_hook_util(entyvar_ent_ctx(self), "SetData");
   }
   feature_hook_util(entyvar_ent_ctx(self), "GetData");

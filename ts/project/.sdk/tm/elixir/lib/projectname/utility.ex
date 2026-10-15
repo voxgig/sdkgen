@@ -1348,7 +1348,7 @@ defmodule ProjectName.Utility do
                   Enum.map(0..(n - 1), fn i ->
                     entry = S.getelem(resdata, i)
                     ent = apply(mod, :make, [entity])
-                    if S.ismap(entry), do: apply(mod, :data_set, [ent, entry])
+                    apply(mod, :data_set, [ent, entry])
                     ent
                   end)
                 end

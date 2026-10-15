@@ -89,8 +89,8 @@ sub deleted {
 
 sub data_set {
   my ($self, $args) = @_;
-  if ($args) {
-    $self->{_data} = ProjectNameHelpers::to_map(Voxgig::Struct::clone($args)) || {};
+  if (defined $args) {
+    $self->{_data} = Voxgig::Struct::clone($args);
     $self->{_utility}{feature_hook}->($self->{_entctx}, 'SetData');
   }
   return;

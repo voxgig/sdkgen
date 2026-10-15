@@ -45,7 +45,7 @@ function entityOp(opname: string, present: boolean, entityname: string): string 
        | List items ->
          List.map (fun entry ->
              let e = ent.e_make () in
-             (match entry with Map _ -> e.e_data_set entry | _ -> ());
+             e.e_data_set entry;
              e)
            !items
        | _ -> []));

@@ -165,7 +165,7 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
 
             $find_all = function (array $entmap, $match, $alias) use ($find_first) {
                 if (!is_array($match) || empty($match)) {
-                    return array_values(array_filter($entmap, 'is_array'));
+                    return array_values($entmap);
                 }
                 $out = [];
                 foreach ($entmap as $e) {

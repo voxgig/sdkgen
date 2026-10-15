@@ -44,10 +44,7 @@ public static partial class SdkUtility
                 foreach (var entry in list)
                 {
                     var ent = entity.Make();
-                    if (entry is Dictionary<string, object?> entryMap)
-                    {
-                        ent.Data(entryMap);
-                    }
+                    ent.Data(entry);
                     entities.Add(ent);
                 }
                 result.Resdata = entities;

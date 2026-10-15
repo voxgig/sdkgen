@@ -31,7 +31,7 @@ public abstract class EntityBase implements SdkEntity {
   protected SdkClient client;
   protected Utility utility;
   protected Map<String, Object> entopts;
-  protected Map<String, Object> data = new LinkedHashMap<>();
+  protected Object data = new LinkedHashMap<String, Object>();
   protected Map<String, Object> match = new LinkedHashMap<>();
   protected Context entctx;
 
@@ -84,8 +84,9 @@ public abstract class EntityBase implements SdkEntity {
   @Override
   public Object data(Object... args) {
     if (args.length > 0 && args[0] != null) {
-      Map<String, Object> d = Helpers.toMapAny(Struct.clone(args[0]));
-      this.data = d == null ? new LinkedHashMap<>() : d;
+      Object cloned = Struct.clone(args[0]);
+      Map<String, Object> d = Helpers.toMapAny(cloned);
+      this.data = d == null ? cloned : d;
       this.utility.featureHook.apply(this.entctx, "SetData");
     }
 

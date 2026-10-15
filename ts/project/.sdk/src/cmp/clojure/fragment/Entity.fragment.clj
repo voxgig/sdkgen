@@ -12,8 +12,8 @@
     e))
 
 (defn- ent-data-set [ent args]
-  (when args
-    (reset! (:_data ent) (let [m (core/to-map (vs/clone args))] (if m m (vs/jm))))
+  (when (some? args)
+    (reset! (:_data ent) (vs/clone args))
     (core/feature-hook (:_entctx ent) "SetData")))
 
 (defn- ent-data-get [ent]

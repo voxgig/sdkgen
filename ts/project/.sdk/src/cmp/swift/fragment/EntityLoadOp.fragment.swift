@@ -6,7 +6,7 @@ import Foundation
 final class EntyClassLoadOpFragment: EntyClass {
 // EJECT-START
 public override func load(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value {
-  var ctxmap: [String: Any?] = ["opname": "load", "match": match, "data": data]
+  var ctxmap: [String: Any?] = ["opname": "load", "match": match, "data": data.asMap ?? VMap()]
   if let ctrl = ctrl { ctxmap["ctrl"] = ctrl }
   if let reqmatch = reqmatch { ctxmap["reqmatch"] = reqmatch }
   let ctx = utility.makeContext(ctxmap, entctx)
@@ -15,7 +15,7 @@ public override func load(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value {
     if let result = ctx.result {
       if let rm = result.resmatch { self.match = rm }
       if !isNil(result.resdata) {
-        self.data = clone(result.resdata).asMap ?? VMap()
+        self.data = .map(clone(result.resdata).asMap ?? VMap())
       }
     }
   }

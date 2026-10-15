@@ -1562,7 +1562,7 @@
                   (let [out (vs/jt)]
                     (doseq [entry (vec resdata)]
                       (let [e ((:make entity))]
-                        (when (vs/ismap entry) ((:data-set e) entry))
+                        ((:data-set e) entry)
                         (.add ^java.util.List out e)))
                     (oset! result :resdata out)))))
             (when-let [ex (oget (oget ctx :ctrl) :explain)] (.put ^java.util.Map ex "result" result))

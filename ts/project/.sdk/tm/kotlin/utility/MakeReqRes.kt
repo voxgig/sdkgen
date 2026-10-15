@@ -141,9 +141,7 @@ fun makeResult(ctx: Context): Result {
       val entities = mutableListOf<Any?>()
       for (entry in resdata) {
         val ent = entity.make()
-        if (entry is MutableMap<*, *>) {
-          ent.data(entry)
-        }
+        ent.data(entry)
         entities.add(ent)
       }
       result.resdata = entities

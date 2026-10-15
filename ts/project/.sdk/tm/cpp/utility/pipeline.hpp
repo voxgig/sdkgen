@@ -1356,7 +1356,7 @@ inline ResultPtr makeResult(CtxPtr ctx) {
       Value entities = vlist();
       for (const auto& entry : *resdata.as_list()) {
         EntityPtr ent = entity->make();
-        if (entry.is_map()) ent->data(entry);
+        ent->data(entry);
         entities.as_list()->push_back(entry);
         (void)ent;
       }

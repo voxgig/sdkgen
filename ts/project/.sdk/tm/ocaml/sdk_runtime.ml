@@ -1512,7 +1512,7 @@ let make_result_util (ctx : ctx) : (result option * sdk_error option) =
              | List r, Some entity ->
                let entries = List.map (fun entry ->
                    let ent = entity.e_make () in
-                   (match entry with Map _ -> ent.e_data_set entry | _ -> ());
+                   ent.e_data_set entry;
                    entry) !r in
                result.rt_resdata <- lst entries
              | _ -> ())

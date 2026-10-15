@@ -50,9 +50,7 @@ final class MakeResult {
         List<Object> entities = new ArrayList<>();
         for (Object entry : (List<Object>) resdata) {
           Entity ent = entity.make();
-          if (entry instanceof Map) {
-            ent.data(entry);
-          }
+          ent.data(entry);
           entities.add(ent);
         }
         result.resdata = entities;

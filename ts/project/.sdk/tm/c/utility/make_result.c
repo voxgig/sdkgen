@@ -39,12 +39,7 @@ SdkResult* make_result_util(Context* ctx, PNError** err) {
         for (size_t i = 0; i < list->len; i++) {
           voxgig_value* entry = list->items[i];
           Entity* e = entity->vt->make(entity);
-          voxgig_value* out;
-          if (voxgig_is_map(entry)) {
-            out = e->vt->data(e, entry);
-          } else {
-            out = e->vt->data(e, NULL);
-          }
+          voxgig_value* out = e->vt->data(e, entry);
           voxgig_list_push(voxgig_as_list(entities), voxgig_retain(out));
         }
         result->resdata = entities;

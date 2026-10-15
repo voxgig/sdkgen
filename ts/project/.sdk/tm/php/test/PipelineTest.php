@@ -46,9 +46,9 @@ class PlClient
 // records the data it was given.
 class PlEntityItem
 {
-    public array $data = [];
+    public mixed $data = [];
 
-    public function data_set(array $d): void
+    public function data_set(mixed $d): void
     {
         $this->data = $d;
     }
@@ -365,7 +365,7 @@ class PipelineTest extends TestCase
         $ctx = self::ctx([
             'entity' => $entity,
             'spec' => new ProjectNameSpec(['step' => 's']),
-            'result' => new ProjectNameResult(['ok' => true, 'resdata' => [['a' => 1], ['a' => 2]]]),
+            'result' => new ProjectNameResult(['ok' => true, 'resdata' => [['a' => 1], 'b.md']]),
         ]);
         $ctx->op = new ProjectNameOperation(['name' => 'list', 'entity' => 'x']);
         [$result, $err] = ProjectNameMakeResult::call($ctx);
@@ -373,6 +373,7 @@ class PipelineTest extends TestCase
         $this->assertCount(2, $result->resdata);
         $this->assertCount(2, $entity->made);
         $this->assertSame(['a' => 1], $result->resdata[0]->data);
+        $this->assertSame('b.md', $result->resdata[1]->data);
     }
 
     public function test_make_result_empty_list_yields_empty_resdata(): void

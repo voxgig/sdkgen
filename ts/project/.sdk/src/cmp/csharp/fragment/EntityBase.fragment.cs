@@ -16,7 +16,7 @@ public abstract class ProjectNameEntityBase : IEntity
     protected ProjectNameSDK client;
     protected Utility utility;
     protected Dictionary<string, object?> entopts;
-    protected Dictionary<string, object?> data = new();
+    protected object? data = new Dictionary<string, object?>();
     protected Dictionary<string, object?> match = new();
     protected Context entctx;
 
@@ -76,8 +76,8 @@ public abstract class ProjectNameEntityBase : IEntity
     {
         if (newdata != null)
         {
-            data = Helpers.ToMapAny(StructUtils.Clone(newdata))
-                ?? new Dictionary<string, object?>();
+            var cloned = StructUtils.Clone(newdata);
+            data = (object?)Helpers.ToMapAny(cloned) ?? cloned;
             utility.FeatureHook(entctx, "SetData");
         }
 

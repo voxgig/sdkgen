@@ -40,12 +40,7 @@ pub fn make_result_util(
                 let mut entities: Vec<Value> = Vec::new();
                 for entry in list.borrow().iter() {
                     let e = ent.make();
-                    let out = if let Value::Map(_) = entry {
-                        e.data(Some(entry))
-                    } else {
-                        e.data(None)
-                    };
-                    entities.push(out);
+                    entities.push(e.data(Some(entry)));
                 }
                 result.borrow_mut().resdata = Value::list(entities);
             }

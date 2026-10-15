@@ -67,8 +67,8 @@ class EntyClass
   end
 
   def data_set(args)
-    if args
-      @_data = ProjectNameHelpers.to_map(VoxgigStruct.clone(args)) || {}
+    unless args.nil?
+      @_data = VoxgigStruct.clone(args)
       @_utility.feature_hook.call(@_entctx, "SetData")
     end
   end

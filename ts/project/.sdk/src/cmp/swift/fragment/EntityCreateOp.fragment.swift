@@ -6,7 +6,7 @@ import Foundation
 final class EntyClassCreateOpFragment: EntyClass {
 // EJECT-START
 public override func create(_ reqdata: VMap?, _ ctrl: VMap?) throws -> Value {
-  var ctxmap: [String: Any?] = ["opname": "create", "match": match, "data": data]
+  var ctxmap: [String: Any?] = ["opname": "create", "match": match, "data": data.asMap ?? VMap()]
   if let ctrl = ctrl { ctxmap["ctrl"] = ctrl }
   if let reqdata = reqdata { ctxmap["reqdata"] = reqdata }
   let ctx = utility.makeContext(ctxmap, entctx)
@@ -14,7 +14,7 @@ public override func create(_ reqdata: VMap?, _ ctrl: VMap?) throws -> Value {
   return try runOp(ctx) {
     if let result = ctx.result {
       if !isNil(result.resdata) {
-        self.data = clone(result.resdata).asMap ?? VMap()
+        self.data = .map(clone(result.resdata).asMap ?? VMap())
       }
     }
   }

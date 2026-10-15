@@ -76,7 +76,7 @@ defmodule ProjectName.EntityBase do
 
   def data_set(ent, args) do
     if args != nil do
-      S.setprop(ent, "_data", H.or_(H.to_map(S.clone(args)), S.jm([])))
+      S.setprop(ent, "_data", S.clone(args))
       Utility.feature_hook(S.getprop(ent, "_entctx"), "SetData")
     end
 

@@ -1313,8 +1313,7 @@ inline EntityBase::EntityBase(const std::string& name, SdkClient* client_, const
 
 inline Value EntityBase::data(const Value& arg) {
   if (!arg.is_undef()) {
-    Value d = Helpers::toMapAny(Struct::clone(arg));
-    data_ = d.is_map() ? d : vmap();
+    data_ = arg.is_null() ? vmap() : Struct::clone(arg);
     utility->featureHook(entctx, "SetData");
   }
   utility->featureHook(entctx, "GetData");

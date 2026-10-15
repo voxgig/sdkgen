@@ -14,7 +14,7 @@ class EntyClass
     private $_client;
     private $_utility;
     private array $_entopts;
-    private array $_data;
+    private mixed $_data;
     private array $_match;
     private $_entctx;
     private bool $_deleted = false;
@@ -98,8 +98,9 @@ class EntyClass
      */
     public function data_set($args): void
     {
-        if ($args) {
-            $this->_data = ProjectNameHelpers::to_map(Struct::clone($args)) ?? [];
+        if ($args !== null) {
+            $data = Struct::clone($args);
+            $this->_data = $data instanceof \stdClass ? (array)$data : $data;
             ($this->_utility->feature_hook)($this->_entctx, "SetData");
         }
     }

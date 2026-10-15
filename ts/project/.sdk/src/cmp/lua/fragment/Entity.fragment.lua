@@ -48,13 +48,17 @@ end
 -- also holds the client and the utility.
 function EntyClass:to_record()
   local rec = self._utility.clean(self._entctx, vs.clone(self._data or {}))
-  rec["voxgig$entity"] = self._name
+  if type(rec) == "table" then
+    rec["voxgig$entity"] = self._name
+  end
   return rec
 end
 
 EntyClass.__tostring = function(self)
   local rec = self:to_record()
-  rec["voxgig$entity"] = nil
+  if type(rec) == "table" then
+    rec["voxgig$entity"] = nil
+  end
   return self._name .. " " .. json.encode(rec)
 end
 
@@ -87,7 +91,7 @@ end
 
 function EntyClass:data_set(args)
   if args ~= nil then
-    self._data = helpers.to_map(vs.clone(args)) or {}
+    self._data = vs.clone(args)
     self._utility.feature_hook(self._entctx, "SetData")
   end
 end

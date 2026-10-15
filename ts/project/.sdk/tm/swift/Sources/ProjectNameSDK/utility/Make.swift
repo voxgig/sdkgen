@@ -460,9 +460,7 @@ func makeResultUtil(_ ctx: Context) throws -> Result {
       let entities = VList()
       for entry in list.items {
         let ent = entity.make()
-        if let entryMap = entry.asMap {
-          ent.data(.map(entryMap))
-        }
+        ent.data(entry)
         entities.items.append(.nat(ent))
       }
       result.resdata = .list(entities)

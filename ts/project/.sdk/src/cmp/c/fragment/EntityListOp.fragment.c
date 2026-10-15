@@ -30,7 +30,7 @@ static Entity** entyvar_list(Entity* e, voxgig_value* reqmatch, voxgig_value* ct
   for (size_t i = 0; i < n; i++) {
     voxgig_value* entry = voxgig_as_list(out)->items[i];
     Entity* ent = e->vt->make(e);
-    if (voxgig_is_map(entry)) ent->vt->data(ent, entry);
+    ent->vt->data(ent, entry);
     items[i] = ent;
   }
   items[n] = NULL;

@@ -55,7 +55,7 @@ class EntyClass:
 
     def data_set(self, args=None):
         if args is not None:
-            self._data = helpers.to_map(vs.clone(args)) or {}
+            self._data = vs.clone(args)
             self._utility.feature_hook(self._entctx, "SetData")
 
     def data_get(self) -> EntityName:

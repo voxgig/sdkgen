@@ -10,7 +10,7 @@ open class ProjectNameEntityBase: Entity {
   var client: ProjectNameSDK
   var utility: Utility
   var entopts: VMap
-  var data = VMap()
+  var data: Value = .map(VMap())
   var match = VMap()
   var entctx: Context!
 
@@ -47,11 +47,11 @@ open class ProjectNameEntityBase: Entity {
   @discardableResult
   public func data(_ newdata: Value?) -> Value {
     if let nd = newdata, !isNil(nd) {
-      data = clone(nd).asMap ?? VMap()
+      data = clone(nd)
       utility.featureHook(entctx, "SetData")
     }
     utility.featureHook(entctx, "GetData")
-    return clone(.map(data))
+    return clone(data)
   }
 
   @discardableResult
@@ -203,7 +203,7 @@ open class ProjectNameEntityBase: Entity {
       "opname": action,
       "ctrl": ctrl,
       "match": match,
-      "data": data,
+      "data": data.asMap ?? VMap(),
     ]
     if let a = args {
       // The context reads reqmatch and reqdata as a VMap, never a Value.
@@ -246,9 +246,9 @@ open class ProjectNameEntityBase: Entity {
 // An entity prints as its data, as ts and go do: `match` can hold a query
 // credential from the response match, and `dump` walks every stored property.
 extension ProjectNameEntityBase: CustomStringConvertible, CustomDebugStringConvertible, CustomReflectable {
-  public var description: Swift.String { name + " " + jsonify(.map(data), indent: 0) }
+  public var description: Swift.String { name + " " + jsonify(data, indent: 0) }
   public var debugDescription: Swift.String { description }
   public var customMirror: Swift.Mirror {
-    Swift.Mirror(self, children: ["name": name, "data": jsonify(.map(data), indent: 0)])
+    Swift.Mirror(self, children: ["name": name, "data": jsonify(data, indent: 0)])
   }
 }

@@ -27,7 +27,7 @@ abstract class EntityCreateOpFragment(clientIn: SdkClient, entoptsIn: MutableMap
       if (result != null) {
         if (result.resdata != null) {
           val d = Helpers.toMapAny(Struct.clone(result.resdata))
-          this.data = d ?: linkedMapOf()
+          this.data = d ?: linkedMapOf<String, Any?>()
         }
       }
     }

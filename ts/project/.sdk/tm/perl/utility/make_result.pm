@@ -39,7 +39,7 @@ $REGISTRY{make_result} = sub {
       my @entities;
       for my $entry (@$resdata) {
         my $ent = $entity->make;
-        $ent->data_set($entry) if Voxgig::Struct::ismap($entry);
+        $ent->data_set($entry);
         push @entities, $ent;
       }
       $result->{resdata} = \@entities;

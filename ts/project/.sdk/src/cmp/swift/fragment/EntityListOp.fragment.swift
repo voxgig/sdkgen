@@ -6,7 +6,7 @@ import Foundation
 final class EntyClassListOpFragment: EntyClass {
 // EJECT-START
 public override func list(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value {
-  var ctxmap: [String: Any?] = ["opname": "list", "match": match, "data": data]
+  var ctxmap: [String: Any?] = ["opname": "list", "match": match, "data": data.asMap ?? VMap()]
   if let ctrl = ctrl { ctxmap["ctrl"] = ctrl }
   if let reqmatch = reqmatch { ctxmap["reqmatch"] = reqmatch }
   let ctx = utility.makeContext(ctxmap, entctx)

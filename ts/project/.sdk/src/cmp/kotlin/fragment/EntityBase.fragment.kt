@@ -19,7 +19,7 @@ abstract class EntityBase(nm: String, clientIn: SdkClient, entoptsIn: MutableMap
   protected var client: SdkClient
   protected var utility: Utility
   protected var entopts: MutableMap<String, Any?>
-  protected var data: MutableMap<String, Any?> = linkedMapOf()
+  protected var data: Any? = linkedMapOf<String, Any?>()
   protected var match: MutableMap<String, Any?> = linkedMapOf()
   protected var entctx: Context
 
@@ -48,8 +48,8 @@ abstract class EntityBase(nm: String, clientIn: SdkClient, entoptsIn: MutableMap
 
   override fun data(vararg args: Any?): Any? {
     if (args.isNotEmpty() && args[0] != null) {
-      val d = Helpers.toMapAny(Struct.clone(args[0]))
-      this.data = d ?: linkedMapOf()
+      val cloned = Struct.clone(args[0])
+      this.data = Helpers.toMapAny(cloned) ?: cloned
       this.utility.featureHook(this.entctx, "SetData")
     }
 

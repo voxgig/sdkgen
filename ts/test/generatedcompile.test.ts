@@ -36,6 +36,7 @@ import {
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
 import { ITEMS_EXPECT, ITEMS_PROBES, itemsListed } from './itemprobes'
+import { SCALAR_EXPECT, SCALAR_PROBES, scalarsListed } from './scalarprobes'
 import { REQD_EXPECT, REQD_PROBES, reqdListed } from './reqdprobes'
 import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
 import {
@@ -7989,6 +7990,22 @@ describe('probes driven through a generated SDK', () => {
       ok(ran.ok, lane.target + ': the items probe failed:\n' + tail(ran.out, 60))
       strictEqual(itemsListed(ran.out), ITEMS_EXPECT,
         lane.target + ' probe output:\n' + tail(ran.out))
+    })
+
+    test(name + ': a list keeps each item that is not a record', async (t) => {
+      const missing = lane.ready()
+      if (null != missing) return t.skip(missing)
+
+      const sdkroot = await sdkFor(lane.target)
+      const ran = lane.exec(sdkroot, nestedTestEnv(), writer(sdkroot),
+        { name: 'scalars', source: SCALAR_PROBES })
+
+      if (ran.unlaunchable) {
+        return t.skip(name + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+      }
+
+      ok(ran.ok, name + ': the scalars probe failed:\n' + tail(ran.out, 60))
+      strictEqual(scalarsListed(ran.out), SCALAR_EXPECT, name + ' probe output:\n' + tail(ran.out))
     })
 
     test(name + ': a test-mode list answers only the seeds its required parameters match',
