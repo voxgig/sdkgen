@@ -139,7 +139,8 @@ async function doctor(actx, scope, selected) {
         forked: [], edited: [], stale: [], missing: [], additive: [],
         superseded: [], unwired: [], orphanModel: [],
         resyncPending: [], aliasedDiff: [],
-        outdated: [], unrecorded: [], byItem: {}, ignoredLog: false, ok: true,
+        outdated: [], unrecorded: [], unresolved: [], byItem: {},
+        ignoredLog: false, ok: true,
     };
     const copies = (0, copies_1.readCopies)(fs, root);
     report.ignoredLog = (0, copies_1.ignoredLog)(fs, root);
@@ -154,9 +155,17 @@ async function doctor(actx, scope, selected) {
         counts[kind] = Object.keys((0, kindCollection_1.kindCollection)(model, kind) ?? {}).length;
     }
     log.info({ point: 'doctor-start', targets: counts.target ?? 0, ...counts });
+    const resolved = new Map();
+    const resolve = (kind, name) => {
+        const key = (0, copies_1.itemKey)(kind, name);
+        if (!resolved.has(key)) {
+            resolved.set(key, resolveDeclared(kind, name, actx));
+        }
+        return resolved.get(key);
+    };
     const targets = new Map();
     for (const tname of Object.keys(model?.main?.[types_1.KIT]?.target ?? {}).sort()) {
-        const source = resolveDeclared('target', tname, actx);
+        const source = resolve('target', tname);
         if (null != source) {
             targets.set(tname, source);
         }
@@ -167,14 +176,14 @@ async function doctor(actx, scope, selected) {
             if (null != scope && !scope(kind, name)) {
                 continue;
             }
-            const source = 'target' === kind ?
-                targets.get(name) : resolveDeclared(kind, name, actx);
+            const source = resolve(kind, name);
             if (null == source) {
+                noteUnresolved(actx, report, kind, name);
                 continue;
             }
             const found = noteDrift(actx, report, copies, kind, source);
             if ('target' === kind) {
-                checkTarget(actx, source, report, found, selected);
+                checkTarget(actx, source, report, found, resolve, selected);
             }
             if ('edition' === kind) {
                 checkEdition(actx, source, report, found);
@@ -199,7 +208,8 @@ async function doctor(actx, scope, selected) {
     // authoritative either way.
     report.ok = 0 === report.forked.length + report.edited.length +
         report.stale.length + report.missing.length + report.superseded.length +
-        report.orphanModel.length + report.outdated.length;
+        report.orphanModel.length + report.outdated.length +
+        report.unresolved.length;
     for (const [kind, note] of [
         ['forked', 'FORKED (will be reverted by `target add`)'],
         ['edited', 'EDITED template master'],
@@ -212,6 +222,7 @@ async function doctor(actx, scope, selected) {
         ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
         ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
         ['outdated', 'OUTDATED (unchanged since it was copied, but its source has moved on)'],
+        ['unresolved', 'UNRESOLVED (declared, but its source is not installed; install it)'],
     ]) {
         for (const file of report[kind]) {
             log.info({ point: 'doctor-finding', kind, file, note: note + ': ' + file });
@@ -241,12 +252,13 @@ async function doctor(actx, scope, selected) {
         resyncPending: report.resyncPending.length,
         aliasedDiff: report.aliasedDiff.length,
         outdated: report.outdated.length,
+        unresolved: report.unresolved.length,
         note: report.ok ?
             ('.sdk matches the scaffold (' + report.additive.length + ' additive)') :
             ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
                 report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
                 report.missing.length + ' missing, ' + report.outdated.length +
-                ' outdated')
+                ' outdated, ' + report.unresolved.length + ' unresolved')
     });
     return { report };
 }
@@ -290,7 +302,31 @@ function resolveDeclared(kind, name, actx) {
         return undefined;
     }
 }
-function checkTarget(actx, resolved, report, found, selected) {
+// Not drift: nothing on disk says what its copies should be.
+function noteUnresolved(actx, report, kind, name) {
+    const item = (0, copies_1.itemKey)(kind, name);
+    const declared = (0, kindCollection_1.kindCollection)(actx.model, kind)?.[name] ?? {};
+    const from = declaredFrom(declared);
+    report.unresolved.push(item);
+    report.byItem[item] = {
+        ...pkgOf(declared.package),
+        outdated: 0,
+        changed: 0,
+        unresolved: from,
+    };
+    actx.log.warn({
+        point: 'doctor-unresolved', kind, [kind]: name, from,
+        note: kind + ' ' + name + ': declared from ' + from + ', which is not ' +
+            'installed, so its files in .sdk cannot be checked or refreshed. ' +
+            'Install it and re-run doctor.'
+    });
+}
+function declaredFrom(declared) {
+    return [declared.package, declared.base]
+        .filter((s) => 'string' === typeof s && '' !== s).join(' at ') ||
+        'a source the model does not record';
+}
+function checkTarget(actx, resolved, report, found, resolve, selected) {
     const tname = resolved.name;
     const tfolder = resolved.folder;
     const torigname = resolved.origname;
@@ -333,10 +369,15 @@ function checkTarget(actx, resolved, report, found, selected) {
     // different trim from the one `target add` applied and report correctly
     // trimmed files as missing.
     const excludes = (0, target_1.trimFeatures)({ log: quietLog(actx.log), fs: () => fs, folder: root, model }, tfolder, torigname, tname, features);
+    // An active feature whose source is not installed still owns its copies
+    // here: `feature add` skips it and `target add` keeps them.
+    const keep = (0, featureSource_1.featureExcludes)((0, featureSource_1.findFeatureSources)(fs, node_path_1.default.join(root, 'tm', tname), features.filter((f) => null != featuremodel[f] &&
+        !fs.existsSync(resolve('feature', f)?.model ?? ''))));
     compareTrees(actx, report, found, trees, {
         excludes,
+        keep: (kind) => 'edited' === kind ? keep : [],
         foreign: (kind) => 'edited' === kind ?
-            foreignFeatureSource(actx, resolved) : [],
+            foreignFeatureSource(actx, resolved, resolve) : [],
     });
 }
 function compareTrees(actx, report, found, trees, opts) {
@@ -364,6 +405,7 @@ function compareTrees(actx, report, found, trees, opts) {
         const actual = walk(fs, tree.project);
         const expectedSet = new Set(expected);
         const actualSet = new Set(actual);
+        const keep = opts?.keep?.(tree.kind) ?? [];
         for (const rel of expected) {
             if (!actualSet.has(rel)) {
                 found('missing', label + rel);
@@ -383,7 +425,7 @@ function compareTrees(actx, report, found, trees, opts) {
             }
         }
         for (const rel of actual) {
-            if (expectedSet.has(rel)) {
+            if (expectedSet.has(rel) || excluded(rel, keep)) {
                 continue;
             }
             // A component the scaffold has NEVER shipped is the project's own —
@@ -427,14 +469,14 @@ function checkEdition(actx, resolved, report, found) {
     });
     compareTrees(actx, report, found, trees);
 }
-function foreignFeatureSource(actx, target) {
+function foreignFeatureSource(actx, target, resolve) {
     const out = new Map();
     const features = actx.model?.main?.[types_1.KIT]?.feature ?? {};
     for (const fname of Object.keys(features).sort()) {
         if (false === features[fname]?.active) {
             continue;
         }
-        const source = resolveDeclared('feature', fname, actx);
+        const source = resolve('feature', fname);
         if (null == source) {
             continue;
         }
@@ -709,6 +751,12 @@ function copyWarnings(report) {
         }
     }
     const lines = report.ignoredLog ? [copies_1.IGNORED_LOG] : [];
+    for (const item of report.unresolved) {
+        lines.push(item.replace('/', ' ') + ': declared from ' +
+            report.byItem[item]?.unresolved + ', which is not installed, so this ' +
+            'run generates from the copies already in .sdk. Install it before ' +
+            'running `voxgig-sdkgen package update`, which cannot refresh them.');
+    }
     for (const [key, group] of groups) {
         const [what, command] = key.split('\n');
         const pkg = group.drift[0].package;

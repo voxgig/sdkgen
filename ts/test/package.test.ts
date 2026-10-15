@@ -11,6 +11,7 @@ import {
 } from '../dist/action/package.js'
 import { ACTION_MAP, actionNames } from '../dist/action/dispatch.js'
 import { COPY_LOG } from '../dist/action/copies.js'
+import { doctor, copyCheck } from '../dist/action/doctor.js'
 import {
   SCAFFOLD, SCAFFOLD_BASE, ROOT, makeProject, recordLog, targetRef,
   target_add, feature_add,
@@ -1311,6 +1312,106 @@ describe('package update', () => {
     finally {
       Fs.rmSync(pkg, { recursive: true, force: true })
     }
+  })
+})
+
+
+describe('a declared package that is not installed', () => {
+
+  const STATION = 'tm/go/feature/station_feature.go'
+
+  // The bundled go target plus a `station` feature from its own package,
+  // whose checkout is then removed: a fresh clone without the package.
+  async function uninstalled() {
+    const pkg = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-station-'))
+    const sdk = Path.join(pkg, '.sdk')
+    Fs.mkdirSync(Path.join(sdk, 'model', 'feature'), { recursive: true })
+    Fs.writeFileSync(Path.join(sdk, 'model', 'feature', 'station.aontu'),
+      Fs.readFileSync(Path.join(SCAFFOLD, 'model', 'feature', 'retry.aontu'),
+        'utf8').replace(/\bretry\b/g, 'station'))
+    Fs.mkdirSync(Path.join(sdk, 'tm', 'go', 'feature'), { recursive: true })
+    Fs.writeFileSync(Path.join(sdk, 'tm', 'go', 'feature', 'station_feature.go'),
+      'package feature\n')
+    Fs.writeFileSync(Path.join(pkg, 'sdkgen-package.json'), JSON.stringify({
+      sdkgen: { package: 1 }, name: '@acme/sdkgen-station', version: '1.0.0',
+      provides: { feature: ['station'] },
+    }))
+
+    const log = recordLog()
+    const project = makeProject({ log })
+    project.actx.flags = {}
+    await target_add([targetRef('go')], project.actx)
+    project.actx.model.main.kit.target.go = {
+      name: 'go', base: SCAFFOLD_BASE, package: '@voxgig/sdkgen',
+    }
+
+    try {
+      await package_add([pkg], project.actx)
+    }
+    finally {
+      Fs.rmSync(pkg, { recursive: true, force: true })
+    }
+
+    const src = String(project.fs.readFileSync(
+      ROOT + '/model/feature/station.aontu', 'utf8'))
+    project.actx.model.main.kit.feature.station = {
+      name: 'station', active: true,
+      base: (src.match(/^\s*base:\s*'([^']*)'/m) || [])[1],
+      package: '@acme/sdkgen-station',
+    }
+
+    ok(project.files().includes(STATION), 'the fixture did not install station')
+    log.lines.length = 0
+
+    return { project, log }
+  }
+
+
+  test('doctor reports the package unresolved, and its files not stale', async () => {
+    const { project, log } = await uninstalled()
+
+    const report: any = (await doctor(project.actx)).report
+
+    deepStrictEqual(report.unresolved, ['feature/station'])
+    deepStrictEqual(report.stale, [], 'its files were read as stale')
+    strictEqual(report.ok, false, 'an item doctor cannot check passed')
+
+    const note = log.lines.find((l: any) => 'doctor-unresolved' === l.point)
+    ok(/@acme\/sdkgen-station[\s\S]*Install it/.test(note?.note), note?.note)
+
+    const lines = await copyCheck(project.actx)
+    ok(lines.some((l: string) => l.startsWith('feature station: declared from ' +
+      '@acme/sdkgen-station')), lines.join('\n'))
+    ok(!lines.some((l: string) => l.includes('package update @voxgig/sdkgen')),
+      'generate recommended the update that deletes them: ' + lines.join('\n'))
+  })
+
+
+  test('updating another package keeps its files, and says so', async () => {
+    const { project, log } = await uninstalled()
+    project.actx.flags = { nofetch: true }
+
+    await package_update(['@voxgig/sdkgen'], project.actx)
+
+    ok(project.files().includes(STATION), 'the update deleted ' + STATION)
+
+    const kept = log.lines.find((l: any) => 'target-template-kept' === l.point)
+    ok(kept?.files.includes('feature/station_feature.go'), JSON.stringify(kept))
+    strictEqual(kept.level, 'warn')
+  })
+
+
+  test('a prune still removes a stale file, one line per file', async () => {
+    const { project, log } = await uninstalled()
+    project.fs.writeFileSync(ROOT + '/tm/go/gone.go', 'package gone\n')
+    project.actx.flags = { nofetch: true }
+
+    await package_update(['@voxgig/sdkgen'], project.actx)
+
+    ok(!project.files().includes('tm/go/gone.go'), 'the stale file survived')
+    deepStrictEqual(log.lines
+      .filter((l: any) => 'target-template-prune-file' === l.point)
+      .map((l: any) => l.file), ['tm/go/gone.go'])
   })
 })
 

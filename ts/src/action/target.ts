@@ -169,6 +169,10 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
   const dryrun = !!actx?.opts?.dryrun
 
 
+  // `feature add` skips a feature it cannot resolve and leaves its copies
+  // alone, so the prune must not delete them first.
+  const unresolved = unresolvedFeatures(features ?? [], ctx$)
+
   Project({}, () => {
     // Resolved names of every target in this run. The index File is
     // re-rendered per target and the last render wins, so each render must
@@ -226,8 +230,15 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
 
       const trim = trimFeatures(ctx$, tfolder, torigname, tname, features)
 
+      const held = findFeatureSources(
+        fs, Path.join(ctx$.folder ?? '.', 'tm', tname), unresolved)
+      const keep = {
+        names: Array.from(new Set(held.map((s) => s.name))),
+        patterns: featureExcludes(held),
+      }
+
       pruneStaleTemplates(
-        ctx$, tfolder + '/tm/' + torigname, 'tm/' + tname, trim, dryrun)
+        ctx$, tfolder + '/tm/' + torigname, 'tm/' + tname, trim, dryrun, keep)
 
       Folder({ name: 'tm/' + tname }, () => {
         Copy({
@@ -334,12 +345,26 @@ function aliasCmpTree(
 
 
 
+function unresolvedFeatures(features: string[], ctx$: any): string[] {
+  return features.filter((fname: string) => {
+    try {
+      resolveKind(fname, 'feature', ctx$)
+      return false
+    }
+    catch (err: any) {
+      return true
+    }
+  })
+}
+
+
 function pruneStaleTemplates(
   ctx$: any,
   fromDir: string,
   toRel: string,
   trim: RegExp[],
   dryrun?: boolean,
+  keep?: { names: string[], patterns: RegExp[] },
 ) {
   const { log } = ctx$
   const fs = ctx$.fs()
@@ -389,7 +414,21 @@ function pruneStaleTemplates(
   const trimmed = (rel: string) => trim.some((re) => re.test(rel))
   const want = new Set(sourceFiles.filter((rel) => !trimmed(rel)))
 
-  const stale = listRel(destDir).filter((rel) => !want.has(rel))
+  const kept = (rel: string) => true === keep?.patterns.some((re) => re.test(rel))
+  const unwanted = listRel(destDir).filter((rel) => !want.has(rel))
+  const held = unwanted.filter(kept)
+  const stale = unwanted.filter((rel) => !kept(rel))
+
+  if (0 < held.length) {
+    log.warn({
+      point: 'target-template-kept', target: toRel, count: held.length,
+      files: held, feature: keep?.names,
+      note: toRel + ': keeping ' + held.length + ' file(s) of ' +
+        keep?.names.join(', ') + ', whose source is not installed: ' +
+        held.join(', ')
+    })
+  }
+
   if (0 === stale.length) {
     return
   }
@@ -416,6 +455,11 @@ function pruneStaleTemplates(
     try {
       fs.unlinkSync(Path.join(destDir, rel))
       removed.push(rel)
+      log.info({
+        point: 'target-template-prune-file', target: toRel,
+        file: toRel + '/' + rel,
+        note: 'removed ' + toRel + '/' + rel
+      })
     }
     catch (e: any) {
       log.warn({

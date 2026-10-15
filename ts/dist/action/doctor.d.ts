@@ -12,6 +12,7 @@ type DoctorReport = {
     aliasedDiff: string[];
     outdated: string[];
     unrecorded: string[];
+    unresolved: string[];
     byItem: Record<string, ItemDrift>;
     ignoredLog: boolean;
     ok: boolean;
@@ -22,6 +23,7 @@ type ItemDrift = {
     to?: string;
     outdated: number;
     changed: number;
+    unresolved?: string;
 };
 declare function action_doctor(args: string[], actx: ActionContext): Promise<ActionResult>;
 type DoctorScope = (kind: string, name: string) => boolean;

@@ -105,6 +105,9 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
     // The prune below writes through `fs` directly rather than through
     // jostraca, so it has to be told about the dry run itself.
     const dryrun = !!actx?.opts?.dryrun;
+    // `feature add` skips a feature it cannot resolve and leaves its copies
+    // alone, so the prune must not delete them first.
+    const unresolved = unresolvedFeatures(features ?? [], ctx$);
     (0, jostraca_1.Project)({}, () => {
         // Resolved names of every target in this run. The index File is
         // re-rendered per target and the last render wins, so each render must
@@ -152,7 +155,12 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                 });
             }
             const trim = trimFeatures(ctx$, tfolder, torigname, tname, features);
-            pruneStaleTemplates(ctx$, tfolder + '/tm/' + torigname, 'tm/' + tname, trim, dryrun);
+            const held = (0, featureSource_1.findFeatureSources)(fs, node_path_1.default.join(ctx$.folder ?? '.', 'tm', tname), unresolved);
+            const keep = {
+                names: Array.from(new Set(held.map((s) => s.name))),
+                patterns: (0, featureSource_1.featureExcludes)(held),
+            };
+            pruneStaleTemplates(ctx$, tfolder + '/tm/' + torigname, 'tm/' + tname, trim, dryrun, keep);
             (0, jostraca_1.Folder)({ name: 'tm/' + tname }, () => {
                 (0, jostraca_1.Copy)({
                     from: tfolder + '/tm/' + torigname,
@@ -222,7 +230,18 @@ function aliasCmpTree(ctx$, fromDir, toRel, torigname, tname, cmpbase = 'src/cmp
     };
     (0, jostraca_1.Folder)({ name: toRel }, () => emit(fromDir, toRel));
 }
-function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun) {
+function unresolvedFeatures(features, ctx$) {
+    return features.filter((fname) => {
+        try {
+            (0, kind_1.resolveKind)(fname, 'feature', ctx$);
+            return false;
+        }
+        catch (err) {
+            return true;
+        }
+    });
+}
+function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun, keep) {
     const { log } = ctx$;
     const fs = ctx$.fs();
     const folder = ctx$.folder ?? '.';
@@ -265,7 +284,19 @@ function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun) {
     // applies them.
     const trimmed = (rel) => trim.some((re) => re.test(rel));
     const want = new Set(sourceFiles.filter((rel) => !trimmed(rel)));
-    const stale = listRel(destDir).filter((rel) => !want.has(rel));
+    const kept = (rel) => true === keep?.patterns.some((re) => re.test(rel));
+    const unwanted = listRel(destDir).filter((rel) => !want.has(rel));
+    const held = unwanted.filter(kept);
+    const stale = unwanted.filter((rel) => !kept(rel));
+    if (0 < held.length) {
+        log.warn({
+            point: 'target-template-kept', target: toRel, count: held.length,
+            files: held, feature: keep?.names,
+            note: toRel + ': keeping ' + held.length + ' file(s) of ' +
+                keep?.names.join(', ') + ', whose source is not installed: ' +
+                held.join(', ')
+        });
+    }
     if (0 === stale.length) {
         return;
     }
@@ -290,6 +321,11 @@ function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun) {
         try {
             fs.unlinkSync(node_path_1.default.join(destDir, rel));
             removed.push(rel);
+            log.info({
+                point: 'target-template-prune-file', target: toRel,
+                file: toRel + '/' + rel,
+                note: 'removed ' + toRel + '/' + rel
+            });
         }
         catch (e) {
             log.warn({

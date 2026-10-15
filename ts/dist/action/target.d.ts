@@ -4,7 +4,10 @@ declare function target_add(targets: string[], actx: ActionContext): Promise<Act
 declare function aliasCmpName(name: string, torigname: string, tname: string): string;
 declare function aliasCmpText(src: string, torigname: string, tname: string, cmpbase?: string): string;
 declare function aliasCmpTree(ctx$: any, fromDir: string, toRel: string, torigname: string, tname: string, cmpbase?: string): void;
-declare function pruneStaleTemplates(ctx$: any, fromDir: string, toRel: string, trim: RegExp[], dryrun?: boolean): void;
+declare function pruneStaleTemplates(ctx$: any, fromDir: string, toRel: string, trim: RegExp[], dryrun?: boolean, keep?: {
+    names: string[];
+    patterns: RegExp[];
+}): void;
 declare function featureCatalogue(ctx$: any, tfolder: string): string[];
 declare function trimFeatures(ctx$: any, tfolder: string, torigname: string, tname: string, features: string[]): RegExp[];
 declare function readTargetFeature(ctx$: any, tfolder: string, torigname: string, tname: string): {

@@ -33,7 +33,7 @@ import type { Source } from './resolve'
 
 import { definitionPath } from '../helpers/definition'
 
-import { findFeatureSources } from '../helpers/featureSource'
+import { findFeatureSources, featureExcludes } from '../helpers/featureSource'
 
 import { isJunk } from '../helpers/junk'
 
@@ -110,6 +110,9 @@ type DoctorReport = {
   // nothing shows whether the project changed them.
   unrecorded: string[]
 
+  // Declared items whose source is not installed; their copies are kept.
+  unresolved: string[]
+
   // Per item with findings, keyed `<kind>/<name>`.
   byItem: Record<string, ItemDrift>
 
@@ -132,6 +135,8 @@ type ItemDrift = {
 
   // Forked, edited, missing and stale files.
   changed: number
+
+  unresolved?: string
 }
 
 
@@ -283,7 +288,8 @@ async function doctor(
     forked: [], edited: [], stale: [], missing: [], additive: [],
     superseded: [], unwired: [], orphanModel: [],
     resyncPending: [], aliasedDiff: [],
-    outdated: [], unrecorded: [], byItem: {}, ignoredLog: false, ok: true,
+    outdated: [], unrecorded: [], unresolved: [], byItem: {},
+    ignoredLog: false, ok: true,
   }
 
   const copies = readCopies(fs, root)
@@ -306,11 +312,20 @@ async function doctor(
 
   log.info({ point: 'doctor-start', targets: counts.target ?? 0, ...counts })
 
+  const resolved = new Map<string, Source | undefined>()
+  const resolve: Resolve = (kind: string, name: string) => {
+    const key = itemKey(kind, name)
+    if (!resolved.has(key)) {
+      resolved.set(key, resolveDeclared(kind, name, actx))
+    }
+    return resolved.get(key)
+  }
+
   const targets = new Map<string, Source>()
 
   for (const tname of
     Object.keys((model as any)?.main?.[KIT]?.target ?? {}).sort()) {
-    const source = resolveDeclared('target', tname, actx)
+    const source = resolve('target', tname)
 
     if (null != source) {
       targets.set(tname, source)
@@ -325,17 +340,17 @@ async function doctor(
         continue
       }
 
-      const source = 'target' === kind ?
-        targets.get(name) : resolveDeclared(kind, name, actx)
+      const source = resolve(kind, name)
 
       if (null == source) {
+        noteUnresolved(actx, report, kind, name)
         continue
       }
 
       const found = noteDrift(actx, report, copies, kind, source)
 
       if ('target' === kind) {
-        checkTarget(actx, source, report, found, selected)
+        checkTarget(actx, source, report, found, resolve, selected)
       }
 
       if ('edition' === kind) {
@@ -365,7 +380,8 @@ async function doctor(
   // authoritative either way.
   report.ok = 0 === report.forked.length + report.edited.length +
     report.stale.length + report.missing.length + report.superseded.length +
-    report.orphanModel.length + report.outdated.length
+    report.orphanModel.length + report.outdated.length +
+    report.unresolved.length
 
   for (const [kind, note] of [
     ['forked', 'FORKED (will be reverted by `target add`)'],
@@ -379,6 +395,7 @@ async function doctor(
     ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
     ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
     ['outdated', 'OUTDATED (unchanged since it was copied, but its source has moved on)'],
+    ['unresolved', 'UNRESOLVED (declared, but its source is not installed; install it)'],
   ] as [keyof DoctorReport, string][]) {
     for (const file of (report[kind] as string[])) {
       log.info({ point: 'doctor-finding', kind, file, note: note + ': ' + file })
@@ -410,12 +427,13 @@ async function doctor(
     resyncPending: report.resyncPending.length,
     aliasedDiff: report.aliasedDiff.length,
     outdated: report.outdated.length,
+    unresolved: report.unresolved.length,
     note: report.ok ?
       ('.sdk matches the scaffold (' + report.additive.length + ' additive)') :
       ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
         report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
         report.missing.length + ' missing, ' + report.outdated.length +
-        ' outdated')
+        ' outdated, ' + report.unresolved.length + ' unresolved')
   })
 
   return { report }
@@ -474,9 +492,44 @@ function resolveDeclared(
 }
 
 
+// Not drift: nothing on disk says what its copies should be.
+function noteUnresolved(
+  actx: ActionContext, report: DoctorReport, kind: string, name: string,
+) {
+  const item = itemKey(kind, name)
+  const declared: any = kindCollection(actx.model, kind)?.[name] ?? {}
+  const from = declaredFrom(declared)
+
+  report.unresolved.push(item)
+  report.byItem[item] = {
+    ...pkgOf(declared.package),
+    outdated: 0,
+    changed: 0,
+    unresolved: from,
+  }
+
+  actx.log.warn({
+    point: 'doctor-unresolved', kind, [kind]: name, from,
+    note: kind + ' ' + name + ': declared from ' + from + ', which is not ' +
+      'installed, so its files in .sdk cannot be checked or refreshed. ' +
+      'Install it and re-run doctor.'
+  })
+}
+
+
+function declaredFrom(declared: any): string {
+  return [declared.package, declared.base]
+    .filter((s: any) => 'string' === typeof s && '' !== s).join(' at ') ||
+    'a source the model does not record'
+}
+
+
+type Resolve = (kind: string, name: string) => Source | undefined
+
+
 function checkTarget(
   actx: ActionContext, resolved: Source, report: DoctorReport, found: Found,
-  selected?: string[],
+  resolve: Resolve, selected?: string[],
 ) {
   const tname = resolved.name
   const tfolder = resolved.folder
@@ -529,10 +582,17 @@ function checkTarget(
     { log: quietLog(actx.log), fs: () => fs, folder: root, model },
     tfolder, torigname, tname, features)
 
+  // An active feature whose source is not installed still owns its copies
+  // here: `feature add` skips it and `target add` keeps them.
+  const keep = featureExcludes(findFeatureSources(fs, Path.join(root, 'tm', tname),
+    features.filter((f: string) => null != featuremodel[f] &&
+      !fs.existsSync(resolve('feature', f)?.model ?? ''))))
+
   compareTrees(actx, report, found, trees, {
     excludes,
+    keep: (kind: string) => 'edited' === kind ? keep : [],
     foreign: (kind: string) => 'edited' === kind ?
-      foreignFeatureSource(actx, resolved) : [],
+      foreignFeatureSource(actx, resolved, resolve) : [],
   })
 }
 
@@ -544,6 +604,7 @@ function compareTrees(
   trees: TreeCompare[],
   opts?: {
     excludes?: RegExp[],
+    keep?: (kind: string) => RegExp[],
     foreign?: (kind: string) => Iterable<[string, string]>,
   },
 ) {
@@ -579,6 +640,7 @@ function compareTrees(
 
     const expectedSet = new Set(expected)
     const actualSet = new Set(actual)
+    const keep = opts?.keep?.(tree.kind) ?? []
 
     for (const rel of expected) {
       if (!actualSet.has(rel)) {
@@ -604,7 +666,7 @@ function compareTrees(
     }
 
     for (const rel of actual) {
-      if (expectedSet.has(rel)) {
+      if (expectedSet.has(rel) || excluded(rel, keep)) {
         continue
       }
 
@@ -677,7 +739,7 @@ type TreeCompare = {
 
 
 function foreignFeatureSource(
-  actx: ActionContext, target: Source,
+  actx: ActionContext, target: Source, resolve: Resolve,
 ): Map<string, string> {
   const out = new Map<string, string>()
 
@@ -688,7 +750,7 @@ function foreignFeatureSource(
       continue
     }
 
-    const source = resolveDeclared('feature', fname, actx)
+    const source = resolve('feature', fname)
 
     if (null == source) {
       continue
@@ -1085,6 +1147,13 @@ function copyWarnings(report: DoctorReport): string[] {
   }
 
   const lines: string[] = report.ignoredLog ? [IGNORED_LOG] : []
+
+  for (const item of report.unresolved) {
+    lines.push(item.replace('/', ' ') + ': declared from ' +
+      report.byItem[item]?.unresolved + ', which is not installed, so this ' +
+      'run generates from the copies already in .sdk. Install it before ' +
+      'running `voxgig-sdkgen package update`, which cannot refresh them.')
+  }
 
   for (const [key, group] of groups) {
     const [what, command] = key.split('\n')
