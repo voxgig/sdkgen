@@ -2203,6 +2203,78 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  test('an API title holding quotes, an ampersand and an interpolation reaches every manifest description intact', async () => {
+    const TITLE = 'Bob\'s "Shop" & Co #{x}'
+    const want = 'for the ' + TITLE + ' public API.'
+    const out = await generate(['csharp', 'elixir', 'js', 'lua', 'perl', 'php', 'py', 'py-data', 'rb', 'ts'],
+      undefined, "main: kit: text: { title: 'Bob\\'s \"Shop\" & Co #{x}' }")
+    const bad: string[] = []
+
+    for (const file of ['ts/package.json', 'js/package.json', 'php/composer.json']) {
+      try {
+        if (!JSON.parse(out[file]).description.includes(want)) bad.push(file + ' does not carry the title')
+      }
+      catch (err: any) { bad.push(file + ' is not JSON: ' + err.message) }
+    }
+
+    // Each manifest's own literal form, readable without its toolchain.
+    const literal: [string, string][] = [
+      ['csharp/DemoSDK.csproj', 'for the Bob\'s "Shop" &amp; Co #{x} public API.'],
+      ['elixir/mix.exs', 'for the Bob\'s \\"Shop\\" & Co \\#{x} public API.'],
+      ['lua/demo.rockspec', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['perl/Makefile.PL', 'for the Bob\\\'s "Shop" & Co #{x} public API.'],
+      ['py/pyproject.toml', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['py-data/pyproject.toml', 'for the Bob\'s \\"Shop\\" & Co #{x} public API.'],
+      ['rb/Demo_sdk.gemspec', 'for the Bob\'s \\"Shop\\" & Co \\#{x} public API.'],
+    ]
+    for (const [file, text] of literal) {
+      if (!String(out[file]).includes(text)) bad.push(file + ' lacks ' + text)
+    }
+    deepStrictEqual(bad, [])
+
+    // Where its toolchain is here, each manifest is read back by its own parser.
+    const toml = (path: string): [string, string[]] => ['python3', ['-I', '-c',
+      `import sys, tomllib\nsys.stdout.write(tomllib.load(open(sys.argv[1], 'rb'))['project']['description'])`, path]]
+    const readers: [string, string, (path: string) => [string, string[]]][] = [
+      ['py/pyproject.toml', 'TOML', toml],
+      ['py-data/pyproject.toml', 'TOML', toml],
+      ['csharp/DemoSDK.csproj', 'XML', (path) => ['python3', ['-I', '-c',
+        `import sys, xml.etree.ElementTree as E\nsys.stdout.write(E.parse(sys.argv[1]).getroot().find('PropertyGroup/Description').text)`, path]]],
+      ['rb/Demo_sdk.gemspec', 'gemspec', (path) => ['ruby', ['-e',
+        'spec = eval(File.read(ARGV[0])); print spec.summary, "\\n", spec.description', path]]],
+      ['lua/demo.rockspec', 'rockspec', (path) => ['lua', ['-e',
+        `dofile(${JSON.stringify(path)}) io.write(description.summary)`]]],
+      ['perl/Makefile.PL', 'Makefile.PL', (path) => ['perl', ['-e',
+        'my $src = do { local $/; open my $f, "<", $ARGV[0] or die; <$f> };' +
+        ' $src =~ /ABSTRACT\\s+=> (.+),\\n/ or die "no ABSTRACT"; print eval $1', path]]],
+      ['elixir/mix.exs', 'mix.exs', (path) => ['elixir', ['-e',
+        '[_, lit] = Regex.run(~r/description: (.+),\\n/, File.read!(hd(System.argv()))); ' +
+        '{v, _} = Code.eval_string(lit); IO.write(v)', path]]],
+    ]
+
+    const unread: string[] = []
+    const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-title-'))
+    try {
+      for (const [file, what, reader] of readers) {
+        const path = Path.join(dir, file.replace(/\//g, '_'))
+        writeFileSync(path, out[file])
+        const [tool, args] = reader(path)
+        if (null == toolchain(tool)) continue
+        const run = spawnSync(tool, args, { encoding: 'utf8', cwd: dir })
+        if (0 !== run.status) unread.push(`${file}: ${tool} cannot read the ${what}: ${run.stderr}`)
+        else if (!run.stdout.includes(want) ||
+          ('rb/Demo_sdk.gemspec' === file && 2 !== run.stdout.split(want).length - 1)) {
+          unread.push(`${file}: ${tool} reads the description as: ${run.stdout}`)
+        }
+      }
+    }
+    finally {
+      Fs.rmSync(dir, { recursive: true, force: true })
+    }
+    deepStrictEqual(unread, [])
+  })
+
+
   test('a declared version reaches every manifest', async () => {
     const TARGETS = [
       'csharp', 'elixir', 'java', 'js', 'kotlin',

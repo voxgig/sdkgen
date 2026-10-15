@@ -14,6 +14,8 @@ import type {
   Model,
 } from '@voxgig/apidef'
 
+import { elixirString } from './utility_elixir'
+
 
 const Package = cmp(async function Package(props: any) {
   const ctx$ = props.ctx$
@@ -58,7 +60,7 @@ const Package = cmp(async function Package(props: any) {
       app: :${app},
       version: "${packageVersion(model, target.name)}",
       elixir: "~> 1.14",
-      description: ${JSON.stringify(pkgDescription(model, target.name))},
+      description: ${elixirString(pkgDescription(model, target.name))},
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),

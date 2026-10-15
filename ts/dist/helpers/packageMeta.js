@@ -13,6 +13,7 @@ exports.isPublished = isPublished;
 exports.registryName = registryName;
 exports.vendorCommand = vendorCommand;
 exports.pkgDescription = pkgDescription;
+exports.tomlString = tomlString;
 exports.nonAffiliation = nonAffiliation;
 exports.keywords = keywords;
 exports.publisherInfo = publisherInfo;
@@ -301,6 +302,10 @@ function pkgDescription(model, target) {
     return `Unofficial generated ${langLabel(originName(model, target))} SDK` +
         ` for the ${apiName(model)} public API.` +
         ` Not affiliated with or endorsed by the upstream API provider.`;
+}
+// JSON's string escapes are all TOML's; TOML also refuses a raw DEL.
+function tomlString(s) {
+    return JSON.stringify(String(s)).replace(/\x7f/g, '\\u007F');
 }
 // Longer non-affiliation / generated-code disclosure for READMEs, LICENSE and
 // SECURITY.md. Generic on the upstream owner (owner names are only ~45%

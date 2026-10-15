@@ -476,9 +476,12 @@ const LUA_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/
 
 
 function luaKey(name: string): string {
-  return LUA_IDENT.test(name) && !isReservedName(name, 'lua')
-    ? name
-    : `["${name.replace(/[\\"]/g, '\\$&').replace(/\n/g, '\\n').replace(/\r/g, '\\r')}"]`
+  return LUA_IDENT.test(name) && !isReservedName(name, 'lua') ? name : `[${luaString(name)}]`
+}
+
+
+function luaString(s: string): string {
+  return `"${String(s).replace(/[\\"]/g, '\\$&').replace(/\n/g, '\\n').replace(/\r/g, '\\r')}"`
 }
 
 
@@ -520,5 +523,6 @@ export {
   jsKey,
   jsQuote,
   luaKey,
+  luaString,
   prefixLeadingDigit,
 }

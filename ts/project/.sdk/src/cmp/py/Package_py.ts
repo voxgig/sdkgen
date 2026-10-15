@@ -5,6 +5,7 @@ import {
   cmp,
   collectDeps,
   pkgDescription,
+  tomlString,
   keywords,
   repoInfo, packageName,
   packageVersion
@@ -34,7 +35,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "${distName}"
 version = "${packageVersion(model, target.name)}"
-description = "${pkgDescription(model, target.name)}"
+description = ${tomlString(pkgDescription(model, target.name))}
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"

@@ -314,6 +314,12 @@ function pkgDescription(model: any, target: string): string {
     ` Not affiliated with or endorsed by the upstream API provider.`
 }
 
+// JSON's string escapes are all TOML's; TOML also refuses a raw DEL.
+function tomlString(s: string): string {
+  return JSON.stringify(String(s)).replace(/\x7f/g, '\\u007F')
+}
+
+
 // Longer non-affiliation / generated-code disclosure for READMEs, LICENSE and
 // SECURITY.md. Generic on the upstream owner (owner names are only ~45%
 // reliably known across the fleet).
@@ -416,6 +422,7 @@ export {
   registryName,
   vendorCommand,
   pkgDescription,
+  tomlString,
   nonAffiliation,
   keywords,
   publisherInfo,

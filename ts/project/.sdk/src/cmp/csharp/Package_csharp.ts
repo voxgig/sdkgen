@@ -67,7 +67,7 @@ const Package = cmp(async function Package(props: any) {
     <Version>${packageVersion(model, target.name)}</Version>
     <PackageId>${Name}.Sdk</PackageId>
     <Authors>${xmlText(authorInfo(model, target.name).name)}</Authors>
-    <Description>${pkgDescription(model, target.name)}</Description>
+    <Description>${xmlText(pkgDescription(model, target.name))}</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>${repoUrl}</RepositoryUrl>
   </PropertyGroup>

@@ -32,6 +32,7 @@ declare function apiName(model: any): string;
 declare function packageName(model: any, eco: string): string;
 declare function installCommand(model: any, target: string): string;
 declare function pkgDescription(model: any, target: string): string;
+declare function tomlString(s: string): string;
 declare function nonAffiliation(model: any): string;
 declare function keywords(model: any): string[];
 declare function publisherInfo(model: any): {
@@ -51,4 +52,4 @@ declare function contributorList(model: any): {
 }[];
 declare function envToken(name: any): string;
 declare function envName(model: any): string;
-export { sdkName, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, apiName, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, nonAffiliation, keywords, publisherInfo, isDefaultPublisher, securityContact, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, docsSiteUrl, };
+export { sdkName, PUBLISHER, PUBLISHER_URL, SECURITY_EMAIL, GENERATOR_URL, LANG_LABEL, langLabel, originName, repoInfo, apiName, packageName, installCommand, registryState, isPublished, registryName, vendorCommand, pkgDescription, tomlString, nonAffiliation, keywords, publisherInfo, isDefaultPublisher, securityContact, authorInfo, contributorList, envName, envToken, goModule, goVersion, goPackageIdent, packageVersion, docsSiteUrl, };

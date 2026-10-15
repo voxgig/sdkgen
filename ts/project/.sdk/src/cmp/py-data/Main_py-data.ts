@@ -3,7 +3,7 @@ import {
   cmp, each,
   File, Content, Copy, Folder,
   entityCollection, entityOps, entityIdField, canonToDtype,
-  collectDeps, pkgDescription, keywords, repoInfo, envName, apiName,
+  collectDeps, pkgDescription, tomlString, keywords, repoInfo, envName, apiName,
   packageName, registryState, serverVariables,
   SdkGenError,
   packageVersion,
@@ -115,7 +115,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "${distName}"
 version = "${packageVersion(model, target.name)}"
-description = "${pkgDescription(model, target.name)}"
+description = ${tomlString(pkgDescription(model, target.name))}
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"

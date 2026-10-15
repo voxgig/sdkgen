@@ -31,6 +31,7 @@ exports.jsOptProp = jsOptProp;
 exports.jsKey = jsKey;
 exports.jsQuote = jsQuote;
 exports.luaKey = luaKey;
+exports.luaString = luaString;
 exports.prefixLeadingDigit = prefixLeadingDigit;
 const opShape_1 = require("./opShape");
 const JS_RESERVED = new Set([
@@ -399,9 +400,10 @@ function jsQuote(s) {
 }
 const LUA_IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
 function luaKey(name) {
-    return LUA_IDENT.test(name) && !isReservedName(name, 'lua')
-        ? name
-        : `["${name.replace(/[\\"]/g, '\\$&').replace(/\n/g, '\\n').replace(/\r/g, '\\r')}"]`;
+    return LUA_IDENT.test(name) && !isReservedName(name, 'lua') ? name : `[${luaString(name)}]`;
+}
+function luaString(s) {
+    return `"${String(s).replace(/[\\"]/g, '\\$&').replace(/\n/g, '\\n').replace(/\r/g, '\\r')}"`;
 }
 // As `jsProp`, but optional-chained: `obj?.name` / `obj?.["3ds_session_id"]`.
 function jsOptProp(obj, name) {

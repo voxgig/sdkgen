@@ -29,6 +29,8 @@ import {
   vendorCommand,
   goPackageIdent,
   luaKey,
+  luaString,
+  tomlString,
 } from '../dist/sdkgen.js'
 
 
@@ -344,6 +346,13 @@ describe('helpers', () => {
 
       // `self` is reserved in Ruby but NOT in Lua, so it is a bare key here.
       strictEqual(luaKey('self'), 'self')
+    })
+
+
+    test('luaString and tomlString escape what their string forms cannot hold', () => {
+      strictEqual(luaString('Bob\'s "Shop" \\ Co\n'), '"Bob\'s \\"Shop\\" \\\\ Co\\n"')
+      strictEqual(luaKey('a"b\\c'), '[' + luaString('a"b\\c') + ']')
+      strictEqual(tomlString('Bob\'s "Shop" \\ Co\n\t\x7f'), '"Bob\'s \\"Shop\\" \\\\ Co\\n\\t\\u007F"')
     })
 
 

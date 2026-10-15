@@ -53,7 +53,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME             => '${Name}SDK',
     VERSION_FROM     => 'lib/${Name}SDK.pm',
-    ABSTRACT         => '${pkgDescription(model, target.name)}',
+    ABSTRACT         => ${perlStringLiteral(pkgDescription(model, target.name))},
     AUTHOR           => ${perlStringLiteral(authorInfo(model, target.name).name)},
     LICENSE          => 'mit',
     MIN_PERL_VERSION => '${minperl}',
