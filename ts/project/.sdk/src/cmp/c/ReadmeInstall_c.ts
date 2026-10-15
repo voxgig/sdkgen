@@ -1,6 +1,24 @@
 
 import { cmp, Content, installCommand, isPublished, repoInfo } from '@voxgig/sdkgen'
 
+import { cIdent } from './utility_c'
+
+
+// Why one program can hold several generated SDKs, and what a program must
+// do to keep it so.
+function linking(target: any, model: any): string {
+  const prefix = cIdent(model) + '_'
+  return `Every global name in \`libsdk.a\` carries this SDK's prefix
+(\`${prefix}sdk_prepare\`, \`${prefix}cmap\`, ...), so one program can link several
+generated SDKs. \`make\` writes the map from each short name to its prefixed
+one to \`${target.name}/core/prefix.h\`, and \`core/api.h\` includes it, so your code
+keeps the short names. Include \`core/api.h\` before any other SDK header, and
+give each SDK a source file of its own: the headers of two SDKs declare the
+same type names.
+
+`
+}
+
 
 const ReadmeInstall = cmp(function ReadmeInstall(props: any) {
   const { target, ctx$ } = props
@@ -17,7 +35,7 @@ Or build it from a source checkout with the bundled \`Makefile\`:
 cd ${target.name} && make
 \`\`\`
 
-`)
+${linking(target, model)}`)
     return
   }
 
@@ -43,7 +61,7 @@ cc -I ${target.name}/core -I ${target.name}/utility/struct \\
    myapp.c ${target.name}/libsdk.a -lm -o myapp
 \`\`\`
 
-`)
+${linking(target, model)}`)
 })
 
 

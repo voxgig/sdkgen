@@ -1882,6 +1882,95 @@ abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") 
   })
 
 
+  // SDKs of ONE model, so every entity, utility and vendored name is the same
+  // in each and only the SDK's own prefix can keep them apart.
+  test('c: two generated SDKs link into one program', async (t) => {
+    const make = toolchain('make')
+    const cc = cCompiler()
+    const nm = toolchain('nm')
+    if (null == make || null == cc || null == nm) {
+      return t.skip('needs make, nm and a C compiler (make: ' + make + ', nm: ' + nm +
+        ', cc: ' + cc + ')')
+    }
+
+    const names = ['alpha', 'omega']
+    const roots: Record<string, string> = {}
+    for (const name of names) {
+      roots[name] = Path.join(tmp, 'c-link-' + name, 'c')
+      await generateTo('c', roots[name], undefined, undefined, { name })
+      const built = run(make, ['CC=' + cc, 'build'], roots[name])
+      if (built.timedOut) return t.skip('c: ' + built.out)
+      ok(built.ok, 'c: the ' + name + ' SDK did not build:\n' + tail(built.out))
+    }
+
+    const defined = (name: string): string[] =>
+      run(nm, ['-P', '-g', 'libsdk.a'], roots[name]).out.split('\n')
+        .map((line) => line.trim().split(/\s+/))
+        .filter((f) => 2 <= f.length && /^[A-Z]$/.test(f[1]) && 'U' !== f[1])
+        .map((f) => f[0].replace(/^_/, ''))
+    const alpha = defined('alpha')
+    const omega = new Set(defined('omega'))
+    ok(100 < alpha.length && 100 < omega.size,
+      'c: nm read too few names to compare (' + alpha.length + ', ' + omega.size + ')')
+    deepStrictEqual(alpha.filter((n) => !n.startsWith('alpha_')), [],
+      'c: the alpha archive defines names without its prefix')
+    deepStrictEqual(alpha.filter((n) => omega.has(n)), [],
+      'c: both archives define these names')
+
+    const dir = Path.join(tmp, 'c-link')
+    Fs.mkdirSync(dir, { recursive: true })
+    for (const name of names) {
+      Fs.writeFileSync(Path.join(dir, name + '_part.c'), `#include "api.h"
+
+#include <stdio.h>
+
+static voxgig_value* answer(void* ud, voxgig_value* args) {
+  (void)ud; (void)args;
+  return cmap(5, "status", v_num(200), "statusText", v_str("OK"), "headers", v_map(),
+    "body", v_str("{}"), "json", json_thunk(cmap(2, "id", v_str("p01"),
+    "title", v_str("${name}"))));
+}
+
+int ${name}_part(void) {
+  PNError* err = NULL;
+  ${pascal(name)}SDK* client = ${name}_sdk_new(cmap(1, "system", cmap(1, "fetch", vfn(answer, NULL))));
+  Entity* planet = ${name}_planet(client, NULL);
+  Entity* got = planet->vt->load(planet, cmap(1, "id", v_str("p01")), NULL, &err);
+  if (err) { printf("${name}: %s\\n", err->msg); return 1; }
+  printf("${name}: %s\\n", get_str(got->vt->data(got, NULL), "title"));
+  return 0;
+}
+`)
+    }
+    Fs.writeFileSync(Path.join(dir, 'main.c'), `#include <stdio.h>
+
+int alpha_part(void);
+int omega_part(void);
+
+int main(void) {
+  return alpha_part() | omega_part();
+}
+`)
+
+    const objects: string[] = []
+    for (const name of names) {
+      const built = run(cc, ['-std=c11', '-D_GNU_SOURCE', '-I', Path.join(roots[name], 'core'),
+        '-I', Path.join(roots[name], 'utility', 'struct'), '-c', name + '_part.c',
+        '-o', name + '_part.o'], dir)
+      ok(built.ok, 'c: ' + name + '_part.c does not compile:\n' + tail(built.out))
+      objects.push(name + '_part.o')
+    }
+    const archives = names.map((name) => Path.join(roots[name], 'libsdk.a'))
+    const linked = run(cc, ['main.c', ...objects, ...archives, '-lm', '-o', 'both.out'], dir)
+    ok(linked.ok, 'c: the two SDKs do not link into one program:\n' + tail(linked.out))
+
+    const ran = run(Path.join(dir, 'both.out'), [], dir)
+    ok(ran.ok, 'c: the two-SDK program failed:\n' + tail(ran.out))
+    strictEqual(ran.out.replace(/\r\n/g, '\n').trim(), 'alpha: alpha\nomega: omega',
+      'c: each SDK did not answer through its own pipeline')
+  })
+
+
   test('perl: the secrets feature runs with the feature active', async (t) => {
     const sdkroot = Path.join(tmp, 'perl-secrets')
     await generateTo('perl', sdkroot,
@@ -7355,10 +7444,13 @@ const DOC_LANES: {
     needs: 'C compiler',
     compile: (sdkroot, blocks) => {
       const cc = cCompiler()
-      if (null == cc) return null
+      const make = toolchain('make')
+      if (null == cc || null == make) return null
       const dir = Path.join(sdkroot, '_readme')
       Fs.mkdirSync(dir, { recursive: true })
-      return blocks.map((block, i) => {
+      // core/api.h includes the prefix map `make` writes, as for any consumer.
+      const prefix = { label: 'core/prefix.h', bin: make, args: ['CC=' + cc, 'core/prefix.h'] }
+      return [prefix, ...blocks.map((block, i) => {
         const file = Path.join(dir, 'example_' + i + '.c')
         Fs.writeFileSync(file, cExample(block,
           pageImports(blocks, block.doc, /^#include\b/)))
@@ -7372,7 +7464,7 @@ const DOC_LANES: {
             '-Werror=implicit-function-declaration',
             '-iquote', '.', '-I', 'core', '-I', 'utility/struct', '-I', 'feature', file],
         }
-      })
+      })]
     },
   },
   {

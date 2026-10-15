@@ -12,7 +12,7 @@ src/cmp/c/EntityBase_c.ts 70f610b1220f
 src/cmp/c/EntityOperation_c.ts 2f10c1394cb9
 src/cmp/c/EntityTypes_c.ts f00a21c238c1
 src/cmp/c/Entity_c.ts c3dbf7462270
-src/cmp/c/Gitignore_c.ts 1c1cfa982fef
+src/cmp/c/Gitignore_c.ts 3a2606d4e3e3
 src/cmp/c/MainEntity_c.ts d6e780384b49
 src/cmp/c/Main_c.ts c1dce7783690
 src/cmp/c/Package_c.ts e1fcd4b774ba
@@ -21,7 +21,7 @@ src/cmp/c/ReadmeEntity_c.ts 7dc59cfb6e97
 src/cmp/c/ReadmeExamplesTest_c.ts 2e899b115aaa
 src/cmp/c/ReadmeExplanation_c.ts 193fa2c194dd
 src/cmp/c/ReadmeHowto_c.ts 5ab5161820d7
-src/cmp/c/ReadmeInstall_c.ts 2da234817e64
+src/cmp/c/ReadmeInstall_c.ts d05387675109
 src/cmp/c/ReadmeIntro_c.ts 75d0f4c82317
 src/cmp/c/ReadmeModel_c.ts a28efdaa99f9
 src/cmp/c/ReadmeOptions_c.ts f305d6f87635
@@ -46,7 +46,7 @@ src/cmp/c/fragment/Main.fragment.c 86f9e0dff0b5
 src/cmp/c/tsconfig.json 720a3f229019
 src/cmp/c/utility_c.ts 412b3308b0d9
 tm/c/LICENSE 52acd47c245f
-tm/c/Makefile ab2d345ce24f
+tm/c/Makefile a7fbdcd38479
 tm/c/VERSION e6635045e1d2
 tm/c/core/context.c 3d02628a07f0
 tm/c/core/control.c acb5a3790b08
@@ -56,7 +56,7 @@ tm/c/core/operation.c fb16ed309ed9
 tm/c/core/point.c 1539404e1bcc
 tm/c/core/response.c 735acc3c1292
 tm/c/core/result.c 60bde846d061
-tm/c/core/sdk.h 2d7296b95e10
+tm/c/core/sdk.h c7188cae61a0
 tm/c/core/spec.c cb3f60193af1
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
