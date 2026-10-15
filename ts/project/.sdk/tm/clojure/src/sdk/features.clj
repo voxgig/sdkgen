@@ -465,7 +465,9 @@
         track! (fn [kind]
                  (let [t (track-ensure! fa "_cache" (vs/jm "hit" 0 "miss" 0 "bypass" 0))]
                    (.put ^java.util.Map t kind (inc (long (mget t kind))))))
+        ;; A body the transport could not read as JSON passes through, for the operation to report.
         cacheable? (fn [res] (and (vs/ismap res)
+                                  (not (true? (vs/getprop res "unreadable")))
                                   (let [s (vs/getprop res "status")] (and (number? s) (>= s 200) (< s 300)))))
         snapshot (fn [res]
                    (let [jf (vs/getprop res "json")

@@ -127,9 +127,11 @@ private:
     return res;
   }
 
+  // A body the transport could not read as JSON passes through, for the operation to report.
   bool storable(const Value& res) {
     int status = fopt::fresStatus(res);
-    return status >= 200 && status < 300;
+    Value unreadable = getp(res, "unreadable");
+    return status >= 200 && status < 300 && !(unreadable.is_bool() && unreadable.as_bool());
   }
 
   CacheSnapshot snapshot(const Value& res) {

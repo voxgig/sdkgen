@@ -103,7 +103,8 @@ end
 
 
 function CacheFeature:_cacheable(res, err)
-  if err ~= nil or res == nil then
+  -- A body the transport could not read as JSON passes through, for the operation to report.
+  if err ~= nil or res == nil or res["unreadable"] == true then
     return false
   end
   local status = res["status"]

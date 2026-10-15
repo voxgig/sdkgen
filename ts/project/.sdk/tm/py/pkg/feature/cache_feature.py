@@ -77,8 +77,9 @@ class ProjectNameCacheFeature(ProjectNameBaseFeature):
         self._track("bypass")
         return res, err
 
+    # A body the transport could not read as JSON passes through, for the operation to report.
     def _cacheable(self, res):
-        if not isinstance(res, dict):
+        if not isinstance(res, dict) or res.get("unreadable") is True:
             return False
         status = res.get("status")
         if not isinstance(status, (int, float)) or isinstance(status, bool):

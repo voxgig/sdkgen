@@ -102,6 +102,8 @@ sub through {
 sub _cacheable {
   my ($self, $res) = @_;
   return 0 unless Voxgig::Struct::ismap($res);
+  # A body the transport could not read as JSON passes through, for the operation to report.
+  return 0 if $res->{unreadable};
   my $status = $res->{status};
   return 0 unless defined $status && !ref($status)
     && Scalar::Util::looks_like_number($status);

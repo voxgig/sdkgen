@@ -425,7 +425,10 @@ Two processes each get their own bucket.
 Serves a cached snapshot instead of hitting the network when the same
 method and URL was fetched within `ttl` milliseconds. Only successful
 (2xx) responses to cacheable methods are stored, keyed by method plus URL.
-The store is bounded: at `max` entries the oldest is evicted.
+The store is bounded: at `max` entries the oldest is evicted. A body that
+is not JSON is never stored: it passes through, so the operation raises
+the same `response_content_type` or `response_json_invalid` error it
+raises without the cache.
 
 Response bodies are one-shot streams, so a hit cannot simply replay the
 original object. The feature normalises the body on capture, which means

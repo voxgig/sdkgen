@@ -114,9 +114,11 @@ class CacheFeature extends BaseFeature("cache", "0.0.1", true) {
     res
   }
 
+  // A body the transport could not read as JSON passes through, for the operation to report.
   private def storable(res: Object): Boolean = {
     val status = FeatureOptions.fresStatus(res)
-    status >= 200 && status < 300
+    status >= 200 && status < 300 &&
+      java.lang.Boolean.TRUE != res.asInstanceOf[JMap[String, Object]].get("unreadable")
   }
 
   private def snapshot(res: Object): CacheSnapshot = {

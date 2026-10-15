@@ -63,6 +63,14 @@ class CacheFeature extends BaseFeature {
 
     if (this._cacheable(res)) {
       const snapshot = await this._snapshot(res)
+
+      // A body that is not JSON is not stored, and the replay hands its text
+      // on: the operation reports it as it would without the cache.
+      if (snapshot.failed) {
+        this._track('bypass')
+        return this._replay(snapshot)
+      }
+
       const ttl = null == this._options.ttl ? 5000 : this._options.ttl
       this._evict()
       this._store.set(key, { expiry: now + ttl, snapshot })
@@ -86,14 +94,28 @@ class CacheFeature extends BaseFeature {
 
   async _snapshot(res) {
     let data = undefined
-    if ('function' === typeof res.json) {
+    let text = undefined
+    let unread = undefined
+    let failed = false
+    if ('function' === typeof res.text) {
+      try {
+        text = await res.text()
+        data = '' === text.trim() ? undefined : JSON.parse(text)
+      }
+      catch (err) {
+        // Unread, or not JSON: the replay's text() hands the same failure on.
+        failed = true
+        unread = null == text ? err : undefined
+      }
+    }
+    else if ('function' === typeof res.json) {
       try { data = await res.json() } catch (_e) { data = undefined }
     }
     const headers = {}
     if (res.headers && 'function' === typeof res.headers.forEach) {
       res.headers.forEach((v, k) => headers[k] = v)
     }
-    return { status: res.status, statusText: res.statusText, data, headers }
+    return { status: res.status, statusText: res.statusText, data, headers, text, unread, failed }
   }
 
 
@@ -104,6 +126,14 @@ class CacheFeature extends BaseFeature {
       statusText: snapshot.statusText,
       body: 'not-used',
       json: async () => snapshot.data,
+      ...(null == snapshot.text && null == snapshot.unread ? {} : {
+        text: async () => {
+          if (null != snapshot.unread) {
+            throw snapshot.unread
+          }
+          return snapshot.text
+        },
+      }),
       headers: {
         get(key) { return headers[String(key).toLowerCase()] },
         forEach(callback) {

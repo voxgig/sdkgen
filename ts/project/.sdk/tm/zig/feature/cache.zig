@@ -164,8 +164,10 @@ fn through(track: *CacheTrack, options: Value, ctx: *Context, url: []const u8, f
     }
 }
 
+// A body the transport could not read as JSON passes through, for the operation to report.
 fn storable(res: Value) bool {
     const status = sup.fres_status(res) orelse return false;
+    if (h.get_bool(res, "unreadable") orelse false) return false;
     return status >= 200 and status < 300;
 }
 

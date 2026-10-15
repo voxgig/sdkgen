@@ -70,8 +70,10 @@ class ProjectNameCacheFeature < ProjectNameBaseFeature
     return res, err
   end
 
+  # A body the transport could not read as JSON passes through, for the operation to report.
   def _cacheable(res)
     return false unless res.is_a?(Hash)
+    return false if true == res["unreadable"]
     status = res["status"]
     status.is_a?(Numeric) && status >= 200 && status < 300
   end

@@ -227,7 +227,7 @@ tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 5978c081353b
 tm/clojure/src/sdk/core.clj 3835d616e1f2
-tm/clojure/src/sdk/features.clj bf69cbc11b36
+tm/clojure/src/sdk/features.clj a08f2202dce7
 tm/clojure/src/voxgig/struct.clj d1254bc5d2cd
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 590d662e1233
@@ -1139,7 +1139,7 @@ src/cmp/ocaml/utility_ocaml.ts c7b75b60e39c
 tm/ocaml/LICENSE 7a036af3f8a4
 tm/ocaml/Makefile 2420a3372dbb
 tm/ocaml/VERSION e6635045e1d2
-tm/ocaml/sdk_features.ml 6f9ef9361376
+tm/ocaml/sdk_features.ml 7d5735644852
 tm/ocaml/sdk_helpers.ml 24933d1c5031
 tm/ocaml/sdk_json.ml 7514a4177ebb
 tm/ocaml/sdk_runtime.ml 27b255cf52ed
@@ -1798,7 +1798,7 @@ tm/scala/core/Types.scala 931d5c55babc
 tm/scala/core/Utility.scala 577bd7a77a2e
 tm/scala/feature/AuditFeature.scala 25d0799b1b72
 tm/scala/feature/BaseFeature.scala 0c6439fca620
-tm/scala/feature/CacheFeature.scala dde3197ebb96
+tm/scala/feature/CacheFeature.scala 7e813980df24
 tm/scala/feature/ClienttrackFeature.scala a25ea3610993
 tm/scala/feature/CostFeature.scala f2777eba14cd
 tm/scala/feature/DebugFeature.scala f5dfb38ae865
@@ -2198,7 +2198,7 @@ tm/zig/core/types.zig 3a8f6e7a08f9
 tm/zig/core/utility.zig 59304b3f5e39
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
-tm/zig/feature/cache.zig d7352c80c34e
+tm/zig/feature/cache.zig ef3b23e5e239
 tm/zig/feature/clienttrack.zig c83ed2b08d81
 tm/zig/feature/cost.zig 2c3882a47898
 tm/zig/feature/debug.zig b2098ff40efa

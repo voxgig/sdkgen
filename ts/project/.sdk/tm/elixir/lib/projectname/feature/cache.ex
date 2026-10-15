@@ -75,8 +75,9 @@ defmodule ProjectName.Feature.Cache do
     end
   end
 
+  # A body the transport could not read as JSON passes through, for the operation to report.
   defp cacheable(res) do
-    if not S.ismap(res) do
+    if not S.ismap(res) or S.getprop(res, "unreadable") == true do
       false
     else
       status = S.getprop(res, "status")

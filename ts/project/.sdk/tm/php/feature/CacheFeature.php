@@ -86,7 +86,8 @@ class ProjectNameCacheFeature extends ProjectNameBaseFeature
 
     private function _cacheable(mixed $res, mixed $err): bool
     {
-        if ($err !== null || !is_array($res)) {
+        // A body the transport could not read as JSON passes through, for the operation to report.
+        if ($err !== null || !is_array($res) || true === ($res['unreadable'] ?? false)) {
             return false;
         }
         $status = $res['status'] ?? null;

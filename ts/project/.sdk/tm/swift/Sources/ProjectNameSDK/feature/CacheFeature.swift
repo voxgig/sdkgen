@@ -107,9 +107,10 @@ public final class CacheFeature: BaseFeature {
     return res
   }
 
+  // A body the transport could not read as JSON passes through, for the operation to report.
   private static func storable(_ res: Value) -> Bool {
     let (status, has) = fresStatus(res)
-    return has && status >= 200 && status < 300
+    return has && status >= 200 && status < 300 && gp(res, "unreadable") != .bool(true)
   }
 
   private static func snapshot(_ res: Value) -> CacheSnapshot {

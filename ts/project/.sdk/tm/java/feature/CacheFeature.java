@@ -125,9 +125,11 @@ public class CacheFeature extends BaseFeature {
     return res;
   }
 
+  // A body the transport could not read as JSON passes through, for the operation to report.
   private boolean storable(Object res) {
     int status = FeatureOptions.fresStatus(res);
-    return status >= 200 && status < 300;
+    return status >= 200 && status < 300
+        && !Boolean.TRUE.equals(((Map<String, Object>) res).get("unreadable"));
   }
 
   private CacheSnapshot snapshot(Object res) {

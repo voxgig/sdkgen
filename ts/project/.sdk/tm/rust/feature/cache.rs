@@ -141,8 +141,10 @@ fn through(
     out
 }
 
+// A body the transport could not read as JSON passes through, for the operation to report.
 fn storable(res: &Value) -> bool {
     matches!(fres_status(res), Some(status) if (200..300).contains(&status))
+        && !matches!(getp(res, "unreadable"), Value::Bool(true))
 }
 
 fn snapshot(res: &Value) -> CacheSnapshot {

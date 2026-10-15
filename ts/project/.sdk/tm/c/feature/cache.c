@@ -86,9 +86,12 @@ static bool option_list_match(voxgig_value* options, const char* key,
   return false;
 }
 
+// A body the transport could not read as JSON passes through, for the operation to report.
 static bool storable(voxgig_value* res) {
   int64_t status;
-  return fres_status(res, &status) && status >= 200 && status < 300;
+  bool unreadable = false;
+  get_bool(res, "unreadable", &unreadable);
+  return fres_status(res, &status) && status >= 200 && status < 300 && !unreadable;
 }
 
 // snapshot captures the response as a re-readable map:

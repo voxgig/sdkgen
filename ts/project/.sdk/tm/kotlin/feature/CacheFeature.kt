@@ -108,9 +108,10 @@ class CacheFeature : BaseFeature("cache", "0.0.1", true) {
     return res
   }
 
+  // A body the transport could not read as JSON passes through, for the operation to report.
   private fun storable(res: Any?): Boolean {
     val status = FeatureOptions.fresStatus(res)
-    return status in 200..299
+    return status in 200..299 && (res as Map<*, *>)["unreadable"] != true
   }
 
   private fun snapshot(res: Any?): CacheSnapshot {

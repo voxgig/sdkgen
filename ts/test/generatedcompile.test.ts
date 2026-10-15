@@ -7834,12 +7834,14 @@ describe('probes driven through a generated SDK', () => {
   let tmp = ''
   const generated = new Map<string, Promise<string>>()
 
-  const sdkFor = (target: string): Promise<string> => {
-    if (!generated.has(target)) {
-      const sdkroot = Path.join(tmp, target)
-      generated.set(target, generateTo(target, sdkroot, MEDIA_MODEL).then(() => sdkroot))
+  // A feature list generates a second SDK beside the default one.
+  const sdkFor = (target: string, features?: string[]): Promise<string> => {
+    const key = null == features ? target : target + '-' + features.join('-')
+    if (!generated.has(key)) {
+      const sdkroot = Path.join(tmp, key)
+      generated.set(key, generateTo(target, sdkroot, MEDIA_MODEL, features).then(() => sdkroot))
     }
-    return generated.get(target)!
+    return generated.get(key)!
   }
 
   const writer = (sdkroot: string) => (name: string, source: string) => {
@@ -8013,7 +8015,7 @@ describe('probes driven through a generated SDK', () => {
         const key = 'ts' === lane.target || 'js' === lane.target ? 'node' : lane.target
         ok(null != NONJSON_PROBES[key], lane.target + ': no non-JSON probe')
 
-        const sdkroot = await sdkFor(lane.target)
+        const sdkroot = await sdkFor(lane.target, ['test', 'log', 'cache'])
         const cases = Path.join(sdkroot, 'nonjson-cases.json')
         Fs.writeFileSync(cases, JSON.stringify(NONJSON_CASES))
         const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
@@ -8039,7 +8041,8 @@ describe('probes driven through a generated SDK', () => {
         }
 
         ok(ran.ok, lane.target + ': the non-JSON probe failed:\n' + tail(ran.out, 60))
-        deepStrictEqual(nonjsonFailures(ran.out, lane.target, seam), [],
+        deepStrictEqual(
+          nonjsonFailures(ran.out, lane.target, seam, ['probe', 'direct', 'cache1', 'cache2']), [],
           lane.target + ' probe output:\n' + tail(ran.out))
       })
 

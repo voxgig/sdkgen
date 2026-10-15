@@ -107,9 +107,12 @@ func (f *CacheFeature) through(ctx *core.Context, url string, fetchdef map[strin
 	return res, err
 }
 
+// A body the transport could not read as JSON passes through, for the operation to report.
 func (f *CacheFeature) storable(res any) bool {
 	status, ok := fresStatus(res)
-	return ok && status >= 200 && status < 300
+	rm, _ := res.(map[string]any)
+	unreadable, _ := rm["unreadable"].(bool)
+	return ok && status >= 200 && status < 300 && !unreadable
 }
 
 func (f *CacheFeature) snapshot(res any) *cacheSnapshot {

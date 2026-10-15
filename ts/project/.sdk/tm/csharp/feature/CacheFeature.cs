@@ -118,10 +118,12 @@ public class CacheFeature : BaseFeature
         return res;
     }
 
+    // A body the transport could not read as JSON passes through, for the operation to report.
     private static bool Storable(object? res)
     {
         var (status, has) = FresStatus(res);
-        return has && status >= 200 && status < 300;
+        return has && status >= 200 && status < 300 &&
+            !(res is Dictionary<string, object?> rm && rm.TryGetValue("unreadable", out var u) && u is true);
     }
 
     private static CacheSnapshot Snapshot(object? res)

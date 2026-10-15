@@ -79,11 +79,12 @@ function nonjsonOutcomes(out: string, path: string): Record<string, { code: stri
 const NONJSON_MESSAGE_ONLY = ['rust', 'c', 'cpp', 'zig']
 
 
-// Each case that did not get its code, or whose message lacks a part, the agent
-// it must name among them, or holds one it must not, by both paths.
-function nonjsonFailures(out: string, target: string, seam: boolean): string[] {
+// Each case missing its code, a part of its message or the agent it must name, or
+// holding what it must not, by each path; `cache1` and `cache2` list twice, cached.
+function nonjsonFailures(out: string, target: string, seam: boolean,
+  paths: string[] = ['probe', 'direct']): string[] {
   const fails: string[] = []
-  for (const path of ['probe', 'direct']) {
+  for (const path of paths) {
     const found = nonjsonOutcomes(out, path)
     for (const c of NONJSON_CASES) {
       const want = NONJSON_EXPECT[c.name]
@@ -167,6 +168,18 @@ const report = (path, name, code, message) => console.log('nonjson-' + path + ':
     const res = await client.direct({ path: 'cat' })
     if (res.ok) report('direct', c.name, 'ok')
     else report('direct', c.name, String(res.err?.code), res.err?.message)
+    const cached = new SDK({ base: base + '/c' + i, apikey: '${NONJSON_SECRET}',
+      feature: { cache: { active: true } },
+      ...(c.agent ? { headers: { 'user-agent': c.agent } } : {}) })
+    for (const path of ['cache1', 'cache2']) {
+      try {
+        await cached.Cat().list({})
+        report(path, c.name, 'ok')
+      }
+      catch (err) {
+        report(path, c.name, String(err.code), err.message)
+      }
+    }
   }
 })()
 `
@@ -217,6 +230,16 @@ func TestNonjsonProbe(t *testing.T) {
 		} else {
 			fmt.Printf("nonjson-direct: %s: none | %v\n", c.Name, res["err"])
 		}
+		copts := map[string]any{"base": fmt.Sprintf("%s/c%d", base, i), "apikey": "SECRET_TOKEN",
+			"feature": map[string]any{"cache": map[string]any{"active": true}}}
+		if c.Agent != "" {
+			copts["headers"] = map[string]any{"user-agent": c.Agent}
+		}
+		cached := sdk.NewDemoSDK(copts)
+		for _, path := range []string{"cache1", "cache2"} {
+			_, err := cached.Cat(nil).List(map[string]any{}, nil)
+			nonjsonReport(path, c.Name, err)
+		}
 	}
 }
 
@@ -232,7 +255,7 @@ func nonjsonReport(path, name string, err error) {
 	fmt.Printf("nonjson-%s: %s: %s | %s\n", path, name, code,
 		nonjsonSpace.ReplaceAllString(err.Error(), " "))
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 // Without requests, NONJSON_SEAM answers here as the transport would.
@@ -280,7 +303,20 @@ for i, c in enumerate(cases):
     else:
         err = res.get('err')
         report('direct', c['name'], getattr(err, 'code', 'none'), err)
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+    copts = {'base': '%s/c%d' % (base, i), 'apikey': 'SECRET_TOKEN',
+             'feature': {'cache': {'active': True}}}
+    if c.get('agent'):
+        copts['headers'] = {'user-agent': c['agent']}
+    if seam:
+        copts['system'] = {'fetch': stub_for(c)}
+    cached = DemoSDK(copts)
+    for path in ('cache1', 'cache2'):
+        try:
+            cached.Cat().list({})
+            report(path, c['name'], 'ok')
+        except Exception as e:
+            report(path, c['name'], getattr(e, 'code', 'none'), e)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const RB_PROBE = String.raw`
@@ -316,8 +352,20 @@ cases.each_with_index do |c, i|
     err = res['err']
     report('direct', c['name'], code_of(err), err.respond_to?(:message) ? err.message : err)
   end
+  copts = { 'base' => "#{base}/c#{i}", 'apikey' => 'SECRET_TOKEN',
+            'feature' => { 'cache' => { 'active' => true } } }
+  copts['headers'] = { 'user-agent' => c['agent'] } if c['agent']
+  cached = DemoSDK.new(copts)
+  %w[cache1 cache2].each do |path|
+    begin
+      cached.Cat.list({})
+      report(path, c['name'], 'ok')
+    rescue StandardError => e
+      report(path, c['name'], code_of(e), e.message)
+    end
+  end
 end
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const PHP_PROBE = String.raw`<?php
@@ -358,8 +406,22 @@ foreach ($cases as $i => $c) {
         $err = $res['err'] ?? null;
         nonjson_report('direct', $c['name'], nonjson_code($err), nonjson_message($err));
     }
+    $copts = ['base' => $base . '/c' . $i, 'apikey' => 'SECRET_TOKEN',
+        'feature' => ['cache' => ['active' => true]]];
+    if (!empty($c['agent'])) {
+        $copts['headers'] = ['user-agent' => $c['agent']];
+    }
+    $cached = new DemoSDK($copts);
+    foreach (['cache1', 'cache2'] as $path) {
+        try {
+            $cached->Cat()->list([]);
+            nonjson_report($path, $c['name'], 'ok');
+        } catch (Throwable $e) {
+            nonjson_report($path, $c['name'], nonjson_code($e), nonjson_message($e));
+        }
+    }
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const PERL_PROBE = String.raw`
@@ -407,9 +469,22 @@ for my $c (@$cases) {
     report('direct', $c->{name}, code_of($res->{err}),
       defined $res->{err} ? "$res->{err}" : '');
   }
+  my $copts = { base => "$base/c$i", apikey => 'SECRET_TOKEN',
+    feature => { cache => { active => 1 } } };
+  $copts->{headers} = { 'user-agent' => $c->{agent} } if defined $c->{agent};
+  my $cached = DemoSDK->new($copts);
+  for my $path (qw(cache1 cache2)) {
+    if (eval { $cached->Cat->list({}); 1 }) {
+      report($path, $c->{name}, 'ok');
+    }
+    else {
+      my $err = $@;
+      report($path, $c->{name}, code_of($err), "$err");
+    }
+  }
   $i++;
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 // Without luasocket, NONJSON_SEAM answers here as the transport would.
@@ -471,8 +546,23 @@ for i, c in ipairs(cases) do
   else
     report("direct", c.name, code_of(dres.err), message_of(dres.err))
   end
+  local copts = { base = base .. "/c" .. (i - 1), apikey = "SECRET_TOKEN",
+    feature = { cache = { active = true } } }
+  if c.agent ~= nil then copts.headers = { ["user-agent"] = c.agent } end
+  if seam then copts.system = { fetch = stub_for(c) } end
+  local cached = sdk.new(copts)
+  for _, path in ipairs({ "cache1", "cache2" }) do
+    local cok, cres, cerr = pcall(function() local ent = cached:Cat(); return ent:list({}) end)
+    if not cok then
+      report(path, c.name, code_of(cres), message_of(cres))
+    elseif cerr ~= nil then
+      report(path, c.name, code_of(cerr), message_of(cerr))
+    else
+      report(path, c.name, "ok")
+    end
+  end
 end
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const JAVA_PROBE = String.raw`
@@ -518,10 +608,23 @@ public class NonjsonProbe {
       Map<String, Object> res = client.direct(map("path", "cat"));
       if (Boolean.TRUE.equals(res.get("ok"))) report("direct", f[0], "ok", null);
       else report("direct", f[0], codeOf(res.get("err")), messageOf(res.get("err")));
+      Map<String, Object> copts = map("base", base + "/c" + i, "apikey", "SECRET_TOKEN",
+          "feature", map("cache", map("active", true)));
+      if (!f[3].isEmpty()) copts.put("headers", map("user-agent", f[3]));
+      DemoSDK cached = new DemoSDK(copts);
+      for (String path : new String[] { "cache1", "cache2" }) {
+        try {
+          cached.cat(null).list(map(), null);
+          report(path, f[0], "ok", null);
+        }
+        catch (RuntimeException e) {
+          report(path, f[0], codeOf(e), messageOf(e));
+        }
+      }
     }
   }
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const KOTLIN_PROBE = String.raw`package voxgig.demosdk.sdktest
@@ -564,10 +667,22 @@ class NonjsonProbe {
       val res = client.direct(linkedMapOf<String, Any?>("path" to "cat"))
       if (res["ok"] == true) report("direct", f[0], "ok", null)
       else report("direct", f[0], codeOf(res["err"]), messageOf(res["err"]))
+      val copts = linkedMapOf<String, Any?>("base" to base + "/c" + i, "apikey" to "SECRET_TOKEN",
+        "feature" to linkedMapOf<String, Any?>("cache" to linkedMapOf<String, Any?>("active" to true)))
+      if (f[3].isNotEmpty()) copts["headers"] = linkedMapOf<String, Any?>("user-agent" to f[3])
+      val cached = DemoSDK(copts)
+      for (path in listOf("cache1", "cache2")) {
+        try {
+          cached.cat(null).list(linkedMapOf<String, Any?>(), null)
+          report(path, f[0], "ok", null)
+        } catch (e: RuntimeException) {
+          report(path, f[0], codeOf(e), messageOf(e))
+        }
+      }
     }
   }
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const SCALA_PROBE = String.raw`
@@ -614,10 +729,23 @@ object NonjsonProbeMain {
       val res = client.direct(map("path" -> "cat"))
       if (java.lang.Boolean.TRUE == res.get("ok")) report("direct", f(0), "ok", null)
       else report("direct", f(0), codeOf(res.get("err")), messageOf(res.get("err")))
+      val copts = map("base" -> (base + "/c" + i), "apikey" -> "SECRET_TOKEN",
+        "feature" -> map("cache" -> map("active" -> java.lang.Boolean.TRUE)))
+      if (f(3).nonEmpty) copts.put("headers", map("user-agent" -> f(3)))
+      val cached = new DemoSDK(copts)
+      for (path <- Seq("cache1", "cache2")) {
+        try {
+          cached.cat(null).list(map(), null)
+          report(path, f(0), "ok", null)
+        }
+        catch {
+          case e: RuntimeException => report(path, f(0), codeOf(e), messageOf(e))
+        }
+      }
     }
   }
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const CSHARP_PROBE = String.raw`
@@ -658,10 +786,32 @@ public static class NonjsonProbe
             var res = client.Direct(new Dictionary<string, object?> { ["path"] = "cat" });
             if (res.TryGetValue("ok", out var ok) && ok is true) Report("direct", f[0], "ok", null);
             else Report("direct", f[0], CodeOf(res.GetValueOrDefault("err")), MessageOf(res.GetValueOrDefault("err")));
+            var copts = new Dictionary<string, object?>
+            {
+                ["base"] = nbase + "/c" + i, ["apikey"] = "SECRET_TOKEN",
+                ["feature"] = new Dictionary<string, object?>
+                {
+                    ["cache"] = new Dictionary<string, object?> { ["active"] = true },
+                },
+            };
+            if (f[3] != "") copts["headers"] = new Dictionary<string, object?> { ["user-agent"] = f[3] };
+            var cached = new DemoSDK(copts);
+            foreach (var path in new[] { "cache1", "cache2" })
+            {
+                try
+                {
+                    cached.Cat().List(new Dictionary<string, object?>());
+                    Report(path, f[0], "ok", null);
+                }
+                catch (Exception e)
+                {
+                    Report(path, f[0], CodeOf(e), MessageOf(e));
+                }
+            }
         }
     }
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const RUST_PROBE = String.raw`
@@ -702,9 +852,24 @@ fn nonjson_probe() {
             },
             Err(e) => report("direct", f[0], &e.code, Some(e.msg.clone())),
         }
+        let mut copts = vec![
+            ("base", Value::str(format!("{}/c{}", base, i))),
+            ("apikey", Value::str("SECRET_TOKEN")),
+            ("feature", jo(vec![("cache", jo(vec![("active", Value::Bool(true))]))])),
+        ];
+        if !f[3].is_empty() {
+            copts.push(("headers", jo(vec![("user-agent", Value::str(f[3]))])));
+        }
+        let cached = DemoSDK::new(jo(copts));
+        for path in ["cache1", "cache2"] {
+            match cached.cat(Value::Noval).list(jo(vec![]), Value::Noval) {
+                Ok(_) => report(path, f[0], "ok", None),
+                Err(e) => report(path, f[0], &e.code, Some(e.msg.clone())),
+            }
+        }
     }
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const ELIXIR_PROBE = String.raw`
@@ -756,10 +921,26 @@ defmodule Demo.NonjsonProbeTest do
         err = S.getprop(res, "err")
         report("direct", name, code_of(err), message_of(err))
       end
+
+      copts =
+        S.jm(["base", base <> "/c" <> Integer.to_string(i), "apikey", "SECRET_TOKEN",
+          "feature", S.jm(["cache", S.jm(["active", true])])])
+
+      if agent != "", do: S.setprop(copts, "headers", S.jm(["user-agent", agent]))
+      cached = Demo.new(copts)
+
+      for path <- ["cache1", "cache2"] do
+        try do
+          Demo.Entity.Cat.list(Demo.cat(cached), S.jm([]))
+          report(path, name, "ok", nil)
+        rescue
+          e -> report(path, name, code_of(e), message_of(e))
+        end
+      end
     end)
   end
 end
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const CLOJURE_PROBE = String.raw`
@@ -804,8 +985,17 @@ const CLOJURE_PROBE = String.raw`
       (if (true? (vs/getprop res "ok"))
         (report "direct" name "ok" nil)
         (let [err (vs/getprop res "err")]
-          (report "direct" name (code-of err) (message-of err)))))))
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+          (report "direct" name (code-of err) (message-of err)))))
+    (let [copts (vs/jm "base" (str base "/c" i) "apikey" "SECRET_TOKEN"
+                       "feature" (vs/jm "cache" (vs/jm "active" true)))
+          _ (when (not= "" agent) (vs/setprop copts "headers" (vs/jm "user-agent" agent)))
+          cached (api/make-sdk copts)]
+      (doseq [path ["cache1" "cache2"]]
+        (try
+          (e-cat/list (api/cat cached nil) (vs/jm) (vs/jm))
+          (report path name "ok" nil)
+          (catch Throwable e (report path name (code-of e) (message-of e))))))))
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 // c, cpp, zig and ocaml ship no live transport: a stub system.fetch answers
@@ -876,10 +1066,23 @@ int main(void) {
     if (derr) report("direct", name, derr->code, derr->msg);
     else if (get_bool(res, "ok", &ok) && ok) report("direct", name, "ok", NULL);
     else report("direct", name, "error", get_str(res, "err"));
+    voxgig_value* copts = cmap(4, "base", v_str(url), "apikey", v_str("SECRET_TOKEN"),
+      "system", cmap(1, "fetch", vfn(stub, c)),
+      "feature", cmap(1, "cache", cmap(1, "active", v_bool(true))));
+    if (agent) setp(copts, "headers", cmap(1, "user-agent", v_str(agent)));
+    DemoSDK* cached = demo_sdk_new(copts);
+    const char* paths[] = { "cache1", "cache2" };
+    for (int n = 0; n < 2; n++) {
+      PNError* cerr = NULL;
+      Entity* ce = demo_cat(cached, NULL);
+      ce->vt->list(ce, v_map(), v_map(), &cerr);
+      if (cerr) report(paths[n], name, cerr->code, cerr->msg);
+      else report(paths[n], name, "ok", NULL);
+    }
   }
   return 0;
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const CPP_PROBE = String.raw`
@@ -954,11 +1157,32 @@ int main() {
       std::string m = as_str(getp(getp(res, "err"), "message"));
       report("direct", name, "error", &m);
     }
+    Value copts = vmap({
+      {"base", Value(base + "/c" + std::to_string(i))},
+      {"apikey", Value("SECRET_TOKEN")},
+      {"system", vmap({{"fetch", Value(fetch)}})},
+      {"feature", vmap({{"cache", vmap({{"active", Value(true)}})}})},
+    });
+    if (agent.is_string()) map_put(copts, "headers", vmap({{"user-agent", agent}}));
+    auto cached = std::make_shared<DemoSDK>(copts);
+    for (const std::string path : { "cache1", "cache2" }) {
+      try {
+        cached->cat()->list(vmap(), vmap());
+        report(path, name, "ok", nullptr);
+      }
+      catch (const SdkErrorPtr& e) {
+        report(path, name, e->code, &e->msg);
+      }
+      catch (const std::exception& e) {
+        std::string m = e.what();
+        report(path, name, "none", &m);
+      }
+    }
     i++;
   }
   return 0;
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const ZIG_PROBE = String.raw`
@@ -1031,9 +1255,23 @@ test "nonjson probe" {
         } else {
             report("direct", name, "error", h.scalar_str(h.getp(res, "err")));
         }
+        const copts = h.jo(&.{
+            .{ "base", h.vstr(base) },
+            .{ "apikey", h.vstr("SECRET_TOKEN") },
+            .{ "system", h.jo(&.{.{ "fetch", h.callable(@ptrCast(cp), stub) }}) },
+            .{ "feature", h.jo(&.{.{ "cache", h.jo(&.{.{ "active", h.vbool(true) }}) }}) },
+        });
+        if (agent == .string) h.setp(copts, "headers", h.jo(&.{.{ "user-agent", agent }}));
+        const cached = sdk.SDK.new(copts);
+        for ([_][]const u8{ "cache1", "cache2" }) |path| {
+            switch (cached.cat(vnull()).list(h.omap(), h.omap())) {
+                .ok => report(path, name, "ok", null),
+                .err => |e| report(path, name, e.code, e.msg),
+            }
+        }
     }
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const OCAML_PROBE = String.raw`
@@ -1080,9 +1318,21 @@ let () =
        | _ ->
          let err = getp res "err" in
          let field k = match getp err k with Str s -> s | _ -> "none" in
-         report "direct" name (field "code") (Some (field "message"))))
+         report "direct" name (field "code") (Some (field "message")));
+      let copts = jo [("base", Str ("http://nonjson.test/c" ^ string_of_int i));
+                      ("apikey", Str "SECRET_TOKEN");
+                      ("system", jo [("fetch", stub c)]);
+                      ("feature", jo [("cache", jo [("active", Bool true)])])] in
+      (match getp c "agent" with Str _ as a -> setp copts "headers" (jo [("user-agent", a)]) | _ -> ());
+      let cached = Sdk_client.make copts in
+      List.iter (fun path ->
+          match (Sdk_client.cat cached Noval).e_list (empty_map ()) (empty_map ()) with
+          | _ -> report path name "ok" None
+          | exception Sdk_error_exc e -> report path name e.err_code (Some e.err_msg)
+          | exception e -> report path name "none" (Some (Printexc.to_string e)))
+        ["cache1"; "cache2"])
     cases
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const SWIFT_PROBE = String.raw`import Foundation
@@ -1135,10 +1385,32 @@ final class NonjsonProbeTest: XCTestCase {
         let err = gp(res, "err").asNative
         report("direct", name, codeOf(err), messageOf(err))
       }
+      let copts = VMap()
+      copts.entries["base"] = .string(base + "/c\(i)")
+      copts.entries["apikey"] = .string("SECRET_TOKEN")
+      if let agent = gp(c, "agent").asString {
+        let headers = VMap()
+        headers.entries["user-agent"] = .string(agent)
+        copts.entries["headers"] = .map(headers)
+      }
+      let active = VMap()
+      active.entries["active"] = .bool(true)
+      let feature = VMap()
+      feature.entries["cache"] = .map(active)
+      copts.entries["feature"] = .map(feature)
+      let cached = DemoSDK(copts)
+      for path in ["cache1", "cache2"] {
+        do {
+          _ = try cached.Cat(nil).list(VMap(), nil)
+          report(path, name, "ok", nil)
+        } catch {
+          report(path, name, codeOf(error), messageOf(error))
+        }
+      }
     }
   }
 }
-`.replace('SECRET_TOKEN', NONJSON_SECRET)
+`.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
 const NONJSON_PROBES: Record<string, string> = {

@@ -271,7 +271,9 @@ let cache_feature () : feature =
     let cl = cc ctx in
     let bucket = track_bucket cl "cache" (fun () -> jo [("hit", Num 0.); ("miss", Num 0.); ("bypass", Num 0.)]) in
     bump_num bucket kind 1. in
+  (* A body the transport could not read as JSON passes through, for the operation to report. *)
   let cacheable res = match res with
+    | Map _ when getp res "unreadable" = Bool true -> false
     | Map _ -> (match getp res "status" with Num n -> n >= 200. && n < 300. | _ -> false)
     | _ -> false in
   let snapshot res =
