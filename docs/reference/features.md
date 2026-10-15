@@ -797,8 +797,9 @@ Signals understood:
 - `next`, `cursor`, `nextCursor`, `nextPage`, `hasMore` in the body, and
   the underscore spellings `next_cursor`, `next_page`, `has_more`; when a
   body carries both spellings, the first form wins
-- GraphQL Relay connections, read from the `pageInfo` path the model
-  recorded for the operation
+- GraphQL Relay connections, read from the `pageInfo` beside the nodes the
+  operation returns: at `data.issues` for a response path of
+  `body.data.issues.nodes`, unless the model records a `connpath`
 
 Normalised result: `{ page, totalCount, nextPage, next, cursor, hasMore }`.
 

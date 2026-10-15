@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pointIsGraphql = pointIsGraphql;
+exports.pointGraphql = pointGraphql;
 exports.ownPointFirst = ownPointFirst;
 exports.primaryPoint = primaryPoint;
 exports.graphqlDirectSkip = graphqlDirectSkip;
@@ -44,6 +45,23 @@ function ownPointFirst(points, entityName, opname) {
     out.splice(own, 1);
     out.splice(at, 0, target);
     return out;
+}
+// Where the model records no connection path, the response path to the
+// nodes less its `body.` root and the nodes field: `data.issues`.
+function pointGraphql(point) {
+    const gq = point?.gq;
+    const page = gq?.page;
+    if (null == page || 'object' !== typeof page ||
+        (null != page.connpath && '' !== page.connpath)) {
+        return gq;
+    }
+    const res = String(point?.t?.res ?? '').replace(/^`(.*)`$/, '$1');
+    const nodes = '.' + String(page.nodes ?? 'nodes');
+    if (!res.startsWith('body.') || !res.endsWith(nodes) ||
+        res.length <= 'body.'.length + nodes.length) {
+        return gq;
+    }
+    return { ...gq, page: { ...page, connpath: res.slice('body.'.length, -nodes.length) } };
 }
 function primaryPoint(points, entityName, opname) {
     return points.find((pt) => ownField(pt, entityName, opname)) ?? points[0];

@@ -10,7 +10,7 @@ import { targetFeatures } from './helpers/applicability'
 import { serverVariables } from './helpers/serverVars'
 import { pointParts } from './helpers/pointPath'
 import { bodyFieldNames } from './helpers/opShape'
-import { ownPointFirst } from './helpers/graphqlPoint'
+import { ownPointFirst, pointGraphql } from './helpers/graphqlPoint'
 import { packageVersion } from './helpers/packageMeta'
 
 
@@ -310,7 +310,7 @@ function withPointParts(op: any, fields: any[] = [], entityName: string = ''): a
         return {
           active: pt.a, kind: pt.k, method: pt.m, orig: pt.o,
           segments: pt.s, parts: pointParts(pt), rename: pt.r,
-          transform: pt.t, args, select: pt.q, live: pt.li, graphql: pt.gq,
+          transform: pt.t, args, select: pt.q, live: pt.li, graphql: pointGraphql(pt),
           body: pt.rb, response: pt.rs,
         }
       }),

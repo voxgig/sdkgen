@@ -14,7 +14,7 @@ import { loadFeature } from './featureharness'
 import { makeModel, graphqlOnly } from './generateharness'
 
 import { configDefinition, projectConst } from '../dist/sdkgen.js'
-import { ownPointFirst } from '../dist/helpers/graphqlPoint'
+import { ownPointFirst, pointGraphql } from '../dist/helpers/graphqlPoint'
 
 
 const TM_TS = Path.resolve(
@@ -520,11 +520,21 @@ describe('graphql-makespec', () => {
 // satisfies, so the entity's own field must come before a search, a lookup
 // through another entity and a narrower collection that model order puts
 // first.
+let fixtureDef: any
+
+function graphqlDef(): any {
+  if (null == fixtureDef) {
+    const model = makeModel(['ts'], undefined, graphqlOnly())
+    model.const = projectConst(model)
+    fixtureDef = configDefinition(model, 'ts').def
+  }
+  return fixtureDef
+}
+
+
 describe('graphql-own-point', () => {
 
-  const model = makeModel(['ts'], undefined, graphqlOnly())
-  model.const = projectConst(model)
-  const { def } = configDefinition(model, 'ts')
+  const def = graphqlDef()
   const fields = (ent: string, op: string) =>
     def.entity[ent].op[op].points.map((pt: any) => pt.graphql.field)
 
@@ -589,6 +599,68 @@ describe('graphql-own-point', () => {
 
     const rest = [{ o: '/issue/search' }, { o: '/issue' }]
     assert.equal(ownPointFirst(rest, 'issue', 'list'), rest)
+  })
+
+})
+
+
+// No model records where a Relay connection sits in the response, so the
+// config derives it from the point's response path.
+describe('graphql-connpath', () => {
+
+  const def = graphqlDef()
+  const PagingFeature = loadFeature('paging')
+
+  const listPoint = (ent: string, field: string) =>
+    def.entity[ent].op.list.points.find((pt: any) => field === pt.graphql.field)
+
+
+  test('config-carries-connpath', () => {
+    assert.equal(listPoint('issue', 'issues').graphql.page.connpath, 'data.issues')
+    assert.equal(listPoint('issue', 'issueSearch').graphql.page.connpath, 'data.issueSearch')
+    assert.equal(listPoint('team', 'teams').graphql.page.connpath, 'data.teams')
+
+    for (const pt of def.entity.issue.op.load.points) {
+      assert.equal(pt.graphql.page, undefined)
+    }
+  })
+
+
+  test('relay-body-pages-through-config-point', () => {
+    const f = new PagingFeature()
+    f.init({ client: {} } as any, { active: true })
+    const result: any = {
+      body: {
+        data: {
+          issues: {
+            nodes: [{ id: 'i1' }],
+            pageInfo: { endCursor: 'c1', hasNextPage: true },
+          },
+        },
+      },
+    }
+
+    f.PreResult({
+      op: { name: 'list' },
+      point: listPoint('issue', 'issues'),
+      ctrl: {},
+      result,
+      utility: { struct },
+    })
+
+    assert.equal(result.paging.hasMore, true)
+    assert.equal(result.paging.cursor, 'c1')
+  })
+
+
+  test('model-connpath-kept', () => {
+    const own = { k: 'graphql', gq: { field: 'issues', page: { nodes: 'nodes', connpath: 'x.y' } },
+      t: { res: '`body.data.issues.nodes`' } }
+    assert.equal(pointGraphql(own), own.gq)
+
+    const flat = { k: 'graphql', gq: { field: 'issues', page: { nodes: 'nodes' } },
+      t: { res: '`body.issues`' } }
+    assert.equal(pointGraphql(flat), flat.gq)
   })
 
 })

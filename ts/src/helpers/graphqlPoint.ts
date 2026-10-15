@@ -52,6 +52,25 @@ function ownPointFirst(points: any[], entityName: string, opname: string): any[]
 }
 
 
+// Where the model records no connection path, the response path to the
+// nodes less its `body.` root and the nodes field: `data.issues`.
+function pointGraphql(point: any): any {
+  const gq = point?.gq
+  const page = gq?.page
+  if (null == page || 'object' !== typeof page ||
+    (null != page.connpath && '' !== page.connpath)) {
+    return gq
+  }
+  const res = String(point?.t?.res ?? '').replace(/^`(.*)`$/, '$1')
+  const nodes = '.' + String(page.nodes ?? 'nodes')
+  if (!res.startsWith('body.') || !res.endsWith(nodes) ||
+    res.length <= 'body.'.length + nodes.length) {
+    return gq
+  }
+  return { ...gq, page: { ...page, connpath: res.slice('body.'.length, -nodes.length) } }
+}
+
+
 function primaryPoint<P>(points: P[], entityName: string, opname: string): P | undefined {
   return points.find((pt: P) => ownField(pt, entityName, opname)) ?? points[0]
 }
@@ -65,6 +84,7 @@ function graphqlDirectSkip(opname: string, entityName: string): string {
 
 export {
   pointIsGraphql,
+  pointGraphql,
   ownPointFirst,
   primaryPoint,
   graphqlDirectSkip,

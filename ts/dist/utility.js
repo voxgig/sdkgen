@@ -253,7 +253,7 @@ function withPointParts(op, fields = [], entityName = '') {
                 return {
                     active: pt.a, kind: pt.k, method: pt.m, orig: pt.o,
                     segments: pt.s, parts: (0, pointPath_1.pointParts)(pt), rename: pt.r,
-                    transform: pt.t, args, select: pt.q, live: pt.li, graphql: pt.gq,
+                    transform: pt.t, args, select: pt.q, live: pt.li, graphql: (0, graphqlPoint_1.pointGraphql)(pt),
                     body: pt.rb, response: pt.rs,
                 };
             }),
