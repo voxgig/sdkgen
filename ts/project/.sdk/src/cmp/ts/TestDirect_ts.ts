@@ -26,6 +26,7 @@ import {
   pointParts,
   pointIsGraphql,
   hasLiveScenarios,
+  primaryPoint,
 } from '@voxgig/sdkgen'
 
 
@@ -248,7 +249,8 @@ ${checks}
 
 function generateDirectLoad(model: Model, entity: ModelEntity) {
   const loadOp = entity.op?.load
-  const loadPoint: ModelPoint | undefined = loadOp?.points?.[0]
+  const loadPoint: ModelPoint | undefined = null == loadOp?.points ? undefined :
+    primaryPoint(loadOp.points, entity.name, 'load')
 
   if (null == loadPoint) {
     return
@@ -298,7 +300,8 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
     .join('\n')
 
   const listOp = entity.op?.list
-  const listPoint = listOp?.points?.[0]
+  const listPoint = null == listOp?.points ? undefined :
+    primaryPoint(listOp.points, entity.name, 'list')
   const listParams = listPoint?.g?.params || []
   const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param) : ''
   const hasList = null != listPoint
@@ -444,7 +447,8 @@ ${loadChecks}
 
 function generateDirectList(model: Model, entity: ModelEntity) {
   const listOp = entity.op?.list
-  const listPoint: ModelPoint | undefined = listOp?.points?.[0]
+  const listPoint: ModelPoint | undefined = null == listOp?.points ? undefined :
+    primaryPoint(listOp.points, entity.name, 'list')
 
   if (null == listPoint) {
     return

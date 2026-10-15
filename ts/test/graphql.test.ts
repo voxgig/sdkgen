@@ -11,6 +11,10 @@ import { transform } from 'sucrase'
 import * as struct from '@voxgig/struct'
 
 import { loadFeature } from './featureharness'
+import { makeModel, graphqlOnly } from './generateharness'
+
+import { configDefinition, projectConst } from '../dist/sdkgen.js'
+import { ownPointFirst } from '../dist/helpers/graphqlPoint'
 
 
 const TM_TS = Path.resolve(
@@ -507,6 +511,84 @@ describe('graphql-makespec', () => {
     assert.ok(!(spec instanceof Error))
     assert.deepStrictEqual(spec.body, { rest: true })
     assert.ok(calls.includes('body'))
+  })
+
+})
+
+
+// A bare list or load takes the first point whose selector the call
+// satisfies, so the entity's own field must come before a search, a lookup
+// through another entity and a narrower collection that model order puts
+// first.
+describe('graphql-own-point', () => {
+
+  const model = makeModel(['ts'], undefined, graphqlOnly())
+  model.const = projectConst(model)
+  const { def } = configDefinition(model, 'ts')
+  const fields = (ent: string, op: string) =>
+    def.entity[ent].op[op].points.map((pt: any) => pt.graphql.field)
+
+  const makePoint = loadTemplate(Path.join(TM_TS, 'MakePointUtility.ts')).makePoint
+
+
+  test('config-orders-own-field-first', () => {
+    assert.deepStrictEqual(fields('issue', 'list'), ['issues', 'issueSearch'])
+    assert.deepStrictEqual(fields('issue', 'load'), ['issue', 'attachmentIssue'])
+    assert.deepStrictEqual(fields('team', 'list'), ['teams', 'administrableTeams'])
+  })
+
+
+  test('makepoint-reaches-own-field', () => {
+    const calls: [string, string, any, string][] = [
+      ['issue', 'list', {}, 'issues'],
+      ['issue', 'load', { id: 'i1' }, 'issue'],
+      ['team', 'list', {}, 'teams'],
+    ]
+    for (const [ent, opname, match, field] of calls) {
+      const op = def.entity[ent].op[opname]
+      const ctx: any = {
+        out: {},
+        op: { name: opname, input: 'match', points: op.points },
+        options: { allow: { op: opname } },
+        match,
+        reqmatch: match,
+        utility: { struct },
+        error: (code: string, msg: string) => Object.assign(new Error(msg), { code }),
+      }
+      const point = makePoint(ctx)
+      assert.ok(!(point instanceof Error), String(point?.message))
+      assert.equal(point.graphql.field, field, ent + ' ' + opname)
+    }
+  })
+
+
+  const gq = (field: string, q?: any) => ({ k: 'graphql', gq: { field }, q })
+
+  test('narrower-selector-keeps-its-place', () => {
+    const figma = gq('issueFigmaFileKeySearch', { exist: ['file_key'] })
+    const search = gq('issueSearch')
+    const own = gq('issues')
+
+    assert.deepStrictEqual(ownPointFirst([figma, search, own], 'issue', 'list'),
+      [figma, own, search])
+
+    const vcs = gq('issueVcsBranchSearch', { exist: ['branch_name'] })
+    const attach = gq('attachmentIssue', { exist: ['id'] })
+    const issue = gq('issue', { exist: ['id'] })
+
+    assert.deepStrictEqual(ownPointFirst([vcs, attach, issue], 'issue', 'load'),
+      [vcs, issue, attach])
+  })
+
+
+  test('action-and-http-points-untouched', () => {
+    const archive = gq('issueArchive', { $action: 'archive', exist: ['id'] })
+    const own = gq('issue', { exist: ['id'] })
+    const points = [archive, own]
+    assert.equal(ownPointFirst(points, 'issue', 'load'), points)
+
+    const rest = [{ o: '/issue/search' }, { o: '/issue' }]
+    assert.equal(ownPointFirst(rest, 'issue', 'list'), rest)
   })
 
 })

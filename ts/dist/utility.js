@@ -27,7 +27,7 @@ const apidef_1 = require("@voxgig/apidef");
 const applicability_1 = require("./helpers/applicability");
 const serverVars_1 = require("./helpers/serverVars");
 const pointPath_1 = require("./helpers/pointPath");
-const opShape_1 = require("./helpers/opShape");
+const graphqlPoint_1 = require("./helpers/graphqlPoint");
 const packageMeta_1 = require("./helpers/packageMeta");
 function resolvePath(ctx$, path) {
     const base = null == ctx$.cmpfolder ? ctx$.folder : ctx$.cmpfolder;
@@ -220,7 +220,19 @@ const SPEC_FACTS = {
 };
 // The argument kinds a call routes outside the body.
 const ROUTED_KINDS = ['header', 'cookie', 'query'];
-function withPointParts(op, fields = []) {
+// The names a point's body keeps when a routed argument shares one: those its
+// JSON request body declares (`bf`), every active field where the model
+// records no `bf`, and never a field the entity marks read-only.
+function bodyFieldNames(pt, fields) {
+    if (false === pt.bf) {
+        return [];
+    }
+    const readOnly = fields.filter((f) => true === f.ro).map((f) => f.n);
+    const names = Array.isArray(pt.bf) ? pt.bf :
+        fields.filter((f) => false !== f.a).map((f) => f.n);
+    return names.filter((name) => !readOnly.includes(name));
+}
+function withPointParts(op, fields = [], entityName = '') {
     if (null == op) {
         return op;
     }
@@ -228,10 +240,10 @@ function withPointParts(op, fields = []) {
     (0, jostraca_1.each)(op, (o, opname) => {
         out[opname] = null == o || null == o.points ? o : {
             ...o,
-            points: (0, jostraca_1.each)(o.points).filter((pt) => false !== pt?.a).map((pt) => {
+            points: (0, graphqlPoint_1.ownPointFirst)((0, jostraca_1.each)(o.points).filter((pt) => false !== pt?.a), entityName, opname).map((pt) => {
                 if (null == pt)
                     return pt;
-                const kept = (0, opShape_1.bodyFieldNames)(pt, fields);
+                const kept = bodyFieldNames(pt, fields);
                 const args = Object.fromEntries(Object.entries(pt.g || {}).map(([kind, values]) => [kind, (0, jostraca_1.each)(values).filter((arg) => false !== arg.a).map((arg) => ({
                         name: arg.n, orig: arg.or, type: arg.t, kind: arg.k,
                         reqd: arg.r, example: arg.ex,
@@ -273,7 +285,7 @@ function configDefinition(model, targetname) {
             })),
             id: e.id,
             name: e.name,
-            op: withPointParts(e.op, (0, jostraca_1.each)(e.fields || {})),
+            op: withPointParts(e.op, (0, jostraca_1.each)(e.fields || {}), e.name),
             relations: e.relations,
         }, true);
         entityStubs[e.name] = {};

@@ -10,6 +10,7 @@ import { targetFeatures } from './helpers/applicability'
 import { serverVariables } from './helpers/serverVars'
 import { pointParts } from './helpers/pointPath'
 import { bodyFieldNames } from './helpers/opShape'
+import { ownPointFirst } from './helpers/graphqlPoint'
 import { packageVersion } from './helpers/packageMeta'
 
 
@@ -286,7 +287,7 @@ const SPEC_FACTS: Record<string, (model: any) => any> = {
 const ROUTED_KINDS = ['header', 'cookie', 'query']
 
 
-function withPointParts(op: any, fields: any[] = []): any {
+function withPointParts(op: any, fields: any[] = [], entityName: string = ''): any {
   if (null == op) {
     return op
   }
@@ -295,7 +296,8 @@ function withPointParts(op: any, fields: any[] = []): any {
   each(op, (o: any, opname: string) => {
     out[opname] = null == o || null == o.points ? o : {
       ...o,
-      points: each(o.points).filter((pt: any) => false !== pt?.a).map((pt: any) => {
+      points: ownPointFirst(each(o.points).filter((pt: any) => false !== pt?.a),
+        entityName, opname).map((pt: any) => {
         if (null == pt) return pt
         const kept = bodyFieldNames(pt, fields)
         const args = Object.fromEntries(Object.entries(pt.g || {}).map(([kind, values]) =>
@@ -346,7 +348,7 @@ function configDefinition(model: any, targetname?: string): { def: any, json: st
       })),
       id: e.id,
       name: e.name,
-      op: withPointParts(e.op, each(e.fields || {})),
+      op: withPointParts(e.op, each(e.fields || {}), e.name),
       relations: e.relations,
     }, true)
     entityStubs[e.name] = {}

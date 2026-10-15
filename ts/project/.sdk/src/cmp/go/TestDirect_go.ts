@@ -16,6 +16,7 @@ import {
   serverVariables, envName, envToken, liveStrict, liveStrictNote,
   pointParts,
   pointIsGraphql,
+  primaryPoint,
 } from '@voxgig/sdkgen'
 
 
@@ -107,7 +108,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const loadOp = entity.op?.load
   const listOp = entity.op?.list
 
-  const loadPoint = loadOp?.points?.[0]
+  const loadPoint = null == loadOp?.points ? undefined :
+    primaryPoint(loadOp.points, entity.name, 'load')
   const loadIsGraphql = pointIsGraphql(loadPoint)
   const loadPath = loadPoint ? normalizePathParams(pointParts(loadPoint), loadPoint?.g?.params || [], loadPoint?.r?.param) : ''
   const allLoadParams = loadPoint?.g?.params || []
@@ -133,7 +135,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const loadParams = allLoadParams.filter((p: any) =>
     _renamedPlaceholders.has(p.n) || _renamedPlaceholders.has(p.or))
 
-  const listPoint = listOp?.points?.[0]
+  const listPoint = null == listOp?.points ? undefined :
+    primaryPoint(listOp.points, entity.name, 'list')
   const listIsGraphql = pointIsGraphql(listPoint)
   const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) : ''
   const listParams = listPoint?.g?.params || []

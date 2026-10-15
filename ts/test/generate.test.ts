@@ -5949,7 +5949,7 @@ main: kit: flow: BasicBadgeFlow: {
     const out = await generate(sdkTargets(), undefined, graphqlOnly())
     const doc = (field: string) =>
       JSON.stringify(`query IssueLoad($id: String!) { ${field}(id: $id) { id title } }`)
-    const loadDoc = doc('attachmentIssue')
+    const loadDoc = doc('issue')
 
     for (const [target, file, sent] of [
       ['ts', 'ts/test/entity/issue/IssueDirect.test.ts', `assert(sent.query === ${loadDoc})`],
