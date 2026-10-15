@@ -354,6 +354,34 @@ describe('pipeline:feature order', () => {
 })
 
 
+describe('pipeline:makeOptions', () => {
+
+  test('clients built from one options object keep its maps and see its edits', () => {
+    const probe = { x: 1 }
+    const testopts = { active: true }
+    const options = { entity: { probe }, feature: { test: testopts } }
+
+    const first = new ProjectNameSDK(options)
+    strictEqual(options.entity.probe, probe)
+    strictEqual(options.feature.test, testopts)
+
+    probe.x = 2
+    const second = new ProjectNameSDK(options)
+    strictEqual(second.options().entity.probe.x, 2)
+    strictEqual(first.options().entity.probe.x, 1)
+  })
+
+  test('a config option does not reach the caller\'s maps', () => {
+    const options = { entity: { probe: { x: 1 } } }
+    const ctx = { utility: stdutil, options, config: { options: { entity: { probe: { y: 5 } } } } }
+    const o = stdutil.makeOptions(ctx)
+    strictEqual(o.entity.probe.x, 1)
+    strictEqual(o.entity.probe.y, 5)
+    deepStrictEqual(options, { entity: { probe: { x: 1 } } })
+  })
+})
+
+
 // A cookie credential as prepareAuth writes it: `<scheme>=K` for the probe
 // key, with no scheme prefix and nothing else in the bag.
 const COOKIE_PAIR = /^[^=;]+=K$/

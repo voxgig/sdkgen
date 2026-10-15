@@ -28,7 +28,7 @@ function makeOptions(ctx) {
   // rather than `null ==`, so an OMITTED auth is not read as a suppression.
   const authsuppressed = null === (options || {}).auth
 
-  let opts = { ...(options || {}) }
+  let opts = struct.clone(options || {})
 
   if (authsuppressed) {
     delete opts.auth
@@ -88,10 +88,9 @@ function makeOptions(ctx) {
   // never to the spec.
   const optspec = OPTSPEC
 
-  // Clone the config side before merging: `config` is a module-level
-  // singleton in ts/js, and merge would otherwise use its nested maps as
-  // merge TARGETS — one instance's options (server, headers, ...) would
-  // contaminate every instance constructed after it.
+  // Both sides are clones: merge uses their nested maps as merge TARGETS, so
+  // the module-level `config` singleton would carry one instance's options
+  // into the next, and the caller's own maps would be swapped for merge's.
   opts = merge([{}, struct.clone(cfgopts), opts])
 
   try {
