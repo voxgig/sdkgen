@@ -1,4 +1,4 @@
-import { flowSteps, opReachable } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, validateSeeds } from '@voxgig/sdkgen'
 
 import {
   flatten,
@@ -211,7 +211,7 @@ ${hasList ? `
       assert_equal 3, got.length
     end
   end
-${failureTests(model, entity)}` : ''}${validateTest(model, entity)}
+${failureTests(model, entity)}${validateListTest(model, entity)}` : ''}${validateTest(model, entity)}
   def test_basic_flow
     setup = ${entity.name}_basic_setup(nil)
     # Per-op sdk-test-control.json skip.
@@ -751,6 +751,35 @@ function validateTest(model: Model, entity: ModelEntity): string {
     end
     assert_equal "validate_failed", err.code
   end
+`
+}
+
+
+// A list response is checked record by record, not entity by entity.
+function validateListTest(model: Model, entity: ModelEntity): string {
+  const seeds = validateSeeds(entity)
+  if (null == seeds) {
+    return ''
+  }
+  const Name = model.const.Name
+  const seed = (rec: Record<string, any>) =>
+    '{ "entity" => { ' + formatRubyValue(entity.name) + ' => { "v1" => { ' +
+    Object.entries(rec).map(([k, v]) => formatRubyValue(k) + ' => ' + formatRubyValue(v)).join(', ') +
+    ' } } } }'
+  return `
+  def test_validate_list_response
+    cfg = ${Name}Config.shared_config
+    unless cfg["feature"].is_a?(Hash) && cfg["feature"].key?("validate")
+      skip("feature not present in this SDK: validate")
+    end
+    opts = { "feature" => { "validate" => { "active" => true, "request" => false, "response" => true } } }
+    listed = ${Name}SDK.test(${seed(seeds.valid)}, opts).${entity.Name}(nil).list(nil, nil)
+    assert_equal ["v1"], listed.map { |ent| ent.data_get["id"] }
+${null == seeds.invalid ? '' : `    err = assert_raises(StandardError) do
+      ${Name}SDK.test(${seed(seeds.invalid)}, opts).${entity.Name}(nil).list(nil, nil)
+    end
+    assert_equal "validate_failed", err.code
+`}  end
 `
 }
 

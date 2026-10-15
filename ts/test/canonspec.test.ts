@@ -12,6 +12,7 @@ import {
   entitySpecs,
   optionalSpec,
   sentinel,
+  validateSeeds,
 } from '../dist/helpers/canonSpec'
 
 
@@ -227,5 +228,40 @@ describe('canonSpec: entity specs', () => {
     const specs = entitySpecs({ name: 'empty' })
     ok(accepts({ anything: 1 }, specs.data))
     deepStrictEqual(specs.op, {})
+  })
+})
+
+
+describe('canonSpec: validate seeds', () => {
+
+  const field = (n: string, t: any, r = true) => ({ n, t, r })
+  const ent = (...fields: any[]) =>
+    ({ name: 'w', fields: Object.fromEntries(fields.map((f) => [f.n, f])) })
+
+  test('the valid seed passes the record spec once the mock adds its id', () => {
+    const e = ent(field('id', S('STRING')), field('name', S('STRING')),
+      field('size', S('INTEGER')), field('note', S('STRING'), false),
+      field('mix', ONE([S('STRING'), S('INTEGER')])))
+    const seeds = validateSeeds(e)!
+    deepStrictEqual(seeds.valid, { name: 'x', size: 1, mix: 'x' })
+    ok(accepts({ ...seeds.valid, id: 'v1' }, entityDataSpec(e)))
+    deepStrictEqual(seeds.invalid, { name: 1, size: 1, mix: 'x' })
+    ok(!accepts({ ...seeds.invalid, id: 'v1' }, entityDataSpec(e)))
+  })
+
+  test('an optional field can carry the mistyped value', () => {
+    const e = ent(field('label', S('STRING'), false))
+    const seeds = validateSeeds(e)!
+    deepStrictEqual(seeds.valid, {})
+    ok(!accepts({ ...seeds.invalid, id: 'v1' }, entityDataSpec(e)))
+  })
+
+  test('no field to mistype leaves only the valid seed', () => {
+    deepStrictEqual(validateSeeds(ent(field('any', S('ANY')))), { valid: { any: 'x' }, invalid: null })
+  })
+
+  test('a non-string id, or a required field neither string nor number, has no seed', () => {
+    strictEqual(validateSeeds(ent(field('id', S('INTEGER')))), null)
+    strictEqual(validateSeeds(ent(field('flag', S('BOOLEAN')))), null)
   })
 })

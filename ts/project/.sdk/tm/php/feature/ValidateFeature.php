@@ -311,9 +311,9 @@ class ProjectNameValidateFeature extends ProjectNameBaseFeature
     // handles both.
     private static function _unwrap(mixed $record): mixed
     {
-        if (is_object($record) && method_exists($record, 'data')) {
+        if (is_object($record) && method_exists($record, 'data_get')) {
             try {
-                $data = $record->data();
+                $data = $record->data_get();
             } catch (\Throwable $e) {
                 return $record;
             }

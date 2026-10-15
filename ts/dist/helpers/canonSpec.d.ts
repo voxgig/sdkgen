@@ -8,5 +8,11 @@ declare function entitySpecs(ent: any): {
     data: Record<string, any>;
     op: Record<string, any>;
 };
+type ValidateSeeds = {
+    valid: Record<string, string | number>;
+    invalid: Record<string, string | number> | null;
+};
+declare function validateSeeds(ent: any): ValidateSeeds | null;
 declare function byExampleSpec(val: any): any;
-export { byExampleSpec, canonToSpec, optionalSpec, entityDataSpec, entityOpSpec, entitySpecs, sentinel, SPEC_STRING, };
+export { byExampleSpec, canonToSpec, optionalSpec, entityDataSpec, entityOpSpec, entitySpecs, sentinel, validateSeeds, SPEC_STRING, };
+export type { ValidateSeeds, };

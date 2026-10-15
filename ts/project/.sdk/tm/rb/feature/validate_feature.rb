@@ -239,9 +239,9 @@ class ProjectNameValidateFeature < ProjectNameBaseFeature
   # against a field spec fails on every required field while its actual data
   # goes unchecked. A load returns the record itself, so this handles both.
   def _unwrap(record)
-    if record.respond_to?(:data)
+    if record.respond_to?(:data_get)
       begin
-        data = record.data
+        data = record.data_get
       rescue StandardError
         return record
       end

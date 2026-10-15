@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, validateSeeds } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -173,7 +173,7 @@ use constant LIVE_STRICT => ${strict ? 1 : 0};
   my $ent = $testsdk->${entity.Name}(undef);
   ok(defined $ent, '${entity.name}: create instance');
 }
-${hasList ? failureTests(N, entity) : ''}${validateTest(N, entity)}
+${hasList ? failureTests(N, entity) + validateListTest(N, entity) : ''}${validateTest(N, entity)}
 BASIC_FLOW: {
   my $setup = ${entity.name}_basic_setup(undef);
   my $_live = $setup->{live} ? 1 : 0;
@@ -704,6 +704,37 @@ SKIP: {
   is(ref $err ? $err->{code} : undef, 'validate_failed',
     '${entity.name}: an invalid request fails with validate_failed');
 }
+`
+}
+
+
+// A list response is checked record by record, not entity by entity.
+function validateListTest(N: string, entity: ModelEntity): string {
+  const seeds = validateSeeds(entity)
+  if (null == seeds) {
+    return ''
+  }
+  const seed = (rec: Record<string, any>) =>
+    '{ entity => { ' + perlStringLiteral(entity.name) + ' => { v1 => { ' +
+    Object.entries(rec).map(([k, v]) => perlStringLiteral(k) + ' => ' +
+      ('string' === typeof v ? perlStringLiteral(v) : String(v))).join(', ') +
+    ' } } } }'
+  return `
+SKIP: {
+  skip('feature not present in this SDK: validate', ${null == seeds.invalid ? 1 : 2})
+    unless ${N}Config::shared_config()->{feature}{validate};
+  my $opts = { feature => { validate => { active => 1, request => 0, response => 1 } } };
+  my $listed = eval {
+    ${N}SDK->test(${seed(seeds.valid)}, $opts)->${entity.Name}(undef)->list(undef, undef)
+  };
+  is_deeply([map { $_->data_get->{id} } @{ $listed // [] }], ['v1'],
+    '${entity.name}: validate checks each listed record') or diag("$@");
+${null == seeds.invalid ? '' : `  my $err = eval {
+    ${N}SDK->test(${seed(seeds.invalid)}, $opts)->${entity.Name}(undef)->list(undef, undef); undef
+  } // $@;
+  is(ref $err ? $err->{code} : undef, 'validate_failed',
+    '${entity.name}: a mistyped listed record fails with validate_failed');
+`}}
 `
 }
 

@@ -240,7 +240,7 @@ class ProjectNameValidateFeature(ProjectNameBaseFeature):
 # against a field spec fails on every required field while its actual data
 # goes unchecked. A load returns the record itself, so this handles both.
 def _unwrap(record):
-    data_fn = getattr(record, "data", None)
+    data_fn = getattr(record, "data_get", None)
     if callable(data_fn):
         try:
             data = data_fn()

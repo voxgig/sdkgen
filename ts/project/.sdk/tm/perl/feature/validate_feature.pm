@@ -288,8 +288,8 @@ sub _check {
 sub _unwrap {
   my ($record) = @_;
 
-  if (Scalar::Util::blessed($record) && $record->can('data')) {
-    my $data = eval { $record->data };
+  if (Scalar::Util::blessed($record) && $record->can('data_get')) {
+    my $data = eval { $record->data_get };
     return $data if defined $data;
   }
 

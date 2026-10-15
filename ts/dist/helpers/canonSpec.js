@@ -8,6 +8,7 @@ exports.entityDataSpec = entityDataSpec;
 exports.entityOpSpec = entityOpSpec;
 exports.entitySpecs = entitySpecs;
 exports.sentinel = sentinel;
+exports.validateSeeds = validateSeeds;
 const jostraca_1 = require("jostraca");
 const canonType_1 = require("./canonType");
 const opShape_1 = require("./opShape");
@@ -117,6 +118,49 @@ function entitySpecs(ent) {
         }
     }
     return { data: entityDataSpec(ent), op };
+}
+// Records a test can seed for the validate feature to check on a list
+// response: one the entity's record spec admits, and one with a declared
+// field mistyped. Only strings and numbers, which every target writes the
+// same way. The test mock gives a seeded record its key as `id`.
+function validateSeeds(ent) {
+    const S_NUMBERS = [sentinel('NUMBER'), sentinel('INTEGER')];
+    const stringy = (alt) => S_STRING === alt || (Array.isArray(alt) && S_EXACT === alt[0] && 'string' === typeof alt[1]);
+    const valid = {};
+    let mistyped = null;
+    for (const [name, node] of Object.entries(entityDataSpec(ent))) {
+        if (S_OPEN === name) {
+            continue;
+        }
+        const alts = alternatives(node);
+        const str = alts.some((a) => S_ANY === a || S_STRING === a);
+        const num = alts.some((a) => S_ANY === a || S_NUMBERS.includes(a));
+        if ('id' === name) {
+            if (!str) {
+                return null;
+            }
+            continue;
+        }
+        if (!alts.includes(S_NIL)) {
+            if (str) {
+                valid[name] = 'x';
+            }
+            else if (num) {
+                valid[name] = 1;
+            }
+            else {
+                return null;
+            }
+        }
+        const scalar = alts.every((a) => S_NIL === a || stringy(a) || S_NUMBERS.includes(a));
+        if (null == mistyped && scalar && str !== num) {
+            mistyped = [name, str ? 1 : 'x'];
+        }
+    }
+    return {
+        valid,
+        invalid: null == mistyped ? null : { ...valid, [mistyped[0]]: mistyped[1] },
+    };
 }
 function byExampleSpec(val) {
     if (null == val) {

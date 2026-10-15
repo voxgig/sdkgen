@@ -6863,8 +6863,8 @@ describe('generated entity tests make only calls the runtime takes', () => {
     const res = run(cmd.bin, cmd.args, testdir, cmd.env)
     if (res.timedOut) return t.skip('py: ' + res.out)
     ok(res.ok, 'py: a generated entity test failed:\n' + tail(res.out))
-    ok(/\b10 passed, 3 skipped\b/.test(res.out),
-      'py: expected ten passing and three skipped tests:\n' + tail(res.out))
+    ok(/\b10 passed, 4 skipped\b/.test(res.out),
+      'py: expected ten passing and four skipped tests:\n' + tail(res.out))
 
     Fs.writeFileSync(Path.join(testdir, 'sdk-test-control.json'), MOON_SKIP)
     const skip = pytest(['-rs', files[0]])!
@@ -6886,8 +6886,8 @@ describe('generated entity tests make only calls the runtime takes', () => {
     const res = run(cmd.bin, cmd.args, root, cmd.env)
     if (res.timedOut) return t.skip('rb: ' + res.out)
     ok(res.ok, 'rb: a generated entity test failed:\n' + tail(res.out))
-    ok(/\b14 runs, \d+ assertions, 0 failures, 0 errors, 3 skips\b/.test(res.out),
-      'rb: expected fourteen runs and three skips:\n' + tail(res.out))
+    ok(/\b15 runs, \d+ assertions, 0 failures, 0 errors, 4 skips\b/.test(res.out),
+      'rb: expected fifteen runs and four skips:\n' + tail(res.out))
 
     Fs.writeFileSync(Path.join(root, 'test', 'sdk-test-control.json'), MOON_SKIP)
     const skip = minitest(['-e', load('moon'), '--', '-v'])!

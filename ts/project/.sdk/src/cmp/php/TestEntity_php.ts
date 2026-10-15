@@ -1,4 +1,4 @@
-import { flowSteps, opReachable } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, validateSeeds } from '@voxgig/sdkgen'
 
 import {
   flatten,
@@ -210,7 +210,7 @@ ${hasList ? `
             $this->assertCount(3, $got);
         }
     }
-${failureTests(model, entity, accessor)}` : ''}${validateTest(model, entity, accessor)}
+${failureTests(model, entity, accessor)}${validateListTest(model, entity, accessor)}` : ''}${validateTest(model, entity, accessor)}
     public function test_basic_flow(): void
     {
         $setup = ${entity.name}_basic_setup(null);
@@ -816,6 +816,39 @@ function validateTest(model: Model, entity: ModelEntity, accessor: string): stri
         }
         $this->assertSame('validate_failed', $err->sdk_code ?? null);
     }
+`
+}
+
+
+// A list response is checked record by record, not entity by entity.
+function validateListTest(model: Model, entity: ModelEntity, accessor: string): string {
+  const seeds = validateSeeds(entity)
+  if (null == seeds) {
+    return ''
+  }
+  const Name = model.const.Name
+  const seed = (rec: Record<string, any>) =>
+    "['entity' => [" + formatPhpValue(entity.name) + " => ['v1' => [" +
+    Object.entries(rec).map(([k, v]) => formatPhpValue(k) + ' => ' + formatPhpValue(v)).join(', ') +
+    ']]]]'
+  return `
+    public function test_validate_list_response(): void
+    {
+        $cfg = ${Name}Config::shared_config();
+        if (!isset($cfg["feature"]["validate"])) {
+            $this->markTestSkipped('feature not present in this SDK: validate');
+        }
+        $opts = ["feature" => ["validate" => ["active" => true, "request" => false, "response" => true]]];
+        $listed = ${Name}SDK::test(${seed(seeds.valid)}, $opts)->${accessor}(null)->list(null, null);
+        $this->assertSame(['v1'], array_map(fn($ent) => $ent->data_get()['id'] ?? null, $listed));
+${null == seeds.invalid ? '' : `        $err = null;
+        try {
+            ${Name}SDK::test(${seed(seeds.invalid)}, $opts)->${accessor}(null)->list(null, null);
+        } catch (\\Throwable $e) {
+            $err = $e;
+        }
+        $this->assertSame('validate_failed', $err->sdk_code ?? null);
+`}    }
 `
 }
 
