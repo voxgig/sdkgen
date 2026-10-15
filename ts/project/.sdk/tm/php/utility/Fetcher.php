@@ -148,7 +148,11 @@ class ProjectNameFetcher
         // it here at the SDK level since cURL bypasses PHP stream wrappers
         // (so the wrapper-based guard wouldn't see this call).
         if (getenv('VOXGIG_GETONLY_GUARD') === 'TRUE' && $method !== 'GET') {
-            fwrite(STDERR, "[GET-ONLY GUARD] blocked {$method} {$fullurl}\n");
+            // The path alone: the query can carry a credential, and nothing
+            // has cleaned this line.
+            $path = parse_url($fullurl, PHP_URL_PATH);
+            $path = is_string($path) && $path !== '' ? $path : '/';
+            fwrite(STDERR, "[GET-ONLY GUARD] blocked {$method} {$path}\n");
             return [
                 [
                     'status' => 0,
@@ -157,7 +161,7 @@ class ProjectNameFetcher
                     'json' => function () { return null; },
                     'body' => '',
                 ],
-                "GET-only guard blocked {$method} {$fullurl}",
+                "GET-only guard blocked {$method} {$path}",
             ];
         }
 

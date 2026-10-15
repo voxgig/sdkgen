@@ -510,6 +510,32 @@ class PipelineTest extends TestCase
     }
 
 
+    // The guard writes to STDERR, so it is read from a child process.
+    public function test_get_only_guard_prints_no_query_credential(): void
+    {
+        if (!function_exists('curl_init') || !function_exists('proc_open')) {
+            $this->markTestSkipped('the GET-only guard sits on the cURL transport');
+        }
+        $sdk = realpath(__DIR__ . '/../projectname_sdk.php');
+        $code = 'require ' . var_export($sdk, true) . ';'
+            . ' [, $err] = ProjectNameFetcher::defaultHttpFetch('
+            . '"http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01&x=1", ["method" => "POST"]);'
+            . ' echo $err;';
+        $env = array_merge(getenv(), ['VOXGIG_GETONLY_GUARD' => 'TRUE']);
+        $proc = proc_open([PHP_BINARY, '-r', $code],
+            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, $env);
+        $out = stream_get_contents($pipes[1]);
+        $errout = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        proc_close($proc);
+
+        $this->assertStringContainsString('[GET-ONLY GUARD] blocked POST /planet/p1', $errout);
+        $this->assertStringContainsString('blocked POST /planet/p1', $out);
+        $this->assertStringNotContainsString('GUARDKEY01', $errout);
+        $this->assertStringNotContainsString('GUARDKEY01', $out);
+    }
+
     // --- make_fetch_def ----------------------------------------------------------
 
     public function test_make_fetch_def_guards_a_missing_spec(): void
