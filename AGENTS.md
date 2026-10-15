@@ -32,7 +32,8 @@ Two rules, and they pull in opposite directions on purpose:
 So state what the CODE requires and cite what enforces it, rather than what
 some past run found. `ts/package.json` declares `engines.node: >=24`; the
 operating systems and Node versions the suite is run on live in
-`.github/workflows/build.yml`; and the Vale release the prose gate measures
+`.github/workflows/build.yml`, and the toolchains whose lanes run only
+nightly in `.github/workflows/nightly.yml`; and the Vale release the prose gate measures
 against is `VALE_VERSION` in `.github/workflows/docs.yml`, which the
 `Makefile` reads out of that file rather than restating, so `make
 vale-install` fetches exactly what CI ran. Read those rather than copying

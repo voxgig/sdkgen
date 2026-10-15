@@ -1,0 +1,2 @@
+# The test runner the generated py SDKs' lanes need in CI.
+pytest==9.1.1
