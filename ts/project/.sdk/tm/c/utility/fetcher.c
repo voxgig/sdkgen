@@ -1,24 +1,11 @@
-// Default transport (mirrors utility/fetcher.rs). The C target ships no HTTP
-// client dependency: live requests without a caller-supplied system.fetch
-// return a transport error. All tests run in test mode (fetch blocked) or
-// inject a system.fetch mock, so the live path is never exercised by tests.
+// The transport the pipeline calls (mirrors utility/fetcher.rs): a
+// caller-supplied system.fetch when there is one, else the SDK's own
+// (utility/http.c).
 
 #include "sdk.h"
 
 #include <stdio.h>
 #include <string.h>
-
-static voxgig_value* default_http_fetch(const char* fullurl, voxgig_value* fetchdef,
-                                        Context* ctx, PNError** err) {
-  (void)fetchdef;
-  char buf[512];
-  snprintf(buf, sizeof(buf),
-           "live HTTP transport not available in the C SDK (URL was: \"%s\"); "
-           "supply options.system.fetch",
-           fullurl);
-  *err = context_make_error(ctx, "fetch_transport", buf);
-  return NULL;
-}
 
 voxgig_value* fetcher_util(Fetcher* self, Context* ctx, const char* fullurl,
                            voxgig_value* fetchdef, PNError** err) {
@@ -57,7 +44,7 @@ voxgig_value* fetcher_util(Fetcher* self, Context* ctx, const char* fullurl,
   voxgig_value* sys_fetch = getpath2(options, "system", "fetch");
 
   if (v_is_noval(sys_fetch) || v_is_null(sys_fetch)) {
-    return default_http_fetch(fullurl, fetchdef, ctx, err);
+    return http_fetch(ctx, fullurl, fetchdef, err);
   }
 
   if (voxgig_is_func(sys_fetch)) {

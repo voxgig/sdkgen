@@ -59,14 +59,12 @@
 //     fails). Conflating the last two is the failure this library exists
 //     to prevent.
 //
-//   * The c core ships no HTTP client (utility/fetcher.c). The exchange
-//     therefore uses options.system.fetch when supplied - the seam every
-//     live c request already lives under - and otherwise
-//     `secrets_rawfetch`, which lives in the GENERATED feature/secrets/
-//     kinds.c: a libcurl round-trip when a plugin group is active, a
-//     transport error that says so when none is (see Config_c; the
-//     generated kinds.mk beside it is what links libcurl on the same
-//     condition).
+//   * The exchange uses options.system.fetch when supplied - the seam every
+//     live c request lives under - and otherwise `secrets_rawfetch`, which
+//     lives in the GENERATED feature/secrets/kinds.c: a libcurl round-trip
+//     when a plugin group is active, the SDK's own client (utility/http.c)
+//     when none is (see Config_c; the generated kinds.mk beside it is what
+//     links libcurl on the same condition).
 //
 //   * sek_new is documented NOT REENTRANT (a file-scope slot for the
 //     duration of the call). It runs once, in the client constructor,
@@ -89,7 +87,7 @@
 
 // The exchange transport of last resort, defined in the GENERATED
 // feature/secrets/kinds.c (Config_c) - libcurl when a plugin group is
-// active, a "no transport" error otherwise. Prototyped here rather than in
+// active, the SDK's own client otherwise. Prototyped here rather than in
 // sdk.h because core/ must not know a gated feature's internals.
 voxgig_value* secrets_rawfetch(Context* ctx, const char* url,
                                voxgig_value* fetchdef, PNError** err);

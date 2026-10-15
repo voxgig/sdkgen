@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems, targetFeatures } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -25,6 +25,37 @@ function cLit(type: any): string {
 // cmap(...) for a set of pairs, or NULL when empty.
 function cmapExpr(pairs: string[]): string {
   return pairs.length ? `cmap(${pairs.length}, ${pairs.join(', ')})` : 'NULL'
+}
+
+
+// What the SDK's own transport does, which is what a reader needs before
+// deciding to replace it.
+function transportText(model: any, target: any): string {
+  const env = envName(model)
+  const proxy = null != targetFeatures(model, target).proxy
+  return `The SDK sends each request itself: HTTP/1.1 on a socket, one request per
+connection. It reads a response framed by \`Content-Length\`, by chunks or by
+the connection closing, gives up on an exchange after 30 seconds, refuses a
+response larger than 32 MiB, and follows no redirect. A failure to connect,
+send or read is a \`fetch_transport\` error.
+
+\`https://\` binds the platform's OpenSSL: \`make\` uses it wherever its headers
+are installed (\`make TLS=openssl\` insists on it), and a program linking
+\`libsdk.a\` links what \`make -s ldlibs\` prints. The server's certificate is
+verified against the system's trust store and its name against the host, and
+nothing turns that off. A build made with \`TLS=none\` links no TLS library and
+refuses every \`https://\` request. Two environment variables change what is
+trusted:
+
+- \`${env}_CA_BUNDLE\` names a PEM file of roots added to the system's.
+- \`${env}_TLS_PIN\` is the SHA-256 fingerprint of the one certificate to trust
+  in place of any store, for a local service with a self-signed certificate.
+  \`openssl x509 -noout -fingerprint -sha256 -in cert.pem\` prints it, and the
+  host name is still checked against that certificate.
+${proxy ? `
+With the \`proxy\` feature, a request goes through its \`http://\` proxy, and an
+\`https://\` request through a \`CONNECT\` tunnel to it.
+` : ''}`
 }
 
 
@@ -124,18 +155,24 @@ PNError* err = NULL;
 ${testModeExample}
 \`\`\`
 
+### Send requests over HTTP and HTTPS
+
+${transportText(model, target)}
+
 ### Use a custom fetch function
 
 Replace the HTTP transport with your own function (the same shape the test
-transport uses):
+transport uses). A response is read through its \`json\` only when it carries
+a \`body\`:
 
 \`\`\`c
 static voxgig_value* mock_fetch(void* ud, voxgig_value* args) {
     (void)ud; (void)args;
-    return cmap(4,
+    return cmap(5,
         "status", v_num(200),
         "statusText", v_str("OK"),
         "headers", v_map(),
+        "body", v_str("{\\"id\\":\\"mock01\\"}"),
         "json", json_thunk(cmap(1, "id", v_str("mock01"))));
 }
 

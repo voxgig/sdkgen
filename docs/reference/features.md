@@ -219,7 +219,8 @@ for the TCP and TLS handshake once rather than on every call.
 | `perl` | One `HTTP::Tiny` per proxy and redirect setting, which keeps its connection alive. |
 | `swift`, `clojure`, `elixir` | `URLSession.shared`, the JVM keep-alive cache and the `:httpc` default profile pool on their own. |
 | `lua` | LuaSocket opens a connection per request; it has no keep-alive to reuse. |
-| `c`, `cpp`, `zig`, `ocaml` | No default transport: the SDK sends nothing until `system.fetch` is supplied. |
+| `c` | The SDK's own HTTP/1.1 client, which opens a connection per request and keeps none. `https://` binds the platform's OpenSSL in a build made with it, and is refused in one made with `TLS=none`. |
+| `cpp`, `zig`, `ocaml` | No default transport: the SDK sends nothing until `system.fetch` is supplied. |
 
 The pool is per process, not per SDK instance, so two clients constructed
 in one process share it, and it is never closed explicitly: an idle
@@ -233,7 +234,9 @@ goes through that function and the SDK opens no connection of its own. The
 `fetchdef` carries `method`, `headers` and `body`, plus the `proxy` and
 `redirect` annotations a transport feature adds, which a supplied client
 is expected to honour the same way the default one does. In `ts` and `js`
-it also carries the caller's `signal`, described next.
+it also carries the caller's `signal`, described next. The `c` client
+follows no redirect at all, and answers with the redirect response itself
+(`ts/project/.sdk/tm/c/tests/transport_test.c`).
 
 ### Cancelling a request
 

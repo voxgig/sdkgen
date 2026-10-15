@@ -2,6 +2,7 @@
 import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual, throws } from 'node:assert'
 
+import { X509Certificate } from 'node:crypto'
 import Fs from 'node:fs'
 import Net from 'node:net'
 import Os from 'node:os'
@@ -35,6 +36,7 @@ import {
   mediaFailures, mediaPrinted, mediaRaised, mediaRecord,
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
+import { TLS_PROBE, TLS_SERVER } from './tlsprobes'
 import { ITEMS_EXPECT, ITEMS_PROBES, itemsListed } from './itemprobes'
 import { REQD_EXPECT, REQD_PROBES, reqdListed } from './reqdprobes'
 import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
@@ -1961,13 +1963,110 @@ int main(void) {
       objects.push(name + '_part.o')
     }
     const archives = names.map((name) => Path.join(roots[name], 'libsdk.a'))
-    const linked = run(cc, ['main.c', ...objects, ...archives, '-lm', '-o', 'both.out'], dir)
+    const libs = new Set(names.flatMap((name) =>
+      run(make, ['-s', 'CC=' + cc, 'ldlibs'], roots[name]).out.trim().split(/\s+/)))
+    const linked = run(cc, ['main.c', ...objects, ...archives, ...libs, '-o', 'both.out'], dir)
     ok(linked.ok, 'c: the two SDKs do not link into one program:\n' + tail(linked.out))
 
     const ran = run(Path.join(dir, 'both.out'), [], dir)
     ok(ran.ok, 'c: the two-SDK program failed:\n' + tail(ran.out))
     strictEqual(ran.out.replace(/\r\n/g, '\n').trim(), 'alpha: alpha\nomega: omega',
       'c: each SDK did not answer through its own pipeline')
+  })
+
+
+  test('c: the default transport verifies a TLS server, pinned or not', async (t) => {
+    const make = toolchain('make')
+    const cc = cCompiler()
+    const openssl = toolchain('openssl')
+    if (null == make || null == cc || null == openssl) {
+      return t.skip('needs make, openssl and a C compiler (make: ' + make + ', openssl: ' +
+        openssl + ', cc: ' + cc + ')')
+    }
+    const hdrprobe = Path.join(tmp, 'c-tls-headers.c')
+    Fs.writeFileSync(hdrprobe, '#include <openssl/ssl.h>\nint main(void) { return 0; }\n')
+    if (!run(cc, ['-fsyntax-only', hdrprobe], tmp).ok) {
+      return t.skip('c: a compiler is here but the OpenSSL development headers are not')
+    }
+
+    const sdkroot = Path.join(tmp, 'c-tls', 'c')
+    await generateTo('c', sdkroot)
+    Fs.writeFileSync(Path.join(sdkroot, 'tests', 'tls_probe.c'), TLS_PROBE)
+    const built = run(make, ['CC=' + cc, 'TLS=openssl', 'tests/tls_probe.out'], sdkroot)
+    ok(built.ok, 'c: the TLS probe does not build:\n' + tail(built.out))
+
+    // Throwaway certificates, made here and gone with the directory.
+    const certs = Path.join(tmp, 'c-tls-certs')
+    Fs.mkdirSync(certs, { recursive: true })
+    for (const [name, san] of [['local', 'DNS:localhost'], ['other', 'DNS:elsewhere.example']]) {
+      const made = run(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+        '-subj', '/CN=' + name, '-addext', 'subjectAltName=' + san,
+        '-keyout', name + '.key', '-out', name + '.pem'], certs)
+      if (!made.ok) return t.skip('c: openssl cannot make a test certificate:\n' + tail(made.out, 5))
+    }
+    const pin = (name: string) =>
+      new X509Certificate(Fs.readFileSync(Path.join(certs, name + '.pem'))).fingerprint256
+
+    const local = await tlsServer(certs, 'local')
+    const other = await tlsServer(certs, 'other')
+    try {
+      const probe = (url: string, pinned: string) => run(
+        Path.join(sdkroot, 'tests', 'tls_probe.out'), [url], sdkroot,
+        { ...process.env, DEMO_TLS_PIN: pinned }).out
+      const seen = () => Fs.readFileSync(local.log, 'utf8').split('\n').filter((l) => '' !== l).length
+
+      const at = 'https://localhost:' + local.port + '/p'
+      ok(/^tls-probe: 200 \{"over":"tls"\}$/m.test(probe(at, pin('local'))),
+        'c: the pinned certificate was not trusted:\n' + probe(at, pin('local')))
+
+      const before = seen()
+      const wrong = probe(at, '00'.repeat(32))
+      ok(/fetch_transport: .*not the one DEMO_TLS_PIN names/.test(wrong),
+        'c: a certificate that is not the pinned one was not refused:\n' + wrong)
+      strictEqual(seen(), before, 'c: a request reached the server past a pin it does not match')
+
+      const unpinned = probe(at, '')
+      ok(/fetch_transport: .*certificate verify failed: self.signed certificate/.test(unpinned),
+        'c: a self-signed certificate was trusted without a pin:\n' + unpinned)
+
+      const named = probe('https://localhost:' + other.port + '/p', pin('other'))
+      ok(/certificate verify failed: hostname mismatch/.test(named),
+        'c: a pin let a certificate for another name through:\n' + named)
+
+      const literal = probe('https://127.0.0.1:' + local.port + '/p', pin('local'))
+      ok(/certificate verify failed: IP address mismatch/.test(literal),
+        'c: a pin let a certificate without the address through:\n' + literal)
+    }
+    finally {
+      local.stop()
+      other.stop()
+    }
+  })
+
+
+  test('c: a TLS=none build links no TLS library and refuses https://', async (t) => {
+    const make = toolchain('make')
+    const cc = cCompiler()
+    if (null == make || null == cc || null == toolchain('nm')) {
+      return t.skip('needs make, nm and a C compiler')
+    }
+
+    const sdkroot = Path.join(tmp, 'c-notls', 'c')
+    await generateTo('c', sdkroot)
+    Fs.writeFileSync(Path.join(sdkroot, 'tests', 'tls_probe.c'), TLS_PROBE)
+
+    const checked = run(make, ['CC=' + cc, 'TLS=none', 'check-tls'], sdkroot)
+    ok(checked.ok && /OpenSSL is named by no object/.test(checked.out),
+      'c: check-tls did not clear a TLS=none build:\n' + tail(checked.out))
+    const libs = run(make, ['-s', 'CC=' + cc, 'TLS=none', 'ldlibs'], sdkroot).out
+    ok(!/-lssl|-lcrypto/.test(libs), 'c: a TLS=none build links ' + libs.trim())
+
+    const built = run(make, ['CC=' + cc, 'TLS=none', 'tests/tls_probe.out'], sdkroot)
+    ok(built.ok, 'c: the probe does not link without OpenSSL:\n' + tail(built.out))
+    const refused = run(Path.join(sdkroot, 'tests', 'tls_probe.out'),
+      ['https://127.0.0.1:9/p'], sdkroot).out
+    ok(/fetch_transport: .*TLS=none.*options\.system\.fetch/.test(refused),
+      'c: an https:// request did not say this build has no TLS:\n' + refused)
   })
 
 
@@ -7799,7 +7898,6 @@ const PROBE_LANES: ProbeLane[] = [
   {
     target: 'c',
     ready: () => null == toolchain('make') || null == authProbeCc() ? 'no C toolchain' : null,
-    seam: () => true,
     exec: (sdkroot, env, write, probe) => {
       write('tests/' + probe.name + '_probe.c', probe.source.c)
       const out = 'tests/' + probe.name + '_probe.out'
@@ -7877,6 +7975,30 @@ function mediaServer(dir: string): Promise<{ port: number, log: string, stop: ()
     let seen = ''
     proc.on('error', reject)
     proc.on('exit', (code) => reject(new Error('media server exited: ' + code)))
+    proc.stdout!.on('data', (chunk) => {
+      seen += String(chunk)
+      const m = /listening (\d+)/.exec(seen)
+      if (null != m) {
+        proc.removeAllListeners('exit')
+        resolve({ port: Number(m[1]), log, stop: () => proc.kill('SIGKILL') })
+      }
+    })
+  })
+}
+
+
+// A TLS server over the named certificate, logging what it reads.
+function tlsServer(dir: string, name: string): Promise<{ port: number, log: string, stop: () => void }> {
+  const file = Path.join(dir, 'tls-server.cjs')
+  const log = Path.join(dir, name + '-requests.log')
+  Fs.writeFileSync(file, TLS_SERVER)
+  const proc = spawn(process.execPath,
+    [file, Path.join(dir, name + '.pem'), Path.join(dir, name + '.key'), log],
+    { stdio: ['ignore', 'pipe', 'inherit'] })
+  return new Promise((resolve, reject) => {
+    let seen = ''
+    proc.on('error', reject)
+    proc.on('exit', (code) => reject(new Error('tls server exited: ' + code)))
     proc.stdout!.on('data', (chunk) => {
       seen += String(chunk)
       const m = /listening (\d+)/.exec(seen)

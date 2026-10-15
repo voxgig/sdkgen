@@ -54,11 +54,12 @@ cd ${target.name} && make          # builds libsdk.a
 cd ${target.name} && make test     # builds + runs the test binaries
 \`\`\`
 
-Link your program against \`libsdk.a\` and include \`core/api.h\`:
+Link your program against \`libsdk.a\` and the libraries \`make -s ldlibs\`
+prints, and include \`core/api.h\`:
 
 \`\`\`bash
 cc -I ${target.name}/core -I ${target.name}/utility/struct \\
-   myapp.c ${target.name}/libsdk.a -lm -o myapp
+   myapp.c ${target.name}/libsdk.a $(make -s -C ${target.name} ldlibs) -o myapp
 \`\`\`
 
 ${linking(target, model)}`)

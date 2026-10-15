@@ -48,6 +48,30 @@ FEATURE_SRCS :=
 FEATURE_TEST_SRCS :=
 -include $(wildcard feature/*/kinds.mk)
 
+# ---- TLS for https:// ----------------------------------------------------------
+#
+# TLS=openssl binds the platform's OpenSSL, unvendored (-lssl -lcrypto);
+# TLS=none links no TLS library, and an https:// request then fails saying
+# so. The default, auto, is openssl wherever its headers and POSIX sockets
+# are found. OPENSSL_CFLAGS and OPENSSL_LIBS reach an OpenSSL installed off
+# the compiler's own paths, as `pkg-config --cflags --libs openssl` prints.
+TLS ?= auto
+OPENSSL_CFLAGS ?=
+OPENSSL_LIBS ?= -lssl -lcrypto
+ifeq ($(TLS),auto)
+TLS_BACKEND := $(shell printf '\#include <openssl/ssl.h>\n\#include <sys/socket.h>\n' | \
+  $(CC) $(OPENSSL_CFLAGS) -x c -E - >/dev/null 2>&1 && echo openssl || echo none)
+else
+TLS_BACKEND := $(TLS)
+endif
+ifeq ($(filter openssl none,$(TLS_BACKEND)),)
+$(error TLS must be auto, openssl or none, not '$(TLS)')
+endif
+ifeq ($(TLS_BACKEND),openssl)
+INC += $(OPENSSL_CFLAGS)
+LDLIBS += $(OPENSSL_LIBS)
+endif
+
 # feature/*/*.c: a feature may carry a vendored library payload in its own
 # subdirectory (the station feature vendors voxgig_station there - C has no
 # package registry, so tier-C libraries ride the feature source; see
@@ -57,7 +81,7 @@ FEATURE_TEST_SRCS :=
 # kinds.mk nothing references it, so the archive member is never pulled
 # into a link.
 LIB_SRCS := $(wildcard core/*.c utility/*.c utility/struct/*.c feature/*.c feature/*/*.c entity/*.c) \
-  $(FEATURE_SRCS)
+  utility/tls/$(TLS_BACKEND).c $(FEATURE_SRCS)
 LIB_OBJS := $(LIB_SRCS:.c=.o)
 
 # ---- one prefix per SDK -------------------------------------------------------
@@ -106,11 +130,16 @@ TEST_BINS := $(TEST_SRCS:.c=.out)
 OMNI_SRCS := $(wildcard tests/vendor/omni/*.c)
 OMNI_OBJS := $(OMNI_SRCS:.c=.o)
 
-.PHONY: all build test clean publish
+.PHONY: all build test clean publish ldlibs check-tls
 
 all: build
 
 build: libsdk.a
+
+# What a program linking libsdk.a links beside it, as `make -s ldlibs`
+# prints it: run it with the TLS= the archive was built with.
+ldlibs:
+	@echo $(LDLIBS)
 
 # Keep this before the generic rule for GNU make 3.81 on macOS.
 # omni's util.c includes <regex.h>. CFLAGS is `?=`, so an operator override
@@ -178,8 +207,26 @@ $(OMNI_TESTS): tests/%.out: tests/%.c libsdk.a libomni.a
 tests/%.out: tests/%.c libsdk.a
 	$(CC) $(CFLAGS) $(INC) $(TEST_INC) $(PREFIXED) $< libsdk.a -o $@ $(LDLIBS)
 
+# The TLS boundary, read off the objects as sekreto's check-core reads it:
+# in a TLS=none build no object outside a gated feature's payload names
+# OpenSSL, and in a TLS=openssl build utility/tls/openssl.c alone does. The
+# read must find the fetcher calling the transport, or it read nothing.
+CORE_OBJS = $(filter-out $(FEATURE_SRCS:.c=.o),$(LIB_OBJS))
+check-tls: $(LIB_OBJS)
+	@needs=$$(for o in $(CORE_OBJS); do $(NM) -P -g $$o | awk -v o=$$o -v label='$(LABEL_PREFIX)' \
+	  '$$2 == "U" { n = $$1; if (label != "" && index(n, label) == 1) n = substr(n, length(label) + 1); \
+	  print o " " n }'; done); \
+	printf '%s\n' "$$needs" | grep -qx 'utility/fetcher.o $(SDK_PREFIX)http_fetch' \
+	  || { echo "check-tls: nm found no call from the fetcher to the transport" >&2; exit 1; }; \
+	ssl=$$(printf '%s\n' "$$needs" | grep -E ' (SSL|OPENSSL|X509|ERR|EVP|BIO|PEM)_' \
+	  | grep -v '^utility/tls/openssl.o '); \
+	if [ -n "$$ssl" ]; then echo "check-tls: OpenSSL is named outside utility/tls/openssl.c:" $$ssl >&2; exit 1; fi; \
+	if [ openssl = $(TLS_BACKEND) ]; then printf '%s\n' "$$needs" | grep -qx 'utility/tls/openssl.o SSL_connect' \
+	  || { echo "check-tls: the openssl backend does not name SSL_connect" >&2; exit 1; }; fi; \
+	echo "check-tls: TLS=$(TLS_BACKEND); OpenSSL is named by $(if $(filter openssl,$(TLS_BACKEND)),utility/tls/openssl.c alone,no object)"
+
 # Build and run every test; aggregate pass/fail.
-test: libsdk.a libomni.a
+test: libsdk.a libomni.a check-tls
 	@fail=0; total=0; \
 	for src in $(TEST_SRCS); do \
 	  bin=$${src%.c}.out; \

@@ -873,11 +873,12 @@ fn allow_probe() {
 `
 
 
-// c, cpp, zig and ocaml ship no live transport: system.fetch answers here.
+// With ALLOW_SEAM, system.fetch answers here instead of a server.
 const C_PROBE = String.raw`
 #include "sdk.h"
 #include "api.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static voxgig_value* stub(void* ud, voxgig_value* args) {
@@ -903,8 +904,9 @@ static void report(const char* name, const char* result) {
 }
 
 static DemoSDK* client(voxgig_value* allow) {
-  return demo_sdk_new(cmap(3, "base", v_str("http://allow.test"), "allow", allow,
-    "system", cmap(1, "fetch", vfn(stub, NULL))));
+  voxgig_value* opts = cmap(2, "base", v_str(getenv("ALLOW_BASE")), "allow", allow);
+  if (getenv("ALLOW_SEAM")) setp(opts, "system", cmap(1, "fetch", vfn(stub, NULL)));
+  return demo_sdk_new(opts);
 }
 
 static void load(const char* name, DemoSDK* sdk) {
