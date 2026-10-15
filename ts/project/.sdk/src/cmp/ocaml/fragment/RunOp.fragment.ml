@@ -5,7 +5,11 @@
 let unexpected (ctx : ctx) (e : exn) : value =
   let e =
     (try
-       (* #PreUnexpected-Hook *)
+       (* Once per operation: make_error fires it for its own error. *)
+       if not ctx.c_unexpected_fired then begin
+         (* #PreUnexpected-Hook *)
+         ()
+       end;
        e
      with hookerr -> hookerr) in
   clean_explain ctx;

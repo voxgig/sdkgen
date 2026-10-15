@@ -175,7 +175,7 @@ class EntyClass
 
         # What a hook raises here must not escape the cleaning below.
         begin
-          utility.feature_hook.call(ctx, "PreUnexpected")
+          utility.feature_hook.call(ctx, "PreUnexpected") unless ctx.unexpected_fired
         rescue StandardError => hookerr
           operr = hookerr
           ctx.ctrl.err = operr
@@ -296,7 +296,10 @@ class EntyClass
 
       # What a hook raises here must not escape the cleaning below.
       begin
-        # #PreUnexpected-Hook
+        # Once per operation: make_error fires it for its own error.
+        unless ctx.unexpected_fired
+          # #PreUnexpected-Hook
+        end
       rescue StandardError => hookerr
         operr = hookerr
         ctx.ctrl.err = operr

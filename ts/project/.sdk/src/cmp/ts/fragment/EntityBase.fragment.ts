@@ -165,8 +165,10 @@ class ProjectNameEntityBase<D = any> {
     catch (err: any) {
       // What a hook throws here must not escape the cleaning below.
       try {
-        const fres = featureHook(ctx, 'PreUnexpected')
-        if (fres instanceof Promise) { await fres }
+        if (!ctx.unexpectedFired) {
+          const fres = featureHook(ctx, 'PreUnexpected')
+          if (fres instanceof Promise) { await fres }
+        }
       }
       catch (hookerr: any) {
         err = hookerr

@@ -211,7 +211,8 @@ sub stream {
 
         # What a hook dies with here must not escape the cleaning below.
         my $fired = eval {
-          $utility->{feature_hook}->($ctx, 'PreUnexpected');
+          $utility->{feature_hook}->($ctx, 'PreUnexpected')
+            unless $ctx->{unexpected_fired};
           1;
         };
         if (!$fired) {
@@ -302,7 +303,10 @@ sub _run_op {
 
     # What a hook dies with here must not escape the cleaning below.
     my $fired = eval {
-      # #PreUnexpected-Hook
+      # Once per operation: make_error fires it for its own error.
+      unless ($ctx->{unexpected_fired}) {
+        # #PreUnexpected-Hook
+      }
       1;
     };
     if (!$fired) {

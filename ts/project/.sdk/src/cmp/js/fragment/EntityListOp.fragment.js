@@ -90,7 +90,10 @@ class EntityOperation {
     catch (err) {
       // What a hook throws here must not escape the cleaning below.
       try {
-        // #PreUnexpected-Hook
+        // Once per operation: makeError fires it for its own error.
+        if (!ctx.unexpectedFired) {
+          // #PreUnexpected-Hook
+        }
       }
       catch (hookerr) {
         err = hookerr

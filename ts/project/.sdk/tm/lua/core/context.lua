@@ -19,6 +19,9 @@ function Context.new(ctxmap, basectx)
 
   self.id = "C" .. tostring(math.random(10000000, 99999999))
   self.out = {}
+  -- Set by make_error as it fires PreUnexpected, which fires once per
+  -- operation.
+  self.unexpected_fired = false
 
   ctxmap = ctxmap or {}
 

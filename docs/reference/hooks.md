@@ -42,7 +42,7 @@ what the shipped features actually do with these hooks, see
 | `PreResponse` | Parsing the response | |
 | `PreResult` | Extracting result data | |
 | `PreDone` | Returning to the caller | Entity state is updated here. |
-| `PreUnexpected` | (on unexpected error) | Fired when an exception/panic escapes the pipeline. |
+| `PreUnexpected` | (on unexpected error) | Fired once per failed operation: for the SDK's own error, and when an exception/panic escapes the pipeline. |
 
 ```
 PrePoint → PreSpec → PreRequest → PreResponse → PreResult → PreDone

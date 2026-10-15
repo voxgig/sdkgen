@@ -63,7 +63,10 @@ defmodule ProjectName.Pipeline do
     # What a hook raises here must not escape the cleaning below.
     {e, st} =
       try do
-        # #PreUnexpected-Hook
+        # Once per operation: make_error fires it for its own error.
+        if S.getprop(ctx, "unexpected_fired") != true do
+          # #PreUnexpected-Hook
+        end
 
         {e, st}
       rescue

@@ -22,6 +22,9 @@ class Context {
   // Store for the current operation.
   current = new WeakMap()
 
+  // Set by makeError as it fires PreUnexpected, which fires once per operation.
+  unexpectedFired = false
+
 
   ctrl = {}
   meta = {}

@@ -17,6 +17,9 @@ class ProjectNameContext:
     def __init__(self, ctxmap=None, basectx=None):
         self.id = "C" + str(random.randint(10000000, 99999999))
         self.out = {}
+        # Set by make_error as it fires PreUnexpected, which fires once per
+        # operation.
+        self.unexpected_fired = False
 
         if ctxmap is None:
             ctxmap = {}

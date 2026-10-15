@@ -238,7 +238,10 @@ function EntyClass:stream(action, args, callopts)
     end
 
     -- What a hook raises here must not escape the cleaning below.
-    local hookok, hookerr = pcall(utility.feature_hook, ctx, "PreUnexpected")
+    local hookok, hookerr = true, nil
+    if not ctx.unexpected_fired then
+      hookok, hookerr = pcall(utility.feature_hook, ctx, "PreUnexpected")
+    end
     if not hookok then
       item = hookerr
     end
@@ -324,7 +327,10 @@ function EntyClass:_run_op(ctx, post_done)
 
   -- What a hook raises here must not escape the cleaning below.
   local hookok, hookerr = pcall(function()
-    -- #PreUnexpected-Hook
+    -- Once per operation: make_error fires it for its own error.
+    if not ctx.unexpected_fired then
+      -- #PreUnexpected-Hook
+    end
   end)
   if not hookok then
     out = hookerr

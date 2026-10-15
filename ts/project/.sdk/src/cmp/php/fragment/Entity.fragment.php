@@ -230,7 +230,9 @@ class EntyClass
         } catch (\Throwable $err) {
             // What a hook throws here must not escape the cleaning below.
             try {
-                ($utility->feature_hook)($ctx, "PreUnexpected");
+                if (!$ctx->unexpected_fired) {
+                    ($utility->feature_hook)($ctx, "PreUnexpected");
+                }
             } catch (\Throwable $hookerr) {
                 $err = $hookerr;
             }
@@ -307,7 +309,10 @@ class EntyClass
         } catch (\Throwable $err) {
             // What a hook throws here must not escape the cleaning below.
             try {
-                // #PreUnexpected-Hook
+                // Once per operation: make_error fires it for its own error.
+                if (!$ctx->unexpected_fired) {
+                    // #PreUnexpected-Hook
+                }
             } catch (\Throwable $hookerr) {
                 $err = $hookerr;
             }

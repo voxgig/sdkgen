@@ -17,12 +17,15 @@ class ProjectNameContext
   attr_accessor :id, :out, :client, :utility, :ctrl, :meta, :config,
                 :entopts, :options, :entity, :shared, :opmap,
                 :data, :reqdata, :match, :reqmatch, :point,
-                :spec, :result, :response, :op
+                :spec, :result, :response, :op, :unexpected_fired
 
   def initialize(ctxmap = {}, basectx = nil)
     ctxmap ||= {}
     @id = "C#{rand(10000000..99999999)}"
     @out = {}
+    # Set by make_error as it fires PreUnexpected, which fires once per
+    # operation.
+    @unexpected_fired = false
 
     @client = ProjectNameHelpers.get_ctx_prop(ctxmap, "client") || basectx&.client
     @utility = ProjectNameHelpers.get_ctx_prop(ctxmap, "utility") || basectx&.utility

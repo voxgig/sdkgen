@@ -251,6 +251,7 @@ let make_context_impl (cs : ctxspec) (basectx : ctx option) : ctx =
     c_opmap = opmap; c_response = response; c_result = result; c_spec = spec;
     c_data = data; c_reqdata = reqdata; c_match = mtch; c_reqmatch = reqmatch;
     c_entity = entity; c_shared = shared; c_scratch = Hashtbl.create 8;
+    c_unexpected_fired = false;
   } in
   let opname = match cs.cs_opname with Some s -> s | None -> "" in
   ctx.c_op <- resolve_op ctx opname;
@@ -536,6 +537,7 @@ let make_error_util (ctx : ctx) (err_opt : sdk_error option) : value =
      debug) close/record error paths that never reach PreDone (e.g. a PrePoint
      rbac short-circuit). Fires after ctrl_err is set so hooks can read the
      error; features guard against double-recording when PreDone already fired. *)
+  ctx.c_unexpected_fired <- true;
   (cu ctx).u_feature_hook ctx "PreUnexpected";
   if ctx.c_ctrl.ctrl_throw = Some false then result.rt_resdata
   else raise (Sdk_error_exc sdk_err)

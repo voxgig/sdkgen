@@ -75,6 +75,7 @@ local function make_error_util(ctx, err)
   -- read the error; features guard against double-recording when PreDone
   -- already fired.
   if ctx.utility ~= nil and type(ctx.utility.feature_hook) == "function" then
+    ctx.unexpected_fired = true
     ctx.utility.feature_hook(ctx, "PreUnexpected")
   end
 

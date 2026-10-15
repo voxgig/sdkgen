@@ -41,6 +41,7 @@ import { ABORT_OUTCOMES, ABORT_PROBES, abortOutcomes } from './abortprobes'
 import {
   NONJSON_CASES, NONJSON_PROBES, NONJSON_SERVER, nonjsonFailures, nonjsonTsv,
 } from './nonjsonprobes'
+import { HOOK_KINDS, HOOK_PROBES, hookCounts } from './hookprobes'
 
 
 // A list requiring a Lua keyword and `__proto__`, which an object literal must compute.
@@ -8040,6 +8041,27 @@ describe('probes driven through a generated SDK', () => {
         deepStrictEqual(nonjsonFailures(ran.out, lane.target, seam), [],
           lane.target + ' probe output:\n' + tail(ran.out))
       })
+
+    const probeKey = 'ts' === lane.target || 'js' === lane.target ? 'node' : lane.target
+
+    if (null == lane.label && null != HOOK_PROBES[probeKey]) {
+      test(lane.target + ': one failed operation fires PreUnexpected once', async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+
+        const sdkroot = await sdkFor(lane.target)
+        const ran = lane.exec(sdkroot, nestedTestEnv(), writer(sdkroot),
+          { name: 'hook', source: HOOK_PROBES })
+
+        if (ran.unlaunchable) {
+          return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, lane.target + ': the hook probe failed:\n' + tail(ran.out, 60))
+        deepStrictEqual(hookCounts(ran.out), Object.fromEntries(HOOK_KINDS.map((k) => [k, 1])),
+          lane.target + ' probe output:\n' + tail(ran.out))
+      })
+    }
 
     // A signal is the TypeScript and JavaScript targets' own seam.
     if (['ts', 'js'].includes(lane.target)) {

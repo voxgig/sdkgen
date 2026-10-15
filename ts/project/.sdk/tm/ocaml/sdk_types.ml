@@ -278,4 +278,7 @@ and ctx = {
   (* per-op feature scratch (telemetry span, metrics start, debug entry,
    * audit-seen flag): keyed by feature, holding a struct value. *)
   mutable c_scratch : (string, value) Hashtbl.t;
+  (* Set by make_error as it fires PreUnexpected, which fires once per
+   * operation. *)
+  mutable c_unexpected_fired : bool;
 }

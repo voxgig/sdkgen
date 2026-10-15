@@ -1582,6 +1582,7 @@
         ;; hooks can read the error; features guard against double-recording
         ;; when PreDone already fired.
         (when (oget ctx :utility)
+          (oset! ctx :unexpected-fired true)
           (ucall ctx :feature-hook "PreUnexpected"))
         (if (= false (oget (oget ctx :ctrl) :throw))
           (oget result :resdata)

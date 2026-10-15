@@ -67,6 +67,7 @@ function makeError(ctx, err) {
   // error; features guard against double-recording when PreDone already fired.
   if (null != ctx.client && null != ctx.utility &&
     'function' === typeof ctx.utility.featureHook) {
+    ctx.unexpectedFired = true
     ctx.utility.featureHook(ctx, 'PreUnexpected')
   }
 

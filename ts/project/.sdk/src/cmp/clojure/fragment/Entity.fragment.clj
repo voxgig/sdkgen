@@ -80,7 +80,10 @@
   [ctx operr]
   ;; What a hook throws here must not escape the cleaning below.
   (let [err (try
-              ; #PreUnexpected-Hook
+              ;; Once per operation: make-error fires it for its own error.
+              (when-not (core/oget ctx :unexpected-fired)
+                ; #PreUnexpected-Hook
+                nil)
               operr
               (catch Throwable hookerr hookerr))]
     (core/clean-explain! ctx)

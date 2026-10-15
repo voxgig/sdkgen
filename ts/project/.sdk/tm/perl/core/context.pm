@@ -28,6 +28,9 @@ sub new {
 
   $self->{id} = 'C' . (10000000 + int(rand(90000000)));
   $self->{out} = {};
+  # Set by make_error as it fires PreUnexpected, which fires once per
+  # operation.
+  $self->{unexpected_fired} = 0;
 
   my $gcp = \&ProjectNameHelpers::get_ctx_prop;
 
