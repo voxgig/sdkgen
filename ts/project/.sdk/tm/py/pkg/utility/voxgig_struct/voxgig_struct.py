@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/struct 0.1.1 (python/voxgig_struct/voxgig_struct.py)
-# Source: https://github.com/voxgig/struct @ 3ab807cc2ae74b2b1b02863a15dad3aa40f15725  [tag: sdk-20261009-0906-0]
+# Source: https://github.com/voxgig/struct @ 621057e24eb5f3e3da6fd3820ff24a36aaacb21b  [tag: sdk-20261016-0845-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # Copyright (c) 2025 Voxgig Ltd. MIT LICENSE.
 #
@@ -1546,7 +1546,7 @@ def setpath(store, path, val, injdef=UNDEF):
 
     base = getprop(injdef, S_base) if injdef else UNDEF
     numparts = size(parts)
-    parent = getprop(store, base, store) if base else store
+    parent = getprop(store, base, store)
 
     for pI in range(numparts - 1):
         partKey = getelem(parts, pI)

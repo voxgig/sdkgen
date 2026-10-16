@@ -1,5 +1,5 @@
-# VENDORED: @voxgig/sekreto sdk-20261009-0906-0 (elixir/plugins/httpjson.ex)
-# Source: https://github.com/voxgig/sekreto @ 83396df4f1c3d579af17e152b7a55fdade307ab1  [tag: sdk-20261009-0906-0]
+# VENDORED: @voxgig/sekreto sdk-20261016-0845-0 (elixir/plugins/httpjson.ex)
+# Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261016-0845-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # The round-trip every remote store shares - and OUTSIDE THE CORE with the
 # client under it.

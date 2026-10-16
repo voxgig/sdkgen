@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (csharp/Struct.cs)
-// Source: https://github.com/voxgig/struct @ 3ab807cc2ae74b2b1b02863a15dad3aa40f15725  [tag: sdk-20261009-0906-0]
+// Source: https://github.com/voxgig/struct @ 621057e24eb5f3e3da6fd3820ff24a36aaacb21b  [tag: sdk-20261016-0845-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE. */
 
@@ -3025,13 +3025,15 @@ namespace Voxgig.Struct
                     return null;
                 }
 
+                // TS descends through getprop, so a null data value is NONE here.
+                object? current = inj.DParent ?? NONE;
                 string? currentStr = null;
                 foreach (object? tval in tvals)
                 {
-                    bool exactMatch = Equals(tval, inj.DParent);
+                    bool exactMatch = Equals(tval, current);
                     if (!exactMatch && IsNode(tval))
                     {
-                        currentStr ??= Stringify(inj.DParent);
+                        currentStr ??= Stringify(current);
                         exactMatch = Stringify(tval) == currentStr;
                     }
                     if (exactMatch)
@@ -3048,7 +3050,7 @@ namespace Voxgig.Struct
                     inj.Path,
                     (1 < Size(inj.Path) ? "" : "value ") +
                     "exactly equal to " + (1 == Size(tvals) ? "" : "one of ") + valdesc,
-                    Typify(inj.DParent), inj.DParent));
+                    Typify(current), current));
             }
             else
             {
@@ -3107,6 +3109,9 @@ namespace Voxgig.Struct
             {
                 return null;
             }
+
+            // TS reads the spec value through getprop, so a null spec value is NONE.
+            pval ??= NONE;
 
             bool exact = GetProp(inj.Meta, S_BEXACT) is bool b && b;
 
@@ -3197,8 +3202,8 @@ namespace Voxgig.Struct
             }
             else if (exact)
             {
-                // Missing key (TS undefined) must not match JSON null in the spec.
-                object? cExact = cKeyExists ? cval : NONE;
+                // TS getprop answers NONE for an absent key and a null alike.
+                object? cExact = cKeyExists && cval != null ? cval : NONE;
                 if (!Equals(cExact, pval))
                 {
                     string pathmsg = 1 < Size(inj.Path)

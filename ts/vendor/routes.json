@@ -40,7 +40,7 @@
   "routed cannot see it. Declared, not derived - deriving it swept each",
   "port's CLI and tests in too."
  ],
- "tag": "sdk-20261009-0906-0",
+ "tag": "sdk-20261016-0845-0",
  "ignorenote": [
   "What a routed directory is EXPECTED to hold that is not vendored.",
   "--audit reports every OTHER unrouted file, so this list is what keeps a",

@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (java/src/Struct.java)
-// Source: https://github.com/voxgig/struct @ 3ab807cc2ae74b2b1b02863a15dad3aa40f15725  [tag: sdk-20261009-0906-0]
+// Source: https://github.com/voxgig/struct @ 621057e24eb5f3e3da6fd3820ff24a36aaacb21b  [tag: sdk-20261016-0845-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 package JAVAPACKAGE.utility.struct;
 
@@ -2725,19 +2725,7 @@ public class Struct {
         }
 
         // No match; describe alternatives.
-        StringBuilder valdesc = new StringBuilder();
-        for (int i = 0; i < tvals.size(); i++) {
-          if (i > 0) valdesc.append(", ");
-          Object tv = tvals.get(i);
-          if (tv instanceof String s) {
-            Matcher m = R_TRANSFORM_NAME.matcher(s);
-            if (m.matches()) {
-              valdesc.append(m.group(1).toLowerCase(Locale.ROOT));
-              continue;
-            }
-          }
-          valdesc.append(stringify(tv));
-        }
+        String valdesc = _describeAlternatives(tvals);
         inj.errs.add(
             _invalidTypeMsg(
                 inj.path,
@@ -2747,6 +2735,22 @@ public class Struct {
                 "V0210"));
         return UNDEF;
       };
+
+  // Lowers every `$NAME` marker in the joined description, nested ones included.
+  private static String _describeAlternatives(List<Object> tvals) {
+    StringBuilder joined = new StringBuilder();
+    for (int i = 0; i < tvals.size(); i++) {
+      if (i > 0) joined.append(", ");
+      joined.append(stringify(tvals.get(i)));
+    }
+    Matcher m = R_TRANSFORM_NAME.matcher(joined);
+    StringBuilder out = new StringBuilder();
+    while (m.find()) {
+      m.appendReplacement(out, Matcher.quoteReplacement(m.group(1).toLowerCase(Locale.ROOT)));
+    }
+    m.appendTail(out);
+    return out.toString();
+  }
 
   /**
    * $EXACT: validate against any one of a list of literal alternatives.
@@ -2800,19 +2804,7 @@ public class Struct {
           }
 
           // No match.
-          StringBuilder valdesc = new StringBuilder();
-          for (int i = 0; i < tvals.size(); i++) {
-            if (i > 0) valdesc.append(", ");
-            Object tv = tvals.get(i);
-            if (tv instanceof String s) {
-              Matcher m = R_TRANSFORM_NAME.matcher(s);
-              if (m.matches()) {
-                valdesc.append(m.group(1).toLowerCase(Locale.ROOT));
-                continue;
-              }
-            }
-            valdesc.append(stringify(tv));
-          }
+          String valdesc = _describeAlternatives(tvals);
           inj.errs.add(
               _invalidTypeMsg(
                   inj.path,

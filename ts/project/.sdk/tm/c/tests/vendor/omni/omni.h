@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/omni sdk-20261009-0906-0 (c/src/omni.h)
-// Source: https://github.com/voxgig/omni @ 5ab24080fb06b45bbbbc3814522bda7da30b520b  [tag: sdk-20261009-0906-0]
+// VENDORED: @voxgig/omni sdk-20261016-0845-0 (c/src/omni.h)
+// Source: https://github.com/voxgig/omni @ e9cb45a308a4da47ffdbc1b3149b9c59199190b2  [tag: sdk-20261016-0845-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Omni: the shared multi-language test runner (C port).
  *
@@ -154,8 +154,8 @@ int omni_regex_find(const char *pattern, const char *text);
 /* Capability strings this runner supports beyond the version baseline. A
  * spec's OMNI.requires list is checked against this: an unknown
  * capability refuses the spec loudly at load time, instead of a lagging
- * port silently mis-running it. NULL-terminated; empty today - future
- * format features mint a string here. */
+ * port silently mis-running it. NULL-terminated. A spec turns each on
+ * only by requiring it. */
 extern const char *const OMNI_CAPABILITIES[];
 
 typedef struct omni_result {
@@ -169,8 +169,6 @@ struct omni_subject {
   omni_result (*call)(omni_subject *self, omni_json **args, size_t nargs);
   void *data;
 };
-
-typedef struct omni_provider omni_provider;
 
 struct omni_provider {
   /* Resolve a test subject by name. NULL when unknown. */
@@ -201,6 +199,8 @@ struct omni_provider {
 typedef struct omni_flags {
   int null;         /* Convert JSON nulls to NULLMARK (default 1). */
   const char *name; /* Label used in failure messages. */
+  int all;          /* Run every entry, then fail once listing each failure. */
+  omni_json *wait;  /* Entry id to {cause}, holding those entries. NULL for none. */
 } omni_flags;
 
 omni_flags omni_flags_default(void);

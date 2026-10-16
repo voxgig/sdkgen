@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/plugin 0.2.0 (python/voxgig_plugin/env.py)
-# Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20261009-0906-0]
+# Source: https://github.com/voxgig/plugin @ caa404b2dfa206d77db6c2869e5b31c2a3202b2d  [tag: sdk-20261016-0845-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 """Environment overrides (section 9.5) - level 7 of the ladder.
 

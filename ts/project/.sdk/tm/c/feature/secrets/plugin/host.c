@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/plugin sdk-20261009-0906-0 (c/src/host.c)
-// Source: https://github.com/voxgig/plugin @ 43acbf266b0dbcf52e5ab5463d85c822da9cd234  [tag: sdk-20261009-0906-0]
+// VENDORED: @voxgig/plugin sdk-20261016-0845-0 (c/src/host.c)
+// Source: https://github.com/voxgig/plugin @ caa404b2dfa206d77db6c2869e5b31c2a3202b2d  [tag: sdk-20261016-0845-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* The host: the lifecycle state machine (§5), extension points (§6),
  * and resource capture (§8). See host.h for the two rules that shape

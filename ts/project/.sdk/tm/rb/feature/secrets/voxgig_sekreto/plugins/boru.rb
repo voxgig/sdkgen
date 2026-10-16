@@ -1,5 +1,5 @@
-# VENDORED: @voxgig/sekreto sdk-20261009-0906-0 (ruby/lib/voxgig_sekreto/plugins/boru.rb)
-# Source: https://github.com/voxgig/sekreto @ 83396df4f1c3d579af17e152b7a55fdade307ab1  [tag: sdk-20261009-0906-0]
+# VENDORED: @voxgig/sekreto sdk-20261016-0845-0 (ruby/lib/voxgig_sekreto/plugins/boru.rb)
+# Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261016-0845-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # frozen_string_literal: true
 
@@ -81,10 +81,11 @@ module VoxgigSekreto
         raise SekretoError, 'sekreto: cannot run ' + @command + ': ' + e.message
       end
 
-      # boru prints the value and one newline, and nothing else.
-      return out.sub(/\n\z/, '') if status.success?
+      # boru prints the value and one newline, and nothing else. Open3 tags
+      # the bytes with the locale's encoding, so read them as UTF-8.
+      return out.force_encoding('UTF-8').sub(/\n\z/, '') if status.success?
 
-      why = err.to_s.strip
+      why = err.to_s.force_encoding('UTF-8').scrub.strip
 
       # "no alias named" is boru saying it does not hold this secret, which is
       # a miss: the chain carries on to the next provider. A locked vault or a

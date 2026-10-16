@@ -1,5 +1,5 @@
-# VENDORED: @voxgig/sekreto sdk-20261009-0906-0 (ruby/lib/voxgig_sekreto/providers.rb)
-# Source: https://github.com/voxgig/sekreto @ 83396df4f1c3d579af17e152b7a55fdade307ab1  [tag: sdk-20261009-0906-0]
+# VENDORED: @voxgig/sekreto sdk-20261016-0845-0 (ruby/lib/voxgig_sekreto/providers.rb)
+# Source: https://github.com/voxgig/sekreto @ ee837130bf444ca46a5a46181bdd6743e118898c  [tag: sdk-20261016-0845-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # frozen_string_literal: true
 
@@ -59,7 +59,7 @@ module VoxgigSekreto
     def load
       if @values.nil?
         @values = begin
-          VoxgigSekreto.parsedotenv(File.read(@file))
+          VoxgigSekreto.parsedotenv(File.read(@file, encoding: 'UTF-8'))
         rescue Errno::ENOENT, Errno::ENOTDIR
           # An absent file - or an absent directory - means "no secrets
           # here", exactly like FileProvider. Anything else (permission
@@ -117,7 +117,7 @@ module VoxgigSekreto
       file = File.join(@dir, VoxgigSekreto.envkey(name, @prefix))
 
       text = begin
-        File.read(file)
+        File.read(file, encoding: 'UTF-8')
       rescue Errno::ENOENT, Errno::ENOTDIR
         # An absent file - or an absent directory - means "no secrets
         # here", exactly like a missing .env. Anything else (permission
