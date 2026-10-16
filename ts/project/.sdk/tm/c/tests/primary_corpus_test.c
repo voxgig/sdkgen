@@ -382,39 +382,52 @@ static acred auth_credential(void) {
 static void auth_retarget(omni_json* node, const acred* cred) {
   size_t i;
   size_t j;
+  omni_json* headers = NULL;
+  omni_json* placed;
+  omni_json* bag;
+  const char* text;
   if (omni_islist(node)) {
     for (i = 0; i < node->listlen; i++) auth_retarget(node->list[i], cred);
     return;
   }
   if (!omni_ismap(node)) return;
   for (i = 0; i < node->maplen; i++) {
-    omni_json* bag = node->vals[i];
-    if (0 != strcmp(node->keys[i], "headers") || !omni_ismap(bag)) {
-      auth_retarget(bag, cred);
-      continue;
-    }
-    if (cred->query) node->keys[i] = omni_pool_strdup(POOL, "query");
-    for (j = 0; j < bag->maplen; j++) {
-      const char* text = omni_strval(bag->vals[j]);
-      if (0 != strcmp(bag->keys[j], "authorization")) {
-        auth_retarget(bag->vals[j], cred);
-        continue;
-      }
-      bag->keys[j] = omni_pool_strdup(POOL, cred->name);
-      if (NULL != text && '\0' != cred->pair[0]) {
-        size_t n = strlen(cred->pair) + strlen(text) + 1;
-        char* joined = (char*)omni_pool_alloc(POOL, n);
-        snprintf(joined, n, "%s%s", cred->pair, text);
-        bag->vals[j] = omni_str(POOL, joined);
-      }
-    }
+    if (0 == strcmp(node->keys[i], "headers") && omni_ismap(node->vals[i])) headers = node->vals[i];
+    else auth_retarget(node->vals[i], cred);
   }
+  if (NULL == headers) return;
+  for (j = 0; j < headers->maplen; j++) {
+    if (0 == strcmp(headers->keys[j], "authorization")) break;
+  }
+  if (j == headers->maplen) return;
+
+  placed = headers->vals[j];
+  for (; j + 1 < headers->maplen; j++) {
+    headers->keys[j] = headers->keys[j + 1];
+    headers->vals[j] = headers->vals[j + 1];
+  }
+  headers->maplen--;
+
+  text = omni_strval(placed);
+  if (NULL != text && '\0' != cred->pair[0]) {
+    size_t n = strlen(cred->pair) + strlen(text) + 1;
+    char* joined = (char*)omni_pool_alloc(POOL, n);
+    snprintf(joined, n, "%s%s", cred->pair, text);
+    placed = omni_str(POOL, joined);
+  }
+
+  bag = cred->query ? omni_map_get(node, "query") : headers;
+  if (!omni_ismap(bag)) {
+    bag = omni_map(POOL);
+    omni_map_set(node, "query", bag);
+  }
+  omni_map_set(bag, cred->name, placed);
 }
 
 /* The corpus states the credential as `headers.authorization`, a placeholder
- * for wherever this SDK puts it: each `headers` bag becomes the real
- * container, `authorization` in it the real name, and a cookie credential's
- * value its pair. */
+ * for wherever this SDK puts it. Only that entry moves, under the real name
+ * and into the real container, and a cookie credential's value becomes its
+ * pair: every other header and query parameter stays where it was. */
 static int auth_prep(omni_json* basic, const char** why) {
   acred cred = auth_credential();
   if (!cred.found) {

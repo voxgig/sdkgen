@@ -780,35 +780,39 @@ fn auth_credential() -> Option<AuthCred> {
 }
 
 // The corpus states the credential as `headers.authorization`, a placeholder
-// for wherever this SDK puts it: each `headers` bag becomes the real
-// container, `authorization` in it the real name, and a cookie credential's
-// value its pair.
+// for wherever this SDK puts it. Only that entry moves, under the real name
+// and into the real container, and a cookie credential's value becomes its
+// pair: every other header and query parameter stays where it was.
 fn auth_retarget(node: &Json, cred: &AuthCred) -> Json {
     match node {
         Json::List(items) => Json::List(items.iter().map(|n| auth_retarget(n, cred)).collect()),
         Json::Map(entries) => {
             let mut out = BTreeMap::new();
+            let mut placed = None;
             for (key, val) in entries {
-                let Json::Map(inner) = val else {
-                    out.insert(key.clone(), auth_retarget(val, cred));
-                    continue;
-                };
-                if "headers" != key {
-                    out.insert(key.clone(), auth_retarget(val, cred));
-                    continue;
-                }
-                let mut bag = BTreeMap::new();
-                for (bk, bv) in inner {
-                    if "authorization" != bk {
-                        bag.insert(bk.clone(), auth_retarget(bv, cred));
-                    } else if let Json::Str(text) = bv {
-                        bag.insert(cred.name.clone(), Json::Str(format!("{}{}", cred.pair, text)));
-                    } else {
-                        bag.insert(cred.name.clone(), auth_retarget(bv, cred));
+                match val {
+                    Json::Map(inner) if "headers" == key => {
+                        let mut bag = inner.clone();
+                        placed = bag.remove("authorization").map(|v| match v {
+                            Json::Str(text) => Json::Str(format!("{}{}", cred.pair, text)),
+                            other => other,
+                        });
+                        out.insert(key.clone(), Json::Map(bag));
+                    }
+                    _ => {
+                        out.insert(key.clone(), auth_retarget(val, cred));
                     }
                 }
+            }
+            if let Some(value) = placed {
                 let to = if cred.query { "query" } else { "headers" };
-                out.insert(to.to_string(), Json::Map(bag));
+                let dest = out.entry(to.to_string()).or_insert_with(|| Json::Map(BTreeMap::new()));
+                if !matches!(dest, Json::Map(_)) {
+                    *dest = Json::Map(BTreeMap::new());
+                }
+                if let Json::Map(bag) = dest {
+                    bag.insert(cred.name.clone(), value);
+                }
             }
             Json::Map(out)
         }

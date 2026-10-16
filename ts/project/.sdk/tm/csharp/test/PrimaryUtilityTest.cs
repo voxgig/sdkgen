@@ -108,6 +108,12 @@ public class PrimaryUtilityTest
                 "zero cases would run; add cases, or mark the fixture " +
                 "PENDING in .sdk/test/primary/");
         }
+        if (name == "prepareAuth")
+        {
+            var cred = AuthCredential.Discover();
+            Assert.True(null != cred, "prepareAuth placed no credential in headers or query");
+            basic = (Dictionary<string, object?>)AuthCredential.Retarget(basic, cred!)!;
+        }
         run.RunSet(basic, subject);
     }
 

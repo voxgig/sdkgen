@@ -18,6 +18,7 @@
 
 #include "omni_resolver.hpp"
 #include "harness.hpp"
+#include "auth_credential.hpp"
 
 using namespace sdk;
 using namespace sdk::fh;
@@ -80,6 +81,14 @@ static void runsection(const std::string& name, const res::Subject& subject) {
     return;
   }
   sdktest::checks()++;
+  if (name == "prepareAuth") {
+    auto cred = authCredential();
+    if (cred.name.empty()) {
+      sdktest::record_fail(name, "prepareAuth placed no credential in headers or query");
+      return;
+    }
+    basic = retargetAuth(basic, cred);
+  }
   primaryRun().runsetflags(name, basic, true, subject);
 }
 
@@ -850,7 +859,11 @@ static void corpusCoverage() {
                   joinnames(staleskip) + " - drop them from notThisSuite()");
 }
 
-int main() {
+int main(int argc, char** argv) {
+  if (2 == argc && std::string(argv[1]) == "--prepare-auth") {
+    T_RUN(prepareAuthBasic);
+    return sdktest::summary("primary_utility_test");
+  }
   T_RUN(exists);
   T_RUN(cleanBasic);
   T_RUN(cleanCorpus);

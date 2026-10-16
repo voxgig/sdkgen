@@ -4950,7 +4950,15 @@ describe('prepareAuth names, replaces and clears only its own credential', () =>
 
 // The cookie entry holds the drop cases to the credential's own pair inside
 // the shared `cookie` header, which is where prepareAuth places it.
-const CREDNAME_MODELS: { name: string, extra: string }[] = [
+
+// The entries naming `lanes` hold only the ports whose runners keep every
+// other header and query parameter in place. A public API places no
+// credential, so the corpus case, which asserts one, does not apply to it.
+const CREDNAME_STRICT = ['c', 'cpp', 'rust', 'csharp']
+
+const CREDNAME_MODELS: {
+  name: string, extra: string, lanes?: string[], pipelineOnly?: boolean,
+}[] = [
   {
     name: 'a credential named by the API, not `authorization`',
     extra: `
@@ -4974,6 +4982,28 @@ main: kit: config: auth: { active: true, prefix: '', in: 'cookie', name: 'sessio
     extra: `
 main: kit: config: auth: { active: true, prefix: '', in: 'query', name: 'token' }
 `,
+  },
+  {
+    name: 'a query credential whose name keeps its case',
+    extra: `
+main: kit: config: auth: { active: true, in: 'query', name: 'ApiToken' }
+`,
+    lanes: CREDNAME_STRICT,
+  },
+  {
+    name: 'a header named cookie, which is not a cookie credential',
+    extra: `
+main: kit: config: auth: { active: true, in: 'header', name: 'cookie' }
+`,
+    lanes: CREDNAME_STRICT,
+  },
+  {
+    name: 'a public API, which places no credential',
+    extra: `
+main: kit: config: auth: { active: false }
+`,
+    lanes: CREDNAME_STRICT,
+    pipelineOnly: true,
   },
 ]
 
@@ -4999,10 +5029,23 @@ const CREDNAME_CORPUS = {
   },
 }
 
+// The same case beside a header and a query parameter that are not the
+// credential, which a retargeted run must leave where they were.
+function credNameCorpusKeeping(): any {
+  const corpus: any = structuredClone(CREDNAME_CORPUS)
+  const entry = corpus.primary.prepareAuth.basic.set[0]
+  for (const spec of [entry.ctx.spec, entry.match.ctx.spec]) {
+    spec.headers['x-extra'] = 'header'
+    spec.query = { keep: 'query' }
+  }
+  return corpus
+}
+
 
 type CredNameStep = {
   // What the step proves, for the failure message.
   name: string,
+  corpus?: boolean,
   cmd: (sdkroot: string) => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
   // A line the run must PRINT. Exit zero is not enough: a filtered run that
   // matches nothing is a fully-skipped suite, which every one of these
@@ -5052,6 +5095,7 @@ const CREDNAME_LANES: CredNameLane[] = [
       },
       {
         name: 'the corpus prepareAuth section',
+        corpus: true,
         cmd: () => Fs.existsSync(TSC)
           ? {
             bin: process.execPath,
@@ -5083,6 +5127,7 @@ const CREDNAME_LANES: CredNameLane[] = [
       },
       {
         name: 'the corpus prepareAuth section',
+        corpus: true,
         cmd: () => ({
           bin: process.execPath,
           args: ['--test', '--test-reporter=tap', '--test-name-pattern=auth-basic',
@@ -5110,6 +5155,7 @@ const CREDNAME_LANES: CredNameLane[] = [
       },
       {
         name: 'the corpus prepareAuth section',
+        corpus: true,
         cmd: () => {
           const go = toolchain('go')
           return null == go ? null : {
@@ -5133,6 +5179,7 @@ const CREDNAME_LANES: CredNameLane[] = [
       },
       {
         name: 'the corpus prepareAuth section',
+        corpus: true,
         cmd: () => pytest(['test/test_primary_utility.py', '-k', 'prepare_auth', '-q']),
         ran: /1 passed/,
       },
@@ -5149,6 +5196,7 @@ const CREDNAME_LANES: CredNameLane[] = [
       },
       {
         name: 'the corpus prepareAuth section',
+        corpus: true,
         cmd: () => minitest(['test/primary_utility_test.rb', '-n', 'test_prepare_auth_basic']),
         ran: /1 runs, \d+ assertions, 0 failures, 0 errors/,
       },
@@ -5165,6 +5213,7 @@ const CREDNAME_LANES: CredNameLane[] = [
       },
       {
         name: 'the corpus prepareAuth section',
+        corpus: true,
         cmd: () => phpunit(['--filter', 'test_prepare_auth_basic', 'test/PrimaryUtilityTest.php']),
         ran: /OK \(1 test/,
       },
@@ -5183,6 +5232,7 @@ const CREDNAME_LANES: CredNameLane[] = [
       },
       {
         name: 'the corpus prepareAuth section',
+        corpus: true,
         cmd: () => busted(['--filter', 'prepareAuth', 'test/primary_utility_test.lua']),
         ran: /1 success \/ 0 failures \/ 0 errors/,
       },
@@ -5203,6 +5253,7 @@ const CREDNAME_LANES: CredNameLane[] = [
       },
       {
         name: 'the corpus prepareAuth section',
+        corpus: true,
         cmd: () => {
           const perl = toolchain('perl')
           return null == perl
@@ -5225,6 +5276,7 @@ const CREDNAME_LANES: CredNameLane[] = [
       },
       {
         name: 'the corpus prepareAuth section',
+        corpus: true,
         cmd: () => cargoTest(['--test', 'primary_utility_test', 'primary_prepare_auth_basic']),
         ran: /test result: ok\. 1 passed; 0 failed/,
       },
@@ -5253,10 +5305,65 @@ const CREDNAME_LANES: CredNameLane[] = [
       },
       {
         name: 'the corpus prepareAuth section',
+        corpus: true,
         cmd: (sdkroot) => ({
           bin: Path.join(sdkroot, 'tests', 'primary_corpus_test.out'), args: ['prepareAuth'],
         }),
         ran: /^PRIMARY CORPUS: 1 cases in 1 sections, 0 section\(s\) FAILED$/m,
+      },
+    ],
+  },
+  {
+    target: 'cpp',
+    needs: 'make and a C++ compiler',
+    steps: [
+      {
+        name: 'the suites build',
+        cmd: () => {
+          const make = toolchain('make')
+          const cxx = cxxCompiler()
+          return null == make || null == cxx ? null : {
+            bin: make,
+            args: ['CXX=' + cxx, 'test/pipeline_test.out', 'test/primary_utility_test.out'],
+          }
+        },
+        ran: /primary_utility_test\.out/,
+      },
+      {
+        name: 'the pipeline suite',
+        cmd: (sdkroot) => ({ bin: Path.join(sdkroot, 'test', 'pipeline_test.out'), args: [] }),
+        ran: /^pipeline_test: [1-9]\d* tests, [1-9]\d* checks, 0 failures$/m,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        corpus: true,
+        cmd: (sdkroot) => ({
+          bin: Path.join(sdkroot, 'test', 'primary_utility_test.out'), args: ['--prepare-auth'],
+        }),
+        ran: /^primary_utility_test: 1 tests, [1-9]\d* checks, 0 failures$/m,
+      },
+    ],
+  },
+  {
+    target: 'csharp',
+    needs: 'dotnet',
+    // Built here, under the longer budget a restore needs.
+    prepare: (sdkroot) => {
+      const built = run(toolchain('dotnet')!, ['build', '--nologo', '-v', 'quiet', 'test'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      return built.ok ? null : 'the generated csharp test project does not build:\n' + tail(built.out)
+    },
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => dotnetTest('PipelineTest.PrepareAuth'),
+        ran: /Passed!\s+-\s+Failed:\s+0,\s+Passed:\s+[1-9]\d*,\s+Skipped:\s+0/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        corpus: true,
+        cmd: () => dotnetTest('PrimaryUtilityTest.PrepareAuthBasic'),
+        ran: /Passed!\s+-\s+Failed:\s+0,\s+Passed:\s+1,\s+Skipped:\s+0/,
       },
     ],
   },
@@ -5271,12 +5378,24 @@ const CREDNAME_LANES: CredNameLane[] = [
       },
       {
         name: 'the corpus prepareAuth section',
+        corpus: true,
         cmd: () => maven(['-Dtest=PrimaryUtilityTest#prepareAuthBasic']),
         ran: /Tests run: 1, Failures: 0, Errors: 0/,
       },
     ],
   },
 ]
+
+
+function dotnetTest(filter: string) {
+  const dotnet = toolchain('dotnet')
+  return null == dotnet ? null : {
+    bin: dotnet,
+    args: ['test', '--nologo', '--no-build', '-v', 'quiet',
+      '--logger', 'console;verbosity=minimal',
+      '--filter', 'FullyQualifiedName~' + filter, 'test'],
+  }
+}
 
 
 // One target directory for every model's crate, which differ in a file or
@@ -5347,10 +5466,7 @@ describe('generated auth tests discover the credential name', () => {
   before(() => {
     cwd = process.cwd()
     tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-credname-'))
-    const testdir = Path.join(tmp, '.sdk', 'test')
-    Fs.mkdirSync(testdir, { recursive: true })
-    Fs.writeFileSync(Path.join(testdir, 'test.json'),
-      JSON.stringify(CREDNAME_CORPUS, null, 2))
+    Fs.mkdirSync(Path.join(tmp, '.sdk', 'test'), { recursive: true })
   })
 
   after(() => {
@@ -5359,15 +5475,20 @@ describe('generated auth tests discover the credential name', () => {
   })
 
   for (const lane of CREDNAME_LANES) {
+    const strict = CREDNAME_STRICT.includes(lane.target)
     for (const model of CREDNAME_MODELS) {
+      if (null != model.lanes && !model.lanes.includes(lane.target)) continue
+      const steps = lane.steps.filter((step) => !(model.pipelineOnly && step.corpus))
 
     test(lane.target + ': ' + model.name,
       async (t) => {
+        Fs.writeFileSync(Path.join(tmp, '.sdk', 'test', 'test.json'),
+          JSON.stringify(strict ? credNameCorpusKeeping() : CREDNAME_CORPUS, null, 2))
         const sdkroot = Path.join(tmp, lane.target)
         Fs.rmSync(sdkroot, { recursive: true, force: true })
         await generateTo(lane.target, sdkroot, model.extra)
 
-        const cmds = lane.steps.map((step) => step.cmd(sdkroot))
+        const cmds = steps.map((step) => step.cmd(sdkroot))
         if (cmds.some((cmd) => null == cmd)) {
           return t.skip(
             'no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')
@@ -5378,8 +5499,8 @@ describe('generated auth tests discover the credential name', () => {
           return t.skip(lane.target + ': ' + notready)
         }
 
-        for (let at = 0; at < lane.steps.length; at++) {
-          const step = lane.steps[at]
+        for (let at = 0; at < steps.length; at++) {
+          const step = steps[at]
           const cmd = cmds[at]!
           const ran = run(cmd.bin, cmd.args, sdkroot, cmd.env)
 
@@ -5897,6 +6018,13 @@ function cCompiler(): string | null {
   const configured = process.env.CC
   return null == configured || '' === configured
     ? (toolchain('cc') || toolchain('gcc'))
+    : toolchain(configured)
+}
+
+function cxxCompiler(): string | null {
+  const configured = process.env.CXX
+  return null == configured || '' === configured
+    ? (toolchain('g++') || toolchain('c++') || toolchain('clang++'))
     : toolchain(configured)
 }
 

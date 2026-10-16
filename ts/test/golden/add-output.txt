@@ -70,7 +70,7 @@ tm/c/tests/feature_harness.h 4ee48c52576f
 tm/c/tests/omni_resolver.h d02058fb3bc4
 tm/c/tests/omni_smoke_test.c 6408be08e5b4
 tm/c/tests/pipeline_test.c 39f2d4164345
-tm/c/tests/primary_corpus_test.c cee69a238046
+tm/c/tests/primary_corpus_test.c 8b5b07a955dc
 tm/c/tests/primary_utility_test.c 01ca5c5d1c03
 tm/c/tests/server_variable_test.c b49f64ffac4b
 tm/c/tests/struct_corpus_test.c d210851e0ef4
@@ -305,6 +305,7 @@ tm/cpp/feature/test.hpp 22af5d5ffbf4
 tm/cpp/src/feature/README.md 3f39917d4bcf
 tm/cpp/src/feature/base/.gitkeep e3b0c44298fc
 tm/cpp/src/feature/test/.gitkeep e3b0c44298fc
+tm/cpp/test/auth_credential.hpp 886e31075212
 tm/cpp/test/concurrency_test.cpp 9ee74de5f187
 tm/cpp/test/custom_utility_test.cpp 2b69801ad71d
 tm/cpp/test/exists_test.cpp 9e03ef43cc67
@@ -312,8 +313,8 @@ tm/cpp/test/harness.hpp 47bca05ee167
 tm/cpp/test/netsim_test.cpp 40bb856c820b
 tm/cpp/test/omni_resolver.hpp e8a41e0b16fc
 tm/cpp/test/omni_smoke_test.cpp dacc9e1b8327
-tm/cpp/test/pipeline_test.cpp 1a4c29d6ebfc
-tm/cpp/test/primary_utility_test.cpp 68d1c6667f71
+tm/cpp/test/pipeline_test.cpp 34072773b4a2
+tm/cpp/test/primary_utility_test.cpp 7d2335762b77
 tm/cpp/test/runner_support.hpp cf97960870c1
 tm/cpp/test/sdk-test-control.json acadc87764f6
 tm/cpp/test/server_variable_test.cpp a6a1670e96ac
@@ -394,6 +395,7 @@ tm/csharp/feature/TestFeature.cs 5dc2f50946e5
 tm/csharp/src/feature/README.md ddb1daf8f8fe
 tm/csharp/src/feature/base/.gitkeep e3b0c44298fc
 tm/csharp/src/feature/test/.gitkeep e3b0c44298fc
+tm/csharp/test/AuthCredential.cs d4b40f654eda
 tm/csharp/test/ConcurrencyTest.cs a2210d8f24f0
 tm/csharp/test/CustomUtilityTest.cs a909ed678d84
 tm/csharp/test/ExistsTest.cs 3d458c790b7c
@@ -401,8 +403,8 @@ tm/csharp/test/FeatureHarness.cs cbdc6a80fc7a
 tm/csharp/test/NetsimTest.cs 3c36d55e1540
 tm/csharp/test/OmniResolver.cs 12edf791ee98
 tm/csharp/test/OmniSmokeTest.cs adbc2519341d
-tm/csharp/test/PipelineTest.cs bb27f42a5e55
-tm/csharp/test/PrimaryUtilityTest.cs dbd0f417929c
+tm/csharp/test/PipelineTest.cs d5e845f81b70
+tm/csharp/test/PrimaryUtilityTest.cs cd22ae73df20
 tm/csharp/test/Runner.cs 1e85bb505148
 tm/csharp/test/StructUtilityTest.cs bcc257581aee
 tm/csharp/test/sdk-test-control.json 1368770ffc61
@@ -1692,7 +1694,7 @@ tm/rust/tests/netsim_test.rs bc23c72e88b2
 tm/rust/tests/omni_resolver/mod.rs b458d10a892a
 tm/rust/tests/omni_smoke_test.rs f412dbc766e8
 tm/rust/tests/pipeline_test.rs edc6a5fc87cc
-tm/rust/tests/primary_utility_test.rs 1cea45936939
+tm/rust/tests/primary_utility_test.rs 97e0f61aa714
 tm/rust/tests/sdk-test-control.json 8e1530378d2f
 tm/rust/tests/struct_utility_test.rs e19a58dc8fad
 tm/rust/tests/vendor/omni/json.rs e71720f05457

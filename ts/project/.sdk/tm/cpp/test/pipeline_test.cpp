@@ -2,7 +2,7 @@
 // (mirrors java test/PipelineTest.java + tm/go/test/pipeline_test.go). The
 // generated entity tests exercise the happy path; these drive the error and
 // edge branches (missing spec/response/result, 4xx handling, transport
-// failures, feature add semantics, auth header shaping) that a normal
+// failures, feature add semantics, auth placement) that a normal
 // success-path op never reaches. All utilities are reached through the client
 // utility, so this suite is API-agnostic.
 
@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "harness.hpp"
+#include "auth_credential.hpp"
 
 using namespace sdk;
 using namespace sdk::fh;
@@ -390,33 +391,37 @@ static void prepareAuth_guardsMissingSpec() {
 }
 
 static void prepareAuth_apikeyWithPrefixSpaceJoined() {
+  auto cred = authCredential();
   auto client = plClient(fhMap({{"apikey", Value("K")}, {"auth", fhMap({{"prefix", Value("Bearer")}, {"basic", Value(false)}})}}));
   UtilityPtr utility = client->getUtility();
   CtxPtr ctx = plCtx(client, utility, Value::undef());
   ctx->spec = authSpec(Value::undef());
   utility->prepareAuth(ctx);
-  ASSERT_EQ_VAL(getp(ctx->spec->headers, "authorization"), Value("Bearer K"), "expected Bearer K");
+  ASSERT_EQ_VAL(authActual(ctx->spec, cred), authExpected(cred, "Bearer", "K"), "credential with prefix");
 }
 
 static void prepareAuth_rawApikeyEmptyPrefixAsIs() {
+  auto cred = authCredential();
   auto client = plClient(fhMap({{"apikey", Value("K")}, {"auth", fhMap({{"prefix", Value("")}, {"basic", Value(false)}})}}));
   UtilityPtr utility = client->getUtility();
   CtxPtr ctx = plCtx(client, utility, Value::undef());
   ctx->spec = authSpec(Value::undef());
   utility->prepareAuth(ctx);
-  ASSERT_EQ_VAL(getp(ctx->spec->headers, "authorization"), Value("K"), "expected K");
+  ASSERT_EQ_VAL(authActual(ctx->spec, cred), authExpected(cred, "", "K"), "raw credential");
 }
 
 static void prepareAuth_emptyApikeyDropsHeader() {
+  auto cred = authCredential();
   auto client = plClient(fhMap({{"apikey", Value("")}, {"auth", fhMap({{"prefix", Value("Bearer")}, {"basic", Value(false)}})}}));
   UtilityPtr utility = client->getUtility();
   CtxPtr ctx = plCtx(client, utility, Value::undef());
-  ctx->spec = authSpec(fhMap({{"authorization", Value("stale")}}));
+  ctx->spec = authSeed(cred);
   utility->prepareAuth(ctx);
-  ASSERT_FALSE(map_contains(ctx->spec->headers, "authorization"), "expected authorization dropped");
+  ASSERT_FALSE(authContains(ctx->spec, cred), "expected credential dropped");
 }
 
 static void prepareAuth_missingApikeyDropsHeader() {
+  auto cred = authCredential();
   auto client = plClient(fhMap({{"auth", fhMap({{"prefix", Value("Bearer")}, {"basic", Value(false)}})}}));
   Value options = client->optionsMap();
   Value apikey = getp(options, "apikey");
@@ -426,12 +431,13 @@ static void prepareAuth_missingApikeyDropsHeader() {
   }
   UtilityPtr utility = client->getUtility();
   CtxPtr ctx = plCtx(client, utility, Value::undef());
-  ctx->spec = authSpec(fhMap({{"authorization", Value("stale")}}));
+  ctx->spec = authSeed(cred);
   utility->prepareAuth(ctx);
-  ASSERT_FALSE(map_contains(ctx->spec->headers, "authorization"), "expected authorization dropped");
+  ASSERT_FALSE(authContains(ctx->spec, cred), "expected credential dropped");
 }
 
 static void prepareAuth_publicApiNoAuthBlockDropsHeader() {
+  auto cred = authCredential();
   auto client = plClient(fhMap({{"apikey", Value("K")}}));
   Value options = client->optionsMap();
   if (!is_nullish(getp(options, "auth"))) {
@@ -441,9 +447,9 @@ static void prepareAuth_publicApiNoAuthBlockDropsHeader() {
   }
   UtilityPtr utility = client->getUtility();
   CtxPtr ctx = plCtx(client, utility, Value::undef());
-  ctx->spec = authSpec(fhMap({{"authorization", Value("stale")}}));
+  ctx->spec = authSeed(cred);
   utility->prepareAuth(ctx);
-  ASSERT_TRUE(is_nullish(getp(ctx->spec->headers, "authorization")), "expected authorization dropped");
+  ASSERT_TRUE(is_nullish(authActual(ctx->spec, cred)), "expected credential dropped");
 }
 
 // --- feature order (array form + test-first default) ------------------------
