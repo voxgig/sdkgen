@@ -20,7 +20,7 @@ src/cmp/c/PrepareAuth_c.ts a6ec77e4c610
 src/cmp/c/ReadmeEntity_c.ts 7dc59cfb6e97
 src/cmp/c/ReadmeExamplesTest_c.ts 2e899b115aaa
 src/cmp/c/ReadmeExplanation_c.ts 193fa2c194dd
-src/cmp/c/ReadmeHowto_c.ts 4e7480c969ba
+src/cmp/c/ReadmeHowto_c.ts d7b348e7ee1e
 src/cmp/c/ReadmeInstall_c.ts bf1713c53287
 src/cmp/c/ReadmeIntro_c.ts 75d0f4c82317
 src/cmp/c/ReadmeModel_c.ts a28efdaa99f9
@@ -46,7 +46,7 @@ src/cmp/c/fragment/Main.fragment.c 86f9e0dff0b5
 src/cmp/c/tsconfig.json 720a3f229019
 src/cmp/c/utility_c.ts 412b3308b0d9
 tm/c/LICENSE 52acd47c245f
-tm/c/Makefile bdf4646460dd
+tm/c/Makefile 7f9664574b89
 tm/c/VERSION e6635045e1d2
 tm/c/core/context.c 3d02628a07f0
 tm/c/core/control.c acb5a3790b08
@@ -74,7 +74,7 @@ tm/c/tests/primary_corpus_test.c 698fafc15f25
 tm/c/tests/primary_utility_test.c 01ca5c5d1c03
 tm/c/tests/server_variable_test.c b49f64ffac4b
 tm/c/tests/struct_corpus_test.c d210851e0ef4
-tm/c/tests/transport_test.c 7fa910f6956d
+tm/c/tests/transport_test.c 3cbaefc1b2da
 tm/c/tests/vendor/omni/json.c 0d5ff94634c7
 tm/c/tests/vendor/omni/omni.h 1c5cd90fdb75
 tm/c/tests/vendor/omni/runner.c 69643d48b86f
@@ -86,7 +86,7 @@ tm/c/utility/feature_hook.c 2519ac12e079
 tm/c/utility/feature_init.c c4d6683438aa
 tm/c/utility/fetcher.c 99b07aa204e1
 tm/c/utility/graphql.c a21a86e03521
-tm/c/utility/http.c a1abc8d61644
+tm/c/utility/http.c d8a711f0a675
 tm/c/utility/jsonparse.c cffd3f2ac8b1
 tm/c/utility/make_context.c 615156796cbb
 tm/c/utility/make_error.c 024d4ebdb064

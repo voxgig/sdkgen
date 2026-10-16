@@ -130,7 +130,7 @@ TEST_BINS := $(TEST_SRCS:.c=.out)
 OMNI_SRCS := $(wildcard tests/vendor/omni/*.c)
 OMNI_OBJS := $(OMNI_SRCS:.c=.o)
 
-.PHONY: all build test clean publish ldlibs check-tls
+.PHONY: all build test clean publish ldlibs check-tls FORCE
 
 all: build
 
@@ -165,6 +165,15 @@ $(PREFIX_H): $(PLAIN_OBJS)
 	  || { rm -f $@.tmp; exit 1; }
 	@if cmp -s $@.tmp $@; then rm -f $@.tmp; else mv $@.tmp $@; fi
 
+# The TLS backend this archive was built with, rewritten only when TLS=
+# selects another, so a switch rebuilds the archive.
+TLS_STAMP := build/tls-backend
+$(TLS_STAMP): FORCE
+	@mkdir -p $(dir $@)
+	@if [ "$$(cat $@ 2>/dev/null)" != "$(TLS_BACKEND)" ]; then echo $(TLS_BACKEND) > $@; fi
+
+FORCE:
+
 %.o: %.c $(PREFIX_H)
 	$(CC) $(CFLAGS) $(INC) $(PREFIXED) -c $< -o $@
 
@@ -177,7 +186,7 @@ $(PREFIX_H): $(PLAIN_OBJS)
 # The archive is then read back: a name it defines without the prefix is
 # one another SDK's archive can define too, so it is not kept, and nor is an
 # archive the read found no names in.
-libsdk.a: $(LIB_OBJS)
+libsdk.a: $(LIB_OBJS) $(TLS_STAMP)
 	@rm -f $@
 	ar rcs $@ $(LIB_OBJS)
 	@names=$$($(call defined_names,$@)); \
@@ -242,7 +251,7 @@ test: libsdk.a libomni.a check-tls
 clean:
 	rm -f $(LIB_OBJS) libsdk.a $(OMNI_OBJS) libomni.a $(TEST_BINS) tests/*.out \
 	  tests/feature/*/*.out corpus-scoreboard.json $(PREFIX_H)
-	rm -rf build/plain
+	rm -rf build/plain $(TLS_STAMP)
 
 # C has no central registry — publishing IS the git tag.
 VERSION := $(shell cat VERSION 2>/dev/null || echo 0.0.1)

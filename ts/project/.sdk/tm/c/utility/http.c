@@ -18,7 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-// The whole exchange, from resolving the host to the last byte read.
+// The exchange, from the first connection attempt to the last byte read.
+// Name resolution runs before it, bounded by the system resolver alone.
 #ifndef HTTP_TIMEOUT_MS
 #define HTTP_TIMEOUT_MS 30000
 #endif
@@ -787,6 +788,24 @@ static void proxy_credentials(HttpBuf* req, const HttpUrl* proxy) {
   free(plain.data);
 }
 
+// The path and query as the request line carries them: a space or a byte
+// past ASCII is percent-encoded, and a control character, which could end
+// the line, is refused.
+static int add_target(HttpBuf* req, const char* s, size_t n) {
+  for (size_t i = 0; i < n; i++) {
+    unsigned char ch = (unsigned char)s[i];
+    if (ch < 0x20 || 0x7f == ch) return 0;
+    if (' ' == ch || 0x80 <= ch) {
+      char esc[4];
+      snprintf(esc, sizeof(esc), "%%%02X", ch);
+      buf_add(req, esc, 3);
+    } else {
+      buf_add(req, s + i, 1);
+    }
+  }
+  return 1;
+}
+
 // The bytes to send, or a message naming what cannot be sent.
 static const char* build_request(HttpBuf* req, const char* method, const HttpUrl* u,
                                  const char* url, const HttpUrl* proxy, voxgig_value* fetchdef) {
@@ -795,7 +814,9 @@ static const char* build_request(HttpBuf* req, const char* method, const HttpUrl
   // Through a proxy, an http:// request names the whole URL.
   if (NULL != proxy && !u->tls) buf_add(req, url, (size_t)(u->target - url));
   if (0 == u->target_len || '/' != u->target[0]) buf_str(req, "/");
-  buf_add(req, u->target, u->target_len);
+  if (!add_target(req, u->target, u->target_len)) {
+    return "the URL's path or query has a control character HTTP cannot carry";
+  }
   buf_str(req, " HTTP/1.1\r\nHost: ");
   buf_str(req, u->authority);
   buf_str(req, "\r\n");

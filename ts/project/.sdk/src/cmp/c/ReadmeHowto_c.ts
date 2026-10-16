@@ -33,11 +33,14 @@ function cmapExpr(pairs: string[]): string {
 function transportText(model: any, target: any): string {
   const env = envName(model)
   const proxy = null != targetFeatures(model, target).proxy
-  return `The SDK sends each request itself: HTTP/1.1 on a socket, one request per
-connection. It reads a response framed by \`Content-Length\`, by chunks or by
-the connection closing, gives up on an exchange after 30 seconds, refuses a
-response larger than 32 MiB, and follows no redirect. A failure to connect,
-send or read is a \`fetch_transport\` error.
+  return `On a POSIX system the SDK sends each request itself: HTTP/1.1 on a
+socket, one request per connection. It reads a response framed by
+\`Content-Length\`, by chunks or by the connection closing, gives up on an
+exchange 30 seconds after it starts to connect, refuses a response larger
+than 32 MiB, and follows no redirect. Looking up the host comes before those
+30 seconds, and is bounded by the system resolver alone. A failure to
+connect, send or read is a \`fetch_transport\` error. On Windows there is no
+default transport: supply \`options.system.fetch\`, described next.
 
 \`https://\` binds the platform's OpenSSL: \`make\` uses it wherever its headers
 are installed (\`make TLS=openssl\` insists on it), and a program linking

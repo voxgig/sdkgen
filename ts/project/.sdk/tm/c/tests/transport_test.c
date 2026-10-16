@@ -342,6 +342,18 @@ int main(void) {
     "headers", cmap(1, "x-split", v_str("one\r\nInjected: two"))), &err) &&
     mentions(err, "fetch_transport", "cannot carry"), "a header with a line break is refused");
 
+  snprintf(url, sizeof(url), "%s/x HTTP/1.1\r\nInjected: two\r\n\r\nGET /echo", base);
+  err = NULL;
+  CHECK(NULL == get(sdk, url, &err) && mentions(err, "fetch_transport", "control character"),
+    "a path with a line break is refused");
+
+  snprintf(url, sizeof(url), "%s/a b/echo?q=\xC3\xA9 f", base);
+  err = NULL;
+  res = get(sdk, url, &err);
+  CHECK(NULL == err, "a path with a space is answered");
+  CHECK_STR_EQ(get_str(json_of(res), "target"), "/a%20b/echo?q=%C3%A9%20f",
+    "a space and a byte past ASCII are percent-encoded");
+
   // A name resolves through getaddrinfo.
   snprintf(url, sizeof(url), "http://localhost:%d/length", port);
   err = NULL;
