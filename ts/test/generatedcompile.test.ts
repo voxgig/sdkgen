@@ -2026,8 +2026,9 @@ int main(void) {
       objects.push(name + '_part.o')
     }
     const archives = names.map((name) => Path.join(roots[name], 'libsdk.a'))
+    // Under a parent make, a sub-make prints its directory even with -s.
     const libs = new Set(names.flatMap((name) =>
-      run(make, ['-s', 'CC=' + cc, 'ldlibs'], roots[name]).out.trim().split(/\s+/)))
+      run(make, ['-s', '--no-print-directory', 'CC=' + cc, 'ldlibs'], roots[name]).out.trim().split(/\s+/)))
     const linked = run(cc, ['main.c', ...objects, ...archives, ...libs, '-o', 'both.out'], dir)
     ok(linked.ok, 'c: the two SDKs do not link into one program:\n' + tail(linked.out))
 
@@ -2121,7 +2122,7 @@ int main(void) {
     const checked = run(make, ['CC=' + cc, 'TLS=none', 'check-tls'], sdkroot)
     ok(checked.ok && /OpenSSL is named by no object/.test(checked.out),
       'c: check-tls did not clear a TLS=none build:\n' + tail(checked.out))
-    const libs = run(make, ['-s', 'CC=' + cc, 'TLS=none', 'ldlibs'], sdkroot).out
+    const libs = run(make, ['-s', '--no-print-directory', 'CC=' + cc, 'TLS=none', 'ldlibs'], sdkroot).out
     ok(!/-lssl|-lcrypto/.test(libs), 'c: a TLS=none build links ' + libs.trim())
 
     const built = run(make, ['CC=' + cc, 'TLS=none', 'tests/tls_probe.out'], sdkroot)
