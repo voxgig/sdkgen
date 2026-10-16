@@ -159,10 +159,12 @@ main: kit: contributor: 'ada': { name: 'Ada Lovelace', url: 'https://example.com
 ## `main.kit.text`
 
 The project's own wording for the generated README files, kept in
-`.sdk/model/text.aontu`, or in `.sdk/model/project.aontu` for a project
-scaffolded before `text.aontu` existed. A slot left empty falls back to the
-same slot of `main.kit.info`, where the spec supplies `title`, `summary` and
-`website`. So the spec's wording is the default, and a project's wording
+`.sdk/model/text.aontu`, which the scaffold writes once and a re-scaffold
+keeps. A project scaffolded before `text.aontu` existed gets the file on its
+next re-scaffold, and can set `main.kit.text` in `.sdk/model/project.aontu`
+until then. A slot left empty falls back to the same slot of `main.kit.info`,
+where the spec supplies `title`, `summary` and `website`. So the spec's
+wording is the default, and a project's wording
 replaces it without a unification conflict. The branch is closed: a slot not
 listed here, such as a misspelled `taglin`, fails the model build.
 

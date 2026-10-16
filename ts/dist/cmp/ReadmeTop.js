@@ -576,7 +576,8 @@ customizable without forking any upstream tool:
 
 | Path | What it holds | Edit it? |
 | --- | --- | --- |
-| \`.sdk/model/project.aontu\` | This project's own decisions: package names, versions, features, per-target settings and README wording in \`main.kit.text\` | Yes. The scaffold writes it once and never again. |
+| \`.sdk/model/project.aontu\` | This project's own decisions: package names, versions, features and per-target settings | Yes. The scaffold writes it once and never again. |
+| \`.sdk/model/text.aontu\` | The README wording, in \`main.kit.text\`: the tagline, the summary and the entity descriptions | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/guide/guide.aontu\` | How the spec's paths map onto entities and operations | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/\`, the rest | The API model built from the spec, and the target and feature definitions | Not by hand. Generation, \`target add\` and a new scaffold run rewrite it. |
 | \`.sdk/def/\` | The OpenAPI spec | Replace it when the API changes. Generation rebuilds the model from it. |

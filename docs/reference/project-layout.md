@@ -179,8 +179,9 @@ Wording for the generated README files belongs under `main.kit.text`, in
 `.sdk/model/text.aontu`. Generation rewrites `README.md`, and a re-scaffold
 rewrites `config.aontu`, so text written in either is lost; see
 [`main.kit.text`](./model.md#mainkittext). A project scaffolded before
-`text.aontu` existed can set `main.kit.text` in `project.aontu`, which a
-re-scaffold also keeps.
+`text.aontu` existed gets the file on its next re-scaffold, and can set
+`main.kit.text` in `project.aontu`, which a re-scaffold also keeps, until
+then.
 
 ### Repository administration
 

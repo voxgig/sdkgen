@@ -1735,12 +1735,14 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const rows = section.split('\n').filter((line: string) => line.startsWith('| `'))
       .map((line: string) => line.split(' | '))
     deepStrictEqual(rows.map((row: string[]) => row[0].slice(2)), [
-      '`.sdk/model/project.aontu`', '`.sdk/model/guide/guide.aontu`', '`.sdk/model/`, the rest', '`.sdk/def/`',
+      '`.sdk/model/project.aontu`', '`.sdk/model/text.aontu`', '`.sdk/model/guide/guide.aontu`',
+      '`.sdk/model/`, the rest', '`.sdk/def/`',
       '`.sdk/src/cmp/<target>/`, `.sdk/tm/<target>/`', '`.sdk/test/`', '`<target>/`, such as `ts/`',
       '`README.md`, `LICENSE`, `Makefile` and the other root files',
     ])
     deepStrictEqual(rows.map((row: string[]) => row[2].split('.')[0]),
-      ['Yes', 'Yes', 'Not by hand', 'Replace it when the API changes', 'Only to add a component of your own', 'No', 'No', 'No'])
+      ['Yes', 'Yes', 'Yes', 'Not by hand', 'Replace it when the API changes', 'Only to add a component of your own',
+        'No', 'No', 'No'])
 
     for (const command of ['npm run generate', 'npm run add-target <target>', 'npm run add-feature <feature>',
       'npx voxgig-sdkgen doctor']) {

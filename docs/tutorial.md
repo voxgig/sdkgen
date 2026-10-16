@@ -100,7 +100,7 @@ cd ../.sdk
 ```
 
 Give the README a tagline by adding this line to the end of
-`model/project.aontu`, the project's own model file:
+`model/text.aontu`, where the project keeps its README wording:
 
 ```jsonic
 main: kit: text: tagline: 'Planets and moons, from TypeScript.'
@@ -143,8 +143,9 @@ checkout is linked there and built; the steps are in
   feature; `feature add` brings in others. `generate` turns the model into
   SDK source.
 - The generated output is disposable — the **model** is its only input, so
-  a change to the SDK is a change to the project's own model file,
-  `.sdk/model/project.aontu`.
+  a change to the SDK is a change to the project's own model files:
+  `.sdk/model/project.aontu`, and `.sdk/model/text.aontu` for the README
+  wording.
 
 ## Where to go next
 
