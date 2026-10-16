@@ -1,5 +1,5 @@
 // VENDORED: @voxgig/struct 0.1.1 (kotlin/src/main/kotlin/voxgig/struct/Struct.kt)
-// Source: https://github.com/voxgig/struct @ 3a42881b1d26c75ebbed9f1897f0ba94cf3cf780  [tag: sdk-20260925-1316-0]
+// Source: https://github.com/voxgig/struct @ 3ab807cc2ae74b2b1b02863a15dad3aa40f15725  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 package KOTLINPACKAGE.utility.struct
 
@@ -432,10 +432,6 @@ object Struct {
             is MutableList<*> -> {
                 val list = parent as MutableList<Any?>
                 val idx = parseIntKey(key) ?: return parent
-                if (value == null) {
-                    if (idx in list.indices) list.removeAt(idx)
-                    return list
-                }
                 if (idx >= 0) {
                     val target = idx.coerceIn(0, list.size)
                     if (target < list.size) list[target] = value else list.add(value)
@@ -618,9 +614,16 @@ object Struct {
 
     fun reEscape(s: String): String = escre(s)
 
+    // Keeps what encodeURIComponent keeps: URLEncoder encodes `~!'()` and spaces as `+`.
     fun escurl(s: Any?): String {
         if (s == null || s === UNDEF) return ""
-        return URLEncoder.encode(s.toString(), StandardCharsets.UTF_8).replace("+", "%20")
+        return URLEncoder.encode(s.toString(), StandardCharsets.UTF_8)
+            .replace("+", "%20")
+            .replace("%7E", "~")
+            .replace("%21", "!")
+            .replace("%27", "'")
+            .replace("%28", "(")
+            .replace("%29", ")")
     }
 
     fun join(
@@ -1066,22 +1069,29 @@ object Struct {
                                 dst[pI] = getprop(dst[pI - 1], key, UNDEF).let { if (it === UNDEF) null else it }
                             }
                             val tval = dst[pI]
-                            cur[pI] =
-                                when {
-                                    tval == null && (typify(v) and T_INSTANCE) == 0 -> if (islist(v)) mutableListOf<Any?>() else linkedMapOf<String, Any?>()
-                                    typify(v) == typify(tval) -> tval
-                                    else -> v
-                                }
+                            if (typify(v) == typify(tval)) {
+                                cur[pI] = tval
+                            } else if ((typify(v) and T_INSTANCE) == 0) {
+                                // Otherwise the override wins: a plain node is copied, taking
+                                // nothing from the destination, so no later merge writes into it.
+                                cur[pI] = if (islist(v)) mutableListOf<Any?>() else linkedMapOf<String, Any?>()
+                                dst[pI] = null
+                            } else {
+                                // A class instance is kept as is, so there is nothing to descend.
+                                cur[pI] = v
+                                return@WalkApply null
+                            }
                         }
                         v
                     }
                 val after =
-                    WalkApply { key, _, _, path ->
+                    WalkApply { key, _, parent, path ->
                         val cI = path.size
                         if (key == null || cI <= 0) return@WalkApply cur[0]
-                        val v = cur[cI]
-                        cur[cI - 1] = setprop(cur[cI - 1], key, v)
-                        v
+                        cur[cI - 1] = setprop(cur[cI - 1], key, cur[cI])
+                        // walk writes this back into the override, so it is the
+                        // override's own child, leaving the override unchanged.
+                        lookup(parent, key)
                     }
                 walk(obj, before, after, md)
                 out = cur[0]
@@ -2254,7 +2264,6 @@ object Struct {
             val sp = slice(inj.path, -1, null)
             @Suppress("UNCHECKED_CAST")
             inj.path = if (sp is List<*>) (sp as List<String>).toMutableList() else mutableListOf()
-            inj.key = strkey(getelem(inj.path, -1))
 
             val tvalsRaw = slice(inj.parent, 1, null)
 

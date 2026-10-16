@@ -370,7 +370,6 @@ describe('vendored', () => {
   test('local deviations from vendored code stay marked', () => {
     // php and rb are not routed, so they stay hand-patched.
     const patched: Record<string, number> = {
-      'tm/csharp/utility/struct/Struct.cs': 1,
       'tm/php/utility/struct/Struct.php': 4,
       'tm/rb/utility/struct/voxgig_struct.rb': 1,
     }

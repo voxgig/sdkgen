@@ -1,5 +1,5 @@
-// VENDORED: @voxgig/sekreto sdk-20260925-1316-0 (c/src/internal.h)
-// Source: https://github.com/voxgig/sekreto @ 163f537960de6813cc393b89843949ca3afa8cfc  [tag: sdk-20260925-1316-0]
+// VENDORED: @voxgig/sekreto sdk-20261009-0906-0 (c/src/internal.h)
+// Source: https://github.com/voxgig/sekreto @ 83396df4f1c3d579af17e152b7a55fdade307ab1  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* What the CORE's own files share, and a consumer never sees: the string
  * helpers and the one local-file read the four built-in kinds need.

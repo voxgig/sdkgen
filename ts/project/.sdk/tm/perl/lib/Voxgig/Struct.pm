@@ -1,5 +1,5 @@
 # VENDORED: @voxgig/struct 0.1.1 (perl/lib/Voxgig/Struct.pm)
-# Source: https://github.com/voxgig/struct @ 3a42881b1d26c75ebbed9f1897f0ba94cf3cf780  [tag: sdk-20260925-1316-0]
+# Source: https://github.com/voxgig/struct @ 3ab807cc2ae74b2b1b02863a15dad3aa40f15725  [tag: sdk-20261009-0906-0]
 # License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 # Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE.
 # Perl port of the canonical TypeScript implementation (ts/src/StructUtility.ts).
@@ -750,11 +750,12 @@ sub escre {
 }
 
 # Escape characters that are unsafe in a URL component.
+# Keeps what encodeURIComponent keeps.
 sub escurl {
     my ($s) = @_;
     return '' unless defined $s;
     $s = "$s";
-    $s =~ s/([^A-Za-z0-9\-_.~])/sprintf('%%%02X', ord($1))/ge;
+    $s =~ s/([^A-Za-z0-9\-_.~!*'()])/sprintf('%%%02X', ord($1))/ge;
     return $s;
 }
 
@@ -1347,7 +1348,7 @@ sub merge {
 
     my $out = $vals->[0];
     for (my $i = 1; $i < @$vals; $i++) {
-        $out = _merge_pair($out, $vals->[$i], $md, 0);
+        $out = _merge_pair($out, $vals->[$i], $md, 0, {});
     }
 
     # Depth zero means nothing merges, and canonical answers the LAST element
@@ -1361,33 +1362,51 @@ sub merge {
     return $out;
 }
 
+# A blessed array is still a list, as an Array subclass is in typescript.
+sub _isinstance {
+    my ($val) = @_;
+    return blessed($val) && !islist($val) ? 1 : 0;
+}
+
 sub _merge_pair {
-    my ($a, $b, $maxdepth, $depth) = @_;
-    return $b if !defined $a || is_none($a);
-    return $b unless isnode($a);
+    my ($a, $b, $maxdepth, $depth, $path) = @_;
     return $b unless isnode($b);
-    return $b if islist($a) != islist($b);  # type mismatch → replace
     if ($depth >= $maxdepth) { return $b }
+    my $rb    = refaddr($b);
+    my $fresh = 0;
+    # A blessed hash is a class instance, so it and a plain map differ in kind
+    # as a list and a map do. typify here calls both a map.
+    if (   !isnode($a)
+        || islist($a) != islist($b)
+        || _isinstance($a) != _isinstance($b) )
+    {
+        # The override wins: a plain node is copied, so no later merge writes
+        # into it. A class instance is kept as is.
+        return $b if _isinstance($b);
+
+        # An override that refers back to itself, as clone makes of such an
+        # object, closes on the copy already under way for that node.
+        my $copy = $path->{"c$rb"};
+        return $copy if defined $copy;
+
+        $a     = islist($b) ? _mklist() : _mkmap();
+        $fresh = 1;
+    }
+    elsif ( $path->{ refaddr($a) . ":$rb" } ) {
+        # Already being merged into this same node further up.
+        return $a;
+    }
+    local $path->{"c$rb"} = $a if $fresh;
+    local $path->{ refaddr($a) . ":$rb" } = 1;
     if (islist($a)) {
         for (my $i = 0; $i < @$b; $i++) {
-            if ($i < @$a) {
-                $a->[$i] = _merge_pair($a->[$i], $b->[$i], $maxdepth, $depth + 1);
-            }
-            else {
-                $a->[$i] = $b->[$i];
-            }
+            $a->[$i] = _merge_pair($a->[$i], $b->[$i], $maxdepth, $depth + 1, $path);
         }
         return $a;
     }
     # Map.
     for my $k (_map_keys($b)) {
-        my $bv = $b->{$k};
-        if (exists $a->{$k}) {
-            $a->{$k} = _merge_pair($a->{$k}, $bv, $maxdepth, $depth + 1);
-        }
-        else {
-            $a->{$k} = $bv;
-        }
+        $a->{$k} = _merge_pair($a->{$k}, $b->{$k}, $maxdepth, $depth + 1, $path);
     }
     return $a;
 }

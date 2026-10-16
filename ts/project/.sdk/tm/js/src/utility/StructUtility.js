@@ -1,8 +1,8 @@
-// VENDORED: @voxgig/struct 0.1.4 (javascript/src/struct.js)
-// Source: https://github.com/voxgig/struct @ 3a42881b1d26c75ebbed9f1897f0ba94cf3cf780  [tag: sdk-20260925-1316-0]
+// VENDORED: @voxgig/struct 0.1.7 (javascript/src/struct.js)
+// Source: https://github.com/voxgig/struct @ 3ab807cc2ae74b2b1b02863a15dad3aa40f15725  [tag: sdk-20261009-0906-0]
 // License: MIT (c) voxgig - see repository LICENSE. Do not edit: resync from upstream.
 /* Copyright (c) 2025-2026 Voxgig Ltd. MIT LICENSE. */
-// VERSION: @voxgig/struct-js 0.1.6
+// VERSION: @voxgig/struct-js 0.1.7
 /* Voxgig Struct
  * =============
  *
@@ -849,7 +849,7 @@ function walk(
 // Merge a list of values into each other. Later values have
 // precedence.  Nodes override scalars. Node kinds (list or map)
 // override each other, and do *not* merge.  The first element is
-// modified.
+// modified; the others are not.
 function merge(val, maxdepth) {
   // const md: number = null == maxdepth ? MAXDEPTH : maxdepth < 0 ? 0 : maxdepth
   const md = slice(maxdepth ?? MAXDEPTH, 0)
@@ -892,34 +892,32 @@ function merge(val, maxdepth) {
           dst[pI] = 0 < pI ? getprop(dst[pI - 1], key) : dst[pI]
           const tval = dst[pI]
           const vtype = typify(val)
-          // Destination empty, so create node (unless override is class instance).
-          if (NONE === tval && 0 === (T_instance & vtype)) {
-            cur[pI] = islist(val) ? [] : {}
-          }
           // Matching override and destination so continue with their values.
-          else if (vtype === typify(tval)) {
+          if (vtype === typify(tval)) {
             cur[pI] = tval
           }
-          // Override wins.
+          // Otherwise the override wins: a plain node is copied, taking
+          // nothing from the destination, so no later merge writes into it.
+          else if (0 === (T_instance & vtype)) {
+            cur[pI] = islist(val) ? [] : {}
+            dst[pI] = NONE
+          }
+          // A class instance is kept as is, so there is nothing to descend.
           else {
             cur[pI] = val
-            // No need to descend when override wins (destination is discarded).
             val = NONE
           }
         }
-        // console.log('BEFORE-END', pathify(path), '@', pI, key,
-        //   stringify(val, -1, 1), stringify(parent, -1, 1),
-        //   'CUR=', stringify(cur, -1, 1), 'DST=', stringify(dst, -1, 1))
         return val
       }
-      function after(key, _val, _parent, path) {
+      function after(key, _val, parent, path) {
         const cI = size(path)
         const target = cur[cI - 1]
         const value = cur[cI]
-        // console.log('AFTER-PREP', pathify(path), '@', cI, cur, '|',
-        //   stringify(key, -1, 1), stringify(value, -1, 1), 'T=', stringify(target, -1, 1))
         setprop(target, key, value)
-        return value
+        // walk writes this back into the override, so below the root it is
+        // the override's own child (_lookup keeps a null, getprop would not).
+        return 0 === cI ? value : _lookup(parent, key)
       }
       // Walk overriding node, creating paths in output as needed.
       out = walk(obj, before, after, maxdepth)
