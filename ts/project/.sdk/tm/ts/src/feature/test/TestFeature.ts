@@ -41,8 +41,9 @@ function ownIdField(config: any, getpath: any, entityName: string): string {
     // No path param at all (or the route ends in a literal, e.g.
     // /orgs/{org}/private-registries/public-key): a single required QUERY
     // param can still be the record's own key (e.g. GET /result?trace_id=).
+    // The config omits `reqd` where it is false, so only `true` is required.
     const query = (best && best.args && best.args.query) || []
-    const reqdQuery = query.filter((q: any) => false !== q.reqd)
+    const reqdQuery = query.filter((q: any) => true === q.reqd)
     if (1 === reqdQuery.length) return String(reqdQuery[0].name)
 
     // The last path parameter of a literal-terminal route is remembered as

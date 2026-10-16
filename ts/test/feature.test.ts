@@ -11,6 +11,8 @@ import { getEventListeners } from 'node:events'
 import Path from 'node:path'
 import Fs from 'node:fs'
 
+import * as struct from '@voxgig/struct'
+
 import {
   makeClient, makeClock, makeResponse, loadFeature, loadFeatureModule,
 } from './featureharness'
@@ -1117,6 +1119,30 @@ describe('feature:test-netsim', () => {
     strictEqual(slept, 120)
     strictEqual(r.status, 200)
   })
+})
+
+
+describe('feature:test-seed', () => {
+
+  // GET /active/?permanent= : the point has no path param, and its only
+  // argument is optional, so the seed key is the id and nothing else.
+  test('a record seeded for a route keyed by no required argument comes back as seeded', () => {
+    const inst: any = new (loadFeature('test'))()
+    const client: any = {}
+    const entity = { active: { k1: { content: 'x' } } }
+    const config = {
+      entity: {
+        active: {
+          op: { load: { points: [{ parts: ['active'], args: { query: [{ name: 'permanent' }] } }] } },
+        },
+      },
+    }
+
+    inst.init({ client, config, utility: { struct } }, { entity })
+
+    deepStrictEqual(entity.active.k1, { content: 'x', id: 'k1' })
+  })
+
 })
 
 

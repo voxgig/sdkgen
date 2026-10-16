@@ -90,6 +90,36 @@ describe('ownIdField', () => {
   })
 
 
+  // GET /result?trace_id= addresses one record by its query parameter.
+  test('a route with no path param picks its single required query param', () => {
+    const config = {
+      entity: {
+        result: {
+          op: { load: { points: [{ parts: ['result'],
+            args: { query: [{ name: 'trace_id', reqd: true }] } }] } },
+        },
+      },
+    }
+
+    strictEqual(ownIdField(config, getpath, 'result'), 'trace_id')
+  })
+
+
+  // The config drops `reqd: false`: an optional query param has no `reqd`.
+  test('a route with no path param and only an optional query param falls back to id', () => {
+    const config = {
+      entity: {
+        active: {
+          op: { load: { points: [{ parts: ['active'],
+            args: { query: [{ name: 'permanent' }] } }] } },
+        },
+      },
+    }
+
+    strictEqual(ownIdField(config, getpath, 'active'), 'id')
+  })
+
+
   // No load points at all (list-only entity, or a fresh model) — fall back
   // to the conventional 'id' rather than throwing.
   test('an entity with no points falls back to id', () => {

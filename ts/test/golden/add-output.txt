@@ -2075,7 +2075,7 @@ tm/ts/src/Result.ts 45a656e9d5df
 tm/ts/src/Spec.ts 4cda481b4c0b
 tm/ts/src/feature/README.md 630422c5567f
 tm/ts/src/feature/base/BaseFeature.ts f42ad986da12
-tm/ts/src/feature/test/TestFeature.ts ea7498f70d95
+tm/ts/src/feature/test/TestFeature.ts cf1c2fa70913
 tm/ts/src/tsconfig.json 8276b533f6e4
 tm/ts/src/types.ts 5e1f5518bba6
 tm/ts/src/utility/CleanUtility.ts 127a2d0fb150
