@@ -7279,6 +7279,49 @@ describe('generated entity tests make only calls the runtime takes', () => {
     ok(checks.moon === checks.signal && checks.moon < checks.planet,
       'c: unexpected check counts ' + JSON.stringify(checks))
   })
+
+
+  // A seed read from a missing file has no value, which every other target's
+  // test feature takes as no seed at all.
+  const CPP_SEED_PROBE = `#include "runner_support.hpp"
+using namespace sdk;
+using namespace sdk::rs;
+static void seed_probe() {
+  Value none = vs::parse_json(read_file("../.sdk/test/entity/absent/AbsentTestData.json"));
+  ASSERT_TRUE(DemoSDK::testSDK(vmap({{"entity", getp(none, "existing")}}), Value::undef()) != nullptr,
+    "a seed of no value");
+  auto sdk = DemoSDK::testSDK(vmap({{"entity", vmap({{"planet", vmap({{"p1", vmap({{"title", Value("t")}})}})}})},
+    {"net", Value(nullptr)}}), Value::undef());
+  Value got = sdk->planet()->load(vmap({{"id", Value("p1")}}), Value::undef())->data();
+  ASSERT_EQ_VAL(getp(got, "title"), Value("t"), "the seeded record");
+}
+int main() {
+  T_RUN(seed_probe);
+  return sdktest::summary("seed_probe_test");
+}
+`
+
+  test('cpp: the moon, signal and planet entity tests pass, and a seed of no value is taken', async (t) => {
+    const make = toolchain('make')
+    const cxx = cleanCxx()
+    if (null == make || null == cxx) {
+      return t.skip('needs make and a C++ compiler (make: ' + make + ', cxx: ' + cxx + ')')
+    }
+
+    const root = Path.join(tmp, 'cpp')
+    await generateTo('cpp', root, ROUTING_MODEL)
+    Fs.writeFileSync(Path.join(root, 'test', 'seed_probe_test.cpp'), CPP_SEED_PROBE)
+    for (const name of ['moon_entity', 'signal_entity', 'planet_entity', 'seed_probe']) {
+      const out = 'test/' + name + '_test.out'
+      const built = run(make, ['-j2', 'CXX=' + cxx, out], root)
+      if (built.timedOut) return t.skip('cpp: ' + built.out)
+      ok(built.ok, 'cpp: ' + name + '_test did not build:\n' + tail(built.out))
+      const res = run(Path.join(root, out), [], root)
+      ok(res.ok, 'cpp: ' + name + '_test failed:\n' + tail(res.out))
+      ok(new RegExp('^' + name + '_test: [1-9]\\d* tests, [1-9]\\d* checks, 0 failures$', 'm').test(res.out),
+        'cpp: ' + name + '_test printed no clean summary:\n' + tail(res.out))
+    }
+  })
 })
 
 

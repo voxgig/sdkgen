@@ -1996,6 +1996,24 @@ inline Value makeOptions(CtxPtr ctx) {
     }
   }
 
+  // A feature option given as null or no value is absent, as the ts reference
+  // validates it. This port's validate refuses such a key of an open map
+  // under `$ONE` ("Unexpected keys"), so it is dropped first.
+  {
+    Value fmap = mapget(opts, "feature");
+    if (fmap.is_map()) {
+      for (const auto& fentry : *fmap.as_map()) {
+        const Value& fopts = fentry.second;
+        if (!fopts.is_map()) continue;
+        std::vector<std::string> absent;
+        for (const auto& oentry : *fopts.as_map()) {
+          if (is_nullish(oentry.second)) absent.push_back(oentry.first);
+        }
+        for (const auto& key : absent) map_remove(fopts, key);
+      }
+    }
+  }
+
   // THE OPTION SPEC IS GENERATED, NOT WRITTEN HERE.
   //
   // Built from the model: `main.kit.optspec` for the standard options, plus
