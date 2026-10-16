@@ -27,6 +27,7 @@ const apidef_1 = require("@voxgig/apidef");
 const applicability_1 = require("./helpers/applicability");
 const serverVars_1 = require("./helpers/serverVars");
 const pointPath_1 = require("./helpers/pointPath");
+const opShape_1 = require("./helpers/opShape");
 const packageMeta_1 = require("./helpers/packageMeta");
 function resolvePath(ctx$, path) {
     const base = null == ctx$.cmpfolder ? ctx$.folder : ctx$.cmpfolder;
@@ -219,18 +220,6 @@ const SPEC_FACTS = {
 };
 // The argument kinds a call routes outside the body.
 const ROUTED_KINDS = ['header', 'cookie', 'query'];
-// The names a point's body keeps when a routed argument shares one: those its
-// JSON request body declares (`bf`), every active field where the model
-// records no `bf`, and never a field the entity marks read-only.
-function bodyFieldNames(pt, fields) {
-    if (false === pt.bf) {
-        return [];
-    }
-    const readOnly = fields.filter((f) => true === f.ro).map((f) => f.n);
-    const names = Array.isArray(pt.bf) ? pt.bf :
-        fields.filter((f) => false !== f.a).map((f) => f.n);
-    return names.filter((name) => !readOnly.includes(name));
-}
 function withPointParts(op, fields = []) {
     if (null == op) {
         return op;
@@ -242,7 +231,7 @@ function withPointParts(op, fields = []) {
             points: (0, jostraca_1.each)(o.points).filter((pt) => false !== pt?.a).map((pt) => {
                 if (null == pt)
                     return pt;
-                const kept = bodyFieldNames(pt, fields);
+                const kept = (0, opShape_1.bodyFieldNames)(pt, fields);
                 const args = Object.fromEntries(Object.entries(pt.g || {}).map(([kind, values]) => [kind, (0, jostraca_1.each)(values).filter((arg) => false !== arg.a).map((arg) => ({
                         name: arg.n, orig: arg.or, type: arg.t, kind: arg.k,
                         reqd: arg.r, example: arg.ex,

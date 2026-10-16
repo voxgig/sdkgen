@@ -1164,6 +1164,42 @@ main: kit: entity: zest: {
 `
 
 
+// A create whose request body is not the record its response returns.
+const REQUEST_SHAPED_ENTITY = `
+main: kit: entity: asset: {
+  alias: field: {}
+  name: "asset"
+  id: { field: "id", name: "id" }
+  field: { id: { name: "id", kind: "field", type: "\`$STRING\`", required: true } }
+  fields: {
+    "created_at": { h: 'Created At', n: "created_at", r: true, ro: true, t: "\`$STRING\`" }
+    "id": { h: 'Id', n: "id", r: true, ro: true, t: "\`$STRING\`" }
+    "inputs": { h: 'Inputs', n: "inputs", r: false, t: "\`$ARRAY\`" }
+    "status": { h: 'Status', n: "status", r: true, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: true, t: "\`$STRING\`" }
+  }
+  op: {
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`", ex: "a01" } ] }
+      m: "GET", o: "/asset/{id}", s: [{ lit: "asset" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    create: { name: "create", points: [ {
+      g: {}, m: "POST", o: "/asset", s: [{ lit: "asset" }]
+      bf: ["created_at", "id", "inputs", "title"]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: flow: BasicAssetFlow: {
+  entity: "asset", kind: "basic", name: "BasicAssetFlow"
+  step: [
+    { o: "create", i: { ref: "asset_ref01" } }
+    { o: "load", i: { ref: "asset_ref01", srcdatavar: "asset_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
+
 export {
   KIT,
   STAGE,
@@ -1193,6 +1229,7 @@ export {
   OPLESS_ENTITY,
   CREATE_ONLY_ENTITY,
   PATCH_ONLY_ENTITY,
+  REQUEST_SHAPED_ENTITY,
   makeLog,
   layeredFs,
   makeModel,

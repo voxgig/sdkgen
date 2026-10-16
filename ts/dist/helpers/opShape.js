@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OP_SUFFIX = exports.CANON_OP_ORDER = void 0;
+exports.bodyFieldNames = bodyFieldNames;
 exports.deriveEntityNames = deriveEntityNames;
 exports.entityCollection = entityCollection;
 exports.opTypeName = opTypeName;
@@ -209,8 +210,10 @@ function fieldInOp(field, opname) {
 }
 function fieldOptional(field, opname) {
     switch (opname) {
-        case 'create':
-            return false === field.r;
+        case 'create': {
+            const req = field.op?.[opname]?.req;
+            return false === ('boolean' === typeof req ? req : field.r);
+        }
         case 'update':
         case 'patch':
             return true;
@@ -221,6 +224,17 @@ function fieldOptional(field, opname) {
         default:
             return true;
     }
+}
+// The names a point's request body sends: what it declares (`bf`), every
+// active field where no `bf` is recorded, and never a read-only field.
+function bodyFieldNames(pt, fields) {
+    if (false === pt.bf) {
+        return [];
+    }
+    const readOnly = fields.filter((f) => true === f.ro).map((f) => f.n);
+    const names = Array.isArray(pt.bf) ? pt.bf :
+        fields.filter((f) => false !== f.a).map((f) => f.n);
+    return names.filter((name) => !readOnly.includes(name));
 }
 // The ordered request-payload members for an entity op, with each member's
 // required/optional decision baked in. `fromParams` records whether the op's
@@ -246,16 +260,25 @@ function opRequestShape(ent, opname) {
         optional: false === p.r,
     })) : [];
     const paramNames = new Set(paramItems.map((p) => p.name));
-    const fields = (ent.fields ? (0, jostraca_1.each)(ent.fields) : [])
+    const allFields = ent.fields ? (0, jostraca_1.each)(ent.fields) : [];
+    const points = selectablePoints(op);
+    const sent = isbodyop ? new Set((0 < points.length ? points : [{}])
+        .flatMap((pt) => bodyFieldNames(pt ?? {}, allFields))) : null;
+    const fields = allFields
         .filter((f) => f.a !== false)
-        .filter((f) => fieldInOp(f, opname));
+        .filter((f) => fieldInOp(f, opname))
+        .filter((f) => null == sent || sent.has(f.n));
+    const known = new Set(allFields.map((f) => f.n));
+    const undeclared = null == sent ? [] : [...sent]
+        .filter((name) => !known.has(name) && !paramNames.has(name)).sort()
+        .map((name) => ({ name, type: '`$ANY`', optional: true }));
     const items = paramItems.concat(fields
         .filter((f) => !paramNames.has(f.n))
         .map((f) => ({
         name: f.n,
         type: f.t,
         optional: fieldOptional(f, opname),
-    })));
+    })), undeclared);
     return { items, fromParams: false };
 }
 function entityIdField(ent) {

@@ -28,6 +28,7 @@ import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
   searchOnly, listOnly, retypedList, seedableList, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
   KEYWORD_ACCESSOR_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
+  REQUEST_SHAPED_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -848,6 +849,49 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // A create written the way the API documents it: the request body's own
+  // fields, none of the record's server-assigned ones. The expected errors
+  // prove the type is the request's and not an open one.
+  test('typescript: a documented create type-checks under strict', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-request-shaped')
+    await generateTo('ts', sdkroot, REQUEST_SHAPED_ENTITY)
+    linkDeps(sdkroot)
+
+    const src = tsc(sdkroot, 'src')
+    ok(src.ok, 'generated src does not compile:\n' + src.out)
+
+    const consumer = Path.join(sdkroot, 'consumer')
+    Fs.mkdirSync(consumer)
+    Fs.writeFileSync(Path.join(consumer, 'tsconfig.json'), JSON.stringify({
+      compilerOptions: {
+        strict: true, noEmit: true, module: 'nodenext', target: 'es2022',
+        skipLibCheck: true, esModuleInterop: true, types: ['node'],
+      },
+      files: ['create.ts'],
+    }))
+    Fs.writeFileSync(Path.join(consumer, 'create.ts'),
+      "import { DemoSDK } from '..'\n\n" +
+      'export async function documented(client: DemoSDK): Promise<string> {\n' +
+      '  const asset = await client.Asset().create({\n' +
+      "    inputs: [{ url: 'https://example.com/clip.mp4' }],\n" +
+      "    title: 'Ada',\n" +
+      '  })\n' +
+      '  return asset.data().id\n' +
+      '}\n\n' +
+      'export async function refused(client: DemoSDK): Promise<void> {\n' +
+      '  // @ts-expect-error the record\'s status is not part of the request\n' +
+      "  await client.Asset().create({ title: 'Ada', status: 'ready' })\n" +
+      '  // @ts-expect-error the request requires a title\n' +
+      "  await client.Asset().create({ inputs: [] })\n" +
+      '}\n')
+
+    const checked = run(process.execPath, [TSC, '-p', 'consumer'], sdkroot)
+    ok(checked.ok, 'a documented create does not type-check:\n' + checked.out)
+  })
+
+
   // The generated build script runs both projects in ONE `tsc --build`, and
   // the test tree imports the package root, which resolves through the
   // emitted dist/. TypeScript 5 happened to build src first; the projects
@@ -1003,6 +1047,7 @@ pub fn main() void {
       listOnly('tally', [['n', '["`$ONE`", ["`$INTEGER`", "`$NULL`"]]'], ['z', '"`$NULL`"']])],
     ['a list example whose parameters are a keyword and __proto__', 'ts-readme-keys', KEYWORD_LIST],
     ['a list example whose parameter its create types otherwise', 'ts-readme-retyped', retypedList()],
+    ['a create whose request is not its record', 'ts-readme-request', REQUEST_SHAPED_ENTITY],
   ] as [string, string, string | undefined][]) {
     test('typescript: the README example tests type-check and run ' + what, async () => {
       ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')

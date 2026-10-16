@@ -9,6 +9,7 @@ import { targetFeatures } from './helpers/applicability'
 
 import { serverVariables } from './helpers/serverVars'
 import { pointParts } from './helpers/pointPath'
+import { bodyFieldNames } from './helpers/opShape'
 import { packageVersion } from './helpers/packageMeta'
 
 
@@ -283,20 +284,6 @@ const SPEC_FACTS: Record<string, (model: any) => any> = {
 
 // The argument kinds a call routes outside the body.
 const ROUTED_KINDS = ['header', 'cookie', 'query']
-
-
-// The names a point's body keeps when a routed argument shares one: those its
-// JSON request body declares (`bf`), every active field where the model
-// records no `bf`, and never a field the entity marks read-only.
-function bodyFieldNames(pt: any, fields: any[]): string[] {
-  if (false === pt.bf) {
-    return []
-  }
-  const readOnly = fields.filter((f: any) => true === f.ro).map((f: any) => f.n)
-  const names: string[] = Array.isArray(pt.bf) ? pt.bf :
-    fields.filter((f: any) => false !== f.a).map((f: any) => f.n)
-  return names.filter((name) => !readOnly.includes(name))
-}
 
 
 function withPointParts(op: any, fields: any[] = []): any {

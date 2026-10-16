@@ -21,6 +21,7 @@ import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, seedableList, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
+  REQUEST_SHAPED_ENTITY,
 } from './generateharness'
 
 
@@ -1953,6 +1954,27 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
     strictEqual(offenders.length, 0,
       'ts: generated code shadows a language global:\n  ' + offenders.join('\n  '))
+  })
+
+
+  test('a create type is the request body, not the record', async () => {
+    const out = await generate(['ts', 'go'], undefined, REQUEST_SHAPED_ENTITY)
+
+    const ts = findFile(out, 'ts/src/DemoTypes.ts')
+    ok(null != ts, 'ts: no DemoTypes.ts generated')
+    ok(ts!.includes('export interface AssetCreateData {\n' +
+      '  inputs?: any[]\n' +
+      '  title: string\n' +
+      '}\n'), 'ts: AssetCreateData is not the request body:\n' +
+      (/export interface AssetCreateData \{[^}]*\}/.exec(ts!) ?? [''])[0])
+    ok(/export interface Asset \{[^}]*created_at: string[^}]*status: string/.test(ts!),
+      'ts: the record type lost a server-assigned field')
+
+    const go = findFile(out, 'go/entity/types.go') ?? ''
+    const create = (/type AssetCreateData struct \{[^}]*\}/.exec(go) ?? [''])[0]
+    ok(/Inputs\b/.test(create) && /Title\b/.test(create) &&
+      !/\b(Id|CreatedAt|Status)\b/.test(create),
+    'go: AssetCreateData is not the request body:\n' + create)
   })
 
 

@@ -250,8 +250,10 @@ function fieldInOp(field: any, opname: string): boolean {
 
 function fieldOptional(field: any, opname: string): boolean {
   switch (opname) {
-    case 'create':
-      return false === field.r
+    case 'create': {
+      const req = field.op?.[opname]?.req
+      return false === ('boolean' === typeof req ? req : field.r)
+    }
     case 'update':
     case 'patch':
       return true
@@ -262,6 +264,19 @@ function fieldOptional(field: any, opname: string): boolean {
     default:
       return true
   }
+}
+
+
+// The names a point's request body sends: what it declares (`bf`), every
+// active field where no `bf` is recorded, and never a read-only field.
+function bodyFieldNames(pt: any, fields: any[]): string[] {
+  if (false === pt.bf) {
+    return []
+  }
+  const readOnly = fields.filter((f: any) => true === f.ro).map((f: any) => f.n)
+  const names: string[] = Array.isArray(pt.bf) ? pt.bf :
+    fields.filter((f: any) => false !== f.a).map((f: any) => f.n)
+  return names.filter((name) => !readOnly.includes(name))
 }
 
 
@@ -295,9 +310,21 @@ function opRequestShape(ent: any, opname: string):
   })) : []
   const paramNames = new Set(paramItems.map((p: any) => p.name))
 
-  const fields = (ent.fields ? each(ent.fields) : [])
+  const allFields = ent.fields ? each(ent.fields) : []
+
+  const points = selectablePoints(op)
+  const sent = isbodyop ? new Set((0 < points.length ? points : [{}])
+    .flatMap((pt: any) => bodyFieldNames(pt ?? {}, allFields))) : null
+
+  const fields = allFields
     .filter((f: any) => f.a !== false)
     .filter((f: any) => fieldInOp(f, opname))
+    .filter((f: any) => null == sent || sent.has(f.n))
+
+  const known = new Set(allFields.map((f: any) => f.n))
+  const undeclared = null == sent ? [] : [...sent]
+    .filter((name) => !known.has(name) && !paramNames.has(name)).sort()
+    .map((name) => ({ name, type: '`$ANY`', optional: true }))
 
   const items = paramItems.concat(
     fields
@@ -306,7 +333,8 @@ function opRequestShape(ent: any, opname: string):
         name: f.n,
         type: f.t,
         optional: fieldOptional(f, opname),
-      })))
+      })),
+    undeclared)
 
   return { items, fromParams: false }
 }
@@ -695,6 +723,7 @@ function entityDataIdField(ent: any): string | null {
 export {
   CANON_OP_ORDER,
   OP_SUFFIX,
+  bodyFieldNames,
   deriveEntityNames,
   entityCollection,
   opTypeName,

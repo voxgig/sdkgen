@@ -43,6 +43,13 @@ the result.
      intersection across alternative points; `$action` points excluded);
      otherwise entity fields with per-op policy (create respects `req`,
      update/patch/list all-optional, load/remove require the `id` field).
+   - **A body op takes its request, not the record** — create, update and
+     patch take their route and query params plus the entity fields the
+     point's JSON request body declares (`bf`), every active field where
+     the model records no `bf`, and never a read-only (`ro`) field. A name
+     the body declares that no entity field carries is an optional member
+     of any type. Create takes a field's own requirement for create
+     (`op.create.req`) over its record-wide `r`.
    - **Collision handling** — two entity names whose PascalCase forms
      meet once case is ignored never reach an emitter: generation renames
      one of them on the model first (see

@@ -127,6 +127,62 @@ describe('opRequestShape — partiality policy', () => {
 })
 
 
+describe('opRequestShape — a body op takes its request, not the record', () => {
+
+  // A response that requires server-assigned fields, and a request body that
+  // declares a field the response never returns.
+  function makeAsset(bf?: any) {
+    return {
+      Name: 'Asset', name: 'asset',
+      fields: {
+        created_at: { n: 'created_at', t: '`$STRING`', r: true, ro: true },
+        id: { n: 'id', t: '`$STRING`', r: true, ro: true },
+        inputs: { n: 'inputs', t: '`$ARRAY`', r: false },
+        status: { n: 'status', t: '`$STRING`', r: true },
+        title: { n: 'title', t: '`$STRING`', r: true },
+      },
+      op: {
+        create: { points: [{ m: 'POST', ...(undefined === bf ? {} : { bf }) }] },
+        update: { points: [{
+          m: 'PUT', g: { params: [{ n: 'id', t: '`$STRING`', r: true }] },
+          ...(undefined === bf ? {} : { bf }),
+        }] },
+      },
+    }
+  }
+
+  test('create takes what bf declares, less a read-only field', () => {
+    const { items } = opRequestShape(
+      makeAsset(['created_at', 'id', 'inputs', 'mode', 'title']), 'create')
+    deepStrictEqual(optionalByName(items), { inputs: true, title: false, mode: true })
+    strictEqual(items.find((it: any) => 'mode' === it.name)!.type, '`$ANY`',
+      'a name only the request declares has no record type to borrow')
+  })
+
+  test('without bf, create takes every field but a read-only one', () => {
+    const { items } = opRequestShape(makeAsset(), 'create')
+    deepStrictEqual(optionalByName(items), { inputs: true, status: false, title: false })
+  })
+
+  test('bf false sends no body fields', () => {
+    deepStrictEqual(opRequestShape(makeAsset(false), 'create').items, [])
+  })
+
+  test('update keeps its route param beside the declared fields', () => {
+    const { items } = opRequestShape(makeAsset(['inputs', 'title']), 'update')
+    deepStrictEqual(optionalByName(items), { id: false, inputs: true, title: true })
+  })
+
+  test("create honours a field's own requirement for create", () => {
+    const ent: any = makeAsset(['inputs', 'title'])
+    ent.fields.title.op = { create: { req: false } }
+    ent.fields.inputs.op = { create: { req: true } }
+    deepStrictEqual(optionalByName(opRequestShape(ent, 'create').items),
+      { inputs: false, title: true })
+  })
+})
+
+
 describe('opRequestShape — multi-point param merging', () => {
 
   // An op serving several alternative routes: a param is required only if
