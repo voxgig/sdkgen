@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use common::*;
 
-use RUSTCRATE::core::helpers::{getp, getpath, ja, jo};
+use RUSTCRATE::core::helpers::{getp, getpath, ja, jo, setp};
 use RUSTCRATE::utility::voxgigstruct as vs;
 use RUSTCRATE::{
     test_sdk, BaseFeature, Context, CtxSpec, Entity, FeatureRef, FetcherFn, Operation,
@@ -595,60 +595,160 @@ fn pipeline_prepare_auth_guards_missing_spec() {
     assert_eq!(err.map(|e| e.code), Some("auth_no_spec".to_string()));
 }
 
-#[test]
-fn pipeline_prepare_auth_apikey_with_prefix_space_joined() {
-    let (client, utility) = pl_client(jo(vec![
-        ("apikey", Value::str("K")),
-        ("auth", jo(vec![("prefix", Value::str("Bearer")), ("basic", Value::Bool(false))])),
-    ]));
-    let ctx = pl_ctx(&client, &utility, None);
-    *ctx.spec.borrow_mut() = Some(auth_spec(Value::Noval));
-    utility.prepare_auth(&ctx).expect("no error");
-    let spec = ctx.spec.borrow().clone().unwrap();
-    let headers = spec.borrow().headers.clone();
-    assert_eq!(getp(&headers, "authorization"), Value::str("Bearer K"));
+// Where this SDK's prepare_auth puts the credential. The API's own scheme
+// decides the container and the name, so the cases read them from a probe
+// run instead of assuming the authorization header. `pair` is the
+// `<scheme>=` lead-in of a cookie credential, which rides the header bag
+// under "cookie"; it is empty for a header or query credential.
+struct PlCred {
+    query: bool,
+    name: String,
+    value: Value,
+    pair: String,
 }
 
-#[test]
-fn pipeline_prepare_auth_raw_apikey_empty_prefix_as_is() {
-    let (client, utility) = pl_client(jo(vec![
-        ("apikey", Value::str("K")),
-        ("auth", jo(vec![("prefix", Value::str("")), ("basic", Value::Bool(false))])),
-    ]));
-    let ctx = pl_ctx(&client, &utility, None);
-    *ctx.spec.borrow_mut() = Some(auth_spec(Value::Noval));
-    utility.prepare_auth(&ctx).expect("no error");
-    let spec = ctx.spec.borrow().clone().unwrap();
-    let headers = spec.borrow().headers.clone();
-    assert_eq!(getp(&headers, "authorization"), Value::str("K"));
+// A cookie credential as prepare_auth writes it for the probe key: one
+// `<scheme>=K` pair and nothing else.
+fn pl_cookie_pair(text: &str) -> bool {
+    match text.split_once('=') {
+        Some((scheme, key)) => !scheme.is_empty() && !scheme.contains(';') && "K" == key,
+        None => false,
+    }
 }
 
-#[test]
-fn pipeline_prepare_auth_empty_apikey_drops_header() {
-    let (client, utility) = pl_client(jo(vec![
-        ("apikey", Value::str("")),
-        ("auth", jo(vec![("prefix", Value::str("Bearer")), ("basic", Value::Bool(false))])),
-    ]));
+// The options auth block every case passes. `basic: false` is explicit: an
+// HTTP Basic API's config carries `auth.basic: true`, whose branch needs a
+// secret as well and writes nothing without one, which the probe would read
+// as a public API.
+fn pl_auth(prefix: &str) -> Value {
+    jo(vec![("prefix", Value::str(prefix)), ("basic", Value::Bool(false))])
+}
+
+fn pl_bag(spec: &Rc<RefCell<Spec>>, query: bool) -> Value {
+    let spec = spec.borrow();
+    if query {
+        spec.query.clone()
+    } else {
+        spec.headers.clone()
+    }
+}
+
+// Runs prepare_auth once over empty headers and query, and reports which it
+// wrote to, and under what name. None is a public API, a legitimate shape.
+fn pl_auth_probe(sdkopts: Value) -> Option<PlCred> {
+    let (client, utility) = pl_client(sdkopts);
     let ctx = pl_ctx(&client, &utility, None);
-    *ctx.spec.borrow_mut() = Some(auth_spec(jo(vec![(
-        "authorization",
-        Value::str("stale"),
-    )])));
-    utility.prepare_auth(&ctx).expect("no error");
+    *ctx.spec.borrow_mut() = Some(auth_spec(Value::Noval));
+    if utility.prepare_auth(&ctx).is_err() {
+        return None;
+    }
     let spec = ctx.spec.borrow().clone().unwrap();
-    let headers = spec.borrow().headers.clone();
-    assert!(
-        getp(&headers, "authorization").is_noval(),
-        "expected authorization dropped"
+    for query in [false, true] {
+        if let Some((name, value)) = vs::items_vec(&pl_bag(&spec, query)).into_iter().next() {
+            let mut pair = String::new();
+            if let Some(text) = value.as_str() {
+                if !query && "cookie" == name && pl_cookie_pair(text) {
+                    pair = text[..text.len() - 1].to_string();
+                }
+            }
+            return Some(PlCred { query, name, value, pair });
+        }
+    }
+    None
+}
+
+fn pl_auth_credential() -> Option<PlCred> {
+    pl_auth_probe(jo(vec![("apikey", Value::str("K")), ("auth", pl_auth("Bearer"))]))
+}
+
+// Every credential this SDK could place: both credentials and Basic switched
+// on, so whichever branch the API has, something lands unless it is public.
+fn pl_auth_any_credential() -> Option<PlCred> {
+    pl_auth_probe(jo(vec![
+        ("apikey", Value::str("K")),
+        ("secret", Value::str("S")),
+        ("auth", jo(vec![("prefix", Value::str("Bearer")), ("basic", Value::Bool(true))])),
+    ]))
+}
+
+// Runs prepare_auth over a fresh spec, seeding the credential's slot first
+// when there is a seed, and returns what is left there.
+fn pl_auth_placed(sdkopts: Value, seed: Option<&str>) -> Option<Value> {
+    let cred = pl_auth_credential()?;
+    let (client, utility) = pl_client(sdkopts);
+    let ctx = pl_ctx(&client, &utility, None);
+    let spec = auth_spec(Value::Noval);
+    if let Some(seed) = seed {
+        // cred.pair keeps a cookie seed from reading as a stranger's cookie.
+        setp(&pl_bag(&spec, cred.query), &cred.name, Value::str(format!("{}{}", cred.pair, seed)));
+    }
+    *ctx.spec.borrow_mut() = Some(spec.clone());
+    utility.prepare_auth(&ctx).expect("no error");
+    let value = getp(&pl_bag(&spec, cred.query), &cred.name);
+    if value.is_noval() {
+        None
+    } else {
+        Some(value)
+    }
+}
+
+// Without this the cases below cannot fail for an SDK whose credential the
+// probe misses: every one of them takes the public-API path instead.
+#[test]
+fn pipeline_prepare_auth_probe_finds_the_credential_this_sdk_places() {
+    assert_eq!(
+        pl_auth_credential().is_none(),
+        pl_auth_any_credential().is_none(),
+        "the probe missed a credential this SDK places"
     );
 }
 
 #[test]
-fn pipeline_prepare_auth_missing_apikey_drops_header() {
-    let (client, utility) = pl_client(jo(vec![(
-        "auth",
-        jo(vec![("prefix", Value::str("Bearer")), ("basic", Value::Bool(false))]),
-    )]));
+fn pipeline_prepare_auth_apikey_placed_where_this_api_puts_it() {
+    let sdkopts = jo(vec![("apikey", Value::str("K")), ("auth", pl_auth("Bearer"))]);
+    let Some(cred) = pl_auth_credential() else {
+        assert!(pl_auth_placed(sdkopts, None).is_none(), "expected no credential placed");
+        return;
+    };
+    if !cred.pair.is_empty() {
+        // A cookie credential is a `<scheme>=<key>` pair, with no room for a prefix.
+        assert!(
+            cred.value.as_str().map(pl_cookie_pair).unwrap_or(false),
+            "expected a cookie pair, got {:?}",
+            cred.value
+        );
+        return;
+    }
+    // A header credential is prefix-joined; a query credential is the raw key.
+    let want = if cred.query { "K" } else { "Bearer K" };
+    assert_eq!(cred.value, Value::str(want), "the credential under {:?}", cred.name);
+}
+
+#[test]
+fn pipeline_prepare_auth_raw_apikey_empty_prefix_as_is() {
+    let placed = pl_auth_placed(
+        jo(vec![("apikey", Value::str("K")), ("auth", pl_auth(""))]),
+        None,
+    );
+    match pl_auth_credential() {
+        Some(cred) => assert_eq!(placed, Some(Value::str(format!("{}K", cred.pair)))),
+        None => assert!(placed.is_none(), "expected no credential placed"),
+    }
+}
+
+#[test]
+fn pipeline_prepare_auth_empty_apikey_drops_credential() {
+    let placed = pl_auth_placed(
+        jo(vec![("apikey", Value::str("")), ("auth", pl_auth("Bearer"))]),
+        Some("stale"),
+    );
+    assert!(placed.is_none(), "expected the credential dropped, got {:?}", placed);
+}
+
+#[test]
+fn pipeline_prepare_auth_missing_apikey_drops_credential() {
+    let sdkopts = jo(vec![("auth", pl_auth("Bearer"))]);
+    let (client, _) = pl_client(sdkopts.clone());
     let options = client.options_map();
     if get_str(&options, "apikey")
         .map(|k| !k.is_empty())
@@ -657,23 +757,14 @@ fn pipeline_prepare_auth_missing_apikey_drops_header() {
         eprintln!("skip: SDK options carry a configured apikey");
         return;
     }
-    let ctx = pl_ctx(&client, &utility, None);
-    *ctx.spec.borrow_mut() = Some(auth_spec(jo(vec![(
-        "authorization",
-        Value::str("stale"),
-    )])));
-    utility.prepare_auth(&ctx).expect("no error");
-    let spec = ctx.spec.borrow().clone().unwrap();
-    let headers = spec.borrow().headers.clone();
-    assert!(
-        getp(&headers, "authorization").is_noval(),
-        "expected authorization dropped"
-    );
+    let placed = pl_auth_placed(sdkopts, Some("stale"));
+    assert!(placed.is_none(), "expected the credential dropped, got {:?}", placed);
 }
 
 #[test]
-fn pipeline_prepare_auth_public_api_no_auth_block_drops_header() {
-    let (client, utility) = pl_client(jo(vec![("apikey", Value::str("K"))]));
+fn pipeline_prepare_auth_public_api_no_auth_block_drops_credential() {
+    let sdkopts = jo(vec![("apikey", Value::str("K"))]);
+    let (client, _) = pl_client(sdkopts.clone());
     let options = client.options_map();
     if !getp(&options, "auth").is_noval() {
         // Option validation supplies an auth shape for this SDK, so a truly
@@ -681,18 +772,8 @@ fn pipeline_prepare_auth_public_api_no_auth_block_drops_header() {
         eprintln!("skip: options always carry an auth block in this SDK");
         return;
     }
-    let ctx = pl_ctx(&client, &utility, None);
-    *ctx.spec.borrow_mut() = Some(auth_spec(jo(vec![(
-        "authorization",
-        Value::str("stale"),
-    )])));
-    utility.prepare_auth(&ctx).expect("no error");
-    let spec = ctx.spec.borrow().clone().unwrap();
-    let headers = spec.borrow().headers.clone();
-    assert!(
-        getp(&headers, "authorization").is_noval(),
-        "expected authorization dropped"
-    );
+    let placed = pl_auth_placed(sdkopts, Some("stale"));
+    assert!(placed.is_none(), "expected the credential dropped, got {:?}", placed);
 }
 
 // (get_str used by the auth guards above)

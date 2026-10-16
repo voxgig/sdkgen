@@ -69,8 +69,8 @@ tm/c/tests/ctest.h d2111a0ede61
 tm/c/tests/feature_harness.h 4ee48c52576f
 tm/c/tests/omni_resolver.h d02058fb3bc4
 tm/c/tests/omni_smoke_test.c 6408be08e5b4
-tm/c/tests/pipeline_test.c b4c8322e9ab7
-tm/c/tests/primary_corpus_test.c 698fafc15f25
+tm/c/tests/pipeline_test.c 39f2d4164345
+tm/c/tests/primary_corpus_test.c cee69a238046
 tm/c/tests/primary_utility_test.c 01ca5c5d1c03
 tm/c/tests/server_variable_test.c b49f64ffac4b
 tm/c/tests/struct_corpus_test.c d210851e0ef4
@@ -1691,8 +1691,8 @@ tm/rust/tests/custom_utility_test.rs 958b76f524b2
 tm/rust/tests/netsim_test.rs bc23c72e88b2
 tm/rust/tests/omni_resolver/mod.rs 7d8311d30d77
 tm/rust/tests/omni_smoke_test.rs f412dbc766e8
-tm/rust/tests/pipeline_test.rs d3379de00790
-tm/rust/tests/primary_utility_test.rs 289d1d1cd976
+tm/rust/tests/pipeline_test.rs edc6a5fc87cc
+tm/rust/tests/primary_utility_test.rs 1cea45936939
 tm/rust/tests/sdk-test-control.json 8e1530378d2f
 tm/rust/tests/struct_utility_test.rs e19a58dc8fad
 tm/rust/tests/vendor/omni/json.rs 93db9e411eab

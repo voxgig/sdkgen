@@ -4965,6 +4965,12 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 main: kit: config: auth: { active: true, prefix: '', in: 'cookie', name: 'session' }
 `,
   },
+  {
+    name: 'a credential carried in the query',
+    extra: `
+main: kit: config: auth: { active: true, prefix: '', in: 'query', name: 'token' }
+`,
+  },
 ]
 
 
@@ -4993,7 +4999,7 @@ const CREDNAME_CORPUS = {
 type CredNameStep = {
   // What the step proves, for the failure message.
   name: string,
-  cmd: () => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
+  cmd: (sdkroot: string) => { bin: string, args: string[], env?: NodeJS.ProcessEnv } | null,
   // A line the run must PRINT. Exit zero is not enough: a filtered run that
   // matches nothing is a fully-skipped suite, which every one of these
   // frameworks reports as a pass.
@@ -5205,6 +5211,50 @@ const CREDNAME_LANES: CredNameLane[] = [
     ],
   },
   {
+    target: 'rust',
+    needs: 'cargo',
+    // The corpus step waits on the vendored omni, which does not yet compile
+    // in a generated SDK: its module documentation includes a file the
+    // vendor set does not ship.
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => cargoTest(['--test', 'pipeline_test', 'pipeline_prepare_auth']),
+        ran: /test result: ok\. [1-9]\d* passed; 0 failed/,
+      },
+    ],
+  },
+  {
+    target: 'c',
+    needs: 'make and a C compiler',
+    steps: [
+      {
+        name: 'the suites build',
+        cmd: () => {
+          const make = toolchain('make')
+          const cc = cCompiler()
+          return null == make || null == cc ? null : {
+            bin: make,
+            args: ['CC=' + cc, 'tests/pipeline_test.out', 'tests/primary_corpus_test.out'],
+          }
+        },
+        ran: /primary_corpus_test\.out/,
+      },
+      {
+        name: 'the pipeline suite',
+        cmd: (sdkroot) => ({ bin: Path.join(sdkroot, 'tests', 'pipeline_test.out'), args: [] }),
+        ran: /^pipeline: [1-9]\d* checks, 0 failed$/m,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        cmd: (sdkroot) => ({
+          bin: Path.join(sdkroot, 'tests', 'primary_corpus_test.out'), args: ['prepareAuth'],
+        }),
+        ran: /^PRIMARY CORPUS: 1 cases in 1 sections, 0 section\(s\) FAILED$/m,
+      },
+    ],
+  },
+  {
     target: 'java',
     needs: 'java and maven',
     steps: [
@@ -5221,6 +5271,18 @@ const CREDNAME_LANES: CredNameLane[] = [
     ],
   },
 ]
+
+
+// One target directory for every model's crate, which differ in a file or
+// two, so each model after the first builds incrementally.
+function cargoTest(args: string[]) {
+  const cargo = toolchain('cargo')
+  return null == cargo ? null : {
+    bin: cargo,
+    args: ['test', ...args],
+    env: { ...process.env, CARGO_TARGET_DIR: Path.join('..', 'rust-target') },
+  }
+}
 
 
 function pytest(args: string[]) {
@@ -5299,7 +5361,7 @@ describe('generated auth tests discover the credential name', () => {
         Fs.rmSync(sdkroot, { recursive: true, force: true })
         await generateTo(lane.target, sdkroot, model.extra)
 
-        const cmds = lane.steps.map((step) => step.cmd())
+        const cmds = lane.steps.map((step) => step.cmd(sdkroot))
         if (cmds.some((cmd) => null == cmd)) {
           return t.skip(
             'no usable ' + lane.target + ' toolchain here (' + lane.needs + ')')

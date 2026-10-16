@@ -3,10 +3,11 @@ mod common;
 mod omni_resolver;
 
 use std::cell::RefCell;
+use std::collections::BTreeMap;
 use std::rc::Rc;
 
 use common::*;
-use omni_resolver::{entrycount, jpath, tostruct, Run};
+use omni_resolver::{entrycount, jpath, tostruct, Json, Run};
 
 use RUSTCRATE::core::helpers::{get_str, getp, ja, jo, setp, to_map, vfn};
 use RUSTCRATE::utility::voxgigstruct as vs;
@@ -741,9 +742,89 @@ fn primary_param_basic() {
     });
 }
 
+// Where this SDK's prepare_auth puts the credential, probed once over empty
+// headers and query. `pair` is the `<scheme>=` lead-in of a cookie
+// credential, which rides the header bag under "cookie".
+struct AuthCred {
+    query: bool,
+    name: String,
+    pair: String,
+}
+
+fn auth_credential() -> Option<AuthCred> {
+    let client = test_sdk(
+        Value::Noval,
+        jo(vec![
+            ("apikey", Value::str("PROBE")),
+            ("auth", jo(vec![("prefix", Value::str("")), ("basic", Value::Bool(false))])),
+        ]),
+    );
+    let utility = client.get_utility();
+    let ctx = make_test_ctx(&client, &utility);
+    let spec = Rc::new(RefCell::new(Spec::new(&jo(vec![("step", Value::str("s"))]))));
+    *ctx.spec.borrow_mut() = Some(spec.clone());
+    utility.prepare_auth(&ctx).ok()?;
+    for query in [false, true] {
+        let bag = if query { spec.borrow().query.clone() } else { spec.borrow().headers.clone() };
+        if let Some((name, value)) = vs::items_vec(&bag).into_iter().next() {
+            let text = value.as_str().unwrap_or("");
+            let pair = if !query && "cookie" == name && text.ends_with("=PROBE") {
+                text[..text.len() - "PROBE".len()].to_string()
+            } else {
+                String::new()
+            };
+            return Some(AuthCred { query, name, pair });
+        }
+    }
+    None
+}
+
+// The corpus states the credential as `headers.authorization`, a placeholder
+// for wherever this SDK puts it: each `headers` bag becomes the real
+// container, `authorization` in it the real name, and a cookie credential's
+// value its pair.
+fn auth_retarget(node: &Json, cred: &AuthCred) -> Json {
+    match node {
+        Json::List(items) => Json::List(items.iter().map(|n| auth_retarget(n, cred)).collect()),
+        Json::Map(entries) => {
+            let mut out = BTreeMap::new();
+            for (key, val) in entries {
+                let Json::Map(inner) = val else {
+                    out.insert(key.clone(), auth_retarget(val, cred));
+                    continue;
+                };
+                if "headers" != key {
+                    out.insert(key.clone(), auth_retarget(val, cred));
+                    continue;
+                }
+                let mut bag = BTreeMap::new();
+                for (bk, bv) in inner {
+                    if "authorization" != bk {
+                        bag.insert(bk.clone(), auth_retarget(bv, cred));
+                    } else if let Json::Str(text) = bv {
+                        bag.insert(cred.name.clone(), Json::Str(format!("{}{}", cred.pair, text)));
+                    } else {
+                        bag.insert(cred.name.clone(), auth_retarget(bv, cred));
+                    }
+                }
+                let to = if cred.query { "query" } else { "headers" };
+                out.insert(to.to_string(), Json::Map(bag));
+            }
+            Json::Map(out)
+        }
+        other => other.clone(),
+    }
+}
+
 #[test]
 fn primary_prepare_auth_basic() {
     let mut run = primary_run();
+    let cred = auth_credential().expect("prepare_auth placed no credential in headers or query");
+    if let Json::Map(sections) = &mut run.spec {
+        if let Some(section) = sections.get_mut("prepareAuth") {
+            *section = auth_retarget(section, &cred);
+        }
+    }
     let setup_opts = tostruct(&jpath(&run.spec, &["prepareAuth", "DEF", "setup", "a"]));
     let auth_client = test_sdk(Value::Noval, setup_opts);
     let auth_utility = auth_client.get_utility();
@@ -757,10 +838,11 @@ fn primary_prepare_auth_basic() {
 
         // Update entry ctx for match.
         if let (Value::Map(_), Some(spec)) = (&ctxmap, ctx.spec.borrow().clone()) {
+            let spec = spec.borrow();
             setp(
                 &ctxmap,
                 "spec",
-                jo(vec![("headers", spec.borrow().headers.clone())]),
+                jo(vec![("headers", spec.headers.clone()), ("query", spec.query.clone())]),
             );
         }
 

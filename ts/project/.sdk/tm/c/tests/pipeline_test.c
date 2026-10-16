@@ -1,8 +1,8 @@
 // Direct unit tests for the operation-pipeline utilities (C port of
 // tm/rust/tests/pipeline_test.rs). The generated entity tests exercise the
 // happy path; these drive the error and edge branches — missing spec/response/
-// result, 4xx handling, transport failures, feature-add ordering, auth header
-// shaping — that a normal success-path op never reaches. Contexts are built
+// result, 4xx handling, transport failures, feature-add ordering, auth
+// placement — that a normal success-path op never reaches. Contexts are built
 // directly (no mock server) and the utilities are called in isolation.
 
 #include "feature_harness.h" // fh_response + Fetcher helpers + ctest.h
@@ -402,64 +402,161 @@ static void test_prepare_auth_guards_missing_spec(void) {
   CHECK_STR_EQ(err ? err->code : "", "auth_no_spec", "prepare_auth: no spec");
 }
 
-static void test_prepare_auth_apikey_with_prefix_space_joined(void) {
-  pl_client(cmap(2, "apikey", v_str("K"), "auth", cmap(2, "prefix", v_str("Bearer"), "basic", v_bool(false))));
+// Where this SDK's prepare_auth puts the credential. The API's own scheme
+// decides the container and the name, so the cases read them from a probe
+// run instead of assuming the authorization header. `pair` is the
+// `<scheme>=` lead-in of a cookie credential, which rides the header bag
+// under "cookie"; it is empty for a header or query credential.
+typedef struct {
+  bool found;
+  bool query;
+  char name[128];
+  char value[256];
+  char pair[128];
+} PlCred;
+
+// A cookie credential as prepare_auth writes it for the probe key: one
+// `<scheme>=K` pair and nothing else.
+static bool pl_cookie_pair(const char* text) {
+  const char* eq = strchr(text, '=');
+  return NULL != eq && eq != text && NULL == strchr(text, ';') && 0 == strcmp(eq + 1, "K");
+}
+
+// The options auth block every case passes. `basic: false` is explicit: an
+// HTTP Basic API's config carries `auth.basic: true`, whose branch needs a
+// secret as well and writes nothing without one, which the probe would read
+// as a public API.
+static voxgig_value* pl_auth(const char* prefix) {
+  return cmap(2, "prefix", v_str(prefix), "basic", v_bool(false));
+}
+
+static voxgig_value* pl_bag(Spec* spec, bool query) {
+  return query ? spec->query : spec->headers;
+}
+
+// Runs prepare_auth once over empty headers and query, and reports which it
+// wrote to, and under what name. Not found is a public API, a legitimate shape.
+static PlCred pl_auth_probe(voxgig_value* sdkopts) {
+  PlCred cred;
+  memset(&cred, 0, sizeof(cred));
+  pl_client(sdkopts);
   Context* ctx = pl_ctx(NULL);
   ctx->spec = auth_spec(v_undef());
   PNError* err = NULL;
   prepare_auth_util(ctx, &err);
-  CHECK_STR_EQ(get_str(ctx->spec->headers, "authorization"), "Bearer K",
-               "prepare_auth: prefix space-joined");
+  if (err) return cred;
+  for (int q = 0; q < 2; q++) {
+    voxgig_value* bag = pl_bag(ctx->spec, 1 == q);
+    if (!voxgig_is_map(bag) || 0 == voxgig_as_map(bag)->len) continue;
+    voxgig_map* m = voxgig_as_map(bag);
+    voxgig_value* v = m->entries[0].value;
+    cred.found = true;
+    cred.query = 1 == q;
+    snprintf(cred.name, sizeof(cred.name), "%s", m->entries[0].key);
+    snprintf(cred.value, sizeof(cred.value), "%s", voxgig_is_string(v) ? voxgig_as_string(v) : "");
+    if (!cred.query && 0 == strcmp(cred.name, "cookie") && pl_cookie_pair(cred.value)) {
+      snprintf(cred.pair, sizeof(cred.pair), "%.*s", (int)(strlen(cred.value) - 1), cred.value);
+    }
+    return cred;
+  }
+  return cred;
+}
+
+static PlCred pl_auth_credential(void) {
+  return pl_auth_probe(cmap(2, "apikey", v_str("K"), "auth", pl_auth("Bearer")));
+}
+
+// Every credential this SDK could place: both credentials and Basic switched
+// on, so whichever branch the API has, something lands unless it is public.
+static PlCred pl_auth_any_credential(void) {
+  return pl_auth_probe(cmap(3, "apikey", v_str("K"), "secret", v_str("S"),
+    "auth", cmap(2, "prefix", v_str("Bearer"), "basic", v_bool(true))));
+}
+
+// Runs prepare_auth over a fresh spec, seeding the credential's slot first
+// when seed is not NULL, and returns what is left there: NULL when nothing.
+static const char* pl_auth_placed(voxgig_value* sdkopts, const char* seed) {
+  PlCred cred = pl_auth_credential();
+  if (!cred.found) return NULL;
+  pl_client(sdkopts);
+  Context* ctx = pl_ctx(NULL);
+  ctx->spec = auth_spec(v_undef());
+  if (seed) {
+    // cred.pair keeps a cookie seed from reading as a stranger's cookie.
+    char seeded[256];
+    snprintf(seeded, sizeof(seeded), "%s%s", cred.pair, seed);
+    setp(pl_bag(ctx->spec, cred.query), cred.name, v_str(seeded));
+  }
+  PNError* err = NULL;
+  prepare_auth_util(ctx, &err);
+  CHECK(NULL == err, "prepare_auth: no error");
+  voxgig_value* left = getp(pl_bag(ctx->spec, cred.query), cred.name);
+  return v_is_noval(left) ? NULL : (voxgig_is_string(left) ? voxgig_as_string(left) : "");
+}
+
+// Without this the cases below cannot fail for an SDK whose credential the
+// probe misses: every one of them takes the public-API path instead.
+static void test_prepare_auth_probe_finds_the_credential_this_sdk_places(void) {
+  CHECK(pl_auth_credential().found == pl_auth_any_credential().found,
+        "prepare_auth: the probe missed a credential this SDK places");
+}
+
+static void test_prepare_auth_apikey_placed_where_this_api_puts_it(void) {
+  voxgig_value* sdkopts = cmap(2, "apikey", v_str("K"), "auth", pl_auth("Bearer"));
+  PlCred cred = pl_auth_credential();
+  if (!cred.found) {
+    CHECK(NULL == pl_auth_placed(sdkopts, NULL), "prepare_auth: a public api places nothing");
+    return;
+  }
+  if ('\0' != cred.pair[0]) {
+    // A cookie credential is a `<scheme>=<key>` pair, with no room for a prefix.
+    CHECK(pl_cookie_pair(cred.value), "prepare_auth: a cookie pair");
+    return;
+  }
+  // A header credential is prefix-joined; a query credential is the raw key.
+  CHECK_STR_EQ(cred.value, cred.query ? "K" : "Bearer K",
+               "prepare_auth: the apikey where this api puts it");
 }
 
 static void test_prepare_auth_raw_apikey_empty_prefix_as_is(void) {
-  pl_client(cmap(2, "apikey", v_str("K"), "auth", cmap(2, "prefix", v_str(""), "basic", v_bool(false))));
-  Context* ctx = pl_ctx(NULL);
-  ctx->spec = auth_spec(v_undef());
-  PNError* err = NULL;
-  prepare_auth_util(ctx, &err);
-  CHECK_STR_EQ(get_str(ctx->spec->headers, "authorization"), "K", "prepare_auth: raw apikey");
+  PlCred cred = pl_auth_credential();
+  const char* placed =
+    pl_auth_placed(cmap(2, "apikey", v_str("K"), "auth", pl_auth("")), NULL);
+  if (!cred.found) {
+    CHECK(NULL == placed, "prepare_auth: a public api places nothing");
+    return;
+  }
+  char want[160];
+  snprintf(want, sizeof(want), "%sK", cred.pair);
+  CHECK_STR_EQ(placed, want, "prepare_auth: raw apikey");
 }
 
-static void test_prepare_auth_empty_apikey_drops_header(void) {
-  pl_client(cmap(2, "apikey", v_str(""), "auth", cmap(2, "prefix", v_str("Bearer"), "basic", v_bool(false))));
-  Context* ctx = pl_ctx(NULL);
-  ctx->spec = auth_spec(cmap(1, "authorization", v_str("stale")));
-  PNError* err = NULL;
-  prepare_auth_util(ctx, &err);
-  CHECK(v_is_noval(getp(ctx->spec->headers, "authorization")),
-        "prepare_auth: empty apikey drops header");
+static void test_prepare_auth_empty_apikey_drops_credential(void) {
+  CHECK(NULL == pl_auth_placed(cmap(2, "apikey", v_str(""), "auth", pl_auth("Bearer")), "stale"),
+        "prepare_auth: empty apikey drops the credential");
 }
 
-static void test_prepare_auth_missing_apikey_drops_header(void) {
-  pl_client(cmap(1, "auth", cmap(2, "prefix", v_str("Bearer"), "basic", v_bool(false))));
-  voxgig_value* options = sdk_options_map(PL_CLIENT);
-  const char* k = get_str(options, "apikey");
+static void test_prepare_auth_missing_apikey_drops_credential(void) {
+  voxgig_value* sdkopts = cmap(1, "auth", pl_auth("Bearer"));
+  pl_client(sdkopts);
+  const char* k = get_str(sdk_options_map(PL_CLIENT), "apikey");
   if (k && k[0] != '\0') {
     fprintf(stderr, "skip: SDK options carry a configured apikey\n");
     return;
   }
-  Context* ctx = pl_ctx(NULL);
-  ctx->spec = auth_spec(cmap(1, "authorization", v_str("stale")));
-  PNError* err = NULL;
-  prepare_auth_util(ctx, &err);
-  CHECK(v_is_noval(getp(ctx->spec->headers, "authorization")),
-        "prepare_auth: missing apikey drops header");
+  CHECK(NULL == pl_auth_placed(sdkopts, "stale"),
+        "prepare_auth: missing apikey drops the credential");
 }
 
-static void test_prepare_auth_public_api_no_auth_block_drops_header(void) {
-  pl_client(cmap(1, "apikey", v_str("K")));
-  voxgig_value* options = sdk_options_map(PL_CLIENT);
-  if (!v_is_noval(getp(options, "auth"))) {
+static void test_prepare_auth_public_api_no_auth_block_drops_credential(void) {
+  voxgig_value* sdkopts = cmap(1, "apikey", v_str("K"));
+  pl_client(sdkopts);
+  if (!v_is_noval(getp(sdk_options_map(PL_CLIENT), "auth"))) {
     fprintf(stderr, "skip: options always carry an auth block in this SDK\n");
     return;
   }
-  Context* ctx = pl_ctx(NULL);
-  ctx->spec = auth_spec(cmap(1, "authorization", v_str("stale")));
-  PNError* err = NULL;
-  prepare_auth_util(ctx, &err);
-  CHECK(v_is_noval(getp(ctx->spec->headers, "authorization")),
-        "prepare_auth: public api drops header");
+  CHECK(NULL == pl_auth_placed(sdkopts, "stale"),
+        "prepare_auth: public api drops the credential");
 }
 
 // =============================================================================
@@ -550,11 +647,12 @@ int main(void) {
   RUN(test_feature_order_array_is_explicit);
   RUN(test_feature_order_map_no_test_is_sorted);
   RUN(test_prepare_auth_guards_missing_spec);
-  RUN(test_prepare_auth_apikey_with_prefix_space_joined);
+  RUN(test_prepare_auth_probe_finds_the_credential_this_sdk_places);
+  RUN(test_prepare_auth_apikey_placed_where_this_api_puts_it);
   RUN(test_prepare_auth_raw_apikey_empty_prefix_as_is);
-  RUN(test_prepare_auth_empty_apikey_drops_header);
-  RUN(test_prepare_auth_missing_apikey_drops_header);
-  RUN(test_prepare_auth_public_api_no_auth_block_drops_header);
+  RUN(test_prepare_auth_empty_apikey_drops_credential);
+  RUN(test_prepare_auth_missing_apikey_drops_credential);
+  RUN(test_prepare_auth_public_api_no_auth_block_drops_credential);
 
   printf("pipeline: %d unit tests run\n", TESTS);
   TEST_SUMMARY("pipeline");
