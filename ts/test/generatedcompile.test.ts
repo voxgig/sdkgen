@@ -1967,6 +1967,13 @@ abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") 
     deepStrictEqual(alpha.filter((n) => omega.has(n)), [],
       'c: both archives define these names')
 
+    const mapped = (file: string) => new Set(Fs.readFileSync(Path.join(roots.alpha, file), 'utf8')
+      .split('\n').map((line) => /^#define (\w+) alpha_\1$/.exec(line)?.[1]).filter(Boolean))
+    const all = mapped('core/prefix.h')
+    const api = mapped('core/prefix_api.h')
+    ok(all.has('http_tls_available') && !api.has('http_tls_available') && api.has('sdk_prepare'),
+      'c: core/prefix_api.h maps a name no header declares, or misses one they do')
+
     const dir = Path.join(tmp, 'c-link')
     Fs.mkdirSync(dir, { recursive: true })
     for (const name of names) {
@@ -1990,15 +1997,19 @@ int ${name}_part(void) {
   printf("${name}: %s\\n", get_str(got->vt->data(got, NULL), "title"));
   return 0;
 }
-`)
+${'alpha' === name ? `
+// A name the SDK defines but its headers do not declare is the program's own.
+int http_tls_available(void) { return 7; }
+` : ''}`)
     }
     Fs.writeFileSync(Path.join(dir, 'main.c'), `#include <stdio.h>
 
 int alpha_part(void);
 int omega_part(void);
+int http_tls_available(void);
 
 int main(void) {
-  return alpha_part() | omega_part();
+  return alpha_part() | omega_part() | (7 != http_tls_available());
 }
 `)
 
@@ -7596,7 +7607,9 @@ const DOC_LANES: {
       const dir = Path.join(sdkroot, '_readme')
       Fs.mkdirSync(dir, { recursive: true })
       // core/api.h includes the prefix map `make` writes, as for any consumer.
-      const prefix = { label: 'core/prefix.h', bin: make, args: ['CC=' + cc, 'core/prefix.h'] }
+      const prefix = {
+        label: 'core/prefix_api.h', bin: make, args: ['CC=' + cc, 'core/prefix_api.h'],
+      }
       return [prefix, ...blocks.map((block, i) => {
         const file = Path.join(dir, 'example_' + i + '.c')
         Fs.writeFileSync(file, cExample(block,

@@ -10,11 +10,12 @@ function linking(target: any, model: any): string {
   const prefix = cIdent(model) + '_'
   return `Every global name in \`libsdk.a\` carries this SDK's prefix
 (\`${prefix}sdk_prepare\`, \`${prefix}cmap\`, ...), so one program can link several
-generated SDKs. \`make\` writes the map from each short name to its prefixed
-one to \`${target.name}/core/prefix.h\`, and \`core/api.h\` includes it, so your code
-keeps the short names. Include \`core/api.h\` before any other SDK header, and
-give each SDK a source file of its own: the headers of two SDKs declare the
-same type names.
+generated SDKs. \`make\` maps each short name to its prefixed one in
+\`${target.name}/core/prefix.h\`, which the SDK is compiled with, and each name its
+headers declare in \`${target.name}/core/prefix_api.h\`, which \`core/api.h\` includes,
+so your code keeps the short names and the SDK's private names never rename
+your own. Include \`core/api.h\` before any other SDK header, and give each SDK
+a source file of its own: the headers of two SDKs declare the same type names.
 
 `
 }

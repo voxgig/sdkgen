@@ -23,11 +23,12 @@
 #ifndef PROJECTNAME_SDK_H
 #define PROJECTNAME_SDK_H
 
-// Written by `make` beside this header: every global name this SDK defines,
-// renamed to carry its own prefix. First, so the vendored headers below are
-// renamed as well.
+// Written by `make` beside this header: each global name the SDK's headers
+// declare, renamed to carry its own prefix. The SDK itself is compiled with
+// prefix.h, which renames every name it defines. First, so the vendored
+// headers below are renamed as well.
 #ifndef PROJECTNAME_SDK_UNPREFIXED
-#include "prefix.h"
+#include "prefix_api.h"
 #endif
 
 #include "voxgig_struct.h"
