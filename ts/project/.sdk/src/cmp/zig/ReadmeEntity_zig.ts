@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, entityIdField, opRequestShape, opNeedsAction } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, entityIdField, opRequestShape, opNeedsAction, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -130,8 +130,7 @@ entity (for \`list\`, a slice of entities, one per record), whose record
     }
 
     if (callable.includes('load')) {
-      const loadItems = opRequestShape(entity, 'load').items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const loadItems = matchExampleItems(entity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length

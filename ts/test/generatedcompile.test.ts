@@ -27,7 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
-  searchOnly, listOnly, retypedList, seedableList, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
+  searchOnly, listOnly, retypedList, seedableList, selectorLoad, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
   KEYWORD_ACCESSOR_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
   REQUEST_SHAPED_ENTITY,
 } from './generateharness'
@@ -1050,6 +1050,8 @@ pub fn main() void {
     ['a list example whose parameters are a keyword and __proto__', 'ts-readme-keys', KEYWORD_LIST],
     ['a list example whose parameter its create types otherwise', 'ts-readme-retyped', retypedList()],
     ['a create whose request is not its record', 'ts-readme-request', REQUEST_SHAPED_ENTITY],
+    ['a load example whose points each need a selector of their own', 'ts-readme-selector-load',
+      selectorLoad('contact', ['email', 'phone'])],
   ] as [string, string, string | undefined][]) {
     test('typescript: the README example tests type-check and run ' + what, async () => {
       ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
@@ -7405,6 +7407,12 @@ describe('the README examples run for a slug carrying the word client', () => {
     test(lane.target + ': the README examples run where a list\'s parameters are a keyword and __proto__',
       async (t) => {
         await readmeLane(t, lane, lane.target + '-keys', KEYWORD_LIST, /__proto__/)
+      })
+
+    test(lane.target + ': the README examples run where a load\'s points each need a selector of their own',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-selector-load', selectorLoad('contact', ['email', 'phone']),
+          /email/, 'load example with a selector')
       })
 
     // `)(` parses in no target.

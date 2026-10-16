@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, phpEntityAccessor, seededList, litPair } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, phpEntityAccessor, seededList, litPair, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -43,8 +43,7 @@ const ReadmeTopTest = cmp(function ReadmeTopTest(props: any) {
     } else if (isMatchOp) {
       // Every REQUIRED match key (id first, then parent path params like
       // page_id) — the same shape the runtime resolves path params from.
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const items = matchExampleItems(exampleEntity, primaryOp, idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       callArg = 0 < items.length

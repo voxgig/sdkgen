@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, opRequestShape, safeVarName, exampleVarName, jsKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, opRequestShape, safeVarName, exampleVarName, jsKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -325,8 +325,7 @@ ${info.desc}
             // The id key plus every REQUIRED match key (parent path params
             // like page_id) — the same shape that generates <Name><Op>Match,
             // so the example always type-checks.
-            const matchItems = opRequestShape(ent, opname).items
-              .filter((it: any) => !it.optional || it.name === idF)
+            const matchItems = matchExampleItems(ent, opname, idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length

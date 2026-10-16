@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -39,7 +39,12 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
   let testArg = 'null'
   if (exampleEntity && isMatchOp) {
-    testArg = idF ? `new Dictionary<string, object?> { ["${idF}"] = "test01" }` : 'null'
+    const items = matchExampleItems(exampleEntity, primaryOp, idF)
+      .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+    testArg = 0 < items.length
+      ? `new Dictionary<string, object?> {${items.map((it: any) =>
+        ` [${csStringLiteral(it.name)}] = ${it.name === idF ? '"test01"' : csLit(it.type)}`).join(',')} }`
+      : 'null'
   } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
     const chosen = requiredItems(exampleEntity, 'list')
     testArg = `new Dictionary<string, object?> {${chosen.map((it: any) =>

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, opRequestShape, elixirAccessor, entityCollection, exampleVarName } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, opRequestShape, elixirAccessor, entityCollection, exampleVarName, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -54,8 +54,7 @@ end
       // Every REQUIRED load-match key (id first, then parent path params like
       // page_id) — the same shape the runtime resolves path params from, so
       // the example always works.
-      const loadItems = opRequestShape(exampleEntity, 'load').items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const loadItems = matchExampleItems(exampleEntity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       // No required match keys (a singleton endpoint like /current) means no

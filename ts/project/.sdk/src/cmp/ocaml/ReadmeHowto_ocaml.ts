@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -37,7 +37,11 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   if (exampleEntity && 'list' === primaryOp) {
     testArg = ocamlListMatch(exampleEntity)
   } else if (exampleEntity && isMatchOp) {
-    testArg = idF ? `(jo [("${idF}", Str "test01")])` : '(empty_map ())'
+    const items = matchExampleItems(exampleEntity, primaryOp, idF)
+      .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+    testArg = 0 < items.length
+      ? `(jo [${items.map((it: any) => `("${it.name}", ${it.name === idF ? 'Str "test01"' : ocamlLit(it.type)})`).join('; ')}])`
+      : '(empty_map ())'
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
     const items = opRequestShape(exampleEntity, primaryOp).items
       .filter((it: any) => it.name !== idF && it.name !== 'id')

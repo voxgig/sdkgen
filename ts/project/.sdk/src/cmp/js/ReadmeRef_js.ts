@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey , targetFeatures, opNeedsAction, bodyNote, listMatchArg } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey , targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -294,8 +294,7 @@ ${info.desc}
             // The id key plus every REQUIRED match key (parent path params
             // like page_id) — the same shape the runtime resolves path
             // params from, so the example always works.
-            const matchItems = opRequestShape(ent, opname).items
-              .filter((it: any) => !it.optional || it.name === idF)
+            const matchItems = matchExampleItems(ent, opname, idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length

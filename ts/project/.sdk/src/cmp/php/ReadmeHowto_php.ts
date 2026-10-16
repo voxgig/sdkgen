@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, phpEntityAccessor, seededList, litPair } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, phpEntityAccessor, seededList, litPair, matchExampleItems } from '@voxgig/sdkgen'
 
 import { KIT, getModelPath, nom } from '@voxgig/apidef'
 
@@ -44,8 +44,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   if (listed) {
     testCallArg = 0 < listed.call.length ? `[${listed.call.join(', ')}]` : ''
   } else if (exampleEntity && isMatchOp) {
-    const items = opRequestShape(exampleEntity, primaryOp).items
-      .filter((it: any) => !it.optional || it.name === idF)
+    const items = matchExampleItems(exampleEntity, primaryOp, idF)
       .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
     testCallArg = 0 < items.length
       ? `[${items.map((it: any) => litPair('php', it.name, it.name === idF ? '"test01"' : phpLit(it.type))).join(', ')}]`

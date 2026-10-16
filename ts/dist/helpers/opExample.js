@@ -5,6 +5,7 @@ exports.helperLang = helperLang;
 exports.primaryOpCall = primaryOpCall;
 exports.idLiteral = idLiteral;
 exports.requiredItems = requiredItems;
+exports.matchExampleItems = matchExampleItems;
 exports.matchArg = matchArg;
 exports.listMatchArg = listMatchArg;
 exports.seededList = seededList;
@@ -88,6 +89,14 @@ function requiredItems(ent, op) {
     }
     const fewest = points.reduce((a, b) => (0, opShape_1.pointRequires)(b).length < (0, opShape_1.pointRequires)(a).length ? b : a);
     return needed({ ...ent, op: { ...ent.op, [op]: { ...ent.op[op], points: [fewest] } } });
+}
+// A load or remove example's members: requiredItems and the id, in shape order.
+function matchExampleItems(ent, op, idF) {
+    const required = Object.create(null);
+    requiredItems(ent, op).forEach((it) => { required[it.name] = it; });
+    return (0, opShape_1.opRequestShape)(ent, op).items
+        .filter((it) => null != required[it.name] || it.name === idF)
+        .map((it) => required[it.name] || it);
 }
 function matchArg(lang, ent, op, idF, idLit) {
     const items = requiredItems(ent, op);

@@ -1,5 +1,5 @@
 
-import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, elixirAccessor, entityCollection, exampleVarName, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, elixirAccessor, entityCollection, exampleVarName, requiredItems, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -34,8 +34,7 @@ sdk = ${Name}.test()
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = ''
     if (isMatchOp || ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length)) {
-      const items = (isMatchOp ? opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF) : requiredItems(exampleEntity, 'list'))
+      const items = (isMatchOp ? matchExampleItems(exampleEntity, primaryOp, idF) : requiredItems(exampleEntity, 'list'))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length

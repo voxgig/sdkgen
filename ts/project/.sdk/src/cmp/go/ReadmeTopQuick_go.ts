@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityOps, opRequestShape, goModule, serverVariables, listMatchArg } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityOps, opRequestShape, goModule, serverVariables, listMatchArg, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -80,8 +80,7 @@ for _, ${eVar} := range ${eVar}s.([]any) {
       // entity's own id last, each value a type-correct Go literal.
       const neIdF = entityIdField(nestedEntity)
       const neLoadOp = nestedEntity.op && nestedEntity.op.load
-      const neMatchPairs = opRequestShape(nestedEntity, 'load').items
-        .filter((it: any) => !it.optional)
+      const neMatchPairs = requiredItems(nestedEntity, 'load')
         .sort((a: any, b: any) =>
           (a.name === neIdF ? 1 : 0) - (b.name === neIdF ? 1 : 0))
         .map((it: any) =>
@@ -103,8 +102,7 @@ fmt.Println(${neVar}.(sdk.Entity).Data())
 
     if (!hasCall && opnames.includes('load')) {
       const idF = entityIdField(exampleEntity)
-      const loadItems = opRequestShape(exampleEntity, 'load').items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const loadItems = matchExampleItems(exampleEntity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length

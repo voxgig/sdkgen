@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, opNeedsAction, listMatchArg } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, opNeedsAction, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -112,8 +112,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     }
 
     if (callable.includes('load')) {
-      const loadItems = opRequestShape(entity, 'load').items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const loadItems = matchExampleItems(entity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length

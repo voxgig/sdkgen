@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -37,7 +37,11 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
   let testArg = 'Value::Noval'
   if (exampleEntity && isMatchOp) {
-    testArg = idF ? `jo(vec![("${idF}", Value::str("test01"))])` : 'Value::Noval'
+    const items = matchExampleItems(exampleEntity, primaryOp, idF)
+      .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+    testArg = 0 < items.length
+      ? `jo(vec![${items.map((it: any) => `(${JSON.stringify(it.name)}, ${it.name === idF ? 'Value::str("test01")' : rustLit(it.type)})`).join(', ')}])`
+      : 'Value::Noval'
   } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
     const chosen = requiredItems(exampleEntity, 'list')
     testArg = `jo(vec![${chosen.map((it: any) => `(${JSON.stringify(it.name)}, ${rustLit(it.type)})`).join(', ')}])`

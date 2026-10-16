@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityOps, goModule, serverVariables, listMatchArg } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityOps, goModule, serverVariables, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -68,8 +68,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     // params like page_id) — the same shape that generates the op's request
     // match, so the example always carries the keys the route needs.
     const matchArg = (opname: string): string => {
-      const matchItems = opRequestShape(exampleEntity, opname).items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const matchItems = matchExampleItems(exampleEntity, opname, idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       return 0 < matchItems.length

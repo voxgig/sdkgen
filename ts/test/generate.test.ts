@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, seedableList, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, seedableList, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY,
@@ -219,6 +219,24 @@ function listCalls(out: Record<string, string>, target: string, entity: RegExp):
         /\(\s*$/.test(line) ? line + ' ' + lines[i + 1] : line)
       .filter((line: string) => /(\.|:|->|\/)(e_)?(list|List)\b/.test(line) && entity.test(line))
       .filter((line: string) => !/^\s*(\/\/|#|--|\||-|\*|;|\(\*)/.test(line) && !/Value::List\(/.test(line))
+      .map((line: string) => path + ': ' + line.trim()))
+}
+
+
+// Every load call the docs of one target make on an entity, read on to the
+// bracket that closes it; comments and table rows left out.
+function loadCalls(out: Record<string, string>, target: string, entity: RegExp): string[] {
+  const depth = (text: string) => (text.match(/[([{]/g) || []).length - (text.match(/[)\]}]/g) || []).length
+  return Object.keys(out)
+    .filter((path: string) => path.startsWith(target + '/') && path.endsWith('.md'))
+    .flatMap((path: string) => out[path].split('\n')
+      .map((line: string, i: number, lines: string[]) => {
+        let call = line
+        for (let j = i + 1; j < lines.length && j < i + 12 && 0 < depth(call); j++) call += ' ' + lines[j].trim()
+        return call
+      })
+      .filter((line: string) => /(\.|:|->|\/)(e_)?(load|Load)\b/.test(line) && entity.test(line))
+      .filter((line: string) => !/^\s*(\/\/|#|--|\||-|\*|;|\(\*|`)/.test(line))
       .map((line: string) => path + ': ' + line.trim()))
 }
 
@@ -5886,6 +5904,26 @@ main: kit: flow: BasicBadgeFlow: {
     wrong.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Cc]ontact/)
       .filter((line: string) => !/email/.test(line)))
     deepStrictEqual(wrong, [], 'list examples that pass no point\'s selector:\n' + wrong.join('\n'))
+  })
+
+
+  test('a load whose points each need a selector of their own passes one point\'s, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const wrong: string[] = []
+    for (const [shape, parent] of [['flat', undefined], ['nested', 'planet']]) {
+      const out = await generate(targets, undefined, selectorLoad('contact', ['email', 'phone'], parent))
+      if ('nested' === shape) {
+        ok(/Contact is nested under planet/.test(out['ts/README.md']), 'the nested quick start was not written')
+      }
+      for (const target of targets) {
+        const found = loadCalls(out, target, /[Cc]ontact/)
+        ok(0 < found.length, target + ': no ' + shape + ' load example found')
+        wrong.push(...found.filter((line: string) => !/email/.test(line)).map((line) => shape + ' ' + line))
+      }
+      wrong.push(...loadCalls({ 'top/README.md': out['README.md'] }, 'top', /[Cc]ontact/)
+        .filter((line: string) => !/email/.test(line)).map((line) => shape + ' ' + line))
+    }
+    deepStrictEqual(wrong, [], 'load examples that pass no point\'s selector:\n' + wrong.join('\n'))
   })
 
 

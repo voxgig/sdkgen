@@ -563,6 +563,44 @@ main: kit: flow: ${flow}: {
 }
 
 
+// A load-only entity on one route whose points each require one of the given
+// query parameters; with `parent`, a route nested under that entity's id.
+function selectorLoad(name: string, selectors: string[], parent?: string): string {
+  const flow = 'Basic' + name[0].toUpperCase() + name.slice(1) + 'Flow'
+  const pid = parent + '_id'
+  const nest = null == parent ? null : {
+    param: `{ k: "param", n: "${pid}", or: "${pid}", r: true, t: "\`$STRING\`" }`,
+    path: `/${parent}/{${pid}}`,
+    seg: `{ lit: "${parent}" }, { var: "${pid}" }, `,
+  }
+  return entityOnly(`
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id" }
+${null == nest ? '' : `  relations: ancestors: [[path($.main.kit.entity.${parent})]]\n`}  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: load: {
+    name: "load"
+    points: [${selectors.map((sel) => `
+      {
+        g: {${null == nest ? '' : ` params: [ ${nest.param} ],`} query: [ { k: "query", n: "${sel}", or: "${sel}", r: true, t: "\`$STRING\`" } ] }
+        m: "GET", o: "${null == nest ? '' : nest.path}/${name}"
+        s: [${null == nest ? '' : nest.seg}{ lit: "${name}" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+        q: { exist: ["${sel}"] }
+      }`).join('')}
+    ]
+  }
+}
+
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
+  step: [ { o: "load", i: { ref: "${name}_ref01", srcdatavar: "${name}_ref01_data", suffix: "_dt0" } } ]
+}
+`)
+}
+
+
 // A list requiring string id, q and tag, whose create requires q as an integer.
 // With `load`, a load by id too, which every test-mode block seeds.
 function retypedList(name: string = 'crate', load: boolean = false): string {
@@ -1214,6 +1252,7 @@ export {
   searchOnly,
   listOnly,
   selectorList,
+  selectorLoad,
   retypedList,
   seedableList,
   entityOnly,

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField, listMatchArg } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, listMatchArg, matchExampleItems, litPair, litFor } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -45,6 +45,10 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const eLower = String(exEnt.name || 'entity').toLowerCase()
   const hasLoad = null != (exEnt.op || {}).load
   const idF = entityIdField(exEnt)
+  const loadItems = hasLoad ? matchExampleItems(exEnt, 'load', idF)
+    .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1)) : []
+  const loadArg = 0 < loadItems.length ? `{ ${loadItems.map((it: any) =>
+    litPair('lua', it.name, it.name === idF ? '"example_id"' : litFor('lua', it.type))).join(', ')} }` : ''
 
   const apikeyOptionRow = isAuthActive(model)
     ? '| `apikey` | `string` | API key for authentication. |\n'
@@ -119,7 +123,7 @@ ${resultShapeRows}
 Check \`err\` first (it is non-\`nil\` on failure), then use \`value\`:
 
     local ${eLower}, err = client:${eName}():${hasLoad ? 'load' : 'list'}(${
-      hasLoad ? (idF ? `{ ${idF} = "example_id" }` : '') : listMatchArg('lua', exEnt)})
+      hasLoad ? loadArg : listMatchArg('lua', exEnt)})
     if err then error(err) end
     -- ${eLower} is ${hasLoad ? 'the loaded entity' : 'an array of entities, one per record'}
 

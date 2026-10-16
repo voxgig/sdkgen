@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -45,8 +45,7 @@ let () =
       arg = ocamlListMatch(exampleEntity)
     } else if (isMatchOp) {
       // Every REQUIRED match key (id first).
-      const items = opRequestShape(exampleEntity, primaryOp).items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const items = matchExampleItems(exampleEntity, primaryOp, idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length

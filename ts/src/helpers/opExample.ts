@@ -89,6 +89,16 @@ function requiredItems(ent: any, op: string): any[] {
 }
 
 
+// A load or remove example's members: requiredItems and the id, in shape order.
+function matchExampleItems(ent: any, op: string, idF: string | null): any[] {
+  const required: Record<string, any> = Object.create(null)
+  requiredItems(ent, op).forEach((it: any) => { required[it.name] = it })
+  return opRequestShape(ent, op).items
+    .filter((it: any) => null != required[it.name] || it.name === idF)
+    .map((it: any) => required[it.name] || it)
+}
+
+
 function matchArg(
   lang: LiteralLang, ent: any, op: string, idF: string | null, idLit: string
 ): string {
@@ -227,6 +237,7 @@ export {
   primaryOpCall,
   idLiteral,
   requiredItems,
+  matchExampleItems,
   matchArg,
   listMatchArg,
   seededList,

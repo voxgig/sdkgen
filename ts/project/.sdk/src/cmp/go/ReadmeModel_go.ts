@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, goModule, listMatchArg } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, entityIdField, entityPrimaryOp, goModule, listMatchArg, matchExampleItems, litPair, litFor } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -60,8 +60,13 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
     ? firstPrimaryOp.charAt(0).toUpperCase() + firstPrimaryOp.slice(1)
     : ''
   const firstIsMatchOp = 'load' === firstPrimaryOp || 'remove' === firstPrimaryOp
+  const firstMatch = firstIsMatchOp
+    ? matchExampleItems(firstWithOp, firstPrimaryOp!, firstIdF)
+      .sort((a: any, b: any) => (a.name === firstIdF ? 0 : 1) - (b.name === firstIdF ? 0 : 1))
+    : []
   const firstOpArg = firstIsMatchOp
-    ? (firstIdF ? `map[string]any{"${firstIdF}": "example_id"}` : 'nil')
+    ? (0 < firstMatch.length ? `map[string]any{${firstMatch.map((it: any) =>
+      litPair('go', it.name, it.name === firstIdF ? '"example_id"' : litFor('go', it.type))).join(', ')}}` : 'nil')
     : 'list' === firstPrimaryOp ? listMatchArg('go', firstWithOp)
       : 'map[string]any{/* fields */}'
 

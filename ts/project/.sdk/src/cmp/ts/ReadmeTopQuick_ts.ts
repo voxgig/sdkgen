@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, isHttpBasicAuth, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, serverVariables, listMatchArg } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, isHttpBasicAuth, packageName, envName, entityIdField, entityOps, opRequestShape, safeVarName, exampleVarName, jsKey, serverVariables, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -77,8 +77,7 @@ for (const ${eVar} of ${eVar}s) {
       const loadOp = nestedEntity.op && nestedEntity.op.load
 
       const neIdF = entityIdField(nestedEntity)
-      const neMatchLines = opRequestShape(nestedEntity, 'load').items
-        .filter((it: any) => !it.optional || it.name === neIdF)
+      const neMatchLines = matchExampleItems(nestedEntity, 'load', neIdF)
         .sort((a: any, b: any) =>
           (a.name === neIdF ? 1 : 0) - (b.name === neIdF ? 1 : 0))
         .map((it: any) =>
@@ -98,8 +97,7 @@ console.log(${neVar}.data())
     if (!hasCall && opnames.includes('load')) {
       // The id and every required parameter: a load without them has no route.
       const idF = entityIdField(exampleEntity)
-      const loadItems = opRequestShape(exampleEntity, 'load').items
-        .filter((it: any) => !it.optional || it.name === idF)
+      const loadItems = matchExampleItems(exampleEntity, 'load', idF)
         .sort((a: any, b: any) =>
           (a.name === idF ? 1 : 0) - (b.name === idF ? 1 : 0))
         .map((it: any) =>

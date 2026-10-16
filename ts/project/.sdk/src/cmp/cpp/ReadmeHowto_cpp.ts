@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -36,7 +36,11 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
   let testArg = 'Value::undef()'
   if (exampleEntity && isMatchOp) {
-    testArg = idF ? `vmap({{"${idF}", Value("test01")}})` : 'Value::undef()'
+    const items = matchExampleItems(exampleEntity, primaryOp, idF)
+      .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+    testArg = 0 < items.length
+      ? `vmap({${items.map((it: any) => `{"${cppEscape(it.name)}", ${it.name === idF ? 'Value("test01")' : cppLit(it.type)}}`).join(', ')}})`
+      : 'Value::undef()'
   } else if (exampleEntity && 'list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
     const chosen = requiredItems(exampleEntity, 'list')
     testArg = `vmap({${chosen.map((it: any) => `{"${cppEscape(it.name)}", ${cppLit(it.type)}}`).join(', ')}})`

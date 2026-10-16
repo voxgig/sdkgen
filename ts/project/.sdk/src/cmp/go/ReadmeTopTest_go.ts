@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, goModule, requiredItems, litPair } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, goModule, requiredItems, litPair, matchExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -45,7 +45,11 @@ client := sdk.Test()
     const isMatchOp = 'load' === primaryOp || 'remove' === primaryOp
     let arg = 'nil'
     if (isMatchOp) {
-      arg = idF ? `map[string]any{"${idF}": "test01"}` : 'nil'
+      const items = matchExampleItems(exampleEntity, primaryOp, idF)
+        .sort((a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
+      arg = 0 < items.length
+        ? `map[string]any{${items.map((it: any) => litPair('go', it.name, it.name === idF ? '"test01"' : goLit(it.type))).join(', ')}}`
+        : 'nil'
     } else if ('list' === primaryOp && 0 < requiredItems(exampleEntity, 'list').length) {
       const chosen = requiredItems(exampleEntity, 'list')
       arg = `map[string]any{${chosen.map((it: any) => litPair('go', it.name, goLit(it.type))).join(', ')}}`
