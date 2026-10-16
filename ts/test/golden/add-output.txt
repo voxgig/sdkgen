@@ -7,12 +7,12 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/c.aontu a815ea8be12c
 model/target/target-index.aontu 221a8f331196
-src/cmp/c/Config_c.ts e639bde5106f
+src/cmp/c/Config_c.ts 25d671979d39
 src/cmp/c/EntityBase_c.ts 70f610b1220f
 src/cmp/c/EntityOperation_c.ts 2f10c1394cb9
 src/cmp/c/EntityTypes_c.ts f00a21c238c1
 src/cmp/c/Entity_c.ts c3dbf7462270
-src/cmp/c/Gitignore_c.ts 1c1cfa982fef
+src/cmp/c/Gitignore_c.ts cfb70ab8b595
 src/cmp/c/MainEntity_c.ts d6e780384b49
 src/cmp/c/Main_c.ts c1dce7783690
 src/cmp/c/Package_c.ts e1fcd4b774ba
@@ -20,8 +20,8 @@ src/cmp/c/PrepareAuth_c.ts a6ec77e4c610
 src/cmp/c/ReadmeEntity_c.ts 7a12dabe5d0b
 src/cmp/c/ReadmeExamplesTest_c.ts 2e899b115aaa
 src/cmp/c/ReadmeExplanation_c.ts 193fa2c194dd
-src/cmp/c/ReadmeHowto_c.ts 1c8f84db28bb
-src/cmp/c/ReadmeInstall_c.ts 2da234817e64
+src/cmp/c/ReadmeHowto_c.ts 659da8aeb05a
+src/cmp/c/ReadmeInstall_c.ts d91184e38d27
 src/cmp/c/ReadmeIntro_c.ts 75d0f4c82317
 src/cmp/c/ReadmeModel_c.ts a28efdaa99f9
 src/cmp/c/ReadmeOptions_c.ts f305d6f87635
@@ -46,7 +46,7 @@ src/cmp/c/fragment/Main.fragment.c 86f9e0dff0b5
 src/cmp/c/tsconfig.json 720a3f229019
 src/cmp/c/utility_c.ts 412b3308b0d9
 tm/c/LICENSE 52acd47c245f
-tm/c/Makefile ab2d345ce24f
+tm/c/Makefile 6cde55dc9835
 tm/c/VERSION e6635045e1d2
 tm/c/core/context.c 3d02628a07f0
 tm/c/core/control.c acb5a3790b08
@@ -56,7 +56,7 @@ tm/c/core/operation.c fb16ed309ed9
 tm/c/core/point.c 1539404e1bcc
 tm/c/core/response.c 735acc3c1292
 tm/c/core/result.c 60bde846d061
-tm/c/core/sdk.h f9725128aedf
+tm/c/core/sdk.h 6598443f74e9
 tm/c/core/spec.c cb3f60193af1
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
@@ -69,11 +69,12 @@ tm/c/tests/ctest.h d2111a0ede61
 tm/c/tests/feature_harness.h 4ee48c52576f
 tm/c/tests/omni_resolver.h d02058fb3bc4
 tm/c/tests/omni_smoke_test.c 6408be08e5b4
-tm/c/tests/pipeline_test.c b4c8322e9ab7
-tm/c/tests/primary_corpus_test.c 698fafc15f25
+tm/c/tests/pipeline_test.c 39f2d4164345
+tm/c/tests/primary_corpus_test.c cee69a238046
 tm/c/tests/primary_utility_test.c 01ca5c5d1c03
 tm/c/tests/server_variable_test.c b49f64ffac4b
 tm/c/tests/struct_corpus_test.c d210851e0ef4
+tm/c/tests/transport_test.c 3cbaefc1b2da
 tm/c/tests/vendor/omni/json.c 0d5ff94634c7
 tm/c/tests/vendor/omni/omni.h 1c5cd90fdb75
 tm/c/tests/vendor/omni/runner.c 69643d48b86f
@@ -83,8 +84,9 @@ tm/c/utility/done.c c34b62a8b13a
 tm/c/utility/feature_add.c d77b2f280d84
 tm/c/utility/feature_hook.c 2519ac12e079
 tm/c/utility/feature_init.c c4d6683438aa
-tm/c/utility/fetcher.c 675b6ce6a4c2
+tm/c/utility/fetcher.c 99b07aa204e1
 tm/c/utility/graphql.c a21a86e03521
+tm/c/utility/http.c d8a711f0a675
 tm/c/utility/jsonparse.c cffd3f2ac8b1
 tm/c/utility/make_context.c 615156796cbb
 tm/c/utility/make_error.c 024d4ebdb064
@@ -118,6 +120,9 @@ tm/c/utility/struct/value.h b38fb4ce4dfb
 tm/c/utility/struct/value_io.c ad154dab653a
 tm/c/utility/struct/value_io.h d322b6e9d6d8
 tm/c/utility/struct/voxgig_struct.h 71de4f01ea7b
+tm/c/utility/tls/none.c aaadabd4d899
+tm/c/utility/tls/openssl.c 6e4cf4adec55
+tm/c/utility/tls/tls.h e86b668c9420
 tm/c/utility/transform_request.c 54340294b211
 tm/c/utility/transform_response.c 51ac106169eb
 
@@ -1686,8 +1691,8 @@ tm/rust/tests/custom_utility_test.rs 958b76f524b2
 tm/rust/tests/netsim_test.rs bc23c72e88b2
 tm/rust/tests/omni_resolver/mod.rs 7d8311d30d77
 tm/rust/tests/omni_smoke_test.rs f412dbc766e8
-tm/rust/tests/pipeline_test.rs d3379de00790
-tm/rust/tests/primary_utility_test.rs 289d1d1cd976
+tm/rust/tests/pipeline_test.rs edc6a5fc87cc
+tm/rust/tests/primary_utility_test.rs 1cea45936939
 tm/rust/tests/sdk-test-control.json 8e1530378d2f
 tm/rust/tests/struct_utility_test.rs e19a58dc8fad
 tm/rust/tests/vendor/omni/json.rs 93db9e411eab
