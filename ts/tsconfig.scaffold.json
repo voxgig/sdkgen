@@ -7,13 +7,14 @@
     "(That is exactly what happened with entityCollection in Entity_ts.ts.)",
     "@voxgig/sdkgen is mapped to this package's own source so the components",
     "resolve the same names a consumer would. fragment/ is excluded: fragments",
-    "are template source with placeholder tokens, not valid standalone modules."
+    "are template source with placeholder tokens, not valid standalone modules.",
+    "strict matches the scaffold's own src/tsconfig.json, which consumers build with."
   ],
   "compilerOptions": {
     "target": "ES2021",
     "module": "node16",
     "moduleResolution": "node16",
-    "strict": false,
+    "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
     "esModuleInterop": true,

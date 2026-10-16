@@ -186,7 +186,7 @@ try {
         return null != matchType && null != dataIdType && matchType === dataIdType
       }
       const idValueFor = (opname: string): string => usesCreatedId(opname)
-        ? `${jsProp('created.data()', dataIdF)}!`
+        ? `${jsProp('created.data()', dataIdF as string)}!`
         : exampleValue(exampleEntity, exampleEntity.op[opname], idF as string, 'example_id')
 
       Content(`### 4. Create, update, and remove
