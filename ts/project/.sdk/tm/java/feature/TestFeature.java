@@ -222,7 +222,7 @@ public class TestFeature extends BaseFeature {
     if ("load".equals(op.name)) {
       Object args = buildArgs(ctx, op, resolveMatch(ctx, ctx.reqmatch));
       List<Object> found = Struct.select(entmap, args);
-      Object ent = Struct.getelem(found, 0);
+      Object ent = Struct.getelem(found, 0, null);
       if (ent == null) {
         return respond(ctx, 404, null, extra("statusText", "Not found"));
       }
@@ -270,7 +270,7 @@ public class TestFeature extends BaseFeature {
       }
       Object args = buildArgs(ctx, op, updateMatch);
       List<Object> found = Struct.select(entmap, args);
-      Object ent = Struct.getelem(found, 0);
+      Object ent = Struct.getelem(found, 0, null);
       if (ent == null) {
         // update miss: 404, never another record
         return respond(ctx, 404, null, extra("statusText", "Not found"));
@@ -285,7 +285,7 @@ public class TestFeature extends BaseFeature {
     else if ("remove".equals(op.name)) {
       Object args = buildArgs(ctx, op, resolveMatch(ctx, ctx.reqmatch));
       List<Object> found = Struct.select(entmap, args);
-      Object ent = Struct.getelem(found, 0);
+      Object ent = Struct.getelem(found, 0, null);
       // Remove only the first matched entity. If nothing matches,
       // succeed as a no-op rather than erroring.
       if (ent instanceof Map) {

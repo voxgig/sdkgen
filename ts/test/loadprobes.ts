@@ -155,32 +155,13 @@ end
 `
 
 
-// java and scala: the test mock answers a load it holds no record for with
-// 200, so a scripted transport answers 404 there instead.
 const JAVA_PROBE = String.raw`
 import java.util.*;
-import java.util.function.Supplier;
 import voxgig.demosdk.core.*;
 
 public class LoadProbe {
   static DemoSDK client() {
-    Utility.FetcherFn notFound = (ctx, fullurl, fetchdef) -> {
-      Map<String, Object> out = new LinkedHashMap<>();
-      out.put("status", 404);
-      out.put("statusText", "Not found");
-      out.put("headers", new LinkedHashMap<String, Object>());
-      out.put("json", (Supplier<Object>) () -> null);
-      out.put("body", "not-used");
-      return out;
-    };
-    Map<String, Object> test = new LinkedHashMap<>();
-    test.put("active", true);
-    Map<String, Object> utility = new LinkedHashMap<>();
-    utility.put("fetcher", notFound);
-    Map<String, Object> opts = new LinkedHashMap<>();
-    opts.put("test", test);
-    opts.put("utility", utility);
-    return new DemoSDK(opts);
+    return DemoSDK.testSDK(null, null);
   }
 
   public static void main(String[] args) {
@@ -228,30 +209,10 @@ class LoadProbe {
 
 const SCALA_PROBE = String.raw`
 import java.util.LinkedHashMap
-import java.util.function.Supplier
-import voxgig.demosdk.core.{DemoSDK, FetcherFn, SdkError}
+import voxgig.demosdk.core.{DemoSDK, SdkError}
 
 object LoadProbeMain {
-  private def client(): DemoSDK = {
-    val notFound: FetcherFn = (_, _, _) => {
-      val js: Supplier[Object] = () => null
-      val out = new LinkedHashMap[String, Object]()
-      out.put("status", java.lang.Integer.valueOf(404))
-      out.put("statusText", "Not found")
-      out.put("headers", new LinkedHashMap[String, Object]())
-      out.put("json", js)
-      out.put("body", "not-used")
-      out
-    }
-    val test = new LinkedHashMap[String, Object]()
-    test.put("active", java.lang.Boolean.TRUE)
-    val utility = new LinkedHashMap[String, Object]()
-    utility.put("fetcher", notFound)
-    val opts = new LinkedHashMap[String, Object]()
-    opts.put("test", test)
-    opts.put("utility", utility)
-    new DemoSDK(opts)
-  }
+  private def client(): DemoSDK = DemoSDK.testSDK(null, null)
 
   def main(args: Array[String]): Unit = {
     for ((name, id) <- Seq("missing" -> "nope", "unsent" -> null, "dotdot" -> "..", "dot" -> ".")) {
