@@ -5217,14 +5217,16 @@ const CREDNAME_LANES: CredNameLane[] = [
   {
     target: 'rust',
     needs: 'cargo',
-    // The corpus step waits on the vendored omni, which does not yet compile
-    // in a generated SDK: its module documentation includes a file the
-    // vendor set does not ship.
     steps: [
       {
         name: 'the pipeline suite',
         cmd: () => cargoTest(['--test', 'pipeline_test', 'pipeline_prepare_auth']),
         ran: /test result: ok\. [1-9]\d* passed; 0 failed/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        cmd: () => cargoTest(['--test', 'primary_utility_test', 'primary_prepare_auth_basic']),
+        ran: /test result: ok\. 1 passed; 0 failed/,
       },
     ],
   },

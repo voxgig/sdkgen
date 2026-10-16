@@ -1689,7 +1689,7 @@ tm/rust/src/feature/test/.gitkeep e3b0c44298fc
 tm/rust/tests/common/mod.rs 64242e3a1695
 tm/rust/tests/custom_utility_test.rs 958b76f524b2
 tm/rust/tests/netsim_test.rs bc23c72e88b2
-tm/rust/tests/omni_resolver/mod.rs 7d8311d30d77
+tm/rust/tests/omni_resolver/mod.rs b458d10a892a
 tm/rust/tests/omni_smoke_test.rs f412dbc766e8
 tm/rust/tests/pipeline_test.rs edc6a5fc87cc
 tm/rust/tests/primary_utility_test.rs 1cea45936939

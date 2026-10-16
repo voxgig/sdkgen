@@ -492,6 +492,7 @@ impl Run {
         let flags = Flags {
             null: nullflag,
             name: Some(label.to_string()),
+            ..Flags::default()
         };
         let count = entrycount(set);
         let usespec = retargetctx(set);
@@ -714,6 +715,7 @@ pub fn fix_json(val: &Value, nullflag: bool) -> Value {
         &Flags {
             null: nullflag,
             name: None,
+            ..Flags::default()
         },
     ))
 }
