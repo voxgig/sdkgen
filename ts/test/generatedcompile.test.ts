@@ -2,6 +2,7 @@
 import { test, describe, before, after } from 'node:test'
 import { ok, strictEqual, deepStrictEqual, throws } from 'node:assert'
 
+import { X509Certificate } from 'node:crypto'
 import Fs from 'node:fs'
 import Net from 'node:net'
 import Os from 'node:os'
@@ -36,6 +37,7 @@ import {
   mediaFailures, mediaPrinted, mediaRaised, mediaRecord,
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
+import { TLS_PROBE, TLS_SERVER } from './tlsprobes'
 import { ITEMS_EXPECT, ITEMS_PROBES, itemsListed } from './itemprobes'
 import { SCALAR_EXPECT, SCALAR_PROBES, scalarsListed } from './scalarprobes'
 import { REQD_EXPECT, REQD_PROBES, reqdListed } from './reqdprobes'
@@ -1927,6 +1929,192 @@ abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") 
     ok(/^secrets: 2 plugin definition\(s\) selected by the model$/m.test(out),
       'c: feature_plugins("secrets") did not answer the vault group\'s two definitions:\n' +
       tail(out))
+  })
+
+
+  // SDKs of ONE model, so every entity, utility and vendored name is the same
+  // in each and only the SDK's own prefix can keep them apart.
+  test('c: two generated SDKs link into one program', async (t) => {
+    const make = toolchain('make')
+    const cc = cCompiler()
+    const nm = toolchain('nm')
+    if (null == make || null == cc || null == nm) {
+      return t.skip('needs make, nm and a C compiler (make: ' + make + ', nm: ' + nm +
+        ', cc: ' + cc + ')')
+    }
+
+    const names = ['alpha', 'omega']
+    const roots: Record<string, string> = {}
+    for (const name of names) {
+      roots[name] = Path.join(tmp, 'c-link-' + name, 'c')
+      await generateTo('c', roots[name], undefined, undefined, { name })
+      const built = run(make, ['CC=' + cc, 'build'], roots[name])
+      if (built.timedOut) return t.skip('c: ' + built.out)
+      ok(built.ok, 'c: the ' + name + ' SDK did not build:\n' + tail(built.out))
+    }
+
+    const defined = (name: string): string[] =>
+      run(nm, ['-P', '-g', 'libsdk.a'], roots[name]).out.split('\n')
+        .map((line) => line.trim().split(/\s+/))
+        .filter((f) => 2 <= f.length && /^[A-Z]$/.test(f[1]) && 'U' !== f[1])
+        .map((f) => f[0].replace(/^_/, ''))
+    const alpha = defined('alpha')
+    const omega = new Set(defined('omega'))
+    ok(100 < alpha.length && 100 < omega.size,
+      'c: nm read too few names to compare (' + alpha.length + ', ' + omega.size + ')')
+    deepStrictEqual(alpha.filter((n) => !n.startsWith('alpha_')), [],
+      'c: the alpha archive defines names without its prefix')
+    deepStrictEqual(alpha.filter((n) => omega.has(n)), [],
+      'c: both archives define these names')
+
+    const dir = Path.join(tmp, 'c-link')
+    Fs.mkdirSync(dir, { recursive: true })
+    for (const name of names) {
+      Fs.writeFileSync(Path.join(dir, name + '_part.c'), `#include "api.h"
+
+#include <stdio.h>
+
+static voxgig_value* answer(void* ud, voxgig_value* args) {
+  (void)ud; (void)args;
+  return cmap(5, "status", v_num(200), "statusText", v_str("OK"), "headers", v_map(),
+    "body", v_str("{}"), "json", json_thunk(cmap(2, "id", v_str("p01"),
+    "title", v_str("${name}"))));
+}
+
+int ${name}_part(void) {
+  PNError* err = NULL;
+  ${pascal(name)}SDK* client = ${name}_sdk_new(cmap(1, "system", cmap(1, "fetch", vfn(answer, NULL))));
+  Entity* planet = ${name}_planet(client, NULL);
+  Entity* got = planet->vt->load(planet, cmap(1, "id", v_str("p01")), NULL, &err);
+  if (err) { printf("${name}: %s\\n", err->msg); return 1; }
+  printf("${name}: %s\\n", get_str(got->vt->data(got, NULL), "title"));
+  return 0;
+}
+`)
+    }
+    Fs.writeFileSync(Path.join(dir, 'main.c'), `#include <stdio.h>
+
+int alpha_part(void);
+int omega_part(void);
+
+int main(void) {
+  return alpha_part() | omega_part();
+}
+`)
+
+    const objects: string[] = []
+    for (const name of names) {
+      const built = run(cc, ['-std=c11', '-D_GNU_SOURCE', '-I', Path.join(roots[name], 'core'),
+        '-I', Path.join(roots[name], 'utility', 'struct'), '-c', name + '_part.c',
+        '-o', name + '_part.o'], dir)
+      ok(built.ok, 'c: ' + name + '_part.c does not compile:\n' + tail(built.out))
+      objects.push(name + '_part.o')
+    }
+    const archives = names.map((name) => Path.join(roots[name], 'libsdk.a'))
+    const libs = new Set(names.flatMap((name) =>
+      run(make, ['-s', 'CC=' + cc, 'ldlibs'], roots[name]).out.trim().split(/\s+/)))
+    const linked = run(cc, ['main.c', ...objects, ...archives, ...libs, '-o', 'both.out'], dir)
+    ok(linked.ok, 'c: the two SDKs do not link into one program:\n' + tail(linked.out))
+
+    const ran = run(Path.join(dir, 'both.out'), [], dir)
+    ok(ran.ok, 'c: the two-SDK program failed:\n' + tail(ran.out))
+    strictEqual(ran.out.replace(/\r\n/g, '\n').trim(), 'alpha: alpha\nomega: omega',
+      'c: each SDK did not answer through its own pipeline')
+  })
+
+
+  test('c: the default transport verifies a TLS server, pinned or not', async (t) => {
+    const make = toolchain('make')
+    const cc = cCompiler()
+    const openssl = toolchain('openssl')
+    if (null == make || null == cc || null == openssl) {
+      return t.skip('needs make, openssl and a C compiler (make: ' + make + ', openssl: ' +
+        openssl + ', cc: ' + cc + ')')
+    }
+    const hdrprobe = Path.join(tmp, 'c-tls-headers.c')
+    Fs.writeFileSync(hdrprobe, '#include <openssl/ssl.h>\nint main(void) { return 0; }\n')
+    if (!run(cc, ['-fsyntax-only', hdrprobe], tmp).ok) {
+      return t.skip('c: a compiler is here but the OpenSSL development headers are not')
+    }
+
+    const sdkroot = Path.join(tmp, 'c-tls', 'c')
+    await generateTo('c', sdkroot)
+    Fs.writeFileSync(Path.join(sdkroot, 'tests', 'tls_probe.c'), TLS_PROBE)
+    const built = run(make, ['CC=' + cc, 'TLS=openssl', 'tests/tls_probe.out'], sdkroot)
+    ok(built.ok, 'c: the TLS probe does not build:\n' + tail(built.out))
+
+    // Throwaway certificates, made here and gone with the directory.
+    const certs = Path.join(tmp, 'c-tls-certs')
+    Fs.mkdirSync(certs, { recursive: true })
+    for (const [name, san] of [['local', 'DNS:localhost'], ['other', 'DNS:elsewhere.example']]) {
+      const made = run(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+        '-subj', '/CN=' + name, '-addext', 'subjectAltName=' + san,
+        '-keyout', name + '.key', '-out', name + '.pem'], certs)
+      if (!made.ok) return t.skip('c: openssl cannot make a test certificate:\n' + tail(made.out, 5))
+    }
+    const pin = (name: string) =>
+      new X509Certificate(Fs.readFileSync(Path.join(certs, name + '.pem'))).fingerprint256
+
+    const local = await tlsServer(certs, 'local')
+    const other = await tlsServer(certs, 'other')
+    try {
+      const probe = (url: string, pinned: string) => run(
+        Path.join(sdkroot, 'tests', 'tls_probe.out'), [url], sdkroot,
+        { ...process.env, DEMO_TLS_PIN: pinned }).out
+      const seen = () => Fs.readFileSync(local.log, 'utf8').split('\n').filter((l) => '' !== l).length
+
+      const at = 'https://localhost:' + local.port + '/p'
+      ok(/^tls-probe: 200 \{"over":"tls"\}$/m.test(probe(at, pin('local'))),
+        'c: the pinned certificate was not trusted:\n' + probe(at, pin('local')))
+
+      const before = seen()
+      const wrong = probe(at, '00'.repeat(32))
+      ok(/fetch_transport: .*not the one DEMO_TLS_PIN names/.test(wrong),
+        'c: a certificate that is not the pinned one was not refused:\n' + wrong)
+      strictEqual(seen(), before, 'c: a request reached the server past a pin it does not match')
+
+      const unpinned = probe(at, '')
+      ok(/fetch_transport: .*certificate verify failed: self.signed certificate/.test(unpinned),
+        'c: a self-signed certificate was trusted without a pin:\n' + unpinned)
+
+      const named = probe('https://localhost:' + other.port + '/p', pin('other'))
+      ok(/certificate verify failed: hostname mismatch/.test(named),
+        'c: a pin let a certificate for another name through:\n' + named)
+
+      const literal = probe('https://127.0.0.1:' + local.port + '/p', pin('local'))
+      ok(/certificate verify failed: IP address mismatch/.test(literal),
+        'c: a pin let a certificate without the address through:\n' + literal)
+    }
+    finally {
+      local.stop()
+      other.stop()
+    }
+  })
+
+
+  test('c: a TLS=none build links no TLS library and refuses https://', async (t) => {
+    const make = toolchain('make')
+    const cc = cCompiler()
+    if (null == make || null == cc || null == toolchain('nm')) {
+      return t.skip('needs make, nm and a C compiler')
+    }
+
+    const sdkroot = Path.join(tmp, 'c-notls', 'c')
+    await generateTo('c', sdkroot)
+    Fs.writeFileSync(Path.join(sdkroot, 'tests', 'tls_probe.c'), TLS_PROBE)
+
+    const checked = run(make, ['CC=' + cc, 'TLS=none', 'check-tls'], sdkroot)
+    ok(checked.ok && /OpenSSL is named by no object/.test(checked.out),
+      'c: check-tls did not clear a TLS=none build:\n' + tail(checked.out))
+    const libs = run(make, ['-s', 'CC=' + cc, 'TLS=none', 'ldlibs'], sdkroot).out
+    ok(!/-lssl|-lcrypto/.test(libs), 'c: a TLS=none build links ' + libs.trim())
+
+    const built = run(make, ['CC=' + cc, 'TLS=none', 'tests/tls_probe.out'], sdkroot)
+    ok(built.ok, 'c: the probe does not link without OpenSSL:\n' + tail(built.out))
+    const refused = run(Path.join(sdkroot, 'tests', 'tls_probe.out'),
+      ['https://127.0.0.1:9/p'], sdkroot).out
+    ok(/fetch_transport: .*TLS=none.*options\.system\.fetch/.test(refused),
+      'c: an https:// request did not say this build has no TLS:\n' + refused)
   })
 
 
@@ -7403,10 +7591,13 @@ const DOC_LANES: {
     needs: 'C compiler',
     compile: (sdkroot, blocks) => {
       const cc = cCompiler()
-      if (null == cc) return null
+      const make = toolchain('make')
+      if (null == cc || null == make) return null
       const dir = Path.join(sdkroot, '_readme')
       Fs.mkdirSync(dir, { recursive: true })
-      return blocks.map((block, i) => {
+      // core/api.h includes the prefix map `make` writes, as for any consumer.
+      const prefix = { label: 'core/prefix.h', bin: make, args: ['CC=' + cc, 'core/prefix.h'] }
+      return [prefix, ...blocks.map((block, i) => {
         const file = Path.join(dir, 'example_' + i + '.c')
         Fs.writeFileSync(file, cExample(block,
           pageImports(blocks, block.doc, /^#include\b/)))
@@ -7420,7 +7611,7 @@ const DOC_LANES: {
             '-Werror=implicit-function-declaration',
             '-iquote', '.', '-I', 'core', '-I', 'utility/struct', '-I', 'feature', file],
         }
-      })
+      })]
     },
   },
   {
@@ -7755,7 +7946,6 @@ const PROBE_LANES: ProbeLane[] = [
   {
     target: 'c',
     ready: () => null == toolchain('make') || null == authProbeCc() ? 'no C toolchain' : null,
-    seam: () => true,
     exec: (sdkroot, env, write, probe) => {
       write('tests/' + probe.name + '_probe.c', probe.source.c)
       const out = 'tests/' + probe.name + '_probe.out'
@@ -7833,6 +8023,30 @@ function mediaServer(dir: string): Promise<{ port: number, log: string, stop: ()
     let seen = ''
     proc.on('error', reject)
     proc.on('exit', (code) => reject(new Error('media server exited: ' + code)))
+    proc.stdout!.on('data', (chunk) => {
+      seen += String(chunk)
+      const m = /listening (\d+)/.exec(seen)
+      if (null != m) {
+        proc.removeAllListeners('exit')
+        resolve({ port: Number(m[1]), log, stop: () => proc.kill('SIGKILL') })
+      }
+    })
+  })
+}
+
+
+// A TLS server over the named certificate, logging what it reads.
+function tlsServer(dir: string, name: string): Promise<{ port: number, log: string, stop: () => void }> {
+  const file = Path.join(dir, 'tls-server.cjs')
+  const log = Path.join(dir, name + '-requests.log')
+  Fs.writeFileSync(file, TLS_SERVER)
+  const proc = spawn(process.execPath,
+    [file, Path.join(dir, name + '.pem'), Path.join(dir, name + '.key'), log],
+    { stdio: ['ignore', 'pipe', 'inherit'] })
+  return new Promise((resolve, reject) => {
+    let seen = ''
+    proc.on('error', reject)
+    proc.on('exit', (code) => reject(new Error('tls server exited: ' + code)))
     proc.stdout!.on('data', (chunk) => {
       seen += String(chunk)
       const m = /listening (\d+)/.exec(seen)

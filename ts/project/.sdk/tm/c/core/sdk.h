@@ -23,6 +23,13 @@
 #ifndef PROJECTNAME_SDK_H
 #define PROJECTNAME_SDK_H
 
+// Written by `make` beside this header: every global name this SDK defines,
+// renamed to carry its own prefix. First, so the vendored headers below are
+// renamed as well.
+#ifndef PROJECTNAME_SDK_UNPREFIXED
+#include "prefix.h"
+#endif
+
 #include "voxgig_struct.h"
 
 #include <stdbool.h>
@@ -304,6 +311,11 @@ struct Fetcher {
 // The default live transport.
 voxgig_value* fetcher_util(Fetcher* self, Context* ctx, const char* url,
                            voxgig_value* fetchdef, PNError** err);
+
+// The SDK's own HTTP/1.1 client (utility/http.c), which fetcher_util calls
+// when no system.fetch is supplied: a transport-shaped response map, or
+// NULL with a fetch_transport error.
+voxgig_value* http_fetch(Context* ctx, const char* url, voxgig_value* fetchdef, PNError** err);
 
 // ===========================================================================
 // Utility bundle (mirrors core/utility_type.rs)

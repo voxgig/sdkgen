@@ -1117,7 +1117,7 @@ fn media_probe() {
 `
 
 
-// c and cpp ship no live transport: system.fetch prints each request.
+// With MEDIA_SEAM, system.fetch prints each request instead of sending it.
 const C_PROBE = String.raw`
 #include "sdk.h"
 #include "api.h"
@@ -1164,7 +1164,8 @@ int main(void) {
     voxgig_value* c = voxgig_list_get(cases, i);
     char url[512];
     snprintf(url, sizeof(url), "%s/c%zu", base, i);
-    voxgig_value* opts = cmap(2, "base", v_str(url), "system", cmap(1, "fetch", vfn(printer, NULL)));
+    voxgig_value* opts = cmap(1, "base", v_str(url));
+    if (getenv("MEDIA_SEAM")) setp(opts, "system", cmap(1, "fetch", vfn(printer, NULL)));
     voxgig_value* headers = getp(c, "headers");
     if (!v_is_noval(headers)) setp(opts, "headers", headers);
     DemoSDK* sdk = demo_sdk_new(opts);

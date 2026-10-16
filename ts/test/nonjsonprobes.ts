@@ -998,8 +998,8 @@ const CLOJURE_PROBE = String.raw`
 `.replaceAll('SECRET_TOKEN', NONJSON_SECRET)
 
 
-// c, cpp, zig and ocaml ship no live transport: a stub system.fetch answers
-// each case and sets the unreadable mark, as a transport does.
+// With NONJSON_SEAM, a stub system.fetch answers each case and sets the
+// unreadable mark, as a transport does.
 const C_PROBE = String.raw`
 #include "sdk.h"
 #include "api.h"
@@ -1050,8 +1050,8 @@ int main(void) {
     const char* name = get_str(c, "name");
     char url[256];
     snprintf(url, sizeof(url), "%s/c%zu", base, i);
-    voxgig_value* opts = cmap(3, "base", v_str(url), "apikey", v_str("SECRET_TOKEN"),
-      "system", cmap(1, "fetch", vfn(stub, c)));
+    voxgig_value* opts = cmap(2, "base", v_str(url), "apikey", v_str("SECRET_TOKEN"));
+    if (getenv("NONJSON_SEAM")) setp(opts, "system", cmap(1, "fetch", vfn(stub, c)));
     const char* agent = get_str(c, "agent");
     if (agent) setp(opts, "headers", cmap(1, "user-agent", v_str(agent)));
     DemoSDK* sdk = demo_sdk_new(opts);
@@ -1066,9 +1066,9 @@ int main(void) {
     if (derr) report("direct", name, derr->code, derr->msg);
     else if (get_bool(res, "ok", &ok) && ok) report("direct", name, "ok", NULL);
     else report("direct", name, "error", get_str(res, "err"));
-    voxgig_value* copts = cmap(4, "base", v_str(url), "apikey", v_str("SECRET_TOKEN"),
-      "system", cmap(1, "fetch", vfn(stub, c)),
+    voxgig_value* copts = cmap(3, "base", v_str(url), "apikey", v_str("SECRET_TOKEN"),
       "feature", cmap(1, "cache", cmap(1, "active", v_bool(true))));
+    if (getenv("NONJSON_SEAM")) setp(copts, "system", cmap(1, "fetch", vfn(stub, c)));
     if (agent) setp(copts, "headers", cmap(1, "user-agent", v_str(agent)));
     DemoSDK* cached = demo_sdk_new(copts);
     const char* paths[] = { "cache1", "cache2" };

@@ -266,6 +266,12 @@ compares against the source on disk.
   (`goModule(model, 'go')`).
 - **Do not reuse a built-in name** unless you mean to replace it —
   consumers get a name-collision refusal and must alias.
+- **C feature source is renamed when the SDK builds.** The C target
+  compiles every source it holds, vendored payloads included, with a map
+  that gives each global name the SDK's prefix (`joplin_x` for a global `x`
+  in a project named `joplin`), so that two SDKs link into one program.
+  Your source needs no change for it. A global `joplin_x` beside a global
+  `x` stops the build, because the map would turn them into one name.
 - **`sdkgen-package.json` must be in `files`**, or npm ships a package
   `package add` will not install.
 
