@@ -215,6 +215,75 @@ defmodule ProjectName.PrimaryUtilityTest do
     node
   end
 
+  # A ctx-style subject: materialise, run, publish the observable state.
+  defp ctxrun(args, opts, fun) do
+    node = argnode(args, 0)
+    ctx = livectx(node, opts)
+    out = unwrap(fun.(ctx))
+    sync(node, ctx)
+    out
+  end
+
+  # Where this SDK's prepare_auth puts the credential, probed once over empty
+  # headers and query. `pair` is the `<scheme>=` lead-in of a cookie
+  # credential, which rides the header bag under "cookie".
+  defp auth_credential do
+    probe = ProjectName.test(nil, S.jm(["apikey", "PROBE", "auth", S.jm(["prefix", "", "basic", false])]))
+    specmap = S.jm(["headers", S.jm([]), "query", S.jm([]), "step", "s"])
+    ctx = livectx(S.jm(["spec", specmap]), sdk: probe, client: true)
+    U.prepare_auth(ctx)
+    spec = S.getprop(ctx, "spec")
+
+    Enum.find_value(["headers", "query"], fn where ->
+      bag = S.getprop(spec, where)
+
+      case S.keysof(bag) do
+        [name | _] ->
+          text = S.getprop(bag, name)
+
+          pair =
+            if where == "headers" and name == "cookie" and is_binary(text) and
+                 String.ends_with?(text, "=PROBE"),
+               do: binary_part(text, 0, byte_size(text) - 5),
+               else: ""
+
+          %{where: where, name: name, pair: pair}
+
+        _ ->
+          nil
+      end
+    end)
+  end
+
+  # The corpus states the credential as `headers.authorization`, a placeholder
+  # for wherever this SDK puts it. Only that entry moves, under the real name
+  # and into the real container, and a cookie credential's value becomes its
+  # pair: every other header and query parameter stays where it was.
+  defp auth_retarget(node, cred) when is_list(node), do: Enum.map(node, &auth_retarget(&1, cred))
+
+  defp auth_retarget(node, cred) when is_map(node) do
+    out =
+      Map.new(node, fn
+        {"headers", bag} when is_map(bag) -> {"headers", Map.delete(bag, "authorization")}
+        {key, val} -> {key, auth_retarget(val, cred)}
+      end)
+
+    case node do
+      %{"headers" => %{"authorization" => value}} ->
+        placed = if is_binary(value), do: cred.pair <> value, else: value
+
+        Map.update(out, cred.where, %{cred.name => placed}, fn
+          bag when is_map(bag) -> Map.put(bag, cred.name, placed)
+          _ -> %{cred.name => placed}
+        end)
+
+      _ ->
+        out
+    end
+  end
+
+  defp auth_retarget(node, _cred), do: node
+
   # A result that IS a result node answers in the corpus's own spelling.
   defp neutralise(out) do
     if S.ismap(out) and S.getprop(out, "status_text") != nil, do: neutral_result(out), else: out
@@ -229,14 +298,7 @@ defmodule ProjectName.PrimaryUtilityTest do
 
     base = [sdk: sdk]
 
-    # A ctx-style subject: materialise, run, publish the observable state.
-    ctxrun = fn args, opts, fun ->
-      node = argnode(args, 0)
-      ctx = livectx(node, opts)
-      out = unwrap(fun.(ctx))
-      sync(node, ctx)
-      out
-    end
+    ctxrun = &ctxrun/3
 
     # Look up one corpus section and drive it. The section name rides along as
     # omni's failure LABEL, so a failing entry names the section it came from
@@ -280,11 +342,10 @@ defmodule ProjectName.PrimaryUtilityTest do
     runsection.("makeRequest", fn args -> ctxrun.(args, base, &U.make_request/1) end)
     runsection.("makeResponse", fn args -> ctxrun.(args, base, &U.make_response/1) end)
 
-    # makeSpec and prepareAuth are configured by their OWN DEF.setup.a block,
-    # not by the client's default options - the corpus supplies the base URL
-    # and the api key the cases assert on. prepare_auth reads its options off
-    # the CLIENT (as the reference does, via client.options()), so the section
-    # gets a client built from the same block.
+    # makeSpec is configured by its OWN DEF.setup.a block, not by the client's
+    # default options - the corpus supplies the base URL the cases assert on -
+    # so the section gets a client built from that block. prepareAuth has a
+    # test of its own below, on the same terms.
     specsdk = ProjectName.test(nil, setup_opts(spec, "makeSpec"))
     specopts = [sdk: specsdk, client: true]
 
@@ -311,10 +372,6 @@ defmodule ProjectName.PrimaryUtilityTest do
       out
     end)
 
-    authsdk = ProjectName.test(nil, setup_opts(spec, "prepareAuth"))
-    authopts = [sdk: authsdk, client: true]
-
-    runsection.("prepareAuth", fn args -> ctxrun.(args, authopts, &U.prepare_auth/1) end)
     runsection.("prepareBody", fn args -> ctxrun.(args, base, &U.prepare_body/1) end)
 
     runsection.("prepareHeaders", fn args ->
@@ -349,6 +406,27 @@ defmodule ProjectName.PrimaryUtilityTest do
     # A run that executes nothing is not a pass. A FLOOR, so the corpus can
     # grow without editing this line, and a section that stopped running
     # trips it.
-    assert ran >= 67, "the primary corpus executed only #{ran} cases"
+    assert ran >= 66, "the primary corpus executed only #{ran} cases"
+  end
+
+  # prepare_auth reads its options off the CLIENT (as the reference does, via
+  # client.options()), so the client is built from the section's DEF.setup.a.
+  @tag :prepare_auth
+  test "the prepareAuth corpus section, on this SDK's own credential", %{run: run} do
+    O.reset_cases()
+
+    cred = auth_credential()
+    assert cred != nil, "prepare_auth placed no credential in headers or query"
+
+    authsdk = ProjectName.test(nil, setup_opts(run.spec, "prepareAuth"))
+    node = auth_retarget(section(run.spec, "prepareAuth"), cred)
+
+    run.runsetflags.(node, %{name: "primary.prepareAuth"}, fn args ->
+      ctxrun(args, [sdk: authsdk, client: true], &U.prepare_auth/1)
+    end)
+
+    ran = O.cases()
+    IO.puts("\nPRIMARY prepareAuth: CASES #{ran} (vendored omni)")
+    assert ran > 0, "the prepareAuth section executed no cases"
   end
 end

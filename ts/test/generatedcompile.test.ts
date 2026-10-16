@@ -4954,7 +4954,7 @@ describe('prepareAuth names, replaces and clears only its own credential', () =>
 // The entries naming `lanes` hold only the ports whose runners keep every
 // other header and query parameter in place. A public API places no
 // credential, so the corpus case, which asserts one, does not apply to it.
-const CREDNAME_STRICT = ['c', 'cpp', 'rust', 'csharp']
+const CREDNAME_STRICT = ['c', 'cpp', 'rust', 'csharp', 'kotlin', 'swift', 'zig', 'elixir', 'ocaml']
 
 const CREDNAME_MODELS: {
   name: string, extra: string, lanes?: string[], pipelineOnly?: boolean,
@@ -5056,6 +5056,8 @@ type CredNameStep = {
   // carries ONE section and legitimately fails the rest. The TAP line for
   // the section under test is the verdict there.
   byline?: boolean,
+  // What `ran` reads besides the output, where the runner prints no counts.
+  report?: (sdkroot: string) => string,
 }
 
 type CredNameLane = {
@@ -5347,11 +5349,13 @@ const CREDNAME_LANES: CredNameLane[] = [
   {
     target: 'csharp',
     needs: 'dotnet',
-    // Built here, under the longer budget a restore needs.
+    // Built here, under the longer budget a restore needs. A build that
+    // fails is a failure: a string returned from prepare would skip.
     prepare: (sdkroot) => {
       const built = run(toolchain('dotnet')!, ['build', '--nologo', '-v', 'quiet', 'test'],
         sdkroot, undefined, 30 * 60 * 1000)
-      return built.ok ? null : 'the generated csharp test project does not build:\n' + tail(built.out)
+      ok(built.ok, 'csharp: the generated test project does not build:\n' + tail(built.out))
+      return null
     },
     steps: [
       {
@@ -5364,6 +5368,100 @@ const CREDNAME_LANES: CredNameLane[] = [
         corpus: true,
         cmd: () => dotnetTest('PrimaryUtilityTest.PrepareAuthBasic'),
         ran: /Passed!\s+-\s+Failed:\s+0,\s+Passed:\s+1,\s+Skipped:\s+0/,
+      },
+    ],
+  },
+  {
+    target: 'kotlin',
+    needs: 'gradle (which resolves the Kotlin plugin from the network)',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => gradleTest('*PipelineTest.prepareAuth*'),
+        report: (sdkroot) => junitReport(sdkroot, 'PipelineTest'),
+        ran: /<testsuite name="[^"]*\.PipelineTest" tests="[1-9]\d*" skipped="0" failures="0" errors="0"/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        corpus: true,
+        cmd: () => gradleTest('*PrimaryUtilityTest.prepareAuthBasic'),
+        report: (sdkroot) => junitReport(sdkroot, 'PrimaryUtilityTest'),
+        ran: /<testsuite name="[^"]*\.PrimaryUtilityTest" tests="1" skipped="0" failures="0" errors="0"/,
+      },
+    ],
+  },
+  {
+    target: 'swift',
+    needs: 'swift',
+    // Built here, under the budget a first SwiftPM build needs.
+    prepare: (sdkroot) => {
+      const built = run(toolchain('swift')!, ['build', '--build-tests', '-j', '2'],
+        sdkroot, undefined, 30 * 60 * 1000)
+      ok(built.ok, 'swift: the generated package does not build:\n' + tail(built.out))
+      return null
+    },
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => swiftTest('PipelineTest/testPrepareAuth'),
+        ran: /Executed [1-9]\d* tests?, with 0 failures/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        corpus: true,
+        cmd: () => swiftTest('PrimaryUtilityTest/testPrepareAuthBasic'),
+        ran: /Executed 1 test, with 0 failures/,
+      },
+    ],
+  },
+  {
+    target: 'zig',
+    needs: 'zig 0.16',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => zigTest('pipeline prepare_auth'),
+        ran: /\b([1-9]\d*)\/\1 tests passed/,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        corpus: true,
+        cmd: () => zigTest('primary corpus: prepareAuth'),
+        ran: /primary prepareAuth: [1-9]\d* case/,
+      },
+    ],
+  },
+  {
+    target: 'elixir',
+    needs: 'elixir + mix',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => mixTest([Path.join('test', 'pipeline_test.exs')]),
+        ran: /^[1-9]\d* tests, 0 failures/m,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        corpus: true,
+        cmd: () => mixTest([Path.join('test', 'primary_utility_test.exs'), '--only', 'prepare_auth']),
+        ran: /^PRIMARY prepareAuth: CASES [1-9]\d* /m,
+      },
+    ],
+  },
+  {
+    target: 'ocaml',
+    needs: 'ocamlc, make and a C compiler',
+    steps: [
+      {
+        name: 'the pipeline suite',
+        cmd: () => ocamlMake('test-sdk'),
+        ran: /^SDK PASS [1-9]\d* {2}FAIL 0$/m,
+      },
+      {
+        name: 'the corpus prepareAuth section',
+        corpus: true,
+        cmd: () => ocamlMake('test-primary'),
+        ran: /^PRIMARY CORPUS: PASS 1 {2}FAIL 0$/m,
       },
     ],
   },
@@ -5385,6 +5483,57 @@ const CREDNAME_LANES: CredNameLane[] = [
     ],
   },
 ]
+
+
+// std.debug.print reaches the lane on stderr, which `run` merges.
+function zigTest(filter: string) {
+  const zig = toolchain('zig')
+  if (null == zig) return null
+  const version = run(zig, ['version'], process.cwd())
+  return !version.ok || !/^0\.16\./.test(version.out.trim()) ? null
+    : { bin: zig, args: ['build', 'test', '-Dtest-filter=' + filter, '--summary', 'all'] }
+}
+
+
+// `mix test` refuses to run under any other MIX_ENV, so it is pinned.
+function mixTest(args: string[]) {
+  const mix = toolchain('mix')
+  return null == mix || null == toolchain('elixir') ? null
+    : { bin: mix, args: ['test', '--no-color', ...args], env: { ...process.env, MIX_ENV: 'test' } }
+}
+
+
+function swiftTest(filter: string) {
+  const swift = toolchain('swift')
+  return null == swift ? null
+    : { bin: swift, args: ['test', '-j', '2', '--skip-build', '--filter', filter] }
+}
+
+
+function ocamlMake(goal: string) {
+  const make = toolchain('make')
+  const ocamlc = toolchain('ocamlc')
+  const cc = cCompiler()
+  return null == make || null == ocamlc || null == cc ? null
+    : { bin: make, args: ['CC=' + cc, 'OCAMLC=' + ocamlc, goal] }
+}
+
+
+// gradle hangs on windows rather than failing, as the clean lane says.
+function gradleTest(filter: string) {
+  const gradle = toolchain('gradle')
+  return 'win32' === process.platform || null == gradle ? null
+    : { bin: gradle, args: ['--console=plain', 'test', '--tests', filter] }
+}
+
+
+function junitReport(sdkroot: string, suite: string): string {
+  const dir = Path.join(sdkroot, 'build', 'test-results', 'test')
+  return Fs.existsSync(dir)
+    ? Fs.readdirSync(dir).filter((f) => f.endsWith('.' + suite + '.xml'))
+      .map((f) => Fs.readFileSync(Path.join(dir, f), 'utf8')).join('\n')
+    : ''
+}
 
 
 function dotnetTest(filter: string) {
@@ -5520,7 +5669,8 @@ describe('generated auth tests discover the credential name', () => {
             ' - the generated test names the credential instead of reading ' +
             'where prepareAuth put it:\n' + tail(ran.out))
 
-          ok(step.ran.test(ran.out),
+          const seen = ran.out + (null == step.report ? '' : '\n' + step.report(sdkroot))
+          ok(step.ran.test(seen),
             lane.target + ': ' + step.name + ' did not report a passing ' +
             'prepareAuth case (' + step.ran.source + ') - it matched nothing ' +
             'and skipped, which every one of these frameworks exits zero ' +

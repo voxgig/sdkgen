@@ -2019,14 +2019,6 @@ pub fn graphql_errors_util(ctx: *Context) bool {
 // the generated function is the whole of the binding change.
 pub const prepare_auth_util = @import("prepare_auth.zig").prepare_auth_util;
 
-// The two comptime FACTS the generated file decided: where this SDK puts its
-// credential ("header" | "query" | "cookie" | "none"), and whether the scheme
-// is genuine HTTP Basic. Re-exported on the same path as the function, so
-// test/pipeline_test.zig can reach both as `sdk.utilmod.<name>` and skip the
-// header-shape cases on an SDK that has no header credential to assert on.
-pub const prepare_auth_placement = @import("prepare_auth.zig").PLACEMENT;
-pub const prepare_auth_basic = @import("prepare_auth.zig").BASIC;
-
 pub fn result_basic_util(ctx: *Context) ?*SdkResult {
     const response = ctx.response;
     const result = ctx.result;

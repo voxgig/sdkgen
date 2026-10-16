@@ -1,6 +1,6 @@
 // Direct unit tests for the operation-pipeline utilities: the error and edge
 // branches (missing spec/response/result, 4xx handling, transport failures,
-// featureAdd ordering, auth header shaping) a normal success-path op never
+// featureAdd ordering, auth placement) a normal success-path op never
 // reaches. API-agnostic. Swift twin of the go pipeline_test.go.
 
 import XCTest
@@ -338,8 +338,67 @@ final class PipelineTest: XCTestCase {
 
   // --- PrepareAuth ----------------------------------------------------------
 
-  private func authSpec(_ headers: VMap?) -> Spec {
-    return Spec(vm(("headers", .map(headers ?? VMap())), ("step", .string("s"))))
+  // Where this SDK's prepareAuth puts the credential. The API's own scheme
+  // decides the container and the name, so the cases read them from a probe
+  // run instead of assuming the authorization header. `pair` is the
+  // `<scheme>=` lead-in of a cookie credential, which rides the header bag
+  // under "cookie"; it is empty for a header or query credential.
+  private typealias AuthCred = (query: Bool, name: String, value: Value, pair: String)
+
+  // The options auth block every case passes. `basic: false` is explicit: an
+  // HTTP Basic API's config carries `auth.basic: true`, whose branch needs a
+  // secret as well and writes nothing without one, which the probe would
+  // read as a public API.
+  private func authOpts(_ prefix: String) -> Value {
+    .map(vm(("prefix", .string(prefix)), ("basic", .bool(false))))
+  }
+
+  private func authBags() -> Spec {
+    Spec(vm(("headers", .map(VMap())), ("query", .map(VMap())), ("step", .string("s"))))
+  }
+
+  private func authBag(_ spec: Spec, _ query: Bool) -> VMap { query ? spec.query : spec.headers }
+
+  private func authRun(_ sdkopts: VMap, _ spec: Spec) {
+    let (client, utility) = plClient(sdkopts)
+    let ctx = plCtx(client, utility, nil)
+    ctx.spec = spec
+    _ = try? utility.prepareAuth(ctx)
+  }
+
+  // A cookie credential as prepareAuth writes it for the probe key: one
+  // `<scheme>=K` pair and nothing else.
+  private func cookiePair(_ value: Value) -> Bool {
+    guard let text = value.asString, let eq = text.firstIndex(of: "=") else { return false }
+    return eq != text.startIndex && !text.contains(";") && "K" == text[text.index(after: eq)...]
+  }
+
+  // Nil is a public API, a legitimate shape.
+  private func authProbe(_ sdkopts: VMap) -> AuthCred? {
+    let spec = authBags()
+    authRun(sdkopts, spec)
+    for query in [false, true] {
+      for (name, value) in authBag(spec, query).entries {
+        let pair = !query && "cookie" == name && cookiePair(value)
+          ? String((value.asString ?? "").dropLast()) : ""
+        return (query, name, value, pair)
+      }
+    }
+    return nil
+  }
+
+  private func authCredential() -> AuthCred? {
+    authProbe(vm(("apikey", .string("K")), ("auth", authOpts("Bearer"))))
+  }
+
+  // Runs prepareAuth over fresh bags, seeding the credential's slot first
+  // when there is a seed, and returns what is left there.
+  private func authPlaced(_ sdkopts: VMap, _ seed: String?) -> Value? {
+    guard let cred = authCredential() else { return nil }
+    let spec = authBags()
+    if let seed = seed { authBag(spec, cred.query).entries[cred.name] = .string(cred.pair + seed) }
+    authRun(sdkopts, spec)
+    return authBag(spec, cred.query).entries[cred.name]
   }
 
   func testPrepareAuthGuardsMissingSpec() {
@@ -349,50 +408,45 @@ final class PipelineTest: XCTestCase {
     XCTAssertEqual(errCode { _ = try utility.prepareAuth(ctx) }, "auth_no_spec")
   }
 
-  func testPrepareAuthApikeyWithPrefixSpaceJoined() {
-    let (client, utility) = plClient(vm(
-      ("apikey", .string("K")), ("auth", .map(vm(("prefix", .string("Bearer")), ("basic", .bool(false)))))))
-    let ctx = plCtx(client, utility, nil)
-    ctx.spec = authSpec(nil)
-    _ = try! utility.prepareAuth(ctx)
-    XCTAssertEqual(ctx.spec!.headers.entries["authorization"], .string("Bearer K"))
+  // Without this every case below could pass on the public-API path.
+  func testPrepareAuthProbeFindsTheCredentialThisSdkPlaces() {
+    let any = authProbe(vm(("apikey", .string("K")), ("secret", .string("S")),
+      ("auth", .map(vm(("prefix", .string("Bearer")), ("basic", .bool(true)))))))
+    XCTAssertEqual(authCredential() == nil, any == nil, "the probe missed a credential this SDK places")
+  }
+
+  func testPrepareAuthApikeyPlacedWhereThisApiPutsIt() {
+    guard let cred = authCredential() else {
+      return XCTAssertNil(authPlaced(vm(("apikey", .string("K")), ("auth", authOpts("Bearer"))), nil))
+    }
+    if "" != cred.pair {
+      return XCTAssertTrue(cookiePair(cred.value), "expected a cookie pair, got \(cred.value)")
+    }
+    // A header credential is prefix-joined; a query credential is the raw key.
+    XCTAssertEqual(cred.value, .string(cred.query ? "K" : "Bearer K"))
   }
 
   func testPrepareAuthRawApikeyEmptyPrefixAsIs() {
-    let (client, utility) = plClient(vm(
-      ("apikey", .string("K")), ("auth", .map(vm(("prefix", .string("")), ("basic", .bool(false)))))))
-    let ctx = plCtx(client, utility, nil)
-    ctx.spec = authSpec(nil)
-    _ = try! utility.prepareAuth(ctx)
-    XCTAssertEqual(ctx.spec!.headers.entries["authorization"], .string("K"))
+    let placed = authPlaced(vm(("apikey", .string("K")), ("auth", authOpts(""))), nil)
+    guard let cred = authCredential() else { return XCTAssertNil(placed) }
+    XCTAssertEqual(placed, .string(cred.pair + "K"))
   }
 
-  func testPrepareAuthEmptyApikeyDropsHeader() {
-    let (client, utility) = plClient(vm(
-      ("apikey", .string("")), ("auth", .map(vm(("prefix", .string("Bearer")), ("basic", .bool(false)))))))
-    let ctx = plCtx(client, utility, nil)
-    ctx.spec = authSpec(vm(("authorization", .string("stale"))))
-    _ = try! utility.prepareAuth(ctx)
-    XCTAssertNil(ctx.spec!.headers.entries["authorization"])
+  func testPrepareAuthEmptyApikeyDropsCredential() {
+    XCTAssertNil(authPlaced(vm(("apikey", .string("")), ("auth", authOpts("Bearer"))), "stale"))
   }
 
-  func testPrepareAuthMissingApikeyDropsHeader() {
-    let (client, utility) = plClient(vm(("auth", .map(vm(("prefix", .string("Bearer")), ("basic", .bool(false)))))))
-    let options = client.optionsMap()
-    if let apikey = options.entries["apikey"]?.asString, apikey != "" { return }
-    let ctx = plCtx(client, utility, nil)
-    ctx.spec = authSpec(vm(("authorization", .string("stale"))))
-    _ = try! utility.prepareAuth(ctx)
-    XCTAssertNil(ctx.spec!.headers.entries["authorization"])
+  func testPrepareAuthMissingApikeyDropsCredential() {
+    let sdkopts = vm(("auth", authOpts("Bearer")))
+    let (client, _) = plClient(sdkopts)
+    if let apikey = client.optionsMap().entries["apikey"]?.asString, apikey != "" { return }
+    XCTAssertNil(authPlaced(sdkopts, "stale"))
   }
 
-  func testPrepareAuthPublicApiNoAuthBlockDropsHeader() {
-    let (client, utility) = plClient(vm(("apikey", .string("K"))))
-    let options = client.optionsMap()
-    if let auth = options.entries["auth"], !isNil(auth) { return }
-    let ctx = plCtx(client, utility, nil)
-    ctx.spec = authSpec(vm(("authorization", .string("stale"))))
-    _ = try! utility.prepareAuth(ctx)
-    XCTAssertNil(ctx.spec!.headers.entries["authorization"])
+  func testPrepareAuthPublicApiNoAuthBlockDropsCredential() {
+    let sdkopts = vm(("apikey", .string("K")))
+    let (client, _) = plClient(sdkopts)
+    if let auth = client.optionsMap().entries["auth"], !isNil(auth) { return }
+    XCTAssertNil(authPlaced(sdkopts, "stale"))
   }
 }

@@ -102,6 +102,12 @@ class PrimaryUtilityTest {
       )
       return
     }
+    if ("prepareAuth" == name) {
+      val cred = AuthCredential.discover()
+      assertNotNull(cred, "prepareAuth placed no credential in headers or query")
+      run.runset(AuthCredential.retarget(basic, cred!!), subject)
+      return
+    }
     run.runset(basic, subject)
   }
 

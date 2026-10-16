@@ -3,7 +3,7 @@
 # Direct unit tests for the operation-pipeline utilities. The generated entity
 # tests exercise the happy path; these drive the error and edge branches
 # (missing spec/response/result, 4xx handling, transport failures, feature
-# ordering, auth header shaping) that a normal success-path op never reaches.
+# ordering, auth placement) that a normal success-path op never reaches.
 # All utilities are reached through the client's utility view, so this suite is
 # API-agnostic.
 
@@ -483,7 +483,12 @@ defmodule ProjectName.PipelineTest do
 
   # === prepare_auth ===
 
-  defp auth_ctx(c, options, headers) do
+  # Where this SDK's prepare_auth puts the credential. The API's own scheme
+  # decides the container and the name, so the cases read them from a probe
+  # run instead of assuming the authorization header. `pair` is the
+  # `<scheme>=` lead-in of a cookie credential, which rides the header bag
+  # under "cookie". `basic` is false so an HTTP Basic SDK places the key as is.
+  defp auth_ctx(c, options, spec) do
     fakeclient = S.jm(["options", H.deep(options)])
 
     ctx =
@@ -492,12 +497,57 @@ defmodule ProjectName.PipelineTest do
         nil
       )
 
-    spec = if headers == nil, do: nil, else: Spec.new(H.deep(%{"headers" => headers, "step" => "s"}))
     S.setprop(ctx, "spec", spec)
     ctx
   end
 
-  defp auth_header(ctx), do: S.getprop(S.getprop(S.getprop(ctx, "spec"), "headers"), "authorization")
+  defp auth_opts(prefix), do: %{"prefix" => prefix, "basic" => false}
+
+  defp auth_bags, do: Spec.new(H.deep(%{"headers" => %{}, "query" => %{}, "step" => "s"}))
+
+  defp cookie_pair?(v), do: is_binary(v) and Regex.match?(~r/\A[^=;]+=K\z/, v)
+
+  # Nil is a public API, a legitimate shape.
+  defp auth_probe(options) do
+    spec = auth_bags()
+    Utility.prepare_auth(auth_ctx(client(), options, spec))
+
+    Enum.find_value(["headers", "query"], fn where ->
+      bag = S.getprop(spec, where)
+
+      case S.keysof(bag) do
+        [name | _] ->
+          value = S.getprop(bag, name)
+
+          pair =
+            if where == "headers" and name == "cookie" and cookie_pair?(value),
+              do: binary_part(value, 0, byte_size(value) - 1),
+              else: ""
+
+          %{where: where, name: name, value: value, pair: pair}
+
+        _ ->
+          nil
+      end
+    end)
+  end
+
+  defp auth_cred, do: auth_probe(%{"apikey" => "K", "auth" => auth_opts("Bearer")})
+
+  # Runs prepare_auth over fresh bags, seeding the credential's slot first
+  # when there is a seed, and returns what is left there.
+  defp auth_placed(options, seed) do
+    case auth_cred() do
+      nil ->
+        nil
+
+      cred ->
+        spec = auth_bags()
+        if seed != nil, do: S.setprop(S.getprop(spec, cred.where), cred.name, cred.pair <> seed)
+        Utility.prepare_auth(auth_ctx(client(), options, spec))
+        S.getprop(S.getprop(spec, cred.where), cred.name)
+    end
+  end
 
   test "prepare_auth guards a missing spec" do
     ctx = auth_ctx(client(), %{"auth" => %{"prefix" => ""}, "apikey" => "K"}, nil)
@@ -505,35 +555,45 @@ defmodule ProjectName.PipelineTest do
     assert err.code == "auth_no_spec"
   end
 
-  test "prepare_auth an apikey with a prefix is space joined" do
-    ctx = auth_ctx(client(), %{"apikey" => "K", "auth" => %{"prefix" => "Bearer"}}, %{})
-    {_o, err} = Utility.prepare_auth(ctx)
-    assert err == nil
-    assert auth_header(ctx) == "Bearer K"
+  # Without this every case below could pass on the public-API path.
+  test "prepare_auth the probe finds the credential this sdk places" do
+    any = auth_probe(%{"apikey" => "K", "secret" => "S", "auth" => %{"prefix" => "Bearer", "basic" => true}})
+    assert (auth_cred() == nil) == (any == nil), "the probe missed a credential this SDK places"
+  end
+
+  test "prepare_auth places the apikey where this api puts it" do
+    case auth_cred() do
+      nil ->
+        assert auth_placed(%{"apikey" => "K", "auth" => auth_opts("Bearer")}, nil) == nil
+
+      %{pair: pair, value: value} when pair != "" ->
+        assert cookie_pair?(value), "expected a cookie pair, got #{inspect(value)}"
+
+      # A query parameter has nowhere to put a scheme name.
+      %{where: where, value: value} ->
+        assert value == if(where == "query", do: "K", else: "Bearer K")
+    end
   end
 
   test "prepare_auth a raw apikey goes in as is" do
-    ctx = auth_ctx(client(), %{"apikey" => "K", "auth" => %{"prefix" => ""}}, %{})
-    Utility.prepare_auth(ctx)
-    assert auth_header(ctx) == "K"
+    placed = auth_placed(%{"apikey" => "K", "auth" => auth_opts("")}, nil)
+
+    case auth_cred() do
+      nil -> assert placed == nil
+      cred -> assert placed == cred.pair <> "K"
+    end
   end
 
-  test "prepare_auth an empty apikey drops the header" do
-    ctx = auth_ctx(client(), %{"apikey" => "", "auth" => %{"prefix" => "Bearer"}}, %{"authorization" => "stale"})
-    Utility.prepare_auth(ctx)
-    assert auth_header(ctx) == nil
+  test "prepare_auth an empty apikey drops the credential" do
+    assert auth_placed(%{"apikey" => "", "auth" => auth_opts("Bearer")}, "stale") == nil
   end
 
-  test "prepare_auth a public api drops the header" do
-    ctx = auth_ctx(client(), %{"apikey" => "K"}, %{"authorization" => "stale"})
-    Utility.prepare_auth(ctx)
-    assert auth_header(ctx) == nil
+  test "prepare_auth a public api drops the credential" do
+    assert auth_placed(%{"apikey" => "K"}, "stale") == nil
   end
 
-  test "prepare_auth a missing apikey option drops the header" do
-    ctx = auth_ctx(client(), %{"auth" => %{"prefix" => "Bearer"}}, %{"authorization" => "stale"})
-    Utility.prepare_auth(ctx)
-    assert auth_header(ctx) == nil
+  test "prepare_auth a missing apikey option drops the credential" do
+    assert auth_placed(%{"auth" => auth_opts("Bearer")}, "stale") == nil
   end
 
   # === result helpers ===

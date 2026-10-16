@@ -111,6 +111,47 @@ struct OmniSpec {
 
   /// This node in the SDK's own Value model (for DEF/setup reads).
   var value: Value { OmniResolver.tovalue(json) }
+
+  /// The corpus states the credential as `headers.authorization`, a
+  /// placeholder for wherever this SDK puts it. Only that entry moves, under
+  /// `name` and into the query or the headers, and a cookie credential's value
+  /// gains its `pair` lead-in: every other header and query parameter stays
+  /// where it was.
+  func retargetingAuth(query: Bool, name: String, pair: String) -> OmniSpec {
+    OmniSpec(OmniSpec.retarget(json, query, name, pair))
+  }
+
+  private static func retarget(_ node: Omni.Json, _ query: Bool, _ name: String,
+    _ pair: String) -> Omni.Json {
+    switch node {
+    case .list(let items):
+      return .list(items.map { retarget($0, query, name, pair) })
+    case .map(let entries):
+      var out: [(String, Omni.Json)] = []
+      var placed: Omni.Json? = nil
+      for (key, val) in entries {
+        if "headers" == key, case .map(let bag) = val {
+          for (bk, bv) in bag where "authorization" == bk {
+            if case .str(let text) = bv { placed = .str(pair + text) } else { placed = bv }
+          }
+          out.append((key, .map(bag.filter { "authorization" != $0.0 })))
+        } else {
+          out.append((key, retarget(val, query, name, pair)))
+        }
+      }
+      guard let value = placed else { return .map(out) }
+      let dest = query ? "query" : "headers"
+      if let at = out.firstIndex(where: { dest == $0.0 }), case .map(let bag) = out[at].1 {
+        out[at] = (dest, .map(bag.filter { name != $0.0 } + [(name, value)]))
+      } else {
+        out.removeAll { dest == $0.0 }
+        out.append((dest, .map([(name, value)])))
+      }
+      return .map(out)
+    default:
+      return node
+    }
+  }
 }
 
 enum OmniResolver {

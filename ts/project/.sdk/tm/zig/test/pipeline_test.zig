@@ -36,14 +36,6 @@ fn reqSpec() *sdk.Spec {
     }));
 }
 
-fn authSpec(headers: Value) *sdk.Spec {
-    const hv: Value = if (headers == .object) headers else h.omap();
-    return sdk.Spec.make(h.jo(&.{
-        .{ "headers", hv },
-        .{ "step", h.vstr("s") },
-    }));
-}
-
 // A minimal fake entity for the list-wrap test: data() records each call and
 // echoes the argument back.
 const FakeEntity = struct {
@@ -367,33 +359,104 @@ test "pipeline feature_add: ordering before after replace" {
 // prepare_auth
 // =====================================================================
 
-// WHERE THE CREDENTIAL GOES IS MODEL-DRIVEN: core/prepare_auth.zig is
-// GENERATED from the API's security scheme, and has exactly one branch. The
-// cases below assert the HEADER shape - a key in `spec.headers` named
-// `authorization` - which is the right assertion for the default and the
-// wrong one for the other three. An SDK whose scheme puts the credential in
-// the query string (`?token=`) or a cookie, and one whose project set
-// `main.kit.config.auth.active: false`, correctly place NOTHING in the header
-// bag, so these would go red for a reason that is not a defect.
-//
-// The generated file exports what it chose as a COMPTIME constant, and
-// core/utility.zig re-exports it. Not read from the options: a query SDK's
-// `options.auth.in` does say "query", but an auth-OFF SDK looks exactly like
-// a header one there - Config omits `options.auth` entirely when auth is
-// inactive and the optspec then supplies the same empty defaults.
-//
-// A header SDK - every SDK whose scheme resolves to the default - runs all of
-// these exactly as it did before prepare_auth became a component.
-fn headerCred() bool {
-    return std.mem.eql(u8, sdk.utilmod.prepare_auth_placement, "header");
+// Where this SDK's prepare_auth puts the credential. The API's own scheme
+// decides the container and the name, so the cases read them from a probe
+// run instead of assuming the authorization header. `pair` is the
+// `<scheme>=` lead-in of a cookie credential, which rides the header bag
+// under "cookie"; it is empty for a header or query credential.
+const PlCred = struct {
+    query: bool,
+    name: []const u8,
+    value: Value,
+    pair: []const u8,
+};
+
+// The options auth block every case passes. `basic: false` is explicit: an
+// HTTP Basic API's config carries `auth.basic: true`, whose branch needs a
+// secret as well and writes nothing without one, which the probe would read
+// as a public API.
+fn plAuth(prefix: []const u8) Value {
+    return h.jo(&.{ .{ "prefix", h.vstr(prefix) }, .{ "basic", h.vbool(false) } });
 }
 
-// The two cases that assert how a single token is SHAPED into the header
-// value need more than a header placement: genuine HTTP Basic replaces that
-// shaping with base64(apikey:secret), and refuses outright when the secret is
-// missing - which is exactly what those two fixtures leave out.
-fn singleTokenCred() bool {
-    return headerCred() and !sdk.utilmod.prepare_auth_basic;
+fn plBags() *sdk.Spec {
+    return sdk.Spec.make(h.jo(&.{
+        .{ "headers", h.omap() },
+        .{ "query", h.omap() },
+        .{ "step", h.vstr("s") },
+    }));
+}
+
+fn plBag(spec: *sdk.Spec, query: bool) Value {
+    return if (query) spec.query else spec.headers;
+}
+
+// A cookie credential as prepare_auth writes it for the probe key: one
+// `<scheme>=K` pair and nothing else.
+fn plCookiePair(text: []const u8) bool {
+    const eq = std.mem.indexOfScalar(u8, text, '=') orelse return false;
+    return 0 < eq and null == std.mem.indexOfScalar(u8, text, ';') and
+        std.mem.eql(u8, text[eq + 1 ..], "K");
+}
+
+// Runs prepare_auth once over empty headers and query, and reports which it
+// wrote to, and under what name. Null is a public API, a legitimate shape.
+fn plAuthProbe(sdkopts: Value) ?PlCred {
+    const client = sdk.test_sdk(vnull(), sdkopts);
+    const utility = client.get_utility();
+    const ctx = plCtx(client, utility, null);
+    const spec = plBags();
+    ctx.spec = spec;
+    _ = utility.prepare_auth(ctx) catch return null;
+    for ([_]bool{ false, true }) |query| {
+        const bag = plBag(spec, query);
+        if (bag != .object) continue;
+        var it = bag.object.iterator();
+        const kv = it.next() orelse continue;
+        const name = kv.key_ptr.*;
+        const value = kv.value_ptr.*;
+        var pair: []const u8 = "";
+        if (!query and std.mem.eql(u8, name, "cookie") and value == .string and
+            plCookiePair(value.string))
+        {
+            pair = value.string[0 .. value.string.len - 1];
+        }
+        return .{ .query = query, .name = name, .value = value, .pair = pair };
+    }
+    return null;
+}
+
+fn plAuthCredential() ?PlCred {
+    return plAuthProbe(h.jo(&.{ .{ "apikey", h.vstr("K") }, .{ "auth", plAuth("Bearer") } }));
+}
+
+// Every credential this SDK could place: both credentials and Basic switched
+// on, so whichever branch the API has, something lands unless it is public.
+fn plAuthAnyCredential() ?PlCred {
+    return plAuthProbe(h.jo(&.{
+        .{ "apikey", h.vstr("K") },
+        .{ "secret", h.vstr("S") },
+        .{ "auth", h.jo(&.{ .{ "prefix", h.vstr("Bearer") }, .{ "basic", h.vbool(true) } }) },
+    }));
+}
+
+// Runs prepare_auth over fresh bags, seeding the credential's slot first
+// when there is a seed, and returns what is left there: null when nothing.
+fn plAuthPlaced(sdkopts: Value, seed: ?[]const u8) ?Value {
+    const cred = plAuthCredential() orelse return null;
+    const client = sdk.test_sdk(vnull(), sdkopts);
+    const utility = client.get_utility();
+    const ctx = plCtx(client, utility, null);
+    const spec = plBags();
+    if (seed) |s| {
+        // cred.pair keeps a cookie seed from reading as a stranger's cookie.
+        const seeded = std.mem.concat(h.A(), u8, &.{ cred.pair, s }) catch unreachable;
+        h.setp(plBag(spec, cred.query), cred.name, h.vstr(seeded));
+    }
+    ctx.spec = spec;
+    _ = utility.prepare_auth(ctx) catch {};
+    const left = h.getp(plBag(spec, cred.query), cred.name);
+    return if (h.is_noval(left)) null else left;
 }
 
 test "pipeline prepare_auth: guards missing spec" {
@@ -405,73 +468,57 @@ test "pipeline prepare_auth: guards missing spec" {
     try testing.expect(std.mem.eql(u8, ctx.pending_err.?.code, "auth_no_spec"));
 }
 
-test "pipeline prepare_auth: apikey with prefix space joined" {
-    const client = sdk.test_sdk(vnull(), h.jo(&.{
-        .{ "apikey", h.vstr("K") },
-        .{ "auth", h.jo(&.{.{ "prefix", h.vstr("Bearer") }}) },
-    }));
-    if (!singleTokenCred()) return;
-    const utility = client.get_utility();
-    const ctx = plCtx(client, utility, null);
-    ctx.spec = authSpec(vnull());
-    _ = utility.prepare_auth(ctx) catch {};
-    try testing.expect(h.veq(h.getp(ctx.spec.?.headers, "authorization"), h.vstr("Bearer K")));
+// Without this the cases below cannot fail for an SDK whose credential the
+// probe misses: every one of them takes the public-API path instead.
+test "pipeline prepare_auth: the probe finds the credential this SDK places" {
+    try testing.expectEqual(plAuthAnyCredential() == null, plAuthCredential() == null);
+}
+
+test "pipeline prepare_auth: apikey placed where this api puts it" {
+    const cred = plAuthCredential() orelse {
+        const opts = h.jo(&.{ .{ "apikey", h.vstr("K") }, .{ "auth", plAuth("Bearer") } });
+        try testing.expect(null == plAuthPlaced(opts, null));
+        return;
+    };
+    if (0 < cred.pair.len) {
+        // A cookie credential is a `<scheme>=<key>` pair, with no room for a prefix.
+        try testing.expect(cred.value == .string and plCookiePair(cred.value.string));
+        return;
+    }
+    // A header credential is prefix-joined; a query credential is the raw key.
+    try testing.expect(h.veq(cred.value, h.vstr(if (cred.query) "K" else "Bearer K")));
 }
 
 test "pipeline prepare_auth: raw apikey empty prefix as is" {
-    const client = sdk.test_sdk(vnull(), h.jo(&.{
-        .{ "apikey", h.vstr("K") },
-        .{ "auth", h.jo(&.{.{ "prefix", h.vstr("") }}) },
-    }));
-    if (!singleTokenCred()) return;
-    const utility = client.get_utility();
-    const ctx = plCtx(client, utility, null);
-    ctx.spec = authSpec(vnull());
-    _ = utility.prepare_auth(ctx) catch {};
-    try testing.expect(h.veq(h.getp(ctx.spec.?.headers, "authorization"), h.vstr("K")));
+    const placed = plAuthPlaced(h.jo(&.{ .{ "apikey", h.vstr("K") }, .{ "auth", plAuth("") } }), null);
+    const cred = plAuthCredential() orelse {
+        try testing.expect(null == placed);
+        return;
+    };
+    const want = std.mem.concat(h.A(), u8, &.{ cred.pair, "K" }) catch unreachable;
+    try testing.expect(placed != null and h.veq(placed.?, h.vstr(want)));
 }
 
-test "pipeline prepare_auth: empty apikey drops header" {
-    const client = sdk.test_sdk(vnull(), h.jo(&.{
-        .{ "apikey", h.vstr("") },
-        .{ "auth", h.jo(&.{.{ "prefix", h.vstr("Bearer") }}) },
-    }));
-    if (!headerCred()) return;
-    const utility = client.get_utility();
-    const ctx = plCtx(client, utility, null);
-    ctx.spec = authSpec(h.jo(&.{.{ "authorization", h.vstr("stale") }}));
-    _ = utility.prepare_auth(ctx) catch {};
-    try testing.expect(h.is_noval(h.getp(ctx.spec.?.headers, "authorization")));
+test "pipeline prepare_auth: empty apikey drops the credential" {
+    const opts = h.jo(&.{ .{ "apikey", h.vstr("") }, .{ "auth", plAuth("Bearer") } });
+    try testing.expect(null == plAuthPlaced(opts, "stale"));
 }
 
-test "pipeline prepare_auth: missing apikey drops header" {
-    const client = sdk.test_sdk(vnull(), h.jo(&.{
-        .{ "auth", h.jo(&.{.{ "prefix", h.vstr("Bearer") }}) },
-    }));
-    if (!headerCred()) return;
-    const utility = client.get_utility();
-    const options = client.options_map();
+test "pipeline prepare_auth: missing apikey drops the credential" {
+    const client = sdk.test_sdk(vnull(), h.jo(&.{.{ "auth", plAuth("Bearer") }}));
     // Skip if this SDK's options happen to carry a configured apikey.
-    if (h.get_str(options, "apikey")) |k| {
+    if (h.get_str(client.options_map(), "apikey")) |k| {
         if (k.len != 0) return;
     }
-    const ctx = plCtx(client, utility, null);
-    ctx.spec = authSpec(h.jo(&.{.{ "authorization", h.vstr("stale") }}));
-    _ = utility.prepare_auth(ctx) catch {};
-    try testing.expect(h.is_noval(h.getp(ctx.spec.?.headers, "authorization")));
+    try testing.expect(null == plAuthPlaced(h.jo(&.{.{ "auth", plAuth("Bearer") }}), "stale"));
 }
 
-test "pipeline prepare_auth: public api no auth block drops header" {
+test "pipeline prepare_auth: public api no auth block drops the credential" {
     const client = sdk.test_sdk(vnull(), h.jo(&.{.{ "apikey", h.vstr("K") }}));
-    if (!headerCred()) return;
-    const utility = client.get_utility();
     // Option validation supplies an auth shape for this SDK, so a truly
     // auth-less client cannot be constructed here — mirror the rust skip.
     if (!h.is_noval(h.getp(client.options_map(), "auth"))) return;
-    const ctx = plCtx(client, utility, null);
-    ctx.spec = authSpec(h.jo(&.{.{ "authorization", h.vstr("stale") }}));
-    _ = utility.prepare_auth(ctx) catch {};
-    try testing.expect(h.is_noval(h.getp(ctx.spec.?.headers, "authorization")));
+    try testing.expect(null == plAuthPlaced(h.jo(&.{.{ "apikey", h.vstr("K") }}), "stale"));
 }
 
 // --- feature order (array form + test-first default) ------------------------

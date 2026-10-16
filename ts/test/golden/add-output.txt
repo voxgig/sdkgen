@@ -507,8 +507,8 @@ tm/elixir/test/concurrency_test.exs bbac080182cb
 tm/elixir/test/feature_test.exs b7c442542d7e
 tm/elixir/test/netsim_test.exs d9459f10a6c7
 tm/elixir/test/omni_smoke_test.exs d79d4e7faab8
-tm/elixir/test/pipeline_test.exs 876a4cd347fe
-tm/elixir/test/primary_utility_test.exs fbb1de41504a
+tm/elixir/test/pipeline_test.exs c97ecfff3b19
+tm/elixir/test/primary_utility_test.exs 809ab087b792
 tm/elixir/test/stream_test.exs adcaa6598d60
 tm/elixir/test/struct_corpus_test.exs b7fd9221f7c8
 tm/elixir/test/support/feature_harness.ex 9b26420ea50d
@@ -966,6 +966,7 @@ tm/kotlin/feature/TestFeature.kt 4feb1349dddc
 tm/kotlin/src/feature/README.md 9f8bde3f12e0
 tm/kotlin/src/feature/base/.gitkeep e3b0c44298fc
 tm/kotlin/src/feature/test/.gitkeep e3b0c44298fc
+tm/kotlin/test/AuthCredential.kt c7af13238c4f
 tm/kotlin/test/ConcurrencyTest.kt dfb2ba7e1a11
 tm/kotlin/test/CustomUtilityTest.kt 38682251b430
 tm/kotlin/test/ExistsTest.kt 8305e0fa71e5
@@ -973,8 +974,8 @@ tm/kotlin/test/FeatureHarness.kt ead959d80931
 tm/kotlin/test/NetsimTest.kt 870005516436
 tm/kotlin/test/OmniResolver.kt 177193e3e49a
 tm/kotlin/test/OmniSmokeTest.kt ec9e888beb69
-tm/kotlin/test/PipelineTest.kt c870fac07cad
-tm/kotlin/test/PrimaryUtilityTest.kt 4ba96fe66435
+tm/kotlin/test/PipelineTest.kt c654fb25bc20
+tm/kotlin/test/PrimaryUtilityTest.kt 7517fa2990b1
 tm/kotlin/test/RunnerSupport.kt 5c21250c5d4c
 tm/kotlin/test/ServerVariableTest.kt cf52d241cde8
 tm/kotlin/test/StructCorpusTest.kt fb99eabed538
@@ -1159,11 +1160,11 @@ tm/ocaml/test/custom_utility.ml 1fe63d9d65af
 tm/ocaml/test/harness.ml 366332912de1
 tm/ocaml/test/omni_resolver.ml d4b483a5a08d
 tm/ocaml/test/omni_smoke_test.ml 3045df404dfa
-tm/ocaml/test/primary_utility_test.ml 254711062c6c
+tm/ocaml/test/primary_utility_test.ml 2501379d19ab
 tm/ocaml/test/struct_corpus.ml 6742a3fed883
 tm/ocaml/test/t_feature.ml 010046646b46
 tm/ocaml/test/t_main.ml a468eae08da5
-tm/ocaml/test/t_pipeline.ml 44ac6ce943b5
+tm/ocaml/test/t_pipeline.ml 38549b8eb787
 tm/ocaml/test/testutil.ml d06c690245b6
 tm/ocaml/test/vendor/omni/omni.ml 62def8811826
 tm/ocaml/utility/voxgig_struct.ml a0a616198901
@@ -1999,10 +2000,10 @@ tm/swift/Tests/ProjectNameSDKTests/ConcurrencyTest.swift d19f4343e78e
 tm/swift/Tests/ProjectNameSDKTests/CustomUtilityTest.swift d761ef0813c8
 tm/swift/Tests/ProjectNameSDKTests/ExistsTest.swift b003ca8c07eb
 tm/swift/Tests/ProjectNameSDKTests/NetsimTest.swift e290a72e79ed
-tm/swift/Tests/ProjectNameSDKTests/OmniResolver.swift 4f79581412cb
+tm/swift/Tests/ProjectNameSDKTests/OmniResolver.swift 4d0840455dcf
 tm/swift/Tests/ProjectNameSDKTests/OmniSmokeTest.swift 8c71b23490e1
-tm/swift/Tests/ProjectNameSDKTests/PipelineTest.swift 6b81704b823c
-tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift 796713e32345
+tm/swift/Tests/ProjectNameSDKTests/PipelineTest.swift 88b2121387e7
+tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift c60a08d7f713
 tm/swift/Tests/ProjectNameSDKTests/Runner.swift 7cacfc13a4c6
 tm/swift/Tests/ProjectNameSDKTests/ServerVariableTest.swift e3469c9beea6
 tm/swift/Tests/ProjectNameSDKTests/StructUtilityTest.swift df46c84a8c75
@@ -2176,7 +2177,7 @@ src/cmp/zig/TestClean_zig.ts c7d8ea55ba40
 src/cmp/zig/TestDirect_zig.ts af5fda4e0b0f
 src/cmp/zig/TestEntity_zig.ts a46e513a43a7
 src/cmp/zig/Test_zig.ts db2e195e07e2
-src/cmp/zig/fragment/Build.fragment.zig 2e4de05b8df6
+src/cmp/zig/fragment/Build.fragment.zig 766e8a609810
 src/cmp/zig/fragment/Entity.fragment.zig 3aba8651f11a
 src/cmp/zig/fragment/EntityCreateOp.fragment.zig 204e55446419
 src/cmp/zig/fragment/EntityListOp.fragment.zig 547f12bfa1ac
@@ -2202,7 +2203,7 @@ tm/zig/core/response.zig bc91112131b7
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 25a014ab27fa
 tm/zig/core/types.zig 3a8f6e7a08f9
-tm/zig/core/utility.zig 1c4f3670bba2
+tm/zig/core/utility.zig 0ccec187d572
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig ef3b23e5e239
@@ -2286,8 +2287,8 @@ tm/zig/test/fh.zig fd96cda8dbdc
 tm/zig/test/gotcha_test.zig adfd2d0772c0
 tm/zig/test/omniresolver.zig dbfba6dfcd18
 tm/zig/test/omnismoke_test.zig b70b834e00fd
-tm/zig/test/pipeline_test.zig 029402209a5b
-tm/zig/test/primary_utility_test.zig f2014045ff62
+tm/zig/test/pipeline_test.zig 098b6ae7fa76
+tm/zig/test/primary_utility_test.zig 4bba6eb9e1b2
 tm/zig/test/struct_corpus.zig c02971515919
 tm/zig/test/vendor/omni/omni.zig 62ab77e3e2c6
 tm/zig/test/vendor/omni/regex.zig d950a2e47fc0

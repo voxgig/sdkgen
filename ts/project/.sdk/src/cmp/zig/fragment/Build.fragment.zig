@@ -52,6 +52,8 @@ pub fn build(b: *std.Build) void {
     // #FeatureModules
 
     const test_step = b.step("test", "Run all tests");
+    const test_filters = b.option([]const []const u8, "test-filter",
+        "Run only the tests whose name contains this text") orelse &.{};
 
     // Every test file: gets the struct, sdk and omni modules.
     const test_files = [_][]const u8{
@@ -75,7 +77,7 @@ pub fn build(b: *std.Build) void {
         test_mod.addImport("sdk", sdk_mod);
         test_mod.addImport("omni", omni_mod);
 
-        const t = b.addTest(.{ .root_module = test_mod });
+        const t = b.addTest(.{ .root_module = test_mod, .filters = test_filters });
         const run_t = b.addRunArtifact(t);
         run_t.has_side_effects = true;
         test_step.dependOn(&run_t.step);

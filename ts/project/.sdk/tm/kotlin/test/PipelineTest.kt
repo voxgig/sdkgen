@@ -2,12 +2,11 @@ package KOTLINPACKAGE.sdktest
 
 // Direct unit tests for the operation-pipeline utilities. These drive the
 // error and edge branches (missing spec/response/result, 4xx handling,
-// transport failures, feature add semantics, auth header shaping).
+// transport failures, feature add semantics, auth placement).
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -495,36 +494,40 @@ class PipelineTest {
 
   @Test
   fun prepareAuth_apikeyWithPrefixSpaceJoined() {
+    val cred = AuthCredential.discover()
     val client = plClient(fhMap("apikey", "K", "auth", fhMap("prefix", "Bearer", "basic", false)))
     val utility = client.getUtility()
     val ctx = plCtx(client, utility, null)
     ctx.spec = authSpec(null)
     utility.prepareAuth(ctx)
-    assertEquals("Bearer K", ctx.spec!!.headers["authorization"])
+    assertEquals(AuthCredential.expected(cred, "Bearer", "K"), AuthCredential.actual(ctx.spec!!, cred))
   }
 
   @Test
   fun prepareAuth_rawApikeyEmptyPrefixAsIs() {
+    val cred = AuthCredential.discover()
     val client = plClient(fhMap("apikey", "K", "auth", fhMap("prefix", "", "basic", false)))
     val utility = client.getUtility()
     val ctx = plCtx(client, utility, null)
     ctx.spec = authSpec(null)
     utility.prepareAuth(ctx)
-    assertEquals("K", ctx.spec!!.headers["authorization"])
+    assertEquals(AuthCredential.expected(cred, "", "K"), AuthCredential.actual(ctx.spec!!, cred))
   }
 
   @Test
   fun prepareAuth_emptyApikeyDropsHeader() {
+    val cred = AuthCredential.discover()
     val client = plClient(fhMap("apikey", "", "auth", fhMap("prefix", "Bearer", "basic", false)))
     val utility = client.getUtility()
     val ctx = plCtx(client, utility, null)
-    ctx.spec = authSpec(fhMap("authorization", "stale"))
+    ctx.spec = AuthCredential.seed(cred)
     utility.prepareAuth(ctx)
-    assertFalse(ctx.spec!!.headers.containsKey("authorization"), "expected authorization dropped")
+    assertFalse(AuthCredential.contains(ctx.spec!!, cred), "expected credential dropped")
   }
 
   @Test
   fun prepareAuth_missingApikeyDropsHeader() {
+    val cred = AuthCredential.discover()
     val client = plClient(fhMap("auth", fhMap("prefix", "Bearer", "basic", false)))
     val options = client.optionsMap()
     val apikey = options["apikey"]
@@ -534,13 +537,14 @@ class PipelineTest {
     }
     val utility = client.getUtility()
     val ctx = plCtx(client, utility, null)
-    ctx.spec = authSpec(fhMap("authorization", "stale"))
+    ctx.spec = AuthCredential.seed(cred)
     utility.prepareAuth(ctx)
-    assertFalse(ctx.spec!!.headers.containsKey("authorization"), "expected authorization dropped")
+    assertFalse(AuthCredential.contains(ctx.spec!!, cred), "expected credential dropped")
   }
 
   @Test
   fun prepareAuth_publicApiNoAuthBlockDropsHeader() {
+    val cred = AuthCredential.discover()
     val client = plClient(fhMap("apikey", "K"))
     val options = client.optionsMap()
     if (options["auth"] != null) {
@@ -549,8 +553,8 @@ class PipelineTest {
     }
     val utility = client.getUtility()
     val ctx = plCtx(client, utility, null)
-    ctx.spec = authSpec(fhMap("authorization", "stale"))
+    ctx.spec = AuthCredential.seed(cred)
     utility.prepareAuth(ctx)
-    assertNull(ctx.spec!!.headers["authorization"], "expected authorization dropped")
+    assertFalse(AuthCredential.contains(ctx.spec!!, cred), "expected credential dropped")
   }
 }

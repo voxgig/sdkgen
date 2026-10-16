@@ -132,6 +132,58 @@ let publish (ctxmap : value) (c : ctx) =
    | None -> ());
   ()
 
+(* Where this SDK's prepare_auth puts the credential, probed once over empty
+ * headers and query. `ac_pair` is the `<scheme>=` lead-in of a cookie
+ * credential, which rides the header bag under "cookie". *)
+type auth_cred = { ac_query : bool; ac_name : string; ac_pair : string }
+
+let auth_credential () : auth_cred option =
+  let cl = Sdk_client.test_with Noval
+      (jo [("apikey", Str "PROBE"); ("auth", jo [("prefix", Str ""); ("basic", Bool false)])]) in
+  let c = ctx_from cl (jo []) in
+  let sp = new_spec (jo [("headers", empty_map ()); ("query", empty_map ())]) in
+  c.c_spec <- Some sp;
+  let first = function Map { entries = (k, v) :: _ } -> Some (k, v) | _ -> None in
+  match (try ignore (prepare_auth_util c); true with _ -> false) with
+  | false -> None
+  | true ->
+    match first sp.sp_headers, first sp.sp_query with
+    | Some (k, v), _ ->
+      let pair = match v with
+        | Str t when k = "cookie" && String.ends_with ~suffix:"=PROBE" t ->
+          String.sub t 0 (String.length t - 5)
+        | _ -> "" in
+      Some { ac_query = false; ac_name = k; ac_pair = pair }
+    | None, Some (k, _) -> Some { ac_query = true; ac_name = k; ac_pair = "" }
+    | None, None -> None
+
+(* The corpus states the credential as `headers.authorization`, a placeholder
+ * for wherever this SDK puts it. Only that entry moves, under the real name
+ * and into the real container, and a cookie credential's value becomes its
+ * pair: every other header and query parameter stays where it was. *)
+let rec auth_retarget (cred : auth_cred) (node : O.json) : O.json =
+  match node with
+  | O.JList items -> O.JList (List.map (auth_retarget cred) items)
+  | O.JMap entries ->
+    let placed = ref None in
+    let out = List.map (fun (k, v) ->
+        match k, v with
+        | "headers", O.JMap bag ->
+          (match List.assoc_opt "authorization" bag with
+           | Some (O.Str t) -> placed := Some (O.Str (cred.ac_pair ^ t))
+           | Some other -> placed := Some other
+           | None -> ());
+          (k, O.JMap (List.remove_assoc "authorization" bag))
+        | _ -> (k, auth_retarget cred v)) entries in
+    (match !placed with
+     | None -> O.JMap out
+     | Some v ->
+       let dest = if cred.ac_query then "query" else "headers" in
+       let bag = match List.assoc_opt dest out with Some (O.JMap b) -> b | _ -> [] in
+       O.JMap (List.remove_assoc dest out
+               @ [(dest, O.JMap (List.remove_assoc cred.ac_name bag @ [(cred.ac_name, v)]))]))
+  | other -> other
+
 let () =
   let testfile = if Array.length Sys.argv > 1 then Sys.argv.(1) else "../.sdk/test/test.json" in
   let r = R.make_run testfile "primary" in
@@ -140,8 +192,8 @@ let () =
   let u = cl.cl_utility in
 
   (* Sections configured by their own DEF.setup block get their own client. *)
-  let primary_ctx_with cl2 name f =
-    R.runset_args r name (R.getset r [name; "basic"])
+  let primary_ctx_with ?(prep = fun node -> node) cl2 name f =
+    R.runset_args r name (prep (R.getset r [name; "basic"]))
       (fun args ->
          let ctxmap = arg args 0 in
          let c = ctx_from cl2 ctxmap in
@@ -161,9 +213,14 @@ let () =
   primary_ctx_with (client_for r "makeSpec") "makeSpec"
     (fun c -> match make_spec_util c with
        | (Some s, _) -> spec_to_value s | _ -> Noval);
-  primary_ctx_with (client_for r "prepareAuth") "prepareAuth"
-    (fun c -> ignore (prepare_auth_util c);
-      match c.c_spec with Some s -> spec_to_value s | None -> Noval);
+  (match auth_credential () with
+   | None ->
+     r.R.failures <- "prepareAuth: prepare_auth placed no credential in headers or query"
+                     :: r.R.failures
+   | Some cred ->
+     primary_ctx_with ~prep:(auth_retarget cred) (client_for r "prepareAuth") "prepareAuth"
+       (fun c -> ignore (prepare_auth_util c);
+         match c.c_spec with Some s -> spec_to_value s | None -> Noval));
   primary_ctx "prepareBody" (fun c -> prepare_body_util c);
   primary_ctx "prepareHeaders" (fun c -> prepare_headers_util c);
   primary_ctx "prepareMethod"

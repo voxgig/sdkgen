@@ -83,7 +83,7 @@ final class PrimaryUtilityTest: XCTestCase {
         return XCTFail("test corpus section \"\(name)\" missing - check the " +
           "name against .sdk/test/primary/", file: file, line: line)
       }
-      let basic = section.get("basic")
+      var basic = section.get("basic")
       guard let count = basic.setCount else {
         return XCTFail("test corpus section \"\(name)\" has no basic.set list " +
           "- zero cases would run", file: file, line: line)
@@ -95,12 +95,43 @@ final class PrimaryUtilityTest: XCTestCase {
       }
       if 0 == count { return }
 
+      if "prepareAuth" == name {
+        guard let cred = authCredential() else {
+          return XCTFail("prepareAuth placed no credential in headers or query",
+            file: file, line: line)
+        }
+        basic = basic.retargetingAuth(query: cred.query, name: cred.name, pair: cred.pair)
+      }
+
       try run.runset(basic, subject)
       print("ok primary.\(name): \(count)/\(count)")
     } catch {
       XCTFail("primary.\(name): \(OmniResolver.message(error))",
         file: file, line: line)
     }
+  }
+
+  // Where this SDK's prepareAuth puts the credential, probed once over empty
+  // headers and query. `pair` is the `<scheme>=` lead-in of a cookie
+  // credential, which rides the header bag under "cookie".
+  private func authCredential() -> (query: Bool, name: String, pair: String)? {
+    let probe = ProjectNameSDK.testSDK(nil, vm(("apikey", .string("PROBE")),
+      ("auth", .map(vm(("prefix", .string("")), ("basic", .bool(false)))))))
+    let utility = probe.getUtility()
+    let ctx = utility.makeContext(["opname": "load", "client": probe, "utility": utility],
+      probe.getRootCtx())
+    let spec = Spec(vm(("headers", .map(VMap())), ("query", .map(VMap())), ("step", .string("s"))))
+    ctx.spec = spec
+    guard nil != (try? utility.prepareAuth(ctx)) else { return nil }
+    for query in [false, true] {
+      for (name, value) in (query ? spec.query : spec.headers).entries {
+        let text = value.asString ?? ""
+        let pair = !query && "cookie" == name && text.hasSuffix("=PROBE")
+          ? String(text.dropLast("PROBE".count)) : ""
+        return (query, name, pair)
+      }
+    }
+    return nil
   }
 
   // The DEF.setup options a section names, as SDK options.
