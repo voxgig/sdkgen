@@ -7,6 +7,7 @@ import {
   canonScalarKey,
   requiredItems,
   javaMapOf,
+  javaMapItems,
 } from '@voxgig/sdkgen'
 
 import {
@@ -111,9 +112,10 @@ function jsonAppendLines(value: any, bufname: string): string {
     .join('')
 }
 
-// Map.of and Map.entry reject a null value, so NULL keeps the placeholder.
+// javaMapItems leaves a null-only member out of Map.of, which rejects a null.
 function scalaLit(type: any, placeholder: string = 'example'): string {
   const k = canonScalarKey(type)
+  if ('NULL' === k) return 'null'
   if ('INTEGER' === k) return '1L'
   if ('NUMBER' === k) return '1.0'
   if ('BOOLEAN' === k) return 'true'
@@ -125,7 +127,7 @@ function scalaLit(type: any, placeholder: string = 'example'): string {
 
 // A list's required parameters as its match.
 function scalaListMatch(entity: any): string {
-  const items = requiredItems(entity, 'list')
+  const items = javaMapItems(requiredItems(entity, 'list'))
   return 0 < items.length
     ? javaMapOf(items.map((it: any) => `${JSON.stringify(it.name)}, ${scalaLit(it.type)}`), 'java.util.')
     : 'null'

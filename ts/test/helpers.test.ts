@@ -31,6 +31,7 @@ import {
   luaKey,
   luaString,
   tomlString,
+  invalidRequest,
 } from '../dist/sdkgen.js'
 
 
@@ -185,6 +186,27 @@ describe('helpers', () => {
       const out = collectDeps(makeModel(), 'go', targetDeps)
       const a = out.find((d) => d.name === 'github.com/t/a')
       strictEqual(a?.raw.replace, './local')
+    })
+  })
+
+
+  describe('invalidRequest', () => {
+
+    const NULLABLE_INT = ['`$ONE`', ['`$INTEGER`', '`$NULL`']]
+    const tally = (fields: any) => ({
+      name: 'tally', fields,
+      op: { create: { name: 'create', points: [{ g: {}, m: 'POST', o: '/tally', s: [{ lit: 'tally' }], t: {} }] } },
+    })
+
+    test('mistypes a nullable scalar item as its scalar type', () => {
+      deepStrictEqual(invalidRequest(tally({ n: { n: 'n', r: true, t: NULLABLE_INT } })),
+        { op: 'create', field: 'n', args: { n: 'x' } })
+    })
+
+    test('fills a required nullable item with its scalar type', () => {
+      deepStrictEqual(invalidRequest(tally({
+        b: { n: 'b', r: true, t: '`$BOOLEAN`' }, n: { n: 'n', r: true, t: NULLABLE_INT },
+      })), { op: 'create', field: 'b', args: { b: 'x', n: 1 } })
     })
   })
 

@@ -143,6 +143,12 @@ function javaMapOf(pairs: string[], pkg = ''): string {
 }
 
 
+// Map.of rejects a null value, so a Java or Scala map leaves out a null-only member.
+function javaMapItems(items: any[]): any[] {
+  return items.filter((it: any) => 'NULL' !== canonScalarKey(it.type))
+}
+
+
 // A list's required route and query parameters.
 function listMatchArg(lang: LiteralLang, ent: any): string {
   return matchArg(lang, ent, 'list', null, '')
@@ -256,6 +262,7 @@ export {
   dataArg,
   javaMap,
   javaMapOf,
+  javaMapItems,
   litFor,
   litPair,
   litString,

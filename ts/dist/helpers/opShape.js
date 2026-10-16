@@ -324,17 +324,17 @@ const WELLTYPED = {
 function invalidRequest(ent) {
     for (const opname of entityOps(ent).filter((o) => CANON_OP_ORDER.includes(o))) {
         const { items } = opRequestShape(ent, opname);
-        const bad = items.find((it) => null != MISTYPED[(0, canonType_1.canonKey)(it.type)]);
+        const bad = items.find((it) => null != MISTYPED[(0, canonType_1.canonScalarKey)(it.type)]);
         if (null == bad) {
             continue;
         }
         const args = {};
         for (const it of items) {
             if (it === bad) {
-                args[it.name] = MISTYPED[(0, canonType_1.canonKey)(it.type)];
+                args[it.name] = MISTYPED[(0, canonType_1.canonScalarKey)(it.type)];
             }
             else if (!it.optional) {
-                args[it.name] = WELLTYPED[(0, canonType_1.canonKey)(it.type)] ?? 'x';
+                args[it.name] = WELLTYPED[(0, canonType_1.canonScalarKey)(it.type)] ?? 'x';
             }
         }
         if (opReachable(ent.op[opname], Object.keys(args))) {

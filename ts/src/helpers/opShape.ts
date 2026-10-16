@@ -3,7 +3,7 @@ import { each, names } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
 
 import { pointSegments, pointTerminalParam, pointPathKey } from './pointPath'
-import { canonKey } from './canonType'
+import { canonScalarKey } from './canonType'
 
 import type { TargetOrigins } from '../action/resolve'
 
@@ -390,7 +390,7 @@ function invalidRequest(ent: any):
 
   for (const opname of entityOps(ent).filter((o) => CANON_OP_ORDER.includes(o))) {
     const { items } = opRequestShape(ent, opname)
-    const bad = items.find((it: OpShapeItem) => null != MISTYPED[canonKey(it.type)])
+    const bad = items.find((it: OpShapeItem) => null != MISTYPED[canonScalarKey(it.type)])
     if (null == bad) {
       continue
     }
@@ -398,10 +398,10 @@ function invalidRequest(ent: any):
     const args: Record<string, any> = {}
     for (const it of items) {
       if (it === bad) {
-        args[it.name] = MISTYPED[canonKey(it.type)]
+        args[it.name] = MISTYPED[canonScalarKey(it.type)]
       }
       else if (!it.optional) {
-        args[it.name] = WELLTYPED[canonKey(it.type)] ?? 'x'
+        args[it.name] = WELLTYPED[canonScalarKey(it.type)] ?? 'x'
       }
     }
 

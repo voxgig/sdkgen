@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape, javaMapOf, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape, javaMapOf, matchExampleItems, javaMapItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -60,7 +60,7 @@ ${eVar}List.forEach(${eVar}Item => println(${eVar}Item.data()))
       // Every REQUIRED load-match key (id first, then parent path params like
       // page_id) — the same shape the runtime resolves path params from, so
       // the example always works.
-      const loadItems = matchExampleItems(exampleEntity, 'load', idF)
+      const loadItems = javaMapItems(matchExampleItems(exampleEntity, 'load', idF))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length

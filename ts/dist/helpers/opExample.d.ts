@@ -14,6 +14,7 @@ declare function javaMap(count: number, pkg?: string): {
     pair: (kv: string) => string;
 };
 declare function javaMapOf(pairs: string[], pkg?: string): string;
+declare function javaMapItems(items: any[]): any[];
 declare function listMatchArg(lang: LiteralLang, ent: any): string;
 declare function seededList(lang: LiteralLang, ent: any, idF: string | null, key: string): {
     call: string[];
@@ -26,5 +27,5 @@ type PrimaryCall = {
     isVoid: boolean;
 };
 declare function primaryOpCall(lang: ExampleLang, eName: string, eLower: string, op: string, idF: string | null, ent: any): PrimaryCall;
-export { EXAMPLE_LANGS, helperLang, primaryOpCall, idLiteral, requiredItems, matchExampleItems, matchArg, listMatchArg, seededList, dataArg, javaMap, javaMapOf, litFor, litPair, litString, };
+export { EXAMPLE_LANGS, helperLang, primaryOpCall, idLiteral, requiredItems, matchExampleItems, matchArg, listMatchArg, seededList, dataArg, javaMap, javaMapOf, javaMapItems, litFor, litPair, litString, };
 export type { ExampleLang, LiteralLang, PrimaryCall, };

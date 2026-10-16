@@ -12,6 +12,7 @@ exports.seededList = seededList;
 exports.dataArg = dataArg;
 exports.javaMap = javaMap;
 exports.javaMapOf = javaMapOf;
+exports.javaMapItems = javaMapItems;
 exports.litFor = litFor;
 exports.litPair = litPair;
 exports.litString = litString;
@@ -132,6 +133,10 @@ function javaMap(count, pkg = '') {
 function javaMapOf(pairs, pkg = '') {
     const map = javaMap(pairs.length, pkg);
     return map.open + pairs.map(map.pair).join(', ') + ')';
+}
+// Map.of rejects a null value, so a Java or Scala map leaves out a null-only member.
+function javaMapItems(items) {
+    return items.filter((it) => 'NULL' !== (0, canonType_1.canonScalarKey)(it.type));
 }
 // A list's required route and query parameters.
 function listMatchArg(lang, ent) {

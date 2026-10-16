@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf, matchExampleItems, requiredItems, javaMapItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -105,7 +105,7 @@ catch {
       const parentItem = neRequired.find((it: any) => it.name !== neIdF) as any
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
-      const neMatch = neRequired.map((it: any) =>
+      const neMatch = javaMapItems(neRequired).map((it: any) =>
         `${JSON.stringify(it.name)}, ${scalaLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
@@ -128,7 +128,7 @@ catch {
     }
     else if (opnames.includes('load')) {
       // Every REQUIRED load-match key (id first, then parent path params).
-      const loadRequired = matchExampleItems(exampleEntity, 'load', idF)
+      const loadRequired = javaMapItems(matchExampleItems(exampleEntity, 'load', idF))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
@@ -157,7 +157,7 @@ catch {
     // Model-driven example fields: derive the create/update body from the op
     // shape (opRequestShape) so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = javaMapItems(opRequestShape(exampleEntity, opname).items)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -203,7 +203,7 @@ client.${accessor}(null).patch(${javaMapOf(patchPairs, 'java.util.')}, null)
       }
       if (opnames.includes('remove')) {
         // Every REQUIRED remove-match key: the id plus parent keys like page_id.
-        const removePairs = matchExampleItems(exampleEntity, 'remove', idF)
+        const removePairs = javaMapItems(matchExampleItems(exampleEntity, 'remove', idF))
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF

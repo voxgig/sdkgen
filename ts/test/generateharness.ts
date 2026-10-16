@@ -602,8 +602,8 @@ main: kit: flow: ${flow}: {
 
 
 // An entity whose load requires the query parameter `key` and whose create and
-// update require the field `key`, beside the id.
-function namedFieldEntity(key: string, name: string = 'crate'): string {
+// update require the field `key`, beside the id, each of the given type.
+function namedFieldEntity(key: string, name: string = 'crate', type: string = '"`$STRING`"'): string {
   const flow = 'Basic' + name[0].toUpperCase() + name.slice(1) + 'Flow'
   const id = '{ k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" }'
   const k = JSON.stringify(key)
@@ -614,11 +614,11 @@ main: kit: entity: ${name}: {
   id: { field: "id", name: "id" }
   fields: {
     "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
-    ${k}: { h: 'Key', n: ${k}, r: true, t: "\`$STRING\`" }
+    ${k}: { h: 'Key', n: ${k}, r: true, t: ${type} }
   }
   op: {
     load: { name: "load", points: [ {
-      g: { params: [ ${id} ], query: [ { k: "query", n: ${k}, or: ${k}, r: true, t: "\`$STRING\`" } ] }
+      g: { params: [ ${id} ], query: [ { k: "query", n: ${k}, or: ${k}, r: true, t: ${type} } ] }
       m: "GET", o: "/${name}/{id}", s: [{ lit: "${name}" }, { var: "id" }]
       t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
     create: { name: "create", points: [ {

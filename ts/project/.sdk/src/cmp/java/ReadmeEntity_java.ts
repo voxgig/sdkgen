@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape, opNeedsAction, javaMap, javaMapOf, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape, opNeedsAction, javaMap, javaMapOf, matchExampleItems, javaMapItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -107,7 +107,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
       // The id key plus every REQUIRED match key (parent path params like
       // page_id) — the same shape the runtime resolves path params from, so
       // the example always works.
-      const loadItems = matchExampleItems(entity, 'load', idF)
+      const loadItems = javaMapItems(matchExampleItems(entity, 'load', idF))
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
@@ -138,7 +138,7 @@ Object ${eVar}List = client.${accessor}(null).list(${javaListMatch(entity)}, nul
       // Members come from the SAME shape the runtime validates
       // (opRequestShape): every required member must appear — including a
       // required id and parent keys like page_id — with a real literal.
-      const createItems = opRequestShape(entity, 'create').items
+      const createItems = javaMapItems(opRequestShape(entity, 'create').items)
         .filter((it: any) => !it.optional)
       const createMap = javaMap(createItems.length)
       Content(`#### Example: Create

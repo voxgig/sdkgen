@@ -5792,7 +5792,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const out = await generate(targets, undefined, listOnly('tally', [['z', '"`$NULL`"']]))
 
     // Shared sections are written in TypeScript for the targets the shared
-    // helper does not write. Java and Scala keep the placeholder: Map.of
+    // helper does not write. Java and Scala leave the pair out: Map.of
     // rejects a null value.
     const pair: Record<string, string> = {
       ts: 'z: null', js: 'z: null', py: '"z": None', php: '"z" => null', rb: '"z" => nil',
@@ -5805,7 +5805,10 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     for (const target of targets) {
       const found = listCalls(out, target, /[Tt]ally/)
       ok(0 < found.length, target + ': no list example found')
-      if ('java' === target || 'scala' === target) continue
+      if ('java' === target || 'scala' === target) {
+        wrong.push(...found.filter((line: string) => /"z"/.test(line)))
+        continue
+      }
       ok(null != pair[target], target + ': no null pair declared')
       ok(found.some((line: string) => line.includes(pair[target])),
         target + ': no list example writes ' + pair[target] + ':\n' + found.join('\n'))
@@ -5816,7 +5819,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
-  test('java and scala write example literals from one table each, which says why NULL keeps the placeholder', () => {
+  test('java and scala write example literals from one table each, which says why a null-only member is left out', () => {
     for (const lang of ['java', 'scala']) {
       const dir = Path.join(SCAFFOLD, 'src', 'cmp', lang)
       const tables = readdirSync(dir).filter((file: string) => file.endsWith('.ts') &&
@@ -5827,8 +5830,22 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       const at = src.indexOf('function ' + lang + 'Lit(')
       ok(-1 < at, lang + ': the utility module declares no ' + lang + 'Lit')
       ok(/^\/\/.*\bnull\b/i.test(src.slice(0, at).trimEnd().split('\n').pop()!),
-        lang + ': the literal table does not say why NULL keeps the placeholder')
+        lang + ': the literal table does not say why a null-only member is left out')
     }
+  })
+
+
+  test('java and scala leave a null-only load parameter and create field out of every example map', async () => {
+    const out = await generate(['java', 'scala'], undefined, namedFieldEntity('z', 'crate', '"`$NULL`"'))
+    const wrong: string[] = []
+    for (const target of ['java', 'scala']) {
+      for (const op of ['load', 'create', 'update']) {
+        const found = opCalls(out, target, op, /[Cc]rate/)
+        ok(0 < found.length, target + ': no ' + op + ' example found')
+        wrong.push(...found.filter((line: string) => /"z"|example_z/.test(line)))
+      }
+    }
+    deepStrictEqual(wrong, [], 'examples that write a null-only member into a map:\n' + wrong.join('\n'))
   })
 
 

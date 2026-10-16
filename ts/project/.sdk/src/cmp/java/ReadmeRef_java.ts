@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, javaMap, javaMapOf, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, javaMap, javaMapOf, matchExampleItems, javaMapItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -256,7 +256,7 @@ ${info.desc}
           }
 
           if ('load' === opname || 'remove' === opname) {
-            const matchItems = matchExampleItems(ent, opname, idF)
+            const matchItems = javaMapItems(matchExampleItems(ent, opname, idF))
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
@@ -281,7 +281,7 @@ for (Object item : results) {
 `)
           }
           else if ('create' === opname) {
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = javaMapItems(opRequestShape(ent, 'create').items)
               .filter((it: any) => !it.optional)
             const createMap = javaMap(createItems.length)
             Content(`\`\`\`java
@@ -298,7 +298,7 @@ Object result = client.${accessor}(null).create(${createMap.open}
 `)
           }
           else if ('update' === opname || 'patch' === opname) {
-            const updateItems = opRequestShape(ent, opname).items
+            const updateItems = javaMapItems(opRequestShape(ent, opname).items)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
