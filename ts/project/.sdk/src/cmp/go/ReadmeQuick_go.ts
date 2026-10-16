@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityOps, goModule, serverVariables, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityOps, goModule, serverVariables, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -61,7 +61,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
       return chosen.map((it: any) =>
-        `"${it.name}": ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)}`)
+        `${litString('go', it.name)}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name, 'example_' + it.name)}`)
     }
 
     // The full REQUIRED match for load/remove (id first, then parent path
@@ -73,7 +73,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       return 0 < matchItems.length
         ? `map[string]any{${matchItems.map((it: any) =>
-          `"${it.name}": ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name,
+          `${litString('go', it.name)}: ${exampleValue(exampleEntity, exampleEntity.op[opname], it.name,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}}`
         : 'nil'
     }
@@ -117,7 +117,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
       // The id member (when the entity has an id-like key) plus example
       // patch fields — the same shape that generates the op's request data.
       const updateMembers = (idF
-        ? [`"${idF}": ${exampleValue(exampleEntity, exampleEntity.op.update, idF, 'example_id')}`]
+        ? [`${litString('go', idF)}: ${exampleValue(exampleEntity, exampleEntity.op.update, idF, 'example_id')}`]
         : []).concat(exampleFields('update'))
       body.push(`    // Update a ${eLower}.`)
       body.push(`    updated, err := client.${eName}(nil).Update(map[string]any{${updateMembers.join(', ')}}, nil)`)
@@ -131,7 +131,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
 
     if (opnames.includes('patch')) {
       const patchMembers = (idF
-        ? [`"${idF}": ${exampleValue(exampleEntity, exampleEntity.op.patch, idF, 'example_id')}`]
+        ? [`${litString('go', idF)}: ${exampleValue(exampleEntity, exampleEntity.op.patch, idF, 'example_id')}`]
         : []).concat(exampleFields('patch'))
       body.push(`    // Patch a ${eLower}: only the fields given are sent.`)
       body.push(`    patched, err := client.${eName}(nil).Patch(map[string]any{${patchMembers.join(', ')}}, nil)`)

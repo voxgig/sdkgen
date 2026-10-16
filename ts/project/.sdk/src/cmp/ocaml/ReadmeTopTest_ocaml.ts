@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { ocamlListMatch, ocamlOpField, ocamlVarName } from './utility_ocaml'
+import { ocamlListMatch, ocamlOpField, ocamlVarName, ocamlString } from './utility_ocaml'
 
 
 // A type-correct OCaml `value` literal for a field's canonical type.
@@ -50,14 +50,14 @@ let () =
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       arg = 0 < items.length
         ? `(jo [${items.map((it: any) =>
-          `("${it.name}", ${it.name === idF ? '(Str "test01")' : ocamlLit(it.type)})`).join('; ')}])`
+          `("${ocamlString(it.name)}", ${it.name === idF ? '(Str "test01")' : ocamlLit(it.type)})`).join('; ')}])`
         : '(empty_map ())'
     } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
       const items = opRequestShape(exampleEntity, primaryOp).items
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)
-      arg = `(jo [${chosen.map((it: any) => `("${it.name}", ${ocamlLit(it.type)})`).join('; ')}])`
+      arg = `(jo [${chosen.map((it: any) => `("${ocamlString(it.name)}", ${ocamlLit(it.type)})`).join('; ')}])`
     }
     // The op resolves to the ENTITY (list: one per record); the record is
     // reached with e_data_get.

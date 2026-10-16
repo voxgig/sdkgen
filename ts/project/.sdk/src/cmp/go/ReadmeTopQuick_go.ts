@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityOps, opRequestShape, goModule, serverVariables, listMatchArg, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityOps, opRequestShape, goModule, serverVariables, listMatchArg, matchExampleItems, requiredItems, litString } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -84,7 +84,7 @@ for _, ${eVar} := range ${eVar}s.([]any) {
         .sort((a: any, b: any) =>
           (a.name === neIdF ? 1 : 0) - (b.name === neIdF ? 1 : 0))
         .map((it: any) =>
-          `"${it.name}": ${exampleValue(nestedEntity, neLoadOp, it.name,
+          `${litString('go', it.name)}: ${exampleValue(nestedEntity, neLoadOp, it.name,
             it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
       Content(`
@@ -107,7 +107,7 @@ fmt.Println(${neVar}.(sdk.Entity).Data())
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `map[string]any{${loadItems.map((it: any) =>
-          `"${it.name}": ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, it.name,
+          `${litString('go', it.name)}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.load, it.name,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}}`
         : 'nil'
       Content(`// Load a specific ${eName.toLowerCase()} (returns the entity; err is non-nil on failure)

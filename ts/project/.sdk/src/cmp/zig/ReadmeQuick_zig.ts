@@ -41,7 +41,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     if ('BOOLEAN' === k) return 'h.vbool(true)'
     if ('ARRAY' === k) return 'h.olist()'
     if ('OBJECT' === k) return 'h.omap()'
-    return `h.vstr("${placeholder}")`
+    return `h.vstr(${JSON.stringify(placeholder)})`
   }
 
   Content(`### 1. Create a client
@@ -98,7 +98,7 @@ switch (client.${method}(h.vnull()).list(${zigListMatch(exampleEntity)}, h.vnull
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `.{ "${it.name}", ${zigLit(it.type,
+        `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)} }`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -122,7 +122,7 @@ switch (client.${neMethod}(h.vnull()).load(h.jo(&.{${neMatch.join(', ')}}), h.vn
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `h.jo(&.{${loadRequired.map((it: any) =>
-          `.{ "${it.name}", ${zigLit(it.type,
+          `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)} }`).join(', ')}})`
         : 'h.vnull()'
 
@@ -152,7 +152,7 @@ switch (client.${method}(h.vnull()).load(${loadArg}, h.vnull())) {
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `.{ "${it.name}", ${zigLit(it.type, 'example_' + it.name)} }`)
+      return chosen.map((it: any) => `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type, 'example_' + it.name)} }`)
     }
 
     const idParamType = (opname: string): any => {
@@ -177,7 +177,7 @@ switch (client.${method}(h.vnull()).create(h.jo(&.{${examplePairs('create').join
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`.{ "${idF}", ${idValueFor('update')} }`] : []).concat(examplePairs('update'))
+        const updatePairs = (idF ? [`.{ ${JSON.stringify(idF)}, ${idValueFor('update')} }`] : []).concat(examplePairs('update'))
         Content(`// Update
 switch (client.${method}(h.vnull()).update(h.jo(&.{${updatePairs.join(', ')}}), h.vnull())) {
     .ok => |updated| std.debug.print("{s}\\n", .{h.stringify(updated.asEntity().data(null))}),
@@ -187,7 +187,7 @@ switch (client.${method}(h.vnull()).update(h.jo(&.{${updatePairs.join(', ')}}), 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`.{ "${idF}", ${idValueFor('patch')} }`] : []).concat(examplePairs('patch'))
+        const patchPairs = (idF ? [`.{ ${JSON.stringify(idF)}, ${idValueFor('patch')} }`] : []).concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 switch (client.${method}(h.vnull()).patch(h.jo(&.{${patchPairs.join(', ')}}), h.vnull())) {
     .ok => |patched| std.debug.print("{s}\\n", .{h.stringify(patched.asEntity().data(null))}),
@@ -201,8 +201,8 @@ switch (client.${method}(h.vnull()).patch(h.jo(&.{${patchPairs.join(', ')}}), h.
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `.{ "${it.name}", ${idValueFor('remove')} }`
-            : `.{ "${it.name}", ${zigLit(it.type, 'example_' + it.name)} }`)
+            ? `.{ ${JSON.stringify(it.name)}, ${idValueFor('remove')} }`
+            : `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type, 'example_' + it.name)} }`)
         Content(`// Remove
 switch (client.${method}(h.vnull()).remove(${removePairs.length ? `h.jo(&.{${removePairs.join(', ')}})` : 'h.vnull()'}, h.vnull())) {
     .ok => std.debug.print("removed\\n", .{}),

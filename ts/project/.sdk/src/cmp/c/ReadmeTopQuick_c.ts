@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName, cListMatch } from './utility_c'
+import { cIdent, cVarName, cListMatch, cString } from './utility_c'
 
 
 // A type-correct C expression constructing a voxgig struct Value for a param.
@@ -20,7 +20,7 @@ function cLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'v_bool(true)'
   if ('ARRAY' === k) return 'v_list()'
   if ('OBJECT' === k) return 'v_map()'
-  return `v_str("${placeholder}")`
+  return `v_str(${cString(placeholder)})`
 }
 
 
@@ -78,7 +78,7 @@ for (size_t i = 0; ${evar}s && ${evar}s[i]; i++) {
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = cmapExpr(loadItems.map((it: any) =>
-        `"${it.name}", ${cLit(it.type,
+        `${cString(it.name)}, ${cLit(it.type,
           it.name === idF ? 'example_id' : 'example_' + it.name)}`))
       const acquire = opnames.includes('list')
         ? ''

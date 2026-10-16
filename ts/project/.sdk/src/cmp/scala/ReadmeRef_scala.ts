@@ -261,7 +261,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? javaMapOf(matchItems.map((it: any) =>
-                `"${it.name}", ${scalaLit(it.type,
+                `${JSON.stringify(it.name)}, ${scalaLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)}`), 'java.util.')
               : 'null'
             Content(`\`\`\`scala
@@ -287,7 +287,7 @@ val result = client.${accessor}(null).create(${createMap.open}
 `)
             createItems.map((it: any, i: number) => {
               const comma = i < createItems.length - 1 ? ',' : ''
-              Content(`    ${createMap.pair(`"${it.name}", ${scalaLit(it.type, 'example_' + it.name)}`)}${comma}  // ${canonToType(it.type, target.name)}
+              Content(`    ${createMap.pair(`${JSON.stringify(it.name)}, ${scalaLit(it.type, 'example_' + it.name)}`)}${comma}  // ${canonToType(it.type, target.name)}
 `)
             })
             Content(`), null)
@@ -303,7 +303,7 @@ val result = client.${accessor}(null).create(${createMap.open}
             const updateMap = javaMap(updateItems.length, 'java.util.')
             const updateLines = updateItems.map((it: any, i: number) => {
               const comma = i < updateItems.length - 1 ? ',' : ''
-              return `    ${updateMap.pair(`"${it.name}", ${scalaLit(it.type,
+              return `    ${updateMap.pair(`${JSON.stringify(it.name)}, ${scalaLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}`)}${comma}\n`
             }).join('')
             Content(`\`\`\`scala

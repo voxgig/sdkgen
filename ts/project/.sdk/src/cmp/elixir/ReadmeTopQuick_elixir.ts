@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { elixirLit, elixirListArgs } from './utility_elixir'
+import { elixirLit, elixirListArgs, elixirString } from './utility_elixir'
 
 
 const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
@@ -62,7 +62,7 @@ end
       // reqmatch defaults to nil, so load/1 is the correct call.
       const loadArgs = 0 < loadItems.length
         ? `${eVar}, H.deep(%{${loadItems.map((it: any) =>
-          `"${it.name}" => ${elixirLit(it.type,
+          `${elixirString(it.name)} => ${elixirLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}})`
         : eVar
       Content(`

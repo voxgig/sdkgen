@@ -119,7 +119,7 @@ function scalaLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return 'java.util.List.of()'
   if ('OBJECT' === k) return 'java.util.Map.of()'
-  return `"${placeholder}"`
+  return JSON.stringify(placeholder)
 }
 
 

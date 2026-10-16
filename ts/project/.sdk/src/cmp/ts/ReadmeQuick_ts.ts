@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, isHttpBasicAuth, packageName, envName, serverVariables, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, isHttpBasicAuth, packageName, envName, serverVariables, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, requiredItems, jsProp } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -186,7 +186,7 @@ try {
         return null != matchType && null != dataIdType && matchType === dataIdType
       }
       const idValueFor = (opname: string): string => usesCreatedId(opname)
-        ? `created.data().${dataIdF}!`
+        ? `${jsProp('created.data()', dataIdF)}!`
         : exampleValue(exampleEntity, exampleEntity.op[opname], idF as string, 'example_id')
 
       Content(`### 4. Create, update, and remove
@@ -202,7 +202,7 @@ const created = await client.${eName}().create({${createBody}})
 `)
       }
       if (opnames.includes('update')) {
-        const updateLines = (idF ? [`  ${idF}: ${idValueFor('update')},`] : []).concat(exampleFields('update'))
+        const updateLines = (idF ? [`  ${jsKey(idF)}: ${idValueFor('update')},`] : []).concat(exampleFields('update'))
         const updateBody = updateLines.length ? '\n' + updateLines.join('\n') + '\n' : ''
         Content(`// Update${usesCreatedId('update') ? ' — the id comes off the returned entity\'s data()' : ''}
 const updated = await client.${eName}().update({${updateBody}})
@@ -210,7 +210,7 @@ const updated = await client.${eName}().update({${updateBody}})
 `)
       }
       if (opnames.includes('patch')) {
-        const patchLines = (idF ? [`  ${idF}: ${idValueFor('patch')},`] : []).concat(exampleFields('patch'))
+        const patchLines = (idF ? [`  ${jsKey(idF)}: ${idValueFor('patch')},`] : []).concat(exampleFields('patch'))
         const patchBody = patchLines.length ? '\n' + patchLines.join('\n') + '\n' : ''
         Content(`// Patch — sends only the fields given${usesCreatedId('patch') ? '; the id comes off the returned entity\'s data()' : ''}
 const patched = await client.${eName}().patch({${patchBody}})

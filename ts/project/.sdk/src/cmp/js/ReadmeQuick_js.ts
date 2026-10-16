@@ -110,7 +110,7 @@ console.log(created.data())
 
     if (opnames.includes('update')) {
       const updateLines = (idF
-        ? [`  ${idF}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.update, idF, exampleEntity.name + '_id')},`]
+        ? [`  ${jsKey(idF)}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.update, idF, exampleEntity.name + '_id')},`]
         : []).concat(exampleFields('update'))
       const updateBody = updateLines.length ? '\n' + updateLines.join('\n') + '\n' : ''
       Content(`
@@ -125,7 +125,7 @@ console.log(updated.data())
 
     if (opnames.includes('patch')) {
       const patchLines = (idF
-        ? [`  ${idF}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.patch, idF, exampleEntity.name + '_id')},`]
+        ? [`  ${jsKey(idF)}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.patch, idF, exampleEntity.name + '_id')},`]
         : []).concat(exampleFields('patch'))
       const patchBody = patchLines.length ? '\n' + patchLines.join('\n') + '\n' : ''
       Content(`

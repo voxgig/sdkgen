@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName, cListMatch } from './utility_c'
+import { cIdent, cVarName, cListMatch, cString } from './utility_c'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -42,7 +42,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     if ('BOOLEAN' === k) return 'v_bool(true)'
     if ('ARRAY' === k) return 'v_list()'
     if ('OBJECT' === k) return 'v_map()'
-    return `v_str("${placeholder}")`
+    return `v_str(${cString(placeholder)})`
   }
 
   // cmap(...) for a set of pairs, or NULL when empty.
@@ -107,7 +107,7 @@ if (err) {
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = cmapExpr(neRequired.map((it: any) =>
-        `"${it.name}", ${cLit(it.type,
+        `${cString(it.name)}, ${cLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`))
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -133,7 +133,7 @@ if (err) {
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = cmapExpr(loadRequired.map((it: any) =>
-        `"${it.name}", ${cLit(it.type,
+        `${cString(it.name)}, ${cLit(it.type,
           it.name === idF ? 'example_id' : 'example_' + it.name)}`))
       const acquire = opnames.includes('list')
         ? ''
@@ -167,7 +167,7 @@ if (err) {
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `"${it.name}", ${cLit(it.type, 'example_' + it.name)}`)
+      return chosen.map((it: any) => `${cString(it.name)}, ${cLit(it.type, 'example_' + it.name)}`)
     }
 
     const idParamType = (opname: string): any => {
@@ -194,7 +194,7 @@ ${acquire}`)
       if (opnames.includes('create')) {
         const idLine = readsId && (opnames.includes('update') || opnames.includes('remove'))
           ? `voxgig_value* created_id = created
-    ? getp(created->vt->data(created, NULL), "${dataIdF}") : v_undef();
+    ? getp(created->vt->data(created, NULL), ${cString(dataIdF)}) : v_undef();
 `
           : ''
         Content(`// Create — returns the created entity, or NULL with *err set
@@ -203,14 +203,14 @@ ${idLine}
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`"${idF}", ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (idF ? [`${cString(idF)}, ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`// Update
 ${evar}->vt->update(${evar}, ${cmapExpr(updatePairs)}, NULL, &err);
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`"${idF}", ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (idF ? [`${cString(idF)}, ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 ${evar}->vt->patch(${evar}, ${cmapExpr(patchPairs)}, NULL, &err);
 
@@ -221,8 +221,8 @@ ${evar}->vt->patch(${evar}, ${cmapExpr(patchPairs)}, NULL, &err);
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `"${it.name}", ${idValueFor('remove')}`
-            : `"${it.name}", ${cLit(it.type, 'example_' + it.name)}`)
+            ? `${cString(it.name)}, ${idValueFor('remove')}`
+            : `${cString(it.name)}, ${cLit(it.type, 'example_' + it.name)}`)
         Content(`// Remove
 ${evar}->vt->remove(${evar}, ${cmapExpr(removePairs)}, NULL, &err);
 `)

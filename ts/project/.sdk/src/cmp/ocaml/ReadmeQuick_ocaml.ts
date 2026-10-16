@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { ocamlVarName, ocamlListMatch } from './utility_ocaml'
+import { ocamlVarName, ocamlListMatch, ocamlString } from './utility_ocaml'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -62,7 +62,7 @@ let client = ${ctor}
       if ('BOOLEAN' === k) return '(Bool true)'
       if ('ARRAY' === k) return '(empty_list ())'
       if ('OBJECT' === k) return '(empty_map ())'
-      return `(Str "${placeholder}")`
+      return `(Str "${ocamlString(placeholder)}")`
     }
 
     if (opnames.includes('list')) {
@@ -96,7 +96,7 @@ record with \`e_data_get\`.
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `("${it.name}", ${ocamlLit(it.type,
+        `("${ocamlString(it.name)}", ${ocamlLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)})`)
 
       Content(`### 3. Load ${neArticle} ${neFn}
@@ -120,7 +120,7 @@ record.
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `jo [${loadRequired.map((it: any) =>
-          `("${it.name}", ${ocamlLit(it.type,
+          `("${ocamlString(it.name)}", ${ocamlLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join('; ')}]`
         : 'Noval'
 
@@ -150,7 +150,7 @@ record.
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `("${it.name}", ${ocamlLit(it.type, 'example_' + it.name)})`)
+      return chosen.map((it: any) => `("${ocamlString(it.name)}", ${ocamlLit(it.type, 'example_' + it.name)})`)
     }
 
     const idParamType = (opname: string): any => {
@@ -158,7 +158,7 @@ record.
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `(getp (created.e_data_get ()) "${dataIdF}")`
+      ? `(getp (created.e_data_get ()) "${ocamlString(dataIdF)}")`
       : ocamlLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
@@ -175,14 +175,14 @@ print_endline (stringify (created.e_data_get ()));
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`("${idF}", ${idValueFor('update')})`] : []).concat(examplePairs('update'))
+        const updatePairs = (idF ? [`("${ocamlString(idF)}", ${idValueFor('update')})`] : []).concat(examplePairs('update'))
         Content(`(* Update *)
 ignore ((Sdk_client.${fn} client Noval).e_update (jo [${updatePairs.join('; ')}]) Noval);
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`("${idF}", ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
+        const patchPairs = (idF ? [`("${ocamlString(idF)}", ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
         Content(`(* Patch — sends only the fields given *)
 ignore ((Sdk_client.${fn} client Noval).e_patch (jo [${patchPairs.join('; ')}]) Noval);
 
@@ -193,8 +193,8 @@ ignore ((Sdk_client.${fn} client Noval).e_patch (jo [${patchPairs.join('; ')}]) 
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `("${it.name}", ${idValueFor('remove')})`
-            : `("${it.name}", ${ocamlLit(it.type, 'example_' + it.name)})`)
+            ? `("${ocamlString(it.name)}", ${idValueFor('remove')})`
+            : `("${ocamlString(it.name)}", ${ocamlLit(it.type, 'example_' + it.name)})`)
         Content(`(* Remove — resolves to the entity, marked deleted; it keeps its data *)
 let removed = (Sdk_client.${fn} client Noval).e_remove (${removePairs.length ? `jo [${removePairs.join('; ')}]` : 'Noval'}) Noval in
 Printf.printf "deleted: %b\\n" removed.e_deleted

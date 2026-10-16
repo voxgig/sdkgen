@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, targetFeatures, opNeedsAction, bodyNote, listMatchArg, entityClassName, entityCollection, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, targetFeatures, opNeedsAction, bodyNote, listMatchArg, entityClassName, entityCollection, matchExampleItems, litString } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -18,7 +18,7 @@ function pyLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'True'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
-  return `"${placeholder}"`
+  return litString('py', placeholder)
 }
 
 
@@ -271,7 +271,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `{${matchItems.map((it: any) =>
-                `"${it.name}": ${pyLit(it.type,
+                `${litString('py', it.name)}: ${pyLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')}}`
               : ''
             Content(`\`\`\`python
@@ -301,7 +301,7 @@ for ${eVar} in results:
 result = client.${ent.Name}().create({
 `)
             createItems.map((it: any) => {
-              Content(`    "${it.name}": ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+              Content(`    ${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
 `)
             })
             Content(`})
@@ -317,7 +317,7 @@ result = client.${ent.Name}().create({
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `    "${it.name}": ${pyLit(it.type,
+              `    ${litString('py', it.name)}: ${pyLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`python
 result = client.${ent.Name}().${opname}({

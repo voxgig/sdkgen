@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { perlListArgs } from './utility_perl'
+import { perlListArgs, perlStringLiteral } from './utility_perl'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -63,7 +63,7 @@ my $client = ${ctor};
       if ('BOOLEAN' === k) return '1'
       if ('ARRAY' === k) return '[]'
       if ('OBJECT' === k) return '{}'
-      return `'${placeholder}'`
+      return perlStringLiteral(placeholder)
     }
 
     if (opnames.includes('list')) {
@@ -102,7 +102,7 @@ else {
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `'${it.name}' => ${perlLit(it.type,
+        `${perlStringLiteral(it.name)} => ${perlLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -128,7 +128,7 @@ else {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `{ ${loadRequired.map((it: any) =>
-          `'${it.name}' => ${perlLit(it.type,
+          `${perlStringLiteral(it.name)} => ${perlLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')} }`
         : ''
 
@@ -162,7 +162,7 @@ else {
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `'${it.name}' => ${perlLit(it.type, 'example_' + it.name)}`)
+      return chosen.map((it: any) => `${perlStringLiteral(it.name)} => ${perlLit(it.type, 'example_' + it.name)}`)
     }
 
     const idParamType = (opname: string): any => {
@@ -170,7 +170,7 @@ else {
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `$created->data_get->{${dataIdF}}`
+      ? `$created->data_get->{${/^[A-Za-z_]\w*$/.test(dataIdF) ? dataIdF : perlStringLiteral(dataIdF)}}`
       : perlLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
@@ -186,7 +186,7 @@ my $created = $client->${eName}->create({ ${examplePairs('create').join(', ')} }
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`'${idF}' => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (idF ? [`${perlStringLiteral(idF)} => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`# Update${fromCreated ? " — the created entity's record holds its id" : ''}
 $client->${eName}->update({ ${updatePairs.join(', ')} });
@@ -194,7 +194,7 @@ $client->${eName}->update({ ${updatePairs.join(', ')} });
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`'${idF}' => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (idF ? [`${perlStringLiteral(idF)} => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`# Patch — sends only the fields given
 $client->${eName}->patch({ ${patchPairs.join(', ')} });
 
@@ -205,8 +205,8 @@ $client->${eName}->patch({ ${patchPairs.join(', ')} });
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `'${it.name}' => ${idValueFor('remove')}`
-            : `'${it.name}' => ${perlLit(it.type, 'example_' + it.name)}`)
+            ? `${perlStringLiteral(it.name)} => ${idValueFor('remove')}`
+            : `${perlStringLiteral(it.name)} => ${perlLit(it.type, 'example_' + it.name)}`)
         Content(`# Remove
 $client->${eName}->remove(${removePairs.length ? `{ ${removePairs.join(', ')} }` : ''});
 `)

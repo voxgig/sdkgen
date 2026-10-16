@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -17,7 +17,7 @@ function phpLit(type: any, placeholder: string = 'example'): string {
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '[]'
-  return `"${placeholder}"`
+  return litString('php', placeholder)
 }
 
 
@@ -67,7 +67,7 @@ print_r(array_map(fn($item) => $item->data_get(), $${eName.toLowerCase()}s));
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `[${loadItems.map((it: any) =>
-          `"${it.name}" => ${phpLit(it.type,
+          `${litString('php', it.name)} => ${phpLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}]`
         : ''
       Content(`

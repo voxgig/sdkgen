@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { perlListArgs } from './utility_perl'
+import { perlListArgs, perlStringLiteral } from './utility_perl'
 
 
 // A type-correct, executable Perl literal for a field's canonical type. The
@@ -19,7 +19,7 @@ function perlLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return '1'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
-  return `'${placeholder}'`
+  return perlStringLiteral(placeholder)
 }
 
 
@@ -131,7 +131,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `{ ${loadItems.map((it: any) =>
-          `'${it.name}' => ${perlLit(it.type,
+          `${perlStringLiteral(it.name)} => ${perlLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)}`).join(', ')} }`
         : ''
       Content(`#### Example: Load
@@ -168,7 +168,7 @@ print $_->data_get->{id}, "\\n" for @$${eVar}s;
 my $${eVar} = $client->${entity.Name}->create({
 `)
       createItems.map((it: any) => {
-        Content(`    '${it.name}' => ${perlLit(it.type, 'example_' + it.name)},  # ${perlType(it.type)}
+        Content(`    ${perlStringLiteral(it.name)} => ${perlLit(it.type, 'example_' + it.name)},  # ${perlType(it.type)}
 `)
       })
       Content(`});

@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { perlListArgs } from './utility_perl'
+import { perlListArgs, perlStringLiteral } from './utility_perl'
 
 
 // A type-correct, executable Perl literal for a field's canonical type.
@@ -18,7 +18,7 @@ function perlLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return '1'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
-  return `'${placeholder}'`
+  return perlStringLiteral(placeholder)
 }
 
 
@@ -277,7 +277,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `{ ${matchItems.map((it: any) =>
-                `'${it.name}' => ${perlLit(it.type,
+                `${perlStringLiteral(it.name)} => ${perlLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')} }`
               : ''
             Content(`\`\`\`perl
@@ -303,7 +303,7 @@ for my $${eVar} (@$results) {
 my $result = $client->${ent.Name}->create({
 `)
             createItems.map((it: any) => {
-              Content(`    '${it.name}' => ${perlLit(it.type, 'example_' + it.name)},  # ${perlType(it.type)}
+              Content(`    ${perlStringLiteral(it.name)} => ${perlLit(it.type, 'example_' + it.name)},  # ${perlType(it.type)}
 `)
             })
             Content(`});
@@ -317,7 +317,7 @@ my $result = $client->${ent.Name}->create({
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `    '${it.name}' => ${perlLit(it.type,
+              `    ${perlStringLiteral(it.name)} => ${perlLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`perl
 my $result = $client->${ent.Name}->${opname}({

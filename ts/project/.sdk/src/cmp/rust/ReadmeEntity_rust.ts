@@ -19,7 +19,7 @@ function rustLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'Value::Bool(true)'
   if ('ARRAY' === k) return 'Value::empty_list()'
   if ('OBJECT' === k) return 'Value::empty_map()'
-  return `Value::str("${placeholder}")`
+  return `Value::str(${JSON.stringify(placeholder)})`
 }
 
 
@@ -118,7 +118,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `jo(vec![${loadItems.map((it: any) =>
-          `("${it.name}", ${rustLit(it.type,
+          `(${JSON.stringify(it.name)}, ${rustLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)})`).join(', ')}])`
         : 'Value::Noval'
       Content(`#### Example: Load
@@ -153,7 +153,7 @@ for ${eVar} in &${eVar}s {
 let ${eVar} = client.${method}(Value::Noval).create(jo(vec![
 `)
       createItems.map((it: any) => {
-        Content(`    ("${it.name}", ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, target.name)}
+        Content(`    (${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`]), Value::Noval).unwrap();

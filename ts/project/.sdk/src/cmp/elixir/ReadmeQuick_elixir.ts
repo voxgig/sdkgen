@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { elixirLit, elixirListArgs } from './utility_elixir'
+import { elixirLit, elixirListArgs, elixirString } from './utility_elixir'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -88,7 +88,7 @@ end
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `"${it.name}" => ${elixirLit(it.type,
+        `${elixirString(it.name)} => ${elixirLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -115,7 +115,7 @@ end
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `H.deep(%{${loadRequired.map((it: any) =>
-          `"${it.name}" => ${elixirLit(it.type,
+          `${elixirString(it.name)} => ${elixirLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}})`
         : 'H.deep(%{})'
 
@@ -148,7 +148,7 @@ end
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `"${it.name}" => ${elixirLit(it.type, 'example_' + it.name)}`)
+      return chosen.map((it: any) => `${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)}`)
     }
 
     const idParamType = (opname: string): any => {
@@ -156,7 +156,7 @@ end
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `Voxgig.Struct.getprop(${Name}.Entity.${eName}.data_get(created), "${dataIdF}")`
+      ? `Voxgig.Struct.getprop(${Name}.Entity.${eName}.data_get(created), ${elixirString(dataIdF)})`
       : elixirLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
@@ -174,14 +174,14 @@ created = ${Name}.Entity.${eName}.create(${eVar}, H.deep(%{${examplePairs('creat
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`"${idF}" => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (idF ? [`${elixirString(idF)} => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`# Update
 ${Name}.Entity.${eName}.update(${eVar}, H.deep(%{${updatePairs.join(', ')}}))
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`"${idF}" => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (idF ? [`${elixirString(idF)} => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`# Patch — sends only the fields given
 ${Name}.Entity.${eName}.patch(${eVar}, H.deep(%{${patchPairs.join(', ')}}))
 
@@ -192,8 +192,8 @@ ${Name}.Entity.${eName}.patch(${eVar}, H.deep(%{${patchPairs.join(', ')}}))
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `"${it.name}" => ${idValueFor('remove')}`
-            : `"${it.name}" => ${elixirLit(it.type, 'example_' + it.name)}`)
+            ? `${elixirString(it.name)} => ${idValueFor('remove')}`
+            : `${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)}`)
         Content(`# Remove
 ${Name}.Entity.${eName}.remove(${eVar}${removePairs.length ? `, H.deep(%{${removePairs.join(', ')}})` : ''})
 `)

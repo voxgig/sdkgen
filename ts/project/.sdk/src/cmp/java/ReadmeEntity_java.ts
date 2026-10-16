@@ -112,7 +112,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? javaMapOf(loadItems.map((it: any) =>
-          `"${it.name}", ${javaLit(it.type,
+          `${JSON.stringify(it.name)}, ${javaLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)}`))
         : 'null'
       Content(`#### Example: Load
@@ -148,7 +148,7 @@ Object ${eVar} = client.${accessor}(null).create(${createMap.open}
 `)
       createItems.map((it: any, i: number) => {
         const comma = i < createItems.length - 1 ? ',' : ''
-        Content(`    ${createMap.pair(`"${it.name}", ${javaLit(it.type, 'example_' + it.name)}`)}${comma}  // ${canonToType(it.type, target.name)}
+        Content(`    ${createMap.pair(`${JSON.stringify(it.name)}, ${javaLit(it.type, 'example_' + it.name)}`)}${comma}  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`), null);

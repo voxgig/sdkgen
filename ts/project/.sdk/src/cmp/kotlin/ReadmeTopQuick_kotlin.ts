@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { kotlinVarName, kotlinPackage, kotlinListMatch } from './utility_kotlin'
+import { kotlinVarName, kotlinPackage, kotlinListMatch, kotlinString } from './utility_kotlin'
 
 
 // A type-correct Kotlin literal for a param: numeric/boolean/array/object
@@ -21,7 +21,7 @@ function kotlinLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return 'listOf<Any?>()'
   if ('OBJECT' === k) return 'mapOf<String, Any?>()'
-  return `"${placeholder}"`
+  return kotlinString(placeholder)
 }
 
 
@@ -82,7 +82,7 @@ for (${eVar}Item in ${eVar}List) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `mutableMapOf<String, Any?>(${loadItems.map((it: any) =>
-          `"${it.name}" to ${kotlinLit(it.type,
+          `${kotlinString(it.name)} to ${kotlinLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')})`
         : 'null'
       Content(`

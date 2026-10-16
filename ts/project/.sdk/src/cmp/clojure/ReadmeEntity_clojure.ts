@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cljListMatch } from './utility_clojure'
+import { cljListMatch, cljString } from './utility_clojure'
 
 
 // A type-correct Clojure literal for a field's canonical type. The create
@@ -18,7 +18,7 @@ function cljLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '(vs/jt)'
   if ('OBJECT' === k) return '(vs/jm)'
-  return `"${placeholder}"`
+  return cljString(placeholder)
 }
 
 
@@ -134,7 +134,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `(vs/jm ${loadItems.map((it: any) =>
-          `"${it.name}" ${cljLit(it.type,
+          `${cljString(it.name)} ${cljLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)}`).join(' ')})`
         : 'nil'
       Content(`#### Example: Load
@@ -169,7 +169,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
     (vs/jm
 `)
       createItems.map((it: any) => {
-        Content(`      "${it.name}" ${cljLit(it.type, 'example_' + it.name)}  ;; ${cljType(it.type)}
+        Content(`      ${cljString(it.name)} ${cljLit(it.type, 'example_' + it.name)}  ;; ${cljType(it.type)}
 `)
       })
       Content(`      )

@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cIdent, cVarName, cListMatch } from './utility_c'
+import { cIdent, cVarName, cListMatch, cString } from './utility_c'
 
 
 // Canonical type sentinel -> a C type name for the field/param tables. The
@@ -32,7 +32,7 @@ function cLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'v_bool(true)'
   if ('ARRAY' === k) return 'v_list()'
   if ('OBJECT' === k) return 'v_map()'
-  return `v_str("${placeholder}")`
+  return `v_str(${cString(placeholder)})`
 }
 
 
@@ -137,7 +137,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
         .sort((a: any, b: any) =>
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = cmapExpr(loadItems.map((it: any) =>
-        `"${it.name}", ${cLit(it.type,
+        `${cString(it.name)}, ${cLit(it.type,
           it.name === idF ? entity.name + '_id' : it.name)}`))
       Content(`#### Example: Load
 
@@ -182,7 +182,7 @@ Entity* ${evar} = ${acc}(client, NULL);
 `)
         createItems.map((it: any, i: number) => {
           const comma = i < createItems.length - 1 ? ',' : ')'
-          Content(`    "${it.name}", ${cLit(it.type, 'example_' + it.name)}${comma}  // ${cType(it.type)}
+          Content(`    ${cString(it.name)}, ${cLit(it.type, 'example_' + it.name)}${comma}  // ${cType(it.type)}
 `)
         })
         Content(`, NULL, &err);

@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { kotlinVarName, kotlinListMatch } from './utility_kotlin'
+import { kotlinVarName, kotlinListMatch, kotlinString } from './utility_kotlin'
 
 
 // Type names come from the shared canonToType 'kotlin' column (single source of truth).
@@ -21,7 +21,7 @@ function kotlinLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return 'listOf<Any?>()'
   if ('OBJECT' === k) return 'mapOf<String, Any?>()'
-  return `"${placeholder}"`
+  return kotlinString(placeholder)
 }
 
 
@@ -274,7 +274,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `mutableMapOf<String, Any?>(${matchItems.map((it: any) =>
-                `"${it.name}" to ${kotlinLit(it.type,
+                `${kotlinString(it.name)} to ${kotlinLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')})`
               : 'null'
             Content(`\`\`\`kotlin
@@ -301,7 +301,7 @@ val result = client.${accessor}(null).create(mutableMapOf<String, Any?>(
 `)
             createItems.map((it: any, i: number) => {
               const comma = i < createItems.length - 1 ? ',' : ''
-              Content(`    "${it.name}" to ${kotlinLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, target.name)}
+              Content(`    ${kotlinString(it.name)} to ${kotlinLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, target.name)}
 `)
             })
             Content(`), null)
@@ -316,7 +316,7 @@ val result = client.${accessor}(null).create(mutableMapOf<String, Any?>(
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any, i: number) => {
               const comma = i < updateItems.length - 1 ? ',' : ''
-              return `    "${it.name}" to ${kotlinLit(it.type,
+              return `    ${kotlinString(it.name)} to ${kotlinLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}${comma}\n`
             }).join('')
             Content(`\`\`\`kotlin

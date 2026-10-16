@@ -32,7 +32,7 @@ function zigLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'h.vbool(true)'
   if ('ARRAY' === k) return 'h.olist()'
   if ('OBJECT' === k) return 'h.omap()'
-  return `h.vstr("${placeholder}")`
+  return `h.vstr(${JSON.stringify(placeholder)})`
 }
 
 
@@ -135,7 +135,7 @@ entity (for \`list\`, a slice of entities, one per record), whose record
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `h.jo(&.{${loadItems.map((it: any) =>
-          `.{ "${it.name}", ${zigLit(it.type,
+          `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)} }`).join(', ')}})`
         : 'h.vnull()'
       Content(`#### Example: Load
@@ -176,7 +176,7 @@ switch (client.${method}(h.vnull()).list(${zigListMatch(entity)}, h.vnull())) {
 switch (client.${method}(h.vnull()).create(h.jo(&.{
 `)
       createItems.map((it: any) => {
-        Content(`    .{ "${it.name}", ${zigLit(it.type, 'example_' + it.name)} }, // ${zigType(it.type)}
+        Content(`    .{ ${JSON.stringify(it.name)}, ${zigLit(it.type, 'example_' + it.name)} }, // ${zigType(it.type)}
 `)
       })
       Content(`}), h.vnull())) {

@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cppVarName, cppListMatch } from './utility_cpp'
+import { cppVarName, cppListMatch, cppEscape } from './utility_cpp'
 
 
 // Type names come from the shared canonToType 'cpp' column (single source of truth).
@@ -19,7 +19,7 @@ function cppLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'Value(true)'
   if ('ARRAY' === k) return 'vlist()'
   if ('OBJECT' === k) return 'vmap()'
-  return `Value("${placeholder}")`
+  return `Value("${cppEscape(placeholder)}")`
 }
 
 
@@ -123,7 +123,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `vmap({${loadItems.map((it: any) =>
-          `{"${it.name}", ${cppLit(it.type,
+          `{"${cppEscape(it.name)}", ${cppLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)}}`).join(', ')}})`
         : 'Value::undef()'
       Content(`#### Example: Load
@@ -160,7 +160,7 @@ for (const auto& ${eVar} : ${eVar}s) {
 SdkEntityPtr ${eVar} = client->${acc}()->create(vmap({
 `)
       createItems.map((it: any) => {
-        Content(`    {"${it.name}", ${cppLit(it.type, 'example_' + it.name)}},  // ${canonToType(it.type, target.name)}
+        Content(`    {"${cppEscape(it.name)}", ${cppLit(it.type, 'example_' + it.name)}},  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`}), Value::undef());

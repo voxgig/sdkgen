@@ -3,7 +3,7 @@ import { each } from 'jostraca'
 import { canonScalarKey } from './canonType'
 import { opRequestShape, opParams, selectablePoints, pointRequires } from './opShape'
 
-import { phpEntityAccessor, jsKey, luaKey } from './naming'
+import { phpEntityAccessor, jsKey, jsQuote, luaKey, luaString } from './naming'
 
 
 type ExampleLang = 'ts' | 'js' | 'py' | 'php' | 'rb' | 'lua' | 'go'
@@ -60,15 +60,27 @@ function idLiteral(ent: any, op: string, idF: string | null): string {
 }
 
 
+// A string literal in the target language.
+function litString(lang: LiteralLang, s: string): string {
+  switch (lang) {
+    case 'php': return `"${s.replace(/[\\"$]/g, '\\$&')}"`
+    case 'rb': return JSON.stringify(s).replace(/#(?=[{$@])/g, '\\#')
+    case 'lua': return luaString(s)
+    case 'ts':
+    case 'js': return jsQuote(s)
+    default: return JSON.stringify(s)
+  }
+}
+
+
 function litPair(lang: LiteralLang, name: string, value: string): string {
   switch (lang) {
-    case 'py': return `${JSON.stringify(name)}: ${value}`
-    case 'php': return `"${name.replace(/[\\"$]/g, '\\$&')}" => ${value}`
-    case 'rb': return `${JSON.stringify(name).replace(/#(?=[{$@])/g, '\\#')} => ${value}`
-    case 'go': return `${JSON.stringify(name)}: ${value}`
-    case 'json': return `${JSON.stringify(name)}: ${value}`
+    case 'php':
+    case 'rb': return `${litString(lang, name)} => ${value}`
     case 'lua': return `${luaKey(name)} = ${value}`
-    default: return `${jsKey(name)}: ${value}`
+    case 'ts':
+    case 'js': return `${jsKey(name)}: ${value}`
+    default: return `${litString(lang, name)}: ${value}`
   }
 }
 
@@ -246,6 +258,7 @@ export {
   javaMapOf,
   litFor,
   litPair,
+  litString,
 }
 
 export type {

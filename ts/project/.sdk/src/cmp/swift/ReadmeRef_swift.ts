@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { swiftVarName, swiftListMatch } from './utility_swift'
+import { swiftVarName, swiftListMatch, swiftString } from './utility_swift'
 
 
 // Type names come from the shared canonToType 'swift' column (single source of truth).
@@ -21,7 +21,7 @@ function swiftLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return '.bool(true)'
   if ('ARRAY' === k) return '.list([])'
   if ('OBJECT' === k) return '.map(VMap())'
-  return `.string("${placeholder}")`
+  return `.string(${swiftString(placeholder)})`
 }
 
 
@@ -273,7 +273,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `VMap([${matchItems.map((it: any) =>
-                `("${it.name}", ${swiftLit(it.type,
+                `(${swiftString(it.name)}, ${swiftLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)})`).join(', ')}])`
               : 'nil'
             Content(`\`\`\`swift
@@ -302,7 +302,7 @@ let result = try client.${accessor}().create(VMap([
 `)
             createItems.map((it: any, i: number) => {
               const comma = i < createItems.length - 1 ? ',' : ''
-              Content(`    ("${it.name}", ${swiftLit(it.type, 'example_' + it.name)})${comma}  // ${canonToType(it.type, target.name)}
+              Content(`    (${swiftString(it.name)}, ${swiftLit(it.type, 'example_' + it.name)})${comma}  // ${canonToType(it.type, target.name)}
 `)
             })
             Content(`]), nil)
@@ -317,7 +317,7 @@ let result = try client.${accessor}().create(VMap([
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any, i: number) => {
               const comma = i < updateItems.length - 1 ? ',' : ''
-              return `    ("${it.name}", ${swiftLit(it.type,
+              return `    (${swiftString(it.name)}, ${swiftLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)})${comma}\n`
             }).join('')
             Content(`\`\`\`swift

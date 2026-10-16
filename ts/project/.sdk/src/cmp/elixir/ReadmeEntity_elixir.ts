@@ -7,7 +7,7 @@ import {
 } from '@voxgig/apidef'
 
 // Type names come from the shared canonToType 'elixir' column (single source of truth).
-import { elixirLit, elixirListArgs } from './utility_elixir'
+import { elixirLit, elixirListArgs, elixirString } from './utility_elixir'
 
 
 // Operation method spelling for the Elixir target: each op is a function on
@@ -112,7 +112,7 @@ takes an entity handle built from the client:
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `${Name}.Helpers.deep(%{${loadItems.map((it: any) =>
-          `"${it.name}" => ${elixirLit(it.type,
+          `${elixirString(it.name)} => ${elixirLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)}`).join(', ')}})`
         : `${Name}.Helpers.deep(%{})`
       Content(`#### Example: Load
@@ -149,7 +149,7 @@ ${eVar} = ${Name}.${eCall}(sdk)
 ${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
       createItems.map((it: any) => {
-        Content(`  "${it.name}" => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+        Content(`  ${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
 `)
       })
       Content(`}))

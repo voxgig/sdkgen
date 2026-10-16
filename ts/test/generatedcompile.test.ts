@@ -27,7 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
-  searchOnly, listOnly, retypedList, seedableList, selectorLoad, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
+  searchOnly, listOnly, retypedList, seedableList, selectorLoad, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
   KEYWORD_ACCESSOR_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
   REQUEST_SHAPED_ENTITY,
 } from './generateharness'
@@ -1052,6 +1052,8 @@ pub fn main() void {
     ['a create whose request is not its record', 'ts-readme-request', REQUEST_SHAPED_ENTITY],
     ['a load example whose points each need a selector of their own', 'ts-readme-selector-load',
       selectorLoad('contact', ['email', 'phone'])],
+    ['examples whose load parameter and create field hold a quote and a backslash', 'ts-readme-quoted',
+      namedFieldEntity('a"b\\c')],
   ] as [string, string, string | undefined][]) {
     test('typescript: the README example tests type-check and run ' + what, async () => {
       ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
@@ -7415,6 +7417,12 @@ describe('the README examples run for a slug carrying the word client', () => {
           /email/, 'load example with a selector')
       })
 
+    test(lane.target + ': the README examples run where a load parameter and a create field hold a quote and a backslash',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-quoted', namedFieldEntity('a"b\\c'), /a\\"b|a"b\\\\c/,
+          'load or create example with the quoted name')
+      })
+
     // `)(` parses in no target.
     test(lane.target + ': the README examples fail for an SDK that does not load', async (t) => {
       const sdkroot = Path.join(tmp, lane.target + '-unloadable', lane.target)
@@ -7800,7 +7808,9 @@ describe('the documented c, cpp, rust, zig and ocaml examples compile', () => {
     if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
   })
 
-  for (const lane of DOC_LANES) for (const [shape, extra] of DOC_MODELS) {
+  // The last model names a load parameter and a create field a"b\c.
+  const docModels: [string, string | undefined][] = [...DOC_MODELS, ['quoted-name', namedFieldEntity('a"b\\c')]]
+  for (const lane of DOC_LANES) for (const [shape, extra] of docModels) {
     test(lane.target + ': every documented example compiles, ' + shape + ' first', async (t) => {
       const sdkroot = Path.join(tmp, lane.target + '-' + shape, lane.target)
       await generateTo(lane.target, sdkroot, extra, undefined, { top: true })

@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { swiftVarName, swiftListMatch } from './utility_swift'
+import { swiftVarName, swiftListMatch, swiftString } from './utility_swift'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -43,7 +43,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     if ('BOOLEAN' === k) return '.bool(true)'
     if ('ARRAY' === k) return '.list([])'
     if ('OBJECT' === k) return '.map(VMap())'
-    return `.string("${placeholder}")`
+    return `.string(${swiftString(placeholder)})`
   }
 
   if (authActive) {
@@ -122,7 +122,7 @@ catch {
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `("${it.name}", ${swiftLit(it.type,
+        `(${swiftString(it.name)}, ${swiftLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)})`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -151,7 +151,7 @@ catch {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `VMap([${loadRequired.map((it: any) =>
-          `("${it.name}", ${swiftLit(it.type,
+          `(${swiftString(it.name)}, ${swiftLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join(', ')}])`
         : 'nil'
 
@@ -185,7 +185,7 @@ catch {
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `("${it.name}", ${swiftLit(it.type, 'example_' + it.name)})`)
+      return chosen.map((it: any) => `(${swiftString(it.name)}, ${swiftLit(it.type, 'example_' + it.name)})`)
     }
 
     const idParamType = (opname: string): any => {
@@ -206,7 +206,7 @@ let created = try client.${accessor}().create(VMap([${examplePairs('create').joi
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`("${idF}", ${swiftLit(idParamType('update'), 'example_id')})`] : [])
+        const updatePairs = (idF ? [`(${swiftString(idF)}, ${swiftLit(idParamType('update'), 'example_id')})`] : [])
           .concat(examplePairs('update'))
         Content(`// Update — supply the id in the match/data
 _ = try client.${accessor}().update(VMap([${updatePairs.join(', ')}]), nil)
@@ -214,7 +214,7 @@ _ = try client.${accessor}().update(VMap([${updatePairs.join(', ')}]), nil)
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`("${idF}", ${swiftLit(idParamType('patch'), 'example_id')})`] : [])
+        const patchPairs = (idF ? [`(${swiftString(idF)}, ${swiftLit(idParamType('patch'), 'example_id')})`] : [])
           .concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 _ = try client.${accessor}().patch(VMap([${patchPairs.join(', ')}]), nil)
@@ -227,8 +227,8 @@ _ = try client.${accessor}().patch(VMap([${patchPairs.join(', ')}]), nil)
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `("${it.name}", ${swiftLit(idParamType('remove'), 'example_id')})`
-            : `("${it.name}", ${swiftLit(it.type, 'example_' + it.name)})`)
+            ? `(${swiftString(it.name)}, ${swiftLit(idParamType('remove'), 'example_id')})`
+            : `(${swiftString(it.name)}, ${swiftLit(it.type, 'example_' + it.name)})`)
         Content(`// Remove
 _ = try client.${accessor}().remove(${removePairs.length ? `VMap([${removePairs.join(', ')}])` : 'nil'}, nil)
 `)

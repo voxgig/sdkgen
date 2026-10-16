@@ -20,7 +20,7 @@ function zigLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'h.vbool(true)'
   if ('ARRAY' === k) return 'h.olist()'
   if ('OBJECT' === k) return 'h.omap()'
-  return `h.vstr("${placeholder}")`
+  return `h.vstr(${JSON.stringify(placeholder)})`
 }
 
 
@@ -76,7 +76,7 @@ switch (client.${method}(h.vnull()).list(${zigListMatch(exampleEntity)}, h.vnull
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `h.jo(&.{${loadItems.map((it: any) =>
-          `.{ "${it.name}", ${zigLit(it.type,
+          `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)} }`).join(', ')}})`
         : 'h.vnull()'
       Content(`

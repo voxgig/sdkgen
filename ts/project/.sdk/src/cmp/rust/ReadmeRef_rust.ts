@@ -20,7 +20,7 @@ function rustLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'Value::Bool(true)'
   if ('ARRAY' === k) return 'Value::empty_list()'
   if ('OBJECT' === k) return 'Value::empty_map()'
-  return `Value::str("${placeholder}")`
+  return `Value::str(${JSON.stringify(placeholder)})`
 }
 
 
@@ -267,7 +267,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `jo(vec![${matchItems.map((it: any) =>
-                `("${it.name}", ${rustLit(it.type,
+                `(${JSON.stringify(it.name)}, ${rustLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)})`).join(', ')}])`
               : 'Value::Noval'
             Content(`\`\`\`rust
@@ -294,7 +294,7 @@ for ${eVar} in &results {
 let result = client.${method}(Value::Noval).create(jo(vec![
 `)
             createItems.map((it: any) => {
-              Content(`    ("${it.name}", ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, target.name)}
+              Content(`    (${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)}),  // ${canonToType(it.type, target.name)}
 `)
             })
             Content(`]), Value::Noval).unwrap();
@@ -308,7 +308,7 @@ let result = client.${method}(Value::Noval).create(jo(vec![
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `    ("${it.name}", ${rustLit(it.type,
+              `    (${JSON.stringify(it.name)}, ${rustLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}),\n`).join('')
             Content(`\`\`\`rust
 let result = client.${method}(Value::Noval).${opname}(jo(vec![

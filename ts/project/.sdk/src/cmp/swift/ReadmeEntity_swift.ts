@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { swiftVarName, swiftListMatch } from './utility_swift'
+import { swiftVarName, swiftListMatch, swiftString } from './utility_swift'
 
 
 // Type names come from the shared canonToType 'swift' column (single source of truth).
@@ -19,7 +19,7 @@ function swiftLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return '.bool(true)'
   if ('ARRAY' === k) return '.list([])'
   if ('OBJECT' === k) return '.map(VMap())'
-  return `.string("${placeholder}")`
+  return `.string(${swiftString(placeholder)})`
 }
 
 
@@ -125,7 +125,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `VMap([${loadItems.map((it: any) =>
-          `("${it.name}", ${swiftLit(it.type,
+          `(${swiftString(it.name)}, ${swiftLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)})`).join(', ')}])`
         : 'nil'
       Content(`#### Example: Load
@@ -160,7 +160,7 @@ let ${eVar} = try client.${accessor}().create(VMap([
 `)
       createItems.map((it: any, i: number) => {
         const comma = i < createItems.length - 1 ? ',' : ''
-        Content(`    ("${it.name}", ${swiftLit(it.type, 'example_' + it.name)})${comma}  // ${canonToType(it.type, target.name)}
+        Content(`    (${swiftString(it.name)}, ${swiftLit(it.type, 'example_' + it.name)})${comma}  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`]), nil)

@@ -601,6 +601,47 @@ main: kit: flow: ${flow}: {
 }
 
 
+// An entity whose load requires the query parameter `key` and whose create and
+// update require the field `key`, beside the id.
+function namedFieldEntity(key: string, name: string = 'crate'): string {
+  const flow = 'Basic' + name[0].toUpperCase() + name.slice(1) + 'Flow'
+  const id = '{ k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" }'
+  const k = JSON.stringify(key)
+  return entityOnly(`
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    ${k}: { h: 'Key', n: ${k}, r: true, t: "\`$STRING\`" }
+  }
+  op: {
+    load: { name: "load", points: [ {
+      g: { params: [ ${id} ], query: [ { k: "query", n: ${k}, or: ${k}, r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/${name}/{id}", s: [{ lit: "${name}" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    create: { name: "create", points: [ {
+      g: {}, m: "POST", o: "/${name}", s: [{ lit: "${name}" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    update: { name: "update", points: [ {
+      g: { params: [ ${id} ] }, m: "PUT", o: "/${name}/{id}", s: [{ lit: "${name}" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
+  step: [
+    { o: "create", i: { ref: "${name}_ref01" } }
+    { o: "update", i: { ref: "${name}_ref01", srcdatavar: "${name}_ref01_data", suffix: "_up0" } }
+    { o: "load", i: { ref: "${name}_ref01", srcdatavar: "${name}_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`)
+}
+
+
 // A list requiring string id, q and tag, whose create requires q as an integer.
 // With `load`, a load by id too, which every test-mode block seeds.
 function retypedList(name: string = 'crate', load: boolean = false): string {
@@ -1253,6 +1294,7 @@ export {
   listOnly,
   selectorList,
   selectorLoad,
+  namedFieldEntity,
   retypedList,
   seedableList,
   entityOnly,

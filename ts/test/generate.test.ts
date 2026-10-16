@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, seedableList, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, namedFieldEntity, seedableList, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY,
@@ -223,19 +223,20 @@ function listCalls(out: Record<string, string>, target: string, entity: RegExp):
 }
 
 
-// Every load call the docs of one target make on an entity, read on to the
-// bracket that closes it; comments and table rows left out.
-function loadCalls(out: Record<string, string>, target: string, entity: RegExp): string[] {
+// Every call of one operation the docs of one target make on an entity, read
+// on to the bracket that closes it; comments and table rows left out.
+function opCalls(out: Record<string, string>, target: string, op: string, entity: RegExp): string[] {
   const depth = (text: string) => (text.match(/[([{]/g) || []).length - (text.match(/[)\]}]/g) || []).length
+  const call = new RegExp('(\\.|:|->|\\/)(e_)?(' + op + '|' + op[0].toUpperCase() + op.slice(1) + ')\\b')
   return Object.keys(out)
     .filter((path: string) => path.startsWith(target + '/') && path.endsWith('.md'))
     .flatMap((path: string) => out[path].split('\n')
       .map((line: string, i: number, lines: string[]) => {
-        let call = line
-        for (let j = i + 1; j < lines.length && j < i + 12 && 0 < depth(call); j++) call += ' ' + lines[j].trim()
-        return call
+        let text = line
+        for (let j = i + 1; j < lines.length && j < i + 12 && 0 < depth(text); j++) text += ' ' + lines[j].trim()
+        return text
       })
-      .filter((line: string) => /(\.|:|->|\/)(e_)?(load|Load)\b/.test(line) && entity.test(line))
+      .filter((line: string) => call.test(line) && entity.test(line))
       .filter((line: string) => !/^\s*(\/\/|#|--|\||-|\*|;|\(\*|`)/.test(line))
       .map((line: string) => path + ': ' + line.trim()))
 }
@@ -5916,11 +5917,11 @@ main: kit: flow: BasicBadgeFlow: {
         ok(/Contact is nested under planet/.test(out['ts/README.md']), 'the nested quick start was not written')
       }
       for (const target of targets) {
-        const found = loadCalls(out, target, /[Cc]ontact/)
+        const found = opCalls(out, target, 'load', /[Cc]ontact/)
         ok(0 < found.length, target + ': no ' + shape + ' load example found')
         wrong.push(...found.filter((line: string) => !/email/.test(line)).map((line) => shape + ' ' + line))
       }
-      wrong.push(...loadCalls({ 'top/README.md': out['README.md'] }, 'top', /[Cc]ontact/)
+      wrong.push(...opCalls({ 'top/README.md': out['README.md'] }, 'top', 'load', /[Cc]ontact/)
         .filter((line: string) => !/email/.test(line)).map((line) => shape + ' ' + line))
     }
     deepStrictEqual(wrong, [], 'load examples that pass no point\'s selector:\n' + wrong.join('\n'))
@@ -5942,6 +5943,30 @@ main: kit: flow: BasicBadgeFlow: {
     wrong.push(...listCalls({ 'top/README.md': out['README.md'] }, 'top', /[Cc]rate/)
       .filter((line: string) => !escaped(line)))
     deepStrictEqual(wrong, [], 'list examples that do not escape the name:\n' + wrong.join('\n'))
+  })
+
+
+  test('a load parameter and a create field whose name holds a quote and a backslash are escaped, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, namedFieldEntity('a"b\\c'))
+
+    // Double-quoted in most targets, single-quoted in ts, js and perl.
+    const escaped = (line: string) => line.includes('a\\"b\\\\c') || line.includes("a\"b\\\\c")
+    const raw = /a"b\\c/
+    const wrong: string[] = []
+    for (const target of [...targets, 'top']) {
+      const docs = 'top' === target ? { 'top/README.md': out['README.md'] } : out
+      for (const op of 'top' === target ? ['load'] : ['load', 'create', 'update']) {
+        const found = opCalls(docs, target, op, /[Cc]rate/)
+        ok(found.some(escaped), target + ': no ' + op + ' example writes the name:\n' + found.join('\n'))
+        wrong.push(...found.filter((line: string) => raw.test(line)))
+      }
+      const code = Object.keys(docs).filter((path: string) => path.startsWith(target + '/') && path.endsWith('.md'))
+        .flatMap((path: string) => [...docs[path].matchAll(/```\w*\n([\s\S]*?)```/g)]
+          .flatMap((m) => m[1].split('\n').filter((line: string) => raw.test(line)).map((line) => path + ': ' + line)))
+      wrong.push(...code)
+    }
+    deepStrictEqual(wrong, [], 'examples that do not escape the name:\n' + wrong.join('\n'))
   })
 
 

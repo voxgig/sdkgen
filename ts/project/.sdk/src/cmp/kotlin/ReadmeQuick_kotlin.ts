@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { kotlinVarName, kotlinPackage, kotlinListMatch } from './utility_kotlin'
+import { kotlinVarName, kotlinPackage, kotlinListMatch, kotlinString } from './utility_kotlin'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -42,7 +42,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     if ('BOOLEAN' === k) return 'true'
     if ('ARRAY' === k) return 'listOf<Any?>()'
     if ('OBJECT' === k) return 'mapOf<String, Any?>()'
-    return `"${placeholder}"`
+    return kotlinString(placeholder)
   }
 
   if (authActive) {
@@ -121,7 +121,7 @@ catch (err: RuntimeException) {
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `"${it.name}" to ${kotlinLit(it.type,
+        `${kotlinString(it.name)} to ${kotlinLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -148,7 +148,7 @@ catch (err: RuntimeException) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `mutableMapOf<String, Any?>(${loadRequired.map((it: any) =>
-          `"${it.name}" to ${kotlinLit(it.type,
+          `${kotlinString(it.name)} to ${kotlinLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')})`
         : 'null'
 
@@ -180,7 +180,7 @@ catch (err: RuntimeException) {
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `"${it.name}" to ${kotlinLit(it.type, 'example_' + it.name)}`)
+      return chosen.map((it: any) => `${kotlinString(it.name)} to ${kotlinLit(it.type, 'example_' + it.name)}`)
     }
 
     const idParamType = (opname: string): any => {
@@ -201,7 +201,7 @@ val created = client.${accessor}(null).create(mutableMapOf<String, Any?>(${examp
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`"${idF}" to ${kotlinLit(idParamType('update'), 'example_id')}`] : [])
+        const updatePairs = (idF ? [`${kotlinString(idF)} to ${kotlinLit(idParamType('update'), 'example_id')}`] : [])
           .concat(examplePairs('update'))
         Content(`// Update — supply the id in the match/data
 client.${accessor}(null).update(mutableMapOf<String, Any?>(${updatePairs.join(', ')}), null)
@@ -209,7 +209,7 @@ client.${accessor}(null).update(mutableMapOf<String, Any?>(${updatePairs.join(',
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`"${idF}" to ${kotlinLit(idParamType('patch'), 'example_id')}`] : [])
+        const patchPairs = (idF ? [`${kotlinString(idF)} to ${kotlinLit(idParamType('patch'), 'example_id')}`] : [])
           .concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client.${accessor}(null).patch(mutableMapOf<String, Any?>(${patchPairs.join(', ')}), null)
@@ -222,8 +222,8 @@ client.${accessor}(null).patch(mutableMapOf<String, Any?>(${patchPairs.join(', '
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `"${it.name}" to ${kotlinLit(idParamType('remove'), 'example_id')}`
-            : `"${it.name}" to ${kotlinLit(it.type, 'example_' + it.name)}`)
+            ? `${kotlinString(it.name)} to ${kotlinLit(idParamType('remove'), 'example_id')}`
+            : `${kotlinString(it.name)} to ${kotlinLit(it.type, 'example_' + it.name)}`)
         Content(`// Remove
 client.${accessor}(null).remove(${removePairs.length ? `mutableMapOf<String, Any?>(${removePairs.join(', ')})` : 'null'}, null)
 `)

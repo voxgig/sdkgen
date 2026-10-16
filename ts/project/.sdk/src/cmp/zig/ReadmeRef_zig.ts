@@ -31,7 +31,7 @@ function zigLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'h.vbool(true)'
   if ('ARRAY' === k) return 'h.olist()'
   if ('OBJECT' === k) return 'h.omap()'
-  return `h.vstr("${placeholder}")`
+  return `h.vstr(${JSON.stringify(placeholder)})`
 }
 
 
@@ -276,7 +276,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `h.jo(&.{${matchItems.map((it: any) =>
-                `.{ "${it.name}", ${zigLit(it.type,
+                `.{ ${JSON.stringify(it.name)}, ${zigLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)} }`).join(', ')}})`
               : 'h.vnull()'
             Content(`\`\`\`zig
@@ -309,7 +309,7 @@ switch (client.${method}(h.vnull()).list(${zigListMatch(ent)}, h.vnull())) {
 switch (client.${method}(h.vnull()).create(h.jo(&.{
 `)
             createItems.map((it: any) => {
-              Content(`    .{ "${it.name}", ${zigLit(it.type, 'example_' + it.name)} }, // ${zigType(it.type)}
+              Content(`    .{ ${JSON.stringify(it.name)}, ${zigLit(it.type, 'example_' + it.name)} }, // ${zigType(it.type)}
 `)
             })
             Content(`}), h.vnull())) {
@@ -326,7 +326,7 @@ switch (client.${method}(h.vnull()).create(h.jo(&.{
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `    .{ "${it.name}", ${zigLit(it.type,
+              `    .{ ${JSON.stringify(it.name)}, ${zigLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)} },\n`).join('')
             Content(`\`\`\`zig
 switch (client.${method}(h.vnull()).${opname}(h.jo(&.{

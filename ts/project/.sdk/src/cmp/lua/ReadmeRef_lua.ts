@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -18,7 +18,7 @@ function luaLit(type: any, placeholder: string = 'example'): string {
   if ('INTEGER' === k || 'NUMBER' === k) return '1'
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k || 'OBJECT' === k) return '{}'
-  return `"${placeholder}"`
+  return litString('lua', placeholder)
 }
 
 // Non-identifier table keys use bracket syntax.

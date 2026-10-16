@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { kotlinVarName, kotlinListMatch } from './utility_kotlin'
+import { kotlinVarName, kotlinListMatch, kotlinString } from './utility_kotlin'
 
 
 // Type names come from the shared canonToType 'kotlin' column (single source of truth).
@@ -19,7 +19,7 @@ function kotlinLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return 'listOf<Any?>()'
   if ('OBJECT' === k) return 'mapOf<String, Any?>()'
-  return `"${placeholder}"`
+  return kotlinString(placeholder)
 }
 
 
@@ -125,7 +125,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `mutableMapOf<String, Any?>(${loadItems.map((it: any) =>
-          `"${it.name}" to ${kotlinLit(it.type,
+          `${kotlinString(it.name)} to ${kotlinLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)}`).join(', ')})`
         : 'null'
       Content(`#### Example: Load
@@ -160,7 +160,7 @@ val ${eVar} = client.${accessor}(null).create(mutableMapOf<String, Any?>(
 `)
       createItems.map((it: any, i: number) => {
         const comma = i < createItems.length - 1 ? ',' : ''
-        Content(`    "${it.name}" to ${kotlinLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, target.name)}
+        Content(`    ${kotlinString(it.name)} to ${kotlinLit(it.type, 'example_' + it.name)}${comma}  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`), null)

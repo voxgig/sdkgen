@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { perlListArgs } from './utility_perl'
+import { perlListArgs, perlStringLiteral } from './utility_perl'
 
 
 // A type-correct, executable Perl literal for a param: numeric/boolean/
@@ -21,7 +21,7 @@ function perlLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return '1'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
-  return `'${placeholder}'`
+  return perlStringLiteral(placeholder)
 }
 
 
@@ -69,7 +69,7 @@ for my $${eVar} (@$${eVar}s) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `{ ${loadItems.map((it: any) =>
-          `'${it.name}' => ${perlLit(it.type,
+          `${perlStringLiteral(it.name)} => ${perlLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')} }`
         : ''
       Content(`

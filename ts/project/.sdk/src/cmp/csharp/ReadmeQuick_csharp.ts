@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { csVarName, csListMatch } from './utility_csharp'
+import { csVarName, csListMatch, csStringLiteral } from './utility_csharp'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -64,7 +64,7 @@ var client = ${ctor};
       if ('BOOLEAN' === k) return 'true'
       if ('ARRAY' === k) return 'new List<object?>()'
       if ('OBJECT' === k) return 'new Dictionary<string, object?>()'
-      return `"${placeholder}"`
+      return csStringLiteral(placeholder)
     }
 
     if (opnames.includes('list')) {
@@ -106,7 +106,7 @@ catch (Exception err)
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `["${it.name}"] = ${csLit(it.type,
+        `[${csStringLiteral(it.name)}] = ${csLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -136,7 +136,7 @@ catch (Exception err)
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `new Dictionary<string, object?> {${loadRequired.map((it: any) =>
-          ` ["${it.name}"] = ${csLit(it.type,
+          ` [${csStringLiteral(it.name)}] = ${csLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(',')} }`
         : 'null'
 
@@ -171,7 +171,7 @@ catch (Exception err)
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `["${it.name}"] = ${csLit(it.type, 'example_' + it.name)}`)
+      return chosen.map((it: any) => `[${csStringLiteral(it.name)}] = ${csLit(it.type, 'example_' + it.name)}`)
     }
 
     const idParamType = (opname: string): any => {
@@ -192,7 +192,7 @@ var created = client.${eName}().Create(new Dictionary<string, object?> { ${examp
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`["${idF}"] = ${csLit(idParamType('update'), 'example_id')}`] : [])
+        const updatePairs = (idF ? [`[${csStringLiteral(idF)}] = ${csLit(idParamType('update'), 'example_id')}`] : [])
           .concat(examplePairs('update'))
         Content(`// Update — supply the id in the match/data
 client.${eName}().Update(new Dictionary<string, object?> { ${updatePairs.join(', ')} });
@@ -200,7 +200,7 @@ client.${eName}().Update(new Dictionary<string, object?> { ${updatePairs.join(',
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`["${idF}"] = ${csLit(idParamType('patch'), 'example_id')}`] : [])
+        const patchPairs = (idF ? [`[${csStringLiteral(idF)}] = ${csLit(idParamType('patch'), 'example_id')}`] : [])
           .concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client.${eName}().Patch(new Dictionary<string, object?> { ${patchPairs.join(', ')} });
@@ -213,8 +213,8 @@ client.${eName}().Patch(new Dictionary<string, object?> { ${patchPairs.join(', '
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `["${it.name}"] = ${csLit(idParamType('remove'), 'example_id')}`
-            : `["${it.name}"] = ${csLit(it.type, 'example_' + it.name)}`)
+            ? `[${csStringLiteral(it.name)}] = ${csLit(idParamType('remove'), 'example_id')}`
+            : `[${csStringLiteral(it.name)}] = ${csLit(it.type, 'example_' + it.name)}`)
         Content(`// Remove
 client.${eName}().Remove(${removePairs.length ? `new Dictionary<string, object?> { ${removePairs.join(', ')} }` : 'null'});
 `)

@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { ocamlVarName, ocamlListMatch } from './utility_ocaml'
+import { ocamlVarName, ocamlListMatch, ocamlString } from './utility_ocaml'
 
 
 // A type-correct OCaml `value` literal for a field's canonical type. Strings
@@ -18,7 +18,7 @@ function ocamlLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return '(Bool true)'
   if ('ARRAY' === k) return '(empty_list ())'
   if ('OBJECT' === k) return '(empty_map ())'
-  return `(Str "${placeholder}")`
+  return `(Str "${ocamlString(placeholder)}")`
 }
 
 
@@ -135,7 +135,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `jo [${loadItems.map((it: any) =>
-          `("${it.name}", ${ocamlLit(it.type,
+          `("${ocamlString(it.name)}", ${ocamlLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)})`).join('; ')}]`
         : 'Noval'
       Content(`#### Example: Load
@@ -170,7 +170,7 @@ let ${fn}_datas = List.map (fun e -> e.e_data_get ()) ${fn}s
 let ${fn} = (Sdk_client.${fn} client Noval).e_create (jo [
 `)
       createItems.map((it: any) => {
-        Content(`    ("${it.name}", ${ocamlLit(it.type, 'example_' + it.name)});  (* ${ocamlType(it.type)} *)
+        Content(`    ("${ocamlString(it.name)}", ${ocamlLit(it.type, 'example_' + it.name)});  (* ${ocamlType(it.type)} *)
 `)
       })
       Content(`]) Noval

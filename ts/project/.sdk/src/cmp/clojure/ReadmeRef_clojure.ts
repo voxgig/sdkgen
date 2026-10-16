@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cljListMatch } from './utility_clojure'
+import { cljListMatch, cljString } from './utility_clojure'
 
 
 // A type-correct Clojure literal for a field's canonical type.
@@ -18,7 +18,7 @@ function cljLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '(vs/jt)'
   if ('OBJECT' === k) return '(vs/jm)'
-  return `"${placeholder}"`
+  return cljString(placeholder)
 }
 
 
@@ -280,7 +280,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `(vs/jm ${matchItems.map((it: any) =>
-                `"${it.name}" ${cljLit(it.type,
+                `${cljString(it.name)} ${cljLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(' ')})`
               : 'nil'
             Content(`\`\`\`clojure
@@ -306,7 +306,7 @@ ${info.desc}
     (vs/jm
 `)
             createItems.map((it: any) => {
-              Content(`      "${it.name}" ${cljLit(it.type, 'example_' + it.name)}  ;; ${cljType(it.type)}
+              Content(`      ${cljString(it.name)} ${cljLit(it.type, 'example_' + it.name)}  ;; ${cljType(it.type)}
 `)
             })
             Content(`      )
@@ -321,7 +321,7 @@ ${info.desc}
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `      "${it.name}" ${cljLit(it.type,
+              `      ${cljString(it.name)} ${cljLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}\n`).join('')
             Content(`\`\`\`clojure
 (def result

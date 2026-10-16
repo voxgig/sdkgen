@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cppVarName, cppListMatch } from './utility_cpp'
+import { cppVarName, cppListMatch, cppEscape } from './utility_cpp'
 
 
 // Type names come from the shared canonToType 'cpp' column (single source of truth).
@@ -20,7 +20,7 @@ function cppLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'Value(true)'
   if ('ARRAY' === k) return 'vlist()'
   if ('OBJECT' === k) return 'vmap()'
-  return `Value("${placeholder}")`
+  return `Value("${cppEscape(placeholder)}")`
 }
 
 
@@ -271,7 +271,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `vmap({${matchItems.map((it: any) =>
-                `{"${it.name}", ${cppLit(it.type,
+                `{"${cppEscape(it.name)}", ${cppLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)}}`).join(', ')}})`
               : 'Value::undef()'
             Content(`\`\`\`cpp
@@ -298,7 +298,7 @@ for (const auto& ${acc} : results) {
 SdkEntityPtr result = client->${acc}()->create(vmap({
 `)
             createItems.map((it: any) => {
-              Content(`    {"${it.name}", ${cppLit(it.type, 'example_' + it.name)}},  // ${canonToType(it.type, target.name)}
+              Content(`    {"${cppEscape(it.name)}", ${cppLit(it.type, 'example_' + it.name)}},  // ${canonToType(it.type, target.name)}
 `)
             })
             Content(`}), Value::undef());
@@ -312,7 +312,7 @@ SdkEntityPtr result = client->${acc}()->create(vmap({
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `    {"${it.name}", ${cppLit(it.type,
+              `    {"${cppEscape(it.name)}", ${cppLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)}},\n`).join('')
             Content(`\`\`\`cpp
 SdkEntityPtr result = client->${acc}()->${opname}(vmap({

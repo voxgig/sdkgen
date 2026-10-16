@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, isHttpBasicAuth, envName, entityIdField, entityDataIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, isHttpBasicAuth, envName, entityIdField, entityDataIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -53,7 +53,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
   const testCallArg = primaryArg('test01')
   const stateCallArg = primaryArg('example')
   const stateDataLine = dataIdF
-    ? `console.log(data.${dataIdF})`
+    ? `console.log(${jsProp('data', dataIdF)})`
     : `console.log(data)`
 
   // The op-driven example lines, shown only when the SDK has an entity op.

@@ -14,6 +14,7 @@ exports.javaMap = javaMap;
 exports.javaMapOf = javaMapOf;
 exports.litFor = litFor;
 exports.litPair = litPair;
+exports.litString = litString;
 const canonType_1 = require("./canonType");
 const opShape_1 = require("./opShape");
 const naming_1 = require("./naming");
@@ -65,15 +66,25 @@ function idLiteral(ent, op, idF) {
     const k = (0, canonType_1.canonScalarKey)(item && item.type);
     return ('INTEGER' === k || 'NUMBER' === k) ? '1' : '"example_id"';
 }
+// A string literal in the target language.
+function litString(lang, s) {
+    switch (lang) {
+        case 'php': return `"${s.replace(/[\\"$]/g, '\\$&')}"`;
+        case 'rb': return JSON.stringify(s).replace(/#(?=[{$@])/g, '\\#');
+        case 'lua': return (0, naming_1.luaString)(s);
+        case 'ts':
+        case 'js': return (0, naming_1.jsQuote)(s);
+        default: return JSON.stringify(s);
+    }
+}
 function litPair(lang, name, value) {
     switch (lang) {
-        case 'py': return `${JSON.stringify(name)}: ${value}`;
-        case 'php': return `"${name.replace(/[\\"$]/g, '\\$&')}" => ${value}`;
-        case 'rb': return `${JSON.stringify(name).replace(/#(?=[{$@])/g, '\\#')} => ${value}`;
-        case 'go': return `${JSON.stringify(name)}: ${value}`;
-        case 'json': return `${JSON.stringify(name)}: ${value}`;
+        case 'php':
+        case 'rb': return `${litString(lang, name)} => ${value}`;
         case 'lua': return `${(0, naming_1.luaKey)(name)} = ${value}`;
-        default: return `${(0, naming_1.jsKey)(name)}: ${value}`;
+        case 'ts':
+        case 'js': return `${(0, naming_1.jsKey)(name)}: ${value}`;
+        default: return `${litString(lang, name)}: ${value}`;
     }
 }
 // The members an example call must give. Points of one route that each need

@@ -78,7 +78,7 @@ import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools'
 import type { McpTool } from './helpers/mcpTools'
 import {
   primaryOpCall, idLiteral, requiredItems, matchExampleItems, matchArg, listMatchArg, seededList, dataArg, javaMap, javaMapOf, litFor,
-  litPair,
+  litPair, litString,
 } from './helpers/opExample'
 import type { ExampleLang, LiteralLang } from './helpers/opExample'
 import { liveStrict, liveStrictNote, liveFlowNeeds } from './helpers/testPolicy'
@@ -1207,6 +1207,7 @@ export {
   dataArg,
   litFor,
   litPair,
+  litString,
   featureOf,
   availableFeatures,
   findFeatureSources,

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, opNeedsAction, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, opNeedsAction, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -14,7 +14,7 @@ function pyLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'True'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
-  return `"${placeholder}"`
+  return litString('py', placeholder)
 }
 
 
@@ -117,7 +117,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `{${loadItems.map((it: any) =>
-          `"${it.name}": ${pyLit(it.type,
+          `${litString('py', it.name)}: ${pyLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)}`).join(', ')}}`
         : ''
       Content(`#### Example: Load
@@ -153,7 +153,7 @@ ${eVar}s = client.${entity.Name}().list(${listMatchArg('py', entity)})
 ${eVar} = client.${entity.Name}().create({
 `)
       createItems.map((it: any) => {
-        Content(`    "${it.name}": ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+        Content(`    ${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
 `)
       })
       Content(`})

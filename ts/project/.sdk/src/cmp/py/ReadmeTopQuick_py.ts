@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, serverVariables, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, serverVariables, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -19,7 +19,7 @@ function pyLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'True'
   if ('ARRAY' === k) return '[]'
   if ('OBJECT' === k) return '{}'
-  return `"${placeholder}"`
+  return litString('py', placeholder)
 }
 
 
@@ -77,7 +77,7 @@ for ${eVar} in ${eVar}s:
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `{${loadItems.map((it: any) =>
-          `"${it.name}": ${pyLit(it.type,
+          `${litString('py', it.name)}: ${pyLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}}`
         : ''
       Content(`

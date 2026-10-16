@@ -65,7 +65,7 @@ ${eVar}List.forEach(${eVar}Item => println(${eVar}Item.data()))
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? javaMapOf(loadItems.map((it: any) =>
-          `"${it.name}", ${scalaLit(it.type,
+          `${JSON.stringify(it.name)}, ${scalaLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`), 'java.util.')
         : 'null'
       Content(`

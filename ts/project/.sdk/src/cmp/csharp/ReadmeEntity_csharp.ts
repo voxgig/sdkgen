@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { csVarName, csListMatch } from './utility_csharp'
+import { csVarName, csListMatch, csStringLiteral } from './utility_csharp'
 
 
 // Type names come from the shared canonToType 'csharp' column (single source of truth).
@@ -20,7 +20,7 @@ function csLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return 'new List<object?>()'
   if ('OBJECT' === k) return 'new Dictionary<string, object?>()'
-  return `"${placeholder}"`
+  return csStringLiteral(placeholder)
 }
 
 
@@ -124,7 +124,7 @@ const ReadmeEntity = cmp(function ReadmeEntity(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `new Dictionary<string, object?> {${loadItems.map((it: any) =>
-          ` ["${it.name}"] = ${csLit(it.type,
+          ` [${csStringLiteral(it.name)}] = ${csLit(it.type,
             it.name === idF ? entity.name + '_id' : it.name)}`).join(',')} }`
         : 'null'
       Content(`#### Example: Load
@@ -159,7 +159,7 @@ var ${eVar} = client.${entity.Name}().Create(new Dictionary<string, object?>
 {
 `)
       createItems.map((it: any) => {
-        Content(`    ["${it.name}"] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, target.name)}
+        Content(`    [${csStringLiteral(it.name)}] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, target.name)}
 `)
       })
       Content(`});

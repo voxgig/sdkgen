@@ -7,7 +7,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { csVarName, csListMatch } from './utility_csharp'
+import { csVarName, csListMatch, csStringLiteral } from './utility_csharp'
 
 
 // Type names come from the shared canonToType 'csharp' column (single source of truth).
@@ -21,7 +21,7 @@ function csLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return 'new List<object?>()'
   if ('OBJECT' === k) return 'new Dictionary<string, object?>()'
-  return `"${placeholder}"`
+  return csStringLiteral(placeholder)
 }
 
 
@@ -275,7 +275,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `new Dictionary<string, object?> {${matchItems.map((it: any) =>
-                ` ["${it.name}"] = ${csLit(it.type,
+                ` [${csStringLiteral(it.name)}] = ${csLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(',')} }`
               : 'null'
             Content(`\`\`\`csharp
@@ -303,7 +303,7 @@ var result = client.${ent.Name}().Create(new Dictionary<string, object?>
 {
 `)
             createItems.map((it: any) => {
-              Content(`    ["${it.name}"] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, target.name)}
+              Content(`    [${csStringLiteral(it.name)}] = ${csLit(it.type, 'example_' + it.name)},  // ${canonToType(it.type, target.name)}
 `)
             })
             Content(`});
@@ -317,7 +317,7 @@ var result = client.${ent.Name}().Create(new Dictionary<string, object?>
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `    ["${it.name}"] = ${csLit(it.type,
+              `    [${csStringLiteral(it.name)}] = ${csLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`csharp
 var result = client.${ent.Name}().${'patch' === opname ? 'Patch' : 'Update'}(new Dictionary<string, object?>

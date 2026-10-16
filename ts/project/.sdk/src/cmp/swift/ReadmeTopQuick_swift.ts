@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { swiftVarName, swiftListMatch } from './utility_swift'
+import { swiftVarName, swiftListMatch, swiftString } from './utility_swift'
 
 
 // A type-correct Swift `Value` literal for a param: numeric/boolean/array/
@@ -21,7 +21,7 @@ function swiftLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return '.bool(true)'
   if ('ARRAY' === k) return '.list([])'
   if ('OBJECT' === k) return '.map(VMap())'
-  return `.string("${placeholder}")`
+  return `.string(${swiftString(placeholder)})`
 }
 
 
@@ -85,7 +85,7 @@ for ${eVar}Item in ${eVar}List.asList?.items ?? [] {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `VMap([${loadItems.map((it: any) =>
-          `("${it.name}", ${swiftLit(it.type,
+          `(${swiftString(it.name)}, ${swiftLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join(', ')}])`
         : 'nil'
       Content(`

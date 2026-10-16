@@ -32,7 +32,7 @@ function elixirLit(sentinel: unknown, placeholder: string = 'example'): string {
     case 'BOOLEAN': return 'true'
     case 'ARRAY': return '[]'
     case 'OBJECT': return '%{}'
-    default: return `"${placeholder}"`
+    default: return elixirString(placeholder)
   }
 }
 

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, luaKey, listMatchArg, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, luaKey, listMatchArg, matchExampleItems, requiredItems, litString } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -61,7 +61,7 @@ local client = ${ctor}
       if ('INTEGER' === k || 'NUMBER' === k) return '1'
       if ('BOOLEAN' === k) return 'true'
       if ('ARRAY' === k || 'OBJECT' === k) return '{}'
-      return `"${placeholder}"`
+      return litString('lua', placeholder)
     }
 
     // MODEL-DRIVEN display field: the list example must reference a field
@@ -78,8 +78,8 @@ local client = ${ctor}
       fields.find((f: any) => f && !idNames.has(f.n) && isStringField(f)) ||
       fields.find((f: any) => f && !idNames.has(f.n))
     const displayField = displayFieldObj ? displayFieldObj.name : null
-    const idCol = dataIdF ? `rec["${dataIdF}"]` : null
-    const dispCol = displayField ? `rec["${displayField}"]` : null
+    const idCol = dataIdF ? `rec[${litString('lua', dataIdF)}]` : null
+    const dispCol = displayField ? `rec[${litString('lua', displayField)}]` : null
     const printCols = [idCol, dispCol].filter(Boolean).join(', ')
     // A record with neither column prints every field it holds.
     const printRecord = (v: string, cols: string, pad: string): string => cols
@@ -132,7 +132,7 @@ ${neName} is nested under ${parentName}, so provide the \`${parentParam}\`.
 \`\`\`lua
 local ${neVar}, err = client:${neName}():load({ ${neMatch.join(', ')} })
 if err then error(err) end
-${printRecord(neVar, neDataIdF ? `rec["${neDataIdF}"]` : '', '')}
+${printRecord(neVar, neDataIdF ? `rec[${litString('lua', neDataIdF)}]` : '', '')}
 \`\`\`
 
 `)
@@ -178,7 +178,7 @@ ${printRecord(eVar, printCols, '')}
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `created:data_get()["${dataIdF}"]`
+      ? `created:data_get()[${litString('lua', dataIdF)}]`
       : luaLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
@@ -195,14 +195,14 @@ if err then error(err) end
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${idF} = ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (idF ? [`${luaKey(idF)} = ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`-- Update
 client:${eName}():update({ ${updatePairs.join(', ')} })
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`${idF} = ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (idF ? [`${luaKey(idF)} = ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`-- Patch — sends only the fields given
 client:${eName}():patch({ ${patchPairs.join(', ')} })
 

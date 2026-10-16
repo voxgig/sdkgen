@@ -20,7 +20,7 @@ function rustLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'Value::Bool(true)'
   if ('ARRAY' === k) return 'Value::empty_list()'
   if ('OBJECT' === k) return 'Value::empty_map()'
-  return `Value::str("${placeholder}")`
+  return `Value::str(${JSON.stringify(placeholder)})`
 }
 
 
@@ -71,7 +71,7 @@ for ${eVar} in &${eVar}s {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `jo(vec![${loadItems.map((it: any) =>
-          `("${it.name}", ${rustLit(it.type,
+          `(${JSON.stringify(it.name)}, ${rustLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join(', ')}])`
         : 'Value::Noval'
       Content(`

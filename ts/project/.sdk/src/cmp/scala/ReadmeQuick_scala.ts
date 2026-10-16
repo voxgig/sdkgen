@@ -106,7 +106,7 @@ catch {
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `"${it.name}", ${scalaLit(it.type,
+        `${JSON.stringify(it.name)}, ${scalaLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -133,7 +133,7 @@ catch {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? javaMapOf(loadRequired.map((it: any) =>
-          `"${it.name}", ${scalaLit(it.type,
+          `${JSON.stringify(it.name)}, ${scalaLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`), 'java.util.')
         : 'null'
 
@@ -165,7 +165,7 @@ catch {
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `"${it.name}", ${scalaLit(it.type, 'example_' + it.name)}`)
+      return chosen.map((it: any) => `${JSON.stringify(it.name)}, ${scalaLit(it.type, 'example_' + it.name)}`)
     }
 
     const idParamType = (opname: string): any => {
@@ -186,7 +186,7 @@ val created = client.${accessor}(null).create(${javaMapOf(examplePairs('create')
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`"${idF}", ${scalaLit(idParamType('update'), 'example_id')}`] : [])
+        const updatePairs = (idF ? [`${JSON.stringify(idF)}, ${scalaLit(idParamType('update'), 'example_id')}`] : [])
           .concat(examplePairs('update'))
         Content(`// Update — supply the id in the match/data
 client.${accessor}(null).update(${javaMapOf(updatePairs, 'java.util.')}, null)
@@ -194,7 +194,7 @@ client.${accessor}(null).update(${javaMapOf(updatePairs, 'java.util.')}, null)
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`"${idF}", ${scalaLit(idParamType('patch'), 'example_id')}`] : [])
+        const patchPairs = (idF ? [`${JSON.stringify(idF)}, ${scalaLit(idParamType('patch'), 'example_id')}`] : [])
           .concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client.${accessor}(null).patch(${javaMapOf(patchPairs, 'java.util.')}, null)
@@ -207,8 +207,8 @@ client.${accessor}(null).patch(${javaMapOf(patchPairs, 'java.util.')}, null)
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `"${it.name}", ${scalaLit(idParamType('remove'), 'example_id')}`
-            : `"${it.name}", ${scalaLit(it.type, 'example_' + it.name)}`)
+            ? `${JSON.stringify(it.name)}, ${scalaLit(idParamType('remove'), 'example_id')}`
+            : `${JSON.stringify(it.name)}, ${scalaLit(it.type, 'example_' + it.name)}`)
         Content(`// Remove
 client.${accessor}(null).remove(${removePairs.length ? javaMapOf(removePairs, 'java.util.') : 'null'}, null)
 `)

@@ -120,7 +120,7 @@ function javaLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return 'List.of()'
   if ('OBJECT' === k) return 'Map.of()'
-  return `"${placeholder}"`
+  return JSON.stringify(placeholder)
 }
 
 

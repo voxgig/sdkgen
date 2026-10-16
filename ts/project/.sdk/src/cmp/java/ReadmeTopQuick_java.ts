@@ -84,7 +84,7 @@ for (Object ${eVar}Item : ${eVar}List) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? javaMapOf(loadItems.map((it: any) =>
-          `"${it.name}", ${javaLit(it.type,
+          `${JSON.stringify(it.name)}, ${javaLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`))
         : 'null'
       Content(`

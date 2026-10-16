@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cppVarName, cppListMatch } from './utility_cpp'
+import { cppVarName, cppListMatch, cppEscape } from './utility_cpp'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -62,7 +62,7 @@ ${ctor}
     if ('BOOLEAN' === k) return 'Value(true)'
     if ('ARRAY' === k) return 'vlist()'
     if ('OBJECT' === k) return 'vmap()'
-    return `Value("${placeholder}")`
+    return `Value("${cppEscape(placeholder)}")`
   }
 
   if (exampleEntity) {
@@ -114,7 +114,7 @@ try {
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `{"${it.name}", ${cppLit(it.type,
+        `{"${cppEscape(it.name)}", ${cppLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}}`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -139,7 +139,7 @@ try {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `vmap({${loadRequired.map((it: any) =>
-          `{"${it.name}", ${cppLit(it.type,
+          `{"${cppEscape(it.name)}", ${cppLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}}`).join(', ')}})`
         : 'Value::undef()'
 
@@ -168,7 +168,7 @@ try {
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `{"${it.name}", ${cppLit(it.type, 'example_' + it.name)}}`)
+      return chosen.map((it: any) => `{"${cppEscape(it.name)}", ${cppLit(it.type, 'example_' + it.name)}}`)
     }
 
     // The id VALUE for an update/remove match: read off the created entity's
@@ -179,7 +179,7 @@ try {
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `getp(created->data(), "${dataIdF}")`
+      ? `getp(created->data(), "${cppEscape(dataIdF)}")`
       : cppLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
@@ -195,7 +195,7 @@ SdkEntityPtr created = client->${acc}()->create(vmap({${examplePairs('create').j
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`{"${idF}", ${idValueFor('update')}}`] : []).concat(examplePairs('update'))
+        const updatePairs = (idF ? [`{"${cppEscape(idF)}", ${idValueFor('update')}}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`// Update${fromCreated ? " — reuse the created record's id" : ''}
 client->${acc}()->update(vmap({${updatePairs.join(', ')}}), Value::undef());
@@ -203,7 +203,7 @@ client->${acc}()->update(vmap({${updatePairs.join(', ')}}), Value::undef());
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`{"${idF}", ${idValueFor('patch')}}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (idF ? [`{"${cppEscape(idF)}", ${idValueFor('patch')}}`] : []).concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client->${acc}()->patch(vmap({${patchPairs.join(', ')}}), Value::undef());
 
@@ -214,8 +214,8 @@ client->${acc}()->patch(vmap({${patchPairs.join(', ')}}), Value::undef());
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `{"${it.name}", ${idValueFor('remove')}}`
-            : `{"${it.name}", ${cppLit(it.type, 'example_' + it.name)}}`)
+            ? `{"${cppEscape(it.name)}", ${idValueFor('remove')}}`
+            : `{"${cppEscape(it.name)}", ${cppLit(it.type, 'example_' + it.name)}}`)
         Content(`// Remove
 client->${acc}()->remove(${removePairs.length ? `vmap({${removePairs.join(', ')}})` : 'Value::undef()'}, Value::undef());
 `)

@@ -6,7 +6,7 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
-import { cppVarName, cppListMatch } from './utility_cpp'
+import { cppVarName, cppListMatch, cppEscape } from './utility_cpp'
 
 
 // A type-correct C++ literal for a param.
@@ -17,7 +17,7 @@ function cppLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'Value(true)'
   if ('ARRAY' === k) return 'vlist()'
   if ('OBJECT' === k) return 'vmap()'
-  return `Value("${placeholder}")`
+  return `Value("${cppEscape(placeholder)}")`
 }
 
 
@@ -73,7 +73,7 @@ for (const auto& ${eVar} : ${eVar}s) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `vmap({${loadItems.map((it: any) =>
-          `{"${it.name}", ${cppLit(it.type,
+          `{"${cppEscape(it.name)}", ${cppLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}}`).join(', ')}})`
         : 'Value::undef()'
       Content(`

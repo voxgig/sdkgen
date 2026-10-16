@@ -8,7 +8,7 @@ import {
 } from '@voxgig/apidef'
 
 // Type names come from the shared canonToType 'elixir' column (single source of truth).
-import { elixirLit, elixirListArgs } from './utility_elixir'
+import { elixirLit, elixirListArgs, elixirString } from './utility_elixir'
 
 
 const OP_SIGNATURES: Record<string, { sig: string, desc: string }> = {
@@ -213,7 +213,7 @@ ${info.desc}
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const arg = 0 < matchItems.length
               ? `${Name}.Helpers.deep(%{${matchItems.map((it: any) =>
-                `"${it.name}" => ${elixirLit(it.type,
+                `${elixirString(it.name)} => ${elixirLit(it.type,
                   it.name === idF ? ent.name + '_id' : it.name)}`).join(', ')}})`
               : `${Name}.Helpers.deep(%{})`
             Content(`\`\`\`elixir
@@ -236,7 +236,7 @@ ${eVar}s = ${Name}.Entity.${EName}.list(${eVar}${elixirListArgs(ent, Name)})
 ${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
             createItems.map((it: any) => {
-              Content(`  "${it.name}" => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
+              Content(`  ${elixirString(it.name)} => ${elixirLit(it.type, 'example_' + it.name)},  # ${canonToType(it.type, target.name)}
 `)
             })
             Content(`}))
@@ -250,7 +250,7 @@ ${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
             const updateLines = updateItems.map((it: any) =>
-              `  "${it.name}" => ${elixirLit(it.type,
+              `  ${elixirString(it.name)} => ${elixirLit(it.type,
                 it.name === idF ? ent.name + '_id' : it.name)},\n`).join('')
             Content(`\`\`\`elixir
 ${eVar} = ${Name}.Entity.${EName}.${opname}(${eVar}, ${Name}.Helpers.deep(%{

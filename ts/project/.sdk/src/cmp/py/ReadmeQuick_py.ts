@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, serverVariables, listMatchArg, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, serverVariables, listMatchArg, matchExampleItems, requiredItems, litString } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -74,7 +74,7 @@ client = ${ctor}
       if ('BOOLEAN' === k) return 'True'
       if ('ARRAY' === k) return '[]'
       if ('OBJECT' === k) return '{}'
-      return `"${placeholder}"`
+      return litString('py', placeholder)
     }
 
     if (opnames.includes('list')) {
@@ -108,7 +108,7 @@ except Exception as err:
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `"${it.name}": ${pyLit(it.type,
+        `${litString('py', it.name)}: ${pyLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)}`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -132,7 +132,7 @@ except Exception as err:
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `{${loadRequired.map((it: any) =>
-          `"${it.name}": ${pyLit(it.type,
+          `${litString('py', it.name)}: ${pyLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(', ')}}`
         : ''
 
@@ -160,7 +160,7 @@ except Exception as err:
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `"${it.name}": ${pyLit(it.type, 'example_' + it.name)}`)
+      return chosen.map((it: any) => `${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)}`)
     }
 
     // The id VALUE for an update/remove match: taken off the returned `created`
@@ -171,7 +171,7 @@ except Exception as err:
       return it && it.type
     }
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `created.data_get()["${dataIdF}"]`
+      ? `created.data_get()[${litString('py', dataIdF)}]`
       : pyLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
@@ -187,7 +187,7 @@ created = client.${eName}().create({${examplePairs('create').join(', ')}})
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`"${idF}": ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (idF ? [`${litString('py', idF)}: ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`# Update${fromCreated ? " — the created entity's record holds its id" : ''}
 client.${eName}().update({${updatePairs.join(', ')}})
@@ -195,7 +195,7 @@ client.${eName}().update({${updatePairs.join(', ')}})
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`"${idF}": ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (idF ? [`${litString('py', idF)}: ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`# Patch — sends only the fields given
 client.${eName}().patch({${patchPairs.join(', ')}})
 
@@ -206,8 +206,8 @@ client.${eName}().patch({${patchPairs.join(', ')}})
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `"${it.name}": ${idValueFor('remove')}`
-            : `"${it.name}": ${pyLit(it.type, 'example_' + it.name)}`)
+            ? `${litString('py', it.name)}: ${idValueFor('remove')}`
+            : `${litString('py', it.name)}: ${pyLit(it.type, 'example_' + it.name)}`)
         Content(`# Remove
 client.${eName}().remove(${removePairs.length ? `{${removePairs.join(', ')}}` : ''})
 `)

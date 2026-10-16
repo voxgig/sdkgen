@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { csVarName, csListMatch } from './utility_csharp'
+import { csVarName, csListMatch, csStringLiteral } from './utility_csharp'
 
 
 // A type-correct C# literal for a param: numeric/boolean/array/object params
@@ -21,7 +21,7 @@ function csLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return 'new List<object?>()'
   if ('OBJECT' === k) return 'new Dictionary<string, object?>()'
-  return `"${placeholder}"`
+  return csStringLiteral(placeholder)
 }
 
 
@@ -74,7 +74,7 @@ foreach (var ${eVar}Item in ${eVar}List)
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `new Dictionary<string, object?> {${loadItems.map((it: any) =>
-          ` ["${it.name}"] = ${csLit(it.type,
+          ` [${csStringLiteral(it.name)}] = ${csLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(',')} }`
         : 'null'
       Content(`

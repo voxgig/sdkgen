@@ -42,7 +42,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     if ('BOOLEAN' === k) return 'Value::Bool(true)'
     if ('ARRAY' === k) return 'Value::empty_list()'
     if ('OBJECT' === k) return 'Value::empty_map()'
-    return `Value::str("${placeholder}")`
+    return `Value::str(${JSON.stringify(placeholder)})`
   }
 
   Content(`### 1. Create a client
@@ -100,7 +100,7 @@ match client.${method}(Value::Noval).list(${rustListMatch(exampleEntity)}, Value
       const parentParam = parentItem && parentItem.name
       const parentName = parentParam ? parentParam.replace(/_id$/, '') : 'its parent'
       const neMatch = neRequired.map((it: any) =>
-        `("${it.name}", ${rustLit(it.type,
+        `(${JSON.stringify(it.name)}, ${rustLit(it.type,
           it.name === neIdF ? 'example_id' : 'example_' + it.name)})`)
 
       Content(`### 3. Load ${neArticle} ${neName.toLowerCase()}
@@ -124,7 +124,7 @@ match client.${neMethod}(Value::Noval).load(jo(vec![${neMatch.join(', ')}]), Val
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadRequired.length
         ? `jo(vec![${loadRequired.map((it: any) =>
-          `("${it.name}", ${rustLit(it.type,
+          `(${JSON.stringify(it.name)}, ${rustLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)})`).join(', ')}])`
         : 'Value::Noval'
 
@@ -154,7 +154,7 @@ match client.${method}(Value::Noval).load(${loadArg}, Value::Noval) {
       const chosen = 'create' === opname
         ? (required.length ? required : items.slice(0, 2))
         : required.concat(optional).slice(0, Math.max(2, required.length))
-      return chosen.map((it: any) => `("${it.name}", ${rustLit(it.type, 'example_' + it.name)})`)
+      return chosen.map((it: any) => `(${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)})`)
     }
 
     const idParamType = (opname: string): any => {
@@ -165,7 +165,7 @@ match client.${method}(Value::Noval).load(${loadArg}, Value::Noval) {
     // entity's record with getp when its data type carries the id AND a create
     // ran; otherwise a type-correct literal.
     const idValueFor = (opname: string): string => (null != dataIdF && opnames.includes('create'))
-      ? `getp(&created.data(None), "${dataIdF}")`
+      ? `getp(&created.data(None), ${JSON.stringify(dataIdF)})`
       : rustLit(idParamType(opname), 'example_id')
 
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
@@ -181,14 +181,14 @@ let created = client.${method}(Value::Noval).create(jo(vec![${examplePairs('crea
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`("${idF}", ${idValueFor('update')})`] : []).concat(examplePairs('update'))
+        const updatePairs = (idF ? [`(${JSON.stringify(idF)}, ${idValueFor('update')})`] : []).concat(examplePairs('update'))
         Content(`// Update
 client.${method}(Value::Noval).update(jo(vec![${updatePairs.join(', ')}]), Value::Noval).unwrap();
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`("${idF}", ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
+        const patchPairs = (idF ? [`(${JSON.stringify(idF)}, ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client.${method}(Value::Noval).patch(jo(vec![${patchPairs.join(', ')}]), Value::Noval).unwrap();
 
@@ -199,8 +199,8 @@ client.${method}(Value::Noval).patch(jo(vec![${patchPairs.join(', ')}]), Value::
           .sort((a: any, b: any) =>
             (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
           .map((it: any) => it.name === idF
-            ? `("${it.name}", ${idValueFor('remove')})`
-            : `("${it.name}", ${rustLit(it.type, 'example_' + it.name)})`)
+            ? `(${JSON.stringify(it.name)}, ${idValueFor('remove')})`
+            : `(${JSON.stringify(it.name)}, ${rustLit(it.type, 'example_' + it.name)})`)
         Content(`// Remove
 client.${method}(Value::Noval).remove(${removePairs.length ? `jo(vec![${removePairs.join(', ')}])` : 'Value::Noval'}, Value::Noval).unwrap();
 `)

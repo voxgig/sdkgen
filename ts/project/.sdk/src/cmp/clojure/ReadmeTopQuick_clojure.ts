@@ -7,7 +7,7 @@ import {
   nom,
 } from '@voxgig/apidef'
 
-import { cljListMatch } from './utility_clojure'
+import { cljListMatch, cljString } from './utility_clojure'
 
 
 // A type-correct Clojure literal for a param: numeric/boolean/array/object
@@ -19,7 +19,7 @@ function cljLit(type: any, placeholder: string = 'example'): string {
   if ('BOOLEAN' === k) return 'true'
   if ('ARRAY' === k) return '(vs/jt)'
   if ('OBJECT' === k) return '(vs/jm)'
-  return `"${placeholder}"`
+  return cljString(placeholder)
 }
 
 
@@ -69,7 +69,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
           (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
       const loadArg = 0 < loadItems.length
         ? `(vs/jm ${loadItems.map((it: any) =>
-          `"${it.name}" ${cljLit(it.type,
+          `${cljString(it.name)} ${cljLit(it.type,
             it.name === idF ? 'example_id' : 'example_' + it.name)}`).join(' ')})`
         : 'nil'
       Content(`
