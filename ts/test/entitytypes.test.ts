@@ -181,11 +181,13 @@ describe('EntityTypes emitters — fixture model output', () => {
   })
 
   test('py: TypedDicts with required/optional split and py unions', async () => {
-    const { files } = await render('py', { name: 'py', ext: 'py' })
+    const { files, warnings } = await render('py', { name: 'py', ext: 'py' })
     const out = findFile(files, /demo_types\.py$/)
     ok(out.includes('class Sun'), 'Sun TypedDict')
     ok(out.includes('class Moon'), 'inactive Moon present')
     ok(out.includes('str | int'), 'union renders in python syntax')
+    ok(out.includes(`"wave-len": `), 'non-identifier field kept, in the functional form')
+    ok(!warnings.some((w) => 'entity-types-skip-field' === w.point), 'no field skipped')
   })
 
   test('php: $NULL and unions degrade to mixed — never `?null`', async () => {
