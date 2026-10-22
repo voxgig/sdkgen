@@ -105,7 +105,7 @@ class SecretsTest {
         val headers = fetchdef["headers"]
         if (headers is Map<*, *>) {
           for (e in headers.entries) {
-            if ("authorization".equals(e.key.toString(), ignoreCase = true)) {
+            if (CREDHEADER.equals(e.key.toString(), ignoreCase = true)) {
               hasAuth = true
               auth = e.value?.toString() ?: ""
             }
@@ -154,6 +154,15 @@ class SecretsTest {
 
   companion object {
     const val BASE = "http://secrets.test/api"
+
+    // The header the credential travels in: the DEFAULT client's auth.name,
+    // lower-cased as prepareAuth sends it. Read from a default client
+    // because a test's `auth: null` leaves no name to read.
+    val CREDHEADER: String by lazy {
+      val auth = ProjectNameSDK.testSDK(null, null).optionsMap()["auth"]
+      val name = if (auth is Map<*, *>) auth["name"] else null
+      if (name is String && "" != name) name.lowercase() else "authorization"
+    }
   }
 
   // A sekreto Provider built in code.
@@ -165,14 +174,14 @@ class SecretsTest {
     override fun describe(): String = label
   }
 
-  // The Authorization header carries the SPEC's credential prefix, which a
+  // The credential header carries the SPEC's credential prefix, which a
   // TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
   // `Bearer <token>`, an apiKey scheme the raw token. So assert on the
   // CREDENTIAL and let the prefix be whatever this SDK's API declares.
   private fun credentialIs(header: String?, token: String) {
     val got = header ?: ""
     assertTrue(got == token || got.endsWith(" $token"),
-      "expected the authorization header to carry $token, got: \"$got\"")
+      "expected the $CREDHEADER header to carry $token, got: \"$got\"")
   }
 
   private fun map(vararg pairs: Pair<String, Any?>): MutableMap<String, Any?> =
@@ -310,7 +319,7 @@ class SecretsTest {
     val client = ProjectNameSDK.testSDK(null, map("apikey" to "OPTKEY01"))
     val fetchdef = client.prepare(map("path" to "/"))
     val headers = fetchdef["headers"] as MutableMap<String, Any?>
-    credentialIs(headers["authorization"] as? String, "OPTKEY01")
+    credentialIs(headers[CREDHEADER] as? String, "OPTKEY01")
 
     // No runtime activation, no extend: the feature must not be installed,
     // whatever this project's model says.
@@ -319,12 +328,12 @@ class SecretsTest {
   }
 
   @Test
-  fun inactiveNoApikeyMeansNoAuthorizationHeader() {
+  fun inactiveNoApikeyMeansNoCredentialHeader() {
     val client = ProjectNameSDK.testSDK(null, null)
     val fetchdef = client.prepare(map("path" to "/"))
     val headers = fetchdef["headers"] as MutableMap<String, Any?>
-    assertFalse(headers.containsKey("authorization"),
-      "unexpected authorization header: " + headers["authorization"])
+    assertFalse(headers.containsKey(CREDHEADER),
+      "unexpected $CREDHEADER header: " + headers[CREDHEADER])
   }
 
   // ===================================================================
@@ -935,7 +944,7 @@ class SecretsTest {
   //
   // What the chain resolves is a REFRESH token, which is POSTed to a token
   // endpoint for a short-lived ACCESS token; the access token is what the
-  // Authorization header carries; and when the API answers 401 the client
+  // credential header carries; and when the API answers 401 the client
   // buys another and tries the same request again, once.
 
   private fun exchangeClient(

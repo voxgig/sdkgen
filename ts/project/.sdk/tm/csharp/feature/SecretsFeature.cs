@@ -38,7 +38,7 @@
 //
 // ONE VISIBLE CONSEQUENCE, worth knowing before it surprises someone:
 // ProjectNameSDK.Prepare() returns the fetchdef WITHOUT crossing the
-// transport, so its authorization header is the one PrepareAuth built from
+// transport, so its credential header is the one PrepareAuth built from
 // the apikey OPTION - never the chain-resolved credential. Prepare is a
 // what-would-I-send inspector; what is actually sent is what Direct,
 // Graphql and the entity ops put on the wire, and those all cross the seam.
@@ -524,11 +524,11 @@ public class SecretsFeature : BaseFeature
     // Buy a token and try the request again when the API says the current
     // one is spent.
     //
-    // The retry rewrites the authorization header IN PLACE on the fetchdef,
+    // The retry rewrites the credential header IN PLACE on the fetchdef,
     // because the header was built by the synchronous PrepareAuth before
     // this request left and carries the token that just failed. Rebuilt the
-    // way PrepareAuth builds it, from the same options auth.prefix, so the
-    // two cannot drift.
+    // way PrepareAuth builds it, from the same options auth name and prefix,
+    // so the two cannot drift.
     private object? WithRefresh(Context ctx, string url,
         Dictionary<string, object?> fetchdef, FetcherFunc inner)
     {
@@ -639,20 +639,24 @@ public class SecretsFeature : BaseFeature
             return;
         }
 
+        // The header PrepareAuth writes: auth.name, lower-cased.
+        var name = StructUtils.GetPath(_liveopts, StructUtils.Jt("auth", "name"))
+            is string n && "" != n ? n.ToLowerInvariant() : "authorization";
+
         // Suppressed auth means NO header, the same answer PrepareAuth
         // gives. Reached defensively - WithRefresh does not retry at all
         // when auth is suppressed - but this is the function that writes
         // the credential, so it is where the rule has to hold.
         if (AuthSuppressed())
         {
-            headers.Remove("authorization");
+            headers.Remove(name);
             return;
         }
 
         var prefix = StructUtils.GetPath(_liveopts, StructUtils.Jt("auth", "prefix"))
             as string ?? "";
 
-        headers["authorization"] = "" == prefix ? token : prefix + " " + token;
+        headers[name] = "" == prefix ? token : prefix + " " + token;
     }
 
     // ---------------------------------------------------------------

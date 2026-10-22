@@ -367,11 +367,11 @@ class SecretsFeature extends BaseFeature {
   // Buy a token and try the request again when the API says the current one
   // is spent. Wraps the transport; installed only when exchanging.
   //
-  // The retry rewrites the Authorization header IN PLACE on the fetchdef,
+  // The retry rewrites the credential header IN PLACE on the fetchdef,
   // because the header was built by the synchronous prepareAuth before this
   // request left, and it carries the token that just failed. Rebuilt the
-  // way prepareAuth builds it, from the same options.auth.prefix, so the
-  // two cannot drift.
+  // way prepareAuth builds it, from the same options.auth name and prefix,
+  // so the two cannot drift.
   async _withRefresh(ctx, url, fetchdef, inner) {
     const x = this._exchange
     const max = null == x ? 0 : x.retries
@@ -457,8 +457,12 @@ class SecretsFeature extends BaseFeature {
       return
     }
 
+    // The header prepareAuth wrote: auth.name, lower-cased.
+    const name = 'string' === typeof auth.name && '' !== auth.name ?
+      auth.name.toLowerCase() : 'authorization'
+
     const prefix = auth.prefix
-    fetchdef.headers.authorization = prefix ? prefix + ' ' + token : token
+    fetchdef.headers[name] = prefix ? prefix + ' ' + token : token
   }
 }
 

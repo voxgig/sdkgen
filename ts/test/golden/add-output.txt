@@ -171,7 +171,7 @@ src/cmp/clojure/utility_clojure.ts fa25f9feb766
 tm/clojure/LICENSE 52acd47c245f
 tm/clojure/Makefile d3ac03fe6a52
 tm/clojure/VERSION e6635045e1d2
-tm/clojure/feature/secrets/sdk/feature/secrets.clj fb72d36fd60d
+tm/clojure/feature/secrets/sdk/feature/secrets.clj b7de61ebf569
 tm/clojure/feature/secrets/voxgig/plugin.clj 9685e8620632
 tm/clojure/feature/secrets/voxgig/plugin/capability.clj a152592fc1b2
 tm/clojure/feature/secrets/voxgig/plugin/catalog.clj bd2f2b70e6cf
@@ -236,7 +236,7 @@ tm/clojure/src/sdk/features.clj a08f2202dce7
 tm/clojure/src/voxgig/struct.clj e11f03d1c544
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 590d662e1233
-tm/clojure/test/sdk/test/feature/secrets.clj 6ab6b24e4eb5
+tm/clojure/test/sdk/test/feature/secrets.clj ef0134a7fd63
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
 tm/clojure/test/sdk/test/omni_smoke.clj eb96d122a518
@@ -1820,7 +1820,7 @@ tm/scala/feature/ProxyFeature.scala c93944c9ada6
 tm/scala/feature/RatelimitFeature.scala 4b96e4be9fd5
 tm/scala/feature/RbacFeature.scala 978c969eccca
 tm/scala/feature/RetryFeature.scala 117b343c03a4
-tm/scala/feature/SecretsFeature.scala e9d5e814cd43
+tm/scala/feature/SecretsFeature.scala 913d21c1b86d
 tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala b1bf710a5667
 tm/scala/feature/TestFeature.scala 03218282723c
@@ -1868,7 +1868,7 @@ tm/scala/sdktest/SdkTestMain.scala 82e0f52a8719
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala c6be9c1da3bb
-tm/scala/sdktest/feature/secrets/SecretsTestMain.scala e5fef42c7a9d
+tm/scala/sdktest/feature/secrets/SecretsTestMain.scala 46fcc5c8a13b
 tm/scala/sdktest/sdk-test-control.json acadc87764f6
 tm/scala/sdktest/vendor/omni/Json.scala 649be1ad1c6f
 tm/scala/sdktest/vendor/omni/Runner.scala cccc29d1c2df
@@ -2219,7 +2219,7 @@ tm/zig/feature/proxy.zig cbe0d0918153
 tm/zig/feature/ratelimit.zig 635710bddb9a
 tm/zig/feature/rbac.zig 4d095a24a6d9
 tm/zig/feature/retry.zig 684949f0d189
-tm/zig/feature/secrets.zig 99019653f64e
+tm/zig/feature/secrets.zig 0ad0ba1bc98f
 tm/zig/feature/secrets/plugin/capability.zig 3e8388d3d47d
 tm/zig/feature/secrets/plugin/catalog.zig 82a753a9dfff
 tm/zig/feature/secrets/plugin/config.zig 4e50541f655a
@@ -2281,7 +2281,7 @@ tm/zig/src/feature/telemetry/.gitkeep e3b0c44298fc
 tm/zig/src/feature/test/.gitkeep e3b0c44298fc
 tm/zig/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/zig/src/feature/validate/.gitkeep e3b0c44298fc
-tm/zig/test/feature/secrets/secrets_test.zig f5f292a60b55
+tm/zig/test/feature/secrets/secrets_test.zig 849eb18a3166
 tm/zig/test/feature_test.zig dfbcd6a18307
 tm/zig/test/fh.zig fd96cda8dbdc
 tm/zig/test/gotcha_test.zig adfd2d0772c0

@@ -21,6 +21,17 @@ const { SDK } = require('../../utility/index')
 const ENVPREFIX = 'PROJECTENV_TEST_SECRETS_'
 
 
+// The header the credential travels in: the DEFAULT client's auth.name,
+// lower-cased as prepareAuth sends it. Read from a default client because
+// a test's `auth: null` leaves no name to read.
+const CREDHEADER = (() => {
+  const auth = SDK.test({}, {}).options().auth
+  const name = null == auth ? null : auth.name
+  return 'string' === typeof name && '' !== name ?
+    name.toLowerCase() : 'authorization'
+})()
+
+
 // prepare() returns the fetchdef the transport would receive — the closest
 // observable point to the wire for header assertions — and it awaits
 // secrets resolution itself, because it bypasses the feature hook pipeline.
@@ -32,7 +43,7 @@ async function prepared(sdkopts) {
 }
 
 
-// The Authorization header carries the SPEC's credential prefix, which a
+// The credential header carries the SPEC's credential prefix, which a
 // TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
 // `Bearer <token>`, an apiKey scheme the raw token. So assert on the
 // CREDENTIAL and let the prefix be whatever this SDK's API declares —
@@ -41,7 +52,7 @@ async function prepared(sdkopts) {
 function credentialIs(header, token) {
   const got = String(null == header ? '' : header)
   assert.ok(got === token || got.endsWith(' ' + token),
-    'expected the Authorization header to carry ' + token + ', got: ' + got)
+    'expected the ' + CREDHEADER + ' header to carry ' + token + ', got: ' + got)
 }
 
 
@@ -67,16 +78,16 @@ describe('secrets', () => {
 
   test('inactive: apikey option behaves exactly as before', async () => {
     const { sdk, fetchdef } = await prepared({ apikey: 'OPTKEY01' })
-    credentialIs(fetchdef.headers['authorization'], 'OPTKEY01')
+    credentialIs(fetchdef.headers[CREDHEADER], 'OPTKEY01')
 
     // No feature, no instance: the accessor is the only way in.
     assert.equal(sdk.secrets(), undefined)
   })
 
 
-  test('inactive: no apikey means no authorization header', async () => {
+  test('inactive: no apikey means no credential header', async () => {
     const { fetchdef } = await prepared({})
-    assert.equal(fetchdef.headers['authorization'], undefined)
+    assert.equal(fetchdef.headers[CREDHEADER], undefined)
   })
 
 
@@ -85,7 +96,7 @@ describe('secrets', () => {
     const { sdk, fetchdef } = await prepared(
       Object.assign({ apikey: 'OPTKEY01' }, envchain()))
 
-    credentialIs(fetchdef.headers['authorization'], 'OPTKEY01')
+    credentialIs(fetchdef.headers[CREDHEADER], 'OPTKEY01')
 
     // The explicit option is a real store, not a special case: a directed
     // read names it like any other.
@@ -103,7 +114,7 @@ describe('secrets', () => {
   test('active: an OMITTED apikey defers to the chain', async () => {
     process.env[ENVPREFIX + 'APIKEY'] = 'ENVKEY01'
     const { fetchdef } = await prepared(envchain())
-    credentialIs(fetchdef.headers['authorization'], 'ENVKEY01')
+    credentialIs(fetchdef.headers[CREDHEADER], 'ENVKEY01')
   })
 
 
@@ -111,7 +122,7 @@ describe('secrets', () => {
     process.env[ENVPREFIX + 'APIKEY'] = 'ENVKEY01'
     const { fetchdef } = await prepared(
       Object.assign({ apikey: '' }, envchain()))
-    credentialIs(fetchdef.headers['authorization'], 'ENVKEY01')
+    credentialIs(fetchdef.headers[CREDHEADER], 'ENVKEY01')
   })
 
 
@@ -137,7 +148,7 @@ describe('secrets', () => {
         Object.assign({ auth: null }, envchain()))
 
       // Nothing on the wire, even though the chain would have resolved.
-      assert.equal(fetchdef.headers['authorization'], undefined)
+      assert.equal(fetchdef.headers[CREDHEADER], undefined)
 
       // The suppression survives option validation rather than being
       // replaced by the optspec's default auth map.
@@ -148,7 +159,7 @@ describe('secrets', () => {
   test('active: auth null suppresses an EXPLICIT apikey too', async () => {
     const { fetchdef } = await prepared(
       Object.assign({ apikey: 'OPTKEY01', auth: null }, envchain()))
-    assert.equal(fetchdef.headers['authorization'], undefined)
+    assert.equal(fetchdef.headers[CREDHEADER], undefined)
   })
 
 
@@ -165,14 +176,14 @@ describe('secrets', () => {
         },
       },
     })
-    credentialIs(fetchdef.headers['authorization'], 'CUSTOM01')
+    credentialIs(fetchdef.headers[CREDHEADER], 'CUSTOM01')
     assert.deepEqual(asked, ['apikey'])
   })
 
 
   test('active: a miss everywhere leaves the header off', async () => {
     const { sdk, fetchdef } = await prepared(envchain())
-    assert.equal(fetchdef.headers['authorization'], undefined)
+    assert.equal(fetchdef.headers[CREDHEADER], undefined)
     assert.equal(sdk.options().apikey, '')
   })
 
@@ -234,7 +245,7 @@ describe('secrets', () => {
       stub.calls.push({
         url,
         init,
-        auth: ((init || {}).headers || {})['authorization'],
+        auth: ((init || {}).headers || {})[CREDHEADER],
       })
       return { status: 200, json: async () => ({ ok: true }), headers: {} }
     }
@@ -351,7 +362,7 @@ describe('secrets', () => {
 
     const second = await sdk.prepare({ path: '/' })
     assert.ok(!(second instanceof Error), 'second attempt should recover, got ' + String(second))
-    credentialIs(second.headers['authorization'], 'RECOVERED01')
+    credentialIs(second.headers[CREDHEADER], 'RECOVERED01')
   })
 
 
@@ -408,11 +419,11 @@ describe('secrets', () => {
       })
 
       const first = await sdk.prepare({ path: '/' })
-      assert.equal(first.headers['authorization'], undefined,
+      assert.equal(first.headers[CREDHEADER], undefined,
         'the first resolve missed, so no credential should go out')
 
       const second = await sdk.prepare({ path: '/' })
-      credentialIs(second.headers['authorization'], 'LATEKEY')
+      credentialIs(second.headers[CREDHEADER], 'LATEKEY')
 
       assert.ok(1 < calls,
         'the chain was asked once and the MISS cached: a secret that ' +
@@ -448,7 +459,7 @@ describe('secrets', () => {
     process.env[ENVPREFIX + 'API_TOKEN'] = 'TOKKEY01'
     try {
       const { fetchdef } = await prepared(envchain({ name: 'api.token' }))
-      credentialIs(fetchdef.headers['authorization'], 'TOKKEY01')
+      credentialIs(fetchdef.headers[CREDHEADER], 'TOKKEY01')
     }
     finally {
       delete process.env[ENVPREFIX + 'API_TOKEN']
@@ -519,7 +530,7 @@ describe('secrets', () => {
 
     const fetchdef = await sdk.prepare({ path: '/' })
     assert.ok(!(fetchdef instanceof Error), String(fetchdef))
-    credentialIs(fetchdef.headers['authorization'], 'VOCAB01')
+    credentialIs(fetchdef.headers[CREDHEADER], 'VOCAB01')
   })
 
 
@@ -581,7 +592,7 @@ describe('secrets', () => {
 //
 // The shape these tests pin: what the chain resolves is a REFRESH token,
 // which is POSTed to a token endpoint for a short-lived ACCESS token; the
-// access token is what the Authorization header carries; and when the API
+// access token is what the credential header carries; and when the API
 // answers 401 the client buys another and tries the same request again,
 // once.
 //
@@ -614,7 +625,7 @@ describe('secrets exchange', () => {
     let apicall = -1
 
     const fetch = async (url, init) => {
-      calls.push({ url, init, auth: (init.headers || {})['authorization'] })
+      calls.push({ url, init, auth: (init.headers || {})[CREDHEADER] })
 
       if (url.endsWith('/' + (o.path || 'auth/token'))) {
         if (true === o.tokenfails) {
@@ -957,7 +968,7 @@ describe('secrets exchange', () => {
     const bought = stub.token().length
 
     const feature = sdk._secrets
-    const fetchdef = { headers: { authorization: 'Bearer STALE01' } }
+    const fetchdef = { headers: { [CREDHEADER]: 'Bearer STALE01' } }
 
     sdk._options.apikey = 'STALE01'
 
@@ -978,7 +989,7 @@ describe('secrets exchange', () => {
     assert.equal(calls, 2, 'the request was retried once')
     assert.equal(stub.token().length, bought,
       'the retry must reuse the token another request already bought')
-    authIs({ auth: fetchdef.headers.authorization }, 'ACCESS09')
+    authIs({ auth: fetchdef.headers[CREDHEADER] }, 'ACCESS09')
   })
 
 
@@ -987,7 +998,7 @@ describe('secrets exchange', () => {
 
     const { fetchdef } = await prepared(envchain())
 
-    credentialIs(fetchdef.headers['authorization'], 'PLAINKEY01')
+    credentialIs(fetchdef.headers[CREDHEADER], 'PLAINKEY01')
     delete process.env[ENVPREFIX + 'APIKEY']
   })
 
@@ -1013,7 +1024,7 @@ describe('secrets exchange', () => {
 
     assert.equal(stub.calls.length, 0, 'test mode must not do IO')
     // A deterministic placeholder, so offline suites need no configuration.
-    credentialIs(fetchdef.headers['authorization'], 'test-access_token')
+    credentialIs(fetchdef.headers[CREDHEADER], 'test-access_token')
   })
 
 })

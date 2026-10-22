@@ -21,7 +21,7 @@
 -- `graphql()` run no hooks at all. The transport wrapper installed in init
 -- is the one seam every wire path crosses: entity ops (make_request), the
 -- raw paths (_raw_request) and the exchange retries all come through it. It
--- resolves there, rewrites the authorization header prepare_auth built from
+-- resolves there, rewrites the credential header prepare_auth built from
 -- the options apikey, and - this is the point - REFUSES TO SEND while the
 -- chain is broken.
 --
@@ -445,7 +445,7 @@ end
 
 
 -- Buy a token and try the request again when the API says the current one
--- is spent. The retry rewrites the authorization header IN PLACE on the
+-- is spent. The retry rewrites the credential header IN PLACE on the
 -- fetchdef, because the header was built before this request left and it
 -- carries the token that just failed.
 function SecretsFeature:_with_refresh(ctx, fullurl, fetchdef, inner)
@@ -532,15 +532,22 @@ function SecretsFeature:_reauth(fetchdef, token)
     return
   end
 
+  -- The header prepare_auth writes: auth.name, lower-cased.
+  local name = auth["name"]
+  if type(name) ~= "string" or name == "" then
+    name = "authorization"
+  end
+  name = string.lower(name)
+
   local prefix = auth["prefix"]
   if type(prefix) ~= "string" then
     prefix = ""
   end
 
   if prefix == "" then
-    headers["authorization"] = token
+    headers[name] = token
   else
-    headers["authorization"] = prefix .. " " .. token
+    headers[name] = prefix .. " " .. token
   end
 end
 

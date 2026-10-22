@@ -54,6 +54,21 @@ static int CASES = 0;
     fn();                                                                      \
   } while (0)
 
+// The header the credential travels in: the DEFAULT client's auth.name,
+// lower-cased as prepare_auth sends it. Read from a default client because a
+// test's `auth: null` leaves no name to read. Computed once, held for the run.
+static const char* cred_header(void) {
+  static char* name = NULL;
+  if (NULL != name) return name;
+  voxgig_value* v = getpath2(sdk_options_map(test_sdk(NULL, NULL)), "auth", "name");
+  const char* given = voxgig_is_string(v) ? voxgig_as_string(v) : "";
+  name = strdup('\0' == given[0] ? "authorization" : given);
+  for (char* c = name; '\0' != *c; c++) {
+    if ('A' <= *c && *c <= 'Z') *c = (char)(*c - 'A' + 'a');
+  }
+  return name;
+}
+
 // ---- the recording live transport ------------------------------------------
 
 #define MAX_CALLS 16
@@ -95,7 +110,7 @@ static voxgig_value* live_fetch(void* ud, voxgig_value* args) {
   voxgig_value* urlv = voxgig_getelem(args, v_int(0), voxgig_new_undef());
   voxgig_value* fetchdef = voxgig_getelem(args, v_int(1), voxgig_new_undef());
   const char* url = voxgig_is_string(urlv) ? voxgig_as_string(urlv) : "";
-  // A SNAPSHOT, not a share: the exchange rewrites the authorization header
+  // A SNAPSHOT, not a share: the exchange rewrites the credential header
   // of the SAME fetchdef in place before it retries, so a shared reference
   // would show the retry's token on the first attempt's record.
   voxgig_list_push(voxgig_as_list(r->calls),
@@ -119,20 +134,20 @@ static voxgig_value* call_fetchdef(Rec* r, int i) {
   return getp(voxgig_getelem(r->calls, v_int(i), voxgig_new_undef()), "fetchdef");
 }
 
-// The authorization header of call i, or NULL when absent. Presence is read
+// The credential header of call i, or NULL when absent. Presence is read
 // off the map directly: a present-but-EMPTY header is not suppression, and
 // get_str alone cannot tell the two apart.
 static const char* call_auth(Rec* r, int i, bool* present) {
   voxgig_value* headers = getp(call_fetchdef(r, i), "headers");
   if (present) {
     *present = voxgig_is_map(headers) &&
-      NULL != voxgig_map_get(voxgig_as_map(headers), "authorization");
+      NULL != voxgig_map_get(voxgig_as_map(headers), cred_header());
   }
-  return get_str(headers, "authorization");
+  return get_str(headers, cred_header());
 }
 
-// The Authorization header carries the SPEC's credential prefix, which a
-// TEMPLATE cannot know (a bearer scheme gives `Bearer <token>`, an apiKey
+// The credential header carries the SPEC's credential prefix (if any), which
+// a TEMPLATE cannot know (a bearer scheme gives `Bearer <token>`, an apiKey
 // scheme the raw token). So assert on the CREDENTIAL and let the prefix be
 // whatever this SDK's API declares.
 static bool credential_is(const char* header, const char* token) {
@@ -246,7 +261,7 @@ static void t_inactive_no_apikey_no_header(void) {
   bool present = true;
   call_auth(r, 0, &present);
   CHECK_INT_EQ(r->api, 1, "inactive: one call");
-  CHECK(!present, "inactive: no apikey means no authorization header");
+  CHECK(!present, "inactive: no apikey means no credential header");
 }
 
 // ---- active: the chain ------------------------------------------------------
@@ -412,7 +427,7 @@ static void t_provider_error_fails_entity_op(void) {
   FhOpResult res2 = fh_op(&h2, o);
   CHECK(res2.ok, "control: the entity op with a working chain succeeds");
   CHECK_INT_EQ(rec_count(calls2), 1, "control: the entity op reached the transport once");
-  CHECK(credential_is(get_str(rec_headers(calls2, 0), "authorization"), "CUSTOM01"),
+  CHECK(credential_is(get_str(rec_headers(calls2, 0), cred_header()), "CUSTOM01"),
         "control: the entity op carried the credential");
 }
 
@@ -753,7 +768,7 @@ static void t_exchange_test_mode_buys_nothing(void) {
   FhOpResult res = fh_op(&h, o);
   CHECK(res.ok, "test mode: the op succeeds");
   CHECK_INT_EQ(rec_count(calls), 1, "test mode: one call, and it is the API call");
-  CHECK(credential_is(get_str(rec_headers(calls, 0), "authorization"), "test-access_token"),
+  CHECK(credential_is(get_str(rec_headers(calls, 0), cred_header()), "test-access_token"),
         "test mode: buys nothing and carries the deterministic fake token");
   CHECK_INT_EQ(fh_track_int(feats[0].f, "buys"), 1, "test mode: counted as a (fake) purchase");
 }

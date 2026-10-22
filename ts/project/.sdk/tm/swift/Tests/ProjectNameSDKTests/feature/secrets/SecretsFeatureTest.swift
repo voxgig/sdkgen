@@ -44,6 +44,14 @@ import XCTest
 import Sekreto
 import struct VoxgigPlugin.Definition
 
+// The header the credential travels in: the DEFAULT client's auth.name,
+// lower-cased as prepareAuth sends it. Read from a default client because a
+// test's `auth: nil` leaves no name to read.
+let secretsCredHeader: String = {
+  let name = gp(gp(ProjectNameSDK.testSDK(nil, nil).optionsMap(), "auth"), "name").asString ?? ""
+  return "" == name ? "authorization" : name.lowercased()
+}()
+
 // -------------------------------------------------------------------
 // The recording transport: system.fetch for a LIVE client, scripting one
 // status per API call (the last repeating) and a token endpoint for the
@@ -89,7 +97,7 @@ final class SecretsWire {
     var auth = ""
     var hasAuth = false
     if let headers = gp(fetchdef, "headers").asMap {
-      for (k, v) in headers.entries where k.lowercased() == "authorization" {
+      for (k, v) in headers.entries where k.lowercased() == secretsCredHeader {
         hasAuth = true
         auth = v.asString ?? stringify(v)
       }
@@ -176,14 +184,14 @@ final class SecretsFeatureTest: XCTestCase {
   // -------------------------------------------------------------------
   // Support.
 
-  // The Authorization header carries the SPEC's credential prefix, which a
+  // The credential header carries the SPEC's credential prefix, which a
   // TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
   // `Bearer <token>`, an apiKey scheme the raw token. So assert on the
   // CREDENTIAL and let the prefix be whatever this SDK's API declares.
   private func credentialIs(_ header: String, _ token: String,
                             file: StaticString = #filePath, line: UInt = #line) {
     XCTAssertTrue(header == token || header.hasSuffix(" " + token),
-      "expected the authorization header to carry \(token), got: \"\(header)\"",
+      "expected the \(secretsCredHeader) header to carry \(token), got: \"\(header)\"",
       file: file, line: line)
   }
 
@@ -331,7 +339,7 @@ final class SecretsFeatureTest: XCTestCase {
     let client = ProjectNameSDK.testSDK(nil, vm(("apikey", .string("OPTKEY01"))))
     let fetchdef = try client.prepare(vm(("path", .string("/"))))
     let headers = gp(fetchdef, "headers").asMap ?? VMap()
-    credentialIs(gp(headers, "authorization").asString ?? "", "OPTKEY01")
+    credentialIs(gp(headers, secretsCredHeader).asString ?? "", "OPTKEY01")
 
     // No runtime activation, no extend: the feature must not be installed,
     // whatever this project's model says.
@@ -339,12 +347,12 @@ final class SecretsFeatureTest: XCTestCase {
       "the feature must not install itself without feature.secrets.active")
   }
 
-  func testInactiveNoApikeyMeansNoAuthorizationHeader() throws {
+  func testInactiveNoApikeyMeansNoCredentialHeader() throws {
     let client = ProjectNameSDK.testSDK(nil, nil)
     let fetchdef = try client.prepare(vm(("path", .string("/"))))
     let headers = gp(fetchdef, "headers").asMap ?? VMap()
-    XCTAssertNil(headers.entries["authorization"],
-      "unexpected authorization header: \(stringify(gp(headers, "authorization")))")
+    XCTAssertNil(headers.entries[secretsCredHeader],
+      "unexpected \(secretsCredHeader) header: \(stringify(gp(headers, secretsCredHeader)))")
   }
 
   // ===================================================================

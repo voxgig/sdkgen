@@ -384,11 +384,11 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
     # Buy a token and try the request again when the API says the current
     # one is spent. Wraps the transport; installed only when exchanging.
     #
-    # The retry rewrites the authorization header IN PLACE on the
+    # The retry rewrites the credential header IN PLACE on the
     # fetchdef, because the header was built by the synchronous
     # prepare_auth before this request left, and it carries the token that
     # just failed. Rebuilt the way prepare_auth builds it, from the same
-    # options.auth.prefix, so the two cannot drift.
+    # options.auth name and prefix, so the two cannot drift.
     def _with_refresh(self, ctx, url, fetchdef, inner):
         x = self._exchange
         max_retries = 0 if x is None else x["retries"]
@@ -459,8 +459,13 @@ class ProjectNameSecretsFeature(ProjectNameBaseFeature):
             fetchdef["headers"].pop("authorization", None)
             return
 
+        # The header prepare_auth wrote: auth.name, lower-cased.
+        name = auth.get("name") if isinstance(auth, dict) else None
+        name = name.lower() if isinstance(name, str) and "" != name \
+            else "authorization"
+
         prefix = auth.get("prefix") if isinstance(auth, dict) else None
-        fetchdef["headers"]["authorization"] = \
+        fetchdef["headers"][name] = \
             prefix + " " + token if prefix else token
 
 

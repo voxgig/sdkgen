@@ -34,6 +34,15 @@ class SecretsFeatureTest < Minitest::Test
   # changes.
   ENVPREFIX = "PROJECTENV_TEST_SECRETS_"
 
+  # The header the credential travels in: the DEFAULT client's auth.name,
+  # lower-cased as prepare_auth sends it. Read from a default client because
+  # a test's `auth: nil` leaves no name to read.
+  CREDHEADER = begin
+    auth = ProjectNameSDK.test(nil, nil).options_map["auth"]
+    name = auth.is_a?(Hash) ? auth["name"] : nil
+    name.is_a?(String) && !name.empty? ? name.downcase : "authorization"
+  end
+
   # ---------------------------------------------------------------------
   # The recording transport: system.fetch for a LIVE client, scripting one
   # status per API call (the last repeating) and a token endpoint for the
@@ -64,8 +73,8 @@ class SecretsFeatureTest < Minitest::Test
         headers = fetchdef["headers"].is_a?(Hash) ? fetchdef["headers"] : {}
         @calls << {
           "url" => fullurl,
-          "auth" => headers["authorization"],
-          "has" => headers.key?("authorization"),
+          "auth" => headers[CREDHEADER],
+          "has" => headers.key?(CREDHEADER),
           "body" => fetchdef["body"],
         }
 
@@ -193,7 +202,7 @@ class SecretsFeatureTest < Minitest::Test
         @lock.synchronize { @refresh = parsed["refresh_token"] }
         payload = '{"access_token": "RAWTOK01"}'
       else
-        @lock.synchronize { @auth = headers["authorization"] }
+        @lock.synchronize { @auth = headers[CREDHEADER] }
         payload = "{}"
       end
 
@@ -207,12 +216,12 @@ class SecretsFeatureTest < Minitest::Test
   # -------------------------------------------------------------------
   # Support.
 
-  # The Authorization header carries the SPEC's credential prefix, which a
-  # TEMPLATE cannot know - so assert on the CREDENTIAL and let the prefix be
-  # whatever this SDK's API declares.
+  # The credential header carries the SPEC's credential prefix (if any),
+  # which a TEMPLATE cannot know - so assert on the CREDENTIAL and let the
+  # prefix be whatever this SDK's API declares.
   def assert_credential(header, token)
     ok = header == token || header.to_s.end_with?(" " + token)
-    assert ok, "expected the authorization header to carry #{token}, got: #{header.inspect}"
+    assert ok, "expected the #{CREDHEADER} header to carry #{token}, got: #{header.inspect}"
   end
 
   def secrets_feature_of(client)
@@ -345,17 +354,17 @@ class SecretsFeatureTest < Minitest::Test
   def test_inactive_apikey_option_behaves_exactly_as_before
     client = ProjectNameSDK.test(nil, { "apikey" => "OPTKEY01" })
     fetchdef = client.prepare({ "path" => "/" })
-    assert_credential(fetchdef["headers"]["authorization"], "OPTKEY01")
+    assert_credential(fetchdef["headers"][CREDHEADER], "OPTKEY01")
 
     assert_nil secrets_feature_of(client),
       "no activation and no extend: the feature must not be installed"
   end
 
-  def test_inactive_no_apikey_means_no_authorization_header
+  def test_inactive_no_apikey_means_no_credential_header
     client = ProjectNameSDK.test(nil, nil)
     fetchdef = client.prepare({ "path" => "/" })
-    refute fetchdef["headers"].key?("authorization"),
-      "unexpected authorization header: #{fetchdef['headers']['authorization'].inspect}"
+    refute fetchdef["headers"].key?(CREDHEADER),
+      "unexpected #{CREDHEADER} header: #{fetchdef['headers'][CREDHEADER].inspect}"
   end
 
   # -------------------------------------------------------------------

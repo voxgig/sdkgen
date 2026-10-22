@@ -20,9 +20,9 @@
 // (the ts design) would have one thread walking the map while another
 // mutated it. The credential is therefore held in FEATURE STATE behind a
 // lock, the options map stays frozen after construction, and the
-// authorization header is rewritten per request at the transport - built
-// the same way prepareAuth builds it, from the same options.auth.prefix, so
-// the two cannot drift. This is go's structural deviation, adopted for a
+// credential header is rewritten per request at the transport - built
+// the same way prepareAuth builds it, from the same options.auth name and
+// prefix, so the two cannot drift. This is go's structural deviation, adopted for a
 // sharper version of go's own reason.
 //
 // WHERE RESOLUTION HAPPENS. At the TRANSPORT SEAM, not in the PreSpec hook.
@@ -434,7 +434,7 @@ public final class SecretsFeature: BaseFeature {
   // withrefresh buys a token and tries the request again when the API says
   // the current one is spent.
   //
-  // The retry rewrites the authorization header IN PLACE on the fetchdef,
+  // The retry rewrites the credential header IN PLACE on the fetchdef,
   // because the header was built by the synchronous prepareAuth before this
   // request left, and it carries the token that just failed.
   private func withrefresh(_ ctx: Context, _ url: String, _ fetchdef: VMap,
@@ -526,10 +526,14 @@ public final class SecretsFeature: BaseFeature {
       return
     }
 
+    // The header prepareAuth writes: auth.name, lower-cased.
+    let rawname = gp(auth, "name").asString ?? ""
+    let name = "" == rawname ? "authorization" : rawname.lowercased()
+
     let prefix = gp(auth, "prefix").asString ?? ""
     // Empty prefix (raw apiKey credential) must not add a leading space -
     // prepareAuth's rule, repeated here because this is the other writer.
-    headers.entries["authorization"] = .string("" == prefix ? token : prefix + " " + token)
+    headers.entries[name] = .string("" == prefix ? token : prefix + " " + token)
   }
 
   // buy an access token with the refresh token. Concurrent callers share the

@@ -393,11 +393,18 @@ func (f *SecretsFeature) reauth(fetchdef map[string]any, token string) {
 		return
 	}
 
+	// The header prepareAuth wrote: auth.name, lower-cased.
+	name, _ := auth["name"].(string)
+	if "" == name {
+		name = "authorization"
+	}
+	name = strings.ToLower(name)
+
 	prefix, _ := auth["prefix"].(string)
 	if "" == prefix {
-		headers["authorization"] = token
+		headers[name] = token
 	} else {
-		headers["authorization"] = prefix + " " + token
+		headers[name] = prefix + " " + token
 	}
 }
 

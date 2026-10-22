@@ -487,8 +487,8 @@ private:
 
   // ---- credential injection ---------------------------------------------------
 
-  // Write the resolved credential into THIS request's authorization header,
-  // the way prepareAuth builds it (same options auth.prefix, same
+  // Write the resolved credential into THIS request's credential header,
+  // the way prepareAuth builds it (same options auth name and prefix, same
   // suppression rule), so the two cannot drift.
   //
   // `auth: null` is the documented way to send NO credential, and
@@ -503,15 +503,20 @@ private:
     Value headers = getp(fetchdef, "headers");
     if (!headers.is_map()) return;
 
+    // The header prepareAuth writes: auth.name, lower-cased.
+    std::string name = as_str(Struct::getpath(liveopts_, {"auth", "name"}));
+    if (name.empty()) name = "authorization";
+    for (auto& c : name) c = ('A' <= c && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
+
     if (authSuppressed()) {
-      map_remove(headers, "authorization");
+      map_remove(headers, name);
       return;
     }
 
     if (cred_.empty()) return;
 
     std::string prefix = as_str(Struct::getpath(liveopts_, {"auth", "prefix"}));
-    map_put(headers, "authorization",
+    map_put(headers, name,
             Value(prefix.empty() ? cred_ : prefix + " " + cred_));
   }
 

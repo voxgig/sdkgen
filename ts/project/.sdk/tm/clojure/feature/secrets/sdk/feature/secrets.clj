@@ -369,16 +369,22 @@
 (defn- reauth! [fa fetchdef token]
   (let [headers (vs/getprop fetchdef "headers")]
     (when (vs/ismap headers)
-      (if (nil? (auth-of fa))
-        ;; Suppressed auth means NO header, the same answer u-prepare-auth
-        ;; gives. Reached defensively - nothing calls this with auth
-        ;; suppressed - but this is the function that writes the
-        ;; credential, so it is where the rule has to hold.
-        (vs/delprop headers core/HEADER-AUTH)
-        (let [prefix (let [p (vs/getpath (liveopts fa) "auth.prefix")]
-                       (if (string? p) p ""))]
-          (.put ^java.util.Map headers core/HEADER-AUTH
-                (if (= "" prefix) token (str prefix " " token))))))))
+      ;; The header u-prepare-auth writes: auth.name, lower-cased, else the
+      ;; name the API declares.
+      (let [given (vs/getpath (liveopts fa) "auth.name")
+            name (if (and (string? given) (not= "" given))
+                   (.toLowerCase ^String given java.util.Locale/ROOT)
+                   core/HEADER-AUTH)]
+        (if (nil? (auth-of fa))
+          ;; Suppressed auth means NO header, the same answer u-prepare-auth
+          ;; gives. Reached defensively - nothing calls this with auth
+          ;; suppressed - but this is the function that writes the
+          ;; credential, so it is where the rule has to hold.
+          (vs/delprop headers name)
+          (let [prefix (let [p (vs/getpath (liveopts fa) "auth.prefix")]
+                         (if (string? p) p ""))]
+            (.put ^java.util.Map headers name
+                  (if (= "" prefix) token (str prefix " " token)))))))))
 
 
 (defn- spent? [fa res]

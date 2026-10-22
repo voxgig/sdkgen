@@ -74,7 +74,7 @@ class ProjectNameSecretsMapProvider implements \Voxgig\Sekreto\Provider
 // no way to refuse them when the chain is broken. The transport is the ONE
 // seam every wire path crosses (utility/MakeRequest.php and Main's
 // raw_request both call `$utility->fetcher`), so the wrapper installed in
-// init() resolves there, rewrites the authorization header prepare_auth
+// init() resolves there, rewrites the credential header prepare_auth
 // built, and refuses the request outright when a provider errors.
 //
 // MISS vs ERROR (sekreto's invariant): a provider MISS falls through - the
@@ -427,7 +427,7 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
     // Buy a token and try the request again when the API says the current
     // one is spent.
     //
-    // The retry rewrites the authorization header IN PLACE on the fetchdef,
+    // The retry rewrites the credential header IN PLACE on the fetchdef,
     // because the header was built by the synchronous prepare_auth before
     // this request left, and it carries the token that just failed.
     private function with_refresh(ProjectNameContext $ctx, string $url, array $fetchdef, mixed $inner): array
@@ -610,7 +610,7 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
         $this->cred = is_string($value) ? $value : '';
     }
 
-    // Rebuild the authorization header from the credential, exactly as
+    // Rebuild the credential header from the credential, exactly as
     // prepare_auth builds it.
     private function inject(array &$fetchdef, string $token): void
     {
@@ -618,10 +618,15 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
             return;
         }
 
+        // The header prepare_auth writes: auth.name, lower-cased.
+        $name = \Voxgig\Struct\Struct::getpath($this->liveopts, 'auth.name');
+        $name = is_string($name) && '' !== $name
+            ? strtolower($name) : 'authorization';
+
         // Suppressed auth means NO header, the same answer prepare_auth
         // gives - and so does an empty credential.
         if (null === ($this->liveopts['auth'] ?? null) || '' === $token) {
-            unset($fetchdef['headers']['authorization']);
+            unset($fetchdef['headers'][$name]);
             return;
         }
 
@@ -631,7 +636,7 @@ class ProjectNameSecretsFeature extends ProjectNameBaseFeature
         }
 
         // Empty prefix (raw apiKey credential) must not add a leading space.
-        $fetchdef['headers']['authorization'] = '' === $prefix
+        $fetchdef['headers'][$name] = '' === $prefix
             ? $token : $prefix . ' ' . $token;
     }
 

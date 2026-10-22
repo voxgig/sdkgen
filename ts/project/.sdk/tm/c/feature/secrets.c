@@ -277,8 +277,8 @@ static bool spec_of_map(sek_pool* pool, voxgig_value* m, sek_spec* spec, const c
 
 // ---- credential injection ---------------------------------------------------
 
-// Write the resolved credential into THIS request's authorization header,
-// the way prepare_auth builds it (same options auth.prefix, same
+// Write the resolved credential into THIS request's credential header,
+// the way prepare_auth builds it (same options auth name and prefix, same
 // suppression rule), so the two cannot drift.
 //
 // `auth: null` is the documented way to send NO credential, and
@@ -292,26 +292,41 @@ static void secrets_reauth(SecretsFeature* f, voxgig_value* fetchdef) {
   voxgig_value* headers = getp(fetchdef, "headers");
   if (!voxgig_is_map(headers)) return;
 
+  // The header prepare_auth writes: auth.name, lower-cased into a copy this
+  // function frees.
+  voxgig_value* namev = getpath2(f->liveopts, "auth", "name");
+  const char* given = voxgig_is_string(namev) ? voxgig_as_string(namev) : "";
+  char* name = strdup('\0' == given[0] ? "authorization" : given);
+  if (NULL == name) return;
+  for (char* c = name; '\0' != *c; c++) {
+    if ('A' <= *c && *c <= 'Z') *c = (char)(*c - 'A' + 'a');
+  }
+
   voxgig_value* auth = getp(f->liveopts, "auth");
   if (v_is_noval(auth) || v_is_null(auth)) {
-    voxgig_value* k = voxgig_new_string("authorization");
+    voxgig_value* k = voxgig_new_string(name);
     voxgig_delprop(headers, k);
     voxgig_release(k);
+    free(name);
     return;
   }
 
-  if (NULL == f->cred || '\0' == f->cred[0]) return;
+  if (NULL == f->cred || '\0' == f->cred[0]) {
+    free(name);
+    return;
+  }
 
   const char* prefix = get_str(auth, "prefix");
   if (NULL == prefix || '\0' == prefix[0]) {
-    setp(headers, "authorization", v_str(f->cred));
+    setp(headers, name, v_str(f->cred));
   } else {
     size_t n = strlen(prefix) + 1 + strlen(f->cred) + 1;
     char* buf = (char*)malloc(n);
     snprintf(buf, n, "%s %s", prefix, f->cred);
-    setp(headers, "authorization", v_str(buf));
+    setp(headers, name, v_str(buf));
     free(buf);
   }
+  free(name);
 }
 
 // Every value this feature resolves or buys is a secret the SDK handles,

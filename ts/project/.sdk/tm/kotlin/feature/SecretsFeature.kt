@@ -44,9 +44,9 @@ import KOTLINPACKAGE.utility.struct.Struct
 // LinkedHashMap while another mutated it: a ConcurrentModificationException,
 // not merely a torn read. The credential is therefore held in FEATURE STATE
 // behind a lock, the options map stays frozen after construction, and the
-// authorization header is rewritten per request at the transport - built
-// the same way prepareAuth builds it, from the same options.auth.prefix, so
-// the two cannot drift. This is go's structural deviation, adopted for a
+// credential header is rewritten per request at the transport - built
+// the same way prepareAuth builds it, from the same options.auth name and
+// prefix, so the two cannot drift. This is go's structural deviation, adopted for a
 // sharper version of go's own reason.
 //
 // WHERE RESOLUTION HAPPENS. At the TRANSPORT SEAM, not in the PreSpec hook.
@@ -456,7 +456,7 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
   // withrefresh buys a token and tries the request again when the API says
   // the current one is spent.
   //
-  // The retry rewrites the authorization header IN PLACE on the fetchdef,
+  // The retry rewrites the credential header IN PLACE on the fetchdef,
   // because the header was built by the synchronous prepareAuth before this
   // request left, and it carries the token that just failed.
   private fun withrefresh(
@@ -543,8 +543,13 @@ class SecretsFeature : BaseFeature("secrets", "0.1.0", true) {
       return
     }
 
-    val prefix = (auth as Map<String, Any?>)["prefix"]
-    headers["authorization"] =
+    // The header prepareAuth wrote: auth.name, lower-cased.
+    val rawname = (auth as Map<String, Any?>)["name"]
+    val name =
+      if (rawname is String && "" != rawname) rawname.lowercase() else "authorization"
+
+    val prefix = auth["prefix"]
+    headers[name] =
       if (prefix is String && "" != prefix) "$prefix $token" else token
   }
 

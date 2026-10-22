@@ -20,6 +20,17 @@ import (
 
 const envprefix = "PROJECTENV_TEST_SECRETS_"
 
+// credheader is the header the credential travels in: the DEFAULT
+// client's auth.name, lower-cased as prepare_auth sends it. Read from a
+// default client because a test's `auth: nil` leaves no name to read.
+var credheader = func() string {
+	auth, _ := sdk.TestSDK(nil, nil).OptionsMap()["auth"].(map[string]any)
+	if name, _ := auth["name"].(string); "" != name {
+		return strings.ToLower(name)
+	}
+	return "authorization"
+}()
+
 // ---------------------------------------------------------------------
 // The recording transport: system.fetch for a LIVE client, scripting one
 // status per API call (the last repeating) and a token endpoint for the
@@ -59,7 +70,7 @@ func (w *wire) fetch(url string, fetchdef map[string]any) (map[string]any, error
 	auth := ""
 	has := false
 	if headers, is := fetchdef["headers"].(map[string]any); is {
-		if v, found := headers["authorization"]; found {
+		if v, found := headers[credheader]; found {
 			auth, _ = v.(string)
 			has = true
 		}
@@ -123,13 +134,13 @@ func (w *wire) token() []wirecall {
 // ---------------------------------------------------------------------
 // Support.
 
-// The Authorization header carries the SPEC's credential prefix, which a
-// TEMPLATE cannot know - so assert on the CREDENTIAL and let the prefix be
-// whatever this SDK's API declares.
+// The credential header carries the SPEC's credential prefix (if any),
+// which a TEMPLATE cannot know - so assert on the CREDENTIAL and let the
+// prefix be whatever this SDK's API declares.
 func credentialIs(t *testing.T, header string, token string) {
 	t.Helper()
 	if header != token && !strings.HasSuffix(header, " "+token) {
-		t.Fatalf("expected the authorization header to carry %s, got: %q", token, header)
+		t.Fatalf("expected the %s header to carry %s, got: %q", credheader, token, header)
 	}
 }
 
@@ -319,7 +330,7 @@ func TestSecretsInactive(t *testing.T) {
 			t.Fatalf("prepare failed: %v", err)
 		}
 		headers, _ := fetchdef["headers"].(map[string]any)
-		auth, _ := headers["authorization"].(string)
+		auth, _ := headers[credheader].(string)
 		credentialIs(t, auth, "OPTKEY01")
 
 		if nil != secretsFeatureOf(client) {
@@ -327,15 +338,15 @@ func TestSecretsInactive(t *testing.T) {
 		}
 	})
 
-	t.Run("no apikey means no authorization header", func(t *testing.T) {
+	t.Run("no apikey means no credential header", func(t *testing.T) {
 		client := sdk.TestSDK(nil, nil)
 		fetchdef, err := client.Prepare(map[string]any{"path": "/"})
 		if err != nil {
 			t.Fatalf("prepare failed: %v", err)
 		}
 		headers, _ := fetchdef["headers"].(map[string]any)
-		if _, has := headers["authorization"]; has {
-			t.Fatalf("unexpected authorization header: %v", headers["authorization"])
+		if _, has := headers[credheader]; has {
+			t.Fatalf("unexpected %s header: %v", credheader, headers[credheader])
 		}
 	})
 }
@@ -730,7 +741,7 @@ func TestSecretsExchangeRawFetch(t *testing.T) {
 			return
 		}
 		mu.Lock()
-		gotauth = req.Header.Get("authorization")
+		gotauth = req.Header.Get(credheader)
 		mu.Unlock()
 		res.Header().Set("content-type", "application/json")
 		res.Write([]byte(`{}`))

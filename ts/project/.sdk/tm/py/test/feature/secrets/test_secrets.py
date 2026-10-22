@@ -37,6 +37,20 @@ from projectname_sdk.feature.secrets_feature import ProjectNameSecretsFeature
 ENVPREFIX = "PROJECTENV_TEST_SECRETS_"
 
 
+def cred_header():
+    """The header the credential travels in: the DEFAULT client's
+    auth.name, lower-cased as prepare_auth sends it. Read from a default
+    client because a test's `auth: None` leaves no name to read."""
+    sdk = ProjectNameSDK({"base": "http://localhost:8080"})
+    name = (sdk.options_map().get("auth") or {}).get("name")
+    if isinstance(name, str) and "" != name:
+        return name.lower()
+    return "authorization"
+
+
+CREDHEADER = cred_header()
+
+
 def secrets_sdk(sdkopts):
     """An SDK with the secrets feature ACTIVE.
 
@@ -120,14 +134,14 @@ class TestSecrets(unittest.TestCase):
         return transport.calls[-1]["fetchdef"].get("headers") or {}
 
     def assert_credential(self, headers, token):
-        # The Authorization header carries the SPEC's credential prefix,
-        # which a TEMPLATE cannot know - assert on the CREDENTIAL and let
-        # the prefix be whatever this SDK's API declares.
-        got = str(headers.get("authorization") or "")
+        # The credential header carries the SPEC's credential prefix (if
+        # any), which a TEMPLATE cannot know - assert on the CREDENTIAL and
+        # let the prefix be whatever this SDK's API declares.
+        got = str(headers.get(CREDHEADER) or "")
         self.assertTrue(
             got == token or got.endswith(" " + token),
-            "expected the authorization header to carry %s, got: %r"
-            % (token, got))
+            "expected the %s header to carry %s, got: %r"
+            % (CREDHEADER, token, got))
 
     # --- the chain ---
 
@@ -184,7 +198,7 @@ class TestSecrets(unittest.TestCase):
         sdk, transport = self._sdk(envchain())
 
         headers = self._send(sdk, transport)
-        self.assertNotIn("authorization", headers)
+        self.assertNotIn(CREDHEADER, headers)
 
     def test_a_provider_error_fails_the_op(self):
         # A broken store is NOT a miss: resolution must raise (failing the
@@ -233,7 +247,7 @@ class TestSecrets(unittest.TestCase):
         })
 
         headers = self._lastwire(sdk, transport)
-        self.assertNotIn("authorization", headers,
+        self.assertNotIn(CREDHEADER, headers,
                          "the chain has nothing yet, so no credential "
                          "should go out")
 
@@ -290,7 +304,7 @@ class TestSecrets(unittest.TestCase):
         sdk, transport = self._sdk(opts)
 
         headers = self._send(sdk, transport)
-        self.assertNotIn("authorization", headers)
+        self.assertNotIn(CREDHEADER, headers)
 
 
 if __name__ == "__main__":
@@ -419,7 +433,7 @@ class TestSecretsReviewPins(unittest.TestCase):
 
         state["have"] = False
         headers = self._wire(sdk, transport)
-        self.assertEqual("", str(headers.get("authorization") or ""),
+        self.assertEqual("", str(headers.get(CREDHEADER) or ""),
                          "after the chain reports a miss, the retracted "
                          "credential must not go out")
 
@@ -444,8 +458,8 @@ class TestSecretsReviewPins(unittest.TestCase):
         return transport.calls[-1]["fetchdef"].get("headers") or {}
 
     def assert_credential(self, headers, token):
-        got = str(headers.get("authorization") or "")
+        got = str(headers.get(CREDHEADER) or "")
         self.assertTrue(
             got == token or got.endswith(" " + token),
-            "expected the authorization header to carry %s, got: %r"
-            % (token, got))
+            "expected the %s header to carry %s, got: %r"
+            % (CREDHEADER, token, got))

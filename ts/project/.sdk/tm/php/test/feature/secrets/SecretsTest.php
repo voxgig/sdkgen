@@ -38,6 +38,22 @@ use PHPUnit\Framework\TestCase;
 // exchange tests.
 class ProjectNameSecretsWire
 {
+    private static ?string $credheader = null;
+
+    // The header the credential travels in: the DEFAULT client's auth.name,
+    // lower-cased as prepare_auth sends it. Read from a default client
+    // because a test's `auth: null` leaves no name to read.
+    public static function credheader(): string
+    {
+        if (null === self::$credheader) {
+            $client = ProjectNameSDK::test(null, null);
+            $name = $client->options_map()['auth']['name'] ?? null;
+            self::$credheader = is_string($name) && '' !== $name
+                ? strtolower($name) : 'authorization';
+        }
+        return self::$credheader;
+    }
+
     /** @var array<int,array<string,mixed>> */
     public array $calls = [];
     /** @var array<int,int> */
@@ -63,8 +79,8 @@ class ProjectNameSecretsWire
         $headers = is_array($fetchdef['headers'] ?? null) ? $fetchdef['headers'] : [];
         $this->calls[] = [
             'url' => $fullurl,
-            'auth' => $headers['authorization'] ?? null,
-            'has' => array_key_exists('authorization', $headers),
+            'auth' => $headers[self::credheader()] ?? null,
+            'has' => array_key_exists(self::credheader(), $headers),
             'body' => $fetchdef['body'] ?? null,
         ];
 
@@ -138,15 +154,16 @@ class ProjectNameSecretsTest extends TestCase
     // -----------------------------------------------------------------
     // Support.
 
-    // The Authorization header carries the SPEC's credential prefix, which
-    // a TEMPLATE cannot know - so assert on the CREDENTIAL and let the
-    // prefix be whatever this SDK's API declares.
+    // The credential header carries the SPEC's credential prefix (if any),
+    // which a TEMPLATE cannot know - so assert on the CREDENTIAL and let
+    // the prefix be whatever this SDK's API declares.
     private function assertCredential(mixed $header, string $token): void
     {
         $ok = $header === $token
             || (is_string($header) && str_ends_with($header, ' ' . $token));
         $this->assertTrue($ok,
-            'expected the authorization header to carry ' . $token .
+            'expected the ' . ProjectNameSecretsWire::credheader() .
+            ' header to carry ' . $token .
             ', got: ' . var_export($header, true));
     }
 
@@ -299,17 +316,18 @@ class ProjectNameSecretsTest extends TestCase
     {
         $client = ProjectNameSDK::test(null, ['apikey' => 'OPTKEY01']);
         $fetchdef = $client->prepare(['path' => '/']);
-        $this->assertCredential($fetchdef['headers']['authorization'] ?? null, 'OPTKEY01');
+        $this->assertCredential($fetchdef['headers'][ProjectNameSecretsWire::credheader()] ?? null, 'OPTKEY01');
 
         $this->assertNull($this->secretsFeatureOf($client),
             'no activation and no extend: the feature must not be installed');
     }
 
-    public function testInactiveNoApikeyMeansNoAuthorizationHeader(): void
+    public function testInactiveNoApikeyMeansNoCredentialHeader(): void
     {
         $client = ProjectNameSDK::test(null, null);
         $fetchdef = $client->prepare(['path' => '/']);
-        $this->assertArrayNotHasKey('authorization', $fetchdef['headers']);
+        $this->assertArrayNotHasKey(ProjectNameSecretsWire::credheader(),
+            $fetchdef['headers']);
     }
 
     // -----------------------------------------------------------------
@@ -389,7 +407,8 @@ class ProjectNameSecretsTest extends TestCase
 
         // Nor may it surface through the fetchdef prepare() builds.
         $fetchdef = $client->prepare(['path' => '/']);
-        $this->assertArrayNotHasKey('authorization', $fetchdef['headers']);
+        $this->assertArrayNotHasKey(ProjectNameSecretsWire::credheader(),
+            $fetchdef['headers']);
     }
 
     public function testCustomProvidersAreAcceptedVerbatim(): void
@@ -1029,12 +1048,15 @@ if (str_ends_with($path, '/auth/token')) {
 }
 $auth = '';
 foreach ($_SERVER as $k => $v) {
-    if ('HTTP_AUTHORIZATION' === $k) { $auth = (string)$v; }
+    if ('CREDKEY' === $k) { $auth = (string)$v; }
 }
 file_put_contents($dir . '/auth.txt', $auth);
 header('content-type: application/json');
 echo '{}';
 ROUTER;
+        // The server sees the credential header under its CGI name.
+        $router = str_replace('CREDKEY', 'HTTP_' . strtoupper(
+            str_replace('-', '_', ProjectNameSecretsWire::credheader())), $router);
         file_put_contents($this->dir . '/router.php', $router);
 
         // A free port: bind, read it, release it. The window between release

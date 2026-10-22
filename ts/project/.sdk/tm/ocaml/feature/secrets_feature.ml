@@ -185,7 +185,7 @@ let make ?(plugins : Defs.definition list = [])
         jo [("resolves", Num 0.); ("refusals", Num 0.); ("buys", Num 0.); ("retries", Num 0.)])
     | None -> empty_map () in
 
-  (* Rewrite the authorization header on THIS request from the resolved
+  (* Rewrite the credential header on THIS request from the resolved
    * credential, the way prepare_auth builds it: `auth: null` (Noval or a
    * stored Null - the documented way to send NO credential) means no
    * header, else options.auth.prefix + the token. *)
@@ -193,11 +193,15 @@ let make ?(plugins : Defs.definition list = [])
     match getp fetchdef "headers" with
     | Map _ as headers ->
       let opts = live_options () in
+      (* The header prepare_auth writes: auth.name, lower-cased. *)
+      let name = match getpath_s opts "auth.name" with
+        | Str s when s <> "" -> String.lowercase_ascii s
+        | _ -> "authorization" in
       (match getp opts "auth" with
        | Map _ ->
          let prefix = match getpath_s opts "auth.prefix" with Str s -> s | _ -> "" in
-         setp headers "authorization" (Str (if prefix <> "" then prefix ^ " " ^ token else token))
-       | _ -> ignore (delprop headers (Str "authorization")))
+         setp headers name (Str (if prefix <> "" then prefix ^ " " ^ token else token))
+       | _ -> ignore (delprop headers (Str name)))
     | _ -> () in
 
   let spent (x : xchg) (res : value) : bool =
@@ -316,7 +320,7 @@ let make ?(plugins : Defs.definition list = [])
             else (match buy x with Ok _ -> Ok () | Error m -> Error m))) in
 
   (* Buy a token and try the request again when the API says the current
-   * one is spent. The retry rewrites the authorization header IN PLACE on
+   * one is spent. The retry rewrites the credential header IN PLACE on
    * the fetchdef, because the header carries the token that just failed. *)
   let withrefresh (x : xchg) fctx url fetchdef inner : (value * sdk_error option) =
     (* `auth: null` is the documented way to send NO credential, and

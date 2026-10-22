@@ -607,12 +607,17 @@ fn reauth(state: &Rc<RefCell<SecretsState>>, fetchdef: &Value, token: &str) {
 
     let options = state.borrow().options.clone();
 
+    let name = match getpath(&["auth", "name"], &options) {
+        Value::Str(s) if !s.is_empty() => s.to_ascii_lowercase(),
+        _ => "authorization".to_string(),
+    };
+
     // Suppressed auth means NO header, the same answer prepare_auth gives.
     // Reached defensively - with_refresh does not retry at all when auth
     // is suppressed - but this is the function that writes the credential,
     // so it is where the rule has to hold.
     if !authactive(&options) {
-        vs::del_prop(headers, &Value::str("authorization"));
+        vs::del_prop(headers, &Value::str(name.as_str()));
         return;
     }
 
@@ -623,13 +628,9 @@ fn reauth(state: &Rc<RefCell<SecretsState>>, fetchdef: &Value, token: &str) {
 
     // Empty prefix (a raw apiKey credential) must not add a leading space.
     if prefix.is_empty() {
-        setp(&headers, "authorization", Value::str(token));
+        setp(&headers, &name, Value::str(token));
     } else {
-        setp(
-            &headers,
-            "authorization",
-            Value::str(format!("{} {}", prefix, token)),
-        );
+        setp(&headers, &name, Value::str(format!("{} {}", prefix, token)));
     }
 }
 

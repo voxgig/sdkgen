@@ -40,6 +40,15 @@
 
 (def ^:private BASE "http://secrets.test/api")
 
+;; The header the credential travels in: the DEFAULT client's auth.name,
+;; lower-cased as u-prepare-auth sends it, else the name the API declares.
+;; Read from a default client because a test's `auth: nil` leaves no name.
+(def ^:private CREDHEADER
+  (let [name (vs/getpath (core/client-options-map (client/test-sdk nil nil)) "auth.name")]
+    (if (and (string? name) (not= "" name))
+      (.toLowerCase ^String name java.util.Locale/ROOT)
+      core/HEADER-AUTH)))
+
 ;; Named explicitly: a project that narrows the default allow.op set would
 ;; otherwise turn these into a false RED (the control leg refused before it
 ;; reached the transport), and the rule under test lives at the transport,
@@ -58,7 +67,7 @@
 
 
 ;; `reply` is (fn [n url fetchdef] -> [res err]); nil means 200 {ok true}.
-;; The authorization header is snapshotted AS A STRING at call time: the
+;; The credential header is snapshotted AS A STRING at call time: the
 ;; fetchdef's header map is the live spec map the retry rewrites IN PLACE,
 ;; so holding the map would make every recorded call show the last token.
 (defn- counting-fetch
@@ -69,7 +78,7 @@
      (assoc stub :fetch
             (fn [url fetchdef]
               (let [headers (vs/getprop fetchdef "headers")
-                    auth (when (vs/ismap headers) (vs/getprop headers "authorization"))
+                    auth (when (vs/ismap headers) (vs/getprop headers CREDHEADER))
                     n (inc (count @calls))]
                 (swap! calls conj {:url url
                                    :auth (when (some? auth) (str auth))
@@ -161,14 +170,14 @@
                  (deref (core/client-features sdk)))))
 
 
-;; The Authorization header carries the SPEC's credential prefix, which a
+;; The credential header carries the SPEC's credential prefix, which a
 ;; TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
 ;; `Bearer <token>`, an apiKey scheme the raw token. So assert on the
 ;; CREDENTIAL and let the prefix be whatever this SDK's API declares.
 (defn- credential-is [got token msg]
   (let [s (str (or got ""))]
     (t/is-true (or (= s token) (str/ends-with? s (str " " token)))
-               (str msg ": expected the authorization header to carry " token
+               (str msg ": expected the " CREDHEADER " header to carry " token
                     ", got " (pr-str got)))))
 
 
@@ -232,7 +241,7 @@
                  sdk (live-sdk stub)]
              (client/direct sdk (vs/jm "path" "/thing"))
              (t/is-eq (sent stub) 1 "one request")
-             (t/is-nil (:auth (call-at stub 0)) "no authorization header"))))
+             (t/is-nil (:auth (call-at stub 0)) "no credential header"))))
 
     ;; ---- apikey KEEPS ITS MEANING ----
 
@@ -289,7 +298,7 @@
                  sdk (live-sdk stub :secrets (sekopts "providers" (vs/jt (miss-provider))))]
              (client/direct sdk (vs/jm "path" "/thing"))
              (t/is-eq (sent stub) 1 "the request still goes out")
-             (t/is-nil (:auth (call-at stub 0)) "no authorization header"))))
+             (t/is-nil (:auth (call-at stub 0)) "no credential header"))))
 
     ;; ---- FAIL CLOSED: a provider ERROR is not a miss ----
     ;;
@@ -565,7 +574,7 @@
                ;; unsend it. The suppression is now honoured before the
                ;; first purchase.
                (t/is-eq (sent stub) 1 (str "one API call, no purchase: " (wire stub)))
-               (t/is-nil (:auth (call-at stub 0)) "no authorization header"))))
+               (t/is-nil (:auth (call-at stub 0)) "no credential header"))))
 
       (chk "secrets-exchange-with-no-refresh-token-fails-closed"
            (fn []

@@ -613,11 +613,11 @@ fn resolve_once(st: *State, ctx: *Context) E!void {
 // Buy a token and try the request again when the API says the current one
 // is spent.
 //
-// The retry rewrites the authorization header IN PLACE on the fetchdef,
+// The retry rewrites the credential header IN PLACE on the fetchdef,
 // because the header was built by the synchronous prepare_auth before this
 // request left and carries the token that just failed. Rebuilt the way
-// prepare_auth builds it, from the same options.auth.prefix, so the two
-// cannot drift.
+// prepare_auth builds it, from the same options.auth name and prefix, so
+// the two cannot drift.
 fn with_refresh(st: *State, ctx: *Context, url: []const u8, fetchdef: Value, inner: Fetcher) E!Value {
     // `auth: null` is the documented way to send NO credential, and
     // prepare_auth honours it by removing the header. A refusal of a
@@ -686,12 +686,18 @@ fn reauth(st: *State, fetchdef: Value, token: []const u8) void {
     const headers = h.getp(fetchdef, "headers");
     if (headers != .object) return;
 
+    // The header prepare_auth writes: auth.name, lower-cased.
+    const name: []const u8 = switch (h.getpath(&.{ "auth", "name" }, st.liveopts)) {
+        .string => |s| if (s.len == 0) HEADER_AUTH else std.ascii.allocLowerString(h.A(), s) catch HEADER_AUTH,
+        else => HEADER_AUTH,
+    };
+
     // Suppressed auth means NO header, the same answer prepare_auth gives.
     // Reached defensively - with_refresh does not retry at all when auth is
     // suppressed - but this is the function that writes the credential, so
     // it is where the rule has to hold.
     if (!auth_active(st.liveopts)) {
-        h.del_prop(headers, h.vstr(HEADER_AUTH));
+        h.del_prop(headers, h.vstr(name));
         return;
     }
 
@@ -702,9 +708,9 @@ fn reauth(st: *State, fetchdef: Value, token: []const u8) void {
 
     // Empty prefix (a raw apiKey credential) must not add a leading space.
     if (0 == prefix.len) {
-        h.setp(headers, HEADER_AUTH, h.vstr(token));
+        h.setp(headers, name, h.vstr(token));
     } else {
-        h.setp(headers, HEADER_AUTH, h.vstr(std.fmt.allocPrint(h.A(), "{s} {s}", .{ prefix, token }) catch token));
+        h.setp(headers, name, h.vstr(std.fmt.allocPrint(h.A(), "{s} {s}", .{ prefix, token }) catch token));
     }
 }
 

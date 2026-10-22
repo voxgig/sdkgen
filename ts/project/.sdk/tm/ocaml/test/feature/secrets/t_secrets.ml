@@ -14,7 +14,7 @@
  *     test-mode mock, which replaces the fetcher and hides the seam;
  *   - every assertion reads what the RECORDER received, never the options
  *     map, which this feature never writes. The FEATURE writes the
- *     authorization header (see the header-only note on placed_cred_of
+ *     credential header (see the header-only note on placed_cred_of
  *     below), so its cases read that; the three cases where the feature is
  *     inactive or missed read whatever the generated prepare_auth placed;
  *   - a refusal must carry the PROVIDER'S OWN message (sekreto's wording),
@@ -102,10 +102,11 @@ let token_calls (r : recorder) : value list =
  * perfectly well.
  *
  * KNOWN GAP, DELIBERATELY NOT PAPERED OVER HERE: the FEATURE'S own rewrite
- * (secrets_feature.ml) still writes `authorization` whatever the scheme
- * says, so a chain-resolved secret does NOT follow the placement. Every
- * target's secrets feature does the same. The cases below that exercise the
- * feature therefore keep reading the header - which is what the code
+ * (secrets_feature.ml) always writes a HEADER - the one auth.name names -
+ * whatever the scheme's placement says, so on a query or cookie scheme a
+ * chain-resolved secret does NOT follow the placement. Every target's
+ * secrets feature does the same. The cases below that exercise the feature
+ * therefore keep reading the credential header - which is what the code
  * actually does - and only the three cases where the feature is inactive or
  * missed read the placed bag. Making the feature placement-aware is a
  * separate change, across every target at once. *)
@@ -176,12 +177,20 @@ let placed_cred_of (fd : value) : value =
      | Map _ -> Sdk_features.header_ci headers Sdk_prepare_auth.cred_name
      | _ -> Noval)
 
-(* The AUTHORIZATION HEADER the i-th API call carried, or Noval - what the
+(* The header the credential travels in: the DEFAULT client's auth.name,
+ * lower-cased as prepare_auth sends it. Read from a default client because
+ * a test's `auth: null` leaves no name to read. *)
+let credheader : string =
+  match getpath_s (Sdk_client.test ()).cl_options "auth.name" with
+  | Str s when s <> "" -> String.lowercase_ascii s
+  | _ -> "authorization"
+
+(* The CREDENTIAL HEADER the i-th API call carried, or Noval - what the
  * feature's own rewrite writes (see the note above). *)
 let auth_of (r : recorder) (i : int) : value =
   match List.nth_opt (api_calls r) i with
   | Some c -> (match getp (getp c "fetchdef") "headers" with
-      | Map _ as h -> Sdk_features.header_ci h "authorization"
+      | Map _ as h -> Sdk_features.header_ci h credheader
       | _ -> Noval)
   | None -> Noval
 
@@ -205,7 +214,7 @@ let credential_is (header : value) (token : string) : bool =
 let absent (header : value) : bool = is_nullish header
 
 (* SUPPRESSION IS ABOUT EVERY BAG, not just the header. `auth: null` must
- * leave nothing anywhere, so a suppression case asserts the authorization
+ * leave nothing anywhere, so a suppression case asserts the credential
  * header AND the bag this API's scheme places its credential in - otherwise
  * a query-placement SDK could leak `?token=...` and still read green,
  * because the header it never uses was empty. *)
@@ -645,7 +654,7 @@ let () =
           ok200 (jo [("access_token", Str ("ACCESS" ^ string_of_int (List.length (token_calls r))))])
         else
           let token = match getp fd "headers" with
-            | Map _ as h -> (match Sdk_features.header_ci h "authorization" with Str s -> s | _ -> "")
+            | Map _ as h -> (match Sdk_features.header_ci h credheader with Str s -> s | _ -> "")
             | _ -> "" in
           status_res (api token) (jo [("id", Str "r01")])) in
 
@@ -774,7 +783,7 @@ let () =
         (entity_names ());
       check "an entity op recorded its fetchdef" !seen;
       let header = match getpath_s explain "fetchdef.headers" with
-        | Map _ as h -> Sdk_features.header_ci h "authorization"
+        | Map _ as h -> Sdk_features.header_ci h credheader
         | _ -> Noval in
       check ("carries the deterministic test token: " ^ stringify header)
         (credential_is header "test-access_token");

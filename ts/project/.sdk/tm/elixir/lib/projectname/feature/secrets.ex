@@ -562,7 +562,7 @@ defmodule ProjectName.Feature.Secrets do
   # Buy a token and try the request again when the API says the current one
   # is spent.
   #
-  # The retry rewrites the authorization header IN PLACE on the fetchdef,
+  # The retry rewrites the credential header IN PLACE on the fetchdef,
   # because the header was built by the synchronous prepare_auth before this
   # request left and it carries the token that just failed. Rebuilt the way
   # prepare_auth builds it, from the same options auth.prefix, so the two
@@ -623,12 +623,16 @@ defmodule ProjectName.Feature.Secrets do
       # Reached defensively - the transport does not resolve at all when
       # auth is suppressed - but this is the function that writes the
       # credential, so it is where the rule has to hold.
+      # The header prepare_auth writes: auth.name, lower-cased.
+      name = S.getpath(S.getprop(f, "_liveopts"), "auth.name")
+      name = if is_binary(name) and name != "", do: String.downcase(name), else: "authorization"
+
       if suppressed?(f) or token == "" do
-        S.delprop(headers, "authorization")
+        S.delprop(headers, name)
       else
         prefix = S.getpath(S.getprop(f, "_liveopts"), "auth.prefix")
         prefix = if is_binary(prefix), do: prefix, else: ""
-        S.setprop(headers, "authorization", if(prefix != "", do: prefix <> " " <> token, else: token))
+        S.setprop(headers, name, if(prefix != "", do: prefix <> " " <> token, else: token))
       end
     end
 

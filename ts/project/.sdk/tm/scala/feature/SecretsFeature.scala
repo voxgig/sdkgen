@@ -344,11 +344,11 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
   // Buy a token and try the request again when the API says the current one
   // is spent.
   //
-  // The retry rewrites the authorization header IN PLACE on the fetchdef,
+  // The retry rewrites the credential header IN PLACE on the fetchdef,
   // because the header was built by the synchronous prepareAuth before this
   // request left and it carries the token that just failed. Rebuilt the way
-  // prepareAuth builds it, from the same options auth.prefix, so the two
-  // cannot drift.
+  // prepareAuth builds it, from the same options auth name and prefix, so
+  // the two cannot drift.
   private def withrefresh(
     ctx: Context,
     url: String,
@@ -426,12 +426,17 @@ class SecretsFeature extends BaseFeature("secrets", "0.1.0", true) {
     val rawauth = if (this.liveopts == null) null else this.liveopts.get("auth")
     rawauth match {
       case authmap: JMap[_, _] =>
+        // The header prepareAuth wrote: auth.name, lower-cased.
+        val name = authmap.asInstanceOf[JMap[String, Object]].get("name") match {
+          case s: String if s.nonEmpty => s.toLowerCase(java.util.Locale.ROOT)
+          case _ => "authorization"
+        }
         val prefix = authmap.asInstanceOf[JMap[String, Object]].get("prefix") match {
           case s: String => s
           case _ => ""
         }
-        if ("" == prefix) headers.put("authorization", token)
-        else headers.put("authorization", prefix + " " + token)
+        if ("" == prefix) headers.put(name, token)
+        else headers.put(name, prefix + " " + token)
       case _ => headers.remove("authorization")
     }
   }

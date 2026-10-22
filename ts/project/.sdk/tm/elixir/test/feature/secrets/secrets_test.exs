@@ -39,6 +39,14 @@ defmodule ProjectName.SecretsTest do
   @envprefix "PROJECTENV_TEST_SECRETS_"
   @base "http://raw.test/api"
 
+  # The header the credential travels in: the DEFAULT client's auth.name,
+  # lower-cased as prepare_auth sends it. Read from a default client because
+  # a test's `auth: nil` leaves no name to read.
+  defp credheader do
+    name = S.getpath(ProjectName.options_map(ProjectName.test()), "auth.name")
+    if is_binary(name) and name != "", do: String.downcase(name), else: "authorization"
+  end
+
   # ---- the recorder --------------------------------------------------------
 
   # A transport that records every call it is handed, so "sent" is a fact
@@ -56,13 +64,14 @@ defmodule ProjectName.SecretsTest do
     apistatus = Map.get(opts, :api, [200])
     resfield = Map.get(opts, :response, "access_token")
     tokenfail = Map.get(opts, :tokenfail, nil)
+    credheader = credheader()
 
     fetch = fn url, fetchdef ->
       headers = S.getprop(fetchdef, "headers")
 
       auth =
         if S.ismap(headers),
-          do: ProjectName.Feature.header_get(headers, "authorization"),
+          do: ProjectName.Feature.header_get(headers, credheader),
           else: nil
 
       [{:calls, cs}] = :ets.lookup(t, :calls)
@@ -163,7 +172,7 @@ defmodule ProjectName.SecretsTest do
 
   # ---- assertions ----------------------------------------------------------
 
-  # The authorization header carries the SPEC's credential prefix, which a
+  # The credential header carries the SPEC's credential prefix, which a
   # TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
   # `Bearer <token>`, an apiKey scheme the raw token. So assert on the
   # CREDENTIAL and let the prefix be whatever this SDK's API declares -
@@ -173,7 +182,8 @@ defmodule ProjectName.SecretsTest do
     got = if is_binary(header), do: header, else: ""
 
     assert got == token or String.ends_with?(got, " " <> token),
-           "expected the Authorization header to carry " <> token <> ", got: " <> inspect(header)
+           "expected the " <> credheader() <> " header to carry " <> token <> ", got: " <>
+             inspect(header)
   end
 
   defp auth_is(call, token), do: credential_is(if(call == nil, do: nil, else: call.auth), token)
@@ -223,7 +233,7 @@ defmodule ProjectName.SecretsTest do
       assert Secrets.sekreto(client) == nil
     end
 
-    test "inactive: no apikey means no authorization header" do
+    test "inactive: no apikey means no credential header" do
       r = recorder()
       client = sdk(r, [])
       ProjectName.direct(client, S.jm(["path", "/thing"]))
@@ -794,7 +804,7 @@ defmodule ProjectName.SecretsTest do
   #
   # The shape these tests pin: what the chain resolves is a REFRESH token,
   # which is POSTed to a token endpoint for a short-lived ACCESS token; the
-  # access token is what the Authorization header carries; and when the API
+  # access token is what the credential header carries; and when the API
   # answers 401 the client buys another and tries the same request again,
   # once.
   #

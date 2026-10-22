@@ -44,6 +44,18 @@ object SecretsTestMain {
   private var npass = 0
   private val failures = new ArrayList[String]()
 
+  // The header the credential travels in: the DEFAULT client's auth.name,
+  // lower-cased as prepareAuth sends it. Read from a default client because
+  // a test's `auth: null` leaves no name to read.
+  private lazy val CREDHEADER: String =
+    ProjectNameSDK.testSDK(null, null).optionsMap().get("auth") match {
+      case auth: JMap[_, _] => auth.asInstanceOf[JMap[String, Object]].get("name") match {
+        case s: String if s.nonEmpty => s.toLowerCase(java.util.Locale.ROOT)
+        case _ => "authorization"
+      }
+      case _ => "authorization"
+    }
+
   private def pass(): Unit = { npass += 1 }
   private def fail(name: String, msg: String): Unit = failures.add(name + ": " + msg)
   private def check(name: String, cond: Boolean, msg: String): Unit =
@@ -56,7 +68,7 @@ object SecretsTestMain {
   private def eqi(name: String, exp: Int, act: Int): Unit =
     check(name, exp == act, "expected " + exp + ", got " + act)
 
-  // The Authorization header carries the SPEC's credential prefix, which a
+  // The credential header carries the SPEC's credential prefix, which a
   // TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives `Bearer
   // <token>`, an apiKey scheme the raw token. So assert on the CREDENTIAL and
   // let the prefix be whatever this SDK's API declares - pinning the whole
@@ -70,7 +82,7 @@ object SecretsTestMain {
       new String(java.util.Base64.getDecoder.decode(got.substring(6)), "UTF-8").startsWith(token + ":")
     } catch { case _: IllegalArgumentException => false })
     check(name, got == token || got.endsWith(" " + token) || basic,
-      "expected the authorization header to carry " + token + ", got \"" + got + "\"")
+      "expected the " + CREDHEADER + " header to carry " + token + ", got \"" + got + "\"")
   }
 
   // ---- the recording transport --------------------------------------------
@@ -98,8 +110,8 @@ object SecretsTestMain {
         }
         val call = new LinkedHashMap[String, Object]()
         call.put("url", url)
-        call.put("has", java.lang.Boolean.valueOf(headers.containsKey("authorization")))
-        call.put("auth", headers.get("authorization") match {
+        call.put("has", java.lang.Boolean.valueOf(headers.containsKey(CREDHEADER)))
+        call.put("auth", headers.get(CREDHEADER) match {
           case s: String => s
           case _ => ""
         })
@@ -327,7 +339,7 @@ object SecretsTestMain {
     val client = ProjectNameSDK.testSDK(null, jmap("apikey" -> "OPTKEY01"))
     val fetchdef = client.prepare(jmap("path" -> "/"))
     val headers = fetchdef.get("headers").asInstanceOf[JMap[String, Object]]
-    credentialIs("inactive.apikey", headers.get("authorization").asInstanceOf[String], "OPTKEY01")
+    credentialIs("inactive.apikey", headers.get(CREDHEADER).asInstanceOf[String], "OPTKEY01")
 
     check("inactive.nofeature", null == secretsFeatureOf(client),
       "no model activation and no extend: the feature must not be installed")
@@ -335,8 +347,8 @@ object SecretsTestMain {
     val bare = ProjectNameSDK.testSDK(null, null)
     val bareheaders = bare.prepare(jmap("path" -> "/"))
       .get("headers").asInstanceOf[JMap[String, Object]]
-    check("inactive.noapikey", !bareheaders.containsKey("authorization"),
-      "unexpected authorization header: " + bareheaders.get("authorization"))
+    check("inactive.noapikey", !bareheaders.containsKey(CREDHEADER),
+      "unexpected " + CREDHEADER + " header: " + bareheaders.get(CREDHEADER))
   }
 
   // =========================================================================

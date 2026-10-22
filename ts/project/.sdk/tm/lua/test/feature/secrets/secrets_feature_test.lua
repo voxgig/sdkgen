@@ -40,6 +40,19 @@ local SecretsFeature = require("feature.secrets_feature")
 local sekreto = require("feature.secrets.sekreto")
 
 
+-- The header the credential travels in: the DEFAULT client's auth.name,
+-- lower-cased as prepare_auth sends it. Read from a default client because
+-- a test that clears `auth` leaves no name to read.
+local CREDHEADER = (function()
+  local auth = sdk.test(nil, nil):options_map().auth
+  local name = type(auth) == "table" and auth.name or nil
+  if type(name) == "string" and name ~= "" then
+    return string.lower(name)
+  end
+  return "authorization"
+end)()
+
+
 -- ---------------------------------------------------------------------
 -- The recording transport: system.fetch for a LIVE client, scripting one
 -- status per API call (the last repeating) and a token endpoint for the
@@ -64,7 +77,7 @@ local function make_wire(script)
 
   w.fetch = function(url, fetchdef)
     local headers = type(fetchdef) == "table" and fetchdef.headers or {}
-    local auth = headers["authorization"]
+    local auth = headers[CREDHEADER]
     w.calls[#w.calls + 1] = {
       url = url, auth = auth, has = auth ~= nil,
       body = fetchdef.body, method = fetchdef.method,
@@ -113,14 +126,14 @@ end
 -- ---------------------------------------------------------------------
 -- Support.
 
--- The Authorization header carries the SPEC's credential prefix, which a
--- TEMPLATE cannot know - so assert on the CREDENTIAL and let the prefix be
--- whatever this SDK's API declares.
+-- The credential header carries the SPEC's credential prefix (if any),
+-- which a TEMPLATE cannot know - so assert on the CREDENTIAL and let the
+-- prefix be whatever this SDK's API declares.
 local function assert_credential(header, token)
   local ok = header == token
     or (type(header) == "string" and header:sub(-(#token + 1)) == " " .. token)
-  assert.is_true(ok, "expected the authorization header to carry " .. token ..
-    ", got: " .. tostring(header))
+  assert.is_true(ok, "expected the " .. CREDHEADER .. " header to carry " ..
+    token .. ", got: " .. tostring(header))
 end
 
 
@@ -257,16 +270,16 @@ describe("secrets", function()
       local client = sdk.test(nil, { apikey = "OPTKEY01" })
       local fetchdef, err = client:prepare({ path = "/" })
       assert.is_nil(err)
-      assert_credential(fetchdef.headers["authorization"], "OPTKEY01")
+      assert_credential(fetchdef.headers[CREDHEADER], "OPTKEY01")
       assert.is_nil(secrets_feature_of(client),
         "no model activation, no extend: the feature must not be installed")
     end)
 
-    it("no apikey means no authorization header", function()
+    it("no apikey means no credential header", function()
       local client = sdk.test(nil, nil)
       local fetchdef, err = client:prepare({ path = "/" })
       assert.is_nil(err)
-      assert.is_nil(fetchdef.headers["authorization"])
+      assert.is_nil(fetchdef.headers[CREDHEADER])
     end)
 
     it("an inactive feature wraps nothing and resolves nothing", function()

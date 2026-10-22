@@ -106,7 +106,7 @@ internal class Wire
 
             if (fetchdef.TryGetValue("headers", out var hraw) &&
                 hraw is Dictionary<string, object?> headers &&
-                headers.TryGetValue("authorization", out var auth))
+                headers.TryGetValue(SecretsFeatureTest.CredHeader, out var auth))
             {
                 call.HasAuth = true;
                 call.Auth = auth as string ?? "";
@@ -176,7 +176,19 @@ public class SecretsFeatureTest
     private const string EnvPrefix = "PROJECTENV_TEST_SECRETS_";
     private const string SecretsBase = "http://secrets.test/api";
 
-    // The Authorization header carries the SPEC's credential prefix, which a
+    // The header the credential travels in: the DEFAULT client's auth.name,
+    // lower-cased as PrepareAuth sends it. Read from a default client because
+    // a test's `auth: null` leaves no name to read.
+    internal static readonly string CredHeader = DefaultCredHeader();
+
+    private static string DefaultCredHeader()
+    {
+        var auth = StructUtils.GetProp(ProjectNameSDK.TestSDK(null, null).OptionsMap(), "auth");
+        return StructUtils.GetProp(auth, "name") is string name && "" != name
+            ? name.ToLowerInvariant() : "authorization";
+    }
+
+    // The credential header carries the SPEC's credential prefix, which a
     // TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
     // `Bearer <token>`, an apiKey scheme the raw token. So assert on the
     // CREDENTIAL and let the prefix be whatever this SDK's API declares -
@@ -186,7 +198,7 @@ public class SecretsFeatureTest
     {
         var got = header ?? "";
         Assert.True(got == token || got.EndsWith(" " + token),
-            "expected the authorization header to carry " + token + ", got: " + got);
+            "expected the " + CredHeader + " header to carry " + token + ", got: " + got);
     }
 
     // Construct the client and ADOPT the feature via `extend` ONLY when the
@@ -395,22 +407,22 @@ public class SecretsFeatureTest
         var fetchdef = client.Prepare(new Dictionary<string, object?> { ["path"] = "/" });
         var headers = fetchdef["headers"] as Dictionary<string, object?>;
 
-        CredentialIs(headers!["authorization"] as string ?? "", "OPTKEY01");
+        CredentialIs(headers![CredHeader] as string ?? "", "OPTKEY01");
 
         Assert.True(null == SecretsOf(client),
             "no model activation and no extend: the feature must not be installed");
     }
 
     [Fact]
-    public void InactiveNoApikeyMeansNoAuthorizationHeader()
+    public void InactiveNoApikeyMeansNoCredentialHeader()
     {
         var client = ProjectNameSDK.TestSDK(null, null);
 
         var fetchdef = client.Prepare(new Dictionary<string, object?> { ["path"] = "/" });
         var headers = fetchdef["headers"] as Dictionary<string, object?>;
 
-        Assert.False(headers!.ContainsKey("authorization"),
-            "an SDK with no apikey must send no authorization header");
+        Assert.False(headers!.ContainsKey(CredHeader),
+            "an SDK with no apikey must send no " + CredHeader + " header");
     }
 
 
@@ -626,7 +638,7 @@ public class SecretsFeatureTest
 
     // With `cache: false`, a provider that answered once and then reports a
     // MISS (a revoked secret) must RETRACT the credential: the next request
-    // must go out with no authorization header.
+    // must go out with no credential header.
     [Fact]
     public void UncachedMissRetractsTheCredential()
     {
@@ -1648,7 +1660,7 @@ public class SecretsFeatureTest
                     }
                     else
                     {
-                        gotauth = ctx.Request.Headers["authorization"] ?? "";
+                        gotauth = ctx.Request.Headers[CredHeader] ?? "";
                         payload = "{}";
                         served.Set();
                     }

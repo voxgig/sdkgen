@@ -165,8 +165,22 @@ fn response(status: i64, body: Value) -> Value {
     ])
 }
 
+// The header the credential travels in: the DEFAULT client's auth.name,
+// lower-cased as prepare_auth sends it. Read from a default client because a
+// test's `auth: null` leaves no name to read.
+fn cred_header() -> &'static str {
+    static NAME: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    NAME.get_or_init(|| {
+        let client = RUSTCRATE::test_sdk(Value::Noval, Value::Noval);
+        match getpath(&["auth", "name"], &client.options_map()) {
+            Value::Str(s) if !s.is_empty() => s.to_ascii_lowercase(),
+            _ => "authorization".to_string(),
+        }
+    })
+}
+
 fn authof(fetchdef: &Value) -> Option<String> {
-    match getpath(&["headers", "authorization"], fetchdef) {
+    match getpath(&["headers", cred_header()], fetchdef) {
         Value::Str(s) => Some(s),
         _ => None,
     }
@@ -176,7 +190,8 @@ fn credential_is(header: Option<String>, token: &str) {
     let got = header.unwrap_or_default();
     assert!(
         got == token || got.ends_with(&format!(" {}", token)),
-        "expected the Authorization header to carry {}, got: {:?}",
+        "expected the {} header to carry {}, got: {:?}",
+        cred_header(),
         token,
         got
     );

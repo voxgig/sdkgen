@@ -63,6 +63,19 @@ static int CASES = 0;
     T_RUN(fn);   \
   } while (0)
 
+// The header the credential travels in: the DEFAULT client's auth.name,
+// lower-cased as prepareAuth sends it. Read from a default client because a
+// test's `auth: null` leaves no name to read.
+static const std::string& credHeader() {
+  static const std::string name = [] {
+    std::string n = as_str(Struct::getpath(ProjectNameSDK::testSDK()->options, {"auth", "name"}));
+    if (n.empty()) return std::string("authorization");
+    for (auto& c : n) c = ('A' <= c && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
+    return n;
+  }();
+  return name;
+}
+
 // ---- the recording live transport ------------------------------------------
 
 struct Rec {
@@ -76,7 +89,7 @@ struct Rec {
   std::string tokenfield = "access_token";
 
   Value fetch(const std::string& url, const Value& fetchdef) {
-    // SNAPSHOT the fetchdef: the exchange retry rewrites the authorization
+    // SNAPSHOT the fetchdef: the exchange retry rewrites the credential
     // header of the same map in place (as go does), so a recorded reference
     // would show every attempt carrying the LAST token.
     calls.push_back(vmap({{"url", Value(url)}, {"fetchdef", Struct::clone(fetchdef)}}));
@@ -94,19 +107,19 @@ struct Rec {
     return fhResponse(status, vmap({{"ok", Value(true)}, {"n", Value(n)}}), Value::undef());
   }
 
-  // The authorization header the i-th call left with ("" when none).
+  // The credential header the i-th call left with ("" when none).
   std::string auth(size_t i) const {
     if (i >= calls.size()) return "";
     Value fd = getp(calls[i], "fetchdef");
     Value h = getp(fd, "headers");
-    Value a = getp(h, "authorization");
+    Value a = getp(h, credHeader());
     return a.is_string() ? a.as_string() : "";
   }
 
   bool hasAuth(size_t i) const {
     if (i >= calls.size()) return false;
     Value h = getp(getp(calls[i], "fetchdef"), "headers");
-    return h.is_map() && !mapget(h, "authorization").is_undef();
+    return h.is_map() && !mapget(h, credHeader()).is_undef();
   }
 
   std::string body(size_t i) const {
@@ -373,7 +386,7 @@ static void t_provider_error_fails_entity_op() {
   FhOpResult cr = ch->op(fhOp("load"));
   ASSERT_TRUE(cr.ok, "entity control: op failed: " + (cr.err ? cr.err->msg : std::string("")));
   ASSERT_EQ(crec->calls.size(), (size_t)1, "entity control: exactly one call");
-  Value auth = getp(crec->headers(0), "authorization");
+  Value auth = getp(crec->headers(0), credHeader());
   ASSERT_EQ(as_str(auth), expectAuth(ch->client.get(), "CHAINKEY"),
             "entity control: the chain credential reached the header");
 }
@@ -745,7 +758,7 @@ static void t_exchange_test_mode_buys_nothing() {
   FhOpResult r = h->op(fhOp("load"));
   ASSERT_TRUE(r.ok, "test mode: op failed: " + (r.err ? r.err->msg : std::string("")));
   ASSERT_EQ(rec->calls.size(), (size_t)1, "test mode: exactly one call, and it is the API call");
-  Value auth = getp(rec->headers(0), "authorization");
+  Value auth = getp(rec->headers(0), credHeader());
   ASSERT_EQ(as_str(auth), expectAuth(h->client.get(), "test-access_token"),
             "test mode: the deterministic fake token");
 }
@@ -762,7 +775,7 @@ static void t_entity_op_gets_chain_credential() {
   FhOpResult r = h->op(fhOp("list"));
   ASSERT_TRUE(r.ok, "entity: op failed: " + (r.err ? r.err->msg : std::string("")));
   ASSERT_EQ(rec->calls.size(), (size_t)1, "entity: one call");
-  ASSERT_EQ(as_str(getp(rec->headers(0), "authorization")), expectAuth(h->client.get(), "CHAINKEY"),
+  ASSERT_EQ(as_str(getp(rec->headers(0), credHeader())), expectAuth(h->client.get(), "CHAINKEY"),
             "entity: the chain credential on the entity path");
 }
 

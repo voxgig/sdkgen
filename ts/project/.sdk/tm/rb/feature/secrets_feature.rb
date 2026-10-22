@@ -23,7 +23,7 @@
 # the chain is broken. The transport is the ONE seam every wire path
 # crosses (utility/make_request.rb and Main's raw_request both call
 # `utility.fetcher`), so the wrapper installed in `init` resolves there,
-# rewrites the authorization header prepare_auth built, and refuses the
+# rewrites the credential header prepare_auth built, and refuses the
 # request outright when a provider errors.
 #
 # MISS vs ERROR (sekreto's invariant): a provider MISS falls through - the
@@ -328,7 +328,7 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
   # Buy a token and try the request again when the API says the current one
   # is spent.
   #
-  # The retry rewrites the authorization header IN PLACE on the fetchdef,
+  # The retry rewrites the credential header IN PLACE on the fetchdef,
   # because the header was built by the synchronous prepare_auth before
   # this request left, and it carries the token that just failed.
   def _with_refresh(ctx, url, fetchdef, inner)
@@ -511,16 +511,20 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     end
   end
 
-  # Rebuild the authorization header from the credential, exactly as
+  # Rebuild the credential header from the credential, exactly as
   # prepare_auth builds it.
   def _inject(fetchdef, token)
     return unless fetchdef.is_a?(Hash)
     headers = fetchdef["headers"]
     return unless headers.is_a?(Hash)
 
+    # The header prepare_auth writes: auth.name, lower-cased.
+    name = VoxgigStruct.getpath(@liveopts, "auth.name")
+    name = name.is_a?(String) && !name.empty? ? name.downcase : "authorization"
+
     # Suppressed auth means NO header, the same answer prepare_auth gives.
     if @liveopts["auth"].nil? || token.nil? || token.empty?
-      headers.delete("authorization")
+      headers.delete(name)
       return
     end
 
@@ -528,7 +532,7 @@ class ProjectNameSecretsFeature < ProjectNameBaseFeature
     prefix = "" unless prefix.is_a?(String)
 
     # Empty prefix (raw apiKey credential) must not add a leading space.
-    headers["authorization"] = prefix.empty? ? token : "#{prefix} #{token}"
+    headers[name] = prefix.empty? ? token : "#{prefix} #{token}"
   end
 
   # The plugin DEFINITIONS the model selected for this feature, emitted by

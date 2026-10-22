@@ -457,11 +457,11 @@ public class SecretsFeature extends BaseFeature {
   // withrefresh buys a token and tries the request again when the API says
   // the current one is spent.
   //
-  // The retry rewrites the authorization header IN PLACE on the fetchdef,
+  // The retry rewrites the credential header IN PLACE on the fetchdef,
   // because the header was built by the synchronous prepareAuth before this
   // request left, and it carries the token that just failed. Rebuilt the
-  // way prepareAuth builds it, from the same options auth.prefix, so the
-  // two cannot drift.
+  // way prepareAuth builds it, from the same options auth name and prefix,
+  // so the two cannot drift.
   private Object withrefresh(Context ctx, String url, Map<String, Object> fetchdef,
       Utility.FetcherFn inner) {
 
@@ -554,14 +554,19 @@ public class SecretsFeature extends BaseFeature {
       return;
     }
 
+    // The header prepareAuth wrote: auth.name, lower-cased.
+    Object nameRaw = ((Map<String, Object>) rawauth).get("name");
+    String name = nameRaw instanceof String && !"".equals(nameRaw)
+        ? ((String) nameRaw).toLowerCase(java.util.Locale.ROOT) : "authorization";
+
     Object prefixRaw = ((Map<String, Object>) rawauth).get("prefix");
     String prefix = prefixRaw instanceof String ? (String) prefixRaw : "";
 
     if ("".equals(prefix)) {
-      headers.put("authorization", token);
+      headers.put(name, token);
     }
     else {
-      headers.put("authorization", prefix + " " + token);
+      headers.put(name, prefix + " " + token);
     }
   }
 

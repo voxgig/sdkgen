@@ -65,6 +65,18 @@ public class SecretsFeatureTest {
 
   static final String BASE = "http://secrets.test/api";
 
+  // The header the credential travels in: the DEFAULT client's auth.name,
+  // lower-cased as prepareAuth sends it. Read from a default client because
+  // a test's `auth: null` leaves no name to read.
+  static final String CREDHEADER = credheader();
+
+  static String credheader() {
+    Object auth = ProjectNameSDK.testSDK(null, null).optionsMap().get("auth");
+    Object name = auth instanceof Map ? ((Map<String, Object>) auth).get("name") : null;
+    return name instanceof String && !"".equals(name)
+        ? ((String) name).toLowerCase(java.util.Locale.ROOT) : "authorization";
+  }
+
   // ------------------------------------------------------------------
   // The recording transport: system.fetch for a LIVE client, scripting one
   // status per API call (the last repeating) and a token endpoint for the
@@ -100,9 +112,9 @@ public class SecretsFeatureTest {
       Object headers = fetchdef == null ? null : fetchdef.get("headers");
       if (headers instanceof Map) {
         Map<String, Object> hm = (Map<String, Object>) headers;
-        if (hm.containsKey("authorization")) {
+        if (hm.containsKey(CREDHEADER)) {
           has = true;
-          Object v = hm.get("authorization");
+          Object v = hm.get(CREDHEADER);
           auth = v instanceof String ? (String) v : "";
         }
       }
@@ -173,7 +185,7 @@ public class SecretsFeatureTest {
   // ------------------------------------------------------------------
   // Support.
 
-  // The Authorization header carries the SPEC's credential prefix, which a
+  // The credential header carries the SPEC's credential prefix, which a
   // TEMPLATE cannot know: an OpenAPI `http`/`bearer` scheme gives
   // `Bearer <token>`, an apiKey scheme the raw token. So assert on the
   // CREDENTIAL and let the prefix be whatever this SDK's API declares -
@@ -182,7 +194,7 @@ public class SecretsFeatureTest {
   static void credentialIs(String header, String token) {
     String got = header == null ? "" : header;
     assertTrue(got.equals(token) || got.endsWith(" " + token),
-        "expected the authorization header to carry " + token + ", got: \"" + got + "\"");
+        "expected the " + CREDHEADER + " header to carry " + token + ", got: \"" + got + "\"");
   }
 
   static Map<String, Object> map(Object... kv) {
@@ -371,21 +383,21 @@ public class SecretsFeatureTest {
 
     Map<String, Object> fetchdef = client.prepare(map("path", "/"));
     Map<String, Object> headers = (Map<String, Object>) fetchdef.get("headers");
-    credentialIs((String) headers.get("authorization"), "OPTKEY01");
+    credentialIs((String) headers.get(CREDHEADER), "OPTKEY01");
 
     assertNull(featureOf(client),
         "the feature is switched off: it must not be installed");
   }
 
   @Test
-  public void inactive_noApikeyMeansNoAuthorizationHeader() {
+  public void inactive_noApikeyMeansNoCredentialHeader() {
     ProjectNameSDK client = ProjectNameSDK.testSDK(null, map(
         "feature", map("secrets", map("active", false))));
 
     Map<String, Object> fetchdef = client.prepare(map("path", "/"));
     Map<String, Object> headers = (Map<String, Object>) fetchdef.get("headers");
-    assertFalse(headers.containsKey("authorization"),
-        "unexpected authorization header: " + headers.get("authorization"));
+    assertFalse(headers.containsKey(CREDHEADER),
+        "unexpected " + CREDHEADER + " header: " + headers.get(CREDHEADER));
   }
 
   // ------------------------------------------------------------------
@@ -926,7 +938,7 @@ public class SecretsFeatureTest {
   //
   // What the chain resolves is a REFRESH token, which is POSTed to a token
   // endpoint for a short-lived ACCESS token; the access token is what the
-  // Authorization header carries; and when the API answers 401 the client
+  // credential header carries; and when the API answers 401 the client
   // buys another and tries the same request again, once.
 
   static Map<String, Object> exchangeOpts(Object... extra) {
