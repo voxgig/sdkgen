@@ -615,6 +615,34 @@ describe('guardFlowSteps — a generated flow test makes only calls the runtime 
     deepStrictEqual(sink[0].steps, ['BasicMoonFlow.0:patch'])
   })
 
+  test('a check that a record is gone is switched off with the remove it follows', () => {
+    const steps = () => [
+      { o: 'create', i: { ref: 'moon_ref01' } },
+      { o: 'list', v: [{ apply: 'ItemExists', def: { ref: 'moon_ref01' } }] },
+      { o: 'remove', i: { ref: 'moon_ref01', suffix: '_rm0' } },
+      { o: 'list', v: [{ apply: 'ItemNotExists', def: { ref: 'moon_ref01' } }] },
+    ]
+    const op = (remove: string) => ({
+      create: { points: [pt('/moon')] },
+      list: { points: [pt('/moon')] },
+      remove: { points: [pt(remove)] },
+    })
+
+    // The remove needs a crater the created record does not name.
+    const nested = model(op('/moon/{id}/crater/{uid}'), steps())
+    deepStrictEqual(guardFlowSteps(nested), [
+      { flow: 'BasicMoonFlow', step: 2, op: 'remove' },
+      { flow: 'BasicMoonFlow', step: 3, op: 'list' },
+    ])
+    const step = nested.main.kit.flow.BasicMoonFlow.step
+    deepStrictEqual(step.map((s: any) => s.a), [undefined, undefined, false, false])
+    // The live harness still runs both, where it can resolve the crater.
+    deepStrictEqual(step.map((s: any) => s.unreachable), [undefined, undefined, true, true])
+
+    const own = model(op('/moon/{id}'), steps())
+    deepStrictEqual(guardFlowSteps(own), [])
+  })
+
   test('a step already off, or an op the entity lacks, is left alone', () => {
     const m = model({ list: { points: [pt('/a', 'x'), pt('/b', 'y')] } },
       [{ o: 'list', a: false }, { o: 'remove' }])

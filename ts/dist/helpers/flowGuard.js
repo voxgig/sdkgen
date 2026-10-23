@@ -32,8 +32,16 @@ function guardFlowSteps(model, log) {
         const fields = Object.values(ent.fields || {}).map((f) => f?.n).filter(Boolean);
         const held = [];
         let stored = false;
+        const unremoved = new Set();
         Object.values(flow.step).forEach((step, index) => {
             if (null == step || false === step.a) {
+                return;
+            }
+            // A check that a record is gone holds only if its remove was made.
+            if ((step.v || []).some((v) => 'ItemNotExists' === v?.apply && unremoved.has(v.def?.ref))) {
+                step.a = false;
+                step.unreachable = true;
+                out.push({ flow: name, step: index, op: step.o });
                 return;
             }
             // A step no emitter has a call for would vanish from the test unseen.
@@ -55,6 +63,8 @@ function guardFlowSteps(model, log) {
             if (null != op && !(0, opShape_1.opReachable)(op, given)) {
                 step.a = false;
                 step.unreachable = true;
+                if ('remove' === step.o && null != step.i?.ref)
+                    unremoved.add(step.i.ref);
                 out.push({ flow: name, step: index, op: step.o });
                 return;
             }
@@ -75,7 +85,8 @@ function guardFlowSteps(model, log) {
             point: 'flow-step-unreachable',
             steps: out.map((s) => s.flow + '.' + s.step + ':' + s.op),
             note: 'flow step(s) ' + out.map((s) => s.flow + '#' + s.step + ' (' + s.op + ')').join(', ') +
-                ' switched off: the call they make reaches no route of the operation. ' +
+                ' switched off: the call they make reaches no route of the operation, ' +
+                'or they check a removal such a step was to make. ' +
                 'Every route needs an action, or a path parameter the step does not give.',
         });
     }
