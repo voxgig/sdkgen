@@ -1957,11 +1957,14 @@ abort("FAIL: a multi-segment envelope was not synthesised - #{n} of 3 records") 
       ok(built.ok, 'c: the ' + name + ' SDK did not build:\n' + tail(built.out))
     }
 
+    // C names only, as the Makefile's defined_names reads them: mingw also
+    // lists a .refptr.<name> for each data name an object takes the address of.
     const defined = (name: string): string[] =>
       run(nm, ['-P', '-g', 'libsdk.a'], roots[name]).out.split('\n')
         .map((line) => line.trim().split(/\s+/))
         .filter((f) => 2 <= f.length && /^[A-Z]$/.test(f[1]) && 'U' !== f[1])
         .map((f) => f[0].replace(/^_/, ''))
+        .filter((n) => /^[A-Za-z_]\w*$/.test(n))
     const alpha = defined('alpha')
     const omega = new Set(defined('omega'))
     ok(100 < alpha.length && 100 < omega.size,
@@ -2129,7 +2132,11 @@ int main(void) {
     ok(built.ok, 'c: the probe does not link without OpenSSL:\n' + tail(built.out))
     const refused = run(Path.join(sdkroot, 'tests', 'tls_probe.out'),
       ['https://127.0.0.1:9/p'], sdkroot).out
-    ok(/fetch_transport: .*TLS=none.*options\.system\.fetch/.test(refused),
+    // Without POSIX sockets there is no transport for TLS to sit under.
+    const refusal = cHasHeaders(cc, ['sys/socket.h'])
+      ? /fetch_transport: .*TLS=none.*options\.system\.fetch/
+      : /fetch_transport: .*needs POSIX sockets.*options\.system\.fetch/
+    ok(refusal.test(refused),
       'c: an https:// request did not say this build has no TLS:\n' + refused)
   })
 
@@ -5288,6 +5295,9 @@ const CREDNAME_LANES: CredNameLane[] = [
   {
     target: 'c',
     needs: 'make and a C compiler',
+    // The corpus driver links omni, whose util.c includes <regex.h>.
+    prepare: () => cHasHeaders(cCompiler()!, ['regex.h']) ? null
+      : 'the corpus driver needs POSIX <regex.h>, which this C compiler does not have',
     steps: [
       {
         name: 'the suites build',
@@ -6170,6 +6180,22 @@ function cCompiler(): string | null {
   return null == configured || '' === configured
     ? (toolchain('cc') || toolchain('gcc'))
     : toolchain(configured)
+}
+
+const cHeadersFound = new Map<string, boolean>()
+
+// Whether the C compiler finds every one of these headers.
+function cHasHeaders(cc: string, headers: string[]): boolean {
+  const key = cc + ' ' + headers.join(' ')
+  if (!cHeadersFound.has(key)) {
+    const dir = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-cheaders-'))
+    const file = Path.join(dir, 'headers.c')
+    Fs.writeFileSync(file, headers.map((h) => '#include <' + h + '>\n').join('') +
+      'int main(void) { return 0; }\n')
+    cHeadersFound.set(key, run(cc, ['-fsyntax-only', file], dir).ok)
+    Fs.rmSync(dir, { recursive: true, force: true })
+  }
+  return cHeadersFound.get(key)!
 }
 
 function cxxCompiler(): string | null {
@@ -8363,6 +8389,8 @@ const PROBE_LANES: ProbeLane[] = [
   {
     target: 'c',
     ready: () => null == toolchain('make') || null == authProbeCc() ? 'no C toolchain' : null,
+    // utility/http.c has no transport where there are no POSIX sockets (windows).
+    seam: () => !cHasHeaders(authProbeCc()!, ['sys/socket.h']),
     exec: (sdkroot, env, write, probe) => {
       write('tests/' + probe.name + '_probe.c', probe.source.c)
       const out = 'tests/' + probe.name + '_probe.out'
