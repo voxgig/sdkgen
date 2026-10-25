@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -49,7 +49,7 @@ const client = ${ctor};
     const eName = nom(exampleEntity, 'Name')
     const eVar = zigVarName(exampleEntity.name)
     const method = zigVarName(exampleEntity.name)
-    const opnames = Object.keys(exampleEntity.op || {})
+    const opnames = entityOps(exampleEntity)
     // Model-driven id key: null when the entity has no id-like field, in which
     // case the load example takes no match argument.
     const idF = entityIdField(exampleEntity)

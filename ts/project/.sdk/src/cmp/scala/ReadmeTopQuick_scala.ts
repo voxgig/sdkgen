@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape, javaMapOf, matchExampleItems, javaMapItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape, javaMapOf, matchExampleItems, javaMapItems, entityOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -22,7 +22,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const authActive = isAuthActive(model)
 
   const shown = null != exampleEntity &&
-    ['list', 'load'].some((op: string) => Object.keys(exampleEntity.op || {}).includes(op))
+    ['list', 'load'].some((op: string) => entityOps(exampleEntity).includes(op))
 
   Content(`\`\`\`scala
 import ${scalaPackage(model)}.core.${SDK}
@@ -46,7 +46,7 @@ val client = new ${SDK}(options)
     const eVar = scalaVarName(exampleEntity.name)
     const accessor = scalaVarName(exampleEntity.name)
     const eNameLower = nom(exampleEntity, 'Name').toLowerCase()
-    const opnames = Object.keys(exampleEntity.op || {})
+    const opnames = entityOps(exampleEntity)
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {

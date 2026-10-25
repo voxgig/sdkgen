@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, shadowedLoad, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, shadowedLoad, actionList, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY,
@@ -5964,6 +5964,30 @@ main: kit: flow: BasicBadgeFlow: {
       }
     }
     deepStrictEqual(wrong, [], 'load examples that leave out a route parameter:\n' + wrong.join('\n'))
+  })
+
+
+  // The runtime refuses a call without $action to an operation whose every route is one.
+  test('a root README quick start calls no operation whose every route is an action, in every target', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets, undefined, actionList())
+    const starts = quickStarts(out['README.md'])
+
+    const wrong: string[] = []
+    for (const target of targets) {
+      const start = starts[targetTitle(target)]
+      if (null == start) {
+        wrong.push(target + ': no quick start in the root README')
+        continue
+      }
+      const page = { [target + '/quick.md']: start }
+      wrong.push(...opCalls(page, target, 'list', /[Ee]numeration/).filter((line: string) => !/\$action/.test(line)))
+      if (0 === opCalls(page, target, 'load', /[Ee]numeration/).length) {
+        wrong.push(target + ': the quick start calls no load')
+      }
+    }
+    deepStrictEqual(wrong, [], 'quick starts that call an action-only list without its action:\n' +
+      wrong.join('\n'))
   })
 
 

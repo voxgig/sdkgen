@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, serverVariables, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, serverVariables, listMatchArg, matchExampleItems, litString, entityOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -57,7 +57,7 @@ client = ${ctor}
     // Sanitise the local variable name — an entity whose lowercased name is a
     // Python keyword (e.g. `class`) would otherwise emit uncompilable code.
     const eVar = exampleVarName(eName.toLowerCase(), 'py')
-    const opnames = Object.keys(exampleEntity.op || {})
+    const opnames = entityOps(exampleEntity)
     const idF = entityIdField(exampleEntity)
 
     let hasCall = false

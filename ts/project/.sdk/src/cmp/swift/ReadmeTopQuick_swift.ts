@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -60,7 +60,7 @@ let client = ${SDK}(options)
     const eName = nom(exampleEntity, 'Name')
     const eVar = swiftVarName(exampleEntity.name)
     const eNameLower = eName.toLowerCase()
-    const opnames = Object.keys(exampleEntity.op || {})
+    const opnames = entityOps(exampleEntity)
     // Model-driven id key: null when the entity has no id-like field, in which
     // case the load example takes an empty match.
     const idF = entityIdField(exampleEntity)

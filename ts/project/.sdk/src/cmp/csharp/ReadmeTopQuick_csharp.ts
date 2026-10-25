@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -38,7 +38,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
     : `new ${model.const.Name}SDK()`
 
   const shown = null != exampleEntity &&
-    ['list', 'load'].some((op: string) => Object.keys(exampleEntity.op || {}).includes(op))
+    ['list', 'load'].some((op: string) => entityOps(exampleEntity).includes(op))
 
   Content(`\`\`\`csharp
 using ${model.const.Name}Sdk;
@@ -52,7 +52,7 @@ var client = ${ctor};
     // Sanitise the local variable name — an entity whose camelCased name is a
     // C# keyword gets a trailing underscore (csVarName) so the snippet compiles.
     const eVar = csVarName(exampleEntity.name)
-    const opnames = Object.keys(exampleEntity.op || {})
+    const opnames = entityOps(exampleEntity)
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {

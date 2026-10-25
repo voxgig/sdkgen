@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -48,7 +48,7 @@ my $client = ${ctor};
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
     const eVar = eName.toLowerCase()
-    const opnames = Object.keys(exampleEntity.op || {})
+    const opnames = entityOps(exampleEntity)
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {

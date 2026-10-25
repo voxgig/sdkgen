@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, listMatchArg, matchExampleItems, litString, entityOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -43,7 +43,7 @@ $client = ${ctor};
 
   if (exampleEntity) {
     const eName = nom(exampleEntity, 'Name')
-    const opnames = Object.keys(exampleEntity.op || {})
+    const opnames = entityOps(exampleEntity)
     // Model-driven id key: null when the entity has no id-like field, in which
     // case the load example takes no match argument.
     const idF = entityIdField(exampleEntity)

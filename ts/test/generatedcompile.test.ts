@@ -27,7 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
-  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
+  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
   KEYWORD_ACCESSOR_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
   REQUEST_SHAPED_ENTITY,
 } from './generateharness'
@@ -1054,6 +1054,7 @@ pub fn main() void {
       selectorLoad('contact', ['email', 'phone'])],
     ['load examples whose route parameters optional query parameters shadow', 'ts-readme-shadowed',
       shadowedLoad()],
+    ['a quick start whose entity lists only through actions', 'ts-readme-action-list', actionList()],
     ['examples whose load parameter and create field hold a quote and a backslash', 'ts-readme-quoted',
       namedFieldEntity('a"b\\c')],
   ] as [string, string, string | undefined][]) {
@@ -7773,6 +7774,12 @@ describe('the README examples run for a slug carrying the word client', () => {
       async (t) => {
         await readmeLane(t, lane, lane.target + '-shadowed', shadowedLoad(), /region/,
           'load example with its route parameters')
+      })
+
+    test(lane.target + ': the README examples run where an entity lists only through actions',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-action-list', actionList(), /Enumeration/,
+          'quick start on the action-only entity')
       })
 
     test(lane.target + ': the README examples run where a load parameter and a create field hold a quote and a backslash',

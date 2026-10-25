@@ -638,6 +638,40 @@ main: kit: flow: Basic${name[0].toUpperCase() + name.slice(1)}Flow: {
 }
 
 
+// An entity, alone in the model, that loads by id and lists only through its actions.
+function actionList(): string {
+  const action = (name: string) => `{
+          g: {}, m: "GET", o: "/enumeration/${name}", s: [{ lit: "enumeration" }, { lit: "${name}" }]
+          q: { "$action": "${name}", exist: [] }
+          t: { req: "\`reqdata\`", res: "\`body\`" }
+        }`
+  return entityOnly(`
+main: kit: entity: enumeration: {
+  alias: field: {}
+  name: "enumeration"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: { name: "list", points: [ ${action('basic')} ${action('country')} ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/enumeration/basic/{id}", s: [{ lit: "enumeration" }, { lit: "basic" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ] }
+  }
+}
+
+main: kit: flow: BasicEnumerationFlow: {
+  entity: "enumeration", kind: "basic", name: "BasicEnumerationFlow"
+  step: [ { o: "load", i: { ref: "enumeration_ref01", srcdatavar: "enumeration_ref01_data", suffix: "_dt0" } } ]
+}
+`)
+}
+
+
 // An entity whose load requires the query parameter `key` and whose create and
 // update require the field `key`, beside the id, each of the given type.
 function namedFieldEntity(key: string, name: string = 'crate', type: string = '"`$STRING`"'): string {
@@ -1404,6 +1438,7 @@ export {
   selectorList,
   selectorLoad,
   shadowedLoad,
+  actionList,
   namedFieldEntity,
   retypedList,
   seedableList,
