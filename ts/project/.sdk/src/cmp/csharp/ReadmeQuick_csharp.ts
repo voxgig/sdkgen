@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -163,7 +163,7 @@ catch (Exception err)
     // Model-driven example fields: derive the create/update body from the op
     // shape (opRequestShape) so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -192,15 +192,15 @@ var created = client.${eName}().Create(new Dictionary<string, object?> { ${examp
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`[${csStringLiteral(idF)}] = ${csLit(idParamType('update'), 'example_id')}`] : [])
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`[${csStringLiteral(idF)}] = ${csLit(idParamType('update'), 'example_id')}`] : [])
           .concat(examplePairs('update'))
-        Content(`// Update — supply the id in the match/data
+        Content(`// Update${sendsId(exampleEntity, 'update', idF) ? ' — supply the id in the match/data' : ''}
 client.${eName}().Update(new Dictionary<string, object?> { ${updatePairs.join(', ')} });
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`[${csStringLiteral(idF)}] = ${csLit(idParamType('patch'), 'example_id')}`] : [])
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`[${csStringLiteral(idF)}] = ${csLit(idParamType('patch'), 'example_id')}`] : [])
           .concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client.${eName}().Patch(new Dictionary<string, object?> { ${patchPairs.join(', ')} });

@@ -27,9 +27,8 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
-  searchOnly, listOnly, retypedList, seedableList, selectorLoad, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
-  KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
-  REQUEST_SHAPED_ENTITY, multiRouteLoad,
+  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, idlessUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
+  ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY, REQUEST_SHAPED_ENTITY, multiRouteLoad,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -1052,6 +1051,12 @@ pub fn main() void {
     ['a create whose request is not its record', 'ts-readme-request', REQUEST_SHAPED_ENTITY],
     ['a load example whose points each need a selector of their own', 'ts-readme-selector-load',
       selectorLoad('contact', ['email', 'phone'])],
+    ['load examples whose route parameters optional query parameters shadow', 'ts-readme-shadowed',
+      shadowedLoad()],
+    ['a quick start whose entity lists only through actions', 'ts-readme-action-list', actionList()],
+    ['create examples whose routes each need a parent of their own', 'ts-readme-parented-create',
+      parentedCreate()],
+    ['an update example whose request carries no id', 'ts-readme-idless-update', idlessUpdate()],
     ['examples whose load parameter and create field hold a quote and a backslash', 'ts-readme-quoted',
       namedFieldEntity('a"b\\c')],
   ] as [string, string, string | undefined][]) {
@@ -1091,6 +1096,31 @@ pub fn main() void {
         'the README example tests left their temp directory behind')
     })
   }
+
+
+  // The report printed every pass's whole tsc output, so a failing block came
+  // with the errors of the allowed illustrations, named by temp file.
+  test('typescript: the README example tests quote a failing block with its own tsc errors alone', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-readme-report', 'ts')
+    await generateTo('ts', sdkroot, undefined, undefined, { top: true })
+    linkDeps(sdkroot)
+    Fs.appendFileSync(Path.join(sdkroot, 'README.md'), '\n```ts\n{\n  ok: boolean\n  status: number\n}\n```\n\n' +
+      '```ts\nconst n: number = \'not a number\'\nvoid n\n```\n')
+
+    const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
+    ok(built.ok, 'the generated SDK does not build:\n' + built.out)
+
+    const suite = run(process.execPath,
+      ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
+      sdkroot, nestedTestEnv())
+    ok(!suite.ok, 'the README example tests passed a block that does not type-check')
+    ok(/const n: number = 'not a number'[\s\S]*tsc:[\s\S]*line 1, col 7: error TS2322/.test(suite.out),
+      'the report does not give the failing block its own error at its own line:\n' + tail(suite.out, 60))
+    ok(!/TS2693|_snippet\d+\.gen\.cts/.test(suite.out),
+      'the report quotes an allowed illustration\'s errors, or a temp file:\n' + tail(suite.out, 60))
+  })
 
 
   // Run as written: the README suites above replace a block's seed with their own.
@@ -7965,6 +7995,30 @@ describe('the README examples run for a slug carrying the word client', () => {
       async (t) => {
         await readmeLane(t, lane, lane.target + '-selector-load', selectorLoad('contact', ['email', 'phone']),
           /email/, 'load example with a selector')
+      })
+
+    test(lane.target + ': the README examples run where an optional query parameter shadows a route parameter',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-shadowed', shadowedLoad(), /region/,
+          'load example with its route parameters')
+      })
+
+    test(lane.target + ': the README examples run where an entity lists only through actions',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-action-list', actionList(), /Enumeration/,
+          'quick start on the action-only entity')
+      })
+
+    test(lane.target + ': the README examples run where a create\'s routes each need a parent of their own',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-parented-create', parentedCreate(), /conversation_id/,
+          'create example with a parent')
+      })
+
+    test(lane.target + ': the README examples run where an update\'s request carries no id',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-idless-update', idlessUpdate(), /Fruit/,
+          'update example on the fruit')
       })
 
     test(lane.target + ': the README examples run where a load parameter and a create field hold a quote and a backslash',

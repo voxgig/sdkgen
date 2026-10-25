@@ -1,5 +1,5 @@
 
-import { cmp, Content, entityIdField, pickExampleEntity, opRequestShape, elixirAccessor, entityCollection, exampleVarName, requiredItems, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, entityIdField, pickExampleEntity, elixirAccessor, entityCollection, exampleVarName, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -42,7 +42,7 @@ sdk = ${Name}.test()
           `${elixirString(it.name)} => ${isMatchOp && it.name === idF ? '"test01"' : elixirLit(it.type)}`).join(', ')}})`
         : 'H.deep(%{})'
     } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
-      const items = opRequestShape(exampleEntity, primaryOp).items
+      const items = requestExampleItems(exampleEntity, primaryOp)
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)

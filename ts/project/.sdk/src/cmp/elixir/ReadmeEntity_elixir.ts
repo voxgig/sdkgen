@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, opRequestShape, opNeedsAction, elixirAccessor, entityCollection, exampleVarName, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, opNeedsAction, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -140,7 +140,7 @@ ${eVar}s = ${Name}.Entity.${EName}.list(${eVar}${elixirListArgs(entity, Name)})
       // Members come from the SAME shape the runtime validates
       // (opRequestShape): every required member must appear — with a real,
       // executable literal.
-      const createItems = opRequestShape(entity, 'create').items
+      const createItems = requestExampleItems(entity, 'create')
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
 

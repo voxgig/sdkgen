@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, embeddedLoad, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, embeddedLoad, shadowedLoad, actionList, parentedCreate, idlessUpdate, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, getOnlyFlows, getOnlyBuildctx, multiRouteLoad,
@@ -6121,6 +6121,86 @@ main: kit: flow: BasicBadgeFlow: {
       }
     }
     deepStrictEqual(missing, [], 'direct load tests that send {version} unfilled')
+  })
+
+  test('a load passes the route parameters an optional query parameter shadows, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, shadowedLoad())
+
+    // audio has one route, needing all three; wzn's shorter route needs region and version.
+    const needs: [RegExp, string[]][] = [[/[Aa]udio/, ['path', 'region', 'version']], [/[Ww]zn/, ['region', 'version']]]
+    const wrong: string[] = []
+    for (const target of [...targets, 'top']) {
+      const files = 'top' === target ? { 'top/README.md': out['README.md'] } : out
+      for (const [entity, names] of needs) {
+        const found = opCalls(files, target, 'load', entity)
+        ok('top' === target || 0 < found.length, target + ': no load example found for ' + entity)
+        wrong.push(...found.filter((line: string) =>
+          !names.every((name) => new RegExp('\\b' + name + '\\b').test(line))))
+      }
+    }
+    deepStrictEqual(wrong, [], 'load examples that leave out a route parameter:\n' + wrong.join('\n'))
+  })
+
+
+  test('an update example sends the id only where its request carries it, in every target', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets, undefined, idlessUpdate())
+
+    // The id as a key, in each target's map syntax.
+    const idKey = /(["'])id\1|[{,(]\s*id\s*[:=]/
+    const wrong: string[] = []
+    for (const target of targets) {
+      const updates = opCalls(out, target, 'update', /[Ff]ruit/)
+      const patches = opCalls(out, target, 'patch', /[Ff]ruit/)
+      ok(0 < updates.length && 0 < patches.length, target + ': no update or patch example found')
+      wrong.push(...updates.filter((line: string) => idKey.test(line)).map((line) => 'update ' + line))
+      wrong.push(...patches.filter((line: string) => !idKey.test(line)).map((line) => 'patch ' + line))
+    }
+    deepStrictEqual(wrong, [], 'update examples sending an id their request lacks, ' +
+      'or patch examples leaving out one it carries:\n' + wrong.join('\n'))
+  })
+
+
+  test('a create whose routes each need a parent of their own passes one route\'s parent, in every target', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets, undefined, parentedCreate())
+
+    // A placeholder body is an illustration, not a call.
+    const placeholder = /\/\*|\.\.\./
+    const wrong: string[] = []
+    for (const target of [...targets, 'top']) {
+      const files = 'top' === target ? { 'top/README.md': out['README.md'] } : out
+      const found = opCalls(files, target, 'create', /[Aa]ttachment_?[Uu]rl/)
+        .filter((line: string) => !placeholder.test(line))
+      ok('top' === target || 0 < found.length, target + ': no create example found')
+      wrong.push(...found.filter((line: string) => !/\b(conversation|message)_id\b/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'create examples that reach no route:\n' + wrong.join('\n'))
+  })
+
+
+  // The runtime refuses a call without $action to an operation whose every route is one.
+  test('a root README quick start calls no operation whose every route is an action, in every target', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets, undefined, actionList())
+    const starts = quickStarts(out['README.md'])
+
+    const wrong: string[] = []
+    for (const target of targets) {
+      const start = starts[targetTitle(target)]
+      if (null == start) {
+        wrong.push(target + ': no quick start in the root README')
+        continue
+      }
+      const page = { [target + '/quick.md']: start }
+      wrong.push(...opCalls(page, target, 'list', /[Ee]numeration/).filter((line: string) => !/\$action/.test(line)))
+      if (0 === opCalls(page, target, 'load', /[Ee]numeration/).length) {
+        wrong.push(target + ': the quick start calls no load')
+      }
+    }
+    deepStrictEqual(wrong, [], 'quick starts that call an action-only list without its action:\n' +
+      wrong.join('\n'))
   })
 
 

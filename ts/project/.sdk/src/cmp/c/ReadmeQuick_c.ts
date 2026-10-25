@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -159,7 +159,7 @@ if (err) {
     // Model-driven example fields: derive the create/update body from the op
     // shape so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -192,7 +192,8 @@ if (err) {
 \`\`\`c
 ${acquire}`)
       if (opnames.includes('create')) {
-        const idLine = readsId && (opnames.includes('update') || opnames.includes('remove'))
+        const idLine = readsId && ['update', 'patch', 'remove'].some((op: string) =>
+          opnames.includes(op) && sendsId(exampleEntity, op, idF))
           ? `voxgig_value* created_id = created
     ? getp(created->vt->data(created, NULL), ${cString(dataIdF)}) : v_undef();
 `
@@ -203,14 +204,14 @@ ${idLine}
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${cString(idF)}, ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`${cString(idF)}, ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`// Update
 ${evar}->vt->update(${evar}, ${cmapExpr(updatePairs)}, NULL, &err);
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`${cString(idF)}, ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`${cString(idF)}, ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 ${evar}->vt->patch(${evar}, ${cmapExpr(patchPairs)}, NULL, &err);
 

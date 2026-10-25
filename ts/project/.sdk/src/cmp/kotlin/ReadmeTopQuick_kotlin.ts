@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, entityIdField, opRequestShape, matchExampleItems, entityOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -37,7 +37,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
   const authActive = isAuthActive(model)
 
   const shown = null != exampleEntity &&
-    ['list', 'load'].some((op: string) => Object.keys(exampleEntity.op || {}).includes(op))
+    ['list', 'load'].some((op: string) => entityOps(exampleEntity).includes(op))
 
   Content(`\`\`\`kotlin
 import ${kotlinPackage(model)}.core.${SDK}
@@ -61,7 +61,7 @@ ${shown ? `import ${kotlinPackage(model)}.core.SdkEntity\n` : ''}
     const eVar = kotlinVarName(exampleEntity.name)
     const accessor = kotlinVarName(exampleEntity.name)
     const eNameLower = nom(exampleEntity, 'Name').toLowerCase()
-    const opnames = Object.keys(exampleEntity.op || {})
+    const opnames = entityOps(exampleEntity)
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {

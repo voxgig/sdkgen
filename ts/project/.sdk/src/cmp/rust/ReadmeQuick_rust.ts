@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -146,7 +146,7 @@ match client.${method}(Value::Noval).load(${loadArg}, Value::Noval) {
     // Model-driven example fields: derive the create/update body from the op
     // shape so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -181,14 +181,14 @@ let created = client.${method}(Value::Noval).create(jo(vec![${examplePairs('crea
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`(${JSON.stringify(idF)}, ${idValueFor('update')})`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`(${JSON.stringify(idF)}, ${idValueFor('update')})`] : []).concat(examplePairs('update'))
         Content(`// Update
 client.${method}(Value::Noval).update(jo(vec![${updatePairs.join(', ')}]), Value::Noval).unwrap();
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`(${JSON.stringify(idF)}, ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`(${JSON.stringify(idF)}, ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client.${method}(Value::Noval).patch(jo(vec![${patchPairs.join(', ')}]), Value::Noval).unwrap();
 

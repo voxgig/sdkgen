@@ -13,9 +13,9 @@ import { featureDocs } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
 import {
-  entityPrimaryOp, entityIdField, opRequestShape, entityPath, entityActions,
+  entityPrimaryOp, entityIdField, entityPath, entityActions,
 } from '../helpers/opShape'
-import { EXAMPLE_LANGS, matchArg, listMatchArg, idLiteral, primaryOpCall } from '../helpers/opExample'
+import { EXAMPLE_LANGS, matchArg, listMatchArg, idLiteral, primaryOpCall, requestExampleItems } from '../helpers/opExample'
 import { mcpTools, MCP_WRITE_OPS } from '../helpers/mcpTools'
 import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { canonScalarKey } from '../helpers/canonType'
@@ -307,7 +307,7 @@ ${aboutMd.trim()}
         // server-assigned on a normal create, but an op whose id comes from a
         // PATH PARAMETER requires it, and the typed CreateData then rejects a
         // body without it. Same rule as dataArg in helpers/opExample.
-        const shapeItems = opRequestShape(exEnt, primaryOp).items
+        const shapeItems = requestExampleItems(exEnt, primaryOp)
           .filter((it: any) =>
             (it.name !== exIdF && it.name !== 'id') || !it.optional)
         const required = shapeItems.filter((it: any) => !it.optional)

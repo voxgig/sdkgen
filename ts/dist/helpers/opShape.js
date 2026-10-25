@@ -168,7 +168,9 @@ function opParams(op) {
         const requiredHere = Object.create(null);
         params.forEach((p) => {
             if (p && null != p.n) {
-                requiredHere[p.n] = false !== p.r;
+                // A route parameter stays required beside an optional query
+                // parameter of the same name: the URL cannot be built without it.
+                requiredHere[p.n] = true === requiredHere[p.n] || false !== p.r;
                 if (!seen[p.n]) {
                     seen[p.n] = { ...p };
                     requiredOnAll[p.n] = 0 === pointIndex;

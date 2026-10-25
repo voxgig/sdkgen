@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, entityOps, opRequestShape, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, entityOps, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -145,7 +145,7 @@ for _, item := range ${eVar}s.([]any) {
       // with a type-correct example VALUE via exampleValue — a
       // `"name": /* type */` comment is not a value and yields uncompilable
       // Go, so the example must carry a real literal.
-      const createItems = opRequestShape(entity, 'create').items
+      const createItems = requestExampleItems(entity, 'create')
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
 

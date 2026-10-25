@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, luaKey, listMatchArg, matchExampleItems, requiredItems, litString } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, luaKey, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -161,7 +161,7 @@ ${printRecord(eVar, printCols, '')}
     }
 
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => !idNames.has(it.name) ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -195,14 +195,14 @@ if err then error(err) end
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${luaKey(idF)} = ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`${luaKey(idF)} = ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`-- Update
 client:${eName}():update({ ${updatePairs.join(', ')} })
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`${luaKey(idF)} = ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`${luaKey(idF)} = ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`-- Patch — sends only the fields given
 client:${eName}():patch({ ${patchPairs.join(', ')} })
 

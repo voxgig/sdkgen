@@ -926,6 +926,150 @@ main: kit: flow: ${flow}: {
 }
 
 
+// Loads whose route parameters region and version are also declared as
+// optional query parameters: audio on one route, wzn on its own route and on
+// a shorter one needing only region and version.
+function shadowedLoad(): string {
+  const param = (n: string) => `{ k: "param", n: "${n}", or: "${n}", r: true, t: "\`$STRING\`" }`
+  const query = (n: string) => `{ k: "query", n: "${n}", or: "${n}", r: false, t: "\`$STRING\`" }`
+  const deep = (lit: string) => `{
+        g: { params: [ ${param('path')}, ${param('region')}, ${param('version')} ]
+          query: [ ${query('region')}, ${query('version')} ] }
+        m: "GET", o: "/wz/${lit}{region}/{version}/{path}"
+        s: [{ lit: "wz" }, ${'' === lit ? '' : `{ lit: "${lit.slice(0, -1)}" }, `}{ var: "region" }, { var: "version" }, { var: "path" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+        q: { exist: ["path", "region", "version"] }
+      }`
+  const entity = (name: string, points: string[]) => `
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id", parts: ["region", "version", "path"], sep: "/" }
+  fields: { "id": { h: 'Id', n: "id", r: false, t: "\`$STRING\`" } }
+  op: load: { name: "load", points: [ ${points.join(' ')} ] }
+}
+
+main: kit: flow: Basic${name[0].toUpperCase() + name.slice(1)}Flow: {
+  entity: "${name}", kind: "basic", name: "Basic${name[0].toUpperCase() + name.slice(1)}Flow"
+  step: [ { o: "load", i: { ref: "${name}_ref01", srcdatavar: "${name}_ref01_data", suffix: "_dt0" } } ]
+}
+`
+  return entityOnly(entity('audio', [deep('audio/')]) + entity('wzn', [deep(''), `{
+        g: { params: [ ${param('region')}, ${param('version')} ] }
+        m: "GET", o: "/wz", s: [{ lit: "wz" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+        q: { exist: ["region", "version"] }
+      }`]))
+}
+
+
+// An update that sends a body on a route without the id, and a patch whose
+// body carries it, as fruityvice's PUT /api/fruit.
+function idlessUpdate(): string {
+  const body = (op: string, bf: string[]) => `${op}: { name: "${op}", points: [ {
+      bf: ${JSON.stringify(bf)}
+      m: "${'update' === op ? 'PUT' : 'PATCH'}", o: "/fruit", s: [{ lit: "fruit" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ] }`
+  return entityOnly(`
+main: kit: entity: fruit: {
+  alias: field: {}
+  name: "fruit"
+  id: { field: "id", name: "id" }
+  fields: {
+    "family": { h: 'Family', n: "family", r: false, t: "\`$STRING\`" }
+    "genus": { h: 'Genus', n: "genus", r: false, t: "\`$STRING\`" }
+    "id": { h: 'Id', n: "id", r: false, t: "\`$INTEGER\`" }
+  }
+  op: {
+    list: { name: "list", points: [ { g: {}, m: "GET", o: "/fruit/all", s: [{ lit: "fruit" }, { lit: "all" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$INTEGER\`" } ] }
+      m: "GET", o: "/fruit/{id}", s: [{ lit: "fruit" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    ${body('update', ['family', 'genus'])}
+    ${body('patch', ['id', 'family', 'genus'])}
+  }
+}
+
+main: kit: flow: BasicFruitFlow: {
+  entity: "fruit", kind: "basic", name: "BasicFruitFlow"
+  step: [
+    { o: "list", i: { ref: "fruit_ref01" } }
+    { o: "load", i: { ref: "fruit_ref01", srcdatavar: "fruit_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`)
+}
+
+
+// A create whose routes are each nested under a parent of their own, so the
+// parameter every route needs reaches none of them, as loppee's attachment URL.
+function parentedCreate(): string {
+  const param = (n: string) => `{ k: "param", n: "${n}", or: "${n}", r: true, t: "\`$STRING\`" }`
+  const point = (parent: string) => `{
+          bf: false
+          g: { params: [ ${param('attachment_id')}, ${param(parent + '_id')} ] }
+          m: "POST", o: "/${parent}/{${parent}_id}/attachment/{attachment_id}/url"
+          s: [{ lit: "${parent}" }, { var: "${parent}_id" }, { lit: "attachment" }, { var: "attachment_id" }, { lit: "url" }]
+          t: { req: "\`reqdata\`", res: "\`body\`" }
+          q: { exist: ["attachment_id", "${parent}_id"] }
+        }`
+  return entityOnly(`
+main: kit: entity: attachment_url: {
+  alias: field: {}
+  name: "attachment_url"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "signed_url": { h: 'SignedUrl', n: "signed_url", r: true, t: "\`$STRING\`" }
+  }
+  op: create: { name: "create", points: [ ${point('conversation')} ${point('message')} ] }
+}
+
+main: kit: flow: BasicAttachmentUrlFlow: {
+  entity: "attachment_url", kind: "basic", name: "BasicAttachmentUrlFlow"
+  step: [ { o: "create", i: { ref: "attachment_url_ref01" } } ]
+}
+`)
+}
+
+
+// An entity, alone in the model, that loads by id and lists only through its actions.
+function actionList(): string {
+  const action = (name: string) => `{
+          g: {}, m: "GET", o: "/enumeration/${name}", s: [{ lit: "enumeration" }, { lit: "${name}" }]
+          q: { "$action": "${name}", exist: [] }
+          t: { req: "\`reqdata\`", res: "\`body\`" }
+        }`
+  return entityOnly(`
+main: kit: entity: enumeration: {
+  alias: field: {}
+  name: "enumeration"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: { name: "list", points: [ ${action('basic')} ${action('country')} ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/enumeration/basic/{id}", s: [{ lit: "enumeration" }, { lit: "basic" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ] }
+  }
+}
+
+main: kit: flow: BasicEnumerationFlow: {
+  entity: "enumeration", kind: "basic", name: "BasicEnumerationFlow"
+  step: [ { o: "load", i: { ref: "enumeration_ref01", srcdatavar: "enumeration_ref01_data", suffix: "_dt0" } } ]
+}
+`)
+}
+
+
 // An entity whose load requires the query parameter `key` and whose create and
 // update require the field `key`, beside the id, each of the given type.
 function namedFieldEntity(key: string, name: string = 'crate', type: string = '"`$STRING`"'): string {
@@ -1702,6 +1846,10 @@ export {
   selectorList,
   selectorLoad,
   embeddedLoad,
+  shadowedLoad,
+  actionList,
+  parentedCreate,
+  idlessUpdate,
   namedFieldEntity,
   retypedList,
   seedableList,

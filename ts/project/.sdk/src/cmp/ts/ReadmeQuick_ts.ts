@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, isHttpBasicAuth, packageName, envName, serverVariables, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, requiredItems, jsProp } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, isHttpBasicAuth, packageName, envName, serverVariables, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, requiredItems, jsProp, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -153,7 +153,7 @@ try {
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
       const exampleFields = (opname: string): string[] => {
-        const items = opRequestShape(exampleEntity, opname).items
+        const items = requestExampleItems(exampleEntity, opname)
           .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
             ('create' === opname && !it.optional))
         const required = items.filter((it: any) => !it.optional)
@@ -202,7 +202,7 @@ const created = await client.${eName}().create({${createBody}})
 `)
       }
       if (opnames.includes('update')) {
-        const updateLines = (idF ? [`  ${jsKey(idF)}: ${idValueFor('update')},`] : []).concat(exampleFields('update'))
+        const updateLines = (sendsId(exampleEntity, 'update', idF) ? [`  ${jsKey(idF)}: ${idValueFor('update')},`] : []).concat(exampleFields('update'))
         const updateBody = updateLines.length ? '\n' + updateLines.join('\n') + '\n' : ''
         Content(`// Update${usesCreatedId('update') ? ' — the id comes off the returned entity\'s data()' : ''}
 const updated = await client.${eName}().update({${updateBody}})
@@ -210,7 +210,7 @@ const updated = await client.${eName}().update({${updateBody}})
 `)
       }
       if (opnames.includes('patch')) {
-        const patchLines = (idF ? [`  ${jsKey(idF)}: ${idValueFor('patch')},`] : []).concat(exampleFields('patch'))
+        const patchLines = (sendsId(exampleEntity, 'patch', idF) ? [`  ${jsKey(idF)}: ${idValueFor('patch')},`] : []).concat(exampleFields('patch'))
         const patchBody = patchLines.length ? '\n' + patchLines.join('\n') + '\n' : ''
         Content(`// Patch — sends only the fields given${usesCreatedId('patch') ? '; the id comes off the returned entity\'s data()' : ''}
 const patched = await client.${eName}().patch({${patchBody}})

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape , serverVariables, javaMapOf, matchExampleItems, javaMapItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, opRequestShape , serverVariables, javaMapOf, matchExampleItems, javaMapItems, entityOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -34,7 +34,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
 
 
   const shown = null == exampleEntity ? [] :
-    ['list', 'load'].filter((op: string) => Object.keys(exampleEntity.op || {}).includes(op))
+    ['list', 'load'].filter((op: string) => entityOps(exampleEntity).includes(op))
   const imports = [
     ...(shown.includes('list') ? ['java.util.List'] : []),
     ...(authActive || '' !== javaServerLines || shown.includes('load') ? ['java.util.Map'] : []),
@@ -66,7 +66,7 @@ ${javaServerLines}${SDK} client = new ${SDK}(options);
     const eVar = javaVarName(exampleEntity.name)
     const accessor = javaVarName(exampleEntity.name)
     const eNameLower = nom(exampleEntity, 'Name').toLowerCase()
-    const opnames = Object.keys(exampleEntity.op || {})
+    const opnames = entityOps(exampleEntity)
     const idF = entityIdField(exampleEntity)
 
     if (opnames.includes('list')) {

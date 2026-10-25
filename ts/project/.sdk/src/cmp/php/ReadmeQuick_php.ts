@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, phpEntityAccessor, listMatchArg, matchExampleItems, requiredItems, litString } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, phpEntityAccessor, listMatchArg, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -154,7 +154,7 @@ try {
     }
 
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -186,7 +186,7 @@ $created = $client->${phpEntityAccessor(eName)}()->create([${examplePairs('creat
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${litString('php', idF)} => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`${litString('php', idF)} => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`// Update${fromCreated ? ` — index the record via data_get() ($created->data_get()[${litString('php', dataIdF)}]).` : ''}
 $client->${phpEntityAccessor(eName)}()->update([${updatePairs.join(', ')}]);
@@ -194,7 +194,7 @@ $client->${phpEntityAccessor(eName)}()->update([${updatePairs.join(', ')}]);
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`${litString('php', idF)} => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`${litString('php', idF)} => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 $client->${phpEntityAccessor(eName)}()->patch([${patchPairs.join(', ')}]);
 

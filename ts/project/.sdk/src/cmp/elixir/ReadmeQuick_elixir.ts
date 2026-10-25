@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -140,7 +140,7 @@ end
     // Model-driven example fields: derive the create/update body from the op
     // shape so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -174,14 +174,14 @@ created = ${Name}.Entity.${eName}.create(${eVar}, H.deep(%{${examplePairs('creat
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${elixirString(idF)} => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`${elixirString(idF)} => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         Content(`# Update
 ${Name}.Entity.${eName}.update(${eVar}, H.deep(%{${updatePairs.join(', ')}}))
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`${elixirString(idF)} => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`${elixirString(idF)} => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`# Patch — sends only the fields given
 ${Name}.Entity.${eName}.patch(${eVar}, H.deep(%{${patchPairs.join(', ')}}))
 

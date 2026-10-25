@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -177,7 +177,7 @@ catch {
     // Model-driven example fields: derive the create/update body from the op
     // shape (opRequestShape) so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -206,15 +206,15 @@ let created = try client.${accessor}().create(VMap([${examplePairs('create').joi
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`(${swiftString(idF)}, ${swiftLit(idParamType('update'), 'example_id')})`] : [])
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`(${swiftString(idF)}, ${swiftLit(idParamType('update'), 'example_id')})`] : [])
           .concat(examplePairs('update'))
-        Content(`// Update — supply the id in the match/data
+        Content(`// Update${sendsId(exampleEntity, 'update', idF) ? ' — supply the id in the match/data' : ''}
 _ = try client.${accessor}().update(VMap([${updatePairs.join(', ')}]), nil)
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`(${swiftString(idF)}, ${swiftLit(idParamType('patch'), 'example_id')})`] : [])
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`(${swiftString(idF)}, ${swiftLit(idParamType('patch'), 'example_id')})`] : [])
           .concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 _ = try client.${accessor}().patch(VMap([${patchPairs.join(', ')}]), nil)

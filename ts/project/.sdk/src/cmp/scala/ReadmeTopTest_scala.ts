@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems, javaMapOf, matchExampleItems, javaMapItems } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -39,7 +39,7 @@ val client = ${SDK}.testSDK(null, null)
           `${JSON.stringify(it.name)}, ${isMatchOp && it.name === idF ? '"test01"' : scalaLit(it.type)}`), 'java.util.')
         : 'null'
     } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
-      const items = javaMapItems(opRequestShape(exampleEntity, primaryOp).items)
+      const items = javaMapItems(requestExampleItems(exampleEntity, primaryOp))
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)

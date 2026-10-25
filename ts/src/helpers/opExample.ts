@@ -2,6 +2,7 @@
 import { each } from 'jostraca'
 import { canonScalarKey } from './canonType'
 import { opRequestShape, opParams, selectablePoints, pointRequires } from './opShape'
+import type { OpShapeItem } from './opShape'
 
 import { phpEntityAccessor, jsKey, jsQuote, luaKey, luaString } from './naming'
 
@@ -101,6 +102,18 @@ function requiredItems(ent: any, op: string): any[] {
 }
 
 
+// Shape-ordered request members, required as requiredItems decides, so an example reaches a route.
+function requestExampleItems(ent: any, op: string): OpShapeItem[] {
+  const required = new Set(requiredItems(ent, op).map((it: any) => it.name))
+  return opRequestShape(ent, op).items.map((it: OpShapeItem) => ({ ...it, optional: !required.has(it.name) }))
+}
+
+
+function sendsId(ent: any, op: string, idF: string | null): idF is string {
+  return null != idF && opRequestShape(ent, op).items.some((it: OpShapeItem) => it.name === idF)
+}
+
+
 // A load or remove example's members: requiredItems and the id, in shape order.
 function matchExampleItems(ent: any, op: string, idF: string | null): any[] {
   const required: Record<string, any> = Object.create(null)
@@ -176,7 +189,7 @@ function seededList(lang: LiteralLang, ent: any, idF: string | null, key: string
 function dataArg(lang: LiteralLang, ent: any, op: string, idF: string | null): string {
   const routed = new Set(opParams(ent?.op?.[op]).map((p: any) => p.n))
   const addresses = (it: any) => it.name === idF || it.name === 'id' || routed.has(it.name)
-  const items = opRequestShape(ent, op).items
+  const items = requestExampleItems(ent, op)
     .filter((it: any) =>
       (it.name !== idF && it.name !== 'id') || !it.optional)
   const required = items.filter((it: any) => !it.optional)
@@ -255,6 +268,8 @@ export {
   primaryOpCall,
   idLiteral,
   requiredItems,
+  requestExampleItems,
+  sendsId,
   matchExampleItems,
   matchArg,
   listMatchArg,

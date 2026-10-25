@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems, javaMapOf, matchExampleItems, javaMapItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, entityIdField, pickExampleEntity, requiredItems, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -37,7 +37,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
     testArg = javaMapOf(chosen.map((it: any) =>
       `${JSON.stringify(it.name)}, ${scalaLit(it.type)}`), 'java.util.')
   } else if (exampleEntity && ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp)) {
-    const items = javaMapItems(opRequestShape(exampleEntity, primaryOp).items)
+    const items = javaMapItems(requestExampleItems(exampleEntity, primaryOp))
       .filter((it: any) => it.name !== idF && it.name !== 'id')
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, isHttpBasicAuth, envName, entityIdField, entityDataIdField, pickExampleEntity, opRequestShape, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, isHttpBasicAuth, envName, entityIdField, entityDataIdField, pickExampleEntity, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -41,7 +41,7 @@ const ReadmeHowto = cmp(function ReadmeHowto(props: any) {
       return `{ ${pairs.join(', ')} }`
     }
     const isIdField = (it: any) => it.name === idF || it.name === 'id'
-    const items = opRequestShape(exampleEntity, primaryOp).items
+    const items = requestExampleItems(exampleEntity, primaryOp)
       .filter((it: any) => !isIdField(it) || !it.optional)
     const required = items.filter((it: any) => !it.optional)
     const chosen = required.length ? required : items.slice(0, 3)

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -154,7 +154,7 @@ else {
     // separately as the match key for update/remove; a REQUIRED create id
     // stays (the call is invalid without it).
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -186,7 +186,7 @@ my $created = $client->${eName}->create({ ${examplePairs('create').join(', ')} }
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${perlStringLiteral(idF)} => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`${perlStringLiteral(idF)} => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`# Update${fromCreated ? " — the created entity's record holds its id" : ''}
 $client->${eName}->update({ ${updatePairs.join(', ')} });
@@ -194,7 +194,7 @@ $client->${eName}->update({ ${updatePairs.join(', ')} });
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`${perlStringLiteral(idF)} => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`${perlStringLiteral(idF)} => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`# Patch — sends only the fields given
 $client->${eName}->patch({ ${patchPairs.join(', ')} });
 

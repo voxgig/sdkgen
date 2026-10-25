@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -144,7 +144,7 @@ switch (client.${method}(h.vnull()).load(${loadArg}, h.vnull())) {
     // Model-driven example fields: derive the create/update body from the op
     // shape so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)
@@ -177,7 +177,7 @@ switch (client.${method}(h.vnull()).create(h.jo(&.{${examplePairs('create').join
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`.{ ${JSON.stringify(idF)}, ${idValueFor('update')} }`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`.{ ${JSON.stringify(idF)}, ${idValueFor('update')} }`] : []).concat(examplePairs('update'))
         Content(`// Update
 switch (client.${method}(h.vnull()).update(h.jo(&.{${updatePairs.join(', ')}}), h.vnull())) {
     .ok => |updated| std.debug.print("{s}\\n", .{h.stringify(updated.asEntity().data(null))}),
@@ -187,7 +187,7 @@ switch (client.${method}(h.vnull()).update(h.jo(&.{${updatePairs.join(', ')}}), 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`.{ ${JSON.stringify(idF)}, ${idValueFor('patch')} }`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`.{ ${JSON.stringify(idF)}, ${idValueFor('patch')} }`] : []).concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 switch (client.${method}(h.vnull()).patch(h.jo(&.{${patchPairs.join(', ')}}), h.vnull())) {
     .ok => |patched| std.debug.print("{s}\\n", .{h.stringify(patched.asEntity().data(null))}),

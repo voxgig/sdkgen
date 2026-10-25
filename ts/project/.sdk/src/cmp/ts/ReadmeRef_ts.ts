@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, opRequestShape, safeVarName, exampleVarName, jsKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, isHttpBasicAuth, entityIdField, entityActions, safeVarName, exampleVarName, jsKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -351,7 +351,7 @@ const results = await client.${ent.Name}().${opname}(${listMatchArg('ts', ent)})
             // <Name>CreateData (every required member appears), each with a
             // type-correct example VALUE via exampleValue — a `name: /* type */`
             // comment is not a value and yields invalid TS (TS1109).
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`ts
 const result = await client.${ent.Name}().create({
@@ -368,7 +368,7 @@ const result = await client.${ent.Name}().create({
           else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape
             // that generates <Name>UpdateData — then the patch-fields note.
-            const updateItems = opRequestShape(ent, opname).items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
