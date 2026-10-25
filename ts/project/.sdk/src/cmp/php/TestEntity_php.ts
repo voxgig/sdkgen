@@ -31,7 +31,7 @@ import {
   phpEntityAccessor,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
-  liveRouteExamples, liveStepExamples,
+  liveRouteExamples, liveStepExamples, flowLoadRoute,
   liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveEntity,
 } from '@voxgig/sdkgen'
@@ -633,7 +633,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`        $${matchvar} = [
             "id" => $${srcdatavar}["id"],
         ];
-${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}        $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}        $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
         $${datavar}_load_result = Helpers::to_map(is_object($${datavar}_loaded) && method_exists($${datavar}_loaded, 'data_get') ? $${datavar}_loaded->data_get() : $${datavar}_loaded);
         $this->assertNotNull($${datavar}_load_result);
         $this->assertEquals($${datavar}_load_result["id"], $${srcdatavar}["id"]);
@@ -696,6 +696,23 @@ function parentMatch(step: any, matchvar: string): string {
     .map(([key, val]: any) => `        $${matchvar}["${key}"] = $setup["idmap"]["${key}"] ?? $setup["idmap"]["${val}"] ?? null;
 `).join('')
 }
+
+// A load of a known record fills its route from that record, and from the
+// step's binding where the record holds no scalar for it.
+function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
+  const route = flowLoadRoute(entity, step)
+  if (null == route) {
+    return parentMatch(step, matchvar)
+  }
+  return route.args.map((arg) => {
+    const bound = arg.idmap.map((key) => `$setup["idmap"]["${key}"]`).join(' ?? ') + ' ?? null'
+    const own = `$${srcdatavar}["${arg.field}"]`
+    return `        $${matchvar}["${arg.name}"] = ${null == arg.field ? bound :
+      `is_scalar(${own} ?? null) ? ${own} : (${bound})`};
+`
+  }).join('')
+}
+
 
 const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,

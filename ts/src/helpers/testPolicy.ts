@@ -114,24 +114,32 @@ function liveQueryExamples(point: any): [string, string | number | boolean][] {
 }
 
 
+const plainPoints = (entity: any, opname: string): any[] => (entity?.op?.[opname]?.points || [])
+  .filter((point: any) => false !== point.a && null == point.q?.$action)
+
+
+function routeExamples(point: any, bound: string[], pathBound: boolean):
+  [string, string | number | boolean][] | undefined {
+  const params = pathBound ? [] : point.g?.params || []
+  const args = [...params, ...(point.g?.query || []).filter((arg: any) => arg.r)]
+  const fill: [string, string | number | boolean][] = []
+  for (const arg of args) {
+    if (bound.includes(arg.n) || fill.some(([name]) => name === arg.n)) continue
+    const ex = scalarExample(arg)
+    if (undefined !== ex) fill.push([arg.n, ex])
+    else if (false !== arg.r) return undefined
+  }
+  return fill
+}
+
+
 // The live entity harness's route: the first whose required parameters are
 // all bound or exemplified. A load of a known record binds its own path.
 function liveRouteExamples(entity: any, opname: string, bound: string[], pathBound = false):
   [string, string | number | boolean][] {
-  const points: any[] = (entity?.op?.[opname]?.points || [])
-    .filter((point: any) => false !== point.a && null == point.q?.$action)
-  for (const point of points) {
-    const params = pathBound ? [] : point.g?.params || []
-    const args = [...params, ...(point.g?.query || []).filter((arg: any) => arg.r)]
-    const fill: [string, string | number | boolean][] = []
-    let usable = true
-    for (const arg of args) {
-      if (bound.includes(arg.n) || fill.some(([name]) => name === arg.n)) continue
-      const ex = scalarExample(arg)
-      if (undefined !== ex) fill.push([arg.n, ex])
-      else if (false !== arg.r) usable = false
-    }
-    if (usable) return fill
+  for (const point of plainPoints(entity, opname)) {
+    const fill = routeExamples(point, bound, pathBound)
+    if (null != fill) return fill
   }
   return []
 }
@@ -140,7 +148,69 @@ function liveRouteExamples(entity: any, opname: string, bound: string[], pathBou
 function liveStepExamples(entity: any, step: any): [string, string | number | boolean][] {
   if ('list' !== step?.o && 'load' !== step?.o) return []
   const bound = getMatchEntries(step).map(([name]) => name)
-  return liveRouteExamples(entity, step.o, bound, 'load' === step.o && null != entity?.id)
+  const known = 'load' === step.o && null != entity?.id
+  const route = known ? flowLoadRoute(entity, step) : undefined
+  return null == route ? liveRouteExamples(entity, step.o, bound, known) :
+    routeExamples(route.point, bound, true) ?? []
+}
+
+
+const SCALAR_FIELD = ['`$STRING`', '`$INTEGER`', '`$NUMBER`', '`$BOOLEAN`']
+
+type FlowRouteArg = { name: string, field?: string, idmap: string[] }
+
+type FlowLoadRoute = { route: string, point: any, args: FlowRouteArg[] }
+
+
+// The scalar field of the record a route parameter reads: the entity id's
+// mapping for it, else its namesake; a dotted mapping reads into an object.
+function recordField(entity: any, name: string): string | undefined {
+  const field = entity?.id?.from?.[name] ?? name
+  if ('string' !== typeof field || field.includes('.')) return undefined
+  const def: any = Object.values(entity?.fields || {}).find((f: any) => f?.n === field)
+  return SCALAR_FIELD.includes(def?.t) ? field : undefined
+}
+
+
+// The route a flow's load of a known record takes: the first the runtime
+// tries that takes the id and whose other path parameters the record holds
+// or the step binds, read from the record first. Undefined keeps the match.
+function flowLoadRoute(entity: any, step: any): FlowLoadRoute | undefined {
+  if ('load' !== step?.o || null == entity?.id) return undefined
+  const bound = new Map(getMatchEntries(step)
+    .filter(([, binding]) => 'string' === typeof binding) as [string, string][])
+  const order = [...bound.keys()]
+  const rank = (arg: FlowRouteArg) => order.includes(arg.name) ? order.indexOf(arg.name) : order.length
+  for (const point of plainPoints(entity, 'load')) {
+    const names = [...new Set<string>((point.g?.params || []).map((arg: any) => arg.n))]
+    if (!names.includes('id')) continue
+    const args: FlowRouteArg[] = names.filter((name) => 'id' !== name).map((name) => {
+      const binding = bound.get(name)
+      return {
+        name, field: recordField(entity, name),
+        idmap: null == binding || binding === name ? [name] : [name, binding],
+      }
+    })
+    if (args.every((arg) => null != arg.field || bound.has(arg.name))) {
+      return { route: routeOf(point), point, args: args.sort((a, b) => rank(a) - rank(b)) }
+    }
+  }
+  return undefined
+}
+
+
+// The flow, each load of a known record naming its route and record fields.
+function liveFlowRoutes(entity: any, flow: any): any {
+  if (!Array.isArray(flow?.step)) return flow
+  const step = flow.step.map((step: any) => {
+    const route = flowLoadRoute(entity, step)
+    return null == route ? step : {
+      ...step, route: route.route,
+      record: Object.fromEntries(route.args.filter((arg) => null != arg.field)
+        .map((arg) => [arg.name, arg.field])),
+    }
+  })
+  return { ...flow, step }
 }
 
 
@@ -280,11 +350,12 @@ function liveExcludedSummary(plan: LiveGetOnly): string {
 }
 
 
-export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly }
+export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, FlowRouteArg, FlowLoadRoute }
 
 export {
   liveStrict, liveStrictNote, liveFlowNeeds,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
+  flowLoadRoute, liveFlowRoutes,
   liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason,
   liveExcludedLines, liveExcludedSummary,
 }

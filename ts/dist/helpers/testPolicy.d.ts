@@ -14,6 +14,18 @@ declare function liveRouteExamples(entity: any, opname: string, bound: string[],
     string | number | boolean
 ][];
 declare function liveStepExamples(entity: any, step: any): [string, string | number | boolean][];
+type FlowRouteArg = {
+    name: string;
+    field?: string;
+    idmap: string[];
+};
+type FlowLoadRoute = {
+    route: string;
+    point: any;
+    args: FlowRouteArg[];
+};
+declare function flowLoadRoute(entity: any, step: any): FlowLoadRoute | undefined;
+declare function liveFlowRoutes(entity: any, flow: any): any;
 declare function liveEntity(ctx$: any, entity: any): any;
 declare const LIVE_GETONLY_ENV = "VOXGIG_GETONLY_GUARD";
 type LiveExcluded = {
@@ -30,5 +42,5 @@ declare function liveGetOnlyReason(point: any): string | undefined;
 declare function liveGetOnly(entity: any, flow: any): LiveGetOnly | undefined;
 declare function liveExcludedLines(plan: LiveGetOnly): string[];
 declare function liveExcludedSummary(plan: LiveGetOnly): string;
-export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly };
-export { liveStrict, liveStrictNote, liveFlowNeeds, liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples, liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason, liveExcludedLines, liveExcludedSummary, };
+export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, FlowRouteArg, FlowLoadRoute };
+export { liveStrict, liveStrictNote, liveFlowNeeds, liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples, flowLoadRoute, liveFlowRoutes, liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason, liveExcludedLines, liveExcludedSummary, };

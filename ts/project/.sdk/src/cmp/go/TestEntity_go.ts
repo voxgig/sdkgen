@@ -30,7 +30,7 @@ import {
   entityDataIdField, envName, envToken,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
-  liveRouteExamples, liveStepExamples,
+  liveRouteExamples, liveStepExamples, flowLoadRoute,
   liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveEntity,
 } from '@voxgig/sdkgen'
@@ -733,7 +733,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 			"id": ${srcdatavar}["id"],
 		}
 `)
-    parentMatch(step, matchvar)
+    loadMatch(entity, step, matchvar, srcdatavar)
     liveFill(entity, step, matchvar)
     Content(`		${datavar}Loaded, err := ${entvar}.Load(${matchvar}, nil)
 		if err != nil {
@@ -821,11 +821,36 @@ function parentMatch(step: any, matchvar: string) {
   const parents = Object.entries(step.m || {})
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
   for (const [key, val] of parents) {
-    Content(`		if v := setup.idmap["${key}"]; v != nil {
-			${matchvar}["${key}"] = v
-		} else {
-			${matchvar}["${key}"] = setup.idmap["${val}"]
-		}
+    Content(boundMatch(matchvar, key, [key, val as string], '\t\t'))
+  }
+}
+
+
+function boundMatch(matchvar: string, name: string, keys: string[], indent: string): string {
+  return 1 === keys.length ? `${indent}${matchvar}["${name}"] = setup.idmap["${keys[0]}"]
+` : `${indent}if v := setup.idmap["${keys[0]}"]; v != nil {
+${indent}	${matchvar}["${name}"] = v
+${indent}} else {
+${indent}	${matchvar}["${name}"] = setup.idmap["${keys[1]}"]
+${indent}}
+`
+}
+
+
+// A load of a known record fills its route from that record, and from the
+// step's binding where the record holds no scalar for it.
+function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string) {
+  const route = flowLoadRoute(entity, step)
+  if (null == route) {
+    return parentMatch(step, matchvar)
+  }
+  for (const arg of route.args) {
+    Content(null == arg.field ? boundMatch(matchvar, arg.name, arg.idmap, '\t\t') :
+      `		switch v := ${srcdatavar}["${arg.field}"].(type) {
+		case string, bool, float64, int, int64:
+			${matchvar}["${arg.name}"] = v
+		default:
+${boundMatch(matchvar, arg.name, arg.idmap, '\t\t\t')}		}
 `)
   }
 }

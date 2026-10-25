@@ -110,6 +110,12 @@ runs without `<PROJ>_TEST_<ENTITY>_ENTID`. A flow that binds an identifier it
 can neither create nor list still needs that variable; without it, the test
 names the identifier it is missing.
 
+A flow loads the record it listed or created by the route that record fills:
+the first route that takes the record's identifier and whose other path
+parameters the record holds as a scalar field or the step binds. A parameter
+the record holds comes from the record, offline and live, in every target, and
+the step's binding fills it only when the record holds no scalar value for it.
+
 A required parameter that the model gives an example for needs no variable
 either. A live direct test takes each path parameter's example as the id that
 `<PROJ>_TEST_<ENTITY>_ENTID` would otherwise supply, under the same key, so the

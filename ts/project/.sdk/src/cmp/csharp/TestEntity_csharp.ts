@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -687,7 +687,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
         {
             ["id"] = ${srcdatavar}!["id"],
         };
-${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
         var ${datavar}LoadResult = Helpers.ToMapAny(${datavar}Loaded is IEntity le ? le.Data() : ${datavar}Loaded);
         Assert.True(${datavar}LoadResult != null, "expected load result to be a map");
         Assert.True(StructRunner.DeepEqual(${datavar}LoadResult!["id"], ${srcdatavar}["id"]),
@@ -748,6 +748,23 @@ function parentMatch(step: any, matchvar: string): string {
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
     .map(([key, val]: any) => `        ${matchvar}["${key}"] = StructUtils.GetProp(setup.Idmap, "${key}") ?? StructUtils.GetProp(setup.Idmap, "${val}");
 `).join('')
+}
+
+
+// A load of a known record fills its route from that record, and from the
+// step's binding where the record holds no scalar for it.
+function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
+  const route = flowLoadRoute(entity, step)
+  if (null == route) {
+    return parentMatch(step, matchvar)
+  }
+  return route.args.map((arg) => {
+    const bound = arg.idmap.map((key) => `StructUtils.GetProp(setup.Idmap, "${key}")`).join(' ?? ')
+    const own = `StructUtils.GetProp(${srcdatavar}, "${arg.field}")`
+    return `        ${matchvar}["${arg.name}"] = ${null == arg.field ? bound :
+      `${own} is System.IConvertible ? ${own} : ${bound}`};
+`
+  }).join('')
 }
 
 
