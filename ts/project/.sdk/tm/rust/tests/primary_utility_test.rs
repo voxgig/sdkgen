@@ -376,6 +376,40 @@ fn primary_fetcher_blocked_test_mode() {
     );
 }
 
+// Nothing listens on port 9: a request the guard let through fails there.
+#[test]
+fn primary_fetcher_getonly_guard() {
+    let live_client = ProjectNameSDK::new(jo(vec![("base", Value::str("http://127.0.0.1:9"))]));
+    let live_utility = live_client.get_utility();
+    let ctx = live_utility.make_context(
+        CtxSpec {
+            opname: Some("create".to_string()),
+            client: Some(live_client.clone()),
+            utility: Some(live_utility.clone()),
+            ..Default::default()
+        },
+        None,
+    );
+    let url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01";
+    let def = |method: &str| jo(vec![("method", Value::str(method)), ("headers", Value::empty_map())]);
+
+    let prior = std::env::var("VOXGIG_GETONLY_GUARD").ok();
+    std::env::set_var("VOXGIG_GETONLY_GUARD", "TRUE");
+    let refused = live_utility.fetch(&ctx, url, &def("POST")).err();
+    let sent = live_utility.fetch(&ctx, url, &def("GET")).err();
+    match prior {
+        Some(v) => std::env::set_var("VOXGIG_GETONLY_GUARD", v),
+        None => std::env::remove_var("VOXGIG_GETONLY_GUARD"),
+    }
+
+    let refused = refused.expect("expected the POST to be refused");
+    assert_eq!(refused.code, "fetch_getonly_block");
+    assert!(refused.msg.contains("[GET-ONLY GUARD] blocked POST /planet/p1"), "{}", refused.msg);
+    assert!(!refused.msg.contains("GUARDKEY01"), "{}", refused.msg);
+    let sent = sent.expect("expected the GET to reach the closed port");
+    assert_ne!(sent.code, "fetch_getonly_block", "{}", sent.msg);
+}
+
 #[test]
 fn primary_make_context_basic() {
     let (client, utility) = base_client();

@@ -142,11 +142,15 @@ test-primary: run_primary_corpus
 test-concurrency: run_concurrency_test
 	./run_concurrency_test
 
+# The sdk suite sets the GET-only flag with Unix.putenv; a feature tier that
+# links unix.cma already brings it.
+SDK_UNIX = $(if $(filter unix.cma,$(FEATURE_LIB)),,unix.cma)
+
 # Every executable that links the RUNTIME links the gated feature tier with
 # it: library archives FIRST (an archive must precede the modules that use
 # it), stub objects and link flags LAST.
 run_sdk_test: $(SDK_TEST) $(FEATURE_OBJ)
-	$(OCAMLC) $(INC) $(FEATURE_LIB) $(SDK_TEST) $(FEATURE_OBJ) $(FEATURE_LINK) -o run_sdk_test
+	$(OCAMLC) $(INC) -I +unix $(SDK_UNIX) $(FEATURE_LIB) $(SDK_TEST) $(FEATURE_OBJ) $(FEATURE_LINK) -o run_sdk_test
 
 run_omni_smoke: $(SMOKE_SRC)
 	$(OCAMLC) $(INC) $(SMOKE_SRC) -o run_omni_smoke

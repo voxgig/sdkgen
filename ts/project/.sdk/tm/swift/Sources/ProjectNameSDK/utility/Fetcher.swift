@@ -42,7 +42,31 @@ private let manualRedirectSession = URLSession(
   configuration: cookielessConfiguration(),
   delegate: ManualRedirectDelegate(), delegateQueue: nil)
 
+let getOnlyEnv = "VOXGIG_GETONLY_GUARD"
+
+// A GET-only live run refuses any other method before it is sent. The error
+// names the path alone: the query can carry a credential.
+func getOnlyRefusal(_ fullurl: String, _ method: String) -> ProjectNameError? {
+  let upper = method.uppercased()
+  if ProcessInfo.processInfo.environment[getOnlyEnv] != "TRUE" || upper == "GET" {
+    return nil
+  }
+  var rest = Substring(fullurl)
+  if let scheme = rest.range(of: "://") {
+    rest = rest[scheme.upperBound...]
+    rest = rest[(rest.firstIndex(where: { "/?#".contains($0) }) ?? rest.endIndex)...]
+  }
+  let path = rest[..<(rest.firstIndex(where: { "?#".contains($0) }) ?? rest.endIndex)]
+  return ProjectNameError("fetch_getonly_block",
+    "[GET-ONLY GUARD] blocked \(upper) \(path.isEmpty ? "/" : String(path))", nil)
+}
+
 func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
+  let method = gp(fetchdef, "method").asString ?? "GET"
+  if let refused = getOnlyRefusal(fullurl, method.isEmpty ? "GET" : method) {
+    throw refused
+  }
+
   // A request that cannot be sent fails the operation.
   guard let url = URL(string: fullurl) else {
     throw ProjectNameError("fetch_transport", "the URL could not be parsed", nil)

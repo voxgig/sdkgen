@@ -30,10 +30,44 @@
 
 (defn- fake-client-opts [opts] {:options (atom opts) :mode (atom "test") :features (atom []) :store (atom {})})
 
+;; A POST, then a GET, to a closed port: the guard's code and message, or
+;; "sent" for a request it let through.
+(defn getonly-probe []
+  (let [sdk (client/make-sdk (vs/jm "base" "http://127.0.0.1:9"))
+        ctx (make-ctx sdk "create")
+        url "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01"]
+    (apply str (for [method ["POST" "GET"]]
+                 (let [[_ err] ((core/uget ctx :fetcher) ctx url (vs/jm "method" method "headers" (vs/jm)))]
+                   (if (= "fetch_getonly_block" (:code err))
+                     (str (:code err) " " (:msg err) "\n")
+                     "sent\n"))))))
+
+;; A JVM cannot set its own environment, so the probe runs in a child JVM.
+(defn- getonly-child []
+  (let [pb (ProcessBuilder. ^java.util.List
+            [(.orElse (.command (.info (java.lang.ProcessHandle/current))) "java")
+             "-cp" (System/getProperty "java.class.path") "clojure.main" "-e"
+             "(require 'sdk.test.pipeline) (print (sdk.test.pipeline/getonly-probe)) (flush) (System/exit 0)"])
+        _ (.put (.environment pb) "VOXGIG_GETONLY_GUARD" "TRUE")
+        _ (.redirectErrorStream pb true)
+        proc (.start pb)
+        text (slurp (.getInputStream proc))]
+    (t/is-eq (.waitFor proc) 0 text)
+    text))
+
 (defn run [rec]
   (let [sdk (client/test-sdk nil nil)
         utility (core/get-utility sdk)]
     (letfn [(chk [name thunk] (t/run-check rec name thunk))]
+
+      ;; ---- fetcher ----
+      ;; Nothing listens on port 9: a request the guard let through fails there.
+      (chk "fetcher-getonly-guard"
+           (fn [] (let [out (if (= "TRUE" (System/getenv "VOXGIG_GETONLY_GUARD")) (getonly-probe) (getonly-child))]
+                    (t/is-true (clojure.string/starts-with?
+                                out "fetch_getonly_block [GET-ONLY GUARD] blocked POST /planet/p1\n") out)
+                    (t/is-true (clojure.string/ends-with? (clojure.string/trim out) "\nsent") out)
+                    (t/is-true (not (clojure.string/includes? out "GUARDKEY01")) out))))
 
       ;; ---- make-point ----
       (chk "point-rejects-disallowed-op"

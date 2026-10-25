@@ -64,11 +64,38 @@ public static partial class SdkUtility
         return manual ? ManualRedirectHttpClient : DefaultHttpClient;
     }
 
+    internal const string GetOnlyEnv = "VOXGIG_GETONLY_GUARD";
+
+    // A GET-only live run refuses any other method before it is sent. The
+    // error names the path alone: the query can carry a credential.
+    internal static ProjectNameError? GetOnlyRefusal(string fullurl, string method)
+    {
+        var upper = method.ToUpperInvariant();
+        if (Environment.GetEnvironmentVariable(GetOnlyEnv) != "TRUE" || upper == "GET")
+        {
+            return null;
+        }
+        var rest = fullurl;
+        var scheme = rest.IndexOf("://", StringComparison.Ordinal);
+        if (scheme >= 0)
+        {
+            rest = System.Text.RegularExpressions.Regex.Replace(rest.Substring(scheme + 3), "^[^/?#]*", "");
+        }
+        var path = rest.Split(new[] { '?', '#' }, 2)[0];
+        return new ProjectNameError("fetch_getonly_block",
+            "[GET-ONLY GUARD] blocked " + upper + " " + (path == "" ? "/" : path), null);
+    }
+
     internal static Dictionary<string, object?> DefaultHttpFetch(
         string fullurl, Dictionary<string, object?> fetchdef)
     {
         var method = fetchdef.TryGetValue("method", out var mraw) && mraw is string m && m != ""
             ? m : "GET";
+        var refused = GetOnlyRefusal(fullurl, method);
+        if (refused != null)
+        {
+            throw refused;
+        }
 
         using var req = new HttpRequestMessage(new HttpMethod(method), fullurl);
 

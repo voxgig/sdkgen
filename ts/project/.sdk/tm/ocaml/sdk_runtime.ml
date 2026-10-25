@@ -1522,6 +1522,28 @@ let make_result_util (ctx : ctx) : (result option * sdk_error option) =
 
 (* ----- fetcher (innermost transport) ----- *)
 
+(* A GET-only live run refuses any other method before it is sent. The error
+ * names the path alone: the query can carry a credential. *)
+let getonly_refusal (ctx : ctx) (fullurl : string) (fetchdef : value) : sdk_error option =
+  let meth = match get_str fetchdef "method" with
+    | Some m when m <> "" -> String.uppercase_ascii m
+    | _ -> "GET" in
+  if Sys.getenv_opt "VOXGIG_GETONLY_GUARD" <> Some "TRUE" || meth = "GET" then None
+  else begin
+    let index_from s i pred =
+      let rec go j = if j >= String.length s || pred s.[j] then j else go (j + 1) in go i in
+    let n = String.length fullurl in
+    let rec scheme i = if i + 3 > n then None
+      else if String.sub fullurl i 3 = "://" then Some (i + 3) else scheme (i + 1) in
+    let start = match scheme 0 with
+      | Some a -> index_from fullurl a (fun c -> c = '/' || c = '?' || c = '#')
+      | None -> 0 in
+    let stop = index_from fullurl start (fun c -> c = '?' || c = '#') in
+    let path = if stop = start then "/" else String.sub fullurl start (stop - start) in
+    Some (ctx_make_error ctx "fetch_getonly_block"
+      ("[GET-ONLY GUARD] blocked " ^ meth ^ " " ^ path))
+  end
+
 let fetcher_util (ctx : ctx) (fullurl : string) (fetchdef : value) : (value * sdk_error option) =
   let client = cc ctx in
   if client.cl_mode <> "live" then
@@ -1543,8 +1565,11 @@ let fetcher_util (ctx : ctx) (fullurl : string) (fetchdef : value) : (value * sd
       | Noval | Null ->
         (* No live HTTP transport is bundled (dependency-free build); tests
          * run against the test-feature mock or a system.fetch injection. *)
-        (Noval, Some (ctx_make_error ctx "fetch_no_transport"
-          "No live HTTP transport in this build; provide options.system.fetch."))
+        (match getonly_refusal ctx fullurl fetchdef with
+         | Some refused -> (Noval, Some refused)
+         | None ->
+           (Noval, Some (ctx_make_error ctx "fetch_no_transport"
+             "No live HTTP transport in this build; provide options.system.fetch.")))
       | _ -> (Noval, Some (ctx_make_error ctx "fetch_invalid" "system.fetch is not a valid function"))
   end
 

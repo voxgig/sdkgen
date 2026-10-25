@@ -706,6 +706,27 @@ object SdkTestMain {
   // Small identity wrapper so IntConsumer/LongSupplier land in the map as-is.
   private def f0(o: Object): Object = o
 
+  // Nothing listens on port 9: a request the guard let through fails there.
+  // A JVM cannot set its own environment, so the probe runs in a child JVM.
+  private def testGetOnlyGuard(): Unit = {
+    val out =
+      if ("TRUE" == System.getenv("VOXGIG_GETONLY_GUARD")) SdkGetOnlyProbe.probe()
+      else {
+        val pb = new ProcessBuilder(ProcessHandle.current().info().command().orElse("java"),
+          "-cp", System.getProperty("java.class.path"), "SdkGetOnlyProbe")
+        pb.environment().put("VOXGIG_GETONLY_GUARD", "TRUE")
+        pb.redirectErrorStream(true)
+        val proc = pb.start()
+        val text = new String(proc.getInputStream.readAllBytes(), "UTF-8")
+        eqI("getonly.exit", 0, proc.waitFor())
+        text
+      }
+    check("getonly.refused",
+      out.startsWith("fetch_getonly_block [GET-ONLY GUARD] blocked POST /planet/p1\n"), out)
+    check("getonly.get", out.trim.endsWith("\nsent"), out)
+    check("getonly.query", !out.contains("GUARDKEY01"), out)
+  }
+
   def main(args: Array[String]): Unit = {
     val suites: Seq[(String, () => Unit)] = Seq(
       "netsim" -> testNetsim, "retry" -> testRetry, "timeout" -> testTimeout,
@@ -715,7 +736,7 @@ object SdkTestMain {
       "paging" -> testPaging, "streaming" -> testStreaming, "proxy" -> testProxy,
       "composition" -> testComposition, "featureAdd" -> testFeatureAdd,
       "featureOrder" -> testFeatureOrder, "entityCrud" -> testEntityCrud,
-      "entityStream" -> testEntityStream)
+      "entityStream" -> testEntityStream, "getOnlyGuard" -> testGetOnlyGuard)
 
     suites.foreach { case (name, fn) =>
       try fn()
@@ -727,4 +748,33 @@ object SdkTestMain {
     println("\nRUNTIME PASS " + npass + "  FAIL " + failures.size())
     if (failures.size() > 0) System.exit(1)
   }
+}
+
+
+// The GET-only guard test's child: a POST, then a GET, to a closed port.
+object SdkGetOnlyProbe {
+  def probe(): String = {
+    val opts = new LinkedHashMap[String, Object]()
+    opts.put("base", "http://127.0.0.1:9")
+    val client = new ProjectNameSDK(opts)
+    val utility = client.getUtility()
+    val cm = new LinkedHashMap[String, Object]()
+    cm.put("opname", "create")
+    val ctx = utility.makeContext(cm, client.getRootCtx())
+    val url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01"
+    val out = new StringBuilder()
+    for (method <- Seq("POST", "GET")) {
+      val fetchdef = new LinkedHashMap[String, Object]()
+      fetchdef.put("method", method)
+      fetchdef.put("headers", new LinkedHashMap[String, Object]())
+      try { utility.fetcher(ctx, url, fetchdef); out.append("answered\n") }
+      catch {
+        case e: SdkError => out.append(e.code).append(' ').append(e.msg).append('\n')
+        case _: RuntimeException => out.append("sent\n")
+      }
+    }
+    out.toString
+  }
+
+  def main(args: Array[String]): Unit = print(probe())
 }

@@ -511,17 +511,24 @@ class PipelineTest extends TestCase
     }
 
 
-    // The guard writes to STDERR, so it is read from a child process.
+    // The guard writes to STDERR, so it is read from a child process. Nothing
+    // listens on port 9: a request the guard let through fails there.
     public function test_get_only_guard_prints_no_query_credential(): void
     {
-        if (!function_exists('curl_init') || !function_exists('proc_open')) {
-            $this->markTestSkipped('the GET-only guard sits on the cURL transport');
+        if (!function_exists('proc_open')) {
+            $this->markTestSkipped('the guard is read from a child process');
         }
         $sdk = realpath(__DIR__ . '/../projectname_sdk.php');
         $code = 'require ' . var_export($sdk, true) . ';'
-            . ' [, $err] = ProjectNameFetcher::defaultHttpFetch('
-            . '"http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01&x=1", ["method" => "POST"]);'
-            . ' echo $err;';
+            . ' $client = new ProjectNameSDK(["base" => "http://127.0.0.1:9"]);'
+            . ' $utility = $client->get_utility();'
+            . ' $ctx = ($utility->make_context)(["opname" => "create", "client" => $client,'
+            . ' "utility" => $utility], null);'
+            . ' $url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01&x=1";'
+            . ' [, $err] = ($utility->fetcher)($ctx, $url, ["method" => "POST"]);'
+            . ' echo $err->sdk_code, " ", $err->msg, "\n";'
+            . ' [, $geterr] = ($utility->fetcher)($ctx, $url, ["method" => "GET"]);'
+            . ' echo $geterr instanceof ProjectNameError ? $geterr->sdk_code : "sent";';
         $env = array_merge(getenv(), ['VOXGIG_GETONLY_GUARD' => 'TRUE']);
         $proc = proc_open([PHP_BINARY, '-r', $code],
             [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, $env);
@@ -532,7 +539,8 @@ class PipelineTest extends TestCase
         proc_close($proc);
 
         $this->assertStringContainsString('[GET-ONLY GUARD] blocked POST /planet/p1', $errout);
-        $this->assertStringContainsString('blocked POST /planet/p1', $out);
+        $this->assertStringStartsWith('fetch_getonly_block [GET-ONLY GUARD] blocked POST /planet/p1', $out);
+        $this->assertStringEndsWith("\nsent", $out);
         $this->assertStringNotContainsString('GUARDKEY01', $errout);
         $this->assertStringNotContainsString('GUARDKEY01', $out);
     }

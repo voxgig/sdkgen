@@ -21,6 +21,23 @@ function defaultUserAgent(fetchdef: Record<string, any>) {
 }
 
 
+const GETONLY_ENV = 'VOXGIG_GETONLY_GUARD'
+
+
+// A GET-only live run refuses any other method before it is sent. The error
+// names the path alone: the query can carry a credential.
+function getOnlyRefusal(ctx: Context, fullurl: string, fetchdef: Record<string, any>) {
+  const method = String(fetchdef.method || 'GET').toUpperCase()
+  if ('TRUE' !== (globalThis as any).process?.env?.[GETONLY_ENV] || 'GET' === method) {
+    return
+  }
+  const scheme = fullurl.indexOf('://')
+  const rest = scheme < 0 ? fullurl : fullurl.slice(scheme + 3).replace(/^[^/?#]*/, '')
+  const path = rest.split(/[?#]/)[0] || '/'
+  return ctx.error('fetch_getonly_block', '[GET-ONLY GUARD] blocked ' + method + ' ' + path)
+}
+
+
 // Make HTTP call using library. Replace this utility for mocking etc.
 async function fetcher(
   ctx: Context,
@@ -43,6 +60,13 @@ async function fetcher(
   }
 
   const fetch = options.system.fetch
+
+  // The platform's fetch is the SDK's own transport; a supplied one is the
+  // caller's, and a mock sends nothing.
+  const refused = fetch === globalThis.fetch ? getOnlyRefusal(ctx, fullurl, fetchdef) : undefined
+  if (refused) {
+    return refused
+  }
 
   defaultUserAgent(fetchdef)
 

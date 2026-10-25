@@ -10,6 +10,7 @@ const std = @import("std");
 const vs = @import("voxgig-struct");
 const h = @import("helpers.zig");
 const err = @import("error.zig");
+const mem = @import("mem.zig");
 const types = @import("types.zig");
 const ctxmod = @import("context.zig");
 const control_mod = @import("control.zig");
@@ -2300,8 +2301,29 @@ pub fn fetcher_util(ctx: *Context, fullurl: []const u8, fetchdef: Value) E!Value
     return ctx.fail("fetch_invalid", "system.fetch is not a valid function");
 }
 
+// A GET-only live run refuses any other method before it is sent. The error
+// names the path alone: the query can carry a credential.
+fn getonly_refusal(fullurl: []const u8, fetchdef: Value) ?[]const u8 {
+    const environ = mem.threaded().environ.process_environ;
+    const flag = environ.getAlloc(h.A(), "VOXGIG_GETONLY_GUARD") catch return null;
+    if (!std.mem.eql(u8, flag, "TRUE")) return null;
+    const raw = h.get_str(fetchdef, "method") orelse "";
+    var buf: [16]u8 = undefined;
+    const method = if (raw.len == 0) "GET" else std.ascii.upperString(buf[0..@min(raw.len, buf.len)], raw[0..@min(raw.len, buf.len)]);
+    if (std.mem.eql(u8, method, "GET")) return null;
+    var rest = fullurl;
+    if (std.mem.indexOf(u8, rest, "://")) |i| {
+        rest = rest[i + 3 ..];
+        rest = rest[(std.mem.indexOfAny(u8, rest, "/?#") orelse rest.len)..];
+    }
+    const path = rest[0..(std.mem.indexOfAny(u8, rest, "?#") orelse rest.len)];
+    return fmt("[GET-ONLY GUARD] blocked {s} {s}", .{ method, if (path.len == 0) "/" else path });
+}
+
 fn default_http_fetch(ctx: *Context, fullurl: []const u8, fetchdef: Value) E!Value {
-    _ = fetchdef;
+    if (getonly_refusal(fullurl, fetchdef)) |msg| {
+        return ctx.fail("fetch_getonly_block", msg);
+    }
     // Live HTTP transport. The generated test suite runs entirely against the
     // offline mock (the `test` feature), so this path is not exercised by
     // tests; a real deployment injects `system.fetch`. A std.http.Client

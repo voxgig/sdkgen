@@ -71,7 +71,7 @@ tm/c/tests/omni_resolver.h d02058fb3bc4
 tm/c/tests/omni_smoke_test.c 6408be08e5b4
 tm/c/tests/pipeline_test.c 39f2d4164345
 tm/c/tests/primary_corpus_test.c 8b5b07a955dc
-tm/c/tests/primary_utility_test.c 01ca5c5d1c03
+tm/c/tests/primary_utility_test.c c4284c86f79b
 tm/c/tests/server_variable_test.c b49f64ffac4b
 tm/c/tests/struct_corpus_test.c d210851e0ef4
 tm/c/tests/transport_test.c 3cbaefc1b2da
@@ -84,7 +84,7 @@ tm/c/utility/done.c c34b62a8b13a
 tm/c/utility/feature_add.c d77b2f280d84
 tm/c/utility/feature_hook.c 2519ac12e079
 tm/c/utility/feature_init.c c4d6683438aa
-tm/c/utility/fetcher.c 99b07aa204e1
+tm/c/utility/fetcher.c dacb7ae0ee3a
 tm/c/utility/graphql.c a21a86e03521
 tm/c/utility/http.c d8a711f0a675
 tm/c/utility/jsonparse.c cffd3f2ac8b1
@@ -231,7 +231,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj 5978c081353b
-tm/clojure/src/sdk/core.clj 679857d8ce42
+tm/clojure/src/sdk/core.clj 4e7e5f2e7ce8
 tm/clojure/src/sdk/features.clj a08f2202dce7
 tm/clojure/src/voxgig/struct.clj e11f03d1c544
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
@@ -240,7 +240,7 @@ tm/clojure/test/sdk/test/feature/secrets.clj ef0134a7fd63
 tm/clojure/test/sdk/test/netsim.clj 2e797c353a8b
 tm/clojure/test/sdk/test/omni.clj cabff67d9640
 tm/clojure/test/sdk/test/omni_smoke.clj eb96d122a518
-tm/clojure/test/sdk/test/pipeline.clj 6c40203b1a22
+tm/clojure/test/sdk/test/pipeline.clj 5dc0e4058b4b
 tm/clojure/test/sdk/test/primary.clj f306427e725e
 tm/clojure/test/sdk/test/struct_corpus.clj 7bc252602c61
 tm/clojure/test/sdk/test_runner.clj b74fa394f777
@@ -314,7 +314,7 @@ tm/cpp/test/netsim_test.cpp 40bb856c820b
 tm/cpp/test/omni_resolver.hpp e8a41e0b16fc
 tm/cpp/test/omni_smoke_test.cpp dacc9e1b8327
 tm/cpp/test/pipeline_test.cpp 34072773b4a2
-tm/cpp/test/primary_utility_test.cpp 7d2335762b77
+tm/cpp/test/primary_utility_test.cpp 5260628cbbcf
 tm/cpp/test/runner_support.hpp cf97960870c1
 tm/cpp/test/sdk-test-control.json acadc87764f6
 tm/cpp/test/server_variable_test.cpp a6a1670e96ac
@@ -324,7 +324,7 @@ tm/cpp/test/vendor/omni/json.hpp 657d69741eb5
 tm/cpp/test/vendor/omni/omni.hpp 14523e74aafe
 tm/cpp/test/vendor/omni/util.hpp 371f4622ad9e
 tm/cpp/utility/cookie.hpp d2b5fb5f0264
-tm/cpp/utility/pipeline.hpp f67cb8a4f775
+tm/cpp/utility/pipeline.hpp 487b64524aac
 tm/cpp/utility/voxgigstruct/value.hpp 97c18881d788
 tm/cpp/utility/voxgigstruct/value_io.hpp 5fe5c8199dfc
 tm/cpp/utility/voxgigstruct/voxgig_struct.hpp 2fd1e8054158
@@ -404,7 +404,7 @@ tm/csharp/test/NetsimTest.cs 3c36d55e1540
 tm/csharp/test/OmniResolver.cs 12edf791ee98
 tm/csharp/test/OmniSmokeTest.cs adbc2519341d
 tm/csharp/test/PipelineTest.cs d5e845f81b70
-tm/csharp/test/PrimaryUtilityTest.cs cd22ae73df20
+tm/csharp/test/PrimaryUtilityTest.cs a8560b3381ed
 tm/csharp/test/Runner.cs 1e85bb505148
 tm/csharp/test/StructUtilityTest.cs bcc257581aee
 tm/csharp/test/sdk-test-control.json 1368770ffc61
@@ -415,7 +415,7 @@ tm/csharp/utility/Done.cs 0106c22118b7
 tm/csharp/utility/FeatureAdd.cs 5a5f0fd34beb
 tm/csharp/utility/FeatureHook.cs 923e6654ee06
 tm/csharp/utility/FeatureInit.cs 8e81f5a41870
-tm/csharp/utility/Fetcher.cs 864a82910849
+tm/csharp/utility/Fetcher.cs 5ba1086c2bbe
 tm/csharp/utility/Graphql.cs 6b8bdb457f11
 tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs 6900c189af67
@@ -498,7 +498,7 @@ tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex a6ab3f6305f6
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex 52cc09c70b46
+tm/elixir/lib/projectname/utility.ex c6d466a1d68f
 tm/elixir/lib/utility/struct/voxgig_struct.ex 6cf834c5da52
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -507,7 +507,7 @@ tm/elixir/test/concurrency_test.exs bbac080182cb
 tm/elixir/test/feature_test.exs b7c442542d7e
 tm/elixir/test/netsim_test.exs d9459f10a6c7
 tm/elixir/test/omni_smoke_test.exs d79d4e7faab8
-tm/elixir/test/pipeline_test.exs c97ecfff3b19
+tm/elixir/test/pipeline_test.exs 3682834f08cf
 tm/elixir/test/primary_utility_test.exs 809ab087b792
 tm/elixir/test/stream_test.exs adcaa6598d60
 tm/elixir/test/struct_corpus_test.exs b7fd9221f7c8
@@ -591,7 +591,7 @@ tm/go/test/omni/util.go 0a6ff00d03ec
 tm/go/test/omniresolver_test.go db219b844df1
 tm/go/test/omnismoke_test.go fb76d8db5060
 tm/go/test/pipeline_test.go aa2adc359fec
-tm/go/test/primary_utility_test.go 1ed5f7443782
+tm/go/test/primary_utility_test.go bf9932e19da2
 tm/go/test/sdk-test-control.json acadc87764f6
 tm/go/test/struct_utility_test.go c3db5a84cdc1
 tm/go/test/testsupport_test.go 320d6f3af56e
@@ -600,7 +600,7 @@ tm/go/utility/done.go 829dd26164b3
 tm/go/utility/feature_add.go 0b62e5d1c8db
 tm/go/utility/feature_hook.go 7efab96be0c6
 tm/go/utility/feature_init.go e2d9a7381261
-tm/go/utility/fetcher.go 28aed7c9ffd4
+tm/go/utility/fetcher.go d391e29235d3
 tm/go/utility/graphql.go f0e6b8fef4a8
 tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go 413cfa42a432
@@ -733,7 +733,7 @@ tm/java/test/NetsimTest.java 9969f77c3cb3
 tm/java/test/OmniResolver.java 54333ccce204
 tm/java/test/OmniSmokeTest.java 722cc2d6bfe7
 tm/java/test/PipelineTest.java 2bde7fdedd64
-tm/java/test/PrimaryUtilityTest.java a730edbeab4a
+tm/java/test/PrimaryUtilityTest.java 37911a7e11d5
 tm/java/test/RunnerSupport.java df36eddbfbca
 tm/java/test/StructCorpusTest.java 2cefdd8ed671
 tm/java/test/sdk-test-control.json acadc87764f6
@@ -745,7 +745,7 @@ tm/java/utility/Done.java 539e95bb155a
 tm/java/utility/FeatureAdd.java 77fd1ce39d5a
 tm/java/utility/FeatureHookUtil.java c0a61e00148f
 tm/java/utility/FeatureInit.java b7ee152fc808
-tm/java/utility/Fetcher.java 31c3e05bc7bb
+tm/java/utility/Fetcher.java c7ff9a69389d
 tm/java/utility/Graphql.java 375386544b43
 tm/java/utility/Json.java 319781c3f5ca
 tm/java/utility/MakeContext.java c7789b287936
@@ -847,7 +847,7 @@ tm/js/src/utility/DoneUtility.js 7da13c3a73d2
 tm/js/src/utility/FeatureAddUtility.js 7053d7f60b27
 tm/js/src/utility/FeatureHookUtility.js 55ecc0949c72
 tm/js/src/utility/FeatureInitUtility.js 8626f12492c2
-tm/js/src/utility/FetcherUtility.js ff6878dc1bf3
+tm/js/src/utility/FetcherUtility.js d73fe2b6320d
 tm/js/src/utility/GraphqlUtility.js e8aed31713c4
 tm/js/src/utility/MakeContextUtility.js bbc1c9839da2
 tm/js/src/utility/MakeErrorUtility.js 71904fb5c231
@@ -883,7 +883,7 @@ tm/js/test/feature/Corpus.test.js 0c34bb3a6862
 tm/js/test/feature/harness.js 570ce780bcd7
 tm/js/test/live-contract.js 348bc8916e69
 tm/js/test/live-entity.js 0adeb037e405
-tm/js/test/live-runner.js 18e39464a47a
+tm/js/test/live-runner.js a348addd57d3
 tm/js/test/live-scenarios.js 3d82fe88e2ab
 tm/js/test/netsim.test.js 11a4e4a385fa
 tm/js/test/omni.js 4cbe528e8289
@@ -892,7 +892,7 @@ tm/js/test/pipeline.test.js 2fd7539e2953
 tm/js/test/sdk-test-control.json 91aad509f363
 tm/js/test/utility.js 222a46324f56
 tm/js/test/utility/Custom.test.js deeb256f75c3
-tm/js/test/utility/PrimaryUtility.test.js ac9afba1b7a7
+tm/js/test/utility/PrimaryUtility.test.js e27d0c3d30c4
 tm/js/test/utility/StructUtility.test.js 7014600e8ff7
 tm/js/test/utility/index.js 18fa1acfe694
 tm/js/test/vendor/omni/index.js 311694cc2cb0
@@ -975,7 +975,7 @@ tm/kotlin/test/NetsimTest.kt 870005516436
 tm/kotlin/test/OmniResolver.kt 177193e3e49a
 tm/kotlin/test/OmniSmokeTest.kt ec9e888beb69
 tm/kotlin/test/PipelineTest.kt c654fb25bc20
-tm/kotlin/test/PrimaryUtilityTest.kt 7517fa2990b1
+tm/kotlin/test/PrimaryUtilityTest.kt 38460f0e40a4
 tm/kotlin/test/RunnerSupport.kt 5c21250c5d4c
 tm/kotlin/test/ServerVariableTest.kt cf52d241cde8
 tm/kotlin/test/StructCorpusTest.kt fb99eabed538
@@ -985,7 +985,7 @@ tm/kotlin/test/vendor/omni/Runner.kt 7379423c7a44
 tm/kotlin/test/vendor/omni/Util.kt debc29b64d40
 tm/kotlin/utility/CoreUtil.kt f717028692de
 tm/kotlin/utility/FeatureUtil.kt 0afe6596ecdb
-tm/kotlin/utility/Fetcher.kt 1d027b839872
+tm/kotlin/utility/Fetcher.kt 61016be5d109
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
 tm/kotlin/utility/MakeOptions.kt dffd4d4c5f9a
@@ -1064,7 +1064,7 @@ tm/lua/test/omni.lua 61f834f4f623
 tm/lua/test/omni_smoke_test.lua f889b585f462
 tm/lua/test/option_defaults_test.lua b3c002d12dee
 tm/lua/test/pipeline_test.lua 085d8445b769
-tm/lua/test/primary_utility_test.lua 9ae463cb4ad4
+tm/lua/test/primary_utility_test.lua 5711c69aae9d
 tm/lua/test/runner.lua 5ba2abe2a283
 tm/lua/test/sdk-test-control.json da0a617f04f6
 tm/lua/test/struct_utility_test.lua 7b6093720d1b
@@ -1078,7 +1078,7 @@ tm/lua/utility/done.lua c1c77faea694
 tm/lua/utility/feature_add.lua f6a951686474
 tm/lua/utility/feature_hook.lua 117392b0b027
 tm/lua/utility/feature_init.lua 97c94b7fa38f
-tm/lua/utility/fetcher.lua ec6dd0e3e083
+tm/lua/utility/fetcher.lua dd5f0e83c4f1
 tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua e47317140bb3
@@ -1145,12 +1145,12 @@ src/cmp/ocaml/fragment/RunOp.fragment.ml fe471fb75caa
 src/cmp/ocaml/tsconfig.json 720a3f229019
 src/cmp/ocaml/utility_ocaml.ts c7b75b60e39c
 tm/ocaml/LICENSE 7a036af3f8a4
-tm/ocaml/Makefile 2420a3372dbb
+tm/ocaml/Makefile 8d078f54d655
 tm/ocaml/VERSION e6635045e1d2
 tm/ocaml/sdk_features.ml 7d5735644852
 tm/ocaml/sdk_helpers.ml 24933d1c5031
 tm/ocaml/sdk_json.ml 7514a4177ebb
-tm/ocaml/sdk_runtime.ml c363b250db60
+tm/ocaml/sdk_runtime.ml 4626e0faeac6
 tm/ocaml/sdk_types.ml b409a91a7c5a
 tm/ocaml/src/feature/README.md 40b41cba5c47
 tm/ocaml/src/feature/base/.gitkeep e3b0c44298fc
@@ -1164,7 +1164,7 @@ tm/ocaml/test/primary_utility_test.ml 2501379d19ab
 tm/ocaml/test/struct_corpus.ml 6742a3fed883
 tm/ocaml/test/t_feature.ml 010046646b46
 tm/ocaml/test/t_main.ml a468eae08da5
-tm/ocaml/test/t_pipeline.ml 38549b8eb787
+tm/ocaml/test/t_pipeline.ml 135b82d775d0
 tm/ocaml/test/testutil.ml d06c690245b6
 tm/ocaml/test/vendor/omni/omni.ml 62def8811826
 tm/ocaml/utility/voxgig_struct.ml a0a616198901
@@ -1235,7 +1235,7 @@ tm/perl/t/netsim.t e5829249c5e9
 tm/perl/t/omni.pm 05901a362319
 tm/perl/t/omni_smoke.t 5b5284fad82f
 tm/perl/t/pipeline.t b9dfbf3bdc49
-tm/perl/t/primary_utility.t c1cf989695c2
+tm/perl/t/primary_utility.t 9542c7af177e
 tm/perl/t/runner.pm e95d5296f9d9
 tm/perl/t/sdk-test-control.json b75ea700c514
 tm/perl/t/server_variables.t 4404608c9256
@@ -1249,7 +1249,7 @@ tm/perl/utility/done.pm 543780c62fb8
 tm/perl/utility/feature_add.pm 1904c2689cad
 tm/perl/utility/feature_hook.pm e28b546e5fd1
 tm/perl/utility/feature_init.pm 669f03c56f25
-tm/perl/utility/fetcher.pm 02d820951fb3
+tm/perl/utility/fetcher.pm eda22375cfef
 tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm 5fc187157147
@@ -1341,7 +1341,7 @@ tm/php/test/FeatureTest.php d237b3661309
 tm/php/test/NetsimTest.php fac241d6b75a
 tm/php/test/Omni.php a5fdc0be95cc
 tm/php/test/OmniSmokeTest.php cad939a73897
-tm/php/test/PipelineTest.php 844e952ad522
+tm/php/test/PipelineTest.php 3b907ac98215
 tm/php/test/PrimaryUtilityTest.php 2cf1ca929598
 tm/php/test/Runner.php ce56f8fce3d0
 tm/php/test/StructUtilityTest.php 8cf4251dbd8f
@@ -1353,7 +1353,7 @@ tm/php/utility/Done.php dd5e686391dd
 tm/php/utility/FeatureAdd.php 7729798603cf
 tm/php/utility/FeatureHook.php 7f333010aba1
 tm/php/utility/FeatureInit.php d2ae3102173f
-tm/php/utility/Fetcher.php 84c39b56eb85
+tm/php/utility/Fetcher.php b7660d792f26
 tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 708cebcf9353
@@ -1446,7 +1446,7 @@ tm/py/pkg/utility/done.py c8768dd1d36f
 tm/py/pkg/utility/feature_add.py f85e86961cec
 tm/py/pkg/utility/feature_hook.py a77281b3d944
 tm/py/pkg/utility/feature_init.py 56df64ac9bd6
-tm/py/pkg/utility/fetcher.py 8e3064d348df
+tm/py/pkg/utility/fetcher.py 70525578a0be
 tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py 522bdf05b187
@@ -1489,7 +1489,7 @@ tm/py/test/test_feature_corpus.py 4f7ee3efba36
 tm/py/test/test_netsim.py 1583f97d2c84
 tm/py/test/test_omni_smoke.py abeaa5fc717b
 tm/py/test/test_pipeline.py 28a40b13fc41
-tm/py/test/test_primary_utility.py 1a83b07808d3
+tm/py/test/test_primary_utility.py 9946d5cbda45
 tm/py/test/test_struct_utility.py 551d75951347
 tm/py/test/voxgig_omni/__init__.py 31d332fe64a7
 tm/py/test/voxgig_omni/runner.py e5ba1852a2a5
@@ -1583,7 +1583,7 @@ tm/rb/test/netsim_test.rb bc7d9265bec9
 tm/rb/test/omni.rb 55153c959df6
 tm/rb/test/omni_smoke_test.rb b39afea20e26
 tm/rb/test/pipeline_test.rb d9d9808d37ca
-tm/rb/test/primary_utility_test.rb 1d6a98ee1ec4
+tm/rb/test/primary_utility_test.rb f5aa2d84aefd
 tm/rb/test/runner.rb d2f115f21614
 tm/rb/test/sdk-test-control.json 9b96054952f6
 tm/rb/test/struct_utility_test.rb 53ba3c8608b5
@@ -1595,7 +1595,7 @@ tm/rb/utility/done.rb 748be3d441f3
 tm/rb/utility/feature_add.rb 56c05f79aaf6
 tm/rb/utility/feature_hook.rb ae80d8f1f9c8
 tm/rb/utility/feature_init.rb 025a7a843acb
-tm/rb/utility/fetcher.rb ceb64c2e7375
+tm/rb/utility/fetcher.rb f038adc9c2ad
 tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb 80f4772ab672
@@ -1695,7 +1695,7 @@ tm/rust/tests/netsim_test.rs bc23c72e88b2
 tm/rust/tests/omni_resolver/mod.rs b458d10a892a
 tm/rust/tests/omni_smoke_test.rs f412dbc766e8
 tm/rust/tests/pipeline_test.rs edc6a5fc87cc
-tm/rust/tests/primary_utility_test.rs 97e0f61aa714
+tm/rust/tests/primary_utility_test.rs eb13f3e42415
 tm/rust/tests/sdk-test-control.json 8e1530378d2f
 tm/rust/tests/struct_utility_test.rs e19a58dc8fad
 tm/rust/tests/vendor/omni/json.rs e71720f05457
@@ -1708,7 +1708,7 @@ tm/rust/utility/done.rs b15d29a24839
 tm/rust/utility/feature_add.rs 17f2d1fcb7c3
 tm/rust/utility/feature_hook.rs 6d794f025b57
 tm/rust/utility/feature_init.rs 66f96bd2cf0d
-tm/rust/utility/fetcher.rs 6dbcda9cf3af
+tm/rust/utility/fetcher.rs 60c578eac7c2
 tm/rust/utility/graphql.rs 5115a012964e
 tm/rust/utility/jsonparse.rs 17f7ee7b908a
 tm/rust/utility/make_context.rs 04f34b592c9c
@@ -1864,7 +1864,7 @@ tm/scala/sdktest/ConcurrencyTest.scala f27840bb67d8
 tm/scala/sdktest/OmniResolver.scala 2bbd5639ca7c
 tm/scala/sdktest/OmniSmoke.scala 5c22c83fb51f
 tm/scala/sdktest/PrimaryCorpus.scala 2ac88f150d4e
-tm/scala/sdktest/SdkTestMain.scala 82e0f52a8719
+tm/scala/sdktest/SdkTestMain.scala b1fd197117a1
 tm/scala/sdktest/SdkTestSupport.scala 9a0a70dcb153
 tm/scala/sdktest/ServerVariableTest.scala 0c041b23fd44
 tm/scala/sdktest/StructCorpus.scala c6be9c1da3bb
@@ -1896,7 +1896,7 @@ tm/scala/src/feature/test/.gitkeep e3b0c44298fc
 tm/scala/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/scala/src/feature/validate/.gitkeep e3b0c44298fc
 tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
-tm/scala/utility/Fetcher.scala 97224a53d044
+tm/scala/utility/Fetcher.scala ab84394b44be
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
 tm/scala/utility/Make.scala 07bf927be26b
@@ -1987,7 +1987,7 @@ tm/swift/Sources/ProjectNameSDK/feature/BaseFeature.swift 37dd198da054
 tm/swift/Sources/ProjectNameSDK/feature/FeatureOptions.swift 954574861e32
 tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift a372e73cf9d2
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
-tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift d57d8d7e844c
+tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift aea3ea59107a
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift ccb00c18e9ec
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 0ce0c9bc0652
@@ -2003,7 +2003,7 @@ tm/swift/Tests/ProjectNameSDKTests/NetsimTest.swift e290a72e79ed
 tm/swift/Tests/ProjectNameSDKTests/OmniResolver.swift 4d0840455dcf
 tm/swift/Tests/ProjectNameSDKTests/OmniSmokeTest.swift 8c71b23490e1
 tm/swift/Tests/ProjectNameSDKTests/PipelineTest.swift 88b2121387e7
-tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift c60a08d7f713
+tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift 1609247dc40d
 tm/swift/Tests/ProjectNameSDKTests/Runner.swift 7cacfc13a4c6
 tm/swift/Tests/ProjectNameSDKTests/ServerVariableTest.swift e3469c9beea6
 tm/swift/Tests/ProjectNameSDKTests/StructUtilityTest.swift df46c84a8c75
@@ -2091,7 +2091,7 @@ tm/ts/src/utility/DoneUtility.ts 228a75d46df4
 tm/ts/src/utility/FeatureAddUtility.ts c391267d72a9
 tm/ts/src/utility/FeatureHookUtility.ts 95985140459e
 tm/ts/src/utility/FeatureInitUtility.ts 389de58bea48
-tm/ts/src/utility/FetcherUtility.ts d57b99ddb31a
+tm/ts/src/utility/FetcherUtility.ts f78e45215e41
 tm/ts/src/utility/GraphqlUtility.ts bd8ce7cadbad
 tm/ts/src/utility/MakeContextUtility.ts 50caf1a75850
 tm/ts/src/utility/MakeErrorUtility.ts 338c6abca4d2
@@ -2127,7 +2127,7 @@ tm/ts/test/feature/Corpus.test.ts 84e87762e86e
 tm/ts/test/feature/harness.ts aa21c893ec53
 tm/ts/test/live-contract.ts 54ee4d2e6fe6
 tm/ts/test/live-entity.ts faa8a1ec1a09
-tm/ts/test/live-runner.ts 66c7f4b891cb
+tm/ts/test/live-runner.ts 338cee142b55
 tm/ts/test/live-scenarios.ts 3543313296c4
 tm/ts/test/netsim.test.ts 350539c6a30b
 tm/ts/test/omni.test.ts 3a59ba8a1d8c
@@ -2138,7 +2138,7 @@ tm/ts/test/tsconfig.json 919b2e464c0b
 tm/ts/test/utility.ts 1ea0442912d3
 tm/ts/test/utility/Corpus.test.ts e7efaa88df0f
 tm/ts/test/utility/Custom.test.ts a8780a38b0ea
-tm/ts/test/utility/PrimaryUtility.test.ts 4ec2bf470312
+tm/ts/test/utility/PrimaryUtility.test.ts d63e664ae375
 tm/ts/test/utility/StructUtility.test.ts 52897a756525
 tm/ts/test/utility/index.ts 477889c43d3e
 tm/ts/test/vendor/omni/Runner.ts aac63902b0bd
@@ -2203,7 +2203,7 @@ tm/zig/core/response.zig bc91112131b7
 tm/zig/core/result.zig 84c2386a4c53
 tm/zig/core/spec.zig 25a014ab27fa
 tm/zig/core/types.zig 3a8f6e7a08f9
-tm/zig/core/utility.zig 0ccec187d572
+tm/zig/core/utility.zig 7d6dbfd7fe6c
 tm/zig/feature/audit.zig 83a49d77a34a
 tm/zig/feature/base.zig ca0fa806bb43
 tm/zig/feature/cache.zig ef3b23e5e239
@@ -2288,7 +2288,7 @@ tm/zig/test/gotcha_test.zig adfd2d0772c0
 tm/zig/test/omniresolver.zig dbfba6dfcd18
 tm/zig/test/omnismoke_test.zig b70b834e00fd
 tm/zig/test/pipeline_test.zig 098b6ae7fa76
-tm/zig/test/primary_utility_test.zig 4bba6eb9e1b2
+tm/zig/test/primary_utility_test.zig 5b580f457cdf
 tm/zig/test/struct_corpus.zig c02971515919
 tm/zig/test/vendor/omni/omni.zig 62ab77e3e2c6
 tm/zig/test/vendor/omni/regex.zig d950a2e47fc0

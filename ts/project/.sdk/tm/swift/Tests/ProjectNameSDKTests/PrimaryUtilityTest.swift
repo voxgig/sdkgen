@@ -425,6 +425,40 @@ final class PrimaryUtilityTest: XCTestCase {
     }
   }
 
+  // Nothing listens on port 9: a request the guard let through fails there.
+  func testFetcherGetOnlyGuard() {
+    let opts = VMap()
+    opts.entries["base"] = .string("http://127.0.0.1:9")
+    let liveClient = ProjectNameSDK(opts)
+    let liveUtility = liveClient.getUtility()
+    let ctx = liveUtility.makeContext(
+      ["opname": "create", "client": liveClient, "utility": liveUtility], nil)
+    let url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01"
+    func def(_ method: String) -> VMap {
+      let fetchdef = VMap()
+      fetchdef.entries["method"] = .string(method)
+      fetchdef.entries["headers"] = .map(VMap())
+      return fetchdef
+    }
+
+    let prior = ProcessInfo.processInfo.environment["VOXGIG_GETONLY_GUARD"]
+    setenv("VOXGIG_GETONLY_GUARD", "TRUE", 1)
+    defer {
+      if let prior = prior { setenv("VOXGIG_GETONLY_GUARD", prior, 1) }
+      else { unsetenv("VOXGIG_GETONLY_GUARD") }
+    }
+
+    XCTAssertThrowsError(try liveUtility.fetcher(ctx, url, def("POST"))) { error in
+      let refused = error as? ProjectNameError
+      XCTAssertEqual(refused?.code, "fetch_getonly_block")
+      XCTAssertTrue(errMessage(error).contains("[GET-ONLY GUARD] blocked POST /planet/p1"), errMessage(error))
+      XCTAssertFalse(errMessage(error).contains("GUARDKEY01"))
+    }
+    XCTAssertThrowsError(try liveUtility.fetcher(ctx, url, def("GET"))) { error in
+      XCTAssertNotEqual((error as? ProjectNameError)?.code, "fetch_getonly_block")
+    }
+  }
+
   func testMakeContextBasic() {
     runsection("makeContext") { args in
       guard let inMap = args.first?.asMap else { return .noval }

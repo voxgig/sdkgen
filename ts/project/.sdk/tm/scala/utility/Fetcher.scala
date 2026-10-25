@@ -41,9 +41,25 @@ object Fetcher {
       })
   }
 
+  val GETONLY_ENV = "VOXGIG_GETONLY_GUARD"
+
+  // A GET-only live run refuses any other method before it is sent. The error
+  // names the path alone: the query can carry a credential.
+  def getOnlyRefusal(fullurl: String, method: String): SdkError = {
+    val upper = method.toUpperCase(java.util.Locale.ROOT)
+    if ("TRUE" != System.getenv(GETONLY_ENV) || "GET" == upper) return null
+    val scheme = fullurl.indexOf("://")
+    val rest = if (scheme < 0) fullurl else fullurl.substring(scheme + 3).replaceFirst("^[^/?#]*", "")
+    val path = rest.split("[?#]", 2)(0)
+    new SdkError("fetch_getonly_block",
+      "[GET-ONLY GUARD] blocked " + upper + " " + (if (path.isEmpty) "/" else path), null)
+  }
+
   def defaultHttpFetch(fullurl: String, fetchdef: JMap[String, Object]): JMap[String, Object] = {
     var method = fetchdef.get("method") match { case s: String => s; case _ => "" }
     if ("" == method) method = "GET"
+    val refused = getOnlyRefusal(fullurl, method)
+    if (refused != null) throw refused
 
     var bodyPublisher = HttpRequest.BodyPublishers.noBody()
     fetchdef.get("body") match {

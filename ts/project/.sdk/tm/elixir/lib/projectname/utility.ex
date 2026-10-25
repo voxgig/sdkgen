@@ -2445,11 +2445,29 @@ defmodule ProjectName.Utility do
         sys_fetch = S.getpath(options, "system.fetch")
 
         cond do
-          sys_fetch == nil -> default_http_fetch(fullurl, fetchdef)
+          sys_fetch == nil -> getonly_refusal(ctx, fullurl, fetchdef) || default_http_fetch(fullurl, fetchdef)
           S.isfunc(sys_fetch) -> sys_fetch.(fullurl, fetchdef)
           true -> {nil, Context.make_error(ctx, "fetch_invalid", "system.fetch is not a valid function")}
         end
       end
+    end
+  end
+
+  # A GET-only live run refuses any other method before it is sent. The error
+  # names the path alone: the query can carry a credential.
+  defp getonly_refusal(ctx, fullurl, fetchdef) do
+    method = H.or_(S.getprop(fetchdef, "method"), "GET") |> to_string() |> String.upcase()
+
+    if System.get_env("VOXGIG_GETONLY_GUARD") == "TRUE" and method not in ["", "GET"] do
+      rest =
+        case String.split(fullurl, "://", parts: 2) do
+          [_, tail] -> Regex.replace(~r/^[^\/?#]*/, tail, "")
+          [whole] -> whole
+        end
+
+      path = rest |> String.split(["?", "#"], parts: 2) |> hd()
+      path = if path == "", do: "/", else: path
+      {nil, Context.make_error(ctx, "fetch_getonly_block", "[GET-ONLY GUARD] blocked #{method} #{path}")}
     end
   end
 

@@ -340,6 +340,34 @@ test "primary fetcher blocked test mode" {
     try testing.expect(std.ascii.indexOfIgnoreCase(ctx.pending_err.?.msg, "blocked") != null);
 }
 
+// Nothing listens on port 9; this target has no transport of its own, so a
+// request the guard let through fails as fetch_transport. The environment
+// std captured at startup is swapped for one that sets the flag.
+test "primary fetcher getonly guard" {
+    const threaded = std.Io.Threaded.global_single_threaded;
+    const saved = threaded.environ.process_environ;
+    if (@TypeOf(saved.block) != std.process.Environ.PosixBlock) return error.SkipZigTest;
+    const flagged = [_:null]?[*:0]const u8{"VOXGIG_GETONLY_GUARD=TRUE"};
+    threaded.environ.process_environ = .{ .block = .{ .slice = &flagged } };
+    defer threaded.environ.process_environ = saved;
+
+    const client = sdk.SDK.new(h.jo(&.{.{ "base", h.vstr("http://127.0.0.1:9") }}));
+    const utility = client.get_utility();
+    const ctx = utility.make_context(sdk.CtxSpec{ .opname = "create", .client = client, .utility = utility }, client.get_root_ctx());
+    const url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01";
+
+    const post = h.jo(&.{ .{ "method", h.vstr("POST") }, .{ "headers", h.omap() } });
+    try testing.expectError(error.Sdk, utility.fetch(ctx, url, post));
+    const refused = ctx.pending_err.?;
+    try testing.expectEqualStrings("fetch_getonly_block", refused.code);
+    try testing.expect(std.mem.indexOf(u8, refused.msg, "[GET-ONLY GUARD] blocked POST /planet/p1") != null);
+    try testing.expect(std.mem.indexOf(u8, refused.msg, "GUARDKEY01") == null);
+
+    const get = h.jo(&.{ .{ "method", h.vstr("GET") }, .{ "headers", h.omap() } });
+    try testing.expectError(error.Sdk, utility.fetch(ctx, url, get));
+    try testing.expectEqualStrings("fetch_transport", ctx.pending_err.?.code);
+}
+
 test "primary new sdk smoke" {
     const client = sdk.new();
     try testing.expect(std.mem.eql(u8, client.mode, "live"));

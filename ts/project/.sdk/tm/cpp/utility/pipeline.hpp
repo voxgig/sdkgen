@@ -8,6 +8,7 @@
 #define SDK_UTILITY_PIPELINE_HPP
 
 #include <algorithm>
+#include <cstdlib>
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
@@ -565,6 +566,25 @@ inline void featureHook(CtxPtr ctx, const std::string& name) {
 
 // ---- fetcher ----------------------------------------------------------
 
+// A GET-only live run refuses any other method before it is sent. The error
+// names the path alone: the query can carry a credential.
+inline SdkErrorPtr getOnlyRefusal(CtxPtr ctx, const std::string& fullurl, const Value& fetchdef) {
+  Value raw = getp(fetchdef, "method");
+  std::string method = raw.is_string() && !raw.as_string().empty() ? raw.as_string() : "GET";
+  for (auto& c : method) c = (char)std::toupper((unsigned char)c);
+  const char* flag = std::getenv("VOXGIG_GETONLY_GUARD");
+  if (nullptr == flag || std::string(flag) != "TRUE" || "GET" == method) return nullptr;
+  std::string rest = fullurl;
+  size_t scheme = rest.find("://");
+  if (std::string::npos != scheme) {
+    rest = rest.substr(scheme + 3);
+    rest = rest.substr(std::min(rest.find_first_of("/?#"), rest.size()));
+  }
+  std::string path = rest.substr(0, rest.find_first_of("?#"));
+  return ctx->makeError("fetch_getonly_block",
+      "[GET-ONLY GUARD] blocked " + method + " " + (path.empty() ? "/" : path));
+}
+
 inline Value fetcher(CtxPtr ctx, const std::string& fullurl, const Value& fetchdef) {
   if (ctx->client->mode != "live") {
     throw ctx->makeError("fetch_mode_block",
@@ -586,6 +606,7 @@ inline Value fetcher(CtxPtr ctx, const std::string& fullurl, const Value& fetchd
   }
 
   if (is_nullish(sysFetch)) {
+    if (SdkErrorPtr refused = getOnlyRefusal(ctx, fullurl, fetchdef)) throw refused;
     // No live HTTP transport is built into the generated C++ SDK; supply a
     // system.fetch callable for live requests.
     throw ctx->makeError("fetch_no_transport",
