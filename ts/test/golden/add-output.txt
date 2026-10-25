@@ -16,7 +16,7 @@ src/cmp/c/Gitignore_c.ts cfb70ab8b595
 src/cmp/c/MainEntity_c.ts d6e780384b49
 src/cmp/c/Main_c.ts c1dce7783690
 src/cmp/c/Package_c.ts e1fcd4b774ba
-src/cmp/c/PrepareAuth_c.ts a6ec77e4c610
+src/cmp/c/PrepareAuth_c.ts ba13d256f46b
 src/cmp/c/ReadmeEntity_c.ts 7a12dabe5d0b
 src/cmp/c/ReadmeExamplesTest_c.ts 2e899b115aaa
 src/cmp/c/ReadmeExplanation_c.ts 193fa2c194dd
@@ -532,7 +532,7 @@ src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts 01154abb3c65
 src/cmp/go/Main_go.ts 3051491b398e
 src/cmp/go/Package_go.ts 111b2b904994
-src/cmp/go/PrepareAuth_go.ts 5e5cc78f966f
+src/cmp/go/PrepareAuth_go.ts 397083cd6c97
 src/cmp/go/ReadmeEntity_go.ts f811fb0254ea
 src/cmp/go/ReadmeExamplesTest_go.ts a4d939c3d7cf
 src/cmp/go/ReadmeExplanation_go.ts e40b052e75ce

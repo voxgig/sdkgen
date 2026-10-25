@@ -89,7 +89,7 @@ Spec* prepare_auth_util(Context* ctx, PNError** err) {
 
   const bag = bagName(spec.where)
 
-  const head = `// prepare_auth utility (mirrors utility/prepare_auth.rs).
+  const preamble = (joins: boolean) => `// prepare_auth utility (mirrors utility/prepare_auth.rs).
 //
 // GENERATED, not templated: where the credential goes - header, query or
 // cookie, and under what name - is a fact about THIS API, and tm/ can only
@@ -97,7 +97,7 @@ Spec* prepare_auth_util(Context* ctx, PNError** err) {
 
 #include "sdk.h"
 
-${header ? `#include <stdio.h>
+${joins ? `#include <stdio.h>
 ` : ''}#include <stdlib.h>
 #include <string.h>
 
@@ -131,7 +131,9 @@ static const char* auth_name(voxgig_value* options) {
   const char* name = voxgig_is_string(v) ? voxgig_as_string(v) : NULL;
   return (NULL == name || '\\0' == name[0]) ? CRED_NAME : name;
 }`}
-${header ? JOIN_HELPER : ''}${cookie ? COOKIE_HELPER : ''}
+${joins ? JOIN_HELPER : ''}${cookie ? COOKIE_HELPER : ''}`
+
+  const head = `
 // Places or clears the credential under name, the one in effect.
 static Spec* prepare_auth_as(Context* ctx, Spec* spec, voxgig_value* ${bag},
                              voxgig_value* options,${withBasic ? ' voxgig_value* auth,' : ''} const char* name,
@@ -207,7 +209,7 @@ ${setHeader('b64', 6)}
   }
 `
 
-  return head + basicBlock + `
+  const body = head + basicBlock + `
   if (skip) {
 ${clear(spec.where, 'name', 4)}
   } else {
@@ -247,6 +249,10 @@ ${header ? `
   return prepare_auth_as(ctx, spec, ${bag}, options, auth_name(options), err);`}
 }
 `
+
+  // Any placement but query and cookie takes the header branch, which joins
+  // a prefix, so the helper goes with its callers rather than with `header`.
+  return preamble(/\bauth_join\(/.test(body)) + body
 }
 
 

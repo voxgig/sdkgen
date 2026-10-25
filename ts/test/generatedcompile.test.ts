@@ -4948,6 +4948,51 @@ describe('prepareAuth names, replaces and clears only its own credential', () =>
 })
 
 
+// An apiKey's `in` reaches the model as the definition spells it, and any
+// placement but query and cookie takes the header branch with its name as
+// given. Go refuses an unused import; c joins a prefix only on that branch.
+describe('prepareAuth compiles for a placement it does not recognise', () => {
+  const PATH_AUTH = "main: kit: config: auth: { active: true, in: path, name: token, prefix: '' }"
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-auth-path-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  test('go: the module builds', async (t) => {
+    const go = toolchain('go')
+    if (null == go) return t.skip('no go toolchain here')
+
+    const sdkroot = Path.join(tmp, 'go')
+    const files = await generateTo('go', sdkroot, PATH_AUTH)
+    ok(files['utility/prepare_auth.go'].includes('const credName = "token"'),
+      'the model did not reach prepare_auth.go')
+
+    const built = run(go, ['build', './...'], sdkroot)
+    ok(built.ok, 'go (in: path):\n' + tail(built.out))
+  })
+
+  test('c: prepare_auth.c declares every function it calls', async (t) => {
+    const make = toolchain('make')
+    const cc = authProbeCc()
+    if (null == make || null == cc) return t.skip('no C toolchain')
+
+    const sdkroot = Path.join(tmp, 'c')
+    await generateTo('c', sdkroot, PATH_AUTH)
+
+    // An error by default in newer GCC, so an older compiler agrees.
+    const flags = Fs.readFileSync(Path.join(sdkroot, 'Makefile'), 'utf8')
+      .match(/^CFLAGS \?= (.+)$/m)![1] + ' -Werror=implicit-function-declaration'
+    const built = run(make, ['CC=' + cc, 'CFLAGS=' + flags, 'utility/prepare_auth.o'], sdkroot)
+    ok(built.ok, 'c (in: path):\n' + tail(built.out))
+  })
+})
+
+
 // APIs whose credential a generated test cannot name in advance. apidef takes
 // the name from the spec's own security scheme, so a test asserting the
 // literal `authorization` fails while the SDK places the credential rightly.
