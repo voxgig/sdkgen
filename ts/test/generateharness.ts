@@ -926,9 +926,8 @@ main: kit: flow: ${flow}: {
 }
 
 
-// Loads whose route parameters region and version are also declared as
-// optional query parameters: audio on one route, wzn on its own route and on
-// a shorter one needing only region and version.
+// Loads whose path parameters region and version are also optional query
+// parameters: audio on one route, wzn on its own and on a shorter one.
 function shadowedLoad(): string {
   const param = (n: string) => `{ k: "param", n: "${n}", or: "${n}", r: true, t: "\`$STRING\`" }`
   const query = (n: string) => `{ k: "query", n: "${n}", or: "${n}", r: false, t: "\`$STRING\`" }`
@@ -963,8 +962,7 @@ main: kit: flow: Basic${name[0].toUpperCase() + name.slice(1)}Flow: {
 }
 
 
-// An update that sends a body on a route without the id, and a patch whose
-// body carries it, as fruityvice's PUT /api/fruit.
+// An update whose route has no id, and a patch whose body has it (fruityvice).
 function idlessUpdate(): string {
   const body = (op: string, bf: string[]) => `${op}: { name: "${op}", points: [ {
       bf: ${JSON.stringify(bf)}
