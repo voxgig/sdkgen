@@ -28,7 +28,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
   searchOnly, listOnly, retypedList, seedableList, selectorLoad, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
-  KEYWORD_ACCESSOR_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
+  KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
   REQUEST_SHAPED_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
@@ -1259,6 +1259,30 @@ pub fn main() void {
     const vet = run(go, ['vet', './...'], sdkroot)
     ok(vet.ok, 'generated go does not vet clean:\n' + vet.out)
   })
+
+
+  test('go, go-cli and go-mcp: an entity named new_<X> beside <X> vets clean',
+    async (t) => {
+      const go = toolchain('go')
+      if (null == go) {
+        return t.skip('no go toolchain here')
+      }
+
+      const root = Path.join(tmp, 'go-new-prefix')
+      await generateBeside(['go', 'go-cli', 'go-mcp'], root, NEW_PREFIX_ENTITY)
+
+      const entity = (name: string) =>
+        Fs.readFileSync(Path.join(root, 'go', 'entity', name + '_entity.go'), 'utf8')
+      ok(/^type NewLicenceEntity struct/m.test(entity('new_licence')),
+        'new_licence lost its class name NewLicenceEntity')
+      ok(/^func NewLicenceEntity2\(/m.test(entity('licence')),
+        'licence still claims the constructor name NewLicenceEntity')
+
+      for (const target of ['go', 'go-cli', 'go-mcp']) {
+        const vet = run(go, ['vet', './...'], Path.join(root, target))
+        ok(vet.ok, target + ' does not vet clean:\n' + tail(vet.out))
+      }
+    })
 
 
   // go-mcp builds on the go SDK it wraps, and an agent host reads each tool's
@@ -4944,6 +4968,51 @@ describe('prepareAuth names, replaces and clears only its own credential', () =>
         .filter((block) => /^\s*#1 .*prepare_auth\.c:/m.test(block))
       deepStrictEqual(own, [], 'c (' + model.name + '): prepareAuth leaks its own allocation')
     }
+  })
+})
+
+
+// An apiKey's `in` reaches the model as the definition spells it, and any
+// placement but query and cookie takes the header branch with its name as
+// given. Go refuses an unused import; c joins a prefix only on that branch.
+describe('prepareAuth compiles for a placement it does not recognise', () => {
+  const PATH_AUTH = "main: kit: config: auth: { active: true, in: path, name: token, prefix: '' }"
+  let tmp = ''
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-auth-path-'))
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+  test('go: the module builds', async (t) => {
+    const go = toolchain('go')
+    if (null == go) return t.skip('no go toolchain here')
+
+    const sdkroot = Path.join(tmp, 'go')
+    const files = await generateTo('go', sdkroot, PATH_AUTH)
+    ok(files['utility/prepare_auth.go'].includes('const credName = "token"'),
+      'the model did not reach prepare_auth.go')
+
+    const built = run(go, ['build', './...'], sdkroot)
+    ok(built.ok, 'go (in: path):\n' + tail(built.out))
+  })
+
+  test('c: prepare_auth.c declares every function it calls', async (t) => {
+    const make = toolchain('make')
+    const cc = authProbeCc()
+    if (null == make || null == cc) return t.skip('no C toolchain')
+
+    const sdkroot = Path.join(tmp, 'c')
+    await generateTo('c', sdkroot, PATH_AUTH)
+
+    // An error by default in newer GCC, so an older compiler agrees.
+    const flags = Fs.readFileSync(Path.join(sdkroot, 'Makefile'), 'utf8')
+      .match(/^CFLAGS \?= (.+)$/m)![1] + ' -Werror=implicit-function-declaration'
+    const built = run(make, ['CC=' + cc, 'CFLAGS=' + flags, 'utility/prepare_auth.o'], sdkroot)
+    ok(built.ok, 'c (in: path):\n' + tail(built.out))
   })
 })
 

@@ -218,6 +218,10 @@ The typed-model subsystem (full picture:
 - **`entityClassName(ent, entityColl) → string`** — collision-free entity
   class name (`<Name>Entity`, disambiguated when it would clash with a
   generated type name).
+- **`entityConstructorName(ent, entityColl) → string`** — the go
+  constructor name, `New<Class>`, numbered (`NewLicenceEntity2`) when it
+  would meet a generated type or class name, such as the class of a
+  `new_licence` entity beside `licence`.
 - **`entityTypeCollisions(entityColl) → string[]`** /
   **`warnEntityTypeCollisions(entityColl, log, lang)`** — detect (and
   warn about) duplicate generated type names across entities.

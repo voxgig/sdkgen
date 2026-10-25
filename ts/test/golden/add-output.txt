@@ -16,7 +16,7 @@ src/cmp/c/Gitignore_c.ts cfb70ab8b595
 src/cmp/c/MainEntity_c.ts d6e780384b49
 src/cmp/c/Main_c.ts c1dce7783690
 src/cmp/c/Package_c.ts e1fcd4b774ba
-src/cmp/c/PrepareAuth_c.ts a6ec77e4c610
+src/cmp/c/PrepareAuth_c.ts ba13d256f46b
 src/cmp/c/ReadmeEntity_c.ts 7a12dabe5d0b
 src/cmp/c/ReadmeExamplesTest_c.ts 2e899b115aaa
 src/cmp/c/ReadmeExplanation_c.ts 193fa2c194dd
@@ -525,14 +525,14 @@ model/sdk.aontu deb90c7d4659
 model/target/go.aontu 1955a91f1973
 model/target/target-index.aontu c475d1cec12b
 src/cmp/go/Config_go.ts a578f69bb65e
-src/cmp/go/EntityOperation_go.ts 466b87860b69
+src/cmp/go/EntityOperation_go.ts 76a52d6224f2
 src/cmp/go/EntityTypes_go.ts 3702d5d19fd2
-src/cmp/go/Entity_go.ts 9fb2f5da8680
+src/cmp/go/Entity_go.ts c5967450df95
 src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts 01154abb3c65
-src/cmp/go/Main_go.ts 3051491b398e
+src/cmp/go/Main_go.ts 9e8145fb6943
 src/cmp/go/Package_go.ts 111b2b904994
-src/cmp/go/PrepareAuth_go.ts 5e5cc78f966f
+src/cmp/go/PrepareAuth_go.ts 397083cd6c97
 src/cmp/go/ReadmeEntity_go.ts f811fb0254ea
 src/cmp/go/ReadmeExamplesTest_go.ts a4d939c3d7cf
 src/cmp/go/ReadmeExplanation_go.ts e40b052e75ce

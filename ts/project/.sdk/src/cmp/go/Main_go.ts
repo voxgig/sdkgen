@@ -5,7 +5,7 @@ import {
   cmp, each, names, cmap,
   List, File, Content, Copy, Folder, Fragment, Line, FeatureHook,
   inactiveFeatureExcludes,
-  entityClassName, entityCollection, goModule, goPackageIdent, pluginExcludes,
+  entityConstructorName, entityCollection, goModule, goPackageIdent, pluginExcludes,
   targetFeatures,
   TEST_CONTROL_EXCLUDE
 } from '@voxgig/sdkgen'
@@ -186,7 +186,7 @@ func init() {
 
     each(entity, (ent: any) => {
       Content(`	core.New${ent.Name}EntityFunc = func(client *core.${model.const.Name}SDK, entopts map[string]any) core.${model.const.Name}Entity {
-		return entity.New${entityClassName(ent, entityCollection(model))}(client, entopts)
+		return entity.${entityConstructorName(ent, entityCollection(model))}(client, entopts)
 	}
 `)
     })

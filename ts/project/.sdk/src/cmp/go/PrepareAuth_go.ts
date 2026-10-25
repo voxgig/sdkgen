@@ -79,22 +79,10 @@ func prepareAuthUtil(ctx *core.Context) (*core.Spec, error) {
   // HTTP Basic is header-only by definition: the scheme is
   // `Authorization: Basic base64(user:pass)`. It cannot be expressed as a
   // query parameter or a cookie, so the branch is emitted only where it can
-  // mean something — and base64 is imported only then.
+  // mean something.
   const withBasic = spec.basic && 'header' === spec.where
 
-  const head = `package utility
-
-import (
-${withBasic ? `	"encoding/base64"
-
-` : ''}${'query' !== spec.where ? `	"strings"
-
-` : ''}	vs "${spec.gomodule}/utility/struct"
-
-	"${spec.gomodule}/core"
-)
-
-const credName = "${gostr(credLiteral(spec.where, spec.name))}"
+  const head = `const credName = "${gostr(credLiteral(spec.where, spec.name))}"
 ${'cookie' === spec.where ? `const cookieHeader = "cookie"
 ` : ''}const optionApikey = "apikey"
 ${withBasic ? `const optionSecret = "secret"
@@ -181,7 +169,7 @@ ${cookieHelper(spec.where)}func prepareAuthUtil(ctx *core.Context) (*core.Spec, 
 	}
 `
 
-  return head + basicBlock + `
+  const body = head + basicBlock + `
 	if skip {
 		${clear(spec.where, 'name')}
 	} else {
@@ -191,6 +179,27 @@ ${place(spec.where, 'name')}
 	return spec, nil
 }
 `
+
+  return `package utility
+
+import (
+${stdImports(body)}	vs "${spec.gomodule}/utility/struct"
+
+	"${spec.gomodule}/core"
+)
+
+` + body
+}
+
+
+// Go rejects an unused import, and which of these the body calls varies by placement.
+const STD_IMPORTS = ['encoding/base64', 'strings']
+
+function stdImports(body: string): string {
+  return STD_IMPORTS
+    .filter((pkg) => new RegExp('\\b' + pkg.split('/').pop() + '\\.[A-Z]').test(body))
+    .map((pkg) => `\t"${pkg}"\n\n`)
+    .join('')
 }
 
 

@@ -1276,6 +1276,10 @@ const ESCAPED_TYPE_ENTITY = ['map', 'map_type', 'array', 'array_type',
 const KEYWORD_ACCESSOR_ENTITY = namedEntity('end') + namedEntity('end_entity')
 
 
+// go: `new_licence`'s class is the constructor name `licence` would take.
+const NEW_PREFIX_ENTITY = namedEntity('licence') + namedEntity('new_licence')
+
+
 // Named to sort after the fixture's own entities.
 const OPLESS_ENTITY = `
 main: kit: entity: zone: {
@@ -1378,6 +1382,7 @@ export {
   SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY,
   KEYWORD_ACCESSOR_ENTITY,
+  NEW_PREFIX_ENTITY,
   CRUD_MODEL,
   DOC_MODELS,
   OPLESS_ENTITY,

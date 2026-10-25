@@ -22,6 +22,7 @@ exports.invalidRequest = invalidRequest;
 exports.entityPrimaryOp = entityPrimaryOp;
 exports.pickExampleEntity = pickExampleEntity;
 exports.entityClassName = entityClassName;
+exports.entityConstructorName = entityConstructorName;
 exports.entityTypeCollisions = entityTypeCollisions;
 exports.warnEntityTypeCollisions = warnEntityTypeCollisions;
 exports.ungeneratedOps = ungeneratedOps;
@@ -444,15 +445,7 @@ function entityClassNames(entityColl, fold = false) {
     }
     const key = (name) => fold ? name.toLowerCase() : name;
     const ents = deriveEntityNames(entityColl);
-    const taken = new Set();
-    ents.forEach((e) => {
-        taken.add(key(e.Name));
-        for (const op of CANON_OP_ORDER) {
-            if (e.op && e.op[op]) {
-                taken.add(key(opTypeName(e.Name, op)));
-            }
-        }
-    });
+    const taken = declaredTypeNames(ents, key);
     // 2. Assign each class name, avoiding all data types and prior classes.
     const out = {};
     ents.forEach((e) => {
@@ -480,6 +473,53 @@ function entityClassName(ent, entityColl, fold = false) {
     }
     const map = entityClassNames(entityColl, fold);
     return map[ent.name] || (ent.Name + 'Entity');
+}
+function declaredTypeNames(ents, key) {
+    const taken = new Set();
+    ents.forEach((e) => {
+        taken.add(key(e.Name));
+        for (const op of CANON_OP_ORDER) {
+            if (e.op && e.op[op]) {
+                taken.add(key(opTypeName(e.Name, op)));
+            }
+        }
+    });
+    return taken;
+}
+const _ctorNameCache = new WeakMap();
+// Go declares each constructor, New<Class>, in the entity package beside
+// every type, where the class of a new_foo entity is the constructor name of
+// foo. A taken name is numbered, so no constructor meets a type or another.
+function entityConstructorNames(entityColl) {
+    const cached = _ctorNameCache.get(entityColl);
+    if (null != cached) {
+        return cached;
+    }
+    const ents = deriveEntityNames(entityColl);
+    const classes = entityClassNames(entityColl);
+    const taken = declaredTypeNames(ents, (name) => name);
+    Object.values(classes).forEach((cls) => taken.add(cls));
+    const out = {};
+    ents.forEach((e) => {
+        const base = 'New' + classes[e.name];
+        let name = base;
+        let n = 1;
+        while (taken.has(name)) {
+            n++;
+            name = base + n;
+        }
+        taken.add(name);
+        out[e.name] = name;
+    });
+    _ctorNameCache.set(entityColl, out);
+    return out;
+}
+function entityConstructorName(ent, entityColl) {
+    if (null == ent) {
+        return '';
+    }
+    return entityConstructorNames(entityColl)[ent.name] ||
+        ('New' + entityClassName(ent, entityColl));
 }
 const _typeCollisionCache = new WeakMap();
 const _typeCollisionCacheFold = new WeakMap();

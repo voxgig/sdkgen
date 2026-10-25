@@ -7,7 +7,7 @@ import Os from 'node:os'
 import Path from 'node:path'
 
 import {
-  opRequestShape, opTypeName, OP_SUFFIX, entityClassName, pickExampleEntity,
+  opRequestShape, opTypeName, OP_SUFFIX, entityClassName, entityConstructorName, pickExampleEntity,
   opReachable, opNeedsAction, entityOps, guardFlowSteps, ungeneratedOps, warnUngeneratedOps,
   entityIdField,
 } from '../dist/sdkgen.js'
@@ -381,6 +381,56 @@ describe('entityClassName — collision-free class names', () => {
     }
     strictEqual(entityClassName(plain.a, plain), 'AlphaEntity')
     strictEqual(entityClassName(plain.b, plain), 'BetaEntity')
+  })
+})
+
+
+describe('entityConstructorName — go constructors meet no type', () => {
+
+  // operator-licence's shape: `new_licence`'s class is `licence`'s
+  // natural constructor name.
+  const pair = {
+    licence: { name: 'licence', Name: 'Licence', op: { load: {} } },
+    new_licence: { name: 'new_licence', Name: 'NewLicence', op: { load: {} } },
+    user: { name: 'user', Name: 'User', op: { load: {} } },
+  }
+
+  test('a constructor that names another class takes the next number', () => {
+    strictEqual(entityClassName(pair.new_licence, pair), 'NewLicenceEntity')
+    strictEqual(entityConstructorName(pair.licence, pair), 'NewLicenceEntity2')
+    strictEqual(entityConstructorName(pair.new_licence, pair), 'NewNewLicenceEntity')
+    strictEqual(entityConstructorName(pair.user, pair), 'NewUserEntity')
+  })
+
+  test('the number skips a name a data type holds', () => {
+    const coll = {
+      ...structuredClone(pair),
+      new_licence_entity2: { name: 'new_licence_entity2', Name: 'NewLicenceEntity2', op: {} },
+    }
+    strictEqual(entityConstructorName(coll.licence, coll), 'NewLicenceEntity3')
+  })
+
+  test('a constructor follows its renamed class', () => {
+    const coll = {
+      project: { name: 'project', Name: 'Project', op: { load: {} } },
+      project_entity: { name: 'project_entity', Name: 'ProjectEntity', op: { create: {} } },
+    }
+    strictEqual(entityConstructorName(coll.project, coll), 'NewProjectEntityClient')
+    strictEqual(entityConstructorName(coll.project_entity, coll), 'NewProjectEntityEntity')
+  })
+
+  test('no constructor meets a type or another constructor', () => {
+    const coll: any = {}
+    for (const name of ['a', 'new_a', 'new_new_a', 'new_a_entity', 'a_entity', 'new_a_entity2']) {
+      const Name = name.split('_').map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join('')
+      coll[name] = { name, Name, op: { load: {} } }
+    }
+    const ents = Object.values(coll)
+    const types = ents.flatMap((e: any) =>
+      [e.Name, opTypeName(e.Name, 'load'), entityClassName(e, coll)])
+    const ctors = ents.map((e: any) => entityConstructorName(e, coll))
+    deepStrictEqual(ctors.filter((c) => types.includes(c)), [])
+    strictEqual(new Set(ctors).size, ctors.length)
   })
 })
 
