@@ -22,12 +22,26 @@ import {
   graphqlDirectSkip,
   liveExampleIds,
   liveQueryExamples,
+  liveEntity,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 import { formatLuaValue } from './utility_lua'
 
 
 // Blocked without the ids its request needs, rather than sent with nil.
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysBlock(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `    if setup.live and os.getenv(${formatLuaValue(LIVE_GETONLY_ENV)}) == "TRUE" and setup.idmap[${formatLuaValue(miss.key)}] == nil then
+      print(${formatLuaValue(liveExcludedLines({ excluded: [miss] })[0])})
+      pending(${formatLuaValue(liveExcludedSummary({ excluded: [miss] }))})
+      return
+    end
+`).join('')
+}
+
+
 function liveKeysBlock(keys: string[], entidEnvVar: string): string {
   return 0 === keys.length ? '' : `    if setup.live then
       for _, _live_key in ipairs({${keys.map((k) => JSON.stringify(k)).join(', ')}}) do
@@ -83,7 +97,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
   const PROJECTNAME = envName(model)
 
@@ -144,11 +158,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listParams = listPoint?.g?.params || []
 
   // Required query params with spec-provided examples — needed in live mode.
-  const loadQuery = loadPoint?.g?.query || []
-  const loadLiveQueryEntries = loadQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const loadLiveQueryLines = loadLiveQueryEntries
-    .map((q: any) => `      query["${q.n}"] = ${JSON.stringify(q.ex)}`)
+  const loadLiveQueryLines = liveQueryExamples(loadPoint)
+    .map(([name, ex]) => `      query["${name}"] = ${formatLuaValue(ex)}`)
     .join('\n')
 
   const loadAllHaveExamples =
@@ -210,7 +221,7 @@ describe("${entity.Name}Direct", function()
       pending(_reason or "skipped via sdk-test-control.json")
       return
     end
-${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    local client = setup.client
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    local client = setup.client
 
     local params = {}
     local query = {}
@@ -271,7 +282,7 @@ ${listLiveQueryLines ? '    if setup.live then\n' + listLiveQueryLines + '    en
       pending(_reason or "skipped via sdk-test-control.json")
       return
     end
-${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    local client = setup.client
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    local client = setup.client
 
     local params = {}
     local query = {}

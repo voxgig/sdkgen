@@ -22,6 +22,8 @@ import {
   graphqlDirectSkip,
   liveExampleIds,
   liveQueryExamples,
+  liveEntity,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 
@@ -64,6 +66,17 @@ function normalizePathParams(
 
 
 // Blocked without the ids its request needs, rather than sent with None.
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysBlock(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `        if setup["live"] and os.environ.get(${JSON.stringify(LIVE_GETONLY_ENV)}) == "TRUE" and setup["idmap"].get(${JSON.stringify(miss.key)}) is None:
+            print(${JSON.stringify(liveExcludedLines({ excluded: [miss] })[0])})
+            pytest.skip(${JSON.stringify(liveExcludedSummary({ excluded: [miss] }))})
+
+`).join('')
+}
+
+
 function liveKeysBlock(keys: string[], entidEnvVar: string): string {
   return 0 === keys.length ? '' : `        if setup["live"]:
             for _live_key in [${keys.map((k) => JSON.stringify(k)).join(', ')}]:
@@ -79,7 +92,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
   const PROJECTNAME = envName(model)
 
@@ -140,11 +153,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) : ''
   const listParams = listPoint?.g?.params || []
 
-  const loadQuery = loadPoint?.g?.query || []
-  const loadLiveQueryEntries = loadQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const loadLiveQueryLines = loadLiveQueryEntries
-    .map((q: any) => `            query["${q.n}"] = ${JSON.stringify(q.ex)}`)
+  const loadLiveQueryLines = liveQueryExamples(loadPoint)
+    .map(([name, ex]) => `            query["${name}"] = ${pyLit(ex)}`)
     .join('\n')
 
   // Path params with spec-provided examples — when ALL load params have
@@ -171,6 +181,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
     Content(`# ${entity.Name} direct test
 
 import json
+import os
 import pytest
 
 from ${model.const.Name.toLowerCase()}_sdk.utility.voxgig_struct import voxgig_struct as vs
@@ -209,7 +220,7 @@ class Test${entity.Name}Direct:
         if _skip:
             pytest.skip(_reason or "skipped via sdk-test-control.json")
             return
-${liveKeysBlock(listLiveIdKeys, entidEnvVar)}        client = setup["client"]
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listLiveIdKeys)}${liveKeysBlock(listLiveIdKeys, entidEnvVar)}        client = setup["client"]
 
         params = {}
         query = {}
@@ -261,7 +272,7 @@ ${listLiveQueryLines ? '        if setup["live"]:\n' + listLiveQueryLines : ''}`
         if _skip:
             pytest.skip(_reason or "skipped via sdk-test-control.json")
             return
-${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}        client = setup["client"]
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}        client = setup["client"]
 
         params = {}
         query = {}

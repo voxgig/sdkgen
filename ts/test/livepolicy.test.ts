@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import {
   liveStrict, liveStrictNote, liveFlowNeeds, guardFlowSteps,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
+  liveEntity, liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveDirectGetOnly,
 } from '../dist/sdkgen'
 
 const model = (global?: boolean, go?: boolean) => ({ main: { kit: {
@@ -95,6 +97,14 @@ test('a live request sends the examples of its required query parameters only', 
   assert.deepEqual(liveQueryExamples(undefined), [])
 })
 
+// direct() sends its query as given, so the key is the definition's name.
+test('a live direct query keys each example by the name the API knows', () => {
+  assert.deepEqual(liveQueryExamples(route('/elo-calculator', [], [
+    { ...arg('query', 'opponent_rating', true, 1400), or: 'opponentRating' },
+    { ...arg('query', 'k_factor', false, 32), or: 'kFactor' },
+    arg('query', 'result', true, 'win')])), [['opponentRating', 1400], ['result', 'win']])
+})
+
 test('a live flow fills the route the live harness takes', () => {
   const release = { name: 'release', op: { list: { points: [
     route('/api/{slug}.json', [arg('param', 'slug', true, 'php')]), route('/api/products.json')] } } }
@@ -120,4 +130,92 @@ test('a load of a known record fills only its required query', () => {
   assert.deepEqual(liveStepExamples({ ...book, id: undefined }, { o: 'load', m: { shelf: 'shelf01' } }),
     [['id', 'b1'], ['lang', 'en']])
   assert.deepEqual(liveStepExamples(book, { o: 'update' }), [])
+})
+
+
+const at = (m: string, o: string, extra: any = {}) => ({ points: [{ m, o, ...extra }] })
+
+test('a GET-only run leaves out a step no GET route reaches, and a load only it gives a record', () => {
+  assert.equal(LIVE_GETONLY_ENV, 'VOXGIG_GETONLY_GUARD')
+  const game = { name: 'game', id: { field: 'id' },
+    op: { create: at('POST', '/game'), load: at('GET', '/game/{gameId}') } }
+  const plan = liveGetOnly(game, flow({ o: 'create' }, { o: 'load', m: { id: 'game01' } }))!
+  assert.deepEqual(plan.excluded, [
+    { id: 'game.create.0', reason: 'GET-only live run: needs POST /game' },
+    { id: 'game.load.1', reason: 'GET-only live run: reads a record only game.create.0 gives' },
+  ])
+  assert.deepEqual(plan.flow.step, [])
+  assert.deepEqual(liveExcludedLines(plan)[0],
+    'LIVE STEP {"id":"game.create.0","state":"excluded","attempted":false,' +
+    '"reason":"GET-only live run: needs POST /game"}')
+  assert.equal(liveExcludedSummary(plan), 'Live coverage incomplete: ' +
+    'game.create.0 excluded (GET-only live run: needs POST /game); ' +
+    'game.load.1 excluded (GET-only live run: reads a record only game.create.0 gives)')
+})
+
+test('a GET-only run keeps the reads a list or nothing at all gives a record', () => {
+  const planet = { name: 'planet', id: { field: 'id' }, op: {
+    create: at('POST', '/planet'), list: at('GET', '/planet'), update: at('PUT', '/planet/{id}'),
+    load: at('GET', '/planet/{id}'), remove: at('DELETE', '/planet/{id}') } }
+  const plan = liveGetOnly(planet, flow({ o: 'create' }, { o: 'list' }, { o: 'update' }, { o: 'load' },
+    { o: 'remove' }, { o: 'list', v: [{ apply: 'ItemNotExists' }] }))!
+  assert.deepEqual(plan.excluded.map(({ id }) => id),
+    ['planet.create.0', 'planet.update.2', 'planet.remove.4', 'planet.list.5'])
+  assert.equal(plan.excluded[3].reason, 'GET-only live run: checks a removal this run does not make')
+  assert.deepEqual(plan.flow.step.map((step: any) => step.o), ['list', 'load'])
+
+  const chart = { name: 'chart', op: { create: at('POST', '/chart'), load: at('GET', '/sky') } }
+  const kept = liveGetOnly(chart, flow({ o: 'create' }, { o: 'load' }))!
+  assert.deepEqual(kept.excluded.map(({ id }) => id), ['chart.create.0'])
+  assert.deepEqual(kept.flow.step.map((step: any) => step.o), ['load'])
+})
+
+test('a GET-only run changes nothing a GET can make, and counts steps as the live harness does', () => {
+  const search = { name: 'search', op: {
+    list: { points: [{ m: 'POST', o: '/search' }, { m: 'GET', o: '/search' }] },
+    load: at('GET', '/search/{id}'), create: { points: [{ m: 'POST', o: '/x', a: false }] } } }
+  assert.equal(liveGetOnly(search, flow({ o: 'list' }, { o: 'load' }, { o: 'create' })), undefined)
+
+  const signal = { name: 'signal', op: { create: at('POST', '/signal'), list: at('GET', '/signal') } }
+  const plan = liveGetOnly(signal, flow({ o: 'list', a: false }, { o: 'list', a: false, unreachable: true },
+    { o: 'create' }))!
+  assert.deepEqual(plan.excluded.map(({ id }) => id), ['signal.create.1'])
+})
+
+test('a required parameter with no example takes the first value its enum allows', () => {
+  const parameters = [
+    { name: 'asset', in: 'query', schema: { enum: ['BTC', 'ETH'] } },
+    { name: 'chain', in: 'query', schema: { enum: ['eth'] } },
+    { name: 'ccy', in: 'query', schema: { enum: ['EUR'] } },
+    { name: 'kind', in: 'path', enum: ['spot'] },
+    { name: 'tags', in: 'query', schema: { enum: [['a']] } },
+  ]
+  const ctx$ = { meta: { apidef: { operation: () => ({ protocol: 'http', parameters }) } } }
+  const quote = { name: 'quote', op: { list: { points: [route('/quote/{kind}', [arg('param', 'kind', true)], [
+    arg('query', 'asset', true), arg('query', 'chain', false), arg('query', 'ccy', true, 'USD'),
+    arg('query', 'tags', true)])] } } }
+  const live = liveEntity(ctx$, quote)
+  const point = live.op.list.points[0]
+  assert.deepEqual(point.g.params.map((a: any) => a.ex), ['spot'])
+  assert.deepEqual(point.g.query.map((a: any) => a.ex), ['BTC', undefined, 'USD', undefined])
+  assert.deepEqual(liveQueryExamples(point), [['asset', 'BTC'], ['ccy', 'USD']])
+  assert.equal(quote.op.list.points[0].g.query[0].ex, undefined)
+  assert.equal(liveEntity({}, quote), quote)
+})
+
+
+test('a GET-only direct test leaves to *_ENTID only an id that a create alone gives', () => {
+  const game = { name: 'game', op: { create: at('POST', '/game'), load: at('GET', '/game/{gameId}') } }
+  const seat = { name: 'seat', op: { load: at('GET', '/game/{game_id}/seat/{id}') } }
+  const board = { name: 'board', op: { create: at('POST', '/board'), list: at('GET', '/board') } }
+  const model = { main: { kit: { entity: { game, seat, board } } } }
+  assert.deepEqual(liveDirectGetOnly(model, game, 'direct-load-game', ['game01']), [
+    { key: 'game01', id: 'direct-load-game', reason: 'GET-only live run: needs game01, which only POST /game gives' },
+  ])
+  assert.deepEqual(liveDirectGetOnly(model, seat, 'direct-load-seat', ['game01', 'seat01', 'slug01'])
+    .map(({ key }) => key), ['game01'])
+  assert.deepEqual(liveDirectGetOnly(model, seat, 'direct-load-seat', ['board01']), [])
+  const summary = liveExcludedSummary({ excluded: liveDirectGetOnly(model, game, 'direct-load-game', ['game01']) })
+  assert.equal(summary, 'Live coverage incomplete: direct-load-game excluded ' +
+    '(GET-only live run: needs game01, which only POST /game gives)')
 })

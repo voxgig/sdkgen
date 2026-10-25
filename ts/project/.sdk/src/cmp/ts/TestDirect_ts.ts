@@ -29,7 +29,11 @@ import {
   hasLiveScenarios,
   primaryPoint,
   liveExampleIds,
+  liveQueryExamples,
   litString,
+  liveEntity,
+  liveGetOnlyReason, LIVE_GETONLY_ENV,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 } from '@voxgig/sdkgen'
 
 
@@ -44,7 +48,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const stdrep = ctx$.stdrep
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
   const ff = projectPath('src/cmp/ts/fragment/')
 
@@ -190,6 +194,29 @@ function unwrapListData(data: any): any[] | null {
 })
 
 
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysLine(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `    if (setup.live && 'TRUE' === process.env.${LIVE_GETONLY_ENV} && null == setup.idmap?.[${JSON.stringify(miss.key)}]) {
+      console.log(${JSON.stringify(liveExcludedLines({ excluded: [miss] })[0])})
+      t.skip(${JSON.stringify(liveExcludedSummary({ excluded: [miss] }))})
+      return
+    }
+`).join('')
+}
+
+
+// A GraphQL request is a POST, which a GET-only live run does not send.
+function getOnlySkip(point: any): string {
+  const reason = liveGetOnlyReason(point)
+  return null == reason ? '' : `    if (setup.live && 'TRUE' === process.env.${LIVE_GETONLY_ENV}) {
+      t.skip(${JSON.stringify(reason)})
+      return
+    }
+`
+}
+
+
 function generateDirectGraphql(
   opname: 'load' | 'list',
   entity: ModelEntity,
@@ -241,7 +268,7 @@ ${varAsserts}`
     if (liveScenariosActive()) { t.skip('Covered by live operation scenarios'); return }
     const setup = directSetup()
     if (maybeSkipControl(t, 'direct', 'direct-${opname}-${entity.name}', setup.live)) return
-${skipMissingLine}    const { client, calls } = setup
+${getOnlySkip(point)}${skipMissingLine}    const { client, calls } = setup
 
     const variables: any = {}
     if (setup.live) {
@@ -297,13 +324,8 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   // ignores them. Optional query params (e.g. `app`, `version`) are skipped
   // even when they have examples — only the strictly required ones are
   // necessary to satisfy the contract.
-  const loadQuery = loadPoint.g?.query || []
-  const liveQueryEntries = loadQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const hasLiveQuery = liveQueryEntries.length > 0
-  const liveQueryLines = liveQueryEntries
-    .map((q: any) => `      ${jsProp('query', q.n)} = ${JSON.stringify(q.ex)}`)
-    .join('\n')
+  const liveQueryLines = liveQueryLinesTs(loadPoint)
+  const hasLiveQuery = '' !== liveQueryLines
 
   const listOp = entity.op?.list
   const listPoint = null == listOp?.points ? undefined :
@@ -432,7 +454,7 @@ ${paramAsserts}`
     if (liveScenariosActive()) { t.skip('Covered by live operation scenarios'); return }
     const setup = directSetup({ id: 'direct01' })
     if (maybeSkipControl(t, 'direct', 'direct-load-${entity.name}', setup.live)) return
-${skipMissingLine}    const { client, calls } = setup
+${getOnlyKeysLine(model, entity, 'direct-load-' + entity.name, liveIdKeys)}${skipMissingLine}    const { client, calls } = setup
 
     const params: any = {}
     const query: any = {}
@@ -468,11 +490,7 @@ function generateDirectList(model: Model, entity: ModelEntity) {
   const listParams = listPoint.g?.params || []
   const listPath = normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param)
 
-  const listQuery = listPoint.g?.query || []
-  const liveQueryLines = listQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-    .map((q: any) => `      ${jsProp('query', q.n)} = ${JSON.stringify(q.ex)}`)
-    .join('\n')
+  const liveQueryLines = liveQueryLinesTs(listPoint)
 
   const liveParams = listParams.map((p: any) => {
     const key = p.n === 'id'
@@ -533,7 +551,7 @@ ${paramAsserts}`
     if (liveScenariosActive()) { t.skip('Covered by live operation scenarios'); return }
     const setup = directSetup([{ id: 'direct01' }, { id: 'direct02' }])
     if (maybeSkipControl(t, 'direct', 'direct-list-${entity.name}', setup.live)) return
-${skipMissingLine}    const { client, calls } = setup
+${getOnlyKeysLine(model, entity, 'direct-list-' + entity.name, liveIdKeys)}${skipMissingLine}    const { client, calls } = setup
 
 ${paramsBlock}
     const result: any = await client.direct({
@@ -561,6 +579,13 @@ function liveChecks(opname: string, usable: string, unusable: string, offline: s
       }
     } else {
 ${offline}    }`
+}
+
+
+function liveQueryLinesTs(point: any): string {
+  return liveQueryExamples(point)
+    .map(([name, ex]) => `      ${jsProp('query', name)} = ${JSON.stringify(ex)}`)
+    .join('\n')
 }
 
 

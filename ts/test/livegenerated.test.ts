@@ -79,25 +79,53 @@ const CREATE_FACTS = {
 }
 const DEFINED: Record<string, any> = { 'POST /v2021/issue': CREATE_FACTS, 'POST /v2021/draft': CREATE_FACTS }
 
+// A record only a create makes: a GET-only run cannot find its id.
+const CREATED_ONLY = `
+main: kit: entity: game: {
+  alias: field: {}
+  name: "game"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: false, t: "\`$STRING\`" } }
+  op: {
+    create: { name: "create", points: [ { g: {}, m: "POST", o: "/game", s: [{ lit: "game" }],
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/game/{id}", s: [{ lit: "game" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+main: kit: flow: BasicGameFlow: {
+  entity: "game", kind: "basic", name: "BasicGameFlow"
+  step: [ { o: "create", i: { ref: "game_ref01" } }
+    { o: "load", m: { id: "game01" }, i: { ref: "game_ref01", srcdatavar: "game_ref01_data", suffix: "_dt0" } } ]
+}
+`
+
 // An action-only load reachable through one action, one with no usable
 // action, and one whose only usable route is an action beside a plain route.
 const EXTRA_ENTITIES = CREATELESS_ENTITY +
   actionEntity('v2018', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current', city: 'bern' }]) +
   actionEntity('v2019', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current' }]) +
   actionEntity('v2020', [{ path: 'weather' }, { action: 'reset', path: 'reset', method: 'POST', bare: true }]) +
-  ACTION_CREATE
+  ACTION_CREATE + CREATED_ONLY
 
 function skipped(output: string): number {
   const found = output.match(/(?:^# skipped|\u2139 skipped) (\d+)/m)
   return null == found ? 0 : Number(found[1])
 }
 
-function child(args: string[], cwd: string): Promise<{ code: number | null, output: string }> {
+function child(args: string[], cwd: string, extra: NodeJS.ProcessEnv = {}):
+  Promise<{ code: number | null, output: string }> {
   return new Promise((resolve, reject) => {
-    const env: NodeJS.ProcessEnv = { ...process.env, DEMO_TEST_LIVE: 'TRUE', DEMO_APIKEY: 'fake-live-test-key' }
+    const env: NodeJS.ProcessEnv = {
+      ...process.env, DEMO_TEST_LIVE: 'TRUE', DEMO_APIKEY: 'fake-live-test-key', ...extra,
+    }
     delete env.NODE_TEST_CONTEXT
     for (const key of Object.keys(env)) {
-      if (key.startsWith('DEMO_TEST_') && key.endsWith('_ENTID')) delete env[key as keyof typeof env]
+      if (key.startsWith('DEMO_TEST_') && key.endsWith('_ENTID') && !(key in extra)) {
+        delete env[key as keyof typeof env]
+      }
     }
     const proc = spawn(process.execPath, args, { cwd, env, timeout: 45000 })
     let output = ''
@@ -252,7 +280,8 @@ describe('generated live tests continue after failures', () => {
       : ['planet/PlanetEntity', 'ambient/AmbientEntity', 'history/HistoryEntity'], direct)
   }
 
-  async function runTests(name: string, mode: string, tests: string[], seed = false) {
+  async function runTests(name: string, mode: string, tests: string[], seed = false,
+    env: NodeJS.ProcessEnv = {}) {
     failure = mode
     records.clear()
     calls.length = 0
@@ -261,7 +290,7 @@ describe('generated live tests continue after failures', () => {
     if (seed) records.set('existing01', { id: 'existing01', title: 'existing' })
     const tree = name.startsWith('ts') ? 'dist-test' : 'test'
     const files = tests.map(test => `${tree}/entity/${test}.test.js`)
-    return child(['--test', '--test-concurrency=1', ...files], roots[name])
+    return child(['--test', '--test-concurrency=1', ...files], roots[name], env)
   }
 
   async function withControl(name: string, options: any,
@@ -283,6 +312,42 @@ describe('generated live tests continue after failures', () => {
       }
       assert.equal(records.size, 0)
     })
+
+    test(target + ': a GET-only run sends no write, reports what it leaves out, and settles on its reads',
+      async () => {
+        const getOnly = { VOXGIG_GETONLY_GUARD: 'TRUE' }
+        const result = await runTests(target, '', ['planet/PlanetEntity'], true, getOnly)
+        assert.equal(result.code, 0, result.output)
+        assert(!calls.some(call => !call.startsWith('GET ')), result.output)
+        for (const request of ['GET /planet', 'GET /planet/existing01']) {
+          assert(calls.includes(request), request + '\n' + result.output)
+        }
+        for (const id of ['planet.create.0', 'planet.update.2', 'planet.remove.4']) {
+          assert(result.output.includes(`"id":"${id}","state":"excluded"`), id + '\n' + result.output)
+        }
+
+        const writes = await runTests(target, '', ['v2021/V2021Entity'], false, getOnly)
+        assert.equal(writes.code, 0, writes.output)
+        assert.deepEqual(calls, [])
+        assert.equal(skipped(writes.output), 1, writes.output)
+        assert.match(writes.output, /Live coverage incomplete: v2021\.create\.0 excluded \(GET-only live run: needs POST/)
+      })
+
+    test(target + ': a GET-only direct load excludes an id only a create gives, unless *_ENTID gives it',
+      async () => {
+        const getOnly = { VOXGIG_GETONLY_GUARD: 'TRUE' }
+        const excluded = await runTests(target, '', ['game/GameDirect'], false, getOnly)
+        assert.equal(excluded.code, 0, excluded.output)
+        assert.equal(calls.length, 0, excluded.output)
+        assert(excluded.output.includes('"id":"direct-load-game","state":"excluded"'), excluded.output)
+        assert.match(excluded.output,
+          /Live coverage incomplete: direct-load-game excluded \(GET-only live run: needs game01, which only POST \/game gives\)/)
+
+        const given = await runTests(target, '', ['game/GameDirect'], false,
+          { ...getOnly, DEMO_TEST_GAME_ENTID: '{"game01":"game77"}' })
+        assert.equal(given.code, 0, given.output)
+        assert(calls.includes('GET /game/game77'), given.output)
+      })
 
     test(target + ': create failure permits independent reads and blocks dependent writes', async () => {
       const result = await run(target, 'POST /planet')

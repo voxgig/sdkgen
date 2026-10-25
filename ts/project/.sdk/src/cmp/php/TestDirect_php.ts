@@ -22,12 +22,25 @@ import {
   graphqlDirectSkip,
   liveExampleIds,
   liveQueryExamples,
+  liveEntity,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 import { formatPhpValue } from './utility_php'
 
 
 // Blocked without the ids its request needs, rather than sent with null.
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysBlock(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `        if (!empty($setup["live"]) && getenv(${formatPhpValue(LIVE_GETONLY_ENV)}) === "TRUE" && null === ($setup["idmap"][${formatPhpValue(miss.key)}] ?? null)) {
+            fwrite(STDOUT, ${formatPhpValue(liveExcludedLines({ excluded: [miss] })[0])} . "\\n");
+            $this->markTestSkipped(${formatPhpValue(liveExcludedSummary({ excluded: [miss] }))});
+        }
+`).join('')
+}
+
+
 function liveKeysBlock(keys: string[], entidEnvVar: string): string {
   return 0 === keys.length ? '' : `        if ($setup["live"]) {
             foreach ([${keys.map((k) => JSON.stringify(k)).join(', ')}] as $_liveKey) {
@@ -83,7 +96,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
   const PROJECTNAME = envName(model)
 
@@ -144,11 +157,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listParams = listPoint?.g?.params || []
 
   // Required query params with spec-provided examples — needed in live mode.
-  const loadQuery = loadPoint?.g?.query || []
-  const loadLiveQueryEntries = loadQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const loadLiveQueryLines = loadLiveQueryEntries
-    .map((q: any) => `            $query["${q.n}"] = ${JSON.stringify(q.ex)};`)
+  const loadLiveQueryLines = liveQueryExamples(loadPoint)
+    .map(([name, ex]) => `            $query["${name}"] = ${formatPhpValue(ex)};`)
     .join('\n')
 
   const loadAllHaveExamples =
@@ -213,7 +223,7 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '    ')}
             $this->markTestSkipped($_reason ?? "skipped via sdk-test-control.json");
             return;
         }
-${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}        $client = $setup["client"];
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}        $client = $setup["client"];
 
         $params = [];
         $query = [];
@@ -272,7 +282,7 @@ ${listLiveQueryLines ? '        if ($setup["live"]) {\n' + listLiveQueryLines + 
             $this->markTestSkipped($_reason ?? "skipped via sdk-test-control.json");
             return;
         }
-${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}        $client = $setup["client"];
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}        $client = $setup["client"];
 
         $params = [];
         $query = [];

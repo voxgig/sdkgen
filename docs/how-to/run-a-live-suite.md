@@ -113,11 +113,15 @@ names the identifier it is missing.
 A required parameter that the model gives an example for needs no variable
 either. A live direct test takes each path parameter's example as the id that
 `<PROJ>_TEST_<ENTITY>_ENTID` would otherwise supply, under the same key, so the
-variable still overrides it, and it sends each required query parameter's
-example. An entity flow fills each required parameter its step leaves unbound
-from its example, on the first route whose required parameters are all bound
-or have an example, which is the route the TS and JS runners take. A required
-parameter with no example still blocks the test.
+variable still overrides it. It also sends each required query parameter's
+example, under the name the API definition gives the parameter rather than
+the model's name for it: `direct()` sends its query as given. An entity flow
+fills each required parameter its step leaves unbound from its example, on the
+first route whose required parameters are all bound or have an example, which
+is the route the TS and JS runners take. A parameter's example is the one its
+definition gives, or the schema default. For a required parameter with
+neither, a live test sends the first value the parameter's `enum` allows. A
+required parameter with no example and no `enum` still blocks the test.
 
 The TS and JS entity flow runners also continue independent operations within
 a flow. A failed create blocks dependent writes, while independent reads still
@@ -141,6 +145,35 @@ fixtures, and configured identifiers still determine which requests can succeed.
 Live assertions remain separate from the mock transport's synthetic identities.
 `ts/test/livegenerated.test.ts` executes generated TS and JS suites against a
 local HTTP server to check continuation, cleanup, and failure outcomes.
+
+## A GET-only live run
+
+A live run against an API you must not change can be limited to GET
+requests. Set `VOXGIG_GETONLY_GUARD=TRUE` beside `<PROJ>_TEST_LIVE=TRUE`. With
+the variable set, the generated tests send nothing but GET requests. It does
+not stop a request on its own, except in the PHP SDK's transport, so pair it
+with a guard at the HTTP layer that refuses any other method.
+
+Every target with a live suite then leaves out two kinds of entity flow step:
+
+- A step whose operation has no GET route, such as a create, update or remove.
+- A step that reads the record only such a step gives: a load whose record
+  only a create or list it left out could supply, an update or remove of the
+  record a create would have made, and a list checking that record's removal.
+
+Each step left out is reported as `excluded`, in the same `LIVE STEP` line the
+TS and JS runners print for a step the control file switches off. A step left
+out is neither a failure nor a pass: the steps that remain decide the test, and
+a flow left with no step to run skips, under either value of
+`main.kit.test.live.strict`. The TS and JS runners skip any flow whose every
+step is excluded, by the control file or by a GET-only run. A direct test of a
+GraphQL operation, whose request is a POST, skips too.
+
+A live direct test is excluded the same way when it needs an id that only a
+write could give: an id with no example, of a record that only a create with
+no GET route makes, and that no GET list finds. Such a test reports itself
+`excluded` and skips. An id that `<PROJ>_TEST_<ENTITY>_ENTID` supplies still
+runs the test.
 
 ## Responses that are not JSON
 

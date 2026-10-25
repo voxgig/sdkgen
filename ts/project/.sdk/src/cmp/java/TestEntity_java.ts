@@ -22,7 +22,9 @@ import {
   serverVarEnv,
   serverVariables, envName, envToken,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
+  liveEntity,
 } from '@voxgig/sdkgen'
 
 
@@ -100,7 +102,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
   const javapackage: string = props.javapackage
 
   const basicflow: ModelEntityFlow | undefined =
@@ -145,7 +147,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const genCtx: GenCtx = { model, entity, javapackage, flow: basicflow, PROJUPPER, accessor }
 
   const strict = liveStrict(model, target.name)
-  const needs = liveFlowNeeds(entity, basicflow)
 
   const stepOps = Array.from(new Set(
     (allSteps as any[]).map((s: any) => s.o).filter(Boolean)))
@@ -206,36 +207,66 @@ ${liveStrictNote(strict, '//', '  ')}
           reason == null || "".equals(reason)
               ? "skipped via sdk-test-control.json" : reason);
     }
-${liveFlowGate(entity, needs, entidEnvVar, accessor, SDK, strict, allSteps.length > 0)}`)
+`)
 
-    // Check if the flow has a create step; if not, bootstrap entity data
-    const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
-    if (!flowHasCreate) {
-      const preambleRef = entity.name + '_ref01'
-      const preambleVar = javaVar(preambleRef)
-      Content(`    // Bootstrap entity data from existing test data (no create step in flow).
+    const flowBody = (flow: any) => {
+      const steps = flowSteps(flow) as any[]
+      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), entidEnvVar, accessor, SDK, strict,
+        steps.length > 0))
+
+      // Check if the flow has a create step; if not, bootstrap entity data
+      const flowHasCreate = steps.some((s: any) => s.o === 'create')
+      if (!flowHasCreate) {
+        const preambleRef = entity.name + '_ref01'
+        const preambleVar = javaVar(preambleRef)
+        Content(`    // Bootstrap entity data from existing test data (no create step in flow).
     List<List<Object>> ${preambleVar}DataRaw = Struct.items(Helpers.toMapAny(
         Struct.getpath(setup.data, "existing.${entity.name}")));
     Map<String, Object> ${preambleVar}Data = ${preambleVar}DataRaw.isEmpty()
         ? null : Helpers.toMapAny(${preambleVar}DataRaw.get(0).get(1));
 
 `)
-    }
-
-    // Model-driven step iteration
-    each(flowSteps(basicflow), (step: any, index: any) => {
-      const opgen: OpGen = GENERATE_OP[step.o]
-      if (opgen) {
-        opgen(genCtx, step, index)
-        Content('\n')
       }
-    })
 
-    Content(`${strict || 0 === allSteps.length ? '' : `    }
+      // Model-driven step iteration
+      each(steps, (step: any, index: any) => {
+        const opgen: OpGen = GENERATE_OP[step.o]
+        if (opgen) {
+          opgen({ ...genCtx, flow }, step, index)
+          Content('\n')
+        }
+      })
+
+      Content(strict || 0 === steps.length ? '' : `    }
     catch (Throwable err) {
       RunnerSupport.liveObserve(err, setup.live, LIVE_STRICT);
     }
-`}  }
+`)
+    }
+
+    const getOnly = liveGetOnly(entity, basicflow)
+    if (null != getOnly) {
+      Content(`    if (setup.live && "TRUE".equals(System.getenv(${javaLit(LIVE_GETONLY_ENV)}))) {
+${liveExcludedLines(getOnly).map((line) => '      System.out.println(' + javaLit(line) + ');\n').join('')}`)
+      if (0 === flowSteps(getOnly.flow).length) {
+        Content(`      Assumptions.abort(${javaLit(liveExcludedSummary(getOnly))});
+      return;
+    }
+
+`)
+      }
+      else {
+        flowBody(getOnly.flow)
+        Content(`      return;
+    }
+
+`)
+      }
+    }
+
+    flowBody(basicflow)
+
+    Content(`  }
 
 `)
 

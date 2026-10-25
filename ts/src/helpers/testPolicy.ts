@@ -3,6 +3,7 @@ import { KIT } from '../types'
 import { flowSteps } from './buildIdNames'
 import { primaryPoint } from './graphqlPoint'
 import { getMatchEntries } from './getMatchEntries'
+import { pointFacts } from './resolved'
 
 
 function liveStrict(model: any, target?: string): boolean {
@@ -80,9 +81,14 @@ function liveIdKey(entityName: string, paramName: string): string {
 }
 
 
+function scalar(value: any): string | number | boolean | undefined {
+  return 'string' === typeof value || 'number' === typeof value || 'boolean' === typeof value ?
+    value : undefined
+}
+
+
 function scalarExample(arg: any): string | number | boolean | undefined {
-  const ex = arg?.ex
-  return 'string' === typeof ex || 'number' === typeof ex || 'boolean' === typeof ex ? ex : undefined
+  return scalar(arg?.ex)
 }
 
 
@@ -104,7 +110,7 @@ function liveExampleIds(entity: any): [string, string | number | boolean][] {
 function liveQueryExamples(point: any): [string, string | number | boolean][] {
   return (point?.g?.query || [])
     .filter((arg: any) => arg.r && undefined !== scalarExample(arg))
-    .map((arg: any) => [arg.n, scalarExample(arg)])
+    .map((arg: any) => [arg.or || arg.n, scalarExample(arg)])
 }
 
 
@@ -138,9 +144,167 @@ function liveStepExamples(entity: any, step: any): [string, string | number | bo
 }
 
 
-export type { LiveFlowNeeds }
+// The first value a parameter's enum allows; apidef already takes a schema
+// default as the example.
+function enumExample(facts: any, arg: any): string | number | boolean | undefined {
+  const where = 'param' === arg.k ? 'path' : arg.k
+  const def = (Array.isArray(facts?.parameters) ? facts.parameters : [])
+    .find((param: any) => param?.name === (arg.or ?? arg.n) && (null == param.in || param.in === where))
+  const values = (def?.schema ?? def)?.enum
+  return Array.isArray(values) ? scalar(values[0]) : undefined
+}
+
+
+// The entity as a live test reads it: a required parameter with no example
+// takes the first value its definition's enum allows.
+function liveEntity(ctx$: any, entity: any): any {
+  let filled = false
+  const op: any = {}
+  for (const [name, operation] of Object.entries(entity?.op || {}) as [string, any][]) {
+    op[name] = !Array.isArray(operation?.points) ? operation : {
+      ...operation,
+      points: operation.points.map((point: any) => {
+        if (null == point?.g) return point
+        const facts = pointFacts(ctx$, point)
+        const g = { ...point.g }
+        for (const kind of ['params', 'query'].filter((kind) => Array.isArray(g[kind]))) {
+          g[kind] = g[kind].map((arg: any) => {
+            const ex = !arg?.r || undefined !== scalarExample(arg) ? undefined : enumExample(facts, arg)
+            if (undefined === ex) return arg
+            filled = true
+            return { ...arg, ex }
+          })
+        }
+        return { ...point, g }
+      }),
+    }
+  }
+  return filled ? { ...entity, op } : entity
+}
+
+
+// Set by the GET-only guard of a read-only live run.
+const LIVE_GETONLY_ENV = 'VOXGIG_GETONLY_GUARD'
+
+type LiveExcluded = { id: string, reason: string }
+
+type LiveGetOnly = {
+  excluded: LiveExcluded[]
+  // the steps left to run, as a flow
+  flow: any
+}
+
+
+// The steps of a flow the live harness runs, as its step ids count them.
+function liveFlowSteps(flow: any): any[] {
+  return Object.values(flow?.step || {})
+    .filter((step: any) => false !== step?.a || true === step?.unreachable)
+}
+
+
+function liveStepId(entity: any, step: any, index: number): string {
+  return entity.name + '.' + step.o + '.' + index
+}
+
+
+const GETONLY = 'GET-only live run: '
+
+const isGet = (point: any) => 'GET' === String(point?.m).toUpperCase()
+
+const routeOf = (point: any) => String(point?.m).toUpperCase() + ' ' + point?.o
+
+
+function writeRoute(entity: any, opname: string): string | undefined {
+  const points: any[] = (entity?.op?.[opname]?.points || []).filter((point: any) => false !== point.a)
+  return 0 === points.length || points.some(isGet) ? undefined : routeOf(points[0])
+}
+
+
+// Why a GET-only live run sends no request to a route: undefined for a GET.
+function liveGetOnlyReason(point: any): string | undefined {
+  return isGet(point) ? undefined : GETONLY + 'needs ' + routeOf(point)
+}
+
+
+// What a GET-only live run leaves out of a flow: each step no GET route
+// reaches, and each step that acts on a record only such a step gives.
+// Undefined when every step can run.
+function liveGetOnly(entity: any, flow: any): LiveGetOnly | undefined {
+  const steps = liveFlowSteps(flow)
+  const reasons = new Map<any, string>()
+  for (const step of steps) {
+    const route = writeRoute(entity, step.o)
+    if (null != route) reasons.set(step, 'needs ' + route)
+  }
+  if (0 === reasons.size) return undefined
+
+  const id = (step: any) => liveStepId(entity, step, steps.indexOf(step))
+  const left = () => steps.filter((step) => !reasons.has(step))
+  const create = steps.find((step) => 'create' === step.o && reasons.has(step))
+  const sources = steps.filter((step) => ['create', 'list'].includes(step.o) && reasons.has(step))
+  if (null != entity?.id && 0 < sources.length) {
+    for (const step of null == create ? [] : left()) {
+      if (['update', 'remove'].includes(step.o)) {
+        reasons.set(step, 'acts on the record ' + id(create) + ' makes')
+      }
+      else if ('list' === step.o && (step.v || []).some((v: any) => 'ItemNotExists' === v?.apply)) {
+        reasons.set(step, 'checks a removal this run does not make')
+      }
+    }
+    if (!left().some((step) => 'list' === step.o)) {
+      for (const step of left().filter((step) => 'load' === step.o)) {
+        reasons.set(step, 'reads a record only ' + sources.map(id).join(', ') + ' gives')
+      }
+    }
+  }
+
+  return {
+    excluded: steps.filter((step) => reasons.has(step))
+      .map((step) => ({ id: id(step), reason: GETONLY + reasons.get(step) })),
+    flow: { ...flow, step: left() },
+  }
+}
+
+
+type LiveKeyExcluded = LiveExcluded & { key: string }
+
+
+// The ids a live direct test needs that a GET-only run cannot get, unless
+// *_ENTID gives them: of a record only a non-GET create makes, no GET list finds.
+function liveDirectGetOnly(model: any, entity: any, test: string, keys: string[]): LiveKeyExcluded[] {
+  const entities = model?.main?.[KIT]?.entity || {}
+  const out: LiveKeyExcluded[] = []
+  for (const key of keys) {
+    const owner = liveIdKey(entity.name, 'id') === key ? entity : entities[key.replace(/01$/, '')]
+    const make = null == owner ? undefined : writeRoute(owner, 'create')
+    const listed = (owner?.op?.list?.points || []).some((point: any) => false !== point.a && isGet(point))
+    if (null != make && !listed) {
+      out.push({ key, id: test, reason: GETONLY + 'needs ' + key + ', which only ' + make + ' gives' })
+    }
+  }
+  return out
+}
+
+
+// The lines the live harness prints for the steps a run leaves out.
+function liveExcludedLines(plan: { excluded: LiveExcluded[] }): string[] {
+  return plan.excluded.map(({ id, reason }) =>
+    'LIVE STEP ' + JSON.stringify({ id, state: 'excluded', attempted: false, reason }))
+}
+
+
+// Why a test whose every step is left out skips, as the live harness says it.
+function liveExcludedSummary(plan: { excluded: LiveExcluded[] }): string {
+  return 'Live coverage incomplete: ' +
+    plan.excluded.map(({ id, reason }) => id + ' excluded (' + reason + ')').join('; ')
+}
+
+
+export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveKeyExcluded }
 
 export {
   liveStrict, liveStrictNote, liveFlowNeeds,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
+  liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 }

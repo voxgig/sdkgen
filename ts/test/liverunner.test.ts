@@ -63,6 +63,31 @@ test('an empty, excluded, or unattempted plan cannot claim live success', async 
   for (const report of [empty, excluded, unattempted]) assert.throws(() => assertLiveReport(report))
 })
 
+test('a run that leaves out every step skips, and one that leaves out some is settled by the rest', async () => {
+  const report = await runLiveSteps([
+    { id: 'game.create.0', excluded: 'GET-only live run: needs POST /game', run: async () => assert.fail('ran') },
+    { id: 'game.load.1', excluded: 'GET-only live run: reads a record only game.create.0 gives',
+      run: async () => assert.fail('ran') },
+  ])
+  for (const strict of [true, false]) {
+    const t = testContext()
+    settleLiveReport(report, { strict, t })
+    assert.deepEqual(t.skips, ['Live coverage incomplete: ' +
+      'game.create.0 excluded (GET-only live run: needs POST /game); ' +
+      'game.load.1 excluded (GET-only live run: reads a record only game.create.0 gives)'])
+  }
+  assert.throws(() => settleLiveReport(report, { strict: true }), /Live coverage incomplete/)
+
+  const partial = await runLiveSteps([
+    { id: 'chart.create.0', excluded: 'GET-only live run: needs POST /chart', run: async () => assert.fail('ran') },
+    { id: 'chart.load.1', run: async (ctx: any) => ctx.attempted() },
+  ])
+  const t = testContext()
+  settleLiveReport(partial, { strict: true, t })
+  assert.deepEqual([t.skips, partial.excluded, partial.passed], [[], 1, 1])
+})
+
+
 test('invalid published output blocks dependent work but remains available for cleanup', async () => {
   const report = await runLiveSteps([
     { id: 'produce', run: async (ctx: any) => { ctx.attempted(); ctx.publish({id:'owned'}); throw Error('invalid vector') } },

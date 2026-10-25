@@ -31,6 +31,8 @@ import {
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples,
+  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveEntity,
 } from '@voxgig/sdkgen'
 
 
@@ -81,7 +83,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
   const basicflow: ModelEntityFlow | undefined =
     getModelPath(model, `main.${KIT}.flow.Basic${nom(entity, 'Name')}Flow`)
@@ -130,7 +132,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
 
   const strict = liveStrict(model, target.name)
-  const needs = liveFlowNeeds(entity, basicflow)
   const entidEnv = PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID'
 
   // The stream test streams the "list" op with no match and asserts a 3-item
@@ -216,13 +217,16 @@ ${strict ? '' : `    @runner.live_observe("${PROJUPPER}_TEST_LIVE", LIVE_STRICT)
             if _skip:
                 pytest.skip(_reason or "skipped via sdk-test-control.json")
                 return
-${liveFlowGate(entity, needs, entidEnv)}
 `)
 
-    // Check if the flow has a create step
-    const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
-    if (!flowHasCreate) {
-      Content(`        # Bootstrap entity data from existing test data.
+    const flowBody = (flow: any) => {
+      const steps = flowSteps(flow) as any[]
+      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), entidEnv) + '\n')
+
+      // Check if the flow has a create step
+      const flowHasCreate = steps.some((s: any) => s.o === 'create')
+      if (!flowHasCreate) {
+        Content(`        # Bootstrap entity data from existing test data.
         ${entity.name}_ref01_data_raw = vs.items(helpers.to_map(
             vs.getpath(setup["data"], "existing.${entity.name}")))
         ${entity.name}_ref01_data = None
@@ -230,24 +234,46 @@ ${liveFlowGate(entity, needs, entidEnv)}
             ${entity.name}_ref01_data = helpers.to_map(${entity.name}_ref01_data_raw[0][1])
 
 `)
+      }
+
+      // Model-driven step iteration
+      each(steps, (step: any, index: any) => {
+        // Never emit a REMOVE (or its removed-item verify LIST) without a
+        // preceding CREATE: a coherent CRUD flow only removes what it created,
+        // so a create-less remove would mutate pre-existing (live) data.
+        if (!flowHasCreate) {
+          if ('remove' === step.o) { return }
+          if ('list' === step.o &&
+            (step.v || []).some((v: any) => 'ItemNotExists' === v.apply)) { return }
+        }
+        const opgen: OpGen = GENERATE_OP[step.o]
+        if (opgen) {
+          opgen({ ...genCtx, flow }, step, index)
+          Content('\n')
+        }
+      })
     }
 
-    // Model-driven step iteration
-    each(flowSteps(basicflow), (step: any, index: any) => {
-      // Never emit a REMOVE (or its removed-item verify LIST) without a
-      // preceding CREATE: a coherent CRUD flow only removes what it created,
-      // so a create-less remove would mutate pre-existing (live) data.
-      if (!flowHasCreate) {
-        if ('remove' === step.o) { return }
-        if ('list' === step.o &&
-          (step.v || []).some((v: any) => 'ItemNotExists' === v.apply)) { return }
-      }
-      const opgen: OpGen = GENERATE_OP[step.o]
-      if (opgen) {
-        opgen(genCtx, step, index)
-        Content('\n')
-      }
-    })
+    // A python block cannot hold steps emitted at the method's own indent,
+    // so the steps a GET-only run keeps go in a method of their own.
+    const getOnly = liveGetOnly(entity, basicflow)
+    const getOnlyRuns = null != getOnly && 0 < flowSteps(getOnly.flow).length
+    if (null != getOnly) {
+      Content(`        if setup["live"] and os.environ.get(${JSON.stringify(LIVE_GETONLY_ENV)}) == "TRUE":
+${liveExcludedLines(getOnly).map((line) => '            print(' + pyLit(line) + ')\n').join('')}${getOnlyRuns ?
+  '            return self._run_get_only_flow(setup)\n' :
+  '            pytest.skip(' + pyLit(liveExcludedSummary(getOnly)) + ')\n'}
+`)
+    }
+
+    flowBody(basicflow)
+
+    if (null != getOnly && getOnlyRuns) {
+      Content(`
+    def _run_get_only_flow(self, setup):
+`)
+      flowBody(getOnly.flow)
+    }
 
     Content(`
 

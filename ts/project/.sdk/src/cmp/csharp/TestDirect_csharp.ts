@@ -22,6 +22,8 @@ import {
   graphqlDirectSkip,
   liveExampleIds,
   liveQueryExamples,
+  liveEntity,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 import { formatCsValue } from './utility_csharp'
@@ -64,12 +66,26 @@ function normalizePathParams(
 }
 
 
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysBlock(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `        if (setup.Live && Environment.GetEnvironmentVariable(${formatCsValue(LIVE_GETONLY_ENV)}) == "TRUE"
+            && StructUtils.GetProp(setup.Idmap, ${formatCsValue(miss.key)}) == null)
+        {
+            Console.WriteLine(${formatCsValue(liveExcludedLines({ excluded: [miss] })[0])});
+            Console.WriteLine(${formatCsValue('skip: ' + liveExcludedSummary({ excluded: [miss] }))});
+            return;
+        }
+`).join('')
+}
+
+
 const TestDirect = cmp(function TestDirect(props: any) {
   const ctx$ = props.ctx$
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
   const Name = model.const.Name
   const PROJECTNAME = envName(model)
@@ -132,11 +148,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listParams = listPoint?.g?.params || []
 
   // Required query params with spec-provided examples - needed in live mode.
-  const loadQuery = loadPoint?.g?.query || []
-  const loadLiveQueryEntries = loadQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const loadLiveQueryLines = loadLiveQueryEntries
-    .map((q: any) => `            query["${q.n}"] = ${formatCsValue(q.ex)};`)
+  const loadLiveQueryLines = liveQueryExamples(loadPoint)
+    .map(([name, ex]) => `            query["${name}"] = ${formatCsValue(ex)};`)
     .join('\n')
 
   // Path params with spec-provided examples - when ALL load params have
@@ -194,7 +207,8 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '    ')}
       const listLiveIdKeys = listParams.length > 0
         ? listLiveParams.map((lp: any) => lp.key)
         : []
-      const listSkipBlock = listLiveIdKeys.length > 0
+      const listSkipBlock = getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listLiveIdKeys) +
+        (listLiveIdKeys.length > 0
         ? `        if (setup.Live)
         {
             foreach (var _liveKey in new[] { ${listLiveIdKeys.map((k: string) => `"${k}"`).join(', ')} })
@@ -207,7 +221,7 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '    ')}
             }
         }
 `
-        : ''
+        : '')
 
       Content(`    [Fact]
     public void DirectList()
@@ -331,7 +345,8 @@ ${listLiveQueryLines ? '        if (setup.Live)\n        {\n' + listLiveQueryLin
         loadLiveIdKeys = [...new Set((hasList ?
           [...listParams, ...loadParams.filter((p: any) => p.n !== 'id')] : loadParams).map(liveKey))]
       }
-      const loadSkipBlock = loadLiveIdKeys.length > 0
+      const loadSkipBlock = getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, loadLiveIdKeys) +
+        (loadLiveIdKeys.length > 0
         ? `        if (setup.Live)
         {
             foreach (var _liveKey in new[] { ${loadLiveIdKeys.map(k => `"${k}"`).join(', ')} })
@@ -344,7 +359,7 @@ ${listLiveQueryLines ? '        if (setup.Live)\n        {\n' + listLiveQueryLin
             }
         }
 `
-        : ''
+        : '')
 
       Content(`    [Fact]
     public void DirectLoad()

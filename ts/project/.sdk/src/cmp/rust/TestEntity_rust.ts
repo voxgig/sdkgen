@@ -22,7 +22,9 @@ import {
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
+  liveEntity,
 } from '@voxgig/sdkgen'
 
 
@@ -95,7 +97,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
   const rustcrate: string = props.rustcrate
 
   const basicflow: ModelEntityFlow | undefined =
@@ -138,7 +140,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const genCtx: GenCtx = { model, entity, rustcrate, flow: basicflow, PROJUPPER }
 
   const strict = liveStrict(model, target.name)
-  const needs = liveFlowNeeds(entity, basicflow)
 
   const opNames = Array.from(new Set(allSteps.map((s: any) => s.o).filter(Boolean)))
   const opsList = opNames.map(o => `"${o}"`).join(', ')
@@ -250,14 +251,18 @@ fn ${evar}_entity_stream() {
 #[test]
 fn ${evar}_entity_basic() {
     let setup = ${evar}_basic_setup(Value::Noval);
-${skipBlock}${liveFlowGate(entity, needs, PROJUPPER + '_TEST_' + ENTUPPER + '_ENTID', method, strict,
-  allSteps.length > 0)}`)
+${skipBlock}`)
 
-    // No create step: bootstrap entity data from existing fixture data.
-    const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
-    if (!flowHasCreate) {
-      const preambleVar = rustVarName(entity.name + '_ref01')
-      Content(`
+    const flowBody = (flow: any) => {
+      const steps = flowSteps(flow) as any[]
+      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), PROJUPPER + '_TEST_' + ENTUPPER + '_ENTID',
+        method, strict, steps.length > 0))
+
+      // No create step: bootstrap entity data from existing fixture data.
+      const flowHasCreate = steps.some((s: any) => s.o === 'create')
+      if (!flowHasCreate) {
+        const preambleVar = rustVarName(entity.name + '_ref01')
+        Content(`
     // Bootstrap entity data from existing test data (no create step in flow).
     let ${preambleVar}_data_raw = vs::items(&to_map(&getpath(&["existing", "${entity.name}"], &setup.data)));
     let ${preambleVar}_data = to_map(&vs::get_elem(
@@ -266,22 +271,47 @@ ${skipBlock}${liveFlowGate(entity, needs, PROJUPPER + '_TEST_' + ENTUPPER + '_EN
         Value::Noval,
     ));
 `)
-    }
-
-    // Model-driven step iteration.
-    each(flowSteps(basicflow), (step: any, index: any) => {
-      const opgen: OpGen = GENERATE_OP[step.o]
-      if (opgen) {
-        opgen(genCtx, step, index)
-        Content('\n')
       }
-    })
 
-    Content(`${strict || 0 === allSteps.length ? '' : `    }));
+      // Model-driven step iteration.
+      each(steps, (step: any, index: any) => {
+        const opgen: OpGen = GENERATE_OP[step.o]
+        if (opgen) {
+          opgen({ ...genCtx, flow }, step, index)
+          Content('\n')
+        }
+      })
+
+      Content(strict || 0 === steps.length ? '' : `    }));
     if let Err(err) = outcome {
         live_observe(err, setup.live, LIVE_STRICT);
     }
-`}}
+`)
+    }
+
+    const getOnly = liveGetOnly(entity, basicflow)
+    if (null != getOnly) {
+      Content(`    if setup.live && std::env::var(${JSON.stringify(LIVE_GETONLY_ENV)}).map(|v| v == "TRUE").unwrap_or(false) {
+${liveExcludedLines(getOnly).map((line) => '        println!("{}", ' + JSON.stringify(line) + ');\n').join('')}`)
+      if (0 === flowSteps(getOnly.flow).length) {
+        Content(`        eprintln!("skip: {}", ${JSON.stringify(liveExcludedSummary(getOnly))});
+        return;
+    }
+
+`)
+      }
+      else {
+        flowBody(getOnly.flow)
+        Content(`        return;
+    }
+
+`)
+      }
+    }
+
+    flowBody(basicflow)
+
+    Content(`}
 
 `)
 

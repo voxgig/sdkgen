@@ -19,6 +19,10 @@ import {
   pointIsGraphql,
   primaryPoint,
   liveExampleIds,
+  liveQueryExamples,
+  liveEntity,
+  liveGetOnlyReason, LIVE_GETONLY_ENV,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 } from '@voxgig/sdkgen'
 
 
@@ -69,7 +73,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
   const gomodule = props.gomodule
 
   const PROJECTNAME = envName(model)
@@ -138,19 +142,11 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) : ''
   const listParams = listPoint?.g?.params || []
 
-  const loadQuery = loadPoint?.g?.query || []
-  const loadLiveQueryEntries = loadQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const loadLiveQueryLines = loadLiveQueryEntries
-    .map((q: any) => `\t\t\tquery["${q.n}"] = ${JSON.stringify(q.ex)}`)
+  const liveQueryLines = (point: any) => liveQueryExamples(point)
+    .map(([name, ex]) => `\t\t\tquery[${JSON.stringify(name)}] = ${JSON.stringify(ex)}`)
     .join('\n')
-
-  const listQuery = listPoint?.g?.query || []
-  const listLiveQueryEntries = listQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const listLiveQueryLines = listLiveQueryEntries
-    .map((q: any) => `\t\t\tquery["${q.n}"] = ${JSON.stringify(q.ex)}`)
-    .join('\n')
+  const loadLiveQueryLines = liveQueryLines(loadPoint)
+  const listLiveQueryLines = liveQueryLines(listPoint)
 
   // Path params with spec-provided examples — when ALL load params have
   // spec examples, prefer them over list-bootstrap. Spec example values are
@@ -221,7 +217,8 @@ func Test${entity.Name}Direct(t *testing.T) {
       const listLiveIdKeysGoLiteral = listLiveIdKeys.length > 0
         ? `[]string{${listLiveIdKeys.map((k: string) => `"${k}"`).join(', ')}}`
         : ''
-      const listSkipBlock = listLiveIdKeys.length > 0
+      const listSkipBlock = getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listLiveIdKeys) +
+        (listLiveIdKeys.length > 0
         ? `		if setup.live {
 			for _, _liveKey := range ${listLiveIdKeysGoLiteral} {
 				if v := setup.idmap[_liveKey]; v == nil {
@@ -231,7 +228,7 @@ func Test${entity.Name}Direct(t *testing.T) {
 			}
 		}
 `
-        : ''
+        : '')
 
       Content(`	t.Run("direct-list-${entity.name}", func(t *testing.T) {
 		setup := ${entity.name}DirectSetup([]any{
@@ -370,7 +367,8 @@ ${listLiveQueryLines}
         loadLiveIdKeys = [...new Set((hasList ?
           [...listParams, ...loadParams.filter((p: any) => p.n !== 'id')] : loadParams).map(liveKey))]
       }
-      const loadSkipBlock = loadLiveIdKeys.length > 0
+      const loadSkipBlock = getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, loadLiveIdKeys) +
+        (loadLiveIdKeys.length > 0
         ? `		if setup.live {
 			for _, _liveKey := range []string{${loadLiveIdKeys.map(k => `"${k}"`).join(', ')}} {
 				if v := setup.idmap[_liveKey]; v == nil {
@@ -380,7 +378,7 @@ ${listLiveQueryLines}
 			}
 		}
 `
-        : ''
+        : '')
 
       Content(`	t.Run("direct-load-${entity.name}", func(t *testing.T) {
 		setup := ${entity.name}DirectSetup(map[string]any{"id": "direct01"})
@@ -631,6 +629,18 @@ var _ = json.Unmarshal
 })
 
 
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysBlock(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `		if setup.live && os.Getenv(${JSON.stringify(LIVE_GETONLY_ENV)}) == "TRUE" && setup.idmap[${JSON.stringify(miss.key)}] == nil {
+			t.Log(${JSON.stringify(liveExcludedLines({ excluded: [miss] })[0])})
+			t.Skip(${JSON.stringify(liveExcludedSummary({ excluded: [miss] }))})
+			return
+		}
+`).join('')
+}
+
+
 // GraphQL-backed op needs POST+body, not a REST-shaped GET+params Direct()
 // call — reuse apidef's own point.gq.doc via the SDK's Graphql() hatch.
 // Mirrors TestDirect_ts.ts's generateDirectGraphql.
@@ -643,6 +653,15 @@ function generateDirectGraphqlGo(
 ) {
   const doc: string = point.gq.doc
   const vars: any[] = point.gq.vars || []
+
+  // A GraphQL request is a POST, which a GET-only live run does not send.
+  const getOnlyReason = liveGetOnlyReason(point)
+  const getOnlySkip = null == getOnlyReason ? '' :
+    `\t\tif setup.live && os.Getenv(${JSON.stringify(LIVE_GETONLY_ENV)}) == "TRUE" {
+\t\t\tt.Skip(${JSON.stringify(getOnlyReason)})
+\t\t\treturn
+\t\t}
+`
 
   const mockVarLines = vars.map((v: any, i: number) =>
     `\t\tvariables["${v.name}"] = "direct0${i + 1}"`).join('\n')
@@ -695,7 +714,7 @@ function generateDirectGraphqlGo(
 			t.Skip(_reason)
 			return
 		}
-${skipBlock}		client := setup.client
+${getOnlySkip}${skipBlock}		client := setup.client
 
 		variables := map[string]any{}
 		if setup.live {

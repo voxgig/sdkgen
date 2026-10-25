@@ -122,8 +122,12 @@ function assertLiveReport(report) {
         throw new Error('Live coverage incomplete: ' + JSON.stringify(report));
     }
 }
-// An account with no record for a step to read skips in either mode.
+// An account with no record for a step to read skips in either mode, as
+// does a run that leaves out every step.
 function settleLiveReport(report, settle = {}) {
+    if (0 < report.planned && report.excluded === report.planned && null != settle.t) {
+        return settle.t.skip('Live coverage incomplete: ' + liveSummary(report));
+    }
     if (liveIncomplete(report)) {
         if (false !== settle.strict || null == settle.t)
             return assertLiveReport(report);

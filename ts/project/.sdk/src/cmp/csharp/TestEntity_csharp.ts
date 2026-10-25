@@ -22,7 +22,9 @@ import {
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
+  liveEntity,
 } from '@voxgig/sdkgen'
 
 
@@ -101,7 +103,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
   const basicflow: ModelEntityFlow | undefined =
     getModelPath(model, `main.${KIT}.flow.Basic${nom(entity, 'Name')}Flow`)
@@ -149,7 +151,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
 
   const strict = liveStrict(model, target.name)
-  const needs = liveFlowNeeds(entity, basicflow)
   const entidEnvVar = `${PROJUPPER}_TEST_${ENTUPPER}_ENTID`
 
   const opNames = Array.from(new Set(
@@ -204,14 +205,18 @@ ${liveStrictNote(strict, '//', '    ')}
     public void Basic()
     {
         var setup = ${entity.Name}BasicSetup(null);
-${skipBlock}${liveFlowGate(entity, needs, entidEnvVar, strict, allSteps.length > 0)}`)
+${skipBlock}`)
 
-    // Check if the flow has a create step; if not, bootstrap entity data
-    const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
-    if (!flowHasCreate) {
-      const preambleRef = entity.name + '_ref01'
-      const preambleVar = csVar(preambleRef)
-      Content(`        // Bootstrap entity data from existing test data (no create step in flow).
+    const flowBody = (flow: any) => {
+      const steps = flowSteps(flow) as any[]
+      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), entidEnvVar, strict, steps.length > 0))
+
+      // Check if the flow has a create step; if not, bootstrap entity data
+      const flowHasCreate = steps.some((s: any) => s.o === 'create')
+      if (!flowHasCreate) {
+        const preambleRef = entity.name + '_ref01'
+        const preambleVar = csVar(preambleRef)
+        Content(`        // Bootstrap entity data from existing test data (no create step in flow).
         var ${preambleVar}DataRaw = StructUtils.Items(
             Helpers.ToMapAny(StructUtils.GetPath(setup.Data, "existing.${entity.name}")));
         var ${preambleVar}Data = ${preambleVar}DataRaw.Count > 0
@@ -219,25 +224,55 @@ ${skipBlock}${liveFlowGate(entity, needs, entidEnvVar, strict, allSteps.length >
             : null;
 
 `)
-    }
-
-    // Model-driven step iteration
-    each(flowSteps(basicflow), (step: any, index: any) => {
-      const opgen: OpGen = GENERATE_OP[step.o]
-      if (opgen) {
-        opgen(genCtx, step, index)
-        Content('\n')
       }
-    })
 
-    Content(`${strict || 0 === allSteps.length ? '' : `        }
+      // Model-driven step iteration
+      each(steps, (step: any, index: any) => {
+        const opgen: OpGen = GENERATE_OP[step.o]
+        if (opgen) {
+          opgen({ ...genCtx, flow }, step, index)
+          Content('\n')
+        }
+      })
+
+      Content(strict || 0 === steps.length ? '' : `        }
         catch (Exception liveErr)
         {
             TestRunner.LiveObserve(liveErr, setup.Live, LIVE_STRICT);
         }
-`}    }
+`)
+    }
+
+    // A C# local is in scope throughout its block, so the steps a GET-only
+    // run keeps cannot share the method with the full flow's.
+    const getOnly = liveGetOnly(entity, basicflow)
+    const getOnlyRuns = null != getOnly && 0 < flowSteps(getOnly.flow).length
+    if (null != getOnly) {
+      Content(`        if (setup.Live && Environment.GetEnvironmentVariable(${formatCsValue(LIVE_GETONLY_ENV)}) == "TRUE")
+        {
+${liveExcludedLines(getOnly).map((line) => '            Console.WriteLine(' + formatCsValue(line) + ');\n').join('')}${getOnlyRuns ?
+  '            BasicGetOnly(setup);\n' :
+  '            Console.WriteLine(' + formatCsValue('skip: ' + liveExcludedSummary(getOnly)) + ');\n'}            return;
+        }
 
 `)
+    }
+
+    flowBody(basicflow)
+
+    Content(`    }
+
+`)
+
+    if (null != getOnly && getOnlyRuns) {
+      Content(`    private static void BasicGetOnly(EntityTestSetup setup)
+    {
+`)
+      flowBody(getOnly.flow)
+      Content(`    }
+
+`)
+    }
 
     // The stream test lists with no match, so a bare call must reach a route.
     const flowHasList = allSteps.some((s: any) => s.o === 'list') &&
