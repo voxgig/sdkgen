@@ -44,11 +44,38 @@ fn agent_for(fetchdef: &Value) -> ureq::Agent {
         .clone()
 }
 
+const GETONLY_ENV: &str = "VOXGIG_GETONLY_GUARD";
+
+// A GET-only live run refuses any other method before it is sent. The error
+// names the path alone: the query can carry a credential.
+fn getonly_refusal(fullurl: &str, method: &str) -> Option<ProjectNameError> {
+    let method = method.to_uppercase();
+    if std::env::var(GETONLY_ENV).ok().as_deref() != Some("TRUE") || method == "GET" {
+        return None;
+    }
+    let rest = match fullurl.find("://") {
+        Some(i) => {
+            let auth = &fullurl[i + 3..];
+            &auth[auth.find(|c| matches!(c, '/' | '?' | '#')).unwrap_or(auth.len())..]
+        }
+        None => fullurl,
+    };
+    let path = &rest[..rest.find(|c| matches!(c, '?' | '#')).unwrap_or(rest.len())];
+    let path = if path.is_empty() { "/" } else { path };
+    Some(ProjectNameError::new(
+        "fetch_getonly_block",
+        &format!("[GET-ONLY GUARD] blocked {} {}", method, path),
+    ))
+}
+
 // Default live transport: ureq (blocking, minimal).
 fn default_http_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectNameError> {
     let method = get_str(fetchdef, "method")
         .filter(|m| !m.is_empty())
         .unwrap_or_else(|| "GET".to_string());
+    if let Some(refused) = getonly_refusal(fullurl, &method) {
+        return Err(refused);
+    }
 
     let agent = agent_for(fetchdef);
     let mut req = agent.request(&method, fullurl);

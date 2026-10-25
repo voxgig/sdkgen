@@ -414,6 +414,55 @@ public class PrimaryUtilityTest {
     }
   }
 
+  // Nothing listens on port 9: a request the guard let through fails there.
+  // A JVM cannot set its own environment, so the probe runs in a child JVM.
+  @Test
+  public void fetcherGetOnlyGuard() throws Exception {
+    String out;
+    if ("TRUE".equals(System.getenv("VOXGIG_GETONLY_GUARD"))) {
+      out = getOnlyProbe();
+    }
+    else {
+      ProcessBuilder pb = new ProcessBuilder(
+          ProcessHandle.current().info().command().orElse("java"),
+          "-cp", System.getProperty("java.class.path"), PrimaryUtilityTest.class.getName());
+      pb.environment().put("VOXGIG_GETONLY_GUARD", "TRUE");
+      pb.redirectErrorStream(true);
+      Process proc = pb.start();
+      out = new String(proc.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+      assertEquals(0, proc.waitFor(), out);
+    }
+    assertTrue(out.startsWith("fetch_getonly_block [GET-ONLY GUARD] blocked POST /planet/p1\n"), out);
+    assertTrue(out.trim().endsWith("\nsent"), out);
+    assertFalse(out.contains("GUARDKEY01"), out);
+  }
+
+  public static void main(String[] args) {
+    System.out.print(getOnlyProbe());
+  }
+
+  static String getOnlyProbe() {
+    ProjectNameSDK liveClient = new ProjectNameSDK(fhMap("base", "http://127.0.0.1:9"));
+    Utility liveUtility = liveClient.getUtility();
+    Context ctx = liveUtility.makeContext.apply(fhMap(
+        "opname", "create", "client", liveClient, "utility", liveUtility), null);
+    String url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01";
+    StringBuilder out = new StringBuilder();
+    for (String method : new String[] {"POST", "GET"}) {
+      try {
+        liveUtility.fetcher.fetch(ctx, url, fhMap("method", method, "headers", new LinkedHashMap<>()));
+        out.append("answered\n");
+      }
+      catch (SdkError e) {
+        out.append(e.code).append(' ').append(e.msg).append('\n');
+      }
+      catch (RuntimeException e) {
+        out.append("sent\n");
+      }
+    }
+    return out.toString();
+  }
+
   @Test
   public void makeContextBasic() {
     runsection("makeContext", (args) -> {

@@ -74,6 +74,31 @@ class PrimaryUtilityTest {
       run()
       return UTILITY!!
     }
+
+    @JvmStatic
+    fun main(args: Array<String>) {
+      print(getOnlyProbe())
+    }
+
+    fun getOnlyProbe(): String {
+      val liveClient = ProjectNameSDK(fhMap("base", "http://127.0.0.1:9"))
+      val liveUtility = liveClient.getUtility()
+      val ctx = liveUtility.makeContext(
+        fhMap("opname", "create", "client", liveClient, "utility", liveUtility), null)
+      val url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01"
+      val out = StringBuilder()
+      for (method in listOf("POST", "GET")) {
+        try {
+          liveUtility.fetcher(ctx, url, fhMap("method", method, "headers", linkedMapOf<String, Any?>()))
+          out.append("answered\n")
+        } catch (e: SdkError) {
+          out.append(e.code).append(' ').append(e.msg).append('\n')
+        } catch (e: RuntimeException) {
+          out.append("sent\n")
+        }
+      }
+      return out.toString()
+    }
   }
 
   // Run one corpus section, failing loudly when it would run ZERO cases.
@@ -380,6 +405,29 @@ class PrimaryUtilityTest {
     } catch (e: RuntimeException) {
       assertTrue(e.message.toString().contains("blocked"), "expected error containing 'blocked', got: ${e.message}")
     }
+  }
+
+  // Nothing listens on port 9: a request the guard let through fails there.
+  // A JVM cannot set its own environment, so the probe runs in a child JVM.
+  @Test
+  fun fetcherGetOnlyGuard() {
+    val out = if ("TRUE" == System.getenv("VOXGIG_GETONLY_GUARD")) {
+      getOnlyProbe()
+    } else {
+      val pb = ProcessBuilder(
+        ProcessHandle.current().info().command().orElse("java"),
+        "-cp", System.getProperty("java.class.path"), PrimaryUtilityTest::class.java.name,
+      )
+      pb.environment()["VOXGIG_GETONLY_GUARD"] = "TRUE"
+      pb.redirectErrorStream(true)
+      val proc = pb.start()
+      val text = proc.inputStream.readAllBytes().toString(Charsets.UTF_8)
+      assertEquals(0, proc.waitFor(), text)
+      text
+    }
+    assertTrue(out.startsWith("fetch_getonly_block [GET-ONLY GUARD] blocked POST /planet/p1\n"), out)
+    assertTrue(out.trim().endsWith("\nsent"), out)
+    assertFalse(out.contains("GUARDKEY01"), out)
   }
 
   @Test

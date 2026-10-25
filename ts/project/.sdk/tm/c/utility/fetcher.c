@@ -4,8 +4,37 @@
 
 #include "sdk.h"
 
+#include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+#define GETONLY_ENV "VOXGIG_GETONLY_GUARD"
+
+// A GET-only live run refuses any other method before it is sent. The error
+// names the path alone: the query can carry a credential.
+static PNError* getonly_refusal(Context* ctx, const char* fullurl, voxgig_value* fetchdef) {
+  const char* flag = getenv(GETONLY_ENV);
+  const char* raw = get_str(fetchdef, "method");
+  char method[16] = "GET";
+  if (NULL != raw && '\0' != raw[0]) {
+    size_t n = 0;
+    for (; '\0' != raw[n] && n < sizeof(method) - 1; n++) {
+      method[n] = (char)toupper((unsigned char)raw[n]);
+    }
+    method[n] = '\0';
+  }
+  if (NULL == flag || 0 != strcmp(flag, "TRUE") || 0 == strcmp(method, "GET")) {
+    return NULL;
+  }
+  const char* scheme = strstr(fullurl, "://");
+  const char* path = NULL == scheme ? fullurl : scheme + 3 + strcspn(scheme + 3, "/?#");
+  int plen = (int)strcspn(path, "?#");
+  char buf[512];
+  snprintf(buf, sizeof(buf), "[GET-ONLY GUARD] blocked %s %.*s", method,
+           0 == plen ? 1 : plen, 0 == plen ? "/" : path);
+  return context_make_error(ctx, "fetch_getonly_block", buf);
+}
 
 voxgig_value* fetcher_util(Fetcher* self, Context* ctx, const char* fullurl,
                            voxgig_value* fetchdef, PNError** err) {
@@ -44,7 +73,8 @@ voxgig_value* fetcher_util(Fetcher* self, Context* ctx, const char* fullurl,
   voxgig_value* sys_fetch = getpath2(options, "system", "fetch");
 
   if (v_is_noval(sys_fetch) || v_is_null(sys_fetch)) {
-    return http_fetch(ctx, fullurl, fetchdef, err);
+    *err = getonly_refusal(ctx, fullurl, fetchdef);
+    return NULL != *err ? NULL : http_fetch(ctx, fullurl, fetchdef, err);
   }
 
   if (voxgig_is_func(sys_fetch)) {

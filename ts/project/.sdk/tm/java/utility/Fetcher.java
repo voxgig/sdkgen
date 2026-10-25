@@ -15,6 +15,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import JAVAPACKAGE.core.Context;
+import JAVAPACKAGE.core.SdkError;
 import JAVAPACKAGE.utility.struct.Struct;
 
 @SuppressWarnings({"unchecked"})
@@ -56,11 +57,34 @@ final class Fetcher {
     });
   }
 
+  static final String GETONLY_ENV = "VOXGIG_GETONLY_GUARD";
+
+  // A GET-only live run refuses any other method before it is sent. The error
+  // names the path alone: the query can carry a credential.
+  static SdkError getOnlyRefusal(String fullurl, String method) {
+    method = method.toUpperCase(java.util.Locale.ROOT);
+    if (!"TRUE".equals(System.getenv(GETONLY_ENV)) || "GET".equals(method)) {
+      return null;
+    }
+    String rest = fullurl;
+    int scheme = rest.indexOf("://");
+    if (scheme >= 0) {
+      rest = rest.substring(scheme + 3).replaceFirst("^[^/?#]*", "");
+    }
+    String path = rest.split("[?#]", 2)[0];
+    return new SdkError("fetch_getonly_block",
+        "[GET-ONLY GUARD] blocked " + method + " " + ("".equals(path) ? "/" : path), null);
+  }
+
   static Map<String, Object> defaultHttpFetch(String fullurl, Map<String, Object> fetchdef) {
     String method = fetchdef.get("method") instanceof String
         ? (String) fetchdef.get("method") : "";
     if ("".equals(method)) {
       method = "GET";
+    }
+    SdkError refused = getOnlyRefusal(fullurl, method);
+    if (refused != null) {
+      throw refused;
     }
 
     HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.noBody();

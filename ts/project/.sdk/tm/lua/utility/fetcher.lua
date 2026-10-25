@@ -2,8 +2,39 @@
 
 local vs = require("utility.struct.struct")
 local json = require("dkjson")
+local ProjectNameError = require("core.error")
+
+local GETONLY_ENV = "VOXGIG_GETONLY_GUARD"
+
+-- A GET-only live run refuses any other method before it is sent. The error
+-- names the path alone: the query can carry a credential.
+local function getonly_refusal(fullurl, method)
+  method = string.upper(tostring(method or ""))
+  if method == "" then
+    method = "GET"
+  end
+  if os.getenv(GETONLY_ENV) ~= "TRUE" or method == "GET" then
+    return nil
+  end
+  local rest = fullurl
+  local scheme = string.find(rest, "://", 1, true)
+  if scheme then
+    rest = string.gsub(string.sub(rest, scheme + 3), "^[^/?#]*", "")
+  end
+  local path = string.match(rest, "^[^?#]*")
+  if path == "" then
+    path = "/"
+  end
+  return ProjectNameError.new("fetch_getonly_block",
+    "[GET-ONLY GUARD] blocked " .. method .. " " .. path)
+end
 
 local function default_http_fetch(fullurl, fetchdef)
+  local refused = getonly_refusal(fullurl, fetchdef["method"])
+  if refused then
+    return nil, refused
+  end
+
   -- Use LuaSocket or similar for real HTTP requests.
   -- This is the default live implementation.
   local http_ok, http = pcall(require, "socket.http")

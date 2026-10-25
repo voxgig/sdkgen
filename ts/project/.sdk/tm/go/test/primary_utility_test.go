@@ -331,6 +331,34 @@ func TestPrimaryUtility(t *testing.T) {
 		}
 	})
 
+	// Nothing listens on port 9: a request the guard let through fails there.
+	t.Run("fetcher-getonly-guard", func(t *testing.T) {
+		liveClient := sdk.NewProjectNameSDK(map[string]any{"base": "http://127.0.0.1:9"})
+		liveUtility := liveClient.GetUtility()
+		ctx := liveUtility.MakeContext(map[string]any{
+			"opname":  "create",
+			"client":  liveClient,
+			"utility": liveUtility,
+		}, nil)
+		url := "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01"
+		t.Setenv("VOXGIG_GETONLY_GUARD", "TRUE")
+
+		_, err := liveUtility.Fetcher(ctx, url, map[string]any{"method": "POST", "headers": map[string]any{}})
+		var sdkerr *sdk.ProjectNameError
+		if !errors.As(err, &sdkerr) || sdkerr.Code != "fetch_getonly_block" {
+			t.Fatalf("expected fetch_getonly_block, got: %v", err)
+		}
+		if !strings.Contains(sdkerr.Msg, "[GET-ONLY GUARD] blocked POST /planet/p1") ||
+			strings.Contains(sdkerr.Msg, "GUARDKEY01") {
+			t.Errorf("unexpected guard message: %s", sdkerr.Msg)
+		}
+
+		_, err = liveUtility.Fetcher(ctx, url, map[string]any{"method": "GET", "headers": map[string]any{}})
+		if err == nil || errors.As(err, &sdkerr) {
+			t.Errorf("expected a GET to reach the closed port, got: %v", err)
+		}
+	})
+
 	t.Run("makeContext-basic", func(t *testing.T) {
 		runsection(t, "makeContext", func(args ...any) (any, error) {
 			if inMap, ok := args[0].(map[string]any); ok {

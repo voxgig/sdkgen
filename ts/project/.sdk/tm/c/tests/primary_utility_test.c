@@ -527,6 +527,42 @@ static void test_primary_fetcher_blocked_test_mode(void) {
   CHECK(has_blocked, "fetcher blocked: message contains 'blocked'");
 }
 
+// Nothing listens on port 9: a request the guard let through fails there.
+static void test_primary_fetcher_getonly_guard(void) {
+  ProjectNameSDK* live = projectname_sdk_new(cmap(1, "base", v_str("http://127.0.0.1:9")));
+  Utility* util = sdk_get_utility(live);
+  CtxSpec cs;
+  memset(&cs, 0, sizeof(cs));
+  cs.opname = "create";
+  cs.client = live;
+  cs.utility = util;
+  Context* ctx = make_context_util(cs, NULL);
+  const char* url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01";
+  const char* prior = getenv("VOXGIG_GETONLY_GUARD");
+  char* saved = NULL == prior ? NULL : strdup(prior);
+  setenv("VOXGIG_GETONLY_GUARD", "TRUE", 1);
+
+  PNError* err = NULL;
+  utility_fetch(util, ctx, url, cmap(2, "method", v_str("POST"), "headers", v_map()), &err);
+  CHECK(err && err->code && 0 == strcmp(err->code, "fetch_getonly_block"),
+        "fetcher getonly: a POST is refused");
+  CHECK(err && err->msg && strstr(err->msg, "[GET-ONLY GUARD] blocked POST /planet/p1"),
+        "fetcher getonly: names the path");
+  CHECK(err && err->msg && !strstr(err->msg, "GUARDKEY01"), "fetcher getonly: leaves out the query");
+
+  PNError* geterr = NULL;
+  utility_fetch(util, ctx, url, cmap(2, "method", v_str("GET"), "headers", v_map()), &geterr);
+  CHECK(geterr && geterr->code && 0 != strcmp(geterr->code, "fetch_getonly_block"),
+        "fetcher getonly: a GET reaches the closed port");
+
+  if (NULL == saved) {
+    unsetenv("VOXGIG_GETONLY_GUARD");
+  } else {
+    setenv("VOXGIG_GETONLY_GUARD", saved, 1);
+    free(saved);
+  }
+}
+
 static void test_primary_new_sdk_smoke(void) {
   ProjectNameSDK* client = projectname_sdk_new(cmap(1, "base", v_str(PU_LIVE_BASE)));
   CHECK_STR_EQ(client->mode, "live", "new sdk mode live");
@@ -573,6 +609,7 @@ int main(void) {
   RUN(test_primary_feature_init_inactive);
   RUN(test_primary_fetcher_live);
   RUN(test_primary_fetcher_blocked_test_mode);
+  RUN(test_primary_fetcher_getonly_guard);
   RUN(test_primary_new_sdk_smoke);
 
   printf("primary: %d unit tests run\n", TESTS);

@@ -430,6 +430,28 @@ runsection('makeError', sub {
   like("$err", qr/blocked/, 'fetcher blocked: error contains "blocked"');
 }
 
+# Nothing listens on port 9: a request the guard let through fails there.
+{
+  my $live_client = ProjectNameSDK->new({ 'base' => 'http://127.0.0.1:9' });
+  my $live_utility = $live_client->get_utility;
+  my $ctx = $live_utility->{make_context}->({
+    'opname' => 'create',
+    'client' => $live_client,
+    'utility' => $live_utility,
+  }, undef);
+  my $url = 'http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01';
+  local $ENV{VOXGIG_GETONLY_GUARD} = 'TRUE';
+
+  my (undef, $err) = $live_utility->{fetcher}->($ctx, $url, { 'method' => 'POST', 'headers' => {} });
+  is(ref $err && $err->{code}, 'fetch_getonly_block', 'fetcher getonly: a POST is refused');
+  like($err->{msg}, qr{\[GET-ONLY GUARD\] blocked POST /planet/p1}, 'fetcher getonly: names the path');
+  unlike($err->{msg}, qr/GUARDKEY01/, 'fetcher getonly: leaves out the query');
+
+  my (undef, $geterr) = $live_utility->{fetcher}->($ctx, $url, { 'method' => 'GET', 'headers' => {} });
+  ok(defined $geterr && !(ref $geterr && 'fetch_getonly_block' eq ($geterr->{code} // '')),
+    'fetcher getonly: a GET reaches the closed port');
+}
+
 
 # === makeContext ===
 

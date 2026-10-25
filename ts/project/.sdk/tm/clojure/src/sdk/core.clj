@@ -1812,6 +1812,19 @@
     (HttpRequest$BodyPublishers/ofByteArray (.readAllBytes ^java.io.InputStream body))
     :else (HttpRequest$BodyPublishers/noBody)))
 
+;; A GET-only live run refuses any other method before it is sent. The error
+;; names the path alone: the query can carry a credential.
+(defn getonly-refusal [ctx fullurl method-str]
+  (let [method (str/upper-case (str method-str))
+        method (if (= "" method) "GET" method)]
+    (when (and (= "TRUE" (System/getenv "VOXGIG_GETONLY_GUARD")) (not= "GET" method))
+      (let [rest-url (if (str/includes? fullurl "://")
+                       (str/replace-first (second (str/split fullurl #"://" 2)) #"^[^/?#]*" "")
+                       fullurl)
+            path (first (str/split rest-url #"[?#]" 2))]
+        (ctx-error ctx "fetch_getonly_block"
+                   (str "[GET-ONLY GUARD] blocked " method " " (if (str/blank? path) "/" path)))))))
+
 (defn default-http-fetch [fullurl fetchdef]
   (let [method-str (or (vs/getprop fetchdef "method") "GET")
         headers (or (vs/getprop fetchdef "headers") (vs/jm))]
@@ -1856,7 +1869,9 @@
                           (str "Request blocked as test feature is active (URL was: \"" fullurl "\")"))]
           (let [sys-fetch (vs/getpath options "system.fetch")]
             (cond
-              (nil? sys-fetch) (default-http-fetch fullurl fetchdef)
+              (nil? sys-fetch) (if-let [refused (getonly-refusal ctx fullurl (vs/getprop fetchdef "method"))]
+                                 [nil refused]
+                                 (default-http-fetch fullurl fetchdef))
               (vs/isfunc sys-fetch) (sys-fetch fullurl fetchdef)
               :else [nil (ctx-error ctx "fetch_invalid" "system.fetch is not a valid function")])))))))
 

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 // ProjectName SDK utility: fetcher
 
+require_once __DIR__ . '/../core/Error.php';
+
 class ProjectNameFetcher
 {
     // Default User-Agent — many CDNs (notably Cloudflare) reject requests
@@ -28,9 +30,29 @@ class ProjectNameFetcher
         return self::$curl;
     }
 
+    public const GETONLY_ENV = 'VOXGIG_GETONLY_GUARD';
+
+    // A GET-only live run refuses any other method before it is sent, on
+    // either transport below. The path alone: the query can carry a
+    // credential, and nothing has cleaned this line.
+    public static function getOnlyRefusal(string $fullurl, string $method): ?ProjectNameError
+    {
+        if (getenv(self::GETONLY_ENV) !== 'TRUE' || $method === 'GET') {
+            return null;
+        }
+        $path = parse_url($fullurl, PHP_URL_PATH);
+        $path = is_string($path) && $path !== '' ? $path : '/';
+        fwrite(STDERR, "[GET-ONLY GUARD] blocked {$method} {$path}\n");
+        return new ProjectNameError('fetch_getonly_block', "[GET-ONLY GUARD] blocked {$method} {$path}");
+    }
+
     public static function defaultHttpFetch(string $fullurl, array $fetchdef): array
     {
         $method_str = strtoupper($fetchdef['method'] ?? 'GET');
+        $refused = self::getOnlyRefusal($fullurl, $method_str);
+        if (null !== $refused) {
+            return [null, $refused];
+        }
         $body_str = $fetchdef['body'] ?? null;
         if (is_resource($body_str)) {
             $body_str = stream_get_contents($body_str);
@@ -144,27 +166,6 @@ class ProjectNameFetcher
 
     private static function curlFetch(string $fullurl, string $method, $body_str, array $header_lines): array
     {
-        // GET-only guard for live tests — set by pub-live-test. We respect
-        // it here at the SDK level since cURL bypasses PHP stream wrappers
-        // (so the wrapper-based guard wouldn't see this call).
-        if (getenv('VOXGIG_GETONLY_GUARD') === 'TRUE' && $method !== 'GET') {
-            // The path alone: the query can carry a credential, and nothing
-            // has cleaned this line.
-            $path = parse_url($fullurl, PHP_URL_PATH);
-            $path = is_string($path) && $path !== '' ? $path : '/';
-            fwrite(STDERR, "[GET-ONLY GUARD] blocked {$method} {$path}\n");
-            return [
-                [
-                    'status' => 0,
-                    'statusText' => 'Blocked',
-                    'headers' => [],
-                    'json' => function () { return null; },
-                    'body' => '',
-                ],
-                "GET-only guard blocked {$method} {$path}",
-            ];
-        }
-
         $ch = self::curlHandle($fullurl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, false);

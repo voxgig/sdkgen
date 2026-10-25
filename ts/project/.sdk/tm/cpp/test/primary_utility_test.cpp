@@ -11,6 +11,7 @@
 // throws omni::OmniError naming the entry, which T_RUN records.
 
 #include <algorithm>
+#include <cstdlib>
 #include <memory>
 #include <set>
 #include <string>
@@ -363,6 +364,41 @@ static void fetcherBlockedTestMode() {
   }
   ASSERT_TRUE(threw, "expected error for test mode fetch");
   ASSERT_TRUE(msg.find("blocked") != std::string::npos, "expected error containing 'blocked'");
+}
+
+// Nothing listens on port 9; this target has no transport of its own, so a
+// request the guard let through fails as fetch_no_transport.
+static void fetcherGetOnlyGuard() {
+  auto liveClient = std::make_shared<ProjectNameSDK>(fhMap({{"base", Value("http://127.0.0.1:9")}}));
+  UtilityPtr liveUtility = liveClient->getUtility();
+  CtxSpec cs;
+  cs.setOpname("create");
+  cs.client = liveClient.get();
+  cs.utility = liveUtility;
+  CtxPtr ctx = liveUtility->makeContext(cs, nullptr);
+  std::string url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01";
+  const char* prior = std::getenv("VOXGIG_GETONLY_GUARD");
+  std::string saved = nullptr == prior ? "" : prior;
+  setenv("VOXGIG_GETONLY_GUARD", "TRUE", 1);
+
+  std::string codes[2];
+  std::string msg;
+  const char* methods[2] = {"POST", "GET"};
+  for (int i = 0; i < 2; i++) {
+    try {
+      liveUtility->fetcher(ctx, url, fhMap({{"method", Value(methods[i])}, {"headers", vmap()}}));
+    } catch (const SdkErrorPtr& e) {
+      codes[i] = e->code;
+      if (0 == i) msg = e->getMessage();
+    }
+  }
+  if (nullptr == prior) unsetenv("VOXGIG_GETONLY_GUARD");
+  else setenv("VOXGIG_GETONLY_GUARD", saved.c_str(), 1);
+
+  ASSERT_TRUE(codes[0] == "fetch_getonly_block", "expected the POST to be refused");
+  ASSERT_TRUE(msg.find("[GET-ONLY GUARD] blocked POST /planet/p1") != std::string::npos, "expected the path");
+  ASSERT_TRUE(msg.find("GUARDKEY01") == std::string::npos, "expected no query");
+  ASSERT_TRUE(codes[1] == "fetch_no_transport", "expected the GET to pass the guard");
 }
 
 // --- makeContext ------------------------------------------------------------
@@ -876,6 +912,7 @@ int main(int argc, char** argv) {
   T_RUN(featureInitInactive);
   T_RUN(fetcherLive);
   T_RUN(fetcherBlockedTestMode);
+  T_RUN(fetcherGetOnlyGuard);
   T_RUN(makeContextBasic);
   T_RUN(makeFetchDefBasic);
   T_RUN(makeFetchDefWithBody);

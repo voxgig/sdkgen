@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 import json
+import os
+import re
 import threading
 from http.cookiejar import DefaultCookiePolicy
 from projectname_sdk.utility.voxgig_struct import voxgig_struct as vs
+from projectname_sdk.core.error import ProjectNameError
 
 
 # Default User-Agent — many CDNs (notably Cloudflare) reject requests with
@@ -43,8 +46,28 @@ def _request_data(body):
     return None
 
 
+_GETONLY_ENV = "VOXGIG_GETONLY_GUARD"
+
+
+# A GET-only live run refuses any other method before it is sent. The error
+# names the path alone: the query can carry a credential.
+def _getonly_refusal(fullurl, method):
+    method = str(method or "GET").upper()
+    if os.environ.get(_GETONLY_ENV) != "TRUE" or method == "GET":
+        return None
+    rest = fullurl
+    if "://" in rest:
+        rest = re.sub(r"^[^/?#]*", "", rest.split("://", 1)[1])
+    path = re.split(r"[?#]", rest, maxsplit=1)[0] or "/"
+    return ProjectNameError(
+        "fetch_getonly_block", "[GET-ONLY GUARD] blocked " + method + " " + path)
+
+
 def _default_http_fetch(fullurl, fetchdef):
     method = fetchdef.get("method", "GET")
+    refused = _getonly_refusal(fullurl, method)
+    if refused is not None:
+        return None, refused
     headers = fetchdef.get("headers", {})
 
     data = _request_data(fetchdef.get("body"))

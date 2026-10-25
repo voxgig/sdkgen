@@ -296,6 +296,29 @@ defmodule ProjectName.PipelineTest do
     assert err.code == "request_no_spec"
   end
 
+  # Nothing listens on port 9: a request the guard let through fails there.
+  test "fetcher refuses a non-GET under the GET-only guard" do
+    c = ProjectName.new(S.jm(["base", "http://127.0.0.1:9"]))
+    ctx = make_ctx(c, "create")
+    url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01"
+    fetchdef = fn method -> S.jm(["method", method, "headers", S.jm([])]) end
+    prior = System.get_env("VOXGIG_GETONLY_GUARD")
+    System.put_env("VOXGIG_GETONLY_GUARD", "TRUE")
+
+    try do
+      {_, refused} = Utility.fetcher(ctx, url, fetchdef.("POST"))
+      assert refused.code == "fetch_getonly_block"
+      assert refused.msg =~ "[GET-ONLY GUARD] blocked POST /planet/p1"
+      refute refused.msg =~ "GUARDKEY01"
+
+      {_, sent} = Utility.fetcher(ctx, url, fetchdef.("GET"))
+      assert sent != nil
+      refute match?(%ProjectName.Error{code: "fetch_getonly_block"}, sent)
+    after
+      if prior, do: System.put_env("VOXGIG_GETONLY_GUARD", prior), else: System.delete_env("VOXGIG_GETONLY_GUARD")
+    end
+  end
+
   test "make_request a transport error tuple lands on the response" do
     boom = ProjectName.Error.new("boom", "boom")
     c = util_override(client(), "fetcher", fn _c, _u, _f -> {nil, boom} end)

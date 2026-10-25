@@ -11,6 +11,8 @@ exports.createLiveTransport = createLiveTransport;
 class LiveBlocked extends Error {
 }
 exports.LiveBlocked = LiveBlocked;
+// The SDK fetcher's code for a write a GET-only run refused unsent.
+const GETONLY_CODE = 'fetch_getonly_block';
 // The account answered, but holds no record the step could act on.
 class LiveEmpty extends Error {
 }
@@ -73,10 +75,12 @@ async function runLiveSteps(steps, options = {}) {
                     record({ id: step.id, state: 'passed', attempted, requests });
                 }
                 catch (error) {
+                    const refused = GETONLY_CODE === error?.code;
                     const state = error instanceof LiveEmpty ? 'empty'
-                        : error instanceof LiveBlocked ? 'blocked' : 'failed';
+                        : error instanceof LiveBlocked || refused ? 'blocked' : 'failed';
                     record({ id: step.id, state, attempted, requests,
-                        reason: 'failed' === state ? failureReason(error) : error.message });
+                        reason: refused ? 'Refused by the GET-only guard' :
+                            'failed' === state ? failureReason(error) : error.message });
                 }
                 if (attempted && (options.delayMs || 0) > 0) {
                     await new Promise(resolve => setTimeout(resolve, options.delayMs));
@@ -152,6 +156,10 @@ function createLiveTransport(timeoutMs = 30000) {
         enter(next) { context = next; },
         fetch: async (input, init) => {
             const url = new URL(String(input));
+            const method = String(init?.method || 'GET').toUpperCase();
+            if ('TRUE' === process.env.VOXGIG_GETONLY_GUARD && 'GET' !== method) {
+                throw Object.assign(new Error('[GET-ONLY GUARD] blocked ' + method + ' ' + url.pathname), { code: GETONLY_CODE });
+            }
             // A credential can travel as the agent (auth.name), so only whether
             // the request carried one is recorded, never its value.
             const request = {

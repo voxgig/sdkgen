@@ -12,6 +12,7 @@ import java.util.function.BiFunction
 import java.util.function.Supplier
 
 import KOTLINPACKAGE.core.Context
+import KOTLINPACKAGE.core.SdkError
 import KOTLINPACKAGE.utility.struct.Struct
 
 // Clients keyed by redirect policy and proxy. Each HttpClient owns a
@@ -45,12 +46,31 @@ private fun clientFor(fetchdef: MutableMap<String, Any?>): HttpClient {
   }
 }
 
+internal const val GETONLY_ENV = "VOXGIG_GETONLY_GUARD"
+
+// A GET-only live run refuses any other method before it is sent. The error
+// names the path alone: the query can carry a credential.
+internal fun getOnlyRefusal(fullurl: String, method: String): SdkError? {
+  val upper = method.uppercase()
+  if ("TRUE" != System.getenv(GETONLY_ENV) || "GET" == upper) {
+    return null
+  }
+  var rest = fullurl
+  val scheme = rest.indexOf("://")
+  if (scheme >= 0) {
+    rest = rest.substring(scheme + 3).replaceFirst(Regex("^[^/?#]*"), "")
+  }
+  val path = rest.split(Regex("[?#]"), 2)[0].ifEmpty { "/" }
+  return SdkError("fetch_getonly_block", "[GET-ONLY GUARD] blocked $upper $path", null)
+}
+
 @Suppress("UNCHECKED_CAST")
 fun defaultHttpFetch(fullurl: String, fetchdef: MutableMap<String, Any?>): MutableMap<String, Any?> {
   var method = if (fetchdef["method"] is String) fetchdef["method"] as String else ""
   if ("" == method) {
     method = "GET"
   }
+  getOnlyRefusal(fullurl, method)?.let { throw it }
 
   var bodyPublisher: HttpRequest.BodyPublisher = HttpRequest.BodyPublishers.noBody()
   val body = fetchdef["body"]

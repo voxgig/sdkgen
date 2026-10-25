@@ -12,6 +12,7 @@ my $__dir;
 BEGIN { $__dir = File::Basename::dirname(Cwd::abs_path(__FILE__)) }
 require(Cwd::abs_path("$__dir/../lib/Voxgig/Struct.pm"));
 require(Cwd::abs_path("$__dir/../core/helpers.pm"));
+require(Cwd::abs_path("$__dir/../core/error.pm"));
 
 package ProjectNameUtilities;
 
@@ -27,11 +28,28 @@ sub _http_client {
   return $HTTP_CLIENTS{$key} //= HTTP::Tiny->new(%new_args);
 }
 
+our $GETONLY_ENV = 'VOXGIG_GETONLY_GUARD';
+
+# A GET-only live run refuses any other method before it is sent. The error
+# names the path alone: the query can carry a credential.
+sub getonly_refusal {
+  my ($fullurl, $method) = @_;
+  return undef if ($ENV{$GETONLY_ENV} // '') ne 'TRUE' || 'GET' eq $method;
+  my $rest = "$fullurl";
+  $rest =~ s{\A[^:/?#]*://[^/?#]*}{};
+  my ($path) = $rest =~ m{\A([^?#]*)};
+  $path = '/' if '' eq $path;
+  return ProjectNameError->new('fetch_getonly_block',
+    "[GET-ONLY GUARD] blocked $method $path");
+}
+
 our $DefaultHttpFetch = sub {
   my ($fullurl, $fetchdef) = @_;
   $fetchdef = {} unless defined $fetchdef;
 
   my $method = uc(defined $fetchdef->{method} ? "$fetchdef->{method}" : 'GET');
+  my $refused = getonly_refusal($fullurl, $method);
+  return (undef, $refused) if $refused;
   my $body = $fetchdef->{body};
   my $headers = Voxgig::Struct::ismap($fetchdef->{headers}) ? $fetchdef->{headers} : {};
 

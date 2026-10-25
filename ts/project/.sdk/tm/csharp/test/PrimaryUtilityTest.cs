@@ -428,6 +428,46 @@ public class PrimaryUtilityTest
         Assert.Contains("blocked", err.Message);
     }
 
+    // Nothing listens on port 9: a request the guard let through fails there.
+    [Fact]
+    public void FetcherGetOnlyGuard()
+    {
+        var liveClient = new ProjectNameSDK(new Dictionary<string, object?>
+        {
+            ["base"] = "http://127.0.0.1:9",
+        });
+        var liveUtility = liveClient.GetUtility();
+        var ctx = liveUtility.MakeContext(new Dictionary<string, object?>
+        {
+            ["opname"] = "create",
+            ["client"] = liveClient,
+            ["utility"] = liveUtility,
+        }, null);
+        var url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01";
+        Dictionary<string, object?> Def(string method) => new()
+        {
+            ["method"] = method,
+            ["headers"] = new Dictionary<string, object?>(),
+        };
+
+        var prior = Environment.GetEnvironmentVariable("VOXGIG_GETONLY_GUARD");
+        Environment.SetEnvironmentVariable("VOXGIG_GETONLY_GUARD", "TRUE");
+        try
+        {
+            var refused = Assert.Throws<ProjectNameError>(() => liveUtility.Fetcher(ctx, url, Def("POST")));
+            Assert.Equal("fetch_getonly_block", refused.Code);
+            Assert.Contains("[GET-ONLY GUARD] blocked POST /planet/p1", refused.Message);
+            Assert.DoesNotContain("GUARDKEY01", refused.Message);
+
+            var sent = Assert.ThrowsAny<Exception>(() => liveUtility.Fetcher(ctx, url, Def("GET")));
+            Assert.False(sent is ProjectNameError, sent.Message);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("VOXGIG_GETONLY_GUARD", prior);
+        }
+    }
+
     [Fact]
     public void MakeContextBasic()
     {

@@ -227,6 +227,28 @@ let () =
       | (Some r, None) -> (match r.rs_err with Some e -> check_str "code" e.err_code "request_no_response" | None -> failwith "expected resp err")
       | _ -> failwith "unexpected");
 
+  (* Nothing listens on port 9; this target has no transport of its own, so
+   * a request the guard let through fails as fetch_no_transport. *)
+  test "fetcher.getonly_guard" (fun () ->
+      let cl = Sdk_client.make (jo [("base", Str "http://127.0.0.1:9")]) in
+      let ctx = mk_ctx cl "create" in
+      let url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01" in
+      let def m = jo [("method", Str m); ("headers", empty_map ())] in
+      let prior = Option.value (Sys.getenv_opt "VOXGIG_GETONLY_GUARD") ~default:"" in
+      Unix.putenv "VOXGIG_GETONLY_GUARD" "TRUE";
+      let refused = cl.cl_utility.u_fetcher ctx url (def "POST") in
+      let sent = cl.cl_utility.u_fetcher ctx url (def "GET") in
+      Unix.putenv "VOXGIG_GETONLY_GUARD" prior;
+      (match refused with
+       | (_, Some e) ->
+         check_str "code" e.err_code "fetch_getonly_block";
+         check "path" (substr_contains e.err_msg "[GET-ONLY GUARD] blocked POST /planet/p1");
+         check "query" (not (substr_contains e.err_msg "GUARDKEY01"))
+       | _ -> failwith "expected the POST to be refused");
+      match sent with
+      | (_, Some e) -> check_str "get" e.err_code "fetch_no_transport"
+      | _ -> failwith "expected the GET to pass the guard");
+
   test "make_fetch_def.guards_spec" (fun () ->
       let cl = client () in
       let ctx = mk_ctx cl "load" in

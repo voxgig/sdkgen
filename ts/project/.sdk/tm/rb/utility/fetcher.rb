@@ -41,6 +41,21 @@ module ProjectNameUtilities
     nil
   end
 
+  GETONLY_ENV = "VOXGIG_GETONLY_GUARD"
+
+  # A GET-only live run refuses any other method before it is sent. The error
+  # names the path alone: the query can carry a credential.
+  def self.getonly_refusal(ctx, fullurl, method)
+    method = method.to_s.upcase
+    method = "GET" if method.empty?
+    return nil if ENV[GETONLY_ENV] != "TRUE" || method == "GET"
+    rest = fullurl.to_s
+    rest = rest.split("://", 2)[1].sub(%r{\A[^/?#]*}, "") if rest.include?("://")
+    path = rest[/\A[^?#]*/]
+    path = "/" if path.empty?
+    ctx.make_error("fetch_getonly_block", "[GET-ONLY GUARD] blocked #{method} #{path}")
+  end
+
   DefaultHttpFetch = ->(fullurl, fetchdef) {
     method_str = fetchdef["method"] || "GET"
     body_str = fetchdef["body"]
@@ -134,7 +149,11 @@ module ProjectNameUtilities
 
     sys_fetch = VoxgigStruct.getpath(options, "system.fetch")
 
-    return DefaultHttpFetch.call(fullurl, fetchdef) if sys_fetch.nil?
+    if sys_fetch.nil?
+      refused = ProjectNameUtilities.getonly_refusal(ctx, fullurl, fetchdef["method"])
+      return nil, refused if refused
+      return DefaultHttpFetch.call(fullurl, fetchdef)
+    end
     return sys_fetch.call(fullurl, fetchdef) if sys_fetch.is_a?(Proc)
 
     return nil, ctx.make_error("fetch_invalid", "system.fetch is not a valid function")
