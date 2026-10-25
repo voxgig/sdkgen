@@ -19,6 +19,8 @@ import {
   liveStrictNote,
   pointIsGraphql,
   graphqlDirectSkip,
+  liveExampleIds,
+  liveQueryExamples,
 } from '@voxgig/sdkgen'
 
 
@@ -160,6 +162,10 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
 
+  const exampleIds = liveExampleIds(entity)
+  const listLiveQueryLines = liveQueryExamples(listPoint)
+    .map(([name, ex]) => `            query["${name}"] = ${pyLit(ex)}\n`).join('')
+
   // The *_ENTID key a live test reads a parameter's value from.
   const liveKey = (param: any): string =>
     ('id' === param.n ? entity.name : param.n.replace(/_id$/, '')) + '01'
@@ -210,7 +216,8 @@ class Test${entity.Name}Direct:
 ${liveKeysBlock(listLiveIdKeys, entidEnvVar)}        client = setup["client"]
 
         params = {}
-`)
+        query = {}
+${listLiveQueryLines ? '        if setup["live"]:\n' + listLiveQueryLines : ''}`)
       listParams.forEach((lp: any, i: number) => {
         Content(`        if setup["live"]:
             params["${lp.n}"] = setup["idmap"].get("${liveKey(lp)}")
@@ -223,6 +230,7 @@ ${liveKeysBlock(listLiveIdKeys, entidEnvVar)}        client = setup["client"]
             "path": "${listPath}",
             "method": "GET",
             "params": params,
+            "query": query,
         })
         if setup["live"]:
             if not _live_ok(result):
@@ -348,7 +356,10 @@ def _${entity.name}_direct_setup(mockres):
         })
         client = ${model.const.Name}SDK(merged_opts)
         idmap = env.get("${entidEnvVar}")
-        return {
+${0 === exampleIds.length ? '' : `        # A path parameter's example stands in for an id *_ENTID does not give.
+        idmap = {${exampleIds.map(([key, ex]) => `${JSON.stringify(key)}: ${pyLit(ex)}`).join(', ')},
+                 **(idmap if isinstance(idmap, dict) else {})}
+`}        return {
             "client": client,
             "calls": calls,
             "live": True,
@@ -381,6 +392,11 @@ def _${entity.name}_direct_setup(mockres):
 `)
   })
 })
+
+
+function pyLit(value: any): string {
+  return true === value ? 'True' : false === value ? 'False' : JSON.stringify(value)
+}
 
 
 export {

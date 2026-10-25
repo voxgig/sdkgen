@@ -30,6 +30,7 @@ import {
   entityDataIdField, envName, envToken,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveRouteExamples, liveStepExamples,
 } from '@voxgig/sdkgen'
 
 
@@ -396,7 +397,9 @@ function liveFlowGate(entity: any, needs: any, strict: boolean, strictConst: str
   }
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
-      .map(([k, v]: any) => `${JSON.stringify(k)}: setup.idmap[${JSON.stringify(v)}]`).join(', ')
+      .map(([k, v]: any) => `${JSON.stringify(k)}: setup.idmap[${JSON.stringify(v)}]`)
+      .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
+        .map(([k, ex]) => `${JSON.stringify(k)}: ${JSON.stringify(ex)}`)).join(', ')
     out += `		if setup.live {
 			liveExisting(t, ${strictConst}, setup.data, ${JSON.stringify(entity.name)}, func() (any, error) {
 				return client.${entity.Name}(nil).List(map[string]any{${match}}, nil)
@@ -511,6 +514,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`		}
 `)
   }
+  liveFill(entity, step, matchvar)
 
   // Only declare ${listvar} as a real var when a downstream validator
   // actually uses it; otherwise `_` to satisfy Go's unused-var check.
@@ -701,6 +705,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 		}
 `)
     parentMatch(step, matchvar)
+    liveFill(entity, step, matchvar)
     Content(`		${datavar}Loaded, err := ${entvar}.Load(${matchvar}, nil)
 		if err != nil {
 			t.Fatalf("load failed: %v", err)
@@ -718,6 +723,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`		${matchvar} := map[string]any{}
 `)
     parentMatch(step, matchvar)
+    liveFill(entity, step, matchvar)
     Content(`		${datavar}Loaded, err := ${entvar}.Load(${matchvar}, nil)
 		if err != nil {
 			t.Fatalf("load failed: %v", err)
@@ -771,6 +777,17 @@ const generateRemove: OpGen = (ctx, step, index) => {
 // A child's route names its parents, and an entity no earlier step has
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
+// A live step sends each example its route requires and the step leaves unbound.
+function liveFill(entity: any, step: any, matchvar: string) {
+  const fills = liveStepExamples(entity, step)
+  if (0 < fills.length) {
+    Content(`		if setup.live {
+${fills.map(([k, ex]) => `			${matchvar}[${JSON.stringify(k)}] = ${JSON.stringify(ex)}\n`).join('')}		}
+`)
+  }
+}
+
+
 function parentMatch(step: any, matchvar: string) {
   const parents = Object.entries(step.m || {})
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))

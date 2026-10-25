@@ -30,6 +30,7 @@ import {
   entityDataIdField, envName, envToken,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveRouteExamples, liveStepExamples,
 } from '@voxgig/sdkgen'
 
 
@@ -52,7 +53,9 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string): string {
   out += '        client = setup["client"]\n'
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
-      .map(([k, v]: any) => `${JSON.stringify(k)}: setup["idmap"].get(${JSON.stringify(v)})`).join(', ')
+      .map(([k, v]: any) => `${JSON.stringify(k)}: setup["idmap"].get(${JSON.stringify(v)})`)
+      .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
+        .map(([k, ex]) => `${JSON.stringify(k)}: ${pyLit(ex)}`)).join(', ')
     out += `        if setup["live"]:
             runner.live_existing(setup, LIVE_STRICT, ${JSON.stringify(entity.name)},
                                  lambda: client.${entity.Name}(None).list({${match}}, None))
@@ -420,6 +423,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`        }
 `)
   }
+  Content(liveFill(entity, step, matchvar))
 
   Content(`
         ${listvar}_result = ${entvar}.list(${matchvar}, None)
@@ -573,7 +577,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`        ${matchvar} = {
             "id": ${srcdatavar}["id"],
         }
-${parentMatch(step, matchvar)}        ${datavar}_loaded = ${entvar}.load(${matchvar}, None)
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}        ${datavar}_loaded = ${entvar}.load(${matchvar}, None)
         ${datavar}_load_result = helpers.to_map(runner.entity_data(${datavar}_loaded))
         assert ${datavar}_load_result is not None
         assert ${datavar}_load_result["id"] == ${srcdatavar}["id"]
@@ -581,7 +585,7 @@ ${parentMatch(step, matchvar)}        ${datavar}_loaded = ${entvar}.load(${match
   }
   else {
     Content(`        ${matchvar} = {}
-${parentMatch(step, matchvar)}        ${datavar}_loaded = ${entvar}.load(${matchvar}, None)
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}        ${datavar}_loaded = ${entvar}.load(${matchvar}, None)
         assert ${datavar}_loaded is not None
 `)
   }
@@ -621,6 +625,14 @@ ${parentMatch(step, matchvar)}        ${entvar}.remove(${matchvar}, None)
 // A child's route names its parents, and an entity no earlier step has
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
+// A live step sends each example its route requires and the step leaves unbound.
+function liveFill(entity: any, step: any, matchvar: string): string {
+  const fills = liveStepExamples(entity, step)
+  return 0 === fills.length ? '' : `        if setup["live"]:
+${fills.map(([k, ex]) => `            ${matchvar}[${JSON.stringify(k)}] = ${pyLit(ex)}\n`).join('')}`
+}
+
+
 function parentMatch(step: any, matchvar: string): string {
   return Object.entries(step.m || {})
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))

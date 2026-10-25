@@ -22,6 +22,7 @@ import {
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveRouteExamples, liveStepExamples,
 } from '@voxgig/sdkgen'
 
 
@@ -69,7 +70,9 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, method: string,
   out += '    let client = setup.client.clone();\n'
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
-      .map(([k, v]: any) => `(${JSON.stringify(k)}, getp(&setup.idmap, ${JSON.stringify(v)}))`).join(', ')
+      .map(([k, v]: any) => `(${JSON.stringify(k)}, getp(&setup.idmap, ${JSON.stringify(v)}))`)
+      .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
+        .map(([k, ex]) => `(${JSON.stringify(k)}, ${rustLit(ex)})`)).join(', ')
     out += `    if setup.live && !live_existing(&setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)}, || {
         client
             .${method}(Value::Noval)
@@ -478,6 +481,7 @@ const generateList: OpGen = (ctx, step, index) => {
 `)
     }
   }
+  Content(liveFill(entity, step, matchvar))
 
   Content(`
     let ${listvar} = ${entvar}
@@ -662,7 +666,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   if (hasEntId) {
     Content(`    let ${matchvar} = jo(vec![("id", getp(&${srcdatavar}, "id"))]);
-${parentMatch(step, matchvar)}    let ${datavar}_loaded = ${entvar}
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    let ${datavar}_loaded = ${entvar}
         .load(${matchvar}.clone(), Value::Noval)
         .expect("load failed");
     let ${datavar}_load_result = to_map(&${datavar}_loaded.data(None));
@@ -679,7 +683,7 @@ ${parentMatch(step, matchvar)}    let ${datavar}_loaded = ${entvar}
   }
   else {
     Content(`    let ${matchvar} = Value::empty_map();
-${parentMatch(step, matchvar)}    let ${datavar}_loaded = ${entvar}
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    let ${datavar}_loaded = ${entvar}
         .load(${matchvar}.clone(), Value::Noval)
         .expect("load failed");
     // load resolves to the ENTITY; the record is reached through data().
@@ -721,6 +725,22 @@ ${parentMatch(step, matchvar)}    ${entvar}
 // A child's route names its parents, and an entity no earlier step has
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
+function rustLit(value: any): string {
+  if ('string' === typeof value) return `Value::str(${JSON.stringify(value)})`
+  if ('boolean' === typeof value) return `Value::Bool(${value})`
+  return `Value::Num(${Number.isInteger(value) ? value + '.0' : value})`
+}
+
+
+// A live step sends each example its route requires and the step leaves unbound.
+function liveFill(entity: any, step: any, matchvar: string): string {
+  const fills = liveStepExamples(entity, step)
+  return 0 === fills.length ? '' : `    if setup.live {
+${fills.map(([k, ex]) => `        setp(&${matchvar}, ${JSON.stringify(k)}, ${rustLit(ex)});\n`).join('')}    }
+`
+}
+
+
 function parentMatch(step: any, matchvar: string): string {
   return Object.entries(step.m || {})
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))

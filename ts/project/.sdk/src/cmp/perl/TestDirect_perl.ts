@@ -19,6 +19,8 @@ import {
   liveStrictNote,
   pointIsGraphql,
   graphqlDirectSkip,
+  liveExampleIds,
+  liveQueryExamples,
 } from '@voxgig/sdkgen'
 
 import { perlStringLiteral } from './utility_perl'
@@ -171,6 +173,10 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
 
+  const exampleIds = liveExampleIds(entity)
+  const listLiveQueryLines = liveQueryExamples(listPoint)
+    .map(([name, ex]) => `    $query->{'${name}'} = ${perlScalar(ex)};\n`).join('')
+
   // The *_ENTID key a live test reads a parameter's value from.
   const liveKey = (param: any): string =>
     ('id' === param.n ? entity.name : param.n.replace(/_id$/, '')) + '01'
@@ -225,7 +231,8 @@ sub live_ok {
 ${liveKeysBlock(N, label, 'DIRECT_LIST', listParams.map(liveKey), entidEnvVar)}  my $client = $setup->{client};
 
   my $params = {};
-`)
+  my $query = {};
+${listLiveQueryLines ? '  if ($setup->{live}) {\n' + listLiveQueryLines + '  }\n' : ''}`)
       listParams.forEach((lp: any, i: number) => {
         Content(`  $params->{'${lp.n}'} = $setup->{live} ? $setup->{idmap}{'${liveKey(lp)}'} : 'direct0${i + 1}';
 `)
@@ -235,6 +242,7 @@ ${liveKeysBlock(N, label, 'DIRECT_LIST', listParams.map(liveKey), entidEnvVar)} 
     'path' => '${listPath}',
     'method' => 'GET',
     'params' => $params,
+    'query' => $query,
   });
   if ($setup->{live}) {
     if (!live_ok($result)) {
@@ -393,7 +401,10 @@ sub ${entity.name}_direct_setup {
       %{ ${N}TestRunner::live_client_options() },${apikeyLiveField}${serverLiveField}
     });
     my $idmap = $env->{'${entidEnvVar}'};
-    return {
+${0 === exampleIds.length ? '' : `    # A path parameter's example stands in for an id *_ENTID does not give.
+    $idmap = { ${exampleIds.map(([key, ex]) => `'${key}' => ${perlScalar(ex)}`).join(', ')},
+      %{ ref $idmap eq 'HASH' ? $idmap : {} } };
+`}    return {
       'client' => $client,
       'calls' => $calls,
       'live' => 1,

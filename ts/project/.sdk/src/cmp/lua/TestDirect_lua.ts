@@ -19,6 +19,8 @@ import {
   liveStrictNote,
   pointIsGraphql,
   graphqlDirectSkip,
+  liveExampleIds,
+  liveQueryExamples,
 } from '@voxgig/sdkgen'
 
 import { formatLuaValue } from './utility_lua'
@@ -162,6 +164,10 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
 
+  const exampleIds = liveExampleIds(entity)
+  const listLiveQueryLines = liveQueryExamples(listPoint)
+    .map(([name, ex]) => `      query["${name}"] = ${formatLuaValue(ex)}\n`).join('')
+
   // The *_ENTID key a live test reads a parameter's value from.
   const liveKey = (param: any): string =>
     ('id' === param.n ? entity.name : param.n.replace(/_id$/, '')) + '01'
@@ -211,7 +217,8 @@ describe("${entity.Name}Direct", function()
 ${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    local client = setup.client
 
     local params = {}
-`)
+    local query = {}
+${listLiveQueryLines ? '    if setup.live then\n' + listLiveQueryLines + '    end\n' : ''}`)
       listParams.forEach((lp: any, i: number) => {
         Content(`    if setup.live then
       params["${lp.n}"] = setup.idmap["${liveKey(lp)}"]
@@ -225,6 +232,7 @@ ${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    local client = setup.c
       path = "${listPath}",
       method = "GET",
       params = params,
+      query = query,
     })
     if setup.live then
       if not live_ok(result, err) then
@@ -374,7 +382,16 @@ function ${entity.name}_direct_setup(mockres)
     end
     local client = sdk.new(merged_opts)
     local idmap = env["${entidEnvVar}"]
-    return {
+${0 === exampleIds.length ? '' : `    if type(idmap) ~= "table" then
+      idmap = {}
+    end
+    -- A path parameter's example stands in for an id *_ENTID does not give.
+    for _k, _v in pairs({${exampleIds.map(([key, ex]) => `["${key}"] = ${formatLuaValue(ex)}`).join(', ')}}) do
+      if idmap[_k] == nil then
+        idmap[_k] = _v
+      end
+    end
+`}    return {
       client = client,
       calls = calls,
       live = true,

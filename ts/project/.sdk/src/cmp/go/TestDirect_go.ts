@@ -17,6 +17,7 @@ import {
   pointParts,
   pointIsGraphql,
   primaryPoint,
+  liveExampleIds,
 } from '@voxgig/sdkgen'
 
 
@@ -169,6 +170,17 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
 
+  const exampleIds = liveExampleIds(entity)
+  const exampleIdBlock = 0 === exampleIds.length ? '' :
+    `		// A path parameter's example stands in for an id *_ENTID does not give.
+		for k, v := range map[string]any{${exampleIds.map(([key, ex]) =>
+      `${JSON.stringify(key)}: ${JSON.stringify(ex)}`).join(', ')}} {
+			if idmap[k] == nil {
+				idmap[k] = v
+			}
+		}
+`
+
   File({ name: entity.name + '_direct_test.' + target.ext }, () => {
 
     Content(`package sdktest
@@ -245,9 +257,16 @@ ${listSkipBlock}		client := setup.client
 
 `)
 
-      if (listParams.length > 0) {
+      if (listParams.length > 0 || '' !== listLiveQueryLines) {
         Content(`		params := map[string]any{}
+		query := map[string]any{}
 `)
+        if (listLiveQueryLines) {
+          Content(`		if setup.live {
+${listLiveQueryLines}
+		}
+`)
+        }
         listLiveParams.forEach((lp: any, i: number) => {
           const placeholder = 'direct0' + (i + 1)
           Content(`		if setup.live {
@@ -262,6 +281,7 @@ ${listSkipBlock}		client := setup.client
 			"path":   "${listPath}",
 			"method": "GET",
 			"params": params,
+			"query":  query,
 		})
 `)
       } else {
@@ -577,7 +597,7 @@ func ${entity.name}DirectSetup(mockres any) *${entity.name}DirectSetupResult {
 				idmap = entidMap
 			}
 		}
-
+${exampleIdBlock}
 		return &${entity.name}DirectSetupResult{client: client, calls: calls, live: true, idmap: idmap}
 	}
 

@@ -27,6 +27,8 @@ import {
   pointIsGraphql,
   hasLiveScenarios,
   primaryPoint,
+  liveExampleIds,
+  litString,
 } from '@voxgig/sdkgen'
 
 
@@ -78,6 +80,14 @@ const TestDirect = cmp(function TestDirect(props: any) {
     return
   }
 
+  const exampleIds = liveExampleIds(entity)
+  const exampleIdLine = 0 === exampleIds.length ? '' :
+    `    // A path parameter's example stands in for an id *_ENTID does not give.
+    idmap = Object.assign({ ${exampleIds.map(([key, ex]) =>
+      `${jsKey(key)}: ${'string' === typeof ex ? litString('ts', ex) : String(ex)}`).join(', ')} },
+      'object' === typeof idmap ? idmap : {})
+`
+
   Folder({ name: entity.name }, () => {
 
     File({ name: nom(entity, 'Name') + 'Direct.test.' + target.name }, () => {
@@ -122,7 +132,7 @@ function directSetup(mockres?: any) {
     if ('string' === typeof idmap && idmap.startsWith('{')) {
       idmap = JSON.parse(idmap)
     }
-
+${exampleIdLine}
     return { client, calls, live, idmap, transport }
   }
 

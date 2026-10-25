@@ -19,6 +19,8 @@ import {
   liveStrictNote,
   pointIsGraphql,
   graphqlDirectSkip,
+  liveExampleIds,
+  liveQueryExamples,
 } from '@voxgig/sdkgen'
 
 import { formatPhpValue } from './utility_php'
@@ -162,6 +164,10 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
 
+  const exampleIds = liveExampleIds(entity)
+  const listLiveQueryLines = liveQueryExamples(listPoint)
+    .map(([name, ex]) => `            $query["${name}"] = ${formatPhpValue(ex)};\n`).join('')
+
   // The *_ENTID key a live test reads a parameter's value from.
   const liveKey = (param: any): string =>
     ('id' === param.n ? entity.name : param.n.replace(/_id$/, '')) + '01'
@@ -214,7 +220,8 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '    ')}
 ${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}        $client = $setup["client"];
 
         $params = [];
-`)
+        $query = [];
+${listLiveQueryLines ? '        if ($setup["live"]) {\n' + listLiveQueryLines + '        }\n' : ''}`)
       listParams.forEach((lp: any, i: number) => {
         Content(`        $params["${lp.n}"] = $setup["live"] ? ($setup["idmap"]["${liveKey(lp)}"] ?? null) : "direct0${i + 1}";
 `)
@@ -224,6 +231,7 @@ ${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}        $client = $setup["
             "path" => "${listPath}",
             "method" => "GET",
             "params" => $params,
+            "query" => $query,
         ]);
         if ($setup["live"]) {
             if (!self::liveOk($result)) {
@@ -371,7 +379,10 @@ function ${entity.name}_direct_setup($mockres)
         ]);
         $client = new ${model.const.Name}SDK($merged_opts);
         $idmap = $env["${entidEnvVar}"] ?? [];
-        return [
+${0 === exampleIds.length ? '' : `        // A path parameter's example stands in for an id *_ENTID does not give.
+        $idmap = array_merge([${exampleIds.map(([key, ex]) => `"${key}" => ${formatPhpValue(ex)}`).join(', ')}],
+            is_array($idmap) ? $idmap : []);
+`}        return [
             "client" => $client,
             "calls" => $calls,
             "live" => true,

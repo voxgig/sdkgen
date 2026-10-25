@@ -19,6 +19,8 @@ import {
   liveStrictNote,
   pointIsGraphql,
   graphqlDirectSkip,
+  liveExampleIds,
+  liveQueryExamples,
 } from '@voxgig/sdkgen'
 
 
@@ -160,6 +162,10 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // Build the ENTID env var name for this entity
   const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
 
+  const exampleIds = liveExampleIds(entity)
+  const listLiveQueryLines = liveQueryExamples(listPoint)
+    .map(([name, ex]) => `      query.put("${name}", ${javaLiteral(ex)});\n`).join('')
+
   File({ name: entity.Name + 'DirectTest.' + target.ext }, () => {
 
     Content(`package ${javapackage}.sdktest;
@@ -251,9 +257,10 @@ ${listSkipBlock}    ${SDK} client = setup.client;
 
 `)
 
-      if (listParams.length > 0) {
+      if (listParams.length > 0 || '' !== listLiveQueryLines) {
         Content(`    Map<String, Object> params = new LinkedHashMap<>();
-`)
+    Map<String, Object> query = new LinkedHashMap<>();
+${listLiveQueryLines ? '    if (setup.live) {\n' + listLiveQueryLines + '    }\n' : ''}`)
         listLiveParams.forEach((lp: any, i: number) => {
           const placeholder = 'direct0' + (i + 1)
           Content(`    if (setup.live) {
@@ -268,7 +275,8 @@ ${listSkipBlock}    ${SDK} client = setup.client;
     Map<String, Object> result = client.direct(jm(
         "path", "${listPath}",
         "method", "GET",
-        "params", params));
+        "params", params,
+        "query", query));
 `)
       } else {
         Content(`
@@ -533,7 +541,10 @@ ${authActive ? `      mergedOpts.put("apikey", env.get("${PROJECTNAME}_APIKEY"))
       else if (entidRaw instanceof Map) {
         idmap = (Map<String, Object>) entidRaw;
       }
-      setup.idmap = idmap;
+${0 === exampleIds.length ? '' : `      // A path parameter's example stands in for an id *_ENTID does not give.
+      idmap = new LinkedHashMap<>(idmap);
+${exampleIds.map(([key, ex]) => `      idmap.putIfAbsent("${key}", ${javaLiteral(ex)});
+`).join('')}`}      setup.idmap = idmap;
       return setup;
     }
 

@@ -22,10 +22,11 @@ import {
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveRouteExamples, liveStepExamples,
 } from '@voxgig/sdkgen'
 
 
-import { csVarName } from './utility_csharp'
+import { csVarName, formatCsValue } from './utility_csharp'
 
 
 // Convert a model name to a camelCase C# local (planet_ref01 -> planetRef01).
@@ -78,7 +79,9 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, strict: boolean
   out += '        var client = setup.Client;\n'
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
-      .map(([k, v]: any) => ` [${JSON.stringify(k)}] = setup.Idmap[${JSON.stringify(v)}],`).join('')
+      .map(([k, v]: any) => ` [${JSON.stringify(k)}] = setup.Idmap[${JSON.stringify(v)}],`)
+      .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
+        .map(([k, ex]) => ` [${JSON.stringify(k)}] = ${formatCsValue(ex)},`)).join('')
     out += `        if (setup.Live && !TestRunner.LiveExisting(setup.Data, LIVE_STRICT, ${JSON.stringify(entity.name)},
             () => client.${entity.Name}().List(new Dictionary<string, object?> {${match} }, null)))
         {
@@ -482,6 +485,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`        };
 `)
   }
+  Content(liveFill(entity, step, matchvar))
 
   Content(`
         var ${listvar}Result = ${entvar}.List(${matchvar}, null);
@@ -648,7 +652,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
         {
             ["id"] = ${srcdatavar}!["id"],
         };
-${parentMatch(step, matchvar)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
         var ${datavar}LoadResult = Helpers.ToMapAny(${datavar}Loaded is IEntity le ? le.Data() : ${datavar}Loaded);
         Assert.True(${datavar}LoadResult != null, "expected load result to be a map");
         Assert.True(StructRunner.DeepEqual(${datavar}LoadResult!["id"], ${srcdatavar}["id"]),
@@ -657,7 +661,7 @@ ${parentMatch(step, matchvar)}        var ${datavar}Loaded = ${entvar}.Load(${ma
   }
   else {
     Content(`        var ${matchvar} = new Dictionary<string, object?>();
-${parentMatch(step, matchvar)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
         Assert.True(${datavar}Loaded != null, "expected load result to be non-null");
 `)
   }
@@ -694,6 +698,16 @@ ${parentMatch(step, matchvar)}        ${entvar}.Remove(${matchvar}, null);
 // A child's route names its parents, and an entity no earlier step has
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
+// A live step sends each example its route requires and the step leaves unbound.
+function liveFill(entity: any, step: any, matchvar: string): string {
+  const fills = liveStepExamples(entity, step)
+  return 0 === fills.length ? '' : `        if (setup.Live)
+        {
+${fills.map(([k, ex]) => `            ${matchvar}[${JSON.stringify(k)}] = ${formatCsValue(ex)};\n`).join('')}        }
+`
+}
+
+
 function parentMatch(step: any, matchvar: string): string {
   return Object.entries(step.m || {})
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))

@@ -1,6 +1,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { liveStrict, liveStrictNote, liveFlowNeeds, guardFlowSteps } from '../dist/sdkgen'
+import {
+  liveStrict, liveStrictNote, liveFlowNeeds, guardFlowSteps,
+  liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
+} from '../dist/sdkgen'
 
 const model = (global?: boolean, go?: boolean) => ({ main: { kit: {
   test: null == global ? {} : { live: { strict: global } },
@@ -61,4 +64,60 @@ test('a step switched off for want of a route is marked for the live harness', (
   const [guarded, disabled] = model.main.kit.flow.BasicSignalFlow.step as any[]
   assert.deepEqual([guarded.a, guarded.unreachable], [false, true])
   assert.deepEqual([disabled.a, disabled.unreachable], [false, undefined])
+})
+
+
+const arg = (k: string, n: string, r: boolean, ex?: any) => ({ k, n, r, ...(undefined === ex ? {} : { ex }) })
+const route = (o: string, params: any[] = [], query: any[] = [], extra: any = {}) =>
+  ({ m: 'GET', o, g: { params, query }, ...extra })
+
+test('a live id key is the one the live harness reads', () => {
+  assert.equal(liveIdKey('product', 'id'), 'product01')
+  assert.equal(liveIdKey('product', 'board_id'), 'board01')
+  assert.equal(liveIdKey('product', 'slug'), 'slug01')
+})
+
+test('a direct test defaults each path parameter id to its example', () => {
+  const entity = { name: 'product', op: {
+    list: { points: [route('/api/{slug}.json', [arg('param', 'slug', true, 'php')])] },
+    load: { points: [route('/api/{slug}/{id}', [arg('param', 'slug', true, 'other'),
+      arg('param', 'id', true, 7), arg('param', 'shelf_id', true)])] },
+  } }
+  assert.deepEqual(liveExampleIds(entity), [['product01', 7], ['slug01', 'php']])
+  assert.deepEqual(liveExampleIds({ name: 'thread', op: { list: { points: [
+    route('/{board}/threads.json', [arg('param', 'board', true)])] } } }), [])
+})
+
+test('a live request sends the examples of its required query parameters only', () => {
+  assert.deepEqual(liveQueryExamples(route('/offers', [], [
+    arg('query', 'asset', true, 'BTC'), arg('query', 'chain', false, 'eth'),
+    arg('query', 'limit', true), arg('query', 'ids', true, ['a'])])), [['asset', 'BTC']])
+  assert.deepEqual(liveQueryExamples(undefined), [])
+})
+
+test('a live flow fills the route the live harness takes', () => {
+  const release = { name: 'release', op: { list: { points: [
+    route('/api/{slug}.json', [arg('param', 'slug', true, 'php')]), route('/api/products.json')] } } }
+  assert.deepEqual(liveRouteExamples(release, 'list', []), [['slug', 'php']])
+  assert.deepEqual(liveRouteExamples(release, 'list', ['slug']), [])
+
+  const thread = { name: 'thread', op: { list: { points: [
+    route('/{board}/threads.json', [arg('param', 'board', true)]), route('/all.json', [], [arg('query', 'q', true, 'x')])] } } }
+  assert.deepEqual(liveRouteExamples(thread, 'list', []), [['q', 'x']])
+  assert.deepEqual(liveRouteExamples({ name: 'none', op: { list: { points: [
+    route('/{board}/threads.json', [arg('param', 'board', true)])] } } }, 'list', []), [])
+
+  const actions = { name: 'signal', op: { list: { points: [
+    route('/signal/weak', [], [arg('query', 'q', true, 'x')], { q: { $action: 'weak' } })] } } }
+  assert.deepEqual(liveRouteExamples(actions, 'list', []), [])
+})
+
+test('a load of a known record fills only its required query', () => {
+  const book = { name: 'book', id: { field: 'id' }, op: { load: { points: [
+    route('/shelf/{shelf}/book/{id}', [arg('param', 'shelf', true, 's1'), arg('param', 'id', true, 'b1')],
+      [arg('query', 'lang', true, 'en')])] } } }
+  assert.deepEqual(liveStepExamples(book, { o: 'load' }), [['lang', 'en']])
+  assert.deepEqual(liveStepExamples({ ...book, id: undefined }, { o: 'load', m: { shelf: 'shelf01' } }),
+    [['id', 'b1'], ['lang', 'en']])
+  assert.deepEqual(liveStepExamples(book, { o: 'update' }), [])
 })
