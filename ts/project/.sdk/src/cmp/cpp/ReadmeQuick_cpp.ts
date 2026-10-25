@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -160,7 +160,7 @@ try {
     }
 
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)

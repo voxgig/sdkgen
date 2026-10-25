@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, phpEntityAccessor, opNeedsAction, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, phpEntityAccessor, opNeedsAction, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -144,7 +144,7 @@ $${entity.name}s = $client->${phpEntityAccessor(entity.Name)}()->list(${listMatc
       // Members come from the SAME shape the runtime validates
       // (opRequestShape): every required member must appear — including a
       // required id and parent keys like page_id.
-      const createItems = opRequestShape(entity, 'create').items
+      const createItems = requestExampleItems(entity, 'create')
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
 

@@ -1,5 +1,5 @@
 
-import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, opRequestShape, requiredItems, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, canonKey, canonScalarKey, entityIdField, pickExampleEntity, requiredItems, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -47,7 +47,7 @@ auto client = ${model.const.Name}SDK::testSDK();
           `{"${cppEscape(it.name)}", ${isMatchOp && it.name === idF ? 'Value("test01")' : cppLit(it.type)}}`).join(', ')}})`
         : 'Value::undef()'
     } else if ('create' === primaryOp || 'update' === primaryOp || 'patch' === primaryOp) {
-      const items = opRequestShape(exampleEntity, primaryOp).items
+      const items = requestExampleItems(exampleEntity, primaryOp)
         .filter((it: any) => it.name !== idF && it.name !== 'id')
       const required = items.filter((it: any) => !it.optional)
       const chosen = required.length ? required : items.slice(0, 3)

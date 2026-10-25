@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, javaMap, javaMapOf, matchExampleItems, javaMapItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, javaMap, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -279,7 +279,7 @@ results.forEach(item => println(item.data()))
 `)
           }
           else if ('create' === opname) {
-            const createItems = javaMapItems(opRequestShape(ent, 'create').items)
+            const createItems = javaMapItems(requestExampleItems(ent, 'create'))
               .filter((it: any) => !it.optional)
             const createMap = javaMap(createItems.length, 'java.util.')
             Content(`\`\`\`scala
@@ -296,7 +296,7 @@ val result = client.${accessor}(null).create(${createMap.open}
 `)
           }
           else if ('update' === opname || 'patch' === opname) {
-            const updateItems = javaMapItems(opRequestShape(ent, opname).items)
+            const updateItems = javaMapItems(requestExampleItems(ent, opname))
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName, luaKey, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -296,7 +296,7 @@ local results, err = client:${ent.Name}():list(${listMatchArg('lua', ent)})
             // a required id and parent keys like page_id (the --[[ type ]]
             // placeholders mark the block as an illustration for the doc
             // gate).
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`lua
 local result, err = client:${ent.Name}():create({
@@ -313,7 +313,7 @@ local result, err = client:${ent.Name}():create({
           else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape the
             // runtime validates — then the patch-fields note.
-            const updateItems = opRequestShape(ent, opname).items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityOps, goModule, serverVariables, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityOps, goModule, serverVariables, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -50,7 +50,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     const idF = entityIdField(exampleEntity)
 
     const exampleFields = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)

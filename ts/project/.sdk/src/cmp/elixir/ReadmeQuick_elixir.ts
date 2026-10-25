@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requiredItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, opRequestShape, entityIdField, entityDataIdField, entityOps, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requiredItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -140,7 +140,7 @@ end
     // Model-driven example fields: derive the create/update body from the op
     // shape so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)

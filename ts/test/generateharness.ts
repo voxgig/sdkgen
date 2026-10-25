@@ -638,6 +638,38 @@ main: kit: flow: Basic${name[0].toUpperCase() + name.slice(1)}Flow: {
 }
 
 
+// A create whose routes are each nested under a parent of their own, so the
+// parameter every route needs reaches none of them, as loppee's attachment URL.
+function parentedCreate(): string {
+  const param = (n: string) => `{ k: "param", n: "${n}", or: "${n}", r: true, t: "\`$STRING\`" }`
+  const point = (parent: string) => `{
+          bf: false
+          g: { params: [ ${param('attachment_id')}, ${param(parent + '_id')} ] }
+          m: "POST", o: "/${parent}/{${parent}_id}/attachment/{attachment_id}/url"
+          s: [{ lit: "${parent}" }, { var: "${parent}_id" }, { lit: "attachment" }, { var: "attachment_id" }, { lit: "url" }]
+          t: { req: "\`reqdata\`", res: "\`body\`" }
+          q: { exist: ["attachment_id", "${parent}_id"] }
+        }`
+  return entityOnly(`
+main: kit: entity: attachment_url: {
+  alias: field: {}
+  name: "attachment_url"
+  id: { field: "id", name: "id" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "signed_url": { h: 'SignedUrl', n: "signed_url", r: true, t: "\`$STRING\`" }
+  }
+  op: create: { name: "create", points: [ ${point('conversation')} ${point('message')} ] }
+}
+
+main: kit: flow: BasicAttachmentUrlFlow: {
+  entity: "attachment_url", kind: "basic", name: "BasicAttachmentUrlFlow"
+  step: [ { o: "create", i: { ref: "attachment_url_ref01" } } ]
+}
+`)
+}
+
+
 // An entity, alone in the model, that loads by id and lists only through its actions.
 function actionList(): string {
   const action = (name: string) => `{
@@ -1439,6 +1471,7 @@ export {
   selectorLoad,
   shadowedLoad,
   actionList,
+  parentedCreate,
   namedFieldEntity,
   retypedList,
   seedableList,

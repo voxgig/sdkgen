@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf, matchExampleItems, requiredItems, javaMapItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps, javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -157,7 +157,7 @@ catch {
     // Model-driven example fields: derive the create/update body from the op
     // shape (opRequestShape) so the docs reference REAL writable fields.
     const examplePairs = (opname: string): string[] => {
-      const items = javaMapItems(opRequestShape(exampleEntity, opname).items)
+      const items = javaMapItems(requestExampleItems(exampleEntity, opname))
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, safeVarName, exampleVarName , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, litString } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, safeVarName, exampleVarName , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -302,7 +302,7 @@ results.each { |item| puts item.data_get }
             // a required id and parent keys like page_id — with a real,
             // executable literal (the doc test RUNS this block, so a comment
             // placeholder would break it).
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`ruby
 result = client.${ent.Name}.create({
@@ -319,7 +319,7 @@ result = client.${ent.Name}.create({
           else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape the
             // runtime validates — then the patch-fields note.
-            const updateItems = opRequestShape(ent, opname).items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, opRequestShape, entityIdField, entityOps, safeVarName, exampleVarName, jsKey, matchArg, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, entityIdField, entityOps, safeVarName, exampleVarName, jsKey, matchArg, listMatchArg, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -45,7 +45,7 @@ const client = ${ctor}
     const idF = entityIdField(exampleEntity)
     const eVar = exampleVarName(exampleEntity.name, 'js')
     const exampleFields = (opname: string): string[] => {
-      const items = opRequestShape(exampleEntity, opname).items
+      const items = requestExampleItems(exampleEntity, opname)
         .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
           ('create' === opname && !it.optional))
       const required = items.filter((it: any) => !it.optional)

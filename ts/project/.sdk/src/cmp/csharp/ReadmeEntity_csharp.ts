@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, opNeedsAction, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opNeedsAction, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -150,7 +150,7 @@ var ${eVar}List = client.${entity.Name}().List(${csListMatch(entity)});
       // Members come from the SAME shape the runtime validates
       // (opRequestShape): every required member must appear — including a
       // required id and parent keys like page_id — with a real literal.
-      const createItems = opRequestShape(entity, 'create').items
+      const createItems = requestExampleItems(entity, 'create')
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
 

@@ -5,6 +5,7 @@ exports.helperLang = helperLang;
 exports.primaryOpCall = primaryOpCall;
 exports.idLiteral = idLiteral;
 exports.requiredItems = requiredItems;
+exports.requestExampleItems = requestExampleItems;
 exports.matchExampleItems = matchExampleItems;
 exports.matchArg = matchArg;
 exports.listMatchArg = listMatchArg;
@@ -102,6 +103,11 @@ function requiredItems(ent, op) {
     const fewest = points.reduce((a, b) => (0, opShape_1.pointRequires)(b).length < (0, opShape_1.pointRequires)(a).length ? b : a);
     return needed({ ...ent, op: { ...ent.op, [op]: { ...ent.op[op], points: [fewest] } } });
 }
+// Shape-ordered request members, required as requiredItems decides, so an example reaches a route.
+function requestExampleItems(ent, op) {
+    const required = new Set(requiredItems(ent, op).map((it) => it.name));
+    return (0, opShape_1.opRequestShape)(ent, op).items.map((it) => ({ ...it, optional: !required.has(it.name) }));
+}
 // A load or remove example's members: requiredItems and the id, in shape order.
 function matchExampleItems(ent, op, idF) {
     const required = Object.create(null);
@@ -159,7 +165,7 @@ function seededList(lang, ent, idF, key) {
 function dataArg(lang, ent, op, idF) {
     const routed = new Set((0, opShape_1.opParams)(ent?.op?.[op]).map((p) => p.n));
     const addresses = (it) => it.name === idF || it.name === 'id' || routed.has(it.name);
-    const items = (0, opShape_1.opRequestShape)(ent, op).items
+    const items = requestExampleItems(ent, op)
         .filter((it) => (it.name !== idF && it.name !== 'id') || !it.optional);
     const required = items.filter((it) => !it.optional);
     const changed = ('update' === op || 'patch' === op) && required.every(addresses) ?

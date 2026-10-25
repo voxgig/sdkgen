@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -299,7 +299,7 @@ List.iter (fun e -> print_endline (stringify (e.e_data_get ()))) results
 `)
           }
           else if ('create' === opname) {
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`ocaml
 let result = (Sdk_client.${fn} client Noval).e_create (jo [
@@ -315,7 +315,7 @@ let result_data = result.e_data_get ()
 `)
           }
           else if ('update' === opname || 'patch' === opname) {
-            const updateItems = opRequestShape(ent, opname).items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))

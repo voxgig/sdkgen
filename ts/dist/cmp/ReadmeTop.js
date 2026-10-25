@@ -254,7 +254,7 @@ ${aboutMd.trim()}
                 // server-assigned on a normal create, but an op whose id comes from a
                 // PATH PARAMETER requires it, and the typed CreateData then rejects a
                 // body without it. Same rule as dataArg in helpers/opExample.
-                const shapeItems = (0, opShape_1.opRequestShape)(exEnt, primaryOp).items
+                const shapeItems = (0, opExample_1.requestExampleItems)(exEnt, primaryOp)
                     .filter((it) => (it.name !== exIdF && it.name !== 'id') || !it.optional);
                 const required = shapeItems.filter((it) => !it.optional);
                 const chosen = required.length ? required : shapeItems.slice(0, 3);

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, opRequestShape, targetFeatures, bodyNote, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, entityOps, targetFeatures, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -300,7 +300,7 @@ for _, item := range results.([]any) {
             // required id), each with a type-correct example VALUE via
             // exampleValue — a `"name": /* type */` comment is not a value
             // and yields uncompilable Go.
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`go
 result, err := client.${ent.Name}(nil).Create(map[string]any{
@@ -322,7 +322,7 @@ fmt.Println(result.(sdk.Entity).Data())
             // The id key plus every REQUIRED data member — the same shape
             // that generates the op's request data — then the patch-fields
             // note.
-            const updateItems = opRequestShape(ent, opname).items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))

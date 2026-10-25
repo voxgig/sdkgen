@@ -77,7 +77,7 @@ import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/ser
 import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools'
 import type { McpTool } from './helpers/mcpTools'
 import {
-  primaryOpCall, idLiteral, requiredItems, matchExampleItems, matchArg, listMatchArg, seededList, dataArg, javaMap, javaMapOf, javaMapItems, litFor,
+  primaryOpCall, idLiteral, requiredItems, requestExampleItems, matchExampleItems, matchArg, listMatchArg, seededList, dataArg, javaMap, javaMapOf, javaMapItems, litFor,
   litPair, litString,
 } from './helpers/opExample'
 import type { ExampleLang, LiteralLang } from './helpers/opExample'
@@ -1203,6 +1203,7 @@ export {
   primaryOpCall,
   idLiteral,
   requiredItems,
+  requestExampleItems,
   matchExampleItems,
   matchArg,
   listMatchArg,

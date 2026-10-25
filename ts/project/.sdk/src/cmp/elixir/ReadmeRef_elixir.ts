@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField, opRequestShape , targetFeatures, opNeedsAction, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, File, isAuthActive, entityIdField , targetFeatures, opNeedsAction, bodyNote, elixirAccessor, entityCollection, exampleVarName, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -230,7 +230,7 @@ ${eVar}s = ${Name}.Entity.${EName}.list(${eVar}${elixirListArgs(ent, Name)})
 `)
           }
           else if ('create' === opname) {
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`elixir
 ${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
@@ -245,7 +245,7 @@ ${eVar} = ${Name}.Entity.${EName}.create(${eVar}, ${Name}.Helpers.deep(%{
 `)
           }
           else if ('update' === opname || 'patch' === opname) {
-            const updateItems = opRequestShape(ent, opname).items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))

@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, opRequestShape, safeVarName, exampleVarName, luaKey, opNeedsAction, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, entityIdField, safeVarName, exampleVarName, luaKey, opNeedsAction, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -145,7 +145,7 @@ local ${eVar}s, err = client:${entity.Name}():list(${listMatchArg('lua', entity)
       // required id and parent keys like page_id — with a real, executable
       // literal (the doc test RUNS this block, so a nil member would vanish
       // from the table and a comment placeholder would not parse).
-      const createItems = opRequestShape(entity, 'create').items
+      const createItems = requestExampleItems(entity, 'create')
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
 

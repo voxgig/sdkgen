@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, isHttpBasicAuth, packageName, envName, serverVariables, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, requiredItems, jsProp } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, isHttpBasicAuth, packageName, envName, serverVariables, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, jsKey, listMatchArg, matchExampleItems, requiredItems, jsProp, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -153,7 +153,7 @@ try {
     if (opnames.includes('create') || opnames.includes('update') || opnames.includes('patch') ||
       opnames.includes('remove')) {
       const exampleFields = (opname: string): string[] => {
-        const items = opRequestShape(exampleEntity, opname).items
+        const items = requestExampleItems(exampleEntity, opname)
           .filter((it: any) => (it.name !== idF && it.name !== 'id') ||
             ('create' === opname && !it.optional))
         const required = items.filter((it: any) => !it.optional)

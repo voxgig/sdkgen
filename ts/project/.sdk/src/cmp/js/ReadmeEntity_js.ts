@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey, opNeedsAction, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, safeVarName, exampleVarName, jsKey, opNeedsAction, listMatchArg, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -134,7 +134,7 @@ const ${eVar}s = await client.${entity.Name}().list(${listMatchArg('js', entity)
       // required id and parent keys like page_id — each with a type-correct
       // example VALUE via exampleValue — a `name: /* type */` comment is not
       // a value and yields invalid code.
-      const createItems = opRequestShape(entity, 'create').items
+      const createItems = requestExampleItems(entity, 'create')
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
 

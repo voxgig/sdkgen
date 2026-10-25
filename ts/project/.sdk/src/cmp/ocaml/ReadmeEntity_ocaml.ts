@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonKey, canonScalarKey, entityIdField, opRequestShape, opNeedsAction, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonKey, canonScalarKey, entityIdField, opNeedsAction, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -162,7 +162,7 @@ let ${fn}_datas = List.map (fun e -> e.e_data_get ()) ${fn}s
     }
 
     if (callable.includes('create')) {
-      const createItems = opRequestShape(entity, 'create').items
+      const createItems = requestExampleItems(entity, 'create')
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
 

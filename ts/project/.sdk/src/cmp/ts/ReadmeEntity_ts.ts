@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, entityIdField, opRequestShape, safeVarName, exampleVarName, jsKey, opNeedsAction, listMatchArg, matchExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, entityIdField, safeVarName, exampleVarName, jsKey, opNeedsAction, listMatchArg, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -133,7 +133,7 @@ const ${eVar}s = await client.${entity.Name}().list(${listMatchArg('ts', entity)
       // (every required member appears), with a type-correct example VALUE
       // via exampleValue — a `name: /* type */` comment is not a value and
       // yields invalid TS (TS1109), so the example must carry a real literal.
-      const createItems = opRequestShape(entity, 'create').items
+      const createItems = requestExampleItems(entity, 'create')
         .filter((it: any) => !it.optional)
       Content(`#### Example: Create
 

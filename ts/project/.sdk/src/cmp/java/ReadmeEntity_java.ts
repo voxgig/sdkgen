@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, entityIdField, opRequestShape, opNeedsAction, javaMap, javaMapOf, matchExampleItems, javaMapItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, entityIdField, opNeedsAction, javaMap, javaMapOf, matchExampleItems, javaMapItems, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -138,7 +138,7 @@ Object ${eVar}List = client.${accessor}(null).list(${javaListMatch(entity)}, nul
       // Members come from the SAME shape the runtime validates
       // (opRequestShape): every required member must appear — including a
       // required id and parent keys like page_id — with a real literal.
-      const createItems = javaMapItems(opRequestShape(entity, 'create').items)
+      const createItems = javaMapItems(requestExampleItems(entity, 'create'))
         .filter((it: any) => !it.optional)
       const createMap = javaMap(createItems.length)
       Content(`#### Example: Create

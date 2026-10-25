@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, shadowedLoad, actionList, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, shadowedLoad, actionList, parentedCreate, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY,
@@ -5964,6 +5964,24 @@ main: kit: flow: BasicBadgeFlow: {
       }
     }
     deepStrictEqual(wrong, [], 'load examples that leave out a route parameter:\n' + wrong.join('\n'))
+  })
+
+
+  test('a create whose routes each need a parent of their own passes one route\'s parent, in every target', async () => {
+    const targets = sdkTargets()
+    const out = await generate(targets, undefined, parentedCreate())
+
+    // A placeholder body is an illustration, not a call.
+    const placeholder = /\/\*|\.\.\./
+    const wrong: string[] = []
+    for (const target of [...targets, 'top']) {
+      const files = 'top' === target ? { 'top/README.md': out['README.md'] } : out
+      const found = opCalls(files, target, 'create', /[Aa]ttachment_?[Uu]rl/)
+        .filter((line: string) => !placeholder.test(line))
+      ok('top' === target || 0 < found.length, target + ': no create example found')
+      wrong.push(...found.filter((line: string) => !/\b(conversation|message)_id\b/.test(line)))
+    }
+    deepStrictEqual(wrong, [], 'create examples that reach no route:\n' + wrong.join('\n'))
   })
 
 

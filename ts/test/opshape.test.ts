@@ -9,7 +9,7 @@ import Path from 'node:path'
 import {
   opRequestShape, opTypeName, OP_SUFFIX, entityClassName, pickExampleEntity,
   opReachable, opNeedsAction, entityOps, guardFlowSteps, ungeneratedOps, warnUngeneratedOps,
-  entityIdField, requiredItems, matchArg,
+  entityIdField, requiredItems, matchArg, requestExampleItems, dataArg,
 } from '../dist/sdkgen.js'
 import { targetOrigins, resolvesBundled, resolveSource, BUNDLED } from '../dist/action/resolve.js'
 
@@ -390,6 +390,32 @@ describe('opRequestShape — multi-point param merging', () => {
     }
     strictEqual(matchArg('ts', shadowedRoute(false), 'load', null, ''),
       '{ path: "example", region: "example", version: "example" }')
+  })
+
+
+  // loppee's attachment URL: each create route has a parent of its own.
+  function parentedCreate() {
+    const param = (n: string) => ({ k: 'param', n, t: '`$STRING`', r: true })
+    const point = (parent: string) => ({
+      bf: false,
+      s: [{ lit: parent }, { var: parent + '_id' }, { lit: 'attachment' }, { var: 'attachment_id' }],
+      g: { params: [param('attachment_id'), param(parent + '_id')] },
+    })
+    return {
+      Name: 'AttachmentUrl', name: 'attachment_url',
+      fields: { id: { n: 'id', t: '`$STRING`', r: true } },
+      op: { create: { points: [point('conversation'), point('message')] } },
+    }
+  }
+
+  test('a create example takes one route\'s parent where no member both routes need reaches either', () => {
+    const ent = parentedCreate()
+    deepStrictEqual(optionalByName(opRequestShape(ent, 'create').items),
+      { attachment_id: false, conversation_id: true, message_id: true }, 'the request type changed')
+    deepStrictEqual(optionalByName(requestExampleItems(ent, 'create')),
+      { attachment_id: false, conversation_id: false, message_id: true })
+    strictEqual(dataArg('ts', ent, 'create', null),
+      '{ attachment_id: "example", conversation_id: "example" }')
   })
 })
 

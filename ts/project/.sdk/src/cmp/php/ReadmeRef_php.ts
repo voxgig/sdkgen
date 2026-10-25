@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, opRequestShape, phpEntityAccessor, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString } from '@voxgig/sdkgen'
+import { cmp, each, Content, canonToType, canonKey, canonScalarKey, File, isAuthActive, entityIdField, phpEntityAccessor, targetFeatures, opNeedsAction, bodyNote, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
 import { ReadmeRefFeatures } from '@voxgig/sdkgen'
 
 import {
@@ -294,7 +294,7 @@ $results = $client->${phpEntityAccessor(ent.Name)}()->list(${listMatchArg('php',
             // Members come from the SAME shape the runtime validates
             // (opRequestShape): every required member must appear — including
             // a required id and parent keys like page_id.
-            const createItems = opRequestShape(ent, 'create').items
+            const createItems = requestExampleItems(ent, 'create')
               .filter((it: any) => !it.optional)
             Content(`\`\`\`php
 $result = $client->${phpEntityAccessor(ent.Name)}()->create([
@@ -311,7 +311,7 @@ $result = $client->${phpEntityAccessor(ent.Name)}()->create([
           else if ('update' === opname || 'patch' === opname) {
             // The id key plus every REQUIRED data member — the same shape the
             // runtime validates — then the patch-fields note.
-            const updateItems = opRequestShape(ent, opname).items
+            const updateItems = requestExampleItems(ent, opname)
               .filter((it: any) => !it.optional || it.name === idF)
               .sort((a: any, b: any) =>
                 (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1))
