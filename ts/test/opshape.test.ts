@@ -9,7 +9,7 @@ import Path from 'node:path'
 import {
   opRequestShape, opTypeName, OP_SUFFIX, entityClassName, pickExampleEntity,
   opReachable, opNeedsAction, entityOps, guardFlowSteps, ungeneratedOps, warnUngeneratedOps,
-  entityIdField,
+  entityIdField, requiredItems, matchArg,
 } from '../dist/sdkgen.js'
 import { targetOrigins, resolvesBundled, resolveSource, BUNDLED } from '../dist/action/resolve.js'
 
@@ -345,6 +345,51 @@ describe('opRequestShape — multi-point param merging', () => {
     const { items } = opRequestShape(makeNestedEntity(), 'invoke')
     const opt = optionalByName(items)
     deepStrictEqual(opt, { id: false })
+  })
+
+
+  // Maplestory's /api/wz/{region}/{version}/{path} also declares optional
+  // query parameters named region and version; reading them last made the
+  // route's own parameters optional, so neither the type nor the example
+  // asked for values the URL cannot be built without.
+  function shadowedRoute(nested: boolean) {
+    const param = (n: string) => ({ k: 'param', n, t: '`$STRING`', r: true })
+    const query = (n: string) => ({ k: 'query', n, t: '`$STRING`', r: false })
+    const deep = {
+      s: [{ lit: 'wz' }, { var: 'region' }, { var: 'version' }, { var: 'path' }],
+      g: { params: [param('path'), param('region'), param('version')],
+        query: [query('region'), query('version')] },
+      q: { exist: ['path', 'region', 'version'] },
+    }
+    const root = {
+      s: [{ lit: 'wz' }],
+      g: { params: [param('region'), param('version')] },
+      q: { exist: ['region', 'version'] },
+    }
+    return {
+      Name: 'Wzn', name: 'wzn', fields: {},
+      op: { load: { points: nested ? [deep, root] : [deep] } },
+    }
+  }
+
+  test('a route parameter stays required beside an optional query parameter of its name', () => {
+    deepStrictEqual(optionalByName(opRequestShape(shadowedRoute(false), 'load').items),
+      { path: false, region: false, version: false })
+    deepStrictEqual(optionalByName(opRequestShape(shadowedRoute(true), 'load').items),
+      { path: true, region: false, version: false })
+  })
+
+  test('the load example then passes what its type requires, and reaches a route', () => {
+    for (const nested of [false, true]) {
+      const ent = shadowedRoute(nested)
+      const required = opRequestShape(ent, 'load').items
+        .filter((it: any) => !it.optional).map((it: any) => it.name)
+      const given = requiredItems(ent, 'load').map((it: any) => it.name)
+      deepStrictEqual(given, required, 'the example and the type disagree')
+      ok(opReachable(ent.op.load, given), 'the example reaches no route: ' + given.join(', '))
+    }
+    strictEqual(matchArg('ts', shadowedRoute(false), 'load', null, ''),
+      '{ path: "example", region: "example", version: "example" }')
   })
 })
 

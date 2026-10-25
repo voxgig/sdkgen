@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, shadowedLoad, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY,
@@ -5944,6 +5944,26 @@ main: kit: flow: BasicBadgeFlow: {
         .filter((line: string) => !/email/.test(line)).map((line) => shape + ' ' + line))
     }
     deepStrictEqual(wrong, [], 'load examples that pass no point\'s selector:\n' + wrong.join('\n'))
+  })
+
+
+  test('a load passes the route parameters an optional query parameter shadows, in every target', async () => {
+    const targets = allTargets().filter((t: string) => !NON_SDK_TARGETS.includes(t))
+    const out = await generate(targets, undefined, shadowedLoad())
+
+    // audio has one route, needing all three; wzn's shorter route needs region and version.
+    const needs: [RegExp, string[]][] = [[/[Aa]udio/, ['path', 'region', 'version']], [/[Ww]zn/, ['region', 'version']]]
+    const wrong: string[] = []
+    for (const target of [...targets, 'top']) {
+      const files = 'top' === target ? { 'top/README.md': out['README.md'] } : out
+      for (const [entity, names] of needs) {
+        const found = opCalls(files, target, 'load', entity)
+        ok('top' === target || 0 < found.length, target + ': no load example found for ' + entity)
+        wrong.push(...found.filter((line: string) =>
+          !names.every((name) => new RegExp('\\b' + name + '\\b').test(line))))
+      }
+    }
+    deepStrictEqual(wrong, [], 'load examples that leave out a route parameter:\n' + wrong.join('\n'))
   })
 
 

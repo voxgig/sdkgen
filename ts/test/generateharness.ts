@@ -601,6 +601,43 @@ main: kit: flow: ${flow}: {
 }
 
 
+// Loads whose route parameters region and version are also declared as
+// optional query parameters: audio on one route, wzn on its own route and on
+// a shorter one needing only region and version.
+function shadowedLoad(): string {
+  const param = (n: string) => `{ k: "param", n: "${n}", or: "${n}", r: true, t: "\`$STRING\`" }`
+  const query = (n: string) => `{ k: "query", n: "${n}", or: "${n}", r: false, t: "\`$STRING\`" }`
+  const deep = (lit: string) => `{
+        g: { params: [ ${param('path')}, ${param('region')}, ${param('version')} ]
+          query: [ ${query('region')}, ${query('version')} ] }
+        m: "GET", o: "/wz/${lit}{region}/{version}/{path}"
+        s: [{ lit: "wz" }, ${'' === lit ? '' : `{ lit: "${lit.slice(0, -1)}" }, `}{ var: "region" }, { var: "version" }, { var: "path" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+        q: { exist: ["path", "region", "version"] }
+      }`
+  const entity = (name: string, points: string[]) => `
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id", parts: ["region", "version", "path"], sep: "/" }
+  fields: { "id": { h: 'Id', n: "id", r: false, t: "\`$STRING\`" } }
+  op: load: { name: "load", points: [ ${points.join(' ')} ] }
+}
+
+main: kit: flow: Basic${name[0].toUpperCase() + name.slice(1)}Flow: {
+  entity: "${name}", kind: "basic", name: "Basic${name[0].toUpperCase() + name.slice(1)}Flow"
+  step: [ { o: "load", i: { ref: "${name}_ref01", srcdatavar: "${name}_ref01_data", suffix: "_dt0" } } ]
+}
+`
+  return entityOnly(entity('audio', [deep('audio/')]) + entity('wzn', [deep(''), `{
+        g: { params: [ ${param('region')}, ${param('version')} ] }
+        m: "GET", o: "/wz", s: [{ lit: "wz" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" }
+        q: { exist: ["region", "version"] }
+      }`]))
+}
+
+
 // An entity whose load requires the query parameter `key` and whose create and
 // update require the field `key`, beside the id, each of the given type.
 function namedFieldEntity(key: string, name: string = 'crate', type: string = '"`$STRING`"'): string {
@@ -1366,6 +1403,7 @@ export {
   listOnly,
   selectorList,
   selectorLoad,
+  shadowedLoad,
   namedFieldEntity,
   retypedList,
   seedableList,
