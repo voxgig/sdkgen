@@ -113,14 +113,15 @@ names the identifier it is missing.
 A required parameter that the model gives an example for needs no variable
 either. A live direct test takes each path parameter's example as the id that
 `<PROJ>_TEST_<ENTITY>_ENTID` would otherwise supply, under the same key, so the
-variable still overrides it, and it sends each required query parameter's
-example. An entity flow fills each required parameter its step leaves unbound
-from its example, on the first route whose required parameters are all bound
-or have an example, which is the route the TS and JS runners take. A
-parameter's example is the one its definition gives, or the schema default.
-For a required parameter with neither, a live test sends the first value the
-parameter's `enum` allows. A required parameter with no example and no `enum`
-still blocks the test.
+variable still overrides it. It also sends each required query parameter's
+example, under the name the API definition gives the parameter rather than
+the model's name for it: `direct()` sends its query as given. An entity flow
+fills each required parameter its step leaves unbound from its example, on the
+first route whose required parameters are all bound or have an example, which
+is the route the TS and JS runners take. A parameter's example is the one its
+definition gives, or the schema default. For a required parameter with
+neither, a live test sends the first value the parameter's `enum` allows. A
+required parameter with no example and no `enum` still blocks the test.
 
 The TS and JS entity flow runners also continue independent operations within
 a flow. A failed create blocks dependent writes, while independent reads still

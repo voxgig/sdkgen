@@ -110,7 +110,7 @@ function liveExampleIds(entity: any): [string, string | number | boolean][] {
 function liveQueryExamples(point: any): [string, string | number | boolean][] {
   return (point?.g?.query || [])
     .filter((arg: any) => arg.r && undefined !== scalarExample(arg))
-    .map((arg: any) => [arg.n, scalarExample(arg)])
+    .map((arg: any) => [arg.or || arg.n, scalarExample(arg)])
 }
 
 

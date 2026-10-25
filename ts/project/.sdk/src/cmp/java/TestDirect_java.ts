@@ -144,11 +144,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listParams = listPoint?.g?.params || []
 
   // Required query params with spec-provided examples — needed in live mode.
-  const loadQuery = loadPoint?.g?.query || []
-  const loadLiveQueryEntries = loadQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const loadLiveQueryLines = loadLiveQueryEntries
-    .map((q: any) => `      query.put("${q.n}", ${javaLiteral(q.ex)});`)
+  const loadLiveQueryLines = liveQueryExamples(loadPoint)
+    .map(([name, ex]) => `      query.put("${name}", ${javaLiteral(ex)});`)
     .join('\n')
 
   // Path params with spec-provided examples — when ALL load params have

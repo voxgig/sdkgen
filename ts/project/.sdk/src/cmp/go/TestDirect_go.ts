@@ -18,6 +18,7 @@ import {
   pointIsGraphql,
   primaryPoint,
   liveExampleIds,
+  liveQueryExamples,
   liveEntity,
   liveGetOnlyReason, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
@@ -144,19 +145,11 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) : ''
   const listParams = listPoint?.g?.params || []
 
-  const loadQuery = loadPoint?.g?.query || []
-  const loadLiveQueryEntries = loadQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const loadLiveQueryLines = loadLiveQueryEntries
-    .map((q: any) => `\t\t\tquery["${q.n}"] = ${JSON.stringify(q.ex)}`)
+  const liveQueryLines = (point: any) => liveQueryExamples(point)
+    .map(([name, ex]) => `\t\t\tquery[${JSON.stringify(name)}] = ${JSON.stringify(ex)}`)
     .join('\n')
-
-  const listQuery = listPoint?.g?.query || []
-  const listLiveQueryEntries = listQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const listLiveQueryLines = listLiveQueryEntries
-    .map((q: any) => `\t\t\tquery["${q.n}"] = ${JSON.stringify(q.ex)}`)
-    .join('\n')
+  const loadLiveQueryLines = liveQueryLines(loadPoint)
+  const listLiveQueryLines = liveQueryLines(listPoint)
 
   // Path params with spec-provided examples — when ALL load params have
   // spec examples, prefer them over list-bootstrap. Spec example values are

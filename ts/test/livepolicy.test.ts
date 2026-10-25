@@ -96,6 +96,14 @@ test('a live request sends the examples of its required query parameters only', 
   assert.deepEqual(liveQueryExamples(undefined), [])
 })
 
+// direct() sends its query as given, so the key is the definition's name.
+test('a live direct query keys each example by the name the API knows', () => {
+  assert.deepEqual(liveQueryExamples(route('/elo-calculator', [], [
+    { ...arg('query', 'opponent_rating', true, 1400), or: 'opponentRating' },
+    { ...arg('query', 'k_factor', false, 32), or: 'kFactor' },
+    arg('query', 'result', true, 'win')])), [['opponentRating', 1400], ['result', 'win']])
+})
+
 test('a live flow fills the route the live harness takes', () => {
   const release = { name: 'release', op: { list: { points: [
     route('/api/{slug}.json', [arg('param', 'slug', true, 'php')]), route('/api/products.json')] } } }

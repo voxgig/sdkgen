@@ -158,11 +158,8 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listParams = listPoint?.g?.params || []
 
   // Required query params with spec-provided examples - needed in live mode.
-  const loadQuery = loadPoint?.g?.query || []
-  const loadLiveQueryEntries = loadQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const loadLiveQueryLines = loadLiveQueryEntries
-    .map((q: any) => `    $query->{'${q.n}'} = ${perlScalar(q.ex)};`)
+  const loadLiveQueryLines = liveQueryExamples(loadPoint)
+    .map(([name, ex]) => `    $query->{'${name}'} = ${perlScalar(ex)};`)
     .join('\n')
 
   const loadAllHaveExamples =

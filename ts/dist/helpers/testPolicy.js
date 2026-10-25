@@ -100,7 +100,7 @@ function liveExampleIds(entity) {
 function liveQueryExamples(point) {
     return (point?.g?.query || [])
         .filter((arg) => arg.r && undefined !== scalarExample(arg))
-        .map((arg) => [arg.n, scalarExample(arg)]);
+        .map((arg) => [arg.or || arg.n, scalarExample(arg)]);
 }
 // The live entity harness's route: the first whose required parameters are
 // all bound or exemplified. A load of a known record binds its own path.

@@ -28,6 +28,7 @@ import {
   hasLiveScenarios,
   primaryPoint,
   liveExampleIds,
+  liveQueryExamples,
   litString,
   liveEntity,
   liveGetOnlyReason, LIVE_GETONLY_ENV,
@@ -314,13 +315,8 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   // ignores them. Optional query params (e.g. `app`, `version`) are skipped
   // even when they have examples — only the strictly required ones are
   // necessary to satisfy the contract.
-  const loadQuery = loadPoint.g?.query || []
-  const liveQueryEntries = loadQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-  const hasLiveQuery = liveQueryEntries.length > 0
-  const liveQueryLines = liveQueryEntries
-    .map((q: any) => `      ${jsProp('query', q.n)} = ${JSON.stringify(q.ex)}`)
-    .join('\n')
+  const liveQueryLines = liveQueryLinesTs(loadPoint)
+  const hasLiveQuery = '' !== liveQueryLines
 
   const listOp = entity.op?.list
   const listPoint = null == listOp?.points ? undefined :
@@ -485,11 +481,7 @@ function generateDirectList(model: Model, entity: ModelEntity) {
   const listParams = listPoint.g?.params || []
   const listPath = normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param)
 
-  const listQuery = listPoint.g?.query || []
-  const liveQueryLines = listQuery
-    .filter((q: any) => q.r && undefined !== q.ex && null !== q.ex)
-    .map((q: any) => `      ${jsProp('query', q.n)} = ${JSON.stringify(q.ex)}`)
-    .join('\n')
+  const liveQueryLines = liveQueryLinesTs(listPoint)
 
   const liveParams = listParams.map((p: any) => {
     const key = p.n === 'id'
@@ -578,6 +570,13 @@ function liveChecks(opname: string, usable: string, unusable: string, offline: s
       }
     } else {
 ${offline}    }`
+}
+
+
+function liveQueryLinesTs(point: any): string {
+  return liveQueryExamples(point)
+    .map(([name, ex]) => `      ${jsProp('query', name)} = ${JSON.stringify(ex)}`)
+    .join('\n')
 }
 
 

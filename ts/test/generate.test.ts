@@ -21,7 +21,7 @@ import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
-  REQUEST_SHAPED_ENTITY, exampleParams, getOnlyFlows, getOnlyBuildctx,
+  REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, getOnlyFlows, getOnlyBuildctx,
 } from './generateharness'
 
 
@@ -3207,6 +3207,35 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       has(files, /release_?entity/i, /["']slug["'][^\n]*["']php["']/, 'does not list with the example slug', target)
       has(files, /offer_?entity/i, /["']asset["'][^\n]*["']BTC["']/, 'does not list with the example asset', target)
       has(files, /guess_?entity/i, /["']name["'][^\n]*["']michael["']/, 'does not load with the example name', target)
+    }
+    deepStrictEqual(gaps, [])
+  })
+
+
+  // direct() sends its query as given, so a direct test keys each required
+  // query example by the definition's name (or), and fills a path
+  // placeholder under the name it puts in the path.
+  test('every live direct test sends a renamed parameter under its wire name', async () => {
+    const out = await generate(LIVE_SUITE_TARGETS, undefined, wireNameParams())
+    const gaps: string[] = []
+    for (const target of LIVE_SUITE_TARGETS) {
+      const files = testFiles(out, target)
+      const direct = (name: string) => files.find(([n]) => new RegExp(name + '_?direct', 'i').test(n))
+      const rating = direct('rating')
+      if (null == rating) gaps.push(`${target}: no rating direct test`)
+      else {
+        if (!/opponentRating\W[^\n]*1400/.test(rating[1])) gaps.push(`${target}: load does not send opponentRating`)
+        if (!/playerRating\W[^\n]*1500/.test(rating[1])) gaps.push(`${target}: list does not send playerRating`)
+        if (/opponent_rating|player_rating/.test(rating[1])) gaps.push(`${target}: sends a model name`)
+        if (/kFactor|k_factor/.test(rating[1])) gaps.push(`${target}: sends an optional parameter`)
+      }
+      const player = direct('player')
+      if (null == player) gaps.push(`${target}: no player direct test`)
+      else {
+        if (!/player\/\{player_id\}/.test(player[1])) gaps.push(`${target}: path is not player/{player_id}`)
+        if (!/params(\W|\.put\(){1,8}player_id\b/i.test(player[1])) gaps.push(`${target}: does not fill player_id`)
+        if (/playerId/.test(player[1])) gaps.push(`${target}: names the path parameter by its wire name`)
+      }
     }
     deepStrictEqual(gaps, [])
   })

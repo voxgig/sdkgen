@@ -530,6 +530,56 @@ function exampleParams(): string {
 }
 
 
+// Query and path parameters whose model name (n) differs from the wire's (or).
+const WIRE_NAME_ENTITIES = `
+main: kit: entity: rating: {
+  alias: field: {}
+  name: "rating"
+  fields: { "change": { h: 'Change', n: "change", r: false, t: "\`$INTEGER\`" } }
+  op: {
+    load: { name: "load", points: [ {
+      g: { query: [
+        { k: "query", n: "opponent_rating", or: "opponentRating", r: true, t: "\`$INTEGER\`", ex: 1400 }
+        { k: "query", n: "k_factor", or: "kFactor", r: false, t: "\`$INTEGER\`", ex: 32 }
+      ] }
+      m: "GET", o: "/elo-calculator", s: [{ lit: "elo-calculator" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    list: { name: "list", points: [ {
+      g: { query: [
+        { k: "query", n: "player_rating", or: "playerRating", r: true, t: "\`$INTEGER\`", ex: 1500 }
+      ] }
+      m: "GET", o: "/ratings", s: [{ lit: "ratings" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: entity: player: {
+  alias: field: {}
+  name: "player"
+  fields: { "name": { h: 'Name', n: "name", r: false, t: "\`$STRING\`" } }
+  op: load: { name: "load", points: [ {
+    g: { params: [ { k: "param", n: "player_id", or: "playerId", r: true, t: "\`$STRING\`", ex: "p1" } ] }
+    m: "GET", o: "/player/{playerId}", s: [{ lit: "player" }, { var: "player_id" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: flow: BasicRatingFlow: {
+  entity: "rating", kind: "basic", name: "BasicRatingFlow"
+  step: [ { o: "list" } ]
+}
+
+main: kit: flow: BasicPlayerFlow: {
+  entity: "player", kind: "basic", name: "BasicPlayerFlow"
+  step: [ { o: "load", i: { ref: "player_ref01", srcdatavar: "player_ref01_data", suffix: "_dt0" } } ]
+}
+`
+
+
+function wireNameParams(): string {
+  return entityOnly(WIRE_NAME_ENTITIES)
+}
+
+
 // Flows a GET-only live run cannot make whole, and a required enum query.
 const GETONLY_ENTITIES = `
 main: kit: entity: game: {
@@ -1534,6 +1584,7 @@ export {
   SEARCH_ENTITY,
   searchOnly,
   exampleParams,
+  wireNameParams,
   getOnlyFlows,
   getOnlyBuildctx,
   listOnly,
