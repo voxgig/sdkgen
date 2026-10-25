@@ -537,6 +537,22 @@ class PipelineTest extends TestCase
         $this->assertStringNotContainsString('GUARDKEY01', $out);
     }
 
+    // The struct port's UNDEF sentinel is one object per process, and the
+    // struct corpus writes into it: no client may take it for a fetcher.
+    public function test_fetcher_without_system_fetch_uses_the_default_transport(): void
+    {
+        $sentinel = \Voxgig\Struct\Struct::undef();
+        $sentinel->pipelinetest = true;
+        try {
+            $client = new ProjectNameSDK(['base' => 'http://localhost:8080']);
+            $this->assertArrayNotHasKey('fetch', $client->options['system'] ?? []);
+            $this->assertNull(ProjectNameFetcher::systemFetch($client->options_map()));
+            $this->assertTrue(ProjectNameFetcher::usesDefault(self::ctx(['client' => $client])));
+        } finally {
+            unset($sentinel->pipelinetest);
+        }
+    }
+
     // --- make_fetch_def ----------------------------------------------------------
 
     public function test_make_fetch_def_guards_a_missing_spec(): void

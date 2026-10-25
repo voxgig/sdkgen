@@ -1341,7 +1341,7 @@ tm/php/test/FeatureTest.php d237b3661309
 tm/php/test/NetsimTest.php fac241d6b75a
 tm/php/test/Omni.php a5fdc0be95cc
 tm/php/test/OmniSmokeTest.php cad939a73897
-tm/php/test/PipelineTest.php 844e952ad522
+tm/php/test/PipelineTest.php 2472d17957ec
 tm/php/test/PrimaryUtilityTest.php 2cf1ca929598
 tm/php/test/Runner.php ce56f8fce3d0
 tm/php/test/StructUtilityTest.php 8cf4251dbd8f
@@ -1353,12 +1353,12 @@ tm/php/utility/Done.php dd5e686391dd
 tm/php/utility/FeatureAdd.php 7729798603cf
 tm/php/utility/FeatureHook.php 7f333010aba1
 tm/php/utility/FeatureInit.php d2ae3102173f
-tm/php/utility/Fetcher.php 84c39b56eb85
+tm/php/utility/Fetcher.php 0eb90fbf139e
 tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 708cebcf9353
 tm/php/utility/MakeFetchDef.php 8f8141558539
-tm/php/utility/MakeOptions.php 65763d374aa8
+tm/php/utility/MakeOptions.php 23ef5c4f3250
 tm/php/utility/MakePoint.php 9a2ad864d1bb
 tm/php/utility/MakeRequest.php 0d5c61684da6
 tm/php/utility/MakeResponse.php 84a420b02660
