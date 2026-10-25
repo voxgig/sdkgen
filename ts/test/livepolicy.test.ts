@@ -4,6 +4,7 @@ import {
   liveStrict, liveStrictNote, liveFlowNeeds, guardFlowSteps,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
   liveEntity, liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveDirectGetOnly,
 } from '../dist/sdkgen'
 
 const model = (global?: boolean, go?: boolean) => ({ main: { kit: {
@@ -200,4 +201,21 @@ test('a required parameter with no example takes the first value its enum allows
   assert.deepEqual(liveQueryExamples(point), [['asset', 'BTC'], ['ccy', 'USD']])
   assert.equal(quote.op.list.points[0].g.query[0].ex, undefined)
   assert.equal(liveEntity({}, quote), quote)
+})
+
+
+test('a GET-only direct test leaves to *_ENTID only an id that a create alone gives', () => {
+  const game = { name: 'game', op: { create: at('POST', '/game'), load: at('GET', '/game/{gameId}') } }
+  const seat = { name: 'seat', op: { load: at('GET', '/game/{game_id}/seat/{id}') } }
+  const board = { name: 'board', op: { create: at('POST', '/board'), list: at('GET', '/board') } }
+  const model = { main: { kit: { entity: { game, seat, board } } } }
+  assert.deepEqual(liveDirectGetOnly(model, game, 'direct-load-game', ['game01']), [
+    { key: 'game01', id: 'direct-load-game', reason: 'GET-only live run: needs game01, which only POST /game gives' },
+  ])
+  assert.deepEqual(liveDirectGetOnly(model, seat, 'direct-load-seat', ['game01', 'seat01', 'slug01'])
+    .map(({ key }) => key), ['game01'])
+  assert.deepEqual(liveDirectGetOnly(model, seat, 'direct-load-seat', ['board01']), [])
+  const summary = liveExcludedSummary({ excluded: liveDirectGetOnly(model, game, 'direct-load-game', ['game01']) })
+  assert.equal(summary, 'Live coverage incomplete: direct-load-game excluded ' +
+    '(GET-only live run: needs game01, which only POST /game gives)')
 })

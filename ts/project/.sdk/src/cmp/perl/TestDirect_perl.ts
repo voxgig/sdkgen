@@ -22,12 +22,26 @@ import {
   liveExampleIds,
   liveQueryExamples,
   liveEntity,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 import { perlStringLiteral } from './utility_perl'
 
 
 // Blocked without the ids its request needs, rather than sent with undef.
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysBlock(model: any, entity: any, label: string, block: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, label, keys).map((miss) =>
+    `  if ($setup->{live} && ($ENV{${LIVE_GETONLY_ENV}} // '') eq 'TRUE' && !defined $setup->{idmap}{${perlStringLiteral(miss.key)}}) {
+    note(${perlStringLiteral(liveExcludedLines({ excluded: [miss] })[0])});
+    note(${perlStringLiteral(liveExcludedSummary({ excluded: [miss] }))});
+    pass('${label}: skipped, a GET-only live run excludes it');
+    last ${block};
+  }
+`).join('')
+}
+
+
 function liveKeysBlock(N: string, label: string, block: string, keys: string[],
   entidEnvVar: string): string {
   return 0 === keys.length ? '' : `  if ($setup->{live}) {
@@ -226,7 +240,7 @@ sub live_ok {
     pass('${label}: skipped via sdk-test-control.json');
     last DIRECT_LIST;
   }
-${liveKeysBlock(N, label, 'DIRECT_LIST', listParams.map(liveKey), entidEnvVar)}  my $client = $setup->{client};
+${getOnlyKeysBlock(model, entity, label, 'DIRECT_LIST', listParams.map(liveKey))}${liveKeysBlock(N, label, 'DIRECT_LIST', listParams.map(liveKey), entidEnvVar)}  my $client = $setup->{client};
 
   my $params = {};
   my $query = {};
@@ -289,7 +303,7 @@ ${listLiveQueryLines ? '  if ($setup->{live}) {\n' + listLiveQueryLines + '  }\n
     pass('${label}: skipped via sdk-test-control.json');
     last DIRECT_LOAD;
   }
-${liveKeysBlock(N, label, 'DIRECT_LOAD', [...new Set(loadLiveIdKeys)], entidEnvVar)}  my $client = $setup->{client};
+${getOnlyKeysBlock(model, entity, label, 'DIRECT_LOAD', [...new Set(loadLiveIdKeys)])}${liveKeysBlock(N, label, 'DIRECT_LOAD', [...new Set(loadLiveIdKeys)], entidEnvVar)}  my $client = $setup->{client};
 
   my $params = {};
   my $query = {};

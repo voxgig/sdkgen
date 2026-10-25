@@ -20,6 +20,7 @@ import {
   liveExampleIds,
   liveQueryExamples,
   liveEntity,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 
@@ -64,6 +65,18 @@ function kotlinLiteral(v: any): string {
   if (null == v) return 'null'
   if ('number' === typeof v || 'boolean' === typeof v) return String(v)
   return JSON.stringify(String(v)).replace(/\$/g, '\\$')
+}
+
+
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysBlock(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `    if (setup.live && "TRUE" == System.getenv(${kotlinLiteral(LIVE_GETONLY_ENV)})
+        && setup.idmap[${kotlinLiteral(miss.key)}] == null) {
+      println(${kotlinLiteral(liveExcludedLines({ excluded: [miss] })[0])})
+      Assumptions.assumeTrue(false, ${kotlinLiteral(liveExcludedSummary({ excluded: [miss] }))})
+    }
+`).join('')
 }
 
 
@@ -181,7 +194,8 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '  ')}
       const listLiveIdKeys = listParams.length > 0
         ? listLiveParams.map((lp: any) => lp.key)
         : []
-      const listSkipBlock = listLiveIdKeys.length > 0
+      const listSkipBlock = getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listLiveIdKeys) +
+        (listLiveIdKeys.length > 0
         ? `    if (setup.live) {
       for (liveKey in arrayOf<String>(${listLiveIdKeys.map((k: string) => `"${k}"`).join(', ')})) {
         if (setup.idmap[liveKey] == null) {
@@ -190,7 +204,7 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '  ')}
       }
     }
 `
-        : ''
+        : '')
 
       Content(`  @Test
   fun directList${entity.Name}() {
@@ -295,7 +309,8 @@ ${listLiveQueryLines ? '    if (setup.live) {\n' + listLiveQueryLines + '    }\n
         loadLiveIdKeys = [...new Set((hasList ?
           [...listParams, ...loadParams.filter((p: any) => p.n !== 'id')] : loadParams).map(liveKey))]
       }
-      const loadSkipBlock = loadLiveIdKeys.length > 0
+      const loadSkipBlock = getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, loadLiveIdKeys) +
+        (loadLiveIdKeys.length > 0
         ? `    if (setup.live) {
       for (liveKey in arrayOf<String>(${loadLiveIdKeys.map(k => `"${k}"`).join(', ')})) {
         if (setup.idmap[liveKey] == null) {
@@ -304,7 +319,7 @@ ${listLiveQueryLines ? '    if (setup.live) {\n' + listLiveQueryLines + '    }\n
       }
     }
 `
-        : ''
+        : '')
 
       Content(`  @Test
   fun directLoad${entity.Name}() {

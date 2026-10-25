@@ -32,6 +32,7 @@ import {
   litString,
   liveEntity,
   liveGetOnlyReason, LIVE_GETONLY_ENV,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 } from '@voxgig/sdkgen'
 
 
@@ -260,7 +261,7 @@ ${mockParamLines || '      // no params'}
   test('direct-load-${entity.name}', async (t) => {
     if (liveScenariosActive()) { t.skip('Covered by live operation scenarios'); return }
     const setup = directSetup({ id: 'direct01' })
-${skipMissingLine}    const { client, calls } = setup
+${getOnlyKeysLine(model, entity, 'direct-load-' + entity.name, liveIdKeys)}${skipMissingLine}    const { client, calls } = setup
 
     const params = {}
     const query = {}
@@ -336,7 +337,7 @@ ${mockLines}
   test('direct-list-${entity.name}', async (t) => {
     if (liveScenariosActive()) { t.skip('Covered by live operation scenarios'); return }
     const setup = directSetup([{ id: 'direct01' }, { id: 'direct02' }])
-${skipMissingLine}    const { client, calls } = setup
+${getOnlyKeysLine(model, entity, 'direct-list-' + entity.name, liveParams.map((lp: any) => lp.key))}${skipMissingLine}    const { client, calls } = setup
 
 ${paramsBlock}
     const result = await client.direct({
@@ -361,6 +362,18 @@ ${paramAsserts}`)}
 // GraphQL-backed op needs POST+body, not a REST-shaped GET+params direct()
 // call — reuse apidef's own point.gq.doc via the SDK's graphql() hatch.
 // Mirrors TestDirect_ts.ts's generateDirectGraphql.
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysLine(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `    if (setup.live && 'TRUE' === process.env.${LIVE_GETONLY_ENV} && null == setup.idmap?.[${JSON.stringify(miss.key)}]) {
+      console.log(${JSON.stringify(liveExcludedLines({ excluded: [miss] })[0])})
+      t.skip(${JSON.stringify(liveExcludedSummary({ excluded: [miss] }))})
+      return
+    }
+`).join('')
+}
+
+
 // A GraphQL request is a POST, which a GET-only live run does not send.
 function getOnlySkip(point: any): string {
   const reason = liveGetOnlyReason(point)

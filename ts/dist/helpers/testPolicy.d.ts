@@ -28,7 +28,15 @@ declare function liveFlowSteps(flow: any): any[];
 declare function liveStepId(entity: any, step: any, index: number): string;
 declare function liveGetOnlyReason(point: any): string | undefined;
 declare function liveGetOnly(entity: any, flow: any): LiveGetOnly | undefined;
-declare function liveExcludedLines(plan: LiveGetOnly): string[];
-declare function liveExcludedSummary(plan: LiveGetOnly): string;
-export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly };
-export { liveStrict, liveStrictNote, liveFlowNeeds, liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples, liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason, liveExcludedLines, liveExcludedSummary, };
+type LiveKeyExcluded = LiveExcluded & {
+    key: string;
+};
+declare function liveDirectGetOnly(model: any, entity: any, test: string, keys: string[]): LiveKeyExcluded[];
+declare function liveExcludedLines(plan: {
+    excluded: LiveExcluded[];
+}): string[];
+declare function liveExcludedSummary(plan: {
+    excluded: LiveExcluded[];
+}): string;
+export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveKeyExcluded };
+export { liveStrict, liveStrictNote, liveFlowNeeds, liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples, liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason, liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, };

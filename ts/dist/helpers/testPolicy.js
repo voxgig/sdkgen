@@ -14,6 +14,7 @@ exports.liveFlowSteps = liveFlowSteps;
 exports.liveStepId = liveStepId;
 exports.liveGetOnly = liveGetOnly;
 exports.liveGetOnlyReason = liveGetOnlyReason;
+exports.liveDirectGetOnly = liveDirectGetOnly;
 exports.liveExcludedLines = liveExcludedLines;
 exports.liveExcludedSummary = liveExcludedSummary;
 const types_1 = require("../types");
@@ -228,6 +229,21 @@ function liveGetOnly(entity, flow) {
             .map((step) => ({ id: id(step), reason: GETONLY + reasons.get(step) })),
         flow: { ...flow, step: left() },
     };
+}
+// The ids a live direct test needs that a GET-only run cannot get, unless
+// *_ENTID gives them: of a record only a non-GET create makes, no GET list finds.
+function liveDirectGetOnly(model, entity, test, keys) {
+    const entities = model?.main?.[types_1.KIT]?.entity || {};
+    const out = [];
+    for (const key of keys) {
+        const owner = liveIdKey(entity.name, 'id') === key ? entity : entities[key.replace(/01$/, '')];
+        const make = null == owner ? undefined : writeRoute(owner, 'create');
+        const listed = (owner?.op?.list?.points || []).some((point) => false !== point.a && isGet(point));
+        if (null != make && !listed) {
+            out.push({ key, id: test, reason: GETONLY + 'needs ' + key + ', which only ' + make + ' gives' });
+        }
+    }
+    return out;
 }
 // The lines the live harness prints for the steps a run leaves out.
 function liveExcludedLines(plan) {

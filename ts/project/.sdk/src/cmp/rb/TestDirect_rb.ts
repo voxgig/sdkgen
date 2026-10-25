@@ -22,12 +22,24 @@ import {
   liveExampleIds,
   liveQueryExamples,
   liveEntity,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 import { formatRubyValue } from './utility_rb'
 
 
 // Blocked without the ids its request needs, rather than sent with nil.
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysBlock(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `    if setup[:live] && ENV[${formatRubyValue(LIVE_GETONLY_ENV)}] == "TRUE" && setup[:idmap][${formatRubyValue(miss.key)}].nil?
+      puts ${formatRubyValue(liveExcludedLines({ excluded: [miss] })[0])}
+      skip(${formatRubyValue(liveExcludedSummary({ excluded: [miss] }))})
+    end
+`).join('')
+}
+
+
 function liveKeysBlock(keys: string[], entidEnvVar: string): string {
   return 0 === keys.length ? '' : `    if setup[:live]
       [${keys.map((k) => JSON.stringify(k)).join(', ')}].each do |_live_key|
@@ -208,7 +220,7 @@ ${liveStrictNote(liveStrict(model, target.name), '#', '  ')}
       skip(_reason || "skipped via sdk-test-control.json")
       return
     end
-${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    client = setup[:client]
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    client = setup[:client]
 
     params = {}
     query = {}
@@ -265,7 +277,7 @@ ${listLiveQueryLines ? '    if setup[:live]\n' + listLiveQueryLines + '    end\n
       skip(_reason || "skipped via sdk-test-control.json")
       return
     end
-${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    client = setup[:client]
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    client = setup[:client]
 
     params = {}
     query = {}

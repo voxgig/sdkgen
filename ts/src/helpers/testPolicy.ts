@@ -266,25 +266,45 @@ function liveGetOnly(entity: any, flow: any): LiveGetOnly | undefined {
 }
 
 
+type LiveKeyExcluded = LiveExcluded & { key: string }
+
+
+// The ids a live direct test needs that a GET-only run cannot get, unless
+// *_ENTID gives them: of a record only a non-GET create makes, no GET list finds.
+function liveDirectGetOnly(model: any, entity: any, test: string, keys: string[]): LiveKeyExcluded[] {
+  const entities = model?.main?.[KIT]?.entity || {}
+  const out: LiveKeyExcluded[] = []
+  for (const key of keys) {
+    const owner = liveIdKey(entity.name, 'id') === key ? entity : entities[key.replace(/01$/, '')]
+    const make = null == owner ? undefined : writeRoute(owner, 'create')
+    const listed = (owner?.op?.list?.points || []).some((point: any) => false !== point.a && isGet(point))
+    if (null != make && !listed) {
+      out.push({ key, id: test, reason: GETONLY + 'needs ' + key + ', which only ' + make + ' gives' })
+    }
+  }
+  return out
+}
+
+
 // The lines the live harness prints for the steps a run leaves out.
-function liveExcludedLines(plan: LiveGetOnly): string[] {
+function liveExcludedLines(plan: { excluded: LiveExcluded[] }): string[] {
   return plan.excluded.map(({ id, reason }) =>
     'LIVE STEP ' + JSON.stringify({ id, state: 'excluded', attempted: false, reason }))
 }
 
 
 // Why a test whose every step is left out skips, as the live harness says it.
-function liveExcludedSummary(plan: LiveGetOnly): string {
+function liveExcludedSummary(plan: { excluded: LiveExcluded[] }): string {
   return 'Live coverage incomplete: ' +
     plan.excluded.map(({ id, reason }) => id + ' excluded (' + reason + ')').join('; ')
 }
 
 
-export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly }
+export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveKeyExcluded }
 
 export {
   liveStrict, liveStrictNote, liveFlowNeeds,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
   liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason,
-  liveExcludedLines, liveExcludedSummary,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 }

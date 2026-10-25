@@ -21,6 +21,7 @@ import {
   liveQueryExamples,
   liveEntity,
   liveGetOnlyReason, LIVE_GETONLY_ENV,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 } from '@voxgig/sdkgen'
 
 
@@ -220,7 +221,8 @@ func Test${entity.Name}Direct(t *testing.T) {
       const listLiveIdKeysGoLiteral = listLiveIdKeys.length > 0
         ? `[]string{${listLiveIdKeys.map((k: string) => `"${k}"`).join(', ')}}`
         : ''
-      const listSkipBlock = listLiveIdKeys.length > 0
+      const listSkipBlock = getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listLiveIdKeys) +
+        (listLiveIdKeys.length > 0
         ? `		if setup.live {
 			for _, _liveKey := range ${listLiveIdKeysGoLiteral} {
 				if v := setup.idmap[_liveKey]; v == nil {
@@ -230,7 +232,7 @@ func Test${entity.Name}Direct(t *testing.T) {
 			}
 		}
 `
-        : ''
+        : '')
 
       Content(`	t.Run("direct-list-${entity.name}", func(t *testing.T) {
 		setup := ${entity.name}DirectSetup([]any{
@@ -369,7 +371,8 @@ ${listLiveQueryLines}
         loadLiveIdKeys = [...new Set((hasList ?
           [...listParams, ...loadParams.filter((p: any) => p.n !== 'id')] : loadParams).map(liveKey))]
       }
-      const loadSkipBlock = loadLiveIdKeys.length > 0
+      const loadSkipBlock = getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, loadLiveIdKeys) +
+        (loadLiveIdKeys.length > 0
         ? `		if setup.live {
 			for _, _liveKey := range []string{${loadLiveIdKeys.map(k => `"${k}"`).join(', ')}} {
 				if v := setup.idmap[_liveKey]; v == nil {
@@ -379,7 +382,7 @@ ${listLiveQueryLines}
 			}
 		}
 `
-        : ''
+        : '')
 
       Content(`	t.Run("direct-load-${entity.name}", func(t *testing.T) {
 		setup := ${entity.name}DirectSetup(map[string]any{"id": "direct01"})
@@ -628,6 +631,18 @@ var _ = json.Unmarshal
 `)
   })
 })
+
+
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysBlock(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `		if setup.live && os.Getenv(${JSON.stringify(LIVE_GETONLY_ENV)}) == "TRUE" && setup.idmap[${JSON.stringify(miss.key)}] == nil {
+			t.Log(${JSON.stringify(liveExcludedLines({ excluded: [miss] })[0])})
+			t.Skip(${JSON.stringify(liveExcludedSummary({ excluded: [miss] }))})
+			return
+		}
+`).join('')
+}
 
 
 // GraphQL-backed op needs POST+body, not a REST-shaped GET+params Direct()

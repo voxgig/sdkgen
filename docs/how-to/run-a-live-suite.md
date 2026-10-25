@@ -169,6 +169,12 @@ a flow left with no step to run skips, under either value of
 step is excluded, by the control file or by a GET-only run. A direct test of a
 GraphQL operation, whose request is a POST, skips too.
 
+A live direct test is excluded the same way when it needs an id that only a
+write could give: an id with no example, of a record that only a create with
+no GET route makes, and that no GET list finds. Such a test reports itself
+`excluded` and skips. An id that `<PROJ>_TEST_<ENTITY>_ENTID` supplies still
+runs the test.
+
 ## Responses that are not JSON
 
 A service can answer a client it does not recognise with an HTML page, often a

@@ -3269,6 +3269,12 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       lacks(/chart_?entity/i, /chart\.load\.1[^\n]*excluded/, 'excludes an id-less load')
       lacks(/estimate_?entity/i, /estimate\.list\.1[^\n]*excluded/, 'excludes a list')
       lacks(/quote_?entity/i, /VOXGIG_GETONLY_GUARD/, 'gates a flow every step of which is a GET')
+      has(/game_?direct/i, /VOXGIG_GETONLY_GUARD[^]{0,200}game01/, 'does not check game01 in a GET-only run')
+      has(/game_?direct/i, /Live coverage incomplete: direct-load-game excluded \(GET-only live run: needs game01, which only POST \/game gives\)/,
+        'does not exclude a direct load whose id only the create gives')
+      for (const name of [/chart_?direct/i, /estimate_?direct/i, /quote_?direct/i]) {
+        lacks(name, /VOXGIG_GETONLY_GUARD/, 'gates a direct test that needs no id')
+      }
       if (['ts', 'js'].includes(target)) continue
       has(/game_?entity/i, /Live coverage incomplete: game\.create\.0 excluded/,
         'does not skip a flow it leaves nothing of')

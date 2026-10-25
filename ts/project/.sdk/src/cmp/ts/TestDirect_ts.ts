@@ -32,6 +32,7 @@ import {
   litString,
   liveEntity,
   liveGetOnlyReason, LIVE_GETONLY_ENV,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 } from '@voxgig/sdkgen'
 
 
@@ -190,6 +191,18 @@ function unwrapListData(data: any): any[] | null {
     })
   })
 })
+
+
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysLine(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `    if (setup.live && 'TRUE' === process.env.${LIVE_GETONLY_ENV} && null == setup.idmap?.[${JSON.stringify(miss.key)}]) {
+      console.log(${JSON.stringify(liveExcludedLines({ excluded: [miss] })[0])})
+      t.skip(${JSON.stringify(liveExcludedSummary({ excluded: [miss] }))})
+      return
+    }
+`).join('')
+}
 
 
 // A GraphQL request is a POST, which a GET-only live run does not send.
@@ -445,7 +458,7 @@ ${paramAsserts}`
     if (liveScenariosActive()) { t.skip('Covered by live operation scenarios'); return }
     const setup = directSetup({ id: 'direct01' })
     if (maybeSkipControl(t, 'direct', 'direct-load-${entity.name}', setup.live)) return
-${skipMissingLine}    const { client, calls } = setup
+${getOnlyKeysLine(model, entity, 'direct-load-' + entity.name, liveIdKeys)}${skipMissingLine}    const { client, calls } = setup
 
     const params: any = {}
     const query: any = {}
@@ -542,7 +555,7 @@ ${paramAsserts}`
     if (liveScenariosActive()) { t.skip('Covered by live operation scenarios'); return }
     const setup = directSetup([{ id: 'direct01' }, { id: 'direct02' }])
     if (maybeSkipControl(t, 'direct', 'direct-list-${entity.name}', setup.live)) return
-${skipMissingLine}    const { client, calls } = setup
+${getOnlyKeysLine(model, entity, 'direct-list-' + entity.name, liveIdKeys)}${skipMissingLine}    const { client, calls } = setup
 
 ${paramsBlock}
     const result: any = await client.direct({

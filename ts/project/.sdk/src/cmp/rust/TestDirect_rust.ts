@@ -22,6 +22,7 @@ import {
   liveExampleIds,
   liveQueryExamples,
   liveEntity,
+  liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 
@@ -29,6 +30,19 @@ import { rustVarName } from './utility_rust'
 
 
 // Blocked without the ids its request needs, rather than sent without them.
+// A GET-only live run excludes a test needing an id that only a write gives.
+function getOnlyKeysBlock(model: any, entity: any, test: string, keys: string[]): string {
+  return liveDirectGetOnly(model, entity, test, keys).map((miss) =>
+    `    if setup.live && std::env::var(${JSON.stringify(LIVE_GETONLY_ENV)}).map(|v| v == "TRUE").unwrap_or(false)
+        && getp(&setup.idmap, ${JSON.stringify(miss.key)}).is_noval() {
+        println!("{}", ${JSON.stringify(liveExcludedLines({ excluded: [miss] })[0])});
+        eprintln!("skip: {}", ${JSON.stringify(liveExcludedSummary({ excluded: [miss] }))});
+        return;
+    }
+`).join('')
+}
+
+
 function liveKeysBlock(keys: string[], entidEnvVar: string): string {
   return 0 === keys.length ? '' : `    if setup.live {
         for live_key in [${keys.map((k) => JSON.stringify(k)).join(', ')}] {
@@ -292,7 +306,7 @@ fn ${evar}_direct_list() {
         );
         return;
     }
-${liveKeysBlock(listLiveParams.map((lp: any) => lp.key), entidEnvVar)}    let client = setup.client.clone();
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listLiveParams.map((lp: any) => lp.key))}${liveKeysBlock(listLiveParams.map((lp: any) => lp.key), entidEnvVar)}    let client = setup.client.clone();
 
     let params = Value::empty_map();
 ${liveQueryBlock(listPoint)}`)
@@ -405,7 +419,7 @@ fn ${evar}_direct_load() {
         );
         return;
     }
-${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    let client = setup.client.clone();
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    let client = setup.client.clone();
 
     let params = Value::empty_map();
 ${liveQueryBlock(loadPoint)}    if setup.live {
