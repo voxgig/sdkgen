@@ -115,7 +115,7 @@ class ProjectNameContext
   end
 
   def make_error(code, msg)
-    ProjectNameError.new(code, msg, self)
+    ProjectNameError.new(msg, code: code, ctx: self)
   end
 
   # The serialised context leaves the pipeline (a logger, an error dump), so
