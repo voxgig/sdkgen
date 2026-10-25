@@ -81,7 +81,7 @@ class PrimaryUtilityTest < Minitest::Test
     return nil unless m.is_a?(Hash)
     msg = m["message"]
     return nil unless msg.is_a?(String) && !msg.empty?
-    ProjectNameError.new(m["code"] || "", msg)
+    ProjectNameError.new(msg, code: m["code"] || "")
   end
 
 

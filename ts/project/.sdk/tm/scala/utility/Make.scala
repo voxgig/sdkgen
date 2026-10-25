@@ -678,13 +678,17 @@ object MakeUrl {
     joinParts.add(spec.suffix)
     var url = Struct.join(joinParts, "/", true)
 
-    // A route the definition ends with a slash keeps it: a server such as a
-    // Django REST one redirects or refuses the route without it.
+    // A route the definition ends with a slash keeps it, for a Django REST server,
+    // and a host with no path takes /, or luasocket reads a query as the host.
     val orig = if (ctx.point == null) null else Struct.getprop(ctx.point, "orig", null)
     orig match {
       case o: String if o.endsWith("/") && (spec.suffix == null || spec.suffix.isEmpty) && !url.endsWith("/") =>
         url = url + "/"
       case _ =>
+    }
+    val authority = url.indexOf("://")
+    if (0 < authority && !url.substring(authority + 3).exists(c => 0 <= "/?#".indexOf(c))) {
+      url = url + "/"
     }
 
     val resmatch = new LinkedHashMap[String, Object]()

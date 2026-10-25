@@ -1359,11 +1359,14 @@
             authquery (set (oget spec :authquery []))
             point (oget ctx :point)
             orig (when point (vs/getprop point "orig"))]
-        ;; A route the definition ends with a slash keeps it: a server such as a
-        ;; Django REST one redirects or refuses the route without it.
+        ;; A route the definition ends with a slash keeps it, for a Django REST server,
+        ;; and a host with no path takes /, or luasocket reads a query as the host.
         (when (and (string? orig) (str/ends-with? orig "/") (empty? (str (oget spec :suffix)))
                    (not (str/ends-with? @url "/")))
           (swap! url str "/"))
+        (let [authority (str/index-of @url "://")]
+          (when (and authority (pos? authority) (not (re-find #"[/?#]" (subs @url (+ authority 3)))))
+            (swap! url str "/")))
         (doseq [item (or (vs/items (oget spec :params)) [])]
           (let [k (vs/getprop item 0) v (vs/getprop item 1)]
             (when (and (some? v) (string? k))

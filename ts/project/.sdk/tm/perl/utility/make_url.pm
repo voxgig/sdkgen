@@ -32,11 +32,13 @@ $REGISTRY{make_url} = sub {
   # Sent with the request, never recorded as the entity's match.
   my %authquery = map { $_ => 1 } @{ $spec->{authquery} || [] };
 
-  # A route the definition ends with a slash keeps it: a server such as a
-  # Django REST one redirects or refuses the route without it.
+  # A route the definition ends with a slash keeps it, for a Django REST server,
+  # and a host with no path takes /, or luasocket reads a query as the host.
   my $orig = $ctx->{point} ? ProjectNameHelpers::gp($ctx->{point}, 'orig') : undef;
   $url .= '/' if defined $orig && !ref $orig && $orig =~ m{/\z}
     && !(defined $spec->{suffix} && '' ne $spec->{suffix}) && $url !~ m{/\z};
+  my $authority = index($url, '://');
+  $url .= '/' if 0 < $authority && substr($url, $authority + 3) !~ m{[/?#]};
 
   my $param_items = Voxgig::Struct::items($spec->{params});
   if ($param_items) {

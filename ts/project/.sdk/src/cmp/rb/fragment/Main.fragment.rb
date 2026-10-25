@@ -185,9 +185,9 @@ class ProjectNameSDK
     {
       "ok" => false,
       "err" => ProjectNameError.new(
-        "#{op}_allow",
         "ProjectNameSDK: #{op}: operation not allowed by" \
-        " SDK option allow.op value: \"#{allow_op}\""),
+        " SDK option allow.op value: \"#{allow_op}\"",
+        code: "#{op}_allow"),
     }
   end
 
@@ -306,7 +306,7 @@ class ProjectNameSDK
       msg = "graphql error" if msg.nil? || msg.to_s.empty?
       res["ok"] = false
       res["err"] = ProjectNameError.new(
-        "graphql_error", "ProjectNameSDK: graphql: #{msg}")
+        "ProjectNameSDK: graphql: #{msg}", code: "graphql_error")
       res["graphql"] = errors
     end
 

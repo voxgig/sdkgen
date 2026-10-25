@@ -37,11 +37,15 @@ final class MakeUrl {
     joinParts.add(spec.suffix);
     String url = Struct.join(joinParts, "/", true);
 
-    // A route the definition ends with a slash keeps it: a server such as a
-    // Django REST one redirects or refuses the route without it.
+    // A route the definition ends with a slash keeps it, for a Django REST server,
+    // and a host with no path takes /, or luasocket reads a query as the host.
     Object orig = ctx.point == null ? null : Struct.getprop(ctx.point, "orig", null);
     if (orig instanceof String && ((String) orig).endsWith("/") &&
         (spec.suffix == null || spec.suffix.isEmpty()) && !url.endsWith("/")) {
+      url = url + "/";
+    }
+    int authority = url.indexOf("://");
+    if (0 < authority && url.substring(authority + 3).chars().noneMatch(c -> 0 <= "/?#".indexOf(c))) {
       url = url + "/";
     }
 

@@ -1351,12 +1351,19 @@ let make_url_util (ctx : ctx) : (string * sdk_error option) =
   | _, None -> ("", Some (ctx_make_error ctx "url_no_result" "Expected context result property to be defined."))
   | Some spec, Some result ->
     let url = ref (join ~sep:(Str "/") ~url:true (ja [Str spec.sp_base; Str spec.sp_prefix; Str spec.sp_path; Str spec.sp_suffix])) in
-    (* A route the definition ends with a slash keeps it: a server such as a
-     * Django REST one redirects or refuses the route without it. *)
+    (* A route the definition ends with a slash keeps it, for a Django REST server,
+     * and a host with no path takes /, or luasocket reads a query as the host. *)
     let ends_slash s = String.length s > 0 && '/' = s.[String.length s - 1] in
     (match getp ctx.c_point "orig" with
      | Str o when ends_slash o && spec.sp_suffix = "" && not (ends_slash !url) -> url := !url ^ "/"
      | _ -> ());
+    let ulen = String.length !url in
+    let rec scheme_end i =
+      if i + 3 > ulen then -1 else if String.sub !url i 3 = "://" then i else scheme_end (i + 1) in
+    let authority = scheme_end 0 in
+    if 0 < authority && not (String.exists (fun c -> c = '/' || c = '?' || c = '#')
+                               (String.sub !url (authority + 3) (ulen - authority - 3)))
+    then url := !url ^ "/";
     let resmatch = empty_map () in
     List.iter (fun key ->
         let v = getp spec.sp_params key in
