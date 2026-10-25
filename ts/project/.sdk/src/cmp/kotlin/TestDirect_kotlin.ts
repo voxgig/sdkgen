@@ -17,6 +17,8 @@ import {
   liveStrictNote,
   pointIsGraphql,
   graphqlDirectSkip,
+  liveExampleIds,
+  liveQueryExamples,
 } from '@voxgig/sdkgen'
 
 
@@ -60,7 +62,7 @@ function normalizePathParams(
 function kotlinLiteral(v: any): string {
   if (null == v) return 'null'
   if ('number' === typeof v || 'boolean' === typeof v) return String(v)
-  return JSON.stringify(String(v))
+  return JSON.stringify(String(v)).replace(/\$/g, '\\$')
 }
 
 
@@ -127,6 +129,10 @@ const TestDirect = cmp(function TestDirect(props: any) {
     : ''
 
   const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
+
+  const exampleIds = liveExampleIds(entity)
+  const listLiveQueryLines = liveQueryExamples(listPoint)
+    .map(([name, ex]) => `      query["${name}"] = ${kotlinLiteral(ex)}\n`).join('')
 
   File({ name: entity.Name + 'DirectTest.' + target.ext }, () => {
 
@@ -204,9 +210,10 @@ ${listSkipBlock}    val client = setup.client
 
 `)
 
-      if (listParams.length > 0) {
+      if (listParams.length > 0 || '' !== listLiveQueryLines) {
         Content(`    val params = linkedMapOf<String, Any?>()
-`)
+    val query = linkedMapOf<String, Any?>()
+${listLiveQueryLines ? '    if (setup.live) {\n' + listLiveQueryLines + '    }\n' : ''}`)
         listLiveParams.forEach((lp: any, i: number) => {
           const placeholder = 'direct0' + (i + 1)
           Content(`    if (setup.live) {
@@ -220,7 +227,8 @@ ${listSkipBlock}    val client = setup.client
     val result = client.direct(jm(
         "path", "${listPath}",
         "method", "GET",
-        "params", params))
+        "params", params,
+        "query", query))
 `)
       } else {
         Content(`
@@ -488,7 +496,10 @@ ${authActive ? `        mergedOpts["apikey"] = env["${PROJECTNAME}_APIKEY"]\n` :
         } else if (entidRaw is MutableMap<*, *>) {
           idmap = entidRaw as MutableMap<String, Any?>
         }
-        setup.idmap = idmap
+${0 === exampleIds.length ? '' : `        // A path parameter's example stands in for an id *_ENTID does not give.
+        idmap = LinkedHashMap(idmap)
+${exampleIds.map(([key, ex]) => `        if (idmap["${key}"] == null) idmap["${key}"] = ${kotlinLiteral(ex)}
+`).join('')}`}        setup.idmap = idmap
         return setup
       }
 

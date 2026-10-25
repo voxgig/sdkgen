@@ -19,6 +19,8 @@ import {
   liveStrictNote,
   pointIsGraphql,
   graphqlDirectSkip,
+  liveExampleIds,
+  liveQueryExamples,
 } from '@voxgig/sdkgen'
 
 import { formatCsValue } from './utility_csharp'
@@ -153,6 +155,10 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const entidEnvVar = `${PROJECTNAME}_TEST_${ENTUPPER}_ENTID`
 
+  const exampleIds = liveExampleIds(entity)
+  const listLiveQueryLines = liveQueryExamples(listPoint)
+    .map(([name, ex]) => `            query["${name}"] = ${formatCsValue(ex)};\n`).join('')
+
   File({ name: entity.Name + 'DirectTest.' + target.ext }, () => {
 
     Content(`// ${entity.name} direct API tests (generated from the API model).
@@ -226,9 +232,10 @@ ${listSkipBlock}        var client = setup.Client;
 
 `)
 
-      if (listParams.length > 0) {
+      if (listParams.length > 0 || '' !== listLiveQueryLines) {
         Content(`        var pathParams = new Dictionary<string, object?>();
-`)
+        var query = new Dictionary<string, object?>();
+${listLiveQueryLines ? '        if (setup.Live)\n        {\n' + listLiveQueryLines + '        }\n' : ''}`)
         listLiveParams.forEach((lp: any, i: number) => {
           const placeholder = 'direct0' + (i + 1)
           Content(`        if (setup.Live)
@@ -247,6 +254,7 @@ ${listSkipBlock}        var client = setup.Client;
             ["path"] = "${listPath}",
             ["method"] = "GET",
             ["params"] = pathParams,
+            ["query"] = query,
         });
 `)
       } else {
@@ -559,7 +567,10 @@ ${loadSkipBlock}        var client = setup.Client;
             {
                 idmap = entidMap;
             }
-
+${0 === exampleIds.length ? '' : `            // A path parameter's example stands in for an id *_ENTID does not give.
+            idmap = new Dictionary<string, object?>(idmap);
+${exampleIds.map(([key, ex]) => `            idmap.TryAdd("${key}", ${formatCsValue(ex)});
+`).join('')}`}
             return new ${entity.Name}DirectSetupResult
             {
                 Client = liveClient,

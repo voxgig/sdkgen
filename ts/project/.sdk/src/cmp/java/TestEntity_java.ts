@@ -22,6 +22,7 @@ import {
   serverVarEnv,
   serverVariables, envName, envToken,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveRouteExamples, liveStepExamples,
 } from '@voxgig/sdkgen'
 
 
@@ -76,7 +77,9 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: strin
   out += `    ${SDK} client = setup.client;\n`
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
-      .map(([k, v]: any) => `match.put(${JSON.stringify(k)}, setup.idmap.get(${JSON.stringify(v)}));`).join(' ')
+      .map(([k, v]: any) => `match.put(${JSON.stringify(k)}, setup.idmap.get(${JSON.stringify(v)}));`)
+      .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
+        .map(([k, ex]) => `match.put(${JSON.stringify(k)}, ${javaLit(ex)});`)).join(' ')
     out += `    if (setup.live) {
       RunnerSupport.liveExisting(setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)}, () -> {
         Map<String, Object> match = new LinkedHashMap<>();${match ? ' ' + match : ''}
@@ -456,6 +459,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`    ${matchvar}.put("${key}", setup.idmap.get("${val}"));
 `)
   }
+  Content(liveFill(entity, step, matchvar))
 
   // Only declare ${listvar} as a real var when a downstream validator
   // actually uses it.
@@ -626,7 +630,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 `)
   if (hasEntId) {
     Content(`    ${matchvar}.put("id", ${srcdatavar}.get("id"));
-${parentMatch(step, matchvar)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
     Map<String, Object> ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded instanceof SdkEntity ? ((SdkEntity) ${datavar}Loaded).data() : ${datavar}Loaded);
     assertNotNull(${datavar}LoadResult, "expected load result to be a map");
     assertEquals(${srcdatavar}.get("id"), ${datavar}LoadResult.get("id"),
@@ -634,7 +638,7 @@ ${parentMatch(step, matchvar)}    Object ${datavar}Loaded = ${entvar}.load(${mat
 `)
   }
   else {
-    Content(`${parentMatch(step, matchvar)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
+    Content(`${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
     assertNotNull(${datavar}Loaded, "expected load result to be non-null");
 `)
   }
@@ -669,6 +673,21 @@ ${parentMatch(step, matchvar)}    ${entvar}.remove(${matchvar}, null);
 // A child's route names its parents, and an entity no earlier step has
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
+function javaLit(value: any): string {
+  if ('string' === typeof value) return JSON.stringify(value)
+  return Number.isInteger(value) && Math.abs(value) > 2147483647 ? value + 'L' : String(value)
+}
+
+
+// A live step sends each example its route requires and the step leaves unbound.
+function liveFill(entity: any, step: any, matchvar: string): string {
+  const fills = liveStepExamples(entity, step)
+  return 0 === fills.length ? '' : `    if (setup.live) {
+${fills.map(([k, ex]) => `      ${matchvar}.put(${JSON.stringify(k)}, ${javaLit(ex)});\n`).join('')}    }
+`
+}
+
+
 function parentMatch(step: any, matchvar: string): string {
   return Object.entries(step.m || {})
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))

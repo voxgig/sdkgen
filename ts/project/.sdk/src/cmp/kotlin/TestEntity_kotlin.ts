@@ -20,6 +20,7 @@ import {
   getMatchEntries,
   isAuthActive, envName, envToken,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveRouteExamples, liveStepExamples,
 } from '@voxgig/sdkgen'
 
 
@@ -72,7 +73,9 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: strin
   out += '    val client = setup.client\n'
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
-      .map(([k, v]: any) => `${JSON.stringify(k)} to setup.idmap?.get(${JSON.stringify(v)})`).join(', ')
+      .map(([k, v]: any) => `${JSON.stringify(k)} to setup.idmap?.get(${JSON.stringify(v)})`)
+      .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
+        .map(([k, ex]) => `${JSON.stringify(k)} to ${kotlinLit(ex)}`)).join(', ')
     out += `    if (setup.live) {
       RunnerSupport.liveExisting(setup.data!!, LIVE_STRICT, ${JSON.stringify(entity.name)}) {
         client.${accessor}(null).list(linkedMapOf<String, Any?>(${match}), null)
@@ -407,6 +410,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`    ${matchvar}["${key}"] = setup.idmap!!["${val}"]
 `)
   }
+  Content(liveFill(entity, step, matchvar))
 
   const allSteps = Object.values(flowSteps(flow)) as any[]
   const listvarUsed = !!step.v?.some((v: any) => {
@@ -570,14 +574,14 @@ const generateLoad: OpGen = (ctx, step, index) => {
 `)
   if (hasEntId) {
     Content(`    ${matchvar}["id"] = ${srcdatavar}["id"]
-${parentMatch(step, matchvar)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
     val ${datavar}LoadResult = Helpers.toMapAny(if (${datavar}Loaded is SdkEntity) ${datavar}Loaded.data() else ${datavar}Loaded) ?: linkedMapOf()
     assertNotNull(${datavar}LoadResult, "expected load result to be a map")
     assertEquals(${srcdatavar}["id"], ${datavar}LoadResult["id"],
         "expected load result id to match")
 `)
   } else {
-    Content(`${parentMatch(step, matchvar)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
+    Content(`${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
     assertNotNull(${datavar}Loaded, "expected load result to be non-null")
 `)
   }
@@ -611,6 +615,21 @@ ${parentMatch(step, matchvar)}    ${entvar}.remove(${matchvar}, null)
 // A child's route names its parents, and an entity no earlier step has
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
+function kotlinLit(value: any): string {
+  if ('string' === typeof value) return JSON.stringify(value).replace(/\$/g, '\\$')
+  return Number.isInteger(value) && Math.abs(value) > 2147483647 ? value + 'L' : String(value)
+}
+
+
+// A live step sends each example its route requires and the step leaves unbound.
+function liveFill(entity: any, step: any, matchvar: string): string {
+  const fills = liveStepExamples(entity, step)
+  return 0 === fills.length ? '' : `    if (setup.live) {
+${fills.map(([k, ex]) => `      ${matchvar}[${JSON.stringify(k)}] = ${kotlinLit(ex)}\n`).join('')}    }
+`
+}
+
+
 function parentMatch(step: any, matchvar: string): string {
   return Object.entries(step.m || {})
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))

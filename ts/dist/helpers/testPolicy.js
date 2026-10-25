@@ -3,8 +3,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.liveStrict = liveStrict;
 exports.liveStrictNote = liveStrictNote;
 exports.liveFlowNeeds = liveFlowNeeds;
+exports.liveIdKey = liveIdKey;
+exports.liveExampleIds = liveExampleIds;
+exports.liveQueryExamples = liveQueryExamples;
+exports.liveRouteExamples = liveRouteExamples;
+exports.liveStepExamples = liveStepExamples;
 const types_1 = require("../types");
 const buildIdNames_1 = require("./buildIdNames");
+const graphqlPoint_1 = require("./graphqlPoint");
+const getMatchEntries_1 = require("./getMatchEntries");
 function liveStrict(model, target) {
     const perTarget = null == target ? undefined :
         model?.main?.[types_1.KIT]?.target?.[target]?.test?.live?.strict;
@@ -55,5 +62,62 @@ function liveFlowNeeds(entity, flow) {
         }
     }
     return needs;
+}
+// The *_ENTID key, the same in the live entity harness and every live test.
+function liveIdKey(entityName, paramName) {
+    return ('id' === paramName ? entityName : paramName.replace(/_id$/, '')) + '01';
+}
+function scalarExample(arg) {
+    const ex = arg?.ex;
+    return 'string' === typeof ex || 'number' === typeof ex || 'boolean' === typeof ex ? ex : undefined;
+}
+function liveExampleIds(entity) {
+    const ids = {};
+    for (const opname of ['list', 'load']) {
+        const points = entity?.op?.[opname]?.points;
+        const point = null == points ? undefined : (0, graphqlPoint_1.primaryPoint)(points, entity.name, opname);
+        for (const arg of point?.g?.params || []) {
+            const key = liveIdKey(entity.name, arg.n);
+            const ex = scalarExample(arg);
+            if (undefined === ids[key] && undefined !== ex)
+                ids[key] = ex;
+        }
+    }
+    return Object.keys(ids).sort().map((key) => [key, ids[key]]);
+}
+function liveQueryExamples(point) {
+    return (point?.g?.query || [])
+        .filter((arg) => arg.r && undefined !== scalarExample(arg))
+        .map((arg) => [arg.n, scalarExample(arg)]);
+}
+// The live entity harness's route: the first whose required parameters are
+// all bound or exemplified. A load of a known record binds its own path.
+function liveRouteExamples(entity, opname, bound, pathBound = false) {
+    const points = (entity?.op?.[opname]?.points || [])
+        .filter((point) => false !== point.a && null == point.q?.$action);
+    for (const point of points) {
+        const params = pathBound ? [] : point.g?.params || [];
+        const args = [...params, ...(point.g?.query || []).filter((arg) => arg.r)];
+        const fill = [];
+        let usable = true;
+        for (const arg of args) {
+            if (bound.includes(arg.n) || fill.some(([name]) => name === arg.n))
+                continue;
+            const ex = scalarExample(arg);
+            if (undefined !== ex)
+                fill.push([arg.n, ex]);
+            else if (false !== arg.r)
+                usable = false;
+        }
+        if (usable)
+            return fill;
+    }
+    return [];
+}
+function liveStepExamples(entity, step) {
+    if ('list' !== step?.o && 'load' !== step?.o)
+        return [];
+    const bound = (0, getMatchEntries_1.getMatchEntries)(step).map(([name]) => name);
+    return liveRouteExamples(entity, step.o, bound, 'load' === step.o && null != entity?.id);
 }
 //# sourceMappingURL=testPolicy.js.map

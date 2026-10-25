@@ -22,6 +22,7 @@ import {
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveRouteExamples, liveStepExamples,
 } from '@voxgig/sdkgen'
 
 import { perlStringLiteral } from './utility_perl'
@@ -68,7 +69,9 @@ function liveFlowGate(N: string, entity: any, needs: any, entidEnv: string,
   out += '  my $client = $setup->{client};\n'
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
-      .map(([k, v]: any) => `'${k}' => $setup->{idmap}{'${v}'}`).join(', ')
+      .map(([k, v]: any) => `'${k}' => $setup->{idmap}{'${v}'}`)
+      .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
+        .map(([k, ex]) => `'${k}' => ${perlLit(ex)}`)).join(', ')
     out += `  if ($setup->{live}) {
     ${N}TestRunner::live_existing($setup, LIVE_STRICT, '${label}', '${entity.name}',
       sub { $client->${entity.Name}(undef)->list({${match}}, undef) }) or last BASIC_FLOW;
@@ -376,6 +379,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`  };
 `)
   }
+  Content(liveFill(entity, step, matchvar))
 
   Content(`
   $V{${listvar}_result} = $V{${entvar}}->list($V{${matchvar}}, undef);
@@ -531,7 +535,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`  $V{${matchvar}} = {
     'id' => $V{${srcdatavar}}{id},
   };
-${parentMatch(step, matchvar)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
   $V{${datavar}_load_result} = ${N}Helpers::to_map(ref($V{${datavar}_loaded}) && $V{${datavar}_loaded}->can('data_get') ? $V{${datavar}_loaded}->data_get : $V{${datavar}_loaded});
   ok(defined $V{${datavar}_load_result}, '${entity.name} load: data');
   is($V{${datavar}_load_result}{id}, $V{${srcdatavar}}{id}, '${entity.name} load: id');
@@ -539,7 +543,7 @@ ${parentMatch(step, matchvar)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{$
   }
   else {
     Content(`  $V{${matchvar}} = {};
-${parentMatch(step, matchvar)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
   ok(defined $V{${datavar}_loaded}, '${entity.name} load: data');
 `)
   }
@@ -576,6 +580,21 @@ ${parentMatch(step, matchvar)}  $V{${entvar}}->remove($V{${matchvar}}, undef);
 // A child's route names its parents, and an entity no earlier step has
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
+function perlLit(value: any): string {
+  return 'string' === typeof value ? perlStringLiteral(value) : true === value ? '1' :
+    false === value ? '0' : String(value)
+}
+
+
+// A live step sends each example its route requires and the step leaves unbound.
+function liveFill(entity: any, step: any, matchvar: string): string {
+  const fills = liveStepExamples(entity, step)
+  return 0 === fills.length ? '' : `  if ($setup->{live}) {
+${fills.map(([k, ex]) => `    $V{${matchvar}}{'${k}'} = ${perlLit(ex)};\n`).join('')}  }
+`
+}
+
+
 function parentMatch(step: any, matchvar: string): string {
   return Object.entries(step.m || {})
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))

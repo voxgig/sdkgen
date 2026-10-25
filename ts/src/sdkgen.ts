@@ -81,7 +81,10 @@ import {
   litPair, litString,
 } from './helpers/opExample'
 import type { ExampleLang, LiteralLang } from './helpers/opExample'
-import { liveStrict, liveStrictNote, liveFlowNeeds } from './helpers/testPolicy'
+import {
+  liveStrict, liveStrictNote, liveFlowNeeds,
+  liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
+} from './helpers/testPolicy'
 import type { LiveFlowNeeds } from './helpers/testPolicy'
 import { pointSegments, pointParts, pointTerminalParam, pointPathKey }
   from './helpers/pointPath'
@@ -1201,6 +1204,11 @@ export {
   liveStrict,
   liveStrictNote,
   liveFlowNeeds,
+  liveIdKey,
+  liveExampleIds,
+  liveQueryExamples,
+  liveRouteExamples,
+  liveStepExamples,
   primaryOpCall,
   idLiteral,
   requiredItems,

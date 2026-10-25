@@ -110,6 +110,15 @@ runs without `<PROJ>_TEST_<ENTITY>_ENTID`. A flow that binds an identifier it
 can neither create nor list still needs that variable; without it, the test
 names the identifier it is missing.
 
+A required parameter that the model gives an example for needs no variable
+either. A live direct test takes each path parameter's example as the id that
+`<PROJ>_TEST_<ENTITY>_ENTID` would otherwise supply, under the same key, so the
+variable still overrides it, and it sends each required query parameter's
+example. An entity flow fills each required parameter its step leaves unbound
+from its example, on the first route whose required parameters are all bound
+or have an example, which is the route the TS and JS runners take. A required
+parameter with no example still blocks the test.
+
 The TS and JS entity flow runners also continue independent operations within
 a flow. A failed create blocks dependent writes, while independent reads still
 run. A failed update does not prevent a later load or cleanup of the resource

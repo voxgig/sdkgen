@@ -27,6 +27,9 @@ import {
   liveStrict,
   liveStrictNote,
   primaryPoint,
+  liveExampleIds,
+  liveQueryExamples,
+  litString,
 } from '@voxgig/sdkgen'
 
 
@@ -74,6 +77,14 @@ const TestDirect = cmp(function TestDirect(props: any) {
     return
   }
 
+  const exampleIds = liveExampleIds(entity)
+  const exampleIdLine = 0 === exampleIds.length ? '' :
+    `    // A path parameter's example stands in for an id *_ENTID does not give.
+    idmap = Object.assign({ ${exampleIds.map(([key, ex]) =>
+      `${jsKey(key)}: ${jsLit(ex)}`).join(', ')} },
+      'object' === typeof idmap ? idmap : {})
+`
+
   Folder({ name: entity.name }, () => {
 
     File({ name: nom(entity, 'Name') + 'Direct.test.' + target.name }, () => {
@@ -116,7 +127,7 @@ function directSetup(mockres) {
     if ('string' === typeof idmap && idmap.startsWith('{')) {
       idmap = JSON.parse(idmap)
     }
-
+${exampleIdLine}
     return { client, calls, live, idmap }
   }
 
@@ -174,6 +185,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
 
   const loadParams = loadPoint.g?.params || []
   const loadPath = normalizePathParams(pointParts(loadPoint), loadParams, loadPoint.r?.param)
+  const liveQueryLines = liveQueryLinesJs(loadPoint)
 
   // Get list info for live mode bootstrapping
   const listOp = entity.op?.list
@@ -204,7 +216,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
       `      ${jsProp('params', lp.name)} = setup.idmap['${lp.key}']`).join('\n')
 
     liveParamsBlock = `    if (setup.live) {
-      const listResult = await client.direct({
+${liveQueryLines}      const listResult = await client.direct({
         path: '${listPath}',
         method: 'GET',
         params: {
@@ -232,7 +244,7 @@ ${mockParamLines}
     const liveParams = loadParams.map((p: any) => ({ name: p.n, key: liveIdKey(entity, p) }))
     liveIdKeys = liveParams.map((lp: any) => lp.key)
     liveParamsBlock = `    if (setup.live) {
-${liveParams.map((lp: any) => `      ${jsProp('params', lp.name)} = setup.idmap['${lp.key}']`).join('\n') || '      // no params'}
+${liveQueryLines}${liveParams.map((lp: any) => `      ${jsProp('params', lp.name)} = setup.idmap['${lp.key}']`).join('\n') || '      // no params'}
     } else {
 ${mockParamLines || '      // no params'}
     }`
@@ -249,12 +261,14 @@ ${mockParamLines || '      // no params'}
 ${skipMissingLine}    const { client, calls } = setup
 
     const params = {}
+    const query = {}
 ${liveParamsBlock}
 
     const result = await client.direct({
       path: '${loadPath}',
       method: 'GET',
       params,
+      query,
     })
 
 ${liveChecks('load', 'null != result.data', 'no data', `      assert(result.ok === true)
@@ -287,26 +301,28 @@ function generateDirectList(model: Model, entity: ModelEntity) {
   const listPath = normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param)
 
   const liveParams = listParams.map((p: any) => ({ name: p.n, key: liveIdKey(entity, p) }))
+  const liveQueryLines = liveQueryLinesJs(listPoint)
 
   const paramAsserts = listParams.map((p: any, i: number) =>
     '      assert(calls[0].url.includes(\'direct0' + (i + 1) + '\'))\n').join('')
 
   let paramsBlock = ''
-  if (listParams.length > 0) {
-    const liveLines = liveParams.map((lp: any) =>
-      `      ${jsProp('params', lp.name)} = setup.idmap['${lp.key}']`).join('\n')
+  if (listParams.length > 0 || '' !== liveQueryLines) {
+    const liveLines = liveQueryLines + liveParams.map((lp: any) =>
+      `      ${jsProp('params', lp.name)} = setup.idmap['${lp.key}']\n`).join('')
     const mockLines = listParams.map((p: any, i: number) =>
       `      ${jsProp('params', p.n)} = 'direct0${i + 1}'`).join('\n')
 
     paramsBlock = `    const params = {}
+    const query = {}
     if (setup.live) {
-${liveLines}
-    } else {
+${liveLines}    }${mockLines ? ` else {
 ${mockLines}
-    }
+    }` : ''}
 `
   } else {
     paramsBlock = `    const params = {}
+    const query = {}
 `
   }
 
@@ -325,6 +341,7 @@ ${paramsBlock}
       path: '${listPath}',
       method: 'GET',
       params,
+      query,
     })
 
 ${liveChecks('list', 'Array.isArray(result.data)', 'no list', `      assert(result.ok === true)
@@ -392,6 +409,18 @@ ${liveChecks(opname, 'null != result.data', 'no data', `      assert(result.ok =
 ${varAsserts}`)}
   })
 `)
+}
+
+
+function jsLit(value: any): string {
+  return 'string' === typeof value ? litString('js', value) : String(value)
+}
+
+
+// A live request sends each required query parameter's example.
+function liveQueryLinesJs(point: any): string {
+  return liveQueryExamples(point)
+    .map(([name, ex]) => `      ${jsProp('query', name)} = ${jsLit(ex)}\n`).join('')
 }
 
 

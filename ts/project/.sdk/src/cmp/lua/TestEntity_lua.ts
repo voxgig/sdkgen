@@ -30,6 +30,7 @@ import {
   serverVariables,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveRouteExamples, liveStepExamples,
 } from '@voxgig/sdkgen'
 
 import { formatLuaValue } from './utility_lua'
@@ -70,7 +71,9 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, strict: boolean
   out += '    local client = setup.client\n'
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
-      .map(([k, v]: any) => `[${JSON.stringify(k)}] = setup.idmap[${JSON.stringify(v)}]`).join(', ')
+      .map(([k, v]: any) => `[${JSON.stringify(k)}] = setup.idmap[${JSON.stringify(v)}]`)
+      .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
+        .map(([k, ex]) => `[${JSON.stringify(k)}] = ${formatLuaValue(ex)}`)).join(', ')
     out += `    if setup.live then
       runner.live_existing(pending, setup, LIVE_STRICT, ${JSON.stringify(entity.name)}, function()
         return client:${entity.Name}(nil):list({${match}}, nil)
@@ -440,6 +443,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`    }
 `)
   }
+  Content(liveFill(entity, step, matchvar))
 
   Content(`
     local ${listvar}_result, err = ${entvar}:list(${matchvar}, nil)
@@ -597,7 +601,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`    local ${matchvar} = {
       id = ${srcdatavar}["id"],
     }
-${parentMatch(step, matchvar)}    local ${datavar}_loaded, err = ${entvar}:load(${matchvar}, nil)
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    local ${datavar}_loaded, err = ${entvar}:load(${matchvar}, nil)
     assert.is_nil(err)
     local ${datavar}_load_result = helpers.to_map(type(${datavar}_loaded) == 'table' and ${datavar}_loaded.data_get and ${datavar}_loaded:data_get() or ${datavar}_loaded)
     assert.is_not_nil(${datavar}_load_result)
@@ -606,7 +610,7 @@ ${parentMatch(step, matchvar)}    local ${datavar}_loaded, err = ${entvar}:load(
   }
   else {
     Content(`    local ${matchvar} = {}
-${parentMatch(step, matchvar)}    local ${datavar}_loaded, err = ${entvar}:load(${matchvar}, nil)
+${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    local ${datavar}_loaded, err = ${entvar}:load(${matchvar}, nil)
     assert.is_nil(err)
     assert.is_not_nil(${datavar}_loaded)
 `)
@@ -648,6 +652,15 @@ ${parentMatch(step, matchvar)}    local _, err = ${entvar}:remove(${matchvar}, n
 // A child's route names its parents, and an entity no earlier step has
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
+// A live step sends each example its route requires and the step leaves unbound.
+function liveFill(entity: any, step: any, matchvar: string): string {
+  const fills = liveStepExamples(entity, step)
+  return 0 === fills.length ? '' : `    if setup.live then
+${fills.map(([k, ex]) => `      ${matchvar}[${JSON.stringify(k)}] = ${formatLuaValue(ex)}\n`).join('')}    end
+`
+}
+
+
 function parentMatch(step: any, matchvar: string): string {
   return Object.entries(step.m || {})
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))

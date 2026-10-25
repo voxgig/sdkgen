@@ -21,7 +21,7 @@ import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
-  REQUEST_SHAPED_ENTITY,
+  REQUEST_SHAPED_ENTITY, exampleParams,
 } from './generateharness'
 
 
@@ -3177,6 +3177,34 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         ? String(entity[1]).includes('runLiveEntity(')
         : /live_?existing/i.test(String(entity[1]))
       if (!reads) gaps.push(`${target}:${entity[0]} does not read a listed record`)
+    }
+    deepStrictEqual(gaps, [])
+  })
+
+
+  // A required parameter with an example needs no *_ENTID: the direct test
+  // takes a path parameter's example as its id and sends a required query
+  // parameter's, and a fixture flow adds both to its match, as the ts and js
+  // live harness does.
+  test('every live target fills a required parameter from its example', async () => {
+    const out = await generate(LIVE_SUITE_TARGETS, undefined, exampleParams())
+    const gaps: string[] = []
+    const has = (files: [string, string][], name: RegExp, re: RegExp, what: string, target: string) => {
+      const file = files.find(([n]) => name.test(n))
+      if (null == file) gaps.push(`${target}: no ${name} test`)
+      else if (!re.test(file[1])) gaps.push(`${target}:${file[0]} ${what}`)
+    }
+    for (const target of LIVE_SUITE_TARGETS) {
+      const files = testFiles(out, target)
+      has(files, /release_?direct/i, /slug01[^\n]*["']php["']/, 'does not default slug01 to the example', target)
+      has(files, /offer_?direct/i, /asset[^\n]*["']BTC["']/, 'does not send the required asset example', target)
+      if (files.some(([n, c]) => /offer_?direct/i.test(n) && /["']eth["']/.test(c))) {
+        gaps.push(target + ': the offer direct test sends an optional example')
+      }
+      if (['ts', 'js'].includes(target)) continue
+      has(files, /release_?entity/i, /["']slug["'][^\n]*["']php["']/, 'does not list with the example slug', target)
+      has(files, /offer_?entity/i, /["']asset["'][^\n]*["']BTC["']/, 'does not list with the example asset', target)
+      has(files, /guess_?entity/i, /["']name["'][^\n]*["']michael["']/, 'does not load with the example name', target)
     }
     deepStrictEqual(gaps, [])
   })

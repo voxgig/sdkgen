@@ -19,6 +19,8 @@ import {
   liveStrictNote,
   pointIsGraphql,
   graphqlDirectSkip,
+  liveExampleIds,
+  liveQueryExamples,
 } from '@voxgig/sdkgen'
 
 
@@ -144,6 +146,15 @@ const TestDirect = cmp(function TestDirect(props: any) {
 
   const entidEnvVar = `${PROJECTNAME}_TEST_${envToken(entity.name)}_ENTID`
 
+  const exampleIds = liveExampleIds(entity)
+  const rustJson = (ex: any) => `json_parse(r##"${JSON.stringify(ex)}"##).unwrap_or(Value::Noval)`
+  const liveQueryBlock = (point: any) => {
+    const lines = liveQueryExamples(point)
+      .map(([name, ex]) => `        setp(&query, "${name}", ${rustJson(ex)});\n`).join('')
+    return '    let query = Value::empty_map();\n' +
+      (lines ? '    if setup.live {\n' + lines + '    }\n' : '')
+  }
+
   // The *_ENTID key a live test reads a parameter's value from.
   const liveKey = (param: any): string =>
     ('id' === param.n ? entity.name : param.n.replace(/_id$/, '')) + '01'
@@ -205,7 +216,11 @@ fn ${evar}_direct_setup(mockres: Value) -> ${entity.Name}DirectSetup {
             Value::Map(m) => Value::Map(m),
             _ => Value::empty_map(),
         };
-        return ${entity.Name}DirectSetup {
+${0 === exampleIds.length ? '' : `        // A path parameter's example stands in for an id *_ENTID does not give.
+${exampleIds.map(([key, ex]) => `        if getp(&idmap, "${key}").is_noval() {
+            setp(&idmap, "${key}", ${rustJson(ex)});
+        }
+`).join('')}`}        return ${entity.Name}DirectSetup {
             client,
             calls,
             live: true,
@@ -279,7 +294,7 @@ fn ${evar}_direct_list() {
 ${liveKeysBlock(listLiveParams.map((lp: any) => lp.key), entidEnvVar)}    let client = setup.client.clone();
 
     let params = Value::empty_map();
-`)
+${liveQueryBlock(listPoint)}`)
       listLiveParams.forEach((lp: any, i: number) => {
         Content(`    if setup.live {
         setp(&params, "${lp.name}", getp(&setup.idmap, "${lp.key}"));
@@ -294,6 +309,7 @@ ${liveKeysBlock(listLiveParams.map((lp: any) => lp.key), entidEnvVar)}    let cl
         ("path", Value::str("${listPath}")),
         ("method", Value::str("GET")),
         ("params", params.clone()),
+        ("query", query.clone()),
     ])) {
         Ok(result) => result,
         Err(err) if setup.live => {
@@ -391,7 +407,7 @@ fn ${evar}_direct_load() {
 ${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    let client = setup.client.clone();
 
     let params = Value::empty_map();
-    if setup.live {
+${liveQueryBlock(loadPoint)}    if setup.live {
 `)
       if (examples) {
         for (const p of loadParams) {
@@ -460,6 +476,7 @@ ${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    let client = setu
         ("path", Value::str("${loadPath}")),
         ("method", Value::str("GET")),
         ("params", params.clone()),
+        ("query", query.clone()),
     ])) {
         Ok(result) => result,
         Err(err) if setup.live => {

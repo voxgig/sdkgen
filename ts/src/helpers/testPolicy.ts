@@ -1,6 +1,8 @@
 import { KIT } from '../types'
 
 import { flowSteps } from './buildIdNames'
+import { primaryPoint } from './graphqlPoint'
+import { getMatchEntries } from './getMatchEntries'
 
 
 function liveStrict(model: any, target?: string): boolean {
@@ -72,6 +74,73 @@ function liveFlowNeeds(entity: any, flow: any): LiveFlowNeeds {
 }
 
 
+// The *_ENTID key, the same in the live entity harness and every live test.
+function liveIdKey(entityName: string, paramName: string): string {
+  return ('id' === paramName ? entityName : paramName.replace(/_id$/, '')) + '01'
+}
+
+
+function scalarExample(arg: any): string | number | boolean | undefined {
+  const ex = arg?.ex
+  return 'string' === typeof ex || 'number' === typeof ex || 'boolean' === typeof ex ? ex : undefined
+}
+
+
+function liveExampleIds(entity: any): [string, string | number | boolean][] {
+  const ids: Record<string, string | number | boolean> = {}
+  for (const opname of ['list', 'load']) {
+    const points = entity?.op?.[opname]?.points
+    const point: any = null == points ? undefined : primaryPoint(points, entity.name, opname)
+    for (const arg of point?.g?.params || []) {
+      const key = liveIdKey(entity.name, arg.n)
+      const ex = scalarExample(arg)
+      if (undefined === ids[key] && undefined !== ex) ids[key] = ex
+    }
+  }
+  return Object.keys(ids).sort().map((key) => [key, ids[key]])
+}
+
+
+function liveQueryExamples(point: any): [string, string | number | boolean][] {
+  return (point?.g?.query || [])
+    .filter((arg: any) => arg.r && undefined !== scalarExample(arg))
+    .map((arg: any) => [arg.n, scalarExample(arg)])
+}
+
+
+// The live entity harness's route: the first whose required parameters are
+// all bound or exemplified. A load of a known record binds its own path.
+function liveRouteExamples(entity: any, opname: string, bound: string[], pathBound = false):
+  [string, string | number | boolean][] {
+  const points: any[] = (entity?.op?.[opname]?.points || [])
+    .filter((point: any) => false !== point.a && null == point.q?.$action)
+  for (const point of points) {
+    const params = pathBound ? [] : point.g?.params || []
+    const args = [...params, ...(point.g?.query || []).filter((arg: any) => arg.r)]
+    const fill: [string, string | number | boolean][] = []
+    let usable = true
+    for (const arg of args) {
+      if (bound.includes(arg.n) || fill.some(([name]) => name === arg.n)) continue
+      const ex = scalarExample(arg)
+      if (undefined !== ex) fill.push([arg.n, ex])
+      else if (false !== arg.r) usable = false
+    }
+    if (usable) return fill
+  }
+  return []
+}
+
+
+function liveStepExamples(entity: any, step: any): [string, string | number | boolean][] {
+  if ('list' !== step?.o && 'load' !== step?.o) return []
+  const bound = getMatchEntries(step).map(([name]) => name)
+  return liveRouteExamples(entity, step.o, bound, 'load' === step.o && null != entity?.id)
+}
+
+
 export type { LiveFlowNeeds }
 
-export { liveStrict, liveStrictNote, liveFlowNeeds }
+export {
+  liveStrict, liveStrictNote, liveFlowNeeds,
+  liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
+}

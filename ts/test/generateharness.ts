@@ -466,6 +466,70 @@ main: kit: flow: BasicMetricFlow: {
 `
 
 
+// Required parameters a live run can only take from their examples: a list
+// under a path parameter, a list requiring a query parameter, and an
+// id-less load requiring a query parameter.
+const EXAMPLE_PARAM_ENTITIES = `
+main: kit: entity: release: {
+  alias: field: {}
+  name: "release"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: list: { name: "list", points: [
+    { g: { params: [ { k: "param", n: "slug", or: "slug", r: true, t: "\`$STRING\`", ex: "php" } ] }
+      m: "GET", o: "/api/{slug}.json", s: [{ lit: "api" }, { lit: "{slug}.json" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } }
+    { g: {}, m: "GET", o: "/api/products.json", s: [{ lit: "api" }, { lit: "products.json" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } }
+  ] }
+}
+
+main: kit: entity: offer: {
+  alias: field: {}
+  name: "offer"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: list: { name: "list", points: [ {
+    g: { query: [
+      { k: "query", n: "asset", or: "asset", r: true, t: "\`$STRING\`", ex: "BTC" }
+      { k: "query", n: "chain", or: "chain", r: false, t: "\`$STRING\`", ex: "eth" }
+    ] }
+    m: "GET", o: "/offers", s: [{ lit: "offers" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: entity: guess: {
+  alias: field: {}
+  name: "guess"
+  fields: { "age": { h: 'Age', n: "age", r: false, t: "\`$NUMBER\`" } }
+  op: load: { name: "load", points: [ {
+    g: { query: [ { k: "query", n: "name", or: "name", r: true, t: "\`$STRING\`", ex: "michael" } ] }
+    m: "GET", o: "/"
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: flow: BasicReleaseFlow: {
+  entity: "release", kind: "basic", name: "BasicReleaseFlow"
+  step: [ { o: "list" } ]
+}
+
+main: kit: flow: BasicOfferFlow: {
+  entity: "offer", kind: "basic", name: "BasicOfferFlow"
+  step: [ { o: "list" } ]
+}
+
+main: kit: flow: BasicGuessFlow: {
+  entity: "guess", kind: "basic", name: "BasicGuessFlow"
+  step: [ { o: "load", i: { ref: "guess_ref01", srcdatavar: "guess_ref01_data", suffix: "_dt0" } } ]
+}
+`
+
+
+function exampleParams(): string {
+  return entityOnly(EXAMPLE_PARAM_ENTITIES)
+}
+
+
 // A list whose route requires the query parameters engine and q.
 const SEARCH_ENTITY = `
 main: kit: entity: search: {
@@ -1367,6 +1431,7 @@ export {
   ROUTING_MODEL,
   SEARCH_ENTITY,
   searchOnly,
+  exampleParams,
   listOnly,
   selectorList,
   selectorLoad,
