@@ -4,7 +4,7 @@ import * as Path from 'node:path'
 import {
   cmp, each, camelify, names,
   File, Content, Folder, Fragment, Line, FeatureHook, Slot,
-  entityClassName, entityCollection, goModule
+  entityClassName, entityConstructorName, entityCollection, goModule
 } from '@voxgig/sdkgen'
 
 import {
@@ -26,6 +26,7 @@ const Entity = cmp(function Entity(props: any) {
   // clash with another entity's data-type name. The DATA type stays `<Name>`.
   const entityColl = entityCollection(model)
   const cls = entityClassName(entity, entityColl)
+  const ctor = entityConstructorName(entity, entityColl)
 
   const entrep = {
     ...stdrep,
@@ -58,7 +59,7 @@ const Entity = cmp(function Entity(props: any) {
 `)
               } :
               ({ indent }: any) => {
-                EntityOperation({ ff, opname, indent, entity, entrep, gomodule, cls })
+                EntityOperation({ ff, opname, indent, entity, entrep, gomodule, cls, ctor })
               }, a), {}))
 
       Fragment({
@@ -72,7 +73,7 @@ const Entity = cmp(function Entity(props: any) {
           entityname: entity.name,
 
           EntyClass: cls,
-          NewEntyClass: 'New' + cls,
+          NewEntyClass: ctor,
 
           '#Entity-Hook': ({ name, indent }: any) =>
             Content({ indent }, `utility.FeatureHook(ctx, "${name}")`),

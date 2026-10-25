@@ -28,7 +28,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
   searchOnly, listOnly, retypedList, seedableList, selectorLoad, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
-  KEYWORD_ACCESSOR_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
+  KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
   REQUEST_SHAPED_ENTITY,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
@@ -1259,6 +1259,30 @@ pub fn main() void {
     const vet = run(go, ['vet', './...'], sdkroot)
     ok(vet.ok, 'generated go does not vet clean:\n' + vet.out)
   })
+
+
+  test('go, go-cli and go-mcp: an entity named new_<X> beside <X> vets clean',
+    async (t) => {
+      const go = toolchain('go')
+      if (null == go) {
+        return t.skip('no go toolchain here')
+      }
+
+      const root = Path.join(tmp, 'go-new-prefix')
+      await generateBeside(['go', 'go-cli', 'go-mcp'], root, NEW_PREFIX_ENTITY)
+
+      const entity = (name: string) =>
+        Fs.readFileSync(Path.join(root, 'go', 'entity', name + '_entity.go'), 'utf8')
+      ok(/^type NewLicenceEntity struct/m.test(entity('new_licence')),
+        'new_licence lost its class name NewLicenceEntity')
+      ok(/^func NewLicenceEntity2\(/m.test(entity('licence')),
+        'licence still claims the constructor name NewLicenceEntity')
+
+      for (const target of ['go', 'go-cli', 'go-mcp']) {
+        const vet = run(go, ['vet', './...'], Path.join(root, target))
+        ok(vet.ok, target + ' does not vet clean:\n' + tail(vet.out))
+      }
+    })
 
 
   // go-mcp builds on the go SDK it wraps, and an agent host reads each tool's

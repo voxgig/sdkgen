@@ -525,12 +525,12 @@ model/sdk.aontu deb90c7d4659
 model/target/go.aontu 1955a91f1973
 model/target/target-index.aontu c475d1cec12b
 src/cmp/go/Config_go.ts a578f69bb65e
-src/cmp/go/EntityOperation_go.ts 466b87860b69
+src/cmp/go/EntityOperation_go.ts 76a52d6224f2
 src/cmp/go/EntityTypes_go.ts 3702d5d19fd2
-src/cmp/go/Entity_go.ts 9fb2f5da8680
+src/cmp/go/Entity_go.ts c5967450df95
 src/cmp/go/Gitignore_go.ts 93490d4fab7a
 src/cmp/go/MainEntity_go.ts 01154abb3c65
-src/cmp/go/Main_go.ts 3051491b398e
+src/cmp/go/Main_go.ts 9e8145fb6943
 src/cmp/go/Package_go.ts 111b2b904994
 src/cmp/go/PrepareAuth_go.ts 397083cd6c97
 src/cmp/go/ReadmeEntity_go.ts f811fb0254ea
