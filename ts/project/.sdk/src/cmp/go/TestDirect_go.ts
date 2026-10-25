@@ -18,6 +18,8 @@ import {
   pointIsGraphql,
   primaryPoint,
   liveExampleIds,
+  liveEntity,
+  liveGetOnlyReason, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 
@@ -68,7 +70,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
   const gomodule = props.gomodule
 
   const PROJECTNAME = envName(model)
@@ -648,6 +650,15 @@ function generateDirectGraphqlGo(
   const doc: string = point.gq.doc
   const vars: any[] = point.gq.vars || []
 
+  // A GraphQL request is a POST, which a GET-only live run does not send.
+  const getOnlyReason = liveGetOnlyReason(point)
+  const getOnlySkip = null == getOnlyReason ? '' :
+    `\t\tif setup.live && os.Getenv(${JSON.stringify(LIVE_GETONLY_ENV)}) == "TRUE" {
+\t\t\tt.Skip(${JSON.stringify(getOnlyReason)})
+\t\t\treturn
+\t\t}
+`
+
   const mockVarLines = vars.map((v: any, i: number) =>
     `\t\tvariables["${v.name}"] = "direct0${i + 1}"`).join('\n')
 
@@ -699,7 +710,7 @@ function generateDirectGraphqlGo(
 			t.Skip(_reason)
 			return
 		}
-${skipBlock}		client := setup.client
+${getOnlySkip}${skipBlock}		client := setup.client
 
 		variables := map[string]any{}
 		if setup.live {

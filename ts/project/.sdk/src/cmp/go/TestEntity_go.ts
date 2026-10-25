@@ -31,6 +31,8 @@ import {
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples,
+  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveEntity,
 } from '@voxgig/sdkgen'
 
 
@@ -56,7 +58,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
   const gomodule: string = props.gomodule
 
   // The stream test streams the "list" op with no match and asserts a 3-item
@@ -223,15 +225,19 @@ ${failureTests(model, entity)}` : ''}${validateTest(model, entity)}
 				return
 			}
 		}
-${liveFlowGate(entity, liveFlowNeeds(entity, basicflow), strict, strictConst,
-      PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID', allSteps.length > 0)}`)
+`)
 
-    // Check if the flow has a create step; if not, bootstrap entity data
-    const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
-    if (!flowHasCreate) {
-      const preambleRef = entity.name + '_ref01'
-      const preambleVar = goVar(preambleRef)
-      Content(`		// Bootstrap entity data from existing test data (no create step in flow).
+    const flowBody = (flow: any) => {
+      const steps = flowSteps(flow) as any[]
+      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), strict, strictConst,
+        PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID', steps.length > 0))
+
+      // Check if the flow has a create step; if not, bootstrap entity data
+      const flowHasCreate = steps.some((s: any) => s.o === 'create')
+      if (!flowHasCreate) {
+        const preambleRef = entity.name + '_ref01'
+        const preambleVar = goVar(preambleRef)
+        Content(`		// Bootstrap entity data from existing test data (no create step in flow).
 		${preambleVar}DataRaw := vs.Items(core.ToMapAny(vs.GetPath(setup.data, "existing.${entity.name}")))
 		var ${preambleVar}Data map[string]any
 		if len(${preambleVar}DataRaw) > 0 {
@@ -242,24 +248,47 @@ ${liveFlowGate(entity, liveFlowNeeds(entity, basicflow), strict, strictConst,
 		_ = ${preambleVar}Data
 
 `)
+      }
+
+      // Model-driven step iteration
+      each(steps, (step: any, index: any) => {
+        // Never emit a REMOVE (or its removed-item verify LIST) without a
+        // preceding CREATE: a coherent CRUD flow only removes what it created,
+        // so a create-less remove would mutate pre-existing (live) data.
+        if (!flowHasCreate) {
+          if ('remove' === step.o) { return }
+          if ('list' === step.o &&
+            (step.v || []).some((v: any) => 'ItemNotExists' === v.apply)) { return }
+        }
+        const opgen: OpGen = GENERATE_OP[step.o]
+        if (opgen) {
+          opgen({ ...genCtx, flow }, step, index)
+          Content('\n')
+        }
+      })
     }
 
-    // Model-driven step iteration
-    each(flowSteps(basicflow), (step: any, index: any) => {
-      // Never emit a REMOVE (or its removed-item verify LIST) without a
-      // preceding CREATE: a coherent CRUD flow only removes what it created,
-      // so a create-less remove would mutate pre-existing (live) data.
-      if (!flowHasCreate) {
-        if ('remove' === step.o) { return }
-        if ('list' === step.o &&
-          (step.v || []).some((v: any) => 'ItemNotExists' === v.apply)) { return }
+    const getOnly = liveGetOnly(entity, basicflow)
+    if (null != getOnly) {
+      Content(`		if setup.live && os.Getenv(${JSON.stringify(LIVE_GETONLY_ENV)}) == "TRUE" {
+${liveExcludedLines(getOnly).map((line) => '\t\t\tt.Log(' + JSON.stringify(line) + ')\n').join('')}`)
+      if (0 === flowSteps(getOnly.flow).length) {
+        Content(`			t.Skip(${JSON.stringify(liveExcludedSummary(getOnly))})
+			return
+		}
+
+`)
       }
-      const opgen: OpGen = GENERATE_OP[step.o]
-      if (opgen) {
-        opgen(genCtx, step, index)
-        Content('\n')
+      else {
+        flowBody(getOnly.flow)
+        Content(`		return
+		}
+
+`)
       }
-    })
+    }
+
+    flowBody(basicflow)
 
     Content(`	})
 }

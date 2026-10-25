@@ -42,12 +42,23 @@ import {
   hasLiveScenarios,
   liveStrict,
   liveStrictNote,
+  liveEntity,
+  liveGetOnly,
+  LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 
 import {
   projectPath
 } from './utility_ts'
+
+
+// The steps a GET-only live run leaves out, for the live harness.
+function getOnlyArg(entity: any, flow: any): string {
+  const plan = liveGetOnly(entity, flow)
+  return null == plan ? '' : `, 'TRUE' === process.env.${LIVE_GETONLY_ENV} ? ${JSON.stringify(
+    Object.fromEntries(plan.excluded.map(({ id, reason }) => [id, reason])))} : {}`
+}
 
 
 type GenCtx = {
@@ -240,7 +251,7 @@ function basicSetup(extra?: any) {
     ${hasLiveScenarios(model) ? `if (live) { t.skip('Covered by live operation scenarios'); return }` : ''}
     const setup = basicSetup()
     if (setup.live) {
-      return runLiveEntity(setup, ${JSON.stringify(entity)}, ${JSON.stringify(basicflow)}, '${nom(entity, 'Name')}', ${JSON.stringify(liveFacts)}, { strict: LIVE_STRICT, t })
+      return runLiveEntity(setup, ${JSON.stringify(liveEntity(ctx$, entity))}, ${JSON.stringify(basicflow)}, '${nom(entity, 'Name')}', ${JSON.stringify(liveFacts)}, { strict: LIVE_STRICT, t }${getOnlyArg(entity, basicflow)})
     }
     const client = setup.client
     const struct = setup.struct

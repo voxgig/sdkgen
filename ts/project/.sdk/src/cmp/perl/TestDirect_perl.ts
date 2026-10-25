@@ -21,6 +21,7 @@ import {
   graphqlDirectSkip,
   liveExampleIds,
   liveQueryExamples,
+  liveEntity,
 } from '@voxgig/sdkgen'
 
 import { perlStringLiteral } from './utility_perl'
@@ -92,7 +93,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const ctx$ = props.ctx$
   const model: Model = ctx$.model
 
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
   const target = props.target
 
   const N = model.const.Name

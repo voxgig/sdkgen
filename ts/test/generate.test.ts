@@ -21,7 +21,7 @@ import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
-  REQUEST_SHAPED_ENTITY, exampleParams,
+  REQUEST_SHAPED_ENTITY, exampleParams, getOnlyFlows, getOnlyBuildctx,
 } from './generateharness'
 
 
@@ -168,6 +168,7 @@ function foldedPaths(paths: string[]): string[] {
 
 async function generate(
   targetNames: string[], name?: string, extra?: string, sink?: any[], features?: string[],
+  buildctx?: any,
 ): Promise<Record<string, string>> {
   const { fs, vol } = memfs({})
 
@@ -183,6 +184,7 @@ async function generate(
   const res = await sdkgen.generate({
     model: makeModel(targetNames, name, extra, features),
     root: makeRoot(),
+    buildctx,
   })
   strictEqual(res.ok, true, 'generation did not report ok')
 
@@ -3210,6 +3212,66 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // A GET-only live run sends nothing but GET: each target leaves out a step
+  // no GET route reaches, and a step reading the record only such a step
+  // gives, says so, and skips a flow it leaves nothing of.
+  test('every live target excludes what a GET-only live run cannot send', async () => {
+    const out = await generate(LIVE_SUITE_TARGETS, undefined, getOnlyFlows(), undefined, undefined,
+      getOnlyBuildctx())
+    const gaps: string[] = []
+    const file = (target: string, name: RegExp) => testFiles(out, target).find(([n]) => name.test(n))
+    for (const target of LIVE_SUITE_TARGETS) {
+      const has = (name: RegExp, re: RegExp, what: string) => {
+        const found = file(target, name)
+        if (null == found) gaps.push(`${target}: no ${name} test`)
+        else if (!re.test(found[1])) gaps.push(`${target}:${found[0]} ${what}`)
+      }
+      const lacks = (name: RegExp, re: RegExp, what: string) => {
+        const found = file(target, name)
+        if (null != found && re.test(found[1])) gaps.push(`${target}:${found[0]} ${what}`)
+      }
+      has(/game_?entity/i, /VOXGIG_GETONLY_GUARD/, 'does not read the GET-only flag')
+      has(/game_?entity/i, /game\.create\.0[^\n]*needs POST \/game/, 'does not exclude the create')
+      has(/game_?entity/i, /game\.load\.1[^\n]*reads a record only game\.create\.0 gives/,
+        'does not exclude the load of the created record')
+      has(/router_?entity/i, /router\.remove\.1[^\n]*needs DELETE \/router\/\{id\}/,
+        'does not exclude the remove')
+      has(/chart_?entity/i, /chart\.create\.0[^\n]*needs POST \/chart/, 'does not exclude the create')
+      lacks(/chart_?entity/i, /chart\.load\.1[^\n]*excluded/, 'excludes an id-less load')
+      lacks(/estimate_?entity/i, /estimate\.list\.1[^\n]*excluded/, 'excludes a list')
+      lacks(/quote_?entity/i, /VOXGIG_GETONLY_GUARD/, 'gates a flow every step of which is a GET')
+      if (['ts', 'js'].includes(target)) continue
+      has(/game_?entity/i, /Live coverage incomplete: game\.create\.0 excluded/,
+        'does not skip a flow it leaves nothing of')
+      lacks(/chart_?entity/i, /Live coverage incomplete: chart/, 'skips a flow with a step left to run')
+    }
+    deepStrictEqual(gaps, [])
+  })
+
+
+  // A required parameter with no example takes the first value its enum allows.
+  test('every live target sends the first enum value of a required parameter', async () => {
+    const out = await generate(LIVE_SUITE_TARGETS, undefined, getOnlyFlows(), undefined, undefined,
+      getOnlyBuildctx())
+    const gaps: string[] = []
+    for (const target of LIVE_SUITE_TARGETS) {
+      const files = testFiles(out, target)
+      for (const kind of ['direct', 'entity'] as const) {
+        const found = files.find(([n]) => new RegExp('quote_?' + kind, 'i').test(n))
+        if (null == found) gaps.push(`${target}: no quote ${kind} test`)
+        else if (!/["']?asset["']?\W[^\n]*["']BTC["']/.test(found[1])) {
+          gaps.push(`${target}:${found[0]} does not send asset BTC`)
+        }
+        // The ts and js harness also carries the definition, enum and all.
+        else if (!['ts', 'js'].includes(target) && /["']ETH["']/.test(found[1])) {
+          gaps.push(`${target}:${found[0]} sends a later enum value`)
+        }
+      }
+    }
+    deepStrictEqual(gaps, [])
+  })
+
+
   // The ts SDK commits its build output.
   //
   // `dist/` and `dist-test/` are part of the published repo — a consumer
@@ -5993,6 +6055,8 @@ main: kit: flow: BasicBadgeFlow: {
         target + ': the direct load does not check its variables')
       ok(!/\.url\.includes\(|strings\.Contains\(url,/.test(text!),
         target + ': a GraphQL direct test asserts a REST URL')
+      ok(/VOXGIG_GETONLY_GUARD[^]*GET-only live run: needs POST issue/.test(text!),
+        target + ': a GET-only live run would send the GraphQL POST')
     }
 
     const cmpdir = Path.join(SCAFFOLD, 'src', 'cmp')

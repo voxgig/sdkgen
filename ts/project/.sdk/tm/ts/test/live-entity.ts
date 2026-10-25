@@ -6,8 +6,10 @@ import { isControlSkipped, liveDelayMs } from './utility'
 
 // The offline flow keeps its deterministic fixture assertions. Live flows
 // resolve real prerequisites per operation and collect failures until done.
+// `excluded` names, by step id, the steps this run leaves out, and why.
 async function runLiveEntity(
   setup: any, entity: any, flow: any, accessor: string, facts: any = {}, settle: LiveSettle = {},
+  excluded: Record<string, string> = {},
 ) {
   const { client, transport } = setup
   // A step switched off only because the offline call reaches no route of
@@ -26,11 +28,12 @@ async function runLiveEntity(
   const report = await runLiveSteps(steps.map((step, index) => {
     const ref = step.i?.ref || entity.name + '_ref01'
     const op = step.o
-    const excluded = isControlSkipped('entityOp', entity.name + '.' + op, 'live')
+    const id = entity.name + '.' + op + '.' + index
+    const control = isControlSkipped('entityOp', entity.name + '.' + op, 'live')
     return {
-      id: entity.name + '.' + op + '.' + index,
+      id,
       cleanup: op === 'remove' || (step.v || []).some((v: any) => v.apply === 'ItemNotExists'),
-      excluded: excluded.skip ? excluded.reason || 'Excluded by test control' : undefined,
+      excluded: control.skip ? control.reason || 'Excluded by test control' : excluded[id],
       run: async (context: any) => {
         transport.enter(context)
         const points = (entity.op?.[op]?.points || []).filter((point: any) => false !== point.a)

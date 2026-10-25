@@ -29,6 +29,8 @@ import {
   primaryPoint,
   liveExampleIds,
   litString,
+  liveEntity,
+  liveGetOnlyReason, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 
@@ -43,7 +45,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const stdrep = ctx$.stdrep
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
   const ff = projectPath('src/cmp/ts/fragment/')
 
@@ -189,6 +191,17 @@ function unwrapListData(data: any): any[] | null {
 })
 
 
+// A GraphQL request is a POST, which a GET-only live run does not send.
+function getOnlySkip(point: any): string {
+  const reason = liveGetOnlyReason(point)
+  return null == reason ? '' : `    if (setup.live && 'TRUE' === process.env.${LIVE_GETONLY_ENV}) {
+      t.skip(${JSON.stringify(reason)})
+      return
+    }
+`
+}
+
+
 function generateDirectGraphql(
   opname: 'load' | 'list',
   entity: ModelEntity,
@@ -240,7 +253,7 @@ ${varAsserts}`
     if (liveScenariosActive()) { t.skip('Covered by live operation scenarios'); return }
     const setup = directSetup()
     if (maybeSkipControl(t, 'direct', 'direct-${opname}-${entity.name}', setup.live)) return
-${skipMissingLine}    const { client, calls } = setup
+${getOnlySkip(point)}${skipMissingLine}    const { client, calls } = setup
 
     const variables: any = {}
     if (setup.live) {

@@ -30,6 +30,8 @@ import {
   liveExampleIds,
   liveQueryExamples,
   litString,
+  liveEntity,
+  liveGetOnlyReason, LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
 
@@ -44,7 +46,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const stdrep = ctx$.stdrep
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
   const ff = projectPath('src/cmp/js/fragment/')
 
@@ -359,6 +361,17 @@ ${paramAsserts}`)}
 // GraphQL-backed op needs POST+body, not a REST-shaped GET+params direct()
 // call — reuse apidef's own point.gq.doc via the SDK's graphql() hatch.
 // Mirrors TestDirect_ts.ts's generateDirectGraphql.
+// A GraphQL request is a POST, which a GET-only live run does not send.
+function getOnlySkip(point: any): string {
+  const reason = liveGetOnlyReason(point)
+  return null == reason ? '' : `    if (setup.live && 'TRUE' === process.env.${LIVE_GETONLY_ENV}) {
+      t.skip(${JSON.stringify(reason)})
+      return
+    }
+`
+}
+
+
 function generateDirectGraphqlJs(
   opname: 'load' | 'list',
   entity: ModelEntity,
@@ -388,7 +401,7 @@ function generateDirectGraphqlJs(
   test('direct-${opname}-${entity.name}', async (t) => {
     if (liveScenariosActive()) { t.skip('Covered by live operation scenarios'); return }
     const setup = directSetup()
-${skipMissingLine}    const { client, calls } = setup
+${getOnlySkip(point)}${skipMissingLine}    const { client, calls } = setup
 
     const variables = {}
     if (setup.live) {

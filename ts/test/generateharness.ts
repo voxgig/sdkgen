@@ -530,6 +530,112 @@ function exampleParams(): string {
 }
 
 
+// Flows a GET-only live run cannot make whole, and a required enum query.
+const GETONLY_ENTITIES = `
+main: kit: entity: game: {
+  alias: field: {}
+  name: "game"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: false, t: "\`$STRING\`" } }
+  op: create: { name: "create", points: [ { g: {}, m: "POST", o: "/game", s: [{ lit: "game" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  op: load: { name: "load", points: [ {
+    g: { params: [ { k: "param", n: "id", or: "gameId", r: true, t: "\`$STRING\`" } ] }
+    m: "GET", o: "/game/{gameId}", q: { exist: ["id"] }, r: { param: { gameId: "id" } }
+    s: [{ lit: "game" }, { var: "id" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: entity: chart: {
+  alias: field: {}
+  name: "chart"
+  fields: { "angle": { h: 'Angle', n: "angle", r: false, t: "\`$NUMBER\`" } }
+  op: create: { name: "create", points: [ { g: {}, m: "POST", o: "/chart", s: [{ lit: "chart" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  op: load: { name: "load", points: [ { g: {}, m: "GET", o: "/sky", s: [{ lit: "sky" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: entity: estimate: {
+  alias: field: {}
+  name: "estimate"
+  fields: { "size": { h: 'Size', n: "size", r: false, t: "\`$NUMBER\`" } }
+  op: create: { name: "create", points: [ { g: {}, m: "POST", o: "/estimate", s: [{ lit: "estimate" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  op: list: { name: "list", points: [ { g: {}, m: "GET", o: "/estimate", s: [{ lit: "estimate" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: entity: router: {
+  alias: field: {}
+  name: "router"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: false, t: "\`$STRING\`" } }
+  op: create: { name: "create", points: [ { g: {}, m: "POST", o: "/router", s: [{ lit: "router" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  op: remove: { name: "remove", points: [ {
+    g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+    m: "DELETE", o: "/router/{id}", q: { exist: ["id"] }
+    s: [{ lit: "router" }, { var: "id" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: entity: quote: {
+  alias: field: {}
+  name: "quote"
+  fields: { "price": { h: 'Price', n: "price", r: false, t: "\`$NUMBER\`" } }
+  op: list: { name: "list", points: [ {
+    g: { query: [ { k: "query", n: "asset", or: "asset", r: true, t: "\`$STRING\`" } ] }
+    m: "GET", o: "/quote", s: [{ lit: "quote" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: flow: BasicGameFlow: {
+  entity: "game", kind: "basic", name: "BasicGameFlow"
+  step: [ { o: "create", i: { ref: "game_ref01" } }
+    { o: "load", m: { id: "game01" }, i: { ref: "game_ref01", srcdatavar: "game_ref01_data", suffix: "_dt0" } } ]
+}
+
+main: kit: flow: BasicChartFlow: {
+  entity: "chart", kind: "basic", name: "BasicChartFlow"
+  step: [ { o: "create", i: { ref: "chart_ref01" } }
+    { o: "load", i: { ref: "chart_ref01", srcdatavar: "chart_ref01_data", suffix: "_dt0" } } ]
+}
+
+main: kit: flow: BasicEstimateFlow: {
+  entity: "estimate", kind: "basic", name: "BasicEstimateFlow"
+  step: [ { o: "create", i: { ref: "estimate_ref01" } }, { o: "list", i: { ref: "estimate_ref01" } } ]
+}
+
+main: kit: flow: BasicRouterFlow: {
+  entity: "router", kind: "basic", name: "BasicRouterFlow"
+  step: [ { o: "create", i: { ref: "router_ref01" } }
+    { o: "remove", m: { id: "router01" }, i: { ref: "router_ref01" } } ]
+}
+
+main: kit: flow: BasicQuoteFlow: {
+  entity: "quote", kind: "basic", name: "BasicQuoteFlow"
+  step: [ { o: "list" } ]
+}
+`
+
+
+const GETONLY_FACTS: Record<string, any> = {
+  'GET /quote': { protocol: 'http', parameters: [
+    { name: 'asset', in: 'query', required: true, schema: { type: 'string', enum: ['BTC', 'ETH'] } }] },
+}
+
+
+function getOnlyFlows(): string {
+  return entityOnly(GETONLY_ENTITIES)
+}
+
+
+function getOnlyBuildctx(): any {
+  return { resolved: { operation: (m: string, o: string) => GETONLY_FACTS[m.toUpperCase() + ' ' + o] } }
+}
+
+
 // A list whose route requires the query parameters engine and q.
 const SEARCH_ENTITY = `
 main: kit: entity: search: {
@@ -1428,6 +1534,8 @@ export {
   SEARCH_ENTITY,
   searchOnly,
   exampleParams,
+  getOnlyFlows,
+  getOnlyBuildctx,
   listOnly,
   selectorList,
   selectorLoad,

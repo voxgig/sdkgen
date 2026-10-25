@@ -14,5 +14,21 @@ declare function liveRouteExamples(entity: any, opname: string, bound: string[],
     string | number | boolean
 ][];
 declare function liveStepExamples(entity: any, step: any): [string, string | number | boolean][];
-export type { LiveFlowNeeds };
-export { liveStrict, liveStrictNote, liveFlowNeeds, liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples, };
+declare function liveEntity(ctx$: any, entity: any): any;
+declare const LIVE_GETONLY_ENV = "VOXGIG_GETONLY_GUARD";
+type LiveExcluded = {
+    id: string;
+    reason: string;
+};
+type LiveGetOnly = {
+    excluded: LiveExcluded[];
+    flow: any;
+};
+declare function liveFlowSteps(flow: any): any[];
+declare function liveStepId(entity: any, step: any, index: number): string;
+declare function liveGetOnlyReason(point: any): string | undefined;
+declare function liveGetOnly(entity: any, flow: any): LiveGetOnly | undefined;
+declare function liveExcludedLines(plan: LiveGetOnly): string[];
+declare function liveExcludedSummary(plan: LiveGetOnly): string;
+export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly };
+export { liveStrict, liveStrictNote, liveFlowNeeds, liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples, liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason, liveExcludedLines, liveExcludedSummary, };

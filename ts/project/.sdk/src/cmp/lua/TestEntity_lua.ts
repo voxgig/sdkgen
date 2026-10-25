@@ -31,6 +31,8 @@ import {
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples,
+  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveEntity,
 } from '@voxgig/sdkgen'
 
 import { formatLuaValue } from './utility_lua'
@@ -93,7 +95,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const model: Model = ctx$.model
 
   const target = props.target
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
 
   // The stream test streams the "list" op with no match and asserts a 3-item
   // collection, so it only applies to an entity whose list a bare call can
@@ -143,7 +145,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const genCtx: GenCtx = { model, entity, flow: basicflow, PROJUPPER }
 
   const strict = liveStrict(model, target.name)
-  const needs = liveFlowNeeds(entity, basicflow)
   const entidEnv = PROJUPPER + '_TEST_' + envToken(entity.name) + '_ENTID'
 
   File({ name: entity.name + '_entity_test.' + target.ext }, () => {
@@ -221,13 +222,16 @@ ${failureTests(entity)}` : ''}${validateTest(entity)}
         return
       end
     end
-${liveFlowGate(entity, needs, entidEnv, strict)}
 `)
 
-    // Check if the flow has a create step
-    const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
-    if (!flowHasCreate) {
-      Content(`    -- Bootstrap entity data from existing test data.
+    const flowBody = (flow: any) => {
+      const steps = flowSteps(flow) as any[]
+      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), entidEnv, strict) + '\n')
+
+      // Check if the flow has a create step
+      const flowHasCreate = steps.some((s: any) => s.o === 'create')
+      if (!flowHasCreate) {
+        Content(`    -- Bootstrap entity data from existing test data.
     local ${entity.name}_ref01_data_raw = vs.items(helpers.to_map(
       vs.getpath(setup.data, "existing.${entity.name}")))
     local ${entity.name}_ref01_data = nil
@@ -236,30 +240,55 @@ ${liveFlowGate(entity, needs, entidEnv, strict)}
     end
 
 `)
-    }
-
-    // Model-driven step iteration
-    each(flowSteps(basicflow), (step: any, index: any) => {
-      // Never emit a REMOVE (or its removed-item verify LIST) without a
-      // preceding CREATE: a coherent CRUD flow only removes what it created,
-      // so a create-less remove would mutate pre-existing (live) data.
-      if (!flowHasCreate) {
-        if ('remove' === step.o) { return }
-        if ('list' === step.o &&
-          (step.v || []).some((v: any) => 'ItemNotExists' === v.apply)) { return }
       }
-      const opgen: OpGen = GENERATE_OP[step.o]
-      if (opgen) {
-        opgen(genCtx, step, index)
-        Content('\n')
-      }
-    })
 
-    Content(`${strict ? '' : `    end)
+      // Model-driven step iteration
+      each(steps, (step: any, index: any) => {
+        // Never emit a REMOVE (or its removed-item verify LIST) without a
+        // preceding CREATE: a coherent CRUD flow only removes what it created,
+        // so a create-less remove would mutate pre-existing (live) data.
+        if (!flowHasCreate) {
+          if ('remove' === step.o) { return }
+          if ('list' === step.o &&
+            (step.v || []).some((v: any) => 'ItemNotExists' === v.apply)) { return }
+        }
+        const opgen: OpGen = GENERATE_OP[step.o]
+        if (opgen) {
+          opgen({ ...genCtx, flow }, step, index)
+          Content('\n')
+        }
+      })
+
+      Content(strict ? '' : `    end)
     if not _live_ok then
       runner.live_observe(pending, _live_err, setup, LIVE_STRICT)
     end
-`}  end)
+`)
+    }
+
+    const getOnly = liveGetOnly(entity, basicflow)
+    if (null != getOnly) {
+      Content(`    if setup.live and os.getenv(${formatLuaValue(LIVE_GETONLY_ENV)}) == "TRUE" then
+${liveExcludedLines(getOnly).map((line) => '      print(' + formatLuaValue(line) + ')\n').join('')}`)
+      if (0 === flowSteps(getOnly.flow).length) {
+        Content(`      pending(${formatLuaValue(liveExcludedSummary(getOnly))})
+      return
+    end
+
+`)
+      }
+      else {
+        flowBody(getOnly.flow)
+        Content(`      return
+    end
+
+`)
+      }
+    }
+
+    flowBody(basicflow)
+
+    Content(`  end)
 end)
 
 `)

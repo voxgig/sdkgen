@@ -92,9 +92,12 @@ function skipped(output: string): number {
   return null == found ? 0 : Number(found[1])
 }
 
-function child(args: string[], cwd: string): Promise<{ code: number | null, output: string }> {
+function child(args: string[], cwd: string, extra: NodeJS.ProcessEnv = {}):
+  Promise<{ code: number | null, output: string }> {
   return new Promise((resolve, reject) => {
-    const env: NodeJS.ProcessEnv = { ...process.env, DEMO_TEST_LIVE: 'TRUE', DEMO_APIKEY: 'fake-live-test-key' }
+    const env: NodeJS.ProcessEnv = {
+      ...process.env, DEMO_TEST_LIVE: 'TRUE', DEMO_APIKEY: 'fake-live-test-key', ...extra,
+    }
     delete env.NODE_TEST_CONTEXT
     for (const key of Object.keys(env)) {
       if (key.startsWith('DEMO_TEST_') && key.endsWith('_ENTID')) delete env[key as keyof typeof env]
@@ -252,7 +255,8 @@ describe('generated live tests continue after failures', () => {
       : ['planet/PlanetEntity', 'ambient/AmbientEntity', 'history/HistoryEntity'], direct)
   }
 
-  async function runTests(name: string, mode: string, tests: string[], seed = false) {
+  async function runTests(name: string, mode: string, tests: string[], seed = false,
+    env: NodeJS.ProcessEnv = {}) {
     failure = mode
     records.clear()
     calls.length = 0
@@ -261,7 +265,7 @@ describe('generated live tests continue after failures', () => {
     if (seed) records.set('existing01', { id: 'existing01', title: 'existing' })
     const tree = name.startsWith('ts') ? 'dist-test' : 'test'
     const files = tests.map(test => `${tree}/entity/${test}.test.js`)
-    return child(['--test', '--test-concurrency=1', ...files], roots[name])
+    return child(['--test', '--test-concurrency=1', ...files], roots[name], env)
   }
 
   async function withControl(name: string, options: any,
@@ -283,6 +287,26 @@ describe('generated live tests continue after failures', () => {
       }
       assert.equal(records.size, 0)
     })
+
+    test(target + ': a GET-only run sends no write, reports what it leaves out, and settles on its reads',
+      async () => {
+        const getOnly = { VOXGIG_GETONLY_GUARD: 'TRUE' }
+        const result = await runTests(target, '', ['planet/PlanetEntity'], true, getOnly)
+        assert.equal(result.code, 0, result.output)
+        assert(!calls.some(call => !call.startsWith('GET ')), result.output)
+        for (const request of ['GET /planet', 'GET /planet/existing01']) {
+          assert(calls.includes(request), request + '\n' + result.output)
+        }
+        for (const id of ['planet.create.0', 'planet.update.2', 'planet.remove.4']) {
+          assert(result.output.includes(`"id":"${id}","state":"excluded"`), id + '\n' + result.output)
+        }
+
+        const writes = await runTests(target, '', ['v2021/V2021Entity'], false, getOnly)
+        assert.equal(writes.code, 0, writes.output)
+        assert.deepEqual(calls, [])
+        assert.equal(skipped(writes.output), 1, writes.output)
+        assert.match(writes.output, /Live coverage incomplete: v2021\.create\.0 excluded \(GET-only live run: needs POST/)
+      })
 
     test(target + ': create failure permits independent reads and blocks dependent writes', async () => {
       const result = await run(target, 'POST /planet')

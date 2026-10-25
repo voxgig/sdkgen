@@ -22,7 +22,9 @@ import {
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
+  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
+  liveEntity,
 } from '@voxgig/sdkgen'
 
 import { perlStringLiteral } from './utility_perl'
@@ -91,7 +93,7 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const ctx$ = props.ctx$
   const model: Model = ctx$.model
 
-  const entity: ModelEntity = props.entity
+  const entity: ModelEntity = liveEntity(ctx$, props.entity)
   const target = props.target
 
   const basicflow: ModelEntityFlow | undefined =
@@ -148,7 +150,6 @@ const TestEntity = cmp(function TestEntity(props: any) {
   const genCtx: GenCtx = { model, entity, flow: basicflow, N, PROJUPPER }
 
   const strict = liveStrict(model, target.name)
-  const needs = liveFlowNeeds(entity, basicflow)
   // The failure tests stream and list with no match, so they need a list a
   // bare call can reach.
   const hasList = opReachable((entity.op as any)?.list, [])
@@ -190,14 +191,16 @@ BASIC_FLOW: {
       last BASIC_FLOW;
     }
   }
-${liveFlowGate(N, entity, needs, ENTIDVAR, strict)}  my %V;
-
 `)
 
-    // Check if the flow has a create step
-    const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
-    if (!flowHasCreate) {
-      Content(`  # Bootstrap entity data from existing test data.
+    const flowBody = (flow: any) => {
+      const steps = flowSteps(flow) as any[]
+      Content(liveFlowGate(N, entity, liveFlowNeeds(entity, flow), ENTIDVAR, strict) + '  my %V;\n\n')
+
+      // Check if the flow has a create step
+      const flowHasCreate = steps.some((s: any) => s.o === 'create')
+      if (!flowHasCreate) {
+        Content(`  # Bootstrap entity data from existing test data.
   $V{${entity.name}_ref01_data_raw} = Voxgig::Struct::items(${N}Helpers::to_map(
     ${N}Helpers::gpath($setup->{data}, 'existing.${entity.name}')));
   $V{${entity.name}_ref01_data} = undef;
@@ -206,20 +209,46 @@ ${liveFlowGate(N, entity, needs, ENTIDVAR, strict)}  my %V;
   }
 
 `)
+      }
+
+      // Model-driven step iteration
+      each(steps, (step: any, index: any) => {
+        const opgen: OpGen = GENERATE_OP[step.o]
+        if (opgen) {
+          opgen({ ...genCtx, flow }, step, index)
+          Content('\n')
+        }
+      })
+
+      Content(strict ? '' : `    1;
+  } or ${N}TestRunner::live_observe($@, $setup, LIVE_STRICT, '${entity.name}: basic flow');
+`)
     }
 
-    // Model-driven step iteration
-    each(flowSteps(basicflow), (step: any, index: any) => {
-      const opgen: OpGen = GENERATE_OP[step.o]
-      if (opgen) {
-        opgen(genCtx, step, index)
-        Content('\n')
-      }
-    })
+    const getOnly = liveGetOnly(entity, basicflow)
+    if (null != getOnly) {
+      Content(`  if ($setup->{live} && ($ENV{${LIVE_GETONLY_ENV}} // '') eq 'TRUE') {
+${liveExcludedLines(getOnly).map((line) => '    note(' + perlLit(line) + ');\n').join('')}`)
+      if (0 === flowSteps(getOnly.flow).length) {
+        Content(`    note(${perlLit(liveExcludedSummary(getOnly))});
+    pass('${entity.name}: basic flow skipped, a GET-only live run excludes every step');
+    last BASIC_FLOW;
+  }
 
-    Content(`${strict ? '' : `    1;
-  } or ${N}TestRunner::live_observe($@, $setup, LIVE_STRICT, '${entity.name}: basic flow');
-`}}
+`)
+      }
+      else {
+        flowBody(getOnly.flow)
+        Content(`    last BASIC_FLOW;
+  }
+
+`)
+      }
+    }
+
+    flowBody(basicflow)
+
+    Content(`}
 
 `)
 
