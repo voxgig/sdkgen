@@ -23,7 +23,7 @@ import {
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
-  liveRouteExamples, liveStepExamples,
+  liveRouteExamples, liveStepExamples, flowLoadRoute,
   liveEntity,
 } from '@voxgig/sdkgen'
 
@@ -564,7 +564,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`  $V{${matchvar}} = {
     'id' => $V{${srcdatavar}}{id},
   };
-${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
   $V{${datavar}_load_result} = ${N}Helpers::to_map(ref($V{${datavar}_loaded}) && $V{${datavar}_loaded}->can('data_get') ? $V{${datavar}_loaded}->data_get : $V{${datavar}_loaded});
   ok(defined $V{${datavar}_load_result}, '${entity.name} load: data');
   is($V{${datavar}_load_result}{id}, $V{${srcdatavar}}{id}, '${entity.name} load: id');
@@ -629,6 +629,23 @@ function parentMatch(step: any, matchvar: string): string {
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
     .map(([key, val]: any) => `  $V{${matchvar}}{'${key}'} = $setup->{idmap}{'${key}'} // $setup->{idmap}{'${val}'};
 `).join('')
+}
+
+
+// A load of a known record fills its route from that record, and from the
+// step's binding where the record holds no scalar for it.
+function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
+  const route = flowLoadRoute(entity, step)
+  if (null == route) {
+    return parentMatch(step, matchvar)
+  }
+  return route.args.map((arg) => {
+    const bound = arg.idmap.map((key) => `$setup->{idmap}{'${key}'}`).join(' // ')
+    const own = `$V{${srcdatavar}}{'${arg.field}'}`
+    return `  $V{${matchvar}}{'${arg.name}'} = ${null == arg.field ? bound :
+      `(defined ${own} && !ref ${own}) ? ${own} : (${bound})`};
+`
+  }).join('')
 }
 
 

@@ -30,7 +30,7 @@ import {
   entityDataIdField, envName, envToken,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
-  liveRouteExamples, liveStepExamples,
+  liveRouteExamples, liveStepExamples, flowLoadRoute,
   liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveEntity,
 } from '@voxgig/sdkgen'
@@ -603,7 +603,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`        ${matchvar} = {
             "id": ${srcdatavar}["id"],
         }
-${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}        ${datavar}_loaded = ${entvar}.load(${matchvar}, None)
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}        ${datavar}_loaded = ${entvar}.load(${matchvar}, None)
         ${datavar}_load_result = helpers.to_map(runner.entity_data(${datavar}_loaded))
         assert ${datavar}_load_result is not None
         assert ${datavar}_load_result["id"] == ${srcdatavar}["id"]
@@ -665,6 +665,23 @@ function parentMatch(step: any, matchvar: string): string {
     .map(([key, val]: any) => `        ${matchvar}["${key}"] = setup["idmap"].get("${key}") or setup["idmap"].get("${val}")
 `).join('')
 }
+
+// A load of a known record fills its route from that record, and from the
+// step's binding where the record holds no scalar for it.
+function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
+  const route = flowLoadRoute(entity, step)
+  if (null == route) {
+    return parentMatch(step, matchvar)
+  }
+  return route.args.map((arg) => {
+    const bound = arg.idmap.map((key) => `setup["idmap"].get("${key}")`).join(' or ')
+    const own = `${srcdatavar}.get("${arg.field}")`
+    return `        ${matchvar}["${arg.name}"] = ${null == arg.field ? bound :
+      `${own} if isinstance(${own}, (str, int, float)) else ${bound}`}
+`
+  }).join('')
+}
+
 
 const GENERATE_OP: Record<string, OpGen> = {
   create: generateCreate,

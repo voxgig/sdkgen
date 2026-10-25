@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -605,7 +605,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 `)
   if (hasEntId) {
     Content(`    ${matchvar}["id"] = ${srcdatavar}["id"]
-${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
     val ${datavar}LoadResult = Helpers.toMapAny(if (${datavar}Loaded is SdkEntity) ${datavar}Loaded.data() else ${datavar}Loaded) ?: linkedMapOf()
     assertNotNull(${datavar}LoadResult, "expected load result to be a map")
     assertEquals(${srcdatavar}["id"], ${datavar}LoadResult["id"],
@@ -666,6 +666,22 @@ function parentMatch(step: any, matchvar: string): string {
     .filter(([k]: any) => k !== 'id' && !k.endsWith('$'))
     .map(([key, val]: any) => `    ${matchvar}["${key}"] = setup.idmap?.get("${key}") ?: setup.idmap?.get("${val}")
 `).join('')
+}
+
+
+// A load of a known record fills its route from that record, and from the
+// step's binding where the record holds no scalar for it.
+function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
+  const route = flowLoadRoute(entity, step)
+  if (null == route) {
+    return parentMatch(step, matchvar)
+  }
+  return route.args.map((arg) => {
+    const bound = arg.idmap.map((key) => `setup.idmap?.get("${key}")`).join(' ?: ')
+    return `    ${matchvar}["${arg.name}"] = ${null == arg.field ? bound :
+      `${srcdatavar}["${arg.field}"].let { if (it is String || it is Number || it is Boolean) it else ${bound} }`}
+`
+  }).join('')
 }
 
 

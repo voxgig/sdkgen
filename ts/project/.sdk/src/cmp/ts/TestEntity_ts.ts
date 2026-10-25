@@ -44,6 +44,8 @@ import {
   liveStrictNote,
   liveEntity,
   liveGetOnly,
+  liveFlowRoutes,
+  flowLoadRoute,
   LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
 
@@ -251,7 +253,7 @@ function basicSetup(extra?: any) {
     ${hasLiveScenarios(model) ? `if (live) { t.skip('Covered by live operation scenarios'); return }` : ''}
     const setup = basicSetup()
     if (setup.live) {
-      return runLiveEntity(setup, ${JSON.stringify(liveEntity(ctx$, entity))}, ${JSON.stringify(basicflow)}, '${nom(entity, 'Name')}', ${JSON.stringify(liveFacts)}, { strict: LIVE_STRICT, t }${getOnlyArg(entity, basicflow)})
+      return runLiveEntity(setup, ${JSON.stringify(liveEntity(ctx$, entity))}, ${JSON.stringify(liveFlowRoutes(entity, basicflow))}, '${nom(entity, 'Name')}', ${JSON.stringify(liveFacts)}, { strict: LIVE_STRICT, t }${getOnlyArg(entity, basicflow)})
     }
     const client = setup.client
     const struct = setup.struct
@@ -535,8 +537,11 @@ const generateLoad: OpGen = (ctx, step, index) => {
   if (hasEntId) {
     Content(`    ${matchvar}.id = ${srcdatavar}.id
 `)
+    loadMatch(entity, step, matchvar, srcdatavar)
   }
-  parentMatch(step, matchvar)
+  else {
+    parentMatch(step, matchvar)
+  }
   if (hasEntId) {
     Content(`    const ${datavar} = (await ${entvar}.load(${matchvar})).data()
     assert(${datavar}.id === ${srcdatavar}.id)
@@ -596,6 +601,24 @@ function parentMatch(step: any, matchvar: string) {
 `)
     }
   })
+}
+
+
+// A load of a known record fills its route from that record, and from the
+// step's binding where the record holds no scalar for it.
+function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string) {
+  const route = flowLoadRoute(entity, step)
+  if (null == route) {
+    return parentMatch(step, matchvar)
+  }
+  for (const arg of route.args) {
+    const bound = arg.idmap.map((key) => `setup.idmap['${key}']`).join(' ?? ')
+    const own = `${srcdatavar}['${arg.field}']`
+    Content(null == arg.field ? `    ${matchvar}['${arg.name}'] = ${bound}
+` : `    ${matchvar}['${arg.name}'] = ['string', 'number', 'boolean'].includes(typeof ${own}) ?
+      ${own} : ${bound}
+`)
+  }
 }
 
 

@@ -29,7 +29,7 @@ import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
   searchOnly, listOnly, retypedList, seedableList, selectorLoad, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
   KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
-  REQUEST_SHAPED_ENTITY,
+  REQUEST_SHAPED_ENTITY, multiRouteLoad,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -7696,6 +7696,137 @@ int main() {
       ok(res.ok, 'cpp: ' + name + '_test failed:\n' + tail(res.out))
       ok(new RegExp('^' + name + '_test: [1-9]\\d* tests, [1-9]\\d* checks, 0 failures$', 'm').test(res.out),
         'cpp: ' + name + '_test printed no clean summary:\n' + tail(res.out))
+    }
+  })
+})
+
+
+// A basic flow loads the record it listed by the route that record fills,
+// and the mock serves it: job under the company its record holds, which the
+// step's binding names no record by, and proverb by its own lang and id
+// beside a parameter-free route.
+describe('a basic flow loads its listed record by the route that record fills', () => {
+
+  let tmp = ''
+  const tests = ['proverb', 'job']
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-multiroute-'))
+    const model = makeModel(['ts'], undefined, multiRouteLoad())
+    for (const name of tests) {
+      const dir = Path.join(tmp, '.sdk', 'test', 'entity', name)
+      Fs.mkdirSync(dir, { recursive: true })
+      Fs.writeFileSync(Path.join(dir, name[0].toUpperCase() + name.slice(1) + 'TestData.json'),
+        JSON.stringify(entityTestData(model.main.kit.entity[name])))
+    }
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+
+  test('ts: the proverb and job flows pass', async () => {
+    const root = Path.join(tmp, 'ts')
+    await generateTo('ts', root, multiRouteLoad())
+    linkDeps(root)
+    for (const tree of ['src', 'test']) {
+      const built = tsc(root, tree)
+      ok(built.ok, 'ts: the generated ' + tree + ' does not compile:\n' + built.out)
+    }
+    const files = ['proverb/Proverb', 'job/Job'].map((n) => Path.join('dist-test', 'entity', n + 'Entity.test.js'))
+    const res = run(process.execPath,
+      ['--test', '--test-concurrency=1', '--test-reporter=tap', ...files], root, nestedTestEnv())
+    ok(res.ok, 'ts: a generated entity test failed:\n' + tail(res.out))
+    strictEqual((res.out.match(/^\s*ok \d+ - basic\b/gm) || []).length, 2, 'ts: not both flows passed:\n' + tail(res.out))
+  })
+
+
+  test('go: the proverb and job flows pass', async (t) => {
+    const go = toolchain('go')
+    if (null == go) return t.skip('needs go')
+    const root = Path.join(tmp, 'go')
+    await generateTo('go', root, multiRouteLoad())
+    const res = run(go, ['test', './test/', '-count=1', '-v', '-run', '^Test(Proverb|Job)Entity$'], root)
+    if (res.timedOut) return t.skip('go: ' + res.out)
+    ok(res.ok, 'go: a generated entity test failed:\n' + tail(res.out))
+    for (const name of ['Proverb', 'Job']) {
+      ok(res.out.includes('--- PASS: Test' + name + 'Entity/basic'), 'go: ' + name + ' flow did not pass:\n' + tail(res.out))
+    }
+  })
+
+
+  test('py: the proverb and job flows pass', async (t) => {
+    const cmd = pytest(['-v', ...tests.map((name) => 'test_' + name + '_entity.py')])
+    if (null == cmd) return t.skip('needs python3 with pytest')
+    const root = Path.join(tmp, 'py')
+    await generateTo('py', root, multiRouteLoad())
+    const res = run(cmd.bin, cmd.args, Path.join(root, 'test'), cmd.env)
+    if (res.timedOut) return t.skip('py: ' + res.out)
+    ok(res.ok, 'py: a generated entity test failed:\n' + tail(res.out))
+    strictEqual((res.out.match(/::test_should_run_basic_flow PASSED/g) || []).length, 2, 'py: not both flows passed:\n' + tail(res.out))
+  })
+
+
+  test('rb: the proverb and job flows pass', async (t) => {
+    const rb = minitest([])
+    if (null == rb) return t.skip('needs ruby with minitest')
+    const root = Path.join(tmp, 'rb')
+    await generateTo('rb', root, multiRouteLoad())
+    for (const name of tests) {
+      const res = run(rb.bin, ['test/' + name + '_entity_test.rb', '-v'], root, rb.env)
+      if (res.timedOut) return t.skip('rb: ' + res.out)
+      ok(res.ok && /#test_basic_flow = [\d.]+ s = \./.test(res.out), 'rb: the ' + name + ' flow failed:\n' + tail(res.out))
+    }
+  })
+
+
+  test('lua: the proverb and job flows pass', async (t) => {
+    const lua = toolchain('lua5.4') || toolchain('lua')
+    const cmd = busted(['-o', 'TAP', ...tests.map((name) => 'test/' + name + '_entity_test.lua')])
+    if (null == cmd || null == lua || !probeOk(lua, ['-e', 'require "dkjson"'])) {
+      return t.skip('needs lua 5.4 with busted and the dkjson rock')
+    }
+    const root = Path.join(tmp, 'lua')
+    await generateTo('lua', root, multiRouteLoad())
+    const res = run(cmd.bin, cmd.args, root)
+    if (res.timedOut) return t.skip('lua: ' + res.out)
+    ok(res.ok && !/^not ok/m.test(res.out), 'lua: a generated entity test failed:\n' + tail(res.out))
+    strictEqual((res.out.match(/^ok \d+ .*basic/gm) || []).length, 2, 'lua: not both flows passed:\n' + tail(res.out))
+  })
+
+
+  test('perl: the proverb and job flows pass', async (t) => {
+    const perl = toolchain('perl')
+    if (null == perl) return t.skip('needs perl')
+    if (!probeOk(perl, ['-MTest::More', '-e', '1'])) return t.skip('perl is here but Test::More is not')
+    const root = Path.join(tmp, 'perl')
+    await generateTo('perl', root, multiRouteLoad())
+    for (const name of tests) {
+      const res = run(perl, ['-Ilib', 't/' + name + '_entity.t'], root)
+      if (res.timedOut) return t.skip('perl: ' + res.out)
+      ok(res.ok && !/^not ok/m.test(res.out) && new RegExp('^ok \\d+ - ' + name + ' load: id$', 'm').test(res.out),
+        'perl: the ' + name + ' flow failed:\n' + tail(res.out))
+    }
+  })
+
+
+  test('cpp: the proverb and job flows pass', async (t) => {
+    const make = toolchain('make')
+    const cxx = cleanCxx()
+    if (null == make || null == cxx) {
+      return t.skip('needs make and a C++ compiler (make: ' + make + ', cxx: ' + cxx + ')')
+    }
+    const root = Path.join(tmp, 'cpp')
+    await generateTo('cpp', root, multiRouteLoad())
+    for (const name of tests) {
+      const out = 'test/' + name + '_entity_test.out'
+      const built = run(make, ['-j2', 'CXX=' + cxx, out], root)
+      if (built.timedOut) return t.skip('cpp: ' + built.out)
+      ok(built.ok, 'cpp: ' + name + '_entity_test did not build:\n' + tail(built.out))
+      const res = run(Path.join(root, out), [], root)
+      ok(res.ok && new RegExp('^' + name + '_entity_test: [1-9]\\d* tests, [1-9]\\d* checks, 0 failures$', 'm').test(res.out),
+        'cpp: ' + name + '_entity_test failed:\n' + tail(res.out))
     }
   })
 })

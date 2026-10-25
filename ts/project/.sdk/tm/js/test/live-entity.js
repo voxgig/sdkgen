@@ -8,6 +8,8 @@ const strict_1 = __importDefault(require("node:assert/strict"));
 const live_contract_1 = require("./live-contract");
 const live_runner_1 = require("./live-runner");
 const utility_1 = require("./utility");
+const routeOf = (point) => String(point.m).toUpperCase() + ' ' + point.o;
+const scalarOf = (value) => ['string', 'number', 'boolean'].includes(typeof value) ? value : undefined;
 // The offline flow keeps its deterministic fixture assertions. Live flows
 // resolve real prerequisites per operation and collect failures until done.
 // `excluded` names, by step id, the steps this run leaves out, and why.
@@ -67,6 +69,14 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
                     if (undefined !== id)
                         input.id = id;
                 }
+                // A load of a known record takes the route the offline flow takes,
+                // and the parameters that flow reads from the record.
+                for (const [name, field] of Object.entries(step.record || {})) {
+                    const value = scalarOf(loaded?.[field]);
+                    if (undefined !== value)
+                        input[name] = value;
+                }
+                const ordered = null == step.route ? points : [...points].sort((a, b) => Number(step.route !== routeOf(a)) - Number(step.route !== routeOf(b)));
                 // A nested route needing a parent id must not hide an available
                 // parameter-free route for the same operation. Use the first viable
                 // candidate. An action route is taken only when the step names its
@@ -75,7 +85,7 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
                 let selected;
                 const unusable = [];
                 const actionOnly = points.every((point) => null != point.q?.$action);
-                for (const point of points) {
+                for (const point of ordered) {
                     const action = point.q?.$action;
                     if (null == input.$action ? null != action && !actionOnly : action !== input.$action)
                         continue;
@@ -87,7 +97,7 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
                         if (undefined !== candidate[arg.n] && null !== candidate[arg.n])
                             continue;
                         const key = arg.n === 'id' ? entity.name + '01' : arg.n.replace(/_id$/, '') + '01';
-                        const value = setup.idmap[key] ?? setup.idmap[arg.n] ?? loaded?.[arg.n] ?? arg.ex;
+                        const value = setup.idmap[key] ?? setup.idmap[arg.n] ?? scalarOf(loaded?.[arg.n]) ?? arg.ex;
                         if (undefined !== value && null !== value)
                             candidate[arg.n] = value;
                         else if (arg.r !== false)

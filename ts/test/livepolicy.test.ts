@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {
   liveStrict, liveStrictNote, liveFlowNeeds, guardFlowSteps,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
-  liveEntity, liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  flowLoadRoute, liveFlowRoutes, liveEntity, liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveDirectGetOnly,
 } from '../dist/sdkgen'
 
@@ -130,6 +130,62 @@ test('a load of a known record fills only its required query', () => {
   assert.deepEqual(liveStepExamples({ ...book, id: undefined }, { o: 'load', m: { shelf: 'shelf01' } }),
     [['id', 'b1'], ['lang', 'en']])
   assert.deepEqual(liveStepExamples(book, { o: 'update' }), [])
+})
+
+
+// proverb-mashup's shape: a record route keyed by the record's own lang
+// and id, sorted before a parameter-free one, as apidef sorts them.
+const field = (n: string, t = '`$STRING`') => ({ [n]: { n, t } })
+const proverb = {
+  name: 'proverb', id: { field: 'id', from: { id: 'id', lang: 'lang' }, parts: ['lang', 'id'] },
+  fields: { ...field('id'), ...field('lang'), ...field('source', '`$OBJECT`') },
+  op: { load: { points: [
+    route('/proverbs/{lang}/{id}', [arg('param', 'id', true, 88), arg('param', 'lang', true, 'ro')]),
+    route('/proverbs/random')] } },
+}
+
+test('a load of a listed record takes the route it can fill from that record', () => {
+  const load = { o: 'load', m: {} }
+  assert.deepEqual(flowLoadRoute(proverb, load), {
+    route: 'GET /proverbs/{lang}/{id}', point: proverb.op.load.points[0],
+    args: [{ name: 'lang', field: 'lang', idmap: ['lang'] }],
+  })
+  // A binding is the fallback for a parameter the record carries.
+  assert.deepEqual(flowLoadRoute(proverb, { o: 'load', m: { id: 'proverb01', lang: 'lang01' } })?.args,
+    [{ name: 'lang', field: 'lang', idmap: ['lang', 'lang01'] }])
+  // A parameter neither the record nor the step gives passes the route by.
+  const bare = { ...proverb, fields: field('id'), id: { field: 'id' } }
+  assert.equal(flowLoadRoute(bare, load), undefined)
+  assert.deepEqual(flowLoadRoute(bare, { o: 'load', m: { lang: 'lang01' } })?.args,
+    [{ name: 'lang', field: undefined, idmap: ['lang', 'lang01'] }])
+  // Only a scalar field fills a route, and a dotted mapping reads into an object.
+  assert.equal(flowLoadRoute({ ...bare, fields: { ...field('id'), ...field('lang', '`$OBJECT`') } }, load),
+    undefined)
+  assert.equal(flowLoadRoute({ ...proverb, id: { field: 'id', from: { lang: 'lang.code' } } }, load),
+    undefined)
+  // A record route is one that takes the id; an action route is never one.
+  assert.equal(flowLoadRoute({ ...proverb, op: { load: { points: [route('/proverbs/random'),
+    route('/proverbs/{lang}/{id}', [arg('param', 'id', true), arg('param', 'lang', true)],
+      [], { q: { $action: 'one' } })] } } }, load), undefined)
+  assert.equal(flowLoadRoute({ ...proverb, id: undefined }, load), undefined)
+  assert.equal(flowLoadRoute(proverb, { o: 'list' }), undefined)
+})
+
+test('the live harness and a live flow take the route the offline flow takes', () => {
+  const steps = [{ o: 'list' }, { o: 'load', m: {} }]
+  const annotated = liveFlowRoutes(proverb, { name: 'BasicProverbFlow', step: steps })
+  assert.deepEqual(annotated.step, [{ o: 'list' },
+    { o: 'load', m: {}, route: 'GET /proverbs/{lang}/{id}', record: { lang: 'lang' } }])
+  assert.equal(annotated.name, 'BasicProverbFlow')
+  assert.deepEqual(steps[1], { o: 'load', m: {} })
+
+  // The record's route, wherever it sorts, not the first route examples fill.
+  const keyed = { ...proverb, op: { load: { points: [
+    route('/proverbs/random', [], [arg('query', 'seed', true, 'k3')]),
+    route('/proverbs/{lang}/{id}', [arg('param', 'id', true), arg('param', 'lang', true)],
+      [arg('query', 'format', true, 'json')])] } } }
+  assert.deepEqual(liveStepExamples(keyed, { o: 'load' }), [['format', 'json']])
+  assert.deepEqual(liveStepExamples({ ...keyed, id: undefined }, { o: 'load' }), [['seed', 'k3']])
 })
 
 

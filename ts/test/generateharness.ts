@@ -686,6 +686,79 @@ function getOnlyBuildctx(): any {
 }
 
 
+// Loads of a listed record: by its lang and id beside a parameterless route, and under its company.
+const MULTIROUTE_ENTITIES = `
+main: kit: entity: proverb: {
+  alias: field: {}
+  name: "proverb"
+  id: { field: "id", from: { id: "id", lang: "lang" }, name: "id", parts: ["lang", "id"], sep: "/" }
+  fields: {
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "lang": { h: 'Lang', n: "lang", r: true, t: "\`$STRING\`" }
+    "text": { h: 'Text', n: "text", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: { name: "list", points: [ { g: {}, m: "GET", o: "/proverbs", q: { exist: [] }
+      s: [{ lit: "proverbs" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [
+      { g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" }
+          { k: "param", n: "lang", or: "lang", r: true, t: "\`$STRING\`" } ] }
+        m: "GET", o: "/proverbs/{lang}/{id}", q: { exist: ["id", "lang"] }
+        s: [{ lit: "proverbs" }, { var: "lang" }, { var: "id" }]
+        t: { req: "\`reqdata\`", res: "\`body\`" } }
+      { g: {}, m: "GET", o: "/proverbs/random", q: { exist: [] }
+        s: [{ lit: "proverbs" }, { lit: "random" }], t: { req: "\`reqdata\`", res: "\`body\`" } }
+    ] }
+  }
+}
+
+main: kit: entity: job: {
+  alias: field: {}
+  name: "job"
+  id: { field: "id", name: "id" }
+  fields: {
+    "company": { h: 'Company', n: "company", r: false, t: "\`$STRING\`" }
+    "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: { name: "list", points: [ {
+      g: { params: [ { k: "param", n: "company", or: "company", r: true, t: "\`$STRING\`", ex: "acme" } ] }
+      m: "GET", o: "/board/{company}/job", q: { exist: ["company"] }
+      s: [{ lit: "board" }, { var: "company" }, { lit: "job" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "company", or: "company", r: true, t: "\`$STRING\`", ex: "acme" }
+          { k: "param", n: "id", or: "idOrSlug", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/board/{company}/job/{idOrSlug}", q: { exist: ["company", "id"] }, r: { param: { idOrSlug: "id" } }
+      s: [{ lit: "board" }, { var: "company" }, { lit: "job" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: flow: BasicProverbFlow: {
+  entity: "proverb", kind: "basic", name: "BasicProverbFlow"
+  step: [
+    { o: "list", v: [{ apply: "ItemExists", def: { ref: "proverb_ref01" } }] }
+    { o: "load", i: { ref: "proverb_ref01", srcdatavar: "proverb_ref01_data", suffix: "_dt0" } }
+  ]
+}
+
+main: kit: flow: BasicJobFlow: {
+  entity: "job", kind: "basic", name: "BasicJobFlow"
+  step: [
+    { o: "list", m: { company: "company01" }, v: [{ apply: "ItemExists", def: { ref: "job_ref01" } }] }
+    { o: "load", m: { company: "company01", id: "job01" }
+      i: { ref: "job_ref01", srcdatavar: "job_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
+
+function multiRouteLoad(): string {
+  return entityOnly(MULTIROUTE_ENTITIES)
+}
+
+
 // A list whose route requires the query parameters engine and q.
 const SEARCH_ENTITY = `
 main: kit: entity: search: {
@@ -1623,6 +1696,8 @@ export {
   wireNameParams,
   getOnlyFlows,
   getOnlyBuildctx,
+  multiRouteLoad,
+  MULTIROUTE_ENTITIES,
   listOnly,
   selectorList,
   selectorLoad,

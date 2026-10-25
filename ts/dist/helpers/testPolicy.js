@@ -9,6 +9,8 @@ exports.liveExampleIds = liveExampleIds;
 exports.liveQueryExamples = liveQueryExamples;
 exports.liveRouteExamples = liveRouteExamples;
 exports.liveStepExamples = liveStepExamples;
+exports.flowLoadRoute = flowLoadRoute;
+exports.liveFlowRoutes = liveFlowRoutes;
 exports.liveEntity = liveEntity;
 exports.liveFlowSteps = liveFlowSteps;
 exports.liveStepId = liveStepId;
@@ -103,26 +105,29 @@ function liveQueryExamples(point) {
         .filter((arg) => arg.r && undefined !== scalarExample(arg))
         .map((arg) => [arg.or || arg.n, scalarExample(arg)]);
 }
+const plainPoints = (entity, opname) => (entity?.op?.[opname]?.points || [])
+    .filter((point) => false !== point.a && null == point.q?.$action);
+function routeExamples(point, bound, pathBound) {
+    const params = pathBound ? [] : point.g?.params || [];
+    const args = [...params, ...(point.g?.query || []).filter((arg) => arg.r)];
+    const fill = [];
+    for (const arg of args) {
+        if (bound.includes(arg.n) || fill.some(([name]) => name === arg.n))
+            continue;
+        const ex = scalarExample(arg);
+        if (undefined !== ex)
+            fill.push([arg.n, ex]);
+        else if (false !== arg.r)
+            return undefined;
+    }
+    return fill;
+}
 // The live entity harness's route: the first whose required parameters are
 // all bound or exemplified. A load of a known record binds its own path.
 function liveRouteExamples(entity, opname, bound, pathBound = false) {
-    const points = (entity?.op?.[opname]?.points || [])
-        .filter((point) => false !== point.a && null == point.q?.$action);
-    for (const point of points) {
-        const params = pathBound ? [] : point.g?.params || [];
-        const args = [...params, ...(point.g?.query || []).filter((arg) => arg.r)];
-        const fill = [];
-        let usable = true;
-        for (const arg of args) {
-            if (bound.includes(arg.n) || fill.some(([name]) => name === arg.n))
-                continue;
-            const ex = scalarExample(arg);
-            if (undefined !== ex)
-                fill.push([arg.n, ex]);
-            else if (false !== arg.r)
-                usable = false;
-        }
-        if (usable)
+    for (const point of plainPoints(entity, opname)) {
+        const fill = routeExamples(point, bound, pathBound);
+        if (null != fill)
             return fill;
     }
     return [];
@@ -131,7 +136,61 @@ function liveStepExamples(entity, step) {
     if ('list' !== step?.o && 'load' !== step?.o)
         return [];
     const bound = (0, getMatchEntries_1.getMatchEntries)(step).map(([name]) => name);
-    return liveRouteExamples(entity, step.o, bound, 'load' === step.o && null != entity?.id);
+    const known = 'load' === step.o && null != entity?.id;
+    const route = known ? flowLoadRoute(entity, step) : undefined;
+    return null == route ? liveRouteExamples(entity, step.o, bound, known) :
+        routeExamples(route.point, bound, true) ?? [];
+}
+const SCALAR_FIELD = ['`$STRING`', '`$INTEGER`', '`$NUMBER`', '`$BOOLEAN`'];
+// The scalar field of the record a route parameter reads: the entity id's
+// mapping for it, else its namesake; a dotted mapping reads into an object.
+function recordField(entity, name) {
+    const field = entity?.id?.from?.[name] ?? name;
+    if ('string' !== typeof field || field.includes('.'))
+        return undefined;
+    const def = Object.values(entity?.fields || {}).find((f) => f?.n === field);
+    return SCALAR_FIELD.includes(def?.t) ? field : undefined;
+}
+// The route a flow's load of a known record takes: the first the runtime
+// tries that takes the id and whose other path parameters the record holds
+// or the step binds, read from the record first. Undefined keeps the match.
+function flowLoadRoute(entity, step) {
+    if ('load' !== step?.o || null == entity?.id)
+        return undefined;
+    const bound = new Map((0, getMatchEntries_1.getMatchEntries)(step)
+        .filter(([, binding]) => 'string' === typeof binding));
+    const order = [...bound.keys()];
+    const rank = (arg) => order.includes(arg.name) ? order.indexOf(arg.name) : order.length;
+    for (const point of plainPoints(entity, 'load')) {
+        const names = [...new Set((point.g?.params || []).map((arg) => arg.n))];
+        if (!names.includes('id'))
+            continue;
+        const args = names.filter((name) => 'id' !== name).map((name) => {
+            const binding = bound.get(name);
+            return {
+                name, field: recordField(entity, name),
+                idmap: null == binding || binding === name ? [name] : [name, binding],
+            };
+        });
+        if (args.every((arg) => null != arg.field || bound.has(arg.name))) {
+            return { route: routeOf(point), point, args: args.sort((a, b) => rank(a) - rank(b)) };
+        }
+    }
+    return undefined;
+}
+// The flow, each load of a known record naming its route and record fields.
+function liveFlowRoutes(entity, flow) {
+    if (!Array.isArray(flow?.step))
+        return flow;
+    const step = flow.step.map((step) => {
+        const route = flowLoadRoute(entity, step);
+        return null == route ? step : {
+            ...step, route: route.route,
+            record: Object.fromEntries(route.args.filter((arg) => null != arg.field)
+                .map((arg) => [arg.name, arg.field])),
+        };
+    });
+    return { ...flow, step };
 }
 // The first value a parameter's enum allows; apidef already takes a schema
 // default as the example.

@@ -21,7 +21,7 @@ import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, embeddedLoad, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
-  REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, getOnlyFlows, getOnlyBuildctx,
+  REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, getOnlyFlows, getOnlyBuildctx, multiRouteLoad,
 } from './generateharness'
 
 
@@ -3235,6 +3235,35 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         if (!/player\/\{player_id\}/.test(player[1])) gaps.push(`${target}: path is not player/{player_id}`)
         if (!/params(\W|\.put\(){1,8}player_id\b/i.test(player[1])) gaps.push(`${target}: does not fill player_id`)
         if (/playerId/.test(player[1])) gaps.push(`${target}: names the path parameter by its wire name`)
+      }
+    }
+    deepStrictEqual(gaps, [])
+  })
+
+  // A basic flow loads the record it listed by the route that record fills:
+  // proverb's lang and id, not the parameter-free route the step was bound
+  // from, and job's company from the record before the step's binding. The
+  // ts and js harness is told the same route.
+  test('every flow target loads a listed record by the route it fills from the record', async () => {
+    const targets = [...LIVE_SUITE_TARGETS, 'cpp', 'scala']
+    const out = await generate(targets, undefined, multiRouteLoad())
+    const gaps: string[] = []
+    for (const target of targets) {
+      for (const [name, field, route] of [['proverb', 'lang', 'GET /proverbs/{lang}/{id}'],
+        ['job', 'company', 'GET /board/{company}/job/{idOrSlug}']]) {
+        const file = testFiles(out, target).find(([n]) => new RegExp(name + '_?entity', 'i').test(n))
+        if (null == file) {
+          gaps.push(`${target}: no ${name} entity test`)
+          continue
+        }
+        const text = String(file[1])
+        if (!new RegExp(`ref01_?data[^\\n]{0,12}["']${field}["']`, 'i').test(text)) {
+          gaps.push(`${target}:${file[0]} does not read ${field} from the listed record`)
+        }
+        if (['ts', 'js'].includes(target) &&
+          !text.includes(`"route":${JSON.stringify(route)},"record":{"${field}":"${field}"}`)) {
+          gaps.push(`${target}:${file[0]} does not name ${route} to the live harness`)
+        }
       }
     }
     deepStrictEqual(gaps, [])

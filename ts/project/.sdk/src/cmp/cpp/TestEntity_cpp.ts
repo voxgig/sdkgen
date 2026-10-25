@@ -1,4 +1,4 @@
-import { flowSteps, invalidRequest, opReachable } from '@voxgig/sdkgen'
+import { flowSteps, invalidRequest, opReachable, flowLoadRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -545,7 +545,7 @@ const generateLoad: OpGen = (ctx, step: any, index) => {
   }
   if (hasEntId) {
     Content(`  Value ${matchvar} = vmap({{"id", getp(${srcdatavar}, "id")}});
-${parentMatch(step, matchvar, '  ')}  Value ${datavar}_loaded = ${entvar}->load(Struct::clone(${matchvar}), Value::undef())->data();
+${loadMatch(entity, step, matchvar, srcdatavar, '  ')}  Value ${datavar}_loaded = ${entvar}->load(Struct::clone(${matchvar}), Value::undef())->data();
   Value ${datavar}_load_result = Helpers::toMapAny(${datavar}_loaded);
   ASSERT_TRUE(${datavar}_load_result.is_map(), "expected load result to be a map");
   ASSERT_EQ_VAL(getp(${datavar}_load_result, "id"), getp(${srcdatavar}, "id"), "expected load result id to match");
@@ -596,6 +596,31 @@ ${indent}  if (parent_id.is_undef() || parent_id.is_null()) parent_id = getp(set
 ${indent}  setp(${matchvar}, "${key}", parent_id);
 ${indent}}
 `).join('')
+}
+
+
+// A load of a known record fills its route from that record, and from the
+// step's binding where the record holds no scalar for it.
+function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string, indent: string): string {
+  const route = flowLoadRoute(entity, step)
+  if (null == route) {
+    return parentMatch(step, matchvar, indent)
+  }
+  return route.args.map((arg) => {
+    const [first, then] = arg.idmap
+    const fallback = (inner: string) => null == then ? '' :
+      `${inner}if (parent_id.is_undef() || parent_id.is_null()) parent_id = getp(setup.idmap, "${then}");
+`
+    return `${indent}{
+${null == arg.field ? `${indent}  Value parent_id = getp(setup.idmap, "${first}");
+${fallback(indent + '  ')}` : `${indent}  Value parent_id = getp(${srcdatavar}, "${arg.field}");
+${indent}  if (!(parent_id.is_string() || parent_id.is_number() || parent_id.is_bool())) {
+${indent}    parent_id = getp(setup.idmap, "${first}");
+${fallback(indent + '    ')}${indent}  }
+`}${indent}  setp(${matchvar}, "${arg.name}", parent_id);
+${indent}}
+`
+  }).join('')
 }
 
 

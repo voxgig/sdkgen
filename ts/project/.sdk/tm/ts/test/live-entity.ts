@@ -4,6 +4,10 @@ import { runLiveSteps, settleLiveReport, LiveBlocked, LiveEmpty } from './live-r
 import type { LiveSettle } from './live-runner'
 import { isControlSkipped, liveDelayMs } from './utility'
 
+const routeOf = (point: any) => String(point.m).toUpperCase() + ' ' + point.o
+
+const scalarOf = (value: any) => ['string', 'number', 'boolean'].includes(typeof value) ? value : undefined
+
 // The offline flow keeps its deterministic fixture assertions. Live flows
 // resolve real prerequisites per operation and collect failures until done.
 // `excluded` names, by step id, the steps this run leaves out, and why.
@@ -62,6 +66,14 @@ async function runLiveEntity(
           const id = loaded[idField] ?? loaded.id
           if (undefined !== id) input.id = id
         }
+        // A load of a known record takes the route the offline flow takes,
+        // and the parameters that flow reads from the record.
+        for (const [name, field] of Object.entries(step.record || {})) {
+          const value = scalarOf(loaded?.[field as string])
+          if (undefined !== value) input[name] = value
+        }
+        const ordered = null == step.route ? points : [...points].sort((a: any, b: any) =>
+          Number(step.route !== routeOf(a)) - Number(step.route !== routeOf(b)))
         // A nested route needing a parent id must not hide an available
         // parameter-free route for the same operation. Use the first viable
         // candidate. An action route is taken only when the step names its
@@ -70,7 +82,7 @@ async function runLiveEntity(
         let selected: any
         const unusable: { route: string, missing: string[] }[] = []
         const actionOnly = points.every((point: any) => null != point.q?.$action)
-        for (const point of points) {
+        for (const point of ordered) {
           const action = point.q?.$action
           if (null == input.$action ? null != action && !actionOnly : action !== input.$action) continue
           const candidate = null == action ? { ...input } : { ...input, $action: action }
@@ -80,7 +92,7 @@ async function runLiveEntity(
           for (const arg of [...params, ...query]) {
             if (undefined !== candidate[arg.n] && null !== candidate[arg.n]) continue
             const key = arg.n === 'id' ? entity.name + '01' : arg.n.replace(/_id$/, '') + '01'
-            const value = setup.idmap[key] ?? setup.idmap[arg.n] ?? loaded?.[arg.n] ?? arg.ex
+            const value = setup.idmap[key] ?? setup.idmap[arg.n] ?? scalarOf(loaded?.[arg.n]) ?? arg.ex
             if (undefined !== value && null !== value) candidate[arg.n] = value
             else if (arg.r !== false) missing.push(arg.n)
           }

@@ -8,7 +8,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import { memfs } from 'memfs'
 import { SdkGen } from '../dist/sdkgen'
 import {
-  makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD, CREATELESS_ENTITY,
+  makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD, CREATELESS_ENTITY, MULTIROUTE_ENTITIES,
 } from './generateharness'
 
 const PKG = Path.resolve(__dirname, '..')
@@ -108,7 +108,7 @@ const EXTRA_ENTITIES = CREATELESS_ENTITY +
   actionEntity('v2018', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current', city: 'bern' }]) +
   actionEntity('v2019', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current' }]) +
   actionEntity('v2020', [{ path: 'weather' }, { action: 'reset', path: 'reset', method: 'POST', bare: true }]) +
-  ACTION_CREATE + CREATED_ONLY
+  ACTION_CREATE + CREATED_ONLY + MULTIROUTE_ENTITIES
 
 function skipped(output: string): number {
   const found = output.match(/(?:^# skipped|\u2139 skipped) (\d+)/m)
@@ -170,6 +170,11 @@ describe('generated live tests continue after failures', () => {
       if (failure === 'html' && url.pathname === '/history') return html(200)
       if (failure === 'empty' && req.method === 'GET' &&
         ['/planet', '/history', '/metric'].includes(url.pathname)) return send([])
+      if (url.pathname === '/proverbs') return send([{ id: '7', lang: 'en', text: 'listed' }])
+      if (url.pathname === '/proverbs/en/7') return send({ id: '7', lang: 'en', text: 'listed' })
+      if (url.pathname === '/proverbs/random') return send({ id: '9', lang: 'ro', text: 'random' })
+      if (url.pathname === '/board/acme/job') return send([{ id: 'j1', company: { slug: 'acme' } }])
+      if (url.pathname === '/board/acme/job/j1') return send({ id: 'j1', company: 'acme' })
       if (url.pathname === '/metric') return send([{ id: 'metric01', count: 3 }])
       if (url.pathname.startsWith('/metric/')) return send({ id: url.pathname.split('/').pop(), count: 3 })
       if (key === 'GET /v2018/current' && url.searchParams.get('city') === 'bern') {
@@ -348,6 +353,15 @@ describe('generated live tests continue after failures', () => {
         assert.equal(given.code, 0, given.output)
         assert(calls.includes('GET /game/game77'), given.output)
       })
+
+    // The route the offline flow takes, filled from the listed record, and
+    // from the example where the record holds an object rather than a scalar.
+    test(target + ': a listed record loads by the route its own fields fill', async () => {
+      const result = await runTests(target, '', ['proverb/ProverbEntity', 'job/JobEntity'])
+      assert.equal(result.code, 0, result.output)
+      assert.deepEqual([...calls].sort(), ['GET /board/acme/job', 'GET /board/acme/job/j1',
+        'GET /proverbs', 'GET /proverbs/en/7'], result.output)
+    })
 
     test(target + ': create failure permits independent reads and blocks dependent writes', async () => {
       const result = await run(target, 'POST /planet')

@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -661,7 +661,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 `)
   if (hasEntId) {
     Content(`    ${matchvar}.put("id", ${srcdatavar}.get("id"));
-${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
     Map<String, Object> ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded instanceof SdkEntity ? ((SdkEntity) ${datavar}Loaded).data() : ${datavar}Loaded);
     assertNotNull(${datavar}LoadResult, "expected load result to be a map");
     assertEquals(${srcdatavar}.get("id"), ${datavar}LoadResult.get("id"),
@@ -725,6 +725,26 @@ function parentMatch(step: any, matchvar: string): string {
     .map(([key, val]: any) => `    ${matchvar}.put("${key}", null != setup.idmap.get("${key}")
         ? setup.idmap.get("${key}") : setup.idmap.get("${val}"));
 `).join('')
+}
+
+
+// A load of a known record fills its route from that record, and from the
+// step's binding where the record holds no scalar for it.
+function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
+  const route = flowLoadRoute(entity, step)
+  if (null == route) {
+    return parentMatch(step, matchvar)
+  }
+  return route.args.map((arg) => {
+    const get = (key: string) => `setup.idmap.get("${key}")`
+    const bound = 1 === arg.idmap.length ? get(arg.idmap[0]) :
+      `null != ${get(arg.idmap[0])} ? ${get(arg.idmap[0])} : ${get(arg.idmap[1])}`
+    const own = `${srcdatavar}.get("${arg.field}")`
+    return null == arg.field ? `    ${matchvar}.put("${arg.name}", ${bound});
+` : `    ${matchvar}.put("${arg.name}", ${own} instanceof String || ${own} instanceof Number
+        || ${own} instanceof Boolean ? ${own} : (${bound}));
+`
+  }).join('')
 }
 
 
