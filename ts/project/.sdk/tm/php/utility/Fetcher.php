@@ -256,12 +256,8 @@ class ProjectNameFetcher
                 "Request blocked as test feature is active (URL was: \"{$fullurl}\")")];
         }
 
-        $sys_fetch = \Voxgig\Struct\Struct::getpath($options, 'system.fetch');
+        $sys_fetch = self::systemFetch($options);
 
-        // Treat null OR an empty stdClass/array as "no fetcher provided" and
-        // fall through to the default HTTP fetcher. The options builder
-        // sometimes materializes `system.fetch` as an empty stdClass even
-        // when the user didn't set one — that's a placeholder, not a value.
         if (self::usesDefault($ctx)) {
             if (null !== $ctx->spec) {
                 $ctx->spec->headers = self::sentHeaders($ctx->spec->headers);
@@ -275,9 +271,19 @@ class ProjectNameFetcher
         return [null, $ctx->make_error('fetch_invalid', 'system.fetch is not a valid function')];
     }
 
+    // getpath answers a missing path with the struct port's UNDEF sentinel:
+    // one stdClass for the whole process, which setprop writes into when it
+    // is handed as a parent. It must never be read, or kept, as a fetcher.
+    public static function systemFetch(mixed $options): mixed
+    {
+        $fetch = \Voxgig\Struct\Struct::getpath($options, 'system.fetch');
+        return $fetch === \Voxgig\Struct\Struct::undef() ? null : $fetch;
+    }
+
+    // An empty map or list for `system.fetch` names no fetcher either.
     public static function usesDefault(ProjectNameContext $ctx): bool
     {
-        $sys_fetch = \Voxgig\Struct\Struct::getpath($ctx->client->options_map(), 'system.fetch');
+        $sys_fetch = self::systemFetch($ctx->client->options_map());
         $is_empty_obj = ($sys_fetch instanceof \stdClass) && empty(get_object_vars($sys_fetch));
         $is_empty_arr = is_array($sys_fetch) && empty($sys_fetch);
         return $sys_fetch === null || $is_empty_obj || $is_empty_arr;
