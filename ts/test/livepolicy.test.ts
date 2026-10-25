@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {
   liveStrict, liveStrictNote, liveFlowNeeds, guardFlowSteps,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
-  flowLoadRoute, liveFlowRoutes, liveEntity, liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes, liveEntity, liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveDirectGetOnly,
 } from '../dist/sdkgen'
 
@@ -148,7 +148,7 @@ test('a load of a listed record takes the route it can fill from that record', (
   const load = { o: 'load', m: {} }
   assert.deepEqual(flowLoadRoute(proverb, load), {
     route: 'GET /proverbs/{lang}/{id}', point: proverb.op.load.points[0],
-    args: [{ name: 'lang', field: 'lang', idmap: ['lang'] }],
+    args: [{ name: 'lang', field: 'lang', idmap: ['lang'] }], offline: false,
   })
   // A binding is the fallback for a parameter the record carries.
   assert.deepEqual(flowLoadRoute(proverb, { o: 'load', m: { id: 'proverb01', lang: 'lang01' } })?.args,
@@ -167,8 +167,43 @@ test('a load of a listed record takes the route it can fill from that record', (
   assert.equal(flowLoadRoute({ ...proverb, op: { load: { points: [route('/proverbs/random'),
     route('/proverbs/{lang}/{id}', [arg('param', 'id', true), arg('param', 'lang', true)],
       [], { q: { $action: 'one' } })] } } }, load), undefined)
-  assert.equal(flowLoadRoute({ ...proverb, id: undefined }, load), undefined)
   assert.equal(flowLoadRoute(proverb, { o: 'list' }), undefined)
+})
+
+
+// college-roi's shape: no id, loaded by a slug its record holds, which the
+// fixture's idmap binding names no record by.
+const slug = {
+  name: 'slug', fields: { ...field('name'), ...field('slug') },
+  op: { load: { points: [
+    route('/colleges/{slug}.json', [arg('param', 'slug', true)]),
+    route('/majors/{slug}.json', [arg('param', 'slug', true)])] } },
+}
+
+test('a load of an entity with no id keeps the route its step binds, read from the record offline', () => {
+  const load = { o: 'load', m: { slug: 'slug01' } }
+  assert.deepEqual(flowLoadRoute(slug, load), {
+    route: 'GET /colleges/{slug}.json', point: slug.op.load.points[0],
+    args: [{ name: 'slug', field: 'slug', idmap: ['slug', 'slug01'] }], offline: true,
+  })
+  assert.equal(flowLoadReadsRecord(slug, load), true)
+  // A parameter the step does not bind is not added from the record, and an
+  // id binding names no parameter of an entity that has no id.
+  assert.equal(flowLoadRoute(slug, { o: 'load', m: {} }), undefined)
+  assert.equal(flowLoadRoute(slug, { o: 'load', m: { id: 'slug01' } }), undefined)
+  assert.equal(flowLoadReadsRecord(slug, { o: 'load', m: {} }), false)
+  // A parameter the record holds no scalar for keeps the binding alone.
+  const opaque = { ...slug, fields: { ...field('name'), ...field('slug', '`$OBJECT`') } }
+  assert.deepEqual(flowLoadRoute(opaque, load)?.args, [{ name: 'slug', field: undefined, idmap: ['slug', 'slug01'] }])
+  assert.equal(flowLoadReadsRecord(opaque, load), false)
+  // A parameter-free route is the one an unbound step takes.
+  assert.deepEqual(flowLoadRoute({ ...proverb, id: undefined }, { o: 'load', m: {} }), {
+    route: 'GET /proverbs/random', point: proverb.op.load.points[1], args: [], offline: true,
+  })
+  // The live harness is not told an offline route, and a live step keeps its binding.
+  const steps = [load]
+  assert.deepEqual(liveFlowRoutes(slug, { step: steps }).step, steps)
+  assert.deepEqual(liveStepExamples(slug, load), [])
 })
 
 test('the live harness and a live flow take the route the offline flow takes', () => {

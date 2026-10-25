@@ -31,7 +31,7 @@ import {
   phpEntityAccessor,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
-  liveRouteExamples, liveStepExamples, flowLoadRoute,
+  liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
   liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveEntity,
 } from '@voxgig/sdkgen'
@@ -620,7 +620,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`        $${entvar} = $client->${accessor}(null);
 `)
   }
-  if (!hasSrcData && hasEntId) {
+  if (!hasSrcData && (hasEntId || flowLoadReadsRecord(entity, step))) {
     Content(`        $${srcdatavar}_raw = Vs::items(Helpers::to_map(
             Vs::getpath($setup["data"], "existing.${entity.name}")));
         $${srcdatavar} = null;
@@ -641,7 +641,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
   }
   else {
     Content(`        $${matchvar} = [];
-${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}        $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}        $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
         $this->assertNotNull($${datavar}_loaded);
 `)
   }
@@ -698,11 +698,21 @@ function parentMatch(step: any, matchvar: string): string {
 }
 
 // A load of a known record fills its route from that record, and from the
-// step's binding where the record holds no scalar for it.
+// step's binding where the record holds no scalar for it. A record only the
+// fixture holds replaces the step's binding offline.
 function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
   const route = flowLoadRoute(entity, step)
   if (null == route) {
     return parentMatch(step, matchvar)
+  }
+  if (route.offline) {
+    const own = route.args.filter((arg) => null != arg.field)
+    return parentMatch(step, matchvar) + (0 === own.length ? '' : `        if (empty($setup["live"])) {
+${own.map((arg) => `            if (is_scalar($${srcdatavar}["${arg.field}"] ?? null)) {
+                $${matchvar}["${arg.name}"] = $${srcdatavar}["${arg.field}"];
+            }
+`).join('')}        }
+`)
   }
   return route.args.map((arg) => {
     const bound = arg.idmap.map((key) => `$setup["idmap"]["${key}"]`).join(' ?? ') + ' ?? null'

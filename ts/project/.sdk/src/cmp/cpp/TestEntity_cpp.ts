@@ -1,4 +1,4 @@
-import { flowSteps, invalidRequest, opReachable, flowLoadRoute } from '@voxgig/sdkgen'
+import { flowSteps, invalidRequest, opReachable, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -536,11 +536,23 @@ const generateLoad: OpGen = (ctx, step: any, index) => {
   const hasEntVar = priorSteps.some((s: any) =>
     ['create', 'list', 'load', 'update', 'remove'].includes(s.o))
   const hasEntId = null != entity.id
+  const created = (s: any) => cppVarName(s.i?.datavar ?? ((s.i?.ref ?? entity.name + '_ref01') + '_data' + (s.i?.suffix ?? '')))
+  const hasSrcData = priorSteps.some((s: any) => 'create' === s.o && created(s) === srcdatavar) ||
+    (!Object.values(flowSteps(flow)).some((s: any) => 'create' === s.o) &&
+      srcdatavar === cppVarName(entity.name + '_ref01') + '_data')
 
   Content(`  // LOAD
 `)
   if (!hasEntVar) {
     Content(`  auto ${entvar} = client->${cppVarName(entity.name)}();
+`)
+  }
+  if (!hasEntId && !hasSrcData && flowLoadReadsRecord(entity, step)) {
+    Content(`  Value ${srcdatavar} = vmap();
+  {
+    std::vector<Value> its = Struct::items(Helpers::toMapAny(Struct::getpath(setup.data, {"existing", "${entity.name}"})));
+    ${srcdatavar} = its.empty() ? vmap() : Helpers::toMapAny(pair_val(its[0]));
+  }
 `)
   }
   if (hasEntId) {
@@ -552,7 +564,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar, '  ')}  Value ${datavar}_loaded 
 `)
   } else {
     Content(`  Value ${matchvar} = vmap();
-${parentMatch(step, matchvar, '  ')}  Value ${datavar}_loaded = ${entvar}->load(${matchvar}, Value::undef())->data();
+${loadMatch(entity, step, matchvar, srcdatavar, '  ')}  Value ${datavar}_loaded = ${entvar}->load(${matchvar}, Value::undef())->data();
   ASSERT_TRUE(!${datavar}_loaded.is_undef(), "expected load result to be non-nil");
 `)
   }
@@ -600,11 +612,22 @@ ${indent}}
 
 
 // A load of a known record fills its route from that record, and from the
-// step's binding where the record holds no scalar for it.
+// step's binding where the record holds no scalar for it. A record only the
+// fixture holds replaces the step's binding offline.
 function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string, indent: string): string {
   const route = flowLoadRoute(entity, step)
   if (null == route) {
     return parentMatch(step, matchvar, indent)
+  }
+  if (route.offline) {
+    const own = route.args.filter((arg) => null != arg.field)
+    return parentMatch(step, matchvar, indent) + (0 === own.length ? '' : `${indent}if (!setup.live) {
+${own.map((arg) => `${indent}  {
+${indent}    Value own = getp(${srcdatavar}, "${arg.field}");
+${indent}    if (own.is_string() || own.is_number() || own.is_bool()) setp(${matchvar}, "${arg.name}", own);
+${indent}  }
+`).join('')}${indent}}
+`)
   }
   return route.args.map((arg) => {
     const [first, then] = arg.idmap

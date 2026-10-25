@@ -30,7 +30,7 @@ import {
   entityDataIdField, envName, envToken,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
-  liveRouteExamples, liveStepExamples, flowLoadRoute,
+  liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
   liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveEntity,
 } from '@voxgig/sdkgen'
@@ -720,7 +720,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`		${entvar} := client.${entity.Name}(nil)
 `)
   }
-  if (!hasSrcData && hasEntId) {
+  if (!hasSrcData && (hasEntId || flowLoadReadsRecord(entity, step))) {
     Content(`		${srcdatavar}Raw := vs.Items(core.ToMapAny(vs.GetPath(setup.data, "existing.${entity.name}")))
 		var ${srcdatavar} map[string]any
 		if len(${srcdatavar}Raw) > 0 {
@@ -751,7 +751,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   else {
     Content(`		${matchvar} := map[string]any{}
 `)
-    parentMatch(step, matchvar)
+    loadMatch(entity, step, matchvar, srcdatavar)
     liveFill(entity, step, matchvar)
     Content(`		${datavar}Loaded, err := ${entvar}.Load(${matchvar}, nil)
 		if err != nil {
@@ -838,11 +838,23 @@ ${indent}}
 
 
 // A load of a known record fills its route from that record, and from the
-// step's binding where the record holds no scalar for it.
+// step's binding where the record holds no scalar for it. A record only the
+// fixture holds replaces the step's binding offline.
 function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string) {
   const route = flowLoadRoute(entity, step)
   if (null == route) {
     return parentMatch(step, matchvar)
+  }
+  if (route.offline) {
+    parentMatch(step, matchvar)
+    const own = route.args.filter((arg) => null != arg.field)
+    return 0 === own.length ? undefined : Content(`		if !setup.live {
+${own.map((arg) => `			switch v := ${srcdatavar}["${arg.field}"].(type) {
+			case string, bool, float64, int, int64:
+				${matchvar}["${arg.name}"] = v
+			}
+`).join('')}		}
+`)
   }
   for (const arg of route.args) {
     Content(null == arg.field ? boundMatch(matchvar, arg.name, arg.idmap, '\t\t') :

@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest, flowLoadRoute } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -125,9 +125,9 @@ ${failureScopes(SDK, entity, accessor)}
     // shipped "existing" fixtures here, mirroring the ts generator. Guarded on a
     // DATA id field — an entity that carries no id has no `.get("id")` to read.
     const flowHasCreate = allSteps.some((s: any) => s.o === 'create')
-    const needsPreambleData = !flowHasCreate &&
-      null != entityDataIdField(entity) &&
-      allSteps.some((s: any) => ['load', 'update', 'remove'].includes(s.o))
+    const needsPreambleData = !flowHasCreate && (null != entityDataIdField(entity) ?
+      allSteps.some((s: any) => ['load', 'update', 'remove'].includes(s.o)) :
+      allSteps.some((s: any) => flowLoadReadsRecord(entity, s)))
     if (needsPreambleData) {
       const preambleData = scalaVarName(entity.name + '_ref01_data')
       Content(`      val ${preambleData}Raw = Struct.items(Helpers.toMapAny(
@@ -354,7 +354,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`      val ${entvar} = client.${accessor}(null)
 `)
   }
-  if (!hasSrcData && hasDataId) {
+  if (!hasSrcData && (hasDataId || flowLoadReadsRecord(entity, step))) {
     Content(`      val ${srcdatavar}Raw = Struct.items(Helpers.toMapAny(
           Struct.getpath(entityData, "existing.${ENTLOWER}")))
       val ${srcdatavar} = Helpers.toMapAny(${srcdatavar}Raw.get(0).get(1))
@@ -370,7 +370,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}      val ${datavar}Loaded = ${e
       rep.eq("${ENTLOWER}.load.id", ${srcdatavar}.get("id"), ${datavar}LoadResult.get("id"))
 `)
   } else {
-    Content(`${parentMatch(step, matchvar)}      val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
+    Content(`${loadMatch(entity, step, matchvar, srcdatavar)}      val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
       rep.check("${ENTLOWER}.load.nonnull", ${datavar}Loaded != null, "expected load result to be non-null")
 `)
   }
@@ -418,11 +418,20 @@ function parentMatch(step: any, matchvar: string): string {
 
 
 // A load of a known record fills its route from that record, and from the
-// step's binding where the record holds no scalar for it.
+// step's binding where the record holds no scalar for it. A record only the
+// fixture holds replaces the step's binding; this suite runs offline only.
 function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
   const route = flowLoadRoute(entity, step)
   if (null == route) {
     return parentMatch(step, matchvar)
+  }
+  if (route.offline) {
+    return parentMatch(step, matchvar) + route.args.filter((arg) => null != arg.field)
+      .map((arg) => `      ${srcdatavar}.get("${arg.field}") match {
+        case v @ (_: String | _: java.lang.Number | _: java.lang.Boolean) => ${matchvar}.put("${arg.name}", v)
+        case _ =>
+      }
+`).join('')
   }
   return route.args.map((arg) => {
     const get = (key: string) => `idmap.get("${key}")`

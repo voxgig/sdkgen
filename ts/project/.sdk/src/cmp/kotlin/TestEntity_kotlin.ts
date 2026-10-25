@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest, flowLoadRoute } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -594,7 +594,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`    val ${entvar} = client.${accessor}(null)
 `)
   }
-  if (!hasSrcData && hasEntId) {
+  if (!hasSrcData && (hasEntId || flowLoadReadsRecord(entity, step))) {
     Content(`    val ${srcdatavar}Raw = Struct.items(Helpers.toMapAny(
         Struct.getpath(setup.data, "existing.${entity.name}")))
     val ${srcdatavar}: MutableMap<String, Any?> = if (${srcdatavar}Raw.isEmpty())
@@ -612,7 +612,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
         "expected load result id to match")
 `)
   } else {
-    Content(`${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
+    Content(`${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
     assertNotNull(${datavar}Loaded, "expected load result to be non-null")
 `)
   }
@@ -670,11 +670,22 @@ function parentMatch(step: any, matchvar: string): string {
 
 
 // A load of a known record fills its route from that record, and from the
-// step's binding where the record holds no scalar for it.
+// step's binding where the record holds no scalar for it. A record only the
+// fixture holds replaces the step's binding offline.
 function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
   const route = flowLoadRoute(entity, step)
   if (null == route) {
     return parentMatch(step, matchvar)
+  }
+  if (route.offline) {
+    const own = route.args.filter((arg) => null != arg.field)
+    return parentMatch(step, matchvar) + (0 === own.length ? '' : `    if (!setup.live) {
+${own.map((arg, i) => `      val own${i} = ${srcdatavar}["${arg.field}"]
+      if (own${i} is String || own${i} is Number || own${i} is Boolean) {
+        ${matchvar}["${arg.name}"] = own${i}
+      }
+`).join('')}    }
+`)
   }
   return route.args.map((arg) => {
     const bound = arg.idmap.map((key) => `setup.idmap?.get("${key}")`).join(' ?: ')

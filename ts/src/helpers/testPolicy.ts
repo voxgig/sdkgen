@@ -159,7 +159,7 @@ const SCALAR_FIELD = ['`$STRING`', '`$INTEGER`', '`$NUMBER`', '`$BOOLEAN`']
 
 type FlowRouteArg = { name: string, field?: string, idmap: string[] }
 
-type FlowLoadRoute = { route: string, point: any, args: FlowRouteArg[] }
+type FlowLoadRoute = { route: string, point: any, args: FlowRouteArg[], offline: boolean }
 
 
 // The scalar field of the record a route parameter reads: the entity id's
@@ -174,28 +174,38 @@ function recordField(entity: any, name: string): string | undefined {
 
 // The route a flow's load of a known record takes: the first the runtime
 // tries that takes the id and whose other path parameters the record holds
-// or the step binds, read from the record first. Undefined keeps the match.
+// or the step binds, read from the record first. Without an id it is the route
+// the step binds, filled from the record offline only. Undefined keeps the match.
 function flowLoadRoute(entity: any, step: any): FlowLoadRoute | undefined {
-  if ('load' !== step?.o || null == entity?.id) return undefined
+  if ('load' !== step?.o) return undefined
+  const keyed = null != entity?.id
   const bound = new Map(getMatchEntries(step)
-    .filter(([, binding]) => 'string' === typeof binding) as [string, string][])
+    .filter(([name, binding]) => 'string' === typeof binding && (keyed || 'id' !== name)) as
+      [string, string][])
   const order = [...bound.keys()]
   const rank = (arg: FlowRouteArg) => order.includes(arg.name) ? order.indexOf(arg.name) : order.length
   for (const point of plainPoints(entity, 'load')) {
     const names = [...new Set<string>((point.g?.params || []).map((arg: any) => arg.n))]
-    if (!names.includes('id')) continue
-    const args: FlowRouteArg[] = names.filter((name) => 'id' !== name).map((name) => {
+    if (keyed && !names.includes('id')) continue
+    const args: FlowRouteArg[] = names.filter((name) => !keyed || 'id' !== name).map((name) => {
       const binding = bound.get(name)
       return {
         name, field: recordField(entity, name),
         idmap: null == binding || binding === name ? [name] : [name, binding],
       }
     })
-    if (args.every((arg) => null != arg.field || bound.has(arg.name))) {
-      return { route: routeOf(point), point, args: args.sort((a, b) => rank(a) - rank(b)) }
+    if (args.every((arg) => bound.has(arg.name) || (keyed && null != arg.field))) {
+      return {
+        route: routeOf(point), point, args: args.sort((a, b) => rank(a) - rank(b)), offline: !keyed,
+      }
     }
   }
   return undefined
+}
+
+
+function flowLoadReadsRecord(entity: any, step: any): boolean {
+  return (flowLoadRoute(entity, step)?.args || []).some((arg) => null != arg.field)
 }
 
 
@@ -204,7 +214,7 @@ function liveFlowRoutes(entity: any, flow: any): any {
   if (!Array.isArray(flow?.step)) return flow
   const step = flow.step.map((step: any) => {
     const route = flowLoadRoute(entity, step)
-    return null == route ? step : {
+    return null == route || route.offline ? step : {
       ...step, route: route.route,
       record: Object.fromEntries(route.args.filter((arg) => null != arg.field)
         .map((arg) => [arg.name, arg.field])),
@@ -375,7 +385,7 @@ export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveKeyExcluded, FlowRou
 export {
   liveStrict, liveStrictNote, liveFlowNeeds,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
-  flowLoadRoute, liveFlowRoutes,
+  flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes,
   liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 }

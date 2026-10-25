@@ -759,6 +759,67 @@ function multiRouteLoad(): string {
 }
 
 
+const KEYLESS_ENTITIES = `
+main: kit: entity: slug: {
+  alias: field: {}
+  name: "slug"
+  fields: {
+    "name": { h: 'Name', n: "name", r: true, t: "\`$STRING\`" }
+    "slug": { h: 'Slug', n: "slug", r: true, t: "\`$STRING\`" }
+  }
+  op: {
+    load: { name: "load", points: [
+      { g: { params: [ { k: "param", n: "slug", or: "slug", r: true, t: "\`$STRING\`" } ] }
+        m: "GET", o: "/colleges/{slug}.json", q: { exist: ["slug"] }
+        s: [{ lit: "colleges" }, { lit: "{slug}.json" }], t: { req: "\`reqdata\`", res: "\`body\`" } }
+      { g: { params: [ { k: "param", n: "slug", or: "slug", r: true, t: "\`$STRING\`" } ] }
+        m: "GET", o: "/majors/{slug}.json", q: { exist: ["slug"] }
+        s: [{ lit: "majors" }, { lit: "{slug}.json" }], t: { req: "\`reqdata\`", res: "\`body\`" } }
+    ] }
+  }
+}
+
+main: kit: entity: rate: {
+  alias: field: {}
+  name: "rate"
+  fields: {
+    "amount": { h: 'Amount', n: "amount", r: true, t: "\`$INTEGER\`" }
+    "base": { h: 'Base', n: "base", r: true, t: "\`$STRING\`" }
+    "label": { h: 'Label', n: "label", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    load: { name: "load", points: [
+      { g: { params: [ { k: "param", n: "amount", or: "amount", r: true, t: "\`$INTEGER\`" }
+          { k: "param", n: "base", or: "base", r: true, t: "\`$STRING\`" } ] }
+        m: "GET", o: "/rates/{amount}-{base}", q: { exist: ["amount", "base"] }
+        s: [{ lit: "rates" }, { lit: "{amount}-{base}" }], t: { req: "\`reqdata\`", res: "\`body\`" } }
+    ] }
+  }
+}
+
+main: kit: flow: BasicSlugFlow: {
+  entity: "slug", kind: "basic", name: "BasicSlugFlow"
+  step: [
+    { o: "load", m: { slug: "slug01" }
+      i: { ref: "slug_ref01", srcdatavar: "slug_ref01_data", suffix: "_dt0" } }
+  ]
+}
+
+main: kit: flow: BasicRateFlow: {
+  entity: "rate", kind: "basic", name: "BasicRateFlow"
+  step: [
+    { o: "load", m: { amount: "amount01", base: "base01" }
+      i: { ref: "rate_ref01", srcdatavar: "rate_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
+
+function keylessLoad(): string {
+  return entityOnly(KEYLESS_ENTITIES)
+}
+
+
 // A list whose route requires the query parameters engine and q.
 const SEARCH_ENTITY = `
 main: kit: entity: search: {
@@ -1840,6 +1901,8 @@ export {
   getOnlyBuildctx,
   multiRouteLoad,
   MULTIROUTE_ENTITIES,
+  keylessLoad,
+  KEYLESS_ENTITIES,
   listOnly,
   selectorList,
   selectorLoad,

@@ -23,7 +23,7 @@ import {
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
-  liveRouteExamples, liveStepExamples, flowLoadRoute,
+  liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
   liveEntity,
 } from '@voxgig/sdkgen'
 
@@ -551,7 +551,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`  $V{${entvar}} = $client->${entity.Name}(undef);
 `)
   }
-  if (!hasSrcData && hasEntId) {
+  if (!hasSrcData && (hasEntId || flowLoadReadsRecord(entity, step))) {
     Content(`  $V{${srcdatavar}_raw} = Voxgig::Struct::items(${N}Helpers::to_map(
     ${N}Helpers::gpath($setup->{data}, 'existing.${entity.name}')));
   $V{${srcdatavar}} = undef;
@@ -572,7 +572,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
   }
   else {
     Content(`  $V{${matchvar}} = {};
-${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
   ok(defined $V{${datavar}_loaded}, '${entity.name} load: data');
 `)
   }
@@ -633,11 +633,22 @@ function parentMatch(step: any, matchvar: string): string {
 
 
 // A load of a known record fills its route from that record, and from the
-// step's binding where the record holds no scalar for it.
+// step's binding where the record holds no scalar for it. A record only the
+// fixture holds replaces the step's binding offline.
 function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
   const route = flowLoadRoute(entity, step)
   if (null == route) {
     return parentMatch(step, matchvar)
+  }
+  if (route.offline) {
+    const own = route.args.filter((arg) => null != arg.field)
+    return parentMatch(step, matchvar) + (0 === own.length ? '' : `  if (!$setup->{live}) {
+${own.map((arg) => `    {
+      my $own = $V{${srcdatavar}}{'${arg.field}'};
+      $V{${matchvar}}{'${arg.name}'} = $own if defined $own && !ref $own;
+    }
+`).join('')}  }
+`)
   }
   return route.args.map((arg) => {
     const bound = arg.idmap.map((key) => `$setup->{idmap}{'${key}'}`).join(' // ')

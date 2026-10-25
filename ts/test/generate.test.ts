@@ -21,7 +21,7 @@ import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, embeddedLoad, shadowedLoad, actionList, parentedCreate, idlessUpdate, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
-  REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, getOnlyFlows, getOnlyBuildctx, multiRouteLoad,
+  REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
 } from './generateharness'
 
 
@@ -3263,6 +3263,47 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         if (['ts', 'js'].includes(target) &&
           !text.includes(`"route":${JSON.stringify(route)},"record":{"${field}":"${field}"}`)) {
           gaps.push(`${target}:${file[0]} does not name ${route} to the live harness`)
+        }
+      }
+    }
+    deepStrictEqual(gaps, [])
+  })
+
+
+  // An entity with no id keeps the route its step binds: offline each bound
+  // parameter takes the value the fixture record holds, which the mock
+  // matches; live, where there is no such record, the binding stands.
+  test('every flow target loads an entity with no id by the values its record holds', async () => {
+    const targets = [...LIVE_SUITE_TARGETS, 'cpp', 'scala']
+    const offline: Record<string, string> = {
+      go: 'if !setup.live {', py: 'if not setup["live"]:', php: 'if (empty($setup["live"])) {',
+      rb: 'unless setup[:live]', lua: 'if not setup.live then', perl: 'if (!$setup->{live}) {',
+      java: 'if (!setup.live) {', kotlin: 'if (!setup.live) {', rust: 'if !setup.live {',
+      csharp: 'if (!setup.Live)', cpp: 'if (!setup.live) {',
+    }
+    const out = await generate(targets, undefined, keylessLoad())
+    const gaps: string[] = []
+    for (const target of targets) {
+      for (const [name, fields] of [['slug', ['slug']], ['rate', ['amount', 'base']]] as [string, string[]][]) {
+        const file = testFiles(out, target).find(([n]) => new RegExp(name + '_?entity', 'i').test(n))
+        if (null == file) {
+          gaps.push(`${target}: no ${name} entity test`)
+          continue
+        }
+        const text = String(file[1])
+        for (const field of fields) {
+          if (!new RegExp(`ref01_?data[^\\n]{0,12}["']${field}["']`, 'i').test(text)) {
+            gaps.push(`${target}:${file[0]} does not read ${field} from the fixture record`)
+          }
+          if (!new RegExp(`idmap[^\\n]{0,30}${field}01`, 'i').test(text)) {
+            gaps.push(`${target}:${file[0]} drops the ${field}01 binding a live run sends`)
+          }
+        }
+        if (null != offline[target] && !text.includes(offline[target])) {
+          gaps.push(`${target}:${file[0]} reads the fixture record in a live run`)
+        }
+        if (['ts', 'js'].includes(target) && (/LOAD: skipped/.test(text) || /"route":"GET \/(colleges|rates)/.test(text))) {
+          gaps.push(`${target}:${file[0]} skips the load, or names an offline route to the live harness`)
         }
       }
     }

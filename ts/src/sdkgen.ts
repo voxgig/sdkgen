@@ -84,7 +84,7 @@ import type { ExampleLang, LiteralLang } from './helpers/opExample'
 import {
   liveStrict, liveStrictNote, liveFlowNeeds,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
-  flowLoadRoute, liveFlowRoutes,
+  flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes,
   liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 } from './helpers/testPolicy'
@@ -1219,6 +1219,7 @@ export {
   liveRouteExamples,
   liveStepExamples,
   flowLoadRoute,
+  flowLoadReadsRecord,
   liveFlowRoutes,
   liveEntity,
   LIVE_GETONLY_ENV,

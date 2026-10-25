@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest, flowLoadRoute } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -674,7 +674,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`        var ${entvar} = client.${entity.Name}();
 `)
   }
-  if (!hasSrcData && hasEntId) {
+  if (!hasSrcData && (hasEntId || flowLoadReadsRecord(entity, step))) {
     Content(`        var ${srcdatavar}Raw = StructUtils.Items(
             Helpers.ToMapAny(StructUtils.GetPath(setup.Data, "existing.${entity.name}")));
         var ${srcdatavar} = ${srcdatavar}Raw.Count > 0
@@ -696,7 +696,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
   }
   else {
     Content(`        var ${matchvar} = new Dictionary<string, object?>();
-${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
         Assert.True(${datavar}Loaded != null, "expected load result to be non-null");
 `)
   }
@@ -752,11 +752,23 @@ function parentMatch(step: any, matchvar: string): string {
 
 
 // A load of a known record fills its route from that record, and from the
-// step's binding where the record holds no scalar for it.
+// step's binding where the record holds no scalar for it. A record only the
+// fixture holds replaces the step's binding offline.
 function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
   const route = flowLoadRoute(entity, step)
   if (null == route) {
     return parentMatch(step, matchvar)
+  }
+  if (route.offline) {
+    const own = route.args.filter((arg) => null != arg.field)
+    return parentMatch(step, matchvar) + (0 === own.length ? '' : `        if (!setup.Live)
+        {
+${own.map((arg, i) => `            if (StructUtils.GetProp(${srcdatavar}, "${arg.field}") is System.IConvertible own${i})
+            {
+                ${matchvar}["${arg.name}"] = own${i};
+            }
+`).join('')}        }
+`)
   }
   return route.args.map((arg) => {
     const bound = arg.idmap.map((key) => `StructUtils.GetProp(setup.Idmap, "${key}")`).join(' ?? ')

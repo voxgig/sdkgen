@@ -1,4 +1,4 @@
-import { flowSteps, opReachable, invalidRequest, flowLoadRoute } from '@voxgig/sdkgen'
+import { flowSteps, opReachable, invalidRequest, flowLoadRoute, flowLoadReadsRecord } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -685,7 +685,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`    let ${entvar} = client.${rustMethodName(entity.name)}(Value::Noval);
 `)
   }
-  if (!hasSrcData && hasEntId) {
+  if (!hasSrcData && (hasEntId || flowLoadReadsRecord(entity, step))) {
     Content(`    let ${srcdatavar}_raw = vs::items(&to_map(&getpath(&["existing", "${entity.name}"], &setup.data)));
     let ${srcdatavar} = to_map(&vs::get_elem(
         &vs::get_elem(&${srcdatavar}_raw, &Value::Num(0.0), Value::Noval),
@@ -713,7 +713,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
   }
   else {
     Content(`    let ${matchvar} = Value::empty_map();
-${parentMatch(step, matchvar)}${liveFill(entity, step, matchvar)}    let ${datavar}_loaded = ${entvar}
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    let ${datavar}_loaded = ${entvar}
         .load(${matchvar}.clone(), Value::Noval)
         .expect("load failed");
     // load resolves to the ENTITY; the record is reached through data().
@@ -783,11 +783,21 @@ function parentMatch(step: any, matchvar: string): string {
 
 
 // A load of a known record fills its route from that record, and from the
-// step's binding where the record holds no scalar for it.
+// step's binding where the record holds no scalar for it. A record only the
+// fixture holds replaces the step's binding offline.
 function loadMatch(entity: any, step: any, matchvar: string, srcdatavar: string): string {
   const route = flowLoadRoute(entity, step)
   if (null == route) {
     return parentMatch(step, matchvar)
+  }
+  if (route.offline) {
+    const own = route.args.filter((arg) => null != arg.field)
+    return parentMatch(step, matchvar) + (0 === own.length ? '' : `    if !setup.live {
+${own.map((arg) => `        if let v @ (Value::Str(_) | Value::Num(_) | Value::Bool(_)) = getp(&${srcdatavar}, "${arg.field}") {
+            setp(&${matchvar}, "${arg.name}", v);
+        }
+`).join('')}    }
+`)
   }
   return route.args.map((arg) => {
     const get = (key: string) => `getp(&setup.idmap, "${key}")`

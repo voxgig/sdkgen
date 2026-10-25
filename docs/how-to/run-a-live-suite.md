@@ -115,6 +115,10 @@ the first route that takes the record's identifier and whose other path
 parameters the record holds as a scalar field or the step binds. A parameter
 the record holds comes from the record, offline and live, in every target, and
 the step's binding fills it only when the record holds no scalar value for it.
+An entity the model gives no identifier keeps the route its step binds. Offline,
+each parameter the step binds takes the value the fixture record holds, which
+is the value the mock matches; live, where no fixture record exists, the step's
+binding and `<PROJ>_TEST_<ENTITY>_ENTID` supply it as before.
 
 A required parameter that the model gives an example for needs no variable
 either. A live direct test takes each path parameter's example as the id that

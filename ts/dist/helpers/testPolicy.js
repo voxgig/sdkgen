@@ -10,6 +10,7 @@ exports.liveQueryExamples = liveQueryExamples;
 exports.liveRouteExamples = liveRouteExamples;
 exports.liveStepExamples = liveStepExamples;
 exports.flowLoadRoute = flowLoadRoute;
+exports.flowLoadReadsRecord = flowLoadReadsRecord;
 exports.liveFlowRoutes = liveFlowRoutes;
 exports.liveEntity = liveEntity;
 exports.liveFlowSteps = liveFlowSteps;
@@ -153,30 +154,37 @@ function recordField(entity, name) {
 }
 // The route a flow's load of a known record takes: the first the runtime
 // tries that takes the id and whose other path parameters the record holds
-// or the step binds, read from the record first. Undefined keeps the match.
+// or the step binds, read from the record first. Without an id it is the route
+// the step binds, filled from the record offline only. Undefined keeps the match.
 function flowLoadRoute(entity, step) {
-    if ('load' !== step?.o || null == entity?.id)
+    if ('load' !== step?.o)
         return undefined;
+    const keyed = null != entity?.id;
     const bound = new Map((0, getMatchEntries_1.getMatchEntries)(step)
-        .filter(([, binding]) => 'string' === typeof binding));
+        .filter(([name, binding]) => 'string' === typeof binding && (keyed || 'id' !== name)));
     const order = [...bound.keys()];
     const rank = (arg) => order.includes(arg.name) ? order.indexOf(arg.name) : order.length;
     for (const point of plainPoints(entity, 'load')) {
         const names = [...new Set((point.g?.params || []).map((arg) => arg.n))];
-        if (!names.includes('id'))
+        if (keyed && !names.includes('id'))
             continue;
-        const args = names.filter((name) => 'id' !== name).map((name) => {
+        const args = names.filter((name) => !keyed || 'id' !== name).map((name) => {
             const binding = bound.get(name);
             return {
                 name, field: recordField(entity, name),
                 idmap: null == binding || binding === name ? [name] : [name, binding],
             };
         });
-        if (args.every((arg) => null != arg.field || bound.has(arg.name))) {
-            return { route: routeOf(point), point, args: args.sort((a, b) => rank(a) - rank(b)) };
+        if (args.every((arg) => bound.has(arg.name) || (keyed && null != arg.field))) {
+            return {
+                route: routeOf(point), point, args: args.sort((a, b) => rank(a) - rank(b)), offline: !keyed,
+            };
         }
     }
     return undefined;
+}
+function flowLoadReadsRecord(entity, step) {
+    return (flowLoadRoute(entity, step)?.args || []).some((arg) => null != arg.field);
 }
 // The flow, each load of a known record naming its route and record fields.
 function liveFlowRoutes(entity, flow) {
@@ -184,7 +192,7 @@ function liveFlowRoutes(entity, flow) {
         return flow;
     const step = flow.step.map((step) => {
         const route = flowLoadRoute(entity, step);
-        return null == route ? step : {
+        return null == route || route.offline ? step : {
             ...step, route: route.route,
             record: Object.fromEntries(route.args.filter((arg) => null != arg.field)
                 .map((arg) => [arg.name, arg.field])),
