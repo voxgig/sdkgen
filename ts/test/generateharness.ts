@@ -638,6 +638,47 @@ main: kit: flow: Basic${name[0].toUpperCase() + name.slice(1)}Flow: {
 }
 
 
+// An update that sends a body on a route without the id, and a patch whose
+// body carries it, as fruityvice's PUT /api/fruit.
+function idlessUpdate(): string {
+  const body = (op: string, bf: string[]) => `${op}: { name: "${op}", points: [ {
+      bf: ${JSON.stringify(bf)}
+      m: "${'update' === op ? 'PUT' : 'PATCH'}", o: "/fruit", s: [{ lit: "fruit" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ] }`
+  return entityOnly(`
+main: kit: entity: fruit: {
+  alias: field: {}
+  name: "fruit"
+  id: { field: "id", name: "id" }
+  fields: {
+    "family": { h: 'Family', n: "family", r: false, t: "\`$STRING\`" }
+    "genus": { h: 'Genus', n: "genus", r: false, t: "\`$STRING\`" }
+    "id": { h: 'Id', n: "id", r: false, t: "\`$INTEGER\`" }
+  }
+  op: {
+    list: { name: "list", points: [ { g: {}, m: "GET", o: "/fruit/all", s: [{ lit: "fruit" }, { lit: "all" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$INTEGER\`" } ] }
+      m: "GET", o: "/fruit/{id}", s: [{ lit: "fruit" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    ${body('update', ['family', 'genus'])}
+    ${body('patch', ['id', 'family', 'genus'])}
+  }
+}
+
+main: kit: flow: BasicFruitFlow: {
+  entity: "fruit", kind: "basic", name: "BasicFruitFlow"
+  step: [
+    { o: "list", i: { ref: "fruit_ref01" } }
+    { o: "load", i: { ref: "fruit_ref01", srcdatavar: "fruit_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`)
+}
+
+
 // A create whose routes are each nested under a parent of their own, so the
 // parameter every route needs reaches none of them, as loppee's attachment URL.
 function parentedCreate(): string {
@@ -1472,6 +1513,7 @@ export {
   shadowedLoad,
   actionList,
   parentedCreate,
+  idlessUpdate,
   namedFieldEntity,
   retypedList,
   seedableList,

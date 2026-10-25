@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -201,15 +201,15 @@ val created = client.${accessor}(null).create(mutableMapOf<String, Any?>(${examp
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${kotlinString(idF)} to ${kotlinLit(idParamType('update'), 'example_id')}`] : [])
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`${kotlinString(idF)} to ${kotlinLit(idParamType('update'), 'example_id')}`] : [])
           .concat(examplePairs('update'))
-        Content(`// Update — supply the id in the match/data
+        Content(`// Update${sendsId(exampleEntity, 'update', idF) ? ' — supply the id in the match/data' : ''}
 client.${accessor}(null).update(mutableMapOf<String, Any?>(${updatePairs.join(', ')}), null)
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`${kotlinString(idF)} to ${kotlinLit(idParamType('patch'), 'example_id')}`] : [])
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`${kotlinString(idF)} to ${kotlinLit(idParamType('patch'), 'example_id')}`] : [])
           .concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client.${accessor}(null).patch(mutableMapOf<String, Any?>(${patchPairs.join(', ')}), null)

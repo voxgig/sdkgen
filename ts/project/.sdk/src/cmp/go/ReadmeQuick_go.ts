@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, entityIdField, entityOps, goModule, serverVariables, listMatchArg, matchExampleItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, entityIdField, entityOps, goModule, serverVariables, listMatchArg, matchExampleItems, litString, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -116,7 +116,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     if (opnames.includes('update')) {
       // The id member (when the entity has an id-like key) plus example
       // patch fields — the same shape that generates the op's request data.
-      const updateMembers = (idF
+      const updateMembers = (sendsId(exampleEntity, 'update', idF)
         ? [`${litString('go', idF)}: ${exampleValue(exampleEntity, exampleEntity.op.update, idF, 'example_id')}`]
         : []).concat(exampleFields('update'))
       body.push(`    // Update a ${eLower}.`)
@@ -130,7 +130,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
     }
 
     if (opnames.includes('patch')) {
-      const patchMembers = (idF
+      const patchMembers = (sendsId(exampleEntity, 'patch', idF)
         ? [`${litString('go', idF)}: ${exampleValue(exampleEntity, exampleEntity.op.patch, idF, 'example_id')}`]
         : []).concat(exampleFields('patch'))
       body.push(`    // Patch a ${eLower}: only the fields given are sent.`)

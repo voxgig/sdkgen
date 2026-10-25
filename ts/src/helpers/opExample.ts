@@ -109,6 +109,11 @@ function requestExampleItems(ent: any, op: string): OpShapeItem[] {
 }
 
 
+function sendsId(ent: any, op: string, idF: string | null): idF is string {
+  return null != idF && opRequestShape(ent, op).items.some((it: OpShapeItem) => it.name === idF)
+}
+
+
 // A load or remove example's members: requiredItems and the id, in shape order.
 function matchExampleItems(ent: any, op: string, idF: string | null): any[] {
   const required: Record<string, any> = Object.create(null)
@@ -264,6 +269,7 @@ export {
   idLiteral,
   requiredItems,
   requestExampleItems,
+  sendsId,
   matchExampleItems,
   matchArg,
   listMatchArg,

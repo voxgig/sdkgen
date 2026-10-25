@@ -6,6 +6,7 @@ exports.primaryOpCall = primaryOpCall;
 exports.idLiteral = idLiteral;
 exports.requiredItems = requiredItems;
 exports.requestExampleItems = requestExampleItems;
+exports.sendsId = sendsId;
 exports.matchExampleItems = matchExampleItems;
 exports.matchArg = matchArg;
 exports.listMatchArg = listMatchArg;
@@ -107,6 +108,9 @@ function requiredItems(ent, op) {
 function requestExampleItems(ent, op) {
     const required = new Set(requiredItems(ent, op).map((it) => it.name));
     return (0, opShape_1.opRequestShape)(ent, op).items.map((it) => ({ ...it, optional: !required.has(it.name) }));
+}
+function sendsId(ent, op, idF) {
+    return null != idF && (0, opShape_1.opRequestShape)(ent, op).items.some((it) => it.name === idF);
 }
 // A load or remove example's members: requiredItems and the id, in shape order.
 function matchExampleItems(ent, op, idF) {

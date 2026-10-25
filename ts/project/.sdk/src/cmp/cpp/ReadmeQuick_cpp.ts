@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -195,7 +195,7 @@ SdkEntityPtr created = client->${acc}()->create(vmap({${examplePairs('create').j
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`{"${cppEscape(idF)}", ${idValueFor('update')}}`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`{"${cppEscape(idF)}", ${idValueFor('update')}}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`// Update${fromCreated ? " — reuse the created record's id" : ''}
 client->${acc}()->update(vmap({${updatePairs.join(', ')}}), Value::undef());
@@ -203,7 +203,7 @@ client->${acc}()->update(vmap({${updatePairs.join(', ')}}), Value::undef());
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`{"${cppEscape(idF)}", ${idValueFor('patch')}}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`{"${cppEscape(idF)}", ${idValueFor('patch')}}`] : []).concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client->${acc}()->patch(vmap({${patchPairs.join(', ')}}), Value::undef());
 

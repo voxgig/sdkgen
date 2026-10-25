@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -182,7 +182,7 @@ its record.
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${cljString(idF)} ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`${cljString(idF)} ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`;; Update${fromCreated ? " — the created entity's record holds its id" : ''}
 (e-${eLow}/update (api/${eLow} client nil) (vs/jm ${updatePairs.join(' ')}) nil)
@@ -190,7 +190,7 @@ its record.
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`${cljString(idF)} ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`${cljString(idF)} ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`;; Patch — sends only the fields given
 (e-${eLow}/patch (api/${eLow} client nil) (vs/jm ${patchPairs.join(' ')}) nil)
 

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -181,14 +181,14 @@ let created = client.${method}(Value::Noval).create(jo(vec![${examplePairs('crea
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`(${JSON.stringify(idF)}, ${idValueFor('update')})`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`(${JSON.stringify(idF)}, ${idValueFor('update')})`] : []).concat(examplePairs('update'))
         Content(`// Update
 client.${method}(Value::Noval).update(jo(vec![${updatePairs.join(', ')}]), Value::Noval).unwrap();
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`(${JSON.stringify(idF)}, ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`(${JSON.stringify(idF)}, ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client.${method}(Value::Noval).patch(jo(vec![${patchPairs.join(', ')}]), Value::Noval).unwrap();
 

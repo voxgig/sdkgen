@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, matchExampleItems, requiredItems, litString, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, safeVarName, exampleVarName, matchExampleItems, requiredItems, litString, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -190,7 +190,7 @@ created = client.${eName}.create({ ${examplePairs('create').join(', ')} })
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${litString('rb', idF)} => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`${litString('rb', idF)} => ${idValueFor('update')}`] : []).concat(examplePairs('update'))
         const fromCreated = null != dataIdF && opnames.includes('create')
         Content(`# Update${fromCreated ? ` — index the record via data_get (created.data_get[${litString('rb', dataIdF)}]).` : ''}
 client.${eName}.update({ ${updatePairs.join(', ')} })
@@ -198,7 +198,7 @@ client.${eName}.update({ ${updatePairs.join(', ')} })
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`${litString('rb', idF)} => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`${litString('rb', idF)} => ${idValueFor('patch')}`] : []).concat(examplePairs('patch'))
         Content(`# Patch — sends only the fields given
 client.${eName}.patch({ ${patchPairs.join(', ')} })
 

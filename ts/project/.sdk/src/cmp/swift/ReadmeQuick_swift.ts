@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -206,15 +206,15 @@ let created = try client.${accessor}().create(VMap([${examplePairs('create').joi
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`(${swiftString(idF)}, ${swiftLit(idParamType('update'), 'example_id')})`] : [])
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`(${swiftString(idF)}, ${swiftLit(idParamType('update'), 'example_id')})`] : [])
           .concat(examplePairs('update'))
-        Content(`// Update — supply the id in the match/data
+        Content(`// Update${sendsId(exampleEntity, 'update', idF) ? ' — supply the id in the match/data' : ''}
 _ = try client.${accessor}().update(VMap([${updatePairs.join(', ')}]), nil)
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`(${swiftString(idF)}, ${swiftLit(idParamType('patch'), 'example_id')})`] : [])
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`(${swiftString(idF)}, ${swiftLit(idParamType('patch'), 'example_id')})`] : [])
           .concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 _ = try client.${accessor}().patch(VMap([${patchPairs.join(', ')}]), nil)

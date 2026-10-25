@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -192,15 +192,15 @@ var created = client.${eName}().Create(new Dictionary<string, object?> { ${examp
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`[${csStringLiteral(idF)}] = ${csLit(idParamType('update'), 'example_id')}`] : [])
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`[${csStringLiteral(idF)}] = ${csLit(idParamType('update'), 'example_id')}`] : [])
           .concat(examplePairs('update'))
-        Content(`// Update — supply the id in the match/data
+        Content(`// Update${sendsId(exampleEntity, 'update', idF) ? ' — supply the id in the match/data' : ''}
 client.${eName}().Update(new Dictionary<string, object?> { ${updatePairs.join(', ')} });
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`[${csStringLiteral(idF)}] = ${csLit(idParamType('patch'), 'example_id')}`] : [])
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`[${csStringLiteral(idF)}] = ${csLit(idParamType('patch'), 'example_id')}`] : [])
           .concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client.${eName}().Patch(new Dictionary<string, object?> { ${patchPairs.join(', ')} });

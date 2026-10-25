@@ -9,6 +9,7 @@ declare function litString(lang: LiteralLang, s: string): string;
 declare function litPair(lang: LiteralLang, name: string, value: string): string;
 declare function requiredItems(ent: any, op: string): any[];
 declare function requestExampleItems(ent: any, op: string): OpShapeItem[];
+declare function sendsId(ent: any, op: string, idF: string | null): idF is string;
 declare function matchExampleItems(ent: any, op: string, idF: string | null): any[];
 declare function matchArg(lang: LiteralLang, ent: any, op: string, idF: string | null, idLit: string): string;
 declare function javaMap(count: number, pkg?: string): {
@@ -29,5 +30,5 @@ type PrimaryCall = {
     isVoid: boolean;
 };
 declare function primaryOpCall(lang: ExampleLang, eName: string, eLower: string, op: string, idF: string | null, ent: any): PrimaryCall;
-export { EXAMPLE_LANGS, helperLang, primaryOpCall, idLiteral, requiredItems, requestExampleItems, matchExampleItems, matchArg, listMatchArg, seededList, dataArg, javaMap, javaMapOf, javaMapItems, litFor, litPair, litString, };
+export { EXAMPLE_LANGS, helperLang, primaryOpCall, idLiteral, requiredItems, requestExampleItems, sendsId, matchExampleItems, matchArg, listMatchArg, seededList, dataArg, javaMap, javaMapOf, javaMapItems, litFor, litPair, litString, };
 export type { ExampleLang, LiteralLang, PrimaryCall, };

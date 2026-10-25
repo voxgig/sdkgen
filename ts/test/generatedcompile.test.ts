@@ -27,7 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
-  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
+  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, idlessUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, ESCAPED_TYPE_ENTITY,
   KEYWORD_ACCESSOR_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY,
   REQUEST_SHAPED_ENTITY,
 } from './generateharness'
@@ -1057,6 +1057,7 @@ pub fn main() void {
     ['a quick start whose entity lists only through actions', 'ts-readme-action-list', actionList()],
     ['create examples whose routes each need a parent of their own', 'ts-readme-parented-create',
       parentedCreate()],
+    ['an update example whose request carries no id', 'ts-readme-idless-update', idlessUpdate()],
     ['examples whose load parameter and create field hold a quote and a backslash', 'ts-readme-quoted',
       namedFieldEntity('a"b\\c')],
   ] as [string, string, string | undefined][]) {
@@ -7788,6 +7789,12 @@ describe('the README examples run for a slug carrying the word client', () => {
       async (t) => {
         await readmeLane(t, lane, lane.target + '-parented-create', parentedCreate(), /conversation_id/,
           'create example with a parent')
+      })
+
+    test(lane.target + ': the README examples run where an update\'s request carries no id',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-idless-update', idlessUpdate(), /Fruit/,
+          'update example on the fruit')
       })
 
     test(lane.target + ': the README examples run where a load parameter and a create field hold a quote and a backslash',

@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps , serverVariables, javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, opRequestShape, entityIdField, entityOps , serverVariables, javaMapOf, matchExampleItems, requiredItems, javaMapItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -203,15 +203,15 @@ Object created = client.${accessor}(null).create(${javaMapOf(examplePairs('creat
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`${JSON.stringify(idF)}, ${javaLit(idParamType('update'), 'example_id')}`] : [])
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`${JSON.stringify(idF)}, ${javaLit(idParamType('update'), 'example_id')}`] : [])
           .concat(examplePairs('update'))
-        Content(`// Update — supply the id in the match/data
+        Content(`// Update${sendsId(exampleEntity, 'update', idF) ? ' — supply the id in the match/data' : ''}
 client.${accessor}(null).update(${javaMapOf(updatePairs)}, null);
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`${JSON.stringify(idF)}, ${javaLit(idParamType('patch'), 'example_id')}`] : [])
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`${JSON.stringify(idF)}, ${javaLit(idParamType('patch'), 'example_id')}`] : [])
           .concat(examplePairs('patch'))
         Content(`// Patch — sends only the fields given
 client.${accessor}(null).patch(${javaMapOf(patchPairs)}, null);

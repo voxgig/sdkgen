@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, packageName, envName, entityIdField, entityOps, safeVarName, exampleVarName, jsKey, matchArg, listMatchArg, matchExampleItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, packageName, envName, entityIdField, entityOps, safeVarName, exampleVarName, jsKey, matchArg, listMatchArg, matchExampleItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -109,7 +109,7 @@ console.log(created.data())
     }
 
     if (opnames.includes('update')) {
-      const updateLines = (idF
+      const updateLines = (sendsId(exampleEntity, 'update', idF)
         ? [`  ${jsKey(idF)}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.update, idF, exampleEntity.name + '_id')},`]
         : []).concat(exampleFields('update'))
       const updateBody = updateLines.length ? '\n' + updateLines.join('\n') + '\n' : ''
@@ -124,7 +124,7 @@ console.log(updated.data())
     }
 
     if (opnames.includes('patch')) {
-      const patchLines = (idF
+      const patchLines = (sendsId(exampleEntity, 'patch', idF)
         ? [`  ${jsKey(idF)}: ${exampleValue(exampleEntity, exampleEntity.op && exampleEntity.op.patch, idF, exampleEntity.name + '_id')},`]
         : []).concat(exampleFields('patch'))
       const patchBody = patchLines.length ? '\n' + patchLines.join('\n') + '\n' : ''

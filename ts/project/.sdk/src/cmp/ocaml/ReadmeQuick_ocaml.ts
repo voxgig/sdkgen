@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, envName, canonKey, canonScalarKey, opRequestShape, entityIdField, entityDataIdField, entityOps, matchExampleItems, requiredItems, requestExampleItems, sendsId } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -175,14 +175,14 @@ print_endline (stringify (created.e_data_get ()));
 `)
       }
       if (opnames.includes('update')) {
-        const updatePairs = (idF ? [`("${ocamlString(idF)}", ${idValueFor('update')})`] : []).concat(examplePairs('update'))
+        const updatePairs = (sendsId(exampleEntity, 'update', idF) ? [`("${ocamlString(idF)}", ${idValueFor('update')})`] : []).concat(examplePairs('update'))
         Content(`(* Update *)
 ignore ((Sdk_client.${fn} client Noval).e_update (jo [${updatePairs.join('; ')}]) Noval);
 
 `)
       }
       if (opnames.includes('patch')) {
-        const patchPairs = (idF ? [`("${ocamlString(idF)}", ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
+        const patchPairs = (sendsId(exampleEntity, 'patch', idF) ? [`("${ocamlString(idF)}", ${idValueFor('patch')})`] : []).concat(examplePairs('patch'))
         Content(`(* Patch — sends only the fields given *)
 ignore ((Sdk_client.${fn} client Noval).e_patch (jo [${patchPairs.join('; ')}]) Noval);
 
