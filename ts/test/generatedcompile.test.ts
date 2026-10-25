@@ -1099,6 +1099,31 @@ pub fn main() void {
   }
 
 
+  // The report printed every pass's whole tsc output, so a failing block came
+  // with the errors of the allowed illustrations, named by temp file.
+  test('typescript: the README example tests quote a failing block with its own tsc errors alone', async () => {
+    ok(Fs.existsSync(TSC), 'no local typescript — run `npm install`')
+
+    const sdkroot = Path.join(tmp, 'ts-readme-report', 'ts')
+    await generateTo('ts', sdkroot, undefined, undefined, { top: true })
+    linkDeps(sdkroot)
+    Fs.appendFileSync(Path.join(sdkroot, 'README.md'), '\n```ts\n{\n  ok: boolean\n  status: number\n}\n```\n\n' +
+      '```ts\nconst n: number = \'not a number\'\nvoid n\n```\n')
+
+    const built = run(process.execPath, [TSC, '--build', 'src', 'test'], sdkroot)
+    ok(built.ok, 'the generated SDK does not build:\n' + built.out)
+
+    const suite = run(process.execPath,
+      ['--test', '--test-reporter=tap', Path.join('dist-test', 'readme_examples.test.js')],
+      sdkroot, nestedTestEnv())
+    ok(!suite.ok, 'the README example tests passed a block that does not type-check')
+    ok(/const n: number = 'not a number'[\s\S]*tsc:[\s\S]*line 1, col 7: error TS2322/.test(suite.out),
+      'the report does not give the failing block its own error at its own line:\n' + tail(suite.out, 60))
+    ok(!/TS2693|_snippet\d+\.gen\.cts/.test(suite.out),
+      'the report quotes an allowed illustration\'s errors, or a temp file:\n' + tail(suite.out, 60))
+  })
+
+
   // Run as written: the README suites above replace a block's seed with their own.
   for (const [what, target, fence, howto] of [
     ['typescript: the root README test block', 'ts', 'ts', false],
