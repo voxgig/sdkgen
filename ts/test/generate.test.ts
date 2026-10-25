@@ -18,7 +18,7 @@ import { aliasCmpText } from '../dist/action/target.js'
 // Fixture, miniature Root and memfs layering — shared with
 // generatedcompile.test.ts so both suites generate the SAME SDK.
 import {
-  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
+  KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, embeddedLoad, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams,
@@ -5972,6 +5972,29 @@ main: kit: flow: BasicBadgeFlow: {
         .filter((line: string) => !/email/.test(line)).map((line) => shape + ' ' + line))
     }
     deepStrictEqual(wrong, [], 'load examples that pass no point\'s selector:\n' + wrong.join('\n'))
+  })
+
+
+  test('a direct load gives a placeholder inside a literal segment its own value, in every target', async () => {
+    const out = await generate(sdkTargets(), undefined, embeddedLoad('proxy'))
+
+    // proxy_id and version each get a direct0N value, so direct02 is version's.
+    const cmpdir = Path.join(SCAFFOLD, 'src', 'cmp')
+    const pointed = sdkTargets().filter((t: string) =>
+      existsSync(Path.join(cmpdir, t, 'TestDirect_' + t + '.ts')) &&
+      /\bpoints\b/.test(readFileSync(Path.join(cmpdir, t, 'TestDirect_' + t + '.ts'), 'utf8')))
+    ok(10 < pointed.length, 'the targets whose direct test reads a point were not found')
+
+    const missing: string[] = []
+    for (const target of pointed) {
+      const direct = Object.entries(out).filter(([path]) =>
+        path.startsWith(target + '/') && /proxy_?direct/i.test(path)).map(([, text]) => text).join('\n')
+      ok(direct.includes('{version}.mod'), target + ': no direct load test for the proxy route')
+      if (!direct.includes('direct02')) {
+        missing.push(target)
+      }
+    }
+    deepStrictEqual(missing, [], 'direct load tests that send {version} unfilled')
   })
 
 

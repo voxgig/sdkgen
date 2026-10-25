@@ -123,27 +123,12 @@ function samePath(points) {
     const first = (0, pointPath_1.pointPathKey)(points[0]);
     return points.every((pt) => first === (0, pointPath_1.pointPathKey)(pt));
 }
-// A placeholder inside a literal segment needs a value too.
-function pointParams(point) {
-    const names = [];
-    for (const seg of (0, pointPath_1.pointSegments)(point)) {
-        if (null != seg.var) {
-            names.push(String(seg.var));
-        }
-        else {
-            for (const found of String(seg.lit ?? '').matchAll(/\{([^{}/]+)\}/g)) {
-                names.push(found[1]);
-            }
-        }
-    }
-    return names;
-}
 // The rule makePoint applies: a lone point is taken as it is, otherwise only
 // a point without an action, and one the call fills.
 function opReachable(op, given) {
     const points = op && op.points ? (0, jostraca_1.each)(op.points) : [];
     const have = new Set(given);
-    const fills = (pt) => pointParams(pt).every((name) => have.has(name));
+    const fills = (pt) => (0, pointPath_1.pointPlaceholders)(pt).every((name) => have.has(name));
     if (1 === points.length) {
         return fills(points[0]);
     }

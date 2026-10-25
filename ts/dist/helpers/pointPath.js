@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pointSegments = pointSegments;
 exports.pointParts = pointParts;
+exports.pointPlaceholders = pointPlaceholders;
 exports.pointTerminalParam = pointTerminalParam;
 exports.pointPathKey = pointPathKey;
 const utility_1 = require("../utility");
@@ -17,6 +18,22 @@ function pointSegments(point) {
 }
 function pointParts(point) {
     return pointSegments(point).map((seg) => null == seg.var ? String(seg.lit ?? '') : '{' + seg.var + '}');
+}
+// The path parameters a point's URL needs, including a placeholder inside a
+// literal segment such as `{version}.mod`.
+function pointPlaceholders(point) {
+    const names = [];
+    for (const seg of pointSegments(point)) {
+        if (null != seg.var) {
+            names.push(String(seg.var));
+        }
+        else {
+            for (const found of String(seg.lit ?? '').matchAll(/\{([^{}/]+)\}/g)) {
+                names.push(found[1]);
+            }
+        }
+    }
+    return names;
 }
 function pointTerminalParam(point) {
     const parts = pointParts(point);

@@ -15,6 +15,7 @@ import {
   serverVarEnv,
   serverVariables, envName, envToken,
   pointParts,
+  pointPlaceholders,
   liveStrict,
   liveStrictNote,
   pointIsGraphql,
@@ -123,12 +124,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // actually appear in the URL template should drive direct-test path-param
   // setup and URL-substitution asserts; otherwise the SDK silently drops
   // them and the URL-includes assert fails.
-  const _pathPlaceholders = new Set<string>()
-  for (const part of pointParts(loadPoint)) {
-    if (typeof part === 'string' && part.startsWith('{') && part.endsWith('}')) {
-      _pathPlaceholders.add(part.slice(1, -1))
-    }
-  }
+  const _pathPlaceholders = new Set<string>(pointPlaceholders(loadPoint))
   const _renameMap = (loadPoint?.r?.param || {}) as Record<string, string>
   const _renamedPlaceholders = new Set<string>()
   for (const ph of _pathPlaceholders) {

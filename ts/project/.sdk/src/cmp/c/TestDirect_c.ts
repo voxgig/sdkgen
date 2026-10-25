@@ -12,6 +12,7 @@ import {
   cmp,
   snakify,
   pointParts,
+  pointPlaceholders,
   pointIsGraphql,
   graphqlDirectSkip,
 } from '@voxgig/sdkgen'
@@ -80,12 +81,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const loadPoint = loadOp?.points?.[0]
   const loadPath = loadPoint ? normalizePathParams(pointParts(loadPoint), loadPoint?.g?.params || [], loadPoint?.r?.param) : ''
   const allLoadParams = loadPoint?.g?.params || []
-  const _pathPlaceholders = new Set<string>()
-  for (const part of pointParts(loadPoint)) {
-    if (typeof part === 'string' && part.startsWith('{') && part.endsWith('}')) {
-      _pathPlaceholders.add(part.slice(1, -1))
-    }
-  }
+  const _pathPlaceholders = new Set<string>(pointPlaceholders(loadPoint))
   const _renameMap = (loadPoint?.r?.param || {}) as Record<string, string>
   const _renamedPlaceholders = new Set<string>()
   for (const ph of _pathPlaceholders) {
