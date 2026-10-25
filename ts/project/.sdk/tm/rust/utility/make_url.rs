@@ -60,10 +60,15 @@ pub fn make_url_util(ctx: &Rc<Context>) -> Result<String, ProjectNameError> {
         true,
     );
 
-    // A route the definition ends with a slash keeps it: a server such as a
-    // Django REST one redirects or refuses the route without it.
+    // A route the definition ends with a slash keeps it, for a Django REST server,
+    // and a host with no path takes /, or luasocket reads a query as the host.
     if let Value::Str(orig) = getp(&ctx.point.borrow().clone(), "orig") {
         if orig.ends_with('/') && suffixless && !url.ends_with('/') {
+            url.push('/');
+        }
+    }
+    if let Some(authority) = url.find("://") {
+        if 0 < authority && !url[authority + 3..].contains(|c| matches!(c, '/' | '?' | '#')) {
             url.push('/');
         }
     }

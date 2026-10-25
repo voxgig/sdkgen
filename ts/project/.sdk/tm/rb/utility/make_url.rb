@@ -14,12 +14,14 @@ module ProjectNameUtilities
     # Sent with the request, never recorded as the entity's match.
     authquery = (spec.respond_to?(:authquery) ? spec.authquery : nil) || []
 
-    # A route the definition ends with a slash keeps it: a server such as a
-    # Django REST one redirects or refuses the route without it.
+    # A route the definition ends with a slash keeps it, for a Django REST server,
+    # and a host with no path takes /, or luasocket reads a query as the host.
     orig = ctx.point ? VoxgigStruct.getprop(ctx.point, "orig") : nil
     if orig.is_a?(String) && orig.end_with?("/") && spec.suffix.to_s.empty? && !url.end_with?("/")
       url += "/"
     end
+    authority = url.index("://")
+    url += "/" if authority && 0 < authority && url[(authority + 3)..] !~ %r{[/?#]}
 
     param_items = VoxgigStruct.items(spec.params)
     if param_items

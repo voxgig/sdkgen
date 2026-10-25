@@ -23,10 +23,14 @@ class ProjectNameMakeUrl
         // Sent with the request, never recorded as the entity's match.
         $authquery = $spec->authquery ?? [];
 
-        // A route the definition ends with a slash keeps it: a server such as
-        // a Django REST one redirects or refuses the route without it.
+        // A route the definition ends with a slash keeps it, for a Django REST server,
+        // and a host with no path takes /, or luasocket reads a query as the host.
         $orig = $ctx->point ? \Voxgig\Struct\Struct::getprop($ctx->point, 'orig') : null;
         if (is_string($orig) && str_ends_with($orig, '/') && '' === $spec->suffix && !str_ends_with($url, '/')) {
+            $url .= '/';
+        }
+        $authority = strpos($url, '://');
+        if (is_int($authority) && 0 < $authority && false === strpbrk(substr($url, $authority + 3), '/?#')) {
             $url .= '/';
         }
 

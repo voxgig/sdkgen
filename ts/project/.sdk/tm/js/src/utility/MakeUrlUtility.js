@@ -20,10 +20,14 @@ function makeUrl(ctx) {
 
   let url = join([spec.base, spec.prefix, spec.path, spec.suffix], '/', true)
 
-  // A route the definition ends with a slash keeps it: a server such as a
-  // Django REST one redirects or refuses the route without it.
+  // A route the definition ends with a slash keeps it, for a Django REST server,
+  // and a host with no path takes /, or luasocket reads a query as the host.
   const orig = ctx.point && ctx.point.orig
   if ('string' === typeof orig && orig.endsWith('/') && !spec.suffix && !url.endsWith('/')) {
+    url += '/'
+  }
+  const authority = url.indexOf('://')
+  if (0 < authority && !/[/?#]/.test(url.slice(authority + 3))) {
     url += '/'
   }
   let resmatch = {}

@@ -494,6 +494,18 @@ describe('makeUrl', () => {
         'https://api.test/ability/?limit=5')
     })
 
+    // luasocket takes everything up to the first / as the host, so a query
+    // straight after the host was sent as part of it.
+    test(lang + ': a route at the server root takes the path /', () => {
+      deepStrictEqual(makeUrl(uctx('', { path: '', query: { name: 'michael' } })),
+        'https://api.test/?name=michael')
+      deepStrictEqual(makeUrl(uctx('', { path: '' })), 'https://api.test/')
+      deepStrictEqual(makeUrl(uctx('/', { path: '' })), 'https://api.test/')
+      deepStrictEqual(makeUrl(uctx('', { base: 'https://api.test/v1', path: '', query: { a: 1 } })),
+        'https://api.test/v1?a=1')
+      deepStrictEqual(makeUrl(uctx('', { base: 'base-', path: '' })), 'base-')
+    })
+
     // A URL resolver removes a dot segment, and `..` the segment before it too.
     test(lang + ': a path parameter that is a dot segment is refused', () => {
       for (const id of ['.', '..']) {
@@ -557,7 +569,7 @@ describe('makeUrl', () => {
       const src = readFileSync(Path.join(TM, rel), 'utf8')
       const at = src.indexOf(def)
       ok(-1 !== at, lang + ': no makeUrl definition in ' + rel)
-      if (!src.slice(at, at + 3500).includes('url_param_missing')) {
+      if (!src.slice(at, at + 4500).includes('url_param_missing')) {
         missing.push(lang)
       }
     }
@@ -608,6 +620,22 @@ describe('makeUrl', () => {
       }
     }
     deepStrictEqual(missing, [], 'targets whose makeUrl drops the query')
+  })
+
+  // Source again: the scheme separator is found, and the rest of the URL is
+  // searched for a path, query or fragment.
+  test('every target gives a URL at the server root the path /', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const body = src.slice(src.indexOf(def), src.indexOf(def) + 2500)
+      const at = body.search(/["']:\/\/["']/)
+      const scan = -1 === at ? '' : body.slice(at + 4, at + 300)
+      if (!scan.includes('?') || !scan.includes('#')) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose makeUrl sends a host with no path')
   })
 })
 

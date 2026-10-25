@@ -25,10 +25,15 @@ public static partial class SdkUtility
         // Sent with the request, never recorded as the entity's match.
         var authquery = spec.AuthQuery;
 
-        // A route the definition ends with a slash keeps it: a server such as
-        // a Django REST one redirects or refuses the route without it.
+        // A route the definition ends with a slash keeps it, for a Django REST server,
+        // and a host with no path takes /, or luasocket reads a query as the host.
         if (ctx.Point != null && StructUtils.GetProp(ctx.Point, "orig") is string orig &&
             orig.EndsWith("/") && string.IsNullOrEmpty(spec.Suffix) && !url.EndsWith("/"))
+        {
+            url += "/";
+        }
+        var authority = url.IndexOf("://", System.StringComparison.Ordinal);
+        if (0 < authority && url.IndexOfAny(new[] { '/', '?', '#' }, authority + 3) < 0)
         {
             url += "/";
         }

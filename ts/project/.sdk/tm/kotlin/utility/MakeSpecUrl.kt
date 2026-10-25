@@ -114,11 +114,15 @@ fun makeUrl(ctx: Context): String {
   joinParts.add(spec.suffix)
   var url = Struct.join(joinParts, "/", true)
 
-  // A route the definition ends with a slash keeps it: a server such as a
-  // Django REST one redirects or refuses the route without it.
+  // A route the definition ends with a slash keeps it, for a Django REST server,
+  // and a host with no path takes /, or luasocket reads a query as the host.
   val point = ctx.point
   val orig = if (point == null) null else Struct.getprop(point, "orig", null)
   if (orig is String && orig.endsWith("/") && spec.suffix.isEmpty() && !url.endsWith("/")) {
+    url += "/"
+  }
+  val authority = url.indexOf("://")
+  if (0 < authority && url.substring(authority + 3).none { it in "/?#" }) {
     url += "/"
   }
 
