@@ -156,9 +156,11 @@ local HTTP server to check continuation, cleanup, and failure outcomes.
 
 A live run against an API you must not change can be limited to GET
 requests. Set `VOXGIG_GETONLY_GUARD=TRUE` beside `<PROJ>_TEST_LIVE=TRUE`. With
-the variable set, the generated tests send nothing but GET requests. It does
-not stop a request on its own, except in the PHP SDK's transport, so pair it
-with a guard at the HTTP layer that refuses any other method.
+the variable set, the generated tests send nothing but GET requests, and every
+target's own transport, and the TS and JS live transport, refuse any other
+method with `fetch_getonly_block` before anything is sent. A transport you
+supply through `system.fetch` is not guarded, so pair the variable with a
+guard at the HTTP layer when you use one.
 
 Every target with a live suite then leaves out two kinds of entity flow step:
 
