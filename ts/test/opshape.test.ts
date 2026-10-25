@@ -9,7 +9,7 @@ import Path from 'node:path'
 import {
   opRequestShape, opTypeName, OP_SUFFIX, entityClassName, pickExampleEntity,
   opReachable, opNeedsAction, entityOps, guardFlowSteps, ungeneratedOps, warnUngeneratedOps,
-  entityIdField,
+  entityIdField, pointPlaceholders,
 } from '../dist/sdkgen.js'
 import { targetOrigins, resolvesBundled, resolveSource, BUNDLED } from '../dist/action/resolve.js'
 
@@ -648,6 +648,25 @@ describe('guardFlowSteps — a generated flow test makes only calls the runtime 
       [{ o: 'list', a: false }, { o: 'remove' }])
     deepStrictEqual(guardFlowSteps(m), [])
     deepStrictEqual(guardFlowSteps({}), [])
+  })
+})
+
+
+describe('pointPlaceholders — every parameter a point\'s URL needs', () => {
+
+  test('a whole segment and a placeholder inside a literal one', () => {
+    const point = {
+      s: [{ lit: 'projects' }, { var: 'project_id' }, { lit: '@v' }, { lit: '{module_version}.mod' },
+        { lit: '(*path/){file_name}' }, { lit: '*module_name' }],
+    }
+    deepStrictEqual(pointPlaceholders(point), ['project_id', 'module_version', 'file_name'])
+    deepStrictEqual(pointPlaceholders({ s: [{ lit: 'a' }] }), [])
+  })
+
+  test('opReachable needs a placeholder inside a literal segment too', () => {
+    const op = { points: [{ s: [{ lit: 'go' }, { lit: '{version}.mod' }], q: { exist: [] } }] }
+    strictEqual(opReachable(op, []), false)
+    strictEqual(opReachable(op, ['version']), true)
   })
 })
 

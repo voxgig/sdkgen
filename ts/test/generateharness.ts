@@ -563,6 +563,38 @@ main: kit: flow: ${flow}: {
 }
 
 
+// A load-only entity whose route holds a placeholder inside a literal
+// segment, as a Go module proxy's `/@v/{version}.mod` does.
+function embeddedLoad(name: string): string {
+  const flow = 'Basic' + name[0].toUpperCase() + name.slice(1) + 'Flow'
+  return entityOnly(`
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: load: {
+    name: "load"
+    points: [ {
+      g: { params: [
+        { k: "param", n: "${name}_id", or: "${name}_id", r: true, t: "\`$STRING\`" }
+        { k: "param", n: "version", or: "version", r: true, t: "\`$STRING\`" }
+      ] }
+      m: "GET", o: "/${name}/{${name}_id}/@v/{version}.mod"
+      s: [{ lit: "${name}" }, { var: "${name}_id" }, { lit: "@v" }, { lit: "{version}.mod" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" }
+    } ]
+  }
+}
+
+main: kit: flow: ${flow}: {
+  entity: "${name}", kind: "basic", name: "${flow}"
+  step: [ { o: "load", i: { ref: "${name}_ref01", srcdatavar: "${name}_ref01_data", suffix: "_dt0" } } ]
+}
+`)
+}
+
+
 // A load-only entity on one route whose points each require one of the given
 // query parameters; with `parent`, a route nested under that entity's id.
 function selectorLoad(name: string, selectors: string[], parent?: string): string {
@@ -1366,6 +1398,7 @@ export {
   listOnly,
   selectorList,
   selectorLoad,
+  embeddedLoad,
   namedFieldEntity,
   retypedList,
   seedableList,

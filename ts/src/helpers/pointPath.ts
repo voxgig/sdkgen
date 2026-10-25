@@ -31,6 +31,24 @@ function pointParts(point: any): string[] {
 }
 
 
+// The path parameters a point's URL needs, including a placeholder inside a
+// literal segment such as `{version}.mod`.
+function pointPlaceholders(point: any): string[] {
+  const names: string[] = []
+  for (const seg of pointSegments(point)) {
+    if (null != seg.var) {
+      names.push(String(seg.var))
+    }
+    else {
+      for (const found of String(seg.lit ?? '').matchAll(/\{([^{}/]+)\}/g)) {
+        names.push(found[1])
+      }
+    }
+  }
+  return names
+}
+
+
 function pointTerminalParam(point: any): boolean {
   const parts = pointParts(point)
   const last = 0 < parts.length ? parts[parts.length - 1] : ''
@@ -53,6 +71,7 @@ export type {
 export {
   pointSegments,
   pointParts,
+  pointPlaceholders,
   pointTerminalParam,
   pointPathKey,
 }

@@ -32,7 +32,7 @@ src/cmp/c/ReadmeTopQuick_c.ts b558eb52d4ba
 src/cmp/c/ReadmeTopTest_c.ts b3da36765d5a
 src/cmp/c/Schema_c.ts c4ed362679d7
 src/cmp/c/TestClean_c.ts 0dbcc7b0dc4c
-src/cmp/c/TestDirect_c.ts 740f32433abc
+src/cmp/c/TestDirect_c.ts 66c7ea622235
 src/cmp/c/TestEntity_c.ts a5d7718e4449
 src/cmp/c/Test_c.ts f1a8a6c7a0c6
 src/cmp/c/fragment/Entity.fragment.c 0e673ae6c029
@@ -280,7 +280,7 @@ src/cmp/cpp/ReadmeTopQuick_cpp.ts 47082fa9c601
 src/cmp/cpp/ReadmeTopTest_cpp.ts c3d4fd3b98f9
 src/cmp/cpp/Schema_cpp.ts 8148c50576cd
 src/cmp/cpp/TestClean_cpp.ts 9b56e7fa62f9
-src/cmp/cpp/TestDirect_cpp.ts 5991fb3fa55a
+src/cmp/cpp/TestDirect_cpp.ts 25c2c4c77c41
 src/cmp/cpp/TestEntity_cpp.ts 53ca1995387e
 src/cmp/cpp/Test_cpp.ts a9b085808534
 src/cmp/cpp/fragment/Entity.fragment.cpp a600c54dce06
@@ -361,7 +361,7 @@ src/cmp/csharp/ReadmeTopTest_csharp.ts 2d6ffaa4b825
 src/cmp/csharp/Schema_csharp.ts a898466bc43d
 src/cmp/csharp/SdkError_csharp.ts 1cd61a4cfec7
 src/cmp/csharp/TestClean_csharp.ts e54205e08182
-src/cmp/csharp/TestDirect_csharp.ts 3e78958265cf
+src/cmp/csharp/TestDirect_csharp.ts 94ae4ebc7a85
 src/cmp/csharp/TestEntity_csharp.ts 096d14271a54
 src/cmp/csharp/Test_csharp.ts 881ebab279a4
 src/cmp/csharp/fragment/Entity.fragment.cs 2e98f8d7683d
@@ -548,7 +548,7 @@ src/cmp/go/ReadmeTopQuick_go.ts ff401ecac05c
 src/cmp/go/ReadmeTopTest_go.ts 843a79c217b1
 src/cmp/go/Schema_go.ts 6a9b0bca5db2
 src/cmp/go/TestClean_go.ts 7319ead95cbf
-src/cmp/go/TestDirect_go.ts b1cfed333c2e
+src/cmp/go/TestDirect_go.ts b0522d1b5a78
 src/cmp/go/TestEntity_go.ts 173f13a58bb0
 src/cmp/go/Test_go.ts 836686c64aee
 src/cmp/go/fragment/Entity.fragment.go 4c0d5d489ffa
@@ -686,7 +686,7 @@ src/cmp/java/ReadmeTopTest_java.ts e5768c406e54
 src/cmp/java/Schema_java.ts 1695e2237594
 src/cmp/java/SdkError_java.ts 2957202451b0
 src/cmp/java/TestClean_java.ts f8de8e6f89f4
-src/cmp/java/TestDirect_java.ts b623034b4211
+src/cmp/java/TestDirect_java.ts 4325e52c0169
 src/cmp/java/TestEntity_java.ts a06328073c0e
 src/cmp/java/Test_java.ts 941460b7f312
 src/cmp/java/fragment/Entity.fragment.java 4a531d0e0922
@@ -931,7 +931,7 @@ src/cmp/kotlin/ReadmeTopTest_kotlin.ts 9e746e04dfc6
 src/cmp/kotlin/Schema_kotlin.ts 84ebe8267b11
 src/cmp/kotlin/SdkError_kotlin.ts dc0cd7ddcc31
 src/cmp/kotlin/TestClean_kotlin.ts e85fcde325cb
-src/cmp/kotlin/TestDirect_kotlin.ts 7721259bbccb
+src/cmp/kotlin/TestDirect_kotlin.ts 281f9d2cc216
 src/cmp/kotlin/TestEntity_kotlin.ts 58d9ed65f1d4
 src/cmp/kotlin/Test_kotlin.ts 322f28ee5f6e
 src/cmp/kotlin/fragment/Entity.fragment.kt 39df6554e3aa
@@ -1028,7 +1028,7 @@ src/cmp/lua/ReadmeTopQuick_lua.ts 324c02900444
 src/cmp/lua/ReadmeTopTest_lua.ts 7c58a8120c13
 src/cmp/lua/Schema_lua.ts 5c629a1e1a22
 src/cmp/lua/TestClean_lua.ts 2db104576891
-src/cmp/lua/TestDirect_lua.ts ffdd9f217cf9
+src/cmp/lua/TestDirect_lua.ts 08e571e20815
 src/cmp/lua/TestEntity_lua.ts fb108cdc2e4d
 src/cmp/lua/Test_lua.ts c206f43dff79
 src/cmp/lua/fragment/Entity.fragment.lua f392dabfac01
@@ -1199,7 +1199,7 @@ src/cmp/perl/ReadmeTopQuick_perl.ts 0db2a86c9b47
 src/cmp/perl/ReadmeTopTest_perl.ts 8e2f209d14c8
 src/cmp/perl/Schema_perl.ts 0591817e7773
 src/cmp/perl/TestClean_perl.ts bc5b79efe4a5
-src/cmp/perl/TestDirect_perl.ts fdc6d645e7e1
+src/cmp/perl/TestDirect_perl.ts a8491658dc86
 src/cmp/perl/TestEntity_perl.ts 397c0fa4803e
 src/cmp/perl/Test_perl.ts cb7b4d57d5d1
 src/cmp/perl/fragment/Entity.fragment.pm 5f5f0e524ee8
@@ -1306,7 +1306,7 @@ src/cmp/php/ReadmeTopQuick_php.ts 97fac5ec2e49
 src/cmp/php/ReadmeTopTest_php.ts f875fdc32fc6
 src/cmp/php/Schema_php.ts 9750487a267a
 src/cmp/php/TestClean_php.ts 72ebbaa3ffa5
-src/cmp/php/TestDirect_php.ts ed691a6f567d
+src/cmp/php/TestDirect_php.ts 737b26391dfa
 src/cmp/php/TestEntity_php.ts b65cd1836d64
 src/cmp/php/Test_php.ts 4b04d7202c7a
 src/cmp/php/fragment/Entity.fragment.php 76a9ceae92d3
@@ -1411,7 +1411,7 @@ src/cmp/py/ReadmeTopQuick_py.ts 4261f7841dda
 src/cmp/py/ReadmeTopTest_py.ts 81991e5ae9f7
 src/cmp/py/Schema_py.ts ff45f83e6ff4
 src/cmp/py/TestClean_py.ts 8ff4b3331fac
-src/cmp/py/TestDirect_py.ts db00d6c3661a
+src/cmp/py/TestDirect_py.ts ae0604397109
 src/cmp/py/TestEntity_py.ts 0efa7a66a2db
 src/cmp/py/Test_py.ts 637c586815a4
 src/cmp/py/fragment/Entity.fragment.py ba46590272d1
@@ -1546,7 +1546,7 @@ src/cmp/rb/ReadmeTopQuick_rb.ts d2b676da467f
 src/cmp/rb/ReadmeTopTest_rb.ts 6d732ad1ca9f
 src/cmp/rb/Schema_rb.ts 7aac619fae8d
 src/cmp/rb/TestClean_rb.ts 24fcac8ed64c
-src/cmp/rb/TestDirect_rb.ts cf471ada3b38
+src/cmp/rb/TestDirect_rb.ts e912c61c4cac
 src/cmp/rb/TestEntity_rb.ts 3855031905e7
 src/cmp/rb/Test_rb.ts a98c4dcbd2fb
 src/cmp/rb/fragment/Entity.fragment.rb b7f25ba79af7
@@ -1655,7 +1655,7 @@ src/cmp/rust/ReadmeTopTest_rust.ts 37bf6c84b4bb
 src/cmp/rust/Schema_rust.ts 62516d49914a
 src/cmp/rust/SdkError_rust.ts 44f812a8460e
 src/cmp/rust/TestClean_rust.ts f661682309b2
-src/cmp/rust/TestDirect_rust.ts fe388c576392
+src/cmp/rust/TestDirect_rust.ts 13b491b51389
 src/cmp/rust/TestEntity_rust.ts 5270d45a617d
 src/cmp/rust/Test_rust.ts bacb4080dc83
 src/cmp/rust/fragment/Entity.fragment.rs 7ca413d80615
@@ -1774,7 +1774,7 @@ src/cmp/scala/ReadmeTopQuick_scala.ts c6d67871e0c0
 src/cmp/scala/ReadmeTopTest_scala.ts 797d3acf8a7e
 src/cmp/scala/Schema_scala.ts 24932d354519
 src/cmp/scala/TestClean_scala.ts 8fe9eddddd97
-src/cmp/scala/TestDirect_scala.ts 2a8e8e437103
+src/cmp/scala/TestDirect_scala.ts 64567d4c0ac1
 src/cmp/scala/TestEntity_scala.ts 826d2c7530af
 src/cmp/scala/Test_scala.ts 2fb85405a87f
 src/cmp/scala/fragment/Entity.fragment.scala 02bf1b00e3b5
@@ -2049,7 +2049,7 @@ src/cmp/ts/Schema_ts.ts 28d8eedbb21a
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
 src/cmp/ts/TestClean_ts.ts 7c3843705372
 src/cmp/ts/TestDefinition_ts.ts 8f242daf10a0
-src/cmp/ts/TestDirect_ts.ts 0b535dbfe689
+src/cmp/ts/TestDirect_ts.ts a2a6d50bd39a
 src/cmp/ts/TestEntity_ts.ts 90ea5ffde678
 src/cmp/ts/TestLive_ts.ts 06caf320e2f1
 src/cmp/ts/TestMain_ts.ts 8b45d4d8db1a

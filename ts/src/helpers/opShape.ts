@@ -2,7 +2,7 @@
 import { each, names } from 'jostraca'
 import { KIT, getModelPath } from '@voxgig/apidef'
 
-import { pointSegments, pointTerminalParam, pointPathKey } from './pointPath'
+import { pointSegments, pointPlaceholders, pointTerminalParam, pointPathKey } from './pointPath'
 import { canonScalarKey } from './canonType'
 
 import type { TargetOrigins } from '../action/resolve'
@@ -140,29 +140,12 @@ function samePath(points: any[]): boolean {
 }
 
 
-// A placeholder inside a literal segment needs a value too.
-function pointParams(point: any): string[] {
-  const names: string[] = []
-  for (const seg of pointSegments(point)) {
-    if (null != seg.var) {
-      names.push(String(seg.var))
-    }
-    else {
-      for (const found of String(seg.lit ?? '').matchAll(/\{([^{}/]+)\}/g)) {
-        names.push(found[1])
-      }
-    }
-  }
-  return names
-}
-
-
 // The rule makePoint applies: a lone point is taken as it is, otherwise only
 // a point without an action, and one the call fills.
 function opReachable(op: any, given: string[]): boolean {
   const points: any[] = op && op.points ? each(op.points) : []
   const have = new Set(given)
-  const fills = (pt: any) => pointParams(pt).every((name) => have.has(name))
+  const fills = (pt: any) => pointPlaceholders(pt).every((name) => have.has(name))
 
   if (1 === points.length) {
     return fills(points[0])

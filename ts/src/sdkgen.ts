@@ -83,7 +83,7 @@ import {
 import type { ExampleLang, LiteralLang } from './helpers/opExample'
 import { liveStrict, liveStrictNote, liveFlowNeeds } from './helpers/testPolicy'
 import type { LiveFlowNeeds } from './helpers/testPolicy'
-import { pointSegments, pointParts, pointTerminalParam, pointPathKey }
+import { pointSegments, pointParts, pointPlaceholders, pointTerminalParam, pointPathKey }
   from './helpers/pointPath'
 import { pointIsGraphql, ownPointFirst, primaryPoint, graphqlDirectSkip } from './helpers/graphqlPoint'
 import type { PathSegment } from './helpers/pointPath'
@@ -1120,6 +1120,7 @@ export {
 
   pointSegments,
   pointParts,
+  pointPlaceholders,
   pointTerminalParam,
   pointPathKey,
   pointIsGraphql,

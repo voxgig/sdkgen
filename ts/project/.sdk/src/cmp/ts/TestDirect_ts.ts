@@ -24,6 +24,7 @@ import {
   jsOptProp, envName, envToken, liveStrict, liveStrictNote,
   jsKey,
   pointParts,
+  pointPlaceholders,
   pointIsGraphql,
   hasLiveScenarios,
   primaryPoint,
@@ -269,12 +270,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   // actually appear in the URL template should drive direct-test path-param
   // setup and URL-substitution asserts; otherwise the SDK silently drops
   // them and the URL-includes assert fails.
-  const pathPlaceholders = new Set<string>()
-  for (const part of pointParts(loadPoint)) {
-    if (typeof part === 'string' && part.startsWith('{') && part.endsWith('}')) {
-      pathPlaceholders.add(part.slice(1, -1))
-    }
-  }
+  const pathPlaceholders = new Set<string>(pointPlaceholders(loadPoint))
   const renameMap = (loadPoint.r?.param || {}) as Record<string, string>
   const renamedPlaceholders = new Set<string>()
   for (const ph of pathPlaceholders) {
