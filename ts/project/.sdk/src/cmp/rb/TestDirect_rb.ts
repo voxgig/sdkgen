@@ -24,6 +24,7 @@ import {
   liveQueryExamples,
   liveEntity,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveDirectDiscovery,
 } from '@voxgig/sdkgen'
 
 import { formatRubyValue } from './utility_rb'
@@ -261,8 +262,10 @@ ${listLiveQueryLines ? '    if setup[:live]\n' + listLiveQueryLines + '    end\n
 `)
     }
     else if (hasLoad && loadPoint) {
-      const discover = !loadAllHaveExamples && hasList && 0 < loadParams.length
-      const idParam = loadParams.find((p: any) => 'id' === p.n)?.n ?? loadParams[0]?.n ?? 'id'
+      const discovery = liveDirectDiscovery(entity, loadParams, listPoint)
+      const discover = null != discovery
+      const idParam = discovery?.param
+      const idField = discovery?.field
       const loadLiveIdKeys: string[] = loadAllHaveExamples ? [] :
         discover ? listParams.map(liveKey).concat(loadParams.filter((p: any) => idParam !== p.n).map(liveKey)) :
           loadParams.map(liveKey)
@@ -299,7 +302,7 @@ ${loadLiveQueryLines ? loadLiveQueryLines + '\n' : ''}`)
         Runner.live_empty("The account has no ${entity.name} record to load")
       end
       first = records[0].is_a?(Hash) ? records[0] : {}
-      found = first.fetch("${idParam}", first["id"])
+      found = first["${idField}"]
       if found.nil?
         Runner.live_miss(LIVE_STRICT, "Live load blocked: discovery returned no usable identity")
       end

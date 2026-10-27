@@ -22,6 +22,7 @@ import {
   liveQueryExamples,
   liveEntity,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveDirectDiscovery,
 } from '@voxgig/sdkgen'
 
 
@@ -297,13 +298,14 @@ ${listLiveQueryLines ? '    if (setup.live) {\n' + listLiveQueryLines + '    }\n
 `)
     }
     else if (hasLoad && loadPoint) {
-      const ancestorParams = loadParams.filter((p: any) => p.n !== 'id')
+      const discovery = liveDirectDiscovery(entity, loadParams, listPoint)
+      const ancestorParams = loadParams.filter((p: any) => p.n !== discovery?.param)
 
       const liveKey = (p: any) => p.n === 'id' ? entity.name + '01' : p.n.replace(/_id$/, '') + '01'
       let loadLiveIdKeys: string[] = []
       if (loadParams.length > 0 && !loadAllHaveExamples) {
-        loadLiveIdKeys = [...new Set((hasList ?
-          [...listParams, ...loadParams.filter((p: any) => p.n !== 'id')] : loadParams).map(liveKey))]
+        loadLiveIdKeys = [...new Set((discovery ?
+          [...listParams, ...ancestorParams] : loadParams).map(liveKey))]
       }
       const loadSkipBlock = getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, loadLiveIdKeys) +
         (loadLiveIdKeys.length > 0
@@ -345,7 +347,7 @@ ${loadSkipBlock}    val client = setup.client
 
         if (loadAllHaveExamples) {
           Content(loadExampleLines + '\n')
-        } else if (hasList && loadParams.length > 0) {
+        } else if (discovery) {
           Content(`      val listParams = linkedMapOf<String, Any?>()
 `)
           for (const p of listParams) {
@@ -371,14 +373,13 @@ ${loadSkipBlock}    val client = setup.client
         RunnerSupport.liveEmpty("The account has no ${entity.name} record to load")
       }
       val firstEnt = Helpers.toMapAny(listData[0]) ?: linkedMapOf()
-      if (firstEnt["id"] == null) {
+      if (firstEnt["${discovery.field}"] == null) {
         RunnerSupport.liveMiss(LIVE_STRICT, "Live load blocked: discovery returned no usable identity")
       }
-      params["id"] = firstEnt["id"]
+      params["${discovery.param}"] = firstEnt["${discovery.field}"]
 `)
           for (const p of ancestorParams) {
-            const key = p.n.replace(/_id$/, '') + '01'
-            Content(`      params["${p.n}"] = setup.idmap["${key}"]
+            Content(`      params["${p.n}"] = setup.idmap["${liveKey(p)}"]
 `)
           }
         } else if (loadParams.length > 0) {

@@ -133,6 +133,16 @@ definition gives, or the schema default. For a required parameter with
 neither, a live test sends the first value the parameter's `enum` allows. A
 required parameter with no example and no `enum` still blocks the test.
 
+A live direct load lists records only to find a path parameter that its
+list route does not take, preferring `id`, and only when examples do not
+give every path parameter. It fills `id` from the first listed record's
+identifier field, any other parameter from the record's field of the same
+name, and blocks when the record has no value for it. Every other path
+parameter comes from `<PROJ>_TEST_<ENTITY>_ENTID` or its example. A load
+route with no path parameter is called directly, with its required query
+examples, even when the entity has a list. Every target with a live suite
+follows the same rule.
+
 The TS and JS entity flow runners also continue independent operations within
 a flow. A failed create blocks dependent writes, while independent reads still
 run. A failed update does not prevent a later load or cleanup of the resource

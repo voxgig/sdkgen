@@ -24,6 +24,7 @@ import {
   liveQueryExamples,
   liveEntity,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveDirectDiscovery,
 } from '@voxgig/sdkgen'
 
 
@@ -261,8 +262,10 @@ ${listLiveQueryLines ? '        if setup["live"]:\n' + listLiveQueryLines : ''}`
 `)
     }
     else if (hasLoad && loadPoint) {
-      const discover = !loadAllHaveExamples && hasList && 0 < loadParams.length
-      const idParam = loadParams.find((p: any) => 'id' === p.n)?.n ?? loadParams[0]?.n ?? 'id'
+      const discovery = liveDirectDiscovery(entity, loadParams, listPoint)
+      const discover = null != discovery
+      const idParam = discovery?.param
+      const idField = discovery?.field
       const loadLiveIdKeys: string[] = loadAllHaveExamples ? [] :
         discover ? listParams.map(liveKey).concat(loadParams.filter((p: any) => idParam !== p.n).map(liveKey)) :
           loadParams.map(liveKey)
@@ -295,9 +298,9 @@ ${loadLiveQueryLines ? loadLiveQueryLines + '\n' : ''}`)
             if 0 == len(records):
                 runner.live_empty("The account has no ${entity.name} record to load")
             first = records[0] if isinstance(records[0], dict) else {}
-            if first.get("${idParam}", first.get("id")) is None:
+            if first.get("${idField}") is None:
                 runner.live_miss(LIVE_STRICT, "Live load blocked: discovery returned no usable identity")
-            params["${idParam}"] = first.get("${idParam}", first.get("id"))
+            params["${idParam}"] = first.get("${idField}")
 `)
         for (const p of loadParams.filter((p: any) => idParam !== p.n)) {
           Content(`            params["${p.n}"] = setup["idmap"].get("${liveKey(p)}")

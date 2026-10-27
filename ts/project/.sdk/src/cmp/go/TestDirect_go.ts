@@ -23,6 +23,7 @@ import {
   liveEntity,
   liveGetOnlyReason, LIVE_GETONLY_ENV,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
+  liveDirectDiscovery,
 } from '@voxgig/sdkgen'
 
 
@@ -359,13 +360,14 @@ ${listLiveQueryLines}
           `"${p.n}": "direct0${i + 1}"`).join(', ')
         : ''
 
-      const ancestorParams = loadParams.filter((p: any) => p.n !== 'id')
+      const discovery = liveDirectDiscovery(entity, loadParams, listPoint)
+      const ancestorParams = loadParams.filter((p: any) => p.n !== discovery?.param)
 
       const liveKey = (p: any) => p.n === 'id' ? entity.name + '01' : p.n.replace(/_id$/, '') + '01'
       let loadLiveIdKeys: string[] = []
       if (loadParams.length > 0 && !loadAllHaveExamples) {
-        loadLiveIdKeys = [...new Set((hasList ?
-          [...listParams, ...loadParams.filter((p: any) => p.n !== 'id')] : loadParams).map(liveKey))]
+        loadLiveIdKeys = [...new Set((discovery ?
+          [...listParams, ...ancestorParams] : loadParams).map(liveKey))]
       }
       const loadSkipBlock = getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, loadLiveIdKeys) +
         (loadLiveIdKeys.length > 0
@@ -414,7 +416,7 @@ ${loadSkipBlock}		client := setup.client
 
         if (loadAllHaveExamples) {
           Content(loadExampleLines + '\n')
-        } else if (hasList && loadParams.length > 0) {
+        } else if (discovery) {
           Content(`			listParams := map[string]any{}
 `)
           for (const p of listParams) {
@@ -444,14 +446,13 @@ ${loadSkipBlock}		client := setup.client
 				liveEmpty(t, "The account has no ${entity.name} record to load")
 			}
 			firstEnt := core.ToMapAny(listData[0])
-			if firstEnt["id"] == nil {
+			if firstEnt[${JSON.stringify(discovery.field)}] == nil {
 				liveMiss(t, ${strictConst}, "Live load blocked: discovery returned no usable identity")
 			}
-			params["id"] = firstEnt["id"]
+			params[${JSON.stringify(discovery.param)}] = firstEnt[${JSON.stringify(discovery.field)}]
 `)
           for (const p of ancestorParams) {
-            const key = p.n.replace(/_id$/, '') + '01'
-            Content(`			params["${p.n}"] = setup.idmap["${key}"]
+            Content(`			params["${p.n}"] = setup.idmap["${liveKey(p)}"]
 `)
           }
         } else if (loadParams.length > 0) {
