@@ -407,6 +407,47 @@ class PrimaryUtilityTest {
     }
   }
 
+  // A Django route answers its slashless form with a relative Location. The
+  // transport follows each hop, and answers a "manual" fetch with the 3xx.
+  @Test
+  fun fetcherRedirect() {
+    val seen = java.util.Collections.synchronizedList(mutableListOf<String>())
+    val moved = mapOf("/redirect/r1" to (301 to "/redirect/r1/"), "/redirect/r1/" to (308 to "done"))
+    val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress("127.0.0.1", 0), 0)
+    server.createContext("/") { exchange ->
+      val path = exchange.requestURI.rawPath
+      seen.add(path)
+      val hop = moved[path]
+      val body = if (path == "/redirect/r1/done") "{\"id\":\"r1\"}".toByteArray() else ByteArray(0)
+      if (hop != null) exchange.responseHeaders.set("Location", hop.second)
+      exchange.responseHeaders.set("Content-Type", "application/json")
+      exchange.sendResponseHeaders(hop?.first ?: if (body.isNotEmpty()) 200 else 404,
+        if (body.isNotEmpty()) body.size.toLong() else -1L)
+      exchange.responseBody.write(body)
+      exchange.close()
+    }
+    server.start()
+    val base = "http://127.0.0.1:" + server.address.port
+    try {
+      val liveClient = ProjectNameSDK(fhMap("base", base))
+      val liveUtility = liveClient.getUtility()
+      val ctx = liveUtility.makeContext(
+        fhMap("opname", "load", "client", liveClient, "utility", liveUtility), null)
+
+      val res = liveUtility.fetcher(ctx, "$base/redirect/r1",
+        fhMap("method", "GET", "headers", linkedMapOf<String, Any?>())) as Map<*, *>
+      assertEquals(200, res["status"])
+      assertEquals("{\"id\":\"r1\"}", res["body"])
+      assertEquals(listOf("/redirect/r1", "/redirect/r1/", "/redirect/r1/done"), seen.toList())
+
+      val manual = liveUtility.fetcher(ctx, "$base/redirect/r1",
+        fhMap("method", "GET", "headers", linkedMapOf<String, Any?>(), "redirect", "manual")) as Map<*, *>
+      assertEquals(301, manual["status"])
+    } finally {
+      server.stop(0)
+    }
+  }
+
   // Nothing listens on port 9: a request the guard let through fails there.
   // A JVM cannot set its own environment, so the probe runs in a child JVM.
   @Test

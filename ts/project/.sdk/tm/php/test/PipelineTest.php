@@ -511,6 +511,58 @@ class PipelineTest extends TestCase
     }
 
 
+    // A Django route answers its slashless form with a relative Location. The
+    // transport follows each hop, and answers a "manual" fetch with the 3xx.
+    // The server is a child process: PHP serves nothing while it waits.
+    public function test_fetcher_follows_a_relative_redirect(): void
+    {
+        if (!function_exists('proc_open')) {
+            $this->markTestSkipped('the server runs in a child process');
+        }
+        $server = <<<'SERVER'
+            $srv = stream_socket_server('tcp://127.0.0.1:0');
+            fwrite(STDOUT, explode(':', stream_socket_get_name($srv, false))[1] . "\n");
+            fflush(STDOUT);
+            $moved = ['/redirect/r1' => [301, '/redirect/r1/'], '/redirect/r1/' => [308, 'done']];
+            for ($i = 0; $i < 4 && ($sock = @stream_socket_accept($srv, 20)); $i++) {
+                $path = explode(' ', (string)fgets($sock))[1] ?? '';
+                while (!in_array(fgets($sock), ["\r\n", "\n", false], true)) {
+                }
+                fwrite(STDOUT, $path . "\n");
+                $hop = $moved[$path] ?? null;
+                $body = '/redirect/r1/done' === $path ? '{"id":"r1"}' : '';
+                fwrite($sock, 'HTTP/1.1 ' . ($hop[0] ?? ('' === $body ? 404 : 200)) . " X\r\n"
+                    . (null === $hop ? '' : "Location: {$hop[1]}\r\n") . "Content-Type: application/json\r\n"
+                    . 'Content-Length: ' . strlen($body) . "\r\nConnection: close\r\n\r\n" . $body);
+                fclose($sock);
+            }
+            SERVER;
+        $proc = proc_open([PHP_BINARY, '-r', $server], [1 => ['pipe', 'w']], $pipes);
+        try {
+            $base = 'http://127.0.0.1:' . trim((string)fgets($pipes[1]));
+            $client = new ProjectNameSDK(['base' => $base]);
+            $utility = $client->get_utility();
+            $ctx = ($utility->make_context)(['opname' => 'load', 'client' => $client,
+                'utility' => $utility], null);
+
+            [$res, $err] = ($utility->fetcher)($ctx, $base . '/redirect/r1', ['method' => 'GET', 'headers' => []]);
+            $this->assertNull($err);
+            $this->assertSame(200, $res['status']);
+            $this->assertSame(['id' => 'r1'], ($res['json'])());
+
+            [$manual, $merr] = ($utility->fetcher)($ctx, $base . '/redirect/r1',
+                ['method' => 'GET', 'headers' => [], 'redirect' => 'manual']);
+            $this->assertNull($merr);
+            $this->assertSame(301, $manual['status']);
+            $this->assertSame("/redirect/r1\n/redirect/r1/\n/redirect/r1/done\n/redirect/r1\n",
+                stream_get_contents($pipes[1]));
+        } finally {
+            proc_terminate($proc);
+            proc_close($proc);
+        }
+    }
+
+
     // The guard writes to STDERR, so it is read from a child process. Nothing
     // listens on port 9: a request the guard let through fails there.
     public function test_get_only_guard_prints_no_query_credential(): void

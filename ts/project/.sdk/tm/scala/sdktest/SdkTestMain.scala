@@ -706,6 +706,51 @@ object SdkTestMain {
   // Small identity wrapper so IntConsumer/LongSupplier land in the map as-is.
   private def f0(o: Object): Object = o
 
+  // A Django route answers its slashless form with a relative Location. The
+  // transport follows each hop, and answers a "manual" fetch with the 3xx.
+  private def testRedirect(): Unit = {
+    val seen = java.util.Collections.synchronizedList(new ArrayList[String]())
+    val moved = Map("/redirect/r1" -> (301, "/redirect/r1/"), "/redirect/r1/" -> (308, "done"))
+    val server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0)
+    server.createContext("/", (exchange: com.sun.net.httpserver.HttpExchange) => {
+      val path = exchange.getRequestURI.getRawPath
+      seen.add(path)
+      val hop = moved.get(path)
+      val body = if (path == "/redirect/r1/done") "{\"id\":\"r1\"}".getBytes("UTF-8") else Array[Byte]()
+      hop.foreach(h => exchange.getResponseHeaders.set("Location", h._2))
+      exchange.getResponseHeaders.set("Content-Type", "application/json")
+      exchange.sendResponseHeaders(hop.map(_._1).getOrElse(if (body.nonEmpty) 200 else 404),
+        if (body.nonEmpty) body.length.toLong else -1L)
+      exchange.getResponseBody.write(body)
+      exchange.close()
+    })
+    server.start()
+    val base = "http://127.0.0.1:" + server.getAddress.getPort
+    try {
+      val opts = new LinkedHashMap[String, Object]()
+      opts.put("base", base)
+      val client = new ProjectNameSDK(opts)
+      val utility = client.getUtility()
+      val cm = new LinkedHashMap[String, Object]()
+      cm.put("opname", "load")
+      val ctx = utility.makeContext(cm, client.getRootCtx())
+      def fetch(redirect: String): JMap[String, Object] = {
+        val fetchdef = new LinkedHashMap[String, Object]()
+        fetchdef.put("method", "GET")
+        fetchdef.put("headers", new LinkedHashMap[String, Object]())
+        if (redirect != null) fetchdef.put("redirect", redirect)
+        utility.fetcher(ctx, base + "/redirect/r1", fetchdef).asInstanceOf[JMap[String, Object]]
+      }
+
+      val res = fetch(null)
+      eq("redirect.status", Integer.valueOf(200), res.get("status"))
+      eq("redirect.body", "{\"id\":\"r1\"}", res.get("body"))
+      eq("redirect.hops", "[/redirect/r1, /redirect/r1/, /redirect/r1/done]", seen.toString)
+      eq("redirect.manual", Integer.valueOf(301), fetch("manual").get("status"))
+    }
+    finally server.stop(0)
+  }
+
   // Nothing listens on port 9: a request the guard let through fails there.
   // A JVM cannot set its own environment, so the probe runs in a child JVM.
   private def testGetOnlyGuard(): Unit = {
@@ -736,7 +781,8 @@ object SdkTestMain {
       "paging" -> testPaging, "streaming" -> testStreaming, "proxy" -> testProxy,
       "composition" -> testComposition, "featureAdd" -> testFeatureAdd,
       "featureOrder" -> testFeatureOrder, "entityCrud" -> testEntityCrud,
-      "entityStream" -> testEntityStream, "getOnlyGuard" -> testGetOnlyGuard)
+      "entityStream" -> testEntityStream, "getOnlyGuard" -> testGetOnlyGuard,
+      "redirect" -> testRedirect)
 
     suites.foreach { case (name, fn) =>
       try fn()

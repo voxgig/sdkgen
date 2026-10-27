@@ -31,6 +31,13 @@ function pointParts(point: any): string[] {
 }
 
 
+// The trailing slash a route declares, which its segments do not hold.
+function pointSlash(point: any): string {
+  const orig = point?.o ?? point?.orig
+  return 'string' === typeof orig && orig.endsWith('/') ? '/' : ''
+}
+
+
 // The path parameters a point's URL needs, including a placeholder inside a
 // literal segment such as `{version}.mod`.
 function pointPlaceholders(point: any): string[] {
@@ -71,6 +78,7 @@ export type {
 export {
   pointSegments,
   pointParts,
+  pointSlash,
   pointPlaceholders,
   pointTerminalParam,
   pointPathKey,

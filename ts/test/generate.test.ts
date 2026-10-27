@@ -21,7 +21,7 @@ import {
   KIT, STAGE, SCAFFOLD, makeLog, layeredFs, makeModel, makeRoot, ROUTING_MODEL, searchOnly, listOnly, selectorList, selectorLoad, embeddedLoad, shadowedLoad, actionList, parentedCreate, idlessUpdate, namedFieldEntity, seedableList, graphqlOnly, entityOnly,
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
-  REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
+  REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
   directDiscovery,
 } from './generateharness'
 
@@ -3277,6 +3277,24 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         if (!/params(\W|\.put\(){1,8}player_id\b/i.test(player[1])) gaps.push(`${target}: does not fill player_id`)
         if (/playerId/.test(player[1])) gaps.push(`${target}: names the path parameter by its wire name`)
       }
+    }
+    deepStrictEqual(gaps, [])
+  })
+
+  // A Django route ends with a slash its segments do not hold. The direct
+  // test sends it, as an entity operation does.
+  test('every direct test keeps the slash its route ends with', async () => {
+    const targets = [...LIVE_SUITE_TARGETS, 'scala', 'c', 'cpp']
+    const out = await generate(targets, undefined, slashRoutes())
+    const gaps: string[] = []
+    for (const target of targets) {
+      const file = testFiles(out, target).find(([n]) => /lobby_?direct/i.test(n))
+      if (null == file) {
+        gaps.push(`${target}: no lobby direct test`)
+        continue
+      }
+      if (!/["']api\/lobby\/\{id\}\/["']/.test(file[1])) gaps.push(`${target}: the load path drops its slash`)
+      if (!/["']api\/lobby\/["']/.test(file[1])) gaps.push(`${target}: the list path drops its slash`)
     }
     deepStrictEqual(gaps, [])
   })

@@ -24,11 +24,12 @@ local function make_url_util(ctx)
     authquery[name] = true
   end
 
-  -- A route the definition ends with a slash keeps it, for a Django REST server,
-  -- and a host with no path takes /, or luasocket reads a query as the host.
+  -- A route ending in a slash keeps it, as defined or as passed to direct(), for
+  -- Django, and a host with no path takes /, or luasocket reads a query as the host.
   local orig = ctx.point ~= nil and vs.getprop(ctx.point, "orig") or nil
-  if type(orig) == "string" and orig:sub(-1) == "/" and (spec.suffix == nil or spec.suffix == "")
-      and url:sub(-1) ~= "/" then
+  local slashed = (type(orig) == "string" and orig:sub(-1) == "/")
+    or (type(spec.path) == "string" and spec.path:sub(-1) == "/")
+  if slashed and (spec.suffix == nil or spec.suffix == "") and url:sub(-1) ~= "/" then
     url = url .. "/"
   end
   local authority = url:find("://", 1, true)

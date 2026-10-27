@@ -16,6 +16,9 @@
 #   subject ran - the resolver's CtxView takes care of presenting the
 #   context object as the map omni walks, camelCase keys included.
 
+import http.server
+import threading
+
 import pytest
 
 from projectname_sdk import ProjectNameSDK
@@ -380,6 +383,55 @@ class TestPrimaryUtility:
         assert "blocked" in str(err).lower()
 
     # Nothing listens on port 9: a request the guard let through fails there.
+    # A Django route answers its slashless form with a relative Location. The
+    # transport follows each hop, and answers a "manual" fetch with the 3xx.
+    def test_fetcher_redirect(self):
+        pytest.importorskip("requests")
+        seen = []
+        moved = {"/redirect/r1": (301, "/redirect/r1/"), "/redirect/r1/": (308, "done")}
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+
+            def do_GET(self):
+                seen.append(self.path)
+                hop = moved.get(self.path)
+                done = "/redirect/r1/done" == self.path
+                body = b'{"id":"r1"}' if done else b""
+                self.send_response(hop[0] if hop else 200 if done else 404)
+                if hop:
+                    self.send_header("Location", hop[1])
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Connection", "close")
+                self.end_headers()
+                self.wfile.write(body)
+
+        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        base = "http://127.0.0.1:%d" % server.server_address[1]
+        try:
+            live_client = ProjectNameSDK({"base": base})
+            live_utility = live_client._utility
+            ctx = live_utility.make_context({
+                "opname": "load",
+                "client": live_client,
+                "utility": live_utility,
+            }, None)
+
+            res, err = live_utility.fetcher(ctx, base + "/redirect/r1", {"method": "GET", "headers": {}})
+            assert err is None and res["status"] == 200
+            assert res["json"]() == {"id": "r1"}
+            assert seen == ["/redirect/r1", "/redirect/r1/", "/redirect/r1/done"]
+
+            res, err = live_utility.fetcher(ctx, base + "/redirect/r1",
+                                            {"method": "GET", "headers": {}, "redirect": "manual"})
+            assert err is None and res["status"] == 301
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_fetcher_getonly_guard(self, monkeypatch):
         live_client = ProjectNameSDK({"base": "http://127.0.0.1:9"})
         live_utility = live_client._utility

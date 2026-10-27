@@ -445,6 +445,8 @@ const urlStruct = {
     .join(sep),
 }
 
+const realJoin = loadTemplate('ts/src/utility/StructUtility.ts').join
+
 function uctx(orig: string, spec: any) {
   return {
     utility: { struct: urlStruct },
@@ -506,6 +508,20 @@ describe('makeUrl', () => {
       deepStrictEqual(makeUrl(uctx('', { base: 'base-', path: '' })), 'base-')
     })
 
+    // direct() has no point, so only its own path can say so, and struct's
+    // join drops the slash: that join, not a stand-in, builds this URL.
+    test(lang + ': a trailing slash a direct() path ends with is kept', () => {
+      const direct = (path: string, spec: any = {}) => makeUrl({
+        ...uctx('', { path, params: { id: 391 }, ...spec }), point: undefined,
+        utility: { struct: { ...urlStruct, join: realJoin } },
+      })
+      deepStrictEqual(direct('api/law_draft_api/{id}/'), 'https://api.test/api/law_draft_api/391/')
+      deepStrictEqual(direct('api/law_draft_api/{id}'), 'https://api.test/api/law_draft_api/391')
+      deepStrictEqual(direct('/lobby_group/', { query: { page: 2 } }),
+        'https://api.test/lobby_group/?page=2')
+      deepStrictEqual(direct('lobby_group/', { suffix: '.json' }), 'https://api.test/lobby_group/.json')
+    })
+
     // A URL resolver removes a dot segment, and `..` the segment before it too.
     test(lang + ': a path parameter that is a dot segment is refused', () => {
       for (const id of ['.', '..']) {
@@ -559,6 +575,21 @@ describe('makeUrl', () => {
       }
     }
     deepStrictEqual(missing, [], 'targets whose makeUrl drops a trailing slash')
+  })
+
+  // direct() has no point: the spec's own path is read beside the orig.
+  test('every target keeps a trailing slash a direct() path ends with', () => {
+    const missing: string[] = []
+    for (const [lang, [rel, def]] of Object.entries(TEMPLATES)) {
+      const src = readFileSync(Path.join(TM, rel), 'utf8')
+      const body = src.slice(src.indexOf(def), src.indexOf(def) + 2500)
+      const from = body.indexOf('query as the host.')
+      const rule = -1 === from ? '' : body.slice(from, body.indexOf('://', from))
+      if (!/\borig\b/.test(rule) || !/path/i.test(rule)) {
+        missing.push(lang)
+      }
+    }
+    deepStrictEqual(missing, [], 'targets whose makeUrl drops the slash a direct() path ends with')
   })
 
   // One fleet SDK sent DELETE /permission/{id} for a call that never named an

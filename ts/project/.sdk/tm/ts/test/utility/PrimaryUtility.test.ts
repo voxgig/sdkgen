@@ -2,6 +2,7 @@
 import { test, describe, before } from 'node:test'
 import { equal, deepStrictEqual, ok } from 'node:assert'
 import assert from 'node:assert'
+import Http from 'node:http'
 
 import {
   makeRunner,
@@ -520,6 +521,45 @@ describe('PrimaryUtility', async () => {
     finally {
       if (undefined === prior) delete process.env.VOXGIG_GETONLY_GUARD
       else process.env.VOXGIG_GETONLY_GUARD = prior
+    }
+  })
+
+
+  // A Django route answers its slashless form with a relative Location. The
+  // transport follows each hop, and answers a "manual" fetch with the 3xx.
+  test('fetcher-redirect', async () => {
+    const seen: string[] = []
+    const moved: Record<string, [number, string]> = {
+      '/redirect/r1': [301, '/redirect/r1/'],
+      '/redirect/r1/': [308, 'done'],
+    }
+    const server = Http.createServer((req: any, res: any) => {
+      seen.push(req.url)
+      const to = moved[req.url]
+      const done = '/redirect/r1/done' === req.url
+      res.writeHead(to ? to[0] : done ? 200 : 404, to ? { location: to[1], connection: 'close' } :
+        { 'content-type': 'application/json', connection: 'close' })
+      res.end(done ? '{"id":"r1"}' : '')
+    })
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()))
+    const base = 'http://127.0.0.1:' + (server.address() as any).port
+    try {
+      const liveClient = new (SDK as any)({ base })
+      const liveUtility = liveClient.utility()
+      const ctx = liveUtility.makeContext({ opname: 'load' }, liveClient._rootctx)
+      ctx.client = liveClient
+
+      const res = await liveUtility.fetcher(ctx, base + '/redirect/r1', { method: 'GET', headers: {} })
+      equal(res.status, 200)
+      deepStrictEqual(await res.json(), { id: 'r1' })
+      deepStrictEqual(seen, ['/redirect/r1', '/redirect/r1/', '/redirect/r1/done'])
+
+      const manual = await liveUtility.fetcher(ctx, base + '/redirect/r1',
+        { method: 'GET', headers: {}, redirect: 'manual' })
+      equal(manual.status, 301)
+    }
+    finally {
+      server.close()
     }
   })
 

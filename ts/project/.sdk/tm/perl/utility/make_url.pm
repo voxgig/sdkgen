@@ -32,10 +32,11 @@ $REGISTRY{make_url} = sub {
   # Sent with the request, never recorded as the entity's match.
   my %authquery = map { $_ => 1 } @{ $spec->{authquery} || [] };
 
-  # A route the definition ends with a slash keeps it, for a Django REST server,
-  # and a host with no path takes /, or luasocket reads a query as the host.
+  # A route ending in a slash keeps it, as defined or as passed to direct(), for
+  # Django, and a host with no path takes /, or luasocket reads a query as the host.
   my $orig = $ctx->{point} ? ProjectNameHelpers::gp($ctx->{point}, 'orig') : undef;
-  $url .= '/' if defined $orig && !ref $orig && $orig =~ m{/\z}
+  my $slashed = grep { defined $_ && !ref $_ && m{/\z} } $orig, $spec->{path};
+  $url .= '/' if $slashed
     && !(defined $spec->{suffix} && '' ne $spec->{suffix}) && $url !~ m{/\z};
   my $authority = index($url, '://');
   $url .= '/' if 0 < $authority && substr($url, $authority + 3) !~ m{[/?#]};

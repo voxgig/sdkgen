@@ -15,6 +15,7 @@ import {
   serverVarEnv,
   serverVariables, envName, envToken, liveStrict, liveStrictNote,
   pointParts,
+  pointSlash,
   pointPlaceholders,
   pointIsGraphql,
   primaryPoint,
@@ -118,7 +119,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const loadPoint = null == loadOp?.points ? undefined :
     primaryPoint(loadOp.points, entity.name, 'load')
   const loadIsGraphql = pointIsGraphql(loadPoint)
-  const loadPath = loadPoint ? normalizePathParams(pointParts(loadPoint), loadPoint?.g?.params || [], loadPoint?.r?.param) : ''
+  const loadPath = loadPoint ? normalizePathParams(pointParts(loadPoint), loadPoint?.g?.params || [], loadPoint?.r?.param) + pointSlash(loadPoint) : ''
   const allLoadParams = loadPoint?.g?.params || []
   // Some upstream OpenAPI specs declare a parameter as `in: path` even when
   // that path has no `{name}` placeholder for it. Only path params that
@@ -140,7 +141,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listPoint = null == listOp?.points ? undefined :
     primaryPoint(listOp.points, entity.name, 'list')
   const listIsGraphql = pointIsGraphql(listPoint)
-  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) : ''
+  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) + pointSlash(listPoint) : ''
   const listParams = listPoint?.g?.params || []
 
   const liveQueryLines = (point: any) => liveQueryExamples(point)

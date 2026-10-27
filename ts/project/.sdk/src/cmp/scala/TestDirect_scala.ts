@@ -12,6 +12,7 @@ import {
   cmp,
   snakify,
   pointParts,
+  pointSlash,
   pointPlaceholders,
   pointIsGraphql,
   graphqlDirectSkip,
@@ -83,7 +84,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // Load point info.
   const loadPoint = loadOp?.points?.[0]
   const loadPath = loadPoint
-    ? normalizePathParams(pointParts(loadPoint), loadPoint?.g?.params || [], loadPoint?.r?.param)
+    ? normalizePathParams(pointParts(loadPoint), loadPoint?.g?.params || [], loadPoint?.r?.param) + pointSlash(loadPoint)
     : ''
   const allLoadParams = loadPoint?.g?.params || []
   // Only path params that actually appear in the URL template drive the
@@ -103,7 +104,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   // List point info.
   const listPoint = listOp?.points?.[0]
   const listPath = listPoint
-    ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param)
+    ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) + pointSlash(listPoint)
     : ''
   const listParams = listPoint?.g?.params || []
 

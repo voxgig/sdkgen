@@ -425,6 +425,78 @@ final class PrimaryUtilityTest: XCTestCase {
     }
   }
 
+  // A Django route answers its slashless form with a relative Location. The
+  // transport follows each hop, and answers a "manual" fetch with the 3xx.
+  func testFetcherRedirect() throws {
+    #if os(Linux)
+    let fd = socket(AF_INET, Int32(SOCK_STREAM.rawValue), 0)
+    #else
+    let fd = socket(AF_INET, SOCK_STREAM, 0)
+    #endif
+    var addr = sockaddr_in()
+    addr.sin_family = sa_family_t(AF_INET)
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1")
+    var len = socklen_t(MemoryLayout<sockaddr_in>.size)
+    _ = withUnsafeMutablePointer(to: &addr) {
+      $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(fd, $0, len) }
+    }
+    listen(fd, 8)
+    _ = withUnsafeMutablePointer(to: &addr) {
+      $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(fd, $0, &len) }
+    }
+    let base = "http://127.0.0.1:\(UInt16(bigEndian: addr.sin_port))"
+    defer { close(fd) }
+
+    let lock = NSLock()
+    var seen: [String] = []
+    let moved = ["/redirect/r1": "301 X\r\nLocation: /redirect/r1/", "/redirect/r1/": "308 X\r\nLocation: done"]
+    Thread.detachNewThread {
+      for _ in 0..<4 {
+        let conn = accept(fd, nil, nil)
+        if conn < 0 { return }
+        var head = ""
+        var buf = [UInt8](repeating: 0, count: 4096)
+        while !head.contains("\r\n\r\n") {
+          let got = buf.withUnsafeMutableBytes { read(conn, $0.baseAddress, $0.count) }
+          if got <= 0 { break }
+          head += String(decoding: buf[0..<got], as: UTF8.self)
+        }
+        let parts = head.split(separator: " ")
+        let path = 1 < parts.count ? String(parts[1]) : ""
+        lock.lock(); seen.append(path); lock.unlock()
+        let body = path == "/redirect/r1/done" ? "{\"id\":\"r1\"}" : ""
+        let status = moved[path] ?? (body.isEmpty ? "404 X" : "200 X")
+        let reply = Array(("HTTP/1.1 \(status)\r\nContent-Type: application/json\r\n" +
+          "Content-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n\(body)").utf8)
+        _ = reply.withUnsafeBytes { write(conn, $0.baseAddress, $0.count) }
+        close(conn)
+      }
+    }
+
+    let opts = VMap()
+    opts.entries["base"] = .string(base)
+    let liveClient = ProjectNameSDK(opts)
+    let liveUtility = liveClient.getUtility()
+    let ctx = liveUtility.makeContext(
+      ["opname": "load", "client": liveClient, "utility": liveUtility], nil)
+    func def(_ redirect: String?) -> VMap {
+      let fetchdef = VMap()
+      fetchdef.entries["method"] = .string("GET")
+      fetchdef.entries["headers"] = .map(VMap())
+      if let redirect = redirect { fetchdef.entries["redirect"] = .string(redirect) }
+      return fetchdef
+    }
+
+    let res = try liveUtility.fetcher(ctx, base + "/redirect/r1", def(nil))
+    XCTAssertEqual(gp(res, "status").asInt, 200)
+    XCTAssertEqual(gp(res, "body").asString, "{\"id\":\"r1\"}")
+    lock.lock(); let sent = seen; lock.unlock()
+    XCTAssertEqual(sent, ["/redirect/r1", "/redirect/r1/", "/redirect/r1/done"])
+
+    let manual = try liveUtility.fetcher(ctx, base + "/redirect/r1", def("manual"))
+    XCTAssertEqual(gp(manual, "status").asInt, 301)
+  }
+
   // Nothing listens on port 9: a request the guard let through fails there.
   func testFetcherGetOnlyGuard() {
     let opts = VMap()

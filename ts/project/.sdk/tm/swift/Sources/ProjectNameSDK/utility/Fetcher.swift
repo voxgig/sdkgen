@@ -18,15 +18,7 @@ private func cookielessConfiguration() -> URLSessionConfiguration {
   return cfg
 }
 
-private let defaultSession = URLSession(configuration: cookielessConfiguration())
-
-// Non-following twin of defaultSession. The station feature's
-// middleware sets `redirect: manual` on the fetch definition under a
-// hosts egress policy: a 3xx must come back as a response like any
-// other, because an automatic follow would carry injected credentials
-// to a Location no policy approved (the ts donor's fetch honours the
-// same key natively; redirect policy is per-delegate in URLSession,
-// hence a second session).
+// Every 3xx comes back as a response: defaultHttpFetch follows redirects.
 private final class ManualRedirectDelegate: NSObject, URLSessionTaskDelegate {
   func urlSession(
     _ session: URLSession, task: URLSessionTask,
@@ -61,12 +53,66 @@ func getOnlyRefusal(_ fullurl: String, _ method: String) -> ProjectNameError? {
     "[GET-ONLY GUARD] blocked \(upper) \(path.isEmpty ? "/" : String(path))", nil)
 }
 
-func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
-  let method = gp(fetchdef, "method").asString ?? "GET"
-  if let refused = getOnlyRefusal(fullurl, method.isEmpty ? "GET" : method) {
-    throw refused
-  }
+let redirectStatus: Set<Int64> = [301, 302, 303, 307, 308]
+let redirectMax = 5
 
+// The Location resolved against the URL that answered with it.
+func resolveLocation(_ base: String, _ location: String) -> String? {
+  let trimmed = location.filter { !$0.isWhitespace }
+  guard let resolved = URL(string: trimmed, relativeTo: URL(string: base)) else { return nil }
+  return String(resolved.absoluteString.prefix { $0 != "#" })
+}
+
+private func redirectOrigin(_ url: String) -> String {
+  guard let parts = URLComponents(string: url) else { return url }
+  let scheme = parts.scheme?.lowercased() ?? ""
+  return "\(scheme)://\(parts.host?.lowercased() ?? ""):\(parts.port ?? (scheme == "https" ? 443 : 80))"
+}
+
+private func withoutCredentials(_ fetchdef: VMap) -> VMap {
+  let copy = VMap(fetchdef.entries)
+  if let headers = gp(fetchdef, "headers").asMap {
+    var kept = headers.entries
+    for key in kept.keys where ["authorization", "cookie", "proxy-authorization"].contains(key.lowercased()) {
+      _ = kept.removeValue(forKey: key)
+    }
+    copy.entries["headers"] = .map(VMap(kept))
+  }
+  return copy
+}
+
+// URLSession on Linux drops the trailing slash of a Location it follows, so
+// redirects are followed here. A GET or HEAD follows one, unless the fetch
+// definition says "manual", each hop passing the GET-only guard first; past
+// redirectMax hops the last 3xx is the answer. Another origin is not sent the
+// request's credentials.
+func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
+  let raw = gp(fetchdef, "method").asString ?? "GET"
+  let method = raw.isEmpty ? "GET" : raw.uppercased()
+  let follow = (method == "GET" || method == "HEAD") && gp(fetchdef, "redirect").asString != "manual"
+  var url = fullurl
+  var def = fetchdef
+  var hops = 0
+  while true {
+    if let refused = getOnlyRefusal(url, method) {
+      throw refused
+    }
+    let res = try sendOnce(url, def)
+    guard follow, hops < redirectMax, let status = gp(res, "status").asInt,
+      redirectStatus.contains(status), let location = gp(gp(res, "headers"), "location").asString,
+      let next = resolveLocation(url, location)
+    else {
+      return res
+    }
+    if redirectOrigin(next) != redirectOrigin(url) {
+      def = withoutCredentials(def)
+    }
+    url = next
+    hops += 1
+  }
+}
+
+private func sendOnce(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
   // A request that cannot be sent fails the operation.
   guard let url = URL(string: fullurl) else {
     throw ProjectNameError("fetch_transport", "the URL could not be parsed", nil)
@@ -116,9 +162,7 @@ func defaultHttpFetch(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
   }
   let box = FetchBox()
   let sem = DispatchSemaphore(value: 0)
-  let session = gp(fetchdef, "redirect").asString == "manual"
-    ? manualRedirectSession : defaultSession
-  let task = session.dataTask(with: req) { d, r, e in
+  let task = manualRedirectSession.dataTask(with: req) { d, r, e in
     box.data = d; box.resp = r; box.err = e; sem.signal()
   }
   task.resume()

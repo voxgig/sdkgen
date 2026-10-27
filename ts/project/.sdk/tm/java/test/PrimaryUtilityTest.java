@@ -414,6 +414,53 @@ public class PrimaryUtilityTest {
     }
   }
 
+  // A Django route answers its slashless form with a relative Location. The
+  // transport follows each hop, and answers a "manual" fetch with the 3xx.
+  @Test
+  @SuppressWarnings("unchecked")
+  public void fetcherRedirect() throws Exception {
+    List<String> seen = java.util.Collections.synchronizedList(new ArrayList<>());
+    Map<String, Object[]> moved = Map.of(
+        "/redirect/r1", new Object[] {301, "/redirect/r1/"}, "/redirect/r1/", new Object[] {308, "done"});
+    com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create(
+        new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+    server.createContext("/", (exchange) -> {
+      String path = exchange.getRequestURI().getRawPath();
+      seen.add(path);
+      Object[] hop = moved.get(path);
+      byte[] body = "/redirect/r1/done".equals(path) ? "{\"id\":\"r1\"}".getBytes() : new byte[0];
+      if (hop != null) {
+        exchange.getResponseHeaders().set("Location", (String) hop[1]);
+      }
+      exchange.getResponseHeaders().set("Content-Type", "application/json");
+      exchange.sendResponseHeaders(hop != null ? (int) hop[0] : 0 < body.length ? 200 : 404,
+          0 < body.length ? body.length : -1);
+      exchange.getResponseBody().write(body);
+      exchange.close();
+    });
+    server.start();
+    String base = "http://127.0.0.1:" + server.getAddress().getPort();
+    try {
+      ProjectNameSDK liveClient = new ProjectNameSDK(fhMap("base", base));
+      Utility liveUtility = liveClient.getUtility();
+      Context ctx = liveUtility.makeContext.apply(fhMap(
+          "opname", "load", "client", liveClient, "utility", liveUtility), null);
+
+      Map<String, Object> res = (Map<String, Object>) liveUtility.fetcher.fetch(ctx, base + "/redirect/r1",
+          fhMap("method", "GET", "headers", new LinkedHashMap<>()));
+      assertEquals(200, res.get("status"));
+      assertEquals("{\"id\":\"r1\"}", res.get("body"));
+      assertEquals(List.of("/redirect/r1", "/redirect/r1/", "/redirect/r1/done"), seen);
+
+      Map<String, Object> manual = (Map<String, Object>) liveUtility.fetcher.fetch(ctx,
+          base + "/redirect/r1", fhMap("method", "GET", "headers", new LinkedHashMap<>(), "redirect", "manual"));
+      assertEquals(301, manual.get("status"));
+    }
+    finally {
+      server.stop(0);
+    }
+  }
+
   // Nothing listens on port 9: a request the guard let through fails there.
   // A JVM cannot set its own environment, so the probe runs in a child JVM.
   @Test

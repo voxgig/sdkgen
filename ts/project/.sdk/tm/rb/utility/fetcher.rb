@@ -56,6 +56,46 @@ module ProjectNameUtilities
     ctx.make_error("fetch_getonly_block", "[GET-ONLY GUARD] blocked #{method} #{path}")
   end
 
+  REDIRECT_STATUS = [301, 302, 303, 307, 308].freeze
+  REDIRECT_MAX = 5
+  CREDENTIAL_HEADERS = %w[authorization cookie proxy-authorization].freeze
+
+  def self.redirect_origin(url)
+    uri = URI.parse(url)
+    [uri.scheme, uri.host, uri.port]
+  end
+
+  # Net::HTTP never follows a redirect. A GET or HEAD follows one, unless the
+  # fetch definition says "manual", each hop passing the GET-only guard first;
+  # past REDIRECT_MAX hops the last 3xx is the answer. Another origin is not
+  # sent the request's credentials.
+  def self.follow_redirects(ctx, fullurl, fetchdef)
+    method = fetchdef["method"].to_s.upcase
+    follow = ["", "GET", "HEAD"].include?(method) && fetchdef["redirect"] != "manual"
+    url = fullurl
+    hops = 0
+    loop do
+      refused = getonly_refusal(ctx, url, fetchdef["method"])
+      return nil, refused if refused
+      res, err = DefaultHttpFetch.call(url, fetchdef)
+      location = res.is_a?(Hash) && res["headers"].is_a?(Hash) ? res["headers"]["location"] : nil
+      return res, err unless follow && location.is_a?(String) && hops < REDIRECT_MAX &&
+        REDIRECT_STATUS.include?(res["status"])
+      nxt = begin
+        URI.join(url, location.strip).tap { |u| u.fragment = nil }.to_s
+      rescue URI::Error
+        nil
+      end
+      return res, err if nxt.nil?
+      if redirect_origin(nxt) != redirect_origin(url)
+        headers = (fetchdef["headers"] || {}).reject { |k, _| CREDENTIAL_HEADERS.include?(k.to_s.downcase) }
+        fetchdef = fetchdef.merge("headers" => headers)
+      end
+      url = nxt
+      hops += 1
+    end
+  end
+
   DefaultHttpFetch = ->(fullurl, fetchdef) {
     method_str = fetchdef["method"] || "GET"
     body_str = fetchdef["body"]
@@ -149,11 +189,7 @@ module ProjectNameUtilities
 
     sys_fetch = VoxgigStruct.getpath(options, "system.fetch")
 
-    if sys_fetch.nil?
-      refused = ProjectNameUtilities.getonly_refusal(ctx, fullurl, fetchdef["method"])
-      return nil, refused if refused
-      return DefaultHttpFetch.call(fullurl, fetchdef)
-    end
+    return ProjectNameUtilities.follow_redirects(ctx, fullurl, fetchdef) if sys_fetch.nil?
     return sys_fetch.call(fullurl, fetchdef) if sys_fetch.is_a?(Proc)
 
     return nil, ctx.make_error("fetch_invalid", "system.fetch is not a valid function")

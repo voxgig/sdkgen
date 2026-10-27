@@ -15,11 +15,13 @@ public static partial class SdkUtility
     // CookieContainer would send one call's Set-Cookie on the next, under a
     // different credential — and .NET ADDS container cookies to a request
     // that already carries a Cookie header, which an `apiKey in: cookie`
-    // scheme does. Pooling is the handler's own and is unaffected.
+    // scheme does. Pooling is the handler's own and is unaffected. Past five
+    // redirects the last 3xx is the answer, as in every target.
     private static HttpClientHandler CookielessHandler(bool allowRedirect) =>
         new HttpClientHandler
         {
             AllowAutoRedirect = allowRedirect,
+            MaxAutomaticRedirections = 5,
             UseCookies = false,
         };
 

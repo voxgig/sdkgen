@@ -43,15 +43,26 @@ func clientFor(fetchdef map[string]any) *http.Client {
 	}
 
 	// A shallow copy shares the pooled Transport; only CheckRedirect differs.
+	policy := *client
+	policy.CheckRedirect = followRedirect
 	if redirect, ok := fetchdef["redirect"].(string); ok && redirect == "manual" {
-		manual := *client
-		manual.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		policy.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		}
-		client = &manual
 	}
 
-	return client
+	return &policy
+}
+
+const maxRedirects = 5
+
+// Each redirect passes the GET-only guard before it is sent; past
+// maxRedirects hops the last 3xx is the answer.
+func followRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) > maxRedirects {
+		return http.ErrUseLastResponse
+	}
+	return getOnlyRefusal(req.URL.String(), req.Method)
 }
 
 const getOnlyEnv = "VOXGIG_GETONLY_GUARD"
