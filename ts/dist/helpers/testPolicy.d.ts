@@ -1,7 +1,10 @@
 declare function liveStrict(model: any, target?: string): boolean;
 declare function liveStrictNote(strict: boolean, prefix: string, indent?: string): string;
+type Scalar = string | number | boolean;
 type LiveFlowNeeds = {
     keys: string[];
+    examples?: [string, Scalar][];
+    record?: string;
     discover?: Record<string, string>;
     blocked?: string;
 };
@@ -11,9 +14,9 @@ declare function liveExampleIds(entity: any): [string, string | number | boolean
 declare function liveQueryExamples(point: any): [string, string | number | boolean][];
 declare function liveRouteExamples(entity: any, opname: string, bound: string[], pathBound?: boolean): [
     string,
-    string | number | boolean
+    Scalar
 ][];
-declare function liveStepExamples(entity: any, step: any): [string, string | number | boolean][];
+declare function liveStepExamples(entity: any, step: any, flow?: any): [string, Scalar][];
 type FlowRouteArg = {
     name: string;
     field?: string;

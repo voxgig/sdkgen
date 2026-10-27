@@ -22,7 +22,7 @@ import {
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
-  directDiscovery,
+  directDiscovery, liveFallbacks,
 } from './generateharness'
 
 
@@ -3364,6 +3364,42 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         if (['ts', 'js'].includes(target) && (/LOAD: skipped/.test(text) || /"route":"GET \/(colleges|rates)/.test(text))) {
           gaps.push(`${target}:${file[0]} skips the load, or names an offline route to the live harness`)
         }
+      }
+    }
+    deepStrictEqual(gaps, [])
+  })
+
+
+  // A live flow takes a route parameter from *_ENTID, else from a record a
+  // prior step found, else from its example, as the ts and js harness does:
+  // a bound parameter's example stands in when *_ENTID gives none, a load of
+  // a record no list finds reads the id the example names, and an operation
+  // with only an action route sends that route's examples.
+  test('every live flow target falls back to a route parameter\'s example', async () => {
+    const targets = LIVE_SUITE_TARGETS.filter((target) => !['ts', 'js'].includes(target))
+    const out = await generate(targets, undefined, liveFallbacks())
+    const gaps: string[] = []
+    const blocked = /Live entity test blocked: needs|has no list to find/
+    for (const target of targets) {
+      const files = testFiles(out, target)
+      const has = (name: string, re: RegExp, what: string) => {
+        const file = files.find(([n]) => new RegExp(name + '_?entity', 'i').test(n))
+        if (null == file) gaps.push(`${target}: no ${name} entity test`)
+        else if (!re.test(file[1])) gaps.push(`${target}:${file[0]} ${what}`)
+        else if (blocked.test(file[1])) gaps.push(`${target}:${file[0]} blocks the flow`)
+      }
+      has('repo', /slug01[^\n]{0,30}["']supabase-supabase["']/, 'does not send the example slug for slug01')
+      has('profile', /profile01[^\n]{0,30}4489/, 'does not take the example id for profile01')
+      has('profile', /live_?existing\(/i, 'does not load the record the id names')
+      has('lobbyist', /chamber01[^\n]{0,30}["']sf["']/, 'does not list with the example chamber')
+      has('geo', /["']locale["'][^\n]{0,30}["']en["']/, 'does not send the action route\'s locale')
+      has('suggestion', /["']q["'][^\n]{0,30}["']mitte["']/, 'does not send the action route\'s q')
+      // A required query example is sent, an optional one is not.
+      has('trending', /["']site_id["'][^\n]{0,30}\b1\b/, 'does not send the required site_id')
+      has('trending', /["']lang["'][^\n]{0,30}["']uk["']/, 'does not send the required lang')
+      const trending = files.find(([n]) => /trending_?entity/i.test(n))
+      if (null != trending && /["']limit["'][^\n]{0,30}\b3\b/.test(trending[1])) {
+        gaps.push(`${target}: sends an optional example`)
       }
     }
     deepStrictEqual(gaps, [])

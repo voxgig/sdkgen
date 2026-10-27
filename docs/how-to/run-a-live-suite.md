@@ -106,9 +106,11 @@ whose list found nothing to load. An empty list is a valid answer, and no live
 test asserts how many records an account holds.
 
 An entity flow with no create step reads its record from its own list, so it
-runs without `<PROJ>_TEST_<ENTITY>_ENTID`. A flow that binds an identifier it
-can neither create nor list still needs that variable; without it, the test
-names the identifier it is missing.
+runs without `<PROJ>_TEST_<ENTITY>_ENTID`. A flow with neither a create nor a
+list loads the record that variable names, else the record its load route's
+example names. A flow that binds an identifier it can neither create, list nor
+take from an example still needs that variable; without it, the test names the
+identifier it is missing.
 
 A flow loads the record it listed or created by the route that record fills:
 the first route that takes the record's identifier and whose other path
@@ -117,8 +119,8 @@ the record holds comes from the record, offline and live, in every target, and
 the step's binding fills it only when the record holds no scalar value for it.
 An entity the model gives no identifier keeps the route its step binds. Offline,
 each parameter the step binds takes the value the fixture record holds, which
-is the value the mock matches; live, where no fixture record exists, the step's
-binding and `<PROJ>_TEST_<ENTITY>_ENTID` supply it as before.
+is the value the mock matches; live, where no fixture record exists,
+`<PROJ>_TEST_<ENTITY>_ENTID` supplies it, else the parameter's example.
 
 A required parameter that the model gives an example for needs no variable
 either. A live direct test takes each path parameter's example as the id that
@@ -128,10 +130,14 @@ example, under the name the API definition gives the parameter rather than
 the model's name for it: `direct()` sends its query as given. An entity flow
 fills each required parameter its step leaves unbound from its example, on the
 first route whose required parameters are all bound or have an example, which
-is the route the TS and JS runners take. A parameter's example is the one its
-definition gives, or the schema default. For a required parameter with
-neither, a live test sends the first value the parameter's `enum` allows. A
-required parameter with no example and no `enum` still blocks the test.
+is the route the TS and JS runners take. A parameter the step binds takes the
+value `<PROJ>_TEST_<ENTITY>_ENTID` gives it, else its example. An operation
+whose every route is an `$action` route takes the examples of its first such
+route whose required parameters are all bound or have an example. A
+parameter's example is the one its definition gives, or the schema default.
+For a required parameter with neither, a live test sends the first value the
+parameter's `enum` allows. A required parameter with no example and no `enum`
+still blocks the test.
 
 A live direct load lists records only to find a path parameter that its
 list route does not take, preferring `id`, and only when examples do not
@@ -154,11 +160,12 @@ action is attempted only through such a route, unless the step names an action.
 
 Entity flows print `LIVE STEP` outcomes and a `LIVE SUMMARY` containing planned,
 attempted, passed, failed, blocked, empty, and excluded counts. Request records
-contain methods, paths, HTTP statuses, response content types, and the user
-agent sent; response bodies and credentials are omitted, and a failure is
-reported by its SDK error code rather than by any value. The runner raises its
-final failure after the remaining operations and cleanup have run. A flow that
-attempted no requests cannot report live success.
+contain methods, paths without their query strings, HTTP statuses, response
+content types, and the user agent sent; response bodies and credentials are
+omitted, and a failure is reported by its SDK error code rather than by any
+value. The runner raises its final failure after the remaining operations and
+cleanup have run. A flow that attempted no requests cannot report live
+success.
 
 These execution changes do not supply valid API inputs automatically. The model,
 fixtures, and configured identifiers still determine which requests can succeed.

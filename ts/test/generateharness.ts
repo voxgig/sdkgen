@@ -922,9 +922,113 @@ main: kit: flow: BasicSettingFlow: {
 }
 `
 
+// Flows a live run fills from route examples where *_ENTID gives none.
+const LIVE_FALLBACK_ENTITIES = `
+main: kit: entity: repo: {
+  alias: field: {}
+  name: "repo"
+  fields: { "name": { h: 'Name', n: "name", r: false, t: "\`$STRING\`" } }
+  op: load: { name: "load", points: [ {
+    g: { params: [ { k: "param", n: "slug", or: "slug", r: true, t: "\`$STRING\`", ex: "supabase-supabase" } ] }
+    m: "GET", o: "/repos/{slug}.json", q: { exist: ["slug"] }
+    s: [{ lit: "repos" }, { lit: "{slug}.json" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: entity: profile: {
+  alias: field: {}
+  name: "profile"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$INTEGER\`" } }
+  op: load: { name: "load", points: [ {
+    g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$INTEGER\`", ex: 4489 } ] }
+    m: "GET", o: "/profile/{id}/", q: { exist: ["id"] }
+    s: [{ lit: "profile" }, { var: "id" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: entity: lobbyist: {
+  alias: field: {}
+  name: "lobbyist"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: list: { name: "list", points: [ {
+    g: { params: [ { k: "param", n: "chamber", or: "chamber", r: true, t: "\`$STRING\`", ex: "sf" } ] }
+    m: "GET", o: "/lobbyists-{chamber}.json", q: { exist: ["chamber"] }
+    s: [{ lit: "lobbyists-{chamber}.json" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: entity: geo: {
+  alias: field: {}
+  name: "geo"
+  fields: { "name": { h: 'Name', n: "name", r: false, t: "\`$STRING\`" } }
+  op: load: { name: "load", points: [ {
+    g: { query: [ { k: "query", n: "locale", or: "locale", r: true, t: "\`$STRING\`", ex: "en" } ] }
+    m: "GET", o: "/geo/bootstrap", q: { "$action": "bootstrap", exist: ["locale"] }
+    s: [{ lit: "geo" }, { lit: "bootstrap" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: entity: suggestion: {
+  alias: field: {}
+  name: "suggestion"
+  fields: { "name": { h: 'Name', n: "name", r: false, t: "\`$STRING\`" } }
+  op: list: { name: "list", points: [ {
+    g: { query: [ { k: "query", n: "q", or: "q", r: true, t: "\`$STRING\`", ex: "mitte" } ] }
+    m: "GET", o: "/search/suggest", q: { "$action": "suggest", exist: ["q"] }
+    s: [{ lit: "search" }, { lit: "suggest" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: entity: trending: {
+  alias: field: {}
+  name: "trending"
+  fields: { "name": { h: 'Name', n: "name", r: false, t: "\`$STRING\`" } }
+  op: list: { name: "list", points: [ {
+    g: { query: [
+      { k: "query", n: "lang", or: "lang", r: true, t: "\`$STRING\`", ex: "uk" }
+      { k: "query", n: "limit", or: "limit", r: false, t: "\`$INTEGER\`", ex: 3 }
+      { k: "query", n: "site_id", or: "siteId", r: true, t: "\`$INTEGER\`", ex: 1 }
+    ] }
+    m: "GET", o: "/news/getTrendingNews", q: { exist: ["lang", "site_id"] }
+    s: [{ lit: "news" }, { lit: "getTrendingNews" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: flow: BasicTrendingFlow: {
+  entity: "trending", kind: "basic", name: "BasicTrendingFlow"
+  step: [ { o: "list" } ]
+}
+
+main: kit: flow: BasicRepoFlow: {
+  entity: "repo", kind: "basic", name: "BasicRepoFlow"
+  step: [ { o: "load", m: { slug: "slug01" }, i: { ref: "repo_ref01", srcdatavar: "repo_ref01_data", suffix: "_dt0" } } ]
+}
+
+main: kit: flow: BasicProfileFlow: {
+  entity: "profile", kind: "basic", name: "BasicProfileFlow"
+  step: [ { o: "load", m: { id: "profile01" }
+    i: { ref: "profile_ref01", srcdatavar: "profile_ref01_data", suffix: "_dt0" } } ]
+}
+
+main: kit: flow: BasicLobbyistFlow: {
+  entity: "lobbyist", kind: "basic", name: "BasicLobbyistFlow"
+  step: [ { o: "list", m: { chamber: "chamber01" } } ]
+}
+
+main: kit: flow: BasicGeoFlow: {
+  entity: "geo", kind: "basic", name: "BasicGeoFlow"
+  step: [ { o: "load", i: { ref: "geo_ref01", srcdatavar: "geo_ref01_data", suffix: "_dt0" } } ]
+}
+
+main: kit: flow: BasicSuggestionFlow: {
+  entity: "suggestion", kind: "basic", name: "BasicSuggestionFlow"
+  step: [ { o: "list" } ]
+}
+`
+
 
 function directDiscovery(): string {
   return entityOnly(DISCOVERY_ENTITIES)
+}
+
+function liveFallbacks(): string {
+  return entityOnly(LIVE_FALLBACK_ENTITIES)
 }
 
 
@@ -2009,6 +2113,7 @@ export {
   getOnlyFlows,
   getOnlyBuildctx,
   multiRouteLoad,
+  liveFallbacks,
   MULTIROUTE_ENTITIES,
   keylessLoad,
   KEYLESS_ENTITIES,

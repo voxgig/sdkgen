@@ -48,6 +48,12 @@ type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 function liveFlowGate(entity: any, needs: any, entidEnv: string, method: string,
   strict: boolean, hasSteps: boolean): string {
   let out = ''
+  for (const [k, ex] of needs.examples || []) {
+    out += `    if setup.live && (setup.synthetic_only || getp(&setup.idmap, ${JSON.stringify(k)}).is_noval()) {
+        setp(&setup.idmap, ${JSON.stringify(k)}, ${rustLit(ex)});
+    }
+`
+  }
   if (0 < needs.keys.length) {
     out += `    if setup.live {
         for live_key in [${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')}] {
@@ -70,6 +76,14 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, method: string,
     return out
   }
   out += '    let client = setup.client.clone();\n'
+  if (null != needs.record) {
+    out += `    if setup.live && !live_existing(&setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)}, || {
+        Ok(ja(vec![jo(vec![("id", getp(&setup.idmap, ${JSON.stringify(needs.record)}))])]))
+    }) {
+        return;
+    }
+`
+  }
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
       .map(([k, v]: any) => `(${JSON.stringify(k)}, getp(&setup.idmap, ${JSON.stringify(v)}))`)
@@ -511,7 +525,7 @@ const generateList: OpGen = (ctx, step, index) => {
 `)
     }
   }
-  Content(liveFill(entity, step, matchvar))
+  Content(liveFill(entity, step, matchvar, flow))
 
   Content(`
     let ${listvar} = ${entvar}
@@ -696,7 +710,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   if (hasEntId) {
     Content(`    let ${matchvar} = jo(vec![("id", getp(&${srcdatavar}, "id"))]);
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    let ${datavar}_loaded = ${entvar}
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    let ${datavar}_loaded = ${entvar}
         .load(${matchvar}.clone(), Value::Noval)
         .expect("load failed");
     let ${datavar}_load_result = to_map(&${datavar}_loaded.data(None));
@@ -713,7 +727,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
   }
   else {
     Content(`    let ${matchvar} = Value::empty_map();
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    let ${datavar}_loaded = ${entvar}
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    let ${datavar}_loaded = ${entvar}
         .load(${matchvar}.clone(), Value::Noval)
         .expect("load failed");
     // load resolves to the ENTITY; the record is reached through data().
@@ -763,8 +777,8 @@ function rustLit(value: any): string {
 
 
 // A live step sends each example its route requires and the step leaves unbound.
-function liveFill(entity: any, step: any, matchvar: string): string {
-  const fills = liveStepExamples(entity, step)
+function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
+  const fills = liveStepExamples(entity, step, flow)
   return 0 === fills.length ? '' : `    if setup.live {
 ${fills.map(([k, ex]) => `        setp(&${matchvar}, ${JSON.stringify(k)}, ${rustLit(ex)});\n`).join('')}    }
 `
