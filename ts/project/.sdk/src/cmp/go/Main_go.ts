@@ -129,7 +129,7 @@ var NewBaseFeatureFunc func() Feature
       })
 
       each(entity, (ent: any) => {
-        Content(`var New${ent.Name}EntityFunc func(client *${model.const.Name}SDK, entopts map[string]any) ${model.const.Name}Entity
+        Content(`var New${ent.Name}EntityFunc func(client *${model.const.Name}SDK, entopts map[string]any) ${model.const.Name}EntityBase
 
 `)
       })
@@ -153,7 +153,11 @@ type Context = core.Context
 type Utility = core.Utility
 type Feature = core.Feature
 type Entity = core.Entity
-type ${model.const.Name}Entity = core.${model.const.Name}Entity
+type ${model.const.Name}EntityBase = core.${model.const.Name}EntityBase
+
+// Deprecated: use ${model.const.Name}EntityBase.
+type ${model.const.Name}Entity = core.${model.const.Name}EntityBase
+
 type StreamItem = core.StreamItem
 type FetcherFunc = core.FetcherFunc
 type Spec = core.Spec
@@ -185,7 +189,7 @@ func init() {
     })
 
     each(entity, (ent: any) => {
-      Content(`	core.New${ent.Name}EntityFunc = func(client *core.${model.const.Name}SDK, entopts map[string]any) core.${model.const.Name}Entity {
+      Content(`	core.New${ent.Name}EntityFunc = func(client *core.${model.const.Name}SDK, entopts map[string]any) core.${model.const.Name}EntityBase {
 		return entity.${entityConstructorName(ent, entityCollection(model))}(client, entopts)
 	}
 `)

@@ -14,7 +14,7 @@ const MainEntity = cmp(async function MainEntity(props: any) {
 // ${entity.Name} returns a ${entity.Name} entity bound to this client.
 // Idiomatic usage: client.${entity.Name}(nil).List(nil, nil) or
 // client.${entity.Name}(nil).Load(map[string]any{"id": ...}, nil).
-func (sdk *${model.const.Name}SDK) ${entity.Name}(data map[string]any) ${model.const.Name}Entity {
+func (sdk *${model.const.Name}SDK) ${entity.Name}(data map[string]any) ${model.const.Name}EntityBase {
 	return New${entity.Name}EntityFunc(sdk, data)
 }
 

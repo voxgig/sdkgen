@@ -100,7 +100,7 @@ ${opRows}
 Entity operations return the entity on \`Ok\`, and \`list\` a \`Vec\` of
 entities, one per record; \`data(None)\` reads an entity's record. \`Err\` is
 the branded error. The operations are methods of the
-\`${model.const.Name}Entity\` trait and \`data\` of the \`Entity\` trait, so
+\`${model.const.Name}EntityBase\` trait and \`data\` of the \`Entity\` trait, so
 import both.
 
 The \`direct()\` escape hatch resolves to \`Ok\` even on a non-2xx response —

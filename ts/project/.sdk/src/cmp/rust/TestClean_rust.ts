@@ -135,7 +135,7 @@ use ${rustcrate}::core::types::OutVal;
 use ${rustcrate}::utility::clean;
 use ${rustcrate}::utility::voxgigstruct as vs;
 use ${rustcrate}::{
-    Context, CtxSpec, Entity, Feature, FeatureRef, ${Name}Entity, ${Name}Error, ${Name}SDK, Value,
+    Context, CtxSpec, Entity, Feature, FeatureRef, ${Name}EntityBase, ${Name}Error, ${Name}SDK, Value,
 };
 
 // Generated: the credential's wire placement is fixed when the SDK is built.

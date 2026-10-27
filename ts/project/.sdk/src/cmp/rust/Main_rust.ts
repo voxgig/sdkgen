@@ -207,8 +207,10 @@ pub use crate::core::result::{SdkResult, StreamFn};
 pub use crate::core::sdk::{test_sdk, ${model.const.Name}SDK};
 pub use crate::core::spec::Spec;
 pub use crate::core::types::{
-    Entity, Feature, FeatureRef, FetcherFn, OutVal, ${model.const.Name}Entity,
+    Entity, Feature, FeatureRef, FetcherFn, OutVal, ${model.const.Name}EntityBase,
 };
+// The trait's former name, kept so code written against it still compiles.
+pub use crate::core::types::${model.const.Name}EntityBase as ${model.const.Name}Entity;
 pub use crate::core::utility_type::Utility;
 pub use crate::feature::base::BaseFeature;
 pub use crate::utility::jsonparse::json_parse;
