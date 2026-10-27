@@ -1199,8 +1199,7 @@ main: kit: flow: ${flow}: {
 }
 
 
-// Loads whose path parameters region and version are also optional query
-// parameters: audio on one route, wzn on its own and on a shorter one.
+// region and version are path and optional query parameters (audio, and wzn's full and short routes).
 function shadowedLoad(): string {
   const param = (n: string) => `{ k: "param", n: "${n}", or: "${n}", r: true, t: "\`$STRING\`" }`
   const query = (n: string) => `{ k: "query", n: "${n}", or: "${n}", r: false, t: "\`$STRING\`" }`
