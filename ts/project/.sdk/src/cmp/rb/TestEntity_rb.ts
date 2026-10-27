@@ -31,7 +31,7 @@ import {
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
-  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveEntity,
 } from '@voxgig/sdkgen'
 
@@ -284,18 +284,17 @@ ${failureTests(model, entity)}${validateListTest(model, entity)}` : ''}${validat
       })
     }
 
-    const getOnly = liveGetOnly(entity, basicflow)
-    if (null != getOnly) {
-      Content(`    if setup[:live] && ENV[${formatRubyValue(LIVE_GETONLY_ENV)}] == "TRUE"
-${liveExcludedLines(getOnly).map((line) => '      puts ' + formatRubyValue(line) + '\n').join('')}`)
-      if (0 === flowSteps(getOnly.flow).length) {
-        Content(`      skip(${formatRubyValue(liveExcludedSummary(getOnly))})
+    for (const { getOnly, plan, runs } of liveGates(entity, basicflow)) {
+      Content(`    if setup[:live]${getOnly ? ` && ENV[${formatRubyValue(LIVE_GETONLY_ENV)}] == "TRUE"` : ''}
+${liveExcludedLines(plan).map((line) => '      puts ' + formatRubyValue(line) + '\n').join('')}`)
+      if (!runs) {
+        Content(`      skip(${formatRubyValue(liveExcludedSummary(plan))})
     end
 
 `)
       }
       else {
-        flowBody(getOnly.flow)
+        flowBody(plan.flow)
         Content(`      return
     end
 

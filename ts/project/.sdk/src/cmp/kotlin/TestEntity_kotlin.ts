@@ -20,7 +20,7 @@ import {
   getMatchEntries,
   isAuthActive, envName, envToken,
   liveFlowNeeds, liveStrict, liveStrictNote,
-  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
   liveEntity,
 } from '@voxgig/sdkgen'
@@ -229,19 +229,18 @@ ${liveStrictNote(strict, '//', '  ')}
 `)
     }
 
-    const getOnly = liveGetOnly(entity, basicflow)
-    if (null != getOnly) {
-      Content(`    if (setup.live && "TRUE" == System.getenv(${kotlinLit(LIVE_GETONLY_ENV)})) {
-${liveExcludedLines(getOnly).map((line) => '      println(' + kotlinLit(line) + ')\n').join('')}`)
-      if (0 === flowSteps(getOnly.flow).length) {
-        Content(`      Assumptions.assumeTrue(false, ${kotlinLit(liveExcludedSummary(getOnly))})
+    for (const { getOnly, plan, runs } of liveGates(entity, basicflow)) {
+      Content(`    if (setup.live${getOnly ? ` && "TRUE" == System.getenv(${kotlinLit(LIVE_GETONLY_ENV)})` : ''}) {
+${liveExcludedLines(plan).map((line) => '      println(' + kotlinLit(line) + ')\n').join('')}`)
+      if (!runs) {
+        Content(`      Assumptions.assumeTrue(false, ${kotlinLit(liveExcludedSummary(plan))})
       return
     }
 
 `)
       }
       else {
-        flowBody(getOnly.flow)
+        flowBody(plan.flow)
         Content(`      return
     }
 

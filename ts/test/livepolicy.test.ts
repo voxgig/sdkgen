@@ -4,7 +4,7 @@ import {
   liveStrict, liveStrictNote, liveFlowNeeds, guardFlowSteps,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
   flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes, liveEntity, liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
-  liveDirectGetOnly,
+  liveDirectGetOnly, liveFlowPlan, liveGates,
 } from '../dist/sdkgen'
 
 const model = (global?: boolean, go?: boolean) => ({ main: { kit: {
@@ -347,6 +347,45 @@ test('a GET-only run changes nothing a GET can make, and counts steps as the liv
   const plan = liveGetOnly(signal, flow({ o: 'list', a: false }, { o: 'list', a: false, unreachable: true },
     { o: 'create' }))!
   assert.deepEqual(plan.excluded.map(({ id }) => id), ['signal.create.1'])
+})
+
+test('every live run leaves out a step on an operation the entity lacks, and what it acts on', () => {
+  const account = { name: 'account', op: { remove: at('DELETE', '/api/account') } }
+  const steps = flow({ o: 'create', a: false, unreachable: true, i: { ref: 'account_ref01' } },
+    { o: 'remove', i: { ref: 'account_ref01' } })
+  const plan = liveFlowPlan(account, steps)!
+  assert.deepEqual(plan.excluded, [
+    { id: 'account.create.0', reason: 'account has no create operation' },
+    { id: 'account.remove.1', reason: 'acts on the record account.create.0 makes' },
+  ])
+  assert.deepEqual(plan.flow.step, [])
+
+  const getOnly = liveGetOnly(account, steps)!
+  assert.deepEqual(getOnly.excluded, [
+    { id: 'account.create.0', reason: 'account has no create operation' },
+    { id: 'account.remove.1', reason: 'GET-only live run: needs DELETE /api/account' },
+  ])
+  assert.deepEqual(liveGates(account, steps).map(({ getOnly, runs }) => [getOnly, runs]),
+    [[true, false], [false, false]])
+})
+
+test('a flow with no step to run has a plan that skips, and one whose every step runs has none', () => {
+  const account = { name: 'account', op: { remove: at('DELETE', '/api/account') } }
+  const empty = liveFlowPlan(account, flow())!
+  assert.deepEqual([empty.excluded, empty.flow.step], [[], []])
+  assert.equal(liveExcludedSummary(empty), 'Live coverage incomplete: the flow has no step to run')
+  assert.equal(liveGetOnly(account, flow()), undefined)
+  assert.deepEqual(liveGates(account, flow()).map(({ getOnly, runs }) => [getOnly, runs]), [[false, false]])
+
+  const quote = { name: 'quote', op: { list: at('GET', '/quote') } }
+  assert.equal(liveFlowPlan(quote, flow({ o: 'list' })), undefined)
+  assert.deepEqual(liveGates(quote, flow({ o: 'list' })), [])
+
+  const chart = { name: 'chart', op: { list: at('GET', '/chart'), load: at('GET', '/sky') } }
+  const kept = liveFlowPlan(chart, flow({ o: 'create' }, { o: 'list' }, { o: 'load' }))!
+  assert.deepEqual(kept.excluded.map(({ id }) => id), ['chart.create.0'])
+  assert.deepEqual(liveGates(chart, flow({ o: 'create' }, { o: 'list' }, { o: 'load' }))
+    .map(({ getOnly, runs }) => [getOnly, runs]), [[false, true]])
 })
 
 test('a required parameter with no example takes the first value its enum allows', () => {

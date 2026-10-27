@@ -179,10 +179,11 @@ function assertLiveReport(report: LiveReport): void {
 }
 
 // An account with no record for a step to read skips in either mode, as
-// does a run that leaves out every step.
+// does a run that leaves out every step, or has none to run.
 function settleLiveReport(report: LiveReport, settle: LiveSettle = {}): void {
-  if (0 < report.planned && report.excluded === report.planned && null != settle.t) {
-    return settle.t.skip('Live coverage incomplete: ' + liveSummary(report))
+  if (report.excluded === report.planned && null != settle.t) {
+    return settle.t.skip('Live coverage incomplete: ' +
+      (0 === report.planned ? 'the flow has no step to run' : liveSummary(report)))
   }
   if (liveIncomplete(report)) {
     if (false !== settle.strict || null == settle.t) return assertLiveReport(report)

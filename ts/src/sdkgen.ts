@@ -86,9 +86,10 @@ import {
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
   flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes,
   liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason,
+  liveFlowPlan, liveGates,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 } from './helpers/testPolicy'
-import type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute } from './helpers/testPolicy'
+import type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveGate, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute } from './helpers/testPolicy'
 import { pointSegments, pointParts, pointSlash, pointPlaceholders, pointTerminalParam, pointPathKey }
   from './helpers/pointPath'
 import { pointIsGraphql, ownPointFirst, primaryPoint, graphqlDirectSkip } from './helpers/graphqlPoint'
@@ -1004,6 +1005,7 @@ export type {
   LiveFlowNeeds,
   LiveExcluded,
   LiveGetOnly,
+  LiveGate,
   LiveKeyExcluded,
   FlowRouteArg,
   FlowLoadRoute,
@@ -1232,6 +1234,8 @@ export {
   liveStepId,
   liveGetOnly,
   liveGetOnlyReason,
+  liveFlowPlan,
+  liveGates,
   liveDirectGetOnly,
   liveExcludedLines,
   liveExcludedSummary,

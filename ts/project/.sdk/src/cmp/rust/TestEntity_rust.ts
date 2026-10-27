@@ -22,7 +22,7 @@ import {
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
-  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
   liveEntity,
 } from '@voxgig/sdkgen'
@@ -303,19 +303,18 @@ ${skipBlock}`)
 `)
     }
 
-    const getOnly = liveGetOnly(entity, basicflow)
-    if (null != getOnly) {
-      Content(`    if setup.live && std::env::var(${JSON.stringify(LIVE_GETONLY_ENV)}).map(|v| v == "TRUE").unwrap_or(false) {
-${liveExcludedLines(getOnly).map((line) => '        println!("{}", ' + JSON.stringify(line) + ');\n').join('')}`)
-      if (0 === flowSteps(getOnly.flow).length) {
-        Content(`        eprintln!("skip: {}", ${JSON.stringify(liveExcludedSummary(getOnly))});
+    for (const { getOnly, plan, runs } of liveGates(entity, basicflow)) {
+      Content(`    if setup.live${getOnly ? ` && std::env::var(${JSON.stringify(LIVE_GETONLY_ENV)}).map(|v| v == "TRUE").unwrap_or(false)` : ''} {
+${liveExcludedLines(plan).map((line) => '        println!("{}", ' + JSON.stringify(line) + ');\n').join('')}`)
+      if (!runs) {
+        Content(`        eprintln!("skip: {}", ${JSON.stringify(liveExcludedSummary(plan))});
         return;
     }
 
 `)
       }
       else {
-        flowBody(getOnly.flow)
+        flowBody(plan.flow)
         Content(`        return;
     }
 

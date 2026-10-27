@@ -31,7 +31,7 @@ import {
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
-  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveEntity,
 } from '@voxgig/sdkgen'
 
@@ -285,19 +285,18 @@ ${failureTests(entity)}` : ''}${validateTest(entity)}
 `)
     }
 
-    const getOnly = liveGetOnly(entity, basicflow)
-    if (null != getOnly) {
-      Content(`    if setup.live and os.getenv(${formatLuaValue(LIVE_GETONLY_ENV)}) == "TRUE" then
-${liveExcludedLines(getOnly).map((line) => '      print(' + formatLuaValue(line) + ')\n').join('')}`)
-      if (0 === flowSteps(getOnly.flow).length) {
-        Content(`      pending(${formatLuaValue(liveExcludedSummary(getOnly))})
+    for (const { getOnly, plan, runs } of liveGates(entity, basicflow)) {
+      Content(`    if setup.live${getOnly ? ` and os.getenv(${formatLuaValue(LIVE_GETONLY_ENV)}) == "TRUE"` : ''} then
+${liveExcludedLines(plan).map((line) => '      print(' + formatLuaValue(line) + ')\n').join('')}`)
+      if (!runs) {
+        Content(`      pending(${formatLuaValue(liveExcludedSummary(plan))})
       return
     end
 
 `)
       }
       else {
-        flowBody(getOnly.flow)
+        flowBody(plan.flow)
         Content(`      return
     end
 

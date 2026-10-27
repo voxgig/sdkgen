@@ -22,7 +22,7 @@ import {
   serverVarEnv,
   serverVariables, envName, envToken,
   liveFlowNeeds, liveStrict, liveStrictNote,
-  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
   liveEntity,
 } from '@voxgig/sdkgen'
@@ -260,19 +260,18 @@ ${liveStrictNote(strict, '//', '  ')}
 `)
     }
 
-    const getOnly = liveGetOnly(entity, basicflow)
-    if (null != getOnly) {
-      Content(`    if (setup.live && "TRUE".equals(System.getenv(${javaLit(LIVE_GETONLY_ENV)}))) {
-${liveExcludedLines(getOnly).map((line) => '      System.out.println(' + javaLit(line) + ');\n').join('')}`)
-      if (0 === flowSteps(getOnly.flow).length) {
-        Content(`      Assumptions.abort(${javaLit(liveExcludedSummary(getOnly))});
+    for (const { getOnly, plan, runs } of liveGates(entity, basicflow)) {
+      Content(`    if (setup.live${getOnly ? ` && "TRUE".equals(System.getenv(${javaLit(LIVE_GETONLY_ENV)}))` : ''}) {
+${liveExcludedLines(plan).map((line) => '      System.out.println(' + javaLit(line) + ');\n').join('')}`)
+      if (!runs) {
+        Content(`      Assumptions.abort(${javaLit(liveExcludedSummary(plan))});
       return;
     }
 
 `)
       }
       else {
-        flowBody(getOnly.flow)
+        flowBody(plan.flow)
         Content(`      return;
     }
 

@@ -45,6 +45,13 @@ declare function liveFlowSteps(flow: any): any[];
 declare function liveStepId(entity: any, step: any, index: number): string;
 declare function liveGetOnlyReason(point: any): string | undefined;
 declare function liveGetOnly(entity: any, flow: any): LiveGetOnly | undefined;
+declare function liveFlowPlan(entity: any, flow: any): LiveGetOnly | undefined;
+type LiveGate = {
+    getOnly: boolean;
+    plan: LiveGetOnly;
+    runs: boolean;
+};
+declare function liveGates(entity: any, flow: any): LiveGate[];
 type LiveKeyExcluded = LiveExcluded & {
     key: string;
 };
@@ -55,5 +62,5 @@ declare function liveExcludedLines(plan: {
 declare function liveExcludedSummary(plan: {
     excluded: LiveExcluded[];
 }): string;
-export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute };
-export { liveStrict, liveStrictNote, liveFlowNeeds, liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes, liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason, liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, };
+export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveGate, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute };
+export { liveStrict, liveStrictNote, liveFlowNeeds, liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes, liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason, liveFlowPlan, liveGates, liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, };

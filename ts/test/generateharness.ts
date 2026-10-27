@@ -610,7 +610,29 @@ function slashRoutes(): string {
 
 
 // Flows a GET-only live run cannot make whole, and a required enum query.
-const GETONLY_ENTITIES = `
+// Entities whose only operation is a DELETE: a flow that lists a create the
+// entity lacks beside the remove, and a flow with no step at all.
+const WRITE_ONLY_ENTITIES = ['token', 'session'].map((name) => {
+  const Name = name[0].toUpperCase() + name.slice(1)
+  return `
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  fields: {}
+  op: remove: { name: "remove", points: [ { g: {}, m: "DELETE", o: "/${name}", s: [{ lit: "${name}" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: flow: Basic${Name}Flow: {
+  entity: "${name}", kind: "basic", name: "Basic${Name}Flow"
+  step: [` + ('token' === name ? ` { o: "create", i: { ref: "token_ref01" } }
+    { o: "remove", i: { ref: "token_ref01", suffix: "_rm0" } } ` : '') + `]
+}
+`
+}).join('')
+
+
+const GETONLY_ENTITIES = WRITE_ONLY_ENTITIES + `
 main: kit: entity: game: {
   alias: field: {}
   name: "game"
@@ -2111,6 +2133,7 @@ export {
   slashRoutes,
   getOnlyFlows,
   getOnlyBuildctx,
+  WRITE_ONLY_ENTITIES,
   multiRouteLoad,
   liveFallbacks,
   MULTIROUTE_ENTITIES,

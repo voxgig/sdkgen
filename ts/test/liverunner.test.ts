@@ -63,7 +63,7 @@ test('an empty, excluded, or unattempted plan cannot claim live success', async 
   for (const report of [empty, excluded, unattempted]) assert.throws(() => assertLiveReport(report))
 })
 
-test('a run that leaves out every step skips, and one that leaves out some is settled by the rest', async () => {
+test('a run that leaves out every step, or has none, skips, and one that leaves out some is settled by the rest', async () => {
   const report = await runLiveSteps([
     { id: 'game.create.0', excluded: 'GET-only live run: needs POST /game', run: async () => assert.fail('ran') },
     { id: 'game.load.1', excluded: 'GET-only live run: reads a record only game.create.0 gives',
@@ -77,6 +77,13 @@ test('a run that leaves out every step skips, and one that leaves out some is se
       'game.load.1 excluded (GET-only live run: reads a record only game.create.0 gives)'])
   }
   assert.throws(() => settleLiveReport(report, { strict: true }), /Live coverage incomplete/)
+
+  const empty = await runLiveSteps([])
+  for (const strict of [true, false]) {
+    const t = testContext()
+    settleLiveReport(empty, { strict, t })
+    assert.deepEqual(t.skips, ['Live coverage incomplete: the flow has no step to run'])
+  }
 
   const partial = await runLiveSteps([
     { id: 'chart.create.0', excluded: 'GET-only live run: needs POST /chart', run: async () => assert.fail('ran') },

@@ -32,7 +32,7 @@ import {
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
-  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveEntity,
 } from '@voxgig/sdkgen'
 
@@ -288,19 +288,18 @@ ${failureTests(model, entity, accessor)}${validateListTest(model, entity, access
 `)
     }
 
-    const getOnly = liveGetOnly(entity, basicflow)
-    if (null != getOnly) {
-      Content(`        if (!empty($setup["live"]) && getenv(${formatPhpValue(LIVE_GETONLY_ENV)}) === "TRUE") {
-${liveExcludedLines(getOnly).map((line) =>
+    for (const { getOnly, plan, runs } of liveGates(entity, basicflow)) {
+      Content(`        if (!empty($setup["live"])${getOnly ? ` && getenv(${formatPhpValue(LIVE_GETONLY_ENV)}) === "TRUE"` : ''}) {
+${liveExcludedLines(plan).map((line) =>
   '            fwrite(STDOUT, ' + formatPhpValue(line) + ' . "\\n");\n').join('')}`)
-      if (0 === flowSteps(getOnly.flow).length) {
-        Content(`            $this->markTestSkipped(${formatPhpValue(liveExcludedSummary(getOnly))});
+      if (!runs) {
+        Content(`            $this->markTestSkipped(${formatPhpValue(liveExcludedSummary(plan))});
         }
 
 `)
       }
       else {
-        flowBody(getOnly.flow)
+        flowBody(plan.flow)
         Content(`            return;
         }
 

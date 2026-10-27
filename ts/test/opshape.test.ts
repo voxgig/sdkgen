@@ -725,7 +725,8 @@ describe('guardFlowSteps — a generated flow test makes only calls the runtime 
   })
 
   test('a step whose op no generated test calls is switched off and reported', () => {
-    const m = model({ patch: { points: [pt('/moon')] } }, [{ o: 'patch' }, { o: 'list' }])
+    const m = model({ patch: { points: [pt('/moon')] }, list: { points: [pt('/moon')] } },
+      [{ o: 'patch' }, { o: 'list' }])
     const sink: any[] = []
     const log = { warn: (e: any) => sink.push(e) }
     deepStrictEqual(guardFlowSteps(m, log), [])
@@ -764,11 +765,18 @@ describe('guardFlowSteps — a generated flow test makes only calls the runtime 
     deepStrictEqual(guardFlowSteps(own), [])
   })
 
-  test('a step already off, or an op the entity lacks, is left alone', () => {
-    const m = model({ list: { points: [pt('/a', 'x'), pt('/b', 'y')] } },
-      [{ o: 'list', a: false }, { o: 'remove' }])
+  test('a step already off is left alone', () => {
+    const m = model({ list: { points: [pt('/a', 'x'), pt('/b', 'y')] } }, [{ o: 'list', a: false }])
     deepStrictEqual(guardFlowSteps(m), [])
     deepStrictEqual(guardFlowSteps({}), [])
+  })
+
+  test('a step on an op the entity lacks is switched off, for the live harness to report', () => {
+    const m = model({ remove: { points: [pt('/moon')] } },
+      [{ o: 'create', i: { ref: 'moon_ref01' } }, { o: 'remove', i: { ref: 'moon_ref01' } }])
+    deepStrictEqual(guardFlowSteps(m), [{ flow: 'BasicMoonFlow', step: 0, op: 'create' }])
+    const step = m.main.kit.flow.BasicMoonFlow.step
+    deepStrictEqual(step.map((s: any) => [s.a, s.unreachable]), [[false, true], [undefined, undefined]])
   })
 })
 

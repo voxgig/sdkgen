@@ -3408,7 +3408,9 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
 
   // A GET-only live run sends nothing but GET: each target leaves out a step
   // no GET route reaches, and a step reading the record only such a step
-  // gives, says so, and skips a flow it leaves nothing of.
+  // gives, says so, and skips a flow it leaves nothing of. Any live run
+  // leaves out a step on an operation the entity lacks, and skips a flow
+  // with no step to run.
   test('every live target excludes what a GET-only live run cannot send', async () => {
     const out = await generate(LIVE_SUITE_TARGETS, undefined, getOnlyFlows(), undefined, undefined,
       getOnlyBuildctx())
@@ -3440,10 +3442,18 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       for (const name of [/chart_?direct/i, /estimate_?direct/i, /quote_?direct/i]) {
         lacks(name, /VOXGIG_GETONLY_GUARD/, 'gates a direct test that needs no id')
       }
+      has(/token_?entity/i, /token\.create\.0[^\n]*token has no create operation/,
+        'does not exclude a step on an operation the entity lacks')
+      has(/token_?entity/i, /token\.remove\.1[^\n]*acts on the record token\.create\.0 makes/,
+        'does not exclude the remove of a record no create makes')
       if (['ts', 'js'].includes(target)) continue
       has(/game_?entity/i, /Live coverage incomplete: game\.create\.0 excluded/,
         'does not skip a flow it leaves nothing of')
       lacks(/chart_?entity/i, /Live coverage incomplete: chart/, 'skips a flow with a step left to run')
+      has(/token_?entity/i, /Live coverage incomplete: token\.create\.0 excluded \(token has no create operation\)/,
+        'does not skip a flow whose every step any live run leaves out')
+      has(/session_?entity/i, /Live coverage incomplete: the flow has no step to run/,
+        'does not skip a flow with no step to run')
     }
     deepStrictEqual(gaps, [])
   })

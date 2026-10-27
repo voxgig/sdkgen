@@ -22,7 +22,7 @@ import {
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
-  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
   liveEntity,
 } from '@voxgig/sdkgen'
@@ -241,20 +241,19 @@ BASIC_FLOW: {
 `)
     }
 
-    const getOnly = liveGetOnly(entity, basicflow)
-    if (null != getOnly) {
-      Content(`  if ($setup->{live} && ($ENV{${LIVE_GETONLY_ENV}} // '') eq 'TRUE') {
-${liveExcludedLines(getOnly).map((line) => '    note(' + perlLit(line) + ');\n').join('')}`)
-      if (0 === flowSteps(getOnly.flow).length) {
-        Content(`    note(${perlLit(liveExcludedSummary(getOnly))});
-    pass('${entity.name}: basic flow skipped, a GET-only live run excludes every step');
+    for (const { getOnly, plan, runs } of liveGates(entity, basicflow)) {
+      Content(`  if ($setup->{live}${getOnly ? ` && ($ENV{${LIVE_GETONLY_ENV}} // '') eq 'TRUE'` : ''}) {
+${liveExcludedLines(plan).map((line) => '    note(' + perlLit(line) + ');\n').join('')}`)
+      if (!runs) {
+        Content(`    note(${perlLit(liveExcludedSummary(plan))});
+    pass('${entity.name}: basic flow skipped, the live run leaves no step to run');
     last BASIC_FLOW;
   }
 
 `)
       }
       else {
-        flowBody(getOnly.flow)
+        flowBody(plan.flow)
         Content(`    last BASIC_FLOW;
   }
 

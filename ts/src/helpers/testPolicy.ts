@@ -403,43 +403,80 @@ function liveGetOnlyReason(point: any): string | undefined {
 }
 
 
-// What a GET-only live run leaves out of a flow: each step no GET route
-// reaches, and each step that acts on a record only such a step gives.
-// Undefined when every step can run.
-function liveGetOnly(entity: any, flow: any): LiveGetOnly | undefined {
+const hasRoute = (entity: any, opname: string) =>
+  (entity?.op?.[opname]?.points || []).some((point: any) => false !== point.a)
+
+
+// What a live run leaves out: a step on an operation the entity has no route
+// for, or no GET route reaches in a GET-only run, and what acts on its record.
+function livePlan(entity: any, flow: any, getOnly: boolean): { plan: LiveGetOnly, writes: number } {
   const steps = liveFlowSteps(flow)
   const reasons = new Map<any, string>()
+  let writes = 0
   for (const step of steps) {
     const route = writeRoute(entity, step.o)
-    if (null != route) reasons.set(step, 'needs ' + route)
+    if (!hasRoute(entity, step.o)) reasons.set(step, entity.name + ' has no ' + step.o + ' operation')
+    else if (getOnly && null != route) {
+      reasons.set(step, GETONLY + 'needs ' + route)
+      writes++
+    }
   }
-  if (0 === reasons.size) return undefined
 
   const id = (step: any) => liveStepId(entity, step, steps.indexOf(step))
   const left = () => steps.filter((step) => !reasons.has(step))
+  const after = (sources: any[], why: string) =>
+    (sources.some((step) => reasons.get(step)!.startsWith(GETONLY)) ? GETONLY : '') + why
   const create = steps.find((step) => 'create' === step.o && reasons.has(step))
   const sources = steps.filter((step) => ['create', 'list'].includes(step.o) && reasons.has(step))
-  if (null != entity?.id && 0 < sources.length) {
-    for (const step of null == create ? [] : left()) {
-      if (['update', 'remove'].includes(step.o)) {
-        reasons.set(step, 'acts on the record ' + id(create) + ' makes')
-      }
-      else if ('list' === step.o && (step.v || []).some((v: any) => 'ItemNotExists' === v?.apply)) {
-        reasons.set(step, 'checks a removal this run does not make')
-      }
+  for (const step of null == create ? [] : left()) {
+    if (['update', 'remove'].includes(step.o)) {
+      reasons.set(step, after([create], 'acts on the record ' + id(create) + ' makes'))
     }
-    if (!left().some((step) => 'list' === step.o)) {
-      for (const step of left().filter((step) => 'load' === step.o)) {
-        reasons.set(step, 'reads a record only ' + sources.map(id).join(', ') + ' gives')
-      }
+    else if (null != entity?.id && 'list' === step.o &&
+      (step.v || []).some((v: any) => 'ItemNotExists' === v?.apply)) {
+      reasons.set(step, after([create], 'checks a removal this run does not make'))
+    }
+  }
+  if (null != entity?.id && 0 < sources.length && !left().some((step) => 'list' === step.o)) {
+    for (const step of left().filter((step) => 'load' === step.o)) {
+      reasons.set(step, after(sources, 'reads a record only ' + sources.map(id).join(', ') + ' gives'))
     }
   }
 
   return {
-    excluded: steps.filter((step) => reasons.has(step))
-      .map((step) => ({ id: id(step), reason: GETONLY + reasons.get(step) })),
-    flow: { ...flow, step: left() },
+    writes,
+    plan: {
+      excluded: steps.filter((step) => reasons.has(step))
+        .map((step) => ({ id: id(step), reason: reasons.get(step)! })),
+      flow: { ...flow, step: left() },
+    },
   }
+}
+
+
+// A GET-only run's plan; undefined when it leaves out no more than any live run.
+function liveGetOnly(entity: any, flow: any): LiveGetOnly | undefined {
+  const { plan, writes } = livePlan(entity, flow, true)
+  return 0 === writes ? undefined : plan
+}
+
+
+// Any live run's plan, undefined when every step runs; one with none left skips.
+function liveFlowPlan(entity: any, flow: any): LiveGetOnly | undefined {
+  const { plan } = livePlan(entity, flow, false)
+  return 0 < plan.excluded.length || 0 === flowSteps(plan.flow).length ? plan : undefined
+}
+
+
+type LiveGate = { getOnly: boolean, plan: LiveGetOnly, runs: boolean }
+
+
+// The plans a live flow test settles before its offline flow, GET-only first.
+function liveGates(entity: any, flow: any): LiveGate[] {
+  return [liveGetOnly(entity, flow), liveFlowPlan(entity, flow)]
+    .map((plan, index) => null == plan ? undefined :
+      { getOnly: 0 === index, plan, runs: 0 < flowSteps(plan.flow).length })
+    .filter((gate): gate is LiveGate => null != gate)
 }
 
 
@@ -470,19 +507,23 @@ function liveExcludedLines(plan: { excluded: LiveExcluded[] }): string[] {
 }
 
 
-// Why a test whose every step is left out skips, as the live harness says it.
+const LIVE_NO_STEP = 'the flow has no step to run'
+
+
+// Why a test with no step left to run skips, as the live harness says it.
 function liveExcludedSummary(plan: { excluded: LiveExcluded[] }): string {
-  return 'Live coverage incomplete: ' +
-    plan.excluded.map(({ id, reason }) => id + ' excluded (' + reason + ')').join('; ')
+  return 'Live coverage incomplete: ' + (0 === plan.excluded.length ? LIVE_NO_STEP :
+    plan.excluded.map(({ id, reason }) => id + ' excluded (' + reason + ')').join('; '))
 }
 
 
-export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute }
+export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveGate, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute }
 
 export {
   liveStrict, liveStrictNote, liveFlowNeeds,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
   flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes,
   liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason,
+  liveFlowPlan, liveGates,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 }

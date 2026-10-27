@@ -9,7 +9,7 @@ import { memfs } from 'memfs'
 import { SdkGen } from '../dist/sdkgen'
 import {
   makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD, CREATELESS_ENTITY, MULTIROUTE_ENTITIES,
-  DISCOVERY_ENTITIES,
+  DISCOVERY_ENTITIES, WRITE_ONLY_ENTITIES,
 } from './generateharness'
 
 const PKG = Path.resolve(__dirname, '..')
@@ -105,7 +105,7 @@ main: kit: flow: BasicGameFlow: {
 
 // An action-only load reachable through one action, one with no usable
 // action, and one whose only usable route is an action beside a plain route.
-const EXTRA_ENTITIES = CREATELESS_ENTITY +
+const EXTRA_ENTITIES = CREATELESS_ENTITY + WRITE_ONLY_ENTITIES +
   actionEntity('v2018', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current', city: 'bern' }]) +
   actionEntity('v2019', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current' }]) +
   actionEntity('v2020', [{ path: 'weather' }, { action: 'reset', path: 'reset', method: 'POST', bare: true }]) +
@@ -342,6 +342,21 @@ describe('generated live tests continue after failures', () => {
         assert.equal(skipped(writes.output), 1, writes.output)
         assert.match(writes.output, /Live coverage incomplete: v2021\.create\.0 excluded \(GET-only live run: needs POST/)
       })
+
+    test(target + ': a flow with no step to run skips, GET-only or not, strict or lenient', async () => {
+      for (const name of [target, target + '-lenient']) {
+        for (const env of [{}, { VOXGIG_GETONLY_GUARD: 'TRUE' }]) {
+          const result = await runTests(name, '', ['token/TokenEntity', 'session/SessionEntity'], false, env)
+          assert.equal(result.code, 0, result.output)
+          assert.deepEqual(calls, [], result.output)
+          assert.equal(skipped(result.output), 2, result.output)
+          assert(result.output.includes('{"id":"token.create.0","state":"excluded","attempted":false,' +
+            '"reason":"token has no create operation"}'), result.output)
+          assert(result.output.includes('"id":"token.remove.1","state":"excluded"'), result.output)
+          assert(result.output.includes('Live coverage incomplete: the flow has no step to run'), result.output)
+        }
+      }
+    })
 
     test(target + ': a GET-only direct load excludes an id only a create gives, unless *_ENTID gives it',
       async () => {

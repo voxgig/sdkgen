@@ -35,7 +35,9 @@ its call reaches no route of its operation, because the SDK refuses that
 call: every route is an action the step does not name, or needs a path
 parameter the step does not give. Such a step is also marked `unreachable`,
 and the TS and JS live suites still run it, resolving each route's inputs and
-naming an action themselves. Ancestor chains contain checked entity addresses
+naming an action themselves. A step on an operation the entity does not have
+is made inactive and marked `unreachable` too, and every live suite reports it
+`excluded`. Ancestor chains contain checked entity addresses
 such as `path($.main.kit.entity.planet)`.
 
 Components read this compact model directly. `configDefinition` projects

@@ -31,7 +31,7 @@ import {
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
-  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveEntity,
 } from '@voxgig/sdkgen'
 
@@ -268,19 +268,18 @@ ${failureTests(model, entity)}` : ''}${validateTest(model, entity)}
       })
     }
 
-    const getOnly = liveGetOnly(entity, basicflow)
-    if (null != getOnly) {
-      Content(`		if setup.live && os.Getenv(${JSON.stringify(LIVE_GETONLY_ENV)}) == "TRUE" {
-${liveExcludedLines(getOnly).map((line) => '\t\t\tt.Log(' + JSON.stringify(line) + ')\n').join('')}`)
-      if (0 === flowSteps(getOnly.flow).length) {
-        Content(`			t.Skip(${JSON.stringify(liveExcludedSummary(getOnly))})
+    for (const { getOnly, plan, runs } of liveGates(entity, basicflow)) {
+      Content(`		if setup.live${getOnly ? ` && os.Getenv(${JSON.stringify(LIVE_GETONLY_ENV)}) == "TRUE"` : ''} {
+${liveExcludedLines(plan).map((line) => '\t\t\tt.Log(' + JSON.stringify(line) + ')\n').join('')}`)
+      if (!runs) {
+        Content(`			t.Skip(${JSON.stringify(liveExcludedSummary(plan))})
 			return
 		}
 
 `)
       }
       else {
-        flowBody(getOnly.flow)
+        flowBody(plan.flow)
         Content(`		return
 		}
 

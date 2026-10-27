@@ -12,8 +12,8 @@ const STORES = ['create', 'load', 'update', 'patch'];
 const GENERATED = ['create', 'list', 'load', 'update', 'remove'];
 // A generated flow test calls each step's op with its own match and data,
 // the record's id where the op acts on one, and what the entity instance
-// holds. A step whose call reaches no route is switched off, as the runtime
-// would refuse it, and marked unreachable for the live harness to resolve.
+// holds. A step whose op is absent, or whose call reaches no route, is
+// switched off and marked unreachable for the live harness to resolve.
 function guardFlowSteps(model, log) {
     const kit = model?.main?.[apidef_1.KIT];
     const flows = kit?.flow;
@@ -60,7 +60,7 @@ function guardFlowSteps(model, log) {
                 ...('create' === step.o ? fields.filter((f) => 'id' !== f) : []),
             ];
             const op = ent.op?.[step.o];
-            if (null != op && !(0, opShape_1.opReachable)(op, given)) {
+            if (null == op || !(0, opShape_1.opReachable)(op, given)) {
                 step.a = false;
                 step.unreachable = true;
                 if ('remove' === step.o && null != step.i?.ref)
@@ -85,7 +85,7 @@ function guardFlowSteps(model, log) {
             point: 'flow-step-unreachable',
             steps: out.map((s) => s.flow + '.' + s.step + ':' + s.op),
             note: 'flow step(s) ' + out.map((s) => s.flow + '#' + s.step + ' (' + s.op + ')').join(', ') +
-                ' switched off: the call they make reaches no route of the operation, ' +
+                ' switched off: the entity has no such operation, the call they make reaches no route of it, ' +
                 'or they check a removal such a step was to make. ' +
                 'Every route needs an action, or a path parameter the step does not give.',
         });

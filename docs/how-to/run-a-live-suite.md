@@ -190,13 +190,19 @@ Every target with a live suite then leaves out two kinds of entity flow step:
   only a create or list it left out could supply, an update or remove of the
   record a create would have made, and a list checking that record's removal.
 
+Any live run, GET-only or not, also leaves out a step on an operation the
+entity does not have, such as a create in a flow of an entity whose only
+operation is a remove, and the update or remove of the record that create would
+have made.
+
 Each step left out is reported as `excluded`, in the same `LIVE STEP` line the
 TS and JS runners print for a step the control file switches off. A step left
 out is neither a failure nor a pass: the steps that remain decide the test, and
 a flow left with no step to run skips, under either value of
-`main.kit.test.live.strict`. The TS and JS runners skip any flow whose every
-step is excluded, by the control file or by a GET-only run. A direct test of a
-GraphQL operation, whose request is a POST, skips too.
+`main.kit.test.live.strict`. So does a flow that has no step at all. The TS and
+JS runners skip any flow whose every step is excluded, by the control file or
+by the run. A direct test of a GraphQL operation, whose request is a POST,
+skips too.
 
 A live direct test is excluded the same way when it needs an id that only a
 write could give: an id with no example, of a record that only a create with

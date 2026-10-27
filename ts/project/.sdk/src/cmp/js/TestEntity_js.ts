@@ -42,12 +42,13 @@ import {
   liveStrict,
   liveStrictNote,
   liveEntity,
-  liveGetOnly,
+  liveGates,
   liveFlowRoutes,
   flowLoadRoute,
   flowLoadReadsRecord,
   LIVE_GETONLY_ENV,
 } from '@voxgig/sdkgen'
+import type { LiveGate } from '@voxgig/sdkgen'
 
 
 import {
@@ -57,11 +58,16 @@ import {
 
 // See TestEntity_ts.ts for the GenCtx/OpGen contract — this file mirrors
 // it exactly, the only difference being the language string emitted.
-// The steps a GET-only live run leaves out, for the live harness.
-function getOnlyArg(entity: any, flow: any): string {
-  const plan = liveGetOnly(entity, flow)
-  return null == plan ? '' : `, 'TRUE' === process.env.${LIVE_GETONLY_ENV} ? ${JSON.stringify(
-    Object.fromEntries(plan.excluded.map(({ id, reason }) => [id, reason])))} : {}`
+// The steps a live run leaves out, for the live harness: a GET-only run's
+// when the guard is set, else those any live run leaves out.
+function excludedArg(entity: any, flow: any): string {
+  const gates = liveGates(entity, flow)
+  const getOnly = gates.find((gate) => gate.getOnly)
+  const any = gates.find((gate) => !gate.getOnly)
+  const map = (gate?: LiveGate) => JSON.stringify(
+    Object.fromEntries((gate?.plan.excluded || []).map(({ id, reason }) => [id, reason])))
+  return null != getOnly ? `, 'TRUE' === process.env.${LIVE_GETONLY_ENV} ? ${map(getOnly)} : ${map(any)}` :
+    0 < (any?.plan.excluded.length || 0) ? ', ' + map(any) : ''
 }
 
 
@@ -235,7 +241,7 @@ function basicSetup(extra) {
     ${hasLiveScenarios(model) ? `if (process.env.${PROJENVNAME}_TEST_LIVE === 'TRUE') { t.skip('Covered by live operation scenarios'); return }` : ''}
     const setup = basicSetup()
     if (setup.live) {
-      return runLiveEntity(setup, ${JSON.stringify(liveEntity(ctx$, entity))}, ${JSON.stringify(liveFlowRoutes(entity, basicflow))}, '${nom(entity, 'Name')}', ${JSON.stringify(liveFacts)}, { strict: LIVE_STRICT, t }${getOnlyArg(entity, basicflow)})
+      return runLiveEntity(setup, ${JSON.stringify(liveEntity(ctx$, entity))}, ${JSON.stringify(liveFlowRoutes(entity, basicflow))}, '${nom(entity, 'Name')}', ${JSON.stringify(liveFacts)}, { strict: LIVE_STRICT, t }${excludedArg(entity, basicflow)})
     }
     const client = setup.client
     const struct = setup.struct

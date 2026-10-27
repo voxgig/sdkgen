@@ -22,7 +22,7 @@ import {
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
-  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
   liveEntity,
 } from '@voxgig/sdkgen'
@@ -259,16 +259,16 @@ ${skipBlock}`)
 `)
     }
 
-    // A C# local is in scope throughout its block, so the steps a GET-only
-    // run keeps cannot share the method with the full flow's.
-    const getOnly = liveGetOnly(entity, basicflow)
-    const getOnlyRuns = null != getOnly && 0 < flowSteps(getOnly.flow).length
-    if (null != getOnly) {
-      Content(`        if (setup.Live && Environment.GetEnvironmentVariable(${formatCsValue(LIVE_GETONLY_ENV)}) == "TRUE")
+    // A C# local is in scope throughout its block, so the steps a live run
+    // keeps cannot share the method with the full flow's.
+    const gates = liveGates(entity, basicflow)
+    const method = (getOnly: boolean) => getOnly ? 'BasicGetOnly' : 'BasicLive'
+    for (const { getOnly, plan, runs } of gates) {
+      Content(`        if (setup.Live${getOnly ? ` && Environment.GetEnvironmentVariable(${formatCsValue(LIVE_GETONLY_ENV)}) == "TRUE"` : ''})
         {
-${liveExcludedLines(getOnly).map((line) => '            Console.WriteLine(' + formatCsValue(line) + ');\n').join('')}${getOnlyRuns ?
-  '            BasicGetOnly(setup);\n' :
-  '            Console.WriteLine(' + formatCsValue('skip: ' + liveExcludedSummary(getOnly)) + ');\n'}            return;
+${liveExcludedLines(plan).map((line) => '            Console.WriteLine(' + formatCsValue(line) + ');\n').join('')}${runs ?
+  '            ' + method(getOnly) + '(setup);\n' :
+  '            Console.WriteLine(' + formatCsValue('skip: ' + liveExcludedSummary(plan)) + ');\n'}            return;
         }
 
 `)
@@ -280,11 +280,11 @@ ${liveExcludedLines(getOnly).map((line) => '            Console.WriteLine(' + fo
 
 `)
 
-    if (null != getOnly && getOnlyRuns) {
-      Content(`    private static void BasicGetOnly(EntityTestSetup setup)
+    for (const { getOnly, plan } of gates.filter((gate) => gate.runs)) {
+      Content(`    private static void ${method(getOnly)}(EntityTestSetup setup)
     {
 `)
-      flowBody(getOnly.flow)
+      flowBody(plan.flow)
       Content(`    }
 
 `)

@@ -31,7 +31,7 @@ import {
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
-  liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveEntity,
 } from '@voxgig/sdkgen'
 
@@ -269,24 +269,24 @@ ${strict ? '' : `    @runner.live_observe("${PROJUPPER}_TEST_LIVE", LIVE_STRICT)
     }
 
     // A python block cannot hold steps emitted at the method's own indent,
-    // so the steps a GET-only run keeps go in a method of their own.
-    const getOnly = liveGetOnly(entity, basicflow)
-    const getOnlyRuns = null != getOnly && 0 < flowSteps(getOnly.flow).length
-    if (null != getOnly) {
-      Content(`        if setup["live"] and os.environ.get(${JSON.stringify(LIVE_GETONLY_ENV)}) == "TRUE":
-${liveExcludedLines(getOnly).map((line) => '            print(' + pyLit(line) + ')\n').join('')}${getOnlyRuns ?
-  '            return self._run_get_only_flow(setup)\n' :
-  '            pytest.skip(' + pyLit(liveExcludedSummary(getOnly)) + ')\n'}
+    // so the steps a live run keeps go in a method of their own.
+    const gates = liveGates(entity, basicflow)
+    const method = (getOnly: boolean) => getOnly ? '_run_get_only_flow' : '_run_live_flow'
+    for (const { getOnly, plan, runs } of gates) {
+      Content(`        if setup["live"]${getOnly ? ` and os.environ.get(${JSON.stringify(LIVE_GETONLY_ENV)}) == "TRUE"` : ''}:
+${liveExcludedLines(plan).map((line) => '            print(' + pyLit(line) + ')\n').join('')}${runs ?
+  '            return self.' + method(getOnly) + '(setup)\n' :
+  '            pytest.skip(' + pyLit(liveExcludedSummary(plan)) + ')\n'}
 `)
     }
 
     flowBody(basicflow)
 
-    if (null != getOnly && getOnlyRuns) {
+    for (const { getOnly, plan } of gates.filter((gate) => gate.runs)) {
       Content(`
-    def _run_get_only_flow(self, setup):
+    def ${method(getOnly)}(self, setup):
 `)
-      flowBody(getOnly.flow)
+      flowBody(plan.flow)
     }
 
     Content(`
