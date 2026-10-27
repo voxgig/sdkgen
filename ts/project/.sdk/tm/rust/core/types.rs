@@ -76,9 +76,9 @@ pub trait Entity {
     fn deleted(&self) -> bool;
 }
 
-/// ProjectNameEntity: the full CRUD contract every generated entity
+/// ProjectNameEntityBase: the full CRUD contract every generated entity
 /// implements. Ops the API spec doesn't define are runtime-error stubs.
-pub trait ProjectNameEntity: Entity + Sized {
+pub trait ProjectNameEntityBase: Entity + Sized {
     fn load(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>;
     fn list(self: &Rc<Self>, reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, ProjectNameError>;
     fn create(self: &Rc<Self>, reqdata: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>;

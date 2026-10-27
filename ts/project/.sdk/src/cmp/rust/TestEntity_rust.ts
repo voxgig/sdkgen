@@ -184,7 +184,7 @@ use common::*;
 
 use ${rustcrate}::core::helpers::{getp, getpath, ja, jo, now_ms, setp, to_map};
 use ${rustcrate}::utility::voxgigstruct as vs;
-use ${rustcrate}::{test_sdk, Entity, ${model.const.Name}Entity, ${model.const.Name}SDK, Value};
+use ${rustcrate}::{test_sdk, Entity, ${model.const.Name}EntityBase, ${model.const.Name}SDK, Value};
 
 ${liveStrictNote(strict, '//')}
 const LIVE_STRICT: bool = ${strict};

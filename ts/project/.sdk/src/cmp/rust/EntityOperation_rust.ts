@@ -9,7 +9,7 @@ const EntityOperation = cmp(function Operation(props: any) {
   const { model } = props.ctx$
   const { ff, opname, entity, entrep, cls } = props
 
-  // The op marker sits inside `impl ProjectNameEntity for EntyClass`
+  // The op marker sits inside `impl ProjectNameEntityBase for EntyClass`
   // indented one level; indent the whole spliced method by the marker's
   // own leading whitespace so the emitted rust nests correctly.
   let { indent } = props

@@ -119,7 +119,7 @@ client := sdk.TestSDK(testopts, sdkopts)
 
 
     publishedEntities.map((ent: any) => {
-      Content(`#### \`${ent.Name}(data map[string]any) ${model.const.Name}Entity\`
+      Content(`#### \`${ent.Name}(data map[string]any) ${model.const.Name}EntityBase\`
 
 Create a new \`${ent.Name}\` entity instance. Pass \`nil\` for no initial data.
 
