@@ -42,6 +42,17 @@ import { formatRubyValue } from './utility_rb'
 // the ids it binds, and a create-less load reading the first listed record.
 function liveFlowGate(entity: any, needs: any, entidEnv: string): string {
   let out = ''
+  if (null != needs.examples) {
+    out += `    if setup[:live]
+      { ${needs.examples
+      .map(([k, ex]: any) => JSON.stringify(k) + ' => ' + formatRubyValue(ex)).join(', ')} }.each do |_live_key, _live_ex|
+        if setup[:synthetic_only] || setup[:idmap][_live_key].nil?
+          setup[:idmap][_live_key] = _live_ex
+        end
+      end
+    end
+`
+  }
   if (0 < needs.keys.length) {
     out += `    if setup[:live]
       [${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')}].each do |_live_key|
@@ -59,6 +70,14 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string): string {
 `
   }
   out += '    client = setup[:client]\n'
+  if (null != needs.record) {
+    out += `    if setup[:live]
+      Runner.live_existing(setup, LIVE_STRICT, ${JSON.stringify(entity.name)}) do
+        [{ "id" => setup[:idmap][${JSON.stringify(needs.record)}] }]
+      end
+    end
+`
+  }
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
       .map(([k, v]: any) => `${JSON.stringify(k)} => setup[:idmap][${JSON.stringify(v)}]`)
@@ -467,7 +486,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`    }
 `)
   }
-  Content(liveFill(entity, step, matchvar))
+  Content(liveFill(entity, step, matchvar, flow))
 
   Content(`
     ${listvar}_result = ${entvar}.list(${matchvar}, nil)
@@ -623,7 +642,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`    ${matchvar} = {
       "id" => ${srcdatavar}["id"],
     }
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    ${datavar}_loaded = ${entvar}.load(${matchvar}, nil)
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    ${datavar}_loaded = ${entvar}.load(${matchvar}, nil)
     ${datavar}_load_result = Helpers.to_map(${datavar}_loaded.respond_to?(:data_get) ? ${datavar}_loaded.data_get : ${datavar}_loaded)
     assert !${datavar}_load_result.nil?
     assert_equal ${datavar}_load_result["id"], ${srcdatavar}["id"]
@@ -631,7 +650,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
   }
   else {
     Content(`    ${matchvar} = {}
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    ${datavar}_loaded = ${entvar}.load(${matchvar}, nil)
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    ${datavar}_loaded = ${entvar}.load(${matchvar}, nil)
     assert !${datavar}_loaded.nil?
 `)
   }
@@ -672,8 +691,8 @@ ${parentMatch(step, matchvar)}    ${entvar}.remove(${matchvar}, nil)
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
 // A live step sends each example its route requires and the step leaves unbound.
-function liveFill(entity: any, step: any, matchvar: string): string {
-  const fills = liveStepExamples(entity, step)
+function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
+  const fills = liveStepExamples(entity, step, flow)
   return 0 === fills.length ? '' : `    if setup[:live]
 ${fills.map(([k, ex]) => `      ${matchvar}[${JSON.stringify(k)}] = ${formatRubyValue(ex)}\n`).join('')}    end
 `

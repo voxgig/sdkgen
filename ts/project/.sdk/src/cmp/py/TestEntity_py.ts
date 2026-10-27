@@ -40,6 +40,14 @@ import {
 // the ids it binds, and a create-less load reading the first listed record.
 function liveFlowGate(entity: any, needs: any, entidEnv: string): string {
   let out = ''
+  if (null != needs.examples) {
+    out += `        if setup["live"]:
+            for _live_key, _live_ex in {${needs.examples
+      .map(([k, ex]: any) => JSON.stringify(k) + ': ' + pyLit(ex)).join(', ')}}.items():
+                if setup.get("synthetic_only") or setup["idmap"].get(_live_key) is None:
+                    setup["idmap"][_live_key] = _live_ex
+`
+  }
   if (0 < needs.keys.length) {
     out += `        if setup["live"]:
             for _live_key in [${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')}]:
@@ -53,6 +61,12 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string): string {
 `
   }
   out += '        client = setup["client"]\n'
+  if (null != needs.record) {
+    out += `        if setup["live"]:
+            runner.live_existing(setup, LIVE_STRICT, ${JSON.stringify(entity.name)},
+                                 lambda: [{"id": setup["idmap"].get(${JSON.stringify(needs.record)})}])
+`
+  }
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
       .map(([k, v]: any) => `${JSON.stringify(k)}: setup["idmap"].get(${JSON.stringify(v)})`)
@@ -449,7 +463,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`        }
 `)
   }
-  Content(liveFill(entity, step, matchvar))
+  Content(liveFill(entity, step, matchvar, flow))
 
   Content(`
         ${listvar}_result = ${entvar}.list(${matchvar}, None)
@@ -603,7 +617,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`        ${matchvar} = {
             "id": ${srcdatavar}["id"],
         }
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}        ${datavar}_loaded = ${entvar}.load(${matchvar}, None)
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        ${datavar}_loaded = ${entvar}.load(${matchvar}, None)
         ${datavar}_load_result = helpers.to_map(runner.entity_data(${datavar}_loaded))
         assert ${datavar}_load_result is not None
         assert ${datavar}_load_result["id"] == ${srcdatavar}["id"]
@@ -611,7 +625,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
   }
   else {
     Content(`        ${matchvar} = {}
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}        ${datavar}_loaded = ${entvar}.load(${matchvar}, None)
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        ${datavar}_loaded = ${entvar}.load(${matchvar}, None)
         assert ${datavar}_loaded is not None
 `)
   }
@@ -652,8 +666,8 @@ ${parentMatch(step, matchvar)}        ${entvar}.remove(${matchvar}, None)
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
 // A live step sends each example its route requires and the step leaves unbound.
-function liveFill(entity: any, step: any, matchvar: string): string {
-  const fills = liveStepExamples(entity, step)
+function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
+  const fills = liveStepExamples(entity, step, flow)
   return 0 === fills.length ? '' : `        if setup["live"]:
 ${fills.map(([k, ex]) => `            ${matchvar}[${JSON.stringify(k)}] = ${pyLit(ex)}\n`).join('')}`
 }

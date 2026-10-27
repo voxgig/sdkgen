@@ -117,9 +117,6 @@ test('a live flow fills the route the live harness takes', () => {
   assert.deepEqual(liveRouteExamples({ name: 'none', op: { list: { points: [
     route('/{board}/threads.json', [arg('param', 'board', true)])] } } }, 'list', []), [])
 
-  const actions = { name: 'signal', op: { list: { points: [
-    route('/signal/weak', [], [arg('query', 'q', true, 'x')], { q: { $action: 'weak' } })] } } }
-  assert.deepEqual(liveRouteExamples(actions, 'list', []), [])
 })
 
 test('a load of a known record fills only its required query', () => {
@@ -225,6 +222,85 @@ test('the live harness and a live flow take the route the offline flow takes', (
 
 
 const at = (m: string, o: string, extra: any = {}) => ({ points: [{ m, o, ...extra }] })
+
+
+// The fleet's shapes the live entity harness fills from a route example where
+// *_ENTID gives none: deduped's slug, dumabingo's deputy_profile and
+// lobbyist, deepstatemap's territory_change, coworkingview's geo and search.
+test('a load of an entity with no id takes its bound parameter from its example', () => {
+  const slug = { name: 'slug', fields: field('name'), op: { load: { points: [
+    route('/repos/{slug}.json', [arg('param', 'slug', true, 'supabase-supabase')])] } } }
+  const load = { o: 'load', m: { slug: 'slug01' } }
+  assert.deepEqual(liveFlowNeeds(slug, flow(load)), { keys: [], examples: [['slug01', 'supabase-supabase']] })
+  assert.deepEqual(liveStepExamples(slug, load, flow(load)), [])
+  // With no example, *_ENTID alone can give it.
+  const bare = { ...slug, op: { load: { points: [route('/repos/{slug}.json', [arg('param', 'slug', true)])] } } }
+  assert.deepEqual(liveFlowNeeds(bare, flow(load)), { keys: ['slug01'] })
+  // An id binding names no parameter of an entity with no id, so the route's id takes its example.
+  const station = { name: 'station', op: { load: { points: [
+    route('/seb/{id}', [arg('param', 'id', true, 77)])] } } }
+  const byId = { o: 'load', m: { id: 'station01' } }
+  assert.deepEqual(liveStepExamples(station, byId, flow(byId)), [['id', 77]])
+  assert.deepEqual(liveFlowNeeds(station, flow(byId)), { keys: [] })
+})
+
+test('a load of a record with an id and no list takes the id *_ENTID or its example names', () => {
+  const profile = { name: 'deputy_profile', id: { field: 'id', name: 'id' }, op: { load: { points: [
+    route('/api/lobbist_detail/{id}/', [arg('param', 'id', true, 4489)], [arg('query', 'locale', true, 'en')])] } } }
+  const load = { o: 'load', m: { id: 'deputy_profile01' } }
+  assert.deepEqual(liveFlowNeeds(profile, flow(load)),
+    { keys: [], examples: [['deputy_profile01', 4489]], record: 'deputy_profile01' })
+  assert.deepEqual(liveStepExamples(profile, load, flow(load)), [['locale', 'en']])
+  // An unbound id reads the key the live harness reads.
+  assert.deepEqual(liveFlowNeeds(profile, flow({ o: 'load' })),
+    { keys: [], examples: [['deputy_profile01', 4489]], record: 'deputy_profile01' })
+  // An id with no example is *_ENTID's to give, and a parameter nothing gives blocks.
+  const bare = { ...profile, op: { load: { points: [route('/p/{id}', [arg('param', 'id', true)])] } } }
+  assert.deepEqual(liveFlowNeeds(bare, flow(load)), { keys: ['deputy_profile01'], record: 'deputy_profile01' })
+  const nested = { ...profile, op: { load: { points: [
+    route('/{chamber}/{id}', [arg('param', 'chamber', true), arg('param', 'id', true, 4489)])] } } }
+  assert.deepEqual(liveFlowNeeds(nested, flow(load)),
+    { keys: [], blocked: 'the flow loads a deputy_profile record it has no list to find' })
+  // A record a list finds or a create makes keeps the load's path to that record.
+  const listed = { ...profile, op: { ...profile.op, list: at('GET', '/api/lobbist/') } }
+  assert.deepEqual(liveFlowNeeds(listed, flow({ o: 'list' }, load)), { keys: [], discover: {} })
+  assert.deepEqual(liveStepExamples(listed, load, flow({ o: 'list' }, load)), [['locale', 'en']])
+})
+
+test('a list bound by a path key takes the key from its example', () => {
+  const lobbyist = { name: 'lobbyist', id: { field: 'id' }, op: { list: { points: [
+    route('/media/dumps/lobbist-small-{chamber}.json', [arg('param', 'chamber', true, 'sf')])] } } }
+  const list = { o: 'list', m: { chamber: 'chamber01' } }
+  assert.deepEqual(liveFlowNeeds(lobbyist, flow(list)), { keys: [], examples: [['chamber01', 'sf']] })
+  assert.deepEqual(liveStepExamples(lobbyist, list), [])
+  // The list a load's record is found by sends the same example.
+  assert.deepEqual(liveFlowNeeds({ ...lobbyist, op: { ...lobbyist.op, load: at('GET', '/l/{id}') } },
+    flow(list, { o: 'load' })), { keys: [], examples: [['chamber01', 'sf']], discover: { chamber: 'chamber01' } })
+  const change = { name: 'territory_change', op: { list: { points: [
+    route('/api/history/{timestamp}/diff/prev', [arg('param', 'history_id', true, 1792696779)])] } } }
+  assert.deepEqual(liveFlowNeeds(change, flow({ o: 'list', m: { history_id: 'history01' } })),
+    { keys: [], examples: [['history01', 1792696779]] })
+  // A binding a create needs too stays *_ENTID's.
+  assert.deepEqual(liveFlowNeeds(lobbyist, flow({ o: 'create', m: { chamber: 'chamber01' } }, list)),
+    { keys: ['chamber01'] })
+})
+
+test('an operation with only action routes sends its action route\'s examples', () => {
+  const geo = { name: 'geo', op: { load: { points: [route('/v1/geo/bootstrap', [],
+    [arg('query', 'locale', true, 'en')], { q: { $action: 'bootstrap' } })] } } }
+  assert.deepEqual(liveStepExamples(geo, { o: 'load', m: {} }), [['locale', 'en']])
+  const search = { name: 'search', op: { list: { points: [route('/v1/search/suggest', [],
+    [arg('query', 'locale', true, 'en'), arg('query', 'q', true, 'mitte')], { q: { $action: 'suggest' } })] } } }
+  assert.deepEqual(liveRouteExamples(search, 'list', []), [['locale', 'en'], ['q', 'mitte']])
+  // A plain route is taken while there is one, and an action route is never a record's.
+  const property = { name: 'property', id: { field: 'id' }, op: { list: { points: [
+    route('/v1/properties/map', [], [arg('query', 'bounds', true, 'b')], { q: { $action: 'map' } }),
+    route('/v1/properties', [], [arg('query', 'locale', true, 'en')])] } } }
+  assert.deepEqual(liveRouteExamples(property, 'list', []), [['locale', 'en']])
+  assert.equal(flowLoadRoute({ ...geo, id: { field: 'id' }, op: { load: { points: [route('/v1/geo/{id}',
+    [arg('param', 'id', true)], [], { q: { $action: 'one' } })] } } }, { o: 'load', m: {} }), undefined)
+})
+
 
 test('a GET-only run leaves out a step no GET route reaches, and a load only it gives a record', () => {
   assert.equal(LIVE_GETONLY_ENV, 'VOXGIG_GETONLY_GUARD')

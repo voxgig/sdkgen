@@ -53,6 +53,12 @@ type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: string,
   strict: boolean, hasSteps: boolean): string {
   let out = ''
+  for (const [k, ex] of needs.examples || []) {
+    out += `    if (setup.live && (setup.syntheticOnly || setup.idmap?.get(${JSON.stringify(k)}) == null)) {
+      setup.idmap?.put(${JSON.stringify(k)}, ${kotlinIdLit(ex)})
+    }
+`
+  }
   if (0 < needs.keys.length) {
     out += `    if (setup.live) {
       for (liveKey in arrayOf<String>(${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')})) {
@@ -73,6 +79,14 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: strin
     return out
   }
   out += '    val client = setup.client\n'
+  if (null != needs.record) {
+    out += `    if (setup.live) {
+      RunnerSupport.liveExisting(setup.data!!, LIVE_STRICT, ${JSON.stringify(entity.name)}) {
+        listOf(linkedMapOf<String, Any?>("id" to setup.idmap?.get(${JSON.stringify(needs.record)})))
+      }
+    }
+`
+  }
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
       .map(([k, v]: any) => `${JSON.stringify(k)} to setup.idmap?.get(${JSON.stringify(v)})`)
@@ -441,7 +455,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`    ${matchvar}["${key}"] = setup.idmap!!["${val}"]
 `)
   }
-  Content(liveFill(entity, step, matchvar))
+  Content(liveFill(entity, step, matchvar, flow))
 
   const allSteps = Object.values(flowSteps(flow)) as any[]
   const listvarUsed = !!step.v?.some((v: any) => {
@@ -605,14 +619,14 @@ const generateLoad: OpGen = (ctx, step, index) => {
 `)
   if (hasEntId) {
     Content(`    ${matchvar}["id"] = ${srcdatavar}["id"]
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
     val ${datavar}LoadResult = Helpers.toMapAny(if (${datavar}Loaded is SdkEntity) ${datavar}Loaded.data() else ${datavar}Loaded) ?: linkedMapOf()
     assertNotNull(${datavar}LoadResult, "expected load result to be a map")
     assertEquals(${srcdatavar}["id"], ${datavar}LoadResult["id"],
         "expected load result id to match")
 `)
   } else {
-    Content(`${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
+    Content(`${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
     assertNotNull(${datavar}Loaded, "expected load result to be non-null")
 `)
   }
@@ -652,9 +666,15 @@ function kotlinLit(value: any): string {
 }
 
 
+// A whole number as Json.parse decodes one, so an example equals a record's id.
+function kotlinIdLit(value: any): string {
+  return Number.isSafeInteger(value) ? value + 'L' : kotlinLit(value)
+}
+
+
 // A live step sends each example its route requires and the step leaves unbound.
-function liveFill(entity: any, step: any, matchvar: string): string {
-  const fills = liveStepExamples(entity, step)
+function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
+  const fills = liveStepExamples(entity, step, flow)
   return 0 === fills.length ? '' : `    if (setup.live) {
 ${fills.map(([k, ex]) => `      ${matchvar}[${JSON.stringify(k)}] = ${kotlinLit(ex)}\n`).join('')}    }
 `

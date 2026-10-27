@@ -45,6 +45,17 @@ import { formatPhpValue } from './utility_php'
 function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: string,
   strict: boolean): string {
   let out = ''
+  if (null != needs.examples) {
+    out += `        if (!empty($setup["live"])) {
+            foreach ([${needs.examples
+      .map(([k, ex]: any) => JSON.stringify(k) + ' => ' + formatPhpValue(ex)).join(', ')}] as $_liveKey => $_liveEx) {
+                if (!empty($setup["synthetic_only"]) || null === ($setup["idmap"][$_liveKey] ?? null)) {
+                    $setup["idmap"][$_liveKey] = $_liveEx;
+                }
+            }
+        }
+`
+  }
   if (0 < needs.keys.length) {
     out += `        if (!empty($setup["live"])) {
             foreach ([${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')}] as $_liveKey) {
@@ -62,6 +73,13 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: strin
 `
   }
   out += '        $client = $setup["client"];\n'
+  if (null != needs.record) {
+    out += `        if (!empty($setup["live"])) {
+            Runner::live_existing($setup, self::LIVE_STRICT, ${JSON.stringify(entity.name)},
+                fn() => [["id" => $setup["idmap"][${JSON.stringify(needs.record)}] ?? null]]);
+        }
+`
+  }
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
       .map(([k, v]: any) => `${JSON.stringify(k)} => $setup["idmap"][${JSON.stringify(v)}] ?? null`)
@@ -477,7 +495,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`        ];
 `)
   }
-  Content(liveFill(entity, step, matchvar))
+  Content(liveFill(entity, step, matchvar, flow))
 
   Content(`
         $${listvar}_result = $${entvar}->list($${matchvar}, null);
@@ -633,7 +651,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`        $${matchvar} = [
             "id" => $${srcdatavar}["id"],
         ];
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}        $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
         $${datavar}_load_result = Helpers::to_map(is_object($${datavar}_loaded) && method_exists($${datavar}_loaded, 'data_get') ? $${datavar}_loaded->data_get() : $${datavar}_loaded);
         $this->assertNotNull($${datavar}_load_result);
         $this->assertEquals($${datavar}_load_result["id"], $${srcdatavar}["id"]);
@@ -641,7 +659,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
   }
   else {
     Content(`        $${matchvar} = [];
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}        $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
         $this->assertNotNull($${datavar}_loaded);
 `)
   }
@@ -682,8 +700,8 @@ ${parentMatch(step, matchvar)}        $${entvar}->remove($${matchvar}, null);
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
 // A live step sends each example its route requires and the step leaves unbound.
-function liveFill(entity: any, step: any, matchvar: string): string {
-  const fills = liveStepExamples(entity, step)
+function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
+  const fills = liveStepExamples(entity, step, flow)
   return 0 === fills.length ? '' : `        if (!empty($setup["live"])) {
 ${fills.map(([k, ex]) => `            $${matchvar}[${JSON.stringify(k)}] = ${formatPhpValue(ex)};\n`).join('')}        }
 `

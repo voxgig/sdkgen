@@ -404,6 +404,17 @@ ${liveExcludedLines(getOnly).map((line) => '\t\t\tt.Log(' + JSON.stringify(line)
 function liveFlowGate(entity: any, needs: any, strict: boolean, strictConst: string,
   entidEnv: string, hasSteps: boolean): string {
   let out = ''
+  if (null != needs.examples) {
+    out += `		if setup.live {
+			for _liveKey, _liveEx := range map[string]any{${needs.examples
+      .map(([k, ex]: any) => JSON.stringify(k) + ': ' + goIdLit(ex)).join(', ')}} {
+				if setup.syntheticOnly || setup.idmap[_liveKey] == nil {
+					setup.idmap[_liveKey] = _liveEx
+				}
+			}
+		}
+`
+  }
   if (0 < needs.keys.length) {
     out += `		if setup.live {
 			for _, _liveKey := range []string{${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')}} {
@@ -423,6 +434,14 @@ function liveFlowGate(entity: any, needs: any, strict: boolean, strictConst: str
   if (hasSteps) {
     // A flow whose every step is skipped (a remove with no data id) uses none.
     out += '\t\tclient := setup.client\n\t\t_ = client\n'
+  }
+  if (null != needs.record) {
+    out += `		if setup.live {
+			liveExisting(t, ${strictConst}, setup.data, ${JSON.stringify(entity.name)}, func() (any, error) {
+				return []any{map[string]any{"id": setup.idmap[${JSON.stringify(needs.record)}]}}, nil
+			})
+		}
+`
   }
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
@@ -543,7 +562,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`		}
 `)
   }
-  liveFill(entity, step, matchvar)
+  liveFill(entity, step, matchvar, flow)
 
   // Only declare ${listvar} as a real var when a downstream validator
   // actually uses it; otherwise `_` to satisfy Go's unused-var check.
@@ -734,7 +753,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 		}
 `)
     loadMatch(entity, step, matchvar, srcdatavar)
-    liveFill(entity, step, matchvar)
+    liveFill(entity, step, matchvar, flow)
     Content(`		${datavar}Loaded, err := ${entvar}.Load(${matchvar}, nil)
 		if err != nil {
 			t.Fatalf("load failed: %v", err)
@@ -752,7 +771,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`		${matchvar} := map[string]any{}
 `)
     loadMatch(entity, step, matchvar, srcdatavar)
-    liveFill(entity, step, matchvar)
+    liveFill(entity, step, matchvar, flow)
     Content(`		${datavar}Loaded, err := ${entvar}.Load(${matchvar}, nil)
 		if err != nil {
 			t.Fatalf("load failed: %v", err)
@@ -807,13 +826,19 @@ const generateRemove: OpGen = (ctx, step, index) => {
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
 // A live step sends each example its route requires and the step leaves unbound.
-function liveFill(entity: any, step: any, matchvar: string) {
-  const fills = liveStepExamples(entity, step)
+function liveFill(entity: any, step: any, matchvar: string, flow: any) {
+  const fills = liveStepExamples(entity, step, flow)
   if (0 < fills.length) {
     Content(`		if setup.live {
 ${fills.map(([k, ex]) => `			${matchvar}[${JSON.stringify(k)}] = ${JSON.stringify(ex)}\n`).join('')}		}
 `)
   }
+}
+
+
+// A number as JSON decodes one, so an example compares equal to a record's id.
+function goIdLit(value: any): string {
+  return 'number' === typeof value ? 'float64(' + value + ')' : JSON.stringify(value)
 }
 
 

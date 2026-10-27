@@ -57,6 +57,12 @@ type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: string,
   SDK: string, strict: boolean, hasSteps: boolean): string {
   let out = ''
+  for (const [k, ex] of needs.examples || []) {
+    out += `    if (setup.live && (setup.syntheticOnly || setup.idmap.get(${JSON.stringify(k)}) == null)) {
+      setup.idmap.put(${JSON.stringify(k)}, ${javaIdLit(ex)});
+    }
+`
+  }
   if (0 < needs.keys.length) {
     out += `    if (setup.live) {
       for (String liveKey : new String[] { ${needs.keys.map((k: string) => JSON.stringify(k)).join(', ')} }) {
@@ -77,6 +83,16 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: strin
     return out
   }
   out += `    ${SDK} client = setup.client;\n`
+  if (null != needs.record) {
+    out += `    if (setup.live) {
+      RunnerSupport.liveExisting(setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)}, () -> {
+        Map<String, Object> record = new LinkedHashMap<>();
+        record.put("id", setup.idmap.get(${JSON.stringify(needs.record)}));
+        return List.of(record);
+      });
+    }
+`
+  }
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
       .map(([k, v]: any) => `match.put(${JSON.stringify(k)}, setup.idmap.get(${JSON.stringify(v)}));`)
@@ -490,7 +506,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`    ${matchvar}.put("${key}", setup.idmap.get("${val}"));
 `)
   }
-  Content(liveFill(entity, step, matchvar))
+  Content(liveFill(entity, step, matchvar, flow))
 
   // Only declare ${listvar} as a real var when a downstream validator
   // actually uses it.
@@ -661,7 +677,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 `)
   if (hasEntId) {
     Content(`    ${matchvar}.put("id", ${srcdatavar}.get("id"));
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
     Map<String, Object> ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded instanceof SdkEntity ? ((SdkEntity) ${datavar}Loaded).data() : ${datavar}Loaded);
     assertNotNull(${datavar}LoadResult, "expected load result to be a map");
     assertEquals(${srcdatavar}.get("id"), ${datavar}LoadResult.get("id"),
@@ -669,7 +685,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
 `)
   }
   else {
-    Content(`${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
+    Content(`${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
     assertNotNull(${datavar}Loaded, "expected load result to be non-null");
 `)
   }
@@ -710,9 +726,15 @@ function javaLit(value: any): string {
 }
 
 
+// A whole number as Json.parse decodes one, so an example equals a record's id.
+function javaIdLit(value: any): string {
+  return Number.isSafeInteger(value) ? value + 'L' : javaLit(value)
+}
+
+
 // A live step sends each example its route requires and the step leaves unbound.
-function liveFill(entity: any, step: any, matchvar: string): string {
-  const fills = liveStepExamples(entity, step)
+function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
+  const fills = liveStepExamples(entity, step, flow)
   return 0 === fills.length ? '' : `    if (setup.live) {
 ${fills.map(([k, ex]) => `      ${matchvar}.put(${JSON.stringify(k)}, ${javaLit(ex)});\n`).join('')}    }
 `

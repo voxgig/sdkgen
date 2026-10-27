@@ -53,6 +53,13 @@ type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 function liveFlowGate(entity: any, needs: any, entidEnv: string, strict: boolean,
   hasSteps: boolean): string {
   let out = ''
+  for (const [k, ex] of needs.examples || []) {
+    out += `        if (setup.Live && (setup.SyntheticOnly || StructUtils.GetProp(setup.Idmap, ${JSON.stringify(k)}) == null))
+        {
+            setup.Idmap[${JSON.stringify(k)}] = ${formatCsValue(ex)};
+        }
+`
+  }
   if (0 < needs.keys.length) {
     out += `        if (setup.Live)
         {
@@ -79,6 +86,15 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, strict: boolean
     return out
   }
   out += '        var client = setup.Client;\n'
+  if (null != needs.record) {
+    out += `        if (setup.Live && !TestRunner.LiveExisting(setup.Data, LIVE_STRICT, ${JSON.stringify(entity.name)},
+            () => new List<object?> { new Dictionary<string, object?>
+                { ["id"] = StructUtils.GetProp(setup.Idmap, ${JSON.stringify(needs.record)}) } }))
+        {
+            return;
+        }
+`
+  }
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
       .map(([k, v]: any) => ` [${JSON.stringify(k)}] = setup.Idmap[${JSON.stringify(v)}],`)
@@ -520,7 +536,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`        };
 `)
   }
-  Content(liveFill(entity, step, matchvar))
+  Content(liveFill(entity, step, matchvar, flow))
 
   Content(`
         var ${listvar}Result = ${entvar}.List(${matchvar}, null);
@@ -687,7 +703,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
         {
             ["id"] = ${srcdatavar}!["id"],
         };
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
         var ${datavar}LoadResult = Helpers.ToMapAny(${datavar}Loaded is IEntity le ? le.Data() : ${datavar}Loaded);
         Assert.True(${datavar}LoadResult != null, "expected load result to be a map");
         Assert.True(StructRunner.DeepEqual(${datavar}LoadResult!["id"], ${srcdatavar}["id"]),
@@ -696,7 +712,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
   }
   else {
     Content(`        var ${matchvar} = new Dictionary<string, object?>();
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
         Assert.True(${datavar}Loaded != null, "expected load result to be non-null");
 `)
   }
@@ -734,8 +750,8 @@ ${parentMatch(step, matchvar)}        ${entvar}.Remove(${matchvar}, null);
 // filled knows none of them, so the call itself gives each parent id. A live
 // ENTID may key a parent by its field name, the fixture by its own name.
 // A live step sends each example its route requires and the step leaves unbound.
-function liveFill(entity: any, step: any, matchvar: string): string {
-  const fills = liveStepExamples(entity, step)
+function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
+  const fills = liveStepExamples(entity, step, flow)
   return 0 === fills.length ? '' : `        if (setup.Live)
         {
 ${fills.map(([k, ex]) => `            ${matchvar}[${JSON.stringify(k)}] = ${formatCsValue(ex)};\n`).join('')}        }

@@ -51,6 +51,15 @@ function liveFlowGate(N: string, entity: any, needs: any, entidEnv: string,
   strict: boolean): string {
   const label = entity.name + ': basic flow'
   let out = ''
+  if (null != needs.examples) {
+    out += `  if ($setup->{live}) {
+    my %live_ex = (${needs.examples.map(([k, ex]: any) => perlLit(k) + ' => ' + perlLit(ex)).join(', ')});
+    for my $k (sort keys %live_ex) {
+      $setup->{idmap}{$k} = $live_ex{$k} if $setup->{synthetic_only} || !defined $setup->{idmap}{$k};
+    }
+  }
+`
+  }
   if (0 < needs.keys.length) {
     out += `  if ($setup->{live}) {
     my @missing = grep { $setup->{synthetic_only} || !defined $setup->{idmap}{$_} } (${needs.keys.map((k: string) => `'${k}'`).join(', ')});
@@ -69,6 +78,13 @@ function liveFlowGate(N: string, entity: any, needs: any, entidEnv: string,
 `
   }
   out += '  my $client = $setup->{client};\n'
+  if (null != needs.record) {
+    out += `  if ($setup->{live}) {
+    ${N}TestRunner::live_existing($setup, LIVE_STRICT, '${label}', '${entity.name}',
+      sub { [{ 'id' => $setup->{idmap}{${perlLit(needs.record)}} }] }) or last BASIC_FLOW;
+  }
+`
+  }
   if (null != needs.discover) {
     const match = Object.entries(needs.discover)
       .map(([k, v]: any) => `'${k}' => $setup->{idmap}{'${v}'}`)
@@ -408,7 +424,7 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`  };
 `)
   }
-  Content(liveFill(entity, step, matchvar))
+  Content(liveFill(entity, step, matchvar, flow))
 
   Content(`
   $V{${listvar}_result} = $V{${entvar}}->list($V{${matchvar}}, undef);
@@ -564,7 +580,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
     Content(`  $V{${matchvar}} = {
     'id' => $V{${srcdatavar}}{id},
   };
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
   $V{${datavar}_load_result} = ${N}Helpers::to_map(ref($V{${datavar}_loaded}) && $V{${datavar}_loaded}->can('data_get') ? $V{${datavar}_loaded}->data_get : $V{${datavar}_loaded});
   ok(defined $V{${datavar}_load_result}, '${entity.name} load: data');
   is($V{${datavar}_load_result}{id}, $V{${srcdatavar}}{id}, '${entity.name} load: id');
@@ -572,7 +588,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
   }
   else {
     Content(`  $V{${matchvar}} = {};
-${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
+${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
   ok(defined $V{${datavar}_loaded}, '${entity.name} load: data');
 `)
   }
@@ -616,8 +632,8 @@ function perlLit(value: any): string {
 
 
 // A live step sends each example its route requires and the step leaves unbound.
-function liveFill(entity: any, step: any, matchvar: string): string {
-  const fills = liveStepExamples(entity, step)
+function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
+  const fills = liveStepExamples(entity, step, flow)
   return 0 === fills.length ? '' : `  if ($setup->{live}) {
 ${fills.map(([k, ex]) => `    $V{${matchvar}}{'${k}'} = ${perlLit(ex)};\n`).join('')}  }
 `
