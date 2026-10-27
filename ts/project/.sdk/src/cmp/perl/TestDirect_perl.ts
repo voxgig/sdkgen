@@ -24,6 +24,7 @@ import {
   liveQueryExamples,
   liveEntity,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveDirectDiscovery,
 } from '@voxgig/sdkgen'
 
 import { perlStringLiteral } from './utility_perl'
@@ -285,8 +286,10 @@ ${listLiveQueryLines ? '  if ($setup->{live}) {\n' + listLiveQueryLines + '  }\n
     }
     else if (hasLoad && loadPoint) {
       const label = 'direct-load-' + entity.name
-      const discover = !loadAllHaveExamples && hasList && 0 < loadParams.length
-      const idParam = loadParams.find((p: any) => 'id' === p.n)?.n ?? loadParams[0]?.n ?? 'id'
+      const discovery = liveDirectDiscovery(entity, loadParams, listPoint)
+      const discover = null != discovery
+      const idParam = discovery?.param
+      const idField = discovery?.field
       const loadLiveIdKeys: string[] = loadAllHaveExamples ? [] :
         discover ? listParams.map(liveKey).concat(loadParams.filter((p: any) => idParam !== p.n).map(liveKey)) :
           loadParams.map(liveKey)
@@ -328,7 +331,7 @@ ${loadLiveQueryLines ? loadLiveQueryLines + '\n' : ''}`)
       last DIRECT_LOAD;
     }
     my $first = ref $records->[0] eq 'HASH' ? $records->[0] : {};
-    my $found = $first->{'${idParam}'} // $first->{'id'};
+    my $found = $first->{'${idField}'};
     if (!defined $found) {
       ${N}TestRunner::live_miss(LIVE_STRICT, '${label}', 'Live load blocked: discovery returned no usable identity');
       last DIRECT_LOAD;

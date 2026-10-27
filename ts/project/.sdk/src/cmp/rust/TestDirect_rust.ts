@@ -24,6 +24,7 @@ import {
   liveQueryExamples,
   liveEntity,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveDirectDiscovery,
 } from '@voxgig/sdkgen'
 
 
@@ -392,8 +393,10 @@ fn ${evar}_direct_load() {}
     else if (hasLoad && loadPoint) {
       const examples = 0 < loadParams.length &&
         loadParams.every((p: any) => undefined !== p.ex && null !== p.ex)
-      const discover = !examples && hasList && 0 < loadParams.length
-      const idParam = loadParams.find((p: any) => 'id' === p.n)?.n ?? loadParams[0]?.n ?? 'id'
+      const discovery = liveDirectDiscovery(entity, loadParams, listPoint)
+      const discover = null != discovery
+      const idParam = discovery?.param
+      const idField = discovery?.field
       const loadLiveIdKeys: string[] = examples ? [] :
         discover ? listParams.map(liveKey).concat(loadParams.filter((p: any) => idParam !== p.n).map(liveKey)) :
           loadParams.map(liveKey)
@@ -454,10 +457,7 @@ ${liveQueryBlock(loadPoint)}    if setup.live {
             live_empty("The account has no ${entity.name} record to load");
             return;
         }
-        let mut found = getp(&first, "${idParam}");
-        if found.is_noval() {
-            found = getp(&first, "id");
-        }
+        let found = getp(&first, "${idField}");
         if found.is_noval() {
             live_miss(LIVE_STRICT, "Live load blocked: discovery returned no usable identity");
             return;

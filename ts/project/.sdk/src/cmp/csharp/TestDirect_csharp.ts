@@ -24,6 +24,7 @@ import {
   liveQueryExamples,
   liveEntity,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
+  liveDirectDiscovery,
 } from '@voxgig/sdkgen'
 
 import { formatCsValue } from './utility_csharp'
@@ -336,14 +337,14 @@ ${listLiveQueryLines ? '        if (setup.Live)\n        {\n' + listLiveQueryLin
 `)
     }
     else if (hasLoad && loadPoint) {
-      // Identify ancestor params (not 'id') for live mode
-      const ancestorParams = loadParams.filter((p: any) => p.n !== 'id')
+      const discovery = liveDirectDiscovery(entity, loadParams, listPoint)
+      const ancestorParams = loadParams.filter((p: any) => p.n !== discovery?.param)
 
       const liveKey = (p: any) => p.n === 'id' ? entity.name + '01' : p.n.replace(/_id$/, '') + '01'
       let loadLiveIdKeys: string[] = []
       if (loadParams.length > 0 && !loadAllHaveExamples) {
-        loadLiveIdKeys = [...new Set((hasList ?
-          [...listParams, ...loadParams.filter((p: any) => p.n !== 'id')] : loadParams).map(liveKey))]
+        loadLiveIdKeys = [...new Set((discovery ?
+          [...listParams, ...ancestorParams] : loadParams).map(liveKey))]
       }
       const loadSkipBlock = getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, loadLiveIdKeys) +
         (loadLiveIdKeys.length > 0
@@ -393,8 +394,7 @@ ${loadSkipBlock}        var client = setup.Client;
 
         if (loadAllHaveExamples) {
           Content(loadExampleLines + '\n')
-        } else if (hasList && loadParams.length > 0) {
-          // List-bootstrap: first call list, take id from response.
+        } else if (discovery) {
           Content(`            var listParams = new Dictionary<string, object?>();
 `)
           for (const p of listParams) {
@@ -428,16 +428,15 @@ ${loadSkipBlock}        var client = setup.Client;
                 return;
             }
             var firstEnt = Helpers.ToMapAny(listData[0]);
-            if (firstEnt == null || !firstEnt.TryGetValue("id", out var firstId) || firstId == null)
+            if (firstEnt == null || !firstEnt.TryGetValue("${discovery.field}", out var firstId) || firstId == null)
             {
                 TestRunner.LiveMiss(LIVE_STRICT, "Live load blocked: discovery returned no usable identity");
                 return;
             }
-            pathParams["id"] = firstId;
+            pathParams["${discovery.param}"] = firstId;
 `)
           for (const p of ancestorParams) {
-            const key = p.n.replace(/_id$/, '') + '01'
-            Content(`            pathParams["${p.n}"] = setup.Idmap["${key}"];
+            Content(`            pathParams["${p.n}"] = setup.Idmap["${liveKey(p)}"];
 `)
           }
         } else if (loadParams.length > 0) {

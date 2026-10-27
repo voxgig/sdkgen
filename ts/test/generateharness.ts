@@ -820,6 +820,85 @@ function keylessLoad(): string {
 }
 
 
+// Direct loads found by listing (bank, vault) and not (price, setting).
+const DISCOVERY_ENTITIES = `
+main: kit: entity: price: {
+  alias: field: {}
+  name: "price"
+  fields: { "price": { h: 'Price', n: "price", r: false, t: "\`$NUMBER\`" } }
+  op: {
+    list: { name: "list", points: [ { g: {}, m: "GET", o: "/fixings", s: [{ lit: "fixings" }],
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { query: [ { k: "query", n: "gpu", or: "gpu", r: true, t: "\`$STRING\`", ex: "h100" } ] }
+      m: "GET", o: "/availability", s: [{ lit: "availability" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: entity: bank: {
+  alias: field: {}
+  name: "bank"
+  fields: {
+    "name": { h: 'Name', n: "name", r: false, t: "\`$STRING\`" }
+    "slug": { h: 'Slug', n: "slug", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: { name: "list", points: [ { g: {}, m: "GET", o: "/banks", s: [{ lit: "banks" }],
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "slug", or: "slug", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/banks/{slug}", s: [{ lit: "banks" }, { var: "slug" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: entity: vault: {
+  alias: field: {}
+  name: "vault"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    list: { name: "list", points: [ { g: {}, m: "GET", o: "/vaults", s: [{ lit: "vaults" }],
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/vaults/{id}", s: [{ lit: "vaults" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: entity: setting: {
+  alias: field: {}
+  name: "setting"
+  fields: { "mode": { h: 'Mode', n: "mode", r: false, t: "\`$STRING\`" } }
+  op: {
+    list: { name: "list", points: [ {
+      g: { params: [ { k: "param", n: "org_id", or: "org_id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/orgs/{org_id}/settings", s: [{ lit: "orgs" }, { var: "org_id" }, { lit: "settings" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "org_id", or: "org_id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/orgs/{org_id}/setting", s: [{ lit: "orgs" }, { var: "org_id" }, { lit: "setting" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: flow: BasicPriceFlow: { entity: "price", kind: "basic", name: "BasicPriceFlow", step: [ { o: "list" } ] }
+main: kit: flow: BasicBankFlow: { entity: "bank", kind: "basic", name: "BasicBankFlow", step: [ { o: "list" } ] }
+main: kit: flow: BasicVaultFlow: { entity: "vault", kind: "basic", name: "BasicVaultFlow", step: [ { o: "list" } ] }
+main: kit: flow: BasicSettingFlow: {
+  entity: "setting", kind: "basic", name: "BasicSettingFlow"
+  step: [ { o: "list", m: { org_id: "org01" } } ]
+}
+`
+
+
+function directDiscovery(): string {
+  return entityOnly(DISCOVERY_ENTITIES)
+}
+
+
 // A list whose route requires the query parameters engine and q.
 const SEARCH_ENTITY = `
 main: kit: entity: search: {
@@ -1903,6 +1982,8 @@ export {
   MULTIROUTE_ENTITIES,
   keylessLoad,
   KEYLESS_ENTITIES,
+  directDiscovery,
+  DISCOVERY_ENTITIES,
   listOnly,
   selectorList,
   selectorLoad,

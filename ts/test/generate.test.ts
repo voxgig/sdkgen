@@ -22,6 +22,7 @@ import {
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
+  directDiscovery,
 } from './generateharness'
 
 
@@ -3207,6 +3208,46 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       has(files, /release_?entity/i, /["']slug["'][^\n]*["']php["']/, 'does not list with the example slug', target)
       has(files, /offer_?entity/i, /["']asset["'][^\n]*["']BTC["']/, 'does not list with the example asset', target)
       has(files, /guess_?entity/i, /["']name["'][^\n]*["']michael["']/, 'does not load with the example name', target)
+    }
+    deepStrictEqual(gaps, [])
+  })
+
+
+  // A live direct load lists only to find a path parameter its list route
+  // does not take, and reads that one field of the listed record.
+  test('every live direct load lists only to find what its route needs', async () => {
+    const out = await generate(LIVE_SUITE_TARGETS, undefined, directDiscovery())
+    const LISTED = 'discovery returned no usable identity'
+    const read = (text: string) =>
+      text.slice(text.lastIndexOf('record to load', text.indexOf(LISTED)), text.indexOf(LISTED))
+    const filled = (text: string) => text.slice(text.indexOf(LISTED)).split('\n').slice(0, 8).join('\n')
+    const gaps: string[] = []
+    for (const target of LIVE_SUITE_TARGETS) {
+      const files = testFiles(out, target)
+      const direct = (name: string) =>
+        files.find(([n]) => new RegExp(name + '_?direct', 'i').test(n))?.[1] ?? ''
+      const [price, bank, vault, setting] = ['price', 'bank', 'vault', 'setting'].map(direct)
+      if ('' === price || '' === bank || '' === vault || '' === setting) {
+        gaps.push(`${target}: a direct test is missing`)
+        continue
+      }
+      if (price.includes(LISTED) || price.includes('list discovery')) {
+        gaps.push(`${target}: price lists to load a route with no path parameter`)
+      }
+      if (!/gpu[^\n]*h100/.test(price)) gaps.push(`${target}: price does not send the gpu example`)
+      if (!bank.includes(LISTED)) gaps.push(`${target}: bank does not find slug by listing`)
+      else {
+        if (!/["'.]slug\b/.test(read(bank)) || /["'.]id\b/.test(read(bank))) {
+          gaps.push(`${target}: bank does not read slug, and only slug, from the listed record`)
+        }
+        if (!/slug/.test(filled(bank))) gaps.push(`${target}: bank does not fill slug from the record`)
+      }
+      if (bank.includes('slug01')) gaps.push(`${target}: bank asks *_ENTID for the slug a list finds`)
+      if (!vault.includes(LISTED)) gaps.push(`${target}: vault does not find id by listing`)
+      else if (1 !== (read(vault).match(/["'.]id\b/g) || []).length) {
+        gaps.push(`${target}: vault does not read the listed record's id once`)
+      }
+      if (setting.includes(LISTED)) gaps.push(`${target}: setting lists to find the org_id its list takes`)
     }
     deepStrictEqual(gaps, [])
   })

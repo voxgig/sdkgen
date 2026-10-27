@@ -9,6 +9,7 @@ import { memfs } from 'memfs'
 import { SdkGen } from '../dist/sdkgen'
 import {
   makeModel, makeRoot, layeredFs, makeLog, STAGE, SCAFFOLD, CREATELESS_ENTITY, MULTIROUTE_ENTITIES,
+  DISCOVERY_ENTITIES,
 } from './generateharness'
 
 const PKG = Path.resolve(__dirname, '..')
@@ -108,7 +109,7 @@ const EXTRA_ENTITIES = CREATELESS_ENTITY +
   actionEntity('v2018', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current', city: 'bern' }]) +
   actionEntity('v2019', [{ action: 'history', path: 'history' }, { action: 'current', path: 'current' }]) +
   actionEntity('v2020', [{ path: 'weather' }, { action: 'reset', path: 'reset', method: 'POST', bare: true }]) +
-  ACTION_CREATE + CREATED_ONLY + MULTIROUTE_ENTITIES
+  ACTION_CREATE + CREATED_ONLY + MULTIROUTE_ENTITIES + DISCOVERY_ENTITIES
 
 function skipped(output: string): number {
   const found = output.match(/(?:^# skipped|\u2139 skipped) (\d+)/m)
@@ -176,6 +177,10 @@ describe('generated live tests continue after failures', () => {
       if (url.pathname === '/board/acme/job') return send([{ id: 'j1', company: { slug: 'acme' } }])
       if (url.pathname === '/board/acme/job/j1') return send({ id: 'j1', company: 'acme' })
       if (url.pathname === '/metric') return send([{ id: 'metric01', count: 3 }])
+      if (url.pathname === '/fixings') return send([{ price: 2 }])
+      if (url.pathname === '/availability') return send({ price: 1 })
+      if (url.pathname === '/banks') return send([{ slug: 'acme', name: 'Acme' }])
+      if (url.pathname === '/banks/acme') return send({ slug: 'acme', name: 'Acme' })
       if (url.pathname.startsWith('/metric/')) return send({ id: url.pathname.split('/').pop(), count: 3 })
       if (key === 'GET /v2018/current' && url.searchParams.get('city') === 'bern') {
         return send({ temperature: 12 })
@@ -390,6 +395,22 @@ describe('generated live tests continue after failures', () => {
       assert.notEqual(result.code, 0, result.output)
       for (const request of ['POST /planet', 'GET /planet', 'GET /ambient', 'GET /history']) assert(calls.includes(request), result.output)
     })
+  }
+
+  for (const target of ['ts', 'js']) {
+    test(target + ': a direct load whose route has no path parameter is not found by listing', async () => {
+      const result = await runTests(target, '', ['price/PriceDirect'])
+      assert.equal(result.code, 0, result.output)
+      assert.deepEqual([...calls].sort(), ['GET /availability', 'GET /fixings'], result.output)
+      assert(queries.includes('GET /availability?gpu=h100'), queries.join('\n') + '\n' + result.output)
+    })
+
+    test(target + ': a direct load fills the path parameter its list does not take from the listed record',
+      async () => {
+        const result = await runTests(target, '', ['bank/BankDirect'])
+        assert.equal(result.code, 0, result.output)
+        assert.deepEqual([...calls].sort(), ['GET /banks', 'GET /banks', 'GET /banks/acme'], result.output)
+      })
   }
 
   test('ts: direct list discovery succeeds against a real server', async () => {

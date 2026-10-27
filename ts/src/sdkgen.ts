@@ -93,6 +93,8 @@ import { pointSegments, pointParts, pointPlaceholders, pointTerminalParam, point
   from './helpers/pointPath'
 import { pointIsGraphql, ownPointFirst, primaryPoint, graphqlDirectSkip } from './helpers/graphqlPoint'
 import type { PathSegment } from './helpers/pointPath'
+import { liveDirectDiscovery } from './helpers/liveDiscovery'
+import type { LiveDiscovery } from './helpers/liveDiscovery'
 import {
   featureOf,
   availableFeatures,
@@ -1006,6 +1008,7 @@ export type {
   FlowRouteArg,
   FlowLoadRoute,
   PathSegment,
+  LiveDiscovery,
   FeatureSource,
   DoctorReport,
   RegisterOptions,
@@ -1138,6 +1141,7 @@ export {
   ownPointFirst,
   primaryPoint,
   graphqlDirectSkip,
+  liveDirectDiscovery,
   canonToType,
   canonToSpec,
   entityDataSpec,

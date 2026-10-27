@@ -19,7 +19,7 @@ import {
   isAuthActive,
   serverVarEnv,
   serverVariables,
-  jsProp, envName, envToken,
+  jsProp, jsOptProp, envName, envToken,
   jsKey,
   pointParts,
   pointIsGraphql,
@@ -33,6 +33,7 @@ import {
   liveEntity,
   liveGetOnlyReason, LIVE_GETONLY_ENV,
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
+  liveDirectDiscovery,
 } from '@voxgig/sdkgen'
 
 
@@ -196,22 +197,20 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
     primaryPoint(listOp.points, entity.name, 'list')
   const listParams = listPoint?.g?.params || []
   const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param) : ''
-  const hasList = null != listPoint
-
-  // Ancestor params (not 'id') for live mode
-  const ancestorParams = loadParams.filter((p: any) => p.n !== 'id')
+  const discovery = liveDirectDiscovery(entity, loadParams, listPoint)
 
   const paramAsserts = loadParams.map((p: any, i: number) =>
     '      assert(calls[0].url.includes(\'direct0' + (i + 1) + '\'))\n').join('')
 
   const liveListParams = listParams.map((p: any) => ({ name: p.n, key: liveIdKey(entity, p) }))
-  const liveAncestorParams = ancestorParams.map((p: any) => ({ name: p.n, key: liveIdKey(entity, p) }))
   const mockParamLines = loadParams.map((p: any, i: number) =>
     `      ${jsProp('params', p.n)} = 'direct0${i + 1}'`).join('\n')
 
   let liveIdKeys: string[] = []
   let liveParamsBlock = ''
-  if (hasList) {
+  if (null != discovery) {
+    const liveAncestorParams = loadParams.filter((p: any) => p.n !== discovery.param)
+      .map((p: any) => ({ name: p.n, key: liveIdKey(entity, p) }))
     liveIdKeys = [...new Set([...liveListParams, ...liveAncestorParams].map((lp: any) => lp.key))]
     const listParamLines = liveListParams.map((lp: any) =>
       `        ${lp.name}: setup.idmap['${lp.key}'],`).join('\n')
@@ -235,10 +234,11 @@ ${listParamLines}
       if (0 === listResult.data.length) {
         return void liveEmpty(t, 'The account has no ${entity.name} record to load')
       }
-      if (null == listResult.data[0]?.id) {
+      const candidateId = ${jsOptProp('listResult.data[0]', discovery.field)}
+      if (null == candidateId) {
         return void liveMiss(t, LIVE_STRICT, 'Live load blocked: discovery returned no usable identity')
       }
-      params.id = listResult.data[0].id
+      ${jsProp('params', discovery.param)} = candidateId
 ${ancestorParamLines}
     } else {
 ${mockParamLines}
