@@ -30,6 +30,7 @@ def _session():
         with _SESSION_LOCK:
             if _SESSION is None:
                 session = requests.Session()
+                session.max_redirects = 5
                 session.cookies.set_policy(DefaultCookiePolicy(allowed_domains=[]))
                 _SESSION = session
     return _SESSION

@@ -89,7 +89,7 @@ import {
   liveDirectGetOnly, liveExcludedLines, liveExcludedSummary,
 } from './helpers/testPolicy'
 import type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute } from './helpers/testPolicy'
-import { pointSegments, pointParts, pointPlaceholders, pointTerminalParam, pointPathKey }
+import { pointSegments, pointParts, pointSlash, pointPlaceholders, pointTerminalParam, pointPathKey }
   from './helpers/pointPath'
 import { pointIsGraphql, ownPointFirst, primaryPoint, graphqlDirectSkip } from './helpers/graphqlPoint'
 import type { PathSegment } from './helpers/pointPath'
@@ -1131,6 +1131,7 @@ export {
 
   pointSegments,
   pointParts,
+  pointSlash,
   pointPlaceholders,
   pointTerminalParam,
   pointPathKey,

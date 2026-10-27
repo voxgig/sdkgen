@@ -234,9 +234,24 @@ goes through that function and the SDK opens no connection of its own. The
 `fetchdef` carries `method`, `headers` and `body`, plus the `proxy` and
 `redirect` annotations a transport feature adds, which a supplied client
 is expected to honour the same way the default one does. In `ts` and `js`
-it also carries the caller's `signal`, described next. The `c` client
-follows no redirect at all, and answers with the redirect response itself
-(`ts/project/.sdk/tm/c/tests/transport_test.c`).
+it also carries the caller's `signal`, described next.
+
+### Redirects are followed
+
+A default transport follows a `301`, `302`, `303`, `307` or `308` answer to
+a `GET` or `HEAD`, resolving a relative `Location` against the URL that
+answered. A route its server answers with a redirect, such as one asked for
+without the trailing slash the server expects, still reaches its record.
+Where the HTTP client follows no redirect, or not that way, the SDK follows
+it in its own loop: `php`, `rb`, `lua`, `perl`, `c` and `swift`. There each
+hop passes the GET-only guard first, a hop to another origin goes without
+the `authorization`, `cookie` and `proxy-authorization` headers, and after
+five hops the last redirect response is the answer. The other targets leave
+it to their client, which keeps its own hop limit.
+
+A fetch definition whose `redirect` is `manual`, which a transport feature
+sets under a hosts policy, is answered by the redirect response itself in
+every target.
 
 ### Cancelling a request
 

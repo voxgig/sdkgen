@@ -296,6 +296,67 @@ defmodule ProjectName.PipelineTest do
     assert err.code == "request_no_spec"
   end
 
+  # A Django route answers its slashless form with a relative Location. The
+  # transport follows each hop, and answers a "manual" fetch with the 3xx.
+  test "fetcher follows a relative redirect" do
+    {:ok, listen} =
+      :gen_tcp.listen(0, [:binary, active: false, reuseaddr: true, ip: {127, 0, 0, 1}])
+
+    {:ok, port} = :inet.port(listen)
+    parent = self()
+    moved = %{"/redirect/r1" => {301, "/redirect/r1/"}, "/redirect/r1/" => {308, "done"}}
+
+    read_head = fn read_head, sock, acc ->
+      if String.contains?(acc, "\r\n\r\n") do
+        acc
+      else
+        case :gen_tcp.recv(sock, 0, 5000) do
+          {:ok, data} -> read_head.(read_head, sock, acc <> data)
+          _ -> acc
+        end
+      end
+    end
+
+    serve = fn serve, n ->
+      with true <- n > 0, {:ok, sock} <- :gen_tcp.accept(listen) do
+        path = Enum.at(String.split(read_head.(read_head, sock, ""), " "), 1, "")
+        send(parent, {:seen, path})
+        body = if path == "/redirect/r1/done", do: ~s({"id":"r1"}), else: ""
+
+        {status, location} =
+          case Map.get(moved, path) do
+            {code, to} -> {code, "Location: #{to}\r\n"}
+            nil -> {if(body == "", do: 404, else: 200), ""}
+          end
+
+        :gen_tcp.send(sock, "HTTP/1.1 #{status} X\r\n#{location}Content-Type: application/json\r\n" <>
+          "Content-Length: #{byte_size(body)}\r\nConnection: close\r\n\r\n#{body}")
+        :gen_tcp.close(sock)
+        serve.(serve, n - 1)
+      end
+    end
+
+    spawn(fn -> serve.(serve, 4) end)
+    base = "http://127.0.0.1:#{port}"
+    ctx = make_ctx(ProjectName.new(S.jm(["base", base])), "load")
+    fetchdef = fn extra -> S.jm(["method", "GET", "headers", S.jm([])] ++ extra) end
+
+    try do
+      {res, err} = Utility.fetcher(ctx, base <> "/redirect/r1", fetchdef.([]))
+      assert err == nil
+      assert S.getprop(res, "status") == 200
+      assert S.getprop(res, "body") == ~s({"id":"r1"})
+      seen = for _ <- 1..3, do: (receive do {:seen, p} -> p after 5000 -> nil end)
+      assert seen == ["/redirect/r1", "/redirect/r1/", "/redirect/r1/done"]
+
+      {manual, merr} = Utility.fetcher(ctx, base <> "/redirect/r1", fetchdef.(["redirect", "manual"]))
+      assert merr == nil
+      assert S.getprop(manual, "status") == 301
+    after
+      :gen_tcp.close(listen)
+    end
+  end
+
   # Nothing listens on port 9: a request the guard let through fails there.
   test "fetcher refuses a non-GET under the GET-only guard" do
     c = ProjectName.new(S.jm(["base", "http://127.0.0.1:9"]))

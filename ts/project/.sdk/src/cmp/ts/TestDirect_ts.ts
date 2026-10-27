@@ -24,6 +24,7 @@ import {
   jsOptProp, envName, envToken, liveStrict, liveStrictNote,
   jsKey,
   pointParts,
+  pointSlash,
   pointPlaceholders,
   pointIsGraphql,
   hasLiveScenarios,
@@ -300,7 +301,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   }
 
   const allLoadParams = loadPoint.g?.params || []
-  const loadPath = normalizePathParams(pointParts(loadPoint), allLoadParams, loadPoint.r?.param)
+  const loadPath = normalizePathParams(pointParts(loadPoint), allLoadParams, loadPoint.r?.param) + pointSlash(loadPoint)
 
   // Some upstream OpenAPI specs declare a parameter as `in: path` even when
   // that path has no `{name}` placeholder for it. Only path params that
@@ -331,7 +332,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   const listPoint = null == listOp?.points ? undefined :
     primaryPoint(listOp.points, entity.name, 'list')
   const listParams = listPoint?.g?.params || []
-  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param) : ''
+  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param) + pointSlash(listPoint) : ''
   const hasList = null != listPoint
 
   const ancestorParams = loadParams.filter((p: any) => p.n !== 'id')
@@ -488,7 +489,7 @@ function generateDirectList(model: Model, entity: ModelEntity) {
   }
 
   const listParams = listPoint.g?.params || []
-  const listPath = normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param)
+  const listPath = normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param) + pointSlash(listPoint)
 
   const liveQueryLines = liveQueryLinesTs(listPoint)
 

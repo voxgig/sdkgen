@@ -122,6 +122,20 @@ static void answer(int c) {
     return;
   }
 
+  // A Django route answers its slashless form with a relative Location.
+  if (0 == strcmp(target, "/redirect/r1")) {
+    say(c, "HTTP/1.1 301 Moved Permanently\r\nLocation: /redirect/r1/\r\nContent-Length: 0\r\n\r\n");
+    return;
+  }
+  if (0 == strcmp(target, "/redirect/r1/")) {
+    say(c, "HTTP/1.1 308 Permanent Redirect\r\nLocation: done\r\nContent-Length: 0\r\n\r\n");
+    return;
+  }
+  if (0 == strcmp(target, "/redirect/r1/done")) {
+    reply(c, "200 OK", "application/json", "{\"id\":\"r1\"}");
+    return;
+  }
+
   // The last segment names the case, whatever prefix the API's config adds.
   char path[256];
   size_t plen = strcspn(target, "?");
@@ -389,6 +403,25 @@ int main(void) {
     "path", v_str("/length")), &err);
   CHECK(NULL == err && v_eq(getp(direct, "ok"), v_bool(true)), "a direct request goes live");
   CHECK_STR_EQ(get_str(getp(direct, "data"), "framing"), "length", "and reads the response");
+
+  // The fetcher follows each hop, relative Location and all, and answers a
+  // "manual" fetch with the 3xx.
+  Utility* util = sdk_get_utility(sdk);
+  CtxSpec cs;
+  memset(&cs, 0, sizeof(cs));
+  cs.opname = "load";
+  cs.client = sdk;
+  cs.utility = util;
+  Context* ctx = make_context_util(cs, NULL);
+  snprintf(url, sizeof(url), "%s/redirect/r1", base);
+  err = NULL;
+  res = utility_fetch(util, ctx, url, cmap(2, "method", v_str("GET"), "headers", v_map()), &err);
+  CHECK(NULL == err && 200 == to_int(getp(res, "status")), "a redirect is followed, hop by hop");
+  CHECK_STR_EQ(get_str(json_of(res), "id"), "r1", "to the route its Location names");
+  err = NULL;
+  res = utility_fetch(util, ctx, url, cmap(3, "method", v_str("GET"), "headers", v_map(),
+    "redirect", v_str("manual")), &err);
+  CHECK(NULL == err && 301 == to_int(getp(res, "status")), "a manual fetch is answered by the 301");
 
   kill(server, SIGKILL);
   waitpid(server, NULL, 0);

@@ -430,6 +430,60 @@ runsection('makeError', sub {
   like("$err", qr/blocked/, 'fetcher blocked: error contains "blocked"');
 }
 
+# A Django route answers its slashless form with a relative Location. The
+# transport follows each hop, and answers a "manual" fetch with the 3xx.
+SKIP: {
+  require IO::Socket::INET;
+  require POSIX;
+  my $server = IO::Socket::INET->new(LocalAddr => '127.0.0.1', LocalPort => 0, Listen => 5, ReuseAddr => 1);
+  pipe(my $seen_r, my $seen_w) or skip('no pipe', 6);
+  my $pid = fork();
+  skip('no fork', 6) unless defined $pid;
+  if (0 == $pid) {
+    close $seen_r;
+    $seen_w->autoflush(1);
+    my %moved = ('/redirect/r1' => [301, '/redirect/r1/'], '/redirect/r1/' => [308, 'done']);
+    for (1 .. 4) {
+      my $sock = $server->accept or last;
+      my (undef, $path) = split / /, (<$sock> // '');
+      while (defined(my $line = <$sock>)) { last if $line =~ /\A\r?\n\z/ }
+      print {$seen_w} "$path\n";
+      my $hop = $moved{$path // ''};
+      my $body = ($path // '') eq '/redirect/r1/done' ? '{"id":"r1"}' : '';
+      print {$sock} 'HTTP/1.1 ' . ($hop ? $hop->[0] : '' eq $body ? 404 : 200) . " X\r\n"
+        . ($hop ? "Location: $hop->[1]\r\n" : '') . "Content-Type: application/json\r\n"
+        . 'Content-Length: ' . length($body) . "\r\nConnection: close\r\n\r\n" . $body;
+      close $sock;
+    }
+    POSIX::_exit(0);
+  }
+  close $seen_w;
+  my $base = 'http://127.0.0.1:' . $server->sockport;
+  close $server;
+
+  my $live_client = ProjectNameSDK->new({ 'base' => $base });
+  my $live_utility = $live_client->get_utility;
+  my $ctx = $live_utility->{make_context}->({
+    'opname' => 'load',
+    'client' => $live_client,
+    'utility' => $live_utility,
+  }, undef);
+
+  my ($res, $err) = $live_utility->{fetcher}->($ctx, "$base/redirect/r1", { 'method' => 'GET', 'headers' => {} });
+  ok(!defined $err, 'fetcher redirect: no error');
+  is($res && $res->{status}, 200, 'fetcher redirect: the last hop answers');
+  is_deeply($res && $res->{json}->(), { 'id' => 'r1' }, 'fetcher redirect: its body is read');
+
+  my ($manual, $merr) = $live_utility->{fetcher}->($ctx, "$base/redirect/r1",
+    { 'method' => 'GET', 'headers' => {}, 'redirect' => 'manual' });
+  ok(!defined $merr, 'fetcher redirect manual: no error');
+  is($manual && $manual->{status}, 301, 'fetcher redirect manual: answered by the 301');
+
+  my $seen = do { local $/; <$seen_r> };
+  waitpid($pid, 0);
+  is($seen, "/redirect/r1\n/redirect/r1/\n/redirect/r1/done\n/redirect/r1\n", 'fetcher redirect: each hop is sent');
+}
+
 # Nothing listens on port 9: a request the guard let through fails there.
 {
   my $live_client = ProjectNameSDK->new({ 'base' => 'http://127.0.0.1:9' });

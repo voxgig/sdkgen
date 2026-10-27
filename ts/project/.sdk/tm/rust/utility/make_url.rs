@@ -49,6 +49,7 @@ pub fn make_url_util(ctx: &Rc<Context>) -> Result<String, ProjectNameError> {
     };
 
     let suffixless = suffix.is_empty();
+    let path_slash = path.ends_with('/');
     let mut url = vs::join(
         &Value::list(vec![
             Value::str(base.clone()),
@@ -60,12 +61,12 @@ pub fn make_url_util(ctx: &Rc<Context>) -> Result<String, ProjectNameError> {
         true,
     );
 
-    // A route the definition ends with a slash keeps it, for a Django REST server,
-    // and a host with no path takes /, or luasocket reads a query as the host.
-    if let Value::Str(orig) = getp(&ctx.point.borrow().clone(), "orig") {
-        if orig.ends_with('/') && suffixless && !url.ends_with('/') {
-            url.push('/');
-        }
+    // A route ending in a slash keeps it, as defined or as passed to direct(), for
+    // Django, and a host with no path takes /, or luasocket reads a query as the host.
+    let orig_slash = matches!(getp(&ctx.point.borrow().clone(), "orig"),
+        Value::Str(orig) if orig.ends_with('/'));
+    if (orig_slash || path_slash) && suffixless && !url.ends_with('/') {
+        url.push('/');
     }
     if let Some(authority) = url.find("://") {
         if 0 < authority && !url[authority + 3..].contains(|c| matches!(c, '/' | '?' | '#')) {

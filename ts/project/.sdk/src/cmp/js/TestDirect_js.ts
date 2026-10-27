@@ -22,6 +22,7 @@ import {
   jsProp, envName, envToken,
   jsKey,
   pointParts,
+  pointSlash,
   pointIsGraphql,
   hasLiveScenarios,
   liveStrict,
@@ -187,7 +188,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   }
 
   const loadParams = loadPoint.g?.params || []
-  const loadPath = normalizePathParams(pointParts(loadPoint), loadParams, loadPoint.r?.param)
+  const loadPath = normalizePathParams(pointParts(loadPoint), loadParams, loadPoint.r?.param) + pointSlash(loadPoint)
   const liveQueryLines = liveQueryLinesJs(loadPoint)
 
   // Get list info for live mode bootstrapping
@@ -195,7 +196,7 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
   const listPoint = null == listOp?.points ? undefined :
     primaryPoint(listOp.points, entity.name, 'list')
   const listParams = listPoint?.g?.params || []
-  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param) : ''
+  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param) + pointSlash(listPoint) : ''
   const hasList = null != listPoint
 
   // Ancestor params (not 'id') for live mode
@@ -301,7 +302,7 @@ function generateDirectList(model: Model, entity: ModelEntity) {
   }
 
   const listParams = listPoint.g?.params || []
-  const listPath = normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param)
+  const listPath = normalizePathParams(pointParts(listPoint), listParams, listPoint.r?.param) + pointSlash(listPoint)
 
   const liveParams = listParams.map((p: any) => ({ name: p.n, key: liveIdKey(entity, p) }))
   const liveQueryLines = liveQueryLinesJs(listPoint)

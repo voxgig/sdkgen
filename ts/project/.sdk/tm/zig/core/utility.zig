@@ -1189,12 +1189,12 @@ pub fn make_url_util(ctx: *Context) E![]const u8 {
         h.vstr(spec.suffix),
     }), "/", true) catch "";
 
-    // A route the definition ends with a slash keeps it, for a Django REST server,
-    // and a host with no path takes /, or luasocket reads a query as the host.
+    // A route ending in a slash keeps it, as defined or as passed to direct(), for
+    // Django, and a host with no path takes /, or luasocket reads a query as the host.
     const orig = h.getp(ctx.point, "orig");
-    if (orig == .string and std.mem.endsWith(u8, orig.string, "/") and spec.suffix.len == 0 and
-        !std.mem.endsWith(u8, url, "/"))
-    {
+    const slashed = (orig == .string and std.mem.endsWith(u8, orig.string, "/")) or
+        std.mem.endsWith(u8, spec.path, "/");
+    if (slashed and spec.suffix.len == 0 and !std.mem.endsWith(u8, url, "/")) {
         url = std.mem.concat(h.A(), u8, &.{ url, "/" }) catch url;
     }
     if (std.mem.indexOf(u8, url, "://")) |authority| {

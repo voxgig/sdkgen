@@ -15,6 +15,7 @@ import {
   serverVarEnv,
   serverVariables,
   pointParts,
+  pointSlash,
   pointPlaceholders,
   liveStrict,
   liveStrictNote,
@@ -147,7 +148,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
   const listOp = entity.op?.list
 
   const loadPoint = loadOp?.points?.[0]
-  const loadPath = loadPoint ? normalizePathParams(pointParts(loadPoint), loadPoint?.g?.params || [], loadPoint?.r?.param) : ''
+  const loadPath = loadPoint ? normalizePathParams(pointParts(loadPoint), loadPoint?.g?.params || [], loadPoint?.r?.param) + pointSlash(loadPoint) : ''
   const allLoadParams = loadPoint?.g?.params || []
   // Only path params that actually appear in the URL template drive direct-
   // test path-param setup and URL-substitution asserts (see TestDirect_rb).
@@ -164,7 +165,7 @@ const TestDirect = cmp(function TestDirect(props: any) {
     _renamedPlaceholders.has(p.n) || _renamedPlaceholders.has(p.or))
 
   const listPoint = listOp?.points?.[0]
-  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) : ''
+  const listPath = listPoint ? normalizePathParams(pointParts(listPoint), listPoint?.g?.params || [], listPoint?.r?.param) + pointSlash(listPoint) : ''
   const listParams = listPoint?.g?.params || []
 
   // Required query params with spec-provided examples - needed in live mode.

@@ -664,11 +664,12 @@ inline std::string makeUrl(CtxPtr ctx) {
   Value joinParts = vlist({Value(spec->base), Value(spec->prefix), Value(spec->path), Value(spec->suffix)});
   std::string url = Struct::join(joinParts, "/", true);
 
-  // A route the definition ends with a slash keeps it, for a Django REST server,
-  // and a host with no path takes /, or luasocket reads a query as the host.
+  // A route ending in a slash keeps it, as defined or as passed to direct(), for
+  // Django, and a host with no path takes /, or luasocket reads a query as the host.
   Value orig = ctx->point.is_map() ? getp(ctx->point, "orig") : Value::undef();
-  if (orig.is_string() && !orig.as_string().empty() && '/' == orig.as_string().back() &&
-      spec->suffix.empty() && (url.empty() || '/' != url.back())) {
+  const bool slashed = (orig.is_string() && !orig.as_string().empty() && '/' == orig.as_string().back()) ||
+    (!spec->path.empty() && '/' == spec->path.back());
+  if (slashed && spec->suffix.empty() && (url.empty() || '/' != url.back())) {
     url += "/";
   }
   const size_t authority = url.find("://");

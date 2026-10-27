@@ -29,12 +29,7 @@ local function getonly_refusal(fullurl, method)
     "[GET-ONLY GUARD] blocked " .. method .. " " .. path)
 end
 
-local function default_http_fetch(fullurl, fetchdef)
-  local refused = getonly_refusal(fullurl, fetchdef["method"])
-  if refused then
-    return nil, refused
-  end
-
+local function send_once(fullurl, fetchdef)
   -- Use LuaSocket or similar for real HTTP requests.
   -- This is the default live implementation.
   local http_ok, http = pcall(require, "socket.http")
@@ -76,6 +71,7 @@ local function default_http_fetch(fullurl, fetchdef)
     headers = headers,
     source = body_str and ltn12.source.string(body_str) or nil,
     sink = ltn12.sink.table(response_body),
+    redirect = false,
   })
 
   if not res then
@@ -114,6 +110,58 @@ local function default_http_fetch(fullurl, fetchdef)
     body = body,
     unreadable = unreadable,
   }, nil
+end
+
+
+local REDIRECT_STATUS = { [301] = true, [302] = true, [303] = true, [307] = true, [308] = true }
+local REDIRECT_MAX = 5
+local CREDENTIAL_HEADERS = { authorization = true, cookie = true, ["proxy-authorization"] = true }
+
+local function origin(u)
+  local parsed = require("socket.url").parse(u) or {}
+  local scheme = string.lower(parsed.scheme or "")
+  return scheme .. "://" .. string.lower(parsed.host or "") .. ":" ..
+    tostring(parsed.port or (scheme == "https" and 443 or 80))
+end
+
+-- luasocket follows no 308 and refuses a relative Location from https, so a
+-- GET or HEAD follows a redirect here, unless the fetch definition says
+-- "manual", each hop passing the GET-only guard first; past REDIRECT_MAX hops
+-- the last 3xx is the answer. Another origin is not sent the credentials.
+local function default_http_fetch(fullurl, fetchdef)
+  local method = string.upper(tostring(fetchdef["method"] or "GET"))
+  local follow = (method == "GET" or method == "HEAD") and fetchdef["redirect"] ~= "manual"
+  local url = fullurl
+  local hops = 0
+  while true do
+    local refused = getonly_refusal(url, fetchdef["method"])
+    if refused then
+      return nil, refused
+    end
+    local res, err = send_once(url, fetchdef)
+    local location = res ~= nil and res.headers ~= nil and res.headers["location"] or nil
+    if not follow or type(location) ~= "string" or hops >= REDIRECT_MAX
+        or not REDIRECT_STATUS[res.status] then
+      return res, err
+    end
+    local nexturl = string.gsub(require("socket.url").absolute(url, (string.gsub(location, "%s", ""))), "#.*$", "")
+    if origin(nexturl) ~= origin(url) then
+      local headers = {}
+      for k, v in pairs(fetchdef["headers"] or {}) do
+        if not CREDENTIAL_HEADERS[string.lower(k)] then
+          headers[k] = v
+        end
+      end
+      local copy = {}
+      for k, v in pairs(fetchdef) do
+        copy[k] = v
+      end
+      copy["headers"] = headers
+      fetchdef = copy
+    end
+    url = nexturl
+    hops = hops + 1
+  end
 end
 
 

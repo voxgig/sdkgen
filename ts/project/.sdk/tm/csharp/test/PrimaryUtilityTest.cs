@@ -428,6 +428,75 @@ public class PrimaryUtilityTest
         Assert.Contains("blocked", err.Message);
     }
 
+    // A Django route answers its slashless form with a relative Location. The
+    // transport follows each hop, and answers a "manual" fetch with the 3xx.
+    [Fact]
+    public void FetcherRedirect()
+    {
+        var seen = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        var moved = new Dictionary<string, (int Code, string To)>
+        {
+            ["/redirect/r1"] = (301, "/redirect/r1/"),
+            ["/redirect/r1/"] = (308, "done"),
+        };
+        var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        listener.Start();
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            for (var i = 0; i < 4; i++)
+            {
+                using var conn = listener.AcceptTcpClient();
+                using var stream = conn.GetStream();
+                var reader = new System.IO.StreamReader(stream);
+                var parts = (reader.ReadLine() ?? "").Split(' ');
+                var path = 1 < parts.Length ? parts[1] : "";
+                while (!string.IsNullOrEmpty(reader.ReadLine())) { }
+                seen.Enqueue(path);
+                var body = path == "/redirect/r1/done" ? "{\"id\":\"r1\"}" : "";
+                var moves = moved.TryGetValue(path, out var hop);
+                var head = "HTTP/1.1 " + (moves ? hop.Code : body == "" ? 404 : 200) + " X\r\n" +
+                    (moves ? "Location: " + hop.To + "\r\n" : "") + "Content-Type: application/json\r\n" +
+                    "Content-Length: " + body.Length + "\r\nConnection: close\r\n\r\n";
+                var bytes = System.Text.Encoding.UTF8.GetBytes(head + body);
+                stream.Write(bytes, 0, bytes.Length);
+            }
+        });
+        var bse = "http://127.0.0.1:" + ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+        try
+        {
+            var liveClient = new ProjectNameSDK(new Dictionary<string, object?> { ["base"] = bse });
+            var liveUtility = liveClient.GetUtility();
+            var ctx = liveUtility.MakeContext(new Dictionary<string, object?>
+            {
+                ["opname"] = "load",
+                ["client"] = liveClient,
+                ["utility"] = liveUtility,
+            }, null);
+            Dictionary<string, object?> Def(string? redirect)
+            {
+                var def = new Dictionary<string, object?>
+                {
+                    ["method"] = "GET",
+                    ["headers"] = new Dictionary<string, object?>(),
+                };
+                if (redirect != null) def["redirect"] = redirect;
+                return def;
+            }
+
+            var res = (Dictionary<string, object?>)liveUtility.Fetcher(ctx, bse + "/redirect/r1", Def(null))!;
+            Assert.Equal(200, res["status"]);
+            Assert.Equal("{\"id\":\"r1\"}", res["body"]);
+            Assert.Equal(new[] { "/redirect/r1", "/redirect/r1/", "/redirect/r1/done" }, seen.ToArray());
+
+            var manual = (Dictionary<string, object?>)liveUtility.Fetcher(ctx, bse + "/redirect/r1", Def("manual"))!;
+            Assert.Equal(301, manual["status"]);
+        }
+        finally
+        {
+            listener.Stop();
+        }
+    }
+
     // Nothing listens on port 9: a request the guard let through fails there.
     [Fact]
     public void FetcherGetOnlyGuard()

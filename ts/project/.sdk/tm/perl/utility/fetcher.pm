@@ -43,13 +43,74 @@ sub getonly_refusal {
     "[GET-ONLY GUARD] blocked $method $path");
 }
 
+our @REDIRECT_STATUS = (301, 302, 303, 307, 308);
+our $REDIRECT_MAX = 5;
+
+# The Location resolved against the URL that answered with it (RFC 3986 5.2).
+sub resolve_location {
+  my ($base, $loc) = @_;
+  $loc =~ s/\s+//g;
+  $loc =~ s/#.*//s;
+  return $loc if $loc =~ m{\A[A-Za-z][A-Za-z0-9+.-]*:};
+  my ($scheme, $auth, $path, $query) = $base =~ m{\A([^:/?#]+):(?://([^/?#]*))?([^?#]*)(\?[^#]*)?};
+  return undef unless defined $scheme;
+  return "$scheme:$loc" if $loc =~ m{\A//};
+  $path = '/' if '' eq $path;
+  my ($lpath, $lquery) = $loc =~ m{\A([^?]*)(\?.*)?\z}s;
+  if ('' eq $lpath) {
+    $lpath = $path;
+    $lquery = $query unless defined $lquery;
+  }
+  elsif ($lpath !~ m{\A/}) {
+    (my $dir = $path) =~ s{[^/]*\z}{};
+    $lpath = $dir . $lpath;
+  }
+  my @out;
+  for my $seg (split m{/}, $lpath, -1) {
+    if ('..' eq $seg) { pop @out if 1 < @out; }
+    elsif ('.' ne $seg) { push @out, $seg; }
+  }
+  push @out, '' if $lpath =~ m{(?:\A|/)\.\.?\z};
+  return "$scheme://" . ($auth // '') . join('/', @out) . ($lquery // '');
+}
+
+sub _origin {
+  my ($url) = @_;
+  my ($scheme, $host, $port) = lc($url) =~ m{\A([^:/?#]+)://(?:[^@/?#]*@)?(\[[^\]]*\]|[^:/?#]*)(?::(\d+))?};
+  return join ':', $scheme // '', $host // '', $port // ('https' eq ($scheme // '') ? 443 : 80);
+}
+
+# HTTP::Tiny cannot resolve a relative-path Location, so it follows none here.
+# A GET or HEAD follows a redirect, unless the fetch definition says "manual",
+# each hop passing the GET-only guard first; past $REDIRECT_MAX hops the last
+# 3xx is the answer. Another origin is not sent the request's credentials.
 our $DefaultHttpFetch = sub {
   my ($fullurl, $fetchdef) = @_;
   $fetchdef = {} unless defined $fetchdef;
 
   my $method = uc(defined $fetchdef->{method} ? "$fetchdef->{method}" : 'GET');
-  my $refused = getonly_refusal($fullurl, $method);
-  return (undef, $refused) if $refused;
+  my $follow = ($method eq 'GET' || $method eq 'HEAD')
+    && !(defined $fetchdef->{redirect} && !ref $fetchdef->{redirect} && 'manual' eq $fetchdef->{redirect});
+  my $url = $fullurl;
+  for (my $hops = 0; ; $hops++) {
+    my $refused = getonly_refusal($url, $method);
+    return (undef, $refused) if $refused;
+    my ($res, $err) = _send_once($url, $fetchdef, $method);
+    my $location = $res ? $res->{headers}{location} : undef;
+    my $next = $follow && defined $location && !ref $location && $hops < $REDIRECT_MAX
+      && (grep { $_ == $res->{status} } @REDIRECT_STATUS) ? resolve_location($url, $location) : undef;
+    return ($res, $err) unless defined $next;
+    if (_origin($next) ne _origin($url)) {
+      my $headers = Voxgig::Struct::ismap($fetchdef->{headers}) ? $fetchdef->{headers} : {};
+      $fetchdef = { %$fetchdef, headers => { map { $_ => $headers->{$_} }
+        grep { lc($_) !~ /\A(?:authorization|cookie|proxy-authorization)\z/ } keys %$headers } };
+    }
+    $url = $next;
+  }
+};
+
+sub _send_once {
+  my ($fullurl, $fetchdef, $method) = @_;
   my $body = $fetchdef->{body};
   my $headers = Voxgig::Struct::ismap($fetchdef->{headers}) ? $fetchdef->{headers} : {};
 
@@ -83,14 +144,7 @@ our $DefaultHttpFetch = sub {
     $opts->{content} = $content;
   }
 
-  # fetchdef.redirect 'manual' (the ts fetch vocabulary): return a 3xx
-  # as-is instead of following it. HTTP::Tiny follows redirects by
-  # default; the station feature's hosts policy sets this so a Location
-  # off the allowlist can never pull an automatic credentialed follow-up.
-  my %new_args;
-  $new_args{max_redirect} = 0
-    if defined $fetchdef->{redirect} && !ref $fetchdef->{redirect}
-      && 'manual' eq $fetchdef->{redirect};
+  my %new_args = (max_redirect => 0);
   # Both keys: HTTP::Tiny lets the environment override its generic proxy.
   $new_args{http_proxy} = $new_args{https_proxy} = "$fetchdef->{proxy}"
     if defined $fetchdef->{proxy} && !ref $fetchdef->{proxy}
@@ -137,7 +191,7 @@ our $DefaultHttpFetch = sub {
     'body' => $res->{content},
     'unreadable' => $unreadable,
   }, undef);
-};
+}
 
 $REGISTRY{fetcher} = sub {
   my ($ctx, $fullurl, $fetchdef) = @_;

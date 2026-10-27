@@ -1525,16 +1525,20 @@ defmodule ProjectName.Utility do
             true
           )
 
-        # A route the definition ends with a slash keeps it, for a Django REST server,
-        # and a host with no path takes /, or luasocket reads a query as the host.
+        # A route ending in a slash keeps it, as defined or as passed to direct(), for
+        # Django, and a host with no path takes /, or luasocket reads a query as the host.
         orig = S.getprop(S.getprop(ctx, "point"), "orig")
+        path = S.getprop(spec, "path")
         suffix = S.getprop(spec, "suffix")
 
+        slashed =
+          (is_binary(orig) and String.ends_with?(orig, "/")) or
+            (is_binary(path) and String.ends_with?(path, "/"))
+
         url0 =
-          if is_binary(orig) and String.ends_with?(orig, "/") and (suffix == nil or suffix == "") and
-               not String.ends_with?(joined, "/"),
-             do: joined <> "/",
-             else: joined
+          if slashed and (suffix == nil or suffix == "") and not String.ends_with?(joined, "/"),
+            do: joined <> "/",
+            else: joined
         url0 =
           case :binary.match(url0, "://") do
             {authority, 3} when 0 < authority ->

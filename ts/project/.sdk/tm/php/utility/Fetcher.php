@@ -46,13 +46,89 @@ class ProjectNameFetcher
         return new ProjectNameError('fetch_getonly_block', "[GET-ONLY GUARD] blocked {$method} {$path}");
     }
 
+    public const REDIRECT_STATUS = [301, 302, 303, 307, 308];
+    public const REDIRECT_MAX = 5;
+
+    // Neither transport below follows a redirect. A GET or HEAD follows one
+    // here, unless the fetch definition says "manual", each hop passing the
+    // GET-only guard first; past REDIRECT_MAX hops the last 3xx is the answer.
+    // Another origin is not sent the request's credentials.
     public static function defaultHttpFetch(string $fullurl, array $fetchdef): array
     {
         $method_str = strtoupper($fetchdef['method'] ?? 'GET');
-        $refused = self::getOnlyRefusal($fullurl, $method_str);
-        if (null !== $refused) {
-            return [null, $refused];
+        $follow = in_array($method_str, ['GET', 'HEAD'], true) && ($fetchdef['redirect'] ?? null) !== 'manual';
+        $url = $fullurl;
+        for ($hops = 0; ; $hops++) {
+            $refused = self::getOnlyRefusal($url, $method_str);
+            if (null !== $refused) {
+                return [null, $refused];
+            }
+            [$res, $err] = self::sendOnce($url, $method_str, $fetchdef);
+            $location = is_array($res) ? ($res['headers']['location'] ?? null) : null;
+            $next = $follow && is_string($location) && $hops < self::REDIRECT_MAX
+                && in_array($res['status'], self::REDIRECT_STATUS, true)
+                ? self::resolveLocation($url, $location) : null;
+            if (null === $next) {
+                return [$res, $err];
+            }
+            if (self::origin($next) !== self::origin($url)) {
+                $fetchdef['headers'] = array_filter($fetchdef['headers'] ?? [],
+                    fn($k) => !in_array(strtolower((string)$k), ['authorization', 'cookie', 'proxy-authorization'], true),
+                    ARRAY_FILTER_USE_KEY);
+            }
+            $url = $next;
         }
+    }
+
+    // The Location resolved against the URL that answered with it (RFC 3986 5.2).
+    public static function resolveLocation(string $base, string $loc): ?string
+    {
+        $loc = preg_replace('/#.*$/s', '', preg_replace('/\s+/', '', $loc));
+        if (preg_match('/^[A-Za-z][A-Za-z0-9+.-]*:/', $loc)) {
+            return $loc;
+        }
+        if (!preg_match('~^([^:/?#]+):(?://([^/?#]*))?([^?#]*)(\?[^#]*)?~', $base, $m)) {
+            return null;
+        }
+        [$scheme, $auth, $path, $query] = [$m[1], $m[2] ?? '', $m[3] ?? '', $m[4] ?? ''];
+        if (str_starts_with($loc, '//')) {
+            return $scheme . ':' . $loc;
+        }
+        $path = '' === $path ? '/' : $path;
+        $qat = strpos($loc, '?');
+        $lpath = false === $qat ? $loc : substr($loc, 0, $qat);
+        $lquery = false === $qat ? null : substr($loc, $qat);
+        if ('' === $lpath) {
+            $lpath = $path;
+            $lquery = $lquery ?? $query;
+        } elseif ('/' !== $lpath[0]) {
+            $lpath = substr($path, 0, strrpos($path, '/') + 1) . $lpath;
+        }
+        $out = [];
+        foreach (explode('/', $lpath) as $seg) {
+            if ('..' === $seg) {
+                if (1 < count($out)) {
+                    array_pop($out);
+                }
+            } elseif ('.' !== $seg) {
+                $out[] = $seg;
+            }
+        }
+        if (preg_match('~(^|/)\.\.?$~', $lpath)) {
+            $out[] = '';
+        }
+        return $scheme . '://' . $auth . implode('/', $out) . ($lquery ?? '');
+    }
+
+    private static function origin(string $url): string
+    {
+        $p = parse_url(strtolower($url));
+        $scheme = $p['scheme'] ?? '';
+        return $scheme . '://' . ($p['host'] ?? '') . ':' . ($p['port'] ?? ('https' === $scheme ? 443 : 80));
+    }
+
+    private static function sendOnce(string $fullurl, string $method_str, array $fetchdef): array
+    {
         $body_str = $fetchdef['body'] ?? null;
         if (is_resource($body_str)) {
             $body_str = stream_get_contents($body_str);
@@ -76,8 +152,7 @@ class ProjectNameFetcher
         // Prefer cURL when available — its header capture is reliable across
         // PHP versions, while file_get_contents + custom stream wrappers
         // don't propagate $http_response_header for user-defined wrappers
-        // in PHP 8.3+. (cURL is configured with FOLLOWLOCATION off, so the
-        // manual-redirect annotation below holds there by construction.)
+        // in PHP 8.3+.
         if (function_exists('curl_init')) {
             return self::curlFetch($fullurl, $method_str, $body_str, $header_lines);
         }
@@ -86,18 +161,9 @@ class ProjectNameFetcher
             'http' => [
                 'method' => $method_str,
                 'ignore_errors' => true,
+                'follow_location' => 0,
             ],
         ];
-
-        // Honour a redirect annotation on the fetch definition (set by the
-        // station feature's middleware under a hosts policy): "manual"
-        // surfaces a 3xx as an ordinary response instead of auto-following
-        // it — the http stream wrapper otherwise replays the request,
-        // headers included, against whatever host Location names, carrying
-        // injected credentials to a host no policy approved.
-        if (($fetchdef['redirect'] ?? null) === 'manual') {
-            $opts['http']['follow_location'] = 0;
-        }
 
         if (is_string($body_str)) {
             $opts['http']['content'] = $body_str;

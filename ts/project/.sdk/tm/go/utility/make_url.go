@@ -27,9 +27,10 @@ func makeUrlUtil(ctx *core.Context) (string, error) {
 	url := vs.Join([]any{spec.Base, spec.Prefix, spec.Path, spec.Suffix}, "/", true)
 	resmatch := map[string]any{}
 
-	// A route the definition ends with a slash keeps it, for a Django REST server,
-	// and a host with no path takes /, or luasocket reads a query as the host.
-	if orig, _ := vs.GetProp(ctx.Point, "orig").(string); strings.HasSuffix(orig, "/") &&
+	// A route ending in a slash keeps it, as defined or as passed to direct(), for
+	// Django, and a host with no path takes /, or luasocket reads a query as the host.
+	orig, _ := vs.GetProp(ctx.Point, "orig").(string)
+	if (strings.HasSuffix(orig, "/") || strings.HasSuffix(spec.Path, "/")) &&
 		spec.Suffix == "" && !strings.HasSuffix(url, "/") {
 		url += "/"
 	}

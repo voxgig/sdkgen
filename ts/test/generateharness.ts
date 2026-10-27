@@ -580,6 +580,35 @@ function wireNameParams(): string {
 }
 
 
+// Django routes: each ends with a slash, which its segments do not hold.
+const SLASH_ENTITIES = `
+main: kit: entity: lobby: {
+  alias: field: {}
+  name: "lobby"
+  fields: { "name": { h: 'Name', n: "name", r: false, t: "\`$STRING\`" } }
+  op: {
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$INTEGER\`", ex: 391 } ] }
+      m: "GET", o: "/api/lobby/{id}/", s: [{ lit: "api" }, { lit: "lobby" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    list: { name: "list", points: [ {
+      m: "GET", o: "/api/lobby/", s: [{ lit: "api" }, { lit: "lobby" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: flow: BasicLobbyFlow: {
+  entity: "lobby", kind: "basic", name: "BasicLobbyFlow"
+  step: [ { o: "list" } ]
+}
+`
+
+
+function slashRoutes(): string {
+  return entityOnly(SLASH_ENTITIES)
+}
+
+
 // Flows a GET-only live run cannot make whole, and a required enum query.
 const GETONLY_ENTITIES = `
 main: kit: entity: game: {
@@ -1897,6 +1926,7 @@ export {
   searchOnly,
   exampleParams,
   wireNameParams,
+  slashRoutes,
   getOnlyFlows,
   getOnlyBuildctx,
   multiRouteLoad,

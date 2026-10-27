@@ -266,10 +266,10 @@ func makeUrlUtil(_ ctx: Context) throws -> String {
   // Sent with the request, never recorded as the entity's match.
   let authquery = spec.authquery
 
-  // A route the definition ends with a slash keeps it, for a Django REST server,
-  // and a host with no path takes /, or luasocket reads a query as the host.
-  if let orig = gp(ctx.point, "orig").asString, orig.hasSuffix("/"), spec.suffix.isEmpty,
-     !url.hasSuffix("/") {
+  // A route ending in a slash keeps it, as defined or as passed to direct(), for
+  // Django, and a host with no path takes /, or luasocket reads a query as the host.
+  let slashed = (gp(ctx.point, "orig").asString?.hasSuffix("/") ?? false) || spec.path.hasSuffix("/")
+  if slashed, spec.suffix.isEmpty, !url.hasSuffix("/") {
     url += "/"
   }
   if let authority = url.range(of: "://"), url.startIndex < authority.lowerBound,

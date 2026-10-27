@@ -376,6 +376,71 @@ fn primary_fetcher_blocked_test_mode() {
     );
 }
 
+// A Django route answers its slashless form with a relative Location. The
+// transport follows each hop, and answers a "manual" fetch with the 3xx.
+#[test]
+fn primary_fetcher_redirect() {
+    use std::io::{BufRead, BufReader, Write};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let base = format!("http://{}", listener.local_addr().unwrap());
+    let seen = std::sync::Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+    let log = seen.clone();
+    std::thread::spawn(move || {
+        for stream in listener.incoming().take(4) {
+            let mut stream = stream.unwrap();
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut line = String::new();
+            reader.read_line(&mut line).unwrap();
+            let path = line.split(' ').nth(1).unwrap_or("").to_string();
+            let mut header = String::from("-");
+            while !header.trim().is_empty() {
+                header.clear();
+                if 0 == reader.read_line(&mut header).unwrap_or(0) {
+                    break;
+                }
+            }
+            let (status, location) = match path.as_str() {
+                "/redirect/r1" => (301, "Location: /redirect/r1/\r\n"),
+                "/redirect/r1/" => (308, "Location: done\r\n"),
+                "/redirect/r1/done" => (200, ""),
+                _ => (404, ""),
+            };
+            let body = if 200 == status { "{\"id\":\"r1\"}" } else { "" };
+            log.lock().unwrap().push(path);
+            let _ = write!(stream, "HTTP/1.1 {} X\r\n{}Content-Type: application/json\r\n\
+                Content-Length: {}\r\nConnection: close\r\n\r\n{}", status, location, body.len(), body);
+        }
+    });
+
+    let live_client = ProjectNameSDK::new(jo(vec![("base", Value::str(&base))]));
+    let live_utility = live_client.get_utility();
+    let ctx = live_utility.make_context(
+        CtxSpec {
+            opname: Some("load".to_string()),
+            client: Some(live_client.clone()),
+            utility: Some(live_utility.clone()),
+            ..Default::default()
+        },
+        None,
+    );
+    let url = format!("{}/redirect/r1", base);
+    let res = live_utility
+        .fetch(&ctx, &url, &jo(vec![("method", Value::str("GET")), ("headers", Value::empty_map())]))
+        .expect("expected the redirect followed");
+    assert!(matches!(getp(&res, "status"), Value::Num(n) if 200.0 == n), "{:?}", getp(&res, "status"));
+    assert_eq!(get_str(&res, "body").as_deref(), Some("{\"id\":\"r1\"}"));
+    assert_eq!(*seen.lock().unwrap(), vec!["/redirect/r1", "/redirect/r1/", "/redirect/r1/done"]);
+
+    let manual = live_utility
+        .fetch(&ctx, &url, &jo(vec![
+            ("method", Value::str("GET")),
+            ("headers", Value::empty_map()),
+            ("redirect", Value::str("manual")),
+        ]))
+        .expect("expected the 301");
+    assert!(matches!(getp(&manual, "status"), Value::Num(n) if 301.0 == n), "{:?}", getp(&manual, "status"));
+}
+
 // Nothing listens on port 9: a request the guard let through fails there.
 #[test]
 fn primary_fetcher_getonly_guard() {

@@ -58,13 +58,15 @@ char* make_url_util(Context* ctx, PNError** err) {
   char* url = str_append(NULL, joined ? joined : "");
   free(joined);
 
-  // A route the definition ends with a slash keeps it, for a Django REST server,
-  // and a host with no path takes /, or luasocket reads a query as the host.
+  // A route ending in a slash keeps it, as defined or as passed to direct(), for
+  // Django, and a host with no path takes /, or luasocket reads a query as the host.
   voxgig_value* orig = getp(ctx->point, "orig");
-  if (voxgig_is_string(orig) && (NULL == spec->suffix || '\0' == spec->suffix[0])) {
-    const char* o = voxgig_as_string(orig);
-    size_t olen = strlen(o), ulen = strlen(url);
-    if (0 < olen && '/' == o[olen - 1] && (0 == ulen || '/' != url[ulen - 1])) {
+  if (NULL == spec->suffix || '\0' == spec->suffix[0]) {
+    const char* o = voxgig_is_string(orig) ? voxgig_as_string(orig) : "";
+    const char* p = NULL == spec->path ? "" : spec->path;
+    size_t olen = strlen(o), plen = strlen(p), ulen = strlen(url);
+    if (((0 < olen && '/' == o[olen - 1]) || (0 < plen && '/' == p[plen - 1])) &&
+        (0 == ulen || '/' != url[ulen - 1])) {
       url = str_append(url, "/");
     }
   }

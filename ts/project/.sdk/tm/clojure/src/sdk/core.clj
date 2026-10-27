@@ -1359,9 +1359,11 @@
             authquery (set (oget spec :authquery []))
             point (oget ctx :point)
             orig (when point (vs/getprop point "orig"))]
-        ;; A route the definition ends with a slash keeps it, for a Django REST server,
-        ;; and a host with no path takes /, or luasocket reads a query as the host.
-        (when (and (string? orig) (str/ends-with? orig "/") (empty? (str (oget spec :suffix)))
+        ;; A route ending in a slash keeps it, as defined or as passed to direct(), for
+        ;; Django, and a host with no path takes /, or luasocket reads a query as the host.
+        (when (and (or (and (string? orig) (str/ends-with? orig "/"))
+                       (str/ends-with? (str (oget spec :path)) "/"))
+                   (empty? (str (oget spec :suffix)))
                    (not (str/ends-with? @url "/")))
           (swap! url str "/"))
         (let [authority (str/index-of @url "://")]
@@ -1797,12 +1799,16 @@
 
 ;; java.net.http rather than HttpURLConnection, which refuses PATCH. HTTP/1.1,
 ;; as the vendored sekreto client: over cleartext, HTTP/2 opens with an h2c
-;; upgrade that holds the body back, and some servers refuse that request.
-(def ^:private http-client
-  (delay (-> (HttpClient/newBuilder)
-             (.version HttpClient$Version/HTTP_1_1)
-             (.followRedirects HttpClient$Redirect/NORMAL)
-             (.build))))
+;; upgrade that holds the body back, and some servers refuse that request. A
+;; fetch definition whose redirect is "manual" gets every 3xx as its answer.
+(defn- http-client-for [redirect]
+  (-> (HttpClient/newBuilder)
+      (.version HttpClient$Version/HTTP_1_1)
+      (.followRedirects redirect)
+      (.build)))
+
+(def ^:private http-client (delay (http-client-for HttpClient$Redirect/NORMAL)))
+(def ^:private manual-http-client (delay (http-client-for HttpClient$Redirect/NEVER)))
 
 (defn- body-publisher [body]
   (cond
@@ -1842,7 +1848,8 @@
           (let [ua (str "Mozilla/5.0 (compatible; " SDK-NAME "SDK/1.0)")]
             (.setHeader builder "User-Agent" ua)
             (vs/setprop headers "user-agent" ua)))
-        (let [resp (.send ^HttpClient @http-client (.build builder) (HttpResponse$BodyHandlers/ofByteArray))
+        (let [client (if (= "manual" (vs/getprop fetchdef "redirect")) @manual-http-client @http-client)
+              resp (.send ^HttpClient client (.build builder) (HttpResponse$BodyHandlers/ofByteArray))
               body (String. ^bytes (.body resp) "UTF-8")
               resp-headers (vs/jm)]
           (doseq [[k vlist] (.map (.headers resp))]

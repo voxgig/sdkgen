@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pointSegments = pointSegments;
 exports.pointParts = pointParts;
+exports.pointSlash = pointSlash;
 exports.pointPlaceholders = pointPlaceholders;
 exports.pointTerminalParam = pointTerminalParam;
 exports.pointPathKey = pointPathKey;
@@ -18,6 +19,11 @@ function pointSegments(point) {
 }
 function pointParts(point) {
     return pointSegments(point).map((seg) => null == seg.var ? String(seg.lit ?? '') : '{' + seg.var + '}');
+}
+// The trailing slash a route declares, which its segments do not hold.
+function pointSlash(point) {
+    const orig = point?.o ?? point?.orig;
+    return 'string' === typeof orig && orig.endsWith('/') ? '/' : '';
 }
 // The path parameters a point's URL needs, including a placeholder inside a
 // literal segment such as `{version}.mod`.

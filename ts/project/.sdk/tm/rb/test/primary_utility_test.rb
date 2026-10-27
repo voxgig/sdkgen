@@ -18,6 +18,7 @@
 #   context object as the map omni walks, camelCase keys included.
 
 require "minitest/autorun"
+require "socket"
 require "json"
 require_relative "../ProjectName_sdk"
 require_relative "omni"
@@ -276,6 +277,51 @@ class PrimaryUtilityTest < Minitest::Test
     _, err = blocked_utility.fetcher.call(ctx, "http://example.com/test", fetchdef)
     assert err, "expected blocked error"
     assert_includes err.to_s.downcase, "blocked"
+  end
+
+  # A Django route answers its slashless form with a relative Location. The
+  # transport follows each hop, and answers a "manual" fetch with the 3xx.
+  def test_fetcher_redirect
+    seen = Queue.new
+    moved = { "/redirect/r1" => [301, "/redirect/r1/"], "/redirect/r1/" => [308, "done"] }
+    server = TCPServer.new("127.0.0.1", 0)
+    thread = Thread.new do
+      loop do
+        sock = server.accept
+        path = sock.gets.to_s.split(" ")[1].to_s
+        nil until ["\r\n", "\n", nil].include?(sock.gets)
+        seen << path
+        hop = moved[path]
+        body = path == "/redirect/r1/done" ? '{"id":"r1"}' : ""
+        status = hop ? hop[0] : (body.empty? ? 404 : 200)
+        sock.write("HTTP/1.1 #{status} X\r\n#{hop ? "Location: #{hop[1]}\r\n" : ""}" \
+          "Content-Type: application/json\r\nContent-Length: #{body.bytesize}\r\n" \
+          "Connection: close\r\n\r\n#{body}")
+        sock.close
+      end
+    end
+    base = "http://127.0.0.1:#{server.addr[1]}"
+    live_client = ProjectNameSDK.new({ "base" => base })
+    live_utility = live_client.get_utility
+    ctx = live_utility.make_context.call({
+      "opname" => "load",
+      "client" => live_client,
+      "utility" => live_utility,
+    }, nil)
+
+    res, err = live_utility.fetcher.call(ctx, "#{base}/redirect/r1", { "method" => "GET", "headers" => {} })
+    assert_nil err
+    assert_equal 200, res["status"]
+    assert_equal({ "id" => "r1" }, res["json"].call)
+    assert_equal ["/redirect/r1", "/redirect/r1/", "/redirect/r1/done"], Array.new(seen.size) { seen.pop }
+
+    res, err = live_utility.fetcher.call(ctx, "#{base}/redirect/r1",
+      { "method" => "GET", "headers" => {}, "redirect" => "manual" })
+    assert_nil err
+    assert_equal 301, res["status"]
+  ensure
+    thread&.kill
+    server&.close
   end
 
   # Nothing listens on port 9: a request the guard let through fails there.

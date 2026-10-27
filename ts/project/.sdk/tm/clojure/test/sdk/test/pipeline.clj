@@ -42,6 +42,42 @@
                      (str (:code err) " " (:msg err) "\n")
                      "sent\n"))))))
 
+;; A Django route answers its slashless form with a relative Location. The
+;; transport follows each hop, and answers a "manual" fetch with the 3xx.
+(defn- redirect-check []
+  (let [seen (java.util.Collections/synchronizedList (java.util.ArrayList.))
+        moved {"/redirect/r1" [301 "/redirect/r1/"] "/redirect/r1/" [308 "done"]}
+        server (com.sun.net.httpserver.HttpServer/create (java.net.InetSocketAddress. "127.0.0.1" 0) 0)]
+    (.createContext server "/"
+                    (reify com.sun.net.httpserver.HttpHandler
+                      (handle [_ ex]
+                        (let [path (.getRawPath (.getRequestURI ex))
+                              [code to] (get moved path)
+                              body (.getBytes (if (= path "/redirect/r1/done") "{\"id\":\"r1\"}" "") "UTF-8")
+                              size (alength ^bytes body)]
+                          (.add seen path)
+                          (when to (.set (.getResponseHeaders ex) "Location" to))
+                          (.set (.getResponseHeaders ex) "Content-Type" "application/json")
+                          (.sendResponseHeaders ex (int (or code (if (pos? size) 200 404))) (long (if (pos? size) size -1)))
+                          (.write (.getResponseBody ex) body)
+                          (.close ex)))))
+    (.start server)
+    (try
+      (let [base (str "http://127.0.0.1:" (.getPort (.getAddress server)))
+            sdk (client/make-sdk (vs/jm "base" base))
+            ctx (make-ctx sdk "load")
+            fetch (fn [& kvs] ((core/uget ctx :fetcher) ctx (str base "/redirect/r1")
+                               (apply vs/jm "method" "GET" "headers" (vs/jm) kvs)))
+            [res err] (fetch)
+            [manual merr] (fetch "redirect" "manual")]
+        (t/is-eq err nil "error")
+        (t/is-eq (mget res "status") 200 "status")
+        (t/is-eq (mget res "body") "{\"id\":\"r1\"}" "body")
+        (t/is-eq (vec seen) ["/redirect/r1" "/redirect/r1/" "/redirect/r1/done" "/redirect/r1"] "hops")
+        (t/is-eq merr nil "manual error")
+        (t/is-eq (mget manual "status") 301 "manual status"))
+      (finally (.stop server 0)))))
+
 ;; A JVM cannot set its own environment, so the probe runs in a child JVM.
 (defn- getonly-child []
   (let [pb (ProcessBuilder. ^java.util.List
@@ -68,6 +104,8 @@
                                 out "fetch_getonly_block [GET-ONLY GUARD] blocked POST /planet/p1\n") out)
                     (t/is-true (clojure.string/ends-with? (clojure.string/trim out) "\nsent") out)
                     (t/is-true (not (clojure.string/includes? out "GUARDKEY01")) out))))
+
+      (chk "fetcher-redirect" redirect-check)
 
       ;; ---- make-point ----
       (chk "point-rejects-disallowed-op"

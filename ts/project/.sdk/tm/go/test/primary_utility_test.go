@@ -3,7 +3,10 @@ package sdktest
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	sdk "GOMODULE"
@@ -332,6 +335,63 @@ func TestPrimaryUtility(t *testing.T) {
 	})
 
 	// Nothing listens on port 9: a request the guard let through fails there.
+	// A Django route answers its slashless form with a relative Location. The
+	// transport follows each hop, and answers a "manual" fetch with the 3xx.
+	t.Run("fetcher-redirect", func(t *testing.T) {
+		var mu sync.Mutex
+		seen := []string{}
+		moved := map[string]struct {
+			code int
+			to   string
+		}{"/redirect/r1": {301, "/redirect/r1/"}, "/redirect/r1/": {308, "done"}}
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			mu.Lock()
+			seen = append(seen, r.URL.Path)
+			mu.Unlock()
+			if hop, ok := moved[r.URL.Path]; ok {
+				w.Header().Set("Location", hop.to)
+				w.WriteHeader(hop.code)
+				return
+			}
+			if r.URL.Path != "/redirect/r1/done" {
+				w.WriteHeader(404)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"id":"r1"}`)
+		}))
+		defer server.Close()
+
+		liveClient := sdk.NewProjectNameSDK(map[string]any{"base": server.URL})
+		liveUtility := liveClient.GetUtility()
+		ctx := liveUtility.MakeContext(map[string]any{
+			"opname":  "load",
+			"client":  liveClient,
+			"utility": liveUtility,
+		}, nil)
+
+		res, err := liveUtility.Fetcher(ctx, server.URL+"/redirect/r1", map[string]any{"method": "GET", "headers": map[string]any{}})
+		resmap, _ := res.(map[string]any)
+		if err != nil || resmap["status"] != 200 {
+			t.Fatalf("expected the redirect followed to a 200, got: %v %v", res, err)
+		}
+		if body := resmap["json"].(func() any)(); vs.GetProp(body, "id") != "r1" {
+			t.Errorf("unexpected body: %v", body)
+		}
+		mu.Lock()
+		sent := strings.Join(seen, " ")
+		mu.Unlock()
+		if sent != "/redirect/r1 /redirect/r1/ /redirect/r1/done" {
+			t.Errorf("unexpected requests: %v", sent)
+		}
+
+		res, err = liveUtility.Fetcher(ctx, server.URL+"/redirect/r1",
+			map[string]any{"method": "GET", "headers": map[string]any{}, "redirect": "manual"})
+		if resmap, _ = res.(map[string]any); err != nil || resmap["status"] != 301 {
+			t.Errorf("expected a manual redirect answered by its 301, got: %v %v", res, err)
+		}
+	})
+
 	t.Run("fetcher-getonly-guard", func(t *testing.T) {
 		liveClient := sdk.NewProjectNameSDK(map[string]any{"base": "http://127.0.0.1:9"})
 		liveUtility := liveClient.GetUtility()
