@@ -19,6 +19,7 @@ import {
   buildIdNames,
   getMatchEntries,
   entityDataIdField,
+  entityRecordIdField,
 } from '@voxgig/sdkgen'
 
 
@@ -104,7 +105,7 @@ ${failureScopes(SDK, entity, accessor)}
     rep.scope("${ENTLOWER}.basic") {
       val entityData = Helpers.toMapAny(SdkTestSupport.readJson(
           "../.sdk/test/entity/${ENTLOWER}/${EntityName}TestData.json"))
-      val options = new LinkedHashMap[String, Object]()
+${fixtureIdentity(entity)}      val options = new LinkedHashMap[String, Object]()
       options.put("entity", entityData.get("existing"))
       val client = ${SDK}.testSDK(options, null)
 
@@ -184,7 +185,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
       rep.check("${ENTLOWER}.create.map", ${datavar} != null, "expected create result to be a map")
 `)
   if (null != entityDataIdField(entity)) {
-    Content(`      rep.check("${ENTLOWER}.create.id", ${datavar} != null && ${datavar}.get("id") != null, "expected created entity to have an id")
+    Content(`      rep.check("${ENTLOWER}.create.id", ${datavar} != null && ${datavar}.get(${rid(entity)}) != null, "expected created entity to have an id")
 `)
   }
 }
@@ -242,12 +243,12 @@ const generateList: OpGen = (ctx, step, index) => {
 
       if ('ItemExists' === validator.apply && hasRefData && hasDataId) {
         Content(`      val ${listvar}Found = Struct.select(
-          SdkTestSupport.entityListToData(${listvar}), SdkTestSupport.om("id" -> ${refDataVar}.get("id")))
+          SdkTestSupport.entityListToData(${listvar}), SdkTestSupport.om(${rid(entity)} -> ${refDataVar}.get(${rid(entity)})))
       rep.check("${ENTLOWER}.list.exists", !Struct.isempty(${listvar}Found), "expected to find created entity in list")
 `)
       } else if ('ItemNotExists' === validator.apply && hasRefData && hasDataId) {
         Content(`      val ${listvar}NotFound = Struct.select(
-          SdkTestSupport.entityListToData(${listvar}), SdkTestSupport.om("id" -> ${refDataVar}.get("id")))
+          SdkTestSupport.entityListToData(${listvar}), SdkTestSupport.om(${rid(entity)} -> ${refDataVar}.get(${rid(entity)})))
       rep.check("${ENTLOWER}.list.notexists", Struct.isempty(${listvar}NotFound), "expected removed entity to not be in list")
 `)
       }
@@ -280,7 +281,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`      val ${datavar}Up = new LinkedHashMap[String, Object]()
 `)
   if (hasDataId) {
-    Content(`      ${datavar}Up.put("id", ${srcdatavar}.get("id"))
+    Content(`      ${datavar}Up.put("id", ${srcdatavar}.get(${rid(entity)}))
 `)
   }
 
@@ -312,7 +313,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
       rep.check("${ENTLOWER}.update.map", ${resdatavar} != null, "expected update result to be a map")
 `)
   if (hasDataId) {
-    Content(`      rep.eq("${ENTLOWER}.update.id", ${datavar}Up.get("id"), ${resdatavar}.get("id"))
+    Content(`      rep.eq("${ENTLOWER}.update.id", ${datavar}Up.get("id"), ${resdatavar}.get(${rid(entity)}))
 `)
   }
   if (hasMark) {
@@ -363,11 +364,11 @@ const generateLoad: OpGen = (ctx, step, index) => {
   Content(`      val ${matchvar} = new LinkedHashMap[String, Object]()
 `)
   if (hasDataId) {
-    Content(`      ${matchvar}.put("id", ${srcdatavar}.get("id"))
+    Content(`      ${matchvar}.put("id", ${srcdatavar}.get(${rid(entity)}))
 ${loadMatch(entity, step, matchvar, srcdatavar)}      val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
       val ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded match { case e: SdkEntity => e.data(); case o => o })
       rep.check("${ENTLOWER}.load.map", ${datavar}LoadResult != null, "expected load result to be a map")
-      rep.eq("${ENTLOWER}.load.id", ${srcdatavar}.get("id"), ${datavar}LoadResult.get("id"))
+      rep.eq("${ENTLOWER}.load.id", ${srcdatavar}.get(${rid(entity)}), ${datavar}LoadResult.get(${rid(entity)}))
 `)
   } else {
     Content(`${loadMatch(entity, step, matchvar, srcdatavar)}      val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
@@ -401,9 +402,35 @@ const generateRemove: OpGen = (ctx, step, index) => {
 `)
   }
   Content(`      val ${matchvar} = new LinkedHashMap[String, Object]()
-      ${matchvar}.put("id", ${srcdatavar}.get("id"))
+      ${matchvar}.put("id", ${srcdatavar}.get(${rid(entity)}))
 ${parentMatch(step, matchvar)}      ${entvar}.remove(${matchvar}, null)
 `)
+}
+
+
+// The record field the entity's identity is read from, as a Scala string.
+function rid(entity: any): string {
+  return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  const field = entityRecordIdField(entity)
+  return 'id' === field ? '' : `      entityData.get("existing") match {
+        case fixtureEntities: java.util.Map[_, _] => fixtureEntities.get(${JSON.stringify(entity.name)}) match {
+          case fixtureRecords: java.util.Map[_, _] => fixtureRecords.values().toArray.foreach {
+            case fixtureRec: java.util.Map[_, _] if null != fixtureRec.get("id") =>
+              fixtureRec.asInstanceOf[java.util.Map[String, Object]]
+                .put(${JSON.stringify(field)}, fixtureRec.get("id").asInstanceOf[Object])
+            case _ =>
+          }
+          case _ =>
+        }
+        case _ =>
+      }
+`
 }
 
 

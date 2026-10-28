@@ -25,7 +25,7 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
-  entityDataIdField, envName, envToken,
+  entityDataIdField, entityRecordIdField, envName, envToken, luaKey,
   serverVarEnv,
   serverVariables,
   invalidRequest,
@@ -306,7 +306,7 @@ end)
   f:close()
 
   local entity_data = json.decode(entity_data_source)
-
+${fixtureIdentity(entity)}
   local options = {}
   options["entity"] = entity_data["existing"]
 
@@ -433,7 +433,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
     assert.is_not_nil(${datavar})
 `)
   if (null != ctx.entity.id) {
-    Content(`    assert.is_not_nil(${datavar}["id"])
+    Content(`    assert.is_not_nil(${datavar}[${rid(ctx.entity)}])
 `)
   }
 }
@@ -493,7 +493,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
     local found_item = vs.select(
       runner.entity_list_to_data(${listvar}_result),
-      { id = ${refDataVar}["id"] })
+      { ${luaKey(entityRecordIdField(entity))} = ${refDataVar}[${rid(entity)}] })
     assert.is_false(vs.isempty(found_item))
 `)
       } else if ('ItemNotExists' === validator.apply && hasRefData && hasDataId) {
@@ -501,7 +501,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
     local not_found_item = vs.select(
       runner.entity_list_to_data(${listvar}_result),
-      { id = ${refDataVar}["id"] })
+      { ${luaKey(entityRecordIdField(entity))} = ${refDataVar}[${rid(entity)}] })
     assert.is_true(vs.isempty(not_found_item))
 `)
       }
@@ -534,7 +534,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`    local ${datavar}_up = {
 `)
   if (hasEntIdU) {
-    Content(`      id = ${srcdatavar}["id"],
+    Content(`      id = ${srcdatavar}[${rid(entity)}],
 `)
   }
 
@@ -570,7 +570,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     assert.is_not_nil(${resdatavar})
 `)
   if (hasEntIdU) {
-    Content(`    assert.are.equal(${resdatavar}["id"], ${datavar}_up["id"])
+    Content(`    assert.are.equal(${resdatavar}[${rid(entity)}], ${datavar}_up["id"])
 `)
   }
 
@@ -628,13 +628,13 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   if (hasEntId) {
     Content(`    local ${matchvar} = {
-      id = ${srcdatavar}["id"],
+      id = ${srcdatavar}[${rid(entity)}],
     }
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    local ${datavar}_loaded, err = ${entvar}:load(${matchvar}, nil)
     assert.is_nil(err)
     local ${datavar}_load_result = helpers.to_map(type(${datavar}_loaded) == 'table' and ${datavar}_loaded.data_get and ${datavar}_loaded:data_get() or ${datavar}_loaded)
     assert.is_not_nil(${datavar}_load_result)
-    assert.are.equal(${datavar}_load_result["id"], ${srcdatavar}["id"])
+    assert.are.equal(${datavar}_load_result[${rid(entity)}], ${srcdatavar}[${rid(entity)}])
 `)
   }
   else {
@@ -669,13 +669,33 @@ const generateRemove: OpGen = (ctx, step, index) => {
   }
   // Always match the prior-created entity by id to avoid mock-order flakes.
   Content(`    local ${matchvar} = {
-      id = ${srcdatavar}["id"],
+      id = ${srcdatavar}[${rid(entity)}],
     }
 ${parentMatch(step, matchvar)}    local _, err = ${entvar}:remove(${matchvar}, nil)
     assert.is_nil(err)
 `)
 }
 
+
+
+// The record field the entity's identity is read from, as a Lua string.
+function rid(entity: any): string {
+  return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  const field = entityRecordIdField(entity)
+  return 'id' === field ? '' : `
+  for _, rec in pairs(((entity_data["existing"] or {})[${JSON.stringify(entity.name)}]) or {}) do
+    if type(rec) == "table" and rec["id"] ~= nil then
+      rec[${JSON.stringify(field)}] = rec["id"]
+    end
+  end
+`
+}
 
 
 // A child's route names its parents, and an entity no earlier step has

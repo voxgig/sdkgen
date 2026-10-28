@@ -18,7 +18,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken,
+  isAuthActive, envName, envToken, entityRecordIdField,
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
@@ -328,7 +328,7 @@ ${liveExcludedLines(getOnly).map((line) => '        println!("{}", ' + JSON.stri
     entity_data_file.push("${entity.Name}TestData.json");
 
     let entity_data = read_json(&entity_data_file);
-
+${fixtureIdentity(entity)}
     let options = jo(vec![("entity", getp(&entity_data, "existing"))]);
 
     let client = test_sdk(options, extra.clone());
@@ -472,7 +472,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 `)
   if (null != ctx.entity.id) {
     Content(`    assert!(
-        !getp(&${datavar}, "id").is_noval(),
+        !getp(&${datavar}, ${rid(ctx.entity)}).is_noval(),
         "expected created entity to have an id"
     );
 `)
@@ -535,7 +535,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
     let found_item = vs::select(
         &entity_list_to_data(&${listvar}),
-        &jo(vec![("id", getp(&${refDataVar}, "id"))]),
+        &jo(vec![(${rid(entity)}, getp(&${refDataVar}, ${rid(entity)}))]),
     );
     assert!(
         !vs::is_empty(&found_item),
@@ -547,7 +547,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
     let not_found_item = vs::select(
         &entity_list_to_data(&${listvar}),
-        &jo(vec![("id", getp(&${refDataVar}, "id"))]),
+        &jo(vec![(${rid(entity)}, getp(&${refDataVar}, ${rid(entity)}))]),
     );
     assert!(
         vs::is_empty(&not_found_item),
@@ -584,7 +584,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`    let ${datavar}_up = Value::empty_map();
 `)
   if (hasEntIdU) {
-    Content(`    setp(&${datavar}_up, "id", getp(&${srcdatavar}, "id"));
+    Content(`    setp(&${datavar}_up, "id", getp(&${srcdatavar}, ${rid(entity)}));
 `)
   }
 
@@ -628,7 +628,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 `)
   if (hasEntIdU) {
     Content(`    assert_eq!(
-        getp(&${resdatavar}, "id"),
+        getp(&${resdatavar}, ${rid(entity)}),
         getp(&${datavar}_up, "id"),
         "expected update result id to match"
     );
@@ -695,7 +695,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 `)
   }
   if (hasEntId) {
-    Content(`    let ${matchvar} = jo(vec![("id", getp(&${srcdatavar}, "id"))]);
+    Content(`    let ${matchvar} = jo(vec![("id", getp(&${srcdatavar}, ${rid(entity)}))]);
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    let ${datavar}_loaded = ${entvar}
         .load(${matchvar}.clone(), Value::Noval)
         .expect("load failed");
@@ -705,8 +705,8 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
         "expected load result to be a map"
     );
     assert_eq!(
-        getp(&${datavar}_load_result, "id"),
-        getp(&${srcdatavar}, "id"),
+        getp(&${datavar}_load_result, ${rid(entity)}),
+        getp(&${srcdatavar}, ${rid(entity)}),
         "expected load result id to match"
     );
 `)
@@ -744,11 +744,30 @@ const generateRemove: OpGen = (ctx, step, index) => {
 `)
   }
   // Always match the prior-created entity by id to avoid mock-order flakes.
-  Content(`    let ${matchvar} = jo(vec![("id", getp(&${srcdatavar}, "id"))]);
+  Content(`    let ${matchvar} = jo(vec![("id", getp(&${srcdatavar}, ${rid(entity)}))]);
 ${parentMatch(step, matchvar)}    ${entvar}
         .remove(${matchvar}.clone(), Value::Noval)
         .expect("remove failed");
 `)
+}
+
+
+// The record field the entity's identity is read from, as a Rust string.
+function rid(entity: any): string {
+  return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  return 'id' === entityRecordIdField(entity) ? '' : `
+    for (_, fixture_rec) in vs::items_vec(&to_map(&getpath(&["existing", "${entity.name}"], &entity_data))) {
+        if matches!(fixture_rec, Value::Map(_)) && !getp(&fixture_rec, "id").is_noval() {
+            setp(&fixture_rec, ${rid(entity)}, getp(&fixture_rec, "id"));
+        }
+    }
+`
 }
 
 

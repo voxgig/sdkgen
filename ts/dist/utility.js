@@ -221,10 +221,13 @@ const SPEC_FACTS = {
 };
 // The argument kinds a call routes outside the body.
 const ROUTED_KINDS = ['header', 'cookie', 'query'];
-function withPointParts(op, fields = [], entityName = '') {
+// `alias` names the record field an entity keeps its identity in, where that is
+// not the parameter's own name, so an entity a list returned can address itself.
+function withPointParts(op, fields = [], entityName = '', ident) {
     if (null == op) {
         return op;
     }
+    const alias = null == ident || ident.name === ident.field ? undefined : { [ident.name]: ident.field };
     const out = {};
     (0, jostraca_1.each)(op, (o, opname) => {
         out[opname] = null == o || null == o.points ? o : {
@@ -243,7 +246,7 @@ function withPointParts(op, fields = [], entityName = '') {
                     active: pt.a, kind: pt.k, method: pt.m, orig: pt.o,
                     segments: pt.s, parts: (0, pointPath_1.pointParts)(pt), rename: pt.r,
                     transform: pt.t, args, select: pt.q, live: pt.li, graphql: (0, graphqlPoint_1.pointGraphql)(pt),
-                    body: pt.rb, response: pt.rs,
+                    body: pt.rb, response: pt.rs, alias,
                 };
             }),
         };
@@ -274,7 +277,8 @@ function configDefinition(model, targetname) {
             })),
             id: e.id,
             name: e.name,
-            op: withPointParts(e.op, (0, jostraca_1.each)(e.fields || {}), e.name),
+            op: withPointParts(e.op, (0, jostraca_1.each)(e.fields || {}), e.name, null == e.id ? undefined :
+                { name: e.id.name || 'id', field: (0, opShape_1.entityRecordIdField)(e) }),
             relations: e.relations,
         }, true);
         entityStubs[e.name] = {};

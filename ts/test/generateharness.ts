@@ -820,6 +820,44 @@ function keylessLoad(): string {
 }
 
 
+// Records addressed by their slug: a device carries no id, an article an
+// unrelated one beside the slug.
+const SLUG_KEYED_ENTITIES = ['device', 'article'].map((name: string) => `
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "slug", name: "id" }
+  fields: {${'article' === name ? `
+    "id": { h: 'Id', n: "id", r: true, t: "\`$INTEGER\`" }` : ''}
+    "name": { h: 'Name', n: "name", r: true, t: "\`$STRING\`" }
+    "slug": { h: 'Slug', n: "slug", r: true, t: "\`$STRING\`" }
+  }
+  op: {
+    list: { name: "list", points: [ { g: {}, m: "GET", o: "/${name}s", q: { exist: [] }
+      s: [{ lit: "${name}s" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "slug", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/${name}s/{slug}", q: { exist: ["id"] }, r: { param: { slug: "id" } }
+      s: [{ lit: "${name}s" }, { var: "id" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+
+main: kit: flow: Basic${name[0].toUpperCase() + name.slice(1)}Flow: {
+  entity: "${name}", kind: "basic", name: "Basic${name[0].toUpperCase() + name.slice(1)}Flow"
+  step: [
+    { o: "list", v: [{ apply: "ItemExists", def: { ref: "${name}_ref01" } }] }
+    { o: "load", m: { id: "${name}01" }
+      i: { ref: "${name}_ref01", srcdatavar: "${name}_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`).join('')
+
+
+function slugKeyed(): string {
+  return entityOnly(SLUG_KEYED_ENTITIES)
+}
+
+
 // A list whose route requires the query parameters engine and q.
 const SEARCH_ENTITY = `
 main: kit: entity: search: {
@@ -1900,6 +1938,7 @@ export {
   getOnlyFlows,
   getOnlyBuildctx,
   multiRouteLoad,
+  slugKeyed,
   MULTIROUTE_ENTITIES,
   keylessLoad,
   KEYLESS_ENTITIES,

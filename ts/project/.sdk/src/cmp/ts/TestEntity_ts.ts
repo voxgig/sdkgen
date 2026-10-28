@@ -36,7 +36,7 @@ import {
   serverVarEnv,
   serverVariables,
   isHttpBasicAuth,
-  entityDataIdField, envName, envToken,
+  entityDataIdField, entityRecordIdField, envName, envToken,
   jsKey,
   jsProp,
   hasLiveScenarios,
@@ -161,7 +161,7 @@ function basicSetup(extra?: any) {
 
   // TODO: need a xlang JSON parse utility in voxgig/struct with better error msgs
   const entityData = JSON.parse(entityDataSource)
-
+${fixtureIdentity(entity)}
   options.entity = entityData.existing
 
   let client = ${model.Name}SDK.test(options, extra)
@@ -343,7 +343,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
     ${datavar} = (await ${entvar}.create(${datavar})).data()
 `)
   if (hasEntIdC) {
-    Content(`    assert(null != ${datavar}.id)
+    Content(`    assert(null != ${rid(entity, datavar)})
 `)
   }
   else {
@@ -392,12 +392,12 @@ const generateList: OpGen = (ctx, step, index) => {
 
     if ('ItemExists' === validator.apply && hasRefData && hasDataId) {
       Content(`
-    assert(!isempty(select(${listvar}, { id: ${validRef}_data.id })))
+    assert(!isempty(select(${listvar}, { ${jsKey(entityRecordIdField(entity))}: ${rid(entity, validRef + '_data')} })))
 `)
     }
     else if ('ItemNotExists' === validator.apply && hasRefData && hasDataId) {
       Content(`
-    assert(isempty(select(${listvar}, { id: ${validRef}_data.id })))
+    assert(isempty(select(${listvar}, { ${jsKey(entityRecordIdField(entity))}: ${rid(entity, validRef + '_data')} })))
 `)
     }
   }
@@ -429,7 +429,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`    const ${datavar}: any = {}
 `)
   if (hasEntIdU) {
-    Content(`    ${datavar}.id = ${srcdatavar}.id
+    Content(`    ${datavar}.id = ${rid(entity, srcdatavar)}
 `)
   }
 
@@ -459,7 +459,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     const ${resdatavar} = (await ${entvar}.update(${datavar})).data()
 `)
   if (hasEntIdU) {
-    Content(`    assert(${resdatavar}.id === ${datavar}.id)
+    Content(`    assert(${rid(entity, resdatavar)} === ${datavar}.id)
 `)
   }
   else {
@@ -536,7 +536,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   Content(`    const ${matchvar}: any = {}
 `)
   if (hasEntId) {
-    Content(`    ${matchvar}.id = ${srcdatavar}.id
+    Content(`    ${matchvar}.id = ${rid(entity, srcdatavar)}
 `)
     loadMatch(entity, step, matchvar, srcdatavar)
   }
@@ -545,7 +545,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   if (hasEntId) {
     Content(`    const ${datavar} = (await ${entvar}.load(${matchvar})).data()
-    assert(${datavar}.id === ${srcdatavar}.id)
+    assert(${rid(entity, datavar)} === ${rid(entity, srcdatavar)})
 `)
   }
   else {
@@ -585,11 +585,29 @@ const generateRemove: OpGen = (ctx, step, index) => {
   // Always match the prior-created entity by id. The mock test feature
   // removes the first match in entmap, so without a specific id the
   // result depends on hash-sort order and flakes (see cheapshark).
-  Content(`    const ${matchvar}: any = { id: ${srcdatavar}.id }
+  Content(`    const ${matchvar}: any = { id: ${rid(entity, srcdatavar)} }
 `)
   parentMatch(step, matchvar)
   Content(`    await ${entvar}.remove(${matchvar})
   `)
+}
+
+
+// The record field the entity's identity is read from, on a record.
+function rid(entity: any, record: string): string {
+  return jsProp(record, entityRecordIdField(entity))
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  const field = entityRecordIdField(entity)
+  return 'id' === field ? '' : `
+  for (const rec of Object.values(entityData.existing?.[${JSON.stringify(entity.name)}] ?? {}) as any[]) {
+    if (null != rec?.id) ${jsProp('rec', field)} = rec.id
+  }
+`
 }
 
 

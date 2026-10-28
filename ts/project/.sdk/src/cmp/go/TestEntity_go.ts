@@ -27,7 +27,7 @@ import {
   isAuthActive,
   serverVarEnv,
   serverVariables,
-  entityDataIdField, envName, envToken,
+  entityDataIdField, entityRecordIdField, envName, envToken,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
@@ -313,7 +313,7 @@ ${liveExcludedLines(getOnly).map((line) => '\t\t\tt.Log(' + JSON.stringify(line)
 	if err := json.Unmarshal(entityDataSource, &entityData); err != nil {
 		panic("failed to parse ${entity.name} test data: " + err.Error())
 	}
-
+${fixtureIdentity(entity)}
 	options := map[string]any{}
 	options["entity"] = entityData["existing"]
 
@@ -501,7 +501,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
 		}
 `)
   if (null != ctx.entity.id) {
-    Content(`		if ${datavar}["id"] == nil {
+    Content(`		if ${datavar}[${rid(ctx.entity)}] == nil {
 			t.Fatal("expected created entity to have an id")
 		}
 `)
@@ -582,7 +582,7 @@ const generateList: OpGen = (ctx, step, index) => {
       if ('ItemExists' === validator.apply && hasRefData && hasDataId) {
         const refDataVar = goVar(validRef + '_data')
         Content(`
-		foundItem := vs.Select(entityListToData(${listvar}), map[string]any{"id": ${refDataVar}["id"]})
+		foundItem := vs.Select(entityListToData(${listvar}), map[string]any{${rid(entity)}: ${refDataVar}[${rid(entity)}]})
 		if vs.IsEmpty(foundItem) {
 			t.Fatal("expected to find created entity in list")
 		}
@@ -590,7 +590,7 @@ const generateList: OpGen = (ctx, step, index) => {
       } else if ('ItemNotExists' === validator.apply && hasRefData && hasDataId) {
         const refDataVar = goVar(validRef + '_data')
         Content(`
-		notFoundItem := vs.Select(entityListToData(${listvar}), map[string]any{"id": ${refDataVar}["id"]})
+		notFoundItem := vs.Select(entityListToData(${listvar}), map[string]any{${rid(entity)}: ${refDataVar}[${rid(entity)}]})
 		if !vs.IsEmpty(notFoundItem) {
 			t.Fatal("expected removed entity to not be in list")
 		}
@@ -625,7 +625,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`		${datavar}Up := map[string]any{
 `)
   if (hasEntIdU) {
-    Content(`			"id": ${srcdatavar}["id"],
+    Content(`			"id": ${srcdatavar}[${rid(entity)}],
 `)
   }
 
@@ -667,7 +667,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 		}
 `)
   if (hasEntIdU) {
-    Content(`		if ${resdatavar}["id"] != ${datavar}Up["id"] {
+    Content(`		if ${resdatavar}[${rid(entity)}] != ${datavar}Up["id"] {
 			t.Fatal("expected update result id to match")
 		}
 `)
@@ -730,7 +730,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   if (hasEntId) {
     Content(`		${matchvar} := map[string]any{
-			"id": ${srcdatavar}["id"],
+			"id": ${srcdatavar}[${rid(entity)}],
 		}
 `)
     loadMatch(entity, step, matchvar, srcdatavar)
@@ -743,7 +743,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 		if ${datavar}LoadResult == nil {
 			t.Fatal("expected load result to be a map")
 		}
-		if ${datavar}LoadResult["id"] != ${srcdatavar}["id"] {
+		if ${datavar}LoadResult[${rid(entity)}] != ${srcdatavar}[${rid(entity)}] {
 			t.Fatal("expected load result id to match")
 		}
 `)
@@ -791,7 +791,7 @@ const generateRemove: OpGen = (ctx, step, index) => {
   }
   // Always match the prior-created entity by id to avoid mock-order flakes.
   Content(`		${matchvar} := map[string]any{
-			"id": ${srcdatavar}["id"],
+			"id": ${srcdatavar}[${rid(entity)}],
 		}
 `)
   parentMatch(step, matchvar)
@@ -800,6 +800,26 @@ const generateRemove: OpGen = (ctx, step, index) => {
 			t.Fatalf("remove failed: %v", err)
 		}
 `)
+}
+
+
+// The record field the entity's identity is read from, as a Go string literal.
+function rid(entity: any): string {
+  return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  const field = entityRecordIdField(entity)
+  return 'id' === field ? '' : `
+	for _, rec := range core.ToMapAny(vs.GetPath(entityData, "existing.${entity.name}")) {
+		if recMap := core.ToMapAny(rec); recMap != nil && recMap["id"] != nil {
+			recMap[${JSON.stringify(field)}] = recMap["id"]
+		}
+	}
+`
 }
 
 

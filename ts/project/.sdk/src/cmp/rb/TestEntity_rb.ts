@@ -25,7 +25,7 @@ import {
   buildIdNames,
   getMatchEntries,
   isAuthActive,
-  entityDataIdField, envName, envToken,
+  entityDataIdField, entityRecordIdField, envName, envToken,
   serverVarEnv,
   serverVariables,
   invalidRequest,
@@ -302,7 +302,7 @@ end
   entity_data_file = File.join(__dir__, "..", "..", ".sdk", "test", "entity", "${entity.name}", "${entity.Name}TestData.json")
   entity_data_source = File.read(entity_data_file, encoding: "UTF-8")
   entity_data = JSON.parse(entity_data_source)
-
+${fixtureIdentity(entity)}
   options = {}
   options["entity"] = entity_data["existing"]
 
@@ -428,7 +428,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
     assert !${datavar}.nil?
 `)
   if (null != ctx.entity.id) {
-    Content(`    assert !${datavar}["id"].nil?
+    Content(`    assert !${datavar}[${rid(ctx.entity)}].nil?
 `)
   }
 }
@@ -487,7 +487,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
     found_item = Vs.select(
       Runner.entity_list_to_data(${listvar}_result),
-      { "id" => ${refDataVar}["id"] })
+      { ${rid(entity)} => ${refDataVar}[${rid(entity)}] })
     assert !Vs.isempty(found_item)
 `)
       } else if ('ItemNotExists' === validator.apply && hasRefData && hasDataId) {
@@ -495,7 +495,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
     not_found_item = Vs.select(
       Runner.entity_list_to_data(${listvar}_result),
-      { "id" => ${refDataVar}["id"] })
+      { ${rid(entity)} => ${refDataVar}[${rid(entity)}] })
     assert Vs.isempty(not_found_item)
 `)
       }
@@ -528,7 +528,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`    ${datavar}_up = {
 `)
   if (hasEntIdU) {
-    Content(`      "id" => ${srcdatavar}["id"],
+    Content(`      "id" => ${srcdatavar}[${rid(entity)}],
 `)
   }
 
@@ -563,7 +563,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     assert !${resdatavar}.nil?
 `)
   if (hasEntIdU) {
-    Content(`    assert_equal ${resdatavar}["id"], ${datavar}_up["id"]
+    Content(`    assert_equal ${resdatavar}[${rid(entity)}], ${datavar}_up["id"]
 `)
   }
 
@@ -621,12 +621,12 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   if (hasEntId) {
     Content(`    ${matchvar} = {
-      "id" => ${srcdatavar}["id"],
+      "id" => ${srcdatavar}[${rid(entity)}],
     }
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar)}    ${datavar}_loaded = ${entvar}.load(${matchvar}, nil)
     ${datavar}_load_result = Helpers.to_map(${datavar}_loaded.respond_to?(:data_get) ? ${datavar}_loaded.data_get : ${datavar}_loaded)
     assert !${datavar}_load_result.nil?
-    assert_equal ${datavar}_load_result["id"], ${srcdatavar}["id"]
+    assert_equal ${datavar}_load_result[${rid(entity)}], ${srcdatavar}[${rid(entity)}]
 `)
   }
   else {
@@ -660,12 +660,30 @@ const generateRemove: OpGen = (ctx, step, index) => {
   }
   // Always match the prior-created entity by id to avoid mock-order flakes.
   Content(`    ${matchvar} = {
-      "id" => ${srcdatavar}["id"],
+      "id" => ${srcdatavar}[${rid(entity)}],
     }
 ${parentMatch(step, matchvar)}    ${entvar}.remove(${matchvar}, nil)
 `)
 }
 
+
+
+// The record field the entity's identity is read from, as a Ruby string.
+function rid(entity: any): string {
+  return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  const field = entityRecordIdField(entity)
+  return 'id' === field ? '' : `
+  ((entity_data["existing"] || {})[${JSON.stringify(entity.name)}] || {}).each_value do |rec|
+    rec[${JSON.stringify(field)}] = rec["id"] if rec.is_a?(Hash) && !rec["id"].nil?
+  end
+`
+}
 
 
 // A child's route names its parents, and an entity no earlier step has
