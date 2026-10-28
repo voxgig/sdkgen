@@ -54,5 +54,6 @@ declare function pickExampleEntity(entity: any): {
     primaryOp: string | null;
 };
 declare function entityDataIdField(ent: any): string | null;
-export { CANON_OP_ORDER, OP_SUFFIX, bodyFieldNames, deriveEntityNames, entityCollection, opTypeName, opParams, selectablePoints, pointRequires, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
+declare function entityRecordIdField(ent: any): string;
+export { CANON_OP_ORDER, OP_SUFFIX, bodyFieldNames, deriveEntityNames, entityCollection, opTypeName, opParams, selectablePoints, pointRequires, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, };
 export type { OpShapeItem, UngeneratedOp, };

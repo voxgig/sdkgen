@@ -17,6 +17,7 @@ exports.entityPath = entityPath;
 exports.opRequestShape = opRequestShape;
 exports.entityIdField = entityIdField;
 exports.entityDataIdField = entityDataIdField;
+exports.entityRecordIdField = entityRecordIdField;
 exports.entityOps = entityOps;
 exports.invalidRequest = invalidRequest;
 exports.entityPrimaryOp = entityPrimaryOp;
@@ -629,5 +630,8 @@ function entityDataIdField(ent) {
         return 'id';
     }
     return null;
+}
+function entityRecordIdField(ent) {
+    return entityDataIdField(ent) ?? 'id';
 }
 //# sourceMappingURL=opShape.js.map

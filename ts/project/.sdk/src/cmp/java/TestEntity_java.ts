@@ -20,7 +20,7 @@ import {
   getMatchEntries,
   isAuthActive,
   serverVarEnv,
-  serverVariables, envName, envToken,
+  serverVariables, envName, envToken, entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
@@ -346,7 +346,7 @@ ${liveExcludedLines(plan).map((line) => '      System.out.println(' + javaLit(li
     catch (Exception e) {
       throw new AssertionError("failed to read ${entity.name} test data: " + e.getMessage(), e);
     }
-
+${fixtureIdentity(entity)}
     Map<String, Object> options = new LinkedHashMap<>();
     options.put("entity", entityData.get("existing"));
 
@@ -473,7 +473,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
     assertNotNull(${datavar}, "expected create result to be a map");
 `)
   if (null != ctx.entity.id) {
-    Content(`    assertNotNull(${datavar}.get("id"), "expected created entity to have an id");
+    Content(`    assertNotNull(${datavar}.get(${rid(ctx.entity)}), "expected created entity to have an id");
 `)
   }
 }
@@ -539,7 +539,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
     List<Object> foundItem = Struct.select(
         RunnerSupport.entityListToData(${listvar}),
-        Struct.jm("id", ${refDataVar}.get("id")));
+        Struct.jm(${rid(entity)}, ${refDataVar}.get(${rid(entity)})));
     assertFalse(Struct.isempty(foundItem), "expected to find created entity in list");
 `)
       } else if ('ItemNotExists' === validator.apply && hasRefData) {
@@ -547,7 +547,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
     List<Object> notFoundItem = Struct.select(
         RunnerSupport.entityListToData(${listvar}),
-        Struct.jm("id", ${refDataVar}.get("id")));
+        Struct.jm(${rid(entity)}, ${refDataVar}.get(${rid(entity)})));
     assertTrue(Struct.isempty(notFoundItem), "expected removed entity to not be in list");
 `)
       }
@@ -580,7 +580,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`    Map<String, Object> ${datavar}Up = new LinkedHashMap<>();
 `)
   if (hasEntIdU) {
-    Content(`    ${datavar}Up.put("id", ${srcdatavar}.get("id"));
+    Content(`    ${datavar}Up.put("id", ${srcdatavar}.get(${rid(entity)}));
 `)
   }
 
@@ -614,7 +614,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     assertNotNull(${resdatavar}, "expected update result to be a map");
 `)
   if (hasEntIdU) {
-    Content(`    assertEquals(${datavar}Up.get("id"), ${resdatavar}.get("id"),
+    Content(`    assertEquals(${datavar}Up.get("id"), ${resdatavar}.get(${rid(entity)}),
         "expected update result id to match");
 `)
   }
@@ -675,11 +675,11 @@ const generateLoad: OpGen = (ctx, step, index) => {
   Content(`    Map<String, Object> ${matchvar} = new LinkedHashMap<>();
 `)
   if (hasEntId) {
-    Content(`    ${matchvar}.put("id", ${srcdatavar}.get("id"));
+    Content(`    ${matchvar}.put("id", ${srcdatavar}.get(${rid(entity)}));
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
     Map<String, Object> ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded instanceof SdkEntity ? ((SdkEntity) ${datavar}Loaded).data() : ${datavar}Loaded);
     assertNotNull(${datavar}LoadResult, "expected load result to be a map");
-    assertEquals(${srcdatavar}.get("id"), ${datavar}LoadResult.get("id"),
+    assertEquals(${srcdatavar}.get(${rid(entity)}), ${datavar}LoadResult.get(${rid(entity)}),
         "expected load result id to match");
 `)
   }
@@ -710,9 +710,36 @@ const generateRemove: OpGen = (ctx, step, index) => {
   }
   // Always match the prior-created entity by id to avoid mock-order flakes.
   Content(`    Map<String, Object> ${matchvar} = new LinkedHashMap<>();
-    ${matchvar}.put("id", ${srcdatavar}.get("id"));
+    ${matchvar}.put("id", ${srcdatavar}.get(${rid(entity)}));
 ${parentMatch(step, matchvar)}    ${entvar}.remove(${matchvar}, null);
 `)
+}
+
+
+// The record field the entity's identity is read from, as a Java string.
+function rid(entity: any): string {
+  return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  const field = entityRecordIdField(entity)
+  return 'id' === field ? '' : `
+    Object fixtureEntities = entityData.get("existing");
+    Object fixtureRecords = fixtureEntities instanceof Map
+        ? ((Map<?, ?>) fixtureEntities).get(${JSON.stringify(entity.name)}) : null;
+    if (fixtureRecords instanceof Map) {
+      for (Object fixtureRec : ((Map<?, ?>) fixtureRecords).values()) {
+        if (fixtureRec instanceof Map && null != ((Map<?, ?>) fixtureRec).get("id")) {
+          @SuppressWarnings("unchecked")
+          Map<String, Object> fixtureRecMap = (Map<String, Object>) fixtureRec;
+          fixtureRecMap.put(${JSON.stringify(field)}, fixtureRecMap.get("id"));
+        }
+      }
+    }
+`
 }
 
 

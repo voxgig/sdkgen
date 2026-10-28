@@ -753,6 +753,11 @@ function entityDataIdField(ent: any): string | null {
 }
 
 
+function entityRecordIdField(ent: any): string {
+  return entityDataIdField(ent) ?? 'id'
+}
+
+
 export {
   CANON_OP_ORDER,
   OP_SUFFIX,
@@ -772,6 +777,7 @@ export {
   opRequestShape,
   entityIdField,
   entityDataIdField,
+  entityRecordIdField,
   entityOps,
   invalidRequest,
   entityPrimaryOp,

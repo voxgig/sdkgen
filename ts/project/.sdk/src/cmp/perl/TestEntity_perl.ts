@@ -18,7 +18,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken,
+  isAuthActive, envName, envToken, entityRecordIdField,
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
@@ -279,7 +279,7 @@ ${liveExcludedLines(plan).map((line) => '    note(' + perlLit(line) + ');\n').jo
     local $/;
     Voxgig::Struct::parse_json(<$fh>);
   };
-
+${fixtureIdentity(entity)}
   my $options = {};
   $options->{entity} = $entity_data->{existing};
 
@@ -386,7 +386,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
   ok(defined $V{${datavar}}, '${entity.name} create: data');
 `)
   if (null != ctx.entity.id) {
-    Content(`  ok(defined $V{${datavar}}{id}, '${entity.name} create: id');
+    Content(`  ok(defined $V{${datavar}}{${rid(ctx.entity)}}, '${entity.name} create: id');
 `)
   }
 }
@@ -443,7 +443,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
   $V{found_item} = Voxgig::Struct::select(
     ${N}TestRunner::entity_list_to_data($V{${listvar}_result}),
-    { 'id' => $V{${refDataVar}}{id} });
+    { '${entityRecordIdField(entity)}' => $V{${refDataVar}}{${rid(entity)}} });
   ok(!Voxgig::Struct::isempty($V{found_item}), '${entity.name} list: item exists');
 `)
       } else if ('ItemNotExists' === validator.apply && hasRefData) {
@@ -451,7 +451,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
   $V{not_found_item} = Voxgig::Struct::select(
     ${N}TestRunner::entity_list_to_data($V{${listvar}_result}),
-    { 'id' => $V{${refDataVar}}{id} });
+    { '${entityRecordIdField(entity)}' => $V{${refDataVar}}{${rid(entity)}} });
   ok(Voxgig::Struct::isempty($V{not_found_item}), '${entity.name} list: item not exists');
 `)
       }
@@ -484,7 +484,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`  $V{${datavar}_up} = {
 `)
   if (hasEntIdU) {
-    Content(`    'id' => $V{${srcdatavar}}{id},
+    Content(`    'id' => $V{${srcdatavar}}{${rid(entity)}},
 `)
   }
 
@@ -519,7 +519,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   ok(defined $V{${resdatavar}}, '${entity.name} update: data');
 `)
   if (hasEntIdU) {
-    Content(`  is($V{${resdatavar}}{id}, $V{${datavar}_up}{id}, '${entity.name} update: id');
+    Content(`  is($V{${resdatavar}}{${rid(entity)}}, $V{${datavar}_up}{id}, '${entity.name} update: id');
 `)
   }
 
@@ -577,12 +577,12 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   if (hasEntId) {
     Content(`  $V{${matchvar}} = {
-    'id' => $V{${srcdatavar}}{id},
+    'id' => $V{${srcdatavar}}{${rid(entity)}},
   };
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
   $V{${datavar}_load_result} = ${N}Helpers::to_map(ref($V{${datavar}_loaded}) && $V{${datavar}_loaded}->can('data_get') ? $V{${datavar}_loaded}->data_get : $V{${datavar}_loaded});
   ok(defined $V{${datavar}_load_result}, '${entity.name} load: data');
-  is($V{${datavar}_load_result}{id}, $V{${srcdatavar}}{id}, '${entity.name} load: id');
+  is($V{${datavar}_load_result}{${rid(entity)}}, $V{${srcdatavar}}{${rid(entity)}}, '${entity.name} load: id');
 `)
   }
   else {
@@ -613,11 +613,30 @@ const generateRemove: OpGen = (ctx, step, index) => {
   }
   // Always match the prior-created entity by id to avoid mock-order flakes.
   Content(`  $V{${matchvar}} = {
-    'id' => $V{${srcdatavar}}{id},
+    'id' => $V{${srcdatavar}}{${rid(entity)}},
   };
 ${parentMatch(step, matchvar)}  $V{${entvar}}->remove($V{${matchvar}}, undef);
   pass('${entity.name} remove: completed');
 `)
+}
+
+
+// The record field the entity's identity is read from, as a Perl hash key.
+function rid(entity: any): string {
+  const field = entityRecordIdField(entity)
+  return /^[A-Za-z_]\w*$/.test(field) ? field : `'${field}'`
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  return 'id' === entityRecordIdField(entity) ? '' : `
+  for my $fixture_rec (values %{ $entity_data->{existing}{'${entity.name}'} // {} }) {
+    $fixture_rec->{${rid(entity)}} = $fixture_rec->{id}
+      if ref $fixture_rec eq 'HASH' && defined $fixture_rec->{id};
+  }
+`
 }
 
 

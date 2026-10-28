@@ -18,7 +18,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken,
+  isAuthActive, envName, envToken, entityRecordIdField,
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
@@ -357,7 +357,7 @@ ${liveExcludedLines(plan).map((line) => '            Console.WriteLine(' + forma
             as Dictionary<string, object?>
             ?? throw new InvalidOperationException(
                 "failed to parse ${entity.name} test data");
-
+${fixtureIdentity(entity)}
         var options = new Dictionary<string, object?>
         {
             ["entity"] = entityData["existing"],
@@ -496,7 +496,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
         Assert.True(${datavar} != null, "expected create result to be a map");
 `)
   if (null != ctx.entity.id) {
-    Content(`        Assert.True(${datavar}!["id"] != null, "expected created entity to have an id");
+    Content(`        Assert.True(${datavar}![${rid(ctx.entity)}] != null, "expected created entity to have an id");
 `)
   }
 }
@@ -558,7 +558,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
         var ${listvar}Found = StructUtils.Select(
             TestRunner.EntityListToData(${listvar}!),
-            new Dictionary<string, object?> { ["id"] = ${refDataVar}!["id"] });
+            new Dictionary<string, object?> { [${rid(entity)}] = ${refDataVar}![${rid(entity)}] });
         Assert.False(StructUtils.IsEmpty(${listvar}Found),
             "expected to find created entity in list");
 `)
@@ -567,7 +567,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
         var ${listvar}NotFound = StructUtils.Select(
             TestRunner.EntityListToData(${listvar}!),
-            new Dictionary<string, object?> { ["id"] = ${refDataVar}!["id"] });
+            new Dictionary<string, object?> { [${rid(entity)}] = ${refDataVar}![${rid(entity)}] });
         Assert.True(StructUtils.IsEmpty(${listvar}NotFound),
             "expected removed entity to not be in list");
 `)
@@ -602,7 +602,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
         {
 `)
   if (hasEntIdU) {
-    Content(`            ["id"] = ${srcdatavar}!["id"],
+    Content(`            ["id"] = ${srcdatavar}![${rid(entity)}],
 `)
   }
 
@@ -639,7 +639,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
         Assert.True(${resdatavar} != null, "expected update result to be a map");
 `)
   if (hasEntIdU) {
-    Content(`        Assert.True(StructRunner.DeepEqual(${resdatavar}!["id"], ${datavar}Up["id"]),
+    Content(`        Assert.True(StructRunner.DeepEqual(${resdatavar}![${rid(entity)}], ${datavar}Up["id"]),
             "expected update result id to match");
 `)
   }
@@ -701,12 +701,12 @@ const generateLoad: OpGen = (ctx, step, index) => {
   if (hasEntId) {
     Content(`        var ${matchvar} = new Dictionary<string, object?>
         {
-            ["id"] = ${srcdatavar}!["id"],
+            ["id"] = ${srcdatavar}![${rid(entity)}],
         };
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
         var ${datavar}LoadResult = Helpers.ToMapAny(${datavar}Loaded is IEntity le ? le.Data() : ${datavar}Loaded);
         Assert.True(${datavar}LoadResult != null, "expected load result to be a map");
-        Assert.True(StructRunner.DeepEqual(${datavar}LoadResult!["id"], ${srcdatavar}["id"]),
+        Assert.True(StructRunner.DeepEqual(${datavar}LoadResult![${rid(entity)}], ${srcdatavar}[${rid(entity)}]),
             "expected load result id to match");
 `)
   }
@@ -739,10 +739,39 @@ const generateRemove: OpGen = (ctx, step, index) => {
   // Always match the prior-created entity by id to avoid mock-order flakes.
   Content(`        var ${matchvar} = new Dictionary<string, object?>
         {
-            ["id"] = ${srcdatavar}!["id"],
+            ["id"] = ${srcdatavar}![${rid(entity)}],
         };
 ${parentMatch(step, matchvar)}        ${entvar}.Remove(${matchvar}, null);
 `)
+}
+
+
+// The record field the entity's identity is read from, as a C# string.
+function rid(entity: any): string {
+  return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  const field = entityRecordIdField(entity)
+  return 'id' === field ? '' : `
+        if (entityData.TryGetValue("existing", out var fixtureExisting) &&
+            fixtureExisting is Dictionary<string, object?> fixtureEntities &&
+            fixtureEntities.TryGetValue(${JSON.stringify(entity.name)}, out var fixtureRecords) &&
+            fixtureRecords is Dictionary<string, object?> fixtureMap)
+        {
+            foreach (var fixtureRec in fixtureMap.Values)
+            {
+                if (fixtureRec is Dictionary<string, object?> fixtureRecMap &&
+                    fixtureRecMap.TryGetValue("id", out var fixtureId) && fixtureId != null)
+                {
+                    fixtureRecMap[${JSON.stringify(field)}] = fixtureRecMap["id"];
+                }
+            }
+        }
+`
 }
 
 

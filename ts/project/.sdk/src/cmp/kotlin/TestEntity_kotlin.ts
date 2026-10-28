@@ -18,7 +18,7 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken,
+  isAuthActive, envName, envToken, entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
@@ -309,7 +309,7 @@ ${liveExcludedLines(plan).map((line) => '      println(' + kotlinLit(line) + ')\
       } catch (e: Exception) {
         throw AssertionError("failed to read ${entity.name} test data: " + e.message, e)
       }
-
+${fixtureIdentity(entity)}
       val options = linkedMapOf<String, Any?>()
       options["entity"] = entityData["existing"]
 
@@ -423,7 +423,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
     assertNotNull(${datavar}, "expected create result to be a map")
 `)
   if (null != ctx.entity.id) {
-    Content(`    assertNotNull(${datavar}["id"], "expected created entity to have an id")
+    Content(`    assertNotNull(${datavar}[${rid(ctx.entity)}], "expected created entity to have an id")
 `)
   }
 }
@@ -485,7 +485,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
     val foundItem = Struct.select(
         RunnerSupport.entityListToData(${listvar}),
-        Struct.jm("id", ${refDataVar}["id"]))
+        Struct.jm(${rid(entity)}, ${refDataVar}[${rid(entity)}]))
     assertFalse(Struct.isempty(foundItem), "expected to find created entity in list")
 `)
       } else if ('ItemNotExists' === validator.apply && hasRefData) {
@@ -493,7 +493,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
     val notFoundItem = Struct.select(
         RunnerSupport.entityListToData(${listvar}),
-        Struct.jm("id", ${refDataVar}["id"]))
+        Struct.jm(${rid(entity)}, ${refDataVar}[${rid(entity)}]))
     assertTrue(Struct.isempty(notFoundItem), "expected removed entity to not be in list")
 `)
       }
@@ -526,7 +526,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`    val ${datavar}Up = linkedMapOf<String, Any?>()
 `)
   if (hasEntIdU) {
-    Content(`    ${datavar}Up["id"] = ${srcdatavar}["id"]
+    Content(`    ${datavar}Up["id"] = ${srcdatavar}[${rid(entity)}]
 `)
   }
 
@@ -558,7 +558,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     assertNotNull(${resdatavar}, "expected update result to be a map")
 `)
   if (hasEntIdU) {
-    Content(`    assertEquals(${datavar}Up["id"], ${resdatavar}["id"],
+    Content(`    assertEquals(${datavar}Up["id"], ${resdatavar}[${rid(entity)}],
         "expected update result id to match")
 `)
   }
@@ -617,11 +617,11 @@ const generateLoad: OpGen = (ctx, step, index) => {
   Content(`    val ${matchvar} = linkedMapOf<String, Any?>()
 `)
   if (hasEntId) {
-    Content(`    ${matchvar}["id"] = ${srcdatavar}["id"]
+    Content(`    ${matchvar}["id"] = ${srcdatavar}[${rid(entity)}]
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
     val ${datavar}LoadResult = Helpers.toMapAny(if (${datavar}Loaded is SdkEntity) ${datavar}Loaded.data() else ${datavar}Loaded) ?: linkedMapOf()
     assertNotNull(${datavar}LoadResult, "expected load result to be a map")
-    assertEquals(${srcdatavar}["id"], ${datavar}LoadResult["id"],
+    assertEquals(${srcdatavar}[${rid(entity)}], ${datavar}LoadResult[${rid(entity)}],
         "expected load result id to match")
 `)
   } else {
@@ -650,9 +650,31 @@ const generateRemove: OpGen = (ctx, step, index) => {
 `)
   }
   Content(`    val ${matchvar} = linkedMapOf<String, Any?>()
-    ${matchvar}["id"] = ${srcdatavar}["id"]
+    ${matchvar}["id"] = ${srcdatavar}[${rid(entity)}]
 ${parentMatch(step, matchvar)}    ${entvar}.remove(${matchvar}, null)
 `)
+}
+
+
+// The record field the entity's identity is read from, as a Kotlin string.
+function rid(entity: any): string {
+  return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  const field = entityRecordIdField(entity)
+  return 'id' === field ? '' : `
+      ((entityData["existing"] as? Map<*, *>)?.get(${JSON.stringify(entity.name)}) as? Map<*, *>)?.values?.forEach { fixtureRec ->
+        @Suppress("UNCHECKED_CAST")
+        val fixtureRecMap = fixtureRec as? MutableMap<String, Any?>
+        if (fixtureRecMap != null && fixtureRecMap["id"] != null) {
+          fixtureRecMap[${JSON.stringify(field)}] = fixtureRecMap["id"]
+        }
+      }
+`
 }
 
 

@@ -27,7 +27,7 @@ import {
   isAuthActive,
   serverVarEnv,
   serverVariables,
-  entityDataIdField, envName, envToken,
+  entityDataIdField, entityRecordIdField, envName, envToken,
   phpEntityAccessor,
   invalidRequest,
   liveFlowNeeds, liveStrict, liveStrictNote,
@@ -322,7 +322,7 @@ ${liveExcludedLines(plan).map((line) =>
     $entity_data_file = __DIR__ . '/../../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json';
     $entity_data_source = file_get_contents($entity_data_file);
     $entity_data = json_decode($entity_data_source, true);
-
+${fixtureIdentity(entity)}
     $options = [];
     $options["entity"] = $entity_data["existing"];
 
@@ -455,7 +455,7 @@ const generateCreate: OpGen = (ctx, step, index) => {
         $this->assertNotNull($${datavar});
 `)
   if (null != ctx.entity.id) {
-    Content(`        $this->assertNotNull($${datavar}["id"]);
+    Content(`        $this->assertNotNull($${datavar}[${rid(ctx.entity)}]);
 `)
   }
 }
@@ -514,7 +514,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
         $found_item = sdk_select(
             Runner::entity_list_to_data($${listvar}_result),
-            ["id" => $${refDataVar}["id"]]);
+            [${rid(entity)} => $${refDataVar}[${rid(entity)}]]);
         $this->assertNotEmpty($found_item);
 `)
       } else if ('ItemNotExists' === validator.apply && hasRefData && hasDataId) {
@@ -522,7 +522,7 @@ const generateList: OpGen = (ctx, step, index) => {
         Content(`
         $not_found_item = sdk_select(
             Runner::entity_list_to_data($${listvar}_result),
-            ["id" => $${refDataVar}["id"]]);
+            [${rid(entity)} => $${refDataVar}[${rid(entity)}]]);
         $this->assertEmpty($not_found_item);
 `)
       }
@@ -555,7 +555,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   Content(`        $${datavar}_up = [
 `)
   if (hasEntIdU) {
-    Content(`            "id" => $${srcdatavar}["id"],
+    Content(`            "id" => $${srcdatavar}[${rid(entity)}],
 `)
   }
 
@@ -590,7 +590,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
         $this->assertNotNull($${resdatavar});
 `)
   if (hasEntIdU) {
-    Content(`        $this->assertEquals($${resdatavar}["id"], $${datavar}_up["id"]);
+    Content(`        $this->assertEquals($${resdatavar}[${rid(entity)}], $${datavar}_up["id"]);
 `)
   }
 
@@ -648,12 +648,12 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   if (hasEntId) {
     Content(`        $${matchvar} = [
-            "id" => $${srcdatavar}["id"],
+            "id" => $${srcdatavar}[${rid(entity)}],
         ];
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
         $${datavar}_load_result = Helpers::to_map(is_object($${datavar}_loaded) && method_exists($${datavar}_loaded, 'data_get') ? $${datavar}_loaded->data_get() : $${datavar}_loaded);
         $this->assertNotNull($${datavar}_load_result);
-        $this->assertEquals($${datavar}_load_result["id"], $${srcdatavar}["id"]);
+        $this->assertEquals($${datavar}_load_result[${rid(entity)}], $${srcdatavar}[${rid(entity)}]);
 `)
   }
   else {
@@ -687,12 +687,33 @@ const generateRemove: OpGen = (ctx, step, index) => {
   }
   // Always match the prior-created entity by id to avoid mock-order flakes.
   Content(`        $${matchvar} = [
-            "id" => $${srcdatavar}["id"],
+            "id" => $${srcdatavar}[${rid(entity)}],
         ];
 ${parentMatch(step, matchvar)}        $${entvar}->remove($${matchvar}, null);
 `)
 }
 
+
+
+// The record field the entity's identity is read from, as a PHP string.
+function rid(entity: any): string {
+  return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  const field = entityRecordIdField(entity)
+  const name = JSON.stringify(entity.name)
+  return 'id' === field ? '' : `
+    foreach (($entity_data["existing"][${name}] ?? []) as $rec_key => $rec) {
+        if (is_array($rec) && isset($rec["id"])) {
+            $entity_data["existing"][${name}][$rec_key][${JSON.stringify(field)}] = $rec["id"];
+        }
+    }
+`
+}
 
 
 // A child's route names its parents, and an entity no earlier step has

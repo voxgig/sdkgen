@@ -176,6 +176,49 @@ describe('utility', () => {
   })
 
 
+  // A record addressed by its slug, never an id, still fills the route of an
+  // entity a list returned: the point names the field its `id` is read from.
+  describe('configDefinition identity alias', () => {
+
+    const point = (o: string, params: any[] = []) => ({
+      m: 'GET', o, k: 'http', g: { params }, s: o.split('/').filter((s) => s)
+        .map((s) => s.startsWith('{') ? { var: 'id' } : { lit: s }),
+    })
+    const modelWith = (id: any, fields: string[]) => ({
+      const: { Name: 'Demo' }, name: 'demo',
+      main: { kit: {
+        config: { headers: {} }, info: { servers: [{ url: 'http://x/api' }] }, feature: {},
+        entity: { device: {
+          name: 'device', id,
+          fields: Object.fromEntries(fields.map((n) => [n, { n, t: '`$STRING`' }])),
+          op: {
+            list: { name: 'list', points: [point('/devices')] },
+            load: { name: 'load', points: [point('/devices/{slug}',
+              [{ k: 'param', n: 'id', or: 'slug', r: true, t: '`$STRING`' }])] },
+          },
+        } },
+      } },
+    })
+
+    test('every point of an entity keyed by another field names it', () => {
+      const { def } = configDefinition(modelWith({ name: 'id', field: 'slug' }, ['name', 'slug']))
+      const ops = def.entity.device.op
+      deepStrictEqual(ops.load.points[0].alias, { id: 'slug' })
+      deepStrictEqual(ops.list.points[0].alias, { id: 'slug' })
+    })
+
+    test('an entity keyed by its id names no alias', () => {
+      const { def } = configDefinition(modelWith({ name: 'id', field: 'id' }, ['id', 'slug']))
+      strictEqual(def.entity.device.op.load.points[0].alias, undefined)
+    })
+
+    test('a field the record lacks names no alias', () => {
+      const { def } = configDefinition(modelWith({ name: 'id', field: 'slug' }, ['id', 'name']))
+      strictEqual(def.entity.device.op.load.points[0].alias, undefined)
+    })
+  })
+
+
   describe('resolveAuthPrefix', () => {
 
     test('defaults to Bearer when nothing declared', () => {

@@ -22,7 +22,7 @@ import {
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
-  directDiscovery, liveFallbacks,
+  directDiscovery, liveFallbacks, slugKeyed,
 } from './generateharness'
 
 
@@ -3402,6 +3402,36 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
         gaps.push(`${target}: sends an optional example`)
       }
     }
+    deepStrictEqual(gaps, [])
+  })
+
+
+  // A record addressed by its slug carries no id, or an unrelated one: a flow
+  // loads the listed record by its slug, the fixture keeps the key there too,
+  // and the config names the field so an entity a list returned can load.
+  test('every flow target reads a slug-keyed identity from the slug', async () => {
+    const targets = [...LIVE_SUITE_TARGETS, 'cpp', 'scala']
+    const out = await generate(targets, undefined, slugKeyed())
+    const gaps: string[] = []
+    const reads = (text: string, field: string) =>
+      new RegExp(`ref01_?data(\\.${field}\\b|[^\\n]{0,12}["']${field}["']|\\}\\{${field}\\})`, 'i').test(text)
+    const seeds = (text: string) => text.split('\n').some((line: string) =>
+      /\bslug\b/.test(line) && /(["']id["']|\.id\b|\{id\})/.test(line) && /(=|put\(|setp\()/.test(line))
+    for (const target of targets) {
+      for (const name of ['device', 'article']) {
+        const file = testFiles(out, target).find(([n]) => new RegExp(name + '_?entity', 'i').test(n))
+        if (null == file) {
+          gaps.push(`${target}: no ${name} entity test`)
+          continue
+        }
+        const text = String(file[1])
+        if (!reads(text, 'slug')) gaps.push(`${target}:${file[0]} does not read the slug`)
+        if (reads(text, 'id')) gaps.push(`${target}:${file[0]} reads the identity from id`)
+        if (!seeds(text)) gaps.push(`${target}:${file[0]} leaves the fixture key out of the slug`)
+      }
+    }
+    const config = filesFor(out, 'ts').find(([n]) => /(^|\/)src\/Config\.ts$/.test(n))
+    ok(null != config && /"alias":\s*\{\s*"id":\s*"slug"/.test(config[1]), 'the ts config names no alias')
     deepStrictEqual(gaps, [])
   })
 

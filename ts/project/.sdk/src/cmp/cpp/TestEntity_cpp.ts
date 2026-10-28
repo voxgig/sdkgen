@@ -17,7 +17,7 @@ import {
   cmp,
   each,
   buildIdNames,
-  getMatchEntries, envName, envToken
+  getMatchEntries, envName, envToken, entityRecordIdField,
 } from '@voxgig/sdkgen'
 
 
@@ -95,7 +95,7 @@ static ${entity.Name}Setup ${evar}_basic_setup(const Value& extra) {
 
   std::string entity_data_file = "../.sdk/test/entity/${entity.name}/${entity.Name}TestData.json";
   Value entity_data = vs::parse_json(read_file(entity_data_file));
-
+${fixtureIdentity(entity)}
   Value options = vmap({{"entity", getp(entity_data, "existing")}});
   auto client = ${ProjectName}SDK::testSDK(options, extra);
 
@@ -397,7 +397,7 @@ const generateCreate: OpGen = (ctx, step: any, index) => {
     ASSERT_TRUE(${datavar}.is_map(), "expected create result to be a map");
 `)
   if (null != ctx.entity.id) {
-    Content(`    ASSERT_TRUE(!getp(${datavar}, "id").is_undef(), "expected created entity to have an id");
+    Content(`    ASSERT_TRUE(!getp(${datavar}, ${rid(ctx.entity)}).is_undef(), "expected created entity to have an id");
 `)
   }
   Content(`  }
@@ -445,14 +445,14 @@ const generateList: OpGen = (ctx, step: any, index) => {
       if ('ItemExists' === validator.apply && hasRefData) {
         const refDataVar = cppVarName(validRef + '_data')
         Content(`  {
-    std::vector<Value> found = Struct::select(entity_list_to_data(${listvar}), vmap({{"id", getp(${refDataVar}, "id")}}));
+    std::vector<Value> found = Struct::select(entity_list_to_data(${listvar}), vmap({{${rid(entity)}, getp(${refDataVar}, ${rid(entity)})}}));
     ASSERT_TRUE(!found.empty(), "expected to find created entity in list");
   }
 `)
       } else if ('ItemNotExists' === validator.apply && hasRefData) {
         const refDataVar = cppVarName(validRef + '_data')
         Content(`  {
-    std::vector<Value> found = Struct::select(entity_list_to_data(${listvar}), vmap({{"id", getp(${refDataVar}, "id")}}));
+    std::vector<Value> found = Struct::select(entity_list_to_data(${listvar}), vmap({{${rid(entity)}, getp(${refDataVar}, ${rid(entity)})}}));
     ASSERT_TRUE(found.empty(), "expected removed entity to not be in list");
   }
 `)
@@ -484,7 +484,7 @@ const generateUpdate: OpGen = (ctx, step: any, index) => {
   Content(`  Value ${datavar}_up = vmap();
 `)
   if (hasEntIdU) {
-    Content(`  setp(${datavar}_up, "id", getp(${srcdatavar}, "id"));
+    Content(`  setp(${datavar}_up, "id", getp(${srcdatavar}, ${rid(entity)}));
 `)
   }
   if (step.d) {
@@ -514,7 +514,7 @@ const generateUpdate: OpGen = (ctx, step: any, index) => {
   ASSERT_TRUE(${resdatavar}.is_map(), "expected update result to be a map");
 `)
   if (hasEntIdU) {
-    Content(`  ASSERT_EQ_VAL(getp(${resdatavar}, "id"), getp(${datavar}_up, "id"), "expected update result id to match");
+    Content(`  ASSERT_EQ_VAL(getp(${resdatavar}, ${rid(entity)}), getp(${datavar}_up, "id"), "expected update result id to match");
 `)
   }
   if (markname) {
@@ -556,11 +556,11 @@ const generateLoad: OpGen = (ctx, step: any, index) => {
 `)
   }
   if (hasEntId) {
-    Content(`  Value ${matchvar} = vmap({{"id", getp(${srcdatavar}, "id")}});
+    Content(`  Value ${matchvar} = vmap({{"id", getp(${srcdatavar}, ${rid(entity)})}});
 ${loadMatch(entity, step, matchvar, srcdatavar, '  ')}  Value ${datavar}_loaded = ${entvar}->load(Struct::clone(${matchvar}), Value::undef())->data();
   Value ${datavar}_load_result = Helpers::toMapAny(${datavar}_loaded);
   ASSERT_TRUE(${datavar}_load_result.is_map(), "expected load result to be a map");
-  ASSERT_EQ_VAL(getp(${datavar}_load_result, "id"), getp(${srcdatavar}, "id"), "expected load result id to match");
+  ASSERT_EQ_VAL(getp(${datavar}_load_result, ${rid(entity)}), getp(${srcdatavar}, ${rid(entity)}), "expected load result id to match");
 `)
   } else {
     Content(`  Value ${matchvar} = vmap();
@@ -589,10 +589,33 @@ const generateRemove: OpGen = (ctx, step: any, index) => {
 `)
   }
   Content(`  {
-    Value ${matchvar} = vmap({{"id", getp(${srcdatavar}, "id")}});
+    Value ${matchvar} = vmap({{"id", getp(${srcdatavar}, ${rid(entity)})}});
 ${parentMatch(step, matchvar, '    ')}    ${entvar}->remove(Struct::clone(${matchvar}), Value::undef());
   }
 `)
+}
+
+
+// The record field the entity's identity is read from, as a C++ string.
+function rid(entity: any): string {
+  return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+// The fixture keeps each record's key in `id`; an entity keeping its identity
+// in another field reads the key from there too.
+function fixtureIdentity(entity: any): string {
+  return 'id' === entityRecordIdField(entity) ? '' : `
+  Value fixture_recs = getp(getp(entity_data, "existing"), "${entity.name}");
+  if (fixture_recs.is_map()) {
+    for (const auto& fixture_key : Struct::keysof(fixture_recs)) {
+      Value fixture_rec = getp(fixture_recs, fixture_key);
+      if (fixture_rec.is_map() && !getp(fixture_rec, "id").is_undef()) {
+        setp(fixture_rec, ${rid(entity)}, getp(fixture_rec, "id"));
+      }
+    }
+  }
+`
 }
 
 
