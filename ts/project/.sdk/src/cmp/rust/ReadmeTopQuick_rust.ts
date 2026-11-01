@@ -38,7 +38,7 @@ const ReadmeTopQuick = cmp(function ReadmeTopQuick(props: any) {
     : `${model.const.Name}SDK::new(Value::Noval)`
 
   Content(`\`\`\`rust
-use ${rustcrate}::{jo, ${model.const.Name}Entity, ${model.const.Name}SDK, Entity, Value};
+use ${rustcrate}::{jo, ${model.const.Name}EntityBase, ${model.const.Name}SDK, Entity, Value};
 
 let client = ${ctor};
 

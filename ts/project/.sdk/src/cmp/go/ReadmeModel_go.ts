@@ -121,14 +121,14 @@ Creates a test-mode client with mock transport. Both arguments may be \`nil\`.
 
   each(entityList, (ent: any) => {
     const article = /^[aeiou]/i.test(ent.Name) ? 'an' : 'a'
-    Content(`| \`${ent.Name}\` | \`(data map[string]any) ${model.const.Name}Entity\` | Create ${article} ${ent.Name} entity instance. |
+    Content(`| \`${ent.Name}\` | \`(data map[string]any) ${model.const.Name}EntityBase\` | Create ${article} ${ent.Name} entity instance. |
 `)
   })
 
   Content(`
-### Entity interface (${model.const.Name}Entity)
+### Entity interface (${model.const.Name}EntityBase)
 
-All entities implement the \`${model.const.Name}Entity\` interface.
+All entities implement the \`${model.const.Name}EntityBase\` interface.
 
 | Method | Signature | Description |
 | --- | --- | --- |
