@@ -29,6 +29,7 @@ import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
   searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, idlessUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY, REQUEST_SHAPED_ENTITY, multiRouteLoad, keylessLoad,
+  namedEntity,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -2774,6 +2775,36 @@ echo get_class($client->ContactsField(null)), ' ',
     const folded = beams.filter((b: string, i: number) =>
       beams.findIndex((o: string) => o.toLowerCase() === b.toLowerCase()) !== i)
     deepStrictEqual(folded, [], 'elixir: modules that are one file on macOS')
+  })
+
+
+  // An entity named after the API gets the class name `<Name>Entity`. Rust
+  // and Go once gave their shared entity trait and interface that name too,
+  // and in Rust both met in the entity file.
+  test('go: an entity named after the API compiles', async (t) => {
+    const go = toolchain('go')
+    if (null == go) {
+      return t.skip('no go toolchain here')
+    }
+    const sdkroot = Path.join(tmp, 'go-selfnamed')
+    await generateTo('go', sdkroot, namedEntity('demo'))
+    const vet = run(go, ['vet', './...'], sdkroot)
+    ok(vet.ok, 'go: an entity named after the API does not vet:\n' + tail(vet.out))
+  })
+
+
+  test('rust: an entity named after the API compiles', async (t) => {
+    const cargo = toolchain('cargo')
+    if (null == cargo) {
+      return t.skip('no rust toolchain here')
+    }
+    const sdkroot = Path.join(tmp, 'rust-selfnamed')
+    await generateTo('rust', sdkroot, namedEntity('demo'))
+    // The crate and the entity's own test: the fixture has no features, so
+    // the generated feature test cannot build here.
+    const built = run(cargo, ['test', '--no-run', '--test', 'demo_entity_test'], sdkroot,
+      { ...process.env, CARGO_TARGET_DIR: Path.join('..', 'rust-target') })
+    ok(built.ok, 'rust: an entity named after the API does not compile:\n' + tail(built.out))
   })
 
 

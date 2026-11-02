@@ -44,7 +44,7 @@ const Entity = cmp(function Entity(props: any) {
 
       // For each CRUD op: if the spec defines it, splice in the real
       // implementation. Otherwise emit a stub that satisfies the static
-      // ProjectNameEntity interface (so the package compiles) but errors
+      // ProjectNameEntityBase interface (so the package compiles) but errors
       // at runtime if the caller invokes an unsupported op.
       const opfrags =
         (['load', 'list', 'create', 'update', 'patch', 'remove']

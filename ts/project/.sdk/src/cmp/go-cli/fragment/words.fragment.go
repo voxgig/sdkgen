@@ -75,7 +75,7 @@ func runOp(client *sdk.ProjectNameSDK, op string, query *eng.Value, entityAtom e
 
 // entityFor dispatches on the lowercase entity name. The generator
 // emits one `case "<name>":` per entity defined in the SDK model.
-func entityFor(client *sdk.ProjectNameSDK, name string) (sdk.ProjectNameEntity, error) {
+func entityFor(client *sdk.ProjectNameSDK, name string) (sdk.ProjectNameEntityBase, error) {
 	switch strings.ToLower(name) {
 	// <[SLOT:entityCases]>
 	}

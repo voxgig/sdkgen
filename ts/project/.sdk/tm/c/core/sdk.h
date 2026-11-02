@@ -333,7 +333,7 @@ voxgig_value* utility_fetch(Utility* u, Context* ctx, const char* url,
                             voxgig_value* fetchdef, PNError** err);
 
 // ===========================================================================
-// Entity (vtable; mirrors core/types.rs Entity + ProjectNameEntity)
+// Entity (vtable; mirrors core/types.rs Entity + ProjectNameEntityBase)
 // ===========================================================================
 
 // Every operation resolves to the ENTITY, not the raw data. `list` resolves
@@ -356,7 +356,7 @@ typedef struct EntityVT {
   void (*mark_deleted)(Entity*);
   bool (*deleted)(Entity*);
 
-  // CRUD ops (ProjectNameEntity). On error set *err and return NULL.
+  // CRUD ops (ProjectNameEntityBase). On error set *err and return NULL.
   Entity* (*load)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);
   // Returns a NULL-terminated Entity* array (never NULL on success).
   Entity** (*list)(Entity*, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err);

@@ -10,7 +10,7 @@ use crate::core::context::{Context, CtxSpec};
 use crate::core::error::ProjectNameError;
 use crate::core::helpers::{get_bool, getp, setp, to_map};
 use crate::core::sdk::ProjectNameSDK;
-use crate::core::types::{Entity, ProjectNameEntity};
+use crate::core::types::{Entity, ProjectNameEntityBase};
 use crate::core::utility_type::Utility;
 use crate::utility::voxgigstruct as vs;
 use crate::utility::voxgigstruct::Value;
@@ -302,7 +302,7 @@ impl Entity for EntyClass {
     }
 }
 
-impl ProjectNameEntity for EntyClass {
+impl ProjectNameEntityBase for EntyClass {
     // #LoadOp
 
     // #ListOp

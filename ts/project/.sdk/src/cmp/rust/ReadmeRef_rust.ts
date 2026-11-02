@@ -77,7 +77,7 @@ Complete API reference for the ${model.Name} ${target.title} SDK.
 `)
 
     Content(`\`\`\`rust
-use ${rustcrate}::{jo, ${model.const.Name}Entity, ${model.const.Name}SDK, Entity, Value};
+use ${rustcrate}::{jo, ${model.const.Name}EntityBase, ${model.const.Name}SDK, Entity, Value};
 
 let client = ${model.const.Name}SDK::new(options);
 \`\`\`

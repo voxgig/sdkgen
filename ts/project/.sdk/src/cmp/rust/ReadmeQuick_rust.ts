@@ -48,7 +48,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   Content(`### 1. Create a client
 
 \`\`\`rust
-use ${rustcrate}::{getp, jo, ${model.const.Name}Entity, ${model.const.Name}SDK, Entity, Value};
+use ${rustcrate}::{getp, jo, ${model.const.Name}EntityBase, ${model.const.Name}SDK, Entity, Value};
 
 let client = ${ctor};
 \`\`\`

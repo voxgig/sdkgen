@@ -116,7 +116,7 @@ println!("{:?}", getp(&fetchdef, "headers"));
 Create a mock client for unit testing — no server required:
 
 \`\`\`rust
-use ${rustcrate}::{jo, test_sdk, ${model.const.Name}Entity, Entity, Value};
+use ${rustcrate}::{jo, test_sdk, ${model.const.Name}EntityBase, Entity, Value};
 
 let client = test_sdk(Value::Noval, Value::Noval);
 
