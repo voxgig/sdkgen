@@ -160,6 +160,19 @@ describe('copy merge', () => {
   })
 
 
+  test('a forced run clears the previews a stopped run left', async () => {
+    const f = fixture({ 'tm/a.ts': 'local\n' })
+
+    await rejects(withCopyMerge(f.spec(),
+      async (fs: any) => atomicWrite(fs, 'tm/a.ts', INCOMING)))
+    strictEqual(f.read('log/conflict/tm/a.ts'), INCOMING)
+
+    await withCopyMerge(f.spec({ force: true }),
+      async (fs: any) => atomicWrite(fs, 'tm/a.ts', INCOMING))
+    strictEqual(f.read('log/conflict/tm/a.ts'), undefined)
+  })
+
+
   test('a changed file the record does not hold cannot be merged', async () => {
     const f = fixture({ 'tm/a.ts': 'local\n' })
 

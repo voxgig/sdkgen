@@ -212,6 +212,7 @@ async function doctor(actx, scope, selected) {
         report.orphanModel.length + report.outdated.length +
         report.unresolved.length;
     const customized = new Set(report.customized);
+    const unmergeable = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx) ? new Set(report.unrecorded) : new Set();
     for (const [kind, note] of [
         ['customized', 'CUSTOMIZED (an add merges its updates into it)'],
         ['forked', 'FORKED (will be reverted by `target add`)'],
@@ -231,7 +232,10 @@ async function doctor(actx, scope, selected) {
             if (('forked' === kind || 'edited' === kind) && customized.has(file)) {
                 continue;
             }
-            log.info({ point: 'doctor-finding', kind, file, note: note + ': ' + file });
+            const said = unmergeable.has(file) ?
+                kind.toUpperCase() + ' (no copy record, so an add stops on it; --force takes the source copy)' :
+                note;
+            log.info({ point: 'doctor-finding', kind, file, note: said + ': ' + file });
         }
     }
     for (const item of Object.keys(report.byItem).sort()) {

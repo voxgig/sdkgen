@@ -393,6 +393,7 @@ async function doctor(
     report.unresolved.length
 
   const customized = new Set(report.customized)
+  const unmergeable = MERGE === projectCopyMode(actx) ? new Set(report.unrecorded) : new Set()
 
   for (const [kind, note] of [
     ['customized', 'CUSTOMIZED (an add merges its updates into it)'],
@@ -413,7 +414,10 @@ async function doctor(
       if (('forked' === kind || 'edited' === kind) && customized.has(file)) {
         continue
       }
-      log.info({ point: 'doctor-finding', kind, file, note: note + ': ' + file })
+      const said = unmergeable.has(file) ?
+        kind.toUpperCase() + ' (no copy record, so an add stops on it; --force takes the source copy)' :
+        note
+      log.info({ point: 'doctor-finding', kind, file, note: said + ': ' + file })
     }
   }
 
