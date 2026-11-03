@@ -190,6 +190,20 @@ class ProjectNameSDK implements \JsonSerializable
             }
         }
 
+        // A raw request has no point to declare its response type, so it asks
+        // for the JSON it reads: an API that negotiates on Accept otherwise
+        // answers in its own default format. A caller's own accept wins.
+        $has_accept = false;
+        foreach (array_keys($ctx->spec->headers) as $k) {
+            if (strtolower((string)$k) === 'accept') {
+                $has_accept = true;
+                break;
+            }
+        }
+        if (!$has_accept) {
+            $ctx->spec->headers['accept'] = 'application/json';
+        }
+
         [$_, $err] = ($utility->prepare_auth)($ctx);
         if ($err) {
             return ($utility->make_error)($ctx, $err);

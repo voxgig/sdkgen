@@ -660,6 +660,261 @@ static const char* read_response(HttpConn* c, HttpResp* r, int head) {
   return NULL;
 }
 
+// ---- content coding ------------------------------------------------------------
+
+// Inflate: a server may compress its answer whatever the request
+// asked for. Canonical Huffman decoding a bit at a time, as zlib's puff.c
+// does, so there is no library to link.
+typedef struct {
+  short count[16];
+  short symbol[288];
+} InfHuff;
+
+typedef struct {
+  const unsigned char* in;
+  size_t len;
+  size_t pos;
+  unsigned long buf;
+  int cnt;
+  HttpBuf* out;
+  const char* err;
+} Inf;
+
+static const short INF_LBASE[29] = { 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
+  35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258 };
+static const short INF_LEXT[29] = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
+  3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0 };
+static const short INF_DBASE[30] = { 1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
+  257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577 };
+static const short INF_DEXT[30] = { 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6,
+  7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13 };
+
+static int inf_bits(Inf* s, int need) {
+  unsigned long val = s->buf;
+  while (s->cnt < need) {
+    if (s->pos >= s->len) {
+      s->err = "it ends early";
+      return 0;
+    }
+    val |= (unsigned long)s->in[s->pos++] << s->cnt;
+    s->cnt += 8;
+  }
+  s->buf = val >> need;
+  s->cnt -= need;
+  return (int)(val & ((1UL << need) - 1));
+}
+
+static void inf_huff(InfHuff* h, const unsigned char* lens, int n) {
+  short offs[16];
+  memset(h, 0, sizeof(*h));
+  for (int sym = 0; sym < n; sym++) h->count[lens[sym]]++;
+  offs[1] = 0;
+  for (int len = 1; len < 15; len++) offs[len + 1] = (short)(offs[len] + h->count[len]);
+  for (int sym = 0; sym < n; sym++) {
+    if (0 != lens[sym]) h->symbol[offs[lens[sym]]++] = (short)sym;
+  }
+}
+
+static int inf_decode(Inf* s, const InfHuff* h) {
+  int code = 0, first = 0, index = 0;
+  for (int len = 1; len < 16; len++) {
+    code |= inf_bits(s, 1);
+    if (NULL != s->err) return -1;
+    int count = h->count[len];
+    if (code - count < first) return h->symbol[index + (code - first)];
+    index += count;
+    first = (first + count) << 1;
+    code <<= 1;
+  }
+  s->err = "it holds an invalid code";
+  return -1;
+}
+
+static void inf_byte(Inf* s, char ch) {
+  if ((size_t)HTTP_MAX_BYTES <= s->out->len) {
+    s->err = "it inflates past the response bound";
+    return;
+  }
+  buf_add(s->out, &ch, 1);
+}
+
+static void inf_codes(Inf* s, const InfHuff* lencode, const InfHuff* distcode) {
+  for (;;) {
+    int sym = inf_decode(s, lencode);
+    if (NULL != s->err || 256 == sym) return;
+    if (sym < 256) {
+      inf_byte(s, (char)sym);
+      if (NULL != s->err) return;
+      continue;
+    }
+    sym -= 257;
+    if (29 <= sym) {
+      s->err = "it holds an invalid length";
+      return;
+    }
+    int len = INF_LBASE[sym] + inf_bits(s, INF_LEXT[sym]);
+    int dsym = inf_decode(s, distcode);
+    if (NULL != s->err) return;
+    if (30 <= dsym) {
+      s->err = "it holds an invalid distance";
+      return;
+    }
+    size_t dist = (size_t)INF_DBASE[dsym] + (size_t)inf_bits(s, INF_DEXT[dsym]);
+    if (NULL != s->err) return;
+    if (dist > s->out->len) {
+      s->err = "it reaches back past its start";
+      return;
+    }
+    for (int i = 0; i < len && NULL == s->err; i++) {
+      inf_byte(s, s->out->data[s->out->len - dist]);
+    }
+    if (NULL != s->err) return;
+  }
+}
+
+static void inf_dynamic(Inf* s) {
+  static const unsigned char order[19] = { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13,
+    2, 14, 1, 15 };
+  unsigned char lens[320];
+  InfHuff lencode, distcode;
+  int nlen = inf_bits(s, 5) + 257;
+  int ndist = inf_bits(s, 5) + 1;
+  int ncode = inf_bits(s, 4) + 4;
+  if (NULL != s->err) return;
+  if (286 < nlen || 30 < ndist) {
+    s->err = "it declares too many codes";
+    return;
+  }
+  memset(lens, 0, sizeof(lens));
+  for (int i = 0; i < ncode; i++) lens[order[i]] = (unsigned char)inf_bits(s, 3);
+  if (NULL != s->err) return;
+  inf_huff(&lencode, lens, 19);
+  memset(lens, 0, sizeof(lens));
+  int index = 0;
+  while (index < nlen + ndist) {
+    int sym = inf_decode(s, &lencode);
+    if (NULL != s->err) return;
+    if (sym < 16) {
+      lens[index++] = (unsigned char)sym;
+      continue;
+    }
+    unsigned char len = 0;
+    int rep;
+    if (16 == sym) {
+      if (0 == index) {
+        s->err = "it repeats a length before the first";
+        return;
+      }
+      len = lens[index - 1];
+      rep = 3 + inf_bits(s, 2);
+    }
+    else if (17 == sym) rep = 3 + inf_bits(s, 3);
+    else rep = 11 + inf_bits(s, 7);
+    if (NULL != s->err) return;
+    if (index + rep > nlen + ndist) {
+      s->err = "it declares too many lengths";
+      return;
+    }
+    while (rep--) lens[index++] = len;
+  }
+  if (0 == lens[256]) {
+    s->err = "it has no end-of-block code";
+    return;
+  }
+  inf_huff(&lencode, lens, nlen);
+  inf_huff(&distcode, lens + nlen, ndist);
+  inf_codes(s, &lencode, &distcode);
+}
+
+static const char* inflate_raw(const unsigned char* in, size_t len, HttpBuf* out) {
+  Inf s;
+  memset(&s, 0, sizeof(s));
+  s.in = in;
+  s.len = len;
+  s.out = out;
+  int last;
+  do {
+    last = inf_bits(&s, 1);
+    int kind = inf_bits(&s, 2);
+    if (NULL != s.err) return s.err;
+    if (0 == kind) {
+      // A stored block starts on a byte boundary: what is left of this byte goes.
+      s.buf = 0;
+      s.cnt = 0;
+      if (s.pos + 4 > s.len) return "it ends early";
+      size_t n = (size_t)s.in[s.pos] | ((size_t)s.in[s.pos + 1] << 8);
+      size_t check = (size_t)s.in[s.pos + 2] | ((size_t)s.in[s.pos + 3] << 8);
+      if (n != (~check & 0xffff)) return "a stored block's length is corrupt";
+      s.pos += 4;
+      if (s.pos + n > s.len) return "it ends early";
+      if ((size_t)HTTP_MAX_BYTES < s.out->len + n) return "it inflates past the response bound";
+      buf_add(s.out, (const char*)s.in + s.pos, n);
+      s.pos += n;
+    }
+    else if (1 == kind) {
+      InfHuff fixlen, fixdist;
+      unsigned char lens[288];
+      int sym = 0;
+      for (; sym < 144; sym++) lens[sym] = 8;
+      for (; sym < 256; sym++) lens[sym] = 9;
+      for (; sym < 280; sym++) lens[sym] = 7;
+      for (; sym < 288; sym++) lens[sym] = 8;
+      inf_huff(&fixlen, lens, 288);
+      for (sym = 0; sym < 30; sym++) lens[sym] = 5;
+      inf_huff(&fixdist, lens, 30);
+      inf_codes(&s, &fixlen, &fixdist);
+    }
+    else if (2 == kind) inf_dynamic(&s);
+    else return "it holds an invalid block type";
+    if (NULL != s.err) return s.err;
+  } while (!last);
+  return NULL;
+}
+
+// A gzip or deflate body decoded. Deflate is zlib-wrapped,
+// or raw as some servers send it.
+static const char* decode_body(HttpResp* r) {
+  const char* enc = get_str(r->headers, "content-encoding");
+  if (NULL == enc || 0 == r->body.len) return NULL;
+  while (isspace((unsigned char)*enc)) enc++;
+  size_t elen = strlen(enc);
+  while (0 < elen && isspace((unsigned char)enc[elen - 1])) elen--;
+  int gzip = ieqn(enc, elen, "gzip") || ieqn(enc, elen, "x-gzip");
+  if (!gzip && !ieqn(enc, elen, "deflate")) return NULL;
+
+  const unsigned char* in = (const unsigned char*)r->body.data;
+  size_t len = r->body.len;
+  size_t at = 0;
+  const char* bad = NULL;
+  if (gzip) {
+    if (len < 18 || 0x1f != in[0] || 0x8b != in[1] || 8 != in[2]) bad = "it is not gzip data";
+    else {
+      int flags = in[3];
+      at = 10;
+      if (flags & 4) at = at + 2 <= len ? at + 2 + ((size_t)in[at] | ((size_t)in[at + 1] << 8)) : len;
+      if (flags & 8) { while (at < len && 0 != in[at]) at++; at++; }
+      if (flags & 16) { while (at < len && 0 != in[at]) at++; at++; }
+      if (flags & 2) at += 2;
+      if (at >= len) bad = "it ends early";
+    }
+  }
+  else if (2 <= len && 8 == (in[0] & 0x0f) && 0 == (((unsigned)in[0] << 8) | in[1]) % 31) {
+    at = 2;
+  }
+
+  HttpBuf out = { NULL, 0, 0 };
+  if (NULL == bad) bad = inflate_raw(in + at, len - at, &out);
+  if (NULL != bad) {
+    free(out.data);
+    snprintf(r->why, sizeof(r->why), "its %.*s body is not valid: %s", (int)elen, enc, bad);
+    return r->why;
+  }
+  if (NULL == out.data) buf_add(&out, "", 0);
+  free(r->body.data);
+  r->body = out;
+  return NULL;
+}
+
 // ---- JSON ----------------------------------------------------------------------
 
 // A strict recognizer, because the vendored parser reads a truncated
@@ -1000,6 +1255,7 @@ voxgig_value* http_fetch(Context* ctx, const char* url, voxgig_value* fetchdef, 
   if (NULL == bad) bad = read_response(&c, &r, ieq(method, "HEAD"));
   if (NULL != c.tls) http_tls_close(c.tls);
   if (0 <= c.fd) close(c.fd);
+  if (NULL == bad) bad = decode_body(&r);
   if (NULL != bad) {
     *err = transport_error(ctx, url, "the request failed", bad);
     free(r.raw.data);

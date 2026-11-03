@@ -177,6 +177,23 @@ public class ProjectNameSDK
             }
         }
 
+        // A raw request has no point to declare its response type, so it asks
+        // for the JSON it reads: an API that negotiates on Accept otherwise
+        // answers in its own default format. A caller's own accept wins.
+        var hasAccept = false;
+        foreach (var key in ctx.Spec.Headers.Keys)
+        {
+            if (string.Equals(key, "accept", StringComparison.OrdinalIgnoreCase))
+            {
+                hasAccept = true;
+                break;
+            }
+        }
+        if (!hasAccept)
+        {
+            ctx.Spec.Headers["accept"] = "application/json";
+        }
+
         utility.PrepareAuth(ctx);
 
         return utility.MakeFetchDef(ctx);

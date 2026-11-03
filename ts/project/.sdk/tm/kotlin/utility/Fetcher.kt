@@ -1,15 +1,22 @@
 package KOTLINPACKAGE.utility
 
+import java.io.ByteArrayInputStream
+import java.io.IOException
 import java.io.InputStream
+import java.io.UncheckedIOException
 import java.net.InetSocketAddress
 import java.net.ProxySelector
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.nio.charset.Charset
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.BiFunction
 import java.util.function.Supplier
+import java.util.zip.GZIPInputStream
+import java.util.zip.Inflater
+import java.util.zip.InflaterInputStream
 
 import KOTLINPACKAGE.core.Context
 import KOTLINPACKAGE.core.SdkError
@@ -114,7 +121,7 @@ fun defaultHttpFetch(fullurl: String, fetchdef: MutableMap<String, Any?>): Mutab
 
   val resp: HttpResponse<String>
   try {
-    resp = clientFor(fetchdef).send(reqb.build(), HttpResponse.BodyHandlers.ofString())
+    resp = clientFor(fetchdef).send(reqb.build(), decodedText())
   } catch (e: Exception) {
     throw RuntimeException("fetch: " + e.message, e)
   }
@@ -148,6 +155,50 @@ fun defaultHttpFetch(fullurl: String, fetchdef: MutableMap<String, Any?>): Mutab
   out["body"] = bodyText
   out["unreadable"] = unreadable
   return out
+}
+
+// The body as text, as BodyHandlers.ofString reads it, once a gzip or deflate
+// Content-Encoding is undone: HttpClient decodes none, and a server may
+// compress its answer whatever the request asked for.
+internal fun decodedText(): HttpResponse.BodyHandler<String> =
+  HttpResponse.BodyHandler { info ->
+    val encoding = info.headers().firstValue("content-encoding").orElse("").trim().lowercase()
+    val charset = charsetOf(info.headers().firstValue("content-type").orElse(""))
+    HttpResponse.BodySubscribers.mapping(HttpResponse.BodySubscribers.ofByteArray()) { bytes ->
+      try {
+        String(decodeBody(bytes, encoding), charset)
+      } catch (e: IOException) {
+        throw UncheckedIOException("response body is not valid $encoding data: ${e.message}", e)
+      }
+    }
+  }
+
+// Deflate is zlib-wrapped, or raw as some servers send it.
+internal fun decodeBody(bytes: ByteArray?, encoding: String): ByteArray {
+  if (bytes == null || bytes.isEmpty()) return bytes ?: ByteArray(0)
+  if ("gzip" == encoding || "x-gzip" == encoding) {
+    return GZIPInputStream(ByteArrayInputStream(bytes)).use { it.readAllBytes() }
+  }
+  if ("deflate" == encoding) {
+    val zlib = bytes.size > 1 && (bytes[0].toInt() and 0x0f) == 8 &&
+      (((bytes[0].toInt() and 0xff) shl 8) or (bytes[1].toInt() and 0xff)) % 31 == 0
+    return InflaterInputStream(ByteArrayInputStream(bytes), Inflater(!zlib)).use { it.readAllBytes() }
+  }
+  return bytes
+}
+
+internal fun charsetOf(contentType: String): Charset {
+  for (part in contentType.split(";")) {
+    val kv = part.trim().split("=", limit = 2)
+    if (kv.size == 2 && "charset".equals(kv[0].trim(), ignoreCase = true)) {
+      return try {
+        Charset.forName(kv[1].trim().replace("\"", ""))
+      } catch (e: RuntimeException) {
+        Charsets.UTF_8
+      }
+    }
+  }
+  return Charsets.UTF_8
 }
 
 // HTTP/2 responses carry no reason phrase; use the standard text for

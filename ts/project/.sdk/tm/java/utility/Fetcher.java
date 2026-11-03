@@ -1,18 +1,26 @@
 package JAVAPACKAGE.utility;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 import JAVAPACKAGE.core.Context;
 import JAVAPACKAGE.core.SdkError;
@@ -133,7 +141,7 @@ final class Fetcher {
 
     HttpResponse<String> resp;
     try {
-      resp = clientFor(fetchdef).send(reqb.build(), HttpResponse.BodyHandlers.ofString());
+      resp = clientFor(fetchdef).send(reqb.build(), decodedText());
     }
     catch (Exception e) {
       throw new RuntimeException("fetch: " + e.getMessage(), e);
@@ -171,6 +179,64 @@ final class Fetcher {
     out.put("body", bodyText);
     out.put("unreadable", unreadable);
     return out;
+  }
+
+  // The body as text, as BodyHandlers.ofString reads it, once a gzip or
+  // deflate Content-Encoding is undone: HttpClient decodes none, and a server
+  // may compress its answer whatever the request asked for.
+  static HttpResponse.BodyHandler<String> decodedText() {
+    return info -> {
+      String encoding = info.headers().firstValue("content-encoding").orElse("")
+          .trim().toLowerCase();
+      Charset charset = charsetOf(info.headers().firstValue("content-type").orElse(""));
+      return HttpResponse.BodySubscribers.mapping(
+          HttpResponse.BodySubscribers.ofByteArray(),
+          bytes -> {
+            try {
+              return new String(decodeBody(bytes, encoding), charset);
+            }
+            catch (IOException e) {
+              throw new UncheckedIOException(
+                  "response body is not valid " + encoding + " data: " + e.getMessage(), e);
+            }
+          });
+    };
+  }
+
+  // Deflate is zlib-wrapped, or raw as some servers send it.
+  static byte[] decodeBody(byte[] bytes, String encoding) throws IOException {
+    if (bytes == null || bytes.length == 0) {
+      return bytes == null ? new byte[0] : bytes;
+    }
+    if ("gzip".equals(encoding) || "x-gzip".equals(encoding)) {
+      try (InputStream in = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
+        return in.readAllBytes();
+      }
+    }
+    if ("deflate".equals(encoding)) {
+      boolean zlib = bytes.length > 1 && (bytes[0] & 0x0f) == 8
+          && (((bytes[0] & 0xff) << 8) | (bytes[1] & 0xff)) % 31 == 0;
+      try (InputStream in = new InflaterInputStream(
+          new ByteArrayInputStream(bytes), new Inflater(!zlib))) {
+        return in.readAllBytes();
+      }
+    }
+    return bytes;
+  }
+
+  static Charset charsetOf(String contentType) {
+    for (String part : contentType.split(";")) {
+      String[] kv = part.trim().split("=", 2);
+      if (kv.length == 2 && "charset".equalsIgnoreCase(kv[0].trim())) {
+        try {
+          return Charset.forName(kv[1].trim().replace("\"", ""));
+        }
+        catch (RuntimeException e) {
+          return StandardCharsets.UTF_8;
+        }
+      }
+    }
+    return StandardCharsets.UTF_8;
   }
 
   // HTTP/2 responses carry no reason phrase; use the standard text for

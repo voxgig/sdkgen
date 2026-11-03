@@ -302,10 +302,14 @@ ${loadLiveQueryLines ? loadLiveQueryLines + '\n' : ''}`)
         Content(loadExampleLines + '\n')
       }
       else if (discover) {
+        // The list sends the query its route requires, as direct-list does.
+        const listQuery = liveQueryExamples(listPoint)
+          .map(([name, ex]) => `${formatPhpValue(name)} => ${formatPhpValue(ex)}`).join(', ')
         Content(`            $list_result = $client->direct([
                 "path" => "${listPath}",
                 "method" => "GET",
-                "params" => [${listParams.map((p: any) => `"${p.n}" => $setup["idmap"]["${liveKey(p)}"] ?? null`).join(', ')}],
+                "params" => [${listParams.map((p: any) => `"${p.n}" => $setup["idmap"]["${liveKey(p)}"] ?? null`).join(', ')}],${'' === listQuery ? '' : `
+                "query" => [${listQuery}],`}
             ]);
             if (!self::liveOk($list_result)) {
                 Runner::live_miss(self::LIVE_STRICT, "Live list discovery failed: " . Runner::live_describe($list_result));

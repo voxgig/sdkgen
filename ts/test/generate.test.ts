@@ -3253,6 +3253,57 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // A live direct load lists to find an id through the same route direct-list
+  // calls, so it sends that route's required query from its examples, and no
+  // optional one: an API may answer a bare list route with 400.
+  test('every live direct load discovers through a list that sends its required query', async () => {
+    const AREA = `
+main: kit: entity: area: {
+  alias: field: {}
+  name: "area"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    list: { name: "list", points: [ {
+      g: { query: [
+        { k: "query", n: "query", or: "query", r: true, t: "\`$STRING\`", ex: "london" }
+        { k: "query", n: "limit", or: "limit", r: false, t: "\`$INTEGER\`", ex: 25 }
+      ] }
+      m: "GET", o: "/area", s: [{ lit: "area" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/area/{id}", s: [{ lit: "area" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAreaFlow", step: [ { o: "list" } ] }
+`
+    const out = await generate(LIVE_SUITE_TARGETS, undefined, entityOnly(AREA))
+    const gaps: string[] = []
+    for (const target of LIVE_SUITE_TARGETS) {
+      const file = testFiles(out, target).find(([n]) => /area_?direct/i.test(n))
+      if (null == file) {
+        gaps.push(`${target}: no area direct test`)
+        continue
+      }
+      const text = String(file[1])
+      const start = text.indexOf('direct-load-area')
+      const end = text.indexOf('list discovery failed', start)
+      if (start < 0 || end < 0) {
+        gaps.push(`${target}:${file[0]} does not discover the area id by listing`)
+        continue
+      }
+      const discovery = text.slice(start, end)
+      if (!/\bquery\W[^\n]*london/.test(discovery)) {
+        gaps.push(`${target}:${file[0]} lists without the required query example`)
+      }
+      if (/limit/.test(discovery)) gaps.push(`${target}:${file[0]} lists with an optional query parameter`)
+    }
+    deepStrictEqual(gaps, [])
+  })
+
+
   // direct() sends its query as given, so a direct test keys each required
   // query example by the definition's name (or), and fills a path
   // placeholder under the name it puts in the path.

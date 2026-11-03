@@ -149,6 +149,21 @@ voxgig_value* sdk_prepare(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError*
     }
   }
 
+  // A raw request has no point to declare its response type, so it asks for
+  // the JSON it reads: an API that negotiates on Accept otherwise answers in
+  // its own default format. A caller's own accept wins.
+  int has_accept = 0;
+  if (voxgig_is_map(spec->headers)) {
+    voxgig_map* hm = voxgig_as_map(spec->headers);
+    for (size_t i = 0; i < hm->len && !has_accept; i++) {
+      const char* k = hm->entries[i].key;
+      const char* a = "accept";
+      while (*k && *a && tolower((unsigned char)*k) == *a) { k++; a++; }
+      has_accept = '\0' == *k && '\0' == *a;
+    }
+    if (!has_accept) setp(spec->headers, "accept", v_str("application/json"));
+  }
+
   prepare_auth_util(ctx, err);
   if (*err) return NULL;
 

@@ -23,6 +23,7 @@ main: kit: target: rust: {
 
   deps: {
     'ureq': { active: true, version: '2', kind: prod }
+    'flate2': { active: true, version: '1', kind: prod }
   }
 }
 

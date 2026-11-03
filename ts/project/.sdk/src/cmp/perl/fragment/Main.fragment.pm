@@ -181,6 +181,12 @@ sub prepare {
     $ctx->{spec}{headers}{$_} = $uh->{$_} for keys %$uh;
   }
 
+  # A raw request has no point to declare its response type, so it asks
+  # for the JSON it reads: an API that negotiates on Accept otherwise
+  # answers in its own default format. A caller's own accept wins.
+  $ctx->{spec}{headers}{'accept'} = 'application/json'
+    unless grep { 'accept' eq lc $_ } keys %{ $ctx->{spec}{headers} };
+
   my (undef, $err) = $utility->{prepare_auth}->($ctx);
   die $err if $err;
 

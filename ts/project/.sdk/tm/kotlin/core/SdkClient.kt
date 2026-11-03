@@ -169,6 +169,13 @@ abstract class SdkClient(sdkopts: MutableMap<String, Any?>?) {
       ctx.spec!!.headers.putAll(uheaders)
     }
 
+    // A raw request has no point to declare its response type, so it asks
+    // for the JSON it reads: an API that negotiates on Accept otherwise
+    // answers in its own default format. A caller's own accept wins.
+    if (ctx.spec!!.headers.keys.none { "accept".equals(it, ignoreCase = true) }) {
+      ctx.spec!!.headers["accept"] = "application/json"
+    }
+
     utility.prepareAuth(ctx)
 
     return utility.makeFetchDef(ctx)

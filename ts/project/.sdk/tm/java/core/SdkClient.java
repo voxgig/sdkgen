@@ -181,6 +181,13 @@ public abstract class SdkClient {
       ctx.spec.headers.putAll(uheaders);
     }
 
+    // A raw request has no point to declare its response type, so it asks
+    // for the JSON it reads: an API that negotiates on Accept otherwise
+    // answers in its own default format. A caller's own accept wins.
+    if (ctx.spec.headers.keySet().stream().noneMatch(k -> "accept".equalsIgnoreCase(k))) {
+      ctx.spec.headers.put("accept", "application/json");
+    }
+
     utility.prepareAuth.apply(ctx);
 
     return utility.makeFetchDef.apply(ctx);

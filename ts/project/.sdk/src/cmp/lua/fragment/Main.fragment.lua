@@ -236,6 +236,20 @@ function ProjectNameSDK:prepare(fetchargs)
     end
   end
 
+  -- A raw request has no point to declare its response type, so it asks
+  -- for the JSON it reads: an API that negotiates on Accept otherwise
+  -- answers in its own default format. A caller's own accept wins.
+  local has_accept = false
+  for k, _ in pairs(ctx.spec.headers) do
+    if string.lower(tostring(k)) == "accept" then
+      has_accept = true
+      break
+    end
+  end
+  if not has_accept then
+    ctx.spec.headers["accept"] = "application/json"
+  end
+
   local _, err = utility.prepare_auth(ctx)
   if err ~= nil then
     return nil, err

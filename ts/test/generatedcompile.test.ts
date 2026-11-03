@@ -37,7 +37,8 @@ import {
   mediaFailures, mediaPrinted, mediaRaised, mediaRecord,
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
-import { TLS_PROBE, TLS_SERVER } from './tlsprobes'
+import { TLS_EOF_LUA_PROBE, TLS_EOF_SERVER, TLS_PROBE, TLS_SERVER } from './tlsprobes'
+import { ENVELOPE_CASES, ENVELOPE_EXPECT, ENVELOPE_PROBES, envelopeCounts } from './envelopeprobes'
 import { ITEMS_EXPECT, ITEMS_PROBES, itemsListed } from './itemprobes'
 import { SCALAR_EXPECT, SCALAR_PROBES, scalarsListed } from './scalarprobes'
 import { REQD_EXPECT, REQD_PROBES, reqdListed } from './reqdprobes'
@@ -2162,6 +2163,60 @@ int main(void) {
     finally {
       local.stop()
       other.stop()
+    }
+  })
+
+
+  // OpenSSL reports a close without close_notify as an error; the lua
+  // transport reads it as the end of a body that runs to the close, as curl
+  // and every other target's client do.
+  test('lua: a TLS close without close_notify ends the body', async (t) => {
+    const openssl = toolchain('openssl')
+    const lua = mediaLua()
+    if (null == openssl || null == lua) {
+      return t.skip('needs openssl and a lua with the dkjson rock (openssl: ' + openssl +
+        ', lua: ' + lua + ')')
+    }
+    if (!probeOk(lua, ['-e', 'require "socket.http"; require "ssl.https"'])) {
+      return t.skip('lua: luasocket and luasec are not both installed here')
+    }
+
+    const sdkroot = Path.join(tmp, 'lua-tls-eof')
+    await generateTo('lua', sdkroot)
+    Fs.writeFileSync(Path.join(sdkroot, 'tls_eof_probe.lua'), TLS_EOF_LUA_PROBE)
+
+    const certs = Path.join(tmp, 'lua-tls-eof-certs')
+    Fs.mkdirSync(certs, { recursive: true })
+    const made = run(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+      '-subj', '/CN=localhost', '-keyout', 'eof.key', '-out', 'eof.pem'], certs)
+    if (!made.ok) return t.skip('lua: openssl cannot make a test certificate:\n' + tail(made.out, 5))
+
+    const file = Path.join(certs, 'tls-eof-server.cjs')
+    Fs.writeFileSync(file, TLS_EOF_SERVER)
+    const proc = spawn(process.execPath,
+      [file, Path.join(certs, 'eof.pem'), Path.join(certs, 'eof.key')],
+      { stdio: ['ignore', 'pipe', 'inherit'] })
+    try {
+      const port = await new Promise<number>((resolve, reject) => {
+        let seen = ''
+        proc.on('error', reject)
+        proc.on('exit', (code) => reject(new Error('tls server exited: ' + code)))
+        proc.stdout!.on('data', (chunk) => {
+          seen += String(chunk)
+          const m = /listening (\d+)/.exec(seen)
+          if (null != m) {
+            proc.removeAllListeners('exit')
+            resolve(Number(m[1]))
+          }
+        })
+      })
+      const probe = run(lua, ['tls_eof_probe.lua'], sdkroot,
+        { ...process.env, TLS_BASE: 'https://127.0.0.1:' + port })
+      ok(/^tls-eof: ok tls$/m.test(probe.out),
+        'lua: a body ended by a close without close_notify was not read:\n' + tail(probe.out))
+    }
+    finally {
+      proc.kill('SIGKILL')
     }
   })
 
@@ -9715,6 +9770,40 @@ describe('probes driven through a generated SDK', () => {
       ok(ran.ok, name + ': the scalars probe failed:\n' + tail(ran.out, 60))
       strictEqual(scalarsListed(ran.out), SCALAR_EXPECT, name + ' probe output:\n' + tail(ran.out))
     })
+
+    const envelopeKey = 'ts' === lane.target || 'js' === lane.target ? 'node' : lane.target
+    if (null != ENVELOPE_PROBES[envelopeKey]) {
+      test(name + ': a list whose transform yields no list makes no entity', async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+        if (null != lane.seam && lane.seam()) {
+          return t.skip(name + ': the probe has no live transport here')
+        }
+
+        const sdkroot = await sdkFor(lane.target)
+        const cases = Path.join(sdkroot, 'envelope-cases.json')
+        Fs.writeFileSync(cases, JSON.stringify(ENVELOPE_CASES))
+        const server = await nonjsonServer(sdkroot, cases)
+        let ran: ReturnType<typeof run>
+        try {
+          ran = lane.exec(sdkroot, {
+            ...nestedTestEnv(),
+            ENVELOPE_BASE: 'http://127.0.0.1:' + server.port,
+            ENVELOPE_CASES: cases,
+          }, writer(sdkroot), { name: 'envelope', source: ENVELOPE_PROBES })
+        }
+        finally {
+          server.stop()
+        }
+
+        if (ran.unlaunchable) {
+          return t.skip(name + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, name + ': the envelope probe failed:\n' + tail(ran.out, 60))
+        deepStrictEqual(envelopeCounts(ran.out), ENVELOPE_EXPECT, name + ' probe output:\n' + tail(ran.out))
+      })
+    }
 
     test(name + ': a test-mode list answers only the seeds its required parameters match',
       async (t) => {

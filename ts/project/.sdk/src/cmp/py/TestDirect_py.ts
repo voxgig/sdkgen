@@ -290,10 +290,14 @@ ${loadLiveQueryLines ? loadLiveQueryLines + '\n' : ''}`)
         Content(loadExampleLines + '\n')
       }
       else if (discover) {
+        // The list sends the query its route requires, as direct-list does.
+        const listQuery = liveQueryExamples(listPoint)
+          .map(([name, ex]) => `${JSON.stringify(name)}: ${pyLit(ex)}`).join(', ')
         Content(`            list_result = client.direct({
                 "path": "${listPath}",
                 "method": "GET",
-                "params": {${listParams.map((p: any) => `"${p.n}": setup["idmap"].get("${liveKey(p)}")`).join(', ')}},
+                "params": {${listParams.map((p: any) => `"${p.n}": setup["idmap"].get("${liveKey(p)}")`).join(', ')}},${'' === listQuery ? '' : `
+                "query": {${listQuery}},`}
             })
             if not _live_ok(list_result):
                 runner.live_miss(LIVE_STRICT, "Live list discovery failed: " + runner.live_describe(list_result))

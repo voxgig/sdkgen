@@ -36,7 +36,9 @@ let () =
           (jo [("path", Str "/${ocamlString(entity.name)}"); ("method", Str "GET")]) in
       check_vbool "ok" (getp result "ok") true;
       check_vstr "data.id" (getp (getp result "data") "id") "direct01";
-      check_int "one call" (List.length !calls) 1)
+      check_int "one call" (List.length !calls) 1;
+      let fetchdef = (match !calls with (List r) :: _ -> List.nth !r 1 | _ -> Noval) in
+      check_vstr "accept" (getp (getp fetchdef "headers") "accept") "application/json")
 `)
   })
 })

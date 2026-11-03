@@ -414,11 +414,20 @@ ${loadSkipBlock}        if (setup.Live)
 `)
           }
 
+          // The list sends the query its route requires, as direct-list does.
+          const listQueryLines = liveQueryExamples(listPoint)
+            .map(([name, ex]) => `            listQuery[${formatCsValue(name)}] = ${formatCsValue(ex)};\n`).join('')
+          if ('' !== listQueryLines) {
+            Content(`            var listQuery = new Dictionary<string, object?>();
+` + listQueryLines)
+          }
+
           Content(`            var listResult = client.Direct(new Dictionary<string, object?>
             {
                 ["path"] = "${listPath}",
                 ["method"] = "GET",
-                ["params"] = listParams,
+                ["params"] = listParams,${'' === listQueryLines ? '' : `
+                ["query"] = listQuery,`}
             });
             if (!TestRunner.LiveOk(listResult))
             {

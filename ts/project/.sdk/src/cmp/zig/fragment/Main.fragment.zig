@@ -210,6 +210,22 @@ pub const ProjectNameSDK = struct {
             while (it.next()) |kv| h.setp(spec.headers, kv.key_ptr.*, kv.value_ptr.*);
         }
 
+        // A raw request has no point to declare its response type, so it
+        // asks for the JSON it reads: an API that negotiates on Accept
+        // otherwise answers in its own default format. A caller's own accept
+        // wins.
+        if (spec.headers == .object) {
+            var has_accept = false;
+            var hit = spec.headers.object.iterator();
+            while (hit.next()) |kv| {
+                if (std.ascii.eqlIgnoreCase(kv.key_ptr.*, "accept")) {
+                    has_accept = true;
+                    break;
+                }
+            }
+            if (!has_accept) h.setp(spec.headers, "accept", h.vstr("application/json"));
+        }
+
         _ = try self.sdkUtility.prepare_auth(ctx);
 
         return self.sdkUtility.make_fetch_def(ctx);
