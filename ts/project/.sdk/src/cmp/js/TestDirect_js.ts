@@ -217,6 +217,12 @@ function generateDirectLoad(model: Model, entity: ModelEntity) {
       `        ${lp.name}: setup.idmap['${lp.key}'],`).join('\n')
     const ancestorParamLines = liveAncestorParams.map((lp: any) =>
       `      ${jsProp('params', lp.name)} = setup.idmap['${lp.key}']`).join('\n')
+    // The list sends the query its route requires, as direct-list does.
+    const listQueryLines = liveQueryExamples(listPoint)
+      .map(([name, ex]) => `\n          ${jsKey(name)}: ${jsLit(ex)},`).join('')
+    const listQueryBlock = '' === listQueryLines ? '' : `
+        query: {${listQueryLines}
+        },`
 
     liveParamsBlock = `    if (setup.live) {
 ${liveQueryLines}      const listResult = await client.direct({
@@ -224,7 +230,7 @@ ${liveQueryLines}      const listResult = await client.direct({
         method: 'GET',
         params: {
 ${listParamLines}
-        },
+        },${listQueryBlock}
       })
       if (!listResult.ok || listResult.status < 200 || listResult.status >= 300) {
         return void liveMiss(t, LIVE_STRICT, 'Live list discovery failed: ' + describeLive(listResult))

@@ -431,10 +431,14 @@ ${liveQueryBlock(loadPoint)}    if setup.live {
         }
       }
       else if (discover) {
+        // The list sends the query its route requires, as direct-list does.
+        const listQuery = liveQueryExamples(listPoint)
+          .map(([name, ex]) => `(${JSON.stringify(name)}, ${rustJson(ex)})`).join(', ')
         Content(`        let list_result = match client.direct(jo(vec![
             ("path", Value::str("${listPath}")),
             ("method", Value::str("GET")),
-            ("params", jo(vec![${listParams.map((p: any) => `("${p.n}", getp(&setup.idmap, "${liveKey(p)}"))`).join(', ')}])),
+            ("params", jo(vec![${listParams.map((p: any) => `("${p.n}", getp(&setup.idmap, "${liveKey(p)}"))`).join(', ')}])),${'' === listQuery ? '' : `
+            ("query", jo(vec![${listQuery}])),`}
         ])) {
             Ok(list_result) => list_result,
             Err(err) => {

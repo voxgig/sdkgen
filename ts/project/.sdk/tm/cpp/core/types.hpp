@@ -1054,6 +1054,20 @@ inline Value SdkClient::prepare(const Value& fetchargs_) {
     }
   }
 
+  // A raw request has no point to declare its response type, so it asks for
+  // the JSON it reads: an API that negotiates on Accept otherwise answers in
+  // its own default format. A caller's own accept wins.
+  bool hasAccept = false;
+  for (const auto& item : Struct::items(ctx->spec->headers)) {
+    std::string key = pair_key(item).as_string();
+    for (auto& ch : key) ch = (char)std::tolower((unsigned char)ch);
+    if ("accept" == key) {
+      hasAccept = true;
+      break;
+    }
+  }
+  if (!hasAccept) map_put(ctx->spec->headers, "accept", Value("application/json"));
+
   u->prepareAuth(ctx);
 
   return u->makeFetchDef(ctx);

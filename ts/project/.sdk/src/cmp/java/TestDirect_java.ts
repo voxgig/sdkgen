@@ -408,10 +408,19 @@ ${loadSkipBlock}    ${SDK} client = setup.client;
 `)
           }
 
+          // The list sends the query its route requires, as direct-list does.
+          const listQueryLines = liveQueryExamples(listPoint)
+            .map(([name, ex]) => `      listQuery.put(${JSON.stringify(name)}, ${javaLiteral(ex)});\n`).join('')
+          if ('' !== listQueryLines) {
+            Content(`      Map<String, Object> listQuery = new LinkedHashMap<>();
+` + listQueryLines)
+          }
+
           Content(`      Map<String, Object> listResult = client.direct(jm(
           "path", "${listPath}",
           "method", "GET",
-          "params", listParams));
+          "params", listParams${'' === listQueryLines ? '' : `,
+          "query", listQuery`}));
       if (!liveOk(listResult)) {
         RunnerSupport.liveMiss(LIVE_STRICT, "Live list discovery failed: " + RunnerSupport.liveDescribe(listResult));
       }

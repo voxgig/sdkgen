@@ -142,6 +142,13 @@ abstract class SdkClient(options0: JMap[String, Object]) {
     val uheaders = Helpers.toMapAny(Struct.getprop(fetchargs, "headers"))
     if (uheaders != null) ctx.spec.headers.putAll(uheaders)
 
+    // A raw request has no point to declare its response type, so it asks
+    // for the JSON it reads: an API that negotiates on Accept otherwise
+    // answers in its own default format. A caller's own accept wins.
+    if (!ctx.spec.headers.keySet().stream().anyMatch(k => "accept".equalsIgnoreCase(k))) {
+      ctx.spec.headers.put("accept", "application/json")
+    }
+
     utility.prepareAuth(ctx)
 
     utility.makeFetchDef(ctx)

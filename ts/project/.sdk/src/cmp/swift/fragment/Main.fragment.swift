@@ -144,6 +144,13 @@ public final class ProjectNameSDK {
       }
     }
 
+    // A raw request has no point to declare its response type, so it asks
+    // for the JSON it reads: an API that negotiates on Accept otherwise
+    // answers in its own default format. A caller's own accept wins.
+    if !ctx.spec!.headers.entries.keys.contains(where: { $0.lowercased() == "accept" }) {
+      ctx.spec!.headers.entries["accept"] = .string("application/json")
+    }
+
     _ = try utility.prepareAuth(ctx)
 
     return try utility.makeFetchDef(ctx)

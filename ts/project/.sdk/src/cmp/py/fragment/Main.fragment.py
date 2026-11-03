@@ -188,6 +188,12 @@ class ProjectNameSDK:
             for k, v in uh.items():
                 ctx.spec.headers[k] = v
 
+        # A raw request has no point to declare its response type, so it asks
+        # for the JSON it reads: an API that negotiates on Accept otherwise
+        # answers in its own default format. A caller's own accept wins.
+        if not any(str(k).lower() == "accept" for k in ctx.spec.headers):
+            ctx.spec.headers["accept"] = "application/json"
+
         _, err = utility.prepare_auth(ctx)
         if err is not None:
             raise err
