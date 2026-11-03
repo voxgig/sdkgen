@@ -8435,7 +8435,7 @@ function writeProbe(target: string, root: string): void {
 describe('a flow over an identity its live record may lack compiles and passes offline', () => {
 
   let tmp = ''
-  const names = ['venue', 'saying', 'pokemon', 'badge', 'year']
+  const names = ['venue', 'saying', 'pokemon', 'badge', 'year', 'box']
   const Names = names.map((name) => name[0].toUpperCase() + name.slice(1))
   const LONG = 30 * 60 * 1000
 

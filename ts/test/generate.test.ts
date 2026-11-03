@@ -3512,7 +3512,7 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       has('badge', 'entity', /live_?id\b[^\n]*badge01/i, 'does not fall back on *_ENTID')
       has('pokemon', 'entity', /live_?id\b[^\n]*(=|\?:|\?\?=?|\/\/=)\s*(Value::str\()?["']1["']/i,
         'does not fall back on the route example')
-      for (const name of ['venue', 'saying', 'pokemon', 'badge', 'year']) {
+      for (const name of ['venue', 'saying', 'pokemon', 'badge', 'year', 'box']) {
         has(name, 'entity', /live_?pace\b/i, 'does not pace its requests')
         has(name, 'direct', /live_?pace\b/i, 'does not pace its requests')
         const compares = near(file(name, 'entity') || '', COMPARE)

@@ -1127,8 +1127,8 @@ main: kit: flow: Basic${name[0].toUpperCase() + name.slice(1)}Flow: {
 // Identities a live record does not hold as the fixture's do: a venue keyed by
 // its slug with no list, a saying addressed by position whose record declares
 // no identity field, a pokemon whose list records carry no id, a badge whose
-// route gives no example to fall back on, and a year whose integer identity a
-// string route value names.
+// route gives no example to fall back on, a year whose integer identity a
+// string route value names, and a box keyed by its record's `_id`.
 const LIVE_IDENTITY_ENTITIES = [
   identityEntity('venue', 'slug', [['id', 'INTEGER'], ['name', 'STRING'], ['slug', 'STRING']],
     identityPoint('/v1/venues', 'slug', 'hq')),
@@ -1140,6 +1140,8 @@ const LIVE_IDENTITY_ENTITIES = [
     identityPoint('/badges', 'id'), true),
   identityEntity('year', 'year', [['year', 'INTEGER'], ['summary', 'STRING']],
     identityPoint('/year', 'year', '1969')),
+  identityEntity('box', '_id', [['_id', 'STRING'], ['name', 'STRING']],
+    identityPoint('/boxes', 'boxId', '5a0c347b9fd3c2001111b701'), true),
 ].join('')
 
 
