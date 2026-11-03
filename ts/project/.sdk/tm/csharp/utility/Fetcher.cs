@@ -16,13 +16,17 @@ public static partial class SdkUtility
     // different credential — and .NET ADDS container cookies to a request
     // that already carries a Cookie header, which an `apiKey in: cookie`
     // scheme does. Pooling is the handler's own and is unaffected. Past five
-    // redirects the last 3xx is the answer, as in every target.
+    // redirects the last 3xx is the answer, as in every target. A gzip or
+    // deflate body is decoded, which .NET leaves to the handler to ask for: a
+    // server may compress its answer whatever the request asked for.
     private static HttpClientHandler CookielessHandler(bool allowRedirect) =>
         new HttpClientHandler
         {
             AllowAutoRedirect = allowRedirect,
             MaxAutomaticRedirections = 5,
             UseCookies = false,
+            AutomaticDecompression =
+                System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate,
         };
 
     private static readonly HttpClient DefaultHttpClient = new(CookielessHandler(true));
