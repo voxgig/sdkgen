@@ -38,7 +38,45 @@ int main(int argc, char** argv) {
 `
 
 
+// A server that answers over TLS and then closes the connection without
+// close_notify, as some servers do: the body has no length, so the close is
+// what ends it.
+const TLS_EOF_SERVER = String.raw`
+const tls = require('node:tls')
+const fs = require('node:fs')
+const [cert, key] = process.argv.slice(2)
+const server = tls.createServer({ cert: fs.readFileSync(cert), key: fs.readFileSync(key) }, (socket) => {
+  let seen = ''
+  socket.on('error', () => {})
+  socket.on('data', (chunk) => {
+    seen += chunk
+    if (!seen.includes('\r\n\r\n')) return
+    socket.write('HTTP/1.1 200 OK\r\ncontent-type: application/json\r\nconnection: close\r\n\r\n' +
+      '{"over":"tls"}', () => socket.destroy())
+  })
+})
+server.on('tlsClientError', () => {})
+server.listen(0, '127.0.0.1', () => console.log('listening ' + server.address().port))
+`
+
+
+// The lua SDK's direct() against TLS_BASE: the data it read, or its error.
+const TLS_EOF_LUA_PROBE = String.raw`
+local sdk = require("demo_sdk")
+local client = sdk.new({ base = os.getenv("TLS_BASE") })
+local res = client:direct({ path = "p" })
+if res.ok then
+  print("tls-eof: ok " .. tostring(type(res.data) == "table" and res.data.over or res.data))
+else
+  local err = res.err
+  print("tls-eof: failed " .. tostring(type(err) == "table" and (err.msg or err.message) or err))
+end
+`
+
+
 export {
+  TLS_EOF_LUA_PROBE,
+  TLS_EOF_SERVER,
   TLS_PROBE,
   TLS_SERVER,
 }
