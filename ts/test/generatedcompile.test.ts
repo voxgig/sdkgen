@@ -38,6 +38,7 @@ import {
 } from './mediaprobes'
 import { ALLOW_OUTCOMES, ALLOW_PROBES, allowOutcomes } from './allowprobes'
 import { TLS_PROBE, TLS_SERVER } from './tlsprobes'
+import { ENVELOPE_CASES, ENVELOPE_EXPECT, ENVELOPE_PROBES, envelopeCounts } from './envelopeprobes'
 import { ITEMS_EXPECT, ITEMS_PROBES, itemsListed } from './itemprobes'
 import { SCALAR_EXPECT, SCALAR_PROBES, scalarsListed } from './scalarprobes'
 import { REQD_EXPECT, REQD_PROBES, reqdListed } from './reqdprobes'
@@ -9143,6 +9144,40 @@ describe('probes driven through a generated SDK', () => {
       ok(ran.ok, name + ': the scalars probe failed:\n' + tail(ran.out, 60))
       strictEqual(scalarsListed(ran.out), SCALAR_EXPECT, name + ' probe output:\n' + tail(ran.out))
     })
+
+    const envelopeKey = 'ts' === lane.target || 'js' === lane.target ? 'node' : lane.target
+    if (null != ENVELOPE_PROBES[envelopeKey]) {
+      test(name + ': a list whose transform yields no list makes no entity', async (t) => {
+        const missing = lane.ready()
+        if (null != missing) return t.skip(missing)
+        if (null != lane.seam && lane.seam()) {
+          return t.skip(name + ': the probe has no live transport here')
+        }
+
+        const sdkroot = await sdkFor(lane.target)
+        const cases = Path.join(sdkroot, 'envelope-cases.json')
+        Fs.writeFileSync(cases, JSON.stringify(ENVELOPE_CASES))
+        const server = await nonjsonServer(sdkroot, cases)
+        let ran: ReturnType<typeof run>
+        try {
+          ran = lane.exec(sdkroot, {
+            ...nestedTestEnv(),
+            ENVELOPE_BASE: 'http://127.0.0.1:' + server.port,
+            ENVELOPE_CASES: cases,
+          }, writer(sdkroot), { name: 'envelope', source: ENVELOPE_PROBES })
+        }
+        finally {
+          server.stop()
+        }
+
+        if (ran.unlaunchable) {
+          return t.skip(name + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+        }
+
+        ok(ran.ok, name + ': the envelope probe failed:\n' + tail(ran.out, 60))
+        deepStrictEqual(envelopeCounts(ran.out), ENVELOPE_EXPECT, name + ' probe output:\n' + tail(ran.out))
+      })
+    }
 
     test(name + ': a test-mode list answers only the seeds its required parameters match',
       async (t) => {

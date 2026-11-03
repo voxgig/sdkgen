@@ -32,7 +32,9 @@ function makeResult(ctx) {
     const resdata = result.resdata
     result.resdata = []
 
-    if (null != resdata && 0 < resdata.length) {
+    // Only a list holds records: a string has a length too, and an object
+    // (a page envelope the transform did not unwrap) holds none.
+    if (Array.isArray(resdata) && 0 < resdata.length) {
       for (let entry of resdata) {
         const ent = entity.make()
         ent.data(entry)
