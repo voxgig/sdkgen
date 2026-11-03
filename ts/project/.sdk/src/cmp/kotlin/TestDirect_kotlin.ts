@@ -216,7 +216,10 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '  ')}
       reason == null,
       if (reason == null || "" == reason) "skipped via sdk-test-control.json" else reason,
     )
-${listSkipBlock}    val client = setup.client
+${listSkipBlock}    if (setup.live) {
+      RunnerSupport.livePace()
+    }
+    val client = setup.client
 
 `)
 
@@ -329,7 +332,10 @@ ${listLiveQueryLines ? '    if (setup.live) {\n' + listLiveQueryLines + '    }\n
       reason == null,
       if (reason == null || "" == reason) "skipped via sdk-test-control.json" else reason,
     )
-${loadSkipBlock}    val client = setup.client
+${loadSkipBlock}    if (setup.live) {
+      RunnerSupport.livePace()
+    }
+    val client = setup.client
 
 `)
 

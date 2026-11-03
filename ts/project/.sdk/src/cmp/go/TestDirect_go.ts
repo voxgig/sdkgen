@@ -248,7 +248,10 @@ func Test${entity.Name}Direct(t *testing.T) {
 			t.Skip(_reason)
 			return
 		}
-${listSkipBlock}		client := setup.client
+${listSkipBlock}		if setup.live {
+			livePace()
+		}
+		client := setup.client
 
 `)
 
@@ -396,7 +399,10 @@ ${listLiveQueryLines}
 			t.Skip(_reason)
 			return
 		}
-${loadSkipBlock}		client := setup.client
+${loadSkipBlock}		if setup.live {
+			livePace()
+		}
+		client := setup.client
 
 `)
 
@@ -716,7 +722,10 @@ function generateDirectGraphqlGo(
 			t.Skip(_reason)
 			return
 		}
-${getOnlySkip}${skipBlock}		client := setup.client
+${getOnlySkip}${skipBlock}		if setup.live {
+			livePace()
+		}
+		client := setup.client
 
 		variables := map[string]any{}
 		if setup.live {

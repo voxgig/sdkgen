@@ -218,7 +218,8 @@ ${liveStrictNote(liveStrict(model, target.name), '#', '  ')}
       skip(_reason || "skipped via sdk-test-control.json")
       return
     end
-${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    client = setup[:client]
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    Runner.live_pace if setup[:live]
+    client = setup[:client]
 
     params = {}
     query = {}
@@ -277,7 +278,8 @@ ${listLiveQueryLines ? '    if setup[:live]\n' + listLiveQueryLines + '    end\n
       skip(_reason || "skipped via sdk-test-control.json")
       return
     end
-${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    client = setup[:client]
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    Runner.live_pace if setup[:live]
+    client = setup[:client]
 
     params = {}
     query = {}

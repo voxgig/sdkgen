@@ -270,8 +270,9 @@ end
 
 
 -- The record a create-less flow reads live: the first its list returns,
--- put where the flow reads the fixture's existing records.
-function runner.live_existing(pending, setup, strict, name, list)
+-- put where the flow reads the fixture's existing records. A record with no
+-- value in the identity field takes the fallback identity.
+function runner.live_existing(pending, setup, strict, name, list, field, fallback)
   local ok, found, err = pcall(list)
   if not ok then
     runner.live_miss(pending, strict, "Live list discovery failed: " .. tostring(found))
@@ -289,8 +290,54 @@ function runner.live_existing(pending, setup, strict, name, list)
   if type(record) == "table" and type(record.data_get) == "function" then
     record = record:data_get()
   end
+  if type(record) ~= "table" or record[field] == nil then
+    if fallback == nil then
+      runner.live_miss(pending, strict, "Live entity test blocked: the listed " .. name ..
+        " record has no " .. field .. ", and neither *_ENTID nor the load route's example gives one")
+    end
+    local filled = {}
+    if type(record) == "table" then
+      for k, v in pairs(record) do
+        filled[k] = v
+      end
+    end
+    filled[field] = fallback
+    record = filled
+  end
   setup.data.existing = setup.data.existing or {}
   setup.data.existing[name] = { live01 = record }
+end
+
+
+local function live_id_str(v)
+  local whole = math.type(v) == "float" and math.tointeger(v)
+  return tostring(whole or v)
+end
+
+
+-- Identities compared by their string forms: a route parameter's value
+-- is a string where the record may hold a number.
+function runner.live_same_id(a, b)
+  if a == nil or b == nil then
+    return a == nil and b == nil
+  end
+  return live_id_str(a) == live_id_str(b)
+end
+
+
+-- Sleeps test.live.delayMs before a live request.
+function runner.live_pace()
+  local ms = runner.live_delay_ms()
+  if ms <= 0 then
+    return
+  end
+  local ok, socket = pcall(require, "socket")
+  if ok and type(socket) == "table" and type(socket.sleep) == "function" then
+    socket.sleep(ms / 1000)
+    return
+  end
+  local target = os.clock() + (ms / 1000)
+  while os.clock() < target do end
 end
 
 

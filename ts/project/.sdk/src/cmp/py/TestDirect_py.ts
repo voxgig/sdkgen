@@ -222,7 +222,9 @@ class Test${entity.Name}Direct:
         if _skip:
             pytest.skip(_reason or "skipped via sdk-test-control.json")
             return
-${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listLiveIdKeys)}${liveKeysBlock(listLiveIdKeys, entidEnvVar)}        client = setup["client"]
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listLiveIdKeys)}${liveKeysBlock(listLiveIdKeys, entidEnvVar)}        if setup["live"]:
+            runner.live_pace()
+        client = setup["client"]
 
         params = {}
         query = {}
@@ -276,7 +278,9 @@ ${listLiveQueryLines ? '        if setup["live"]:\n' + listLiveQueryLines : ''}`
         if _skip:
             pytest.skip(_reason or "skipped via sdk-test-control.json")
             return
-${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}        client = setup["client"]
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}        if setup["live"]:
+            runner.live_pace()
+        client = setup["client"]
 
         params = {}
         query = {}

@@ -8,6 +8,9 @@ const routeOf = (point: any) => String(point.m).toUpperCase() + ' ' + point.o
 
 const scalarOf = (value: any) => ['string', 'number', 'boolean'].includes(typeof value) ? value : undefined
 
+// A route parameter's value is a string where the record may hold a number.
+const sameId = (a: any, b: any) => null != a && null != b && String(a) === String(b)
+
 // The offline flow keeps its deterministic fixture assertions. Live flows
 // resolve real prerequisites per operation and collect failures until done.
 // `excluded` names, by step id, the steps this run leaves out, and why.
@@ -27,6 +30,8 @@ async function runLiveEntity(
     ...Object.values(entity.fields || {}).map((field: any) => field?.n).filter(Boolean)])
   const marks = new Map<string, { name: string, value: any }>()
   const idField = entity.id?.field || 'id'
+  const declared = new Set(Object.values(entity.fields || {}).map((field: any) => field?.n))
+  const repeatsId = null != entity.id && (declared.has(idField) || declared.has('id'))
   const copy = (value: any) => JSON.parse(JSON.stringify(value ?? {}))
   const hasCreate = steps.some(step => step.o === 'create')
   const report = await runLiveSteps(steps.map((step, index) => {
@@ -146,7 +151,7 @@ async function runLiveEntity(
             const previous = created.get(validation.def?.ref)
             const id = previous?.[idField] ?? previous?.id
             if (undefined === id) continue
-            const found = data.some((item: any) => (item?.[idField] ?? item?.id) === id)
+            const found = data.some((item: any) => sameId(item?.[idField] ?? item?.id, id))
             if (validation.apply === 'ItemExists') assert(found, 'Created resource missing from list')
             if (validation.apply === 'ItemNotExists') assert(!found, 'Removed resource still in list')
           }
@@ -160,8 +165,8 @@ async function runLiveEntity(
           if (op === 'create') created.set(ref, data)
           context.publish(data)
           if (op === 'create' && entity.id) assert(null != (data[idField] ?? data.id), 'Missing created identity')
-          if (['load', 'update'].includes(op) && input.id != null && entity.id) {
-            assert.equal(data[idField] ?? data.id, input.id, 'Response identity mismatch')
+          if (['load', 'update'].includes(op) && input.id != null && repeatsId) {
+            assert.equal(String(data[idField] ?? data.id), String(input.id), 'Response identity mismatch')
           }
           const mark = marks.get(ref)
           if (mark && ['update', 'load'].includes(op)) {

@@ -32,7 +32,7 @@ import {
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
-  liveEntity,
+  liveEntity, liveIdentity,
 } from '@voxgig/sdkgen'
 
 import { formatRubyValue } from './utility_rb'
@@ -40,7 +40,7 @@ import { formatRubyValue } from './utility_rb'
 
 // The live prologue of a flow built from offline fixtures: blocked without
 // the ids it binds, and a create-less load reading the first listed record.
-function liveFlowGate(entity: any, needs: any, entidEnv: string): string {
+function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string): string {
   let out = ''
   if (null != needs.examples) {
     out += `    if setup[:live]
@@ -71,9 +71,10 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string): string {
   }
   out += '    client = setup[:client]\n'
   if (null != needs.record) {
+    const id = `setup[:idmap][${JSON.stringify(needs.record)}]`
     out += `    if setup[:live]
-      Runner.live_existing(setup, LIVE_STRICT, ${JSON.stringify(entity.name)}) do
-        [{ "id" => setup[:idmap][${JSON.stringify(needs.record)}] }]
+      Runner.live_existing(setup, LIVE_STRICT, ${JSON.stringify(entity.name)}, ${JSON.stringify(identity.field)}, ${id}) do
+        [{ "id" => ${id} }]
       end
     end
 `
@@ -84,7 +85,10 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string): string {
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
         .map(([k, ex]) => `${JSON.stringify(k)} => ${formatRubyValue(ex)}`)).join(', ')
     out += `    if setup[:live]
-      Runner.live_existing(setup, LIVE_STRICT, ${JSON.stringify(entity.name)}) do
+      _live_id = setup[:synthetic_only] ? nil : setup[:idmap][${JSON.stringify(identity.key)}]
+${undefined === identity.ex ? '' : `      _live_id = ${formatRubyValue(identity.ex)} if _live_id.nil?
+`}      Runner.live_pace
+      Runner.live_existing(setup, LIVE_STRICT, ${JSON.stringify(entity.name)}, ${JSON.stringify(identity.field)}, _live_id) do
         client.${entity.Name}(nil).list({${match}}, nil)
       end
     end
@@ -250,7 +254,7 @@ ${failureTests(model, entity)}${validateListTest(model, entity)}` : ''}${validat
 
     const flowBody = (flow: any) => {
       const steps = flowSteps(flow) as any[]
-      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), entidEnv) + '\n')
+      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), liveIdentity(entity, flow), entidEnv) + '\n')
 
       // Check if the flow has a create step
       const flowHasCreate = steps.some((s: any) => s.o === 'create')
@@ -278,6 +282,7 @@ ${failureTests(model, entity)}${validateListTest(model, entity)}` : ''}${validat
         }
         const opgen: OpGen = GENERATE_OP[step.o]
         if (opgen) {
+          Content(LIVE_PACE)
           opgen({ ...genCtx, flow }, step, index)
           Content('\n')
         }
@@ -581,8 +586,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     assert !${resdatavar}.nil?
 `)
   if (hasEntIdU) {
-    Content(`    assert_equal ${resdatavar}[${rid(entity)}], ${datavar}_up["id"]
-`)
+    Content(sameId(entity, `${resdatavar}[${rid(entity)}]`, `${datavar}_up["id"]`))
   }
 
   if (step.s) {
@@ -644,8 +648,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    ${datavar}_loaded = ${entvar}.load(${matchvar}, nil)
     ${datavar}_load_result = Helpers.to_map(${datavar}_loaded.respond_to?(:data_get) ? ${datavar}_loaded.data_get : ${datavar}_loaded)
     assert !${datavar}_load_result.nil?
-    assert_equal ${datavar}_load_result[${rid(entity)}], ${srcdatavar}[${rid(entity)}]
-`)
+${sameId(entity, `${datavar}_load_result[${rid(entity)}]`, `${srcdatavar}[${rid(entity)}]`)}`)
   }
   else {
     Content(`    ${matchvar} = {}
@@ -689,6 +692,18 @@ ${parentMatch(step, matchvar)}    ${entvar}.remove(${matchvar}, nil)
 // The record field the entity's identity is read from, as a Ruby string.
 function rid(entity: any): string {
   return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+const LIVE_PACE = `    Runner.live_pace if setup[:live]
+`
+
+
+// A result's identity matches the one asked for, live only where the
+// record's schema has a field to repeat it in.
+function sameId(entity: any, result: string, expected: string): string {
+  return `    assert Runner.live_same_id(${result}, ${expected})${null == entityDataIdField(entity) ? ' unless setup[:live]' : ''}
+`
 }
 
 

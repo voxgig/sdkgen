@@ -18,13 +18,13 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityRecordIdField,
+  isAuthActive, envName, envToken, entityDataIdField, entityRecordIdField,
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
-  liveEntity,
+  liveEntity, liveIdentity,
 } from '@voxgig/sdkgen'
 
 
@@ -45,7 +45,7 @@ type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 // The live prologue of a flow built from offline fixtures: blocked without
 // the ids it binds, a create-less load reading the first listed record, and
 // a lenient run observing its checks rather than failing on them.
-function liveFlowGate(entity: any, needs: any, entidEnv: string, method: string,
+function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string, method: string,
   strict: boolean, hasSteps: boolean): string {
   let out = ''
   for (const [k, ex] of needs.examples || []) {
@@ -77,9 +77,10 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, method: string,
   }
   out += '    let client = setup.client.clone();\n'
   if (null != needs.record) {
-    out += `    if setup.live && !live_existing(&setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)}, || {
-        Ok(ja(vec![jo(vec![("id", getp(&setup.idmap, ${JSON.stringify(needs.record)}))])]))
-    }) {
+    const id = `getp(&setup.idmap, ${JSON.stringify(needs.record)})`
+    out += `    if setup.live && !live_existing(&setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)},
+        ${JSON.stringify(identity.field)}, ${id}, || Ok(ja(vec![jo(vec![("id", ${id})])])))
+    {
         return;
     }
 `
@@ -89,13 +90,22 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, method: string,
       .map(([k, v]: any) => `(${JSON.stringify(k)}, getp(&setup.idmap, ${JSON.stringify(v)}))`)
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
         .map(([k, ex]) => `(${JSON.stringify(k)}, ${rustLit(ex)})`)).join(', ')
-    out += `    if setup.live && !live_existing(&setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)}, || {
-        client
-            .${method}(Value::Noval)
-            .list(jo(vec![${match}]), Value::Noval)
-            .map(|list| ja(list.iter().map(|e| e.data(None)).collect::<Vec<Value>>()))
-    }) {
-        return;
+    const given = `if setup.synthetic_only { Value::Noval } else { getp(&setup.idmap, ${JSON.stringify(identity.key)}) }`
+    out += `    if setup.live {
+${undefined === identity.ex ? `        let live_id = ${given};
+` : `        let mut live_id = ${given};
+        if live_id.is_noval() || live_id.is_null() {
+            live_id = ${rustLit(identity.ex)};
+        }
+`}        live_pace();
+        if !live_existing(&setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)}, ${JSON.stringify(identity.field)}, live_id, || {
+            client
+                .${method}(Value::Noval)
+                .list(jo(vec![${match}]), Value::Noval)
+                .map(|list| ja(list.iter().map(|e| e.data(None)).collect::<Vec<Value>>()))
+        }) {
+            return;
+        }
     }
 `
   }
@@ -269,8 +279,8 @@ ${skipBlock}`)
 
     const flowBody = (flow: any) => {
       const steps = flowSteps(flow) as any[]
-      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), PROJUPPER + '_TEST_' + ENTUPPER + '_ENTID',
-        method, strict, steps.length > 0))
+      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), liveIdentity(entity, flow),
+        PROJUPPER + '_TEST_' + ENTUPPER + '_ENTID', method, strict, steps.length > 0))
 
       // No create step: bootstrap entity data from existing fixture data.
       const flowHasCreate = steps.some((s: any) => s.o === 'create')
@@ -291,6 +301,7 @@ ${skipBlock}`)
       each(steps, (step: any, index: any) => {
         const opgen: OpGen = GENERATE_OP[step.o]
         if (opgen) {
+          Content(LIVE_PACE)
           opgen({ ...genCtx, flow }, step, index)
           Content('\n')
         }
@@ -640,12 +651,8 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     );
 `)
   if (hasEntIdU) {
-    Content(`    assert_eq!(
-        getp(&${resdatavar}, ${rid(entity)}),
-        getp(&${datavar}_up, "id"),
-        "expected update result id to match"
-    );
-`)
+    Content(sameId(entity, `getp(&${resdatavar}, ${rid(entity)})`, `getp(&${datavar}_up, "id")`,
+      'expected update result id to match'))
   }
 
   // Assert TextFieldMark.
@@ -717,12 +724,8 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
         matches!(${datavar}_load_result, Value::Map(_)),
         "expected load result to be a map"
     );
-    assert_eq!(
-        getp(&${datavar}_load_result, ${rid(entity)}),
-        getp(&${srcdatavar}, ${rid(entity)}),
-        "expected load result id to match"
-    );
-`)
+${sameId(entity, `getp(&${datavar}_load_result, ${rid(entity)})`, `getp(&${srcdatavar}, ${rid(entity)})`,
+  'expected load result id to match')}`)
   }
   else {
     Content(`    let ${matchvar} = Value::empty_map();
@@ -768,6 +771,24 @@ ${parentMatch(step, matchvar)}    ${entvar}
 // The record field the entity's identity is read from, as a Rust string.
 function rid(entity: any): string {
   return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+const LIVE_PACE = `    if setup.live {
+        live_pace();
+    }
+`
+
+
+// A result's identity matches the one asked for, live only where the
+// record's schema has a field to repeat it in.
+function sameId(entity: any, result: string, expected: string, message: string): string {
+  const check = `assert!(live_same_id(&${result}, &${expected}), ${JSON.stringify(message)});`
+  return null == entityDataIdField(entity) ? `    if !setup.live {
+        ${check}
+    }
+` : `    ${check}
+`
 }
 
 

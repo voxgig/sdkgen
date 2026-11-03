@@ -223,7 +223,10 @@ describe("${entity.Name}Direct", function()
       pending(_reason or "skipped via sdk-test-control.json")
       return
     end
-${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    local client = setup.client
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    if setup.live then
+      runner.live_pace()
+    end
+    local client = setup.client
 
     local params = {}
     local query = {}
@@ -286,7 +289,10 @@ ${listLiveQueryLines ? '    if setup.live then\n' + listLiveQueryLines + '    en
       pending(_reason or "skipped via sdk-test-control.json")
       return
     end
-${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    local client = setup.client
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    if setup.live then
+      runner.live_pace()
+    end
+    local client = setup.client
 
     local params = {}
     local query = {}

@@ -20,11 +20,11 @@ import {
   getMatchEntries,
   isAuthActive,
   serverVarEnv,
-  serverVariables, envName, envToken, entityRecordIdField,
+  serverVariables, envName, envToken, entityDataIdField, entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
-  liveEntity,
+  liveEntity, liveIdentity,
 } from '@voxgig/sdkgen'
 
 
@@ -54,7 +54,7 @@ type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 // The live prologue of a flow built from offline fixtures: blocked without
 // the ids it binds, a create-less load reading the first listed record, and
 // a lenient run observing its checks rather than failing on them.
-function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: string,
+function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string, accessor: string,
   SDK: string, strict: boolean, hasSteps: boolean): string {
   let out = ''
   for (const [k, ex] of needs.examples || []) {
@@ -84,10 +84,12 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: strin
   }
   out += `    ${SDK} client = setup.client;\n`
   if (null != needs.record) {
+    const id = `setup.idmap.get(${JSON.stringify(needs.record)})`
     out += `    if (setup.live) {
-      RunnerSupport.liveExisting(setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)}, () -> {
+      RunnerSupport.liveExisting(setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)},
+          ${JSON.stringify(identity.field)}, ${id}, () -> {
         Map<String, Object> record = new LinkedHashMap<>();
-        record.put("id", setup.idmap.get(${JSON.stringify(needs.record)}));
+        record.put("id", ${id});
         return List.of(record);
       });
     }
@@ -99,7 +101,13 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: strin
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
         .map(([k, ex]) => `match.put(${JSON.stringify(k)}, ${javaLit(ex)});`)).join(' ')
     out += `    if (setup.live) {
-      RunnerSupport.liveExisting(setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)}, () -> {
+      Object liveId = setup.syntheticOnly ? null : setup.idmap.get(${JSON.stringify(identity.key)});
+${undefined === identity.ex ? '' : `      if (liveId == null) {
+        liveId = ${javaIdLit(identity.ex)};
+      }
+`}      RunnerSupport.livePace();
+      RunnerSupport.liveExisting(setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)},
+          ${JSON.stringify(identity.field)}, liveId, () -> {
         Map<String, Object> match = new LinkedHashMap<>();${match ? ' ' + match : ''}
         return client.${accessor}(null).list(match, null);
       });
@@ -227,8 +235,8 @@ ${liveStrictNote(strict, '//', '  ')}
 
     const flowBody = (flow: any) => {
       const steps = flowSteps(flow) as any[]
-      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), entidEnvVar, accessor, SDK, strict,
-        steps.length > 0))
+      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), liveIdentity(entity, flow), entidEnvVar,
+        accessor, SDK, strict, steps.length > 0))
 
       // Check if the flow has a create step; if not, bootstrap entity data
       const flowHasCreate = steps.some((s: any) => s.o === 'create')
@@ -248,6 +256,7 @@ ${liveStrictNote(strict, '//', '  ')}
       each(steps, (step: any, index: any) => {
         const opgen: OpGen = GENERATE_OP[step.o]
         if (opgen) {
+          Content(LIVE_PACE)
           opgen({ ...genCtx, flow }, step, index)
           Content('\n')
         }
@@ -614,9 +623,8 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     assertNotNull(${resdatavar}, "expected update result to be a map");
 `)
   if (hasEntIdU) {
-    Content(`    assertEquals(${datavar}Up.get("id"), ${resdatavar}.get(${rid(entity)}),
-        "expected update result id to match");
-`)
+    Content(sameId(entity, `${resdatavar}.get(${rid(entity)})`, `${datavar}Up.get("id")`,
+      'expected update result id to match'))
   }
 
   // Assert TextFieldMark
@@ -679,9 +687,8 @@ const generateLoad: OpGen = (ctx, step, index) => {
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
     Map<String, Object> ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded instanceof SdkEntity ? ((SdkEntity) ${datavar}Loaded).data() : ${datavar}Loaded);
     assertNotNull(${datavar}LoadResult, "expected load result to be a map");
-    assertEquals(${srcdatavar}.get(${rid(entity)}), ${datavar}LoadResult.get(${rid(entity)}),
-        "expected load result id to match");
-`)
+${sameId(entity, `${datavar}LoadResult.get(${rid(entity)})`, `${srcdatavar}.get(${rid(entity)})`,
+  'expected load result id to match')}`)
   }
   else {
     Content(`${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
@@ -719,6 +726,24 @@ ${parentMatch(step, matchvar)}    ${entvar}.remove(${matchvar}, null);
 // The record field the entity's identity is read from, as a Java string.
 function rid(entity: any): string {
   return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+const LIVE_PACE = `    if (setup.live) {
+      RunnerSupport.livePace();
+    }
+`
+
+
+// A result's identity matches the one asked for, live only where the
+// record's schema has a field to repeat it in.
+function sameId(entity: any, result: string, expected: string, message: string): string {
+  const check = `assertTrue(RunnerSupport.liveSameId(${result}, ${expected}), ${JSON.stringify(message)});`
+  return null == entityDataIdField(entity) ? `    if (!setup.live) {
+      ${check}
+    }
+` : `    ${check}
+`
 }
 
 

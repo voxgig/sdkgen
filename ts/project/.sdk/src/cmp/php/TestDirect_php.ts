@@ -225,7 +225,10 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '    ')}
             $this->markTestSkipped($_reason ?? "skipped via sdk-test-control.json");
             return;
         }
-${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}        $client = $setup["client"];
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}        if (!empty($setup["live"])) {
+            Runner::live_pace();
+        }
+        $client = $setup["client"];
 
         $params = [];
         $query = [];
@@ -286,7 +289,10 @@ ${listLiveQueryLines ? '        if ($setup["live"]) {\n' + listLiveQueryLines + 
             $this->markTestSkipped($_reason ?? "skipped via sdk-test-control.json");
             return;
         }
-${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}        $client = $setup["client"];
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}        if (!empty($setup["live"])) {
+            Runner::live_pace();
+        }
+        $client = $setup["client"];
 
         $params = [];
         $query = [];

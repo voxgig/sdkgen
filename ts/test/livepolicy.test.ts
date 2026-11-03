@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  liveStrict, liveStrictNote, liveFlowNeeds, guardFlowSteps,
+  liveStrict, liveStrictNote, liveFlowNeeds, liveIdentity, guardFlowSteps,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
   flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes, liveEntity, liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveDirectGetOnly, liveFlowPlan, liveGates,
@@ -265,6 +265,25 @@ test('a load of a record with an id and no list takes the id *_ENTID or its exam
   const listed = { ...profile, op: { ...profile.op, list: at('GET', '/api/lobbist/') } }
   assert.deepEqual(liveFlowNeeds(listed, flow({ o: 'list' }, load)), { keys: [], discover: {} })
   assert.deepEqual(liveStepExamples(listed, load, flow({ o: 'list' }, load)), [['locale', 'en']])
+})
+
+// A create-less load reads the identity of the record it finds from the field
+// the model names, and a record lacking one takes *_ENTID's value, else the
+// example of the load route's id: PokeAPI's list records carry no id.
+test('a create-less load names the field its record holds the identity in, and its fallbacks', () => {
+  const pokemon = { name: 'pokemon', id: { field: 'id', name: 'id' }, fields: field('id', '`$INTEGER`'),
+    op: { list: at('GET', '/pokemon'), load: { points: [route('/pokemon/{idOrName}', [arg('param', 'id', true, '1')])] } } }
+  const listed = flow({ o: 'list' }, { o: 'load', m: { id: 'pokemon01' } })
+  assert.deepEqual(liveIdentity(pokemon, listed), { field: 'id', key: 'pokemon01', ex: '1' })
+  // The field the model names, though the parameter and the record also carry `id`.
+  const venue = { name: 'venue', id: { field: 'slug', name: 'id' }, fields: { ...field('id'), ...field('slug') },
+    op: { load: { points: [route('/venues/{slug}', [arg('param', 'id', true)])] } } }
+  assert.deepEqual(liveIdentity(venue, flow({ o: 'load' })), { field: 'slug', key: 'venue01' })
+  // A record whose schema declares no field for the identity reads `id`.
+  assert.equal(liveIdentity({ ...venue, fields: field('name') }, flow({ o: 'load' }))?.field, 'id')
+  // An entity with no id, or a flow with no load, reads none.
+  assert.equal(liveIdentity({ ...venue, id: undefined }, flow({ o: 'load' })), undefined)
+  assert.equal(liveIdentity(pokemon, flow({ o: 'list' })), undefined)
 })
 
 test('a list bound by a path key takes the key from its example', () => {

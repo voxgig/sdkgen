@@ -4,6 +4,7 @@ import { flowSteps } from './buildIdNames'
 import { primaryPoint } from './graphqlPoint'
 import { getMatchEntries } from './getMatchEntries'
 import { pointFacts } from './resolved'
+import { entityRecordIdField } from './opShape'
 
 
 function liveStrict(model: any, target?: string): boolean {
@@ -212,6 +213,26 @@ function liveRouteExamples(entity: any, opname: string, bound: string[], pathBou
 function liveRecordFound(entity: any, flow: any): boolean {
   return null != entity?.id &&
     flowSteps(flow).some((step: any) => 'create' === step.o || 'list' === step.o)
+}
+
+
+type LiveIdentity = { field: string, key: string, ex?: Scalar }
+
+
+// Where a create-less flow's load reads the identity of the record it finds,
+// and what a record lacking one takes instead: the *_ENTID value under `key`,
+// else `ex`, the example of the id parameter of the load's route.
+function liveIdentity(entity: any, flow: any): LiveIdentity | undefined {
+  const load = flowSteps(flow).find((step: any) => 'load' === step.o)
+  if (null == load || null == entity?.id) return undefined
+  const hasId = (point: any) => (point.g?.params || []).some((arg: any) => 'id' === arg.n)
+  const point = flowLoadRoute(entity, load)?.point ??
+    plainPoints(entity, 'load').find((point) => !isAction(point) && hasId(point))
+  const ex = scalarExample((point?.g?.params || []).find((arg: any) => 'id' === arg.n))
+  return {
+    field: entityRecordIdField(entity), key: loadIdKey(entity, load),
+    ...(undefined === ex ? {} : { ex }),
+  }
 }
 
 
@@ -517,10 +538,10 @@ function liveExcludedSummary(plan: { excluded: LiveExcluded[] }): string {
 }
 
 
-export type { LiveFlowNeeds, LiveExcluded, LiveGetOnly, LiveGate, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute }
+export type { LiveFlowNeeds, LiveIdentity, LiveExcluded, LiveGetOnly, LiveGate, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute }
 
 export {
-  liveStrict, liveStrictNote, liveFlowNeeds,
+  liveStrict, liveStrictNote, liveFlowNeeds, liveIdentity,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
   flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes,
   liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason,

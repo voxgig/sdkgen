@@ -83,7 +83,7 @@ it names read that from the environment or a gitignored `.env`.
 Twelve targets carry the full live wiring — credential, server variables and
 `test.client.options`:
 
-`ts`, `js`, `go`, `py`, `java`, `php`, `rb`, `lua`, `rust`, `dart`, `csharp`, `perl`
+`ts`, `js`, `go`, `py`, `java`, `kotlin`, `php`, `rb`, `lua`, `rust`, `csharp`, `perl`
 
 The rest generate the mock suite only: they have no live client to configure,
 so those environment variables do nothing there. `ts/test/generate.test.ts`
@@ -111,6 +111,21 @@ list loads the record that variable names, else the record its load route's
 example names. A flow that binds an identifier it can neither create, list nor
 take from an example still needs that variable; without it, the test names the
 identifier it is missing.
+
+Such a flow reads the record's identifier from the field the model names for
+it, `entity.id.field`, which need not be `id`: a record keyed by its `slug`
+holds the identifier there, and so does the record that the variable or the
+example names. A listed record that holds no value in that field, such as a
+list of `{ name, url }` summaries, takes the value the variable gives, else the
+example of the load route's identifier, as a flow with no list does. With
+neither, the test is blocked and names the field it could not fill.
+
+A live load or update checks that the record it returns carries the identifier
+it asked for, comparing the two as strings: a path value is a string where the
+record may hold a number. When the record's schema has no field for the
+identifier, as for an API that addresses records by position, the live check is
+only that a record came back. Offline, every target still compares the
+fixture's identifier.
 
 A flow loads the record it listed or created by the route that record fills:
 the first route that takes the record's identifier and whose other path
@@ -172,6 +187,19 @@ fixtures, and configured identifiers still determine which requests can succeed.
 Live assertions remain separate from the mock transport's synthetic identities.
 `ts/test/livegenerated.test.ts` executes generated TS and JS suites against a
 local HTTP server to check continuation, cleanup, and failure outcomes.
+
+## Pacing
+
+`test.live.delayMs` in `sdk-test-control.json` spaces live requests, by 500 ms
+unless set. Every target with a live suite waits that long before each step of
+a live entity flow, before the list that finds its record, and before each live
+direct test. The TS and JS suites wait after each step and
+after each test instead, which spaces the requests the same way. An API with a
+low rate limit needs a larger value:
+
+```json
+{ "version": 1, "test": { "live": { "delayMs": 2000 } } }
+```
 
 ## A GET-only live run
 

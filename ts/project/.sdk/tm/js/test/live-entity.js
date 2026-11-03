@@ -10,6 +10,8 @@ const live_runner_1 = require("./live-runner");
 const utility_1 = require("./utility");
 const routeOf = (point) => String(point.m).toUpperCase() + ' ' + point.o;
 const scalarOf = (value) => ['string', 'number', 'boolean'].includes(typeof value) ? value : undefined;
+// A route parameter's value is a string where the record may hold a number.
+const sameId = (a, b) => null != a && null != b && String(a) === String(b);
 // The offline flow keeps its deterministic fixture assertions. Live flows
 // resolve real prerequisites per operation and collect failures until done.
 // `excluded` names, by step id, the steps this run leaves out, and why.
@@ -26,6 +28,8 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
         ...Object.values(entity.fields || {}).map((field) => field?.n).filter(Boolean)]);
     const marks = new Map();
     const idField = entity.id?.field || 'id';
+    const declared = new Set(Object.values(entity.fields || {}).map((field) => field?.n));
+    const repeatsId = null != entity.id && (declared.has(idField) || declared.has('id'));
     const copy = (value) => JSON.parse(JSON.stringify(value ?? {}));
     const hasCreate = steps.some(step => step.o === 'create');
     const report = await (0, live_runner_1.runLiveSteps)(steps.map((step, index) => {
@@ -163,7 +167,7 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
                         const id = previous?.[idField] ?? previous?.id;
                         if (undefined === id)
                             continue;
-                        const found = data.some((item) => (item?.[idField] ?? item?.id) === id);
+                        const found = data.some((item) => sameId(item?.[idField] ?? item?.id, id));
                         if (validation.apply === 'ItemExists')
                             (0, strict_1.default)(found, 'Created resource missing from list');
                         if (validation.apply === 'ItemNotExists')
@@ -181,8 +185,8 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
                     context.publish(data);
                     if (op === 'create' && entity.id)
                         (0, strict_1.default)(null != (data[idField] ?? data.id), 'Missing created identity');
-                    if (['load', 'update'].includes(op) && input.id != null && entity.id) {
-                        strict_1.default.equal(data[idField] ?? data.id, input.id, 'Response identity mismatch');
+                    if (['load', 'update'].includes(op) && input.id != null && repeatsId) {
+                        strict_1.default.equal(String(data[idField] ?? data.id), String(input.id), 'Response identity mismatch');
                     }
                     const mark = marks.get(ref);
                     if (mark && ['update', 'load'].includes(op)) {

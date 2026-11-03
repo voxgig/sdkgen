@@ -1092,6 +1092,62 @@ function slugKeyed(): string {
 }
 
 
+const identityPoint = (path: string, param: string, ex?: string | number, type = 'STRING') => `{
+      g: { params: [ { k: "param", n: "id", or: "${param}", r: true, t: "\`$${type}\`"${
+  undefined === ex ? '' : ', ex: ' + JSON.stringify(ex)} } ] }
+      m: "GET", o: "${path}/{${param}}", q: { exist: ["id"] }, r: { param: { ${param}: "id" } }
+      s: [${path.slice(1).split('/').map((lit) => `{ lit: "${lit}" }, `).join('')}{ var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } }`
+
+const identityEntity = (name: string, id: string, fields: [string, string][], load: string, list = false) => `
+main: kit: entity: ${name}: {
+  alias: field: {}
+  name: "${name}"
+  id: { field: "${id}", name: "id" }
+  fields: {${fields.map(([n, t]) => `
+    "${n}": { h: '${n}', n: "${n}", r: false, t: "\`$${t}\`" }`).join('')}
+  }
+  op: {${list ? `
+    list: { name: "list", points: [ { g: {}, m: "GET", o: "/${name}", q: { exist: [] }
+      s: [{ lit: "${name}" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }` : ''}
+    load: { name: "load", points: [ ${load} ] }
+  }
+}
+
+main: kit: flow: Basic${name[0].toUpperCase() + name.slice(1)}Flow: {
+  entity: "${name}", kind: "basic", name: "Basic${name[0].toUpperCase() + name.slice(1)}Flow"
+  step: [${list ? ' { o: "list" }' : ''}
+    { o: "load", m: { id: "${name}01" }
+      i: { ref: "${name}_ref01", srcdatavar: "${name}_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
+
+// Identities a live record does not hold as the fixture's do: a venue keyed by
+// its slug with no list, a saying addressed by position whose record declares
+// no identity field, a pokemon whose list records carry no id, a badge whose
+// route gives no example to fall back on, and a year whose integer identity a
+// string route value names.
+const LIVE_IDENTITY_ENTITIES = [
+  identityEntity('venue', 'slug', [['id', 'INTEGER'], ['name', 'STRING'], ['slug', 'STRING']],
+    identityPoint('/v1/venues', 'slug', 'hq')),
+  identityEntity('saying', 'id', [['author', 'STRING'], ['quote', 'STRING']],
+    identityPoint('/quotes', 'index', 2, 'INTEGER')),
+  identityEntity('pokemon', 'id', [['id', 'INTEGER'], ['name', 'STRING']],
+    identityPoint('/pokemon', 'idOrName', '1'), true),
+  identityEntity('badge', 'id', [['id', 'STRING'], ['name', 'STRING']],
+    identityPoint('/badges', 'id'), true),
+  identityEntity('year', 'year', [['year', 'INTEGER'], ['summary', 'STRING']],
+    identityPoint('/year', 'year', '1969')),
+].join('')
+
+
+function liveIdentities(): string {
+  return entityOnly(LIVE_IDENTITY_ENTITIES)
+}
+
+
 // A list whose route requires the query parameters engine and q.
 const SEARCH_ENTITY = `
 main: kit: entity: search: {
@@ -2175,6 +2231,8 @@ export {
   multiRouteLoad,
   liveFallbacks,
   slugKeyed,
+  liveIdentities,
+  LIVE_IDENTITY_ENTITIES,
   MULTIROUTE_ENTITIES,
   keylessLoad,
   KEYLESS_ENTITIES,

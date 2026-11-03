@@ -263,7 +263,10 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '  ')}
     Assumptions.assumeTrue(reason == null,
         reason == null || "".equals(reason)
             ? "skipped via sdk-test-control.json" : reason);
-${listSkipBlock}    ${SDK} client = setup.client;
+${listSkipBlock}    if (setup.live) {
+      RunnerSupport.livePace();
+    }
+    ${SDK} client = setup.client;
 
 `)
 
@@ -378,7 +381,10 @@ ${listLiveQueryLines ? '    if (setup.live) {\n' + listLiveQueryLines + '    }\n
     Assumptions.assumeTrue(reason == null,
         reason == null || "".equals(reason)
             ? "skipped via sdk-test-control.json" : reason);
-${loadSkipBlock}    ${SDK} client = setup.client;
+${loadSkipBlock}    if (setup.live) {
+      RunnerSupport.livePace();
+    }
+    ${SDK} client = setup.client;
 
 `)
 

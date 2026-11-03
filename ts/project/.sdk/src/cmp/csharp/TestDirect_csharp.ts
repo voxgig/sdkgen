@@ -240,7 +240,11 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '    ')}
         {
             return; // skipped via sdk-test-control.json
         }
-${listSkipBlock}        var client = setup.Client;
+${listSkipBlock}        if (setup.Live)
+        {
+            TestRunner.LivePace();
+        }
+        var client = setup.Client;
 
 `)
 
@@ -375,7 +379,11 @@ ${listLiveQueryLines ? '        if (setup.Live)\n        {\n' + listLiveQueryLin
         {
             return; // skipped via sdk-test-control.json
         }
-${loadSkipBlock}        var client = setup.Client;
+${loadSkipBlock}        if (setup.Live)
+        {
+            TestRunner.LivePace();
+        }
+        var client = setup.Client;
 
 `)
 

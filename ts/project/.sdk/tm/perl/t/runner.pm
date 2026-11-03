@@ -223,10 +223,10 @@ sub live_describe {
 }
 
 # The record a create-less flow reads live: the first its list returns, put
-# where the flow reads the fixture's existing records. False once the test
-# is settled and its block ends.
+# where the flow reads the fixture's existing records, a record with no
+# identity taking the fallback. False once the test is settled.
 sub live_existing {
-  my ($setup, $strict, $label, $name, $list) = @_;
+  my ($setup, $strict, $label, $name, $list, $field, $fallback) = @_;
   my $found = eval { $list->() };
   if (my $err = $@) {
     live_miss($strict, $label, "Live list discovery failed: $err");
@@ -243,8 +243,23 @@ sub live_existing {
   my $first = $found->[0];
   my $record = (Scalar::Util::blessed($first) && $first->can('data_get'))
     ? $first->data_get : $first;
+  if (ref $record ne 'HASH' || !defined $record->{$field}) {
+    if (!defined $fallback) {
+      live_miss($strict, $label, "Live entity test blocked: the listed $name record has no $field, "
+        . "and neither *_ENTID nor the load route's example gives one");
+      return 0;
+    }
+    $record = { (ref $record eq 'HASH' ? %$record : ()), $field => $fallback };
+  }
   $setup->{data}{existing}{$name} = { 'live01' => $record };
   return 1;
+}
+
+# Sleeps test.live.delayMs before a live request.
+sub live_pace {
+  my $ms = live_delay_ms();
+  select(undef, undef, undef, $ms / 1000) if $ms > 0;
+  return;
 }
 
 # In a lenient live run a step that dies skips, observing the live API.

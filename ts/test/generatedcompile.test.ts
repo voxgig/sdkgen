@@ -29,7 +29,7 @@ import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
   searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, idlessUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY, REQUEST_SHAPED_ENTITY, multiRouteLoad, keylessLoad,
-  namedEntity,
+  namedEntity, liveIdentities,
 } from './generateharness'
 import { AUTH_MODELS, AUTH_PROBES } from './authprobes'
 import {
@@ -8036,6 +8036,578 @@ describe('a basic flow loads an entity with no id by the values its record holds
       ok(res.ok && new RegExp('^' + name + '_entity_test: [1-9]\\d* tests, [1-9]\\d* checks, 0 failures$', 'm').test(res.out),
         'cpp: ' + name + '_entity_test failed:\n' + tail(res.out))
     }
+  })
+})
+
+
+// The runner helpers a live flow's identity rests on, called directly, so a
+// lane runs them although no test here goes live: a listed record lacking the
+// identity takes the fallback and one holding it keeps it, a record with no
+// fallback is a strict miss, identities compare by string form, and the pace
+// waits test.live.delayMs.
+const LIVE_IDENTITY_PROBES: Record<string, [string, string]> = {
+  go: ['test/live_identity_probe_test.go', `package sdktest
+
+import (
+	"testing"
+	"time"
+)
+
+func TestLiveIdentityProbe(t *testing.T) {
+	data := map[string]any{}
+	live01 := func() map[string]any {
+		return data["existing"].(map[string]any)["pokemon"].(map[string]any)["live01"].(map[string]any)
+	}
+	liveExisting(t, true, data, "pokemon", "id", "1", func() (any, error) {
+		return []any{map[string]any{"name": "bulbasaur"}}, nil
+	})
+	if rec := live01(); rec["id"] != "1" || rec["name"] != "bulbasaur" {
+		t.Fatalf("a listed record did not take the fallback identity: %v", rec)
+	}
+	liveExisting(t, true, data, "pokemon", "id", "1", func() (any, error) {
+		return []any{map[string]any{"id": float64(5)}}, nil
+	})
+	if rec := live01(); rec["id"] != float64(5) {
+		t.Fatalf("a listed identity was not kept: %v", rec)
+	}
+	if !liveSameId(float64(1969), "1969") || !liveSameId(float64(1000000), "1000000") ||
+		liveSameId(float64(1969), "1970") || liveSameId(nil, "1") || !liveSameId(nil, nil) {
+		t.Fatal("identities are not compared by their string forms")
+	}
+	start := time.Now()
+	livePace()
+	if time.Since(start) < time.Duration(liveDelayMs())*time.Millisecond*9/10 {
+		t.Fatal("livePace did not wait")
+	}
+}
+`],
+  py: ['test/test_live_identity_probe.py', `import time
+
+import pytest
+
+from test import runner
+
+
+def test_live_identity_probe():
+    setup = {"data": {}}
+    runner.live_existing(setup, True, "pokemon", lambda: [{"name": "bulbasaur"}], "id", "1")
+    assert setup["data"]["existing"]["pokemon"]["live01"] == {"name": "bulbasaur", "id": "1"}
+    runner.live_existing(setup, True, "pokemon", lambda: [{"id": 5}], "id", "1")
+    assert setup["data"]["existing"]["pokemon"]["live01"] == {"id": 5}
+    with pytest.raises(pytest.fail.Exception, match="has no slug"):
+        runner.live_existing(setup, True, "venue", lambda: [{"id": 7}], "slug", None)
+    assert runner.live_same_id(1969, "1969") and runner.live_same_id(1969.0, "1969")
+    assert not runner.live_same_id(1969, "1970") and not runner.live_same_id(None, "1")
+    assert runner.live_same_id(None, None)
+    start = time.monotonic()
+    runner.live_pace()
+    assert time.monotonic() - start >= runner.live_delay_ms() / 1000.0 * 0.9
+`],
+  rb: ['test/live_identity_probe_test.rb', `require "minitest/autorun"
+require_relative "../Demo_sdk"
+require_relative "runner"
+
+class LiveIdentityProbeTest < Minitest::Test
+  def test_live_identity_probe
+    setup = { data: {} }
+    Runner.live_existing(setup, true, "pokemon", "id", "1") { [{ "name" => "bulbasaur" }] }
+    assert_equal({ "name" => "bulbasaur", "id" => "1" }, setup[:data]["existing"]["pokemon"]["live01"])
+    Runner.live_existing(setup, true, "pokemon", "id", "1") { [{ "id" => 5 }] }
+    assert_equal({ "id" => 5 }, setup[:data]["existing"]["pokemon"]["live01"])
+    missed = assert_raises(Minitest::Assertion) do
+      Runner.live_existing(setup, true, "venue", "slug", nil) { [{ "id" => 7 }] }
+    end
+    assert_match(/has no slug/, missed.message)
+    assert Runner.live_same_id(1969, "1969")
+    assert Runner.live_same_id(1969.0, "1969")
+    refute Runner.live_same_id(1969, "1970")
+    refute Runner.live_same_id(nil, "1")
+    assert Runner.live_same_id(nil, nil)
+    start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    Runner.live_pace
+    assert Process.clock_gettime(Process::CLOCK_MONOTONIC) - start >= Runner.live_delay_ms / 1000.0 * 0.9
+  end
+end
+`],
+  lua: ['test/live_identity_probe_test.lua', `local runner = require("test.runner")
+
+describe("live identity probe", function()
+  it("fills, keeps, misses, compares and paces", function()
+    local setup = { data = {} }
+    runner.live_existing(pending, setup, true, "pokemon", function() return { { name = "bulbasaur" } } end, "id", "1")
+    assert.are.equal("1", setup.data.existing.pokemon.live01.id)
+    assert.are.equal("bulbasaur", setup.data.existing.pokemon.live01.name)
+    runner.live_existing(pending, setup, true, "pokemon", function() return { { id = 5 } } end, "id", "1")
+    assert.are.equal(5, setup.data.existing.pokemon.live01.id)
+    local ok, err = pcall(runner.live_existing, pending, setup, true, "venue",
+      function() return { { id = 7 } } end, "slug", nil)
+    assert.is_false(ok)
+    assert.is_truthy(tostring(err):find("has no slug", 1, true))
+    assert.is_true(runner.live_same_id(1969, "1969"))
+    assert.is_true(runner.live_same_id(1969.0, "1969"))
+    assert.is_false(runner.live_same_id(1969, "1970"))
+    assert.is_false(runner.live_same_id(nil, "1"))
+    assert.is_true(runner.live_same_id(nil, nil))
+    local has_socket, socket = pcall(require, "socket")
+    local now = has_socket and socket.gettime or os.clock
+    local start = now()
+    runner.live_pace()
+    assert.is_true(now() - start >= runner.live_delay_ms() / 1000 * 0.9)
+  end)
+end)
+`],
+  php: ['test/LiveIdentityProbeTest.php', `<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/../demo_sdk.php';
+require_once __DIR__ . '/Runner.php';
+
+use PHPUnit\\Framework\\TestCase;
+
+class LiveIdentityProbeTest extends TestCase
+{
+    public function test_live_identity_probe(): void
+    {
+        $setup = ["data" => []];
+        Runner::live_existing($setup, true, "pokemon", fn() => [["name" => "bulbasaur"]], "id", "1");
+        $this->assertSame(["name" => "bulbasaur", "id" => "1"], $setup["data"]["existing"]["pokemon"]["live01"]);
+        Runner::live_existing($setup, true, "pokemon", fn() => [["id" => 5]], "id", "1");
+        $this->assertSame(["id" => 5], $setup["data"]["existing"]["pokemon"]["live01"]);
+        try {
+            Runner::live_existing($setup, true, "venue", fn() => [["id" => 7]], "slug", null);
+            $this->fail("no miss");
+        } catch (\\PHPUnit\\Framework\\AssertionFailedError $e) {
+            $this->assertStringContainsString("has no slug", $e->getMessage());
+        }
+        $this->assertTrue(Runner::live_same_id(1969, "1969"));
+        $this->assertTrue(Runner::live_same_id(1969.0, "1969"));
+        $this->assertFalse(Runner::live_same_id(1969, "1970"));
+        $this->assertFalse(Runner::live_same_id(null, "1"));
+        $this->assertTrue(Runner::live_same_id(null, null));
+        $start = microtime(true);
+        Runner::live_pace();
+        $this->assertGreaterThanOrEqual(Runner::live_delay_ms() / 1000 * 0.9, microtime(true) - $start);
+    }
+}
+`],
+  perl: ['t/live_identity_probe.t', `#!perl
+use strict;
+use warnings;
+use Test::More;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use Cwd ();
+use Time::HiRes ();
+
+use DemoSDK;
+require(Cwd::abs_path("$FindBin::Bin/runner.pm"));
+
+my $setup = { data => {} };
+ok(DemoTestRunner::live_existing($setup, 1, 'probe', 'pokemon', sub { [{ name => 'bulbasaur' }] }, 'id', '1'),
+  'probe: a listed record is found');
+is_deeply($setup->{data}{existing}{pokemon}{live01}, { name => 'bulbasaur', id => '1' },
+  'probe: a listed record takes the fallback identity');
+ok(DemoTestRunner::live_existing($setup, 1, 'probe', 'pokemon', sub { [{ id => 5 }] }, 'id', '1'),
+  'probe: a listed record with an identity is found');
+is_deeply($setup->{data}{existing}{pokemon}{live01}, { id => 5 }, 'probe: a listed identity is kept');
+my $start = Time::HiRes::time();
+DemoTestRunner::live_pace();
+cmp_ok(Time::HiRes::time() - $start, '>=', DemoTestRunner::live_delay_ms() / 1000 * 0.9, 'probe: paced');
+done_testing();
+`],
+  rust: ['tests/live_identity_probe.rs', `#![allow(unused_imports)]
+
+mod common;
+
+use common::*;
+
+use demo_sdk::core::helpers::{getp, getpath, ja, jo};
+use demo_sdk::Value;
+
+#[test]
+fn live_identity_probe() {
+    let data = Value::empty_map();
+    assert!(live_existing(&data, true, "pokemon", "id", Value::str("1"),
+        || Ok(ja(vec![jo(vec![("name", Value::str("bulbasaur"))])]))));
+    let rec = getpath(&["existing", "pokemon", "live01"], &data);
+    assert_eq!(getp(&rec, "id"), Value::str("1"));
+    assert_eq!(getp(&rec, "name"), Value::str("bulbasaur"));
+    assert!(live_existing(&data, true, "pokemon", "id", Value::str("1"),
+        || Ok(ja(vec![jo(vec![("id", Value::Num(5.0))])]))));
+    assert_eq!(getp(&getpath(&["existing", "pokemon", "live01"], &data), "id"), Value::Num(5.0));
+    let missed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        live_existing(&Value::empty_map(), true, "venue", "slug", Value::Noval,
+            || Ok(ja(vec![jo(vec![("id", Value::Num(7.0))])])))
+    }));
+    assert!(missed.is_err());
+    assert!(live_same_id(&Value::Num(1969.0), &Value::str("1969")));
+    assert!(!live_same_id(&Value::Num(1969.0), &Value::str("1970")));
+    assert!(!live_same_id(&Value::Noval, &Value::str("1")));
+    assert!(live_same_id(&Value::Null, &Value::Noval));
+    let start = std::time::Instant::now();
+    live_pace();
+    assert!(start.elapsed().as_millis() as i64 >= live_delay_ms() * 9 / 10);
+}
+`],
+  java: ['test/LiveIdentityProbeTest.java', `package voxgig.demosdk.sdktest;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
+
+@SuppressWarnings("unchecked")
+public class LiveIdentityProbeTest {
+  private static Object live01(Map<String, Object> data) {
+    return ((Map<String, Object>) ((Map<String, Object>) data.get("existing")).get("pokemon")).get("live01");
+  }
+
+  @Test
+  public void fillsKeepsMissesComparesAndPaces() {
+    Map<String, Object> data = new LinkedHashMap<>();
+    RunnerSupport.liveExisting(data, true, "pokemon", "id", "1",
+        () -> List.of(new LinkedHashMap<>(Map.of("name", "bulbasaur"))));
+    assertEquals(Map.of("name", "bulbasaur", "id", "1"), live01(data));
+    RunnerSupport.liveExisting(data, true, "pokemon", "id", "1",
+        () -> List.of(new LinkedHashMap<>(Map.of("id", 5L))));
+    assertEquals(Map.of("id", 5L), live01(data));
+    AssertionFailedError missed = assertThrows(AssertionFailedError.class, () ->
+        RunnerSupport.liveExisting(new LinkedHashMap<>(), true, "venue", "slug", null,
+            () -> List.of(new LinkedHashMap<>(Map.of("id", 7L)))));
+    assertTrue(missed.getMessage().contains("has no slug"));
+    assertTrue(RunnerSupport.liveSameId(1969L, "1969"));
+    assertTrue(RunnerSupport.liveSameId(1969.0, "1969"));
+    assertFalse(RunnerSupport.liveSameId(1969L, "1970"));
+    assertFalse(RunnerSupport.liveSameId(null, "1"));
+    assertTrue(RunnerSupport.liveSameId(null, null));
+    long start = System.nanoTime();
+    RunnerSupport.livePace();
+    assertTrue((System.nanoTime() - start) / 1_000_000 >= RunnerSupport.liveDelayMs() * 9L / 10);
+  }
+}
+`],
+  kotlin: ['test/LiveIdentityProbeTest.kt', `package voxgig.demosdk.sdktest
+
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.opentest4j.AssertionFailedError
+
+@Suppress("UNCHECKED_CAST")
+class LiveIdentityProbeTest {
+  private fun live01(data: MutableMap<String, Any?>): Any? =
+    ((data["existing"] as Map<String, Any?>)["pokemon"] as Map<String, Any?>)["live01"]
+
+  @Test
+  fun fillsKeepsMissesComparesAndPaces() {
+    val data = linkedMapOf<String, Any?>()
+    RunnerSupport.liveExisting(data, true, "pokemon", "id", "1") { listOf(linkedMapOf<String, Any?>("name" to "bulbasaur")) }
+    assertEquals(mapOf("name" to "bulbasaur", "id" to "1"), live01(data))
+    RunnerSupport.liveExisting(data, true, "pokemon", "id", "1") { listOf(linkedMapOf<String, Any?>("id" to 5L)) }
+    assertEquals(mapOf("id" to 5L), live01(data))
+    val missed = assertThrows(AssertionFailedError::class.java) {
+      RunnerSupport.liveExisting(linkedMapOf(), true, "venue", "slug", null) { listOf(linkedMapOf<String, Any?>("id" to 7L)) }
+    }
+    assertTrue(missed.message!!.contains("has no slug"))
+    assertTrue(RunnerSupport.liveSameId(1969L, "1969"))
+    assertTrue(RunnerSupport.liveSameId(1969.0, "1969"))
+    assertFalse(RunnerSupport.liveSameId(1969L, "1970"))
+    assertFalse(RunnerSupport.liveSameId(null, "1"))
+    assertTrue(RunnerSupport.liveSameId(null, null))
+    val start = System.nanoTime()
+    RunnerSupport.livePace()
+    assertTrue((System.nanoTime() - start) / 1_000_000 >= RunnerSupport.liveDelayMs() * 9L / 10)
+  }
+}
+`],
+  csharp: ['test/LiveIdentityProbeTest.cs', `using Xunit;
+
+namespace DemoSdk.Test;
+
+public class LiveIdentityProbeTest
+{
+    private static Dictionary<string, object?> Live01(Dictionary<string, object?> data) =>
+        (Dictionary<string, object?>)((Dictionary<string, object?>)((Dictionary<string, object?>)data["existing"]!)["pokemon"]!)["live01"]!;
+
+    [Fact]
+    public void FillsKeepsMissesComparesAndPaces()
+    {
+        var data = new Dictionary<string, object?>();
+        Assert.True(TestRunner.LiveExisting(data, true, "pokemon", "id", "1",
+            () => new List<object?> { new Dictionary<string, object?> { ["name"] = "bulbasaur" } }));
+        Assert.Equal("1", Live01(data)["id"]);
+        Assert.Equal("bulbasaur", Live01(data)["name"]);
+        Assert.True(TestRunner.LiveExisting(data, true, "pokemon", "id", "1",
+            () => new List<object?> { new Dictionary<string, object?> { ["id"] = 5L } }));
+        Assert.Equal(5L, Live01(data)["id"]);
+        Assert.ThrowsAny<Exception>(() =>
+        {
+            TestRunner.LiveExisting(new Dictionary<string, object?>(), true, "venue", "slug", null,
+                () => new List<object?> { new Dictionary<string, object?> { ["id"] = 7L } });
+        });
+        Assert.True(TestRunner.LiveSameId(1969L, "1969"));
+        Assert.True(TestRunner.LiveSameId(1969.0, "1969"));
+        Assert.False(TestRunner.LiveSameId(1969L, "1970"));
+        Assert.False(TestRunner.LiveSameId(null, "1"));
+        Assert.True(TestRunner.LiveSameId(null, null));
+        var start = System.Diagnostics.Stopwatch.StartNew();
+        TestRunner.LivePace();
+        Assert.True(start.ElapsedMilliseconds >= TestRunner.LiveDelayMs() * 9 / 10);
+    }
+}
+`],
+}
+
+
+function writeProbe(target: string, root: string): void {
+  const [file, source] = LIVE_IDENTITY_PROBES[target]
+  Fs.writeFileSync(Path.join(root, file), source)
+}
+
+
+// Identities a live record does not hold as the fixture's do (liveIdentities):
+// the live branches that fill or skip them compile, and the flows and direct
+// tests still pass offline, in every target with a live flow.
+describe('a flow over an identity its live record may lack compiles and passes offline', () => {
+
+  let tmp = ''
+  const names = ['venue', 'saying', 'pokemon', 'badge', 'year']
+  const Names = names.map((name) => name[0].toUpperCase() + name.slice(1))
+  const LONG = 30 * 60 * 1000
+
+  before(() => {
+    tmp = Fs.mkdtempSync(Path.join(Os.tmpdir(), 'sdkgen-liveid-'))
+    const model = makeModel(['ts'], undefined, liveIdentities())
+    names.forEach((name, i) => {
+      const dir = Path.join(tmp, '.sdk', 'test', 'entity', name)
+      Fs.mkdirSync(dir, { recursive: true })
+      Fs.writeFileSync(Path.join(dir, Names[i] + 'TestData.json'),
+        JSON.stringify(entityTestData(model.main.kit.entity[name])))
+    })
+  })
+
+  after(() => {
+    if ('' !== tmp) Fs.rmSync(tmp, { recursive: true, force: true })
+  })
+
+
+  for (const target of ['ts', 'js']) {
+    test(target + ': the entity and direct tests pass', async () => {
+      const root = Path.join(tmp, target)
+      await generateTo(target, root, liveIdentities())
+      linkDeps(root)
+      if ('ts' === target) {
+        for (const tree of ['src', 'test']) {
+          const built = tsc(root, tree)
+          ok(built.ok, 'ts: the generated ' + tree + ' does not compile:\n' + built.out)
+        }
+      }
+      const files = names.flatMap((name, i) => ['Entity', 'Direct'].map((kind) =>
+        Path.join('ts' === target ? 'dist-test' : 'test', 'entity', name, Names[i] + kind + '.test.js')))
+      const res = run(process.execPath,
+        ['--test', '--test-concurrency=1', '--test-reporter=tap', ...files], root, nestedTestEnv())
+      ok(res.ok, target + ': a generated test failed:\n' + tail(res.out))
+      strictEqual((res.out.match(/^\s*ok \d+ - basic\b/gm) || []).length, names.length,
+        target + ': not every flow passed:\n' + tail(res.out))
+    })
+  }
+
+
+  test('go: the entity and direct tests pass', async (t) => {
+    const go = toolchain('go')
+    if (null == go) return t.skip('needs go')
+    const root = Path.join(tmp, 'go')
+    await generateTo('go', root, liveIdentities())
+    writeProbe('go', root)
+    const res = run(go, ['test', './test/', '-count=1', '-v', '-run',
+      '^(Test(' + Names.join('|') + ')(Entity|Direct)|TestLiveIdentityProbe)$'], root, undefined, LONG)
+    if (res.timedOut) return t.skip('go: ' + res.out)
+    ok(res.ok && res.out.includes('--- PASS: TestLiveIdentityProbe'), 'go: a generated test failed:\n' + tail(res.out))
+    for (const Name of Names) {
+      ok(res.out.includes('--- PASS: Test' + Name + 'Entity/basic'), 'go: ' + Name + ' flow did not pass:\n' + tail(res.out))
+    }
+  })
+
+
+  test('py: the entity and direct tests pass', async (t) => {
+    const cmd = pytest(['-v', 'test_live_identity_probe.py',
+      ...names.flatMap((name) => ['test_' + name + '_entity.py', 'test_' + name + '_direct.py'])])
+    if (null == cmd) return t.skip('needs python3 with pytest')
+    const root = Path.join(tmp, 'py')
+    await generateTo('py', root, liveIdentities())
+    writeProbe('py', root)
+    const res = run(cmd.bin, cmd.args, Path.join(root, 'test'), cmd.env)
+    if (res.timedOut) return t.skip('py: ' + res.out)
+    ok(res.ok && /::test_live_identity_probe PASSED/.test(res.out), 'py: a generated test failed:\n' + tail(res.out))
+    strictEqual((res.out.match(/::test_should_run_basic_flow PASSED/g) || []).length, names.length,
+      'py: not every flow passed:\n' + tail(res.out))
+  })
+
+
+  test('rb: the entity and direct tests pass', async (t) => {
+    const rb = minitest([])
+    if (null == rb) return t.skip('needs ruby with minitest')
+    const root = Path.join(tmp, 'rb')
+    await generateTo('rb', root, liveIdentities())
+    writeProbe('rb', root)
+    const probed = run(rb.bin, ['test/live_identity_probe_test.rb'], root, rb.env)
+    ok(probed.ok && /1 runs, \d+ assertions, 0 failures, 0 errors, 0 skips/.test(probed.out),
+      'rb: the runner probe failed:\n' + tail(probed.out))
+    for (const name of names) {
+      for (const kind of ['entity', 'direct']) {
+        const res = run(rb.bin, ['test/' + name + '_' + kind + '_test.rb', '-v'], root, rb.env)
+        if (res.timedOut) return t.skip('rb: ' + res.out)
+        ok(res.ok && ('direct' === kind || /#test_basic_flow = [\d.]+ s = \./.test(res.out)),
+          'rb: the ' + name + ' ' + kind + ' test failed:\n' + tail(res.out))
+      }
+    }
+  })
+
+
+  test('lua: the entity and direct tests pass', async (t) => {
+    const lua = toolchain('lua5.4') || toolchain('lua')
+    const cmd = busted(['-o', 'TAP', 'test/live_identity_probe_test.lua', ...names.flatMap((name) =>
+      ['test/' + name + '_entity_test.lua', 'test/' + name + '_direct_test.lua'])])
+    if (null == cmd || null == lua || !probeOk(lua, ['-e', 'require "dkjson"'])) {
+      return t.skip('needs lua 5.4 with busted and the dkjson rock')
+    }
+    const root = Path.join(tmp, 'lua')
+    await generateTo('lua', root, liveIdentities())
+    writeProbe('lua', root)
+    const res = run(cmd.bin, cmd.args, root)
+    if (res.timedOut) return t.skip('lua: ' + res.out)
+    ok(res.ok && !/^not ok/m.test(res.out) && /^ok \d+ - live identity probe/m.test(res.out),
+      'lua: a generated test failed:\n' + tail(res.out))
+    strictEqual((res.out.match(/^ok \d+ .*basic/gm) || []).length, names.length,
+      'lua: not every flow passed:\n' + tail(res.out))
+  })
+
+
+  test('perl: the entity and direct tests pass', async (t) => {
+    const perl = toolchain('perl')
+    if (null == perl) return t.skip('needs perl')
+    if (!probeOk(perl, ['-MTest::More', '-e', '1'])) return t.skip('perl is here but Test::More is not')
+    const root = Path.join(tmp, 'perl')
+    await generateTo('perl', root, liveIdentities())
+    writeProbe('perl', root)
+    const probed = run(perl, ['-Ilib', 't/live_identity_probe.t'], root)
+    ok(probed.ok && !/^not ok/m.test(probed.out) && /^ok \d+ - probe: paced$/m.test(probed.out),
+      'perl: the runner probe failed:\n' + tail(probed.out))
+    for (const name of names) {
+      for (const kind of ['entity', 'direct']) {
+        const res = run(perl, ['-Ilib', 't/' + name + '_' + kind + '.t'], root)
+        if (res.timedOut) return t.skip('perl: ' + res.out)
+        ok(res.ok && !/^not ok/m.test(res.out) &&
+          ('direct' === kind || new RegExp('^ok \\d+ - ' + name + ' load: id$', 'm').test(res.out)),
+        'perl: the ' + name + ' ' + kind + ' test failed:\n' + tail(res.out))
+      }
+    }
+  })
+
+
+  test('php: the entity and direct tests pass', async (t) => {
+    const root = Path.join(tmp, 'php')
+    await generateTo('php', root, liveIdentities())
+    writeProbe('php', root)
+    const probe = phpunitViaComposer(['test/LiveIdentityProbeTest.php'])
+    if (null == probe) return t.skip('needs php with phpunit (on PATH, PHPUNIT=<path to phpunit.phar>, or composer to install it)')
+    const probed = run(probe.bin, probe.args, root)
+    ok(probed.ok && /OK \(1 test/.test(probed.out), 'php: the runner probe failed:\n' + tail(probed.out))
+    for (const Name of Names) {
+      for (const kind of ['Entity', 'Direct']) {
+        const flow = 'Entity' === kind
+        const cmd = phpunitViaComposer([...(flow ? ['--filter', 'test_basic_flow'] : []),
+          'test/' + Name + kind + 'Test.php'])
+        if (null == cmd) return t.skip('needs php with phpunit (on PATH, PHPUNIT=<path to phpunit.phar>, or composer to install it)')
+        const res = run(cmd.bin, cmd.args, root)
+        if (res.timedOut) return t.skip('php: ' + res.out)
+        ok(res.ok && (flow ? /OK \(1 test/ : /^OK\b/m).test(res.out),
+          'php: the ' + Name + ' ' + kind + ' test failed:\n' + tail(res.out))
+      }
+    }
+  })
+
+
+  test('rust: the entity and direct tests pass', async (t) => {
+    const cmd = cargoTest(['--test', 'live_identity_probe',
+      ...names.flatMap((name) => ['--test', name + '_entity_test', '--test', name + '_direct_test'])])
+    if (null == cmd) return t.skip('needs cargo')
+    const root = Path.join(tmp, 'rust')
+    await generateTo('rust', root, liveIdentities())
+    writeProbe('rust', root)
+    const res = run(cmd.bin, cmd.args, root, cmd.env, LONG)
+    if (res.timedOut) return t.skip('rust: ' + res.out)
+    ok(res.ok && !/test result: FAILED/.test(res.out) && /^test live_identity_probe \.\.\. ok$/m.test(res.out),
+      'rust: a generated test failed:\n' + tail(res.out))
+    strictEqual((res.out.match(/^test \w+_entity_basic \.\.\. ok$/gm) || []).length, names.length,
+      'rust: not every flow passed:\n' + tail(res.out))
+  })
+
+
+  test('java: the entity and direct tests pass', async (t) => {
+    const cmd = maven(['-Dtest=' + ['LiveIdentityProbeTest',
+      ...Names.flatMap((Name) => [Name + 'EntityTest', Name + 'DirectTest'])].join(',')])
+    if (null == cmd) return t.skip('needs java and maven')
+    const root = Path.join(tmp, 'java')
+    await generateTo('java', root, liveIdentities())
+    writeProbe('java', root)
+    const res = run(cmd.bin, cmd.args, root, undefined, LONG)
+    if (res.timedOut) return t.skip('java: ' + res.out)
+    ok(res.ok && /Tests run: [1-9]\d*, Failures: 0, Errors: 0/.test(res.out),
+      'java: a generated test failed:\n' + tail(res.out, 80))
+    for (const suite of ['LiveIdentityProbe', ...Names.map((Name) => Name + 'Entity')]) {
+      ok(new RegExp('Tests run: [1-9]\\d*, Failures: 0, Errors: 0, Skipped: \\d+, .* in [\\w.]*' + suite +
+        'Test').test(res.out), 'java: the ' + suite + ' test did not run:\n' + tail(res.out, 80))
+    }
+  })
+
+
+  test('kotlin: the entity and direct tests pass', async (t) => {
+    const gradle = toolchain('gradle')
+    if ('win32' === process.platform || null == gradle) return t.skip('needs gradle (and not windows, where it hangs)')
+    const root = Path.join(tmp, 'kotlin')
+    await generateTo('kotlin', root, liveIdentities())
+    writeProbe('kotlin', root)
+    const res = run(gradle, ['--console=plain', 'test', '--tests', '*LiveIdentityProbeTest*', ...Names.flatMap((Name) =>
+      ['--tests', '*' + Name + 'EntityTest*', '--tests', '*' + Name + 'DirectTest*'])], root, undefined, LONG)
+    if (res.timedOut) return t.skip('kotlin: ' + res.out)
+    ok(res.ok, 'kotlin: a generated test failed:\n' + tail(res.out, 80))
+    for (const suite of ['LiveIdentityProbe', ...Names.map((Name) => Name + 'Entity')]) {
+      ok(/tests="[1-9]\d*" skipped="\d+" failures="0" errors="0"/.test(junitReport(root, suite + 'Test')),
+        'kotlin: the ' + suite + ' test did not run:\n' + tail(res.out, 80))
+    }
+  })
+
+
+  test('csharp: the entity and direct tests pass', async (t) => {
+    const dotnet = toolchain('dotnet')
+    if (null == dotnet) return t.skip('needs dotnet')
+    const root = Path.join(tmp, 'csharp')
+    await generateTo('csharp', root, liveIdentities())
+    writeProbe('csharp', root)
+    const built = run(dotnet, ['build', '--nologo', '-v', 'quiet', 'test'], root, undefined, LONG)
+    ok(built.ok, 'csharp: the generated test project does not build:\n' + tail(built.out))
+    const filter = Names.flatMap((Name) => [Name + 'EntityTest', Name + 'DirectTest'])
+      .map((suite) => 'FullyQualifiedName~' + suite).join('|')
+    const res = run(dotnet, ['test', '--nologo', '--no-build', '-v', 'quiet',
+      '--logger', 'console;verbosity=minimal', '--filter', filter, 'test'], root, undefined, LONG)
+    if (res.timedOut) return t.skip('csharp: ' + res.out)
+    ok(res.ok && /Passed!\s+-\s+Failed:\s+0,\s+Passed:\s+[1-9]\d*/.test(res.out),
+      'csharp: a generated test failed:\n' + tail(res.out, 80))
+    const probed = run(dotnet, ['test', '--nologo', '--no-build', '-v', 'quiet',
+      '--logger', 'console;verbosity=minimal', '--filter', 'FullyQualifiedName~LiveIdentityProbeTest', 'test'],
+    root, undefined, LONG)
+    ok(probed.ok && /Passed!\s+-\s+Failed:\s+0,\s+Passed:\s+1,/.test(probed.out),
+      'csharp: the runner probe failed:\n' + tail(probed.out, 80))
   })
 })
 

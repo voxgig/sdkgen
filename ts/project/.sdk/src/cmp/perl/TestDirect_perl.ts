@@ -238,7 +238,8 @@ sub live_ok {
     pass('${label}: skipped via sdk-test-control.json');
     last DIRECT_LIST;
   }
-${getOnlyKeysBlock(model, entity, label, 'DIRECT_LIST', listParams.map(liveKey))}${liveKeysBlock(N, label, 'DIRECT_LIST', listParams.map(liveKey), entidEnvVar)}  my $client = $setup->{client};
+${getOnlyKeysBlock(model, entity, label, 'DIRECT_LIST', listParams.map(liveKey))}${liveKeysBlock(N, label, 'DIRECT_LIST', listParams.map(liveKey), entidEnvVar)}  ${N}TestRunner::live_pace() if $setup->{live};
+  my $client = $setup->{client};
 
   my $params = {};
   my $query = {};
@@ -303,7 +304,8 @@ ${listLiveQueryLines ? '  if ($setup->{live}) {\n' + listLiveQueryLines + '  }\n
     pass('${label}: skipped via sdk-test-control.json');
     last DIRECT_LOAD;
   }
-${getOnlyKeysBlock(model, entity, label, 'DIRECT_LOAD', [...new Set(loadLiveIdKeys)])}${liveKeysBlock(N, label, 'DIRECT_LOAD', [...new Set(loadLiveIdKeys)], entidEnvVar)}  my $client = $setup->{client};
+${getOnlyKeysBlock(model, entity, label, 'DIRECT_LOAD', [...new Set(loadLiveIdKeys)])}${liveKeysBlock(N, label, 'DIRECT_LOAD', [...new Set(loadLiveIdKeys)], entidEnvVar)}  ${N}TestRunner::live_pace() if $setup->{live};
+  my $client = $setup->{client};
 
   my $params = {};
   my $query = {};

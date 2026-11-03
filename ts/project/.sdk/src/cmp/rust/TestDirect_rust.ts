@@ -304,7 +304,10 @@ fn ${evar}_direct_list() {
         );
         return;
     }
-${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listLiveParams.map((lp: any) => lp.key))}${liveKeysBlock(listLiveParams.map((lp: any) => lp.key), entidEnvVar)}    let client = setup.client.clone();
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listLiveParams.map((lp: any) => lp.key))}${liveKeysBlock(listLiveParams.map((lp: any) => lp.key), entidEnvVar)}    if setup.live {
+        live_pace();
+    }
+    let client = setup.client.clone();
 
     let params = Value::empty_map();
 ${liveQueryBlock(listPoint)}`)
@@ -419,7 +422,10 @@ fn ${evar}_direct_load() {
         );
         return;
     }
-${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    let client = setup.client.clone();
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    if setup.live {
+        live_pace();
+    }
+    let client = setup.client.clone();
 
     let params = Value::empty_map();
 ${liveQueryBlock(loadPoint)}    if setup.live {

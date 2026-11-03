@@ -33,7 +33,7 @@ import {
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
-  liveEntity,
+  liveEntity, liveIdentity,
 } from '@voxgig/sdkgen'
 
 import { formatPhpValue } from './utility_php'
@@ -42,7 +42,7 @@ import { formatPhpValue } from './utility_php'
 // The live prologue of a flow built from offline fixtures: blocked without
 // the ids it binds, a create-less load reading the first listed record, and
 // a lenient run observing its checks rather than failing on them.
-function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: string,
+function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string, accessor: string,
   strict: boolean): string {
   let out = ''
   if (null != needs.examples) {
@@ -74,9 +74,10 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: strin
   }
   out += '        $client = $setup["client"];\n'
   if (null != needs.record) {
+    const id = `$setup["idmap"][${JSON.stringify(needs.record)}] ?? null`
     out += `        if (!empty($setup["live"])) {
             Runner::live_existing($setup, self::LIVE_STRICT, ${JSON.stringify(entity.name)},
-                fn() => [["id" => $setup["idmap"][${JSON.stringify(needs.record)}] ?? null]]);
+                fn() => [["id" => ${id}]], ${JSON.stringify(identity.field)}, ${id});
         }
 `
   }
@@ -86,8 +87,11 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, accessor: strin
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
         .map(([k, ex]) => `${JSON.stringify(k)} => ${formatPhpValue(ex)}`)).join(', ')
     out += `        if (!empty($setup["live"])) {
+            $_liveId = empty($setup["synthetic_only"]) ? ($setup["idmap"][${JSON.stringify(identity.key)}] ?? null) : null;
+${undefined === identity.ex ? '' : `            $_liveId = $_liveId ?? ${formatPhpValue(identity.ex)};
+`}            Runner::live_pace();
             Runner::live_existing($setup, self::LIVE_STRICT, ${JSON.stringify(entity.name)},
-                fn() => $client->${accessor}(null)->list([${match}], null));
+                fn() => $client->${accessor}(null)->list([${match}], null), ${JSON.stringify(identity.field)}, $_liveId);
         }
 `
   }
@@ -249,7 +253,8 @@ ${failureTests(model, entity, accessor)}${validateListTest(model, entity, access
 
     const flowBody = (flow: any) => {
       const steps = flowSteps(flow) as any[]
-      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), entidEnv, accessor, strict) + '\n')
+      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), liveIdentity(entity, flow), entidEnv, accessor,
+        strict) + '\n')
 
       // Check if the flow has a create step
       const flowHasCreate = steps.some((s: any) => s.o === 'create')
@@ -277,6 +282,7 @@ ${failureTests(model, entity, accessor)}${validateListTest(model, entity, access
         }
         const opgen: OpGen = GENERATE_OP[step.o]
         if (opgen) {
+          Content(LIVE_PACE)
           opgen({ ...genCtx, flow }, step, index)
           Content('\n')
         }
@@ -590,8 +596,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
         $this->assertNotNull($${resdatavar});
 `)
   if (hasEntIdU) {
-    Content(`        $this->assertEquals($${resdatavar}[${rid(entity)}], $${datavar}_up["id"]);
-`)
+    Content(sameId(entity, `$${resdatavar}[${rid(entity)}] ?? null`, `$${datavar}_up["id"]`))
   }
 
   if (step.s) {
@@ -653,8 +658,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
         $${datavar}_load_result = Helpers::to_map(is_object($${datavar}_loaded) && method_exists($${datavar}_loaded, 'data_get') ? $${datavar}_loaded->data_get() : $${datavar}_loaded);
         $this->assertNotNull($${datavar}_load_result);
-        $this->assertEquals($${datavar}_load_result[${rid(entity)}], $${srcdatavar}[${rid(entity)}]);
-`)
+${sameId(entity, `$${datavar}_load_result[${rid(entity)}] ?? null`, `$${srcdatavar}[${rid(entity)}]`)}`)
   }
   else {
     Content(`        $${matchvar} = [];
@@ -698,6 +702,24 @@ ${parentMatch(step, matchvar)}        $${entvar}->remove($${matchvar}, null);
 // The record field the entity's identity is read from, as a PHP string.
 function rid(entity: any): string {
   return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+const LIVE_PACE = `        if (!empty($setup["live"])) {
+            Runner::live_pace();
+        }
+`
+
+
+// A result's identity matches the one asked for, live only where the
+// record's schema has a field to repeat it in.
+function sameId(entity: any, result: string, expected: string): string {
+  const check = `$this->assertTrue(Runner::live_same_id(${result}, ${expected}));`
+  return null == entityDataIdField(entity) ? `        if (empty($setup["live"])) {
+            ${check}
+        }
+` : `        ${check}
+`
 }
 
 
