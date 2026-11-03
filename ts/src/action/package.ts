@@ -32,7 +32,9 @@ import { cmd_package_check } from './check'
 
 import { doctor } from './doctor'
 
-import { COPY_LOG } from './copies'
+import { COPY_LOG, guardCopies, projectCopyMode } from './copies'
+
+import { MERGE } from '../helpers/copymerge'
 
 import { resolveSource, registerInstalled, nameConflict } from './resolve'
 import type { Source } from './resolve'
@@ -302,6 +304,14 @@ async function cmd_package_add(
 async function package_add(
   refs: string[], actx: ActionContext,
 ): Promise<ActionResult> {
+  return guardCopies(actx, 'package add ' + refs.join(' '),
+    (gctx: ActionContext) => addPackages(refs, gctx))
+}
+
+
+async function addPackages(
+  refs: string[], actx: ActionContext,
+): Promise<ActionResult> {
   const log = actx.log
   const flags = actx.flags ?? {}
 
@@ -548,6 +558,14 @@ function installedFrom(pkgname: string, actx: ActionContext): Installed[] {
 async function package_update(
   names: string[], actx: ActionContext,
 ): Promise<ActionResult> {
+  return guardCopies(actx, 'package update ' + names.join(' '),
+    (gctx: ActionContext) => updatePackages(names, gctx))
+}
+
+
+async function updatePackages(
+  names: string[], actx: ActionContext,
+): Promise<ActionResult> {
   const log = actx.log
   const flags = actx.flags ?? {}
 
@@ -658,6 +676,15 @@ async function preCheck(
   const changed = [...report.forked, ...report.edited]
 
   if (0 === changed.length) {
+    return
+  }
+
+  if (MERGE === projectCopyMode(actx) && true !== flags.force) {
+    actx.log.info({
+      point: 'package-update-merge', package: pkgname, files: changed,
+      note: pkgname + ': ' + changed.length + ' locally-changed file(s) ' +
+        'will take the update by merge: ' + changed.join(', ')
+    })
     return
   }
 

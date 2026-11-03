@@ -2,7 +2,13 @@ import Path from 'node:path'
 
 import { createHash } from 'node:crypto'
 
+import { KIT } from '../types'
 import type { ActionContext } from '../types'
+
+import { SdkGenError } from '../utility'
+
+import { copyMode, gitVersions, withCopyMerge } from '../helpers/copymerge'
+import type { CopyMode } from '../helpers/copymerge'
 
 import {
   definitionFileName, definitionFolder, indexName,
@@ -18,6 +24,11 @@ import type { Source } from './resolve'
 // changed from one its source has since moved past. Append-only, one line per
 // add or remove that changed the record, holding just the change.
 const COPY_LOG = 'log/copies.jsonl'
+
+// The base of each copy the project changed, and the incoming copies of a
+// merge that stopped on a conflict.
+const BASE_DIR = 'log/base'
+const CONFLICT_DIR = 'log/conflict'
 
 // Where 4.34.0 kept the whole record, until the next write moves it.
 const LEGACY = 'sdkgen-copies.json'
@@ -317,6 +328,45 @@ function gone(
 }
 
 
+// `main.kit.copies` in the project's model.
+function projectCopyMode(actx: ActionContext): CopyMode {
+  return copyMode((actx.model as any)?.main?.[KIT]?.copies)
+}
+
+
+// Runs an add so that a copy the project changed is merged rather than
+// replaced. An add nested in another runs inside the outer guard.
+async function guardCopies<T>(
+  actx: ActionContext, what: string, run: (actx: ActionContext) => Promise<T>,
+): Promise<T> {
+  if (true === actx.copyGuarded) {
+    return run(actx)
+  }
+
+  const fs = actx.fs()
+  const files = readCopies(fs, actx.folder).files
+  const flags = actx.flags ?? {}
+
+  return withCopyMerge({
+    fs,
+    folder: actx.folder,
+    log: actx.log,
+    what,
+    mode: projectCopyMode(actx),
+    force: true === flags.force,
+    keep: true === flags.keep,
+    dryrun: true === actx.opts?.dryrun,
+    manage: isCopy,
+    recorded: (rel: string) => files[rel],
+    fingerprint,
+    basedir: BASE_DIR,
+    conflictdir: CONFLICT_DIR,
+    versions: gitVersions,
+    error: (msg: string) => new SdkGenError(msg),
+  }, (gfs: any) => run({ ...actx, fs: () => gfs, copyGuarded: true }))
+}
+
+
 // Was this project file left exactly as an add wrote it?
 function untouched(
   fs: any, folder: string, record: CopyRecord, rel: string,
@@ -339,6 +389,8 @@ export type {
 }
 
 export {
+  BASE_DIR,
+  CONFLICT_DIR,
   COPY_LOG,
   IGNORED_LOG,
   ignoredLog,
@@ -347,6 +399,8 @@ export {
   readCopies,
   recordCopies,
   forgetCopies,
+  guardCopies,
+  projectCopyMode,
   untouched,
   isCopy,
 }

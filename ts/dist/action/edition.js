@@ -42,6 +42,9 @@ async function cmd_edition_remove(args, actx) {
     return require('./remove').kind_remove('edition', (0, action_1.parseAddNames)(args), actx);
 }
 async function edition_add(edition, actx) {
+    return (0, copies_1.guardCopies)(actx, 'edition add ' + edition.join(' '), (gctx) => addEditions(edition, gctx));
+}
+async function addEditions(edition, actx) {
     edition = edition.map(ref => !ref.includes('/') && !ref.includes('\\') &&
         !(0, kindCollection_1.kindCollection)(actx.model, 'edition')[ref.split('~')[0]] ? '@voxgig/docgen/project/' + ref : ref);
     const jostraca = actx.jostraca;

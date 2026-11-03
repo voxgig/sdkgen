@@ -224,7 +224,7 @@ describe('doctor reads the copy record', () => {
     strictEqual(report.ok, false, 'outdated is drift: generate would read it')
     deepStrictEqual(report.byItem['target/ts'], {
       package: '@voxgig/sdkgen', from: SHIPPED.version, to: SHIPPED.version,
-      outdated: 1, changed: 0,
+      outdated: 1, changed: 0, customized: 0,
     })
   })
 
@@ -346,8 +346,8 @@ describe('package update reads the copy record', () => {
   })
 
 
-  test('refuses a local edit, and names it as one', async () => {
-    const project = await added('ts')
+  test('refuses a local edit in overwrite mode, and names it as one', async () => {
+    const project = await added('ts', { copies: 'overwrite' })
     editCopy(project, firstFile(project, 'src/cmp/ts/'))
 
     project.actx.flags = { nofetch: true }
@@ -362,7 +362,7 @@ describe('package update reads the copy record', () => {
 describe('generate warns about copies', () => {
 
   test('copyCheck names the items and the command that refreshes them', async () => {
-    const project = await added('ts')
+    const project = await added('ts', { copies: 'overwrite' })
     ageCopy(project, firstFile(project, 'tm/ts/'))
     editCopy(project, firstFile(project, 'src/cmp/ts/'))
 

@@ -10,7 +10,7 @@ import {
   package_add, package_update, action_package, npmFetchArgs,
 } from '../dist/action/package.js'
 import { ACTION_MAP, actionNames } from '../dist/action/dispatch.js'
-import { COPY_LOG } from '../dist/action/copies.js'
+import { COPY_LOG, fingerprint } from '../dist/action/copies.js'
 import { doctor, copyCheck } from '../dist/action/doctor.js'
 import {
   SCAFFOLD, SCAFFOLD_BASE, ROOT, makeProject, recordLog, targetRef,
@@ -875,6 +875,7 @@ describe('package update', () => {
     const pkg = makePackage()
     try {
       const project = await installed(pkg)
+      project.actx.model.main.kit.copies = 'overwrite'
       const order: string[] = []
 
       project.actx.fetchPackage = async () => { order.push('fetch') }
@@ -907,6 +908,7 @@ describe('package update', () => {
     const pkg = makePackage()
     try {
       const project = await installed(pkg)
+      project.actx.model.main.kit.copies = 'overwrite'
       project.actx.fetchPackage = async () => { }
       project.actx.flags = {}
       project.fs.unlinkSync(Path.join(ROOT, COPY_LOG))
@@ -928,6 +930,7 @@ describe('package update', () => {
     const pkg = makePackage()
     try {
       const project = await installed(pkg)
+      project.actx.model.main.kit.copies = 'overwrite'
       project.actx.fetchPackage = async () => { }
       project.actx.flags = {}
 
@@ -1209,6 +1212,7 @@ describe('package update', () => {
     const pkg = makePackage()
     try {
       const project = await installed(pkg)
+      project.actx.model.main.kit.copies = 'overwrite'
 
       // The feature now belongs to a DIFFERENT package, so it is outside the
       // updated package's own item set.
@@ -1249,6 +1253,7 @@ describe('package update', () => {
 
       const project = makeProject({
         feature: { retry: { name: 'retry', active: true } },
+        copies: 'overwrite',
       })
       project.actx.flags = {}
       await target_add([targetRef('go')], project.actx)
@@ -1288,6 +1293,7 @@ describe('package update', () => {
     const pkg = makePackage()
     try {
       const project = await installed(pkg)
+      project.actx.model.main.kit.copies = 'overwrite'
 
       project.actx.model.main.kit.feature.retry.package = '@acme/sdkgen-a'
       project.actx.model.main.kit.target.iotgo.package = '@other/sdkgen-b'
@@ -1404,6 +1410,9 @@ describe('a declared package that is not installed', () => {
   test('a prune still removes a stale file, one line per file', async () => {
     const { project, log } = await uninstalled()
     project.fs.writeFileSync(ROOT + '/tm/go/gone.go', 'package gone\n')
+    project.fs.appendFileSync(ROOT + '/log/copies.jsonl', JSON.stringify({
+      op: 'add', files: { 'tm/go/gone.go': fingerprint('package gone\n') },
+    }) + '\n')
     project.actx.flags = { nofetch: true }
 
     await package_update(['@voxgig/sdkgen'], project.actx)

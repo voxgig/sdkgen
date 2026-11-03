@@ -19,7 +19,7 @@ import type { TreeDef } from './kind'
 import { registerInstalled } from './resolve'
 import type { Source } from './resolve'
 
-import { recordCopies } from './copies'
+import { recordCopies, guardCopies } from './copies'
 
 import { aliasCmpTree, pruneStaleTemplates } from './target'
 
@@ -77,6 +77,14 @@ async function cmd_edition_remove(
 
 
 async function edition_add(
+  edition: string[], actx: ActionContext,
+): Promise<ActionResult> {
+  return guardCopies(actx, 'edition add ' + edition.join(' '),
+    (gctx: ActionContext) => addEditions(edition, gctx))
+}
+
+
+async function addEditions(
   edition: string[], actx: ActionContext,
 ): Promise<ActionResult> {
   edition = edition.map(ref => !ref.includes('/') && !ref.includes('\\') &&

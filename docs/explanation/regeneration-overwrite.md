@@ -3,7 +3,9 @@
 ## Decision
 
 `@voxgig/sdkgen` generates SDK output by **overwriting** existing files, not by
-3-way merging into them. Concretely, `makeBuild` runs jostraca with
+3-way merging into them. This page is about generated output only: the
+copies in `.sdk/` that an add writes are the project's own, and an add merges
+into them, as [The copies in `.sdk` merge](./copies-merge.md) explains. Concretely, `makeBuild` runs jostraca with
 `existing: { txt: { write: true, merge: false } }` (jostraca's default), and
 never enables `merge`.
 
@@ -67,8 +69,10 @@ enterprise-feature work produced non-compiling Go (`undefined: Gon2`,
   so a file left over from before the record stays until it is deleted by
   hand. A path that resolves outside the output folder is reported and not
   recorded.
-- **Adding/removing a target is clean.** `target add` overwrites the target
-  files and rewrites `target-index.aontu` without diff3 markers. (A dedicated
+- **Adding/removing a target is clean.** `target add` refreshes the target's
+  copies in `.sdk` (merging into any the project changed, see
+  [The copies in `.sdk` merge](./copies-merge.md)) and rewrites
+  `target-index.aontu` without diff3 markers. (A dedicated
   `target remove` is still worth adding so the index is never hand-edited.)
 - **If a repo ever needs a genuinely hand-owned file**, protect *that path*
   specifically (per-file `existing.txt` policy / guarded regions) rather than

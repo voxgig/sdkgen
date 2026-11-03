@@ -3,17 +3,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.IGNORED_LOG = exports.COPY_LOG = void 0;
+exports.IGNORED_LOG = exports.COPY_LOG = exports.CONFLICT_DIR = exports.BASE_DIR = void 0;
 exports.ignoredLog = ignoredLog;
 exports.itemKey = itemKey;
 exports.fingerprint = fingerprint;
 exports.readCopies = readCopies;
 exports.recordCopies = recordCopies;
 exports.forgetCopies = forgetCopies;
+exports.guardCopies = guardCopies;
+exports.projectCopyMode = projectCopyMode;
 exports.untouched = untouched;
 exports.isCopy = isCopy;
 const node_path_1 = __importDefault(require("node:path"));
 const node_crypto_1 = require("node:crypto");
+const types_1 = require("../types");
+const utility_1 = require("../utility");
+const copymerge_1 = require("../helpers/copymerge");
 const definition_1 = require("../helpers/definition");
 const kind_1 = require("./kind");
 // What every add wrote into `.sdk`, by fingerprint, and the version of the
@@ -22,6 +27,12 @@ const kind_1 = require("./kind");
 // add or remove that changed the record, holding just the change.
 const COPY_LOG = 'log/copies.jsonl';
 exports.COPY_LOG = COPY_LOG;
+// The base of each copy the project changed, and the incoming copies of a
+// merge that stopped on a conflict.
+const BASE_DIR = 'log/base';
+exports.BASE_DIR = BASE_DIR;
+const CONFLICT_DIR = 'log/conflict';
+exports.CONFLICT_DIR = CONFLICT_DIR;
 // Where 4.34.0 kept the whole record, until the next write moves it.
 const LEGACY = 'sdkgen-copies.json';
 const IGNORED_LOG = '.sdk/.gitignore ignores log/, so .sdk/' + COPY_LOG +
@@ -230,6 +241,37 @@ function gone(fs, folder, record) {
         }
     }
     return missing;
+}
+// `main.kit.copies` in the project's model.
+function projectCopyMode(actx) {
+    return (0, copymerge_1.copyMode)(actx.model?.main?.[types_1.KIT]?.copies);
+}
+// Runs an add so that a copy the project changed is merged rather than
+// replaced. An add nested in another runs inside the outer guard.
+async function guardCopies(actx, what, run) {
+    if (true === actx.copyGuarded) {
+        return run(actx);
+    }
+    const fs = actx.fs();
+    const files = readCopies(fs, actx.folder).files;
+    const flags = actx.flags ?? {};
+    return (0, copymerge_1.withCopyMerge)({
+        fs,
+        folder: actx.folder,
+        log: actx.log,
+        what,
+        mode: projectCopyMode(actx),
+        force: true === flags.force,
+        keep: true === flags.keep,
+        dryrun: true === actx.opts?.dryrun,
+        manage: isCopy,
+        recorded: (rel) => files[rel],
+        fingerprint,
+        basedir: BASE_DIR,
+        conflictdir: CONFLICT_DIR,
+        versions: copymerge_1.gitVersions,
+        error: (msg) => new utility_1.SdkGenError(msg),
+    }, (gfs) => run({ ...actx, fs: () => gfs, copyGuarded: true }));
 }
 // Was this project file left exactly as an add wrote it?
 function untouched(fs, folder, record, rel) {

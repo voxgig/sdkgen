@@ -25,6 +25,7 @@ const kind_1 = require("./kind");
 const check_1 = require("./check");
 const doctor_1 = require("./doctor");
 const copies_1 = require("./copies");
+const copymerge_1 = require("../helpers/copymerge");
 const resolve_1 = require("./resolve");
 const CMD_MAP = Object.assign(Object.create(null), {
     add: cmd_package_add,
@@ -201,6 +202,9 @@ async function cmd_package_add(args, actx) {
     return package_add(refs, actx);
 }
 async function package_add(refs, actx) {
+    return (0, copies_1.guardCopies)(actx, 'package add ' + refs.join(' '), (gctx) => addPackages(refs, gctx));
+}
+async function addPackages(refs, actx) {
     const log = actx.log;
     const flags = actx.flags ?? {};
     // `--only` and `--alias` name items, so they only make sense for ONE
@@ -356,6 +360,9 @@ function installedFrom(pkgname, actx) {
     return found;
 }
 async function package_update(names, actx) {
+    return (0, copies_1.guardCopies)(actx, 'package update ' + names.join(' '), (gctx) => updatePackages(names, gctx));
+}
+async function updatePackages(names, actx) {
     const log = actx.log;
     const flags = actx.flags ?? {};
     const results = [];
@@ -435,6 +442,14 @@ async function preCheck(pkgname, installed, actx) {
     }
     const changed = [...report.forked, ...report.edited];
     if (0 === changed.length) {
+        return;
+    }
+    if (copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx) && true !== flags.force) {
+        actx.log.info({
+            point: 'package-update-merge', package: pkgname, files: changed,
+            note: pkgname + ': ' + changed.length + ' locally-changed file(s) ' +
+                'will take the update by merge: ' + changed.join(', ')
+        });
         return;
     }
     if (true === flags.force) {

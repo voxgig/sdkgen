@@ -145,8 +145,8 @@ describe('aliased target add', () => {
   test('the components and templates DO resync for an alias', async () => {
     // Only the model file is project-owned. The vendored component and
     // template trees are toolchain-owned for an alias exactly as for any
-    // other target, so a resync must still refresh them.
-    const project = makeProject({})
+    // other target, so a resync in overwrite mode still refreshes them.
+    const project = makeProject({ copies: 'overwrite' })
     await target_add([targetRef('go') + '~go2'], project.actx)
 
     project.fs.writeFileSync(

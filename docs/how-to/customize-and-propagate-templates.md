@@ -19,12 +19,16 @@ template; if its shape depends on the entities/operations, it's a
 component. See
 [Components vs templates](../explanation/components-and-templates.md).
 
-For project-side customization (as opposed to fixing sdkgen itself), the
-worked example is
-[voxgig-elementdemo-sdk](https://github.com/voxgig-sdk/voxgig-elementdemo-sdk):
-its `ext/` folder is a project-local sdkgen package providing an entirely
-custom `bash` target and a custom `elementcard` feature, resynced with
-`package add` so nothing lives in files `target add` overwrites.
+For project-side customization (as opposed to fixing sdkgen itself), edit
+the project's own copy under `.sdk/tm/` or `.sdk/src/cmp/`. An add merges
+later updates into it, as
+[The copies in `.sdk` merge](../explanation/copies-merge.md) explains. When
+the same customization is shared by several projects, or is a whole new
+target or feature, package it instead: the worked example is
+[voxgig-elementdemo-sdk](https://github.com/voxgig-sdk/voxgig-elementdemo-sdk),
+whose `ext/` folder is a project-local sdkgen package providing a custom
+`bash` target and a custom `elementcard` feature, installed with
+`package add`.
 
 ## Step 2 — make the fix in this repo
 

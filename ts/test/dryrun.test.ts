@@ -2,6 +2,8 @@
 import { test, describe } from 'node:test'
 import { ok, deepStrictEqual } from 'node:assert'
 
+import { fingerprint } from '../dist/action/copies.js'
+
 import {
   makeProject, targetRef, recordLog, target_add, feature_add, ROOT,
 } from './actionharness'
@@ -89,6 +91,10 @@ describe('dry run', () => {
 
     project.fs.mkdirSync(ROOT + '/tm/lua', { recursive: true })
     project.fs.writeFileSync(ROOT + '/' + stale, '-- stale\n')
+    project.fs.mkdirSync(ROOT + '/log', { recursive: true })
+    project.fs.appendFileSync(ROOT + '/log/copies.jsonl', JSON.stringify({
+      op: 'add', files: { [stale]: fingerprint('-- stale\n') },
+    }) + '\n')
 
     await target_add([targetRef('lua')], project.actx)
 

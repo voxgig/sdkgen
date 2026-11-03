@@ -102,15 +102,17 @@ create-sdkgen over it), and an item from a package that still ships
 
 ## What a project declares about ITSELF
 
-`target add` overwrites `.sdk/src/cmp/**`, `.sdk/tm/**` and
-`.sdk/model/target/<t>.aontu`, and `generate` overwrites the SDK source.
-So anything a project wants to say about itself has to be said in the
-project's OWN model (`.sdk/model/sdk.aontu`) — a hand-edit anywhere else
-is reverted on the next resync, silently. These are the keys that exist
-for that purpose:
+`generate` overwrites the SDK source. `target add` merges updates into
+`.sdk/src/cmp/**`, `.sdk/tm/**` and `.sdk/model/target/<t>.aontu`, or
+overwrites them in a project set to `main: kit: copies: 'overwrite'` (see
+[The copies in `.sdk` merge](../explanation/copies-merge.md)). A decision
+about the project itself still belongs in the project's OWN model
+(`.sdk/model/project.aontu`): a model key carries over every update with no
+merge to resolve. These are the keys that exist for that purpose:
 
 | Path | Why it exists |
 | --- | --- |
+| `main.kit.copies` | `'merge'` (the default) or `'overwrite'`: how an add, and a re-scaffold, treat a copy in `.sdk` the project changed. `'overwrite'` is for a project regenerated in full. |
 | `main.kit.repo.path` / `.host` | Repo identity. The repo is NOT always `<origin>/<name>-sdk`; deriving it from the slug produced a go module path that returns 404 and homepage/bugs URLs for a repo that does not exist. |
 | `main.kit.author` / `main.kit.contributor.<key>` | Manifest attribution. Hand-edited credit in a `package.json` is DELETED by the next regeneration — which is what happened to a hand-written provider repo the first time it was regenerated. |
 | `main.kit.target.<t>.author` | Attribution for ONE target, overriding the model-wide value. A generated SDK is an artefact of the publisher; a Seneca provider is independently released by named people. One model produces both. |

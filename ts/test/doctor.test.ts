@@ -14,7 +14,7 @@ import {
 
 
 async function addedProject(feature: Record<string, any> = {}) {
-  const project = makeProject({ feature })
+  const project = makeProject({ copies: 'overwrite', feature })
 
   await target_add([targetRef('go')], project.actx)
 
@@ -260,7 +260,7 @@ const Top = () => {
 
 
   test('a freshly added ts target reports no drift either', async () => {
-    const project = makeProject({})
+    const project = makeProject({ copies: 'overwrite' })
 
     await target_add([targetRef('ts')], project.actx)
     project.actx.model.main[KIT].target.ts = { name: 'ts', base: SCAFFOLD_BASE }
@@ -273,7 +273,7 @@ const Top = () => {
   })
 
   test('an aliased target is CHECKED, against the tree it came from', async () => {
-    const project = makeProject({})
+    const project = makeProject({ copies: 'overwrite' })
 
     await target_add([targetRef('go') + '~go2'], project.actx)
     project.actx.model.main[KIT].target.go2 =
@@ -299,7 +299,7 @@ const Top = () => {
   // scaffold by exactly the anchor line. The project changed nothing, so
   // calling that a fork would turn every existing consumer's CI red at once.
   test('a pre-provenance copy is resync-pending, not forked', async () => {
-    const project = makeProject({})
+    const project = makeProject({ copies: 'overwrite' })
 
     await target_add([targetRef('go')], project.actx)
     project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
@@ -328,7 +328,7 @@ const Top = () => {
   // ...but the tolerance is narrow: a real edit alongside the missing anchor
   // is still a fork.
   test('a real edit is still forked, anchor or not', async () => {
-    const project = makeProject({})
+    const project = makeProject({ copies: 'overwrite' })
 
     await target_add([targetRef('go')], project.actx)
     project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
@@ -346,7 +346,7 @@ const Top = () => {
 
 
   test('a copy missing only a LATER provenance key is resync-pending', async () => {
-    const project = makeProject({})
+    const project = makeProject({ copies: 'overwrite' })
     await target_add([targetRef('go')], project.actx)
     project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
 
@@ -365,7 +365,7 @@ const Top = () => {
 
 
   test('a CHANGED provenance value is still a fork', async () => {
-    const project = makeProject({})
+    const project = makeProject({ copies: 'overwrite' })
     await target_add([targetRef('go')], project.actx)
     project.actx.model.main[KIT].target.go = { name: 'go', base: SCAFFOLD_BASE }
 
@@ -386,7 +386,7 @@ const Top = () => {
 describe('doctor: feature model files', () => {
 
   async function withFeature() {
-    const project = makeProject({
+    const project = makeProject({ copies: 'overwrite',
       feature: { retry: { name: 'retry', active: true } },
     })
 
@@ -496,7 +496,7 @@ main: kit: feature: circuitbreaker: {
 
 
   async function withForeignFeature(pkg: string) {
-    const project = makeProject({
+    const project = makeProject({ copies: 'overwrite',
       feature: { circuitbreaker: { name: 'circuitbreaker', active: true } },
     })
 
@@ -681,7 +681,7 @@ main: kit: target: 'acme-go': {
   async function acmeReport(mutate: (src: string) => string) {
     const pkg = acmePackage()
     try {
-      const project = makeProject({
+      const project = makeProject({ copies: 'overwrite',
         target: { 'acme-go': { name: 'acme-go' } },
       })
       await target_add([Path.join(pkg, 'acme-go')], project.actx)

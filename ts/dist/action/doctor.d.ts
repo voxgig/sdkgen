@@ -12,6 +12,7 @@ type DoctorReport = {
     aliasedDiff: string[];
     outdated: string[];
     unrecorded: string[];
+    customized: string[];
     unresolved: string[];
     byItem: Record<string, ItemDrift>;
     ignoredLog: boolean;
@@ -23,6 +24,7 @@ type ItemDrift = {
     to?: string;
     outdated: number;
     changed: number;
+    customized: number;
     unresolved?: string;
 };
 declare function action_doctor(args: string[], actx: ActionContext): Promise<ActionResult>;

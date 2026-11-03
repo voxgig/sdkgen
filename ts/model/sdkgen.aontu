@@ -63,6 +63,10 @@ main: kit: publisher: {
 }
 
 
+# A changed .sdk copy: 'merge' it with an update, or 'overwrite' it (full regeneration).
+main: kit: copies: *'merge' | 'overwrite'
+
+
 # What the project's Root writes besides its targets.
 main: kit: phase: {
   top: active: *true | boolean

@@ -113,6 +113,7 @@ REQUIRED_PAGES = (
     "docs/README.md",
     "docs/explanation/architecture.md",
     "docs/explanation/components-and-templates.md",
+    "docs/explanation/copies-merge.md",
     "docs/explanation/operation-pipeline.md",
     "docs/explanation/out-of-tree-targets.md",
     "docs/explanation/regeneration-overwrite.md",

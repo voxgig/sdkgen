@@ -42,6 +42,9 @@ async function cmd_feature_remove(args, actx) {
     return require('./remove').kind_remove('feature', (0, action_1.parseAddNames)(args), actx);
 }
 async function feature_add(features, actx) {
+    return (0, copies_1.guardCopies)(actx, 'feature add ' + features.join(' '), (gctx) => addFeatures(features, gctx));
+}
+async function addFeatures(features, actx) {
     // Reuse the caller's Jostraca instance so feature generation honours the
     // shared controls (notably `dryrun`). A fresh Jostraca() defaults dryrun
     // to false and would write files during a dry run.

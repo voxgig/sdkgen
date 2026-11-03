@@ -58,7 +58,7 @@ import { kindModel, kindIndex, resolveKind, escapeRe } from './kind'
 import { BUNDLED, resolveSource, registerInstalled } from './resolve'
 import type { Source } from './resolve'
 
-import { recordCopies } from './copies'
+import { recordCopies, guardCopies } from './copies'
 
 
 const CMD_MAP: any = {
@@ -94,6 +94,12 @@ async function cmd_target_remove(args: string[], actx: ActionContext): Promise<A
 
 // Code API
 async function target_add(targets: string[], actx: ActionContext): Promise<ActionResult> {
+  return guardCopies(actx, 'target add ' + targets.join(' '),
+    (gctx: ActionContext) => addTargets(targets, gctx))
+}
+
+
+async function addTargets(targets: string[], actx: ActionContext): Promise<ActionResult> {
   const jostraca = actx.jostraca
 
   const opts = {

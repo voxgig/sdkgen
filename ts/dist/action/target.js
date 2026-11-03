@@ -50,6 +50,9 @@ async function cmd_target_remove(args, actx) {
 }
 // Code API
 async function target_add(targets, actx) {
+    return (0, copies_1.guardCopies)(actx, 'target add ' + targets.join(' '), (gctx) => addTargets(targets, gctx));
+}
+async function addTargets(targets, actx) {
     const jostraca = actx.jostraca;
     const opts = {
         fs: actx.fs,

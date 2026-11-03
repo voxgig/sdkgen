@@ -40,7 +40,8 @@ file never includes.
 | `--dryrun` | `-y` | flag | off | Plan the work and log it, but write no files. |
 | `--only <items>` | — | string | everything | `package add` only: install a subset, as `<kind>:<name>` entries. |
 | `--alias <map>` | — | string | — | `package add` only: install under different names, as `<name>=<alias>` entries. |
-| `--force` | — | flag | off | `package update`: overwrite locally-changed files, listing what it discarded. `<kind> remove`: delete forked, edited, stale and project-owned files too. |
+| `--force` | — | flag | off | An add or `package update`: take the incoming copies over locally-changed files instead of merging, listing what it discarded. `<kind> remove`: delete forked, edited, stale and project-owned files too. |
+| `--keep` | — | flag | off | An add or `package update`: keep each locally-changed file whose merge stops, and record the incoming copy as its base. See [The copies in `.sdk` merge](../explanation/copies-merge.md). |
 | `--no-fetch` | — | flag | off | `package update` only: skip the fetch and use the source already installed, which is how to refresh the copies after updating a package with `npm`. |
 | `--delete-output` | — | flag | off | `target remove` only: also delete the generated output directory beside `.sdk/`. |
 
@@ -134,13 +135,14 @@ non-zero when it does not, so it can gate CI.
 voxgig-sdkgen doctor
 ```
 
-It compares the three things `target add` owns and overwrites:
+It compares the three things `target add` copies:
 `.sdk/src/cmp/<t>/`, `.sdk/tm/<t>/` and `.sdk/model/target/<t>.aontu`.
 
-Eight categories:
+Nine categories:
 
 | Category | Meaning |
 | --- | --- |
+| **customized** | In merge mode (the default `main.kit.copies`), a copy the copy record shows the project changed after an add wrote it. An add merges its updates in, so it is the project's own work and never a failure. |
 | **forked** | A file in `.sdk/src/cmp/**`, or a target's own `.sdk/model/target/<t>.aontu`, differs from the scaffold. `target add` will silently revert it. |
 | **edited** | A template master in `.sdk/tm/**` differs — compared *after* applying the same substitutions `target add` applied, so placeholder replacement is not reported as an edit. |
 | **stale** | Present in the project, but `target add` would no longer write it. Orphaned output. |
@@ -150,7 +152,8 @@ Eight categories:
 | **additive** | A project-owned component the scaffold never shipped. Reported, never a failure — this is the supported way to extend a target (see `registerComponent`). |
 | **unwired** | A root-level component this sdkgen provides that the project's `src/*.ts` wiring never calls. Informational: opting out is legitimate. |
 
-The first six fail the check. A plain `diff -r` against the scaffold cannot
+**forked** to **unresolved** fail the check, except the copies reported as
+**customized**. A plain `diff -r` against the scaffold cannot
 do this job: `target add` writes template masters with substitution partly
 applied and inconsistently, so most of what a naive diff reports is not an
 edit at all.
@@ -419,8 +422,11 @@ package never mentions.
 The [copy record](#the-copy-record) settles most of what the check finds.
 A copy the project has not touched since it was written is outdated, and
 the update refreshes it without asking. A copy the record shows was changed
-is a local edit, and the update stops and names it. `--force` overwrites
-locally-changed files, listing what it discarded.
+is a local edit. In merge mode, the default, the update merges into it and
+stops only on a conflict, changing nothing; see
+[The copies in `.sdk` merge](../explanation/copies-merge.md). In a project
+set to `main: kit: copies: 'overwrite'` the update stops and names it.
+`--force` overwrites locally-changed files, listing what it discarded.
 
 Only a copy from before the record existed is ambiguous, and for those the
 refusal states both readings:

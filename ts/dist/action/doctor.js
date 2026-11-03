@@ -21,6 +21,7 @@ const definition_1 = require("../helpers/definition");
 const featureSource_1 = require("../helpers/featureSource");
 const junk_1 = require("../helpers/junk");
 const copies_1 = require("./copies");
+const copymerge_1 = require("../helpers/copymerge");
 const IGNORED_RE = /(~|-jostraca-off)$/;
 function ignoredEntry(name) {
     return IGNORED_RE.test(name) || (0, junk_1.isJunk)(name);
@@ -139,7 +140,7 @@ async function doctor(actx, scope, selected) {
         forked: [], edited: [], stale: [], missing: [], additive: [],
         superseded: [], unwired: [], orphanModel: [],
         resyncPending: [], aliasedDiff: [],
-        outdated: [], unrecorded: [], unresolved: [], byItem: {},
+        outdated: [], unrecorded: [], customized: [], unresolved: [], byItem: {},
         ignoredLog: false, ok: true,
     };
     const copies = (0, copies_1.readCopies)(fs, root);
@@ -206,11 +207,13 @@ async function doctor(actx, scope, selected) {
     // model file nothing reads is never a choice - it is either a file that
     // should be included, or one that should be deleted, and it reads as
     // authoritative either way.
-    report.ok = 0 === report.forked.length + report.edited.length +
-        report.stale.length + report.missing.length + report.superseded.length +
+    report.ok = 0 === report.forked.length + report.edited.length -
+        report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
         report.orphanModel.length + report.outdated.length +
         report.unresolved.length;
+    const customized = new Set(report.customized);
     for (const [kind, note] of [
+        ['customized', 'CUSTOMIZED (an add merges its updates into it)'],
         ['forked', 'FORKED (will be reverted by `target add`)'],
         ['edited', 'EDITED template master'],
         ['stale', 'STALE (no longer written by `target add`)'],
@@ -225,6 +228,9 @@ async function doctor(actx, scope, selected) {
         ['unresolved', 'UNRESOLVED (declared, but its source is not installed; install it)'],
     ]) {
         for (const file of report[kind]) {
+            if (('forked' === kind || 'edited' === kind) && customized.has(file)) {
+                continue;
+            }
             log.info({ point: 'doctor-finding', kind, file, note: note + ': ' + file });
         }
     }
@@ -253,8 +259,10 @@ async function doctor(actx, scope, selected) {
         aliasedDiff: report.aliasedDiff.length,
         outdated: report.outdated.length,
         unresolved: report.unresolved.length,
+        customized: report.customized.length,
         note: report.ok ?
-            ('.sdk matches the scaffold (' + report.additive.length + ' additive)') :
+            ('.sdk matches the scaffold (' + report.additive.length + ' additive, ' +
+                report.customized.length + ' customized)') :
             ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
                 report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
                 report.missing.length + ' missing, ' + report.outdated.length +
@@ -312,6 +320,7 @@ function noteUnresolved(actx, report, kind, name) {
         ...pkgOf(declared.package),
         outdated: 0,
         changed: 0,
+        customized: 0,
         unresolved: from,
     };
     actx.log.warn({
@@ -568,8 +577,10 @@ function noteDrift(actx, report, copies, kind, source) {
     const fs = actx.fs();
     const item = (0, copies_1.itemKey)(kind, source.name);
     const copied = copies.items[item];
+    const merging = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx);
     return (category, label) => {
         let into = category;
+        let custom = false;
         if ('forked' === category || 'edited' === category) {
             const same = (0, copies_1.untouched)(fs, actx.folder, copies, label);
             if (true === same) {
@@ -577,6 +588,10 @@ function noteDrift(actx, report, copies, kind, source) {
             }
             else if (undefined === same) {
                 report.unrecorded.push(label);
+            }
+            else if (merging) {
+                custom = true;
+                report.customized.push(label);
             }
         }
         report[into].push(label);
@@ -586,12 +601,16 @@ function noteDrift(actx, report, copies, kind, source) {
             ...(null == source.version ? {} : { to: source.version }),
             outdated: 0,
             changed: 0,
+            customized: 0,
         };
         if ('outdated' === into) {
             drift.outdated++;
         }
         else {
             drift.changed++;
+        }
+        if (custom) {
+            drift.customized++;
         }
     };
 }
@@ -746,8 +765,8 @@ function copyWarnings(report) {
         if (0 < drift.outdated) {
             add('outdated\n' + command, item, drift.outdated, drift);
         }
-        if (0 < drift.changed) {
-            add('changed\n' + command, item, drift.changed, drift);
+        if (0 < drift.changed - drift.customized) {
+            add('changed\n' + command, item, drift.changed - drift.customized, drift);
         }
     }
     const lines = report.ignoredLog ? [copies_1.IGNORED_LOG] : [];

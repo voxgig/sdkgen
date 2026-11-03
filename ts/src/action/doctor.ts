@@ -38,9 +38,11 @@ import { findFeatureSources, featureExcludes } from '../helpers/featureSource'
 import { isJunk } from '../helpers/junk'
 
 import {
-  readCopies, untouched, itemKey, ignoredLog, IGNORED_LOG,
+  readCopies, untouched, itemKey, ignoredLog, IGNORED_LOG, projectCopyMode,
 } from './copies'
 import type { CopyRecord } from './copies'
+
+import { MERGE } from '../helpers/copymerge'
 
 
 const IGNORED_RE = /(~|-jostraca-off)$/
@@ -110,6 +112,11 @@ type DoctorReport = {
   // nothing shows whether the project changed them.
   unrecorded: string[]
 
+  // In merge mode, the forked and edited copies the record shows the project
+  // changed after an add wrote them. An add merges into these, so they are
+  // the project's own, not drift.
+  customized: string[]
+
   // Declared items whose source is not installed; their copies are kept.
   unresolved: string[]
 
@@ -135,6 +142,8 @@ type ItemDrift = {
 
   // Forked, edited, missing and stale files.
   changed: number
+
+  customized: number
 
   unresolved?: string
 }
@@ -288,7 +297,7 @@ async function doctor(
     forked: [], edited: [], stale: [], missing: [], additive: [],
     superseded: [], unwired: [], orphanModel: [],
     resyncPending: [], aliasedDiff: [],
-    outdated: [], unrecorded: [], unresolved: [], byItem: {},
+    outdated: [], unrecorded: [], customized: [], unresolved: [], byItem: {},
     ignoredLog: false, ok: true,
   }
 
@@ -378,12 +387,15 @@ async function doctor(
   // model file nothing reads is never a choice - it is either a file that
   // should be included, or one that should be deleted, and it reads as
   // authoritative either way.
-  report.ok = 0 === report.forked.length + report.edited.length +
-    report.stale.length + report.missing.length + report.superseded.length +
+  report.ok = 0 === report.forked.length + report.edited.length -
+    report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
     report.orphanModel.length + report.outdated.length +
     report.unresolved.length
 
+  const customized = new Set(report.customized)
+
   for (const [kind, note] of [
+    ['customized', 'CUSTOMIZED (an add merges its updates into it)'],
     ['forked', 'FORKED (will be reverted by `target add`)'],
     ['edited', 'EDITED template master'],
     ['stale', 'STALE (no longer written by `target add`)'],
@@ -398,6 +410,9 @@ async function doctor(
     ['unresolved', 'UNRESOLVED (declared, but its source is not installed; install it)'],
   ] as [keyof DoctorReport, string][]) {
     for (const file of (report[kind] as string[])) {
+      if (('forked' === kind || 'edited' === kind) && customized.has(file)) {
+        continue
+      }
       log.info({ point: 'doctor-finding', kind, file, note: note + ': ' + file })
     }
   }
@@ -428,8 +443,10 @@ async function doctor(
     aliasedDiff: report.aliasedDiff.length,
     outdated: report.outdated.length,
     unresolved: report.unresolved.length,
+    customized: report.customized.length,
     note: report.ok ?
-      ('.sdk matches the scaffold (' + report.additive.length + ' additive)') :
+      ('.sdk matches the scaffold (' + report.additive.length + ' additive, ' +
+        report.customized.length + ' customized)') :
       ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
         report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
         report.missing.length + ' missing, ' + report.outdated.length +
@@ -505,6 +522,7 @@ function noteUnresolved(
     ...pkgOf(declared.package),
     outdated: 0,
     changed: 0,
+    customized: 0,
     unresolved: from,
   }
 
@@ -886,9 +904,11 @@ function noteDrift(
   const fs = actx.fs()
   const item = itemKey(kind, source.name)
   const copied = copies.items[item]
+  const merging = MERGE === projectCopyMode(actx)
 
   return (category: Category, label: string) => {
     let into: Category | 'outdated' = category
+    let custom = false
 
     if ('forked' === category || 'edited' === category) {
       const same = untouched(fs, actx.folder, copies, label)
@@ -898,6 +918,10 @@ function noteDrift(
       }
       else if (undefined === same) {
         report.unrecorded.push(label)
+      }
+      else if (merging) {
+        custom = true
+        report.customized.push(label)
       }
     }
 
@@ -909,6 +933,7 @@ function noteDrift(
       ...(null == source.version ? {} : { to: source.version }),
       outdated: 0,
       changed: 0,
+      customized: 0,
     }
 
     if ('outdated' === into) {
@@ -916,6 +941,10 @@ function noteDrift(
     }
     else {
       drift.changed++
+    }
+
+    if (custom) {
+      drift.customized++
     }
   }
 }
@@ -1141,8 +1170,8 @@ function copyWarnings(report: DoctorReport): string[] {
       add('outdated\n' + command, item, drift.outdated, drift)
     }
 
-    if (0 < drift.changed) {
-      add('changed\n' + command, item, drift.changed, drift)
+    if (0 < drift.changed - drift.customized) {
+      add('changed\n' + command, item, drift.changed - drift.customized, drift)
     }
   }
 

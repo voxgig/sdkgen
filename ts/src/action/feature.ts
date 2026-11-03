@@ -34,7 +34,7 @@ import { copyOpts } from '../helpers/junk'
 import { resolveKind, kindModel, kindIndex } from './kind'
 import type { Source } from './resolve'
 
-import { recordCopies } from './copies'
+import { recordCopies, guardCopies } from './copies'
 
 
 import {
@@ -84,6 +84,12 @@ async function cmd_feature_remove(args: string[], actx: ActionContext): Promise<
 
 
 async function feature_add(features: string[], actx: ActionContext): Promise<ActionResult> {
+  return guardCopies(actx, 'feature add ' + features.join(' '),
+    (gctx: ActionContext) => addFeatures(features, gctx))
+}
+
+
+async function addFeatures(features: string[], actx: ActionContext): Promise<ActionResult> {
 
   // Reuse the caller's Jostraca instance so feature generation honours the
   // shared controls (notably `dryrun`). A fresh Jostraca() defaults dryrun

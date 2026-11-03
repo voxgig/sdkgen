@@ -95,7 +95,10 @@ type Project = {
 
 
 function makeProject(
-  opts: { feature?: Record<string, any>, target?: Record<string, any>, dryrun?: boolean, log?: any } = {},
+  opts: {
+    feature?: Record<string, any>, target?: Record<string, any>, dryrun?: boolean, log?: any,
+    copies?: string,
+  } = {},
 ): Project {
   const { fs, vol } = memfs({})
 
@@ -124,6 +127,7 @@ function makeProject(
           feature: opts.feature || {},
           entity: {},
           target: opts.target || {},
+          ...(null == opts.copies ? {} : { copies: opts.copies }),
         },
       },
     },

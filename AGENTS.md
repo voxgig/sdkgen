@@ -844,9 +844,10 @@ emitted broken source reached the fleet unchallenged.
   models that each lead with a different entity, since a quick start shows
   the first. A section's numbered steps compile as one program.
 - **A project decision belongs in the MODEL, never in a forked component.**
-  `target add` overwrites `.sdk/src/cmp/**`, `.sdk/tm/**` AND
-  `.sdk/model/target/<t>.aontu`, so any hand-edit in those three is silently
-  reverted on the next run — the SDK regresses with nobody touching it. When a
+  `target add` merges updates into `.sdk/src/cmp/**`, `.sdk/tm/**` AND
+  `.sdk/model/target/<t>.aontu`, and overwrites them in a project set to
+  `main: kit: copies: 'overwrite'` (docs/explanation/copies-merge.md), so a
+  fork either carries a merge on every update or is reverted. When a
   project needs to say something about itself, add a model key and read it; do
   not make the project fork. The surfaces that exist for this:
   `main.kit.repo.{path,host}` (repo identity — the repo is NOT always

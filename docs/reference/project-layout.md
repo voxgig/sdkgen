@@ -154,6 +154,8 @@ my-sdk/
 │   ├── tm/<lang>/             # templates copied from sdkgen by `target add`
 │   ├── log/
 │   │   ├── copies.jsonl       # append-only record of what every add copied (commit it)
+│   │   ├── base/              # the base of each copy the project changed (commit it)
+│   │   ├── conflict/          # incoming copies of a merge that stopped (ignored by git)
 │   │   └── generated.jsonl    # append-only record of what every generate wrote (commit it)
 │   └── dist/                  # compiled components (the `generate` step requires these)
 ├── ts/                        # ← generated TypeScript SDK

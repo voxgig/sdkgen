@@ -96,9 +96,11 @@ exists, generation proceeds without another model change and all ordinary
 destination-safety checks still apply. The default is `true`, which preserves
 the original behaviour of creating a missing destination and its parents.
 
-In the project's OWN model — never in
-`.sdk/model/target/seneca-provider.aontu`, which `target add` overwrites
-(and which `voxgig-sdkgen doctor` now reports when it has been edited).
+In the project's OWN model, rather than in
+`.sdk/model/target/seneca-provider.aontu`. That file is a copy: an add merges
+updates into it, or overwrites it in a project set to
+`main: kit: copies: 'overwrite'`, and `voxgig-sdkgen doctor` reports it when
+it has been edited.
 That holds whether the target came from the box or from a package: a
 `package update` refreshes the installed copy the same way.
 

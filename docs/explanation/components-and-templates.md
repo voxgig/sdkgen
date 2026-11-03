@@ -104,17 +104,18 @@ edit ts/project/.sdk/tm/<lang>/...        (template)
   or ts/project/.sdk/src/cmp/<lang>/...   (component)
         │
         ▼  in the consumer .sdk/:  npm run add-target <lang>
-copies updated templates/components into the consumer's .sdk/
+merges the updated templates/components into the consumer's .sdk/
         │
         ▼  npm run generate
-applies placeholder replacement + merges into the target dir
+applies placeholder replacement and overwrites the target dir
 ```
 
-There is one important sharp edge: `generate` **merges** into existing
-files, and placeholder replacement is *not* re-applied to merged
-content. The fix is to delete the specific generated file and re-run
-`generate` so it is created fresh. This is covered step by step in
-[Customize templates and propagate the change](../how-to/customize-and-propagate-templates.md).
+`add-target` merges rather than replaces: a change the consumer made to its
+own copy survives, and the update arrives beside it. See
+[The copies in `.sdk` merge](./copies-merge.md). `generate` then overwrites
+every file it writes, so a generated file always has its placeholders
+replaced; see
+[Regeneration is overwrite, not merge](./regeneration-overwrite.md).
 
 ## See also
 

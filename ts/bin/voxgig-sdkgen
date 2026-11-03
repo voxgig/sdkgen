@@ -63,6 +63,7 @@ async function operate(options) {
     only: options.only,
     alias: options.alias,
     force: options.force,
+    keep: options.keep,
     nofetch: options.nofetch,
     deleteOutput: options.deleteOutput,
   })
@@ -130,6 +131,10 @@ function resolveOptions() {
         type: 'boolean',
       },
 
+      keep: {
+        type: 'boolean',
+      },
+
       // `no-fetch`, not `fetch: false`: parseArgs has no negation, and the
       // flag reads better at the call site as the exception it is.
       'no-fetch': {
@@ -151,6 +156,7 @@ function resolveOptions() {
     only: args.values.only,
     alias: args.values.alias,
     force: !!args.values.force,
+    keep: !!args.values.keep,
     nofetch: !!args.values['no-fetch'],
     deleteOutput: !!args.values['delete-output'],
     args: args.positionals,
@@ -180,6 +186,7 @@ function validateOptions(rawOptions) {
     only: Skip(String),
     alias: Skip(String),
     force: Boolean,
+    keep: Boolean,
     nofetch: Boolean,
     deleteOutput: Boolean,
     args: [String]
@@ -241,8 +248,12 @@ Options:
                         <kind>:<name>,... (default: everything provided)
       --alias <map>     package add: install under different names, as
                         <name>=<alias>,...
-      --force           package update: overwrite locally-changed files;
+      --force           add, package update: take the incoming copies over
+                        locally-changed files instead of merging;
                         <kind> remove: delete forked, edited or stale files too
+      --keep            add, package update: keep locally-changed files whose
+                        merge conflicts, recording the incoming copies as
+                        their base
       --delete-output   target remove: also delete the generated output
                         directory beside .sdk/
       --no-fetch        package update: skip the fetch and use the source
