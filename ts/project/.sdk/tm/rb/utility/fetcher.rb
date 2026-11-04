@@ -3,6 +3,7 @@ require_relative 'struct/voxgig_struct'
 require 'net/http'
 require 'uri'
 require 'json'
+require 'zlib'
 
 module ProjectNameUtilities
   # Started Net::HTTP connections keyed by scheme, host, port and proxy,
@@ -39,6 +40,43 @@ module ProjectNameUtilities
     http.finish if http.started?
   rescue IOError
     nil
+  end
+
+  # A compressed body, decoded here rather than by Net::HTTP: its inflater
+  # stops at the end of the first gzip member and silently drops the rest of a
+  # body sent as several, and it cannot read a raw deflate stream either.
+  def self.decode_body(body, encoding)
+    return body if body.nil? || body.empty?
+    case encoding
+    when "gzip", "x-gzip"
+      out = "".b
+      rest = body.b
+      while rest.bytesize > 2 && rest.start_with?("\x1f\x8b".b)
+        inflate = Zlib::Inflate.new(32 + Zlib::MAX_WBITS)
+        begin
+          out << inflate.inflate(rest)
+          used = inflate.total_in
+        ensure
+          inflate.close
+        end
+        break if used <= 0
+        rest = rest.byteslice(used..)
+      end
+      out
+    when "deflate"
+      begin
+        Zlib::Inflate.inflate(body)
+      rescue Zlib::DataError
+        inflate = Zlib::Inflate.new(-Zlib::MAX_WBITS)
+        begin
+          inflate.inflate(body)
+        ensure
+          inflate.close
+        end
+      end
+    else
+      body
+    end
   end
 
   GETONLY_ENV = "VOXGIG_GETONLY_GUARD"
@@ -144,7 +182,10 @@ module ProjectNameUtilities
       http = ProjectNameUtilities.http_checkout(key, uri, proxy)
       begin
         # Net::HTTP retries idempotent requests; an EOF can follow a committed POST.
-        resp = http.request(request)
+        resp = http.request(request) do |r|
+          r.decode_content = false
+          r.read_body
+        end
       rescue StandardError
         ProjectNameUtilities.http_discard(http)
         raise
@@ -154,10 +195,18 @@ module ProjectNameUtilities
       resp_headers = {}
       resp.each_header { |k, v| resp_headers[k.downcase] = v }
 
+      body = resp.body
+      encoding = resp_headers["content-encoding"].to_s.strip.downcase
+      if resp_headers["content-range"].nil? && %w[gzip x-gzip deflate identity none].include?(encoding)
+        body = ProjectNameUtilities.decode_body(body, encoding)
+        resp_headers.delete("content-encoding")
+        resp_headers["content-length"] = body.bytesize.to_s if resp_headers.key?("content-length") && body
+      end
+
       json_body = nil
       unreadable = false
       begin
-        json_body = JSON.parse(resp.body) if resp.body && !resp.body.strip.empty?
+        json_body = JSON.parse(body) if body && !body.strip.empty?
       rescue JSON::ParserError
         unreadable = true
       end
@@ -167,7 +216,7 @@ module ProjectNameUtilities
         "statusText" => resp.message,
         "headers" => resp_headers,
         "json" => -> { json_body },
-        "body" => resp.body,
+        "body" => body,
         "unreadable" => unreadable,
       }, nil
     rescue StandardError => e

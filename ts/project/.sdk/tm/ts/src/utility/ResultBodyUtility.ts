@@ -26,7 +26,11 @@ async function resultBody(ctx: Context) {
       }
       catch (err: any) {
         if ('SyntaxError' !== err?.name) {
-          throw err
+          if (true === ctx.ctrl?.signal?.aborted) {
+            throw err
+          }
+          result.err = result.err ?? bodyReadError(ctx, result, err)
+          return result
         }
         result.err = unreadableBody(ctx, {
           status: result.status, headers: result.headers, text: err.text,
@@ -37,6 +41,20 @@ async function resultBody(ctx: Context) {
   }
 
   return result
+}
+
+
+// A body that stopped before its end (a dropped connection, a deadline),
+// named by the failure's kind alone: its message can carry a value.
+function bodyReadError(ctx: Context, result: any, err: any): any {
+  const kind = [err?.name, err?.code ?? err?.cause?.code]
+    .filter((part: any) => 'string' === typeof part && '' !== part).join(' ')
+  const type = headerValue(result.headers, 'content-type')
+  const failed = ctx.error('response_body_read', 'response: body could not be read' +
+    ('' === kind ? '' : ' (' + kind + ')') + ' (HTTP ' + result.status + ', content-type ' +
+    (type || 'none') + ')')
+  Object.defineProperty(failed, 'cause', { value: err, writable: true, configurable: true })
+  return failed
 }
 
 

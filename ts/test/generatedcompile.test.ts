@@ -802,6 +802,46 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // A body cut short was rethrown raw, so a live report could only call it a
+  // generic failure; a 17 MB one read whole pins that no cap applies.
+  for (const target of ['ts', 'js']) {
+    test(target + ': a large list is read whole, and one cut short names why', async () => {
+      const sdkroot = Path.join(tmp, target + '-largebody')
+      await generateTo(target, sdkroot)
+      linkDeps(sdkroot)
+      if ('ts' === target) {
+        const compiled = tsc(sdkroot, 'src')
+        ok(compiled.ok, compiled.out)
+      }
+      const probe = Path.join(sdkroot, 'largebody.cjs')
+      Fs.copyFileSync(Path.join(PKG, 'test/fixture/transport/largebody.js'), probe)
+      const result = run(process.execPath, [probe, './' + ('ts' === target ? 'dist' : 'src')], sdkroot)
+      ok(result.ok, result.out)
+      ok(result.out.includes('whole: 28000 items'), result.out)
+      ok(result.out.includes('cut: response_body_read'), result.out)
+    })
+  }
+
+
+  // A 17 MB list, read whole: Net::HTTP's own inflater stopped after the first
+  // gzip member, so a body sent as two came back truncated and unparsable.
+  test('rb: a large compressed list is read whole, every gzip member', async (t) => {
+    const sdkroot = Path.join(tmp, 'rb-largebody')
+    await generateTo('rb', sdkroot)
+    const rb = toolchain('ruby')
+    if (null == rb) return t.skip('needs Ruby')
+    Fs.copyFileSync(Path.join(PKG, 'test/fixture/transport/largebody.rb'),
+      Path.join(sdkroot, 'largebody.rb'))
+    const result = run(rb, ['largebody.rb'], sdkroot, {
+      ...process.env, NO_PROXY: '127.0.0.1', no_proxy: '127.0.0.1',
+    })
+    ok(result.ok, result.out)
+    for (const name of ['identity', 'gzip members', 'raw deflate']) {
+      ok(result.out.includes(name + ': 28000 items'), name + '\n' + result.out)
+    }
+  })
+
+
   for (const [target, tool, file, ctxfile] of [
     ['py', 'python3', 'context.py', 'core/context.py'],
     ['rb', 'ruby', 'context.rb', 'core/context.rb'],
