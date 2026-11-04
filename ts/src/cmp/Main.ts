@@ -5,6 +5,7 @@ import { cmp } from '../helpers/component'
 import { requirePath } from '../utility'
 
 import { ensureStdrep } from '../helpers/stdrep'
+import { userAgent } from '../helpers/useragent'
 
 import {
   KIT
@@ -18,6 +19,10 @@ const Main = cmp(function Main(props: any) {
   // Generator-owned placeholders (PROJECTENV) that the project's frozen
   // Root.ts cannot know about.
   const stdrep = ensureStdrep(ctx$)
+
+  // Per target, as `plain` names the target's own release; each Main_<lang>
+  // copies its templates with this map before the next target sets it.
+  stdrep.PROJECTUSERAGENT = userAgent(model, target.name)
 
   const Main_sdk = requirePath(ctx$, `cmp/${target.name}/Main_${target.name}`)
 

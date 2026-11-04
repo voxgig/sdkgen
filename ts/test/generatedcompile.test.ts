@@ -9606,11 +9606,12 @@ describe('probes driven through a generated SDK', () => {
   const generated = new Map<string, Promise<string>>()
 
   // A feature list generates a second SDK beside the default one.
-  const sdkFor = (target: string, features?: string[]): Promise<string> => {
-    const key = null == features ? target : target + '-' + features.join('-')
+  const sdkFor = (target: string, features?: string[], extra = ''): Promise<string> => {
+    const key = (null == features ? target : target + '-' + features.join('-')) +
+      ('' === extra ? '' : '-agent')
     if (!generated.has(key)) {
       const sdkroot = Path.join(tmp, key)
-      generated.set(key, generateTo(target, sdkroot, MEDIA_MODEL, features).then(() => sdkroot))
+      generated.set(key, generateTo(target, sdkroot, MEDIA_MODEL + extra, features).then(() => sdkroot))
     }
     return generated.get(key)!
   }
@@ -9866,6 +9867,40 @@ describe('probes driven through a generated SDK', () => {
           nonjsonFailures(ran.out, lane.target, seam, ['probe', 'direct', 'cache1', 'cache2']), [],
           lane.target + ' probe output:\n' + tail(ran.out))
       })
+
+    // A transport with no agent of its own (seam) has none to declare.
+    test(lane.target + ': a request carries the agent the model declares', async (t) => {
+      const missing = lane.ready()
+      if (null != missing) return t.skip(missing)
+      if (null != lane.seam && lane.seam()) return t.skip(lane.target + ': no built-in transport here')
+
+      const sdkroot = await sdkFor(lane.target, ['test', 'log', 'cache'], "\nmain: kit: http: useragent: 'plain'\n")
+      const cases = Path.join(sdkroot, 'nonjson-cases.json')
+      Fs.writeFileSync(cases, JSON.stringify(NONJSON_CASES))
+      const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
+      Fs.writeFileSync(tsv, nonjsonTsv())
+      const server = await nonjsonServer(sdkroot, cases)
+      let ran: ReturnType<typeof run>
+      try {
+        ran = lane.exec(sdkroot, {
+          ...nestedTestEnv(),
+          NONJSON_BASE: 'http://127.0.0.1:' + server.port,
+          NONJSON_CASES: cases,
+          NONJSON_TSV: tsv,
+        }, writer(sdkroot), { name: 'nonjson', source: NONJSON_PROBES })
+      }
+      finally {
+        server.stop()
+      }
+
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+      }
+
+      ok(ran.ok, lane.target + ': the non-JSON probe failed:\n' + tail(ran.out, 60))
+      deepStrictEqual(nonjsonFailures(ran.out, lane.target, false, ['probe', 'direct'], 'DemoSDK/0.0.1'), [],
+        lane.target + ' probe output:\n' + tail(ran.out))
+    })
 
     const probeKey = 'ts' === lane.target || 'js' === lane.target ? 'node' : lane.target
 

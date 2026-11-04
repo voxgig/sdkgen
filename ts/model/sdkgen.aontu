@@ -27,6 +27,12 @@ main: kit: test: {
 
 
 
+# Default User-Agent: '' browser-shaped, 'plain' <Name>SDK/<version>, else as written.
+main: kit: http: {
+  useragent: *'' | string
+}
+
+
 main: kit: repo: {
   path: *'' | string
 

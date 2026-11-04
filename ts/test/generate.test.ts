@@ -359,7 +359,7 @@ describe('generate', () => {
         // map without the standard replacements — the generated SDK then names
         // itself "ProjectName" at runtime, or fails to compile outright. Every
         // offender is collected so one fix pass can clear them all.
-        if (/ProjectName|PROJECTNAME|projectname/.test(content) &&
+        if (/ProjectName|PROJECTNAME|projectname|PROJECTUSERAGENT/.test(content) &&
           !PLACEHOLDER_PINNED.some((re) => re.test(path))) {
           leaks.push(path)
         }

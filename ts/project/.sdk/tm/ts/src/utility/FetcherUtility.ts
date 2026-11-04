@@ -2,9 +2,10 @@
 import { Context, Response } from '../types'
 
 
-// Several CDNs refuse a library's own agent, so outside a browser a request
-// without one carries the browser-shaped agent most other targets send.
-const DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; ProjectNameSDK/1.0)'
+// Outside a browser a request without an agent carries the project's
+// (main.kit.http.useragent): browser-shaped unless the model says otherwise,
+// as several CDNs refuse a library's own.
+const DEFAULT_USER_AGENT = 'PROJECTUSERAGENT'
 
 
 function defaultUserAgent(fetchdef: Record<string, any>) {

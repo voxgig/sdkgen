@@ -278,7 +278,7 @@ local function send_once(fullurl, fetchdef)
     end
   end
   if not has_ua then
-    headers["User-Agent"] = "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)"
+    headers["User-Agent"] = "PROJECTUSERAGENT"
   end
 
   local response_body = {}

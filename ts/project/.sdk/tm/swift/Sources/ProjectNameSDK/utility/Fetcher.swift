@@ -144,7 +144,7 @@ private func sendOnce(_ fullurl: String, _ fetchdef: VMap) throws -> Value {
   }
   // The default User-Agent is recorded with the headers the request sent.
   if !hasUA {
-    let agent = "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)"
+    let agent = "PROJECTUSERAGENT"
     req.setValue(agent, forHTTPHeaderField: "User-Agent")
     if let sent = gp(fetchdef, "headers").asMap {
       sent.entries["user-agent"] = .string(agent)

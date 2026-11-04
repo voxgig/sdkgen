@@ -74,7 +74,7 @@ tm/c/tests/primary_corpus_test.c 8b5b07a955dc
 tm/c/tests/primary_utility_test.c c4284c86f79b
 tm/c/tests/server_variable_test.c b49f64ffac4b
 tm/c/tests/struct_corpus_test.c d210851e0ef4
-tm/c/tests/transport_test.c 0bfa02d3b701
+tm/c/tests/transport_test.c 112cde65dacf
 tm/c/tests/vendor/omni/json.c a88defe084fb
 tm/c/tests/vendor/omni/omni.h 807f25062e1d
 tm/c/tests/vendor/omni/runner.c d6c0c7602a58
@@ -86,7 +86,7 @@ tm/c/utility/feature_hook.c 2519ac12e079
 tm/c/utility/feature_init.c c4d6683438aa
 tm/c/utility/fetcher.c 5c720e0cd031
 tm/c/utility/graphql.c a21a86e03521
-tm/c/utility/http.c e2a168aff289
+tm/c/utility/http.c 97df05f453ac
 tm/c/utility/jsonparse.c cffd3f2ac8b1
 tm/c/utility/make_context.c 615156796cbb
 tm/c/utility/make_error.c 024d4ebdb064
@@ -231,7 +231,7 @@ tm/clojure/src/feature/test/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj d87d54a57f03
-tm/clojure/src/sdk/core.clj f3b2878f77fd
+tm/clojure/src/sdk/core.clj efe22aeafbb9
 tm/clojure/src/sdk/features.clj 45a624028649
 tm/clojure/src/voxgig/struct.clj e11f03d1c544
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
@@ -415,7 +415,7 @@ tm/csharp/utility/Done.cs 0106c22118b7
 tm/csharp/utility/FeatureAdd.cs 5a5f0fd34beb
 tm/csharp/utility/FeatureHook.cs 923e6654ee06
 tm/csharp/utility/FeatureInit.cs 8e81f5a41870
-tm/csharp/utility/Fetcher.cs 68a6db76c0a5
+tm/csharp/utility/Fetcher.cs 30195f4aa30f
 tm/csharp/utility/Graphql.cs 6b8bdb457f11
 tm/csharp/utility/MakeContext.cs d3279f4ed96d
 tm/csharp/utility/MakeError.cs 6900c189af67
@@ -498,7 +498,7 @@ tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
 tm/elixir/lib/projectname/feature/test.ex 3ed981b7a867
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
-tm/elixir/lib/projectname/utility.ex d6953585e1d6
+tm/elixir/lib/projectname/utility.ex f180ae24a153
 tm/elixir/lib/utility/struct/voxgig_struct.ex 6cf834c5da52
 tm/elixir/src/feature/README.md 7a6d4b091ddd
 tm/elixir/src/feature/base/.gitkeep e3b0c44298fc
@@ -600,7 +600,7 @@ tm/go/utility/done.go 829dd26164b3
 tm/go/utility/feature_add.go 0b62e5d1c8db
 tm/go/utility/feature_hook.go 7efab96be0c6
 tm/go/utility/feature_init.go e2d9a7381261
-tm/go/utility/fetcher.go 985ab75c969d
+tm/go/utility/fetcher.go 6459243908b9
 tm/go/utility/graphql.go f0e6b8fef4a8
 tm/go/utility/make_context.go c30482d43cbb
 tm/go/utility/make_error.go 413cfa42a432
@@ -745,7 +745,7 @@ tm/java/utility/Done.java 539e95bb155a
 tm/java/utility/FeatureAdd.java 77fd1ce39d5a
 tm/java/utility/FeatureHookUtil.java c0a61e00148f
 tm/java/utility/FeatureInit.java b7ee152fc808
-tm/java/utility/Fetcher.java 23ba793d7960
+tm/java/utility/Fetcher.java 4a3e52671e86
 tm/java/utility/Graphql.java 375386544b43
 tm/java/utility/Json.java 319781c3f5ca
 tm/java/utility/MakeContext.java c7789b287936
@@ -847,7 +847,7 @@ tm/js/src/utility/DoneUtility.js 7da13c3a73d2
 tm/js/src/utility/FeatureAddUtility.js 7053d7f60b27
 tm/js/src/utility/FeatureHookUtility.js 55ecc0949c72
 tm/js/src/utility/FeatureInitUtility.js 8626f12492c2
-tm/js/src/utility/FetcherUtility.js d73fe2b6320d
+tm/js/src/utility/FetcherUtility.js 2a5b6c945463
 tm/js/src/utility/GraphqlUtility.js e8aed31713c4
 tm/js/src/utility/MakeContextUtility.js bbc1c9839da2
 tm/js/src/utility/MakeErrorUtility.js 71904fb5c231
@@ -985,7 +985,7 @@ tm/kotlin/test/vendor/omni/Runner.kt 7379423c7a44
 tm/kotlin/test/vendor/omni/Util.kt debc29b64d40
 tm/kotlin/utility/CoreUtil.kt f717028692de
 tm/kotlin/utility/FeatureUtil.kt 0afe6596ecdb
-tm/kotlin/utility/Fetcher.kt eca553b088ad
+tm/kotlin/utility/Fetcher.kt 090e54bad41e
 tm/kotlin/utility/Graphql.kt a11645f053e2
 tm/kotlin/utility/Json.kt 300cfa023e24
 tm/kotlin/utility/MakeOptions.kt dffd4d4c5f9a
@@ -1078,7 +1078,7 @@ tm/lua/utility/done.lua c1c77faea694
 tm/lua/utility/feature_add.lua f6a951686474
 tm/lua/utility/feature_hook.lua 117392b0b027
 tm/lua/utility/feature_init.lua 97c94b7fa38f
-tm/lua/utility/fetcher.lua 6311319d37f5
+tm/lua/utility/fetcher.lua f479c5af179b
 tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua e47317140bb3
@@ -1249,7 +1249,7 @@ tm/perl/utility/done.pm 543780c62fb8
 tm/perl/utility/feature_add.pm 1904c2689cad
 tm/perl/utility/feature_hook.pm e28b546e5fd1
 tm/perl/utility/feature_init.pm 669f03c56f25
-tm/perl/utility/fetcher.pm 8bed4ebcbfa9
+tm/perl/utility/fetcher.pm 2e4988ae46f2
 tm/perl/utility/graphql.pm 030e663c0b38
 tm/perl/utility/make_context.pm faf9ecc733df
 tm/perl/utility/make_error.pm 5fc187157147
@@ -1353,7 +1353,7 @@ tm/php/utility/Done.php dd5e686391dd
 tm/php/utility/FeatureAdd.php 7729798603cf
 tm/php/utility/FeatureHook.php 7f333010aba1
 tm/php/utility/FeatureInit.php d2ae3102173f
-tm/php/utility/Fetcher.php 136f17b2ee2f
+tm/php/utility/Fetcher.php 72dc4758667f
 tm/php/utility/Graphql.php 15b35cc5d0ee
 tm/php/utility/MakeContext.php 22320c69e453
 tm/php/utility/MakeError.php 708cebcf9353
@@ -1446,7 +1446,7 @@ tm/py/pkg/utility/done.py c8768dd1d36f
 tm/py/pkg/utility/feature_add.py f85e86961cec
 tm/py/pkg/utility/feature_hook.py a77281b3d944
 tm/py/pkg/utility/feature_init.py 56df64ac9bd6
-tm/py/pkg/utility/fetcher.py f197105fc7c4
+tm/py/pkg/utility/fetcher.py 3bd8664833dc
 tm/py/pkg/utility/graphql.py d4f98635b652
 tm/py/pkg/utility/make_context.py 88acadd3dcc6
 tm/py/pkg/utility/make_error.py 522bdf05b187
@@ -1595,7 +1595,7 @@ tm/rb/utility/done.rb 748be3d441f3
 tm/rb/utility/feature_add.rb 56c05f79aaf6
 tm/rb/utility/feature_hook.rb ae80d8f1f9c8
 tm/rb/utility/feature_init.rb 025a7a843acb
-tm/rb/utility/fetcher.rb b9bad81ca02d
+tm/rb/utility/fetcher.rb 011cee1f078b
 tm/rb/utility/graphql.rb 6f1271d3fb6d
 tm/rb/utility/make_context.rb 6c6f8a716cae
 tm/rb/utility/make_error.rb 42e6da8f2237
@@ -1708,7 +1708,7 @@ tm/rust/utility/done.rs b15d29a24839
 tm/rust/utility/feature_add.rs 17f2d1fcb7c3
 tm/rust/utility/feature_hook.rs 6d794f025b57
 tm/rust/utility/feature_init.rs 66f96bd2cf0d
-tm/rust/utility/fetcher.rs 5f911f00efb6
+tm/rust/utility/fetcher.rs 1f209b285eb1
 tm/rust/utility/graphql.rs 5115a012964e
 tm/rust/utility/jsonparse.rs 17f7ee7b908a
 tm/rust/utility/make_context.rs 04f34b592c9c
@@ -1896,7 +1896,7 @@ tm/scala/src/feature/test/.gitkeep e3b0c44298fc
 tm/scala/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/scala/src/feature/validate/.gitkeep e3b0c44298fc
 tm/scala/utility/FeatureUtils.scala 5dc80bb21e7b
-tm/scala/utility/Fetcher.scala 0ebe050e7a45
+tm/scala/utility/Fetcher.scala 74a3dc166bd3
 tm/scala/utility/Graphql.scala 42b7689276a6
 tm/scala/utility/Json.java d39717264d80
 tm/scala/utility/Make.scala b4463bdf65bc
@@ -1987,7 +1987,7 @@ tm/swift/Sources/ProjectNameSDK/feature/BaseFeature.swift 37dd198da054
 tm/swift/Sources/ProjectNameSDK/feature/FeatureOptions.swift 954574861e32
 tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 493a7167ea88
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
-tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 134e1f21b1f7
+tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift d137457dfbb5
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
 tm/swift/Sources/ProjectNameSDK/utility/Make.swift 6adadada94f7
 tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift 0ce0c9bc0652
@@ -2091,7 +2091,7 @@ tm/ts/src/utility/DoneUtility.ts 228a75d46df4
 tm/ts/src/utility/FeatureAddUtility.ts c391267d72a9
 tm/ts/src/utility/FeatureHookUtility.ts 95985140459e
 tm/ts/src/utility/FeatureInitUtility.ts 389de58bea48
-tm/ts/src/utility/FetcherUtility.ts f78e45215e41
+tm/ts/src/utility/FetcherUtility.ts edf72ad85ca6
 tm/ts/src/utility/GraphqlUtility.ts bd8ce7cadbad
 tm/ts/src/utility/MakeContextUtility.ts 50caf1a75850
 tm/ts/src/utility/MakeErrorUtility.ts 338c6abca4d2

@@ -129,10 +129,11 @@ func defaultHTTPFetch(fullurl string, fetchdef map[string]any) (map[string]any, 
 		}
 	}
 	// Default User-Agent — Go's net/http defaults to "Go-http-client/1.1"
-	// which some CDNs block. Use a Mozilla-shaped UA unless the caller
-	// already set one, and record it with the headers the request sent.
+	// which some CDNs block. Use the project's agent (main.kit.http.useragent,
+	// browser-shaped by default) unless the caller already set one, and record
+	// it with the headers the request sent.
 	if !hasUA {
-		agent := "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)"
+		agent := "PROJECTUSERAGENT"
 		req.Header.Set("User-Agent", agent)
 		if headers, ok := fetchdef["headers"].(map[string]any); ok {
 			headers["user-agent"] = agent

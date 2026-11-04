@@ -1866,7 +1866,7 @@
               (.setHeader builder (str k) v))))
         ;; The default User-Agent is recorded with the headers the request sent.
         (when-not @has-ua
-          (let [ua (str "Mozilla/5.0 (compatible; " SDK-NAME "SDK/1.0)")]
+          (let [ua "PROJECTUSERAGENT"]
             (.setHeader builder "User-Agent" ua)
             (vs/setprop headers "user-agent" ua)))
         (let [client (if (= "manual" (vs/getprop fetchdef "redirect")) @manual-http-client @http-client)

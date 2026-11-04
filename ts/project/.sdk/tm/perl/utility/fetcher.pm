@@ -122,11 +122,11 @@ sub _send_once {
     $has_ua = 1 if lc("$k") eq 'user-agent';
     $hdrs{$k} = "$v";
   }
-  # Default User-Agent - some CDNs block library defaults. Use a
-  # Mozilla-shaped UA unless the caller already set one, and record it with
-  # the headers the request sent.
+  # Default User-Agent - some CDNs block library defaults. Use the project's
+  # agent (main.kit.http.useragent, browser-shaped by default) unless the
+  # caller already set one, and record it with the headers the request sent.
   unless ($has_ua) {
-    $hdrs{'User-Agent'} = 'Mozilla/5.0 (compatible; ProjectNameSDK/1.0)';
+    $hdrs{'User-Agent'} = 'PROJECTUSERAGENT';
     $headers->{'user-agent'} = $hdrs{'User-Agent'};
   }
 

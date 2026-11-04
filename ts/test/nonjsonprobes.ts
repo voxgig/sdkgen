@@ -94,7 +94,7 @@ const NONJSON_MESSAGE_ONLY = ['rust', 'c', 'cpp', 'zig']
 // Each case missing its code, a part of its message or the agent it must name, or
 // holding what it must not, by each path; `cache1` and `cache2` list twice, cached.
 function nonjsonFailures(out: string, target: string, seam: boolean,
-  paths: string[] = ['probe', 'direct']): string[] {
+  paths: string[] = ['probe', 'direct'], sent = NONJSON_DEFAULT_AGENT): string[] {
   const fails: string[] = []
   for (const path of paths) {
     const found = nonjsonOutcomes(out, path)
@@ -112,7 +112,7 @@ function nonjsonFailures(out: string, target: string, seam: boolean,
         fails.push(name + ': code ' + got.code + ', expected ' + code + ' (' + got.message + ')')
       }
       const agent = 'ok' === want.code ? [] :
-        ['user-agent ' + (c.agent ?? (seam ? NONJSON_NO_AGENT : NONJSON_DEFAULT_AGENT))]
+        ['user-agent ' + (c.agent ?? (seam ? NONJSON_NO_AGENT : sent))]
       for (const part of [...want.parts, ...agent]) {
         if (!got.message.includes(part)) fails.push(name + ': message lacks ' + JSON.stringify(part))
       }

@@ -123,10 +123,11 @@ module ProjectNameUtilities
         request[k] = v.to_s
       end
       # Default User-Agent — Net::HTTP sets "Ruby" which some CDNs block.
-      # Use a Mozilla-shaped UA unless the caller already set one, and record
-      # it with the headers the request sent.
+      # Use the project's agent (main.kit.http.useragent, browser-shaped by
+      # default) unless the caller already set one, and record it with the
+      # headers the request sent.
       unless has_ua
-        request['User-Agent'] = 'Mozilla/5.0 (compatible; ProjectNameSDK/1.0)'
+        request['User-Agent'] = 'PROJECTUSERAGENT'
         fetchdef["headers"]['user-agent'] = request['User-Agent'] if fetchdef["headers"].is_a?(Hash)
       end
       if body_str.is_a?(String)

@@ -258,9 +258,9 @@ int main(void) {
   voxgig_value* seen = json_of(res);
   CHECK_INT_EQ(to_int(getp(res, "status")), 200, "the GET's status");
   CHECK_STR_EQ(get_str(seen, "target"), "/echo?x=1&y=two", "the query reaches the server");
-  CHECK_STR_EQ(get_str(seen, "user-agent"), "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)",
+  CHECK_STR_EQ(get_str(seen, "user-agent"), "PROJECTUSERAGENT",
     "the default agent is sent");
-  CHECK_STR_EQ(get_str(sent, "user-agent"), "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)",
+  CHECK_STR_EQ(get_str(sent, "user-agent"), "PROJECTUSERAGENT",
     "the default agent is recorded with the headers sent");
   CHECK_STR_EQ(get_str(seen, "connection"), "close", "one request per connection");
   snprintf(url, sizeof(url), "127.0.0.1:%d", port);

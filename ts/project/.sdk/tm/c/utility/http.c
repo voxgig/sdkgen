@@ -29,7 +29,7 @@
 #define HTTP_MAX_BYTES (32 * 1024 * 1024)
 #endif
 
-#define HTTP_USER_AGENT "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)"
+#define HTTP_USER_AGENT "PROJECTUSERAGENT"
 
 // The URL as an error may quote it: no userinfo, query or fragment.
 static char* bare_url(const char* url) {
