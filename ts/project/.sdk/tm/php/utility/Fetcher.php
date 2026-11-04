@@ -9,10 +9,10 @@ class ProjectNameFetcher
 {
     // Default User-Agent — many CDNs (notably Cloudflare) reject requests
     // with PHP's default UA (which file_get_contents doesn't even set),
-    // returning 403 before the request reaches the origin. Set a Mozilla-
-    // shaped UA so the SDK behaves like every other HTTP client by default.
-    // Users can override by passing a User-Agent header in fetchdef.
-    public const DEFAULT_USER_AGENT = 'Mozilla/5.0 (compatible; ProjectNameSDK/1.0)';
+    // returning 403 before the request reaches the origin. The project's
+    // agent (main.kit.http.useragent) is browser-shaped unless the model says
+    // otherwise. Users can override by passing a User-Agent header in fetchdef.
+    public const DEFAULT_USER_AGENT = 'PROJECTUSERAGENT';
 
     // One cURL handle per process, reset between calls rather than closed:
     // curl_reset keeps the connection cache, so the next request to the

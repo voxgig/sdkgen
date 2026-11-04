@@ -13,13 +13,14 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   // examples load by "example_id", so seed that record for each entity; the
   // offline mock then returns it instead of 404-ing.
   const entity = getModelPath(model, `main.${KIT}.entity`) || {}
-  const entnames = Object.values(entity)
+  const goSeedEntries = Object.values(entity)
     .filter((e: any) => e && e.active !== false)
-    .map((e: any) => e.name)
-
-  const goSeedEntries = entnames
-    .map((n: string) =>
-      `"${n}": map[string]any{"example_id": map[string]any{"id": "example_id"}}`)
+    .map((e: any) => {
+      const idField = e.id?.field
+      const extra = 'string' === typeof idField && '' !== idField && 'id' !== idField
+        ? `, ${JSON.stringify(idField)}: "example_id"` : ''
+      return `"${e.name}": map[string]any{"example_id": map[string]any{"id": "example_id"${extra}}}`
+    })
     .join(', ')
   const goSeed = `map[string]any{"entity": map[string]any{${goSeedEntries}}}`
 

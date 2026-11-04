@@ -128,11 +128,11 @@ final class Fetcher {
         }
       }
     }
-    // Default User-Agent — some CDNs block Java's default. Use a
-    // Mozilla-shaped UA unless the caller already set one, and record it with
-    // the headers the request sent.
+    // Default User-Agent — some CDNs block Java's default. Use the project's
+    // agent (main.kit.http.useragent, browser-shaped by default) unless the
+    // caller already set one, and record it with the headers the request sent.
     if (!hasUA) {
-      String agent = "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)";
+      String agent = "PROJECTUSERAGENT";
       reqb.setHeader("User-Agent", agent);
       if (headersRaw instanceof Map) {
         ((Map<String, Object>) headersRaw).put("user-agent", agent);

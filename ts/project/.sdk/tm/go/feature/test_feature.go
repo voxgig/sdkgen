@@ -32,6 +32,16 @@ func itemEnvelopeKey(restf any) string {
 	return ""
 }
 
+// The entity's declared identity field (`entity.id.field`), where it names
+// one other than the `id` every record already carries.
+func declaredIdField(config map[string]any, entityName string) string {
+	field, _ := vs.GetPath(config, []any{"entity", entityName, "id", "field"}).(string)
+	if field == "id" {
+		return ""
+	}
+	return field
+}
+
 type TestFeature struct {
 	BaseFeature
 	client   *core.ProjectNameSDK
@@ -63,6 +73,9 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			if m, ok := val.(map[string]any); ok {
 				if key != nil {
 					m["id"] = *key
+					if idField := declaredIdField(ctx.Config, path[0]); idField != "" {
+						m[idField] = *key
+					}
 				}
 			}
 		}
@@ -223,6 +236,9 @@ func (f *TestFeature) Init(ctx *core.Context, options map[string]any) {
 			ent := vs.Clone(testRecord(ctx.Reqdata))
 			if entm, ok := ent.(map[string]any); ok {
 				entm["id"] = id
+				if idField := declaredIdField(ctx.Config, op.Entity); idField != "" && entm[idField] == nil {
+					entm[idField] = id
+				}
 				if idStr, ok := id.(string); ok {
 					entmap[idStr] = entm
 				}

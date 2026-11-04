@@ -26,9 +26,16 @@ defmodule ProjectName.Feature.Test do
     S.setprop(S.getprop(ctx, "client"), "mode", "test")
 
     # Ensure entity records carry their id (the map key).
+    config = S.getprop(ctx, "config")
+
     S.walk(entity,
       before: fn key, val, _parent, path ->
-        if S.size(path) == 2 and S.ismap(val) and key != nil, do: S.setprop(val, "id", key)
+        if S.size(path) == 2 and S.ismap(val) and key != nil do
+          S.setprop(val, "id", key)
+          id_field = declared_id_field(config, S.getelem(path, 0))
+          if id_field != nil, do: S.setprop(val, id_field, key)
+        end
+
         val
       end
     )
@@ -223,6 +230,8 @@ defmodule ProjectName.Feature.Test do
         if S.ismap(ent) do
           S.delprop(ent, "$body")
           S.setprop(ent, "id", eid)
+          id_field = declared_id_field(S.getprop(fctx, "config"), S.getprop(op, "entity"))
+          if id_field != nil and S.getprop(ent, id_field) == nil, do: S.setprop(ent, id_field, eid)
           if is_binary(eid), do: S.setprop(entmap, eid, ent)
           S.delprop(ent, "$KEY")
           respond(fctx, 200, S.clone(ent))
@@ -277,6 +286,15 @@ defmodule ProjectName.Feature.Test do
     reqd_args = S.select(S.getpath(point, "args." <> kind), S.jm(["reqd", true]))
     S.transform(reqd_args, S.jt(["`$EACH`", "", "`$KEY.name`"]))
   end
+
+  # The entity's declared identity field (`entity.id.field`), where it names
+  # one other than the `id` every record already carries.
+  def declared_id_field(config, entname) when is_binary(entname) do
+    field = S.getpath(config, S.jt(["entity", entname, "id", "field"]))
+    if is_binary(field) and field != "" and field != "id", do: field, else: nil
+  end
+
+  def declared_id_field(_config, _entname), do: nil
 
   # Build a struct select query ($AND of $OR alternatives) from the required
   # params + id, resolving each value through the pipeline param resolver.

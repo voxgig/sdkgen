@@ -102,6 +102,18 @@ local client = sdk.test()
 ${testModeExample}
 \`\`\`
 
+### Verify the server over HTTPS
+
+An \`https://\` request goes through LuaSocket and LuaSec, and the SDK checks
+the server itself before any of the request is sent: its certificate against
+the system's trust store, and its name against the host (an address against
+the certificate's addresses). Nothing turns that off. \`SSL_CERT_FILE\` or
+\`SSL_CERT_DIR\` names the trust store, as for OpenSSL; with neither set and no
+system store found, an \`https://\` request fails rather than going unverified.
+\`${envName(model)}_CA_BUNDLE\` names a PEM file of roots added to the store,
+for a local service with its own certificate authority or a self-signed
+certificate. A different policy is a custom fetch function, described next.
+
 ### Use a custom fetch function
 
 Replace the HTTP transport with your own function:

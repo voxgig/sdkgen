@@ -91,6 +91,7 @@ create-sdkgen over it), and an item from a package that still ships
 | `main.kit.text` | object | The project's own wording for the generated README files (see below). |
 | `main.kit.publisher` | object | Who publishes the SDK (see below). |
 | `main.kit.test` | object | How the generated test suites behave (see below). |
+| `main.kit.http` | object | What the generated transports send (see below). |
 | `main.kit.target.<name>` | object | A language target. |
 | `main.kit.entity.<name>` | object | An API entity. |
 | `main.kit.feature.<name>` | object | A feature. |
@@ -119,6 +120,7 @@ merge to resolve. These are the keys that exist for that purpose:
 | `main.kit.text` | The README wording: tagline, summary, the About section, entity descriptions. Text edited into `README.md` is lost on the next `generate`, and text in `config.aontu` on the next re-scaffold. |
 | `main.kit.publisher` | The copyright holder in every LICENSE, the default package author, and the security contact. An SDK published by anyone but Voxgig otherwise carried Voxgig's name in its licence and Voxgig's address in its security policy. |
 | `main.kit.test.live.strict` | Whether a live test that does not succeed fails or skips. |
+| `main.kit.http.useragent` | The User-Agent a request carries when the caller sets none. The default is browser-shaped, which several content delivery networks require; some APIs refuse it and others ask for an agent that names the client and a contact. |
 | `main.kit.target.<t>.module.path` / `.package` / `.goversion` | Go-family module identity and the `go` directive. |
 | `main.kit.target.<t>.output.path` / `.repo` / `.create` | Generate this target into ANOTHER repo and optionally require that repo to exist already (see [below](#generating-outside-the-sdk-repo-output)). |
 | `main.kit.target.<t>.active` | Whether the target is generated. `false` keeps it in the model, where a target wrapping it can still read it. |
@@ -222,6 +224,19 @@ its copied `.sdk/tm/<t>/LICENSE` keeps the name it was copied with.
 | Path | Type | Default | Description |
 | --- | --- | --- | --- |
 | `test.live.strict` | boolean | `true` | What a live run does with a live test that does not succeed: a failed request, a test missing an input it needs, or an entity flow step that failed or was blocked. `true` fails the test; `false` skips it and names the reason. Read by every target with a live suite (`ts`, `js`, `go`, `py`, `php`, `rb`, `lua`, `perl`, `java`, `kotlin`, `rust` and `csharp`) in its direct tests and entity flows, and in `ts` and `js` by the live coverage check as well. Each generated live test states the value it was generated with in a comment. An account holding no record for a test to read skips that test under either value. Overridable per target (`main.kit.target.<t>.test.live.strict`). Pinned by `ts/test/generate.test.ts` and `ts/test/livegenerated.test.ts`. |
+
+## `main.kit.http`
+
+| Path | Type | Default | Description |
+| --- | --- | --- | --- |
+| `http.useragent` | string | `''` | The User-Agent every target's transport sends when the caller sets none, and so the agent the generated live tests send. `''` sends `Mozilla/5.0 (compatible; <Name>SDK/1.0)`, which several content delivery networks require. `'plain'` sends `<Name>SDK/<version>`, where the version is the target's `publish.version`, for an API that refuses a spoofed browser agent (MangaDex, `nekos.best`). Any other value is sent as written, for an API that asks for an identifying agent with contact details (MusicBrainz). Such a value is printable ASCII without quotes, a backslash, `$`, braces or `??`, as it is written into a string literal in every target; `generate` refuses any other. A header the caller passes still wins. Read by every target with a default agent: all but `cpp`, `zig` and `ocaml`, whose transports send their own. Pinned by `ts/test/useragent.test.ts` and `ts/test/livegenerated.test.ts`. |
+
+Set it in the project's own model:
+
+```aontu
+# .sdk/model/project.aontu
+main: kit: http: useragent: 'plain'
+```
 
 ## `main.kit.phase`
 

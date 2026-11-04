@@ -16,6 +16,14 @@ function mintId() {
 
 
 
+// The entity's declared identity field (`entity.id.field`), where it names
+// one other than the `id` every record already carries.
+function declaredIdField(config, getpath, entityName) {
+  const field = getpath(config, ['entity', entityName, 'id', 'field'])
+  return 'string' === typeof field && '' !== field && 'id' !== field ? field : null
+}
+
+
 // The record the mock keeps: the request data without `$body`, which only the
 // wire carries.
 function recordOf(reqdata) {
@@ -64,6 +72,10 @@ class TestFeature extends BaseFeature {
     walk(entity, (k, v, _parent, path) => {
       if (2 === size(path)) {
         setprop(v, 'id', k)
+        const idField = declaredIdField(ctx.config, struct.getpath, String(path[0]))
+        if (null != idField) {
+          setprop(v, idField, k)
+        }
       }
       return v
     })
@@ -204,6 +216,10 @@ class TestFeature extends BaseFeature {
 
         const ent = clone(recordOf(ctx.reqdata))
         setprop(ent, 'id', id)
+        const idField = declaredIdField(ctx.config, struct.getpath, getprop(op, 'entity'))
+        if (null != idField && null == getprop(ent, idField)) {
+          setprop(ent, idField, id)
+        }
         setprop(entmap, id, ent)
         delprop(ent, '$KEY')
         const out = clone(ent)

@@ -63,6 +63,7 @@ local json = require("dkjson")
 local helpers = require("core.helpers")
 local BaseFeature = require("feature.base_feature")
 local sekreto = require("feature.secrets.sekreto")
+local tls = require("utility.tls")
 
 
 local SecretsFeature = {}
@@ -582,8 +583,8 @@ end
 -- transport for the COMMON case would reject every live token purchase
 -- before a request was made. Mirrors utility/fetcher.lua's own default
 -- (which is a local there, not exported); like it, this is HTTP through
--- socket.http, and an https token endpoint needs luasec's ssl.https on the
--- package path, which the rockspec does not require.
+-- socket.http, and an https token endpoint needs luasec on the package path,
+-- which the rockspec does not require, and is verified as utility/tls says.
 local function raw_exchange_fetch(fullurl, fetchdef)
   local http_ok, http = pcall(require, "socket.http")
   local ltn12_ok, ltn12 = pcall(require, "ltn12")
@@ -606,6 +607,11 @@ local function raw_exchange_fetch(fullurl, fetchdef)
     headers["content-length"] = tostring(#body)
   end
 
+  local create, refused = tls.create(fullurl)
+  if refused ~= nil then
+    return nil, refused
+  end
+
   local chunks = {}
   local res, code = http.request({
     url = fullurl,
@@ -613,6 +619,7 @@ local function raw_exchange_fetch(fullurl, fetchdef)
     headers = headers,
     source = body and ltn12.source.string(body) or nil,
     sink = ltn12.sink.table(chunks),
+    create = create,
   })
 
   if not res then

@@ -26,6 +26,13 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
       .map((e: any) => `    "${nom(e, 'Name')}": "${e.name}",`)
       .join('\n') + '\n}'
 
+  // The declared identity field of each entity that names one other than
+  // `id`, by fixture key: the mock keys a record by it, so the seed does too.
+  const idFieldsLiteral = '{' + entities
+    .filter((e: any) => 'string' === typeof e.id?.field && '' !== e.id.field && 'id' !== e.id.field)
+    .map((e: any) => `${JSON.stringify(e.name)}: ${JSON.stringify(e.id.field)}`)
+    .join(', ') + '}'
+
   File({ name: 'test_readme_examples.' + target.ext }, () => {
     Content(`# ${Name} SDK — documentation python-examples COMPLETENESS gate.
 #
@@ -105,6 +112,9 @@ _CLIENT_VARS = ("client", "sdk")
 
 # The API's capitalised semantic entities -> lowercase fixture key.
 _ENTITIES = ${entitiesLiteral}
+
+# Fixture key -> the entity's declared identity field, where it is not "id".
+_ID_FIELDS = ${idFieldsLiteral}
 
 # The three documents held to the gate, tagged by human label.
 _DOCS = (
@@ -377,7 +387,10 @@ def _seed_literal(block):
     seeded = {}
     for cap, key in _ENTITIES.items():
         if ("." + cap + "(") in block:
-            seeded[key] = {"test01": {"id": "test01"}}
+            record = {"id": "test01"}
+            if key in _ID_FIELDS:
+                record[_ID_FIELDS[key]] = "test01"
+            seeded[key] = {"test01": record}
     return {"entity": seeded}
 
 

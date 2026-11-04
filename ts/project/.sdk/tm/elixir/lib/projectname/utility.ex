@@ -17,7 +17,7 @@ defmodule ProjectName.Utility do
   # src/cmp/elixir/PrepareAuth_elixir.ts into lib/<app>/prepare_auth.ex.
   alias ProjectName.PrepareAuth
 
-  @default_user_agent "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)"
+  @default_user_agent "PROJECTUSERAGENT"
 
   # Content type every GraphQL-over-HTTP request uses.
   @graphql_content_type "application/json"

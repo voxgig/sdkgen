@@ -145,12 +145,13 @@ public static partial class SdkUtility
                 }
             }
         }
-        // Default User-Agent - some CDNs block requests without one. Use a
-        // Mozilla-shaped UA unless the caller already set one, and record it
-        // with the headers the request sent.
+        // Default User-Agent - some CDNs block requests without one. Use the
+        // project's agent (main.kit.http.useragent, browser-shaped by default)
+        // unless the caller already set one, and record it with the headers
+        // the request sent.
         if (!hasUA)
         {
-            var agent = "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)";
+            var agent = "PROJECTUSERAGENT";
             req.Headers.TryAddWithoutValidation("User-Agent", agent);
             if (hraw is Dictionary<string, object?> sent)
             {

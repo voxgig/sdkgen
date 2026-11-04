@@ -92,11 +92,11 @@ fn default_http_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectN
             }
         }
     }
-    // Default User-Agent — some CDNs block library defaults. Use a
-    // Mozilla-shaped UA unless the caller already set one, and record it with
-    // the headers the request sent.
+    // Default User-Agent — some CDNs block library defaults. Use the project's
+    // agent (main.kit.http.useragent, browser-shaped by default) unless the
+    // caller already set one, and record it with the headers the request sent.
     if !has_ua {
-        let agent = "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)";
+        let agent = "PROJECTUSERAGENT";
         req = req.set("User-Agent", agent);
         if let Value::Map(_) = &sent_headers {
             setp(&sent_headers, "user-agent", Value::str(agent));

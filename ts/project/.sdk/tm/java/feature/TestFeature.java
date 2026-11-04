@@ -42,6 +42,13 @@ public class TestFeature extends BaseFeature {
     return out;
   }
 
+  // The entity's declared identity field (`entity.id.field`), where it names
+  // one other than the `id` every record already carries.
+  private static String declaredIdField(Object config, String entityName) {
+    Object field = Struct.getpath(config, List.of("entity", entityName == null ? "" : entityName, "id", "field"));
+    return field instanceof String && !"".equals(field) && !"id".equals(field) ? (String) field : null;
+  }
+
   private static final java.util.regex.Pattern ITEM_ENVELOPE_RE =
       java.util.regex.Pattern.compile("^`\\.([^.`$]+)`$");
 
@@ -100,6 +107,10 @@ public class TestFeature extends BaseFeature {
     Struct.walk(entity, (key, val, parent, path) -> {
       if (path != null && path.size() == 2 && val instanceof Map && key != null) {
         ((Map<String, Object>) val).put("id", key);
+        String idField = declaredIdField(ctx.config, path.get(0));
+        if (idField != null) {
+          ((Map<String, Object>) val).put(idField, key);
+        }
       }
       return val;
     });
@@ -308,6 +319,10 @@ public class TestFeature extends BaseFeature {
       if (ent instanceof Map) {
         Map<String, Object> entm = (Map<String, Object>) ent;
         entm.put("id", id);
+        String idField = declaredIdField(ctx.config, op.entity);
+        if (idField != null && entm.get(idField) == null) {
+          entm.put(idField, id);
+        }
         if (id instanceof String) {
           entmap.put((String) id, entm);
         }

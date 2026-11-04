@@ -3,7 +3,7 @@
 // the real shipped file and drives it directly.
 
 import { test, describe } from 'node:test'
-import { strictEqual } from 'node:assert'
+import { strictEqual, deepStrictEqual } from 'node:assert'
 
 import { readFileSync } from 'node:fs'
 import Path from 'node:path'
@@ -37,7 +37,7 @@ function loadTemplate(rel: string, shims: Record<string, any> = {}): any {
 }
 
 
-const { ownIdField } = loadTemplate('ts/src/feature/test/TestFeature.ts', {
+const { ownIdField, ownIdFields } = loadTemplate('ts/src/feature/test/TestFeature.ts', {
   '../../types': {},
   '../../ProjectNameSDK': {},
   '../base/BaseFeature': { BaseFeature: class { } },
@@ -117,6 +117,52 @@ describe('ownIdField', () => {
     }
 
     strictEqual(ownIdField(config, getpath, 'active'), 'id')
+  })
+
+
+  // A record keyed by `_id` whose route parameter is renamed `id`.
+  test('a declared identity field wins over the route parameter', () => {
+    const config = {
+      entity: {
+        box: {
+          id: { field: '_id', name: 'id' },
+          op: { load: { points: [{ parts: ['boxes', '{id}'] }] } },
+        },
+      },
+    }
+
+    strictEqual(ownIdField(config, getpath, 'box'), '_id')
+    deepStrictEqual(ownIdFields(config, getpath, 'box'), ['_id'])
+  })
+
+
+  // `id` is what every record carries already, so it says nothing more.
+  test('a declared identity of id leaves the route parameter in charge', () => {
+    const config = {
+      entity: {
+        record: {
+          id: { field: 'id', name: 'id' },
+          op: { load: { points: [{ parts: ['{base_id}', '{record_id}'] }] } },
+        },
+      },
+    }
+
+    strictEqual(ownIdField(config, getpath, 'record'), 'record_id')
+  })
+
+
+  // A route that is not renamed still finds the record by its parameter.
+  test('both the declared field and an unrenamed route parameter key the record', () => {
+    const config = {
+      entity: {
+        box: {
+          id: { field: '_id', name: 'id' },
+          op: { load: { points: [{ parts: ['boxes', '{boxId}'] }] } },
+        },
+      },
+    }
+
+    deepStrictEqual(ownIdFields(config, getpath, 'box'), ['_id', 'boxId'])
   })
 
 

@@ -93,7 +93,7 @@ object Fetcher {
     }
     // The default User-Agent is recorded with the headers the request sent.
     if (!hasUA) {
-      val agent = "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)"
+      val agent = "PROJECTUSERAGENT"
       reqb.setHeader("User-Agent", agent)
       fetchdef.get("headers") match {
         case hm: JMap[_, _] => hm.asInstanceOf[JMap[String, Object]].put("user-agent", agent)

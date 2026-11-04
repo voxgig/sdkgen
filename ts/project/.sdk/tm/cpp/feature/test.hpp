@@ -32,10 +32,13 @@ public:
 
     // Ensure entity ids are correct (2-deep maps get id = their key).
     if (entity.is_map()) {
-      Struct::walk(entity, [](const Value& key, const Value& val, const Value& parent,
-                              const std::vector<std::string>& path) -> Value {
+      Value config = ctx->config;
+      Struct::walk(entity, [config](const Value& key, const Value& val, const Value& parent,
+                                    const std::vector<std::string>& path) -> Value {
         if (path.size() == 2 && val.is_map() && key.is_string()) {
           map_put(val, "id", key);
+          std::string idField = declaredIdField(config, path[0]);
+          if (!idField.empty()) map_put(val, idField, key);
         }
         return val;
       });
@@ -57,6 +60,15 @@ public:
   }
 
 private:
+  // The entity's declared identity field (`entity.id.field`), where it names
+  // one other than the `id` every record already carries; empty otherwise.
+  static std::string declaredIdField(const Value& config, const std::string& entityName) {
+    Value field = Struct::getpath(config, {"entity", entityName, "id", "field"});
+    if (!field.is_string()) return "";
+    std::string f = field.as_string();
+    return "id" == f ? "" : f;
+  }
+
   // The key a list's response transform
   // ["`$EACH`", "body", {"`$MERGE`": "`.<key>`"}] reads each item's record
   // under; empty for any other transform.
@@ -234,6 +246,8 @@ private:
       if (ent.is_map()) {
         Struct::delprop(ent, Value("$body"));
         map_put(ent, "id", id);
+        std::string idField = declaredIdField(ctx->config, op->entity);
+        if (!idField.empty() && is_nullish(getp(ent, idField))) map_put(ent, idField, id);
         if (id.is_string()) map_put(entmap, id.as_string(), ent);
         Struct::delprop(ent, Value("$KEY"));
         Value out = Struct::clone(ent);

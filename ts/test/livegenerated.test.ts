@@ -16,6 +16,13 @@ const PKG = Path.resolve(__dirname, '..')
 
 const DEFAULT_AGENT = 'Mozilla/5.0 (compatible; DemoSDK/1.0)'
 
+// A project's own agent (main.kit.http.useragent), as each variant declares it.
+const VARIANT_MODEL: Record<string, string> = {
+  lenient: '\nmain: kit: test: live: strict: false\n',
+  plain: "\nmain: kit: http: useragent: 'plain'\n",
+  agent: "\nmain: kit: http: useragent: 'DemoApp/2.0 ( dev@example.com )'\n",
+}
+
 const CHALLENGE = '<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>' +
   'x'.repeat(300) + '</body></html>'
 
@@ -220,11 +227,11 @@ describe('generated live tests continue after failures', () => {
     await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
     port = (server.address() as any).port
 
-    for (const name of ['ts', 'js', 'ts-lenient', 'js-lenient']) {
-      const target = name.replace('-lenient', '')
+    for (const name of ['ts', 'js', 'ts-lenient', 'js-lenient', 'ts-plain', 'js-agent']) {
+      const [target, variant] = name.split('-')
       const model = makeModel([target], undefined,
         `main: kit: info: servers: [{ url: 'http://127.0.0.1:${port}' }]\n` + EXTRA_ENTITIES +
-        (name === target ? '' : '\nmain: kit: test: live: strict: false\n'), ['test'])
+        (null == variant ? '' : VARIANT_MODEL[variant]), ['test'])
       delete model.main.kit.entity.planet.op.load.points[0].g.params[0].ex
       // The first route needs an unavailable parent; the singleton route
       // remains usable and must still be exercised without ENTID.
@@ -502,6 +509,15 @@ describe('generated live tests continue after failures', () => {
       assert.equal(result.code, 0, result.output)
       assert(agents.length >= 6, agents.join('\n'))
       assert.deepEqual([...new Set(agents)], [DEFAULT_AGENT], result.output)
+    })
+
+    test(target + ': requests carry the agent the model declares', async () => {
+      const declared = 'ts' === target ? 'DemoSDK/0.0.1' : 'DemoApp/2.0 ( dev@example.com )'
+      const result = await runTests(target + ('ts' === target ? '-plain' : '-agent'), '',
+        ['planet/PlanetEntity', 'ambient/AmbientEntity', 'history/HistoryEntity'])
+      assert.equal(result.code, 0, result.output)
+      assert(agents.length >= 6, agents.join('\n'))
+      assert.deepEqual([...new Set(agents)], [declared], result.output)
     })
 
     test(target + ': a non-JSON response names its status, type, agent and body', async () => {

@@ -12,10 +12,10 @@ from projectname_sdk.core.error import ProjectNameError
 
 # Default User-Agent — many CDNs (notably Cloudflare) reject requests with
 # a library's default UA, returning 403 before the request even reaches
-# the origin. Set a Mozilla-shaped UA so the SDK behaves like every other
-# HTTP client by default. Users can still override by passing a User-Agent
-# header in fetchdef.
-_DEFAULT_USER_AGENT = "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)"
+# the origin. The project's agent (main.kit.http.useragent) is browser-shaped
+# unless the model says otherwise. Users can still override by passing a
+# User-Agent header in fetchdef.
+_DEFAULT_USER_AGENT = "PROJECTUSERAGENT"
 
 
 _SESSION = None

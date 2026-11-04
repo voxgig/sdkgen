@@ -13,12 +13,17 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
 
   // Seed a fixture for every active entity so list()/load() resolve
   // offline in test mode with no network. Keyed by the entity's model
-  // name (the same key the test-mode transport looks up).
+  // name (the same key the test-mode transport looks up), and the record
+  // carries the entity's declared identity field as well as `id`.
   const entity = getModelPath(model, `main.${KIT}.entity`)
   const seedEntities: Record<string, any> = {}
   Object.values(entity).forEach((e: any) => {
     if (e && false !== e.active && 'string' === typeof e.name) {
-      seedEntities[e.name] = { test01: { id: 'test01' } }
+      const idField = e.id?.field
+      seedEntities[e.name] = {
+        test01: 'string' === typeof idField && '' !== idField
+          ? { id: 'test01', [idField]: 'test01' } : { id: 'test01' },
+      }
     }
   })
   const seedLiteral = JSON.stringify({ entity: seedEntities })

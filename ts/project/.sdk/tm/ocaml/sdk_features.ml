@@ -1539,6 +1539,12 @@ let test_feature () : feature =
   let reqd_names point kind =
     let reqd_args = select (getpath_s point ("args." ^ kind)) (jo [("reqd", Bool true)]) in
     transform reqd_args (ja [Str "`$EACH`"; Str ""; Str "`$KEY.name`"]) in
+  (* The entity's declared identity field (`entity.id.field`), where it names
+     one other than the `id` every record already carries. *)
+  let declared_id_field config entname =
+    match getpath_s config ("entity." ^ entname ^ ".id.field") with
+    | Str f when f <> "" && f <> "id" -> Some f
+    | _ -> None in
   let build_args ctx (op : operation) args =
     let opname = op.op_name in
     let entname = match ctx.c_entity with Some e -> e.e_name | None -> "_" in
@@ -1631,6 +1637,9 @@ let test_feature () : feature =
           | Map _ ->
             ignore (delprop ent (Str "$body"));
             setp ent "id" eid;
+            (match declared_id_field fctx.c_config op.op_entity with
+             | Some f when is_nullish (getp ent f) -> setp ent f eid
+             | _ -> ());
             (match eid with Str s -> setp entmap s ent | _ -> ());
             ignore (delprop ent (Str "$KEY"));
             respond fctx 200 (clone ent) None
@@ -1664,7 +1673,15 @@ let test_feature () : feature =
       let entity = match getp opts "entity" with Map _ as m -> m | _ -> empty_map () in
       (cc ctx).cl_mode <- "test";
       ignore (walk ~before:(fun key v _parent path ->
-          (if size path = 2 && ismap v && not (is_nullish key) then ignore (setprop v (Str "id") key));
+          (if size path = 2 && ismap v && not (is_nullish key) then begin
+             ignore (setprop v (Str "id") key);
+             match getelem path (Num 0.0) with
+             | Str entname ->
+               (match declared_id_field ctx.c_config entname with
+                | Some f -> ignore (setprop v (Str f) key)
+                | None -> ())
+             | _ -> ()
+           end);
           v) entity);
       let mock = make_mock entity in
       let u = cu ctx in

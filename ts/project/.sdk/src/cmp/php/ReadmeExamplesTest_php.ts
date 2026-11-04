@@ -7,6 +7,12 @@ import {
 } from '@voxgig/apidef'
 
 
+// A PHP single-quoted literal: no interpolation, whatever the name holds.
+function phpQuote(text: string): string {
+  return "'" + String(text).replace(/[\\']/g, '\\$&') + "'"
+}
+
+
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target } = props
   const { model } = props.ctx$
@@ -20,6 +26,14 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const entityLines = Object.values(entity)
     .filter((e: any) => e && e.active !== false)
     .map((e: any) => `        ${JSON.stringify(e.Name)} => ${JSON.stringify(e.name)},`)
+    .join('\n')
+
+  // The declared identity field of each entity that names one other than
+  // `id`, by fixture key: the mock keys a record by it, so the seed does too.
+  const idFieldLines = Object.values(entity)
+    .filter((e: any) => e && e.active !== false &&
+      'string' === typeof e.id?.field && '' !== e.id.field && 'id' !== e.id.field)
+    .map((e: any) => `        ${phpQuote(e.name)} => ${phpQuote(e.id.field)},`)
     .join('\n')
 
   File({ name: 'ReadmeExamplesTest.' + target.ext }, () => {
@@ -66,6 +80,11 @@ class ReadmeExamplesTest extends TestCase
     // Entity accessor (\\$client->Name()) => fixture storage key (lowercase name).
     private const ENTITIES = [
 ${entityLines}
+    ];
+
+    // Fixture key => the entity's declared identity field, where it is not "id".
+    private const ID_FIELDS = [
+${idFieldLines}
     ];
 
     // Documented SDK method names — used only to recognise the NARROW
@@ -238,6 +257,16 @@ ${entityLines}
         $this->assertSame([], $failures, "docs php blocks with syntax errors:\\n" . implode("\\n\\n", $failures));
     }
 
+    /** The one mock record seeded per entity, keyed as the mock keys it. */
+    private static function seedRecord(string $storage): array
+    {
+        $record = ["id" => "test01"];
+        if (isset(self::ID_FIELDS[$storage])) {
+            $record[self::ID_FIELDS[$storage]] = "test01";
+        }
+        return $record;
+    }
+
     /**
      * Build the SDK 'entity' fixture option for the entities a block references,
      * falling back to seeding all entities when none are named.
@@ -247,12 +276,12 @@ ${entityLines}
         $refs = [];
         foreach (self::ENTITIES as $name => $storage) {
             if (preg_match('/\\$client->' . preg_quote($name, '/') . '\\b/', $block)) {
-                $refs[$storage] = ["test01" => ["id" => "test01"]];
+                $refs[$storage] = ["test01" => self::seedRecord($storage)];
             }
         }
         if (empty($refs)) {
             foreach (self::ENTITIES as $storage) {
-                $refs[$storage] = ["test01" => ["id" => "test01"]];
+                $refs[$storage] = ["test01" => self::seedRecord($storage)];
             }
         }
         return ["entity" => $refs];

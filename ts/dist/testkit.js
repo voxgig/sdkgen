@@ -25,7 +25,7 @@ const SDKGEN_ROOT = node_path_1.default.resolve(__dirname, '..');
 exports.SDKGEN_ROOT = SDKGEN_ROOT;
 const PLACEHOLDERS = [
     'ProjectName', 'PROJECTNAME', 'PROJECTENV', 'PROJECTVERSION', 'PROJECTPUBLISHER',
-    'GOMODULE',
+    'PROJECTUSERAGENT', 'GOMODULE',
 ];
 exports.PLACEHOLDERS = PLACEHOLDERS;
 const PLACEHOLDER_REF = /\$\$[A-Za-z_][A-Za-z0-9_.]*\$\$/;

@@ -27,7 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
-  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, idlessUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
+  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, underscoreKeyed, idlessUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY, REQUEST_SHAPED_ENTITY, multiRouteLoad, keylessLoad,
   namedEntity, liveIdentities,
 } from './generateharness'
@@ -802,6 +802,46 @@ describe('generated SDK compiles', () => {
   })
 
 
+  // A body cut short was rethrown raw, so a live report could only call it a
+  // generic failure; a 17 MB one read whole pins that no cap applies.
+  for (const target of ['ts', 'js']) {
+    test(target + ': a large list is read whole, and one cut short names why', async () => {
+      const sdkroot = Path.join(tmp, target + '-largebody')
+      await generateTo(target, sdkroot)
+      linkDeps(sdkroot)
+      if ('ts' === target) {
+        const compiled = tsc(sdkroot, 'src')
+        ok(compiled.ok, compiled.out)
+      }
+      const probe = Path.join(sdkroot, 'largebody.cjs')
+      Fs.copyFileSync(Path.join(PKG, 'test/fixture/transport/largebody.js'), probe)
+      const result = run(process.execPath, [probe, './' + ('ts' === target ? 'dist' : 'src')], sdkroot)
+      ok(result.ok, result.out)
+      ok(result.out.includes('whole: 28000 items'), result.out)
+      ok(result.out.includes('cut: response_body_read'), result.out)
+    })
+  }
+
+
+  // A 17 MB list, read whole: Net::HTTP's own inflater stopped after the first
+  // gzip member, so a body sent as two came back truncated and unparsable.
+  test('rb: a large compressed list is read whole, every gzip member', async (t) => {
+    const sdkroot = Path.join(tmp, 'rb-largebody')
+    await generateTo('rb', sdkroot)
+    const rb = toolchain('ruby')
+    if (null == rb) return t.skip('needs Ruby')
+    Fs.copyFileSync(Path.join(PKG, 'test/fixture/transport/largebody.rb'),
+      Path.join(sdkroot, 'largebody.rb'))
+    const result = run(rb, ['largebody.rb'], sdkroot, {
+      ...process.env, NO_PROXY: '127.0.0.1', no_proxy: '127.0.0.1',
+    })
+    ok(result.ok, result.out)
+    for (const name of ['identity', 'gzip members', 'raw deflate']) {
+      ok(result.out.includes(name + ': 28000 items'), name + '\n' + result.out)
+    }
+  })
+
+
   for (const [target, tool, file, ctxfile] of [
     ['py', 'python3', 'context.py', 'core/context.py'],
     ['rb', 'ruby', 'context.rb', 'core/context.rb'],
@@ -1059,6 +1099,7 @@ pub fn main() void {
     ['create examples whose routes each need a parent of their own', 'ts-readme-parented-create',
       parentedCreate()],
     ['an update example whose request carries no id', 'ts-readme-idless-update', idlessUpdate()],
+    ['update and remove examples on a record keyed by _id', 'ts-readme-underscore-id', underscoreKeyed()],
     ['examples whose load parameter and create field hold a quote and a backslash', 'ts-readme-quoted',
       namedFieldEntity('a"b\\c')],
   ] as [string, string, string | undefined][]) {
@@ -2188,7 +2229,8 @@ int main(void) {
     const certs = Path.join(tmp, 'lua-tls-eof-certs')
     Fs.mkdirSync(certs, { recursive: true })
     const made = run(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
-      '-subj', '/CN=localhost', '-keyout', 'eof.key', '-out', 'eof.pem'], certs)
+      '-subj', '/CN=localhost', '-addext', 'subjectAltName=IP:127.0.0.1',
+      '-keyout', 'eof.key', '-out', 'eof.pem'], certs)
     if (!made.ok) return t.skip('lua: openssl cannot make a test certificate:\n' + tail(made.out, 5))
 
     const file = Path.join(certs, 'tls-eof-server.cjs')
@@ -2210,13 +2252,88 @@ int main(void) {
           }
         })
       })
-      const probe = run(lua, ['tls_eof_probe.lua'], sdkroot,
-        { ...process.env, TLS_BASE: 'https://127.0.0.1:' + port })
+      const probe = run(lua, ['tls_eof_probe.lua'], sdkroot, {
+        ...process.env, TLS_BASE: 'https://127.0.0.1:' + port,
+        DEMO_CA_BUNDLE: Path.join(certs, 'eof.pem'),
+      })
       ok(/^tls-eof: ok tls$/m.test(probe.out),
         'lua: a body ended by a close without close_notify was not read:\n' + tail(probe.out))
     }
     finally {
       proc.kill('SIGKILL')
+    }
+  })
+
+
+  // luasec's own https verifies nothing (verify = "none"); the lua transport
+  // verifies the chain and the name, and refuses with no trust store at all.
+  test('lua: the https transport verifies the server, and trusts a named CA bundle', async (t) => {
+    const openssl = toolchain('openssl')
+    const lua = mediaLua()
+    if (null == openssl || null == lua) {
+      return t.skip('needs openssl and a lua with the dkjson rock (openssl: ' + openssl +
+        ', lua: ' + lua + ')')
+    }
+    if (!probeOk(lua, ['-e', 'require "socket.http"; require "ssl"'])) {
+      return t.skip('lua: luasocket and luasec are not both installed here')
+    }
+
+    const sdkroot = Path.join(tmp, 'lua-tls-verify')
+    await generateTo('lua', sdkroot)
+    Fs.writeFileSync(Path.join(sdkroot, 'tls_eof_probe.lua'), TLS_EOF_LUA_PROBE)
+
+    const certs = Path.join(tmp, 'lua-tls-verify-certs')
+    Fs.mkdirSync(certs, { recursive: true })
+    for (const [name, san] of [['local', 'DNS:localhost'], ['other', 'DNS:elsewhere.example']]) {
+      const made = run(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+        '-subj', '/CN=' + name, '-addext', 'subjectAltName=' + san,
+        '-keyout', name + '.key', '-out', name + '.pem'], certs)
+      if (!made.ok) return t.skip('lua: openssl cannot make a test certificate:\n' + tail(made.out, 5))
+    }
+
+    const local = await tlsServer(certs, 'local')
+    const other = await tlsServer(certs, 'other')
+    try {
+      const probe = (url: string, env: NodeJS.ProcessEnv = {}) => {
+        const base: NodeJS.ProcessEnv = { ...process.env, TLS_BASE: url, ...env }
+        for (const name of ['DEMO_CA_BUNDLE', 'SSL_CERT_FILE', 'SSL_CERT_DIR']) {
+          if (!(name in env)) delete base[name]
+        }
+        return run(lua, ['tls_eof_probe.lua'], sdkroot, base).out
+      }
+      const seen = () => Fs.readFileSync(local.log, 'utf8').split('\n').filter((l) => '' !== l).length
+      const at = 'https://localhost:' + local.port + '/p'
+      const bundle = { DEMO_CA_BUNDLE: Path.join(certs, 'local.pem') }
+
+      const unverified = probe(at)
+      ok(/tls-eof: failed .*certificate verify failed/.test(unverified),
+        'lua: a self-signed certificate was trusted:\n' + unverified)
+      strictEqual(seen(), 0, 'lua: a request reached a server whose certificate was refused')
+
+      ok(/^tls-eof: ok tls$/m.test(probe(at, bundle)),
+        'lua: the certificate DEMO_CA_BUNDLE names was not trusted:\n' + probe(at, bundle))
+      ok(/^tls-eof: ok tls$/m.test(probe(at, { SSL_CERT_FILE: bundle.DEMO_CA_BUNDLE })),
+        'lua: the trust store SSL_CERT_FILE names was not used:\n' +
+        probe(at, { SSL_CERT_FILE: bundle.DEMO_CA_BUNDLE }))
+
+      const named = probe('https://localhost:' + other.port + '/p',
+        { DEMO_CA_BUNDLE: Path.join(certs, 'other.pem') })
+      ok(/certificate verify failed: the certificate does not name localhost/.test(named),
+        'lua: a certificate for another name was trusted:\n' + named)
+
+      const literal = probe('https://127.0.0.1:' + local.port + '/p', bundle)
+      ok(/certificate verify failed: the certificate does not name 127\.0\.0\.1/.test(literal),
+        'lua: a certificate without the address was trusted for it:\n' + literal)
+
+      const before = seen()
+      const nostore = probe(at, { SSL_CERT_DIR: Path.join(certs, 'absent') })
+      ok(/TLS: SSL_CERT_DIR names a directory that does not exist/.test(nostore),
+        'lua: a missing trust store did not refuse the request:\n' + nostore)
+      strictEqual(seen(), before, 'lua: a request went out with no trust store')
+    }
+    finally {
+      local.stop()
+      other.stop()
     }
   })
 
@@ -8820,6 +8937,12 @@ describe('the README examples run for a slug carrying the word client', () => {
           'create example with a parent')
       })
 
+    test(lane.target + ': the README examples run where a record is keyed by _id',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-underscore-id', underscoreKeyed(), /_id/,
+          'update example on the created record\'s _id')
+      })
+
     test(lane.target + ': the README examples run where an update\'s request carries no id',
       async (t) => {
         await readmeLane(t, lane, lane.target + '-idless-update', idlessUpdate(), /Fruit/,
@@ -9599,11 +9722,12 @@ describe('probes driven through a generated SDK', () => {
   const generated = new Map<string, Promise<string>>()
 
   // A feature list generates a second SDK beside the default one.
-  const sdkFor = (target: string, features?: string[]): Promise<string> => {
-    const key = null == features ? target : target + '-' + features.join('-')
+  const sdkFor = (target: string, features?: string[], extra = ''): Promise<string> => {
+    const key = (null == features ? target : target + '-' + features.join('-')) +
+      ('' === extra ? '' : '-agent')
     if (!generated.has(key)) {
       const sdkroot = Path.join(tmp, key)
-      generated.set(key, generateTo(target, sdkroot, MEDIA_MODEL, features).then(() => sdkroot))
+      generated.set(key, generateTo(target, sdkroot, MEDIA_MODEL + extra, features).then(() => sdkroot))
     }
     return generated.get(key)!
   }
@@ -9859,6 +9983,40 @@ describe('probes driven through a generated SDK', () => {
           nonjsonFailures(ran.out, lane.target, seam, ['probe', 'direct', 'cache1', 'cache2']), [],
           lane.target + ' probe output:\n' + tail(ran.out))
       })
+
+    // A transport with no agent of its own (seam) has none to declare.
+    test(lane.target + ': a request carries the agent the model declares', async (t) => {
+      const missing = lane.ready()
+      if (null != missing) return t.skip(missing)
+      if (null != lane.seam && lane.seam()) return t.skip(lane.target + ': no built-in transport here')
+
+      const sdkroot = await sdkFor(lane.target, ['test', 'log', 'cache'], "\nmain: kit: http: useragent: 'plain'\n")
+      const cases = Path.join(sdkroot, 'nonjson-cases.json')
+      Fs.writeFileSync(cases, JSON.stringify(NONJSON_CASES))
+      const tsv = Path.join(sdkroot, 'nonjson-cases.tsv')
+      Fs.writeFileSync(tsv, nonjsonTsv())
+      const server = await nonjsonServer(sdkroot, cases)
+      let ran: ReturnType<typeof run>
+      try {
+        ran = lane.exec(sdkroot, {
+          ...nestedTestEnv(),
+          NONJSON_BASE: 'http://127.0.0.1:' + server.port,
+          NONJSON_CASES: cases,
+          NONJSON_TSV: tsv,
+        }, writer(sdkroot), { name: 'nonjson', source: NONJSON_PROBES })
+      }
+      finally {
+        server.stop()
+      }
+
+      if (ran.unlaunchable) {
+        return t.skip(lane.target + ': the toolchain could not be started here: ' + tail(ran.out, 3))
+      }
+
+      ok(ran.ok, lane.target + ': the non-JSON probe failed:\n' + tail(ran.out, 60))
+      deepStrictEqual(nonjsonFailures(ran.out, lane.target, false, ['probe', 'direct'], 'DemoSDK/0.0.1'), [],
+        lane.target + ' probe output:\n' + tail(ran.out))
+    })
 
     const probeKey = 'ts' === lane.target || 'js' === lane.target ? 'node' : lane.target
 

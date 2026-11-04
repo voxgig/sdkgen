@@ -112,7 +112,7 @@ fun defaultHttpFetch(fullurl: String, fetchdef: MutableMap<String, Any?>): Mutab
   // Default User-Agent — some CDNs block Java's default. It is recorded with
   // the headers the request sent.
   if (!hasUA) {
-    val agent = "Mozilla/5.0 (compatible; ProjectNameSDK/1.0)"
+    val agent = "PROJECTUSERAGENT"
     reqb.setHeader("User-Agent", agent)
     if (headersRaw is MutableMap<*, *>) {
       (headersRaw as MutableMap<String, Any?>)["user-agent"] = agent
