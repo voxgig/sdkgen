@@ -1,6 +1,7 @@
 
 import { test, describe } from 'node:test'
 import { deepStrictEqual, ok, strictEqual } from 'node:assert'
+import { createHash } from 'node:crypto'
 
 import { Aontu } from 'aontu'
 import { memfs } from 'memfs'
@@ -21,6 +22,18 @@ const START_TIME = 1735689600000
 const GENERATED_LOG = '{"at":"2025-01-01T00:01:00.000Z","op":"record","root":".",' +
   '"files":{"foo/java/README.md":"Root","foo/js/README.md":"Root",' +
   '"foo/python/README.md":"Root"}}\n'
+
+
+// What a run generates for a language at an index.
+const gen = (lang: string, index: number) =>
+  '\n# foo ' + lang + ' SDK\n# index=' + index + '\n'
+
+// The tail of a meta log entry in merge mode: the fingerprints of the
+// generates the file has held, oldest first.
+const prints = (...gens: string[]) => ',\n      "fingerprints": [\n' +
+  gens.map((g) => '        "' +
+    createHash('sha256').update(g).digest('hex').substring(0, 16) + '"').join(',\n') +
+  '\n      ]\n'
 
 
 const aontu = new Aontu()
@@ -76,7 +89,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735689840000,\n' +
-        '      "hwhen": 2025010100040000\n' +
+        '      "hwhen": 2025010100040000' + prints(gen('java', 0)) +
         '    },\n' +
         '    "foo/js/README.md": {\n' +
         '      "action": "write",\n' +
@@ -88,7 +101,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735689960000,\n' +
-        '      "hwhen": 2025010100060000\n' +
+        '      "hwhen": 2025010100060000' + prints(gen('js', 0)) +
         '    },\n' +
         '    "foo/python/README.md": {\n' +
         '      "action": "write",\n' +
@@ -100,7 +113,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735690080000,\n' +
-        '      "hwhen": 2025010100080000\n' +
+        '      "hwhen": 2025010100080000' + prints(gen('python', 0)) +
         '    }\n' +
         '  }\n' +
         '}',
@@ -138,7 +151,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735690680000,\n' +
-        '      "hwhen": 2025010100180000\n' +
+        '      "hwhen": 2025010100180000' + prints(gen('java', 0)) +
         '    },\n' +
         '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
@@ -150,7 +163,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735690980000,\n' +
-        '      "hwhen": 2025010100230000\n' +
+        '      "hwhen": 2025010100230000' + prints(gen('js', 0)) +
         '    },\n' +
         '    "foo/python/README.md": {\n' +
         '      "action": "skip",\n' +
@@ -162,7 +175,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735691100000,\n' +
-        '      "hwhen": 2025010100250000\n' +
+        '      "hwhen": 2025010100250000' + prints(gen('python', 0)) +
         '    }\n' +
         '  }\n' +
         '}',
@@ -199,7 +212,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735691700000,\n' +
-        '      "hwhen": 2025010100350000\n' +
+        '      "hwhen": 2025010100350000' + prints(gen('java', 0)) +
         '    },\n' +
         '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
@@ -211,7 +224,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735692000000,\n' +
-        '      "hwhen": 2025010100400000\n' +
+        '      "hwhen": 2025010100400000' + prints(gen('js', 0)) +
         '    },\n' +
         '    "foo/python/README.md": {\n' +
         '      "action": "skip",\n' +
@@ -223,7 +236,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735692120000,\n' +
-        '      "hwhen": 2025010100420000\n' +
+        '      "hwhen": 2025010100420000' + prints(gen('python', 0)) +
         '    }\n' +
         '  }\n' +
         '}',
@@ -242,12 +255,12 @@ describe('sdkgen', () => {
       '/top/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
       '/top/foo/js/README.md': '\n' +
         '# foo js SDK\n' +
-        '<<<<<<< GENERATED: 2025-01-01T00:47:00.000Z/merge\n' +
-        '# index=1\n' +
-        '=======\n' +
+        '<<<<<<< EXISTING: 2025-01-01T00:43:00.000Z/merge\n' +
         '# EXTRA\n' +
         '# index=0\n' +
-        '>>>>>>> EXISTING: 2025-01-01T00:43:00.000Z/merge\n' +
+        '=======\n' +
+        '# index=1\n' +
+        '>>>>>>> GENERATED: 2025-01-01T00:47:00.000Z/merge\n' +
         '',
       '/top/foo/python/README.md': '\n# foo python SDK\n# index=1\n',
       '/top/.jostraca/generated/foo/java/README.md': '\n# foo java SDK\n# index=1\n',
@@ -269,7 +282,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735692900000,\n' +
-        '      "hwhen": 2025010100550000\n' +
+        '      "hwhen": 2025010100550000' + prints(gen('java', 0), gen('java', 1)) +
         '    },\n' +
         '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
@@ -281,7 +294,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": true,\n' +
         '      "when": 1735693200000,\n' +
-        '      "hwhen": 2025010101000000\n' +
+        '      "hwhen": 2025010101000000' + prints(gen('js', 0), gen('js', 1)) +
         '    },\n' +
         '    "foo/python/README.md": {\n' +
         '      "action": "merge",\n' +
@@ -293,7 +306,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735693500000,\n' +
-        '      "hwhen": 2025010101050000\n' +
+        '      "hwhen": 2025010101050000' + prints(gen('python', 0), gen('python', 1)) +
         '    }\n' +
         '  }\n' +
         '}',
@@ -333,7 +346,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735694100000,\n' +
-        '      "hwhen": 2025010101150000\n' +
+        '      "hwhen": 2025010101150000' + prints(gen('java', 0), gen('java', 1)) +
         '    },\n' +
         '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
@@ -345,7 +358,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735694400000,\n' +
-        '      "hwhen": 2025010101200000\n' +
+        '      "hwhen": 2025010101200000' + prints(gen('js', 0), gen('js', 1)) +
         '    },\n' +
         '    "foo/python/README.md": {\n' +
         '      "action": "skip",\n' +
@@ -357,7 +370,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735694520000,\n' +
-        '      "hwhen": 2025010101220000\n' +
+        '      "hwhen": 2025010101220000' + prints(gen('python', 0), gen('python', 1)) +
         '    }\n' +
         '  }\n' +
         '}',
@@ -395,7 +408,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735695120000,\n' +
-        '      "hwhen": 2025010101320000\n' +
+        '      "hwhen": 2025010101320000' + prints(gen('java', 0), gen('java', 1)) +
         '    },\n' +
         '    "foo/js/README.md": {\n' +
         '      "action": "merge",\n' +
@@ -407,7 +420,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735695420000,\n' +
-        '      "hwhen": 2025010101370000\n' +
+        '      "hwhen": 2025010101370000' + prints(gen('js', 0), gen('js', 1)) +
         '    },\n' +
         '    "foo/python/README.md": {\n' +
         '      "action": "skip",\n' +
@@ -419,7 +432,7 @@ describe('sdkgen', () => {
         '      "protect": false,\n' +
         '      "conflict": false,\n' +
         '      "when": 1735695540000,\n' +
-        '      "hwhen": 2025010101390000\n' +
+        '      "hwhen": 2025010101390000' + prints(gen('python', 0), gen('python', 1)) +
         '    }\n' +
         '  }\n' +
         '}',

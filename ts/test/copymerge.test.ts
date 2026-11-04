@@ -132,8 +132,8 @@ describe('copy merge', () => {
     strictEqual(f.read('log/base/tm/a.ts'), BASE, 'the base stays where it was')
 
     const preview = f.read('log/conflict/tm/a.ts') as string
-    ok(preview.includes('<<<<<<< INCOMING (target add ts)'), preview)
-    ok(preview.includes('>>>>>>> LOCAL'), preview)
+    ok(preview.includes('<<<<<<< LOCAL'), preview)
+    ok(preview.includes('>>>>>>> INCOMING (target add ts)'), preview)
     strictEqual(f.read('log/conflict/.gitignore'), '*\n')
   })
 
@@ -186,7 +186,7 @@ describe('copy merge', () => {
 
 
   test('a file still holding conflict markers is not merged over', async () => {
-    const local = '<<<<<<< INCOMING (x)\nONE\n=======\none\n>>>>>>> LOCAL\ntwo\nthree\nfour\nfive\n'
+    const local = '<<<<<<< LOCAL\none\n=======\nONE\n>>>>>>> INCOMING (x)\ntwo\nthree\nfour\nfive\n'
     const f = fixture({ 'tm/a.ts': local, 'log/base/tm/a.ts': BASE }, { 'tm/a.ts': BASE })
 
     await rejects(withCopyMerge(f.spec(),
