@@ -54,6 +54,7 @@ pub const TestFeature = struct {
 
         // Ensure entity ids are correct.
         _ = vs.walk(h.A(), entity, fixIds, null, vs.MAXDEPTH) catch {};
+        seedDeclaredIds(entity, ctx.config);
 
         const tw = h.A().create(TestWrap) catch unreachable;
         tw.* = .{ .entity = entity };
@@ -91,6 +92,25 @@ fn fixIds(_: Allocator, key: ?[]const u8, val: Value, _: Value, path: []const []
         if (key) |k| h.setp(val, "id", h.vstr(k));
     }
     return val;
+}
+
+// The entity's declared identity field (`entity.id.field`), where it names
+// one other than the `id` every record already carries.
+fn declaredIdField(config: Value, entname: []const u8) ?[]const u8 {
+    const field = h.getpath(&.{ "entity", entname, "id", "field" }, config);
+    if (field != .string or field.string.len == 0 or std.mem.eql(u8, field.string, "id")) return null;
+    return field.string;
+}
+
+// fixIds has no closure to read the config from, so the declared field is a
+// second pass over the same seed records.
+fn seedDeclaredIds(entity: Value, config: Value) void {
+    for (h.items_vec(entity)) |ent| {
+        const id_field = declaredIdField(config, ent.k) orelse continue;
+        for (h.items_vec(ent.v)) |rec| {
+            if (rec.v == .object) h.setp(rec.v, id_field, h.vstr(rec.k));
+        }
+    }
 }
 
 // The key a list's response transform
@@ -351,6 +371,9 @@ fn test_fetch(entity: Value, ctx: *Context, _: []const u8, _: Value) err.E!Value
         if (ent == .object) {
             h.del_prop(ent, h.vstr("$body"));
             h.setp(ent, "id", id);
+            if (declaredIdField(ctx.config, op.entity)) |id_field| {
+                if (h.is_noval(h.getp(ent, id_field))) h.setp(ent, id_field, id);
+            }
             if (id == .string) h.setp(entmap, id.string, ent);
             h.del_prop(ent, h.vstr("$KEY"));
             return respond(ctx, 200, h.clone(ent), &.{});

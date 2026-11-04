@@ -39,6 +39,11 @@ public class TestFeature : BaseFeature
             if (path.Count == 2 && val is Dictionary<string, object?> m && key != null)
             {
                 m["id"] = StructUtils.StrKey(key);
+                var idField = DeclaredIdField(ctx.Config, StructUtils.StrKey(path[0]));
+                if (idField != null)
+                {
+                    m[idField] = StructUtils.StrKey(key);
+                }
             }
             return val;
         });
@@ -240,6 +245,11 @@ public class TestFeature : BaseFeature
                 if (ent is Dictionary<string, object?> entm)
                 {
                     entm["id"] = id;
+                    var idField = DeclaredIdField(ctx2.Config, op.Entity);
+                    if (idField != null && StructUtils.GetProp(entm, idField) == null)
+                    {
+                        entm[idField] = id;
+                    }
                     if (id is string idStr)
                     {
                         entmap![idStr] = entm;
@@ -336,6 +346,14 @@ public class TestFeature : BaseFeature
             SleepMs(PickLatency());
             return inner(ctx, url, fetchdef);
         };
+    }
+
+    // The entity's declared identity field (`entity.id.field`), where it names
+    // one other than the `id` every record already carries.
+    private static string? DeclaredIdField(Dictionary<string, object?>? config, string? entityName)
+    {
+        var field = StructUtils.GetPath(config, StructUtils.Jt("entity", entityName ?? "", "id", "field"));
+        return field is string f && f != "" && f != "id" ? f : null;
     }
 
     // The record the mock keeps: the request data without `$body`, which only the

@@ -22,6 +22,14 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
     .map((e: any) => `    ${JSON.stringify(e.Name)} => ${JSON.stringify(e.name)},`)
     .join('\n')
 
+  // The declared identity field of each entity that names one other than
+  // `id`, by fixture key: the mock keys a record by it, so the seed does too.
+  const idFieldLines = Object.values(entity)
+    .filter((e: any) => e && e.active !== false &&
+      'string' === typeof e.id?.field && '' !== e.id.field && 'id' !== e.id.field)
+    .map((e: any) => `    ${JSON.stringify(e.name)} => ${JSON.stringify(e.id.field)},`)
+    .join('\n')
+
   File({ name: 'readme_examples_test.' + target.ext }, () => {
     Content(`# ${model.const.Name} SDK — documentation example COMPLETENESS GATE.
 #
@@ -69,6 +77,11 @@ class ReadmeExamplesTest < Minitest::Test
   # Entity accessor (client.<Name>) => fixture storage key (lowercase name).
   ENTITIES = {
 ${entityLines}
+  }
+
+  # Fixture key => the entity's declared identity field, where it is not "id".
+  ID_FIELDS = {
+${idFieldLines}
   }
 
   # Documented SDK method names — used only to recognise the NARROW
@@ -170,7 +183,11 @@ ${entityLines}
     refs = ENTITIES.select { |name, _| block =~ /#{CLIENT}\\.#{Regexp.escape(name)}\\b/ }
     refs = ENTITIES if refs.empty?
     entity = {}
-    refs.each_value { |storage| entity[storage] = { "test01" => { "id" => "test01" } } }
+    refs.each_value do |storage|
+      record = { "id" => "test01" }
+      record[ID_FIELDS[storage]] = "test01" if ID_FIELDS.key?(storage)
+      entity[storage] = { "test01" => record }
+    end
     { "entity" => entity }.inspect
   end
 

@@ -27,6 +27,22 @@ def item_envelope_key(restf):
     return None if m is None else m.group(1)
 
 
+# The entity's declared identity field (`entity.id.field`), where it names
+# one other than the `id` every record already carries.
+def _declared_id_field(config, entity_name):
+    field = vs.getpath(config, ["entity", entity_name, "id", "field"])
+    return field if isinstance(field, str) and field not in ("", "id") else None
+
+
+def _seed_id(config, key, val, path):
+    if len(path) == 2 and isinstance(val, dict) and key is not None:
+        val["id"] = key
+        id_field = _declared_id_field(config, path[0])
+        if id_field is not None:
+            val[id_field] = key
+    return val
+
+
 # The record the mock keeps: the request data without `$body`, which only the
 # wire carries.
 def _record(reqdata):
@@ -55,10 +71,7 @@ class ProjectNameTestFeature(ProjectNameBaseFeature):
         self.client.mode = "test"
 
         # Ensure entity ids are correct.
-        vs.walk(entity, lambda key, val, parent, path: (
-            val.__setitem__("id", key) if len(path) == 2 and isinstance(val, dict) and key is not None else None,
-            val
-        )[-1])
+        vs.walk(entity, lambda key, val, parent, path: _seed_id(ctx.config, key, val, path))
 
         test_self = self
 
@@ -198,6 +211,9 @@ class ProjectNameTestFeature(ProjectNameBaseFeature):
                 ent = vs.clone(_record(fctx.reqdata))
                 if isinstance(ent, dict):
                     ent["id"] = eid
+                    id_field = _declared_id_field(fctx.config, op.entity)
+                    if id_field is not None and ent.get(id_field) is None:
+                        ent[id_field] = eid
                     if isinstance(eid, str):
                         entmap[eid] = ent
                     vs.delprop(ent, "$KEY")

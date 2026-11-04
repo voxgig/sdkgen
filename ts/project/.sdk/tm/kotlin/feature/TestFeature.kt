@@ -36,6 +36,10 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
       Struct.WalkApply { key, value, _, path ->
         if (path.size == 2 && value is MutableMap<*, *> && key != null) {
           (value as MutableMap<String, Any?>)["id"] = key
+          val idField = declaredIdField(ctx.config, path[0])
+          if (idField != null) {
+            (value as MutableMap<String, Any?>)[idField] = key
+          }
         }
         value
       },
@@ -52,6 +56,13 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
     } else {
       ctx.utility!!.fetcher = makeNetsim(net, testFetcher)
     }
+  }
+
+  // The entity's declared identity field (`entity.id.field`), where it names
+  // one other than the `id` every record already carries.
+  private fun declaredIdField(config: Any?, entityName: String): String? {
+    val field = Struct.getpath(config, listOf("entity", entityName, "id", "field"))
+    return if (field is String && field != "" && field != "id") field else null
   }
 
   // THE MOCK HAS TO AGREE WITH THE MODEL. A point carrying
@@ -219,6 +230,10 @@ class TestFeature : BaseFeature("test", "0.0.1", true) {
         if (ent is MutableMap<*, *>) {
           val entm = ent as MutableMap<String, Any?>
           entm["id"] = id
+          val idField = declaredIdField(ctx.config, op.entity)
+          if (idField != null && entm[idField] == null) {
+            entm[idField] = id
+          }
           if (id is String) {
             entmap[id] = entm
           }

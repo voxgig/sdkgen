@@ -44,6 +44,16 @@ local function record(reqdata)
   return out
 end
 
+-- The entity's declared identity field (`entity.id.field`), where it names
+-- one other than the `id` every record already carries.
+local function declared_id_field(config, entity_name)
+  local field = vs.getpath(config, { "entity", entity_name, "id", "field" })
+  if type(field) == "string" and field ~= "" and field ~= "id" then
+    return field
+  end
+  return nil
+end
+
 function TestFeature:init(ctx, options)
   self.client = ctx.client
   self.options = options
@@ -59,6 +69,10 @@ function TestFeature:init(ctx, options)
   vs.walk(entity, function(key, val, parent, path)
     if #path == 2 and type(val) == "table" and key ~= nil then
       val["id"] = key
+      local id_field = declared_id_field(ctx.config, path[1])
+      if id_field ~= nil then
+        val[id_field] = key
+      end
     end
     return val
   end)
@@ -235,6 +249,10 @@ function TestFeature:init(ctx, options)
       local ent = vs.clone(record(fctx.reqdata))
       if type(ent) == "table" then
         ent["id"] = id
+        local id_field = declared_id_field(fctx.config, op.entity)
+        if id_field ~= nil and ent[id_field] == nil then
+          ent[id_field] = id
+        end
         if type(id) == "string" then
           entmap[id] = ent
         end

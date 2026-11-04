@@ -122,6 +122,13 @@
       (when (string? merge)
         (second (re-matches #"`\.([^.`$]+)`" merge))))))
 
+;; The entity's declared identity field (`entity.id.field`), where it names
+;; one other than the `id` every record already carries.
+(defn- declared-id-field [config entname]
+  (when (string? entname)
+    (let [field (vs/getpath config (vs/jt "entity" entname "id" "field"))]
+      (when (and (string? field) (not= field "") (not= field "id")) field))))
+
 (defn test-feature []
   (let [fa (new-feature "test" true "0.0.1")]
     (swap! fa assoc
@@ -133,7 +140,9 @@
                ;; Ensure entity ids are correct (id = key at depth 2).
                (vs/walk entity (fn [key val _parent path]
                                  (when (and (= (vs/size path) 2) (vs/ismap val) key)
-                                   (.put ^java.util.Map val "id" key))
+                                   (.put ^java.util.Map val "id" key)
+                                   (when-let [id-field (declared-id-field (core/oget ctx :config) (vs/getelem path 0))]
+                                     (.put ^java.util.Map val id-field key)))
                                  val))
                (let [test-fetcher
                      (fn [fctx _fullurl _fetchdef]
@@ -226,6 +235,9 @@
                                  (if (vs/ismap ent)
                                    (do (vs/delprop ent "$body")
                                        (.put ^java.util.Map ent "id" id)
+                                       (when-let [id-field (declared-id-field (core/oget fctx :config) (core/op-entity op))]
+                                         (when (nil? (vs/getprop ent id-field))
+                                           (.put ^java.util.Map ent id-field id)))
                                        (when (string? id) (.put ^java.util.Map entmap (str id) ent))
                                        (vs/delprop ent "$KEY")
                                        (respond 200 (vs/clone ent) nil))

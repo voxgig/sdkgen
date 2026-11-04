@@ -38,6 +38,14 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
         return $m[1];
     }
 
+    // The entity's declared identity field (`entity.id.field`), where it names
+    // one other than the `id` every record already carries.
+    private static function declaredIdField(?array $config, mixed $entityName): ?string
+    {
+        $field = \Voxgig\Struct\Struct::getpath($config, ['entity', (string)$entityName, 'id', 'field']);
+        return is_string($field) && '' !== $field && 'id' !== $field ? $field : null;
+    }
+
     public function __construct()
     {
         parent::__construct();
@@ -62,9 +70,14 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
         $this->client->mode = 'test';
 
         // Ensure entity ids are correct (walk is by value: keep its result).
-        $entity_data = \Voxgig\Struct\Struct::walk($entity_data, function ($key, $val, $parent, $path) {
+        $config = $ctx->config;
+        $entity_data = \Voxgig\Struct\Struct::walk($entity_data, function ($key, $val, $parent, $path) use ($config) {
             if (count($path) === 2 && is_array($val) && $key !== null) {
                 $val['id'] = $key;
+                $idField = self::declaredIdField($config, $path[0]);
+                if (null !== $idField) {
+                    $val[$idField] = $key;
+                }
             }
             return $val;
         });
@@ -299,6 +312,10 @@ class ProjectNameTestFeature extends ProjectNameBaseFeature
 
                 $ent = self::record($fctx->reqdata);
                 $ent['id'] = $id;
+                $idField = self::declaredIdField($fctx->config, $entname);
+                if (null !== $idField && null === ($ent[$idField] ?? null)) {
+                    $ent[$idField] = $id;
+                }
                 $entmap[$id] = $ent;
                 $entity->data[$entname] = $entmap;
                 if (is_array($ent)) unset($ent['$KEY']);

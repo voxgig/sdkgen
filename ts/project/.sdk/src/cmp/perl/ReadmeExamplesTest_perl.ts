@@ -21,6 +21,13 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
     .map((e: any) => `  '${nom(e, 'Name')}' => '${e.name}',`)
     .join('\n')
 
+  // The declared identity field of each entity that names one other than
+  // `id`, by fixture key: the mock keys a record by it, so the seed does too.
+  const idFieldLines = entities
+    .filter((e: any) => 'string' === typeof e.id?.field && '' !== e.id.field && 'id' !== e.id.field)
+    .map((e: any) => `  '${e.name}' => '${String(e.id.field).replace(/[\\']/g, '\\$&')}',`)
+    .join('\n')
+
   // Perl test files use the `.t` extension (run by `prove`), not target.ext
   // (`pl`); this component is invoked inside the `t/` folder by Test_perl.
   File({ name: 'readme_examples.t' }, () => {
@@ -73,6 +80,11 @@ my $SDK_CLASS = '${sdkClass}';
 # Entity accessor (\$client->Name) => fixture storage key (lowercase name).
 my %ENTITIES = (
 ${entityLines}
+);
+
+# Fixture key => the entity's declared identity field, where it is not "id".
+my %ID_FIELDS = (
+${idFieldLines}
 );
 
 # Documented SDK method names - used only to recognise the NARROW
@@ -199,7 +211,9 @@ sub fixtures_literal {
   %refs = %ENTITIES unless %refs;
   my @pairs;
   for my $name (sort keys %refs) {
-    push @pairs, "'" . $refs{$name} . "' => { 'test01' => { 'id' => 'test01' } }";
+    my $storage = $refs{$name};
+    my $extra = exists $ID_FIELDS{$storage} ? ", '" . $ID_FIELDS{$storage} . "' => 'test01'" : '';
+    push @pairs, "'" . $storage . "' => { 'test01' => { 'id' => 'test01'" . $extra . " } }";
   }
   return "{ 'entity' => { " . join(', ', @pairs) . " } }";
 }

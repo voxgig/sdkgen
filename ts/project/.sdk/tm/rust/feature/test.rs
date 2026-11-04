@@ -216,6 +216,15 @@ fn build_args(ctx: &Rc<Context>, args: &Value) -> Value {
     q
 }
 
+// The entity's declared identity field (`entity.id.field`), where it names
+// one other than the `id` every record already carries.
+fn declared_id_field(config: &Value, entname: &str) -> Option<String> {
+    match crate::core::helpers::getpath(&["entity", entname, "id", "field"], config) {
+        Value::Str(f) if !f.is_empty() && f.as_str() != "id" => Some(f.to_string()),
+        _ => None,
+    }
+}
+
 fn test_fetch(
     entity: &Value,
     ctx: &Rc<Context>,
@@ -332,6 +341,11 @@ fn test_fetch(
             if let Value::Map(_) = &ent {
                 vs::del_prop(ent.clone(), &Value::str("$body"));
                 setp(&ent, "id", id.clone());
+                if let Some(id_field) = declared_id_field(&ctx.config.borrow(), &op.entity) {
+                    if getp(&ent, &id_field).is_noval() || getp(&ent, &id_field).is_null() {
+                        setp(&ent, &id_field, id.clone());
+                    }
+                }
                 if let Value::Str(id_str) = &id {
                     setp(&entmap, id_str, ent.clone());
                 }
@@ -435,11 +449,15 @@ impl Feature for TestFeature {
         }
 
         // Ensure entity ids are correct.
+        let config = ctx.config.borrow().clone();
         let mut fix_ids = |key: &Value, val: &Value, _parent: &Value, path: &[String]| -> Value {
             if path.len() == 2 {
                 if let Value::Map(_) = val {
                     if let Value::Str(k) = key {
                         setp(val, "id", Value::str(k.clone()));
+                        if let Some(id_field) = declared_id_field(&config, &path[0]) {
+                            setp(val, &id_field, Value::str(k.clone()));
+                        }
                     }
                 }
             }

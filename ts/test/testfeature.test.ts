@@ -34,7 +34,7 @@ function point() {
 }
 
 
-function makeMock(entity: any, restf?: any) {
+function makeMock(entity: any, restf?: any, config: any = CONFIG) {
   const client: any = { _mode: 'live' }
   const utility: any = {
     struct,
@@ -42,7 +42,7 @@ function makeMock(entity: any, restf?: any) {
     param: (ctx: any, name: string) =>
       null != ctx.reqdata?.[name] ? ctx.reqdata[name] : ctx.reqmatch?.[name],
   }
-  const rootctx: any = { client, utility, config: CONFIG }
+  const rootctx: any = { client, utility, config }
 
   const TestFeature = loadFeature('test')
   const f = new TestFeature()
@@ -50,7 +50,7 @@ function makeMock(entity: any, restf?: any) {
 
   return async function call(opname: string, args: { reqdata?: any, reqmatch?: any } = {}) {
     const ctx: any = {
-      client, utility, config: CONFIG, ctrl: {},
+      client, utility, config, ctrl: {},
       op: { name: opname, entity: 'widget', alias: {} },
       entity: { name: 'widget' },
       reqdata: args.reqdata || {},
@@ -168,6 +168,28 @@ describe('feature:test mock semantics', () => {
     strictEqual(load.status, 200)
     strictEqual(load.data.id, 'w1')
   })
+
+
+  // A record keyed by `_id` whose route parameter is renamed `id`: what a
+  // caller reads back as the identity must be there, seeded or created.
+  test('a record carries its declared identity field', async () => {
+    const config = { entity: { widget: { ...CONFIG.entity.widget, id: { field: '_id', name: 'id' } } } }
+    const call = makeMock({ widget: { w1: { name: 'one' } } }, undefined, config)
+
+    const seeded = await call('load', { reqmatch: { id: 'w1' } })
+    strictEqual(seeded.data._id, 'w1')
+
+    const created = await call('create', { reqdata: { name: 'two' } })
+    strictEqual(created.status, 200)
+    strictEqual(created.data._id, created.data.id)
+
+    const updated = await call('update', { reqdata: { id: created.data._id, name: 'three' } })
+    strictEqual(updated.status, 200)
+    strictEqual(updated.data.name, 'three')
+
+    const given = await call('create', { reqdata: { _id: 'mine', name: 'four' } })
+    strictEqual(given.data._id, 'mine')
+  })
 })
 
 
@@ -201,6 +223,7 @@ describe('feature:test parity', () => {
 
   const MARK = 'update miss: 404, never another record'
   const QUERY = /args\.query|["']query["']/
+  const DECLARED = /\bid["']?(?:\s*,\s*|\s+|\.)["']?field\b/
 
   test('the site table covers every SDK target', () => {
     const NON_SDK = ['go-cli', 'go-mcp', 'py-data']
@@ -216,6 +239,12 @@ describe('feature:test parity', () => {
       const src = Fs.readFileSync(Path.join(TM, target, rel), 'utf8')
       ok(src.includes(MARK), target + ': the update-miss branch lost its marker (' + rel + ')')
       ok(QUERY.test(src), target + ': required query params are no longer read (' + rel + ')')
+    })
+
+    test(target + ': a record carries its declared identity field', () => {
+      const src = Fs.readFileSync(Path.join(TM, target, rel), 'utf8')
+      ok(src.includes('declared identity field') && DECLARED.test(src),
+        target + ': the mock no longer reads entity.id.field (' + rel + ')')
     })
   }
 })

@@ -27,7 +27,7 @@ const TSC = Path.resolve(Path.dirname(require.resolve('typescript')), '..', 'bin
 
 import {
   makeModel, makeRoot, layeredFs, makeLog, toolchain, rubyEnv, pythonEnv, ROUTING_MODEL, entityTestData,
-  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, idlessUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
+  searchOnly, listOnly, retypedList, seedableList, selectorLoad, shadowedLoad, actionList, parentedCreate, underscoreKeyed, idlessUpdate, namedFieldEntity, FOLD_ENTITY, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, NEW_PREFIX_ENTITY, CRUD_MODEL, DOC_MODELS, OPLESS_ENTITY, CREATE_ONLY_ENTITY, PATCH_ONLY_ENTITY, REQUEST_SHAPED_ENTITY, multiRouteLoad, keylessLoad,
   namedEntity, liveIdentities,
 } from './generateharness'
@@ -1059,6 +1059,7 @@ pub fn main() void {
     ['create examples whose routes each need a parent of their own', 'ts-readme-parented-create',
       parentedCreate()],
     ['an update example whose request carries no id', 'ts-readme-idless-update', idlessUpdate()],
+    ['update and remove examples on a record keyed by _id', 'ts-readme-underscore-id', underscoreKeyed()],
     ['examples whose load parameter and create field hold a quote and a backslash', 'ts-readme-quoted',
       namedFieldEntity('a"b\\c')],
   ] as [string, string, string | undefined][]) {
@@ -8818,6 +8819,12 @@ describe('the README examples run for a slug carrying the word client', () => {
       async (t) => {
         await readmeLane(t, lane, lane.target + '-parented-create', parentedCreate(), /conversation_id/,
           'create example with a parent')
+      })
+
+    test(lane.target + ': the README examples run where a record is keyed by _id',
+      async (t) => {
+        await readmeLane(t, lane, lane.target + '-underscore-id', underscoreKeyed(), /_id/,
+          'update example on the created record\'s _id')
       })
 
     test(lane.target + ': the README examples run where an update\'s request carries no id',

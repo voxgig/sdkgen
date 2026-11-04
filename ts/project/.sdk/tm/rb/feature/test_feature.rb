@@ -28,6 +28,13 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
     reqdata.reject { |k, _v| k == "$body" }
   end
 
+  # The entity's declared identity field (`entity.id.field`), where it names
+  # one other than the `id` every record already carries.
+  def self.declared_id_field(config, entity_name)
+    field = VoxgigStruct.getpath(config, ["entity", entity_name, "id", "field"])
+    field.is_a?(String) && !["", "id"].include?(field) ? field : nil
+  end
+
   def initialize
     super
     @version = "0.0.1"
@@ -48,7 +55,11 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
 
     # Ensure entity ids are correct.
     VoxgigStruct.walk(entity, ->(key, val, _parent, path) {
-      val["id"] = key if path.length == 2 && val.is_a?(Hash) && key
+      if path.length == 2 && val.is_a?(Hash) && key
+        val["id"] = key
+        id_field = ProjectNameTestFeature.declared_id_field(ctx.config, path[0])
+        val[id_field] = key unless id_field.nil?
+      end
       val
     })
 
@@ -175,6 +186,8 @@ class ProjectNameTestFeature < ProjectNameBaseFeature
         ent = VoxgigStruct.clone(ProjectNameTestFeature.record(fctx.reqdata))
         if ent.is_a?(Hash)
           ent["id"] = id
+          id_field = ProjectNameTestFeature.declared_id_field(fctx.config, op.entity)
+          ent[id_field] = id if !id_field.nil? && ent[id_field].nil?
           entmap[id.to_s] = ent if id.is_a?(String)
           VoxgigStruct.delprop(ent, "$KEY")
           out = VoxgigStruct.clone(ent)

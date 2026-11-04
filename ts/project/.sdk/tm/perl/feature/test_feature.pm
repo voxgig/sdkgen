@@ -26,6 +26,14 @@ sub item_envelope_key {
   return $1;
 }
 
+# The entity's declared identity field (`entity.id.field`), where it names
+# one other than the `id` every record already carries.
+sub declared_id_field {
+  my ($config, $entity_name) = @_;
+  my $field = ProjectNameHelpers::gpath($config, ['entity', "$entity_name", 'id', 'field']);
+  return (defined $field && !ref($field) && '' ne $field && 'id' ne $field) ? $field : undef;
+}
+
 our @ISA = ('ProjectNameBaseFeature');
 
 sub new {
@@ -56,6 +64,8 @@ sub init {
     if (Voxgig::Struct::islist($path) && 2 == @$path
       && Voxgig::Struct::ismap($val) && defined $key) {
       $val->{id} = $key;
+      my $id_field = declared_id_field($ctx->{config}, $path->[0]);
+      $val->{$id_field} = $key if defined $id_field;
     }
     return $val;
   });
@@ -199,6 +209,8 @@ sub init {
       my $ent = Voxgig::Struct::clone(_record($fctx->{reqdata}));
       if (Voxgig::Struct::ismap($ent)) {
         $ent->{id} = $id;
+        my $id_field = declared_id_field($fctx->{config}, $op->{entity});
+        $ent->{$id_field} = $id if defined $id_field && !defined $ent->{$id_field};
         $entmap->{"$id"} = $ent if defined $id && !ref $id;
         Voxgig::Struct::delprop($ent, '$KEY');
         my $out = Voxgig::Struct::clone($ent);

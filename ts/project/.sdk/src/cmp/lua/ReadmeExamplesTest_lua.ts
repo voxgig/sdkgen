@@ -14,12 +14,14 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   // resolves offline. Bracket-string keys keep the literal valid for any
   // entity name.
   const entity = getModelPath(model, `main.${KIT}.entity`) || {}
-  const entnames = Object.values(entity)
+  const seedEntries = Object.values(entity)
     .filter((e: any) => e && e.active !== false)
-    .map((e: any) => e.name)
-
-  const seedEntries = entnames
-    .map((n: string) => `["${n}"] = { ["test01"] = { id = "test01" } }`)
+    .map((e: any) => {
+      const idField = e.id?.field
+      const extra = 'string' === typeof idField && '' !== idField && 'id' !== idField
+        ? `, [${JSON.stringify(idField)}] = "test01"` : ''
+      return `["${e.name}"] = { ["test01"] = { id = "test01"${extra} } }`
+    })
     .join(', ')
   const seedLiteral = `{ entity = { ${seedEntries} } }`
 

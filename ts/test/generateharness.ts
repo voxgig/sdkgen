@@ -1424,6 +1424,47 @@ main: kit: flow: BasicAttachmentUrlFlow: {
 }
 
 
+// openSenseMap's box: CRUD on a record keyed by `_id`, its `{boxId}` renamed `id`.
+function underscoreKeyed(): string {
+  const byId = (m: string) => `{${'PUT' === m ? '\n      bf: ["exposure", "name"]' : ''}
+      g: { params: [ { k: "param", n: "id", or: "boxId", r: true, t: "\`$STRING\`" } ] }
+      m: "${m}", o: "/boxes/{boxId}", q: { exist: ["id"] }, r: { param: { boxId: "id" } }
+      s: [{ lit: "boxes" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } }`
+  return entityOnly(`
+main: kit: entity: box: {
+  alias: field: {}
+  name: "box"
+  id: { field: "_id", name: "id" }
+  fields: {
+    "_id": { h: 'Id', n: "_id", r: false, t: "\`$STRING\`" }
+    "exposure": { h: 'Exposure', n: "exposure", r: false, t: "\`$STRING\`"
+      op: { create: { req: true, type: "\`$STRING\`" }, update: { req: true, type: "\`$STRING\`" } } }
+    "name": { h: 'Name', n: "name", r: false, t: "\`$STRING\`"
+      op: { create: { req: true, type: "\`$STRING\`" }, update: { req: true, type: "\`$STRING\`" } } }
+  }
+  op: {
+    create: { name: "create", points: [ { bf: ["exposure", "name"], g: {}, m: "POST", o: "/boxes", s: [{ lit: "boxes" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    list: { name: "list", points: [ { g: {}, m: "GET", o: "/boxes", s: [{ lit: "boxes" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ ${byId('GET')} ] }
+    update: { name: "update", points: [ ${byId('PUT')} ] }
+    remove: { name: "remove", points: [ ${byId('DELETE')} ] }
+  }
+}
+
+main: kit: flow: BasicBoxFlow: {
+  entity: "box", kind: "basic", name: "BasicBoxFlow"
+  step: [
+    { o: "create", i: { ref: "box_ref01" } }
+    { o: "load", i: { ref: "box_ref01", srcdatavar: "box_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`)
+}
+
+
 // An entity, alone in the model, that loads by id and lists only through its actions.
 function actionList(): string {
   const action = (name: string) => `{
@@ -2247,6 +2288,7 @@ export {
   shadowedLoad,
   actionList,
   parentedCreate,
+  underscoreKeyed,
   idlessUpdate,
   namedFieldEntity,
   retypedList,

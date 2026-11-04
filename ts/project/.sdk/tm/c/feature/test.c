@@ -223,6 +223,17 @@ static voxgig_value* build_args(Context* ctx, voxgig_value* args) {
   return q;
 }
 
+// The entity's declared identity field (`entity.id.field`), where it names
+// one other than the `id` every record already carries; NULL otherwise.
+static const char* declared_id_field(voxgig_value* config, const char* entname) {
+  if (entname == NULL) return NULL;
+  const char* keys[5] = {"entity", entname, "id", "field", NULL};
+  voxgig_value* field = getpath_c(config, keys);
+  if (!voxgig_is_string(field)) return NULL;
+  const char* f = voxgig_as_string(field);
+  return ('\0' == f[0] || 0 == strcmp(f, "id")) ? NULL : f;
+}
+
 static voxgig_value* test_fetch(voxgig_value* entity, Context* ctx, const char* fullurl,
                                 voxgig_value* fetchdef, PNError** err) {
   (void)fullurl;
@@ -334,6 +345,11 @@ static voxgig_value* test_fetch(voxgig_value* entity, Context* ctx, const char* 
     if (voxgig_is_map(ent)) {
       voxgig_delprop(ent, v_str("$body"));
       setp(ent, "id", id);
+      const char* id_field = declared_id_field(ctx->config, op->entity);
+      if (id_field != NULL) {
+        voxgig_value* had = getp(ent, id_field);
+        if (v_is_noval(had) || v_is_null(had)) setp(ent, id_field, id);
+      }
       if (voxgig_is_string(id)) {
         setp(entmap, voxgig_as_string(id), ent);
       }
@@ -425,10 +441,14 @@ static voxgig_value* test_netsim_fn(Fetcher* self, Context* ctx, const char* url
 static voxgig_value* fix_ids(voxgig_value* key, voxgig_value* val, voxgig_value* parent,
                              voxgig_value* path, void* ud) {
   (void)parent;
-  (void)ud;
   if (voxgig_size(path) == 2) {
     if (voxgig_is_map(val) && voxgig_is_string(key)) {
       setp(val, "id", v_str(voxgig_as_string(key)));
+      voxgig_value* entname = voxgig_getelem(path, v_int(0), NULL);
+      const char* id_field = voxgig_is_string(entname)
+                               ? declared_id_field((voxgig_value*)ud, voxgig_as_string(entname))
+                               : NULL;
+      if (id_field != NULL) setp(val, id_field, v_str(voxgig_as_string(key)));
     }
   }
   return voxgig_retain(val);
@@ -460,7 +480,7 @@ static void test_init(Feature* f, Context* ctx, voxgig_value* options) {
   }
 
   // Ensure entity ids are correct.
-  voxgig_walk(entity, fix_ids, NULL, VOXGIG_MAXDEPTH, NULL);
+  voxgig_walk(entity, fix_ids, NULL, VOXGIG_MAXDEPTH, ctx->config);
 
   TestState* ts = (TestState*)calloc(1, sizeof(TestState));
   ts->entity = entity;

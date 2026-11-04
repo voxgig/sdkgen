@@ -61,7 +61,7 @@ tm/c/core/spec.c cb3f60193af1
 tm/c/core/utility.c c0abea39df50
 tm/c/feature/base.c bb9766d14bfc
 tm/c/feature/support.c 2b580e6c7fc3
-tm/c/feature/test.c 9c7f79e99a3a
+tm/c/feature/test.c 03304fcbf4ba
 tm/c/src/feature/README.md c29c0aa3eaa0
 tm/c/src/feature/base/.gitkeep e3b0c44298fc
 tm/c/src/feature/test/.gitkeep e3b0c44298fc
@@ -232,7 +232,7 @@ tm/clojure/src/feature/timeout/.gitkeep e3b0c44298fc
 tm/clojure/src/feature/validate/.gitkeep e3b0c44298fc
 tm/clojure/src/sdk/client.clj d87d54a57f03
 tm/clojure/src/sdk/core.clj f3b2878f77fd
-tm/clojure/src/sdk/features.clj a08f2202dce7
+tm/clojure/src/sdk/features.clj 45a624028649
 tm/clojure/src/voxgig/struct.clj e11f03d1c544
 tm/clojure/test/sdk/test/concurrency.clj a9bfd623695b
 tm/clojure/test/sdk/test/feature.clj 590d662e1233
@@ -301,7 +301,7 @@ tm/cpp/core/struct.hpp 0be0006d1389
 tm/cpp/core/types.hpp 2471c2d58134
 tm/cpp/feature/base.hpp 09bbe326cadb
 tm/cpp/feature/options.hpp 74561793d626
-tm/cpp/feature/test.hpp 22af5d5ffbf4
+tm/cpp/feature/test.hpp 149ff9adc63a
 tm/cpp/src/feature/README.md 3f39917d4bcf
 tm/cpp/src/feature/base/.gitkeep e3b0c44298fc
 tm/cpp/src/feature/test/.gitkeep e3b0c44298fc
@@ -391,7 +391,7 @@ tm/csharp/core/Types.cs d3790b5cfad6
 tm/csharp/core/Utility.cs c17d1d9df221
 tm/csharp/feature/BaseFeature.cs 2f5da25c6dea
 tm/csharp/feature/FeatureOptions.cs 5f7ff2f3b258
-tm/csharp/feature/TestFeature.cs 5dc2f50946e5
+tm/csharp/feature/TestFeature.cs a33eda2ef898
 tm/csharp/src/feature/README.md ddb1daf8f8fe
 tm/csharp/src/feature/base/.gitkeep e3b0c44298fc
 tm/csharp/src/feature/test/.gitkeep e3b0c44298fc
@@ -495,7 +495,7 @@ tm/elixir/lib/projectname/core.ex 2c5a27f9ef03
 tm/elixir/lib/projectname/entity_base.ex fc35f1c786f2
 tm/elixir/lib/projectname/error.ex 3817e946f99d
 tm/elixir/lib/projectname/feature.ex 558cb5c8c3af
-tm/elixir/lib/projectname/feature/test.ex a6ab3f6305f6
+tm/elixir/lib/projectname/feature/test.ex 3ed981b7a867
 tm/elixir/lib/projectname/helpers.ex c22f481d543d
 tm/elixir/lib/projectname/json.ex d69502568def
 tm/elixir/lib/projectname/utility.ex d6953585e1d6
@@ -534,7 +534,7 @@ src/cmp/go/Main_go.ts 174638830097
 src/cmp/go/Package_go.ts 111b2b904994
 src/cmp/go/PrepareAuth_go.ts 397083cd6c97
 src/cmp/go/ReadmeEntity_go.ts 52b6a144ae95
-src/cmp/go/ReadmeExamplesTest_go.ts a4d939c3d7cf
+src/cmp/go/ReadmeExamplesTest_go.ts 5b977d8f902c
 src/cmp/go/ReadmeExplanation_go.ts e40b052e75ce
 src/cmp/go/ReadmeHowto_go.ts e1088279aa51
 src/cmp/go/ReadmeInstall_go.ts f77e8b14f711
@@ -577,7 +577,7 @@ tm/go/core/types.go c6a061ffe42f
 tm/go/core/utility_type.go 0b9007f0cd82
 tm/go/feature/base_feature.go 1eae8d70e433
 tm/go/feature/feature_options.go 5fa5adf56434
-tm/go/feature/test_feature.go aee79c4e8938
+tm/go/feature/test_feature.go 8a3849d41f08
 tm/go/src/feature/README.md efebfaa50be0
 tm/go/src/feature/base/.gitkeep e3b0c44298fc
 tm/go/src/feature/test/.gitkeep e3b0c44298fc
@@ -720,7 +720,7 @@ tm/java/core/Spec.java 047caf212074
 tm/java/core/Utility.java d9c31b28e3de
 tm/java/feature/BaseFeature.java de43ff62c7d8
 tm/java/feature/FeatureOptions.java 157f46620462
-tm/java/feature/TestFeature.java 73e8cdf49d72
+tm/java/feature/TestFeature.java ca2e2a5f55d7
 tm/java/src/feature/README.md fe95b0698ffe
 tm/java/src/feature/base/.gitkeep e3b0c44298fc
 tm/java/src/feature/test/.gitkeep e3b0c44298fc
@@ -840,7 +840,7 @@ tm/js/src/Result.js f5ca4fe99283
 tm/js/src/Spec.js 641da1cfddbd
 tm/js/src/feature/README.md 630422c5567f
 tm/js/src/feature/base/BaseFeature.js 264e0b98075b
-tm/js/src/feature/test/TestFeature.js 50839cfe2caa
+tm/js/src/feature/test/TestFeature.js b36e7eb4b414
 tm/js/src/types.js f49c15c403b4
 tm/js/src/utility/CleanUtility.js 0951a5263766
 tm/js/src/utility/DoneUtility.js 7da13c3a73d2
@@ -962,7 +962,7 @@ tm/kotlin/core/Spec.kt ccff6a998f67
 tm/kotlin/core/Utility.kt e58c52ea77eb
 tm/kotlin/feature/BaseFeature.kt 7c6e6ca6dbb1
 tm/kotlin/feature/FeatureOptions.kt 3e80a9bbd671
-tm/kotlin/feature/TestFeature.kt 4feb1349dddc
+tm/kotlin/feature/TestFeature.kt db5c3028b777
 tm/kotlin/src/feature/README.md 9f8bde3f12e0
 tm/kotlin/src/feature/base/.gitkeep e3b0c44298fc
 tm/kotlin/src/feature/test/.gitkeep e3b0c44298fc
@@ -1014,7 +1014,7 @@ src/cmp/lua/Main_lua.ts 12d209201ab5
 src/cmp/lua/Package_lua.ts a2e4299a9bbb
 src/cmp/lua/PrepareAuth_lua.ts cc49fb94005b
 src/cmp/lua/ReadmeEntity_lua.ts 999d57a4df76
-src/cmp/lua/ReadmeExamplesTest_lua.ts 260bc16a05b4
+src/cmp/lua/ReadmeExamplesTest_lua.ts 491f3286a9f4
 src/cmp/lua/ReadmeExplanation_lua.ts 74936c6ce867
 src/cmp/lua/ReadmeHowto_lua.ts aead8448d720
 src/cmp/lua/ReadmeInstall_lua.ts 8edbb24fb530
@@ -1053,7 +1053,7 @@ tm/lua/core/result.lua 62e6251e1970
 tm/lua/core/spec.lua e323438a86ab
 tm/lua/core/utility_type.lua f233b369e60f
 tm/lua/feature/base_feature.lua 324bcbfd0836
-tm/lua/feature/test_feature.lua 8dbc578636ee
+tm/lua/feature/test_feature.lua 75f8c585ffa2
 tm/lua/src/feature/README.md 74fc01b8a34f
 tm/lua/src/feature/base/.gitkeep e3b0c44298fc
 tm/lua/src/feature/test/.gitkeep e3b0c44298fc
@@ -1147,7 +1147,7 @@ src/cmp/ocaml/utility_ocaml.ts c7b75b60e39c
 tm/ocaml/LICENSE 7a036af3f8a4
 tm/ocaml/Makefile 8d078f54d655
 tm/ocaml/VERSION e6635045e1d2
-tm/ocaml/sdk_features.ml c804b086c314
+tm/ocaml/sdk_features.ml be2b76a3332f
 tm/ocaml/sdk_helpers.ml 24933d1c5031
 tm/ocaml/sdk_json.ml 7514a4177ebb
 tm/ocaml/sdk_runtime.ml e3f0e8690ccb
@@ -1185,7 +1185,7 @@ src/cmp/perl/Main_perl.ts dbbd7bcdcdde
 src/cmp/perl/Package_perl.ts d2ec55eddbfc
 src/cmp/perl/PrepareAuth_perl.ts f6a9d71e3a11
 src/cmp/perl/ReadmeEntity_perl.ts 3caae01227dc
-src/cmp/perl/ReadmeExamplesTest_perl.ts 253f5ff5172d
+src/cmp/perl/ReadmeExamplesTest_perl.ts 45d8c2903ea0
 src/cmp/perl/ReadmeExplanation_perl.ts 92641c9d1f5c
 src/cmp/perl/ReadmeHowto_perl.ts 2e6bdaf03369
 src/cmp/perl/ReadmeInstall_perl.ts 6ae7b2078d0b
@@ -1224,7 +1224,7 @@ tm/perl/core/result.pm c8daeffb69ad
 tm/perl/core/spec.pm c0abea4855e4
 tm/perl/core/utility_type.pm ae99fdaaf3fb
 tm/perl/feature/base_feature.pm af88f71c0bd9
-tm/perl/feature/test_feature.pm 873a6e50ea39
+tm/perl/feature/test_feature.pm 9ce89de1c07f
 tm/perl/lib/Voxgig/Struct.pm 2248852d7d9c
 tm/perl/src/feature/README.md 74fc01b8a34f
 tm/perl/src/feature/base/.gitkeep e3b0c44298fc
@@ -1292,7 +1292,7 @@ src/cmp/php/Main_php.ts 7cf40a8baf83
 src/cmp/php/Package_php.ts d6e54478a53a
 src/cmp/php/PrepareAuth_php.ts c1c0ed41ade8
 src/cmp/php/ReadmeEntity_php.ts a7b6d0434fe8
-src/cmp/php/ReadmeExamplesTest_php.ts 4cefb6086f6a
+src/cmp/php/ReadmeExamplesTest_php.ts 9e282bdf7586
 src/cmp/php/ReadmeExplanation_php.ts 452c1e096b54
 src/cmp/php/ReadmeHowto_php.ts c73e518bbf33
 src/cmp/php/ReadmeInstall_php.ts a67ef3f9bffe
@@ -1332,7 +1332,7 @@ tm/php/core/Result.php b64c27a0b2ea
 tm/php/core/Spec.php fa1a0f00a842
 tm/php/core/UtilityType.php db9bbfcd0871
 tm/php/feature/BaseFeature.php 19116b364fc2
-tm/php/feature/TestFeature.php f361014f62a3
+tm/php/feature/TestFeature.php d07f7174a250
 tm/php/src/feature/README.md 74fc01b8a34f
 tm/php/src/feature/base/.gitkeep e3b0c44298fc
 tm/php/src/feature/test/.gitkeep e3b0c44298fc
@@ -1397,7 +1397,7 @@ src/cmp/py/Main_py.ts 5630f0feb88c
 src/cmp/py/Package_py.ts 69c4ddb165ed
 src/cmp/py/PrepareAuth_py.ts 43f26508d49b
 src/cmp/py/ReadmeEntity_py.ts c0fff5be4178
-src/cmp/py/ReadmeExamplesTest_py.ts d5ddfcfa68be
+src/cmp/py/ReadmeExamplesTest_py.ts e962e254edcb
 src/cmp/py/ReadmeExplanation_py.ts d7c6b57925cf
 src/cmp/py/ReadmeHowto_py.ts c6edf97e409e
 src/cmp/py/ReadmeInstall_py.ts 1b6d219a6182
@@ -1439,7 +1439,7 @@ tm/py/pkg/core/utility_type.py 7418a6215444
 tm/py/pkg/entity/__init__.py e3b0c44298fc
 tm/py/pkg/feature/__init__.py e3b0c44298fc
 tm/py/pkg/feature/base_feature.py a2f222f0d8c3
-tm/py/pkg/feature/test_feature.py d29a8bc0a10a
+tm/py/pkg/feature/test_feature.py 27cc02899624
 tm/py/pkg/utility/__init__.py e3b0c44298fc
 tm/py/pkg/utility/clean.py 3f247700ff94
 tm/py/pkg/utility/done.py c8768dd1d36f
@@ -1532,7 +1532,7 @@ src/cmp/rb/Main_rb.ts d92e24cb896b
 src/cmp/rb/Package_rb.ts 2391c7fb8c9b
 src/cmp/rb/PrepareAuth_rb.ts 7db3c548fb09
 src/cmp/rb/ReadmeEntity_rb.ts cbeafa4bd3d4
-src/cmp/rb/ReadmeExamplesTest_rb.ts ff618b1e3e11
+src/cmp/rb/ReadmeExamplesTest_rb.ts 617653f6d99d
 src/cmp/rb/ReadmeExplanation_rb.ts 324138dd35be
 src/cmp/rb/ReadmeHowto_rb.ts 209213e8a905
 src/cmp/rb/ReadmeInstall_rb.ts e3cdcd29853e
@@ -1572,7 +1572,7 @@ tm/rb/core/result.rb c5a2738849ce
 tm/rb/core/spec.rb ef2d2977fec2
 tm/rb/core/utility_type.rb 7b18e66203b4
 tm/rb/feature/base_feature.rb 9d4c4d6ec5a8
-tm/rb/feature/test_feature.rb b8813015fa1d
+tm/rb/feature/test_feature.rb e4f233f8ddd3
 tm/rb/src/feature/README.md 74fc01b8a34f
 tm/rb/src/feature/base/.gitkeep e3b0c44298fc
 tm/rb/src/feature/test/.gitkeep e3b0c44298fc
@@ -1685,7 +1685,7 @@ tm/rust/core/types.rs 09174c6cc827
 tm/rust/core/utility_type.rs 78e54c3c4229
 tm/rust/feature/base.rs 8f5e41de2dc6
 tm/rust/feature/support.rs 7a1c1d32aa08
-tm/rust/feature/test.rs 867bbc0f5b7f
+tm/rust/feature/test.rs f31ebcee0db3
 tm/rust/src/feature/README.md f623e5e15340
 tm/rust/src/feature/base/.gitkeep e3b0c44298fc
 tm/rust/src/feature/test/.gitkeep e3b0c44298fc
@@ -1823,7 +1823,7 @@ tm/scala/feature/RetryFeature.scala 117b343c03a4
 tm/scala/feature/SecretsFeature.scala 913d21c1b86d
 tm/scala/feature/StreamingFeature.scala 8ce264ff9371
 tm/scala/feature/TelemetryFeature.scala b1bf710a5667
-tm/scala/feature/TestFeature.scala 03218282723c
+tm/scala/feature/TestFeature.scala 4beda610ed9b
 tm/scala/feature/TimeoutFeature.scala 007550fa7e00
 tm/scala/feature/ValidateFeature.scala 9b6d56f5f601
 tm/scala/feature/secrets/plugin/Capability.scala 3253ff6657e5
@@ -1985,7 +1985,7 @@ tm/swift/Sources/ProjectNameSDK/core/Types.swift b9ccbf883682
 tm/swift/Sources/ProjectNameSDK/core/Utility.swift cd0aef211f89
 tm/swift/Sources/ProjectNameSDK/feature/BaseFeature.swift 37dd198da054
 tm/swift/Sources/ProjectNameSDK/feature/FeatureOptions.swift 954574861e32
-tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift a372e73cf9d2
+tm/swift/Sources/ProjectNameSDK/feature/TestFeature.swift 493a7167ea88
 tm/swift/Sources/ProjectNameSDK/utility/Feature.swift cd51fa259b26
 tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift 134e1f21b1f7
 tm/swift/Sources/ProjectNameSDK/utility/Graphql.swift 7a1b53755d05
@@ -2033,7 +2033,7 @@ src/cmp/ts/Package_ts.ts 61d52a361614
 src/cmp/ts/PrepareAuth_ts.ts 13cc5f3c7f72
 src/cmp/ts/ReadmeEntity_ts.ts 4f1fb3daec35
 src/cmp/ts/ReadmeExampleTest_ts.ts 5dfbe547c29e
-src/cmp/ts/ReadmeExamplesTest_ts.ts d4e879fc6805
+src/cmp/ts/ReadmeExamplesTest_ts.ts 1dc83e9a7ade
 src/cmp/ts/ReadmeExplanation_ts.ts adae2c36cfde
 src/cmp/ts/ReadmeHowto_ts.ts 7b342767c2d0
 src/cmp/ts/ReadmeInstall_ts.ts 2fd8f46f6491
@@ -2083,7 +2083,7 @@ tm/ts/src/Result.ts 45a656e9d5df
 tm/ts/src/Spec.ts 4cda481b4c0b
 tm/ts/src/feature/README.md 630422c5567f
 tm/ts/src/feature/base/BaseFeature.ts f42ad986da12
-tm/ts/src/feature/test/TestFeature.ts cf1c2fa70913
+tm/ts/src/feature/test/TestFeature.ts c6930bbbd35a
 tm/ts/src/tsconfig.json 8276b533f6e4
 tm/ts/src/types.ts 5e1f5518bba6
 tm/ts/src/utility/CleanUtility.ts 127a2d0fb150
@@ -2256,7 +2256,7 @@ tm/zig/feature/secrets/sekreto/sekreto.zig c954b158ece1
 tm/zig/feature/streaming.zig 05fa89649a72
 tm/zig/feature/support.zig 0151996e9aab
 tm/zig/feature/telemetry.zig a1284e6f3d25
-tm/zig/feature/test.zig da6899da648e
+tm/zig/feature/test.zig 8347363f4faf
 tm/zig/feature/timeout.zig 098ad542880b
 tm/zig/feature/validate.zig 51b300758835
 tm/zig/src/feature/README.md f623e5e15340

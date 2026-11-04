@@ -79,6 +79,15 @@ private func testResolveMatch(_ ctx2: Context, _ explicitMatch: VMap) -> VMap {
   return VMap()
 }
 
+// The entity's declared identity field (`entity.id.field`), where it names
+// one other than the `id` every record already carries.
+private func testDeclaredIdField(_ config: VMap?, _ entityName: String) -> String? {
+  guard let config = config,
+        let field = getpath(.map(config), jtp("entity", entityName, "id", "field")).asString,
+        field != "", field != "id" else { return nil }
+  return field
+}
+
 // The record the mock keeps: the request data without `$body`, which only the
 // wire carries.
 private func testRecord(_ reqdata: VMap) -> VMap {
@@ -197,6 +206,9 @@ public final class TestFeature: BaseFeature {
     _ = walk(.map(entity), { key, val, _, path in
       if path.count == 2, val.isMap, key.asString != nil {
         val.asMap!.entries["id"] = .string(strkey(key))
+        if let idField = testDeclaredIdField(ctx.config, path[0]) {
+          val.asMap!.entries[idField] = .string(strkey(key))
+        }
       }
       return val
     }, nil)
@@ -275,6 +287,9 @@ public final class TestFeature: BaseFeature {
         let ent = clone(.map(testRecord(ctx2.reqdata)))
         if let entm = ent.asMap {
           entm.entries["id"] = id
+          if let idField = testDeclaredIdField(ctx2.config, op.entity), isNil(entm.entries[idField] ?? .noval) {
+            entm.entries[idField] = id
+          }
           if let idStr = id.asString { entmap.entries[idStr] = .map(entm) }
           delprop(.map(entm), .string("$KEY"))
           return testRespond(ctx2, 200, clone(.map(entm)), nil)
