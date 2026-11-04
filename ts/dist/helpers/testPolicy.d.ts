@@ -6,6 +6,7 @@ type LiveFlowNeeds = {
     examples?: [string, Scalar][];
     record?: string;
     discover?: Record<string, string>;
+    unrouted?: [string, string][];
     blocked?: string;
 };
 declare function liveFlowNeeds(entity: any, flow: any): LiveFlowNeeds;
@@ -22,6 +23,9 @@ type LiveIdentity = {
     ex?: Scalar;
 };
 declare function liveIdentity(entity: any, flow: any): LiveIdentity | undefined;
+declare function liveRepeatsId(entity: any): boolean;
+declare function liveLoadComparesId(entity: any, flow: any): boolean;
+declare function liveUnrouted(entity: any, step: any, flow?: any): [string, string][];
 declare function liveStepExamples(entity: any, step: any, flow?: any): [string, Scalar][];
 type FlowRouteArg = {
     name: string;
@@ -69,4 +73,4 @@ declare function liveExcludedSummary(plan: {
     excluded: LiveExcluded[];
 }): string;
 export type { LiveFlowNeeds, LiveIdentity, LiveExcluded, LiveGetOnly, LiveGate, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute };
-export { liveStrict, liveStrictNote, liveFlowNeeds, liveIdentity, liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes, liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason, liveFlowPlan, liveGates, liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, };
+export { liveStrict, liveStrictNote, liveFlowNeeds, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted, liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes, liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason, liveFlowPlan, liveGates, liveDirectGetOnly, liveExcludedLines, liveExcludedSummary, };

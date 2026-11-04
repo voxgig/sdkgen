@@ -18,13 +18,13 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityDataIdField, entityRecordIdField,
+  isAuthActive, envName, envToken, entityRecordIdField,
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
-  liveEntity, liveIdentity,
+  liveEntity, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted,
 } from '@voxgig/sdkgen'
 
 
@@ -97,18 +97,22 @@ function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string, 
 `
   }
   if (null != needs.discover) {
-    const match = Object.entries(needs.discover)
-      .map(([k, v]: any) => ` [${JSON.stringify(k)}] = setup.Idmap[${JSON.stringify(v)}],`)
+    const match = 'new Dictionary<string, object?> {' + Object.entries(needs.discover)
+      .map(([k, v]: any) => (needs.unrouted || []).some(([name]: [string, string]) => k === name) ?
+        ` [${JSON.stringify(k)}] = StructUtils.GetProp(setup.Idmap, ${JSON.stringify(v)}),` :
+        ` [${JSON.stringify(k)}] = setup.Idmap[${JSON.stringify(v)}],`)
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
-        .map(([k, ex]) => ` [${JSON.stringify(k)}] = ${formatCsValue(ex)},`)).join('')
+        .map(([k, ex]) => ` [${JSON.stringify(k)}] = ${formatCsValue(ex)},`)).join('') + ' }'
+    const omit = needs.unrouted || []
     out += `        if (setup.Live)
         {
             var liveId = setup.SyntheticOnly ? null : StructUtils.GetProp(setup.Idmap, ${JSON.stringify(identity.key)});
 ${undefined === identity.ex ? '' : `            liveId ??= ${formatCsValue(identity.ex)};
-`}            TestRunner.LivePace();
+`}${0 === omit.length ? '' : `            var liveMatch = ${match};
+${liveOmit(omit, 'liveMatch', '            ')}`}            TestRunner.LivePace();
             if (!TestRunner.LiveExisting(setup.Data, LIVE_STRICT, ${JSON.stringify(entity.name)},
                 ${JSON.stringify(identity.field)}, liveId,
-                () => client.${entity.Name}().List(new Dictionary<string, object?> {${match} }, null)))
+                () => client.${entity.Name}().List(${0 === omit.length ? match : 'liveMatch'}, null)))
             {
                 return;
             }
@@ -539,8 +543,11 @@ const generateList: OpGen = (ctx, step, index) => {
     Content(`        var ${matchvar} = new Dictionary<string, object?>
         {
 `)
+    // *_ENTID may not give a binding the live route does not take.
+    const unrouted = liveUnrouted(entity, step, flow).map(([name]) => name)
     for (const [key, val] of matchEntries) {
-      Content(`            ["${key}"] = setup.Idmap["${val}"],
+      Content(unrouted.includes(key) ? `            ["${key}"] = StructUtils.GetProp(setup.Idmap, "${val}"),
+` : `            ["${key}"] = setup.Idmap["${val}"],
 `)
     }
     Content(`        };
@@ -649,7 +656,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
         Assert.True(${resdatavar} != null, "expected update result to be a map");
 `)
   if (hasEntIdU) {
-    Content(sameId(entity, `StructUtils.GetProp(${resdatavar}, ${rid(entity)})`, `${datavar}Up["id"]`,
+    Content(sameId(liveRepeatsId(entity), `StructUtils.GetProp(${resdatavar}, ${rid(entity)})`, `${datavar}Up["id"]`,
       'expected update result id to match'))
   }
 
@@ -715,7 +722,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
         var ${datavar}LoadResult = Helpers.ToMapAny(${datavar}Loaded is IEntity le ? le.Data() : ${datavar}Loaded);
         Assert.True(${datavar}LoadResult != null, "expected load result to be a map");
-${sameId(entity, `StructUtils.GetProp(${datavar}LoadResult, ${rid(entity)})`,
+${sameId(liveLoadComparesId(entity, flow), `StructUtils.GetProp(${datavar}LoadResult, ${rid(entity)})`,
   `StructUtils.GetProp(${srcdatavar}, ${rid(entity)})`, 'expected load result id to match')}`)
   }
   else {
@@ -767,11 +774,11 @@ const LIVE_PACE = `        if (setup.Live)
 `
 
 
-// A result's identity matches the one asked for, live only where the
-// record's schema has a field to repeat it in.
-function sameId(entity: any, result: string, expected: string, message: string): string {
+// A result's identity matches the one asked for, live only as the live
+// entity harness compares it.
+function sameId(compares: boolean, result: string, expected: string, message: string): string {
   const check = `Assert.True(TestRunner.LiveSameId(${result}, ${expected}), ${JSON.stringify(message)});`
-  return null == entityDataIdField(entity) ? `        if (!setup.Live)
+  return !compares ? `        if (!setup.Live)
         {
             ${check}
         }
@@ -809,10 +816,22 @@ function fixtureIdentity(entity: any): string {
 // A live step sends each example its route requires and the step leaves unbound.
 function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
   const fills = liveStepExamples(entity, step, flow)
-  return 0 === fills.length ? '' : `        if (setup.Live)
+  const omit = liveUnrouted(entity, step, flow)
+  return 0 === fills.length + omit.length ? '' : `        if (setup.Live)
         {
-${fills.map(([k, ex]) => `            ${matchvar}[${JSON.stringify(k)}] = ${formatCsValue(ex)};\n`).join('')}        }
+${fills.map(([k, ex]) => `            ${matchvar}[${JSON.stringify(k)}] = ${formatCsValue(ex)};\n`).join('')}${liveOmit(omit, matchvar, '            ')}        }
 `
+}
+
+
+// A binding the live route does not take is sent only as *_ENTID gives it.
+function liveOmit(omit: [string, string][], matchvar: string, indent: string): string {
+  return omit.map(([name, key]) =>
+    `${indent}if (setup.SyntheticOnly || StructUtils.GetProp(setup.Idmap, ${JSON.stringify(key)}) == null)
+${indent}{
+${indent}    ${matchvar}.Remove(${JSON.stringify(name)});
+${indent}}
+`).join('')
 }
 
 

@@ -28,7 +28,8 @@ async function runLiveEntity(setup, entity, flow, accessor, facts = {}, settle =
         ...Object.values(entity.fields || {}).map((field) => field?.n).filter(Boolean)]);
     const marks = new Map();
     const idField = entity.id?.field || 'id';
-    const declared = new Set(Object.values(entity.fields || {}).map((field) => field?.n));
+    const declared = new Set(Object.values(entity.fields || {})
+        .filter((field) => true !== field?.syn).map((field) => field?.n));
     const repeatsId = null != entity.id && (declared.has(idField) || declared.has('id'));
     const copy = (value) => JSON.parse(JSON.stringify(value ?? {}));
     const hasCreate = steps.some(step => step.o === 'create');

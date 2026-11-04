@@ -32,7 +32,7 @@ import {
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
-  liveEntity, liveIdentity,
+  liveEntity, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted,
 } from '@voxgig/sdkgen'
 
 
@@ -452,10 +452,11 @@ function liveFlowGate(entity: any, needs: any, identity: any, strict: boolean, s
 `
   }
   if (null != needs.discover) {
-    const match = Object.entries(needs.discover)
+    const match = 'map[string]any{' + Object.entries(needs.discover)
       .map(([k, v]: any) => `${JSON.stringify(k)}: setup.idmap[${JSON.stringify(v)}]`)
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
-        .map(([k, ex]) => `${JSON.stringify(k)}: ${JSON.stringify(ex)}`)).join(', ')
+        .map(([k, ex]) => `${JSON.stringify(k)}: ${JSON.stringify(ex)}`)).join(', ') + '}'
+    const omit = needs.unrouted || []
     out += `		if setup.live {
 			var _liveId any
 			if !setup.syntheticOnly {
@@ -464,10 +465,11 @@ function liveFlowGate(entity: any, needs: any, identity: any, strict: boolean, s
 ${undefined === identity.ex ? '' : `			if _liveId == nil {
 				_liveId = ${goIdLit(identity.ex)}
 			}
-`}			livePace()
+`}${0 === omit.length ? '' : `			_liveMatch := ${match}
+${liveOmit(omit, '_liveMatch', '\t\t\t')}`}			livePace()
 			liveExisting(t, ${strictConst}, setup.data, ${JSON.stringify(entity.name)}, ${JSON.stringify(identity.field)}, _liveId,
 				func() (any, error) {
-					return client.${entity.Name}(nil).List(map[string]any{${match}}, nil)
+					return client.${entity.Name}(nil).List(${0 === omit.length ? match : '_liveMatch'}, nil)
 				})
 		}
 `
@@ -703,7 +705,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
 		}
 `)
   if (hasEntIdU) {
-    Content(`		if ${liveDeclared(entity)}!liveSameId(${resdatavar}[${rid(entity)}], ${datavar}Up["id"]) {
+    Content(`		if ${liveDeclared(liveRepeatsId(entity))}!liveSameId(${resdatavar}[${rid(entity)}], ${datavar}Up["id"]) {
 			t.Fatal("expected update result id to match")
 		}
 `)
@@ -779,7 +781,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 		if ${datavar}LoadResult == nil {
 			t.Fatal("expected load result to be a map")
 		}
-		if ${liveDeclared(entity)}!liveSameId(${datavar}LoadResult[${rid(entity)}], ${srcdatavar}[${rid(entity)}]) {
+		if ${liveDeclared(liveLoadComparesId(entity, flow))}!liveSameId(${datavar}LoadResult[${rid(entity)}], ${srcdatavar}[${rid(entity)}]) {
 			t.Fatal("expected load result id to match")
 		}
 `)
@@ -845,10 +847,9 @@ function rid(entity: any): string {
 }
 
 
-// A record whose schema has no field for the identity cannot repeat it, so a
-// live result is not compared on it.
-function liveDeclared(entity: any): string {
-  return null == entityDataIdField(entity) ? '!setup.live && ' : ''
+// A live result is compared on its identity only as the live entity harness does.
+function liveDeclared(compares: boolean): string {
+  return compares ? '' : '!setup.live && '
 }
 
 
@@ -872,11 +873,21 @@ function fixtureIdentity(entity: any): string {
 // A live step sends each example its route requires and the step leaves unbound.
 function liveFill(entity: any, step: any, matchvar: string, flow: any) {
   const fills = liveStepExamples(entity, step, flow)
-  if (0 < fills.length) {
+  const omit = liveUnrouted(entity, step, flow)
+  if (0 < fills.length + omit.length) {
     Content(`		if setup.live {
-${fills.map(([k, ex]) => `			${matchvar}[${JSON.stringify(k)}] = ${JSON.stringify(ex)}\n`).join('')}		}
+${fills.map(([k, ex]) => `			${matchvar}[${JSON.stringify(k)}] = ${JSON.stringify(ex)}\n`).join('')}${liveOmit(omit, matchvar, '\t\t\t')}		}
 `)
   }
+}
+
+
+// A binding the live route does not take is sent only as *_ENTID gives it.
+function liveOmit(omit: [string, string][], matchvar: string, indent: string): string {
+  return omit.map(([name, key]) => `${indent}if setup.syntheticOnly || setup.idmap[${JSON.stringify(key)}] == nil {
+${indent}	delete(${matchvar}, ${JSON.stringify(name)})
+${indent}}
+`).join('')
 }
 
 

@@ -20,11 +20,11 @@ import {
   getMatchEntries,
   isAuthActive,
   serverVarEnv,
-  serverVariables, envName, envToken, entityDataIdField, entityRecordIdField,
+  serverVariables, envName, envToken, entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
-  liveEntity, liveIdentity,
+  liveEntity, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted,
 } from '@voxgig/sdkgen'
 
 
@@ -99,7 +99,9 @@ function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string, 
     const match = Object.entries(needs.discover)
       .map(([k, v]: any) => `match.put(${JSON.stringify(k)}, setup.idmap.get(${JSON.stringify(v)}));`)
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
-        .map(([k, ex]) => `match.put(${JSON.stringify(k)}, ${javaLit(ex)});`)).join(' ')
+        .map(([k, ex]) => `match.put(${JSON.stringify(k)}, ${javaLit(ex)});`))
+      .concat((needs.unrouted || []).map(([name, key]: [string, string]) =>
+        `if (${unsupplied(key)}) match.remove(${JSON.stringify(name)});`)).join(' ')
     out += `    if (setup.live) {
       Object liveId = setup.syntheticOnly ? null : setup.idmap.get(${JSON.stringify(identity.key)});
 ${undefined === identity.ex ? '' : `      if (liveId == null) {
@@ -623,7 +625,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     assertNotNull(${resdatavar}, "expected update result to be a map");
 `)
   if (hasEntIdU) {
-    Content(sameId(entity, `${resdatavar}.get(${rid(entity)})`, `${datavar}Up.get("id")`,
+    Content(sameId(liveRepeatsId(entity), `${resdatavar}.get(${rid(entity)})`, `${datavar}Up.get("id")`,
       'expected update result id to match'))
   }
 
@@ -687,7 +689,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    Object ${datavar}Loaded = ${entvar}.load(${matchvar}, null);
     Map<String, Object> ${datavar}LoadResult = Helpers.toMapAny(${datavar}Loaded instanceof SdkEntity ? ((SdkEntity) ${datavar}Loaded).data() : ${datavar}Loaded);
     assertNotNull(${datavar}LoadResult, "expected load result to be a map");
-${sameId(entity, `${datavar}LoadResult.get(${rid(entity)})`, `${srcdatavar}.get(${rid(entity)})`,
+${sameId(liveLoadComparesId(entity, flow), `${datavar}LoadResult.get(${rid(entity)})`, `${srcdatavar}.get(${rid(entity)})`,
   'expected load result id to match')}`)
   }
   else {
@@ -735,11 +737,11 @@ const LIVE_PACE = `    if (setup.live) {
 `
 
 
-// A result's identity matches the one asked for, live only where the
-// record's schema has a field to repeat it in.
-function sameId(entity: any, result: string, expected: string, message: string): string {
+// A result's identity matches the one asked for, live only as the live
+// entity harness compares it.
+function sameId(compares: boolean, result: string, expected: string, message: string): string {
   const check = `assertTrue(RunnerSupport.liveSameId(${result}, ${expected}), ${JSON.stringify(message)});`
-  return null == entityDataIdField(entity) ? `    if (!setup.live) {
+  return !compares ? `    if (!setup.live) {
       ${check}
     }
 ` : `    ${check}
@@ -786,9 +788,17 @@ function javaIdLit(value: any): string {
 // A live step sends each example its route requires and the step leaves unbound.
 function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
   const fills = liveStepExamples(entity, step, flow)
-  return 0 === fills.length ? '' : `    if (setup.live) {
-${fills.map(([k, ex]) => `      ${matchvar}.put(${JSON.stringify(k)}, ${javaLit(ex)});\n`).join('')}    }
+  const omit = liveUnrouted(entity, step, flow)
+  return 0 === fills.length + omit.length ? '' : `    if (setup.live) {
+${fills.map(([k, ex]) => `      ${matchvar}.put(${JSON.stringify(k)}, ${javaLit(ex)});\n`).join('')}${omit.map(([name, key]) =>
+    `      if (${unsupplied(key)}) {\n        ${matchvar}.remove(${JSON.stringify(name)});\n      }\n`).join('')}    }
 `
+}
+
+
+// A binding the live route does not take is sent only as *_ENTID gives it.
+function unsupplied(key: string): string {
+  return `setup.syntheticOnly || setup.idmap.get(${JSON.stringify(key)}) == null`
 }
 
 

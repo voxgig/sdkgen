@@ -8435,7 +8435,7 @@ function writeProbe(target: string, root: string): void {
 describe('a flow over an identity its live record may lack compiles and passes offline', () => {
 
   let tmp = ''
-  const names = ['venue', 'saying', 'pokemon', 'badge', 'year', 'box']
+  const names = ['venue', 'saying', 'pokemon', 'badge', 'year', 'box', 'motto', 'announcement', 'episode', 'track']
   const Names = names.map((name) => name[0].toUpperCase() + name.slice(1))
   const LONG = 30 * 60 * 1000
 
@@ -8561,8 +8561,8 @@ describe('a flow over an identity its live record may lack compiles and passes o
       for (const kind of ['entity', 'direct']) {
         const res = run(perl, ['-Ilib', 't/' + name + '_' + kind + '.t'], root)
         if (res.timedOut) return t.skip('perl: ' + res.out)
-        ok(res.ok && !/^not ok/m.test(res.out) &&
-          ('direct' === kind || new RegExp('^ok \\d+ - ' + name + ' load: id$', 'm').test(res.out)),
+        ok(res.ok && !/^not ok/m.test(res.out) && ('direct' === kind || 'episode' === name ||
+          new RegExp('^ok \\d+ - ' + name + ' load: id$', 'm').test(res.out)),
         'perl: the ' + name + ' ' + kind + ' test failed:\n' + tail(res.out))
       }
     }

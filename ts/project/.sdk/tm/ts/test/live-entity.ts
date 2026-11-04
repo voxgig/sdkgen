@@ -30,7 +30,8 @@ async function runLiveEntity(
     ...Object.values(entity.fields || {}).map((field: any) => field?.n).filter(Boolean)])
   const marks = new Map<string, { name: string, value: any }>()
   const idField = entity.id?.field || 'id'
-  const declared = new Set(Object.values(entity.fields || {}).map((field: any) => field?.n))
+  const declared = new Set(Object.values(entity.fields || {})
+    .filter((field: any) => true !== field?.syn).map((field: any) => field?.n))
   const repeatsId = null != entity.id && (declared.has(idField) || declared.has('id'))
   const copy = (value: any) => JSON.parse(JSON.stringify(value ?? {}))
   const hasCreate = steps.some(step => step.o === 'create')
