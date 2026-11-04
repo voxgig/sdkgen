@@ -97,6 +97,13 @@
       (when (vs/ismap uh)
         (doseq [item (or (vs/items uh) [])]
           (.put ^java.util.Map (core/oget spec :headers) (vs/getprop item 0) (vs/getprop item 1)))))
+    ;; A raw request has no point to declare its response type, so it asks
+    ;; for the JSON it reads: an API that negotiates on Accept otherwise
+    ;; answers in its own default format. A caller's own accept wins.
+    (let [^java.util.Map sh (core/oget spec :headers)]
+      (when (and (instance? java.util.Map sh)
+                 (not-any? #(= "accept" (.toLowerCase (str %) java.util.Locale/ROOT)) (.keySet sh)))
+        (.put sh "accept" "application/json")))
     (let [[_ err] ((core/uget ctx :prepare-auth) ctx)]
       (when err (core/sdk-throw err)))
     (let [[fetchdef fd-err] ((core/uget ctx :make-fetch-def) ctx)]

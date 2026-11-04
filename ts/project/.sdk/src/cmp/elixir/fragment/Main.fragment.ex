@@ -151,6 +151,16 @@ defmodule ProjectName do
       Enum.each(H.entries(uh), fn {k, v} -> S.setprop(S.getprop(spec, "headers"), k, v) end)
     end
 
+    # A raw request has no point to declare its response type, so it asks
+    # for the JSON it reads: an API that negotiates on Accept otherwise
+    # answers in its own default format. A caller's own accept wins.
+    spec_headers = S.getprop(spec, "headers")
+
+    if S.ismap(spec_headers) and
+         not Enum.any?(H.entries(spec_headers), fn {k, _} -> String.downcase(to_string(k)) == "accept" end) do
+      S.setprop(spec_headers, "accept", "application/json")
+    end
+
     {_spec, err} = Utility.prepare_auth(ctx)
     if err != nil, do: raise(err)
 

@@ -240,7 +240,11 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '    ')}
         {
             return; // skipped via sdk-test-control.json
         }
-${listSkipBlock}        var client = setup.Client;
+${listSkipBlock}        if (setup.Live)
+        {
+            TestRunner.LivePace();
+        }
+        var client = setup.Client;
 
 `)
 
@@ -375,7 +379,11 @@ ${listLiveQueryLines ? '        if (setup.Live)\n        {\n' + listLiveQueryLin
         {
             return; // skipped via sdk-test-control.json
         }
-${loadSkipBlock}        var client = setup.Client;
+${loadSkipBlock}        if (setup.Live)
+        {
+            TestRunner.LivePace();
+        }
+        var client = setup.Client;
 
 `)
 
@@ -406,11 +414,20 @@ ${loadSkipBlock}        var client = setup.Client;
 `)
           }
 
+          // The list sends the query its route requires, as direct-list does.
+          const listQueryLines = liveQueryExamples(listPoint)
+            .map(([name, ex]) => `            listQuery[${formatCsValue(name)}] = ${formatCsValue(ex)};\n`).join('')
+          if ('' !== listQueryLines) {
+            Content(`            var listQuery = new Dictionary<string, object?>();
+` + listQueryLines)
+          }
+
           Content(`            var listResult = client.Direct(new Dictionary<string, object?>
             {
                 ["path"] = "${listPath}",
                 ["method"] = "GET",
-                ["params"] = listParams,
+                ["params"] = listParams,${'' === listQueryLines ? '' : `
+                ["query"] = listQuery,`}
             });
             if (!TestRunner.LiveOk(listResult))
             {

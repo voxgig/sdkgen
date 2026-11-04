@@ -248,6 +248,8 @@ static void ${evar}_direct_load() {
     ASSERT_EQ((int)setup.calls.as_list()->size(), 1, "expected 1 call");
     Value call = (*setup.calls.as_list())[0];
     ASSERT_EQ_VAL(getp(getp(call, "init"), "method"), Value("GET"), "expected method GET");
+    ASSERT_EQ_VAL(getp(getp(getp(call, "init"), "headers"), "accept"), Value("application/json"),
+      "expected accept application/json");
     std::string url = as_str(getp(call, "url"));
 `)
       for (let i = 0; i < loadParams.length; i++) {

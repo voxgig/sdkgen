@@ -1737,6 +1737,14 @@ let prepare (client : sdk_client) (fetchargs : value) : value =
                          ("step", Str "start")]) in
   ctx.c_spec <- Some sp;
   (match getp fetchargs "headers" with Map _ as uh -> List.iter (fun k -> setp sp.sp_headers k (getp uh k)) (keysof uh) | _ -> ());
+  (* A raw request has no point to declare its response type, so it asks for
+   * the JSON it reads: an API that negotiates on Accept otherwise answers in
+   * its own default format. A caller's own accept wins. *)
+  (match sp.sp_headers with
+   | Map _ as hm ->
+     if not (List.exists (fun k -> String.lowercase_ascii k = "accept") (keysof hm)) then
+       setp hm "accept" (Str "application/json")
+   | _ -> ());
   (match u.u_prepare_auth ctx with (_, Some err) -> raise (Sdk_error_exc err) | _ -> ());
   (match u.u_make_fetch_def ctx with (_, Some err) -> raise (Sdk_error_exc err) | (fd, None) -> fd)
 

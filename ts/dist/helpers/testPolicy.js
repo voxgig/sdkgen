@@ -4,6 +4,7 @@ exports.LIVE_GETONLY_ENV = void 0;
 exports.liveStrict = liveStrict;
 exports.liveStrictNote = liveStrictNote;
 exports.liveFlowNeeds = liveFlowNeeds;
+exports.liveIdentity = liveIdentity;
 exports.liveIdKey = liveIdKey;
 exports.liveExampleIds = liveExampleIds;
 exports.liveQueryExamples = liveQueryExamples;
@@ -27,6 +28,7 @@ const buildIdNames_1 = require("./buildIdNames");
 const graphqlPoint_1 = require("./graphqlPoint");
 const getMatchEntries_1 = require("./getMatchEntries");
 const resolved_1 = require("./resolved");
+const opShape_1 = require("./opShape");
 function liveStrict(model, target) {
     const perTarget = null == target ? undefined :
         model?.main?.[types_1.KIT]?.target?.[target]?.test?.live?.strict;
@@ -183,6 +185,22 @@ function liveRouteExamples(entity, opname, bound, pathBound = false) {
 function liveRecordFound(entity, flow) {
     return null != entity?.id &&
         (0, buildIdNames_1.flowSteps)(flow).some((step) => 'create' === step.o || 'list' === step.o);
+}
+// Where a create-less flow's load reads the identity of the record it finds,
+// and what a record lacking one takes instead: the *_ENTID value under `key`,
+// else `ex`, the example of the id parameter of the load's route.
+function liveIdentity(entity, flow) {
+    const load = (0, buildIdNames_1.flowSteps)(flow).find((step) => 'load' === step.o);
+    if (null == load || null == entity?.id)
+        return undefined;
+    const hasId = (point) => (point.g?.params || []).some((arg) => 'id' === arg.n);
+    const point = flowLoadRoute(entity, load)?.point ??
+        plainPoints(entity, 'load').find((point) => !isAction(point) && hasId(point));
+    const ex = scalarExample((point?.g?.params || []).find((arg) => 'id' === arg.n));
+    return {
+        field: (0, opShape_1.entityRecordIdField)(entity), key: loadIdKey(entity, load),
+        ...(undefined === ex ? {} : { ex }),
+    };
 }
 // The idmap key a live load of no known record reads its id from.
 function loadIdKey(entity, step) {

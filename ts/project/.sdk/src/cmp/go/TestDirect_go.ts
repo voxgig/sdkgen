@@ -248,7 +248,10 @@ func Test${entity.Name}Direct(t *testing.T) {
 			t.Skip(_reason)
 			return
 		}
-${listSkipBlock}		client := setup.client
+${listSkipBlock}		if setup.live {
+			livePace()
+		}
+		client := setup.client
 
 `)
 
@@ -396,7 +399,10 @@ ${listLiveQueryLines}
 			t.Skip(_reason)
 			return
 		}
-${loadSkipBlock}		client := setup.client
+${loadSkipBlock}		if setup.live {
+			livePace()
+		}
+		client := setup.client
 
 `)
 
@@ -428,10 +434,20 @@ ${loadSkipBlock}		client := setup.client
 `)
           }
 
+          // The list sends the query its route requires, as direct-list does.
+          const listQueryLines = liveQueryExamples(listPoint)
+            .map(([name, ex]) => `\t\t\tlistQuery[${JSON.stringify(name)}] = ${JSON.stringify(ex)}\n`)
+            .join('')
+          if ('' !== listQueryLines) {
+            Content(`			listQuery := map[string]any{}
+` + listQueryLines)
+          }
+
           Content(`			listResult, listErr := client.Direct(map[string]any{
 				"path":   "${listPath}",
 				"method": "GET",
-				"params": listParams,
+				"params": listParams,${'' === listQueryLines ? '' : `
+				"query":  listQuery,`}
 			})
 			if listErr != nil {
 				liveMiss(t, ${strictConst}, "Live list discovery failed: %v", listErr)
@@ -716,7 +732,10 @@ function generateDirectGraphqlGo(
 			t.Skip(_reason)
 			return
 		}
-${getOnlySkip}${skipBlock}		client := setup.client
+${getOnlySkip}${skipBlock}		if setup.live {
+			livePace()
+		}
+		client := setup.client
 
 		variables := map[string]any{}
 		if setup.live {

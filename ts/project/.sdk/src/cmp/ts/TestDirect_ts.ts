@@ -375,6 +375,12 @@ ${loadParams.map((p: any, i: number) => `      ${jsProp('params', p.n)} = 'direc
       `        ${lp.name}: setup.idmap['${lp.key}'],`).join('\n')
     const ancestorParamLines = liveAncestorParams.map((lp: any) =>
       `      ${jsProp('params', lp.name)} = setup.idmap['${lp.key}']`).join('\n')
+    // The list sends the query its route requires, as direct-list does.
+    const listQueryLines = liveQueryExamples(listPoint)
+      .map(([name, ex]) => `\n          ${jsKey(name)}: ${JSON.stringify(ex)},`).join('')
+    const listQueryBlock = '' === listQueryLines ? '' : `
+        query: {${listQueryLines}
+        },`
 
     liveParamsBlock = `    if (setup.live) {
 ${liveQueryPrefix}      const listResult: any = await client.direct({
@@ -382,7 +388,7 @@ ${liveQueryPrefix}      const listResult: any = await client.direct({
         method: 'GET',
         params: {
 ${listParamLines}
-        },
+        },${listQueryBlock}
       })
       if (!listResult.ok || listResult.status < 200 || listResult.status >= 300) {
         return void liveMiss(t, LIVE_STRICT, 'Live list discovery failed: ' + describeLive(listResult))

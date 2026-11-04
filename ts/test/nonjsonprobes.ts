@@ -11,7 +11,8 @@ const CHALLENGE = '<!DOCTYPE html><html><head><title>Just a moment...</title></h
   '<body>key ' + NONJSON_SECRET + ' ' + 'x'.repeat(300) + '</body></html>'
 
 // `readable` says whether the body parses as JSON; a stub transport, standing
-// in for one the caller supplies, marks the response from it.
+// in for one the caller supplies, marks the response from it. `encoding`
+// compresses the body unasked; `negotiate` answers XML unless asked for JSON.
 type NonjsonCase = {
   name: string
   status: number
@@ -19,6 +20,8 @@ type NonjsonCase = {
   body: string
   readable: boolean
   agent?: string
+  encoding?: 'gzip' | 'deflate'
+  negotiate?: boolean
 }
 
 const NONJSON_CASES: NonjsonCase[] = [
@@ -31,6 +34,12 @@ const NONJSON_CASES: NonjsonCase[] = [
     readable: false },
   { name: 'json', status: 200, type: 'application/json', body: '[{"id":"x01","title":"x"}]',
     readable: true },
+  { name: 'gzip', status: 200, type: 'application/json', body: '[{"id":"x01","title":"x"}]',
+    readable: true, encoding: 'gzip' },
+  { name: 'deflate', status: 200, type: 'application/json', body: '[{"id":"x01","title":"x"}]',
+    readable: true, encoding: 'deflate' },
+  { name: 'accept', status: 200, type: 'application/json', body: '[{"id":"x01","title":"x"}]',
+    readable: true, negotiate: true },
 ]
 
 // What each case's message must hold, beside the code it must carry.
@@ -59,6 +68,9 @@ const NONJSON_EXPECT: Record<string, { code: string, parts: string[], absent: st
     absent: [],
   },
   json: { code: 'ok', parts: [], absent: [] },
+  gzip: { code: 'ok', parts: [], absent: [] },
+  deflate: { code: 'ok', parts: [], absent: [] },
+  accept: { code: 'ok', parts: [], absent: [] },
 }
 
 
@@ -124,6 +136,7 @@ function nonjsonTsv(): string {
 // Answers /c<i>... with case i, and anything else with a 404.
 const NONJSON_SERVER = `
 const http = require('node:http')
+const zlib = require('node:zlib')
 const cases = require(process.argv[2])
 const server = http.createServer((req, res) => {
   req.resume()
@@ -134,10 +147,25 @@ const server = http.createServer((req, res) => {
       res.writeHead(404, { 'content-type': 'text/plain' })
       return res.end('no case')
     }
-    const headers = { 'content-length': Buffer.byteLength(c.body) }
-    if (null != c.type) headers['content-type'] = c.type
+    let body = Buffer.from(c.body)
+    let type = c.type
+    if (c.negotiate && !/application\\/json/i.test(String(req.headers.accept || ''))) {
+      body = Buffer.from('<?xml version="1.0" encoding="UTF-8"?><cats/>')
+      type = 'application/xml; charset=UTF-8'
+    }
+    const headers = {}
+    if ('gzip' === c.encoding) {
+      body = zlib.gzipSync(body)
+      headers['content-encoding'] = 'gzip'
+    }
+    else if ('deflate' === c.encoding) {
+      body = zlib.deflateSync(body)
+      headers['content-encoding'] = 'deflate'
+    }
+    headers['content-length'] = body.length
+    if (null != type) headers['content-type'] = type
     res.writeHead(c.status, headers)
-    res.end(c.body)
+    res.end(body)
   })
 })
 server.listen(0, '127.0.0.1', () => console.log('listening ' + server.address().port))

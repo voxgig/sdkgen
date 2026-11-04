@@ -225,7 +225,10 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '    ')}
             $this->markTestSkipped($_reason ?? "skipped via sdk-test-control.json");
             return;
         }
-${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}        $client = $setup["client"];
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}        if (!empty($setup["live"])) {
+            Runner::live_pace();
+        }
+        $client = $setup["client"];
 
         $params = [];
         $query = [];
@@ -286,7 +289,10 @@ ${listLiveQueryLines ? '        if ($setup["live"]) {\n' + listLiveQueryLines + 
             $this->markTestSkipped($_reason ?? "skipped via sdk-test-control.json");
             return;
         }
-${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}        $client = $setup["client"];
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}        if (!empty($setup["live"])) {
+            Runner::live_pace();
+        }
+        $client = $setup["client"];
 
         $params = [];
         $query = [];
@@ -296,10 +302,14 @@ ${loadLiveQueryLines ? loadLiveQueryLines + '\n' : ''}`)
         Content(loadExampleLines + '\n')
       }
       else if (discover) {
+        // The list sends the query its route requires, as direct-list does.
+        const listQuery = liveQueryExamples(listPoint)
+          .map(([name, ex]) => `${formatPhpValue(name)} => ${formatPhpValue(ex)}`).join(', ')
         Content(`            $list_result = $client->direct([
                 "path" => "${listPath}",
                 "method" => "GET",
-                "params" => [${listParams.map((p: any) => `"${p.n}" => $setup["idmap"]["${liveKey(p)}"] ?? null`).join(', ')}],
+                "params" => [${listParams.map((p: any) => `"${p.n}" => $setup["idmap"]["${liveKey(p)}"] ?? null`).join(', ')}],${'' === listQuery ? '' : `
+                "query" => [${listQuery}],`}
             ]);
             if (!self::liveOk($list_result)) {
                 Runner::live_miss(self::LIVE_STRICT, "Live list discovery failed: " . Runner::live_describe($list_result));

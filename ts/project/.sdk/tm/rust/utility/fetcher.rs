@@ -129,9 +129,18 @@ fn default_http_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectN
         }
     }
 
-    let body_txt = resp
-        .into_string()
-        .map_err(|e| ProjectNameError::new("fetch_body", &format!("{}", e)))?;
+    // ureq decodes gzip and no deflate, which a server may send whatever the
+    // request asked for.
+    let deflate = resp
+        .header("content-encoding")
+        .map(|v| v.trim().eq_ignore_ascii_case("deflate"))
+        .unwrap_or(false);
+    let body_txt = if deflate {
+        read_deflate(resp.into_reader())?
+    } else {
+        resp.into_string()
+            .map_err(|e| ProjectNameError::new("fetch_body", &format!("{}", e)))?
+    };
 
     let parsed = if body_txt.trim().is_empty() {
         Ok(Value::Noval)
@@ -149,6 +158,37 @@ fn default_http_fetch(fullurl: &str, fetchdef: &Value) -> Result<Value, ProjectN
         ("body", Value::str(body_txt)),
         ("unreadable", Value::Bool(unreadable)),
     ]))
+}
+
+// A deflate body as text, bounded as ureq's into_string bounds one. Deflate is
+// zlib-wrapped, or raw as some servers send it.
+fn read_deflate(reader: impl std::io::Read) -> Result<String, ProjectNameError> {
+    use std::io::Read;
+    const LIMIT: usize = 10 * 1_024 * 1_024;
+    let fail = |e: std::io::Error| {
+        ProjectNameError::new("fetch_body", &format!("response body is not valid deflate data: {}", e))
+    };
+    let mut raw: Vec<u8> = Vec::new();
+    reader.take((LIMIT + 1) as u64).read_to_end(&mut raw).map_err(fail)?;
+    let zlib = raw.len() > 1
+        && raw[0] & 0x0f == 8
+        && ((u16::from(raw[0]) << 8) | u16::from(raw[1])) % 31 == 0;
+    let mut out: Vec<u8> = Vec::new();
+    if zlib {
+        flate2::read::ZlibDecoder::new(&raw[..])
+            .take((LIMIT + 1) as u64)
+            .read_to_end(&mut out)
+            .map_err(fail)?;
+    } else {
+        flate2::read::DeflateDecoder::new(&raw[..])
+            .take((LIMIT + 1) as u64)
+            .read_to_end(&mut out)
+            .map_err(fail)?;
+    }
+    if out.len() > LIMIT {
+        return Err(ProjectNameError::new("fetch_body", "response too big for into_string"));
+    }
+    Ok(String::from_utf8_lossy(&out).to_string())
 }
 
 pub fn fetcher_util(

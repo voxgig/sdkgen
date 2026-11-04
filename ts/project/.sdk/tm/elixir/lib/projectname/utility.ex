@@ -2548,31 +2548,66 @@ defmodule ProjectName.Utility do
             S.setprop(acc, String.downcase(to_string(k)), to_string(v))
           end)
 
-        body_str = if is_binary(resp_body), do: resp_body, else: to_string(resp_body)
+        raw_body = if is_binary(resp_body), do: resp_body, else: to_string(resp_body)
 
-        {json_body, unreadable} =
-          if String.trim(body_str) != "" do
-            case safe_json(body_str) do
-              {:ok, v} -> {v, false}
-              _ -> {nil, true}
-            end
-          else
-            {nil, false}
-          end
+        case decode_body(raw_body, S.getprop(rh, "content-encoding")) do
+          {:ok, body_str} ->
+            {json_body, unreadable} =
+              if String.trim(body_str) != "" do
+                case safe_json(body_str) do
+                  {:ok, v} -> {v, false}
+                  _ -> {nil, true}
+                end
+              else
+                {nil, false}
+              end
 
-        status_text = if status < 400, do: "OK", else: "Error"
+            status_text = if status < 400, do: "OK", else: "Error"
 
-        {S.jm([
-           "status", status,
-           "statusText", status_text,
-           "headers", rh,
-           "json", fn -> json_body end,
-           "body", body_str,
-           "unreadable", unreadable
-         ]), nil}
+            {S.jm([
+               "status", status,
+               "statusText", status_text,
+               "headers", rh,
+               "json", fn -> json_body end,
+               "body", body_str,
+               "unreadable", unreadable
+             ]), nil}
+
+          {:error, message} ->
+            {nil, message}
+        end
 
       {:error, reason} ->
         {nil, inspect(reason)}
+    end
+  end
+
+  # :httpc decodes no Content-Encoding, and a server may compress its answer
+  # whatever the request asked for. Deflate is zlib-wrapped,
+  # or raw as some servers send it.
+  defp decode_body("", _encoding), do: {:ok, ""}
+
+  defp decode_body(body, encoding) do
+    enc = encoding |> to_string() |> String.trim() |> String.downcase()
+
+    try do
+      case enc do
+        e when e in ["gzip", "x-gzip"] ->
+          {:ok, :zlib.gunzip(body)}
+
+        "deflate" ->
+          {:ok,
+           try do
+             :zlib.uncompress(body)
+           rescue
+             _ -> :zlib.unzip(body)
+           end}
+
+        _ ->
+          {:ok, body}
+      end
+    rescue
+      e -> {:error, "response body is not valid " <> enc <> " data: " <> Exception.message(e)}
     end
   end
 

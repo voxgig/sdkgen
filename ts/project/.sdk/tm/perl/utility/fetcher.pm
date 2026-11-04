@@ -175,10 +175,19 @@ sub _send_once {
     $resp_headers->{lc "$k"} = $v;
   }
 
+  my $content = $res->{content};
+  my $encoding = lc(defined $resp_headers->{'content-encoding'} ? $resp_headers->{'content-encoding'} : '');
+  $encoding =~ s/\A\s+|\s+\z//g;
+  if (defined $content && length $content && $encoding =~ /\A(?:gzip|x-gzip|deflate)\z/) {
+    my ($decoded, $derr) = _decode_body($content, $encoding);
+    return (undef, $derr) if defined $derr;
+    $content = $decoded;
+  }
+
   my $json_body;
   my $unreadable = 0;
-  if (defined $res->{content} && $res->{content} =~ /\S/) {
-    my $parsed = eval { $json_body = Voxgig::Struct::parse_json($res->{content}); 1 };
+  if (defined $content && $content =~ /\S/) {
+    my $parsed = eval { $json_body = Voxgig::Struct::parse_json($content); 1 };
     $unreadable = 1 unless $parsed;
   }
   my $captured = $json_body;
@@ -188,9 +197,39 @@ sub _send_once {
     'statusText' => (defined $res->{reason} ? "$res->{reason}" : ''),
     'headers' => $resp_headers,
     'json' => sub { $captured },
-    'body' => $res->{content},
+    'body' => $content,
     'unreadable' => $unreadable,
   }, undef);
+}
+
+# HTTP::Tiny decodes no Content-Encoding, and a server may compress its answer
+# whatever the request asked for. Deflate is zlib-wrapped, or
+# raw as some servers send it.
+sub _decode_body {
+  no warnings 'once';
+  my ($content, $encoding) = @_;
+  my $out;
+  my $ok = eval {
+    if ('deflate' eq $encoding) {
+      require IO::Uncompress::Inflate;
+      require IO::Uncompress::RawInflate;
+      IO::Uncompress::Inflate::inflate(\$content => \$out, Transparent => 0)
+        or IO::Uncompress::RawInflate::rawinflate(\$content => \$out, Transparent => 0)
+        or die "$IO::Uncompress::RawInflate::RawInflateError\n";
+    }
+    else {
+      require IO::Uncompress::Gunzip;
+      IO::Uncompress::Gunzip::gunzip(\$content => \$out, Transparent => 0)
+        or die "$IO::Uncompress::Gunzip::GunzipError\n";
+    }
+    1;
+  };
+  if (!$ok) {
+    my $e = "$@";
+    $e =~ s/\s+\z//;
+    return (undef, "response body is not valid $encoding data: $e");
+  }
+  return ($out, undef);
 }
 
 $REGISTRY{fetcher} = sub {

@@ -18,13 +18,13 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityRecordIdField,
+  isAuthActive, envName, envToken, entityDataIdField, entityRecordIdField,
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
-  liveEntity,
+  liveEntity, liveIdentity,
 } from '@voxgig/sdkgen'
 
 import { perlStringLiteral } from './utility_perl'
@@ -47,7 +47,7 @@ type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 // The live prologue of a flow built from offline fixtures: blocked without
 // the ids it binds, a create-less load reading the first listed record, and
 // a lenient run reporting a failed check without failing the test.
-function liveFlowGate(N: string, entity: any, needs: any, entidEnv: string,
+function liveFlowGate(N: string, entity: any, needs: any, identity: any, entidEnv: string,
   strict: boolean): string {
   const label = entity.name + ': basic flow'
   let out = ''
@@ -79,9 +79,10 @@ function liveFlowGate(N: string, entity: any, needs: any, entidEnv: string,
   }
   out += '  my $client = $setup->{client};\n'
   if (null != needs.record) {
+    const id = `$setup->{idmap}{${perlLit(needs.record)}}`
     out += `  if ($setup->{live}) {
     ${N}TestRunner::live_existing($setup, LIVE_STRICT, '${label}', '${entity.name}',
-      sub { [{ 'id' => $setup->{idmap}{${perlLit(needs.record)}} }] }) or last BASIC_FLOW;
+      sub { [{ 'id' => ${id} }] }, ${perlLit(identity.field)}, ${id}) or last BASIC_FLOW;
   }
 `
   }
@@ -91,8 +92,12 @@ function liveFlowGate(N: string, entity: any, needs: any, entidEnv: string,
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
         .map(([k, ex]) => `'${k}' => ${perlLit(ex)}`)).join(', ')
     out += `  if ($setup->{live}) {
+    my $live_id = $setup->{synthetic_only} ? undef : $setup->{idmap}{${perlLit(identity.key)}};
+${undefined === identity.ex ? '' : `    $live_id //= ${perlLit(identity.ex)};
+`}    ${N}TestRunner::live_pace();
     ${N}TestRunner::live_existing($setup, LIVE_STRICT, '${label}', '${entity.name}',
-      sub { $client->${entity.Name}(undef)->list({${match}}, undef) }) or last BASIC_FLOW;
+      sub { $client->${entity.Name}(undef)->list({${match}}, undef) }, ${perlLit(identity.field)}, $live_id)
+      or last BASIC_FLOW;
   }
 `
   }
@@ -211,7 +216,8 @@ BASIC_FLOW: {
 
     const flowBody = (flow: any) => {
       const steps = flowSteps(flow) as any[]
-      Content(liveFlowGate(N, entity, liveFlowNeeds(entity, flow), ENTIDVAR, strict) + '  my %V;\n\n')
+      Content(liveFlowGate(N, entity, liveFlowNeeds(entity, flow), liveIdentity(entity, flow), ENTIDVAR, strict) +
+        '  my %V;\n\n')
 
       // Check if the flow has a create step
       const flowHasCreate = steps.some((s: any) => s.o === 'create')
@@ -231,6 +237,7 @@ BASIC_FLOW: {
       each(steps, (step: any, index: any) => {
         const opgen: OpGen = GENERATE_OP[step.o]
         if (opgen) {
+          Content(`  ${N}TestRunner::live_pace() if $setup->{live};\n`)
           opgen({ ...genCtx, flow }, step, index)
           Content('\n')
         }
@@ -519,7 +526,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   ok(defined $V{${resdatavar}}, '${entity.name} update: data');
 `)
   if (hasEntIdU) {
-    Content(`  is($V{${resdatavar}}{${rid(entity)}}, $V{${datavar}_up}{id}, '${entity.name} update: id');
+    Content(`  is($V{${resdatavar}}{${rid(entity)}}, $V{${datavar}_up}{id}, '${entity.name} update: id')${liveDeclared(entity)};
 `)
   }
 
@@ -582,7 +589,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
   $V{${datavar}_load_result} = ${N}Helpers::to_map(ref($V{${datavar}_loaded}) && $V{${datavar}_loaded}->can('data_get') ? $V{${datavar}_loaded}->data_get : $V{${datavar}_loaded});
   ok(defined $V{${datavar}_load_result}, '${entity.name} load: data');
-  is($V{${datavar}_load_result}{${rid(entity)}}, $V{${srcdatavar}}{${rid(entity)}}, '${entity.name} load: id');
+  is($V{${datavar}_load_result}{${rid(entity)}}, $V{${srcdatavar}}{${rid(entity)}}, '${entity.name} load: id')${liveDeclared(entity)};
 `)
   }
   else {
@@ -625,6 +632,13 @@ ${parentMatch(step, matchvar)}  $V{${entvar}}->remove($V{${matchvar}}, undef);
 function rid(entity: any): string {
   const field = entityRecordIdField(entity)
   return /^[A-Za-z_]\w*$/.test(field) ? field : `'${field}'`
+}
+
+
+// `is` compares string forms, so a number matches the path value naming it;
+// a record whose schema has no field for the identity is not compared live.
+function liveDeclared(entity: any): string {
+  return null == entityDataIdField(entity) ? ' unless $setup->{live}' : ''
 }
 
 

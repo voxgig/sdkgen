@@ -238,9 +238,10 @@ def live_describe(result):
         (" " + str(ctype).split(";")[0].strip() if ctype else "")
 
 
-def live_existing(setup, strict, name, list_call):
+def live_existing(setup, strict, name, list_call, field, fallback):
     """Finds the record a create-less flow reads live: the first its list
-    returns, put where the flow reads the fixture's existing records."""
+    returns, put where the flow reads the fixture's existing records. A
+    record with no value in the identity field takes the fallback identity."""
     try:
         found = list_call()
     except Exception as err:
@@ -249,8 +250,36 @@ def live_existing(setup, strict, name, list_call):
         live_miss(strict, "Live list discovery returned no list")
     if 0 == len(found):
         live_empty(f"The account has no {name} record to load")
+    record = entity_data(found[0])
+    if not isinstance(record, dict) or record.get(field) is None:
+        if fallback is None:
+            live_miss(strict, f"Live entity test blocked: the listed {name} record has no {field}, "
+                      "and neither *_ENTID nor the load route's example gives one")
+        record = {**(record if isinstance(record, dict) else {}), field: fallback}
     existing = setup["data"].setdefault("existing", {})
-    existing[name] = {"live01": entity_data(found[0])}
+    existing[name] = {"live01": record}
+
+
+def live_same_id(a, b):
+    """Identities compared by their string forms: a route parameter's
+    value is a string where the record may hold a number."""
+    if a is None or b is None:
+        return a is None and b is None
+    return _live_id_str(a) == _live_id_str(b)
+
+
+def _live_id_str(v):
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    return str(v)
+
+
+def live_pace():
+    """Sleeps test.live.delayMs before a live request."""
+    import time
+    time.sleep(live_delay_ms() / 1000.0)
 
 
 def live_observe(live_env, strict):

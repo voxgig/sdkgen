@@ -465,7 +465,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     const ${resdatavar} = (await ${entvar}.update(${datavar})).data()
 `)
   if (hasEntIdU) {
-    Content(`    assert(${rid(entity, resdatavar)} === ${datavar}.id)
+    Content(`    assert(${rid(entity, untyped(entity, resdatavar))} === ${datavar}.id)
 `)
   }
   else {
@@ -551,7 +551,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
   }
   if (hasEntId) {
     Content(`    const ${datavar} = (await ${entvar}.load(${matchvar})).data()
-    assert(${rid(entity, datavar)} === ${rid(entity, srcdatavar)})
+    assert(${rid(entity, untyped(entity, datavar))} === ${rid(entity, srcdatavar)})
 `)
   }
   else {
@@ -602,6 +602,12 @@ const generateRemove: OpGen = (ctx, step, index) => {
 // The record field the entity's identity is read from, on a record.
 function rid(entity: any, record: string): string {
   return jsProp(record, entityRecordIdField(entity))
+}
+
+
+// A record type with no identity field has no member to read it from.
+function untyped(entity: any, record: string): string {
+  return null == entityDataIdField(entity) ? `(${record} as any)` : record
 }
 
 

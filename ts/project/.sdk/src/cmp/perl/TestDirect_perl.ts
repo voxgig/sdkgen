@@ -238,7 +238,8 @@ sub live_ok {
     pass('${label}: skipped via sdk-test-control.json');
     last DIRECT_LIST;
   }
-${getOnlyKeysBlock(model, entity, label, 'DIRECT_LIST', listParams.map(liveKey))}${liveKeysBlock(N, label, 'DIRECT_LIST', listParams.map(liveKey), entidEnvVar)}  my $client = $setup->{client};
+${getOnlyKeysBlock(model, entity, label, 'DIRECT_LIST', listParams.map(liveKey))}${liveKeysBlock(N, label, 'DIRECT_LIST', listParams.map(liveKey), entidEnvVar)}  ${N}TestRunner::live_pace() if $setup->{live};
+  my $client = $setup->{client};
 
   my $params = {};
   my $query = {};
@@ -303,7 +304,8 @@ ${listLiveQueryLines ? '  if ($setup->{live}) {\n' + listLiveQueryLines + '  }\n
     pass('${label}: skipped via sdk-test-control.json');
     last DIRECT_LOAD;
   }
-${getOnlyKeysBlock(model, entity, label, 'DIRECT_LOAD', [...new Set(loadLiveIdKeys)])}${liveKeysBlock(N, label, 'DIRECT_LOAD', [...new Set(loadLiveIdKeys)], entidEnvVar)}  my $client = $setup->{client};
+${getOnlyKeysBlock(model, entity, label, 'DIRECT_LOAD', [...new Set(loadLiveIdKeys)])}${liveKeysBlock(N, label, 'DIRECT_LOAD', [...new Set(loadLiveIdKeys)], entidEnvVar)}  ${N}TestRunner::live_pace() if $setup->{live};
+  my $client = $setup->{client};
 
   my $params = {};
   my $query = {};
@@ -313,10 +315,14 @@ ${loadLiveQueryLines ? loadLiveQueryLines + '\n' : ''}`)
         Content(loadExampleLines + '\n')
       }
       else if (discover) {
+        // The list sends the query its route requires, as direct-list does.
+        const listQuery = liveQueryExamples(listPoint)
+          .map(([name, ex]) => `${perlScalar(name)} => ${perlScalar(ex)}`).join(', ')
         Content(`    my $list_result = $client->direct({
       'path' => '${listPath}',
       'method' => 'GET',
-      'params' => {${listParams.map((p: any) => `'${p.n}' => $setup->{idmap}{'${liveKey(p)}'}`).join(', ')}},
+      'params' => {${listParams.map((p: any) => `'${p.n}' => $setup->{idmap}{'${liveKey(p)}'}`).join(', ')}},${'' === listQuery ? '' : `
+      'query' => {${listQuery}},`}
     });
     if (!live_ok($list_result)) {
       ${N}TestRunner::live_miss(LIVE_STRICT, '${label}', 'Live list discovery failed: ' . ${N}TestRunner::live_describe($list_result));

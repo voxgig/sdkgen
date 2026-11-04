@@ -1,7 +1,10 @@
 package SCALAPACKAGE.utility
 
+import java.io.{ByteArrayInputStream, IOException, UncheckedIOException}
 import java.net.{InetSocketAddress, ProxySelector, URI}
 import java.net.http.{HttpClient, HttpRequest, HttpResponse}
+import java.nio.charset.{Charset, StandardCharsets}
+import java.util.zip.{GZIPInputStream, Inflater, InflaterInputStream}
 import java.util.{LinkedHashMap, List => JList, Map => JMap}
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.{BiFunction, Function => JFunction, Supplier}
@@ -99,7 +102,7 @@ object Fetcher {
     }
 
     val resp =
-      try clientFor(fetchdef).send(reqb.build(), HttpResponse.BodyHandlers.ofString())
+      try clientFor(fetchdef).send(reqb.build(), decodedText())
       catch { case e: Exception => throw new RuntimeException("fetch: " + e.getMessage, e) }
 
     val headers = new LinkedHashMap[String, Object]()
@@ -127,6 +130,50 @@ object Fetcher {
     out.put("body", bodyText)
     out.put("unreadable", java.lang.Boolean.valueOf(unreadable))
     out
+  }
+
+  // The body as text, as BodyHandlers.ofString reads it, once a gzip or
+  // deflate Content-Encoding is undone: HttpClient decodes none, and a server
+  // may compress its answer whatever the request asked for.
+  def decodedText(): HttpResponse.BodyHandler[String] = (info: HttpResponse.ResponseInfo) => {
+    val encoding = info.headers().firstValue("content-encoding").orElse("").trim.toLowerCase
+    val charset = charsetOf(info.headers().firstValue("content-type").orElse(""))
+    HttpResponse.BodySubscribers.mapping[Array[Byte], String](
+      HttpResponse.BodySubscribers.ofByteArray(),
+      (bytes: Array[Byte]) =>
+        try new String(decodeBody(bytes, encoding), charset)
+        catch {
+          case e: IOException =>
+            throw new UncheckedIOException(
+              "response body is not valid " + encoding + " data: " + e.getMessage, e)
+        })
+  }
+
+  // Deflate is zlib-wrapped, or raw as some servers send it.
+  def decodeBody(bytes: Array[Byte], encoding: String): Array[Byte] = {
+    if (bytes == null || bytes.isEmpty) return if (bytes == null) Array.emptyByteArray else bytes
+    if ("gzip" == encoding || "x-gzip" == encoding) {
+      val in = new GZIPInputStream(new ByteArrayInputStream(bytes))
+      try return in.readAllBytes() finally in.close()
+    }
+    if ("deflate" == encoding) {
+      val zlib = bytes.length > 1 && (bytes(0) & 0x0f) == 8 &&
+        (((bytes(0) & 0xff) << 8) | (bytes(1) & 0xff)) % 31 == 0
+      val in = new InflaterInputStream(new ByteArrayInputStream(bytes), new Inflater(!zlib))
+      try return in.readAllBytes() finally in.close()
+    }
+    bytes
+  }
+
+  def charsetOf(contentType: String): Charset = {
+    for (part <- contentType.split(";")) {
+      val kv = part.trim.split("=", 2)
+      if (kv.length == 2 && "charset".equalsIgnoreCase(kv(0).trim)) {
+        return try Charset.forName(kv(1).trim.replace("\"", ""))
+        catch { case _: RuntimeException => StandardCharsets.UTF_8 }
+      }
+    }
+    StandardCharsets.UTF_8
   }
 
   def statusText(status: Int): String = status match {

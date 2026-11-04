@@ -216,7 +216,10 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '  ')}
       reason == null,
       if (reason == null || "" == reason) "skipped via sdk-test-control.json" else reason,
     )
-${listSkipBlock}    val client = setup.client
+${listSkipBlock}    if (setup.live) {
+      RunnerSupport.livePace()
+    }
+    val client = setup.client
 
 `)
 
@@ -329,7 +332,10 @@ ${listLiveQueryLines ? '    if (setup.live) {\n' + listLiveQueryLines + '    }\n
       reason == null,
       if (reason == null || "" == reason) "skipped via sdk-test-control.json" else reason,
     )
-${loadSkipBlock}    val client = setup.client
+${loadSkipBlock}    if (setup.live) {
+      RunnerSupport.livePace()
+    }
+    val client = setup.client
 
 `)
 
@@ -359,10 +365,19 @@ ${loadSkipBlock}    val client = setup.client
 `)
           }
 
+          // The list sends the query its route requires, as direct-list does.
+          const listQueryLines = liveQueryExamples(listPoint)
+            .map(([name, ex]) => `      listQuery[${kotlinLiteral(name)}] = ${kotlinLiteral(ex)}\n`).join('')
+          if ('' !== listQueryLines) {
+            Content(`      val listQuery = linkedMapOf<String, Any?>()
+` + listQueryLines)
+          }
+
           Content(`      val listResult = client.direct(jm(
           "path", "${listPath}",
           "method", "GET",
-          "params", listParams))
+          "params", listParams${'' === listQueryLines ? '' : `,
+          "query", listQuery`}))
       if (!liveOk(listResult)) {
         RunnerSupport.liveMiss(LIVE_STRICT, "Live list discovery failed: " + RunnerSupport.liveDescribe(listResult))
       }

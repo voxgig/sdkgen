@@ -436,9 +436,10 @@ public final class RunnerSupport {
   }
 
   // The record a create-less flow reads live: the first its list returns,
-  // put where the flow reads the fixture's existing records.
+  // put where the flow reads the fixture's existing records. A record with
+  // no value in the identity field takes the fallback identity.
   public static void liveExisting(Map<String, Object> data, boolean strict, String name,
-      Supplier<Object> list) {
+      String field, Object fallback, Supplier<Object> list) {
     Object found = null;
     try {
       found = list.get();
@@ -455,6 +456,19 @@ public final class RunnerSupport {
     }
     Object first = items.get(0);
     Object record = first instanceof Entity ? ((Entity) first).data() : first;
+    Map<String, Object> fields = Helpers.toMapAny(record);
+    if (fields == null || fields.get(field) == null) {
+      if (fallback == null) {
+        liveMiss(strict, "Live entity test blocked: the listed " + name + " record has no " + field
+            + ", and neither *_ENTID nor the load route's example gives one");
+      }
+      Map<String, Object> filled = new LinkedHashMap<>();
+      if (fields != null) {
+        filled.putAll(fields);
+      }
+      filled.put(field, fallback);
+      record = filled;
+    }
     Object existing = data.get("existing");
     if (!(existing instanceof Map)) {
       existing = new LinkedHashMap<String, Object>();
@@ -463,6 +477,35 @@ public final class RunnerSupport {
     Map<String, Object> holder = new LinkedHashMap<>();
     holder.put("live01", record);
     ((Map<String, Object>) existing).put(name, holder);
+  }
+
+  // Identities compared by their string forms: a route parameter's
+  // value is a string where the record may hold a number.
+  public static boolean liveSameId(Object a, Object b) {
+    if (a == null || b == null) {
+      return a == null && b == null;
+    }
+    return liveIdString(a).equals(liveIdString(b));
+  }
+
+  private static String liveIdString(Object v) {
+    if (v instanceof Double || v instanceof Float) {
+      double d = ((Number) v).doubleValue();
+      if (!Double.isInfinite(d) && d == Math.rint(d) && Math.abs(d) < 9.0e15) {
+        return Long.toString((long) d);
+      }
+    }
+    return String.valueOf(v);
+  }
+
+  // Sleeps test.live.delayMs before a live request.
+  public static void livePace() {
+    try {
+      Thread.sleep(liveDelayMs());
+    }
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+    }
   }
 
   // In a lenient live run a failing check skips, observing the live API.

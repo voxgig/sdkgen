@@ -101,7 +101,8 @@ low-level methods:
   (useful for debugging or a custom transport).
 
 Both accept a map with `path`, `method`, `params`, `query`, `headers`,
-and `body`.
+and `body`. A request whose headers name no `accept` asks for
+`application/json`, the format the SDK reads.
 
 ## See also
 

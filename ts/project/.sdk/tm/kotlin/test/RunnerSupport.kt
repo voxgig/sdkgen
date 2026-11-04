@@ -343,8 +343,10 @@ object RunnerSupport {
   }
 
   // The record a create-less flow reads live: the first its list returns,
-  // put where the flow reads the fixture's existing records.
-  fun liveExisting(data: MutableMap<String, Any?>, strict: Boolean, name: String, list: () -> Any?) {
+  // put where the flow reads the fixture's existing records. A record with
+  // no value in the identity field takes the fallback identity.
+  fun liveExisting(data: MutableMap<String, Any?>, strict: Boolean, name: String,
+    field: String, fallback: Any?, list: () -> Any?) {
     var found: Any? = null
     try {
       found = list()
@@ -359,13 +361,48 @@ object RunnerSupport {
       liveEmpty("The account has no " + name + " record to load")
     }
     val first = items[0]
-    val record = if (first is Entity) first.data() else first
+    var record = if (first is Entity) first.data() else first
+    val fields = record as? Map<*, *>
+    if (fields == null || fields[field] == null) {
+      if (fallback == null) {
+        liveMiss(strict, "Live entity test blocked: the listed " + name + " record has no " + field +
+          ", and neither *_ENTID nor the load route's example gives one")
+      }
+      val filled = linkedMapOf<String, Any?>()
+      fields?.forEach { (k, v) -> filled[k.toString()] = v }
+      filled[field] = fallback
+      record = filled
+    }
     var existing = data["existing"]
     if (existing !is MutableMap<*, *>) {
       existing = linkedMapOf<String, Any?>()
       data["existing"] = existing
     }
     (existing as MutableMap<String, Any?>)[name] = linkedMapOf<String, Any?>("live01" to record)
+  }
+
+  // Identities compared by their string forms: a route parameter's
+  // value is a string where the record may hold a number.
+  fun liveSameId(a: Any?, b: Any?): Boolean {
+    if (a == null || b == null) {
+      return a == null && b == null
+    }
+    return liveIdString(a) == liveIdString(b)
+  }
+
+  private fun liveIdString(v: Any): String {
+    if (v is Double || v is Float) {
+      val d = (v as Number).toDouble()
+      if (!d.isInfinite() && d == Math.rint(d) && Math.abs(d) < 9.0e15) {
+        return d.toLong().toString()
+      }
+    }
+    return v.toString()
+  }
+
+  // Sleeps test.live.delayMs before a live request.
+  fun livePace() {
+    Thread.sleep(liveDelayMs().toLong())
   }
 
   // In a lenient live run a failing check skips, observing the live API.

@@ -18,13 +18,13 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityRecordIdField,
+  isAuthActive, envName, envToken, entityDataIdField, entityRecordIdField,
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
-  liveEntity,
+  liveEntity, liveIdentity,
 } from '@voxgig/sdkgen'
 
 
@@ -50,7 +50,7 @@ type OpGen = (ctx: GenCtx, step: ModelEntityFlowStep, index: number) => void
 // The live prologue of a flow built from offline fixtures: blocked without
 // the ids it binds, a create-less load reading the first listed record, and
 // a lenient run observing its checks rather than failing on them.
-function liveFlowGate(entity: any, needs: any, entidEnv: string, strict: boolean,
+function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string, strict: boolean,
   hasSteps: boolean): string {
   let out = ''
   for (const [k, ex] of needs.examples || []) {
@@ -87,9 +87,10 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, strict: boolean
   }
   out += '        var client = setup.Client;\n'
   if (null != needs.record) {
+    const id = `StructUtils.GetProp(setup.Idmap, ${JSON.stringify(needs.record)})`
     out += `        if (setup.Live && !TestRunner.LiveExisting(setup.Data, LIVE_STRICT, ${JSON.stringify(entity.name)},
-            () => new List<object?> { new Dictionary<string, object?>
-                { ["id"] = StructUtils.GetProp(setup.Idmap, ${JSON.stringify(needs.record)}) } }))
+            ${JSON.stringify(identity.field)}, ${id},
+            () => new List<object?> { new Dictionary<string, object?> { ["id"] = ${id} } }))
         {
             return;
         }
@@ -100,10 +101,17 @@ function liveFlowGate(entity: any, needs: any, entidEnv: string, strict: boolean
       .map(([k, v]: any) => ` [${JSON.stringify(k)}] = setup.Idmap[${JSON.stringify(v)}],`)
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
         .map(([k, ex]) => ` [${JSON.stringify(k)}] = ${formatCsValue(ex)},`)).join('')
-    out += `        if (setup.Live && !TestRunner.LiveExisting(setup.Data, LIVE_STRICT, ${JSON.stringify(entity.name)},
-            () => client.${entity.Name}().List(new Dictionary<string, object?> {${match} }, null)))
+    out += `        if (setup.Live)
         {
-            return;
+            var liveId = setup.SyntheticOnly ? null : StructUtils.GetProp(setup.Idmap, ${JSON.stringify(identity.key)});
+${undefined === identity.ex ? '' : `            liveId ??= ${formatCsValue(identity.ex)};
+`}            TestRunner.LivePace();
+            if (!TestRunner.LiveExisting(setup.Data, LIVE_STRICT, ${JSON.stringify(entity.name)},
+                ${JSON.stringify(identity.field)}, liveId,
+                () => client.${entity.Name}().List(new Dictionary<string, object?> {${match} }, null)))
+            {
+                return;
+            }
         }
 `
   }
@@ -225,7 +233,8 @@ ${skipBlock}`)
 
     const flowBody = (flow: any) => {
       const steps = flowSteps(flow) as any[]
-      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), entidEnvVar, strict, steps.length > 0))
+      Content(liveFlowGate(entity, liveFlowNeeds(entity, flow), liveIdentity(entity, flow), entidEnvVar, strict,
+        steps.length > 0))
 
       // Check if the flow has a create step; if not, bootstrap entity data
       const flowHasCreate = steps.some((s: any) => s.o === 'create')
@@ -246,6 +255,7 @@ ${skipBlock}`)
       each(steps, (step: any, index: any) => {
         const opgen: OpGen = GENERATE_OP[step.o]
         if (opgen) {
+          Content(LIVE_PACE)
           opgen({ ...genCtx, flow }, step, index)
           Content('\n')
         }
@@ -639,9 +649,8 @@ const generateUpdate: OpGen = (ctx, step, index) => {
         Assert.True(${resdatavar} != null, "expected update result to be a map");
 `)
   if (hasEntIdU) {
-    Content(`        Assert.True(StructRunner.DeepEqual(${resdatavar}![${rid(entity)}], ${datavar}Up["id"]),
-            "expected update result id to match");
-`)
+    Content(sameId(entity, `StructUtils.GetProp(${resdatavar}, ${rid(entity)})`, `${datavar}Up["id"]`,
+      'expected update result id to match'))
   }
 
   // Assert TextFieldMark
@@ -706,9 +715,8 @@ const generateLoad: OpGen = (ctx, step, index) => {
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        var ${datavar}Loaded = ${entvar}.Load(${matchvar}, null);
         var ${datavar}LoadResult = Helpers.ToMapAny(${datavar}Loaded is IEntity le ? le.Data() : ${datavar}Loaded);
         Assert.True(${datavar}LoadResult != null, "expected load result to be a map");
-        Assert.True(StructRunner.DeepEqual(${datavar}LoadResult![${rid(entity)}], ${srcdatavar}[${rid(entity)}]),
-            "expected load result id to match");
-`)
+${sameId(entity, `StructUtils.GetProp(${datavar}LoadResult, ${rid(entity)})`,
+  `StructUtils.GetProp(${srcdatavar}, ${rid(entity)})`, 'expected load result id to match')}`)
   }
   else {
     Content(`        var ${matchvar} = new Dictionary<string, object?>();
@@ -749,6 +757,26 @@ ${parentMatch(step, matchvar)}        ${entvar}.Remove(${matchvar}, null);
 // The record field the entity's identity is read from, as a C# string.
 function rid(entity: any): string {
   return JSON.stringify(entityRecordIdField(entity))
+}
+
+
+const LIVE_PACE = `        if (setup.Live)
+        {
+            TestRunner.LivePace();
+        }
+`
+
+
+// A result's identity matches the one asked for, live only where the
+// record's schema has a field to repeat it in.
+function sameId(entity: any, result: string, expected: string, message: string): string {
+  const check = `Assert.True(TestRunner.LiveSameId(${result}, ${expected}), ${JSON.stringify(message)});`
+  return null == entityDataIdField(entity) ? `        if (!setup.Live)
+        {
+            ${check}
+        }
+` : `        ${check}
+`
 }
 
 

@@ -167,7 +167,7 @@ module ProjectNameTestRunner
 
   # The record a create-less flow reads live: the first its list returns,
   # put where the flow reads the fixture's existing records.
-  def self.live_existing(setup, strict, name)
+  def self.live_existing(setup, strict, name, field, fallback)
     found = begin
       yield
     rescue StandardError => e
@@ -177,7 +177,30 @@ module ProjectNameTestRunner
     live_empty("The account has no #{name} record to load") if found.empty?
     first = found[0]
     record = first.respond_to?(:data_get) ? first.data_get : first
+    if !record.is_a?(Hash) || record[field].nil?
+      if fallback.nil?
+        live_miss(strict, "Live entity test blocked: the listed #{name} record has no #{field}, " \
+          "and neither *_ENTID nor the load route's example gives one")
+      end
+      record = (record.is_a?(Hash) ? record : {}).merge(field => fallback)
+    end
     (setup[:data]["existing"] ||= {})[name] = { "live01" => record }
+  end
+
+  # Identities compared by their string forms: a route parameter's
+  # value is a string where the record may hold a number.
+  def self.live_same_id(a, b)
+    return a.nil? && b.nil? if a.nil? || b.nil?
+    live_id_str(a) == live_id_str(b)
+  end
+
+  def self.live_id_str(v)
+    v.is_a?(Float) && v.finite? && v == v.floor ? v.to_i.to_s : v.to_s
+  end
+
+  # Sleeps test.live.delayMs before a live request.
+  def self.live_pace
+    sleep(live_delay_ms / 1000.0)
   end
 
   # In a lenient live run a failing check skips, observing the live API.

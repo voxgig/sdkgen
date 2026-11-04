@@ -45,6 +45,7 @@ test "${method}_prepare_smoke" {
         return;
     };
     try std.testing.expect(std.mem.eql(u8, h.get_str(fetchdef, "method") orelse "", "GET"));
+    try std.testing.expect(std.mem.eql(u8, h.get_str(h.getp(fetchdef, "headers"), "accept") orelse "", "application/json"));
 }
 `)
 })

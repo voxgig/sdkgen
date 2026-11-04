@@ -263,7 +263,10 @@ ${liveStrictNote(liveStrict(model, target.name), '//', '  ')}
     Assumptions.assumeTrue(reason == null,
         reason == null || "".equals(reason)
             ? "skipped via sdk-test-control.json" : reason);
-${listSkipBlock}    ${SDK} client = setup.client;
+${listSkipBlock}    if (setup.live) {
+      RunnerSupport.livePace();
+    }
+    ${SDK} client = setup.client;
 
 `)
 
@@ -378,7 +381,10 @@ ${listLiveQueryLines ? '    if (setup.live) {\n' + listLiveQueryLines + '    }\n
     Assumptions.assumeTrue(reason == null,
         reason == null || "".equals(reason)
             ? "skipped via sdk-test-control.json" : reason);
-${loadSkipBlock}    ${SDK} client = setup.client;
+${loadSkipBlock}    if (setup.live) {
+      RunnerSupport.livePace();
+    }
+    ${SDK} client = setup.client;
 
 `)
 
@@ -408,10 +414,19 @@ ${loadSkipBlock}    ${SDK} client = setup.client;
 `)
           }
 
+          // The list sends the query its route requires, as direct-list does.
+          const listQueryLines = liveQueryExamples(listPoint)
+            .map(([name, ex]) => `      listQuery.put(${JSON.stringify(name)}, ${javaLiteral(ex)});\n`).join('')
+          if ('' !== listQueryLines) {
+            Content(`      Map<String, Object> listQuery = new LinkedHashMap<>();
+` + listQueryLines)
+          }
+
           Content(`      Map<String, Object> listResult = client.direct(jm(
           "path", "${listPath}",
           "method", "GET",
-          "params", listParams));
+          "params", listParams${'' === listQueryLines ? '' : `,
+          "query", listQuery`}));
       if (!liveOk(listResult)) {
         RunnerSupport.liveMiss(LIVE_STRICT, "Live list discovery failed: " + RunnerSupport.liveDescribe(listResult));
       }

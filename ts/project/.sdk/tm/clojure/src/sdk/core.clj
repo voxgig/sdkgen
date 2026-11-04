@@ -1810,6 +1810,27 @@
 (def ^:private http-client (delay (http-client-for HttpClient$Redirect/NORMAL)))
 (def ^:private manual-http-client (delay (http-client-for HttpClient$Redirect/NEVER)))
 
+;; java.net.http decodes no Content-Encoding, and a server may compress its
+;; answer whatever the request asked for. Deflate is zlib-wrapped, or raw as
+;; some servers send it.
+(defn- decode-body ^bytes [^bytes body encoding]
+  (let [enc (str/lower-case (str/trim (str encoding)))
+        n (if (nil? body) 0 (alength body))]
+    (cond
+      (zero? n) body
+      (#{"gzip" "x-gzip"} enc)
+      (with-open [in (java.util.zip.GZIPInputStream. (java.io.ByteArrayInputStream. body))]
+        (.readAllBytes ^java.io.InputStream in))
+      (= "deflate" enc)
+      (let [b0 (bit-and (aget body 0) 0xff)
+            b1 (if (< 1 n) (bit-and (aget body 1) 0xff) 0)
+            zlib (and (< 1 n) (= 8 (bit-and b0 0x0f))
+                      (zero? (mod (bit-or (bit-shift-left b0 8) b1) 31)))]
+        (with-open [in (java.util.zip.InflaterInputStream.
+                        (java.io.ByteArrayInputStream. body) (java.util.zip.Inflater. (not zlib)))]
+          (.readAllBytes ^java.io.InputStream in)))
+      :else body)))
+
 (defn- body-publisher [body]
   (cond
     (string? body) (HttpRequest$BodyPublishers/ofString body)
@@ -1850,7 +1871,9 @@
             (vs/setprop headers "user-agent" ua)))
         (let [client (if (= "manual" (vs/getprop fetchdef "redirect")) @manual-http-client @http-client)
               resp (.send ^HttpClient client (.build builder) (HttpResponse$BodyHandlers/ofByteArray))
-              body (String. ^bytes (.body resp) "UTF-8")
+              body (String. ^bytes (decode-body (.body resp)
+                                                (.orElse (.firstValue (.headers resp) "content-encoding") ""))
+                            "UTF-8")
               resp-headers (vs/jm)]
           (doseq [[k vlist] (.map (.headers resp))]
             (.put ^java.util.Map resp-headers (str/lower-case k) (str/join "," vlist)))

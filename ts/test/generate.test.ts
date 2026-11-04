@@ -22,7 +22,7 @@ import {
   FOLD_ENTITY, UNGENERATED_OP, BUILTIN_TYPE_ENTITY, SAFE_TYPE_ENTITY, CREATELESS_ENTITY,
   ESCAPED_TYPE_ENTITY, KEYWORD_ACCESSOR_ENTITY, DOC_MODELS, namedEntity, toolchain,
   REQUEST_SHAPED_ENTITY, exampleParams, wireNameParams, slashRoutes, getOnlyFlows, getOnlyBuildctx, multiRouteLoad, keylessLoad,
-  directDiscovery, liveFallbacks, slugKeyed,
+  directDiscovery, liveFallbacks, slugKeyed, liveIdentities,
 } from './generateharness'
 
 
@@ -3253,6 +3253,57 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   })
 
 
+  // A live direct load lists to find an id through the same route direct-list
+  // calls, so it sends that route's required query from its examples, and no
+  // optional one: an API may answer a bare list route with 400.
+  test('every live direct load discovers through a list that sends its required query', async () => {
+    const AREA = `
+main: kit: entity: area: {
+  alias: field: {}
+  name: "area"
+  id: { field: "id", name: "id" }
+  fields: { "id": { h: 'Id', n: "id", r: true, t: "\`$STRING\`" } }
+  op: {
+    list: { name: "list", points: [ {
+      g: { query: [
+        { k: "query", n: "query", or: "query", r: true, t: "\`$STRING\`", ex: "london" }
+        { k: "query", n: "limit", or: "limit", r: false, t: "\`$INTEGER\`", ex: 25 }
+      ] }
+      m: "GET", o: "/area", s: [{ lit: "area" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+    load: { name: "load", points: [ {
+      g: { params: [ { k: "param", n: "id", or: "id", r: true, t: "\`$STRING\`" } ] }
+      m: "GET", o: "/area/{id}", s: [{ lit: "area" }, { var: "id" }]
+      t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+  }
+}
+main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAreaFlow", step: [ { o: "list" } ] }
+`
+    const out = await generate(LIVE_SUITE_TARGETS, undefined, entityOnly(AREA))
+    const gaps: string[] = []
+    for (const target of LIVE_SUITE_TARGETS) {
+      const file = testFiles(out, target).find(([n]) => /area_?direct/i.test(n))
+      if (null == file) {
+        gaps.push(`${target}: no area direct test`)
+        continue
+      }
+      const text = String(file[1])
+      const start = text.indexOf('direct-load-area')
+      const end = text.indexOf('list discovery failed', start)
+      if (start < 0 || end < 0) {
+        gaps.push(`${target}:${file[0]} does not discover the area id by listing`)
+        continue
+      }
+      const discovery = text.slice(start, end)
+      if (!/\bquery\W[^\n]*london/.test(discovery)) {
+        gaps.push(`${target}:${file[0]} lists without the required query example`)
+      }
+      if (/limit/.test(discovery)) gaps.push(`${target}:${file[0]} lists with an optional query parameter`)
+    }
+    deepStrictEqual(gaps, [])
+  })
+
+
   // direct() sends its query as given, so a direct test keys each required
   // query example by the definition's name (or), and fills a path
   // placeholder under the name it puts in the path.
@@ -3432,6 +3483,54 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     }
     const config = filesFor(out, 'ts').find(([n]) => /(^|\/)src\/Config\.ts$/.test(n))
     ok(null != config && /"alias":\s*\{\s*"id":\s*"slug"/.test(config[1]), 'the ts config names no alias')
+    deepStrictEqual(gaps, [])
+  })
+
+
+  // A live record may not hold its identity as the fixture's do (see
+  // liveIdentities). A create-less load's record takes the identity in the
+  // field the model names, a listed record lacking one takes *_ENTID's value or
+  // the route example, a schema with no identity field is not compared on one
+  // live, an identity compares by its string form, and every request is paced.
+  test('every live flow target fills, falls back on and compares a live identity', async () => {
+    const out = await generate(LIVE_SUITE_TARGETS, undefined, liveIdentities())
+    const gaps: string[] = []
+    const NOT_LIVE = /(!setup\.live|not setup\["live"\]|unless setup\[:live\]|not setup\.live|empty\(\$setup\["live"\]\)|unless \$setup->\{live\}|!setup\.Live)/
+    const COMPARE = /(live_?same_?id|LiveSameId)\(|is\([^\n]*load: id'\)/gi
+    const near = (text: string, re: RegExp) => [...text.matchAll(re)]
+      .map((m) => text.slice(Math.max(0, m.index! - 80), m.index! + m[0].length + 140))
+    for (const target of LIVE_SUITE_TARGETS.filter((t) => !['ts', 'js'].includes(t))) {
+      const file = (name: string, kind: string) =>
+        testFiles(out, target).find(([n]) => new RegExp(name + '_?' + kind, 'i').test(n))?.[1]
+      const has = (name: string, kind: string, re: RegExp, what: string) => {
+        const text = file(name, kind)
+        if (null == text) gaps.push(`${target}: no ${name} ${kind} test`)
+        else if (!re.test(text)) gaps.push(`${target}: ${name} ${kind} ${what}`)
+      }
+      has('venue', 'entity', /live_?existing[\s\S]{0,240}["']slug["']/i, 'does not put the stand-in id in the slug')
+      has('pokemon', 'entity', /live_?id\b[^\n]*pokemon01/i, 'does not fall back on *_ENTID')
+      has('badge', 'entity', /live_?id\b[^\n]*badge01/i, 'does not fall back on *_ENTID')
+      has('pokemon', 'entity', /live_?id\b[^\n]*(=|\?:|\?\?=?|\/\/=)\s*(Value::str\()?["']1["']/i,
+        'does not fall back on the route example')
+      for (const name of ['venue', 'saying', 'pokemon', 'badge', 'year', 'box']) {
+        has(name, 'entity', /live_?pace\b/i, 'does not pace its requests')
+        has(name, 'direct', /live_?pace\b/i, 'does not pace its requests')
+        const compares = near(file(name, 'entity') || '', COMPARE)
+        if (0 === compares.length) gaps.push(`${target}: ${name} compares no identity`)
+        const guarded = compares.filter((around) => NOT_LIVE.test(around))
+        if ('saying' === name && guarded.length !== compares.length) {
+          gaps.push(`${target}: saying compares a live record on an identity its schema lacks`)
+        }
+        if ('saying' !== name && 0 < guarded.length) gaps.push(`${target}: ${name} compares offline only`)
+      }
+    }
+    for (const target of ['ts', 'js']) {
+      const harness = filesFor(out, target).find(([n]) => /test\/live-entity\.(ts|js)$/.test(n))?.[1] || ''
+      if (!/String\(data\[idField\] \?\? data\.id\), String\(input\.id\)/.test(harness) ||
+        !/input\.id != null && repeatsId/.test(harness)) {
+        gaps.push(`${target}: the live harness compares an identity strictly, or one the schema lacks`)
+      }
+    }
     deepStrictEqual(gaps, [])
   })
 

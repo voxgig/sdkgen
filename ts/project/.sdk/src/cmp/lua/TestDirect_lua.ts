@@ -223,7 +223,10 @@ describe("${entity.Name}Direct", function()
       pending(_reason or "skipped via sdk-test-control.json")
       return
     end
-${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    local client = setup.client
+${getOnlyKeysBlock(model, entity, 'direct-list-' + entity.name, listParams.map(liveKey))}${liveKeysBlock(listParams.map(liveKey), entidEnvVar)}    if setup.live then
+      runner.live_pace()
+    end
+    local client = setup.client
 
     local params = {}
     local query = {}
@@ -286,7 +289,10 @@ ${listLiveQueryLines ? '    if setup.live then\n' + listLiveQueryLines + '    en
       pending(_reason or "skipped via sdk-test-control.json")
       return
     end
-${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    local client = setup.client
+${getOnlyKeysBlock(model, entity, 'direct-load-' + entity.name, [...new Set(loadLiveIdKeys)])}${liveKeysBlock([...new Set(loadLiveIdKeys)], entidEnvVar)}    if setup.live then
+      runner.live_pace()
+    end
+    local client = setup.client
 
     local params = {}
     local query = {}
@@ -296,10 +302,14 @@ ${loadLiveQueryLines ? loadLiveQueryLines + '\n' : ''}`)
         Content(loadExampleLines + '\n')
       }
       else if (discover) {
+        // The list sends the query its route requires, as direct-list does.
+        const listQuery = liveQueryExamples(listPoint)
+          .map(([name, ex]) => `[${formatLuaValue(name)}] = ${formatLuaValue(ex)}`).join(', ')
         Content(`      local list_result, list_err = client:direct({
         path = "${listPath}",
         method = "GET",
-        params = {${listParams.map((p: any) => `["${p.n}"] = setup.idmap["${liveKey(p)}"]`).join(', ')}},
+        params = {${listParams.map((p: any) => `["${p.n}"] = setup.idmap["${liveKey(p)}"]`).join(', ')}},${'' === listQuery ? '' : `
+        query = {${listQuery}},`}
       })
       if not live_ok(list_result, list_err) then
         runner.live_miss(pending, LIVE_STRICT, "Live list discovery failed: " .. runner.live_describe(list_result, list_err))

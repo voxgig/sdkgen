@@ -246,12 +246,14 @@ pub fn live_describe(result: &Value) -> String {
 }
 
 // The record a create-less flow reads live: the first its list returns, put
-// where the flow reads the fixture's existing records. False once the test
-// is settled and has to return.
+// where the flow reads the fixture's existing records, a record with no
+// identity taking the fallback. False once the test is settled.
 pub fn live_existing(
     data: &Value,
     strict: bool,
     name: &str,
+    field: &str,
+    fallback: Value,
     list: impl FnOnce() -> Result<Value, ProjectNameError>,
 ) -> bool {
     let found = match list() {
@@ -265,18 +267,64 @@ pub fn live_existing(
         live_miss(strict, "Live list discovery returned no list");
         return false;
     }
-    let first = vs::get_elem(&found, &Value::Num(0.0), Value::Noval);
-    if first.is_noval() {
+    let mut record = vs::get_elem(&found, &Value::Num(0.0), Value::Noval);
+    if record.is_noval() {
         live_empty(&format!("The account has no {} record to load", name));
         return false;
+    }
+    let is_map = matches!(record, Value::Map(_));
+    let held = if is_map { getp(&record, field) } else { Value::Noval };
+    if held.is_noval() || held.is_null() {
+        if fallback.is_noval() || fallback.is_null() {
+            live_miss(strict, &format!(
+                "Live entity test blocked: the listed {} record has no {}, \
+                 and neither *_ENTID nor the load route's example gives one",
+                name, field
+            ));
+            return false;
+        }
+        let filled = Value::empty_map();
+        if is_map {
+            for key in vs::keysof_vec(&record) {
+                setp(&filled, &key, getp(&record, &key));
+            }
+        }
+        setp(&filled, field, fallback);
+        record = filled;
     }
     let mut existing = getp(data, "existing");
     if !matches!(existing, Value::Map(_)) {
         existing = Value::empty_map();
         setp(data, "existing", existing.clone());
     }
-    setp(&existing, name, jo(vec![("live01", first)]));
+    setp(&existing, name, jo(vec![("live01", record)]));
     true
+}
+
+// Identities compared by their string forms: a route parameter's value
+// is a string where the record may hold a number.
+pub fn live_same_id(a: &Value, b: &Value) -> bool {
+    let absent = |v: &Value| v.is_noval() || v.is_null();
+    if absent(a) || absent(b) {
+        return absent(a) && absent(b);
+    }
+    live_id_str(a) == live_id_str(b)
+}
+
+fn live_id_str(v: &Value) -> String {
+    match v {
+        Value::Str(s) => s.clone(),
+        Value::Num(n) if n.is_finite() && 0.0 == n.fract() && n.abs() < 9.0e15 => format!("{}", *n as i64),
+        _ => vs::stringify(v, None, false),
+    }
+}
+
+// Sleeps test.live.delayMs before a live request.
+pub fn live_pace() {
+    let ms = live_delay_ms();
+    if ms > 0 {
+        std::thread::sleep(std::time::Duration::from_millis(ms as u64));
+    }
 }
 
 // In a lenient live run a panicking check is reported and the test returns,

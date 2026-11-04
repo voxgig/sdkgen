@@ -186,6 +186,21 @@ impl ProjectNameSDK {
             }
         }
 
+        // A raw request has no point to declare its response type, so it
+        // asks for the JSON it reads: an API that negotiates on Accept
+        // otherwise answers in its own default format. A caller's own
+        // accept wins.
+        {
+            let spec_headers = spec.borrow().headers.clone();
+            let has_accept = match &spec_headers {
+                Value::Map(m) => m.borrow().keys().any(|k| k.eq_ignore_ascii_case("accept")),
+                _ => false,
+            };
+            if !has_accept {
+                setp(&spec_headers, "accept", Value::str("application/json"));
+            }
+        }
+
         utility.prepare_auth(&ctx)?;
 
         utility.make_fetch_def(&ctx)
