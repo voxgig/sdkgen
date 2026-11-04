@@ -3,6 +3,7 @@
 local vs = require("utility.struct.struct")
 local json = require("dkjson")
 local ProjectNameError = require("core.error")
+local tls = require("utility.tls")
 
 local GETONLY_ENV = "VOXGIG_GETONLY_GUARD"
 
@@ -225,27 +226,6 @@ local function decode_body(body, encoding)
   return inflate_raw(body, 1)
 end
 
--- OpenSSL reports a TLS close without close_notify as "unexpected eof while
--- reading", where every other target reads it as the end of the body. The
--- other options are luasec's defaults, which an options list replaces.
-local TLS_OPTIONS = { "all", "no_sslv2", "no_sslv3", "no_tlsv1", "ignore_unexpected_eof" }
-
-local function tls_options()
-  local ssl_ok, ssl = pcall(require, "ssl")
-  local known = ssl_ok and type(ssl) == "table" and type(ssl.config) == "table"
-    and ssl.config.options or nil
-  if type(known) ~= "table" or not known.ignore_unexpected_eof then
-    return nil
-  end
-  local options = {}
-  for _, name in ipairs(TLS_OPTIONS) do
-    if known[name] then
-      table.insert(options, name)
-    end
-  end
-  return options
-end
-
 local function send_once(fullurl, fetchdef)
   -- Use LuaSocket or similar for real HTTP requests.
   -- This is the default live implementation.
@@ -268,8 +248,8 @@ local function send_once(fullurl, fetchdef)
     headers["content-length"] = tostring(#body_str)
   end
 
-  -- Default User-Agent — many CDNs reject requests with no UA. Set a
-  -- Mozilla-shaped UA unless the caller already set one.
+  -- Default User-Agent — many CDNs reject requests with no UA. Set the
+  -- project's agent (main.kit.http.useragent) unless the caller set one.
   local has_ua = false
   for k, _ in pairs(headers) do
     if string.lower(k) == "user-agent" then
@@ -281,6 +261,12 @@ local function send_once(fullurl, fetchdef)
     headers["User-Agent"] = "PROJECTUSERAGENT"
   end
 
+  -- An https connection is verified before any byte of the request is sent.
+  local create, refused = tls.create(fullurl)
+  if refused ~= nil then
+    return nil, refused
+  end
+
   local response_body = {}
   local res, code, response_headers = http.request({
     url = fullurl,
@@ -289,7 +275,7 @@ local function send_once(fullurl, fetchdef)
     source = body_str and ltn12.source.string(body_str) or nil,
     sink = ltn12.sink.table(response_body),
     redirect = false,
-    options = string.find(string.lower(fullurl), "^https:") and tls_options() or nil,
+    create = create,
   })
 
   if not res then

@@ -1016,7 +1016,7 @@ src/cmp/lua/PrepareAuth_lua.ts cc49fb94005b
 src/cmp/lua/ReadmeEntity_lua.ts 999d57a4df76
 src/cmp/lua/ReadmeExamplesTest_lua.ts 491f3286a9f4
 src/cmp/lua/ReadmeExplanation_lua.ts 74936c6ce867
-src/cmp/lua/ReadmeHowto_lua.ts aead8448d720
+src/cmp/lua/ReadmeHowto_lua.ts ccda334815c9
 src/cmp/lua/ReadmeInstall_lua.ts 8edbb24fb530
 src/cmp/lua/ReadmeIntro_lua.ts 43b26ec598f8
 src/cmp/lua/ReadmeModel_lua.ts 16db8d238063
@@ -1078,7 +1078,7 @@ tm/lua/utility/done.lua c1c77faea694
 tm/lua/utility/feature_add.lua f6a951686474
 tm/lua/utility/feature_hook.lua 117392b0b027
 tm/lua/utility/feature_init.lua 97c94b7fa38f
-tm/lua/utility/fetcher.lua f479c5af179b
+tm/lua/utility/fetcher.lua d3eaf4f79776
 tm/lua/utility/graphql.lua cb967f03d41b
 tm/lua/utility/make_context.lua 2b847f886881
 tm/lua/utility/make_error.lua e47317140bb3
@@ -1104,6 +1104,7 @@ tm/lua/utility/result_body.lua e61618b29a84
 tm/lua/utility/result_headers.lua 33df8d29e12f
 tm/lua/utility/struct/regex.lua a6371643c5b5
 tm/lua/utility/struct/struct.lua 13d14e641459
+tm/lua/utility/tls.lua 4ed1453010a5
 tm/lua/utility/transform_request.lua 83de7b64e4f1
 tm/lua/utility/transform_response.lua 37d0bb1f1d1f
 tm/lua/utility/unreadable_body.lua 384782606ccc

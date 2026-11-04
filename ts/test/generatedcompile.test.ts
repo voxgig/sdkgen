@@ -2229,7 +2229,8 @@ int main(void) {
     const certs = Path.join(tmp, 'lua-tls-eof-certs')
     Fs.mkdirSync(certs, { recursive: true })
     const made = run(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
-      '-subj', '/CN=localhost', '-keyout', 'eof.key', '-out', 'eof.pem'], certs)
+      '-subj', '/CN=localhost', '-addext', 'subjectAltName=IP:127.0.0.1',
+      '-keyout', 'eof.key', '-out', 'eof.pem'], certs)
     if (!made.ok) return t.skip('lua: openssl cannot make a test certificate:\n' + tail(made.out, 5))
 
     const file = Path.join(certs, 'tls-eof-server.cjs')
@@ -2251,13 +2252,88 @@ int main(void) {
           }
         })
       })
-      const probe = run(lua, ['tls_eof_probe.lua'], sdkroot,
-        { ...process.env, TLS_BASE: 'https://127.0.0.1:' + port })
+      const probe = run(lua, ['tls_eof_probe.lua'], sdkroot, {
+        ...process.env, TLS_BASE: 'https://127.0.0.1:' + port,
+        DEMO_CA_BUNDLE: Path.join(certs, 'eof.pem'),
+      })
       ok(/^tls-eof: ok tls$/m.test(probe.out),
         'lua: a body ended by a close without close_notify was not read:\n' + tail(probe.out))
     }
     finally {
       proc.kill('SIGKILL')
+    }
+  })
+
+
+  // luasec's own https verifies nothing (verify = "none"); the lua transport
+  // verifies the chain and the name, and refuses with no trust store at all.
+  test('lua: the https transport verifies the server, and trusts a named CA bundle', async (t) => {
+    const openssl = toolchain('openssl')
+    const lua = mediaLua()
+    if (null == openssl || null == lua) {
+      return t.skip('needs openssl and a lua with the dkjson rock (openssl: ' + openssl +
+        ', lua: ' + lua + ')')
+    }
+    if (!probeOk(lua, ['-e', 'require "socket.http"; require "ssl"'])) {
+      return t.skip('lua: luasocket and luasec are not both installed here')
+    }
+
+    const sdkroot = Path.join(tmp, 'lua-tls-verify')
+    await generateTo('lua', sdkroot)
+    Fs.writeFileSync(Path.join(sdkroot, 'tls_eof_probe.lua'), TLS_EOF_LUA_PROBE)
+
+    const certs = Path.join(tmp, 'lua-tls-verify-certs')
+    Fs.mkdirSync(certs, { recursive: true })
+    for (const [name, san] of [['local', 'DNS:localhost'], ['other', 'DNS:elsewhere.example']]) {
+      const made = run(openssl, ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+        '-subj', '/CN=' + name, '-addext', 'subjectAltName=' + san,
+        '-keyout', name + '.key', '-out', name + '.pem'], certs)
+      if (!made.ok) return t.skip('lua: openssl cannot make a test certificate:\n' + tail(made.out, 5))
+    }
+
+    const local = await tlsServer(certs, 'local')
+    const other = await tlsServer(certs, 'other')
+    try {
+      const probe = (url: string, env: NodeJS.ProcessEnv = {}) => {
+        const base: NodeJS.ProcessEnv = { ...process.env, TLS_BASE: url, ...env }
+        for (const name of ['DEMO_CA_BUNDLE', 'SSL_CERT_FILE', 'SSL_CERT_DIR']) {
+          if (!(name in env)) delete base[name]
+        }
+        return run(lua, ['tls_eof_probe.lua'], sdkroot, base).out
+      }
+      const seen = () => Fs.readFileSync(local.log, 'utf8').split('\n').filter((l) => '' !== l).length
+      const at = 'https://localhost:' + local.port + '/p'
+      const bundle = { DEMO_CA_BUNDLE: Path.join(certs, 'local.pem') }
+
+      const unverified = probe(at)
+      ok(/tls-eof: failed .*certificate verify failed/.test(unverified),
+        'lua: a self-signed certificate was trusted:\n' + unverified)
+      strictEqual(seen(), 0, 'lua: a request reached a server whose certificate was refused')
+
+      ok(/^tls-eof: ok tls$/m.test(probe(at, bundle)),
+        'lua: the certificate DEMO_CA_BUNDLE names was not trusted:\n' + probe(at, bundle))
+      ok(/^tls-eof: ok tls$/m.test(probe(at, { SSL_CERT_FILE: bundle.DEMO_CA_BUNDLE })),
+        'lua: the trust store SSL_CERT_FILE names was not used:\n' +
+        probe(at, { SSL_CERT_FILE: bundle.DEMO_CA_BUNDLE }))
+
+      const named = probe('https://localhost:' + other.port + '/p',
+        { DEMO_CA_BUNDLE: Path.join(certs, 'other.pem') })
+      ok(/certificate verify failed: the certificate does not name localhost/.test(named),
+        'lua: a certificate for another name was trusted:\n' + named)
+
+      const literal = probe('https://127.0.0.1:' + local.port + '/p', bundle)
+      ok(/certificate verify failed: the certificate does not name 127\.0\.0\.1/.test(literal),
+        'lua: a certificate without the address was trusted for it:\n' + literal)
+
+      const before = seen()
+      const nostore = probe(at, { SSL_CERT_DIR: Path.join(certs, 'absent') })
+      ok(/TLS: SSL_CERT_DIR names a directory that does not exist/.test(nostore),
+        'lua: a missing trust store did not refuse the request:\n' + nostore)
+      strictEqual(seen(), before, 'lua: a request went out with no trust store')
+    }
+    finally {
+      local.stop()
+      other.stop()
     }
   })
 
