@@ -32,15 +32,19 @@ const TWINS: [string, any][] = [
 function liveSetup(accessor: string, reply: any) {
   let context: any
   const inputs: any[] = []
-  const op = async (input: any) => {
+  const op = (wrap: (reply: any) => any) => async (input: any) => {
     context.attempted()
     inputs.push(input)
-    return { data: () => reply }
+    return wrap(reply)
   }
+  const item = (record: any) => ({ data: () => record })
   return {
     inputs,
     setup: {
-      client: { [accessor]: () => ({ load: op, list: op }) },
+      client: { [accessor]: () => ({
+        load: op(item),
+        list: op((records: any) => (Array.isArray(records) ? records : [records]).map(item)),
+      }) },
       transport: { enter: (ctx: any) => { context = ctx } },
       idmap: {}, data: { new: {} }, now: 1,
     },
@@ -49,9 +53,9 @@ function liveSetup(accessor: string, reply: any) {
 
 const loadFlow = (name: string) => ({ step: [{ o: 'load', m: { id: name + '01' } }] })
 
-const entity = (name: string, id: string, fields: string[], ex: string | number) => ({
+const entity = (name: string, id: string, fields: string[], ex: string | number, added: string[] = []) => ({
   name, id: { field: id, name: 'id' },
-  fields: Object.fromEntries(fields.map((n) => [n, { n }])),
+  fields: Object.fromEntries([...fields.map((n) => [n, { n }]), ...added.map((n) => [n, { n, syn: true }])]),
   op: { load: { points: [{ m: 'GET', o: '/' + name + '/{id}',
     g: { params: [{ k: 'param', n: 'id', r: true, ex }] } }] } },
 })
@@ -70,6 +74,50 @@ for (const [twin, runLiveEntity] of TWINS) {
     await quietly(() => runLiveEntity(setup, entity('saying', 'id', ['author', 'quote'], 2),
       loadFlow('saying'), 'Saying', {}, { strict: true }))
     assert.deepEqual(inputs, [{ id: 2 }])
+  })
+
+
+  test(twin + ': a live load is not compared on an identity field the model adds', async () => {
+    const { setup, inputs } = liveSetup('Motto', { author: 'Salvador Dali', quote: 'Intelligence...' })
+    await quietly(() => runLiveEntity(setup, entity('motto', 'id', ['author', 'quote'], 2, ['id']),
+      loadFlow('motto'), 'Motto', {}, { strict: true }))
+    assert.deepEqual(inputs, [{ id: 2 }])
+
+    // The same field, declared by the record's own schema, is compared.
+    const declared = liveSetup('Motto', { author: 'Salvador Dali', quote: 'Intelligence...' })
+    await assert.rejects(quietly(() => runLiveEntity(declared.setup,
+      entity('motto', 'id', ['author', 'id', 'quote'], 2), loadFlow('motto'), 'Motto', {}, { strict: true })),
+    /Response identity mismatch/)
+  })
+
+
+  test(twin + ': a live load by the parts of an identity sends and compares no id', async () => {
+    const announcement = {
+      name: 'announcement',
+      id: { field: 'id', name: 'id', parts: ['currency', 'indicator'],
+        from: { currency: 'currency', indicator: 'indicator' } },
+      fields: { currency: { n: 'currency' }, id: { n: 'id' }, indicator: { n: 'indicator' } },
+      op: { load: { points: [{ m: 'GET', o: '/announcements/{currency}/{indicator}', g: { params: [
+        { k: 'param', n: 'currency', r: true, ex: 'USD' }, { k: 'param', n: 'indicator', r: true, ex: 'inflation' },
+      ] } }] } },
+    }
+    const { setup, inputs } = liveSetup('Announcement', { currency: 'USD', indicator: 'inflation' })
+    await quietly(() => runLiveEntity(setup, announcement, { step: [{ o: 'load' }] }, 'Announcement', {},
+      { strict: true }))
+    assert.deepEqual(inputs, [{ currency: 'USD', indicator: 'inflation' }])
+  })
+
+
+  test(twin + ': a live list takes the first route it can fill, without a binding that route does not take', async () => {
+    const point = (o: string, n: string, ex: any) =>
+      ({ m: 'GET', o, g: { params: [{ k: 'param', n, r: true, ex }] } })
+    const episode = { name: 'episode', fields: { episode_number: { n: 'episode_number' } }, op: { list: { points: [
+      point('/episodes/random/{count}', 'count', 1), point('/episode/{episodeNumber}', 'episode_number', 420),
+    ] } } }
+    const { setup, inputs } = liveSetup('Episode', [{ episode_number: 7 }])
+    await quietly(() => runLiveEntity(setup, episode,
+      { step: [{ o: 'list', m: { episode_number: 'episode_number01' } }] }, 'Episode', {}, { strict: true }))
+    assert.deepEqual(inputs, [{ count: 1 }])
   })
 
 

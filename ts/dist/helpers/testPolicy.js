@@ -5,6 +5,9 @@ exports.liveStrict = liveStrict;
 exports.liveStrictNote = liveStrictNote;
 exports.liveFlowNeeds = liveFlowNeeds;
 exports.liveIdentity = liveIdentity;
+exports.liveRepeatsId = liveRepeatsId;
+exports.liveLoadComparesId = liveLoadComparesId;
+exports.liveUnrouted = liveUnrouted;
 exports.liveIdKey = liveIdKey;
 exports.liveExampleIds = liveExampleIds;
 exports.liveQueryExamples = liveQueryExamples;
@@ -65,9 +68,10 @@ function liveFlowNeeds(entity, flow) {
         if ('update' === step.o)
             bindings(step.d).forEach(([, k]) => keys.add(k));
         if ('list' === step.o) {
-            const args = liveStepArgs(entity, step, flow) || [];
-            fill(args);
-            bindings(step.m).filter(([, k]) => !args.some((arg) => k === arg.key)).forEach(([, k]) => keys.add(k));
+            const args = liveStepArgs(entity, step, flow);
+            fill(args || []);
+            if (null == args)
+                bindings(step.m).forEach(([, k]) => keys.add(k));
         }
         if ('load' === step.o && !liveRecordFound(entity, flow)) {
             const args = liveStepArgs(entity, step, flow);
@@ -89,6 +93,9 @@ function liveFlowNeeds(entity, flow) {
     else if (steps.some((step) => 'load' === step.o)) {
         if (null != list) {
             needs.discover = Object.fromEntries(bindings(list.m));
+            const unrouted = liveUnrouted(entity, list, flow);
+            if (0 < unrouted.length)
+                needs.unrouted = unrouted;
         }
         else if (unrouted) {
             needs.blocked = 'the flow loads a ' + entity.name + ' record it has no list to find';
@@ -201,6 +208,28 @@ function liveIdentity(entity, flow) {
         field: (0, opShape_1.entityRecordIdField)(entity), key: loadIdKey(entity, load),
         ...(undefined === ex ? {} : { ex }),
     };
+}
+function liveRepeatsId(entity) {
+    if (null == entity?.id)
+        return false;
+    const declared = new Set(Object.values(entity.fields || {})
+        .filter((field) => true !== field?.syn).map((field) => field?.n));
+    return declared.has(entity.id.field || 'id') || declared.has('id');
+}
+// Only an identity the load sends, as the live entity harness: a listed or created record's, or a route's `id`.
+function liveLoadComparesId(entity, flow) {
+    if (!liveRepeatsId(entity))
+        return false;
+    if (liveRecordFound(entity, flow))
+        return true;
+    const load = (0, buildIdNames_1.flowSteps)(flow).find((step) => 'load' === step.o);
+    return (liveStepArgs(entity, load, flow) || []).some((arg) => 'id' === arg.name);
+}
+function liveUnrouted(entity, step, flow) {
+    if ('list' !== step?.o)
+        return [];
+    const args = liveStepArgs(entity, step, flow);
+    return null == args ? [] : bindings(step.m).filter(([, key]) => !args.some((arg) => key === arg.key));
 }
 // The idmap key a live load of no known record reads its id from.
 function loadIdKey(entity, step) {

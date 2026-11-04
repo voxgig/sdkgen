@@ -18,13 +18,13 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityDataIdField, entityRecordIdField,
+  isAuthActive, envName, envToken, entityRecordIdField,
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
-  liveEntity, liveIdentity,
+  liveEntity, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted,
 } from '@voxgig/sdkgen'
 
 import { perlStringLiteral } from './utility_perl'
@@ -87,16 +87,18 @@ function liveFlowGate(N: string, entity: any, needs: any, identity: any, entidEn
 `
   }
   if (null != needs.discover) {
-    const match = Object.entries(needs.discover)
+    const match = '{' + Object.entries(needs.discover)
       .map(([k, v]: any) => `'${k}' => $setup->{idmap}{'${v}'}`)
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
-        .map(([k, ex]) => `'${k}' => ${perlLit(ex)}`)).join(', ')
+        .map(([k, ex]) => `'${k}' => ${perlLit(ex)}`)).join(', ') + '}'
+    const omit = needs.unrouted || []
     out += `  if ($setup->{live}) {
     my $live_id = $setup->{synthetic_only} ? undef : $setup->{idmap}{${perlLit(identity.key)}};
 ${undefined === identity.ex ? '' : `    $live_id //= ${perlLit(identity.ex)};
-`}    ${N}TestRunner::live_pace();
+`}${0 === omit.length ? '' : `    my $live_match = ${match};
+${omit.map(([name, key]: [string, string]) => `    delete $live_match->{${perlLit(name)}} if ${unsupplied(key)};\n`).join('')}`}    ${N}TestRunner::live_pace();
     ${N}TestRunner::live_existing($setup, LIVE_STRICT, '${label}', '${entity.name}',
-      sub { $client->${entity.Name}(undef)->list({${match}}, undef) }, ${perlLit(identity.field)}, $live_id)
+      sub { $client->${entity.Name}(undef)->list(${0 === omit.length ? match : '$live_match'}, undef) }, ${perlLit(identity.field)}, $live_id)
       or last BASIC_FLOW;
   }
 `
@@ -526,7 +528,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
   ok(defined $V{${resdatavar}}, '${entity.name} update: data');
 `)
   if (hasEntIdU) {
-    Content(`  is($V{${resdatavar}}{${rid(entity)}}, $V{${datavar}_up}{id}, '${entity.name} update: id')${liveDeclared(entity)};
+    Content(`  is($V{${resdatavar}}{${rid(entity)}}, $V{${datavar}_up}{id}, '${entity.name} update: id')${liveDeclared(liveRepeatsId(entity))};
 `)
   }
 
@@ -589,7 +591,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}  $V{${datavar}_loaded} = $V{${entvar}}->load($V{${matchvar}}, undef);
   $V{${datavar}_load_result} = ${N}Helpers::to_map(ref($V{${datavar}_loaded}) && $V{${datavar}_loaded}->can('data_get') ? $V{${datavar}_loaded}->data_get : $V{${datavar}_loaded});
   ok(defined $V{${datavar}_load_result}, '${entity.name} load: data');
-  is($V{${datavar}_load_result}{${rid(entity)}}, $V{${srcdatavar}}{${rid(entity)}}, '${entity.name} load: id')${liveDeclared(entity)};
+  is($V{${datavar}_load_result}{${rid(entity)}}, $V{${srcdatavar}}{${rid(entity)}}, '${entity.name} load: id')${liveDeclared(liveLoadComparesId(entity, flow))};
 `)
   }
   else {
@@ -636,9 +638,9 @@ function rid(entity: any): string {
 
 
 // `is` compares string forms, so a number matches the path value naming it;
-// a record whose schema has no field for the identity is not compared live.
-function liveDeclared(entity: any): string {
-  return null == entityDataIdField(entity) ? ' unless $setup->{live}' : ''
+// live, it compares only as the live entity harness does.
+function liveDeclared(compares: boolean): string {
+  return compares ? '' : ' unless $setup->{live}'
 }
 
 
@@ -666,9 +668,17 @@ function perlLit(value: any): string {
 // A live step sends each example its route requires and the step leaves unbound.
 function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
   const fills = liveStepExamples(entity, step, flow)
-  return 0 === fills.length ? '' : `  if ($setup->{live}) {
-${fills.map(([k, ex]) => `    $V{${matchvar}}{'${k}'} = ${perlLit(ex)};\n`).join('')}  }
+  const omit = liveUnrouted(entity, step, flow)
+  return 0 === fills.length + omit.length ? '' : `  if ($setup->{live}) {
+${fills.map(([k, ex]) => `    $V{${matchvar}}{'${k}'} = ${perlLit(ex)};\n`).join('')}${omit.map(([name, key]) =>
+    `    delete $V{${matchvar}}{${perlLit(name)}} if ${unsupplied(key)};\n`).join('')}  }
 `
+}
+
+
+// A binding the live route does not take is sent only as *_ENTID gives it.
+function unsupplied(key: string): string {
+  return `$setup->{synthetic_only} || !defined $setup->{idmap}{${perlLit(key)}}`
 }
 
 

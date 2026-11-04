@@ -32,7 +32,7 @@ import {
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
-  liveEntity, liveIdentity,
+  liveEntity, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted,
 } from '@voxgig/sdkgen'
 
 import { formatLuaValue } from './utility_lua'
@@ -92,10 +92,11 @@ function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string, 
 `
   }
   if (null != needs.discover) {
-    const match = Object.entries(needs.discover)
+    const match = '{' + Object.entries(needs.discover)
       .map(([k, v]: any) => `[${JSON.stringify(k)}] = setup.idmap[${JSON.stringify(v)}]`)
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
-        .map(([k, ex]) => `[${JSON.stringify(k)}] = ${formatLuaValue(ex)}`)).join(', ')
+        .map(([k, ex]) => `[${JSON.stringify(k)}] = ${formatLuaValue(ex)}`)).join(', ') + '}'
+    const omit = needs.unrouted || []
     out += `    if setup.live then
       local _live_id = nil
       if not setup.synthetic_only then
@@ -104,9 +105,10 @@ function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string, 
 ${undefined === identity.ex ? '' : `      if _live_id == nil then
         _live_id = ${formatLuaValue(identity.ex)}
       end
-`}      runner.live_pace()
+`}${0 === omit.length ? '' : `      local _live_match = ${match}
+${liveOmit(omit, '_live_match', '      ')}`}      runner.live_pace()
       runner.live_existing(pending, setup, LIVE_STRICT, ${JSON.stringify(entity.name)}, function()
-        return client:${entity.Name}(nil):list({${match}}, nil)
+        return client:${entity.Name}(nil):list(${0 === omit.length ? match : '_live_match'}, nil)
       end, ${JSON.stringify(identity.field)}, _live_id)
     end
 `
@@ -598,7 +600,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     assert.is_not_nil(${resdatavar})
 `)
   if (hasEntIdU) {
-    Content(sameId(entity, `${resdatavar}[${rid(entity)}]`, `${datavar}_up["id"]`))
+    Content(sameId(liveRepeatsId(entity), `${resdatavar}[${rid(entity)}]`, `${datavar}_up["id"]`))
   }
 
   if (step.s) {
@@ -661,7 +663,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
     assert.is_nil(err)
     local ${datavar}_load_result = helpers.to_map(type(${datavar}_loaded) == 'table' and ${datavar}_loaded.data_get and ${datavar}_loaded:data_get() or ${datavar}_loaded)
     assert.is_not_nil(${datavar}_load_result)
-${sameId(entity, `${datavar}_load_result[${rid(entity)}]`, `${srcdatavar}[${rid(entity)}]`)}`)
+${sameId(liveLoadComparesId(entity, flow), `${datavar}_load_result[${rid(entity)}]`, `${srcdatavar}[${rid(entity)}]`)}`)
   }
   else {
     Content(`    local ${matchvar} = {}
@@ -716,11 +718,11 @@ const LIVE_PACE = `    if setup.live then
 `
 
 
-// A result's identity matches the one asked for, live only where the
-// record's schema has a field to repeat it in.
-function sameId(entity: any, result: string, expected: string): string {
+// A result's identity matches the one asked for, live only as the live
+// entity harness compares it.
+function sameId(compares: boolean, result: string, expected: string): string {
   const check = `assert.is_true(runner.live_same_id(${result}, ${expected}))`
-  return null == entityDataIdField(entity) ? `    if not setup.live then
+  return !compares ? `    if not setup.live then
       ${check}
     end
 ` : `    ${check}
@@ -748,9 +750,19 @@ function fixtureIdentity(entity: any): string {
 // A live step sends each example its route requires and the step leaves unbound.
 function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
   const fills = liveStepExamples(entity, step, flow)
-  return 0 === fills.length ? '' : `    if setup.live then
-${fills.map(([k, ex]) => `      ${matchvar}[${JSON.stringify(k)}] = ${formatLuaValue(ex)}\n`).join('')}    end
+  const omit = liveUnrouted(entity, step, flow)
+  return 0 === fills.length + omit.length ? '' : `    if setup.live then
+${fills.map(([k, ex]) => `      ${matchvar}[${JSON.stringify(k)}] = ${formatLuaValue(ex)}\n`).join('')}${liveOmit(omit, matchvar, '      ')}    end
 `
+}
+
+
+// A binding the live route does not take is sent only as *_ENTID gives it.
+function liveOmit(omit: [string, string][], matchvar: string, indent: string): string {
+  return omit.map(([name, key]) => `${indent}if setup.synthetic_only or setup.idmap[${JSON.stringify(key)}] == nil then
+${indent}  ${matchvar}[${JSON.stringify(name)}] = nil
+${indent}end
+`).join('')
 }
 
 

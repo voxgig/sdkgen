@@ -18,11 +18,11 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityDataIdField, entityRecordIdField,
+  isAuthActive, envName, envToken, entityRecordIdField,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
-  liveEntity, liveIdentity,
+  liveEntity, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted,
 } from '@voxgig/sdkgen'
 
 
@@ -90,17 +90,19 @@ function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string, 
 `
   }
   if (null != needs.discover) {
-    const match = Object.entries(needs.discover)
+    const match = 'linkedMapOf<String, Any?>(' + Object.entries(needs.discover)
       .map(([k, v]: any) => `${JSON.stringify(k)} to setup.idmap?.get(${JSON.stringify(v)})`)
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
-        .map(([k, ex]) => `${JSON.stringify(k)} to ${kotlinLit(ex)}`)).join(', ')
+        .map(([k, ex]) => `${JSON.stringify(k)} to ${kotlinLit(ex)}`)).join(', ') + ')'
+    const omit = needs.unrouted || []
     const given = `if (setup.syntheticOnly) null else setup.idmap?.get(${JSON.stringify(identity.key)})`
     out += `    if (setup.live) {
       val liveId: Any? = ${undefined === identity.ex ? given : `(${given}) ?: ${kotlinIdLit(identity.ex)}`}
-      RunnerSupport.livePace()
+${0 === omit.length ? '' : `      val liveMatch = ${match}
+${liveOmit(omit, 'liveMatch', '      ')}`}      RunnerSupport.livePace()
       RunnerSupport.liveExisting(setup.data!!, LIVE_STRICT, ${JSON.stringify(entity.name)},
         ${JSON.stringify(identity.field)}, liveId) {
-        client.${accessor}(null).list(linkedMapOf<String, Any?>(${match}), null)
+        client.${accessor}(null).list(${0 === omit.length ? match : 'liveMatch'}, null)
       }
     }
 `
@@ -565,7 +567,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     assertNotNull(${resdatavar}, "expected update result to be a map")
 `)
   if (hasEntIdU) {
-    Content(sameId(entity, `${resdatavar}[${rid(entity)}]`, `${datavar}Up["id"]`,
+    Content(sameId(liveRepeatsId(entity), `${resdatavar}[${rid(entity)}]`, `${datavar}Up["id"]`,
       'expected update result id to match'))
   }
 
@@ -627,7 +629,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
     val ${datavar}LoadResult = Helpers.toMapAny(if (${datavar}Loaded is SdkEntity) ${datavar}Loaded.data() else ${datavar}Loaded) ?: linkedMapOf()
     assertNotNull(${datavar}LoadResult, "expected load result to be a map")
-${sameId(entity, `${datavar}LoadResult[${rid(entity)}]`, `${srcdatavar}[${rid(entity)}]`,
+${sameId(liveLoadComparesId(entity, flow), `${datavar}LoadResult[${rid(entity)}]`, `${srcdatavar}[${rid(entity)}]`,
   'expected load result id to match')}`)
   } else {
     Content(`${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    val ${datavar}Loaded = ${entvar}.load(${matchvar}, null)
@@ -673,11 +675,11 @@ const LIVE_PACE = `    if (setup.live) {
 `
 
 
-// A result's identity matches the one asked for, live only where the
-// record's schema has a field to repeat it in.
-function sameId(entity: any, result: string, expected: string, message: string): string {
+// A result's identity matches the one asked for, live only as the live
+// entity harness compares it.
+function sameId(compares: boolean, result: string, expected: string, message: string): string {
   const check = `assertTrue(RunnerSupport.liveSameId(${result}, ${expected}), ${JSON.stringify(message)})`
-  return null == entityDataIdField(entity) ? `    if (!setup.live) {
+  return !compares ? `    if (!setup.live) {
       ${check}
     }
 ` : `    ${check}
@@ -719,9 +721,19 @@ function kotlinIdLit(value: any): string {
 // A live step sends each example its route requires and the step leaves unbound.
 function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
   const fills = liveStepExamples(entity, step, flow)
-  return 0 === fills.length ? '' : `    if (setup.live) {
-${fills.map(([k, ex]) => `      ${matchvar}[${JSON.stringify(k)}] = ${kotlinLit(ex)}\n`).join('')}    }
+  const omit = liveUnrouted(entity, step, flow)
+  return 0 === fills.length + omit.length ? '' : `    if (setup.live) {
+${fills.map(([k, ex]) => `      ${matchvar}[${JSON.stringify(k)}] = ${kotlinLit(ex)}\n`).join('')}${liveOmit(omit, matchvar, '      ')}    }
 `
+}
+
+
+// A binding the live route does not take is sent only as *_ENTID gives it.
+function liveOmit(omit: [string, string][], matchvar: string, indent: string): string {
+  return omit.map(([name, key]) => `${indent}if (setup.syntheticOnly || setup.idmap?.get(${JSON.stringify(key)}) == null) {
+${indent}  ${matchvar}.remove(${JSON.stringify(name)})
+${indent}}
+`).join('')
 }
 
 

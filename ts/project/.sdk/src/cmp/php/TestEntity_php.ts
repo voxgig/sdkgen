@@ -33,7 +33,7 @@ import {
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
-  liveEntity, liveIdentity,
+  liveEntity, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted,
 } from '@voxgig/sdkgen'
 
 import { formatPhpValue } from './utility_php'
@@ -82,16 +82,18 @@ function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string, 
 `
   }
   if (null != needs.discover) {
-    const match = Object.entries(needs.discover)
+    const match = '[' + Object.entries(needs.discover)
       .map(([k, v]: any) => `${JSON.stringify(k)} => $setup["idmap"][${JSON.stringify(v)}] ?? null`)
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
-        .map(([k, ex]) => `${JSON.stringify(k)} => ${formatPhpValue(ex)}`)).join(', ')
+        .map(([k, ex]) => `${JSON.stringify(k)} => ${formatPhpValue(ex)}`)).join(', ') + ']'
+    const omit = needs.unrouted || []
     out += `        if (!empty($setup["live"])) {
             $_liveId = empty($setup["synthetic_only"]) ? ($setup["idmap"][${JSON.stringify(identity.key)}] ?? null) : null;
 ${undefined === identity.ex ? '' : `            $_liveId = $_liveId ?? ${formatPhpValue(identity.ex)};
-`}            Runner::live_pace();
+`}${0 === omit.length ? '' : `            $_liveMatch = ${match};
+${liveOmit(omit, '_liveMatch', '            ')}`}            Runner::live_pace();
             Runner::live_existing($setup, self::LIVE_STRICT, ${JSON.stringify(entity.name)},
-                fn() => $client->${accessor}(null)->list([${match}], null), ${JSON.stringify(identity.field)}, $_liveId);
+                fn() => $client->${accessor}(null)->list(${0 === omit.length ? match : '$_liveMatch'}, null), ${JSON.stringify(identity.field)}, $_liveId);
         }
 `
   }
@@ -493,8 +495,10 @@ const generateList: OpGen = (ctx, step, index) => {
   } else {
     Content(`        $${matchvar} = [
 `)
+    // *_ENTID may not give a binding the live route does not take.
+    const unrouted = liveUnrouted(entity, step, flow).map(([name]) => name)
     for (const [key, val] of matchEntries) {
-      Content(`            "${key}" => $setup["idmap"]["${val}"],
+      Content(`            "${key}" => $setup["idmap"]["${val}"]${unrouted.includes(key) ? ' ?? null' : ''},
 `)
     }
     Content(`        ];
@@ -596,7 +600,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
         $this->assertNotNull($${resdatavar});
 `)
   if (hasEntIdU) {
-    Content(sameId(entity, `$${resdatavar}[${rid(entity)}] ?? null`, `$${datavar}_up["id"]`))
+    Content(sameId(liveRepeatsId(entity), `$${resdatavar}[${rid(entity)}] ?? null`, `$${datavar}_up["id"]`))
   }
 
   if (step.s) {
@@ -658,7 +662,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}        $${datavar}_loaded = $${entvar}->load($${matchvar}, null);
         $${datavar}_load_result = Helpers::to_map(is_object($${datavar}_loaded) && method_exists($${datavar}_loaded, 'data_get') ? $${datavar}_loaded->data_get() : $${datavar}_loaded);
         $this->assertNotNull($${datavar}_load_result);
-${sameId(entity, `$${datavar}_load_result[${rid(entity)}] ?? null`, `$${srcdatavar}[${rid(entity)}]`)}`)
+${sameId(liveLoadComparesId(entity, flow), `$${datavar}_load_result[${rid(entity)}] ?? null`, `$${srcdatavar}[${rid(entity)}]`)}`)
   }
   else {
     Content(`        $${matchvar} = [];
@@ -711,11 +715,11 @@ const LIVE_PACE = `        if (!empty($setup["live"])) {
 `
 
 
-// A result's identity matches the one asked for, live only where the
-// record's schema has a field to repeat it in.
-function sameId(entity: any, result: string, expected: string): string {
+// A result's identity matches the one asked for, live only as the live
+// entity harness compares it.
+function sameId(compares: boolean, result: string, expected: string): string {
   const check = `$this->assertTrue(Runner::live_same_id(${result}, ${expected}));`
-  return null == entityDataIdField(entity) ? `        if (empty($setup["live"])) {
+  return !compares ? `        if (empty($setup["live"])) {
             ${check}
         }
 ` : `        ${check}
@@ -744,9 +748,20 @@ function fixtureIdentity(entity: any): string {
 // A live step sends each example its route requires and the step leaves unbound.
 function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
   const fills = liveStepExamples(entity, step, flow)
-  return 0 === fills.length ? '' : `        if (!empty($setup["live"])) {
-${fills.map(([k, ex]) => `            $${matchvar}[${JSON.stringify(k)}] = ${formatPhpValue(ex)};\n`).join('')}        }
+  const omit = liveUnrouted(entity, step, flow)
+  return 0 === fills.length + omit.length ? '' : `        if (!empty($setup["live"])) {
+${fills.map(([k, ex]) => `            $${matchvar}[${JSON.stringify(k)}] = ${formatPhpValue(ex)};\n`).join('')}${liveOmit(omit, matchvar, '            ')}        }
 `
+}
+
+
+// A binding the live route does not take is sent only as *_ENTID gives it.
+function liveOmit(omit: [string, string][], matchvar: string, indent: string): string {
+  return omit.map(([name, key]) =>
+    `${indent}if (!empty($setup["synthetic_only"]) || null === ($setup["idmap"][${JSON.stringify(key)}] ?? null)) {
+${indent}    unset($${matchvar}[${JSON.stringify(name)}]);
+${indent}}
+`).join('')
 }
 
 

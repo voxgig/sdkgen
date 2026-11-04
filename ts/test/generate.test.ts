@@ -3487,11 +3487,10 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
   })
 
 
-  // A live record may not hold its identity as the fixture's do (see
-  // liveIdentities). A create-less load's record takes the identity in the
-  // field the model names, a listed record lacking one takes *_ENTID's value or
-  // the route example, a schema with no identity field is not compared on one
-  // live, an identity compares by its string form, and every request is paced.
+  // See liveIdentities: a live identity is filled from the field the model
+  // names, else *_ENTID or the route example; it is compared by string form,
+  // and only where the record declares it and the load sends it. A list binding
+  // its route does not take needs no *_ENTID. Every request is paced.
   test('every live flow target fills, falls back on and compares a live identity', async () => {
     const out = await generate(LIVE_SUITE_TARGETS, undefined, liveIdentities())
     const gaps: string[] = []
@@ -3512,22 +3511,35 @@ main: kit: flow: BasicAreaFlow: { entity: "area", kind: "basic", name: "BasicAre
       has('badge', 'entity', /live_?id\b[^\n]*badge01/i, 'does not fall back on *_ENTID')
       has('pokemon', 'entity', /live_?id\b[^\n]*(=|\?:|\?\?=?|\/\/=)\s*(Value::str\()?["']1["']/i,
         'does not fall back on the route example')
-      for (const name of ['venue', 'saying', 'pokemon', 'badge', 'year', 'box']) {
+      const offlineOnly = ['saying', 'motto', 'announcement']
+      for (const name of ['venue', 'saying', 'pokemon', 'badge', 'year', 'box', 'motto', 'announcement',
+        'episode', 'track']) {
         has(name, 'entity', /live_?pace\b/i, 'does not pace its requests')
         has(name, 'direct', /live_?pace\b/i, 'does not pace its requests')
+        if ('episode' === name) continue
         const compares = near(file(name, 'entity') || '', COMPARE)
         if (0 === compares.length) gaps.push(`${target}: ${name} compares no identity`)
         const guarded = compares.filter((around) => NOT_LIVE.test(around))
-        if ('saying' === name && guarded.length !== compares.length) {
-          gaps.push(`${target}: saying compares a live record on an identity its schema lacks`)
+        if (offlineOnly.includes(name) && guarded.length !== compares.length) {
+          gaps.push(`${target}: ${name} compares a live record on an identity it does not repeat`)
         }
-        if ('saying' !== name && 0 < guarded.length) gaps.push(`${target}: ${name} compares offline only`)
+        if (!offlineOnly.includes(name) && 0 < guarded.length) gaps.push(`${target}: ${name} compares offline only`)
+      }
+      for (const [name, key, param] of [['episode', 'episode_number01', 'episode_number'],
+        ['track', 'album01', 'album_id']]) {
+        const text = file(name, 'entity') || ''
+        if (/Live entity test blocked: needs/.test(text)) gaps.push(`${target}: ${name} needs ${key} via *_ENTID`)
+        const drops = text.split('\n').filter((line) => new RegExp(`["']${param}["']`).test(line) &&
+          /(delete|pop|remove|unset|= nil|del_prop)/i.test(line))
+        const lists = 'track' === name ? 2 : 1
+        if (drops.length !== lists) gaps.push(`${target}: ${name} sends ${param} live although *_ENTID gave none`)
+        if (!new RegExp(`["']count["'][^\\n]{0,30}\\b1\\b`).test(text)) gaps.push(`${target}: ${name} lists by no example count`)
       }
     }
     for (const target of ['ts', 'js']) {
       const harness = filesFor(out, target).find(([n]) => /test\/live-entity\.(ts|js)$/.test(n))?.[1] || ''
       if (!/String\(data\[idField\] \?\? data\.id\), String\(input\.id\)/.test(harness) ||
-        !/input\.id != null && repeatsId/.test(harness)) {
+        !/input\.id != null && repeatsId/.test(harness) || !/true !== field\?\.syn/.test(harness)) {
         gaps.push(`${target}: the live harness compares an identity strictly, or one the schema lacks`)
       }
     }

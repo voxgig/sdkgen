@@ -1099,13 +1099,14 @@ const identityPoint = (path: string, param: string, ex?: string | number, type =
       s: [${path.slice(1).split('/').map((lit) => `{ lit: "${lit}" }, `).join('')}{ var: "id" }]
       t: { req: "\`reqdata\`", res: "\`body\`" } }`
 
-const identityEntity = (name: string, id: string, fields: [string, string][], load: string, list = false) => `
+const identityEntity = (name: string, id: string, fields: [string, string, boolean?][], load: string,
+  list = false) => `
 main: kit: entity: ${name}: {
   alias: field: {}
   name: "${name}"
   id: { field: "${id}", name: "id" }
-  fields: {${fields.map(([n, t]) => `
-    "${n}": { h: '${n}', n: "${n}", r: false, t: "\`$${t}\`" }`).join('')}
+  fields: {${fields.map(([n, t, syn]) => `
+    "${n}": { h: '${n}', n: "${n}", r: false, t: "\`$${t}\`"${syn ? ', syn: true' : ''} }`).join('')}
   }
   op: {${list ? `
     list: { name: "list", points: [ { g: {}, m: "GET", o: "/${name}", q: { exist: [] }
@@ -1124,11 +1125,101 @@ main: kit: flow: Basic${name[0].toUpperCase() + name.slice(1)}Flow: {
 `
 
 
-// Identities a live record does not hold as the fixture's do: a venue keyed by
-// its slug with no list, a saying addressed by position whose record declares
-// no identity field, a pokemon whose list records carry no id, a badge whose
-// route gives no example to fall back on, a year whose integer identity a
-// string route value names, and a box keyed by its record's `_id`.
+const pathParam = (name: string, or: string, ex: string | number, type = 'STRING') =>
+  `{ k: "param", n: "${name}", or: "${or}", r: true, t: "\`$${type}\`", ex: ${JSON.stringify(ex)} }`
+
+const listPoint = (path: string, params: string[], exist: string[], rename = '') => `{
+      g: { params: [ ${params.join(' ')} ] }
+      m: "GET", o: "${path}", q: { exist: ${JSON.stringify(exist)} }${rename ? `, r: { param: { ${rename} } }` : ''}
+      s: [${path.slice(1).split('/').map((part) => part.startsWith('{') ?
+    `{ var: "${exist[0]}" }` : `{ lit: "${part}" }`).join(', ')}]
+      t: { req: "\`reqdata\`", res: "\`body\`" } }`
+
+const PARTS_ENTITY = `
+main: kit: entity: announcement: {
+  alias: field: {}
+  name: "announcement"
+  id: { field: "id", name: "id", parts: ["currency", "indicator"]
+    from: { currency: "currency", indicator: "indicator" }, sep: "/" }
+  fields: {
+    "currency": { h: 'Currency', n: "currency", r: true, t: "\`$STRING\`" }
+    "id": { h: 'Id', n: "id", r: false, t: "\`$STRING\`" }
+    "indicator": { h: 'Indicator', n: "indicator", r: true, t: "\`$STRING\`" }
+    "name": { h: 'Name', n: "name", r: false, t: "\`$STRING\`" }
+  }
+  op: load: { name: "load", points: [ {
+    g: { params: [ ${pathParam('currency', 'currency', 'USD')} ${pathParam('indicator', 'indicator', 'inflation')} ] }
+    m: "GET", o: "/announcements/{currency}/{indicator}", q: { exist: ["currency", "indicator"] }
+    s: [{ lit: "announcements" }, { var: "currency" }, { var: "indicator" }]
+    t: { req: "\`reqdata\`", res: "\`body\`" } }
+    { g: {}, m: "GET", o: "/announcements/latest", q: { exist: [] }
+      s: [{ lit: "announcements" }, { lit: "latest" }], t: { req: "\`reqdata\`", res: "\`body\`" } } ] }
+}
+
+main: kit: flow: BasicAnnouncementFlow: {
+  entity: "announcement", kind: "basic", name: "BasicAnnouncementFlow"
+  step: [ { o: "load", i: { ref: "announcement_ref01", srcdatavar: "announcement_ref01_data", suffix: "_dt0" } } ]
+}
+`
+
+const UNROUTED_ENTITIES = `
+main: kit: entity: episode: {
+  alias: field: {}
+  name: "episode"
+  fields: {
+    "episode_number": { h: 'Episode Number', n: "episode_number", r: false, t: "\`$INTEGER\`" }
+    "title": { h: 'Title', n: "title", r: false, t: "\`$STRING\`" }
+  }
+  op: list: { name: "list", points: [
+    ${listPoint('/episodes/random/{count}', [pathParam('count', 'count', 1, 'INTEGER')], ['count'])}
+    ${listPoint('/episode/{episodeNumber}', [pathParam('episode_number', 'episodeNumber', 420, 'INTEGER')],
+    ['episode_number'], 'episodeNumber: "episode_number"')}
+    ${listPoint('/episodes/{episodeNumbers}', [pathParam('episode_number', 'episodeNumbers', '666,667')],
+    ['episode_number'], 'episodeNumbers: "episode_number"')}
+  ] }
+}
+
+main: kit: flow: BasicEpisodeFlow: {
+  entity: "episode", kind: "basic", name: "BasicEpisodeFlow"
+  step: [ { o: "list", m: { episode_number: "episode_number01" }
+    v: [{ apply: "ItemExists", def: { ref: "episode_ref01" } }] } ]
+}
+
+main: kit: entity: track: {
+  alias: field: {}
+  name: "track"
+  id: { field: "id", name: "id" }
+  fields: {
+    "album_id": { h: 'Album Id', n: "album_id", r: false, t: "\`$STRING\`" }
+    "id": { h: 'Id', n: "id", r: false, t: "\`$STRING\`" }
+    "name": { h: 'Name', n: "name", r: false, t: "\`$STRING\`" }
+  }
+  op: {
+    list: { name: "list", points: [
+      ${listPoint('/tracks/random/{count}', [pathParam('count', 'count', 1, 'INTEGER')], ['count'])}
+      {
+        g: { params: [ { k: "param", n: "album_id", or: "albumId", r: true, t: "\`$STRING\`" } ] }
+        m: "GET", o: "/albums/{albumId}/tracks", q: { exist: ["album_id"] }, r: { param: { albumId: "album_id" } }
+        s: [{ lit: "albums" }, { var: "album_id" }, { lit: "tracks" }], t: { req: "\`reqdata\`", res: "\`body\`" } }
+    ] }
+    load: { name: "load", points: [ ${identityPoint('/tracks', 'trackId', 't1')} ] }
+  }
+}
+
+main: kit: flow: BasicTrackFlow: {
+  entity: "track", kind: "basic", name: "BasicTrackFlow"
+  step: [
+    { o: "list", m: { album_id: "album01" } }
+    { o: "load", m: { id: "track01" }, i: { ref: "track_ref01", srcdatavar: "track_ref01_data", suffix: "_dt0" } }
+  ]
+}
+`
+
+
+// Live identities unlike the fixture's: by slug (venue), position (saying),
+// absent from listed records (pokemon), with no example (badge), an integer
+// (year), `_id` (box), only a model-added field (motto), route parts
+// (announcement); and lists whose first route takes no binding (episode, track).
 const LIVE_IDENTITY_ENTITIES = [
   identityEntity('venue', 'slug', [['id', 'INTEGER'], ['name', 'STRING'], ['slug', 'STRING']],
     identityPoint('/v1/venues', 'slug', 'hq')),
@@ -1142,6 +1233,10 @@ const LIVE_IDENTITY_ENTITIES = [
     identityPoint('/year', 'year', '1969')),
   identityEntity('box', '_id', [['_id', 'STRING'], ['name', 'STRING']],
     identityPoint('/boxes', 'boxId', '5a0c347b9fd3c2001111b701'), true),
+  identityEntity('motto', 'id', [['author', 'STRING'], ['id', 'STRING', true], ['quote', 'STRING']],
+    identityPoint('/mottos', 'index', 2, 'INTEGER'), true),
+  PARTS_ENTITY,
+  UNROUTED_ENTITIES,
 ].join('')
 
 

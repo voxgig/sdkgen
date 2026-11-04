@@ -124,8 +124,12 @@ A live load or update checks that the record it returns carries the identifier
 it asked for, comparing the two as strings: a path value is a string where the
 record may hold a number. When the record's schema has no field for the
 identifier, as for an API that addresses records by position, the live check is
-only that a record came back. Offline, every target still compares the
-fixture's identifier.
+only that a record came back. A field that the model adds for the identifier
+and that no schema declares, marked `syn: true`, is not the record's own and
+does not count. A load by a route that takes the parts of an identifier, such
+as a currency and an indicator, rather than the identifier itself sends none,
+so it compares one only for a record that the flow created or listed. Offline,
+every target still compares the fixture's identifier.
 
 A flow loads the record it listed or created by the route that record fills:
 the first route that takes the record's identifier and whose other path
@@ -146,7 +150,9 @@ the model's name for it: `direct()` sends its query as given. An entity flow
 fills each required parameter its step leaves unbound from its example, on the
 first route whose required parameters are all bound or have an example, which
 is the route the TS and JS runners take. A parameter the step binds takes the
-value `<PROJ>_TEST_<ENTITY>_ENTID` gives it, else its example. An operation
+value `<PROJ>_TEST_<ENTITY>_ENTID` gives it, else its example. A parameter the
+step binds that this route does not take needs no variable, and the step sends
+it only when the variable gives it. An operation
 whose every route is an `$action` route takes the examples of its first such
 route whose required parameters are all bound or have an example. A
 parameter's example is the one its definition gives, or the schema default.

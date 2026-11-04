@@ -32,7 +32,7 @@ import {
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
-  liveEntity, liveIdentity,
+  liveEntity, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted,
 } from '@voxgig/sdkgen'
 
 import { formatRubyValue } from './utility_rb'
@@ -80,16 +80,18 @@ function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string):
 `
   }
   if (null != needs.discover) {
-    const match = Object.entries(needs.discover)
+    const match = '{' + Object.entries(needs.discover)
       .map(([k, v]: any) => `${JSON.stringify(k)} => setup[:idmap][${JSON.stringify(v)}]`)
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
-        .map(([k, ex]) => `${JSON.stringify(k)} => ${formatRubyValue(ex)}`)).join(', ')
+        .map(([k, ex]) => `${JSON.stringify(k)} => ${formatRubyValue(ex)}`)).join(', ') + '}'
+    const omit = needs.unrouted || []
     out += `    if setup[:live]
       _live_id = setup[:synthetic_only] ? nil : setup[:idmap][${JSON.stringify(identity.key)}]
 ${undefined === identity.ex ? '' : `      _live_id = ${formatRubyValue(identity.ex)} if _live_id.nil?
-`}      Runner.live_pace
+`}${0 === omit.length ? '' : `      _live_match = ${match}
+${liveOmit(omit, '_live_match', '      ')}`}      Runner.live_pace
       Runner.live_existing(setup, LIVE_STRICT, ${JSON.stringify(entity.name)}, ${JSON.stringify(identity.field)}, _live_id) do
-        client.${entity.Name}(nil).list({${match}}, nil)
+        client.${entity.Name}(nil).list(${0 === omit.length ? match : '_live_match'}, nil)
       end
     end
 `
@@ -586,7 +588,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     assert !${resdatavar}.nil?
 `)
   if (hasEntIdU) {
-    Content(sameId(entity, `${resdatavar}[${rid(entity)}]`, `${datavar}_up["id"]`))
+    Content(sameId(liveRepeatsId(entity), `${resdatavar}[${rid(entity)}]`, `${datavar}_up["id"]`))
   }
 
   if (step.s) {
@@ -648,7 +650,7 @@ const generateLoad: OpGen = (ctx, step, index) => {
 ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchvar, flow)}    ${datavar}_loaded = ${entvar}.load(${matchvar}, nil)
     ${datavar}_load_result = Helpers.to_map(${datavar}_loaded.respond_to?(:data_get) ? ${datavar}_loaded.data_get : ${datavar}_loaded)
     assert !${datavar}_load_result.nil?
-${sameId(entity, `${datavar}_load_result[${rid(entity)}]`, `${srcdatavar}[${rid(entity)}]`)}`)
+${sameId(liveLoadComparesId(entity, flow), `${datavar}_load_result[${rid(entity)}]`, `${srcdatavar}[${rid(entity)}]`)}`)
   }
   else {
     Content(`    ${matchvar} = {}
@@ -699,10 +701,10 @@ const LIVE_PACE = `    Runner.live_pace if setup[:live]
 `
 
 
-// A result's identity matches the one asked for, live only where the
-// record's schema has a field to repeat it in.
-function sameId(entity: any, result: string, expected: string): string {
-  return `    assert Runner.live_same_id(${result}, ${expected})${null == entityDataIdField(entity) ? ' unless setup[:live]' : ''}
+// A result's identity matches the one asked for, live only as the live
+// entity harness compares it.
+function sameId(compares: boolean, result: string, expected: string): string {
+  return `    assert Runner.live_same_id(${result}, ${expected})${compares ? '' : ' unless setup[:live]'}
 `
 }
 
@@ -725,9 +727,18 @@ function fixtureIdentity(entity: any): string {
 // A live step sends each example its route requires and the step leaves unbound.
 function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
   const fills = liveStepExamples(entity, step, flow)
-  return 0 === fills.length ? '' : `    if setup[:live]
-${fills.map(([k, ex]) => `      ${matchvar}[${JSON.stringify(k)}] = ${formatRubyValue(ex)}\n`).join('')}    end
+  const omit = liveUnrouted(entity, step, flow)
+  return 0 === fills.length + omit.length ? '' : `    if setup[:live]
+${fills.map(([k, ex]) => `      ${matchvar}[${JSON.stringify(k)}] = ${formatRubyValue(ex)}\n`).join('')}${liveOmit(omit, matchvar, '      ')}    end
 `
+}
+
+
+// A binding the live route does not take is sent only as *_ENTID gives it.
+function liveOmit(omit: [string, string][], matchvar: string, indent: string): string {
+  return omit.map(([name, key]) =>
+    `${indent}${matchvar}.delete(${JSON.stringify(name)}) if setup[:synthetic_only] || setup[:idmap][${JSON.stringify(key)}].nil?
+`).join('')
 }
 
 

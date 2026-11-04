@@ -2,6 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   liveStrict, liveStrictNote, liveFlowNeeds, liveIdentity, guardFlowSteps,
+  liveRepeatsId, liveLoadComparesId, liveUnrouted,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
   flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes, liveEntity, liveGetOnly, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveDirectGetOnly, liveFlowPlan, liveGates,
@@ -284,6 +285,71 @@ test('a create-less load names the field its record holds the identity in, and i
   // An entity with no id, or a flow with no load, reads none.
   assert.equal(liveIdentity({ ...venue, id: undefined }, flow({ o: 'load' })), undefined)
   assert.equal(liveIdentity(pokemon, flow({ o: 'list' })), undefined)
+})
+
+// The live entity harness compares a load's identity only where the record's
+// own schema declares its field and the load sends it. A field the model adds
+// (`syn`) is not the record's: Motivational Spark's quotes answer
+// {author, quote}. A route of an identity's parts sends no `id`: FXMacroData's
+// announcement is addressed by currency and indicator.
+test('a live load compares only an identity the record declares and the load sends', () => {
+  const quote = (fields: any) => ({ name: 'quote', id: { field: 'id', name: 'id' }, fields,
+    op: { load: { points: [route('/quotes/{index}', [arg('param', 'id', true, 2)])] } } })
+  const load = flow({ o: 'load', m: { id: 'quote01' } })
+  const added = { ...field('author'), ...field('quote'), id: { n: 'id', t: '`$STRING`', syn: true } }
+  assert.equal(liveRepeatsId(quote(added)), false)
+  assert.equal(liveLoadComparesId(quote(added), load), false)
+  assert.equal(liveLoadComparesId(quote(added), flow({ o: 'list' }, { o: 'load' })), false)
+  assert.equal(liveRepeatsId(quote({ ...added, id: { n: 'id', t: '`$STRING`' } })), true)
+  assert.equal(liveLoadComparesId(quote({ ...added, id: { n: 'id', t: '`$STRING`' } }), load), true)
+  assert.equal(liveRepeatsId(quote({ ...field('author'), ...field('quote') })), false)
+  assert.equal(liveRepeatsId({ ...quote(added), id: undefined }), false)
+
+  const announcement = { name: 'announcement',
+    id: { field: 'id', name: 'id', parts: ['currency', 'indicator'],
+      from: { currency: 'currency', indicator: 'indicator' } },
+    fields: { ...field('currency'), ...field('id'), ...field('indicator') },
+    op: { load: { points: [route('/announcements/{currency}/{indicator}',
+      [arg('param', 'currency', true, 'USD'), arg('param', 'indicator', true, 'inflation')]), route('/latest')] } } }
+  assert.equal(liveRepeatsId(announcement), true)
+  assert.equal(liveLoadComparesId(announcement, flow({ o: 'load' })), false)
+  // A record the flow lists or creates carries its own identity for the load to send.
+  assert.equal(liveLoadComparesId({ ...announcement, op: { ...announcement.op, list: at('GET', '/a') } },
+    flow({ o: 'list' }, { o: 'load' })), true)
+  assert.equal(liveLoadComparesId(announcement, flow({ o: 'create' }, { o: 'load' })), true)
+})
+
+// BoneQuest's episode lists by a random count, by one number or by several:
+// the live entity harness takes the first route it can fill, so a number the
+// step binds that route does not take needs no *_ENTID and is sent only as
+// *_ENTID gives it.
+test('a live list needs no binding its route does not take, and sends it only as given', () => {
+  const routes = [
+    route('/episodes/random/{count}', [arg('param', 'count', true, 1)]),
+    route('/episode/{episodeNumber}', [arg('param', 'episode_number', true, 420)]),
+    route('/episodes/{episodeNumbers}', [arg('param', 'episode_number', true, '666,667')]),
+  ]
+  const episode = { name: 'episode', fields: field('episode_number'), op: { list: { points: routes } } }
+  const list = { o: 'list', m: { episode_number: 'episode_number01' } }
+  assert.deepEqual(liveFlowNeeds(episode, flow(list)), { keys: [] })
+  assert.deepEqual(liveStepExamples(episode, list), [['count', 1]])
+  assert.deepEqual(liveUnrouted(episode, list), [['episode_number', 'episode_number01']])
+  // A route that takes the binding fills it from its example.
+  const numbered = { ...episode, op: { list: { points: routes.slice(1) } } }
+  assert.deepEqual(liveFlowNeeds(numbered, flow(list)), { keys: [], examples: [['episode_number01', 420]] })
+  assert.deepEqual(liveUnrouted(numbered, list), [])
+  // With no route to take, the binding is still *_ENTID's to give.
+  const bare = { ...episode, op: { list: { points: [route('/e/{n}', [arg('param', 'episode_number', true)]),
+    route('/r/{count}', [arg('param', 'count', true)])] } } }
+  assert.deepEqual(liveFlowNeeds(bare, flow({ o: 'list', m: { other: 'other01' } })), { keys: ['other01'] })
+  assert.deepEqual(liveUnrouted(bare, { o: 'list', m: { other: 'other01' } }), [])
+  assert.deepEqual(liveUnrouted(episode, { o: 'load', m: { episode_number: 'episode_number01' } }), [])
+  // The list that finds a load's record leaves it out the same way.
+  const track = { ...episode, name: 'track', id: { field: 'id', name: 'id' },
+    op: { list: { points: routes.slice(0, 2) }, load: { points: [route('/t/{id}', [arg('param', 'id', true, 't1')])] } } }
+  assert.deepEqual(liveFlowNeeds(track, flow(list, { o: 'load' })), {
+    keys: [], discover: { episode_number: 'episode_number01' }, unrouted: [['episode_number', 'episode_number01']],
+  })
 })
 
 test('a list bound by a path key takes the key from its example', () => {

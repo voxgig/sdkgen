@@ -38,6 +38,8 @@ type LiveFlowNeeds = {
   record?: string
   // match of the list that finds the existing record a create-less load reads
   discover?: Record<string, string>
+  // of that match, the bindings its route does not take, sent only as *_ENTID gives them
+  unrouted?: [string, string][]
   // why the flow cannot run against a live API at all
   blocked?: string
 }
@@ -65,9 +67,9 @@ function liveFlowNeeds(entity: any, flow: any): LiveFlowNeeds {
     if ('create' === step.o) bindings(step.m).forEach(([, k]) => keys.add(k))
     if ('update' === step.o) bindings(step.d).forEach(([, k]) => keys.add(k))
     if ('list' === step.o) {
-      const args = liveStepArgs(entity, step, flow) || []
-      fill(args)
-      bindings(step.m).filter(([, k]) => !args.some((arg) => k === arg.key)).forEach(([, k]) => keys.add(k))
+      const args = liveStepArgs(entity, step, flow)
+      fill(args || [])
+      if (null == args) bindings(step.m).forEach(([, k]) => keys.add(k))
     }
     if ('load' === step.o && !liveRecordFound(entity, flow)) {
       const args = liveStepArgs(entity, step, flow)
@@ -91,6 +93,8 @@ function liveFlowNeeds(entity: any, flow: any): LiveFlowNeeds {
   else if (steps.some((step) => 'load' === step.o)) {
     if (null != list) {
       needs.discover = Object.fromEntries(bindings(list.m))
+      const unrouted = liveUnrouted(entity, list, flow)
+      if (0 < unrouted.length) needs.unrouted = unrouted
     }
     else if (unrouted) {
       needs.blocked = 'the flow loads a ' + entity.name + ' record it has no list to find'
@@ -233,6 +237,30 @@ function liveIdentity(entity: any, flow: any): LiveIdentity | undefined {
     field: entityRecordIdField(entity), key: loadIdKey(entity, load),
     ...(undefined === ex ? {} : { ex }),
   }
+}
+
+
+function liveRepeatsId(entity: any): boolean {
+  if (null == entity?.id) return false
+  const declared = new Set(Object.values(entity.fields || {})
+    .filter((field: any) => true !== field?.syn).map((field: any) => field?.n))
+  return declared.has(entity.id.field || 'id') || declared.has('id')
+}
+
+
+// Only an identity the load sends, as the live entity harness: a listed or created record's, or a route's `id`.
+function liveLoadComparesId(entity: any, flow: any): boolean {
+  if (!liveRepeatsId(entity)) return false
+  if (liveRecordFound(entity, flow)) return true
+  const load = flowSteps(flow).find((step: any) => 'load' === step.o)
+  return (liveStepArgs(entity, load, flow) || []).some((arg) => 'id' === arg.name)
+}
+
+
+function liveUnrouted(entity: any, step: any, flow?: any): [string, string][] {
+  if ('list' !== step?.o) return []
+  const args = liveStepArgs(entity, step, flow)
+  return null == args ? [] : bindings(step.m).filter(([, key]) => !args.some((arg) => key === arg.key))
 }
 
 
@@ -542,6 +570,7 @@ export type { LiveFlowNeeds, LiveIdentity, LiveExcluded, LiveGetOnly, LiveGate, 
 
 export {
   liveStrict, liveStrictNote, liveFlowNeeds, liveIdentity,
+  liveRepeatsId, liveLoadComparesId, liveUnrouted,
   liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples,
   flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes,
   liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason,

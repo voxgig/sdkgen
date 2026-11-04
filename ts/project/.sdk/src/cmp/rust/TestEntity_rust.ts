@@ -18,13 +18,13 @@ import {
   each,
   buildIdNames,
   getMatchEntries,
-  isAuthActive, envName, envToken, entityDataIdField, entityRecordIdField,
+  isAuthActive, envName, envToken, entityRecordIdField,
   serverVarEnv,
   serverVariables,
   liveFlowNeeds, liveStrict, liveStrictNote,
   liveGates, liveExcludedLines, liveExcludedSummary, LIVE_GETONLY_ENV,
   liveRouteExamples, liveStepExamples,
-  liveEntity, liveIdentity,
+  liveEntity, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted,
 } from '@voxgig/sdkgen'
 
 
@@ -86,10 +86,11 @@ function liveFlowGate(entity: any, needs: any, identity: any, entidEnv: string, 
 `
   }
   if (null != needs.discover) {
-    const match = Object.entries(needs.discover)
+    const match = 'jo(vec![' + Object.entries(needs.discover)
       .map(([k, v]: any) => `(${JSON.stringify(k)}, getp(&setup.idmap, ${JSON.stringify(v)}))`)
       .concat(liveRouteExamples(entity, 'list', Object.keys(needs.discover))
-        .map(([k, ex]) => `(${JSON.stringify(k)}, ${rustLit(ex)})`)).join(', ')
+        .map(([k, ex]) => `(${JSON.stringify(k)}, ${rustLit(ex)})`)).join(', ') + '])'
+    const omit = needs.unrouted || []
     const given = `if setup.synthetic_only { Value::Noval } else { getp(&setup.idmap, ${JSON.stringify(identity.key)}) }`
     out += `    if setup.live {
 ${undefined === identity.ex ? `        let live_id = ${given};
@@ -97,11 +98,12 @@ ${undefined === identity.ex ? `        let live_id = ${given};
         if live_id.is_noval() || live_id.is_null() {
             live_id = ${rustLit(identity.ex)};
         }
-`}        live_pace();
+`}${0 === omit.length ? '' : `        let live_match = ${match};
+${liveOmit(omit, 'live_match', '        ')}`}        live_pace();
         if !live_existing(&setup.data, LIVE_STRICT, ${JSON.stringify(entity.name)}, ${JSON.stringify(identity.field)}, live_id, || {
             client
                 .${method}(Value::Noval)
-                .list(jo(vec![${match}]), Value::Noval)
+                .list(${0 === omit.length ? match : 'live_match.clone()'}, Value::Noval)
                 .map(|list| ja(list.iter().map(|e| e.data(None)).collect::<Vec<Value>>()))
         }) {
             return;
@@ -651,7 +653,7 @@ const generateUpdate: OpGen = (ctx, step, index) => {
     );
 `)
   if (hasEntIdU) {
-    Content(sameId(entity, `getp(&${resdatavar}, ${rid(entity)})`, `getp(&${datavar}_up, "id")`,
+    Content(sameId(liveRepeatsId(entity), `getp(&${resdatavar}, ${rid(entity)})`, `getp(&${datavar}_up, "id")`,
       'expected update result id to match'))
   }
 
@@ -724,7 +726,7 @@ ${loadMatch(entity, step, matchvar, srcdatavar)}${liveFill(entity, step, matchva
         matches!(${datavar}_load_result, Value::Map(_)),
         "expected load result to be a map"
     );
-${sameId(entity, `getp(&${datavar}_load_result, ${rid(entity)})`, `getp(&${srcdatavar}, ${rid(entity)})`,
+${sameId(liveLoadComparesId(entity, flow), `getp(&${datavar}_load_result, ${rid(entity)})`, `getp(&${srcdatavar}, ${rid(entity)})`,
   'expected load result id to match')}`)
   }
   else {
@@ -780,11 +782,11 @@ const LIVE_PACE = `    if setup.live {
 `
 
 
-// A result's identity matches the one asked for, live only where the
-// record's schema has a field to repeat it in.
-function sameId(entity: any, result: string, expected: string, message: string): string {
+// A result's identity matches the one asked for, live only as the live
+// entity harness compares it.
+function sameId(compares: boolean, result: string, expected: string, message: string): string {
   const check = `assert!(live_same_id(&${result}, &${expected}), ${JSON.stringify(message)});`
-  return null == entityDataIdField(entity) ? `    if !setup.live {
+  return !compares ? `    if !setup.live {
         ${check}
     }
 ` : `    ${check}
@@ -818,9 +820,20 @@ function rustLit(value: any): string {
 // A live step sends each example its route requires and the step leaves unbound.
 function liveFill(entity: any, step: any, matchvar: string, flow: any): string {
   const fills = liveStepExamples(entity, step, flow)
-  return 0 === fills.length ? '' : `    if setup.live {
-${fills.map(([k, ex]) => `        setp(&${matchvar}, ${JSON.stringify(k)}, ${rustLit(ex)});\n`).join('')}    }
+  const omit = liveUnrouted(entity, step, flow)
+  return 0 === fills.length + omit.length ? '' : `    if setup.live {
+${fills.map(([k, ex]) => `        setp(&${matchvar}, ${JSON.stringify(k)}, ${rustLit(ex)});\n`).join('')}${liveOmit(omit, matchvar, '        ')}    }
 `
+}
+
+
+// A binding the live route does not take is sent only as *_ENTID gives it.
+function liveOmit(omit: [string, string][], matchvar: string, indent: string): string {
+  return omit.map(([name, key]) =>
+    `${indent}if setup.synthetic_only || getp(&setup.idmap, ${JSON.stringify(key)}).is_noval() {
+${indent}    vs::del_prop(${matchvar}.clone(), &Value::str(${JSON.stringify(name)}));
+${indent}}
+`).join('')
 }
 
 
