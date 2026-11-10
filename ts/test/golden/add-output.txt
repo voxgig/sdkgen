@@ -66,12 +66,12 @@ tm/c/src/feature/README.md c29c0aa3eaa0
 tm/c/src/feature/base/.gitkeep e3b0c44298fc
 tm/c/src/feature/test/.gitkeep e3b0c44298fc
 tm/c/tests/ctest.h d2111a0ede61
-tm/c/tests/feature_harness.h 4ee48c52576f
+tm/c/tests/feature_harness.h b5aa82f82114
 tm/c/tests/omni_resolver.h d02058fb3bc4
 tm/c/tests/omni_smoke_test.c 6408be08e5b4
 tm/c/tests/pipeline_test.c 39f2d4164345
 tm/c/tests/primary_corpus_test.c 8b5b07a955dc
-tm/c/tests/primary_utility_test.c c4284c86f79b
+tm/c/tests/primary_utility_test.c ca161399455a
 tm/c/tests/server_variable_test.c b49f64ffac4b
 tm/c/tests/struct_corpus_test.c d210851e0ef4
 tm/c/tests/transport_test.c 112cde65dacf
@@ -314,7 +314,7 @@ tm/cpp/test/netsim_test.cpp 40bb856c820b
 tm/cpp/test/omni_resolver.hpp e8a41e0b16fc
 tm/cpp/test/omni_smoke_test.cpp dacc9e1b8327
 tm/cpp/test/pipeline_test.cpp 34072773b4a2
-tm/cpp/test/primary_utility_test.cpp 5260628cbbcf
+tm/cpp/test/primary_utility_test.cpp a53553a747f7
 tm/cpp/test/runner_support.hpp cf97960870c1
 tm/cpp/test/sdk-test-control.json acadc87764f6
 tm/cpp/test/server_variable_test.cpp a6a1670e96ac
@@ -1236,7 +1236,7 @@ tm/perl/t/netsim.t e5829249c5e9
 tm/perl/t/omni.pm 05901a362319
 tm/perl/t/omni_smoke.t 5b5284fad82f
 tm/perl/t/pipeline.t b9dfbf3bdc49
-tm/perl/t/primary_utility.t 033698348d9e
+tm/perl/t/primary_utility.t 9d905f070890
 tm/perl/t/runner.pm faf289b7cd5d
 tm/perl/t/sdk-test-control.json b75ea700c514
 tm/perl/t/server_variables.t 4404608c9256
@@ -2004,7 +2004,7 @@ tm/swift/Tests/ProjectNameSDKTests/NetsimTest.swift e290a72e79ed
 tm/swift/Tests/ProjectNameSDKTests/OmniResolver.swift 4d0840455dcf
 tm/swift/Tests/ProjectNameSDKTests/OmniSmokeTest.swift 8c71b23490e1
 tm/swift/Tests/ProjectNameSDKTests/PipelineTest.swift 88b2121387e7
-tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift 9d3751324981
+tm/swift/Tests/ProjectNameSDKTests/PrimaryUtilityTest.swift 056de1a12efd
 tm/swift/Tests/ProjectNameSDKTests/Runner.swift 7cacfc13a4c6
 tm/swift/Tests/ProjectNameSDKTests/ServerVariableTest.swift e3469c9beea6
 tm/swift/Tests/ProjectNameSDKTests/StructUtilityTest.swift df46c84a8c75
