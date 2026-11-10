@@ -540,7 +540,7 @@ static void test_primary_fetcher_getonly_guard(void) {
   const char* url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01";
   const char* prior = getenv("VOXGIG_GETONLY_GUARD");
   char* saved = NULL == prior ? NULL : strdup(prior);
-  setenv("VOXGIG_GETONLY_GUARD", "TRUE", 1);
+  fh_setenv("VOXGIG_GETONLY_GUARD", "TRUE");
 
   PNError* err = NULL;
   utility_fetch(util, ctx, url, cmap(2, "method", v_str("POST"), "headers", v_map()), &err);
@@ -556,9 +556,9 @@ static void test_primary_fetcher_getonly_guard(void) {
         "fetcher getonly: a GET reaches the closed port");
 
   if (NULL == saved) {
-    unsetenv("VOXGIG_GETONLY_GUARD");
+    fh_unsetenv("VOXGIG_GETONLY_GUARD");
   } else {
-    setenv("VOXGIG_GETONLY_GUARD", saved, 1);
+    fh_setenv("VOXGIG_GETONLY_GUARD", saved);
     free(saved);
   }
 }

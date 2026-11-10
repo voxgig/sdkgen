@@ -21,6 +21,25 @@
 
 #define FH __attribute__((unused)) static
 
+// ---- environment ------------------------------------------------------------
+
+// MinGW declares neither setenv nor unsetenv.
+FH void fh_setenv(const char* key, const char* val) {
+#ifdef _WIN32
+  _putenv_s(key, val);
+#else
+  setenv(key, val, 1);
+#endif
+}
+
+FH void fh_unsetenv(const char* key) {
+#ifdef _WIN32
+  _putenv_s(key, "");
+#else
+  unsetenv(key);
+#endif
+}
+
 // ---- feature presence -------------------------------------------------------
 
 FH bool fh_has_feature(const char* name) {

@@ -282,10 +282,17 @@ const UNSENT_CASES: MediaCase[] = [
 ].map((name) => MEDIA_CASES.find((c) => name === c.name)!)
 
 
-// The error line each case's operation printed, or null where it returned. A
-// test runner may indent what a test prints.
+// What a probe printed, a line at a time. A test runner may indent it, and
+// zig's build runner opens a step's captured stderr with terminal codes.
+function printedLines(out: string): string[] {
+  return out.replace(/\x1b(?:\[[0-?]*[ -\/]*[@-~]|[()][0-9A-Za-z])/g, '')
+    .split(/\r?\n/).map((line) => line.trim())
+}
+
+
+// The error line each case's operation printed, or null where it returned.
 function mediaRaised(cases: MediaCase[], out: string): (string | null)[] {
-  const lines = out.split(/\r?\n/).map((line) => line.trim())
+  const lines = printedLines(out)
   return cases.map((_c, i) =>
     lines.find((line) => line.startsWith('media-probe: case ' + i + ': ')) ?? null)
 }
@@ -393,7 +400,7 @@ function mediaRecord(method: string, url: string, headers: Record<string, any>,
 
 // A probe without a live transport prints each request as a line of its own.
 function mediaPrinted(out: string): MediaRecord[] {
-  return out.split(/\r?\n/)
+  return printedLines(out)
     .filter((line) => line.startsWith('MEDIA-REQUEST '))
     .map((line) => {
       const r = JSON.parse(line.slice('MEDIA-REQUEST '.length))

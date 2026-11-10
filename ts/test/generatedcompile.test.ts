@@ -92,6 +92,11 @@ function linkDeps(sdkroot: string) {
 
 const RUN_TIMEOUT_MS = 5 * 60 * 1000
 
+// The line ExUnit prints when every test passed, in either of its epilogues.
+function exunitPassed(count: string = '[1-9]\\d*'): RegExp {
+  return new RegExp('^(?:' + count + ' tests?, 0 failures|Result: ' + count + ' passed)', 'm')
+}
+
 function exunitCount(out: string): { total: number, failed: number } | null {
   const legacy = /(\d+) tests?, (\d+) failures?/.exec(out)
   if (null != legacy) {
@@ -1831,7 +1836,8 @@ describe('auth null', () => {
     // environment gap, not a generator defect - but a compiler that IS
     // here and fails is a defect.
     const built = run(make, ['build'], sdkroot)
-    if (!built.ok && /a C compiler .* is needed|openssl\/ssl\.h: No such file/.test(built.out)) {
+    if (!built.ok &&
+      /a C compiler .* is needed|openssl\/\w+\.h(: No such file|' file not found)/.test(built.out)) {
       return t.skip('lua: no C compiler or OpenSSL headers here to build the sekreto helper:\n' +
         tail(built.out, 10))
     }
@@ -5751,7 +5757,7 @@ const CREDNAME_LANES: CredNameLane[] = [
       {
         name: 'the pipeline suite',
         cmd: () => mixTest([Path.join('test', 'pipeline_test.exs')]),
-        ran: /^[1-9]\d* tests, 0 failures/m,
+        ran: exunitPassed(),
       },
       {
         name: 'the corpus prepareAuth section',
@@ -6985,7 +6991,7 @@ const CONCURRENCY_LANES: ConcurrencyLane[] = [
     ran: [
       /\* test concurrent registration keeps every secret masked \(/,
       /\* test concurrent requests survive registration \(/,
-      /^2 tests, 0 failures$/m,
+      exunitPassed('2'),
     ],
   },
   {

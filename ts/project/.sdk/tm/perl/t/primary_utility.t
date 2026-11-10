@@ -455,7 +455,8 @@ SKIP: {
         . 'Content-Length: ' . length($body) . "\r\nConnection: close\r\n\r\n" . $body;
       close $sock;
     }
-    POSIX::_exit(0);
+    # Windows forks a thread, where _exit ends the whole test process.
+    $^O eq 'MSWin32' ? exit(0) : POSIX::_exit(0);
   }
   close $seen_w;
   my $base = 'http://127.0.0.1:' . $server->sockport;

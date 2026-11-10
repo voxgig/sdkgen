@@ -1059,14 +1059,14 @@ static void test_proxy_bypasses_noproxy_hosts(void) {
 
 static void test_proxy_fromenv_reads_https_proxy(void) {
   if (!fh_present("proxy")) return;
-  setenv("HTTPS_PROXY", "http://env-proxy:8080", 1);
+  fh_setenv("HTTPS_PROXY", "http://env-proxy:8080");
   voxgig_value* calls;
   Fetcher* srv = fh_recorder(NULL, NULL, &calls);
   Feature* f = feature_proxy_new();
   FhFeat feats[] = {{f, cmap(1, "fromEnv", v_bool(true))}};
   FhHarness h = fh_make(srv, feats, 1);
   fh_op(&h, op_load());
-  unsetenv("HTTPS_PROXY");
+  fh_unsetenv("HTTPS_PROXY");
   CHECK_STR_EQ(get_str(rec_fetchdef(calls, 0), "proxy"), "http://env-proxy:8080",
                "proxy: env proxy");
 }

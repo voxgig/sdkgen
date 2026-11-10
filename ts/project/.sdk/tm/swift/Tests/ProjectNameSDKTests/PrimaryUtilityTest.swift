@@ -438,7 +438,14 @@ final class PrimaryUtilityTest: XCTestCase {
     addr.sin_addr.s_addr = inet_addr("127.0.0.1")
     var len = socklen_t(MemoryLayout<sockaddr_in>.size)
     _ = withUnsafeMutablePointer(to: &addr) {
-      $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(fd, $0, len) }
+      $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa -> Int32 in
+        #if os(Linux)
+        return bind(fd, sa, len)
+        #else
+        // A bare bind here names an instance method XCTestCase inherits.
+        return Darwin.bind(fd, sa, len)
+        #endif
+      }
     }
     listen(fd, 8)
     _ = withUnsafeMutablePointer(to: &addr) {
