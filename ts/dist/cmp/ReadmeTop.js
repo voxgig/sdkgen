@@ -13,6 +13,7 @@ const mcpTools_1 = require("../helpers/mcpTools");
 const canonType_1 = require("../helpers/canonType");
 const naming_1 = require("../helpers/naming");
 const text_1 = require("../helpers/text");
+const alongside_1 = require("../helpers/alongside");
 const packageMeta_1 = require("../helpers/packageMeta");
 const SDKGEN_REPO = 'https://github.com/voxgig/sdkgen';
 const VOXGIG_SDK = 'https://voxgig.com/sdk/';
@@ -38,11 +39,6 @@ function installCommand(target, model) {
 }
 function pickLeadTarget(sdkTargets) {
     return sdkTargets[0];
-}
-const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test'];
-// A consumer (py-data) switches every phase off and has no ReadmeTop components.
-function isConsumer(target) {
-    return PHASES.every((name) => false === target.phase?.[name]?.active);
 }
 const EXAMPLE_FENCE = {
     ts: 'ts', js: 'js', py: 'python', go: 'go', php: 'php', rb: 'ruby', lua: 'lua',
@@ -126,9 +122,9 @@ const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
         .slice()
         .sort((a, b) => orderOf(a.name) - orderOf(b.name));
     const isCliOrMcp = (t) => t.name === 'go-cli' || t.name === 'go-mcp';
-    const sdkTargets = ordered.filter((t) => !isConsumer(t));
+    const sdkTargets = ordered.filter((t) => !(0, alongside_1.isConsumer)(t));
     // The CLI and the MCP server have surfaces of their own below.
-    const consumerTargets = ordered.filter((t) => isConsumer(t) && !isCliOrMcp(t));
+    const consumerTargets = ordered.filter((t) => (0, alongside_1.isConsumer)(t) && !isCliOrMcp(t));
     const docTargets = ordered.filter((t) => !isCliOrMcp(t));
     const pkgTargets = activeTargets
         .slice()

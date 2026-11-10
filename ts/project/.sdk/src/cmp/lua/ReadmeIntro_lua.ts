@@ -1,5 +1,5 @@
 
-import { cmp, Content, modelText } from '@voxgig/sdkgen'
+import { cmp, Content, modelText, alongsideNote } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -43,10 +43,7 @@ The ${target.title} SDK for the ${model.Name} API — an entity-oriented client 
 
 It exposes the API as capitalised, semantic **Entities** — e.g. \`client:${eName}()\` — each with the same small set of operations (${opList}) instead of raw URL paths and query strings. You call meaning, not endpoints, which keeps the cognitive load low.
 
-> Other languages, the CLI, and MCP server live alongside this one — see
-> the [top-level README](../README.md).
-
-`)
+${alongsideNote(model, target.name)}`)
 })
 
 

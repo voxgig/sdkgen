@@ -1,5 +1,5 @@
 
-import { cmp, Content, modelText } from '@voxgig/sdkgen'
+import { cmp, Content, modelText, alongsideNote } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -44,10 +44,7 @@ The API is exposed as capitalised, semantic **Entities** — e.g.
 instead of raw URL paths and query parameters. This keeps the surface
 predictable and low-friction for both humans and AI agents.
 
-> Other languages, the CLI, and MCP server live alongside this one — see
-> the [top-level README](../README.md).
-
-`)
+${alongsideNote(model, target.name)}`)
 })
 
 

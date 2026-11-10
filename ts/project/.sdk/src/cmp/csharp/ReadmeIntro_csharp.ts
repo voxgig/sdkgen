@@ -1,5 +1,5 @@
 
-import { cmp, Content, modelText } from '@voxgig/sdkgen'
+import { cmp, Content, modelText, alongsideNote } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -53,10 +53,7 @@ carrying a small, uniform set of operations (${opList}) instead of raw URL
 paths and query strings. You work with named resources and verbs, which
 keeps the cognitive load low.
 
-> Other languages, the CLI, and MCP server live alongside this one — see
-> the [top-level README](../README.md).
-
-`)
+${alongsideNote(model, target.name)}`)
 })
 
 

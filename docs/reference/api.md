@@ -199,6 +199,14 @@ flow. `$`-suffixed sentinels are skipped and the result is de-duplicated.
 The user-facing entries of a flow step's `match` object — keys ending in
 `$` (jostraca/aontu sentinels) are filtered out.
 
+### `alongsideNote(model, targetName) → string`
+
+The note that ends a language README's introduction, naming what the
+project generates beside that target: other languages, the CLI, and the MCP
+server. It reads only the active targets, so a project that declares
+`main: kit: target: 'go-mcp': active: false` is not promised an MCP server.
+It returns an empty string when the project generates nothing else.
+
 ### Typing helpers
 
 The typed-model subsystem (full picture:

@@ -21,6 +21,7 @@ import type { ExampleLang, PrimaryCall } from '../helpers/opExample'
 import { canonScalarKey } from '../helpers/canonType'
 import { safeVarName, exampleVarName, jsKey } from '../helpers/naming'
 import { modelText } from '../helpers/text'
+import { isConsumer } from '../helpers/alongside'
 
 import {
   installCommand as pkgInstall,
@@ -61,14 +62,6 @@ function installCommand(target: any, model: any): string {
 
 function pickLeadTarget(sdkTargets: any[]): any | undefined {
   return sdkTargets[0]
-}
-
-
-const PHASES = ['entity', 'feature', 'readme', 'agentguide', 'test']
-
-// A consumer (py-data) switches every phase off and has no ReadmeTop components.
-function isConsumer(target: any): boolean {
-  return PHASES.every((name: string) => false === target.phase?.[name]?.active)
 }
 
 

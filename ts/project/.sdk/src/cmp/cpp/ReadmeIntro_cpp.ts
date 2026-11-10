@@ -1,5 +1,5 @@
 
-import { cmp, Content, modelText } from '@voxgig/sdkgen'
+import { cmp, Content, modelText, alongsideNote } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -57,10 +57,7 @@ keeps the cognitive load low. Every value flows through a single dynamic
 \`sdk::Value\` type (a JSON-like variant), so there is no schema-driven code to
 regenerate when the API changes.
 
-> Other languages, the CLI, and MCP server live alongside this one — see
-> the [top-level README](../README.md).
-
-`)
+${alongsideNote(model, target.name)}`)
 })
 
 

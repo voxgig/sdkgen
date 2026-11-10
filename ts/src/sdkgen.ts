@@ -158,6 +158,7 @@ import {
   GENERATOR_URL,
 } from './helpers/packageMeta'
 import { modelText } from './helpers/text'
+import { alongsideNote } from './helpers/alongside'
 import {
   npmScriptRm,
   npmScriptEnv,
@@ -1327,6 +1328,7 @@ export {
   SECURITY_EMAIL,
   GENERATOR_URL,
   modelText,
+  alongsideNote,
   npmScriptRm,
   npmScriptEnv,
   npmScriptTestSome,

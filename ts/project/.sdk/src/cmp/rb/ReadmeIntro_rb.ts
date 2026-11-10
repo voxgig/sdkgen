@@ -1,5 +1,5 @@
 
-import { cmp, Content, modelText } from '@voxgig/sdkgen'
+import { cmp, Content, modelText, alongsideNote } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -45,10 +45,7 @@ ${tagline}
 
 The ${target.title} SDK for the ${model.Name} API — an entity-oriented client using idiomatic Ruby conventions.
 
-${semantic}> Other languages, the CLI, and MCP server live alongside this one — see
-> the [top-level README](../README.md).
-
-`)
+${semantic}${alongsideNote(model, target.name)}`)
 })
 
 

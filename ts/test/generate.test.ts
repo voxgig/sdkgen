@@ -12,7 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools, alongsideNote } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -1793,6 +1793,50 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     }
 
     deepStrictEqual(bad, [])
+  })
+
+
+  test('a language readme names only the surfaces the project generates', async () => {
+    const LANGS = readdirSync(Path.join(SCAFFOLD, 'src', 'cmp'))
+      .filter((t) => existsSync(Path.join(SCAFFOLD, 'src', 'cmp', t, `ReadmeIntro_${t}.ts`)))
+      .filter((t) => 'ts' !== t && 'go' !== t)
+    const intro = (out: Record<string, string>, t: string) => String(out[t + '/README.md'])
+    const bad: string[] = []
+
+    const all = await generate([...LANGS, 'go', 'go-cli', 'go-mcp'])
+    for (const t of LANGS) {
+      if (!intro(all, t).includes('> Other languages, the CLI, and MCP server live alongside this one'))
+        bad.push(t + ': every surface on, the note changed')
+    }
+
+    const nomcp = await generate([...LANGS, 'go', 'go-cli', 'go-mcp'], undefined,
+      "main: kit: target: 'go-mcp': active: false")
+    for (const t of LANGS) {
+      if (intro(nomcp, t).includes('MCP')) bad.push(t + ': go-mcp off, still names an MCP server')
+      if (!intro(nomcp, t).includes('> Other languages and the CLI live alongside this one'))
+        bad.push(t + ': go-mcp off, the note does not name the CLI')
+    }
+
+    const alone = await generate(['py'])
+    if (intro(alone, 'py').includes('alongside this one')) bad.push('py alone: names a sibling')
+
+    deepStrictEqual(bad, [])
+  })
+
+
+  test('alongsideNote words each combination of surfaces', () => {
+    const note = (targets: Record<string, any>) =>
+      alongsideNote({ main: { [KIT]: { target: targets } } }, 'py').split(' alongside')[0]
+    const off = { active: false }
+    const consumer = { phase: { entity: off, feature: off, readme: off, agentguide: off, test: off } }
+
+    strictEqual(note({ py: {}, rb: {}, 'go-cli': {}, 'go-mcp': {} }), '> Other languages, the CLI, and MCP server live')
+    strictEqual(note({ py: {}, rb: {}, 'go-mcp': {} }), '> Other languages and the MCP server live')
+    strictEqual(note({ py: {}, rb: {}, 'go-cli': {}, 'go-mcp': off }), '> Other languages and the CLI live')
+    strictEqual(note({ py: {}, 'go-cli': {}, 'go-mcp': {} }), '> The CLI and MCP server live')
+    strictEqual(note({ py: {}, 'go-cli': {} }), '> The CLI lives')
+    strictEqual(note({ py: {}, 'go-mcp': {} }), '> The MCP server lives')
+    strictEqual(note({ py: {}, rb: off, 'py-data': consumer }), '')
   })
 
 
