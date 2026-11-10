@@ -366,6 +366,23 @@ static void fetcherBlockedTestMode() {
   ASSERT_TRUE(msg.find("blocked") != std::string::npos, "expected error containing 'blocked'");
 }
 
+// MinGW declares neither setenv nor unsetenv.
+static void setEnv(const char* key, const char* val) {
+#ifdef _WIN32
+  _putenv_s(key, val);
+#else
+  setenv(key, val, 1);
+#endif
+}
+
+static void unsetEnv(const char* key) {
+#ifdef _WIN32
+  _putenv_s(key, "");
+#else
+  unsetenv(key);
+#endif
+}
+
 // Nothing listens on port 9; this target has no transport of its own, so a
 // request the guard let through fails as fetch_no_transport.
 static void fetcherGetOnlyGuard() {
@@ -379,7 +396,7 @@ static void fetcherGetOnlyGuard() {
   std::string url = "http://127.0.0.1:9/planet/p1?apikey=GUARDKEY01";
   const char* prior = std::getenv("VOXGIG_GETONLY_GUARD");
   std::string saved = nullptr == prior ? "" : prior;
-  setenv("VOXGIG_GETONLY_GUARD", "TRUE", 1);
+  setEnv("VOXGIG_GETONLY_GUARD", "TRUE");
 
   std::string codes[2];
   std::string msg;
@@ -392,8 +409,8 @@ static void fetcherGetOnlyGuard() {
       if (0 == i) msg = e->getMessage();
     }
   }
-  if (nullptr == prior) unsetenv("VOXGIG_GETONLY_GUARD");
-  else setenv("VOXGIG_GETONLY_GUARD", saved.c_str(), 1);
+  if (nullptr == prior) unsetEnv("VOXGIG_GETONLY_GUARD");
+  else setEnv("VOXGIG_GETONLY_GUARD", saved.c_str());
 
   ASSERT_TRUE(codes[0] == "fetch_getonly_block", "expected the POST to be refused");
   ASSERT_TRUE(msg.find("[GET-ONLY GUARD] blocked POST /planet/p1") != std::string::npos, "expected the path");
