@@ -32,7 +32,8 @@ const RESERVED = [
   'not', 'or', 'rescue', 'true', 'when',
 ]
 
-// Compiles, with a warning that it overrides the built-in.
+// Compiles, with or without a warning that it overrides a built-in: that
+// depends on the Elixir and Erlang release.
 const OVERRIDES = ['record']
 
 // Legal type names, some of them close to the guarded ones.
@@ -146,7 +147,7 @@ describe('elixir type name guard', () => {
         strictEqual(seen[n], 'error ok', n)
       }
       for (const n of OVERRIDES) {
-        strictEqual(seen[n], 'warning ok', n)
+        ok(['warning ok', 'ok ok'].includes(seen[n]), n + ': ' + seen[n])
       }
       for (const n of ORDINARY) {
         ok(seen[n]?.startsWith('ok '), n + ' should compile as a type: ' + seen[n])
