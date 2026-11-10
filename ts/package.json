@@ -1,6 +1,6 @@
 {
   "name": "@voxgig/sdkgen",
-  "version": "4.41.0",
+  "version": "4.41.1",
   "main": "dist/sdkgen.js",
   "type": "commonjs",
   "engines": {
@@ -94,9 +94,9 @@
     "@voxgig/docgen": ">=0.27.0",
     "@voxgig/struct": ">=0.2",
     "@voxgig/util": ">=0.5",
-    "aontu": ">=0.75.0",
-    "jostraca": ">=0.41.0",
-    "shape": ">=11.4.1"
+    "aontu": ">=0.76.3",
+    "jostraca": ">=0.42.0",
+    "shape": ">=12"
   },
   "peerDependenciesMeta": {
     "@voxgig/docgen": {

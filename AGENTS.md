@@ -649,7 +649,7 @@ emitted broken source reached the fleet unchallenged.
   target's own `module: package:` as a stamp (false fork on an untouched
   file) *and* stripped it from the comparison (a real deletion passing
   the check). Compare against what `provenanceReplace` emits.
-- **An OPTIONAL CLI flag is `Skip(...)`, not `One(..., undefined)`.** The
+- **An OPTIONAL CLI flag is `Skip(...)`, not `Nof(1, ..., undefined)`.** The
   shape is closed AND every listed key is required: spelling the optional
   flags as an alternative with `undefined` made them mandatory, so every
   invocation that did not pass both `--only` and `--alias` — i.e. every
