@@ -4,7 +4,7 @@ const Path = require('node:path')
 const { statSync } = require('node:fs')
 const { parseArgs } = require('node:util')
 
-const { Shape, One, Skip } = require('shape')
+const { Shape, Nof, Skip } = require('shape')
 
 const { SdkGen } = require('../dist/sdkgen.js')
 
@@ -171,12 +171,12 @@ function validateOptions(rawOptions) {
   // flag needs an entry in all three places (parse entry, this shape, the
   // help text) rather than only the first.
   const optShape = Shape({
-    debug: One(String, Boolean),
+    debug: Nof(1, String, Boolean),
     help: Boolean,
     version: Boolean,
     dryrun: Boolean,
-    // `Skip`, not `One(String, undefined)`. An unlisted alternative is not
-    // how `shape` spells "may be absent": `One(String, undefined)` made the
+    // `Skip`, not `Nof(1, String, undefined)`. An unlisted alternative is not
+    // how `shape` spells "may be absent": the `undefined` alternative made the
     // property REQUIRED, so every invocation without BOTH `--only` and
     // `--alias` was rejected before it reached an action — which is every
     // ordinary `target add`. `Optional(String)` is the other spelling and is
