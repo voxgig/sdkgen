@@ -8,7 +8,7 @@ const { Shape, Nof, Skip } = require('shape')
 
 const { SdkGen } = require('../dist/sdkgen.js')
 
-const VERSION = '4.43.0'
+const VERSION = '4.44.0'
 const KONSOLE = console
 
 
