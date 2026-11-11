@@ -108,8 +108,8 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
     // The prune below writes through `fs` directly rather than through
     // jostraca, so it has to be told about the dry run itself.
     const dryrun = !!actx?.opts?.dryrun;
-    // `feature add` skips a feature it cannot resolve and leaves its copies
-    // alone, so the prune must not delete them first.
+    // `feature add` copies nothing for a feature it cannot resolve or that the
+    // project defines itself, so the prune must not delete those files first.
     const unresolved = unresolvedFeatures(features ?? [], ctx$);
     (0, jostraca_1.Project)({}, () => {
         // Resolved names of every target in this run. The index File is
@@ -146,6 +146,13 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                 ctx$, kind: 'target', source, names: tnames,
                 content: ctx$.meta.content.target_index,
             }));
+            if (source.owned) {
+                log.info({
+                    point: 'target-owned', target: tname,
+                    note: tname + ': defined in this project, so its files stay as they are'
+                });
+                return;
+            }
             if (aliased) {
                 aliasCmpTree(ctx$, tfolder + '/src/cmp/' + torigname, 'src/cmp/' + tname, torigname, tname);
             }
@@ -236,8 +243,7 @@ function aliasCmpTree(ctx$, fromDir, toRel, torigname, tname, cmpbase = 'src/cmp
 function unresolvedFeatures(features, ctx$) {
     return features.filter((fname) => {
         try {
-            (0, kind_1.resolveKind)(fname, 'feature', ctx$);
-            return false;
+            return true === (0, kind_1.resolveKind)(fname, 'feature', ctx$).owned;
         }
         catch (err) {
             return true;

@@ -660,7 +660,10 @@ Follow-ups, in rough order (updated 2026-09-05):
    had no empty-section guard. All fixed, all red-checked.
 6. ~~elementdemo~~ **DONE** — the second acceptance gate PASSED
    (voxgig-sdk/voxgig-elementdemo-sdk#8): `ext/` regenerates with an
-   empty diff, bash 29/29, java elementcard 4/4; the dotenv-as-builtin
+   empty diff, bash 29/29, java elementcard 4/4 (elementdemo's `ext/`
+   package was retired on 2026-11-11: the `bash` target and `elementcard`
+   now live in its `.sdk`, and sdkgen refuses a package folder inside a
+   project); the dotenv-as-builtin
    path proven on its live `[dotenv, env]` chain; go/py gain secrets;
    the struct.nullsem lanes (opt-in flipped for all four pilots, corpus
    adopted from create-sdkgen) run green.

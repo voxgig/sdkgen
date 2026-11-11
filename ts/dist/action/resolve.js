@@ -16,6 +16,7 @@ const kindCollection_1 = require("../helpers/kindCollection");
 const node_path_1 = __importDefault(require("node:path"));
 const struct_1 = require("@voxgig/struct");
 const types_1 = require("../types");
+const utility_1 = require("../utility");
 const definition_1 = require("../helpers/definition");
 const manifest_1 = require("../helpers/manifest");
 const BUNDLED = 'node_modules/@voxgig/sdkgen/project/.sdk';
@@ -78,6 +79,24 @@ function resolveSource(ref, kind, ctx$) {
     if (!found) {
         throw new Error(capitalise(kind) + ' folder not found in:\n' + search.join('\n  '));
     }
+    if (insideProject(root, folder)) {
+        throw new utility_1.SdkGenError(capitalise(kind) + ' source ' + folder + ' is inside this project.' +
+            '\n  A project\'s own ' + kind + ' lives in its .sdk: define it in ' +
+            'model/' + kind + '/' + origname + '.aontu, put its sources under tm/ ' +
+            '(and src/cmp/ for a target), and add it by name.' +
+            '\n  A package is for sharing ' + kind + 's between projects: install ' +
+            'it from npm, or add it from a checkout outside the project.');
+    }
+    const ownmodel = (0, definition_1.definitionPathAny)(fs, root, kind, origname);
+    if (name === origname &&
+        node_path_1.default.normalize(folder) === node_path_1.default.normalize(node_path_1.default.join(root, BUNDLED)) &&
+        !fs.existsSync((0, definition_1.definitionPathAny)(fs, folder, kind, origname)) &&
+        fs.existsSync(ownmodel)) {
+        return {
+            name, origname, folder: node_path_1.default.normalize(root), base: '.', model: ownmodel,
+            owned: true,
+        };
+    }
     // `base` is the folder relative to the project root. Compare with the
     // PLATFORM separator: on Windows `root + '/'` never prefixes a normalised
     // absolute path, so the root would not be stripped and `base` would stay
@@ -101,6 +120,17 @@ function resolveSource(ref, kind, ctx$) {
             ...(null == owner.version ? {} : { version: owner.version }),
         }),
     };
+}
+// A package folder beside `.sdk` in the same project, such as an `ext/`:
+// the project's own items belong in `.sdk` itself.
+function insideProject(root, folder) {
+    const sdk = node_path_1.default.resolve(root);
+    if ('.sdk' !== node_path_1.default.basename(sdk)) {
+        return false;
+    }
+    const abs = node_path_1.default.resolve(folder);
+    return abs.startsWith(node_path_1.default.dirname(sdk) + node_path_1.default.sep) &&
+        !abs.startsWith(node_path_1.default.join(sdk, 'node_modules') + node_path_1.default.sep);
 }
 function sourcePackage(fs, folder, kind, origname, ctx$) {
     const read = (0, manifest_1.readManifest)(fs, folder);

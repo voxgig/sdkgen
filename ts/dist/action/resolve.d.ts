@@ -7,6 +7,7 @@ type Source = {
     model: string;
     package?: string;
     version?: string;
+    owned?: boolean;
 };
 declare function lastSegment(ref: string): string;
 declare function resolveSource(ref: string, kind: string, ctx$: any): Source;

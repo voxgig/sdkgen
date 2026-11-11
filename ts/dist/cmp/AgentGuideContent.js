@@ -181,18 +181,24 @@ npm run add-feature <name>    # e.g. log  (comma-separated for several)
 npm run build && npm run generate
 \`\`\`
 
-To author a **new** feature:
+To author a **new** feature, when editing a template cannot make the change:
 
 1. Define its model at \`.sdk/model/feature/<name>.aontu\` — \`name: key()\`,
    \`title\`, \`version\`, \`active\`, \`config.options.active\`, a \`hook\`
    map (\`<Stage>: active: true\`), and per-language \`deps\`.
-2. Register it in \`.sdk/model/feature/feature-index.aontu\` with
-   \`@"<name>.aontu"\`.
-3. Provide the per-language runtime under that target's feature template dir
+2. Provide the per-language runtime under that target's feature template dir
    (\`.sdk/tm/<lang>/src/feature/<name>/\` for ts/js, \`.sdk/tm/<lang>/feature/\`
    otherwise) — the \`FEATURE_Name\` / \`FEATURE_VERSION\` placeholders are
-   substituted on \`add-feature\`.
-4. \`npm run add-feature <name> && npm run build && npm run generate\`.
+   substituted when \`generate\` copies it.
+3. \`npm run add-feature <name> && npm run build && npm run generate\`. No
+   package provides the name, so the add registers the feature in
+   \`feature-index.aontu\` and copies nothing: the files in \`.sdk\` are its
+   source.
+
+A target of the project's own is written the same way:
+\`.sdk/model/target/<name>.aontu\`, \`.sdk/src/cmp/<name>/\` and
+\`.sdk/tm/<name>/\`, then \`npm run add-target <name>\`. Never put a package
+folder such as \`ext/\` inside the project: sdkgen refuses it.
 `;
 }
 function customiseSection() {

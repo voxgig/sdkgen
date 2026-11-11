@@ -121,6 +121,10 @@ async function planRemove(kind, name, actx, deleteOutput) {
         plan.refused.push('(source not found: the copy cannot be compared with what' +
             ' `' + kind + ' add` wrote; every file below is deleted only under --force)');
     }
+    else if (source.owned) {
+        plan.refused.push('(defined in this project: these files are its only' +
+            ' source, and are deleted only under --force)');
+    }
     // The feature being removed counts as selected, so its own source is
     // compared rather than written off as stale — see checkTarget.
     const findings = null == source ? { all: [], aliased: new Set() } :

@@ -92,6 +92,9 @@ function kindModel(props) {
     const def = kindDef(kind);
     const fs = ctx$.fs();
     const log = ctx$.log;
+    if (source.owned) {
+        return;
+    }
     const aliased = source.name !== source.origname;
     const owned = aliased && true === def.ownedWhenAliased;
     const replace = (0, stdrep_1.provenanceReplace)({

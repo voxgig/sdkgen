@@ -8,9 +8,9 @@ keeping the "SDKs have no dependencies" rule — including the upstream
 bug-fix backports the prototype surfaced.
 
 **Source of truth.** Everything here was proven against solardemo. The
-sekreto half now runs on its main, project-owned, via `options.extend`
-([`ts/src/ext/secrets/`](https://github.com/voxgig-sdk/voxgig-solardemo-sdk/tree/main/ts/src/ext/secrets)
-— see **Staging** for why that route exists and what it is waiting on).
+sekreto half ran on its main, project-owned, via `options.extend`, from
+`ts/src/ext/secrets/` (see **Staging** for why that route existed). That
+directory is gone: `secrets` is now a generated feature.
 The struct and omni halves, and the full hand-refactor they came from,
 are on the prototype branch
 [`claude/vendor-omni-struct-sekreto-prototype`](https://github.com/voxgig-sdk/voxgig-solardemo-sdk/tree/claude/vendor-omni-struct-sekreto-prototype)
@@ -370,12 +370,12 @@ components all see the same answer — which is a design of its own
 **Meanwhile, `options.extend` is the honest staging route.** It is the
 documented seam for handing a generated client a feature INSTANCE at
 construction, it needs no sdkgen change, and it puts a feature's design
-under test in a real consumer before the templates exist. solardemo runs
-the secrets feature this way today
-([`ts/src/ext/secrets/`](https://github.com/voxgig-sdk/voxgig-solardemo-sdk/tree/main/ts/src/ext/secrets)):
-project-owned, untouched by `generate`, drift gate green. Phase 3 moves
-it into a feature template and deletes it there. Any future feature can
-be staged the same way.
+under test in a real consumer before the templates exist. solardemo ran
+the secrets feature this way from `ts/src/ext/secrets/`: project-owned,
+untouched by `generate`, drift gate green, until Phase 3 moved it into a
+feature template and deleted the directory. A feature a project keeps for
+itself is now defined in its `.sdk` instead (see
+[Customize templates](../how-to/customize-and-propagate-templates.md)).
 
 ## Rollout and acceptance
 
@@ -403,9 +403,9 @@ absorbed. For the secrets half specifically, the acceptance test is
 sharper and already in place: solardemo's `ts/src/ext/secrets/` and its
 14 tests must keep passing when the feature becomes generated, with the
 directory deleted and nothing else in the suite changing. Elementdemo is the
-second gate: its `ext/` package's custom `bash` target and
-`elementcard` feature must regenerate unchanged, proving the migration
-does not break external sdkgen packages.
+second gate: its custom `bash` target and `elementcard` feature must
+regenerate unchanged. They came from an `ext/` package then; since
+2026-11-11 they are defined in elementdemo's own `.sdk`.
 
 Version note: Phases 1–2 change generated output for every consumer
 (vendored library refresh, runner replacement) — a minor bump at

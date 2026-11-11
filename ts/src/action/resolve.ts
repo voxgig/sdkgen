@@ -6,6 +6,8 @@ import { getelem } from '@voxgig/struct'
 
 import { KIT } from '../types'
 
+import { SdkGenError } from '../utility'
+
 import { definitionPathAny } from '../helpers/definition'
 import { readManifest, checkShape, ITEM_NAME_RE } from '../helpers/manifest'
 
@@ -33,6 +35,10 @@ type Source = {
 
   // That package's version, read from the same manifest.
   version?: string
+
+  // Defined in the project's own `.sdk` and provided by nothing else, so the
+  // project's files ARE the source: an add registers it and copies nothing.
+  owned?: boolean
 }
 
 
@@ -109,6 +115,27 @@ function resolveSource(ref: string, kind: string, ctx$: any): Source {
       capitalise(kind) + ' folder not found in:\n' + search.join('\n  '))
   }
 
+  if (insideProject(root, folder)) {
+    throw new SdkGenError(
+      capitalise(kind) + ' source ' + folder + ' is inside this project.' +
+      '\n  A project\'s own ' + kind + ' lives in its .sdk: define it in ' +
+      'model/' + kind + '/' + origname + '.aontu, put its sources under tm/ ' +
+      '(and src/cmp/ for a target), and add it by name.' +
+      '\n  A package is for sharing ' + kind + 's between projects: install ' +
+      'it from npm, or add it from a checkout outside the project.')
+  }
+
+  const ownmodel = definitionPathAny(fs, root, kind, origname)
+  if (name === origname &&
+    Path.normalize(folder) === Path.normalize(Path.join(root, BUNDLED)) &&
+    !fs.existsSync(definitionPathAny(fs, folder, kind, origname)) &&
+    fs.existsSync(ownmodel)) {
+    return {
+      name, origname, folder: Path.normalize(root), base: '.', model: ownmodel,
+      owned: true,
+    }
+  }
+
   // `base` is the folder relative to the project root. Compare with the
   // PLATFORM separator: on Windows `root + '/'` never prefixes a normalised
   // absolute path, so the root would not be stripped and `base` would stay
@@ -135,6 +162,20 @@ function resolveSource(ref: string, kind: string, ctx$: any): Source {
       ...(null == owner.version ? {} : { version: owner.version }),
     }),
   }
+}
+
+
+// A package folder beside `.sdk` in the same project, such as an `ext/`:
+// the project's own items belong in `.sdk` itself.
+function insideProject(root: string, folder: string): boolean {
+  const sdk = Path.resolve(root)
+  if ('.sdk' !== Path.basename(sdk)) {
+    return false
+  }
+
+  const abs = Path.resolve(folder)
+  return abs.startsWith(Path.dirname(sdk) + Path.sep) &&
+    !abs.startsWith(Path.join(sdk, 'node_modules') + Path.sep)
 }
 
 
