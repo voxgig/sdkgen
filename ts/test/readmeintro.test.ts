@@ -34,7 +34,11 @@ describe('ReadmeIntro', () => {
         'const { Content } = require(' + jostraca + ')\n' + src)
     }
     write('body', 'module.exports = { ReadmeIntroBody: () => Content("Body.\\n\\n") }')
-    write('whole', 'module.exports = { ReadmeIntro: () => Content("# Whole, as written.\\n\\n") }')
+    // As 4.42.0 scaffolded every intro: a whole ReadmeIntro that writes its own note.
+    write('whole', 'const sdkgen = require(' + JSON.stringify(require.resolve('../dist/sdkgen.js')) + ')\n' +
+      'module.exports = { ReadmeIntro: sdkgen.cmp(function ReadmeIntro(props) {\n' +
+      '  Content("# Whole, as written.\\n\\n" + sdkgen.alongsideNote(props.ctx$.model, props.target.name))\n' +
+      '}) }')
   })
 
   after(() => {
@@ -64,7 +68,9 @@ describe('ReadmeIntro', () => {
 
 
   test('leaves a component that writes the whole introduction to write it', async () => {
-    strictEqual(await render('whole'), '# Whole, as written.\n\n')
+    strictEqual(await render('whole'), '# Whole, as written.\n\n' +
+      '> Other languages and the CLI live alongside this one — see\n' +
+      '> the [top-level README](../README.md).\n\n')
   })
 })
 

@@ -209,6 +209,14 @@ flow. `$`-suffixed sentinels are skipped and the result is de-duplicated.
 The user-facing entries of a flow step's `match` object — keys ending in
 `$` (jostraca/aontu sentinels) are filtered out.
 
+### `alongsideNote(model, targetName) → string`
+
+The note the shared `ReadmeIntro` ends a language introduction with, naming
+what the project generates beside that target: other languages, the CLI, and
+the MCP server, read from the active targets. It returns an empty string when
+the project generates nothing else. A per-language component that writes its
+whole introduction itself can call it for the same note.
+
 ### Typing helpers
 
 The typed-model subsystem (full picture:

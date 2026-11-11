@@ -12,8 +12,7 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools } from '../dist/sdkgen.js'
-import { alongsideNote } from '../dist/helpers/alongside.js'
+import { SdkGen, mcpTools, alongsideNote } from '../dist/sdkgen.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
