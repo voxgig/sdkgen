@@ -175,8 +175,8 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
   const dryrun = !!actx?.opts?.dryrun
 
 
-  // `feature add` skips a feature it cannot resolve and leaves its copies
-  // alone, so the prune must not delete them first.
+  // `feature add` copies nothing for a feature it cannot resolve or that the
+  // project defines itself, so the prune must not delete those files first.
   const unresolved = unresolvedFeatures(features ?? [], ctx$)
 
   Project({}, () => {
@@ -220,6 +220,14 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
         ctx$, kind: 'target', source, names: tnames,
         content: ctx$.meta.content.target_index,
       }))
+
+      if (source.owned) {
+        log.info({
+          point: 'target-owned', target: tname,
+          note: tname + ': defined in this project, so its files stay as they are'
+        })
+        return
+      }
 
       if (aliased) {
         aliasCmpTree(ctx$, tfolder + '/src/cmp/' + torigname,
@@ -354,8 +362,7 @@ function aliasCmpTree(
 function unresolvedFeatures(features: string[], ctx$: any): string[] {
   return features.filter((fname: string) => {
     try {
-      resolveKind(fname, 'feature', ctx$)
-      return false
+      return true === resolveKind(fname, 'feature', ctx$).owned
     }
     catch (err: any) {
       return true

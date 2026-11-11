@@ -485,6 +485,13 @@ replacement (`ProjectName`, `GOMODULE`, …) is **not** re-applied to
 merged content. If you see a literal `ProjectName` in output, delete that
 generated file and re-run `generate` to recreate it fresh.
 
+A PROJECT customises in its own `.sdk`, in this order: edit the template or
+component copy; else define a feature of its own (`.sdk/model/feature/`,
+`.sdk/tm/<lang>/`); else a target of its own (`.sdk/model/target/`,
+`.sdk/src/cmp/`, `.sdk/tm/`). `feature add` / `target add` register a name
+that only the project defines and copy nothing. Never a package folder
+inside the project (an `ext/`): `resolveSource` refuses it.
+
 Details: [customize-and-propagate-templates](./docs/how-to/customize-and-propagate-templates.md).
 Debugging a failing target: [debug-generation](./docs/how-to/debug-generation.md).
 
@@ -1274,7 +1281,7 @@ so a working machine usually has all of them checked out as siblings:
 | `apidef` | parses an OpenAPI definition into the model sdkgen consumes |
 | `create-sdkgen` | scaffolds a new SDK project, and OWNS the test `.aontu` data in `project/standard/.sdk/test/` |
 | `voxgig-solardemo-sdk` | the reference generated SDK: `ts/` is the SDK, `.sdk/` the build tooling |
-| `voxgig-elementdemo-sdk` | the reference for CUSTOMIZATION: its `ext/` package adds an entirely custom `bash` target and an `elementcard` feature across five languages, with project-owned corpus cases driving all of them |
+| `voxgig-elementdemo-sdk` | the reference for CUSTOMIZATION: its `.sdk` defines an entirely custom `bash` target and an `elementcard` feature across five languages, with project-owned corpus cases driving all of them |
 | `struct`, `omni`, `plugin`, `sekreto` | the four vendored libraries, taken at a shared tag rather than as packages |
 
 ## Documentation editions

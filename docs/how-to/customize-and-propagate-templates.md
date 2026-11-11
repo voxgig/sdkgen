@@ -19,16 +19,32 @@ template; if its shape depends on the entities/operations, it's a
 component. See
 [Components vs templates](../explanation/components-and-templates.md).
 
-For project-side customization (as opposed to fixing sdkgen itself), edit
-the project's own copy under `.sdk/tm/` or `.sdk/src/cmp/`. An add merges
-later updates into it, as
-[The copies in `.sdk` merge](../explanation/copies-merge.md) explains. When
-the same customization is shared by several projects, or is a whole new
-target or feature, package it instead: the worked example is
+For project-side customization (as opposed to fixing sdkgen itself),
+everything goes in the project's own `.sdk`, in this order:
+
+1. **Edit a template or component.** Change the project's copy under
+   `.sdk/tm/<lang>/` or `.sdk/src/cmp/<lang>/`, in every target that needs
+   it. An add merges later toolchain updates into the edited copy, as
+   [The copies in `.sdk` merge](../explanation/copies-merge.md) explains.
+2. **Write a feature of the project's own,** when a template cannot express
+   the change. Define it in `.sdk/model/feature/<name>.aontu`, put its
+   sources in each target's feature folder under `.sdk/tm/<lang>/`, and run
+   `voxgig-sdkgen feature add <name>`. No package provides the name, so the
+   add registers the feature and copies nothing: the files in `.sdk` are its
+   source.
+3. **Write a target of the project's own** the same way, for a language
+   sdkgen does not ship: `.sdk/model/target/<name>.aontu`,
+   `.sdk/src/cmp/<name>/` and `.sdk/tm/<name>/`, then
+   `voxgig-sdkgen target add <name>`.
+
+Never put a package folder inside the project, such as an `ext/` beside
+`.sdk`: sdkgen refuses one, and names the `.sdk` paths to use instead. An
+sdkgen package is for sharing targets and features between projects (see
+[Use an sdkgen package](./use-an-sdkgen-package.md)). The worked example of
+all three steps is
 [voxgig-elementdemo-sdk](https://github.com/voxgig-sdk/voxgig-elementdemo-sdk),
-whose `ext/` folder is a project-local sdkgen package providing a custom
-`bash` target and a custom `elementcard` feature, installed with
-`package add`.
+whose `.sdk` holds a custom `bash` target and a custom `elementcard`
+feature.
 
 ## Step 2 — make the fix in this repo
 

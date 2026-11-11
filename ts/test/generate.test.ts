@@ -1726,7 +1726,19 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
     const readme = (await generate(['ts']))['README.md']
     ok(readme.includes('**Regeneration overwrites.**'), 'the overwrite bullet is gone')
     ok(readme.includes('(`.sdk/model/project.aontu`)'), 'the bullet does not name the project model')
-    ok(!/merge/i.test(readme), 'the root readme still promises a merge')
+    const overwrite = readme.split('**Regeneration overwrites.**')[1].split('\n- ')[0]
+    ok(!/merge/i.test(overwrite), 'the overwrite bullet promises a merge')
+  })
+
+
+  test('the root readme says how a project that regenerates .sdk in full customises', async () => {
+    const merged = String((await generate(['ts']))['README.md'])
+    const full = String((await generate(['ts'], undefined, "main: kit: copies: 'overwrite'"))['README.md'])
+
+    ok(merged.includes('merges toolchain updates into your edits'), 'the map omits the merge')
+    ok(full.includes('This repository regenerates `.sdk` in full'), 'the bullet omits the overwrite')
+    ok(full.includes('Only after setting `copies`'), 'the map omits the overwrite')
+    ok(!full.includes('merges toolchain updates into your edits'), 'the map promises a merge')
   })
 
 
@@ -1744,7 +1756,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       '`README.md`, `LICENSE`, `Makefile` and the other root files',
     ])
     deepStrictEqual(rows.map((row: string[]) => row[2].split('.')[0]),
-      ['Yes', 'Yes', 'Yes', 'Not by hand', 'Replace it when the API changes', 'Only to add a component of your own',
+      ['Yes', 'Yes', 'Yes', 'Not by hand', 'Replace it when the API changes', 'Yes',
         'No', 'No', 'No'])
 
     for (const command of ['npm run generate', 'npm run add-target <target>', 'npm run add-feature <feature>',

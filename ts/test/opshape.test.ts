@@ -968,7 +968,7 @@ function provenanceModel(checkout: string): any {
             base: 'node_modules/@voxgig/sdkgen-langpack/.sdk', origname: 'dart',
             package: '@voxgig/sdkgen-langpack',
           },
-          bash: { base: 'ext/.sdk', origname: 'bash' },
+          bash: { base: '../acme/.sdk', origname: 'bash' },
           py: { base: checkout, origname: 'py', package: '@voxgig/sdkgen' },
         },
       },
@@ -983,7 +983,7 @@ describe('targetOrigins — which targets the ungenerated-op warning speaks for'
     deepStrictEqual(targetOrigins(provenanceModel('/elsewhere/sdkgen/ts/project/.sdk')), {
       bundled: ['go', 'go2', 'js', 'ts'],
       external: [
-        { name: 'bash', from: 'ext/.sdk' },
+        { name: 'bash', from: '../acme/.sdk' },
         { name: 'dart', from: 'node_modules/@voxgig/sdkgen-langpack/.sdk' },
         { name: 'py', from: '/elsewhere/sdkgen/ts/project/.sdk' },
       ],
@@ -999,7 +999,7 @@ describe('targetOrigins — which targets the ungenerated-op warning speaks for'
       const root = Path.join(tmp, 'project')
       const checkout = Path.join(tmp, 'checkout', 'ts', 'project', '.sdk')
       for (const dir of [
-        BUNDLED, 'node_modules/@voxgig/sdkgen-langpack/.sdk', 'ext/.sdk',
+        BUNDLED, 'node_modules/@voxgig/sdkgen-langpack/.sdk', '../acme/.sdk',
       ]) {
         Fs.mkdirSync(Path.join(root, dir), { recursive: true })
       }

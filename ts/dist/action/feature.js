@@ -127,6 +127,13 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                 ctx$, kind: 'feature', source, names: fnames,
                 content: ctx$.meta.content.feature_index,
             }));
+            if (source.owned) {
+                log.info({
+                    point: 'feature-owned', feature: fname,
+                    note: fname + ': defined in this project, so its files stay as they are'
+                });
+                return;
+            }
             (0, jostraca_1.each)(target, (t) => {
                 // The target's OWN tree, under the name it has in ITS source — an
                 // aliased target's templates live at `tm/<origname>`, so searching
@@ -153,6 +160,15 @@ const FeatureRoot = (0, jostraca_1.cmp)(function FeatureRoot(props) {
                 const sources = 0 < overlay.length ? overlay :
                     (0, featureSource_1.findFeatureSources)(fs, owntm, [fname]);
                 const tmfolder = 0 < overlay.length ? featuretm : owntm;
+                // A target the project defines itself carries its own feature sources.
+                const inplace = 0 === sources.length && 0 < (0, featureSource_1.findFeatureSources)(fs, node_path_1.default.join(ctx$.folder ?? '.', 'tm', t.name), [fname]).length;
+                if (inplace) {
+                    log.info({
+                        point: 'feature-source-in-place', feature: fname, target: t.name,
+                        note: fname + ': target ' + t.name + ' has its own source'
+                    });
+                    return;
+                }
                 if (0 === sources.length) {
                     log.warn({
                         point: 'feature-source-missing', feature: fname, target: t.name,

@@ -164,6 +164,10 @@ function kindModel(props: {
   const fs = ctx$.fs()
   const log = ctx$.log
 
+  if (source.owned) {
+    return
+  }
+
   const aliased = source.name !== source.origname
   const owned = aliased && true === def.ownedWhenAliased
 

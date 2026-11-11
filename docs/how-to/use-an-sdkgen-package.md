@@ -20,12 +20,17 @@ Two steps, deliberately: `npm` fetches, `sdkgen` installs. Keeping them
 separate keeps their failure modes separate — a network problem and a
 manifest problem do not look alike.
 
-A package can also come from a checkout or a plain directory:
+A package can also come from a checkout or a plain directory outside the
+project:
 
 ```bash
-voxgig-sdkgen package add ../acme-sdkgen-iot
+voxgig-sdkgen package add ../../acme-sdkgen-iot
 voxgig-sdkgen package add /abs/path/to/acme-sdkgen-iot
 ```
+
+A folder inside the project, such as an `ext/` beside `.sdk`, is refused.
+A project's own targets and features live in its `.sdk`, as
+[Customize templates](./customize-and-propagate-templates.md) shows.
 
 A package released before aontu's `.aontu` rename still ships its items as
 `<name>.aon`. They install all the same, as `<name>.aontu`, with each

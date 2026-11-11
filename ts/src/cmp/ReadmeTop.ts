@@ -605,11 +605,24 @@ Pass custom features via the \`extend\` option at construction time.
 `)
 
     // 11c. Customization: model-driven declarations, in-repo templates and
-    // components, regeneration that overwrites, packages, and a map of which
-    // paths are the project's to edit. Every SDK repo carries its own
-    // generator, so this belongs in every README.
+    // components, regeneration that overwrites, customising in `.sdk`, and a
+    // map of which paths are the project's to edit. Every SDK repo carries
+    // its own generator, so this belongs in every README. A repository that
+    // regenerates `.sdk` in full says so, since its copies do not merge.
     const mapTarget = sdkTargets[0] || docTargets[0]
     const targetDir = mapTarget ? `\`<target>/\`, such as \`${mapTarget.name}/\`` : `\`<target>/\``
+    const merging = 'overwrite' !== model.main?.kit?.copies
+    const mergeNote = merging ?
+      `An add merges toolchain updates into the
+  edited copies, and \`voxgig-sdkgen doctor\` reports any drift from what a
+  resync would write.` :
+      `This repository regenerates \`.sdk\` in full
+  (\`main: kit: copies: 'overwrite'\`): set it to \`'merge'\` before
+  customising, so that an add merges toolchain updates into the edited
+  copies.`
+    const copiesRow = merging ?
+      `Yes. They are this project's copies, and \`target add\` merges toolchain updates into your edits.` :
+      `Only after setting \`copies\` to \`'merge'\`. This repository regenerates them in full.`
     Content(`## Customizing this SDK
 
 This repository contains its own generator (\`.sdk/\`), so the SDK is
@@ -630,10 +643,11 @@ customizable without forking any upstream tool:
   (\`.sdk/model/project.aontu\`), or extend a target with a component of its
   own in \`.sdk/src/cmp/<target>/\`, registered with \`registerComponent\`,
   which \`voxgig-sdkgen doctor\` reports as an addition rather than drift.
-- **Custom features and entire custom targets** arrive through sdkgen
-  packages (\`voxgig-sdkgen package add\`), on the same rails as the
-  bundled languages, and \`voxgig-sdkgen doctor\` reports any drift from
-  what a resync would write.
+- **Customise in \`.sdk\`.** Edit the templates and components first. When
+  they cannot express a change, write a feature of this project's own, or
+  an entire custom target, in \`.sdk/model/\`, \`.sdk/tm/\` and
+  \`.sdk/src/cmp/\`, and add it by name (\`voxgig-sdkgen feature add\`,
+  \`voxgig-sdkgen target add\`). ${mergeNote}
 
 ### Project map
 
@@ -642,9 +656,9 @@ customizable without forking any upstream tool:
 | \`.sdk/model/project.aontu\` | This project's own decisions: package names, versions, features and per-target settings | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/text.aontu\` | The README wording, in \`main.kit.text\`: the tagline, the summary and the entity descriptions | Yes. The scaffold writes it once and never again. |
 | \`.sdk/model/guide/guide.aontu\` | How the spec's paths map onto entities and operations | Yes. The scaffold writes it once and never again. |
-| \`.sdk/model/\`, the rest | The API model built from the spec, and the target and feature definitions | Not by hand. Generation, \`target add\` and a new scaffold run rewrite it. |
+| \`.sdk/model/\`, the rest | The API model built from the spec, and the target and feature definitions | Not by hand. Generation, \`target add\` and a new scaffold run rewrite it, apart from a feature or target this project defines itself. |
 | \`.sdk/def/\` | The OpenAPI spec | Replace it when the API changes. Generation rebuilds the model from it. |
-| \`.sdk/src/cmp/<target>/\`, \`.sdk/tm/<target>/\` | The components and templates that generate each target | Only to add a component of your own. \`target add\` overwrites the copies. |
+| \`.sdk/src/cmp/<target>/\`, \`.sdk/tm/<target>/\` | The components and templates that generate each target | ${copiesRow} |
 | \`.sdk/test/\` | The shared test cases the generated tests run | No. |
 | ${targetDir} | One generated SDK per target, with its own tests | No. Generation overwrites it. |
 | \`README.md\`, \`LICENSE\`, \`Makefile\` and the other root files | The repository's generated files | No. Generation overwrites them. |
