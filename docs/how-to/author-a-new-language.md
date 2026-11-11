@@ -107,7 +107,13 @@ section, and `AgentGuide_<lang>` adds a section to the target's agent
 guide.
 
 Each is a file `<Name>_<lang>.ts` in the target's components folder,
-exporting a component named `<Name>`.
+exporting a component named `<Name>`, with one exception.
+`ReadmeIntro_<lang>.ts` exports `ReadmeIntroBody`, which writes only the
+paragraphs that describe this language's client. The shared `ReadmeIntro`
+writes the title and tagline before it and, after it, the note that names the
+other surfaces the project generates, read from its active targets. A file
+that still exports a whole `ReadmeIntro` writes the introduction itself, as
+before. `introOps(model)` gives the operation names an introduction lists.
 
 ### Component skeleton
 

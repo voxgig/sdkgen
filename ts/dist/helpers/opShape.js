@@ -19,6 +19,7 @@ exports.entityIdField = entityIdField;
 exports.entityDataIdField = entityDataIdField;
 exports.entityRecordIdField = entityRecordIdField;
 exports.entityOps = entityOps;
+exports.introOps = introOps;
 exports.invalidRequest = invalidRequest;
 exports.entityPrimaryOp = entityPrimaryOp;
 exports.pickExampleEntity = pickExampleEntity;
@@ -344,6 +345,22 @@ function entityOps(ent) {
     const active = Object.keys(ops).filter((o) => ops[o] && ops[o].active !== false && !opNeedsAction(ops[o]));
     return CANON_OP_ORDER.filter((o) => active.includes(o))
         .concat(active.filter((o) => !CANON_OP_ORDER.includes(o)).sort());
+}
+// Unlike entityOps, keeps action-only ops: the README introductions always have.
+function introOps(model) {
+    const entity = model?.main?.[apidef_1.KIT]?.entity || {};
+    const found = new Set();
+    for (const e of Object.values(entity)) {
+        if (!e || false === e.active)
+            continue;
+        for (const o of Object.keys(e.op || {})) {
+            if (e.op[o] && false !== e.op[o].active)
+                found.add(o);
+        }
+    }
+    const names = CANON_OP_ORDER.filter((o) => found.has(o))
+        .concat([...found].filter((o) => !CANON_OP_ORDER.includes(o)));
+    return 0 < names.length ? names : ['list', 'load'];
 }
 // Every bundled target emits a method for the CANON_OP_ORDER ops and nothing
 // else, so any other active op of an active entity has none in those SDKs.

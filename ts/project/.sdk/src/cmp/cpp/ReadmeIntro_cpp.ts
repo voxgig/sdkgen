@@ -1,5 +1,5 @@
 
-import { cmp, Content, modelText, alongsideNote } from '@voxgig/sdkgen'
+import { cmp, Content, introOps } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -9,16 +9,10 @@ import {
 import { cppVarName } from './utility_cpp'
 
 
-const ReadmeIntro = cmp(function ReadmeIntro(props: any) {
+const ReadmeIntroBody = cmp(function ReadmeIntroBody(props: any) {
   const { target, ctx$: { model } } = props
-  const info = modelText(model)
-  const tagline = info.tagline || ''
 
-  Content(`# ${model.Name} ${target.title} SDK
-
-${tagline}
-
-The ${target.title} SDK for the ${model.Name} API — a header-only,
+  Content(`The ${target.title} SDK for the ${model.Name} API — a header-only,
 entity-oriented client following idiomatic modern C++ (C++17) conventions.
 
 `)
@@ -34,20 +28,7 @@ entity-oriented client following idiomatic modern C++ (C++17) conventions.
     ? `for example \`client->${cppVarName(exampleEntity.name)}()\` — each`
     : 'each'
 
-  // Model-driven op list — only the operations the active entities actually
-  // expose (a read-only entity has just list+load); never claim
-  // create/update/remove exist when no entity has them.
-  const CANON_OPS = ['list', 'load', 'create', 'update', 'patch', 'remove']
-  const opSet = new Set<string>()
-  Object.values(entity || {}).forEach((e: any) => {
-    if (!e || e.active === false) return
-    Object.keys(e.op || {}).forEach((o: string) => {
-      if (e.op[o] && e.op[o].active !== false) opSet.add(o)
-    })
-  })
-  const opNames = CANON_OPS.filter((o) => opSet.has(o))
-    .concat([...opSet].filter((o) => !CANON_OPS.includes(o)))
-  const opList = (opNames.length ? opNames : ['list', 'load'])
+  const opList = introOps(model)
     .map((o) => '`' + o + '`').join(', ')
 
   Content(`The SDK exposes the API as capitalised, semantic **Entities** — ${example}
@@ -57,10 +38,10 @@ keeps the cognitive load low. Every value flows through a single dynamic
 \`sdk::Value\` type (a JSON-like variant), so there is no schema-driven code to
 regenerate when the API changes.
 
-${alongsideNote(model, target.name)}`)
+`)
 })
 
 
 export {
-  ReadmeIntro
+  ReadmeIntroBody
 }

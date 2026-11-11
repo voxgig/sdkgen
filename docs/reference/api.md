@@ -110,6 +110,16 @@ implementation in `ts/project/.sdk/src/cmp/<lang>/`:
 `ReadmeOptions`, `ReadmeEntity`, `ReadmeHowto`, `ReadmeExplanation`,
 `ReadmeRef`, and `FeatureHook`.
 
+#### `ReadmeIntro`
+
+Opens every language README. It writes the title and tagline, then the
+target's own `ReadmeIntroBody`, then a note naming what else the project
+generates: other languages, the CLI, and the MCP server, read from the active
+targets. A project that declares `main: kit: target: 'go-mcp': active: false`
+is not promised an MCP server, and a project with one target gets no note. A
+per-language file that exports a whole `ReadmeIntro` instead writes the
+introduction itself, unframed.
+
 #### `FeatureHook`
 
 ```ts
@@ -199,14 +209,6 @@ flow. `$`-suffixed sentinels are skipped and the result is de-duplicated.
 The user-facing entries of a flow step's `match` object — keys ending in
 `$` (jostraca/aontu sentinels) are filtered out.
 
-### `alongsideNote(model, targetName) → string`
-
-The note that ends a language README's introduction, naming what the
-project generates beside that target: other languages, the CLI, and the MCP
-server. It reads only the active targets, so a project that declares
-`main: kit: target: 'go-mcp': active: false` is not promised an MCP server.
-It returns an empty string when the project generates nothing else.
-
 ### Typing helpers
 
 The typed-model subsystem (full picture:
@@ -237,6 +239,9 @@ The typed-model subsystem (full picture:
   key of the load match / of the data type (they differ; doc generators
   must pick the right one). **`entityOps(ent)`** — active op names in
   canonical order, leaving out an op whose every route is an action;
+  **`introOps(model)`** — the op names a README introduction lists, across
+  every active entity, canonical ones first, or `list` and `load` when there
+  are none;
   **`entityPrimaryOp(ent)`** — the representative op for a single example;
   **`pickExampleEntity(entityColl)`** — the entity a README example should
   use, preferring one whose example call reaches a route.

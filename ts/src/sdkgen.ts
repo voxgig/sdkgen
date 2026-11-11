@@ -71,7 +71,7 @@ import type { DepEntry } from './helpers/collectDeps'
 import { canonToType, canonToDtype, canonKey, canonScalarKey } from './helpers/canonType'
 import { canonToSpec, entityDataSpec, entityOpSpec, entitySpecs, validateSeeds } from './helpers/canonSpec'
 import { optionSpec, featureOptionSpec, entitySpecMap } from './helpers/optspec'
-import { OP_SUFFIX, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, deriveEntityNames, entityCollection } from './helpers/opShape'
+import { OP_SUFFIX, opTypeName, opParams, opReachable, opNeedsAction, ownPoint, opActions, entityActions, entityPath, opRequestShape, entityIdField, entityDataIdField, entityRecordIdField, entityOps, introOps, invalidRequest, entityPrimaryOp, pickExampleEntity, entityClassName, entityConstructorName, entityTypeCollisions, warnEntityTypeCollisions, ungeneratedOps, warnUngeneratedOps, deriveEntityNames, entityCollection } from './helpers/opShape'
 import { isReservedName, safeVarName, exampleVarName, phpEntityAccessor, entityCacheField, isRbCoreConstant, isRbSdkConstant, rbSafeTypeName, isSwiftSdkType, swiftSafeTypeName, isPhpReservedType, isPhpSdkClass, phpSafeTypeName, isTsReservedType, isTsSdkType, tsSafeTypeName, isElixirReservedType, elixirSafeTypeName, elixirTypeNames, elixirTypeName, elixirAccessorNames, elixirAccessor, tsTypeName, rbTypeName, phpTypeName, swiftTypeName, jsProp, jsOptProp, jsKey, jsQuote, luaKey, luaString, prefixLeadingDigit } from './helpers/naming'
 import { serverVariables, hasServerVariables, serverVarEnv } from './helpers/serverVars'
 import { mcpTools, MCP_READ_OPS, MCP_WRITE_OPS } from './helpers/mcpTools'
@@ -158,7 +158,6 @@ import {
   GENERATOR_URL,
 } from './helpers/packageMeta'
 import { modelText } from './helpers/text'
-import { alongsideNote } from './helpers/alongside'
 import {
   npmScriptRm,
   npmScriptEnv,
@@ -1176,6 +1175,7 @@ export {
   entityDataIdField,
   entityRecordIdField,
   entityOps,
+  introOps,
   entityPrimaryOp,
   pickExampleEntity,
   entityClassName,
@@ -1328,7 +1328,6 @@ export {
   SECURITY_EMAIL,
   GENERATOR_URL,
   modelText,
-  alongsideNote,
   npmScriptRm,
   npmScriptEnv,
   npmScriptTestSome,

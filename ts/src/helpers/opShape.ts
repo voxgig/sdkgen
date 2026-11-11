@@ -415,6 +415,22 @@ function entityOps(ent: any): string[] {
 }
 
 
+// Unlike entityOps, keeps action-only ops: the README introductions always have.
+function introOps(model: any): string[] {
+  const entity = model?.main?.[KIT]?.entity || {}
+  const found = new Set<string>()
+  for (const e of Object.values(entity) as any[]) {
+    if (!e || false === e.active) continue
+    for (const o of Object.keys(e.op || {})) {
+      if (e.op[o] && false !== e.op[o].active) found.add(o)
+    }
+  }
+  const names = CANON_OP_ORDER.filter((o) => found.has(o))
+    .concat([...found].filter((o) => !CANON_OP_ORDER.includes(o)))
+  return 0 < names.length ? names : ['list', 'load']
+}
+
+
 type UngeneratedOp = { entity: string, op: string, points: string[] }
 
 
@@ -779,6 +795,7 @@ export {
   entityDataIdField,
   entityRecordIdField,
   entityOps,
+  introOps,
   invalidRequest,
   entityPrimaryOp,
   pickExampleEntity,

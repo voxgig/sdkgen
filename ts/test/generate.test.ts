@@ -12,7 +12,8 @@ import { memfs } from 'memfs'
 import { cmp, each, names, Project, Folder } from 'jostraca'
 import * as sucrase from 'sucrase'
 
-import { SdkGen, mcpTools, alongsideNote } from '../dist/sdkgen.js'
+import { SdkGen, mcpTools } from '../dist/sdkgen.js'
+import { alongsideNote } from '../dist/helpers/alongside.js'
 import { aliasCmpText } from '../dist/action/target.js'
 
 // Fixture, miniature Root and memfs layering — shared with
@@ -1799,17 +1800,16 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
   test('a language readme names only the surfaces the project generates', async () => {
     const LANGS = readdirSync(Path.join(SCAFFOLD, 'src', 'cmp'))
       .filter((t) => existsSync(Path.join(SCAFFOLD, 'src', 'cmp', t, `ReadmeIntro_${t}.ts`)))
-      .filter((t) => 'ts' !== t && 'go' !== t)
     const intro = (out: Record<string, string>, t: string) => String(out[t + '/README.md'])
     const bad: string[] = []
 
-    const all = await generate([...LANGS, 'go', 'go-cli', 'go-mcp'])
+    const all = await generate([...LANGS, 'go-cli', 'go-mcp'])
     for (const t of LANGS) {
       if (!intro(all, t).includes('> Other languages, the CLI, and MCP server live alongside this one'))
         bad.push(t + ': every surface on, the note changed')
     }
 
-    const nomcp = await generate([...LANGS, 'go', 'go-cli', 'go-mcp'], undefined,
+    const nomcp = await generate([...LANGS, 'go-cli', 'go-mcp'], undefined,
       "main: kit: target: 'go-mcp': active: false")
     for (const t of LANGS) {
       if (intro(nomcp, t).includes('MCP')) bad.push(t + ': go-mcp off, still names an MCP server')
