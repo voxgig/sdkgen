@@ -2,7 +2,9 @@
 
 Status: **proposal** (2026-11-12). Nothing here is implemented. Code
 references are to `main` at 9aebaf9e (4.44.0); paths are relative to the
-repository root unless another repository is named.
+repository root unless another repository is named. The plan that carries
+this out is `docs/design/model-dependent-text-plan.md`, and each issue it
+resolves has an entry in `docs/design/model-dependent-text-issues.md`.
 
 From the review of `alongsideNote` (`ts/src/helpers/alongside.ts`), in full:
 
@@ -483,22 +485,27 @@ and `remove` descriptions say `{"id":1}`
 through `matchArg`. One tool serves several entities, so each description
 gives the per-entity form.
 
-**Packs.** The language pack runs at its floor (4.34.2) and at head. Every
-resolver section 6 builds on is exported at 4.34.2 (236 exports there, 278 at
-4.44.0, none removed). A new derivation is read through a namespace import
-with a fallback, because a named import of a newer export is TS2305 at the
-floor. The literal sibling sentence in sdkgen-langpack's
-`.sdk/src/cmp/dart/ReadmeIntro_dart.ts:56` and
-`.sdk/src/cmp/haskell/ReadmeIntro_haskell.ts:58` goes away when the module exports
-`ReadmeIntroBody` (the introduction without title and tagline) beside a
-`ReadmeIntro` that writes them and calls the body. This was measured at
-4.34.2, 4.41.1 and 4.42.0 (no note) and at 4.43.0 and 4.44.0 (framed, with the
-generated note), and it strict-compiles at both ends. Exporting one function
-under both names writes the title twice at head, and the pack's suite passes
-it. The pack declares `surface` and `consumes` in its target files, and the
-4.34.2 schema ignores them (measured). The infrastructure pack's
+**Packs.** The language pack was measured at 0.0.15 (088a35f), which ran at a
+floor of 4.34.2 and at head. Its main has since moved (c6069bb, not yet
+released): the floor is 4.43.0, the three introductions export only
+`ReadmeIntroBody` inside the frame of section 2, the literal sibling sentence
+that stood in `.sdk/src/cmp/dart/ReadmeIntro_dart.ts` and
+`.sdk/src/cmp/haskell/ReadmeIntro_haskell.ts` is gone, and its suite fails on
+a second title. What was measured at 0.0.15 is why that was the right change:
+a module exporting `ReadmeIntroBody` beside a `ReadmeIntro` that writes the
+title and calls the body strict-compiled from 4.34.2 to 4.44.0, with no note
+up to 4.42.0 and the generated note from 4.43.0, while exporting one function
+under both names wrote the title twice at head and the suite passed it.
+
+Two things hold for any pack. Every resolver section 6 builds on is exported
+at 4.34.2 (236 exports there, 278 at 4.44.0, none removed), and a new
+derivation is read through a namespace import with a fallback, because a named
+import of a newer export is TS2305 at a floor below it. A pack declares
+`surface` and `consumes` in its target files, and a schema older than the
+slots ignores them (measured at 4.34.2). The infrastructure pack's
 `seneca-provider` (floor 4.33.0) is the first packaged consumer and declares
-them the same way.
+them the same way, once the vocabulary of section 5 has a word for a
+provider, which it does not yet.
 
 **docgen.** docgen reads its own `kind` first, as a presentation override,
 then `targetSurface` when the sdkgen it resolves exports it, and its present
@@ -523,7 +530,7 @@ moves its pin, and the rest call it.
 | 1 | The derivations of section 6; the two slots (and the three bundled declarations, if D2); the third `targetOrigins` answer; neutral readers ported (`alongside.ts`, `ReadmeIntro.ts`, `ReadmeTop.ts`, `mcpTools.ts`, the agent-guide components); `isConsumer` deleted | none, except that an alias of go-cli is named as the CLI and no sibling note is written where no root README is | about 15 source files, 1 model, 10 test files | next generate after the pin moves; three copies outdated if D2 |
 | 2 | Neutral corrections, one commit each: the default-on wording; six stages; the false "`generate` merges" line, and the add rule through `modelCopyMode`; "Built-in features"; links through `docLink`; wording tables keyed by origin, with a row for every bundled language and no default row; fence tags; empty tables; escapers at neutral sinks; the generate-time check | yes, each commit its own diff | about 20 source files | as stage 1 |
 | 3 | The copy wave, all twenty languages: constructor needs from `requiredOptions`, after one README-lane model with Basic in the header and a templated URL joins the lanes; field types keyed by language, not `target.name`; feature-tree lines naming no feature; escapers at copy sinks; the two consumer strings | yes | about 200 scaffold files; the add-output golden once | `package update` or `target add` |
-| 4 | Outside the bundle: both packs (the dual intro export in dart and haskell, the declarations), docgen (`targetSurface`, `guardModel`, a logger), create-sdkgen (Root imports `rootPlan`) | pack READMEs, editions | three or four repositories | their releases |
+| 4 | Outside the bundle: both packs (the declarations; the language pack's introductions already write only their own body), docgen (`targetSurface`, `guardModel`, a logger), create-sdkgen (Root imports `rootPlan`) | pack READMEs, editions | three or four repositories | their releases |
 
 Stage 1 was prototyped with the derivations gathered in a record object; the
 reads are the same. With everything switched on, 7 of 7 fixtures were
@@ -555,7 +562,7 @@ stop a recurrence.
 
 | # | Case | Neutral components | Per-language copies | Packs |
 | --- | --- | --- | --- | --- |
-| 1 | Sibling note and tagline find go-cli and go-mcp by key; an alias, a packaged or a project-owned surface is missed | prevented: `targetSurface` | none involved | fixed once (dual export); caught when the pack runs the guard with go, go-cli and go-mcp staged |
+| 1 | Sibling note and tagline find go-cli and go-mcp by key; an alias, a packaged or a project-owned surface is missed | prevented: `targetSurface` | none involved | fixed on the pack's main (c6069bb); caught when the pack runs the guard with go, go-cli and go-mcp staged |
 | 2 | "Inactive until you switch it on" while `log` starts on | prevented: one sentence from `featureOnByDefault` | none involved | none involved |
 | 3 | "Use test mode" with no `test` feature | out of scope: no CLI path reaches that state (section 13) | same | same |
 | 4 | Links to files never written; 100 with the top phase off | prevented: `docLink` | caught: `link`, and every generate | caught: every generate |
@@ -569,7 +576,7 @@ stop a recurrence.
 | 12 | A pipe in a description; `$$name$$` | prevented where the escapers are called | caught: every generate (tables); fixed in the wave | caught: every generate |
 | 13 | `SDKGEN_EXTERNAL` changes in-tree documents; `../README.md` written into another repository | caught: `link` on every tree written; `docLink` drops the link; in-tree content is D3 | as neutral | as neutral |
 | 14 | An older go-cli copy misclassed; an alias never updates | prevented for aliases (origin-keyed); out of scope for the four-flag copy, because the go-cli file shipped at that age does not parse | none involved | none involved |
-| 15 | The pack's literal sentence at floor 4.34.2 | none involved | none involved | fixed once, measured from 4.34.2 to 4.44.0 |
+| 15 | The pack's literal sentence at floor 4.34.2 | none involved | none involved | fixed on the pack's main (c6069bb), which raises the floor to 4.43.0; not yet released |
 
 ## 12. Decisions for the maintainer
 
@@ -636,7 +643,9 @@ model-specific claims from them, without a gate.
   `secret`; lean has neither `secret` nor `server`). Each quick start prints
   what its own runtime takes.
 - **Vendor text never fails a build.**
-- **Packs keep their floors.**
+- **Nothing here raises a pack's floor.** A pack reads a new derivation
+  through a fallback; when it raises its floor is its own decision, as the
+  language pack's move to 4.43.0 was.
 - **docgen keeps `kind` first** for its editions.
 
 ## 14. Found while designing
@@ -688,8 +697,11 @@ none is fixed by this note.
     pin goes back, the copies stay newer, and `generate` stops with TS2305.
     Doctor calls the newer copies outdated and prints a command that would
     replace them with older ones.
-14. The language pack's floor lane fails `check-package` on a fresh install:
-    `shape` resolves to 12.1.0 and the 4.34.2 CLI imports `One` from it.
+14. The language pack's floor lane failed `check-package` on a fresh install
+    at 0.0.15: `shape` resolves to 12.1.0 and the 4.34.2 CLI imports `One`
+    from it. The pack's main now sets the floor at 4.43.0, which is not yet
+    released. The infrastructure pack's floor (4.33.0) is below the same fix,
+    which is in 4.41.1.
 15. `$$` in vendor text is substituted in 20 of 22 generated source files.
 16. The agent guide lists `ocaml` among the untrimmed targets;
     `ts/project/.sdk/model/target/ocaml.aontu:45` says `trim: true`.
