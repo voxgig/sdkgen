@@ -30,7 +30,7 @@ const refFacts: RefFacts = {
   valueType: { STRING: 'string', OBJECT: 'map', ANY: 'any' },
   ctor: ["(require '[{module} :as {client}]", "         '[voxgig.struct :as vs])", '', '(def client ({ctor} options))'],
   test: [{ sig: '({client}/test-sdk testopts sdkopts)', call: '(def client ({client}/test-sdk nil nil))', args: true }],
-  accessor: { sig: '({client}/{accessor} client data)', arg: 'data' },
+  accessor: { sig: '({client}/{accessor} client data)', arg: 'entopts' },
   op: {
     list: '(list ent reqmatch ctrl) -> vector',
     load: '(load ent reqmatch ctrl) -> entity',

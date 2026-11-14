@@ -58,6 +58,9 @@ const forms: Forms = {
   namesWhy: 'clojure passes by position; the runtime names the setter argument args',
   uncompared: { returns: 'the clojure runtime declares no types, so a signature\'s `-> x` is compared with nothing; the facts that rest on one are cited' },
   cite: {
+    'ref.facts.entity[0].copy': { value: true, file: "src/cmp/clojure/fragment/Entity.fragment.clj", quote: "(vs/clone (deref (:_data ent)))" },
+    'notes.members': { value: "State accessors are stored on the entity map and called via keyword lookup.", file: "src/cmp/clojure/fragment/Entity.fragment.clj", quote: [":data-get (fn [] (ent-data-get ent))"] },
+    'notes.instance': { value: "The SDK utility object is reached through `sdk.client`, which `{module}`\ndoes not re-export: `(sdk.client/get-utility client)` returns a copy of it.", file: "tm/clojure/src/sdk/client.clj", quote: ["(defn get-utility [client] (core/get-utility client))"], also: [{ file: "tm/clojure/src/sdk/core.clj", quote: ["(defn get-utility [client] (utility-copy (:utility client)))"] }] },
     'facts.collection': { value: "vector", file: OPS[1], quote: [';; Resolves to a vector of entities, one per record, as make-result builds', '(if (vs/islist items) (vec items) items)'] },
     'ref.facts.container': { file: 'tm/clojure/src/sdk/client.clj', quote: '[voxgig.struct :as vs]' },
     'ref.facts.ctor[0]': { file: 'src/cmp/clojure/Main_clojure.ts', quote: ['(ns sdk.api', '(:require [sdk.client :as client]${requires}))'] },
@@ -78,9 +81,6 @@ const forms: Forms = {
     },
     'ref.facts.body.once': { value: "an `InputStream`", file: 'tm/clojure/src/sdk/core.clj', quote: ';; read here, once, before the first attempt, so that a retry sends the same' , also: [{ file: 'tm/clojure/src/sdk/core.clj', quote: '(if (instance? java.io.InputStream body) (.readAllBytes ^java.io.InputStream body) body)' }] },
     'ref.facts.cancel': { value: false, file: 'tm/clojure/src/sdk/core.clj', quote: '(def ^:private http-client (delay (http-client-for HttpClient$Redirect/NORMAL)))' },
-  },
-  exceptions: {
-    'ref.facts.accessor.arg': 'WRONG: the accessor passes its argument on as the entity options (MainEntity_clojure.ts `(defn ${cljAccessor(entity)} [client data] (${cljEntityAlias(entity)}/make client data))`; Entity.fragment.clj:54 `(defn make [client data] (new-entity client data))` and :32 `(defn- new-entity [client entopts]`); the page says "Pass `nil` for no initial data."',
   },
 }
 
