@@ -158,7 +158,7 @@ function check(t: string, S: any, forms: Forms): Finding[] {
     ...[...r.client, ...r.entity].map((m: any) => sigName(m.sig)), ...r.test.map((x: any) => sigName(x.sig)),
     ...Object.values(f.method) as string[], ...Object.values(r.op).map((s: any) => sigName(s)),
     ...r.ctor.map((l: string) => sigName(l)), ...(r.ctorAlts || []).map((x: any) => sigName(x.call)),
-    sigName(r.accessor.sig),
+    sigName(r.accessor.sig), '{ctor}',
   ].filter((x) => '' !== x).map(spell)
   const isKnown = (n: string) => known.some((k) => k === n || (/\{\w+\}/.test(k) && new RegExp('^' + namePattern(k) + '$').test(n)))
   const undocumented = forms.undocumented || {}
@@ -264,16 +264,21 @@ const CONTROLS: Control[] = [
     },
   },
   {
-    name: 'a parameter added to load', check: 'parameters', mutate: (S) => {
+    name: 'a parameter added to load', check: 'parameters', mutate: (S, forms) => {
       if (null == S.ref) return false
-      S.ref.facts.op.load = S.ref.facts.op.load.replace(/\(/, '(extra, ').replace(/\[(?=\w)/, '[extra ')
+      const sig = S.ref.facts.op.load
+      const n = (forms.sigName || defaultSigName)(sig)
+      const at = sig.indexOf(n) + n.length
+      S.ref.facts.op.load = '(' === sig[at] ? sig.slice(0, at + 1) + 'extra, ' + sig.slice(at + 1)
+        : sig.slice(0, at) + ' extra' + sig.slice(at)
       return true
     },
   },
   {
-    name: 'a member the runtime does not define declared', check: 'signature', mutate: (S) => {
+    name: 'a member the runtime does not define declared', check: 'signature', mutate: (S, forms) => {
       if (null == S.ref) return false
-      S.ref.facts.entity.push({ kind: 'make', sig: S.ref.facts.entity[0].sig.replace(/[A-Za-z_][\w-]*(?=\s*\()/, 'nosuchmember') })
+      const sig = S.ref.facts.entity[0].sig
+      S.ref.facts.entity.push({ kind: 'make', sig: sig.replace((forms.sigName || defaultSigName)(sig), 'nosuchmember') })
       return true
     },
   },
