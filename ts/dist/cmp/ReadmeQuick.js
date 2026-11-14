@@ -10,12 +10,16 @@ const sdkdesc_1 = require("../helpers/sdkdesc");
 const example_1 = require("../helpers/example");
 const ReadmeQuick = (0, component_1.cmp)(function ReadmeQuick(props) {
     const { target, ctx$ } = props;
-    const provider = (0, optional_1.optionalComponent)(ctx$, target, 'Syntax');
+    const t = target.name;
+    // A target's own ReadmeQuick_<lang> wins over its provider: a project that
+    // forked it keeps its fork, and a copy an upgrade left behind keeps writing
+    // what it wrote until doctor's stale finding has it removed.
+    const own = (0, utility_1.loadOptional)(ctx$, `./cmp/${t}/ReadmeQuick_${t}`);
+    const provider = null == own ? (0, optional_1.optionalComponent)(ctx$, target, 'Syntax') : undefined;
     if (provider) {
-        (0, jostraca_1.Content)(quickText(provider.Syntax, (0, sdkdesc_1.sdkDescription)(ctx$.model, target.name)));
+        (0, jostraca_1.Content)(quickText(provider.Syntax, (0, sdkdesc_1.sdkDescription)(ctx$.model, t)));
         return;
     }
-    // A target without a syntax provider writes its own tutorial body.
     const placement = (0, utility_1.credentialPlacement)(ctx$.model);
     (0, jostraca_1.Content)(`
 ## Tutorial: your first API call
@@ -24,7 +28,7 @@ This tutorial walks through creating a client, listing entities, and
 loading a specific record.${'' === placement ? '' : ' ' + placement}
 
 `);
-    const ReadmeQuick_sdk = (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeQuick');
+    const ReadmeQuick_sdk = own ?? (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeQuick');
     if (ReadmeQuick_sdk) {
         ReadmeQuick_sdk['ReadmeQuick']({ target });
     }

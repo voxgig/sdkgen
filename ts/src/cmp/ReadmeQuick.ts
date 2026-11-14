@@ -1,7 +1,7 @@
 import { Content } from 'jostraca'
 import { cmp } from '../helpers/component'
 
-import { credentialPlacement } from '../utility'
+import { credentialPlacement, loadOptional } from '../utility'
 import { optionalComponent } from '../helpers/optional'
 import { sdkDescription } from '../helpers/sdkdesc'
 import type { SdkDescription } from '../helpers/sdkdesc'
@@ -13,14 +13,18 @@ import type { Syntax, Scope } from '../helpers/example'
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const { target, ctx$ } = props
+  const t = target.name
 
-  const provider = optionalComponent(ctx$, target, 'Syntax')
+  // A target's own ReadmeQuick_<lang> wins over its provider: a project that
+  // forked it keeps its fork, and a copy an upgrade left behind keeps writing
+  // what it wrote until doctor's stale finding has it removed.
+  const own = loadOptional(ctx$, `./cmp/${t}/ReadmeQuick_${t}`)
+  const provider = null == own ? optionalComponent(ctx$, target, 'Syntax') : undefined
   if (provider) {
-    Content(quickText(provider.Syntax, sdkDescription(ctx$.model, target.name)))
+    Content(quickText(provider.Syntax, sdkDescription(ctx$.model, t)))
     return
   }
 
-  // A target without a syntax provider writes its own tutorial body.
   const placement = credentialPlacement(ctx$.model)
 
   Content(`
@@ -31,8 +35,7 @@ loading a specific record.${'' === placement ? '' : ' ' + placement}
 
 `)
 
-  const ReadmeQuick_sdk =
-    optionalComponent(ctx$, target, 'ReadmeQuick')
+  const ReadmeQuick_sdk = own ?? optionalComponent(ctx$, target, 'ReadmeQuick')
 
   if (ReadmeQuick_sdk) {
     ReadmeQuick_sdk['ReadmeQuick']({ target })
