@@ -2,12 +2,13 @@ import { indentLines } from '@voxgig/sdkgen'
 import type { Entry, Expr, Ref, Scope, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
+// As utility_c's C_RESERVED, copied: that module also holds helpers that read the model.
 const RESERVED = new Set<string>([
   'auto', 'break', 'case', 'char', 'const', 'continue', 'default', 'do',
   'double', 'else', 'enum', 'extern', 'float', 'for', 'goto', 'if', 'inline',
-  'int', 'long', 'register', 'restrict', 'return', 'short', 'signed',
-  'sizeof', 'static', 'struct', 'switch', 'typedef', 'union', 'unsigned',
-  'void', 'volatile', 'while', 'bool', 'true', 'false', 'client', 'err',
+  'int', 'long', 'register', 'restrict', 'return', 'short', 'signed', 'sizeof',
+  'static', 'struct', 'switch', 'typedef', 'union', 'unsigned', 'void',
+  'volatile', 'while', 'bool', 'true', 'false',
 ])
 
 const str = (s: string): string => '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'
