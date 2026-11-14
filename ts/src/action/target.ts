@@ -58,7 +58,12 @@ import { kindModel, kindIndex, resolveKind, escapeRe } from './kind'
 import { BUNDLED, resolveSource, registerInstalled } from './resolve'
 import type { Source } from './resolve'
 
-import { recordCopies, guardCopies } from './copies'
+import {
+  recordCopies, guardCopies, readCopies, untouched, projectCopyMode,
+} from './copies'
+import type { CopyRecord } from './copies'
+
+import { OVERWRITE } from '../helpers/copymerge'
 
 
 const CMD_MAP: any = {
@@ -229,6 +234,9 @@ const TargetRoot = cmp(function TargetRoot(props: any) {
         return
       }
 
+      pruneRetired(ctx$, actx, tfolder + '/src/cmp/' + torigname,
+        'src/cmp/' + tname, torigname, tname)
+
       if (aliased) {
         aliasCmpTree(ctx$, tfolder + '/src/cmp/' + torigname,
           'src/cmp/' + tname, torigname, tname)
@@ -378,6 +386,7 @@ function pruneStaleTemplates(
   trim: RegExp[],
   dryrun?: boolean,
   keep?: { names: string[], patterns: RegExp[] },
+  copies?: RetiredCopies,
 ) {
   const { log } = ctx$
   const fs = ctx$.fs()
@@ -425,12 +434,14 @@ function pruneStaleTemplates(
   // patterns are matched against the source-relative path, the same way Copy
   // applies them.
   const trimmed = (rel: string) => trim.some((re) => re.test(rel))
-  const want = new Set(sourceFiles.filter((rel) => !trimmed(rel)))
+  const rename = copies?.rename ?? ((rel: string) => rel)
+  const want = new Set(sourceFiles.filter((rel) => !trimmed(rel)).map(rename))
 
   const kept = (rel: string) => true === keep?.patterns.some((re) => re.test(rel))
   const unwanted = listRel(destDir).filter((rel) => !want.has(rel))
   const held = unwanted.filter(kept)
-  const stale = unwanted.filter((rel) => !kept(rel))
+  const stale = null == copies ? unwanted.filter((rel) => !kept(rel)) :
+    retiredCopies(ctx$, toRel, unwanted, copies)
 
   if (0 < held.length) {
     log.warn({
@@ -467,6 +478,9 @@ function pruneStaleTemplates(
   for (const rel of stale) {
     try {
       fs.unlinkSync(Path.join(destDir, rel))
+      if (null != copies) {
+        removeCompiled(fs, folder, toRel + '/' + rel)
+      }
       removed.push(rel)
       log.info({
         point: 'target-template-prune-file', target: toRel,
@@ -489,6 +503,74 @@ function pruneStaleTemplates(
       note: toRel + ': removed ' + removed.length +
         ' stale template(s) the toolchain no longer provides for this SDK'
     })
+  }
+}
+
+
+// A component the source no longer ships is removed only when the copy record
+// shows an add wrote it and nothing has changed it since.
+function pruneRetired(
+  ctx$: any, actx: any, fromDir: string, toRel: string,
+  origname: string, name: string,
+) {
+  pruneStaleTemplates(ctx$, fromDir, toRel, [], !!actx?.opts?.dryrun, undefined, {
+    record: readCopies(ctx$.fs(), ctx$.folder ?? '.'),
+    rename: origname === name ? undefined :
+      (rel: string) => aliasCmpName(rel, origname, name),
+    discard: true === actx?.flags?.force || OVERWRITE === projectCopyMode(actx),
+  })
+}
+
+
+type RetiredCopies = {
+  record: CopyRecord
+  rename?: (rel: string) => string
+  // Overwrite mode or --force: a changed copy goes too, as it would be
+  // overwritten if the source still shipped it.
+  discard?: boolean
+}
+
+
+// Of the files an add no longer writes, the ones it may delete. A file the
+// record has no entry for may be the project's own, so it is never one.
+function retiredCopies(
+  ctx$: any, toRel: string, unwanted: string[], copies: RetiredCopies,
+): string[] {
+  const fs = ctx$.fs()
+  const folder = ctx$.folder ?? '.'
+  const out: string[] = []
+
+  for (const rel of unwanted) {
+    const file = toRel + '/' + rel
+    const same = untouched(fs, folder, copies.record, file)
+
+    if (true === same || (false === same && true === copies.discard)) {
+      out.push(rel)
+    }
+    else if (false === same) {
+      ctx$.log.warn({
+        point: 'target-component-override', file,
+        note: file + ': its source no longer ships this component, and this ' +
+          'project changed it, so it is kept and still used in place of the ' +
+          'shared one. Delete it to use the shared one.'
+      })
+    }
+  }
+
+  return out
+}
+
+
+// The loader requires `.sdk/dist/<path>`, and `tsc --build` leaves the output
+// of a deleted source in place.
+function removeCompiled(fs: any, folder: string, rel: string) {
+  const stem = Path.join(folder, 'dist', rel.replace(/^src\//, '')
+    .replace(/\.ts$/, ''))
+
+  for (const ext of ['.js', '.js.map', '.d.ts', '.d.ts.map']) {
+    if (fs.existsSync(stem + ext)) {
+      fs.unlinkSync(stem + ext)
+    }
   }
 }
 
@@ -621,4 +703,5 @@ export {
   aliasCmpName,
   aliasCmpTree,
   pruneStaleTemplates,
+  pruneRetired,
 }

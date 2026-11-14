@@ -228,6 +228,7 @@ async function driftFindings(actx, scope, selected) {
             ...report.edited,
             ...report.stale,
             ...report.additive,
+            ...report.override,
             ...report.aliasedDiff,
         ],
         // Kept apart because it needs different advice — see kindRemove.

@@ -1,4 +1,5 @@
 import type { ActionContext, ActionResult } from '../types';
+import type { CopyRecord } from './copies';
 declare function action_target(args: string[], actx: ActionContext): Promise<ActionResult>;
 declare function target_add(targets: string[], actx: ActionContext): Promise<ActionResult>;
 declare function aliasCmpName(name: string, torigname: string, tname: string): string;
@@ -7,7 +8,13 @@ declare function aliasCmpTree(ctx$: any, fromDir: string, toRel: string, torigna
 declare function pruneStaleTemplates(ctx$: any, fromDir: string, toRel: string, trim: RegExp[], dryrun?: boolean, keep?: {
     names: string[];
     patterns: RegExp[];
-}): void;
+}, copies?: RetiredCopies): void;
+declare function pruneRetired(ctx$: any, actx: any, fromDir: string, toRel: string, origname: string, name: string): void;
+type RetiredCopies = {
+    record: CopyRecord;
+    rename?: (rel: string) => string;
+    discard?: boolean;
+};
 declare function featureCatalogue(ctx$: any, tfolder: string): string[];
 declare function trimFeatures(ctx$: any, tfolder: string, torigname: string, tname: string, features: string[]): RegExp[];
 declare function readTargetFeature(ctx$: any, tfolder: string, torigname: string, tname: string): {
@@ -21,4 +28,4 @@ declare function resolveTarget(tref: string, ctx$: any): {
     base: string;
     package: string | undefined;
 };
-export { action_target, featureCatalogue, target_add, resolveTarget, trimFeatures, readTargetFeature, aliasCmpText, aliasCmpName, aliasCmpTree, pruneStaleTemplates, };
+export { action_target, featureCatalogue, target_add, resolveTarget, trimFeatures, readTargetFeature, aliasCmpText, aliasCmpName, aliasCmpTree, pruneStaleTemplates, pruneRetired, };
