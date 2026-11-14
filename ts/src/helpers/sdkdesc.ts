@@ -119,7 +119,7 @@ type DescFeature = {
 
 type DescRef = {
   title: string // the language's title, as the target names it
-  test: boolean // the test feature ships, so the test constructor exists
+  test: boolean // the test feature ships; without it the test constructor builds no mock
   optionRows: DescOptionRow[]
   features: DescFeature[] // the features this target has, sorted
 }
