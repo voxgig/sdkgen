@@ -53,7 +53,7 @@ const forms: Forms = {
     ['Control', 'object'], ['any', 'object'], ['Partial<D>', 'object'], ['Record<string,any>', 'object'],
   ]),
   cite: {
-    'facts.collection': { file: OPS[1], quote: 'async list(this: any, reqmatch?: EntityNameListMatch, ctrl?: Control): Promise<EntyClass[]>' },
+    'facts.collection': { value: "array", file: OPS[1], quote: 'async list(this: any, reqmatch?: EntityNameListMatch, ctrl?: Control): Promise<EntyClass[]>' },
     'ref.facts.container': {
       file: 'tm/ts/src/utility/MakeOptionsUtility.ts',
       quote: 'const layer = (b: any) => null != b && \'object\' === typeof b && !Array.isArray(b) ? b : {}',
@@ -66,7 +66,7 @@ const forms: Forms = {
       file: MAIN, quote: 'return this._utility.struct.clone(this._options)',
       unquoted: { object: 'a clone of the options, which makeOptions builds as an object' },
     },
-    'ref.facts.client[1].kind': { file: MAIN, quote: 'return this._utility.struct.clone(this._utility)' },
+    'ref.facts.client[1].kind': { value: "utility", file: MAIN, quote: 'return this._utility.struct.clone(this._utility)' },
     'ref.facts.client[1].returns': {
       file: MAIN, quote: 'return this._utility.struct.clone(this._utility)',
       unquoted: { object: 'a clone of the Utility instance' },
@@ -84,8 +84,8 @@ const forms: Forms = {
         Error: 'ctx.error returns a ProjectNameError, which extends Error',
       },
     },
-    'ref.facts.prepare.fails': { file: MAIN, quote: 'return ctx.error(\'spec_method_allow\'' },
-    'ref.facts.body.values': {
+    'ref.facts.prepare.fails': { value: "value", file: MAIN, quote: 'return ctx.error(\'spec_method_allow\'' },
+    'ref.facts.body.values': { value: "a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string",
       file: MEDIA, quote: ['return value instanceof ArrayBuffer || ArrayBuffer.isView(value) ||', '(\'undefined\' !== typeof Blob && value instanceof Blob) || isStream(value)'],
       also: [{ file: 'tm/ts/src/utility/MakeFetchDefUtility.ts', quote: 'fetchdef.body = isRawValue(body) || (\'object\' !== typeof body && !isJsonRequest(ctx.point)) ?' }],
       unquoted: {
@@ -93,8 +93,8 @@ const forms: Forms = {
         Uint8Array: 'a typed array, which ArrayBuffer.isView accepts',
       },
     },
-    'ref.facts.body.once': { file: 'tm/ts/src/utility/MakeRequestUtility.ts', quote: '// A stream can be read once; read it now, so that a retry sends the same bytes.' },
-    'ref.facts.cancel': { file: 'tm/ts/src/utility/MakeFetchDefUtility.ts', quote: 'fetchdef.signal = ctx.ctrl.signal' },
+    'ref.facts.body.once': { value: "a stream", file: 'tm/ts/src/utility/MakeRequestUtility.ts', quote: '// A stream can be read once; read it now, so that a retry sends the same bytes.' },
+    'ref.facts.cancel': { value: true, file: 'tm/ts/src/utility/MakeFetchDefUtility.ts', quote: 'fetchdef.signal = ctx.ctrl.signal' },
   },
   exceptions: {
     'ref.facts.accessor.arg': 'WRONG: the accessor\'s argument is the entity options (MainEntity_ts.ts: "The argument is the entity OPTIONS object (passed to the entity constructor as entopts), not initial entity data."); the page says "Pass `undefined` for no initial data."',
