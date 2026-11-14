@@ -55,15 +55,15 @@ const forms: Forms = {
   cite: {
     'facts.collection': { file: 'tm/go/utility/make_result.go', quote: 'var entities []any' },
     'ref.facts.container': { file: MAIN, quote: 'func NewProjectNameSDK(options map[string]any) *ProjectNameSDK {' },
-    'ref.facts.client[1].kind': { file: MAIN, quote: 'return CopyUtility(sdk.utility)' },
-    'ref.facts.prepare.fails': { file: MAIN, quote: 'func (sdk *ProjectNameSDK) Prepare(fetchargs map[string]any) (map[string]any, error) {' },
-    'ref.facts.body.values': {
+    'ref.facts.client[1].kind': { value: "utility", file: MAIN, quote: 'return CopyUtility(sdk.utility)' },
+    'ref.facts.prepare.fails': { value: "style", file: MAIN, quote: 'func (sdk *ProjectNameSDK) Prepare(fetchargs map[string]any) (map[string]any, error) {' },
+    'ref.facts.body.values': { value: "a `[]byte`, a `string` or an `io.Reader`",
       file: 'tm/go/utility/fetcher.go',
       quote: '\tcase string:\n\t\tif body != "" {\n\t\t\tbodyReader = strings.NewReader(body)\n\t\t}\n\tcase []byte:\n\t\tbodyReader = bytes.NewReader(body)\n\tcase io.Reader:',
     },
-    'ref.facts.body.once': { file: 'tm/go/utility/media.go', quote: 'if r, ok := body.(io.Reader); ok {\n\t\tdata, err := io.ReadAll(r)' },
-    'ref.facts.cancel': { file: 'tm/go/utility/fetcher.go', quote: 'req, err := http.NewRequest(method, fullurl, bodyReader)' },
-    'notes.member:stream': {
+    'ref.facts.body.once': { value: "an `io.Reader`", file: 'tm/go/utility/media.go', quote: 'if r, ok := body.(io.Reader); ok {\n\t\tdata, err := io.ReadAll(r)' },
+    'ref.facts.cancel': { value: false, file: 'tm/go/utility/fetcher.go', quote: 'req, err := http.NewRequest(method, fullurl, bodyReader)' },
+    'notes.member:stream': { value: "It sends the items on the returned channel, which closes when the stream\nends. A `StreamItem` holds one item in `Item`, or in `Err` the error that\nended the stream: the error the operation itself would return, sent as the\nlast value. Under `throw: false` in `callopts[\"ctrl\"]`, no error is sent.",
       file: ENTITY,
       quote: [
         'func (e *EntyClass) Stream(action string, args map[string]any, callopts map[string]any) <-chan core.StreamItem {',
