@@ -2165,11 +2165,10 @@ src/cmp/zig/ReadmeInstall_zig.ts 52b119944d2c
 src/cmp/zig/ReadmeIntro_zig.ts 04e7058e1817
 src/cmp/zig/ReadmeModel_zig.ts 957ed3c603bf
 src/cmp/zig/ReadmeOptions_zig.ts 737426363d4e
-src/cmp/zig/ReadmeRef_zig.ts d0289ca5c6e4
 src/cmp/zig/ReadmeTopHowto_zig.ts 77361baf4079
 src/cmp/zig/ReadmeTopTest_zig.ts feee7ba97c0f
 src/cmp/zig/Schema_zig.ts c55b2e5555f7
-src/cmp/zig/Syntax_zig.ts bec54c702015
+src/cmp/zig/Syntax_zig.ts a92a766c2463
 src/cmp/zig/TestClean_zig.ts c7d8ea55ba40
 src/cmp/zig/TestDirect_zig.ts 60144692ef88
 src/cmp/zig/TestEntity_zig.ts a46e513a43a7
