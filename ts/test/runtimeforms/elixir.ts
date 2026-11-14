@@ -54,21 +54,21 @@ const forms: Forms = {
   namesWhy: 'elixir passes by position; the page names the entity argument entity and the setter argument by what it holds',
   uncompared: { returns: 'the runtime writes @spec on the operations only; the client and entity members carry none, so their declared returns are compared with nothing' },
   cite: {
-    'facts.collection': {
+    'facts.collection': { value: "`Voxgig.Struct` list",
       file: 'src/cmp/elixir/fragment/EntityListOp.fragment.ex', quote: '# Returns a list of entityname entities, one per record, whose data_get/1',
       also: [{ file: MAIN, quote: 'alias Voxgig.Struct, as: S' }],
     },
     'ref.facts.container': { file: MAIN, quote: ['alias Voxgig.Struct, as: S', 'fetchargs = if S.ismap(fetchargs), do: fetchargs, else: S.jm([])'] },
-    'ref.facts.client[1].kind': { file: MAIN, quote: 'def get_utility(client), do: S.getprop(client, "_utility")' },
+    'ref.facts.client[1].kind': { value: "utilityBase", file: MAIN, quote: 'def get_utility(client), do: S.getprop(client, "_utility")' },
     'ref.facts.direct.returns': { file: MAIN, quote: 'S.jm(["ok", false, "err", err])', unquoted: { 'map()': 'S.jm builds a map' } },
     'ref.facts.prepare.returns': { file: MAIN, quote: 'def prepare(client, fetchargs \\\\ nil) do', unquoted: { 'map()': 'the fetch definition, a map' } },
-    'ref.facts.prepare.fails': { file: MAIN, quote: 'raise Context.make_error(ctx, "spec_method_allow",' },
-    'ref.facts.body.values': {
+    'ref.facts.prepare.fails': { value: "style", file: MAIN, quote: 'raise Context.make_error(ctx, "spec_method_allow",' },
+    'ref.facts.body.values': { value: "a binary",
       file: 'tm/elixir/lib/projectname/utility.ex',
       quote: ['scalar = is_binary(body) or is_number(body) or is_boolean(body)', 'S.setprop(fetchdef, "body", body)'],
     },
-    'ref.facts.cancel': { file: 'tm/elixir/lib/projectname/utility.ex', quote: 'case :httpc.request(method, request, http_opts, body_format: :binary) do' },
-    'notes.member:utilityBase': { file: MAIN, quote: 'def get_utility(client), do: S.getprop(client, "_utility")' },
+    'ref.facts.cancel': { value: false, file: 'tm/elixir/lib/projectname/utility.ex', quote: 'case :httpc.request(method, request, http_opts, body_format: :binary) do' },
+    'notes.member:utilityBase': { value: "It is the client's own node, not a copy.", file: MAIN, quote: 'def get_utility(client), do: S.getprop(client, "_utility")' },
   },
   exceptions: {
     'optional:opMatched list': 'the runtime defaults the match, and a nested entity\'s list needs its parent: the page shows it required, beside the sentence naming the members (stage 3, ref-10)',
