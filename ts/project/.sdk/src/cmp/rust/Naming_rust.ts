@@ -11,7 +11,7 @@ const Naming: NamingType = (model, _target, tm) => ({
   layout: {
     module: crateIdent(model),
     client: tm('ProjectNameSDK'),
-    ctor: tm('ProjectNameSDK') + '::new',
+    ctor: tm('ProjectNameSDK::new'),
     names: { entityBase: tm('ProjectNameEntityBase') },
   },
   symbols: (e) => ({ accessor: rustMethodName(e.name), var: rustVarName(e.name) }),

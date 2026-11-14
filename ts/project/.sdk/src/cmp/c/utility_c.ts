@@ -25,6 +25,11 @@ function cVarName(name: string): string {
 }
 
 
+// The function a client exposes an entity through: <ident>_<evar>.
+function cAccessorName(model: any, entityName: string): string {
+  return cIdent(model) + '_' + cVarName(entityName)
+}
+
 function cIdent(model: any): string {
   return String(model.name).toLowerCase().replace(/[^a-z0-9]/g, '')
 }
@@ -158,6 +163,7 @@ function cListMatch(entity: any): string {
 
 
 export {
+  cAccessorName,
   cListMatch,
   cString,
   cStringLiteral,

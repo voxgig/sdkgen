@@ -1,6 +1,6 @@
 import { indentLines } from '@voxgig/sdkgen'
 import { canonKey } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Scope, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Scope, SdkDescription, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
 const facts: RuntimeFacts = {
@@ -29,7 +29,7 @@ const refFacts: RefFacts = {
   valueType: { STRING: 'string', OBJECT: 'map', ANY: 'any' },
   ctor: ["(require '[{module} :as {client}]", "         '[voxgig.struct :as vs])", '', '(def client ({ctor} options))'],
   test: [{ sig: '({client}/test-sdk testopts sdkopts)', call: '(def client ({client}/test-sdk nil nil))', args: true }],
-  accessor: { sig: '({accessor} client data)', arg: 'data' },
+  accessor: { sig: '({client}/{accessor} client data)', arg: 'data' },
   op: {
     list: '(list ent reqmatch ctrl) -> vector',
     load: '(load ent reqmatch ctrl) -> entity',
@@ -92,16 +92,19 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `${str(en.key)} ${expr(en.value)}`
 
-const callExpr = (s: Extract<Stmt, { k: 'call' }>): string =>
-  `(${s.entity.sym.alias}/${(facts.method as any)[s.op]} (${s.entity.sym.accessor} client nil) ${null == s.arg ? 'nil' : expr({ k: 'map', entries: s.arg })} nil)`
+// An entity's accessor lives in the client's namespace, called through its alias.
+const acc = (e: Ref['entity'], desc: SdkDescription): string => `${desc.layout.client}/${e.sym.accessor}`
+
+const callExpr = (s: Extract<Stmt, { k: 'call' }>, desc: SdkDescription): string =>
+  `(${s.entity.sym.alias}/${(facts.method as any)[s.op]} (${acc(s.entity, desc)} client nil) ${null == s.arg ? 'nil' : expr({ k: 'map', entries: s.arg })} nil)`
 
 // A line comment runs to the end of its line, so an argument that carries
 // one (a member's type, a closing note) is laid out one member per line.
 const commented = (s: Extract<Stmt, { k: 'call' }>): boolean =>
   s.wide && null != s.arg && (null != s.note || s.arg.some((en) => null != en.type))
 
-const callLines = (s: Extract<Stmt, { k: 'call' }>): string[] => {
-  const head = `(${s.entity.sym.alias}/${(facts.method as any)[s.op]} (${s.entity.sym.accessor} client nil)`
+const callLines = (s: Extract<Stmt, { k: 'call' }>, desc: SdkDescription): string[] => {
+  const head = `(${s.entity.sym.alias}/${(facts.method as any)[s.op]} (${acc(s.entity, desc)} client nil)`
   const members = (s.arg as Entry[]).map((en) => `    ${pair(en)}` + (null == en.type ? '' : '  ;; ' + (TYPES[canonKey(en.type)] ?? 'any')))
   return [head, '  (vs/jm', ...members, ...(null == s.note ? [] : ['    ;; ' + s.note]), '    )', '  nil)']
 }
@@ -151,17 +154,17 @@ const Syntax: SyntaxType = {
     return [`(def client (${desc.layout.ctor} ${0 === s.options.length ? 'nil' : expr({ k: 'map', entries: s.options })}))`]
   },
 
-  call: (s, _desc, sc) => {
+  call: (s, desc, sc) => {
     if (fusesWith(s, sc)) {
-      sc.local.add(FUSED + name(s.bind as Ref) + FUSED + callExpr(s))
+      sc.local.add(FUSED + name(s.bind as Ref) + FUSED + callExpr(s, desc))
       return []
     }
     if (commented(s)) {
-      const lines = callLines(s)
+      const lines = callLines(s, desc)
       return null == s.bind ? close(lines, 0)
         : [`(def ${name(s.bind)}`, ...close(indentLines(lines, '  '))]
     }
-    return [null == s.bind ? callExpr(s) : `(def ${name(s.bind)} ${callExpr(s)})`]
+    return [null == s.bind ? callExpr(s, desc) : `(def ${name(s.bind)} ${callExpr(s, desc)})`]
   },
 
   each: (s, inner, sc) => {
@@ -177,14 +180,14 @@ const Syntax: SyntaxType = {
 
   // A bound result scopes what follows it: a list's binding is the doseq that
   // walks it, a load's a let around the rest.
-  attempt: (s, inner) => {
+  attempt: (s, inner, _sc, desc) => {
     const [first, ...rest] = s.body
     let form: string[]
     if ('call' === first.k && null != first.bind) {
       const each = rest.find((x) => 'each' === x.k && x.of === first.bind) as Extract<Stmt, { k: 'each' }> | undefined
       form = null != each && 1 === rest.length
-        ? [`(doseq [${name(each.item)} ${callExpr(first)}]`, ...close(indentLines(inner(each.body), '  '))]
-        : [`(let [${name(first.bind)} ${callExpr(first)}]`, ...close(indentLines(inner(rest), '  '))]
+        ? [`(doseq [${name(each.item)} ${callExpr(first, desc)}]`, ...close(indentLines(inner(each.body), '  '))]
+        : [`(let [${name(first.bind)} ${callExpr(first, desc)}]`, ...close(indentLines(inner(rest), '  '))]
     }
     else {
       form = inner(s.body)
@@ -205,7 +208,7 @@ const Syntax: SyntaxType = {
     facts: refFacts,
     type: (t) => TYPES[canonKey(t)] ?? 'any',
     key: (container, path) => 0 === path.length ? container : path.join('.'),
-    instance: (e) => [`(require '[${e.sym.module} :as ${e.sym.alias}])`, '', `(def ${e.sym.var} (${e.sym.accessor} client nil))`],
+    instance: (e, desc) => [`(require '[${e.sym.module} :as ${e.sym.alias}])`, '', `(def ${e.sym.var} (${acc(e, desc)} client nil))`],
     read: (value, key) => `(vs/getprop ${value} ${str(key)})`,
   },
 }

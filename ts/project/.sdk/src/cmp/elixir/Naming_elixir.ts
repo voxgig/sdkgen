@@ -16,7 +16,7 @@ const Naming: NamingType = (model, _target, tm) => {
     layout: {
       module: tm('ProjectName'),
       client: tm('ProjectName'),
-      ctor: tm('ProjectName') + '.new',
+      ctor: tm('ProjectName.new'),
       names: { helpers: tm('ProjectName.Helpers') },
     },
     symbols: (e) => ({

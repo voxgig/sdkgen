@@ -141,7 +141,9 @@ const Syntax: SyntaxType = {
     0 === s.options.length
       ? `${desc.layout.client}* client = ${desc.layout.ctor}(NULL);`
       : `${desc.layout.client}* client = ${desc.layout.ctor}(cmap(${s.options.length},\n` +
-      s.options.map((en) => `    ${str(en.key)}, ${option(en.value)}`).join(',\n') + '));',
+      s.options.map((en) => `    ${str(en.key)}, ${option(en.value)}`).join(',\n') +
+      // A member laid out one per line puts the closing of the call on its own line.
+      (s.options.some((en) => option(en.value).includes('\n')) ? '\n));' : '));'),
   ],
 
   // The error slot and each entity's handle are declared once, ahead of the

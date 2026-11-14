@@ -10,7 +10,7 @@ const Naming: NamingType = (_model, _target, tm) => ({
   layout: {
     module: 'sdk',
     client: tm('ProjectNameSDK'),
-    ctor: tm('ProjectNameSDK') + '.new',
+    ctor: tm('ProjectNameSDK.new'),
   },
   symbols: (e) => ({ accessor: zigVarName(e.name), var: zigVarName(e.name) }),
   ident: zigVarName,

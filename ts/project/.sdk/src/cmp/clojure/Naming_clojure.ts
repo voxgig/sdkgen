@@ -13,7 +13,7 @@ const Naming: NamingType = () => ({
     ctor: 'api/make-sdk',
   },
   symbols: (e) => ({
-    accessor: 'api/' + cljAccessor(e),
+    accessor: cljAccessor(e),
     var: cljAccessor(e),
     module: cljEntityNs(e),
     alias: cljEntityAlias(e),
