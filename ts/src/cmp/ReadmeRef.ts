@@ -114,6 +114,9 @@ function memberText(kind: MemberKind, p: Syntax, desc: SdkDescription, ent?: Des
     case 'streamIterator': return 'Run an operation through the pipeline and yield its result items as\nthey arrive, as an async iterator.'
     case 'streamGenerator': return 'Run an operation through the pipeline and yield its result items as\nthey arrive, as a generator.'
     case 'streamLazy': return 'Run an operation through the pipeline and return a lazy stream of its\nresult items.'
+    case 'streamSync': return 'Run an operation through the pipeline and return an iterator over its\nresult items.'
+    case 'streamFunction': return 'Run an operation through the pipeline and return a function that\n' +
+      `returns its next result item on each call, and ${code(r.facts.none)} once the items end.`
     case 'streamList': return 'Run an operation through the pipeline and return its result items as\none list. ' + failsSentence(p.facts)
     case 'direct': return 'Make a direct HTTP request to any API endpoint.'
     case 'prepare': return `Prepare a fetch definition without sending the request. Accepts the\nsame parameters as ${code(sig('direct'))}.`
@@ -196,8 +199,10 @@ function constructorText(p: Syntax, desc: SdkDescription): string {
   const r = p.ref as RefSyntax
   const container = 'bare' === r.facts.keys
     ? ` ${code('options')} is a ${code(r.facts.container)} map\n(${code(r.facts.none)} for none).` : ''
+  const alts = r.facts.ctorAlts || []
+  const sentence = `Create a new SDK client instance.${container}${altText(alts, desc)}`
   return `### Constructor\n\n${fenced(p, r.facts.ctor.map((l) => fill(l, desc)))}\n` +
-    `Create a new SDK client instance.${container}${altText(r.facts.ctorAlts || [], desc)}\n\n` +
+    `${0 === alts.length ? sentence : wrap(sentence.replace(/\n/g, ' '))}\n\n` +
     note(p, 'ctor') + keyTable(p, 'options', desc.ref.optionRows) + '\n'
 }
 

@@ -96,6 +96,8 @@ type MemberKind =
   | 'dataArg' | 'matchArg' // the argument is always passed: a map sets, a null value gets
   | 'make' | 'name' | 'client' | 'entopts'
   | 'stream' | 'streamIterator' | 'streamGenerator' | 'streamList' | 'streamLazy'
+  | 'streamSync' // a synchronous iterator over the items (rb Enumerator, scala Iterator)
+  | 'streamFunction' // a function returning the next item per call, `none` at the end (lua, perl)
 
 // `returns`: the type it returns, where the signature does not say.
 type Member = { kind: MemberKind, sig: string, returns?: string }
