@@ -21,7 +21,7 @@ import type { Source } from './resolve'
 
 import { recordCopies, guardCopies } from './copies'
 
-import { aliasCmpTree, pruneStaleTemplates } from './target'
+import { aliasCmpTree, pruneStaleTemplates, pruneRetired } from './target'
 
 import { parseAddNames, loadContent, ensureModelInclude } from './action'
 
@@ -196,6 +196,10 @@ const EditionRoot = cmp(function EditionRoot(props: any) {
           pruneStaleTemplates(
             ctx$, source.folder + '/' + from[i].path, tree.path, [],
             !!props.actx?.opts?.dryrun)
+        }
+        else {
+          pruneRetired(ctx$, props.actx, source.folder + '/' + from[i].path,
+            tree.path, source.origname, source.name)
         }
 
         copyTree(ctx$, source, tree, from[i].path)
