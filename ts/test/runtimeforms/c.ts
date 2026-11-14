@@ -72,17 +72,17 @@ const forms: Forms = {
     paramNames: 'the EntityVT function pointers in core/sdk.h leave their receiver parameter unnamed (Entity*)',
   },
   cite: {
-    'facts.collection': { file: OPFILES[1], quote: ['// array is NULL-terminated.', 'items[n] = NULL;'] },
+    'facts.collection': { value: "`NULL`-terminated array", file: OPFILES[1], quote: ['// array is NULL-terminated.', 'items[n] = NULL;'] },
     'facts.errSlot': { file: MAIN, quote: '*err = context_make_error(ctx, "spec_method_allow", buf);' },
     'facts.nullValue': { file: OPFILES[0], quote: 'if (*err) return NULL;' },
     'ref.facts.container': { file: MAIN, quote: 'ProjectNameSDK* projectname_sdk_new(voxgig_value* options) {' },
     'ref.facts.ctor[0]': { file: MAIN, quote: '#include "api.h"' },
-    'ref.facts.prepare.fails': { file: MAIN, quote: 'voxgig_value* sdk_prepare(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err) {' },
-    'ref.facts.body.values': {
+    'ref.facts.prepare.fails': { value: "style", file: MAIN, quote: 'voxgig_value* sdk_prepare(ProjectNameSDK* sdk, voxgig_value* fetchargs, PNError** err) {' },
+    'ref.facts.body.values': { value: "a string value holding the bytes, such as `voxgig_new_string_n`",
       file: 'tm/c/utility/http.c',
       quote: ['if (voxgig_is_string(body)) {\n    bytes = voxgig_as_string(body);\n    blen = voxgig_string_len(body);', '"body", voxgig_new_string_n(text, len),'],
     },
-    'ref.facts.cancel': { file: 'tm/c/utility/http.c', quote: '// The default live transport: HTTP/1.1 over a socket, one request per\n// connection.' },
+    'ref.facts.cancel': { value: false, file: 'tm/c/utility/http.c', quote: '// The default live transport: HTTP/1.1 over a socket, one request per\n// connection.' },
   },
   exceptions: {
     'types:ARRAY': 'the code generator\'s map gives voxgig_value* for arrays and maps alike; the page says which, as the old page did',
