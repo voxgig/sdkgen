@@ -469,7 +469,7 @@ src/cmp/elixir/ReadmeOptions_elixir.ts eb3b2b997109
 src/cmp/elixir/ReadmeTopHowto_elixir.ts 90ecb763e0ad
 src/cmp/elixir/ReadmeTopTest_elixir.ts 1cb36261a935
 src/cmp/elixir/Schema_elixir.ts a2d61dba669a
-src/cmp/elixir/Syntax_elixir.ts 74ea9629d74b
+src/cmp/elixir/Syntax_elixir.ts f6ce7dde80a2
 src/cmp/elixir/TestClean_elixir.ts 9119b5fc16e7
 src/cmp/elixir/TestDirect_elixir.ts 2ee44de0d1a9
 src/cmp/elixir/TestEntity_elixir.ts 0fa82f90ced3
@@ -1406,7 +1406,7 @@ src/cmp/py/ReadmeOptions_py.ts 6984e3568866
 src/cmp/py/ReadmeTopHowto_py.ts 98e1b9247b51
 src/cmp/py/ReadmeTopTest_py.ts 8b84dccc74bc
 src/cmp/py/Schema_py.ts ff45f83e6ff4
-src/cmp/py/Syntax_py.ts f6331e8b43e9
+src/cmp/py/Syntax_py.ts 8af2d17691e7
 src/cmp/py/TestClean_py.ts 8ff4b3331fac
 src/cmp/py/TestDirect_py.ts 6048b9a4737e
 src/cmp/py/TestEntity_py.ts 21048f17c313
@@ -2041,7 +2041,7 @@ src/cmp/ts/ReadmeTopHowto_ts.ts 80267a2529f3
 src/cmp/ts/ReadmeTopTest_ts.ts 8c614df68cb0
 src/cmp/ts/Schema_ts.ts 28d8eedbb21a
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
-src/cmp/ts/Syntax_ts.ts b6238cf6f7a0
+src/cmp/ts/Syntax_ts.ts 38dcb1d311d4
 src/cmp/ts/TestClean_ts.ts 7c3843705372
 src/cmp/ts/TestDefinition_ts.ts 8f242daf10a0
 src/cmp/ts/TestDirect_ts.ts cf90eb2a6b45
