@@ -49,7 +49,7 @@ const forms: Forms = {
   sigParams: (sig) => form(sig).params,
   sigReturns: () => '',
   tokens: { Class: 'EntyClass', client: 'api', sdk: 'ProjectName', ctor: 'make-sdk' },
-  types: { column: null },
+  types: { column: null, any: ['NULL', 'ANY'] },
 }
 
 export { forms }
