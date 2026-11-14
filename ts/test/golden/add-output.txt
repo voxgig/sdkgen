@@ -148,12 +148,12 @@ src/cmp/clojure/ReadmeInstall_clojure.ts be41896688cd
 src/cmp/clojure/ReadmeIntro_clojure.ts ecca16eaf2c8
 src/cmp/clojure/ReadmeModel_clojure.ts b1cefbb97697
 src/cmp/clojure/ReadmeOptions_clojure.ts 74c2c0adcce4
-src/cmp/clojure/ReadmeQuick_clojure.ts 607e1d64ec02
 src/cmp/clojure/ReadmeRef_clojure.ts 706febf6bf79
 src/cmp/clojure/ReadmeTopHowto_clojure.ts e1494b86d033
 src/cmp/clojure/ReadmeTopQuick_clojure.ts c3fed4d0208b
 src/cmp/clojure/ReadmeTopTest_clojure.ts 4079d255054d
 src/cmp/clojure/Schema_clojure.ts 173cdd00d273
+src/cmp/clojure/Syntax_clojure.ts 2f301016aa8e
 src/cmp/clojure/TestClean_clojure.ts db091badfd02
 src/cmp/clojure/TestDirect_clojure.ts ebfe781a958d
 src/cmp/clojure/TestEntity_clojure.ts 9d5860060f5f
@@ -2168,12 +2168,12 @@ src/cmp/zig/ReadmeInstall_zig.ts 52b119944d2c
 src/cmp/zig/ReadmeIntro_zig.ts 04e7058e1817
 src/cmp/zig/ReadmeModel_zig.ts 957ed3c603bf
 src/cmp/zig/ReadmeOptions_zig.ts 737426363d4e
-src/cmp/zig/ReadmeQuick_zig.ts 4606229f2cf6
 src/cmp/zig/ReadmeRef_zig.ts d0289ca5c6e4
 src/cmp/zig/ReadmeTopHowto_zig.ts 77361baf4079
 src/cmp/zig/ReadmeTopQuick_zig.ts fc9d512f8e2b
 src/cmp/zig/ReadmeTopTest_zig.ts feee7ba97c0f
 src/cmp/zig/Schema_zig.ts c55b2e5555f7
+src/cmp/zig/Syntax_zig.ts 54d89dca03a2
 src/cmp/zig/TestClean_zig.ts c7d8ea55ba40
 src/cmp/zig/TestDirect_zig.ts 60144692ef88
 src/cmp/zig/TestEntity_zig.ts a46e513a43a7
