@@ -40,7 +40,7 @@ const forms: Forms = {
     deleted: 'whether remove succeeded on this instance; not documented by the old pages',
   },
   members: {
-    options: 'options-map', utility: 'get-utility', direct: 'direct', prepare: 'prepare',
+    options: 'options-map', direct: 'direct', prepare: 'prepare',
     dataGet: 'data-get', dataSet: 'data-set', matchGet: 'match-get', matchSet: 'match-set',
     make: 'make', name: 'get-name', stream: 'stream',
   },
