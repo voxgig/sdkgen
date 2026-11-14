@@ -23,7 +23,7 @@ const vtMethod = (src: Src[], all: (files: string[]) => Src[]): string | null =>
 const forms: Forms = {
   files: {
     client: ['src/cmp/c/fragment/Main.fragment.c', 'src/cmp/c/MainEntity_c.ts'],
-    entity: ['tm/c/core/sdk.h#typedef struct EntityVT {:}', 'src/cmp/c/fragment/Entity.fragment.c'],
+    entity: ['tm/c/core/sdk.h#typedef struct EntityVT {#}', 'src/cmp/c/fragment/Entity.fragment.c'],
     ops: OPS,
   },
   opMethod: (_op, src, all) => vtMethod(src, all),
