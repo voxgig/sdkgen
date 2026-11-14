@@ -69,6 +69,7 @@ const forms: Forms = {
   namesWhy: 'Ruby passes these by position; the runtime names the setter argument args',
   uncompared: { returns: 'the runtime documents a return with `@return` on some methods only; the facts that rest on the others are cited' },
   cite: {
+    'ref.facts.entity[0].copy': { value: true, file: "src/cmp/rb/fragment/Entity.fragment.rb", quote: "VoxgigStruct.clone(@_data)" },
     'facts.recordType': { file: ENTITY, quote: '@return [EntityName, Hash]' },
     'ref.facts.container': { file: MAIN, quote: 'out.is_a?(Hash) ? out : {}' },
     'ref.facts.ctor[0]': { file: 'src/cmp/rb/Main_rb.ts', quote: 'require_relative \'feature/base_feature\'' },
@@ -84,7 +85,6 @@ const forms: Forms = {
     'ref.facts.cancel': { value: false, file: 'tm/rb/utility/fetcher.rb', quote: 'http = Net::HTTP.new(uri.host, uri.port, purl.host, purl.port, purl.user, purl.password)' },
   },
   exceptions: {
-    'ref.facts.accessor.arg': 'WRONG: the accessor passes its argument to the entity constructor as entopts (MainEntity_rb.ts `def ${entity.Name}(data = nil)` ... `${cls}.new(self, data)`; Entity.fragment.rb:7 `def initialize(client, entopts = nil)`); the page says "Pass `nil` for no initial data."',
     'returns:entity dataGet': 'the runtime documents `[EntityName, Hash]`: the typed Struct name or a Hash; the page names the Hash, as the old page did',
   },
 }

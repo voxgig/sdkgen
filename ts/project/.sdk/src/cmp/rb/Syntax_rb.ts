@@ -25,7 +25,7 @@ const refFacts: RefFacts = {
   valueType: { STRING: 'String', OBJECT: 'Hash', ANY: 'any' },
   ctor: ['require_relative \'{module}\'', '', 'client = {ctor}(options)'],
   test: [{ sig: '{client}.test(testopts = nil, sdkopts = nil)', call: 'client = {client}.test', args: true }],
-  accessor: { sig: '{accessor}(data = nil)', arg: 'data' },
+  accessor: { sig: '{accessor}(data = nil)', arg: 'entopts' },
   op: {
     list: 'list(reqmatch = nil, ctrl = nil) -> Array<{Class}>',
     load: 'load(reqmatch = nil, ctrl = nil) -> {Class}',
