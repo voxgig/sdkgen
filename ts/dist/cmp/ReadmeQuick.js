@@ -118,24 +118,24 @@ function boundName(stmts, role) {
 }
 // The steps every quick start takes, each with its sentences, from the
 // description and the runtime facts alone.
-function quickSteps(p, desc) {
+function quickSteps(p, desc, where = 'tutorial') {
     const q = desc.quick;
     const f = p.facts;
     const steps = [];
     const lead = ['creating a client'];
     const ent = (name) => desc.entities.find((e) => e.name === name);
     steps.push({ title: 'Create a client', text: clientText(desc), stmts: (0, example_1.clientBlock)(desc), comment: 'Create a client' });
-    const list = (0, example_1.listBlock)(desc, f);
+    const list = (0, example_1.listBlock)(desc, f, where);
     if (null != q && null != list) {
         const n = ent(q.entity).Name.toLowerCase();
         lead.push(`listing ${n} records`);
         const cls = ent(q.entity).className;
         steps.push({
-            title: `List ${n} records`, text: (0, runtimeprose_1.listSentence)(f, boundName(list, 'item')) + noteText(p, 'tutorial:list'),
+            title: `List ${n} records`, text: (0, runtimeprose_1.listSentence)(f, boundName(list, 'item')) + noteText(p, 'tutorial:list', desc),
             stmts: list, comment: (0, runtimeprose_1.listComment)(f, `List ${n} records`, cls),
         });
     }
-    const load = (0, example_1.loadBlock)(desc, f);
+    const load = (0, example_1.loadBlock)(desc, f, where);
     if (null != q && null != q.load && null != load) {
         const e = ent(q.load.entity);
         const n = e.Name.toLowerCase();
@@ -143,7 +143,7 @@ function quickSteps(p, desc) {
         const nested = null == q.load.nested ? '' :
             `${e.Name} is nested under ${q.load.nested.parent}, so provide the \`${q.load.nested.param}\`. `;
         steps.push({
-            title: `Load ${article(n)} ${n}`, text: nested + (0, runtimeprose_1.loadSentence)(f, boundName(load, 'one')) + noteText(p, 'tutorial:load'),
+            title: `Load ${article(n)} ${n}`, text: nested + (0, runtimeprose_1.loadSentence)(f, boundName(load, 'one')) + noteText(p, 'tutorial:load', desc),
             stmts: load, comment: (0, runtimeprose_1.loadComment)(f, `Load ${article(n)} ${n}`, e.className),
         });
     }
@@ -154,7 +154,7 @@ function quickSteps(p, desc) {
         lead.push(`${series(ops.map((o) => GERUND[o]))} ${article(n)} ${n}`);
         const title = series(ops);
         const Title = title.charAt(0).toUpperCase() + title.slice(1);
-        steps.push({ title: Title, text: noteText(p, 'tutorial:write').trim(), stmts: writes, comment: Title });
+        steps.push({ title: Title, text: (0, runtimeprose_1.writeSentence)(f, ops) + noteText(p, 'tutorial:write', desc), stmts: writes, comment: Title });
     }
     return { steps, lead };
 }
@@ -170,7 +170,7 @@ ${wrap(`This tutorial walks through ${series(lead)}.${'' === where ? '' : ' ' + 
         (1 < steps.length ? ' Every operation returns entities, not raw records.' : ''))}
 
 `;
-    out += (0, example_2.note)(p, 'tutorial');
+    out += (0, example_2.note)(p, 'tutorial', desc);
     // A runtime whose examples are whole programs gets the same sentences, as a
     // numbered list, and the steps as one program. A step whose statements open
     // with their own comment is named by it, not again by its title; the client
@@ -194,8 +194,8 @@ ${wrap(`This tutorial walks through ${series(lead)}.${'' === where ? '' : ' ' + 
     return out;
 }
 // A runtime note's text as a paragraph's trailing sentences.
-function noteText(p, slot) {
-    const n = (0, example_2.note)(p, slot).trim();
+function noteText(p, slot, desc) {
+    const n = (0, example_2.note)(p, slot, desc).trim();
     return '' === n ? '' : ' ' + n;
 }
 // The statements with every attempt replaced by its body: the call is written
@@ -210,7 +210,7 @@ function bare(stmts) {
 // old root quick starts were.
 function topQuickText(p, desc) {
     const sc = (0, example_1.newScope)();
-    const { steps } = quickSteps(p, desc);
+    const { steps } = quickSteps(p, desc, 'top');
     const first = steps.filter((s) => /^(Create a client|List |Load )/.test(s.title));
     // The comment names the step, so the program printer adds no title of its own.
     const commented = first.map((s) => ({

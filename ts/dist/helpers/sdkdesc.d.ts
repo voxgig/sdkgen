@@ -74,11 +74,14 @@ type DescEntity = {
     fields: DescField[];
     fieldOps: boolean;
     refOps: DescOp[];
-    actions: {
-        action: string;
-        op: string;
-        path: string;
-    }[];
+    actions: DescAction[];
+    show: string[];
+};
+type DescAction = {
+    action: string;
+    op: string;
+    path: string;
+    params: DescArg[];
 };
 type DescOptionRow = {
     path: string[];
@@ -112,7 +115,6 @@ type DescQuick = {
     patch: DescArg[] | null;
     remove: DescArg[] | null;
     chainsId: boolean;
-    show: string[];
 };
 type SdkDescription = {
     target: string;
@@ -139,5 +141,5 @@ type SdkDescription = {
 };
 declare function sdkDescription(model: any, target: any, naming?: Naming, stdrep?: Record<string, string>): SdkDescription;
 declare function templateName(map: Record<string, string>, name: string): string;
-export type { DescField, DescFeature, DescOp, DescOptionRow, DescRef, Naming, SdkDescription, DescLayout, DescSymbols, DescArg, DescEntity, DescOption, DescQuick, DescServerVar, Scalar, };
+export type { DescAction, DescField, DescFeature, DescOp, DescOptionRow, DescRef, Naming, SdkDescription, DescLayout, DescSymbols, DescArg, DescEntity, DescOption, DescQuick, DescServerVar, Scalar, };
 export { templateName, sdkDescription, };

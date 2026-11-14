@@ -186,7 +186,9 @@ function describeEntity(e, sym, named) {
         })),
         fieldOps: fields.some((f) => null != f.op && 0 < Object.keys(f.op).length),
         refOps: methods.map((o) => describeOp(e, o, id)),
-        actions: (0, opShape_1.entityActions)(e).filter((a) => methods.includes(a.op)),
+        actions: (0, opShape_1.entityActions)(e).filter((a) => methods.includes(a.op))
+            .map((a) => ({ ...a, params: actionParams(e, a, id) })),
+        show: showFields(fields, (0, opShape_1.entityDataIdField)(e)),
     };
 }
 // The reference's example members for one operation: what a call must give,
@@ -218,6 +220,17 @@ function describeOp(e, op, idF) {
         idInData: ('update' === op || 'patch' === op) && (0, opExample_1.sendsId)(e, op, idF) ? idF : null,
         body: 'create' === op || 'update' === op || 'patch' === op ? (0, media_1.bodyFacts)(e.op[op]) : null,
     };
+}
+// The path parameters of an action's route, in route order, typed from the
+// point that declares them.
+function actionParams(e, a, idF) {
+    const points = Object.values(e.op?.[a.op]?.points || {});
+    const pt = points.find((p) => null != p && p.q?.['$action'] === a.action && String(p.o || '') === a.path);
+    const declared = Object.values(pt?.g?.params || {}).filter((x) => null != x && null != x.n);
+    return [...a.path.matchAll(/\{([^}]+)\}/g)].map((m) => {
+        const it = declared.find((x) => x.n === m[1] || x.or === m[1]) || { n: m[1], t: '`$STRING`' };
+        return typed({ name: it.n, type: it.t }, it.n === idF || 'id' === it.n ? e.name + '_id' : it.n);
+    });
 }
 function isNested(e) {
     return null != e.relations && null != e.relations.ancestors && 0 < e.relations.ancestors.length &&
@@ -292,13 +305,14 @@ function quickChoices(activeEntities) {
         remove: !ops.includes('remove') ? null : (0, opExample_1.matchExampleItems)(ex, 'remove', idF).sort(idFirst(idF))
             .map((it) => it.name === idF ? idArg('remove') : typed(it, 'example_' + it.name)),
         chainsId: ['update', 'patch', 'remove'].some((o) => ops.includes(o) && (0, opExample_1.sendsId)(ex, o, idF) && chains(o)),
-        show: showFields(fields, dataIdF),
     };
 }
-// The record id, then the first other string field: what php, rb, lua and perl
-// chose for themselves, chosen here once.
+// The record id, then the first other string field, else the first other
+// field of any type: what php, rb and lua chose for themselves (perl printed
+// the id alone), chosen here once.
 function showFields(fields, dataIdF) {
-    const display = fields.find((f) => f && f.n !== 'id' && f.n !== dataIdF && '$STRING' === f.t);
+    const other = fields.filter((f) => f && f.n !== 'id' && f.n !== dataIdF);
+    const display = other.find((f) => 'STRING' === (0, canonType_1.canonScalarKey)(f.t)) || other[0];
     return [dataIdF, display ? display.n : null].filter((f) => null != f);
 }
 //# sourceMappingURL=sdkdesc.js.map

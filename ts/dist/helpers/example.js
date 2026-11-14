@@ -62,16 +62,19 @@ function call(entity, op, arg, bind) {
     const wide = WRITE_OPS.includes(op) || ('load' === op && null != arg && 1 < arg.length);
     return { k: 'call', entity, op, arg, bind, wide };
 }
-// How an example shows an entity: the whole record, or the chosen fields where
-// the runtime's examples print those.
-function show(desc, facts, of) {
-    const fields = desc.quick ? desc.quick.show : [];
-    return 'fields' === facts.prints && 0 < fields.length ? { k: 'fields', of, fields } : { k: 'record', of };
+// How an example shows an entity: the whole record, or the chosen fields of
+// the entity shown, where and as the runtime's examples print those.
+function show(desc, facts, of, where) {
+    const e = desc.entities.find((x) => x.name === of.entity.name);
+    const fields = e ? e.show : [];
+    const chosen = 'fields' === facts.prints ||
+        ('listFields' === facts.prints && 'tutorial' === where && 'item' === of.role);
+    return chosen && 0 < fields.length ? { k: 'fields', of, fields } : { k: 'record', of };
 }
 function clientBlock(desc) {
     return [{ k: 'client', options: optionEntries(desc.options) }];
 }
-function listBlock(desc, facts) {
+function listBlock(desc, facts, where = 'tutorial') {
     const q = desc.quick;
     if (null == q || null == q.list)
         return null;
@@ -81,11 +84,11 @@ function listBlock(desc, facts) {
     return [{
             k: 'attempt', what: 'list', body: [
                 call(entity, 'list', 0 < q.list.length ? argEntries(q.list, null) : null, many),
-                { k: 'each', item, of: many, body: [{ k: 'print', what: show(desc, facts, item) }] },
+                { k: 'each', item, of: many, body: [{ k: 'print', what: show(desc, facts, item, where) }] },
             ],
         }];
 }
-function loadBlock(desc, facts) {
+function loadBlock(desc, facts, where = 'tutorial') {
     const q = desc.quick;
     if (null == q || null == q.load)
         return null;
@@ -94,7 +97,7 @@ function loadBlock(desc, facts) {
     return [{
             k: 'attempt', what: 'load', body: [
                 call(entity, 'load', 0 < q.load.args.length ? argEntries(q.load.args, null) : null, one),
-                { k: 'print', what: show(desc, facts, one) },
+                { k: 'print', what: show(desc, facts, one, where) },
             ],
         }];
 }
@@ -145,7 +148,7 @@ function refOpBlock(desc, facts, ent, op) {
         const item = refOf(desc, 'item', entity, 'generic');
         return [
             call(entity, 'list', arg, many),
-            { k: 'each', item, of: many, body: [{ k: 'print', what: { k: 'record', of: item } }] },
+            { k: 'each', item, of: many, body: [{ k: 'print', what: show(desc, facts, item, 'reference') }] },
         ];
     }
     const one = refOf(desc, 'load' === op.name ? 'one' : 'created', entity, 'generic');
@@ -156,12 +159,13 @@ function refOpBlock(desc, facts, ent, op) {
     if ('call' === stmt.k && ('update' === op.name || 'patch' === op.name)) {
         stmt.note = 'update' === op.name ? 'Fields to update' : 'Only the fields to change';
     }
-    return [stmt, ...(facts.unusedError ? [{ k: 'print', what: { k: 'record', of: one } }] : [])];
+    return [stmt, ...(facts.unusedError ? [{ k: 'print', what: show(desc, facts, one, 'reference') }] : [])];
 }
 // A custom action called: the operation it is routed through, with `$action`
-// in its argument. Its response is the action's own, so it is not bound.
+// and the route's path parameters in its argument. Its response is the
+// action's own, so it is not bound.
 function actionBlock(desc, ent, action) {
-    const stmt = call(entOf(desc, ent.name), action.op, [{ key: '$action', value: { k: 'str', text: action.action } }], null);
+    const stmt = call(entOf(desc, ent.name), action.op, [{ key: '$action', value: { k: 'str', text: action.action } }, ...argEntries(action.params, null)], null);
     if ('call' === stmt.k) {
         stmt.wide = true;
         stmt.note = '...the action\'s own arguments';
@@ -285,10 +289,20 @@ const IMPORTED = '\u0000imports';
 function newScope(standalone = false) {
     return { declared: new Set(), local: new Set(), stmts: [], section: [], standalone };
 }
-// A runtime note for a slot, as a paragraph, or nothing.
-function note(p, slot) {
+// A runtime note for a slot, as a paragraph, or nothing. A note names the
+// SDK's own modules as the signatures do: {module}, {client}, {ctor} and
+// {names.<role>} are filled from the description's layout, which the naming
+// hook decided; the note itself stays static text.
+function note(p, slot, desc) {
     const text = p.notes && Object.prototype.hasOwnProperty.call(p.notes, slot) ? p.notes[slot] : undefined;
-    return null == text || '' === text ? '' : text + '\n\n';
+    if (null == text || '' === text)
+        return '';
+    const layout = desc ? desc.layout : {};
+    const filled = text.replace(/\{(module|client|ctor|names\.\w+)\}/g, (m, k) => {
+        const v = k.startsWith('names.') ? (layout.names || {})[k.slice(6)] : layout[k];
+        return 'string' === typeof v ? v : m;
+    });
+    return filled + '\n\n';
 }
 function indent(lines, by) {
     return lines.map((l) => '' === l ? l : by + l);

@@ -17,11 +17,16 @@ const ReadmeFeatures = (0, component_1.cmp)(function ReadmeFeatures(props) {
     if (0 === features.length) {
         return;
     }
+    const on = features.filter(FeatureDocs_1.activeByDefault).map((f) => '`' + f.name + '`');
     (0, jostraca_1.Content)(`## Features
 
-This SDK ships ${features.length} optional features. Each is **inactive until you
+${0 === on.length ? `This SDK ships ${features.length} optional features. Each is **inactive until you
 switch it on**, so an SDK you have not configured behaves exactly as if none of
-them existed — no retries, no cache, no logging, no measurable overhead.
+them existed — no retries, no cache, no logging, no measurable overhead.` :
+        `This SDK ships ${features.length} optional features. Each is **inactive until you
+switch it on**, except ${on.join(', ')}, which ${1 === on.length ? 'runs' : 'run'} unless disabled. Every other
+feature you have not configured behaves exactly as if it did not exist,
+with no measurable overhead.`}
 
 Activate a feature by name in the client options, alongside the options shown
 above:
@@ -70,7 +75,11 @@ ${f.title}.
             (0, jostraca_1.Content)(`
 `);
         }
-        (0, jostraca_1.Content)(`Set \`feature.${f.name}.active\` to enable it${0 < f.options.length ? ', then override any of the options above' : ''}.
+        (0, jostraca_1.Content)((0, FeatureDocs_1.activeByDefault)(f)
+            ? `It is active by default: set \`feature.${f.name}.active\` to false to switch it off${0 < f.options.length ? ', or override any of the options above' : ''}.
+
+`
+            : `Set \`feature.${f.name}.active\` to enable it${0 < f.options.length ? ', then override any of the options above' : ''}.
 
 `);
         if (f.wraps) {

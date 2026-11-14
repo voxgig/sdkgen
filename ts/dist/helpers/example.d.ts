@@ -1,4 +1,4 @@
-import type { DescEntity, DescOp, DescSymbols, Scalar, SdkDescription } from './sdkdesc';
+import type { DescAction, DescEntity, DescOp, DescSymbols, Scalar, SdkDescription } from './sdkdesc';
 type Ent = {
     name: string;
     Name: string;
@@ -88,13 +88,16 @@ type RuntimeFacts = {
     unwrap?: string;
     unusedError?: boolean;
     listOf?: string;
-    prints: 'record' | 'fields';
+    prints: Prints;
 };
+type Prints = 'record' | 'listFields' | 'fields';
+type ShowPlace = 'tutorial' | 'top' | 'reference';
 type MemberKind = 'options' | 'utility' | 'utilityBase' | 'direct' | 'prepare' | 'tester' | 'data' | 'match' | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet' | 'dataArg' | 'matchArg' | 'make' | 'name' | 'client' | 'entopts' | 'stream' | 'streamIterator' | 'streamGenerator' | 'streamList' | 'streamLazy' | 'streamSync' | 'streamFunction';
 type Member = {
     kind: MemberKind;
     sig: string;
     returns?: string;
+    copy?: boolean;
 };
 type RefFacts = {
     entityBy: 'class' | 'Name' | 'module';
@@ -151,15 +154,12 @@ type RefFacts = {
 type CtorKind = 'defaults' | 'explicit';
 declare function entOf(desc: SdkDescription, name: string): Ent;
 declare function clientBlock(desc: SdkDescription): Stmt[];
-declare function listBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | null;
-declare function loadBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | null;
+declare function listBlock(desc: SdkDescription, facts: RuntimeFacts, where?: ShowPlace): Stmt[] | null;
+declare function loadBlock(desc: SdkDescription, facts: RuntimeFacts, where?: ShowPlace): Stmt[] | null;
 declare function writeOps(desc: SdkDescription): string[];
 declare function writeBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | null;
 declare function refOpBlock(desc: SdkDescription, facts: RuntimeFacts, ent: DescEntity, op: DescOp): Stmt[] | null;
-declare function actionBlock(desc: SdkDescription, ent: DescEntity, action: {
-    action: string;
-    op: string;
-}): Stmt[];
+declare function actionBlock(desc: SdkDescription, ent: DescEntity, action: DescAction): Stmt[];
 declare function featureBlock(names: string[]): Stmt[];
 type Uses = {
     env: boolean;
@@ -216,7 +216,7 @@ type RefSyntax = {
     instance: (ent: Ent, desc: SdkDescription) => string[];
     read: (value: string, key: string) => string;
 };
-type NoteSlot = `member:${MemberKind}` | 'ctor' | 'test' | 'instance' | 'entity' | 'operations' | 'features' | 'tutorial' | 'tutorial:list' | 'tutorial:load' | 'tutorial:write' | 'top';
+type NoteSlot = `member:${MemberKind}` | 'ctor' | 'test' | 'instance' | 'entity' | 'operations' | 'members' | 'features' | 'tutorial' | 'tutorial:list' | 'tutorial:load' | 'tutorial:write' | 'top';
 declare function printStmts(p: Syntax, stmts: Stmt[], desc: SdkDescription, sc: Scope, inAttempt?: boolean): string[];
 declare function printBlock(p: Syntax, stmts: Stmt[], desc: SdkDescription, sc: Scope): string;
 declare function printSteps(p: Syntax, steps: {
@@ -232,7 +232,7 @@ declare function printJoined(p: Syntax, steps: {
     stmts: Stmt[];
 }[], desc: SdkDescription, sc: Scope): string;
 declare function newScope(standalone?: boolean): Scope;
-declare function note(p: Syntax, slot: NoteSlot): string;
+declare function note(p: Syntax, slot: NoteSlot, desc?: SdkDescription): string;
 declare function indent(lines: string[], by: string): string[];
-export type { CallContext, CtorKind, NoteSlot, Member, MemberKind, RefFacts, RefSyntax, Ent, Entry, Expr, OpName, ProgramStep, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses, };
+export type { CallContext, CtorKind, NoteSlot, Member, MemberKind, RefFacts, RefSyntax, Ent, Entry, Expr, OpName, Prints, ProgramStep, ShowPlace, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses, };
 export { actionBlock, clientBlock, entOf, featureBlock, refOpBlock, indent, listBlock, newScope, note, loadBlock, printBlock, printJoined, printProgram, printStmts, printSteps, uses, writeBlock, writeOps, };

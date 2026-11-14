@@ -11,7 +11,7 @@ const ReadmeRefFeatures = (0, component_1.cmp)(function ReadmeRefFeatures(props)
     if (0 === features.length) {
         return;
     }
-    const onByDefault = (f) => f.options.some((o) => 'active' === o.name && 'true' === o.value);
+    const onByDefault = FeatureDocs_1.activeByDefault;
     const on = features.filter(onByDefault).map((f) => '`' + f.name + '`');
     // Emitted INSIDE the per-language `## Features` section, after its summary
     // table and activation snippet, so these are subsections of it rather than

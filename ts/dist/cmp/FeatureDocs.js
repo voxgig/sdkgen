@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.activeByDefault = activeByDefault;
 exports.featureDocs = featureDocs;
 exports.renderValue = renderValue;
 exports.sentinelName = sentinelName;
@@ -71,6 +72,12 @@ function featureDocs(model, target) {
         };
     })
         .sort((a, b) => a.name.localeCompare(b.name));
+}
+// Whether a feature runs without being switched on: its own `active` option
+// defaults to true (model/feature/log.aontu). The one place both feature
+// sections, README and REFERENCE, decide it.
+function activeByDefault(f) {
+    return f.options.some((o) => 'active' === o.name && 'true' === o.value);
 }
 const FIXED_ORDER_TARGETS = ['lean'];
 function honoursActivationOrder(target) {

@@ -16,6 +16,7 @@ type FeatureDoc = {
 declare function sentinelName(v: any): string;
 declare function renderValue(v: any): string;
 declare function featureDocs(model: any, target?: any): FeatureDoc[];
+declare function activeByDefault(f: FeatureDoc): boolean;
 declare function honoursActivationOrder(target: any): boolean;
-export { featureDocs, renderValue, sentinelName, honoursActivationOrder, };
+export { activeByDefault, featureDocs, renderValue, sentinelName, honoursActivationOrder, };
 export type { FeatureDoc };
