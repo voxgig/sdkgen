@@ -26,7 +26,7 @@ const refFacts: RefFacts = {
   valueType: { STRING: 'str', OBJECT: 'dict', ANY: 'any' },
   ctor: ['from {module} import {client}', '', 'client = {ctor}(options)'],
   test: [{ sig: '{client}.test(testopts=None, sdkopts=None)', call: 'client = {client}.test()', args: true }],
-  accessor: { sig: '{accessor}(data=None)', arg: 'data' },
+  accessor: { sig: '{accessor}(data=None)', arg: 'entopts' },
   op: {
     list: 'list(reqmatch=None, ctrl=None) -> list[{Class}]',
     load: 'load(reqmatch=None, ctrl=None) -> {Class}',
@@ -44,9 +44,9 @@ const refFacts: RefFacts = {
   ],
   entity: [
     { kind: 'dataGet', sig: 'data_get() -> dict', copy: true },
-    { kind: 'dataSet', sig: 'data_set(data=None)' },
+    { kind: 'dataSet', sig: 'data_set(args=None)' },
     { kind: 'matchGet', sig: 'match_get() -> dict' },
-    { kind: 'matchSet', sig: 'match_set(match=None)' },
+    { kind: 'matchSet', sig: 'match_set(args=None)' },
     { kind: 'make', sig: 'make() -> Entity' },
     { kind: 'streamGenerator', sig: 'stream(action, args=None, callopts=None)' },
     { kind: 'name', sig: 'get_name() -> str' },

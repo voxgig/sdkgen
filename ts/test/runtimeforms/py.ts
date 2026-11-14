@@ -45,6 +45,7 @@ const forms: Forms = {
   // The porter's, from here on.
   uncompared: { returns: 'the runtime annotates the returns of the operations and data_get/match_get only; the others are cited where a fact rests on them' },
   cite: {
+    'ref.facts.entity[0].copy': { value: true, file: "src/cmp/py/fragment/Entity.fragment.py", quote: "return vs.clone(self._data)" },
     'facts.recordType': { file: ENTITY, quote: ['def data_get(self) -> EntityName:', 'return vs.clone(self._data)'], unquoted: { dict: 'EntityName is a TypedDict, so a dict at run time' } },
     'ref.facts.container': { file: MAIN, quote: 'extend = options.get("extend") if isinstance(options, dict) else None' },
     'ref.facts.ctor[0]': {
@@ -63,9 +64,6 @@ const forms: Forms = {
     'ref.facts.cancel': { value: false, file: 'tm/py/pkg/utility/fetcher.py', quote: 'timeout = fetchdef.get("timeout")' },
   },
   exceptions: {
-    'ref.facts.accessor.arg': 'WRONG: the accessor passes its argument to the entity constructor as entopts (MainEntity_py.ts `def ${entity.Name}(self, data=None)` ... `return ${cls}(self, data)`; Entity.fragment.py:12 `def __init__(self, client, entopts=None):`); the page says "Pass `None` for no initial data."',
-    'paramNames:entity dataSet': 'WRONG: the runtime\'s keyword is args (Entity.fragment.py:56 `def data_set(self, args=None):`); the page shows data_set(data=None), and data_set(data=...) raises TypeError',
-    'paramNames:entity matchSet': 'WRONG: the runtime\'s keyword is args (Entity.fragment.py:65 `def match_set(self, args=None):`); the page shows match_set(match=None), and match_set(match=...) raises TypeError',
     'optional:opMatched list': 'the runtime defaults the match, and a nested entity\'s list needs its parent: the page shows it required, beside the sentence naming the members (stage 3, ref-10)',
     'returns:entity dataGet': 'EntityName is a TypedDict, so a dict; the page names the dict, as the old page did',
     'returns:entity matchGet': 'EntityName is a TypedDict, so a dict; the page names the dict, as the old page did',
