@@ -505,6 +505,15 @@ function pick(
 }
 
 
+
+// HTTP Basic in the header and a server URL templated on a required and a
+// defaulted variable: the quick start's constructor must carry both.
+const BASIC_SERVER = CRUD_MODEL + `
+main: kit: config: auth: { active: true, prefix: 'Basic', basic: true }
+main: kit: info: servers: [ { url: 'https://{tenant}.example.com/{region}', variables: { tenant: { default: '' }, region: { default: 'eu' } } } ]
+`
+
+
 describe('run', () => {
 
   test('reports a kill from outside as that signal, not as a timeout',
@@ -1090,6 +1099,7 @@ pub fn main() void {
     ['the examples', 'ts-readme', undefined],
     ['the examples, with a patch', 'ts-readme-patch', FOLD_ENTITY],
     ['the examples, with a patch in the tutorial', 'ts-readme-crud', CRUD_MODEL],
+    ['the examples, with Basic auth and a templated server', 'ts-readme-basic-server', BASIC_SERVER],
     ['a list example with its required parameters', 'ts-readme-search', searchOnly()],
     ['a list example with a nullable and a null-only parameter', 'ts-readme-nullable',
       listOnly('tally', [['n', '["`$ONE`", ["`$INTEGER`", "`$NULL`"]]'], ['z', '"`$NULL`"']])],
@@ -8910,6 +8920,10 @@ describe('the README examples run for a slug carrying the word client', () => {
       await readmeLane(t, lane, lane.target + '-patch', CRUD_MODEL, /patch\(/i, 'patch example')
     })
 
+    test(lane.target + ': the README examples run with Basic auth and a templated server', async (t) => {
+      await readmeLane(t, lane, lane.target + '-basic-server', BASIC_SERVER, /tenant/, 'templated server')
+    })
+
     test(lane.target + ': the README examples run where a list requires parameters', async (t) => {
       await readmeLane(t, lane, lane.target + '-search', searchOnly())
     })
@@ -9347,7 +9361,8 @@ describe('the documented c, cpp, rust, zig and ocaml examples compile', () => {
   })
 
   // The last model names a load parameter and a create field a"b\c.
-  const docModels: [string, string | undefined][] = [...DOC_MODELS, ['quoted-name', namedFieldEntity('a"b\\c')]]
+  const docModels: [string, string | undefined][] = [...DOC_MODELS, ['quoted-name', namedFieldEntity('a"b\\c')],
+    ['basic-server', BASIC_SERVER]]
   for (const lane of DOC_LANES) for (const [shape, extra] of docModels) {
     test(lane.target + ': every documented example compiles, ' + shape + ' first', async (t) => {
       const sdkroot = Path.join(tmp, lane.target + '-' + shape, lane.target)

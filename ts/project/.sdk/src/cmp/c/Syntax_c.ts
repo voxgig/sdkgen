@@ -78,6 +78,8 @@ const Syntax: SyntaxType = {
   },
 
   client: (s, desc) => [
+    // getenv is declared in stdlib.h, which core/api.h does not include.
+    ...(s.options.some((en) => 'env' === en.value.k) ? ['#include <stdlib.h>'] : []),
     '#include "core/api.h"',
     '',
     0 === s.options.length
