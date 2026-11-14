@@ -58,7 +58,7 @@ const forms: Forms = {
   namesWhy: 'clojure passes by position; the runtime names the setter argument args',
   uncompared: { returns: 'the clojure runtime declares no types, so a signature\'s `-> x` is compared with nothing; the facts that rest on one are cited' },
   cite: {
-    'facts.collection': { file: OPS[1], quote: [';; Resolves to a vector of entities, one per record, as make-result builds', '(if (vs/islist items) (vec items) items)'] },
+    'facts.collection': { value: "vector", file: OPS[1], quote: [';; Resolves to a vector of entities, one per record, as make-result builds', '(if (vs/islist items) (vec items) items)'] },
     'ref.facts.container': { file: 'tm/clojure/src/sdk/client.clj', quote: '[voxgig.struct :as vs]' },
     'ref.facts.ctor[0]': { file: 'src/cmp/clojure/Main_clojure.ts', quote: ['(ns sdk.api', '(:require [sdk.client :as client]${requires}))'] },
     'ref.facts.ctor[1]': { file: 'tm/clojure/src/sdk/client.clj', quote: '[voxgig.struct :as vs]' },
@@ -70,14 +70,14 @@ const forms: Forms = {
       file: 'tm/clojure/src/sdk/client.clj', quote: '(defn prepare [client fetchargs]',
       unquoted: { map: 'the fetch definition make-fetch-def builds, a voxgig.struct map' },
     },
-    'ref.facts.prepare.fails': { file: 'tm/clojure/src/sdk/client.clj', quote: '(core/sdk-throw (core/ctx-error ctx "spec_method_allow"' },
-    'ref.facts.body.values': {
+    'ref.facts.prepare.fails': { value: "style", file: 'tm/clojure/src/sdk/client.clj', quote: '(core/sdk-throw (core/ctx-error ctx "spec_method_allow"' },
+    'ref.facts.body.values': { value: "a byte array, a `String` or an `InputStream`",
       file: 'tm/clojure/src/sdk/core.clj',
       quote: [';; A byte array, an InputStream or a string, sent as it is. An InputStream is', '(or (bytes? body) (instance? java.io.InputStream body)) body'],
       unquoted: { String: 'a string, which the comment above raw-body names' },
     },
-    'ref.facts.body.once': { file: 'tm/clojure/src/sdk/core.clj', quote: ';; read here, once, before the first attempt, so that a retry sends the same' , also: [{ file: 'tm/clojure/src/sdk/core.clj', quote: '(if (instance? java.io.InputStream body) (.readAllBytes ^java.io.InputStream body) body)' }] },
-    'ref.facts.cancel': { file: 'tm/clojure/src/sdk/core.clj', quote: '(def ^:private http-client (delay (http-client-for HttpClient$Redirect/NORMAL)))' },
+    'ref.facts.body.once': { value: "an `InputStream`", file: 'tm/clojure/src/sdk/core.clj', quote: ';; read here, once, before the first attempt, so that a retry sends the same' , also: [{ file: 'tm/clojure/src/sdk/core.clj', quote: '(if (instance? java.io.InputStream body) (.readAllBytes ^java.io.InputStream body) body)' }] },
+    'ref.facts.cancel': { value: false, file: 'tm/clojure/src/sdk/core.clj', quote: '(def ^:private http-client (delay (http-client-for HttpClient$Redirect/NORMAL)))' },
   },
   exceptions: {
     'ref.facts.accessor.arg': 'WRONG: the accessor passes its argument on as the entity options (MainEntity_clojure.ts `(defn ${cljAccessor(entity)} [client data] (${cljEntityAlias(entity)}/make client data))`; Entity.fragment.clj:54 `(defn make [client data] (new-entity client data))` and :32 `(defn- new-entity [client entopts]`); the page says "Pass `nil` for no initial data."',
