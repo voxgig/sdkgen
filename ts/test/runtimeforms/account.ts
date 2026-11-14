@@ -127,7 +127,7 @@ function account(lang: string, S: any, forms: Forms, verified: Set<string>): Acc
         const quote = parts.map((x) => ([] as string[]).concat(x.quote).join(' ... ')).join(' | ')
         out.cited.push({
           path, file: parts.map((x) => x.file).join(' | '), quote, value,
-          prose: 0 === codeTokens(path, value, spell).length,
+          prose: prosy(value, codeTokens(path, value, spell), spell),
           unquoted: Object.entries(c.unquoted || {}).map(([k, v]) => k + ': ' + v),
         })
       }
@@ -146,6 +146,15 @@ function account(lang: string, S: any, forms: Forms, verified: Set<string>): Acc
     if (/^(facts|ref\.facts|notes)\./.test(p) && !paths.has(p)) out.findings.push(`exception ${p}: the provider declares no such fact`)
   }
   return out
+}
+
+
+// Whether a value says more than its code tokens: words a quote cannot pin.
+function prosy(value: any, toks: string[], spell: (s: string) => string): boolean {
+  if ('string' !== typeof value) return true
+  let rest = spell(value).replace(/(?<!\$)\{\w+\}/g, ' ')
+  for (const t of toks) rest = rest.split(t).join(' ')
+  return /[A-Za-z]{2,}/.test(rest.replace(/`/g, ' '))
 }
 
 
@@ -170,6 +179,12 @@ function checkCitation(lang: string, path: string, value: any, c: Citation, spel
   for (const tok of toks) {
     if (!has(tok) && null == c.unquoted?.[tok]) {
       return `cite ${path}: the quote does not contain ${JSON.stringify(tok)}, which the fact states`
+    }
+  }
+  if (prosy(value, toks, spell)) {
+    if (!('value' in c)) return `cite ${path}: no quote can hold ${JSON.stringify(value)}; pin the audited value (value: ...)`
+    if (JSON.stringify(c.value) !== JSON.stringify(value)) {
+      return `cite ${path}: the fact is ${JSON.stringify(value)}; the citation audited ${JSON.stringify(c.value)}`
     }
   }
   for (const tok of Object.keys(c.unquoted || {})) {

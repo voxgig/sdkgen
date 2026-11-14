@@ -580,6 +580,15 @@ const CONTROLS: Control[] = [
     },
   },
   {
+    name: 'a cited prose value changed', check: 'account', mutate: (S, forms) => {
+      const p = Object.keys(forms.cite || {}).find((k) => /^facts\.|^ref\.facts\./.test(k) && 'value' in (forms.cite as any)[k])
+      if (null == p) return false
+      const v = get(S, p)
+      set(S, p, 'boolean' === typeof v ? !v : String(v) + ' or more')
+      return true
+    },
+  },
+  {
     name: 'a cited fact with its citation removed', check: 'account', mutate: (_S, forms) => {
       const p = firstCited(forms)
       if (null == p) return false
