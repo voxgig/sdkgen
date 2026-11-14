@@ -50,6 +50,8 @@ const forms: Forms = {
   // The porter's, from here on.
   typeNames: { 'Rc<crate::entity::${mod}::${cls}>': 'Rc<EntyClass>' },
   cite: {
+    'ref.facts.entity[0].copy': { value: true, file: "src/cmp/rust/fragment/Entity.fragment.rs", quote: "vs::clone(&self.data.borrow())" },
+    'notes.member:direct': { value: "The result map always comes back inside `Ok`, for a non-2xx response and\nfor a request that could not be made alike; its `ok` key reports the failure.", file: "src/cmp/rust/fragment/Main.fragment.rs", quote: ["        self.raw_request(fetchargs)", "            Err(err) => {\n                return Ok(jo(vec![", "        Ok(jo(vec![\n            (\"ok\", Value::Bool(false)),"] },
     'facts.ok': { file: OPS[0], quote: 'Ok(self.clone())' },
     'facts.err': { file: ENTITY, quote: 'Err(err) => return utility.make_error(ctx, Some(err)),' },
     'ref.facts.none': { file: MAIN, quote: 'options: RefCell::new(Value::Noval),' },
@@ -74,9 +76,6 @@ const forms: Forms = {
       unquoted: { 'bytes_value(&[u8])': 'the signature bytes_value(bytes: &[u8]) with its parameter name left out' },
     },
     'ref.facts.cancel': { value: false, file: 'tm/rust/utility/fetcher.rs', quote: 'AGENT.get_or_init(|| ureq::AgentBuilder::new().build()).clone()' },
-  },
-  exceptions: {
-    'notes.member:direct': 'WRONG: direct never returns Err. A request that could not be made comes back as Ok with ok false: prepare failing (Main.fragment.rs:245-251), the fetch failing (272-278), no response (282-287) and an unreadable one (338-341) all return Ok(jo(... ("ok", Value::Bool(false)) ...)); the note says Err "is reserved for a request that could not be made"',
   },
 }
 

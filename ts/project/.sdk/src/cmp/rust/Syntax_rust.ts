@@ -165,8 +165,8 @@ const Syntax: SyntaxType = {
   },
 
   notes: {
-    'member:direct': 'The result map comes back inside `Ok` even for a non-2xx response; `Err`\n' +
-      'is reserved for a request that could not be made.',
+    'member:direct': 'The result map always comes back inside `Ok`, for a non-2xx response and\n' +
+      'for a request that could not be made alike; its `ok` key reports the failure.',
   },
 }
 
