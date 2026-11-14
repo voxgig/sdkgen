@@ -283,8 +283,8 @@ function refOpBlock(desc: SdkDescription, facts: RuntimeFacts, ent: DescEntity, 
   }
   const one = refOf(desc, 'load' === op.name ? 'one' : 'created', entity, 'generic')
   const stmt = call(entity, op.name, write ? (arg || []) : arg, one)
-  // A remove takes a match, laid out as a load's is.
-  if ('call' === stmt.k && 'remove' === op.name) stmt.wide = null != arg && 1 < arg.length
+  // A reference example's match stays on one line, as the old pages had it.
+  if ('call' === stmt.k && ('remove' === op.name || 'load' === op.name)) stmt.wide = false
   if ('call' === stmt.k && ('update' === op.name || 'patch' === op.name)) {
     stmt.note = 'update' === op.name ? 'Fields to update' : 'Only the fields to change'
   }
