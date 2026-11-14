@@ -1,5 +1,5 @@
 
-import { cmp, Content, isAuthActive, isHttpBasicAuth, envName, entityIdField, entityDataIdField, pickExampleEntity, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp, requestExampleItems } from '@voxgig/sdkgen'
+import { cmp, Content, isAuthActive, readsSecret, envName, entityIdField, entityDataIdField, pickExampleEntity, safeVarName, exampleVarName, jsKey, requiredItems, matchExampleItems, jsProp, requestExampleItems } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -88,7 +88,8 @@ ${stateDataLine}
     : ''
 
   const authActive = isAuthActive(model)
-  const authBasic = authActive && isHttpBasicAuth(model)
+  // The secret option exists only where the runtime reads it (Basic in the header).
+  const authBasic = readsSecret(model)
   const apikeyTesterCtor = authActive
     ? `new ${model.const.Name}SDK({ apikey: '...'${authBasic ? `, secret: '...'` : ''} })`
     : `new ${model.const.Name}SDK()`

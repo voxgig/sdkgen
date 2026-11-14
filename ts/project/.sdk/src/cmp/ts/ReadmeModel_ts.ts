@@ -1,5 +1,5 @@
 
-import { cmp, each, Content, isAuthActive, isHttpBasicAuth, serverVariables } from '@voxgig/sdkgen'
+import { cmp, each, Content, isAuthActive, readsSecret, serverVariables } from '@voxgig/sdkgen'
 
 import {
   KIT,
@@ -49,7 +49,8 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   const returnBullets = retBullets.join('\n')
 
   const authActive = isAuthActive(model)
-  const authBasic = authActive && isHttpBasicAuth(model)
+  // The secret option exists only where the runtime reads it (Basic in the header).
+  const authBasic = readsSecret(model)
   const apikeyOptionType = authActive ? `\n  apikey?: string` : ''
   const secretOptionType = authBasic ? `\n  secret?: string` : ''
   const apikeyOptionRow = authActive
@@ -65,10 +66,11 @@ const ReadmeModel = cmp(function ReadmeModel(props: any) {
   // to supply without going back to the spec.
   const svars = serverVariables(model)
   const serverOptionType = 0 === svars.length ? '' :
-    `\n  server?: { ${svars.map((v: any) => `${v.name}: string`).join(', ')} }`
+    `\n  server?: { ${svars.map((v: any) => `${v.name}${v.required ? '' : '?'}: string`).join(', ')} }`
   const serverOptionRow = 0 === svars.length ? '' :
-    '| `server` | `object` | **Required.** Values for the server-URL variables: ' +
-    svars.map((v: any) => '`' + v.name + '`').join(', ') +
+    '| `server` | `object` | ' + (svars.some((v: any) => v.required) ? '**Required.** ' : '') +
+    'Values for the server-URL variables: ' +
+    svars.map((v: any) => '`' + v.name + '`' + (v.required ? '' : ' (defaults to `' + v.dflt + '`)')).join(', ') +
     '. The API base URL is a template over them. |\n'
 
   Content(`### ${model.const.Name}SDK
