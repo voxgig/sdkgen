@@ -135,7 +135,7 @@ function quickText(p: Syntax, desc: SdkDescription): string {
       `${e.Name} is nested under ${q.load.nested.parent}, so provide the \`${q.load.nested.param}\`.\n`
     steps.push({
       title: `Load ${article(n)} ${n}`,
-      text: nested + wrap(`${w.op('load')} returns the entity and ${w.fails}; ${w.data} reads its record.`) + '\n\n',
+      text: nested + wrap(`${w.op('load')} returns ${w.one ?? 'the entity'} and ${w.fails}; ${w.data} reads its record.`) + '\n\n',
       block: printBlock(p, load, desc, sc),
     })
   }

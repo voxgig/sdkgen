@@ -163,6 +163,7 @@ type Scope = { declared: Set<string>, local: Set<string>, stmts: Stmt[], section
 type RuntimeWords = {
   op: (name: string) => string // how the prose names an operation: `list()`
   many: string // what a list returns: 'an array'
+  one?: string // what a load returns, where it is not the entity itself: 'a result whose `.ok` is the entity'
   fails: string // how an operation reports failure: 'throws on failure'
   data: string // what reads an entity's record: '`.data()`'
 }

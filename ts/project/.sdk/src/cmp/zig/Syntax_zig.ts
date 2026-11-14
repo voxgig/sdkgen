@@ -65,7 +65,8 @@ const Syntax: SyntaxType = {
 
   words: {
     op: (op) => '`' + op + '()`',
-    many: 'a slice',
+    many: 'a result whose `.ok` is a slice',
+    one: 'a result whose `.ok` is the entity',
     fails: 'reports failure in `.err`',
     data: '`asEntity().data(null)`',
   },

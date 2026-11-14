@@ -79,6 +79,7 @@ type Scope = {
 type RuntimeWords = {
     op: (name: string) => string;
     many: string;
+    one?: string;
     fails: string;
     data: string;
 };
