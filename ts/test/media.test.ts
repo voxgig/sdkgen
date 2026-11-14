@@ -371,7 +371,9 @@ describe('media: every target documents a raw body', () => {
   test('the reference names $body for each raw create and update', async () => {
     const cmpdir = Path.join(SCAFFOLD, 'src', 'cmp')
     const targets = readdirSync(cmpdir)
-      .filter((t) => existsSync(Path.join(cmpdir, t, 'ReadmeRef_' + t + '.ts')))
+      // A target's REFERENCE comes from its own component or its provider.
+      .filter((t) => existsSync(Path.join(cmpdir, t, 'ReadmeRef_' + t + '.ts')) ||
+        existsSync(Path.join(cmpdir, t, 'Syntax_' + t + '.ts')))
       .sort()
     ok(20 <= targets.length, 'expected every bundled target, got ' + targets.length)
 

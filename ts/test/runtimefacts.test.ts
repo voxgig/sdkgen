@@ -59,6 +59,39 @@ const STYLE: Record<string, (src: string, load: string) => boolean> = {
 }
 
 
+// The generator components that write fixed members into the runtime (the
+// entity accessor, go's Test()), beside the templates and fragments.
+function generatorSource(t: string): string {
+  const dir = Path.join(SCAFFOLD, 'src', 'cmp', t)
+  return Fs.readdirSync(dir)
+    .filter((f: string) => /^(Main|MainEntity|EntityBase|Entity)_/.test(f) && f.endsWith('.ts'))
+    .map((f: string) => Fs.readFileSync(Path.join(dir, f), 'utf8')).join('\n')
+}
+
+// The function a declared signature names: `vt->data(...)` -> data,
+// `{var}_stream(...)` -> any `<ident>_stream`, `{client}.test(...)` -> test.
+function memberPattern(sig: string): RegExp | null {
+  const m = /([\w{}]+)\s*\(/.exec(sig.replace(/^.*?(->|\.)(?=[\w{}]+\s*\()/, ''))
+  if (null == m || /^\{(accessor|ctor)\}$/.test(m[1])) return null
+  const name = esc(m[1]).replace(/\\\{var\\\}|\\\{\w+\\\}/g, '\\w+')
+  return new RegExp('(\\b|\\(\\*)' + name + '\\)?\\s*\\(')
+}
+
+// A fixed member a runtime may define, by kind: if the runtime defines it,
+// the table must declare it, so the reference cannot fall behind the runtime.
+const PRESENT: Record<string, RegExp> = {
+  stream: /(async \*stream|\) Stream|def stream|\w+_stream)\s*\(/,
+  client: /^\s+client\(\)\s*\{|def client\(|\) Client\(\)/m,
+  entopts: /^\s+entopts\(\)\s*\{|def entopts\(|\) Entopts\(/m,
+  options: /^\s+options\(\)\s*\{|\) OptionsMap\(|def options_map\(/m,
+  utility: /^\s+utility\(\)\s*\{|\) GetUtility\(|def get_utility\(/m,
+  make: /^\s+make\(|\) Make\(\)|def make\(|_make\(Entity/m,
+  name: /getName\(|GetName\(|def get_name\(|\(\*get_name\)/,
+}
+
+const kindOf = (k: string): string => k.startsWith('stream') ? 'stream' : k
+
+
 describe('runtimefacts', () => {
 
   test('every provider is checked', () => {
@@ -80,6 +113,25 @@ describe('runtimefacts', () => {
       ok(declares(src, acc), t + ': record accessor ' + acc + ' (from ' + f.record + ') is not declared')
 
       ok(STYLE[f.result](src, f.method.load), t + ': load is not declared in the ' + f.result + ' style')
+    })
+
+    test(t + ': the declared reference members are what its runtime defines', (tc) => {
+      const { Syntax } = require(Path.join(STAGE, t, 'Syntax_' + t + '.js'))
+      if (null == Syntax.ref) return tc.skip(t + ' declares no reference facts')
+      const r = Syntax.ref.facts
+      const src = runtimeSource(t) + '\n' + generatorSource(t)
+
+      const sigs = [...r.client, ...r.entity].map((m: any) => m.sig)
+        .concat(r.test.map((x: any) => x.sig), Object.values(r.op) as string[])
+      const absent = sigs.filter((sig: string) => {
+        const re = memberPattern(sig)
+        return null != re && !re.test(src)
+      })
+      deepStrictEqual(absent, [], t + ': signatures the reference declares and the runtime does not define')
+
+      const declared = [...r.client, ...r.entity].map((m: any) => kindOf(m.kind))
+      const undeclared = Object.keys(PRESENT).filter((k) => PRESENT[k].test(src) && !declared.includes(k))
+      deepStrictEqual(undeclared, [], t + ': members the runtime defines and the reference does not document')
     })
   }
 })

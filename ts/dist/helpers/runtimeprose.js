@@ -4,6 +4,8 @@
 // collection noun, never a sentence.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createComment = createComment;
+exports.failsSentence = failsSentence;
+exports.opText = opText;
 exports.listComment = listComment;
 exports.listSentence = listSentence;
 exports.loadComment = loadComment;
@@ -78,5 +80,61 @@ function listComment(f, title) {
 }
 function loadComment(f, title) {
     return `${title}: ${'union' === f.result ? f.ok + ' is ' : ''}the entity; ${failsShort(f)}`;
+}
+// What each operation does, before what it returns.
+const OP_DOES = {
+    list: 'List entities matching the given criteria.',
+    load: 'Load a single entity matching the given criteria.',
+    create: 'Create a new entity with the given data.',
+    update: 'Update an existing entity.',
+    patch: 'Change part of an existing entity: only the fields given are sent.',
+    remove: 'Remove the entity matching the given criteria.',
+};
+// What an operation's value is.
+function opValue(f, op) {
+    switch (op) {
+        case 'list': return `${a(f.collection)} of entities, one per record`;
+        case 'load': return `the entity, whose record ${code(f.record)} reads`;
+        case 'remove': return 'the entity, marked as deleted';
+        default: return `the ${'patch' === op ? 'patched' : op + 'd'} entity`;
+    }
+}
+// How an operation hands its value back and reports a failure.
+function returnClause(f, value) {
+    switch (f.result) {
+        case 'throw':
+        case 'raise':
+            return `${f.async ? 'Resolves to' : 'Returns'} ${value}, and ${f.result}s on failure.`;
+        case 'pair':
+            return `Returns ${value}; ${code(f.errVar)} is non-nil on failure.`;
+        case 'errslot':
+            return `Returns ${value}, or ${code(f.nullValue)} with ${code(f.errSlot)} set on failure.`;
+        case 'union':
+            return `The result's ${code(f.ok)} is ${value}, and its ${code(f.err)} reports failure.`;
+    }
+}
+// The reference's description of one operation. `needs`: what a list match
+// must give; `idInData`: the id key an update or patch must carry.
+function opText(f, op, needs, idInData) {
+    const parts = [OP_DOES[op]];
+    if ('list' === op) {
+        parts.push(0 === needs.length
+            ? 'The match is optional: without one, every record is listed.'
+            : `The match must include ${needs.map(code).join(' and ')}.`);
+    }
+    if (null != idInData)
+        parts.push(`The data must include the entity id, ${code(idInData)}.`);
+    parts.push(returnClause(f, opValue(f, op)));
+    return parts.join(' ');
+}
+// How a failure of a call other than an operation is reported.
+function failsSentence(f) {
+    switch (f.result) {
+        case 'throw':
+        case 'raise': return `It ${f.result}s on failure.`;
+        case 'pair': return `${code(f.errVar)} is non-nil on failure.`;
+        case 'errslot': return `It returns ${code(f.nullValue)} with ${code(f.errSlot)} set on failure.`;
+        case 'union': return `Its ${code(f.err)} reports failure.`;
+    }
 }
 //# sourceMappingURL=runtimeprose.js.map

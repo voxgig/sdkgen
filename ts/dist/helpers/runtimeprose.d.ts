@@ -4,4 +4,6 @@ declare function loadSentence(f: RuntimeFacts): string;
 declare function createComment(f: RuntimeFacts): string;
 declare function listComment(f: RuntimeFacts, title: string): string;
 declare function loadComment(f: RuntimeFacts, title: string): string;
-export { createComment, listComment, listSentence, loadComment, loadSentence, };
+declare function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string | null): string;
+declare function failsSentence(f: RuntimeFacts): string;
+export { createComment, failsSentence, opText, listComment, listSentence, loadComment, loadSentence, };

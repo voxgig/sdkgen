@@ -2,7 +2,9 @@
 /* Copyright (c) 2026 Voxgig Ltd, MIT License */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RAW_BODY = void 0;
+exports.bodyFacts = bodyFacts;
 exports.bodyNote = bodyNote;
+exports.bodyNoteText = bodyNoteText;
 exports.opRawBody = opRawBody;
 exports.opRequestBody = opRequestBody;
 const jostraca_1 = require("jostraca");
@@ -29,12 +31,26 @@ function opRawBody(op) {
 function codeList(types) {
     return types.map((t) => '`' + t + '`').join(', ');
 }
+function bodyFacts(op) {
+    const rb = opRequestBody(op);
+    if (null == rb || 'string' !== typeof rb.media) {
+        return null;
+    }
+    return {
+        kind: 'raw' === rb.kind ? 'raw' : 'encoded',
+        media: rb.media,
+        binary: true === rb.binary,
+        others: (Array.isArray(rb.alternatives) ? rb.alternatives : [])
+            .map((alt) => alt?.media).filter((m) => 'string' === typeof m),
+        encoded: opBodies(op).filter((b) => 'raw' !== b.kind)
+            .map((b) => b.media).filter((m) => 'string' === typeof m),
+    };
+}
 // The reference note for a body that is not JSON. `values` names what the
 // target accepts as `$body`, `once` the stream among them, which is read in
 // full before the request is sent, and `binary: false` a target without bytes.
-function bodyNote(op, target) {
-    const rb = opRequestBody(op);
-    if (null == rb || 'string' !== typeof rb.media) {
+function bodyNoteText(rb, target) {
+    if (null == rb) {
         return '';
     }
     if ('raw' !== rb.kind) {
@@ -44,18 +60,17 @@ function bodyNote(op, target) {
     if (true === rb.binary && false === target.binary) {
         return 'Declares a binary `' + rb.media + '` body, which this SDK cannot send yet.\n\n';
     }
-    const others = (Array.isArray(rb.alternatives) ? rb.alternatives : [])
-        .map((alt) => alt?.media).filter((m) => 'string' === typeof m);
-    const encoded = opBodies(op).filter((b) => 'raw' !== b.kind)
-        .map((b) => b.media).filter((m) => 'string' === typeof m);
     return 'Sends its body unencoded, as `' + rb.media + '`: pass it as `' + RAW_BODY +
         '`, ' + target.values + '.' +
         (null == target.once ? '' : ' ' + target.once.charAt(0).toUpperCase() + target.once.slice(1) +
             ' is read in full before the request is sent, so that a retry sends the same bytes.') +
-        (0 < others.length ? ' The operation also accepts ' + codeList(others) +
+        (0 < rb.others.length ? ' The operation also accepts ' + codeList(rb.others) +
             ': a `content-type` header option that is not JSON replaces the declared one.' : '') +
-        (0 < encoded.length ? ' Its other endpoints declare ' + codeList(encoded) +
+        (0 < rb.encoded.length ? ' Its other endpoints declare ' + codeList(rb.encoded) +
             ' bodies, which this SDK sends as JSON.' : '') +
         '\n\n';
+}
+function bodyNote(op, target) {
+    return bodyNoteText(bodyFacts(op), target);
 }
 //# sourceMappingURL=media.js.map

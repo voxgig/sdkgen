@@ -4,7 +4,11 @@
 // provider implements to print it. Nothing here reads the model: examples are
 // built from an SdkDescription and the provider's declared runtime facts.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.actionBlock = actionBlock;
 exports.clientBlock = clientBlock;
+exports.entOf = entOf;
+exports.featureBlock = featureBlock;
+exports.refOpBlock = refOpBlock;
 exports.indent = indent;
 exports.listBlock = listBlock;
 exports.newScope = newScope;
@@ -106,6 +110,51 @@ const WRITE_COMMENT = {
         (chained ? '; the id comes off the created entity\'s record' : ''),
     remove: () => 'Remove',
 };
+// The reference's example for one operation: a list or load consumed as the
+// tutorial consumes it, a write called alone. None for an operation reached
+// only through `$action`.
+function refOpBlock(desc, facts, ent, op) {
+    if (op.action)
+        return null;
+    const entity = entOf(desc, ent.name);
+    const arg = 0 < op.args.length ? argEntries(op.args, null) : null;
+    if ('list' === op.name) {
+        const many = { role: 'many', entity };
+        const item = { role: 'item', entity };
+        return [{
+                k: 'attempt', what: 'list', body: [
+                    call(entity, 'list', arg, many),
+                    { k: 'each', item, of: many, body: [{ k: 'print', what: { k: 'record', of: item } }] },
+                ],
+            }];
+    }
+    if ('load' === op.name) {
+        const one = { role: 'one', entity };
+        return [{
+                k: 'attempt', what: 'load', body: [
+                    call(entity, 'load', arg, one),
+                    { k: 'print', what: { k: 'record', of: one } },
+                ],
+            }];
+    }
+    return [call(entity, op.name, 'remove' === op.name ? arg : (arg || []), null)];
+}
+// A call that selects a custom action.
+function actionBlock(desc, ent, a) {
+    return [call(entOf(desc, ent.name), a.op, [{ key: '$action', value: { k: 'str', text: a.action } }], null)];
+}
+// The client constructed with the named features switched on.
+function featureBlock(names) {
+    return [{
+            k: 'client', options: [{
+                    key: 'feature', value: {
+                        k: 'map', entries: names.map((n) => ({
+                            key: n, value: { k: 'map', entries: [{ key: 'active', value: { k: 'lit', type: 'BOOLEAN', text: '' } }] },
+                        })),
+                    },
+                }],
+        }];
+}
 function uses(stmts) {
     const found = { env: false, field: false, print: false, entities: [] };
     const expr = (e) => {

@@ -1,3 +1,4 @@
+import type { BodyFacts } from './media';
 type Scalar = string;
 type DescServerVar = {
     name: string;
@@ -42,14 +43,55 @@ type Naming = (model: any, target: any) => {
     layout: DescLayout;
     symbols: (entity: any) => DescSymbols;
 };
+type DescField = {
+    name: string;
+    type: any;
+    required: boolean;
+    text: string;
+    ops: string[];
+};
+type DescOp = {
+    name: string;
+    action: boolean;
+    args: DescArg[];
+    needs: string[];
+    idInData: string | null;
+    body: BodyFacts | null;
+};
 type DescEntity = {
     name: string;
     Name: string;
+    className: string;
     sym: DescSymbols;
+    text: string;
     ops: string[];
     id: string | null;
     dataId: string | null;
     parents: string[];
+    fields: DescField[];
+    fieldOps: boolean;
+    refOps: DescOp[];
+    actions: {
+        action: string;
+        op: string;
+        path: string;
+    }[];
+};
+type DescOptionRow = {
+    path: string[];
+    type: 'STRING' | 'OBJECT' | 'ANY';
+    text: string;
+};
+type DescFeature = {
+    name: string;
+    title: string;
+    version: string;
+};
+type DescRef = {
+    title: string;
+    test: boolean;
+    optionRows: DescOptionRow[];
+    features: DescFeature[];
 };
 type DescQuick = {
     entity: string;
@@ -89,7 +131,8 @@ type SdkDescription = {
     server: DescServerVar[];
     entities: DescEntity[];
     quick: DescQuick | null;
+    ref: DescRef;
 };
 declare function sdkDescription(model: any, target: any, naming?: Naming): SdkDescription;
-export type { Naming, SdkDescription, DescLayout, DescSymbols, DescArg, DescEntity, DescOption, DescQuick, DescServerVar, Scalar, };
+export type { DescField, DescFeature, DescOp, DescOptionRow, DescRef, Naming, SdkDescription, DescLayout, DescSymbols, DescArg, DescEntity, DescOption, DescQuick, DescServerVar, Scalar, };
 export { sdkDescription, };
