@@ -24,7 +24,7 @@ const refFacts: RefFacts = {
   valueType: { STRING: 'String.t()', OBJECT: 'map()', ANY: 'any()' },
   ctor: ['sdk = {ctor}(options)'],
   test: [{ sig: '{module}.test(testopts \\\\ nil, sdkopts \\\\ nil)', call: 'sdk = {module}.test()', args: true }],
-  accessor: { sig: '{module}.{accessor}(client, entopts \\\\ nil)', arg: 'entopts' },
+  accessor: { sig: '{module}.{accessor}(client, entopts \\\\ nil)', arg: 'entopts', param: 'entopts' },
   op: {
     list: 'list(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: list()',
     load: 'load(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: entity',
@@ -46,10 +46,10 @@ const refFacts: RefFacts = {
     { kind: 'matchGet', sig: 'match_get(entity) :: map()' },
     { kind: 'matchSet', sig: 'match_set(entity, match)' },
     { kind: 'make', sig: 'make(entity) :: entity' },
-    { kind: 'streamLazy', sig: 'stream(entity, action, args \\\\ nil, callopts \\\\ nil) :: Enumerable.t()' },
+    { kind: 'streamLazy', sig: 'stream(entity, action, args \\\\ nil, callopts \\\\ nil) :: Enumerable.t()', runs: 'call' },
     { kind: 'name', sig: 'get_name(entity) :: String.t()' },
   ],
-  direct: { returns: 'map()' },
+  direct: { returns: 'map()', okFalse: 'false' },
   prepare: { returns: 'map()', fails: 'style' },
   body: { values: 'a binary' },
   cancel: false,
@@ -175,8 +175,7 @@ const Syntax: SyntaxType = {
   notes: {
     'member:utilityBase': 'It is the client\'s own node, not a copy.',
     ctor: 'Build `options` from a native map with `{names.helpers}.deep/1`.',
-    'tutorial:list': 'Named with its arity, it is `list/2`; `Voxgig.Struct.getelem/2` reads an item.',
-    'tutorial:load': 'Named with its arity, it is `load/2`.',
+    'tutorial:list': '`Voxgig.Struct.getelem/2` reads an item.',
   },
 }
 

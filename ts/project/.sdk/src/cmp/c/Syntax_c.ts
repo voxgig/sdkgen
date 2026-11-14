@@ -21,13 +21,14 @@ const refFacts: RefFacts = {
   entityBy: 'Name',
   noun: 'Functions',
   none: 'NULL',
+  setArg: 'a map',
   keys: 'bare',
   maps: 'maps',
   container: 'voxgig_value*',
   valueType: { STRING: 'string', OBJECT: 'map', ANY: 'any' },
   ctor: ['#include "{module}"', '', '{client}* client = {ctor}(options);'],
   test: [{ sig: '{client}* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts)', call: '{client}* client = test_sdk(NULL, NULL);', args: true }],
-  accessor: { sig: 'Entity* {accessor}({client}* client, voxgig_value* entopts)', arg: 'entopts' },
+  accessor: { sig: 'Entity* {accessor}({client}* client, voxgig_value* entopts)', arg: 'entopts', param: 'entopts' },
   op: {
     list: 'Entity** vt->list(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
     load: 'Entity* vt->load(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
@@ -44,10 +45,10 @@ const refFacts: RefFacts = {
     { kind: 'dataArg', sig: 'voxgig_value* vt->data(Entity* e, voxgig_value* args)', copy: true },
     { kind: 'matchArg', sig: 'voxgig_value* vt->matchv(Entity* e, voxgig_value* args)' },
     { kind: 'make', sig: 'Entity* vt->make(Entity* e)' },
-    { kind: 'streamList', sig: 'voxgig_value* {var}_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err)' },
+    { kind: 'streamList', sig: 'voxgig_value* {var}_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err)', runs: 'call' },
     { kind: 'name', sig: 'const char* vt->get_name(Entity* e)' },
   ],
-  direct: { returns: 'voxgig_value*' },
+  direct: { returns: 'voxgig_value*', okFalse: 'false' },
   prepare: { returns: 'voxgig_value*', fails: 'style' },
   body: { values: 'a string value holding the bytes, such as `voxgig_new_string_n`' },
   cancel: false,
@@ -119,7 +120,8 @@ const reads = (stmts: Stmt[], ref: Ref): string[] => {
     if ('field' === e.k && e.of.role === ref.role && !found.includes(e.field)) found.push(e.field)
     if ('map' === e.k) e.entries.forEach((en) => visit(en.value))
   }
-  stmts.forEach((s) => { if ('call' === s.k) (s.arg || []).forEach((en) => visit(en.value)) })
+  // A later call may sit inside the check of the one before it.
+  calls(stmts).forEach((s) => (s.arg || []).forEach((en) => visit(en.value)))
   return found
 }
 
@@ -198,14 +200,14 @@ const Syntax: SyntaxType = {
   // The call sets *err; what follows it runs only when it did not.
   attempt: (s, inner) => {
     const [first, ...rest] = s.body
+    const after = inner(rest)
     return [
       ...inner([first]),
       'if (err) {',
       `    fprintf(stderr, "${s.what} failed: %s\\n", err->msg);`,
       // A set error slot fails every later call, so it is cleared once reported.
       '    err = NULL;',
-      '} else {',
-      ...indentLines(inner(rest), '    '),
+      ...(0 === after.length ? [] : ['} else {', ...indentLines(after, '    ')]),
       '}',
     ]
   },

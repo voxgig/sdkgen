@@ -30,7 +30,7 @@ const refFacts: RefFacts = {
   valueType: { STRING: 'string', OBJECT: 'map', ANY: 'any' },
   ctor: ["(require '[{module} :as {client}]", "         '[voxgig.struct :as vs])", '', '(def client ({ctor} options))'],
   test: [{ sig: '({client}/test-sdk testopts sdkopts)', call: '(def client ({client}/test-sdk nil nil))', args: true }],
-  accessor: { sig: '({client}/{accessor} client data)', arg: 'entopts' },
+  accessor: { sig: '({client}/{accessor} client data)', arg: 'entopts', param: 'data' },
   op: {
     list: '(list ent reqmatch ctrl) -> vector',
     load: '(load ent reqmatch ctrl) -> entity',
@@ -50,10 +50,10 @@ const refFacts: RefFacts = {
     { kind: 'matchGet', sig: '((:match-get ent)) -> map' },
     { kind: 'matchSet', sig: '((:match-set ent) match)' },
     { kind: 'make', sig: '((:make ent)) -> entity' },
-    { kind: 'streamLazy', sig: '(stream ent action args callopts) -> seq' },
+    { kind: 'streamLazy', sig: '(stream ent action args callopts) -> seq', runs: 'call' },
     { kind: 'name', sig: '((:get-name ent)) -> string' },
   ],
-  direct: { returns: 'map' },
+  direct: { returns: 'map', okFalse: 'false' },
   prepare: { returns: 'map', fails: 'style' },
   body: { values: 'a byte array, a `String` or an `InputStream`', once: 'an `InputStream`' },
   cancel: false,
@@ -214,8 +214,7 @@ const Syntax: SyntaxType = {
   },
 
   notes: {
-    instance: 'The SDK utility object is reached through `sdk.client`, which `{module}`\n' +
-      'does not re-export: `(sdk.client/get-utility client)` returns a copy of it.',
+    instance: 'The SDK utility object is reached through `sdk.client`, which `{module}`\ndoes not re-export: `(sdk.client/get-utility client)` returns a copy of it.',
     members: 'State accessors are stored on the entity map and called via keyword lookup.',
   },
 }

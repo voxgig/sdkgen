@@ -31,7 +31,7 @@ const refFacts: RefFacts = {
     call: 'use {module}::{test_sdk, Value};\n\nlet client = test_sdk(Value::Noval, Value::Noval);',
     args: true,
   }],
-  accessor: { sig: '{accessor}(entopts: Value) -> Rc<{Class}>', arg: 'entopts' },
+  accessor: { sig: '{accessor}(entopts: Value) -> Rc<{Class}>', arg: 'entopts', param: 'entopts' },
   op: {
     list: 'list(reqmatch: Value, ctrl: Value) -> Result<Vec<Rc<Self>>, ProjectNameError>',
     load: 'load(reqmatch: Value, ctrl: Value) -> Result<Rc<Self>, ProjectNameError>',
@@ -50,10 +50,10 @@ const refFacts: RefFacts = {
     { kind: 'dataArg', sig: 'data(args: Option<&Value>) -> Value', copy: true },
     { kind: 'matchArg', sig: 'matchv(args: Option<&Value>) -> Value' },
     { kind: 'make', sig: 'make() -> Rc<dyn Entity>' },
-    { kind: 'streamList', sig: 'stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, ProjectNameError>' },
+    { kind: 'streamList', sig: 'stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, ProjectNameError>', runs: 'call' },
     { kind: 'name', sig: 'get_name() -> String' },
   ],
-  direct: { returns: 'Result<Value, ProjectNameError>' },
+  direct: { returns: 'Result<Value, ProjectNameError>', okFalse: 'false' },
   prepare: { returns: 'Result<Value, ProjectNameError>', fails: 'style' },
   body: { values: 'a string, or bytes as `bytes_value(&[u8])`' },
   cancel: false,
@@ -165,8 +165,7 @@ const Syntax: SyntaxType = {
   },
 
   notes: {
-    'member:direct': 'The result map always comes back inside `Ok`, for a non-2xx response and\n' +
-      'for a request that could not be made alike; its `ok` key reports the failure.',
+    'member:direct': 'The result map always comes back inside `Ok`, for a non-2xx response and\nfor a request that could not be made alike; its `ok` key reports the failure.',
   },
 }
 

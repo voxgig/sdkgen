@@ -21,13 +21,14 @@ const refFacts: RefFacts = {
   entityBy: 'class',
   noun: 'Methods',
   none: 'h.vnull()',
+  setArg: 'a map',
   keys: 'bare',
   maps: 'maps',
   container: 'Value',
   valueType: { STRING: 'string', OBJECT: 'map', ANY: 'any' },
   ctor: ['const sdk = @import("{module}");', 'const h = sdk.h;', '', 'const client = sdk.{client}.new(options);'],
   test: [{ sig: 'test_sdk(testopts: Value, sdkopts: Value) *{client}', call: 'const client = sdk.test_sdk(h.vnull(), h.vnull());', args: true }],
-  accessor: { sig: '{accessor}(entopts: Value) *{Class}', arg: 'entopts' },
+  accessor: { sig: '{accessor}(entopts: Value) *{Class}', arg: 'entopts', param: 'entopts' },
   op: {
     list: 'list(reqmatch: Value, ctrl: Value) EntListResult',
     load: 'load(reqmatch: Value, ctrl: Value) EntResult',
@@ -45,10 +46,10 @@ const refFacts: RefFacts = {
   entity: [
     { kind: 'dataArg', sig: 'data(args: ?Value) Value', copy: true },
     { kind: 'matchArg', sig: 'matchv(args: ?Value) Value' },
-    { kind: 'streamList', sig: 'stream(action: []const u8, args: Value, callopts: Value) StreamResult' },
+    { kind: 'streamList', sig: 'stream(action: []const u8, args: Value, callopts: Value) StreamResult', runs: 'call' },
     { kind: 'name', sig: 'get_name() []const u8' },
   ],
-  direct: { returns: 'Value' },
+  direct: { returns: 'Value', okFalse: 'false' },
   prepare: { returns: 'E!Value', fails: 'note' },
   body: { values: 'a string value holding the bytes' },
   cancel: false,
@@ -187,8 +188,7 @@ const Syntax: SyntaxType = {
 
   notes: {
     'member:prepare': 'On failure it returns the error of its error union, for `try` or `catch`.',
-    'member:streamList': 'Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with\n' +
-      'whatever data the failure left; otherwise `.err` holds the branded error.',
+    'member:streamList': 'Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with\nwhatever data the failure left; otherwise `.err` holds the branded error.',
   },
 }
 

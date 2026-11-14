@@ -10,6 +10,8 @@ const facts: RuntimeFacts = {
   collection: '`[]any`',
   record: 'Data()',
   errVar: 'err',
+  pairForm: '(value, error)',
+  noError: 'nil',
   unusedError: true,
   prints: 'record',
 }
@@ -29,7 +31,7 @@ const refFacts: RefFacts = {
     { sig: 'Test() *{client}', call: 'client := sdk.Test()', args: false },
     { sig: 'TestSDK(testopts, sdkopts map[string]any) *{client}', call: 'client := sdk.TestSDK(nil, nil)', args: true },
   ],
-  accessor: { sig: '{accessor}(data map[string]any) {sdk}EntityBase', arg: 'entopts' },
+  accessor: { sig: '{accessor}(data map[string]any) {sdk}EntityBase', arg: 'entopts', param: 'data' },
   op: {
     list: 'List(reqmatch, ctrl map[string]any) (any, error)',
     load: 'Load(reqmatch, ctrl map[string]any) (any, error)',
@@ -48,10 +50,10 @@ const refFacts: RefFacts = {
     { kind: 'data', sig: 'Data(args ...any) any', copy: true },
     { kind: 'match', sig: 'Match(args ...any) any' },
     { kind: 'make', sig: 'Make() Entity' },
-    { kind: 'stream', sig: 'Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem' },
+    { kind: 'stream', sig: 'Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem', runs: 'background' },
     { kind: 'name', sig: 'GetName() string' },
   ],
-  direct: { returns: '(map[string]any, error)' },
+  direct: { returns: '(map[string]any, error)', okFalse: 'false' },
   prepare: { returns: '(map[string]any, error)', fails: 'style' },
   body: { values: 'a `[]byte`, a `string` or an `io.Reader`', once: 'an `io.Reader`' },
   cancel: false,
@@ -153,10 +155,7 @@ const Syntax: SyntaxType = {
   },
 
   notes: {
-    'member:stream': 'It sends the items on the returned channel, which closes when the stream\n' +
-      'ends. A `StreamItem` holds one item in `Item`, or in `Err` the error that\nended the stream: ' +
-      'the error the operation itself would return, sent as the\nlast value. Under `throw: false` in ' +
-      '`callopts["ctrl"]`, no error is sent.',
+    'member:stream': 'It sends the items on the returned channel, which closes when the stream\nends. A `StreamItem` holds one item in `Item`, or in `Err` the error that\nended the stream: the error the operation itself would return, sent as the\nlast value. Under `throw: false` in `callopts["ctrl"]`, no error is sent.',
   },
 
   // A complete program: what the steps use is imported, and each step is a
