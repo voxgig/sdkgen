@@ -3,6 +3,7 @@ declare const OPTIONAL_COMPONENTS: {
     ReadmeFeatures: null;
     ReadmeModel: null;
     Syntax: null;
+    Naming: null;
     ReadmeIntro: (t: string) => string;
     ReadmeInstall: (t: string) => string;
     ReadmeQuick: (t: string) => string;

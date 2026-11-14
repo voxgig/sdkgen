@@ -25,9 +25,27 @@ type DescArg = {
     name: string;
     fromCreated: string;
 };
+type DescLayout = {
+    module: string;
+    client: string;
+    ctor: string;
+};
+type DescSymbols = {
+    accessor: string;
+    var: string;
+    vars: string;
+    module?: string;
+    alias?: string;
+    fields?: Record<string, string>;
+};
+type Naming = (model: any, target: any) => {
+    layout: DescLayout;
+    symbols: (entity: any) => DescSymbols;
+};
 type DescEntity = {
     name: string;
     Name: string;
+    sym: DescSymbols;
     ops: string[];
     id: string | null;
     dataId: string | null;
@@ -49,12 +67,14 @@ type DescQuick = {
     patch: DescArg[] | null;
     remove: DescArg[] | null;
     chainsId: boolean;
+    show: string[];
 };
 type SdkDescription = {
     target: string;
     name: string;
     Name: string;
     package: string;
+    layout: DescLayout;
     env: {
         prefix: string;
     };
@@ -70,6 +90,6 @@ type SdkDescription = {
     entities: DescEntity[];
     quick: DescQuick | null;
 };
-declare function sdkDescription(model: any, targetName: string): SdkDescription;
-export type { SdkDescription, DescArg, DescEntity, DescOption, DescQuick, DescServerVar, Scalar, };
+declare function sdkDescription(ctx$: any, target: any): SdkDescription;
+export type { Naming, SdkDescription, DescLayout, DescSymbols, DescArg, DescEntity, DescOption, DescQuick, DescServerVar, Scalar, };
 export { sdkDescription, };

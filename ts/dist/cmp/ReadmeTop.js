@@ -5,6 +5,8 @@ const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
+const sdkdesc_1 = require("../helpers/sdkdesc");
+const ReadmeQuick_1 = require("./ReadmeQuick");
 const optional_1 = require("../helpers/optional");
 const FeatureDocs_1 = require("./FeatureDocs");
 const opShape_1 = require("../helpers/opShape");
@@ -65,6 +67,20 @@ function entityExample(lang, Name, call) {
             (call ? `\nlocal ${call.resultVar}, err = ${call.expr}` : '');
         default: return '';
     }
+}
+// A target's root quick start: its own ReadmeTopQuick_<lang> where it has one
+// (a pack, or a project's override), else the shared one through its syntax
+// provider, else nothing (with the optional-component warning).
+function topQuick(ctx$, target) {
+    const t = target.name;
+    const own = (0, utility_1.loadOptional)(ctx$, `./cmp/${t}/ReadmeTopQuick_${t}`);
+    if (own)
+        return () => own['ReadmeTopQuick']({ target });
+    const provider = (0, optional_1.optionalComponent)(ctx$, target, 'Syntax');
+    if (provider)
+        return () => (0, jostraca_1.Content)((0, ReadmeQuick_1.topQuickText)(provider.Syntax, (0, sdkdesc_1.sdkDescription)(ctx$, target)));
+    const Quick = (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeTopQuick');
+    return Quick ? () => Quick['ReadmeTopQuick']({ target }) : undefined;
 }
 const ReadmeTop = (0, component_1.cmp)(function ReadmeTop(props) {
     const { ctx$ } = props;
@@ -355,10 +371,9 @@ network, and no credentials:
 ### ${leadTarget.title}
 
 `);
-            const LeadQuick = (0, optional_1.optionalComponent)(ctx$, leadTarget, 'ReadmeTopQuick');
-            if (LeadQuick) {
-                LeadQuick['ReadmeTopQuick']({ target: leadTarget });
-            }
+            const leadQuick = topQuick(ctx$, leadTarget);
+            if (leadQuick)
+                leadQuick();
             const placement = (0, utility_1.credentialPlacement)(model);
             (0, jostraca_1.Content)(`
 ${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
@@ -468,12 +483,12 @@ own list above for exactly which it supports.
 
 `);
             otherTargets.forEach((tgt) => {
-                const Quick = (0, optional_1.optionalComponent)(ctx$, tgt, 'ReadmeTopQuick');
-                if (Quick) {
+                const quick = topQuick(ctx$, tgt);
+                if (quick) {
                     (0, jostraca_1.Content)(`### ${tgt.title}
 
 `);
-                    Quick['ReadmeTopQuick']({ target: tgt });
+                    quick();
                     (0, jostraca_1.Content)(`
 `);
                 }

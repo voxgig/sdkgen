@@ -29,6 +29,7 @@ import { Schema } from './Schema_py'
 import { PrepareAuth } from './PrepareAuth_py'
 import { Gitignore } from './Gitignore_py'
 import { MainEntity } from './MainEntity_py'
+import { pyPackageDir } from './utility_py'
 import { EntityTypes } from './EntityTypes_py'
 
 
@@ -45,7 +46,7 @@ const Main = cmp(async function Main(props: any) {
 
   const secrets = null != (feature as any).secrets
 
-  const pkgdir = model.const.Name.toLowerCase() + '_sdk'
+  const pkgdir = pyPackageDir(model)
 
   Package({ target })
 

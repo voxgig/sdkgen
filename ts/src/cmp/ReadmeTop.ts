@@ -7,7 +7,9 @@ import {
   getModelPath
 } from '../types'
 
-import { credentialPlacement } from '../utility'
+import { credentialPlacement, loadOptional } from '../utility'
+import { sdkDescription } from '../helpers/sdkdesc'
+import { topQuickText } from './ReadmeQuick'
 import { optionalComponent } from '../helpers/optional'
 import { featureDocs } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
@@ -93,6 +95,20 @@ function entityExample(lang: ExampleLang, Name: string, call: PrimaryCall | null
       (call ? `\nlocal ${call.resultVar}, err = ${call.expr}` : '')
     default: return ''
   }
+}
+
+
+// A target's root quick start: its own ReadmeTopQuick_<lang> where it has one
+// (a pack, or a project's override), else the shared one through its syntax
+// provider, else nothing (with the optional-component warning).
+function topQuick(ctx$: any, target: any): (() => void) | undefined {
+  const t = target.name
+  const own = loadOptional(ctx$, `./cmp/${t}/ReadmeTopQuick_${t}`)
+  if (own) return () => own['ReadmeTopQuick']({ target })
+  const provider = optionalComponent(ctx$, target, 'Syntax')
+  if (provider) return () => Content(topQuickText(provider.Syntax, sdkDescription(ctx$, target)))
+  const Quick = optionalComponent(ctx$, target, 'ReadmeTopQuick')
+  return Quick ? () => Quick['ReadmeTopQuick']({ target }) : undefined
 }
 
 
@@ -408,11 +424,8 @@ network, and no credentials:
 ### ${leadTarget.title}
 
 `)
-      const LeadQuick =
-        optionalComponent(ctx$, leadTarget, 'ReadmeTopQuick')
-      if (LeadQuick) {
-        LeadQuick['ReadmeTopQuick']({ target: leadTarget })
-      }
+      const leadQuick = topQuick(ctx$, leadTarget)
+      if (leadQuick) leadQuick()
       const placement = credentialPlacement(model)
       Content(`
 ${'' === placement ? '' : placement + '\n\n'}See the [${leadTarget.title} README](${leadTarget.name}/README.md) for the full guide.
@@ -527,13 +540,12 @@ own list above for exactly which it supports.
 
 `)
       otherTargets.forEach((tgt: any) => {
-        const Quick =
-          optionalComponent(ctx$, tgt, 'ReadmeTopQuick')
-        if (Quick) {
+        const quick = topQuick(ctx$, tgt)
+        if (quick) {
           Content(`### ${tgt.title}
 
 `)
-          Quick['ReadmeTopQuick']({ target: tgt })
+          quick()
           Content(`
 `)
         }

@@ -1,27 +1,23 @@
 import { indentLines } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, Scope, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RuntimeFacts, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
-// As utility_zig's ZIG_RESERVED, copied: that module also holds helpers that read the model.
-const RESERVED = new Set<string>([
-  'addrspace', 'align', 'allowzero', 'and', 'anyframe', 'anytype', 'asm',
-  'async', 'await', 'break', 'callconv', 'catch', 'comptime', 'const',
-  'continue', 'defer', 'else', 'enum', 'errdefer', 'error', 'export',
-  'extern', 'fn', 'for', 'if', 'inline', 'noalias', 'nosuspend', 'noinline',
-  'opaque', 'or', 'orelse', 'packed', 'pub', 'resume', 'return',
-  'linksection', 'struct', 'suspend', 'switch', 'test', 'threadlocal', 'try',
-  'union', 'unreachable', 'usingnamespace', 'var', 'volatile', 'while',
-])
-
-const varName = (n: string): string => {
-  const snake = n.replace(/[^a-zA-Z0-9_]/g, '_').toLowerCase()
-  return RESERVED.has(snake) ? snake + '_' : snake
+const facts: RuntimeFacts = {
+  method: { list: 'list', load: 'load', create: 'create', update: 'update', patch: 'patch', remove: 'remove' },
+  named: 'call',
+  async: false,
+  result: 'union',
+  collection: 'slice',
+  record: 'asEntity().data(null)',
+  ok: '.ok',
+  err: '.err',
+  prints: 'record',
 }
 
 const str = (s: string): string => JSON.stringify(s)
 
 const name = (r: Ref): string =>
-  'created' === r.role ? 'created' : varName(r.entity.name) + ('many' === r.role ? 's' : '')
+  'created' === r.role ? 'created' : ('many' === r.role ? r.entity.sym.vars : r.entity.sym.var)
 
 const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
   INTEGER: 'h.vnum(1)', NUMBER: 'h.vnum(1)', BOOLEAN: 'h.vbool(true)', ARRAY: 'h.olist()', OBJECT: 'h.omap()', NULL: 'h.vnull()',
@@ -36,6 +32,7 @@ const expr = (e: Expr): string => {
     case 'env': return `h.vstr(std.posix.getenv(${str(e.name)}) orelse "")`
     case 'record': return `h.stringify(${data(e.of)})`
     case 'field': return `h.getp(${data(e.of)}, ${str(e.field)})`
+    case 'fields': return e.fields.map((f) => `h.stringify(h.getp(${data(e.of)}, ${str(f)}))`).join(', ')
     case 'map': return `h.jo(&.{${e.entries.map(pair).join(', ')}})`
   }
 }
@@ -48,45 +45,33 @@ const members = (entries: Entry[], pad: string): string[] =>
     : [`${pad}${pair(en)},`])
 
 const callExpr = (s: Extract<Stmt, { k: 'call' }>): string =>
-  `client.${varName(s.entity.name)}(h.vnull()).${s.op}(${null == s.arg ? 'h.vnull()' : expr({ k: 'map', entries: s.arg })}, h.vnull())`
+  `client.${s.entity.sym.accessor}(h.vnull()).${(facts.method as any)[s.op]}(${null == s.arg ? 'h.vnull()' : expr({ k: 'map', entries: s.arg })}, h.vnull())`
 
 const failed = (what: string): string => `std.debug.print("${what} failed: {s}\\n", .{e.msg})`
 
 // A statement printed as a switch arm: the trailing `;` becomes the arm's `,`.
 const arm = (line: string): string => line.replace(/;$/, ',')
 
-// The switch is how zig handles the result union. Inside an attempt the
-// switch is the attempt's; a call reached outside one is switched on here.
-const INSIDE = 'attempt'
-
 
 const Syntax: SyntaxType = {
   fence: 'zig',
-
-  words: {
-    op: (op) => '`' + op + '()`',
-    many: 'a result whose `.ok` is a slice',
-    one: 'a result whose `.ok` is the entity',
-    fails: 'reports failure in `.err`',
-    data: '`asEntity().data(null)`',
-  },
+  facts,
 
   client: (s, desc) => [
     'const std = @import("std");',
-    'const sdk = @import("sdk");',
-    'const h = sdk.h;',
+    `const ${desc.layout.module} = @import("${desc.layout.module}");`,
+    `const h = ${desc.layout.module}.h;`,
     '',
     0 === s.options.length
-      ? `const client = sdk.${desc.Name}SDK.new(h.vnull());`
-      : `const client = sdk.${desc.Name}SDK.new(h.jo(&.{\n${members(s.options, '    ').join('\n')}\n}));`,
+      ? `const client = ${desc.layout.module}.${desc.layout.ctor}(h.vnull());`
+      : `const client = ${desc.layout.module}.${desc.layout.ctor}(h.jo(&.{\n${members(s.options, '    ').join('\n')}\n}));`,
   ],
 
-  call: (s, _desc, sc: Scope) => {
-    if (sc.local.has(INSIDE)) {
-      return [callExpr(s)]
-    }
-    // Outside an attempt: the write's own switch. A bound result is kept for
-    // what follows it, so the error arm leaves the function.
+  // The switch is how zig handles the result union. Inside an attempt the
+  // switch is the attempt's; a call outside one is switched on here, and a
+  // bound result is kept for what follows, so the error arm leaves.
+  call: (s, _desc, _sc, cx) => {
+    if (cx.inAttempt) return [callExpr(s)]
     if (null != s.bind) {
       return [
         `const ${name(s.bind)} = switch (${callExpr(s)}) {`,
@@ -109,14 +94,14 @@ const Syntax: SyntaxType = {
     '}',
   ],
 
-  print: (s, sc) => [`std.debug.print("{s}\\n", .{${Syntax.expr(s.what, sc)}});`],
+  print: (s, sc) => 'fields' === s.what.k
+    ? [`std.debug.print("${s.what.fields.map(() => '{s}').join(' ')}\\n", .{${Syntax.expr(s.what, sc)}});`]
+    : [`std.debug.print("{s}\\n", .{${Syntax.expr(s.what, sc)}});`],
 
   // The first statement is the call switched on; the rest is its .ok arm.
-  attempt: (s, inner, sc) => {
+  attempt: (s, inner) => {
     const [first, ...rest] = s.body
-    sc.local.add(INSIDE)
     const scrutinee = inner([first])
-    sc.local.delete(INSIDE)
     const bound = 'call' === first.k && null != first.bind ? `|${name(first.bind)}| ` : ''
     const body = inner(rest)
     const ok = 1 === body.length

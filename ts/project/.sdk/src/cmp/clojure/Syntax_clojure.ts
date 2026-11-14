@@ -1,6 +1,16 @@
 import { indentLines, uses } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RuntimeFacts, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
+
+const facts: RuntimeFacts = {
+  method: { list: 'list', load: 'load', create: 'create', update: 'update', patch: 'patch', remove: 'remove' },
+  named: 'bare',
+  async: false,
+  result: 'raise',
+  collection: 'vector',
+  record: '((:data-get entity))',
+  prints: 'record',
+}
 
 const str = (s: string): string => '"' + String(s)
   .replace(/\\/g, '\\\\')
@@ -9,7 +19,8 @@ const str = (s: string): string => '"' + String(s)
   .replace(/\t/g, '\\t')
   .replace(/\r/g, '\\r') + '"'
 
-const name = (r: Ref): string => 'created' === r.role ? 'created' : r.entity.name
+const name = (r: Ref): string =>
+  'created' === r.role ? 'created' : ('many' === r.role ? r.entity.sym.vars : r.entity.sym.var)
 
 const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
   INTEGER: '1', NUMBER: '1', BOOLEAN: 'true', ARRAY: '(vs/jt)', OBJECT: '(vs/jm)', NULL: 'nil',
@@ -24,6 +35,7 @@ const expr = (e: Expr): string => {
     case 'env': return `(System/getenv ${str(e.name)})`
     case 'record': return record(e.of)
     case 'field': return `(vs/getprop ${record(e.of)} ${str(e.field)})`
+    case 'fields': return e.fields.map((f) => `(vs/getprop ${record(e.of)} ${str(f)})`).join(' ')
     case 'map': return `(vs/jm ${e.entries.map(pair).join(' ')})`
   }
 }
@@ -31,7 +43,7 @@ const expr = (e: Expr): string => {
 const pair = (en: Entry): string => `${str(en.key)} ${expr(en.value)}`
 
 const callExpr = (s: Extract<Stmt, { k: 'call' }>): string =>
-  `(e-${s.entity.name}/${s.op} (api/${s.entity.name} client nil) ${null == s.arg ? 'nil' : expr({ k: 'map', entries: s.arg })} nil)`
+  `(${s.entity.sym.alias}/${(facts.method as any)[s.op]} (${s.entity.sym.accessor} client nil) ${null == s.arg ? 'nil' : expr({ k: 'map', entries: s.arg })} nil)`
 
 // A form's closing paren goes on the last line of what it encloses.
 const close = (lines: string[], n = 1): string[] =>
@@ -40,23 +52,18 @@ const close = (lines: string[], n = 1): string[] =>
 
 const Syntax: SyntaxType = {
   fence: 'clojure',
-
-  words: {
-    op: (op) => '`' + op + '`',
-    many: 'a vector',
-    fails: 'raises on failure',
-    data: '`((:data-get entity))`',
-  },
+  facts,
 
   client: (s, desc, sc) => {
     // Every entity namespace the section calls is required here, ahead of it.
-    const ents = uses(sc.section).entities
+    const used = uses(sc.section).entities
+    const syms = desc.entities.filter((e) => used.includes(e.name)).map((e) => e.sym)
     return [
-      "(require '[sdk.api :as api]",
-      ...ents.map((n) => `         '[sdk.entity.${n} :as e-${n}]`),
+      `(require '[${desc.layout.module} :as ${desc.layout.client}]`,
+      ...syms.map((m) => `         '[${m.module} :as ${m.alias}]`),
       "         '[voxgig.struct :as vs])",
       '',
-      `(def client (api/make-sdk ${0 === s.options.length ? 'nil' : expr({ k: 'map', entries: s.options })}))`,
+      `(def client (${desc.layout.ctor} ${0 === s.options.length ? 'nil' : expr({ k: 'map', entries: s.options })}))`,
     ]
   },
 

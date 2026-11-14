@@ -2,7 +2,7 @@
 // A language-neutral representation of an example program, the builders the
 // shared documentation components call, and the interface a target's syntax
 // provider implements to print it. Nothing here reads the model: examples are
-// built from an SdkDescription.
+// built from an SdkDescription and the provider's declared runtime facts.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.clientBlock = clientBlock;
 exports.indent = indent;
@@ -10,15 +10,18 @@ exports.listBlock = listBlock;
 exports.newScope = newScope;
 exports.loadBlock = loadBlock;
 exports.printBlock = printBlock;
+exports.printJoined = printJoined;
+exports.printProgram = printProgram;
 exports.printStmts = printStmts;
+exports.printSteps = printSteps;
 exports.uses = uses;
 exports.writeBlock = writeBlock;
 exports.writeOps = writeOps;
-// A null arg on a call: the call takes no match. A create always takes data.
+const runtimeprose_1 = require("./runtimeprose");
 // ---- the builders
 function entOf(desc, name) {
     const e = desc.entities.find((x) => x.name === name);
-    return { name, Name: e ? e.Name : name };
+    return e ? { name, Name: e.Name, sym: e.sym } : { name, Name: name, sym: { accessor: name, var: name, vars: name + 's' } };
 }
 function argEntries(args, of) {
     return args.map((a) => ({
@@ -33,10 +36,21 @@ function optionEntries(options) {
         ? { key: 'server', value: { k: 'map', entries: o.vars.map((v) => ({ key: v.name, value: { k: 'str', text: v.placeholder } })) } }
         : { key: o.name, value: { k: 'env', name: o.env } });
 }
+const WRITE_OPS = ['create', 'update', 'patch', 'remove'];
+function call(entity, op, arg, bind) {
+    const wide = WRITE_OPS.includes(op) || ('load' === op && null != arg && 1 < arg.length);
+    return { k: 'call', entity, op, arg, bind, wide };
+}
+// How an example shows an entity: the whole record, or the chosen fields where
+// the runtime's examples print those.
+function show(desc, facts, of) {
+    const fields = desc.quick ? desc.quick.show : [];
+    return 'fields' === facts.prints && 0 < fields.length ? { k: 'fields', of, fields } : { k: 'record', of };
+}
 function clientBlock(desc) {
     return [{ k: 'client', options: optionEntries(desc.options) }];
 }
-function listBlock(desc) {
+function listBlock(desc, facts) {
     const q = desc.quick;
     if (null == q || null == q.list)
         return null;
@@ -45,12 +59,12 @@ function listBlock(desc) {
     const item = { role: 'item', entity };
     return [{
             k: 'attempt', what: 'list', body: [
-                { k: 'call', entity, op: 'list', arg: 0 < q.list.length ? argEntries(q.list, null) : null, bind: many },
-                { k: 'each', item, of: many, body: [{ k: 'print', what: { k: 'record', of: item } }] },
+                call(entity, 'list', 0 < q.list.length ? argEntries(q.list, null) : null, many),
+                { k: 'each', item, of: many, body: [{ k: 'print', what: show(desc, facts, item) }] },
             ],
         }];
 }
-function loadBlock(desc) {
+function loadBlock(desc, facts) {
     const q = desc.quick;
     if (null == q || null == q.load)
         return null;
@@ -58,17 +72,18 @@ function loadBlock(desc) {
     const one = { role: 'one', entity };
     return [{
             k: 'attempt', what: 'load', body: [
-                { k: 'call', entity, op: 'load', arg: 0 < q.load.args.length ? argEntries(q.load.args, null) : null, bind: one },
-                { k: 'print', what: { k: 'record', of: one } },
+                call(entity, 'load', 0 < q.load.args.length ? argEntries(q.load.args, null) : null, one),
+                { k: 'print', what: show(desc, facts, one) },
             ],
         }];
 }
-const WRITE_OPS = ['create', 'update', 'patch', 'remove'];
 function writeOps(desc) {
     const q = desc.quick;
     return null == q ? [] : WRITE_OPS.filter((o) => null != q[o]);
 }
-function writeBlock(desc) {
+// Write results are not shown, by every language alike; the created entity is
+// bound only where a later call reads its id.
+function writeBlock(desc, facts) {
     const q = desc.quick;
     const ops = writeOps(desc);
     if (0 === ops.length)
@@ -80,24 +95,19 @@ function writeBlock(desc) {
         if (0 < out.length)
             out.push({ k: 'gap' });
         const chained = q[op].some((a) => null != a.fromCreated);
-        out.push({ k: 'comment', text: WRITE_COMMENT[op](chained) });
-        out.push({
-            k: 'call', entity, op,
-            arg: 'create' === op || 0 < q[op].length ? argEntries(q[op], created) : null,
-            bind: 'create' === op ? created : null,
-        });
+        out.push({ k: 'comment', text: 'create' === op ? (0, runtimeprose_1.createComment)(facts) : WRITE_COMMENT[op](chained) });
+        out.push(call(entity, op, 'create' === op || 0 < q[op].length ? argEntries(q[op], created) : null, 'create' === op && q.chainsId ? created : null));
     }
     return out;
 }
 const WRITE_COMMENT = {
-    create: () => 'Create — returns the created entity',
     update: (chained) => 'Update' + (chained ? ' — the id comes off the created entity\'s record' : ''),
     patch: (chained) => 'Patch — sends only the fields given' +
         (chained ? '; the id comes off the created entity\'s record' : ''),
     remove: () => 'Remove',
 };
 function uses(stmts) {
-    const found = { env: false, field: false, entities: [] };
+    const found = { env: false, field: false, print: false, entities: [] };
     const expr = (e) => {
         if ('env' === e.k)
             found.env = true;
@@ -114,24 +124,26 @@ function uses(stmts) {
                 found.entities.push(s.entity.name);
             (s.arg || []).forEach((en) => expr(en.value));
         }
-        if ('print' === s.k)
+        if ('print' === s.k) {
+            found.print = true;
             expr(s.what);
+        }
         if ('each' === s.k || 'attempt' === s.k)
             s.body.forEach(walk);
     };
     stmts.forEach(walk);
     return found;
 }
-function printStmts(p, stmts, desc, sc) {
-    const inner = (body) => printStmts(p, body, desc, sc);
+function printStmts(p, stmts, desc, sc, inAttempt = false) {
     const out = [];
-    for (const s of stmts) {
+    stmts.forEach((s, i) => {
+        const inner = (body) => printStmts(p, body, desc, sc, inAttempt || 'attempt' === s.k);
         switch (s.k) {
             case 'client':
                 out.push(...p.client(s, desc, sc));
                 break;
             case 'call':
-                out.push(...p.call(s, desc, sc));
+                out.push(...p.call(s, desc, sc, { inAttempt, last: i === stmts.length - 1 }));
                 break;
             case 'each':
                 out.push(...p.each(s, inner, sc));
@@ -149,14 +161,43 @@ function printStmts(p, stmts, desc, sc) {
                 out.push('');
                 break;
         }
-    }
-    return out;
+    });
+    // A printer may return a multi-line string as one line; indenting needs lines.
+    return out.flatMap((l) => l.split('\n'));
 }
 // A whole code block: the fence, the provider's lines, the closing fence.
 function printBlock(p, stmts, desc, sc) {
     sc.local = new Set();
     sc.stmts = stmts;
     const lines = [...(p.before ? p.before(stmts, desc, sc) : []), ...printStmts(p, stmts, desc, sc)];
+    return fenced(p, lines);
+}
+// Steps printed under one local scope, each with what it hoists ahead of it.
+function printSteps(p, steps, desc, sc) {
+    sc.local = new Set();
+    sc.stmts = steps.flatMap((s) => s.stmts);
+    return steps.map((s) => {
+        // A step's leading comment names it, so it stays ahead of what is hoisted.
+        const lead = 'comment' === s.stmts[0]?.k ? 1 : 0;
+        return {
+            title: s.title,
+            lines: [
+                ...printStmts(p, s.stmts.slice(0, lead), desc, sc),
+                ...(p.before ? p.before(s.stmts, desc, sc) : []),
+                ...printStmts(p, s.stmts.slice(lead), desc, sc),
+            ],
+        };
+    });
+}
+// Steps printed into one program, by the provider's program printer.
+function printProgram(p, steps, desc, sc) {
+    return fenced(p, p.program(printSteps(p, steps, desc, sc), desc, sc));
+}
+// Steps printed into one block, a blank line between them.
+function printJoined(p, steps, desc, sc) {
+    return fenced(p, printSteps(p, steps, desc, sc).flatMap((s, i) => 0 === i ? s.lines : ['', ...s.lines]));
+}
+function fenced(p, lines) {
     return '```' + p.fence + '\n' + lines.join('\n') + '\n```\n';
 }
 function newScope() {

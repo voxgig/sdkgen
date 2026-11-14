@@ -9,6 +9,7 @@ import { CANON_OP_ORDER, entityDataIdField, entityIdField, entityOps, opRequestS
 import { matchExampleItems, requestExampleItems, requiredItems, sendsId } from './opExample'
 import { envName, packageName } from './packageMeta'
 import { serverVariables } from './serverVars'
+import { optionalComponent } from './optional'
 import {
   isAuthActive, isAuthSuppressed, isHttpBasicAuth, resolveAuthIn, resolveAuthName,
 } from '../utility'
@@ -35,9 +36,35 @@ type DescArg =
   | { name: string, type: Scalar, placeholder: string }
   | { name: string, fromCreated: string }
 
+// The names the generated code gives the SDK as a whole, decided by the
+// target's own naming functions (its Naming hook).
+type DescLayout = {
+  module: string // what an example imports the SDK by: a package, module path, header or namespace
+  client: string // the client type
+  ctor: string // the function or constructor an example creates a client with
+}
+
+// The names the generated code gives one entity, from the same hook.
+type DescSymbols = {
+  accessor: string // the client member, or function, that yields the entity
+  var: string // a variable holding one entity
+  vars: string // a variable holding a list of them
+  module?: string // what an example must import to call its operations
+  alias?: string // the name that import is bound to
+  fields?: Record<string, string> // field -> the identifier a variable named after it takes
+}
+
+// A target's naming hook: the code generator's own naming functions, which may
+// read the model. Exported as `Naming` by cmp/<target>/Naming_<target>.
+type Naming = (model: any, target: any) => {
+  layout: DescLayout
+  symbols: (entity: any) => DescSymbols
+}
+
 type DescEntity = {
   name: string // model key, e.g. graph_ql
   Name: string // class-name stem, e.g. GraphQl
+  sym: DescSymbols
   ops: string[] // generated, callable, canonical order
   id: string | null // the load-match id key
   dataId: string | null // the id on the returned record
@@ -53,6 +80,7 @@ type DescQuick = {
   patch: DescArg[] | null
   remove: DescArg[] | null
   chainsId: boolean // update/patch/remove take the id off the created record
+  show: string[] // the fields a runtime that prints chosen fields prints: the record id, then one display field
 }
 
 type SdkDescription = {
@@ -60,6 +88,7 @@ type SdkDescription = {
   name: string // model slug
   Name: string // class-name stem
   package: string // published package or module path of this target
+  layout: DescLayout
   env: { prefix: string }
   auth: { active: boolean, in: string, name: string, basic: boolean, secret: boolean }
   options: DescOption[] // what the quick start's constructor passes, in order
@@ -72,20 +101,33 @@ type SdkDescription = {
 const memo: WeakMap<object, Record<string, SdkDescription>> = new WeakMap()
 
 
-function sdkDescription(model: any, targetName: string): SdkDescription {
+function sdkDescription(ctx$: any, target: any): SdkDescription {
+  const model = ctx$.model
+  const targetName = target.name
   let byTarget = memo.get(model)
   if (null == byTarget) {
     byTarget = {}
     memo.set(model, byTarget)
   }
   if (null == byTarget[targetName]) {
-    byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, targetName)))
+    const hook = optionalComponent(ctx$, target, 'Naming')
+    const naming: Naming = hook ? hook.Naming : genericNaming
+    byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, target, naming)))
   }
   return byTarget[targetName]
 }
 
 
-function describe(model: any, targetName: string): SdkDescription {
+// For a target with no naming hook: the class-name stem, unchanged.
+const genericNaming: Naming = (model: any) => ({
+  layout: { module: model.name, client: model.const.Name + 'SDK', ctor: model.const.Name + 'SDK' },
+  symbols: (e: any) => ({ accessor: nom(e, 'Name'), var: e.name, vars: e.name + 's' }),
+})
+
+
+function describe(model: any, target: any, naming: Naming): SdkDescription {
+  const targetName = target.name
+  const names = naming(model, target)
   const prefix = envName(model)
   const active = isAuthActive(model)
   const where = resolveAuthIn(model)
@@ -113,11 +155,12 @@ function describe(model: any, targetName: string): SdkDescription {
     name: model.name,
     Name: model.const.Name,
     package: packageName(model, targetName),
+    layout: names.layout,
     env: { prefix },
     auth: { active, in: where, name: resolveAuthName(model), basic, secret },
     options,
     server,
-    entities: activeEntities.map(describeEntity),
+    entities: activeEntities.map((e: any) => describeEntity(e, names.symbols(e))),
     quick: quickChoices(activeEntities),
   }
 }
@@ -129,11 +172,12 @@ function referenced(model: any, name: string): boolean {
 }
 
 
-function describeEntity(e: any): DescEntity {
+function describeEntity(e: any, sym: DescSymbols): DescEntity {
   const id = entityIdField(e)
   return {
     name: e.name,
     Name: nom(e, 'Name'),
+    sym,
     ops: entityOps(e).filter((o) => CANON_OP_ORDER.includes(o)),
     id,
     dataId: entityDataIdField(e),
@@ -226,12 +270,24 @@ function quickChoices(activeEntities: any[]): DescQuick | null {
     remove: !ops.includes('remove') ? null : matchExampleItems(ex, 'remove', idF).sort(idFirst(idF))
       .map((it: any) => it.name === idF ? idArg('remove') : typed(it, 'example_' + it.name)),
     chainsId: ['update', 'patch', 'remove'].some((o) => ops.includes(o) && sendsId(ex, o, idF) && chains(o)),
+    show: showFields(fields, dataIdF),
   }
 }
 
 
+// The record id, then the first other string field: what php, rb, lua and perl
+// chose for themselves, chosen here once.
+function showFields(fields: any[], dataIdF: string | null): string[] {
+  const display = fields.find((f: any) => f && f.n !== 'id' && f.n !== dataIdF && '$STRING' === f.t)
+  return [dataIdF, display ? display.n : null].filter((f): f is string => null != f)
+}
+
+
 export type {
+  Naming,
   SdkDescription,
+  DescLayout,
+  DescSymbols,
   DescArg,
   DescEntity,
   DescOption,

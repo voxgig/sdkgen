@@ -1,17 +1,23 @@
-import { camelify, exampleVarName, indentLines } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, Scope, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import { indentLines, uses } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RuntimeFacts, Scope, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
+
+const facts: RuntimeFacts = {
+  method: { list: 'List', load: 'Load', create: 'Create', update: 'Update', patch: 'Patch', remove: 'Remove' },
+  named: 'call',
+  async: false,
+  result: 'pair',
+  collection: '`[]any`',
+  record: 'Data()',
+  errVar: 'err',
+  prints: 'record',
+}
 
 const str = (s: string): string => JSON.stringify(s).replace(/﻿/g, '\\ufeff')
 
-const varName = (n: string): string => {
-  const pascal = camelify(n)
-  return exampleVarName(pascal.charAt(0).toLowerCase() + pascal.slice(1), 'go')
-}
-
 const name = (r: Ref): string =>
   'item' === r.role ? 'item' : ('created' === r.role ? 'created' :
-    varName(r.entity.name) + ('many' === r.role ? 's' : ''))
+    ('many' === r.role ? r.entity.sym.vars : r.entity.sym.var))
 
 const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
   INTEGER: '1', NUMBER: '1', BOOLEAN: 'true', ARRAY: '[]any{}', OBJECT: 'map[string]any{}', NULL: 'nil',
@@ -26,6 +32,7 @@ const expr = (e: Expr): string => {
     case 'env': return `os.Getenv(${str(e.name)})`
     case 'record': return data(e.of)
     case 'field': return `${data(e.of)}.(map[string]any)[${str(e.field)}]`
+    case 'fields': return e.fields.map((f) => `${data(e.of)}.(map[string]any)[${str(f)}]`).join(', ')
     case 'map': return 'map[string]any{' + e.entries.map(pair).join(', ') + '}'
   }
 }
@@ -37,12 +44,10 @@ const members = (entries: Entry[], pad: string): string[] =>
     ? [`${pad}${str(en.key)}: map[string]any{`, ...members(en.value.entries, pad + '    '), `${pad}},`]
     : [`${pad}${pair(en)},`])
 
-const cap = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
-
 // Operations return (value, error): the error is checked where it is made.
 const check = ['if err != nil {', '    panic(err)', '}']
 
-// `:=` declares err the first time in a block, `=` reuses it.
+// `:=` declares err the first time in a function, `=` reuses it.
 const bindErr = (bound: string | null, sc: Scope): string => {
   if (null != bound) {
     sc.local.add('err')
@@ -56,27 +61,18 @@ const bindErr = (bound: string | null, sc: Scope): string => {
 
 const Syntax: SyntaxType = {
   fence: 'go',
-
-  words: {
-    op: (op) => '`' + cap(op) + '()`',
-    many: 'a `[]any`',
-    fails: 'reports failure in a non-nil `err`',
-    data: '`Data()`',
-  },
+  facts,
 
   client: (s, desc) => [
-    ...(s.options.some((en) => 'env' === en.value.k) ? ['import "os"'] : []),
-    `import sdk ${str(desc.package)}`,
-    '',
     0 === s.options.length
-      ? 'client := sdk.New()'
-      : `client := sdk.New${desc.Name}SDK(map[string]any{\n${members(s.options, '    ').join('\n')}\n})`,
+      ? `client := sdk.${desc.layout.ctor}(nil)`
+      : `client := sdk.${desc.layout.ctor}(map[string]any{\n${members(s.options, '    ').join('\n')}\n})`,
   ],
 
   call: (s, _desc, sc) => {
     const arg = null == s.arg ? 'nil' : expr({ k: 'map', entries: s.arg })
     return [
-      `${bindErr(null == s.bind ? null : name(s.bind), sc)} client.${s.entity.Name}(nil).${cap(s.op)}(${arg}, nil)`,
+      `${bindErr(null == s.bind ? null : name(s.bind), sc)} client.${s.entity.sym.accessor}(nil).${(facts.method as any)[s.op]}(${arg}, nil)`,
       ...check,
     ]
   },
@@ -95,6 +91,31 @@ const Syntax: SyntaxType = {
   comment: (text) => '// ' + text,
 
   expr: (e) => expr(e),
+
+  // A complete program: what the steps use is imported, and each step is a
+  // commented paragraph of main. A client nothing calls is still used.
+  program: (steps, desc, sc) => {
+    const used = uses(sc.section)
+    const body = steps.flatMap((s, i) => [
+      ...(0 < i ? [''] : []),
+      ...('' === s.title ? [] : ['// ' + s.title]),
+      ...s.lines,
+    ])
+    if (0 === used.entities.length) body.push('_ = client')
+    return [
+      'package main',
+      '',
+      'import (',
+      ...(used.print ? ['    "fmt"'] : []),
+      ...(used.env ? ['    "os"'] : []),
+      `    sdk ${str(desc.layout.module)}`,
+      ')',
+      '',
+      'func main() {',
+      ...indentLines(body, '    '),
+      '}',
+    ]
+  },
 }
 
 

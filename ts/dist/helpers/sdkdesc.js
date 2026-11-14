@@ -10,20 +10,32 @@ const opShape_1 = require("./opShape");
 const opExample_1 = require("./opExample");
 const packageMeta_1 = require("./packageMeta");
 const serverVars_1 = require("./serverVars");
+const optional_1 = require("./optional");
 const utility_1 = require("../utility");
 const memo = new WeakMap();
-function sdkDescription(model, targetName) {
+function sdkDescription(ctx$, target) {
+    const model = ctx$.model;
+    const targetName = target.name;
     let byTarget = memo.get(model);
     if (null == byTarget) {
         byTarget = {};
         memo.set(model, byTarget);
     }
     if (null == byTarget[targetName]) {
-        byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, targetName)));
+        const hook = (0, optional_1.optionalComponent)(ctx$, target, 'Naming');
+        const naming = hook ? hook.Naming : genericNaming;
+        byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, target, naming)));
     }
     return byTarget[targetName];
 }
-function describe(model, targetName) {
+// For a target with no naming hook: the class-name stem, unchanged.
+const genericNaming = (model) => ({
+    layout: { module: model.name, client: model.const.Name + 'SDK', ctor: model.const.Name + 'SDK' },
+    symbols: (e) => ({ accessor: (0, apidef_1.nom)(e, 'Name'), var: e.name, vars: e.name + 's' }),
+});
+function describe(model, target, naming) {
+    const targetName = target.name;
+    const names = naming(model, target);
     const prefix = (0, packageMeta_1.envName)(model);
     const active = (0, utility_1.isAuthActive)(model);
     const where = (0, utility_1.resolveAuthIn)(model);
@@ -49,11 +61,12 @@ function describe(model, targetName) {
         name: model.name,
         Name: model.const.Name,
         package: (0, packageMeta_1.packageName)(model, targetName),
+        layout: names.layout,
         env: { prefix },
         auth: { active, in: where, name: (0, utility_1.resolveAuthName)(model), basic, secret },
         options,
         server,
-        entities: activeEntities.map(describeEntity),
+        entities: activeEntities.map((e) => describeEntity(e, names.symbols(e))),
         quick: quickChoices(activeEntities),
     };
 }
@@ -61,11 +74,12 @@ function referenced(model, name) {
     const url = model?.main?.[apidef_1.KIT]?.info?.servers?.[0]?.url || '';
     return url.includes('{' + name + '}');
 }
-function describeEntity(e) {
+function describeEntity(e, sym) {
     const id = (0, opShape_1.entityIdField)(e);
     return {
         name: e.name,
         Name: (0, apidef_1.nom)(e, 'Name'),
+        sym,
         ops: (0, opShape_1.entityOps)(e).filter((o) => opShape_1.CANON_OP_ORDER.includes(o)),
         id,
         dataId: (0, opShape_1.entityDataIdField)(e),
@@ -145,6 +159,13 @@ function quickChoices(activeEntities) {
         remove: !ops.includes('remove') ? null : (0, opExample_1.matchExampleItems)(ex, 'remove', idF).sort(idFirst(idF))
             .map((it) => it.name === idF ? idArg('remove') : typed(it, 'example_' + it.name)),
         chainsId: ['update', 'patch', 'remove'].some((o) => ops.includes(o) && (0, opExample_1.sendsId)(ex, o, idF) && chains(o)),
+        show: showFields(fields, dataIdF),
     };
+}
+// The record id, then the first other string field: what php, rb, lua and perl
+// chose for themselves, chosen here once.
+function showFields(fields, dataIdF) {
+    const display = fields.find((f) => f && f.n !== 'id' && f.n !== dataIdF && '$STRING' === f.t);
+    return [dataIdF, display ? display.n : null].filter((f) => null != f);
 }
 //# sourceMappingURL=sdkdesc.js.map

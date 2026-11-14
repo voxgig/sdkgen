@@ -1,13 +1,22 @@
-import { exampleVarName, indentLines } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import { indentLines } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RuntimeFacts, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
+
+const facts: RuntimeFacts = {
+  method: { list: 'list', load: 'load', create: 'create', update: 'update', patch: 'patch', remove: 'remove' },
+  named: 'call',
+  async: false,
+  result: 'raise',
+  collection: '`list`',
+  record: 'data_get()',
+  recordType: 'dict',
+  prints: 'record',
+}
 
 const str = (s: string): string => JSON.stringify(s)
 
-const name = (r: Ref): string => {
-  const v = exampleVarName(r.entity.Name.toLowerCase(), 'py')
-  return 'many' === r.role ? v + 's' : ('created' === r.role ? 'created' : v)
-}
+const name = (r: Ref): string =>
+  'many' === r.role ? r.entity.sym.vars : ('created' === r.role ? 'created' : r.entity.sym.var)
 
 const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
   INTEGER: '1', NUMBER: '1', BOOLEAN: 'True', ARRAY: '[]', OBJECT: '{}', NULL: 'None',
@@ -20,6 +29,7 @@ const expr = (e: Expr): string => {
     case 'env': return `os.environ.get(${str(e.name)})`
     case 'record': return name(e.of) + '.data_get()'
     case 'field': return `${name(e.of)}.data_get()[${str(e.field)}]`
+    case 'fields': return e.fields.map((f) => `${name(e.of)}.data_get().get(${str(f)})`).join(', ')
     case 'map': return '{' + e.entries.map(pair).join(', ') + '}'
   }
 }
@@ -34,25 +44,19 @@ const members = (entries: Entry[], pad: string): string[] =>
 
 const Syntax: SyntaxType = {
   fence: 'python',
-
-  words: {
-    op: (op) => '`' + op + '()`',
-    many: 'a `list`',
-    fails: 'raises on failure',
-    data: '`data_get()`',
-  },
+  facts,
 
   client: (s, desc) => [
     ...(s.options.some((en) => 'env' === en.value.k) ? ['import os'] : []),
-    `from ${desc.Name.toLowerCase()}_sdk import ${desc.Name}SDK`,
+    `from ${desc.layout.module} import ${desc.layout.client}`,
     '',
     0 === s.options.length
-      ? `client = ${desc.Name}SDK()`
-      : `client = ${desc.Name}SDK({\n${members(s.options, '    ').join('\n')}\n})`,
+      ? `client = ${desc.layout.ctor}()`
+      : `client = ${desc.layout.ctor}({\n${members(s.options, '    ').join('\n')}\n})`,
   ],
 
   call: (s) => {
-    const call = `client.${s.entity.Name}().${s.op}(${null == s.arg ? '' : expr({ k: 'map', entries: s.arg })})`
+    const call = `client.${s.entity.sym.accessor}().${(facts.method as any)[s.op]}(${null == s.arg ? '' : expr({ k: 'map', entries: s.arg })})`
     return [null == s.bind ? call : `${name(s.bind)} = ${call}`]
   },
 

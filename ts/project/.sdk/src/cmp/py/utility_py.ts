@@ -7,6 +7,12 @@ import {
 } from '@voxgig/struct'
 
 
+// The python package directory, and the module an example imports.
+function pyPackageDir(model: any): string {
+  return model.const.Name.toLowerCase() + '_sdk'
+}
+
+
 function projectPath(suffix?: string): string {
   return Path.normalize(Path.join(__dirname, '../../..', suffix ?? ''))
 }
@@ -106,6 +112,7 @@ function clean(o: any, dropDefaults?: boolean): any {
 
 
 export {
+  pyPackageDir,
   clean,
   formatPyDict,
   formatPyValue,

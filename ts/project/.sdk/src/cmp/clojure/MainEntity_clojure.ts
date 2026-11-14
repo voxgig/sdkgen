@@ -2,6 +2,8 @@
 
 import { cmp, Content } from '@voxgig/sdkgen'
 
+import { cljAccessor, cljEntityAlias } from './utility_clojure'
+
 
 const MainEntity = cmp(async function MainEntity(props: any) {
   const { entity } = props
@@ -11,7 +13,7 @@ const MainEntity = cmp(async function MainEntity(props: any) {
   // aliased e-<name> in the api ns require.
   Content(`
 ;; ${entity.Name} accessor: (${entity.name} client data)
-(defn ${entity.name} [client data] (e-${entity.name}/make client data))
+(defn ${cljAccessor(entity)} [client data] (${cljEntityAlias(entity)}/make client data))
 `)
 })
 

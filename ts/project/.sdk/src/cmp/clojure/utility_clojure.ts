@@ -9,6 +9,20 @@ import {
 import { canonScalarKey, requiredItems } from '@voxgig/sdkgen'
 
 
+// An entity's accessor in sdk.api, and the namespace and alias it is required by.
+function cljAccessor(entity: any): string {
+  return entity.name
+}
+
+function cljEntityNs(entity: any): string {
+  return 'sdk.entity.' + entity.name
+}
+
+function cljEntityAlias(entity: any): string {
+  return 'e-' + entity.name
+}
+
+
 function projectPath(suffix?: string): string {
   return Path.normalize(Path.join(__dirname, '../../..', suffix ?? ''))
 }
@@ -133,6 +147,9 @@ function cljListMatch(entity: any): string {
 
 
 export {
+  cljAccessor,
+  cljEntityAlias,
+  cljEntityNs,
   cljListMatch,
   cljStringChunks,
   clean,
