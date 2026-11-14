@@ -121,7 +121,7 @@ function listComment(f, title, cls) {
     return `${title}: ${'union' === f.result ? f.ok + ' is ' : ''}${m}; ${failsShort(f)}`;
 }
 function loadComment(f, title, cls) {
-    const one = null != f.listOf && null != cls ? `the entity, a ${cls}` : 'the entity';
+    const one = null != f.listOf && null != cls ? `the entity, ${a(cls)}` : 'the entity';
     return `${title}: ${'union' === f.result ? f.ok + ' is ' : ''}${one}; ${failsShort(f)}`;
 }
 // What each operation does, before what it returns.
