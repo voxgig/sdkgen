@@ -252,14 +252,13 @@ This entity exposes custom API actions in addition to the standard
 operations. Select one with \`$action\` in the call's argument; the
 remaining keys are sent as that action's payload.
 
-| Action | Operation | Route |
-| --- | --- | --- |
-${ent.actions.map((a) => `| ${code(a.action)} | ${code(p.facts.method[a.op])} | ${code(a.path)} |`).join('\n')}
+| Action | Operation | Route | Call |
+| --- | --- | --- | --- |
+${ent.actions.map((a) => `| ${code(a.action)} | ${code(p.facts.method[a.op])} | ${code(a.path)} | ${code(actionCall(p, desc, ent, a))} |`).join('\n')}
 
 An action returns that action's OWN response, which is not necessarily a
 ${ent.Name} record — check the API definition for its shape.
 
-${(0, example_1.printBlock)(p, (0, example_1.actionBlock)(desc, ent, ent.actions[0]), desc, (0, example_1.newScope)(true))}
 `;
     }
     if (0 < ent.refOps.length) {
@@ -281,6 +280,15 @@ ${(0, example_1.printBlock)(p, (0, example_1.actionBlock)(desc, ent, ent.actions
             (0, example_1.note)(p, `member:${m.kind}`);
     }
     return out;
+}
+// How one custom action is called, on one line: the call statement as the
+// language writes it outside error handling. Not a block: its payload is the
+// action's own, which no model states, so it could be neither type-checked
+// nor run.
+function actionCall(p, desc, ent, a) {
+    const [stmt] = (0, example_1.actionBlock)(desc, ent, a);
+    const narrow = { ...stmt, wide: false, note: undefined };
+    return p.call(narrow, desc, (0, example_1.newScope)(true), { inAttempt: false, last: true })[0].split('\n')[0];
 }
 // The variable an operation's example binds its result to.
 function boundOf(block) {
