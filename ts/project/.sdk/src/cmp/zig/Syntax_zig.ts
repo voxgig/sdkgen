@@ -43,7 +43,7 @@ const refFacts: RefFacts = {
     { kind: 'prepare', sig: 'prepare(fetchargs: Value) E!Value' },
   ],
   entity: [
-    { kind: 'dataArg', sig: 'data(args: ?Value) Value' },
+    { kind: 'dataArg', sig: 'data(args: ?Value) Value', copy: true },
     { kind: 'matchArg', sig: 'matchv(args: ?Value) Value' },
     { kind: 'streamList', sig: 'stream(action: []const u8, args: Value, callopts: Value) StreamResult' },
     { kind: 'name', sig: 'get_name() []const u8' },
@@ -74,7 +74,9 @@ const expr = (e: Expr): string => {
   switch (e.k) {
     case 'lit': return lit(e)
     case 'str': return `h.vstr(${str(e.text)})`
-    case 'env': return `h.vstr(std.posix.getenv(${str(e.name)}) orelse "")`
+    // Zig 0.16 has no free-standing getenv: the process environment belongs
+    // to the global Io, where the runtime reads it too (feature/proxy.zig).
+    case 'env': return `h.vstr(std.Io.Threaded.global_single_threaded.environ.process_environ.getAlloc(h.A(), ${str(e.name)}) catch "")`
     case 'record': return `h.stringify(${data(e.of)})`
     case 'field': return `h.getp(${data(e.of)}, ${str(e.field)})`
     case 'fields': return e.fields.map((f) => `h.stringify(h.getp(${data(e.of)}, ${str(f)}))`).join(', ')

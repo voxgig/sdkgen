@@ -10,7 +10,7 @@ const facts: RuntimeFacts = {
   collection: '`Array`',
   record: 'data_get',
   recordType: 'Hash',
-  prints: 'fields',
+  prints: 'listFields',
 }
 
 // The fixed API the reference page documents: Main.fragment.rb,
@@ -41,7 +41,7 @@ const refFacts: RefFacts = {
     { kind: 'prepare', sig: 'prepare(fetchargs = {}) -> Hash' },
   ],
   entity: [
-    { kind: 'dataGet', sig: 'data_get -> Hash' },
+    { kind: 'dataGet', sig: 'data_get -> Hash', copy: true },
     { kind: 'dataSet', sig: 'data_set(data)' },
     { kind: 'matchGet', sig: 'match_get -> Hash' },
     { kind: 'matchSet', sig: 'match_set(match)' },

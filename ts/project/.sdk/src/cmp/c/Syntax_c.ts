@@ -41,7 +41,7 @@ const refFacts: RefFacts = {
     { kind: 'prepare', sig: 'voxgig_value* sdk_prepare({client}* client, voxgig_value* fetchargs, PNError** err)' },
   ],
   entity: [
-    { kind: 'dataArg', sig: 'voxgig_value* vt->data(Entity* e, voxgig_value* args)' },
+    { kind: 'dataArg', sig: 'voxgig_value* vt->data(Entity* e, voxgig_value* args)', copy: true },
     { kind: 'matchArg', sig: 'voxgig_value* vt->matchv(Entity* e, voxgig_value* args)' },
     { kind: 'make', sig: 'Entity* vt->make(Entity* e)' },
     { kind: 'streamList', sig: 'voxgig_value* {var}_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err)' },

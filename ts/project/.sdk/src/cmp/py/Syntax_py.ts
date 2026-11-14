@@ -43,7 +43,7 @@ const refFacts: RefFacts = {
     { kind: 'prepare', sig: 'prepare(fetchargs=None) -> dict' },
   ],
   entity: [
-    { kind: 'dataGet', sig: 'data_get() -> dict' },
+    { kind: 'dataGet', sig: 'data_get() -> dict', copy: true },
     { kind: 'dataSet', sig: 'data_set(data=None)' },
     { kind: 'matchGet', sig: 'match_get() -> dict' },
     { kind: 'matchSet', sig: 'match_set(match=None)' },

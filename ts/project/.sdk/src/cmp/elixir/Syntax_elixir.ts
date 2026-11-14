@@ -41,7 +41,7 @@ const refFacts: RefFacts = {
     { kind: 'prepare', sig: 'prepare(client, fetchargs \\\\ nil) :: map()' },
   ],
   entity: [
-    { kind: 'dataGet', sig: 'data_get(entity) :: map()' },
+    { kind: 'dataGet', sig: 'data_get(entity) :: map()', copy: true },
     { kind: 'dataSet', sig: 'data_set(entity, data)' },
     { kind: 'matchGet', sig: 'match_get(entity) :: map()' },
     { kind: 'matchSet', sig: 'match_set(entity, match)' },
@@ -174,6 +174,9 @@ const Syntax: SyntaxType = {
 
   notes: {
     'member:utilityBase': 'It is the client\'s own node, not a copy.',
+    ctor: 'Build `options` from a native map with `{names.helpers}.deep/1`.',
+    'tutorial:list': 'Named with its arity, it is `list/2`; `Voxgig.Struct.getelem/2` reads an item.',
+    'tutorial:load': 'Named with its arity, it is `load/2`.',
   },
 }
 

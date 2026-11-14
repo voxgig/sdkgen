@@ -45,7 +45,7 @@ const refFacts: RefFacts = {
     { kind: 'prepare', sig: 'Prepare(fetchargs map[string]any) (map[string]any, error)' },
   ],
   entity: [
-    { kind: 'data', sig: 'Data(args ...any) any' },
+    { kind: 'data', sig: 'Data(args ...any) any', copy: true },
     { kind: 'match', sig: 'Match(args ...any) any' },
     { kind: 'make', sig: 'Make() Entity' },
     { kind: 'stream', sig: 'Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem' },

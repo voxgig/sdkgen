@@ -42,7 +42,7 @@ const refFacts: RefFacts = {
     { kind: 'tester', sig: 'tester(testopts?, sdkopts?)' },
   ],
   entity: [
-    { kind: 'data', sig: 'data(data?: object)' },
+    { kind: 'data', sig: 'data(data?: object)', copy: true },
     { kind: 'match', sig: 'match(match?: object)' },
     { kind: 'make', sig: 'make()' },
     { kind: 'streamIterator', sig: 'stream(action: string, args?: object, callopts?: object)' },

@@ -16,7 +16,8 @@ const facts: RuntimeFacts = {
 // The fixed API the reference page documents: what sdk.api re-exports
 // (Main_clojure), the entity map's keyword functions and the operations
 // (Entity.fragment.clj). sdk.api does not re-export get-utility, so the
-// utility member is not documented.
+// utility is not a member here: the `instance` note gives its route, through
+// sdk.client (tm/clojure/src/sdk/client.clj, core.clj utility-copy).
 const refFacts: RefFacts = {
   entityBy: 'Name',
   noun: 'Functions',
@@ -44,7 +45,7 @@ const refFacts: RefFacts = {
     { kind: 'prepare', sig: '({client}/prepare client fetchargs) -> map' },
   ],
   entity: [
-    { kind: 'dataGet', sig: '((:data-get ent)) -> map' },
+    { kind: 'dataGet', sig: '((:data-get ent)) -> map', copy: true },
     { kind: 'dataSet', sig: '((:data-set ent) data)' },
     { kind: 'matchGet', sig: '((:match-get ent)) -> map' },
     { kind: 'matchSet', sig: '((:match-set ent) match)' },
@@ -210,6 +211,12 @@ const Syntax: SyntaxType = {
     key: (container, path) => 0 === path.length ? container : path.join('.'),
     instance: (e, desc) => [`(require '[${e.sym.module} :as ${e.sym.alias}])`, '', `(def ${e.sym.var} (${acc(e, desc)} client nil))`],
     read: (value, key) => `(vs/getprop ${value} ${str(key)})`,
+  },
+
+  notes: {
+    instance: 'The SDK utility object is reached through `sdk.client`, which `{module}`\n' +
+      'does not re-export: `(sdk.client/get-utility client)` returns a copy of it.',
+    members: 'State accessors are stored on the entity map and called via keyword lookup.',
   },
 }
 

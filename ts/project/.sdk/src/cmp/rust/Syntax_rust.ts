@@ -47,7 +47,7 @@ const refFacts: RefFacts = {
     { kind: 'prepare', sig: 'prepare(fetchargs: Value) -> Result<Value, ProjectNameError>' },
   ],
   entity: [
-    { kind: 'dataArg', sig: 'data(args: Option<&Value>) -> Value' },
+    { kind: 'dataArg', sig: 'data(args: Option<&Value>) -> Value', copy: true },
     { kind: 'matchArg', sig: 'matchv(args: Option<&Value>) -> Value' },
     { kind: 'make', sig: 'make() -> Rc<dyn Entity>' },
     { kind: 'streamList', sig: 'stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, ProjectNameError>' },
