@@ -208,8 +208,10 @@ ${tagline}
         // Named here, in one line, with the detail left to each target's README.
         const features = (0, FeatureDocs_1.featureDocs)(model);
         if (0 < features.length) {
+            const on = features.filter(FeatureDocs_1.activeByDefault).map((f) => '`' + f.name + '`');
             (0, jostraca_1.Content)(`> **Features:** ${features.map((f) => '`' + f.name + '`').join(', ')} — opt-in,
-> inactive until switched on, and configured per client. See the Features
+> inactive until switched on${0 === on.length ? '' : ` except ${on.join(', ')}, which ${1 === on.length ? 'runs' : 'run'} unless
+> disabled`}, and configured per client. See the Features
 > section of any SDK README below for what each one does.
 
 `);
