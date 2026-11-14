@@ -550,7 +550,8 @@ function retiredCopies(
         point: 'target-component-override', file,
         note: file + ': its source no longer ships this component, and this ' +
           'project changed it, so it is kept and still used in place of the ' +
-          'shared one. Delete it to use the shared one.'
+          'shared one. To use the shared one, delete it and its compiled ' +
+          'output under dist/' + file.replace(/^src\//, '').replace(/\.ts$/, '.js')
       })
     }
   }
