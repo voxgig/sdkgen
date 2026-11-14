@@ -9,7 +9,7 @@ const OPS = ['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `
 const forms: Forms = {
   files: {
     client: ['src/cmp/rust/fragment/Main.fragment.rs', 'src/cmp/rust/MainEntity_rust.ts'],
-    entity: ['src/cmp/rust/fragment/Entity.fragment.rs', 'tm/rust/core/types.rs#pub trait Entity {:\n}'],
+    entity: ['src/cmp/rust/fragment/Entity.fragment.rs', 'tm/rust/core/types.rs#pub trait Entity {#\n}'],
     ops: OPS,
   },
   decl: (name) => new RegExp(`^[ \\t]*(?:pub )?fn ${name}(?=\\()`, 'm'),
