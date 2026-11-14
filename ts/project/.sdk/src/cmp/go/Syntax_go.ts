@@ -21,6 +21,7 @@ const refFacts: RefFacts = {
   none: 'nil',
   keys: 'member',
   maps: 'maps',
+  container: 'map[string]any',
   valueType: { STRING: 'string', OBJECT: 'map[string]any', ANY: 'any' },
   ctor: ['func {ctor}(options map[string]any) *{client}'],
   test: [

@@ -23,6 +23,7 @@ const refFacts: RefFacts = {
   none: 'NULL',
   keys: 'bare',
   maps: 'maps',
+  container: 'voxgig_value*',
   valueType: { STRING: 'string', OBJECT: 'map', ANY: 'any' },
   ctor: ['#include "{module}"', '', '{client}* client = {ctor}(options);'],
   test: [{ sig: '{client}* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts)', call: '{client}* client = test_sdk(NULL, NULL);', args: true }],

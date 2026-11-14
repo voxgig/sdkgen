@@ -20,6 +20,7 @@ const refFacts: RefFacts = {
   none: 'undefined',
   keys: 'member',
   maps: 'objects',
+  container: 'object',
   valueType: { STRING: 'string', OBJECT: 'object', ANY: 'any' },
   ctor: ['new {ctor}(options?: object)'],
   test: [{ sig: '{client}.test(testopts?, sdkopts?)', call: 'const client = {client}.test()', args: true }],

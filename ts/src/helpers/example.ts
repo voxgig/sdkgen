@@ -92,6 +92,7 @@ type RefFacts = {
   none: string // the literal for no value: 'undefined', 'nil', 'None', 'NULL'
   keys: 'member' | 'bare' // option tables name `options.x`, or bare map keys
   maps: string // the language's maps, plural: 'objects', 'maps', 'dicts'
+  container: string // the type of the options and fetchargs containers: 'object', 'voxgig_value*'
   valueType: Record<'STRING' | 'OBJECT' | 'ANY', string> // option and fetcharg value types
   ctor: string[] // the constructor, as the page shows it
   test: { sig: string, call: string, args: boolean }[] // test constructors

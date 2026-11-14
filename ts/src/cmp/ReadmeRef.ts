@@ -115,7 +115,7 @@ function keyTable(p: Syntax, container: 'options' | 'fetchargs', rows: { path: s
     ? `**Parameters (${code(container)} map keys):**\n\n| Key | Value type | Description |\n| --- | --- | --- |\n`
     : '**Parameters:**\n\n| Name | Type | Description |\n| --- | --- | --- |\n'
   if (!bare && 'options' === container) {
-    out += `| ${code('options')} | ${code(r.facts.valueType.OBJECT)} | SDK configuration options. |\n`
+    out += `| ${code('options')} | ${code(r.facts.container)} | SDK configuration options. |\n`
   }
   for (const row of rows) {
     out += `| ${code(r.key(container, row.path))} | ${code(r.facts.valueType[row.type])} | ${row.text} |\n`
@@ -166,7 +166,7 @@ function clientMember(m: Member, p: Syntax, desc: SdkDescription): string {
 function constructorText(p: Syntax, desc: SdkDescription): string {
   const r = p.ref as RefSyntax
   const container = 'bare' === r.facts.keys
-    ? ` ${code('options')} is a ${code(r.facts.valueType.OBJECT)} map\n(${code(r.facts.none)} for none).` : ''
+    ? ` ${code('options')} is a ${code(r.facts.container)} map\n(${code(r.facts.none)} for none).` : ''
   return `### Constructor\n\n${fenced(p, r.facts.ctor.map((l) => fill(l, desc)))}\n` +
     `Create a new SDK client instance.${container}\n\n` +
     keyTable(p, 'options', desc.ref.optionRows) + '\n'
@@ -196,7 +196,8 @@ function instanceText(p: Syntax, desc: SdkDescription): string {
       `Create a new ${code(typeOf(r, ent))} instance. Pass ${code(r.facts.none)} for no initial\n` +
       ('data' === r.facts.accessor.arg ? 'data.' : 'options.') + '\n\n'
   }
-  for (const m of r.facts.client) out += clientMember(m, p, desc)
+  // tester() aliases the test constructor, so it is documented with it.
+  for (const m of r.facts.client) if ('tester' !== m.kind || desc.ref.test) out += clientMember(m, p, desc)
   if (r.facts.cancel) {
     out += `#### Cancelling a call
 

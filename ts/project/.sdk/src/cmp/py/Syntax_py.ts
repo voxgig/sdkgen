@@ -21,6 +21,7 @@ const refFacts: RefFacts = {
   none: 'None',
   keys: 'member',
   maps: 'dicts',
+  container: 'dict',
   valueType: { STRING: 'str', OBJECT: 'dict', ANY: 'any' },
   ctor: ['from {module} import {client}', '', 'client = {ctor}(options)'],
   test: [{ sig: '{client}.test(testopts=None, sdkopts=None)', call: 'client = {client}.test()', args: true }],
