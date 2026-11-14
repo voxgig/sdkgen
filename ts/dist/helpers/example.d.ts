@@ -7,6 +7,8 @@ type Ent = {
 type Ref = {
     role: 'many' | 'item' | 'one' | 'created';
     entity: Ent;
+    name: string;
+    list?: string;
 };
 type Expr = {
     k: 'lit';
@@ -36,6 +38,7 @@ type Expr = {
 type Entry = {
     key: string;
     value: Expr;
+    type?: Scalar;
 };
 type Stmt = {
     k: 'client';
@@ -47,6 +50,7 @@ type Stmt = {
     arg: Entry[] | null;
     bind: Ref | null;
     wide: boolean;
+    note?: string;
 } | {
     k: 'each';
     item: Ref;
@@ -65,7 +69,7 @@ type Stmt = {
 } | {
     k: 'gap';
 };
-type ResultStyle = 'throw' | 'raise' | 'pair' | 'errslot' | 'union';
+type ResultStyle = 'throw' | 'raise' | 'die' | 'pair' | 'errslot' | 'union' | 'wrapped';
 type OpName = 'list' | 'load' | 'create' | 'update' | 'patch' | 'remove';
 type RuntimeFacts = {
     method: Record<OpName, string>;
@@ -80,32 +84,53 @@ type RuntimeFacts = {
     nullValue?: string;
     ok?: string;
     err?: string;
+    pairForm?: string;
+    unwrap?: string;
+    unusedError?: boolean;
+    listOf?: string;
     prints: 'record' | 'fields';
 };
-type MemberKind = 'options' | 'utility' | 'utilityShared' | 'direct' | 'prepare' | 'tester' | 'data' | 'match' | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet' | 'make' | 'name' | 'client' | 'entopts' | 'streamIterator' | 'streamGenerator' | 'streamChannel' | 'streamList' | 'streamLazy';
+type MemberKind = 'options' | 'utility' | 'utilityBase' | 'direct' | 'prepare' | 'tester' | 'data' | 'match' | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet' | 'dataArg' | 'matchArg' | 'make' | 'name' | 'client' | 'entopts' | 'stream' | 'streamIterator' | 'streamGenerator' | 'streamList' | 'streamLazy';
 type Member = {
     kind: MemberKind;
     sig: string;
+    returns?: string;
 };
 type RefFacts = {
-    classes: boolean;
-    noun: 'Methods' | 'Functions';
+    entityBy: 'class' | 'Name' | 'module';
+    noun: string;
+    entityNoun?: string;
+    heading?: string;
     none: string;
+    lits?: {
+        true: string;
+        false: string;
+    };
+    setArg?: string;
     keys: 'member' | 'bare';
     maps: string;
     container: string;
     valueType: Record<'STRING' | 'OBJECT' | 'ANY', string>;
     ctor: string[];
+    ctorAlts?: {
+        call: string;
+        kind: CtorKind;
+    }[];
     test: {
         sig: string;
         call: string;
         args: boolean;
+        alts?: {
+            call: string;
+            kind: CtorKind;
+        }[];
     }[];
     accessor: {
         sig: string;
         arg: 'data' | 'entopts';
     };
     op: Record<OpName, string>;
+    opMatched?: Partial<Record<OpName, string>>;
     client: Member[];
     entity: Member[];
     direct: {
@@ -114,7 +139,7 @@ type RefFacts = {
     };
     prepare: {
         returns: string;
-        fails: 'style' | 'value' | 'errorunion';
+        fails: 'style' | 'value' | 'note';
     };
     body: {
         values: string;
@@ -123,6 +148,7 @@ type RefFacts = {
     };
     cancel: boolean;
 };
+type CtorKind = 'defaults' | 'explicit';
 declare function entOf(desc: SdkDescription, name: string): Ent;
 declare function clientBlock(desc: SdkDescription): Stmt[];
 declare function listBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | null;
@@ -130,6 +156,10 @@ declare function loadBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | 
 declare function writeOps(desc: SdkDescription): string[];
 declare function writeBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | null;
 declare function refOpBlock(desc: SdkDescription, facts: RuntimeFacts, ent: DescEntity, op: DescOp): Stmt[] | null;
+declare function actionBlock(desc: SdkDescription, ent: DescEntity, action: {
+    action: string;
+    op: string;
+}): Stmt[];
 declare function featureBlock(names: string[]): Stmt[];
 type Uses = {
     env: boolean;
@@ -143,6 +173,7 @@ type Scope = {
     local: Set<string>;
     stmts: Stmt[];
     section: Stmt[];
+    standalone: boolean;
 };
 type CallContext = {
     inAttempt: boolean;
@@ -163,15 +194,17 @@ type Syntax = {
     }>, desc: SdkDescription, sc: Scope, cx: CallContext) => string[];
     each: (s: Extract<Stmt, {
         k: 'each';
-    }>, inner: (body: Stmt[]) => string[], sc: Scope) => string[];
+    }>, inner: (body: Stmt[]) => string[], sc: Scope, desc: SdkDescription, cx: CallContext) => string[];
     print: (s: Extract<Stmt, {
         k: 'print';
-    }>, sc: Scope) => string[];
+    }>, sc: Scope, desc: SdkDescription) => string[];
     attempt: (s: Extract<Stmt, {
         k: 'attempt';
-    }>, inner: (body: Stmt[]) => string[], sc: Scope) => string[];
+    }>, inner: (body: Stmt[]) => string[], sc: Scope, desc: SdkDescription) => string[];
     comment: (text: string) => string;
-    expr: (e: Expr, sc: Scope) => string;
+    expr: (e: Expr, sc: Scope, desc: SdkDescription) => string;
+    imports?: (desc: SdkDescription, used: Uses) => string[];
+    notes?: Partial<Record<NoteSlot, string>>;
     before?: (stmts: Stmt[], desc: SdkDescription, sc: Scope) => string[];
     program?: (steps: ProgramStep[], desc: SdkDescription, sc: Scope) => string[];
     ref?: RefSyntax;
@@ -181,7 +214,9 @@ type RefSyntax = {
     type: (t: any) => string;
     key: (container: 'options' | 'fetchargs', path: string[]) => string;
     instance: (ent: Ent, desc: SdkDescription) => string[];
+    read: (value: string, key: string) => string;
 };
+type NoteSlot = `member:${MemberKind}` | 'ctor' | 'test' | 'instance' | 'entity' | 'operations' | 'features' | 'tutorial' | 'tutorial:list' | 'tutorial:load' | 'tutorial:write' | 'top';
 declare function printStmts(p: Syntax, stmts: Stmt[], desc: SdkDescription, sc: Scope, inAttempt?: boolean): string[];
 declare function printBlock(p: Syntax, stmts: Stmt[], desc: SdkDescription, sc: Scope): string;
 declare function printSteps(p: Syntax, steps: {
@@ -196,7 +231,8 @@ declare function printJoined(p: Syntax, steps: {
     title: string;
     stmts: Stmt[];
 }[], desc: SdkDescription, sc: Scope): string;
-declare function newScope(): Scope;
+declare function newScope(standalone?: boolean): Scope;
+declare function note(p: Syntax, slot: NoteSlot): string;
 declare function indent(lines: string[], by: string): string[];
-export type { CallContext, Member, MemberKind, RefFacts, RefSyntax, Ent, Entry, Expr, OpName, ProgramStep, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses, };
-export { clientBlock, entOf, featureBlock, refOpBlock, indent, listBlock, newScope, loadBlock, printBlock, printJoined, printProgram, printStmts, printSteps, uses, writeBlock, writeOps, };
+export type { CallContext, CtorKind, NoteSlot, Member, MemberKind, RefFacts, RefSyntax, Ent, Entry, Expr, OpName, ProgramStep, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses, };
+export { actionBlock, clientBlock, entOf, featureBlock, refOpBlock, indent, listBlock, newScope, note, loadBlock, printBlock, printJoined, printProgram, printStmts, printSteps, uses, writeBlock, writeOps, };

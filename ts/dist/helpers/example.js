@@ -4,6 +4,7 @@
 // provider implements to print it. Nothing here reads the model: examples are
 // built from an SdkDescription and the provider's declared runtime facts.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.actionBlock = actionBlock;
 exports.clientBlock = clientBlock;
 exports.entOf = entOf;
 exports.featureBlock = featureBlock;
@@ -11,6 +12,7 @@ exports.refOpBlock = refOpBlock;
 exports.indent = indent;
 exports.listBlock = listBlock;
 exports.newScope = newScope;
+exports.note = note;
 exports.loadBlock = loadBlock;
 exports.printBlock = printBlock;
 exports.printJoined = printJoined;
@@ -24,15 +26,31 @@ const runtimeprose_1 = require("./runtimeprose");
 // ---- the builders
 function entOf(desc, name) {
     const e = desc.entities.find((x) => x.name === name);
-    return e ? { name, Name: e.Name, sym: e.sym } : { name, Name: name, sym: { accessor: name, var: name, vars: name + 's' } };
+    return e ? { name, Name: e.Name, sym: e.sym } : { name, Name: name, sym: { accessor: name, var: name, plural: name } };
 }
-function argEntries(args, of) {
-    return args.map((a) => ({
-        key: a.name,
-        value: null != a.fromCreated && null != of
-            ? { k: 'field', of, field: a.fromCreated }
-            : { k: 'lit', type: a.type, text: a.placeholder },
-    }));
+const GENERIC = { many: 'results', item: 'item', one: 'result', created: 'result' };
+function refOf(desc, role, entity, naming) {
+    const vars = desc.layout.vars || {};
+    const pick = (r) => 'generic' === naming
+        ? (vars[GENERIC[r]] ?? GENERIC[r])
+        : ('many' === r ? entity.sym.plural : ('created' === r ? (vars.created ?? 'created') : entity.sym.var));
+    const ref = { role, entity, name: pick(role) };
+    if ('item' === role)
+        ref.list = pick('many');
+    return ref;
+}
+function argEntries(args, of, typed = false) {
+    return args.map((a) => {
+        const en = {
+            key: a.name,
+            value: null != a.fromCreated && null != of
+                ? { k: 'field', of, field: a.fromCreated }
+                : { k: 'lit', type: a.type, text: a.placeholder },
+        };
+        if (typed && null != a.type)
+            en.type = a.type;
+        return en;
+    });
 }
 function optionEntries(options) {
     return options.map((o) => 'server' === o.name
@@ -58,8 +76,8 @@ function listBlock(desc, facts) {
     if (null == q || null == q.list)
         return null;
     const entity = entOf(desc, q.entity);
-    const many = { role: 'many', entity };
-    const item = { role: 'item', entity };
+    const many = refOf(desc, 'many', entity, 'entity');
+    const item = refOf(desc, 'item', entity, 'entity');
     return [{
             k: 'attempt', what: 'list', body: [
                 call(entity, 'list', 0 < q.list.length ? argEntries(q.list, null) : null, many),
@@ -72,7 +90,7 @@ function loadBlock(desc, facts) {
     if (null == q || null == q.load)
         return null;
     const entity = entOf(desc, q.load.entity);
-    const one = { role: 'one', entity };
+    const one = refOf(desc, 'one', entity, 'entity');
     return [{
             k: 'attempt', what: 'load', body: [
                 call(entity, 'load', 0 < q.load.args.length ? argEntries(q.load.args, null) : null, one),
@@ -92,13 +110,13 @@ function writeBlock(desc, facts) {
     if (0 === ops.length)
         return null;
     const entity = entOf(desc, q.entity);
-    const created = { role: 'created', entity };
+    const created = refOf(desc, 'created', entity, 'entity');
     const out = [];
     for (const op of ops) {
         if (0 < out.length)
             out.push({ k: 'gap' });
         const chained = q[op].some((a) => null != a.fromCreated);
-        out.push({ k: 'comment', text: 'create' === op ? (0, runtimeprose_1.createComment)(facts) : WRITE_COMMENT[op](chained) });
+        out.push({ k: 'comment', text: 'create' === op ? (0, runtimeprose_1.createComment)(facts, created.name) : WRITE_COMMENT[op](chained) });
         out.push(call(entity, op, 'create' === op || 0 < q[op].length ? argEntries(q[op], created) : null, 'create' === op && q.chainsId ? created : null));
     }
     return out;
@@ -109,34 +127,46 @@ const WRITE_COMMENT = {
         (chained ? '; the id comes off the created entity\'s record' : ''),
     remove: () => 'Remove',
 };
-// The reference's example for one operation: a list or load consumed as the
-// tutorial consumes it, a write called alone. None for an operation reached
-// only through `$action`.
+// The reference's example for one operation, in the shape most of the
+// twenty old pages had: the call bound to `result` (`results` for a list),
+// outside error handling, which the language writes its own way; a list's
+// items printed; a write's data members commented with their types, and an
+// update's or patch's data closed by a comment on what else to send. A bound
+// value is printed where an unused binding fails the build. None for an
+// operation reached only through `$action`.
 function refOpBlock(desc, facts, ent, op) {
     if (op.action)
         return null;
     const entity = entOf(desc, ent.name);
-    const arg = 0 < op.args.length ? argEntries(op.args, null) : null;
+    const write = WRITE_OPS.includes(op.name) && 'remove' !== op.name;
+    const arg = 0 < op.args.length ? argEntries(op.args, null, 'create' === op.name) : null;
     if ('list' === op.name) {
-        const many = { role: 'many', entity };
-        const item = { role: 'item', entity };
-        return [{
-                k: 'attempt', what: 'list', body: [
-                    call(entity, 'list', arg, many),
-                    { k: 'each', item, of: many, body: [{ k: 'print', what: { k: 'record', of: item } }] },
-                ],
-            }];
+        const many = refOf(desc, 'many', entity, 'generic');
+        const item = refOf(desc, 'item', entity, 'generic');
+        return [
+            call(entity, 'list', arg, many),
+            { k: 'each', item, of: many, body: [{ k: 'print', what: { k: 'record', of: item } }] },
+        ];
     }
-    if ('load' === op.name) {
-        const one = { role: 'one', entity };
-        return [{
-                k: 'attempt', what: 'load', body: [
-                    call(entity, 'load', arg, one),
-                    { k: 'print', what: { k: 'record', of: one } },
-                ],
-            }];
+    const one = refOf(desc, 'load' === op.name ? 'one' : 'created', entity, 'generic');
+    const stmt = call(entity, op.name, write ? (arg || []) : arg, one);
+    // A remove takes a match, laid out as a load's is.
+    if ('call' === stmt.k && 'remove' === op.name)
+        stmt.wide = null != arg && 1 < arg.length;
+    if ('call' === stmt.k && ('update' === op.name || 'patch' === op.name)) {
+        stmt.note = 'update' === op.name ? 'Fields to update' : 'Only the fields to change';
     }
-    return [call(entity, op.name, 'remove' === op.name ? arg : (arg || []), null)];
+    return [stmt, ...(facts.unusedError ? [{ k: 'print', what: { k: 'record', of: one } }] : [])];
+}
+// A custom action called: the operation it is routed through, with `$action`
+// in its argument. Its response is the action's own, so it is not bound.
+function actionBlock(desc, ent, action) {
+    const stmt = call(entOf(desc, ent.name), action.op, [{ key: '$action', value: { k: 'str', text: action.action } }], null);
+    if ('call' === stmt.k) {
+        stmt.wide = true;
+        stmt.note = '...the action\'s own arguments';
+    }
+    return [stmt];
 }
 // The client constructed with the named features switched on.
 function featureBlock(names) {
@@ -184,19 +214,25 @@ function printStmts(p, stmts, desc, sc, inAttempt = false) {
         const inner = (body) => printStmts(p, body, desc, sc, inAttempt || 'attempt' === s.k);
         switch (s.k) {
             case 'client':
+                if (p.imports && !sc.standalone && !sc.declared.has(IMPORTED)) {
+                    sc.declared.add(IMPORTED);
+                    const lines = p.imports(desc, uses(sc.section.length ? sc.section : stmts));
+                    if (0 < lines.length)
+                        out.push(...lines, '');
+                }
                 out.push(...p.client(s, desc, sc));
                 break;
             case 'call':
                 out.push(...p.call(s, desc, sc, { inAttempt, last: i === stmts.length - 1 }));
                 break;
             case 'each':
-                out.push(...p.each(s, inner, sc));
+                out.push(...p.each(s, inner, sc, desc, { inAttempt, last: i === stmts.length - 1 }));
                 break;
             case 'print':
-                out.push(...p.print(s, sc));
+                out.push(...p.print(s, sc, desc));
                 break;
             case 'attempt':
-                out.push(...p.attempt(s, inner, sc));
+                out.push(...p.attempt(s, inner, sc, desc));
                 break;
             case 'comment':
                 out.push(p.comment(s.text));
@@ -244,8 +280,15 @@ function printJoined(p, steps, desc, sc) {
 function fenced(p, lines) {
     return '```' + p.fence + '\n' + lines.join('\n') + '\n```\n';
 }
-function newScope() {
-    return { declared: new Set(), local: new Set(), stmts: [], section: [] };
+// Recorded in Scope.declared once the page's imports are printed.
+const IMPORTED = '\u0000imports';
+function newScope(standalone = false) {
+    return { declared: new Set(), local: new Set(), stmts: [], section: [], standalone };
+}
+// A runtime note for a slot, as a paragraph, or nothing.
+function note(p, slot) {
+    const text = p.notes && Object.prototype.hasOwnProperty.call(p.notes, slot) ? p.notes[slot] : undefined;
+    return null == text || '' === text ? '' : text + '\n\n';
 }
 function indent(lines, by) {
     return lines.map((l) => '' === l ? l : by + l);

@@ -3,8 +3,10 @@
 // states, computed once from the model. Plain data, JSON-serialisable, so a
 // syntax provider can print from it without reading the model.
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.templateName = templateName;
 exports.sdkDescription = sdkDescription;
 const apidef_1 = require("@voxgig/apidef");
+const utility_1 = require("@voxgig/apidef/dist/utility");
 const canonType_1 = require("./canonType");
 const opShape_1 = require("./opShape");
 const media_1 = require("./media");
@@ -14,10 +16,11 @@ const FeatureDocs_1 = require("../cmp/FeatureDocs");
 const opExample_1 = require("./opExample");
 const packageMeta_1 = require("./packageMeta");
 const serverVars_1 = require("./serverVars");
-const utility_1 = require("../utility");
+const utility_2 = require("../utility");
 const memo = new WeakMap();
-// `naming` is the target's Naming hook, which the calling component finds.
-function sdkDescription(model, target, naming) {
+// `naming` is the target's Naming hook, which the calling component finds;
+// `stdrep` the template substitutions generation applies (ctx$.stdrep).
+function sdkDescription(model, target, naming, stdrep) {
     const targetName = target.name;
     let byTarget = memo.get(model);
     if (null == byTarget) {
@@ -25,24 +28,55 @@ function sdkDescription(model, target, naming) {
         memo.set(model, byTarget);
     }
     if (null == byTarget[targetName]) {
-        byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, target, naming || genericNaming)));
+        byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, target, naming || genericNaming, templateMap(model, stdrep))));
     }
     return byTarget[targetName];
 }
+// The ProjectName family of substitutions, as generation applies them to the
+// templates: the Root's ctx$.stdrep (names(stdrep, Name, 'ProjectName')).
+function templateMap(model, stdrep) {
+    const src = stdrep && null != stdrep.ProjectName ? stdrep : projectNames(model.const.Name);
+    const out = {};
+    for (const [k, v] of Object.entries(src)) {
+        if (/^project[_-]?name[_-]?$/i.test(k) && 'string' === typeof v)
+            out[k] = v;
+    }
+    return out;
+}
+function projectNames(Name) {
+    const snake = Name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase();
+    return {
+        ProjectName: Name, project_name_: snake, 'project-name-': snake.replace(/_/g, '-'),
+        projectname: Name.toLowerCase(), PROJECTNAME: Name.toUpperCase(),
+    };
+}
+// A name as the templates spell it, substituted as the templates are.
+function templateName(map, name) {
+    const keys = Object.keys(map).sort((a, b) => b.length - a.length);
+    if (0 === keys.length)
+        return name;
+    const re = new RegExp(keys.map((k) => k.replace(/[-]/g, '\\-')).join('|'), 'g');
+    return name.replace(re, (k) => map[k]);
+}
 // For a target with no naming hook: the class-name stem, unchanged.
-const genericNaming = (model) => ({
-    layout: { module: model.name, client: model.const.Name + 'SDK', ctor: model.const.Name + 'SDK' },
-    symbols: (e) => ({ accessor: (0, apidef_1.nom)(e, 'Name'), var: e.name, vars: e.name + 's' }),
+const genericNaming = (model, _target, tm) => ({
+    layout: { module: model.name, client: tm('ProjectNameSDK'), ctor: tm('ProjectNameSDK') },
+    symbols: (e) => ({ accessor: (0, apidef_1.nom)(e, 'Name'), var: e.name }),
 });
-function describe(model, target, naming) {
+function describe(model, target, naming, template) {
     const targetName = target.name;
-    const names = naming(model, target);
+    const names = naming(model, target, (n) => templateName(template, n));
+    const ident = names.ident || ((n) => n);
+    const layout = {
+        ...names.layout,
+        vars: Object.fromEntries(['results', 'item', 'result', 'created'].map((n) => [n, ident(n)])),
+    };
     const prefix = (0, packageMeta_1.envName)(model);
-    const active = (0, utility_1.isAuthActive)(model);
-    const where = (0, utility_1.resolveAuthIn)(model);
-    const basic = (0, utility_1.isHttpBasicAuth)(model);
+    const active = (0, utility_2.isAuthActive)(model);
+    const where = (0, utility_2.resolveAuthIn)(model);
+    const basic = (0, utility_2.isHttpBasicAuth)(model);
     // The runtimes read `secret` only for Basic sent in the header (PrepareAuth).
-    const secret = active && basic && 'header' === where && !(0, utility_1.isAuthSuppressed)(model);
+    const secret = active && basic && 'header' === where && !(0, utility_2.isAuthSuppressed)(model);
     const server = (0, serverVars_1.serverVariables)(model)
         .filter((v) => referenced(model, v.name))
         .map((v) => ({ name: v.name, required: v.required, dflt: v.dflt }));
@@ -61,15 +95,16 @@ function describe(model, target, naming) {
     const descs = (0, text_1.modelText)(model).entity_desc || {};
     return {
         target: targetName,
+        template,
         name: model.name,
         Name: model.const.Name,
         package: (0, packageMeta_1.packageName)(model, targetName),
-        layout: names.layout,
+        layout,
         env: { prefix },
-        auth: { active, in: where, name: (0, utility_1.resolveAuthName)(model), basic, secret },
+        auth: { active, in: where, name: (0, utility_2.resolveAuthName)(model), basic, secret },
         options,
         server,
-        entities: activeEntities.map((e) => describeEntity(e, names.symbols(e), {
+        entities: activeEntities.map((e) => describeEntity(e, { ...names.symbols(e), plural: ident((0, utility_1.pluralize)(e.name)) }, {
             className: (0, opShape_1.entityClassName)(e, coll),
             text: [descs[e.name], e.short, e.desc].find((t) => 'string' === typeof t && '' !== t.trim()) || '',
         })),

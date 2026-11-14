@@ -10,6 +10,7 @@ const utility_1 = require("../utility");
 const optional_1 = require("../helpers/optional");
 const sdkdesc_1 = require("../helpers/sdkdesc");
 const example_1 = require("../helpers/example");
+const example_2 = require("../helpers/example");
 const runtimeprose_1 = require("../helpers/runtimeprose");
 const ReadmeQuick = (0, component_1.cmp)(function ReadmeQuick(props) {
     const { target, ctx$ } = props;
@@ -40,7 +41,7 @@ exports.ReadmeQuick = ReadmeQuick;
 // The target's description, named by its own Naming hook.
 function describeTarget(ctx$, target) {
     const hook = (0, optional_1.optionalComponent)(ctx$, target, 'Naming');
-    return (0, sdkdesc_1.sdkDescription)(ctx$.model, target, hook ? hook.Naming : undefined);
+    return (0, sdkdesc_1.sdkDescription)(ctx$.model, target, hook ? hook.Naming : undefined, ctx$.stdrep);
 }
 const article = (s) => /^[aeiou]/i.test(s) ? 'an' : 'a';
 function series(items) {
@@ -99,6 +100,22 @@ function wrap(text, first = '', rest = '') {
         out.push(line);
     return out.join('\n');
 }
+// The name a block binds: the list's item, or the loaded entity.
+function boundName(stmts, role) {
+    let found = '';
+    const walk = (s) => {
+        if ('' !== found)
+            return;
+        if ('each' === s.k && 'item' === role)
+            found = s.item.name;
+        if ('call' === s.k && null != s.bind && s.bind.role === role)
+            found = s.bind.name;
+        if ('attempt' === s.k || 'each' === s.k)
+            s.body.forEach(walk);
+    };
+    stmts.forEach(walk);
+    return found;
+}
 // The steps every quick start takes, each with its sentences, from the
 // description and the runtime facts alone.
 function quickSteps(p, desc) {
@@ -112,7 +129,11 @@ function quickSteps(p, desc) {
     if (null != q && null != list) {
         const n = ent(q.entity).Name.toLowerCase();
         lead.push(`listing ${n} records`);
-        steps.push({ title: `List ${n} records`, text: (0, runtimeprose_1.listSentence)(f), stmts: list, comment: (0, runtimeprose_1.listComment)(f, `List ${n} records`) });
+        const cls = ent(q.entity).className;
+        steps.push({
+            title: `List ${n} records`, text: (0, runtimeprose_1.listSentence)(f, boundName(list, 'item')) + noteText(p, 'tutorial:list'),
+            stmts: list, comment: (0, runtimeprose_1.listComment)(f, `List ${n} records`, cls),
+        });
     }
     const load = (0, example_1.loadBlock)(desc, f);
     if (null != q && null != q.load && null != load) {
@@ -121,7 +142,10 @@ function quickSteps(p, desc) {
         lead.push(`loading ${article(n)} ${n}`);
         const nested = null == q.load.nested ? '' :
             `${e.Name} is nested under ${q.load.nested.parent}, so provide the \`${q.load.nested.param}\`. `;
-        steps.push({ title: `Load ${article(n)} ${n}`, text: nested + (0, runtimeprose_1.loadSentence)(f), stmts: load, comment: (0, runtimeprose_1.loadComment)(f, `Load ${article(n)} ${n}`) });
+        steps.push({
+            title: `Load ${article(n)} ${n}`, text: nested + (0, runtimeprose_1.loadSentence)(f, boundName(load, 'one')) + noteText(p, 'tutorial:load'),
+            stmts: load, comment: (0, runtimeprose_1.loadComment)(f, `Load ${article(n)} ${n}`, e.className),
+        });
     }
     const writes = (0, example_1.writeBlock)(desc, f);
     if (null != q && null != writes) {
@@ -130,7 +154,7 @@ function quickSteps(p, desc) {
         lead.push(`${series(ops.map((o) => GERUND[o]))} ${article(n)} ${n}`);
         const title = series(ops);
         const Title = title.charAt(0).toUpperCase() + title.slice(1);
-        steps.push({ title: Title, text: '', stmts: writes, comment: Title });
+        steps.push({ title: Title, text: noteText(p, 'tutorial:write').trim(), stmts: writes, comment: Title });
     }
     return { steps, lead };
 }
@@ -142,18 +166,26 @@ function quickText(p, desc) {
     let out = `
 ## Tutorial: your first API call
 
-${wrap(`This tutorial walks through ${series(lead)}.${'' === where ? '' : ' ' + where}`)}
+${wrap(`This tutorial walks through ${series(lead)}.${'' === where ? '' : ' ' + where}` +
+        (1 < steps.length ? ' Every operation returns entities, not raw records.' : ''))}
 
 `;
+    out += (0, example_2.note)(p, 'tutorial');
     // A runtime whose examples are whole programs gets the same sentences, as a
-    // numbered list, and the steps as one program.
+    // numbered list, and the steps as one program. A step whose statements open
+    // with their own comment is named by it, not again by its title; the client
+    // opens the program unnamed, as it always did.
     if (p.program) {
-        out += 'The steps are one program, shown whole after them.\n\n';
+        out += (1 === steps.length
+            ? 'The program after this step runs it.'
+            : `The program after these ${steps.length} steps runs them in order.`) + '\n\n';
         steps.forEach((s, i) => {
             const lead = `${i + 1}. **${s.title}.**`;
             out += ('' === s.text ? lead : wrap(s.text.trim(), lead + ' ', '   ')) + '\n';
         });
-        out += '\n' + (0, example_1.printProgram)(p, steps.map((s) => ({ title: s.comment, stmts: s.stmts })), desc, sc) + '\n';
+        out += '\n' + (0, example_1.printProgram)(p, steps.map((s) => ({
+            title: 'comment' === s.stmts[0]?.k || 'client' === s.stmts[0]?.k ? '' : s.comment, stmts: s.stmts,
+        })), desc, sc) + '\n';
         return out;
     }
     steps.forEach((s, i) => {
@@ -161,18 +193,29 @@ ${wrap(`This tutorial walks through ${series(lead)}.${'' === where ? '' : ' ' + 
     });
     return out;
 }
+// A runtime note's text as a paragraph's trailing sentences.
+function noteText(p, slot) {
+    const n = (0, example_2.note)(p, slot).trim();
+    return '' === n ? '' : ' ' + n;
+}
+// The statements with every attempt replaced by its body: the call is written
+// as the language writes one outside error handling.
+function bare(stmts) {
+    return stmts.flatMap((s) => 'attempt' === s.k ? bare(s.body)
+        : ('each' === s.k ? [{ ...s, body: bare(s.body) }] : [s]));
+}
 // The root README's quick start for one language: the tutorial's first steps,
 // client, list and load, in one block, each step named in a comment that
-// states its runtime fact.
+// states its runtime fact, its calls outside error handling, as most of the
+// old root quick starts were.
 function topQuickText(p, desc) {
     const sc = (0, example_1.newScope)();
-    const f = p.facts;
     const { steps } = quickSteps(p, desc);
     const first = steps.filter((s) => /^(Create a client|List |Load )/.test(s.title));
     // The comment names the step, so the program printer adds no title of its own.
     const commented = first.map((s) => ({
         title: '',
-        stmts: 'Create a client' === s.title ? s.stmts : [{ k: 'comment', text: s.comment }, ...s.stmts],
+        stmts: 'Create a client' === s.title ? s.stmts : [{ k: 'comment', text: s.comment }, ...bare(s.stmts)],
     }));
     sc.section = commented.flatMap((s) => s.stmts);
     return p.program ? (0, example_1.printProgram)(p, commented, desc, sc) : (0, example_1.printJoined)(p, commented, desc, sc);

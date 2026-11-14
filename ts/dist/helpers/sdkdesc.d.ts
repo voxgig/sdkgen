@@ -31,19 +31,20 @@ type DescLayout = {
     client: string;
     ctor: string;
     names?: Record<string, string>;
+    vars?: Record<string, string>;
 };
 type DescSymbols = {
     accessor: string;
     var: string;
-    vars: string;
+    plural: string;
     module?: string;
     alias?: string;
     fields?: Record<string, string>;
-    type?: string;
 };
-type Naming = (model: any, target: any) => {
+type Naming = (model: any, target: any, tm: (name: string) => string) => {
     layout: DescLayout;
-    symbols: (entity: any) => DescSymbols;
+    symbols: (entity: any) => Omit<DescSymbols, 'plural'>;
+    ident?: (name: string) => string;
 };
 type DescField = {
     name: string;
@@ -115,6 +116,7 @@ type DescQuick = {
 };
 type SdkDescription = {
     target: string;
+    template: Record<string, string>;
     name: string;
     Name: string;
     package: string;
@@ -135,6 +137,7 @@ type SdkDescription = {
     quick: DescQuick | null;
     ref: DescRef;
 };
-declare function sdkDescription(model: any, target: any, naming?: Naming): SdkDescription;
+declare function sdkDescription(model: any, target: any, naming?: Naming, stdrep?: Record<string, string>): SdkDescription;
+declare function templateName(map: Record<string, string>, name: string): string;
 export type { DescField, DescFeature, DescOp, DescOptionRow, DescRef, Naming, SdkDescription, DescLayout, DescSymbols, DescArg, DescEntity, DescOption, DescQuick, DescServerVar, Scalar, };
-export { sdkDescription, };
+export { templateName, sdkDescription, };
