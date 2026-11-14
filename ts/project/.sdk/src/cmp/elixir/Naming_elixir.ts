@@ -10,21 +10,21 @@ import { elixirEntityModule } from './utility_elixir'
 // module, collision-free over the WHOLE entity collection, inactive entities
 // included (MainEntity_elixir: elixirAccessor), and the module its operations
 // live in (Entity.fragment.ex: ProjectName.Entity.EntityName).
-const Naming: NamingType = (model) => {
-  const Name = model.const.Name
+const Naming: NamingType = (model, _target, tm) => {
   const coll = entityCollection(model)
   return {
     layout: {
-      module: Name,
-      client: Name,
-      ctor: Name + '.new',
-      names: { helpers: Name + '.Helpers' },
+      module: tm('ProjectName'),
+      client: tm('ProjectName'),
+      ctor: tm('ProjectName') + '.new',
+      names: { helpers: tm('ProjectName.Helpers') },
     },
-    symbols: (e) => {
-      const v = exampleVarName(e.name, 'elixir')
-      const module = elixirEntityModule(Name, { ...e, Name: nom(e, 'Name') })
-      return { accessor: Name + '.' + elixirAccessor(e, coll), var: v, vars: v + 's', module, type: module }
-    },
+    symbols: (e) => ({
+      accessor: elixirAccessor(e, coll),
+      var: exampleVarName(e.name, 'elixir'),
+      module: elixirEntityModule(model.const.Name, { ...e, Name: nom(e, 'Name') }),
+    }),
+    ident: (name) => exampleVarName(name, 'elixir'),
   }
 }
 

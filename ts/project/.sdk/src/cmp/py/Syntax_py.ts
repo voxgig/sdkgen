@@ -1,5 +1,5 @@
 import { canonToType, indentLines } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
 const facts: RuntimeFacts = {
@@ -16,9 +16,10 @@ const facts: RuntimeFacts = {
 // The fixed API the reference page documents: Entity.fragment.py,
 // Main.fragment.py and MainEntity_py.
 const refFacts: RefFacts = {
-  classes: true,
+  entityBy: 'class',
   noun: 'Methods',
   none: 'None',
+  lits: { true: 'True', false: 'False' },
   keys: 'member',
   maps: 'dicts',
   container: 'dict',
@@ -34,6 +35,7 @@ const refFacts: RefFacts = {
     patch: 'patch(reqdata, ctrl=None) -> {Class}',
     remove: 'remove(reqmatch, ctrl=None) -> {Class}',
   },
+  opMatched: { list: 'list(reqmatch, ctrl=None) -> list[{Class}]' },
   client: [
     { kind: 'options', sig: 'options_map() -> dict' },
     { kind: 'utility', sig: 'get_utility() -> Utility' },
@@ -57,8 +59,7 @@ const refFacts: RefFacts = {
 
 const str = (s: string): string => JSON.stringify(s)
 
-const name = (r: Ref): string =>
-  'many' === r.role ? r.entity.sym.vars : ('created' === r.role ? 'created' : r.entity.sym.var)
+const name = (r: Ref): string => r.name
 
 const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
   INTEGER: '1', NUMBER: '1', BOOLEAN: 'True', ARRAY: '[]', OBJECT: '{}', NULL: 'None',
@@ -78,28 +79,40 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `${str(en.key)}: ${expr(en.value)}`
 
-// A map two levels down stays on its member's line.
+// A map two levels down stays on its member's line; a member's type, where it
+// has one, follows it.
 const members = (entries: Entry[], pad: string, depth = 0): string[] =>
   entries.flatMap((en) => 'map' === en.value.k && 0 === depth
     ? [`${pad}${str(en.key)}: {`, ...members(en.value.entries, pad + '    ', depth + 1), `${pad}},`]
-    : [`${pad}${pair(en)},`])
+    : [`${pad}${pair(en)},` + (null == en.type ? '' : '  # ' + canonToType(en.type, 'py'))])
+
+// A write's data is laid out a member per line where it carries types or a
+// note; otherwise on one line, as the py examples always were.
+const argOf = (s: Extract<Stmt, { k: 'call' }>): string => {
+  if (null == s.arg) return ''
+  const laid = s.wide && (null != s.note || s.arg.some((en) => null != en.type))
+  if (!laid) return expr({ k: 'map', entries: s.arg })
+  return '{\n' + [...members(s.arg, '    '), ...(null == s.note ? [] : ['    # ' + s.note])].join('\n') + '\n}'
+}
 
 
 const Syntax: SyntaxType = {
   fence: 'python',
   facts,
 
-  client: (s, desc) => [
-    ...(s.options.some((en) => 'env' === en.value.k) ? ['import os'] : []),
+  imports: (desc, used) => [
+    ...(used.env ? ['import os'] : []),
     `from ${desc.layout.module} import ${desc.layout.client}`,
-    '',
+  ],
+
+  client: (s, desc) => [
     0 === s.options.length
       ? `client = ${desc.layout.ctor}()`
       : `client = ${desc.layout.ctor}({\n${members(s.options, '    ').join('\n')}\n})`,
   ],
 
   call: (s) => {
-    const call = `client.${s.entity.sym.accessor}().${(facts.method as any)[s.op]}(${null == s.arg ? '' : expr({ k: 'map', entries: s.arg })})`
+    const call = `client.${s.entity.sym.accessor}().${(facts.method as any)[s.op]}(${argOf(s)})`
     return [null == s.bind ? call : `${name(s.bind)} = ${call}`]
   },
 
@@ -126,6 +139,7 @@ const Syntax: SyntaxType = {
     type: (t) => canonToType(t, 'py'),
     key: (container, path) => container + path.map((k) => `[${str(k)}]`).join(''),
     instance: (e) => [`${e.sym.var} = client.${e.sym.accessor}()`],
+    read: (value, key) => `${value}[${str(key)}]`,
   },
 }
 

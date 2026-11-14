@@ -15,10 +15,10 @@ const Naming: NamingType = () => ({
   symbols: (e) => ({
     accessor: 'api/' + cljAccessor(e),
     var: cljAccessor(e),
-    vars: cljAccessor(e) + 's',
     module: cljEntityNs(e),
     alias: cljEntityAlias(e),
   }),
+  ident: (name) => name,
 })
 
 

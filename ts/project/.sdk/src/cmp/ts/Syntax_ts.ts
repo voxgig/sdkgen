@@ -9,13 +9,14 @@ const facts: RuntimeFacts = {
   result: 'throw',
   collection: 'array',
   record: '.data()',
+  listOf: '{Class}[]',
   prints: 'record',
 }
 
 // The fixed API the reference page documents: EntityBase.fragment.ts,
 // Entity.fragment.ts and Main.fragment.ts.
 const refFacts: RefFacts = {
-  classes: true,
+  entityBy: 'class',
   noun: 'Methods',
   none: 'undefined',
   keys: 'member',
@@ -34,8 +35,8 @@ const refFacts: RefFacts = {
     remove: 'remove(match: object, ctrl?: object)',
   },
   client: [
-    { kind: 'options', sig: 'options()' },
-    { kind: 'utility', sig: 'utility()' },
+    { kind: 'options', sig: 'options()', returns: 'object' },
+    { kind: 'utility', sig: 'utility()', returns: 'object' },
     { kind: 'direct', sig: 'direct(fetchargs?: object)' },
     { kind: 'prepare', sig: 'prepare(fetchargs?: object)' },
     { kind: 'tester', sig: 'tester(testopts?, sdkopts?)' },
@@ -54,8 +55,7 @@ const refFacts: RefFacts = {
   cancel: true,
 }
 
-const name = (r: Ref): string =>
-  'many' === r.role ? r.entity.sym.vars : ('created' === r.role ? 'created' : r.entity.sym.var)
+const name = (r: Ref): string => r.name
 
 const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
   INTEGER: '1', NUMBER: '1', BOOLEAN: 'true', ARRAY: '[]', OBJECT: '{}', NULL: 'null',
@@ -75,32 +75,33 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `${jsKey(en.key)}: ${expr(en.value)}`
 
-// One member per line, closed with a trailing comma; a map two levels down
-// stays on its member's line.
+// One member per line, closed with a trailing comma and its type where it
+// has one; a map two levels down stays on its member's line.
 const members = (entries: Entry[], pad: string, depth = 0): string[] =>
   entries.flatMap((en) => 'map' === en.value.k && 0 === depth
     ? [`${pad}${jsKey(en.key)}: {`, ...members(en.value.entries, pad + '  ', depth + 1), `${pad}},`]
-    : [`${pad}${pair(en)},`])
+    : [`${pad}${pair(en)},` + (null == en.type ? '' : ' // ' + canonToType(en.type, 'ts'))])
 
-const argOf = (arg: Entry[] | null, wide: boolean): string =>
-  null == arg ? '' : (0 === arg.length ? '{}' :
-    wide ? '{\n' + members(arg, '  ').join('\n') + '\n}' : '{ ' + arg.map(pair).join(', ') + ' }')
+const argOf = (arg: Entry[] | null, wide: boolean, note?: string): string =>
+  null == arg ? '' : (0 === arg.length && null == note ? '{}' :
+    wide ? '{\n' + [...members(arg, '  '), ...(null == note ? [] : ['  // ' + note])].join('\n') + '\n}'
+      : '{ ' + arg.map(pair).join(', ') + ' }')
 
 
 const Syntax: SyntaxType = {
   fence: 'ts',
   facts,
 
+  imports: (desc) => [`import { ${desc.layout.client} } from '${desc.layout.module}'`],
+
   client: (s, desc) => [
-    `import { ${desc.layout.client} } from '${desc.layout.module}'`,
-    '',
     0 === s.options.length
       ? `const client = new ${desc.layout.ctor}()`
       : `const client = new ${desc.layout.ctor}({\n${members(s.options, '  ').join('\n')}\n})`,
   ],
 
   call: (s) => {
-    const call = `await client.${s.entity.sym.accessor}().${(facts.method as any)[s.op]}(${argOf(s.arg, s.wide)})`
+    const call = `await client.${s.entity.sym.accessor}().${(facts.method as any)[s.op]}(${argOf(s.arg, s.wide, s.note)})`
     return (null == s.bind ? call : `const ${name(s.bind)} = ${call}`).split('\n')
   },
 
@@ -129,6 +130,7 @@ const Syntax: SyntaxType = {
     type: (t) => canonToType(t, 'ts'),
     key: (container, path) => [container, ...path].join('.'),
     instance: (e) => [`const ${e.sym.var} = client.${e.sym.accessor}()`],
+    read: (value, key) => jsProp(value, key),
   },
 }
 

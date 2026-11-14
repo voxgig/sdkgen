@@ -18,7 +18,7 @@ const facts: RuntimeFacts = {
 // The fixed API the reference page documents: core/sdk.h (the Entity
 // vtable), Main.fragment.c, MainEntity_c and EntityBase_c (`<evar>_stream`).
 const refFacts: RefFacts = {
-  classes: false,
+  entityBy: 'Name',
   noun: 'Functions',
   none: 'NULL',
   keys: 'bare',
@@ -41,8 +41,8 @@ const refFacts: RefFacts = {
     { kind: 'prepare', sig: 'voxgig_value* sdk_prepare({client}* client, voxgig_value* fetchargs, PNError** err)' },
   ],
   entity: [
-    { kind: 'data', sig: 'voxgig_value* vt->data(Entity* e, voxgig_value* args)' },
-    { kind: 'match', sig: 'voxgig_value* vt->matchv(Entity* e, voxgig_value* args)' },
+    { kind: 'dataArg', sig: 'voxgig_value* vt->data(Entity* e, voxgig_value* args)' },
+    { kind: 'matchArg', sig: 'voxgig_value* vt->matchv(Entity* e, voxgig_value* args)' },
     { kind: 'make', sig: 'Entity* vt->make(Entity* e)' },
     { kind: 'streamList', sig: 'voxgig_value* {var}_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err)' },
     { kind: 'name', sig: 'const char* vt->get_name(Entity* e)' },
@@ -58,13 +58,13 @@ const str = (s: string): string => '"' + s.replace(/\\/g, '\\\\').replace(/"/g, 
 // The entity handle an operation is called on.
 const handle = (e: Ref['entity']): string => e.sym.var
 
+// C has no loop variable: an item is its list indexed. The entity's handle
+// already holds the entity's own name, so a loaded entity bound to the same
+// name is renamed rather than shadowing it.
 const name = (r: Ref): string => {
-  switch (r.role) {
-    case 'many': return r.entity.sym.vars
-    case 'item': return r.entity.sym.vars + '[i]'
-    case 'one': return 'loaded'
-    case 'created': return 'created'
-  }
+  if ('item' === r.role) return r.list + '[i]'
+  if ('one' === r.role && r.name === handle(r.entity)) return 'loaded'
+  return r.name
 }
 
 // A field read off a created record is hoisted into a variable of its own.
@@ -77,6 +77,22 @@ const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
 const cmap = (entries: Entry[]): string =>
   0 === entries.length ? 'NULL'
     : `cmap(${entries.length}, ${entries.map((en) => `${str(en.key)}, ${expr(en.value)}`).join(', ')})`
+
+// A write's data laid out a member per line, each with its type, closed by its
+// note; the call's remaining arguments follow on a line of their own.
+const wideMap = (entries: Entry[], note?: string): string => {
+  const lines = entries.map((en, i) => `    ${str(en.key)}, ${expr(en.value)}` +
+    (i === entries.length - 1 ? ')' : ',') +
+    (null == en.type ? '' : '  // ' + canonToType(en.type, 'c')))
+  if (null != note) lines.push(`    // ${note}`)
+  return `cmap(${entries.length},\n${lines.join('\n')}\n`
+}
+
+const laidOut = (s: Extract<Stmt, { k: 'call' }>): boolean =>
+  s.wide && null != s.arg && 0 < s.arg.length && (null != s.note || s.arg.some((en) => null != en.type))
+
+// Bound outside error handling: what is printed of it is guarded.
+const UNCHECKED = 'unchecked:'
 
 const data = (r: Ref): string => `${name(r)}->vt->data(${name(r)}, NULL)`
 
@@ -115,11 +131,13 @@ const Syntax: SyntaxType = {
   fence: 'c',
   facts,
 
-  client: (s, desc) => [
-    // getenv is declared in stdlib.h, which core/api.h does not include.
-    ...(s.options.some((en) => 'env' === en.value.k) ? ['#include <stdlib.h>'] : []),
+  // getenv is declared in stdlib.h, which core/api.h does not include.
+  imports: (desc, used) => [
+    ...(used.env ? ['#include <stdlib.h>'] : []),
     `#include "${desc.layout.module}"`,
-    '',
+  ],
+
+  client: (s, desc) => [
     0 === s.options.length
       ? `${desc.layout.client}* client = ${desc.layout.ctor}(NULL);`
       : `${desc.layout.client}* client = ${desc.layout.ctor}(cmap(${s.options.length},\n` +
@@ -144,10 +162,14 @@ const Syntax: SyntaxType = {
     return out
   },
 
-  call: (s, _desc, sc) => {
+  call: (s, _desc, sc, cx) => {
     const h = handle(s.entity)
-    const call = `${h}->vt->${(facts.method as any)[s.op]}(${h}, ${cmap(s.arg || [])}, NULL, &err);`
+    const method = (facts.method as any)[s.op]
+    const call = laidOut(s)
+      ? `${h}->vt->${method}(${h}, ${wideMap(s.arg as Entry[], s.note)}, NULL, &err);`
+      : `${h}->vt->${method}(${h}, ${cmap(s.arg || [])}, NULL, &err);`
     if (null == s.bind) return [call]
+    if (!cx.inAttempt) sc.local.add(UNCHECKED + name(s.bind))
     const type = 'many' === s.bind.role ? 'Entity**' : 'Entity*'
     const out = [`${type} ${name(s.bind)} = ${call}`]
     for (const field of reads(sc.stmts, s.bind)) {
@@ -157,15 +179,19 @@ const Syntax: SyntaxType = {
     return out
   },
 
-  each: (s, inner) => [
-    `for (size_t i = 0; ${name(s.of)}[i]; i++) {`,
+  each: (s, inner, sc) => [
+    `for (size_t i = 0; ${sc.local.has(UNCHECKED + name(s.of)) ? name(s.of) + ' && ' : ''}${name(s.of)}[i]; i++) {`,
     ...indentLines(inner(s.body), '    '),
     '}',
   ],
 
-  print: (s) => 'fields' === s.what.k
-    ? [`printf("${s.what.fields.map(() => '%s').join(' ')}\\n", ${expr(s.what)});`]
-    : [`printf("%s\\n", ${expr(s.what)});`],
+  print: (s, sc) => {
+    const line = 'fields' === s.what.k
+      ? `printf("${s.what.fields.map(() => '%s').join(' ')}\\n", ${expr(s.what)});`
+      : `printf("%s\\n", ${expr(s.what)});`
+    const of = 'record' === s.what.k || 'fields' === s.what.k ? name(s.what.of) : ''
+    return '' !== of && sc.local.has(UNCHECKED + of) ? [`if (${of}) {`, '    ' + line, '}'] : [line]
+  },
 
   // The call sets *err; what follows it runs only when it did not.
   attempt: (s, inner) => {
@@ -174,6 +200,8 @@ const Syntax: SyntaxType = {
       ...inner([first]),
       'if (err) {',
       `    fprintf(stderr, "${s.what} failed: %s\\n", err->msg);`,
+      // A set error slot fails every later call, so it is cleared once reported.
+      '    err = NULL;',
       '} else {',
       ...indentLines(inner(rest), '    '),
       '}',
@@ -192,6 +220,7 @@ const Syntax: SyntaxType = {
     },
     key: (_container, path) => path.join('.'),
     instance: (e) => [`Entity* ${e.sym.var} = ${e.sym.accessor}(client, NULL);`],
+    read: (value, key) => `getp(${value}, ${str(key)})`,
   },
 }
 

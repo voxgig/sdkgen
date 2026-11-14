@@ -6,16 +6,14 @@ import { nom } from '@voxgig/apidef'
 // The names the ts code generator gives the SDK: the package Package_ts
 // publishes, the ProjectNameSDK class, and each entity's accessor
 // (MainEntity_ts: `${entity.Name}(entopts)`).
-const Naming: NamingType = (model, target) => ({
+const Naming: NamingType = (model, target, tm) => ({
   layout: {
     module: packageName(model, target.name),
-    client: model.const.Name + 'SDK',
-    ctor: model.const.Name + 'SDK',
+    client: tm('ProjectNameSDK'),
+    ctor: tm('ProjectNameSDK'),
   },
-  symbols: (e) => {
-    const v = exampleVarName(nom(e, 'Name').toLowerCase(), 'ts')
-    return { accessor: nom(e, 'Name'), var: v, vars: v + 's' }
-  },
+  symbols: (e) => ({ accessor: nom(e, 'Name'), var: exampleVarName(e.name, 'ts') }),
+  ident: (name) => exampleVarName(name, 'ts'),
 })
 
 

@@ -15,7 +15,7 @@ const facts: RuntimeFacts = {
 // The fixed API the reference page documents: Main.fragment.ex,
 // Entity.fragment.ex, the Entity<Op>Op fragments and lib/projectname/entity_base.ex.
 const refFacts: RefFacts = {
-  classes: false,
+  entityBy: 'module',
   noun: 'Functions',
   none: 'nil',
   keys: 'bare',
@@ -24,7 +24,7 @@ const refFacts: RefFacts = {
   valueType: { STRING: 'String.t()', OBJECT: 'map()', ANY: 'any()' },
   ctor: ['sdk = {ctor}(options)'],
   test: [{ sig: '{module}.test(testopts \\\\ nil, sdkopts \\\\ nil)', call: 'sdk = {module}.test()', args: true }],
-  accessor: { sig: '{accessor}(client, entopts \\\\ nil)', arg: 'entopts' },
+  accessor: { sig: '{module}.{accessor}(client, entopts \\\\ nil)', arg: 'entopts' },
   op: {
     list: 'list(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: list()',
     load: 'load(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: entity',
@@ -33,10 +33,10 @@ const refFacts: RefFacts = {
     patch: 'patch(entity, reqdata, ctrl \\\\ nil) :: entity',
     remove: 'remove(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: entity',
   },
+  opMatched: { list: 'list(entity, reqmatch, ctrl \\\\ nil) :: list()' },
   client: [
     { kind: 'options', sig: 'options_map(client) :: map()' },
-    // get_utility/1 hands back the client's own utility node.
-    { kind: 'utilityShared', sig: 'get_utility(client) :: map()' },
+    { kind: 'utilityBase', sig: 'get_utility(client) :: map()' },
     { kind: 'direct', sig: 'direct(client, fetchargs) :: map()' },
     { kind: 'prepare', sig: 'prepare(client, fetchargs) :: map()' },
   ],
@@ -60,14 +60,7 @@ const str = (s: string): string => '"' + s.replace(/\\/g, '\\\\').replace(/"/g, 
   .replace(/#/g, '\\#').replace(/\n/g, '\\n').replace(/\t/g, '\\t') + '"'
 
 // The client is `sdk`; an item of a list is read off it by index.
-const name = (r: Ref): string => {
-  switch (r.role) {
-    case 'many': return r.entity.sym.vars
-    case 'item': return `Voxgig.Struct.getelem(${r.entity.sym.vars}, i)`
-    case 'one': return r.entity.sym.var
-    case 'created': return 'created'
-  }
-}
+const name = (r: Ref): string => 'item' === r.role ? `Voxgig.Struct.getelem(${r.list}, i)` : r.name
 
 const mod = (r: Ref): string => r.entity.sym.module as string
 
@@ -92,10 +85,16 @@ const expr = (e: Expr): string => {
 const pair = (en: Entry): string => `${str(en.key)} => ${expr(en.value)}`
 
 // A native map handed to the SDK is made a struct value by Helpers.deep/1,
-// aliased `H` once the client block has declared the alias.
-const deep = (entries: Entry[], sc: Scope, helpers: string): string => {
-  const fn = (sc.declared.has('H') ? 'H' : helpers) + '.deep'
+// aliased `H` by the page's imports, and named in full in a block that stands
+// alone. A map of maps, or a write's data with types or a note, is laid out a
+// member per line.
+const deep = (entries: Entry[], sc: Scope, helpers: string, note?: string): string => {
+  const fn = (sc.standalone ? helpers : 'H') + '.deep'
   const mapOfMaps = (e: Expr) => 'map' === e.k && e.entries.some((en) => 'map' === en.value.k)
+  if (null != note || entries.some((en) => null != en.type)) {
+    const lines = entries.map((en) => `  ${pair(en)},` + (null == en.type ? '' : '  # ' + canonToType(en.type, 'elixir')))
+    return `${fn}(%{\n${[...lines, ...(null == note ? [] : ['  # ' + note])].join('\n')}\n})`
+  }
   if (!entries.some((en) => mapOfMaps(en.value))) return `${fn}(${expr({ k: 'map', entries })})`
   const lines = entries.map((en) => 'map' === en.value.k && mapOfMaps(en.value)
     ? [`  ${str(en.key)} => %{`, ...en.value.entries.map((x) => `    ${pair(x)},`), '  }'].join('\n')
@@ -106,13 +105,14 @@ const deep = (entries: Entry[], sc: Scope, helpers: string): string => {
 const calls = (stmts: Stmt[]): Extract<Stmt, { k: 'call' }>[] => stmts.flatMap((s: Stmt) =>
   'call' === s.k ? [s] : ('each' === s.k ? calls(s.body) : []))
 
-// The handle each entity's operations take, bound from the client.
-const handles = (stmts: Stmt[], have: Set<string>): string[] => {
+// The handle each entity's operations take, bound from the client: its
+// factory function on the client module.
+const handles = (stmts: Stmt[], have: Set<string>, desc: any): string[] => {
   const out: string[] = []
   for (const s of calls(stmts)) {
     if (have.has(s.entity.sym.var)) continue
     have.add(s.entity.sym.var)
-    out.push(`${s.entity.sym.var} = ${s.entity.sym.accessor}(sdk)`)
+    out.push(`${s.entity.sym.var} = ${desc.layout.module}.${s.entity.sym.accessor}(sdk)`)
   }
   return out
 }
@@ -124,23 +124,20 @@ const Syntax: SyntaxType = {
   fence: 'elixir',
   facts,
 
-  client: (s, desc, sc) => {
-    sc.declared.add('H')
-    return [
-      `alias ${helpers(desc)}, as: H`,
-      '',
-      0 === s.options.length ? `sdk = ${desc.layout.ctor}()` : `sdk = ${desc.layout.ctor}(${deep(s.options, sc, helpers(desc))})`,
-    ]
-  },
+  imports: (desc) => [`alias ${helpers(desc)}, as: H`],
+
+  client: (s, desc, sc) => [
+    0 === s.options.length ? `sdk = ${desc.layout.ctor}()` : `sdk = ${desc.layout.ctor}(${deep(s.options, sc, helpers(desc))})`,
+  ],
 
   // A block whose calls stand outside an attempt binds their handles first.
-  before: (stmts, _desc, sc) => {
-    const found = handles(stmts, sc.local)
+  before: (stmts, desc, sc) => {
+    const found = handles(stmts, sc.local, desc)
     return 0 === found.length ? [] : [...found, '']
   },
 
   call: (s, desc, sc) => {
-    const args = [s.entity.sym.var, ...(null == s.arg ? [] : [deep(s.arg, sc, helpers(desc))])]
+    const args = [s.entity.sym.var, ...(null == s.arg ? [] : [deep(s.arg, sc, helpers(desc), s.note)])]
     const call = `${s.entity.sym.module}.${(facts.method as any)[s.op]}(${args.join(', ')})`
     return [null == s.bind ? call : `${name(s.bind)} = ${call}`]
   },
@@ -155,9 +152,9 @@ const Syntax: SyntaxType = {
 
   // A binding made inside `try` does not outlive it, so the handle is bound
   // there too.
-  attempt: (s, inner) => [
+  attempt: (s, inner, _sc, desc) => [
     'try do',
-    ...indentLines([...handles(s.body, new Set()), ...inner(s.body)], '  '),
+    ...indentLines([...handles(s.body, new Set(), desc), ...inner(s.body)], '  '),
     'rescue',
     `  err -> IO.puts("${s.what} failed: " <> inspect(err))`,
     'end',
@@ -171,7 +168,12 @@ const Syntax: SyntaxType = {
     facts: refFacts,
     type: (t) => canonToType(t, 'elixir'),
     key: (_container, path) => path.join('.'),
-    instance: (e) => [`${e.sym.var} = ${e.sym.accessor}(sdk)`],
+    instance: (e, desc) => [`${e.sym.var} = ${desc.layout.module}.${e.sym.accessor}(sdk)`],
+    read: (value, key) => `Voxgig.Struct.getprop(${value}, ${str(key)})`,
+  },
+
+  notes: {
+    'member:utilityBase': 'It is the client\'s own node, not a copy.',
   },
 }
 

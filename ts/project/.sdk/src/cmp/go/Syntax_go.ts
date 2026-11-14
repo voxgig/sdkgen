@@ -1,5 +1,5 @@
 import { canonToType, indentLines, uses } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Scope, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Scope, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
 const facts: RuntimeFacts = {
@@ -10,13 +10,14 @@ const facts: RuntimeFacts = {
   collection: '`[]any`',
   record: 'Data()',
   errVar: 'err',
+  unusedError: true,
   prints: 'record',
 }
 
 // The fixed API the reference page documents: Entity.fragment.go,
 // Main.fragment.go, MainEntity_go and Main_go (Test).
 const refFacts: RefFacts = {
-  classes: true,
+  entityBy: 'class',
   noun: 'Methods',
   none: 'nil',
   keys: 'member',
@@ -26,7 +27,7 @@ const refFacts: RefFacts = {
   ctor: ['func {ctor}(options map[string]any) *{client}'],
   test: [
     { sig: 'Test() *{client}', call: 'client := sdk.Test()', args: false },
-    { sig: 'TestSDK(testopts, sdkopts map[string]any) *{client}', call: 'client := sdk.TestSDK(testopts, sdkopts)', args: true },
+    { sig: 'TestSDK(testopts, sdkopts map[string]any) *{client}', call: 'client := sdk.TestSDK(nil, nil)', args: true },
   ],
   accessor: { sig: '{accessor}(data map[string]any) {sdk}EntityBase', arg: 'data' },
   op: {
@@ -47,7 +48,7 @@ const refFacts: RefFacts = {
     { kind: 'data', sig: 'Data(args ...any) any' },
     { kind: 'match', sig: 'Match(args ...any) any' },
     { kind: 'make', sig: 'Make() Entity' },
-    { kind: 'streamChannel', sig: 'Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem' },
+    { kind: 'stream', sig: 'Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem' },
     { kind: 'name', sig: 'GetName() string' },
   ],
   direct: { returns: '(map[string]any, error)' },
@@ -58,9 +59,7 @@ const refFacts: RefFacts = {
 
 const str = (s: string): string => JSON.stringify(s).replace(/﻿/g, '\\ufeff')
 
-const name = (r: Ref): string =>
-  'item' === r.role ? 'item' : ('created' === r.role ? 'created' :
-    ('many' === r.role ? r.entity.sym.vars : r.entity.sym.var))
+const name = (r: Ref): string => r.name
 
 const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
   INTEGER: '1', NUMBER: '1', BOOLEAN: 'true', ARRAY: '[]any{}', OBJECT: 'map[string]any{}', NULL: 'nil',
@@ -82,11 +81,19 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `${str(en.key)}: ${expr(en.value)}`
 
-// A map two levels down stays on its member's line.
+// A map two levels down stays on its member's line; a member's type, where it
+// has one, follows it.
 const members = (entries: Entry[], pad: string, depth = 0): string[] =>
   entries.flatMap((en) => 'map' === en.value.k && 0 === depth
     ? [`${pad}${str(en.key)}: map[string]any{`, ...members(en.value.entries, pad + '    ', depth + 1), `${pad}},`]
-    : [`${pad}${pair(en)},`])
+    : [`${pad}${pair(en)},` + (null == en.type ? '' : ' // ' + canonToType(en.type, 'go'))])
+
+// A write's data is laid out a member per line, closed by its note.
+const argOf = (s: Extract<Stmt, { k: 'call' }>): string => {
+  if (null == s.arg) return 'nil'
+  if (!s.wide || (0 === s.arg.length && null == s.note)) return expr({ k: 'map', entries: s.arg })
+  return 'map[string]any{\n' + [...members(s.arg, '    '), ...(null == s.note ? [] : ['    // ' + s.note])].join('\n') + '\n}'
+}
 
 // Operations return (value, error): the error is checked where it is made.
 const check = ['if err != nil {', '    panic(err)', '}']
@@ -114,7 +121,7 @@ const Syntax: SyntaxType = {
   ],
 
   call: (s, _desc, sc) => {
-    const arg = null == s.arg ? 'nil' : expr({ k: 'map', entries: s.arg })
+    const arg = argOf(s)
     return [
       `${bindErr(null == s.bind ? null : name(s.bind), sc)} client.${s.entity.sym.accessor}(nil).${(facts.method as any)[s.op]}(${arg}, nil)`,
       ...check,
@@ -140,7 +147,16 @@ const Syntax: SyntaxType = {
     facts: refFacts,
     type: (t) => canonToType(t, 'go'),
     key: (container, path) => container + path.map((k) => `[${str(k)}]`).join(''),
-    instance: (e) => [`${e.sym.var} := client.${e.sym.accessor}(nil)`],
+    // A binding nothing reads does not compile, so the handle is used.
+    instance: (e) => [`${e.sym.var} := client.${e.sym.accessor}(nil)`, `fmt.Println(${e.sym.var}.GetName()) // ${str(e.name)}`],
+    read: (value, key) => `${value}[${str(key)}]`,
+  },
+
+  notes: {
+    'member:stream': 'It sends the items on the returned channel, which closes when the stream\n' +
+      'ends. A `StreamItem` holds one item in `Item`, or in `Err` the error that\nended the stream: ' +
+      'the error the operation itself would return, sent as the\nlast value. Under `throw: false` in ' +
+      '`callopts["ctrl"]`, no error is sent.',
   },
 
   // A complete program: what the steps use is imported, and each step is a

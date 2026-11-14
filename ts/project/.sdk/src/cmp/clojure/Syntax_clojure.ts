@@ -1,4 +1,4 @@
-import { indentLines, uses } from '@voxgig/sdkgen'
+import { indentLines } from '@voxgig/sdkgen'
 import type { Entry, Expr, Ref, RuntimeFacts, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
@@ -8,7 +8,7 @@ const facts: RuntimeFacts = {
   async: false,
   result: 'raise',
   collection: 'vector',
-  record: '((:data-get entity))',
+  record: '((:data-get {var}))',
   prints: 'record',
 }
 
@@ -19,8 +19,7 @@ const str = (s: string): string => '"' + String(s)
   .replace(/\t/g, '\\t')
   .replace(/\r/g, '\\r') + '"'
 
-const name = (r: Ref): string =>
-  'created' === r.role ? 'created' : ('many' === r.role ? r.entity.sym.vars : r.entity.sym.var)
+const name = (r: Ref): string => r.name
 
 const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
   INTEGER: '1', NUMBER: '1', BOOLEAN: 'true', ARRAY: '(vs/jt)', OBJECT: '(vs/jm)', NULL: 'nil',
@@ -54,18 +53,16 @@ const Syntax: SyntaxType = {
   fence: 'clojure',
   facts,
 
-  client: (s, desc, sc) => {
-    // Every entity namespace the section calls is required here, ahead of it.
-    const used = uses(sc.section).entities
-    const syms = desc.entities.filter((e) => used.includes(e.name)).map((e) => e.sym)
-    return [
-      `(require '[${desc.layout.module} :as ${desc.layout.client}]`,
-      ...syms.map((m) => `         '[${m.module} :as ${m.alias}]`),
-      "         '[voxgig.struct :as vs])",
-      '',
-      `(def client (${desc.layout.ctor} ${0 === s.options.length ? 'nil' : expr({ k: 'map', entries: s.options })}))`,
-    ]
-  },
+  // Every entity namespace the section calls is required, ahead of it.
+  imports: (desc, used) => [
+    `(require '[${desc.layout.module} :as ${desc.layout.client}]`,
+    ...desc.entities.filter((e) => used.entities.includes(e.name)).map((e) => `         '[${e.sym.module} :as ${e.sym.alias}]`),
+    "         '[voxgig.struct :as vs])",
+  ],
+
+  client: (s, desc) => [
+    `(def client (${desc.layout.ctor} ${0 === s.options.length ? 'nil' : expr({ k: 'map', entries: s.options })}))`,
+  ],
 
   call: (s) => [null == s.bind ? callExpr(s) : `(def ${name(s.bind)} ${callExpr(s)})`],
 

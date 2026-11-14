@@ -6,13 +6,14 @@ import { zigVarName } from './utility_zig'
 // The names the zig code generator gives the SDK: the `sdk` module its build
 // declares, ProjectNameSDK, and each entity's accessor method (MainEntity_zig:
 // zigVarName).
-const Naming: NamingType = (model) => ({
+const Naming: NamingType = (_model, _target, tm) => ({
   layout: {
     module: 'sdk',
-    client: model.const.Name + 'SDK',
-    ctor: model.const.Name + 'SDK.new',
+    client: tm('ProjectNameSDK'),
+    ctor: tm('ProjectNameSDK') + '.new',
   },
-  symbols: (e) => ({ accessor: zigVarName(e.name), var: zigVarName(e.name), vars: zigVarName(e.name) + 's' }),
+  symbols: (e) => ({ accessor: zigVarName(e.name), var: zigVarName(e.name) }),
+  ident: zigVarName,
 })
 
 

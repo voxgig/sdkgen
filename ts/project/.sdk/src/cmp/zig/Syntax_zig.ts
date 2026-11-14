@@ -1,4 +1,4 @@
-import { canonToType, indentLines } from '@voxgig/sdkgen'
+import { canonKey, indentLines } from '@voxgig/sdkgen'
 import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
@@ -11,13 +11,14 @@ const facts: RuntimeFacts = {
   record: 'asEntity().data(null)',
   ok: '.ok',
   err: '.err',
+  unusedError: true,
   prints: 'record',
 }
 
 // The fixed API the reference page documents: Main.fragment.zig,
 // Entity.fragment.zig and core/types.zig (the Entity interface).
 const refFacts: RefFacts = {
-  classes: true,
+  entityBy: 'class',
   noun: 'Methods',
   none: 'h.vnull()',
   keys: 'bare',
@@ -42,21 +43,26 @@ const refFacts: RefFacts = {
     { kind: 'prepare', sig: 'prepare(fetchargs: Value) E!Value' },
   ],
   entity: [
-    { kind: 'data', sig: 'data(args: ?Value) Value' },
-    { kind: 'match', sig: 'matchv(args: ?Value) Value' },
+    { kind: 'dataArg', sig: 'data(args: ?Value) Value' },
+    { kind: 'matchArg', sig: 'matchv(args: ?Value) Value' },
     { kind: 'streamList', sig: 'stream(action: []const u8, args: Value, callopts: Value) StreamResult' },
     { kind: 'name', sig: 'get_name() []const u8' },
   ],
   direct: { returns: 'Value' },
-  prepare: { returns: 'E!Value', fails: 'errorunion' },
+  prepare: { returns: 'E!Value', fails: 'note' },
   body: { values: 'a string value holding the bytes' },
   cancel: false,
 }
 
 const str = (s: string): string => JSON.stringify(s)
 
-const name = (r: Ref): string =>
-  'created' === r.role ? 'created' : ('many' === r.role ? r.entity.sym.vars : r.entity.sym.var)
+const name = (r: Ref): string => r.name
+
+// Zig emits no typed models (everything is a Value), so the reference names a
+// field's type as the old page did, by the zig type its canonical type maps to.
+const zigType = (t: any): string => ({
+  STRING: '[]const u8', INTEGER: 'i64', NUMBER: 'f64', BOOLEAN: 'bool', ARRAY: 'Value (array)', OBJECT: 'Value (object)',
+} as Record<string, string>)[canonKey(t)] ?? 'Value'
 
 const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
   INTEGER: 'h.vnum(1)', NUMBER: 'h.vnum(1)', BOOLEAN: 'h.vbool(true)', ARRAY: 'h.olist()', OBJECT: 'h.omap()', NULL: 'h.vnull()',
@@ -78,14 +84,22 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `.{ ${str(en.key)}, ${expr(en.value)} }`
 
-// A map two levels down stays on its member's line.
+// A map two levels down stays on its member's line; a member's type, where it
+// has one, follows it.
 const members = (entries: Entry[], pad: string, depth = 0): string[] =>
   entries.flatMap((en) => 'map' === en.value.k && 0 === depth
     ? [`${pad}.{ ${str(en.key)}, h.jo(&.{`, ...members(en.value.entries, pad + '    ', depth + 1), `${pad}}) },`]
-    : [`${pad}${pair(en)},`])
+    : [`${pad}${pair(en)},` + (null == en.type ? '' : ' // ' + zigType(en.type))])
+
+// A write's data with types or a note is laid out a member per line.
+const argOf = (s: Extract<Stmt, { k: 'call' }>): string => {
+  if (null == s.arg) return 'h.vnull()'
+  if (!(s.wide && (null != s.note || s.arg.some((en) => null != en.type)))) return expr({ k: 'map', entries: s.arg })
+  return 'h.jo(&.{\n' + [...members(s.arg, '    '), ...(null == s.note ? [] : ['    // ' + s.note])].join('\n') + '\n})'
+}
 
 const callExpr = (s: Extract<Stmt, { k: 'call' }>): string =>
-  `client.${s.entity.sym.accessor}(h.vnull()).${(facts.method as any)[s.op]}(${null == s.arg ? 'h.vnull()' : expr({ k: 'map', entries: s.arg })}, h.vnull())`
+  `client.${s.entity.sym.accessor}(h.vnull()).${(facts.method as any)[s.op]}(${argOf(s)}, h.vnull())`
 
 const failed = (what: string): string => `std.debug.print("${what} failed: {s}\\n", .{e.msg})`
 
@@ -97,11 +111,13 @@ const Syntax: SyntaxType = {
   fence: 'zig',
   facts,
 
-  client: (s, desc) => [
+  imports: (desc) => [
     'const std = @import("std");',
     `const ${desc.layout.module} = @import("${desc.layout.module}");`,
     `const h = ${desc.layout.module}.h;`,
-    '',
+  ],
+
+  client: (s, desc) => [
     0 === s.options.length
       ? `const client = ${desc.layout.module}.${desc.layout.ctor}(h.vnull());`
       : `const client = ${desc.layout.module}.${desc.layout.ctor}(h.jo(&.{\n${members(s.options, '    ').join('\n')}\n}));`,
@@ -134,9 +150,9 @@ const Syntax: SyntaxType = {
     '}',
   ],
 
-  print: (s, sc) => 'fields' === s.what.k
-    ? [`std.debug.print("${s.what.fields.map(() => '{s}').join(' ')}\\n", .{${Syntax.expr(s.what, sc)}});`]
-    : [`std.debug.print("{s}\\n", .{${Syntax.expr(s.what, sc)}});`],
+  print: (s) => 'fields' === s.what.k
+    ? [`std.debug.print("${s.what.fields.map(() => '{s}').join(' ')}\\n", .{${expr(s.what)}});`]
+    : [`std.debug.print("{s}\\n", .{${expr(s.what)}});`],
 
   // The first statement is the call switched on; the rest is its .ok arm.
   attempt: (s, inner) => {
@@ -161,9 +177,16 @@ const Syntax: SyntaxType = {
 
   ref: {
     facts: refFacts,
-    type: (t) => canonToType(t, 'zig'),
+    type: zigType,
     key: (_container, path) => path.join('.'),
     instance: (e) => [`const ${e.sym.var} = client.${e.sym.accessor}(h.vnull());`],
+    read: (value, key) => `h.get_bool(${value}, ${str(key)})`,
+  },
+
+  notes: {
+    'member:prepare': 'On failure it returns the error of its error union, for `try` or `catch`.',
+    'member:streamList': 'Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with\n' +
+      'whatever data the failure left; otherwise `.err` holds the branded error.',
   },
 }
 
