@@ -38,6 +38,9 @@ type Forms = {
   // opens.
   decl: (name: string) => RegExp
   open?: '(' | '[' // the bracket a parameter list opens with; default '('
+  // A declaration may have no parameter list at all (Ruby's `def name`): it
+  // then takes none.
+  bare?: boolean
   split?: 'comma' | 'space' // how parameters are separated; default 'comma'
   receiver?: RegExp // a leading parameter the runtime declares and a signature omits
   // Whether a parameter may be left out by the caller.
@@ -150,10 +153,11 @@ function findDecls(forms: Forms, files: { file: string, text: string }[], name: 
     for (const m of text.matchAll(re)) {
       const at = (m.index as number) + m[0].length
       const b = bracketed(text, at, forms.open || '(')
-      if (null == b) continue
-      let params = splitParams(b.inner, forms.split)
+      if (null == b && !(forms.bare && text[at] !== (forms.open || '('))) continue
+      const end = null == b ? at : b.end
+      let params = null == b ? [] : splitParams(b.inner, forms.split)
       if (forms.receiver && 0 < params.length && forms.receiver.test(params[0])) params = params.slice(1)
-      const after = text.slice(b.end, b.end + 200).split('\n')[0]
+      const after = text.slice(end, end + 200).split('\n')[0]
       const before = text.slice(Math.max(0, (m.index as number) - 400), m.index as number)
       out.push({
         name, params, returns: forms.returns(after, before, m[0]).trim(), head: m[0],
