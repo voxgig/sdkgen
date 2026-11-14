@@ -54,6 +54,10 @@ const forms: Forms = {
   namesWhy: 'elixir passes by position; the page names the entity argument entity and the setter argument by what it holds',
   uncompared: { returns: 'the runtime writes @spec on the operations only; the client and entity members carry none, so their declared returns are compared with nothing' },
   cite: {
+    'ref.facts.entity[0].copy': { value: true, file: "tm/elixir/lib/projectname/entity_base.ex", quote: "S.clone(S.getprop(ent, \"_data\"))" },
+    'notes.ctor': { value: "Build `options` from a native map with `{names.helpers}.deep/1`.", file: "tm/elixir/lib/projectname/helpers.ex", quote: ["def deep(v) do"] },
+    'notes.tutorial:list': { value: "Named with its arity, it is `list/2`; `Voxgig.Struct.getelem/2` reads an item.", file: "src/cmp/elixir/fragment/EntityListOp.fragment.ex", quote: ["def list(ent, reqmatch \\\\ nil, ctrl \\\\ nil) do"], also: [{ file: "tm/elixir/lib/utility/struct/voxgig_struct.ex", quote: ["def getelem(val, key, alt \\\\ nil) do"] }] },
+    'notes.tutorial:load': { value: "Named with its arity, it is `load/2`.", file: "src/cmp/elixir/fragment/EntityLoadOp.fragment.ex", quote: ["def load(ent, reqmatch \\\\ nil, ctrl \\\\ nil) do"] },
     'facts.collection': { value: "`Voxgig.Struct` list",
       file: 'src/cmp/elixir/fragment/EntityListOp.fragment.ex', quote: '# Returns a list of entityname entities, one per record, whose data_get/1',
       also: [{ file: MAIN, quote: 'alias Voxgig.Struct, as: S' }],
