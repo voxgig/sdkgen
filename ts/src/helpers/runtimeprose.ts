@@ -134,7 +134,7 @@ function listComment(f: RuntimeFacts, title: string, cls?: string): string {
 }
 
 function loadComment(f: RuntimeFacts, title: string, cls?: string): string {
-  const one = null != f.listOf && null != cls ? `the entity, a ${cls}` : 'the entity'
+  const one = null != f.listOf && null != cls ? `the entity, ${a(cls)}` : 'the entity'
   return `${title}: ${'union' === f.result ? f.ok + ' is ' : ''}${one}; ${failsShort(f)}`
 }
 
