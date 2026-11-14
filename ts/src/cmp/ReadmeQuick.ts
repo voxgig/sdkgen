@@ -106,12 +106,17 @@ function quickText(p: Syntax, desc: SdkDescription): string {
   const w = p.words
   const steps: { title: string, text: string, block: string }[] = []
 
-  steps.push({ title: 'Create a client', text: clientText(desc), block: printBlock(p, clientBlock(desc), desc, sc) })
+  const list = listBlock(desc)
+  const load = loadBlock(desc)
+  const writes = writeBlock(desc)
+  const client = clientBlock(desc)
+  sc.section = [client, list, load, writes].flatMap((b) => b || [])
+
+  steps.push({ title: 'Create a client', text: clientText(desc), block: printBlock(p, client, desc, sc) })
   const lead = ['creating a client']
 
   const ent = (name: string) => desc.entities.find((e) => e.name === name) as any
 
-  const list = listBlock(desc)
   if (null != q && null != list) {
     const n = ent(q.entity).Name.toLowerCase()
     lead.push(`listing ${n} records`)
@@ -122,7 +127,6 @@ function quickText(p: Syntax, desc: SdkDescription): string {
     })
   }
 
-  const load = loadBlock(desc)
   if (null != q && null != q.load && null != load) {
     const e = ent(q.load.entity)
     const n = e.Name.toLowerCase()
@@ -136,7 +140,6 @@ function quickText(p: Syntax, desc: SdkDescription): string {
     })
   }
 
-  const writes = writeBlock(desc)
   if (null != q && null != writes) {
     const ops = writeOps(desc)
     const n = ent(q.entity).Name.toLowerCase()

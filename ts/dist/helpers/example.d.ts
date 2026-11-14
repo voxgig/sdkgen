@@ -74,6 +74,7 @@ type Scope = {
     declared: Set<string>;
     local: Set<string>;
     stmts: Stmt[];
+    section: Stmt[];
 };
 type RuntimeWords = {
     op: (name: string) => string;

@@ -93,10 +93,14 @@ function quickText(p, desc) {
     const sc = (0, example_1.newScope)();
     const w = p.words;
     const steps = [];
-    steps.push({ title: 'Create a client', text: clientText(desc), block: (0, example_1.printBlock)(p, (0, example_1.clientBlock)(desc), desc, sc) });
+    const list = (0, example_1.listBlock)(desc);
+    const load = (0, example_1.loadBlock)(desc);
+    const writes = (0, example_1.writeBlock)(desc);
+    const client = (0, example_1.clientBlock)(desc);
+    sc.section = [client, list, load, writes].flatMap((b) => b || []);
+    steps.push({ title: 'Create a client', text: clientText(desc), block: (0, example_1.printBlock)(p, client, desc, sc) });
     const lead = ['creating a client'];
     const ent = (name) => desc.entities.find((e) => e.name === name);
-    const list = (0, example_1.listBlock)(desc);
     if (null != q && null != list) {
         const n = ent(q.entity).Name.toLowerCase();
         lead.push(`listing ${n} records`);
@@ -106,7 +110,6 @@ function quickText(p, desc) {
             block: (0, example_1.printBlock)(p, list, desc, sc),
         });
     }
-    const load = (0, example_1.loadBlock)(desc);
     if (null != q && null != q.load && null != load) {
         const e = ent(q.load.entity);
         const n = e.Name.toLowerCase();
@@ -119,7 +122,6 @@ function quickText(p, desc) {
             block: (0, example_1.printBlock)(p, load, desc, sc),
         });
     }
-    const writes = (0, example_1.writeBlock)(desc);
     if (null != q && null != writes) {
         const ops = (0, example_1.writeOps)(desc);
         const n = ent(q.entity).Name.toLowerCase();

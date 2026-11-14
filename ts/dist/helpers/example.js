@@ -160,7 +160,7 @@ function printBlock(p, stmts, desc, sc) {
     return '```' + p.fence + '\n' + lines.join('\n') + '\n```\n';
 }
 function newScope() {
-    return { declared: new Set(), local: new Set(), stmts: [] };
+    return { declared: new Set(), local: new Set(), stmts: [], section: [] };
 }
 function indent(lines, by) {
     return lines.map((l) => '' === l ? l : by + l);

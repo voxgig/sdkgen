@@ -1,4 +1,4 @@
-import { indentLines } from '@voxgig/sdkgen'
+import { indentLines, uses } from '@voxgig/sdkgen'
 import type { Entry, Expr, Ref, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
@@ -48,14 +48,9 @@ const Syntax: SyntaxType = {
     data: '`((:data-get entity))`',
   },
 
-  client: (s, desc) => {
+  client: (s, desc, sc) => {
     // Every entity namespace the section calls is required here, ahead of it.
-    const q = desc.quick
-    const ents: string[] = []
-    if (null != q) {
-      ents.push(q.entity)
-      if (null != q.load && !ents.includes(q.load.entity)) ents.push(q.load.entity)
-    }
+    const ents = uses(sc.section).entities
     return [
       "(require '[sdk.api :as api]",
       ...ents.map((n) => `         '[sdk.entity.${n} :as e-${n}]`),

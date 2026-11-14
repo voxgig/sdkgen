@@ -154,7 +154,9 @@ function uses(stmts: Stmt[]): Uses {
 
 // What one section's printing has declared so far; a printer that hoists a
 // declaration (a handle, an error slot) records it here.
-type Scope = { declared: Set<string>, local: Set<string>, stmts: Stmt[] }
+// `section` is every statement the section prints, known before its first
+// block, for a printer that declares ahead what later blocks use.
+type Scope = { declared: Set<string>, local: Set<string>, stmts: Stmt[], section: Stmt[] }
 
 // The words the shared prose uses for this runtime's parts. Data, not text:
 // the sentences that hold them are written once.
@@ -209,7 +211,7 @@ function printBlock(p: Syntax, stmts: Stmt[], desc: SdkDescription, sc: Scope): 
 
 
 function newScope(): Scope {
-  return { declared: new Set(), local: new Set(), stmts: [] }
+  return { declared: new Set(), local: new Set(), stmts: [], section: [] }
 }
 
 
