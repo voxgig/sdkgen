@@ -1,9 +1,11 @@
 // How the rb runtime writes things: methods of the client and entity classes,
 // a method with no parameters written without a parameter list, and the
-// return a method documents in its `@return [Type]` comment.
+// return a method documents in its comment block.
 import type { Forms } from './forms'
 import { defaultSigName, defaultSigParams, defaultSigReturns } from './forms'
 
+const MAIN = 'src/cmp/rb/fragment/Main.fragment.rb'
+const ENTITY = 'src/cmp/rb/fragment/Entity.fragment.rb'
 const OPS = ['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/rb/fragment/Entity${o}Op.fragment.rb`)
 
 // The comment block directly above a declaration.
@@ -17,14 +19,17 @@ const docOf = (before: string): string => {
 
 const forms: Forms = {
   files: {
-    client: ['src/cmp/rb/fragment/Main.fragment.rb'],
+    client: ['src/cmp/rb/fragment/Main.fragment.rb', 'src/cmp/rb/MainEntity_rb.ts'],
     entity: ['src/cmp/rb/fragment/Entity.fragment.rb'],
     ops: OPS,
   },
   decl: (name) => new RegExp(`^[ \\t]+def (?:self\\.)?${name}(?=[(\\s])`, 'm'),
   bare: true,
+  param: (p) => ({ name: (/^\*{0,2}&?(\w+)/.exec(p.trim()) || ['', ''])[1], type: '' }),
   optional: (p) => /=/.test(p),
   returns: (_after, before) => (/@return \[([^\]]+)\]/.exec(docOf(before)) || [])[1] || '',
+  entityCtor: 'initialize',
+  ctorDecl: 'initialize',
   public: {
     client: /^  def (?:self\.)?((?!initialize\b)[a-z]\w*[?!]?)|(?<=^  attr_accessor[^\n]*:)(\w+)/gm,
     entity: /^  def (?:self\.)?((?!initialize\b)[a-z]\w*[?!]?)|(?<=^  attr_accessor[^\n]*:)(\w+)/gm,
@@ -56,9 +61,30 @@ const forms: Forms = {
   sigName: (sig) => sig.includes('(') ? defaultSigName(sig) : ((/^([\w{}]+[?!]?)/.exec(sig) || [])[1] || ''),
   sigParams: (sig) => sig.includes('(') ? defaultSigParams(sig) : [],
   sigReturns: (sig) => sig.includes('(') ? defaultSigReturns(sig) : ((/->\s*(.+)$/.exec(sig) || [])[1] || '').trim(),
-  tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'ProjectNameSDK.new' },
+  tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'ProjectNameSDK.new', accessor: '${entity.Name}' },
   types: { column: 'rb' },
+
+  // The porter's, from here on.
+  renames: { args: ['data', 'match'] },
+  namesWhy: 'Ruby passes these by position; the runtime names the setter argument args',
+  uncompared: { returns: 'the runtime documents a return with `@return` on some methods only; the facts that rest on the others are cited' },
+  cite: {
+    'facts.recordType': { file: ENTITY, quote: '@return [EntityName, Hash]' },
+    'ref.facts.container': { file: MAIN, quote: 'out.is_a?(Hash) ? out : {}' },
+    'ref.facts.ctor[0]': { file: 'src/cmp/rb/Main_rb.ts', quote: 'require_relative \'feature/base_feature\'' },
+    'ref.facts.client[1].kind': { file: MAIN, quote: 'def get_utility\n    ProjectNameUtility.copy(@_utility)' },
+    'ref.facts.direct.returns': { file: MAIN, quote: '"ok" => false,', unquoted: { Hash: 'the result is a Hash literal' } },
+    'ref.facts.prepare.returns': { file: MAIN, quote: 'fetchdef, fd_err = utility.make_fetch_def.call(ctx)', unquoted: { Hash: 'make_fetch_def builds the fetch definition as a Hash' } },
+    'ref.facts.prepare.fails': { file: MAIN, quote: 'raise fd_err if fd_err' },
+    'ref.facts.body.values': {
+      file: 'tm/rb/utility/fetcher.rb',
+      quote: 'if body_str.is_a?(String)\n        request.body = body_str\n      elsif body_str.respond_to?(:read)',
+    },
+    'ref.facts.body.once': { file: 'tm/rb/utility/media.rb', quote: 'body.respond_to?(:read) ? body.read : body' },
+    'ref.facts.cancel': { file: 'tm/rb/utility/fetcher.rb', quote: 'http = Net::HTTP.new(uri.host, uri.port, purl.host, purl.port, purl.user, purl.password)' },
+  },
   exceptions: {
+    'ref.facts.accessor.arg': 'WRONG: the accessor passes its argument to the entity constructor as entopts (MainEntity_rb.ts `def ${entity.Name}(data = nil)` ... `${cls}.new(self, data)`; Entity.fragment.rb:7 `def initialize(client, entopts = nil)`); the page says "Pass `nil` for no initial data."',
     'returns:entity dataGet': 'the runtime documents `[EntityName, Hash]`: the typed Struct name or a Hash; the page names the Hash, as the old page did',
   },
 }
