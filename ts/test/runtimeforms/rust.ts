@@ -67,13 +67,13 @@ const forms: Forms = {
         ProjectNameSDK: 'the generator spells it ${model.const.Name}SDK',
       },
     },
-    'ref.facts.client[1].kind': { file: MAIN, quote: 'pub fn get_utility(&self) -> Rc<Utility> {\n        Utility::copy(&self.utility)' },
-    'ref.facts.prepare.fails': { file: MAIN, quote: 'pub fn prepare(&self, fetchargs: Value) -> Result<Value, ProjectNameError> {' },
-    'ref.facts.body.values': {
+    'ref.facts.client[1].kind': { value: "utility", file: MAIN, quote: 'pub fn get_utility(&self) -> Rc<Utility> {\n        Utility::copy(&self.utility)' },
+    'ref.facts.prepare.fails': { value: "style", file: MAIN, quote: 'pub fn prepare(&self, fetchargs: Value) -> Result<Value, ProjectNameError> {' },
+    'ref.facts.body.values': { value: "a string, or bytes as `bytes_value(&[u8])`",
       file: 'tm/rust/utility/media.rs', quote: ['pub fn bytes_value(bytes: &[u8]) -> Value {', 'Value::Str(s) => Some(s.as_bytes().to_vec()),'],
       unquoted: { 'bytes_value(&[u8])': 'the signature bytes_value(bytes: &[u8]) with its parameter name left out' },
     },
-    'ref.facts.cancel': { file: 'tm/rust/utility/fetcher.rs', quote: 'AGENT.get_or_init(|| ureq::AgentBuilder::new().build()).clone()' },
+    'ref.facts.cancel': { value: false, file: 'tm/rust/utility/fetcher.rs', quote: 'AGENT.get_or_init(|| ureq::AgentBuilder::new().build()).clone()' },
   },
   exceptions: {
     'notes.member:direct': 'WRONG: direct never returns Err. A request that could not be made comes back as Ok with ok false: prepare failing (Main.fragment.rs:245-251), the fetch failing (272-278), no response (282-287) and an unreadable one (338-341) all return Ok(jo(... ("ok", Value::Bool(false)) ...)); the note says Err "is reserved for a request that could not be made"',
