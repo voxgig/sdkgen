@@ -2,21 +2,24 @@
 // and of each entity module, typed by @spec.
 import type { Forms } from './forms'
 
+const MAIN = 'src/cmp/elixir/fragment/Main.fragment.ex'
 const OPS = ['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/elixir/fragment/Entity${o}Op.fragment.ex`)
 
 const forms: Forms = {
   files: {
-    client: ['src/cmp/elixir/fragment/Main.fragment.ex'],
+    client: ['src/cmp/elixir/fragment/Main.fragment.ex', 'src/cmp/elixir/MainEntity_elixir.ts'],
     entity: ['tm/elixir/lib/projectname/entity_base.ex', 'src/cmp/elixir/fragment/Entity.fragment.ex'],
     ops: OPS,
   },
   decl: (name) => new RegExp(`^[ \\t]*def ${name}(?=\\()`, 'm'),
+  param: (p) => ({ name: (/^(\w+)/.exec(p.trim()) || ['', ''])[1], type: '' }),
   optional: (p) => /\\\\/.test(p),
   // The return is the @spec's, ahead of the def.
   returns: (_after, before) => {
     const specs = [...before.matchAll(/@spec [\w?!]+\(.*\)\s*::\s*(.+)/g)]
     return 0 < specs.length ? specs[specs.length - 1][1] : ''
   },
+  entityCtor: 'new',
   public: {
     client: /^  def ([a-z]\w*)\(/gm,
     entity: /^  def ([a-z]\w*)\(/gm,
@@ -43,8 +46,30 @@ const forms: Forms = {
     return null == m ? { name: rec } : { name: m[1], arity: +m[2] }
   },
   sigName: (sig) => (/(?:^|[.\s])([a-z_{][\w{}]*)\s*\(/.exec(sig.replace(/^\{module\}\./, '')) || [])[1] || '',
-  tokens: { Class: 'EntyClass', client: 'ProjectName', sdk: 'ProjectName', ctor: 'new', module: 'ProjectName' },
+  tokens: { Class: 'EntyClass', client: 'ProjectName', sdk: 'ProjectName', ctor: 'new', module: 'ProjectName', accessor: '${accessor}' },
   types: { column: 'elixir' },
+
+  // The porter's, from here on.
+  renames: { ent: 'entity', args: ['data', 'match'] },
+  namesWhy: 'elixir passes by position; the page names the entity argument entity and the setter argument by what it holds',
+  uncompared: { returns: 'the runtime writes @spec on the operations only; the client and entity members carry none, so their declared returns are compared with nothing' },
+  cite: {
+    'facts.collection': {
+      file: 'src/cmp/elixir/fragment/EntityListOp.fragment.ex', quote: '# Returns a list of entityname entities, one per record, whose data_get/1',
+      also: [{ file: MAIN, quote: 'alias Voxgig.Struct, as: S' }],
+    },
+    'ref.facts.container': { file: MAIN, quote: ['alias Voxgig.Struct, as: S', 'fetchargs = if S.ismap(fetchargs), do: fetchargs, else: S.jm([])'] },
+    'ref.facts.client[1].kind': { file: MAIN, quote: 'def get_utility(client), do: S.getprop(client, "_utility")' },
+    'ref.facts.direct.returns': { file: MAIN, quote: 'S.jm(["ok", false, "err", err])', unquoted: { 'map()': 'S.jm builds a map' } },
+    'ref.facts.prepare.returns': { file: MAIN, quote: 'def prepare(client, fetchargs \\\\ nil) do', unquoted: { 'map()': 'the fetch definition, a map' } },
+    'ref.facts.prepare.fails': { file: MAIN, quote: 'raise Context.make_error(ctx, "spec_method_allow",' },
+    'ref.facts.body.values': {
+      file: 'tm/elixir/lib/projectname/utility.ex',
+      quote: ['scalar = is_binary(body) or is_number(body) or is_boolean(body)', 'S.setprop(fetchdef, "body", body)'],
+    },
+    'ref.facts.cancel': { file: 'tm/elixir/lib/projectname/utility.ex', quote: 'case :httpc.request(method, request, http_opts, body_format: :binary) do' },
+    'notes.member:utilityBase': { file: MAIN, quote: 'def get_utility(client), do: S.getprop(client, "_utility")' },
+  },
   exceptions: {
     'optional:opMatched list': 'the runtime defaults the match, and a nested entity\'s list needs its parent: the page shows it required, beside the sentence naming the members (stage 3, ref-10)',
     ...Object.fromEntries(['op list', 'op load', 'op create', 'op update', 'op patch', 'op remove', 'opMatched list']
