@@ -10,7 +10,7 @@ import {
 import { credentialPlacement, loadOptional } from '../utility'
 import { describeTarget, topQuickText } from './ReadmeQuick'
 import { optionalComponent } from '../helpers/optional'
-import { featureDocs } from './FeatureDocs'
+import { activeByDefault, featureDocs } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
 import {
@@ -257,8 +257,10 @@ ${tagline}
     // Named here, in one line, with the detail left to each target's README.
     const features = featureDocs(model)
     if (0 < features.length) {
+      const on = features.filter(activeByDefault).map((f: FeatureDoc) => '`' + f.name + '`')
       Content(`> **Features:** ${features.map((f: FeatureDoc) => '`' + f.name + '`').join(', ')} — opt-in,
-> inactive until switched on, and configured per client. See the Features
+> inactive until switched on${0 === on.length ? '' : ` except ${on.join(', ')}, which ${1 === on.length ? 'runs' : 'run'} unless
+> disabled`}, and configured per client. See the Features
 > section of any SDK README below for what each one does.
 
 `)
