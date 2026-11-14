@@ -13,9 +13,9 @@ src/cmp/c/EntityOperation_c.ts 2f10c1394cb9
 src/cmp/c/EntityTypes_c.ts f00a21c238c1
 src/cmp/c/Entity_c.ts c3dbf7462270
 src/cmp/c/Gitignore_c.ts cfb70ab8b595
-src/cmp/c/MainEntity_c.ts d6e780384b49
+src/cmp/c/MainEntity_c.ts 9b391d274d18
 src/cmp/c/Main_c.ts c1dce7783690
-src/cmp/c/Naming_c.ts 4887394fab87
+src/cmp/c/Naming_c.ts 9297e3cf6d56
 src/cmp/c/Package_c.ts e1fcd4b774ba
 src/cmp/c/PrepareAuth_c.ts ba13d256f46b
 src/cmp/c/ReadmeEntity_c.ts b1b24f6b4c2f
@@ -29,7 +29,7 @@ src/cmp/c/ReadmeOptions_c.ts f305d6f87635
 src/cmp/c/ReadmeTopHowto_c.ts 53480bd63967
 src/cmp/c/ReadmeTopTest_c.ts 9ae625173e92
 src/cmp/c/Schema_c.ts c4ed362679d7
-src/cmp/c/Syntax_c.ts 9dd4e1b6c5ef
+src/cmp/c/Syntax_c.ts c7cce8cac3a3
 src/cmp/c/TestClean_c.ts 0dbcc7b0dc4c
 src/cmp/c/TestDirect_c.ts 68234fa433d4
 src/cmp/c/TestEntity_c.ts a5d7718e4449
@@ -43,7 +43,7 @@ src/cmp/c/fragment/EntityRemoveOp.fragment.c 4c45a19d2616
 src/cmp/c/fragment/EntityUpdateOp.fragment.c e458ce724b0a
 src/cmp/c/fragment/Main.fragment.c 8ac3961bb6c3
 src/cmp/c/tsconfig.json 720a3f229019
-src/cmp/c/utility_c.ts 412b3308b0d9
+src/cmp/c/utility_c.ts 89bafcd84821
 tm/c/LICENSE 52acd47c245f
 tm/c/Makefile 6cde55dc9835
 tm/c/VERSION e6635045e1d2
@@ -137,7 +137,7 @@ src/cmp/clojure/Entity_clojure.ts 180f52ef5ca9
 src/cmp/clojure/Gitignore_clojure.ts 02def6714f53
 src/cmp/clojure/MainEntity_clojure.ts 52ccd9a252ee
 src/cmp/clojure/Main_clojure.ts 5afda8121ec7
-src/cmp/clojure/Naming_clojure.ts 2330f2f0d98c
+src/cmp/clojure/Naming_clojure.ts 2cac932547d0
 src/cmp/clojure/Package_clojure.ts d675493d467e
 src/cmp/clojure/PrepareAuth_clojure.ts f367a47086b2
 src/cmp/clojure/ReadmeEntity_clojure.ts 6308f4e4157b
@@ -151,7 +151,7 @@ src/cmp/clojure/ReadmeOptions_clojure.ts 74c2c0adcce4
 src/cmp/clojure/ReadmeTopHowto_clojure.ts e1494b86d033
 src/cmp/clojure/ReadmeTopTest_clojure.ts 4079d255054d
 src/cmp/clojure/Schema_clojure.ts 173cdd00d273
-src/cmp/clojure/Syntax_clojure.ts df086b94b96a
+src/cmp/clojure/Syntax_clojure.ts a6e90fe5d352
 src/cmp/clojure/TestClean_clojure.ts db091badfd02
 src/cmp/clojure/TestDirect_clojure.ts ebfe781a958d
 src/cmp/clojure/TestEntity_clojure.ts 9d5860060f5f
@@ -454,7 +454,7 @@ src/cmp/elixir/Entity_elixir.ts 184381df5efb
 src/cmp/elixir/Gitignore_elixir.ts d98ec8dd42b0
 src/cmp/elixir/MainEntity_elixir.ts 09c7cbc1b93c
 src/cmp/elixir/Main_elixir.ts d12f5e9c14a6
-src/cmp/elixir/Naming_elixir.ts 47f738c0a962
+src/cmp/elixir/Naming_elixir.ts d5d00c3218e4
 src/cmp/elixir/Package_elixir.ts 2006f40f300a
 src/cmp/elixir/PrepareAuth_elixir.ts 60ef10da18e2
 src/cmp/elixir/ReadmeEntity_elixir.ts 4fbe9da24c13
@@ -1633,7 +1633,7 @@ src/cmp/rust/Entity_rust.ts 5136b405582f
 src/cmp/rust/Gitignore_rust.ts 285a6decc9dd
 src/cmp/rust/MainEntity_rust.ts cfab71599f0a
 src/cmp/rust/Main_rust.ts 28620b21729d
-src/cmp/rust/Naming_rust.ts f6908af2efe8
+src/cmp/rust/Naming_rust.ts 79889c9dad6e
 src/cmp/rust/Package_rust.ts 2803ef7d34a0
 src/cmp/rust/PrepareAuth_rust.ts f48748ac39c5
 src/cmp/rust/ReadmeEntity_rust.ts 3ff319020626
@@ -2151,7 +2151,7 @@ src/cmp/zig/Entity_zig.ts 5e0f147b7e57
 src/cmp/zig/Gitignore_zig.ts ec49760abeae
 src/cmp/zig/MainEntity_zig.ts d0d2ec1fe12a
 src/cmp/zig/Main_zig.ts 8f91bc6af36f
-src/cmp/zig/Naming_zig.ts f9d667574ba6
+src/cmp/zig/Naming_zig.ts 8529c785720b
 src/cmp/zig/Package_zig.ts 34a84ffff31b
 src/cmp/zig/PrepareAuth_zig.ts ff18ef091eeb
 src/cmp/zig/ReadmeEntity_zig.ts 9a69dff638cb
