@@ -139,7 +139,8 @@ type SdkDescription = {
     quick: DescQuick | null;
     ref: DescRef;
 };
+declare function readsSecret(model: any): boolean;
 declare function sdkDescription(model: any, target: any, naming?: Naming, stdrep?: Record<string, string>): SdkDescription;
 declare function templateName(map: Record<string, string>, name: string): string;
 export type { DescAction, DescField, DescFeature, DescOp, DescOptionRow, DescRef, Naming, SdkDescription, DescLayout, DescSymbols, DescArg, DescEntity, DescOption, DescQuick, DescServerVar, Scalar, };
-export { templateName, sdkDescription, };
+export { templateName, sdkDescription, readsSecret, };

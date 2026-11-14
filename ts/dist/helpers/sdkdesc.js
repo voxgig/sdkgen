@@ -5,6 +5,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.templateName = templateName;
 exports.sdkDescription = sdkDescription;
+exports.readsSecret = readsSecret;
 const apidef_1 = require("@voxgig/apidef");
 const utility_1 = require("@voxgig/apidef/dist/utility");
 const canonType_1 = require("./canonType");
@@ -20,6 +21,10 @@ const utility_2 = require("../utility");
 const memo = new WeakMap();
 // `naming` is the target's Naming hook, which the calling component finds;
 // `stdrep` the template substitutions generation applies (ctx$.stdrep).
+// The runtimes read `secret` only for Basic sent in the header (PrepareAuth).
+function readsSecret(model) {
+    return (0, utility_2.isAuthActive)(model) && (0, utility_2.isHttpBasicAuth)(model) && 'header' === (0, utility_2.resolveAuthIn)(model) && !(0, utility_2.isAuthSuppressed)(model);
+}
 function sdkDescription(model, target, naming, stdrep) {
     const targetName = target.name;
     let byTarget = memo.get(model);
@@ -75,8 +80,7 @@ function describe(model, target, naming, template) {
     const active = (0, utility_2.isAuthActive)(model);
     const where = (0, utility_2.resolveAuthIn)(model);
     const basic = (0, utility_2.isHttpBasicAuth)(model);
-    // The runtimes read `secret` only for Basic sent in the header (PrepareAuth).
-    const secret = active && basic && 'header' === where && !(0, utility_2.isAuthSuppressed)(model);
+    const secret = readsSecret(model);
     const server = (0, serverVars_1.serverVariables)(model)
         .filter((v) => referenced(model, v.name))
         .map((v) => ({ name: v.name, required: v.required, dflt: v.dflt }));

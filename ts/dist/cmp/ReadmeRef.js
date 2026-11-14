@@ -214,10 +214,10 @@ function instanceText(p, desc) {
             `Create a new ${code(typeOf(r, ent))} instance. Pass ${code(r.facts.none)} for no initial\n` +
             ('data' === r.facts.accessor.arg ? 'data.' : 'options.') + '\n\n';
     }
-    // tester() aliases the test constructor, so it is documented with it.
+    // The runtime has every declared member whether or not the test feature
+    // ships: tester() is an alias of the test constructor, documented above.
     for (const m of r.facts.client)
-        if ('tester' !== m.kind || desc.ref.test)
-            out += clientMember(m, p, desc);
+        out += clientMember(m, p, desc);
     if (r.facts.cancel) {
         out += `#### Cancelling a call
 
