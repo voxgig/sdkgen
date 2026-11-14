@@ -29,8 +29,10 @@ type Family =
 
 // `also`: quotes from further files; `unquoted`: a token the fact states
 // that no quote holds, and why the fact still stands.
+// `value`: what was audited, for a fact no quote can hold (prose, a boolean,
+// a kind); the fact must still be it.
 type Citation = {
-  file: string, quote: string | string[]
+  file: string, quote: string | string[], value?: any
   also?: { file: string, quote: string | string[] }[]
   unquoted?: Record<string, string>
 }
