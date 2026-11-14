@@ -148,11 +148,10 @@ src/cmp/clojure/ReadmeInstall_clojure.ts be41896688cd
 src/cmp/clojure/ReadmeIntro_clojure.ts ecca16eaf2c8
 src/cmp/clojure/ReadmeModel_clojure.ts b1cefbb97697
 src/cmp/clojure/ReadmeOptions_clojure.ts 74c2c0adcce4
-src/cmp/clojure/ReadmeRef_clojure.ts 706febf6bf79
 src/cmp/clojure/ReadmeTopHowto_clojure.ts e1494b86d033
 src/cmp/clojure/ReadmeTopTest_clojure.ts 4079d255054d
 src/cmp/clojure/Schema_clojure.ts 173cdd00d273
-src/cmp/clojure/Syntax_clojure.ts 877046225533
+src/cmp/clojure/Syntax_clojure.ts df086b94b96a
 src/cmp/clojure/TestClean_clojure.ts db091badfd02
 src/cmp/clojure/TestDirect_clojure.ts ebfe781a958d
 src/cmp/clojure/TestEntity_clojure.ts 9d5860060f5f
