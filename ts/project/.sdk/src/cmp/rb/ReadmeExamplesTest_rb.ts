@@ -6,12 +6,14 @@ import {
   getModelPath,
 } from '@voxgig/apidef'
 
+import { rbSdkFile } from './utility_rb'
+
 
 const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
   const { target } = props
   const { model } = props.ctx$
 
-  const sdkbase = model.const.Name + '_sdk'
+  const sdkbase = rbSdkFile(model)
   const sdkfile = sdkbase + '.rb'
 
   // Entity accessor (client.<Name>) => fixture storage key (lowercase name),

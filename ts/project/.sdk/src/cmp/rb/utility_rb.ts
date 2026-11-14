@@ -16,6 +16,13 @@ function rbListArgs(entity: any): string {
 }
 
 
+// The SDK's entry file, without its extension: what Main_rb writes and an
+// example requires.
+function rbSdkFile(model: any): string {
+  return model.const.Name + '_sdk'
+}
+
+
 function projectPath(suffix?: string): string {
   return Path.normalize(Path.join(__dirname, '../../..', suffix ?? ''))
 }
@@ -122,4 +129,5 @@ export {
   formatRubyValue,
   projectPath,
   rbListArgs,
+  rbSdkFile,
 }

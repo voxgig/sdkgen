@@ -29,6 +29,7 @@ import { PrepareAuth } from './PrepareAuth_rb'
 import { Gitignore } from './Gitignore_rb'
 import { MainEntity } from './MainEntity_rb'
 import { EntityTypes } from './EntityTypes_rb'
+import { rbSdkFile } from './utility_rb'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -58,7 +59,7 @@ const Main = cmp(async function Main(props: any) {
     }
   })
 
-  File({ name: model.const.Name + '_sdk.' + target.ext }, () => {
+  File({ name: rbSdkFile(model) + '.' + target.ext }, () => {
 
     Fragment(
       {
