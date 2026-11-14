@@ -22,7 +22,7 @@ const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
   const own = loadOptional(ctx$, `./cmp/${t}/ReadmeQuick_${t}`)
   const provider = null == own ? optionalComponent(ctx$, target, 'Syntax') : undefined
   if (provider) {
-    Content(quickText(provider.Syntax, sdkDescription(ctx$, target)))
+    Content(quickText(provider.Syntax, describeTarget(ctx$, target)))
     return
   }
 
@@ -42,6 +42,13 @@ loading a specific record.${'' === placement ? '' : ' ' + placement}
     ReadmeQuick_sdk['ReadmeQuick']({ target })
   }
 })
+
+
+// The target's description, named by its own Naming hook.
+function describeTarget(ctx$: any, target: any): SdkDescription {
+  const hook = optionalComponent(ctx$, target, 'Naming')
+  return sdkDescription(ctx$.model, target, hook ? hook.Naming : undefined)
+}
 
 
 const article = (s: string) => /^[aeiou]/i.test(s) ? 'an' : 'a'
@@ -104,7 +111,8 @@ function wrap(text: string, first = '', rest = ''): string {
 }
 
 
-type Step = { title: string, text: string, stmts: Stmt[] }
+// `comment`: how the step is named inside a program, with its runtime fact.
+type Step = { title: string, text: string, stmts: Stmt[], comment: string }
 
 // The steps every quick start takes, each with its sentences, from the
 // description and the runtime facts alone.
@@ -115,13 +123,13 @@ function quickSteps(p: Syntax, desc: SdkDescription): { steps: Step[], lead: str
   const lead = ['creating a client']
   const ent = (name: string) => desc.entities.find((e) => e.name === name) as any
 
-  steps.push({ title: 'Create a client', text: clientText(desc), stmts: clientBlock(desc) })
+  steps.push({ title: 'Create a client', text: clientText(desc), stmts: clientBlock(desc), comment: 'Create a client' })
 
   const list = listBlock(desc, f)
   if (null != q && null != list) {
     const n = ent(q.entity).Name.toLowerCase()
     lead.push(`listing ${n} records`)
-    steps.push({ title: `List ${n} records`, text: listSentence(f), stmts: list })
+    steps.push({ title: `List ${n} records`, text: listSentence(f), stmts: list, comment: listComment(f, `List ${n} records`) })
   }
 
   const load = loadBlock(desc, f)
@@ -131,7 +139,7 @@ function quickSteps(p: Syntax, desc: SdkDescription): { steps: Step[], lead: str
     lead.push(`loading ${article(n)} ${n}`)
     const nested = null == q.load.nested ? '' :
       `${e.Name} is nested under ${q.load.nested.parent}, so provide the \`${q.load.nested.param}\`. `
-    steps.push({ title: `Load ${article(n)} ${n}`, text: nested + loadSentence(f), stmts: load })
+    steps.push({ title: `Load ${article(n)} ${n}`, text: nested + loadSentence(f), stmts: load, comment: loadComment(f, `Load ${article(n)} ${n}`) })
   }
 
   const writes = writeBlock(desc, f)
@@ -140,7 +148,8 @@ function quickSteps(p: Syntax, desc: SdkDescription): { steps: Step[], lead: str
     const n = ent(q.entity).Name.toLowerCase()
     lead.push(`${series(ops.map((o) => GERUND[o]))} ${article(n)} ${n}`)
     const title = series(ops)
-    steps.push({ title: title.charAt(0).toUpperCase() + title.slice(1), text: '', stmts: writes })
+    const Title = title.charAt(0).toUpperCase() + title.slice(1)
+    steps.push({ title: Title, text: '', stmts: writes, comment: Title })
   }
   return { steps, lead }
 }
@@ -166,7 +175,7 @@ ${wrap(`This tutorial walks through ${series(lead)}.${'' === where ? '' : ' ' + 
       const lead = `${i + 1}. **${s.title}.**`
       out += ('' === s.text ? lead : wrap(s.text.trim(), lead + ' ', '   ')) + '\n'
     })
-    out += '\n' + printProgram(p, steps, desc, sc) + '\n'
+    out += '\n' + printProgram(p, steps.map((s) => ({ title: s.comment, stmts: s.stmts })), desc, sc) + '\n'
     return out
   }
 
@@ -188,10 +197,7 @@ function topQuickText(p: Syntax, desc: SdkDescription): string {
   // The comment names the step, so the program printer adds no title of its own.
   const commented = first.map((s) => ({
     title: '',
-    stmts: 'Create a client' === s.title ? s.stmts : [
-      { k: 'comment', text: /^List /.test(s.title) ? listComment(f, s.title) : loadComment(f, s.title) } as Stmt,
-      ...s.stmts,
-    ],
+    stmts: 'Create a client' === s.title ? s.stmts : [{ k: 'comment', text: s.comment } as Stmt, ...s.stmts],
   }))
   sc.section = commented.flatMap((s) => s.stmts)
   return p.program ? printProgram(p, commented, desc, sc) : printJoined(p, commented, desc, sc)
@@ -200,6 +206,7 @@ function topQuickText(p: Syntax, desc: SdkDescription): string {
 
 export {
   ReadmeQuick,
+  describeTarget,
   quickText,
   topQuickText,
 }

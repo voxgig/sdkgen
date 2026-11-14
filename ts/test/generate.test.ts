@@ -3141,7 +3141,7 @@ main: kit: config: auth: { active: true, prefix: 'Basic', basic: true, in: 'head
       .sort()
 
     deepStrictEqual(dispatched,
-      ['ReadmeTopQuick:go', 'ReadmeTopQuick:py', 'ReadmeTopQuick:ts'],
+      ['ReadmeTopTest:go', 'ReadmeTopTest:py', 'ReadmeTopTest:ts'],
       'registered component did not dispatch for every target')
 
     const absent = sink

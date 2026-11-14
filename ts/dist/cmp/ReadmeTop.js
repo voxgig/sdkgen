@@ -5,7 +5,6 @@ const jostraca_1 = require("jostraca");
 const component_1 = require("../helpers/component");
 const types_1 = require("../types");
 const utility_1 = require("../utility");
-const sdkdesc_1 = require("../helpers/sdkdesc");
 const ReadmeQuick_1 = require("./ReadmeQuick");
 const optional_1 = require("../helpers/optional");
 const FeatureDocs_1 = require("./FeatureDocs");
@@ -78,7 +77,7 @@ function topQuick(ctx$, target) {
         return () => own['ReadmeTopQuick']({ target });
     const provider = (0, optional_1.optionalComponent)(ctx$, target, 'Syntax');
     if (provider)
-        return () => (0, jostraca_1.Content)((0, ReadmeQuick_1.topQuickText)(provider.Syntax, (0, sdkdesc_1.sdkDescription)(ctx$, target)));
+        return () => (0, jostraca_1.Content)((0, ReadmeQuick_1.topQuickText)(provider.Syntax, (0, ReadmeQuick_1.describeTarget)(ctx$, target)));
     const Quick = (0, optional_1.optionalComponent)(ctx$, target, 'ReadmeTopQuick');
     return Quick ? () => Quick['ReadmeTopQuick']({ target }) : undefined;
 }

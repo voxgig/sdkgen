@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReadmeQuick = void 0;
+exports.describeTarget = describeTarget;
 exports.quickText = quickText;
 exports.topQuickText = topQuickText;
 const jostraca_1 = require("jostraca");
@@ -19,7 +20,7 @@ const ReadmeQuick = (0, component_1.cmp)(function ReadmeQuick(props) {
     const own = (0, utility_1.loadOptional)(ctx$, `./cmp/${t}/ReadmeQuick_${t}`);
     const provider = null == own ? (0, optional_1.optionalComponent)(ctx$, target, 'Syntax') : undefined;
     if (provider) {
-        (0, jostraca_1.Content)(quickText(provider.Syntax, (0, sdkdesc_1.sdkDescription)(ctx$, target)));
+        (0, jostraca_1.Content)(quickText(provider.Syntax, describeTarget(ctx$, target)));
         return;
     }
     const placement = (0, utility_1.credentialPlacement)(ctx$.model);
@@ -36,6 +37,11 @@ loading a specific record.${'' === placement ? '' : ' ' + placement}
     }
 });
 exports.ReadmeQuick = ReadmeQuick;
+// The target's description, named by its own Naming hook.
+function describeTarget(ctx$, target) {
+    const hook = (0, optional_1.optionalComponent)(ctx$, target, 'Naming');
+    return (0, sdkdesc_1.sdkDescription)(ctx$.model, target, hook ? hook.Naming : undefined);
+}
 const article = (s) => /^[aeiou]/i.test(s) ? 'an' : 'a';
 function series(items) {
     if (items.length < 3)
@@ -101,12 +107,12 @@ function quickSteps(p, desc) {
     const steps = [];
     const lead = ['creating a client'];
     const ent = (name) => desc.entities.find((e) => e.name === name);
-    steps.push({ title: 'Create a client', text: clientText(desc), stmts: (0, example_1.clientBlock)(desc) });
+    steps.push({ title: 'Create a client', text: clientText(desc), stmts: (0, example_1.clientBlock)(desc), comment: 'Create a client' });
     const list = (0, example_1.listBlock)(desc, f);
     if (null != q && null != list) {
         const n = ent(q.entity).Name.toLowerCase();
         lead.push(`listing ${n} records`);
-        steps.push({ title: `List ${n} records`, text: (0, runtimeprose_1.listSentence)(f), stmts: list });
+        steps.push({ title: `List ${n} records`, text: (0, runtimeprose_1.listSentence)(f), stmts: list, comment: (0, runtimeprose_1.listComment)(f, `List ${n} records`) });
     }
     const load = (0, example_1.loadBlock)(desc, f);
     if (null != q && null != q.load && null != load) {
@@ -115,7 +121,7 @@ function quickSteps(p, desc) {
         lead.push(`loading ${article(n)} ${n}`);
         const nested = null == q.load.nested ? '' :
             `${e.Name} is nested under ${q.load.nested.parent}, so provide the \`${q.load.nested.param}\`. `;
-        steps.push({ title: `Load ${article(n)} ${n}`, text: nested + (0, runtimeprose_1.loadSentence)(f), stmts: load });
+        steps.push({ title: `Load ${article(n)} ${n}`, text: nested + (0, runtimeprose_1.loadSentence)(f), stmts: load, comment: (0, runtimeprose_1.loadComment)(f, `Load ${article(n)} ${n}`) });
     }
     const writes = (0, example_1.writeBlock)(desc, f);
     if (null != q && null != writes) {
@@ -123,7 +129,8 @@ function quickSteps(p, desc) {
         const n = ent(q.entity).Name.toLowerCase();
         lead.push(`${series(ops.map((o) => GERUND[o]))} ${article(n)} ${n}`);
         const title = series(ops);
-        steps.push({ title: title.charAt(0).toUpperCase() + title.slice(1), text: '', stmts: writes });
+        const Title = title.charAt(0).toUpperCase() + title.slice(1);
+        steps.push({ title: Title, text: '', stmts: writes, comment: Title });
     }
     return { steps, lead };
 }
@@ -146,7 +153,7 @@ ${wrap(`This tutorial walks through ${series(lead)}.${'' === where ? '' : ' ' + 
             const lead = `${i + 1}. **${s.title}.**`;
             out += ('' === s.text ? lead : wrap(s.text.trim(), lead + ' ', '   ')) + '\n';
         });
-        out += '\n' + (0, example_1.printProgram)(p, steps, desc, sc) + '\n';
+        out += '\n' + (0, example_1.printProgram)(p, steps.map((s) => ({ title: s.comment, stmts: s.stmts })), desc, sc) + '\n';
         return out;
     }
     steps.forEach((s, i) => {
@@ -165,10 +172,7 @@ function topQuickText(p, desc) {
     // The comment names the step, so the program printer adds no title of its own.
     const commented = first.map((s) => ({
         title: '',
-        stmts: 'Create a client' === s.title ? s.stmts : [
-            { k: 'comment', text: /^List /.test(s.title) ? (0, runtimeprose_1.listComment)(f, s.title) : (0, runtimeprose_1.loadComment)(f, s.title) },
-            ...s.stmts,
-        ],
+        stmts: 'Create a client' === s.title ? s.stmts : [{ k: 'comment', text: s.comment }, ...s.stmts],
     }));
     sc.section = commented.flatMap((s) => s.stmts);
     return p.program ? (0, example_1.printProgram)(p, commented, desc, sc) : (0, example_1.printJoined)(p, commented, desc, sc);

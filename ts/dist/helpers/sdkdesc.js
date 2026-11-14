@@ -10,11 +10,10 @@ const opShape_1 = require("./opShape");
 const opExample_1 = require("./opExample");
 const packageMeta_1 = require("./packageMeta");
 const serverVars_1 = require("./serverVars");
-const optional_1 = require("./optional");
 const utility_1 = require("../utility");
 const memo = new WeakMap();
-function sdkDescription(ctx$, target) {
-    const model = ctx$.model;
+// `naming` is the target's Naming hook, which the calling component finds.
+function sdkDescription(model, target, naming) {
     const targetName = target.name;
     let byTarget = memo.get(model);
     if (null == byTarget) {
@@ -22,9 +21,7 @@ function sdkDescription(ctx$, target) {
         memo.set(model, byTarget);
     }
     if (null == byTarget[targetName]) {
-        const hook = (0, optional_1.optionalComponent)(ctx$, target, 'Naming');
-        const naming = hook ? hook.Naming : genericNaming;
-        byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, target, naming)));
+        byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, target, naming || genericNaming)));
     }
     return byTarget[targetName];
 }

@@ -8,8 +8,7 @@ import {
 } from '../types'
 
 import { credentialPlacement, loadOptional } from '../utility'
-import { sdkDescription } from '../helpers/sdkdesc'
-import { topQuickText } from './ReadmeQuick'
+import { describeTarget, topQuickText } from './ReadmeQuick'
 import { optionalComponent } from '../helpers/optional'
 import { featureDocs } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
@@ -106,7 +105,7 @@ function topQuick(ctx$: any, target: any): (() => void) | undefined {
   const own = loadOptional(ctx$, `./cmp/${t}/ReadmeTopQuick_${t}`)
   if (own) return () => own['ReadmeTopQuick']({ target })
   const provider = optionalComponent(ctx$, target, 'Syntax')
-  if (provider) return () => Content(topQuickText(provider.Syntax, sdkDescription(ctx$, target)))
+  if (provider) return () => Content(topQuickText(provider.Syntax, describeTarget(ctx$, target)))
   const Quick = optionalComponent(ctx$, target, 'ReadmeTopQuick')
   return Quick ? () => Quick['ReadmeTopQuick']({ target }) : undefined
 }

@@ -2159,7 +2159,7 @@ function makeModel(
 // Stand-ins for a project's own components. `ReadmeTopQuick` is implemented
 // by every target, so it proves dispatch; nothing implements `NoSuchThing`,
 // so it proves a target that opts out is skipped rather than fatal.
-const RegisteredQuick = registerComponent('ReadmeTopQuick')
+const RegisteredQuick = registerComponent('ReadmeTopTest')
 const RegisteredAbsent = registerComponent('NoSuchThing')
 
 

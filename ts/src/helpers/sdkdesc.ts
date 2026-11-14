@@ -9,7 +9,6 @@ import { CANON_OP_ORDER, entityDataIdField, entityIdField, entityOps, opRequestS
 import { matchExampleItems, requestExampleItems, requiredItems, sendsId } from './opExample'
 import { envName, packageName } from './packageMeta'
 import { serverVariables } from './serverVars'
-import { optionalComponent } from './optional'
 import {
   isAuthActive, isAuthSuppressed, isHttpBasicAuth, resolveAuthIn, resolveAuthName,
 } from '../utility'
@@ -101,8 +100,8 @@ type SdkDescription = {
 const memo: WeakMap<object, Record<string, SdkDescription>> = new WeakMap()
 
 
-function sdkDescription(ctx$: any, target: any): SdkDescription {
-  const model = ctx$.model
+// `naming` is the target's Naming hook, which the calling component finds.
+function sdkDescription(model: any, target: any, naming?: Naming): SdkDescription {
   const targetName = target.name
   let byTarget = memo.get(model)
   if (null == byTarget) {
@@ -110,9 +109,7 @@ function sdkDescription(ctx$: any, target: any): SdkDescription {
     memo.set(model, byTarget)
   }
   if (null == byTarget[targetName]) {
-    const hook = optionalComponent(ctx$, target, 'Naming')
-    const naming: Naming = hook ? hook.Naming : genericNaming
-    byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, target, naming)))
+    byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, target, naming || genericNaming)))
   }
   return byTarget[targetName]
 }

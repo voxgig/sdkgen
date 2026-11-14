@@ -90,6 +90,6 @@ type SdkDescription = {
     entities: DescEntity[];
     quick: DescQuick | null;
 };
-declare function sdkDescription(ctx$: any, target: any): SdkDescription;
+declare function sdkDescription(model: any, target: any, naming?: Naming): SdkDescription;
 export type { Naming, SdkDescription, DescLayout, DescSymbols, DescArg, DescEntity, DescOption, DescQuick, DescServerVar, Scalar, };
 export { sdkDescription, };

@@ -112,6 +112,11 @@ guide.
 tutorial, every sentence written once and every code block printed by
 the provider; a target without one keeps its own `ReadmeQuick_<lang>`.
 
+`Naming_<lang>` goes with a syntax provider. It exports `Naming`, which
+calls the naming functions the target's code generator calls and returns
+the names the examples use: the module, the client and each entity's
+accessor and variables. A provider reads names only from there.
+
 Each is a file `<Name>_<lang>.ts` in the target's components folder,
 exporting a component named `<Name>`, with one exception.
 `ReadmeIntro_<lang>.ts` exports `ReadmeIntroBody`, which writes only the
