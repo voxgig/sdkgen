@@ -84,7 +84,7 @@ function memberText(kind, p, desc, ent) {
         case 'entopts': return 'Return a copy of the entity options.';
         case 'streamIterator': return 'Run an operation through the pipeline and yield its result items as\nthey arrive, as an async iterator.';
         case 'streamGenerator': return 'Run an operation through the pipeline and yield its result items as\nthey arrive, as a generator.';
-        case 'streamList': return 'Run an operation through the pipeline and return its result items as\none list.';
+        case 'streamList': return 'Run an operation through the pipeline and return its result items as\none list. ' + (0, runtimeprose_1.failsSentence)(p.facts);
         case 'streamChannel': return 'Run an operation through the pipeline and send its result items on the\n' +
             'returned channel, which closes when the stream ends. A `StreamItem` holds\none item in `Item`, ' +
             'or in `Err` the error that ended the stream: the\nerror the operation itself would return, sent as the last value. Under\n' +
@@ -139,7 +139,9 @@ function clientMember(m, p, desc) {
         out += `**Returns:** ${code(r.facts.prepare.returns)}. ` +
             ('value' === r.facts.prepare.fails
                 ? `On failure it ${f.async ? 'resolves to' : 'returns'} the error instead.`
-                : (0, runtimeprose_1.failsSentence)(f)) + '\n\n';
+                : ('errorunion' === r.facts.prepare.fails
+                    ? 'On failure it returns the error of its error union, for `try` or `catch`.'
+                    : (0, runtimeprose_1.failsSentence)(f))) + '\n\n';
     }
     return out;
 }

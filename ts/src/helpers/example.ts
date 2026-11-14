@@ -101,7 +101,8 @@ type RefFacts = {
   client: Member[] // the client's fixed members, in page order
   entity: Member[] // an entity's fixed members, in page order
   direct: { returns: string, signal?: string } // `signal`: the type of fetchargs ctrl.signal
-  prepare: { returns: string, fails: 'style' | 'value' } // 'value': the error is returned, not thrown
+  // 'value': the error is returned in place of the definition; 'errorunion': a language error union
+  prepare: { returns: string, fails: 'style' | 'value' | 'errorunion' }
   body: { values: string, once?: string, binary?: boolean } // what `$body` accepts
   cancel: boolean // operations take an abort signal in ctrl.signal
 }

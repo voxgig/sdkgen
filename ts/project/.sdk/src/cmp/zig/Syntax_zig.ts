@@ -1,5 +1,5 @@
-import { indentLines } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, RuntimeFacts, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import { canonToType, indentLines } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
 const facts: RuntimeFacts = {
@@ -12,6 +12,45 @@ const facts: RuntimeFacts = {
   ok: '.ok',
   err: '.err',
   prints: 'record',
+}
+
+// The fixed API the reference page documents: Main.fragment.zig,
+// Entity.fragment.zig and core/types.zig (the Entity interface).
+const refFacts: RefFacts = {
+  classes: true,
+  noun: 'Methods',
+  none: 'h.vnull()',
+  keys: 'bare',
+  maps: 'maps',
+  container: 'Value',
+  valueType: { STRING: 'string', OBJECT: 'map', ANY: 'any' },
+  ctor: ['const sdk = @import("{module}");', 'const h = sdk.h;', '', 'const client = sdk.{client}.new(options);'],
+  test: [{ sig: 'test_sdk(testopts: Value, sdkopts: Value) *{client}', call: 'const client = sdk.test_sdk(h.vnull(), h.vnull());', args: true }],
+  accessor: { sig: '{accessor}(entopts: Value) *{Class}', arg: 'entopts' },
+  op: {
+    list: 'list(reqmatch: Value, ctrl: Value) EntListResult',
+    load: 'load(reqmatch: Value, ctrl: Value) EntResult',
+    create: 'create(reqdata: Value, ctrl: Value) EntResult',
+    update: 'update(reqdata: Value, ctrl: Value) EntResult',
+    patch: 'patch(reqdata: Value, ctrl: Value) EntResult',
+    remove: 'remove(reqmatch: Value, ctrl: Value) EntResult',
+  },
+  client: [
+    { kind: 'options', sig: 'options_map() Value' },
+    { kind: 'utility', sig: 'get_utility() *Utility' },
+    { kind: 'direct', sig: 'direct(fetchargs: Value) Value' },
+    { kind: 'prepare', sig: 'prepare(fetchargs: Value) E!Value' },
+  ],
+  entity: [
+    { kind: 'data', sig: 'data(args: ?Value) Value' },
+    { kind: 'match', sig: 'matchv(args: ?Value) Value' },
+    { kind: 'streamList', sig: 'stream(action: []const u8, args: Value, callopts: Value) StreamResult' },
+    { kind: 'name', sig: 'get_name() []const u8' },
+  ],
+  direct: { returns: 'Value' },
+  prepare: { returns: 'E!Value', fails: 'errorunion' },
+  body: { values: 'a string value holding the bytes' },
+  cancel: false,
 }
 
 const str = (s: string): string => JSON.stringify(s)
@@ -39,9 +78,10 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `.{ ${str(en.key)}, ${expr(en.value)} }`
 
-const members = (entries: Entry[], pad: string): string[] =>
-  entries.flatMap((en) => 'map' === en.value.k
-    ? [`${pad}.{ ${str(en.key)}, h.jo(&.{`, ...members(en.value.entries, pad + '    '), `${pad}}) },`]
+// A map two levels down stays on its member's line.
+const members = (entries: Entry[], pad: string, depth = 0): string[] =>
+  entries.flatMap((en) => 'map' === en.value.k && 0 === depth
+    ? [`${pad}.{ ${str(en.key)}, h.jo(&.{`, ...members(en.value.entries, pad + '    ', depth + 1), `${pad}}) },`]
     : [`${pad}${pair(en)},`])
 
 const callExpr = (s: Extract<Stmt, { k: 'call' }>): string =>
@@ -118,6 +158,13 @@ const Syntax: SyntaxType = {
   comment: (text) => '// ' + text,
 
   expr: (e) => expr(e),
+
+  ref: {
+    facts: refFacts,
+    type: (t) => canonToType(t, 'zig'),
+    key: (_container, path) => path.join('.'),
+    instance: (e) => [`const ${e.sym.var} = client.${e.sym.accessor}(h.vnull());`],
+  },
 }
 
 

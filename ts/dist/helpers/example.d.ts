@@ -114,7 +114,7 @@ type RefFacts = {
     };
     prepare: {
         returns: string;
-        fails: 'style' | 'value';
+        fails: 'style' | 'value' | 'errorunion';
     };
     body: {
         values: string;
