@@ -27,12 +27,12 @@ const refFacts: RefFacts = {
   test: [{ sig: '{client}.test(testopts?, sdkopts?)', call: 'const client = {client}.test()', args: true }],
   accessor: { sig: '{accessor}(data?: object)', arg: 'data' },
   op: {
-    list: 'list(match: object, ctrl?: object)',
-    load: 'load(match: object, ctrl?: object)',
-    create: 'create(data: object, ctrl?: object)',
-    update: 'update(data: object, ctrl?: object)',
-    patch: 'patch(data: object, ctrl?: object)',
-    remove: 'remove(match: object, ctrl?: object)',
+    list: 'list(match?: object, ctrl?: object)',
+    load: 'load(match?: object, ctrl?: object)',
+    create: 'create(data?: object, ctrl?: object)',
+    update: 'update(data?: object, ctrl?: object)',
+    patch: 'patch(data?: object, ctrl?: object)',
+    remove: 'remove(match?: object, ctrl?: object)',
   },
   client: [
     { kind: 'options', sig: 'options()', returns: 'object' },

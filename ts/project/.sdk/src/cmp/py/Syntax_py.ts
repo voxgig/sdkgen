@@ -29,11 +29,11 @@ const refFacts: RefFacts = {
   accessor: { sig: '{accessor}(data=None)', arg: 'data' },
   op: {
     list: 'list(reqmatch=None, ctrl=None) -> list[{Class}]',
-    load: 'load(reqmatch, ctrl=None) -> {Class}',
+    load: 'load(reqmatch=None, ctrl=None) -> {Class}',
     create: 'create(reqdata, ctrl=None) -> {Class}',
     update: 'update(reqdata, ctrl=None) -> {Class}',
     patch: 'patch(reqdata, ctrl=None) -> {Class}',
-    remove: 'remove(reqmatch, ctrl=None) -> {Class}',
+    remove: 'remove(reqmatch=None, ctrl=None) -> {Class}',
   },
   opMatched: { list: 'list(reqmatch, ctrl=None) -> list[{Class}]' },
   client: [
@@ -44,9 +44,9 @@ const refFacts: RefFacts = {
   ],
   entity: [
     { kind: 'dataGet', sig: 'data_get() -> dict' },
-    { kind: 'dataSet', sig: 'data_set(data)' },
+    { kind: 'dataSet', sig: 'data_set(data=None)' },
     { kind: 'matchGet', sig: 'match_get() -> dict' },
-    { kind: 'matchSet', sig: 'match_set(match)' },
+    { kind: 'matchSet', sig: 'match_set(match=None)' },
     { kind: 'make', sig: 'make() -> Entity' },
     { kind: 'streamGenerator', sig: 'stream(action, args=None, callopts=None)' },
     { kind: 'name', sig: 'get_name() -> str' },

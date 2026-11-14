@@ -37,8 +37,8 @@ const refFacts: RefFacts = {
   client: [
     { kind: 'options', sig: 'options_map(client) :: map()' },
     { kind: 'utilityBase', sig: 'get_utility(client) :: map()' },
-    { kind: 'direct', sig: 'direct(client, fetchargs) :: map()' },
-    { kind: 'prepare', sig: 'prepare(client, fetchargs) :: map()' },
+    { kind: 'direct', sig: 'direct(client, fetchargs \\\\ nil) :: map()' },
+    { kind: 'prepare', sig: 'prepare(client, fetchargs \\\\ nil) :: map()' },
   ],
   entity: [
     { kind: 'dataGet', sig: 'data_get(entity) :: map()' },
