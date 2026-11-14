@@ -30,7 +30,7 @@ src/cmp/c/ReadmeTopHowto_c.ts 53480bd63967
 src/cmp/c/ReadmeTopQuick_c.ts 2bfd2610215f
 src/cmp/c/ReadmeTopTest_c.ts 9ae625173e92
 src/cmp/c/Schema_c.ts c4ed362679d7
-src/cmp/c/Syntax_c.ts 970356fcac1d
+src/cmp/c/Syntax_c.ts 34c079c4baf4
 src/cmp/c/TestClean_c.ts 0dbcc7b0dc4c
 src/cmp/c/TestDirect_c.ts 68234fa433d4
 src/cmp/c/TestEntity_c.ts a5d7718e4449
@@ -2047,7 +2047,7 @@ src/cmp/ts/ReadmeTopQuick_ts.ts c1b85d04f7e7
 src/cmp/ts/ReadmeTopTest_ts.ts 8c614df68cb0
 src/cmp/ts/Schema_ts.ts 28d8eedbb21a
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
-src/cmp/ts/Syntax_ts.ts 8bbc7c0af845
+src/cmp/ts/Syntax_ts.ts 2e082f7aeb0f
 src/cmp/ts/TestClean_ts.ts 7c3843705372
 src/cmp/ts/TestDefinition_ts.ts 8f242daf10a0
 src/cmp/ts/TestDirect_ts.ts cf90eb2a6b45
