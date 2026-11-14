@@ -4,7 +4,6 @@
 // provider implements to print it. Nothing here reads the model: examples are
 // built from an SdkDescription and the provider's declared runtime facts.
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.actionBlock = actionBlock;
 exports.clientBlock = clientBlock;
 exports.entOf = entOf;
 exports.featureBlock = featureBlock;
@@ -138,10 +137,6 @@ function refOpBlock(desc, facts, ent, op) {
             }];
     }
     return [call(entity, op.name, 'remove' === op.name ? arg : (arg || []), null)];
-}
-// A call that selects a custom action.
-function actionBlock(desc, ent, a) {
-    return [call(entOf(desc, ent.name), a.op, [{ key: '$action', value: { k: 'str', text: a.action } }], null)];
 }
 // The client constructed with the named features switched on.
 function featureBlock(names) {

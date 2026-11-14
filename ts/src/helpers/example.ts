@@ -236,11 +236,6 @@ function refOpBlock(desc: SdkDescription, facts: RuntimeFacts, ent: DescEntity, 
   return [call(entity, op.name, 'remove' === op.name ? arg : (arg || []), null)]
 }
 
-// A call that selects a custom action.
-function actionBlock(desc: SdkDescription, ent: DescEntity, a: { action: string, op: string }): Stmt[] {
-  return [call(entOf(desc, ent.name), a.op, [{ key: '$action', value: { k: 'str', text: a.action } }], null)]
-}
-
 // The client constructed with the named features switched on.
 function featureBlock(names: string[]): Stmt[] {
   return [{
@@ -417,7 +412,6 @@ export type {
 }
 
 export {
-  actionBlock,
   clientBlock,
   entOf,
   featureBlock,

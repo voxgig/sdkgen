@@ -228,7 +228,6 @@ ${ent.actions.map((a) => `| ${code(a.action)} | ${code(p.facts.method[a.op])} | 
 An action returns that action's OWN response, which is not necessarily a
 ${ent.Name} record — check the API definition for its shape.
 
-${(0, example_1.printBlock)(p, (0, example_1.actionBlock)(desc, ent, ent.actions[0]), desc, (0, example_1.newScope)())}
 `;
     }
     if (0 < ent.refOps.length) {

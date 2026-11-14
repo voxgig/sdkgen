@@ -130,10 +130,6 @@ declare function loadBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | 
 declare function writeOps(desc: SdkDescription): string[];
 declare function writeBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | null;
 declare function refOpBlock(desc: SdkDescription, facts: RuntimeFacts, ent: DescEntity, op: DescOp): Stmt[] | null;
-declare function actionBlock(desc: SdkDescription, ent: DescEntity, a: {
-    action: string;
-    op: string;
-}): Stmt[];
 declare function featureBlock(names: string[]): Stmt[];
 type Uses = {
     env: boolean;
@@ -203,4 +199,4 @@ declare function printJoined(p: Syntax, steps: {
 declare function newScope(): Scope;
 declare function indent(lines: string[], by: string): string[];
 export type { CallContext, Member, MemberKind, RefFacts, RefSyntax, Ent, Entry, Expr, OpName, ProgramStep, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses, };
-export { actionBlock, clientBlock, entOf, featureBlock, refOpBlock, indent, listBlock, newScope, loadBlock, printBlock, printJoined, printProgram, printStmts, printSteps, uses, writeBlock, writeOps, };
+export { clientBlock, entOf, featureBlock, refOpBlock, indent, listBlock, newScope, loadBlock, printBlock, printJoined, printProgram, printStmts, printSteps, uses, writeBlock, writeOps, };

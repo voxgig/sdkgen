@@ -10,7 +10,7 @@ import { mdCell, mdInline } from '../helpers/markdown'
 import { bodyNoteText } from '../helpers/media'
 import type { DescEntity, SdkDescription } from '../helpers/sdkdesc'
 import {
-  actionBlock, entOf, featureBlock, newScope, printBlock, refOpBlock,
+  entOf, featureBlock, newScope, printBlock, refOpBlock,
 } from '../helpers/example'
 import type { Ent, Expr, Member, MemberKind, OpName, RefSyntax, Syntax } from '../helpers/example'
 import { failsSentence, opText } from '../helpers/runtimeprose'
@@ -252,7 +252,6 @@ ${ent.actions.map((a) => `| ${code(a.action)} | ${code(p.facts.method[a.op as Op
 An action returns that action's OWN response, which is not necessarily a
 ${ent.Name} record — check the API definition for its shape.
 
-${printBlock(p, actionBlock(desc, ent, ent.actions[0]), desc, newScope())}
 `
   }
 
