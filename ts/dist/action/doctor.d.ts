@@ -5,6 +5,8 @@ type DoctorReport = {
     stale: string[];
     missing: string[];
     additive: string[];
+    retired: string[];
+    override: string[];
     superseded: string[];
     unwired: string[];
     orphanModel: string[];

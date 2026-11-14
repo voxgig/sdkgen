@@ -13,6 +13,7 @@ exports.aliasCmpText = aliasCmpText;
 exports.aliasCmpName = aliasCmpName;
 exports.aliasCmpTree = aliasCmpTree;
 exports.pruneStaleTemplates = pruneStaleTemplates;
+exports.pruneRetired = pruneRetired;
 const node_path_1 = __importDefault(require("node:path"));
 const jostraca_1 = require("jostraca");
 const util_1 = require("@voxgig/util");
@@ -29,6 +30,7 @@ const action_1 = require("./action");
 const kind_1 = require("./kind");
 const resolve_1 = require("./resolve");
 const copies_1 = require("./copies");
+const copymerge_1 = require("../helpers/copymerge");
 const CMD_MAP = {
     add: cmd_target_add,
     remove: cmd_target_remove,
@@ -153,6 +155,7 @@ const TargetRoot = (0, jostraca_1.cmp)(function TargetRoot(props) {
                 });
                 return;
             }
+            pruneRetired(ctx$, actx, tfolder + '/src/cmp/' + torigname, 'src/cmp/' + tname, torigname, tname);
             if (aliased) {
                 aliasCmpTree(ctx$, tfolder + '/src/cmp/' + torigname, 'src/cmp/' + tname, torigname, tname);
             }
@@ -250,7 +253,7 @@ function unresolvedFeatures(features, ctx$) {
         }
     });
 }
-function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun, keep) {
+function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun, keep, copies) {
     const { log } = ctx$;
     const fs = ctx$.fs();
     const folder = ctx$.folder ?? '.';
@@ -292,11 +295,13 @@ function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun, keep) {
     // patterns are matched against the source-relative path, the same way Copy
     // applies them.
     const trimmed = (rel) => trim.some((re) => re.test(rel));
-    const want = new Set(sourceFiles.filter((rel) => !trimmed(rel)));
+    const rename = copies?.rename ?? ((rel) => rel);
+    const want = new Set(sourceFiles.filter((rel) => !trimmed(rel)).map(rename));
     const kept = (rel) => true === keep?.patterns.some((re) => re.test(rel));
     const unwanted = listRel(destDir).filter((rel) => !want.has(rel));
     const held = unwanted.filter(kept);
-    const stale = unwanted.filter((rel) => !kept(rel));
+    const stale = null == copies ? unwanted.filter((rel) => !kept(rel)) :
+        retiredCopies(ctx$, toRel, unwanted, copies);
     if (0 < held.length) {
         log.warn({
             point: 'target-template-kept', target: toRel, count: held.length,
@@ -329,6 +334,9 @@ function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun, keep) {
     for (const rel of stale) {
         try {
             fs.unlinkSync(node_path_1.default.join(destDir, rel));
+            if (null != copies) {
+                removeCompiled(fs, folder, toRel + '/' + rel);
+            }
             removed.push(rel);
             log.info({
                 point: 'target-template-prune-file', target: toRel,
@@ -350,6 +358,49 @@ function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun, keep) {
             note: toRel + ': removed ' + removed.length +
                 ' stale template(s) the toolchain no longer provides for this SDK'
         });
+    }
+}
+// Deletes an unshipped component only when the copy record shows it unchanged.
+function pruneRetired(ctx$, actx, fromDir, toRel, origname, name) {
+    pruneStaleTemplates(ctx$, fromDir, toRel, [], !!actx?.opts?.dryrun, undefined, {
+        record: (0, copies_1.readCopies)(ctx$.fs(), ctx$.folder ?? '.'),
+        rename: origname === name ? undefined :
+            (rel) => aliasCmpName(rel, origname, name),
+        discard: true === actx?.flags?.force || copymerge_1.OVERWRITE === (0, copies_1.projectCopyMode)(actx),
+    });
+}
+// A file the record has no entry for may be the project's own.
+function retiredCopies(ctx$, toRel, unwanted, copies) {
+    const fs = ctx$.fs();
+    const folder = ctx$.folder ?? '.';
+    const out = [];
+    for (const rel of unwanted) {
+        const file = toRel + '/' + rel;
+        const same = (0, copies_1.untouched)(fs, folder, copies.record, file);
+        if (true === same || (false === same && true === copies.discard)) {
+            out.push(rel);
+        }
+        else if (false === same) {
+            ctx$.log.warn({
+                point: 'target-component-override', file,
+                note: file + ': its source no longer ships this component, and this ' +
+                    'project changed it, so it is kept and still used in place of the ' +
+                    'shared one. To use the shared one, delete it and its compiled ' +
+                    'output under dist/' + file.replace(/^src\//, '').replace(/\.ts$/, '.js')
+            });
+        }
+    }
+    return out;
+}
+// The loader requires `.sdk/dist/<path>`, and `tsc --build` leaves the output
+// of a deleted source in place.
+function removeCompiled(fs, folder, rel) {
+    const stem = node_path_1.default.join(folder, 'dist', rel.replace(/^src\//, '')
+        .replace(/\.ts$/, ''));
+    for (const ext of ['.js', '.js.map', '.d.ts', '.d.ts.map']) {
+        if (fs.existsSync(stem + ext)) {
+            fs.unlinkSync(stem + ext);
+        }
     }
 }
 function featureCatalogue(ctx$, tfolder) {

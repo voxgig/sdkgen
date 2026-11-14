@@ -125,6 +125,9 @@ const EditionRoot = (0, jostraca_1.cmp)(function EditionRoot(props) {
                 if ('template' === tree.replace) {
                     (0, target_1.pruneStaleTemplates)(ctx$, source.folder + '/' + from[i].path, tree.path, [], !!props.actx?.opts?.dryrun);
                 }
+                else {
+                    (0, target_1.pruneRetired)(ctx$, props.actx, source.folder + '/' + from[i].path, tree.path, source.origname, source.name);
+                }
                 copyTree(ctx$, source, tree, from[i].path);
             });
             log.info({ point: 'edition-done', edition: source.name, note: source.name });
