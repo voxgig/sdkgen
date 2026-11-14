@@ -16,43 +16,73 @@ function opName(f: RuntimeFacts, op: string): string {
   return code('call' === f.named ? m + '()' : m)
 }
 
-function recordClause(f: RuntimeFacts, of: string): string {
-  return `${code(f.record)} reads ${of} record` + (f.recordType ? ` (${a(code(f.recordType))})` : '')
+// The code that reads a record, naming the variable the example binds.
+function record(f: RuntimeFacts, bound: string): string {
+  return f.record.replace(/\{var\}/g, bound)
+}
+
+function recordClause(f: RuntimeFacts, of: string, bound: string): string {
+  return `${code(record(f, bound))} reads ${of} record` + (f.recordType ? ` (${a(code(f.recordType))})` : '')
+}
+
+// The failure verb of the three styles that return the value directly.
+function verb(f: RuntimeFacts): string {
+  return { throw: 'throws', raise: 'raises', die: 'dies', wrapped: 'throws' }[f.result as string] as string
+}
+
+function pairForm(f: RuntimeFacts): string {
+  return f.pairForm || '(value, error)'
+}
+
+// A list's value, naming the type where the language declares one.
+function many(f: RuntimeFacts, cls?: string): string {
+  return null != f.listOf && null != cls
+    ? `${a(code(f.listOf.replace(/\{Class\}/g, cls)))}, one entity per record`
+    : `${a(f.collection)} of entities, one per record`
 }
 
 
 // What a list returns, and how it fails: one sentence (two for `pair`).
-function listSentence(f: RuntimeFacts): string {
+// `bound`: the variable the example binds an item to.
+function listSentence(f: RuntimeFacts, bound: string): string {
   const op = opName(f, 'list')
-  const many = `${a(f.collection)} of entities, one per record`
-  const rec = recordClause(f, 'an entity\'s')
+  const m = many(f)
+  const rec = recordClause(f, 'an entity\'s', bound)
   switch (f.result) {
     case 'throw':
     case 'raise':
-      return `${op} ${f.async ? 'resolves to' : 'returns'} ${many}, and ${f.result}s on failure; ${rec}.`
+    case 'die':
+      return `${op} ${f.async ? 'resolves to' : 'returns'} ${m}, and ${verb(f)} on failure; ${rec}.`
+    case 'wrapped':
+      return `${op} returns a value holding ${m}, and throws on failure; ${code(f.unwrap as string)} ` +
+        `takes one entity out, and ${rec}.`
     case 'pair':
-      return `${op} returns ${code('(value, error)')}: the value is ${many}, and a non-nil ${code(f.errVar as string)} ` +
+      return `${op} returns ${code(pairForm(f))}: the value is ${m}, and a non-nil ${code(f.errVar as string)} ` +
         `reports failure. There is no ${code('{ok, data}')} wrapper; ${rec}.`
     case 'errslot':
-      return `${op} returns ${many}, or ${code(f.nullValue as string)} with ${code(f.errSlot as string)} set on failure, ` +
+      return `${op} returns ${m}, or ${code(f.nullValue as string)} with ${code(f.errSlot as string)} set on failure, ` +
         `so check ${code(f.errVar as string)} after the call; ${rec}.`
     case 'union':
-      return `${op} returns a result whose ${code(f.ok as string)} is ${many}, and whose ${code(f.err as string)} ` +
+      return `${op} returns a result whose ${code(f.ok as string)} is ${m}, and whose ${code(f.err as string)} ` +
         `reports failure; ${rec}.`
   }
 }
 
 
 // What a load returns, and how it fails.
-function loadSentence(f: RuntimeFacts): string {
+function loadSentence(f: RuntimeFacts, bound: string): string {
   const op = opName(f, 'load')
-  const rec = recordClause(f, 'its')
+  const rec = recordClause(f, 'its', bound)
   switch (f.result) {
     case 'throw':
     case 'raise':
-      return `${op} ${f.async ? 'resolves to' : 'returns'} the entity and ${f.result}s on failure; ${rec}.`
+    case 'die':
+      return `${op} ${f.async ? 'resolves to' : 'returns'} the entity and ${verb(f)} on failure; ${rec}.`
+    case 'wrapped':
+      return `${op} returns a value holding the entity, and throws on failure; ${code(f.unwrap as string)} ` +
+        `takes it out, and ${rec}.`
     case 'pair':
-      return `${op} returns ${code('(value, error)')}: the value is the entity, and a non-nil ` +
+      return `${op} returns ${code(pairForm(f))}: the value is the entity, and a non-nil ` +
         `${code(f.errVar as string)} reports failure; ${rec}.`
     case 'errslot':
       return `${op} returns the entity, or ${code(f.nullValue as string)} with ${code(f.errSlot as string)} ` +
@@ -64,31 +94,48 @@ function loadSentence(f: RuntimeFacts): string {
 }
 
 
-// The write comments, where a runtime fact changes what a create returns.
-function createComment(f: RuntimeFacts): string {
-  return 'Create — returns the created entity' +
-    ('errslot' === f.result ? `, or ${f.nullValue} with ${f.errSlot} set` : '')
+// Where a value comes back, for a code comment, in the result style's words.
+function carries(f: RuntimeFacts, value: string): string {
+  switch (f.result) {
+    case 'throw':
+    case 'raise':
+    case 'die':
+      return `${f.async ? 'resolves to' : 'returns'} ${value}`
+    case 'wrapped': return `returns a value holding ${value}`
+    case 'pair': return `the value is ${value}`
+    case 'errslot': return `returns ${value}, or ${f.nullValue} with ${f.errSlot} set`
+    case 'union': return `${f.ok} carries ${value}`
+  }
+}
+
+// The create step's comment: what it returns, as the result style says it,
+// and how its record is read.
+function createComment(f: RuntimeFacts, bound: string): string {
+  return `Create — ${carries(f, 'the created entity')}; ${record(f, bound)} reads its record`
 }
 
 
 // A short form for a code comment: how failure is reported.
 function failsShort(f: RuntimeFacts): string {
   switch (f.result) {
-    case 'throw': return 'throws on failure'
-    case 'raise': return 'raises on failure'
+    case 'throw':
+    case 'raise':
+    case 'die':
+    case 'wrapped': return verb(f) + ' on failure'
     case 'pair': return f.errVar + ' is non-nil on failure'
     case 'errslot': return f.errSlot + ' is set on failure'
     case 'union': return f.err + ' on failure'
   }
 }
 
-function listComment(f: RuntimeFacts, title: string): string {
-  const many = `${a(f.collection.replace(/`/g, ''))} of entities, one per record`
-  return `${title}: ${'union' === f.result ? f.ok + ' is ' : ''}${many}; ${failsShort(f)}`
+function listComment(f: RuntimeFacts, title: string, cls?: string): string {
+  const m = many(f, cls).replace(/`/g, '')
+  return `${title}: ${'union' === f.result ? f.ok + ' is ' : ''}${m}; ${failsShort(f)}`
 }
 
-function loadComment(f: RuntimeFacts, title: string): string {
-  return `${title}: ${'union' === f.result ? f.ok + ' is ' : ''}the entity; ${failsShort(f)}`
+function loadComment(f: RuntimeFacts, title: string, cls?: string): string {
+  const one = null != f.listOf && null != cls ? `the entity, a ${cls}` : 'the entity'
+  return `${title}: ${'union' === f.result ? f.ok + ' is ' : ''}${one}; ${failsShort(f)}`
 }
 
 
@@ -105,8 +152,8 @@ const OP_DOES: Record<string, string> = {
 // What an operation's value is.
 function opValue(f: RuntimeFacts, op: string): string {
   switch (op) {
-    case 'list': return `${a(f.collection)} of entities, one per record`
-    case 'load': return `the entity, whose record ${code(f.record)} reads`
+    case 'list': return many(f)
+    case 'load': return 'the entity'
     case 'remove': return 'the entity, marked as deleted'
     default: return `the ${'patch' === op ? 'patched' : op + 'd'} entity`
   }
@@ -117,7 +164,10 @@ function returnClause(f: RuntimeFacts, value: string): string {
   switch (f.result) {
     case 'throw':
     case 'raise':
-      return `${f.async ? 'Resolves to' : 'Returns'} ${value}, and ${f.result}s on failure.`
+    case 'die':
+      return `${f.async ? 'Resolves to' : 'Returns'} ${value}, and ${verb(f)} on failure.`
+    case 'wrapped':
+      return `Returns a value holding ${value}, and throws on failure.`
     case 'pair':
       return `Returns ${value}; ${code(f.errVar as string)} is non-nil on failure.`
     case 'errslot':
@@ -128,8 +178,9 @@ function returnClause(f: RuntimeFacts, value: string): string {
 }
 
 // The reference's description of one operation. `needs`: what a list match
-// must give; `idInData`: the id key an update or patch must carry.
-function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string | null): string {
+// must give; `idInData`: the id key an update or patch must carry; `bound`:
+// the variable the example binds the result to.
+function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string | null, bound: string): string {
   const parts = [OP_DOES[op]]
   if ('list' === op) {
     parts.push(0 === needs.length
@@ -138,6 +189,7 @@ function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string |
   }
   if (null != idInData) parts.push(`The data must include the entity id, ${code(idInData)}.`)
   parts.push(returnClause(f, opValue(f, op)))
+  if ('load' === op) parts.push(`${code(record(f, bound))} reads its record.`)
   return parts.join(' ')
 }
 
@@ -145,7 +197,9 @@ function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string |
 function failsSentence(f: RuntimeFacts): string {
   switch (f.result) {
     case 'throw':
-    case 'raise': return `It ${f.result}s on failure.`
+    case 'raise':
+    case 'die':
+    case 'wrapped': return `It ${verb(f)} on failure.`
     case 'pair': return `${code(f.errVar as string)} is non-nil on failure.`
     case 'errslot': return `It returns ${code(f.nullValue as string)} with ${code(f.errSlot as string)} set on failure.`
     case 'union': return `Its ${code(f.err as string)} reports failure.`
@@ -161,4 +215,5 @@ export {
   listSentence,
   loadComment,
   loadSentence,
+  record,
 }

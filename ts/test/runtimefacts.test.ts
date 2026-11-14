@@ -92,7 +92,7 @@ const PRESENT: Record<string, RegExp> = {
   name: /getName\(|GetName\(|def get_name\(|\(\*get_name\)|fn get_name\(/,
 }
 
-const kindOf = (k: string): string => k.startsWith('stream') ? 'stream' : ('utilityShared' === k ? 'utility' : k)
+const kindOf = (k: string): string => k.startsWith('stream') ? 'stream' : (k.startsWith('utility') ? 'utility' : k)
 
 
 describe('runtimefacts', () => {

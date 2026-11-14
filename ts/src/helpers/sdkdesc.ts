@@ -3,6 +3,7 @@
 // syntax provider can print from it without reading the model.
 
 import { KIT, getModelPath, nom } from '@voxgig/apidef'
+import { pluralize } from '@voxgig/apidef/dist/utility'
 
 import { canonScalarKey } from './canonType'
 import {
@@ -50,24 +51,29 @@ type DescLayout = {
   client: string // the client type
   ctor: string // the function or constructor an example creates a client with
   names?: Record<string, string> // further names an example imports, by role (rust's entity-base trait, elixir's helpers module)
+  vars?: Record<string, string> // the example variable names shared code chooses, as the language must spell them
 }
 
 // The names the generated code gives one entity, from the same hook.
 type DescSymbols = {
   accessor: string // the client member, or function, that yields the entity
   var: string // a variable holding one entity
-  vars: string // a variable holding a list of them
-  module?: string // what an example must import to call its operations
+  plural: string // a variable holding a list of them: the entity's plural (apidef's), as an identifier
+  module?: string // what an example must import to call its operations; also what a page names the entity by where RefFacts.entityBy is 'module'
   alias?: string // the name that import is bound to
   fields?: Record<string, string> // field -> the identifier a variable named after it takes
-  type?: string // what the reference names the entity by, where neither its class nor its Name is it (elixir's module)
 }
 
 // A target's naming hook: the code generator's own naming functions, which may
 // read the model. Exported as `Naming` by cmp/<target>/Naming_<target>.
-type Naming = (model: any, target: any) => {
+// `tm` substitutes a name as the templates spell it ('ProjectNameSDK') exactly
+// as generation substitutes the templates (ctx$.stdrep). `ident` adapts a
+// variable name that shared code chose to the language's identifier rules
+// (style, reserved words); the description applies it.
+type Naming = (model: any, target: any, tm: (name: string) => string) => {
   layout: DescLayout
-  symbols: (entity: any) => DescSymbols
+  symbols: (entity: any) => Omit<DescSymbols, 'plural'>
+  ident?: (name: string) => string
 }
 
 // One field of an entity's record. `type` is the canonical sentinel, which a
@@ -140,6 +146,7 @@ type DescQuick = {
 
 type SdkDescription = {
   target: string
+  template: Record<string, string> // the template substitutions generation applies (ctx$.stdrep), for a declared signature
   name: string // model slug
   Name: string // class-name stem
   package: string // published package or module path of this target
@@ -157,8 +164,9 @@ type SdkDescription = {
 const memo: WeakMap<object, Record<string, SdkDescription>> = new WeakMap()
 
 
-// `naming` is the target's Naming hook, which the calling component finds.
-function sdkDescription(model: any, target: any, naming?: Naming): SdkDescription {
+// `naming` is the target's Naming hook, which the calling component finds;
+// `stdrep` the template substitutions generation applies (ctx$.stdrep).
+function sdkDescription(model: any, target: any, naming?: Naming, stdrep?: Record<string, string>): SdkDescription {
   const targetName = target.name
   let byTarget = memo.get(model)
   if (null == byTarget) {
@@ -166,22 +174,55 @@ function sdkDescription(model: any, target: any, naming?: Naming): SdkDescriptio
     memo.set(model, byTarget)
   }
   if (null == byTarget[targetName]) {
-    byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, target, naming || genericNaming)))
+    byTarget[targetName] = JSON.parse(JSON.stringify(describe(model, target, naming || genericNaming, templateMap(model, stdrep))))
   }
   return byTarget[targetName]
 }
 
 
+// The ProjectName family of substitutions, as generation applies them to the
+// templates: the Root's ctx$.stdrep (names(stdrep, Name, 'ProjectName')).
+function templateMap(model: any, stdrep?: Record<string, string>): Record<string, string> {
+  const src: Record<string, string> = stdrep && null != stdrep.ProjectName ? stdrep : projectNames(model.const.Name)
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(src)) {
+    if (/^project[_-]?name[_-]?$/i.test(k) && 'string' === typeof v) out[k] = v
+  }
+  return out
+}
+
+function projectNames(Name: string): Record<string, string> {
+  const snake = Name.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase()
+  return {
+    ProjectName: Name, project_name_: snake, 'project-name-': snake.replace(/_/g, '-'),
+    projectname: Name.toLowerCase(), PROJECTNAME: Name.toUpperCase(),
+  }
+}
+
+// A name as the templates spell it, substituted as the templates are.
+function templateName(map: Record<string, string>, name: string): string {
+  const keys = Object.keys(map).sort((a, b) => b.length - a.length)
+  if (0 === keys.length) return name
+  const re = new RegExp(keys.map((k) => k.replace(/[-]/g, '\\-')).join('|'), 'g')
+  return name.replace(re, (k) => map[k])
+}
+
+
 // For a target with no naming hook: the class-name stem, unchanged.
-const genericNaming: Naming = (model: any) => ({
-  layout: { module: model.name, client: model.const.Name + 'SDK', ctor: model.const.Name + 'SDK' },
-  symbols: (e: any) => ({ accessor: nom(e, 'Name'), var: e.name, vars: e.name + 's' }),
+const genericNaming: Naming = (model: any, _target: any, tm) => ({
+  layout: { module: model.name, client: tm('ProjectNameSDK'), ctor: tm('ProjectNameSDK') },
+  symbols: (e: any) => ({ accessor: nom(e, 'Name'), var: e.name }),
 })
 
 
-function describe(model: any, target: any, naming: Naming): SdkDescription {
+function describe(model: any, target: any, naming: Naming, template: Record<string, string>): SdkDescription {
   const targetName = target.name
-  const names = naming(model, target)
+  const names = naming(model, target, (n: string) => templateName(template, n))
+  const ident = names.ident || ((n: string) => n)
+  const layout: DescLayout = {
+    ...names.layout,
+    vars: Object.fromEntries(['results', 'item', 'result', 'created'].map((n) => [n, ident(n)])),
+  }
   const prefix = envName(model)
   const active = isAuthActive(model)
   const where = resolveAuthIn(model)
@@ -208,15 +249,16 @@ function describe(model: any, target: any, naming: Naming): SdkDescription {
 
   return {
     target: targetName,
+    template,
     name: model.name,
     Name: model.const.Name,
     package: packageName(model, targetName),
-    layout: names.layout,
+    layout,
     env: { prefix },
     auth: { active, in: where, name: resolveAuthName(model), basic, secret },
     options,
     server,
-    entities: activeEntities.map((e: any) => describeEntity(e, names.symbols(e), {
+    entities: activeEntities.map((e: any) => describeEntity(e, { ...names.symbols(e), plural: ident(pluralize(e.name)) }, {
       className: entityClassName(e, coll),
       text: [descs[e.name], e.short, e.desc].find((t: any) => 'string' === typeof t && '' !== t.trim()) || '',
     })),
@@ -456,5 +498,6 @@ export type {
 }
 
 export {
+  templateName,
   sdkDescription,
 }
