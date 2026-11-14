@@ -94,6 +94,31 @@ function loadSentence(f: RuntimeFacts, bound: string): string {
 }
 
 
+// What the tutorial's writes return, and how each fails: one sentence over
+// all of them, in the result style's words.
+function writeSentence(f: RuntimeFacts, ops: string[]): string {
+  const each = 1 === ops.length ? `${opName(f, ops[0])} returns` : 'Each write returns'
+  const what = 'the entity it wrote' + (ops.includes('remove') ? ' (a removed one is marked as deleted)' : '')
+  switch (f.result) {
+    case 'throw':
+    case 'raise':
+    case 'die':
+      return `${f.async ? each.replace(/returns$/, 'resolves to') : each} ${what}, and ${verb(f)} on failure.`
+    case 'wrapped':
+      return `${each} a value holding ${what}, and throws on failure.`
+    case 'pair':
+      return `${each} ${code(pairForm(f))} too: the value is ${what}, and a non-nil ` +
+        `${code(f.errVar as string)} reports failure.`
+    case 'errslot':
+      return `${each} ${what}, or ${code(f.nullValue as string)} with ${code(f.errSlot as string)} set on ` +
+        `failure, so check ${code(f.errVar as string)} after each call.`
+    case 'union':
+      return `${each} a result whose ${code(f.ok as string)} is ${what} and whose ${code(f.err as string)} ` +
+        `reports failure.`
+  }
+}
+
+
 // Where a value comes back, for a code comment, in the result style's words.
 function carries(f: RuntimeFacts, value: string): string {
   switch (f.result) {
@@ -189,7 +214,9 @@ function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string |
   }
   if (null != idInData) parts.push(`The data must include the entity id, ${code(idInData)}.`)
   parts.push(returnClause(f, opValue(f, op)))
-  if ('load' === op) parts.push(`${code(record(f, bound))} reads its record.`)
+  // Every single-entity result says how its record is read: the reference's
+  // examples print none of them (the majority shape), so the sentence keeps it.
+  if ('list' !== op) parts.push(`${code(record(f, bound))} reads its record.`)
   return parts.join(' ')
 }
 
@@ -216,4 +243,5 @@ export {
   loadComment,
   loadSentence,
   record,
+  writeSentence,
 }

@@ -109,8 +109,13 @@ type DescEntity = {
   fields: DescField[]
   fieldOps: boolean // the model says which operations each field takes part in
   refOps: DescOp[] // every active operation's method, canonical order, as the reference shows it
-  actions: { action: string, op: string, path: string }[] // custom `$action` routes
+  actions: DescAction[] // custom `$action` routes
+  show: string[] // the fields an example that prints chosen fields shows of this entity's record
 }
+
+// A custom action: the operation it is routed through, its route, and the
+// route's path parameters, each a typed placeholder (the id as `<entity>_id`).
+type DescAction = { action: string, op: string, path: string, params: DescArg[] }
 
 // A client option the constructor accepts, in table order.
 type DescOptionRow = {
@@ -141,7 +146,6 @@ type DescQuick = {
   patch: DescArg[] | null
   remove: DescArg[] | null
   chainsId: boolean // update/patch/remove take the id off the created record
-  show: string[] // the fields a runtime that prints chosen fields prints: the record id, then one display field
 }
 
 type SdkDescription = {
@@ -345,7 +349,9 @@ function describeEntity(e: any, sym: DescSymbols, named: { className: string, te
     })),
     fieldOps: fields.some((f: any) => null != f.op && 0 < Object.keys(f.op).length),
     refOps: methods.map((o) => describeOp(e, o, id)),
-    actions: entityActions(e).filter((a) => methods.includes(a.op)),
+    actions: entityActions(e).filter((a) => methods.includes(a.op))
+      .map((a) => ({ ...a, params: actionParams(e, a, id) })),
+    show: showFields(fields, entityDataIdField(e)),
   }
 }
 
@@ -379,6 +385,19 @@ function describeOp(e: any, op: string, idF: string | null): DescOp {
     idInData: ('update' === op || 'patch' === op) && sendsId(e, op, idF) ? idF : null,
     body: 'create' === op || 'update' === op || 'patch' === op ? bodyFacts(e.op[op]) : null,
   }
+}
+
+
+// The path parameters of an action's route, in route order, typed from the
+// point that declares them.
+function actionParams(e: any, a: { op: string, action: string, path: string }, idF: string | null): DescArg[] {
+  const points: any[] = Object.values(e.op?.[a.op]?.points || {})
+  const pt = points.find((p: any) => null != p && p.q?.['$action'] === a.action && String(p.o || '') === a.path)
+  const declared: any[] = Object.values(pt?.g?.params || {}).filter((x: any) => null != x && null != x.n)
+  return [...a.path.matchAll(/\{([^}]+)\}/g)].map((m) => {
+    const it = declared.find((x: any) => x.n === m[1] || x.or === m[1]) || { n: m[1], t: '`$STRING`' }
+    return typed({ name: it.n, type: it.t }, it.n === idF || 'id' === it.n ? e.name + '_id' : it.n)
+  })
 }
 
 
@@ -466,20 +485,22 @@ function quickChoices(activeEntities: any[]): DescQuick | null {
     remove: !ops.includes('remove') ? null : matchExampleItems(ex, 'remove', idF).sort(idFirst(idF))
       .map((it: any) => it.name === idF ? idArg('remove') : typed(it, 'example_' + it.name)),
     chainsId: ['update', 'patch', 'remove'].some((o) => ops.includes(o) && sendsId(ex, o, idF) && chains(o)),
-    show: showFields(fields, dataIdF),
   }
 }
 
 
-// The record id, then the first other string field: what php, rb, lua and perl
-// chose for themselves, chosen here once.
+// The record id, then the first other string field, else the first other
+// field of any type: what php, rb and lua chose for themselves (perl printed
+// the id alone), chosen here once.
 function showFields(fields: any[], dataIdF: string | null): string[] {
-  const display = fields.find((f: any) => f && f.n !== 'id' && f.n !== dataIdF && '$STRING' === f.t)
+  const other = fields.filter((f: any) => f && f.n !== 'id' && f.n !== dataIdF)
+  const display = other.find((f: any) => 'STRING' === canonScalarKey(f.t)) || other[0]
   return [dataIdF, display ? display.n : null].filter((f): f is string => null != f)
 }
 
 
 export type {
+  DescAction,
   DescField,
   DescFeature,
   DescOp,

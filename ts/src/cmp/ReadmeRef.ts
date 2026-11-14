@@ -85,10 +85,15 @@ function memberName(r: RefSyntax, k: MemberKind): string {
   return null == named ? k : named[1] + '()'
 }
 
+// What a getter hands back: a copy where the runtime clones, which its member
+// declares (Member.copy).
+const COPY = 'Returns a copy of the current data.'
+
 // The sentence each fixed member kind is described by.
-function memberText(kind: MemberKind, p: Syntax, desc: SdkDescription, ent?: DescEntity): string {
+function memberText(m: Member, p: Syntax, desc: SdkDescription, ent?: DescEntity): string {
   const r = p.ref as RefSyntax
   const sig = (k: MemberKind) => memberName(r, k)
+  const kind = m.kind
   switch (kind) {
     case 'options': return 'Return a deep copy of the current SDK options.'
     case 'utility': return 'Return a copy of the SDK utility object.'
@@ -98,11 +103,12 @@ function memberText(kind: MemberKind, p: Syntax, desc: SdkDescription, ent?: Des
       return `Alias for ${code(fill(test.call, desc).replace(/^.*?=\s*/, ''))}.`
     }
     case 'data': return 'Get or set the entity data. When called with data, sets the entity\'s\n' +
-      'internal data and returns the current data. When called without\narguments, returns a copy of the current data.'
+      'internal data and returns the current data. When called without\narguments, returns ' +
+      (m.copy ? 'a copy of the current data.' : 'the current data.')
     case 'match': return `Get or set the entity match criteria. Works the same as ${code(sig('data'))}.`
-    case 'dataArg': return `Get the entity data. Pass ${r.facts.setArg || 'a map'} to set it.`
+    case 'dataArg': return wrap(`Get the entity data.${m.copy ? ' ' + COPY : ''} Pass ${r.facts.setArg || 'a map'} to set it.`)
     case 'matchArg': return `Get the entity match criteria. Pass ${r.facts.setArg || 'a map'} to set it.`
-    case 'dataGet': return 'Get the entity data.'
+    case 'dataGet': return 'Get the entity data.' + (m.copy ? ' ' + COPY : '')
     case 'dataSet': return 'Set the entity data.'
     case 'matchGet': return 'Get the entity match criteria.'
     case 'matchSet': return 'Set the entity match criteria.'
@@ -160,7 +166,7 @@ function directRows(p: Syntax, desc: SdkDescription): { path: string[], type: 'S
 function clientMember(m: Member, p: Syntax, desc: SdkDescription): string {
   const r = p.ref as RefSyntax
   const f = p.facts
-  let out = `#### ${code(fill(m.sig, desc))}\n\n${memberText(m.kind, p, desc)}\n\n`
+  let out = `#### ${code(fill(m.sig, desc))}\n\n${memberText(m, p, desc)}\n\n`
   if ('direct' === m.kind) {
     out += keyTable(p, 'fetchargs', directRows(p, desc))
     if (r.facts.direct.signal) {
@@ -182,7 +188,7 @@ function clientMember(m: Member, p: Syntax, desc: SdkDescription): string {
   else if (null != m.returns) {
     out += `**Returns:** ${code(fill(m.returns, desc))}.\n\n`
   }
-  return out + note(p, `member:${m.kind}`)
+  return out + note(p, `member:${m.kind}`, desc)
 }
 
 
@@ -203,7 +209,7 @@ function constructorText(p: Syntax, desc: SdkDescription): string {
   const sentence = `Create a new SDK client instance.${container}${altText(alts, desc)}`
   return `### Constructor\n\n${fenced(p, r.facts.ctor.map((l) => fill(l, desc)))}\n` +
     `${0 === alts.length ? sentence : wrap(sentence.replace(/\n/g, ' '))}\n\n` +
-    note(p, 'ctor') + keyTable(p, 'options', desc.ref.optionRows) + '\n'
+    note(p, 'ctor', desc) + keyTable(p, 'options', desc.ref.optionRows) + '\n'
 }
 
 
@@ -223,13 +229,13 @@ function testText(p: Syntax, desc: SdkDescription): string {
         : `Create a test client ${mock}, and no options.`) +
       `${altText(t.alts || [], desc)} It returns a client in test mode.`) + `\n\n${fenced(p, [fill(t.call, desc)])}\n`
   }
-  return out + note(p, 'test')
+  return out + note(p, 'test', desc)
 }
 
 
 function instanceText(p: Syntax, desc: SdkDescription): string {
   const r = p.ref as RefSyntax
-  let out = `\n### Instance ${r.facts.noun}\n\n` + note(p, 'instance')
+  let out = `\n### Instance ${r.facts.noun}\n\n` + note(p, 'instance', desc)
   for (const ent of desc.entities) {
     out += `#### ${code(fill(r.facts.accessor.sig, desc, ent))}\n\n` +
       `Create a new ${code(typeOf(r, ent))} instance. Pass ${code(r.facts.none)} for no initial\n` +
@@ -259,7 +265,7 @@ function entityText(p: Syntax, desc: SdkDescription, ent: DescEntity): string {
   let out = `\n---\n\n## ${typeOf(r, ent)}\n\n`
   const text = mdInline(ent.text)
   if ('' !== text) out += text + '\n\n'
-  out += fenced(p, r.instance(ref, desc)) + '\n' + note(p, 'entity')
+  out += fenced(p, r.instance(ref, desc)) + '\n' + note(p, 'entity', desc)
 
   if (0 < ent.fields.length) {
     out += '### Fields\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n'
@@ -281,8 +287,9 @@ function entityText(p: Syntax, desc: SdkDescription, ent: DescEntity): string {
     out += `### Actions
 
 This entity exposes custom API actions in addition to the standard
-operations. Select one with \`$action\` in the call's argument; the
-remaining keys are sent as that action's payload.
+operations. Select one with \`$action\` in the call's argument, beside the
+route's path parameters, as the Call column shows; the action's own
+arguments go beside them too, and are sent as that action's payload.
 
 | Action | Operation | Route | Call |
 | --- | --- | --- | --- |
@@ -295,7 +302,7 @@ ${ent.Name} record — check the API definition for its shape.
   }
 
   if (0 < ent.refOps.length) {
-    out += '### Operations\n\n' + note(p, 'operations')
+    out += '### Operations\n\n' + note(p, 'operations', desc)
     for (const op of ent.refOps) {
       const name = op.name as OpName
       const sig = (0 < op.needs.length && r.facts.opMatched && r.facts.opMatched[name]) || r.facts.op[name]
@@ -307,10 +314,10 @@ ${ent.Name} record — check the API definition for its shape.
     }
   }
 
-  out += `### Common ${r.facts.entityNoun || r.facts.noun}\n\n`
+  out += `### Common ${r.facts.entityNoun || r.facts.noun}\n\n` + note(p, 'members', desc)
   for (const m of r.facts.entity) {
-    out += `#### ${code(fill(m.sig, desc, ent))}\n\n${memberText(m.kind, p, desc, ent)}\n\n` +
-      note(p, `member:${m.kind}`)
+    out += `#### ${code(fill(m.sig, desc, ent))}\n\n${memberText(m, p, desc, ent)}\n\n` +
+      note(p, `member:${m.kind}`, desc)
   }
   return out
 }
@@ -319,7 +326,7 @@ ${ent.Name} record — check the API definition for its shape.
 // language writes it outside error handling. Not a block: its payload is the
 // action's own, which no model states, so it could be neither type-checked
 // nor run.
-function actionCall(p: Syntax, desc: SdkDescription, ent: DescEntity, a: { action: string, op: string }): string {
+function actionCall(p: Syntax, desc: SdkDescription, ent: DescEntity, a: DescEntity['actions'][number]): string {
   const [stmt] = actionBlock(desc, ent, a) as Extract<Stmt, { k: 'call' }>[]
   const narrow = { ...stmt, wide: false, note: undefined }
   return p.call(narrow, desc, newScope(true), { inAttempt: false, last: true })[0].split('\n')[0]
@@ -348,7 +355,7 @@ ${features.map((f) => `| ${code(f.name)} | ${f.version} | ${mdCell(f.title)} |`)
 Features are activated via the \`feature\` option:
 
 ${printBlock(p, featureBlock(features.map((f) => f.name)), desc, newScope(true))}
-${note(p, 'features')}`
+${note(p, 'features', desc)}`
 }
 
 

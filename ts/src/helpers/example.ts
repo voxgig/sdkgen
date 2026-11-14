@@ -3,7 +3,7 @@
 // provider implements to print it. Nothing here reads the model: examples are
 // built from an SdkDescription and the provider's declared runtime facts.
 
-import type { DescArg, DescEntity, DescOp, DescOption, DescSymbols, Scalar, SdkDescription } from './sdkdesc'
+import type { DescAction, DescArg, DescEntity, DescOp, DescOption, DescSymbols, Scalar, SdkDescription } from './sdkdesc'
 import { createComment } from './runtimeprose'
 
 
@@ -79,8 +79,17 @@ type RuntimeFacts = {
   unwrap?: string // wrapped: the code that takes the entity out of the value
   unusedError?: boolean // a bound value no statement reads fails the build (go, zig)
   listOf?: string // the type a list resolves to, where the language names one: '{Class}[]'
-  prints: 'record' | 'fields' // how an example shows an entity: its whole record, or chosen fields
+  prints: Prints
 }
+
+// How an example shows an entity: 'record', its whole record, everywhere;
+// 'listFields', chosen fields of each item the tutorial lists, and the whole
+// record everywhere else (rb, php); 'fields', chosen fields everywhere
+// (perl). Where each applies is decided once, in `show`.
+type Prints = 'record' | 'listFields' | 'fields'
+
+// Where an example stands, for `show`.
+type ShowPlace = 'tutorial' | 'top' | 'reference'
 
 
 // A fixed member of the client or of an entity, as the runtime declares it.
@@ -100,7 +109,9 @@ type MemberKind =
   | 'streamFunction' // a function returning the next item per call, `none` at the end (lua, perl)
 
 // `returns`: the type it returns, where the signature does not say.
-type Member = { kind: MemberKind, sig: string, returns?: string }
+// `copy`: a data or match getter returns a copy of the entity's own value,
+// not the value itself.
+type Member = { kind: MemberKind, sig: string, returns?: string, copy?: boolean }
 
 // What the reference page states about a runtime, independently of any model.
 type RefFacts = {
@@ -192,18 +203,21 @@ function call(entity: Ent, op: string, arg: Entry[] | null, bind: Ref | null): S
   return { k: 'call', entity, op, arg, bind, wide }
 }
 
-// How an example shows an entity: the whole record, or the chosen fields where
-// the runtime's examples print those.
-function show(desc: SdkDescription, facts: RuntimeFacts, of: Ref): Expr {
-  const fields = desc.quick ? desc.quick.show : []
-  return 'fields' === facts.prints && 0 < fields.length ? { k: 'fields', of, fields } : { k: 'record', of }
+// How an example shows an entity: the whole record, or the chosen fields of
+// the entity shown, where and as the runtime's examples print those.
+function show(desc: SdkDescription, facts: RuntimeFacts, of: Ref, where: ShowPlace): Expr {
+  const e = desc.entities.find((x) => x.name === of.entity.name)
+  const fields = e ? e.show : []
+  const chosen = 'fields' === facts.prints ||
+    ('listFields' === facts.prints && 'tutorial' === where && 'item' === of.role)
+  return chosen && 0 < fields.length ? { k: 'fields', of, fields } : { k: 'record', of }
 }
 
 function clientBlock(desc: SdkDescription): Stmt[] {
   return [{ k: 'client', options: optionEntries(desc.options) }]
 }
 
-function listBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | null {
+function listBlock(desc: SdkDescription, facts: RuntimeFacts, where: ShowPlace = 'tutorial'): Stmt[] | null {
   const q = desc.quick
   if (null == q || null == q.list) return null
   const entity = entOf(desc, q.entity)
@@ -212,12 +226,12 @@ function listBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | null {
   return [{
     k: 'attempt', what: 'list', body: [
       call(entity, 'list', 0 < q.list.length ? argEntries(q.list, null) : null, many),
-      { k: 'each', item, of: many, body: [{ k: 'print', what: show(desc, facts, item) }] },
+      { k: 'each', item, of: many, body: [{ k: 'print', what: show(desc, facts, item, where) }] },
     ],
   }]
 }
 
-function loadBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | null {
+function loadBlock(desc: SdkDescription, facts: RuntimeFacts, where: ShowPlace = 'tutorial'): Stmt[] | null {
   const q = desc.quick
   if (null == q || null == q.load) return null
   const entity = entOf(desc, q.load.entity)
@@ -225,7 +239,7 @@ function loadBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | null {
   return [{
     k: 'attempt', what: 'load', body: [
       call(entity, 'load', 0 < q.load.args.length ? argEntries(q.load.args, null) : null, one),
-      { k: 'print', what: show(desc, facts, one) },
+      { k: 'print', what: show(desc, facts, one, where) },
     ],
   }]
 }
@@ -280,7 +294,7 @@ function refOpBlock(desc: SdkDescription, facts: RuntimeFacts, ent: DescEntity, 
     const item = refOf(desc, 'item', entity, 'generic')
     return [
       call(entity, 'list', arg, many),
-      { k: 'each', item, of: many, body: [{ k: 'print', what: { k: 'record', of: item } }] },
+      { k: 'each', item, of: many, body: [{ k: 'print', what: show(desc, facts, item, 'reference') }] },
     ]
   }
   const one = refOf(desc, 'load' === op.name ? 'one' : 'created', entity, 'generic')
@@ -290,14 +304,16 @@ function refOpBlock(desc: SdkDescription, facts: RuntimeFacts, ent: DescEntity, 
   if ('call' === stmt.k && ('update' === op.name || 'patch' === op.name)) {
     stmt.note = 'update' === op.name ? 'Fields to update' : 'Only the fields to change'
   }
-  return [stmt, ...(facts.unusedError ? [{ k: 'print', what: { k: 'record', of: one } } as Stmt] : [])]
+  return [stmt, ...(facts.unusedError ? [{ k: 'print', what: show(desc, facts, one, 'reference') } as Stmt] : [])]
 }
 
 
 // A custom action called: the operation it is routed through, with `$action`
-// in its argument. Its response is the action's own, so it is not bound.
-function actionBlock(desc: SdkDescription, ent: DescEntity, action: { action: string, op: string }): Stmt[] {
-  const stmt = call(entOf(desc, ent.name), action.op, [{ key: '$action', value: { k: 'str', text: action.action } }], null)
+// and the route's path parameters in its argument. Its response is the
+// action's own, so it is not bound.
+function actionBlock(desc: SdkDescription, ent: DescEntity, action: DescAction): Stmt[] {
+  const stmt = call(entOf(desc, ent.name), action.op,
+    [{ key: '$action', value: { k: 'str', text: action.action } }, ...argEntries(action.params, null)], null)
   if ('call' === stmt.k) {
     stmt.wide = true
     stmt.note = '...the action\'s own arguments'
@@ -402,7 +418,7 @@ type RefSyntax = {
 // printed after the slot's shared text, exactly when the page prints it.
 type NoteSlot =
   | `member:${MemberKind}` // a fixed member of the client or an entity
-  | 'ctor' | 'test' | 'instance' | 'entity' | 'operations' | 'features'
+  | 'ctor' | 'test' | 'instance' | 'entity' | 'operations' | 'members' | 'features'
   | 'tutorial' | 'tutorial:list' | 'tutorial:load' | 'tutorial:write' | 'top'
 
 
@@ -483,10 +499,19 @@ function newScope(standalone = false): Scope {
   return { declared: new Set(), local: new Set(), stmts: [], section: [], standalone }
 }
 
-// A runtime note for a slot, as a paragraph, or nothing.
-function note(p: Syntax, slot: NoteSlot): string {
+// A runtime note for a slot, as a paragraph, or nothing. A note names the
+// SDK's own modules as the signatures do: {module}, {client}, {ctor} and
+// {names.<role>} are filled from the description's layout, which the naming
+// hook decided; the note itself stays static text.
+function note(p: Syntax, slot: NoteSlot, desc?: SdkDescription): string {
   const text = p.notes && Object.prototype.hasOwnProperty.call(p.notes, slot) ? p.notes[slot] : undefined
-  return null == text || '' === text ? '' : text + '\n\n'
+  if (null == text || '' === text) return ''
+  const layout: any = desc ? desc.layout : {}
+  const filled = text.replace(/\{(module|client|ctor|names\.\w+)\}/g, (m, k: string) => {
+    const v = k.startsWith('names.') ? (layout.names || {})[k.slice(6)] : layout[k]
+    return 'string' === typeof v ? v : m
+  })
+  return filled + '\n\n'
 }
 
 
@@ -507,7 +532,9 @@ export type {
   Entry,
   Expr,
   OpName,
+  Prints,
   ProgramStep,
+  ShowPlace,
   Ref,
   ResultStyle,
   RuntimeFacts,

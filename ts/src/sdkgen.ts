@@ -83,9 +83,9 @@ import {
 } from './helpers/opExample'
 import type { ExampleLang, LiteralLang } from './helpers/opExample'
 import { sdkDescription, templateName } from './helpers/sdkdesc'
-import type { SdkDescription, DescArg, DescEntity, DescLayout, DescOption, DescQuick, DescServerVar, DescSymbols, Naming } from './helpers/sdkdesc'
+import type { SdkDescription, DescAction, DescArg, DescEntity, DescLayout, DescOption, DescQuick, DescServerVar, DescSymbols, Naming } from './helpers/sdkdesc'
 import { featureBlock, refOpBlock, clientBlock, listBlock, loadBlock, writeBlock, writeOps, printBlock, printProgram, printStmts, newScope, note, uses, indent as indentLines } from './helpers/example'
-import type { CtorKind, Member, MemberKind, NoteSlot, RefFacts, RefSyntax, CallContext, Ent, Entry, Expr, OpName, ProgramStep, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses } from './helpers/example'
+import type { CtorKind, Member, MemberKind, NoteSlot, RefFacts, RefSyntax, CallContext, Ent, Entry, Expr, OpName, Prints, ProgramStep, Ref, ResultStyle, ShowPlace, RuntimeFacts, Scope, Stmt, Syntax, Uses } from './helpers/example'
 import {
   liveStrict, liveStrictNote, liveFlowNeeds, liveIdentity,
   liveRepeatsId, liveLoadComparesId, liveUnrouted,
@@ -1004,8 +1004,8 @@ function clear(path: string) {
 
 
 export type {
-  SdkDescription, DescArg, DescEntity, DescLayout, DescOption, DescQuick, DescServerVar, DescSymbols, Naming,
-  CtorKind, Member, MemberKind, NoteSlot, RefFacts, RefSyntax, CallContext, Ent, Entry, Expr, OpName, ProgramStep, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses,
+  SdkDescription, DescAction, DescArg, DescEntity, DescLayout, DescOption, DescQuick, DescServerVar, DescSymbols, Naming,
+  CtorKind, Member, MemberKind, NoteSlot, RefFacts, RefSyntax, CallContext, Ent, Entry, Expr, OpName, Prints, ProgramStep, Ref, ResultStyle, ShowPlace, RuntimeFacts, Scope, Stmt, Syntax, Uses,
   SdkGenOptions,
   ExampleLang,
   LiteralLang,

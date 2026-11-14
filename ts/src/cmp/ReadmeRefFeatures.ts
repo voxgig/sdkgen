@@ -1,7 +1,7 @@
 import { Content } from 'jostraca'
 import { cmp } from '../helpers/component'
 
-import { featureDocs, honoursActivationOrder } from './FeatureDocs'
+import { activeByDefault, featureDocs, honoursActivationOrder } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
 
 
@@ -15,7 +15,7 @@ const ReadmeRefFeatures = cmp(function ReadmeRefFeatures(props: any) {
     return
   }
 
-  const onByDefault = (f: FeatureDoc) => f.options.some((o) => 'active' === o.name && 'true' === o.value)
+  const onByDefault = activeByDefault
   const on = features.filter(onByDefault).map((f) => '`' + f.name + '`')
 
   // Emitted INSIDE the per-language `## Features` section, after its summary

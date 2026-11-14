@@ -91,6 +91,14 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
 
 
 
+// Whether a feature runs without being switched on: its own `active` option
+// defaults to true (model/feature/log.aontu). The one place both feature
+// sections, README and REFERENCE, decide it.
+function activeByDefault(f: FeatureDoc): boolean {
+  return f.options.some((o) => 'active' === o.name && 'true' === o.value)
+}
+
+
 const FIXED_ORDER_TARGETS = ['lean']
 
 function honoursActivationOrder(target: any): boolean {
@@ -99,6 +107,7 @@ function honoursActivationOrder(target: any): boolean {
 
 
 export {
+  activeByDefault,
   featureDocs,
   renderValue,
   sentinelName,

@@ -10,7 +10,8 @@ import {
 } from '../helpers/example'
 import { note } from '../helpers/example'
 import type { Stmt, Syntax, Scope } from '../helpers/example'
-import { listComment, listSentence, loadComment, loadSentence } from '../helpers/runtimeprose'
+import { listComment, listSentence, loadComment, loadSentence, writeSentence } from '../helpers/runtimeprose'
+import type { ShowPlace } from '../helpers/example'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -130,7 +131,7 @@ function boundName(stmts: Stmt[], role: 'item' | 'one'): string {
 
 // The steps every quick start takes, each with its sentences, from the
 // description and the runtime facts alone.
-function quickSteps(p: Syntax, desc: SdkDescription): { steps: Step[], lead: string[] } {
+function quickSteps(p: Syntax, desc: SdkDescription, where: ShowPlace = 'tutorial'): { steps: Step[], lead: string[] } {
   const q = desc.quick
   const f = p.facts
   const steps: Step[] = []
@@ -139,18 +140,18 @@ function quickSteps(p: Syntax, desc: SdkDescription): { steps: Step[], lead: str
 
   steps.push({ title: 'Create a client', text: clientText(desc), stmts: clientBlock(desc), comment: 'Create a client' })
 
-  const list = listBlock(desc, f)
+  const list = listBlock(desc, f, where)
   if (null != q && null != list) {
     const n = ent(q.entity).Name.toLowerCase()
     lead.push(`listing ${n} records`)
     const cls = ent(q.entity).className
     steps.push({
-      title: `List ${n} records`, text: listSentence(f, boundName(list, 'item')) + noteText(p, 'tutorial:list'),
+      title: `List ${n} records`, text: listSentence(f, boundName(list, 'item')) + noteText(p, 'tutorial:list', desc),
       stmts: list, comment: listComment(f, `List ${n} records`, cls),
     })
   }
 
-  const load = loadBlock(desc, f)
+  const load = loadBlock(desc, f, where)
   if (null != q && null != q.load && null != load) {
     const e = ent(q.load.entity)
     const n = e.Name.toLowerCase()
@@ -158,7 +159,7 @@ function quickSteps(p: Syntax, desc: SdkDescription): { steps: Step[], lead: str
     const nested = null == q.load.nested ? '' :
       `${e.Name} is nested under ${q.load.nested.parent}, so provide the \`${q.load.nested.param}\`. `
     steps.push({
-      title: `Load ${article(n)} ${n}`, text: nested + loadSentence(f, boundName(load, 'one')) + noteText(p, 'tutorial:load'),
+      title: `Load ${article(n)} ${n}`, text: nested + loadSentence(f, boundName(load, 'one')) + noteText(p, 'tutorial:load', desc),
       stmts: load, comment: loadComment(f, `Load ${article(n)} ${n}`, e.className),
     })
   }
@@ -170,7 +171,7 @@ function quickSteps(p: Syntax, desc: SdkDescription): { steps: Step[], lead: str
     lead.push(`${series(ops.map((o) => GERUND[o]))} ${article(n)} ${n}`)
     const title = series(ops)
     const Title = title.charAt(0).toUpperCase() + title.slice(1)
-    steps.push({ title: Title, text: noteText(p, 'tutorial:write').trim(), stmts: writes, comment: Title })
+    steps.push({ title: Title, text: writeSentence(f, ops) + noteText(p, 'tutorial:write', desc), stmts: writes, comment: Title })
   }
   return { steps, lead }
 }
@@ -189,7 +190,7 @@ ${wrap(`This tutorial walks through ${series(lead)}.${'' === where ? '' : ' ' + 
     (1 < steps.length ? ' Every operation returns entities, not raw records.' : ''))}
 
 `
-  out += note(p, 'tutorial')
+  out += note(p, 'tutorial', desc)
   // A runtime whose examples are whole programs gets the same sentences, as a
   // numbered list, and the steps as one program. A step whose statements open
   // with their own comment is named by it, not again by its title; the client
@@ -216,8 +217,8 @@ ${wrap(`This tutorial walks through ${series(lead)}.${'' === where ? '' : ' ' + 
 
 
 // A runtime note's text as a paragraph's trailing sentences.
-function noteText(p: Syntax, slot: Parameters<typeof note>[1]): string {
-  const n = note(p, slot).trim()
+function noteText(p: Syntax, slot: Parameters<typeof note>[1], desc: SdkDescription): string {
+  const n = note(p, slot, desc).trim()
   return '' === n ? '' : ' ' + n
 }
 
@@ -234,7 +235,7 @@ function bare(stmts: Stmt[]): Stmt[] {
 // old root quick starts were.
 function topQuickText(p: Syntax, desc: SdkDescription): string {
   const sc: Scope = newScope()
-  const { steps } = quickSteps(p, desc)
+  const { steps } = quickSteps(p, desc, 'top')
   const first = steps.filter((s) => /^(Create a client|List |Load )/.test(s.title))
   // The comment names the step, so the program printer adds no title of its own.
   const commented = first.map((s) => ({
