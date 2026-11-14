@@ -30,6 +30,7 @@ type DescLayout = {
     module: string;
     client: string;
     ctor: string;
+    names?: Record<string, string>;
 };
 type DescSymbols = {
     accessor: string;
@@ -38,6 +39,7 @@ type DescSymbols = {
     module?: string;
     alias?: string;
     fields?: Record<string, string>;
+    type?: string;
 };
 type Naming = (model: any, target: any) => {
     layout: DescLayout;

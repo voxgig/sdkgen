@@ -78,10 +78,10 @@ type RuntimeFacts = {
 // {module}, {accessor}, {var}, {Class} and {Name} are filled from the
 // description. Each kind has its sentence written once, in the shared page.
 type MemberKind =
-  | 'options' | 'utility' | 'direct' | 'prepare' | 'tester'
+  | 'options' | 'utility' | 'utilityShared' | 'direct' | 'prepare' | 'tester'
   | 'data' | 'match' | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet'
   | 'make' | 'name' | 'client' | 'entopts'
-  | 'streamIterator' | 'streamGenerator' | 'streamChannel' | 'streamList'
+  | 'streamIterator' | 'streamGenerator' | 'streamChannel' | 'streamList' | 'streamLazy'
 
 type Member = { kind: MemberKind, sig: string }
 

@@ -142,7 +142,15 @@ function clean(o: any, dropDefaults?: boolean): any {
 }
 
 
+// The module an entity's operations live in (Entity.fragment.ex declares
+// ProjectName.Entity.EntityName).
+function elixirEntityModule(Name: string, entity: any): string {
+  return Name + '.Entity.' + entity.Name
+}
+
+
 export {
+  elixirEntityModule,
   clean,
   formatElixir,
   elixirString,

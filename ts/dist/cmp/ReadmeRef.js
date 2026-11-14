@@ -54,7 +54,7 @@ function fenced(p, lines) {
 // What an entity is called on the page: its class, or its name where the
 // runtime has no class per entity.
 function typeOf(r, ent) {
-    return r.facts.classes ? ent.className : ent.Name;
+    return ent.sym.type ?? (r.facts.classes ? ent.className : ent.Name);
 }
 // The sentence each fixed member kind is described by.
 function memberText(kind, p, desc, ent) {
@@ -67,6 +67,7 @@ function memberText(kind, p, desc, ent) {
     switch (kind) {
         case 'options': return 'Return a deep copy of the current SDK options.';
         case 'utility': return 'Return a copy of the SDK utility object.';
+        case 'utilityShared': return 'Return the SDK utility object itself, not a copy.';
         case 'tester': {
             const test = r.facts.test.find((x) => x.args) || r.facts.test[0];
             return `Alias for ${code(fill(test.call, desc).replace(/^.*?=\s*/, ''))}.`;
@@ -84,6 +85,7 @@ function memberText(kind, p, desc, ent) {
         case 'entopts': return 'Return a copy of the entity options.';
         case 'streamIterator': return 'Run an operation through the pipeline and yield its result items as\nthey arrive, as an async iterator.';
         case 'streamGenerator': return 'Run an operation through the pipeline and yield its result items as\nthey arrive, as a generator.';
+        case 'streamLazy': return 'Run an operation through the pipeline and return a lazy stream of its\nresult items.';
         case 'streamList': return 'Run an operation through the pipeline and return its result items as\none list. ' + (0, runtimeprose_1.failsSentence)(p.facts);
         case 'streamChannel': return 'Run an operation through the pipeline and send its result items on the\n' +
             'returned channel, which closes when the stream ends. A `StreamItem` holds\none item in `Item`, ' +
@@ -132,11 +134,11 @@ function clientMember(m, p, desc) {
             out += `| ${code(r.key('fetchargs', ['ctrl', 'signal']))} | ${code(r.facts.direct.signal)} | ` +
                 'Aborts the request in flight: `ok` is then `false` and `err.code` is `request_aborted`. |\n';
         }
-        out += `\n**Returns:** ${code(r.facts.direct.returns)}. On a failure \`ok\` is \`false\` and\n` +
+        out += `\n**Returns:** ${code(fill(r.facts.direct.returns, desc))}. On a failure \`ok\` is \`false\` and\n` +
             '`err` holds the error. A failed request is reported in the result, not\nas an error, so branch on `ok`.\n\n';
     }
     else if ('prepare' === m.kind) {
-        out += `**Returns:** ${code(r.facts.prepare.returns)}. ` +
+        out += `**Returns:** ${code(fill(r.facts.prepare.returns, desc))}. ` +
             ('value' === r.facts.prepare.fails
                 ? `On failure it ${f.async ? 'resolves to' : 'returns'} the error instead.`
                 : ('errorunion' === r.facts.prepare.fails

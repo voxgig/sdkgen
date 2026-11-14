@@ -82,7 +82,7 @@ type RuntimeFacts = {
     err?: string;
     prints: 'record' | 'fields';
 };
-type MemberKind = 'options' | 'utility' | 'direct' | 'prepare' | 'tester' | 'data' | 'match' | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet' | 'make' | 'name' | 'client' | 'entopts' | 'streamIterator' | 'streamGenerator' | 'streamChannel' | 'streamList';
+type MemberKind = 'options' | 'utility' | 'utilityShared' | 'direct' | 'prepare' | 'tester' | 'data' | 'match' | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet' | 'make' | 'name' | 'client' | 'entopts' | 'streamIterator' | 'streamGenerator' | 'streamChannel' | 'streamList' | 'streamLazy';
 type Member = {
     kind: MemberKind;
     sig: string;

@@ -2,6 +2,8 @@
 
 import { cmp, Content, elixirAccessor, entityCollection } from '@voxgig/sdkgen'
 
+import { elixirEntityModule } from './utility_elixir'
+
 
 // Emit an entity factory function into the main SDK module (at its slot):
 //   def widget(client, entopts \\ nil), do: Solardemo.Entity.Widget.new(client, entopts)
@@ -16,7 +18,7 @@ const MainEntity = cmp(async function MainEntity(props: any) {
   Content(`
   @doc "Entity factory for ${entity.name}."
   def ${accessor}(client, entopts \\\\ nil) do
-    ${Name}.Entity.${entity.Name}.new(client, entopts)
+    ${elixirEntityModule(Name, entity)}.new(client, entopts)
   end
 `)
 

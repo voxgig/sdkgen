@@ -453,8 +453,9 @@ src/cmp/elixir/EntityOperation_elixir.ts a8cc83998c86
 src/cmp/elixir/EntityTypes_elixir.ts 1be156fafb80
 src/cmp/elixir/Entity_elixir.ts 184381df5efb
 src/cmp/elixir/Gitignore_elixir.ts d98ec8dd42b0
-src/cmp/elixir/MainEntity_elixir.ts 9a4a93d98814
+src/cmp/elixir/MainEntity_elixir.ts 09c7cbc1b93c
 src/cmp/elixir/Main_elixir.ts d12f5e9c14a6
+src/cmp/elixir/Naming_elixir.ts 3f588866d4ef
 src/cmp/elixir/Package_elixir.ts 2006f40f300a
 src/cmp/elixir/PrepareAuth_elixir.ts 60ef10da18e2
 src/cmp/elixir/ReadmeEntity_elixir.ts 4fbe9da24c13
@@ -465,12 +466,10 @@ src/cmp/elixir/ReadmeInstall_elixir.ts 3acf9fdebf84
 src/cmp/elixir/ReadmeIntro_elixir.ts 46304960cfa0
 src/cmp/elixir/ReadmeModel_elixir.ts 446cb536e8ac
 src/cmp/elixir/ReadmeOptions_elixir.ts eb3b2b997109
-src/cmp/elixir/ReadmeQuick_elixir.ts 8dc0ee928db9
-src/cmp/elixir/ReadmeRef_elixir.ts a7c720bcacc6
 src/cmp/elixir/ReadmeTopHowto_elixir.ts 90ecb763e0ad
-src/cmp/elixir/ReadmeTopQuick_elixir.ts 22d38cfca38e
 src/cmp/elixir/ReadmeTopTest_elixir.ts 1cb36261a935
 src/cmp/elixir/Schema_elixir.ts a2d61dba669a
+src/cmp/elixir/Syntax_elixir.ts 7efea919b447
 src/cmp/elixir/TestClean_elixir.ts 9119b5fc16e7
 src/cmp/elixir/TestDirect_elixir.ts 2ee44de0d1a9
 src/cmp/elixir/TestEntity_elixir.ts 0fa82f90ced3
@@ -485,7 +484,7 @@ src/cmp/elixir/fragment/EntityUpdateOp.fragment.ex 9f17e5565271
 src/cmp/elixir/fragment/Main.fragment.ex 98cb5b4657d3
 src/cmp/elixir/fragment/Pipeline.fragment.ex 841c454450ca
 src/cmp/elixir/tsconfig.json 720a3f229019
-src/cmp/elixir/utility_elixir.ts bdfc9c5a3a23
+src/cmp/elixir/utility_elixir.ts ed9db66cde95
 tm/elixir/LICENSE 7a036af3f8a4
 tm/elixir/Makefile 411daea82111
 tm/elixir/VERSION e6635045e1d2
@@ -1635,6 +1634,7 @@ src/cmp/rust/Entity_rust.ts 5136b405582f
 src/cmp/rust/Gitignore_rust.ts 285a6decc9dd
 src/cmp/rust/MainEntity_rust.ts cfab71599f0a
 src/cmp/rust/Main_rust.ts 28620b21729d
+src/cmp/rust/Naming_rust.ts f82932a1ed37
 src/cmp/rust/Package_rust.ts 2803ef7d34a0
 src/cmp/rust/PrepareAuth_rust.ts f48748ac39c5
 src/cmp/rust/ReadmeEntity_rust.ts 3ff319020626
@@ -1645,13 +1645,11 @@ src/cmp/rust/ReadmeInstall_rust.ts 912b9bd72f54
 src/cmp/rust/ReadmeIntro_rust.ts ff8ade9a8b24
 src/cmp/rust/ReadmeModel_rust.ts d205e3754c09
 src/cmp/rust/ReadmeOptions_rust.ts 3ced16eb7ae4
-src/cmp/rust/ReadmeQuick_rust.ts 931034ec30e6
-src/cmp/rust/ReadmeRef_rust.ts bd6e5bd28951
 src/cmp/rust/ReadmeTopHowto_rust.ts 7f66286916f9
-src/cmp/rust/ReadmeTopQuick_rust.ts f343d6298d11
 src/cmp/rust/ReadmeTopTest_rust.ts caefcf02393d
 src/cmp/rust/Schema_rust.ts 62516d49914a
 src/cmp/rust/SdkError_rust.ts 44f812a8460e
+src/cmp/rust/Syntax_rust.ts f19b07f60f80
 src/cmp/rust/TestClean_rust.ts 6b0385a97d66
 src/cmp/rust/TestDirect_rust.ts 5f9aa42b1a0b
 src/cmp/rust/TestEntity_rust.ts 749ace669e46

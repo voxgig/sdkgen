@@ -49,6 +49,7 @@ type DescLayout = {
   module: string // what an example imports the SDK by: a package, module path, header or namespace
   client: string // the client type
   ctor: string // the function or constructor an example creates a client with
+  names?: Record<string, string> // further names an example imports, by role (rust's entity-base trait, elixir's helpers module)
 }
 
 // The names the generated code gives one entity, from the same hook.
@@ -59,6 +60,7 @@ type DescSymbols = {
   module?: string // what an example must import to call its operations
   alias?: string // the name that import is bound to
   fields?: Record<string, string> // field -> the identifier a variable named after it takes
+  type?: string // what the reference names the entity by, where neither its class nor its Name is it (elixir's module)
 }
 
 // A target's naming hook: the code generator's own naming functions, which may

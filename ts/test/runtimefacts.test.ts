@@ -36,7 +36,7 @@ const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 // A method declared in any of the languages' forms.
 function declares(src: string, m: string): boolean {
-  return new RegExp('(^\\s+|async\\s+|func \\(\\w+ \\*?\\w+\\)\\s+|def\\s+|pub fn\\s+|\\(defn-?\\s+|\\(\\*|:)' + esc(m) + '\\b', 'm').test(src)
+  return new RegExp('(^\\s+|async\\s+|func \\(\\w+ \\*?\\w+\\)\\s+|def\\s+|(pub )?fn\\s+|\\(defn-?\\s+|\\(\\*|:)' + esc(m) + '\\b', 'm').test(src)
 }
 
 // The name the record accessor calls: `.data()` -> data, `vt->data` -> data,
@@ -55,7 +55,8 @@ const STYLE: Record<string, (src: string, load: string) => boolean> = {
   raise: (src, load) => new RegExp('def\\s+' + esc(load) + '\\(|\\(defn\\s+' + esc(load) + '\\b').test(src),
   pair: (src, load) => new RegExp(esc(load) + '\\([^)]*\\)\\s*\\(any, error\\)').test(src),
   errslot: (src, load) => new RegExp('\\(\\*' + esc(load) + '\\)\\([^)]*PNError\\*\\* err\\)').test(src),
-  union: (src, load) => new RegExp('pub fn ' + esc(load) + '\\([^)]*\\)\\s+\\w*Result\\b').test(src),
+  // zig: `pub fn load(...) EntResult`; rust: `fn load(...) -> Result<..>`.
+  union: (src, load) => new RegExp('(pub )?fn ' + esc(load) + '\\([^)]*\\)\\s+(->\\s*)?\\w*Result\\b').test(src),
 }
 
 
@@ -71,7 +72,9 @@ function generatorSource(t: string): string {
 // The function a declared signature names: `vt->data(...)` -> data,
 // `{var}_stream(...)` -> any `<ident>_stream`, `{client}.test(...)` -> test.
 function memberPattern(sig: string): RegExp | null {
-  const m = /([\w{}]+)\s*\(/.exec(sig.replace(/^.*?(->|\.)(?=[\w{}]+\s*\()/, ''))
+  // Only a receiver ahead of the first parenthesis is stripped, so a return
+  // type such as `String.t()` is not read as the member's name.
+  const m = /([\w{}]+)\s*\(/.exec(sig.replace(/^[^(]*?(->|\.)(?=[\w{}]+\s*\()/, ''))
   if (null == m || /^\{(accessor|ctor)\}$/.test(m[1])) return null
   const name = esc(m[1]).replace(/\\\{var\\\}|\\\{\w+\\\}/g, '\\w+')
   return new RegExp('(\\b|\\(\\*)' + name + '\\)?\\s*\\(')
@@ -80,16 +83,16 @@ function memberPattern(sig: string): RegExp | null {
 // A fixed member a runtime may define, by kind: if the runtime defines it,
 // the table must declare it, so the reference cannot fall behind the runtime.
 const PRESENT: Record<string, RegExp> = {
-  stream: /(async \*stream|\) Stream|def stream|\w+_stream)\s*\(/,
+  stream: /(async \*stream|\) Stream|def stream|\w+_stream|fn stream)\s*\(/,
   client: /^\s+client\(\)\s*\{|def client\(|\) Client\(\)/m,
   entopts: /^\s+entopts\(\)\s*\{|def entopts\(|\) Entopts\(/m,
-  options: /^\s+options\(\)\s*\{|\) OptionsMap\(|def options_map\(/m,
-  utility: /^\s+utility\(\)\s*\{|\) GetUtility\(|def get_utility\(/m,
-  make: /^\s+make\(|\) Make\(\)|def make\(|_make\(Entity/m,
-  name: /getName\(|GetName\(|def get_name\(|\(\*get_name\)/,
+  options: /^\s+options\(\)\s*\{|\) OptionsMap\(|def options_map\(|fn options_map\(/m,
+  utility: /^\s+utility\(\)\s*\{|\) GetUtility\(|def get_utility\(|fn get_utility\(/m,
+  make: /^\s+make\(|\) Make\(\)|def make\(|_make\(Entity|fn make\(&self\)/m,
+  name: /getName\(|GetName\(|def get_name\(|\(\*get_name\)|fn get_name\(/,
 }
 
-const kindOf = (k: string): string => k.startsWith('stream') ? 'stream' : k
+const kindOf = (k: string): string => k.startsWith('stream') ? 'stream' : ('utilityShared' === k ? 'utility' : k)
 
 
 describe('runtimefacts', () => {
