@@ -1,18 +1,26 @@
 // How the py runtime writes things: methods of the client and entity classes.
 import type { Forms } from './forms'
 
+const MAIN = 'src/cmp/py/fragment/Main.fragment.py'
+const ENTITY = 'src/cmp/py/fragment/Entity.fragment.py'
 const OPS = ['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/py/fragment/Entity${o}Op.fragment.py`)
 
 const forms: Forms = {
   files: {
-    client: ['src/cmp/py/fragment/Main.fragment.py'],
+    client: ['src/cmp/py/fragment/Main.fragment.py', 'src/cmp/py/MainEntity_py.ts'],
     entity: ['src/cmp/py/fragment/Entity.fragment.py'],
     ops: OPS,
   },
   decl: (name) => new RegExp(`^[ \\t]+def ${name}(?=\\()`, 'm'),
   receiver: /^(self|cls)$/,
+  param: (p) => {
+    const m = /^\**(\w+)\s*(?::\s*([^=]+?))?\s*(?:=.*)?$/.exec(p.trim())
+    return null == m ? { name: '', type: '' } : { name: m[1], type: (m[2] || '').trim() }
+  },
   optional: (p) => /=/.test(p),
   returns: (after) => (/^\s*->\s*([^:]+):/.exec(after) || [])[1] || '',
+  entityCtor: '__init__',
+  ctorDecl: '__init__',
   public: {
     client: /^    def ([a-z]\w*)\(/gm,
     entity: /^    def ([a-z]\w*)\(/gm,
@@ -20,6 +28,8 @@ const forms: Forms = {
   undocumented: {
     options: 'a property over the same options options_map() copies',
     get_root_ctx: 'the pipeline\'s root context, for features; not part of the documented API',
+    mark_deleted: 'set by remove itself; the entity reports it through deleted',
+    deleted: 'whether remove succeeded on this instance; not documented by the old pages',
     graphql: 'a GraphQL request through the pipeline; no reference page documents it (old pages neither)',
   },
   members: {
@@ -30,9 +40,32 @@ const forms: Forms = {
   streamKind: (d) => /\byield\b/.test(d.rest.split(/\n    def /)[0]) ? 'streamGenerator' : 'stream',
   style: { exception: 'raise', raises: /\braise\b/ },
   record: (rec) => ({ name: (/(\w+)\(\)$/.exec(rec) || [])[1] || rec }),
-  tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName' },
+  tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', accessor: '${entity.Name}' },
   types: { column: 'py' },
+  // The porter's, from here on.
+  uncompared: { returns: 'the runtime annotates the returns of the operations and data_get/match_get only; the others are cited where a fact rests on them' },
+  cite: {
+    'facts.recordType': { file: ENTITY, quote: ['def data_get(self) -> EntityName:', 'return vs.clone(self._data)'], unquoted: { dict: 'EntityName is a TypedDict, so a dict at run time' } },
+    'ref.facts.container': { file: MAIN, quote: 'extend = options.get("extend") if isinstance(options, dict) else None' },
+    'ref.facts.ctor[0]': {
+      file: 'src/cmp/py/Main_py.ts', quote: ['File({ name: \'__init__.\' + target.ext }, () => {', 'from ${model.const.Name.toLowerCase()}_sdk.feature.base_feature import ${model.const.Name}BaseFeature'],
+      also: [{ file: MAIN, quote: 'class ProjectNameSDK' }],
+    },
+    'ref.facts.client[1].kind': { file: MAIN, quote: 'return ProjectNameUtility.copy(self._utility)' },
+    'ref.facts.direct.returns': { file: MAIN, quote: ['def direct(self, fetchargs=None):', 'return {"ok": False, "err": utility.clean(self._rootctx, err)}'], unquoted: { dict: 'the result is a dict literal' } },
+    'ref.facts.prepare.returns': { file: 'tm/py/pkg/utility/make_fetch_def.py', quote: ['"url": url,', '"method": spec.method,'], unquoted: { dict: 'the fetch definition is a dict literal' } },
+    'ref.facts.prepare.fails': { file: MAIN, quote: 'raise ctx.make_error("spec_method_allow",' },
+    'ref.facts.body.values': {
+      file: 'tm/py/pkg/utility/fetcher.py',
+      quote: ['if isinstance(body, str):\n        return body.encode("utf-8")', 'if isinstance(body, (bytearray, memoryview)):', 'if isinstance(body, bytes) or hasattr(body, "read"):'],
+    },
+    'ref.facts.body.once': { file: 'tm/py/pkg/utility/media.py', quote: 'if body is not None and callable(getattr(body, "read", None)):\n        return body.read()' },
+    'ref.facts.cancel': { file: 'tm/py/pkg/utility/fetcher.py', quote: 'timeout = fetchdef.get("timeout")' },
+  },
   exceptions: {
+    'ref.facts.accessor.arg': 'WRONG: the accessor passes its argument to the entity constructor as entopts (MainEntity_py.ts `def ${entity.Name}(self, data=None)` ... `return ${cls}(self, data)`; Entity.fragment.py:12 `def __init__(self, client, entopts=None):`); the page says "Pass `None` for no initial data."',
+    'paramNames:entity dataSet': 'WRONG: the runtime\'s keyword is args (Entity.fragment.py:56 `def data_set(self, args=None):`); the page shows data_set(data=None), and data_set(data=...) raises TypeError',
+    'paramNames:entity matchSet': 'WRONG: the runtime\'s keyword is args (Entity.fragment.py:65 `def match_set(self, args=None):`); the page shows match_set(match=None), and match_set(match=...) raises TypeError',
     'optional:opMatched list': 'the runtime defaults the match, and a nested entity\'s list needs its parent: the page shows it required, beside the sentence naming the members (stage 3, ref-10)',
     'returns:entity dataGet': 'EntityName is a TypedDict, so a dict; the page names the dict, as the old page did',
     'returns:entity matchGet': 'EntityName is a TypedDict, so a dict; the page names the dict, as the old page did',
