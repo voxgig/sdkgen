@@ -1,0 +1,69 @@
+// How the cpp runtime writes things: the members declared in the SdkClient
+// and EntityBase classes of core/types.hpp (the type ahead of the name, a
+// default after `=`), the generated client and entity classes, and each
+// operation overriding SdkEntity's pure virtual.
+import type { Forms } from './forms'
+
+const OPS = ['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/cpp/fragment/Entity${o}Op.fragment.cpp`)
+const TYPES = 'tm/cpp/core/types.hpp'
+
+const forms: Forms = {
+  files: {
+    client: [`${TYPES}#class SdkClient {#\n};`, 'src/cmp/cpp/fragment/Main.fragment.cpp', 'src/cmp/cpp/MainEntity_cpp.ts#Content(`#`)'],
+    entity: ['src/cmp/cpp/fragment/Entity.fragment.cpp', `${TYPES}#class EntityBase : public SdkEntity,#\n};`],
+    // types.hpp holds the out-of-line definitions, where the runtime throws.
+    ops: [...OPS, TYPES],
+  },
+  decl: (name) => new RegExp(`^[ \\t]*(?:virtual |static |explicit |inline )*(?:(?!return\\b|class\\b|struct\\b)[\\w:<>,]+(?:<[^;(]*>)?[\\s*&]+)?${name}(?=[(\\s=;])`, 'm'),
+  bare: true,
+  param: (p) => {
+    const m = /^(.*?[\s*&])(\w+)\s*(?:=.*)?$/.exec(p.trim())
+    return null == m ? { name: '', type: p.trim() } : { name: m[2], type: m[1].trim() }
+  },
+  optional: (p) => /=/.test(p),
+  returns: (_after, _before, head) => (/^[ \t]*(?:virtual |static |explicit |inline )*(.*?)\s+[\w$\{\}]+$/.exec(head) || [])[1]?.trim() || '',
+  entityCtor: 'EntyClass',
+  opName: /^  [\w:<>]+ ([a-z]\w*)\(const Value& req\w+, const Value& ctrl\) override/gm,
+  public: {
+    client: /^  (?:virtual |static |explicit |inline )*(?:const )?[\w:<>,]+(?:<[^;(]*>)?[\s*&]+([a-z]\w*)\s*(?:\(|=[^=]|;)/gm,
+    entity: /^  (?:virtual |static |explicit |inline )*(?:const )?[\w:<>,]+(?:<[^;(]*>)?[\s*&]+([a-z]\w*)\s*(?:\(|=[^=]|;)/gm,
+  },
+  undocumented: {
+    mode: 'a public field holding "live" or "test"',
+    features: 'a public field holding the installed features, for the pipeline',
+    options: 'the public field optionsMap() copies',
+    utility: 'the public field getUtility() returns',
+    rootctx: 'the public field getRootCtx() returns',
+    to_string: 'the printed form (operator<<)',
+    getRootCtx: 'the pipeline\'s root context, for features',
+    graphql: 'a GraphQL request through the pipeline; no reference page documents it',
+    opAllowed: 'private: the allow.op check direct and graphql share',
+    opDenied: 'private: the refusal direct and graphql return',
+    rawRequest: 'private: the request path direct and graphql share',
+    testOptions: 'the helper testSDK uses to build test-mode options',
+    create: 'the static constructor with no options (ProjectNameSDK::create)',
+    name_: 'public field: the entity name getName() returns',
+    deleted_: 'public field behind deleted()',
+    client: 'public field: the client the entity belongs to',
+    entopts: 'public field: the entity options',
+    data_: 'public field behind data()',
+    match_: 'public field behind match()',
+    entctx: 'public field: the entity\'s pipeline context',
+    self: 'the shared handle the operations return',
+    runOp: 'protected: drives one operation through the pipeline (the reader does not see C++ access sections)',
+    markDeleted: 'set by remove itself; the entity reports it through deleted',
+    deleted: 'whether remove succeeded on this instance',
+  },
+  members: {
+    options: 'optionsMap', utility: 'getUtility', direct: 'direct', prepare: 'prepare',
+    data: 'data', match: 'match', make: 'make', name: 'getName', stream: 'stream',
+  },
+  streamKind: (d) => /^std::vector<Value>/.test(d.returns) ? 'streamList' : 'stream',
+  style: { exception: 'throw', raises: /\bthrow\b/ },
+  record: (rec) => ({ name: (/(\w+)\(\)$/.exec(rec) || [])[1] || rec }),
+  tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'ProjectNameSDK', accessor: '${accessor}' },
+  types: { column: 'cpp' },
+  // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
+}
+
+export { forms }
