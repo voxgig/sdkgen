@@ -170,6 +170,12 @@ const memo: WeakMap<object, Record<string, SdkDescription>> = new WeakMap()
 
 // `naming` is the target's Naming hook, which the calling component finds;
 // `stdrep` the template substitutions generation applies (ctx$.stdrep).
+// The runtimes read `secret` only for Basic sent in the header (PrepareAuth).
+function readsSecret(model: any): boolean {
+  return isAuthActive(model) && isHttpBasicAuth(model) && 'header' === resolveAuthIn(model) && !isAuthSuppressed(model)
+}
+
+
 function sdkDescription(model: any, target: any, naming?: Naming, stdrep?: Record<string, string>): SdkDescription {
   const targetName = target.name
   let byTarget = memo.get(model)
@@ -231,8 +237,7 @@ function describe(model: any, target: any, naming: Naming, template: Record<stri
   const active = isAuthActive(model)
   const where = resolveAuthIn(model)
   const basic = isHttpBasicAuth(model)
-  // The runtimes read `secret` only for Basic sent in the header (PrepareAuth).
-  const secret = active && basic && 'header' === where && !isAuthSuppressed(model)
+  const secret = readsSecret(model)
 
   const server: DescServerVar[] = serverVariables(model)
     .filter((v: any) => referenced(model, v.name))
@@ -521,4 +526,5 @@ export type {
 export {
   templateName,
   sdkDescription,
+  readsSecret,
 }

@@ -77,6 +77,11 @@ describe('runtimefacts', () => {
         lines.push(`  cited${c.prose ? ' (prose: audit only)' : ''} ${c.path} = ${JSON.stringify(c.value)}\n    ${c.file}: ${JSON.stringify(c.quote)}`)
       }
       for (const x of res.account.excepted) lines.push(`  excepted ${x.path}: ${x.reason}`)
+      // One line per declared leaf, for a reviewer's fact sheet.
+      const cites = new Map(res.account.cited.map((c) => [c.path, c.file]))
+      for (const [p, c] of Object.entries(res.account.category)) {
+        lines.push(`${t} account ${p}: ${c}${cites.has(p) ? ' (' + cites.get(p) + ')' : ''}`)
+      }
       for (const [k, v] of Object.entries(forms.exceptions || {})) {
         if (!/^(facts|ref\.facts|notes)\./.test(k)) lines.push(`  exception ${k}: ${v}`)
       }
