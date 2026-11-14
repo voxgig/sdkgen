@@ -5,7 +5,15 @@
 import { KIT, getModelPath, nom } from '@voxgig/apidef'
 
 import { canonScalarKey } from './canonType'
-import { CANON_OP_ORDER, entityDataIdField, entityIdField, entityOps, opRequestShape } from './opShape'
+import {
+  CANON_OP_ORDER, entityActions, entityClassName, entityCollection, entityDataIdField, entityIdField, entityOps,
+  opNeedsAction, opRequestShape,
+} from './opShape'
+import { bodyFacts } from './media'
+import type { BodyFacts } from './media'
+import { modelText } from './text'
+import { targetFeatures } from './applicability'
+import { featureDocs } from '../cmp/FeatureDocs'
 import { matchExampleItems, requestExampleItems, requiredItems, sendsId } from './opExample'
 import { envName, packageName } from './packageMeta'
 import { serverVariables } from './serverVars'
@@ -60,14 +68,60 @@ type Naming = (model: any, target: any) => {
   symbols: (entity: any) => DescSymbols
 }
 
+// One field of an entity's record. `type` is the canonical sentinel, which a
+// provider names in its own language; `text` is the spec's description, raw.
+type DescField = {
+  name: string
+  type: any
+  required: boolean
+  text: string
+  ops: string[] // the generated operations whose request or response carries it
+}
+
+// One generated operation, as the reference page shows it.
+type DescOp = {
+  name: string // canonical: list, load, create, update, patch, remove
+  action: boolean // reachable only through `$action`, so no example call
+  args: DescArg[] // what its example passes, id first; [] for none
+  needs: string[] // list: the match members it requires (a nested entity's parent)
+  idInData: string | null // update, patch: the id key the data must carry
+  body: BodyFacts | null // a request body that is not JSON
+}
+
 type DescEntity = {
   name: string // model key, e.g. graph_ql
   Name: string // class-name stem, e.g. GraphQl
+  className: string // the entity class, collision-free (entityClassName)
   sym: DescSymbols
+  text: string // the description: the project's entity_desc, else the spec's
   ops: string[] // generated, callable, canonical order
   id: string | null // the load-match id key
   dataId: string | null // the id on the returned record
   parents: string[] // required non-id load parameters of a nested entity
+  fields: DescField[]
+  fieldOps: boolean // the model says which operations each field takes part in
+  refOps: DescOp[] // every active operation's method, canonical order, as the reference shows it
+  actions: { action: string, op: string, path: string }[] // custom `$action` routes
+}
+
+// A client option the constructor accepts, in table order.
+type DescOptionRow = {
+  path: string[] // the key, and for a server variable the key under `server`
+  type: 'STRING' | 'OBJECT' | 'ANY'
+  text: string
+}
+
+type DescFeature = {
+  name: string
+  title: string
+  version: string
+}
+
+type DescRef = {
+  title: string // the language's title, as the target names it
+  test: boolean // the test feature ships, so the test constructor exists
+  optionRows: DescOptionRow[]
+  features: DescFeature[] // the features this target has, sorted
 }
 
 type DescQuick = {
@@ -94,6 +148,7 @@ type SdkDescription = {
   server: DescServerVar[] // variables the server URL references
   entities: DescEntity[]
   quick: DescQuick | null // null when no entity is active
+  ref: DescRef
 }
 
 
@@ -146,6 +201,8 @@ function describe(model: any, target: any, naming: Naming): SdkDescription {
 
   const entityMap = getModelPath(model, `main.${KIT}.entity`) || {}
   const activeEntities = (Object.values(entityMap) as any[]).filter((e: any) => e.active !== false)
+  const coll = entityCollection(model)
+  const descs = modelText(model).entity_desc || {}
 
   return {
     target: targetName,
@@ -157,8 +214,57 @@ function describe(model: any, target: any, naming: Naming): SdkDescription {
     auth: { active, in: where, name: resolveAuthName(model), basic, secret },
     options,
     server,
-    entities: activeEntities.map((e: any) => describeEntity(e, names.symbols(e))),
+    entities: activeEntities.map((e: any) => describeEntity(e, names.symbols(e), {
+      className: entityClassName(e, coll),
+      text: [descs[e.name], e.short, e.desc].find((t: any) => 'string' === typeof t && '' !== t.trim()) || '',
+    })),
     quick: quickChoices(activeEntities),
+    ref: describeRef(model, target, active, secret, server),
+  }
+}
+
+
+// The constructor's option rows. Each must be a key of main.kit.optspec, the
+// schema make_options validates against; `feature` is assembled per target.
+const OPTION_TEXT: [string, string][] = [
+  ['apikey', 'API key for authentication.'],
+  ['secret', 'API secret for authentication.'],
+  ['base', 'Base URL for API requests.'],
+  ['prefix', 'URL prefix appended after base.'],
+  ['suffix', 'URL suffix appended after path.'],
+  ['headers', 'Custom headers for all requests.'],
+  ['feature', 'Feature configuration.'],
+  ['system', 'System overrides (e.g. custom fetch).'],
+]
+
+function describeRef(model: any, target: any, active: boolean, secret: boolean, server: DescServerVar[]): DescRef {
+  const spec = getModelPath(model, `main.${KIT}.optspec`, { required: false, only_active: false }) || {}
+  const kind = (v: any): DescOptionRow['type'] =>
+    null != v && 'object' === typeof v ? 'OBJECT' : ('string' === typeof v && !v.includes('$ANY') ? 'STRING' : 'ANY')
+  const rows: DescOptionRow[] = []
+  for (const [key, text] of OPTION_TEXT) {
+    if ('apikey' === key && !active) continue
+    if ('secret' === key && !secret) continue
+    if ('feature' !== key && !(key in spec)) continue
+    rows.push({ path: [key], type: 'feature' === key ? 'OBJECT' : kind(spec[key]), text })
+  }
+  if (0 < server.length && 'server' in spec) {
+    rows.push({ path: ['server'], type: 'OBJECT', text: 'Values for the variables the server URL is templated on.' })
+    for (const v of server) {
+      rows.push({
+        path: ['server', v.name], type: 'STRING',
+        text: v.required ? 'Required.' : 'Defaults to `' + v.dflt + '`.',
+      })
+    }
+  }
+  const feats = targetFeatures(model, target)
+  return {
+    title: target.title || target.name,
+    test: null != feats.test && false !== feats.test.active,
+    optionRows: rows,
+    features: featureDocs(model, target).map((f: any) => ({
+      name: f.name, title: f.title, version: String((feats[f.name] || {}).version || ''),
+    })),
   }
 }
 
@@ -169,16 +275,65 @@ function referenced(model: any, name: string): boolean {
 }
 
 
-function describeEntity(e: any, sym: DescSymbols): DescEntity {
+function describeEntity(e: any, sym: DescSymbols, named: { className: string, text: string }): DescEntity {
   const id = entityIdField(e)
+  const ops = entityOps(e).filter((o) => CANON_OP_ORDER.includes(o))
+  // An op reached only through `$action` still has its method: the reference
+  // shows its signature, and its routes under Actions.
+  const methods = CANON_OP_ORDER.filter((o) => null != e.op?.[o] && false !== e.op[o].active)
+  const fields: any[] = Object.values(e.fields || {}).filter((f: any) => null != f && null != f.n)
   return {
     name: e.name,
     Name: nom(e, 'Name'),
+    className: named.className,
     sym,
-    ops: entityOps(e).filter((o) => CANON_OP_ORDER.includes(o)),
+    text: named.text,
+    ops,
     id,
     dataId: entityDataIdField(e),
     parents: isNested(e) ? requiredItems(e, 'load').filter((it: any) => it.name !== id).map((it: any) => it.name) : [],
+    fields: fields.map((f: any) => ({
+      name: f.n,
+      type: f.t,
+      required: !!f.r,
+      text: 'string' === typeof f.sh ? f.sh : '',
+      ops: methods.filter((o) => null != f.op?.[o] && false !== f.op[o].active),
+    })),
+    fieldOps: fields.some((f: any) => null != f.op && 0 < Object.keys(f.op).length),
+    refOps: methods.map((o) => describeOp(e, o, id)),
+    actions: entityActions(e).filter((a) => methods.includes(a.op)),
+  }
+}
+
+
+// The reference's example members for one operation: what a call must give,
+// each a typed placeholder (the id as `<entity>_id`, a create's data as
+// `example_<field>`).
+function describeOp(e: any, op: string, idF: string | null): DescOp {
+  const idFirst = (a: any, b: any) => (a.name === idF ? 0 : 1) - (b.name === idF ? 0 : 1)
+  const ph = (it: any, other: string) => typed(it, it.name === idF ? e.name + '_id' : other)
+  let args: DescArg[] = []
+  if ('load' === op || 'remove' === op) {
+    args = matchExampleItems(e, op, idF).sort(idFirst).map((it: any) => ph(it, it.name))
+  }
+  else if ('list' === op) {
+    args = requiredItems(e, 'list').map((it: any) => typed(it, 'example'))
+  }
+  else if ('create' === op) {
+    args = requestExampleItems(e, 'create').filter((it: any) => !it.optional)
+      .map((it: any) => typed(it, 'example_' + it.name))
+  }
+  else {
+    args = requestExampleItems(e, op).filter((it: any) => !it.optional || it.name === idF)
+      .sort(idFirst).map((it: any) => ph(it, it.name))
+  }
+  return {
+    name: op,
+    action: opNeedsAction(e.op[op]),
+    args,
+    needs: 'list' === op ? requiredItems(e, 'list').map((it: any) => it.name) : [],
+    idInData: ('update' === op || 'patch' === op) && sendsId(e, op, idF) ? idF : null,
+    body: 'create' === op || 'update' === op || 'patch' === op ? bodyFacts(e.op[op]) : null,
   }
 }
 
@@ -281,6 +436,11 @@ function showFields(fields: any[], dataIdF: string | null): string[] {
 
 
 export type {
+  DescField,
+  DescFeature,
+  DescOp,
+  DescOptionRow,
+  DescRef,
   Naming,
   SdkDescription,
   DescLayout,

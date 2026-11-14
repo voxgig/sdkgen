@@ -36,12 +36,38 @@ function codeList(types: string[]): string {
 }
 
 
+// What an operation's request body is, when it is not JSON: plain data, so a
+// description can carry it and the note be written from it.
+type BodyFacts = {
+  kind: 'raw' | 'encoded'
+  media: string
+  binary: boolean
+  others: string[]
+  encoded: string[]
+}
+
+function bodyFacts(op: any): BodyFacts | null {
+  const rb = opRequestBody(op)
+  if (null == rb || 'string' !== typeof rb.media) {
+    return null
+  }
+  return {
+    kind: 'raw' === rb.kind ? 'raw' : 'encoded',
+    media: rb.media,
+    binary: true === rb.binary,
+    others: (Array.isArray(rb.alternatives) ? rb.alternatives : [])
+      .map((alt: any) => alt?.media).filter((m: any) => 'string' === typeof m),
+    encoded: opBodies(op).filter((b: any) => 'raw' !== b.kind)
+      .map((b: any) => b.media).filter((m: any) => 'string' === typeof m),
+  }
+}
+
+
 // The reference note for a body that is not JSON. `values` names what the
 // target accepts as `$body`, `once` the stream among them, which is read in
 // full before the request is sent, and `binary: false` a target without bytes.
-function bodyNote(op: any, target: { values: string, once?: string, binary?: boolean }): string {
-  const rb = opRequestBody(op)
-  if (null == rb || 'string' !== typeof rb.media) {
+function bodyNoteText(rb: BodyFacts | null, target: { values: string, once?: string, binary?: boolean }): string {
+  if (null == rb) {
     return ''
   }
 
@@ -54,26 +80,30 @@ function bodyNote(op: any, target: { values: string, once?: string, binary?: boo
     return 'Declares a binary `' + rb.media + '` body, which this SDK cannot send yet.\n\n'
   }
 
-  const others = (Array.isArray(rb.alternatives) ? rb.alternatives : [])
-    .map((alt: any) => alt?.media).filter((m: any) => 'string' === typeof m)
-  const encoded = opBodies(op).filter((b: any) => 'raw' !== b.kind)
-    .map((b: any) => b.media).filter((m: any) => 'string' === typeof m)
-
   return 'Sends its body unencoded, as `' + rb.media + '`: pass it as `' + RAW_BODY +
     '`, ' + target.values + '.' +
     (null == target.once ? '' : ' ' + target.once.charAt(0).toUpperCase() + target.once.slice(1) +
       ' is read in full before the request is sent, so that a retry sends the same bytes.') +
-    (0 < others.length ? ' The operation also accepts ' + codeList(others) +
+    (0 < rb.others.length ? ' The operation also accepts ' + codeList(rb.others) +
       ': a `content-type` header option that is not JSON replaces the declared one.' : '') +
-    (0 < encoded.length ? ' Its other endpoints declare ' + codeList(encoded) +
+    (0 < rb.encoded.length ? ' Its other endpoints declare ' + codeList(rb.encoded) +
       ' bodies, which this SDK sends as JSON.' : '') +
     '\n\n'
 }
 
 
+function bodyNote(op: any, target: { values: string, once?: string, binary?: boolean }): string {
+  return bodyNoteText(bodyFacts(op), target)
+}
+
+
+export type { BodyFacts }
+
 export {
   RAW_BODY,
+  bodyFacts,
   bodyNote,
+  bodyNoteText,
   opRawBody,
   opRequestBody,
 }

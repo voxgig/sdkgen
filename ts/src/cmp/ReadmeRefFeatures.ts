@@ -15,19 +15,23 @@ const ReadmeRefFeatures = cmp(function ReadmeRefFeatures(props: any) {
     return
   }
 
+  const onByDefault = (f: FeatureDoc) => f.options.some((o) => 'active' === o.name && 'true' === o.value)
+  const on = features.filter(onByDefault).map((f) => '`' + f.name + '`')
+
   // Emitted INSIDE the per-language `## Features` section, after its summary
   // table and activation snippet, so these are subsections of it rather than
   // a competing heading.
   Content(`
 ### Configuring features
 
-Each feature is inactive until switched on, and an SDK with no feature
-configured does no feature work at all. Every option below keeps its default
+${0 === on.length ? `Each feature is inactive until switched on, and an SDK with no feature
+configured does no feature work at all.` : `Each feature is inactive until switched on, except ${on.join(', ')}, which
+${1 === on.length ? 'runs' : 'run'} unless disabled.`} Every option below keeps its default
 unless you name it.
 
 ${honoursActivationOrder(target) ?
-  'The array form of \\`feature\\` is significant: several features wrap the\ntransport, and the order you list them in is the order they nest.' :
-  'This SDK takes \\`feature\\` as a map and composes the transport-wrapping\nfeatures in a fixed catalog order, so activation order does not change\nnesting here.'}
+  'The array form of `feature` is significant: several features wrap the\ntransport, and the order you list them in is the order they nest.' :
+  'This SDK takes `feature` as a map and composes the transport-wrapping\nfeatures in a fixed catalog order, so activation order does not change\nnesting here.'}
 
 `)
 
@@ -130,9 +134,9 @@ its default unless you name it.
 `)
     }
 
-    Content(`- Inactive by default: leaving it out costs nothing at runtime.
-
-`)
+    Content(onByDefault(f)
+      ? '- Active by default: set `active: false` to switch it off.\n\n'
+      : '- Inactive by default: leaving it out costs nothing at runtime.\n\n')
   }
 })
 

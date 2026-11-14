@@ -3,7 +3,7 @@
 // provider implements to print it. Nothing here reads the model: examples are
 // built from an SdkDescription and the provider's declared runtime facts.
 
-import type { DescArg, DescOption, DescSymbols, Scalar, SdkDescription } from './sdkdesc'
+import type { DescArg, DescEntity, DescOp, DescOption, DescSymbols, Scalar, SdkDescription } from './sdkdesc'
 import { createComment } from './runtimeprose'
 
 
@@ -70,6 +70,39 @@ type RuntimeFacts = {
   ok?: string // union: the success arm: '.ok'
   err?: string // union: the failure arm: '.err'
   prints: 'record' | 'fields' // how an example shows an entity: its whole record, or chosen fields
+}
+
+
+// A fixed member of the client or of an entity, as the runtime declares it.
+// `sig` is the signature as the language writes it; {sdk}, {client}, {ctor},
+// {module}, {accessor}, {var}, {Class} and {Name} are filled from the
+// description. Each kind has its sentence written once, in the shared page.
+type MemberKind =
+  | 'options' | 'utility' | 'direct' | 'prepare' | 'tester'
+  | 'data' | 'match' | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet'
+  | 'make' | 'name' | 'client' | 'entopts'
+  | 'streamIterator' | 'streamGenerator' | 'streamChannel' | 'streamList'
+
+type Member = { kind: MemberKind, sig: string }
+
+// What the reference page states about a runtime, independently of any model.
+type RefFacts = {
+  classes: boolean // an entity is a class named by its className; false: by its Name
+  noun: 'Methods' | 'Functions' // what the client's and an entity's members are called
+  none: string // the literal for no value: 'undefined', 'nil', 'None', 'NULL'
+  keys: 'member' | 'bare' // option tables name `options.x`, or bare map keys
+  maps: string // the language's maps, plural: 'objects', 'maps', 'dicts'
+  valueType: Record<'STRING' | 'OBJECT' | 'ANY', string> // option and fetcharg value types
+  ctor: string[] // the constructor, as the page shows it
+  test: { sig: string, call: string, args: boolean }[] // test constructors
+  accessor: { sig: string, arg: 'data' | 'entopts' } // the client's entity accessor
+  op: Record<OpName, string> // each operation's signature
+  client: Member[] // the client's fixed members, in page order
+  entity: Member[] // an entity's fixed members, in page order
+  direct: { returns: string, signal?: string } // `signal`: the type of fetchargs ctrl.signal
+  prepare: { returns: string, fails: 'style' | 'value' } // 'value': the error is returned, not thrown
+  body: { values: string, once?: string, binary?: boolean } // what `$body` accepts
+  cancel: boolean // operations take an abort signal in ctrl.signal
 }
 
 
@@ -173,6 +206,54 @@ const WRITE_COMMENT: Record<string, (chained: boolean) => string> = {
 }
 
 
+// The reference's example for one operation: a list or load consumed as the
+// tutorial consumes it, a write called alone. None for an operation reached
+// only through `$action`.
+function refOpBlock(desc: SdkDescription, facts: RuntimeFacts, ent: DescEntity, op: DescOp): Stmt[] | null {
+  if (op.action) return null
+  const entity = entOf(desc, ent.name)
+  const arg = 0 < op.args.length ? argEntries(op.args, null) : null
+  if ('list' === op.name) {
+    const many: Ref = { role: 'many', entity }
+    const item: Ref = { role: 'item', entity }
+    return [{
+      k: 'attempt', what: 'list', body: [
+        call(entity, 'list', arg, many),
+        { k: 'each', item, of: many, body: [{ k: 'print', what: { k: 'record', of: item } }] },
+      ],
+    }]
+  }
+  if ('load' === op.name) {
+    const one: Ref = { role: 'one', entity }
+    return [{
+      k: 'attempt', what: 'load', body: [
+        call(entity, 'load', arg, one),
+        { k: 'print', what: { k: 'record', of: one } },
+      ],
+    }]
+  }
+  return [call(entity, op.name, 'remove' === op.name ? arg : (arg || []), null)]
+}
+
+// A call that selects a custom action.
+function actionBlock(desc: SdkDescription, ent: DescEntity, a: { action: string, op: string }): Stmt[] {
+  return [call(entOf(desc, ent.name), a.op, [{ key: '$action', value: { k: 'str', text: a.action } }], null)]
+}
+
+// The client constructed with the named features switched on.
+function featureBlock(names: string[]): Stmt[] {
+  return [{
+    k: 'client', options: [{
+      key: 'feature', value: {
+        k: 'map', entries: names.map((n) => ({
+          key: n, value: { k: 'map', entries: [{ key: 'active', value: { k: 'lit', type: 'BOOLEAN', text: '' } }] } as Expr,
+        })),
+      },
+    }],
+  }]
+}
+
+
 // What a block uses, for a printer that declares imports.
 type Uses = { env: boolean, field: boolean, print: boolean, entities: string[] }
 
@@ -228,6 +309,15 @@ type Syntax = {
   // Optional: the steps of a section assembled into one complete program, for
   // a language whose examples are whole programs that its README test runs.
   program?: (steps: ProgramStep[], desc: SdkDescription, sc: Scope) => string[]
+  // Optional: what the reference page needs beyond statements.
+  ref?: RefSyntax
+}
+
+type RefSyntax = {
+  facts: RefFacts
+  type: (t: any) => string // a field's type, from its canonical sentinel
+  key: (container: 'options' | 'fetchargs', path: string[]) => string // how a table names an option
+  instance: (ent: Ent, desc: SdkDescription) => string[] // obtaining one entity from the client
 }
 
 
@@ -307,6 +397,10 @@ function indent(lines: string[], by: string): string[] {
 
 export type {
   CallContext,
+  Member,
+  MemberKind,
+  RefFacts,
+  RefSyntax,
   Ent,
   Entry,
   Expr,
@@ -322,7 +416,11 @@ export type {
 }
 
 export {
+  actionBlock,
   clientBlock,
+  entOf,
+  featureBlock,
+  refOpBlock,
   indent,
   listBlock,
   newScope,

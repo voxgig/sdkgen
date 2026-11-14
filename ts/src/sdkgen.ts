@@ -57,7 +57,8 @@ import { registerComponent } from './cmp/Registered'
 
 import { resolvedFor, liveHint, pointFacts, boundedFacts, hasLiveScenarios } from './helpers/resolved'
 import { definitionPlan } from './helpers/definitionPlan'
-import { RAW_BODY, bodyNote, opRawBody, opRequestBody } from './helpers/media'
+import { RAW_BODY, bodyFacts, bodyNote, bodyNoteText, opRawBody, opRequestBody } from './helpers/media'
+import { mdCell, mdInline } from './helpers/markdown'
 import type { RegisterOptions } from './cmp/Registered'
 
 import { buildIdNames, entityRelationName, flowSteps } from './helpers/buildIdNames'
@@ -83,8 +84,8 @@ import {
 import type { ExampleLang, LiteralLang } from './helpers/opExample'
 import { sdkDescription } from './helpers/sdkdesc'
 import type { SdkDescription, DescArg, DescEntity, DescLayout, DescOption, DescQuick, DescServerVar, DescSymbols, Naming } from './helpers/sdkdesc'
-import { clientBlock, listBlock, loadBlock, writeBlock, writeOps, printBlock, printProgram, printStmts, newScope, uses, indent as indentLines } from './helpers/example'
-import type { CallContext, Ent, Entry, Expr, OpName, ProgramStep, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses } from './helpers/example'
+import { actionBlock, featureBlock, refOpBlock, clientBlock, listBlock, loadBlock, writeBlock, writeOps, printBlock, printProgram, printStmts, newScope, uses, indent as indentLines } from './helpers/example'
+import type { Member, MemberKind, RefFacts, RefSyntax, CallContext, Ent, Entry, Expr, OpName, ProgramStep, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses } from './helpers/example'
 import {
   liveStrict, liveStrictNote, liveFlowNeeds, liveIdentity,
   liveRepeatsId, liveLoadComparesId, liveUnrouted,
@@ -1004,7 +1005,7 @@ function clear(path: string) {
 
 export type {
   SdkDescription, DescArg, DescEntity, DescLayout, DescOption, DescQuick, DescServerVar, DescSymbols, Naming,
-  CallContext, Ent, Entry, Expr, OpName, ProgramStep, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses,
+  Member, MemberKind, RefFacts, RefSyntax, CallContext, Ent, Entry, Expr, OpName, ProgramStep, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses,
   SdkGenOptions,
   ExampleLang,
   LiteralLang,
@@ -1072,6 +1073,7 @@ export const List: Component = JostracaModule.List
 
 
 export {
+  mdCell, mdInline, bodyFacts, bodyNoteText, actionBlock, featureBlock, refOpBlock,
   sdkDescription, clientBlock, listBlock, loadBlock, writeBlock, writeOps, printBlock, printProgram, printStmts, newScope, uses, indentLines,
   Main,
   Deploy,

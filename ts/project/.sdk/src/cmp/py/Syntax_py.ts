@@ -1,5 +1,5 @@
-import { indentLines } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, RuntimeFacts, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import { canonToType, indentLines } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
 const facts: RuntimeFacts = {
@@ -11,6 +11,47 @@ const facts: RuntimeFacts = {
   record: 'data_get()',
   recordType: 'dict',
   prints: 'record',
+}
+
+// The fixed API the reference page documents: Entity.fragment.py,
+// Main.fragment.py and MainEntity_py.
+const refFacts: RefFacts = {
+  classes: true,
+  noun: 'Methods',
+  none: 'None',
+  keys: 'member',
+  maps: 'dicts',
+  valueType: { STRING: 'str', OBJECT: 'dict', ANY: 'any' },
+  ctor: ['from {module} import {client}', '', 'client = {ctor}(options)'],
+  test: [{ sig: '{client}.test(testopts=None, sdkopts=None)', call: 'client = {client}.test()', args: true }],
+  accessor: { sig: '{accessor}(data=None)', arg: 'data' },
+  op: {
+    list: 'list(reqmatch=None, ctrl=None) -> list[{Class}]',
+    load: 'load(reqmatch, ctrl=None) -> {Class}',
+    create: 'create(reqdata, ctrl=None) -> {Class}',
+    update: 'update(reqdata, ctrl=None) -> {Class}',
+    patch: 'patch(reqdata, ctrl=None) -> {Class}',
+    remove: 'remove(reqmatch, ctrl=None) -> {Class}',
+  },
+  client: [
+    { kind: 'options', sig: 'options_map() -> dict' },
+    { kind: 'utility', sig: 'get_utility() -> Utility' },
+    { kind: 'direct', sig: 'direct(fetchargs=None) -> dict' },
+    { kind: 'prepare', sig: 'prepare(fetchargs=None) -> dict' },
+  ],
+  entity: [
+    { kind: 'dataGet', sig: 'data_get() -> dict' },
+    { kind: 'dataSet', sig: 'data_set(data)' },
+    { kind: 'matchGet', sig: 'match_get() -> dict' },
+    { kind: 'matchSet', sig: 'match_set(match)' },
+    { kind: 'make', sig: 'make() -> Entity' },
+    { kind: 'streamGenerator', sig: 'stream(action, args=None, callopts=None)' },
+    { kind: 'name', sig: 'get_name() -> str' },
+  ],
+  direct: { returns: 'dict' },
+  prepare: { returns: 'dict', fails: 'style' },
+  body: { values: '`bytes`, `bytearray`, `memoryview`, a `str` or a file object', once: 'a file object' },
+  cancel: false,
 }
 
 const str = (s: string): string => JSON.stringify(s)
@@ -36,9 +77,10 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `${str(en.key)}: ${expr(en.value)}`
 
-const members = (entries: Entry[], pad: string): string[] =>
-  entries.flatMap((en) => 'map' === en.value.k
-    ? [`${pad}${str(en.key)}: {`, ...members(en.value.entries, pad + '    '), `${pad}},`]
+// A map two levels down stays on its member's line.
+const members = (entries: Entry[], pad: string, depth = 0): string[] =>
+  entries.flatMap((en) => 'map' === en.value.k && 0 === depth
+    ? [`${pad}${str(en.key)}: {`, ...members(en.value.entries, pad + '    ', depth + 1), `${pad}},`]
     : [`${pad}${pair(en)},`])
 
 
@@ -77,6 +119,13 @@ const Syntax: SyntaxType = {
   comment: (text) => '# ' + text,
 
   expr: (e) => expr(e),
+
+  ref: {
+    facts: refFacts,
+    type: (t) => canonToType(t, 'py'),
+    key: (container, path) => container + path.map((k) => `[${str(k)}]`).join(''),
+    instance: (e) => [`${e.sym.var} = client.${e.sym.accessor}()`],
+  },
 }
 
 

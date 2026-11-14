@@ -1,5 +1,5 @@
-import { indentLines } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, RuntimeFacts, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import { canonKey, canonToType, indentLines } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Stmt, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
 const facts: RuntimeFacts = {
@@ -13,6 +13,43 @@ const facts: RuntimeFacts = {
   errSlot: '*err',
   nullValue: 'NULL',
   prints: 'record',
+}
+
+// The fixed API the reference page documents: core/sdk.h (the Entity
+// vtable), Main.fragment.c, MainEntity_c and EntityBase_c (`<evar>_stream`).
+const refFacts: RefFacts = {
+  classes: false,
+  noun: 'Functions',
+  none: 'NULL',
+  keys: 'bare',
+  maps: 'maps',
+  valueType: { STRING: 'string', OBJECT: 'map', ANY: 'any' },
+  ctor: ['#include "{module}"', '', '{client}* client = {ctor}(options);'],
+  test: [{ sig: '{client}* test_sdk(voxgig_value* testopts, voxgig_value* sdkopts)', call: '{client}* client = test_sdk(NULL, NULL);', args: true }],
+  accessor: { sig: 'Entity* {accessor}({client}* client, voxgig_value* entopts)', arg: 'entopts' },
+  op: {
+    list: 'Entity** vt->list(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
+    load: 'Entity* vt->load(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
+    create: 'Entity* vt->create(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
+    update: 'Entity* vt->update(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
+    patch: 'Entity* vt->patch(Entity* e, voxgig_value* reqdata, voxgig_value* ctrl, PNError** err)',
+    remove: 'Entity* vt->remove(Entity* e, voxgig_value* reqmatch, voxgig_value* ctrl, PNError** err)',
+  },
+  client: [
+    { kind: 'direct', sig: 'voxgig_value* sdk_direct({client}* client, voxgig_value* fetchargs, PNError** err)' },
+    { kind: 'prepare', sig: 'voxgig_value* sdk_prepare({client}* client, voxgig_value* fetchargs, PNError** err)' },
+  ],
+  entity: [
+    { kind: 'data', sig: 'voxgig_value* vt->data(Entity* e, voxgig_value* args)' },
+    { kind: 'match', sig: 'voxgig_value* vt->matchv(Entity* e, voxgig_value* args)' },
+    { kind: 'make', sig: 'Entity* vt->make(Entity* e)' },
+    { kind: 'streamList', sig: 'voxgig_value* {var}_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err)' },
+    { kind: 'name', sig: 'const char* vt->get_name(Entity* e)' },
+  ],
+  direct: { returns: 'voxgig_value*' },
+  prepare: { returns: 'voxgig_value*', fails: 'style' },
+  body: { values: 'a string value holding the bytes, such as `voxgig_new_string_n`' },
+  cancel: false,
 }
 
 const str = (s: string): string => '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'
@@ -54,6 +91,11 @@ const expr = (e: Expr): string => {
   }
 }
 
+// An option whose value is a map of maps is laid out one member per line.
+const option = (e: Expr): string => 'map' === e.k && e.entries.some((en) => 'map' === en.value.k)
+  ? `cmap(${e.entries.length},\n` + e.entries.map((en) => `        ${str(en.key)}, ${expr(en.value)}`).join(',\n') + ')'
+  : expr(e)
+
 const reads = (stmts: Stmt[], ref: Ref): string[] => {
   const found: string[] = []
   const visit = (e: Expr): void => {
@@ -80,7 +122,7 @@ const Syntax: SyntaxType = {
     0 === s.options.length
       ? `${desc.layout.client}* client = ${desc.layout.ctor}(NULL);`
       : `${desc.layout.client}* client = ${desc.layout.ctor}(cmap(${s.options.length},\n` +
-      s.options.map((en) => `    ${str(en.key)}, ${expr(en.value)}`).join(',\n') + '));',
+      s.options.map((en) => `    ${str(en.key)}, ${option(en.value)}`).join(',\n') + '));',
   ],
 
   // The error slot and each entity's handle are declared once, ahead of the
@@ -140,6 +182,16 @@ const Syntax: SyntaxType = {
   comment: (text) => '// ' + text,
 
   expr: (e) => expr(e),
+
+  ref: {
+    facts: refFacts,
+    type: (t) => {
+      const k = canonKey(t)
+      return canonToType(t, 'c') + ('ARRAY' === k ? ' (list)' : ('OBJECT' === k ? ' (map)' : ''))
+    },
+    key: (_container, path) => path.join('.'),
+    instance: (e) => [`Entity* ${e.sym.var} = ${e.sym.accessor}(client, NULL);`],
+  },
 }
 
 

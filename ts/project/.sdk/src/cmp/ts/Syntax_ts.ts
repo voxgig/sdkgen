@@ -1,5 +1,5 @@
-import { indentLines, jsKey, jsProp, jsQuote } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, RuntimeFacts, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import { canonToType, indentLines, jsKey, jsProp, jsQuote } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
 const facts: RuntimeFacts = {
@@ -10,6 +10,47 @@ const facts: RuntimeFacts = {
   collection: 'array',
   record: '.data()',
   prints: 'record',
+}
+
+// The fixed API the reference page documents: EntityBase.fragment.ts,
+// Entity.fragment.ts and Main.fragment.ts.
+const refFacts: RefFacts = {
+  classes: true,
+  noun: 'Methods',
+  none: 'undefined',
+  keys: 'member',
+  maps: 'objects',
+  valueType: { STRING: 'string', OBJECT: 'object', ANY: 'any' },
+  ctor: ['new {ctor}(options?: object)'],
+  test: [{ sig: '{client}.test(testopts?, sdkopts?)', call: 'const client = {client}.test()', args: true }],
+  accessor: { sig: '{accessor}(data?: object)', arg: 'data' },
+  op: {
+    list: 'list(match: object, ctrl?: object)',
+    load: 'load(match: object, ctrl?: object)',
+    create: 'create(data: object, ctrl?: object)',
+    update: 'update(data: object, ctrl?: object)',
+    patch: 'patch(data: object, ctrl?: object)',
+    remove: 'remove(match: object, ctrl?: object)',
+  },
+  client: [
+    { kind: 'options', sig: 'options()' },
+    { kind: 'utility', sig: 'utility()' },
+    { kind: 'direct', sig: 'direct(fetchargs?: object)' },
+    { kind: 'prepare', sig: 'prepare(fetchargs?: object)' },
+    { kind: 'tester', sig: 'tester(testopts?, sdkopts?)' },
+  ],
+  entity: [
+    { kind: 'data', sig: 'data(data?: object)' },
+    { kind: 'match', sig: 'match(match?: object)' },
+    { kind: 'make', sig: 'make()' },
+    { kind: 'streamIterator', sig: 'stream(action: string, args?: object, callopts?: object)' },
+    { kind: 'client', sig: 'client()' },
+    { kind: 'entopts', sig: 'entopts()' },
+  ],
+  direct: { returns: 'Promise<{ ok, status, headers, data }>', signal: 'AbortSignal' },
+  prepare: { returns: 'Promise<{ url, method, headers, body } | Error>', fails: 'value' },
+  body: { values: 'a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string', once: 'a stream' },
+  cancel: true,
 }
 
 const name = (r: Ref): string =>
@@ -33,10 +74,11 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `${jsKey(en.key)}: ${expr(en.value)}`
 
-// One member per line, closed with a trailing comma, at the given depth.
-const members = (entries: Entry[], pad: string): string[] =>
-  entries.flatMap((en) => 'map' === en.value.k
-    ? [`${pad}${jsKey(en.key)}: {`, ...members(en.value.entries, pad + '  '), `${pad}},`]
+// One member per line, closed with a trailing comma; a map two levels down
+// stays on its member's line.
+const members = (entries: Entry[], pad: string, depth = 0): string[] =>
+  entries.flatMap((en) => 'map' === en.value.k && 0 === depth
+    ? [`${pad}${jsKey(en.key)}: {`, ...members(en.value.entries, pad + '  ', depth + 1), `${pad}},`]
     : [`${pad}${pair(en)},`])
 
 const argOf = (arg: Entry[] | null, wide: boolean): string =>
@@ -80,6 +122,13 @@ const Syntax: SyntaxType = {
   comment: (text) => '// ' + text,
 
   expr: (e) => expr(e),
+
+  ref: {
+    facts: refFacts,
+    type: (t) => canonToType(t, 'ts'),
+    key: (container, path) => [container, ...path].join('.'),
+    instance: (e) => [`const ${e.sym.var} = client.${e.sym.accessor}()`],
+  },
 }
 
 

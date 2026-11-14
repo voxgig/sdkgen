@@ -1,5 +1,5 @@
-import { indentLines, uses } from '@voxgig/sdkgen'
-import type { Entry, Expr, Ref, RuntimeFacts, Scope, Syntax as SyntaxType } from '@voxgig/sdkgen'
+import { canonToType, indentLines, uses } from '@voxgig/sdkgen'
+import type { Entry, Expr, Ref, RefFacts, RuntimeFacts, Scope, Syntax as SyntaxType } from '@voxgig/sdkgen'
 
 
 const facts: RuntimeFacts = {
@@ -11,6 +11,48 @@ const facts: RuntimeFacts = {
   record: 'Data()',
   errVar: 'err',
   prints: 'record',
+}
+
+// The fixed API the reference page documents: Entity.fragment.go,
+// Main.fragment.go, MainEntity_go and Main_go (Test).
+const refFacts: RefFacts = {
+  classes: true,
+  noun: 'Methods',
+  none: 'nil',
+  keys: 'member',
+  maps: 'maps',
+  valueType: { STRING: 'string', OBJECT: 'map[string]any', ANY: 'any' },
+  ctor: ['func {ctor}(options map[string]any) *{client}'],
+  test: [
+    { sig: 'Test() *{client}', call: 'client := sdk.Test()', args: false },
+    { sig: 'TestSDK(testopts, sdkopts map[string]any) *{client}', call: 'client := sdk.TestSDK(testopts, sdkopts)', args: true },
+  ],
+  accessor: { sig: '{accessor}(data map[string]any) {sdk}EntityBase', arg: 'data' },
+  op: {
+    list: 'List(reqmatch, ctrl map[string]any) (any, error)',
+    load: 'Load(reqmatch, ctrl map[string]any) (any, error)',
+    create: 'Create(reqdata, ctrl map[string]any) (any, error)',
+    update: 'Update(reqdata, ctrl map[string]any) (any, error)',
+    patch: 'Patch(reqdata, ctrl map[string]any) (any, error)',
+    remove: 'Remove(reqmatch, ctrl map[string]any) (any, error)',
+  },
+  client: [
+    { kind: 'options', sig: 'OptionsMap() map[string]any' },
+    { kind: 'utility', sig: 'GetUtility() *Utility' },
+    { kind: 'direct', sig: 'Direct(fetchargs map[string]any) (map[string]any, error)' },
+    { kind: 'prepare', sig: 'Prepare(fetchargs map[string]any) (map[string]any, error)' },
+  ],
+  entity: [
+    { kind: 'data', sig: 'Data(args ...any) any' },
+    { kind: 'match', sig: 'Match(args ...any) any' },
+    { kind: 'make', sig: 'Make() Entity' },
+    { kind: 'streamChannel', sig: 'Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem' },
+    { kind: 'name', sig: 'GetName() string' },
+  ],
+  direct: { returns: '(map[string]any, error)' },
+  prepare: { returns: '(map[string]any, error)', fails: 'style' },
+  body: { values: 'a `[]byte`, a `string` or an `io.Reader`', once: 'an `io.Reader`' },
+  cancel: false,
 }
 
 const str = (s: string): string => JSON.stringify(s).replace(/﻿/g, '\\ufeff')
@@ -39,9 +81,10 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `${str(en.key)}: ${expr(en.value)}`
 
-const members = (entries: Entry[], pad: string): string[] =>
-  entries.flatMap((en) => 'map' === en.value.k
-    ? [`${pad}${str(en.key)}: map[string]any{`, ...members(en.value.entries, pad + '    '), `${pad}},`]
+// A map two levels down stays on its member's line.
+const members = (entries: Entry[], pad: string, depth = 0): string[] =>
+  entries.flatMap((en) => 'map' === en.value.k && 0 === depth
+    ? [`${pad}${str(en.key)}: map[string]any{`, ...members(en.value.entries, pad + '    ', depth + 1), `${pad}},`]
     : [`${pad}${pair(en)},`])
 
 // Operations return (value, error): the error is checked where it is made.
@@ -91,6 +134,13 @@ const Syntax: SyntaxType = {
   comment: (text) => '// ' + text,
 
   expr: (e) => expr(e),
+
+  ref: {
+    facts: refFacts,
+    type: (t) => canonToType(t, 'go'),
+    key: (container, path) => container + path.map((k) => `[${str(k)}]`).join(''),
+    instance: (e) => [`${e.sym.var} := client.${e.sym.accessor}(nil)`],
+  },
 
   // A complete program: what the steps use is imported, and each step is a
   // commented paragraph of main. A client nothing calls is still used.
