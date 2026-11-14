@@ -55,7 +55,7 @@ import type { ExampleLang, LiteralLang } from './helpers/opExample';
 import { readsSecret, sdkDescription, templateName } from './helpers/sdkdesc';
 import type { SdkDescription, DescAction, DescArg, DescEntity, DescLayout, DescOption, DescQuick, DescServerVar, DescSymbols, Naming } from './helpers/sdkdesc';
 import { featureBlock, refOpBlock, clientBlock, listBlock, loadBlock, writeBlock, writeOps, printBlock, printProgram, printStmts, newScope, note, uses, indent as indentLines } from './helpers/example';
-import type { CtorKind, Member, MemberKind, NoteSlot, RefFacts, RefSyntax, CallContext, Ent, Entry, Expr, OpName, Prints, ProgramStep, Ref, ResultStyle, ShowPlace, RuntimeFacts, Scope, Stmt, Syntax, Uses } from './helpers/example';
+import type { CtorKind, Member, MemberKind, NoteSlot, RefFacts, RefSyntax, CallContext, Ent, Entry, Expr, OpName, Prints, ProgramStep, Ref, ResultStyle, ShowPlace, StreamRuns, RuntimeFacts, Scope, Stmt, Syntax, Uses } from './helpers/example';
 import { liveStrict, liveStrictNote, liveFlowNeeds, liveIdentity, liveRepeatsId, liveLoadComparesId, liveUnrouted, liveIdKey, liveExampleIds, liveQueryExamples, liveRouteExamples, liveStepExamples, flowLoadRoute, flowLoadReadsRecord, liveFlowRoutes, liveEntity, LIVE_GETONLY_ENV, liveFlowSteps, liveStepId, liveGetOnly, liveGetOnlyReason, liveFlowPlan, liveGates, liveDirectGetOnly, liveExcludedLines, liveExcludedSummary } from './helpers/testPolicy';
 import type { LiveFlowNeeds, LiveIdentity, LiveExcluded, LiveGetOnly, LiveGate, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute } from './helpers/testPolicy';
 import { pointSegments, pointParts, pointSlash, pointPlaceholders, pointTerminalParam, pointPathKey } from './helpers/pointPath';
@@ -130,7 +130,7 @@ declare function SdkGen(opts: SdkGenOptions): {
 declare namespace SdkGen {
     var makeBuild: (opts: SdkGenOptions) => Promise<(model: any, build: any, ctx: any) => Promise<any>>;
 }
-export type { SdkDescription, DescAction, DescArg, DescEntity, DescLayout, DescOption, DescQuick, DescServerVar, DescSymbols, Naming, CtorKind, Member, MemberKind, NoteSlot, RefFacts, RefSyntax, CallContext, Ent, Entry, Expr, OpName, Prints, ProgramStep, Ref, ResultStyle, ShowPlace, RuntimeFacts, Scope, Stmt, Syntax, Uses, SdkGenOptions, ExampleLang, LiteralLang, McpTool, DepEntry, LiveFlowNeeds, LiveIdentity, LiveExcluded, LiveGetOnly, LiveGate, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute, PathSegment, LiveDiscovery, FeatureSource, DoctorReport, RegisterOptions, Manifest, ManifestRead, };
+export type { SdkDescription, DescAction, DescArg, DescEntity, DescLayout, DescOption, DescQuick, DescServerVar, DescSymbols, Naming, CtorKind, Member, MemberKind, NoteSlot, RefFacts, RefSyntax, CallContext, Ent, Entry, Expr, OpName, Prints, ProgramStep, Ref, ResultStyle, ShowPlace, StreamRuns, RuntimeFacts, Scope, Stmt, Syntax, Uses, SdkGenOptions, ExampleLang, LiteralLang, McpTool, DepEntry, LiveFlowNeeds, LiveIdentity, LiveExcluded, LiveGetOnly, LiveGate, LiveKeyExcluded, FlowRouteArg, FlowLoadRoute, PathSegment, LiveDiscovery, FeatureSource, DoctorReport, RegisterOptions, Manifest, ManifestRead, };
 export type { SdkModel, ModelKit, ModelTarget, ModelFeature, ModelEntity, ModelDep, ModelHook, } from './types';
 type Component = (props: any, children?: any) => void;
 export declare const cmp: typeof JostracaModule.cmp;

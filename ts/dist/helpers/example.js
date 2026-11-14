@@ -5,6 +5,8 @@
 // built from an SdkDescription and the provider's declared runtime facts.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.actionBlock = actionBlock;
+exports.checksItself = checksItself;
+exports.interrupts = interrupts;
 exports.clientBlock = clientBlock;
 exports.entOf = entOf;
 exports.featureBlock = featureBlock;
@@ -26,7 +28,22 @@ const runtimeprose_1 = require("./runtimeprose");
 // ---- the builders
 function entOf(desc, name) {
     const e = desc.entities.find((x) => x.name === name);
-    return e ? { name, Name: e.Name, sym: e.sym } : { name, Name: name, sym: { accessor: name, var: name, plural: name } };
+    if (null == e)
+        throw new Error(`example: no entity ${name} in the description of ${desc.target}`);
+    return { name, Name: e.Name, sym: e.sym };
+}
+// Whether a failure stops the program where it happens: it throws, raises
+// or dies. Otherwise the failure comes back to the caller, and an example
+// may not use a result, or make its next call, past one it has not checked.
+function interrupts(style) {
+    return 'throw' === style || 'raise' === style || 'die' === style || 'wrapped' === style;
+}
+// Whether a call can be printed with no check of its own. In 'pair' and
+// 'union' the error comes back with the value, so binding the value takes the
+// result apart (a checked `err`, an unwrap, a switch); in 'errslot' the value
+// is bound whether or not the slot was set, so the example has to check it.
+function checksItself(style) {
+    return 'errslot' !== style;
 }
 const GENERIC = { many: 'results', item: 'item', one: 'result', created: 'result' };
 function refOf(desc, role, entity, naming) {
@@ -120,7 +137,10 @@ function writeBlock(desc, facts) {
             out.push({ k: 'gap' });
         const chained = q[op].some((a) => null != a.fromCreated);
         out.push({ k: 'comment', text: 'create' === op ? (0, runtimeprose_1.createComment)(facts, created.name) : WRITE_COMMENT[op](chained) });
-        out.push(call(entity, op, 'create' === op || 0 < q[op].length ? argEntries(q[op], created) : null, 'create' === op && q.chainsId ? created : null));
+        const stmt = call(entity, op, 'create' === op || 0 < q[op].length ? argEntries(q[op], created) : null, 'create' === op && q.chainsId ? created : null);
+        // Each write is followed by another, or by the end of the step: where the
+        // call does not check itself, its check is printed after it.
+        out.push(checksItself(facts.result) ? stmt : { k: 'attempt', what: op, body: [stmt] });
     }
     return out;
 }
@@ -159,7 +179,11 @@ function refOpBlock(desc, facts, ent, op) {
     if ('call' === stmt.k && ('update' === op.name || 'patch' === op.name)) {
         stmt.note = 'update' === op.name ? 'Fields to update' : 'Only the fields to change';
     }
-    return [stmt, ...(facts.unusedError ? [{ k: 'print', what: show(desc, facts, one, 'reference') }] : [])];
+    // The record is read back where an unused binding fails the build, and,
+    // for a single entity, where a failure does not interrupt: the provider's
+    // printer then prints the read past the check it needs.
+    const read = facts.unusedError || (!interrupts(facts.result) && ('load' === op.name || 'remove' === op.name));
+    return [stmt, ...(read ? [{ k: 'print', what: show(desc, facts, one, 'reference') }] : [])];
 }
 // A custom action called: the operation it is routed through, with `$action`
 // and the route's path parameters in its argument. Its response is the

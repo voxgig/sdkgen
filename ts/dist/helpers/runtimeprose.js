@@ -16,8 +16,17 @@ const code = (s) => '`' + s + '`';
 const article = (s) => /^`?[aeiou]/i.test(s) ? 'an' : 'a';
 const a = (s) => article(s) + ' ' + s;
 function opName(f, op) {
-    const m = f.method[op] || op;
+    const m = f.method[op];
+    if (null == m)
+        throw new Error(`runtimeprose: no method declared for ${op}`);
     return code('call' === f.named ? m + '()' : m);
+}
+// A fact a result style needs, which the provider must declare.
+function need(f, key) {
+    const v = f[key];
+    if (null == v)
+        throw new Error(`runtimeprose: result style ${f.result} needs facts.${key}`);
+    return v;
 }
 // The code that reads a record, naming the variable the example binds.
 function record(f, bound) {
@@ -31,7 +40,11 @@ function verb(f) {
     return { throw: 'throws', raise: 'raises', die: 'dies', wrapped: 'throws' }[f.result];
 }
 function pairForm(f) {
-    return f.pairForm || '(value, error)';
+    return need(f, 'pairForm');
+}
+// `non-nil`, from the value the error holds when nothing failed.
+function nonNil(f) {
+    return 'non-' + need(f, 'noError');
 }
 // A list's value, naming the type where the language declares one.
 function many(f, cls) {
@@ -54,7 +67,7 @@ function listSentence(f, bound) {
             return `${op} returns a value holding ${m}, and throws on failure; ${code(f.unwrap)} ` +
                 `takes one entity out, and ${rec}.`;
         case 'pair':
-            return `${op} returns ${code(pairForm(f))}: the value is ${m}, and a non-nil ${code(f.errVar)} ` +
+            return `${op} returns ${code(pairForm(f))}: the value is ${m}, and a ${nonNil(f)} ${code(f.errVar)} ` +
                 `reports failure. There is no ${code('{ok, data}')} wrapper; ${rec}.`;
         case 'errslot':
             return `${op} returns ${m}, or ${code(f.nullValue)} with ${code(f.errSlot)} set on failure, ` +
@@ -77,7 +90,7 @@ function loadSentence(f, bound) {
             return `${op} returns a value holding the entity, and throws on failure; ${code(f.unwrap)} ` +
                 `takes it out, and ${rec}.`;
         case 'pair':
-            return `${op} returns ${code(pairForm(f))}: the value is the entity, and a non-nil ` +
+            return `${op} returns ${code(pairForm(f))}: the value is the entity, and a ${nonNil(f)} ` +
                 `${code(f.errVar)} reports failure; ${rec}.`;
         case 'errslot':
             return `${op} returns the entity, or ${code(f.nullValue)} with ${code(f.errSlot)} ` +
@@ -100,7 +113,7 @@ function writeSentence(f, ops) {
         case 'wrapped':
             return `${each} a value holding ${what}, and throws on failure.`;
         case 'pair':
-            return `${each} ${code(pairForm(f))} too: the value is ${what}, and a non-nil ` +
+            return `${each} ${code(pairForm(f))} too: the value is ${what}, and a ${nonNil(f)} ` +
                 `${code(f.errVar)} reports failure.`;
         case 'errslot':
             return `${each} ${what}, or ${code(f.nullValue)} with ${code(f.errSlot)} set on ` +
@@ -135,7 +148,7 @@ function failsShort(f) {
         case 'raise':
         case 'die':
         case 'wrapped': return verb(f) + ' on failure';
-        case 'pair': return f.errVar + ' is non-nil on failure';
+        case 'pair': return f.errVar + ' is ' + nonNil(f) + ' on failure';
         case 'errslot': return f.errSlot + ' is set on failure';
         case 'union': return f.err + ' on failure';
     }
@@ -176,7 +189,7 @@ function returnClause(f, value) {
         case 'wrapped':
             return `Returns a value holding ${value}, and throws on failure.`;
         case 'pair':
-            return `Returns ${value}; ${code(f.errVar)} is non-nil on failure.`;
+            return `Returns ${value}; ${code(f.errVar)} is ${nonNil(f)} on failure.`;
         case 'errslot':
             return `Returns ${value}, or ${code(f.nullValue)} with ${code(f.errSlot)} set on failure.`;
         case 'union':
@@ -209,7 +222,7 @@ function failsSentence(f) {
         case 'raise':
         case 'die':
         case 'wrapped': return `It ${verb(f)} on failure.`;
-        case 'pair': return `${code(f.errVar)} is non-nil on failure.`;
+        case 'pair': return `${code(f.errVar)} is ${nonNil(f)} on failure.`;
         case 'errslot': return `It returns ${code(f.nullValue)} with ${code(f.errSlot)} set on failure.`;
         case 'union': return `Its ${code(f.err)} reports failure.`;
     }

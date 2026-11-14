@@ -38,10 +38,13 @@ loading a specific record.${'' === placement ? '' : ' ' + placement}
     }
 });
 exports.ReadmeQuick = ReadmeQuick;
-// The target's description, named by its own Naming hook.
+// The target's description, named by its own Naming hook. A target with a
+// syntax provider has one: names are never guessed for it.
 function describeTarget(ctx$, target) {
     const hook = (0, optional_1.optionalComponent)(ctx$, target, 'Naming');
-    return (0, sdkdesc_1.sdkDescription)(ctx$.model, target, hook ? hook.Naming : undefined, ctx$.stdrep);
+    if (null == hook)
+        throw new Error(`${target.name}: a syntax provider needs a Naming hook (cmp/${target.name}/Naming_${target.name})`);
+    return (0, sdkdesc_1.sdkDescription)(ctx$.model, target, hook.Naming, ctx$.stdrep);
 }
 const article = (s) => /^[aeiou]/i.test(s) ? 'an' : 'a';
 function series(items) {
@@ -207,7 +210,8 @@ function bare(stmts) {
 // The root README's quick start for one language: the tutorial's first steps,
 // client, list and load, in one block, each step named in a comment that
 // states its runtime fact, its calls outside error handling, as most of the
-// old root quick starts were.
+// old root quick starts were. Where a call does not check itself, its check
+// stays: the load after the list may not run past an unchecked failure.
 function topQuickText(p, desc) {
     const sc = (0, example_1.newScope)();
     const { steps } = quickSteps(p, desc, 'top');
@@ -215,7 +219,8 @@ function topQuickText(p, desc) {
     // The comment names the step, so the program printer adds no title of its own.
     const commented = first.map((s) => ({
         title: '',
-        stmts: 'Create a client' === s.title ? s.stmts : [{ k: 'comment', text: s.comment }, ...bare(s.stmts)],
+        stmts: 'Create a client' === s.title ? s.stmts
+            : [{ k: 'comment', text: s.comment }, ...((0, example_1.checksItself)(p.facts.result) ? bare(s.stmts) : s.stmts)],
     }));
     sc.section = commented.flatMap((s) => s.stmts);
     return p.program ? (0, example_1.printProgram)(p, commented, desc, sc) : (0, example_1.printJoined)(p, commented, desc, sc);

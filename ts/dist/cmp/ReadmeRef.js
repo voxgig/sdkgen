@@ -61,15 +61,45 @@ function typeOf(r, ent) {
     switch (r.facts.entityBy) {
         case 'class': return ent.className;
         case 'Name': return ent.Name;
-        case 'module': return ent.sym.module ?? ent.Name;
+        case 'module':
+            if (null == ent.sym.module)
+                throw new Error(`ReadmeRef: entityBy 'module' and no module named for ${ent.name}`);
+            return ent.sym.module;
     }
 }
-const lit = (r, v) => code((r.facts.lits || { true: 'true', false: 'false' })[v ? 'true' : 'false']);
+// The value the direct result's `ok` holds on a failure, as the runtime writes it.
+const okFalse = (r) => code(r.facts.direct.okFalse);
 // How prose names a fixed member: its name from its signature, called.
 function memberName(r, k) {
-    const m = [...r.facts.client, ...r.facts.entity].find((x) => x.kind === k);
-    const named = null == m ? null : /([\w.]+(?:->\w+)?)\s*\(/.exec(m.sig);
-    return null == named ? k : named[1] + '()';
+    const m = [...r.facts.client, ...r.facts.entity].find((x) => 'function' === typeof k ? k(x.kind) : x.kind === k);
+    if (null == m)
+        throw new Error(`ReadmeRef: no declared member of kind ${String(k)}`);
+    // A form whose head is the call, `(ns/name args)`, is named by its head alone.
+    const head = /^\((?:[^\s()/]+\/)?([^\s()/]+)[\s)]/.exec(m.sig);
+    if (null != head)
+        return head[1];
+    const named = /([\w.]+(?:->\w+)?)\s*\(/.exec(m.sig);
+    if (null == named)
+        throw new Error(`ReadmeRef: the signature of ${m.kind} names no call: ${m.sig}`);
+    return named[1] + '()';
+}
+// How a map is passed to set an entity's data or match.
+function setArg(r) {
+    if (null == r.facts.setArg)
+        throw new Error('ReadmeRef: dataArg and matchArg need ref.facts.setArg');
+    return r.facts.setArg;
+}
+// When a stream's operation runs, and when its items are read.
+const STREAM_RUNS = {
+    iterate: 'The operation runs when iteration starts, not when the call returns.',
+    call: 'The operation runs, and every item is read, before the call returns.',
+    background: 'The operation starts at the call and runs beside the caller, handing over each item as the caller takes it.',
+};
+// A stream kind's sentence: what it returns, then when it runs.
+function streamText(what, m) {
+    if (null == m.runs)
+        throw new Error(`ReadmeRef: stream member ${m.sig} needs runs`);
+    return wrap(`Run an operation through the pipeline and ${what} ${STREAM_RUNS[m.runs].replace(/\n/g, ' ')}`);
 }
 // What a getter hands back: a copy where the runtime clones, which its member
 // declares (Member.copy).
@@ -91,8 +121,8 @@ function memberText(m, p, desc, ent) {
             'internal data and returns the current data. When called without\narguments, returns ' +
             (m.copy ? 'a copy of the current data.' : 'the current data.');
         case 'match': return `Get or set the entity match criteria. Works the same as ${code(sig('data'))}.`;
-        case 'dataArg': return wrap(`Get the entity data.${m.copy ? ' ' + COPY : ''} Pass ${r.facts.setArg || 'a map'} to set it.`);
-        case 'matchArg': return `Get the entity match criteria. Pass ${r.facts.setArg || 'a map'} to set it.`;
+        case 'dataArg': return wrap(`Get the entity data.${m.copy ? ' ' + COPY : ''} Pass ${setArg(r)} to set it.`);
+        case 'matchArg': return `Get the entity match criteria. Pass ${setArg(r)} to set it.`;
         case 'dataGet': return 'Get the entity data.' + (m.copy ? ' ' + COPY : '');
         case 'dataSet': return 'Set the entity data.';
         case 'matchGet': return 'Get the entity match criteria.';
@@ -101,14 +131,14 @@ function memberText(m, p, desc, ent) {
         case 'name': return 'Return the entity name.';
         case 'client': return `Return the parent ${code(desc.layout.client)} instance.`;
         case 'entopts': return 'Return a copy of the entity options.';
-        case 'stream': return 'Run an operation through the pipeline and stream its result items.';
-        case 'streamIterator': return 'Run an operation through the pipeline and yield its result items as\nthey arrive, as an async iterator.';
-        case 'streamGenerator': return 'Run an operation through the pipeline and yield its result items as\nthey arrive, as a generator.';
-        case 'streamLazy': return 'Run an operation through the pipeline and return a lazy stream of its\nresult items.';
-        case 'streamSync': return 'Run an operation through the pipeline and return an iterator over its\nresult items.';
-        case 'streamFunction': return 'Run an operation through the pipeline and return a function that\n' +
-            `returns its next result item on each call, and ${code(r.facts.none)} once the items end.`;
-        case 'streamList': return 'Run an operation through the pipeline and return its result items as\none list. ' + (0, runtimeprose_1.failsSentence)(p.facts);
+        case 'stream': return streamText('stream its result items.', m);
+        case 'streamIterator': return streamText('yield its result items as an async iterator.', m);
+        case 'streamGenerator': return streamText('yield its result items as a generator.', m);
+        case 'streamLazy': return streamText('return a lazy sequence of its result items.', m);
+        case 'streamSync': return streamText('return an iterator over its result items.', m);
+        case 'streamFunction': return streamText('return a function that returns its next result item on each ' +
+            `call, and ${code(r.facts.none)} once the items end.`, m);
+        case 'streamList': return streamText(`return its result items as one list. ${(0, runtimeprose_1.failsSentence)(p.facts)}`, m);
         case 'direct': return 'Make a direct HTTP request to any API endpoint.';
         case 'prepare': return `Prepare a fetch definition without sending the request. Accepts the\nsame parameters as ${code(sig('direct'))}.`;
     }
@@ -150,11 +180,11 @@ function clientMember(m, p, desc) {
         out += keyTable(p, 'fetchargs', directRows(p, desc));
         if (r.facts.direct.signal) {
             out += `| ${code(r.key('fetchargs', ['ctrl', 'signal']))} | ${code(r.facts.direct.signal)} | ` +
-                `Aborts the request in flight: \`ok\` is then ${lit(r, false)} and \`err.code\` is \`request_aborted\`. |\n`;
+                `Aborts the request in flight: \`ok\` is then ${okFalse(r)} and \`err.code\` is ${code(abortCode(r))}. |\n`;
         }
         out += '\n' + wrap(`**Returns:** ${code(fill(r.facts.direct.returns, desc))}, a result map holding \`ok\`, ` +
             '`status`, `headers` and `data`, even for a non-2xx response; on a failure `ok` is ' +
-            `${lit(r, false)} and \`err\` holds the error. A failed request is reported in the result, ` +
+            `${okFalse(r)} and \`err\` holds the error. A failed request is reported in the result, ` +
             `not as an error, so branch on ${code(r.read('result', 'ok'))}.`) + '\n\n';
     }
     else if ('prepare' === m.kind) {
@@ -206,13 +236,24 @@ function testText(p, desc) {
     }
     return out + (0, example_1.note)(p, 'test', desc);
 }
+// What the accessor's argument is. Where the signature names it otherwise
+// than what it is (rb's `data`, passed on as the entity options), the page
+// says both, once.
+function accessorText(r, type) {
+    const { arg, param } = r.facts.accessor;
+    const what = 'data' === arg ? 'data' : 'options';
+    const name = 'data' === arg ? 'data' : 'entopts';
+    const made = `Create a new ${code(type)} instance.`;
+    return param === name
+        ? `${made} Pass ${code(r.facts.none)} for no initial\n${what}.`
+        : wrap(`${made} Its ${code(param)} argument holds the entity ${what}: pass ${code(r.facts.none)} for none.`);
+}
 function instanceText(p, desc) {
     const r = p.ref;
     let out = `\n### Instance ${r.facts.noun}\n\n` + (0, example_1.note)(p, 'instance', desc);
     for (const ent of desc.entities) {
         out += `#### ${code(fill(r.facts.accessor.sig, desc, ent))}\n\n` +
-            `Create a new ${code(typeOf(r, ent))} instance. Pass ${code(r.facts.none)} for no initial\n` +
-            ('data' === r.facts.accessor.arg ? 'data.' : 'options.') + '\n\n';
+            accessorText(r, typeOf(r, ent)) + '\n\n';
     }
     // The runtime has every declared member whether or not the test feature
     // ships: tester() is an alias of the test constructor, documented above.
@@ -222,10 +263,10 @@ function instanceText(p, desc) {
         out += `#### Cancelling a call
 
 Every entity operation takes an optional \`ctrl\` object after its match or
-data, and an \`AbortSignal\` in \`ctrl.signal\` cancels the request in flight.
+data, and ${a(code(cancelSignal(r)))} in \`ctrl.signal\` cancels the request in flight.
 The operation then rejects with an error whose \`code\` is
-\`request_aborted\` and whose \`cause\` is the signal's reason. A request
-whose signal has already aborted is not sent. \`stream()\` takes the signal
+${code(abortCode(r))} and whose \`cause\` is the signal's reason. A request
+whose signal has already aborted is not sent. ${code(memberName(r, (k) => k.startsWith('stream')))} takes the signal
 as \`callopts.signal\`, and ends when it aborts.
 
 `;
@@ -279,7 +320,7 @@ ${ent.Name} record — check the API definition for its shape.
             const sig = (0 < op.needs.length && r.facts.opMatched && r.facts.opMatched[name]) || r.facts.op[name];
             const block = (0, example_1.refOpBlock)(desc, p.facts, ent, op);
             out += `#### ${code(fill(sig, desc, ent))}\n\n` +
-                `${wrap((0, runtimeprose_1.opText)(p.facts, op.name, op.needs, op.idInData, boundOf(block)))}\n\n`;
+                `${wrap((0, runtimeprose_1.opText)(p.facts, op.name, op.needs, op.idInData, boundOf(block, desc)))}\n\n`;
             if (null != block)
                 out += (0, example_1.printBlock)(p, block, desc, (0, example_1.newScope)(true)) + '\n';
             out += (0, media_1.bodyNoteText)(op.body, r.facts.body);
@@ -301,11 +342,30 @@ function actionCall(p, desc, ent, a) {
     const narrow = { ...stmt, wide: false, note: undefined };
     return p.call(narrow, desc, (0, example_1.newScope)(true), { inAttempt: false, last: true })[0].split('\n')[0];
 }
-// The variable an operation's example binds its result to.
-function boundOf(block) {
+// The variable an operation's example binds its result to; for an operation
+// with no example, the name the reference's examples give a result.
+function boundOf(block, desc) {
     const first = (block || [])[0];
-    return null != first && 'call' === first.k && null != first.bind ? first.bind.name : 'result';
+    if (null != first && 'call' === first.k && null != first.bind)
+        return first.bind.name;
+    const result = (desc.layout.vars || {}).result;
+    if (null == result)
+        throw new Error('ReadmeRef: no example name for a result');
+    return result;
 }
+// The type of the signal that cancels a call: the one direct() takes.
+function cancelSignal(r) {
+    if (null == r.facts.direct.signal)
+        throw new Error('ReadmeRef: cancel needs direct.signal, the signal type');
+    return r.facts.direct.signal;
+}
+// The code of the error an abort leaves, declared with the signal.
+function abortCode(r) {
+    if (null == r.facts.direct.abortCode)
+        throw new Error('ReadmeRef: direct.signal needs direct.abortCode');
+    return r.facts.direct.abortCode;
+}
+const a = (s) => (/^`?[aeiou]/i.test(s) ? 'an ' : 'a ') + s;
 function featuresText(p, desc) {
     const features = desc.ref.features;
     if (0 === features.length)

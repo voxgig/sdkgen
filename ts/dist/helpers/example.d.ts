@@ -85,6 +85,7 @@ type RuntimeFacts = {
     ok?: string;
     err?: string;
     pairForm?: string;
+    noError?: string;
     unwrap?: string;
     unusedError?: boolean;
     listOf?: string;
@@ -93,11 +94,13 @@ type RuntimeFacts = {
 type Prints = 'record' | 'listFields' | 'fields';
 type ShowPlace = 'tutorial' | 'top' | 'reference';
 type MemberKind = 'options' | 'utility' | 'utilityBase' | 'direct' | 'prepare' | 'tester' | 'data' | 'match' | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet' | 'dataArg' | 'matchArg' | 'make' | 'name' | 'client' | 'entopts' | 'stream' | 'streamIterator' | 'streamGenerator' | 'streamList' | 'streamLazy' | 'streamSync' | 'streamFunction';
+type StreamRuns = 'iterate' | 'call' | 'background';
 type Member = {
     kind: MemberKind;
     sig: string;
     returns?: string;
     copy?: boolean;
+    runs?: StreamRuns;
 };
 type RefFacts = {
     entityBy: 'class' | 'Name' | 'module';
@@ -105,10 +108,6 @@ type RefFacts = {
     entityNoun?: string;
     heading?: string;
     none: string;
-    lits?: {
-        true: string;
-        false: string;
-    };
     setArg?: string;
     keys: 'member' | 'bare';
     maps: string;
@@ -131,6 +130,7 @@ type RefFacts = {
     accessor: {
         sig: string;
         arg: 'data' | 'entopts';
+        param: string;
     };
     op: Record<OpName, string>;
     opMatched?: Partial<Record<OpName, string>>;
@@ -139,6 +139,8 @@ type RefFacts = {
     direct: {
         returns: string;
         signal?: string;
+        abortCode?: string;
+        okFalse: string;
     };
     prepare: {
         returns: string;
@@ -153,6 +155,8 @@ type RefFacts = {
 };
 type CtorKind = 'defaults' | 'explicit';
 declare function entOf(desc: SdkDescription, name: string): Ent;
+declare function interrupts(style: ResultStyle): boolean;
+declare function checksItself(style: ResultStyle): boolean;
 declare function clientBlock(desc: SdkDescription): Stmt[];
 declare function listBlock(desc: SdkDescription, facts: RuntimeFacts, where?: ShowPlace): Stmt[] | null;
 declare function loadBlock(desc: SdkDescription, facts: RuntimeFacts, where?: ShowPlace): Stmt[] | null;
@@ -234,5 +238,5 @@ declare function printJoined(p: Syntax, steps: {
 declare function newScope(standalone?: boolean): Scope;
 declare function note(p: Syntax, slot: NoteSlot, desc?: SdkDescription): string;
 declare function indent(lines: string[], by: string): string[];
-export type { CallContext, CtorKind, NoteSlot, Member, MemberKind, RefFacts, RefSyntax, Ent, Entry, Expr, OpName, Prints, ProgramStep, ShowPlace, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses, };
-export { actionBlock, clientBlock, entOf, featureBlock, refOpBlock, indent, listBlock, newScope, note, loadBlock, printBlock, printJoined, printProgram, printStmts, printSteps, uses, writeBlock, writeOps, };
+export type { CallContext, CtorKind, NoteSlot, Member, MemberKind, RefFacts, RefSyntax, Ent, Entry, Expr, OpName, Prints, ProgramStep, ShowPlace, StreamRuns, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses, };
+export { actionBlock, checksItself, interrupts, clientBlock, entOf, featureBlock, refOpBlock, indent, listBlock, newScope, note, loadBlock, printBlock, printJoined, printProgram, printStmts, printSteps, uses, writeBlock, writeOps, };
