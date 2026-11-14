@@ -14,6 +14,7 @@ type Decl = {
   before: string
   rest: string
   file: string
+  bare?: boolean // declared with no parameter list: a property or field
 }
 
 type Src = { file: string, text: string }
@@ -35,10 +36,8 @@ type Citation = {
 }
 
 type Forms = {
-  // Paths relative to project/.sdk.
   files: { client: string[], entity: string[], ops: string[] }
 
-  // The match ends where the parameter list opens.
   decl: (name: string) => RegExp
   open?: '(' | '['
   bare?: boolean
@@ -49,14 +48,16 @@ type Forms = {
   // from the source after the match.
   declReader?: (after: string) => { params: string[], returns?: string } | null
   optional: (param: string) => boolean
-  returns: (after: string, before: string, head: string) => string
-  // A parameter's name and type, where it states them.
+  // `rest`: the source after the parameter list, for a return on a later line.
+  returns: (after: string, before: string, head: string, rest: string) => string
   param?: (param: string) => { name: string, type: string }
 
   // The source that defines an operation, and the method it is declared as
   // there. Default: the ops file named Entity<Op>Op, and the one public
   // entity member it declares.
   opSource?: (op: OpName) => string[]
+  // An operation the runtime does not have, with the reason.
+  absentOps?: Partial<Record<OpName, string>>
   opName?: RegExp
   opMethod?: (op: OpName, src: Src[], all: (files: string[]) => Src[]) => string | null
 
@@ -109,15 +110,14 @@ const SCAFFOLD = Path.resolve(__dirname, '..', '..', 'project', '.sdk')
 const OPS: OpName[] = ['list', 'load', 'create', 'update', 'patch', 'remove']
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1)
 
-// `path#from:to` reads the part of a file from `from` to the next `to`.
+// `path#from#to` reads the part of a file from `from` to the next `to`.
 function read(files: string[]): Src[] {
   return files.flatMap((f) => {
-    const [file, part] = f.split('#')
+    const [file, from, to] = f.split('#')
     const p = Path.join(SCAFFOLD, file)
     if (!Fs.existsSync(p)) throw new Error('runtime file named by the forms is missing: ' + file)
     let text = Fs.readFileSync(p, 'utf8')
-    if (null != part) {
-      const [from, to] = part.split(':')
+    if (null != from) {
       const at = text.indexOf(from)
       const end = text.indexOf(to, at + from.length)
       if (at < 0 || end < 0) throw new Error('runtime file part named by the forms is missing: ' + f)
@@ -185,7 +185,10 @@ function findDecls(forms: Forms, files: Src[], name: string): Decl[] {
       let params = null == b ? [] : splitParams(b.inner, forms.split)
       if (forms.receiver && 0 < params.length && forms.receiver.test(params[0])) params = params.slice(1)
       const after = text.slice(end, end + 200).split('\n')[0]
-      out.push({ name, params, returns: forms.returns(after, before, m[0]).trim(), head: m[0], before, rest, file })
+      out.push({
+        name, params, returns: forms.returns(after, before, m[0], text.slice(end, end + 400)).trim(), head: m[0], before, rest, file,
+        bare: null == b,
+      })
     }
   }
   return out
@@ -231,7 +234,6 @@ function opSource(forms: Forms, op: OpName): string[] {
   return forms.files.ops.filter((f) => re.test(f))
 }
 
-// The method the runtime defines an operation as, or why it cannot say.
 function opMethod(forms: Forms, op: OpName): { method: string | null, why: string } {
   const files = opSource(forms, op)
   if (0 === files.length) return { method: null, why: 'the forms name no source for ' + op }
@@ -246,7 +248,6 @@ function opMethod(forms: Forms, op: OpName): { method: string | null, why: strin
 }
 
 
-// What the reader finds in a runtime through its forms alone.
 type Shape = { member: string, shape: string }
 type View = {
   methods: Record<OpName, { method: string | null, why: string, decl: Decl | null }>
