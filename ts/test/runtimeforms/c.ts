@@ -72,6 +72,7 @@ const forms: Forms = {
     paramNames: 'the EntityVT function pointers in core/sdk.h leave their receiver parameter unnamed (Entity*)',
   },
   cite: {
+    'ref.facts.entity[0].copy': { value: true, file: "src/cmp/c/fragment/Entity.fragment.c", quote: "return voxgig_clone(self->data);" },
     'facts.collection': { value: "`NULL`-terminated array", file: OPFILES[1], quote: ['// array is NULL-terminated.', 'items[n] = NULL;'] },
     'facts.errSlot': { file: MAIN, quote: '*err = context_make_error(ctx, "spec_method_allow", buf);' },
     'facts.nullValue': { file: OPFILES[0], quote: 'if (*err) return NULL;' },
