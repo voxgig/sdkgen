@@ -31,6 +31,8 @@ const DEFAULTS: [RegExp, Category][] = [
   [/^ref\.facts\.(op|opMatched)\.\w+$/, 'derived'],
   [/^ref\.facts\.(client|entity)\[\d+\]\.(sig|kind)$/, 'derived'],
   [/^ref\.facts\.(client|entity)\[\d+\]\.returns$/, 'cited'],
+  // Whether a getter returns a copy or the live value: read off the runtime's code.
+  [/^ref\.facts\.(client|entity)\[\d+\]\.copy$/, 'cited'],
   [/^ref\.facts\.(direct|prepare)\.returns$/, 'derived'],
   [/^ref\.facts\.direct\.signal$/, 'cited'],
   [/^ref\.facts\.prepare\.fails$/, 'cited'],
