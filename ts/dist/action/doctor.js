@@ -283,17 +283,16 @@ async function doctor(actx, scope, selected) {
     });
     return { report };
 }
-// Which root-level components the project's own wiring calls. The wiring is
-// hand-written TypeScript (Root.ts / Top.ts / BuildSDK.ts), so this is a
-// reference check, not a diff: sdkgen has no reference copy of a file it does
-// not ship.
-// A component the project holds under a name a shared component dispatches
-// to is used in place of the shared section.
+// A shared component calls a target's own component of this name first.
 function replacesShared(kind, file) {
     const m = file.match(/^src\/cmp\/([^/]+)\/([A-Za-z]+)_\1\.ts$/);
     return ('additive' === kind || 'override' === kind) && null != m &&
         m[2] in optional_1.OPTIONAL_COMPONENTS ? ' (used instead of the shared ' + m[2] + ')' : '';
 }
+// Which root-level components the project's own wiring calls. The wiring is
+// hand-written TypeScript (Root.ts / Top.ts / BuildSDK.ts), so this is a
+// reference check, not a diff: sdkgen has no reference copy of a file it does
+// not ship.
 function checkWiring(actx, report) {
     const fs = actx.fs();
     const src = node_path_1.default.join(actx.folder, 'src');
@@ -599,8 +598,6 @@ function noteDrift(actx, report, copies, kind, source) {
     const copied = copies.items[item];
     const merging = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx);
     return (category, label) => {
-        // Not shipped: retired if the record shows an add wrote it unchanged,
-        // otherwise the project's own.
         if ('unshipped' === category) {
             const same = (0, copies_1.untouched)(fs, actx.folder, copies, label);
             if (true !== same) {

@@ -360,8 +360,7 @@ function pruneStaleTemplates(ctx$, fromDir, toRel, trim, dryrun, keep, copies) {
         });
     }
 }
-// A component the source no longer ships is removed only when the copy record
-// shows an add wrote it and nothing has changed it since.
+// Deletes an unshipped component only when the copy record shows it unchanged.
 function pruneRetired(ctx$, actx, fromDir, toRel, origname, name) {
     pruneStaleTemplates(ctx$, fromDir, toRel, [], !!actx?.opts?.dryrun, undefined, {
         record: (0, copies_1.readCopies)(ctx$.fs(), ctx$.folder ?? '.'),
@@ -370,8 +369,7 @@ function pruneRetired(ctx$, actx, fromDir, toRel, origname, name) {
         discard: true === actx?.flags?.force || copymerge_1.OVERWRITE === (0, copies_1.projectCopyMode)(actx),
     });
 }
-// Of the files an add no longer writes, the ones it may delete. A file the
-// record has no entry for may be the project's own, so it is never one.
+// A file the record has no entry for may be the project's own.
 function retiredCopies(ctx$, toRel, unwanted, copies) {
     const fs = ctx$.fs();
     const folder = ctx$.folder ?? '.';
