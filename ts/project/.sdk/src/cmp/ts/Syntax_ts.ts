@@ -26,7 +26,8 @@ const expr = (e: Expr): string => {
 
 const pair = (en: Entry): string => `${jsKey(en.key)}: ${expr(en.value)}`
 
-// One member per line, closed with a trailing comma, at the given depth.
+// One member per line, closed with a trailing comma, at the given depth: a
+// write's data, and a load match of more than one member.
 const members = (entries: Entry[], pad: string): string[] =>
   entries.flatMap((en) => 'map' === en.value.k
     ? [`${pad}${jsKey(en.key)}: {`, ...members(en.value.entries, pad + '  '), `${pad}},`]
@@ -34,7 +35,7 @@ const members = (entries: Entry[], pad: string): string[] =>
 
 const argOf = (op: string, arg: Entry[] | null): string =>
   null == arg ? '' : (0 === arg.length ? '{}' :
-    (WRITES.includes(op) || 1 < arg.length) ? '{\n' + members(arg, '  ').join('\n') + '\n}'
+    (WRITES.includes(op) || ('load' === op && 1 < arg.length)) ? '{\n' + members(arg, '  ').join('\n') + '\n}'
       : '{ ' + arg.map(pair).join(', ') + ' }')
 
 

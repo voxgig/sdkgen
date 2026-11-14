@@ -106,6 +106,12 @@ the default and no warning: `ReadmeModel_<lang>` and
 section, and `AgentGuide_<lang>` adds a section to the target's agent
 guide.
 
+`Syntax_<lang>` is a syntax provider rather than a section. It exports
+`Syntax`: printers for the example representation in
+`helpers/example.ts`. A target that has one gets the shared README
+tutorial, every sentence written once and every code block printed by
+the provider; a target without one keeps its own `ReadmeQuick_<lang>`.
+
 Each is a file `<Name>_<lang>.ts` in the target's components folder,
 exporting a component named `<Name>`, with one exception.
 `ReadmeIntro_<lang>.ts` exports `ReadmeIntroBody`, which writes only the
