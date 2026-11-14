@@ -2,8 +2,7 @@
 import { Content } from 'jostraca'
 import { cmp } from '../helpers/component'
 
-import { credentialPlacement } from '../utility'
-import { optionalComponent } from '../helpers/optional'
+import { credentialPlacement, loadOptional } from '../utility'
 
 
 const ReadmeQuick = cmp(function ReadmeQuick(props: any) {
@@ -18,15 +17,25 @@ loading a specific record.${'' === placement ? '' : ' ' + placement}
 
 `)
 
-  const ReadmeQuick_sdk =
-    optionalComponent(ctx$, target, 'ReadmeQuick')
+  const t = target.name
 
-  if (ReadmeQuick_sdk) {
-    ReadmeQuick_sdk['ReadmeQuick']({ target })
+  // A target's own component still wins: a project override, an older copy,
+  // or a packaged target that has not moved to a provider.
+  const own = loadOptional(ctx$, `./cmp/${t}/ReadmeQuick_${t}`)
+
+  if (own) {
+    own['ReadmeQuick']({ target })
+    return
   }
+
+  const syntax = loadOptional(ctx$, `./cmp/${t}/Syntax_${t}`)?.Syntax
+
+  Content(`<!-- shared-quick provider=${null == syntax ? 'none' : syntax.lang} -->
+SHARED QUICK START for ${t}: ${null == syntax ? '(no syntax provider)' :
+      syntax.call('client', 'Entity', '')}
+
+`)
 })
-
-
 
 
 export {
