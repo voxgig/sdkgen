@@ -1,2 +1,5 @@
+import type { SdkDescription } from '../helpers/sdkdesc';
+import type { Syntax } from '../helpers/example';
 declare const ReadmeQuick: import("jostraca").Component<any, never, never>;
-export { ReadmeQuick };
+declare function quickText(p: Syntax, desc: SdkDescription): string;
+export { ReadmeQuick, quickText, };

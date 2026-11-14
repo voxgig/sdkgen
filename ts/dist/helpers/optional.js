@@ -11,6 +11,8 @@ const OPTIONAL_COMPONENTS = {
     AgentGuide: null,
     ReadmeFeatures: null,
     ReadmeModel: null,
+    // A syntax provider: without one, the target writes its own sections.
+    Syntax: null,
     ReadmeIntro: (t) => t + '/README.md has no title or introduction',
     ReadmeInstall: (t) => t + "/README.md's install section is empty",
     ReadmeQuick: (t) => t + "/README.md's tutorial is empty",

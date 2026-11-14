@@ -2,6 +2,7 @@ declare const OPTIONAL_COMPONENTS: {
     AgentGuide: null;
     ReadmeFeatures: null;
     ReadmeModel: null;
+    Syntax: null;
     ReadmeIntro: (t: string) => string;
     ReadmeInstall: (t: string) => string;
     ReadmeQuick: (t: string) => string;

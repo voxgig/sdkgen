@@ -81,6 +81,10 @@ import {
   litPair, litString,
 } from './helpers/opExample'
 import type { ExampleLang, LiteralLang } from './helpers/opExample'
+import { sdkDescription } from './helpers/sdkdesc'
+import type { SdkDescription, DescArg, DescEntity, DescOption, DescQuick, DescServerVar } from './helpers/sdkdesc'
+import { clientBlock, listBlock, loadBlock, writeBlock, writeOps, printBlock, printStmts, newScope, uses, indent as indentLines } from './helpers/example'
+import type { Ent, Entry, Expr, Ref, RuntimeWords, Scope, Stmt, Syntax, Uses } from './helpers/example'
 import {
   liveStrict, liveStrictNote, liveFlowNeeds, liveIdentity,
   liveRepeatsId, liveLoadComparesId, liveUnrouted,
@@ -999,6 +1003,8 @@ function clear(path: string) {
 
 
 export type {
+  SdkDescription, DescArg, DescEntity, DescOption, DescQuick, DescServerVar,
+  Ent, Entry, Expr, Ref, RuntimeWords, Scope, Stmt, Syntax, Uses,
   SdkGenOptions,
   ExampleLang,
   LiteralLang,
@@ -1066,6 +1072,7 @@ export const List: Component = JostracaModule.List
 
 
 export {
+  sdkDescription, clientBlock, listBlock, loadBlock, writeBlock, writeOps, printBlock, printStmts, newScope, uses, indentLines,
   Main,
   Deploy,
   License,
