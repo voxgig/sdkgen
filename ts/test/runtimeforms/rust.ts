@@ -2,18 +2,26 @@
 // structs, an entity's members on the core Entity trait.
 import type { Forms } from './forms'
 
+const MAIN = 'src/cmp/rust/fragment/Main.fragment.rs'
+const ENTITY = 'src/cmp/rust/fragment/Entity.fragment.rs'
 const OPS = ['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/rust/fragment/Entity${o}Op.fragment.rs`)
 
 const forms: Forms = {
   files: {
-    client: ['src/cmp/rust/fragment/Main.fragment.rs'],
-    entity: ['src/cmp/rust/fragment/Entity.fragment.rs', 'tm/rust/core/types.rs'],
+    client: ['src/cmp/rust/fragment/Main.fragment.rs', 'src/cmp/rust/MainEntity_rust.ts'],
+    entity: ['src/cmp/rust/fragment/Entity.fragment.rs', 'tm/rust/core/types.rs#pub trait Entity {:\n}'],
     ops: OPS,
   },
   decl: (name) => new RegExp(`^[ \\t]*(?:pub )?fn ${name}(?=\\()`, 'm'),
   receiver: /^(&?self|self\s*:)/,
+  param: (p) => {
+    const m = /^(?:mut\s+)?(\w+)\s*:\s*(.+)$/.exec(p.trim())
+    return null == m ? { name: '', type: '' } : { name: m[1], type: m[2].trim() }
+  },
   optional: () => false,
-  returns: (after) => (/^\s*->\s*([^{;]+)/.exec(after) || [])[1] || '',
+  returns: (after) => (/^\s*->\s*([^;]+?)\s*(?:\s\{.*)?$/.exec(after) || [])[1] || '',
+  opName: /^fn ([a-z]\w*)\(self/gm,
+  entityCtor: 'new',
   public: {
     client: /^\s*pub fn ([a-z]\w*)\(/gm,
     // The struct's pub fns, and the Entity trait's methods it implements.
@@ -24,6 +32,7 @@ const forms: Forms = {
     graphql: 'a GraphQL request through the pipeline; no reference page documents it (old pages neither)',
     mark_deleted: 'set by remove itself; the entity reports it through deleted',
     deleted: 'whether remove succeeded on this instance; not documented by the old pages',
+    ent_ctx: 'the entity\'s pipeline context, for features (an Entity trait method); not part of the documented API',
   },
   members: {
     options: 'options_map', utility: 'get_utility', direct: 'direct', prepare: 'prepare',
@@ -35,8 +44,40 @@ const forms: Forms = {
     const m = /(\w+)\(([^()]*)\)$/.exec(rec)
     return null == m ? { name: rec } : { name: m[1], arity: '' === m[2] ? 0 : m[2].split(',').length }
   },
-  tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'new' },
+  tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'new', accessor: '${method}' },
   types: { column: 'rust' },
+
+  // The porter's, from here on.
+  typeNames: { 'Rc<crate::entity::${mod}::${cls}>': 'Rc<EntyClass>' },
+  cite: {
+    'facts.ok': { file: OPS[0], quote: 'Ok(self.clone())' },
+    'facts.err': { file: ENTITY, quote: 'Err(err) => return utility.make_error(ctx, Some(err)),' },
+    'ref.facts.none': { file: MAIN, quote: 'options: RefCell::new(Value::Noval),' },
+    'ref.facts.setArg': {
+      file: ENTITY, quote: 'fn data(&self, args: Option<&Value>) -> Value {\n        if let Some(arg) = args {',
+      unquoted: { 'Some(&map)': 'an Option<&Value> argument, written for a map value named map' },
+    },
+    'ref.facts.container': { file: MAIN, quote: 'pub fn new(options: Value) -> Rc<ProjectNameSDK> {' },
+    'ref.facts.ctor[0]': {
+      file: 'src/cmp/rust/Main_rust.ts',
+      quote: ['call_json, call_vfn, getp, ja, jo, json_thunk, to_map, unsupported_op, vfn,', '    Entity, Feature, FeatureRef, FetcherFn, OutVal, ${model.const.Name}EntityBase,',
+        'pub use crate::core::sdk::{test_sdk, ${model.const.Name}SDK};', 'pub use crate::utility::voxgigstruct::Value;'],
+      unquoted: {
+        ProjectNameEntityBase: 'the generator spells it ${model.const.Name}EntityBase',
+        ProjectNameSDK: 'the generator spells it ${model.const.Name}SDK',
+      },
+    },
+    'ref.facts.client[1].kind': { file: MAIN, quote: 'pub fn get_utility(&self) -> Rc<Utility> {\n        Utility::copy(&self.utility)' },
+    'ref.facts.prepare.fails': { file: MAIN, quote: 'pub fn prepare(&self, fetchargs: Value) -> Result<Value, ProjectNameError> {' },
+    'ref.facts.body.values': {
+      file: 'tm/rust/utility/media.rs', quote: ['pub fn bytes_value(bytes: &[u8]) -> Value {', 'Value::Str(s) => Some(s.as_bytes().to_vec()),'],
+      unquoted: { 'bytes_value(&[u8])': 'the signature bytes_value(bytes: &[u8]) with its parameter name left out' },
+    },
+    'ref.facts.cancel': { file: 'tm/rust/utility/fetcher.rs', quote: 'AGENT.get_or_init(|| ureq::AgentBuilder::new().build()).clone()' },
+  },
+  exceptions: {
+    'notes.member:direct': 'WRONG: direct never returns Err. A request that could not be made comes back as Ok with ok false: prepare failing (Main.fragment.rs:245-251), the fetch failing (272-278), no response (282-287) and an unreadable one (338-341) all return Ok(jo(... ("ok", Value::Bool(false)) ...)); the note says Err "is reserved for a request that could not be made"',
+  },
 }
 
 export { forms }
