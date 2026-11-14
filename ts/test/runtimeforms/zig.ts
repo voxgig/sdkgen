@@ -52,6 +52,7 @@ const forms: Forms = {
   typeNames: { '*@import("../entity/${mod}.zig").${cls}': '*EntyClass' },
   namesWhy: 'zig passes by position; the runtime suffixes a parameter it rebinds with _in, and the accessor\'s return is spelled through the generator',
   cite: {
+    'ref.facts.entity[0].copy': { value: true, file: "src/cmp/zig/fragment/Entity.fragment.zig", quote: "return h.clone(self.data);" },
     'facts.collection': { value: "slice", file: ENTITY, quote: 'pub const EntListResult = union(enum) {\n    ok: []*EntyClass,' },
     'facts.ok': { file: ENTITY, quote: '.ok => EntResult{ .ok = self },' },
     'facts.err': { file: ENTITY, quote: '.err => |e| EntResult{ .err = e },' },
