@@ -90,7 +90,7 @@ type RuntimeFacts = {
     listOf?: string;
     prints: 'record' | 'fields';
 };
-type MemberKind = 'options' | 'utility' | 'utilityBase' | 'direct' | 'prepare' | 'tester' | 'data' | 'match' | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet' | 'dataArg' | 'matchArg' | 'make' | 'name' | 'client' | 'entopts' | 'stream' | 'streamIterator' | 'streamGenerator' | 'streamList' | 'streamLazy';
+type MemberKind = 'options' | 'utility' | 'utilityBase' | 'direct' | 'prepare' | 'tester' | 'data' | 'match' | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet' | 'dataArg' | 'matchArg' | 'make' | 'name' | 'client' | 'entopts' | 'stream' | 'streamIterator' | 'streamGenerator' | 'streamList' | 'streamLazy' | 'streamSync' | 'streamFunction';
 type Member = {
     kind: MemberKind;
     sig: string;
