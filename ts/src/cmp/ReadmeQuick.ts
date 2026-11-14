@@ -6,7 +6,7 @@ import { optionalComponent } from '../helpers/optional'
 import { sdkDescription } from '../helpers/sdkdesc'
 import type { SdkDescription } from '../helpers/sdkdesc'
 import {
-  clientBlock, listBlock, loadBlock, newScope, printBlock, printJoined, printProgram, writeBlock, writeOps,
+  checksItself, clientBlock, listBlock, loadBlock, newScope, printBlock, printJoined, printProgram, writeBlock, writeOps,
 } from '../helpers/example'
 import { note } from '../helpers/example'
 import type { Stmt, Syntax, Scope } from '../helpers/example'
@@ -46,10 +46,12 @@ loading a specific record.${'' === placement ? '' : ' ' + placement}
 })
 
 
-// The target's description, named by its own Naming hook.
+// The target's description, named by its own Naming hook. A target with a
+// syntax provider has one: names are never guessed for it.
 function describeTarget(ctx$: any, target: any): SdkDescription {
   const hook = optionalComponent(ctx$, target, 'Naming')
-  return sdkDescription(ctx$.model, target, hook ? hook.Naming : undefined, ctx$.stdrep)
+  if (null == hook) throw new Error(`${target.name}: a syntax provider needs a Naming hook (cmp/${target.name}/Naming_${target.name})`)
+  return sdkDescription(ctx$.model, target, hook.Naming, ctx$.stdrep)
 }
 
 
@@ -232,7 +234,8 @@ function bare(stmts: Stmt[]): Stmt[] {
 // The root README's quick start for one language: the tutorial's first steps,
 // client, list and load, in one block, each step named in a comment that
 // states its runtime fact, its calls outside error handling, as most of the
-// old root quick starts were.
+// old root quick starts were. Where a call does not check itself, its check
+// stays: the load after the list may not run past an unchecked failure.
 function topQuickText(p: Syntax, desc: SdkDescription): string {
   const sc: Scope = newScope()
   const { steps } = quickSteps(p, desc, 'top')
@@ -240,7 +243,8 @@ function topQuickText(p: Syntax, desc: SdkDescription): string {
   // The comment names the step, so the program printer adds no title of its own.
   const commented = first.map((s) => ({
     title: '',
-    stmts: 'Create a client' === s.title ? s.stmts : [{ k: 'comment', text: s.comment } as Stmt, ...bare(s.stmts)],
+    stmts: 'Create a client' === s.title ? s.stmts
+      : [{ k: 'comment', text: s.comment } as Stmt, ...(checksItself(p.facts.result) ? bare(s.stmts) : s.stmts)],
   }))
   sc.section = commented.flatMap((s) => s.stmts)
   return p.program ? printProgram(p, commented, desc, sc) : printJoined(p, commented, desc, sc)

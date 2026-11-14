@@ -4,12 +4,12 @@
 // run by default.
 
 import { describe, test } from 'node:test'
-import { deepStrictEqual, ok, strictEqual } from 'node:assert'
+import { deepStrictEqual, ok, strictEqual, throws } from 'node:assert'
 import * as Path from 'node:path'
 
 const { refText } = require('../dist/cmp/ReadmeRef.js')
 const { activeByDefault } = require('../dist/cmp/FeatureDocs.js')
-const { actionBlock, listBlock, loadBlock, note } = require('../dist/helpers/example.js')
+const { actionBlock, listBlock, loadBlock, note, refOpBlock, writeBlock } = require('../dist/helpers/example.js')
 const { writeSentence } = require('../dist/helpers/runtimeprose.js')
 
 const STAGE = Path.resolve(__dirname, '..', 'dist-test-scaffold', '.sdk', 'dist', 'cmp')
@@ -69,7 +69,8 @@ describe('shared facts', () => {
     const base = ts()
     const withCopy = (copy: boolean) => ({
       ...base, ref: { ...base.ref, facts: { ...base.ref.facts,
-        entity: [{ kind: 'dataGet', sig: 'data_get()', copy }] } },
+        entity: [...base.ref.facts.entity.filter((m: any) => m.kind.startsWith('stream')),
+          { kind: 'dataGet', sig: 'data_get()', copy }] } },
     })
     const d = { ...desc, entities: [desc.entities[0]] }
     ok(refText(withCopy(true), d).includes('Get the entity data. Returns a copy of the current data.'))
@@ -85,9 +86,30 @@ describe('shared facts', () => {
     const f = ts().facts
     ok(/^Each write resolves to the entity it wrote \(a removed one is marked as deleted\), and throws/
       .test(writeSentence(f, ['create', 'remove'])))
-    ok(/`\(value, error\)` too/.test(writeSentence({ ...f, result: 'pair', errVar: 'err' }, ['create'])))
+    ok(/`\(value, error\)` too: .* a non-nil `err`/.test(writeSentence({ ...f, result: 'pair', errVar: 'err', pairForm: '(value, error)', noError: 'nil' }, ['create'])))
+    // A pair's form and its no-error value are declared, never supplied here.
+    throws(() => writeSentence({ ...f, result: 'pair', errVar: 'err' }, ['create']), /needs facts\.pairForm/)
     ok(/`NULL` with `\*err` set on failure, so check `err`/
       .test(writeSentence({ ...f, result: 'errslot', errVar: 'err', errSlot: '*err', nullValue: 'NULL' }, ['create', 'update'])))
+  })
+
+  // Where a failure does not interrupt, an example reads a single entity's
+  // record back past the provider's check, and a write the call does not
+  // check itself carries its check; where it does, the bare shape stays.
+  test('an example never walks past a failure it has not checked', () => {
+    const f = ts().facts
+    const load = { name: 'load', args: [], needs: [], idInData: null, body: null, action: false }
+    const ent = desc.entities[0]
+    strictEqual(refOpBlock(desc, f, ent, load).length, 1)
+    for (const result of ['errslot', 'pair', 'union']) {
+      deepStrictEqual(refOpBlock(desc, { ...f, result }, ent, load).map((x: any) => x.k), ['call', 'print'], result)
+    }
+    const q = { ...desc.quick, create: [], update: [{ name: 'id', fromCreated: 'id' }], chainsId: true }
+    const writes = (result: string) => writeBlock({ ...desc, quick: q }, { ...f, result, errSlot: '*err', nullValue: 'NULL' })
+      .filter((x: any) => 'comment' !== x.k && 'gap' !== x.k).map((x: any) => x.k)
+    deepStrictEqual(writes('errslot'), ['attempt', 'attempt'])
+    deepStrictEqual(writes('throw'), ['call', 'call'])
+    deepStrictEqual(writes('union'), ['call', 'call'])
   })
 
   test('an action is called with its route\'s path parameters', () => {

@@ -12,8 +12,16 @@ const article = (s: string): string => /^`?[aeiou]/i.test(s) ? 'an' : 'a'
 const a = (s: string): string => article(s) + ' ' + s
 
 function opName(f: RuntimeFacts, op: string): string {
-  const m = (f.method as any)[op] || op
+  const m = (f.method as any)[op]
+  if (null == m) throw new Error(`runtimeprose: no method declared for ${op}`)
   return code('call' === f.named ? m + '()' : m)
+}
+
+// A fact a result style needs, which the provider must declare.
+function need(f: RuntimeFacts, key: 'pairForm' | 'noError' | 'errVar' | 'errSlot' | 'nullValue' | 'ok' | 'err' | 'unwrap'): string {
+  const v = f[key]
+  if (null == v) throw new Error(`runtimeprose: result style ${f.result} needs facts.${key}`)
+  return v
 }
 
 // The code that reads a record, naming the variable the example binds.
@@ -31,7 +39,12 @@ function verb(f: RuntimeFacts): string {
 }
 
 function pairForm(f: RuntimeFacts): string {
-  return f.pairForm || '(value, error)'
+  return need(f, 'pairForm')
+}
+
+// `non-nil`, from the value the error holds when nothing failed.
+function nonNil(f: RuntimeFacts): string {
+  return 'non-' + need(f, 'noError')
 }
 
 // A list's value, naming the type where the language declares one.
@@ -57,7 +70,7 @@ function listSentence(f: RuntimeFacts, bound: string): string {
       return `${op} returns a value holding ${m}, and throws on failure; ${code(f.unwrap as string)} ` +
         `takes one entity out, and ${rec}.`
     case 'pair':
-      return `${op} returns ${code(pairForm(f))}: the value is ${m}, and a non-nil ${code(f.errVar as string)} ` +
+      return `${op} returns ${code(pairForm(f))}: the value is ${m}, and a ${nonNil(f)} ${code(f.errVar as string)} ` +
         `reports failure. There is no ${code('{ok, data}')} wrapper; ${rec}.`
     case 'errslot':
       return `${op} returns ${m}, or ${code(f.nullValue as string)} with ${code(f.errSlot as string)} set on failure, ` +
@@ -82,7 +95,7 @@ function loadSentence(f: RuntimeFacts, bound: string): string {
       return `${op} returns a value holding the entity, and throws on failure; ${code(f.unwrap as string)} ` +
         `takes it out, and ${rec}.`
     case 'pair':
-      return `${op} returns ${code(pairForm(f))}: the value is the entity, and a non-nil ` +
+      return `${op} returns ${code(pairForm(f))}: the value is the entity, and a ${nonNil(f)} ` +
         `${code(f.errVar as string)} reports failure; ${rec}.`
     case 'errslot':
       return `${op} returns the entity, or ${code(f.nullValue as string)} with ${code(f.errSlot as string)} ` +
@@ -107,7 +120,7 @@ function writeSentence(f: RuntimeFacts, ops: string[]): string {
     case 'wrapped':
       return `${each} a value holding ${what}, and throws on failure.`
     case 'pair':
-      return `${each} ${code(pairForm(f))} too: the value is ${what}, and a non-nil ` +
+      return `${each} ${code(pairForm(f))} too: the value is ${what}, and a ${nonNil(f)} ` +
         `${code(f.errVar as string)} reports failure.`
     case 'errslot':
       return `${each} ${what}, or ${code(f.nullValue as string)} with ${code(f.errSlot as string)} set on ` +
@@ -147,7 +160,7 @@ function failsShort(f: RuntimeFacts): string {
     case 'raise':
     case 'die':
     case 'wrapped': return verb(f) + ' on failure'
-    case 'pair': return f.errVar + ' is non-nil on failure'
+    case 'pair': return f.errVar + ' is ' + nonNil(f) + ' on failure'
     case 'errslot': return f.errSlot + ' is set on failure'
     case 'union': return f.err + ' on failure'
   }
@@ -194,7 +207,7 @@ function returnClause(f: RuntimeFacts, value: string): string {
     case 'wrapped':
       return `Returns a value holding ${value}, and throws on failure.`
     case 'pair':
-      return `Returns ${value}; ${code(f.errVar as string)} is non-nil on failure.`
+      return `Returns ${value}; ${code(f.errVar as string)} is ${nonNil(f)} on failure.`
     case 'errslot':
       return `Returns ${value}, or ${code(f.nullValue as string)} with ${code(f.errSlot as string)} set on failure.`
     case 'union':
@@ -227,7 +240,7 @@ function failsSentence(f: RuntimeFacts): string {
     case 'raise':
     case 'die':
     case 'wrapped': return `It ${verb(f)} on failure.`
-    case 'pair': return `${code(f.errVar as string)} is non-nil on failure.`
+    case 'pair': return `${code(f.errVar as string)} is ${nonNil(f)} on failure.`
     case 'errslot': return `It returns ${code(f.nullValue as string)} with ${code(f.errSlot as string)} set on failure.`
     case 'union': return `Its ${code(f.err as string)} reports failure.`
   }

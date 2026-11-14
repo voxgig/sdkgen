@@ -4,7 +4,7 @@
 // entity noun, and every stream kind.
 
 import { describe, test } from 'node:test'
-import { ok, strictEqual } from 'node:assert'
+import { ok, strictEqual, throws } from 'node:assert'
 import * as Path from 'node:path'
 
 const { refText } = require('../dist/cmp/ReadmeRef.js')
@@ -68,18 +68,45 @@ describe('reference interface', () => {
       stream: /stream its result items\./,
       streamIterator: /as an async iterator\./,
       streamGenerator: /as a generator\./,
-      streamLazy: /a lazy stream of its\nresult items\./,
-      streamList: /as\none list\./,
-      streamSync: /an iterator over its\nresult items\./,
+      streamLazy: /a lazy sequence of its result items\./,
+      streamList: /as one list\./,
+      streamSync: /an iterator over its result items\./,
       streamFunction: /returns its next result item on each call, and `undefined` once the items end\./,
     }
     for (const [kind, re] of Object.entries(kinds)) {
       const p = provider((r) => {
         r.entity = r.entity.map((m: any) => m.kind.startsWith('stream') ? { ...m, kind } : m)
       })
-      const out = refText(p, desc)
+      const out = refText(p, desc).replace(/\n/g, ' ')
       ok(re.test(out), kind + ': ' + out.slice(out.indexOf('stream(')))
     }
+  })
+
+  // When the operation runs is a declared fact, never read from the kind:
+  // swift's async iterator runs before it returns, ts's when iteration starts.
+  test('a stream says when its operation runs, and has no default', () => {
+    const runs: Record<string, RegExp> = {
+      iterate: /The operation runs when iteration starts, not when the call returns\./,
+      call: /The operation runs, and every item is read, before the call returns\./,
+      background: /The operation starts at the call and runs beside/,
+    }
+    for (const [r, re] of Object.entries(runs)) {
+      const out = refText(provider((f) => {
+        f.entity = f.entity.map((m: any) => m.kind.startsWith('stream') ? { ...m, runs: r } : m)
+      }), desc).replace(/\n/g, ' ')
+      ok(re.test(out), r + ': ' + out.slice(out.indexOf('stream(')))
+    }
+    throws(() => refText(provider((f) => {
+      f.entity = f.entity.map((m: any) => m.kind.startsWith('stream') ? { ...m, runs: undefined } : m)
+    }), desc), /needs runs/)
+  })
+
+  // The direct result's failure literal is the runtime's, declared; shared
+  // code holds none.
+  test('the direct result states the declared ok literal, and has no default', () => {
+    const out = refText(provider((f) => { f.direct = { ...f.direct, okFalse: '0' } }), desc).replace(/\n/g, ' ')
+    ok(out.includes('on a failure `ok` is `0`'), out)
+    ok(!/`ok` is (then )?`false`/.test(out), out)
   })
 
   test('the entity is named by its class, its Name or its module', () => {

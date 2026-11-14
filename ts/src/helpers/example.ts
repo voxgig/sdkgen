@@ -75,7 +75,8 @@ type RuntimeFacts = {
   nullValue?: string // errslot: what a failed call returns: 'NULL'
   ok?: string // union: the success arm: '.ok'
   err?: string // union: the failure arm: '.err'
-  pairForm?: string // pair: how the pair is written, default '(value, error)'
+  pairForm?: string // pair, required there: how the pair is written: '(value, error)'
+  noError?: string // pair, required there: what errVar holds when nothing failed: 'nil'
   unwrap?: string // wrapped: the code that takes the entity out of the value
   unusedError?: boolean // a bound value no statement reads fails the build (go, zig)
   listOf?: string // the type a list resolves to, where the language names one: '{Class}[]'
@@ -108,10 +109,17 @@ type MemberKind =
   | 'streamSync' // a synchronous iterator over the items (rb Enumerator, scala Iterator)
   | 'streamFunction' // a function returning the next item per call, `none` at the end (lua, perl)
 
+// When a stream's operation runs, read from the runtime's code, never from
+// its type: 'iterate', when the caller starts iterating; 'call', before the
+// call returns, every item read; 'background', from the call on, beside the
+// caller, each item handed over as the caller takes it.
+type StreamRuns = 'iterate' | 'call' | 'background'
+
 // `returns`: the type it returns, where the signature does not say.
 // `copy`: a data or match getter returns a copy of the entity's own value,
 // not the value itself.
-type Member = { kind: MemberKind, sig: string, returns?: string, copy?: boolean }
+// `runs`: a stream kind's StreamRuns, required for every stream kind.
+type Member = { kind: MemberKind, sig: string, returns?: string, copy?: boolean, runs?: StreamRuns }
 
 // What the reference page states about a runtime, independently of any model.
 type RefFacts = {
@@ -122,8 +130,7 @@ type RefFacts = {
   entityNoun?: string // where an entity's members are called otherwise: 'Fields', 'Members'
   heading?: string // the client's heading, where the client has no type: '{module}'
   none: string // the literal for no value: 'undefined', 'nil', 'None', 'NULL'
-  lits?: { true: string, false: string } // boolean literals, where prose names one; default `true`/`false`
-  setArg?: string // dataArg, matchArg: how a map is passed to set; default 'a map'
+  setArg?: string // dataArg, matchArg, required there: how a map is passed to set: 'a map'
   keys: 'member' | 'bare' // option tables name `options.x`, or bare map keys
   maps: string // the language's maps, plural: 'objects', 'maps', 'dicts'
   container: string // the type of the options and fetchargs containers: 'object', 'voxgig_value*'
@@ -131,12 +138,17 @@ type RefFacts = {
   ctor: string[] // the constructor, as the page shows it
   ctorAlts?: { call: string, kind: CtorKind }[] // other ways to construct one, each with its sentence
   test: { sig: string, call: string, args: boolean, alts?: { call: string, kind: CtorKind }[] }[] // test constructors
-  accessor: { sig: string, arg: 'data' | 'entopts' } // the client's entity accessor
+  // The client's entity accessor. `param`: the name its signature gives the
+  // argument, which the page names where it is not the options' name.
+  accessor: { sig: string, arg: 'data' | 'entopts', param: string }
   op: Record<OpName, string> // each operation's signature
   opMatched?: Partial<Record<OpName, string>> // the signature where the match is required (a nested list)
   client: Member[] // the client's fixed members, in page order
   entity: Member[] // an entity's fixed members, in page order
-  direct: { returns: string, signal?: string } // `signal`: the type of fetchargs ctrl.signal
+  // `signal`: the type of fetchargs ctrl.signal, and `abortCode`, required
+  // with it, the `code` of the error an abort leaves. `okFalse`: the value the
+  // result's `ok` holds on a failure, as the runtime writes it: 'false', 'False', '0'.
+  direct: { returns: string, signal?: string, abortCode?: string, okFalse: string }
   // 'style': as the result style says; 'value': the error is returned in place
   // of the definition; 'note': the runtime's note on member:prepare says how
   prepare: { returns: string, fails: 'style' | 'value' | 'note' }
@@ -154,7 +166,24 @@ type CtorKind = 'defaults' | 'explicit'
 
 function entOf(desc: SdkDescription, name: string): Ent {
   const e = desc.entities.find((x) => x.name === name)
-  return e ? { name, Name: e.Name, sym: e.sym } : { name, Name: name, sym: { accessor: name, var: name, plural: name } }
+  if (null == e) throw new Error(`example: no entity ${name} in the description of ${desc.target}`)
+  return { name, Name: e.Name, sym: e.sym }
+}
+
+
+// Whether a failure stops the program where it happens: it throws, raises
+// or dies. Otherwise the failure comes back to the caller, and an example
+// may not use a result, or make its next call, past one it has not checked.
+function interrupts(style: ResultStyle): boolean {
+  return 'throw' === style || 'raise' === style || 'die' === style || 'wrapped' === style
+}
+
+// Whether a call can be printed with no check of its own. In 'pair' and
+// 'union' the error comes back with the value, so binding the value takes the
+// result apart (a checked `err`, an unwrap, a switch); in 'errslot' the value
+// is bound whether or not the slot was set, so the example has to check it.
+function checksItself(style: ResultStyle): boolean {
+  return 'errslot' !== style
 }
 
 // What an example calls each value. The tutorial and the root quick start name
@@ -262,9 +291,12 @@ function writeBlock(desc: SdkDescription, facts: RuntimeFacts): Stmt[] | null {
     if (0 < out.length) out.push({ k: 'gap' })
     const chained = (q[op] as DescArg[]).some((a: any) => null != a.fromCreated)
     out.push({ k: 'comment', text: 'create' === op ? createComment(facts, created.name) : WRITE_COMMENT[op](chained) })
-    out.push(call(entity, op,
+    const stmt = call(entity, op,
       'create' === op || 0 < q[op].length ? argEntries(q[op], created) : null,
-      'create' === op && q.chainsId ? created : null))
+      'create' === op && q.chainsId ? created : null)
+    // Each write is followed by another, or by the end of the step: where the
+    // call does not check itself, its check is printed after it.
+    out.push(checksItself(facts.result) ? stmt : { k: 'attempt', what: op, body: [stmt] })
   }
   return out
 }
@@ -304,7 +336,11 @@ function refOpBlock(desc: SdkDescription, facts: RuntimeFacts, ent: DescEntity, 
   if ('call' === stmt.k && ('update' === op.name || 'patch' === op.name)) {
     stmt.note = 'update' === op.name ? 'Fields to update' : 'Only the fields to change'
   }
-  return [stmt, ...(facts.unusedError ? [{ k: 'print', what: show(desc, facts, one, 'reference') } as Stmt] : [])]
+  // The record is read back where an unused binding fails the build, and,
+  // for a single entity, where a failure does not interrupt: the provider's
+  // printer then prints the read past the check it needs.
+  const read = facts.unusedError || (!interrupts(facts.result) && ('load' === op.name || 'remove' === op.name))
+  return [stmt, ...(read ? [{ k: 'print', what: show(desc, facts, one, 'reference') } as Stmt] : [])]
 }
 
 
@@ -535,6 +571,7 @@ export type {
   Prints,
   ProgramStep,
   ShowPlace,
+  StreamRuns,
   Ref,
   ResultStyle,
   RuntimeFacts,
@@ -546,6 +583,8 @@ export type {
 
 export {
   actionBlock,
+  checksItself,
+  interrupts,
   clientBlock,
   entOf,
   featureBlock,
