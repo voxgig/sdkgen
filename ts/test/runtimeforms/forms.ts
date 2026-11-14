@@ -1,112 +1,133 @@
 // How a runtime writes things, declared once per language in
-// test/runtimeforms/<lang>.ts. The guard (runtimefacts.test.ts) reads the
-// runtime through these forms and re-derives, from the runtime alone, what a
-// syntax provider declares about it. Adding a language adds one file here.
+// test/runtimeforms/<lang>.ts and read by runtimefacts.test.ts and
+// runtimereader.test.ts. Adding a language adds one file here.
 
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 
 
-// One declaration found in the runtime.
 type Decl = {
   name: string
   params: string[] // as written, the receiver dropped
-  returns: string // the return the declaration states; '' when none
-  head: string // the text the declaration pattern matched
-  before: string // the source just ahead of the declaration
-  rest: string // the source from the declaration on
+  returns: string // '' when the declaration states none
+  head: string
+  before: string
+  rest: string
   file: string
 }
 
+type Src = { file: string, text: string }
+
 type Style = 'throw' | 'raise' | 'die' | 'pair' | 'errslot' | 'union' | 'wrapped'
 
-// A member family: the kinds of RefFacts members that are the same member,
-// written in a different shape (data, dataArg, dataGet and dataSet are all
-// the entity's data).
+type OpName = 'list' | 'load' | 'create' | 'update' | 'patch' | 'remove'
+
 type Family =
   | 'options' | 'utility' | 'direct' | 'prepare' | 'tester'
   | 'data' | 'match' | 'make' | 'name' | 'client' | 'entopts' | 'stream'
 
+// `also`: quotes from further files; `unquoted`: a token the fact states
+// that no quote holds, and why the fact still stands.
+type Citation = {
+  file: string, quote: string | string[]
+  also?: { file: string, quote: string | string[] }[]
+  unquoted?: Record<string, string>
+}
+
 type Forms = {
-  // Where the runtime is, relative to project/.sdk. `client`: the client's
-  // members, the constructors and the test constructors (the generator
-  // components that write them included); `entity`: an entity's members and
-  // accessor; `ops`: the six operations.
+  // Paths relative to project/.sdk.
   files: { client: string[], entity: string[], ops: string[] }
 
-  // A declaration of `name`. The match must end where its parameter list
-  // opens.
+  // The match ends where the parameter list opens.
   decl: (name: string) => RegExp
-  open?: '(' | '[' // the bracket a parameter list opens with; default '('
-  // A declaration may have no parameter list at all (Ruby's `def name`): it
-  // then takes none.
+  open?: '(' | '['
   bare?: boolean
-  split?: 'comma' | 'space' // how parameters are separated; default 'comma'
-  receiver?: RegExp // a leading parameter the runtime declares and a signature omits
-  // Whether a parameter may be left out by the caller.
+  split?: 'comma' | 'space'
+  receiver?: RegExp
+  // For a runtime whose parameters are not a bracketed list after the name
+  // (perl's `my (...) = @_`, ocaml's arrows): the parameters and the return,
+  // from the source after the match.
+  declReader?: (after: string) => { params: string[], returns?: string } | null
   optional: (param: string) => boolean
-  // The return a declaration states, from the text after its parameter list
-  // (and the text ahead of it, for a separate type specification).
   returns: (after: string, before: string, head: string) => string
+  // A parameter's name and type, where it states them.
+  param?: (param: string) => { name: string, type: string }
 
-  // Every public member the client and an entity define, by name: a global
-  // pattern whose first group is the name.
+  // The source that defines an operation, and the method it is declared as
+  // there. Default: the ops file named Entity<Op>Op, and the one public
+  // entity member it declares.
+  opSource?: (op: OpName) => string[]
+  opName?: RegExp
+  opMethod?: (op: OpName, src: Src[], all: (files: string[]) => Src[]) => string | null
+
   public: { client: RegExp, entity: RegExp }
-  // Public runtime members the page does not document, each with its reason.
   undocumented?: Record<string, string>
 
-  // The runtime name of each member family, where the runtime has it.
   members: Partial<Record<Family | 'dataGet' | 'dataSet' | 'matchGet' | 'matchSet', string>>
-  // The kind a stream member is, from its declaration.
   streamKind?: (d: Decl) => string
+  // The declaration an entity accessor's argument is passed on to.
+  entityCtor?: string
+  // The client constructor's declaration, where it is not spelled as {ctor}.
+  ctorDecl?: string
 
-  // How the result style shows in the load operation's declaration; the
-  // first that holds wins, and `exception` is the style when none does.
   style: {
     exception: 'throw' | 'raise' | 'die'
-    raises: RegExp // how the runtime raises, so `exception` is checked
+    raises: RegExp
   } & Partial<Record<'pair' | 'errslot' | 'union' | 'wrapped', (d: Decl) => boolean>>
 
-  // Whether operations resolve (a promise or task) rather than return, from
-  // the load operation's declaration; default: they return.
   async?: (d: Decl) => boolean
 
-  // The function a record accessor calls, and its arity where it says.
   record: (record: string) => { name: string, arity?: number }
 
-  // How a declared signature names its function and its parameters. The
-  // defaults read `name(a, b)` after any receiver (`x.`, `x->`).
+  // The porter's: how the provider spells its signatures.
   sigName?: (sig: string) => string
   sigParams?: (sig: string) => string[]
   sigReturns?: (sig: string) => string
 
-  // How the signature tokens are spelled in the runtime's templates, so a
-  // declared return can be compared with the runtime's.
   tokens: Record<string, string>
+  // How the page names a runtime parameter or type that it names otherwise.
+  renames?: Record<string, string | string[]>
+  typeNames?: Record<string, string>
+  namesWhy?: string
 
-  // Field types: `column` is the code generator's own type map (canonToType)
-  // where the language has one; `any` lists the canonical types whose
-  // printed name may be the generic one.
-  types: { column: string | null, any?: string[] }
+  // `column`: the code generator's own type map; null with the reason when
+  // it has none.
+  types: { column: string | null, reason?: string, any?: string[] }
 
-  // Facts the forms deliberately do not compare, each with its reason
-  // (counted as unguarded).
+  // A comparison these forms cannot make, by check, with the reason.
+  uncompared?: Partial<Record<'returns' | 'paramTypes' | 'paramNames', string>>
+
+  // The porter's: a declared fact shown in a runtime file.
+  cite?: Record<string, Citation>
+  // The porter's: a check or fact not compared, with its reason; a reason
+  // beginning `WRONG:` records a declared fact the runtime contradicts.
   exceptions?: Record<string, string>
 }
 
 
 const SCAFFOLD = Path.resolve(__dirname, '..', '..', 'project', '.sdk')
+const OPS: OpName[] = ['list', 'load', 'create', 'update', 'patch', 'remove']
+const cap = (s: string) => s[0].toUpperCase() + s.slice(1)
 
-function read(files: string[]): { file: string, text: string }[] {
+// `path#from:to` reads the part of a file from `from` to the next `to`.
+function read(files: string[]): Src[] {
   return files.flatMap((f) => {
-    const p = Path.join(SCAFFOLD, f)
-    if (!Fs.existsSync(p)) throw new Error('runtime file named by the forms is missing: ' + f)
-    return [{ file: f, text: Fs.readFileSync(p, 'utf8') }]
+    const [file, part] = f.split('#')
+    const p = Path.join(SCAFFOLD, file)
+    if (!Fs.existsSync(p)) throw new Error('runtime file named by the forms is missing: ' + file)
+    let text = Fs.readFileSync(p, 'utf8')
+    if (null != part) {
+      const [from, to] = part.split(':')
+      const at = text.indexOf(from)
+      const end = text.indexOf(to, at + from.length)
+      if (at < 0 || end < 0) throw new Error('runtime file part named by the forms is missing: ' + f)
+      text = text.slice(at, end + to.length)
+    }
+    return [{ file: f, text }]
   })
 }
 
 
-// The text inside the bracket that opens at `at`, and the index after it.
 function bracketed(src: string, at: number, open: string): { inner: string, end: number } | null {
   const close = '(' === open ? ')' : ']'
   if (src[at] !== open) return null
@@ -124,7 +145,6 @@ function bracketed(src: string, at: number, open: string): { inner: string, end:
 }
 
 
-// Parameters split at the top level.
 function splitParams(inner: string, how: 'comma' | 'space' = 'comma'): string[] {
   const out: string[] = []
   let depth = 0
@@ -145,32 +165,34 @@ function splitParams(inner: string, how: 'comma' | 'space' = 'comma'): string[] 
 }
 
 
-// Every declaration of `name` in the files.
-function findDecls(forms: Forms, files: { file: string, text: string }[], name: string): Decl[] {
+function findDecls(forms: Forms, files: Src[], name: string): Decl[] {
   const out: Decl[] = []
   const re = new RegExp(forms.decl(name).source, 'gm')
   for (const { file, text } of files) {
     for (const m of text.matchAll(re)) {
       const at = (m.index as number) + m[0].length
+      const before = text.slice(Math.max(0, (m.index as number) - 400), m.index as number)
+      const rest = text.slice(at, at + 3000)
+      if (forms.declReader) {
+        const r = forms.declReader(rest)
+        if (null == r) continue
+        out.push({ name, params: r.params, returns: (r.returns || '').trim(), head: m[0], before, rest, file })
+        continue
+      }
       const b = bracketed(text, at, forms.open || '(')
       if (null == b && !(forms.bare && text[at] !== (forms.open || '('))) continue
       const end = null == b ? at : b.end
       let params = null == b ? [] : splitParams(b.inner, forms.split)
       if (forms.receiver && 0 < params.length && forms.receiver.test(params[0])) params = params.slice(1)
       const after = text.slice(end, end + 200).split('\n')[0]
-      const before = text.slice(Math.max(0, (m.index as number) - 400), m.index as number)
-      out.push({
-        name, params, returns: forms.returns(after, before, m[0]).trim(), head: m[0],
-        before, rest: text.slice(at, at + 3000), file,
-      })
+      out.push({ name, params, returns: forms.returns(after, before, m[0]).trim(), head: m[0], before, rest, file })
     }
   }
   return out
 }
 
 
-// The names a global pattern finds.
-function publicNames(re: RegExp, files: { file: string, text: string }[]): string[] {
+function publicNames(re: RegExp, files: Src[]): string[] {
   const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g')
   const found = new Set<string>()
   for (const { text } of files) for (const m of text.matchAll(g)) found.add(m.slice(1).find((x) => null != x) as string)
@@ -180,9 +202,8 @@ function publicNames(re: RegExp, files: { file: string, text: string }[]): strin
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-// A name pattern for a declared name holding signature tokens: `{var}_stream`.
 function namePattern(name: string): string {
-  return esc(name).replace(/\\\{\w+\\\}/g, '\\w+')
+  return esc(name).replace(/(?<!\\\$)\\\{\w+\\\}/g, '\\w+')
 }
 
 
@@ -204,8 +225,91 @@ const defaultSigReturns = (sig: string): string => {
 }
 
 
-export type { Decl, Family, Forms, Style }
+function opSource(forms: Forms, op: OpName): string[] {
+  if (forms.opSource) return forms.opSource(op)
+  const re = new RegExp('(^|/)Entity' + cap(op) + 'Op\\.')
+  return forms.files.ops.filter((f) => re.test(f))
+}
+
+// The method the runtime defines an operation as, or why it cannot say.
+function opMethod(forms: Forms, op: OpName): { method: string | null, why: string } {
+  const files = opSource(forms, op)
+  if (0 === files.length) return { method: null, why: 'the forms name no source for ' + op }
+  const src = read(files)
+  if (forms.opMethod) {
+    const m = forms.opMethod(op, src, read)
+    return { method: m, why: null == m ? 'the forms\' opMethod finds none in ' + files.join(' ') : '' }
+  }
+  const names = publicNames(forms.opName || forms.public.entity, src)
+  if (1 !== names.length) return { method: null, why: `${files.join(' ')} declares ${names.length} public members (${names.join(' ')})` }
+  return { method: names[0], why: '' }
+}
+
+
+// What the reader finds in a runtime through its forms alone.
+type Shape = { member: string, shape: string }
+type View = {
+  methods: Record<OpName, { method: string | null, why: string, decl: Decl | null }>
+  load: Decl | null
+  style: Style | 'none'
+  async: boolean
+  record: { name: string, params: number } | null
+  client: string[]
+  entity: string[]
+  shapes: Shape[]
+}
+
+function view(forms: Forms): View {
+  const client = read(forms.files.client)
+  const entity = read(forms.files.entity)
+  const all = [...client, ...entity, ...read(forms.files.ops)]
+  const methods = {} as View['methods']
+  for (const op of OPS) {
+    const m = opMethod(forms, op)
+    const decl = null == m.method ? null
+      : findDecls(forms, read(opSource(forms, op)), esc(m.method))[0] || findDecls(forms, read(forms.files.ops), esc(m.method))[0] || null
+    methods[op] = { ...m, decl }
+  }
+  const load = methods.load.decl
+  const style: Style | 'none' = null == load ? 'none'
+    : ((['pair', 'errslot', 'union', 'wrapped'] as const).find((s) => forms.style[s] && (forms.style[s] as any)(load)) ||
+      (forms.style.raises.test(all.map((x) => x.text).join('\n')) ? forms.style.exception : 'none'))
+  const recName = forms.members.dataGet || forms.members.data
+  const recDecl = null == recName ? null : findDecls(forms, entity, esc(recName))[0] || null
+  const shapes: Shape[] = []
+  for (const fam of ['data', 'match'] as const) {
+    const getn = forms.members[(fam + 'Get') as 'dataGet']
+    const setn = forms.members[(fam + 'Set') as 'dataSet']
+    const one1 = forms.members[fam]
+    if (null != getn && 0 < findDecls(forms, entity, esc(getn)).length) {
+      shapes.push({ member: fam, shape: `${fam}Get + ${fam}Set (${getn}, ${setn})` })
+    }
+    else if (null != one1) {
+      const d = findDecls(forms, entity, esc(one1))[0]
+      if (null != d) {
+        const last = d.params[d.params.length - 1]
+        shapes.push({ member: fam, shape: (0 < d.params.length && !forms.optional(last) ? fam + 'Arg' : fam) + ` (${one1})` })
+      }
+    }
+  }
+  if (null != forms.members.stream && null != forms.streamKind) {
+    const d = findDecls(forms, entity, esc(forms.members.stream))[0]
+    if (null != d) shapes.push({ member: 'stream', shape: forms.streamKind(d) + ` (${forms.members.stream})` })
+  }
+  return {
+    methods, load, style,
+    async: null != load && null != forms.async && forms.async(load),
+    record: null == recDecl ? null : { name: recDecl.name, params: recDecl.params.length },
+    client: publicNames(forms.public.client, client),
+    entity: publicNames(forms.public.entity, entity),
+    shapes,
+  }
+}
+
+
+export type { Citation, Decl, Family, Forms, OpName, Shape, Src, Style, View }
 export {
+  OPS,
   SCAFFOLD,
   bracketed,
   defaultSigName,
@@ -214,7 +318,10 @@ export {
   esc,
   findDecls,
   namePattern,
+  opMethod,
+  opSource,
   publicNames,
   read,
   splitParams,
+  view,
 }
