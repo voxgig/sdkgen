@@ -53,6 +53,7 @@ const forms: Forms = {
     ['Control', 'object'], ['any', 'object'], ['Partial<D>', 'object'], ['Record<string,any>', 'object'],
   ]),
   cite: {
+    'ref.facts.entity[0].copy': { value: true, file: "src/cmp/ts/fragment/EntityBase.fragment.ts", quote: "let out = struct.clone(this._data)" },
     'facts.collection': { value: "array", file: OPS[1], quote: 'async list(this: any, reqmatch?: EntityNameListMatch, ctrl?: Control): Promise<EntyClass[]>' },
     'ref.facts.container': {
       file: 'tm/ts/src/utility/MakeOptionsUtility.ts',
@@ -95,10 +96,6 @@ const forms: Forms = {
     },
     'ref.facts.body.once': { value: "a stream", file: 'tm/ts/src/utility/MakeRequestUtility.ts', quote: '// A stream can be read once; read it now, so that a retry sends the same bytes.' },
     'ref.facts.cancel': { value: true, file: 'tm/ts/src/utility/MakeFetchDefUtility.ts', quote: 'fetchdef.signal = ctx.ctrl.signal' },
-  },
-  exceptions: {
-    'ref.facts.accessor.arg': 'WRONG: the accessor\'s argument is the entity options (MainEntity_ts.ts: "The argument is the entity OPTIONS object (passed to the entity constructor as entopts), not initial entity data."); the page says "Pass `undefined` for no initial data."',
-    'paramNames:accessor': 'WRONG: the runtime\'s parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`), the page names it data',
   },
 }
 

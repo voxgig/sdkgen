@@ -25,7 +25,7 @@ const refFacts: RefFacts = {
   valueType: { STRING: 'string', OBJECT: 'object', ANY: 'any' },
   ctor: ['new {ctor}(options?: object)'],
   test: [{ sig: '{client}.test(testopts?, sdkopts?)', call: 'const client = {client}.test()', args: true }],
-  accessor: { sig: '{accessor}(data?: object)', arg: 'data' },
+  accessor: { sig: '{accessor}(entopts?: object)', arg: 'entopts' },
   op: {
     list: 'list(match?: object, ctrl?: object)',
     load: 'load(match?: object, ctrl?: object)',
