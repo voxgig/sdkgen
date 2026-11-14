@@ -29,7 +29,7 @@ const refFacts: RefFacts = {
     { sig: 'Test() *{client}', call: 'client := sdk.Test()', args: false },
     { sig: 'TestSDK(testopts, sdkopts map[string]any) *{client}', call: 'client := sdk.TestSDK(nil, nil)', args: true },
   ],
-  accessor: { sig: '{accessor}(data map[string]any) {sdk}EntityBase', arg: 'data' },
+  accessor: { sig: '{accessor}(data map[string]any) {sdk}EntityBase', arg: 'entopts' },
   op: {
     list: 'List(reqmatch, ctrl map[string]any) (any, error)',
     load: 'Load(reqmatch, ctrl map[string]any) (any, error)',

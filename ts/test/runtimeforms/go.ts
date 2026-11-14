@@ -53,6 +53,7 @@ const forms: Forms = {
 
   // The porter's, from here on.
   cite: {
+    'ref.facts.entity[0].copy': { value: true, file: "src/cmp/go/fragment/Entity.fragment.go", quote: "out := vs.Clone(e.data)" },
     'facts.collection': { file: 'tm/go/utility/make_result.go', quote: 'var entities []any' },
     'ref.facts.container': { file: MAIN, quote: 'func NewProjectNameSDK(options map[string]any) *ProjectNameSDK {' },
     'ref.facts.client[1].kind': { value: "utility", file: MAIN, quote: 'return CopyUtility(sdk.utility)' },
@@ -72,9 +73,6 @@ const forms: Forms = {
       ],
       also: [{ file: 'tm/go/core/types.go', quote: 'type StreamItem struct {\n\tItem any\n\tErr  error\n}' }],
     },
-  },
-  exceptions: {
-    'ref.facts.accessor.arg': 'WRONG: the accessor passes its argument to the entity constructor as entopts (MainEntity_go.ts `return New${entity.Name}EntityFunc(sdk, data)`; Entity.fragment.go `func NewEntyClass(client *core.ProjectNameSDK, entopts map[string]any)`); the page says "Pass `nil` for no initial data."',
   },
 }
 
