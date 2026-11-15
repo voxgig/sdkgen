@@ -60,12 +60,14 @@ async function cmd_doctor_prune(_args, actx) {
     const fs = actx.fs();
     const found = supersededFiles(actx);
     const pruned = [];
-    for (const abs of found) {
-        fs.unlinkSync(abs);
-        pruned.push(abs);
-        log.info({ point: 'doctor-prune', file: abs, note: 'pruned superseded: ' + abs });
-    }
     const dryrun = !!actx.opts?.dryrun;
+    for (const abs of found) {
+        if (!dryrun) {
+            fs.unlinkSync(abs);
+        }
+        pruned.push(abs);
+        log.info({ point: 'doctor-prune', file: abs, dryrun, note: (dryrun ? 'would prune' : 'pruned') + ' superseded: ' + abs });
+    }
     for (const rel of orphanCompiledFiles(actx)) {
         const stem = node_path_1.default.join(actx.folder, rel.replace(/\.js$/, ''));
         for (const ext of ['.js', '.js.map', '.d.ts', '.d.ts.map']) {
@@ -81,8 +83,9 @@ async function cmd_doctor_prune(_args, actx) {
     }
     log.info({
         point: 'doctor-prune-end', pruned: pruned.length,
-        note: 0 === pruned.length ? 'nothing superseded to prune' :
-            ('pruned ' + pruned.length + ' superseded file(s)')
+        note: 0 === pruned.length ? 'nothing superseded or orphaned to prune' :
+            ((dryrun ? 'would prune ' : 'pruned ') + pruned.length + ' file(s)' +
+                (dryrun ? ' - ** DRY RUN **' : ''))
     });
     return { report: { pruned, ok: true } };
 }
