@@ -125,6 +125,18 @@ describe('reference interface', () => {
     throws(() => refText(provider((r) => { r.testMock = undefined }), none), /testMock/)
   })
 
+  // S13's residue: with no test feature, the first argument is put in the
+  // options and nothing reads it; the page does not call it the feature's.
+  test('the test client\'s first argument without the test feature is not called the feature\'s options', () => {
+    const none = { ...desc, ref: { ...desc.ref, test: false } }
+    const withArgs = (r: any) => { r.testMock = 'generated'; r.test = r.test.map((t: any) => ({ ...t, args: true })) }
+    const generated = refText(provider(withArgs), none).replace(/\n/g, ' ')
+    ok(!generated.includes('test feature\'s options'), generated)
+    ok(/with no `test` feature in this SDK, nothing reads\s+it\./.test(generated), generated)
+    const shipped = refText(provider((r) => { r.test = r.test.map((t: any) => ({ ...t, args: true })) }), desc).replace(/\n/g, ' ')
+    ok(shipped.includes('test feature\'s options, which the call switches on'), shipped)
+  })
+
   // A key of the direct result is read by the language's own printer; the
   // branch reads it as a truth test.
   test('the direct result names its keys through the read printer', () => {
