@@ -25,6 +25,8 @@ for (const r of B) {
   out.push(`${r.section.padEnd(10)}         ${String(t.identical).padStart(9)} ${String(t.corrected).padStart(9)} ${String(t.unified).padStart(7)} ${String(t.changed).padStart(9)} | ${String(r.classes).padStart(7)} ${String(r.unclassified).padStart(4)} ${String(r.defect).padStart(6)} | ${r.toolchain ? 'yes (' + r.toolchain + ')' : 'NO'}; ${changed} changed blocks compiled by nothing`)
   if (r.unclassified || r.defect) bad++
 }
+// a changed normalizer count is open on its own: say so, since no class shows it
+for (const r of B) if (r.countNote) out.push(`  RECOUNT ${r.section}: ${r.countNote} (counted in OPEN above; read the pairs in *.blocks.diff, then blocks.js --record-counts)`)
 out.push('  classes = "otherwise" pairs grouped by masked diff + OLD-only/NEW-only blocks + identifiers new to or gone from the code (' + B.map((r) => r.section + ': ' + Object.entries(r.byType || {}).map(([k, v]) => k + ' ' + v).join(', ')).join('; ') + ')')
 out.push('  a compiler on PATH compiles nothing here: no tool compiles the changed blocks of these variations; the toolchain lanes compile their own models')
 const contra = L.flatMap((r) => r.contradictions.map((c) => ({ ...c, section: r.section })))
@@ -35,7 +37,7 @@ if (contra.length) {
 }
 if (Pu) {
   const noteBad = Pu.open.filter((f) => /notes declared but no notes region|outside every notes region/.test(f.check)).length
-  out.push(`purity: ${Pu.open.length} open, ${Pu.accepted.length} accepted | notes declared ${null == Pu.declaredNotes ? '?' : Pu.declaredNotes}, note regions found ${Pu.noteRegions}${noteBad ? ' (NOTES NOT LINTED)' : ''}`)
+  out.push(`purity: ${Pu.open.length} open, ${Pu.accepted.length} accepted | notes declared ${null == Pu.declaredNotes ? '?' : Pu.declaredNotes}${Pu.declaredKeys && Pu.declaredKeys.length ? ' (' + Pu.declaredKeys.join(', ') + ')' : ''}, note regions found ${Pu.noteRegions} (a region holds any number of notes)${Pu.notesMissed && Pu.notesMissed.length ? '; declared notes NO REGION HOLDS: ' + Pu.notesMissed.join(', ') : '; every declared note is in a region the lint read'}${noteBad ? ' (NOTES NOT LINTED)' : ''}`)
   for (const f of Pu.open.slice(0, 6)) out.push(`  OPEN ${f.file}:${f.line} ${f.check}: ${String(f.text).slice(0, 90)}`)
   if (Pu.open.length) bad++
 } else { out.push('purity: NOT RUN'); bad++ }
@@ -65,6 +67,6 @@ if (Se) {
 }
 const fsl = (() => { try { return Fs.readFileSync(Path.join(dir, 'factsheet.log'), 'utf8').trim().split('\n').pop() } catch (e) { return 'factsheet: not run' } })()
 out.push(`fact sheet: ${fsl.replace(/ -> .*$/, '')}: ${Path.join(dir, 'facts.txt')} (audit every fact a shared sentence carries)`)
-out.push(`worklists: ${dir}/<section>.open.json (fill into hand/${lang}.json), *.ledger.txt, *.blocks.txt, *.blocks.diff`)
+out.push(`worklists: ${dir}/<section>.open.json (REGENERATED ON EVERY RUN: copy decisions into hand/${lang}.json, the only state), *.ledger.txt, *.blocks.txt, *.blocks.diff`)
 console.log(out.join('\n'))
 process.exit(bad ? 1 : 0)

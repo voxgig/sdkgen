@@ -83,6 +83,9 @@ function diff(a, b) {
 // left, document order.
 const AT = [(b) => b.at, (b) => b.at.replace(/(^|> )\d+\.\s+/g, '$1'),
   (b) => b.at.replace(/(^|> )\d+\.\s+/g, '$1').replace(/`[^`(]*?([\w$:-]+)\s*\([^`]*`/g, '`$1`'),
+  // a signature with no parenthesis (OCaml's `e_load reqmatch ctrl : entity_obj`):
+  // cut to its first identifier, after the cut above has made `e_load (value) ...` `e_load`
+  (b) => b.at.replace(/(^|> )\d+\.\s+/g, '$1').replace(/`[^`(]*?([\w$:-]+)\s*\([^`]*`/g, '`$1`').replace(/`([A-Za-z_][\w$.]*)\s[^`(]*`/g, '`$1`'),
   // the last heading alone: an entity heading that changed (a collision rename)
   (b) => b.at.split(' > ').pop().replace(/^\d+\.\s+/, '').replace(/`[^`(]*?([\w$:-]+)\s*\([^`]*`/g, '`$1`')]
 function pairBlocks(O, N) {
@@ -181,7 +184,12 @@ function main() {
   if (!a.old || !a.new) { console.error('usage: node blocks.js --old <root> --new <root> [--lang l] [--section s] [--vars v,..] [--normalizers dir] [--classes dir] [--out dir] [--template] [--json]'); process.exit(2) }
   let bad = 0
   const json = []
-  for (const { section, lang, ported } of K.plan(a)) {
+  // portcheck passes the sections it found ported, from the registry or read
+  // off the clone: those are ported whatever ported.json lists
+  const given = K.list(a.ported)
+  for (const p0 of K.plan(a)) {
+    const { section, lang } = p0
+    const ported = p0.ported || !!(given && given.includes(section))
     const r = run(a, section, lang)
     const decided = K.loadClasses(Path.join(a.classes, lang + '.json'))
     let un = 0, defect = 0

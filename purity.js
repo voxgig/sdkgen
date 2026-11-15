@@ -18,7 +18,7 @@ const K = require('./common.js')
 
 // What a provider may import: helpers that quote, lay out or name a type
 // from its canonical sentinel. Anything else imported is a finding.
-const PRINTING = new Set(['indentLines', 'jsKey', 'jsProp', 'jsQuote', 'uses', 'canonToType', 'canonKey'])
+const PRINTING = new Set(['indentLines', 'jsKey', 'jsProp', 'jsQuote', 'luaKey', 'luaString', 'uses', 'canonToType', 'canonKey'])
 const OPS = ['list', 'load', 'create', 'update', 'patch', 'remove']
 
 // A model read is any of these, under any name or cast: the model's own
@@ -221,6 +221,7 @@ function main() {
     // a provider that declares notes the lint did not read is an error
     const dn = declaredNotes(a.providers, l)
     r.declaredNotes = dn ? Object.keys(dn).length : null
+    r.declaredKeys = dn ? Object.keys(dn) : []
     r.noteRegions = r.syntax ? r.syntax.notes : 0
     r.notesMissed = []
     if (dn && r.syntax) {

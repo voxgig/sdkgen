@@ -27,9 +27,17 @@ step() { echo "[portcheck $lang] $1" >&2; }
 
 if [ "${REGEN:-0}" = 1 ]; then
   step "regenerate NEW from $clone (a progress line per variation)"
-  node "$here/gen/gen.js" "$root/new" "$clone/ts" 2>&1 | tee "$out/regen.log" >&2 || { echo "generation failed"; exit 1; }
+  # the generator's own exit code, not tee's: a generation that throws leaves
+  # new/ as the run before wrote it, and nothing may be measured on that
+  set -o pipefail
+  node "$here/gen/gen.js" "$root/new" "$clone/ts" 2>&1 | tee "$out/regen.log" >&2
+  grc=$?
+  set +o pipefail
   got=$(grep -c 'READMEs in' "$out/regen.log"); skipped=$(grep 'SKIPPED' "$out/regen.log" | sed 's/^.*\] \([^:]*\):.*/\1/' | tr '\n' ' ')
-  step "regenerated $got variations; SKIPPED: ${skipped:-none} (a skipped variation keeps its earlier output in new/, or is absent from it)"
+  want=$(ls "$root/old" | wc -l)
+  step "regenerated $got of the $want variations old/ holds; SKIPPED: ${skipped:-none}"
+  if [ $grc != 0 ]; then echo "REGENERATION FAILED (exit $grc): the generator threw; new/ holds the pages of an earlier run and nothing is measured"; tail -n 5 "$out/regen.log"; echo "PORTCHECK $lang: FAIL"; exit 1; fi
+  if [ "$got" -lt "$want" ]; then echo "REGENERATION SHORT: $got variations regenerated, old/ holds $want (skipped: ${skipped:-none}); a variation not regenerated keeps an earlier run's pages, so nothing is measured (make the workspace with mkworkspace.sh so the alias variation can be staged)"; echo "PORTCHECK $lang: FAIL"; exit 1; fi
 fi
 
 sections=$(node -e 'const r=require(process.argv[1]);console.log(Object.keys(r.ported).filter(s=>r.ported[s].includes(process.argv[2])).join(","))' "$here/ported.json" "$lang")
@@ -55,10 +63,10 @@ if [ "${SCRATCH:-0}" = 1 ]; then cls="$out/scratch-classes"; scratch=(--scratch 
 step "classify (hand/$lang.json, then stage-3a rule records for this language, then exact shared sentences)"
 node "$here/classify.js" --clone "$clone" --old "$root/old" --new "$root/new" --lang "$lang" --section "$sections" "${scratch[@]}" > "$out/classify.log" 2>&1 || { cat "$out/classify.log"; echo "classify failed"; exit 1; }
 step "ledger";   node "$here/ledger.js" --old "$root/old" --new "$root/new" --lang "$lang" --section "$sections" --classes "$cls" --json > "$out/ledger.json" 2> "$out/ledger.err" || rc=1
-step "blocks";   node "$here/blocks.js" --old "$root/old" --new "$root/new" --lang "$lang" --section "$sections" --classes "$cls" --json > "$out/blocks.json" 2> "$out/blocks.err" || rc=1
+step "blocks";   node "$here/blocks.js" --old "$root/old" --new "$root/new" --lang "$lang" --section "$sections" --ported "$sections" --classes "$cls" --json > "$out/blocks.json" 2> "$out/blocks.err" || rc=1
 # human-readable worklists too (same run, text form)
 node "$here/ledger.js" --old "$root/old" --new "$root/new" --lang "$lang" --section "$sections" --classes "$cls" > "$out/ledger.log" 2>&1
-node "$here/blocks.js" --old "$root/old" --new "$root/new" --lang "$lang" --section "$sections" --classes "$cls" > "$out/blocks.log" 2>&1
+node "$here/blocks.js" --old "$root/old" --new "$root/new" --lang "$lang" --section "$sections" --ported "$sections" --classes "$cls" > "$out/blocks.log" 2>&1
 step "fact sheet (and the language and convention facts against the OLD page)"; node "$here/factsheet.js" --clone "$clone" --old "$root/old" --new "$root/new" --lang "$lang" --section "$sections" "${fscratch[@]}" > "$out/factsheet.log" 2>&1 || rc=1
 if [ "${SCRATCH:-0}" != 1 ]; then
   step "hand records: does every quotation in a reason still stand on a page or in the clone"
