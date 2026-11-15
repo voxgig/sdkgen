@@ -250,5 +250,20 @@
   "outcome": "correction:S25",
   "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
   "n": 1
+ },
+ "0b4cba0581": {
+  "outcome": "same-meaning",
+  "why": "a word match on `None` in the README's test-mode line; nothing about the accessor's argument",
+  "n": 94
+ },
+ "891cc0c6f3": {
+  "outcome": "same-meaning",
+  "why": "README:203-206 shows DemoSDK.test(testopts, sdkopts), both may be None; same",
+  "n": 19
+ },
+ "c2c1d3d303": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the accessor passes its argument to the entity constructor as entopts (Entity.fragment.py:12 __init__(self, client, entopts=None)): options, not initial data",
+  "n": 94
  }
 }

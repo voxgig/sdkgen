@@ -739,5 +739,15 @@
   "outcome": "correction:S25",
   "why": "ref-issues: remove inactive, its example goes with it",
   "n": 1
+ },
+ "097bbe00c6": {
+  "outcome": "same-meaning",
+  "why": "a word match on nil in the README's test line; nothing about the accessor's argument",
+  "n": 94
+ },
+ "618096b4cc": {
+  "outcome": "same-meaning",
+  "why": "README:208 calls DemoSDK.test(testopts, sdkopts); same parameters",
+  "n": 19
  }
 }

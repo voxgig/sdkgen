@@ -1036,5 +1036,29 @@
   "outcome": "unification:ref-generic-names",
   "why": "",
   "n": 1
+ },
+ "f790cebbef": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "de6be18bcd": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "3dd8c04a4f": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "c2024de800": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
  }
 }

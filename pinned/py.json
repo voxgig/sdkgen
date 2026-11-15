@@ -979,5 +979,59 @@
   "outcome": "unification:ref-generic-names",
   "why": "",
   "n": 1
+ },
+ "891cc0c6f3": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "7ffe03ab02": {
+  "rule": "sig-forms2",
+  "outcome": "correction:runtime-forms",
+  "why": "",
+  "n": 93
+ },
+ "2777cf626f": {
+  "rule": "sig-forms2",
+  "outcome": "correction:runtime-forms",
+  "why": "",
+  "n": 93
+ },
+ "7f6f311476": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "84c40b637b": {
+  "rule": "stream-member",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 94
+ },
+ "3dd8c04a4f": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "c0f3f408dd": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "1c26dab551": {
+  "rule": "add-sig-forms",
+  "outcome": "correction:runtime-forms",
+  "why": "",
+  "n": 1
+ },
+ "a40bbd4b56": {
+  "rule": "add-sig-forms",
+  "outcome": "correction:runtime-forms",
+  "why": "",
+  "n": 1
  }
 }

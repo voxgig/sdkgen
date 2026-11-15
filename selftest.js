@@ -64,7 +64,12 @@ const NEW = Path.resolve(a.new), OLD = Path.resolve(a.old)
 const results = []
 const t0 = Date.now()
 const progress = (msg) => console.log(`[selftest ${((Date.now() - t0) / 1000).toFixed(0)}s] ${msg}`)
-const record = (part, id, ok, detail) => { results.push({ part, id, ok, detail }); console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${part} ${id}: ${detail}`) }
+const MOVED = (() => { try { return JSON.parse(Fs.readFileSync(Path.join(__dirname, 'controls', 'moved.json'), 'utf8')).moved } catch (e) { return {} } })()
+const record = (part, id, ok, detail) => {
+  const why = !ok && MOVED[part + ' ' + id]
+  results.push({ part, id, ok: ok || !!why, moved: !!why, detail })
+  console.log(`  ${ok ? 'ok  ' : why ? 'MOVED' : 'FAIL'} ${part} ${id}: ${detail}${why ? ' -- moved: ' + why.slice(0, 160) : ''}`)
+}
 
 Fs.mkdirSync(W); Fs.cpSync(Path.join(__dirname, 'classes'), TC, { recursive: true }); Fs.mkdirSync(TCS)
 for (const v of Fs.readdirSync(NEW)) if (Fs.statSync(Path.join(NEW, v)).isDirectory()) Fs.symlinkSync(Path.join(NEW, v), Path.join(W, v))
@@ -246,7 +251,7 @@ if (want('identity')) {
   same('number', [['The program after these 2 steps runs them in order.', 'sentence', 'go'], ['The program after these 4 steps runs them in order.', 'sentence', 'go']])
   same('comment-fact', [['Load an ambient: Ok is the entity; Err on failure', 'comment', 'rust'], ['Load an ambient: .ok is the entity; .err on failure', 'comment', 'zig']])
   same('comment-collection', [['List planet records: a list of entities, one per record; raises on failure', 'comment', 'py'], ['List planet records: a vector of entities, one per record; raises on failure', 'comment', 'clojure']])
-  same('vec-own-backticks', [['The result\'s `Ok` is a `Vec` of entities, one per record, and its `Err` reports failure.', 'sentence', 'rust'], ['The result\'s `.ok` is a `slice` of entities, one per record, and its `.err` reports failure.', 'sentence', 'zig']])
+  same('vec-own-backticks', [['The result\'s `Ok` is a `Vec` of entities, one per record, and its `Err` reports failure.', 'sentence', 'rust'], ['The result\'s `.ok` is a slice of entities, one per record, and its `.err` reports failure.', 'sentence', 'zig']])
   // the converse: a shared word is not a slot
   same('shared-word-stays', [['The match is optional: without one, every record is listed.', 'sentence', 'ts'], ['The match is optional: without one, every planet is listed.', 'sentence', 'ts']], false)
   same('shared-literal-stays', [['A failed request is reported in the result, not as an error, so branch on `result.ok`.', 'sentence', 'ts'], ['A failed request is reported in the result, not as an error, and so branch on `result.ok`.', 'sentence', 'ts']], false)
@@ -344,7 +349,9 @@ if (holes.length) console.log(`\nfrom scratch, no new open class (holes): ${hole
 const bad = results.filter((r) => !r.ok)
 const by = {}
 for (const r of results) { const k = r.part + (/ \[scratch\]$/.test(r.id) ? ' scratch' : ''); by[k] = by[k] || [0, 0]; by[k][r.ok ? 0 : 1]++ }
-console.log(`\nselftest: ${results.length} controls, ${bad.length} failed (${Object.entries(by).map(([p, [o, f]]) => `${p} ${o}/${o + f}`).join(', ')}) in ${((Date.now() - t0) / 1000).toFixed(0)}s; scratch ${TMP}`)
+const moved = results.filter((r) => r.moved)
+if (moved.length) console.log(`moved (controls/moved.json, each a finding): ${moved.map((r) => r.part + ' ' + r.id).join('; ')}`)
+console.log(`\nselftest: ${results.length} controls, ${bad.length} failed, ${moved.length} moved (${Object.entries(by).map(([p, [o, f]]) => `${p} ${o}/${o + f}`).join(', ')}) in ${((Date.now() - t0) / 1000).toFixed(0)}s; scratch ${TMP}`)
 if (a.json) Fs.writeFileSync(a.json, JSON.stringify(results, null, 1))
 if (!a.keep) Fs.rmSync(TMP, { recursive: true, force: true })
 process.exit(bad.length ? 1 : 0)

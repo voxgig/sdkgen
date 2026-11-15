@@ -295,5 +295,20 @@
   "outcome": "correction:S25",
   "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
   "n": 1
+ },
+ "e615041e24": {
+  "outcome": "restored:note",
+  "why": "the arity naming the old elixir README stated (the check's misclassified 5): load is defined with defaulted arguments (EntityLoadOp.fragment.ex), the tutorial calls load/2",
+  "n": 16
+ },
+ "fbaca6bf31": {
+  "outcome": "restored:note",
+  "why": "the arity naming and the getelem/2 item read the old README stated (EntityListOp.fragment.ex; voxgig_struct.ex:466 def getelem(val, key, alt \\\\ nil))",
+  "n": 7
+ },
+ "618096b4cc": {
+  "outcome": "same-meaning",
+  "why": "README:229 calls Demo.test(testopts, sdkopts); same parameters",
+  "n": 19
  }
 }

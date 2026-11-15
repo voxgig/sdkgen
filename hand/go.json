@@ -316,5 +316,15 @@
   "outcome": "restored:shared",
   "why": "restored as the kind sentence 'Run an operation through the pipeline and stream its result items.' followed by the runs sentence, and go's note 'It sends the items on the returned channel, which closes when the stream ends.'",
   "n": 1
+ },
+ "618096b4cc": {
+  "outcome": "same-meaning",
+  "why": "the README shows TestSDK(testopts, sdkopts map[string]any); same parameters, and both may be nil there too",
+  "n": 21
+ },
+ "1948d9eee5": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the accessor passes its argument to the entity constructor as entopts (Entity.fragment.go NewEntyClass(client, entopts)); it is options, not initial data",
+  "n": 108
  }
 }

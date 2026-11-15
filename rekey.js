@@ -127,7 +127,8 @@ function rekeyLang(a) {
   const hand = readJson(files.hand) || {}
   const pinned = readJson(files.pinned) || {}
   const classes = readJson(files.classes) || {}
-  const base = { old: a.old, new: a.new, clone: a.clone, normalizers: Path.join(from, 'normalizers') }
+  // a language's own normalizers are the records' directory's (they require ../normalizers.js beside them)
+  const base = { old: a.old, new: a.new, clone: a.clone, normalizers: Fs.existsSync(Path.join(from, 'normalizers.js')) ? Path.join(from, 'normalizers') : undefined }
   const NEW = codeOf(HERE)
   const sections = sectionsFor(a, lang)
   const t0 = Date.now()
@@ -137,9 +138,11 @@ function rekeyLang(a) {
   for (const s of sections) { newCls[s] = classesOf(NEW, base, s, lang); progress(`new ${s}: ${newCls[s].length} classes`) }
   const newIds = new Set(Object.values(newCls).flat().map((c) => c.id))
   const keys = [...Object.keys(hand).filter(isId), ...Object.keys(pinned), ...Object.keys(classes)]
-  const known = keys.filter((k) => newIds.has(k)).length
+  // keyed by this code already: (nearly) every key is a class it makes; the
+  // rest are records of classes no code makes any more (stale, kept as they are)
+  const uniq = new Set(keys), known = [...uniq].filter((k) => newIds.has(k)).length
   let codeDir = a.code ? Path.resolve(a.code) : null
-  if (!codeDir) codeDir = keys.length && known === new Set(keys).size ? HERE : Path.join(HERE, 'legacy', 'v32')
+  if (!codeDir) codeDir = uniq.size && known >= 0.9 * uniq.size ? HERE : Path.join(HERE, 'legacy', 'v32')
   const report = { lang, from, to, code: codeDir, sections: {}, renamed: 0, merged: [], split: [], conflicts: [], unsourced: [], gone: [], carried: { hand: 0, pinned: 0, classes: 0 }, dropped: { hand: [], pinned: [] }, stale: { hand: [], pinned: [] }, absent: {}, counts: null }
   if (codeDir === HERE) {
     report.already = true
@@ -198,8 +201,13 @@ function rekeyLang(a) {
   }
   // records that went nowhere
   // a record of a class the old code does not make either was stale before the re-key
-  for (const k of Object.keys(hand).filter(isId)) if (!carriedHand.has(k)) (oldIds.has(k) ? report.dropped.hand : report.stale.hand).push({ id: k, ...hand[k] })
-  for (const k of Object.keys(pinned)) if (!oldIds.has(k)) report.stale.pinned.push(k)
+  // a record of a class the old code does not make either was stale before
+  // the re-key: kept as it is (no class has its id, so it decides nothing)
+  for (const k of Object.keys(hand).filter(isId)) if (!carriedHand.has(k)) {
+    if (oldIds.has(k)) report.dropped.hand.push({ id: k, ...hand[k] })
+    else { report.stale.hand.push({ id: k, ...hand[k] }); if (!out.hand[k]) out.hand[k] = hand[k] }
+  }
+  for (const k of Object.keys(pinned)) if (!oldIds.has(k)) { report.stale.pinned.push(k); if (!out.pinned[k]) out.pinned[k] = pinned[k] }
   // absent: the old absent list (old code), its example under the new identity
   if (hand.absent && Object.keys(hand.absent).length) {
     const tmp = Fs.mkdtempSync(Path.join(a.tmp || Os.tmpdir(), 'rekey-absent-'))
@@ -334,7 +342,7 @@ function main() {
   const goneIds = [...new Set(r.gone.map((g) => g.id))]
   if (goneIds.length) console.log(`  gone (an old class with occurrences that form no class now): ${goneIds.length} classes, ${r.gone.length} occurrences: ${goneIds.slice(0, 12).join(' ')}`)
   for (const x of r.dropped.hand) console.log(`  HAND ENTRY NOT CARRIED [${x.id}] ${x.outcome}: ${String(x.text || x.why || '').slice(0, 100)}`)
-  if (r.stale.hand.length || r.stale.pinned.length) console.log(`  stale before the re-key (no class of the old code has the id): hand ${r.stale.hand.map((x) => x.id).join(' ') || 'none'}; rule records ${r.stale.pinned.length}`)
+  if (r.stale.hand.length || r.stale.pinned.length) console.log(`  stale before the re-key (no class of the old code has the id; kept as they are): hand ${r.stale.hand.map((x) => x.id).join(' ') || 'none'}; rule records ${r.stale.pinned.length}`)
   process.exitCode = r.conflicts.length || r.dropped.hand.length || r.unsourced.length ? 1 : 0
 }
 

@@ -395,5 +395,10 @@
   "outcome": "correction:S25",
   "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
   "n": 1
+ },
+ "f790cebbef": {
+  "outcome": "same-meaning",
+  "why": "README:209 calls sdk.test_sdk(testopts, sdkopts); same parameters",
+  "n": 19
  }
 }

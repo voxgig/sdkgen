@@ -1010,5 +1010,41 @@
   "outcome": "unification:ref-generic-names",
   "why": "",
   "n": 1
+ },
+ "618096b4cc": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "1b01d75892": {
+  "rule": "clojure-keyword-note",
+  "outcome": "dropped",
+  "why": "the signatures ((:data-get ent)) show the keyword call; a sentence saying so would be clojure-only prose",
+  "n": 94
+ },
+ "fbf2304915": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "6573e9e210": {
+  "rule": "stream-member",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 94
+ },
+ "3dd8c04a4f": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "a578c7a1f8": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
  }
 }

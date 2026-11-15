@@ -1028,5 +1028,53 @@
   "outcome": "correction:go-testsdk-args",
   "why": "",
   "n": 1
+ },
+ "618096b4cc": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 21
+ },
+ "fbf2304915": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 21
+ },
+ "3dd8c04a4f": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "31d8b2afcb": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 18
+ },
+ "14d7ad06dd": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
+  "why": "",
+  "n": 3
+ },
+ "d0cd23d2c9": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
+  "why": "",
+  "n": 1
+ },
+ "64340cef2b": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
+  "why": "",
+  "n": 1
+ },
+ "2ff6ebd59a": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
+  "why": "",
+  "n": 1
  }
 }

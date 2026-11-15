@@ -1116,5 +1116,41 @@
   "outcome": "unification:ref-generic-names",
   "why": "",
   "n": 1
+ },
+ "59f3410e6d": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "9fc9891dc2": {
+  "rule": "add-note-rust",
+  "outcome": "restored:note",
+  "why": "",
+  "n": 19
+ },
+ "8da1e9158a": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "8b235236da": {
+  "rule": "add-note-rust",
+  "outcome": "restored:note",
+  "why": "",
+  "n": 19
+ },
+ "3dd8c04a4f": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "b4f7e278c8": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
  }
 }

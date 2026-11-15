@@ -306,5 +306,10 @@
   "outcome": "correction:S25",
   "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
   "n": 1
+ },
+ "59f3410e6d": {
+  "outcome": "same-meaning",
+  "why": "README:201 calls test_sdk(testopts, sdkopts); same parameters",
+  "n": 19
  }
 }

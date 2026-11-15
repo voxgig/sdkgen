@@ -1178,5 +1178,47 @@
   "outcome": "unification:ref-list-printed",
   "why": "",
   "n": 1
+ },
+ "618096b4cc": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "4a4cd8d647": {
+  "rule": "elixir-deep",
+  "outcome": "dropped",
+  "why": "the code shows Demo.Helpers.deep; a sentence on it is elixir-only prose (stage 3 decision)",
+  "n": 19
+ },
+ "fbf2304915": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "6573e9e210": {
+  "rule": "stream-member",
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 94
+ },
+ "3dd8c04a4f": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "5229cae02f": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "ceb5e2e4dd": {
+  "rule": "tok-elixir-getelem",
+  "outcome": "dropped",
+  "why": "the elixir arity sentence (getelem/2) is dropped as elixir-only prose; the code shows getelem",
+  "n": 1
  }
 }

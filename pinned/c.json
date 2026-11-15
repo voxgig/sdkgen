@@ -1018,5 +1018,35 @@
   "outcome": "restored:shared",
   "why": "",
   "n": 1
+ },
+ "91303c1c3e": {
+  "rule": "tok-comment-words",
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1
+ },
+ "6ee07c173d": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "12fac265f2": {
+  "rule": "test-opts-shared",
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19
+ },
+ "3dd8c04a4f": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
+ },
+ "35d915ca49": {
+  "rule": "actions-table",
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16
  }
 }

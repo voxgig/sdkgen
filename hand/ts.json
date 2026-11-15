@@ -374,5 +374,10 @@
   "outcome": "correction:ref-6",
   "why": "the action example block became the Call cell of the Actions table",
   "n": 1
+ },
+ "f2c1dbed8f": {
+  "outcome": "same-meaning",
+  "why": "the README lists tester(testopts?, sdkopts?) as creating a test-mode client; consistent with testopts/sdkopts as described",
+  "n": 19
  }
 }
