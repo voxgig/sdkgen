@@ -45,7 +45,9 @@ const forms: Forms = {
   style: { exception: 'die', raises: /\bdie\b/ },
   record: (rec) => ({ name: (/(\w+)(?:\(\))?$/.exec(rec) || [])[1] || rec }),
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'new', accessor: '${entity.Name}' },
-  types: { column: null, reason: 'the code generator has no perl column in canonToType (every type maps to any); the page\'s type words are the provider\'s own' },
+  types: { column: null, reason: 'the code generator has no perl column in canonToType (every type maps to any); the page\'s type words are the provider\'s own',
+    // The words the page prints, pinned: no generator map checks them, the reviewer audits them.
+    words: { STRING: 'string', INTEGER: 'integer', NUMBER: 'number', BOOLEAN: 'boolean', NULL: 'undef', ARRAY: 'arrayref', OBJECT: 'hashref', ANY: 'scalar' } },
   uncompared: { paramTypes: 'perl declares no parameter types', returns: 'perl declares no return types' },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, cite and exceptions.
   // What the table states besides names, parameters and returns.

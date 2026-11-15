@@ -125,9 +125,11 @@ type Forms = {
   typeNames?: Record<string, string>
   namesWhy?: string
 
-  // `column`: the code generator's own type map; null with the reason when
-  // it has none.
-  types: { column: string | null, reason?: string, any?: string[] }
+  // `column`: the code generator's own type map, which must be the one its
+  // EntityTypes component passes canonToType; null with the reason when it has
+  // none, and then `words`: each canonical type's word as the page prints it,
+  // pinned for the reviewer, who audits it.
+  types: { column: string | null, reason?: string, any?: string[], words?: Record<string, string> }
 
   // A comparison these forms cannot make, by check, with the reason.
   uncompared?: Partial<Record<'returns' | 'paramTypes' | 'paramNames', string>>
@@ -141,6 +143,26 @@ type Forms = {
 
 
 const SCAFFOLD = Path.resolve(__dirname, '..', '..', 'project', '.sdk')
+
+// The canonToType column a language's EntityTypes component uses, read from
+// its source and the helpers file it calls (elixir's elixirType); null where
+// it has none, and every column named when it names more than one.
+function generatorColumn(lang: string): { column: string | null, file: string } {
+  const file = `src/cmp/${lang}/EntityTypes_${lang}.ts`
+  const p = Path.join(SCAFFOLD, file)
+  if (!Fs.existsSync(p)) return { column: null, file }
+  const found = new Set<string>()
+  for (const f of [p, Path.join(SCAFFOLD, `src/cmp/${lang}/utility_${lang}.ts`)]) {
+    if (!Fs.existsSync(f)) continue
+    const src = Fs.readFileSync(f, 'utf8')
+    const lang0 = (/^const LANG = '(\w+)'/m.exec(src) || [])[1]
+    for (const m of src.matchAll(/canonToType\([^)]*,\s*(?:'(\w+)'|(LANG))\s*\)/g)) {
+      const col = m[1] || lang0
+      if (null != col) found.add(col)
+    }
+  }
+  return { column: 1 === found.size ? [...found][0] : (0 === found.size ? null : [...found].sort().join('|')), file }
+}
 const OPS: OpName[] = ['list', 'load', 'create', 'update', 'patch', 'remove']
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1)
 
@@ -364,6 +386,7 @@ export {
   defaultSigReturns,
   esc,
   findDecls,
+  generatorColumn,
   namePattern,
   opMethod,
   opSource,

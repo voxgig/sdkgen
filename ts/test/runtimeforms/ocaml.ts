@@ -95,7 +95,9 @@ const forms: Forms = {
   style: { exception: 'raise', raises: /\braise\b/ },
   record: (rec) => ({ name: (/(e_\w+)/.exec(rec) || [])[1] || rec }),
   tokens: { Class: 'entity_obj', client: 'sdk_client', sdk: 'Sdk_client', ctor: 'make', accessor: '${fn}' },
-  types: { column: null, reason: 'the code generator has no ocaml column in canonToType (every type maps to any); the page\'s type words are the provider\'s own' },
+  types: { column: null, reason: 'the code generator has no ocaml column in canonToType (every type maps to any); the page\'s type words are the provider\'s own',
+    // The words the page prints, pinned: no generator map checks them, the reviewer audits them.
+    words: { STRING: 'string', INTEGER: 'int', NUMBER: 'float', BOOLEAN: 'bool', NULL: 'value', ARRAY: 'value list', OBJECT: 'value map', ANY: 'value' } },
   // The porter's, from here on.
   sigName: (sig) => sigParts(sig).name,
   sigParams: (sig) => sigParts(sig).params,

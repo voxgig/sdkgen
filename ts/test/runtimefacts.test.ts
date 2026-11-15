@@ -71,7 +71,9 @@ describe('runtimefacts', () => {
       const res = full(t, syntaxOf(t), forms)
       const n = tally(res.account)
       lines.push(`${t}: ` + Object.entries(n).map(([k, v]) => `${k} ${v}`).join(', ') +
-        `; types: ${null == forms.types.column ? 'printer total only (' + forms.types.reason + ')' : 'column ' + forms.types.column}` +
+        `; types: ${null == forms.types.column
+          ? `type words ${Object.keys(forms.types.words || {}).length}, pinned for the reviewer (${Object.entries(forms.types.words || {}).map(([k, v]) => k + ' ' + v).join(', ')}; ${forms.types.reason})`
+          : 'column ' + forms.types.column + ' (derived from the generator)'}` +
         `; uncompared ${Object.entries(res.uncompared).filter(([, v]) => 0 < v).map(([k, v]) => `${k} ${v} (${(forms.uncompared as any)?.[k]})`).join(', ') || 'none'}`)
       for (const c of res.account.cited) {
         lines.push(`  cited${c.absence ? ' (absence: searched)' : c.prose ? ' (prose: audit only)' : ''} ${c.path} = ${JSON.stringify(c.value)}\n    ${c.file}: ${JSON.stringify(c.quote)}` +

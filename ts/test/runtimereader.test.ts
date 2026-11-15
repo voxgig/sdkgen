@@ -9,7 +9,7 @@ import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 
 import type { Decl, Forms, View } from './runtimeforms/forms'
-import { OPS, bracketed, esc, findDecls, read, view } from './runtimeforms/forms'
+import { OPS, bracketed, esc, findDecls, generatorColumn, read, view } from './runtimeforms/forms'
 import { FORMS_SRC, FRAMEWORK, RUNS, streamItems, streamClaims } from './runtimeforms/guard'
 import { AHEAD, checkCitation } from './runtimeforms/account'
 
@@ -51,6 +51,8 @@ function problems(t: string, forms: Forms, v: View): string[] {
     }
     if (!(v as any)[side].includes(name)) out.push(`members.${fam} ${name} is not among the public ${side} members`)
   }
+  const gen = generatorColumn(t)
+  if (gen.column !== forms.types.column) out.push(`types: the forms give column ${forms.types.column}; ${gen.file} uses ${gen.column ?? 'none'}`)
   if (null == forms.types.column) {
     if (null == forms.types.reason) out.push('types: no column and no reason')
   }

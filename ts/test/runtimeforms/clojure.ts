@@ -51,7 +51,9 @@ const forms: Forms = {
   sigParams: (sig) => form(sig).params,
   sigReturns: (sig) => ((/\)\s*->\s*(.+)$/.exec(sig.trim()) || [])[1] || '').trim(),
   tokens: { Class: 'EntyClass', client: 'api', sdk: 'ProjectName', ctor: 'make-sdk', accessor: '${cljAccessor(entity)}' },
-  types: { column: null, any: ['NULL', 'ANY'], reason: 'the code generator has no clojure column in canonToType; the page\'s type words are the provider\'s own' },
+  types: { column: null, any: ['NULL', 'ANY'], reason: 'the code generator has no clojure column in canonToType; the page\'s type words are the provider\'s own',
+    // The words the page prints, pinned: no generator map checks them, the reviewer audits them.
+    words: { STRING: 'string', INTEGER: 'long', NUMBER: 'double', BOOLEAN: 'boolean', NULL: 'any', ARRAY: 'vector', OBJECT: 'map', ANY: 'any' } },
 
   // The porter's, from here on.
   renames: { args: ['data', 'match'] },

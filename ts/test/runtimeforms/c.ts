@@ -61,7 +61,8 @@ const forms: Forms = {
   },
   record: (rec) => ({ name: rec.replace(/^vt->/, '') }),
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'projectname_sdk_new', var: 'entyvar', accessor: '${cAccessorName(model, entity.name)}' },
-  types: { column: 'c' },
+  // ARRAY and OBJECT differ from the generator's map (excepted below), so the page's words are pinned.
+  types: { column: 'c', words: { ARRAY: 'voxgig_value* (list)', OBJECT: 'voxgig_value* (map)' } },
 
   // The porter's, from here on.
   renames: { sdk: 'client' },

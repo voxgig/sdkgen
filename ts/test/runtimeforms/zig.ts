@@ -45,7 +45,9 @@ const forms: Forms = {
     return null == m ? { name: rec } : { name: m[1], arity: '' === m[2] ? 0 : m[2].split(',').length }
   },
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'new', accessor: '${method}' },
-  types: { column: null, reason: 'the code generator has no zig column in canonToType: every field is a Value, so the page\'s type words are the provider\'s own' },
+  types: { column: null, reason: 'the code generator has no zig column in canonToType: every field is a Value, so the page\'s type words are the provider\'s own',
+    // The words the page prints, pinned: no generator map checks them, the reviewer audits them.
+    words: { STRING: '[]const u8', INTEGER: 'i64', NUMBER: 'f64', BOOLEAN: 'bool', NULL: 'Value', ARRAY: 'Value (array)', OBJECT: 'Value (object)', ANY: 'Value' } },
 
   // The porter's, from here on.
   renames: { fetchargs_in: 'fetchargs', testopts_in: 'testopts', sdkopts_in: 'sdkopts' },
