@@ -1,0 +1,14 @@
+[
+ {
+  "file": "Naming",
+  "check": "naming function no non-README component calls",
+  "text": "exampleVarName (from @voxgig/sdkgen)",
+  "why": "An example variable is not a name the code generator makes. The hook adapts the shared example names (results, item, result, created, the entity plural) to PHP's identifier rules with the sdkgen function the other ported languages' hooks use (it suffixes client and reserved words); the php code generator names no example variables."
+ },
+ {
+  "file": "Syntax",
+  "check": "concatenation on a description name",
+  "text": "return ['<?php', `require_once '${'top' === place ? desc.layout.dir + '/' + desc.layout.module : desc.layout.module}';`]",
+  "why": "Not a name: the path a root-level script requires, the target's directory (layout.dir, from the naming hook) joined to the SDK's entry file (layout.module, phpSdkFile), printed only for the root quick start (brief 7 decision 1). Ran from the repository root of generated SDKs: OLD's bare demo_sdk.php fails at the require_once, this path passes it. It renames nothing."
+ }
+]

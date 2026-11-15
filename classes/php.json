@@ -1,0 +1,2457 @@
+{
+ "3980935898": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "the echo is the word server in the README test-mode section (resolve without a live server), which says nothing about the server option or its variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "shared:ts:63dbaa39ec",
+  "why": "masked, it is the ts unit of class 63dbaa39ec (correction:S28, by rule:step-numbers)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "cb33d087c0"
+  ],
+  "unreviewed": 0
+ },
+ "ff4863a314": {
+  "outcome": "shared:ts:ff4863a314",
+  "why": "masked, it is the ts unit of class ff4863a314 (correction:S28, by rule:tutorial-leadin)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "ebfc2354cd"
+  ],
+  "unreviewed": 0
+ },
+ "384d901d17": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared load sentence above the block: load() returns the entity and throws on failure, and the record accessor reads its record",
+  "n": 10,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "0538108a37": {
+  "outcome": "shared:ts:0538108a37",
+  "why": "masked, it is the ts unit of class 0538108a37 (restored:shared, by rule:entities-contract)",
+  "n": 18,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "9ca694d427"
+  ],
+  "unreviewed": 0
+ },
+ "b31c974005": {
+  "outcome": "shared:ts:b31c974005",
+  "why": "masked, it is the ts unit of class b31c974005 (correction:sentence-review-env, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "25f8905d37"
+  ],
+  "unreviewed": 0
+ },
+ "9363faf207": {
+  "outcome": "shared:ts:9363faf207",
+  "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "f2481f9ce5": {
+  "outcome": "restored:shared",
+  "why": "the shared load sentence; OLD said it in the block comment (load() returns the ENTITY, call data_get() for the record, throws on error)",
+  "n": 10,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "a65ba4a33f": {
+  "outcome": "shared:ts:a65ba4a33f",
+  "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "4966aea016"
+  ],
+  "unreviewed": 0
+ },
+ "bef2b8f986": {
+  "outcome": "shared:ts:bef2b8f986",
+  "why": "masked, it is the ts unit of class bef2b8f986 (unification:write-title-entity, by hand)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "21fc35c768"
+  ],
+  "unreviewed": 0
+ },
+ "5a3859e529": {
+  "outcome": "shared:ts:5a3859e529",
+  "why": "masked, it is the ts unit of class 5a3859e529 (correction:S28, by rule:tutorial-leadin)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "836725aec1"
+  ],
+  "unreviewed": 0
+ },
+ "79ac52d2c7": {
+  "outcome": "restored:shared",
+  "why": "the shared load sentence, moved from the block comment to the prose above the block",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "bb1b90ba6d": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared list sentence above the block (an array of entities, one per record; the record accessor reads an entity's record)",
+  "n": 7,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "fbaeb73f79": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 5,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "cfccdec4e5": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "691bdc9ddb": {
+  "outcome": "restored:shared",
+  "why": "restored in the shared patch comment, which keeps these words and adds where the id comes from",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "9f05cac604": {
+  "outcome": "restored:shared",
+  "why": "the shared list sentence; OLD said it in the block comment (list() returns entity instances; data_get() reads each record)",
+  "n": 7,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "cd43169d87": {
+  "outcome": "restored:shared",
+  "why": "the shared write sentence; OLD's create comment said create returns the entity",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "b77c7d518a": {
+  "outcome": "shared:py:d0874922f8",
+  "why": "masked, it is the py unit of class d0874922f8 (restored:fact, by hand)",
+  "n": 5,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "663f4dd150"
+  ],
+  "unreviewed": 0
+ },
+ "0ed7dc127d": {
+  "outcome": "shared:ts:079a339ba7",
+  "why": "masked, it is the ts unit of class 079a339ba7 (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "a102512ba9"
+  ],
+  "unreviewed": 0
+ },
+ "aeabe4bdf1": {
+  "outcome": "shared:ts:b7c60b65eb",
+  "why": "masked, it is the ts unit of class b7c60b65eb (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 3,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "e3dc10a6b7"
+  ],
+  "unreviewed": 0
+ },
+ "29bba9e03f": {
+  "outcome": "shared:ts:29bba9e03f",
+  "why": "masked, it is the ts unit of class 29bba9e03f (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "728df7c1c3"
+  ],
+  "unreviewed": 0
+ },
+ "cdfbb6475b": {
+  "outcome": "shared:ts:cdfbb6475b",
+  "why": "masked, it is the ts unit of class cdfbb6475b (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "81aabf087b"
+  ],
+  "unreviewed": 0
+ },
+ "1fa815677a": {
+  "outcome": "shared:ts:1fa815677a",
+  "why": "masked, it is the ts unit of class 1fa815677a (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "1760a2d205"
+  ],
+  "unreviewed": 0
+ },
+ "c9c9426cd8": {
+  "outcome": "shared:ts:c9c9426cd8",
+  "why": "masked, it is the ts unit of class c9c9426cd8 (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "219aa7c229"
+  ],
+  "unreviewed": 0
+ },
+ "79233d47ba": {
+  "outcome": "shared:ts:79233d47ba",
+  "why": "masked, it is the ts unit of class 79233d47ba (same-meaning, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "9bcb2825f2"
+  ],
+  "unreviewed": 0
+ },
+ "defb73bfd8": {
+  "outcome": "shared:ts:defb73bfd8",
+  "why": "masked, it is the ts unit of class defb73bfd8 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "3ab3fb2b2e"
+  ],
+  "unreviewed": 0
+ },
+ "9cbb8e3add": {
+  "outcome": "shared:ts:9cbb8e3add",
+  "why": "masked, it is the ts unit of class 9cbb8e3add (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "bcbefa9d5b"
+  ],
+  "unreviewed": 0
+ },
+ "c44f65ddeb": {
+  "outcome": "shared:ts:c44f65ddeb",
+  "why": "masked, it is the ts unit of class c44f65ddeb (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "0416b3a5e1"
+  ],
+  "unreviewed": 0
+ },
+ "3528a38f43": {
+  "outcome": "shared:ts:3528a38f43",
+  "why": "masked, it is the ts unit of class 3528a38f43 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "787064e0dd"
+  ],
+  "unreviewed": 0
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed for the operations the entity has",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "ec589bf68a": {
+  "outcome": "shared:ts:ec589bf68a",
+  "why": "masked, it is the ts unit of class ec589bf68a (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "b83e95bec6"
+  ],
+  "unreviewed": 0
+ },
+ "ef59a19bf9": {
+  "outcome": "restored:shared",
+  "why": "the shared write sentence for an entity whose only write is update",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "the echo is the word server in the README test-mode section (resolve without a live server), which says nothing about the server option or its variables",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "shared:ts:8848495678",
+  "why": "masked, it is the ts unit of class 8848495678 (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "6fb3670380": {
+  "outcome": "same-meaning",
+  "why": "DEMO_APIKEY in the tutorial's client sentence, which OLD's block also read",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the shared client sentence says the example passes the API key from the environment as the apikey option; OLD showed it only in code (getenv in the client block)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "0acd9c1b01": {
+  "outcome": "restored:shared",
+  "why": "the method name in the shared load sentence, which OLD's comment also named",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "db68021d06": {
+  "outcome": "restored:shared",
+  "why": "the record accessor named in the shared sentences, as OLD's comments did",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a74448c643": {
+  "outcome": "restored:fact",
+  "why": "the record type (recordType, cited: Entity.fragment.php @return EntityName|array) in the shared sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET) beside apikey; OLD passed apikey alone",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET) beside apikey; OLD passed apikey alone",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "36e1725df7": {
+  "outcome": "restored:shared",
+  "why": "the method name in the shared list sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "8f33ee43c0": {
+  "outcome": "restored:shared",
+  "why": "the shared sentences name the variable the example binds ($ambient->data_get()), where OLD said data_get() alone",
+  "n": 4,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "56ef420ec4": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "OLD php wrote what each tutorial call returns as a comment inside the block (load() returns the ENTITY ... (throws on error)); NEW states it once, in the shared sentence above the block, with php's record accessor and record type; the block keeps the call and the print",
+  "n": 16,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "66a724feff": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "4883d125ef": {
+  "outcome": "unification:show-fields",
+  "why": "php prints chosen fields of each item the tutorial lists (prints listFields, as OLD did): the id and the display field brief 7 decision 3 picks (the first string field, title). OLD read the type as $STRING without the backticks the model writes, never matched, and fell back to the first non-id field (radius); the loop variable is named after the entity, as in every ported language",
+  "n": 6,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "32307559b0": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "5297e4e497": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "f8266e1bcd": {
+  "outcome": "unification:show-fields",
+  "why": "php prints chosen fields of each item the tutorial lists (prints listFields, as OLD did): the id and the display field brief 7 decision 3 picks (the first string field, title). OLD read the type as $STRING without the backticks the model writes, never matched, and fell back to the first non-id field (radius); the loop variable is named after the entity, as in every ported language",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "7050fb4167": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET) beside apikey; OLD passed apikey alone",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET) beside apikey; OLD passed apikey alone",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e6b0f3f7e": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "c76072420b": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "fa99929817": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "OLD php wrote what each tutorial call returns as a comment inside the block (load() returns the ENTITY ... (throws on error)); NEW states it once, in the shared sentence above the block, with php's record accessor and record type; the block keeps the call and the print",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "39cd96730f": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "OLD php wrote what each tutorial call returns as a comment inside the block (load() returns the ENTITY ... (throws on error)); NEW states it once, in the shared sentence above the block, with php's record accessor and record type; the block keeps the call and the print",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "f9509b1a54": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "OLD php wrote what each tutorial call returns as a comment inside the block (load() returns the ENTITY ... (throws on error)); NEW states it once, in the shared sentence above the block, with php's record accessor and record type; the block keeps the call and the print",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "3432ea08dd": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "OLD php wrote what each tutorial call returns as a comment inside the block (load() returns the ENTITY ... (throws on error)); NEW states it once, in the shared sentence above the block, with php's record accessor and record type; the block keeps the call and the print",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "775fa6576e": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "OLD php wrote what each tutorial call returns as a comment inside the block (load() returns the ENTITY ... (throws on error)); NEW states it once, in the shared sentence above the block, with php's record accessor and record type; the block keeps the call and the print",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "187ec9c074": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "OLD php wrote what each tutorial call returns as a comment inside the block (load() returns the ENTITY ... (throws on error)); NEW states it once, in the shared sentence above the block, with php's record accessor and record type; the block keeps the call and the print",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "dcad36bb52": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "OLD php wrote what each tutorial call returns as a comment inside the block (load() returns the ENTITY ... (throws on error)); NEW states it once, in the shared sentence above the block, with php's record accessor and record type; the block keeps the call and the print",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "761e08f06f": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "OLD php wrote what each tutorial call returns as a comment inside the block (load() returns the ENTITY ... (throws on error)); NEW states it once, in the shared sentence above the block, with php's record accessor and record type; the block keeps the call and the print",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "21e4337a22": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: Create returns the created entity and data_get reads its record, Update and Patch take the id off the created entity's record; OLD said the same in its own words (index the record via data_get())",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "df90d43976": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure); OLD said the same in its own words, and the record read stays in the code",
+  "n": 10,
+  "by": "hand",
+  "type": "missing",
+  "section": "rootquick"
+ },
+ "5eae1ff183": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure); OLD said the same in its own words, and the record read stays in the code",
+  "n": 10,
+  "by": "hand",
+  "type": "added",
+  "section": "rootquick"
+ },
+ "f8946bf37c": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure); OLD said the same in its own words, and the record read stays in the code",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "cec11d1aff": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure); OLD said the same in its own words, and the record read stays in the code",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "e8bfeb55bb": {
+  "outcome": "correction:root-import-place",
+  "why": "brief 7 decision 1: the root quick start is read from the repository root, so it requires php/demo_sdk.php (layout.dir from the naming hook). RAN, on SDKs generated by tools/before/gensdk.js (default, crud, basic-server), each block saved at the repository root and run with php there: OLD stops at its require_once with Failed opening required demo_sdk.php in all three; NEW passes the require and stops only at the live request (Could not resolve host) or, with DEMO_APIKEY and DEMO_SECRET unset, at option validation",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "9b9117fbd6": {
+  "outcome": "correction:root-import-place",
+  "why": "brief 7 decision 1: the root quick start is read from the repository root, so it requires php/demo_sdk.php (layout.dir from the naming hook). RAN, on SDKs generated by tools/before/gensdk.js (default, crud, basic-server), each block saved at the repository root and run with php there: OLD stops at its require_once with Failed opening required demo_sdk.php in all three; NEW passes the require and stops only at the live request (Could not resolve host) or, with DEMO_APIKEY and DEMO_SECRET unset, at option validation",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "cf4857154e": {
+  "outcome": "correction:root-import-place",
+  "why": "brief 7 decision 1: the root quick start is read from the repository root, so it requires php/demo_sdk.php (layout.dir from the naming hook). RAN, on SDKs generated by tools/before/gensdk.js (default, crud, basic-server), each block saved at the repository root and run with php there: OLD stops at its require_once with Failed opening required demo_sdk.php in all three; NEW passes the require and stops only at the live request (Could not resolve host) or, with DEMO_APIKEY and DEMO_SECRET unset, at option validation",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "b1b4305eae": {
+  "outcome": "correction:root-import-place",
+  "why": "brief 7 decision 1: the root quick start is read from the repository root, so it requires php/demo_sdk.php (layout.dir from the naming hook). RAN, on SDKs generated by tools/before/gensdk.js (default, crud, basic-server), each block saved at the repository root and run with php there: OLD stops at its require_once with Failed opening required demo_sdk.php in all three; NEW passes the require and stops only at the live request (Could not resolve host) or, with DEMO_APIKEY and DEMO_SECRET unset, at option validation",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "03633d44ae": {
+  "outcome": "correction:root-import-place",
+  "why": "brief 7 decision 1: the root quick start is read from the repository root, so it requires php/demo_sdk.php (layout.dir from the naming hook). RAN, on SDKs generated by tools/before/gensdk.js (default, crud, basic-server), each block saved at the repository root and run with php there: OLD stops at its require_once with Failed opening required demo_sdk.php in all three; NEW passes the require and stops only at the live request (Could not resolve host) or, with DEMO_APIKEY and DEMO_SECRET unset, at option validation",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "d318cafb17": {
+  "outcome": "correction:root-import-place",
+  "why": "brief 7 decision 1: the root quick start is read from the repository root, so it requires php/demo_sdk.php (layout.dir from the naming hook). RAN, on SDKs generated by tools/before/gensdk.js (default, crud, basic-server), each block saved at the repository root and run with php there: OLD stops at its require_once with Failed opening required demo_sdk.php in all three; NEW passes the require and stops only at the live request (Could not resolve host) or, with DEMO_APIKEY and DEMO_SECRET unset, at option validation",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "5334638f63": {
+  "outcome": "correction:root-import-place",
+  "why": "brief 7 decision 1: the root quick start is read from the repository root, so it requires php/demo_sdk.php (layout.dir from the naming hook). RAN, on SDKs generated by tools/before/gensdk.js (default, crud, basic-server), each block saved at the repository root and run with php there: OLD stops at its require_once with Failed opening required demo_sdk.php in all three; NEW passes the require and stops only at the live request (Could not resolve host) or, with DEMO_APIKEY and DEMO_SECRET unset, at option validation",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "d5e2427d64": {
+  "outcome": "correction:root-import-place",
+  "why": "brief 7 decision 1: the root quick start is read from the repository root, so it requires php/demo_sdk.php (layout.dir from the naming hook). RAN, on SDKs generated by tools/before/gensdk.js (default, crud, basic-server), each block saved at the repository root and run with php there: OLD stops at its require_once with Failed opening required demo_sdk.php in all three; NEW passes the require and stops only at the live request (Could not resolve host) or, with DEMO_APIKEY and DEMO_SECRET unset, at option validation",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "af491fdd15": {
+  "outcome": "correction:root-import-place",
+  "why": "brief 7 decision 1: the root quick start is read from the repository root, so it requires php/demo_sdk.php (layout.dir from the naming hook). RAN, on SDKs generated by tools/before/gensdk.js (default, crud, basic-server), each block saved at the repository root and run with php there: OLD stops at its require_once with Failed opening required demo_sdk.php in all three; NEW passes the require and stops only at the live request (Could not resolve host) or, with DEMO_APIKEY and DEMO_SECRET unset, at option validation",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "d107fa7f7c": {
+  "outcome": "correction:root-import-place",
+  "why": "brief 7 decision 1: the root quick start is read from the repository root, so it requires php/demo_sdk.php (layout.dir from the naming hook). RAN, on SDKs generated by tools/before/gensdk.js (default, crud, basic-server), each block saved at the repository root and run with php there: OLD stops at its require_once with Failed opening required demo_sdk.php in all three; NEW passes the require and stops only at the live request (Could not resolve host) or, with DEMO_APIKEY and DEMO_SECRET unset, at option validation",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "2765394f9e": {
+  "outcome": "correction:root-import-place",
+  "why": "brief 7 decision 1: the root quick start is read from the repository root, so it requires php/demo_sdk.php (layout.dir from the naming hook). RAN, on SDKs generated by tools/before/gensdk.js (default, crud, basic-server), each block saved at the repository root and run with php there: OLD stops at its require_once with Failed opening required demo_sdk.php in all three; NEW passes the require and stops only at the live request (Could not resolve host) or, with DEMO_APIKEY and DEMO_SECRET unset, at option validation",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "41e8b6808d": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure); OLD said the same in its own words, and the record read stays in the code",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET) beside apikey; OLD passed apikey alone",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET) beside apikey; OLD passed apikey alone",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "3afc848277": {
+  "outcome": "unification:root-list-print",
+  "why": "the root list prints each listed entity's record in a foreach (shared listBlock, the loop the tutorial prints too); OLD printed print_r of array_map over the list, the same records",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "39eb355944": {
+  "outcome": "unification:root-list-print",
+  "why": "the foreach of the root list print (as 3afc848277)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure); OLD said the same in its own words, and the record read stays in the code",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "61d073347b": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure); OLD said the same in its own words, and the record read stays in the code",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "be14f5e112": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure); OLD said the same in its own words, and the record read stays in the code",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "e28aeb1554": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure); OLD said the same in its own words, and the record read stays in the code",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "5524296637": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure); OLD said the same in its own words, and the record read stays in the code",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (Load an ambient: the entity; throws on failure); OLD said the same in its own words, and the record read stays in the code",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "1049b1de5c": {
+  "outcome": "unification:root-list-print",
+  "why": "OLD's array_map over the list became the foreach (as 3afc848277)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "aa679d03b6": {
+  "outcome": "unification:root-list-print",
+  "why": "OLD's arrow function inside array_map became the foreach (as 3afc848277)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "42ffb0d2d3": {
+  "outcome": "unification:root-list-print",
+  "why": "OLD's arrow function parameter; the loop now names its variable after the entity",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id of the nested entity the root quick start loads (doc-nested)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id's example value (doc-nested)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "4324d803ed": {
+  "outcome": "same-meaning",
+  "why": "the README entity table names the same member with its own signature column; the REFERENCE heading writes the runtime declaration, which declares no return type, and its sentence says it returns a copy of the match criteria",
+  "n": 94,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "88a52eda7c": {
+  "outcome": "same-meaning",
+  "why": "the README test line says both arguments may be null, as this sentence does; their only difference, the mock transport without the test feature, is the contradiction recorded as bff341cf32",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9a06a9079a": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 92,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "php/README.md:229 (B; every variation), printed by the unported README component: | `Ambient` | `($data): AmbientEntity` | Create an Ambient entity instance. |",
+  "true": "REFERENCE: called with null the accessor returns the instance the client keeps; only a call with options creates a new one",
+  "evidence": "MainEntity_php.ts:43-49 (if ($data === null) ... return $this->_${field}; ... return new ${cls}($this, $data);)"
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README result-shape table lists the same keys (ok, status, headers, data) and ok true for a 2xx; no disagreement on these",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "8456c2ee6c": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "php/README.md:271 (B; every variation), printed by the unported README component: On error, `ok` is `false` and `$err` contains the error value.",
+  "true": "REFERENCE: a response whose body is read, 2xx or not, carries no err; err is set only when no response was read or the body could not be read",
+  "evidence": "Main.fragment.php:321-330 ($out has ok, status, headers, data; $out[\"err\"] only when $body_err is not null), :262, :277"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "the README feature table names log as Logging and says nothing about its default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "d4af1f09d0": {
+  "outcome": "same-meaning",
+  "why": "restored in the shared test sentence, which ends both may be null",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "40619d86b7": {
+  "outcome": "same-meaning",
+  "why": "an echo of the removed sentence on the README's test line, which says both arguments may be null and is about the test constructor, not the accessor; the accessor's own argument is now described as the entity options (bf4ca985aa)",
+  "n": 94,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "4e4b3fdc9c": {
+  "outcome": "same-meaning",
+  "why": "the README still names the prepare result $fetchdef; NEW states it as the shared prepare Returns line: array, the fetch definition; the README's prepare example still names it $fetchdef",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6aced21d71": {
+  "outcome": "shared:ts:6aced21d71",
+  "why": "masked, it is the ts unit of class 6aced21d71 (correction:ref-features-escape, by rule:features-escape)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "4fb872e54f"
+  ],
+  "unreviewed": 0
+ },
+ "21c01bdd6a": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 83,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "ce63a20200": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 28,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "e7aeac75c5": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "ba8f3a7586": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d92e3753e3": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "3848bb87bb": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 92,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c1044f2999": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 93,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "5af3800bc6": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 93,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bc1d84d682": {
+  "outcome": "same-meaning",
+  "why": "the shared operation sentence: throws on failure for throws on error, and a comma before it; the same fact",
+  "n": 83,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "fd5353fde3": {
+  "outcome": "same-meaning",
+  "why": "the shared operation sentence: throws on failure for throws on error, and a comma before it; the same fact",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "042740d448": {
+  "outcome": "shared:go:042740d448",
+  "why": "masked, it is the go unit of class 042740d448 (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "5ddee20721"
+  ],
+  "unreviewed": 0
+ },
+ "b231092e5a": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d9fa60f1b3": {
+  "outcome": "same-meaning",
+  "why": "the shared operation sentence: throws on failure for throws on error, and a comma before it; the same fact",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "86be21c15d": {
+  "outcome": "same-meaning",
+  "why": "the shared operation sentence: throws on failure for throws on error, and a comma before it; the same fact",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the test constructor's section is headed Test client in every language",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d553096f96": {
+  "outcome": "restored:shared",
+  "why": "restored in the shared test sentence, which ends both may be null",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed Client Methods in every language, decided once; php's client members are instance methods called with -> on the client",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "96730271b0": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: the php accessor called with null returns the instance the client keeps, made by the first such call, and with options a new one (MainEntity_php.ts:43-49: if ($data === null) { if ($this->_${field} === null) ... return $this->_${field}; } return new ${cls}($this, $data);). OLD said every call creates a new instance, false for a call with null",
+  "n": 93,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "601223610d": {
+  "outcome": "correction:accessor-arg-entopts",
+  "why": "the accessor passes its argument to the entity constructor as the entity options (MainEntity_php.ts:49 new ${cls}($this, $data); Entity.fragment.php:22 __construct($client, ?array $entopts = null)); OLD called it initial data",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "afc25ceae3": {
+  "outcome": "correction:php-accessor-graphql",
+  "why": "the GraphQl entity's accessor is GraphQl_ in the runtime (MainEntity_php.ts:22 phpEntityAccessor: the name meets the client's own graphql method). PHP method names are case-insensitive, so OLD's GraphQl() calls the client's graphql(string $query, ...): RAN php -r on a class with graphql(string $q) called as GraphQl(): ArgumentCountError, Too few arguments",
+  "n": 10,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1c5d70bf03": {
+  "outcome": "restored:fact",
+  "why": "the runtime declares get_utility() with no return type (Main.fragment.php:133), so the heading writes none; the type OLD put in the heading is restored as the Returns line, DemoUtility (cited: UtilityType.php copy(ProjectNameUtility $src): ProjectNameUtility), and the copy sentence stays (decision 13, cited to the allocation)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d793e5defb": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the runtime declares direct(array $fetchargs = []): mixed (Main.fragment.php:222); the array it returns is in the Returns line",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "90384a0c2d": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared direct sentence: a failure is reported in the result, not as an error",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "4198acff8c": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared direct Returns paragraph: the keys ok, status, headers and data, and ok false with err on a failure",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "bc694f2e66": {
+  "outcome": "restored:shared",
+  "why": "restored in the shared direct sentence ending branch on $result[\"ok\"]",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "102d661e20": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared direct Returns line (array, a result map; a failure is in the result, not an error)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8934a849e8": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared prepare Returns line: array, the fetch definition",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b362e08c4": {
+  "outcome": "restored:shared",
+  "why": "restored as It throws on failure (prepare fails by the result style, cited: MakeError.php throw $sdk_err)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "5c564336a0": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared load sentence: Returns the entity, and throws on failure, then the record read on the bound result",
+  "n": 28,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ed238167e1": {
+  "outcome": "restored:shared",
+  "why": "restored as List entities matching the given criteria. and The match is optional. (the sentence review found that every record is listed without a match overstated)",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data, so the data need not include the id",
+  "n": 20,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log, active by default (model/feature/log.aontu); NEW says inactive until switched on, except log",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "false for log, active by default (model/feature/log.aontu); NEW says inactive until switched on, except log",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "50de36fa79": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b2a89584dc": {
+  "outcome": "shared:ts:b2a89584dc",
+  "why": "masked, it is the ts unit of class b2a89584dc (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4eea983832"
+  ],
+  "unreviewed": 0
+ },
+ "b4195f76b3": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "35ea4c3e84": {
+  "outcome": "shared:ts:35ea4c3e84",
+  "why": "masked, it is the ts unit of class 35ea4c3e84 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7247de945f"
+  ],
+  "unreviewed": 0
+ },
+ "4de731b396": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "06e0e1b2b7": {
+  "outcome": "shared:ts:06e0e1b2b7",
+  "why": "masked, it is the ts unit of class 06e0e1b2b7 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9c7c471a05"
+  ],
+  "unreviewed": 0
+ },
+ "a986258b72": {
+  "outcome": "shared:ts:a986258b72",
+  "why": "masked, it is the ts unit of class a986258b72 (unification:ref-test-heading, by rule:test-heading)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ffe4eb970b"
+  ],
+  "unreviewed": 0
+ },
+ "5243df6860": {
+  "outcome": "restored:shared",
+  "why": "the shared test sentence: OLD's both may be null, with what each argument holds",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "cd00ec9b2a": {
+  "outcome": "shared:ts:cd00ec9b2a",
+  "why": "masked, it is the ts unit of class cd00ec9b2a (unification:client-heading, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5266d8cbf2"
+  ],
+  "unreviewed": 0
+ },
+ "030c13f8d7": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: the php accessor called with null returns the instance the client keeps, made by the first such call, and with options a new one (MainEntity_php.ts:43-49: if ($data === null) { if ($this->_${field} === null) ... return $this->_${field}; } return new ${cls}($this, $data);). OLD said every call creates a new instance, false for a call with null",
+  "n": 92,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "bf4ca985aa": {
+  "outcome": "correction:accessor-arg-entopts",
+  "why": "the accessor passes its argument to the entity constructor as the entity options (MainEntity_php.ts:49 new ${cls}($this, $data); Entity.fragment.php:22 __construct($client, ?array $entopts = null)); OLD called it initial data",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7b143ecdfa": {
+  "outcome": "shared:ts:82b6e219ea",
+  "why": "masked, it is the ts unit of class 82b6e219ea (correction:guard-accessor-arg, by hand)",
+  "n": 10,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4af20ce756"
+  ],
+  "unreviewed": 0
+ },
+ "715e102b98": {
+  "outcome": "shared:c:31334dded1",
+  "why": "masked, it is the c unit of class 31334dded1 (restored:fact, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fb0d7d681d"
+  ],
+  "unreviewed": 0
+ },
+ "54bfa12ec4": {
+  "outcome": "restored:fact",
+  "why": "the type OLD wrote in the get_utility heading (DemoUtility), now the Returns line because the runtime declares no return type (as 1c5d70bf03); cited: UtilityType.php public static function copy(ProjectNameUtility $src): ProjectNameUtility",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c10a7624d4": {
+  "outcome": "shared:elixir:4b8feb4091",
+  "why": "masked, it is the elixir unit of class 4b8feb4091 (correction:runtime-forms, by rule:add-sig-forms)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "78e12a7505"
+  ],
+  "unreviewed": 0
+ },
+ "6979eaacb4": {
+  "outcome": "shared:ts:6979eaacb4",
+  "why": "masked, it is the ts unit of class 6979eaacb4 (correction:S49, by rule:add-type-cells)",
+  "n": 34,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ea66aefd24"
+  ],
+  "unreviewed": 0
+ },
+ "0a2e66219d": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "e4234b51f2": {
+  "outcome": "shared:ts:b82912bd60",
+  "why": "masked, it is the ts unit of class b82912bd60 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0a6358906c"
+  ],
+  "unreviewed": 0
+ },
+ "e8e8cc2723": {
+  "outcome": "shared:ts:e8e8cc2723",
+  "why": "masked, it is the ts unit of class e8e8cc2723 (correction:freeze-direct-wording, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "42aedb7ce3"
+  ],
+  "unreviewed": 1
+ },
+ "ace60e9a2b": {
+  "outcome": "restored:shared",
+  "why": "the shared direct Returns paragraph (sentence review): err is there only when no response was read or the body could not be read (Main.fragment.php:262, 277, 327-329)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "9450a74ec6": {
+  "outcome": "restored:shared",
+  "why": "OLD said direct does not throw and to branch on ok; the shared sentence says both",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "927fd64229": {
+  "outcome": "shared:py:927fd64229",
+  "why": "masked, it is the py unit of class 927fd64229 (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "581898e092"
+  ],
+  "unreviewed": 0
+ },
+ "b8bbf6a5e0": {
+  "outcome": "shared:py:fc4313d211",
+  "why": "masked, it is the py unit of class fc4313d211 (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5c8f458658"
+  ],
+  "unreviewed": 0
+ },
+ "c692d85a6d": {
+  "outcome": "restored:shared",
+  "why": "OLD said Throws on error. of prepare; the shared sentence for a prepare that fails by the result style",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "80d61d1816": {
+  "outcome": "restored:shared",
+  "why": "the shared load sentence, as 5c564336a0",
+  "n": 28,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "16746920c7": {
+  "outcome": "shared:ts:89c5ef9c6d",
+  "why": "masked, it is the ts unit of class 89c5ef9c6d (restored:shared, by hand)",
+  "n": 79,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3bb5d3a968"
+  ],
+  "unreviewed": 0
+ },
+ "0918d10148": {
+  "outcome": "shared:ts:0918d10148",
+  "why": "masked, it is the ts unit of class 0918d10148 (correction:decision-7-match-copy, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3c3c04f33c"
+  ],
+  "unreviewed": 0
+ },
+ "52fc3c435b": {
+  "outcome": "shared:py:593ef47de1",
+  "why": "masked, it is the py unit of class 593ef47de1 (restored:fact, by rule:stream-member)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "957a8c7efa"
+  ],
+  "unreviewed": 0
+ },
+ "4734507491": {
+  "outcome": "shared:py:4734507491",
+  "why": "masked, it is the py unit of class 4734507491 (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7df20388eb"
+  ],
+  "unreviewed": 0
+ },
+ "91bc59ac7f": {
+  "outcome": "shared:ts:91bc59ac7f",
+  "why": "masked, it is the ts unit of class 91bc59ac7f (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5003b705ca"
+  ],
+  "unreviewed": 0
+ },
+ "80f77307dc": {
+  "outcome": "shared:ts:80f77307dc",
+  "why": "masked, it is the ts unit of class 80f77307dc (correction:decision-6-stream-signal, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "28235772cb"
+  ],
+  "unreviewed": 0
+ },
+ "8d73e84813": {
+  "outcome": "shared:rb:8d73e84813",
+  "why": "masked, it is the rb unit of class 8d73e84813 (restored:shared, by hand)",
+  "n": 83,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "91de682ebb"
+  ],
+  "unreviewed": 0
+ },
+ "0030efbf5a": {
+  "outcome": "shared:ts:0030efbf5a",
+  "why": "masked, it is the ts unit of class 0030efbf5a (correction:decision-14-list-call, by hand)",
+  "n": 82,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fdfa305bc4"
+  ],
+  "unreviewed": 1
+ },
+ "393056d0c1": {
+  "outcome": "shared:go:393056d0c1",
+  "why": "masked, it is the go unit of class 393056d0c1 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "185f26bc68"
+  ],
+  "unreviewed": 0
+ },
+ "0f10166e63": {
+  "outcome": "shared:go:0f10166e63",
+  "why": "masked, it is the go unit of class 0f10166e63 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "abe9546ee3"
+  ],
+  "unreviewed": 0
+ },
+ "c2467756ac": {
+  "outcome": "shared:ts:6e0387536b",
+  "why": "masked, it is the ts unit of class 6e0387536b (correction:ref-6, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "82e6814387"
+  ],
+  "unreviewed": 0
+ },
+ "d3f3b82555": {
+  "outcome": "shared:go:d3f3b82555",
+  "why": "masked, it is the go unit of class d3f3b82555 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2b8bc511e9"
+  ],
+  "unreviewed": 0
+ },
+ "7615c6fe93": {
+  "outcome": "shared:ts:7615c6fe93",
+  "why": "masked, it is the ts unit of class 7615c6fe93 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "c151802d4a"
+  ],
+  "unreviewed": 0
+ },
+ "6356afc86b": {
+  "outcome": "shared:go:6356afc86b",
+  "why": "masked, it is the go unit of class 6356afc86b (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "120aec2437"
+  ],
+  "unreviewed": 0
+ },
+ "193859bf79": {
+  "outcome": "shared:go:193859bf79",
+  "why": "masked, it is the go unit of class 193859bf79 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "22bdd0ff18"
+  ],
+  "unreviewed": 0
+ },
+ "28d337e733": {
+  "outcome": "shared:go:28d337e733",
+  "why": "masked, it is the go unit of class 28d337e733 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2a8d9aa773"
+  ],
+  "unreviewed": 0
+ },
+ "9023782dca": {
+  "outcome": "shared:ts:9023782dca",
+  "why": "masked, it is the ts unit of class 9023782dca (correction:ref-6, by rule:add-action-op)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e3081c2053"
+  ],
+  "unreviewed": 0
+ },
+ "3d50058045": {
+  "outcome": "shared:go:3d50058045",
+  "why": "masked, it is the go unit of class 3d50058045 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ebea8de27f"
+  ],
+  "unreviewed": 0
+ },
+ "223424d54f": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions table's Call cell: the call that reaches the action, its route parameter beside $action (OLD php printed no Actions table)",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "a9081dcdc4": {
+  "outcome": "shared:ts:81deb78cd7",
+  "why": "masked, it is the ts unit of class 81deb78cd7 (correction:sentence-review-action, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7e4d6fd58f"
+  ],
+  "unreviewed": 0
+ },
+ "6da904adba": {
+  "outcome": "shared:ts:6da904adba",
+  "why": "masked, it is the ts unit of class 6da904adba (correction:sentence-review-update-id, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6cfad26916"
+  ],
+  "unreviewed": 0
+ },
+ "5cc7cb0a5f": {
+  "outcome": "shared:ts:b23edb42bc",
+  "why": "masked, it is the ts unit of class b23edb42bc (correction:decision-11-deleted, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "808ab9f422"
+  ],
+  "unreviewed": 0
+ },
+ "1095fa7261": {
+  "outcome": "shared:ts:1095fa7261",
+  "why": "masked, it is the ts unit of class 1095fa7261 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8d6016d7e2"
+  ],
+  "unreviewed": 0
+ },
+ "916036b165": {
+  "outcome": "shared:ts:916036b165",
+  "why": "masked, it is the ts unit of class 916036b165 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d77745e7ee"
+  ],
+  "unreviewed": 0
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "4e130abfca": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET) beside apikey; OLD passed apikey alone",
+  "n": 2,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "6fcc39ea14": {
+  "outcome": "shared:ts:2d4608bdb8",
+  "why": "masked, it is the ts unit of class 2d4608bdb8 (correction:sentence-review-secret, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "05a5a62f89"
+  ],
+  "unreviewed": 0
+ },
+ "6217677e1b": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 4,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "84f0495962": {
+  "outcome": "same-meaning",
+  "why": "the shared operation sentence: throws on failure for throws on error, and a comma before it; the same fact",
+  "n": 4,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "cbcdf6e5f9": {
+  "outcome": "shared:ts:cbcdf6e5f9",
+  "why": "masked, it is the ts unit of class cbcdf6e5f9 (unification:op-sentences, by rule:op-sentences)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d3d603d612"
+  ],
+  "unreviewed": 0
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "php/README.md:219 (no-test), printed by the unported README component: Creates a test-mode client with mock transport. Both arguments may be `null`.",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "Main_php.ts features factory falls back to return new ${model.const.Name}BaseFeature(); (cited ahead, testMock generated); Main.fragment.php:393-411 test() only switches feature.test on"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the shared sentence says so",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "81aa9cecf9": {
+  "outcome": "shared:ts:81aa9cecf9",
+  "why": "masked, it is the ts unit of class 81aa9cecf9 (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "f616466503"
+  ],
+  "unreviewed": 0
+ },
+ "dbdce4bb0e": {
+  "outcome": "shared:ts:dbdce4bb0e",
+  "why": "masked, it is the ts unit of class dbdce4bb0e (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dd74ff9ab6"
+  ],
+  "unreviewed": 0
+ },
+ "fdc80fe847": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "php/README.md:225 (ref-issues), printed by the unported README component: | `Planet` | `($data): PlanetEntity` | Create a Planet entity instance. |",
+  "true": "REFERENCE: called with null the accessor returns the PlanetEntityClient instance the client keeps; the class is PlanetEntityClient, not PlanetEntity",
+  "evidence": "MainEntity_php.ts:20 entityClassName(entity, entityCollection(model), true) and :43-49"
+ },
+ "ef282389f3": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "php/README.md:226 (ref-issues), printed by the unported README component: | `PlanetEntity` | `($data): PlanetEntityEntity` | Create a PlanetEntity entity instance. |",
+  "true": "REFERENCE: called with null the accessor returns the instance the client keeps",
+  "evidence": "MainEntity_php.ts:43-49"
+ },
+ "da08f7e7bd": {
+  "outcome": "shared:ts:da08f7e7bd",
+  "why": "masked, it is the ts unit of class da08f7e7bd (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [],
+  "unreviewed": 0
+ },
+ "f0505482a5": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "fe06e05f78": {
+  "outcome": "shared:ts:fe06e05f78",
+  "why": "masked, it is the ts unit of class fe06e05f78 (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "f6b8425ed5"
+  ],
+  "unreviewed": 0
+ },
+ "e20f8e9111": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: the php accessor called with null returns the instance the client keeps, made by the first such call, and with options a new one (MainEntity_php.ts:43-49: if ($data === null) { if ($this->_${field} === null) ... return $this->_${field}; } return new ${cls}($this, $data);). OLD said every call creates a new instance, false for a call with null",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one table cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one table cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d245316c2e": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the planet entity's class is PlanetEntityClient, because the planet_entity entity's data type takes PlanetEntity; the php runtime names the class with the same function (entityClassName, MainEntity_php.ts:20), so OLD's PlanetEntity named the data type, not the class",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f179b73211": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off for Planet: an inactive operation is not documented (OLD documented and exampled it)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off for Planet: an inactive operation is not documented (OLD documented and exampled it)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "3e76d82226": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off for Planet: an inactive operation is not documented (OLD documented and exampled it)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "faf05e4fad": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "b54cc1f728": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9eccc73785": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the planet entity's class is PlanetEntityClient, because the planet_entity entity's data type takes PlanetEntity; the php runtime names the class with the same function (entityClassName, MainEntity_php.ts:20), so OLD's PlanetEntity named the data type, not the class",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "807a9a56ea": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: the php accessor called with null returns the instance the client keeps, made by the first such call, and with options a new one (MainEntity_php.ts:43-49: if ($data === null) { if ($this->_${field} === null) ... return $this->_${field}; } return new ${cls}($this, $data);). OLD said every call creates a new instance, false for a call with null",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b955c1b56a": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: the php accessor called with null returns the instance the client keeps, made by the first such call, and with options a new one (MainEntity_php.ts:43-49: if ($data === null) { if ($this->_${field} === null) ... return $this->_${field}; } return new ${cls}($this, $data);). OLD said every call creates a new instance, false for a call with null",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7393140c1f": {
+  "outcome": "shared:ts:7393140c1f",
+  "why": "masked, it is the ts unit of class 7393140c1f (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9fe8f9d917"
+  ],
+  "unreviewed": 0
+ },
+ "7dd340f0f1": {
+  "outcome": "shared:ts:7dd340f0f1",
+  "why": "masked, it is the ts unit of class 7dd340f0f1 (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [],
+  "unreviewed": 0
+ },
+ "e5a5fe490d": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "597929e942": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "34914a971c": {
+  "outcome": "shared:rb:d8065d07cb",
+  "why": "masked, it is the rb unit of class d8065d07cb (correction:runtime-forms, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7bebc239a6"
+  ],
+  "unreviewed": 0
+ },
+ "af75422e0b": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "2b92c06c6a": {
+  "outcome": "correction:signature-from-runtime",
+  "why": "the heading now writes the runtime's own declaration, which the guard re-derives: the operations take ?array $reqmatch = null (or $reqdata) and an untyped $ctrl = null and return mixed (EntityLoadOp.fragment.php:15 and its siblings), make() returns self (Entity.fragment.php:90), data_get() and match_get() declare no return type (Entity.fragment.php:111, 131), test returns self (Main.fragment.php:393). OLD made the match or data required and typed ctrl, which PHP does not",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd48acdf84": {
+  "outcome": "restored:fact",
+  "why": "the entity's stream member, which the runtime declares (Entity.fragment.php:148 public function stream(string $action, ?array $args = null, ?array $callopts = null): \\Generator) and OLD did not document",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "057b5775f7": {
+  "outcome": "restored:fact",
+  "why": "the entity's stream member, which the runtime declares (Entity.fragment.php:148 public function stream(string $action, ?array $args = null, ?array $callopts = null): \\Generator) and OLD did not document",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "07b6a683db": {
+  "outcome": "restored:fact",
+  "why": "the entity's stream member, which the runtime declares (Entity.fragment.php:148 public function stream(string $action, ?array $args = null, ?array $callopts = null): \\Generator) and OLD did not document",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:fact",
+  "why": "the entity's stream member, which the runtime declares (Entity.fragment.php:148 public function stream(string $action, ?array $args = null, ?array $callopts = null): \\Generator) and OLD did not document",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "adde049da0": {
+  "outcome": "restored:fact",
+  "why": "the entity's stream member, which the runtime declares (Entity.fragment.php:148 public function stream(string $action, ?array $args = null, ?array $callopts = null): \\Generator) and OLD did not document",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token signal of the stream's sentence (callopts.signal), cited: Entity.fragment.php:152 and the aborted() checks between items",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions table's Call cell: the call that reaches the action, its route parameter beside $action (OLD php printed no Actions table)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7e7f66c823": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions table's Call cell: the call that reaches the action, its route parameter beside $action (OLD php printed no Actions table)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the mark is read, $result->deleted() (Entity.fragment.php:85 public function deleted(): bool)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET) beside apikey; OLD passed apikey alone",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must pass where the server URL is templated (server-required-given); NEW names them in the sentence, the options table and the client block",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "de5257a162": {
+  "outcome": "same-meaning",
+  "why": "OLD's result shape wrote ok as bool; the shared sentence says ok is false unless the status is 2xx",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "393a02c223": {
+  "outcome": "dropped",
+  "why": "OLD said err holds an \\Exception; direct catches \\Throwable (Main.fragment.php:261 catch (\\Throwable $err)) and also sets a ProjectNameError, so the type was too narrow; the shared sentence says err holds the error",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "8928fd2128": {
+  "outcome": "same-meaning",
+  "why": "OLD named the prepare result $fetchdef; the shared sentence calls it the fetch definition, and the README's prepare example still binds $fetchdef",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "581230b3fb": {
+  "outcome": "correction:php-accessor-graphql",
+  "why": "the GraphQl entity's accessor is GraphQl_ in the runtime (MainEntity_php.ts:22 phpEntityAccessor: the name meets the client's own graphql method). PHP method names are case-insensitive, so OLD's GraphQl() calls the client's graphql(string $query, ...): RAN php -r on a class with graphql(string $q) called as GraphQl(): ArgumentCountError, Too few arguments",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the planet entity's class is PlanetEntityClient, because the planet_entity entity's data type takes PlanetEntity; the php runtime names the class with the same function (entityClassName, MainEntity_php.ts:20), so OLD's PlanetEntity named the data type, not the class",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "864d14a8de": {
+  "outcome": "unification:client-printer-indent",
+  "why": "the feature block is the client constructed with the features switched on, printed by the client printer, which indents the options by four spaces as OLD's tutorial client block did; OLD's REFERENCE feature block used two",
+  "n": 18,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "e246347925": {
+  "outcome": "unification:ref-list-example",
+  "why": "the reference list example prints each item it lists, as every ported language does (shared refOpBlock); OLD bound the list and printed nothing",
+  "n": 83,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "0d9258355e": {
+  "outcome": "correction:ref-create-runnable",
+  "why": "the reference create example passes typed placeholder literals with the type as a comment; OLD passed null for each field, which a required string field rejects",
+  "n": 16,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "bcf01342de": {
+  "outcome": "unification:client-printer-indent",
+  "why": "the feature block is the client constructed with the features switched on, printed by the client printer, which indents the options by four spaces as OLD's tutorial client block did; OLD's REFERENCE feature block used two",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "6b2916cd5f": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off for Planet: an inactive operation is not documented (OLD documented and exampled it)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "reference"
+ },
+ "4426f01f05": {
+  "outcome": "unification:ref-list-example",
+  "why": "the reference list example prints each item it lists, as every ported language does (shared refOpBlock); OLD bound the list and printed nothing",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "98da2f8424": {
+  "outcome": "unification:ref-list-example",
+  "why": "the reference list example prints each item it lists, as every ported language does (shared refOpBlock); OLD bound the list and printed nothing",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "6a8837b248": {
+  "outcome": "unification:ref-list-example",
+  "why": "the reference list example prints each item it lists, as every ported language does (shared refOpBlock); OLD bound the list and printed nothing",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "07df39caf1": {
+  "outcome": "unification:ref-list-example",
+  "why": "the reference list example prints each item it lists, as every ported language does (shared refOpBlock); OLD bound the list and printed nothing",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "ce6dcdccb7": {
+  "outcome": "unification:ref-list-example",
+  "why": "the reference list example prints each item it lists, as every ported language does (shared refOpBlock); OLD bound the list and printed nothing",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "e7b80cfdc5": {
+  "outcome": "correction:ref-create-runnable",
+  "why": "the reference create example passes typed placeholder literals with the type as a comment; OLD passed null for each field, which a required string field rejects",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "14e3ab3f99": {
+  "outcome": "correction:ref-create-runnable",
+  "why": "the reference create example passes typed placeholder literals with the type as a comment; OLD passed null for each field, which a required string field rejects",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "771a86501c": {
+  "outcome": "correction:ref-create-runnable",
+  "why": "the reference create example passes typed placeholder literals with the type as a comment; OLD passed null for each field, which a required string field rejects",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "reference"
+ }
+}
