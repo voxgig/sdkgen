@@ -551,6 +551,30 @@
   "type": "echo",
   "section": "reference"
  },
+ "91818357b4": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "201af0a913": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "277b700b6c": {
+  "outcome": "same-meaning",
+  "why": "the README's operations table says remove returns the entity marked as deleted; this sentence names how the mark is read; no disagreement",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "f64ae2f4fc": {
   "outcome": "same-meaning",
   "why": "the README feature table names log as Logging and says nothing about its default",
@@ -692,6 +716,14 @@
   "why": "",
   "n": 19,
   "by": "rule:direct-shared",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "93b7b5f0d8": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 81,
+  "by": "hand",
   "type": "reworded",
   "section": "reference"
  },
@@ -927,6 +959,22 @@
   "type": "added",
   "section": "reference"
  },
+ "8d3d8466a1": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b81bc77d47": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "d16d410cb8": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
@@ -983,6 +1031,14 @@
   "type": "added",
   "section": "reference"
  },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "593ef47de1": {
   "outcome": "restored:fact",
   "why": "",
@@ -1002,6 +1058,14 @@
  "91bc59ac7f": {
   "outcome": "restored:fact",
   "why": "when the operation runs: `runs: 'iterate'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.py (the pipeline runs inside the generator); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
   "n": 94,
   "by": "hand",
   "type": "added",
@@ -1103,6 +1167,14 @@
   "type": "added",
   "section": "reference"
  },
+ "b23edb42bc": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "1095fa7261": {
   "outcome": "correction:S09",
   "why": "",
@@ -1149,6 +1221,14 @@
   "n": 4,
   "by": "rule:op-failure-clause",
   "type": "reworded",
+  "section": "reference"
+ },
+ "c19864bf92": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 2,
+  "by": "hand",
+  "type": "missing",
   "section": "reference"
  },
  "cbcdf6e5f9": {
@@ -1330,6 +1410,14 @@
   "type": "added",
   "section": "reference"
  },
+ "0030efbf5a": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "1c227ca04a": {
   "outcome": "correction:U34",
   "why": "",
@@ -1446,6 +1534,14 @@
   "type": "novel-token",
   "section": "reference"
  },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
  "9c792a9893": {
   "outcome": "correction:ref-6",
   "why": "",
@@ -1459,6 +1555,14 @@
   "why": "",
   "n": 1,
   "by": "rule:tok-action-call",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
+  "n": 1,
+  "by": "hand",
   "type": "novel-token",
   "section": "reference"
  },

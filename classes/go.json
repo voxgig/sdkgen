@@ -99,6 +99,14 @@
   "type": "added",
   "section": "tutorial"
  },
+ "43fcb7d9e2": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 18,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
  "c0831e892a": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
@@ -174,6 +182,14 @@
  "8a0c441967": {
   "outcome": "unification:go-tutorial-program",
   "why": "the new splitter cuts go's program step lead from the sentence after it (cut.js splitSentences, bold lead after [.!?]**); this is the lead alone, the step title ReadmeQuick.ts prints for p.program. Split from 14f5b323fe (restored:fact); the sentence after it is 6145dede90.",
+  "n": 7,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "889742e2ba": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
   "n": 7,
   "by": "hand",
   "type": "added",
@@ -342,6 +358,14 @@
  "b2d304a399": {
   "outcome": "unification:write-title-entity",
   "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "79abd43b19": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
   "n": 1,
   "by": "hand",
   "type": "added",
@@ -875,6 +899,22 @@
   "type": "block-vanished-token",
   "section": "rootquick"
  },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 21,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9efa1d0afc": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 21,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "f64ae2f4fc": {
   "outcome": "same-meaning",
   "why": "the README's feature table names log as Logging; it says nothing about its default (the README Features section now says log is active by default too)",
@@ -1143,6 +1183,22 @@
   "type": "added",
   "section": "reference"
  },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 21,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d806f62156": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 21,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "f0f908777a": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
@@ -1175,6 +1231,14 @@
   "type": "added",
   "section": "reference"
  },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 108,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "bc487a4d6a": {
   "outcome": "restored:fact",
   "why": "",
@@ -1187,6 +1251,22 @@
   "outcome": "restored:fact",
   "why": "when the operation runs: `runs: 'background'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.go (go func() at :217 starts the operation at the call; unbuffered sends); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
   "n": 108,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 108,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "8c4c22e291": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 94,
   "by": "hand",
   "type": "added",
   "section": "reference"
@@ -1292,6 +1372,14 @@
   "why": "",
   "n": 36,
   "by": "rule:add-type-comment",
+  "type": "added",
+  "section": "reference"
+ },
+ "01e17d08d0": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 17,
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
@@ -1562,6 +1650,14 @@
   "type": "novel-token",
   "section": "reference"
  },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
  "9c792a9893": {
   "outcome": "correction:ref-6",
   "why": "",
@@ -1597,6 +1693,14 @@
  "280e83f298": {
   "outcome": "correction:action-call-cell",
   "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "88cfeff73e": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
   "n": 1,
   "by": "hand",
   "type": "novel-token",

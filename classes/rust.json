@@ -1,4 +1,12 @@
 {
+ "d22ceb9f1d": {
+  "outcome": "same-meaning",
+  "why": "the README's other mentions of Ok/Err (.ok/.err) speak of prepare or of the same result union; this sentence names the operation bare where its call must pass arguments; no disagreement",
+  "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
  "360f66a3d2": {
   "outcome": "same-meaning",
   "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
@@ -20,6 +28,14 @@
   "why": "",
   "n": 10,
   "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "d040108f03": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 16,
+  "by": "hand",
   "type": "reworded",
   "section": "tutorial"
  },
@@ -55,6 +71,14 @@
   "type": "added",
   "section": "tutorial"
  },
+ "5573149c71": {
+  "outcome": "same-meaning",
+  "why": "the README's other mentions of Ok/Err (.ok/.err) speak of prepare or of the same result union; this sentence names the operation bare where its call must pass arguments; no disagreement",
+  "n": 7,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
  "60a78d5fcd": {
   "outcome": "same-meaning",
   "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
@@ -76,6 +100,14 @@
   "why": "",
   "n": 3,
   "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "5dc05c2031": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 7,
+  "by": "hand",
   "type": "reworded",
   "section": "tutorial"
  },
@@ -207,6 +239,14 @@
   "type": "reworded",
   "section": "tutorial"
  },
+ "86a3e8e585": {
+  "outcome": "same-meaning",
+  "why": "the README's other mentions of Ok/Err (.ok/.err) speak of prepare or of the same result union; this sentence names the operation bare where its call must pass arguments; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
  "3528a38f43": {
   "outcome": "correction:S28",
   "why": "",
@@ -226,6 +266,14 @@
  "ec589bf68a": {
   "outcome": "unification:write-title-entity",
   "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "9a5d1383a5": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
   "n": 1,
   "by": "hand",
   "type": "added",
@@ -711,10 +759,34 @@
   "type": "echo",
   "section": "reference"
  },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "408cd76830": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "e3751412d1": {
   "outcome": "same-meaning",
   "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure; README:98 says prepare returns the fetch definition on Ok and Err on failure",
   "n": 113,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "277b700b6c": {
+  "outcome": "same-meaning",
+  "why": "the README's operations table says remove returns the entity marked as deleted; this sentence names how the mark is read; no disagreement",
+  "n": 15,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -819,6 +891,14 @@
   "outcome": "correction:sentence-review-update-id",
   "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
   "n": 17,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "01d6788fab": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 81,
   "by": "hand",
   "type": "reworded",
   "section": "reference"
@@ -1027,6 +1107,22 @@
   "type": "added",
   "section": "reference"
  },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "4bc61ca1a9": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "bcd1dd6792": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
@@ -1078,6 +1174,14 @@
  "55a8b68a1f": {
   "outcome": "restored:fact",
   "why": "data returns a copy: Entity.fragment.rs:285 vs::clone(&self.data.borrow())",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
   "n": 94,
   "by": "hand",
   "type": "added",
@@ -1203,6 +1307,14 @@
   "type": "added",
   "section": "reference"
  },
+ "b23edb42bc": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "1095fa7261": {
   "outcome": "correction:S09",
   "why": "",
@@ -1257,6 +1369,14 @@
   "n": 3,
   "by": "rule:collision-units",
   "type": "reworded",
+  "section": "reference"
+ },
+ "7961c8c7b6": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 2,
+  "by": "hand",
+  "type": "missing",
   "section": "reference"
  },
  "cbcdf6e5f9": {
@@ -1502,6 +1622,14 @@
   "type": "added",
   "section": "reference"
  },
+ "1e28ac89ab": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "556200ce8a": {
   "outcome": "unification:op-sentences",
   "why": "",
@@ -1667,6 +1795,14 @@
   "why": "",
   "n": 1,
   "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
+  "n": 1,
+  "by": "hand",
   "type": "novel-token",
   "section": "reference"
  },

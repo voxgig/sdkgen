@@ -33,7 +33,7 @@
  },
  "713f77bec7": {
   "outcome": "restored:shared",
-  "why": "restored as the shared load sentence: \"`load()` returns a value holding the entity, and throws on failure; `asNative as? Entity` takes it out, and `(ambient.asNative as? Entity)?.data()` reads its record\" (1ede05e640)",
+  "why": "restored as the shared load sentence, now naming the unwrap in words (brief 7 decision 12) and the operation bare (decision 14): \"`load` returns a value holding the entity, and throws on failure; `asNative as? Entity` takes it out, and `ambient.data()` reads its record\" (1ede05e640)",
   "n": 16,
   "by": "hand",
   "type": "missing",
@@ -61,7 +61,7 @@
   "sentences": [
    "25f8905d37"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "9363faf207": {
   "outcome": "shared:ts:9363faf207",
@@ -75,6 +75,14 @@
   ],
   "unreviewed": 0
  },
+ "bc59087427": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
  "a65ba4a33f": {
   "outcome": "shared:ts:a65ba4a33f",
   "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
@@ -85,7 +93,15 @@
   "sentences": [
    "4966aea016"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
+ },
+ "9d80e50c20": {
+  "outcome": "same-meaning",
+  "why": "the README's other mentions of Ok/Err (.ok/.err) speak of prepare or of the same result union; this sentence names the operation bare where its call must pass arguments; no disagreement",
+  "n": 7,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
  },
  "bef2b8f986": {
   "outcome": "shared:ts:bef2b8f986",
@@ -97,7 +113,15 @@
   "sentences": [
    "21fc35c768"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
+ },
+ "44fa0dabac": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
  },
  "5a3859e529": {
   "outcome": "shared:ts:5a3859e529",
@@ -113,7 +137,7 @@
  },
  "454d326c2d": {
   "outcome": "restored:shared",
-  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 454d326c2d): restored as the create comment \"Create — returns a value holding the created entity; (created.asNative as? Entity)?.data() reads its record\"",
+  "why": "re-paired at v3.3 (the units decided at v33p as 454d326c2d): restored as the create comment, which now names the unwrap in words (brief 7 decision 12): \"Create — returns a value holding the created entity; asNative as? Entity takes it out, and created.data() reads its record\"",
   "n": 5,
   "by": "hand",
   "type": "missing",
@@ -138,6 +162,14 @@
  "8331b0f6e3": {
   "outcome": "restored:shared",
   "why": "the wrapped style's write sentence (writeSentence); OLD said only, in the create comment, that create returns the entity; true: every op returns .native(NativeRef(self)) on success and remove marks it deleted (EntityBase.fragment.swift:167-171)",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "5fd9f16c2d": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
   "n": 5,
   "by": "hand",
   "type": "added",
@@ -189,7 +221,7 @@
   "sentences": [
    "81aabf087b"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "1fa815677a": {
   "outcome": "shared:ts:1fa815677a",
@@ -213,7 +245,7 @@
   "sentences": [
    "219aa7c229"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "79233d47ba": {
   "outcome": "shared:ts:79233d47ba",
@@ -225,7 +257,7 @@
   "sentences": [
    "9bcb2825f2"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "defb73bfd8": {
   "outcome": "shared:ts:defb73bfd8",
@@ -293,7 +325,15 @@
   "sentences": [
    "b83e95bec6"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
+ },
+ "5b9af17b7e": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
  },
  "325b1911ed": {
   "outcome": "same-meaning",
@@ -475,9 +515,33 @@
   "type": "block-changed",
   "section": "tutorial"
  },
+ "c4f2d04f4a": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "c089cf077f": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
  "c49ed11762": {
   "outcome": "unification:example-names",
   "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "9de8faf2d3": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
@@ -574,6 +638,38 @@
  "14eb5dfde1": {
   "outcome": "unification:write-comment-style",
   "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "24a51da904": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `takes` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "6a03279ab9": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `it` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "6b913f8580": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `out` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "2920034cd9": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `and` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
   "n": 1,
   "by": "hand",
   "type": "block-novel-token",
@@ -947,6 +1043,22 @@
   "type": "echo",
   "section": "reference"
  },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b2d0f18ca8": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "f64ae2f4fc": {
   "outcome": "same-meaning",
   "why": "a word match on log in console.log (the shared Error handling section's TypeScript block, unported); the README says nothing about log's default",
@@ -1037,7 +1149,7 @@
  },
  "d31e05e59e": {
   "outcome": "correction:matchv-arg",
-  "why": "matchv(_ newmatch: Value?) has no default (EntityBase.fragment.swift:58): passing a value sets, nil gets; \"Get or set\" became \"Get the entity match criteria. Pass a `Value` to set it.\"",
+  "why": "matchv(_ newmatch: Value?) has no default (EntityBase.fragment.swift:58): passing a value sets, nil gets; \"Get or set\" became \"Get the entity match criteria. Returns a copy of the current match criteria. Pass a `Value` to set it.\" (the copy clause is brief 7 decision 7)",
   "n": 94,
   "by": "hand",
   "type": "reworded",
@@ -1213,7 +1325,7 @@
  },
  "50a4172e64": {
   "outcome": "restored:shared",
-  "why": "the wrapped return clause plus the record sentence: \"Returns a value holding the entity, and throws on failure. `(result.asNative as? Entity)?.data()` reads its record.\" — the unwrap is now inside the record expression",
+  "why": "the wrapped return clause plus the record sentence: \"Returns a value holding the entity, and throws on failure. `asNative as? Entity` takes the entity out, and `result.data()` reads its record.\" (the unwrap named in words, brief 7 decision 12)",
   "n": 28,
   "by": "hand",
   "type": "missing",
@@ -1393,7 +1505,7 @@
   "sentences": [
    "746a31db3f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "cd00ec9b2a": {
   "outcome": "shared:ts:cd00ec9b2a",
@@ -1405,7 +1517,7 @@
   "sentences": [
    "5266d8cbf2"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "3cfb131ab0": {
   "outcome": "restored:fact",
@@ -1469,7 +1581,7 @@
   "sentences": [
    "7a3e73d523"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "a112cd49f2": {
   "outcome": "shared:ts:b82912bd60",
@@ -1481,7 +1593,23 @@
   "sentences": [
    "0a6358906c"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "824d11833c": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
  },
  "b9b1eb40e3": {
   "outcome": "correction:sentence-review-direct",
@@ -1547,6 +1675,14 @@
   "type": "added",
   "section": "reference"
  },
+ "2fc026d092": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
+  "n": 79,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "944b3637d3": {
   "outcome": "restored:fact",
   "why": "the data member's declared signature, see 4cba1de5c3",
@@ -1578,6 +1714,14 @@
  "fe498c931d": {
   "outcome": "restored:fact",
   "why": "the matchv declared signature, see b58a1c7936",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
   "n": 94,
   "by": "hand",
   "type": "added",
@@ -1618,6 +1762,22 @@
    "e866dc0d3c"
   ],
   "unreviewed": 0
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b44a06006a": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 82,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
  },
  "393056d0c1": {
   "outcome": "shared:go:393056d0c1",
@@ -1757,7 +1917,7 @@
   "sentences": [
    "7e4d6fd58f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "e6a78931f2": {
   "outcome": "restored:shared",
@@ -1777,7 +1937,7 @@
   "sentences": [
    "6cfad26916"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "31327a7525": {
   "outcome": "restored:shared",
@@ -1865,7 +2025,7 @@
   "sentences": [
    "05a5a62f89"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "2e9cd7c427": {
   "outcome": "restored:fact",
@@ -1960,7 +2120,7 @@
   "sentences": [
    "f616466503"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "dbdce4bb0e": {
   "outcome": "shared:ts:dbdce4bb0e",
@@ -1972,7 +2132,7 @@
   "sentences": [
    "dd74ff9ab6"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "10f0d238e2": {
   "outcome": "shared:ts:10f0d238e2",
@@ -2219,6 +2379,14 @@
  "a200bcc7e9": {
   "outcome": "restored:fact",
   "why": "stream returns AsyncStream<Value> (EntityBase.fragment.swift:189)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
   "n": 1,
   "by": "hand",
   "type": "novel-token",

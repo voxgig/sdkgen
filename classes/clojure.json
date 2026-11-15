@@ -607,6 +607,22 @@
   "type": "echo",
   "section": "reference"
  },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "c5bf30cf23": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "2f2794265d": {
   "outcome": "same-meaning",
   "why": "README:10 lists create among the operations; the action runs through create",
@@ -1039,6 +1055,22 @@
   "type": "added",
   "section": "reference"
  },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "429cdfbc35": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "cd6e4db5f1": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
@@ -1087,6 +1119,14 @@
   "type": "added",
   "section": "reference"
  },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "b40453110e": {
   "outcome": "restored:fact",
   "why": "",
@@ -1106,6 +1146,14 @@
  "169ee4e438": {
   "outcome": "restored:fact",
   "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.clj (run-op at :164 before the lazy-seq is built); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
   "n": 94,
   "by": "hand",
   "type": "added",
@@ -1464,6 +1512,14 @@
   "why": "",
   "n": 1,
   "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1,
+  "by": "hand",
   "type": "novel-token",
   "section": "reference"
  },

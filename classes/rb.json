@@ -719,6 +719,30 @@
   "type": "reworded",
   "section": "rootquick"
  },
+ "f3b16c1393": {
+  "outcome": "correction:decision-1-imports-place",
+  "why": "brief 7 decision 1: the root quick start requires the SDK by its path from the repository root, `require_relative \"rb/Demo_sdk\"` (ran by the shared engineer from the root of a generated SDK: OLD's `require_relative \"Demo_sdk\"` fails with LoadError, NEW loads the SDK); the rest of the pair as decided before for auth-off: the client passes the server variables that have no default (S49, server-required-given), the shared step comment, and the call without ()",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "5fc6d07889": {
+  "outcome": "correction:decision-1-imports-place",
+  "why": "brief 7 decision 1: the root quick start requires the SDK by its path from the repository root, `require_relative \"rb/Demo_sdk\"` (ran by the shared engineer from the root of a generated SDK: OLD's `require_relative \"Demo_sdk\"` fails with LoadError, NEW loads the SDK); the rest of the pair as decided before for doc-nested: the root loads the nested satellite with its parent id (root-load-nested), the server variable (S49), the shared step comments and the loop variable",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "8dd780b69a": {
+  "outcome": "correction:decision-1-imports-place",
+  "why": "the token `rb` of the root quick start's require path, `rb/Demo_sdk`: brief 7 decision 1: the root quick start requires the SDK by its path from the repository root, `require_relative \"rb/Demo_sdk\"` (ran by the shared engineer from the root of a generated SDK: OLD's `require_relative \"Demo_sdk\"` fails with LoadError, NEW loads the SDK)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
  "ff935caa13": {
   "outcome": "correction:S49",
   "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
@@ -855,10 +879,34 @@
   "type": "echo",
   "section": "reference"
  },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9efa1d0afc": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "e5f622335b": {
   "outcome": "same-meaning",
   "why": "README:240: data_get gets the entity data; the same",
   "n": 59,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "c2408b4f0a": {
+  "outcome": "same-meaning",
+  "why": "the README's operations table says remove returns the entity marked as deleted; this sentence names how the mark is read; no disagreement",
+  "n": 15,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -1295,6 +1343,22 @@
   "type": "added",
   "section": "reference"
  },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d806f62156": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "d16d410cb8": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
@@ -1351,6 +1415,14 @@
   ],
   "unreviewed": 0
  },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "90e9b6e073": {
   "outcome": "restored:fact",
   "why": "stream is a public entity member the old rb page did not document: Entity.fragment.rb:104 def stream(action, args = nil, callopts = nil), :140 Enumerator.new; the guard derives it",
@@ -1362,6 +1434,14 @@
  "91bc59ac7f": {
   "outcome": "restored:fact",
   "why": "when the operation runs: `runs: 'iterate'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.rb (the pipeline runs inside Enumerator.new, :140, on the first next); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
   "n": 94,
   "by": "hand",
   "type": "added",
@@ -1531,6 +1611,14 @@
   "outcome": "correction:sentence-review-update-id",
   "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
   "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "290fb0c986": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15,
   "by": "hand",
   "type": "added",
   "section": "reference"
@@ -1934,6 +2022,14 @@
   "type": "novel-token",
   "section": "reference"
  },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
  "9c792a9893": {
   "outcome": "correction:ref-6",
   "why": "the action name in the Call cell",
@@ -1945,6 +2041,14 @@
  "7e7f66c823": {
   "outcome": "correction:ref-6",
   "why": "the client receiver in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
   "n": 1,
   "by": "hand",
   "type": "novel-token",

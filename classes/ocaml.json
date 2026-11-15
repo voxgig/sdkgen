@@ -61,7 +61,7 @@
   "sentences": [
    "25f8905d37"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "9363faf207": {
   "outcome": "shared:ts:9363faf207",
@@ -93,7 +93,7 @@
   "sentences": [
    "4966aea016"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "5e48ea2104": {
   "outcome": "same-meaning",
@@ -113,7 +113,7 @@
   "sentences": [
    "21fc35c768"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "5a3859e529": {
   "outcome": "shared:ts:5a3859e529",
@@ -269,7 +269,7 @@
   "sentences": [
    "81aabf087b"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "1fa815677a": {
   "outcome": "shared:ts:1fa815677a",
@@ -293,7 +293,7 @@
   "sentences": [
    "219aa7c229"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "79233d47ba": {
   "outcome": "shared:clojure:79233d47ba",
@@ -305,7 +305,7 @@
   "sentences": [
    "9bcb2825f2"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "defb73bfd8": {
   "outcome": "shared:ts:defb73bfd8",
@@ -381,7 +381,7 @@
   "sentences": [
    "b83e95bec6"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "f9e7379255": {
   "outcome": "shared:py:db304a6ebf",
@@ -1103,6 +1103,14 @@
   "type": "echo",
   "section": "reference"
  },
+ "617e809d5f": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "bcdac71696": {
   "outcome": "same-meaning",
   "why": "a word match: README:10 names the operation `list`; the sentence names the collection `list` an e_list returns",
@@ -1115,6 +1123,14 @@
   "outcome": "same-meaning",
   "why": "README:229 lists `e_create` as `value -> value -> entity_obj`; the Actions table routes terraform through it",
   "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "739d454a28": {
+  "outcome": "same-meaning",
+  "why": "the README's operations table says remove returns the entity marked as deleted; this sentence names how the mark is read; no disagreement",
+  "n": 15,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -1673,7 +1689,7 @@
   "sentences": [
    "1f08cc692d"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "4261ccc85e": {
   "outcome": "restored:shared",
@@ -1705,7 +1721,7 @@
   "sentences": [
    "746a31db3f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "013e98cb9f": {
   "outcome": "shared:ts:cd00ec9b2a",
@@ -1717,7 +1733,7 @@
   "sentences": [
    "5266d8cbf2"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "d74e50a73f": {
   "outcome": "shared:ts:82b6e219ea",
@@ -1813,7 +1829,23 @@
   "sentences": [
    "7a3e73d523"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
+ },
+ "af0bd24893": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fc78874e94": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
  },
  "79bdf00274": {
   "outcome": "correction:sentence-review-direct",
@@ -1915,6 +1947,14 @@
   ],
   "unreviewed": 0
  },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "70ba49fc5d": {
   "outcome": "shared:py:593ef47de1",
   "why": "masked, it is the py unit of class 593ef47de1 (restored:fact, by rule:stream-member)",
@@ -1951,6 +1991,14 @@
   ],
   "unreviewed": 0
  },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "e864590471": {
   "outcome": "correction:stream-documented",
   "why": "OLD omitted e_stream, a public entity_obj field (sdk_types.ml `mutable e_stream : string -> value -> value -> value Seq.t;`); the shared stream sentence and the note on its arguments document it",
@@ -1969,7 +2017,7 @@
   "sentences": [
    "4cc33fe3da"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "358b7fdaff": {
   "outcome": "shared:py:2c469482e0",
@@ -2121,7 +2169,7 @@
   "sentences": [
    "7e4d6fd58f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "18134b8c88": {
   "outcome": "shared:py:e007bd9e31",
@@ -2145,7 +2193,7 @@
   "sentences": [
    "6cfad26916"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "be5e0b29e5": {
   "outcome": "shared:py:62d13e0a33",
@@ -2170,6 +2218,14 @@
    "f28445713f"
   ],
   "unreviewed": 0
+ },
+ "45755db38d": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
  },
  "1095fa7261": {
   "outcome": "shared:ts:1095fa7261",
@@ -2213,7 +2269,7 @@
   "sentences": [
    "05a5a62f89"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "4033f23e2d": {
   "outcome": "shared:c:4033f23e2d",
@@ -2291,6 +2347,14 @@
   "type": "echo",
   "section": "reference"
  },
+ "90dcf9c037": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "7a37d1b419": {
   "outcome": "same-meaning",
   "why": "README:177 'Both arguments may be `Noval`' (test_with); the REFERENCE says the same of test_with's arguments and of the options map",
@@ -2344,7 +2408,7 @@
   "sentences": [
    "f616466503"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "dbdce4bb0e": {
   "outcome": "shared:ts:dbdce4bb0e",
@@ -2356,7 +2420,7 @@
   "sentences": [
    "dd74ff9ab6"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "da08f7e7bd": {
   "outcome": "shared:ts:da08f7e7bd",
@@ -2533,6 +2597,14 @@
  "7a9d5874ad": {
   "outcome": "correction:stream-documented",
   "why": "OLD omitted e_stream, a public entity_obj field (sdk_types.ml `mutable e_stream : string -> value -> value -> value Seq.t;`); the shared stream sentence and the note on its arguments document it",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
   "n": 1,
   "by": "hand",
   "type": "novel-token",

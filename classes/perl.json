@@ -61,7 +61,7 @@
   "sentences": [
    "25f8905d37"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "9363faf207": {
   "outcome": "shared:ts:9363faf207",
@@ -93,7 +93,7 @@
   "sentences": [
    "4966aea016"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "bef2b8f986": {
   "outcome": "shared:ts:bef2b8f986",
@@ -105,7 +105,7 @@
   "sentences": [
    "21fc35c768"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "406d576484": {
   "outcome": "restored:shared",
@@ -213,7 +213,7 @@
   "sentences": [
    "81aabf087b"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "1fa815677a": {
   "outcome": "shared:ts:1fa815677a",
@@ -237,7 +237,7 @@
   "sentences": [
    "219aa7c229"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "79233d47ba": {
   "outcome": "shared:ts:79233d47ba",
@@ -249,7 +249,7 @@
   "sentences": [
    "9bcb2825f2"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "defb73bfd8": {
   "outcome": "shared:ts:defb73bfd8",
@@ -317,7 +317,7 @@
   "sentences": [
    "b83e95bec6"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "412625e889": {
   "outcome": "restored:shared",
@@ -443,10 +443,34 @@
   "type": "novel-token",
   "section": "tutorial"
  },
+ "6a6dd48964": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49, server-required-given), as decided for these units at v33p (316d79799f); the pair moved only because the tutorial's import block now carries `use lib 'lib';` (brief 7 decision 1), which OLD perl's tutorial also printed",
+  "n": 12,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
  "3cd8281249": {
   "outcome": "correction:display-field",
   "why": "the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef",
   "n": 10,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "2fa561ae84": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET, S50/D23), and the server variables (S49), as decided for these units at v33p (eea7b04552); re-paired by decision 1's import block, which OLD perl also printed",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "be9b83ebe0": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49, server-required-given), as decided for these units at v33p (316d79799f); the pair moved only because the tutorial's import block now carries `use lib 'lib';` (brief 7 decision 1), which OLD perl's tutorial also printed",
+  "n": 1,
   "by": "hand",
   "type": "block-changed",
   "section": "tutorial"
@@ -470,6 +494,14 @@
  "d2255de953": {
   "outcome": "correction:display-field",
   "why": "the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef (doc-nested: the satellite's first string field is planet_id)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "430d615ddd": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49, server-required-given), as decided for these units at v33p (316d79799f); the pair moved only because the tutorial's import block now carries `use lib 'lib';` (brief 7 decision 1), which OLD perl's tutorial also printed",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
@@ -585,6 +617,94 @@
   "n": 6,
   "by": "hand",
   "type": "reworded",
+  "section": "rootquick"
+ },
+ "80e4a482e4": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "082e242cee": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "763cb3b082": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "ea7d20f04f": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "2e9ed570bb": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "0542fa4137": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "a89dd5755a": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "d790c6cf31": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "5e0f26590a": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "5de52e5578": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "57814c4573": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
   "section": "rootquick"
  },
  "ff935caa13": {
@@ -719,6 +839,14 @@
   "outcome": "same-meaning",
   "why": "a word match on undef in the README's test(undef, undef) call; nothing there about the accessor",
   "n": 94,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "cd06a25fa6": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -1089,7 +1217,7 @@
   "sentences": [
    "5266d8cbf2"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "b484e0da52": {
   "outcome": "shared:clojure:5ca02aaa87",
@@ -1145,7 +1273,7 @@
   "sentences": [
    "7a3e73d523"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "23b4e8a6d6": {
   "outcome": "shared:ts:b82912bd60",
@@ -1157,7 +1285,23 @@
   "sentences": [
    "0a6358906c"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
+ },
+ "0761788e5b": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7d301ef25c": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
  },
  "b27cfa68ec": {
   "outcome": "correction:sentence-review-direct",
@@ -1239,6 +1383,14 @@
   ],
   "unreviewed": 0
  },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "bb633eacde": {
   "outcome": "shared:rb:d8065d07cb",
   "why": "masked, it is the rb unit of class d8065d07cb (correction:runtime-forms, by hand)",
@@ -1283,10 +1435,26 @@
   ],
   "unreviewed": 0
  },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "ef4c488fdd": {
   "outcome": "restored:note",
   "why": "the runtime note: stream yields an entity as the hashref its data_get returns (Entity.fragment.pm:141 '# An entity is yielded as its record, the hashref its data_get returns.', :179-188 unwrap). Worded so it holds under the streaming feature's chunkSize too, where an item is an arrayref batch whose entities are unwrapped the same way (streaming_feature.pm:65-70, Entity.fragment.pm:186)",
   "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0030efbf5a": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 82,
   "by": "hand",
   "type": "added",
   "section": "reference"
@@ -1429,7 +1597,7 @@
   "sentences": [
    "7e4d6fd58f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "6da904adba": {
   "outcome": "shared:ts:6da904adba",
@@ -1441,7 +1609,19 @@
   "sentences": [
    "6cfad26916"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
+ },
+ "4e13b8f46c": {
+  "outcome": "shared:ts:b23edb42bc",
+  "why": "masked, it is the ts unit of class b23edb42bc (correction:decision-11-deleted, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "808ab9f422"
+  ],
+  "unreviewed": 0
  },
  "6979eaacb4": {
   "outcome": "shared:ts:6979eaacb4",
@@ -1505,7 +1685,7 @@
   "sentences": [
    "05a5a62f89"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "8974fe557b": {
   "outcome": "restored:shared",
@@ -1530,6 +1710,14 @@
  "066a083189": {
   "outcome": "same-meaning",
   "why": "the README's direct example passes 'method' => 'GET', which agrees with the default",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "8706ab324a": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
   "n": 1,
   "by": "hand",
   "type": "echo",
@@ -1564,7 +1752,7 @@
   "sentences": [
    "f616466503"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "dbdce4bb0e": {
   "outcome": "shared:ts:dbdce4bb0e",
@@ -1576,7 +1764,7 @@
   "sentences": [
    "dd74ff9ab6"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "10f0d238e2": {
   "outcome": "shared:ts:10f0d238e2",
@@ -1808,6 +1996,14 @@
   "type": "novel-token",
   "section": "reference"
  },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
  "9c792a9893": {
   "outcome": "correction:ref-6",
   "why": "the action name in the Call cell",
@@ -1819,6 +2015,14 @@
  "7e7f66c823": {
   "outcome": "restored:shared",
   "why": "make's sentence: 'with the same client and options' (Entity.fragment.pm:71 passes $self->{_client})",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
@@ -1846,6 +2050,22 @@
   "n": 1,
   "by": "hand",
   "type": "vanished-token",
+  "section": "reference"
+ },
+ "bafc700723": {
+  "outcome": "correction:decision-3-scalar-field",
+  "why": "brief 7 decision 3: the list example prints a scalar display field (Console `->{maker}`) or, where the entity has none, the id alone (Record, whose only other field `fields` is a map that printed HASH(0x...)); the loop variable is the shared `$item` and list() has its parentheses (noarg-parens), as decided for the other reference list blocks",
+  "n": 18,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "24d40b660d": {
+  "outcome": "correction:decision-3-scalar-field",
+  "why": "brief 7 decision 3: the list example prints a scalar display field (Console `->{maker}`) or, where the entity has none, the id alone (Record, whose only other field `fields` is a map that printed HASH(0x...)); the loop variable is the shared `$item` and list() has its parentheses (noarg-parens), as decided for the other reference list blocks",
+  "n": 64,
+  "by": "hand",
+  "type": "block-changed",
   "section": "reference"
  },
  "5a083e16cc": {

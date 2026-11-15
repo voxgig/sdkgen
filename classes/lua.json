@@ -77,7 +77,7 @@
   "sentences": [
    "25f8905d37"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "9363faf207": {
   "outcome": "shared:ts:9363faf207",
@@ -109,7 +109,7 @@
   "sentences": [
    "4966aea016"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "bef2b8f986": {
   "outcome": "shared:ts:bef2b8f986",
@@ -121,7 +121,7 @@
   "sentences": [
    "21fc35c768"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "5a3859e529": {
   "outcome": "shared:ts:5a3859e529",
@@ -241,7 +241,7 @@
   "sentences": [
    "81aabf087b"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "1fa815677a": {
   "outcome": "shared:ts:1fa815677a",
@@ -265,7 +265,7 @@
   "sentences": [
    "219aa7c229"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "79233d47ba": {
   "outcome": "shared:ts:79233d47ba",
@@ -277,7 +277,7 @@
   "sentences": [
    "9bcb2825f2"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "defb73bfd8": {
   "outcome": "shared:ts:defb73bfd8",
@@ -345,7 +345,15 @@
   "sentences": [
    "b83e95bec6"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
+ },
+ "f5e8e05fbb": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
  },
  "325b1911ed": {
   "outcome": "same-meaning",
@@ -903,6 +911,22 @@
   "type": "echo",
   "section": "reference"
  },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "282d4750fe": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "47c258dd35": {
   "outcome": "same-meaning",
   "why": "the README's test-mode comment says data_get() reads the entity's record (lua/README.md:123); the same",
@@ -1047,6 +1071,14 @@
   "outcome": "unification:client-heading",
   "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
   "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d24cc5aafa": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 93,
   "by": "hand",
   "type": "missing",
   "section": "reference"
@@ -1233,7 +1265,7 @@
   "sentences": [
    "746a31db3f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "cd00ec9b2a": {
   "outcome": "shared:ts:cd00ec9b2a",
@@ -1245,7 +1277,23 @@
   "sentences": [
    "5266d8cbf2"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
+ },
+ "ef6e4f695b": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 92,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "bf4ca985aa": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
  },
  "dce8243b59": {
   "outcome": "shared:elixir:4b8feb4091",
@@ -1292,7 +1340,7 @@
   "sentences": [
    "7a3e73d523"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "104448b83f": {
   "outcome": "shared:ts:b82912bd60",
@@ -1304,7 +1352,23 @@
   "sentences": [
    "0a6358906c"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "11da65611b": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
  },
  "33ee785ed0": {
   "outcome": "shared:ts:33ee785ed0",
@@ -1316,7 +1380,7 @@
   "sentences": [
    "010ab525bc"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "e93eb54667": {
   "outcome": "restored:note",
@@ -1374,6 +1438,14 @@
   ],
   "unreviewed": 0
  },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "f8ffb2b296": {
   "outcome": "shared:py:593ef47de1",
   "why": "masked, it is the py unit of class 593ef47de1 (restored:fact, by rule:stream-member)",
@@ -1406,6 +1478,14 @@
   ],
   "unreviewed": 0
  },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "482c4e7ba9": {
   "outcome": "restored:note",
   "why": "lua's note on stream: unlike an operation's value, err, the returned function raises a failure with `error` (Entity.fragment.lua:238 `error(item, 0)`, :254 `error(err, 0)`)",
@@ -1424,7 +1504,7 @@
   "sentences": [
    "4cc33fe3da"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "393056d0c1": {
   "outcome": "shared:go:393056d0c1",
@@ -1564,7 +1644,7 @@
   "sentences": [
    "7e4d6fd58f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "9f8b986637": {
   "outcome": "unification:op-failure-clause",
@@ -1596,7 +1676,7 @@
   "sentences": [
    "6cfad26916"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "6afa2d3a82": {
   "outcome": "unification:op-failure-clause",
@@ -1609,6 +1689,14 @@
  "fcd6511f9a": {
   "outcome": "unification:op-failure-clause",
   "why": "the failure clause in the shared pair form ('; `err` is non-nil on failure'); the same fact as OLD's 'or `nil` and an error on failure' (make_error.lua:86 `return nil, sdk_err`)",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "f64dc915fc": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
   "n": 15,
   "by": "hand",
   "type": "added",
@@ -1664,7 +1752,7 @@
   "sentences": [
    "05a5a62f89"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "7229636aa2": {
   "outcome": "shared:rb:385b2d16af",
@@ -1722,6 +1810,14 @@
   "type": "echo",
   "section": "reference"
  },
+ "7e86a932db": {
+  "outcome": "same-meaning",
+  "why": "the README's accessor call passes nil the same way; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "9cb2039c55": {
   "outcome": "same-meaning",
   "why": "the echo is the word `nil` in the README's test line; unrelated to the stream's end",
@@ -1767,7 +1863,7 @@
   "sentences": [
    "f616466503"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "dbdce4bb0e": {
   "outcome": "shared:ts:dbdce4bb0e",
@@ -1779,7 +1875,7 @@
   "sentences": [
    "dd74ff9ab6"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "da08f7e7bd": {
   "outcome": "shared:ts:da08f7e7bd",
@@ -1875,6 +1971,14 @@
   "type": "reworded",
   "section": "reference"
  },
+ "c57c0ef5c6": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
  "dac11a1691": {
   "outcome": "correction:G27",
   "why": "ref-issues: the field description is escaped into one cell",
@@ -1921,6 +2025,22 @@
   "n": 1,
   "by": "hand",
   "type": "missing",
+  "section": "reference"
+ },
+ "671a0cd356": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0fd244b2e3": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
   "section": "reference"
  },
  "7393140c1f": {
@@ -2065,6 +2185,14 @@
   "type": "novel-token",
   "section": "reference"
  },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
  "8eed77596a": {
   "outcome": "restored:note",
   "why": "the `error` the stream note names, as 482c4e7ba9",
@@ -2129,6 +2257,14 @@
   "type": "novel-token",
   "section": "reference"
  },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
  "045e555fdd": {
   "outcome": "correction:S50",
   "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
@@ -2177,6 +2313,14 @@
   "type": "block-changed",
   "section": "reference"
  },
+ "ba0e501f34": {
+  "outcome": "correction:decision-3-scalar-field",
+  "why": "brief 7 decision 3: the list example prints a scalar display field (Console `rec[\"maker\"]`) or, where the entity has none, the id alone (Record, whose other field `fields` is a table that printed table: 0x...); the rest of the block (the err check, ipairs over the results, `local rec = item:data_get()`) is as decided for the other reference list blocks",
+  "n": 64,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
  "bc48bd2de6": {
   "outcome": "correction:ref-create-runnable",
   "why": "the reference create example passes typed literals with the type as a comment (`id = \"example_id\", -- string`); OLD wrote `id = --[[ string ]],`, a placeholder that does not parse, which the README test counts as an illustration and never runs",
@@ -2197,6 +2341,14 @@
   "outcome": "correction:checked-examples",
   "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
   "n": 20,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "e12ef1cf85": {
+  "outcome": "correction:decision-3-scalar-field",
+  "why": "brief 7 decision 3: the list example prints a scalar display field (Console `rec[\"maker\"]`) or, where the entity has none, the id alone (Record, whose other field `fields` is a table that printed table: 0x...); the rest of the block (the err check, ipairs over the results, `local rec = item:data_get()`) is as decided for the other reference list blocks",
+  "n": 18,
   "by": "hand",
   "type": "block-changed",
   "section": "reference"
