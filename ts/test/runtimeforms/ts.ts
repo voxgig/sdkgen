@@ -53,9 +53,9 @@ const forms: Forms = {
     ['Control', 'object'], ['any', 'object'], ['Partial<D>', 'object'], ['Record<string,any>', 'object'],
   ]),
   cite: {
+    'ref.facts.direct.abortCode': { file: 'tm/ts/src/utility/MakeRequestUtility.ts', quote: "const abort = ctx.error('request_aborted', 'request aborted')" },
     'ref.facts.none': { file: 'src/cmp/ts/fragment/EntityBase.fragment.ts', quote: 'return undefined' },
-    'ref.facts.lits.false': { value: 'false', file: MAIN, quote: 'return { ok: false, err: utility.clean(this._rootctx, fetchdef) }' },
-    'ref.facts.lits.true': { value: 'true', file: MAIN, quote: 'ok: null == err && status >= 200 && status < 300,', unquoted: { true: 'ok is the boolean the status test computes; true is not spelled' } },
+    'ref.facts.direct.okFalse': { file: MAIN, quote: 'return { ok: false, err: utility.clean(this._rootctx, fetchdef) }' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/ts/fragment/EntityBase.fragment.ts", quote: "let out = struct.clone(this._data)" },
     'facts.collection': { value: "array", file: OPS[1], quote: 'async list(this: any, reqmatch?: EntityNameListMatch, ctrl?: Control): Promise<EntyClass[]>' },
     'ref.facts.container': {
