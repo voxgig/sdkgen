@@ -87,7 +87,7 @@ describe('reference interface', () => {
   test('a stream says when its operation runs, and has no default', () => {
     const runs: Record<string, RegExp> = {
       iterate: /The operation runs when iteration starts, not when the call returns\./,
-      call: /The operation runs, and every item is read, before the call returns\./,
+      call: /The operation runs before the call returns\./,
       background: /The operation starts at the call and runs beside/,
     }
     for (const [r, re] of Object.entries(runs)) {

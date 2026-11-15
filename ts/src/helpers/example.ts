@@ -116,8 +116,8 @@ type MemberKind =
 type StreamRuns = 'iterate' | 'call' | 'background'
 
 // `returns`: the type it returns, where the signature does not say.
-// `copy`: a data or match getter returns a copy of the entity's own value,
-// not the value itself.
+// `copy`: a getter (data, match, options, entopts) returns a copy of the
+// value it holds, not the value itself; without it the page says no copy.
 // `runs`: a stream kind's StreamRuns, required for every stream kind.
 type Member = { kind: MemberKind, sig: string, returns?: string, copy?: boolean, runs?: StreamRuns }
 

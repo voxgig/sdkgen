@@ -99,10 +99,12 @@ function setArg(r: RefSyntax): string {
   return r.facts.setArg
 }
 
-// When a stream's operation runs, and when its items are read.
+// When a stream's operation runs. No sentence says when the items are read:
+// in java, kotlin, scala and perl the operation runs at the call and the
+// streaming feature's items are drawn as the caller iterates.
 const STREAM_RUNS: Record<StreamRuns, string> = {
   iterate: 'The operation runs when iteration starts, not when the call returns.',
-  call: 'The operation runs, and every item is read, before the call returns.',
+  call: 'The operation runs before the call returns.',
   background: 'The operation starts at the call and runs beside the caller, handing over each item as the caller takes it.',
 }
 
@@ -122,7 +124,7 @@ function memberText(m: Member, p: Syntax, desc: SdkDescription, ent?: DescEntity
   const sig = (k: MemberKind) => memberName(r, k)
   const kind = m.kind
   switch (kind) {
-    case 'options': return 'Return a deep copy of the current SDK options.'
+    case 'options': return m.copy ? 'Return a deep copy of the current SDK options.' : 'Return the current SDK options.'
     case 'utility': return 'Return a copy of the SDK utility object.'
     case 'utilityBase': return 'Return the SDK utility object.'
     case 'tester': {
@@ -142,7 +144,7 @@ function memberText(m: Member, p: Syntax, desc: SdkDescription, ent?: DescEntity
     case 'make': return `Create a new ${code(ent ? typeOf(r, ent) : '')} instance with the same client and\noptions.`
     case 'name': return 'Return the entity name.'
     case 'client': return `Return the parent ${code(desc.layout.client)} instance.`
-    case 'entopts': return 'Return a copy of the entity options.'
+    case 'entopts': return m.copy ? 'Return a copy of the entity options.' : 'Return the entity options.'
     case 'stream': return streamText('stream its result items.', m)
     case 'streamIterator': return streamText('yield its result items as an async iterator.', m)
     case 'streamGenerator': return streamText('yield its result items as a generator.', m)
@@ -251,8 +253,8 @@ function testText(p: Syntax, desc: SdkDescription): string {
   for (const t of r.facts.test) {
     out += `#### ${code(fill(t.sig, desc))}\n\n` + wrap(
       (t.args
-        ? `Create a test client ${mock}. \`testopts\` are the test feature's options ` +
-          `and \`sdkopts\` further client options, merged over the test defaults; both may be ${code(r.facts.none)}.`
+        ? `Create a test client ${mock}. The first argument holds the test feature's options ` +
+          `and the second further client options, merged over the test defaults; both may be ${code(r.facts.none)}.`
         : `Create a test client ${mock}, and no options.`) +
       `${altText(t.alts || [], desc)} It returns a client in test mode.`) + `\n\n${fenced(p, [fill(t.call, desc)])}\n`
   }
