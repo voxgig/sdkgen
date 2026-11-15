@@ -12,6 +12,8 @@ import {
   publicNames, read,
 } from './forms'
 import { account, checkCitation, codeTokens, runtimeFiles, runtimeText } from './account'
+import type { Call } from './calls'
+import { arityFits, readCalls, receiverFits } from './calls'
 
 const { CANON_TYPE } = require('../../dist/helpers/canonType.js')
 const { canonToType } = require('../../dist/sdkgen.js')
@@ -20,7 +22,7 @@ const { canonToType } = require('../../dist/sdkgen.js')
 const STAGE = Path.resolve(__dirname, '..', '..', 'dist-test-scaffold', '.sdk', 'dist', 'cmp')
 const FORMS = __dirname
 const FORMS_SRC = Path.resolve(__dirname, '..', '..', 'test', 'runtimeforms')
-const FRAMEWORK = ['forms', 'account', 'guard']
+const FRAMEWORK = ['forms', 'account', 'guard', 'calls']
 
 const PROVIDERS: string[] = Fs.readdirSync(STAGE)
   .filter((t: string) => Fs.existsSync(Path.join(STAGE, t, 'Syntax_' + t + '.js')))
@@ -129,12 +131,13 @@ function check(t: string, S: any, forms: Forms): Result {
     }
     let good = true
     // A field is not called, and what is called is not written as a field.
-    const called = new RegExp(esc(spell(name)) + '\\s*[(\\[]').test(spell(sigText)) || /^\(/.test(sigText.trim())
+    const called = null != forms.called ? forms.called(spell(sigText), spell(name))
+      : new RegExp(esc(spell(name)) + '\\s*[(\\[]').test(spell(sigText)) || /^\(/.test(sigText.trim())
     if (fits.field && called && null == exc['field:' + where]) {
       good = false
       add('field', `${where}: ${spell(name)} is a field of the runtime, declared as called (${sigText})`)
     }
-    if (!fits.field && !called && !forms.parenless && null == exc['field:' + where]) {
+    if (!fits.field && !called && !(forms.parenless && null == forms.called) && null == exc['field:' + where]) {
       good = false
       add('field', `${where}: ${spell(name)} is called in the runtime, declared as a field (${sigText})`)
     }
@@ -142,6 +145,19 @@ function check(t: string, S: any, forms: Forms): Result {
       !spell(sigText).includes(forms.failure.shows) && null == exc['fails:' + where]) {
       good = false
       add('fails', `${where}: ${spell(name)} shows its failure as ${forms.failure.shows} in the runtime; the signature does not (${sigText})`)
+    }
+    // What the signature writes the member on must be what the runtime declares.
+    if (null != forms.calls) {
+      const c = readCalls(forms.calls, spell(sigText), spell(name))[0]
+      // On a variable the page binds (an instance), or on a type or module
+      // name; a qualifier that is neither (c's vtable) says nothing.
+      const types = [forms.tokens.client, forms.tokens.module, forms.tokens.sdk].filter((x) => null != x)
+      const head = null == c ? '' : (/^\(?\s*\$?([A-Za-z_][\w$]*)/.exec(c.recv) || [])[1] || ''
+      if (null != c && ('instance' === c.kind || 'result' === c.kind ? 'instance' !== fits.on : (types.includes(head) && 'instance' === fits.on)) &&
+        null == exc['on:' + where]) {
+        good = false
+        add('on', `${where}: the signature writes ${spell(name)} on ${c.recv} (${sigText}); the runtime declares it on ${fits.on === 'module' ? 'its module' : 'the ' + fits.on}`)
+      }
     }
     if (instance && 'type' === fits.on && null == exc['on:' + where]) {
       good = false
@@ -288,7 +304,8 @@ function check(t: string, S: any, forms: Forms): Result {
   r.test.forEach((x: any, i: number) => {
     const d = sig('test', `ref.facts.test[${i}].sig`, x.sig, client)
     if (null == d) return
-    if (!spell(x.call).includes(spell(sigName(x.sig)))) add('test', `test constructor call ${x.call} does not call ${sigName(x.sig)}`)
+    if (null != forms.calls) { /* read with the forms' call notation below */ }
+    else if (!spell(x.call).includes(spell(sigName(x.sig)))) add('test', `test constructor call ${x.call} does not call ${sigName(x.sig)}`)
     else {
       const recv = receiver(spell(x.call), spell(sigName(x.sig)))
       if (!fitsOn(d.on, recv)) add('on', `test constructor ${sigName(x.sig)} is declared on ${d.on === 'module' ? 'its module' : 'the ' + d.on} in the runtime; the call ${x.call} makes it on ${recv}`)
@@ -322,6 +339,7 @@ function check(t: string, S: any, forms: Forms): Result {
   }
 
   ;(r.ctor as string[]).forEach((line, i) => {
+    if (null != forms.calls) return
     if (line.includes('{ctor}') || (null != forms.tokens.ctor && new RegExp('\\b' + esc(forms.tokens.ctor) + '\\(').test(line))) {
       callOf('ctor', `ref.facts.ctor[${i}]`, line, client)
     }
@@ -331,6 +349,113 @@ function check(t: string, S: any, forms: Forms): Result {
     const rname = forms.members[which]
     const d = null == rname ? null : one(client, rname)
     if (null != d && '' !== d.returns && type(d.returns) === norm(r[which].returns, forms)) verified.add(`ref.facts.${which}.returns`)
+  }
+
+  // Calls as the provider prints them, read in the runtime's notation: the
+  // constructor the naming hook gives, the test constructors, the accessor
+  // and each operation exist, are made on what the runtime declares them on,
+  // through its separator, with as many arguments as they take.
+  if (null == forms.calls) add('calls', 'the forms do not say how a call is written (calls: { on, args, parenless, ctor })')
+  else {
+    const N = forms.calls
+    const hook = namingOf(t)
+    if (null != hook.problem) add('ctor', hook.problem)
+    else {
+      const layout = hook.layout
+      const desc = probeDesc(hook)
+      const imports = importsOf(S, desc)
+      // A printed call: its declaration exists, takes that many arguments, is on what the call is made on.
+      const judge = (where: string, path: string | null, c: Call, decls: Decl[], text: string, classCall = false) => {
+        // The class itself called (py, swift) is a call on the type.
+        if (classCall && 'free' === c.kind) c = { ...c, kind: 'type' }
+        const fit = decls.find((d) => arityFits(forms, d.params, c.args.length))
+        let good = true
+        if (null == fit) {
+          good = false
+          add('arity', `${where}: ${c.name} takes ${decls.map((d) => arity(forms, d.params)).join(' or ')} in the runtime; ${JSON.stringify(text.trim())} passes ${c.args.length}`)
+        }
+        const d = fit || decls[0]
+        if (!receiverFits(d.on, c.kind)) {
+          good = false
+          add('on', `${where}: ${c.name} is declared on ${d.on === 'module' ? 'its module' : 'the ' + d.on}; ${JSON.stringify(text.trim())} calls it on ${c.recv || '(nothing)'} (${c.kind})`)
+        }
+        else if ('' !== c.sep && null != N.on[d.on] && !(N.on[d.on] as string[]).includes(c.sep)) {
+          good = false
+          add('on', `${where}: ${c.name} is declared on ${d.on === 'module' ? 'its module' : 'the ' + d.on}, called through ${(N.on[d.on] as string[]).join(' or ')}; ${JSON.stringify(text.trim())} calls it through ${c.sep}`)
+        }
+        if (good && null != path) verified.add(path)
+        return good
+      }
+      // The constructor: the hook's name, as the client printer prints it.
+      const member = layout.ctor.split(/::|->|\.|\/|:/).pop() as string
+      const classCall = [layout.client, forms.tokens.client].includes(member)
+      const declName = classCall ? (forms.ctorDecl || forms.tokens.ctor) : (N.ctor?.[member] ?? member)
+      const ctorDecls = null == declName ? [] : findDecls(forms, client, esc(declName))
+      if (0 === ctorDecls.length) add('ctor', `the naming hook's constructor ${layout.ctor} runs ${declName}, which the ${t} runtime does not declare`)
+      // With no options the printer may use a declared defaults constructor (ocaml's make0).
+      const alts = (r.ctorAlts || []).map((x: any) => (/([\w{}$]+)\s*(?:\(|\s|$)/.exec(x.call.replace(/^.*?(?:\.|::|->)(?=[\w{}$]+\s*(?:\(|\s|$))/, '')) || [])[1])
+        .filter((x: any) => null != x).map(spell)
+      for (const opts of [[], [{ key: 'apikey', value: { k: 'str', text: 'k' } }]]) {
+        let text = ''
+        try { text = S.client({ k: 'client', options: opts }, desc, scope()).join('\n') }
+        catch (e: any) { add('ctor', 'the client printer throws: ' + e.message); continue }
+        const cs = readCalls(N, text, member)
+        if (0 === cs.length && (0 < opts.length || !alts.some((a: string) => 0 < readCalls(N, text, a).length))) {
+          add('ctor', `the client printer does not call the naming hook's constructor ${layout.ctor}: ${JSON.stringify(text)}`)
+        }
+        for (const c of cs) {
+          if (0 === ctorDecls.length) continue
+          judge('ctor', null, c, ctorDecls, text, classCall)
+          if ('' !== c.recv && !boundBy(imports, c.recv, [layout.client, layout.module, forms.tokens.client])) {
+            add('ctor', `${layout.ctor} is called on ${c.recv}, which the imports the provider prints do not bind (${JSON.stringify(imports)})`)
+          }
+        }
+      }
+      // The reference's constructor lines, spelled as the page spells them.
+      ;(r.ctor as string[]).forEach((line, i) => {
+        const text = spellLayout(line, layout)
+        const cs = readCalls(N, text, member)
+        if (!line.includes('{ctor}') && 0 === cs.length) return
+        if (0 === cs.length) return add('ctor', `ref.facts.ctor[${i}]: ${JSON.stringify(text)} does not call ${member}`)
+        if (0 < ctorDecls.length && cs.every((c) => judge(`ref.facts.ctor[${i}]`, null, c, ctorDecls, text, classCall))) verified.add(`ref.facts.ctor[${i}]`)
+      })
+      // Test constructors and the reference's other constructors.
+      const calledAs = (where: string, path: string, call: string, sigText: string) => {
+        const name = spell(sigName(sigText))
+        const decls = findDecls(forms, client, pattern(sigName(sigText)))
+        const text = spellLayout(spell(call), layout)
+        const cs = readCalls(N, text, name)
+        if (0 === decls.length) return
+        if (0 === cs.length) return add('test', `${where}: ${JSON.stringify(call)} does not call ${name}`)
+        if (cs.every((c) => judge(where, null, c, decls, text))) verified.add(path)
+      }
+      r.test.forEach((x: any, i: number) => calledAs('test', `ref.facts.test[${i}].call`, x.call, x.sig))
+      ;(r.ctorAlts || []).forEach((x: any, i: number) => {
+        const name = sigName(x.call) || (/([\w{}$]+)\s*(?:\(|\s|$)/.exec(x.call.replace(/^.*?(?:\.|::|->)(?=[\w{}$]+\s*(?:\(|\s|$))/, '')) || [])[1]
+        if (null != name) calledAs('ctorAlts', `ref.facts.ctorAlts[${i}].call`, x.call, name + (/\(/.test(x.call) ? '()' : ''))
+      })
+      // Each operation as the call printer prints it: the accessor, then the method.
+      const accDecls = findDecls(forms, client, pattern(forms.tokens.accessor || ''))
+      const ent = desc.entities[0]
+      for (const op of OPS) {
+        const m = (f.method as any)[op]
+        const d = one(read(opSource(forms, op)), m) || one(ops, m)
+        if (null == d) continue
+        const variants = ['list', 'load', 'remove'].includes(op) ? [null, [{ key: 'id', value: { k: 'str', text: 'x' } }]] : [[{ key: 'id', value: { k: 'str', text: 'x' } }]]
+        for (const arg of variants) {
+          let text = ''
+          try {
+            text = S.call({ k: 'call', entity: ent, op, arg, bind: { role: 'one', entity: ent, name: ent.sym.var }, wide: false },
+              desc, scope(), { inAttempt: false, last: false }).join('\n')
+          }
+          catch (e: any) { add('arity', `the call printer throws for ${op}: ${e.message}`); continue }
+          const cs = readCalls(N, text, m, [ent.sym.var])
+          if (0 === cs.length) add('arity', `the call printer prints ${op} as ${JSON.stringify(text)}, which calls no ${m}`)
+          for (const c of cs) judge(`op ${op}`, null, c, [d], text)
+          if (0 < accDecls.length) for (const c of readCalls(N, text, ent.sym.accessor, [ent.sym.var])) judge(`op ${op} accessor`, null, c, accDecls, text)
+        }
+      }
+    }
   }
 
   // The call a provider prints for an operation carries what calling a
@@ -597,6 +722,66 @@ function printRecord(S: any): string | null {
 }
 
 
+// The naming hook, called on a probe model with names left as the templates
+// spell them, as the guard reads the runtime.
+const PROBE_MODEL = { name: 'demo', const: { Name: 'Demo' }, main: { kit: { info: {}, target: {}, entity: {} } } }
+
+function namingOf(t: string): { layout: any, symbols: (e: any) => any, problem?: string } {
+  const p = Path.join(STAGE, t, 'Naming_' + t + '.js')
+  if (!Fs.existsSync(p)) return { layout: null, symbols: () => ({}), problem: `no naming hook Naming_${t}` }
+  try {
+    const n = require(p).Naming(PROBE_MODEL, { name: t }, (x: string) => x)
+    return { layout: n.layout, symbols: n.symbols }
+  }
+  catch (e: any) {
+    return { layout: null, symbols: () => ({}), problem: `the naming hook throws on a probe model: ${e.message}` }
+  }
+}
+
+function probeDesc(hook: { layout: any, symbols: (e: any) => any }): any {
+  let sym: any = {}
+  try { sym = hook.symbols({ name: 'planet', Name: 'Planet', op: {}, field: {} }) || {} }
+  catch (e: any) { sym = {} }
+  const ent = { ...PROBE_ENT, className: 'PlanetEntity', sym: { ...PROBE_ENT.sym, ...sym, plural: 'planets' }, fields: [], ops: OPS }
+  return { layout: { ...hook.layout, vars: { ...(hook.layout.vars || {}) } }, entities: [ent], quick: null, options: [], template: {}, name: 'demo', Name: 'Demo' }
+}
+
+const scope = () => ({ declared: new Set(), local: new Set(), stmts: [], section: [], standalone: false })
+
+// The imports a provider prints: its imports printer, else what its program
+// printer puts ahead of the steps.
+function importsOf(S: any, desc: any): string {
+  const used = { env: false, field: false, print: false, entities: [desc.entities[0].name] }
+  try {
+    if (null != S.imports) return S.imports(desc, used).join('\n')
+    if (null != S.program) return S.program([], desc, { ...scope(), section: [] }).join('\n')
+  }
+  catch (e: any) {
+    return ''
+  }
+  return ''
+}
+
+// Whether a call's qualifier is a name the imports bind, or the client type
+// or module itself.
+function boundBy(imports: string, recv: string, own: string[]): boolean {
+  const head = (/^\(?\s*\$?([A-Za-z_][\w$]*)/.exec(recv) || [])[1] || recv
+  if (own.filter((x) => null != x).some((x) => x === head || x === recv || x.split(/\.|::/)[0] === head)) return true
+  const h = esc(head)
+  return new RegExp(`\\b(?:local|const|let|var|my)\\s+${h}\\b|\\bas:?\\s+${h}\\b|import\\s*\\{[^}]*\\b${h}\\b|\\bimport\\s+${h}\\b|\\buse\\s+[\\w:]*\\b${h}\\b|:as\\s+${h}\\b|from\\s+\\S+\\s+import\\s+[^\\n]*\\b${h}\\b|^\\s*${h}\\s+"`, 'm').test(imports)
+}
+
+// A line of the page with its layout names, as the page spells it.
+function spellLayout(line: string, layout: any): string {
+  return line.replace(/\{ctor\}/g, layout.ctor).replace(/\{module\}/g, layout.module).replace(/\{client\}/g, layout.client)
+}
+
+function arity(forms: Forms, params: string[]): string {
+  const req = params.filter((p) => !forms.optional(p)).length
+  return req === params.length ? `${req} argument(s)` : `${req} to ${params.length} argument(s)`
+}
+
+
 function full(t: string, S: any, forms: Forms) {
   const res = check(t, S, forms)
   const acc = account(t, S, forms, res.verified)
@@ -821,8 +1006,11 @@ const CONTROLS: Control[] = [
       const re = new RegExp('(?:[\\w{}$]+\\s*(?:\\.|::|->|/))?' + esc(n), 'g')
       const all = [...x.call.matchAll(re)]
       if (0 === all.length) return false
+      // On the client, through the separator the language calls an instance member with.
+      const sep = null == forms.calls ? '.' : (forms.calls.on.instance || [])[0]
+      if (null == sep) return false
       const last = all[all.length - 1]
-      x.call = x.call.slice(0, last.index) + 'client.' + n + x.call.slice((last.index as number) + last[0].length)
+      x.call = x.call.slice(0, last.index) + 'client' + sep + n + x.call.slice((last.index as number) + last[0].length)
       return true
     },
   },

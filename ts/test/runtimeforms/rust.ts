@@ -45,6 +45,8 @@ const forms: Forms = {
     return null == m ? { name: rec } : { name: m[1], arity: '' === m[2] ? 0 : m[2].split(',').length }
   },
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'new', accessor: '${method}' },
+  // How a call is written: `.` on a value, `::` on the type or a module.
+  calls: { on: { instance: ['.'], type: ['::'], module: ['::'] } },
   types: { column: 'rust' },
 
   // The porter's, from here on.

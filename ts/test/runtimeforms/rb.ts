@@ -62,6 +62,8 @@ const forms: Forms = {
   sigParams: (sig) => sig.includes('(') ? defaultSigParams(sig) : [],
   sigReturns: (sig) => sig.includes('(') ? defaultSigReturns(sig) : ((/->\s*(.+)$/.exec(sig) || [])[1] || '').trim(),
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'ProjectNameSDK.new', accessor: '${entity.Name}' },
+  // How a call is written: `.` for every member, parentheses optional; `new` runs `initialize`.
+  calls: { on: { instance: ['.'], type: ['.'] }, parenless: true, ctor: { new: 'initialize' } },
   types: { column: 'rb' },
 
   // The porter's, from here on.
@@ -103,6 +105,9 @@ const forms: Forms = {
   on: (d) => 'initialize' === d.name || /def self\./.test(d.head) ? 'type' : 'instance',
   field: () => false,
   parenless: true,
+  // Every public member is a method: written with or without parentheses, a
+  // name is a call, so the field-or-call check has no field to find.
+  called: () => true,
   returnsFrom: () => 'comment',
   stream: {
     file: "src/cmp/rb/fragment/Entity.fragment.rb",

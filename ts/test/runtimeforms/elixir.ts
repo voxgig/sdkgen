@@ -47,6 +47,8 @@ const forms: Forms = {
   },
   sigName: (sig) => (/(?:^|[.\s])([a-z_{][\w{}]*)\s*\(/.exec(sig.replace(/^\{module\}\./, '')) || [])[1] || '',
   tokens: { Class: 'EntyClass', client: 'ProjectName', sdk: 'ProjectName', ctor: 'new', module: 'ProjectName', accessor: '${accessor}' },
+  // How a call is written: `Module.fun(...)`, the entity or client passed first.
+  calls: { on: { module: ['.'] } },
   types: { column: 'elixir' },
 
   // The porter's, from here on.

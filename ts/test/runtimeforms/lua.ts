@@ -53,6 +53,8 @@ const forms: Forms = {
   style: { exception: 'throw', raises: /\berror\(/, pair: (d) => /^\S+, err$/.test(d.returns) },
   record: (rec) => ({ name: (/(\w+)\(\)$/.exec(rec) || [])[1] || rec }),
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'new', accessor: '${entity.Name}' },
+  // How a call is written: `:` for a method, which passes the table as self; `.` for a function on the table.
+  calls: { on: { instance: [':'], type: ['.'], module: ['.'] } },
   types: { column: 'lua' },
   uncompared: {
     paramTypes: 'lua declares no parameter types',
