@@ -804,6 +804,20 @@ function namingOf(t: string): { layout: any, symbols: (e: any) => any, problem?:
   }
 }
 
+// Whether the hook spells its constructor through tm (a template name) or
+// otherwise (a literal, or a generator function): the reviewer reads the latter.
+function ctorSource(t: string): string {
+  const p = Path.join(STAGE, t, 'Naming_' + t + '.js')
+  if (!Fs.existsSync(p)) return '(no hook)'
+  try {
+    const ctor = String(require(p).Naming(PROBE_MODEL, { name: t }, (x: string) => '\u0001' + x).layout.ctor)
+    return ctor.includes('\u0001') ? 'a template name, through tm' : 'not through tm: a hook literal or a generator function'
+  }
+  catch (e: any) {
+    return 'the hook throws: ' + e.message
+  }
+}
+
 function probeDesc(hook: { layout: any, symbols: (e: any) => any }): any {
   let sym: any = {}
   try { sym = hook.symbols({ name: 'planet', Name: 'Planet', op: {}, field: {} }) || {} }
@@ -1214,6 +1228,6 @@ function set(S: any, path: string, v: any) {
 
 
 export {
-  CONTROLS, FAMILY, FORMS, FORMS_SRC, FRAMEWORK, PROVIDERS, RUNS, check, clone, fitsOn, formsOf, full, printCall, receiver,
+  CONTROLS, FAMILY, FORMS, FORMS_SRC, FRAMEWORK, PROVIDERS, RUNS, check, clone, ctorSource, fitsOn, formsOf, full, namingOf, printCall, receiver,
   streamClaims, streamItems, syntaxOf,
 }
