@@ -48,6 +48,8 @@ const forms: Forms = {
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
   // What the table states besides names, parameters and returns.
   testDecl: 'testSDK',
+  // A def with no parameter list is still a method; only val and var are fields.
+  field: (d) => /\b(val|var)\s/.test(d.head),
   on: (d) => 'ProjectNameSDK' === d.name || 'EntyClass' === d.name || /\nobject \w+ \{/.test(d.before) ? 'type' : 'instance',
   expect: { testSDK: { on: 'type' } },
   stream: {
