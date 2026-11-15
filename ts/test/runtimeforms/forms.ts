@@ -15,7 +15,16 @@ type Decl = {
   rest: string
   file: string
   bare?: boolean // declared with no parameter list: a property or field
+  // Filled from the forms after reading (see dims): what the member is called
+  // on, whether it is a field rather than something called, how a failure
+  // shows in the declaration, and whether the return was read from a comment.
+  on: On
+  field: boolean
+  fails: string
+  from: 'code' | 'comment'
 }
+
+type On = 'instance' | 'type' | 'module'
 
 type Src = { file: string, text: string }
 
@@ -31,10 +40,30 @@ type Family =
 // that no quote holds, and why the fact still stands.
 // `value`: what was audited, for a fact no quote can hold (prose, a boolean,
 // a kind); the fact must still be it.
+// `absent`: a fact that something is not there, shown by a search that must
+// match nothing in the named runtime files (a directory names every file under it).
 type Citation = {
   file: string, quote: string | string[], value?: any
   also?: { file: string, quote: string | string[] }[]
   unquoted?: Record<string, string>
+} | {
+  absent: { pattern: RegExp, files: string[] }, value: any
+}
+
+// Where a stream's items come from, read off its implementation by position:
+// `construct` builds what the caller iterates (a generator's own head where the
+// function is one; the final return where nothing is deferred), `run` starts
+// the operation, `draw` takes the streaming feature's items. A quote before the
+// construct runs before the stream returns.
+type StreamItems = {
+  file: string
+  construct: string
+  starts: 'at call' | 'on iteration'
+  run: string
+  draw: string
+  // What the table states; must equal what the positions give.
+  runs: string
+  items: string
 }
 
 type Forms = {
@@ -48,7 +77,7 @@ type Forms = {
   // For a runtime whose parameters are not a bracketed list after the name
   // (perl's `my (...) = @_`, ocaml's arrows): the parameters and the return,
   // from the source after the match.
-  declReader?: (after: string) => { params: string[], returns?: string } | null
+  declReader?: (after: string) => { params: string[], returns?: string, field?: boolean } | null
   optional: (param: string) => boolean
   // `rest`: the source after the parameter list, for a return on a later line.
   returns: (after: string, before: string, head: string, rest: string) => string
@@ -72,6 +101,30 @@ type Forms = {
   entityCtor?: string
   // The client constructor's declaration, where it is not spelled as {ctor}.
   ctorDecl?: string
+  // The test constructor's declaration (default: members.tester).
+  testDecl?: string
+
+  // What a declaration is called on (default: the type for a constructor's
+  // name or a `static` head, else an instance).
+  on?: (d: Decl) => On
+  // Whether a declaration is a field or property rather than called (default: bare).
+  field?: (d: Decl) => boolean
+  // How a failure shows in a declaration, '' where it does not.
+  fails?: (d: Decl) => string
+  // Where the runtime's operations show a failure in their declaration: the
+  // word they show, and the word a call to them needs ('' when none).
+  failure?: { shows: string, call: string }
+  // A call may be written without a parameter list (rb), so a signature
+  // without one is not a field.
+  parenless?: boolean
+  // Whether a declaration's return was read from a comment.
+  returnsFrom?: (d: Decl) => 'code' | 'comment'
+  stream?: StreamItems
+  // What the forms' author read off the runtime for named declarations; the
+  // reader requires the same, so a changed runtime or a changed reading fails.
+  expect?: Record<string, Partial<{ on: On, field: boolean, fails: string }>>
+  // Facts the table states that no declaration shows, cited.
+  shows?: Record<string, Citation>
 
   style: {
     exception: 'throw' | 'raise' | 'die'
@@ -167,6 +220,18 @@ function splitParams(inner: string, how: 'comma' | 'space' = 'comma'): string[] 
 }
 
 
+const CTOR_NAMES = /^(constructor|__init__|__construct|initialize|init|new|EntyClass|ProjectNameSDK)$/
+
+// The dimensions a page states besides name, parameters and return.
+function dims(forms: Forms, d: Omit<Decl, 'on' | 'field' | 'fails' | 'from'> & Partial<Decl>): Decl {
+  const x = d as Decl
+  x.field = null != forms.field ? forms.field(x) : !!x.bare
+  x.on = null != forms.on ? forms.on(x) : (CTOR_NAMES.test(x.name) || /\bstatic\b/.test(x.head) ? 'type' : 'instance')
+  x.fails = null != forms.fails ? forms.fails(x) : ''
+  x.from = null != forms.returnsFrom ? forms.returnsFrom(x) : 'code'
+  return x
+}
+
 function findDecls(forms: Forms, files: Src[], name: string): Decl[] {
   const out: Decl[] = []
   const re = new RegExp(forms.decl(name).source, 'gm')
@@ -178,7 +243,7 @@ function findDecls(forms: Forms, files: Src[], name: string): Decl[] {
       if (forms.declReader) {
         const r = forms.declReader(rest)
         if (null == r) continue
-        out.push({ name, params: r.params, returns: (r.returns || '').trim(), head: m[0], before, rest, file })
+        out.push(dims(forms, { name, params: r.params, returns: (r.returns || '').trim(), head: m[0], before, rest, file, bare: r.field }))
         continue
       }
       const b = bracketed(text, at, forms.open || '(')
@@ -187,10 +252,10 @@ function findDecls(forms: Forms, files: Src[], name: string): Decl[] {
       let params = null == b ? [] : splitParams(b.inner, forms.split)
       if (forms.receiver && 0 < params.length && forms.receiver.test(params[0])) params = params.slice(1)
       const after = text.slice(end, end + 200).split('\n')[0]
-      out.push({
+      out.push(dims(forms, {
         name, params, returns: forms.returns(after, before, m[0], text.slice(end, end + 400)).trim(), head: m[0], before, rest, file,
         bare: null == b,
-      })
+      }))
     }
   }
   return out
@@ -310,8 +375,9 @@ function view(forms: Forms): View {
 }
 
 
-export type { Citation, Decl, Family, Forms, OpName, Shape, Src, Style, View }
+export type { Citation, Decl, Family, Forms, On, OpName, Shape, Src, StreamItems, Style, View }
 export {
+  CTOR_NAMES,
   OPS,
   SCAFFOLD,
   bracketed,

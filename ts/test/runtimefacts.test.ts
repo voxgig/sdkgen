@@ -9,7 +9,7 @@ import { ok, deepStrictEqual } from 'node:assert'
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 
-import { account, tally } from './runtimeforms/account'
+import { account, occurrences, tally } from './runtimeforms/account'
 import { CONTROLS, FORMS, FORMS_SRC, PROVIDERS, check, clone, formsOf, full, syntaxOf } from './runtimeforms/guard'
 
 
@@ -74,9 +74,11 @@ describe('runtimefacts', () => {
         `; types: ${null == forms.types.column ? 'printer total only (' + forms.types.reason + ')' : 'column ' + forms.types.column}` +
         `; uncompared ${Object.entries(res.uncompared).filter(([, v]) => 0 < v).map(([k, v]) => `${k} ${v} (${(forms.uncompared as any)?.[k]})`).join(', ') || 'none'}`)
       for (const c of res.account.cited) {
-        lines.push(`  cited${c.prose ? ' (prose: audit only)' : ''} ${c.path} = ${JSON.stringify(c.value)}\n    ${c.file}: ${JSON.stringify(c.quote)}`)
+        lines.push(`  cited${c.absence ? ' (absence: searched)' : c.prose ? ' (prose: audit only)' : ''} ${c.path} = ${JSON.stringify(c.value)}\n    ${c.file}: ${JSON.stringify(c.quote)}` +
+          c.unquoted.map((u) => `\n    unquoted ${u} [the runtime has it in ${occurrences(t, u.split(':')[0]).length} file(s)]`).join(''))
       }
       for (const x of res.account.excepted) lines.push(`  excepted ${x.path}: ${x.reason}`)
+      for (const x of res.account.ahead) lines.push(`  cited ahead of a declaration ${x.path} = ${JSON.stringify(x.value)}`)
       // One line per declared leaf, for a reviewer's fact sheet.
       const cites = new Map(res.account.cited.map((c) => [c.path, c.file]))
       for (const [p, c] of Object.entries(res.account.category)) {
