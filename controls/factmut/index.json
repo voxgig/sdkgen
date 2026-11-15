@@ -39,7 +39,41 @@
    "lang": "py",
    "fact": "ref.keys",
    "change": "ref.facts.keys 'member' -> 'bare' (an enumeration)",
-   "files": 19
+   "files": 19,
+   "regenerated": "v3.3 n-tools: pages from the v33p clone through enumgen.js (the v3.2 pages differed from v33p in shared wording too, which the minimal pair counts)"
+  },
+  {
+   "id": "perl-prints-record",
+   "round": "R4",
+   "lang": "perl",
+   "fact": "prints",
+   "change": "prints 'fields' -> 'record'",
+   "files": 51,
+   "why": "T4: the reviewers' attack; the v3.3 sheet called it ATTESTED"
+  },
+  {
+   "id": "ocaml-keys-member",
+   "round": "R4",
+   "lang": "ocaml",
+   "fact": "ref.keys",
+   "change": "ref.facts.keys 'bare' -> 'member' (back to the OLD page's convention)",
+   "files": 19,
+   "why": "T4: the reviewers' attack; the v3.3 sheet called it ATTESTED; the OLD page reads as the mutated value, so only the reviewed decision (a hand fact record) catches it: reviewed mode only",
+   "modes": [
+    "reviewed"
+   ]
+  },
+  {
+   "id": "swift-entityby-name",
+   "round": "R4",
+   "lang": "swift",
+   "fact": "ref.entityBy",
+   "change": "ref.facts.entityBy 'class' -> 'Name' (back to the OLD page's convention)",
+   "files": 18,
+   "why": "T4: the reviewers' attack; the v3.3 sheet called it ATTESTED; the OLD page reads as the mutated value, so only the reviewed decision (a hand fact record) catches it: reviewed mode only",
+   "modes": [
+    "reviewed"
+   ]
   }
  ],
  "moved": [

@@ -36,9 +36,10 @@ Create a new SDK client instance. `options` is a `dict` map
 
 #### `DemoSDK.test(testopts=None, sdkopts=None)`
 
-Create a test client with mock features active. `testopts` are the test
-feature's options and `sdkopts` further client options, merged over the
-test defaults; both may be `None`. It returns a client in test mode.
+Create a test client with mock features active. The first argument holds
+the test feature's options and the second further client options, merged
+over the test defaults; both may be `None`. It returns a client in test
+mode.
 
 ```python
 client = DemoSDK.test()
@@ -49,33 +50,33 @@ client = DemoSDK.test()
 
 #### `Console(data=None)`
 
-Create a new `ConsoleEntity` instance. Pass `None` for no initial
-options.
+Create a new `ConsoleEntity` instance. Its `data` argument holds the
+entity options: pass `None` for none.
 
 #### `GraphQl(data=None)`
 
-Create a new `GraphQlEntity` instance. Pass `None` for no initial
-options.
+Create a new `GraphQlEntity` instance. Its `data` argument holds the
+entity options: pass `None` for none.
 
 #### `History(data=None)`
 
-Create a new `HistoryEntity` instance. Pass `None` for no initial
-options.
+Create a new `HistoryEntity` instance. Its `data` argument holds the
+entity options: pass `None` for none.
 
 #### `Planet(data=None)`
 
-Create a new `PlanetEntity` instance. Pass `None` for no initial
-options.
+Create a new `PlanetEntity` instance. Its `data` argument holds the
+entity options: pass `None` for none.
 
 #### `Record(data=None)`
 
-Create a new `RecordEntity` instance. Pass `None` for no initial
-options.
+Create a new `RecordEntity` instance. Its `data` argument holds the
+entity options: pass `None` for none.
 
 #### `Utility(data=None)`
 
-Create a new `UtilityEntity` instance. Pass `None` for no initial
-options.
+Create a new `UtilityEntity` instance. Its `data` argument holds the
+entity options: pass `None` for none.
 
 #### `options_map() -> dict`
 
@@ -169,8 +170,9 @@ options.
 
 #### `stream(action, args=None, callopts=None)`
 
-Run an operation through the pipeline and yield its result items as
-they arrive, as a generator.
+Run an operation through the pipeline and yield its result items as a
+generator. The operation runs when iteration starts, not when the call
+returns.
 
 #### `get_name() -> str`
 
@@ -231,8 +233,9 @@ options.
 
 #### `stream(action, args=None, callopts=None)`
 
-Run an operation through the pipeline and yield its result items as
-they arrive, as a generator.
+Run an operation through the pipeline and yield its result items as a
+generator. The operation runs when iteration starts, not when the call
+returns.
 
 #### `get_name() -> str`
 
@@ -293,8 +296,9 @@ options.
 
 #### `stream(action, args=None, callopts=None)`
 
-Run an operation through the pipeline and yield its result items as
-they arrive, as a generator.
+Run an operation through the pipeline and yield its result items as a
+generator. The operation runs when iteration starts, not when the call
+returns.
 
 #### `get_name() -> str`
 
@@ -413,8 +417,9 @@ options.
 
 #### `stream(action, args=None, callopts=None)`
 
-Run an operation through the pipeline and yield its result items as
-they arrive, as a generator.
+Run an operation through the pipeline and yield its result items as a
+generator. The operation runs when iteration starts, not when the call
+returns.
 
 #### `get_name() -> str`
 
@@ -475,8 +480,9 @@ options.
 
 #### `stream(action, args=None, callopts=None)`
 
-Run an operation through the pipeline and yield its result items as
-they arrive, as a generator.
+Run an operation through the pipeline and yield its result items as a
+generator. The operation runs when iteration starts, not when the call
+returns.
 
 #### `get_name() -> str`
 
@@ -537,8 +543,9 @@ options.
 
 #### `stream(action, args=None, callopts=None)`
 
-Run an operation through the pipeline and yield its result items as
-they arrive, as a generator.
+Run an operation through the pipeline and yield its result items as a
+generator. The operation runs when iteration starts, not when the call
+returns.
 
 #### `get_name() -> str`
 

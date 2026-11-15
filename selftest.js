@@ -193,6 +193,8 @@ if (want('facts')) {
   }
   let i = 0
   for (const m of idx) for (const mode of MODES) {
+    // a control that only a decision can catch runs in the reviewed mode only (index.json `modes`)
+    if (m.modes && !m.modes.includes(mode)) continue
     i++
     // the output under test with the mutated language's files laid over it
     const R = Path.join(TMP, 'fm-' + m.id)

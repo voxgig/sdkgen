@@ -173,11 +173,21 @@ function main() {
   }
   // enumerated facts: against the sentences the reference languages print under each value
   const enumRows = rows.filter((r) => r.enum && ATTEST_ACCOUNT.test(r.account))
-  if (enumRows.length) attestEnums(enumRows, { a, ts, lang, sections, vars, allPairs })
-  for (const r of rows) if (r.attest && 'UNATTESTED' === r.attest.status) {
-    const h = handFacts[r.path]
+  if (enumRows.length) attestEnums(enumRows, { a, ts, lang, sections, vars, allPairs, cache: a['enum-cache'] || Path.join(__dirname, 'review', 'enum') })
+  for (const r of rows) if (r.attest && ('UNATTESTED' === r.attest.status || (r.enum && 'not judged' === r.attest.status))) {
+    // a record may name the fact as the guard does (ref.facts.entityBy) or as the sheet does (ref.entityBy)
+    const h = handFacts[r.path] || handFacts[leafPath(r.path)]
     if (h && JSON.stringify(h.value) === JSON.stringify(r.value) && ['why', 'evidence'].every((k) => h[k] && String(h[k]).trim())) r.attest.status = 'RECORDED'
     else if (h) r.attest.handProblem = JSON.stringify(h.value) !== JSON.stringify(r.value) ? `hand record is for ${JSON.stringify(h.value)}` : 'hand record needs "why" and "evidence"'
+  }
+  // A value a person decided (hand/<lang>.json facts) is the value: a provider
+  // declaring another fails, whatever the OLD page says. This is what catches
+  // a value moved back to the OLD page's convention (ocaml keys 'bare' ->
+  // 'member', swift entityBy 'class' -> 'Name'), which the page comparison
+  // attests. Not from scratch: no decision is read there.
+  for (const r of rows) {
+    const h = handFacts[r.path] || handFacts[leafPath(r.path)]
+    if (h && 'value' in h && JSON.stringify(h.value) !== JSON.stringify(r.value)) r.attest = { status: 'UNATTESTED', detail: `hand/${lang}.json decided ${JSON.stringify(h.value)} (${String(h.why || '').slice(0, 80)}); the provider now declares ${JSON.stringify(r.value)}`, ex: r.attest && r.attest.ex }
   }
   for (const r of rows) {
     const at = r.attest ? ` | ${r.attest.status}${r.attest.detail ? ' (' + r.attest.detail + ')' : ''}${r.attest.handProblem ? '; ' + r.attest.handProblem : ''}` : ''
@@ -201,14 +211,15 @@ function main() {
   const att = rows.filter((r) => r.attest)
   const byAtt = {}
   for (const r of att) byAtt[r.attest.status] = (byAtt[r.attest.status] || 0) + 1
-  const unatt = att.filter((r) => 'UNATTESTED' === r.attest.status)
+  // an enumeration not judged fails as an unattested one does: a value the tools cannot judge is a person's to decide
+  const unatt = att.filter((r) => 'UNATTESTED' === r.attest.status || (r.enum && 'not judged' === r.attest.status))
   const pinned = Object.entries(G.cited).filter(([, c]) => c.prose).map(([p]) => p)
   L.push('', `# ${rows.length} facts (${Object.entries(byAcc).map(([k, v]) => k + ' ' + v).join(', ')}), ${Object.keys(F.notes).length} notes; ${noAccount} with no account; ${rows.filter((r) => r.enum).length} enumerations; ${rows.filter((r) => !r.enum && 0 === r.n).length} printed facts substituted in no unit of these sections`)
   L.push(`# language and convention facts compared with the OLD page: ${att.length} (${Object.entries(byAtt).map(([k, v]) => k + ' ' + v).join(', ') || 'none'})${unatt.length ? '; UNATTESTED: ' + unatt.map((r) => r.path + ' = ' + JSON.stringify(r.value)).join(', ') : ''}`)
   L.push(`# cited facts ${Object.keys(G.cited).length}, of which PINNED prose ${pinned.length} (audit each): ${pinned.join(', ')}`)
   const file = Path.join(a.out, lang, 'facts.txt')
   K.writeFile(file, L.join('\n') + '\n')
-  const summary = { lang, facts: rows.length, noAccount, attestation: byAtt, unattested: unatt.map((r) => ({ path: r.path, value: r.value, account: r.account, enum: r.enum, detail: r.attest.detail, ex: r.attest.ex || null, handProblem: r.attest.handProblem || null })), cited: Object.keys(G.cited).length, pinned, override: F.override || null, scratch: !!a.scratch }
+  const summary = { lang, facts: rows.length, noAccount, attestation: byAtt, unattested: unatt.map((r) => ({ status: r.attest.status, path: r.path, value: r.value, account: r.account, enum: r.enum, detail: r.attest.detail, ex: r.attest.ex || null, handProblem: r.attest.handProblem || null })), cited: Object.keys(G.cited).length, pinned, override: F.override || null, scratch: !!a.scratch }
   K.writeFile(Path.join(a.out, lang, 'facts.json'), JSON.stringify(summary, null, 1) + '\n')
   console.log(`factsheet ${lang}: ${rows.length} facts, ${noAccount} with no account, ${unatt.length} unattested${unatt.length ? ' (' + unatt.map((r) => r.path).join(', ') + ')' : ''}, guard report ${G.ran ? 'read' : 'not available'} -> ${file}`)
   // A fact with no account is a fact nobody checked; an unattested one is a
@@ -246,47 +257,137 @@ function attestValue(row, labs, allPairs) {
   }
 }
 
-// Enumerated facts: which sentences a value selects is read off the
-// reference languages (ported.json for the section, less this one).
+// Enumerated facts, judged by a MINIMAL PAIR. The sentences and blocks a
+// value selects are the units of this language's pages that change when that
+// fact alone takes another value (enumgen.js generates them from the clone's
+// own provider, the fact set in memory). Each differing unit is set beside
+// the OLD unit paired with it, and only the tokens that tell the two values'
+// units apart are compared: OLD holds the value when it carries more of this
+// value's own tokens than of the other's; it contradicts it the other way.
+//   ATTESTED: held more often than contradicted;
+//   UNATTESTED: otherwise contradicted (the OLD page reads as another value);
+//   not judged: units differ but none has an OLD unit to compare with, or no
+//     other value exists to compare: FAILS, like UNATTESTED, until
+//     hand/<lang>.json records the fact at its value (why, evidence);
+//   not printed: no unit of these pages depends on it.
+// Why the cross-language reading it replaces passed wrong values: it took as
+// "selected" every unit some reference of the same value printed and no
+// reference of another value printed (mostly units the fact has nothing to do
+// with), and called the fact attested on ONE such unit paired identically
+// with OLD; perl `prints: record`, ocaml `keys: member` and swift `entityBy`
+// were each attested that way (hundreds of units, a few identical).
+function enumDomain(ts, path) {
+  const dir = Path.join(ts, 'dist-test-scaffold/.sdk/dist/cmp')
+  const vals = new Set()
+  if (!Fs.existsSync(dir)) return vals
+  for (const l of Fs.readdirSync(dir)) {
+    const f = Path.join(dir, l, 'Syntax_' + l + '.js')
+    if (!Fs.existsSync(f)) continue
+    try { const F = Facts.load(ts, l); const x = F.facts.find((y) => y.path === path); if (x && 'string' === typeof x.value) vals.add(x.value) } catch (e) { }
+  }
+  return vals
+}
+
+function enumPages(ctx, path, value) {
+  const { ts, lang } = ctx
+  const dir = Path.join(ctx.cache, lang, path + '=' + value)
+  const prov = Path.join(ts, 'dist-test-scaffold/.sdk/dist/cmp', lang, 'Syntax_' + lang + '.js')
+  const st = (f) => { try { const x = Fs.statSync(f); return x.size + ':' + x.mtimeMs } catch (e) { return '-' } }
+  const stamp = JSON.stringify({ ts, prov: st(prov), dist: st(Path.join(ts, 'dist', 'sdkgen.js')), ref: st(Path.join(ts, 'dist', 'cmp', 'ReadmeRef.js')), quick: st(Path.join(ts, 'dist', 'cmp', 'ReadmeQuick.js')), gen: st(Path.join(__dirname, 'enumgen.js')) })
+  const sf = Path.join(dir, '.stamp')
+  if (Fs.existsSync(sf) && Fs.readFileSync(sf, 'utf8') === stamp) return Fs.existsSync(Path.join(dir, '.failed')) ? null : dir
+  Fs.rmSync(dir, { recursive: true, force: true })
+  Fs.mkdirSync(dir, { recursive: true })
+  const t0 = Date.now()
+  try { CP.execFileSync(process.execPath, [Path.join(__dirname, 'enumgen.js'), dir, ts, lang, path, value], { stdio: 'pipe', maxBuffer: 1 << 26 }) }
+  catch (e) { Fs.writeFileSync(Path.join(dir, '.failed'), String(e.stderr || e.message).split('\n').find((l) => /Error:/.test(l)) || 'generation failed'); Fs.writeFileSync(sf, stamp); return null }
+  console.error(`[factsheet ${lang}] generated ${path}=${value} in ${((Date.now() - t0) / 1000).toFixed(0)}s (cached in ${dir})`)
+  Fs.writeFileSync(sf, stamp)
+  return dir
+}
+
+// Tokens that tell two renderings apart: code spans whole, words with the
+// punctuation of a call or a member (`list()`, `->{id}`), other marks alone.
+const etoks = (t) => (String(t).match(/`[^`]*`|[\w$:@%>{}.\-]+(?:\(\))?|\S/g) || []).filter((x) => /[A-Za-z]/.test(x))
+function minus(a, b) { const m = new Map(); for (const x of b) m.set(x, (m.get(x) || 0) + 1); const out = []; for (const x of a) { if (m.get(x)) m.set(x, m.get(x) - 1); else out.push(x) } return out }
+// +1: OLD holds this value's own tokens, not the other's; -1: the reverse; 0: neither, or both
+function side(oldText, mine, theirs) {
+  if (oldText === mine) return 1
+  if (null != theirs && oldText === theirs) return -1
+  const O = new Set(etoks(oldText)), A = etoks(mine), Bt = null == theirs ? [] : etoks(theirs)
+  const da = minus(A, Bt), db = minus(Bt, A)
+  const ha = da.length ? da.filter((x) => O.has(x)).length / da.length : 0, hb = db.length ? db.filter((x) => O.has(x)).length / db.length : 0
+  return ha > hb ? 1 : hb > ha ? -1 : 0
+}
+
+// A block: the lines that tell the two values apart, each looked for whole
+// in the OLD block (a field name or a bracket is in any OLD program, so
+// tokens of whole blocks are no evidence)
+const lnorm = (l) => l.trim().replace(/\s+/g, ' ')
+function sideLines(oldCode, mine, theirs) {
+  const O = new Set(oldCode.split('\n').map(lnorm).filter(Boolean))
+  const A = mine.split('\n').map(lnorm).filter(Boolean), Bt = theirs.split('\n').map(lnorm).filter(Boolean)
+  const da = minus(A, Bt), db = minus(Bt, A)
+  const ha = da.filter((x) => O.has(x)).length, hb = db.filter((x) => O.has(x)).length
+  return ha > hb ? 1 : hb > ha ? -1 : 0
+}
+
 function attestEnums(rows, ctx) {
   const { a, ts, lang, sections, vars, allPairs } = ctx
-  const per = new Map(rows.map((r) => [r.path, { carriers: [], ok: 0, paired: 0, refs: new Set(), ex: null }]))
-  for (const section of sections) {
-    const refs = (C.REG.ported[section] || []).filter((l) => l !== lang)
-    const RF = Object.fromEntries(refs.map((r) => [r, Facts.load(ts, r)]))
-    const RM = Object.fromEntries(refs.map((r) => [r, Facts.masker(RF[r], [a.old, a.new])]))
-    const printed = Object.fromEntries(refs.map((r) => [r, new Set()]))
-    for (const r of refs) for (const v of vars) for (const u of C.units(C.loadSection(a.new, v, section, r))) printed[r].add(u.kind + '\u0000' + RM[r](u.text, u.kind))
-    for (const row of rows) {
-      const valOf = (r) => { const f = RF[r].facts.find((x) => x.path === row.path); return f ? f.value : null }
-      const same = refs.filter((r) => valOf(r) === row.value), other = refs.filter((r) => null != valOf(r) && valOf(r) !== row.value)
-      const P = per.get(row.path)
-      same.forEach((r) => P.refs.add(r))
-      if (!same.length) continue
-      const otherSet = new Set(other.flatMap((r) => [...printed[r]]))
-      const markers = new Set(same.flatMap((r) => [...printed[r]]).filter((k) => !otherSet.has(k)))
-      const otherWords = new Set([...otherSet].flatMap((k) => [...wordsOf(k.split('\u0000')[1])]))
-      const vWords = new Set([...markers].flatMap((k) => [...wordsOf(k.split('\u0000')[1])]).filter((w) => !otherWords.has(w)))
-      for (const p of allPairs.filter((x) => x.section === section)) {
-        if (!markers.has(p.n.kind + '\u0000' + p.m)) continue
-        P.carriers.push(p)
-        if (!p.o) continue
-        P.paired++
-        const ow = wordsOf(p.mo)
-        if (p.o === p.n || p.o.text === p.n.text || [...ow].some((w) => vWords.has(w))) { P.ok++; if (!P.ex) P.ex = { v: p.v, section, old: p.o.text, new: p.n.text } }
+  const B = require('./blocks.js')
+  const byNew = new Map()
+  for (const p of allPairs) { const k = p.v + '\u0000' + p.section + '\u0000' + p.n.kind + '\u0000' + p.n.text; if (!byNew.has(k)) byNew.set(k, p) }
+  for (const row of rows) {
+    const others = [...enumDomain(ts, row.path)].filter((x) => x !== row.value)
+    if (!others.length) { row.attest = { status: 'not judged', detail: 'no other value of this enumeration is declared in the clone, so nothing shows what it selects' }; continue }
+    const tally = { held: 0, contra: 0, fresh: 0, units: 0, blocks: 0 }
+    let exH = null, exC = null
+    const cannot = []
+    for (const w of others) {
+      const W = enumPages({ ts, lang, cache: ctx.cache }, row.path, w)
+      // a value this provider cannot print (it lacks a fact the value needs) selects nothing to compare
+      if (!W) { cannot.push(w); continue }
+      for (const section of sections) for (const v of vars) {
+        const sv = C.loadSection(a.new, v, section, lang), sw = C.loadSection(W, v, section, lang)
+        if (null == sv || null == sw) continue
+        // prose: units of v's page that w's page holds otherwise or not at all
+        const r = Ledger.pairSection(C.units(sv), C.units(sw), (x) => x)
+        const sel = [...r.reworded.map((p) => [p.o, p.n]), ...r.missing.map((u) => [u, null])]
+        for (const [u, uw] of sel) {
+          if (!u.text || !/[A-Za-z]/.test(u.text)) continue
+          tally.units++
+          const p = byNew.get(v + '\u0000' + section + '\u0000' + u.kind + '\u0000' + u.text)
+          const o = p && p.o
+          if (!o) { tally.fresh++; continue }
+          const sd = side(o.text, u.text, uw ? uw.text : null)
+          const ex = { v, section, old: o.text, new: u.text + (uw ? '   [as ' + w + ': ' + uw.text + ']' : '   [as ' + w + ': no such unit]') }
+          if (sd > 0) { tally.held++; exH = exH || ex } else if (sd < 0) { tally.contra++; exC = exC || ex } else tally.fresh++
+        }
+        // blocks: v's block against w's, each beside the OLD block paired with it
+        const so = C.loadSection(a.old, v, section, lang)
+        const Bv = C.blocks(sv), Bw = C.blocks(sw), Bo = so ? C.blocks(so) : []
+        const vw = B.pairBlocks(Bv, Bw), ov = B.pairBlocks(Bo, Bv)
+        const oOf = new Map(ov.pairs.map(([i, j]) => [j, i]))
+        for (const [i, j] of vw.pairs) {
+          if (Bv[i].code === Bw[j].code) continue
+          tally.blocks++
+          const oi = oOf.get(i)
+          if (null == oi) { tally.fresh++; continue }
+          const oc = Bo[oi].code
+          const sd = sideLines(oc, Bv[i].code, Bw[j].code)
+          const ex = { v, section, old: oc.split('\n').find((l, k) => l !== (Bv[i].code.split('\n')[k])) || oc.slice(0, 120), new: (Bv[i].code.split('\n').find((l, k) => l !== (Bw[j].code.split('\n')[k])) || '') + '   [as ' + w + ': ' + (Bw[j].code.split('\n').find((l, k) => l !== (Bv[i].code.split('\n')[k])) || '') + ']' }
+          if (sd > 0) { tally.held++; exH = exH || ex } else if (sd < 0) { tally.contra++; exC = exC || ex } else tally.fresh++
+        }
       }
     }
-  }
-  for (const row of rows) {
-    const P = per.get(row.path)
-    if (!P.refs.size) { row.attest = { status: 'not judged', detail: 'no reference language declares this value: every sentence it selects is new to the references and left for a person' }; continue }
-    if (!P.carriers.length) { row.attest = { status: 'not printed', detail: `prints none of the sentences only ${[...P.refs].join(', ')} (the same value) print` }; continue }
-    const first = P.carriers.find((p) => p.o) || P.carriers[0]
-    row.attest = {
-      status: P.ok ? 'ATTESTED' : 'UNATTESTED',
-      detail: P.ok ? `${P.ok} of ${P.carriers.length} units it selects (as ${[...P.refs].join(', ')}) pair with OLD units that use them` : `${P.carriers.length} units it selects (the sentences of ${[...P.refs].join(', ')}); ${P.paired} paired with OLD units, none identical or using a word only this value's sentences use`,
-      ex: P.ex || { v: first.v, section: first.section, old: first.o ? first.o.text : '(added)', new: first.n.text },
-    }
+    const what = `minimal pair against ${others.filter((x) => !cannot.includes(x)).join(', ') || 'no value'}${cannot.length ? ' (' + cannot.join(', ') + ': this provider cannot print it)' : ''}: ${tally.units} prose units and ${tally.blocks} blocks differ; OLD reads as ${row.value} in ${tally.held}, as another value in ${tally.contra}, has nothing to compare in ${tally.fresh}`
+    if (!tally.units && !tally.blocks) row.attest = { status: 'not printed', detail: `${what}: no unit of these pages depends on it` }
+    // held outnumbers contradicted: the OLD page reads mostly as this value
+    // (OLD pages were not consistent: ts wrote "`Ambient` entity instance" in
+    // one place and the class in others), so a mixed one says so
+    else if (tally.held > tally.contra) row.attest = { status: 'ATTESTED', detail: what + (tally.contra ? ' (mixed)' : ''), ex: exH }
+    else if (tally.contra) row.attest = { status: 'UNATTESTED', detail: what + (tally.held ? ' (mixed: a person reads it)' : ''), ex: exC }
+    else row.attest = { status: 'not judged', detail: `${what}: the units it selects have no OLD counterpart; a person decides (hand/${lang}.json facts)` }
   }
 }
 

@@ -36,9 +36,10 @@ Create a new SDK client instance. `options` is a `dict` map
 
 #### `DemoSDK.test(testopts=None, sdkopts=None)`
 
-Create a test client with mock features active. `testopts` are the test
-feature's options and `sdkopts` further client options, merged over the
-test defaults; both may be `None`. It returns a client in test mode.
+Create a test client with mock features active. The first argument holds
+the test feature's options and the second further client options, merged
+over the test defaults; both may be `None`. It returns a client in test
+mode.
 
 ```python
 client = DemoSDK.test()
