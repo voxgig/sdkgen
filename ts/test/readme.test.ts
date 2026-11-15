@@ -296,4 +296,12 @@ describe('ReadmeRefFeatures', () => {
     // Every row of the table has the header's two cells.
     strictEqual(row.split(/(?<!\\)\|/).length - 2, 2, row)
   })
+
+  test('a pipe or a backtick in an option default stays in its code span and its row (U102)', async () => {
+    const out = await renderRefFeatures({ log: { hook: ['PreRequest'], options: { active: true, tag: 'a|b`c' } } })
+    const row = out.split('\n').find((l) => /^\| `+tag`+ \|/.test(l)) || ''
+    strictEqual(row, "| `tag` | ``'a\\|b`c'`` |")
+    // An ordinary default prints as before.
+    ok(out.includes('| `active` | `true` |'), out)
+  })
 })

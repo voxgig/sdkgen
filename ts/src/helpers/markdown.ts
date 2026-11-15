@@ -18,6 +18,17 @@ function mdCell(text: any): string {
     .trim()
 }
 
+// Text as a code span in one table cell: fenced by more backticks than any
+// run inside it, padded where it meets a backtick, its pipes escaped (GFM
+// reads `\|` in a cell's code span as a pipe).
+function mdCodeCell(text: any): string {
+  const t = String(null == text ? '' : text).replace(/\r?\n+/g, ' ')
+  const run = Math.max(0, ...(t.match(/`+/g) || []).map((r) => r.length))
+  const fence = '`'.repeat(run + 1)
+  const pad = /^`|`$/.test(t) ? ' ' : ''
+  return (fence + pad + t + pad + fence).replace(/\|/g, () => '\\|')
+}
+
 // Text for a paragraph of its own: line breaks kept, relative links unwrapped.
 function mdInline(text: any): string {
   if (null == text) return ''
@@ -40,6 +51,7 @@ function spans(text: string): string[] {
 
 export {
   mdCell,
+  mdCodeCell,
   mdInline,
   spans,
 }
