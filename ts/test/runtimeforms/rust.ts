@@ -50,6 +50,8 @@ const forms: Forms = {
   // The porter's, from here on.
   typeNames: { 'Rc<crate::entity::${mod}::${cls}>': 'Rc<EntyClass>' },
   cite: {
+    'ref.facts.lits.false': { value: 'false', file: MAIN, quote: '("ok", Value::Bool(false)),' },
+    'ref.facts.lits.true': { value: 'true', file: MAIN, quote: '("ok", Value::Bool(body_err.is_none() && (200..300).contains(&status))),', unquoted: { true: 'ok is the bool the status test computes; true is not spelled' } },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/rust/fragment/Entity.fragment.rs", quote: "vs::clone(&self.data.borrow())" },
     'notes.member:direct': { value: "The result map always comes back inside `Ok`, for a non-2xx response and\nfor a request that could not be made alike; its `ok` key reports the failure.", file: "src/cmp/rust/fragment/Main.fragment.rs", quote: ["        self.raw_request(fetchargs)", "            Err(err) => {\n                return Ok(jo(vec![", "        Ok(jo(vec![\n            (\"ok\", Value::Bool(false)),"] },
     'facts.ok': { file: OPS[0], quote: 'Ok(self.clone())' },
@@ -75,7 +77,19 @@ const forms: Forms = {
       file: 'tm/rust/utility/media.rs', quote: ['pub fn bytes_value(bytes: &[u8]) -> Value {', 'Value::Str(s) => Some(s.as_bytes().to_vec()),'],
       unquoted: { 'bytes_value(&[u8])': 'the signature bytes_value(bytes: &[u8]) with its parameter name left out' },
     },
-    'ref.facts.cancel': { value: false, file: 'tm/rust/utility/fetcher.rs', quote: 'AGENT.get_or_init(|| ureq::AgentBuilder::new().build()).clone()' },
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/rust/utility/fetcher.rs'] } },
+  },
+  // What the table states besides names, parameters and returns.
+  testDecl: 'test_sdk',
+  on: (d) => /^\(\s*(&\s*)?(mut\s+)?self\b/.test(d.rest) ? 'instance' : (/^[ \t]+/.test(d.head) ? 'type' : 'module'),
+  fails: (d) => /^Result</.test(d.returns) ? 'Result' : '',
+  failure: { shows: 'Result', call: 'unwrap' },
+  stream: {
+    file: "src/cmp/rust/fragment/Entity.fragment.rs",
+    construct: "return Ok(sf().into_iter());", starts: "at call",
+    run: "self.utility.feature_hook(&ctx, \"PrePoint\");",
+    draw: "return Ok(sf().into_iter());",
+    runs: "before it returns", items: "before it returns",
   },
 }
 
