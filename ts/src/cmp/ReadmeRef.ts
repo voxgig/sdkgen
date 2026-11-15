@@ -78,7 +78,11 @@ function typeOf(r: RefSyntax, ent: DescEntity): string {
 }
 
 // The value the direct result's `ok` holds on a failure, as the runtime writes it.
-const okFalse = (r: RefSyntax): string => code(r.facts.direct.okFalse)
+const okFalse = (r: RefSyntax): string => {
+  const v = r.facts.direct.okFalse
+  if (null == v || '' === v) throw new Error('ReadmeRef: direct needs ref.facts.direct.okFalse')
+  return code(v)
+}
 
 
 // How prose names a fixed member: its name from its signature, called.

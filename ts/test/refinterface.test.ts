@@ -84,6 +84,10 @@ describe('reference interface', () => {
 
   // When the operation runs is a declared fact, never read from the kind:
   // swift's async iterator runs before it returns, ts's when iteration starts.
+  test('the ok literal of direct has no default', () => {
+    throws(() => refText(provider((f) => { f.direct = { ...f.direct, okFalse: undefined } }), desc), /okFalse/)
+  })
+
   test('a stream says when its operation runs, and has no default', () => {
     const runs: Record<string, RegExp> = {
       iterate: /The operation runs when iteration starts, not when the call returns\./,
