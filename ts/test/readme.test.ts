@@ -5,7 +5,7 @@ import { strictEqual, ok, match } from 'node:assert'
 import { Jostraca, Project, Folder, File } from 'jostraca'
 import { memfs } from 'memfs'
 
-import { ReadmeExplanation, ReadmeErrors } from '../dist/sdkgen.js'
+import { ReadmeExplanation, ReadmeErrors, ReadmeRefFeatures } from '../dist/sdkgen.js'
 
 
 // A logger stub keeps the optional-component warning out of the test
@@ -185,5 +185,74 @@ describe('ReadmeErrors', () => {
     // js and an unmodelled language fall back to the ts default.
     strictEqual(await renderErrors('js'), await renderErrors('ts'))
     ok((await renderErrors('cobol')).includes('if (!result.ok) {'))
+  })
+})
+
+
+// The REFERENCE features section, from a feature model like the shipped
+// one: a feature's `transport` and `hook` say what it attaches to.
+type FeatSpec = { transport?: string, hook?: string[], options?: any, optspec?: any }
+function featureModel(feats: Record<string, FeatSpec>) {
+  const feature: any = {}
+  for (const [name, f] of Object.entries(feats)) {
+    feature[name] = {
+      active: true, name, title: name.toUpperCase(), transport: f.transport || 'none',
+      hook: Object.fromEntries((f.hook || []).map((h) => [h, { active: true }])),
+      config: { options: { active: false, ...(f.options || {}) }, ...(f.optspec ? { optspec: f.optspec } : {}) },
+    }
+  }
+  return { name: 'demo', main: { kit: { entity: {}, feature } } }
+}
+
+async function renderRefFeatures(feats: Record<string, FeatSpec>, props: any = {}): Promise<string> {
+  const { fs, vol } = memfs({})
+  await Jostraca().generate(
+    { fs: () => fs, folder: '/x', model: featureModel(feats), log },
+    () => {
+      Project({ folder: 'p' }, () => {
+        File({ name: 'out.md' }, () => { ReadmeRefFeatures({ target: { name: 'ts' }, ...props }) })
+      })
+    },
+  )
+  const json: any = vol.toJSON()
+  return json[Object.keys(json).find((k) => k.endsWith('out.md'))!]
+}
+
+// '#### `name`' subsection.
+const featSection = (md: string, name: string): string => {
+  const out: string[] = []
+  let on = false
+  for (const l of md.split('\n')) {
+    if (/^#{1,4} /.test(l)) on = l === '#### `' + name + '`'
+    if (on) out.push(l)
+  }
+  return out.join('\n')
+}
+
+const SHIPPED: Record<string, FeatSpec> = {
+  cache: { transport: 'wrap' },
+  cost: { transport: 'wrap', hook: ['PrePoint', 'PreDone'] },
+  retry: { transport: 'wrap' },
+  log: { hook: ['PreRequest'], options: { active: true } },
+  audit: { hook: ['PreDone'] },
+  test: { transport: 'base', hook: ['PreRequest'] },
+}
+
+
+describe('ReadmeRefFeatures', () => {
+
+  test('the base transport is neither a hook feature nor said to attach to hooks (X3)', async () => {
+    const out = await renderRefFeatures(SHIPPED)
+    const hookLine = out.split('\n').find((l) => / attach(es)? to pipeline hooks/.test(l)) || ''
+    ok(!hookLine.includes('`test`'), hookLine)
+    ok(hookLine.includes('`audit`') && hookLine.includes('`log`'), hookLine)
+    const test = featSection(out, 'test')
+    ok(!/[Aa]ttaches to pipeline hooks/.test(test), test)
+    ok(/Installs the BASE transport/.test(test), test)
+    // A wrapper that also declares hooks says both, as the model declares.
+    const cost = featSection(out, 'cost')
+    ok(/Wraps the transport/.test(cost) && /Also attaches to pipeline hooks\./.test(cost), cost)
+    ok(!/Also attaches/.test(featSection(out, 'retry')))
+    ok(/Attaches to pipeline hooks, not the transport/.test(featSection(out, 'audit')))
   })
 })

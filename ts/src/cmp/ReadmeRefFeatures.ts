@@ -35,8 +35,10 @@ ${honoursActivationOrder(target) ?
 
 `)
 
+  // By the transport each declares: a wrapper, the base transport the
+  // wrappers wrap, or none; only the last are order-free hook features.
   const wrapping = features.filter((f) => f.wraps)
-  const hooked = features.filter((f) => !f.wraps)
+  const hooked = features.filter((f) => 'none' === f.transport && 0 < f.hooks.length)
 
   if (0 < wrapping.length) {
     Content(`#### Ordering
@@ -121,8 +123,12 @@ its default unless you name it.
       Content(`- Wraps the transport: its place in the activation order decides what it
   sees. See [Ordering](#ordering) above.
 `)
+      if (0 < f.hooks.length) {
+        Content(`- Also attaches to pipeline hooks.
+`)
+      }
     }
-    else {
+    else if ('none' === f.transport && 0 < f.hooks.length) {
       Content(`- Attaches to pipeline hooks, not the transport, so activation order does
   not change what it observes.
 `)
