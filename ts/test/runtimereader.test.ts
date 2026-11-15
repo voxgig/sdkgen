@@ -94,6 +94,10 @@ function dimensionProblems(t: string, forms: Forms, v: View): string[] {
     if (s.onType && 'type' !== d.on) out.push(`${d.name} (${d.file}) is declared on the type; the forms read it as on ${d.on}`)
     if (d.field && 0 < d.params.length) out.push(`${d.name} (${d.file}) is read as a field and takes ${d.params.length} parameters`)
   }
+  const opFails = OPS.map((op) => v.methods[op].decl?.fails || '').filter((x) => '' !== x)
+  if (null == forms.failure && 0 < opFails.length) {
+    out.push(`the operations show their failure in the declaration (${opFails[0]}); the forms state no failure record (failure: { shows, call })`)
+  }
   if (null != forms.failure) {
     for (const op of OPS) {
       const d = v.methods[op].decl
