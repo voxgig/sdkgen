@@ -99,14 +99,6 @@
   "type": "added",
   "section": "tutorial"
  },
- "769cd94ade": {
-  "outcome": "unification:op-sentences",
-  "why": "",
-  "n": 18,
-  "by": "rule:op-sentences",
-  "type": "added",
-  "section": "tutorial"
- },
  "c0831e892a": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
@@ -182,14 +174,6 @@
  "8a0c441967": {
   "outcome": "unification:go-tutorial-program",
   "why": "the new splitter cuts go's program step lead from the sentence after it (cut.js splitSentences, bold lead after [.!?]**); this is the lead alone, the step title ReadmeQuick.ts prints for p.program. Split from 14f5b323fe (restored:fact); the sentence after it is 6145dede90.",
-  "n": 7,
-  "by": "hand",
-  "type": "added",
-  "section": "tutorial"
- },
- "6145dede90": {
-  "outcome": "restored:fact",
-  "why": "the sentence after go's bold lead '**List planet records.**', split from 14f5b323fe (restored:fact: go's (value, error) pair and its []any list), whose decision it inherits (rekey.js listed it as a split part; the stage-3a rule record did not match the part's text).",
   "n": 7,
   "by": "hand",
   "type": "added",
@@ -358,14 +342,6 @@
  "b2d304a399": {
   "outcome": "unification:write-title-entity",
   "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
-  "n": 1,
-  "by": "hand",
-  "type": "added",
-  "section": "tutorial"
- },
- "46180fea4b": {
-  "outcome": "same-meaning",
-  "why": "awkward sentence fixed: 'too' only when a list or load step named the pair before (ref-issues has none); same fact",
   "n": 1,
   "by": "hand",
   "type": "added",
@@ -899,22 +875,6 @@
   "type": "block-vanished-token",
   "section": "rootquick"
  },
- "89672a79c6": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 21,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "940b78cf67": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 21,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
  "f64ae2f4fc": {
   "outcome": "same-meaning",
   "why": "the README's feature table names log as Logging; it says nothing about its default (the README Features section now says log is active by default too)",
@@ -1183,30 +1143,6 @@
   "type": "added",
   "section": "reference"
  },
- "251d7318e6": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 21,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "ac937e958b": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 21,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "c0d3b842b8": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 21,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
  "f0f908777a": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
@@ -1251,14 +1187,6 @@
   "outcome": "restored:fact",
   "why": "when the operation runs: `runs: 'background'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.go (go func() at :217 starts the operation at the call; unbuffered sends); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
   "n": 108,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "17e455f4a3": {
-  "outcome": "correction:sentence-review-list-match",
-  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
-  "n": 94,
   "by": "hand",
   "type": "added",
   "section": "reference"

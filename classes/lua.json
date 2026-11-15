@@ -347,18 +347,6 @@
   ],
   "unreviewed": 1
  },
- "f5e8e05fbb": {
-  "outcome": "shared:go:46180fea4b",
-  "why": "masked, it is the go unit of class 46180fea4b (same-meaning, by hand)",
-  "n": 1,
-  "by": "shared",
-  "type": "added",
-  "section": "tutorial",
-  "sentences": [
-   "ea4598e14c"
-  ],
-  "unreviewed": 1
- },
  "325b1911ed": {
   "outcome": "same-meaning",
   "why": "as 360f66a3d2, server-mixed",
@@ -915,22 +903,6 @@
   "type": "echo",
   "section": "reference"
  },
- "89672a79c6": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "940b78cf67": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
  "47c258dd35": {
   "outcome": "same-meaning",
   "why": "the README's test-mode comment says data_get() reads the entity's record (lua/README.md:123); the same",
@@ -1034,18 +1006,6 @@
   "by": "hand",
   "type": "reworded",
   "section": "reference"
- },
- "cce9e8691a": {
-  "outcome": "shared:ts:cce9e8691a",
-  "why": "masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
-  "n": 92,
-  "by": "shared",
-  "type": "reworded",
-  "section": "reference",
-  "sentences": [
-   "0071df96c2"
-  ],
-  "unreviewed": 0
  },
  "042740d448": {
   "outcome": "shared:go:042740d448",
@@ -1287,18 +1247,6 @@
   ],
   "unreviewed": 1
  },
- "5ca02aaa87": {
-  "outcome": "shared:clojure:5ca02aaa87",
-  "why": "masked, it is the clojure unit of class 5ca02aaa87 (correction:guard-accessor-arg, by hand)",
-  "n": 94,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "afa4347469"
-  ],
-  "unreviewed": 0
- },
  "dce8243b59": {
   "outcome": "shared:elixir:4b8feb4091",
   "why": "masked, it is the elixir unit of class 4b8feb4091 (correction:runtime-forms, by rule:add-sig-forms)",
@@ -1355,42 +1303,6 @@
   "section": "reference",
   "sentences": [
    "0a6358906c"
-  ],
-  "unreviewed": 1
- },
- "251d7318e6": {
-  "outcome": "shared:ts:251d7318e6",
-  "why": "masked, it is the ts unit of class 251d7318e6 (correction:sentence-review-direct, by hand)",
-  "n": 19,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "663d6ed57c"
-  ],
-  "unreviewed": 1
- },
- "ac937e958b": {
-  "outcome": "shared:ts:ac937e958b",
-  "why": "masked, it is the ts unit of class ac937e958b (correction:sentence-review-direct, by hand)",
-  "n": 19,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "e87b3544ac"
-  ],
-  "unreviewed": 1
- },
- "47242ab38a": {
-  "outcome": "shared:ts:47242ab38a",
-  "why": "masked, it is the ts unit of class 47242ab38a (correction:sentence-review-direct, by hand)",
-  "n": 19,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "eefd70afa7"
   ],
   "unreviewed": 1
  },
@@ -1503,8 +1415,8 @@
   "section": "reference"
  },
  "17e455f4a3": {
-  "outcome": "shared:ts:17e455f4a3",
-  "why": "masked, it is the ts unit of class 17e455f4a3 (correction:sentence-review-list-match, by hand)",
+  "outcome": "shared:c:a059e52e2d",
+  "why": "masked, it is the c unit of class a059e52e2d (correction:sentence-review-list-match, by hand)",
   "n": 82,
   "by": "shared",
   "type": "added",
@@ -1810,14 +1722,6 @@
   "type": "echo",
   "section": "reference"
  },
- "a4bcd72971": {
-  "outcome": "same-meaning",
-  "why": "nil for none, as the README says of the test arguments; the same literal for the same meaning",
-  "n": 1,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
  "9cb2039c55": {
   "outcome": "same-meaning",
   "why": "the echo is the word `nil` in the README's test line; unrelated to the stream's end",
@@ -1970,30 +1874,6 @@
   "by": "hand",
   "type": "reworded",
   "section": "reference"
- },
- "10f0d238e2": {
-  "outcome": "shared:ts:10f0d238e2",
-  "why": "masked, it is the ts unit of class 10f0d238e2 (correction:U34, by rule:class-collision)",
-  "n": 1,
-  "by": "shared",
-  "type": "reworded",
-  "section": "reference",
-  "sentences": [
-   "0071df96c2"
-  ],
-  "unreviewed": 0
- },
- "e35271001c": {
-  "outcome": "shared:ts:e35271001c",
-  "why": "masked, it is the ts unit of class e35271001c (unification:accessor-sentence, by rule:accessor-sentence)",
-  "n": 1,
-  "by": "shared",
-  "type": "reworded",
-  "section": "reference",
-  "sentences": [
-   "0071df96c2"
-  ],
-  "unreviewed": 0
  },
  "dac11a1691": {
   "outcome": "correction:G27",
@@ -2297,14 +2177,6 @@
   "type": "block-changed",
   "section": "reference"
  },
- "ba0e501f34": {
-  "outcome": "correction:checked-examples",
-  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
-  "n": 81,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "reference"
- },
  "bc48bd2de6": {
   "outcome": "correction:ref-create-runnable",
   "why": "the reference create example passes typed literals with the type as a comment (`id = \"example_id\", -- string`); OLD wrote `id = --[[ string ]],`, a placeholder that does not parse, which the README test counts as an illustration and never runs",
@@ -2338,14 +2210,6 @@
   "section": "reference"
  },
  "cbc5489fcd": {
-  "outcome": "correction:checked-examples",
-  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "reference"
- },
- "e12ef1cf85": {
   "outcome": "correction:checked-examples",
   "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
   "n": 1,

@@ -740,9 +740,9 @@
   "n": 1
  },
  "24d40b660d": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared showFields change lands: where an entity's only non-id field is a map, the shared display field is that map, and perl prints its reference: Record's list example prints `$item->data_get->{fields}`, which outputs HASH(0x...) (out/new/B/perl/REFERENCE.md:536; 14 variations); OLD printed ->{id} alone. The other blocks of this class are [unification:ref-list-example]: the reference list example binds `results` and names each item `item`, the same names in every ported language (shared refOpBlock, generic naming); an operation called with no argument is written with () in every place (OLD wrote list bare and load()); and the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef",
-  "n": 81
+  "outcome": "correction:decision-3-scalar-field",
+  "why": "brief 7 decision 3: the list example prints a scalar display field (Console `->{maker}`) or, where the entity has none, the id alone (Record, whose only other field `fields` is a map that printed HASH(0x...)); the loop variable is the shared `$item` and list() has its parentheses (noarg-parens), as decided for the other reference list blocks",
+  "n": 64
  },
  "5a083e16cc": {
   "outcome": "unification:ref-list-example",
@@ -750,9 +750,9 @@
   "n": 1
  },
  "bafc700723": {
-  "outcome": "unification:ref-list-example",
-  "why": "ref-issues: as 24d40b660d; PlanetEntity has no other field, so the id alone",
-  "n": 1
+  "outcome": "correction:decision-3-scalar-field",
+  "why": "brief 7 decision 3: the list example prints a scalar display field (Console `->{maker}`) or, where the entity has none, the id alone (Record, whose only other field `fields` is a map that printed HASH(0x...)); the loop variable is the shared `$item` and list() has its parentheses (noarg-parens), as decided for the other reference list blocks",
+  "n": 18
  },
  "8d4be337ab": {
   "outcome": "correction:S25",
@@ -865,5 +865,130 @@
   "outcome": "same-meaning",
   "why": "the removed sentence 'Pass `undef` for no initial data.' is said again by the accessor sentence that replaced it ('Its `data` argument holds the entity options: pass `undef` for none.'); the echo is the README's test call `DemoSDK->test(undef, undef)`, which passes undef as the null value too: no disagreement",
   "n": 94
+ },
+ "cd06a25fa6": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "0761788e5b": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "7d301ef25c": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94
+ },
+ "0030efbf5a": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 82
+ },
+ "52f68eedfd": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15
+ },
+ "8706ab324a": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 1
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
+  "n": 1
+ },
+ "6a6dd48964": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49, server-required-given), as decided for these units at v33p (316d79799f); the pair moved only because the tutorial's import block now carries `use lib 'lib';` (brief 7 decision 1), which OLD perl's tutorial also printed",
+  "n": 12
+ },
+ "2fa561ae84": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET, S50/D23), and the server variables (S49), as decided for these units at v33p (eea7b04552); re-paired by decision 1's import block, which OLD perl also printed",
+  "n": 2
+ },
+ "be9b83ebe0": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49, server-required-given), as decided for these units at v33p (316d79799f); the pair moved only because the tutorial's import block now carries `use lib 'lib';` (brief 7 decision 1), which OLD perl's tutorial also printed",
+  "n": 1
+ },
+ "430d615ddd": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variables that have no default (S49, server-required-given), as decided for these units at v33p (316d79799f); the pair moved only because the tutorial's import block now carries `use lib 'lib';` (brief 7 decision 1), which OLD perl's tutorial also printed",
+  "n": 1
+ },
+ "80e4a482e4": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 5
+ },
+ "082e242cee": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1
+ },
+ "763cb3b082": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1
+ },
+ "ea7d20f04f": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1
+ },
+ "2e9ed570bb": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1
+ },
+ "0542fa4137": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 3
+ },
+ "a89dd5755a": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1
+ },
+ "d790c6cf31": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1
+ },
+ "5e0f26590a": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 2
+ },
+ "5de52e5578": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 1
+ },
+ "57814c4573": {
+  "outcome": "correction:decision-1-3-root",
+  "why": "the root quick start, re-decided after brief 7 decisions 1 and 3 (these classes were DEFECT at v33a): it keeps `use lib 'perl/lib';` as OLD did (no diff line: the import is identical to OLD's) and runs from the repository root (ran: tools/before/run.sh, the perl lane runs root blocks from the root: see the freeze lanes); it prints scalar display fields (`->{flow}`, `->{title}`, `->{maker}` or the id alone; no example prints a hash reference: grep of out/new finds no `->{fields}`). The rest of each pair is what the tutorial pairs were decided as: the server variables (S49), the secret (S50), the shared step comments ('Load an ambient: the entity; dies on failure'), list() with parentheses (noarg-parens)",
+  "n": 2
  }
 }

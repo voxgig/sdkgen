@@ -23,7 +23,8 @@
  },
  "absent": {
   "2e09bb327d": "the ocaml client module defines no options function (Main_ocaml.ts: make, make0, test, test_with, direct, graphql, prepare, entity and the accessors); the options are the sdk_client record's field cl_options (sdk_types.ml), the live value, not a copy, which the page does not document",
-  "663f4dd150": "printed, in the same 5 variations, as the write step's comment '(* Create — returns the created entity; created.e_data_get () reads its record *)' (crud-bare/ocaml/README.md and the four other write variations), the comment py, rb, elixir and clojure print with their own record read. It is another unit only because ocaml's record expression applies e_data_get to unit with a space (facts.record `{var}.e_data_get ()`), and a comment's raw fact token is cut at the space, so the skeleton differs from the references' one-token reads (`data_get()`, `data_get/1`). The class of that unit is 53ecb3c159, decided"
+  "663f4dd150": "printed, in the same 5 variations, as the write step's comment '(* Create — returns the created entity; created.e_data_get () reads its record *)' (crud-bare/ocaml/README.md and the four other write variations), the comment py, rb, elixir and clojure print with their own record read. It is another unit only because ocaml's record expression applies e_data_get to unit with a space (facts.record `{var}.e_data_get ()`), and a comment's raw fact token is cut at the space, so the skeleton differs from the references' one-token reads (`data_get()`, `data_get/1`). The class of that unit is 53ecb3c159, decided",
+  "57d77b63f4": "ocaml's entity name is the record field `e_name` (sdk_types.ml `mutable e_name : string;`), declared `field: true` (brief 7 decision 9, re-derived by the guard), so the page prints the field sentence 'The entity name.' in the same variations; 'Return the entity name.' would say a field returns"
  },
  "360f66a3d2": {
   "outcome": "same-meaning",
@@ -1238,6 +1239,51 @@
  "f958f95add": {
   "outcome": "correction:S25",
   "why": "ref-issues: OLD documented a remove for Planet whose operation is inactive in the model, which NEW drops (catalogue S25: an inactive operation is not documented); the NEW block it is paired with is that variation's test_with block (as 9fd66fe014), left unpaired by the dropped section",
+  "n": 1
+ },
+ "617e809d5f": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "739d454a28": {
+  "outcome": "same-meaning",
+  "why": "the README's operations table says remove returns the entity marked as deleted; this sentence names how the mark is read; no disagreement",
+  "n": 15
+ },
+ "af0bd24893": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "fc78874e94": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94
+ },
+ "45755db38d": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15
+ },
+ "90dcf9c037": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 1
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
   "n": 1
  }
 }

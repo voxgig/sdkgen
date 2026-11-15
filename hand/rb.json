@@ -938,5 +938,70 @@
    "why": "rb's prose names an operation without parentheses, as OLD rb did: \"Entity operations return the entity, and `list` an `Array` of entities\" (OLD B/rb/README.md, result section), \"After a successful `load`, the entity\" (state section), and the tutorial comment '# load returns the ENTITY'. The sentences this value selects are the tutorial's step sentences (\"`load` returns the entity and raises on failure\"), new since the tutorial was shared, so the minimal pair finds no OLD unit beside them; the OLD naming elsewhere on the same pages agrees with bare",
    "evidence": "OLD B/rb/README.md (quoted in why); NEW B/rb/README.md tutorial"
   }
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "9efa1d0afc": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "c2408b4f0a": {
+  "outcome": "same-meaning",
+  "why": "the README's operations table says remove returns the entity marked as deleted; this sentence names how the mark is read; no disagreement",
+  "n": 15
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "d806f62156": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94
+ },
+ "290fb0c986": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
+  "n": 1
+ },
+ "f3b16c1393": {
+  "outcome": "correction:decision-1-imports-place",
+  "why": "brief 7 decision 1: the root quick start requires the SDK by its path from the repository root, `require_relative \"rb/Demo_sdk\"` (ran by the shared engineer from the root of a generated SDK: OLD's `require_relative \"Demo_sdk\"` fails with LoadError, NEW loads the SDK); the rest of the pair as decided before for auth-off: the client passes the server variables that have no default (S49, server-required-given), the shared step comment, and the call without ()",
+  "n": 1
+ },
+ "5fc6d07889": {
+  "outcome": "correction:decision-1-imports-place",
+  "why": "brief 7 decision 1: the root quick start requires the SDK by its path from the repository root, `require_relative \"rb/Demo_sdk\"` (ran by the shared engineer from the root of a generated SDK: OLD's `require_relative \"Demo_sdk\"` fails with LoadError, NEW loads the SDK); the rest of the pair as decided before for doc-nested: the root loads the nested satellite with its parent id (root-load-nested), the server variable (S49), the shared step comments and the loop variable",
+  "n": 1
+ },
+ "8dd780b69a": {
+  "outcome": "correction:decision-1-imports-place",
+  "why": "the token `rb` of the root quick start's require path, `rb/Demo_sdk`: brief 7 decision 1: the root quick start requires the SDK by its path from the repository root, `require_relative \"rb/Demo_sdk\"` (ran by the shared engineer from the root of a generated SDK: OLD's `require_relative \"Demo_sdk\"` fails with LoadError, NEW loads the SDK)",
+  "n": 1
  }
 }

@@ -719,22 +719,6 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "6b1439989e": {
-  "outcome": "correction:S49",
-  "why": "auth-off: as 6a89281cc1, and the root steps in the shared form (step-comment-runtime-fact, rb-noarg-call)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
- "8dc0a31fa3": {
-  "outcome": "unification:root-load-nested",
-  "why": "doc-nested: the root quick start loads the nested satellite with its parent id, as the tutorial does (root-load-nested); plus the server tenant (S49) and the shared step comments",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
  "ff935caa13": {
   "outcome": "correction:S49",
   "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
@@ -867,22 +851,6 @@
   "outcome": "same-meaning",
   "why": "nil for none, as the README says of the test arguments; the same literal for the same meaning (rb/README.md:211)",
   "n": 94,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "89672a79c6": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "940b78cf67": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -1320,30 +1288,6 @@
   "section": "reference"
  },
  "4b54f03c24": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "251d7318e6": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "ac937e958b": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "c0d3b842b8": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
   "n": 19,

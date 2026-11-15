@@ -551,22 +551,6 @@
   "type": "echo",
   "section": "reference"
  },
- "af59555ce3": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "34de2503de": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
  "f64ae2f4fc": {
   "outcome": "same-meaning",
   "why": "the README feature table names log as Logging and says nothing about its default",
@@ -791,14 +775,6 @@
   "type": "missing",
   "section": "reference"
  },
- "c19864bf92": {
-  "outcome": "restored:shared",
-  "why": "restored as 'The match is optional.' (v3.3: 'without one, every record is listed' overstated, sentence review)",
-  "n": 83,
-  "by": "hand",
-  "type": "missing",
-  "section": "reference"
- },
  "2f38082332": {
   "outcome": "correction:S09",
   "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
@@ -951,30 +927,6 @@
   "type": "added",
   "section": "reference"
  },
- "a3a5190702": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "2c78e40e1f": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "c0d3b842b8": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
  "d16d410cb8": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
@@ -1051,14 +1003,6 @@
   "outcome": "restored:fact",
   "why": "when the operation runs: `runs: 'iterate'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.py (the pipeline runs inside the generator); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
   "n": 94,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "17e455f4a3": {
-  "outcome": "correction:sentence-review-list-match",
-  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
-  "n": 82,
   "by": "hand",
   "type": "added",
   "section": "reference"

@@ -12,7 +12,7 @@
   },
   "named": {
    "value": "call",
-   "why": "go's operations are methods called with parentheses (EntityLoadOp.fragment.go `func (e *EntyClass) Load(reqmatch map[string]any, ctrl map[string]any) (any, error) {`), and the sentences this value selects describe what a call returns (\"`Load()` returns `(value, error)`: the value is the entity\"). OLD go named a member with parentheses where it described a call's result (\"Data() reads its record\" in the tutorial comment, \"`Data()` reads its record\" in the README result table) and bare only where it listed names (the intro's (`List`, `Load`, ...), the Method column of the entity table). The minimal pair finds no OLD counterpart because go's tutorial became one program and its step sentences are new; nothing OLD says contradicts the call form",
+   "why": "go's operations are methods called with parentheses (EntityLoadOp.fragment.go `func (e *EntyClass) Load(reqmatch map[string]any, ctrl map[string]any) (any, error) {`), and the sentences this value selects describe what a call returns (\"`Data()` reads its record\"; an operation itself is now named bare, \"`Load` returns `(value, error)`: the value is the entity\", because brief 7 decision 14 names a call only where it compiles, and go's Load takes two arguments, facts.arity 2). OLD go named a member with parentheses where it described a call's result (\"Data() reads its record\" in the tutorial comment, \"`Data()` reads its record\" in the README result table) and bare only where it listed names (the intro's (`List`, `Load`, ...), the Method column of the entity table). The minimal pair finds no OLD counterpart because go's tutorial became one program and its step sentences are new; nothing OLD says contradicts the call form",
    "evidence": "OLD B/go/README.md tutorial comment '// Load a single ambient \u2014 the value is the entity; Data() reads its record.'; OLD B/go/README.md '| `Load` / `Create` / `Update` / `Remove` | the entity, whose `Data()` reads its record'; NEW B/go/README.md '`Load()` returns `(value, error)`'"
   }
  },
@@ -571,5 +571,70 @@
   "81aabf087b": "go's tutorial is one program, so shared code prints each step title as a bold lead of the numbered list above the program ('1. **Create a client.**') rather than as a '### N.' heading; the same title is printed, in the same variations, in another unit. Counted over out/new at v33m+guard: the bold leads and ts's headings give the same titles with the same counts ('Create a client' 21 against 19 headings in ts, the two lone-go/alias variations being go-only; 'List planet records' 6/6, 'List console records' 1/1, 'Create, update, patch, and remove a planet' 3/3, 'Create and remove a planet' 1/1, 'Create, update, and remove a planet' 1/1, 'Update a gauge' 1/1)",
   "219aa7c229": "go's tutorial is one program, so shared code prints each step title as a bold lead of the numbered list above the program ('1. **Create a client.**') rather than as a '### N.' heading; the same title is printed, in the same variations, in another unit. Counted over out/new at v33m+guard: the bold leads and ts's headings give the same titles with the same counts ('Create a client' 21 against 19 headings in ts, the two lone-go/alias variations being go-only; 'List planet records' 6/6, 'List console records' 1/1, 'Create, update, patch, and remove a planet' 3/3, 'Create and remove a planet' 1/1, 'Create, update, and remove a planet' 1/1, 'Update a gauge' 1/1)",
   "b83e95bec6": "go's tutorial is one program, so shared code prints each step title as a bold lead of the numbered list above the program ('1. **Create a client.**') rather than as a '### N.' heading; the same title is printed, in the same variations, in another unit. Counted over out/new at v33m+guard: the bold leads and ts's headings give the same titles with the same counts ('Create a client' 21 against 19 headings in ts, the two lone-go/alias variations being go-only; 'List planet records' 6/6, 'List console records' 1/1, 'Create, update, patch, and remove a planet' 3/3, 'Create and remove a planet' 1/1, 'Create, update, and remove a planet' 1/1, 'Update a gauge' 1/1)"
+ },
+ "43fcb7d9e2": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 18
+ },
+ "889742e2ba": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 7
+ },
+ "79abd43b19": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 1
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 21
+ },
+ "9efa1d0afc": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 21
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 21
+ },
+ "d806f62156": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 21
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 108
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 108
+ },
+ "8c4c22e291": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 94
+ },
+ "01e17d08d0": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 17
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1
+ },
+ "88cfeff73e": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
+  "n": 1
  }
 }

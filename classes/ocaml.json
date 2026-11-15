@@ -1103,22 +1103,6 @@
   "type": "echo",
   "section": "reference"
  },
- "e1fe83a47e": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "7412dc1202": {
-  "outcome": "same-meaning",
-  "why": "README:237 lists `e_name` | `string` | 'The entity name.' among the entity's fields; the note says it is a field",
-  "n": 94,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
  "bcdac71696": {
   "outcome": "same-meaning",
   "why": "a word match: README:10 names the operation `list`; the sentence names the collection `list` an e_list returns",
@@ -1178,14 +1162,6 @@
    "4fb872e54f"
   ],
   "unreviewed": 0
- },
- "31018c1ca2": {
-  "outcome": "unification:member-sentence",
-  "why": "the shared name sentence 'Return the entity name.'; the note beside it says `e_name` is a field, read without a call, as OLD's `e_name : string` heading did",
-  "n": 94,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
  },
  "b7a34aa499": {
   "outcome": "unification:ctor-alt",
@@ -1839,38 +1815,6 @@
   ],
   "unreviewed": 1
  },
- "5f5b4afc27": {
-  "outcome": "shared:ts:251d7318e6",
-  "why": "masked, it is the ts unit of class 251d7318e6 (correction:sentence-review-direct, by hand)",
-  "n": 19,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "663d6ed57c"
-  ],
-  "unreviewed": 1
- },
- "9c8a2fbe80": {
-  "outcome": "shared:ts:ac937e958b",
-  "why": "masked, it is the ts unit of class ac937e958b (correction:sentence-review-direct, by hand)",
-  "n": 19,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "e87b3544ac"
-  ],
-  "unreviewed": 1
- },
- "ec8c64676d": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
  "79bdf00274": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
@@ -1891,9 +1835,9 @@
   ],
   "unreviewed": 0
  },
- "927fd64229": {
-  "outcome": "shared:py:927fd64229",
-  "why": "masked, it is the py unit of class 927fd64229 (restored:shared, by rule:direct-shared)",
+ "3b7bee4991": {
+  "outcome": "shared:clojure:3b7bee4991",
+  "why": "masked, it is the clojure unit of class 3b7bee4991 (restored:shared, by rule:direct-shared)",
   "n": 19,
   "by": "shared",
   "type": "added",
@@ -1903,13 +1847,17 @@
   ],
   "unreviewed": 0
  },
- "a149a9fedd": {
-  "outcome": "restored:shared",
-  "why": "the prepare Returns sentence: the fetch definition, and it raises on failure (sdk_features.ml prepare raises Sdk_error_exc). Its `direct()` is the shared member naming (ReadmeRef.ts memberName appends `()`), which is not OCaml call syntax: recorded as an interface gap",
+ "82e67efb2e": {
+  "outcome": "shared:clojure:fdfd098acd",
+  "why": "masked, it is the clojure unit of class fdfd098acd (restored:shared, by rule:direct-shared)",
   "n": 19,
-  "by": "hand",
+  "by": "shared",
   "type": "added",
-  "section": "reference"
+  "section": "reference",
+  "sentences": [
+   "5c8f458658"
+  ],
+  "unreviewed": 0
  },
  "d3f87f869d": {
   "outcome": "shared:py:d3f87f869d",
@@ -2011,17 +1959,9 @@
   "type": "added",
   "section": "reference"
  },
- "1497300dc7": {
-  "outcome": "restored:note",
-  "why": "OLD's heading `e_name : string` showed a field; the note says it is a field, read without a call",
-  "n": 94,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
  "17e455f4a3": {
-  "outcome": "shared:ts:17e455f4a3",
-  "why": "masked, it is the ts unit of class 17e455f4a3 (correction:sentence-review-list-match, by hand)",
+  "outcome": "shared:c:a059e52e2d",
+  "why": "masked, it is the c unit of class a059e52e2d (correction:sentence-review-list-match, by hand)",
   "n": 82,
   "by": "shared",
   "type": "added",
@@ -2347,14 +2287,6 @@
   "outcome": "same-meaning",
   "why": "the type word string, as the README options table uses it",
   "n": 4,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "426c9da05d": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 1,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -2697,14 +2629,6 @@
  "9838d0827d": {
   "outcome": "unification:ocaml-signature",
   "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
-  "n": 1,
-  "by": "hand",
-  "type": "vanished-token",
-  "section": "reference"
- },
- "71d7c4cfa1": {
-  "outcome": "dropped",
-  "why": "the e_deleted field name: the shared remove sentence says 'marked as deleted' and there is no per-operation note slot; e_deleted is listed undocumented in the forms (README.md:244 still names it)",
   "n": 1,
   "by": "hand",
   "type": "vanished-token",

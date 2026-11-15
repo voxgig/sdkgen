@@ -1,6 +1,9 @@
 // rb: normalizers whose pattern is Ruby syntax.
 const { onNew, onOld } = require('../normalizers.js')
 module.exports = [
+  { id: 'rb-root-require-place', order: 5, kind: 'correction', keys: /^root/,
+    undoes: 'the root quick start requires the SDK by its path from the repository root (brief 7 decision 1; ran from the root: OLD\'s require_relative "Demo_sdk" fails with LoadError, NEW loads): NEW\'s "rb/<file>" read as OLD\'s "<file>"',
+    undo: onNew((t) => t.replace(/^require_relative "rb\/(\w+)"$/m, 'require_relative "$1"')) },
   { id: 'server-required-given:rb', order: 9, kind: 'correction', keys: /^(tutorial|root)/,
     undoes: 'the client now gives the server variables that have no default (S50/D23): the Ruby hash entry "server" => { ... } is removed from NEW where OLD had none',
     undo: onNew((t, old) => /"server"/.test(old || '') ? t : t.replace(/\n {2}"server" => \{\n( {4}"\w+" => "<\w+>",\n)+ {2}\},(?=\n)/, '')) },

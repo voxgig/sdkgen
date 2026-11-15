@@ -613,5 +613,78 @@
    "why": "the noun OLD used for the client's members ('Instance Methods'); held there; the new context is the shared heading 'Client Methods', decided once for all twenty (the section lists the client's members; c, clojure and elixir have no instance)",
    "evidence": "OLD B/ts/REFERENCE.md \"### Instance Methods\", \"### Static Methods\""
   }
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "282d4750fe": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "277b700b6c": {
+  "outcome": "same-meaning",
+  "why": "the README's operations table says remove returns the entity marked as deleted; this sentence names how the mark is read; no disagreement",
+  "n": 15
+ },
+ "e5cf3d8bf5": {
+  "outcome": "correction:decision-13-utility-live",
+  "why": "brief 7 decision 13: ts utility() returns the live object: struct.clone hands a class instance back by reference (ran: node, vendored StructUtility clone(instance) === instance true); 'a copy' was false for ts",
+  "n": 19
+ },
+ "bcf36bb6e5": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 19
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "11da65611b": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94
+ },
+ "9a9b7d8556": {
+  "outcome": "correction:decision-9-field",
+  "why": "brief 7 decision 9: the entity name is a field in this runtime (ts EntityBase.fragment.ts `name = ''`; ocaml sdk_types.ml `mutable e_name : string;`), read without a call; the page documents it as a field",
+  "n": 94
+ },
+ "fdd66e0776": {
+  "outcome": "correction:decision-9-field",
+  "why": "brief 7 decision 9: the entity name is a field in this runtime (ts EntityBase.fragment.ts `name = ''`; ocaml sdk_types.ml `mutable e_name : string;`), read without a call; the page documents it as a field",
+  "n": 94
+ },
+ "0030efbf5a": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 82
+ },
+ "b23edb42bc": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
+  "n": 1
+ },
+ "absent": {
+  "57d77b63f4": "ts's entity name is a field (EntityBase.fragment.ts:18 `name = ''`, assigned in Entity.fragment.ts), declared `field: true` (brief 7 decision 9, re-derived by the guard: ts forms read a class property as a field), so the page prints the field sentence 'The entity name.' under `name: string`, as ocaml does for e_name; 'Return the entity name.' would be false"
  }
 }

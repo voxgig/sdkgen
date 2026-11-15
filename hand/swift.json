@@ -23,7 +23,7 @@
  },
  "713f77bec7": {
   "outcome": "restored:shared",
-  "why": "restored as the shared load sentence: \"`load()` returns a value holding the entity, and throws on failure; `asNative as? Entity` takes it out, and `(ambient.asNative as? Entity)?.data()` reads its record\" (1ede05e640)",
+  "why": "restored as the shared load sentence, now naming the unwrap in words (brief 7 decision 12) and the operation bare (decision 14): \"`load` returns a value holding the entity, and throws on failure; `asNative as? Entity` takes it out, and `ambient.data()` reads its record\" (1ede05e640)",
   "n": 16
  },
  "1ede05e640": {
@@ -43,7 +43,7 @@
  },
  "454d326c2d": {
   "outcome": "restored:shared",
-  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 454d326c2d): restored as the create comment \"Create — returns a value holding the created entity; (created.asNative as? Entity)?.data() reads its record\"",
+  "why": "re-paired at v3.3 (the units decided at v33p as 454d326c2d): restored as the create comment, which now names the unwrap in words (brief 7 decision 12): \"Create — returns a value holding the created entity; asNative as? Entity takes it out, and created.data() reads its record\"",
   "n": 5
  },
  "77832f0697": {
@@ -529,7 +529,7 @@
  },
  "d31e05e59e": {
   "outcome": "correction:matchv-arg",
-  "why": "matchv(_ newmatch: Value?) has no default (EntityBase.fragment.swift:58): passing a value sets, nil gets; \"Get or set\" became \"Get the entity match criteria. Pass a `Value` to set it.\"",
+  "why": "matchv(_ newmatch: Value?) has no default (EntityBase.fragment.swift:58): passing a value sets, nil gets; \"Get or set\" became \"Get the entity match criteria. Returns a copy of the current match criteria. Pass a `Value` to set it.\" (the copy clause is brief 7 decision 7)",
   "n": 94
  },
  "9d3daf5913": {
@@ -625,7 +625,7 @@
  },
  "50a4172e64": {
   "outcome": "restored:shared",
-  "why": "the wrapped return clause plus the record sentence: \"Returns a value holding the entity, and throws on failure. `(result.asNative as? Entity)?.data()` reads its record.\" — the unwrap is now inside the record expression",
+  "why": "the wrapped return clause plus the record sentence: \"Returns a value holding the entity, and throws on failure. `asNative as? Entity` takes the entity out, and `result.data()` reads its record.\" (the unwrap named in words, brief 7 decision 12)",
   "n": 28
  },
  "4cba1de5c3": {
@@ -1110,5 +1110,113 @@
   "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
   "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)",
   "n": 1
+ },
+ "bc59087427": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 16
+ },
+ "9d80e50c20": {
+  "outcome": "same-meaning",
+  "why": "the README's other mentions of Ok/Err (.ok/.err) speak of prepare or of the same result union; this sentence names the operation bare where its call must pass arguments; no disagreement",
+  "n": 7
+ },
+ "44fa0dabac": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 7
+ },
+ "5fd9f16c2d": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
+  "n": 5
+ },
+ "5b9af17b7e": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 1
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "b2d0f18ca8": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "824d11833c": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "2fc026d092": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: swift's record fact is the plain accessor again and the wrapped style names its unwrap in the sentence (`asNative as? Entity` takes the entity out, cited ValidateFeature.swift `if let ent = record.asNative as? Entity {`); the printed code is unchanged",
+  "n": 79
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94
+ },
+ "b44a06006a": {
+  "outcome": "correction:decision-14-list-call",
+  "why": "brief 7 decision 14 (and the freeze's rewording): the list sentence names the call without a match as one that compiles (no default arguments: go, rust, zig and swift pass two none values; ts, py and perl may omit both), and does not say it lists every record (the entity's stored match still applies: go List passes e.match, ts this._match)",
+  "n": 82
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1
+ },
+ "c4f2d04f4a": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
+  "n": 3
+ },
+ "c089cf077f": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
+  "n": 1
+ },
+ "9de8faf2d3": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "brief 7 decision 12: the create comment names the unwrap in words ('asNative as? Entity takes it out, and created.data() reads its record') now that swift's record fact is the plain accessor; the printed code is unchanged from v33a, where the rest of the pair was decided: the later writes take the id off the created entity's record, `(created.asNative as? Entity)?.data()...`, and patch names what it sends",
+  "n": 1
+ },
+ "24a51da904": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `takes` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1
+ },
+ "6a03279ab9": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `it` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1
+ },
+ "6b913f8580": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `out` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1
+ },
+ "2920034cd9": {
+  "outcome": "correction:decision-12-unwrap",
+  "why": "the word `and` of the create comment's new clause 'asNative as? Entity takes it out, and ...' (brief 7 decision 12), read as code by the token scan because it stands in a code comment",
+  "n": 1
+ },
+ "absent": {
+  "3bb5d3a968": "swift's results are wrapped: every record sentence names the unwrap first, '`asNative as? Entity` takes the entity out, and `result.data()` reads its record' (brief 7 decision 12), in the same variations; the plain '`…` reads its record.' would name data() on a Value, which has none"
  }
 }

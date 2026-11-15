@@ -21,6 +21,7 @@
    "blank-lines": 9,
    "rb-loop-var": 6,
    "rb-noarg-call": 9,
+   "rb-root-require-place": 17,
    "secret-option": 2,
    "server-required-given:rb": 14,
    "step-comment-runtime-fact": 15,

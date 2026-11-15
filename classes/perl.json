@@ -443,42 +443,10 @@
   "type": "novel-token",
   "section": "tutorial"
  },
- "316d79799f": {
-  "outcome": "correction:S49",
-  "why": "the server option and its variables, which the client must now pass (server-required-given, S49); and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 12,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "tutorial"
- },
  "3cd8281249": {
   "outcome": "correction:display-field",
   "why": "the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef",
   "n": 10,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "tutorial"
- },
- "eea7b04552": {
-  "outcome": "correction:S50",
-  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23; the server option and its variables, which the client must now pass (server-required-given, S49); and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 2,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "tutorial"
- },
- "0aaaeb0644": {
-  "outcome": "correction:S49",
-  "why": "auth-off: OLD built the client with no options, so it could not fill the templated server URL; NEW passes the tenant; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "tutorial"
- },
- "9b32484fa9": {
-  "outcome": "dropped",
-  "why": "the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`) (tutorial: the Install section directly above the tutorial prints `use lib 'lib'; use DemoSDK;`, so the reader is told once; the tutorial's own line returns with the shared imports-place change)",
-  "n": 3,
   "by": "hand",
   "type": "block-changed",
   "section": "tutorial"
@@ -502,14 +470,6 @@
  "d2255de953": {
   "outcome": "correction:display-field",
   "why": "the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef (doc-nested: the satellite's first string field is planet_id)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "tutorial"
- },
- "0860511808": {
-  "outcome": "correction:S49",
-  "why": "the server option and its variables, which the client must now pass (server-required-given, S49) (server-mixed: account); and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
@@ -579,14 +539,6 @@
   "type": "block-novel-token",
   "section": "tutorial"
  },
- "33526951e8": {
-  "outcome": "dropped",
-  "why": "the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`) (tutorial: the Install section directly above the tutorial prints `use lib 'lib'; use DemoSDK;`, so the reader is told once; the tutorial's own line returns with the shared imports-place change)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-vanished-token",
-  "section": "tutorial"
- },
  "fa99929817": {
   "outcome": "correction:write-comment-style",
   "why": "OLD's 'Create — returns the ENTITY (call data_get for the record)' is the shared create comment",
@@ -635,94 +587,6 @@
   "type": "reworded",
   "section": "rootquick"
  },
- "c891952d31": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 5,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
- "b4408878f8": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S50] header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23; the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
- "69ec83482b": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] auth-off: NEW passes the tenant the templated server URL needs; the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
- "a2103afb97": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [unification:noarg-parens] an operation called with no argument is written with () in every place (OLD wrote list bare and load()); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
- "646792a4b9": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S50] header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23; the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
- "d0885cc8ba": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] the server option and its variables, which the client must now pass (server-required-given, S49); an operation called with no argument is written with () in every place (OLD wrote list bare and load()); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 3,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
- "8efbe2e59b": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
- "17f4e10000": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
- "2d39864b8b": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] ent-none: the server option and its variables, which the client must now pass (server-required-given, S49); and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`); the trailing blank line after the client went with the absent steps",
-  "n": 2,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
- "ef35a4d88c": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
- "905b8fd076": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [dropped] server-none: the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef",
-  "n": 2,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "rootquick"
- },
  "ff935caa13": {
   "outcome": "correction:S49",
   "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
@@ -769,22 +633,6 @@
   "n": 1,
   "by": "hand",
   "type": "block-novel-token",
-  "section": "rootquick"
- },
- "336fea9d3b": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-vanished-token",
-  "section": "rootquick"
- },
- "dc2822fe83": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`) (the perl/ of 'perl/lib')",
-  "n": 1,
-  "by": "hand",
-  "type": "block-vanished-token",
   "section": "rootquick"
  },
  "b1989358a0": {
@@ -871,14 +719,6 @@
   "outcome": "same-meaning",
   "why": "a word match on undef in the README's test(undef, undef) call; nothing there about the accessor",
   "n": 94,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "1bd70c0c52": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -1319,38 +1159,6 @@
   ],
   "unreviewed": 1
  },
- "31d77f826a": {
-  "outcome": "shared:ts:251d7318e6",
-  "why": "masked, it is the ts unit of class 251d7318e6 (correction:sentence-review-direct, by hand)",
-  "n": 19,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "663d6ed57c"
-  ],
-  "unreviewed": 1
- },
- "0e3841dc06": {
-  "outcome": "shared:ts:ac937e958b",
-  "why": "masked, it is the ts unit of class ac937e958b (correction:sentence-review-direct, by hand)",
-  "n": 19,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "e87b3544ac"
-  ],
-  "unreviewed": 1
- },
- "03602a7b82": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
  "b27cfa68ec": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
@@ -1482,18 +1290,6 @@
   "by": "hand",
   "type": "added",
   "section": "reference"
- },
- "17e455f4a3": {
-  "outcome": "shared:ts:17e455f4a3",
-  "why": "masked, it is the ts unit of class 17e455f4a3 (correction:sentence-review-list-match, by hand)",
-  "n": 82,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "4cc33fe3da"
-  ],
-  "unreviewed": 1
  },
  "393056d0c1": {
   "outcome": "shared:go:393056d0c1",
@@ -1734,14 +1530,6 @@
  "066a083189": {
   "outcome": "same-meaning",
   "why": "the README's direct example passes 'method' => 'GET', which agrees with the default",
-  "n": 1,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "ff6e6b1e22": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
   "n": 1,
   "by": "hand",
   "type": "echo",
@@ -2060,25 +1848,9 @@
   "type": "vanished-token",
   "section": "reference"
  },
- "24d40b660d": {
-  "outcome": "defect",
-  "why": "DEFECT until the shared showFields change lands: where an entity's only non-id field is a map, the shared display field is that map, and perl prints its reference: Record's list example prints `$item->data_get->{fields}`, which outputs HASH(0x...) (out/new/B/perl/REFERENCE.md:536; 14 variations); OLD printed ->{id} alone. The other blocks of this class are [unification:ref-list-example]: the reference list example binds `results` and names each item `item`, the same names in every ported language (shared refOpBlock, generic naming); an operation called with no argument is written with () in every place (OLD wrote list bare and load()); and the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef",
-  "n": 81,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "reference"
- },
  "5a083e16cc": {
   "outcome": "unification:ref-list-example",
   "why": "doc-nested: as 24d40b660d; the satellite's display field is planet_id",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "reference"
- },
- "bafc700723": {
-  "outcome": "unification:ref-list-example",
-  "why": "ref-issues: as 24d40b660d; PlanetEntity has no other field, so the id alone",
   "n": 1,
   "by": "hand",
   "type": "block-changed",

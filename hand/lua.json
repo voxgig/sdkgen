@@ -17,8 +17,8 @@
   },
   "prints": {
    "value": "fields",
-   "why": "an example prints chosen fields of the record: lua's record is a table, and `print` of a table writes table: 0x..., so 'record' would print an address. OLD lua printed by iterating the record (`for k, val in pairs(ambient:data_get()) do print(k, val) end`, the 20 'another value' readings) in the tutorial and fields elsewhere (12): mixed, so the sheet cannot attest it. 'fields' is the value that prints readable output in every block; where the display field is itself a table (`rec[\"fields\"]` on Record) the print is as unreadable as perl's HASH(0x...), which brief 7 decision 3 (a scalar display field) fixes in shared code",
-   "evidence": "OLD B/lua/README.md `for k, val in pairs(ambient:data_get()) do print(k, val) end`; NEW B/lua/REFERENCE.md `print(rec[\"id\"], rec[\"fields\"])`"
+   "why": "an example prints chosen fields of the record: lua's record is a table, and `print` of a table writes table: 0x..., so 'record' would print an address. OLD lua printed by iterating the record (`for k, val in pairs(ambient:data_get()) do print(k, val) end`, the 20 'another value' readings) in the tutorial and fields elsewhere (12): mixed, so the sheet cannot attest it. 'fields' is the value that prints readable output in every block; where the only other field is itself a table (`fields` on Record) the example now prints the id alone, `print(rec[\"id\"])`, because brief 7 decision 3 makes the display field a scalar",
+   "evidence": "OLD B/lua/README.md `for k, val in pairs(ambient:data_get()) do print(k, val) end`; NEW B/lua/REFERENCE.md `print(rec[\"id\"], rec[\"maker\"])` (Console) and `print(rec[\"id\"])` (Record)"
   }
  },
  "absent": {
@@ -58,7 +58,11 @@
   "ea12b61c7f": "go's tutorial is one program (Syntax_go's `program` printer): a numbered list of steps with bold leads, then one program. lua has no program printer (its README test loads each block on its own), so its tutorial prints a ### heading and a block per step, with the same shared sentences under the headings (e.g. B/lua/README.md 'The client reads its API key from the `DEMO_APIKEY` environment variable.'); the bold lead makes go's unit another unit (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)",
   "a2c72437b6": "go's tutorial is one program (Syntax_go's `program` printer): a numbered list of steps with bold leads, then one program. lua has no program printer (its README test loads each block on its own), so its tutorial prints a ### heading and a block per step, with the same shared sentences under the headings (e.g. B/lua/README.md 'The client reads its API key from the `DEMO_APIKEY` environment variable.'); the bold lead makes go's unit another unit (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)",
   "1f08cc692d": "go has a second test constructor, Test(), which takes no options; lua has one, sdk.test(testopts, sdkopts) (Main.fragment.lua:432), and its sentence says what both arguments hold (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)",
-  "a678b32375": "lua prints the same unit with its own collection word, 'an array of entities' (crud-bare/README.md lua root block, crud-bare/lua/REFERENCE.md); 'array' is lua's declared collection, which the mask replaces, and the article follows it (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)"
+  "a678b32375": "lua prints the same unit with its own collection word, 'an array of entities' (crud-bare/README.md lua root block, crud-bare/lua/REFERENCE.md); 'array' is lua's declared collection, which the mask replaces, and the article follows it (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)",
+  "19898188ee": "lua prints the same unit with its own collection word, 'an array of entities' (crud-bare/README.md lua root block, crud-bare/lua/REFERENCE.md); 'array' is lua's declared collection, which the mask replaces, and the article follows it (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m); the operation is now named bare where arity applies (brief 7 decision 14), which gave the reference sentence a new id; the reason stands",
+  "0071df96c2": "lua's accessor, called with nil, returns the instance the client keeps (MainEntity_lua.ts: `if data == nil then if self._x == nil then self._x = EntityMod.new(self, nil) end return self._x end`), so lua prints the cached sentence of brief 7 decision 4, 'Called with `nil`, return the ... instance the client keeps, made by the first such call; called with entity options, create a new one.', in the same variations; 'Create a new ... instance.' would be false for the call with nil",
+  "afa4347469": "with accessor.cached (brief 7 decision 4) the clause 'pass nil for none' would contradict the sentence before it (nil returns the kept instance); lua prints 'Its `data` argument holds the entity options.' alone, in the same variations",
+  "fdfa305bc4": "lua names an operation bare (facts.named 'bare'; `client:Planet():list(nil)` is a method call through a colon) and declares no arity, so it prints 'The match is optional.' in the same variations; the call form is printed only for languages that name a call and declare how many arguments it must pass (brief 7 decision 14)"
  },
  "360f66a3d2": {
   "outcome": "same-meaning",
@@ -808,9 +812,9 @@
   "n": 10
  },
  "ba0e501f34": {
-  "outcome": "correction:checked-examples",
-  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
-  "n": 81
+  "outcome": "correction:decision-3-scalar-field",
+  "why": "brief 7 decision 3: the list example prints a scalar display field (Console `rec[\"maker\"]`) or, where the entity has none, the id alone (Record, whose other field `fields` is a table that printed table: 0x...); the rest of the block (the err check, ipairs over the results, `local rec = item:data_get()`) is as decided for the other reference list blocks",
+  "n": 64
  },
  "bc48bd2de6": {
   "outcome": "correction:ref-create-runnable",
@@ -838,9 +842,9 @@
   "n": 1
  },
  "e12ef1cf85": {
-  "outcome": "correction:checked-examples",
-  "why": "v3.2 checked examples (pair style, decided once in example.ts): every call takes `local x, err =` apart and checks it with `if err then error(err) end` (OLD's `if err then error(err) end`, now after the writes too, which OLD left unchecked); a reference load or remove reads its record back after the check",
-  "n": 1
+  "outcome": "correction:decision-3-scalar-field",
+  "why": "brief 7 decision 3: the list example prints a scalar display field (Console `rec[\"maker\"]`) or, where the entity has none, the id alone (Record, whose other field `fields` is a table that printed table: 0x...); the rest of the block (the err check, ipairs over the results, `local rec = item:data_get()`) is as decided for the other reference list blocks",
+  "n": 18
  },
  "22c26fcbf9": {
   "outcome": "correction:S25",
@@ -1012,6 +1016,91 @@
  "1873ad789f": {
   "outcome": "correction:action-call-cell",
   "why": "a token of the action Call cell, now the call's whole statements on one line (`... if err then error(err) end`), as b178332f86",
+  "n": 1
+ },
+ "f5e8e05fbb": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity > 0: go, rust, zig, swift), prose names the operation bare (`List`) rather than as a call that would not compile (`List()`)",
+  "n": 1
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "282d4750fe": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19
+ },
+ "d24cc5aafa": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 93
+ },
+ "ef6e4f695b": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 92
+ },
+ "bf4ca985aa": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 94
+ },
+ "e8e8cc2723": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "11da65611b": {
+  "outcome": "correction:freeze-direct-wording",
+  "why": "direct's Returns, reworded once at the freeze (independent check of the sentence round: awkward): the keys are said for a response whose body is read, because ts and js drop `data` when the body cannot be read (run by that check: ts 200 'not json' gives ok, status, headers, err) while py, go, perl keep it empty; and `err` is read where it is introduced, since 'A key is read as' read as a rule for every key. Same facts otherwise",
+  "n": 19
+ },
+ "0918d10148": {
+  "outcome": "correction:decision-7-match-copy",
+  "why": "brief 7 decision 7: the match getter returns a copy, as the data getter does, and now says so (cited: the getter clones the match in every ported runtime, e.g. go Entity.fragment.go `out := vs.Clone(e.match)`, c Entity.fragment.c `return voxgig_clone(self->mtch);`, clojure `(vs/clone (deref (:_match ent)))`); OLD said nothing about it",
+  "n": 94
+ },
+ "80f77307dc": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the stream reads callopts.signal between items (cited per runtime, e.g. ts EntityBase.fragment.ts `if (signal && signal.aborted) { return }`, perl `return undef if $aborted->();`); the sentence prints on its own fact under the stream member, and the cancel paragraph speaks of operations only",
+  "n": 94
+ },
+ "f64dc915fc": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the deleted mark is read (a member or field the entity declares, re-derived by the guard, e.g. go `Deleted()`, c `vt->deleted`, zig field `deleted`); it says nothing about the data, which the runtimes replace when the response carries a record",
+  "n": 15
+ },
+ "7e86a932db": {
+  "outcome": "same-meaning",
+  "why": "the README's accessor call passes nil the same way; no disagreement",
+  "n": 1
+ },
+ "c57c0ef5c6": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 1
+ },
+ "671a0cd356": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 1
+ },
+ "0fd244b2e3": {
+  "outcome": "correction:decision-4-accessor-cached",
+  "why": "brief 7 decision 4: lua's accessor called with nil returns the instance the client keeps (MainEntity_lua.ts: `if self._${field} == nil then self._${field} = EntityMod.new(self, nil) end return self._${field}`); 'Create a new ... instance' was false for that call",
+  "n": 1
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's new sentence (`callopts.signal`)",
+  "n": 1
+ },
+ "db819a027f": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the token of the deleted read the remove sentence now names",
   "n": 1
  }
 }

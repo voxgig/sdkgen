@@ -4,5 +4,11 @@
   "check": "naming function no non-README component calls",
   "text": "exampleVarName (from @voxgig/sdkgen)",
   "why": "An example variable is not a name the code generator makes. The hook adapts the shared example names (results, item, result, the entity plural) to the language identifier rules with the sdkgen function the language's other README families use; no code generator has an equivalent."
+ },
+ {
+  "file": "Syntax",
+  "check": "concatenation on a description name",
+  "text": "return [`require_relative ${str(('top' === place ? desc.layout.dir + '/' : '') + desc.layout.module)}`]",
+  "why": "Not a name: the path a root-level program requires, the target's directory (layout.dir, from the naming hook) joined to the SDK file (layout.module), printed only for the root quick start (brief 7 decision 1; ran from the repository root: OLD's bare file fails with LoadError). It renames nothing."
  }
 ]

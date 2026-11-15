@@ -23,14 +23,6 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "13a7b586db": {
-  "outcome": "unification:op-sentences",
-  "why": "",
-  "n": 16,
-  "by": "rule:op-sentences",
-  "type": "reworded",
-  "section": "tutorial"
- },
  "0538108a37": {
   "outcome": "restored:shared",
   "why": "",
@@ -76,14 +68,6 @@
   "why": "",
   "n": 3,
   "by": "rule:tutorial-leadin",
-  "type": "reworded",
-  "section": "tutorial"
- },
- "886bc364b3": {
-  "outcome": "correction:runtime-forms",
-  "why": "",
-  "n": 7,
-  "by": "rule:op-signature",
   "type": "reworded",
   "section": "tutorial"
  },
@@ -207,17 +191,6 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "41949a3c62": {
-  "outcome": "contradiction",
-  "why": "",
-  "n": 1,
-  "by": "hand",
-  "type": "echo",
-  "section": "tutorial",
-  "where": "zig/README.md:77-86 (Error handling, printed by the shared ReadmeErrors.ts for 16 languages, unported): 'Entity operations reject on failure, so wrap them in `try` / `catch`', with TypeScript code",
-  "true": "the tutorial and REFERENCE: a zig operation returns a result union whose .ok is the entity and .err reports failure; it does not reject, and try/catch does not apply",
-  "evidence": "src/cmp/zig/fragment/EntityLoadOp.fragment.zig returns EntResult (.ok / .err); README:152 itself switches on .ok/.err"
- },
  "c44f65ddeb": {
   "outcome": "correction:S28",
   "why": "",
@@ -245,14 +218,6 @@
  "ec589bf68a": {
   "outcome": "unification:write-title-entity",
   "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
-  "n": 1,
-  "by": "hand",
-  "type": "added",
-  "section": "tutorial"
- },
- "95022eb6b9": {
-  "outcome": "restored:fact",
-  "why": "the write sentence for the one write ref-issues has",
   "n": 1,
   "by": "hand",
   "type": "added",
@@ -898,22 +863,6 @@
   "type": "echo",
   "section": "reference"
  },
- "89672a79c6": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "940b78cf67": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
  "74e67fc6cf": {
   "outcome": "contradiction",
   "why": "",
@@ -1125,14 +1074,6 @@
   "type": "missing",
   "section": "reference"
  },
- "6a59b75c3e": {
-  "outcome": "restored:shared",
-  "why": "restored as 'The match is optional.' (v3.3: 'without one, every record is listed' overstated, sentence review)",
-  "n": 83,
-  "by": "hand",
-  "type": "missing",
-  "section": "reference"
- },
  "2f38082332": {
   "outcome": "correction:S09",
   "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
@@ -1273,30 +1214,6 @@
   "type": "added",
   "section": "reference"
  },
- "251d7318e6": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "ac937e958b": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "bc1be46613": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
  "e0280db03c": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
@@ -1361,14 +1278,6 @@
   "outcome": "restored:fact",
   "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.zig (make_point and the operation before streamItems returns the slice); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
   "n": 94,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "17e455f4a3": {
-  "outcome": "correction:sentence-review-list-match",
-  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
-  "n": 82,
   "by": "hand",
   "type": "added",
   "section": "reference"

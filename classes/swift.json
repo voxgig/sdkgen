@@ -75,14 +75,6 @@
   ],
   "unreviewed": 0
  },
- "1ede05e640": {
-  "outcome": "restored:shared",
-  "why": "the wrapped style's load sentence (runtimeprose loadSentence) with swift's cited unwrap and derived record; replaces the OLD \"`load()` returns the ENTITY — call data() for the record — and throws on error\", same facts",
-  "n": 16,
-  "by": "hand",
-  "type": "added",
-  "section": "tutorial"
- },
  "a65ba4a33f": {
   "outcome": "shared:ts:a65ba4a33f",
   "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
@@ -95,14 +87,6 @@
   ],
   "unreviewed": 1
  },
- "2ab61ac902": {
-  "outcome": "same-meaning",
-  "why": "a word match on VList: the README options table says `extend` is a `VList`; nothing about what list returns",
-  "n": 7,
-  "by": "hand",
-  "type": "echo",
-  "section": "tutorial"
- },
  "bef2b8f986": {
   "outcome": "shared:ts:bef2b8f986",
   "why": "masked, it is the ts unit of class bef2b8f986 (unification:write-title-entity, by hand)",
@@ -114,14 +98,6 @@
    "21fc35c768"
   ],
   "unreviewed": 1
- },
- "28f0ea9b7a": {
-  "outcome": "restored:shared",
-  "why": "the wrapped style's list sentence: same facts (a list of entities one per record, throws, asNative as? Entity unwraps an item, data() reads the record); the value is named as the VList it holds (Value.swift: case list(VList)); OLD named the call with its arguments list(nil, nil), the shared sentence names it list()",
-  "n": 7,
-  "by": "hand",
-  "type": "reworded",
-  "section": "tutorial"
  },
  "5a3859e529": {
   "outcome": "shared:ts:5a3859e529",
@@ -162,14 +138,6 @@
  "8331b0f6e3": {
   "outcome": "restored:shared",
   "why": "the wrapped style's write sentence (writeSentence); OLD said only, in the create comment, that create returns the entity; true: every op returns .native(NativeRef(self)) on success and remove marks it deleted (EntityBase.fragment.swift:167-171)",
-  "n": 5,
-  "by": "hand",
-  "type": "added",
-  "section": "tutorial"
- },
- "fec65e4929": {
-  "outcome": "restored:shared",
-  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as fec65e4929): the shared create comment in the wrapped style, with swift's record expression; replaces \"Create — returns the ENTITY (call data() for the record)\"",
   "n": 5,
   "by": "hand",
   "type": "added",
@@ -326,14 +294,6 @@
    "b83e95bec6"
   ],
   "unreviewed": 1
- },
- "76f72279eb": {
-  "outcome": "restored:shared",
-  "why": "the write sentence for one write (ref-issues: update only), in the wrapped style",
-  "n": 1,
-  "by": "hand",
-  "type": "added",
-  "section": "tutorial"
  },
  "325b1911ed": {
   "outcome": "same-meaning",
@@ -515,33 +475,9 @@
   "type": "block-changed",
   "section": "tutorial"
  },
- "27793e952b": {
-  "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
-  "n": 3,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "tutorial"
- },
- "557ea2b7a9": {
-  "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "tutorial"
- },
  "c49ed11762": {
   "outcome": "unification:example-names",
   "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem",
-  "n": 1,
-  "by": "hand",
-  "type": "block-changed",
-  "section": "tutorial"
- },
- "389912065e": {
-  "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity instead of a literal (chainsId)",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
@@ -1007,22 +943,6 @@
   "outcome": "same-meaning",
   "why": "a word match on VList: the README options table says `extend` is a `VList`; nothing about list",
   "n": 83,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "89672a79c6": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "940b78cf67": {
-  "outcome": "same-meaning",
-  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
-  "n": 19,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -1563,38 +1483,6 @@
   ],
   "unreviewed": 1
  },
- "251d7318e6": {
-  "outcome": "shared:ts:251d7318e6",
-  "why": "masked, it is the ts unit of class 251d7318e6 (correction:sentence-review-direct, by hand)",
-  "n": 19,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "663d6ed57c"
-  ],
-  "unreviewed": 1
- },
- "ac937e958b": {
-  "outcome": "shared:ts:ac937e958b",
-  "why": "masked, it is the ts unit of class ac937e958b (correction:sentence-review-direct, by hand)",
-  "n": 19,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "e87b3544ac"
-  ],
-  "unreviewed": 1
- },
- "58c6715c33": {
-  "outcome": "correction:sentence-review-direct",
-  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
-  "n": 19,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
  "b9b1eb40e3": {
   "outcome": "correction:sentence-review-direct",
   "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
@@ -1655,14 +1543,6 @@
   "outcome": "restored:shared",
   "why": "the wrapped return clause for load",
   "n": 28,
-  "by": "hand",
-  "type": "added",
-  "section": "reference"
- },
- "773dbe24f2": {
-  "outcome": "restored:shared",
-  "why": "the record sentence of every single-entity op: the record is read through the unwrap; OLD said \"whose record `data()` reads ... that `asNative as? Entity` unwraps\" for load only",
-  "n": 79,
   "by": "hand",
   "type": "added",
   "section": "reference"
@@ -1738,18 +1618,6 @@
    "e866dc0d3c"
   ],
   "unreviewed": 0
- },
- "17e455f4a3": {
-  "outcome": "shared:ts:17e455f4a3",
-  "why": "masked, it is the ts unit of class 17e455f4a3 (correction:sentence-review-list-match, by hand)",
-  "n": 82,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "4cc33fe3da"
-  ],
-  "unreviewed": 1
  },
  "393056d0c1": {
   "outcome": "shared:go:393056d0c1",
