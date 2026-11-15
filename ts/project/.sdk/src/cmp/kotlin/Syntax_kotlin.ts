@@ -76,8 +76,9 @@ const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
   INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'listOf<Any?>()', OBJECT: 'mapOf<String, Any?>()', NULL: 'null',
 } as Record<string, string>)[e.type] ?? str(e.text)
 
-// The entity an operation returned, cast from `Any?`, and its record.
-const data = (r: Ref): string => `(${name(r)} as SdkEntity).data()`
+// The record of an entity. A list's item is cast from `Any?` where it is
+// read; a value an operation returned is cast where it is bound (below).
+const data = (r: Ref): string => 'item' === r.role ? `(${name(r)} as SdkEntity).data()` : `${name(r)}.data()`
 const field = (r: Ref, f: string): string => `(${data(r)} as Map<*, *>)[${str(f)}]`
 
 const expr = (e: Expr): string => {
@@ -93,6 +94,16 @@ const expr = (e: Expr): string => {
 }
 
 const pair = (en: Entry): string => `${str(en.key)} to ${expr(en.value)}`
+
+// Whether the statements read the record a bound value holds.
+const refers = (e: Expr, r: Ref): boolean => 'map' === e.k ? e.entries.some((en) => refers(en.value, r))
+  : (('record' === e.k || 'field' === e.k || 'fields' === e.k) && e.of.name === r.name)
+const reads = (stmts: Stmt[], r: Ref): boolean => stmts.some((s) => {
+  if ('print' === s.k) return refers(s.what, r)
+  if ('call' === s.k) return (s.arg || []).some((en) => refers(en.value, r))
+  if ('each' === s.k || 'attempt' === s.k) return reads(s.body, r)
+  return false
+})
 
 // A map laid out a member per line; a map member one level down is laid out
 // the same way, deeper ones stay on their member's line.
@@ -129,11 +140,13 @@ const Syntax: SyntaxType = {
       : `val client = ${desc.layout.ctor}(mutableMapOf<String, Any?>(\n${members(s.options, '    ').join('\n')}\n))`,
   ],
 
-  // A list is a List of entities, cast so that it can be iterated.
-  call: (s) => {
+  // An operation returns `Any?`: a list is cast to a List so that it can be
+  // iterated, and an entity to SdkEntity where the block reads its record.
+  call: (s, _desc, sc) => {
     const call = `client.${s.entity.sym.accessor}(null).${(facts.method as any)[s.op]}(${argOf(s)}, null)`
     if (null == s.bind) return [call]
-    return [`val ${name(s.bind)} = ${call}${'many' === s.bind.role ? ' as List<*>' : ''}`]
+    const cast = 'many' === s.bind.role ? ' as List<*>' : (reads(sc.stmts, s.bind) ? ' as SdkEntity' : '')
+    return [`val ${name(s.bind)} = ${call}${cast}`]
   },
 
   each: (s, inner) => [
