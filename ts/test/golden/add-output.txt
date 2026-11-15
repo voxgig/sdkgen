@@ -1762,7 +1762,7 @@ src/cmp/scala/ReadmeOptions_scala.ts 6c961d32294b
 src/cmp/scala/ReadmeTopHowto_scala.ts 1169e3db1008
 src/cmp/scala/ReadmeTopTest_scala.ts a9ffb6404c1b
 src/cmp/scala/Schema_scala.ts 98d756d85e8c
-src/cmp/scala/Syntax_scala.ts 40a64f70fe07
+src/cmp/scala/Syntax_scala.ts 604f275fd5e0
 src/cmp/scala/TestClean_scala.ts 8fe9eddddd97
 src/cmp/scala/TestDirect_scala.ts 07de948be724
 src/cmp/scala/TestEntity_scala.ts a075c6549a8d
