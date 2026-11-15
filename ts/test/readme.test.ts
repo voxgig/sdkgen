@@ -266,4 +266,16 @@ describe('ReadmeRefFeatures', () => {
     delete nocost.cost
     ok(/such as a cache serving a hit/.test(await renderRefFeatures(nocost)))
   })
+
+  test('one wrapping feature: singular wording and no nesting claim; none: no ordering at all (U52)', async () => {
+    const one = await renderRefFeatures({ retry: { transport: 'wrap' }, log: SHIPPED.log, test: SHIPPED.test })
+    ok(!/several features wrap/.test(one), one)
+    ok(!/^`\w+` wrap the transport/m.test(one), one)
+    ok(!/nesting order|nested inside|order they nest/.test(one), one)
+    ok(/`retry` is the one feature that wraps the transport/.test(one), one)
+    const none = await renderRefFeatures({ log: SHIPPED.log, audit: SHIPPED.audit })
+    ok(!/#### Ordering|wrap the|array form/.test(none), none)
+    const two = await renderRefFeatures(SHIPPED)
+    ok(/several features wrap/.test(two) && /activation order is nesting order/.test(two), two)
+  })
 })

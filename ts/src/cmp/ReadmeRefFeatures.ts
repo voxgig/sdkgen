@@ -18,6 +18,16 @@ const ReadmeRefFeatures = cmp(function ReadmeRefFeatures(props: any) {
   const onByDefault = activeByDefault
   const on = features.filter(onByDefault).map((f) => '`' + f.name + '`')
 
+  // By the transport each declares: a wrapper, the base transport the
+  // wrappers wrap, or none; only the last are order-free hook features.
+  const has = (name: string): boolean => features.some((f) => name === f.name)
+  const wrapping = features.filter((f) => f.wraps)
+  const hooked = features.filter((f) => 'none' === f.transport && 0 < f.hooks.length)
+  const names = (fs: FeatureDoc[]): string => fs.map((f) => '`' + f.name + '`').join(', ')
+  // Nesting needs two wrappers; with one there is no order to speak of.
+  const nests = 1 < wrapping.length
+  const ordered = honoursActivationOrder(target)
+
   // Emitted INSIDE the per-language `## Features` section, after its summary
   // table and activation snippet, so these are subsections of it rather than
   // a competing heading.
@@ -29,23 +39,15 @@ configured does no feature work at all.` : `Each feature is inactive until switc
 ${1 === on.length ? 'runs' : 'run'} unless disabled.`} Every option below keeps its default
 unless you name it.
 
-${honoursActivationOrder(target) ?
-  'The array form of `feature` is significant: several features wrap the\ntransport, and the order you list them in is the order they nest.' :
-  'This SDK takes `feature` as a map and composes the transport-wrapping\nfeatures in a fixed catalog order, so activation order does not change\nnesting here.'}
-
-`)
-
-  // By the transport each declares: a wrapper, the base transport the
-  // wrappers wrap, or none; only the last are order-free hook features.
-  const has = (name: string): boolean => features.some((f) => name === f.name)
-  const wrapping = features.filter((f) => f.wraps)
-  const hooked = features.filter((f) => 'none' === f.transport && 0 < f.hooks.length)
+${!nests ? '' : ordered ?
+  'The array form of `feature` is significant: several features wrap the\ntransport, and the order you list them in is the order they nest.\n\n' :
+  'This SDK takes `feature` as a map and composes the transport-wrapping\nfeatures in a fixed catalog order, so activation order does not change\nnesting here.\n\n'}`)
 
   if (0 < wrapping.length) {
     Content(`#### Ordering
 
-${wrapping.map((f) => '`' + f.name + '`').join(', ')} wrap the transport. Each
-wraps whatever is already installed${honoursActivationOrder(target) ?
+${nests ? `${names(wrapping)} wrap the transport. Each
+wraps whatever is already installed${ordered ?
   ', so **activation order is nesting order**:\na feature activated later sits OUTSIDE one activated earlier, and sees the call\nfirst.' :
   '. This SDK fixes that order in its own\ncatalog rather than taking it from the caller.'}
 
@@ -57,8 +59,10 @@ that was never spent.
 ` : `That decides behaviour, not just sequence: a feature that short-circuits the
 call${has('cache') ? ', such as a cache serving a hit,' : ''} stops every feature nested inside it from
 ever seeing that call.
+`}` : `${names(wrapping)} is the one feature that wraps the transport: it wraps
+whatever transport is installed.
 `}
-${hooked.map((f) => '`' + f.name + '`').join(', ')} attach to pipeline hooks
+${names(hooked)} attach to pipeline hooks
 rather than the transport, so their order does not affect what they observe.
 
 `)
