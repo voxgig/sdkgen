@@ -1282,7 +1282,8 @@ src/cmp/php/EntityTypes_php.ts 4ffa1b893ae1
 src/cmp/php/Entity_php.ts 11d4cc8b9dae
 src/cmp/php/Gitignore_php.ts e6379c0edbe7
 src/cmp/php/MainEntity_php.ts 63d270027217
-src/cmp/php/Main_php.ts 7cf40a8baf83
+src/cmp/php/Main_php.ts fda1a4ba62c4
+src/cmp/php/Naming_php.ts 32310bd78267
 src/cmp/php/Package_php.ts d6e54478a53a
 src/cmp/php/PrepareAuth_php.ts c1c0ed41ade8
 src/cmp/php/ReadmeEntity_php.ts a7b6d0434fe8
@@ -1293,12 +1294,10 @@ src/cmp/php/ReadmeInstall_php.ts a67ef3f9bffe
 src/cmp/php/ReadmeIntro_php.ts ec27ddafd34d
 src/cmp/php/ReadmeModel_php.ts 39c1d3c64b4b
 src/cmp/php/ReadmeOptions_php.ts 8e01f70c9171
-src/cmp/php/ReadmeQuick_php.ts 4f8039bb6e9f
-src/cmp/php/ReadmeRef_php.ts 591591392e1a
 src/cmp/php/ReadmeTopHowto_php.ts a0a90593a80f
-src/cmp/php/ReadmeTopQuick_php.ts 3680292dbd0a
 src/cmp/php/ReadmeTopTest_php.ts c1a4a8bb5d36
 src/cmp/php/Schema_php.ts 9750487a267a
+src/cmp/php/Syntax_php.ts 697232948214
 src/cmp/php/TestClean_php.ts 72ebbaa3ffa5
 src/cmp/php/TestDirect_php.ts 8731b768120c
 src/cmp/php/TestEntity_php.ts 5f5f4d87574f
@@ -1312,7 +1311,7 @@ src/cmp/php/fragment/EntityRemoveOp.fragment.php f0ec07bd1517
 src/cmp/php/fragment/EntityUpdateOp.fragment.php 708596fd1802
 src/cmp/php/fragment/Main.fragment.php 369e3abf1654
 src/cmp/php/tsconfig.json 720a3f229019
-src/cmp/php/utility_php.ts c65bddbe5deb
+src/cmp/php/utility_php.ts dc55871ba6f6
 tm/php/LICENSE 52acd47c245f
 tm/php/Makefile 1df8eadc6f78
 tm/php/VERSION e6635045e1d2
