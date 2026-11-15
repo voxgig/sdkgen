@@ -20,7 +20,8 @@ const forms: Forms = {
     return null == m ? { name: '', type: '' } : { name: m[1], type: m[2] }
   },
   optional: (p) => /=|^vararg\b/.test(p),
-  returns: (after) => (/^\s*:\s*([^={]+)/.exec(after) || [])[1] || '',
+  // A class header's `: Base(...)` names its superclass, not a return.
+  returns: (after, _before, head) => /\bclass\s/.test(head) ? '' : (/^\s*:\s*([^={]+)/.exec(after) || [])[1] || '',
   entityCtor: 'EntyClass',
   opName: /^  override fun ([a-z]\w*)\(/gm,
   public: {
