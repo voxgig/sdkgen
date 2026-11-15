@@ -90,6 +90,10 @@ const forms: Forms = {
     draw: "| Some fn -> fn ()",
     runs: "before it returns", items: "before it returns",
   },
+  // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
+  cite: {
+    'ref.facts.direct.okFalse': { value: "false", file: "tm/ocaml/sdk_features.ml", quote: "jo [(\"ok\", Bool false);" },
+  },
 }
 
 export { forms }
