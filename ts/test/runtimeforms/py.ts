@@ -45,6 +45,7 @@ const forms: Forms = {
   // The porter's, from here on.
   uncompared: { returns: 'the runtime annotates the returns of the operations and data_get/match_get only; the others are cited where a fact rests on them' },
   cite: {
+    'ref.facts.client[0].copy': { value: true, file: "src/cmp/py/fragment/Main.fragment.py", quote: "out = vs.clone(self.options)" },
     'ref.facts.none': { file: 'src/cmp/py/fragment/EntityLoadOp.fragment.py', quote: 'def load(self, reqmatch=None, ctrl=None) -> EntyClass:' },
     'ref.facts.direct.okFalse': { file: MAIN, quote: 'return {"ok": False, "err": utility.clean(self._rootctx, err)}' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/py/fragment/Entity.fragment.py", quote: "return vs.clone(self._data)" },
@@ -55,7 +56,7 @@ const forms: Forms = {
       also: [{ file: MAIN, quote: 'class ProjectNameSDK' }],
     },
     'ref.facts.client[1].kind': { value: "utility", file: MAIN, quote: 'return ProjectNameUtility.copy(self._utility)' },
-    'ref.facts.direct.returns': { file: MAIN, quote: ['def direct(self, fetchargs=None):', 'return {"ok": False, "err": utility.clean(self._rootctx, err)}', 'if isinstance(fetched, dict):'] },
+    'ref.facts.direct.returns': { file: MAIN, quote: ['def direct(self, fetchargs=None):', 'return {"ok": False, "err": utility.clean(self._rootctx, err)}'], unquoted: { dict: 'the result is a dict literal; Python does not spell its type' } },
     'ref.facts.prepare.returns': { file: 'tm/py/pkg/utility/make_fetch_def.py', quote: ['"url": url,', '"method": spec.method,'], unquoted: { dict: 'the fetch definition is a dict literal' } },
     'ref.facts.prepare.fails': { value: "style", file: MAIN, quote: 'raise ctx.make_error("spec_method_allow",' },
     'ref.facts.body.values': { value: "`bytes`, `bytearray`, `memoryview`, a `str` or a file object",

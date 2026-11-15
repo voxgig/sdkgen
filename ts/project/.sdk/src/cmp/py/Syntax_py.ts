@@ -36,7 +36,7 @@ const refFacts: RefFacts = {
   },
   opMatched: { list: 'list(reqmatch, ctrl=None) -> list[{Class}]' },
   client: [
-    { kind: 'options', sig: 'options_map() -> dict' },
+    { kind: 'options', sig: 'options_map() -> dict', copy: true },
     { kind: 'utility', sig: 'get_utility() -> Utility' },
     { kind: 'direct', sig: 'direct(fetchargs=None) -> dict' },
     { kind: 'prepare', sig: 'prepare(fetchargs=None) -> dict' },
