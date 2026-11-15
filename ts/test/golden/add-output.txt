@@ -784,6 +784,7 @@ src/cmp/js/Entity_js.ts debbc06d5c79
 src/cmp/js/Gitignore_js.ts 7e1f5ab06113
 src/cmp/js/MainEntity_js.ts 2d4bef66f0c1
 src/cmp/js/Main_js.ts 5964cdac192d
+src/cmp/js/Naming_js.ts ca7d091eaeb7
 src/cmp/js/Package_js.ts bf2c5d8163f2
 src/cmp/js/PrepareAuth_js.ts 9742af3eb16d
 src/cmp/js/ReadmeEntity_js.ts 20cb70a7e456
@@ -793,13 +794,11 @@ src/cmp/js/ReadmeInstall_js.ts b32a0d558675
 src/cmp/js/ReadmeIntro_js.ts ff6e22583d99
 src/cmp/js/ReadmeModel_js.ts 14995251d016
 src/cmp/js/ReadmeOptions_js.ts 6a3950ed95f9
-src/cmp/js/ReadmeQuick_js.ts 7e93450e771c
-src/cmp/js/ReadmeRef_js.ts f3557cc0a412
 src/cmp/js/ReadmeTopHowto_js.ts 1fd0efc85561
-src/cmp/js/ReadmeTopQuick_js.ts ac185f82a7ff
 src/cmp/js/ReadmeTopTest_js.ts 58f6a02f2a39
 src/cmp/js/Schema_js.ts 557790433a08
 src/cmp/js/SdkError_js.ts c3c526f2b624
+src/cmp/js/Syntax_js.ts 1d333593a40e
 src/cmp/js/TestClean_js.ts 0fb89a1170e3
 src/cmp/js/TestDefinition_js.ts 9bd45df6b9d9
 src/cmp/js/TestDirect_js.ts 46fc3fefb5d4
