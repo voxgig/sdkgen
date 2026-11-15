@@ -83,7 +83,7 @@
   "why": "",
   "n": 4
  },
- "9fe064910d": {
+ "1989b91f6f": {
   "rule": "write-comments",
   "outcome": "restored:fact",
   "why": "",
@@ -131,7 +131,7 @@
   "why": "",
   "n": 1
  },
- "a70e78782c": {
+ "dcd365a50d": {
   "rule": "write-comments",
   "outcome": "restored:fact",
   "why": "",
@@ -408,7 +408,7 @@
   "n": 27,
   "rekeyed": "c0e6640e69+fe603541cd"
  },
- "1e52c8e19e": {
+ "304d33a8f5": {
   "rule": "op-signature",
   "outcome": "correction:runtime-forms",
   "why": "",
@@ -421,7 +421,7 @@
   "n": 92,
   "rekeyed": "6738d1d568+be62a48d77"
  },
- "4299fe5f5e": {
+ "92bc6e303b": {
   "rule": "op-sentences",
   "outcome": "unification:op-sentences",
   "why": "",
@@ -679,7 +679,7 @@
   "why": "",
   "n": 16
  },
- "650eff7141": {
+ "3d50058045": {
   "rule": "actions-table",
   "outcome": "correction:ref-6",
   "why": "",
@@ -721,13 +721,13 @@
   "why": "",
   "n": 4
  },
- "f7372b5fc5": {
+ "f41ebb5b18": {
   "rule": "op-signature",
   "outcome": "correction:runtime-forms",
   "why": "",
   "n": 1
  },
- "e861a34f8e": {
+ "cbcdf6e5f9": {
   "rule": "op-sentences",
   "outcome": "unification:op-sentences",
   "why": "",
@@ -769,20 +769,20 @@
   "why": "",
   "n": 1
  },
- "73eb76be49": {
+ "21401b4fdc": {
   "rule": "make-sentence",
   "outcome": "unification:member-sentences",
   "why": "",
   "n": 1,
   "rekeyed": "6738d1d568"
  },
- "58dce0253b": {
+ "41f428548f": {
   "rule": "class-collision",
   "outcome": "correction:U34",
   "why": "",
   "n": 1
  },
- "65514f523e": {
+ "1fb62647bb": {
   "rule": "class-collision",
   "outcome": "correction:U34",
   "why": "",
@@ -806,13 +806,13 @@
   "why": "",
   "n": 1
  },
- "9d28d07c10": {
+ "803ab31d20": {
   "rule": "class-collision",
   "outcome": "correction:U34",
   "why": "",
   "n": 1
  },
- "45597eec7e": {
+ "ec6851bb78": {
   "rule": "class-collision",
   "outcome": "correction:U34",
   "why": "",
@@ -830,7 +830,7 @@
   "why": "",
   "n": 1
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "rule": "op-sentences",
   "outcome": "unification:op-sentences",
   "why": "",
@@ -860,7 +860,7 @@
   "why": "",
   "n": 1
  },
- "29687f1ee8": {
+ "1c227ca04a": {
   "rule": "class-collision",
   "outcome": "correction:U34",
   "why": "",

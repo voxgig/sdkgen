@@ -356,9 +356,27 @@ const MARK = { E: '', F: '', S: 'Ⓢ', L: 'Ⓛ' }
 const SYM = { E: 'Ⓔ', F: 'Ⓕ', S: 'Ⓢ', L: 'Ⓛ' }
 const canon = (w) => w.toLowerCase().replace(/_/g, '')
 const sameName = (a, b) => { const x = canon(a), y = canon(b); return x.includes(y) || y.includes(x) }
-function templateOf(s, rs) {
+// Code in a unit: a code span, and outside spans a token with code in it
+// (`data_get()`, `vt->data`, `[]any`, `.ok`, `*err`): a language's own
+// spelling. It is no part of a template (so go's `Data()` and lua's
+// `data_get()` sentence are one template), and a name inside it is always
+// masked, as in v3.2.
+function codeRanges(s) {
+  const out = []
+  for (const m of s.matchAll(/`[^`]*`/g)) out.push({ s: m.index, e: m.index + m[0].length })
+  const bare = s.replace(/`[^`]*`/g, (m) => ' '.repeat(m.length))
+  for (const m of bare.matchAll(/\S+/g)) {
+    const w = m[0].replace(/[.,;:!?]+$/, '')
+    if (/[()[\]{}*]|->|::|_|^\.[A-Za-z]/.test(w) && /[A-Za-z]/.test(w)) out.push({ s: m.index, e: m.index + w.length })
+  }
+  return out.sort((x, y) => x.s - y.s)
+}
+const inCode = (codes, r) => codes.some((c) => r.s >= c.s && r.e <= c.e)
+
+function templateOf(s, rs, codes = []) {
+  const marks = [...rs.filter((r) => !inCode(codes, r)).map((r) => ({ s: r.s, e: r.e, m: MARK[r.t] })), ...codes.map((c) => ({ s: c.s, e: c.e, m: '§' }))].sort((x, y) => x.s - y.s)
   let out = '', at = 0
-  for (const r of rs) { out += s.slice(at, r.s) + MARK[r.t]; at = r.e }
+  for (const r of marks) { if (r.s < at) continue; out += s.slice(at, r.s) + r.m; at = r.e }
   // the article follows the name ("an ambient", "a planet"): one template
   // and numbers (a step number) are no part of a template
   return (out + s.slice(at)).replace(/(^|[^A-Za-z])([Aa])n?(\s+)(?=[\uE001\uE002])/g, '$1$2$3').replace(/\b\d+\b/g, '#')
@@ -380,9 +398,10 @@ function learned(roots) {
   const T = new Map()
   const learn = (text, src, title) => {
     const { ranges } = candidates(VL, title, text)
-    const ms = ranges.filter((r) => 'E' === r.t || 'F' === r.t)
+    const codes = codeRanges(text)
+    const ms = ranges.filter((r) => ('E' === r.t || 'F' === r.t) && !inCode(codes, r))
     if (!ms.length) return
-    const key = templateOf(text, ranges)
+    const key = templateOf(text, ranges, codes)
     let row = T.get(key)
     if (!row) { row = ms.map(() => new Map()); T.set(key, row) }
     ms.forEach((r, i) => { const c = canon(r.w); if (!row[i].has(c)) row[i].set(c, new Set()); row[i].get(c).add(src) })
@@ -423,9 +442,10 @@ function modelRanges(roots, lang, excl = lang) {
   const self = 'new:' + excl
   return (s) => {
     const { ranges } = candidates(VL, title, s)
-    const ms = ranges.filter((r) => 'E' === r.t || 'F' === r.t)
+    const codes = codeRanges(s)
+    const ms = ranges.filter((r) => ('E' === r.t || 'F' === r.t) && !inCode(codes, r))
     if (!ms.length) return ranges.map((r) => ({ ...r, rep: SYM[r.t] }))
-    const row = learned(roots).get(templateOf(s, ranges))
+    const row = learned(roots).get(templateOf(s, ranges, codes))
     // a tie every other source keeps that this unit breaks (an entity swapped
     // for another in one place): the later position is marked, so the unit is
     // not the template's
@@ -445,7 +465,7 @@ function modelRanges(roots, lang, excl = lang) {
     }
     let i = 0
     return ranges.map((r) => {
-      if ('S' === r.t || 'L' === r.t) return { ...r, rep: SYM[r.t] }
+      if ('S' === r.t || 'L' === r.t || inCode(codes, r)) return { ...r, rep: SYM[r.t] }
       const pos = row ? row[i] : null
       if (broken.has(i)) { i++; return { ...r, rep: SYM[r.t] + '≠' } }
       i++

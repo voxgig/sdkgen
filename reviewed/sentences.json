@@ -297,7 +297,7 @@
    "example": "go: Create — the value is the created entity; Data() reads its record",
    "identity": "comment | Create — the value is the created entity; Data() reads its record"
   },
-  "f332d399fc": {
+  "288c093dd4": {
    "verdict": "ok",
    "note": "[89e4ec3e7c] go pair listSentence first half (bold lead).",
    "from": [
@@ -305,7 +305,7 @@
    ],
    "fromSplit": true,
    "example": "go: **List planet records.**",
-   "identity": "sentence | **List Ⓔ records.**"
+   "identity": "sentence | **List Ⓔ Ⓔs.**"
   },
   "a678b32375": {
    "verdict": "ok",
@@ -376,7 +376,7 @@
    "example": "go: **Create and remove.**",
    "identity": "sentence | **Create and remove.**"
   },
-  "05c42f9ed1": {
+  "959c64f833": {
    "verdict": "awkward",
    "note": "[64112421c3] ReadmeQuick.ts:161-162. \"so provide the `planet_id`\" — \"the\" before a code token, and it does not say where (the match) or that the satellite id is still needed. Better: \"Satellite is nested under planet, so the match gives `planet_id` as well as the satellite's own id.\"",
    "from": [
@@ -384,7 +384,7 @@
    ],
    "fromSplit": true,
    "example": "go: Satellite is nested under planet, so provide the `planet_id`.",
-   "identity": "sentence | Satellite is nested under planet, so provide the `planet_id`."
+   "identity": "sentence | Satellite is nested under planet, so provide the `Ⓔ_id`."
   },
   "fa703982ba": {
    "verdict": "ok",
@@ -700,14 +700,14 @@
    "example": "zig: List planet records: .ok is a slice of entities, one per record; .err on failure",
    "identity": "comment | List Ⓔ records: ⟦⟧ is a ⟦⟧ of entities, one per record; ⟦⟧ on failure"
   },
-  "ba3dad9403": {
+  "49431fb9be": {
    "verdict": "ok",
    "note": "[49431fb9be] Action call (actionCall, ReadmeRef.ts:375-379); ts create accepts `$action` (tm/ts/src/utility/MakePointUtility.ts selects the point).",
    "from": [
     "49431fb9be"
    ],
    "example": "ts: `await client.Planet().create({ $action: 'terraform', id: 'planet_id' })`",
-   "identity": "cell | `await client.Planet().create({ $action: 'terraform', id: 'planet_id' })`"
+   "identity": "cell | `await client.Ⓔ().create({ $action: 'terraform', Ⓕ: 'Ⓔ_id' })`"
   },
   "4fb872e54f": {
    "verdict": "ok",
@@ -816,14 +816,14 @@
    "example": "ts: Create a new `PlanetEntity` instance.",
    "identity": "sentence | Create a new ⟦⟧ instance."
   },
-  "774adb2ffa": {
+  "fa85157376": {
    "verdict": "awkward",
    "note": "[ed7f424dbc] Overstated in every runtime that prints it: a path parameter is read from the call's match, then the entity's stored match, then the call's data, then the entity's stored data (ts tm/ts/src/utility/ParamUtility.ts:40-56; go tm/go/utility/param.go:47-68; c tm/c/utility/param.c:48-56), so update/patch on an entity already loaded need not repeat the id. Better: 'Unless the entity already holds it, the data must include the entity id, `id`.' Mask artefact: the shared word 'id' in 'the entity id' is masked to a field slot because a field is named id.",
    "from": [
     "ed7f424dbc"
    ],
    "example": "ts: The data must include the entity id, `id`.",
-   "identity": "sentence | The data must include the entity id, `id`."
+   "identity": "sentence | The data must include the entity id, `Ⓕ`."
   },
   "82e6814387": {
    "verdict": "ok",
@@ -1125,14 +1125,14 @@
    "example": "ts: Resolves to the patched entity, and throws on failure.",
    "identity": "sentence | Resolves to the patched entity, and throws on failure."
   },
-  "52d3c15e31": {
+  "d3d603d612": {
    "verdict": "ok",
    "note": "[d3d603d612] Required parent path parameter from the model. Strictly the entity's stored match can also supply it (ParamUtility.ts:40-56), which is rare for a list; acceptable.",
    "from": [
     "d3d603d612"
    ],
    "example": "ts: The match must include `planet_id`.",
-   "identity": "sentence | The match must include `planet_id`."
+   "identity": "sentence | The match must include `Ⓔ_id`."
   },
   "9402aedbb5": {
    "verdict": "awkward",
@@ -1355,23 +1355,23 @@
    "example": "go: `terraform`",
    "identity": "cell | `terraform`"
   },
-  "870d2c9402": {
+  "ebea8de27f": {
    "verdict": "ok",
    "note": "[ebea8de27f] Route from the model (point path).",
    "from": [
     "ebea8de27f"
    ],
    "example": "go: `/planet/{id}/terraform`",
-   "identity": "cell | `/planet/{id}/terraform`"
+   "identity": "cell | `/Ⓔ/{Ⓕ}/terraform`"
   },
-  "edc5636bca": {
+  "fd375d3d92": {
    "verdict": "ok",
    "note": "[fd375d3d92] Call cell from the printer; fills the route's id.",
    "from": [
     "fd375d3d92"
    ],
    "example": "go: `_, err := client.Planet(nil).Create(map[string]any{\"$action\": \"terraform\", \"id\": \"planet_id\"}, nil)`",
-   "identity": "cell | `_, err := client.Planet(nil).Create(map[string]any{\"$action\": \"terraform\", \"id\": \"planet_id\"}, nil)`"
+   "identity": "cell | `_, err := client.Ⓔ(nil).Create(map[string]any{\"$action\": \"terraform\", \"Ⓕ\": \"Ⓔ_id\"}, nil)`"
   },
   "677223da44": {
    "verdict": "false",
@@ -1571,14 +1571,14 @@
    "example": "py: Run an operation through the pipeline and yield its result items as a generator.",
    "identity": "sentence | Run an operation through the pipeline and yield its result items as a generator."
   },
-  "59bbc6f6da": {
+  "76fabc0077": {
    "verdict": "ok",
    "note": "[76fabc0077] Action call; py create accepts $action.",
    "from": [
     "76fabc0077"
    ],
    "example": "py: `client.Planet().create({\"$action\": \"terraform\", \"id\": \"planet_id\"})`",
-   "identity": "cell | `client.Planet().create({\"$action\": \"terraform\", \"id\": \"planet_id\"})`"
+   "identity": "cell | `client.Ⓔ().create({\"$action\": \"terraform\", \"Ⓕ\": \"Ⓔ_id\"})`"
   },
   "5338ac6916": {
    "verdict": "ok",
@@ -1735,14 +1735,14 @@
    "example": "c: The operation runs before the call returns.",
    "identity": "sentence | The operation runs before the call returns."
   },
-  "999e12e4e3": {
+  "7ac0237c03": {
    "verdict": "awkward",
    "note": "[7ac0237c03] True call, but unlike every other language's Call cell it is not self-contained: `planet` and `err` are not declared anywhere on the row (ts and py write client.Planet().create(...)). Either print the accessor in the call (`demo_planet(client, NULL)` bound first) or say in the prose that `planet` is the entity from the example above.",
    "from": [
     "7ac0237c03"
    ],
    "example": "c: `planet->vt->create(planet, cmap(2, \"$action\", v_str(\"terraform\"), \"id\", v_str(\"planet_id\")), NULL, &err);`",
-   "identity": "cell | `planet->vt->create(planet, cmap(2, \"$action\", v_str(\"terraform\"), \"id\", v_str(\"planet_id\")), NULL, &err);`"
+   "identity": "cell | `Ⓔ->vt->create(Ⓔ, cmap(2, \"$action\", v_str(\"terraform\"), \"Ⓕ\", v_str(\"Ⓔ_id\")), NULL, &err);`"
   },
   "847a5afbe6": {
    "verdict": "ok",
@@ -1863,14 +1863,14 @@
    "example": "zig: Its `.err` reports failure.",
    "identity": "sentence | Its ⟦⟧ reports failure."
   },
-  "ae176cb8a7": {
+  "9259ea6674": {
    "verdict": "awkward",
    "note": "[9259ea6674] The Call cell shows `switch (client.planet(...).create(...), h.vnull())) {`: an unclosed statement, because actionCall keeps only the first line of the printed call (ReadmeRef.ts:378) and zig's call opens a switch. Should show the call expression alone, `client.planet(h.vnull()).create(...)`.",
    "from": [
     "9259ea6674"
    ],
    "example": "zig: `switch (client.planet(h.vnull()).create(h.jo(&.{.{ \"$action\", h.vstr(\"terraform\") }, .{ \"id\", h.vstr(\"planet_id\") }}), h.vnull())) {`",
-   "identity": "cell | `switch (client.planet(h.vnull()).create(h.jo(&.{.{ \"$action\", h.vstr(\"terraform\") }, .{ \"id\", h.vstr(\"planet_id\") }}), h.vnull())) {`"
+   "identity": "cell | `switch (client.Ⓔ(h.vnull()).create(h.jo(&.{.{ \"$action\", h.vstr(\"terraform\") }, .{ \"Ⓕ\", h.vstr(\"Ⓔ_id\") }}), h.vnull())) {`"
   },
   "9c7c8ac25c": {
    "verdict": "ok",
@@ -1926,14 +1926,14 @@
    "example": "clojure: The SDK utility object is reached through `sdk.client`, which `sdk.api` does not re-export:",
    "identity": "sentence | The SDK utility object is reached through `sdk.client`, which `sdk.api` does not re-export:"
   },
-  "71bffb136f": {
+  "e179fbae04": {
    "verdict": "ok",
    "note": "[e179fbae04] clojure note (Syntax_clojure.ts:217); true: tm/clojure/src/sdk/core.clj:227 `(utility-copy (:utility client))`, client.clj:69.",
    "from": [
     "e179fbae04"
    ],
    "example": "clojure: `(sdk.client/get-utility client)` returns a copy of it.",
-   "identity": "sentence | `(sdk.client/get-utility client)` returns a copy of it."
+   "identity": "sentence | `(sdk.client/get-Ⓔ client)` returns a copy of it."
   },
   "65e89e0eda": {
    "verdict": "ok",
@@ -1953,14 +1953,14 @@
    "example": "clojure: Run an operation through the pipeline and return a lazy sequence of its result items.",
    "identity": "sentence | Run an operation through the pipeline and return a lazy sequence of its result items."
   },
-  "cd2047601b": {
+  "cebb5984c9": {
    "verdict": "ok",
    "note": "[cebb5984c9] Call cell; e-planet is required in the entity's own block above it (REFERENCE.md:387).",
    "from": [
     "cebb5984c9"
    ],
    "example": "clojure: `(e-planet/create (api/planet client nil) (vs/jm \"$action\" \"terraform\" \"id\" \"planet_id\") nil)`",
-   "identity": "cell | `(e-planet/create (api/planet client nil) (vs/jm \"$action\" \"terraform\" \"id\" \"planet_id\") nil)`"
+   "identity": "cell | `(e-Ⓔ/create (api/Ⓔ client nil) (vs/jm \"$action\" \"terraform\" \"Ⓕ\" \"Ⓔ_id\") nil)`"
   },
   "1691416fca": {
    "verdict": "ok",
@@ -1980,14 +1980,14 @@
    "example": "rust: `stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, DemoError>`",
    "identity": "heading | `stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, ⓈError>`"
   },
-  "b1715007b9": {
+  "ed524ea13a": {
    "verdict": "ok",
    "note": "[ed524ea13a] Call cell (with .unwrap()).",
    "from": [
     "ed524ea13a"
    ],
    "example": "rust: `client.planet(Value::Noval).create(jo(vec![(\"$action\", Value::str(\"terraform\")), (\"id\", Value::str(\"planet_id\"))]), Value::Noval).unwrap();`",
-   "identity": "cell | `client.planet(Value::Noval).create(jo(vec![(\"$action\", Value::str(\"terraform\")), (\"id\", Value::str(\"planet_id\"))]), Value::Noval).unwrap();`"
+   "identity": "cell | `client.Ⓔ(Value::Noval).create(jo(vec![(\"$action\", Value::str(\"terraform\")), (\"Ⓕ\", Value::str(\"Ⓔ_id\"))]), Value::Noval).unwrap();`"
   },
   "4b1f2e32dd": {
    "verdict": "ok",
@@ -2061,14 +2061,14 @@
    "example": "elixir: `prepare(client, fetchargs \\\\ nil) :: map()`",
    "identity": "heading | ⟦ref.client.3.sig⟧"
   },
-  "e7f6a5aa52": {
+  "a640d12e06": {
    "verdict": "ok",
    "note": "[a640d12e06] Call cell; `planet` is bound by the entity block above.",
    "from": [
     "a640d12e06"
    ],
    "example": "elixir: `Demo.Entity.Planet.create(planet, Demo.Helpers.deep(%{\"$action\" => \"terraform\", \"id\" => \"planet_id\"}))`",
-   "identity": "cell | `Ⓢ.Entity.Planet.create(planet, Ⓢ.Helpers.deep(%{\"$action\" => \"terraform\", \"id\" => \"planet_id\"}))`"
+   "identity": "cell | `Ⓢ.Entity.Ⓔ.create(Ⓔ, Ⓢ.Helpers.deep(%{\"$action\" => \"terraform\", \"Ⓕ\" => \"Ⓔ_id\"}))`"
   },
   "22cfc13b27": {
    "verdict": "ok",
@@ -2142,14 +2142,14 @@
    "example": "rb: List entities matching the given criteria.",
    "identity": "sentence | List entities matching the given criteria."
   },
-  "aab49200ab": {
+  "b5b5c85e92": {
    "verdict": "ok",
    "note": "[b5b5c85e92] Call cell.",
    "from": [
     "b5b5c85e92"
    ],
    "example": "rb: `client.Planet.create({ \"$action\" => \"terraform\", \"id\" => \"planet_id\" })`",
-   "identity": "cell | `client.Planet.create({ \"$action\" => \"terraform\", \"id\" => \"planet_id\" })`"
+   "identity": "cell | `client.Ⓔ.create({ \"$action\" => \"terraform\", \"Ⓕ\" => \"Ⓔ_id\" })`"
   }
  },
  "unmapped": [],
@@ -2169,12 +2169,12 @@
  ],
  "fromSplit": [
   "e9015df1ee",
-  "f332d399fc",
+  "288c093dd4",
   "a678b32375",
   "c2202236d4",
   "2fe75fe657",
   "b096c33607",
-  "05c42f9ed1",
+  "959c64f833",
   "fa703982ba",
   "8e1e3a0b5b",
   "61b8533268"

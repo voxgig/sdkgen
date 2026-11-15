@@ -209,7 +209,7 @@
   "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
   "n": 16
  },
- "abe0178bc3": {
+ "fe4aa1b045": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16
@@ -271,7 +271,7 @@
   "why": "ref-issues: the description's pipe broke the table; escaped now",
   "n": 1
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1

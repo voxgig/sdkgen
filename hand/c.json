@@ -261,7 +261,7 @@
   "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The copy sentence rests on Member.copy, cited at utility.c:70 (voxgig_clone).",
   "n": 19
  },
- "05c51cea28": {
+ "31334dded1": {
   "outcome": "restored:fact",
   "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The utility heading.",
   "n": 19
@@ -291,7 +291,7 @@
   "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
   "n": 16
  },
- "53a45f7395": {
+ "fead692406": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16

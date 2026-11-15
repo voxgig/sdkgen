@@ -111,7 +111,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "9fe064910d": {
+ "1989b91f6f": {
   "outcome": "restored:shared",
   "why": "restored as the comment 'Create — returns the created entity; data_get() reads its record' and the write sentence",
   "n": 4,
@@ -183,7 +183,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "a70e78782c": {
+ "dcd365a50d": {
   "outcome": "restored:fact",
   "why": "",
   "n": 1,
@@ -591,7 +591,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "1e52c8e19e": {
+ "304d33a8f5": {
   "outcome": "correction:runtime-forms",
   "why": "",
   "n": 15,
@@ -607,7 +607,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "4299fe5f5e": {
+ "92bc6e303b": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 19,
@@ -1015,7 +1015,7 @@
   "type": "added",
   "section": "reference"
  },
- "650eff7141": {
+ "3d50058045": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1023,7 +1023,7 @@
   "type": "added",
   "section": "reference"
  },
- "9dc7ea3e9f": {
+ "a685f7351f": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16,
@@ -1079,7 +1079,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "f7372b5fc5": {
+ "f41ebb5b18": {
   "outcome": "correction:runtime-forms",
   "why": "",
   "n": 1,
@@ -1087,7 +1087,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "e861a34f8e": {
+ "cbcdf6e5f9": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,
@@ -1146,7 +1146,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "73eb76be49": {
+ "21401b4fdc": {
   "outcome": "unification:member-sentences",
   "why": "",
   "n": 1,
@@ -1154,7 +1154,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "58dce0253b": {
+ "41f428548f": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1162,7 +1162,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "65514f523e": {
+ "1fb62647bb": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1194,7 +1194,7 @@
   "type": "missing",
   "section": "reference"
  },
- "9d28d07c10": {
+ "803ab31d20": {
   "outcome": "correction:U34",
   "why": "ref-issues: the heading sits under the PlanetEntityClient class now",
   "n": 1,
@@ -1202,7 +1202,7 @@
   "type": "missing",
   "section": "reference"
  },
- "45597eec7e": {
+ "ec6851bb78": {
   "outcome": "correction:S25",
   "why": "ref-issues turns remove off: an inactive operation is not documented",
   "n": 1,
@@ -1226,7 +1226,7 @@
   "type": "missing",
   "section": "reference"
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1,
@@ -1266,7 +1266,7 @@
   "type": "added",
   "section": "reference"
  },
- "29687f1ee8": {
+ "1c227ca04a": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,

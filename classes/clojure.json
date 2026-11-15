@@ -623,7 +623,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "4299fe5f5e": {
+ "92bc6e303b": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 19,
@@ -743,7 +743,7 @@
   "type": "missing",
   "section": "reference"
  },
- "4c2e0a570d": {
+ "423809a525": {
   "outcome": "correction:clojure-utility",
   "why": "false: sdk.api has no get-utility (Main_clojure.ts generates sdk.api without it; the guard reads its re-exports). The route that exists, sdk.client/get-utility, is in the instance note",
   "n": 19,
@@ -951,7 +951,7 @@
   "type": "added",
   "section": "reference"
  },
- "0e03ad0cba": {
+ "fbfbaaa041": {
   "outcome": "restored:note",
   "why": "as bb1005dc6f: core.clj:227 get-utility returns utility-copy",
   "n": 19,
@@ -1175,7 +1175,7 @@
   "type": "added",
   "section": "reference"
  },
- "650eff7141": {
+ "3d50058045": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1183,7 +1183,7 @@
   "type": "added",
   "section": "reference"
  },
- "0cc37532a2": {
+ "8dc7a55eb9": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16,
@@ -1251,7 +1251,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "e861a34f8e": {
+ "cbcdf6e5f9": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,
@@ -1339,7 +1339,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "9b30bab00c": {
+ "9e4d9398f9": {
   "outcome": "unification:member-sentences",
   "why": "",
   "n": 1,
@@ -1347,7 +1347,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "cbe6082fc4": {
+ "a1595da12b": {
   "outcome": "unification:accessor-sentence",
   "why": "",
   "n": 1,
@@ -1371,7 +1371,7 @@
   "type": "missing",
   "section": "reference"
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1,

@@ -34,7 +34,7 @@
   "why": "restored in the list sentence (`.data()` reads an entity's record) and the printed loop",
   "n": 7
  },
- "c0d621eec3": {
+ "0412262a52": {
   "outcome": "restored:shared",
   "why": "restored as the step's write sentence: each write resolves to the entity it wrote; the record is read with .data() in the code",
   "n": 4
@@ -114,7 +114,7 @@
   "why": "moved into the Returns sentence; README:302 says the same",
   "n": 19
  },
- "2bb513dce5": {
+ "5b8eca7ad4": {
   "outcome": "correction:ref-6",
   "why": "the call carries the route's path parameter, so it can fill /planet/{id}/terraform",
   "n": 15
@@ -293,13 +293,13 @@
   "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
   "n": 1
  },
- "205d5e7ca3": {
+ "ba47e4f94f": {
   "outcome": "correction:guard-accessor-arg",
   "why": "the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
   "n": 1,
   "rekeyed": "37cbd7c81c"
  },
- "cff43aaa1d": {
+ "f3cf8c6c54": {
   "outcome": "restored:shared",
   "why": "restored as 'Create a new `AmbientEntity` instance.' in the accessor sentence",
   "n": 1,
@@ -325,7 +325,7 @@
   "why": "under the PlanetEntityClient heading in ref-issues, extended with the route's path parameters",
   "n": 1
  },
- "ad0ce90b71": {
+ "a9d28cef46": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter (id) now; under PlanetEntityClient",
   "n": 1
@@ -345,7 +345,7 @@
   "why": "ref-issues: remove inactive",
   "n": 1
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs (opMatched); the old line said the same in other words",
   "n": 1
@@ -355,7 +355,7 @@
   "why": "as 6e0387536b, under PlanetEntityClient (ref-issues)",
   "n": 1
  },
- "203296a7bf": {
+ "dedcfa23a4": {
   "outcome": "correction:ref-6",
   "why": "as 5b8eca7ad4, under PlanetEntityClient (ref-issues)",
   "n": 1

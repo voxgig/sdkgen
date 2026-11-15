@@ -154,7 +154,7 @@
   "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.clj:32 (defn- new-entity [client entopts])); the signature names the parameter data ((api/ambient client data)) (accessor.param, derived), so the page says both, once (ReadmeRef accessorText); restored as 5ca02aaa87 under the module heading",
   "n": 94
  },
- "4c2e0a570d": {
+ "423809a525": {
   "outcome": "correction:clojure-utility",
   "why": "false: sdk.api has no get-utility (Main_clojure.ts generates sdk.api without it; the guard reads its re-exports). The route that exists, sdk.client/get-utility, is in the instance note",
   "n": 19
@@ -224,7 +224,7 @@
   "why": "the route to the utility, true per tm/clojure/src/sdk/client.clj:69 (the check's misclassified 2)",
   "n": 19
  },
- "0e03ad0cba": {
+ "fbfbaaa041": {
   "outcome": "restored:note",
   "why": "as bb1005dc6f: core.clj:227 get-utility returns utility-copy",
   "n": 19
@@ -254,7 +254,7 @@
   "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
   "n": 16
  },
- "0cc37532a2": {
+ "8dc7a55eb9": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16
@@ -304,7 +304,7 @@
   "why": "ref-issues: the description's pipe broke the table; escaped now",
   "n": 1
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1

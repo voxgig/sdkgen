@@ -95,7 +95,7 @@
   "why": "",
   "n": 7
  },
- "c0d621eec3": {
+ "0412262a52": {
   "rule": "write-comments",
   "outcome": "restored:fact",
   "why": "",
@@ -137,7 +137,7 @@
   "why": "",
   "n": 1
  },
- "0cc17840e2": {
+ "91fe624da0": {
   "rule": "write-comments",
   "outcome": "restored:fact",
   "why": "",
@@ -335,7 +335,7 @@
   "why": "",
   "n": 1
  },
- "028291d1da": {
+ "721639c026": {
   "rule": "root-step-comment",
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
@@ -347,7 +347,7 @@
   "why": "",
   "n": 16
  },
- "ed2f55cd53": {
+ "2b0e42cdc7": {
   "rule": "root-step-comment",
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
@@ -360,7 +360,7 @@
   "why": "",
   "n": 5
  },
- "1715e659ec": {
+ "cf69e14ea1": {
   "rule": "root-step-comment",
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
@@ -541,7 +541,7 @@
   "n": 92,
   "rekeyed": "bde0d2283c+cce9e8691a"
  },
- "4299fe5f5e": {
+ "92bc6e303b": {
   "rule": "op-sentences",
   "outcome": "unification:op-sentences",
   "why": "",
@@ -848,7 +848,7 @@
   "why": "",
   "n": 4
  },
- "e861a34f8e": {
+ "cbcdf6e5f9": {
   "rule": "op-sentences",
   "outcome": "unification:op-sentences",
   "why": "",
@@ -884,26 +884,26 @@
   "why": "",
   "n": 1
  },
- "b7bbd03809": {
+ "fe06e05f78": {
   "rule": "class-collision",
   "outcome": "correction:U34",
   "why": "",
   "n": 1
  },
- "56561c6006": {
+ "10f0d238e2": {
   "rule": "class-collision",
   "outcome": "correction:U34",
   "why": "",
   "n": 1
  },
- "88dc600aad": {
+ "e35271001c": {
   "rule": "accessor-sentence",
   "outcome": "unification:accessor-sentence",
   "why": "",
   "n": 1,
   "rekeyed": "cce9e8691a"
  },
- "cff43aaa1d": {
+ "f3cf8c6c54": {
   "rule": "accessor-sentence",
   "outcome": "unification:accessor-sentence",
   "why": "",
@@ -928,7 +928,7 @@
   "why": "",
   "n": 1
  },
- "ad0ce90b71": {
+ "a9d28cef46": {
   "rule": "actions-table",
   "outcome": "correction:ref-6",
   "why": "",
@@ -952,7 +952,7 @@
   "why": "",
   "n": 1
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "rule": "op-sentences",
   "outcome": "unification:op-sentences",
   "why": "",

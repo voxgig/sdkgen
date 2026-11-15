@@ -167,7 +167,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "fcf2530b0d": {
+ "d79d402a61": {
   "outcome": "restored:shared",
   "why": "restored as 'Update — the id comes off the created entity's record'; the code still indexes created.data_get[\"id\"]",
   "n": 4,
@@ -947,7 +947,7 @@
   ],
   "unreviewed": 0
  },
- "bc359f4a19": {
+ "6b5de0a2d5": {
   "outcome": "correction:runtime-forms",
   "why": "create returns the entity (EntityCreateOp.fragment.rb), not a result",
   "n": 15,
@@ -979,7 +979,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "8fc1b6a197": {
+ "f8cdd493b6": {
   "outcome": "correction:runtime-forms",
   "why": "remove defaults its match and returns the entity: EntityRemoveOp.fragment.rb:12 def remove(reqmatch = nil, ctrl = nil)",
   "n": 15,
@@ -1007,7 +1007,7 @@
   ],
   "unreviewed": 0
  },
- "4299fe5f5e": {
+ "92bc6e303b": {
   "outcome": "shared:ts:4299fe5f5e",
   "why": "masked, it is the ts unit of class 4299fe5f5e (unification:op-sentences, by rule:op-sentences)",
   "n": 19,
@@ -1467,7 +1467,7 @@
   ],
   "unreviewed": 0
  },
- "650eff7141": {
+ "3d50058045": {
   "outcome": "shared:go:650eff7141",
   "why": "masked, it is the go unit of class 650eff7141 (correction:ref-6, by rule:actions-table)",
   "n": 16,
@@ -1479,7 +1479,7 @@
   ],
   "unreviewed": 0
  },
- "4f4ee88c0e": {
+ "b8e5b4084d": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16,
@@ -1543,7 +1543,7 @@
   ],
   "unreviewed": 0
  },
- "9ca5c90a96": {
+ "385b2d16af": {
   "outcome": "correction:runtime-forms",
   "why": "patch returns the entity, not a result",
   "n": 3,
@@ -1563,7 +1563,7 @@
   ],
   "unreviewed": 0
  },
- "e861a34f8e": {
+ "cbcdf6e5f9": {
   "outcome": "shared:ts:e861a34f8e",
   "why": "masked, it is the ts unit of class e861a34f8e (unification:op-sentences, by rule:op-sentences)",
   "n": 1,
@@ -1632,7 +1632,7 @@
   "sentences": [],
   "unreviewed": 0
  },
- "f8447fc95c": {
+ "adf810dba3": {
   "outcome": "correction:runtime-forms",
   "why": "list resolves to an Array of the entity class (EntityListOp.fragment.rb, make_result wraps each record)",
   "n": 1,
@@ -1640,7 +1640,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "ac2746b27e": {
+ "5cae75a800": {
   "outcome": "correction:runtime-forms",
   "why": "make returns an instance of the entity's own class: Entity.fragment.rb:64-66 `def make ... EntyClass.new(@_client, opts)`. The README member table (ReadmeModel_rb.ts, unported) still says make -> Entity",
   "n": 1,
@@ -1648,7 +1648,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "56561c6006": {
+ "10f0d238e2": {
   "outcome": "shared:ts:56561c6006",
   "why": "masked, it is the ts unit of class 56561c6006 (correction:U34, by rule:class-collision)",
   "n": 1,
@@ -1660,7 +1660,7 @@
   ],
   "unreviewed": 0
  },
- "88dc600aad": {
+ "e35271001c": {
   "outcome": "shared:ts:88dc600aad",
   "why": "masked, it is the ts unit of class 88dc600aad (unification:accessor-sentence, by rule:accessor-sentence)",
   "n": 1,
@@ -1672,7 +1672,7 @@
   ],
   "unreviewed": 0
  },
- "b7bbd03809": {
+ "fe06e05f78": {
   "outcome": "shared:ts:b7bbd03809",
   "why": "masked, it is the ts unit of class b7bbd03809 (correction:U34, by rule:class-collision)",
   "n": 1,
@@ -1684,7 +1684,7 @@
   ],
   "unreviewed": 0
  },
- "f6aa168485": {
+ "514150701d": {
   "outcome": "correction:U34",
   "why": "ref-issues: the class is PlanetEntityClient; create returns it",
   "n": 1,
@@ -1692,7 +1692,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "1f5e594134": {
+ "d753ed9282": {
   "outcome": "correction:U34",
   "why": "ref-issues: patch returns PlanetEntityClient",
   "n": 1,
@@ -1700,7 +1700,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "0600fa7369": {
+ "8973d2b775": {
   "outcome": "correction:U34",
   "why": "ref-issues: update returns PlanetEntityClient",
   "n": 1,
@@ -1708,7 +1708,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "f3266e30b4": {
+ "430b2ddb09": {
   "outcome": "correction:U34",
   "why": "ref-issues: list returns an Array of PlanetEntityClient",
   "n": 1,
@@ -1716,7 +1716,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "f8cb689528": {
+ "d032c25479": {
   "outcome": "correction:U34",
   "why": "ref-issues: load defaults its match and returns PlanetEntityClient",
   "n": 1,
@@ -1772,7 +1772,7 @@
   "type": "missing",
   "section": "reference"
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1,
@@ -1810,7 +1810,7 @@
   "sentences": [],
   "unreviewed": 0
  },
- "e705aa789f": {
+ "20e60c4c79": {
   "outcome": "correction:U34",
   "why": "ref-issues: make returns PlanetEntityClient",
   "n": 1,

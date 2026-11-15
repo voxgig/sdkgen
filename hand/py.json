@@ -9,7 +9,7 @@
   "why": "restored as '`load()` returns the entity and raises on failure; `data_get()` reads its record'",
   "n": 10
  },
- "9fe064910d": {
+ "1989b91f6f": {
   "outcome": "restored:shared",
   "why": "restored as the comment 'Create — returns the created entity; data_get() reads its record' and the write sentence",
   "n": 4
@@ -164,7 +164,7 @@
   "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
   "n": 16
  },
- "9dc7ea3e9f": {
+ "a685f7351f": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16
@@ -201,12 +201,12 @@
   "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
   "n": 1
  },
- "9d28d07c10": {
+ "803ab31d20": {
   "outcome": "correction:U34",
   "why": "ref-issues: the heading sits under the PlanetEntityClient class now",
   "n": 1
  },
- "45597eec7e": {
+ "ec6851bb78": {
   "outcome": "correction:S25",
   "why": "ref-issues turns remove off: an inactive operation is not documented",
   "n": 1
@@ -221,7 +221,7 @@
   "why": "ref-issues: remove inactive",
   "n": 1
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1

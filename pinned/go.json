@@ -124,7 +124,7 @@
   "why": "",
   "n": 5
  },
- "2081dbd030": {
+ "8a0c441967": {
   "rule": "add-go-pair",
   "outcome": "restored:fact",
   "why": "",
@@ -143,6 +143,12 @@
   "outcome": "restored:fact",
   "why": "",
   "n": 7
+ },
+ "14d7ad06dd": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
+  "why": "",
+  "n": 3
  },
  "73e14658e4": {
   "rule": "add-step-comment",
@@ -180,6 +186,12 @@
   "why": "",
   "n": 1
  },
+ "d0cd23d2c9": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
+  "why": "",
+  "n": 1
+ },
  "1fa815677a": {
   "rule": "tutorial-leadin",
   "outcome": "correction:S28",
@@ -192,12 +204,18 @@
   "why": "",
   "n": 1
  },
- "f2812787cc": {
+ "306a9286fc": {
   "rule": "add-nested-sentence",
   "outcome": "unification:tutorial-nested-load",
   "why": "",
   "n": 1,
   "rekeyed": "d4e96cf680"
+ },
+ "64340cef2b": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
+  "why": "",
+  "n": 1
  },
  "9cbb8e3add": {
   "rule": "tutorial-leadin",
@@ -220,6 +238,12 @@
  "3528a38f43": {
   "rule": "tutorial-leadin",
   "outcome": "correction:S28",
+  "why": "",
+  "n": 1
+ },
+ "2ff6ebd59a": {
+  "rule": "add-go-steps",
+  "outcome": "unification:go-tutorial-program",
   "why": "",
   "n": 1
  },
@@ -554,7 +578,7 @@
   "n": 106,
   "rekeyed": "bde0d2283c+cce9e8691a"
  },
- "4299fe5f5e": {
+ "92bc6e303b": {
   "rule": "op-sentences",
   "outcome": "unification:op-sentences",
   "why": "",
@@ -776,7 +800,7 @@
   "why": "",
   "n": 18
  },
- "650eff7141": {
+ "3d50058045": {
   "rule": "actions-table",
   "outcome": "correction:ref-6",
   "why": "",
@@ -818,7 +842,7 @@
   "why": "",
   "n": 2
  },
- "e861a34f8e": {
+ "cbcdf6e5f9": {
   "rule": "op-sentences",
   "outcome": "unification:op-sentences",
   "why": "",
@@ -866,20 +890,20 @@
   "why": "",
   "n": 1
  },
- "56561c6006": {
+ "10f0d238e2": {
   "rule": "class-collision",
   "outcome": "correction:U34",
   "why": "",
   "n": 1
  },
- "88dc600aad": {
+ "e35271001c": {
   "rule": "accessor-sentence",
   "outcome": "unification:accessor-sentence",
   "why": "",
   "n": 1,
   "rekeyed": "cce9e8691a"
  },
- "b7bbd03809": {
+ "fe06e05f78": {
   "rule": "class-collision",
   "outcome": "correction:U34",
   "why": "",
@@ -903,7 +927,7 @@
   "why": "",
   "n": 1
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "rule": "op-sentences",
   "outcome": "unification:op-sentences",
   "why": "",
@@ -1052,29 +1076,5 @@
   "outcome": "correction:ref-6",
   "why": "",
   "n": 18
- },
- "14d7ad06dd": {
-  "rule": "add-go-steps",
-  "outcome": "unification:go-tutorial-program",
-  "why": "",
-  "n": 3
- },
- "d0cd23d2c9": {
-  "rule": "add-go-steps",
-  "outcome": "unification:go-tutorial-program",
-  "why": "",
-  "n": 1
- },
- "64340cef2b": {
-  "rule": "add-go-steps",
-  "outcome": "unification:go-tutorial-program",
-  "why": "",
-  "n": 1
- },
- "2ff6ebd59a": {
-  "rule": "add-go-steps",
-  "outcome": "unification:go-tutorial-program",
-  "why": "",
-  "n": 1
  }
 }

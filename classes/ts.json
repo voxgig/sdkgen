@@ -151,7 +151,7 @@
   "type": "missing",
   "section": "tutorial"
  },
- "c0d621eec3": {
+ "0412262a52": {
   "outcome": "restored:shared",
   "why": "restored as the step's write sentence: each write resolves to the entity it wrote; the record is read with .data() in the code",
   "n": 4,
@@ -215,7 +215,7 @@
   "type": "reworded",
   "section": "tutorial"
  },
- "0cc17840e2": {
+ "91fe624da0": {
   "outcome": "restored:fact",
   "why": "",
   "n": 1,
@@ -503,7 +503,7 @@
   "type": "block-vanished-token",
   "section": "tutorial"
  },
- "028291d1da": {
+ "721639c026": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 10,
@@ -519,7 +519,7 @@
   "type": "missing",
   "section": "rootquick"
  },
- "ed2f55cd53": {
+ "2b0e42cdc7": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 7,
@@ -535,7 +535,7 @@
   "type": "added",
   "section": "rootquick"
  },
- "1715e659ec": {
+ "cf69e14ea1": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
   "n": 1,
@@ -719,7 +719,7 @@
   "type": "echo",
   "section": "reference"
  },
- "2bb513dce5": {
+ "5b8eca7ad4": {
   "outcome": "correction:ref-6",
   "why": "the call carries the route's path parameter, so it can fill /planet/{id}/terraform",
   "n": 15,
@@ -807,7 +807,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "4299fe5f5e": {
+ "92bc6e303b": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 19,
@@ -1259,7 +1259,7 @@
   "type": "added",
   "section": "reference"
  },
- "e861a34f8e": {
+ "cbcdf6e5f9": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,
@@ -1334,7 +1334,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "205d5e7ca3": {
+ "ba47e4f94f": {
   "outcome": "correction:guard-accessor-arg",
   "why": "the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
   "n": 1,
@@ -1342,7 +1342,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "b7bbd03809": {
+ "fe06e05f78": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1350,7 +1350,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "56561c6006": {
+ "10f0d238e2": {
   "outcome": "correction:U34",
   "why": "",
   "n": 1,
@@ -1358,7 +1358,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "88dc600aad": {
+ "e35271001c": {
   "outcome": "unification:accessor-sentence",
   "why": "",
   "n": 1,
@@ -1366,7 +1366,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "cff43aaa1d": {
+ "f3cf8c6c54": {
   "outcome": "restored:shared",
   "why": "restored as 'Create a new `AmbientEntity` instance.' in the accessor sentence",
   "n": 1,
@@ -1406,7 +1406,7 @@
   "type": "missing",
   "section": "reference"
  },
- "ad0ce90b71": {
+ "a9d28cef46": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter (id) now; under PlanetEntityClient",
   "n": 1,
@@ -1438,7 +1438,7 @@
   "type": "missing",
   "section": "reference"
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs (opMatched); the old line said the same in other words",
   "n": 1,
@@ -1470,7 +1470,7 @@
   "type": "added",
   "section": "reference"
  },
- "203296a7bf": {
+ "dedcfa23a4": {
   "outcome": "correction:ref-6",
   "why": "as 5b8eca7ad4, under PlanetEntityClient (ref-issues)",
   "n": 1,

@@ -791,7 +791,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "22d98d99fc": {
+ "89229f2a29": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 19,
@@ -1023,7 +1023,7 @@
   "type": "added",
   "section": "reference"
  },
- "05c51cea28": {
+ "31334dded1": {
   "outcome": "restored:fact",
   "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The utility heading.",
   "n": 19,
@@ -1247,7 +1247,7 @@
   "type": "added",
   "section": "reference"
  },
- "650eff7141": {
+ "3d50058045": {
   "outcome": "correction:ref-6",
   "why": "",
   "n": 16,
@@ -1255,7 +1255,7 @@
   "type": "added",
   "section": "reference"
  },
- "53a45f7395": {
+ "fead692406": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16,
@@ -1319,7 +1319,7 @@
   "type": "added",
   "section": "reference"
  },
- "e861a34f8e": {
+ "cbcdf6e5f9": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 1,
@@ -1375,7 +1375,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "cbe6082fc4": {
+ "a1595da12b": {
   "outcome": "unification:accessor-sentence",
   "why": "",
   "n": 1,
@@ -1383,7 +1383,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "9b30bab00c": {
+ "9e4d9398f9": {
   "outcome": "unification:member-sentences",
   "why": "",
   "n": 1,
@@ -1447,7 +1447,7 @@
   "type": "added",
   "section": "reference"
  },
- "95d2cfd076": {
+ "64ba28e2e9": {
   "outcome": "restored:fact",
   "why": "",
   "n": 1,

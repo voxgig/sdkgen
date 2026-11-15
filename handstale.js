@@ -67,6 +67,12 @@ function found1(cp, q) {
   // a path with a line (`Main.fragment.ts:270-276`): the file exists in the clone
   const p = /^([\w./-]+\.[A-Za-z]+)(:\d+(-\d+)?(,\d+(-\d+)?)*)?$/.exec(t)
   if (p && cp.names.has(Path.basename(p[1]))) return true
+  // a one-letter name in a quotation is a placeholder (`local x, err =`,
+  // `(f())`): it stands for any identifier, and nothing else is loosened
+  if (/(^|[^A-Za-z0-9_])[a-z]([^A-Za-z0-9_]|$)/.test(t)) {
+    const re = new RegExp(t.split(/(?<![A-Za-z0-9_])([a-z])(?![A-Za-z0-9_])/).map((p, i) => i % 2 ? '[A-Za-z_][\\w]*' : p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')).join(''))
+    if (re.test(cp.raw) || re.test(cp.src)) return true
+  }
   // a quoted page text may carry the page's own escapes or markup
   const plain = (x) => norm(x).replace(/\\\|/g, '|').replace(/[`*]/g, '')
   if (q.kind === 'text' && plain(cp.raw).includes(plain(t))) return true

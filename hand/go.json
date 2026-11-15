@@ -67,7 +67,7 @@
   "why": "restored as the comment 'Remove' and step 4's lead-in",
   "n": 5
  },
- "2081dbd030": {
+ "8a0c441967": {
   "outcome": "unification:go-tutorial-program",
   "why": "the new splitter cuts go's program step lead from the sentence after it (cut.js splitSentences, bold lead after [.!?]**); this is the lead alone, the step title ReadmeQuick.ts prints for p.program. Split from 14f5b323fe (restored:fact); the sentence after it is 6145dede90.",
   "n": 7
@@ -258,7 +258,7 @@
   "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
   "n": 18
  },
- "586319b6d2": {
+ "1f5282fbe3": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 18
@@ -307,7 +307,7 @@
   "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
   "n": 1
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "outcome": "restored:shared",
   "why": "the patch data sentence names the id the route needs; same fact, other words",
   "n": 1

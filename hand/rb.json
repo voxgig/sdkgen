@@ -47,7 +47,7 @@
   "why": "restored as the comment 'Create — returns the created entity; data_get reads its record'",
   "n": 4
  },
- "fcf2530b0d": {
+ "d79d402a61": {
   "outcome": "restored:shared",
   "why": "restored as 'Update — the id comes off the created entity's record'; the code still indexes created.data_get[\"id\"]",
   "n": 4
@@ -407,7 +407,7 @@
   "why": "moved into the shared list sentence; README:240 lists data_get the same way",
   "n": 70
  },
- "bc359f4a19": {
+ "6b5de0a2d5": {
   "outcome": "correction:runtime-forms",
   "why": "create returns the entity (EntityCreateOp.fragment.rb), not a result",
   "n": 15
@@ -430,7 +430,7 @@
   "n": 27,
   "rekeyed": "9557524e8d+36d626bcf0"
  },
- "8fc1b6a197": {
+ "f8cdd493b6": {
   "outcome": "correction:runtime-forms",
   "why": "remove defaults its match and returns the entity: EntityRemoveOp.fragment.rb:12 def remove(reqmatch = nil, ctrl = nil)",
   "n": 15
@@ -541,7 +541,7 @@
   "why": "the old 'Returns an array of entities, one per record ... Raises on error.' in the shared form",
   "n": 83
  },
- "4f4ee88c0e": {
+ "b8e5b4084d": {
   "outcome": "correction:ref-6",
   "why": "the Call cell carries the route's path parameter id",
   "n": 16
@@ -551,7 +551,7 @@
   "why": "Was accepted automatically as shared:go:b31b1f71dd (masked, it is the go unit of class b31b1f71dd (correction:ref-6, by rule:actions-table)). The sentence review marked its sentence false (reviewed/sentences.json cf564b5fca, carried by rekey.js --verdicts), and a false sentence is never matched again; recorded by hand with the reference class's own outcome so that rb stands where the reference languages stand until shared code is fixed. Counted on the one screen as an accepted class whose sentence a reviewer called false.",
   "n": 16
  },
- "9ca5c90a96": {
+ "385b2d16af": {
   "outcome": "correction:runtime-forms",
   "why": "patch returns the entity, not a result",
   "n": 3
@@ -578,39 +578,39 @@
   "why": "Was accepted automatically as shared:ts:f878d6c74a (masked, it is the ts unit of class f878d6c74a (correction:S13, by rule:test-nofeature)). The sentence review marked its sentence false (reviewed/sentences.json d48de033ea, carried by rekey.js --verdicts), and a false sentence is never matched again; recorded by hand with the reference class's own outcome so that rb stands where the reference languages stand until shared code is fixed. Counted on the one screen as an accepted class whose sentence a reviewer called false.",
   "n": 1
  },
- "f8447fc95c": {
+ "adf810dba3": {
   "outcome": "correction:runtime-forms",
   "why": "list resolves to an Array of the entity class (EntityListOp.fragment.rb, make_result wraps each record)",
   "n": 1,
   "rekeyed": "d15797ca9d"
  },
- "ac2746b27e": {
+ "5cae75a800": {
   "outcome": "correction:runtime-forms",
   "why": "make returns an instance of the entity's own class: Entity.fragment.rb:64-66 `def make ... EntyClass.new(@_client, opts)`. The README member table (ReadmeModel_rb.ts, unported) still says make -> Entity",
   "n": 1,
   "rekeyed": "d8065d07cb"
  },
- "f6aa168485": {
+ "514150701d": {
   "outcome": "correction:U34",
   "why": "ref-issues: the class is PlanetEntityClient; create returns it",
   "n": 1
  },
- "1f5e594134": {
+ "d753ed9282": {
   "outcome": "correction:U34",
   "why": "ref-issues: patch returns PlanetEntityClient",
   "n": 1
  },
- "0600fa7369": {
+ "8973d2b775": {
   "outcome": "correction:U34",
   "why": "ref-issues: update returns PlanetEntityClient",
   "n": 1
  },
- "f3266e30b4": {
+ "430b2ddb09": {
   "outcome": "correction:U34",
   "why": "ref-issues: list returns an Array of PlanetEntityClient",
   "n": 1
  },
- "f8cb689528": {
+ "d032c25479": {
   "outcome": "correction:U34",
   "why": "ref-issues: load defaults its match and returns PlanetEntityClient",
   "n": 1
@@ -645,7 +645,7 @@
   "why": "ref-issues: remove inactive",
   "n": 1
  },
- "17601e0f3b": {
+ "0b29ec4944": {
   "outcome": "restored:shared",
   "why": "the update data sentence names the id the route needs; same fact, other words",
   "n": 1
@@ -655,7 +655,7 @@
   "why": "ref-issues: under PlanetEntityClient, make returns that class (Entity.fragment.rb:64-66 EntyClass.new)",
   "n": 1
  },
- "e705aa789f": {
+ "20e60c4c79": {
   "outcome": "correction:U34",
   "why": "ref-issues: make returns PlanetEntityClient",
   "n": 1
