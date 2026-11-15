@@ -77,6 +77,8 @@ const forms: Forms = {
   namesWhy: 'the client class spells SDK types module-qualified inside its own body only, so an entity accessor cannot shadow them (Main.fragment.swift:3-15), and names its raw arguments with an In suffix; outside it they are VMap, Utility and the argument names the page gives. MainEntity_swift writes the accessor\'s return as ${Name}EntityBase, which is the ProjectNameEntityBase class of EntityBase.fragment.swift:8',
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/swift/fragment/Main.fragment.swift", quote: "r.entries[\"ok\"] = .bool(false)" },
+    // The test client's mock without the test feature, cited ahead: the factory's fallback.
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/swift/Config_swift.ts", quote: "default: return BaseFeature()" },
     'facts.collection': { file: 'tm/swift/Sources/ProjectNameSDK/Struct/Value.swift', quote: 'case list(VList)' },
     'facts.unwrap': { value: 'asNative as? Entity', file: 'tm/swift/Sources/ProjectNameSDK/feature/ValidateFeature.swift', quote: UNWRAP_QUOTE },
     'ref.facts.none': { file: MAIN, quote: 'public init(_ optionsIn: ProjectNameSdk.VMap? = nil) {' },
@@ -108,12 +110,6 @@ const forms: Forms = {
     run: "let materialised = try runOp(ctx, {})",
     draw: "items = streamFn()",
     runs: "before it returns", items: "before it returns",
-  },
-  // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
-  cite: {
-    'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/swift/fragment/Main.fragment.swift", quote: "r.entries[\"ok\"] = .bool(false)" },
-    // The test client's mock without the test feature, cited ahead: the factory's fallback.
-    'ref.facts.testMock': { value: "generated", file: "src/cmp/swift/Config_swift.ts", quote: "default: return BaseFeature()" },
   },
   // direct's `ok` on a failure, cited ahead of the provider: a port declares
   // ref.facts.direct.okFalse as this value (in `cite` above).
