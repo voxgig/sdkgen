@@ -5,7 +5,6 @@ import type { Forms } from './forms'
 
 const MAIN = 'src/cmp/lua/fragment/Main.fragment.lua'
 const ENTITY = 'src/cmp/lua/fragment/Entity.fragment.lua'
-const LOAD = 'src/cmp/lua/fragment/EntityLoadOp.fragment.lua'
 const OPS = ['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/lua/fragment/Entity${o}Op.fragment.lua`)
 
 // The `---@return` lines directly above a declaration: the first by its type,
@@ -87,13 +86,21 @@ const forms: Forms = {
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/lua/fragment/Main.fragment.lua", quote: "return { ok = false, err = err }, nil" },
-    'facts.pairForm': { value: 'value, err', file: LOAD, quote: '---@return EntyClass\n---@return string? err' },
+    // The pair as the code returns it: the error table second on a failure, nil second on success.
+    'facts.pairForm': { value: 'value, err', file: 'tm/lua/utility/make_error.lua', quote: 'return nil, sdk_err',
+      also: [{ file: ENTITY, quote: 'return self, nil' }] },
     'facts.noError': { file: ENTITY, quote: 'return self, nil' },
     'facts.collection': { value: 'array', file: 'tm/lua/utility/make_result.lua', quote: ['local entities = {}', 'table.insert(entities, ent)', 'result.resdata = entities'] },
     'ref.facts.none': { file: 'src/cmp/lua/MainEntity_lua.ts', quote: 'if data == nil then' },
     'ref.facts.container': { file: MAIN, quote: 'local out = vs.clone(self.options)\n  if type(out) == "table" then' },
-    'ref.facts.ctor[0]': { file: MAIN, quote: 'local config = require("config_shared")()',
-      unquoted: { sdk: 'the name the page binds the required module to, as the generated tests bind it (tm/lua/test/extend_test.lua:14, TestEntity_lua.ts); no runtime file requires the SDK module itself' } },
+    // The module Main_lua writes is the chunk Main.fragment.lua, which returns the client table: requiring it gives the table `new` is called on.
+    'ref.facts.ctor[0]': { file: 'src/cmp/lua/Main_lua.ts', quote: "File({ name: luaSdkModule(model) + '.' + target.ext }",
+      also: [{ file: MAIN, quote: 'return ProjectNameSDK\n' }],
+      unquoted: {
+        local: 'Lua\'s keyword for a local binding; the line binds the module the quoted chunk returns',
+        require: 'Lua\'s module loader, which runs the quoted chunk and gives back what it returns; no runtime file requires the SDK module itself',
+        sdk: 'the name the page binds the required module to, as the generated tests bind it (tm/lua/test/extend_test.lua:14, TestEntity_lua.ts); test files are not runtime files',
+      } },
     'ref.facts.client[0].copy': { value: true, file: MAIN, quote: 'local out = vs.clone(self.options)' },
     'ref.facts.client[1].kind': { value: 'utility', file: MAIN, quote: 'function ProjectNameSDK:get_utility()\n  return Utility.copy(self._utility)' },
     'ref.facts.direct.returns': { file: MAIN, quote: ['local out = {\n      ok = body_err == nil and status >= 200 and status < 300,', 'return out, nil'],
@@ -104,7 +111,12 @@ const forms: Forms = {
     'ref.facts.entity[0].copy': { value: true, file: ENTITY, quote: 'return vs.clone(self._data)' },
     'ref.facts.entity[2].copy': { value: true, file: ENTITY, quote: 'return vs.clone(self._match)' },
     'ref.facts.body.values': { value: 'a string', file: 'tm/lua/utility/fetcher.lua', quote: 'if type(body_str) ~= "string" then\n    body_str = nil' },
-    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/lua/utility/fetcher.lua'] } },
+    // Operations only: every file an operation runs through, outside comments. Entity.fragment.lua is left out because
+    // its stream honours callopts.signal (EntyClass:stream, `local signal = callopts["signal"]`), which this fact does
+    // not state; the shared cancel paragraph cannot say it apart from operations.
+    'ref.facts.cancel': { value: false, absent: {
+      pattern: /^(?![ \t]*--).*(\b(cancel\w*|abort\w*|signal)\b|AbortController|cancel_request)/im,
+      files: [MAIN, ...OPS, 'tm/lua/utility/', 'tm/lua/core/'] } },
     'notes.member:direct': { value: 'It also returns a second value, which is always `nil`: a failure is\nreported in the result, never in the second value.',
       file: MAIN, quote: ['return self:_op_denied("direct"), nil', 'return { ok = false, err = err }, nil', 'return out, nil'] },
     'notes.member:streamFunction': { value: 'Unlike an operation, it reports a failure by raising it with `error`\nfrom the returned function, as the caller iterates.',
