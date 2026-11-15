@@ -78,6 +78,11 @@ const forms: Forms = {
   },
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
+    // The stream reads no signal: searched over the whole cpp runtime, ahead of a provider.
+    'ref.facts.streamSignal': { value: false, absent: { pattern: /\bsignal\b/i, except: [
+      { file: 'tm/cpp/feature/secrets/plugins/Httpjson.cpp', quote: ['#include <signal.h>'],
+        why: "the secrets feature's own HTTP client, which ignores SIGPIPE; no operation or stream reads it" },
+    ] } },
     'ref.facts.direct.okFalse': { value: "false", file: "tm/cpp/core/types.hpp", quote: "map_put(out, \"ok\", Value(false));" },
   },
 }

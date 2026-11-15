@@ -21,6 +21,10 @@ const forms: Forms = {
     return { params: m[1].split(',').map((p) => p.trim()).filter((p) => '' !== p && !/^\$(self|class)$/.test(p)) }
   },
   param: (p) => ({ name: (/^[$@%](\w+)/.exec(p.trim()) || ['', ''])[1], type: '' }),
+  // Perl checks no arity, so any parameter may be left out. What the runtime's
+  // comments call required (reqdata, a stream's action) is not readable from a
+  // parameter's name alone: the page's $data is optional to the accessor and
+  // required to the setter.
   optional: () => true,
   returns: () => '',
   entityCtor: 'new',
@@ -54,7 +58,8 @@ const forms: Forms = {
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, cite and exceptions.
   // What the table states besides names, parameters and returns.
   testDecl: 'test',
-  on: (d) => /^\s*\{\s*(?:#[^\n]*\n\s*)*my\s*\(\s*\$class\b/.test(d.rest) ? 'type' : (/^\s*\{\s*(?:#[^\n]*\n\s*)*my\s*\(\s*\$self\b/.test(d.rest) ? 'instance' : 'module'),
+  // A sub that unpacks no receiver (TO_JSON) is still a method of its package.
+  on: (d) => /^\s*\{\s*(?:#[^\n]*\n\s*)*my\s*\(\s*\$class\b/.test(d.rest) ? 'type' : 'instance',
   expect: { test: { on: 'type' }, new: { on: 'type' }, load: { on: 'instance' } },
   shows: {
     'direct\'s `ok`': {
