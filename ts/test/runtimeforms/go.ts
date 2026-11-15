@@ -53,6 +53,7 @@ const forms: Forms = {
 
   // The porter's, from here on.
   cite: {
+    'ref.facts.client[0].copy': { value: true, file: "src/cmp/go/fragment/Main.fragment.go", quote: "out := vs.Clone(sdk.options)" },
     'facts.pairForm': { value: '(value, error)', file: 'src/cmp/go/fragment/EntityLoadOp.fragment.go', quote: 'func (e *EntyClass) Load(reqmatch map[string]any, ctrl map[string]any) (any, error) {', unquoted: { value: 'the page names the first result by what it is; the runtime types it any' } },
     'facts.noError': { file: 'src/cmp/go/fragment/Entity.fragment.go', quote: 'return e, nil' },
     'ref.facts.none': { file: MAIN, quote: 'return nil, err' },

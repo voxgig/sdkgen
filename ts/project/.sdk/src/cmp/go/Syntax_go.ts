@@ -41,7 +41,7 @@ const refFacts: RefFacts = {
     remove: 'Remove(reqmatch, ctrl map[string]any) (any, error)',
   },
   client: [
-    { kind: 'options', sig: 'OptionsMap() map[string]any' },
+    { kind: 'options', sig: 'OptionsMap() map[string]any', copy: true },
     { kind: 'utility', sig: 'GetUtility() *Utility' },
     { kind: 'direct', sig: 'Direct(fetchargs map[string]any) (map[string]any, error)' },
     { kind: 'prepare', sig: 'Prepare(fetchargs map[string]any) (map[string]any, error)' },
