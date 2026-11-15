@@ -1,5 +1,6 @@
 import { Content } from 'jostraca'
 import { cmp } from '../helpers/component'
+import { mdCell } from '../helpers/markdown'
 
 import { activeByDefault, featureDocs, honoursActivationOrder } from './FeatureDocs'
 import type { FeatureDoc } from './FeatureDocs'
@@ -102,7 +103,7 @@ ${f.title}.
 |---|---|
 `)
       for (const o of f.extras) {
-        Content(`| \`${o.name}\` | ${o.type} |
+        Content(`| \`${o.name}\` | ${mdCell(o.type)} |
 `)
       }
       Content(`
