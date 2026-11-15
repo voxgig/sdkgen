@@ -72,8 +72,7 @@ const forms: Forms = {
     dataGet: 'e_data_get', dataSet: 'e_data_set', matchGet: 'e_match_get', matchSet: 'e_match_set',
     make: 'e_make', name: 'e_name', stream: 'e_stream',
   },
-  // The Seq is built over a list run_op has already produced (Entity_ocaml.ts),
-  // so it is an iterator over the items, not a lazy read of them.
+  // The Seq walks a list run_op has already produced (Entity_ocaml.ts).
   streamKind: (d) => /\bSeq\.t$/.test(d.returns) ? 'streamSync' : 'stream',
   style: { exception: 'raise', raises: /\braise\b/ },
   record: (rec) => ({ name: (/(e_\w+)/.exec(rec) || [])[1] || rec }),
