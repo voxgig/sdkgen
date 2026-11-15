@@ -44,8 +44,6 @@ import type { CopyRecord } from './copies'
 
 import { MERGE } from '../helpers/copymerge'
 
-import { OPTIONAL_COMPONENTS } from '../helpers/optional'
-
 
 const IGNORED_RE = /(~|-jostraca-off)$/
 
@@ -85,14 +83,6 @@ type DoctorReport = {
   missing: string[]
 
   additive: string[]
-
-  // A component its source no longer ships, which the copy record shows an
-  // add wrote and nothing changed: the next add removes it.
-  retired: string[]
-
-  // The same, changed in this project: kept, and used in place of the shared
-  // component. Informational, like `additive`.
-  override: string[]
 
   superseded: string[]
 
@@ -159,7 +149,7 @@ type ItemDrift = {
 }
 
 
-type Category = 'forked' | 'edited' | 'missing' | 'stale' | 'unshipped'
+type Category = 'forked' | 'edited' | 'missing' | 'stale'
 
 type Found = (category: Category, label: string) => void
 
@@ -305,7 +295,7 @@ async function doctor(
 
   const report: DoctorReport = {
     forked: [], edited: [], stale: [], missing: [], additive: [],
-    retired: [], override: [], superseded: [], unwired: [], orphanModel: [],
+    superseded: [], unwired: [], orphanModel: [],
     resyncPending: [], aliasedDiff: [],
     outdated: [], unrecorded: [], customized: [], unresolved: [], byItem: {},
     ignoredLog: false, ok: true,
@@ -400,7 +390,7 @@ async function doctor(
   report.ok = 0 === report.forked.length + report.edited.length -
     report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
     report.orphanModel.length + report.outdated.length +
-    report.retired.length + report.unresolved.length
+    report.unresolved.length
 
   const customized = new Set(report.customized)
   const unmergeable = MERGE === projectCopyMode(actx) ? new Set(report.unrecorded) : new Set()
@@ -412,8 +402,6 @@ async function doctor(
     ['stale', 'STALE (no longer written by `target add`)'],
     ['missing', 'MISSING (would be written by `target add`)'],
     ['additive', 'additive (project-owned, not drift)'],
-    ['retired', 'RETIRED (an unchanged copy its source no longer ships; the next add removes it)'],
-    ['override', 'override (its source no longer ships it; changed here, so kept and used instead of the shared component)'],
     ['superseded', 'SUPERSEDED generated output (run `doctor prune` to delete)'],
     ['unwired', 'NOT WIRED IN (root capability this project is missing)'],
     ['orphanModel', 'ORPHAN MODEL FILE (on disk, included by nothing, read by nobody)'],
@@ -429,10 +417,7 @@ async function doctor(
       const said = unmergeable.has(file) ?
         kind.toUpperCase() + ' (no copy record, so an add stops on it; --force takes the source copy)' :
         note
-      log.info({
-        point: 'doctor-finding', kind, file,
-        note: said + ': ' + file + replacesShared(kind, file),
-      })
+      log.info({ point: 'doctor-finding', kind, file, note: said + ': ' + file })
     }
   }
 
@@ -459,8 +444,6 @@ async function doctor(
     unwired: report.unwired.length,
     orphanModel: report.orphanModel.length,
     resyncPending: report.resyncPending.length,
-    retired: report.retired.length,
-    override: report.override.length,
     aliasedDiff: report.aliasedDiff.length,
     outdated: report.outdated.length,
     unresolved: report.unresolved.length,
@@ -471,8 +454,7 @@ async function doctor(
       ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
         report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
         report.missing.length + ' missing, ' + report.outdated.length +
-        ' outdated, ' + report.retired.length + ' retired, ' +
-        report.unresolved.length + ' unresolved')
+        ' outdated, ' + report.unresolved.length + ' unresolved')
   })
 
   return { report }
@@ -483,15 +465,6 @@ async function doctor(
 // hand-written TypeScript (Root.ts / Top.ts / BuildSDK.ts), so this is a
 // reference check, not a diff: sdkgen has no reference copy of a file it does
 // not ship.
-// A component the project holds under a name a shared component dispatches
-// to is used in place of the shared section.
-function replacesShared(kind: string, file: string): string {
-  const m = file.match(/^src\/cmp\/([^/]+)\/([A-Za-z]+)_\1\.ts$/)
-  return ('additive' === kind || 'override' === kind) && null != m &&
-    m[2] in OPTIONAL_COMPONENTS ? ' (used instead of the shared ' + m[2] + ')' : ''
-}
-
-
 function checkWiring(actx: ActionContext, report: DoctorReport) {
   const fs = actx.fs()
   const src = Path.join(actx.folder, 'src')
@@ -725,7 +698,7 @@ function compareTrees(
       const known = fs.existsSync(Path.join(tree.scaffold, rel)) ||
         landed.has(rel)
       if ('forked' === tree.kind && !known) {
-        found('unshipped', label + rel)
+        report.additive.push(label + rel)
       }
       else {
         found('stale', label + rel)
@@ -938,23 +911,10 @@ function noteDrift(
   const merging = MERGE === projectCopyMode(actx)
 
   return (category: Category, label: string) => {
-    // Not shipped: retired if the record shows an add wrote it unchanged,
-    // otherwise the project's own.
-    if ('unshipped' === category) {
-      const same = untouched(fs, actx.folder, copies, label)
-      if (true !== same) {
-        report[false === same ? 'override' : 'additive'].push(label)
-        return
-      }
-    }
-
-    let into: Category | 'outdated' | 'retired' = category
+    let into: Category | 'outdated' = category
     let custom = false
 
-    if ('unshipped' === category) {
-      into = 'retired'
-    }
-    else if ('forked' === category || 'edited' === category) {
+    if ('forked' === category || 'edited' === category) {
       const same = untouched(fs, actx.folder, copies, label)
 
       if (true === same) {
@@ -969,7 +929,7 @@ function noteDrift(
       }
     }
 
-    report[into as 'forked'].push(label)
+    report[into].push(label)
 
     const drift = report.byItem[item] = report.byItem[item] ?? {
       ...pkgOf(source.package ?? copied?.package),
@@ -980,7 +940,7 @@ function noteDrift(
       customized: 0,
     }
 
-    if ('outdated' === into || 'retired' === into) {
+    if ('outdated' === into) {
       drift.outdated++
     }
     else {
