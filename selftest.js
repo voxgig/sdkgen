@@ -30,6 +30,12 @@
 //           recording the true values, so that the unmutated output passes;
 //   sentences a reference sentence marked `false` in reviewed/sentences.json
 //           is never matched, and every shared match records its verdict.
+//   samefact a language's own fact of ANOTHER path where a reference's fact
+//           stands (controls/samefact.json): left for a person, nothing
+//           accepted automatically, in both modes;
+//   pages   pagecheck.js on the unchanged pages of every listed language (no
+//           finding) and on a wrong step count, heading number and article
+//           (controls/pages.json): a finding of the expected kind;
 //   masking a shared word the v3.2 mask hid as a model name or a fact
 //           (controls/masking.json), changed on one page: a new class left
 //           for a person and nothing accepted automatically, in both modes;
@@ -51,6 +57,7 @@ const CP = require('node:child_process')
 const Os = require('node:os')
 const K = require('./common.js')
 const Classify = require('./classify.js')
+const C0 = require('./cut.js')
 
 const a = K.args(process.argv.slice(2))
 if (!a.clone || !a.old || !a.new) { console.error('usage: node selftest.js --clone <clone> --old <root> --new <root> [--stage2 <root>] [--only ledger,accept,purity,blocks,recall]'); process.exit(2) }
@@ -139,14 +146,16 @@ function injected(j, mode = 'reviewed') {
 const holes = []
 const tag = (mode) => 'scratch' === mode ? ' [scratch]' : ''
 
-if (want('ledger') || want('accept') || want('recheck') || want('missing') || want('masking')) {
+if (want('ledger') || want('accept') || want('recheck') || want('missing') || want('masking') || want('samefact')) {
   const inj = want('ledger') ? JSON.parse(Fs.readFileSync(Path.join(CTL, 'injections.json'), 'utf8')) : []
   const acc = want('accept') ? JSON.parse(Fs.readFileSync(Path.join(CTL, 'accept.json'), 'utf8')) : []
   const rck = want('recheck') ? JSON.parse(Fs.readFileSync(Path.join(CTL, 'recheck.json'), 'utf8')) : []
   const mis = want('missing') ? JSON.parse(Fs.readFileSync(Path.join(CTL, 'missing.json'), 'utf8')) : []
   // a shared word the v3.2 mask hid as a model name (or as a fact), changed on one page
   const msk = want('masking') ? JSON.parse(Fs.readFileSync(Path.join(CTL, 'masking.json'), 'utf8')) : []
-  const total = (inj.length + acc.length + rck.length + mis.length + msk.length) * MODES.length
+  // a language's own fact of ANOTHER path where a reference's fact stands (the sentence round's check)
+  const sfx = want('samefact') ? JSON.parse(Fs.readFileSync(Path.join(CTL, 'samefact.json'), 'utf8')) : []
+  const total = (inj.length + acc.length + rck.length + mis.length + msk.length + sfx.length) * MODES.length
   progress(`injections: ${inj.length} regressions, ${acc.length} false sentences, ${rck.length} of the re-check's, ${mis.length} dropped sentences; modes ${MODES.join(', ')} (${total} runs)`)
   let i = 0
   const pct = () => `${i}/${total}, ${Math.round(100 * i / total)}%`
@@ -156,11 +165,12 @@ if (want('ledger') || want('accept') || want('recheck') || want('missing') || wa
       i++
       const r = injected(j, mode)
       if (r.err) { record(part, j.id + tag(mode), false, r.err); continue }
-      const flagged = r.newOpen.length > 0 || r.un > r.baseUn
+      // an absent or dropped sentence with no reason fails the one command as an open class does
+      const flagged = r.newOpen.length > 0 || r.un > r.baseUn || r.newAbsent.length > 0
       if (!flagged && 'scratch' === mode) holes.push(`${part} ${j.id}`)
-      record(part, j.id + tag(mode), flagged, `${flagged ? 'flagged' : 'NOT FLAGGED'}: ${r.newOpen.length} new open class(es)${r.fewer.length ? ` (${r.fewer.length} printed less often than its reference)` : ''}, unclassified ${r.baseUn} -> ${r.un} (${pct()})`)
+      record(part, j.id + tag(mode), flagged, `${flagged ? 'flagged' : 'NOT FLAGGED'}: ${r.newOpen.length} new open class(es)${r.fewer.length ? ` (${r.fewer.length} printed less often than its reference)` : ''}, ${r.newAbsent.length} new absent or dropped sentence(s), unclassified ${r.baseUn} -> ${r.un} (${pct()})`)
     }
-    for (const [part, list] of [['accept', acc], ['masking', msk]]) for (const j of list) {
+    for (const [part, list] of [['accept', acc], ['masking', msk], ['samefact', sfx]]) for (const j of list) {
       i++
       const r = injected(j, mode)
       if (r.err) { record(part, j.id + tag(mode), false, r.err); continue }
@@ -175,6 +185,24 @@ if (want('ledger') || want('accept') || want('recheck') || want('missing') || wa
       const ok = r.newOpen.length > 0 || r.un > r.baseUn || r.newAbsent.length > 0
       record('missing', j.id + tag(mode), ok, `${ok ? 'flagged' : 'NOT FLAGGED'}: ${r.newOpen.length} new open class(es), ${r.fewer.length} printed less often than its reference, ${r.newAbsent.length} new absent sentence(s), unclassified ${r.baseUn} -> ${r.un} (${pct()})`)
     }
+  }
+}
+
+if (want('pages')) {
+  // pagecheck.js: a number the page determines and the article before a word,
+  // checked against the page (identity and the match form set both aside).
+  // The check reads no hand record, so the reviewed mode and the from-scratch
+  // mode run it alike: each control runs once per mode.
+  progress('page numbers and articles (controls/pages.json)')
+  const PC = require('./pagecheck.js')
+  const list = JSON.parse(Fs.readFileSync(Path.join(CTL, 'pages.json'), 'utf8'))
+  const langs = [...new Set([...list.map((x) => x.lang), ...Object.values(C0.REG.ported).flat()])]
+  for (const l of langs) { const r = PC.run({ new: NEW, lang: l }); record('pages', 'clean:' + l, 0 === r.findings.length, `${r.findings.length} finding(s) on the unchanged pages (${r.counts.steps} step counts, ${r.counts.headings} numbered headings, ${r.counts.lists} lists, ${r.counts.articles} articles, ${r.counts.notJudged} not judged)${r.findings[0] ? ': ' + r.findings[0].why : ''}`) }
+  for (const mode of MODES) for (const j of list) {
+    const r = withInjection(j, () => PC.run({ new: W, lang: j.lang, section: j.section }))
+    if (r.err) { record('pages', j.id + tag(mode), false, r.err); continue }
+    const hit = r.findings.filter((f) => f.kind === j.expect)
+    record('pages', j.id + tag(mode), hit.length > 0, `${r.findings.length} finding(s): ${hit[0] ? hit[0].kind + ' ' + hit[0].why : 'NONE of kind ' + j.expect}`)
   }
 }
 

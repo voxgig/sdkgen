@@ -54,5 +54,41 @@
   "to": "",
   "why": "T1/T2: the reviewers' attack: a shared sentence dropped from every REFERENCE of a port. lua (style pair, shared with go) gave PASS with 'absent 36 (35 explained)'; perl (die) and swift (wrapped) share their style with no reference, so their absent list was empty and nothing moved from scratch. Must be a new absent entry with no reason, which fails the one command.",
   "adapted": "v3.3 (k-freeze33a): the from text of v33p ('A failed request is reported ...') is no longer printed (the sentence fixes); the same intent on the new text, which occurs once in each of the 19 REFERENCEs"
+ },
+ {
+  "id": "drop-branch-go-one",
+  "lang": "go",
+  "section": "reference",
+  "file": "B/go/REFERENCE.md",
+  "from": " A failure is reported in the result, not as an error,\nso branch on `result[\"ok\"] == true`.",
+  "to": "",
+  "why": "the sentence round's independent check (required fix 3): go's and c's branch sentence dropped; the absent list compares every position as a slot, per variation, so a sentence dropped from one variation (DROPPED) or from all (ABSENT) is a failing entry from scratch too"
+ },
+ {
+  "id": "drop-branch-go-all",
+  "lang": "go",
+  "section": "reference",
+  "file": "*/go/REFERENCE.md",
+  "from": " A failure is reported in the result, not as an error,\nso branch on `result[\"ok\"] == true`.",
+  "to": "",
+  "why": "the sentence round's independent check (required fix 3): go's and c's branch sentence dropped; the absent list compares every position as a slot, per variation, so a sentence dropped from one variation (DROPPED) or from all (ABSENT) is a failing entry from scratch too"
+ },
+ {
+  "id": "drop-branch-c-one",
+  "lang": "c",
+  "section": "reference",
+  "file": "B/c/REFERENCE.md",
+  "from": " A failure is reported in the result, not as an\nerror, so branch on `voxgig_as_bool(getp(result, \"ok\"))`.",
+  "to": "",
+  "why": "the sentence round's independent check (required fix 3): go's and c's branch sentence dropped; the absent list compares every position as a slot, per variation, so a sentence dropped from one variation (DROPPED) or from all (ABSENT) is a failing entry from scratch too"
+ },
+ {
+  "id": "drop-branch-c-all",
+  "lang": "c",
+  "section": "reference",
+  "file": "*/c/REFERENCE.md",
+  "from": " A failure is reported in the result, not as an\nerror, so branch on `voxgig_as_bool(getp(result, \"ok\"))`.",
+  "to": "",
+  "why": "the sentence round's independent check (required fix 3): go's and c's branch sentence dropped; the absent list compares every position as a slot, per variation, so a sentence dropped from one variation (DROPPED) or from all (ABSENT) is a failing entry from scratch too"
  }
 ]

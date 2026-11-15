@@ -1,0 +1,42 @@
+[
+ {
+  "id": "swap-ok-err-zig",
+  "lang": "zig",
+  "section": "reference",
+  "file": "B/zig/REFERENCE.md",
+  "from": "The result's `.ok` is\nthe entity, and its `.err` reports failure. `asEntity().data(null)`",
+  "to": "The result's `.err` is\nthe entity, and its `.ok` reports failure. `asEntity().data(null)`",
+  "note": "two facts of one language swapped (ok, err): each is zig's own, of the other path",
+  "why": "the sentence round's independent check (s3c-sfix-verify, required fix 1): the match form masked a position whose text was ANY of the language's own facts; the attack, accepted automatically in both modes at 6e224b8, must leave a class for a person"
+ },
+ {
+  "id": "record-read-is-list-py",
+  "lang": "py",
+  "section": "reference",
+  "file": "B/py/REFERENCE.md",
+  "from": "and raises on failure. `data_get()` reads its record.",
+  "to": "and raises on failure. `list()` reads its record.",
+  "note": "py's method.list where its record reader belongs",
+  "why": "the sentence round's independent check (s3c-sfix-verify, required fix 1): the match form masked a position whose text was ANY of the language's own facts; the attack, accepted automatically in both modes at 6e224b8, must leave a class for a person"
+ },
+ {
+  "id": "collection-is-hash-rb",
+  "lang": "rb",
+  "section": "reference",
+  "file": "B/rb/REFERENCE.md",
+  "from": "Returns an `Array` of entities, one per record, and raises on failure.",
+  "to": "Returns an `Hash` of entities, one per record, and raises on failure.",
+  "note": "rb's recordType where its collection belongs",
+  "why": "the sentence round's independent check (s3c-sfix-verify, required fix 1): the match form masked a position whose text was ANY of the language's own facts; the attack, accepted automatically in both modes at 6e224b8, must leave a class for a person"
+ },
+ {
+  "id": "comment-collection-is-list-rb",
+  "lang": "rb",
+  "section": "rootquick",
+  "file": "crud-bare/README.md",
+  "from": "# List planet records: an Array of entities, one per record; raises on failure",
+  "to": "# List planet records: a list of entities, one per record; raises on failure",
+  "note": "rb's method name 'list' where its collection belongs, in a comment (py's collection word)",
+  "why": "the sentence round's independent check (s3c-sfix-verify, required fix 1): the match form masked a position whose text was ANY of the language's own facts; the attack, accepted automatically in both modes at 6e224b8, must leave a class for a person"
+ }
+]
