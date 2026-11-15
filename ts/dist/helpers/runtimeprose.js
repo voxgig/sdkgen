@@ -20,11 +20,19 @@ const article = (s) => /^`?(?:u[bcdfgklmnprstvz][aeiou]|uni|use|usu|eu|one\b)/i.
     : (/^`?[aeiou]/i.test(s) ? 'an' : 'a');
 exports.article = article;
 const a = (s) => article(s) + ' ' + s;
+// An operation named in prose: called, `load()`, where a call with no
+// arguments compiles; by its name alone where the language names it bare or
+// every call must pass its arguments (arity).
 function opName(f, op) {
     const m = f.method[op];
     if (null == m)
         throw new Error(`runtimeprose: no method declared for ${op}`);
-    return code('call' === f.named ? m + '()' : m);
+    return code('call' === f.named && !(0 < (f.arity || 0)) ? m + '()' : m);
+}
+// The call that lists every record: no match, each argument the none value.
+function noMatchCall(f, none) {
+    const n = f.arity || 0;
+    return code(f.method.list + '(' + Array.from({ length: n }, () => none).join(', ') + ')');
 }
 // A fact a result style needs, which the provider must declare.
 function need(f, key) {
@@ -36,6 +44,12 @@ function need(f, key) {
 // The code that reads a record, naming the variable the example binds.
 function record(f, bound) {
     return f.record.replace(/\{var\}/g, bound);
+}
+// Where an operation returns a value holding the entity (wrapped), the unwrap
+// that takes it out comes first.
+function readsRecord(f, bound, of = 'its') {
+    const unwrapped = 'wrapped' === f.result ? `${code(need(f, 'unwrap'))} takes the entity out, and ` : '';
+    return `${unwrapped}${code(record(f, bound))} reads ${of} record`;
 }
 function recordClause(f, of, bound) {
     return `${code(record(f, bound))} reads ${of} record` + (f.recordType ? ` (${a(code(f.recordType))})` : '');
@@ -145,7 +159,8 @@ function carries(f, value) {
 // The create step's comment: what it returns, as the result style says it,
 // and how its record is read.
 function createComment(f, bound) {
-    return `Create — ${carries(f, 'the created entity')}; ${record(f, bound)} reads its record`;
+    return `Create — ${carries(f, 'the created entity')}; ` +
+        ('wrapped' === f.result ? `${need(f, 'unwrap')} takes it out, and ` : '') + `${record(f, bound)} reads its record`;
 }
 // A short form for a code comment: how failure is reported.
 function failsShort(f) {
@@ -205,20 +220,27 @@ function returnClause(f, value) {
 // The reference's description of one operation. `needs`: what a list match
 // must give; `idInData`: the id key an update or patch must carry; `bound`:
 // the variable the example binds the result to.
-function opText(f, op, needs, idInData, bound) {
+// `ref`: what the reference page knows besides: the none value, and how a
+// removed entity's mark is read ({var} the entity).
+function opText(f, op, needs, idInData, bound, ref = {}) {
     const parts = [OP_DOES[op]];
     if ('list' === op) {
         parts.push(0 === needs.length
-            ? 'The match is optional.'
+            ? ('call' === f.named && null != f.arity && null != ref.none
+                ? `The match is optional: ${noMatchCall(f, ref.none)} lists every record.`
+                : 'The match is optional.')
             : `The match must include ${needs.map(code).join(' and ')}.`);
     }
     if (null != idInData)
         parts.push(`The data must include the entity id, ${code(idInData)}, unless the entity already holds it.`);
     parts.push(returnClause(f, opValue(f, op)));
+    if ('remove' === op && null != ref.deleted) {
+        parts.push(`${code(ref.deleted.replace(/\{var\}/g, bound))} reads the mark.`);
+    }
     // Every single-entity result says how its record is read: the reference's
     // examples print none of them (the majority shape), so the sentence keeps it.
     if ('list' !== op)
-        parts.push(`${code(record(f, bound))} reads its record.`);
+        parts.push(readsRecord(f, bound) + '.');
     return parts.join(' ');
 }
 // How a failure of a call other than an operation is reported.

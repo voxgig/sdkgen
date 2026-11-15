@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.templateName = templateName;
 exports.sdkDescription = sdkDescription;
 exports.readsSecret = readsSecret;
+exports.showFieldsOf = showFields;
 const apidef_1 = require("@voxgig/apidef");
 const utility_1 = require("@voxgig/apidef/dist/utility");
 const canonType_1 = require("./canonType");
@@ -312,11 +313,12 @@ function quickChoices(activeEntities) {
     };
 }
 // The record id, then the first other string field, else the first other
-// field of any type: what php, rb and lua chose for themselves (perl printed
-// the id alone), chosen here once.
+// integer, number or boolean field; with no scalar, the id alone (a map or a
+// list printed whole is no display field: perl prints `HASH(0x...)`).
 function showFields(fields, dataIdF) {
     const other = fields.filter((f) => f && f.n !== 'id' && f.n !== dataIdF);
-    const display = other.find((f) => 'STRING' === (0, canonType_1.canonScalarKey)(f.t)) || other[0];
+    const display = ['STRING', 'INTEGER', 'NUMBER', 'BOOLEAN']
+        .map((k) => other.find((f) => k === (0, canonType_1.canonScalarKey)(f.t))).find((f) => null != f);
     return [dataIdF, display ? display.n : null].filter((f) => null != f);
 }
 //# sourceMappingURL=sdkdesc.js.map

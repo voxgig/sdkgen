@@ -244,7 +244,7 @@ function printStmts(p, stmts, desc, sc, inAttempt = false) {
             case 'client':
                 if (p.imports && !sc.standalone && !sc.declared.has(IMPORTED)) {
                     sc.declared.add(IMPORTED);
-                    const lines = p.imports(desc, uses(sc.section.length ? sc.section : stmts));
+                    const lines = p.imports(desc, uses(sc.section.length ? sc.section : stmts), sc.place);
                     if (0 < lines.length)
                         out.push(...lines, '');
                 }
@@ -310,8 +310,8 @@ function fenced(p, lines) {
 }
 // Recorded in Scope.declared once the page's imports are printed.
 const IMPORTED = '\u0000imports';
-function newScope(standalone = false) {
-    return { declared: new Set(), local: new Set(), stmts: [], section: [], standalone };
+function newScope(standalone = false, place) {
+    return { declared: new Set(), local: new Set(), stmts: [], section: [], standalone, place };
 }
 // A runtime note for a slot, as a paragraph, or nothing. A note names the
 // SDK's own modules as the signatures do: {module}, {client}, {ctor} and

@@ -7,6 +7,9 @@ declare function writeSentence(f: RuntimeFacts, ops: string[], after?: boolean):
 declare function createComment(f: RuntimeFacts, bound: string): string;
 declare function listComment(f: RuntimeFacts, title: string, cls?: string): string;
 declare function loadComment(f: RuntimeFacts, title: string, cls?: string): string;
-declare function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string | null, bound: string): string;
+declare function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string | null, bound: string, ref?: {
+    none?: string;
+    deleted?: string;
+}): string;
 declare function failsSentence(f: RuntimeFacts): string;
 export { article, createComment, failsSentence, opText, listComment, listSentence, loadComment, loadSentence, record, writeSentence, };
