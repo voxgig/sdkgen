@@ -4,6 +4,8 @@
 // any parameter may be left out, and declares no types.
 import type { Forms } from './forms'
 
+const MAIN = 'src/cmp/perl/fragment/Main.fragment.pm'
+const ENTITY = 'src/cmp/perl/fragment/Entity.fragment.pm'
 const OPS = ['Load', 'List', 'Create', 'Update', 'Patch', 'Remove'].map((o) => `src/cmp/perl/fragment/Entity${o}Op.fragment.pm`)
 
 const forms: Forms = {
@@ -64,11 +66,30 @@ const forms: Forms = {
     draw: "my $next = $src->();",
     runs: "before it returns", items: "as the caller iterates",
   },
+  // The porter's part.
+  renames: { args: ['data', 'match'] },
+  namesWhy: 'Perl passes these by position; the runtime names the setter argument $args, the page names what it holds',
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
     'ref.facts.direct.okFalse': { value: "0", file: "src/cmp/perl/fragment/Main.fragment.pm", quote: "'ok' => 0," },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
     'ref.facts.testMock': { value: "generated", file: "src/cmp/perl/Main_perl.ts", quote: "  return ${model.const.Name}BaseFeature->new;" },
+    'ref.facts.ctor[0]': { file: 'src/cmp/perl/Main_perl.ts', quote: "// callers write `use lib '<sdk>/lib'; use <Name>SDK;`." },
+    'ref.facts.ctor[1]': { file: 'tm/perl/t/feature.t', quote: 'use ProjectNameSDK;' },
+    'ref.facts.direct.returns': { file: MAIN, quote: ['# direct() is the raw-HTTP escape hatch: it always returns a result hash', '# ({ ok => ..., ... }) and never dies.'], unquoted: { hashref: 'the result is a hash reference literal; the runtime says "a result hash"' } },
+    'ref.facts.prepare.returns': { file: MAIN, quote: '# return just the fetchdef hashref (dying on error) so callers -' },
+    'ref.facts.none': { file: ENTITY, quote: 'return undef unless @items;' },
+    'facts.collection': { file: 'src/cmp/perl/fragment/EntityListOp.fragment.pm', quote: '# Returns the matching EntityName items as an arrayref of entities, one per' },
+    'facts.recordType': { file: ENTITY, quote: '# Returns the current EntityName data (hashref).' },
+    'ref.facts.container': { file: MAIN, quote: '$options = {} unless defined $options;', unquoted: { hashref: 'a `{}` literal is a hash reference; the runtime never names the type' } },
+    'ref.facts.client[0].copy': { value: true, file: MAIN, quote: 'my $out = Voxgig::Struct::clone($self->{options});' },
+    'ref.facts.client[1].kind': { value: 'utility', file: MAIN, quote: 'return ProjectNameUtility->copy($self->{_utility});' },
+    'ref.facts.entity[0].copy': { value: true, file: ENTITY, quote: 'return Voxgig::Struct::clone($self->{_data});' },
+    'ref.facts.prepare.fails': { value: 'style', file: MAIN, quote: 'die $fd_err if $fd_err;' },
+    'ref.facts.body.values': { value: 'a byte string, a character string, sent as UTF-8, or a filehandle', file: 'tm/perl/utility/media.pm', quote: '# A string of bytes, a character string (sent as UTF-8), or a filehandle. A' },
+    'ref.facts.body.once': { value: 'a filehandle', file: 'tm/perl/utility/media.pm', quote: '# filehandle can be read once, so it is read here, before the first attempt,' },
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|alarm\b/i, files: ['tm/perl/utility/fetcher.pm'] } },
+    'notes.member:streamFunction': { value: 'Each item is the hashref `data_get` returns, not an entity.', file: ENTITY, quote: '# An entity is yielded as its record, the hashref its data_get returns.' },
   },
 }
 
