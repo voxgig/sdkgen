@@ -65,6 +65,7 @@ const forms: Forms = {
   uncompared: { returns: 'the clojure runtime declares no types, so a signature\'s `-> x` is compared with nothing; the facts that rest on one are cited' },
   cite: {
     'ref.facts.client[0].copy': { value: true, file: "tm/clojure/src/sdk/core.clj", quote: "(let [o (vs/clone (deref (:options client)))] (if (vs/ismap o) o (vs/jm))))" },
+    'ref.facts.entity[2].copy': { value: true, file: "src/cmp/clojure/fragment/Entity.fragment.clj", quote: "(vs/clone (deref (:_match ent)))" },
     'ref.facts.none': { file: 'src/cmp/clojure/fragment/EntityLoadOp.fragment.clj', quote: ';; Load a single EntityName (reqmatch: id/query fields; nil = empty match).' },
     'ref.facts.direct.okFalse': { file: 'tm/clojure/src/sdk/client.clj', quote: '(vs/jm "ok" false "err" (core/ucall (core/client-root-ctx client) :clean (:err pr)))' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/clojure/fragment/Entity.fragment.clj", quote: "(vs/clone (deref (:_data ent)))" },

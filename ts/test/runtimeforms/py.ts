@@ -50,6 +50,8 @@ const forms: Forms = {
     // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
     'ref.facts.entity[2].copy': { value: true, file: 'src/cmp/py/fragment/Entity.fragment.py', quote: 'return vs.clone(self._match)' },
     'ref.facts.client[0].copy': { value: true, file: "src/cmp/py/fragment/Main.fragment.py", quote: "out = vs.clone(self.options)" },
+    // Decision 13: the getter returns what the copy function builds, a new object.
+    'ref.facts.client[1].copy': { value: true, file: "src/cmp/py/fragment/Main.fragment.py", quote: "return ProjectNameUtility.copy(self._utility)", also: [{ file: "tm/py/pkg/core/utility_type.py", quote: ["    def copy(cls, src):\n        u = cls()"] }] },
     'ref.facts.none': { file: 'src/cmp/py/fragment/EntityLoadOp.fragment.py', quote: 'def load(self, reqmatch=None, ctrl=None) -> EntyClass:' },
     'ref.facts.direct.okFalse': { file: MAIN, quote: 'return {"ok": False, "err": utility.clean(self._rootctx, err)}' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/py/fragment/Entity.fragment.py", quote: "return vs.clone(self._data)" },

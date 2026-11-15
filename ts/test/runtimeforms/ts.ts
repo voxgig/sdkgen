@@ -13,7 +13,13 @@ const forms: Forms = {
     entity: [BASE, 'src/cmp/ts/fragment/Entity.fragment.ts'],
     ops: OPS,
   },
-  decl: (name) => new RegExp(`^[ \\t]+(?:static\\s+|async\\s+\\*?\\s*)*${name}(?=\\()`, 'm'),
+  // A method, or a class property with an initialiser at the class body's indent
+  // (`name = ''`), which is a field: read without a call.
+  decl: (name) => new RegExp(`^(?:[ \\t]+(?:static\\s+|async\\s+\\*?\\s*)*${name}(?=\\()|  ${name}(?=\\s*(?::[^=\\n(]+)?=\\s))`, 'm'),
+  bare: true,
+  // A field is written `name: type`; anything else is a call.
+  sigName: (sig) => /^[\w$]+\s*:/.test(sig) && !sig.includes('(') ? (/^[\w$]+/.exec(sig) as RegExpExecArray)[0]
+    : ((/([\w{}$-]+)\s*\(/.exec(sig.replace(/^[^(]*?(->|\.)(?=[\w{}]+\s*\()/, '')) || [])[1] || ''),
   receiver: /^this\s*:/,
   param: (p) => {
     const m = /^(?:\.\.\.)?(\w+)\??\s*(?::\s*([^=]+?))?\s*(?:=.*)?$/.exec(p.trim())
@@ -24,7 +30,7 @@ const forms: Forms = {
   entityCtor: 'constructor',
   public: {
     client: /^  (?:static |async \*?)?((?!constructor\b)[a-z]\w*)\(/gm,
-    entity: /^  (?:static |async \*?)?((?!constructor\b)[a-z]\w*)\(/gm,
+    entity: /^  (?:static |async \*?)?((?!constructor\b)[a-z]\w*)(?:\(|\s*(?::[^=\n(]+)?=\s)/gm,
   },
   undocumented: {
     graphql: 'a GraphQL request through the pipeline; no reference page documents it (old pages neither)',
@@ -32,10 +38,11 @@ const forms: Forms = {
     toString: 'the printed form; not part of the documented API',
     markDeleted: 'set by remove itself; the entity reports it through deleted',
     deleted: 'whether remove succeeded on this instance; not documented by the old pages',
+    name_: 'the snake form of the entity name, which the code generator fills; the page documents `name`',
   },
   members: {
     options: 'options', utility: 'utility', direct: 'direct', prepare: 'prepare', tester: 'tester',
-    data: 'data', match: 'match', make: 'make', client: 'client', entopts: 'entopts', stream: 'stream',
+    data: 'data', match: 'match', make: 'make', client: 'client', entopts: 'entopts', stream: 'stream', name: 'name',
   },
   streamKind: (d) => /async\s*\*/.test(d.head) ? 'streamIterator' : 'stream',
   async: (d) => /\basync\b/.test(d.head),
@@ -59,6 +66,9 @@ const forms: Forms = {
     'ref.facts.streamSignal': { value: true, file: 'src/cmp/ts/fragment/EntityBase.fragment.ts', quote: ['ctrl.signal = callopts.signal', 'if (signal && signal.aborted) { return }'] },
     'ref.facts.entity[1].copy': { value: true, file: 'src/cmp/ts/fragment/EntityBase.fragment.ts', quote: 'let out = struct.clone(this._match)' },
     'ref.facts.client[0].copy': { value: true, file: "src/cmp/ts/fragment/Main.fragment.ts", quote: "return this._utility.struct.clone(this._options)" },
+    // Decision 13: utility() runs struct.clone on a class instance, which clone
+    // hands back by reference (a non-plain object is copied, not cloned): the live object.
+    'ref.facts.client[1].copy': { value: false, file: 'src/cmp/ts/fragment/Main.fragment.ts', quote: 'return this._utility.struct.clone(this._utility)', also: [{ file: 'tm/ts/src/utility/StructUtility.ts', quote: ["'Object' !== v.constructor.name &&", "return (refs.push(v), '`$REF:' + (refs.length - 1) + '`')"] }, { file: 'tm/ts/src/utility/Utility.ts', quote: 'class Utility {' }] },
     'ref.facts.entity[5].copy': { value: true, file: "src/cmp/ts/fragment/EntityBase.fragment.ts", quote: "return this._utility.struct.merge([{}, this._entopts])" },
     'ref.facts.direct.abortCode': { file: 'tm/ts/src/utility/MakeRequestUtility.ts', quote: "const abort = ctx.error('request_aborted', 'request aborted')" },
     'ref.facts.none': { file: 'src/cmp/ts/fragment/EntityBase.fragment.ts', quote: 'return undefined' },

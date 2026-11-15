@@ -57,6 +57,9 @@ const forms: Forms = {
   namesWhy: 'zig passes by position; the runtime suffixes a parameter it rebinds with _in, and the accessor\'s return is spelled through the generator',
   cite: {
     'ref.facts.client[0].copy': { value: true, file: "src/cmp/zig/fragment/Main.fragment.zig", quote: "return h.clone(self.options);" },
+    'ref.facts.entity[1].copy': { value: true, file: "src/cmp/zig/fragment/Entity.fragment.zig", quote: "return h.clone(self.mtch);" },
+    // Decision 13: the getter returns what the copy function builds, a new object.
+    'ref.facts.client[1].copy': { value: true, file: "src/cmp/zig/fragment/Main.fragment.zig", quote: "return Utility.copy(self.sdkUtility);", also: [{ file: "tm/zig/core/utility.zig", quote: ["pub fn copy(src: *Utility) *Utility {\n        const u = h.A().create(Utility) catch unreachable;"] }] },
     'ref.facts.setArg': { value: 'a map', file: 'src/cmp/zig/fragment/Entity.fragment.zig', quote: ['self.data = if (arg == .null) h.omap() else h.clone(arg);', 'const cloned = h.to_map(h.clone(arg));'] },
     'ref.facts.direct.okFalse': { file: MAIN, quote: '.{ "ok", h.vbool(false) },' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/zig/fragment/Entity.fragment.zig", quote: "return h.clone(self.data);" },

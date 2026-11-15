@@ -55,6 +55,8 @@ const forms: Forms = {
     // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
     'ref.facts.entity[1].copy': { value: true, file: 'src/cmp/rust/fragment/Entity.fragment.rs', quote: 'vs::clone(&self.mtch.borrow())' },
     'ref.facts.client[0].copy': { value: true, file: "src/cmp/rust/fragment/Main.fragment.rs", quote: "vs::clone(&self.options.borrow())" },
+    // Decision 13: the getter returns what the copy function builds, a new object.
+    'ref.facts.client[1].copy': { value: true, file: "src/cmp/rust/fragment/Main.fragment.rs", quote: "Utility::copy(&self.utility)", also: [{ file: "tm/rust/core/utility_type.rs", quote: ["pub fn copy(src: &Utility) -> Rc<Utility> {", "Rc::new(Utility {"] }] },
     'ref.facts.direct.okFalse': { file: MAIN, quote: '("ok", Value::Bool(false)),' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/rust/fragment/Entity.fragment.rs", quote: "vs::clone(&self.data.borrow())" },
     'notes.member:direct': { value: "The result map always comes back inside `Ok`.", file: "src/cmp/rust/fragment/Main.fragment.rs", quote: ["        self.raw_request(fetchargs)", "            Err(err) => {\n                return Ok(jo(vec![", "        Ok(jo(vec![\n            (\"ok\", Value::Bool(false)),"] },

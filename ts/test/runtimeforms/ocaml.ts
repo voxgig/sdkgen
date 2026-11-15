@@ -164,7 +164,6 @@ const forms: Forms = {
     'notes.operations': { value: 'Each operation takes its match or data, then a control map, `ctrl`,\nboth by position: pass `Noval` for either to give none.',
       file: 'src/cmp/ocaml/EntityOperation_ocaml.ts', quote: ['  return `  ent.${field} <- (fun ${arg} ctrl ->', '      let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in', 'cs_ctrl = (match ctrl with Noval | Null -> None | c -> Some c);'] },
     'notes.member:streamSync': { value: 'Its arguments are the name of the operation, its match, and `callopts`.', file: 'tm/ocaml/sdk_types.ml', quote: ['(* stream action args callopts -> a lazy Seq over result items. *)', 'mutable e_stream : string -> value -> value -> value Seq.t;'] },
-    'notes.member:name': { value: '`e_name` is a field of the entity, read without a call.', file: 'tm/ocaml/sdk_types.ml', quote: ['and entity_obj = {', 'mutable e_name : string;'] },
   },
 }
 

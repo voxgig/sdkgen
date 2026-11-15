@@ -97,6 +97,8 @@ const forms: Forms = {
     'facts.recordType': { file: ENTITY, quote: '# Returns the current EntityName data (hashref).' },
     'ref.facts.container': { file: MAIN, quote: '$options = {} unless defined $options;', unquoted: { hashref: 'the options default to a `{}` literal, a hash reference; the runtime names hashref for a match, request data and a record (EntityLoadOp.fragment.pm:5, EntityCreateOp.fragment.pm:5, Entity.fragment.pm:99), never in a comment on the options themselves' } },
     'ref.facts.client[0].copy': { value: true, file: MAIN, quote: 'my $out = Voxgig::Struct::clone($self->{options});' },
+    // Decision 13: the getter returns what the copy function builds, a new object.
+    'ref.facts.client[1].copy': { value: true, file: "src/cmp/perl/fragment/Main.fragment.pm", quote: "return ProjectNameUtility->copy($self->{_utility});", also: [{ file: "tm/perl/core/utility_type.pm", quote: ["sub copy {\n  my ($class, $src) = @_;\n  my $u = $class->new;"] }] },
     'ref.facts.client[1].kind': { value: 'utility', file: MAIN, quote: 'return ProjectNameUtility->copy($self->{_utility});' },
     'ref.facts.entity[0].copy': { value: true, file: ENTITY, quote: 'return Voxgig::Struct::clone($self->{_data});' },
     'ref.facts.prepare.fails': { value: 'style', file: MAIN, quote: 'die $fd_err if $fd_err;' },

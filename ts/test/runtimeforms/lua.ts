@@ -108,6 +108,8 @@ const forms: Forms = {
         sdk: 'the name the page binds the required module to, as the generated tests bind it (tm/lua/test/extend_test.lua:14, TestEntity_lua.ts); test files are not runtime files',
       } },
     'ref.facts.client[0].copy': { value: true, file: MAIN, quote: 'local out = vs.clone(self.options)' },
+    // Decision 13: the getter returns what the copy function builds, a new object.
+    'ref.facts.client[1].copy': { value: true, file: "src/cmp/lua/fragment/Main.fragment.lua", quote: "return Utility.copy(self._utility)", also: [{ file: "tm/lua/core/utility_type.lua", quote: ["function Utility.copy(src)\n  local u = Utility.new()"] }] },
     'ref.facts.client[1].kind': { value: 'utility', file: MAIN, quote: 'function ProjectNameSDK:get_utility()\n  return Utility.copy(self._utility)' },
     'ref.facts.direct.returns': { file: MAIN, quote: ['local out = {\n      ok = body_err == nil and status >= 200 and status < 300,', 'return out, nil'],
       unquoted: { table: 'the result is a table constructor, `{ ok = ..., status = ..., headers = ..., data = ... }`' } },

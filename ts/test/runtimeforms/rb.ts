@@ -74,6 +74,8 @@ const forms: Forms = {
     // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
     'ref.facts.entity[2].copy': { value: true, file: 'src/cmp/rb/fragment/Entity.fragment.rb', quote: 'VoxgigStruct.clone(@_match)' },
     'ref.facts.client[0].copy': { value: true, file: "src/cmp/rb/fragment/Main.fragment.rb", quote: "out = VoxgigStruct.clone(@options)" },
+    // Decision 13: the getter returns what the copy function builds, a new object.
+    'ref.facts.client[1].copy': { value: true, file: "src/cmp/rb/fragment/Main.fragment.rb", quote: "ProjectNameUtility.copy(@_utility)", also: [{ file: "tm/rb/core/utility_type.rb", quote: ["def self.copy(src)\n    u = ProjectNameUtility.new"] }] },
     'ref.facts.none': { file: 'src/cmp/rb/fragment/EntityLoadOp.fragment.rb', quote: 'def load(reqmatch = nil, ctrl = nil)' },
     'ref.facts.direct.okFalse': { file: MAIN, quote: 'return { "ok" => false, "err" => err }' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/rb/fragment/Entity.fragment.rb", quote: "VoxgigStruct.clone(@_data)" },

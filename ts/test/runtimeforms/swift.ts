@@ -83,6 +83,8 @@ const forms: Forms = {
     'ref.facts.setArg': { file: BASE, quote: 'public func data(_ newdata: Value?) -> Value {' },
     'ref.facts.container': { file: MAIN, quote: 'private var options: ProjectNameSdk.VMap = ProjectNameSdk.VMap()' },
     'ref.facts.client[0].copy': { value: true, file: MAIN, quote: 'return clone(.map(options)).asMap ?? ProjectNameSdk.VMap()' },
+    // Decision 13: the getter returns what the copy function builds, a new object.
+    'ref.facts.client[1].copy': { value: true, file: "src/cmp/swift/fragment/Main.fragment.swift", quote: "return ProjectNameSdk.Utility.copy(utility)", also: [{ file: "tm/swift/Sources/ProjectNameSDK/core/Utility.swift", quote: ["public static func copy(_ src: Utility) -> Utility {\n    let u = Utility(noregister: true)"] }] },
     'ref.facts.client[1].kind': { value: 'utility', file: MAIN, quote: 'return ProjectNameSdk.Utility.copy(utility)' },
     'ref.facts.entity[0].copy': { value: true, file: BASE, quote: 'return clone(data)' },
     'ref.facts.entity[1].copy': { value: true, file: BASE, quote: 'return clone(.map(match))' },

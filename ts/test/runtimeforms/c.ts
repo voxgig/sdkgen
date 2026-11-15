@@ -76,6 +76,9 @@ const forms: Forms = {
   },
   cite: {
     'ref.facts.client[0].copy': { value: true, file: "tm/c/core/utility.c", quote: "voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }" },
+    'ref.facts.entity[1].copy': { value: true, file: "src/cmp/c/fragment/Entity.fragment.c", quote: "return voxgig_clone(self->mtch);" },
+    // Decision 13: the getter returns what the copy function builds, a new object.
+    'ref.facts.client[1].copy': { value: true, file: "tm/c/core/utility.c", quote: "Utility* sdk_get_utility(ProjectNameSDK* sdk) { return utility_copy(sdk->utility); }", also: [{ file: "tm/c/core/utility.c", quote: ["Utility* utility_copy(Utility* src) {\n  Utility* u = (Utility*)calloc(1, sizeof(Utility));"] }] },
     'ref.facts.client[1].kind': { value: 'utility', file: 'tm/c/core/utility.c', quote: 'Utility* sdk_get_utility(ProjectNameSDK* sdk) { return utility_copy(sdk->utility); }' },
     'ref.facts.setArg': { value: 'a map', file: 'src/cmp/c/fragment/Entity.fragment.c', quote: ['static voxgig_value* entyvar_data(Entity* e, voxgig_value* args) {', 'voxgig_value* cloned = to_map(voxgig_clone(args));'] },
     'ref.facts.none': { file: 'src/cmp/c/fragment/EntityLoadOp.fragment.c', quote: 'if (*err) return NULL;' },

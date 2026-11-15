@@ -58,6 +58,8 @@ const forms: Forms = {
     // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
     'ref.facts.entity[1].copy': { value: true, file: 'src/cmp/go/fragment/Entity.fragment.go', quote: 'out := vs.Clone(e.match)' },
     'ref.facts.client[0].copy': { value: true, file: "src/cmp/go/fragment/Main.fragment.go", quote: "out := vs.Clone(sdk.options)" },
+    // Decision 13: the getter returns what the copy function builds, a new object.
+    'ref.facts.client[1].copy': { value: true, file: "src/cmp/go/fragment/Main.fragment.go", quote: "return CopyUtility(sdk.utility)", also: [{ file: "tm/go/core/utility_type.go", quote: ["func CopyUtility(src *Utility) *Utility {\n\tu := &Utility{}"] }] },
     'facts.pairForm': { value: '(value, error)', file: 'src/cmp/go/fragment/EntityLoadOp.fragment.go', quote: 'func (e *EntyClass) Load(reqmatch map[string]any, ctrl map[string]any) (any, error) {', unquoted: { value: 'the page names the first result by what it is; the runtime types it any' } },
     'facts.noError': { file: 'src/cmp/go/fragment/Entity.fragment.go', quote: 'return e, nil' },
     'ref.facts.none': { file: MAIN, quote: 'return nil, err' },
