@@ -250,7 +250,7 @@ function check(t: string, S: any, forms: Forms): Result {
   // A record printed by the print printer is unwrapped with facts.unwrap too.
   if (null != f.unwrap) {
     const shown = printStmt(S)
-    if (null == shown || !shown.includes(String(f.unwrap))) {
+    if (null == shown || !new RegExp('(?<!\\w)' + esc(String(f.unwrap)) + '(?!\\w)').test(shown)) {
       recordOk = false
       add('record', `the print printer shows a record as ${JSON.stringify(shown)}, which does not unwrap with facts.unwrap (${f.unwrap})`)
     }
