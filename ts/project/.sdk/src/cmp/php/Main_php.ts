@@ -29,6 +29,7 @@ import { PrepareAuth } from './PrepareAuth_php'
 import { Gitignore } from './Gitignore_php'
 import { MainEntity } from './MainEntity_php'
 import { EntityTypes } from './EntityTypes_php'
+import { phpSdkFile } from './utility_php'
 
 
 const Main = cmp(async function Main(props: any) {
@@ -56,7 +57,7 @@ const Main = cmp(async function Main(props: any) {
     }
   })
 
-  File({ name: model.const.Name.toLowerCase() + '_sdk.' + target.ext }, () => {
+  File({ name: phpSdkFile(model) }, () => {
 
     Fragment(
       {
