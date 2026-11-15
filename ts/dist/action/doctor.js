@@ -22,7 +22,6 @@ const featureSource_1 = require("../helpers/featureSource");
 const junk_1 = require("../helpers/junk");
 const copies_1 = require("./copies");
 const copymerge_1 = require("../helpers/copymerge");
-const optional_1 = require("../helpers/optional");
 const IGNORED_RE = /(~|-jostraca-off)$/;
 function ignoredEntry(name) {
     return IGNORED_RE.test(name) || (0, junk_1.isJunk)(name);
@@ -139,7 +138,7 @@ async function doctor(actx, scope, selected) {
     const root = actx.folder;
     const report = {
         forked: [], edited: [], stale: [], missing: [], additive: [],
-        retired: [], override: [], superseded: [], unwired: [], orphanModel: [],
+        superseded: [], unwired: [], orphanModel: [],
         resyncPending: [], aliasedDiff: [],
         outdated: [], unrecorded: [], customized: [], unresolved: [], byItem: {},
         ignoredLog: false, ok: true,
@@ -211,7 +210,7 @@ async function doctor(actx, scope, selected) {
     report.ok = 0 === report.forked.length + report.edited.length -
         report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
         report.orphanModel.length + report.outdated.length +
-        report.retired.length + report.unresolved.length;
+        report.unresolved.length;
     const customized = new Set(report.customized);
     const unmergeable = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx) ? new Set(report.unrecorded) : new Set();
     for (const [kind, note] of [
@@ -221,8 +220,6 @@ async function doctor(actx, scope, selected) {
         ['stale', 'STALE (no longer written by `target add`)'],
         ['missing', 'MISSING (would be written by `target add`)'],
         ['additive', 'additive (project-owned, not drift)'],
-        ['retired', 'RETIRED (an unchanged copy its source no longer ships; the next add removes it)'],
-        ['override', 'override (its source no longer ships it; changed here, so kept and used instead of the shared component)'],
         ['superseded', 'SUPERSEDED generated output (run `doctor prune` to delete)'],
         ['unwired', 'NOT WIRED IN (root capability this project is missing)'],
         ['orphanModel', 'ORPHAN MODEL FILE (on disk, included by nothing, read by nobody)'],
@@ -238,10 +235,7 @@ async function doctor(actx, scope, selected) {
             const said = unmergeable.has(file) ?
                 kind.toUpperCase() + ' (no copy record, so an add stops on it; --force takes the source copy)' :
                 note;
-            log.info({
-                point: 'doctor-finding', kind, file,
-                note: said + ': ' + file + replacesShared(kind, file),
-            });
+            log.info({ point: 'doctor-finding', kind, file, note: said + ': ' + file });
         }
     }
     for (const item of Object.keys(report.byItem).sort()) {
@@ -266,8 +260,6 @@ async function doctor(actx, scope, selected) {
         unwired: report.unwired.length,
         orphanModel: report.orphanModel.length,
         resyncPending: report.resyncPending.length,
-        retired: report.retired.length,
-        override: report.override.length,
         aliasedDiff: report.aliasedDiff.length,
         outdated: report.outdated.length,
         unresolved: report.unresolved.length,
@@ -278,16 +270,9 @@ async function doctor(actx, scope, selected) {
             ('.sdk has drifted: ' + report.forked.length + ' forked, ' +
                 report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
                 report.missing.length + ' missing, ' + report.outdated.length +
-                ' outdated, ' + report.retired.length + ' retired, ' +
-                report.unresolved.length + ' unresolved')
+                ' outdated, ' + report.unresolved.length + ' unresolved')
     });
     return { report };
-}
-// A shared component calls a target's own component of this name first.
-function replacesShared(kind, file) {
-    const m = file.match(/^src\/cmp\/([^/]+)\/([A-Za-z]+)_\1\.ts$/);
-    return ('additive' === kind || 'override' === kind) && null != m &&
-        m[2] in optional_1.OPTIONAL_COMPONENTS ? ' (used instead of the shared ' + m[2] + ')' : '';
 }
 // Which root-level components the project's own wiring calls. The wiring is
 // hand-written TypeScript (Root.ts / Top.ts / BuildSDK.ts), so this is a
@@ -462,7 +447,7 @@ function compareTrees(actx, report, found, trees, opts) {
             const known = fs.existsSync(node_path_1.default.join(tree.scaffold, rel)) ||
                 landed.has(rel);
             if ('forked' === tree.kind && !known) {
-                found('unshipped', label + rel);
+                report.additive.push(label + rel);
             }
             else {
                 found('stale', label + rel);
@@ -598,19 +583,9 @@ function noteDrift(actx, report, copies, kind, source) {
     const copied = copies.items[item];
     const merging = copymerge_1.MERGE === (0, copies_1.projectCopyMode)(actx);
     return (category, label) => {
-        if ('unshipped' === category) {
-            const same = (0, copies_1.untouched)(fs, actx.folder, copies, label);
-            if (true !== same) {
-                report[false === same ? 'override' : 'additive'].push(label);
-                return;
-            }
-        }
         let into = category;
         let custom = false;
-        if ('unshipped' === category) {
-            into = 'retired';
-        }
-        else if ('forked' === category || 'edited' === category) {
+        if ('forked' === category || 'edited' === category) {
             const same = (0, copies_1.untouched)(fs, actx.folder, copies, label);
             if (true === same) {
                 into = 'outdated';
@@ -632,7 +607,7 @@ function noteDrift(actx, report, copies, kind, source) {
             changed: 0,
             customized: 0,
         };
-        if ('outdated' === into || 'retired' === into) {
+        if ('outdated' === into) {
             drift.outdated++;
         }
         else {
