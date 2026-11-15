@@ -261,6 +261,7 @@ src/cmp/cpp/Entity_cpp.ts 32524dfa5e12
 src/cmp/cpp/Gitignore_cpp.ts 164c931b3983
 src/cmp/cpp/MainEntity_cpp.ts e419d3bb76ae
 src/cmp/cpp/Main_cpp.ts 1ecaff97452a
+src/cmp/cpp/Naming_cpp.ts 5c3b8f79f750
 src/cmp/cpp/Package_cpp.ts e1fcd4b774ba
 src/cmp/cpp/PrepareAuth_cpp.ts 06c46235ac63
 src/cmp/cpp/ReadmeEntity_cpp.ts 823fb70799cc
@@ -271,12 +272,10 @@ src/cmp/cpp/ReadmeInstall_cpp.ts 615f9f586fad
 src/cmp/cpp/ReadmeIntro_cpp.ts 61d4716331c9
 src/cmp/cpp/ReadmeModel_cpp.ts 93f050aec32e
 src/cmp/cpp/ReadmeOptions_cpp.ts 460af294815f
-src/cmp/cpp/ReadmeQuick_cpp.ts 3dead9508eb5
-src/cmp/cpp/ReadmeRef_cpp.ts a8404665d31e
 src/cmp/cpp/ReadmeTopHowto_cpp.ts 4b4bbe9d899a
-src/cmp/cpp/ReadmeTopQuick_cpp.ts d77a8c03b796
 src/cmp/cpp/ReadmeTopTest_cpp.ts 6634fb44d472
 src/cmp/cpp/Schema_cpp.ts 8148c50576cd
+src/cmp/cpp/Syntax_cpp.ts 0292346b05e8
 src/cmp/cpp/TestClean_cpp.ts 9b56e7fa62f9
 src/cmp/cpp/TestDirect_cpp.ts cfbc2a338964
 src/cmp/cpp/TestEntity_cpp.ts 1750f0b15132
