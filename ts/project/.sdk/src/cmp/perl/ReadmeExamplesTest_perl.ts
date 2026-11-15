@@ -40,7 +40,9 @@ const ReadmeExamplesTest = cmp(function ReadmeExamplesTest(props: any) {
 # ../REFERENCE.md, extracts every fenced perl block (tagged by source doc +
 # index) and enforces:
 #
-#   1. SYNTAX - 'perl -c' on every block (SDK lib on \@INC).
+#   1. SYNTAX - 'perl -c' on every block, run where the page's reader runs it
+#      (the repository root for the root README, perl/ for the others); a
+#      block that imports the SDK must find it with its own library path.
 #   2. RUN    - every RUNNABLE block (constructs the SDK, drives \$client, or
 #      performs an entity op) is EXECUTED offline in seeded test mode
 #      (${sdkClass}->test) against the real SDK. Captured output is scanned for
@@ -73,6 +75,15 @@ my %DOCS = (
   'root README'    => File::Spec->catfile($PKG_ROOT, '..', 'README.md'),
   'perl README'    => File::Spec->catfile($PKG_ROOT, 'README.md'),
   'perl REFERENCE' => File::Spec->catfile($PKG_ROOT, 'REFERENCE.md'),
+);
+
+# Where each page's reader runs a block: the repository root for the root
+# README, the SDK's own directory for its README and REFERENCE. A block that
+# imports the SDK itself must find it from there, as its reader would.
+my %DIRS = (
+  'root README'    => Cwd::abs_path(File::Spec->catdir($PKG_ROOT, '..')),
+  'perl README'    => $PKG_ROOT,
+  'perl REFERENCE' => $PKG_ROOT,
 );
 
 my $SDK_CLASS = '${sdkClass}';
@@ -140,7 +151,7 @@ sub all_blocks {
     next unless defined $text;
     my $i = 0;
     for my $code (blocks_in($text)) {
-      push @all, { doc => $label, n => $i, code => $code };
+      push @all, { doc => $label, n => $i, code => $code, dir => $DIRS{$label} };
       $i++;
     }
   }
@@ -219,12 +230,35 @@ sub fixtures_literal {
 }
 
 
-# Rewrite a runnable block into an executable offline test-mode program: the
-# SDK lib is put on \@INC by absolute path; any real ->new/->test constructor
-# becomes ${sdkClass}->test(<fixtures>); a block that only uses \$client gets
-# such a constructor prepended. The constructor arg match is deliberately
-# shallow (no nested parens) - runnable op blocks never build a client inline
-# with a paren-bearing argument.
+# Whether a block imports the SDK itself (\`use ${sdkClass};\`): its own
+# library path then has to find it from where the page's reader runs.
+sub own_import {
+  my ($block) = @_;
+  return $block =~ /^\\s*use\\s+\\Q$SDK_CLASS\\E\\s*;/m;
+}
+
+
+# Run perl in the page's directory, as its reader would; a block that does not
+# import the SDK itself is a fragment of the page and gets the lib by -I.
+sub run_perl {
+  my ($blk, $path, @flags) = @_;
+  my $here = Cwd::getcwd();
+  chdir $blk->{dir} or die "cannot enter $blk->{dir}: $!";
+  my $inc = own_import($blk->{code}) ? '' : qq{-I"$LIB" };
+  my $out = qx{"$^X" $inc@flags "$path" 2>&1};
+  my $rc = $?;
+  chdir $here;
+  return ($out, $rc);
+}
+
+
+# Rewrite a runnable block into an executable offline test-mode program: any
+# real ->new/->test constructor becomes ${sdkClass}->test(<fixtures>); a block
+# that only uses \$client gets such a constructor prepended. A block keeps its
+# own imports exactly as written; one with none is a fragment of its page and
+# gets the import the page gives ahead of it. The constructor arg match is
+# deliberately shallow (no nested parens) - runnable op blocks never build a
+# client inline with a paren-bearing argument.
 sub to_runner {
   my ($block) = @_;
   my $fixtures = fixtures_literal($block);
@@ -235,7 +269,7 @@ sub to_runner {
   else {
     $body = "my \\\$client = $SDK_CLASS->test($fixtures);\\n" . $block;
   }
-  return "use lib '$LIB';\\nuse $SDK_CLASS;\\n" . $body;
+  return own_import($block) ? $body : "use $SDK_CLASS;\\n" . $body;
 }
 
 
@@ -263,8 +297,8 @@ ok(scalar(@BLOCKS) > 0, 'docs contain perl examples');
   my @failures;
   for my $blk (@BLOCKS) {
     my $path = write_temp($blk->{code});
-    my $out = qx{"$^X" -I"$LIB" -c "$path" 2>&1};
-    if (0 != $?) {
+    my ($out, $rc) = run_perl($blk, $path, '-c');
+    if (0 != $rc) {
       push @failures, "$blk->{doc} #$blk->{n}:\\n$out\\n$blk->{code}";
     }
   }
@@ -282,9 +316,9 @@ ok(scalar(@BLOCKS) > 0, 'docs contain perl examples');
     next unless runnable($blk->{code});
     $ran++;
     my $path = write_temp(to_runner($blk->{code}));
-    my $out = qx{"$^X" -I"$LIB" "$path" 2>&1};
+    my ($out, $rc) = run_perl($blk, $path);
     if ($out =~ $FATAL) {
-      push @failures, "$blk->{doc} #$blk->{n} (exit @{[ $? >> 8 ]}):\\n$out\\n$blk->{code}";
+      push @failures, "$blk->{doc} #$blk->{n} (exit @{[ $rc >> 8 ]}):\\n$out\\n$blk->{code}";
     }
   }
   ok($ran > 0, 'at least one runnable perl example executed');
