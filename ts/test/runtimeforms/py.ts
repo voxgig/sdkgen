@@ -45,6 +45,9 @@ const forms: Forms = {
   // The porter's, from here on.
   uncompared: { returns: 'the runtime annotates the returns of the operations and data_get/match_get only; the others are cited where a fact rests on them' },
   cite: {
+    'ref.facts.none': { file: 'src/cmp/py/fragment/EntityLoadOp.fragment.py', quote: 'def load(self, reqmatch=None, ctrl=None) -> EntyClass:' },
+    'ref.facts.lits.false': { file: MAIN, quote: 'return {"ok": False, "err": utility.clean(self._rootctx, err)}' },
+    'ref.facts.lits.true': { file: MAIN, quote: '"ok": body_err is None and status >= 200 and status < 300,', unquoted: { True: 'ok is the bool the status test computes; True is not spelled' } },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/py/fragment/Entity.fragment.py", quote: "return vs.clone(self._data)" },
     'facts.recordType': { file: ENTITY, quote: ['def data_get(self) -> EntityName:', 'return vs.clone(self._data)'], unquoted: { dict: 'EntityName is a TypedDict, so a dict at run time' } },
     'ref.facts.container': { file: MAIN, quote: 'extend = options.get("extend") if isinstance(options, dict) else None' },
@@ -53,7 +56,7 @@ const forms: Forms = {
       also: [{ file: MAIN, quote: 'class ProjectNameSDK' }],
     },
     'ref.facts.client[1].kind': { value: "utility", file: MAIN, quote: 'return ProjectNameUtility.copy(self._utility)' },
-    'ref.facts.direct.returns': { file: MAIN, quote: ['def direct(self, fetchargs=None):', 'return {"ok": False, "err": utility.clean(self._rootctx, err)}'], unquoted: { dict: 'the result is a dict literal' } },
+    'ref.facts.direct.returns': { file: MAIN, quote: ['def direct(self, fetchargs=None):', 'return {"ok": False, "err": utility.clean(self._rootctx, err)}', 'if isinstance(fetched, dict):'] },
     'ref.facts.prepare.returns': { file: 'tm/py/pkg/utility/make_fetch_def.py', quote: ['"url": url,', '"method": spec.method,'], unquoted: { dict: 'the fetch definition is a dict literal' } },
     'ref.facts.prepare.fails': { value: "style", file: MAIN, quote: 'raise ctx.make_error("spec_method_allow",' },
     'ref.facts.body.values': { value: "`bytes`, `bytearray`, `memoryview`, a `str` or a file object",
@@ -61,12 +64,22 @@ const forms: Forms = {
       quote: ['if isinstance(body, str):\n        return body.encode("utf-8")', 'if isinstance(body, (bytearray, memoryview)):', 'if isinstance(body, bytes) or hasattr(body, "read"):'],
     },
     'ref.facts.body.once': { value: "a file object", file: 'tm/py/pkg/utility/media.py', quote: 'if body is not None and callable(getattr(body, "read", None)):\n        return body.read()' },
-    'ref.facts.cancel': { value: false, file: 'tm/py/pkg/utility/fetcher.py', quote: 'timeout = fetchdef.get("timeout")' },
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/py/pkg/utility/fetcher.py'] } },
   },
   exceptions: {
     'optional:opMatched list': 'the runtime defaults the match, and a nested entity\'s list needs its parent: the page shows it required, beside the sentence naming the members (stage 3, ref-10)',
     'returns:entity dataGet': 'EntityName is a TypedDict, so a dict; the page names the dict, as the old page did',
     'returns:entity matchGet': 'EntityName is a TypedDict, so a dict; the page names the dict, as the old page did',
+  },
+  // What the table states besides names, parameters and returns.
+  testDecl: 'test',
+  on: (d) => '__init__' === d.name || /(^|\n)[ \t]*@(classmethod|staticmethod)\b[^\n]*\n$/.test(d.before) ? 'type' : 'instance',
+  stream: {
+    file: "src/cmp/py/fragment/Entity.fragment.py",
+    construct: "def stream(self, action, args=None, callopts=None):", starts: "on iteration",
+    run: "failed = self._stream_steps(ctx)",
+    draw: "for item in stream_fn():",
+    runs: "as the caller iterates", items: "as the caller iterates",
   },
 }
 
