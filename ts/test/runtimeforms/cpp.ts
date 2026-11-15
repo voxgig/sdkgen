@@ -64,6 +64,16 @@ const forms: Forms = {
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'ProjectNameSDK', accessor: '${accessor}' },
   types: { column: 'cpp' },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
+  // What the table states besides names, parameters and returns.
+  testDecl: 'testSDK',
+  expect: { testSDK: { on: 'type' } },
+  stream: {
+    file: "tm/cpp/core/types.hpp",
+    construct: "return res->stream();", starts: "at call",
+    run: "  try {\n    u->featureHook(ctx, \"PrePoint\");\n    Value point = u->makePoint(ctx);\n    ctx->out.has_point = true;\n    ctx->out.point = point;\n\n    u->featureHook(ctx, \"PreSpec\");\n    SpecPtr spec = u->makeSpec(ctx);\n    ctx->out.spec = spec;\n\n    u->featureHook(ctx, \"PreRequest\");\n    ResponsePtr request = u->makeRequest(ctx);\n    ctx->out.request = request;\n\n    u->featureHook(ctx, \"PreResponse\");\n    ResponsePtr response = u->makeResponse(ctx);\n    ctx->out.response = response;\n\n    u->featureHook(ctx, \"PreResult\");\n    ResultPtr result = u->makeResult(ctx);\n    ctx->out.result = result;\n\n    u->featureHook(ctx, \"PreDone\");\n\n    // Inbound",
+    draw: "return res->stream();",
+    runs: "before it returns", items: "before it returns",
+  },
 }
 
 export { forms }
