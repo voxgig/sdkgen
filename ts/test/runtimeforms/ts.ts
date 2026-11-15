@@ -53,6 +53,9 @@ const forms: Forms = {
     ['Control', 'object'], ['any', 'object'], ['Partial<D>', 'object'], ['Record<string,any>', 'object'],
   ]),
   cite: {
+    'ref.facts.none': { file: 'src/cmp/ts/fragment/EntityBase.fragment.ts', quote: 'return undefined' },
+    'ref.facts.lits.false': { value: 'false', file: MAIN, quote: 'return { ok: false, err: utility.clean(this._rootctx, fetchdef) }' },
+    'ref.facts.lits.true': { value: 'true', file: MAIN, quote: 'ok: null == err && status >= 200 && status < 300,', unquoted: { true: 'ok is the boolean the status test computes; true is not spelled' } },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/ts/fragment/EntityBase.fragment.ts", quote: "let out = struct.clone(this._data)" },
     'facts.collection': { value: "array", file: OPS[1], quote: 'async list(this: any, reqmatch?: EntityNameListMatch, ctrl?: Control): Promise<EntyClass[]>' },
     'ref.facts.container': {
@@ -65,7 +68,7 @@ const forms: Forms = {
     },
     'ref.facts.client[0].returns': {
       file: MAIN, quote: 'return this._utility.struct.clone(this._options)',
-      unquoted: { object: 'a clone of the options, which makeOptions builds as an object' },
+      also: [{ file: 'tm/ts/src/utility/MakeOptionsUtility.ts', quote: 'const layer = (b: any) => null != b && \'object\' === typeof b && !Array.isArray(b) ? b : {}' }],
     },
     'ref.facts.client[1].kind': { value: "utility", file: MAIN, quote: 'return this._utility.struct.clone(this._utility)' },
     'ref.facts.client[1].returns': {
@@ -77,25 +80,32 @@ const forms: Forms = {
     },
     'ref.facts.direct.signal': { file: 'tm/ts/src/Control.ts', quote: 'signal?: AbortSignal' },
     'ref.facts.prepare.returns': {
-      file: MAIN, quote: ['async prepare(fetchargs?: any)', 'return ctx.error(\'spec_method_allow\'', 'return makeFetchDef(ctx)'],
+      file: MAIN, quote: ['async prepare(fetchargs?: any)', 'return ctx.error(\'spec_method_allow\'', 'return makeFetchDef(ctx)', 'async direct(fetchargs?: any): Promise<DirectResult>'],
       also: [{ file: 'tm/ts/src/utility/MakeFetchDefUtility.ts', quote: ['    url,\n    method: spec.method,\n    headers: spec.headers,', 'fetchdef.body ='] },
         { file: 'tm/ts/src/Context.ts', quote: 'return new ProjectNameError(code, msg, this)' }],
       unquoted: {
-        Promise: 'prepare is an async method, so it resolves a Promise',
         Error: 'ctx.error returns a ProjectNameError, which extends Error',
       },
     },
     'ref.facts.prepare.fails': { value: "value", file: MAIN, quote: 'return ctx.error(\'spec_method_allow\'' },
     'ref.facts.body.values': { value: "a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string",
-      file: MEDIA, quote: ['return value instanceof ArrayBuffer || ArrayBuffer.isView(value) ||', '(\'undefined\' !== typeof Blob && value instanceof Blob) || isStream(value)'],
+      file: MEDIA, quote: ['return value instanceof ArrayBuffer || ArrayBuffer.isView(value) ||', '(\'undefined\' !== typeof Blob && value instanceof Blob) || isStream(value)', 'return new Uint8Array(chunk)'],
       also: [{ file: 'tm/ts/src/utility/MakeFetchDefUtility.ts', quote: 'fetchdef.body = isRawValue(body) || (\'object\' !== typeof body && !isJsonRequest(ctx.point)) ?' }],
       unquoted: {
         Buffer: 'a Node Buffer is a Uint8Array, which ArrayBuffer.isView accepts',
-        Uint8Array: 'a typed array, which ArrayBuffer.isView accepts',
       },
     },
     'ref.facts.body.once': { value: "a stream", file: 'tm/ts/src/utility/MakeRequestUtility.ts', quote: '// A stream can be read once; read it now, so that a retry sends the same bytes.' },
     'ref.facts.cancel': { value: true, file: 'tm/ts/src/utility/MakeFetchDefUtility.ts', quote: 'fetchdef.signal = ctx.ctrl.signal' },
+  },
+  // What the table states besides names, parameters and returns.
+  testDecl: 'test',
+  stream: {
+    file: "src/cmp/ts/fragment/EntityBase.fragment.ts",
+    construct: "async *stream(this: any, action: string", starts: "on iteration",
+    run: "const failed = await this._streamSteps(ctx)",
+    draw: "for await (const item of result.stream())",
+    runs: "as the caller iterates", items: "as the caller iterates",
   },
 }
 
