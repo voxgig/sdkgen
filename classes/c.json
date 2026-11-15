@@ -1,0 +1,1626 @@
+{
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match: README:181 is about the server's TLS certificate, and the README states nothing about the `server` option's variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10,
+  "by": "rule:step-numbers",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "123923823b": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "7b27de1bff": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 16,
+  "by": "rule:op-sentences",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "4147ad0745": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 18,
+  "by": "rule:entities-contract",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "3320e33aa5": {
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 15,
+  "by": "rule:apikey-env",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "9363faf207": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "b98c5c1370": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "by": "rule:basic-secret",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "849816779b": {
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 3,
+  "by": "rule:write-heading2",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "efb5949362": {
+  "outcome": "correction:runtime-forms",
+  "why": "",
+  "n": 7,
+  "by": "rule:op-signature",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "428b2a83e1": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 3,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "630aac747d": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 5,
+  "by": "rule:write-comments",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "6263763b56": {
+  "outcome": "restored:shared",
+  "why": "restored in the list sentence and the printed loop (`vt->data` on each item)",
+  "n": 7,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "9a132de632": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Update — the id comes off the created entity's record'",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "8e1fb48a5a": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch — sends only the fields given; ...'",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "374c28c871": {
+  "outcome": "restored:fact",
+  "why": "the write results as one sentence: the written entity, or NULL with *err set (EntityCreateOp.fragment.c returns NULL on *err); the check asked for the err check per call, which the sentence now names",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "6f58c092d8": {
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 4,
+  "by": "rule:add-write-comment",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "ea9f53b714": {
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 3,
+  "by": "rule:add-write-comment",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "732bb80f3d": {
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 1,
+  "by": "rule:write-heading2",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "67bc2b34e8": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "2609d87cfb": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "69ba25b1fc": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "d39368fa0b": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "dd5f182f01": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "f4f124751b": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "4555bd17b9": {
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 1,
+  "by": "rule:write-heading",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "c4975e4b2e": {
+  "outcome": "restored:fact",
+  "why": "the write sentence for the one write ref-issues has",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match: README:181 is about the server's TLS certificate, and the README states nothing about the `server` option's variables (server-mixed)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "6fb3670380": {
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-apikey",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-region",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "81a09d8cf6": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "487377ad3f": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README)",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "b4b66556bc": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "5b32f0dc83": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "1af3b9ca32": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README); ref-issues has update only, so the block declares err itself",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "0afd2531b0": {
+  "outcome": "correction:c-stdlib",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-c-stdlib",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "6b9fc5bc40": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 10,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "65a0fe8142": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 6,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "744bc005dd": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 7,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "5bbfe54955": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "ed4b554680": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "af098243e5": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "b20cd43c61": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "31e1469668": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "5d9d9b18da": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "59570b4eb5": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "37a83b9746": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "a56c959d33": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "bab79a7465": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "429dec79da": {
+  "outcome": "correction:c-stdlib",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-c-stdlib",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "4a3209e8d9": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b7edec76ca": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "0070cc262b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "13c982079d": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (fprintf)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "bc57fc9f69": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (stderr)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "93215155ec": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (the word failed in the message)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "3e1d601376": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (err->msg)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "0ca279dc4d": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (else)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "c39207e459": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "c60144e129": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "7851b353c0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5f9251f640": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "61d073347b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "4199db29e1": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-chain",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-nested-load",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-nested-load",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f7aa0fdb13": {
+  "outcome": "same-meaning",
+  "why": "a word match: README:181 is about the server's TLS certificate, and the README states nothing about the `server` option's variables",
+  "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it",
+  "n": 34,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "317c4c377c": {
+  "outcome": "same-meaning",
+  "why": "README:322 says on error ok is false and err carries the error value; same",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b88d063ce9": {
+  "outcome": "same-meaning",
+  "why": "the README calls sdk_direct with the same fetchargs map",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "af7dd8de26": {
+  "outcome": "same-meaning",
+  "why": "the README calls sdk_direct; the fetch definition is the request it would send",
+  "n": 18,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in a code comment (console.log); the README says nothing else about log's default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "97b7dcdc97": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6aced21d71": {
+  "outcome": "correction:ref-features-escape",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-escape",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "2fb2060684": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 19,
+  "by": "rule:op-sentences",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "2624404c02": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 28,
+  "by": "rule:op-sentences",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bde0d2283c": {
+  "outcome": "unification:accessor-sentence",
+  "why": "",
+  "n": 94,
+  "by": "rule:accessor-sentence",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "042740d448": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d5b8571b7f": {
+  "outcome": "unification:member-sentences",
+  "why": "",
+  "n": 94,
+  "by": "rule:make-sentence",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "92ce533dbd": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "ffa2f87e8a": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "4f08cd5dd9": {
+  "outcome": "restored:shared",
+  "why": "restored as 'both may be `NULL`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "457eed3bf3": {
+  "outcome": "restored:shared",
+  "why": "the accessors are under Instance Functions, each headed by its signature",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a1848760f9": {
+  "outcome": "restored:shared",
+  "why": "restored as the Returns sentence: a result map holding ok, status, headers and data; on a failure ok is false and err holds the error",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "74cdbb7125": {
+  "outcome": "restored:shared",
+  "why": "restored as 'A failed request is reported in the result, not as an error, so branch on getp(result, \"ok\")'; true: sdk_raw_request only sets *err to NULL and returns err_map(...) for every failure (Main.fragment.c:196-275)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Path parameter values for `{param}` substitution.'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "b1cb2968c2": {
+  "outcome": "restored:shared",
+  "why": "restored as 'the fetch definition ... It returns `NULL` with `*err` set on failure.'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "287a14befa": {
+  "outcome": "restored:shared",
+  "why": "the heading is Common Functions in c (the page's noun for c members); the members are all there",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "4f0ad8c7ba": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional: without one, every record is listed.' (NULL is the match the example passes)",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "4033f23e2d": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "b2a89584dc": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "509f8ee353": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "35ea4c3e84": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-required-cell",
+  "type": "added",
+  "section": "reference"
+ },
+ "55901c7ad8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "06e0e1b2b7": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-required-cell",
+  "type": "added",
+  "section": "reference"
+ },
+ "a986258b72": {
+  "outcome": "unification:ref-test-heading",
+  "why": "",
+  "n": 19,
+  "by": "rule:test-heading",
+  "type": "added",
+  "section": "reference"
+ },
+ "a1d6dcd8be": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7e13c0a95a": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:test-opts-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "2cf0cc299b": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19,
+  "by": "rule:add-structure",
+  "type": "added",
+  "section": "reference"
+ },
+ "d04a960684": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The options heading.",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "92841846e3": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The copy sentence rests on Member.copy, cited at utility.c:70 (voxgig_clone).",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "31334dded1": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The utility heading.",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "83dd225751": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). Kind utility (a copy), cited at utility.c:72 (utility_copy).",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "6979eaacb4": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 34,
+  "by": "rule:add-type-cells",
+  "type": "added",
+  "section": "reference"
+ },
+ "92238dc9df": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "added",
+  "section": "reference"
+ },
+ "b22a4fd4cf": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 35,
+  "by": "rule:add-type-cells",
+  "type": "added",
+  "section": "reference"
+ },
+ "f25ed95c66": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:add-ctrl-row",
+  "type": "added",
+  "section": "reference"
+ },
+ "157800c565": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "added",
+  "section": "reference"
+ },
+ "64a7f24e53": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "a6f39b2cd9": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "243b374ef7": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "303f9e9351": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "e8cf949d5a": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 113,
+  "by": "rule:add-fails",
+  "type": "added",
+  "section": "reference"
+ },
+ "43d177af05": {
+  "outcome": "restored:fact",
+  "why": "how the record is read, now under every single-entity operation (the check's output_defects 2: the c load example's read of vt->data went with the majority shape)",
+  "n": 79,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "39c84e60ea": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 94,
+  "by": "rule:add-structure",
+  "type": "added",
+  "section": "reference"
+ },
+ "55a8b68a1f": {
+  "outcome": "restored:fact",
+  "why": "vt->data returns a copy: Entity.fragment.c:249 `return voxgig_clone(self->data);`",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "88dff1bb13": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 94,
+  "by": "rule:add-stream-sig",
+  "type": "added",
+  "section": "reference"
+ },
+ "b3483ee526": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 94,
+  "by": "rule:stream-member",
+  "type": "added",
+  "section": "reference"
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.c (PrePoint hook and the operation before the list is built and returned); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "eaf64e26bd": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 82,
+  "by": "rule:op-sentences",
+  "type": "added",
+  "section": "reference"
+ },
+ "393056d0c1": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "0f10166e63": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2467756ac": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d3f3b82555": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "7615c6fe93": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "6356afc86b": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "193859bf79": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "28d337e733": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "9023782dca": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:add-action-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "3d50058045": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "fead692406": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b31b1f71dd": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "53d7c50411": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 15,
+  "by": "rule:add-update-note",
+  "type": "added",
+  "section": "reference"
+ },
+ "1095fa7261": {
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-log",
+  "type": "added",
+  "section": "reference"
+ },
+ "916036b165": {
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-log",
+  "type": "added",
+  "section": "reference"
+ },
+ "2d7cc08deb": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "by": "rule:add-secret",
+  "type": "added",
+  "section": "reference"
+ },
+ "3e1ef005aa": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "by": "rule:basic-secret",
+  "type": "added",
+  "section": "reference"
+ },
+ "9c989d37e7": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 4,
+  "by": "rule:add-update-note",
+  "type": "added",
+  "section": "reference"
+ },
+ "cbcdf6e5f9": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:op-sentences",
+  "type": "added",
+  "section": "reference"
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "91baf1b4b6": {
+  "outcome": "same-meaning",
+  "why": "README:199 says the test feature's transport has a shape a custom transport may copy; it does not say this SDK has a mock transport. No disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "91201b47e3": {
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1,
+  "by": "rule:test-nofeature",
+  "type": "added",
+  "section": "reference"
+ },
+ "f878d6c74a": {
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1,
+  "by": "rule:test-nofeature",
+  "type": "added",
+  "section": "reference"
+ },
+ "da08f7e7bd": {
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1,
+  "by": "rule:field-escape",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "26c79b69a8": {
+  "outcome": "restored:shared",
+  "why": "the update data sentence names the id the route needs; same fact, other words",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "6be9ac7d6e": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "01da88105b": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "7dd340f0f1": {
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1,
+  "by": "rule:field-escape",
+  "type": "added",
+  "section": "reference"
+ },
+ "5153f403d8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-region",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fb33f90173": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The new token is the function name.",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "39c56f1616": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "abb698049e": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "959d5c5123": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "057b5775f7": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 1,
+  "by": "rule:actions-table",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e894f75da6": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e1f6800b0b": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The new token is the function name.",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "c70f589702": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 10,
+  "by": "rule:tok-c-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a5772bf845": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "reference"
+ },
+ "8395badbc9": {
+  "outcome": "correction:c-err-declared",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-c-err",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "f348eeaeba": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-update-note",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "1070ff1f72": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "54d103011e": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-update-note",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "0856872351": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "3a03a66ea9": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-update-note",
+  "type": "block-novel-token",
+  "section": "reference"
+ }
+}

@@ -1,0 +1,8 @@
+[
+ {
+  "file": "Naming",
+  "check": "naming function no non-README component calls",
+  "text": "exampleVarName (from @voxgig/sdkgen)",
+  "why": "An example variable is not a name the code generator makes. The hook adapts the shared example names (results, item, result, the entity plural) to the language identifier rules with the sdkgen function the language's other README families use; no code generator has an equivalent."
+ }
+]

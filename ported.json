@@ -1,0 +1,145 @@
+{
+ "note": "The one registry. Every tool reads languages, titles and the ported sets from here, or from its arguments.",
+ "base": "9aebaf9e",
+ "languages": {
+  "ts": "TypeScript",
+  "js": "JavaScript",
+  "go": "Golang",
+  "py": "Python",
+  "php": "PHP",
+  "rb": "Ruby",
+  "lua": "Lua",
+  "csharp": "C#",
+  "java": "Java",
+  "kotlin": "Kotlin",
+  "scala": "Scala",
+  "swift": "Swift",
+  "rust": "Rust",
+  "c": "C",
+  "cpp": "C++",
+  "zig": "Zig",
+  "perl": "Perl",
+  "clojure": "Clojure",
+  "elixir": "Elixir",
+  "ocaml": "OCaml"
+ },
+ "ported": {
+  "tutorial": [
+   "ts",
+   "go",
+   "py",
+   "c",
+   "zig",
+   "clojure",
+   "rust",
+   "elixir",
+   "rb"
+  ],
+  "rootquick": [
+   "ts",
+   "go",
+   "py",
+   "c",
+   "zig",
+   "clojure",
+   "rust",
+   "elixir",
+   "rb"
+  ],
+  "reference": [
+   "ts",
+   "go",
+   "py",
+   "c",
+   "zig",
+   "clojure",
+   "rust",
+   "elixir",
+   "rb"
+  ]
+ },
+ "families": {
+  "tutorial": "ReadmeQuick",
+  "rootquick": "ReadmeTopQuick",
+  "reference": "ReadmeRef"
+ },
+ "sharedBefore": {
+  "tutorial": [
+   "ts/src/cmp/ReadmeQuick.ts"
+  ],
+  "rootquick": [
+   "ts/src/cmp/ReadmeTop.ts"
+  ],
+  "reference": [
+   "ts/src/cmp/ReadmeRef.ts",
+   "ts/src/cmp/ReadmeRefFeatures.ts"
+  ]
+ },
+ "toolchain": {
+  "ts": [
+   "node"
+  ],
+  "js": [
+   "node"
+  ],
+  "go": [
+   "go"
+  ],
+  "py": [
+   "python3"
+  ],
+  "php": [
+   "php"
+  ],
+  "rb": [
+   "ruby"
+  ],
+  "lua": [
+   "lua5.4",
+   "lua"
+  ],
+  "csharp": [
+   "dotnet"
+  ],
+  "java": [
+   "javac"
+  ],
+  "kotlin": [
+   "kotlinc"
+  ],
+  "scala": [
+   "scala",
+   "sbt"
+  ],
+  "swift": [
+   "swift"
+  ],
+  "rust": [
+   "cargo"
+  ],
+  "c": [
+   "gcc",
+   "cc"
+  ],
+  "cpp": [
+   "g++",
+   "c++"
+  ],
+  "zig": [
+   "zig"
+  ],
+  "perl": [
+   "perl"
+  ],
+  "clojure": [
+   "clojure"
+  ],
+  "elixir": [
+   "elixir"
+  ],
+  "ocaml": [
+   "ocaml"
+  ]
+ },
+ "toolchainNote": "the command whose presence (command -v) means a changed block in that language can be compiled here; checked at run time, never recorded"
+}

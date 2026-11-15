@@ -1,0 +1,37 @@
+{
+ "tutorial": {
+  "corrected": 21,
+  "unified": 23,
+  "used": {
+   "rb-create-comment": 5,
+   "rb-display-field": 6,
+   "rb-loop-var": 7,
+   "rb-noarg-call": 10,
+   "rb-op-comment": 23,
+   "secret-option": 2,
+   "server-required-given:rb": 15,
+   "trailing-blank": 1,
+   "write-comment-style": 5
+  }
+ },
+ "rootquick": {
+  "corrected": 2,
+  "unified": 15,
+  "used": {
+   "blank-lines": 9,
+   "rb-loop-var": 6,
+   "rb-noarg-call": 9,
+   "secret-option": 2,
+   "server-required-given:rb": 14,
+   "step-comment-runtime-fact": 15,
+   "trailing-blank": 2
+  }
+ },
+ "reference": {
+  "corrected": 0,
+  "unified": 10,
+  "used": {
+   "rb-noarg-call": 10
+  }
+ }
+}

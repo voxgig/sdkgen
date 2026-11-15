@@ -1,0 +1,732 @@
+{
+ "1221234688": {
+  "outcome": "restored:fact",
+  "why": "the record type (prints fact recordType 'Hash', cited in the guard: data_get returns a Hash)",
+  "n": 1
+ },
+ "3980935898": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create \u2014 returns the created entity; data_get reads its record', 'Update/Patch \u2014 ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 15
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
+  "n": 1
+ },
+ "1aeada8e90": {
+  "outcome": "same-meaning",
+  "why": "README:230 lists data_get as () -> Hash, Get entity data; the same: data_get reads the record, a Hash",
+  "n": 1
+ },
+ "8269f08815": {
+  "outcome": "restored:shared",
+  "why": "restored as the sentence above the block: '`load` returns the entity and raises on failure; `data_get` reads its record (a `Hash`)'",
+  "n": 10
+ },
+ "d5bda2ca41": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Create \u2014 returns the created entity; data_get reads its record'",
+  "n": 4
+ },
+ "a8902f35c7": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Update \u2014 the id comes off the created entity's record'; the code still indexes created.data_get[\"id\"]",
+  "n": 4
+ },
+ "8e1fb48a5a": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch \u2014 sends only the fields given; ...'",
+  "n": 3
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1
+ },
+ "482b97fbd7": {
+  "outcome": "restored:shared",
+  "why": "the old list comment's facts are the shared list sentence, plus how a failure shows (raises) and the record's type (a Hash, Entity.fragment.rb data_get returns a Hash clone)",
+  "n": 7
+ },
+ "cb6b6e206b": {
+  "outcome": "restored:shared",
+  "why": "the old load comment's facts are the shared load sentence",
+  "n": 6
+ },
+ "d7ede4c606": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comment; same facts (the created entity, data_get reads its record)",
+  "n": 1
+ },
+ "6fb3670380": {
+  "outcome": "same-meaning",
+  "why": "DEMO_APIKEY in the tutorial's client sentence, which the old block's code also read",
+  "n": 1
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "0acd9c1b01": {
+  "outcome": "restored:shared",
+  "why": "the method name in the shared load sentence",
+  "n": 1
+ },
+ "db68021d06": {
+  "outcome": "restored:shared",
+  "why": "the record accessor named in the shared sentences, as the old comment did",
+  "n": 1
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1
+ },
+ "36e1725df7": {
+  "outcome": "restored:shared",
+  "why": "the method name in the shared list sentence",
+  "n": 1
+ },
+ "88b6818ce7": {
+  "outcome": "restored:shared",
+  "why": "the collection word (facts.collection Array), as the old comment said",
+  "n": 1
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1
+ },
+ "6a89281cc1": {
+  "outcome": "correction:S49",
+  "why": "auth-off: OLD built the client with no options, so it could not fill the templated server URL; NEW passes the tenant (server-required-given), in a hash because there is no other option",
+  "n": 1
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1
+ },
+ "4e6b0f3f7e": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create \u2014 returns the created entity; data_get reads its record', 'Update/Patch \u2014 ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1
+ },
+ "14eb5dfde1": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create \u2014 returns the created entity; data_get reads its record', 'Update/Patch \u2014 ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1
+ },
+ "b3e1a90434": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create \u2014 returns the created entity; data_get reads its record', 'Update/Patch \u2014 ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1
+ },
+ "431e9ea0d5": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create \u2014 returns the created entity; data_get reads its record', 'Update/Patch \u2014 ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1
+ },
+ "4e30f7a270": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create \u2014 returns the created entity; data_get reads its record', 'Update/Patch \u2014 ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1
+ },
+ "c76072420b": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create \u2014 returns the created entity; data_get reads its record', 'Update/Patch \u2014 ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1
+ },
+ "21e4337a22": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create \u2014 returns the created entity; data_get reads its record', 'Update/Patch \u2014 ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1
+ },
+ "fa99929817": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1
+ },
+ "39cd96730f": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1
+ },
+ "f9509b1a54": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1
+ },
+ "599c415d96": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1
+ },
+ "775fa6576e": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1
+ },
+ "187ec9c074": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1
+ },
+ "e6d0449dc0": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1
+ },
+ "888286504a": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1
+ },
+ "fc17bcd3f0": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1
+ },
+ "a59b2af542": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1
+ },
+ "ac0c29dd9a": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1
+ },
+ "44df517e03": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1
+ },
+ "d3922e5206": {
+  "outcome": "unification:rb-loop-var",
+  "why": "the loop names its variable after the entity (|planet|), as the shared list step does",
+  "n": 1
+ },
+ "8aafc69c7d": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 10
+ },
+ "90618c2d13": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 7
+ },
+ "88b79047ba": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 6
+ },
+ "6b1439989e": {
+  "outcome": "correction:S49",
+  "why": "auth-off: as 6a89281cc1, and the root steps in the shared form (step-comment-runtime-fact, rb-noarg-call)",
+  "n": 1
+ },
+ "8dc0a31fa3": {
+  "outcome": "unification:root-load-nested",
+  "why": "doc-nested: the root quick start loads the nested satellite with its parent id, as the tutorial does (root-load-nested); plus the server tenant (S49) and the shared step comments",
+  "n": 1
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id of the nested entity the root now loads",
+  "n": 1
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id's example value",
+  "n": 1
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1
+ },
+ "41e8b6808d": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1
+ },
+ "b1989358a0": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1
+ },
+ "61d073347b": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1
+ },
+ "be14f5e112": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1
+ },
+ "e28aeb1554": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1
+ },
+ "5524296637": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1
+ },
+ "0c5db6b150": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1
+ },
+ "42ffb0d2d3": {
+  "outcome": "unification:rb-loop-var",
+  "why": "the loop names its variable after the entity",
+  "n": 1
+ },
+ "097bbe00c6": {
+  "outcome": "same-meaning",
+  "why": "a word match on nil in the README's test line; nothing about the accessor's argument",
+  "n": 94
+ },
+ "f0ef94c040": {
+  "outcome": "same-meaning",
+  "why": "moved into the shared list sentence; README:240 lists data_get the same way",
+  "n": 70
+ },
+ "4b411df79a": {
+  "outcome": "same-meaning",
+  "why": "README:240: data_get gets the entity data; the same",
+  "n": 59
+ },
+ "a1baf337ea": {
+  "outcome": "same-meaning",
+  "why": "moved into the shared load sentence; README:240 lists data_get the same way",
+  "n": 23
+ },
+ "618096b4cc": {
+  "outcome": "same-meaning",
+  "why": "README:208 calls DemoSDK.test(testopts, sdkopts); same parameters",
+  "n": 19
+ },
+ "0548ef0b51": {
+  "outcome": "same-meaning",
+  "why": "README:79 and :261-263 say the same keys, and err on failure",
+  "n": 19
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "the README feature table names log as Logging and says nothing about its default",
+  "n": 19
+ },
+ "e59066a2d8": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence ('both may be `nil`'); README:211 says the same",
+  "n": 19
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "contradiction",
+  "where": "rb/README.md:211 (no-test): 'Creates a test-mode client with mock transport. Both arguments may be `nil`.'",
+  "true": "REFERENCE: without the test feature its source does not ship, so the test client has no mock transport",
+  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13",
+  "n": 1
+ },
+ "ed238167e1": {
+  "outcome": "restored:shared",
+  "why": "restored as 'List entities matching the given criteria.' and 'The match is optional: without one, every record is listed.'",
+  "n": 83
+ },
+ "156675e505": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Returns an `Array` of entities, one per record, and raises on failure.' with the record read in the example",
+  "n": 83
+ },
+ "8a746d79b4": {
+  "outcome": "restored:shared",
+  "why": "restored inside the list sentence ('and raises on failure')",
+  "n": 83
+ },
+ "8b0851ad11": {
+  "outcome": "restored:shared",
+  "why": "restored as the load sentence (returns the entity, raises on failure) and '`data_get` reads its record'",
+  "n": 28
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client",
+  "n": 19
+ },
+ "d389e7085e": {
+  "outcome": "restored:shared",
+  "why": "restored as 'both may be `nil`'",
+  "n": 19
+ },
+ "f28a4a4041": {
+  "outcome": "restored:shared",
+  "why": "restored as the Returns sentence (ok, status, headers, data; err on failure) and 'A failed request is reported in the result, not as an error, so branch on result[\"ok\"]'",
+  "n": 19
+ },
+ "7141e40426": {
+  "outcome": "restored:shared",
+  "why": "the Returns line is kept, naming the Hash and its keys",
+  "n": 19
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1
+ },
+ "993924c4c6": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
+  "n": 1
+ },
+ "c68e7167df": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1
+ },
+ "f010700f70": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1
+ },
+ "0b29ec4944": {
+  "outcome": "restored:shared",
+  "why": "the update data sentence names the id the route needs; same fact, other words",
+  "n": 1
+ },
+ "2326614e42": {
+  "outcome": "correction:runtime-forms",
+  "why": "ref-issues: under PlanetEntityClient, make returns that class (Entity.fragment.rb:64-66 EntyClass.new)",
+  "n": 1
+ },
+ "d8065d07cb": {
+  "outcome": "correction:runtime-forms",
+  "why": "make returns an instance of the entity's own class: Entity.fragment.rb:64-66 `def make ... EntyClass.new(@_client, opts)`. The README member table (ReadmeModel_rb.ts, unported) still says make -> Entity",
+  "n": 77
+ },
+ "d15797ca9d": {
+  "outcome": "correction:runtime-forms",
+  "why": "list resolves to an Array of the entity class (EntityListOp.fragment.rb, make_result wraps each record)",
+  "n": 66
+ },
+ "9beedf1687": {
+  "outcome": "unification:op-failure-clause",
+  "why": "the failure clause in the shared form; same fact",
+  "n": 19
+ },
+ "305c24366b": {
+  "outcome": "restored:shared",
+  "why": "the fetch definition, with what it is; 'raises on error' is the next sentence (9beedf1687)",
+  "n": 19
+ },
+ "07afcb51c1": {
+  "outcome": "correction:runtime-forms",
+  "why": "as d15797ca9d",
+  "n": 16
+ },
+ "36d626bcf0": {
+  "outcome": "correction:runtime-forms",
+  "why": "load defaults its match and returns the entity: EntityLoadOp.fragment.rb:14 def load(reqmatch = nil, ctrl = nil). The README reference table (unported) still shows load(reqmatch, ctrl)",
+  "n": 16
+ },
+ "81b3ea8a7b": {
+  "outcome": "correction:runtime-forms",
+  "why": "as d8065d07cb",
+  "n": 16
+ },
+ "1df1f4d318": {
+  "outcome": "correction:runtime-forms",
+  "why": "create returns the entity (EntityCreateOp.fragment.rb), not a result",
+  "n": 15
+ },
+ "ba3ca7097c": {
+  "outcome": "correction:runtime-forms",
+  "why": "remove defaults its match and returns the entity: EntityRemoveOp.fragment.rb:12 def remove(reqmatch = nil, ctrl = nil)",
+  "n": 15
+ },
+ "0670e4a87f": {
+  "outcome": "correction:runtime-forms",
+  "why": "update returns the entity, not a result",
+  "n": 14
+ },
+ "9557524e8d": {
+  "outcome": "correction:runtime-forms",
+  "why": "as 36d626bcf0",
+  "n": 11
+ },
+ "563e095378": {
+  "outcome": "correction:runtime-forms",
+  "why": "patch returns the entity, not a result",
+  "n": 3
+ },
+ "6414adddb5": {
+  "outcome": "correction:runtime-forms",
+  "why": "update returns the entity, not a result (ref-issues)",
+  "n": 1
+ },
+ "2d539c715b": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient; create returns it",
+  "n": 1
+ },
+ "054ea87f7e": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: patch returns PlanetEntityClient",
+  "n": 1
+ },
+ "c89ea40a31": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: update returns PlanetEntityClient",
+  "n": 1
+ },
+ "bf926333f0": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: list returns an Array of PlanetEntityClient",
+  "n": 1
+ },
+ "dba5fe5c17": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: load defaults its match and returns PlanetEntityClient",
+  "n": 1
+ },
+ "90e9b6e073": {
+  "outcome": "restored:fact",
+  "why": "stream is a public entity member the old rb page did not document: Entity.fragment.rb:104 def stream(action, args = nil, callopts = nil), :140 Enumerator.new; the guard derives it",
+  "n": 94
+ },
+ "8d73e84813": {
+  "outcome": "restored:shared",
+  "why": "the first half of the old list sentence ('List entities matching the given criteria')",
+  "n": 83
+ },
+ "c19ca67d5a": {
+  "outcome": "restored:shared",
+  "why": "the old 'Returns an array of entities, one per record ... Raises on error.' in the shared form",
+  "n": 83
+ },
+ "af55f86fa2": {
+  "outcome": "restored:shared",
+  "why": "the old direct Returns line with the keys it listed",
+  "n": 19
+ },
+ "b8e5b4084d": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16
+ },
+ "e6d8ee9d63": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: make returns PlanetEntityClient",
+  "n": 1
+ },
+ "053d666657": {
+  "outcome": "correction:runtime-forms",
+  "why": "the token Entity went with make -> Entity; make returns the entity class (Entity.fragment.rb:66)",
+  "n": 1
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1
+ },
+ "fd48acdf84": {
+  "outcome": "restored:fact",
+  "why": "the stream member, as 90e9b6e073",
+  "n": 1
+ },
+ "057b5775f7": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter action (and the action name in the Actions table)",
+  "n": 1
+ },
+ "07b6a683db": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter args",
+  "n": 1
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter callopts",
+  "n": 1
+ },
+ "b06366cfd0": {
+  "outcome": "restored:fact",
+  "why": "stream returns an Enumerator (Entity.fragment.rb:140)",
+  "n": 1
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "the action name in the Call cell",
+  "n": 1
+ },
+ "7e7f66c823": {
+  "outcome": "correction:ref-6",
+  "why": "the client receiver in the Call cell",
+  "n": 1
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class PlanetEntityClient named in the accessor sentence",
+  "n": 1
+ },
+ "0e12b4022a": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive, its example goes with it",
+  "n": 1
+ },
+ "e72c9d98eb": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.rb:7 def initialize(client, entopts = nil); MainEntity_rb.ts:21 passes data as entopts); the signature names the parameter data ({accessor}(data = nil)) (accessor.param, derived), so the page says both, once (ReadmeRef accessorText)",
+  "n": 94
+ },
+ "a4bcd72971": {
+  "outcome": "same-meaning",
+  "why": "nil for none, as the README says of the test arguments; the same literal for the same meaning (rb/README.md:211)",
+  "n": 94
+ },
+ "b5b91fba23": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19
+ },
+ "f09662fec4": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (rb/README.md:211)",
+  "n": 19
+ },
+ "91bc59ac7f": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'iterate'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.rb (the pipeline runs inside Enumerator.new, :140, on the first next); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94
+ },
+ "absent": {
+  "7029749eeb": "rb prints 'Returns an `Array` of entities, one per record, and raises on failure.' (B/rb/REFERENCE.md): the same sentence; the article follows the collection word (an `Array`, a `list`), which the mask leaves outside the label"
+ }
+}

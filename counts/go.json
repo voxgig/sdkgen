@@ -1,0 +1,33 @@
+{
+ "tutorial": {
+  "corrected": 12,
+  "unified": 1,
+  "used": {
+   "go-indent": 13,
+   "secret-option": 1,
+   "server-required-only": 11,
+   "step-comment-runtime-fact": 13,
+   "tutorial-loop-entity": 1
+  }
+ },
+ "rootquick": {
+  "corrected": 14,
+  "unified": 4,
+  "used": {
+   "go-indent": 18,
+   "go-root-program": 18,
+   "root-load-step": 4,
+   "secret-option": 2,
+   "server-required-only": 16,
+   "step-comment-runtime-fact": 18
+  }
+ },
+ "reference": {
+  "corrected": 21,
+  "unified": 18,
+  "used": {
+   "go-testsdk-args": 21,
+   "ref-type-comments": 18
+  }
+ }
+}

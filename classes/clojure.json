@@ -1,0 +1,1550 @@
+{
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10,
+  "by": "rule:step-numbers",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "2f484b3ece": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 16,
+  "by": "rule:op-sentences",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "123923823b": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "4147ad0745": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 18,
+  "by": "rule:entities-contract",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "3320e33aa5": {
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 15,
+  "by": "rule:apikey-env",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "9363faf207": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "b98c5c1370": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "by": "rule:basic-secret",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "849816779b": {
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 3,
+  "by": "rule:write-heading2",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "428b2a83e1": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 3,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "2416829f17": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 7,
+  "by": "rule:op-failure-clause",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "a74dc8fb64": {
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 4,
+  "by": "rule:write-comment-id2",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "a7a404c62e": {
+  "outcome": "restored:shared",
+  "why": "restored in the list sentence and the printed loop ((:data-get item))",
+  "n": 7,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "7fe2bb62d9": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Create — returns the created entity' and the write sentence",
+  "n": 5,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "8e1fb48a5a": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch — sends only the fields given; ...'",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "d2da816355": {
+  "outcome": "restored:fact",
+  "why": "the write results as one sentence; true of clojure (each op returns the entity and throws through sdk-throw)",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "f8346d135e": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 5,
+  "by": "rule:write-comments",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "ea9f53b714": {
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 3,
+  "by": "rule:add-write-comment",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "732bb80f3d": {
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 1,
+  "by": "rule:write-heading2",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "67bc2b34e8": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "2609d87cfb": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "69ba25b1fc": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "d39368fa0b": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "dd5f182f01": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "f4f124751b": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "4555bd17b9": {
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 1,
+  "by": "rule:write-heading",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "c2358342da": {
+  "outcome": "restored:fact",
+  "why": "the write sentence for the one write ref-issues has",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "6fb3670380": {
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-apikey",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-region",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the function name update in the write sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "3382a46b52": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "fd6cd48aa4": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-chain",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "85fb47a0e2": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 10,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "105d4ff9a2": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 7,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "f4498c7104": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 6,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "b2dd192333": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "e8f1d090be": {
+  "outcome": "unification:root-load-nested",
+  "why": "the root quick start loads what the tutorial loads, the nested entity with its parent id (description choice, stage 2), and its step comments state the runtime fact",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "db3cf06cf7": {
+  "outcome": "correction:S49",
+  "why": "ref-issues root: server variable given; the namespace of an entity no step calls is not required (imports follow the steps)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "4a3209e8d9": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "41e8b6808d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "61d073347b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "5524296637": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-nested-load",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-nested-load",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "9980e9e173": {
+  "outcome": "same-meaning",
+  "why": "README:7 and :173 say options is a voxgig.struct map, or nil; same",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f7aa0fdb13": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "37a4e46263": {
+  "outcome": "same-meaning",
+  "why": "README:973 says sdk.api is the public surface to require; consistent with the note that the utility is reached through sdk.client, which sdk.api does not re-export",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "c679f2d6a0": {
+  "outcome": "same-meaning",
+  "why": "README:228 calls the argument fetchargs too",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "b5e9f92943": {
+  "outcome": "same-meaning",
+  "why": "README:278 says on error ok is false and err contains the error; same keys",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "2f2794265d": {
+  "outcome": "same-meaning",
+  "why": "README:10 lists create among the operations; the action runs through create",
+  "n": 11,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in console.log; the README says nothing about log's default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e8d21858da": {
+  "outcome": "same-meaning",
+  "why": "moved into the Returns sentence; the README reads the same keys",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6aced21d71": {
+  "outcome": "correction:ref-features-escape",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-escape",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "08405d5f95": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 83,
+  "by": "rule:op-failure-clause",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "3780da62e4": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 15,
+  "by": "rule:op-failure-clause",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c47c92da89": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 19,
+  "by": "rule:op-sentences",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d5b8571b7f": {
+  "outcome": "unification:member-sentences",
+  "why": "",
+  "n": 94,
+  "by": "rule:make-sentence",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "e007bd9e31": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 16,
+  "by": "rule:op-failure-clause",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "62d13e0a33": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 16,
+  "by": "rule:op-failure-clause",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bde0d2283c": {
+  "outcome": "unification:accessor-sentence",
+  "why": "",
+  "n": 94,
+  "by": "rule:accessor-sentence",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "042740d448": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "92ce533dbd": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "156dcc3ff5": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 28,
+  "by": "rule:op-failure-clause",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "0c31903ae8": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19,
+  "by": "rule:page-structure2",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "3bf831e413": {
+  "outcome": "restored:shared",
+  "why": "the client section is headed by the client namespace, sdk.api, the page's name for the client (clojure's client has no type name)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c7ee4c1d3e": {
+  "outcome": "restored:shared",
+  "why": "the make-sdk function is under Constructor with its call",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "41fd9a4847": {
+  "outcome": "restored:shared",
+  "why": "the options are the Constructor's parameter table",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d389e7085e": {
+  "outcome": "restored:shared",
+  "why": "restored as 'both may be `nil`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "345905e403": {
+  "outcome": "restored:shared",
+  "why": "the client functions are under Instance Functions",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "09ca6bd48f": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.clj:32 (defn- new-entity [client entopts])); the signature names the parameter data ((api/ambient client data)) (accessor.param, derived), so the page says both, once (ReadmeRef accessorText); restored as 5ca02aaa87 under the module heading",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "423809a525": {
+  "outcome": "correction:clojure-utility",
+  "why": "false: sdk.api has no get-utility (Main_clojure.ts generates sdk.api without it; the guard reads its re-exports). The route that exists, sdk.client/get-utility, is in the instance note",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c1aa3f3565": {
+  "outcome": "restored:note",
+  "why": "the instance note says (sdk.client/get-utility client) returns a copy of it (core.clj:227 utility-copy)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "7433a6d16d": {
+  "outcome": "restored:shared",
+  "why": "restored as the Returns sentence with the same keys",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a6d7cbc021": {
+  "outcome": "restored:shared",
+  "why": "restored as 'A failed request is reported in the result, not as an error, so branch on (vs/getprop result \"ok\")'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "7fd0cb6715": {
+  "outcome": "restored:shared",
+  "why": "restored as '**Parameters (`fetchargs` map keys):**'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Path parameter values for `{param}` substitution.'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "7b71a17a53": {
+  "outcome": "restored:shared",
+  "why": "the Returns line names the map and its keys",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c41a606d0c": {
+  "outcome": "restored:shared",
+  "why": "restored as the prepare Returns sentence: the fetch definition, and it raises on failure",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ca21ef23eb": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional: without one, every record is listed.'",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0ccd61dc70": {
+  "outcome": "dropped",
+  "why": "the header of the make-sdk options table, which became the Constructor's table under the shared page (its own header names Name/Type/Description)",
+  "n": 38,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d177508b5b": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19,
+  "by": "rule:add-structure",
+  "type": "added",
+  "section": "reference"
+ },
+ "c393538548": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19,
+  "by": "rule:add-structure",
+  "type": "added",
+  "section": "reference"
+ },
+ "eee9e984cd": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19,
+  "by": "rule:add-structure",
+  "type": "added",
+  "section": "reference"
+ },
+ "9a230f563a": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 38,
+  "by": "rule:add-structure",
+  "type": "added",
+  "section": "reference"
+ },
+ "4033f23e2d": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "b2a89584dc": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "509f8ee353": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "35ea4c3e84": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-required-cell",
+  "type": "added",
+  "section": "reference"
+ },
+ "55901c7ad8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "06e0e1b2b7": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-required-cell",
+  "type": "added",
+  "section": "reference"
+ },
+ "b5b91fba23": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7e13c0a95a": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:test-opts-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "2cf0cc299b": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19,
+  "by": "rule:add-structure",
+  "type": "added",
+  "section": "reference"
+ },
+ "bb1005dc6f": {
+  "outcome": "restored:note",
+  "why": "the route to the utility, true per tm/clojure/src/sdk/client.clj:69 (the check's misclassified 2)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fbfbaaa041": {
+  "outcome": "restored:note",
+  "why": "as bb1005dc6f: core.clj:227 get-utility returns utility-copy",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "5ca02aaa87": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.clj:32 (defn- new-entity [client entopts])); the signature names the parameter data (accessor.param, derived), so the page says both, once (ReadmeRef accessorText)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "8765f0df0e": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19,
+  "by": "rule:add-structure",
+  "type": "added",
+  "section": "reference"
+ },
+ "6979eaacb4": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 34,
+  "by": "rule:add-type-cells",
+  "type": "added",
+  "section": "reference"
+ },
+ "92238dc9df": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "added",
+  "section": "reference"
+ },
+ "b22a4fd4cf": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 35,
+  "by": "rule:add-type-cells",
+  "type": "added",
+  "section": "reference"
+ },
+ "f25ed95c66": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:add-ctrl-row",
+  "type": "added",
+  "section": "reference"
+ },
+ "a47006aa8d": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "added",
+  "section": "reference"
+ },
+ "a1b1ba7a35": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "2680c1e934": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "3b7bee4991": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "fdfd098acd": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "d3f87f869d": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 19,
+  "by": "rule:op-failure-clause",
+  "type": "added",
+  "section": "reference"
+ },
+ "a36cfc5046": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 28,
+  "by": "rule:op-failure-clause",
+  "type": "added",
+  "section": "reference"
+ },
+ "55a8b68a1f": {
+  "outcome": "restored:fact",
+  "why": "data-get returns a copy: Entity.fragment.clj:21 (vs/clone (deref (:_data ent)))",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b40453110e": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 94,
+  "by": "rule:add-stream-sig",
+  "type": "added",
+  "section": "reference"
+ },
+ "71cbb92746": {
+  "outcome": "restored:fact",
+  "why": "stream is a real member (Entity.fragment.clj :stream, a lazy-seq at :185); the kind sentence now names only what the call returns (a lazy sequence: the type is a clojure LazySeq, walked over items realised before the call returns, which the runs sentence beside it says); nothing in it says when items arrive",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.clj (run-op at :164 before the lazy-seq is built); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "eaf64e26bd": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 82,
+  "by": "rule:op-sentences",
+  "type": "added",
+  "section": "reference"
+ },
+ "393056d0c1": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "0f10166e63": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2467756ac": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d3f3b82555": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "7615c6fe93": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "6356afc86b": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "193859bf79": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "28d337e733": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "9023782dca": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:add-action-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "3d50058045": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "8dc7a55eb9": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b31b1f71dd": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "f7b6870401": {
+  "outcome": "shared:go:69429bb577",
+  "why": "masked, it is the go unit of class 69429bb577 (restored:shared, by hand)",
+  "n": 51,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2d9199cb7a"
+  ],
+  "unreviewed": 1
+ },
+ "1095fa7261": {
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-log",
+  "type": "added",
+  "section": "reference"
+ },
+ "916036b165": {
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-log",
+  "type": "added",
+  "section": "reference"
+ },
+ "2d7cc08deb": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "by": "rule:add-secret",
+  "type": "added",
+  "section": "reference"
+ },
+ "3e1ef005aa": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "by": "rule:basic-secret",
+  "type": "added",
+  "section": "reference"
+ },
+ "b8d8f44805": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 4,
+  "by": "rule:op-failure-clause",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "cbcdf6e5f9": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:op-sentences",
+  "type": "added",
+  "section": "reference"
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f09662fec4": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (clojure/README.md:173 uses nil for no options, ent-none)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it",
+  "n": 4,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e59066a2d8": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence ('both may be `nil`'); README:173 uses nil for no options the same way",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "91baf1b4b6": {
+  "outcome": "same-meaning",
+  "why": "README:217 shows the test-sdk call; it does not claim a mock transport in this SDK. No disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "91201b47e3": {
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1,
+  "by": "rule:test-nofeature",
+  "type": "added",
+  "section": "reference"
+ },
+ "f878d6c74a": {
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1,
+  "by": "rule:test-nofeature",
+  "type": "added",
+  "section": "reference"
+ },
+ "da08f7e7bd": {
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1,
+  "by": "rule:field-escape",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "restored:shared",
+  "why": "the update data sentence names the id the route needs; same fact, other words",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c53de85c6e": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f010700f70": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "7dd340f0f1": {
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1,
+  "by": "rule:field-escape",
+  "type": "added",
+  "section": "reference"
+ },
+ "5153f403d8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-region",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "5653bbb40e": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "abb698049e": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd48acdf84": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "057b5775f7": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "07b6a683db": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "095040cca0": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 1,
+  "by": "rule:actions-table",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "4028fbfb63": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8928fd2128": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-keys",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "961804c407": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "reference"
+ },
+ "6a8837b248": {
+  "outcome": "unification:ref-generic-names",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-generic-names",
+  "type": "block-novel-token",
+  "section": "reference"
+ }
+}

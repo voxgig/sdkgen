@@ -1,0 +1,25 @@
+{
+ "note": "A control hand file for selftest.js part facts (reviewed mode); never copied to hand/.",
+ "facts": {
+  "ref.noun": {
+   "value": "Functions",
+   "why": "CONTROL ONLY: stands for the porter's record of the true value, so that a wrong value is the only thing left unattested; not a review",
+   "evidence": "the unmutated provider at v31-frozen"
+  },
+  "ref.heading": {
+   "value": "{module}",
+   "why": "CONTROL ONLY: stands for the porter's record of the true value, so that a wrong value is the only thing left unattested; not a review",
+   "evidence": "the unmutated provider at v31-frozen"
+  },
+  "ref.none": {
+   "value": "nil",
+   "why": "CONTROL ONLY: stands for the porter's record of the true value, so that a wrong value is the only thing left unattested; not a review",
+   "evidence": "the unmutated provider at v31-frozen"
+  },
+  "ref.valueType.OBJECT": {
+   "value": "map",
+   "why": "CONTROL ONLY: stands for the porter's record of the true value, so that a wrong value is the only thing left unattested; not a review",
+   "evidence": "the unmutated provider at v31-frozen"
+  }
+ }
+}

@@ -1,0 +1,58 @@
+[
+ {
+  "id": "region-required-ref-ts",
+  "lang": "ts",
+  "section": "reference",
+  "file": "B/ts/REFERENCE.md",
+  "from": "| `options.server.region` | `string` | Defaults to `eu`. |",
+  "to": "| `options.server.region` | `string` | Required. |"
+ },
+ {
+  "id": "ok-true-py",
+  "lang": "py",
+  "section": "reference",
+  "file": "doc-crud/py/REFERENCE.md",
+  "from": "on a failure `ok` is `False`",
+  "to": "on a failure `ok` is `True`"
+ },
+ {
+  "id": "raises-returns-py",
+  "lang": "py",
+  "section": "reference",
+  "file": "doc-crud/py/REFERENCE.md",
+  "from": "per record, and raises on failure.",
+  "to": "per record, and returns `None` on failure."
+ },
+ {
+  "id": "negation-go",
+  "lang": "go",
+  "section": "reference",
+  "file": "doc-crud/go/REFERENCE.md",
+  "from": "even for a non-2xx response",
+  "to": "except for a non-2xx response"
+ },
+ {
+  "id": "type-cell-zig",
+  "lang": "zig",
+  "section": "reference",
+  "file": "B/zig/REFERENCE.md",
+  "from": "| `year` | `i64` |",
+  "to": "| `year` | `f64` |"
+ },
+ {
+  "id": "ok-true-rb-new-language",
+  "lang": "rb",
+  "section": "reference",
+  "file": "B/rb/REFERENCE.md",
+  "from": "on a failure `ok` is `false`",
+  "to": "on a failure `ok` is `true`"
+ },
+ {
+  "id": "raises-returns-rb-new-language",
+  "lang": "rb",
+  "section": "reference",
+  "file": "doc-crud/rb/REFERENCE.md",
+  "from": "and raises on failure.",
+  "to": "and returns `nil` on failure."
+ }
+]

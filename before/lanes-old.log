@@ -1,0 +1,150 @@
+  generated rb (default): 147 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/default/rb/rb
+[rb default] run 1: exit 0, 1.166465014s
+[rb default] run 2: exit 0, .964364478s
+[rb default] run 3: exit 0, .946034853s
+[rb default] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/default/rb/rb): env LANG=C LC_ALL=C ruby test/readme_examples_test.rb
+[rb default] last lines:
+    
+    ....
+    
+    Finished in 0.851144s, 4.6996 runs/s, 23.4978 assertions/s.
+    
+    4 runs, 20 assertions, 0 failures, 0 errors, 0 skips
+[rb default] minimum of 3: .946034853s
+  generated rb (crud): 135 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/crud/rb/rb
+[rb crud] run 1: exit 0, .972016258s
+[rb crud] run 2: exit 0, .966860640s
+[rb crud] run 3: exit 0, 1.096318621s
+[rb crud] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/crud/rb/rb): env LANG=C LC_ALL=C ruby test/readme_examples_test.rb
+[rb crud] last lines:
+      rb REFERENCE   total=14 executed=14 syntaxchecked=0 illustration=0
+    .
+    
+    Finished in 0.984914s, 4.0613 runs/s, 20.3063 assertions/s.
+    
+    4 runs, 20 assertions, 0 failures, 0 errors, 0 skips
+[rb crud] minimum of 3: .966860640s
+  generated rb (basic-server): 135 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/basic-server/rb/rb
+[rb basic-server] run 1: exit 0, .934663723s
+[rb basic-server] run 2: exit 0, .716126530s
+[rb basic-server] run 3: exit 0, .850351366s
+[rb basic-server] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/basic-server/rb/rb): env LANG=C LC_ALL=C ruby test/readme_examples_test.rb
+[rb basic-server] last lines:
+      rb REFERENCE   total=14 executed=14 syntaxchecked=0 illustration=0
+    .
+    
+    Finished in 0.772565s, 5.1776 runs/s, 25.8878 assertions/s.
+    
+    4 runs, 20 assertions, 0 failures, 0 errors, 0 skips
+[rb basic-server] minimum of 3: .716126530s
+  generated perl (default): 146 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/default/perl/perl
+[perl default] run 1: exit 0, 4.326951085s
+[perl default] run 2: exit 0, 4.441177224s
+[perl default] run 3: exit 0, 4.779160175s
+[perl default] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/default/perl/perl): perl -Ilib t/readme_examples.t
+[perl default] last lines:
+    # perl REFERENCE   total=21 executed=21 syntaxchecked=0 illustration=0
+    # root README      total=3 executed=3 syntaxchecked=0 illustration=0
+    ok 5 - no runnable-looking perl block was left unexecuted
+    ok 6 - every perl block is executed, syntaxchecked-nonrunnable, or illustration
+    ok 7 - at least one executed perl example
+    1..7
+[perl default] minimum of 3: 4.326951085s
+  generated perl (crud): 134 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/crud/perl/perl
+[perl crud] run 1: exit 0, 3.281751501s
+[perl crud] run 2: exit 0, 3.766729978s
+[perl crud] run 3: exit 0, 3.531998524s
+[perl crud] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/crud/perl/perl): perl -Ilib t/readme_examples.t
+[perl crud] last lines:
+    # perl REFERENCE   total=14 executed=14 syntaxchecked=0 illustration=0
+    # root README      total=3 executed=3 syntaxchecked=0 illustration=0
+    ok 5 - no runnable-looking perl block was left unexecuted
+    ok 6 - every perl block is executed, syntaxchecked-nonrunnable, or illustration
+    ok 7 - at least one executed perl example
+    1..7
+[perl crud] minimum of 3: 3.281751501s
+  generated perl (basic-server): 134 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/basic-server/perl/perl
+[perl basic-server] run 1: exit 0, 3.274516526s
+[perl basic-server] run 2: exit 0, 3.438483081s
+[perl basic-server] run 3: exit 0, 2.980511243s
+[perl basic-server] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/basic-server/perl/perl): perl -Ilib t/readme_examples.t
+[perl basic-server] last lines:
+    # perl REFERENCE   total=14 executed=14 syntaxchecked=0 illustration=0
+    # root README      total=3 executed=3 syntaxchecked=0 illustration=0
+    ok 5 - no runnable-looking perl block was left unexecuted
+    ok 6 - every perl block is executed, syntaxchecked-nonrunnable, or illustration
+    ok 7 - at least one executed perl example
+    1..7
+[perl basic-server] minimum of 3: 2.980511243s
+  generated cpp (default): 155 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/default/cpp/cpp
+[cpp default] run 1: exit 0, 3.370820685s
+[cpp default] run 2: exit 0, 3.366695321s
+[cpp default] run 3: exit 0, 3.244844390s
+[cpp default] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/default/cpp/cpp): rm -f test/readme_examples_test.out && make -s test/readme_examples_test.out && ./test/readme_examples_test.out
+[cpp default] last lines:
+    readme_examples: scanned 41 cpp block(s)
+    readme_examples_test: 1 tests, 85 checks, 0 failures
+[cpp default] minimum of 3: 3.244844390s
+  generated cpp (crud): 143 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/crud/cpp/cpp
+[cpp crud] run 1: exit 0, 2.709622615s
+[cpp crud] run 2: exit 0, 2.835645806s
+[cpp crud] run 3: exit 0, 2.901014563s
+[cpp crud] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/crud/cpp/cpp): rm -f test/readme_examples_test.out && make -s test/readme_examples_test.out && ./test/readme_examples_test.out
+[cpp crud] last lines:
+    readme_examples: scanned 32 cpp block(s)
+    readme_examples_test: 1 tests, 67 checks, 0 failures
+[cpp crud] minimum of 3: 2.709622615s
+  generated cpp (basic-server): 143 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/basic-server/cpp/cpp
+[cpp basic-server] run 1: exit 0, 3.864359195s
+[cpp basic-server] run 2: exit 0, 2.898567998s
+[cpp basic-server] run 3: exit 0, 3.375411716s
+[cpp basic-server] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/basic-server/cpp/cpp): rm -f test/readme_examples_test.out && make -s test/readme_examples_test.out && ./test/readme_examples_test.out
+[cpp basic-server] last lines:
+    readme_examples: scanned 32 cpp block(s)
+    readme_examples_test: 1 tests, 67 checks, 0 failures
+[cpp basic-server] minimum of 3: 2.898567998s
+  generated js (default): 166 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/default/js/js
+[js default] the generated SDK has no README example test (no runner file); NOT RUN
+  generated js (crud): 154 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/crud/js/js
+[js crud] the generated SDK has no README example test (no runner file); NOT RUN
+  generated js (basic-server): 154 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/basic-server/js/js
+[js basic-server] the generated SDK has no README example test (no runner file); NOT RUN
+  generated java (default): 165 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/default/java/java
+[java default] run 1: exit 0, 9.749801683s
+[java default] run 2: exit 0, 6.747699393s
+[java default] run 3: exit 0, 6.047361442s
+[java default] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/default/java/java): mvn -B test -Dtest=ReadmeExamplesTest -DfailIfNoSpecifiedTests=false
+[java default] last lines:
+    [INFO] ------------------------------------------------------------------------
+    [INFO] BUILD SUCCESS
+    [INFO] ------------------------------------------------------------------------
+    [INFO] Total time:  4.889 s
+    [INFO] Finished at: 2026-11-14T18:37:14Z
+    [INFO] ------------------------------------------------------------------------
+[java default] minimum of 3: 6.047361442s
+  generated java (crud): 153 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/crud/java/java
+[java crud] run 1: exit 0, 7.257877530s
+[java crud] run 2: exit 0, 7.782317149s
+[java crud] run 3: exit 0, 6.647989297s
+[java crud] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/crud/java/java): mvn -B test -Dtest=ReadmeExamplesTest -DfailIfNoSpecifiedTests=false
+[java crud] last lines:
+    [INFO] ------------------------------------------------------------------------
+    [INFO] BUILD SUCCESS
+    [INFO] ------------------------------------------------------------------------
+    [INFO] Total time:  5.325 s
+    [INFO] Finished at: 2026-11-14T18:37:36Z
+    [INFO] ------------------------------------------------------------------------
+[java crud] minimum of 3: 6.647989297s
+  generated java (basic-server): 153 files in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/basic-server/java/java
+[java basic-server] run 1: exit 0, 7.108271559s
+[java basic-server] run 2: exit 0, 5.114400596s
+[java basic-server] run 3: exit 0, 6.854860786s
+[java basic-server] command (in /tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/before/work/basic-server/java/java): mvn -B test -Dtest=ReadmeExamplesTest -DfailIfNoSpecifiedTests=false
+[java basic-server] last lines:
+    [INFO] ------------------------------------------------------------------------
+    [INFO] BUILD SUCCESS
+    [INFO] ------------------------------------------------------------------------
+    [INFO] Total time:  5.593 s
+    [INFO] Finished at: 2026-11-14T18:37:56Z
+    [INFO] ------------------------------------------------------------------------
+[java basic-server] minimum of 3: 5.114400596s

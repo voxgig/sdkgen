@@ -1,0 +1,374 @@
+{
+ "a5772bf845": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1
+ },
+ "068fe6cd56": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact",
+  "n": 1
+ },
+ "81a09d8cf6": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact",
+  "n": 1
+ },
+ "94c8e63438": {
+  "outcome": "correction:S49",
+  "why": "server variable given; stdlib.h for getenv (c-stdlib); err declared ahead of the first call (c-err-placement)",
+  "n": 1
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match: README:181 is about the server's TLS certificate, and the README states nothing about the `server` option's variables",
+  "n": 15
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match: README:181 is about the server's TLS certificate, and the README states nothing about the `server` option's variables (server-mixed)",
+  "n": 1
+ },
+ "6263763b56": {
+  "outcome": "restored:shared",
+  "why": "restored in the list sentence and the printed loop (`vt->data` on each item)",
+  "n": 7
+ },
+ "9a132de632": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Update \u2014 the id comes off the created entity's record'",
+  "n": 4
+ },
+ "8e1fb48a5a": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch \u2014 sends only the fields given; ...'",
+  "n": 3
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1
+ },
+ "374c28c871": {
+  "outcome": "restored:fact",
+  "why": "the write results as one sentence: the written entity, or NULL with *err set (EntityCreateOp.fragment.c returns NULL on *err); the check asked for the err check per call, which the sentence now names",
+  "n": 5
+ },
+ "c4975e4b2e": {
+  "outcome": "restored:fact",
+  "why": "the write sentence for the one write ref-issues has",
+  "n": 1
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it",
+  "n": 34
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 19
+ },
+ "6ee07c173d": {
+  "outcome": "same-meaning",
+  "why": "README:269 calls test_sdk(testopts, sdkopts); same parameters",
+  "n": 19
+ },
+ "317c4c377c": {
+  "outcome": "same-meaning",
+  "why": "README:322 says on error ok is false and err carries the error value; same",
+  "n": 19
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in a code comment (console.log); the README says nothing else about log's default",
+  "n": 19
+ },
+ "b88d063ce9": {
+  "outcome": "same-meaning",
+  "why": "the README calls sdk_direct with the same fetchargs map",
+  "n": 18
+ },
+ "af7dd8de26": {
+  "outcome": "same-meaning",
+  "why": "the README calls sdk_direct; the fetch definition is the request it would send",
+  "n": 18
+ },
+ "f7aa0fdb13": {
+  "outcome": "same-meaning",
+  "why": "a word match: README:181 is about the server's TLS certificate, and the README states nothing about the `server` option's variables",
+  "n": 16
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "same-meaning",
+  "why": "README:199 says the test feature's transport has a shape a custom transport may copy; it does not say this SDK has a mock transport. No disagreement",
+  "n": 1
+ },
+ "287a14befa": {
+  "outcome": "restored:shared",
+  "why": "the heading is Common Functions in c (the page's noun for c members); the members are all there",
+  "n": 94
+ },
+ "4f0ad8c7ba": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional: without one, every record is listed.' (NULL is the match the example passes)",
+  "n": 83
+ },
+ "ffa2f87e8a": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client",
+  "n": 19
+ },
+ "4f08cd5dd9": {
+  "outcome": "restored:shared",
+  "why": "restored as 'both may be `NULL`'",
+  "n": 19
+ },
+ "457eed3bf3": {
+  "outcome": "restored:shared",
+  "why": "the accessors are under Instance Functions, each headed by its signature",
+  "n": 19
+ },
+ "a1848760f9": {
+  "outcome": "restored:shared",
+  "why": "restored as the Returns sentence: a result map holding ok, status, headers and data; on a failure ok is false and err holds the error",
+  "n": 19
+ },
+ "74cdbb7125": {
+  "outcome": "restored:shared",
+  "why": "restored as 'A failed request is reported in the result, not as an error, so branch on getp(result, \"ok\")'; true: sdk_raw_request only sets *err to NULL and returns err_map(...) for every failure (Main.fragment.c:196-275)",
+  "n": 19
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Path parameter values for `{param}` substitution.'",
+  "n": 19
+ },
+ "b1cb2968c2": {
+  "outcome": "restored:shared",
+  "why": "restored as 'the fetch definition ... It returns `NULL` with `*err` set on failure.'",
+  "n": 19
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1
+ },
+ "26c79b69a8": {
+  "outcome": "restored:shared",
+  "why": "the update data sentence names the id the route needs; same fact, other words",
+  "n": 1
+ },
+ "6be9ac7d6e": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1
+ },
+ "01da88105b": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1
+ },
+ "55a8b68a1f": {
+  "outcome": "restored:fact",
+  "why": "vt->data returns a copy: Entity.fragment.c:249 `return voxgig_clone(self->data);`",
+  "n": 94
+ },
+ "43d177af05": {
+  "outcome": "restored:fact",
+  "why": "how the record is read, now under every single-entity operation (the check's output_defects 2: the c load example's read of vt->data went with the majority shape)",
+  "n": 79
+ },
+ "c2467756ac": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
+  "n": 16
+ },
+ "fead692406": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16
+ },
+ "487377ad3f": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README)",
+  "n": 3
+ },
+ "b4b66556bc": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README)",
+  "n": 1
+ },
+ "5b32f0dc83": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README)",
+  "n": 1
+ },
+ "1af3b9ca32": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples (errslot style, decided once in example.ts): each write is followed by `if (err) { fprintf(stderr, ...); err = NULL; }`, as the step's sentence says (check err after each call); created_id is read only when created is non-NULL, so no later call dereferences a failed result; OLD checked nothing. Compiled by the c DOC lane (README, REFERENCE, root README); ref-issues has update only, so the block declares err itself",
+  "n": 1
+ },
+ "5bbfe54955": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 5
+ },
+ "ed4b554680": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1
+ },
+ "af098243e5": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1
+ },
+ "b20cd43c61": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1
+ },
+ "31e1469668": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1
+ },
+ "5d9d9b18da": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 3
+ },
+ "59570b4eb5": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1
+ },
+ "37a83b9746": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1
+ },
+ "a56c959d33": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 1
+ },
+ "bab79a7465": {
+  "outcome": "correction:checked-examples",
+  "why": "v3.2 checked examples: the root quick start checks err after the list (and resets it) before the load runs, then checks the load: OLD loaded after an unchecked err and read `loaded` only by its NULL test. The rest of the difference is what the reviewed normalizers named at v3.1 and no longer apply once a block changes otherwise: server-required-given:c (G01: the server variable without a default is passed), c-stdlib (#include <stdlib.h> for getenv), c-err-placement, step-comment-runtime-fact, secret-option:c. Same calls, same printed record. Compiled by the c DOC lane (root README)",
+  "n": 2
+ },
+ "13c982079d": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (fprintf)",
+  "n": 1
+ },
+ "bc57fc9f69": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (stderr)",
+  "n": 1
+ },
+ "93215155ec": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (the word failed in the message)",
+  "n": 1
+ },
+ "3e1d601376": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (err->msg)",
+  "n": 1
+ },
+ "0ca279dc4d": {
+  "outcome": "correction:checked-examples",
+  "why": "the check's own tokens: fprintf(stderr, \"... failed: %s\\n\", err->msg) and the else branch of the checked root quick start (else)",
+  "n": 1
+ },
+ "a1d6dcd8be": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19
+ },
+ "d04a960684": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The options heading.",
+  "n": 19
+ },
+ "92841846e3": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The copy sentence rests on Member.copy, cited at utility.c:70 (voxgig_clone).",
+  "n": 19
+ },
+ "31334dded1": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The utility heading.",
+  "n": 19
+ },
+ "83dd225751": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). Kind utility (a copy), cited at utility.c:72 (utility_copy).",
+  "n": 19
+ },
+ "fb33f90173": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The new token is the function name.",
+  "n": 1
+ },
+ "e1f6800b0b": {
+  "outcome": "restored:fact",
+  "why": "a client member the runtime has and OLD c's REFERENCE omitted: tm/c/core/utility.c:70 `voxgig_value* sdk_options_map(ProjectNameSDK* sdk) { return voxgig_clone(sdk->options); }` and :72 `Utility* sdk_get_utility(...) { return utility_copy(sdk->utility); }`, declared in sdk.h:477-478; the guard reads both (signature derived; the copy and utility kind cited). The new token is the function name.",
+  "n": 1
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.c (PrePoint hook and the operation before the list is built and returned); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94
+ },
+ "facts": {
+  "errVar": {
+   "value": "err",
+   "why": "the variable c's examples declare and pass by address; OLD c held it (`PNError* err = NULL;`, `&err`); the new contexts are the errslot sentences ('check `err` after each call') naming that variable",
+   "evidence": "OLD B/c/README.md:58 `PNError* err = NULL;`, :68 `...load(ambient, NULL, NULL, &err);`; Syntax_c errSlot cites EntityLoadOp.fragment.c `PNError** err`"
+  },
+  "ref.noun": {
+   "value": "Functions",
+   "why": "C has no methods: the client members are free functions taking the client (demo_ambient(client, ...), sdk_direct(client, ...)) and the entity members are function pointers called through the vtable (vt->load(e, ...)). OLD c had no 'Instance ...' heading and called the entity members 'Common Methods' (OLD B/c/REFERENCE.md:134), a misnomer the noun corrects",
+   "evidence": "Syntax_c.ts client and entity signatures; tm/c/core/sdk.h EntityVT function pointers; OLD B/c/REFERENCE.md:44 'Entity Accessors', :134 'Common Methods'"
+  }
+ }
+}

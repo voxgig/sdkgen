@@ -1,0 +1,173 @@
+[
+ {
+  "id": "rb-load-returns-nil",
+  "lang": "rb",
+  "section": "reference",
+  "what": "wrong failure word",
+  "file": "doc-crud/rb/REFERENCE.md",
+  "from": "Load a single entity matching the given criteria. Returns the entity,\nand raises on failure.",
+  "to": "Load a single entity matching the given criteria. Returns the entity,\nand returns `nil` on failure."
+ },
+ {
+  "id": "rb-list-reqmatch-required",
+  "lang": "rb",
+  "section": "reference",
+  "what": "optional parameter said required (signature)",
+  "file": "doc-crud/rb/REFERENCE.md",
+  "from": "#### `list(reqmatch = nil, ctrl = nil) -> Array<PlanetEntity>`",
+  "to": "#### `list(reqmatch, ctrl = nil) -> Array<PlanetEntity>`"
+ },
+ {
+  "id": "rb-match-optional-required",
+  "lang": "rb",
+  "section": "reference",
+  "what": "optional match said required (prose)",
+  "file": "doc-crud/rb/REFERENCE.md",
+  "from": "The match is optional:\nwithout one, every record is listed.",
+  "to": "The match is required:\nwithout one, nothing is listed."
+ },
+ {
+  "id": "rb-direct-sentence-dropped",
+  "lang": "rb",
+  "section": "reference",
+  "what": "dropped sentence",
+  "file": "doc-crud/rb/REFERENCE.md",
+  "from": " A failed request is reported in the result, not\nas an error, so branch on `result[\"ok\"]`.",
+  "to": ""
+ },
+ {
+  "id": "rb-retries-number",
+  "lang": "rb",
+  "section": "reference",
+  "what": "changed number",
+  "file": "B/rb/REFERENCE.md",
+  "from": "| `retries` | `2` |",
+  "to": "| `retries` | `5` |"
+ },
+ {
+  "id": "rb-get-utility-return",
+  "lang": "rb",
+  "section": "reference",
+  "what": "wrong return",
+  "file": "doc-crud/rb/REFERENCE.md",
+  "from": "#### `get_utility -> Utility`",
+  "to": "#### `get_utility -> Hash`"
+ },
+ {
+  "id": "rb-utility-live",
+  "lang": "rb",
+  "section": "reference",
+  "what": "copy said live",
+  "file": "doc-crud/rb/REFERENCE.md",
+  "from": "Return a copy of the SDK utility object.",
+  "to": "Return the live SDK utility object."
+ },
+ {
+  "id": "rb-tut-list-hash",
+  "lang": "rb",
+  "section": "tutorial",
+  "what": "wrong collection",
+  "file": "doc-crud/rb/README.md",
+  "from": "`list` returns an `Array` of entities",
+  "to": "`list` returns a `Hash` of entities"
+ },
+ {
+  "id": "rb-tut-write-record",
+  "lang": "rb",
+  "section": "tutorial",
+  "what": "wrong return (record not entity)",
+  "file": "doc-crud/rb/README.md",
+  "from": "Each write returns the entity it wrote",
+  "to": "Each write returns the record it wrote"
+ },
+ {
+  "id": "rb-region-required",
+  "lang": "rb",
+  "section": "reference",
+  "what": "defaulted variable said required",
+  "file": "doc-crud/rb/REFERENCE.md",
+  "from": "| `options[\"server\"][\"region\"]` | `String` | Defaults to `eu`. |",
+  "to": "| `options[\"server\"][\"region\"]` | `String` | Required. |"
+ },
+ {
+  "id": "rb-dataget-nocopy",
+  "lang": "rb",
+  "section": "reference",
+  "what": "weakened: copy dropped",
+  "file": "B/rb/REFERENCE.md",
+  "from": "Get the entity data. Returns a copy of the current data.",
+  "to": "Get the entity data."
+ },
+ {
+  "id": "py-list-sig-required",
+  "lang": "py",
+  "section": "reference",
+  "what": "optional parameter said required",
+  "file": "doc-crud/py/REFERENCE.md",
+  "from": "#### `load(reqmatch=None, ctrl=None) -> PlanetEntity`",
+  "to": "#### `load(reqmatch, ctrl=None) -> PlanetEntity`"
+ },
+ {
+  "id": "py-load-returns-none",
+  "lang": "py",
+  "section": "reference",
+  "what": "wrong failure word",
+  "file": "doc-crud/py/REFERENCE.md",
+  "from": "Load a single entity matching the given criteria. Returns the entity,\nand raises on failure.",
+  "to": "Load a single entity matching the given criteria. Returns the entity,\nand returns `None` on failure."
+ },
+ {
+  "id": "py-tut-dict",
+  "lang": "py",
+  "section": "tutorial",
+  "what": "wrong literal type",
+  "file": "doc-crud/py/README.md",
+  "from": "`load()` returns the entity and raises on failure; `data_get()` reads\nits record (a `dict`).",
+  "to": "`load()` returns the entity and raises on failure; `data_get()` reads\nits record (a `list`)."
+ },
+ {
+  "id": "py-dataget-nocopy",
+  "lang": "py",
+  "section": "reference",
+  "what": "weakened: copy dropped",
+  "file": "doc-crud/py/REFERENCE.md",
+  "from": "Get the entity data. Returns a copy of the current data.",
+  "to": "Get the entity data. Returns the current data."
+ },
+ {
+  "id": "go-list-map",
+  "lang": "go",
+  "section": "reference",
+  "what": "wrong collection",
+  "file": "doc-crud/go/REFERENCE.md",
+  "from": "Returns a `[]any` of entities, one\nper record; `err` is non-nil on failure.",
+  "to": "Returns a `map[string]any` of entities, one\nper record; `err` is non-nil on failure."
+ },
+ {
+  "id": "go-err-nil",
+  "lang": "go",
+  "section": "reference",
+  "what": "wrong failure word",
+  "file": "doc-crud/go/REFERENCE.md",
+  "from": "`err` is non-nil on failure. `Data()` reads its record.",
+  "to": "`err` is nil on failure. `Data()` reads its record."
+ },
+ {
+  "id": "go-stream-dropped",
+  "lang": "go",
+  "section": "reference",
+  "what": "dropped sentence",
+  "file": "doc-crud/go/REFERENCE.md",
+  "from": " Under `throw: false` in `callopts[\"ctrl\"]`, no error is sent.",
+  "to": ""
+ },
+ {
+  "id": "go-tut-step4-dropped",
+  "lang": "go",
+  "section": "tutorial",
+  "what": "dropped sentence",
+  "file": "doc-crud/go/README.md",
+  "from": " Each write returns `(value,\n   error)` too: the value is the entity it wrote (a removed one is\n   marked as deleted), and a non-nil `err` reports failure.",
+  "to": ""
+ }
+]

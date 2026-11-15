@@ -1,0 +1,1768 @@
+{
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10,
+  "by": "rule:step-numbers",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "123923823b": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 10,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "c80fed460f": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 16,
+  "by": "rule:op-sentences",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "4147ad0745": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 18,
+  "by": "rule:entities-contract",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "3320e33aa5": {
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 15,
+  "by": "rule:apikey-env",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "9363faf207": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "b98c5c1370": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "by": "rule:basic-secret",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "849816779b": {
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 3,
+  "by": "rule:write-heading2",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "428b2a83e1": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 3,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "486f1d12af": {
+  "outcome": "correction:runtime-forms",
+  "why": "",
+  "n": 7,
+  "by": "rule:op-signature",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "8b61693e8f": {
+  "outcome": "restored:shared",
+  "why": "restored in the list sentence and the printed loop (asEntity().data(null) on each item)",
+  "n": 7,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "d9e4a5888b": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Create — .ok is the created entity' and the write sentence",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "9a132de632": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Update — the id comes off the created entity's record'",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "8e1fb48a5a": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch — sends only the fields given; ...'",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "6c43ff2d59": {
+  "outcome": "restored:fact",
+  "why": "the write results as one sentence: .ok the written entity, .err on failure (EntityCreateOp.fragment.zig returns EntResult)",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "69f44cda54": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 4,
+  "by": "rule:write-comments",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "6f58c092d8": {
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 4,
+  "by": "rule:add-write-comment",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "ea9f53b714": {
+  "outcome": "unification:write-comment-style",
+  "why": "",
+  "n": 3,
+  "by": "rule:add-write-comment",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "732bb80f3d": {
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 1,
+  "by": "rule:write-heading2",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "67bc2b34e8": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "2609d87cfb": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "69ba25b1fc": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "b2e881d342": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:write-comments",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "d39368fa0b": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "ead3f5a0ef": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial",
+  "where": "zig/README.md:77-86 (Error handling, printed by the shared ReadmeErrors.ts for 16 languages, unported): 'Entity operations reject on failure, so wrap them in `try` / `catch`', with TypeScript code",
+  "true": "the tutorial and REFERENCE: a zig operation returns a result union whose .ok is the entity and .err reports failure; it does not reject, and try/catch does not apply",
+  "evidence": "src/cmp/zig/fragment/EntityLoadOp.fragment.zig returns EntResult (.ok / .err); README:152 itself switches on .ok/.err"
+ },
+ "dd5f182f01": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "f4f124751b": {
+  "outcome": "correction:S28",
+  "why": "",
+  "n": 1,
+  "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "4555bd17b9": {
+  "outcome": "correction:U45",
+  "why": "",
+  "n": 1,
+  "by": "rule:write-heading",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "95022eb6b9": {
+  "outcome": "restored:fact",
+  "why": "the write sentence for the one write ref-issues has",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "6fb3670380": {
+  "outcome": "unification:client-env-sentence",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-apikey",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-region",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "09532cf246": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-keys",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "84f11343be": {
+  "outcome": "dropped",
+  "why": "the instruction to switch on .ok: the union sentence states .ok and .err and the code shows the switch (stage 3 decision)",
+  "n": 1,
+  "by": "rule:tok-zig-switch",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "fbf79e412d": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact. UNVERIFIED: no zig here",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "ec3f31b885": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "38b2554fdd": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "7d676e4951": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "f2304656af": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "0502261efc": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "6817fe1610": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "a3f75871e8": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "92fe0b08b8": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "48938d9e89": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "a2f617f5aa": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "2559b4363c": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "aeb3c8328d": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "2cd95e7b3e": {
+  "outcome": "unification:zig-bind-outside",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-zig-return",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "536ead6583": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-chain",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "0e42bedae3": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "cd8353f0bc": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "75054b67b9": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "38b6bc8ef0": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-chain",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "1e0d444246": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-chain",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "a4e0a05587": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-chain",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "be74a49db7": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 10,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "60b9272c0d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 6,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "bd5fd2be75": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 7,
+  "by": "rule:root-step-comment",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "d311c218ae": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact. UNVERIFIED: no zig here",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "1f79a9926d": {
+  "outcome": "unification:root-load-nested",
+  "why": "doc-nested: the root quick start loads the nested satellite with its parent id (root-load-nested), binds results outside error handling (zig-bind-outside), gives the server tenant (S49) and reads the environment through Io (zig-env-io); each part as in the other root blocks",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "92bd7646e3": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "6a12b6ba57": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "7241b4d238": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "4cfd5b01ab": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5eceb7d78e": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "26cb169e58": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "72356f26e6": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "45812b9db4": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "4a3209e8d9": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "bdc58e4d73": {
+  "outcome": "unification:zig-bind-outside",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-zig-return",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:basic-secret",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "295504858a": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "7851b353c0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5f9251f640": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fa825fd8f8": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "4261ee6d6b": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "d413390699": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-comment-words",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-nested-load",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-nested-load",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "1ba71ab8c8": {
+  "outcome": "same-meaning",
+  "why": "the README direct example reads ok and headers off the same result map",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "74e67fc6cf": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "zig/README.md:77-86 (Error handling, printed by the shared ReadmeErrors.ts for 16 languages, unported): 'Entity operations reject on failure, so wrap them in `try` / `catch`', with TypeScript code",
+  "true": "REFERENCE for prepare (E!Value, for try/catch) and the operation sentences (result unions); README's claim that entity operations reject is false for zig",
+  "evidence": "Main.fragment.zig: pub fn prepare(...) E!Value; EntityLoadOp.fragment.zig returns EntResult"
+ },
+ "f7aa0fdb13": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it",
+  "n": 34,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in console.log; the README says nothing about log's default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f23290592f": {
+  "outcome": "same-meaning",
+  "why": "README:242's stream row says the same: .ok with its result items, or .err; the REFERENCE now says the items come back as one list and .err reports failure",
+  "n": 94,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "97b7dcdc97": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "042740d448": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "ef8774be7c": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6aced21d71": {
+  "outcome": "correction:ref-features-escape",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-escape",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "92ce533dbd": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d8344ee7f8": {
+  "outcome": "restored:note",
+  "why": "",
+  "n": 94,
+  "by": "rule:zig-stream-note",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1274114fef": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 94,
+  "by": "rule:stream-member",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "2fb2060684": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 19,
+  "by": "rule:op-sentences",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "866403b722": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 15,
+  "by": "rule:collision-units",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "0f27e4fc5f": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 82,
+  "by": "rule:collision-units",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "3e8ca55bc9": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "43fb1efe69": {
+  "outcome": "unification:ref-page-structure",
+  "why": "",
+  "n": 19,
+  "by": "rule:page-structure2",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "555b8a82ef": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 27,
+  "by": "rule:op-sentences",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "f300e8ebee": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-escape",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "982790f322": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b9ce12aabb": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 15,
+  "by": "rule:collision-units",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "0ec50e4f5b": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 15,
+  "by": "rule:collision-units",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "4d9b0e63f2": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0bb5114a4e": {
+  "outcome": "restored:shared",
+  "why": "restored as 'both may be `h.vnull()`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1942272f09": {
+  "outcome": "restored:shared",
+  "why": "restored as 'return its result items as one list. Its `.err` reports failure.' with the throw:false note",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "741ad0f33f": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional: without one, every record is listed.'",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "4033f23e2d": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "b22a4fd4cf": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 35,
+  "by": "rule:add-type-cells",
+  "type": "added",
+  "section": "reference"
+ },
+ "b2a89584dc": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "509f8ee353": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 15,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "6979eaacb4": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 34,
+  "by": "rule:add-type-cells",
+  "type": "added",
+  "section": "reference"
+ },
+ "35ea4c3e84": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-required-cell",
+  "type": "added",
+  "section": "reference"
+ },
+ "55901c7ad8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "06e0e1b2b7": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 16,
+  "by": "rule:server-required-cell",
+  "type": "added",
+  "section": "reference"
+ },
+ "a986258b72": {
+  "outcome": "unification:ref-test-heading",
+  "why": "",
+  "n": 19,
+  "by": "rule:test-heading",
+  "type": "added",
+  "section": "reference"
+ },
+ "348f880ab3": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7e13c0a95a": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:test-opts-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "f25ed95c66": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:add-ctrl-row",
+  "type": "added",
+  "section": "reference"
+ },
+ "9eec770ead": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
+  "type": "added",
+  "section": "reference"
+ },
+ "927fd64229": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "3bf8b6fd45": {
+  "outcome": "restored:shared",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "10a8506f99": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 28,
+  "by": "rule:add-ref-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "55a8b68a1f": {
+  "outcome": "shared:py:55a8b68a1f",
+  "why": "masked, it is the py unit of class 55a8b68a1f (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "f2901d9293"
+  ],
+  "unreviewed": 1
+ },
+ "65ab1c1cb3": {
+  "outcome": "unification:op-failure-clause",
+  "why": "",
+  "n": 94,
+  "by": "rule:add-fails",
+  "type": "added",
+  "section": "reference"
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.zig (make_point and the operation before streamItems returns the slice); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "eaf64e26bd": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 82,
+  "by": "rule:op-sentences",
+  "type": "added",
+  "section": "reference"
+ },
+ "393056d0c1": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "0f10166e63": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "c2467756ac": {
+  "outcome": "shared:ts:6e0387536b",
+  "why": "masked, it is the ts unit of class 6e0387536b (correction:ref-6, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "82e6814387"
+  ],
+  "unreviewed": 1
+ },
+ "d3f3b82555": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "7615c6fe93": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "6356afc86b": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "193859bf79": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "28d337e733": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "9023782dca": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:add-action-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "3d50058045": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "4f36ed1acf": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b31b1f71dd": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 16,
+  "by": "rule:actions-table",
+  "type": "added",
+  "section": "reference"
+ },
+ "571b1e3e38": {
+  "outcome": "restored:fact",
+  "why": "the record read on every single-entity operation (asEntity().data(null)), true of zig's entity",
+  "n": 52,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "1095fa7261": {
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-log",
+  "type": "added",
+  "section": "reference"
+ },
+ "916036b165": {
+  "outcome": "correction:S09",
+  "why": "",
+  "n": 19,
+  "by": "rule:features-log",
+  "type": "added",
+  "section": "reference"
+ },
+ "2d7cc08deb": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "by": "rule:add-secret",
+  "type": "added",
+  "section": "reference"
+ },
+ "3e1ef005aa": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 2,
+  "by": "rule:basic-secret",
+  "type": "added",
+  "section": "reference"
+ },
+ "0c3424f5ce": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 3,
+  "by": "rule:collision-units",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "cbcdf6e5f9": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:op-sentences",
+  "type": "added",
+  "section": "reference"
+ },
+ "3ed9b2b0fe": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the same two arguments (both may be h.vnull()); nothing disagrees (zig/README.md:170 uses h.vnull() for no options, ent-none)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "676e50e089": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence ('both may be `h.vnull()`'); README:170 uses h.vnull() for no options the same way",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "dc7d8b5035": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the stream note's callopts.ctrl",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "91baf1b4b6": {
+  "outcome": "same-meaning",
+  "why": "README:1019 is the generic file tree (feature/ holds base, test, log); it does not say this SDK ships the test feature. No disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "91201b47e3": {
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1,
+  "by": "rule:test-nofeature",
+  "type": "added",
+  "section": "reference"
+ },
+ "f878d6c74a": {
+  "outcome": "correction:S13",
+  "why": "",
+  "n": 1,
+  "by": "rule:test-nofeature",
+  "type": "added",
+  "section": "reference"
+ },
+ "da08f7e7bd": {
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1,
+  "by": "rule:field-escape",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "91a3a0bd69": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1,
+  "by": "rule:class-collision",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "ecc1388a0c": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1,
+  "by": "rule:class-collision",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "993924c4c6": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "63ba6de054": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the create sentence says .ok is the entity it wrote",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8f254e8c98": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the list sentence says .ok is a slice of entities, one per record",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "fef338e403": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the load sentence with the record read",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "3055aad6aa": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the patch sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a28311853e": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "96847801df": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "26c79b69a8": {
+  "outcome": "restored:shared",
+  "why": "the update data sentence names the id the route needs; same fact, other words",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1cbc5f74da": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the update sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "5130ea0617": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1,
+  "by": "rule:class-collision",
+  "type": "added",
+  "section": "reference"
+ },
+ "7dd340f0f1": {
+  "outcome": "correction:G27",
+  "why": "",
+  "n": 1,
+  "by": "rule:field-escape",
+  "type": "added",
+  "section": "reference"
+ },
+ "4ea2d4181f": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:add-ref-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "70c81c22c1": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:add-ref-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "8cb718da4a": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:add-ref-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "69edf77de5": {
+  "outcome": "unification:op-sentences",
+  "why": "",
+  "n": 1,
+  "by": "rule:add-ref-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "5153f403d8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "added",
+  "section": "reference"
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:G01",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-region",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "409b8ce3b8": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "abb698049e": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "f40e4c8a30": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 1,
+  "by": "rule:actions-table",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8983d1f7dc": {
+  "outcome": "restored:fact",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-stream",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7e7f66c823": {
+  "outcome": "correction:ref-6",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-action-call",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "bf0c84e3b2": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-secret",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 1,
+  "by": "rule:server-vars",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "",
+  "n": 1,
+  "by": "rule:class-collision",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "53b0392a00": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "reference"
+ },
+ "ab1bb38b53": {
+  "outcome": "unification:zig-bind-outside",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-zig-return",
+  "type": "block-novel-token",
+  "section": "reference"
+ },
+ "6a8837b248": {
+  "outcome": "unification:ref-generic-names",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-generic-names",
+  "type": "block-novel-token",
+  "section": "reference"
+ }
+}

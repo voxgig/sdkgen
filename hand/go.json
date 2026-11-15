@@ -1,0 +1,293 @@
+{
+ "a0788e0dd9": {
+  "outcome": "same-meaning",
+  "why": "ent-none has no entity, so the tutorial has no operation to describe; README:7 is the README's generic introduction naming an entity's usual operations, not a restatement of this paragraph",
+  "n": 1
+ },
+ "b3701b5b70": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "go's tutorial program: write data one member per line, write results not bound and the id taken off the created entity, the loop variable named after the entity (OLD doc-list named it planet), only the server variables with no default (G01), comments state the runtime fact. Compiled and run by the go README lane",
+  "n": 1
+ },
+ "7092d24ea2": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "go's tutorial program: write data one member per line, write results not bound and the id taken off the created entity, the loop variable named after the entity (OLD doc-list named it planet), only the server variables with no default (G01), comments state the runtime fact. Compiled and run by the go README lane",
+  "n": 1
+ },
+ "a90f370df5": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "go's tutorial program: write data one member per line, write results not bound and the id taken off the created entity, the loop variable named after the entity (OLD doc-list named it planet), only the server variables with no default (G01), comments state the runtime fact. Compiled and run by the go README lane",
+  "n": 1
+ },
+ "5d6c742cd0": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "go's tutorial program: write data one member per line, write results not bound and the id taken off the created entity, the loop variable named after the entity (OLD doc-list named it planet), only the server variables with no default (G01), comments state the runtime fact. Compiled and run by the go README lane",
+  "n": 1
+ },
+ "fd8b2f5f91": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "go's tutorial program: write data one member per line, write results not bound and the id taken off the created entity, the loop variable named after the entity (OLD doc-list named it planet), only the server variables with no default (G01), comments state the runtime fact. Compiled and run by the go README lane",
+  "n": 1
+ },
+ "70db3ce8aa": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "go's tutorial program: write data one member per line, write results not bound and the id taken off the created entity, the loop variable named after the entity (OLD doc-list named it planet), only the server variables with no default (G01), comments state the runtime fact. Compiled and run by the go README lane",
+  "n": 1
+ },
+ "892c435089": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "go's tutorial program: write data one member per line, write results not bound and the id taken off the created entity, the loop variable named after the entity (OLD doc-list named it planet), only the server variables with no default (G01), comments state the runtime fact. Compiled and run by the go README lane",
+  "n": 1
+ },
+ "cbed32dcda": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "go's tutorial program: write data one member per line, write results not bound and the id taken off the created entity, the loop variable named after the entity (OLD doc-list named it planet), only the server variables with no default (G01), comments state the runtime fact. Compiled and run by the go README lane",
+  "n": 1
+ },
+ "3748e22e71": {
+  "outcome": "unification:go-root-program",
+  "why": "go's root quick start is one program (package main), as its tutorial; it lists and loads; compiled and run by the go README lane",
+  "n": 1
+ },
+ "f3ff4e11d0": {
+  "outcome": "unification:go-root-program",
+  "why": "go's root quick start is one program (package main), as its tutorial; it lists and loads; compiled and run by the go README lane",
+  "n": 1
+ },
+ "3537681cd4": {
+  "outcome": "unification:go-root-program",
+  "why": "go's root quick start is one program (package main), as its tutorial; it lists and loads; compiled and run by the go README lane",
+  "n": 2
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "the echo is the word 'server' in the README's `base` cell ('Base URL of the API server'); the README options table does not list `server` at all, so it states nothing about its variables",
+  "n": 16
+ },
+ "e1b0d2d30d": {
+  "outcome": "same-meaning",
+  "why": "as 360f66a3d2: a word match on the `base` cell, auth-off",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "as 360f66a3d2, server-mixed",
+  "n": 1
+ },
+ "b6ef0e9023": {
+  "outcome": "dropped",
+  "why": "the go tutorial is one program under the section heading; the steps are bold lead-ins and 'The program after these N steps runs them in order.' introduces the code, so no sub-heading is needed",
+  "n": 21
+ },
+ "3291b1acc6": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The program after these N steps runs them in order.' and step 1 Create a client",
+  "n": 21
+ },
+ "8d92fa2135": {
+  "outcome": "restored:shared",
+  "why": "restored as the pair-style step sentences: List returns (value, error), a []any of entities, no {ok, data} wrapper, Data() reads a record; Load the same; and the write sentence",
+  "n": 21
+ },
+ "52f93108d7": {
+  "outcome": "restored:shared",
+  "why": "restored in step 3's sentence and the comment 'Load a planet: the entity; err is non-nil on failure'",
+  "n": 13
+ },
+ "6b4b65d6e6": {
+  "outcome": "restored:shared",
+  "why": "restored in step 2's sentence and the comment 'a []any of entities, one per record'",
+  "n": 7
+ },
+ "5859bb0a44": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Create \u2014 the value is the created entity' and step 4's lead-in",
+  "n": 5
+ },
+ "defc60cc77": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Update \u2014 the id comes off the created entity's record' and step 4's lead-in",
+  "n": 5
+ },
+ "cac139f6b5": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Remove' and step 4's lead-in",
+  "n": 5
+ },
+ "2b06aa734e": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch \u2014 sends only the fields given; ...'",
+  "n": 3
+ },
+ "dd5bf246c5": {
+  "outcome": "restored:fact",
+  "why": "the write results the old program never stated: each write returns (value, error), the value the written entity (EntityCreateOp.fragment.go returns the entity); the stage-3a check's missing sentence (output_defects 6)",
+  "n": 3
+ },
+ "160b7454ef": {
+  "outcome": "restored:fact",
+  "why": "as dd5bf246c5, crud-noupdate",
+  "n": 1
+ },
+ "e136a25dbb": {
+  "outcome": "restored:fact",
+  "why": "as dd5bf246c5, doc-nested",
+  "n": 1
+ },
+ "fbac4aa9f2": {
+  "outcome": "restored:fact",
+  "why": "as dd5bf246c5, for the one write ref-issues has",
+  "n": 1
+ },
+ "b8d591c7b2": {
+  "outcome": "same-meaning",
+  "why": "the method name Update in the write sentence",
+  "n": 1
+ },
+ "618096b4cc": {
+  "outcome": "same-meaning",
+  "why": "the README shows TestSDK(testopts, sdkopts map[string]any); same parameters, and both may be nil there too",
+  "n": 21
+ },
+ "3d6fd1c6b5": {
+  "outcome": "same-meaning",
+  "why": "README:274 lists the same ok, status, headers and data keys",
+  "n": 21
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "the README's feature table names log as Logging; it says nothing about its default (the README Features section now says log is active by default too)",
+  "n": 21
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 1
+ },
+ "e59066a2d8": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence ('both may be `nil`'); README:221 says the same",
+  "n": 1
+ },
+ "60c6b0b417": {
+  "outcome": "contradiction",
+  "where": "go/README.md:221 (no-test): 'Creates a test-mode client with mock transport.'",
+  "true": "REFERENCE: without the test feature its source does not ship, so the test client has no mock transport",
+  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "contradiction",
+  "where": "go/README.md:221 (no-test): 'Creates a test-mode client with mock transport.'",
+  "true": "REFERENCE, as 60c6b0b417",
+  "evidence": "as 60c6b0b417",
+  "n": 1
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client; Test() and TestSDK() are its members",
+  "n": 21
+ },
+ "2127bd9037": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Create a test client with mock features active, and no options.'",
+  "n": 21
+ },
+ "127e7211ac": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Create a test client with mock features active.' with what each option map is",
+  "n": 21
+ },
+ "d389e7085e": {
+  "outcome": "restored:shared",
+  "why": "restored as 'both may be `nil`'",
+  "n": 21
+ },
+ "52e4c4a2ee": {
+  "outcome": "restored:shared",
+  "why": "the Returns line is kept and extended with the result keys",
+  "n": 21
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 21
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 21
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1
+ },
+ "993924c4c6": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
+  "n": 1
+ },
+ "0b29ec4944": {
+  "outcome": "restored:shared",
+  "why": "the patch data sentence names the id the route needs; same fact, other words",
+  "n": 1
+ },
+ "059d2f6a5c": {
+  "outcome": "restored:shared",
+  "why": "restored as the kind sentence 'Run an operation through the pipeline and stream its result items.' followed by the runs sentence, and go's note 'It sends the items on the returned channel, which closes when the stream ends.'",
+  "n": 1
+ },
+ "1948d9eee5": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the accessor passes its argument to the entity constructor as entopts (Entity.fragment.go NewEntyClass(client, entopts)); it is options, not initial data",
+  "n": 108
+ },
+ "69429bb577": {
+  "outcome": "restored:shared",
+  "why": "how the record is read, which the old load sentence stated ('Data() reads its record' in the old tutorial and example comments)",
+  "n": 89
+ },
+ "c2467756ac": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
+  "n": 18
+ },
+ "1f5282fbe3": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 18
+ },
+ "e72c9d98eb": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.go:23 func NewEntyClass(client *core.ProjectNameSDK, entopts map[string]any)); the signature names the parameter data (Syntax_go accessor sig) (accessor.param, derived), so the page says both, once (ReadmeRef accessorText)",
+  "n": 108
+ },
+ "b5b91fba23": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 21
+ },
+ "f09662fec4": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (go/README.md, ent-none)",
+  "n": 1
+ },
+ "0d8efcdac5": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'background'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.go (go func() at :217 starts the operation at the call; unbuffered sends); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 108
+ },
+ "facts": {
+  "errVar": {
+   "value": "err",
+   "why": "the variable go's examples bind an operation's error to; OLD go held it in 6 contexts (`if err != nil`); the 10 new contexts are the pair-style sentences ('a non-nil `err` reports failure') that name the variable the code beside them binds",
+   "evidence": "OLD B/go/README.md:62-63 `ambient, err := client.Ambient(nil).Load(nil, nil)` / `if err != nil {`; NEW prints the same binding in every go block"
+  }
+ }
+}

@@ -1,0 +1,56 @@
+{
+ "note": "Provider mutations of a language or convention fact, and one enumerated fact, built once (P/i-tools/scripts/mutbuild.sh in a second copy of the clone, then generated). Each holds the mutated provider's facts (syntax-<lang>.json, read through TOOLS_SYNTAX_OVERRIDE=override.json) and the files of that language that differ from the base output (new/). selftest.js overlays them on the output under test and requires the fact sheet to fail naming the fact, in the reviewed mode and from scratch.",
+ "mutations": [
+  {
+   "id": "clojure-entitynoun-fields",
+   "round": "R1",
+   "lang": "clojure",
+   "fact": "ref.entityNoun",
+   "change": "ref.facts.entityNoun 'Members' -> 'Fields'",
+   "files": 18
+  },
+  {
+   "id": "rb-maps-arrays",
+   "round": "R2",
+   "lang": "rb",
+   "fact": "ref.maps",
+   "change": "ref.facts.maps 'hashes' -> 'arrays'",
+   "files": 19
+  },
+  {
+   "id": "clojure-heading-client",
+   "round": "R2",
+   "lang": "clojure",
+   "fact": "ref.heading",
+   "change": "ref.facts.heading '{module}' -> '{client}'",
+   "files": 19
+  },
+  {
+   "id": "rb-noun-functions",
+   "round": "R3",
+   "lang": "rb",
+   "fact": "ref.noun",
+   "change": "ref.facts.noun 'Methods' -> 'Functions'",
+   "files": 19
+  },
+  {
+   "id": "py-keys-bare",
+   "round": "R3",
+   "lang": "py",
+   "fact": "ref.keys",
+   "change": "ref.facts.keys 'member' -> 'bare' (an enumeration)",
+   "files": 19
+  }
+ ],
+ "moved": [
+  {
+   "id": "rb-none-null",
+   "round": "R1",
+   "lang": "rb",
+   "fact": "ref.none",
+   "change": "ref.facts.none 'nil' -> 'null'",
+   "files": 19,
+   "why": "v3.2: ref.facts.none is cited (account.ts DEFAULTS), so the guard checks its value against the quote, not the fact sheet against the OLD page; the same mutation is caught by the guard ('cite ref.facts.none: the quote does not contain \"null\"'): runtimefacts negative control and the mutation v32-rb-none-null. The directory is kept for the record."
+  }
+ ]
+}

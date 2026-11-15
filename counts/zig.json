@@ -1,0 +1,32 @@
+{
+ "tutorial": {
+  "corrected": 17,
+  "unified": 0,
+  "used": {
+   "secret-option": 2,
+   "server-required-given": 15,
+   "zig-env-io": 17
+  }
+ },
+ "rootquick": {
+  "corrected": 2,
+  "unified": 15,
+  "used": {
+   "blank-lines": 9,
+   "secret-option": 2,
+   "server-required-given": 14,
+   "step-comment-runtime-fact": 15,
+   "trailing-blank": 2,
+   "zig-bind-outside": 15,
+   "zig-env-io": 16
+  }
+ },
+ "reference": {
+  "corrected": 0,
+  "unified": 162,
+  "used": {
+   "ref-loop-item": 83,
+   "zig-bind-outside": 162
+  }
+ }
+}

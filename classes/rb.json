@@ -1,0 +1,2001 @@
+{
+ "1221234688": {
+  "outcome": "restored:fact",
+  "why": "the record type (prints fact recordType 'Hash', cited in the guard: data_get returns a Hash)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "2910759209": {
+  "outcome": "shared:py:593ef47de1",
+  "why": "masked, it is the py unit of class 593ef47de1 (restored:fact, by rule:stream-member)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "eb2099b4b6"
+  ],
+  "unreviewed": 1
+ },
+ "3980935898": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — returns the created entity; data_get reads its record', 'Update/Patch — ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "shared:ts:63dbaa39ec",
+  "why": "masked, it is the ts unit of class 63dbaa39ec (correction:S28, by rule:step-numbers)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "ac969fd7fb"
+  ],
+  "unreviewed": 1
+ },
+ "123923823b": {
+  "outcome": "shared:ts:123923823b",
+  "why": "masked, it is the ts unit of class 123923823b (correction:S28, by rule:tutorial-leadin)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "509df65eab"
+  ],
+  "unreviewed": 1
+ },
+ "8269f08815": {
+  "outcome": "restored:shared",
+  "why": "restored as the sentence above the block: '`load` returns the entity and raises on failure; `data_get` reads its record (a `Hash`)'",
+  "n": 10,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "4147ad0745": {
+  "outcome": "shared:ts:4147ad0745",
+  "why": "masked, it is the ts unit of class 4147ad0745 (restored:shared, by rule:entities-contract)",
+  "n": 18,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "ee58ce03de"
+  ],
+  "unreviewed": 1
+ },
+ "3320e33aa5": {
+  "outcome": "shared:ts:3320e33aa5",
+  "why": "masked, it is the ts unit of class 3320e33aa5 (unification:client-env-sentence, by rule:apikey-env)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "a2bf96f937"
+  ],
+  "unreviewed": 1
+ },
+ "9363faf207": {
+  "outcome": "shared:ts:9363faf207",
+  "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "afbad155be"
+  ],
+  "unreviewed": 1
+ },
+ "2a8a462f5e": {
+  "outcome": "shared:py:5e6ce1e565",
+  "why": "masked, it is the py unit of class 5e6ce1e565 (unification:tutorial-op-sentence, by rule:add-tutorial-op)",
+  "n": 10,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "1b25034e90"
+  ],
+  "unreviewed": 1
+ },
+ "b98c5c1370": {
+  "outcome": "shared:ts:b98c5c1370",
+  "why": "masked, it is the ts unit of class b98c5c1370 (correction:S50, by rule:basic-secret)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "cfc01f1671"
+  ],
+  "unreviewed": 1
+ },
+ "849816779b": {
+  "outcome": "shared:ts:849816779b",
+  "why": "masked, it is the ts unit of class 849816779b (correction:U45, by rule:write-heading2)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "c246e90164"
+  ],
+  "unreviewed": 1
+ },
+ "428b2a83e1": {
+  "outcome": "shared:ts:428b2a83e1",
+  "why": "masked, it is the ts unit of class 428b2a83e1 (correction:S28, by rule:tutorial-leadin)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "3b42b780fa"
+  ],
+  "unreviewed": 1
+ },
+ "482b97fbd7": {
+  "outcome": "restored:shared",
+  "why": "the old list comment's facts are the shared list sentence, plus how a failure shows (raises) and the record's type (a Hash, Entity.fragment.rb data_get returns a Hash clone)",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "cb6b6e206b": {
+  "outcome": "restored:shared",
+  "why": "the old load comment's facts are the shared load sentence",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "d5bda2ca41": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Create — returns the created entity; data_get reads its record'",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "a8902f35c7": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Update — the id comes off the created entity's record'; the code still indexes created.data_get[\"id\"]",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "8e1fb48a5a": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch — sends only the fields given; ...'",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "d2da816355": {
+  "outcome": "shared:py:d2da816355",
+  "why": "masked, it is the py unit of class d2da816355 (restored:fact, by hand)",
+  "n": 5,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "f2515f53be"
+  ],
+  "unreviewed": 1
+ },
+ "1274d63c39": {
+  "outcome": "shared:py:7f8b2cc8a9",
+  "why": "masked, it is the py unit of class 7f8b2cc8a9 (restored:fact, by rule:write-comments)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "a12cc73410"
+  ],
+  "unreviewed": 1
+ },
+ "6f58c092d8": {
+  "outcome": "shared:ts:94cf7a3ef4",
+  "why": "masked, it is the ts unit of class 94cf7a3ef4 (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "3b2733cb55"
+  ],
+  "unreviewed": 1
+ },
+ "ea9f53b714": {
+  "outcome": "shared:ts:d11bb4c954",
+  "why": "masked, it is the ts unit of class d11bb4c954 (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 3,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "ac63285763"
+  ],
+  "unreviewed": 1
+ },
+ "732bb80f3d": {
+  "outcome": "shared:ts:732bb80f3d",
+  "why": "masked, it is the ts unit of class 732bb80f3d (correction:U45, by rule:write-heading2)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "4633b64615"
+  ],
+  "unreviewed": 1
+ },
+ "67bc2b34e8": {
+  "outcome": "shared:ts:67bc2b34e8",
+  "why": "masked, it is the ts unit of class 67bc2b34e8 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "8e422a85a8"
+  ],
+  "unreviewed": 1
+ },
+ "2609d87cfb": {
+  "outcome": "shared:ts:2609d87cfb",
+  "why": "masked, it is the ts unit of class 2609d87cfb (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "95064ad01e"
+  ],
+  "unreviewed": 1
+ },
+ "69ba25b1fc": {
+  "outcome": "shared:ts:69ba25b1fc",
+  "why": "masked, it is the ts unit of class 69ba25b1fc (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "59ac8a63ea"
+  ],
+  "unreviewed": 1
+ },
+ "d7ede4c606": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comment; same facts (the created entity, data_get reads its record)",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "d39368fa0b": {
+  "outcome": "shared:ts:d39368fa0b",
+  "why": "masked, it is the ts unit of class d39368fa0b (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "bcbefa9d5b"
+  ],
+  "unreviewed": 1
+ },
+ "1aeada8e90": {
+  "outcome": "same-meaning",
+  "why": "README:230 lists data_get as () -> Hash, Get entity data; the same: data_get reads the record, a Hash",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "dd5f182f01": {
+  "outcome": "shared:ts:dd5f182f01",
+  "why": "masked, it is the ts unit of class dd5f182f01 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "5f48968a61"
+  ],
+  "unreviewed": 1
+ },
+ "f4f124751b": {
+  "outcome": "shared:ts:f4f124751b",
+  "why": "masked, it is the ts unit of class f4f124751b (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "fc11508b53"
+  ],
+  "unreviewed": 1
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "4555bd17b9": {
+  "outcome": "shared:ts:4555bd17b9",
+  "why": "masked, it is the ts unit of class 4555bd17b9 (correction:U45, by rule:write-heading)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "f999547282"
+  ],
+  "unreviewed": 1
+ },
+ "c2358342da": {
+  "outcome": "shared:py:db304a6ebf",
+  "why": "masked, it is the py unit of class db304a6ebf (restored:fact, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "2e3c8aae76"
+  ],
+  "unreviewed": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "shared:ts:8848495678",
+  "why": "masked, it is the ts unit of class 8848495678 (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "2873e86578"
+  ],
+  "unreviewed": 1
+ },
+ "6fb3670380": {
+  "outcome": "same-meaning",
+  "why": "DEMO_APIKEY in the tutorial's client sentence, which the old block's code also read",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "0acd9c1b01": {
+  "outcome": "restored:shared",
+  "why": "the method name in the shared load sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "db68021d06": {
+  "outcome": "restored:shared",
+  "why": "the record accessor named in the shared sentences, as the old comment did",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "36e1725df7": {
+  "outcome": "restored:shared",
+  "why": "the method name in the shared list sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "88b6818ce7": {
+  "outcome": "restored:shared",
+  "why": "the collection word (facts.collection Array), as the old comment said",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "6a89281cc1": {
+  "outcome": "correction:S49",
+  "why": "auth-off: OLD built the client with no options, so it could not fill the templated server URL; NEW passes the tenant (server-required-given), in a hash because there is no other option",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e6b0f3f7e": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — returns the created entity; data_get reads its record', 'Update/Patch — ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "14eb5dfde1": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — returns the created entity; data_get reads its record', 'Update/Patch — ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — returns the created entity; data_get reads its record', 'Update/Patch — ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — returns the created entity; data_get reads its record', 'Update/Patch — ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — returns the created entity; data_get reads its record', 'Update/Patch — ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "c76072420b": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — returns the created entity; data_get reads its record', 'Update/Patch — ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "fa99929817": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "39cd96730f": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "f9509b1a54": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "599c415d96": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "775fa6576e": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "187ec9c074": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# load returns the ENTITY ... (raises on error)' became the shared sentence above the block (rb-op-comment); its words are in that sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "e6d0449dc0": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "888286504a": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "fc17bcd3f0": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "a59b2af542": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "ac0c29dd9a": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "44df517e03": {
+  "outcome": "unification:tutorial-op-sentence",
+  "why": "the in-block comment '# list returns an Array of Planet entities, one per record' became the shared list sentence (rb-op-comment)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "d3922e5206": {
+  "outcome": "unification:rb-loop-var",
+  "why": "the loop names its variable after the entity (|planet|), as the shared list step does",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "21e4337a22": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared write comments: 'Create — returns the created entity; data_get reads its record', 'Update/Patch — ... the id comes off the created entity's record' (A1, A4, A8)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "8aafc69c7d": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 10,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "90618c2d13": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "88b79047ba": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "6b1439989e": {
+  "outcome": "correction:S49",
+  "why": "auth-off: as 6a89281cc1, and the root steps in the shared form (step-comment-runtime-fact, rb-noarg-call)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "8dc0a31fa3": {
+  "outcome": "unification:root-load-nested",
+  "why": "doc-nested: the root quick start loads the nested satellite with its parent id, as the tutorial does (root-load-nested); plus the server tenant (S49) and the shared step comments",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "41e8b6808d": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "61d073347b": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "be14f5e112": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "e28aeb1554": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "5524296637": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "correction:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; raises on failure')",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "42ffb0d2d3": {
+  "outcome": "unification:rb-loop-var",
+  "why": "the loop names its variable after the entity",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id of the nested entity the root now loads",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id's example value",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "a4bcd72971": {
+  "outcome": "same-meaning",
+  "why": "nil for none, as the README says of the test arguments; the same literal for the same meaning (rb/README.md:211)",
+  "n": 94,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f09662fec4": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the same two arguments (both may be nil); nothing disagrees (rb/README.md:211)",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "0548ef0b51": {
+  "outcome": "same-meaning",
+  "why": "README:79 and :261-263 say the same keys, and err on failure",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "4b411df79a": {
+  "outcome": "same-meaning",
+  "why": "README:240: data_get gets the entity data; the same",
+  "n": 59,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "the README feature table names log as Logging and says nothing about its default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e59066a2d8": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence ('both may be `nil`'); README:211 says the same",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "a1baf337ea": {
+  "outcome": "same-meaning",
+  "why": "moved into the shared load sentence; README:240 lists data_get the same way",
+  "n": 23,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f0ef94c040": {
+  "outcome": "same-meaning",
+  "why": "moved into the shared list sentence; README:240 lists data_get the same way",
+  "n": 70,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "042740d448": {
+  "outcome": "shared:go:042740d448",
+  "why": "masked, it is the go unit of class 042740d448 (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "5ddee20721"
+  ],
+  "unreviewed": 1
+ },
+ "6aced21d71": {
+  "outcome": "shared:go:6aced21d71",
+  "why": "masked, it is the go unit of class 6aced21d71 (correction:ref-features-escape, by rule:features-escape)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "4fb872e54f"
+  ],
+  "unreviewed": 1
+ },
+ "bde0d2283c": {
+  "outcome": "shared:ts:bde0d2283c",
+  "why": "masked, it is the ts unit of class bde0d2283c (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 16,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "1eccc7250d"
+  ],
+  "unreviewed": 1
+ },
+ "1df1f4d318": {
+  "outcome": "correction:runtime-forms",
+  "why": "create returns the entity (EntityCreateOp.fragment.rb), not a result",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "0670e4a87f": {
+  "outcome": "correction:runtime-forms",
+  "why": "update returns the entity, not a result",
+  "n": 14,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d15797ca9d": {
+  "outcome": "correction:runtime-forms",
+  "why": "list resolves to an Array of the entity class (EntityListOp.fragment.rb, make_result wraps each record)",
+  "n": 66,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "07afcb51c1": {
+  "outcome": "correction:runtime-forms",
+  "why": "as d15797ca9d",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "9557524e8d": {
+  "outcome": "correction:runtime-forms",
+  "why": "as 36d626bcf0",
+  "n": 11,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "36d626bcf0": {
+  "outcome": "correction:runtime-forms",
+  "why": "load defaults its match and returns the entity: EntityLoadOp.fragment.rb:14 def load(reqmatch = nil, ctrl = nil). The README reference table (unported) still shows load(reqmatch, ctrl)",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "ba3ca7097c": {
+  "outcome": "correction:runtime-forms",
+  "why": "remove defaults its match and returns the entity: EntityRemoveOp.fragment.rb:12 def remove(reqmatch = nil, ctrl = nil)",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "d8065d07cb": {
+  "outcome": "correction:runtime-forms",
+  "why": "make returns an instance of the entity's own class: Entity.fragment.rb:64-66 `def make ... EntyClass.new(@_client, opts)`. The README member table (ReadmeModel_rb.ts, unported) still says make -> Entity",
+  "n": 77,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "81b3ea8a7b": {
+  "outcome": "correction:runtime-forms",
+  "why": "as d8065d07cb",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "cce9e8691a": {
+  "outcome": "shared:ts:cce9e8691a",
+  "why": "masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 77,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "b90b5c03ed"
+  ],
+  "unreviewed": 1
+ },
+ "3780da62e4": {
+  "outcome": "shared:py:3780da62e4",
+  "why": "masked, it is the py unit of class 3780da62e4 (unification:op-failure-clause, by rule:op-failure-clause)",
+  "n": 15,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "f28445713f"
+  ],
+  "unreviewed": 1
+ },
+ "c47c92da89": {
+  "outcome": "shared:ts:c47c92da89",
+  "why": "masked, it is the ts unit of class c47c92da89 (unification:op-sentences, by rule:op-sentences)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "ed7f424dbc"
+  ],
+  "unreviewed": 1
+ },
+ "9beedf1687": {
+  "outcome": "unification:op-failure-clause",
+  "why": "the failure clause in the shared form; same fact",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "305c24366b": {
+  "outcome": "restored:shared",
+  "why": "the fetch definition, with what it is; 'raises on error' is the next sentence (9beedf1687)",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "e007bd9e31": {
+  "outcome": "shared:py:e007bd9e31",
+  "why": "masked, it is the py unit of class e007bd9e31 (unification:op-failure-clause, by rule:op-failure-clause)",
+  "n": 16,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "04d3017bb0"
+  ],
+  "unreviewed": 1
+ },
+ "62d13e0a33": {
+  "outcome": "shared:py:62d13e0a33",
+  "why": "masked, it is the py unit of class 62d13e0a33 (unification:op-failure-clause, by rule:op-failure-clause)",
+  "n": 16,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "1c3e043734"
+  ],
+  "unreviewed": 1
+ },
+ "e72c9d98eb": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "the old sentence was false: the accessor's argument is the entity options (the guard derives accessor.arg 'entopts' from the entity constructor, Entity.fragment.rb:7 def initialize(client, entopts = nil); MainEntity_rb.ts:21 passes data as entopts); the signature names the parameter data ({accessor}(data = nil)) (accessor.param, derived), so the page says both, once (ReadmeRef accessorText)",
+  "n": 94,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d389e7085e": {
+  "outcome": "restored:shared",
+  "why": "restored as 'both may be `nil`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f28a4a4041": {
+  "outcome": "restored:shared",
+  "why": "restored as the Returns sentence (ok, status, headers, data; err on failure) and 'A failed request is reported in the result, not as an error, so branch on result[\"ok\"]'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "7141e40426": {
+  "outcome": "restored:shared",
+  "why": "the Returns line is kept, naming the Hash and its keys",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8b0851ad11": {
+  "outcome": "restored:shared",
+  "why": "restored as the load sentence (returns the entity, raises on failure) and '`data_get` reads its record'",
+  "n": 28,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ed238167e1": {
+  "outcome": "restored:shared",
+  "why": "restored as 'List entities matching the given criteria.' and 'The match is optional: without one, every record is listed.'",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "156675e505": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Returns an `Array` of entities, one per record, and raises on failure.' with the record read in the example",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8a746d79b4": {
+  "outcome": "restored:shared",
+  "why": "restored inside the list sentence ('and raises on failure')",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa731f856a": {
+  "outcome": "shared:go:aa731f856a",
+  "why": "masked, it is the go unit of class aa731f856a (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6afe3f6b0d"
+  ],
+  "unreviewed": 1
+ },
+ "fce7ffe65c": {
+  "outcome": "shared:py:e3d31fb103",
+  "why": "masked, it is the py unit of class e3d31fb103 (correction:S49, by rule:add-type-cells)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dfa5cb5552"
+  ],
+  "unreviewed": 1
+ },
+ "b2a89584dc": {
+  "outcome": "shared:ts:b2a89584dc",
+  "why": "masked, it is the ts unit of class b2a89584dc (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4eea983832"
+  ],
+  "unreviewed": 1
+ },
+ "ae8fd518c8": {
+  "outcome": "shared:go:ae8fd518c8",
+  "why": "masked, it is the go unit of class ae8fd518c8 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e61813ee66"
+  ],
+  "unreviewed": 1
+ },
+ "717c04afe8": {
+  "outcome": "shared:ts:6979eaacb4",
+  "why": "masked, it is the ts unit of class 6979eaacb4 (correction:S49, by rule:add-type-cells)",
+  "n": 34,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ea66aefd24"
+  ],
+  "unreviewed": 1
+ },
+ "35ea4c3e84": {
+  "outcome": "shared:ts:35ea4c3e84",
+  "why": "masked, it is the ts unit of class 35ea4c3e84 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7247de945f"
+  ],
+  "unreviewed": 1
+ },
+ "ac200e5023": {
+  "outcome": "shared:go:ac200e5023",
+  "why": "masked, it is the go unit of class ac200e5023 (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8a90021109"
+  ],
+  "unreviewed": 1
+ },
+ "06e0e1b2b7": {
+  "outcome": "shared:ts:06e0e1b2b7",
+  "why": "masked, it is the ts unit of class 06e0e1b2b7 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9c7c471a05"
+  ],
+  "unreviewed": 1
+ },
+ "a986258b72": {
+  "outcome": "shared:ts:a986258b72",
+  "why": "masked, it is the ts unit of class a986258b72 (unification:ref-test-heading, by rule:test-heading)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ffe4eb970b"
+  ],
+  "unreviewed": 1
+ },
+ "b5b91fba23": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "7e13c0a95a": {
+  "outcome": "shared:ts:7e13c0a95a",
+  "why": "masked, it is the ts unit of class 7e13c0a95a (restored:shared, by rule:test-opts-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9577ba159e"
+  ],
+  "unreviewed": 1
+ },
+ "af55f86fa2": {
+  "outcome": "restored:shared",
+  "why": "the old direct Returns line with the keys it listed",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "17ac2b3403": {
+  "outcome": "shared:go:17ac2b3403",
+  "why": "masked, it is the go unit of class 17ac2b3403 (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0f06358e5b"
+  ],
+  "unreviewed": 1
+ },
+ "a36cfc5046": {
+  "outcome": "shared:py:a36cfc5046",
+  "why": "masked, it is the py unit of class a36cfc5046 (unification:op-failure-clause, by rule:op-failure-clause)",
+  "n": 28,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "943a2c940d"
+  ],
+  "unreviewed": 1
+ },
+ "c29688a7ac": {
+  "outcome": "shared:go:69429bb577",
+  "why": "masked, it is the go unit of class 69429bb577 (restored:shared, by hand)",
+  "n": 79,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2d9199cb7a"
+  ],
+  "unreviewed": 1
+ },
+ "90e9b6e073": {
+  "outcome": "restored:fact",
+  "why": "stream is a public entity member the old rb page did not document: Entity.fragment.rb:104 def stream(action, args = nil, callopts = nil), :140 Enumerator.new; the guard derives it",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "91bc59ac7f": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'iterate'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.rb (the pipeline runs inside Enumerator.new, :140, on the first next); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "8d73e84813": {
+  "outcome": "restored:shared",
+  "why": "the first half of the old list sentence ('List entities matching the given criteria')",
+  "n": 83,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "eaf64e26bd": {
+  "outcome": "shared:ts:eaf64e26bd",
+  "why": "masked, it is the ts unit of class eaf64e26bd (unification:op-sentences, by rule:op-sentences)",
+  "n": 82,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9c22b8823a"
+  ],
+  "unreviewed": 1
+ },
+ "c19ca67d5a": {
+  "outcome": "restored:shared",
+  "why": "the old 'Returns an array of entities, one per record ... Raises on error.' in the shared form",
+  "n": 83,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "393056d0c1": {
+  "outcome": "shared:go:393056d0c1",
+  "why": "masked, it is the go unit of class 393056d0c1 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "185f26bc68"
+  ],
+  "unreviewed": 1
+ },
+ "0f10166e63": {
+  "outcome": "shared:go:0f10166e63",
+  "why": "masked, it is the go unit of class 0f10166e63 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "abe9546ee3"
+  ],
+  "unreviewed": 1
+ },
+ "c2467756ac": {
+  "outcome": "shared:ts:6e0387536b",
+  "why": "masked, it is the ts unit of class 6e0387536b (correction:ref-6, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "82e6814387"
+  ],
+  "unreviewed": 1
+ },
+ "d3f3b82555": {
+  "outcome": "shared:go:d3f3b82555",
+  "why": "masked, it is the go unit of class d3f3b82555 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2b8bc511e9"
+  ],
+  "unreviewed": 1
+ },
+ "7615c6fe93": {
+  "outcome": "shared:ts:7615c6fe93",
+  "why": "masked, it is the ts unit of class 7615c6fe93 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "c151802d4a"
+  ],
+  "unreviewed": 1
+ },
+ "6356afc86b": {
+  "outcome": "shared:go:6356afc86b",
+  "why": "masked, it is the go unit of class 6356afc86b (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "120aec2437"
+  ],
+  "unreviewed": 1
+ },
+ "193859bf79": {
+  "outcome": "shared:go:193859bf79",
+  "why": "masked, it is the go unit of class 193859bf79 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "22bdd0ff18"
+  ],
+  "unreviewed": 1
+ },
+ "28d337e733": {
+  "outcome": "shared:go:28d337e733",
+  "why": "masked, it is the go unit of class 28d337e733 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2a8d9aa773"
+  ],
+  "unreviewed": 1
+ },
+ "9023782dca": {
+  "outcome": "shared:ts:9023782dca",
+  "why": "masked, it is the ts unit of class 9023782dca (correction:ref-6, by rule:add-action-op)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e3081c2053"
+  ],
+  "unreviewed": 1
+ },
+ "3d50058045": {
+  "outcome": "shared:go:3d50058045",
+  "why": "masked, it is the go unit of class 3d50058045 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ebea8de27f"
+  ],
+  "unreviewed": 1
+ },
+ "b8e5b4084d": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b31b1f71dd": {
+  "outcome": "shared:go:b31b1f71dd",
+  "why": "masked, it is the go unit of class b31b1f71dd (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "cf564b5fca"
+  ],
+  "unreviewed": 1
+ },
+ "1095fa7261": {
+  "outcome": "shared:ts:1095fa7261",
+  "why": "masked, it is the ts unit of class 1095fa7261 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8d6016d7e2"
+  ],
+  "unreviewed": 1
+ },
+ "916036b165": {
+  "outcome": "shared:ts:916036b165",
+  "why": "masked, it is the ts unit of class 916036b165 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d77745e7ee"
+  ],
+  "unreviewed": 1
+ },
+ "6aeea92fca": {
+  "outcome": "shared:go:6aeea92fca",
+  "why": "masked, it is the go unit of class 6aeea92fca (correction:S50, by rule:add-secret)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dc97559d3c"
+  ],
+  "unreviewed": 1
+ },
+ "3e1ef005aa": {
+  "outcome": "shared:go:3e1ef005aa",
+  "why": "masked, it is the go unit of class 3e1ef005aa (correction:S50, by rule:basic-secret)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "b21c47b21e"
+  ],
+  "unreviewed": 1
+ },
+ "563e095378": {
+  "outcome": "correction:runtime-forms",
+  "why": "patch returns the entity, not a result",
+  "n": 3,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b8d8f44805": {
+  "outcome": "shared:py:b8d8f44805",
+  "why": "masked, it is the py unit of class b8d8f44805 (unification:op-failure-clause, by rule:op-failure-clause)",
+  "n": 4,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "5338ac6916"
+  ],
+  "unreviewed": 1
+ },
+ "cbcdf6e5f9": {
+  "outcome": "shared:ts:cbcdf6e5f9",
+  "why": "masked, it is the ts unit of class cbcdf6e5f9 (unification:op-sentences, by rule:op-sentences)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d3d603d612"
+  ],
+  "unreviewed": 1
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "91baf1b4b6": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "rb/README.md:211 (no-test): 'Creates a test-mode client with mock transport. Both arguments may be `nil`.'",
+  "true": "REFERENCE: without the test feature its source does not ship, so the test client has no mock transport",
+  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "91201b47e3": {
+  "outcome": "shared:ts:91201b47e3",
+  "why": "masked, it is the ts unit of class 91201b47e3 (correction:S13, by rule:test-nofeature)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9402aedbb5"
+  ],
+  "unreviewed": 1
+ },
+ "f878d6c74a": {
+  "outcome": "shared:ts:f878d6c74a",
+  "why": "masked, it is the ts unit of class f878d6c74a (correction:S13, by rule:test-nofeature)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d48de033ea"
+  ],
+  "unreviewed": 1
+ },
+ "da08f7e7bd": {
+  "outcome": "shared:ts:da08f7e7bd",
+  "why": "masked, it is the ts unit of class da08f7e7bd (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "0676c37240"
+  ],
+  "unreviewed": 1
+ },
+ "6414adddb5": {
+  "outcome": "correction:runtime-forms",
+  "why": "update returns the entity, not a result (ref-issues)",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "e496bcc19a": {
+  "outcome": "shared:ts:e496bcc19a",
+  "why": "masked, it is the ts unit of class e496bcc19a (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "82c5fb6c18"
+  ],
+  "unreviewed": 1
+ },
+ "409d0f7ba8": {
+  "outcome": "shared:ts:409d0f7ba8",
+  "why": "masked, it is the ts unit of class 409d0f7ba8 (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "58f6c63c63"
+  ],
+  "unreviewed": 1
+ },
+ "2d539c715b": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient; create returns it",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "054ea87f7e": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: patch returns PlanetEntityClient",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c89ea40a31": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: update returns PlanetEntityClient",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bf926333f0": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: list returns an Array of PlanetEntityClient",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "dba5fe5c17": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: load defaults its match and returns PlanetEntityClient",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "993924c4c6": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c68e7167df": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f010700f70": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "restored:shared",
+  "why": "the update data sentence names the id the route needs; same fact, other words",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2326614e42": {
+  "outcome": "correction:runtime-forms",
+  "why": "ref-issues: under PlanetEntityClient, make returns that class (Entity.fragment.rb:64-66 EntyClass.new)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "5130ea0617": {
+  "outcome": "shared:ts:5130ea0617",
+  "why": "masked, it is the ts unit of class 5130ea0617 (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d9b679fcb2"
+  ],
+  "unreviewed": 1
+ },
+ "7dd340f0f1": {
+  "outcome": "shared:ts:7dd340f0f1",
+  "why": "masked, it is the ts unit of class 7dd340f0f1 (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "20aa105d6b"
+  ],
+  "unreviewed": 1
+ },
+ "e6d8ee9d63": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: make returns PlanetEntityClient",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d2af3edbca": {
+  "outcome": "shared:go:d2af3edbca",
+  "why": "masked, it is the go unit of class d2af3edbca (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "799b8582a8"
+  ],
+  "unreviewed": 1
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd48acdf84": {
+  "outcome": "restored:fact",
+  "why": "the stream member, as 90e9b6e073",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "057b5775f7": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter action (and the action name in the Actions table)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "07b6a683db": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter args",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter callopts",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "b06366cfd0": {
+  "outcome": "restored:fact",
+  "why": "stream returns an Enumerator (Entity.fragment.rb:140)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "the action name in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7e7f66c823": {
+  "outcome": "correction:ref-6",
+  "why": "the client receiver in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given); the tutorial sentence names them",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "053d666657": {
+  "outcome": "correction:runtime-forms",
+  "why": "the token Entity went with make -> Entity; make returns the entity class (Entity.fragment.rb:66)",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class PlanetEntityClient named in the accessor sentence",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "0e12b4022a": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive, its example goes with it",
+  "n": 1,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "reference"
+ }
+}

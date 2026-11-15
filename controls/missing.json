@@ -1,0 +1,26 @@
+[
+ {
+  "id": "missing-direct-one-variation",
+  "lang": "rb",
+  "section": "reference",
+  "file": "doc-crud/rb/REFERENCE.md",
+  "from": " A failed request is reported in the result, not\nas an error, so branch on `result[\"ok\"]`.",
+  "to": ""
+ },
+ {
+  "id": "missing-direct-every-variation",
+  "lang": "rb",
+  "section": "reference",
+  "file": "*/rb/REFERENCE.md",
+  "from": " A failed request is reported in the result, not\nas an error, so branch on `result[\"ok\"]`.",
+  "to": ""
+ },
+ {
+  "id": "missing-table-row",
+  "lang": "rb",
+  "section": "reference",
+  "file": "doc-crud/rb/REFERENCE.md",
+  "from": "| `options[\"server\"][\"tenant\"]` | `String` | Required. |\n",
+  "to": ""
+ }
+]

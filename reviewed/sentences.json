@@ -1,0 +1,4 @@
+{
+ "note": "One verdict per masked reference sentence (ids from `node sentences.js`): ok, false or awkward, with a note. Written by a reviewer and by no tool. A sentence marked false is never matched as a shared sentence.",
+ "sentences": {}
+}

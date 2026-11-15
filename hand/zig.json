@@ -1,0 +1,405 @@
+{
+ "f23290592f": {
+  "outcome": "same-meaning",
+  "why": "README:242's stream row says the same: .ok with its result items, or .err; the REFERENCE now says the items come back as one list and .err reports failure",
+  "n": 94
+ },
+ "dc7d8b5035": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the stream note's callopts.ctrl",
+  "n": 1
+ },
+ "53b0392a00": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1
+ },
+ "d311c218ae": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact. UNVERIFIED: no zig here",
+  "n": 1
+ },
+ "fbf79e412d": {
+  "outcome": "correction:S49",
+  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact. UNVERIFIED: no zig here",
+  "n": 1
+ },
+ "ec3f31b885": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 3
+ },
+ "38b2554fdd": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 1
+ },
+ "7d676e4951": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 1
+ },
+ "f2304656af": {
+  "outcome": "unification:tutorial-write-unbound",
+  "why": "zig: the created entity is bound outside its switch, so later writes take its id; write results are not printed. UNVERIFIED: no zig here",
+  "n": 1
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 15
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
+  "n": 1
+ },
+ "ead3f5a0ef": {
+  "outcome": "contradiction",
+  "where": "zig/README.md:77-86 (Error handling, printed by the shared ReadmeErrors.ts for 16 languages, unported): 'Entity operations reject on failure, so wrap them in `try` / `catch`', with TypeScript code",
+  "true": "the tutorial and REFERENCE: a zig operation returns a result union whose .ok is the entity and .err reports failure; it does not reject, and try/catch does not apply",
+  "evidence": "src/cmp/zig/fragment/EntityLoadOp.fragment.zig returns EntResult (.ok / .err); README:152 itself switches on .ok/.err",
+  "n": 1
+ },
+ "8b61693e8f": {
+  "outcome": "restored:shared",
+  "why": "restored in the list sentence and the printed loop (asEntity().data(null) on each item)",
+  "n": 7
+ },
+ "d9e4a5888b": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Create \u2014 .ok is the created entity' and the write sentence",
+  "n": 4
+ },
+ "9a132de632": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Update \u2014 the id comes off the created entity's record'",
+  "n": 4
+ },
+ "8e1fb48a5a": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch \u2014 sends only the fields given; ...'",
+  "n": 3
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1
+ },
+ "6c43ff2d59": {
+  "outcome": "restored:fact",
+  "why": "the write results as one sentence: .ok the written entity, .err on failure (EntityCreateOp.fragment.zig returns EntResult)",
+  "n": 5
+ },
+ "95022eb6b9": {
+  "outcome": "restored:fact",
+  "why": "the write sentence for the one write ref-issues has",
+  "n": 1
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1
+ },
+ "0502261efc": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "6817fe1610": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "a3f75871e8": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "92fe0b08b8": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "48938d9e89": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "a2f617f5aa": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "2559b4363c": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "aeb3c8328d": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "0e42bedae3": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "cd8353f0bc": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "75054b67b9": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "92bd7646e3": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "6a12b6ba57": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "7241b4d238": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "4cfd5b01ab": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "5eceb7d78e": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "26cb169e58": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "72356f26e6": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "45812b9db4": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "fa825fd8f8": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "4261ee6d6b": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "d413390699": {
+  "outcome": "correction:zig-env-io",
+  "why": "the apikey line reads the environment through the global Io the runtime uses (tm/zig/core/utility.zig:2312, feature/proxy.zig:172); std.posix.getenv does not exist in Zig 0.16 (documentation lane: OLD 5/6, basic-server fails on it). The normalizer zig-env-io undoes it in the block counts",
+  "n": 1
+ },
+ "1f79a9926d": {
+  "outcome": "unification:root-load-nested",
+  "why": "doc-nested: the root quick start loads the nested satellite with its parent id (root-load-nested), binds results outside error handling (zig-bind-outside), gives the server tenant (S49) and reads the environment through Io (zig-env-io); each part as in the other root blocks",
+  "n": 1
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it",
+  "n": 34
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 19
+ },
+ "1ba71ab8c8": {
+  "outcome": "same-meaning",
+  "why": "the README direct example reads ok and headers off the same result map",
+  "n": 19
+ },
+ "74e67fc6cf": {
+  "outcome": "contradiction",
+  "where": "zig/README.md:77-86 (Error handling, printed by the shared ReadmeErrors.ts for 16 languages, unported): 'Entity operations reject on failure, so wrap them in `try` / `catch`', with TypeScript code",
+  "true": "REFERENCE for prepare (E!Value, for try/catch) and the operation sentences (result unions); README's claim that entity operations reject is false for zig",
+  "evidence": "Main.fragment.zig: pub fn prepare(...) E!Value; EntityLoadOp.fragment.zig returns EntResult",
+  "n": 19
+ },
+ "f790cebbef": {
+  "outcome": "same-meaning",
+  "why": "README:209 calls sdk.test_sdk(testopts, sdkopts); same parameters",
+  "n": 19
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in console.log; the README says nothing about log's default",
+  "n": 19
+ },
+ "f7aa0fdb13": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 16
+ },
+ "676e50e089": {
+  "outcome": "same-meaning",
+  "why": "moved into the test sentence ('both may be `h.vnull()`'); README:170 uses h.vnull() for no options the same way",
+  "n": 1
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "same-meaning",
+  "why": "README:1019 is the generic file tree (feature/ holds base, test, log); it does not say this SDK ships the test feature. No disagreement",
+  "n": 1
+ },
+ "1942272f09": {
+  "outcome": "restored:shared",
+  "why": "restored as 'return its result items as one list. Its `.err` reports failure.' with the throw:false note",
+  "n": 94
+ },
+ "741ad0f33f": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional: without one, every record is listed.'",
+  "n": 83
+ },
+ "4d9b0e63f2": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client",
+  "n": 19
+ },
+ "0bb5114a4e": {
+  "outcome": "restored:shared",
+  "why": "restored as 'both may be `h.vnull()`'",
+  "n": 19
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1
+ },
+ "993924c4c6": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
+  "n": 1
+ },
+ "63ba6de054": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the create sentence says .ok is the entity it wrote",
+  "n": 1
+ },
+ "8f254e8c98": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the list sentence says .ok is a slice of entities, one per record",
+  "n": 1
+ },
+ "fef338e403": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the load sentence with the record read",
+  "n": 1
+ },
+ "3055aad6aa": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the patch sentence",
+  "n": 1
+ },
+ "a28311853e": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1
+ },
+ "96847801df": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1
+ },
+ "26c79b69a8": {
+  "outcome": "restored:shared",
+  "why": "the update data sentence names the id the route needs; same fact, other words",
+  "n": 1
+ },
+ "1cbc5f74da": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the update sentence",
+  "n": 1
+ },
+ "571b1e3e38": {
+  "outcome": "restored:fact",
+  "why": "the record read on every single-entity operation (asEntity().data(null)), true of zig's entity",
+  "n": 52
+ },
+ "4f36ed1acf": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16
+ },
+ "348f880ab3": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19
+ },
+ "3ed9b2b0fe": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the same two arguments (both may be h.vnull()); nothing disagrees (zig/README.md:170 uses h.vnull() for no options, ent-none)",
+  "n": 1
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.zig (make_point and the operation before streamItems returns the slice); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94
+ },
+ "absent": {
+  "6c86b08eed": "zig prints the same sentence with its own facts: '`list()` returns a result whose `.ok` is a slice of entities, one per record, and whose `.err` reports failure' (crud-bare/zig/README.md:56); rust's collection is code (`Vec`), zig's a word (slice), so the masks differ",
+  "5097de7b71": "zig prints '// Create \u2014 .ok carries the created entity; asEntity().data(null) reads its record' (crud-bare/zig/README.md:89); rust's Ok in a comment is not masked as its code fact `Ok`",
+  "76d2d79f05": "zig prints '// Load an ambient: .ok is the entity; .err on failure' (B/README.md:637); rust's comment spells Ok and Err bare, which the mask does not read as the facts",
+  "882eac65b5": "zig prints '// List planet records: .ok is a slice of entities, one per record; .err on failure' (crud-bare root README); same sentence, Vec/slice and bare Ok/Err masked differently",
+  "4f5c517896": "zig prints '// Load a planet: .ok is the entity; .err on failure' (crud-bare root README); same sentence, bare Ok/Err masked differently",
+  "f089dfe228": "zig prints '`options` is a `Value` map (`h.vnull()` for none).' (B/zig/REFERENCE.md:17); zig's container `Value` equals its direct.returns, so the mask label holds both paths",
+  "9eb94f847f": "zig prints '**Returns:** `Value`, a result map holding `ok`, `status`, `headers` and `data`, ...' (B/zig/REFERENCE.md:111); the type differs and is masked as a fact in zig, as code in rust",
+  "ec1e4431f5": "rust's own note on direct (notes.member:direct): its direct returns a Result whose Ok always holds the map; zig's direct returns a plain Value (B/zig/REFERENCE.md:111), so the note has nothing to say there",
+  "279ed7a4c5": "zig prints '**Returns:** `E!Value`, the fetch definition: the request `direct()` would send.' (B/zig/REFERENCE.md:121); the return type is masked as a fact in zig",
+  "e1e95dfa64": "zig prints 'Pass a map to set it.' (B/zig/REFERENCE.md:162,167): zig's setArg is 'a map' (cited, Entity.fragment.zig data_impl/matchv_impl), rust's `Some(&map)`",
+  "7ba1efdbf9": "make is not a method of zig's entity struct: it is reached through the Entity interface as asEntity().makeEnt() (tm/zig/core/types.zig:56,64; v_make in Entity.fragment.zig), which neither OLD nor NEW documents; recorded as a gap for the integration (a member the forms do not list)",
+  "2d3c123097": "zig prints 'The result's `.ok` is a slice of entities, one per record, and its `.err` reports failure.' (B/zig/REFERENCE.md:203); Vec/slice masked differently"
+ }
+}

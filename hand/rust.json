@@ -1,0 +1,316 @@
+{
+ "79be45b7f4": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1
+ },
+ "2e18b25c03": {
+  "outcome": "unification:root-load-nested",
+  "why": "the root quick start loads what the tutorial loads, the nested entity with its parent id (description choice, stage 2), and its step comments state the runtime fact [carried from class 110017b823: blocks.js now diffs before the normalizers, so the class id changed; same pair, same decision]",
+  "n": 1
+ },
+ "b098a95b4a": {
+  "outcome": "same-meaning",
+  "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
+  "n": 16
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 15
+ },
+ "b68c78ab53": {
+  "outcome": "same-meaning",
+  "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
+  "n": 7
+ },
+ "60a78d5fcd": {
+  "outcome": "same-meaning",
+  "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
+  "n": 5
+ },
+ "45c2e1c964": {
+  "outcome": "same-meaning",
+  "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables (server-mixed)",
+  "n": 1
+ },
+ "6c54376e84": {
+  "outcome": "restored:shared",
+  "why": "restored in the list sentence ('`data(None)` reads an entity's record') and the printed loop",
+  "n": 7
+ },
+ "7fe2bb62d9": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Create \u2014 returns the created entity' and the write sentence",
+  "n": 5
+ },
+ "9a132de632": {
+  "outcome": "restored:shared",
+  "why": "restored as the comment 'Update \u2014 the id comes off the created entity's record'",
+  "n": 4
+ },
+ "8e1fb48a5a": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch \u2014 sends only the fields given; ...'",
+  "n": 3
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed 2. Update",
+  "n": 1
+ },
+ "d7a02d3a77": {
+  "outcome": "restored:fact",
+  "why": "the write results as one sentence: Ok the written entity, Err on failure (EntityCreateOp.fragment.rs returns Result<Rc<Self>, ...>)",
+  "n": 5
+ },
+ "8f59ec72f1": {
+  "outcome": "restored:fact",
+  "why": "the write sentence for the one write ref-issues has",
+  "n": 1
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the write sentence",
+  "n": 1
+ },
+ "e3751412d1": {
+  "outcome": "same-meaning",
+  "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure; README:98 says prepare returns the fetch definition on Ok and Err on failure",
+  "n": 113
+ },
+ "5062d75fb9": {
+  "outcome": "same-meaning",
+  "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
+  "n": 83
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it",
+  "n": 34
+ },
+ "96426c4d58": {
+  "outcome": "same-meaning",
+  "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
+  "n": 28
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README direct example passes method GET; consistent with GET as the default",
+  "n": 19
+ },
+ "468f6870af": {
+  "outcome": "same-meaning",
+  "why": "README:257 says on error ok is false and err carries the error value; same keys",
+  "n": 19
+ },
+ "59f3410e6d": {
+  "outcome": "same-meaning",
+  "why": "README:201 calls test_sdk(testopts, sdkopts); same parameters",
+  "n": 19
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in console.log (README:73, the shared Error handling section's TypeScript block, unported); nothing about log's default",
+  "n": 19
+ },
+ "48160c08a5": {
+  "outcome": "same-meaning",
+  "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
+  "n": 16
+ },
+ "856cd768b1": {
+  "outcome": "same-meaning",
+  "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
+  "n": 16
+ },
+ "f7aa0fdb13": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 16
+ },
+ "8eaab9cfb0": {
+  "outcome": "same-meaning",
+  "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
+  "n": 15
+ },
+ "0dca9ebfc4": {
+  "outcome": "same-meaning",
+  "why": "the README's own rust examples (README:58-61) match on Ok / Err the same way: Err reports failure",
+  "n": 4
+ },
+ "0669f69970": {
+  "outcome": "same-meaning",
+  "why": "README:98 is about prepare (Ok or Err); the note is about direct, which the README also shows returning a map whose ok it reads (README:105-112)",
+  "n": 1
+ },
+ "a6b02bb83b": {
+  "outcome": "same-meaning",
+  "why": "moved into the prepare Returns sentence; README:98 says the same",
+  "n": 1
+ },
+ "ce1c1aa923": {
+  "outcome": "same-meaning",
+  "why": "ctrl is the same control map in the README's operation table and the direct fetchargs",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "same-meaning",
+  "why": "README:949 is the generic file tree (feature/ holds base, test, log); it does not say this SDK ships the test feature. No disagreement",
+  "n": 1
+ },
+ "39e83216c5": {
+  "outcome": "same-meaning",
+  "why": "ref-issues: moved under PlanetEntityClient with the record read; the README's examples match on Ok/Err the same way",
+  "n": 1
+ },
+ "6b6c33954a": {
+  "outcome": "same-meaning",
+  "why": "ref-issues: remove is inactive, so its sentence went (S25); the README states nothing about it",
+  "n": 1
+ },
+ "18d686c242": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional: without one, every record is listed.'",
+  "n": 83
+ },
+ "4d9b0e63f2": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client",
+  "n": 19
+ },
+ "17496270dc": {
+  "outcome": "restored:shared",
+  "why": "restored as 'both may be `Value::Noval`'",
+  "n": 19
+ },
+ "f51fe22dbd": {
+  "outcome": "restored:shared",
+  "why": "restored as the prepare Returns sentence: the fetch definition, and its Err reports failure",
+  "n": 19
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log (active by default, model/feature/log.aontu); restored as 'inactive until switched on, except `log`'",
+  "n": 19
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line says active-by-default for log and inactive for the rest, from FeatureDocs.activeByDefault",
+  "n": 19
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
+  "n": 1
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description is escaped into one cell",
+  "n": 1
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the description's pipe broke the table; escaped now",
+  "n": 1
+ },
+ "993924c4c6": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides",
+  "n": 1
+ },
+ "b682564ddf": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the list sentence",
+  "n": 1
+ },
+ "ed7991ada1": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the load sentence with the record read",
+  "n": 1
+ },
+ "81e8023d42": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the patch sentence",
+  "n": 1
+ },
+ "eca3c07407": {
+  "outcome": "correction:S25",
+  "why": "ref-issues turns remove off: an inactive operation is not documented",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1
+ },
+ "31021810d1": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove inactive",
+  "n": 1
+ },
+ "26c79b69a8": {
+  "outcome": "restored:shared",
+  "why": "the update data sentence names the id the route needs; same fact, other words",
+  "n": 1
+ },
+ "70ee6beb01": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: under PlanetEntityClient, the update sentence",
+  "n": 1
+ },
+ "55a8b68a1f": {
+  "outcome": "restored:fact",
+  "why": "data returns a copy: Entity.fragment.rs:285 vs::clone(&self.data.borrow())",
+  "n": 94
+ },
+ "2873c457b3": {
+  "outcome": "restored:fact",
+  "why": "the record read, now on every single-entity operation (the check's output_defects 3: the rust load example's print went with the majority shape)",
+  "n": 79
+ },
+ "f06a5de1f8": {
+  "outcome": "correction:guard-rust-direct",
+  "why": "the old note said Err is reserved for a request that could not be made; false: raw_request returns Ok(jo(... ok false ...)) for every failure (Main.fragment.rs, raw_request). The note now says so",
+  "n": 19
+ },
+ "c2467756ac": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions prose: path parameters beside $action, the action's own arguments beside them",
+  "n": 16
+ },
+ "1c354e6389": {
+  "outcome": "correction:ref-6",
+  "why": "the Call cell carries the route's path parameter id",
+  "n": 16
+ },
+ "a82016d4de": {
+  "outcome": "restored:shared",
+  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+  "n": 19
+ },
+ "169ee4e438": {
+  "outcome": "restored:fact",
+  "why": "when the operation runs: `runs: 'call'`, derived by the guard from the positions of the stream record's quotes in Entity.fragment.rs (PrePoint hook and the operation before the Vec is collected and returned); the old 'as they arrive' was false of every runtime (each streaming feature yields from a response read whole)",
+  "n": 94
+ },
+ "absent": {
+  "f11f771494": "rust prints '`list()` returns a result whose `Ok` is a `Vec` of entities, one per record, and whose `Err` reports failure' (crud-bare/rust/README.md:47); masks differ (`Vec` code, slice a word)",
+  "dbb15d380e": "rust prints '// Create \u2014 Ok carries the created entity; data(None) reads its record' (crud-bare/rust/README.md:80); its bare Ok in a comment is not masked as the fact `Ok`",
+  "805f851dc5": "rust prints '// Load an ambient: Ok is the entity; Err on failure' (B/README.md:584); bare Ok/Err masked differently",
+  "541249a1d2": "rust prints '// List planet records: Ok is a Vec of entities, one per record; Err on failure' (crud-bare root README); same sentence",
+  "5d43ee1d56": "rust prints '// Load a planet: Ok is the entity; Err on failure' (crud-bare root README); same sentence",
+  "e608b49726": "rust prints '`options` is a `Value` map (`Value::Noval` for none).' (B/rust/REFERENCE.md:16); in zig `Value` is also direct.returns, so zig's mask label holds two paths",
+  "b074ecf1b0": "rust prints '**Returns:** `Result<Value, DemoError>`, a result map holding ...' (B/rust/REFERENCE.md:112); same sentence, its type masked differently",
+  "278796fdee": "rust prints '**Returns:** `Result<Value, DemoError>`, the fetch definition: the request `direct()` would send.' (B/rust/REFERENCE.md:126)",
+  "8f0ff15cb2": "zig's own note on prepare (notes.member:prepare): zig's prepare returns an error union (E!Value); rust's returns a Result and its failure is stated by the Returns sentence",
+  "96ae20c828": "rust prints 'Pass `Some(&map)` to set it.' (B/rust/REFERENCE.md:167): rust's setArg is `Some(&map)` (cited), zig's 'a map'",
+  "6da7022487": "zig's own note on stream (notes.member:streamList, the throw:false behaviour of its result union); rust's stream returns a Result<IntoIter> with no such case",
+  "4864f34793": "rust prints 'The result's `Ok` is a `Vec` of entities, one per record, and its `Err` reports failure.' (B/rust/REFERENCE.md:205)"
+ }
+}

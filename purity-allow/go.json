@@ -1,0 +1,8 @@
+[
+ {
+  "file": "Naming",
+  "check": "naming function no non-README component calls",
+  "text": "goVarName (from ./utility_go)",
+  "why": "As exampleVarName, for go: the example-variable adapter go's README families use; the code generator names no example variables."
+ }
+]

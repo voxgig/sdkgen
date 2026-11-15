@@ -1,0 +1,100 @@
+▶ generated SDK compiles
+  ✔ rb: pooled HTTP connections do not replay unsafe requests (395.520749ms)
+  ✔ rb: a large compressed list is read whole, every gzip member (758.105793ms)
+  ✔ rb: operation controls are isolated (267.703248ms)
+  ✔ rb: the SDK builds where a list's parameters are a keyword, __proto__ and a quoted name (246.246893ms)
+  ✔ rb: the secrets feature runs with the feature active (1040.018131ms)
+  ✔ rb: the mock synthesises a multi-segment response envelope (306.392252ms)
+✔ generated SDK compiles (3031.800304ms)
+▶ auth null suppresses the credential
+  ✔ rb: auth null beats an explicit apikey (339.677634ms)
+✔ auth null suppresses the credential (342.997525ms)
+▶ the feature corpus runs from a generated SDK
+  ✔ rb: the feature corpus executes against the generated client (2555.920156ms)
+✔ the feature corpus runs from a generated SDK (2559.917551ms)
+▶ prepareAuth names, replaces and clears only its own credential
+  ✔ rb: a cookie credential (268.320874ms)
+  ✔ rb: a header credential (277.690937ms)
+  ✔ rb: a query credential (339.573103ms)
+✔ prepareAuth names, replaces and clears only its own credential (894.360293ms)
+▶ generated auth tests discover the credential name
+  ✔ rb: a credential named by the API, not `authorization` (741.148743ms)
+  ✔ rb: an HTTP Basic API, whose config takes the Basic branch (734.860305ms)
+  ✔ rb: a credential carried as a cookie (683.104594ms)
+  ✔ rb: a credential carried in the query (631.812087ms)
+✔ generated auth tests discover the credential name (2796.586124ms)
+▶ the canary sweep runs from a generated SDK
+  ✔ rb: no credential leaves the SDK (header auth, no server variable) (1299.19932ms)
+  ✔ rb: no credential leaves the SDK (query auth, server variable with an empty default) (1579.889516ms)
+  ✔ rb: no credential leaves the SDK (basic auth, server variable with no declaration) (1448.727099ms)
+✔ the canary sweep runs from a generated SDK (4335.637053ms)
+▶ concurrent requests on one client share its state
+  ✔ rb: concurrent requests on one client share its operation cache and secret registry (3693.485504ms)
+✔ concurrent requests on one client share its state (3698.84712ms)
+▶ generated entity tests make only calls the runtime takes
+  ✔ rb: the entity tests pass, and the control file skips a flow (956.957389ms)
+  ✔ rb: the moon, signal and planet entity tests pass (960.63802ms)
+✔ generated entity tests make only calls the runtime takes (2276.537642ms)
+▶ a basic flow loads its listed record by the route that record fills
+  ✔ rb: the proverb and job flows pass (794.52666ms)
+✔ a basic flow loads its listed record by the route that record fills (1035.468103ms)
+▶ a basic flow loads an entity with no id by the values its record holds
+  ✔ rb: the slug and rate flows pass (895.024644ms)
+✔ a basic flow loads an entity with no id by the values its record holds (1110.953307ms)
+▶ a flow over an identity its live record may lack compiles and passes offline
+  ✔ rb: the entity and direct tests pass (4458.663573ms)
+✔ a flow over an identity its live record may lack compiles and passes offline (4925.901701ms)
+▶ the README examples run for a slug carrying the word client
+  ✔ rb: every README example is classified, and run (1275.510039ms)
+  ✔ rb: every README example is classified, and run, with a patch (1209.631093ms)
+  ✖ rb: the README examples run with Basic auth and a templated server (236.530615ms)
+  ✔ rb: the README examples run where a list requires parameters (1031.597091ms)
+  ✔ rb: the README examples run where a list's parameters are a keyword and __proto__ (909.360406ms)
+  ✔ rb: the README examples run where a load's points each need a selector of their own (1119.248667ms)
+  ✔ rb: the README examples run where an optional query parameter shadows a route parameter (1070.090339ms)
+  ✔ rb: the README examples run where an entity lists only through actions (870.436455ms)
+  ✔ rb: the README examples run where a create's routes each need a parent of their own (930.162999ms)
+  ✔ rb: the README examples run where a record is keyed by _id (1101.382195ms)
+  ✔ rb: the README examples run where an update's request carries no id (895.062074ms)
+  ✔ rb: the README examples run where a load parameter and a create field hold a quote and a backslash (929.995766ms)
+  ✔ rb: the README examples fail for an SDK that does not load (891.831099ms)
+✖ the README examples run for a slug carrying the word client (12501.652529ms)
+▶ probes driven through a generated SDK
+  ✔ rb: the media types a point declares reach the wire (512.771311ms)
+  ✔ rb: an operation whose request cannot be sent raises (341.129673ms)
+  ✔ rb: an allow list names whole methods and operations, in any case (165.533755ms)
+  ✔ rb: a list reads the record each of its items wraps (108.676734ms)
+  ✔ rb: a list keeps each item that is not a record (111.752043ms)
+  ✔ rb: a list whose transform yields no list makes no entity (186.380678ms)
+  ✔ rb: a test-mode list answers only the seeds its required parameters match (118.46066ms)
+  ✔ rb: a body that is not JSON names its status, type, agent and preview (533.044449ms)
+  ✔ rb: a request carries the agent the model declares (522.250287ms)
+  ✔ rb: one failed operation fires PreUnexpected once (111.899472ms)
+  ✔ rb: a failed load's error says whether it was a 404 (143.119508ms)
+  ✔ rb: a path parameter of . or .. is refused before the transport (175.077569ms)
+✔ probes driven through a generated SDK (3042.48053ms)
+ℹ tests 49
+ℹ suites 13
+ℹ pass 48
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 44227.395665
+
+✖ failing tests:
+
+test at dist-test/generatedcompile.test.js:7678:30
+✖ rb: the README examples run with Basic auth and a templated server (236.530615ms)
+  AssertionError [ERR_ASSERTION]: rb: the README has no templated server
+      at readmeLane (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/oldclone/ts/dist-test/generatedcompile.test.js:7652:30)
+      at async TestContext.<anonymous> (/tmp/claude-0/-home-user/f1977c62-4748-5872-8f72-6f448dbac3f1/scratchpad/design/proto2/v3tools/oldclone/ts/dist-test/generatedcompile.test.js:7679:13)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -1,0 +1,30 @@
+{
+ "tutorial": {
+  "corrected": 22,
+  "unified": 0,
+  "used": {
+   "secret-option": 2,
+   "server-required-only": 16,
+   "trailing-blank": 1,
+   "write-comment-style": 5
+  }
+ },
+ "rootquick": {
+  "corrected": 18,
+  "unified": 0,
+  "used": {
+   "blank-lines": 10,
+   "secret-option": 2,
+   "server-required-only": 15,
+   "step-comment-runtime-fact": 16,
+   "trailing-blank": 2
+  }
+ },
+ "reference": {
+  "corrected": 0,
+  "unified": 83,
+  "used": {
+   "ref-loop-item": 83
+  }
+ }
+}

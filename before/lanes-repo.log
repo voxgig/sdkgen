@@ -1,0 +1,3 @@
+pattern '^rb: ' exit 1 44.264224803s
+pattern '^cpp: every documented example compiles' exit 0 13.817852949s
+pattern 'php: README output stays bounded' exit 0 3.134132758s
