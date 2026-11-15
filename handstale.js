@@ -30,9 +30,9 @@ const CORPUS = new Map()
 function corpus(a, lang) {
   const k = [a.clone, a.old, a.new, lang].join('\0')
   if (CORPUS.has(k)) return CORPUS.get(k)
-  const pages = []
+  const pages = [], newPages = []
   for (const root of [a.old, a.new]) for (const v of C.variationsOf(root)) for (const f of ['README.md', lang + '/README.md', lang + '/REFERENCE.md']) {
-    const t = C.readIf(Path.join(root, v, f)); if (t) pages.push(t)
+    const t = C.readIf(Path.join(root, v, f)); if (t) { pages.push(t); if (root === a.new) newPages.push(t) }
   }
   const ts = Path.join(Path.resolve(a.clone), 'ts')
   const src = [], names = new Set()
@@ -41,6 +41,9 @@ function corpus(a, lang) {
     if (/\.(ts|js|md|aontu|json|go|py|rb|rs|c|h|zig|clj|ex|exs|lua|pm|pl|swift|ml|php|java|kt|scala|cs|cpp|hpp|txt)$/.test(f) && Fs.statSync(f).size < 2e6) src.push(Fs.readFileSync(f, 'utf8'))
   }
   const res = { pages: norm(pages.join('\n')), raw: pages.join('\n'), src: src.join('\n'), srcNorm: norm(src.join('\n')), names }
+  // the same without the OLD pages: a quotation found only on an OLD page counts
+  // only where the record quotes the OLD side (see oldSide)
+  res.fresh = { pages: norm(newPages.join('\n')), raw: newPages.join('\n'), src: res.src, srcNorm: res.srcNorm, names }
   CORPUS.set(k, res)
   return res
 }
@@ -49,11 +52,11 @@ function corpus(a, lang) {
 function quotes(text) {
   const out = []
   const s = String(text || '')
-  for (const m of s.matchAll(/`([^`]+)`/g)) out.push({ q: m[1], kind: 'code' })
+  for (const m of s.matchAll(/`([^`]+)`/g)) out.push({ q: m[1], kind: 'code', before: s.slice(Math.max(0, m.index - 60), m.index) })
   // a quoted passage keeps its code spans (compared with the markup taken off,
   // on both sides): blanking them left "Pass a   to set it.", on no page
   const spanless = s.replace(/`[^`]*`/g, (m) => m.replace(/"/g, '\u0001'))
-  for (const m of spanless.matchAll(/["“]([^"”]{3,200})["”]/g)) if (/\S+\s+\S+/.test(m[1])) out.push({ q: m[1].replace(/\u0001/g, '"'), kind: 'text' })
+  for (const m of spanless.matchAll(/["“]([^"”]{3,200})["”]/g)) if (/\S+\s+\S+/.test(m[1])) out.push({ q: m[1].replace(/\u0001/g, '"'), kind: 'text', before: s.slice(Math.max(0, m.index - 60), m.index) })
   return out
 }
 
@@ -101,7 +104,14 @@ function run(a) {
     const qs = ['why', 'where', 'true', 'evidence', 'value'].flatMap((k) => 'string' === typeof rec[k] ? quotes(rec[k]).map((q) => ({ ...q, field: k })) : [])
     if (!qs.length) return
     res.checkable++; res.quotes += qs.length
-    const gone = qs.filter((q) => !found(cp, q))
+    // A quotation on an OLD page only stands for text the record says is OLD's:
+    // an outcome about what OLD had (correction, dropped, contradiction, defect),
+    // or a marker in the 60 characters before it (OLD, the old page, was, said,
+    // printed, wrote, restored from).
+    // Elsewhere it must be on a NEW page or in the source: text that left both
+    // would otherwise stay green because OLD still holds it.
+    const oldSide = (q) => /^(correction|dropped|contradiction|defect)/.test(rec.outcome || '') || /\b(OLD|[Oo]ld page|old|was|were|said|wrote|printed|had|restored from)\b/.test(q.before || '')
+    const gone = qs.filter((q) => !(oldSide(q) ? found(cp, q) : found(cp.fresh, q)))
     if (gone.length) res.stale.push({ id, where, outcome: rec.outcome || null, missing: gone.map((q) => q.q) })
   }
   for (const [id, rec] of Object.entries(hand)) if (/^[0-9a-f]{10}$/.test(id) && rec && 'object' === typeof rec) look(id, 'class', rec)

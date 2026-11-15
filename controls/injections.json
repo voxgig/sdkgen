@@ -28,6 +28,15 @@
   "adapted": "v3.3: the from text of v3.2 is no longer printed (the sentence fixes); the same intent on the new text"
  },
  {
+  "id": "sentence-removed-go-branch",
+  "lang": "go",
+  "section": "reference",
+  "what": "the direct() branch sentence removed: v3.2's intent of sentence-removed-go, restored beside its retargeted copy (the sentence round's check, required fix 3)",
+  "file": "doc-crud/go/REFERENCE.md",
+  "from": " A failure is reported in the result, not as an error,\nso branch on `result[\"ok\"] == true`.",
+  "to": ""
+ },
+ {
   "id": "false-sentence-py",
   "lang": "py",
   "section": "reference",

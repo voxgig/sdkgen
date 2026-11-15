@@ -143,3 +143,17 @@ From the sentence round's tools (7d5dab2), with the four ports' records brought 
 - a printed call with the wrong number of arguments, the wrong Lua separator, or an unknown member on the client;
 - a depluralising or suffix rule anywhere in your provider, hook or their helpers;
 - a generation that throws, or one that regenerates fewer variations than `old/` holds.
+
+## Changes at v3.3 (the first half of the freeze, on v33m with the guard)
+
+What the sentence round's independent check required of the tools, and what was done:
+
+- `buildfresh.js`: `ts/project/.sdk/model/**` and `ts/project/.sdk/src/**` are compared BY CONTENT with their staged copies under `ts/dist-test-scaffold/.sdk/`, which generation reads. A target or feature model edited and not re-staged now fails as `STALE BUILD ... differs from its staged copy`. Control: `identity stale-staged-model`.
+- `handstale.js`: a quotation found only on an OLD page stands only where the record says it quotes OLD: an outcome of `correction`, `dropped`, `contradiction` or `defect`, or a marker in the 60 characters before it (OLD, the old page, was, were, said, wrote, printed, had, restored from). Otherwise it must be on a NEW page or in the source. Control: `identity old-only-quotation`.
+- `controls/injections.json` `sentence-removed-go-branch`: v3.2's intent of `sentence-removed-go` (drop go's branch sentence), beside its retargeted copy. Flagged in the reviewed mode; from scratch it is recorded in `controls/moved.json`: a sentence only one language's read prints leaves no trace from scratch, and dropped from every variation none in either mode, until the absent list compares across all references with code spans erased (NOT done).
+- `controls/missing.json`: the three port drops (lua, perl, swift) target the sentence as the sentence round reworded it; `regen regeneration-short` no longer depends on where the clone sits (old/ holds one variation the generator does not make).
+- NOT done (identity changes that re-key every language): masking a position only for the SAME fact path the reference holds there (zig `.ok`/`.err` swapped, py `list()` as the record read, rb `Hash` as collection and rb's 'a list' were accepted as shared); numbers and the a/an article kept literal in the match form.
+
+### For a port started from v3.2: move it onto the current clone FIRST
+
+The procedure above, run literally, re-keys cleanly and then FAILS (the check measured 16 open classes for lua, not 5): the open classes are the v3.2 sentences the port still prints. Before re-keying and the one command: rebase or cherry-pick the port's commits onto the current clone (v33s or later), declare `ref.facts.testMock` ('generated', or 'always' where the runtime ships the test feature whatever the model) and a truth read in `read(value, key, truth)` where `ok` is not a boolean the language tests directly (swift `== .bool(true)`, ocaml `= Bool true`), rebuild, regenerate `out/new`. Then re-key and run the one command; the classes the sentence fixes opened are decided by the written rules the nine and the four ports were decided by (P/sfix/run/decide.py, P/v33/mine/decide.py).

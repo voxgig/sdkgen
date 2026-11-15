@@ -6,6 +6,9 @@
 //   ts/test/**/*.ts                        -> ts/dist-test/**/*.js
 //   ts/project/.sdk/src/cmp/**/*.ts        -> ts/dist-test-scaffold/.sdk/dist/cmp/**/*.js
 //   ts/project/.sdk/src/cmp/**/fragment/*  -> ts/dist-test-scaffold/.sdk/src/cmp/**/fragment/* (staged copy)
+//   ts/project/.sdk/{model,src}/**          -> ts/dist-test-scaffold/.sdk/{model,src}/** (staged copies,
+//                                              compared by CONTENT: generation reads the target and
+//                                              feature models from the staged copy, whatever its time)
 // A failed build leaves the previous output in place, so without this the one
 // command passes on the old code. Exit 1 naming each stale or missing output.
 // (*.d.ts sources make nothing and are skipped.)
@@ -23,7 +26,7 @@ function walk(dir, out = []) {
 
 function check(clone) {
   const ts = Path.join(Path.resolve(clone), 'ts')
-  const stale = [], missing = []
+  const stale = [], missing = [], differ = []
   let n = 0
   const pair = (src, out) => {
     n++
@@ -42,7 +45,17 @@ function check(clone) {
     if (rel.split(Path.sep).includes('fragment')) pair(f, Path.join(ts, 'dist-test-scaffold/.sdk/src/cmp', rel))
     else if (/\.ts$/.test(f) && !/\.d\.ts$/.test(f)) pair(f, js(Path.join(ts, 'dist-test-scaffold/.sdk/dist/cmp', rel)))
   }
-  return { checked: n, stale, missing }
+  const staged = Path.join(ts, 'dist-test-scaffold/.sdk')
+  for (const top of ['model', 'src']) {
+    const root = Path.join(ts, 'project/.sdk', top)
+    for (const f of walk(root)) {
+      const out = Path.join(staged, top, Path.relative(root, f))
+      n++
+      if (!Fs.existsSync(out)) { missing.push({ src: f, out }); continue }
+      if (!Fs.readFileSync(f).equals(Fs.readFileSync(out))) differ.push({ src: f, out })
+    }
+  }
+  return { checked: n, stale, missing, differ }
 }
 
 function main() {
@@ -53,7 +66,8 @@ function main() {
   const rel = (p) => Path.relative(ts, p)
   for (const x of r.stale) console.log(`STALE BUILD: ts/${rel(x.src)} is ${x.by}s newer than ts/${rel(x.out)}`)
   for (const x of r.missing) console.log(`STALE BUILD: ts/${rel(x.src)} has no build output ts/${rel(x.out)}`)
-  const bad = r.stale.length + r.missing.length
+  for (const x of r.differ) console.log(`STALE BUILD: ts/${rel(x.src)} differs from its staged copy ts/${rel(x.out)}, which generation reads`)
+  const bad = r.stale.length + r.missing.length + r.differ.length
   console.log(`build: ${r.checked} sources checked, ${bad ? bad + ' STALE (rebuild: cd ts && npm run build, and read its exit code)' : 'current'}`)
   process.exit(bad ? 1 : 0)
 }

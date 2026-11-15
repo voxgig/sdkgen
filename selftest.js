@@ -250,7 +250,13 @@ if (want('regen')) {
   const bad = Path.join(TMP, 'regen-noclone'); Fs.mkdirSync(Path.join(bad, 'ts'), { recursive: true })
   const r1 = run(bad, mk('throw'))
   record('regen', 'generation-throws', 0 !== r1.rc && /REGENERATION FAILED/.test(r1.out) && !/^== portcheck/m.test(r1.out), `exit ${r1.rc}: ${(/REGENERATION FAILED[^\n]*|regenerated[^\n]*/.exec(r1.out) || ['no line'])[0].slice(0, 120)}`)
-  const r2 = run(a.clone, mk('short'))
+  // old/ holds one variation more than the generator makes, so the control
+  // does not depend on where the clone sits (a clone inside a workspace
+  // stages the alias variation, and then nothing is short)
+  const short = Path.join(TMP, 'regen-short'); Fs.mkdirSync(Path.join(short, 'new'), { recursive: true }); Fs.mkdirSync(Path.join(short, 'old'))
+  for (const v of Fs.readdirSync(OLD)) Fs.symlinkSync(Path.join(Fs.realpathSync(OLD), v), Path.join(short, 'old', v))
+  Fs.cpSync(Path.join(Fs.realpathSync(OLD), 'B'), Path.join(short, 'old', 'zz-not-generated'), { recursive: true })
+  const r2 = run(a.clone, short)
   record('regen', 'regeneration-short', 0 !== r2.rc && /REGENERATION SHORT/.test(r2.out) && !/^== portcheck/m.test(r2.out), `exit ${r2.rc}: ${(/REGENERATION SHORT[^\n]*|regenerated[^\n]*/.exec(r2.out) || ['no line'])[0].slice(0, 140)}`)
 }
 
@@ -310,19 +316,31 @@ if (want('identity')) {
   // the stale build: a mirror whose one source is newer than its output
   const BF = require('./buildfresh.js')
   const real = BF.check(a.clone)
-  record('identity', 'build-current', 0 === real.stale.length + real.missing.length, `the clone: ${real.checked} sources, ${real.stale.length + real.missing.length} stale`)
+  record('identity', 'build-current', 0 === real.stale.length + real.missing.length + real.differ.length, `the clone: ${real.checked} sources, ${real.stale.length + real.missing.length + real.differ.length} stale`)
   const SB = Path.join(TMP, 'stalebuild', 'ts')
   for (const d of ['src/helpers', 'dist/helpers']) Fs.mkdirSync(Path.join(SB, d), { recursive: true })
   Fs.writeFileSync(Path.join(SB, 'dist/helpers/x.js'), '1'); Fs.utimesSync(Path.join(SB, 'dist/helpers/x.js'), new Date(1e12), new Date(1e12))
   Fs.writeFileSync(Path.join(SB, 'src/helpers/x.ts'), '1')
   const sb = node([Path.join(__dirname, 'buildfresh.js'), Path.dirname(SB)])
   record('identity', 'stale-build', 0 !== sb.rc && /STALE BUILD: ts\/src\/helpers\/x\.ts/.test(sb.out), sb.out.trim().split('\n')[0])
+  // a model the generator reads from its staged copy: edited and not re-staged (the sentence round's check, required fix 4)
+  const SM = Path.join(TMP, 'stalemodel', 'ts')
+  for (const d of ['project/.sdk/model/feature', 'dist-test-scaffold/.sdk/model/feature']) Fs.mkdirSync(Path.join(SM, d), { recursive: true })
+  Fs.writeFileSync(Path.join(SM, 'dist-test-scaffold/.sdk/model/feature/log.aontu'), 'active: true\n')
+  Fs.writeFileSync(Path.join(SM, 'project/.sdk/model/feature/log.aontu'), 'active: false\n')
+  const sm = node([Path.join(__dirname, 'buildfresh.js'), Path.dirname(SM)])
+  record('identity', 'stale-staged-model', 0 !== sm.rc && /STALE BUILD: ts\/project\/\.sdk\/model\/feature\/log\.aontu differs/.test(sm.out), sm.out.trim().split('\n')[0])
   // the stale hand record: a reason quoting text that no page and no file holds
   const HS = require('./handstale.js')
   const hf = Path.join(TMP, 'hand-stale.json')
   Fs.writeFileSync(hf, JSON.stringify({ 'aaaaaaaaaa': { outcome: 'same-meaning', why: 'the page says `getp(result, "ok")` as it did', n: 1 }, 'bbbbbbbbbb': { outcome: 'same-meaning', why: 'the page says `voxgig_branch_on_okay(result)` as it did', n: 1 } }))
   const hs = HS.run({ clone: a.clone, old: OLD, new: NEW, lang: 'c', hand: hf })
   record('identity', 'stale-hand-record', 1 === hs.stale.length && 'bbbbbbbbbb' === hs.stale[0].id, `${hs.stale.length} stale: ${hs.stale.map((s) => s.id + ' ' + s.missing.join(',')).join('; ')}`)
+  // a quotation only an OLD page holds stands only where the record says it quotes OLD (the sentence round's check, required fix 5)
+  const ho = Path.join(TMP, 'hand-old-only.json')
+  Fs.writeFileSync(ho, JSON.stringify({ 'cccccccccc': { outcome: 'same-meaning', why: 'the page says "Get the entity data. Pass a map to set it."', n: 1 }, 'dddddddddd': { outcome: 'same-meaning', why: 'OLD said "Get the entity data. Pass a map to set it."; NEW says the same', n: 1 } }))
+  const hso = HS.run({ clone: a.clone, old: OLD, new: NEW, lang: 'c', hand: ho })
+  record('identity', 'old-only-quotation', 1 === hso.stale.length && 'cccccccccc' === hso.stale[0].id, `${hso.stale.length} stale: ${hso.stale.map((s) => s.id).join('; ')} (a quotation only OLD holds, unmarked, is stale; marked OLD, it stands)`)
   // re-key: records keyed by this code are left alone, twice; a decision is never lost
   const RK = require('./rekey.js')
   const RT = Path.join(TMP, 'rekey')

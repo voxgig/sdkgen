@@ -2,7 +2,7 @@
  "facts": {
   "named": {
    "value": "call",
-   "why": "OLD swift names an operation with parentheses: \"`load()` returns the ENTITY — call data() for the record — and throws on error\" (tutorial), and spells the list call with its arguments, \"`list(nil, nil)` returns ...\"; the shared sentences name it as `load()` and `list()`. `list()` names the operation; it is not a call Swift can make (EntityBase.fragment.swift:71 list has two parameters and no defaults), and the shared REFERENCE sentence no longer gives the working no-match call OLD gave: weaker than OLD, recorded as a shared change. The tool pairs no OLD unit because every sentence carrying it was reworded",
+   "why": "OLD swift names an operation with parentheses: \"`load()` returns the ENTITY — call data() for the record — and throws on error\" (tutorial), and OLD spells the list call with its arguments, \"`list(nil, nil)` returns ...\"; the shared sentences name it as `load()` and `list()`. `list()` names the operation; it is not a call Swift can make (EntityBase.fragment.swift:71 list has two parameters and no defaults), and the shared REFERENCE sentence no longer gives the working no-match call OLD gave: weaker than OLD, recorded as a shared change. The tool pairs no OLD unit because every sentence carrying it was reworded",
    "evidence": "out/old/B/swift/README.md:55 \"`load()` returns the ENTITY\""
   },
   "ref.facts.entityBy": {
