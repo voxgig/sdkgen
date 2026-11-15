@@ -117,6 +117,7 @@ const bindErr = (bound: string | null, sc: Scope): string => {
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'go',
   facts,
 

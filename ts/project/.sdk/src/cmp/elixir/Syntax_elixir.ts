@@ -122,6 +122,7 @@ const helpers = (desc: any): string => (desc.layout.names || {}).helpers as stri
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'elixir',
   facts,
 

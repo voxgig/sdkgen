@@ -29,7 +29,7 @@ src/cmp/c/ReadmeOptions_c.ts f305d6f87635
 src/cmp/c/ReadmeTopHowto_c.ts 53480bd63967
 src/cmp/c/ReadmeTopTest_c.ts 9ae625173e92
 src/cmp/c/Schema_c.ts c4ed362679d7
-src/cmp/c/Syntax_c.ts 596761bb72ad
+src/cmp/c/Syntax_c.ts 8b5d1da46427
 src/cmp/c/TestClean_c.ts 0dbcc7b0dc4c
 src/cmp/c/TestDirect_c.ts 68234fa433d4
 src/cmp/c/TestEntity_c.ts a5d7718e4449
@@ -151,7 +151,7 @@ src/cmp/clojure/ReadmeOptions_clojure.ts 74c2c0adcce4
 src/cmp/clojure/ReadmeTopHowto_clojure.ts e1494b86d033
 src/cmp/clojure/ReadmeTopTest_clojure.ts 4079d255054d
 src/cmp/clojure/Schema_clojure.ts 173cdd00d273
-src/cmp/clojure/Syntax_clojure.ts 771eaad9c4fb
+src/cmp/clojure/Syntax_clojure.ts 7f1b80e353ea
 src/cmp/clojure/TestClean_clojure.ts db091badfd02
 src/cmp/clojure/TestDirect_clojure.ts ebfe781a958d
 src/cmp/clojure/TestEntity_clojure.ts 9d5860060f5f
@@ -468,7 +468,7 @@ src/cmp/elixir/ReadmeOptions_elixir.ts eb3b2b997109
 src/cmp/elixir/ReadmeTopHowto_elixir.ts 90ecb763e0ad
 src/cmp/elixir/ReadmeTopTest_elixir.ts 1cb36261a935
 src/cmp/elixir/Schema_elixir.ts a2d61dba669a
-src/cmp/elixir/Syntax_elixir.ts 3c30ab8501b2
+src/cmp/elixir/Syntax_elixir.ts f1fa6f7f33f9
 src/cmp/elixir/TestClean_elixir.ts 9119b5fc16e7
 src/cmp/elixir/TestDirect_elixir.ts 2ee44de0d1a9
 src/cmp/elixir/TestEntity_elixir.ts 0fa82f90ced3
@@ -542,7 +542,7 @@ src/cmp/go/ReadmeOptions_go.ts 47c8f1e458b1
 src/cmp/go/ReadmeTopHowto_go.ts 2d7332aca33c
 src/cmp/go/ReadmeTopTest_go.ts 91b120dc85f3
 src/cmp/go/Schema_go.ts 6a9b0bca5db2
-src/cmp/go/Syntax_go.ts d68276d7089e
+src/cmp/go/Syntax_go.ts b577460799af
 src/cmp/go/TestClean_go.ts 7319ead95cbf
 src/cmp/go/TestDirect_go.ts c9edf724de9e
 src/cmp/go/TestEntity_go.ts dbf1851fdd50
@@ -1021,7 +1021,7 @@ src/cmp/lua/ReadmeOptions_lua.ts 5e609fb40675
 src/cmp/lua/ReadmeTopHowto_lua.ts 2f4ff4561460
 src/cmp/lua/ReadmeTopTest_lua.ts a5647e458051
 src/cmp/lua/Schema_lua.ts 5c629a1e1a22
-src/cmp/lua/Syntax_lua.ts 4513c1c50c3a
+src/cmp/lua/Syntax_lua.ts 322beb631c96
 src/cmp/lua/TestClean_lua.ts 2db104576891
 src/cmp/lua/TestDirect_lua.ts 96fe252d19ae
 src/cmp/lua/TestEntity_lua.ts 812d82f809d5
@@ -1131,7 +1131,7 @@ src/cmp/ocaml/ReadmeTopHowto_ocaml.ts f283dca429a5
 src/cmp/ocaml/ReadmeTopTest_ocaml.ts c497e73f87fb
 src/cmp/ocaml/Schema_ocaml.ts b079f590abc8
 src/cmp/ocaml/SdkError_ocaml.ts fdf2f6acd1b9
-src/cmp/ocaml/Syntax_ocaml.ts e053b1be7696
+src/cmp/ocaml/Syntax_ocaml.ts c41b5b14d26f
 src/cmp/ocaml/TestClean_ocaml.ts e42cb36cb87a
 src/cmp/ocaml/TestDirect_ocaml.ts bd659b8dc3ad
 src/cmp/ocaml/TestEntity_ocaml.ts f3f71fdefa4f
@@ -1191,7 +1191,7 @@ src/cmp/perl/ReadmeOptions_perl.ts 4afa7ae879d0
 src/cmp/perl/ReadmeTopHowto_perl.ts 287f685ca3bf
 src/cmp/perl/ReadmeTopTest_perl.ts 950f8286521b
 src/cmp/perl/Schema_perl.ts 0591817e7773
-src/cmp/perl/Syntax_perl.ts b4faf2c0a1d5
+src/cmp/perl/Syntax_perl.ts 919ceb04f589
 src/cmp/perl/TestClean_perl.ts bc5b79efe4a5
 src/cmp/perl/TestDirect_perl.ts fc495986cf70
 src/cmp/perl/TestEntity_perl.ts 7ee9db141d2d
@@ -1402,7 +1402,7 @@ src/cmp/py/ReadmeOptions_py.ts 6984e3568866
 src/cmp/py/ReadmeTopHowto_py.ts 98e1b9247b51
 src/cmp/py/ReadmeTopTest_py.ts 8b84dccc74bc
 src/cmp/py/Schema_py.ts ff45f83e6ff4
-src/cmp/py/Syntax_py.ts bcf41e3df0c5
+src/cmp/py/Syntax_py.ts b793a5452be5
 src/cmp/py/TestClean_py.ts 8ff4b3331fac
 src/cmp/py/TestDirect_py.ts 6048b9a4737e
 src/cmp/py/TestEntity_py.ts 21048f17c313
@@ -1536,7 +1536,7 @@ src/cmp/rb/ReadmeOptions_rb.ts 1d371d839786
 src/cmp/rb/ReadmeTopHowto_rb.ts d4c1341f730d
 src/cmp/rb/ReadmeTopTest_rb.ts abcd96aab99b
 src/cmp/rb/Schema_rb.ts 7aac619fae8d
-src/cmp/rb/Syntax_rb.ts 3db8325d34c8
+src/cmp/rb/Syntax_rb.ts 8d6fa8fb37d5
 src/cmp/rb/TestClean_rb.ts ed226d1bdafd
 src/cmp/rb/TestDirect_rb.ts 438fdf9acb6e
 src/cmp/rb/TestEntity_rb.ts 05cfc9a024c0
@@ -1644,7 +1644,7 @@ src/cmp/rust/ReadmeTopHowto_rust.ts 7f66286916f9
 src/cmp/rust/ReadmeTopTest_rust.ts caefcf02393d
 src/cmp/rust/Schema_rust.ts 62516d49914a
 src/cmp/rust/SdkError_rust.ts 44f812a8460e
-src/cmp/rust/Syntax_rust.ts 558277f35bfd
+src/cmp/rust/Syntax_rust.ts 3a6a38280dfa
 src/cmp/rust/TestClean_rust.ts 6b0385a97d66
 src/cmp/rust/TestDirect_rust.ts 5f9aa42b1a0b
 src/cmp/rust/TestEntity_rust.ts 749ace669e46
@@ -1931,7 +1931,7 @@ src/cmp/swift/ReadmeTopHowto_swift.ts e7d3f536e578
 src/cmp/swift/ReadmeTopTest_swift.ts 62e7c83c57b1
 src/cmp/swift/Schema_swift.ts de5a4a02dc8d
 src/cmp/swift/SdkError_swift.ts eb21c3a56459
-src/cmp/swift/Syntax_swift.ts f5dd87b0d6b8
+src/cmp/swift/Syntax_swift.ts c365526e235a
 src/cmp/swift/TestClean_swift.ts 1b23944dab4c
 src/cmp/swift/TestDirect_swift.ts 3c38c4dfe812
 src/cmp/swift/TestEntity_swift.ts 1d49c1ac1803
@@ -2035,7 +2035,7 @@ src/cmp/ts/ReadmeTopHowto_ts.ts 80267a2529f3
 src/cmp/ts/ReadmeTopTest_ts.ts 8c614df68cb0
 src/cmp/ts/Schema_ts.ts 28d8eedbb21a
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
-src/cmp/ts/Syntax_ts.ts b287796296a1
+src/cmp/ts/Syntax_ts.ts 36efe3055a98
 src/cmp/ts/TestClean_ts.ts 7c3843705372
 src/cmp/ts/TestDefinition_ts.ts 8f242daf10a0
 src/cmp/ts/TestDirect_ts.ts cf90eb2a6b45
@@ -2160,7 +2160,7 @@ src/cmp/zig/ReadmeOptions_zig.ts 737426363d4e
 src/cmp/zig/ReadmeTopHowto_zig.ts 77361baf4079
 src/cmp/zig/ReadmeTopTest_zig.ts feee7ba97c0f
 src/cmp/zig/Schema_zig.ts c55b2e5555f7
-src/cmp/zig/Syntax_zig.ts 62c214b22a68
+src/cmp/zig/Syntax_zig.ts 9e43e5c6e0e0
 src/cmp/zig/TestClean_zig.ts c7d8ea55ba40
 src/cmp/zig/TestDirect_zig.ts 60144692ef88
 src/cmp/zig/TestEntity_zig.ts a46e513a43a7

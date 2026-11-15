@@ -1,4 +1,5 @@
 import type { DescAction, DescEntity, DescOp, DescSymbols, Scalar, SdkDescription } from './sdkdesc';
+import type { SYNTAX_INTERFACE } from './syntaxversion';
 type Ent = {
     name: string;
     Name: string;
@@ -196,6 +197,7 @@ type ProgramStep = {
     lines: string[];
 };
 type Syntax = {
+    interface: typeof SYNTAX_INTERFACE;
     fence: string;
     facts: RuntimeFacts;
     client: (s: Extract<Stmt, {

@@ -1,0 +1,39 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SYNTAX_CHANGES = exports.SYNTAX_INTERFACE = void 0;
+exports.checkSyntaxInterface = checkSyntaxInterface;
+const utility_1 = require("../utility");
+// The interface a syntax provider is written against, declared by the
+// provider as `interface`. Raised on every breaking change to it.
+const SYNTAX_INTERFACE = '3.3';
+exports.SYNTAX_INTERFACE = SYNTAX_INTERFACE;
+// What each raise asks of a provider written for the version before it.
+const SYNTAX_CHANGES = [
+    { to: '3.3', change: 'ref.read(value, key, truth?): a read used as a condition is called with truth = true, and prints the test the language branches on' },
+    { to: '3.3', change: "ref.facts.testMock is required: 'generated' or 'always'" },
+    { to: '3.3', change: 'ref.facts.streamSignal: without it, no sentence says a stream ends on callopts.signal' },
+    { to: '3.3', change: 'the wrapped result style: facts.record is the plain accessor, and facts.unwrap the step before it' },
+    { to: '3.3', change: "the utility getter's sentence follows Member.copy: without copy: true it says the getter returns the object itself" },
+];
+exports.SYNTAX_CHANGES = SYNTAX_CHANGES;
+const num = (v) => v.split('.').map(Number);
+const before = (a, b) => {
+    const [x, y] = [num(a), num(b)];
+    return x[0] < y[0] || (x[0] === y[0] && (x[1] ?? 0) < (y[1] ?? 0));
+};
+function checkSyntaxInterface(target, declared) {
+    if (SYNTAX_INTERFACE === declared) {
+        return;
+    }
+    const from = 'string' === typeof declared ? declared : undefined;
+    const changes = SYNTAX_CHANGES.filter((c) => null == from || before(from, c.to));
+    const file = `.sdk/src/cmp/${target}/Syntax_${target}.ts`;
+    throw new utility_1.SdkGenError(target + ': the syntax provider ' + file + ' is written for ' +
+        (null == from ? 'an interface before ' + SYNTAX_CHANGES[0].to + ' (it declares none)' :
+            'interface ' + from) +
+        ', and this sdkgen calls interface ' + SYNTAX_INTERFACE + '. ' +
+        (0 === changes.length ? '' :
+            'Check each change, then declare interface: \'' + SYNTAX_INTERFACE + '\':\n' +
+                changes.map((c) => '  - ' + c.to + ': ' + c.change).join('\n')));
+}
+//# sourceMappingURL=syntaxversion.js.map

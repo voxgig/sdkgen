@@ -131,6 +131,7 @@ const close = (lines: string[], n = 1): string[] =>
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'clojure',
   facts,
 

@@ -94,6 +94,7 @@ const argOf = (arg: Entry[] | null, wide: boolean, note?: string): string =>
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'ts',
   facts,
 

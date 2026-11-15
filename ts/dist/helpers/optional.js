@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.OPTIONAL_COMPONENTS = void 0;
 exports.optionalComponent = optionalComponent;
 const utility_1 = require("../utility");
+const syntaxversion_1 = require("./syntaxversion");
 const DOCS = 'https://github.com/voxgig/sdkgen/blob/main/docs/how-to/' +
     'author-a-new-language.md#optional-readme-components';
 // What a target's documentation goes without when the target does not supply
@@ -32,6 +33,9 @@ function optionalComponent(ctx$, target, name) {
     const t = target.name;
     const found = (0, utility_1.loadOptional)(ctx$, `./cmp/${t}/${name}_${t}`);
     if (undefined !== found) {
+        if ('Syntax' === name) {
+            (0, syntaxversion_1.checkSyntaxInterface)(t, found.Syntax?.interface);
+        }
         return found;
     }
     const lacks = OPTIONAL_COMPONENTS[name];

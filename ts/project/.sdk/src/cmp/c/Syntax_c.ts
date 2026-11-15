@@ -134,6 +134,7 @@ const calls = (stmts: Stmt[]): Extract<Stmt, { k: 'call' }>[] => stmts.flatMap((
 
 
 const Syntax: SyntaxType = {
+  interface: '3.3',
   fence: 'c',
   facts,
 

@@ -1,5 +1,6 @@
 
 import { loadOptional } from '../utility'
+import { checkSyntaxInterface } from './syntaxversion'
 
 
 const DOCS = 'https://github.com/voxgig/sdkgen/blob/main/docs/how-to/' +
@@ -44,6 +45,9 @@ function optionalComponent(ctx$: any, target: any, name: OptionalComponent): any
   const found = loadOptional(ctx$, `./cmp/${t}/${name}_${t}`)
 
   if (undefined !== found) {
+    if ('Syntax' === name) {
+      checkSyntaxInterface(t, found.Syntax?.interface)
+    }
     return found
   }
 
