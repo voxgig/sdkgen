@@ -57,13 +57,11 @@ const forms: Forms = {
   renames: { args: ['data', 'match'] },
   namesWhy: 'clojure passes by position; the runtime names the setter argument args',
   exceptions: {
-    streamItems: 'WRONG: clojure: ref.facts.entity stream kind streamLazy ("return a lazy stream of its result items"); Entity.fragment.clj runs run-op and realises the streaming feature\'s items with vec and mapv before it returns; the lazy-seq walks the realised vector',
   },
   uncompared: { returns: 'the clojure runtime declares no types, so a signature\'s `-> x` is compared with nothing; the facts that rest on one are cited' },
   cite: {
     'ref.facts.none': { file: 'src/cmp/clojure/fragment/EntityLoadOp.fragment.clj', quote: ';; Load a single EntityName (reqmatch: id/query fields; nil = empty match).' },
-    'ref.facts.lits.false': { value: 'false', file: 'tm/clojure/src/sdk/client.clj', quote: '(vs/jm "ok" false "err" (core/ucall (core/client-root-ctx client) :clean (:err pr)))' },
-    'ref.facts.lits.true': { value: 'true', file: 'tm/clojure/src/sdk/client.clj', quote: 'out (vs/jm "ok" (and (nil? body-err) (>= status 200) (< status 300))', unquoted: { true: 'ok is the boolean the status test computes; true is not spelled' } },
+    'ref.facts.direct.okFalse': { file: 'tm/clojure/src/sdk/client.clj', quote: '(vs/jm "ok" false "err" (core/ucall (core/client-root-ctx client) :clean (:err pr)))' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/clojure/fragment/Entity.fragment.clj", quote: "(vs/clone (deref (:_data ent)))" },
     'notes.members': { value: "State accessors are stored on the entity map and called via keyword lookup.", file: "src/cmp/clojure/fragment/Entity.fragment.clj", quote: [":data-get (fn [] (ent-data-get ent))"] },
     'notes.instance': { value: "The SDK utility object is reached through `sdk.client`, which `{module}`\ndoes not re-export: `(sdk.client/get-utility client)` returns a copy of it.", file: "tm/clojure/src/sdk/client.clj", quote: ["(ns sdk.client", "(defn get-utility [client] (core/get-utility client))"], also: [{ file: "tm/clojure/src/sdk/core.clj", quote: ["(defn get-utility [client] (utility-copy (:utility client)))"] }],
