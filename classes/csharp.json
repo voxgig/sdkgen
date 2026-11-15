@@ -1,0 +1,2675 @@
+{
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match: the README options table's `base` cell says 'Base URL of the API server'; the csharp README options table states nothing about the server variables",
+  "n": 15,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "63dbaa39ec": {
+  "outcome": "shared:ts:63dbaa39ec",
+  "why": "masked, it is the ts unit of class 63dbaa39ec (correction:S28, by rule:step-numbers)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "cb33d087c0"
+  ],
+  "unreviewed": 0
+ },
+ "ff4863a314": {
+  "outcome": "shared:ts:ff4863a314",
+  "why": "masked, it is the ts unit of class ff4863a314 (correction:S28, by rule:tutorial-leadin)",
+  "n": 10,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "ebfc2354cd"
+  ],
+  "unreviewed": 0
+ },
+ "832e8b7a93": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "the shared load sentence. `Load` takes a match it may not leave out (EntityLoadOp.fragment.cs: `Load(Dictionary<string, object?>? reqmatch, ... ctrl = null)`, arity 1), so prose names it bare, not as the call `Load()` that does not compile; 'throws on failure' is the throw style's verb (C# throws); OLD's '(as `object?`)' is the declared return, now in the REFERENCE signature",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "0538108a37": {
+  "outcome": "shared:ts:0538108a37",
+  "why": "masked, it is the ts unit of class 0538108a37 (restored:shared, by rule:entities-contract)",
+  "n": 18,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "9ca694d427"
+  ],
+  "unreviewed": 0
+ },
+ "b31c974005": {
+  "outcome": "shared:ts:b31c974005",
+  "why": "masked, it is the ts unit of class b31c974005 (correction:sentence-review-env, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "25f8905d37"
+  ],
+  "unreviewed": 0
+ },
+ "9363faf207": {
+  "outcome": "shared:ts:9363faf207",
+  "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "a65ba4a33f": {
+  "outcome": "shared:ts:a65ba4a33f",
+  "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "4966aea016"
+  ],
+  "unreviewed": 0
+ },
+ "4fafcfa72b": {
+  "outcome": "same-meaning",
+  "why": "the README's unported operations table states the same of Load (returns it, raises on error); no disagreement",
+  "n": 6,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "bef2b8f986": {
+  "outcome": "shared:ts:bef2b8f986",
+  "why": "masked, it is the ts unit of class bef2b8f986 (unification:write-title-entity, by hand)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "21fc35c768"
+  ],
+  "unreviewed": 0
+ },
+ "ada07548f8": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "the shared list sentence: `List` named bare (its match is required, arity 1); the REFERENCE says the no-match call is `List(null)`; 'throws' is the throw style's verb",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "5a3859e529": {
+  "outcome": "shared:ts:5a3859e529",
+  "why": "masked, it is the ts unit of class 5a3859e529 (correction:S28, by rule:tutorial-leadin)",
+  "n": 3,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "836725aec1"
+  ],
+  "unreviewed": 0
+ },
+ "d4414a1523": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Create — returns the created entity; Data() reads its record' (the shared create comment)",
+  "n": 5,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "77832f0697": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Update — the id comes off the created entity's record': the id is now read off the created entity instead of supplied as a literal",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "691bdc9ddb": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Patch — sends only the fields given; the id comes off the created entity's record'",
+  "n": 3,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "cd43169d87": {
+  "outcome": "unification:write-sentence",
+  "why": "the shared write sentence over the step's operations: each returns the entity (RunPipeline returns `this` when the result is ok, EntityBase.fragment.cs:235-242) and remove marks it (:237-240); OLD's step had no sentence",
+  "n": 5,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "f7321a5ac9": {
+  "outcome": "shared:py:d0874922f8",
+  "why": "masked, it is the py unit of class d0874922f8 (restored:fact, by hand)",
+  "n": 5,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "663f4dd150"
+  ],
+  "unreviewed": 0
+ },
+ "0ed7dc127d": {
+  "outcome": "shared:ts:079a339ba7",
+  "why": "masked, it is the ts unit of class 079a339ba7 (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "a102512ba9"
+  ],
+  "unreviewed": 0
+ },
+ "aeabe4bdf1": {
+  "outcome": "shared:ts:b7c60b65eb",
+  "why": "masked, it is the ts unit of class b7c60b65eb (unification:write-comment-style, by rule:write-comment-id2)",
+  "n": 3,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "e3dc10a6b7"
+  ],
+  "unreviewed": 0
+ },
+ "29bba9e03f": {
+  "outcome": "shared:ts:29bba9e03f",
+  "why": "masked, it is the ts unit of class 29bba9e03f (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "728df7c1c3"
+  ],
+  "unreviewed": 0
+ },
+ "cdfbb6475b": {
+  "outcome": "shared:ts:cdfbb6475b",
+  "why": "masked, it is the ts unit of class cdfbb6475b (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "81aabf087b"
+  ],
+  "unreviewed": 0
+ },
+ "1fa815677a": {
+  "outcome": "shared:ts:1fa815677a",
+  "why": "masked, it is the ts unit of class 1fa815677a (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "1760a2d205"
+  ],
+  "unreviewed": 0
+ },
+ "c9c9426cd8": {
+  "outcome": "shared:ts:c9c9426cd8",
+  "why": "masked, it is the ts unit of class c9c9426cd8 (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "219aa7c229"
+  ],
+  "unreviewed": 0
+ },
+ "79233d47ba": {
+  "outcome": "shared:ts:79233d47ba",
+  "why": "masked, it is the ts unit of class 79233d47ba (same-meaning, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "9bcb2825f2"
+  ],
+  "unreviewed": 0
+ },
+ "defb73bfd8": {
+  "outcome": "shared:ts:defb73bfd8",
+  "why": "masked, it is the ts unit of class defb73bfd8 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "3ab3fb2b2e"
+  ],
+  "unreviewed": 0
+ },
+ "9cbb8e3add": {
+  "outcome": "shared:ts:9cbb8e3add",
+  "why": "masked, it is the ts unit of class 9cbb8e3add (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "bcbefa9d5b"
+  ],
+  "unreviewed": 0
+ },
+ "c44f65ddeb": {
+  "outcome": "shared:ts:c44f65ddeb",
+  "why": "masked, it is the ts unit of class c44f65ddeb (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "0416b3a5e1"
+  ],
+  "unreviewed": 0
+ },
+ "41335a8b90": {
+  "outcome": "same-meaning",
+  "why": "the README's unported operations table says the same of Update; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "3528a38f43": {
+  "outcome": "shared:ts:3528a38f43",
+  "why": "masked, it is the ts unit of class 3528a38f43 (correction:S28, by rule:tutorial-leadin)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "787064e0dd"
+  ],
+  "unreviewed": 0
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed '2. Update a gauge', as the operations it runs",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "tutorial"
+ },
+ "ec589bf68a": {
+  "outcome": "shared:ts:ec589bf68a",
+  "why": "masked, it is the ts unit of class ec589bf68a (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "b83e95bec6"
+  ],
+  "unreviewed": 0
+ },
+ "6b81760ed3": {
+  "outcome": "unification:write-sentence",
+  "why": "ref-issues: the shared write sentence for one operation (Update returns the entity, EntityBase.fragment.cs:235-242)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "as 360f66a3d2, server-mixed (account)",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "8848495678": {
+  "outcome": "shared:ts:8848495678",
+  "why": "masked, it is the ts unit of class 8848495678 (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
+ },
+ "6fb3670380": {
+  "outcome": "unification:client-env-sentence",
+  "why": "DEMO_APIKEY in the shared client sentence; the OLD block's code read the same variable",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the client sentence says the example passes the key from the environment variable as the option (no PrepareAuth reads the environment); the option names are those the block passes",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the client sentence says the example passes the key from the environment variable as the option (no PrepareAuth reads the environment); the option names are those the block passes",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "b8d591c7b2": {
+  "outcome": "same-meaning",
+  "why": "the method name Update in the write sentence (ref-issues)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "d4f99aa149": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "OLD's '(as `object?`)' in the list and load sentences; the return type is stated by the REFERENCE signatures (`object? Load(...)`), and the sentences say what the value is (the entity, a list of entities)",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "5a5008f076": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "OLD named the list call `List(null)` in the tutorial sentence; NEW names it bare, `List`, and the REFERENCE gives the no-match call `List(null)`",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "tutorial"
+ },
+ "1be23ba869": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 10,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "58f00ae3c5": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "97da49a673": {
+  "outcome": "correction:S49",
+  "why": "auth-off: the client now passes the required server variable (the URL is templated on tenant); OLD constructed it with no options",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "0168be9d0e": {
+  "outcome": "unification:example-names",
+  "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem",
+  "n": 7,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "7612c47580": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "35979b577a": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "a3282ee028": {
+  "outcome": "unification:wide-load-match",
+  "why": "doc-nested: a load match of more than one member is laid out a member per line (the shared `wide` rule), the same two members in the same order",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "57e004f551": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "252eb5f5ee": {
+  "outcome": "correction:S49",
+  "why": "ent-none: the client passes the required server variable; `using Voxgig.Struct;` is printed only where a block reads with StructUtils (the imports printer, by what the section uses), and ent-none's tutorial prints nothing",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "ec261c1fc5": {
+  "outcome": "unification:write-layout",
+  "why": "ref-issues: a write's data is laid out a member per line (the shared `wide` rule for writes), the same member",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "9aa20d3d59": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "tutorial"
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "b3e1a90434": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "4e30f7a270": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "c76072420b": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "3749784cab": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "tutorial"
+ },
+ "5fffdab795": {
+  "outcome": "unification:write-comment-style",
+  "why": "OLD's create comment said '(as object?)'; the shared create comment says how the record is read instead",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "3805b111d7": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "c4f1ef9b16": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "3db5a488a6": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read, Update/Patch say the id comes off the created entity's record, and the id is read off the created entity (StructUtils.GetProp on its Data()) instead of a literal (chainsId)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "tutorial"
+ },
+ "f9713683ba": {
+  "outcome": "unification:example-names",
+  "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "tutorial"
+ },
+ "2eb69fa8a2": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 10,
+  "by": "hand",
+  "type": "missing",
+  "section": "rootquick"
+ },
+ "5eae1ff183": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 10,
+  "by": "hand",
+  "type": "added",
+  "section": "rootquick"
+ },
+ "919a37d61a": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 7,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "9f62ed0ac0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 6,
+  "by": "hand",
+  "type": "reworded",
+  "section": "rootquick"
+ },
+ "adc1e71751": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 5,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "156fbb5a60": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "4673958cd7": {
+  "outcome": "correction:S49",
+  "why": "auth-off: the client now passes the required server variable; OLD constructed it with no options",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "3d4aae6c8d": {
+  "outcome": "defect",
+  "why": "shared code names the list's item and the loaded entity alike (ts/src/helpers/example.ts refOf: 'item' and 'one' both take entity.sym.var), and the root quick start prints both in one block (ts/src/cmp/ReadmeQuick.ts topQuickText, `bare` drops the try blocks): `foreach (var planet in planets)` then `var planet = (IEntity)...` at the same level. C# puts a local's scope over its whole block, so the later `var planet` conflicts with the loop variable (CS0136, C# spec 'local variable declaration space ... includes any nested blocks'); OLD named them planetItem and planet and compiled. The provider cannot rename: the names are decided once in shared code. Needs an additive shared fact (see report)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "b2b5fd8804": {
+  "outcome": "defect",
+  "why": "shared code names the list's item and the loaded entity alike (ts/src/helpers/example.ts refOf: 'item' and 'one' both take entity.sym.var), and the root quick start prints both in one block (ts/src/cmp/ReadmeQuick.ts topQuickText, `bare` drops the try blocks): `foreach (var planet in planets)` then `var planet = (IEntity)...` at the same level. C# puts a local's scope over its whole block, so the later `var planet` conflicts with the loop variable (CS0136, C# spec 'local variable declaration space ... includes any nested blocks'); OLD named them planetItem and planet and compiled. The provider cannot rename: the names are decided once in shared code. Needs an additive shared fact (see report)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "8c5a4fbe41": {
+  "outcome": "defect",
+  "why": "shared code names the list's item and the loaded entity alike (ts/src/helpers/example.ts refOf: 'item' and 'one' both take entity.sym.var), and the root quick start prints both in one block (ts/src/cmp/ReadmeQuick.ts topQuickText, `bare` drops the try blocks): `foreach (var planet in planets)` then `var planet = (IEntity)...` at the same level. C# puts a local's scope over its whole block, so the later `var planet` conflicts with the loop variable (CS0136, C# spec 'local variable declaration space ... includes any nested blocks'); OLD named them planetItem and planet and compiled. The provider cannot rename: the names are decided once in shared code. Needs an additive shared fact (see report)",
+  "n": 3,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "ebd00e4cc6": {
+  "outcome": "correction:S49",
+  "why": "doc-list: the client passes the required server variable; the list is bound to the plural and each item to the entity variable (consoles/console), the shared example names; `console` is not the type `Console` (C# names are case-sensitive)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "f85b064b55": {
+  "outcome": "unification:root-load-nested",
+  "why": "doc-nested: the root quick start loads the nested entity the tutorial loads (satellite, with its parent id), under the shared example names; item `planet` and loaded `satellite` do not share a name",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "4c75075013": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "daf6451597": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "rootquick"
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "4a3209e8d9": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "cdb707579b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "41e8b6808d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "61d073347b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "ac19dca525": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "5524296637": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "cdee2a5b5d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form ('Load an ambient: the entity; throws on failure'); C# throws (Helpers.UnsupportedOp, RunOp's MakeError), which OLD called raising",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id of the nested entity the root now loads",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "the parent id's example value",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-shape",
+  "section": "rootquick"
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; ok false on a failure, err holding the error); this sentence says when err is there; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9efa1d0afc": {
+  "outcome": "same-meaning",
+  "why": "as 9c6d819441",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6ddbbf1859": {
+  "outcome": "same-meaning",
+  "why": "the README's direct example; the sentence says prepare takes the same arguments, which Main.fragment.cs shows (both take `fetchargs`)",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "4d5631f4cc": {
+  "outcome": "same-meaning",
+  "why": "the README's direct and prepare examples; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on log in console.log (the shared Error handling section's TypeScript block, unported); the README says nothing about log's default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "42f7383ba4": {
+  "outcome": "same-meaning",
+  "why": "OLD's direct Returns sentence (removed); the README's direct example reads the same keys",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "48d12b9b75": {
+  "outcome": "same-meaning",
+  "why": "OLD's prepare Returns sentence (removed); the README binds `var fetchdef = client.Prepare(...)`, the same fetch definition",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9a3614f623": {
+  "outcome": "restored:fact",
+  "why": "the options and fetchargs value type, now the declared container `Dictionary<string, object?>` (Main.fragment.cs:26 `Dictionary<string, object?>? options`); OLD abbreviated it `Dictionary`",
+  "n": 76,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "55e0b0d3ac": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
+  "n": 16,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6aced21d71": {
+  "outcome": "shared:ts:6aced21d71",
+  "why": "masked, it is the ts unit of class 6aced21d71 (correction:ref-features-escape, by rule:features-escape)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "4fb872e54f"
+  ],
+  "unreviewed": 0
+ },
+ "042740d448": {
+  "outcome": "shared:go:042740d448",
+  "why": "masked, it is the go unit of class 042740d448 (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "5ddee20721"
+  ],
+  "unreviewed": 0
+ },
+ "b2f8d161db": {
+  "outcome": "unification:member-sentences",
+  "why": "the shared member sentences: make names the class and says it keeps the client (Make() returns new EntyClass(client, CloneOpts()), Entity.fragment.cs:14-17)",
+  "n": 92,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "92ce533dbd": {
+  "outcome": "shared:py:92ce533dbd",
+  "why": "masked, it is the py unit of class 92ce533dbd (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "reworded",
+  "section": "reference",
+  "sentences": [
+   "3cd4c3ecdc"
+  ],
+  "unreviewed": 0
+ },
+ "94eba098bf": {
+  "outcome": "unification:result-style-words",
+  "why": "the shared return clause of result style throw: 'throws on failure'. C# operations throw (EntityBase.fragment.cs: Helpers.UnsupportedOp, MakeError under RunOp); OLD said 'raises on error', the same fact in another word",
+  "n": 83,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "91234b31f0": {
+  "outcome": "unification:result-style-words",
+  "why": "the shared return clause of result style throw: 'throws on failure'. C# operations throw (EntityBase.fragment.cs: Helpers.UnsupportedOp, MakeError under RunOp); OLD said 'raises on error', the same fact in another word",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "94997f80de": {
+  "outcome": "restored:fact",
+  "why": "OLD's sentence that `options` is a `Dictionary<string, object?>`; NEW states it in the options table's first row, `options` | `Dictionary<string, object?>` (the container fact)",
+  "n": 17,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the section is headed Test client; TestSDK is its member, static on the class (Main.fragment.cs:414)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "087a6d0de8": {
+  "outcome": "correction:testsdk-no-defaults",
+  "why": "OLD wrote `TestSDK(testopts = null, sdkopts = null)`, but neither parameter has a default (Main.fragment.cs:414-415: `public static ProjectNameSDK TestSDK(Dictionary<string, object?>? testopts, Dictionary<string, object?>? sdkopts)`): a call must pass both; NEW writes the declaration, on the class",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d553096f96": {
+  "outcome": "restored:shared",
+  "why": "restored in the shared test sentence: 'both may be `null`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once); OLD said Instance Methods",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c43f9eaf7a": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 93,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "dae78da098": {
+  "outcome": "restored:shared",
+  "why": "the accessor sentence 'Create a new `AmbientEntity` instance. Pass `null` for no initial options.' (MainEntity_csharp.ts:172-175 makes a new entity on every call); its return type `DemoEntityBase`, which OLD gave in the sentence, is in the signature heading",
+  "n": 93,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "b57bd5370a": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "daa8e7f6a8": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "595e0793c6": {
+  "outcome": "correction:direct-no-default",
+  "why": "OLD wrote `Direct(fetchargs = null)`, but the parameter has no default (Main.fragment.cs:205 `Direct(Dictionary<string, object?>? fetchargs)`); NEW writes the declaration",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "4f545407f2": {
+  "outcome": "restored:shared",
+  "why": "restored as the direct Returns paragraph: the keys `ok`, `status`, `headers`, `data`, and when `err` is there",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c6998cc942": {
+  "outcome": "restored:shared",
+  "why": "restored as 'A failure is reported in the result, not as an error, so branch on `result[\"ok\"] is true`.' OLD's `result[\"ok\"]` is an `object?`, which C# cannot use as a condition; `is true` can",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e9793b5771": {
+  "outcome": "restored:fact",
+  "why": "as 9a3614f623: the type cell names the whole type",
+  "n": 57,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Path parameter values for `{param}` substitution.'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "5c979da39a": {
+  "outcome": "restored:shared",
+  "why": "restored in the direct Returns paragraph: '**Returns:** `Dictionary<string, object?>`, a result map'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d668e7ef06": {
+  "outcome": "correction:direct-no-default",
+  "why": "OLD wrote `Prepare(fetchargs = null)`; Main.fragment.cs:113 declares `Prepare(Dictionary<string, object?>? fetchargs)` with no default",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c41a606d0c": {
+  "outcome": "restored:shared",
+  "why": "the prepare Returns sentence: the fetch definition, and it throws on failure (Main.fragment.cs:141 `throw ctx.MakeError(\"spec_method_allow\", ...)`)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d5ecc12768": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 28,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "835d004ad7": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Returns the entity, and throws on failure. `Data()` reads its record.'",
+  "n": 28,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "65f7e0948c": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "db192874b0": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2562fe1c8f": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "705e301f01": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "993924c4c6": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
+  "n": 77,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e35cbb95f0": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "7b3e29f6ea": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional; a call without one is `List(null)`.' The sentence review dropped 'to list all records' (the entity's stored match still applies, and an endpoint may page)",
+  "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "96b1098bf1": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "8bf4334a4c": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Returns the created entity, and throws on failure.'",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e380aab252": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e513b61e40": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "ref-issues: the gauge update data carries no id (the entity has none); OLD said the data must include `id` for it. Planet's update and patch keep it, as 'The data must include the entity id, `id`, unless the entity already holds it.'",
+  "n": 20,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e1e40527b4": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Returns the updated entity, and throws on failure.'",
+  "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "false for log, which is active by default (model/feature/log.aontu active: true); restored as 'inactive until switched on, except `log`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the per-feature line now says active-by-default for log and inactive for the rest (FeatureDocs.activeByDefault)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa731f856a": {
+  "outcome": "shared:go:aa731f856a",
+  "why": "masked, it is the go unit of class aa731f856a (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6afe3f6b0d"
+  ],
+  "unreviewed": 0
+ },
+ "b2a89584dc": {
+  "outcome": "shared:ts:b2a89584dc",
+  "why": "masked, it is the ts unit of class b2a89584dc (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4eea983832"
+  ],
+  "unreviewed": 0
+ },
+ "ae8fd518c8": {
+  "outcome": "shared:go:ae8fd518c8",
+  "why": "masked, it is the go unit of class ae8fd518c8 (correction:S49, by rule:server-vars)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e61813ee66"
+  ],
+  "unreviewed": 0
+ },
+ "35ea4c3e84": {
+  "outcome": "shared:ts:35ea4c3e84",
+  "why": "masked, it is the ts unit of class 35ea4c3e84 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7247de945f"
+  ],
+  "unreviewed": 0
+ },
+ "ac200e5023": {
+  "outcome": "shared:go:ac200e5023",
+  "why": "masked, it is the go unit of class ac200e5023 (correction:S49, by rule:server-vars)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8a90021109"
+  ],
+  "unreviewed": 0
+ },
+ "06e0e1b2b7": {
+  "outcome": "shared:ts:06e0e1b2b7",
+  "why": "masked, it is the ts unit of class 06e0e1b2b7 (correction:G01, by rule:server-required-cell)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9c7c471a05"
+  ],
+  "unreviewed": 0
+ },
+ "a986258b72": {
+  "outcome": "shared:ts:a986258b72",
+  "why": "masked, it is the ts unit of class a986258b72 (unification:ref-test-heading, by rule:test-heading)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ffe4eb970b"
+  ],
+  "unreviewed": 0
+ },
+ "74addb7cf9": {
+  "outcome": "correction:testsdk-no-defaults",
+  "why": "as 087a6d0de8",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0bf51a1c12": {
+  "outcome": "shared:go:640b39740e",
+  "why": "masked, it is the go unit of class 640b39740e (correction:sentence-review-test, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "746a31db3f"
+  ],
+  "unreviewed": 0
+ },
+ "cd00ec9b2a": {
+  "outcome": "shared:ts:cd00ec9b2a",
+  "why": "masked, it is the ts unit of class cd00ec9b2a (unification:client-heading, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5266d8cbf2"
+  ],
+  "unreviewed": 0
+ },
+ "5d9fc715bf": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 93,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "fcc86222b8": {
+  "outcome": "shared:ts:cce9e8691a",
+  "why": "masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 92,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "6e402b4266": {
+  "outcome": "shared:c:d04a960684",
+  "why": "masked, it is the c unit of class d04a960684 (restored:fact, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "475c89eecd"
+  ],
+  "unreviewed": 0
+ },
+ "61eb1b0f87": {
+  "outcome": "shared:c:31334dded1",
+  "why": "masked, it is the c unit of class 31334dded1 (restored:fact, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fb0d7d681d"
+  ],
+  "unreviewed": 0
+ },
+ "138c795861": {
+  "outcome": "shared:elixir:4b8feb4091",
+  "why": "masked, it is the elixir unit of class 4b8feb4091 (correction:runtime-forms, by rule:add-sig-forms)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "78e12a7505"
+  ],
+  "unreviewed": 0
+ },
+ "042e8c9fbb": {
+  "outcome": "restored:fact",
+  "why": "as 9a3614f623",
+  "n": 90,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "92238dc9df": {
+  "outcome": "shared:c:92238dc9df",
+  "why": "masked, it is the c unit of class 92238dc9df (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7d64fb6cb3"
+  ],
+  "unreviewed": 0
+ },
+ "132238e7e0": {
+  "outcome": "shared:py:132238e7e0",
+  "why": "masked, it is the py unit of class 132238e7e0 (unification:direct-table, by rule:add-ctrl-row)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "107a756204"
+  ],
+  "unreviewed": 0
+ },
+ "65160f6e35": {
+  "outcome": "shared:ts:65160f6e35",
+  "why": "masked, it is the ts unit of class 65160f6e35 (correction:sentence-review-ctrl, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7a3e73d523"
+  ],
+  "unreviewed": 0
+ },
+ "f24cb4d431": {
+  "outcome": "shared:ts:b82912bd60",
+  "why": "masked, it is the ts unit of class b82912bd60 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0a6358906c"
+  ],
+  "unreviewed": 0
+ },
+ "e8e8cc2723": {
+  "outcome": "shared:ts:e8e8cc2723",
+  "why": "masked, it is the ts unit of class e8e8cc2723 (correction:freeze-direct-wording, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "42aedb7ce3"
+  ],
+  "unreviewed": 1
+ },
+ "d806f62156": {
+  "outcome": "shared:go:d806f62156",
+  "why": "masked, it is the go unit of class d806f62156 (correction:freeze-direct-wording, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fe4d5d27e7"
+  ],
+  "unreviewed": 1
+ },
+ "599e6c7589": {
+  "outcome": "restored:shared",
+  "why": "as c6998cc942",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d79ed928a8": {
+  "outcome": "shared:elixir:9702f02e8d",
+  "why": "masked, it is the elixir unit of class 9702f02e8d (correction:runtime-forms, by rule:add-sig-forms)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4fd58b94dc"
+  ],
+  "unreviewed": 0
+ },
+ "e41bde5d5b": {
+  "outcome": "restored:shared",
+  "why": "the prepare member sentence 'Accepts the same parameters as `Direct()`.' (the shared member naming); both take fetchargs (Main.fragment.cs:113, :205)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "f8df569405": {
+  "outcome": "shared:go:8b2f57ed1a",
+  "why": "masked, it is the go unit of class 8b2f57ed1a (restored:shared, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5c8f458658"
+  ],
+  "unreviewed": 0
+ },
+ "c692d85a6d": {
+  "outcome": "restored:shared",
+  "why": "restored from 'raises on error': prepare throws (Main.fragment.cs:141)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "861a2bfee4": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
+  "n": 76,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "22f67677c7": {
+  "outcome": "shared:ts:723eefda19",
+  "why": "masked, it is the ts unit of class 723eefda19 (correction:runtime-forms, by rule:op-signature)",
+  "n": 28,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4388aa476d"
+  ],
+  "unreviewed": 0
+ },
+ "80d61d1816": {
+  "outcome": "restored:shared",
+  "why": "as 835d004ad7",
+  "n": 28,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "891d0381c7": {
+  "outcome": "shared:ts:89c5ef9c6d",
+  "why": "masked, it is the ts unit of class 89c5ef9c6d (restored:shared, by hand)",
+  "n": 79,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3bb5d3a968"
+  ],
+  "unreviewed": 0
+ },
+ "c9c09b4698": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "28d0569a0d": {
+  "outcome": "unification:member-sentences",
+  "why": "the shared data sentence says what a call with data does: Data(newdata) sets the data and returns a copy of it (EntityBase.fragment.cs:75-86)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "486e9a1df9": {
+  "outcome": "unification:member-sentences",
+  "why": "the shared data sentence: without an argument Data() returns `StructUtils.Clone(data)` (EntityBase.fragment.cs:85), a copy (cited)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b3508f8c0d": {
+  "outcome": "shared:py:783b0eefd7",
+  "why": "masked, it is the py unit of class 783b0eefd7 (correction:guard-param-name, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "440d837326"
+  ],
+  "unreviewed": 0
+ },
+ "532ed9117e": {
+  "outcome": "unification:member-sentences",
+  "why": "the shared match sentence: Match works as Data does (EntityBase.fragment.cs:88-99)",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "0918d10148": {
+  "outcome": "shared:ts:0918d10148",
+  "why": "masked, it is the ts unit of class 0918d10148 (correction:decision-7-match-copy, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "3c3c04f33c"
+  ],
+  "unreviewed": 0
+ },
+ "83dd8c33c0": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "c6af6b29b4": {
+  "outcome": "shared:ts:39135c73d0",
+  "why": "masked, it is the ts unit of class 39135c73d0 (restored:fact, by rule:stream-member)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7034f074ec"
+  ],
+  "unreviewed": 0
+ },
+ "50dcec911f": {
+  "outcome": "shared:ts:50dcec911f",
+  "why": "masked, it is the ts unit of class 50dcec911f (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4c93659f14"
+  ],
+  "unreviewed": 0
+ },
+ "91bc59ac7f": {
+  "outcome": "shared:ts:91bc59ac7f",
+  "why": "masked, it is the ts unit of class 91bc59ac7f (restored:fact, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5003b705ca"
+  ],
+  "unreviewed": 0
+ },
+ "80f77307dc": {
+  "outcome": "shared:ts:80f77307dc",
+  "why": "masked, it is the ts unit of class 80f77307dc (correction:decision-6-stream-signal, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "28235772cb"
+  ],
+  "unreviewed": 0
+ },
+ "206ad4e683": {
+  "outcome": "correction:stream-member",
+  "why": "the entity stream member, which every C# entity declares (EntityBase.fragment.cs:257 `public async IAsyncEnumerable<object?> Stream(...)`) and OLD did not document; its signature and the shared stream sentences, with the note on its own `cancel` token",
+  "n": 94,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "4ba46c09d4": {
+  "outcome": "shared:rb:d8065d07cb",
+  "why": "masked, it is the rb unit of class d8065d07cb (correction:runtime-forms, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7bebc239a6"
+  ],
+  "unreviewed": 0
+ },
+ "515b0070b6": {
+  "outcome": "shared:ts:42c3636ef9",
+  "why": "masked, it is the ts unit of class 42c3636ef9 (correction:runtime-forms, by rule:op-signature)",
+  "n": 83,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "fa8637c0bd"
+  ],
+  "unreviewed": 0
+ },
+ "f991db05d7": {
+  "outcome": "restored:shared",
+  "why": "as 7b3e29f6ea",
+  "n": 82,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "393056d0c1": {
+  "outcome": "shared:go:393056d0c1",
+  "why": "masked, it is the go unit of class 393056d0c1 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "185f26bc68"
+  ],
+  "unreviewed": 0
+ },
+ "0f10166e63": {
+  "outcome": "shared:go:0f10166e63",
+  "why": "masked, it is the go unit of class 0f10166e63 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "abe9546ee3"
+  ],
+  "unreviewed": 0
+ },
+ "c2467756ac": {
+  "outcome": "shared:ts:6e0387536b",
+  "why": "masked, it is the ts unit of class 6e0387536b (correction:ref-6, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "82e6814387"
+  ],
+  "unreviewed": 0
+ },
+ "d3f3b82555": {
+  "outcome": "shared:go:d3f3b82555",
+  "why": "masked, it is the go unit of class d3f3b82555 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2b8bc511e9"
+  ],
+  "unreviewed": 0
+ },
+ "7615c6fe93": {
+  "outcome": "shared:ts:7615c6fe93",
+  "why": "masked, it is the ts unit of class 7615c6fe93 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "c151802d4a"
+  ],
+  "unreviewed": 0
+ },
+ "6356afc86b": {
+  "outcome": "shared:go:6356afc86b",
+  "why": "masked, it is the go unit of class 6356afc86b (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "120aec2437"
+  ],
+  "unreviewed": 0
+ },
+ "193859bf79": {
+  "outcome": "shared:go:193859bf79",
+  "why": "masked, it is the go unit of class 193859bf79 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "22bdd0ff18"
+  ],
+  "unreviewed": 0
+ },
+ "28d337e733": {
+  "outcome": "shared:go:28d337e733",
+  "why": "masked, it is the go unit of class 28d337e733 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "2a8d9aa773"
+  ],
+  "unreviewed": 0
+ },
+ "f6a99bb171": {
+  "outcome": "shared:ts:9023782dca",
+  "why": "masked, it is the ts unit of class 9023782dca (correction:ref-6, by rule:add-action-op)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e3081c2053"
+  ],
+  "unreviewed": 0
+ },
+ "3d50058045": {
+  "outcome": "shared:go:3d50058045",
+  "why": "masked, it is the go unit of class 3d50058045 (correction:ref-6, by rule:actions-table)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ebea8de27f"
+  ],
+  "unreviewed": 0
+ },
+ "590771adbd": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions table's Call cell: the call that selects the action with `$action` beside the route's path parameter (`id`)",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "a9081dcdc4": {
+  "outcome": "shared:ts:81deb78cd7",
+  "why": "masked, it is the ts unit of class 81deb78cd7 (correction:sentence-review-action, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7e4d6fd58f"
+  ],
+  "unreviewed": 0
+ },
+ "638df3d562": {
+  "outcome": "shared:ts:fc4eb8cd66",
+  "why": "masked, it is the ts unit of class fc4eb8cd66 (correction:runtime-forms, by rule:op-signature)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "03f31979fa"
+  ],
+  "unreviewed": 0
+ },
+ "a6c40f43b6": {
+  "outcome": "restored:shared",
+  "why": "as 8bf4334a4c",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "509523588c": {
+  "outcome": "shared:ts:a0555bdf8e",
+  "why": "masked, it is the ts unit of class a0555bdf8e (correction:runtime-forms, by rule:op-signature)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0bd42bc9da"
+  ],
+  "unreviewed": 0
+ },
+ "6da904adba": {
+  "outcome": "shared:ts:6da904adba",
+  "why": "masked, it is the ts unit of class 6da904adba (correction:sentence-review-update-id, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6cfad26916"
+  ],
+  "unreviewed": 0
+ },
+ "caabc79e5a": {
+  "outcome": "restored:shared",
+  "why": "as e1e40527b4",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "034234492c": {
+  "outcome": "shared:ts:b2cf6be514",
+  "why": "masked, it is the ts unit of class b2cf6be514 (correction:runtime-forms, by rule:op-signature)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "21516a568c"
+  ],
+  "unreviewed": 0
+ },
+ "01e17d08d0": {
+  "outcome": "shared:ts:b23edb42bc",
+  "why": "masked, it is the ts unit of class b23edb42bc (correction:decision-11-deleted, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "808ab9f422"
+  ],
+  "unreviewed": 0
+ },
+ "6979eaacb4": {
+  "outcome": "shared:ts:6979eaacb4",
+  "why": "masked, it is the ts unit of class 6979eaacb4 (correction:S49, by rule:add-type-cells)",
+  "n": 34,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "ea66aefd24"
+  ],
+  "unreviewed": 0
+ },
+ "1095fa7261": {
+  "outcome": "shared:ts:1095fa7261",
+  "why": "masked, it is the ts unit of class 1095fa7261 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "8d6016d7e2"
+  ],
+  "unreviewed": 0
+ },
+ "916036b165": {
+  "outcome": "shared:ts:916036b165",
+  "why": "masked, it is the ts unit of class 916036b165 (correction:S09, by rule:features-log)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d77745e7ee"
+  ],
+  "unreviewed": 0
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "6aeea92fca": {
+  "outcome": "shared:go:6aeea92fca",
+  "why": "masked, it is the go unit of class 6aeea92fca (correction:S50, by rule:add-secret)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dc97559d3c"
+  ],
+  "unreviewed": 0
+ },
+ "6fcc39ea14": {
+  "outcome": "shared:ts:2d4608bdb8",
+  "why": "masked, it is the ts unit of class 2d4608bdb8 (correction:sentence-review-secret, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "05a5a62f89"
+  ],
+  "unreviewed": 0
+ },
+ "89a23b0fd1": {
+  "outcome": "same-meaning",
+  "why": "the README's examples read the record with Data(), as this sentence says",
+  "n": 33,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "9bc20385ee": {
+  "outcome": "same-meaning",
+  "why": "the README's examples call Data(); this sentence says Match works the same; no disagreement",
+  "n": 30,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e826dd6ae2": {
+  "outcome": "same-meaning",
+  "why": "OLD's load sentence (removed), the same fact the new sentence states",
+  "n": 9,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "13e89cd14f": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "50d6ad1e73": {
+  "outcome": "restored:shared",
+  "why": "restored as 'Returns the patched entity, and throws on failure.'",
+  "n": 4,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "b4e350ebd9": {
+  "outcome": "shared:ts:df0db6061e",
+  "why": "masked, it is the ts unit of class df0db6061e (correction:runtime-forms, by rule:op-signature)",
+  "n": 4,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "a5e47cfb6f"
+  ],
+  "unreviewed": 0
+ },
+ "0c361e13cd": {
+  "outcome": "restored:shared",
+  "why": "as 50d6ad1e73",
+  "n": 4,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "cbcdf6e5f9": {
+  "outcome": "shared:ts:cbcdf6e5f9",
+  "why": "masked, it is the ts unit of class cbcdf6e5f9 (unification:op-sentences, by rule:op-sentences)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "d3d603d612"
+  ],
+  "unreviewed": 0
+ },
+ "bd4b298802": {
+  "outcome": "same-meaning",
+  "why": "the README's test-mode section says both arguments may be null; the same",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "d4af1f09d0": {
+  "outcome": "same-meaning",
+  "why": "OLD's sentence (removed); the README says the same",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "79337316f8": {
+  "outcome": "restored:fact",
+  "why": "as 94997f80de",
+  "n": 2,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "why": "",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference",
+  "where": "no-test csharp/README.md:226, the unported README's test-client line: 'Creates a test-mode client with mock transport. Both arguments may be `null`.', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "read, not run (no dotnet here): Config_csharp.ts MakeFeature falls back to `return new Feature.BaseFeature();` for a feature the SDK lacks; TestSDK sets Mode = \"test\" (Main.fragment.cs:426-429); Fetcher.cs refuses a request in test mode with no transport (fetch_mode_block)"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so (Config_csharp.ts MakeFeature falls back to BaseFeature)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "81aa9cecf9": {
+  "outcome": "shared:ts:81aa9cecf9",
+  "why": "masked, it is the ts unit of class 81aa9cecf9 (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "f616466503"
+  ],
+  "unreviewed": 0
+ },
+ "dbdce4bb0e": {
+  "outcome": "shared:ts:dbdce4bb0e",
+  "why": "masked, it is the ts unit of class dbdce4bb0e (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dd74ff9ab6"
+  ],
+  "unreviewed": 0
+ },
+ "7f188f33e8": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the planet class is PlanetEntityClient (entityClassName renames it on a collision with the PlanetEntity type); the sentence names it",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "5d54345ff5": {
+  "outcome": "unification:member-sentences",
+  "why": "the shared member sentences: make names the class and says it keeps the client (Make() returns new EntyClass(client, CloneOpts()), Entity.fragment.cs:14-17)",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "035bdeb70d": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the field description with | is escaped into one cell",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "6e28ac9cd9": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "badde432a5": {
+  "outcome": "restored:shared",
+  "why": "as dae78da098, ref-issues",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "92e45cf378": {
+  "outcome": "correction:G27",
+  "why": "as 035bdeb70d",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "as 035bdeb70d",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove is inactive on that entity; the page documents the operations the entity has",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f010700f70": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: remove is inactive on that entity; the page documents the operations the entity has",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "d245316c2e": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "1f11d95d03": {
+  "outcome": "shared:ts:10f0d238e2",
+  "why": "masked, it is the ts unit of class 10f0d238e2 (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "6c2e94bab3": {
+  "outcome": "restored:fact",
+  "why": "the member's signature as C# declares it (return type, parameter types, defaults), compared by the guard with the runtime's declaration; OLD wrote parameter names only, the return after an arrow",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "73324231a5": {
+  "outcome": "shared:ts:e35271001c",
+  "why": "masked, it is the ts unit of class e35271001c (unification:accessor-sentence, by rule:accessor-sentence)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0071df96c2"
+  ],
+  "unreviewed": 0
+ },
+ "7393140c1f": {
+  "outcome": "shared:ts:7393140c1f",
+  "why": "masked, it is the ts unit of class 7393140c1f (correction:U34, by rule:class-collision)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "9fe8f9d917"
+  ],
+  "unreviewed": 0
+ },
+ "7dd340f0f1": {
+  "outcome": "shared:ts:7dd340f0f1",
+  "why": "masked, it is the ts unit of class 7dd340f0f1 (correction:G27, by rule:field-escape)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [],
+  "unreviewed": 0
+ },
+ "99e505dfce": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d2af3edbca": {
+  "outcome": "shared:go:d2af3edbca",
+  "why": "masked, it is the go unit of class d2af3edbca (correction:S49, by rule:server-vars)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "799b8582a8"
+  ],
+  "unreviewed": 0
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "fa8ee0c3e6": {
+  "outcome": "restored:shared",
+  "why": "the `is` of the branch condition `result[\"ok\"] is true` (the read printer's truth test), as c6998cc942",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "866c43bbc6": {
+  "outcome": "correction:stream-member",
+  "why": "the entity stream member, which every C# entity declares (EntityBase.fragment.cs:257 `public async IAsyncEnumerable<object?> Stream(...)`) and OLD did not document; its signature and the shared stream sentences, with the note on its own `cancel` token",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "d2db1c52b0": {
+  "outcome": "correction:stream-member",
+  "why": "the entity stream member, which every C# entity declares (EntityBase.fragment.cs:257 `public async IAsyncEnumerable<object?> Stream(...)`) and OLD did not document; its signature and the shared stream sentences, with the note on its own `cancel` token",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "057b5775f7": {
+  "outcome": "correction:stream-member",
+  "why": "the entity stream member, which every C# entity declares (EntityBase.fragment.cs:257 `public async IAsyncEnumerable<object?> Stream(...)`) and OLD did not document; its signature and the shared stream sentences, with the note on its own `cancel` token",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "07b6a683db": {
+  "outcome": "correction:stream-member",
+  "why": "the entity stream member, which every C# entity declares (EntityBase.fragment.cs:257 `public async IAsyncEnumerable<object?> Stream(...)`) and OLD did not document; its signature and the shared stream sentences, with the note on its own `cancel` token",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7a9d5874ad": {
+  "outcome": "correction:stream-member",
+  "why": "the entity stream member, which every C# entity declares (EntityBase.fragment.cs:257 `public async IAsyncEnumerable<object?> Stream(...)`) and OLD did not document; its signature and the shared stream sentences, with the note on its own `cancel` token",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e4f41af490": {
+  "outcome": "correction:stream-member",
+  "why": "the entity stream member, which every C# entity declares (EntityBase.fragment.cs:257 `public async IAsyncEnumerable<object?> Stream(...)`) and OLD did not document; its signature and the shared stream sentences, with the note on its own `cancel` token",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "452db9b769": {
+  "outcome": "correction:stream-member",
+  "why": "the entity stream member, which every C# entity declares (EntityBase.fragment.cs:257 `public async IAsyncEnumerable<object?> Stream(...)`) and OLD did not document; its signature and the shared stream sentences, with the note on its own `cancel` token",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "ec92c81364": {
+  "outcome": "correction:stream-member",
+  "why": "the entity stream member, which every C# entity declares (EntityBase.fragment.cs:257 `public async IAsyncEnumerable<object?> Stream(...)`) and OLD did not document; its signature and the shared stream sentences, with the note on its own `cancel` token",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "eea38408c0": {
+  "outcome": "correction:decision-6-stream-signal",
+  "why": "brief 7 decision 6: the token `signal` of the stream's sentence (`callopts.signal`, read at EntityBase.fragment.cs:268)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "the action name in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7e7f66c823": {
+  "outcome": "correction:ref-6",
+  "why": "the client receiver in the Call cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "c2d76ec109": {
+  "outcome": "correction:ref-6",
+  "why": "the `new` of the Call cell's `new Dictionary<string, object?>`",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "88cfeff73e": {
+  "outcome": "correction:decision-11-deleted",
+  "why": "brief 7 decision 11: the remove sentence names how the mark is read, `result.Deleted()` (IEntity declares it, tm/csharp/core/Types.cs:19; the example binds result as IEntity)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_csharp reads the options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "8928fd2128": {
+  "outcome": "restored:shared",
+  "why": "the prepare Returns sentence calls it the fetch definition rather than fetchdef",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
+  "section": "reference"
+ },
+ "5d21515960": {
+  "outcome": "unification:entity-heading",
+  "why": "the entity section is headed by its class (entityBy class): the generated class is <Name>Entity (Entity_csharp.ts writes cls = entityClassName); OLD headed it with the entity Name",
+  "n": 9,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "57048dc63c": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class PlanetEntityClient named in the heading and sentences",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "c1b55b9c24": {
+  "outcome": "dropped",
+  "why": "the constructor block's `using Voxgig.Struct;`: the block calls only `new DemoSDK(options)`, which needs the SDK namespace alone (`using DemoSdk;`, kept); no line of the block names Voxgig.Struct, so the page stays true and the block compiles as before",
+  "n": 19,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "8898ed5bef": {
+  "outcome": "unification:csharp-entity-cast",
+  "why": "an operation returns `object?` (EntityLoadOp.fragment.cs etc.); the example binds a single entity as `IEntity` (tm/csharp/core/Types.cs:8, which declares Data and Deleted) with `(IEntity)...!`, as OLD's tutorial already did, so that `Data()` and `result.Deleted()`, which the sentences name, are calls on the bound type",
+  "n": 17,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "2a438b746c": {
+  "outcome": "unification:csharp-entity-cast",
+  "why": "an operation returns `object?` (EntityLoadOp.fragment.cs etc.); the example binds a single entity as `IEntity` (tm/csharp/core/Types.cs:8, which declares Data and Deleted) with `(IEntity)...!`, as OLD's tutorial already did, so that `Data()` and `result.Deleted()`, which the sentences name, are calls on the bound type",
+  "n": 10,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "60760b6232": {
+  "outcome": "unification:csharp-entity-cast",
+  "why": "an operation returns `object?` (EntityLoadOp.fragment.cs etc.); the example binds a single entity as `IEntity` (tm/csharp/core/Types.cs:8, which declares Data and Deleted) with `(IEntity)...!`, as OLD's tutorial already did, so that `Data()` and `result.Deleted()`, which the sentences name, are calls on the bound type",
+  "n": 16,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "7b137cd7dd": {
+  "outcome": "unification:csharp-entity-cast",
+  "why": "an operation returns `object?` (EntityLoadOp.fragment.cs etc.); the example binds a single entity as `IEntity` (tm/csharp/core/Types.cs:8, which declares Data and Deleted) with `(IEntity)...!`, as OLD's tutorial already did, so that `Data()` and `result.Deleted()`, which the sentences name, are calls on the bound type",
+  "n": 15,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "fa651e2cf9": {
+  "outcome": "unification:csharp-entity-cast",
+  "why": "an operation returns `object?` (EntityLoadOp.fragment.cs etc.); the example binds a single entity as `IEntity` (tm/csharp/core/Types.cs:8, which declares Data and Deleted) with `(IEntity)...!`, as OLD's tutorial already did, so that `Data()` and `result.Deleted()`, which the sentences name, are calls on the bound type",
+  "n": 16,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "ec6ec3e0c4": {
+  "outcome": "unification:csharp-entity-cast",
+  "why": "an operation returns `object?` (EntityLoadOp.fragment.cs etc.); the example binds a single entity as `IEntity` (tm/csharp/core/Types.cs:8, which declares Data and Deleted) with `(IEntity)...!`, as OLD's tutorial already did, so that `Data()` and `result.Deleted()`, which the sentences name, are calls on the bound type",
+  "n": 4,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "4ad4021e1c": {
+  "outcome": "unification:csharp-entity-cast",
+  "why": "an operation returns `object?` (EntityLoadOp.fragment.cs etc.); the example binds a single entity as `IEntity` (tm/csharp/core/Types.cs:8, which declares Data and Deleted) with `(IEntity)...!`, as OLD's tutorial already did, so that `Data()` and `result.Deleted()`, which the sentences name, are calls on the bound type",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "5178f8bdf4": {
+  "outcome": "same-meaning",
+  "why": "ref-issues: a pairing artefact. OLD headed entities by Name (Planet, PlanetEntity, Utility), NEW by class (PlanetEntityClient, PlanetEntityEntity, UtilityEntity), so the pairing by heading matches different entities; every OLD instance block `var <var> = client.<Accessor>();` is printed unchanged in NEW under its entity's class heading",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "ada9abc8ec": {
+  "outcome": "same-meaning",
+  "why": "ref-issues: a pairing artefact. OLD headed entities by Name (Planet, PlanetEntity, Utility), NEW by class (PlanetEntityClient, PlanetEntityEntity, UtilityEntity), so the pairing by heading matches different entities; every OLD instance block `var <var> = client.<Accessor>();` is printed unchanged in NEW under its entity's class heading",
+  "n": 2,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "b4870af648": {
+  "outcome": "same-meaning",
+  "why": "ref-issues: a pairing artefact. OLD headed entities by Name (Planet, PlanetEntity, Utility), NEW by class (PlanetEntityClient, PlanetEntityEntity, UtilityEntity), so the pairing by heading matches different entities; every OLD instance block `var <var> = client.<Accessor>();` is printed unchanged in NEW under its entity's class heading",
+  "n": 1,
+  "by": "hand",
+  "type": "block-old-only",
+  "section": "reference"
+ },
+ "16fed272aa": {
+  "outcome": "dropped",
+  "why": "as c1b55b9c24",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "reference"
+ },
+ "34b283aa62": {
+  "outcome": "dropped",
+  "why": "as c1b55b9c24",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "reference"
+ }
+}
