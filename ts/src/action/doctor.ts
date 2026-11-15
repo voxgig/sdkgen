@@ -100,6 +100,10 @@ type DoctorReport = {
 
   orphanModel: string[]
 
+  // Compiled output under dist/cmp/<target>/ whose source under src/cmp is
+  // gone. The loader reads dist, so generation still calls it.
+  orphanCompiled: string[]
+
   // A copy that differs from the scaffold ONLY in its provenance lines —
   // written before `base`/`origname` were stamped, so the project changed
   // nothing and `target add` will bring it up to date. Informational: this
@@ -200,6 +204,21 @@ async function cmd_doctor_prune(_args: string[], actx: ActionContext): Promise<A
     log.info({ point: 'doctor-prune', file: abs, note: 'pruned superseded: ' + abs })
   }
 
+  const dryrun = !!actx.opts?.dryrun
+  for (const rel of orphanCompiledFiles(actx)) {
+    const stem = Path.join(actx.folder, rel.replace(/\.js$/, ''))
+    for (const ext of ['.js', '.js.map', '.d.ts', '.d.ts.map']) {
+      if (!dryrun && fs.existsSync(stem + ext)) {
+        fs.unlinkSync(stem + ext)
+      }
+    }
+    pruned.push(rel)
+    log.info({
+      point: 'doctor-prune', file: rel, dryrun,
+      note: (dryrun ? 'would prune' : 'pruned') + ' orphan compiled component: ' + rel,
+    })
+  }
+
   log.info({
     point: 'doctor-prune-end', pruned: pruned.length,
     note: 0 === pruned.length ? 'nothing superseded to prune' :
@@ -293,6 +312,29 @@ function orphanModelFiles(actx: ActionContext): string[] {
 }
 
 
+// A target's compiled component with no source beside it in src/cmp. Only
+// targets the model declares: a removed target's output is never loaded.
+function orphanCompiledFiles(actx: ActionContext): string[] {
+  const fs = actx.fs()
+  const targets = Object.keys((actx.model as any)?.main?.[KIT]?.target ?? {}).sort()
+  const found: string[] = []
+
+  for (const t of targets) {
+    for (const rel of walk(fs, Path.join(actx.folder, 'dist', 'cmp', t))) {
+      if (!rel.endsWith('.js')) {
+        continue
+      }
+      const src = Path.join(actx.folder, 'src', 'cmp', t, rel.replace(/\.js$/, ''))
+      if (!fs.existsSync(src + '.ts') && !fs.existsSync(src + '.js')) {
+        found.push('dist/cmp/' + t + '/' + rel)
+      }
+    }
+  }
+
+  return found
+}
+
+
 async function doctor(
   actx: ActionContext, scope?: DoctorScope, selected?: string[],
 ): Promise<ActionResult> {
@@ -304,7 +346,7 @@ async function doctor(
   const report: DoctorReport = {
     forked: [], edited: [], stale: [], missing: [], additive: [],
     retired: [], override: [], superseded: [], unwired: [], orphanModel: [],
-    resyncPending: [], aliasedDiff: [],
+    orphanCompiled: [], resyncPending: [], aliasedDiff: [],
     outdated: [], unrecorded: [], customized: [], unresolved: [], byItem: {},
     ignoredLog: false, ok: true,
   }
@@ -319,6 +361,8 @@ async function doctor(
   report.superseded = supersededFiles(actx)
 
   report.orphanModel = orphanModelFiles(actx)
+
+  report.orphanCompiled = orphanCompiledFiles(actx)
 
   const kinds = Object.keys(KINDS).sort()
 
@@ -397,7 +441,7 @@ async function doctor(
   // authoritative either way.
   report.ok = 0 === report.forked.length + report.edited.length -
     report.customized.length + report.stale.length + report.missing.length + report.superseded.length +
-    report.orphanModel.length + report.outdated.length +
+    report.orphanModel.length + report.orphanCompiled.length + report.outdated.length +
     report.retired.length + report.unresolved.length
 
   const customized = new Set(report.customized)
@@ -415,6 +459,7 @@ async function doctor(
     ['superseded', 'SUPERSEDED generated output (run `doctor prune` to delete)'],
     ['unwired', 'NOT WIRED IN (root capability this project is missing)'],
     ['orphanModel', 'ORPHAN MODEL FILE (on disk, included by nothing, read by nobody)'],
+    ['orphanCompiled', 'ORPHAN COMPILED COMPONENT (its source is gone, but generate still loads it; `doctor prune` deletes it)'],
     ['resyncPending', 'RESYNC PENDING (predates provenance; `target add` updates it)'],
     ['aliasedDiff', 'aliased model differs from its origin (project-owned, not drift)'],
     ['outdated', 'OUTDATED (unchanged since it was copied, but its source has moved on)'],
@@ -456,6 +501,7 @@ async function doctor(
     superseded: report.superseded.length,
     unwired: report.unwired.length,
     orphanModel: report.orphanModel.length,
+    orphanCompiled: report.orphanCompiled.length,
     resyncPending: report.resyncPending.length,
     retired: report.retired.length,
     override: report.override.length,
@@ -470,6 +516,7 @@ async function doctor(
         report.edited.length + ' edited, ' + report.stale.length + ' stale, ' +
         report.missing.length + ' missing, ' + report.outdated.length +
         ' outdated, ' + report.retired.length + ' retired, ' +
+        report.orphanCompiled.length + ' orphan compiled, ' +
         report.unresolved.length + ' unresolved')
   })
 
@@ -1215,6 +1262,12 @@ function copyWarnings(report: DoctorReport): string[] {
   }
 
   const lines: string[] = report.ignoredLog ? [IGNORED_LOG] : []
+
+  if (0 < report.orphanCompiled.length) {
+    lines.push(report.orphanCompiled.length + ' compiled component(s) in .sdk ' +
+      'have no source, and this run still loads them: ' +
+      report.orphanCompiled.join(', ') + '. `npx voxgig-sdkgen doctor prune` deletes them.')
+  }
 
   for (const item of report.unresolved) {
     lines.push(item.replace('/', ' ') + ': declared from ' +
