@@ -294,7 +294,7 @@ function tally(a: Account): Record<string, number> {
 
 
 export type { Account, Category }
-// The runtime files a token occurs in, for a reviewer of an unquoted token.
+// The runtime files a token occurs in.
 function occurrences(lang: string, tok: string): string[] {
   return runtimeFiles(lang).filter((f) => wordIn(tok, Fs.readFileSync(Path.join(SCAFFOLD, f), 'utf8')))
 }
