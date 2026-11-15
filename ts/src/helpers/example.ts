@@ -151,8 +151,9 @@ type RefFacts = {
   // Where the test constructor's mock comes from: 'generated', only from an
   // SDK generated with the test feature (without it the base feature stands
   // in, and the client refuses every request); 'always', the runtime ships
-  // the test feature whatever the model says.
-  testMock: 'generated' | 'always'
+  // the test feature whatever the model says. Required from interface 3.3,
+  // checked at generate: optional here so that a 3.2 provider still compiles.
+  testMock?: 'generated' | 'always'
   // The client's entity accessor. `param`: the name its signature gives the
   // argument, which the page names where it is not the options' name.
   // `cached`: called with the none value, it returns one instance the client
@@ -441,8 +442,9 @@ type CallContext = { inAttempt: boolean, last: boolean }
 type ProgramStep = { title: string, lines: string[] }
 
 type Syntax = {
-  // The interface version this provider is written for: SYNTAX_INTERFACE.
-  interface: typeof SYNTAX_INTERFACE
+  // The interface version this provider is written for: SYNTAX_INTERFACE, or
+  // SYNTAX_PREVIOUS (or nothing), which the shared code serves with a warning.
+  interface?: typeof SYNTAX_INTERFACE | typeof SYNTAX_PREVIOUS
   fence: string // the code fence language
   facts: RuntimeFacts
   // Each printer returns lines; `inner` prints nested statements at one more level.
@@ -471,20 +473,6 @@ type Syntax = {
   // Optional: what the reference page needs beyond statements.
   ref?: RefSyntax
 }
-
-
-// A provider written for the interface before this one, which the shared code
-// still serves (helpers/syntaxversion): what that raise made required is
-// optional here, and the declaration may be absent.
-type SyntaxPrev = Omit<Syntax, 'interface' | 'ref'> & {
-  interface?: typeof SYNTAX_PREVIOUS
-  ref?: Omit<RefSyntax, 'facts'> & {
-    facts: Omit<RefFacts, 'testMock'> & Partial<Pick<RefFacts, 'testMock'>>
-  }
-}
-
-// What a provider module exports as `Syntax`.
-type ProviderSyntax = Syntax | SyntaxPrev
 
 type RefSyntax = {
   facts: RefFacts
@@ -604,8 +592,6 @@ function indent(lines: string[], by: string): string[] {
 
 
 export type {
-  ProviderSyntax,
-  SyntaxPrev,
   CallContext,
   CtorKind,
   NoteSlot,
