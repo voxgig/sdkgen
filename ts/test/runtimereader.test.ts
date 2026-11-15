@@ -10,8 +10,8 @@ import * as Path from 'node:path'
 
 import type { Decl, Forms, View } from './runtimeforms/forms'
 import { OPS, bracketed, esc, findDecls, read, view } from './runtimeforms/forms'
-import { FORMS_SRC, FRAMEWORK, streamItems, streamClaims } from './runtimeforms/guard'
-import { checkCitation } from './runtimeforms/account'
+import { FORMS_SRC, FRAMEWORK, RUNS, streamItems, streamClaims } from './runtimeforms/guard'
+import { AHEAD, checkCitation } from './runtimeforms/account'
 
 const { CANON_TYPE } = require('../dist/helpers/canonType.js')
 const { canonToType } = require('../dist/sdkgen.js')
@@ -138,6 +138,13 @@ function dimensionProblems(t: string, forms: Forms, v: View): string[] {
     const bad = checkCitation(t, 'shows.' + what, (c as any).value, c, (x) => x)
     if (null != bad) out.push(bad)
   }
+  // A fact cited ahead of a provider holds its value now, ported or not.
+  const spell = (s: string) => s.replace(/\{(\w+)\}/g, (_m, k: string) => forms.tokens[k] ?? '{' + k + '}')
+  for (const [path, c] of Object.entries(forms.cite || {}) as [string, any][]) {
+    if (!AHEAD.test(path) || !('value' in c)) continue
+    const bad = checkCitation(t, path, c.value, c, spell)
+    if (null != bad) out.push(bad)
+  }
   return out
 }
 
@@ -206,8 +213,10 @@ function section(t: string, forms: Forms, v: View): string {
     'Members the runtime does not have: ' + (FAMILIES.filter((f) => null == (forms.members as any)[f] && null == (forms.members as any)[f + 'Get']).join(', ') || 'none') + '.',
     '',
     null == st || null != st.problem ? 'Stream: (not read)' :
-      `Stream (${forms.stream?.file}): the operation runs **${st.runs}**; the streaming feature's items are read **${st.items}**; ` +
+      `Stream (${forms.stream?.file}): the operation runs **${st.runs}** (a provider declares \`runs: '${RUNS[st.runs]}'\`); the streaming feature's items are read **${st.items}**; ` +
       'without the feature the items are the whole result, read before the first one is handed over.',
+    ...Object.entries(forms.cite || {}).filter(([p, c]: [string, any]) => AHEAD.test(p) && 'value' in c)
+      .map(([p, c]: [string, any]) => `- \`${p}\`, cited ahead of a provider: \`${c.value}\` (${c.file}: \`${c.quote}\`)`),
     ...Object.entries(forms.shows || {}).map(([what, c]: [string, any]) => `- ${what}: ${JSON.stringify(c.value)} (${c.file ?? 'absent from ' + c.absent?.files.join(', ')})`),
     '',
     null == forms.types.column

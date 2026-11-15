@@ -280,7 +280,15 @@ function check(t: string, S: any, forms: Forms): Result {
     if ((0 < d.params.length) === !!x.args) verified.add(`ref.facts.test[${i}].args`)
     else add('test', `test constructor ${sigName(x.sig)} takes ${d.params.length} parameters; args declared ${x.args}`)
   })
-  sig('accessor', 'ref.facts.accessor.sig', r.accessor.sig, client)
+  const accD = sig('accessor', 'ref.facts.accessor.sig', r.accessor.sig, client)
+  // The name the accessor's signature gives its argument, as the page prints it.
+  if (null != r.accessor.param) {
+    const ps = sigParams(r.accessor.sig)
+    const last = ps[ps.length - 1]
+    const pname = null == last ? '' : forms.param ? (forms.param as any)(spell(last)).name : last
+    if (pname !== r.accessor.param) add('accessor', `the accessor's signature names its argument ${pname || '(none)'}; declared param: ${r.accessor.param}`)
+    else if (null != accD) verified.add('ref.facts.accessor.param')
+  }
 
   if (null != forms.entityCtor) {
     const ctor = one(entity, forms.entityCtor)
@@ -317,17 +325,23 @@ function check(t: string, S: any, forms: Forms): Result {
     }
   }
 
-  // A stream kind whose sentence says when the items are read must be what
-  // the code does.
-  {
-    const sk = r.entity.find((m: any) => 'stream' === FAMILY[m.kind])
-    if (null != sk && null != forms.stream) {
-      const st = streamItems(t, forms.stream)
-      const claim = streamClaims(sk.kind)
-      if (null != st.problem) add('streamItems', st.problem)
-      else if (null != claim && claim !== st.items && null == exc.streamItems) {
-        add('streamItems', `stream is ${sk.kind}, whose page says the items are read ${claim}; the code reads them ${st.items}`)
-      }
+  // When a stream's operation runs is what the code's positions give; a kind
+  // whose sentence says when the items are read must be what the code does.
+  if (null != forms.stream) {
+    const st = streamItems(t, forms.stream)
+    for (const side of ['client', 'entity'] as const) {
+      r[side].forEach((m: any, i: number) => {
+        if ('stream' !== FAMILY[m.kind]) return
+        if (null != st.problem) return add('streamItems', st.problem)
+        const claim = streamClaims(m.kind)
+        if (null != claim && claim !== st.items && null == exc.streamItems) {
+          add('streamItems', `stream is ${m.kind}, whose page says the items are read ${claim}; the code reads them ${st.items}`)
+        }
+        if (null == m.runs) return
+        const want = RUNS[st.runs]
+        if (want !== m.runs) add('runs', `the code runs the stream's operation ${st.runs} (${want}); declared runs: ${m.runs}`)
+        else verified.add(`ref.facts.${side}[${i}].runs`)
+      })
     }
   }
 
@@ -468,11 +482,15 @@ function streamItems(lang: string, s: StreamItems): { runs: string, items: strin
   }
 }
 
-// When the page's sentence for a stream kind says the items are read.
+// When the page's sentence for a stream kind says the items are read: only
+// one list says it; the other kinds name what is returned (ReadmeRef.ts).
 function streamClaims(kind: string): string | null {
-  if (['streamIterator', 'streamGenerator', 'streamLazy'].includes(kind)) return 'as the caller iterates'
-  if ('streamList' === kind) return 'before it returns'
-  return null
+  return 'streamList' === kind ? 'before it returns' : null
+}
+
+// The page's `runs`, from what the positions of the stream's quotes give.
+const RUNS: Record<string, string> = {
+  'as the caller iterates': 'iterate', 'before it returns': 'call', 'from the call, beside the caller': 'background',
 }
 
 const PROBE_ENT = { name: 'planet', Name: 'Planet', sym: { accessor: 'Planet', var: 'planet', plural: 'planets' } }
@@ -747,13 +765,29 @@ const CONTROLS: Control[] = [
     },
   },
   {
-    name: 'a stream recorded as read as the caller iterates when the code reads it first', check: 'streamItems', mutate: (S, forms) => {
+    name: 'a stream shown as one list when the code reads its items as the caller iterates', check: 'streamItems', mutate: (S, forms) => {
       if (null == S.ref || null == forms.stream) return false
       const m = S.ref.facts.entity.find((x: any) => 'stream' === FAMILY[x.kind])
-      if (null == m) return false
-      if (null != forms.exceptions?.streamItems) return false
+      if (null == m || null != forms.exceptions?.streamItems) return false
       const lang = (/^(?:src\/cmp|tm)\/([\w-]+)\//.exec(forms.stream.file) || [])[1] || ''
-      m.kind = 'before it returns' === streamItems(lang, forms.stream).items ? 'streamIterator' : 'streamList'
+      if ('before it returns' === streamItems(lang, forms.stream).items) return false
+      m.kind = 'streamList'
+      return true
+    },
+  },
+  {
+    name: 'a stream whose operation is declared to run at another time', check: 'runs', mutate: (S) => {
+      if (null == S.ref) return false
+      const m = S.ref.facts.entity.find((x: any) => 'stream' === FAMILY[x.kind] && null != x.runs)
+      if (null == m) return false
+      m.runs = 'call' === m.runs ? 'iterate' : 'call'
+      return true
+    },
+  },
+  {
+    name: "the accessor's parameter named otherwise", check: 'accessor', mutate: (S) => {
+      if (null == S.ref || null == S.ref.facts.accessor.param) return false
+      S.ref.facts.accessor.param = 'zzparam'
       return true
     },
   },
@@ -819,6 +853,6 @@ function set(S: any, path: string, v: any) {
 
 
 export {
-  CONTROLS, FAMILY, FORMS, FORMS_SRC, FRAMEWORK, PROVIDERS, check, clone, fitsOn, formsOf, full, printCall, receiver,
+  CONTROLS, FAMILY, FORMS, FORMS_SRC, FRAMEWORK, PROVIDERS, RUNS, check, clone, fitsOn, formsOf, full, printCall, receiver,
   streamClaims, streamItems, syntaxOf,
 }

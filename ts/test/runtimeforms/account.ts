@@ -16,11 +16,11 @@ const DEFAULTS: [RegExp, Category][] = [
   [/^facts\.(async|result|record|listOf)$/, 'derived'],
   [/^facts\.(named|prints|errVar)$/, 'convention'],
   [/^facts\.unusedError$/, 'language'],
-  [/^facts\.(collection|recordType|errSlot|nullValue|ok|err|pairForm|unwrap)$/, 'cited'],
+  [/^facts\.(collection|recordType|errSlot|nullValue|ok|err|pairForm|noError|unwrap)$/, 'cited'],
   [/^ref\.facts\.(entityBy|noun|entityNoun|heading|keys)$/, 'convention'],
   // What a runtime's source spells: cited, the token in the quote.
   [/^ref\.facts\.none$/, 'cited'],
-  [/^ref\.facts\.lits\.(true|false)$/, 'cited'],
+  [/^ref\.facts\.direct\.(okFalse|abortCode)$/, 'cited'],
   [/^ref\.facts\.maps$/, 'language'],
   [/^ref\.facts\.(setArg|container)$/, 'cited'],
   // Derived where it is the type printer's word, else the options table's.
@@ -29,9 +29,9 @@ const DEFAULTS: [RegExp, Category][] = [
   [/^ref\.facts\.ctorAlts\[\d+\]\.(call|kind)$/, 'derived'],
   [/^ref\.facts\.test\[\d+\]\.(sig|call|args)$/, 'derived'],
   [/^ref\.facts\.test\[\d+\]\.alts\[\d+\]\.(call|kind)$/, 'cited'],
-  [/^ref\.facts\.accessor\.(sig|arg)$/, 'derived'],
+  [/^ref\.facts\.accessor\.(sig|arg|param)$/, 'derived'],
   [/^ref\.facts\.(op|opMatched)\.\w+$/, 'derived'],
-  [/^ref\.facts\.(client|entity)\[\d+\]\.(sig|kind)$/, 'derived'],
+  [/^ref\.facts\.(client|entity)\[\d+\]\.(sig|kind|runs)$/, 'derived'],
   [/^ref\.facts\.(client|entity)\[\d+\]\.returns$/, 'cited'],
   // Whether a getter returns a copy or the live value: read off the runtime's code.
   [/^ref\.facts\.(client|entity)\[\d+\]\.copy$/, 'cited'],
@@ -45,7 +45,7 @@ const DEFAULTS: [RegExp, Category][] = [
 
 // A fact cited before the provider declares it: its citation carries the
 // value the runtime shows, and a later declaration must equal it.
-const AHEAD = /^ref\.facts\.lits\.(true|false)$/
+const AHEAD = /^ref\.facts\.direct\.okFalse$/
 
 function defaultCategory(path: string, value: any): Category | null {
   if ('' === value) return 'convention'
@@ -299,4 +299,4 @@ function occurrences(lang: string, tok: string): string[] {
   return runtimeFiles(lang).filter((f) => wordIn(tok, Fs.readFileSync(Path.join(SCAFFOLD, f), 'utf8')))
 }
 
-export { DEFAULTS, account, checkCitation, occurrences, codeTokens, declaredLeaves, defaultCategory, runtimeFiles, runtimeText, tally }
+export { AHEAD, DEFAULTS, account, checkCitation, occurrences, codeTokens, declaredLeaves, defaultCategory, runtimeFiles, runtimeText, tally }
