@@ -71,9 +71,19 @@ const lit = (e: Extract<Expr, { k: 'lit' }>): string => ({
   INTEGER: '1L', NUMBER: '1.0', BOOLEAN: 'true', ARRAY: 'List.of()', OBJECT: 'Map.of()', NULL: 'null',
 } as Record<string, string>)[e.type] ?? str(e.text)
 
-// An operation returns Object: a loaded entity is bound as SdkEntity, any
-// other result is cast where its record is read.
-const entity = (r: Ref): string => 'one' === r.role ? name(r) : `((SdkEntity) ${name(r)})`
+// An operation returns Object. A result the block reads is bound as an
+// SdkEntity, cast once; a list's item, an Object, is cast where it is read.
+const entity = (r: Ref): string => 'item' === r.role ? `((SdkEntity) ${name(r)})` : name(r)
+
+// Whether the statements read the value bound to `n`.
+const exprReads = (e: Expr, n: string): boolean => 'map' === e.k ? e.entries.some((en) => exprReads(en.value, n))
+  : (('record' === e.k || 'field' === e.k || 'fields' === e.k) && n === e.of.name)
+const reads = (stmts: Stmt[], n: string): boolean => stmts.some((s) => {
+  if ('print' === s.k) return exprReads(s.what, n)
+  if ('call' === s.k) return (s.arg || []).some((en) => exprReads(en.value, n))
+  if ('each' === s.k || 'attempt' === s.k) return reads(s.body, n)
+  return false
+})
 const data = (r: Ref): string => `${entity(r)}.data()`
 const field = (r: Ref, f: string): string => `((Map<?, ?>) ${data(r)}).get(${str(f)})`
 
@@ -137,11 +147,11 @@ const Syntax: SyntaxType = {
     return out
   },
 
-  call: (s) => {
+  call: (s, _desc, sc) => {
     const call = `client.${s.entity.sym.accessor}(null).${(facts.method as any)[s.op]}(${argOf(s)}, null)`
     if (null == s.bind) return [call + ';']
     if ('many' === s.bind.role) return [`List<?> ${name(s.bind)} = (List<?>) ${call};`]
-    if ('one' === s.bind.role) return [`SdkEntity ${name(s.bind)} = (SdkEntity) ${call};`]
+    if (reads(sc.stmts, name(s.bind))) return [`SdkEntity ${name(s.bind)} = (SdkEntity) ${call};`]
     return [`Object ${name(s.bind)} = ${call};`]
   },
 
