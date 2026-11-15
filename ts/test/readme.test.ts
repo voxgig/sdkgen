@@ -278,4 +278,12 @@ describe('ReadmeRefFeatures', () => {
     const two = await renderRefFeatures(SHIPPED)
     ok(/several features wrap/.test(two) && /activation order is nesting order/.test(two), two)
   })
+
+  test('the hook sentence is written only when a hook feature exists, and agrees with one (U53)', async () => {
+    const only = await renderRefFeatures({ retry: { transport: 'wrap' }, cache: { transport: 'wrap' } })
+    ok(!/(^|\n) ?attach(es)? to pipeline hooks/.test(only), only)
+    ok(!/attach(es)? to pipeline hooks/.test(only), only)
+    const one = await renderRefFeatures({ retry: { transport: 'wrap' }, cache: { transport: 'wrap' }, audit: SHIPPED.audit })
+    ok(/`audit` attaches to pipeline hooks\nrather than the transport, so its order/.test(one), one)
+  })
 })
