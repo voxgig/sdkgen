@@ -39,11 +39,11 @@
   "type": "added",
   "section": "tutorial"
  },
- "3320e33aa5": {
-  "outcome": "unification:client-env-sentence",
-  "why": "",
+ "b31c974005": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
   "n": 15,
-  "by": "rule:apikey-env",
+  "by": "hand",
   "type": "added",
   "section": "tutorial"
  },
@@ -55,19 +55,19 @@
   "type": "added",
   "section": "tutorial"
  },
- "b98c5c1370": {
-  "outcome": "correction:S50",
-  "why": "",
+ "a65ba4a33f": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
   "n": 2,
-  "by": "rule:basic-secret",
+  "by": "hand",
   "type": "added",
   "section": "tutorial"
  },
- "849816779b": {
-  "outcome": "correction:U45",
-  "why": "",
+ "bef2b8f986": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
   "n": 3,
-  "by": "rule:write-heading2",
+  "by": "hand",
   "type": "reworded",
   "section": "tutorial"
  },
@@ -97,8 +97,8 @@
  },
  "d9e4a5888b": {
   "outcome": "restored:shared",
-  "why": "restored as the comment 'Create — .ok is the created entity' and the write sentence",
-  "n": 4,
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as d9e4a5888b): restored as the comment 'Create — .ok is the created entity' and the write sentence",
+  "n": 5,
   "by": "hand",
   "type": "missing",
   "section": "tutorial"
@@ -129,9 +129,9 @@
  },
  "9917af5f8a": {
   "outcome": "restored:fact",
-  "why": "",
-  "n": 4,
-  "by": "rule:write-comments",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 9917af5f8a): restored:fact",
+  "n": 5,
+  "by": "hand",
   "type": "added",
   "section": "tutorial"
  },
@@ -151,19 +151,19 @@
   "type": "added",
   "section": "tutorial"
  },
- "732bb80f3d": {
-  "outcome": "correction:U45",
-  "why": "",
-  "n": 1,
-  "by": "rule:write-heading2",
-  "type": "reworded",
-  "section": "tutorial"
- },
  "29bba9e03f": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
   "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "cdfbb6475b": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
   "type": "reworded",
   "section": "tutorial"
  },
@@ -175,19 +175,27 @@
   "type": "reworded",
   "section": "tutorial"
  },
+ "c9c9426cd8": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "79233d47ba": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: it now says where the parent id goes (the match, as the example passes it); same fact",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
  "defb73bfd8": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
   "by": "rule:tutorial-leadin",
-  "type": "reworded",
-  "section": "tutorial"
- },
- "418c678845": {
-  "outcome": "restored:fact",
-  "why": "",
-  "n": 1,
-  "by": "rule:write-comments",
   "type": "reworded",
   "section": "tutorial"
  },
@@ -234,11 +242,11 @@
   "type": "missing",
   "section": "tutorial"
  },
- "4555bd17b9": {
-  "outcome": "correction:U45",
-  "why": "",
+ "ec589bf68a": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
   "n": 1,
-  "by": "rule:write-heading",
+  "by": "hand",
   "type": "added",
   "section": "tutorial"
  },
@@ -271,6 +279,14 @@
   "why": "",
   "n": 1,
   "by": "rule:tok-apikey",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
   "type": "novel-token",
   "section": "tutorial"
  },
@@ -319,6 +335,14 @@
   "why": "",
   "n": 1,
   "by": "rule:basic-secret",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
   "type": "novel-token",
   "section": "tutorial"
  },
@@ -586,41 +610,41 @@
   "type": "block-vanished-token",
   "section": "tutorial"
  },
- "be74a49db7": {
+ "561bcf923d": {
   "outcome": "unification:step-comment-runtime-fact",
-  "why": "",
+  "why": "the root quick start's step comment, now in the union style's words with a verb ('holds the failure', sentence review: the failure clause had none); same fact",
   "n": 10,
-  "by": "rule:root-step-comment",
+  "by": "hand",
   "type": "reworded",
   "section": "rootquick"
  },
- "60b9272c0d": {
+ "b84b13bb30": {
   "outcome": "unification:step-comment-runtime-fact",
-  "why": "",
+  "why": "the root quick start's step comment, now in the union style's words with a verb ('holds the failure', sentence review: the failure clause had none); same fact",
   "n": 6,
-  "by": "rule:root-step-comment",
+  "by": "hand",
   "type": "reworded",
   "section": "rootquick"
  },
- "1761faf269": {
+ "92371be8b1": {
   "outcome": "unification:step-comment-runtime-fact",
-  "why": "",
+  "why": "the root quick start's step comment, now in the union style's words with a verb ('holds the failure', sentence review: the failure clause had none); same fact",
   "n": 7,
-  "by": "rule:root-step-comment",
+  "by": "hand",
   "type": "reworded",
   "section": "rootquick"
  },
- "d311c218ae": {
+ "1129cb4ff5": {
   "outcome": "correction:S49",
-  "why": "the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact. UNVERIFIED: no zig here",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as d311c218ae): the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact. UNVERIFIED: no zig here",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
   "section": "rootquick"
  },
- "1f79a9926d": {
+ "bf586106dd": {
   "outcome": "unification:root-load-nested",
-  "why": "doc-nested: the root quick start loads the nested satellite with its parent id (root-load-nested), binds results outside error handling (zig-bind-outside), gives the server tenant (S49) and reads the environment through Io (zig-env-io); each part as in the other root blocks",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 1f79a9926d): doc-nested: the root quick start loads the nested satellite with its parent id (root-load-nested), binds results outside error handling (zig-bind-outside), gives the server tenant (S49) and reads the environment through Io (zig-env-io); each part as in the other root blocks",
   "n": 1,
   "by": "hand",
   "type": "block-changed",
@@ -714,6 +738,14 @@
   "type": "block-novel-token",
   "section": "rootquick"
  },
+ "41e92b6d9d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "'holds': the root quick start's union step comments now say '.err holds the failure' (sentence review: the failure clause had no verb)",
+  "n": 1,
+  "by": "hand",
+  "type": "block-novel-token",
+  "section": "rootquick"
+ },
  "bdc58e4d73": {
   "outcome": "unification:zig-bind-outside",
   "why": "",
@@ -802,6 +834,14 @@
   "type": "block-vanished-token",
   "section": "rootquick"
  },
+ "1d7f4a3f68": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "'on': the comment's old '.err on failure' clause, now '.err holds the failure'",
+  "n": 1,
+  "by": "hand",
+  "type": "block-vanished-token",
+  "section": "rootquick"
+ },
  "0c5db6b150": {
   "outcome": "unification:step-comment-runtime-fact",
   "why": "",
@@ -834,9 +874,41 @@
   "type": "echo",
   "section": "reference"
  },
- "1ba71ab8c8": {
+ "f7aa0fdb13": {
   "outcome": "same-meaning",
-  "why": "the README direct example reads ok and headers off the same result map",
+  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
+  "n": 16,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "4f06c74f01": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "3344d6d2fb": {
+  "outcome": "same-meaning",
+  "why": "the type word string, as the README's options table uses it",
+  "n": 34,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "89672a79c6": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "940b78cf67": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
   "n": 19,
   "by": "hand",
   "type": "echo",
@@ -853,25 +925,25 @@
   "true": "REFERENCE for prepare (E!Value, for try/catch) and the operation sentences (result unions); README's claim that entity operations reject is false for zig",
   "evidence": "Main.fragment.zig: pub fn prepare(...) E!Value; EntityLoadOp.fragment.zig returns EntResult"
  },
- "f7aa0fdb13": {
-  "outcome": "same-meaning",
-  "why": "a word match on the README's `base` cell ('Base URL of the API server'); the README options table does not list `server`, so it states nothing about its variables",
-  "n": 16,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "3344d6d2fb": {
-  "outcome": "same-meaning",
-  "why": "the type word string, as the README's options table uses it",
-  "n": 34,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
  "f64ae2f4fc": {
   "outcome": "same-meaning",
   "why": "a word match on log in console.log; the README says nothing about log's default",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bd94a4de30": {
+  "outcome": "same-meaning",
+  "why": "the OLD direct Returns line, restored in the shared Returns sentence (its keys, and err when the body cannot be read or the request cannot be made); the README statement shown agrees",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "fb1d09486d": {
+  "outcome": "same-meaning",
+  "why": "the OLD prepare line, restored in zig's note on prepare (on failure it returns the error of its error union, for try or catch); the README's try/catch wording is the contradiction recorded on that note",
   "n": 19,
   "by": "hand",
   "type": "echo",
@@ -893,35 +965,11 @@
   "type": "reworded",
   "section": "reference"
  },
- "042740d448": {
-  "outcome": "unification:direct-table",
-  "why": "",
-  "n": 19,
-  "by": "rule:direct-rows",
-  "type": "reworded",
-  "section": "reference"
- },
- "ef8774be7c": {
-  "outcome": "unification:direct-table",
-  "why": "",
-  "n": 19,
-  "by": "rule:direct-rows",
-  "type": "reworded",
-  "section": "reference"
- },
  "6aced21d71": {
   "outcome": "correction:ref-features-escape",
   "why": "",
   "n": 19,
   "by": "rule:features-escape",
-  "type": "reworded",
-  "section": "reference"
- },
- "92ce533dbd": {
-  "outcome": "restored:shared",
-  "why": "",
-  "n": 19,
-  "by": "rule:direct-shared",
   "type": "reworded",
   "section": "reference"
  },
@@ -933,27 +981,27 @@
   "type": "reworded",
   "section": "reference"
  },
- "1274114fef": {
-  "outcome": "restored:fact",
-  "why": "",
-  "n": 94,
-  "by": "rule:stream-member",
-  "type": "reworded",
-  "section": "reference"
- },
- "89229f2a29": {
-  "outcome": "unification:op-sentences",
-  "why": "",
-  "n": 19,
-  "by": "rule:op-sentences",
-  "type": "reworded",
-  "section": "reference"
- },
  "866403b722": {
   "outcome": "correction:U34",
   "why": "",
   "n": 15,
   "by": "rule:collision-units",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "c937cc2865": {
+  "outcome": "correction:sentence-review-stream",
+  "why": "the stream sentence fixed once (sentence review): a lazy sequence over items already read misled (clojure Entity.fragment.clj:164,180,185 realises every item before returning; elixir entity_base.ex:150,160,172 a Stream over a list), and 'one list' was false for rust's IntoIter; the sentence names what is returned, the runs sentence when the operation runs",
+  "n": 94,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "042740d448": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 19,
+  "by": "rule:direct-rows",
   "type": "reworded",
   "section": "reference"
  },
@@ -965,7 +1013,7 @@
   "type": "reworded",
   "section": "reference"
  },
- "3e8ca55bc9": {
+ "92ce533dbd": {
   "outcome": "restored:shared",
   "why": "",
   "n": 19,
@@ -981,27 +1029,19 @@
   "type": "reworded",
   "section": "reference"
  },
+ "b59f0b4edf": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 17,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
  "6ee52056d9": {
   "outcome": "unification:op-sentences",
   "why": "",
   "n": 27,
   "by": "rule:op-sentences",
-  "type": "reworded",
-  "section": "reference"
- },
- "f300e8ebee": {
-  "outcome": "restored:shared",
-  "why": "",
-  "n": 19,
-  "by": "rule:direct-escape",
-  "type": "reworded",
-  "section": "reference"
- },
- "982790f322": {
-  "outcome": "restored:shared",
-  "why": "",
-  "n": 19,
-  "by": "rule:direct-shared",
   "type": "reworded",
   "section": "reference"
  },
@@ -1032,6 +1072,46 @@
  "0bb5114a4e": {
   "outcome": "restored:shared",
   "why": "restored as 'both may be `h.vnull()`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "3faf36caf8": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 3e8ca55bc9): restored:shared",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c0b2f77dfd": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 982790f322): restored:shared",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c115f99e12": {
+  "outcome": "unification:direct-table",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as ef8774be7c): unification:direct-table",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a2fe5d33d2": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as f300e8ebee): restored:shared",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -1077,14 +1157,6 @@
   "type": "added",
   "section": "reference"
  },
- "b22a4fd4cf": {
-  "outcome": "correction:S49",
-  "why": "",
-  "n": 35,
-  "by": "rule:add-type-cells",
-  "type": "added",
-  "section": "reference"
- },
  "b2a89584dc": {
   "outcome": "correction:S49",
   "why": "",
@@ -1098,14 +1170,6 @@
   "why": "",
   "n": 15,
   "by": "rule:server-vars",
-  "type": "added",
-  "section": "reference"
- },
- "6979eaacb4": {
-  "outcome": "correction:S49",
-  "why": "",
-  "n": 34,
-  "by": "rule:add-type-cells",
   "type": "added",
   "section": "reference"
  },
@@ -1141,19 +1205,47 @@
   "type": "added",
   "section": "reference"
  },
- "348f880ab3": {
-  "outcome": "restored:shared",
-  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+ "9f0d13f4f1": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
   "n": 19,
   "by": "hand",
   "type": "added",
   "section": "reference"
  },
- "7e13c0a95a": {
-  "outcome": "restored:shared",
-  "why": "",
+ "cd00ec9b2a": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
   "n": 19,
-  "by": "rule:test-opts-shared",
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "6979eaacb4": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 34,
+  "by": "rule:add-type-cells",
+  "type": "added",
+  "section": "reference"
+ },
+ "92238dc9df": {
+  "outcome": "shared:c:92238dc9df",
+  "why": "masked, it is the c unit of class 92238dc9df (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7d64fb6cb3"
+  ],
+  "unreviewed": 0
+ },
+ "b22a4fd4cf": {
+  "outcome": "correction:S49",
+  "why": "",
+  "n": 35,
+  "by": "rule:add-type-cells",
   "type": "added",
   "section": "reference"
  },
@@ -1165,11 +1257,51 @@
   "type": "added",
   "section": "reference"
  },
- "9eec770ead": {
-  "outcome": "unification:direct-table",
-  "why": "",
+ "65160f6e35": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
   "n": 19,
-  "by": "rule:direct-rows",
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "d080651bee": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "251d7318e6": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "ac937e958b": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "bc1be46613": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "e0280db03c": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
@@ -1186,6 +1318,14 @@
   "why": "",
   "n": 19,
   "by": "rule:direct-shared",
+  "type": "added",
+  "section": "reference"
+ },
+ "5942751ca4": {
+  "outcome": "restored:note",
+  "why": "zig's note on member:prepare, unchanged, re-paired under the client heading: prepare returns E!Value (Main.fragment.zig), so a failure is the error of its error union; OLD said 'use catch/try to handle the error union'; kept a note, not a style: zig alone returns a native error union beside its operations' result union",
+  "n": 19,
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
@@ -1225,11 +1365,11 @@
   "type": "added",
   "section": "reference"
  },
- "566d3ef425": {
-  "outcome": "unification:op-sentences",
-  "why": "",
+ "17e455f4a3": {
+  "outcome": "correction:sentence-review-list-match",
+  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
   "n": 82,
-  "by": "rule:op-sentences",
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
@@ -1317,19 +1457,19 @@
   "type": "added",
   "section": "reference"
  },
- "4f36ed1acf": {
-  "outcome": "correction:ref-6",
-  "why": "the Call cell carries the route's path parameter id",
+ "a4fe2f9b08": {
+  "outcome": "correction:action-call-cell",
+  "why": "the action's Call cell is the call's statements on one line, with what the language declares ahead of it and the check it needs (sentence review: zig's cell left a switch unclosed, c's used variables nothing declared); pipes escaped for the table",
   "n": 16,
   "by": "hand",
   "type": "added",
   "section": "reference"
  },
- "3c49d29119": {
-  "outcome": "correction:ref-6",
-  "why": "",
+ "a9081dcdc4": {
+  "outcome": "correction:sentence-review-action",
+  "why": "the action sentence, fixed once (sentence review: false, an action is a create call and returns the entity): run in ts and py, create with $action returns the same entity, whose data() is then the action's response",
   "n": 16,
-  "by": "rule:actions-table",
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
@@ -1365,11 +1505,11 @@
   "type": "added",
   "section": "reference"
  },
- "3e1ef005aa": {
-  "outcome": "correction:S50",
-  "why": "",
+ "6fcc39ea14": {
+  "outcome": "correction:sentence-review-secret",
+  "why": "awkward sentence of the review fixed: the runtimes read secret only for HTTP Basic in the header, joined with apikey as user:password (PrepareAuth_<lang>; sdkdesc readsSecret)",
   "n": 2,
-  "by": "rule:basic-secret",
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
@@ -1387,14 +1527,6 @@
   "n": 1,
   "by": "rule:op-sentences",
   "type": "added",
-  "section": "reference"
- },
- "3ed9b2b0fe": {
-  "outcome": "same-meaning",
-  "why": "the README's test line says the same of the same two arguments (both may be h.vnull()); nothing disagrees (zig/README.md:170 uses h.vnull() for no options, ent-none)",
-  "n": 1,
-  "by": "hand",
-  "type": "echo",
   "section": "reference"
  },
  "676e50e089": {
@@ -1421,51 +1553,11 @@
   "type": "echo",
   "section": "reference"
  },
- "91baf1b4b6": {
-  "outcome": "same-meaning",
-  "why": "README:1019 is the generic file tree (feature/ holds base, test, log); it does not say this SDK ships the test feature. No disagreement",
-  "n": 1,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
- "46dc1a3462": {
-  "outcome": "correction:S13",
-  "why": "no-test: the SDK has no test feature, so the client has no mock features; the sentence says so",
-  "n": 1,
-  "by": "hand",
-  "type": "missing",
-  "section": "reference"
- },
- "91201b47e3": {
-  "outcome": "correction:S13",
-  "why": "",
-  "n": 1,
-  "by": "rule:test-nofeature",
-  "type": "added",
-  "section": "reference"
- },
- "f878d6c74a": {
-  "outcome": "correction:S13",
-  "why": "",
-  "n": 1,
-  "by": "rule:test-nofeature",
-  "type": "added",
-  "section": "reference"
- },
  "da08f7e7bd": {
   "outcome": "correction:G27",
   "why": "",
   "n": 1,
   "by": "rule:field-escape",
-  "type": "reworded",
-  "section": "reference"
- },
- "f183d44666": {
-  "outcome": "correction:U34",
-  "why": "",
-  "n": 1,
-  "by": "rule:class-collision",
   "type": "reworded",
   "section": "reference"
  },
@@ -1475,6 +1567,14 @@
   "n": 1,
   "by": "rule:class-collision",
   "type": "reworded",
+  "section": "reference"
+ },
+ "1fe25d7aac": {
+  "outcome": "correction:U34",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as f183d44666): correction:U34",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
   "section": "reference"
  },
  "dac11a1691": {
@@ -1489,6 +1589,14 @@
   "outcome": "correction:G27",
   "why": "ref-issues: the description's pipe broke the table; escaped now",
   "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "30b274a911": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 3,
   "by": "hand",
   "type": "missing",
   "section": "reference"
@@ -1557,20 +1665,20 @@
   "type": "missing",
   "section": "reference"
  },
- "30b274a911": {
-  "outcome": "restored:shared",
-  "why": "the update data sentence names the id the route needs; same fact, other words",
-  "n": 1,
-  "by": "hand",
-  "type": "missing",
-  "section": "reference"
- },
  "1cbc5f74da": {
   "outcome": "correction:U34",
   "why": "ref-issues: under PlanetEntityClient, the update sentence",
   "n": 1,
   "by": "hand",
   "type": "missing",
+  "section": "reference"
+ },
+ "386c0af687": {
+  "outcome": "correction:U34",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as f183d44666): correction:U34",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
   "section": "reference"
  },
  "7393140c1f": {
@@ -1602,6 +1710,14 @@
   "why": "",
   "n": 1,
   "by": "rule:add-ref-op",
+  "type": "added",
+  "section": "reference"
+ },
+ "6da904adba": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 2,
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
@@ -1661,27 +1777,19 @@
   "type": "novel-token",
   "section": "reference"
  },
- "409b8ce3b8": {
-  "outcome": "unification:direct-table",
-  "why": "",
+ "c5847965f4": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result; zig reads a key with h.getp and branches on h.get_bool(...) orelse false, as its README example does",
   "n": 1,
-  "by": "rule:tok-direct-explain",
+  "by": "hand",
   "type": "novel-token",
   "section": "reference"
  },
- "abb698049e": {
-  "outcome": "unification:direct-table",
-  "why": "",
+ "933dac37ed": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result; zig reads a key with h.getp and branches on h.get_bool(...) orelse false, as its README example does",
   "n": 1,
-  "by": "rule:tok-direct-explain",
-  "type": "novel-token",
-  "section": "reference"
- },
- "f40e4c8a30": {
-  "outcome": "unification:direct-table",
-  "why": "",
-  "n": 1,
-  "by": "rule:tok-direct-explain",
+  "by": "hand",
   "type": "novel-token",
   "section": "reference"
  },
@@ -1709,11 +1817,75 @@
   "type": "novel-token",
   "section": "reference"
  },
+ "409b8ce3b8": {
+  "outcome": "unification:direct-table",
+  "why": "",
+  "n": 1,
+  "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
  "bf0c84e3b2": {
   "outcome": "unification:direct-table",
   "why": "",
   "n": 1,
   "by": "rule:tok-direct-explain",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "4028fbfb63": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "e2ff8cd316": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "2efb8a38e8": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "13907fcf88": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "dcf6897c17": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "18e2f9a575": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "7cd766d572": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1,
+  "by": "hand",
   "type": "novel-token",
   "section": "reference"
  },

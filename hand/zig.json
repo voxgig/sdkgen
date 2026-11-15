@@ -6,11 +6,14 @@
   "7d1db2c55c": "zig prints '**Returns:** `Value`, a result map holding `ok`, `status`, `headers` and `data`, ...' (B/zig/REFERENCE.md:111); the type differs and is masked as a fact in zig, as code in rust",
   "5c8f458658": "zig prints '**Returns:** `E!Value`, the fetch definition: the request `direct()` would send.' (B/zig/REFERENCE.md:121); the return type is masked as a fact in zig",
   "322c78c566": "zig prints the same sentence with its own facts: '`list()` returns a result whose `.ok` is a slice of entities, one per record, and whose `.err` reports failure' (crud-bare/zig/README.md:56); rust's collection is code (`Vec`), zig's a word (slice), so the masks differ",
-  "ad23683b78": "zig prints '// Create — .ok carries the created entity; asEntity().data(null) reads its record' (crud-bare/zig/README.md:89); rust's Ok in a comment is not masked as its code fact `Ok`",
+  "ad23683b78": "zig prints '// Create \u2014 .ok carries the created entity; asEntity().data(null) reads its record' (crud-bare/zig/README.md:89); rust's Ok in a comment is not masked as its code fact `Ok`",
   "88dc628742": "zig prints '// Load an ambient: .ok is the entity; .err on failure' (B/README.md:637); rust's comment spells Ok and Err bare, which the mask does not read as the facts | zig prints '// Load a planet: .ok is the entity; .err on failure' (crud-bare root README); same sentence, bare Ok/Err masked differently",
   "4ca4d664d8": "zig prints '// List planet records: .ok is a slice of entities, one per record; .err on failure' (crud-bare root README); same sentence, Vec/slice and bare Ok/Err masked differently",
   "12182a3155": "zig prints '`options` is a `Value` map (`h.vnull()` for none).' (B/zig/REFERENCE.md:17); zig's container `Value` equals its direct.returns, so the mask label holds both paths",
-  "bea4cfb8e1": "zig prints 'The result's `.ok` is a slice of entities, one per record, and its `.err` reports failure.' (B/zig/REFERENCE.md:203); Vec/slice masked differently"
+  "bea4cfb8e1": "zig prints 'The result's `.ok` is a slice of entities, one per record, and its `.err` reports failure.' (B/zig/REFERENCE.md:203); Vec/slice masked differently",
+  "3deec669ce": "rust's own note on direct (notes.member:direct): rust's direct returns a Result whose Ok always holds the map; zig's direct returns a plain Value (B/zig/REFERENCE.md direct signature), so the note has nothing to say there",
+  "f616466503": "zig ships the test feature whatever the model (ref.facts.testMock 'always', cited: Config_zig.ts BUILTIN_FEATURES names 'test', and make_feature maps it); its no-test page says 'Create a test client with mock features active.' (no-test/zig/REFERENCE.md), which is true there",
+  "dd74ff9ab6": "zig ships the test feature whatever the model (testMock 'always'); a zig SDK without the test feature in its model still has the mock transport, so the sentence would be false for zig"
  },
  "360f66a3d2": {
   "outcome": "same-meaning",
@@ -24,17 +27,17 @@
  },
  "d9e4a5888b": {
   "outcome": "restored:shared",
-  "why": "restored as the comment 'Create — .ok is the created entity' and the write sentence",
-  "n": 4
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as d9e4a5888b): restored as the comment 'Create \u2014 .ok is the created entity' and the write sentence",
+  "n": 5
  },
  "9a132de632": {
   "outcome": "restored:shared",
-  "why": "restored as the comment 'Update — the id comes off the created entity's record'",
+  "why": "restored as the comment 'Update \u2014 the id comes off the created entity's record'",
   "n": 4
  },
  "691bdc9ddb": {
   "outcome": "restored:shared",
-  "why": "restored as 'Patch — sends only the fields given; ...'",
+  "why": "restored as 'Patch \u2014 sends only the fields given; ...'",
   "n": 3
  },
  "6c43ff2d59": {
@@ -382,9 +385,9 @@
   "n": 1
  },
  "30b274a911": {
-  "outcome": "restored:shared",
-  "why": "the update data sentence names the id the route needs; same fact, other words",
-  "n": 1
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 3
  },
  "1cbc5f74da": {
   "outcome": "correction:U34",
@@ -400,5 +403,282 @@
   "outcome": "same-meaning",
   "why": "README:209 calls sdk.test_sdk(testopts, sdkopts); same parameters",
   "n": 19
+ },
+ "b31c974005": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
+  "n": 15
+ },
+ "a65ba4a33f": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
+  "n": 2
+ },
+ "bef2b8f986": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 3
+ },
+ "9917af5f8a": {
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 9917af5f8a): restored:fact",
+  "n": 5
+ },
+ "cdfbb6475b": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1
+ },
+ "c9c9426cd8": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1
+ },
+ "79233d47ba": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: it now says where the parent id goes (the match, as the example passes it); same fact",
+  "n": 1
+ },
+ "ec589bf68a": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1
+ },
+ "561bcf923d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root quick start's step comment, now in the union style's words with a verb ('holds the failure', sentence review: the failure clause had none); same fact",
+  "n": 10
+ },
+ "b84b13bb30": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root quick start's step comment, now in the union style's words with a verb ('holds the failure', sentence review: the failure clause had none); same fact",
+  "n": 6
+ },
+ "92371be8b1": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root quick start's step comment, now in the union style's words with a verb ('holds the failure', sentence review: the failure clause had none); same fact",
+  "n": 7
+ },
+ "1129cb4ff5": {
+  "outcome": "correction:S49",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as d311c218ae): the client passes the server variable OLD omitted, as its only option (the normalizer reaches only a server beside other options), and the step comment states the runtime fact. UNVERIFIED: no zig here",
+  "n": 1
+ },
+ "bf586106dd": {
+  "outcome": "unification:root-load-nested",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 1f79a9926d): doc-nested: the root quick start loads the nested satellite with its parent id (root-load-nested), binds results outside error handling (zig-bind-outside), gives the server tenant (S49) and reads the environment through Io (zig-env-io); each part as in the other root blocks",
+  "n": 1
+ },
+ "4f06c74f01": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 19
+ },
+ "89672a79c6": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "940b78cf67": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "c937cc2865": {
+  "outcome": "correction:sentence-review-stream",
+  "why": "the stream sentence fixed once (sentence review): a lazy sequence over items already read misled (clojure Entity.fragment.clj:164,180,185 realises every item before returning; elixir entity_base.ex:150,160,172 a Stream over a list), and 'one list' was false for rust's IntoIter; the sentence names what is returned, the runs sentence when the operation runs",
+  "n": 94
+ },
+ "b59f0b4edf": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 17
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19
+ },
+ "3faf36caf8": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 3e8ca55bc9): restored:shared",
+  "n": 19
+ },
+ "c0b2f77dfd": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 982790f322): restored:shared",
+  "n": 19
+ },
+ "c115f99e12": {
+  "outcome": "unification:direct-table",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as ef8774be7c): unification:direct-table",
+  "n": 19
+ },
+ "a2fe5d33d2": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as f300e8ebee): restored:shared",
+  "n": 19
+ },
+ "9f0d13f4f1": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
+  "n": 19
+ },
+ "cd00ec9b2a": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19
+ },
+ "65160f6e35": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "n": 19
+ },
+ "d080651bee": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "251d7318e6": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "ac937e958b": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "bc1be46613": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "e0280db03c": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "17e455f4a3": {
+  "outcome": "correction:sentence-review-list-match",
+  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
+  "n": 82
+ },
+ "a4fe2f9b08": {
+  "outcome": "correction:action-call-cell",
+  "why": "the action's Call cell is the call's statements on one line, with what the language declares ahead of it and the check it needs (sentence review: zig's cell left a switch unclosed, c's used variables nothing declared); pipes escaped for the table",
+  "n": 16
+ },
+ "a9081dcdc4": {
+  "outcome": "correction:sentence-review-action",
+  "why": "the action sentence, fixed once (sentence review: false, an action is a create call and returns the entity): run in ts and py, create with $action returns the same entity, whose data() is then the action's response",
+  "n": 16
+ },
+ "6fcc39ea14": {
+  "outcome": "correction:sentence-review-secret",
+  "why": "awkward sentence of the review fixed: the runtimes read secret only for HTTP Basic in the header, joined with apikey as user:password (PrepareAuth_<lang>; sdkdesc readsSecret)",
+  "n": 2
+ },
+ "1fe25d7aac": {
+  "outcome": "correction:U34",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as f183d44666): correction:U34",
+  "n": 1
+ },
+ "386c0af687": {
+  "outcome": "correction:U34",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as f183d44666): correction:U34",
+  "n": 1
+ },
+ "6da904adba": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 2
+ },
+ "c5847965f4": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result; zig reads a key with h.getp and branches on h.get_bool(...) orelse false, as its README example does",
+  "n": 1
+ },
+ "933dac37ed": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result; zig reads a key with h.getp and branches on h.get_bool(...) orelse false, as its README example does",
+  "n": 1
+ },
+ "4028fbfb63": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1
+ },
+ "e2ff8cd316": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1
+ },
+ "2efb8a38e8": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1
+ },
+ "13907fcf88": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1
+ },
+ "dcf6897c17": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1
+ },
+ "18e2f9a575": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1
+ },
+ "7cd766d572": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1
+ },
+ "bd94a4de30": {
+  "outcome": "same-meaning",
+  "why": "the OLD direct Returns line, restored in the shared Returns sentence (its keys, and err when the body cannot be read or the request cannot be made); the README statement shown agrees",
+  "n": 19
+ },
+ "fb1d09486d": {
+  "outcome": "same-meaning",
+  "why": "the OLD prepare line, restored in zig's note on prepare (on failure it returns the error of its error union, for try or catch); the README's try/catch wording is the contradiction recorded on that note",
+  "n": 19
+ },
+ "5942751ca4": {
+  "outcome": "restored:note",
+  "why": "zig's note on member:prepare, unchanged, re-paired under the client heading: prepare returns E!Value (Main.fragment.zig), so a failure is the error of its error union; OLD said 'use catch/try to handle the error union'; kept a note, not a style: zig alone returns a native error union beside its operations' result union",
+  "n": 19
+ },
+ "41e92b6d9d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "'holds': the root quick start's union step comments now say '.err holds the failure' (sentence review: the failure clause had no verb)",
+  "n": 1
+ },
+ "1d7f4a3f68": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "'on': the comment's old '.err on failure' clause, now '.err holds the failure'",
+  "n": 1
+ },
+ "facts": {
+  "ref.noun": {
+   "value": "Methods",
+   "why": "the noun OLD used for the client's members ('Instance Methods'); held there; the new context is the shared heading 'Client Methods', decided once for all twenty (the section lists the client's members; c, clojure and elixir have no instance)",
+   "evidence": "OLD B/zig/REFERENCE.md \"### Instance Methods\""
+  }
  }
 }

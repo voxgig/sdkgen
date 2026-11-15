@@ -63,11 +63,11 @@
   "type": "added",
   "section": "tutorial"
  },
- "3320e33aa5": {
-  "outcome": "unification:client-env-sentence",
-  "why": "",
+ "b31c974005": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
   "n": 15,
-  "by": "rule:apikey-env",
+  "by": "hand",
   "type": "added",
   "section": "tutorial"
  },
@@ -79,11 +79,19 @@
   "type": "added",
   "section": "tutorial"
  },
- "b98c5c1370": {
-  "outcome": "correction:S50",
-  "why": "",
+ "5d75f15fd4": {
+  "outcome": "same-meaning",
+  "why": "the README's client example passes apikey (and secret) as options, as this sentence says the example does; no disagreement",
   "n": 2,
-  "by": "rule:basic-secret",
+  "by": "hand",
+  "type": "echo",
+  "section": "tutorial"
+ },
+ "a65ba4a33f": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option",
+  "n": 2,
+  "by": "hand",
   "type": "added",
   "section": "tutorial"
  },
@@ -103,11 +111,11 @@
   "type": "echo",
   "section": "tutorial"
  },
- "849816779b": {
-  "outcome": "correction:U45",
-  "why": "",
+ "bef2b8f986": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
   "n": 3,
-  "by": "rule:write-heading2",
+  "by": "hand",
   "type": "reworded",
   "section": "tutorial"
  },
@@ -153,8 +161,8 @@
  },
  "0412262a52": {
   "outcome": "restored:shared",
-  "why": "restored as the step's write sentence: each write resolves to the entity it wrote; the record is read with .data() in the code",
-  "n": 4,
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 0412262a52): restored as the step's write sentence: each write resolves to the entity it wrote; the record is read with .data() in the code",
+  "n": 5,
   "by": "hand",
   "type": "missing",
   "section": "tutorial"
@@ -177,18 +185,10 @@
  },
  "efc6f12457": {
   "outcome": "unification:write-comment-style",
-  "why": "",
-  "n": 4,
-  "by": "rule:add-write-comment",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as efc6f12457): unification:write-comment-style",
+  "n": 5,
+  "by": "hand",
   "type": "added",
-  "section": "tutorial"
- },
- "732bb80f3d": {
-  "outcome": "correction:U45",
-  "why": "",
-  "n": 1,
-  "by": "rule:write-heading2",
-  "type": "reworded",
   "section": "tutorial"
  },
  "29bba9e03f": {
@@ -196,6 +196,14 @@
   "why": "",
   "n": 1,
   "by": "rule:tutorial-leadin",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "cdfbb6475b": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
   "type": "reworded",
   "section": "tutorial"
  },
@@ -207,19 +215,27 @@
   "type": "reworded",
   "section": "tutorial"
  },
+ "c9c9426cd8": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
+ "79233d47ba": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: it now says where the parent id goes (the match, as the example passes it); same fact",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "tutorial"
+ },
  "defb73bfd8": {
   "outcome": "correction:S28",
   "why": "",
   "n": 1,
   "by": "rule:tutorial-leadin",
-  "type": "reworded",
-  "section": "tutorial"
- },
- "91fe624da0": {
-  "outcome": "restored:fact",
-  "why": "",
-  "n": 1,
-  "by": "rule:write-comments",
   "type": "reworded",
   "section": "tutorial"
  },
@@ -255,11 +271,11 @@
   "type": "missing",
   "section": "tutorial"
  },
- "4555bd17b9": {
-  "outcome": "correction:U45",
-  "why": "",
+ "ec589bf68a": {
+  "outcome": "unification:write-title-entity",
+  "why": "the write step is titled with its entity, as the list and load steps are (sentence review: a bare verb title is vague); the operations named are the same",
   "n": 1,
-  "by": "rule:write-heading",
+  "by": "hand",
   "type": "added",
   "section": "tutorial"
  },
@@ -292,6 +308,14 @@
   "why": "",
   "n": 1,
   "by": "rule:tok-apikey",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
   "type": "novel-token",
   "section": "tutorial"
  },
@@ -332,6 +356,14 @@
   "why": "",
   "n": 1,
   "by": "rule:basic-secret",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1,
+  "by": "hand",
   "type": "novel-token",
   "section": "tutorial"
  },
@@ -671,17 +703,33 @@
   "type": "echo",
   "section": "reference"
  },
- "e98db96ff8": {
+ "89672a79c6": {
   "outcome": "same-meaning",
-  "why": "README:302 says on error ok is false and err holds the error; README:78 says the same envelope keys",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
   "n": 19,
   "by": "hand",
   "type": "echo",
   "section": "reference"
  },
- "48e14fa91c": {
+ "940b78cf67": {
   "outcome": "same-meaning",
-  "why": "the README direct() example branches on result.ok; same statement",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "2a96c664d3": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "33a4409681": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
   "n": 19,
   "by": "hand",
   "type": "echo",
@@ -775,27 +823,11 @@
   "type": "reworded",
   "section": "reference"
  },
- "75fe8933fb": {
-  "outcome": "unification:ref-page-structure",
-  "why": "",
-  "n": 38,
-  "by": "rule:page-structure2",
-  "type": "reworded",
-  "section": "reference"
- },
- "37cbd7c81c": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
-  "n": 93,
+ "81deb78cd7": {
+  "outcome": "correction:sentence-review-action",
+  "why": "the action sentence, fixed once (sentence review: false, an action is a create call and returns the entity): run in ts and py, create with $action returns the same entity, whose data() is then the action's response",
+  "n": 15,
   "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "8ac9e540a8": {
-  "outcome": "restored:shared",
-  "why": "",
-  "n": 19,
-  "by": "rule:direct-shared",
   "type": "reworded",
   "section": "reference"
  },
@@ -807,11 +839,11 @@
   "type": "reworded",
   "section": "reference"
  },
- "92bc6e303b": {
-  "outcome": "unification:op-sentences",
-  "why": "",
+ "b82912bd60": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
   "n": 19,
-  "by": "rule:op-sentences",
+  "by": "hand",
   "type": "reworded",
   "section": "reference"
  },
@@ -841,7 +873,7 @@
  },
  "1d5f2874ab": {
   "outcome": "restored:shared",
-  "why": "the section is headed Test client: test() is the only static member, and tester() its alias is documented under Instance Methods",
+  "why": "the section is headed Test client: test() is the only static member, and tester() its alias is documented under Client Methods",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -871,14 +903,6 @@
   "type": "missing",
   "section": "reference"
  },
- "a0ea2daad1": {
-  "outcome": "dropped",
-  "why": "the type cells of the accessor and test-client parameter tables; the types stay in each heading's signature (`entopts?: object`), and the tables went with the sentences that replaced them",
-  "n": 116,
-  "by": "hand",
-  "type": "missing",
-  "section": "reference"
- },
  "a188efe74d": {
   "outcome": "restored:shared",
   "why": "restored as 'further client options, merged over the test defaults'",
@@ -891,6 +915,22 @@
   "outcome": "restored:shared",
   "why": "restored as 'It returns a client in test mode.'",
   "n": 38,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "4aca0e9fc2": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 37cbd7c81c): the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
+  "n": 93,
   "by": "hand",
   "type": "missing",
   "section": "reference"
@@ -935,9 +975,25 @@
   "type": "missing",
   "section": "reference"
  },
- "363701dbb8": {
-  "outcome": "restored:shared",
-  "why": "the Returns line is kept and extended with the result keys",
+ "a0ea2daad1": {
+  "outcome": "dropped",
+  "why": "the type cells of the accessor and test-client parameter tables; the types stay in each heading's signature (`entopts?: object`), and the tables went with the sentences that replaced them",
+  "n": 116,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a27fcb0198": {
+  "outcome": "unification:ref-page-structure",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 75fe8933fb): unification:ref-page-structure",
+  "n": 38,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "ac1b545527": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -946,6 +1002,14 @@
  "7b8e8beaa8": {
   "outcome": "restored:shared",
   "why": "inside the Returns sentence: 'on a failure `ok` is `false` and `err` holds the error'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "a9cb864ded": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 8ac9e540a8): restored:shared",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -971,6 +1035,14 @@
   "outcome": "restored:shared",
   "why": "restored as 'Resolves to the created entity' in the create sentence, with how a failure shows",
   "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 20,
   "by": "hand",
   "type": "missing",
   "section": "reference"
@@ -1031,14 +1103,6 @@
   "type": "added",
   "section": "reference"
  },
- "6979eaacb4": {
-  "outcome": "correction:S49",
-  "why": "",
-  "n": 31,
-  "by": "rule:add-type-cells",
-  "type": "added",
-  "section": "reference"
- },
  "35ea4c3e84": {
   "outcome": "correction:G01",
   "why": "",
@@ -1071,19 +1135,27 @@
   "type": "added",
   "section": "reference"
  },
- "97877bc5dd": {
-  "outcome": "restored:shared",
-  "why": "the test client's parameter table (testopts: the test feature's options; sdkopts: further client options, merged over the test defaults) as one sentence that names the arguments by position (v3.2: shared code prints no runtime token of its own; the heading's signature, checked by the guard's paramNames, names them)",
+ "5ce4fbf9a3": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
   "n": 19,
   "by": "hand",
   "type": "added",
   "section": "reference"
  },
- "7e13c0a95a": {
-  "outcome": "restored:shared",
-  "why": "",
+ "cd00ec9b2a": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
   "n": 19,
-  "by": "rule:test-opts-shared",
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "82b6e219ea": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 37cbd7c81c): the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
+  "n": 93,
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
@@ -1099,21 +1171,73 @@
   ],
   "unreviewed": 0
  },
- "134eeab855": {
-  "outcome": "restored:shared",
-  "why": "",
-  "n": 19,
-  "by": "rule:direct-shared",
+ "1691d17c93": {
+  "outcome": "same-meaning",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as 8e7a866f45): ent-none: the type word object, as the README's options table uses it",
+  "n": 38,
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
- "d61461a7c8": {
-  "outcome": "restored:shared",
+ "6979eaacb4": {
+  "outcome": "correction:S49",
   "why": "",
-  "n": 19,
-  "by": "rule:direct-shared",
+  "n": 31,
+  "by": "rule:add-type-cells",
   "type": "added",
   "section": "reference"
+ },
+ "65160f6e35": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "251d7318e6": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "ac937e958b": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "47242ab38a": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "33ee785ed0": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "72ea88f6fd": {
+  "outcome": "shared:py:fc4313d211",
+  "why": "masked, it is the py unit of class fc4313d211 (restored:shared, by rule:direct-shared)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5c8f458658"
+  ],
+  "unreviewed": 0
  },
  "1c8a16afeb": {
   "outcome": "restored:shared",
@@ -1163,11 +1287,11 @@
   "type": "added",
   "section": "reference"
  },
- "566d3ef425": {
-  "outcome": "unification:op-sentences",
-  "why": "",
+ "17e455f4a3": {
+  "outcome": "correction:sentence-review-list-match",
+  "why": "awkward sentence of the review fixed: 'without one, every record is listed' overstated (an endpoint may page, and the entity's stored match still applies); the sentence keeps what is true, that the match is optional",
   "n": 82,
-  "by": "rule:op-sentences",
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
@@ -1203,6 +1327,14 @@
   "type": "added",
   "section": "reference"
  },
+ "6da904adba": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "d933f2cdb3": {
   "outcome": "unification:op-failure-clause",
   "why": "",
@@ -1225,6 +1357,22 @@
   "n": 19,
   "by": "rule:features-log",
   "type": "added",
+  "section": "reference"
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "2d4608bdb8": {
+  "outcome": "correction:sentence-review-secret",
+  "why": "awkward sentence of the review fixed: the runtimes read secret only for HTTP Basic in the header, joined with apikey as user:password (PrepareAuth_<lang>; sdkdesc readsSecret)",
+  "n": 2,
+  "by": "hand",
+  "type": "reworded",
   "section": "reference"
  },
  "7901b4ddb7": {
@@ -1283,6 +1431,14 @@
   "type": "echo",
   "section": "reference"
  },
+ "9c11b6417b": {
+  "outcome": "same-meaning",
+  "why": "the OLD Returns line of options() without its full stop, re-paired under the client heading (unification:ref-page-structure at v3.2); the README uses object for the same type; no disagreement",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "176972c3bb": {
   "outcome": "same-meaning",
   "why": "ent-none: the test client's parameter types moved into its signature; the README uses object the same way",
@@ -1291,16 +1447,24 @@
   "type": "echo",
   "section": "reference"
  },
- "91baf1b4b6": {
+ "bff341cf32": {
   "outcome": "contradiction",
   "why": "",
   "n": 1,
   "by": "hand",
   "type": "echo",
   "section": "reference",
-  "where": "ts/README.md:230 (no-test): `feature` cell 'Feature activation flags (e.g. `{ test: { active: true } }`)', and ts/README.md:133-144 'Use test mode ... mock client'",
-  "true": "REFERENCE: without the test feature its source does not ship, so test() builds a client with no mock transport",
-  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); catalogue S13"
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)"
+ },
+ "05f770bd83": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
  },
  "46dc1a3462": {
   "outcome": "correction:S13",
@@ -1310,19 +1474,19 @@
   "type": "missing",
   "section": "reference"
  },
- "91201b47e3": {
-  "outcome": "correction:S13",
-  "why": "",
+ "81aa9cecf9": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
   "n": 1,
-  "by": "rule:test-nofeature",
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
- "f878d6c74a": {
-  "outcome": "correction:S13",
-  "why": "",
+ "dbdce4bb0e": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
   "n": 1,
-  "by": "rule:test-nofeature",
+  "by": "hand",
   "type": "added",
   "section": "reference"
  },
@@ -1331,14 +1495,6 @@
   "why": "",
   "n": 1,
   "by": "rule:field-escape",
-  "type": "reworded",
-  "section": "reference"
- },
- "ba47e4f94f": {
-  "outcome": "correction:guard-accessor-arg",
-  "why": "the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
-  "n": 1,
-  "by": "hand",
   "type": "reworded",
   "section": "reference"
  },
@@ -1364,6 +1520,14 @@
   "n": 1,
   "by": "rule:accessor-sentence",
   "type": "reworded",
+  "section": "reference"
+ },
+ "18b691f7e7": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as ba47e4f94f): the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
   "section": "reference"
  },
  "f3cf8c6c54": {
@@ -1414,6 +1578,14 @@
   "type": "missing",
   "section": "reference"
  },
+ "35ed0545fd": {
+  "outcome": "correction:sentence-review-action",
+  "why": "the action sentence, fixed once (sentence review: false, an action is a create call and returns the entity): run in ts and py, create with $action returns the same entity, whose data() is then the action's response",
+  "n": 1,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
  "90066e05ea": {
   "outcome": "correction:S25",
   "why": "ref-issues turns remove off: an inactive operation is not documented",
@@ -1438,12 +1610,12 @@
   "type": "missing",
   "section": "reference"
  },
- "0b29ec4944": {
-  "outcome": "restored:shared",
-  "why": "the update data sentence names the id the route needs (opMatched); the old line said the same in other words",
+ "634de4221b": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "re-paired at v3.3 (the client heading or a neighbouring sentence changed; the units are those decided at v3.2 as ba47e4f94f): the runtime's parameter is entopts (MainEntity_ts.ts `${entity.Name}(entopts?: Record<string, any>)`)",
   "n": 1,
   "by": "hand",
-  "type": "missing",
+  "type": "added",
   "section": "reference"
  },
  "7393140c1f": {
@@ -1473,6 +1645,14 @@
  "dedcfa23a4": {
   "outcome": "correction:ref-6",
   "why": "as 5b8eca7ad4, under PlanetEntityClient (ref-issues)",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "a9081dcdc4": {
+  "outcome": "correction:sentence-review-action",
+  "why": "the action sentence, fixed once (sentence review: false, an action is a create call and returns the entity): run in ts and py, create with $action returns the same entity, whose data() is then the action's response",
   "n": 1,
   "by": "hand",
   "type": "added",
@@ -1556,6 +1736,14 @@
   "n": 1,
   "by": "rule:server-vars",
   "type": "novel-token",
+  "section": "reference"
+ },
+ "3f4da3a957": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "n": 1,
+  "by": "hand",
+  "type": "vanished-token",
   "section": "reference"
  },
  "57048dc63c": {
