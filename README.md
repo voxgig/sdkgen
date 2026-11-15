@@ -103,14 +103,19 @@ The blocks table: `classes` counts the "otherwise" pairs grouped by their masked
 
 ### For a port started from v3.2 (its records keyed by the v3.2 ids)
 
+Tested on a copy of the lua port (`P/sfix/try-lua`): 0 conflicts, 173 of 174 hand entries carried (one merge of two agreeing entries), 34 absent reasons mapped, counts unchanged; the one command then leaves open exactly the five classes whose sentence the review marked false (record them as rb's are recorded, or wait for the shared fix).
+
 ```sh
 export PATH=/opt/node24/bin:$PATH
-# in the port's workspace W (W/tools a copy of the v3.2 tools, W/sdkgen, W/out):
-cp -a <sfix>/tools W/tools-v33                        # the new tools beside the old
-for d in hand pinned classes counts normalizers purity-allow; do cp -a W/tools/$d/<lang>.json W/tools-v33/$d/ 2>/dev/null; done
-cp -a W/tools/normalizers/<lang>.js W/tools-v33/normalizers/ 2>/dev/null
-node W/tools-v33/rekey.js --clone W/sdkgen --old W/out/old --new W/out/new --lang <lang> --from W/tools --to W/tools-v33 --dry   # read the report
-node W/tools-v33/rekey.js --clone W/sdkgen --old W/out/old --new W/out/new --lang <lang> --from W/tools --to W/tools-v33 --json W/rekey-<lang>.json
-W/tools-v33/portcheck.sh W/sdkgen W/out <lang>      # decide every CONFLICT, UNSOURCED and open class in hand/<lang>.json
+# W: the port's workspace (W/tools the v3.2 tools with the port's records, W/sdkgen, W/out); L: the language
+cp -a <sfix>/tools W/tools-v33 && rm -rf W/tools-v33/.git W/tools-v33/review
+for d in counts purity-allow; do [ -f W/tools/$d/L.json ] && cp W/tools/$d/L.json W/tools-v33/$d/; done
+[ -f W/tools/normalizers/L.js ] && cp W/tools/normalizers/L.js W/tools-v33/normalizers/
+node W/tools-v33/rekey.js --clone W/sdkgen --old W/out/old --new W/out/new --lang L --from W/tools --to W/tools-v33 --dry          # read it
+node W/tools-v33/rekey.js --clone W/sdkgen --old W/out/old --new W/out/new --lang L --from W/tools --to W/tools-v33 --json W/rekey-L.json
+W/tools-v33/portcheck.sh W/sdkgen W/out L        # decide each CONFLICT, UNSOURCED and open class in W/tools-v33/hand/L.json
+node W/tools-v33/rekey.js --clone W/sdkgen --old W/out/old --new W/out/new --lang L --from W/tools-v33   # again: "already keyed", nothing changed
 ```
-Exit 1 from rekey.js means something is listed for a person (a merge whose decisions disagree, a class with units no old class held, a hand entry that could not be carried). Running it again on records it already re-keyed changes nothing.
+rekey.js exits 1 when something is listed for a person (a merge whose decisions disagree, a class holding units no old class held, a hand entry that could not be carried). Records stale before the re-key (no class has their id) are kept as they are.
+
+The merging engineer: the nine reference languages' records in this directory are already keyed by v3.3; a port's re-keyed `hand/L.json`, `classes/L.json`, `counts/L.json`, `purity-allow/L.json` (and `normalizers/L.js`) are copied in as they are, `ported.json` gains L, and the nine plus L are run again (adding L to the learners can move a template's slots; if `portcheck` then shows RECOUNT or open classes in the nine, run `rekey.js --code <a checkout of the tools before the merge>` for each, as `logs/rekey2` and `logs/rekey3` did here).
