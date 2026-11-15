@@ -65,18 +65,20 @@
   "lang": "go",
   "section": "reference",
   "file": "B/go/REFERENCE.md",
-  "from": " A failure is reported in the result, not as an error,\nso branch on `result[\"ok\"] == true`.",
+  "from": " A failure is reported in the result, not as an\nerror, so branch on `result[\"ok\"] == true`.",
   "to": "",
-  "why": "the sentence round's independent check (required fix 3): go's and c's branch sentence dropped; the absent list compares every position as a slot, per variation, so a sentence dropped from one variation (DROPPED) or from all (ABSENT) is a failing entry from scratch too"
+  "why": "the sentence round's independent check (required fix 3): go's and c's branch sentence dropped; the absent list compares every position as a slot, per variation, so a sentence dropped from one variation (DROPPED) or from all (ABSENT) is a failing entry from scratch too",
+  "adapted": "base33 (k-base33a): t7 aimed it at v33a's wrapping; the v3.3 freeze re-wrapped direct's Returns paragraph, so the same sentence now breaks after 'not as an'; the same intent on the new text, once in each of the 21 go REFERENCEs"
  },
  {
   "id": "drop-branch-go-all",
   "lang": "go",
   "section": "reference",
   "file": "*/go/REFERENCE.md",
-  "from": " A failure is reported in the result, not as an error,\nso branch on `result[\"ok\"] == true`.",
+  "from": " A failure is reported in the result, not as an\nerror, so branch on `result[\"ok\"] == true`.",
   "to": "",
-  "why": "the sentence round's independent check (required fix 3): go's and c's branch sentence dropped; the absent list compares every position as a slot, per variation, so a sentence dropped from one variation (DROPPED) or from all (ABSENT) is a failing entry from scratch too"
+  "why": "the sentence round's independent check (required fix 3): go's and c's branch sentence dropped; the absent list compares every position as a slot, per variation, so a sentence dropped from one variation (DROPPED) or from all (ABSENT) is a failing entry from scratch too",
+  "adapted": "base33 (k-base33a): t7 aimed it at v33a's wrapping; the v3.3 freeze re-wrapped direct's Returns paragraph, so the same sentence now breaks after 'not as an'; the same intent on the new text, once in each of the 21 go REFERENCEs"
  },
  {
   "id": "drop-branch-c-one",
