@@ -50,8 +50,7 @@ const forms: Forms = {
   // The porter's, from here on.
   typeNames: { 'Rc<crate::entity::${mod}::${cls}>': 'Rc<EntyClass>' },
   cite: {
-    'ref.facts.lits.false': { value: 'false', file: MAIN, quote: '("ok", Value::Bool(false)),' },
-    'ref.facts.lits.true': { value: 'true', file: MAIN, quote: '("ok", Value::Bool(body_err.is_none() && (200..300).contains(&status))),', unquoted: { true: 'ok is the bool the status test computes; true is not spelled' } },
+    'ref.facts.direct.okFalse': { file: MAIN, quote: '("ok", Value::Bool(false)),' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/rust/fragment/Entity.fragment.rs", quote: "vs::clone(&self.data.borrow())" },
     'notes.member:direct': { value: "The result map always comes back inside `Ok`, for a non-2xx response and\nfor a request that could not be made alike; its `ok` key reports the failure.", file: "src/cmp/rust/fragment/Main.fragment.rs", quote: ["        self.raw_request(fetchargs)", "            Err(err) => {\n                return Ok(jo(vec![", "        Ok(jo(vec![\n            (\"ok\", Value::Bool(false)),"] },
     'facts.ok': { file: OPS[0], quote: 'Ok(self.clone())' },
