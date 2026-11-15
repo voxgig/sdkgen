@@ -45,7 +45,7 @@ import {
 import { scaffoldFolder } from '../helpers/shipped'
 
 import { KINDS } from './kind'
-import { SYNTAX_INTERFACE, declaredInterface } from '../helpers/syntaxversion'
+import { SYNTAX_INTERFACE, SYNTAX_PREVIOUS, declaredInterface } from '../helpers/syntaxversion'
 import { componentSource } from '../helpers/cmpfile'
 import { SYNTAX_SECTIONS } from '../helpers/optional'
 
@@ -487,9 +487,15 @@ function checkProviders(fs: any, sdk: string, manifest?: Manifest): Finding[] {
           'Syntax_' + t + '.ts has no Naming_' + t + '.ts, so generation stops on its first page'))
       }
       const declared = declaredInterface(String(fs.readFileSync(file, 'utf8')))
-      if (SYNTAX_INTERFACE !== declared) {
-        found.push(at('error', 'provider-interface',
+      if (null == declared || SYNTAX_PREVIOUS === declared) {
+        found.push(at('warn', 'provider-interface-previous',
           'Syntax_' + t + '.ts declares interface ' + (declared ?? 'none') +
+          ', which this sdkgen serves with fewer sentences until its next raise; it calls ' +
+          SYNTAX_INTERFACE))
+      }
+      else if (SYNTAX_INTERFACE !== declared) {
+        found.push(at('error', 'provider-interface',
+          'Syntax_' + t + '.ts declares interface ' + declared +
           ', and this sdkgen calls ' + SYNTAX_INTERFACE))
       }
     }

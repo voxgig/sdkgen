@@ -4,7 +4,7 @@
 // built from an SdkDescription and the provider's declared runtime facts.
 
 import type { DescAction, DescArg, DescEntity, DescOp, DescOption, DescSymbols, Scalar, SdkDescription } from './sdkdesc'
-import type { SYNTAX_INTERFACE } from './syntaxversion'
+import type { SYNTAX_INTERFACE, SYNTAX_PREVIOUS } from './syntaxversion'
 import { createComment } from './runtimeprose'
 
 
@@ -70,6 +70,9 @@ type RuntimeFacts = {
   result: ResultStyle
   collection: string // what a list's value is: 'array', '`[]any`', 'slice' (markdown)
   record: string // the code that reads an entity's record: '.data()'; {var} is the variable the example binds
+  // Set by the loader, never by a provider: the earlier interface this
+  // provider is written for, which the shared code serves.
+  served?: typeof SYNTAX_PREVIOUS
   recordType?: string // the type that record is, where the runtime names one: 'dict'
   errVar?: string // pair, errslot: the variable a caller checks: 'err'
   errSlot?: string // errslot: what is set on failure: '*err'
@@ -469,6 +472,20 @@ type Syntax = {
   ref?: RefSyntax
 }
 
+
+// A provider written for the interface before this one, which the shared code
+// still serves (helpers/syntaxversion): what that raise made required is
+// optional here, and the declaration may be absent.
+type SyntaxPrev = Omit<Syntax, 'interface' | 'ref'> & {
+  interface?: typeof SYNTAX_PREVIOUS
+  ref?: Omit<RefSyntax, 'facts'> & {
+    facts: Omit<RefFacts, 'testMock'> & Partial<Pick<RefFacts, 'testMock'>>
+  }
+}
+
+// What a provider module exports as `Syntax`.
+type ProviderSyntax = Syntax | SyntaxPrev
+
 type RefSyntax = {
   facts: RefFacts
   type: (t: any) => string // a field's type, from its canonical sentinel
@@ -587,6 +604,8 @@ function indent(lines: string[], by: string): string[] {
 
 
 export type {
+  ProviderSyntax,
+  SyntaxPrev,
   CallContext,
   CtorKind,
   NoteSlot,

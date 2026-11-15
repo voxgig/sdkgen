@@ -6,6 +6,11 @@ import { componentSource } from './cmpfile'
 // provider as `interface`. Raised on every breaking change to it.
 const SYNTAX_INTERFACE = '3.3' as const
 
+// The one earlier interface the shared code still serves, with a warning. A
+// provider that declares nothing is taken as written for it. At the next raise
+// this moves up and its handling is deleted: a provider gets one raise.
+const SYNTAX_PREVIOUS = '3.2' as const
+
 
 // What each raise asks of a provider written for the version before it.
 const SYNTAX_CHANGES: { to: string, change: string }[] = [
@@ -24,9 +29,51 @@ const before = (a: string, b: string) => {
 }
 
 
-function checkSyntaxInterface(target: string, declared: unknown): void {
+// The interface the shared code serves this provider at: the current one, or
+// the previous one with a warning naming each change. Anything else is refused.
+function servedInterface(target: string, declared: unknown, log?: any): string {
   if (SYNTAX_INTERFACE === declared) {
-    return
+    return SYNTAX_INTERFACE
+  }
+
+  if (null == declared || SYNTAX_PREVIOUS === declared) {
+    log?.warn?.({
+      point: 'syntax-interface-previous', target, declared: declared ?? null,
+      note: target + ': the syntax provider .sdk/' + componentSource(target, 'Syntax') +
+        ' is written for interface ' + SYNTAX_PREVIOUS + (null == declared ? ' (it declares none)' : '') +
+        ', which this sdkgen still serves until its next interface raise. Its pages leave out ' +
+        'what these facts would say until the provider declares them and interface: \'' +
+        SYNTAX_INTERFACE + '\':\n' + SYNTAX_CHANGES.filter((c) => SYNTAX_INTERFACE === c.to)
+        .map((c) => '  - ' + c.change).join('\n'),
+    })
+    return SYNTAX_PREVIOUS
+  }
+
+  return checkSyntaxInterface(target, declared)
+}
+
+
+// A provider is marked with the interface it is served at; the shared code
+// reads `facts.served` where the previous interface printed otherwise.
+const served = new WeakMap<object, any>()
+
+function serveSyntax(target: string, module: any, log?: any): any {
+  const syntax = module?.Syntax
+  if (null == syntax || 'object' !== typeof syntax) {
+    return module
+  }
+  if (!served.has(module)) {
+    const at = servedInterface(target, syntax.interface, log)
+    served.set(module, SYNTAX_INTERFACE === at ? module :
+      { ...module, Syntax: { ...syntax, facts: { ...syntax.facts, served: at } } })
+  }
+  return served.get(module)
+}
+
+
+function checkSyntaxInterface(target: string, declared: unknown): never | string {
+  if (SYNTAX_INTERFACE === declared) {
+    return SYNTAX_INTERFACE
   }
 
   const from = 'string' === typeof declared ? declared : undefined
@@ -55,6 +102,9 @@ function declaredInterface(src: string): string | undefined {
 
 export {
   SYNTAX_INTERFACE,
+  SYNTAX_PREVIOUS,
+  servedInterface,
+  serveSyntax,
   declaredInterface,
   SYNTAX_CHANGES,
   checkSyntaxInterface,
