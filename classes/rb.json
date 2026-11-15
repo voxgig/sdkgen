@@ -1008,14 +1008,14 @@
   "unreviewed": 0
  },
  "92bc6e303b": {
-  "outcome": "shared:ts:4299fe5f5e",
-  "why": "masked, it is the ts unit of class 4299fe5f5e (unification:op-sentences, by rule:op-sentences)",
+  "outcome": "shared:ts:92bc6e303b",
+  "why": "masked, it is the ts unit of class 92bc6e303b (unification:op-sentences, by rule:op-sentences)",
   "n": 19,
   "by": "shared",
   "type": "reworded",
   "section": "reference",
   "sentences": [
-   "774adb2ffa"
+   "fa85157376"
   ],
   "unreviewed": 0
  },
@@ -1468,14 +1468,14 @@
   "unreviewed": 0
  },
  "3d50058045": {
-  "outcome": "shared:go:650eff7141",
-  "why": "masked, it is the go unit of class 650eff7141 (correction:ref-6, by rule:actions-table)",
+  "outcome": "shared:go:3d50058045",
+  "why": "masked, it is the go unit of class 3d50058045 (correction:ref-6, by rule:actions-table)",
   "n": 16,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "870d2c9402"
+   "ebea8de27f"
   ],
   "unreviewed": 0
  },
@@ -1564,14 +1564,14 @@
   "unreviewed": 0
  },
  "cbcdf6e5f9": {
-  "outcome": "shared:ts:e861a34f8e",
-  "why": "masked, it is the ts unit of class e861a34f8e (unification:op-sentences, by rule:op-sentences)",
+  "outcome": "shared:ts:cbcdf6e5f9",
+  "why": "masked, it is the ts unit of class cbcdf6e5f9 (unification:op-sentences, by rule:op-sentences)",
   "n": 1,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "52d3c15e31"
+   "d3d603d612"
   ],
   "unreviewed": 0
  },
@@ -1649,8 +1649,8 @@
   "section": "reference"
  },
  "10f0d238e2": {
-  "outcome": "shared:ts:56561c6006",
-  "why": "masked, it is the ts unit of class 56561c6006 (correction:U34, by rule:class-collision)",
+  "outcome": "shared:ts:10f0d238e2",
+  "why": "masked, it is the ts unit of class 10f0d238e2 (correction:U34, by rule:class-collision)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
@@ -1661,8 +1661,8 @@
   "unreviewed": 0
  },
  "e35271001c": {
-  "outcome": "shared:ts:88dc600aad",
-  "why": "masked, it is the ts unit of class 88dc600aad (unification:accessor-sentence, by rule:accessor-sentence)",
+  "outcome": "shared:ts:e35271001c",
+  "why": "masked, it is the ts unit of class e35271001c (unification:accessor-sentence, by rule:accessor-sentence)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
@@ -1673,8 +1673,8 @@
   "unreviewed": 0
  },
  "fe06e05f78": {
-  "outcome": "shared:ts:b7bbd03809",
-  "why": "masked, it is the ts unit of class b7bbd03809 (correction:U34, by rule:class-collision)",
+  "outcome": "shared:ts:fe06e05f78",
+  "why": "masked, it is the ts unit of class fe06e05f78 (correction:U34, by rule:class-collision)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
