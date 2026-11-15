@@ -29,7 +29,7 @@ src/cmp/c/ReadmeOptions_c.ts f305d6f87635
 src/cmp/c/ReadmeTopHowto_c.ts 53480bd63967
 src/cmp/c/ReadmeTopTest_c.ts 9ae625173e92
 src/cmp/c/Schema_c.ts c4ed362679d7
-src/cmp/c/Syntax_c.ts ceb31140a4a5
+src/cmp/c/Syntax_c.ts c80b47d374c5
 src/cmp/c/TestClean_c.ts 0dbcc7b0dc4c
 src/cmp/c/TestDirect_c.ts 68234fa433d4
 src/cmp/c/TestEntity_c.ts a5d7718e4449
@@ -468,7 +468,7 @@ src/cmp/elixir/ReadmeOptions_elixir.ts eb3b2b997109
 src/cmp/elixir/ReadmeTopHowto_elixir.ts 90ecb763e0ad
 src/cmp/elixir/ReadmeTopTest_elixir.ts 1cb36261a935
 src/cmp/elixir/Schema_elixir.ts a2d61dba669a
-src/cmp/elixir/Syntax_elixir.ts 4152974f559a
+src/cmp/elixir/Syntax_elixir.ts 462914034e36
 src/cmp/elixir/TestClean_elixir.ts 9119b5fc16e7
 src/cmp/elixir/TestDirect_elixir.ts 2ee44de0d1a9
 src/cmp/elixir/TestEntity_elixir.ts 0fa82f90ced3
@@ -542,7 +542,7 @@ src/cmp/go/ReadmeOptions_go.ts 47c8f1e458b1
 src/cmp/go/ReadmeTopHowto_go.ts 2d7332aca33c
 src/cmp/go/ReadmeTopTest_go.ts 91b120dc85f3
 src/cmp/go/Schema_go.ts 6a9b0bca5db2
-src/cmp/go/Syntax_go.ts 301d04a6d0aa
+src/cmp/go/Syntax_go.ts a53799333898
 src/cmp/go/TestClean_go.ts 7319ead95cbf
 src/cmp/go/TestDirect_go.ts c9edf724de9e
 src/cmp/go/TestEntity_go.ts dbf1851fdd50
@@ -1405,7 +1405,7 @@ src/cmp/py/ReadmeOptions_py.ts 6984e3568866
 src/cmp/py/ReadmeTopHowto_py.ts 98e1b9247b51
 src/cmp/py/ReadmeTopTest_py.ts 8b84dccc74bc
 src/cmp/py/Schema_py.ts ff45f83e6ff4
-src/cmp/py/Syntax_py.ts 087fdb036079
+src/cmp/py/Syntax_py.ts 31642b08bb26
 src/cmp/py/TestClean_py.ts 8ff4b3331fac
 src/cmp/py/TestDirect_py.ts 6048b9a4737e
 src/cmp/py/TestEntity_py.ts 21048f17c313
@@ -1539,7 +1539,7 @@ src/cmp/rb/ReadmeOptions_rb.ts 1d371d839786
 src/cmp/rb/ReadmeTopHowto_rb.ts d4c1341f730d
 src/cmp/rb/ReadmeTopTest_rb.ts abcd96aab99b
 src/cmp/rb/Schema_rb.ts 7aac619fae8d
-src/cmp/rb/Syntax_rb.ts bee4e3ccd7a0
+src/cmp/rb/Syntax_rb.ts cd25f0df2d41
 src/cmp/rb/TestClean_rb.ts ed226d1bdafd
 src/cmp/rb/TestDirect_rb.ts 438fdf9acb6e
 src/cmp/rb/TestEntity_rb.ts 05cfc9a024c0
@@ -1647,7 +1647,7 @@ src/cmp/rust/ReadmeTopHowto_rust.ts 7f66286916f9
 src/cmp/rust/ReadmeTopTest_rust.ts caefcf02393d
 src/cmp/rust/Schema_rust.ts 62516d49914a
 src/cmp/rust/SdkError_rust.ts 44f812a8460e
-src/cmp/rust/Syntax_rust.ts 40a9cb38f29f
+src/cmp/rust/Syntax_rust.ts 0a74fd3e07b0
 src/cmp/rust/TestClean_rust.ts 6b0385a97d66
 src/cmp/rust/TestDirect_rust.ts 5f9aa42b1a0b
 src/cmp/rust/TestEntity_rust.ts 749ace669e46
@@ -2039,7 +2039,7 @@ src/cmp/ts/ReadmeTopHowto_ts.ts 80267a2529f3
 src/cmp/ts/ReadmeTopTest_ts.ts 8c614df68cb0
 src/cmp/ts/Schema_ts.ts 28d8eedbb21a
 src/cmp/ts/SdkError_ts.ts 699cd45f2bf3
-src/cmp/ts/Syntax_ts.ts f64efd661674
+src/cmp/ts/Syntax_ts.ts e85feec4d509
 src/cmp/ts/TestClean_ts.ts 7c3843705372
 src/cmp/ts/TestDefinition_ts.ts 8f242daf10a0
 src/cmp/ts/TestDirect_ts.ts cf90eb2a6b45
