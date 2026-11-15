@@ -29,7 +29,8 @@ function opName(f, op) {
         throw new Error(`runtimeprose: no method declared for ${op}`);
     return code('call' === f.named && !(0 < (f.arity || 0)) ? m + '()' : m);
 }
-// The call that lists every record: no match, each argument the none value.
+// The call with no match: each argument the none value. It is not said to list
+// every record: the entity's stored match still applies, and an endpoint may page.
 function noMatchCall(f, none) {
     const n = f.arity || 0;
     return code(f.method.list + '(' + Array.from({ length: n }, () => none).join(', ') + ')');
@@ -227,7 +228,7 @@ function opText(f, op, needs, idInData, bound, ref = {}) {
     if ('list' === op) {
         parts.push(0 === needs.length
             ? ('call' === f.named && null != f.arity && null != ref.none
-                ? `The match is optional: ${noMatchCall(f, ref.none)} lists every record.`
+                ? `The match is optional; a call without one is ${noMatchCall(f, ref.none)}.`
                 : 'The match is optional.')
             : `The match must include ${needs.map(code).join(' and ')}.`);
     }
