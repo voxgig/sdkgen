@@ -901,7 +901,7 @@ model/feature/test.aontu c6ebe063b562
 model/sdk.aontu deb90c7d4659
 model/target/kotlin.aontu 3e22fd40e08d
 model/target/target-index.aontu 5312fdf85ea6
-src/cmp/kotlin/Config_kotlin.ts 3acaf3d96500
+src/cmp/kotlin/Config_kotlin.ts 86bf3f58db31
 src/cmp/kotlin/EntityBase_kotlin.ts afa36713ef4c
 src/cmp/kotlin/EntityOperation_kotlin.ts ea019cd45fe0
 src/cmp/kotlin/EntityTypes_kotlin.ts 70cb3a8168d5
@@ -909,6 +909,7 @@ src/cmp/kotlin/Entity_kotlin.ts 2e21c82ab01c
 src/cmp/kotlin/Gitignore_kotlin.ts f164b2f3bdde
 src/cmp/kotlin/MainEntity_kotlin.ts bca2e71d5f00
 src/cmp/kotlin/Main_kotlin.ts adb4c559efa5
+src/cmp/kotlin/Naming_kotlin.ts b5ea312ad547
 src/cmp/kotlin/Package_kotlin.ts caea8d967fed
 src/cmp/kotlin/PrepareAuth_kotlin.ts 4f8679d0c503
 src/cmp/kotlin/ReadmeEntity_kotlin.ts c11b93b9dddd
@@ -919,13 +920,11 @@ src/cmp/kotlin/ReadmeInstall_kotlin.ts 46d9c5adddc6
 src/cmp/kotlin/ReadmeIntro_kotlin.ts 3edc60fc57ff
 src/cmp/kotlin/ReadmeModel_kotlin.ts 2f1384cd9686
 src/cmp/kotlin/ReadmeOptions_kotlin.ts cfce450043b8
-src/cmp/kotlin/ReadmeQuick_kotlin.ts 030723cb2fae
-src/cmp/kotlin/ReadmeRef_kotlin.ts 60dd10527b66
 src/cmp/kotlin/ReadmeTopHowto_kotlin.ts 5f8193767df5
-src/cmp/kotlin/ReadmeTopQuick_kotlin.ts 5ab85e6c993c
 src/cmp/kotlin/ReadmeTopTest_kotlin.ts 6707235865eb
-src/cmp/kotlin/Schema_kotlin.ts 84ebe8267b11
+src/cmp/kotlin/Schema_kotlin.ts 3621db550db1
 src/cmp/kotlin/SdkError_kotlin.ts dc0cd7ddcc31
+src/cmp/kotlin/Syntax_kotlin.ts 19dae9e6e0ca
 src/cmp/kotlin/TestClean_kotlin.ts e85fcde325cb
 src/cmp/kotlin/TestDirect_kotlin.ts b2f5a64898e4
 src/cmp/kotlin/TestEntity_kotlin.ts 0bc109537d13
@@ -941,7 +940,7 @@ src/cmp/kotlin/fragment/EntityUpdateOp.fragment.kt 0d106792f6c1
 src/cmp/kotlin/fragment/Main.fragment.kt da2bcd732d11
 src/cmp/kotlin/fragment/SdkError.fragment.kt c7864044bb8d
 src/cmp/kotlin/tsconfig.json 720a3f229019
-src/cmp/kotlin/utility_kotlin.ts 22ac1e31c8e2
+src/cmp/kotlin/utility_kotlin.ts 0dd7decf664b
 tm/kotlin/LICENSE 52acd47c245f
 tm/kotlin/Makefile 5102e29f09a6
 tm/kotlin/VERSION e6635045e1d2
