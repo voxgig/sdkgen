@@ -255,4 +255,15 @@ describe('ReadmeRefFeatures', () => {
     ok(!/Also attaches/.test(featSection(out, 'retry')))
     ok(/Attaches to pipeline hooks, not the transport/.test(featSection(out, 'audit')))
   })
+
+  test('the ordering note names a cache only where the cache feature is present (S22)', async () => {
+    const without = { ...SHIPPED }
+    delete without.cache
+    const out = await renderRefFeatures(without)
+    ok(/a feature that short-circuits the\s+call stops every feature nested/.test(out), out)
+    ok(!/cache/.test(out.split('#### `')[0]), 'no cache in the ordering note')
+    const nocost = { ...SHIPPED }
+    delete nocost.cost
+    ok(/such as a cache serving a hit/.test(await renderRefFeatures(nocost)))
+  })
 })

@@ -37,6 +37,7 @@ ${honoursActivationOrder(target) ?
 
   // By the transport each declares: a wrapper, the base transport the
   // wrappers wrap, or none; only the last are order-free hook features.
+  const has = (name: string): boolean => features.some((f) => name === f.name)
   const wrapping = features.filter((f) => f.wraps)
   const hooked = features.filter((f) => 'none' === f.transport && 0 < f.hooks.length)
 
@@ -48,13 +49,13 @@ wraps whatever is already installed${honoursActivationOrder(target) ?
   ', so **activation order is nesting order**:\na feature activated later sits OUTSIDE one activated earlier, and sees the call\nfirst.' :
   '. This SDK fixes that order in its own\ncatalog rather than taking it from the caller.'}
 
-${(features.some((f) => 'cost' === f.name) && features.some((f) => 'cache' === f.name)) ?
+${(has('cost') && has('cache')) ?
 `That decides behaviour, not just sequence. \\\`cost\\\` activated before \\\`cache\\\`
 sits inside it, so a response served from the cache never reaches \\\`cost\\\` and is
 correctly charged nothing; reverse them and every cache hit is billed for money
 that was never spent.
 ` : `That decides behaviour, not just sequence: a feature that short-circuits the
-call, such as a cache serving a hit, stops every feature nested inside it from
+call${has('cache') ? ', such as a cache serving a hit,' : ''} stops every feature nested inside it from
 ever seeing that call.
 `}
 ${hooked.map((f) => '`' + f.name + '`').join(', ')} attach to pipeline hooks
