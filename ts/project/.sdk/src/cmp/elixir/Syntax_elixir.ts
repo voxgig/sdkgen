@@ -35,7 +35,7 @@ const refFacts: RefFacts = {
   },
   opMatched: { list: 'list(entity, reqmatch, ctrl \\\\ nil) :: list()' },
   client: [
-    { kind: 'options', sig: 'options_map(client) :: map()' },
+    { kind: 'options', sig: 'options_map(client) :: map()', copy: true },
     { kind: 'utilityBase', sig: 'get_utility(client) :: map()' },
     { kind: 'direct', sig: 'direct(client, fetchargs \\\\ nil) :: map()' },
     { kind: 'prepare', sig: 'prepare(client, fetchargs \\\\ nil) :: map()' },

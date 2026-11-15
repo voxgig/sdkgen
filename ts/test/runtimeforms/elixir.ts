@@ -54,6 +54,7 @@ const forms: Forms = {
   namesWhy: 'elixir passes by position; the page names the entity argument entity and the setter argument by what it holds',
   uncompared: { returns: 'the runtime writes @spec on the operations only; the client and entity members carry none, so their declared returns are compared with nothing' },
   cite: {
+    'ref.facts.client[0].copy': { value: true, file: "src/cmp/elixir/fragment/Main.fragment.ex", quote: "out = S.clone(S.getprop(client, \"options\"))" },
     'notes.tutorial:list': { value: '`Voxgig.Struct.getelem/2` reads an item.', file: 'tm/elixir/lib/utility/struct/voxgig_struct.ex', quote: ['defmodule Voxgig.Struct do', 'def getelem(val, key, alt \\\\ nil)'], unquoted: { 'Voxgig.Struct.getelem/2': 'the arity name of def getelem(val, key, alt \\\\ nil) called with two arguments, in the module Voxgig.Struct' } },
     'ref.facts.none': { file: 'src/cmp/elixir/fragment/EntityLoadOp.fragment.ex', quote: 'def load(ent, reqmatch \\\\ nil, ctrl \\\\ nil) do' },
     'ref.facts.direct.okFalse': { file: MAIN, quote: 'S.jm(["ok", false, "err", err])' },
