@@ -46,6 +46,24 @@ const forms: Forms = {
   types: { column: null, reason: 'the code generator has no perl column in canonToType (every type maps to any); the page\'s type words are the provider\'s own' },
   uncompared: { paramTypes: 'perl declares no parameter types', returns: 'perl declares no return types' },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, cite and exceptions.
+  // What the table states besides names, parameters and returns.
+  testDecl: 'test',
+  on: (d) => /^\s*\{\s*(?:#[^\n]*\n\s*)*my\s*\(\s*\$class\b/.test(d.rest) ? 'type' : (/^\s*\{\s*(?:#[^\n]*\n\s*)*my\s*\(\s*\$self\b/.test(d.rest) ? 'instance' : 'module'),
+  expect: { test: { on: 'type' }, new: { on: 'type' }, load: { on: 'instance' } },
+  shows: {
+    'direct\'s `ok`': {
+      value: '`0` or `1`, not a boolean',
+      file: 'src/cmp/perl/fragment/Main.fragment.pm',
+      quote: ["return { 'ok' => 0, 'err' => $prep_err };", "'ok' => (!defined $body_err && $status >= 200 && $status < 300) ? 1 : 0,"],
+    },
+  },
+  stream: {
+    file: "src/cmp/perl/fragment/Entity.fragment.pm",
+    construct: "    return sub {\n      return undef if $aborted->();\n      my $item = eval {", starts: "on iteration",
+    run: "$self->_run_op($ctx, sub { return });",
+    draw: "my $next = $src->();",
+    runs: "before it returns", items: "as the caller iterates",
+  },
 }
 
 export { forms }
