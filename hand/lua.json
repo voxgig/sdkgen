@@ -9,6 +9,16 @@
    "value": "err",
    "why": "the variable lua's examples bind an operation's error to; OLD lua held it in its code (`local planets, err = ...` / `if err then error(err) end`) and its prose ('Entity operations return `(value, err)`', the root comments 'err on failure'); the new contexts are the pair-style sentences ('a non-nil `err` reports failure') naming the variable the code beside them binds",
    "evidence": "OLD crud-basic/lua/README.md tutorial: `local planets, err = client:Planet():list()` / `if err then error(err) end`; OLD B/README.md lua root: '-- Load a specific ambient (returns the entity; err on failure)'; EntityLoadOp.fragment.lua:11 `---@return string? err`"
+  },
+  "ref.noun": {
+   "value": "Methods",
+   "why": "the noun OLD lua used for the client's members ('Instance Methods'); held there; the new context is the shared heading 'Client Methods', decided once for all twenty by the sentence round (the section lists the client's members; c, clojure and elixir have no instance); lua's client members are called with `:` on the client (`client:direct(...)`, Main.fragment.lua)",
+   "evidence": "OLD B/lua/REFERENCE.md:42 \"### Instance Methods\""
+  },
+  "prints": {
+   "value": "fields",
+   "why": "an example prints chosen fields of the record: lua's record is a table, and `print` of a table writes table: 0x..., so 'record' would print an address. OLD lua printed by iterating the record (`for k, val in pairs(ambient:data_get()) do print(k, val) end`, the 20 'another value' readings) in the tutorial and fields elsewhere (12): mixed, so the sheet cannot attest it. 'fields' is the value that prints readable output in every block; where the display field is itself a table (`rec[\"fields\"]` on Record) the print is as unreadable as perl's HASH(0x...), which brief 7 decision 3 (a scalar display field) fixes in shared code",
+   "evidence": "OLD B/lua/README.md `for k, val in pairs(ambient:data_get()) do print(k, val) end`; NEW B/lua/REFERENCE.md `print(rec[\"id\"], rec[\"fields\"])`"
   }
  },
  "absent": {
@@ -41,7 +51,14 @@
   "0ed967c0f5": "go's stream is a channel fed beside the caller (kind 'stream', runs 'background') with go's note on StreamItem; lua's returns a function (kind streamFunction, Entity.fragment.lua:229) and runs when iteration starts (runs 'iterate': the coroutine is made at the call, :179, and first resumed on the first pull, :233), which print their own sentences and lua's note",
   "6c17f7b52b": "lua prints the same unit with its own collection word, 'an array of entities' (crud-bare/README.md lua root block, crud-bare/lua/REFERENCE.md); 'array' is lua's declared collection, which the mask replaces, and the article follows it",
   "4fb872e54f": "lua prints this sentence word for word (B/lua/REFERENCE.md:737, ReadmeRefFeatures); 'array' is lua's declared collection word, which the mask replaces in lua's unit and not in go's",
-  "a9015bfed2": "as 91f89cb62e, in no-test"
+  "a9015bfed2": "as 91f89cb62e, in no-test",
+  "b4e03207de": "a sentence about go's one program ('The program after ... runs them'); lua's tutorial is a block per step, not one program, so the sentence has nothing to describe (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)",
+  "4e460e7bba": "a sentence about go's one program ('The program after ... runs them'); lua's tutorial is a block per step, not one program, so the sentence has nothing to describe (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)",
+  "a8c3a1d8ce": "go's tutorial is one program (Syntax_go's `program` printer): a numbered list of steps with bold leads, then one program. lua has no program printer (its README test loads each block on its own), so its tutorial prints a ### heading and a block per step, with the same shared sentences under the headings (e.g. B/lua/README.md 'The client reads its API key from the `DEMO_APIKEY` environment variable.'); the bold lead makes go's unit another unit (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)",
+  "ea12b61c7f": "go's tutorial is one program (Syntax_go's `program` printer): a numbered list of steps with bold leads, then one program. lua has no program printer (its README test loads each block on its own), so its tutorial prints a ### heading and a block per step, with the same shared sentences under the headings (e.g. B/lua/README.md 'The client reads its API key from the `DEMO_APIKEY` environment variable.'); the bold lead makes go's unit another unit (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)",
+  "a2c72437b6": "go's tutorial is one program (Syntax_go's `program` printer): a numbered list of steps with bold leads, then one program. lua has no program printer (its README test loads each block on its own), so its tutorial prints a ### heading and a block per step, with the same shared sentences under the headings (e.g. B/lua/README.md 'The client reads its API key from the `DEMO_APIKEY` environment variable.'); the bold lead makes go's unit another unit (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)",
+  "1f08cc692d": "go has a second test constructor, Test(), which takes no options; lua has one, sdk.test(testopts, sdkopts) (Main.fragment.lua:432), and its sentence says what both arguments hold (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)",
+  "a678b32375": "lua prints the same unit with its own collection word, 'an array of entities' (crud-bare/README.md lua root block, crud-bare/lua/REFERENCE.md); 'array' is lua's declared collection, which the mask replaces, and the article follows it (the sentence round reworded this sentence, so it has a new id; the reason is the one the porter gave the old wording, re-read at v33m)"
  },
  "360f66a3d2": {
   "outcome": "same-meaning",
@@ -65,7 +82,7 @@
  },
  "243f8c95d4": {
   "outcome": "same-meaning",
-  "why": "OLD: list's value is an array of entities, one per record, no wrapper, data_get() reads each; NEW says each of these across the list sentence and the next ('There is no `{ok, data}` wrapper; `data_get()` reads an entity's record'). 'iterate it directly' is what the loop under it shows",
+  "why": "OLD: list's value is an array of entities, one per record, no wrapper, data_get() reads each. NEW says the same across the list sentence ('the value is an array of entities, one per record') and the next ('`data_get()` reads an entity's record'); OLD's 'there is no wrapper' is the clause the sentence round dropped from the pair style once, for go and lua alike, as old go wording the review found awkward ('Every operation returns entities' says it); 'iterate it directly' is what the loop under it shows. Re-read at v33m: same meaning",
   "n": 7
  },
  "12e5096244": {
@@ -136,11 +153,6 @@
  "e5e05eb7a6": {
   "outcome": "correction:S50",
   "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
-  "n": 1
- },
- "d5841a7441": {
-  "outcome": "restored:fact",
-  "why": "the `{ok, data}` in 'There is no `{ok, data}` wrapper': OLD said 'there is no wrapper'; the sentence names the envelope direct() returns, which operations do not",
   "n": 1
  },
  "401bbd0e9e": {
@@ -676,9 +688,9 @@
   "n": 1
  },
  "0b29ec4944": {
-  "outcome": "restored:shared",
-  "why": "the patch data sentence names the id the route needs; same fact, other words",
-  "n": 1
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 20
  },
  "23aa32ee94": {
   "outcome": "correction:runtime-forms",
@@ -908,6 +920,98 @@
  "14e3ab3f99": {
   "outcome": "correction:ref-create-runnable",
   "why": "the reference create example passes typed literals with the type as a comment (`id = \"example_id\", -- string`); OLD wrote `id = --[[ string ]],`, a placeholder that does not parse, which the README test counts as an illustration and never runs",
+  "n": 1
+ },
+ "1736630712": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 12e5096244): restored in each step's sentence: '`list` returns `value, err`', '`load` returns `value, err`', 'Each write returns `value, err` too'. The pair is written without parentheses: Lua returns two values, and `(f())` would keep only the first",
+  "n": 7
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1
+ },
+ "05ce2654d0": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 19
+ },
+ "89672a79c6": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "940b78cf67": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19
+ },
+ "09ca6bd48f": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as e72c9d98eb): at v33p these units matched go's class e72c9d98eb as a shared sentence, which go decided correction:guard-accessor-arg (hand); the same decision is taken for them here, by hand",
+  "n": 94
+ },
+ "b3ebb3afdd": {
+  "outcome": "correction:runtime-forms",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 6b1ca96f1d): direct's second value is always nil (Main.fragment.lua:267,300,315,368,371: every return is `..., nil`), so the signature shows the table, and a note says the second value is always nil; OLD's `table, err` suggested an error can come back there",
+  "n": 19
+ },
+ "34c77adf3c": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "n": 19
+ },
+ "2af0b29b9e": {
+  "outcome": "correction:action-call-cell",
+  "why": "the action's Call cell is the call's statements on one line, with what the language declares ahead of it and the check it needs (sentence review: zig's cell left a switch unclosed, c's used variables nothing declared); pipes escaped for the table",
+  "n": 16
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)",
+  "n": 1
+ },
+ "a4bdeb5891": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements (go's err check, zig's switch arms, elixir binding planet)",
+  "n": 1
+ },
+ "3f4da3a957": {
+  "outcome": "correction:sentence-review-ctrl",
+  "why": "the ctrl row's example `explain: true` was false (sentence review): an operation's explain is a map the pipeline fills, true is ignored (py, go run) or throws (ts run: TypeError), and direct() records nothing in it (ts, py run); no example is true of all twenty (php ignores an empty array), so the row says only what ctrl is",
+  "n": 1
+ },
+ "91647d57e6": {
+  "outcome": "same-meaning",
+  "why": "the removed sentence 'Pass `nil` for no initial data.' is said again by the accessor sentence that replaced it ('Its `data` argument holds the entity options: pass `nil` for none.'); the echo is the README's test line ('Both arguments may be `nil`'), which uses nil as the null value too: no disagreement",
+  "n": 1
+ },
+ "b178332f86": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements on one line (`local _, err = client:Planet():create({...}); if err then error(err) end`): the sentence round's fix of the cell (zig's unclosed switch, c's undeclared variables), lua's pair check printed by its own printer",
+  "n": 1
+ },
+ "1873ad789f": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statements on one line (`... if err then error(err) end`), as b178332f86",
   "n": 1
  }
 }

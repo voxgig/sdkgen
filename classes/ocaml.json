@@ -51,6 +51,18 @@
   ],
   "unreviewed": 0
  },
+ "b31c974005": {
+  "outcome": "shared:ts:b31c974005",
+  "why": "masked, it is the ts unit of class b31c974005 (correction:sentence-review-env, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "25f8905d37"
+  ],
+  "unreviewed": 1
+ },
  "9363faf207": {
   "outcome": "shared:ts:9363faf207",
   "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
@@ -71,6 +83,18 @@
   "type": "added",
   "section": "tutorial"
  },
+ "a65ba4a33f": {
+  "outcome": "shared:ts:a65ba4a33f",
+  "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "4966aea016"
+  ],
+  "unreviewed": 1
+ },
  "5e48ea2104": {
   "outcome": "same-meaning",
   "why": "README.md entity table: `e_load` | `value -> value -> entity_obj` | 'Resolves to the entity. Raises on error.': the same facts (the entity; raises)",
@@ -79,17 +103,17 @@
   "type": "echo",
   "section": "tutorial"
  },
- "849816779b": {
-  "outcome": "shared:ts:849816779b",
-  "why": "masked, it is the ts unit of class 849816779b (correction:U45, by rule:write-heading2)",
+ "bef2b8f986": {
+  "outcome": "shared:ts:bef2b8f986",
+  "why": "masked, it is the ts unit of class bef2b8f986 (unification:write-title-entity, by hand)",
   "n": 3,
   "by": "shared",
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "a491ead7c9"
+   "21fc35c768"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "5a3859e529": {
   "outcome": "shared:ts:5a3859e529",
@@ -129,8 +153,8 @@
  },
  "5c46298b27": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: 'Create — returns the created entity; created.e_data_get () reads its record', 'Update/Patch — ... the id comes off the created entity's record', 'Remove'",
-  "n": 4,
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 5c46298b27): the shared write comments: 'Create — returns the created entity; created.e_data_get () reads its record', 'Update/Patch — ... the id comes off the created entity's record', 'Remove'",
+  "n": 5,
   "by": "hand",
   "type": "missing",
   "section": "tutorial"
@@ -181,8 +205,8 @@
  },
  "53ecb3c159": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: 'Create — returns the created entity; created.e_data_get () reads its record', 'Update/Patch — ... the id comes off the created entity's record', 'Remove'",
-  "n": 4,
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 53ecb3c159): the shared write comments: 'Create — returns the created entity; created.e_data_get () reads its record', 'Update/Patch — ... the id comes off the created entity's record', 'Remove'",
+  "n": 5,
   "by": "hand",
   "type": "added",
   "section": "tutorial"
@@ -223,18 +247,6 @@
   ],
   "unreviewed": 0
  },
- "732bb80f3d": {
-  "outcome": "shared:ts:732bb80f3d",
-  "why": "masked, it is the ts unit of class 732bb80f3d (correction:U45, by rule:write-heading2)",
-  "n": 1,
-  "by": "shared",
-  "type": "reworded",
-  "section": "tutorial",
-  "sentences": [
-   "16698bd386"
-  ],
-  "unreviewed": 0
- },
  "29bba9e03f": {
   "outcome": "shared:ts:29bba9e03f",
   "why": "masked, it is the ts unit of class 29bba9e03f (correction:S28, by rule:tutorial-leadin)",
@@ -246,6 +258,18 @@
    "728df7c1c3"
   ],
   "unreviewed": 0
+ },
+ "cdfbb6475b": {
+  "outcome": "shared:ts:cdfbb6475b",
+  "why": "masked, it is the ts unit of class cdfbb6475b (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "81aabf087b"
+  ],
+  "unreviewed": 1
  },
  "1fa815677a": {
   "outcome": "shared:ts:1fa815677a",
@@ -259,6 +283,30 @@
   ],
   "unreviewed": 0
  },
+ "c9c9426cd8": {
+  "outcome": "shared:ts:c9c9426cd8",
+  "why": "masked, it is the ts unit of class c9c9426cd8 (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "219aa7c229"
+  ],
+  "unreviewed": 1
+ },
+ "79233d47ba": {
+  "outcome": "shared:clojure:79233d47ba",
+  "why": "masked, it is the clojure unit of class 79233d47ba (same-meaning, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "9bcb2825f2"
+  ],
+  "unreviewed": 1
+ },
  "defb73bfd8": {
   "outcome": "shared:ts:defb73bfd8",
   "why": "masked, it is the ts unit of class defb73bfd8 (correction:S28, by rule:tutorial-leadin)",
@@ -270,14 +318,6 @@
    "3ab3fb2b2e"
   ],
   "unreviewed": 0
- },
- "ee9a5ce786": {
-  "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: 'Create — returns the created entity; created.e_data_get () reads its record', 'Update/Patch — ... the id comes off the created entity's record', 'Remove'",
-  "n": 1,
-  "by": "hand",
-  "type": "reworded",
-  "section": "tutorial"
  },
  "9cbb8e3add": {
   "outcome": "shared:ts:9cbb8e3add",
@@ -331,17 +371,17 @@
   "type": "missing",
   "section": "tutorial"
  },
- "4555bd17b9": {
-  "outcome": "shared:ts:4555bd17b9",
-  "why": "masked, it is the ts unit of class 4555bd17b9 (correction:U45, by rule:write-heading)",
+ "ec589bf68a": {
+  "outcome": "shared:ts:ec589bf68a",
+  "why": "masked, it is the ts unit of class ec589bf68a (unification:write-title-entity, by hand)",
   "n": 1,
   "by": "shared",
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "46ab3e9cf3"
+   "b83e95bec6"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "f9e7379255": {
   "outcome": "shared:py:db304a6ebf",
@@ -378,6 +418,14 @@
  "6fb3670380": {
   "outcome": "same-meaning",
   "why": "DEMO_APIKEY in the tutorial's client sentence; OLD's client code read it too",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
@@ -426,6 +474,14 @@
  "e5e05eb7a6": {
   "outcome": "correction:S50",
   "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
@@ -489,7 +545,7 @@
  },
  "5154a8de87": {
   "outcome": "unification:ocaml-noarg",
-  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: `if is_nullish reqmatch then empty_map ()`, so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer; and the loop variable is named by shared code (`planet`), where OLD wrote `e`",
+  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: the operation replaces a nullish match or data by an empty map (EntityOperation_ocaml.ts `let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in`), so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer; and the loop variable is named by shared code (`planet`), where OLD wrote `e`. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 7,
   "by": "hand",
   "type": "block-changed",
@@ -617,7 +673,7 @@
  },
  "cbe7331d90": {
   "outcome": "unification:ocaml-noarg",
-  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: `if is_nullish reqmatch then empty_map ()`, so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer",
+  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: the operation replaces a nullish match or data by an empty map (EntityOperation_ocaml.ts `let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in`), so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1,
   "by": "hand",
   "type": "block-vanished-token",
@@ -993,7 +1049,7 @@
  },
  "0ac70c9214": {
   "outcome": "unification:ocaml-noarg",
-  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: `if is_nullish reqmatch then empty_map ()`, so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer",
+  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: the operation replaces a nullish match or data by an empty map (EntityOperation_ocaml.ts `let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in`), so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1,
   "by": "hand",
   "type": "block-vanished-token",
@@ -1039,9 +1095,17 @@
   "type": "echo",
   "section": "reference"
  },
- "28b85cae9d": {
+ "22e9390a31": {
   "outcome": "same-meaning",
-  "why": "README:257 'On error, `ok` is `Bool false` and `err` carries the error value.': the same value and key",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "e1fe83a47e": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
   "n": 19,
   "by": "hand",
   "type": "echo",
@@ -1139,6 +1203,14 @@
   "type": "reworded",
   "section": "reference"
  },
+ "4781faef91": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
  "f7c50d6bbe": {
   "outcome": "unification:ocaml-signature",
   "why": "a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
@@ -1167,17 +1239,13 @@
   ],
   "unreviewed": 0
  },
- "92bc6e303b": {
-  "outcome": "shared:clojure:92bc6e303b",
-  "why": "masked, it is the clojure unit of class 92bc6e303b (unification:op-sentences, by rule:op-sentences)",
-  "n": 19,
-  "by": "shared",
+ "ddf9bcc627": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 93,
+  "by": "hand",
   "type": "reworded",
-  "section": "reference",
-  "sentences": [
-   "fa85157376"
-  ],
-  "unreviewed": 0
+  "section": "reference"
  },
  "92ce533dbd": {
   "outcome": "shared:py:92ce533dbd",
@@ -1203,30 +1271,6 @@
   "outcome": "restored:shared",
   "why": "OLD's `options` row (`value`, 'SDK configuration options (a Map)') and 'from a `value` options map' are the constructor sentence '`options` is a `value` map (`Noval` for none)'; the rows that follow are the map's keys (server and secret where the model needs them)",
   "n": 14,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "0a76017568": {
-  "outcome": "unification:ocaml-signature",
-  "why": "a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
-  "n": 93,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "1578f05138": {
-  "outcome": "unification:ocaml-signature",
-  "why": "a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
-  "n": 19,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "cb81cf0650": {
-  "outcome": "unification:ocaml-signature",
-  "why": "a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
-  "n": 19,
   "by": "hand",
   "type": "reworded",
   "section": "reference"
@@ -1267,25 +1311,25 @@
   ],
   "unreviewed": 0
  },
- "bd7143956f": {
-  "outcome": "unification:member-sentence",
-  "why": "the shared make sentence; e_make is `make client entopts` (Entity_ocaml.ts), the same client and options",
-  "n": 93,
+ "d978e00f4c": {
+  "outcome": "unification:ocaml-signature",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
+  "n": 83,
   "by": "hand",
   "type": "reworded",
   "section": "reference"
  },
- "d978e00f4c": {
-  "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
-  "n": 83,
+ "b8bba83fa5": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 93,
   "by": "hand",
   "type": "reworded",
   "section": "reference"
  },
  "08fd14b4ae": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 28,
   "by": "hand",
   "type": "reworded",
@@ -1293,7 +1337,7 @@
  },
  "80f2137ae9": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 16,
   "by": "hand",
   "type": "reworded",
@@ -1301,7 +1345,7 @@
  },
  "e19ec2d014": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 15,
   "by": "hand",
   "type": "reworded",
@@ -1309,23 +1353,15 @@
  },
  "c2ec44f9f9": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 16,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "c4d1457db0": {
-  "outcome": "unification:member-sentence",
-  "why": "the shared accessor sentence 'Create a new `Ambient` instance. Pass `Noval` for no initial options.'; the accessor is `Sdk_entity_ambient.make client entopts` (MainEntity_ocaml.ts)",
-  "n": 93,
   "by": "hand",
   "type": "reworded",
   "section": "reference"
  },
  "3538e6b4b8": {
   "outcome": "dropped",
-  "why": "the Name and Type headers of the constructor and direct tables: with `keys: bare` both are map-key tables headed Key / Value type / Description",
+  "why": "the Name and Type headers of the constructor and direct tables: with `keys: 'bare'` (Syntax_ocaml.ts) both are map-key tables headed Key / Value type / Description. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 38,
   "by": "hand",
   "type": "missing",
@@ -1358,6 +1394,30 @@
  "7427dfb468": {
   "outcome": "restored:shared",
   "why": "OLD named test_with in prose ('`Sdk_client.test_with` takes explicit options'); it is now documented under its own signature, with 'both may be `Noval`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "b1b776b276": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has; OLD ocaml said 'Instance functions', NEW 'Client functions' (the noun is ocaml's declared `functions`)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "557b1d934a": {
+  "outcome": "unification:ocaml-signature",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 0a76017568): a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
+  "n": 93,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "04b1340346": {
+  "outcome": "unification:ocaml-signature",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 1578f05138): a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -1403,9 +1463,9 @@
   "type": "missing",
   "section": "reference"
  },
- "9ba660ecbf": {
-  "outcome": "restored:shared",
-  "why": "the direct Returns sentence: `value`, a result map holding ok, status, headers and data, err on failure",
+ "753178e77c": {
+  "outcome": "unification:ocaml-signature",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as cb81cf0650): a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -1475,6 +1535,14 @@
   "type": "missing",
   "section": "reference"
  },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 20,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
  "21a7c4db3a": {
   "outcome": "restored:shared",
   "why": "the shared operation sentence: what it returns, that it raises on failure, and `result.e_data_get ()` reads its record (the list example reads each item's)",
@@ -1493,7 +1561,7 @@
  },
  "0ccd61dc70": {
   "outcome": "dropped",
-  "why": "the Name and Type headers of the constructor and direct tables: with `keys: bare` both are map-key tables headed Key / Value type / Description",
+  "why": "the Name and Type headers of the constructor and direct tables: with `keys: 'bare'` (Syntax_ocaml.ts) both are map-key tables headed Key / Value type / Description. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 38,
   "by": "hand",
   "type": "missing",
@@ -1619,17 +1687,17 @@
   "type": "added",
   "section": "reference"
  },
- "379985ad51": {
-  "outcome": "shared:go:379985ad51",
-  "why": "masked, it is the go unit of class 379985ad51 (restored:shared, by rule:add-go-test)",
-  "n": 18,
+ "b86211ab60": {
+  "outcome": "shared:go:b86211ab60",
+  "why": "masked, it is the go unit of class b86211ab60 (correction:sentence-review-test, by hand)",
+  "n": 19,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "91f89cb62e"
+   "1f08cc692d"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "4261ccc85e": {
   "outcome": "restored:shared",
@@ -1639,15 +1707,63 @@
   "type": "added",
   "section": "reference"
  },
- "13191b0292": {
-  "outcome": "shared:ts:97877bc5dd",
-  "why": "masked, it is the ts unit of class 97877bc5dd (restored:shared, by hand)",
+ "10b2b1c0f3": {
+  "outcome": "shared:go:10b2b1c0f3",
+  "why": "masked, it is the go unit of class 10b2b1c0f3 (correction:sentence-review-test, by hand)",
+  "n": 18,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0daa28353f"
+  ],
+  "unreviewed": 0
+ },
+ "63deab2f9f": {
+  "outcome": "shared:c:bc5cf12387",
+  "why": "masked, it is the c unit of class bc5cf12387 (correction:sentence-review-test, by hand)",
   "n": 19,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "cd7277aa5d"
+   "746a31db3f"
+  ],
+  "unreviewed": 1
+ },
+ "013e98cb9f": {
+  "outcome": "shared:ts:cd00ec9b2a",
+  "why": "masked, it is the ts unit of class cd00ec9b2a (unification:client-heading, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5266d8cbf2"
+  ],
+  "unreviewed": 1
+ },
+ "d74e50a73f": {
+  "outcome": "shared:ts:82b6e219ea",
+  "why": "masked, it is the ts unit of class 82b6e219ea (correction:guard-accessor-arg, by hand)",
+  "n": 93,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4af20ce756"
+  ],
+  "unreviewed": 0
+ },
+ "f85581eae9": {
+  "outcome": "shared:c:d04a960684",
+  "why": "masked, it is the c unit of class d04a960684 (restored:fact, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "475c89eecd"
   ],
   "unreviewed": 0
  },
@@ -1676,8 +1792,8 @@
   "unreviewed": 0
  },
  "92238dc9df": {
-  "outcome": "shared:py:ef8774be7c",
-  "why": "masked, it is the py unit of class ef8774be7c (unification:direct-table, by rule:direct-rows)",
+  "outcome": "shared:c:92238dc9df",
+  "why": "masked, it is the c unit of class 92238dc9df (unification:direct-table, by rule:direct-rows)",
   "n": 19,
   "by": "shared",
   "type": "added",
@@ -1711,29 +1827,69 @@
   ],
   "unreviewed": 0
  },
- "6392a1a00a": {
-  "outcome": "unification:direct-rows",
-  "why": "the shared fetchargs table's ctrl row (raw_request reads `getp fetchargs \"ctrl\"`, sdk_features.ml), its example map printed by the ocaml expression printer",
+ "65160f6e35": {
+  "outcome": "shared:ts:65160f6e35",
+  "why": "masked, it is the ts unit of class 65160f6e35 (correction:sentence-review-ctrl, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7a3e73d523"
+  ],
+  "unreviewed": 1
+ },
+ "5f5b4afc27": {
+  "outcome": "shared:ts:251d7318e6",
+  "why": "masked, it is the ts unit of class 251d7318e6 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "663d6ed57c"
+  ],
+  "unreviewed": 1
+ },
+ "9c8a2fbe80": {
+  "outcome": "shared:ts:ac937e958b",
+  "why": "masked, it is the ts unit of class ac937e958b (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e87b3544ac"
+  ],
+  "unreviewed": 1
+ },
+ "ec8c64676d": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
   "n": 19,
   "by": "hand",
   "type": "added",
   "section": "reference"
  },
- "0ca85bd065": {
-  "outcome": "restored:shared",
-  "why": "OLD's 'Returns a result `value` map with `ok`, `status`, `headers`, and `data` (or `err` on failure)': the shared Returns sentence, with `ok` the value `Bool false` on a failure (sdk_features.ml `jo [(\"ok\", Bool false);`), as README:257 also says",
+ "79bdf00274": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
   "n": 19,
   "by": "hand",
   "type": "added",
   "section": "reference"
  },
- "c122ba7a5e": {
-  "outcome": "restored:shared",
-  "why": "'A failed request is reported in the result, not as an error, so branch on `getp result \"ok\"`' (raw_request returns ok false in every failure path, sdk_features.ml)",
+ "554851f1c5": {
+  "outcome": "shared:c:31334dded1",
+  "why": "masked, it is the c unit of class 31334dded1 (restored:fact, by hand)",
   "n": 19,
-  "by": "hand",
+  "by": "shared",
   "type": "added",
-  "section": "reference"
+  "section": "reference",
+  "sentences": [
+   "fb0d7d681d"
+  ],
+  "unreviewed": 0
  },
  "927fd64229": {
   "outcome": "shared:py:927fd64229",
@@ -1863,17 +2019,17 @@
   "type": "added",
   "section": "reference"
  },
- "566d3ef425": {
-  "outcome": "shared:ts:566d3ef425",
-  "why": "masked, it is the ts unit of class 566d3ef425 (unification:op-sentences, by rule:op-sentences)",
+ "17e455f4a3": {
+  "outcome": "shared:ts:17e455f4a3",
+  "why": "masked, it is the ts unit of class 17e455f4a3 (correction:sentence-review-list-match, by hand)",
   "n": 82,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "37c2dafcf5"
+   "4cc33fe3da"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "358b7fdaff": {
   "outcome": "shared:py:2c469482e0",
@@ -2007,13 +2163,25 @@
   ],
   "unreviewed": 0
  },
- "45134e2731": {
-  "outcome": "correction:ref-6",
-  "why": "the shared Actions table: the action, its operation, its route and the call that reaches it with `$action` and the route's path parameter",
+ "4632677904": {
+  "outcome": "correction:action-call-cell",
+  "why": "the action's Call cell is the call's statements on one line, with what the language declares ahead of it and the check it needs (sentence review: zig's cell left a switch unclosed, c's used variables nothing declared); pipes escaped for the table",
   "n": 16,
   "by": "hand",
   "type": "added",
   "section": "reference"
+ },
+ "a9081dcdc4": {
+  "outcome": "shared:ts:81deb78cd7",
+  "why": "masked, it is the ts unit of class 81deb78cd7 (correction:sentence-review-action, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7e4d6fd58f"
+  ],
+  "unreviewed": 1
  },
  "18134b8c88": {
   "outcome": "shared:py:e007bd9e31",
@@ -2026,6 +2194,18 @@
    "04d3017bb0"
   ],
   "unreviewed": 0
+ },
+ "6da904adba": {
+  "outcome": "shared:ts:6da904adba",
+  "why": "masked, it is the ts unit of class 6da904adba (correction:sentence-review-update-id, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6cfad26916"
+  ],
+  "unreviewed": 1
  },
  "be5e0b29e5": {
   "outcome": "shared:py:62d13e0a33",
@@ -2083,17 +2263,17 @@
   "type": "reworded",
   "section": "reference"
  },
- "3e1ef005aa": {
-  "outcome": "shared:go:3e1ef005aa",
-  "why": "masked, it is the go unit of class 3e1ef005aa (correction:S50, by rule:basic-secret)",
+ "6fcc39ea14": {
+  "outcome": "shared:ts:2d4608bdb8",
+  "why": "masked, it is the ts unit of class 2d4608bdb8 (correction:sentence-review-secret, by hand)",
   "n": 2,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "b21c47b21e"
+   "05a5a62f89"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "4033f23e2d": {
   "outcome": "shared:c:4033f23e2d",
@@ -2109,7 +2289,7 @@
  },
  "fd8af2cd3f": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 4,
   "by": "hand",
   "type": "reworded",
@@ -2163,18 +2343,18 @@
   "type": "echo",
   "section": "reference"
  },
- "824ceae447": {
-  "outcome": "same-meaning",
-  "why": "README:177 'Both arguments may be `Noval`' (test_with); the REFERENCE says the same of test_with's arguments and of the options map",
-  "n": 1,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
  "3344d6d2fb": {
   "outcome": "same-meaning",
   "why": "the type word string, as the README options table uses it",
   "n": 4,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "426c9da05d": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 1,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -2203,27 +2383,16 @@
   "type": "echo",
   "section": "reference"
  },
- "60c6b0b417": {
+ "bff341cf32": {
   "outcome": "contradiction",
   "why": "",
-  "n": 1,
+  "n": 2,
   "by": "hand",
   "type": "echo",
   "section": "reference",
-  "where": "ocaml/README.md:202 (no-test): 'Creates a test-mode client with mock transport. Both arguments may be `Noval`'",
-  "true": "REFERENCE: without the test feature its source does not ship, so the test client has no mock transport",
-  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features; catalogue S13"
- },
- "91baf1b4b6": {
-  "outcome": "contradiction",
-  "why": "",
-  "n": 1,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference",
-  "where": "ocaml/README.md:202 (no-test): 'Creates a test-mode client with mock transport. Both arguments may be `Noval`'",
-  "true": "REFERENCE: without the test feature its source does not ship, so the test client has no mock transport",
-  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features; catalogue S13"
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)"
  },
  "46dc1a3462": {
   "outcome": "correction:S13",
@@ -2233,29 +2402,29 @@
   "type": "missing",
   "section": "reference"
  },
- "91201b47e3": {
-  "outcome": "shared:ts:91201b47e3",
-  "why": "masked, it is the ts unit of class 91201b47e3 (correction:S13, by rule:test-nofeature)",
+ "81aa9cecf9": {
+  "outcome": "shared:ts:81aa9cecf9",
+  "why": "masked, it is the ts unit of class 81aa9cecf9 (correction:sentence-review-test, by hand)",
   "n": 2,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "9402aedbb5"
+   "f616466503"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
- "e188d78214": {
-  "outcome": "shared:go:e188d78214",
-  "why": "masked, it is the go unit of class e188d78214 (correction:S13, by rule:test-nofeature)",
-  "n": 1,
+ "dbdce4bb0e": {
+  "outcome": "shared:ts:dbdce4bb0e",
+  "why": "masked, it is the ts unit of class dbdce4bb0e (correction:sentence-review-test, by hand)",
+  "n": 2,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "a9015bfed2"
+   "dd74ff9ab6"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "da08f7e7bd": {
   "outcome": "shared:ts:da08f7e7bd",
@@ -2267,28 +2436,28 @@
   "sentences": [],
   "unreviewed": 0
  },
- "10fbf344de": {
+ "bf046ecd33": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "1107e9b743": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 1,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "70d8da7b68": {
   "outcome": "unification:ocaml-signature",
-  "why": "a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 10fbf344de): a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
   "n": 1,
   "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "2e92dab982": {
-  "outcome": "unification:member-sentence",
-  "why": "the shared make sentence; e_make is `make client entopts` (Entity_ocaml.ts), the same client and options",
-  "n": 1,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "e8844e5109": {
-  "outcome": "unification:member-sentence",
-  "why": "the shared accessor sentence 'Create a new `Ambient` instance. Pass `Noval` for no initial options.'; the accessor is `Sdk_entity_ambient.make client entopts` (MainEntity_ocaml.ts)",
-  "n": 1,
-  "by": "hand",
-  "type": "reworded",
+  "type": "missing",
   "section": "reference"
  },
  "dac11a1691": {
@@ -2323,13 +2492,17 @@
   "type": "missing",
   "section": "reference"
  },
- "0b29ec4944": {
-  "outcome": "correction:U43",
-  "why": "ref-issues: the gauge's update carries no id, so the id sentence is printed only where the data must carry one",
+ "9e60e49f7f": {
+  "outcome": "shared:ts:82b6e219ea",
+  "why": "masked, it is the ts unit of class 82b6e219ea (correction:guard-accessor-arg, by hand)",
   "n": 1,
-  "by": "hand",
-  "type": "missing",
-  "section": "reference"
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "4af20ce756"
+  ],
+  "unreviewed": 0
  },
  "7dd340f0f1": {
   "outcome": "shared:ts:7dd340f0f1",
@@ -2393,22 +2566,6 @@
   "type": "novel-token",
   "section": "reference"
  },
- "409b8ce3b8": {
-  "outcome": "unification:direct-rows",
-  "why": "the shared fetchargs table's ctrl row (raw_request reads `getp fetchargs \"ctrl\"`, sdk_features.ml), its example map printed by the ocaml expression printer",
-  "n": 1,
-  "by": "hand",
-  "type": "novel-token",
-  "section": "reference"
- },
- "abb698049e": {
-  "outcome": "unification:direct-rows",
-  "why": "the shared fetchargs table's ctrl row (raw_request reads `getp fetchargs \"ctrl\"`, sdk_features.ml), its example map printed by the ocaml expression printer",
-  "n": 1,
-  "by": "hand",
-  "type": "novel-token",
-  "section": "reference"
- },
  "bad236414a": {
   "outcome": "unification:direct-rows",
   "why": "the shared fetchargs table's ctrl row (raw_request reads `getp fetchargs \"ctrl\"`, sdk_features.ml), its example map printed by the ocaml expression printer",
@@ -2465,6 +2622,30 @@
   "type": "novel-token",
   "section": "reference"
  },
+ "247f8bf85e": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statement (`let _ = (Sdk_client.planet client Noval).e_create (jo [...]) Noval`), bound to `_` as ocaml discards a value; the sentence round's fix of the cell",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "da55616659": {
+  "outcome": "correction:action-call-cell",
+  "why": "the `_` of `let _ = ...` in the action Call cell (as 247f8bf85e)",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
+ "409b8ce3b8": {
+  "outcome": "unification:direct-rows",
+  "why": "the shared fetchargs table's ctrl row (raw_request reads `getp fetchargs \"ctrl\"`, sdk_features.ml), its example map printed by the ocaml expression printer",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "reference"
+ },
  "8811b87a9e": {
   "outcome": "correction:ref-6",
   "why": "the shared Actions table: the action, its operation, its route and the call that reaches it with `$action` and the route's path parameter",
@@ -2499,7 +2680,7 @@
  },
  "eaa8f0fd34": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1,
   "by": "hand",
   "type": "vanished-token",
@@ -2507,7 +2688,7 @@
  },
  "8c09a3ded1": {
   "outcome": "unification:ocaml-noarg",
-  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: `if is_nullish reqmatch then empty_map ()`, so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer",
+  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: the operation replaces a nullish match or data by an empty map (EntityOperation_ocaml.ts `let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in`), so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1,
   "by": "hand",
   "type": "vanished-token",
@@ -2515,7 +2696,7 @@
  },
  "9838d0827d": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1,
   "by": "hand",
   "type": "vanished-token",
@@ -2527,6 +2708,46 @@
   "n": 1,
   "by": "hand",
   "type": "vanished-token",
+  "section": "reference"
+ },
+ "82a4a3fdfe": {
+  "outcome": "unification:ref-op-block",
+  "why": "paired by heading at last (n-tools c5a2b05: a parenless heading cut to its first identifier): the load, create, update and remove blocks are OLD's minus OLD's `let result_data = result.e_data_get ()` line. The shared reference example of a raise-style operation prints the call alone, as py, rb, elixir and clojure print it (py's OLD page did too); the read is stated in the sentence above every such block ('`result.e_data_get ()` reads its record'), so no fact is lost, only OLD ocaml's demonstration of it",
+  "n": 79,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "e41de61ee0": {
+  "outcome": "unification:ref-op-block",
+  "why": "paired by heading at last: the list blocks change shape as every raise-style list example does in shared code: the comment becomes the sentence ('Returns a list of entities, one per record'), the empty match `(empty_map ())` becomes `(Noval)` (the operation replaces a nullish match by an empty map, EntityOperation_ocaml.ts), the loop variable is named by shared code (`item`), and the iteration is a top-level `let () =` so the block is a whole program; the record is still read with `e_data_get ()`",
+  "n": 82,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "9fd66fe014": {
+  "outcome": "restored:shared",
+  "why": "the test client's block under its own heading (`test_with (testopts : value) (sdkopts : value) : sdk_client`), new in NEW: OLD named test_with only in prose ('`Sdk_client.test_with` takes explicit options'); paired by heading, the 18 variations in which it is NEW-only",
+  "n": 18,
+  "by": "hand",
+  "type": "block-new-only",
+  "section": "reference"
+ },
+ "1779acc003": {
+  "outcome": "unification:ref-op-block",
+  "why": "doc-nested's satellite list, as e41de61ee0: the same shape change, with the parent's planet_id kept in the match",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
+  "section": "reference"
+ },
+ "f958f95add": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: OLD documented a remove for Planet whose operation is inactive in the model, which NEW drops (catalogue S25: an inactive operation is not documented); the NEW block it is paired with is that variation's test_with block (as 9fd66fe014), left unpaired by the dropped section",
+  "n": 1,
+  "by": "hand",
+  "type": "block-changed",
   "section": "reference"
  },
  "83cf1224af": {
@@ -2603,7 +2824,7 @@
  },
  "7138a8d54a": {
   "outcome": "unification:ocaml-noarg",
-  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: `if is_nullish reqmatch then empty_map ()`, so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer",
+  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: the operation replaces a nullish match or data by an empty map (EntityOperation_ocaml.ts `let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in`), so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1,
   "by": "hand",
   "type": "block-vanished-token",

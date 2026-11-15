@@ -9,10 +9,21 @@
    "value": "value",
    "why": "held where OLD has the same place (the direct table's body row typed `value`); the other contexts are units carrying the same token `value` for recordType (the record e_data_get returns) and container (the options map), which are `value` too",
    "evidence": "sdk_types.ml `mutable e_data_get : unit -> value;`; Main_ocaml.ts `let make (options : value)`; OLD B/ocaml/REFERENCE.md `| body | value |`"
+  },
+  "ref.noun": {
+   "value": "functions",
+   "why": "OCaml has no methods: every client member is a let-bound function of the module taking the client (`let direct (client : sdk_client)`, Main_ocaml.ts), so the members are functions; OLD said 'Instance functions', the same noun under the heading the sentence round replaced by 'Client <noun>' for all twenty",
+   "evidence": "OLD B/ocaml/REFERENCE.md:48 \"### Instance functions\"; NEW B/ocaml/REFERENCE.md \"### Client functions\""
+  },
+  "ref.keys": {
+   "value": "bare",
+   "why": "the constructor takes ONE argument, a `value` map (Main_ocaml.ts `let make (options : value) : sdk_client =`), and apikey, base, headers and the rest are keys of that map, which the bare form heads as such ('Parameters (`options` map keys)', Key / Value type). OLD (member, 152:0) listed `options` as a parameter and then each key as if it were another parameter in the same Name / Type table: that is what the old page got wrong, a map's keys presented as parameters of make. The minimal pair can only find that OLD reads as member; the reviewed value is bare",
+   "evidence": "OLD B/ocaml/REFERENCE.md:23-26 '| Name | Type | Description |' then '| `options` | `value` |' and '| `apikey` | `string` |' as rows of one table; Main_ocaml.ts `let make (options : value) : sdk_client =`"
   }
  },
  "absent": {
-  "2e09bb327d": "the ocaml client module defines no options function (Main_ocaml.ts: make, make0, test, test_with, direct, graphql, prepare, entity and the accessors); the options are the sdk_client record's field cl_options (sdk_types.ml), the live value, not a copy, which the page does not document"
+  "2e09bb327d": "the ocaml client module defines no options function (Main_ocaml.ts: make, make0, test, test_with, direct, graphql, prepare, entity and the accessors); the options are the sdk_client record's field cl_options (sdk_types.ml), the live value, not a copy, which the page does not document",
+  "663f4dd150": "printed, in the same 5 variations, as the write step's comment '(* Create — returns the created entity; created.e_data_get () reads its record *)' (crud-bare/ocaml/README.md and the four other write variations), the comment py, rb, elixir and clojure print with their own record read. It is another unit only because ocaml's record expression applies e_data_get to unit with a space (facts.record `{var}.e_data_get ()`), and a comment's raw fact token is cut at the space, so the skeleton differs from the references' one-token reads (`data_get()`, `data_get/1`). The class of that unit is 53ecb3c159, decided"
  },
  "360f66a3d2": {
   "outcome": "same-meaning",
@@ -51,8 +62,8 @@
  },
  "5c46298b27": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: 'Create — returns the created entity; created.e_data_get () reads its record', 'Update/Patch — ... the id comes off the created entity's record', 'Remove'",
-  "n": 4
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 5c46298b27): the shared write comments: 'Create — returns the created entity; created.e_data_get () reads its record', 'Update/Patch — ... the id comes off the created entity's record', 'Remove'",
+  "n": 5
  },
  "9a132de632": {
   "outcome": "unification:write-comment-style",
@@ -76,8 +87,8 @@
  },
  "53ecb3c159": {
   "outcome": "unification:write-comment-style",
-  "why": "the shared write comments: 'Create — returns the created entity; created.e_data_get () reads its record', 'Update/Patch — ... the id comes off the created entity's record', 'Remove'",
-  "n": 4
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 53ecb3c159): the shared write comments: 'Create — returns the created entity; created.e_data_get () reads its record', 'Update/Patch — ... the id comes off the created entity's record', 'Remove'",
+  "n": 5
  },
  "ee9a5ce786": {
   "outcome": "unification:write-comment-style",
@@ -171,7 +182,7 @@
  },
  "5154a8de87": {
   "outcome": "unification:ocaml-noarg",
-  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: `if is_nullish reqmatch then empty_map ()`, so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer; and the loop variable is named by shared code (`planet`), where OLD wrote `e`",
+  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: the operation replaces a nullish match or data by an empty map (EntityOperation_ocaml.ts `let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in`), so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer; and the loop variable is named by shared code (`planet`), where OLD wrote `e`. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 7
  },
  "9a64d210aa": {
@@ -251,7 +262,7 @@
  },
  "cbe7331d90": {
   "outcome": "unification:ocaml-noarg",
-  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: `if is_nullish reqmatch then empty_map ()`, so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer",
+  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: the operation replaces a nullish match or data by an empty map (EntityOperation_ocaml.ts `let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in`), so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1
  },
  "60c0cc8965": {
@@ -486,7 +497,7 @@
  },
  "0ac70c9214": {
   "outcome": "unification:ocaml-noarg",
-  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: `if is_nullish reqmatch then empty_map ()`, so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer",
+  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: the operation replaces a nullish match or data by an empty map (EntityOperation_ocaml.ts `let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in`), so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1
  },
  "bafc5714bd": {
@@ -628,38 +639,32 @@
  },
  "d978e00f4c": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 83
  },
  "08fd14b4ae": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 28
  },
  "80f2137ae9": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 16
  },
  "e19ec2d014": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 15
  },
  "c2ec44f9f9": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 16
- },
- "c4d1457db0": {
-  "outcome": "unification:member-sentence",
-  "why": "the shared accessor sentence 'Create a new `Ambient` instance. Pass `Noval` for no initial options.'; the accessor is `Sdk_entity_ambient.make client entopts` (MainEntity_ocaml.ts)",
-  "n": 93,
-  "rekeyed": "c4d1457db0"
  },
  "3538e6b4b8": {
   "outcome": "dropped",
-  "why": "the Name and Type headers of the constructor and direct tables: with `keys: bare` both are map-key tables headed Key / Value type / Description",
+  "why": "the Name and Type headers of the constructor and direct tables: with `keys: 'bare'` (Syntax_ocaml.ts) both are map-key tables headed Key / Value type / Description. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 38
  },
  "6fa21dcfbf": {
@@ -764,7 +769,7 @@
  },
  "0ccd61dc70": {
   "outcome": "dropped",
-  "why": "the Name and Type headers of the constructor and direct tables: with `keys: bare` both are map-key tables headed Key / Value type / Description",
+  "why": "the Name and Type headers of the constructor and direct tables: with `keys: 'bare'` (Syntax_ocaml.ts) both are map-key tables headed Key / Value type / Description. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 38
  },
  "ac1eac6be0": {
@@ -834,7 +839,7 @@
  },
  "fd8af2cd3f": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 4
  },
  "2d2b23daa2": {
@@ -908,12 +913,6 @@
   "n": 1,
   "rekeyed": "bd7143956f"
  },
- "e8844e5109": {
-  "outcome": "unification:member-sentence",
-  "why": "the shared accessor sentence 'Create a new `Ambient` instance. Pass `Noval` for no initial options.'; the accessor is `Sdk_entity_ambient.make client entopts` (MainEntity_ocaml.ts)",
-  "n": 1,
-  "rekeyed": "c4d1457db0"
- },
  "dac11a1691": {
   "outcome": "correction:G27",
   "why": "ref-issues: the field description's pipe broke the table; escaped into one cell now",
@@ -935,9 +934,9 @@
   "n": 1
  },
  "0b29ec4944": {
-  "outcome": "correction:U43",
-  "why": "ref-issues: the gauge's update carries no id, so the id sentence is printed only where the data must carry one",
-  "n": 1
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 20
  },
  "b4523a5362": {
   "outcome": "correction:S49",
@@ -1031,17 +1030,17 @@
  },
  "eaa8f0fd34": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1
  },
  "8c09a3ded1": {
   "outcome": "unification:ocaml-noarg",
-  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: `if is_nullish reqmatch then empty_map ()`, so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer",
+  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: the operation replaces a nullish match or data by an empty map (EntityOperation_ocaml.ts `let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in`), so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1
  },
  "9838d0827d": {
   "outcome": "unification:ocaml-signature",
-  "why": "an operation is written `e_x (value) (value) : t`: entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table",
+  "why": "an operation is written `e_load (value) (value) : entity_obj` (and so for each operation): entity_obj types each operation field as an arrow with no parameter names (sdk_types.ml `mutable e_load : value -> value -> entity_obj;`), and a named parameter there fails the guard's renamed-parameter control; OLD's names (reqmatch, ctrl) are kept by the operations note and by the README entity table. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1
  },
  "71d7c4cfa1": {
@@ -1049,115 +1048,20 @@
   "why": "the e_deleted field name: the shared remove sentence says 'marked as deleted' and there is no per-operation note slot; e_deleted is listed undocumented in the forms (README.md:244 still names it)",
   "n": 1
  },
- "402fe9c3f0": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 10
- },
- "8e07a58e74": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 9
- },
  "e41de61ee0": {
   "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 54
- },
- "ba961d8726": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 10
+  "why": "paired by heading at last: the list blocks change shape as every raise-style list example does in shared code: the comment becomes the sentence ('Returns a list of entities, one per record'), the empty match `(empty_map ())` becomes `(Noval)` (the operation replaces a nullish match by an empty map, EntityOperation_ocaml.ts), the loop variable is named by shared code (`item`), and the iteration is a top-level `let () =` so the block is a whole program; the record is still read with `e_data_get ()`",
+  "n": 82
  },
  "82a4a3fdfe": {
   "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 27
- },
- "40be3fd4c2": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 12
- },
- "47e50abd3c": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 15
- },
- "b899502014": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 16
- },
- "47694c5f85": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 5
- },
- "ea7782f69a": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 4
- },
- "f4a8da91da": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 4
- },
- "ddd31e4eda": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 4
- },
- "4dc9474ebb": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 2
- },
- "4db2cd36e2": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 1
- },
- "7a7cf5a828": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 1
- },
- "201cf2784e": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 1
+  "why": "paired by heading at last (n-tools c5a2b05: a parenless heading cut to its first identifier): the load, create, update and remove blocks are OLD's minus OLD's `let result_data = result.e_data_get ()` line. The shared reference example of a raise-style operation prints the call alone, as py, rb, elixir and clojure print it (py's OLD page did too); the read is stated in the sentence above every such block ('`result.e_data_get ()` reads its record'), so no fact is lost, only OLD ocaml's demonstration of it",
+  "n": 79
  },
  "9fd66fe014": {
   "outcome": "restored:shared",
-  "why": "OLD named test_with in prose ('`Sdk_client.test_with` takes explicit options'); it is now documented under its own signature, with 'both may be `Noval`'",
-  "n": 1
- },
- "12444df968": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 1
- },
- "d79a3095b4": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 1
- },
- "acf3528ea7": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 1
- },
- "12fb5a4cfb": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 1
- },
- "ce8a55587b": {
-  "outcome": "unification:ref-op-block",
-  "why": "a document-order mispair: OLD headings `e_x reqmatch ctrl : t` carry no parenthesis, so blocks.js cannot cut them to the function name and pairs by order, and the new test_with block shifts every pair after it. Paired by entity and function (mine/refpairs.py over all 19 variations): 151 identical; 79 differ only by OLD's `let result_data = result.e_data_get ()` line (raise interrupts, so refOpBlock prints no read; the sentence '`result.e_data_get ()` reads its record' keeps it); 83 lists change shape (the comment into the sentence, (Noval), item, top-level `let () =`); 1 OLD-only (ref-issues remove, inactive, S25); 19 NEW-only (test_with)",
-  "n": 1
+  "why": "the test client's block under its own heading (`test_with (testopts : value) (sdkopts : value) : sdk_client`), new in NEW: OLD named test_with only in prose ('`Sdk_client.test_with` takes explicit options'); paired by heading, the 18 variations in which it is NEW-only",
+  "n": 18
  },
  "83cf1224af": {
   "outcome": "restored:shared",
@@ -1206,7 +1110,7 @@
  },
  "7138a8d54a": {
   "outcome": "unification:ocaml-noarg",
-  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: `if is_nullish reqmatch then empty_map ()`, so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer",
+  "why": "a call that gives no match passes `(Noval)` for every operation (EntityOperation_ocaml.ts: the operation replaces a nullish match or data by an empty map (EntityOperation_ocaml.ts `let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in`), so it lists everything); OLD passed `(empty_map ())` to list and `(Noval)` to load, and choosing per operation would be an operation literal in the printer. Quotation reworded at v33a (it was schematic); the decision re-read against the class: unchanged",
   "n": 1
  },
  "f0d41204d8": {
@@ -1217,6 +1121,123 @@
  "56f195b25f": {
   "outcome": "unification:loop-var",
   "why": "the loop variable is named by shared code (the entity's variable in the tutorial and root, `item` in the reference); OLD wrote `e`",
+  "n": 1
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1
+ },
+ "22e9390a31": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 19
+ },
+ "e1fe83a47e": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "4781faef91": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "ddf9bcc627": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 93
+ },
+ "b8bba83fa5": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 93
+ },
+ "557b1d934a": {
+  "outcome": "unification:ocaml-signature",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 0a76017568): a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
+  "n": 93
+ },
+ "04b1340346": {
+  "outcome": "unification:ocaml-signature",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 1578f05138): a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
+  "n": 19
+ },
+ "753178e77c": {
+  "outcome": "unification:ocaml-signature",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as cb81cf0650): a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
+  "n": 19
+ },
+ "ec8c64676d": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "79bdf00274": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "4632677904": {
+  "outcome": "correction:action-call-cell",
+  "why": "the action's Call cell is the call's statements on one line, with what the language declares ahead of it and the check it needs (sentence review: zig's cell left a switch unclosed, c's used variables nothing declared); pipes escaped for the table",
+  "n": 16
+ },
+ "426c9da05d": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 1
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)",
+  "n": 2
+ },
+ "bf046ecd33": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 1
+ },
+ "1107e9b743": {
+  "outcome": "same-meaning",
+  "why": "awkward sentence of the review fixed: where an entity is no instance of a class (named by its Name or its module) the page says entity, as OLD said 'entity instance' (c, clojure) or 'handle' (elixir); same statement",
+  "n": 1
+ },
+ "70d8da7b68": {
+  "outcome": "unification:ocaml-signature",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 10fbf344de): a signature is written `name (p : t) : r` (a callable taking unit as `name () : r`, a field as `name : t`) so the guard can tell a callable from a field; the types are the runtime's (sdk_types.ml entity_obj, Main_ocaml.ts let declarations)",
+  "n": 1
+ },
+ "b1b776b276": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has; OLD ocaml said 'Instance functions', NEW 'Client functions' (the noun is ocaml's declared `functions`)",
+  "n": 19
+ },
+ "247f8bf85e": {
+  "outcome": "correction:action-call-cell",
+  "why": "a token of the action Call cell, now the call's whole statement (`let _ = (Sdk_client.planet client Noval).e_create (jo [...]) Noval`), bound to `_` as ocaml discards a value; the sentence round's fix of the cell",
+  "n": 1
+ },
+ "da55616659": {
+  "outcome": "correction:action-call-cell",
+  "why": "the `_` of `let _ = ...` in the action Call cell (as 247f8bf85e)",
+  "n": 1
+ },
+ "1779acc003": {
+  "outcome": "unification:ref-op-block",
+  "why": "doc-nested's satellite list, as e41de61ee0: the same shape change, with the parent's planet_id kept in the match",
+  "n": 1
+ },
+ "f958f95add": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: OLD documented a remove for Planet whose operation is inactive in the model, which NEW drops (catalogue S25: an inactive operation is not documented); the NEW block it is paired with is that variation's test_with block (as 9fd66fe014), left unpaired by the dropped section",
   "n": 1
  }
 }

@@ -932,6 +932,11 @@
    "value": "Methods",
    "why": "the noun OLD used for the client's members ('Instance Methods'); held there; the new context is the shared heading 'Client Methods', decided once for all twenty (the section lists the client's members; c, clojure and elixir have no instance)",
    "evidence": "OLD B/rb/REFERENCE.md \"### Instance Methods\""
+  },
+  "named": {
+   "value": "bare",
+   "why": "rb's prose names an operation without parentheses, as OLD rb did: \"Entity operations return the entity, and `list` an `Array` of entities\" (OLD B/rb/README.md, result section), \"After a successful `load`, the entity\" (state section), and the tutorial comment '# load returns the ENTITY'. The sentences this value selects are the tutorial's step sentences (\"`load` returns the entity and raises on failure\"), new since the tutorial was shared, so the minimal pair finds no OLD unit beside them; the OLD naming elsewhere on the same pages agrees with bare",
+   "evidence": "OLD B/rb/README.md (quoted in why); NEW B/rb/README.md tutorial"
   }
  }
 }

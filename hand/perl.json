@@ -4,6 +4,16 @@
    "value": "hashref",
    "why": "the type word for a map value (options, fetchargs, the record): OLD perl wrote `hashref` for every map-valued option and fetcharg (headers, feature, system, params, query) and for data_get's return; the three contexts the sheet calls contradicted are the tutorial's record clause '(a `hashref`)', a new clause OLD did not have, whose masked OLD unit is a different sentence",
    "evidence": "OLD B/perl/REFERENCE.md: `$options` `hashref`, `$options->{headers}` `hashref`, `data_get() -> hashref`; runtime Entity.fragment.pm:99 '(hashref)'"
+  },
+  "ref.noun": {
+   "value": "Methods",
+   "why": "the noun OLD perl used for the client's members ('Instance Methods'); held there; the new context is the shared heading 'Client Methods', decided once for all twenty by the sentence round (the section lists the client's members; c, clojure and elixir have no instance); perl's client members are subs called on the client object (`$client->direct(...)`, Main.fragment.pm)",
+   "evidence": "OLD B/perl/REFERENCE.md:44 \"### Instance Methods\""
+  },
+  "prints": {
+   "value": "fields",
+   "why": "an example prints chosen scalar fields of the record, never the record: perl's record is a hashref (Entity.fragment.pm data_get returns a clone of the hashref), and `print` of a hashref writes HASH(0x...), so 'record' (and 'listFields', which prints the record outside a list) would print an address; OLD perl printed `->{id}` alone, which neither value prints, so the minimal pair cannot judge it. 'fields' prints the id and one display field; that the display field must be a scalar is brief 7 decision 3 (perl's defect class 24d40b660d waits for it), not this fact",
+   "evidence": "run by the perl reviewer (results/s3b-review-perl): printing a hashref held in a field gives HASH(0x...), 'r1 HASH(0x560fdb4af1d0)'; OLD B/perl/REFERENCE.md list examples print `$item->data_get->{id}`"
   }
  },
  "360f66a3d2": {
@@ -33,8 +43,8 @@
  },
  "24ebd03e1a": {
   "outcome": "restored:shared",
-  "why": "restored as the shared create comment 'Create — returns the created entity; $created->data_get reads its record'",
-  "n": 4
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 24ebd03e1a): restored as the shared create comment 'Create — returns the created entity; $created->data_get reads its record'",
+  "n": 5
  },
  "691bdc9ddb": {
   "outcome": "restored:shared",
@@ -633,9 +643,9 @@
   "n": 1
  },
  "0b29ec4944": {
-  "outcome": "restored:shared",
-  "why": "ref-issues: restored as 'The data must include the entity id, `id`.' under PlanetEntityClient",
-  "n": 1
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 20
  },
  "23beb1c071": {
   "outcome": "correction:entity-class",
@@ -763,5 +773,97 @@
   "outcome": "unification:ref-list-example",
   "why": "the reference list's loop variable is `item` in every ported language (shared generic naming)",
   "n": 1
+ },
+ "3cde1c8a56": {
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 3cde1c8a56): at v33p these units matched py's class d0874922f8 as a shared sentence, which py decided restored:fact (rule:write-comments); the same decision is taken for them here, by hand",
+  "n": 5
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1
+ },
+ "a73d1bf82a": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 19
+ },
+ "1bd70c0c52": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19
+ },
+ "13c85744b1": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 5543fba889): at v33p these units matched go's class e72c9d98eb as a shared sentence, which go decided correction:guard-accessor-arg (hand); the same decision is taken for them here, by hand",
+  "n": 94
+ },
+ "e3b036b6bd": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "OLD perl's direct Returns sentence ('Returns a result `hashref` with `ok`, `status`, `headers`, and `data` (or `err` on failure)') is gone: it said `err` stands for data on failure, which the sentence review found false for a readable non-2xx response (perl Main.fragment.pm sets 'ok' => 0 with status, headers and data and no err for one). The fixed shared sentences replace it: direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "dd5e1cd6ff": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as c0e40143f1): the shared direct sentence: a failed request is reported in the result (Main.fragment.pm:240-246: direct traps prepare's die and returns ok 0)",
+  "n": 19
+ },
+ "c115f99e12": {
+  "outcome": "unification:direct-table",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as ef8774be7c): at v33p these units matched py's class ef8774be7c as a shared sentence, which py decided unification:direct-table (rule:direct-rows); the same decision is taken for them here, by hand",
+  "n": 19
+ },
+ "c83fbf69b6": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
+  "n": 19
+ },
+ "03602a7b82": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "b27cfa68ec": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2
+ },
+ "ff6e6b1e22": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 1
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)",
+  "n": 1
+ },
+ "1f529072c4": {
+  "outcome": "same-meaning",
+  "why": "the echo is the README's direct table (perl/README.md, the `headers` row typed `hashref`), which still states the keys of direct's result as the fixed REFERENCE sentences do; no disagreement: the README names the keys, the REFERENCE adds when `err` is there",
+  "n": 19
+ },
+ "0dd73c0fd6": {
+  "outcome": "same-meaning",
+  "why": "the removed sentence 'Pass `undef` for no initial data.' is said again by the accessor sentence that replaced it ('Its `data` argument holds the entity options: pass `undef` for none.'); the echo is the README's test call `DemoSDK->test(undef, undef)`, which passes undef as the null value too: no disagreement",
+  "n": 94
  }
 }

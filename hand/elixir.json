@@ -4,6 +4,11 @@
    "value": "Functions",
    "why": "elixir has no methods: every member is a module function taking the client or entity as its first argument (Demo.ambient(client, entopts \\\\ nil), options_map(client)); OLD said 'Functions' (OLD B/elixir/REFERENCE.md:41) and 'Common Functions' (:127), so the noun is held; NEW's shared heading is 'Client Functions'",
    "evidence": "OLD B/elixir/REFERENCE.md:41 '### Functions', :127 '### Common Functions'; Syntax_elixir.ts signatures"
+  },
+  "named": {
+   "value": "bare",
+   "why": "elixir's prose names an operation without parentheses, as OLD elixir did: \"Entity operations return the entity, and `list` a list of entities, one per record\" (OLD B/elixir/README.md, result section); OLD's tutorial named the arity form (`load/2`), which the arity note decided against in stage 3. The sentences this value selects are the tutorial's step sentences (\"`load` returns the entity and raises on failure\"), new since the tutorial was shared, so the minimal pair finds no OLD unit beside them; the OLD naming elsewhere on the same pages agrees with bare",
+   "evidence": "OLD B/elixir/README.md (quoted in why); NEW B/elixir/README.md tutorial"
   }
  },
  "absent": {

@@ -51,6 +51,18 @@
   ],
   "unreviewed": 0
  },
+ "b31c974005": {
+  "outcome": "shared:ts:b31c974005",
+  "why": "masked, it is the ts unit of class b31c974005 (correction:sentence-review-env, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "25f8905d37"
+  ],
+  "unreviewed": 1
+ },
  "9363faf207": {
   "outcome": "shared:ts:9363faf207",
   "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
@@ -71,6 +83,18 @@
   "type": "added",
   "section": "tutorial"
  },
+ "a65ba4a33f": {
+  "outcome": "shared:ts:a65ba4a33f",
+  "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "4966aea016"
+  ],
+  "unreviewed": 1
+ },
  "2ab61ac902": {
   "outcome": "same-meaning",
   "why": "a word match on VList: the README options table says `extend` is a `VList`; nothing about what list returns",
@@ -79,17 +103,17 @@
   "type": "echo",
   "section": "tutorial"
  },
- "849816779b": {
-  "outcome": "shared:ts:849816779b",
-  "why": "masked, it is the ts unit of class 849816779b (correction:U45, by rule:write-heading2)",
+ "bef2b8f986": {
+  "outcome": "shared:ts:bef2b8f986",
+  "why": "masked, it is the ts unit of class bef2b8f986 (unification:write-title-entity, by hand)",
   "n": 3,
   "by": "shared",
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "a491ead7c9"
+   "21fc35c768"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "28f0ea9b7a": {
   "outcome": "restored:shared",
@@ -113,8 +137,8 @@
  },
  "454d326c2d": {
   "outcome": "restored:shared",
-  "why": "restored as the create comment \"Create — returns a value holding the created entity; (created.asNative as? Entity)?.data() reads its record\"",
-  "n": 4,
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 454d326c2d): restored as the create comment \"Create — returns a value holding the created entity; (created.asNative as? Entity)?.data() reads its record\"",
+  "n": 5,
   "by": "hand",
   "type": "missing",
   "section": "tutorial"
@@ -145,8 +169,8 @@
  },
  "fec65e4929": {
   "outcome": "restored:shared",
-  "why": "the shared create comment in the wrapped style, with swift's record expression; replaces \"Create — returns the ENTITY (call data() for the record)\"",
-  "n": 4,
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as fec65e4929): the shared create comment in the wrapped style, with swift's record expression; replaces \"Create — returns the ENTITY (call data() for the record)\"",
+  "n": 5,
   "by": "hand",
   "type": "added",
   "section": "tutorial"
@@ -175,18 +199,6 @@
   ],
   "unreviewed": 0
  },
- "732bb80f3d": {
-  "outcome": "shared:ts:732bb80f3d",
-  "why": "masked, it is the ts unit of class 732bb80f3d (correction:U45, by rule:write-heading2)",
-  "n": 1,
-  "by": "shared",
-  "type": "reworded",
-  "section": "tutorial",
-  "sentences": [
-   "16698bd386"
-  ],
-  "unreviewed": 0
- },
  "29bba9e03f": {
   "outcome": "shared:ts:29bba9e03f",
   "why": "masked, it is the ts unit of class 29bba9e03f (correction:S28, by rule:tutorial-leadin)",
@@ -198,6 +210,18 @@
    "728df7c1c3"
   ],
   "unreviewed": 0
+ },
+ "cdfbb6475b": {
+  "outcome": "shared:ts:cdfbb6475b",
+  "why": "masked, it is the ts unit of class cdfbb6475b (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "81aabf087b"
+  ],
+  "unreviewed": 1
  },
  "1fa815677a": {
   "outcome": "shared:ts:1fa815677a",
@@ -211,6 +235,30 @@
   ],
   "unreviewed": 0
  },
+ "c9c9426cd8": {
+  "outcome": "shared:ts:c9c9426cd8",
+  "why": "masked, it is the ts unit of class c9c9426cd8 (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "219aa7c229"
+  ],
+  "unreviewed": 1
+ },
+ "79233d47ba": {
+  "outcome": "shared:ts:79233d47ba",
+  "why": "masked, it is the ts unit of class 79233d47ba (same-meaning, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "9bcb2825f2"
+  ],
+  "unreviewed": 1
+ },
  "defb73bfd8": {
   "outcome": "shared:ts:defb73bfd8",
   "why": "masked, it is the ts unit of class defb73bfd8 (correction:S28, by rule:tutorial-leadin)",
@@ -222,14 +270,6 @@
    "3ab3fb2b2e"
   ],
   "unreviewed": 0
- },
- "9af3164c6e": {
-  "outcome": "restored:shared",
-  "why": "as fec65e4929: the shared create comment, doc-nested",
-  "n": 1,
-  "by": "hand",
-  "type": "reworded",
-  "section": "tutorial"
  },
  "9cbb8e3add": {
   "outcome": "shared:ts:9cbb8e3add",
@@ -275,17 +315,17 @@
   "type": "missing",
   "section": "tutorial"
  },
- "4555bd17b9": {
-  "outcome": "shared:ts:4555bd17b9",
-  "why": "masked, it is the ts unit of class 4555bd17b9 (correction:U45, by rule:write-heading)",
+ "ec589bf68a": {
+  "outcome": "shared:ts:ec589bf68a",
+  "why": "masked, it is the ts unit of class ec589bf68a (unification:write-title-entity, by hand)",
   "n": 1,
   "by": "shared",
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "46ab3e9cf3"
+   "b83e95bec6"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "76f72279eb": {
   "outcome": "restored:shared",
@@ -318,6 +358,14 @@
  "6fb3670380": {
   "outcome": "unification:client-env-sentence",
   "why": "DEMO_APIKEY in the shared client sentence; the OLD block's code read the same variable",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
@@ -358,6 +406,14 @@
  "e5e05eb7a6": {
   "outcome": "correction:S50",
   "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_swift reads options secret",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
@@ -955,9 +1011,17 @@
   "type": "echo",
   "section": "reference"
  },
- "ef00c80d4a": {
+ "89672a79c6": {
   "outcome": "same-meaning",
-  "why": "the README direct example reads headers/status/data off the result; the same keys",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "940b78cf67": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
   "n": 19,
   "by": "hand",
   "type": "echo",
@@ -1007,22 +1071,6 @@
   ],
   "unreviewed": 0
  },
- "1e254c64d9": {
-  "outcome": "restored:fact",
-  "why": "the signature as the runtime declares it: one unlabelled VMap? parameter and throws (Main.fragment.swift:96); OLD named the parameter without its type",
-  "n": 19,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "e7a36e162e": {
-  "outcome": "restored:fact",
-  "why": "the signature as declared (Main.fragment.swift:162), parameter typed",
-  "n": 19,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
  "b2f8d161db": {
   "outcome": "unification:member-sentences",
   "why": "the make sentence names the class; printed once per entity (16 + 77 + 1 = 94 units across the three classes d5b8571b7f, b2f8d161db, 1cf2aacb90): the ledger pairs the first OLD entity with another entity under the renamed headings, so the count split is a pairing artifact, not a dropped sentence. make() returns a new instance with cloneOpts() and the same client (Entity.fragment.swift:10-12) | the make sentence names the class and says it keeps the client: make() returns EntyClass(client, cloneOpts()) (Entity.fragment.swift:11); see d5b8571b7f for the count",
@@ -1052,18 +1100,6 @@
   "section": "reference",
   "sentences": [
    "5ddee20721"
-  ],
-  "unreviewed": 0
- },
- "92bc6e303b": {
-  "outcome": "shared:ts:92bc6e303b",
-  "why": "masked, it is the ts unit of class 92bc6e303b (unification:op-sentences, by rule:op-sentences)",
-  "n": 19,
-  "by": "shared",
-  "type": "reworded",
-  "section": "reference",
-  "sentences": [
-   "fa85157376"
   ],
   "unreviewed": 0
  },
@@ -1183,10 +1219,26 @@
   "type": "missing",
   "section": "reference"
  },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
  "051347e851": {
   "outcome": "restored:fact",
   "why": "the accessor heading is its declared signature, Ambient(_ entopts: VMap? = nil) -> DemoEntityBase (MainEntity_swift.ts:25)",
   "n": 93,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "cd6620080a": {
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as e7a36e162e): the signature as declared (Main.fragment.swift:162), parameter typed",
+  "n": 19,
   "by": "hand",
   "type": "missing",
   "section": "reference"
@@ -1201,7 +1253,7 @@
  },
  "f20168b066": {
   "outcome": "restored:shared",
-  "why": "restored as \"A failed request is reported in the result, not as an error, so branch on `result.entries[\"ok\"]`\"; direct is not throws (Main.fragment.swift:162)",
+  "why": "restored as the shared sentence 'A failure is reported in the result, not as an error, so branch on' `result.entries[\"ok\"] == .bool(true)` (the sentence round's wording, with swift's truth read); direct is not throws (Main.fragment.swift:162), so the branch on the result is the whole of failure handling. Re-read at v33m: still restored",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -1218,6 +1270,14 @@
  "3932ebe961": {
   "outcome": "restored:shared",
   "why": "restored in the Returns paragraph: **Returns:** `VMap`, a result map ...",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "f97fbb188d": {
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 1e254c64d9): the signature as the runtime declares it: one unlabelled VMap? parameter and throws (Main.fragment.swift:96); OLD named the parameter without its type",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -1265,7 +1325,7 @@
  },
  "9946af9a45": {
   "outcome": "restored:shared",
-  "why": "restored as \"The match is optional: without one, every record is listed.\"; the example still passes nil, nil",
+  "why": "restored as the shared sentence \"The match is optional.\" (the sentence round cut 'without one, every record is listed', which overstated); the example still passes nil, nil. Re-read at v33m: still restored",
   "n": 83,
   "by": "hand",
   "type": "missing",
@@ -1275,6 +1335,14 @@
   "outcome": "restored:shared",
   "why": "the wrapped return clause for create",
   "n": 16,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "ref-issues: the gauge update data carries no id (the entity has none); OLD said the data must include `id` for it. Planet's update and patch keep it, as \"The data must include the entity id, `id`, unless the entity already holds it.\" (the sentence round's wording). Re-read at v33m: the correction stands",
+  "n": 20,
   "by": "hand",
   "type": "missing",
   "section": "reference"
@@ -1395,17 +1463,29 @@
   "type": "added",
   "section": "reference"
  },
- "b5b91fba23": {
-  "outcome": "shared:ts:97877bc5dd",
-  "why": "masked, it is the ts unit of class 97877bc5dd (restored:shared, by hand)",
+ "640b39740e": {
+  "outcome": "shared:go:640b39740e",
+  "why": "masked, it is the go unit of class 640b39740e (correction:sentence-review-test, by hand)",
   "n": 19,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "cd7277aa5d"
+   "746a31db3f"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
+ },
+ "cd00ec9b2a": {
+  "outcome": "shared:ts:cd00ec9b2a",
+  "why": "masked, it is the ts unit of class cd00ec9b2a (unification:client-heading, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "5266d8cbf2"
+  ],
+  "unreviewed": 1
  },
  "3cfb131ab0": {
   "outcome": "restored:fact",
@@ -1415,9 +1495,21 @@
   "type": "added",
   "section": "reference"
  },
+ "4fdf639d1b": {
+  "outcome": "shared:elixir:4b8feb4091",
+  "why": "masked, it is the elixir unit of class 4b8feb4091 (correction:runtime-forms, by rule:add-sig-forms)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "78e12a7505"
+  ],
+  "unreviewed": 0
+ },
  "92238dc9df": {
-  "outcome": "shared:py:ef8774be7c",
-  "why": "masked, it is the py unit of class ef8774be7c (unification:direct-table, by rule:direct-rows)",
+  "outcome": "shared:c:92238dc9df",
+  "why": "masked, it is the c unit of class 92238dc9df (unification:direct-table, by rule:direct-rows)",
   "n": 19,
   "by": "shared",
   "type": "added",
@@ -1447,29 +1539,81 @@
   "type": "added",
   "section": "reference"
  },
- "976fbd4577": {
-  "outcome": "unification:direct-table",
-  "why": "the shared fetchargs table documents ctrl, with the explain example printed by swift's expr printer; prepare reads ctrl (Main.fragment.swift:101)",
+ "65160f6e35": {
+  "outcome": "shared:ts:65160f6e35",
+  "why": "masked, it is the ts unit of class 65160f6e35 (correction:sentence-review-ctrl, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7a3e73d523"
+  ],
+  "unreviewed": 1
+ },
+ "a112cd49f2": {
+  "outcome": "shared:ts:b82912bd60",
+  "why": "masked, it is the ts unit of class b82912bd60 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0a6358906c"
+  ],
+  "unreviewed": 1
+ },
+ "251d7318e6": {
+  "outcome": "shared:ts:251d7318e6",
+  "why": "masked, it is the ts unit of class 251d7318e6 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "663d6ed57c"
+  ],
+  "unreviewed": 1
+ },
+ "ac937e958b": {
+  "outcome": "shared:ts:ac937e958b",
+  "why": "masked, it is the ts unit of class ac937e958b (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e87b3544ac"
+  ],
+  "unreviewed": 1
+ },
+ "58c6715c33": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
   "n": 19,
   "by": "hand",
   "type": "added",
   "section": "reference"
  },
- "8e3a5d6365": {
-  "outcome": "restored:shared",
-  "why": "the shared direct Returns paragraph, with okFalse cited (r.entries[\"ok\"] = .bool(false))",
+ "b9b1eb40e3": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
   "n": 19,
   "by": "hand",
   "type": "added",
   "section": "reference"
  },
- "3942dce840": {
-  "outcome": "restored:shared",
-  "why": "restored from \"This escape hatch never throws — branch on result.entries[\"ok\"]\"",
+ "9688f8a264": {
+  "outcome": "shared:elixir:9702f02e8d",
+  "why": "masked, it is the elixir unit of class 9702f02e8d (correction:runtime-forms, by rule:add-sig-forms)",
   "n": 19,
-  "by": "hand",
+  "by": "shared",
   "type": "added",
-  "section": "reference"
+  "section": "reference",
+  "sentences": [
+   "4fd58b94dc"
+  ],
+  "unreviewed": 0
  },
  "927fd64229": {
   "outcome": "shared:py:927fd64229",
@@ -1595,17 +1739,17 @@
   ],
   "unreviewed": 0
  },
- "566d3ef425": {
-  "outcome": "shared:ts:566d3ef425",
-  "why": "masked, it is the ts unit of class 566d3ef425 (unification:op-sentences, by rule:op-sentences)",
+ "17e455f4a3": {
+  "outcome": "shared:ts:17e455f4a3",
+  "why": "masked, it is the ts unit of class 17e455f4a3 (correction:sentence-review-list-match, by hand)",
   "n": 82,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "37c2dafcf5"
+   "4cc33fe3da"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "393056d0c1": {
   "outcome": "shared:go:393056d0c1",
@@ -1735,6 +1879,18 @@
   "type": "added",
   "section": "reference"
  },
+ "a9081dcdc4": {
+  "outcome": "shared:ts:81deb78cd7",
+  "why": "masked, it is the ts unit of class 81deb78cd7 (correction:sentence-review-action, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7e4d6fd58f"
+  ],
+  "unreviewed": 1
+ },
  "e6a78931f2": {
   "outcome": "restored:shared",
   "why": "the wrapped return clause for create",
@@ -1742,6 +1898,18 @@
   "by": "hand",
   "type": "added",
   "section": "reference"
+ },
+ "6da904adba": {
+  "outcome": "shared:ts:6da904adba",
+  "why": "masked, it is the ts unit of class 6da904adba (correction:sentence-review-update-id, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6cfad26916"
+  ],
+  "unreviewed": 1
  },
  "31327a7525": {
   "outcome": "restored:shared",
@@ -1799,6 +1967,14 @@
   ],
   "unreviewed": 0
  },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "6aeea92fca": {
   "outcome": "shared:go:6aeea92fca",
   "why": "masked, it is the go unit of class 6aeea92fca (correction:S50, by rule:add-secret)",
@@ -1811,17 +1987,17 @@
   ],
   "unreviewed": 0
  },
- "3e1ef005aa": {
-  "outcome": "shared:go:3e1ef005aa",
-  "why": "masked, it is the go unit of class 3e1ef005aa (correction:S50, by rule:basic-secret)",
+ "6fcc39ea14": {
+  "outcome": "shared:ts:2d4608bdb8",
+  "why": "masked, it is the ts unit of class 2d4608bdb8 (correction:sentence-review-secret, by hand)",
   "n": 2,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "b21c47b21e"
+   "05a5a62f89"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "2e9cd7c427": {
   "outcome": "restored:fact",
@@ -1871,9 +2047,9 @@
   ],
   "unreviewed": 0
  },
- "f09662fec4": {
+ "515b3d5cc0": {
   "outcome": "same-meaning",
-  "why": "the README's test line says the same of the two arguments (both may be nil); nothing disagrees",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
   "n": 1,
   "by": "hand",
   "type": "echo",
@@ -1887,16 +2063,16 @@
   "type": "echo",
   "section": "reference"
  },
- "91baf1b4b6": {
+ "bff341cf32": {
   "outcome": "contradiction",
   "why": "",
   "n": 1,
   "by": "hand",
   "type": "echo",
   "section": "reference",
-  "where": "swift/README.md:229 (no-test): testSDK \"Creates a test-mode client with mock transport\" (ReadmeOptions_swift, unported)",
-  "true": "REFERENCE: without the test feature its source does not ship, so testSDK builds a client in test mode with no mock transport",
-  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features; catalogue S13"
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)"
  },
  "46dc1a3462": {
   "outcome": "correction:S13",
@@ -1906,17 +2082,29 @@
   "type": "missing",
   "section": "reference"
  },
- "91201b47e3": {
-  "outcome": "shared:ts:91201b47e3",
-  "why": "masked, it is the ts unit of class 91201b47e3 (correction:S13, by rule:test-nofeature)",
+ "81aa9cecf9": {
+  "outcome": "shared:ts:81aa9cecf9",
+  "why": "masked, it is the ts unit of class 81aa9cecf9 (correction:sentence-review-test, by hand)",
   "n": 1,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "9402aedbb5"
+   "f616466503"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
+ },
+ "dbdce4bb0e": {
+  "outcome": "shared:ts:dbdce4bb0e",
+  "why": "masked, it is the ts unit of class dbdce4bb0e (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dd74ff9ab6"
+  ],
+  "unreviewed": 1
  },
  "10f0d238e2": {
   "outcome": "shared:ts:10f0d238e2",
@@ -2014,14 +2202,6 @@
   "type": "missing",
   "section": "reference"
  },
- "0b29ec4944": {
-  "outcome": "correction:U43",
-  "why": "ref-issues: the gauge update data carries no id (the entity has none); OLD said the data must include `id` for it. Planet's update/patch keep it as \"The data must include the entity id, `id`.\"",
-  "n": 1,
-  "by": "hand",
-  "type": "missing",
-  "section": "reference"
- },
  "d245316c2e": {
   "outcome": "unification:entity-heading",
   "why": "the section is headed by the entity class (ConsoleEntity), see 68c1ea7fd6",
@@ -2114,7 +2294,7 @@
  },
  "da55616659": {
   "outcome": "restored:fact",
-  "why": "the declared signatures write each parameter as Swift declares it: `_ name: Type`",
+  "why": "the declared signatures write each parameter as Swift declares it, an unlabelled `_` then name and type (`_ testopts: VMap?`, `_ entopts: VMap? = nil`); re-read at v33m: unchanged",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
@@ -2123,22 +2303,6 @@
  "baab4708d6": {
   "outcome": "restored:fact",
   "why": "the accessor returns DemoEntityBase (MainEntity_swift.ts:25 `-> ${Name}EntityBase`)",
-  "n": 1,
-  "by": "hand",
-  "type": "novel-token",
-  "section": "reference"
- },
- "48311e623e": {
-  "outcome": "unification:direct-table",
-  "why": ".map in the ctrl example",
-  "n": 1,
-  "by": "hand",
-  "type": "novel-token",
-  "section": "reference"
- },
- "abb698049e": {
-  "outcome": "unification:direct-table",
-  "why": "explain in the ctrl example",
   "n": 1,
   "by": "hand",
   "type": "novel-token",

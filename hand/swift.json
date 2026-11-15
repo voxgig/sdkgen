@@ -9,6 +9,11 @@
    "value": "class",
    "why": "Decided by hand; the tool marks it ATTESTED by enumeration pairing only. OLD headed each entity section by the entity Name (## Ambient). The generated class is <Name>Entity, or PlanetEntityClient on a collision (Entity_swift.ts uses entityClassName), so the class names the type a reader holds; OLD named the data type",
    "evidence": "out/old/B/swift/REFERENCE.md headings; src/cmp/swift/Entity_swift.ts entityClassName"
+  },
+  "ref.noun": {
+   "value": "Methods",
+   "why": "the noun OLD swift used for the client's members ('Instance Methods'); held there; the new context is the shared heading 'Client Methods', decided once for all twenty by the sentence round (the section lists the client's members; c, clojure and elixir have no instance); swift's client members are instance methods of the client class (Main.fragment.swift)",
+   "evidence": "OLD B/swift/REFERENCE.md:41 \"### Instance Methods\""
   }
  },
  "360f66a3d2": {
@@ -38,8 +43,8 @@
  },
  "454d326c2d": {
   "outcome": "restored:shared",
-  "why": "restored as the create comment \"Create — returns a value holding the created entity; (created.asNative as? Entity)?.data() reads its record\"",
-  "n": 4
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 454d326c2d): restored as the create comment \"Create — returns a value holding the created entity; (created.asNative as? Entity)?.data() reads its record\"",
+  "n": 5
  },
  "77832f0697": {
   "outcome": "restored:shared",
@@ -58,8 +63,8 @@
  },
  "fec65e4929": {
   "outcome": "restored:shared",
-  "why": "the shared create comment in the wrapped style, with swift's record expression; replaces \"Create — returns the ENTITY (call data() for the record)\"",
-  "n": 4
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as fec65e4929): the shared create comment in the wrapped style, with swift's record expression; replaces \"Create — returns the ENTITY (call data() for the record)\"",
+  "n": 5
  },
  "9af3164c6e": {
   "outcome": "restored:shared",
@@ -600,7 +605,7 @@
  },
  "f20168b066": {
   "outcome": "restored:shared",
-  "why": "restored as \"A failed request is reported in the result, not as an error, so branch on `result.entries[\"ok\"]`\"; direct is not throws (Main.fragment.swift:162)",
+  "why": "restored as the shared sentence 'A failure is reported in the result, not as an error, so branch on' `result.entries[\"ok\"] == .bool(true)` (the sentence round's wording, with swift's truth read); direct is not throws (Main.fragment.swift:162), so the branch on the result is the whole of failure handling. Re-read at v33m: still restored",
   "n": 19
  },
  "c115f99e12": {
@@ -641,7 +646,7 @@
  },
  "9946af9a45": {
   "outcome": "restored:shared",
-  "why": "restored as \"The match is optional: without one, every record is listed.\"; the example still passes nil, nil",
+  "why": "restored as the shared sentence \"The match is optional.\" (the sentence round cut 'without one, every record is listed', which overstated); the example still passes nil, nil. Re-read at v33m: still restored",
   "n": 83
  },
  "97825096da": {
@@ -837,9 +842,9 @@
   "n": 1
  },
  "0b29ec4944": {
-  "outcome": "correction:U43",
-  "why": "ref-issues: the gauge update data carries no id (the entity has none); OLD said the data must include `id` for it. Planet's update/patch keep it as \"The data must include the entity id, `id`.\"",
-  "n": 1
+  "outcome": "correction:sentence-review-update-id",
+  "why": "ref-issues: the gauge update data carries no id (the entity has none); OLD said the data must include `id` for it. Planet's update and patch keep it, as \"The data must include the entity id, `id`, unless the entity already holds it.\" (the sentence round's wording). Re-read at v33m: the correction stands",
+  "n": 20
  },
  "d245316c2e": {
   "outcome": "unification:entity-heading",
@@ -881,7 +886,7 @@
  },
  "da55616659": {
   "outcome": "restored:fact",
-  "why": "the declared signatures write each parameter as Swift declares it: `_ name: Type`",
+  "why": "the declared signatures write each parameter as Swift declares it, an unlabelled `_` then name and type (`_ testopts: VMap?`, `_ entopts: VMap? = nil`); re-read at v33m: unchanged",
   "n": 1
  },
  "baab4708d6": {
@@ -1042,6 +1047,68 @@
  "ada2580c07": {
   "outcome": "unification:swift-unwrap-shadow",
   "why": "the entity is taken out of the returned Value under the same name (if let x = x.asNative as? Entity) instead of an <name>Entity variable, because a provider may not concatenate onto a description name; same calls, same printed record",
+  "n": 1
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
+  "n": 1
+ },
+ "89672a79c6": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "940b78cf67": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 19
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19
+ },
+ "cd6620080a": {
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as e7a36e162e): the signature as declared (Main.fragment.swift:162), parameter typed",
+  "n": 19
+ },
+ "f97fbb188d": {
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 1e254c64d9): the signature as the runtime declares it: one unlabelled VMap? parameter and throws (Main.fragment.swift:96); OLD named the parameter without its type",
+  "n": 19
+ },
+ "58c6715c33": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "b9b1eb40e3": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2
+ },
+ "515b3d5cc0": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 1
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)",
   "n": 1
  }
 }

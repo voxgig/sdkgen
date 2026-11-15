@@ -51,6 +51,18 @@
   ],
   "unreviewed": 0
  },
+ "b31c974005": {
+  "outcome": "shared:ts:b31c974005",
+  "why": "masked, it is the ts unit of class b31c974005 (correction:sentence-review-env, by hand)",
+  "n": 15,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "25f8905d37"
+  ],
+  "unreviewed": 1
+ },
  "9363faf207": {
   "outcome": "shared:ts:9363faf207",
   "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
@@ -71,17 +83,29 @@
   "type": "added",
   "section": "tutorial"
  },
- "849816779b": {
-  "outcome": "shared:ts:849816779b",
-  "why": "masked, it is the ts unit of class 849816779b (correction:U45, by rule:write-heading2)",
+ "a65ba4a33f": {
+  "outcome": "shared:ts:a65ba4a33f",
+  "why": "masked, it is the ts unit of class a65ba4a33f (correction:sentence-review-env, by hand)",
+  "n": 2,
+  "by": "shared",
+  "type": "added",
+  "section": "tutorial",
+  "sentences": [
+   "4966aea016"
+  ],
+  "unreviewed": 1
+ },
+ "bef2b8f986": {
+  "outcome": "shared:ts:bef2b8f986",
+  "why": "masked, it is the ts unit of class bef2b8f986 (unification:write-title-entity, by hand)",
   "n": 3,
   "by": "shared",
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "a491ead7c9"
+   "21fc35c768"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "406d576484": {
   "outcome": "restored:shared",
@@ -125,8 +149,8 @@
  },
  "24ebd03e1a": {
   "outcome": "restored:shared",
-  "why": "restored as the shared create comment 'Create — returns the created entity; $created->data_get reads its record'",
-  "n": 4,
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 24ebd03e1a): restored as the shared create comment 'Create — returns the created entity; $created->data_get reads its record'",
+  "n": 5,
   "by": "hand",
   "type": "missing",
   "section": "tutorial"
@@ -148,16 +172,12 @@
   "section": "tutorial"
  },
  "3cde1c8a56": {
-  "outcome": "shared:py:d0874922f8",
-  "why": "masked, it is the py unit of class d0874922f8 (restored:fact, by rule:write-comments)",
-  "n": 4,
-  "by": "shared",
+  "outcome": "restored:fact",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 3cde1c8a56): at v33p these units matched py's class d0874922f8 as a shared sentence, which py decided restored:fact (rule:write-comments); the same decision is taken for them here, by hand",
+  "n": 5,
+  "by": "hand",
   "type": "added",
-  "section": "tutorial",
-  "sentences": [
-   "663f4dd150"
-  ],
-  "unreviewed": 0
+  "section": "tutorial"
  },
  "aeabe4bdf1": {
   "outcome": "shared:ts:b7c60b65eb",
@@ -168,18 +188,6 @@
   "section": "tutorial",
   "sentences": [
    "e3dc10a6b7"
-  ],
-  "unreviewed": 0
- },
- "732bb80f3d": {
-  "outcome": "shared:ts:732bb80f3d",
-  "why": "masked, it is the ts unit of class 732bb80f3d (correction:U45, by rule:write-heading2)",
-  "n": 1,
-  "by": "shared",
-  "type": "reworded",
-  "section": "tutorial",
-  "sentences": [
-   "16698bd386"
   ],
   "unreviewed": 0
  },
@@ -195,6 +203,18 @@
   ],
   "unreviewed": 0
  },
+ "cdfbb6475b": {
+  "outcome": "shared:ts:cdfbb6475b",
+  "why": "masked, it is the ts unit of class cdfbb6475b (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "81aabf087b"
+  ],
+  "unreviewed": 1
+ },
  "1fa815677a": {
   "outcome": "shared:ts:1fa815677a",
   "why": "masked, it is the ts unit of class 1fa815677a (correction:S28, by rule:tutorial-leadin)",
@@ -207,6 +227,30 @@
   ],
   "unreviewed": 0
  },
+ "c9c9426cd8": {
+  "outcome": "shared:ts:c9c9426cd8",
+  "why": "masked, it is the ts unit of class c9c9426cd8 (unification:write-title-entity, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "219aa7c229"
+  ],
+  "unreviewed": 1
+ },
+ "79233d47ba": {
+  "outcome": "shared:ts:79233d47ba",
+  "why": "masked, it is the ts unit of class 79233d47ba (same-meaning, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "reworded",
+  "section": "tutorial",
+  "sentences": [
+   "9bcb2825f2"
+  ],
+  "unreviewed": 1
+ },
  "defb73bfd8": {
   "outcome": "shared:ts:defb73bfd8",
   "why": "masked, it is the ts unit of class defb73bfd8 (correction:S28, by rule:tutorial-leadin)",
@@ -218,14 +262,6 @@
    "3ab3fb2b2e"
   ],
   "unreviewed": 0
- },
- "f1ff9604c1": {
-  "outcome": "correction:write-comment-style",
-  "why": "the shared create comment; same facts (the created entity, data_get reads its record)",
-  "n": 1,
-  "by": "hand",
-  "type": "reworded",
-  "section": "tutorial"
  },
  "9cbb8e3add": {
   "outcome": "shared:ts:9cbb8e3add",
@@ -271,17 +307,17 @@
   "type": "missing",
   "section": "tutorial"
  },
- "4555bd17b9": {
-  "outcome": "shared:ts:4555bd17b9",
-  "why": "masked, it is the ts unit of class 4555bd17b9 (correction:U45, by rule:write-heading)",
+ "ec589bf68a": {
+  "outcome": "shared:ts:ec589bf68a",
+  "why": "masked, it is the ts unit of class ec589bf68a (unification:write-title-entity, by hand)",
   "n": 1,
   "by": "shared",
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "46ab3e9cf3"
+   "b83e95bec6"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "412625e889": {
   "outcome": "restored:shared",
@@ -314,6 +350,14 @@
  "6fb3670380": {
   "outcome": "same-meaning",
   "why": "DEMO_APIKEY in the tutorial's client sentence, which the client block's code reads ($ENV{'DEMO_APIKEY'}), as OLD's did",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "275db80f77": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
@@ -362,6 +406,14 @@
  "e5e05eb7a6": {
   "outcome": "correction:S50",
   "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1,
+  "by": "hand",
+  "type": "novel-token",
+  "section": "tutorial"
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:sentence-review-env",
+  "why": "the sentence review found 'The client reads its API key ... environment variable' false in every runtime (no PrepareAuth_<lang> of the twenty reads the environment; run: ts and py send no key with only DEMO_APIKEY set); shared clientText now says what the example does: it passes the variable's value as the apikey option; the token is the option name the sentence names",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
@@ -799,18 +851,18 @@
   "type": "block-novel-shape",
   "section": "rootquick"
  },
- "bbff8b945e": {
-  "outcome": "same-meaning",
-  "why": "a word match on the README result-shape table's `headers` row (`hashref`, Response headers), which agrees; that table types `ok` as `boolean` 'True if the HTTP status is 2xx', which the runtime writes as 1 or 0 (Main.fragment.pm:300), Perl's truth values: no contradiction",
-  "n": 19,
-  "by": "hand",
-  "type": "echo",
-  "section": "reference"
- },
  "586b81880f": {
   "outcome": "same-meaning",
   "why": "a word match on the README options table's `extend` row; the README's result shape says the same of list ('`list` an `arrayref` of entities, one per record')",
   "n": 83,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "a73d1bf82a": {
+  "outcome": "same-meaning",
+  "why": "the README's test line says the same of the two arguments (both may be the null value), and its feature cell names the same feature.test option; no disagreement",
+  "n": 19,
   "by": "hand",
   "type": "echo",
   "section": "reference"
@@ -823,9 +875,9 @@
   "type": "echo",
   "section": "reference"
  },
- "f810831be4": {
+ "1bd70c0c52": {
   "outcome": "same-meaning",
-  "why": "the README calls test(undef, undef), which agrees: both may be undef",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
   "n": 19,
   "by": "hand",
   "type": "echo",
@@ -863,6 +915,22 @@
   "type": "echo",
   "section": "reference"
  },
+ "0dd73c0fd6": {
+  "outcome": "same-meaning",
+  "why": "the removed sentence 'Pass `undef` for no initial data.' is said again by the accessor sentence that replaced it ('Its `data` argument holds the entity options: pass `undef` for none.'); the echo is the README's test call `DemoSDK->test(undef, undef)`, which passes undef as the null value too: no disagreement",
+  "n": 94,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "1f529072c4": {
+  "outcome": "same-meaning",
+  "why": "the echo is the README's direct table (perl/README.md, the `headers` row typed `hashref`), which still states the keys of direct's result as the fixed REFERENCE sentences do; no disagreement: the README names the keys, the REFERENCE adds when `err` is there",
+  "n": 19,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "596ec1ae31": {
   "outcome": "same-meaning",
   "why": "the README's table says load returns the entity and dies on error, and data_get reads the record: the same",
@@ -870,26 +938,6 @@
   "by": "hand",
   "type": "echo",
   "section": "reference"
- },
- "544e7efb11": {
-  "outcome": "same-meaning",
-  "why": "the default method named as a bare value, `GET`, not a quoted Perl literal; the same value (Main.fragment.pm:149)",
-  "n": 19,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "ef8774be7c": {
-  "outcome": "shared:py:ef8774be7c",
-  "why": "masked, it is the py unit of class ef8774be7c (unification:direct-table, by rule:direct-rows)",
-  "n": 19,
-  "by": "shared",
-  "type": "reworded",
-  "section": "reference",
-  "sentences": [
-   "7d64fb6cb3"
-  ],
-  "unreviewed": 0
  },
  "6aced21d71": {
   "outcome": "shared:go:6aced21d71",
@@ -915,6 +963,30 @@
   ],
   "unreviewed": 0
  },
+ "4339a79521": {
+  "outcome": "restored:shared",
+  "why": "the shared return clause: 'and dies on failure' for 'and dies on error'",
+  "n": 15,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "544e7efb11": {
+  "outcome": "same-meaning",
+  "why": "the default method named as a bare value, `GET`, not a quoted Perl literal; the same value (Main.fragment.pm:149)",
+  "n": 19,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
+ "b2f8d161db": {
+  "outcome": "correction:entity-class",
+  "why": "make's sentence names the entity's class, the package MainEntity_perl.ts:17,24 instantiates (entityClassName), and that make() passes the same client and a copy of the options (Entity.fragment.pm:68-72); OLD named the accessor. Not dropped: the ledger split the pairs by which OLD entity each NEW sentence met (this class 16, b2f8d161db 77, 1cf2aacb90 1); perl prints it once per entity, 94 in all 21 variations, 7 in B as c does (grep -c 'instance with the same client and' over out/new/*/perl/REFERENCE.md) | as d5b8571b7f",
+  "n": 92,
+  "by": "hand",
+  "type": "reworded",
+  "section": "reference"
+ },
  "92ce533dbd": {
   "outcome": "shared:py:92ce533dbd",
   "why": "masked, it is the py unit of class 92ce533dbd (restored:shared, by rule:direct-shared)",
@@ -926,34 +998,6 @@
    "3cd4c3ecdc"
   ],
   "unreviewed": 0
- },
- "4339a79521": {
-  "outcome": "restored:shared",
-  "why": "the shared return clause: 'and dies on failure' for 'and dies on error'",
-  "n": 15,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
- "92bc6e303b": {
-  "outcome": "shared:ts:92bc6e303b",
-  "why": "masked, it is the ts unit of class 92bc6e303b (unification:op-sentences, by rule:op-sentences)",
-  "n": 19,
-  "by": "shared",
-  "type": "reworded",
-  "section": "reference",
-  "sentences": [
-   "fa85157376"
-  ],
-  "unreviewed": 0
- },
- "b2f8d161db": {
-  "outcome": "correction:entity-class",
-  "why": "make's sentence names the entity's class, the package MainEntity_perl.ts:17,24 instantiates (entityClassName), and that make() passes the same client and a copy of the options (Entity.fragment.pm:68-72); OLD named the accessor. Not dropped: the ledger split the pairs by which OLD entity each NEW sentence met (this class 16, b2f8d161db 77, 1cf2aacb90 1); perl prints it once per entity, 94 in all 21 variations, 7 in B as c does (grep -c 'instance with the same client and' over out/new/*/perl/REFERENCE.md) | as d5b8571b7f",
-  "n": 92,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
  },
  "eb1d085973": {
   "outcome": "correction:entity-class",
@@ -987,26 +1031,6 @@
   "type": "reworded",
   "section": "reference"
  },
- "5543fba889": {
-  "outcome": "shared:go:e72c9d98eb",
-  "why": "masked, it is the go unit of class e72c9d98eb (correction:guard-accessor-arg, by hand)",
-  "n": 94,
-  "by": "shared",
-  "type": "reworded",
-  "section": "reference",
-  "sentences": [
-   "afa4347469"
-  ],
-  "unreviewed": 0
- },
- "c0e40143f1": {
-  "outcome": "restored:shared",
-  "why": "the shared direct sentence: a failed request is reported in the result (Main.fragment.pm:240-246: direct traps prepare's die and returns ok 0)",
-  "n": 19,
-  "by": "hand",
-  "type": "reworded",
-  "section": "reference"
- },
  "1d5f2874ab": {
   "outcome": "unification:test-client-heading",
   "why": "the test constructor sits under the shared 'Test client' heading; it is a class method, called on the class (Main.fragment.pm:364-365 my ($class, ...))",
@@ -1018,6 +1042,46 @@
  "00d312c012": {
   "outcome": "restored:shared",
   "why": "restored in the shared test-client sentence: 'both may be `undef`'",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the client's members are headed 'Client <noun>' in every language (decided once: OLD pages said Instance Methods in sixteen languages, but c, clojure and elixir have module functions taking the client, OLD clojure said 'Client functions'); the section lists the client's members, which every runtime has",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "13c85744b1": {
+  "outcome": "correction:guard-accessor-arg",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as 5543fba889): at v33p these units matched go's class e72c9d98eb as a shared sentence, which go decided correction:guard-accessor-arg (hand); the same decision is taken for them here, by hand",
+  "n": 94,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "e3b036b6bd": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "OLD perl's direct Returns sentence ('Returns a result `hashref` with `ok`, `status`, `headers`, and `data` (or `err` on failure)') is gone: it said `err` stands for data on failure, which the sentence review found false for a readable non-2xx response (perl Main.fragment.pm sets 'ok' => 0 with status, headers and data and no err for one). The fixed shared sentences replace it: direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "dd5e1cd6ff": {
+  "outcome": "restored:shared",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as c0e40143f1): the shared direct sentence: a failed request is reported in the result (Main.fragment.pm:240-246: direct traps prepare's die and returns ok 0)",
+  "n": 19,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "c115f99e12": {
+  "outcome": "unification:direct-table",
+  "why": "re-paired at v3.3 (the sentence fixes changed the client heading or a neighbouring sentence; the units are those decided at v33p as ef8774be7c): at v33p these units matched py's class ef8774be7c as a shared sentence, which py decided unification:direct-table (rule:direct-rows); the same decision is taken for them here, by hand",
   "n": 19,
   "by": "hand",
   "type": "missing",
@@ -1067,6 +1131,14 @@
   "outcome": "restored:shared",
   "why": "restored as 'The match is optional: without one, every record is listed.'",
   "n": 83,
+  "by": "hand",
+  "type": "missing",
+  "section": "reference"
+ },
+ "0b29ec4944": {
+  "outcome": "correction:sentence-review-update-id",
+  "why": "awkward sentence of the review fixed: a path parameter is also read from the entity's stored match and data (ts ParamUtility paramValue reads reqmatch, match, reqdata, data; go param.go, c param.c the same), so the id is needed only where the entity does not hold it",
+  "n": 20,
   "by": "hand",
   "type": "missing",
   "section": "reference"
@@ -1159,15 +1231,47 @@
   ],
   "unreviewed": 0
  },
- "9fc256f884": {
-  "outcome": "shared:ts:97877bc5dd",
-  "why": "masked, it is the ts unit of class 97877bc5dd (restored:shared, by hand)",
+ "c83fbf69b6": {
+  "outcome": "correction:sentence-review-test",
+  "why": "the test client sentence, fixed once: with the test feature, mock features active; without it the client is in test mode with no mock and every request is refused (run: ts after the makeFeature fix, py, go: fetch_mode_block), or, where the runtime ships the test feature whatever the model (testMock 'always', zig and clojure), the mock is active; the arguments sentence says what the code does (setpath feature.test with active switched on); 'It returns a client in test mode' dropped (it repeated the first sentence, and was false for ts before the fix)",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "cd00ec9b2a": {
+  "outcome": "shared:ts:cd00ec9b2a",
+  "why": "masked, it is the ts unit of class cd00ec9b2a (unification:client-heading, by hand)",
   "n": 19,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "cd7277aa5d"
+   "5266d8cbf2"
+  ],
+  "unreviewed": 1
+ },
+ "b484e0da52": {
+  "outcome": "shared:clojure:5ca02aaa87",
+  "why": "masked, it is the clojure unit of class 5ca02aaa87 (correction:guard-accessor-arg, by hand)",
+  "n": 94,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "afa4347469"
+  ],
+  "unreviewed": 0
+ },
+ "92238dc9df": {
+  "outcome": "shared:c:92238dc9df",
+  "why": "masked, it is the c unit of class 92238dc9df (unification:direct-table, by rule:direct-rows)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7d64fb6cb3"
   ],
   "unreviewed": 0
  },
@@ -1191,9 +1295,65 @@
   ],
   "unreviewed": 0
  },
- "edf86c2045": {
-  "outcome": "restored:fact",
-  "why": "the ctrl row's text, with the explain flag the pipeline honours (Entity.fragment.pm:330 ctrl->{explain})",
+ "65160f6e35": {
+  "outcome": "shared:ts:65160f6e35",
+  "why": "masked, it is the ts unit of class 65160f6e35 (correction:sentence-review-ctrl, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7a3e73d523"
+  ],
+  "unreviewed": 1
+ },
+ "23b4e8a6d6": {
+  "outcome": "shared:ts:b82912bd60",
+  "why": "masked, it is the ts unit of class b82912bd60 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "0a6358906c"
+  ],
+  "unreviewed": 1
+ },
+ "31d77f826a": {
+  "outcome": "shared:ts:251d7318e6",
+  "why": "masked, it is the ts unit of class 251d7318e6 (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "663d6ed57c"
+  ],
+  "unreviewed": 1
+ },
+ "0e3841dc06": {
+  "outcome": "shared:ts:ac937e958b",
+  "why": "masked, it is the ts unit of class ac937e958b (correction:sentence-review-direct, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "e87b3544ac"
+  ],
+  "unreviewed": 1
+ },
+ "03602a7b82": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
+ "b27cfa68ec": {
+  "outcome": "correction:sentence-review-direct",
+  "why": "direct's Returns, fixed once (sentence review: false, a readable non-2xx response has no err): run in ts and py, a non-2xx readable response gives ok false with status, headers, data and no err; an unreadable body adds err; a request that cannot be made gives ok and err alone (survey Q9 for the other runtimes); keys named as keys, and one read printed by this language's printer so err reads as a key of the result",
   "n": 19,
   "by": "hand",
   "type": "added",
@@ -1212,8 +1372,8 @@
   "unreviewed": 0
  },
  "26fc499d62": {
-  "outcome": "shared:ts:8ac9e540a8",
-  "why": "masked, it is the ts unit of class 8ac9e540a8 (restored:shared, by rule:direct-shared)",
+  "outcome": "shared:py:fc4313d211",
+  "why": "masked, it is the py unit of class fc4313d211 (restored:shared, by rule:direct-shared)",
   "n": 19,
   "by": "shared",
   "type": "added",
@@ -1323,17 +1483,17 @@
   "type": "added",
   "section": "reference"
  },
- "566d3ef425": {
-  "outcome": "shared:ts:566d3ef425",
-  "why": "masked, it is the ts unit of class 566d3ef425 (unification:op-sentences, by rule:op-sentences)",
+ "17e455f4a3": {
+  "outcome": "shared:ts:17e455f4a3",
+  "why": "masked, it is the ts unit of class 17e455f4a3 (correction:sentence-review-list-match, by hand)",
   "n": 82,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "37c2dafcf5"
+   "4cc33fe3da"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "393056d0c1": {
   "outcome": "shared:go:393056d0c1",
@@ -1463,6 +1623,30 @@
   "type": "added",
   "section": "reference"
  },
+ "a9081dcdc4": {
+  "outcome": "shared:ts:81deb78cd7",
+  "why": "masked, it is the ts unit of class 81deb78cd7 (correction:sentence-review-action, by hand)",
+  "n": 16,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "7e4d6fd58f"
+  ],
+  "unreviewed": 1
+ },
+ "6da904adba": {
+  "outcome": "shared:ts:6da904adba",
+  "why": "masked, it is the ts unit of class 6da904adba (correction:sentence-review-update-id, by hand)",
+  "n": 19,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "6cfad26916"
+  ],
+  "unreviewed": 1
+ },
  "6979eaacb4": {
   "outcome": "shared:ts:6979eaacb4",
   "why": "masked, it is the ts unit of class 6979eaacb4 (correction:S49, by rule:add-type-cells)",
@@ -1499,6 +1683,14 @@
   ],
   "unreviewed": 0
  },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "the README passes apikey and secret together as client options; this cell says what secret is for; no disagreement",
+  "n": 2,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
  "08121435fc": {
   "outcome": "correction:S50",
   "why": "the secret option row for Basic auth (S50/D23)",
@@ -1507,17 +1699,17 @@
   "type": "added",
   "section": "reference"
  },
- "3e1ef005aa": {
-  "outcome": "shared:go:3e1ef005aa",
-  "why": "masked, it is the go unit of class 3e1ef005aa (correction:S50, by rule:basic-secret)",
+ "6fcc39ea14": {
+  "outcome": "shared:ts:2d4608bdb8",
+  "why": "masked, it is the ts unit of class 2d4608bdb8 (correction:sentence-review-secret, by hand)",
   "n": 2,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "b21c47b21e"
+   "05a5a62f89"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
  },
  "8974fe557b": {
   "outcome": "restored:shared",
@@ -1547,16 +1739,24 @@
   "type": "echo",
   "section": "reference"
  },
- "91baf1b4b6": {
+ "ff6e6b1e22": {
+  "outcome": "same-meaning",
+  "why": "the README says the same of direct's result (its keys; on a failure ok is false and err holds the error); this sentence adds when err is there (a body that cannot be read, a request that cannot be made); no disagreement",
+  "n": 1,
+  "by": "hand",
+  "type": "echo",
+  "section": "reference"
+ },
+ "bff341cf32": {
   "outcome": "contradiction",
   "why": "",
   "n": 1,
   "by": "hand",
   "type": "echo",
   "section": "reference",
-  "where": "perl/README.md:219 (no-test): 'Creates a test-mode client with mock transport. Both arguments may be `undef`.' (and :143 'Create a mock client for unit testing')",
-  "true": "REFERENCE: without the test feature its source does not ship, so the test client is in test mode with no mock transport",
-  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); Main.fragment.pm:373-377 test only sets feature.test.active; the features.pm factory (Main_perl.ts:119-150) requires and makes only the features generated; catalogue S13"
+  "where": "the unported README's test-client line or its test-mode section (printed by the language's own README component): 'Creates a test-mode client with mock transport' / 'Use test mode ... mock client', true only with the test feature",
+  "true": "REFERENCE: without the test feature the client has no mock transport and refuses every request",
+  "evidence": "run (sfix/run/probe-ts.js, probe_py.py, go cmd/probe on no-test SDKs): test() builds a client in test mode and every request fails with fetch_mode_block; ts after the makeFeature fallback (b09502f1)"
  },
  "46dc1a3462": {
   "outcome": "correction:S13",
@@ -1566,17 +1766,29 @@
   "type": "missing",
   "section": "reference"
  },
- "91201b47e3": {
-  "outcome": "shared:ts:91201b47e3",
-  "why": "masked, it is the ts unit of class 91201b47e3 (correction:S13, by rule:test-nofeature)",
+ "81aa9cecf9": {
+  "outcome": "shared:ts:81aa9cecf9",
+  "why": "masked, it is the ts unit of class 81aa9cecf9 (correction:sentence-review-test, by hand)",
   "n": 1,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "9402aedbb5"
+   "f616466503"
   ],
-  "unreviewed": 0
+  "unreviewed": 1
+ },
+ "dbdce4bb0e": {
+  "outcome": "shared:ts:dbdce4bb0e",
+  "why": "masked, it is the ts unit of class dbdce4bb0e (correction:sentence-review-test, by hand)",
+  "n": 1,
+  "by": "shared",
+  "type": "added",
+  "section": "reference",
+  "sentences": [
+   "dd74ff9ab6"
+  ],
+  "unreviewed": 1
  },
  "10f0d238e2": {
   "outcome": "shared:ts:10f0d238e2",
@@ -1661,14 +1873,6 @@
  "9833a073af": {
   "outcome": "correction:S25",
   "why": "ref-issues: as d5ceec6bd5",
-  "n": 1,
-  "by": "hand",
-  "type": "missing",
-  "section": "reference"
- },
- "0b29ec4944": {
-  "outcome": "restored:shared",
-  "why": "ref-issues: restored as 'The data must include the entity id, `id`.' under PlanetEntityClient",
   "n": 1,
   "by": "hand",
   "type": "missing",
@@ -1771,14 +1975,6 @@
  "05e95df417": {
   "outcome": "correction:S49",
   "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
-  "n": 1,
-  "by": "hand",
-  "type": "novel-token",
-  "section": "reference"
- },
- "abb698049e": {
-  "outcome": "restored:fact",
-  "why": "the explain control in the ctrl row, as edf86c2045",
   "n": 1,
   "by": "hand",
   "type": "novel-token",
