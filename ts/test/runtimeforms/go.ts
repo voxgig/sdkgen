@@ -53,6 +53,9 @@ const forms: Forms = {
 
   // The porter's, from here on.
   cite: {
+    'ref.facts.none': { file: MAIN, quote: 'return nil, err' },
+    'ref.facts.lits.false': { value: 'false', file: MAIN, quote: 'return map[string]any{"ok": false, "err": sdk.cleanErr(sdk.rootctx, err)}, nil' },
+    'ref.facts.lits.true': { value: 'true', file: MAIN, quote: '"ok":      bodyErr == nil && status >= 200 && status < 300,', unquoted: { true: 'ok is the bool the status test computes; true is not spelled' } },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/go/fragment/Entity.fragment.go", quote: "out := vs.Clone(e.data)" },
     'facts.collection': { file: 'tm/go/utility/make_result.go', quote: 'var entities []any' },
     'ref.facts.container': { file: MAIN, quote: 'func NewProjectNameSDK(options map[string]any) *ProjectNameSDK {' },
@@ -63,16 +66,29 @@ const forms: Forms = {
       quote: '\tcase string:\n\t\tif body != "" {\n\t\t\tbodyReader = strings.NewReader(body)\n\t\t}\n\tcase []byte:\n\t\tbodyReader = bytes.NewReader(body)\n\tcase io.Reader:',
     },
     'ref.facts.body.once': { value: "an `io.Reader`", file: 'tm/go/utility/media.go', quote: 'if r, ok := body.(io.Reader); ok {\n\t\tdata, err := io.ReadAll(r)' },
-    'ref.facts.cancel': { value: false, file: 'tm/go/utility/fetcher.go', quote: 'req, err := http.NewRequest(method, fullurl, bodyReader)' },
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/go/utility/fetcher.go'] } },
     'notes.member:stream': { value: "It sends the items on the returned channel, which closes when the stream\nends. A `StreamItem` holds one item in `Item`, or in `Err` the error that\nended the stream: the error the operation itself would return, sent as the\nlast value. Under `throw: false` in `callopts[\"ctrl\"]`, no error is sent.",
       file: ENTITY,
       quote: [
         'func (e *EntyClass) Stream(action string, args map[string]any, callopts map[string]any) <-chan core.StreamItem {',
         'defer close(out)',
         '// What MakeError or Done hands back: the error, as the last value, or\n\t// under `throw: false` the data there is.',
+        'if c := core.ToMapAny(callopts["ctrl"]); c != nil {',
       ],
       also: [{ file: 'tm/go/core/types.go', quote: 'type StreamItem struct {\n\tItem any\n\tErr  error\n}' }],
     },
+  },
+  // What the table states besides names, parameters and returns.
+  testDecl: 'TestSDK',
+  on: (d) => /^func \(/.test(d.head) ? 'instance' : 'module',
+  fails: (d) => /\berror\)$/.test(d.returns) ? 'second value error' : '',
+  failure: { shows: 'error', call: 'err' },
+  stream: {
+    file: "src/cmp/go/fragment/Entity.fragment.go",
+    construct: "go func() {", starts: "at call",
+    run: "if err := e.streamSteps(ctx); err != nil {",
+    draw: "for item := range ctx.Result.Stream() {",
+    runs: "from the call, beside the caller", items: "from the call, beside the caller",
   },
 }
 
