@@ -41,6 +41,8 @@ const forms: Forms = {
   style: { exception: 'raise', raises: /\braise\b/ },
   record: (rec) => ({ name: (/(\w+)\(\)$/.exec(rec) || [])[1] || rec }),
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', accessor: '${entity.Name}' },
+  // How a call is written: `.` for every member; the class called is its constructor.
+  calls: { on: { instance: ['.'], type: ['.'] } },
   types: { column: 'py' },
   // The porter's, from here on.
   uncompared: { returns: 'the runtime annotates the returns of the operations and data_get/match_get only; the others are cited where a fact rests on them' },

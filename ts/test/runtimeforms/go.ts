@@ -49,6 +49,8 @@ const forms: Forms = {
   style: { exception: 'throw', raises: /$^/, pair: (d) => /^\(\s*\w+\s*,\s*error\s*\)$/.test(d.returns) },
   record: (rec) => ({ name: (/(\w+)\(\)$/.exec(rec) || [])[1] || rec }),
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'NewProjectNameSDK', accessor: '${entity.Name}' },
+  // How a call is written: `.` on a value, `sdk.` for a package function.
+  calls: { on: { instance: ['.'], module: ['.'] } },
   types: { column: 'go' },
 
   // The porter's, from here on.

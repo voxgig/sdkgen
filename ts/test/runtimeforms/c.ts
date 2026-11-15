@@ -61,6 +61,8 @@ const forms: Forms = {
   },
   record: (rec) => ({ name: rec.replace(/^vt->/, '') }),
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'projectname_sdk_new', var: 'entyvar', accessor: '${cAccessorName(model, entity.name)}' },
+  // How a call is written: an entity's operations through `->` (its vtable), the rest as free functions.
+  calls: { on: { instance: ['->'], module: [] } },
   // ARRAY and OBJECT differ from the generator's map (excepted below), so the page's words are pinned.
   types: { column: 'c', words: { ARRAY: 'voxgig_value* (list)', OBJECT: 'voxgig_value* (map)' } },
 

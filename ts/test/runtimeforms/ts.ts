@@ -42,6 +42,8 @@ const forms: Forms = {
   style: { exception: 'throw', raises: /\bthrow\b/ },
   record: (rec) => ({ name: (/(\w+)\(\)$/.exec(rec) || [])[1] || rec }),
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'constructor', accessor: '${entity.Name}' },
+  // How a call is written: `new` for the client class, `.` for every member.
+  calls: { on: { instance: ['.'], type: ['.'] } },
   types: { column: 'ts' },
 
   // The porter's, from here on.

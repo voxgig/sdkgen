@@ -28,18 +28,27 @@ const arrows = (t: string): { params: string[], returns: string } => {
 }
 
 // A signature as the page writes it: `name (p : t) (q : u) : r`, `name () : r`
-// for a callable taking unit, `name : t` for a field. A module qualifier
-// (`{module}.make0 ()`) is dropped.
-const sigParts = (sig: string): { name: string, params: string[], returns: string } => {
+// for a callable taking unit, `name : t` for a field, or the runtime's own
+// arrow form `name : t -> u -> r`, whose parameters are the arrows'. A module
+// qualifier (`{module}.make0 ()`) is dropped. `called`: a parameter group or
+// an arrow, which is what makes a member a function in OCaml.
+const sigParts = (sig: string): { name: string, params: string[], returns: string, called: boolean } => {
   const s = sig.trim().replace(/^[\w{}]+\.(?=[\w{}$])/, '')
   const name = (/^([\w{}$]+)/.exec(s) || ['', ''])[1]
   let rest = s.slice(name.length)
   const params: string[] = []
+  let grouped = false
   for (let g = /^\s*\(((?:[^()]|\([^()]*\))*)\)/.exec(rest); null != g; g = /^\s*\(((?:[^()]|\([^()]*\))*)\)/.exec(rest)) {
+    grouped = true
     if ('' !== g[1].trim()) params.push(g[1].trim())
     rest = rest.slice(g[0].length)
   }
-  return { name, params, returns: ((/^\s*:\s*(.+)$/.exec(rest) || [])[1] || '').trim() }
+  const returns = ((/^\s*:\s*(.+)$/.exec(rest) || [])[1] || '').trim()
+  if (!grouped && /->/.test(returns)) {
+    const a = arrows(returns)
+    return { name, params: a.params, returns: a.returns, called: true }
+  }
+  return { name, params, returns, called: grouped }
 }
 
 const CLIENT = 'src/cmp/ocaml/Main_ocaml.ts'
@@ -95,6 +104,8 @@ const forms: Forms = {
   style: { exception: 'raise', raises: /\braise\b/ },
   record: (rec) => ({ name: (/(e_\w+)/.exec(rec) || [])[1] || rec }),
   tokens: { Class: 'entity_obj', client: 'sdk_client', sdk: 'Sdk_client', ctor: 'make', accessor: '${fn}' },
+  // How a call is written: arguments juxtaposed; `.` for a record field or a module's function.
+  calls: { on: { instance: ['.'], module: ['.'] }, args: 'space' },
   types: { column: null, reason: 'the code generator has no ocaml column in canonToType (every type maps to any); the page\'s type words are the provider\'s own',
     // The words the page prints, pinned: no generator map checks them, the reviewer audits them.
     words: { STRING: 'string', INTEGER: 'int', NUMBER: 'float', BOOLEAN: 'bool', NULL: 'value', ARRAY: 'value list', OBJECT: 'value map', ANY: 'value' } },
@@ -102,6 +113,7 @@ const forms: Forms = {
   sigName: (sig) => sigParts(sig).name,
   sigParams: (sig) => sigParts(sig).params,
   sigReturns: (sig) => sigParts(sig).returns,
+  called: (sig) => sigParts(sig).called,
   // What the table states besides names, parameters and returns.
   testDecl: 'test',
   on: (d) => /^\s*mutable /.test(d.head) ? 'instance' : 'module',
@@ -124,7 +136,6 @@ const forms: Forms = {
     'ref.facts.ctor[0]': { value: 'open Voxgig_struct', file: CLIENT, quote: 'open Voxgig_struct' },
     'ref.facts.ctor[1]': { value: 'open Sdk_helpers', file: 'src/cmp/ocaml/Entity_ocaml.ts', quote: 'open Sdk_helpers' },
     'ref.facts.ctor[2]': { value: 'open Sdk_types', file: CLIENT, quote: 'open Sdk_types' },
-    'ref.facts.ctorAlts[0].call': { file: CLIENT, quote: 'let make0 () : sdk_client = make Noval' },
     'ref.facts.ctorAlts[0].kind': { value: 'defaults', file: CLIENT, quote: ['(* No-argument convenience constructor. *)', 'let make0 () : sdk_client = make Noval'] },
     'ref.facts.entity[0].copy': { value: true, file: 'src/cmp/ocaml/Entity_ocaml.ts', quote: 'ent.e_data_get <- (fun () -> utility.u_feature_hook entctx "GetData"; clone ent.e_data);' },
     'ref.facts.prepare.fails': { value: 'style', file: 'tm/ocaml/sdk_features.ml', quote: 'raise (Sdk_error_exc (ctx_make_error ctx "spec_method_allow"' },

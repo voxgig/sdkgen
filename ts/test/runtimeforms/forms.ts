@@ -5,6 +5,8 @@
 import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 
+import type { CallNotation } from './calls'
+
 
 type Decl = {
   name: string
@@ -100,6 +102,13 @@ type Forms = {
   fails?: (d: Decl) => string // how a failure shows in a declaration
   failure?: { shows: string, call: string } // what each operation shows; what a call needs
   parenless?: boolean // a call may be written without a parameter list (rb)
+  // How a printed call is written: separators by what a member is declared
+  // on, how arguments follow the name, a printed constructor's declaration.
+  calls?: CallNotation
+  // Whether a declared signature writes its member as called, in the
+  // runtime's own notation (ocaml's arrows); default: a parameter list after
+  // the name. Given, it keeps the field-or-call check on for a parenless form.
+  called?: (sig: string, name: string) => boolean
   returnsFrom?: (d: Decl) => 'code' | 'comment'
   stream?: StreamItems
   expect?: Record<string, Partial<{ on: On, field: boolean, fails: string }>>

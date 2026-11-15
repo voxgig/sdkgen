@@ -57,6 +57,8 @@ const forms: Forms = {
   // against facts.unwrap, by the shared guard.
   record: (rec) => { const m = /\.(\w+)\(\)$/.exec(rec); return null == m ? { name: rec } : { name: m[1], arity: 0 } },
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'init', accessor: '${entity.Name}' },
+  // How a call is written: `.` for every member; the class called is its `init`.
+  calls: { on: { instance: ['.'], type: ['.'] } },
   types: { column: 'swift' },
   exceptions: {
   },

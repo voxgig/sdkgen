@@ -45,6 +45,8 @@ const forms: Forms = {
   style: { exception: 'die', raises: /\bdie\b/ },
   record: (rec) => ({ name: (/(\w+)(?:\(\))?$/.exec(rec) || [])[1] || rec }),
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'new', accessor: '${entity.Name}' },
+  // How a call is written: `->` for a method on an object or the package, parentheses optional.
+  calls: { on: { instance: ['->'], type: ['->'], module: ['::'] }, parenless: true },
   types: { column: null, reason: 'the code generator has no perl column in canonToType (every type maps to any); the page\'s type words are the provider\'s own',
     // The words the page prints, pinned: no generator map checks them, the reviewer audits them.
     words: { STRING: 'string', INTEGER: 'integer', NUMBER: 'number', BOOLEAN: 'boolean', NULL: 'undef', ARRAY: 'arrayref', OBJECT: 'hashref', ANY: 'scalar' } },
