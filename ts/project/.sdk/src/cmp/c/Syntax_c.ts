@@ -39,13 +39,13 @@ const refFacts: RefFacts = {
   },
   client: [
     { kind: 'options', sig: 'voxgig_value* sdk_options_map({client}* client)', copy: true },
-    { kind: 'utility', sig: 'Utility* sdk_get_utility({client}* client)' },
+    { kind: 'utility', sig: 'Utility* sdk_get_utility({client}* client)', copy: true },
     { kind: 'direct', sig: 'voxgig_value* sdk_direct({client}* client, voxgig_value* fetchargs, PNError** err)' },
     { kind: 'prepare', sig: 'voxgig_value* sdk_prepare({client}* client, voxgig_value* fetchargs, PNError** err)' },
   ],
   entity: [
     { kind: 'dataArg', sig: 'voxgig_value* vt->data(Entity* e, voxgig_value* args)', copy: true },
-    { kind: 'matchArg', sig: 'voxgig_value* vt->matchv(Entity* e, voxgig_value* args)' },
+    { kind: 'matchArg', sig: 'voxgig_value* vt->matchv(Entity* e, voxgig_value* args)', copy: true },
     { kind: 'make', sig: 'Entity* vt->make(Entity* e)' },
     { kind: 'streamList', sig: 'voxgig_value* {var}_stream(Entity* e, const char* action, voxgig_value* args, voxgig_value* callopts, PNError** err)', runs: 'call' },
     { kind: 'name', sig: 'const char* vt->get_name(Entity* e)' },
@@ -54,6 +54,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'voxgig_value*', fails: 'style' },
   body: { values: 'a string value holding the bytes, such as `voxgig_new_string_n`' },
   cancel: false,
+  deleted: '{var}->vt->deleted({var})',
   testMock: 'generated',
 }
 

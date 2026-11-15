@@ -10,6 +10,7 @@ const facts: RuntimeFacts = {
   collection: 'array',
   record: '.data()',
   listOf: '{Class}[]',
+  arity: 0,
   prints: 'record',
 }
 
@@ -43,7 +44,7 @@ const refFacts: RefFacts = {
   ],
   entity: [
     { kind: 'data', sig: 'data(data?: object)', copy: true },
-    { kind: 'match', sig: 'match(match?: object)' },
+    { kind: 'match', sig: 'match(match?: object)', copy: true },
     { kind: 'make', sig: 'make()' },
     { kind: 'streamIterator', sig: 'stream(action: string, args?: object, callopts?: object)', runs: 'iterate' },
     { kind: 'client', sig: 'client()' },
@@ -53,6 +54,8 @@ const refFacts: RefFacts = {
   prepare: { returns: 'Promise<{ url, method, headers, body } | Error>', fails: 'value' },
   body: { values: 'a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string', once: 'a stream' },
   cancel: true,
+  deleted: '{var}.deleted()',
+  streamSignal: true,
   testMock: 'generated',
 }
 

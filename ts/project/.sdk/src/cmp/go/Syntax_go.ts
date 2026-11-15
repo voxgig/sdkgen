@@ -13,6 +13,7 @@ const facts: RuntimeFacts = {
   pairForm: '(value, error)',
   noError: 'nil',
   unusedError: true,
+  arity: 2,
   prints: 'record',
 }
 
@@ -42,13 +43,13 @@ const refFacts: RefFacts = {
   },
   client: [
     { kind: 'options', sig: 'OptionsMap() map[string]any', copy: true },
-    { kind: 'utility', sig: 'GetUtility() *Utility' },
+    { kind: 'utility', sig: 'GetUtility() *Utility', copy: true },
     { kind: 'direct', sig: 'Direct(fetchargs map[string]any) (map[string]any, error)' },
     { kind: 'prepare', sig: 'Prepare(fetchargs map[string]any) (map[string]any, error)' },
   ],
   entity: [
     { kind: 'data', sig: 'Data(args ...any) any', copy: true },
-    { kind: 'match', sig: 'Match(args ...any) any' },
+    { kind: 'match', sig: 'Match(args ...any) any', copy: true },
     { kind: 'make', sig: 'Make() Entity' },
     { kind: 'stream', sig: 'Stream(action string, args map[string]any, callopts map[string]any) <-chan StreamItem', runs: 'background' },
     { kind: 'name', sig: 'GetName() string' },
@@ -57,6 +58,8 @@ const refFacts: RefFacts = {
   prepare: { returns: '(map[string]any, error)', fails: 'style' },
   body: { values: 'a `[]byte`, a `string` or an `io.Reader`', once: 'an `io.Reader`' },
   cancel: false,
+  deleted: '{var}.Deleted()',
+  streamSignal: true,
   testMock: 'generated',
 }
 

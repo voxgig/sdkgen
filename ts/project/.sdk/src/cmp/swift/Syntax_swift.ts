@@ -13,14 +13,16 @@ const facts: RuntimeFacts = {
   async: false,
   result: 'wrapped',
   collection: '`VList`',
-  record: `({var}.${unwrap})?.${read}`,
+  record: `{var}.${read}`,
   unwrap,
+  arity: 2,
   prints: 'record',
 }
 
-// The record of the entity a value holds, and of an entity already taken out.
-const recordOf = (v: string): string => (facts.record as string).replace('{var}', v)
-const entityRecord = (v: string): string => `${v}.${read}`
+// The record of the entity a value holds (the unwrap, then the record fact),
+// and of an entity already taken out.
+const entityRecord = (v: string): string => (facts.record as string).replace('{var}', v)
+const recordOf = (v: string): string => entityRecord(`(${v}.${unwrap})?`)
 
 // The fixed API the reference page documents: Main.fragment.swift,
 // EntityBase.fragment.swift, Entity.fragment.swift, the Entity*Op fragments
@@ -51,7 +53,7 @@ const refFacts: RefFacts = {
   },
   client: [
     { kind: 'options', sig: 'optionsMap() -> VMap', copy: true },
-    { kind: 'utility', sig: 'getUtility() -> Utility' },
+    { kind: 'utility', sig: 'getUtility() -> Utility', copy: true },
     { kind: 'direct', sig: 'direct(_ fetchargs: VMap?) -> VMap' },
     { kind: 'prepare', sig: 'prepare(_ fetchargs: VMap?) throws -> VMap' },
   ],
@@ -66,6 +68,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'VMap', fails: 'style' },
   body: { values: 'a `String`, or `Data` or `[UInt8]` wrapped with `.nat`' },
   cancel: false,
+  streamSignal: true,
 }
 
 // A double-quoted Swift string literal.

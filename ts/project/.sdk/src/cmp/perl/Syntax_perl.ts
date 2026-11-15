@@ -10,6 +10,7 @@ const facts: RuntimeFacts = {
   collection: '`arrayref`',
   record: '${var}->data_get',
   recordType: 'hashref',
+  arity: 0,
   prints: 'fields',
 }
 
@@ -37,14 +38,14 @@ const refFacts: RefFacts = {
   },
   client: [
     { kind: 'options', sig: 'options_map() -> hashref', copy: true },
-    { kind: 'utility', sig: 'get_utility() -> utility' },
+    { kind: 'utility', sig: 'get_utility() -> utility', copy: true },
     { kind: 'direct', sig: 'direct($fetchargs) -> hashref' },
     { kind: 'prepare', sig: 'prepare($fetchargs) -> hashref' },
   ],
   entity: [
     { kind: 'dataGet', sig: 'data_get() -> hashref', copy: true },
     { kind: 'dataSet', sig: 'data_set($data)' },
-    { kind: 'matchGet', sig: 'match_get() -> hashref' },
+    { kind: 'matchGet', sig: 'match_get() -> hashref', copy: true },
     { kind: 'matchSet', sig: 'match_set($match)' },
     { kind: 'make', sig: 'make() -> {Class}' },
     { kind: 'streamFunction', sig: 'stream($action, $args, $callopts) -> coderef', runs: 'call' },
@@ -54,6 +55,8 @@ const refFacts: RefFacts = {
   prepare: { returns: 'hashref', fails: 'style' },
   body: { values: 'a byte string, a character string, sent as UTF-8, or a filehandle', once: 'a filehandle' },
   cancel: false,
+  deleted: '{var}->deleted',
+  streamSignal: true,
 }
 
 // A single-quoted Perl string: it interpolates nothing, so only the backslash
@@ -119,10 +122,12 @@ const Syntax: SyntaxType = {
   fence: 'perl',
   facts,
 
-  // The page's imports serve the tutorial (read from the SDK's directory) and
-  // the root quick start (read from the repository root) alike, so they name
-  // no library path: where `lib` is depends on where the reader runs.
-  imports: (desc) => [`use ${desc.layout.module};`],
+  // The library path is where the reader runs: the SDK's own directory for
+  // the tutorial, the repository root for the root quick start.
+  imports: (desc, _used, place) => {
+    if ('top' === place && null == desc.layout.dir) throw new Error('perl: the root quick start needs layout.dir')
+    return [`use lib '${'top' === place ? desc.layout.dir + '/lib' : 'lib'}';`, `use ${desc.layout.module};`]
+  },
 
   client: (s, desc) => [
     0 === s.options.length

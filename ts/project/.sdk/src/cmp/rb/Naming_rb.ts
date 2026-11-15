@@ -7,9 +7,11 @@ import { rbSdkFile } from './utility_rb'
 
 // The names the rb code generator gives the SDK: the entry file Main_rb
 // writes (rbSdkFile), the ProjectNameSDK class and its `.new`, and each
-// entity's accessor (MainEntity_rb: `def ${entity.Name}(data = nil)`).
-const Naming: NamingType = (model, _target, tm) => ({
+// entity's accessor (MainEntity_rb: `def ${entity.Name}(data = nil)`); the
+// target's directory, which the root README's require_relative names.
+const Naming: NamingType = (model, target, tm) => ({
   layout: {
+    dir: target.name,
     module: rbSdkFile(model),
     client: tm('ProjectNameSDK'),
     ctor: tm('ProjectNameSDK.new'),

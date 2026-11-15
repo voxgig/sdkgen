@@ -36,14 +36,14 @@ const refFacts: RefFacts = {
   },
   client: [
     { kind: 'options', sig: 'options_map -> Hash', copy: true },
-    { kind: 'utility', sig: 'get_utility -> Utility' },
+    { kind: 'utility', sig: 'get_utility -> Utility', copy: true },
     { kind: 'direct', sig: 'direct(fetchargs = {}) -> Hash' },
     { kind: 'prepare', sig: 'prepare(fetchargs = {}) -> Hash' },
   ],
   entity: [
     { kind: 'dataGet', sig: 'data_get -> Hash', copy: true },
     { kind: 'dataSet', sig: 'data_set(data)' },
-    { kind: 'matchGet', sig: 'match_get -> Hash' },
+    { kind: 'matchGet', sig: 'match_get -> Hash', copy: true },
     { kind: 'matchSet', sig: 'match_set(match)' },
     { kind: 'make', sig: 'make -> {Class}' },
     { kind: 'streamSync', sig: 'stream(action, args = nil, callopts = nil) -> Enumerator', runs: 'iterate' },
@@ -53,6 +53,8 @@ const refFacts: RefFacts = {
   prepare: { returns: 'Hash', fails: 'style' },
   body: { values: 'a `String`, or an IO that responds to `read`', once: 'an IO' },
   cancel: false,
+  deleted: '{var}.deleted',
+  streamSignal: true,
   testMock: 'generated',
 }
 
@@ -101,7 +103,12 @@ const Syntax: SyntaxType = {
   fence: 'ruby',
   facts,
 
-  imports: (desc) => [`require_relative ${str(desc.layout.module)}`],
+  // require_relative is read from the file's own directory: the SDK's for the
+  // tutorial, the repository root for the root quick start.
+  imports: (desc, _used, place) => {
+    if ('top' === place && null == desc.layout.dir) throw new Error('rb: the root quick start needs layout.dir')
+    return [`require_relative ${str(('top' === place ? desc.layout.dir + '/' : '') + desc.layout.module)}`]
+  },
 
   client: (s, desc) => [
     0 === s.options.length

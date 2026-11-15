@@ -47,7 +47,7 @@ const refFacts: RefFacts = {
   entity: [
     { kind: 'dataGet', sig: '((:data-get ent)) -> map', copy: true },
     { kind: 'dataSet', sig: '((:data-set ent) data)' },
-    { kind: 'matchGet', sig: '((:match-get ent)) -> map' },
+    { kind: 'matchGet', sig: '((:match-get ent)) -> map', copy: true },
     { kind: 'matchSet', sig: '((:match-set ent) match)' },
     { kind: 'make', sig: '((:make ent)) -> entity' },
     { kind: 'streamLazy', sig: '(stream ent action args callopts) -> seq', runs: 'call' },
@@ -57,6 +57,8 @@ const refFacts: RefFacts = {
   prepare: { returns: 'map', fails: 'style' },
   body: { values: 'a byte array, a `String` or an `InputStream`', once: 'an `InputStream`' },
   cancel: false,
+  memberNamed: 'bare',
+  streamSignal: true,
   testMock: 'always',
 }
 

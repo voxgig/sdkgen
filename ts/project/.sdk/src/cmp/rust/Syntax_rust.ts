@@ -11,6 +11,7 @@ const facts: RuntimeFacts = {
   record: 'data(None)',
   ok: 'Ok',
   err: 'Err',
+  arity: 2,
   prints: 'record',
 }
 
@@ -42,13 +43,13 @@ const refFacts: RefFacts = {
   },
   client: [
     { kind: 'options', sig: 'options_map() -> Value', copy: true },
-    { kind: 'utility', sig: 'get_utility() -> Rc<Utility>' },
+    { kind: 'utility', sig: 'get_utility() -> Rc<Utility>', copy: true },
     { kind: 'direct', sig: 'direct(fetchargs: Value) -> Result<Value, ProjectNameError>' },
     { kind: 'prepare', sig: 'prepare(fetchargs: Value) -> Result<Value, ProjectNameError>' },
   ],
   entity: [
     { kind: 'dataArg', sig: 'data(args: Option<&Value>) -> Value', copy: true },
-    { kind: 'matchArg', sig: 'matchv(args: Option<&Value>) -> Value' },
+    { kind: 'matchArg', sig: 'matchv(args: Option<&Value>) -> Value', copy: true },
     { kind: 'make', sig: 'make() -> Rc<dyn Entity>' },
     { kind: 'streamList', sig: 'stream(action: &str, args: Value, callopts: Value) -> Result<std::vec::IntoIter<Value>, ProjectNameError>', runs: 'call' },
     { kind: 'name', sig: 'get_name() -> String' },
@@ -57,6 +58,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'Result<Value, ProjectNameError>', fails: 'style' },
   body: { values: 'a string, or bytes as `bytes_value(&[u8])`' },
   cancel: false,
+  deleted: '{var}.deleted()',
   testMock: 'generated',
 }
 

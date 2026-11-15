@@ -49,16 +49,19 @@ const refFacts: RefFacts = {
   entity: [
     { kind: 'dataGet', sig: 'e_data_get () : value', copy: true },
     { kind: 'dataSet', sig: 'e_data_set (value) : unit' },
-    { kind: 'matchGet', sig: 'e_match_get () : value' },
+    { kind: 'matchGet', sig: 'e_match_get () : value', copy: true },
     { kind: 'matchSet', sig: 'e_match_set (value) : unit' },
     { kind: 'make', sig: 'e_make () : entity_obj' },
     { kind: 'streamSync', sig: 'e_stream (string) (value) (value) : value Seq.t', runs: 'call' },
-    { kind: 'name', sig: 'e_name : string' },
+    { kind: 'name', sig: 'e_name : string', field: true },
   ],
   direct: { returns: 'value', okFalse: 'Bool false' },
   prepare: { returns: 'value', fails: 'style' },
   body: { values: 'a `Str` holding the bytes' },
   cancel: false,
+  memberNamed: 'bare',
+  deleted: '{var}.e_deleted',
+  streamSignal: true,
 }
 
 // Field types as the old reference named them: every field is carried in the
@@ -227,7 +230,6 @@ const Syntax: SyntaxType = {
 
   notes: {
     operations: 'Each operation takes its match or data, then a control map, `ctrl`,\nboth by position: pass `Noval` for either to give none.',
-    'member:name': '`e_name` is a field of the entity, read without a call.',
     'member:streamSync': 'Its arguments are the name of the operation, its match, and `callopts`.',
   },
 }

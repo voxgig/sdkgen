@@ -10,6 +10,7 @@ const facts: RuntimeFacts = {
   collection: '`list`',
   record: 'data_get()',
   recordType: 'dict',
+  arity: 0,
   prints: 'record',
 }
 
@@ -36,14 +37,14 @@ const refFacts: RefFacts = {
   },
   client: [
     { kind: 'options', sig: 'options_map() -> dict', copy: true },
-    { kind: 'utility', sig: 'get_utility() -> Utility' },
+    { kind: 'utility', sig: 'get_utility() -> Utility', copy: true },
     { kind: 'direct', sig: 'direct(fetchargs=None) -> dict' },
     { kind: 'prepare', sig: 'prepare(fetchargs=None) -> dict' },
   ],
   entity: [
     { kind: 'dataGet', sig: 'data_get() -> dict', copy: true },
     { kind: 'dataSet', sig: 'data_set(args=None)' },
-    { kind: 'matchGet', sig: 'match_get() -> dict' },
+    { kind: 'matchGet', sig: 'match_get() -> dict', copy: true },
     { kind: 'matchSet', sig: 'match_set(args=None)' },
     { kind: 'make', sig: 'make() -> Entity' },
     { kind: 'streamGenerator', sig: 'stream(action, args=None, callopts=None)', runs: 'iterate' },
@@ -53,6 +54,8 @@ const refFacts: RefFacts = {
   prepare: { returns: 'dict', fails: 'style' },
   body: { values: '`bytes`, `bytearray`, `memoryview`, a `str` or a file object', once: 'a file object' },
   cancel: false,
+  deleted: '{var}.deleted()',
+  streamSignal: true,
   testMock: 'generated',
 }
 
