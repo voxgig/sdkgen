@@ -1,0 +1,32 @@
+[
+ {
+  "id": "number-steps-go",
+  "lang": "go",
+  "section": "tutorial",
+  "file": "B/go/README.md",
+  "from": "The program below runs these 2 steps in order.",
+  "to": "The program below runs these 3 steps in order.",
+  "expect": "STEPS",
+  "why": "the sentence round's independent check (required fix 2): a number the page determines and the article before a word were set aside by identity and the match form; pagecheck.js must name each"
+ },
+ {
+  "id": "number-heading-ts",
+  "lang": "ts",
+  "section": "tutorial",
+  "file": "B/ts/README.md",
+  "from": "### 2. Load an ambient",
+  "to": "### 5. Load an ambient",
+  "expect": "HEADING",
+  "why": "the sentence round's independent check (required fix 2): a number the page determines and the article before a word were set aside by identity and the match form; pagecheck.js must name each"
+ },
+ {
+  "id": "article-a-ambient-ts",
+  "lang": "ts",
+  "section": "tutorial",
+  "file": "B/ts/README.md",
+  "from": "### 2. Load an ambient",
+  "to": "### 2. Load a ambient",
+  "expect": "ARTICLE",
+  "why": "the sentence round's independent check (required fix 2): a number the page determines and the article before a word were set aside by identity and the match form; pagecheck.js must name each"
+ }
+]
