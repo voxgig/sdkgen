@@ -27,6 +27,24 @@ const arrows = (t: string): { params: string[], returns: string } => {
   return { params: parts.filter((p) => 'unit' !== p), returns }
 }
 
+// A signature as the page writes it: `name (p : t) (q : u) : r`, `name () : r`
+// for a callable taking unit, `name : t` for a field. A module qualifier
+// (`{module}.make0 ()`) is dropped.
+const sigParts = (sig: string): { name: string, params: string[], returns: string } => {
+  const s = sig.trim().replace(/^[\w{}]+\.(?=[\w{}$])/, '')
+  const name = (/^([\w{}$]+)/.exec(s) || ['', ''])[1]
+  let rest = s.slice(name.length)
+  const params: string[] = []
+  for (let g = /^\s*\(((?:[^()]|\([^()]*\))*)\)/.exec(rest); null != g; g = /^\s*\(((?:[^()]|\([^()]*\))*)\)/.exec(rest)) {
+    if ('' !== g[1].trim()) params.push(g[1].trim())
+    rest = rest.slice(g[0].length)
+  }
+  return { name, params, returns: ((/^\s*:\s*(.+)$/.exec(rest) || [])[1] || '').trim() }
+}
+
+const CLIENT = 'src/cmp/ocaml/Main_ocaml.ts'
+const RUNTIME = 'tm/ocaml/sdk_runtime.ml'
+
 const forms: Forms = {
   files: {
     client: ['src/cmp/ocaml/Main_ocaml.ts', 'src/cmp/ocaml/MainEntity_ocaml.ts'],
@@ -78,7 +96,10 @@ const forms: Forms = {
   record: (rec) => ({ name: (/(e_\w+)/.exec(rec) || [])[1] || rec }),
   tokens: { Class: 'entity_obj', client: 'sdk_client', sdk: 'Sdk_client', ctor: 'make', accessor: '${fn}' },
   types: { column: null, reason: 'the code generator has no ocaml column in canonToType (every type maps to any); the page\'s type words are the provider\'s own' },
-  // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
+  // The porter's, from here on.
+  sigName: (sig) => sigParts(sig).name,
+  sigParams: (sig) => sigParts(sig).params,
+  sigReturns: (sig) => sigParts(sig).returns,
   // What the table states besides names, parameters and returns.
   testDecl: 'test',
   on: (d) => /^\s*mutable /.test(d.head) ? 'instance' : 'module',
@@ -93,6 +114,23 @@ const forms: Forms = {
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "tm/ocaml/sdk_features.ml", quote: "jo [(\"ok\", Bool false);" },
+    'facts.recordType': { file: 'tm/ocaml/sdk_types.ml', quote: 'mutable e_data_get : unit -> value;' },
+    'ref.facts.none': { file: CLIENT, quote: 'let make0 () : sdk_client = make Noval' },
+    'ref.facts.container': { file: CLIENT, quote: 'let make (options : value) : sdk_client =' },
+    'ref.facts.ctor[0]': { value: 'open Voxgig_struct', file: CLIENT, quote: 'open Voxgig_struct' },
+    'ref.facts.ctor[1]': { value: 'open Sdk_helpers', file: 'src/cmp/ocaml/Entity_ocaml.ts', quote: 'open Sdk_helpers' },
+    'ref.facts.ctor[2]': { value: 'open Sdk_types', file: CLIENT, quote: 'open Sdk_types' },
+    'ref.facts.ctorAlts[0].call': { file: CLIENT, quote: 'let make0 () : sdk_client = make Noval' },
+    'ref.facts.ctorAlts[0].kind': { value: 'defaults', file: CLIENT, quote: ['(* No-argument convenience constructor. *)', 'let make0 () : sdk_client = make Noval'] },
+    'ref.facts.entity[0].copy': { value: true, file: 'src/cmp/ocaml/Entity_ocaml.ts', quote: 'ent.e_data_get <- (fun () -> utility.u_feature_hook entctx "GetData"; clone ent.e_data);' },
+    'ref.facts.prepare.fails': { value: 'style', file: 'tm/ocaml/sdk_features.ml', quote: 'raise (Sdk_error_exc (ctx_make_error ctx "spec_method_allow"' },
+    'ref.facts.body.values': { value: 'a `Str` holding the bytes', file: RUNTIME,
+      quote: ['(* A map or a list is JSON, and so is a scalar on a point that declares\n          a JSON body. Anything else goes as given. *)', '| (Str _ | Num _ | Bool _) as b when is_json_request ctx.c_point ->', '| b -> setp fetchdef "body" b);'] },
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b/i, files: [RUNTIME, 'src/cmp/ocaml/EntityOperation_ocaml.ts', 'src/cmp/ocaml/fragment/RunOp.fragment.ml'] } },
+    'notes.operations': { value: 'Each operation takes its match or data, then a control map, `ctrl`,\nboth by position: pass `Noval` for either to give none.',
+      file: 'src/cmp/ocaml/EntityOperation_ocaml.ts', quote: ['  return `  ent.${field} <- (fun ${arg} ctrl ->', '      let ${arg} = if is_nullish ${arg} then empty_map () else ${arg} in', 'cs_ctrl = (match ctrl with Noval | Null -> None | c -> Some c);'] },
+    'notes.member:streamSync': { value: 'Its arguments are the name of the operation, its match, and `callopts`.', file: 'tm/ocaml/sdk_types.ml', quote: ['(* stream action args callopts -> a lazy Seq over result items. *)', 'mutable e_stream : string -> value -> value -> value Seq.t;'] },
+    'notes.member:name': { value: '`e_name` is a field of the entity, read without a call.', file: 'tm/ocaml/sdk_types.ml', quote: ['and entity_obj = {', 'mutable e_name : string;'] },
   },
 }
 

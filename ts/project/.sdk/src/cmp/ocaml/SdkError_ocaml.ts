@@ -6,6 +6,8 @@ import {
   cmp,
 } from '@voxgig/sdkgen'
 
+import { ERROR_FILE } from './utility_ocaml'
+
 
 const SdkError = cmp(async function SdkError(props: any) {
   const ctx$ = props.ctx$
@@ -13,7 +15,7 @@ const SdkError = cmp(async function SdkError(props: any) {
 
   const model = ctx$.model
 
-  File({ name: 'sdk_error.' + target.ext }, () => {
+  File({ name: ERROR_FILE + '.' + target.ext }, () => {
     Content(`(* ${model.const.Name} SDK error (generated).
  *
  * The branded error type and its exception live in the runtime; this module
