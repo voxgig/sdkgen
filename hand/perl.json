@@ -1,0 +1,767 @@
+{
+ "facts": {
+  "ref.valueType.OBJECT": {
+   "value": "hashref",
+   "why": "the type word for a map value (options, fetchargs, the record): OLD perl wrote `hashref` for every map-valued option and fetcharg (headers, feature, system, params, query) and for data_get's return; the three contexts the sheet calls contradicted are the tutorial's record clause '(a `hashref`)', a new clause OLD did not have, whose masked OLD unit is a different sentence",
+   "evidence": "OLD B/perl/REFERENCE.md: `$options` `hashref`, `$options->{headers}` `hashref`, `data_get() -> hashref`; runtime Entity.fragment.pm:99 '(hashref)'"
+  }
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README options table's `base` cell ('Base URL of the API server'); that table lists no `server`, so it states nothing about the server variables",
+  "n": 15
+ },
+ "07d85fb59f": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared load sentence above the block: '`load()` returns the entity and dies on failure; `$ambient->data_get` reads its record (a `hashref`)'",
+  "n": 10
+ },
+ "e1e46d49e5": {
+  "outcome": "restored:shared",
+  "why": "the old load sentence, in the shared words; true of perl: _run_op returns $self on success (Entity.fragment.pm:293-296) and dies on failure (:318)",
+  "n": 10
+ },
+ "406d576484": {
+  "outcome": "restored:shared",
+  "why": "the old list sentence's facts in the shared words (arrayref of entities one per record, dies, data_get reads the record), plus the record type",
+  "n": 7
+ },
+ "db00c23ac7": {
+  "outcome": "restored:shared",
+  "why": "the old load sentence's facts (returns the entity, dies, data_get reads the record) are the shared load sentence, with the record type cited (Entity.fragment.pm:99 hashref)",
+  "n": 6
+ },
+ "24ebd03e1a": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared create comment 'Create — returns the created entity; $created->data_get reads its record'",
+  "n": 4
+ },
+ "691bdc9ddb": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared patch comment 'Patch — sends only the fields given; the id comes off the created entity's record'",
+  "n": 3
+ },
+ "bcdac0d618": {
+  "outcome": "restored:shared",
+  "why": "the shared write sentence; OLD said the same per call in the comments ('returns the ENTITY'); true: every op returns $self (Entity.fragment.pm:293-296), remove marks it (:295), a failure dies (:318)",
+  "n": 5
+ },
+ "f1ff9604c1": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared create comment; same facts (the created entity, data_get reads its record)",
+  "n": 1
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed '2. Update'",
+  "n": 1
+ },
+ "412625e889": {
+  "outcome": "restored:shared",
+  "why": "ref-issues: the write sentence for the one write the entity has (update)",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "as 360f66a3d2 (server-mixed): a word match on the `base` cell",
+  "n": 1
+ },
+ "6fb3670380": {
+  "outcome": "same-meaning",
+  "why": "DEMO_APIKEY in the tutorial's client sentence, which the client block's code reads ($ENV{'DEMO_APIKEY'}), as OLD's did",
+  "n": 1
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "cbd982eef1": {
+  "outcome": "restored:fact",
+  "why": "the record type, facts.recordType 'hashref', cited (Entity.fragment.pm:99 '# Returns the current EntityName data (hashref).')",
+  "n": 1
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1
+ },
+ "f6f21dc984": {
+  "outcome": "same-meaning",
+  "why": "the method name update in the ref-issues write sentence",
+  "n": 1
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "8f33ee43c0": {
+  "outcome": "restored:shared",
+  "why": "the shared sentences name the variable the example binds ($ambient->data_get), where OLD said data_get alone",
+  "n": 4
+ },
+ "316d79799f": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49); and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 12
+ },
+ "3cd8281249": {
+  "outcome": "correction:display-field",
+  "why": "the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef",
+  "n": 10
+ },
+ "eea7b04552": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23; the server option and its variables, which the client must now pass (server-required-given, S49); and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 2
+ },
+ "0aaaeb0644": {
+  "outcome": "correction:S49",
+  "why": "auth-off: OLD built the client with no options, so it could not fill the templated server URL; NEW passes the tenant; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 1
+ },
+ "9b32484fa9": {
+  "outcome": "dropped",
+  "why": "the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`) (tutorial: the Install section directly above the tutorial prints `use lib 'lib'; use DemoSDK;`, so the reader is told once; the tutorial's own line returns with the shared imports-place change)",
+  "n": 3
+ },
+ "6e67cfc901": {
+  "outcome": "unification:noarg-parens",
+  "why": "an operation called with no argument is written with () in every place (OLD wrote list bare and load()); and the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef",
+  "n": 7
+ },
+ "a3d3e18a58": {
+  "outcome": "correction:display-field",
+  "why": "the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef",
+  "n": 5
+ },
+ "d2255de953": {
+  "outcome": "correction:display-field",
+  "why": "the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef (doc-nested: the satellite's first string field is planet_id)",
+  "n": 1
+ },
+ "0860511808": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49) (server-mixed: account); and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 1
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1
+ },
+ "70ac6b6b08": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared create comment names how the record is read ('$created->data_get reads its record')",
+  "n": 1
+ },
+ "431e9ea0d5": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared update/patch comment: 'the id comes off the created entity's record'",
+  "n": 1
+ },
+ "4e30f7a270": {
+  "outcome": "correction:write-comment-style",
+  "why": "the shared update/patch comment: 'the id comes off the created entity's record'",
+  "n": 1
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49) (server-mixed: account)",
+  "n": 1
+ },
+ "33526951e8": {
+  "outcome": "dropped",
+  "why": "the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`) (tutorial: the Install section directly above the tutorial prints `use lib 'lib'; use DemoSDK;`, so the reader is told once; the tutorial's own line returns with the shared imports-place change)",
+  "n": 1
+ },
+ "fa99929817": {
+  "outcome": "correction:write-comment-style",
+  "why": "OLD's 'Create — returns the ENTITY (call data_get for the record)' is the shared create comment",
+  "n": 1
+ },
+ "39cd96730f": {
+  "outcome": "correction:write-comment-style",
+  "why": "as fa99929817",
+  "n": 1
+ },
+ "fd6cd48aa4": {
+  "outcome": "correction:write-comment-style",
+  "why": "OLD's 'the created entity's record holds its id' is the shared 'the id comes off the created entity's record'",
+  "n": 1
+ },
+ "06cf9c85f2": {
+  "outcome": "restored:shared",
+  "why": "the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; OLD's 'data_get reads its record' is not in the comment (the tutorial and REFERENCE state it), as in every ported language",
+  "n": 10
+ },
+ "88a2ac7a3d": {
+  "outcome": "restored:shared",
+  "why": "the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails",
+  "n": 7
+ },
+ "6fd4bd8604": {
+  "outcome": "restored:shared",
+  "why": "the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; as deddc6212b",
+  "n": 6
+ },
+ "c891952d31": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 5
+ },
+ "b4408878f8": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S50] header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23; the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 1
+ },
+ "69ec83482b": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] auth-off: NEW passes the tenant the templated server URL needs; the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 1
+ },
+ "a2103afb97": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [unification:noarg-parens] an operation called with no argument is written with () in every place (OLD wrote list bare and load()); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 1
+ },
+ "646792a4b9": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S50] header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23; the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 1
+ },
+ "d0885cc8ba": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] the server option and its variables, which the client must now pass (server-required-given, S49); an operation called with no argument is written with () in every place (OLD wrote list bare and load()); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 3
+ },
+ "8efbe2e59b": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 1
+ },
+ "17f4e10000": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 1
+ },
+ "2d39864b8b": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] ent-none: the server option and its variables, which the client must now pass (server-required-given, S49); and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`); the trailing blank line after the client went with the absent steps",
+  "n": 2
+ },
+ "ef35a4d88c": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [correction:S49] the server option and its variables, which the client must now pass (server-required-given, S49); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef; and the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 1
+ },
+ "905b8fd076": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: [dropped] server-none: the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`); the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef",
+  "n": 2
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "41e8b6808d": {
+  "outcome": "restored:shared",
+  "why": "the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails ('dies on failure' for OLD's 'dies on error')",
+  "n": 1
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client passes the secret the runtime reads (DEMO_SECRET), S50/D23",
+  "n": 1
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49) (server-mixed: account)",
+  "n": 1
+ },
+ "336fea9d3b": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`)",
+  "n": 1
+ },
+ "dc2822fe83": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared imports-place change lands: the root quick start prints `use DemoSDK;` with no library path, so run where the root README is read (the repository root) it does not compile (`perl -c`: Can't locate DemoSDK.pm in @INC); OLD printed `use lib 'perl/lib';`, and the same page's other perl block still does. The page's one imports printer is not told which section it prints for (shared: example.ts imports, ReadmeQuick.ts quickText/topQuickText). Otherwise: the page's imports serve the tutorial (read from perl/) and the root quick start (read from the repository root) through one imports printer that cannot tell the two apart, so they name no library path: OLD's `use lib 'lib'` (tutorial) and `use lib 'perl/lib'` (root) are dropped rather than one of them printed false in the other place (interface gap: Syntax.imports gets no place; Main_perl.ts:68-69 says callers write `use lib '<sdk>/lib'`) (the perl/ of 'perl/lib')",
+  "n": 1
+ },
+ "b1989358a0": {
+  "outcome": "restored:shared",
+  "why": "the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails: 'Load an ambient' for OLD's 'Load a specific ambient'",
+  "n": 1
+ },
+ "61d073347b": {
+  "outcome": "restored:shared",
+  "why": "the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the record clause is the tutorial's and REFERENCE's",
+  "n": 1
+ },
+ "be14f5e112": {
+  "outcome": "restored:shared",
+  "why": "the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the record clause is the tutorial's and REFERENCE's",
+  "n": 1
+ },
+ "e28aeb1554": {
+  "outcome": "restored:shared",
+  "why": "the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails; the record clause is the tutorial's and REFERENCE's",
+  "n": 1
+ },
+ "5524296637": {
+  "outcome": "restored:shared",
+  "why": "the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails ('failure' for 'error')",
+  "n": 1
+ },
+ "0c5db6b150": {
+  "outcome": "restored:shared",
+  "why": "the root step comments are the shared ones (listComment/loadComment): what the call returns and how it fails: 'List planet records' for OLD's 'List all planets'",
+  "n": 1
+ },
+ "31a80d54a8": {
+  "outcome": "correction:display-field",
+  "why": "the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef (doc-nested: planet_id is the satellite's display field)",
+  "n": 1
+ },
+ "bda1b97c0c": {
+  "outcome": "same-meaning",
+  "why": "doc-nested: the nested load's match carries the parent key, example_planet_id, as OLD's tutorial did",
+  "n": 1
+ },
+ "bbff8b945e": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README result-shape table's `headers` row (`hashref`, Response headers), which agrees; that table types `ok` as `boolean` 'True if the HTTP status is 2xx', which the runtime writes as 1 or 0 (Main.fragment.pm:300), Perl's truth values: no contradiction",
+  "n": 19
+ },
+ "586b81880f": {
+  "outcome": "same-meaning",
+  "why": "a word match on the README options table's `extend` row; the README's result shape says the same of list ('`list` an `arrayref` of entities, one per record')",
+  "n": 83
+ },
+ "98139c2e52": {
+  "outcome": "same-meaning",
+  "why": "a word match on undef in the README's test(undef, undef) call; nothing there about the accessor",
+  "n": 94
+ },
+ "f810831be4": {
+  "outcome": "same-meaning",
+  "why": "the README calls test(undef, undef), which agrees: both may be undef",
+  "n": 19
+ },
+ "955a849336": {
+  "outcome": "same-meaning",
+  "why": "a word match on undef in the README's test call; the stream function returns undef at the end (Entity.fragment.pm:203,237)",
+  "n": 94
+ },
+ "e53badc13a": {
+  "outcome": "same-meaning",
+  "why": "the README lists data_get as () -> hashref; the note says a streamed entity is yielded as that hashref, which agrees",
+  "n": 85
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on console.log in the README's shared TypeScript error-handling block; the README's Features section (line 561) says the same of log: it runs unless disabled",
+  "n": 19
+ },
+ "f8d3dfd648": {
+  "outcome": "same-meaning",
+  "why": "restored in the shared test-client sentence ('both may be `undef`'); the README's test(undef, undef) agrees",
+  "n": 19
+ },
+ "596ec1ae31": {
+  "outcome": "same-meaning",
+  "why": "the README's table says load returns the entity and dies on error, and data_get reads the record: the same",
+  "n": 25
+ },
+ "544e7efb11": {
+  "outcome": "same-meaning",
+  "why": "the default method named as a bare value, `GET`, not a quoted Perl literal; the same value (Main.fragment.pm:149)",
+  "n": 19
+ },
+ "4339a79521": {
+  "outcome": "restored:shared",
+  "why": "the shared return clause: 'and dies on failure' for 'and dies on error'",
+  "n": 15
+ },
+ "b2f8d161db": {
+  "outcome": "correction:entity-class",
+  "why": "make's sentence names the entity's class, the package MainEntity_perl.ts:17,24 instantiates (entityClassName), and that make() passes the same client and a copy of the options (Entity.fragment.pm:68-72); OLD named the accessor. Not dropped: the ledger split the pairs by which OLD entity each NEW sentence met (this class 16, b2f8d161db 77, 1cf2aacb90 1); perl prints it once per entity, 94 in all 21 variations, 7 in B as c does (grep -c 'instance with the same client and' over out/new/*/perl/REFERENCE.md) | as d5b8571b7f",
+  "n": 92,
+  "rekeyed": "d5b8571b7f+b2f8d161db"
+ },
+ "eb1d085973": {
+  "outcome": "correction:entity-class",
+  "why": "the entity's heading names its class (entityBy: 'class'), the package the accessor returns (MainEntity_perl.ts:24 ${cls}->new); OLD's heading named the accessor plus 'entity'",
+  "n": 16
+ },
+ "5cb454976b": {
+  "outcome": "restored:shared",
+  "why": "the shared return clause",
+  "n": 16
+ },
+ "20ad15527c": {
+  "outcome": "restored:shared",
+  "why": "the shared return clause",
+  "n": 16
+ },
+ "3ebb5ee1a9": {
+  "outcome": "restored:shared",
+  "why": "the shared return clause for list; how the record is read is the tutorial's sentence and each item's print",
+  "n": 83
+ },
+ "c0e40143f1": {
+  "outcome": "restored:shared",
+  "why": "the shared direct sentence: a failed request is reported in the result (Main.fragment.pm:240-246: direct traps prepare's die and returns ok 0)",
+  "n": 19
+ },
+ "1d5f2874ab": {
+  "outcome": "unification:test-client-heading",
+  "why": "the test constructor sits under the shared 'Test client' heading; it is a class method, called on the class (Main.fragment.pm:364-365 my ($class, ...))",
+  "n": 19
+ },
+ "00d312c012": {
+  "outcome": "restored:shared",
+  "why": "restored in the shared test-client sentence: 'both may be `undef`'",
+  "n": 19
+ },
+ "02df6c6783": {
+  "outcome": "restored:shared",
+  "why": "restored as the shared '**Returns:** `hashref`, a result map holding ...'",
+  "n": 19
+ },
+ "5dcfeb4c30": {
+  "outcome": "restored:shared",
+  "why": "restored as '**Returns:** `hashref`, the fetch definition: the request `direct()` would send. It dies on failure.' (Main.fragment.pm:194-200)",
+  "n": 19
+ },
+ "35eec23217": {
+  "outcome": "restored:shared",
+  "why": "the shared return clause plus '`$result->data_get` reads its record.'",
+  "n": 28
+ },
+ "e98e84c0ec": {
+  "outcome": "correction:entity-class",
+  "why": "make's signature names the class it returns, `make() -> AmbientEntity` (Entity.fragment.pm:71 EntyClass->new)",
+  "n": 94
+ },
+ "6d946df107": {
+  "outcome": "correction:entity-class",
+  "why": "as 94e4e0cb3d: the heading names the class",
+  "n": 77,
+  "rekeyed": "6d946df107"
+ },
+ "5558560233": {
+  "outcome": "restored:shared",
+  "why": "restored as 'The match is optional: without one, every record is listed.'",
+  "n": 83
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "the shared features sentence: every feature is inactive until switched on except log, which runs unless disabled (model/feature/log.aontu active: true); OLD's 'no feature work at all' was false with log on",
+  "n": 19
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the log feature is active by default; OLD's 'Inactive by default' line under it was false",
+  "n": 19
+ },
+ "8a10415d41": {
+  "outcome": "correction:S49",
+  "why": "the server option row, from the templated server URL (S49)",
+  "n": 16
+ },
+ "e1d94b3d09": {
+  "outcome": "correction:S49",
+  "why": "the required server variable row (S49)",
+  "n": 15
+ },
+ "4b2d5dfadd": {
+  "outcome": "correction:S49",
+  "why": "the defaulted server variable row (S49)",
+  "n": 16
+ },
+ "fe68ca0220": {
+  "outcome": "restored:fact",
+  "why": "fetchargs ctrl, which prepare reads (Main.fragment.pm:137-138 gp($fetchargs, 'ctrl'))",
+  "n": 19
+ },
+ "edf86c2045": {
+  "outcome": "restored:fact",
+  "why": "the ctrl row's text, with the explain flag the pipeline honours (Entity.fragment.pm:330 ctrl->{explain})",
+  "n": 19
+ },
+ "7e5a7eb8de": {
+  "outcome": "restored:shared",
+  "why": "prepare's failure, in the shared words: it dies (Main.fragment.pm:198 die $fd_err)",
+  "n": 19
+ },
+ "861a2bfee4": {
+  "outcome": "correction:entity-class",
+  "why": "as 94e4e0cb3d",
+  "n": 76,
+  "rekeyed": "861a2bfee4"
+ },
+ "ef282a5393": {
+  "outcome": "restored:shared",
+  "why": "the shared return clause for load",
+  "n": 28
+ },
+ "fef381b2a3": {
+  "outcome": "restored:fact",
+  "why": "stream is a public entity member the old perl page did not document (Entity.fragment.pm:149 sub stream; returns a coderef at :202, :235); the guard derives the kind streamFunction and runs: 'call' from the stream record's quotes",
+  "n": 94
+ },
+ "ef4c488fdd": {
+  "outcome": "restored:note",
+  "why": "the runtime note: stream yields an entity as the hashref its data_get returns (Entity.fragment.pm:141 '# An entity is yielded as its record, the hashref its data_get returns.', :179-188 unwrap). Worded so it holds under the streaming feature's chunkSize too, where an item is an arrayref batch whose entities are unwrapped the same way (streaming_feature.pm:65-70, Entity.fragment.pm:186)",
+  "n": 94
+ },
+ "3df4f1a79b": {
+  "outcome": "correction:ref-6",
+  "why": "the Actions table's Call cell: the action through create, with the route's path parameter (id) beside $action",
+  "n": 16
+ },
+ "08121435fc": {
+  "outcome": "correction:S50",
+  "why": "the secret option row for Basic auth (S50/D23)",
+  "n": 2
+ },
+ "8974fe557b": {
+  "outcome": "restored:shared",
+  "why": "the shared return clause",
+  "n": 4
+ },
+ "066a083189": {
+  "outcome": "same-meaning",
+  "why": "the README's direct example passes 'method' => 'GET', which agrees with the default",
+  "n": 1
+ },
+ "91baf1b4b6": {
+  "outcome": "contradiction",
+  "where": "perl/README.md:219 (no-test): 'Creates a test-mode client with mock transport. Both arguments may be `undef`.' (and :143 'Create a mock client for unit testing')",
+  "true": "REFERENCE: without the test feature its source does not ship, so the test client is in test mode with no mock transport",
+  "evidence": "no-test model: feature test inactive; target add copies feature source only for active features (AGENTS.md 'Trimming the feature set'); Main.fragment.pm:373-377 test only sets feature.test.active; the features.pm factory (Main_perl.ts:119-150) requires and makes only the features generated; catalogue S13",
+  "n": 1
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: the test constructor builds a client in test mode with no mock transport; the shared sentence says so",
+  "n": 1
+ },
+ "7f188f33e8": {
+  "outcome": "correction:U34",
+  "why": "ref-issues: the class is PlanetEntityClient where an entity type collides; make() returns it",
+  "n": 1
+ },
+ "5d54345ff5": {
+  "outcome": "correction:entity-class",
+  "why": "as d5b8571b7f",
+  "n": 1,
+  "rekeyed": "b2f8d161db"
+ },
+ "035bdeb70d": {
+  "outcome": "correction:md-cell",
+  "why": "ref-issues: the field description is one table cell; its pipe is escaped (mdCell) and the relative link text kept without a link that would break from REFERENCE.md",
+  "n": 1
+ },
+ "92e45cf378": {
+  "outcome": "correction:md-cell",
+  "why": "as 035bdeb70d: the unescaped pipe split OLD's cell",
+  "n": 1
+ },
+ "dac11a1691": {
+  "outcome": "correction:md-cell",
+  "why": "as 035bdeb70d",
+  "n": 1
+ },
+ "00745bfed4": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the inactive remove is no longer documented (OLD documented and exampled it)",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: as d5ceec6bd5",
+  "n": 1
+ },
+ "9833a073af": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: as d5ceec6bd5",
+  "n": 1
+ },
+ "0b29ec4944": {
+  "outcome": "restored:shared",
+  "why": "ref-issues: restored as 'The data must include the entity id, `id`.' under PlanetEntityClient",
+  "n": 1
+ },
+ "23beb1c071": {
+  "outcome": "correction:entity-class",
+  "why": "as 94e4e0cb3d: the heading names the class",
+  "n": 1,
+  "rekeyed": "6d946df107"
+ },
+ "99e505dfce": {
+  "outcome": "correction:entity-class",
+  "why": "as 94e4e0cb3d",
+  "n": 1,
+  "rekeyed": "861a2bfee4"
+ },
+ "6d784a0fb1": {
+  "outcome": "correction:S49",
+  "why": "server-mixed: the required server variable row (S49)",
+  "n": 1
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49)",
+  "n": 1
+ },
+ "abb698049e": {
+  "outcome": "restored:fact",
+  "why": "the explain control in the ctrl row, as edf86c2045",
+  "n": 1
+ },
+ "fd48acdf84": {
+  "outcome": "restored:fact",
+  "why": "the stream member, as fef381b2a3",
+  "n": 1
+ },
+ "057b5775f7": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter $action (Entity.fragment.pm:150), and the action name in the Actions table",
+  "n": 1
+ },
+ "07b6a683db": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter $args (Entity.fragment.pm:150)",
+  "n": 1
+ },
+ "7a9d5874ad": {
+  "outcome": "restored:fact",
+  "why": "stream's parameter $callopts (Entity.fragment.pm:150)",
+  "n": 1
+ },
+ "122961dd71": {
+  "outcome": "restored:fact",
+  "why": "stream returns a coderef (Entity.fragment.pm:202, :235 return sub { ... })",
+  "n": 1
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "the action name in the Call cell",
+  "n": 1
+ },
+ "7e7f66c823": {
+  "outcome": "restored:shared",
+  "why": "make's sentence: 'with the same client and options' (Entity.fragment.pm:71 passes $self->{_client})",
+  "n": 1
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "the secret option for Basic auth (S50/D23)",
+  "n": 1
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables, which the client must now pass (server-required-given, S49) (server-mixed)",
+  "n": 1
+ },
+ "8928fd2128": {
+  "outcome": "same-meaning",
+  "why": "OLD's 'Returns the `fetchdef`' is the shared 'the fetch definition'; the README's prepare example names it fetchdef, the same object",
+  "n": 1
+ },
+ "24d40b660d": {
+  "outcome": "defect",
+  "why": "DEFECT until the shared showFields change lands: where an entity's only non-id field is a map, the shared display field is that map, and perl prints its reference: Record's list example prints `$item->data_get->{fields}`, which outputs HASH(0x...) (out/new/B/perl/REFERENCE.md:536; 14 variations); OLD printed ->{id} alone. The other blocks of this class are [unification:ref-list-example]: the reference list example binds `results` and names each item `item`, the same names in every ported language (shared refOpBlock, generic naming); an operation called with no argument is written with () in every place (OLD wrote list bare and load()); and the example prints the shared display fields (sdkdesc showFields: the record id, then the first string field; perl declares prints: 'fields'); OLD perl printed ->{id} alone, also where the entity has no id field (ambient: fields flow, temperature), which printed undef",
+  "n": 81
+ },
+ "5a083e16cc": {
+  "outcome": "unification:ref-list-example",
+  "why": "doc-nested: as 24d40b660d; the satellite's display field is planet_id",
+  "n": 1
+ },
+ "bafc700723": {
+  "outcome": "unification:ref-list-example",
+  "why": "ref-issues: as 24d40b660d; PlanetEntity has no other field, so the id alone",
+  "n": 1
+ },
+ "8d4be337ab": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: a pairing shift: Planet's inactive remove block is gone (S25), so the tool pairs it with the next block, PlanetEntity's instance block, which NEW still prints (REFERENCE.md:321)",
+  "n": 1
+ },
+ "2166870af9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the same pairing shift as 8d4be337ab; all five instance blocks are printed (gauge, planet, planet_entity, record, utility: REFERENCE.md:122,193,321,386,452)",
+  "n": 2
+ },
+ "1a12a51546": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: the same pairing shift; `my $utility = $client->Utility;` is printed (NEW REFERENCE.md:452)",
+  "n": 1
+ },
+ "6a8837b248": {
+  "outcome": "unification:ref-list-example",
+  "why": "the reference list's loop variable is `item` in every ported language (shared generic naming)",
+  "n": 1
+ }
+}

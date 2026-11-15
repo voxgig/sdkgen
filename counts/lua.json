@@ -1,0 +1,23 @@
+{
+ "tutorial": {
+  "corrected": 15,
+  "unified": 0,
+  "used": {
+   "secret-option": 2,
+   "server-required-given": 15
+  }
+ },
+ "rootquick": {
+  "corrected": 2,
+  "unified": 0,
+  "used": {
+   "server-required-given": 2,
+   "trailing-blank": 2
+  }
+ },
+ "reference": {
+  "corrected": 0,
+  "unified": 0,
+  "used": {}
+ }
+}

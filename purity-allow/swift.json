@@ -1,0 +1,8 @@
+[
+ {
+  "file": "Naming",
+  "check": "naming function no non-README component calls",
+  "text": "nom (from @voxgig/apidef)",
+  "why": "MainEntity_swift names each accessor `${entity.Name}`, the Name apidef derives with nom(entity, 'Name'); the hook calls nom because an entity's Name is derived lazily and may not be set yet when the description is built (deriveEntityNames). The value is the same; no rule is added."
+ }
+]
