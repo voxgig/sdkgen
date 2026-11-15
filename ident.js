@@ -29,13 +29,15 @@
 //             A unit that is ALL positions (a signature heading, a key cell,
 //             a Call cell) is no sentence: it keeps its display mask, labels
 //             included, so `⟦ref.op.load⟧` and `⟦ref.op.create⟧` stay apart.
-//   match     (what classify.js accepts a port's unit by): as identity, but a
-//             slot keeps its raw text unless the raw text is one of the unit
-//             language's own declared facts (guarded or accounted); learned
-//             with the language under review left out, so its own pages never
-//             make a slot. A printer's output in a slot must therefore equal a
-//             reference language's to match, and anything else is left for a
-//             person, as before.
+//   match     (what classify.js accepts a port's unit by): the skeleton, a
+//             position masked (unlabelled) only where its raw text is one of
+//             the unit language's own declared facts (guarded or accounted)
+//             AND no other language prints that same text there as plain
+//             shared text (so py's `data`, its accessor parameter, stays the
+//             literal `data` of "headers and `data`"); everything else
+//             literal. The language under review is left out of what the
+//             others print. A printer's output must equal a reference
+//             language's to match, and anything else is left for a person.
 const Fs = require('node:fs')
 const Path = require('node:path')
 const Crypto = require('node:crypto')
@@ -155,7 +157,8 @@ function make(a) {
         if (x.whole || !x.fills.length) continue
         let row = T2.get(x.k)
         if (!row) { row = x.fills.map(() => new Map()); T2.set(x.k, row) }
-        x.fills.forEach((f, i) => { if (!row[i]) row[i] = new Map(); if (!row[i].has(f.fill)) row[i].set(f.fill, new Set()); row[i].get(f.fill).add(r) })
+        // per content, the languages that print it and whether it is their own declared fact
+        x.fills.forEach((f, i) => { if (!row[i]) row[i] = new Map(); if (!row[i].has(f.fill)) row[i].set(f.fill, new Map()); const m = row[i].get(f.fill); m.set(r, (m.get(r) || false) || isOwn(r, f.raw)) })
       }
     }
     return T2
@@ -164,8 +167,14 @@ function make(a) {
     const row = table().get(x.k)
     if (!row || !row[i]) return false
     let n = 0
-    for (const src of row[i].values()) if ([...src].some((l) => l !== excl)) n++
+    for (const src of row[i].values()) if ([...src.keys()].some((l) => l !== excl)) n++
     return n > 1
+  }
+  // printed there, as plain text and not as its own fact, by another language
+  const literalElsewhere = (x, i, fill, excl) => {
+    const row = table().get(x.k)
+    const src = row && row[i] && row[i].get(fill)
+    return !!src && [...src.entries()].some(([l, own]) => l !== excl && !own)
   }
   const lit = (f) => f.span ? '`' + f.fill + '`' : f.fill
   // the article before a mark is one word, whatever the token after it
@@ -181,7 +190,9 @@ function make(a) {
   function match(text, kind, lang, excl) {
     const x = analyse(text, kind, excl)
     if (x.whole) return wholeText(text, kind, lang)
-    return build(x, (i) => varies(x, i, excl) && isOwn(lang, x.fills[i].raw))
+    // a slot only where the language supplies its own declared fact, and no
+    // other language prints the same text there as plain shared text
+    return build(x, (i) => isOwn(lang, x.fills[i].raw) && !literalElsewhere(x, i, x.fills[i].fill, excl))
   }
   const sentenceId = (text, kind, lang) => K.classId('sentence', identity(text, kind, lang))
   const res = { identity, match, sentenceId, analyse, table, isOwn, langs, isModelText: modelTextOf(a, ts) }

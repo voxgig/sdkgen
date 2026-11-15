@@ -40,6 +40,14 @@ if (Pu) {
   if (Pu.open.length) bad++
 } else { out.push('purity: NOT RUN'); bad++ }
 out.push(`guard: ${guard}`)
+const bt = (() => { try { return Fs.readFileSync(Path.join(dir, 'build.txt'), 'utf8').trim().split('\n') } catch (e) { return null } })()
+if (bt) { out.push(bt[bt.length - 1]); for (const l of bt.filter((x) => /^STALE BUILD/.test(x)).slice(0, 8)) out.push('  ' + l); if (bt.some((x) => /^STALE BUILD/.test(x))) bad++ } else { out.push('build: NOT CHECKED'); bad++ }
+const Hs = J('handstale.json')
+if (Hs) {
+  out.push(`hand records: ${Hs.records}, ${Hs.checkable} quote text (${Hs.quotes} quotations); STALE ${Hs.stale.length}`)
+  for (const s of Hs.stale.slice(0, 8)) out.push(`  STALE ${s.where} [${s.id}]: quotes ${s.missing.map((q) => JSON.stringify(q.slice(0, 60))).join(', ')}, on no page of ${lang} and nowhere in the clone`)
+  if (Hs.stale.length) bad++
+}
 const Fa = J('facts.json')
 if (Fa) {
   const at = Fa.attestation || {}
@@ -53,6 +61,7 @@ if (Se) {
   const strict = '1' === process.env.STRICT_SENTENCES
   out.push(`shared sentences: matched ${Se.matched}, of which against a sentence nobody reviewed ${Se.unreviewed}${strict ? ' (STRICT_SENTENCES=1: fails)' : ' (fails only with STRICT_SENTENCES=1)'}; printed less often than its reference ${Se.fewer} (open, above); absent here but printed by every reference of this result style ${Se.absent} (${Se.absentExplained} explained; listed in <section>.absent.json, not failed)`)
   if (strict && Se.unreviewed) bad++
+  if (Se.falseVerdict) out.push(`accepted classes whose sentence a reviewer called false (reviewed/sentences.json): ${Se.falseVerdict} (counted, not failed: the fix is in shared code): ${Se.falseList.slice(0, 6).map((x) => x.id).join(' ')}${Se.falseVerdict > 6 ? ' ...' : ''}`)
 }
 const fsl = (() => { try { return Fs.readFileSync(Path.join(dir, 'factsheet.log'), 'utf8').trim().split('\n').pop() } catch (e) { return 'factsheet: not run' } })()
 out.push(`fact sheet: ${fsl.replace(/ -> .*$/, '')}: ${Path.join(dir, 'facts.txt')} (audit every fact a shared sentence carries)`)

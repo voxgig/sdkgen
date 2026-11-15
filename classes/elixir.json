@@ -629,8 +629,7 @@
   "n": 93,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "c15ce3aefd"
+  "section": "reference"
  },
  "e69b3decc0": {
   "outcome": "restored:note",
@@ -694,8 +693,7 @@
   "n": 93,
   "by": "rule:page-structure2",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "c032f374ab"
+  "section": "reference"
  },
  "d567bec3e0": {
   "outcome": "unification:ref-page-structure",
@@ -1370,8 +1368,7 @@
   "n": 1,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "c15ce3aefd"
+  "section": "reference"
  },
  "4713af1033": {
   "outcome": "unification:ref-page-structure",
@@ -1379,8 +1376,7 @@
   "n": 1,
   "by": "rule:page-structure2",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "c032f374ab"
+  "section": "reference"
  },
  "dac11a1691": {
   "outcome": "correction:G27",

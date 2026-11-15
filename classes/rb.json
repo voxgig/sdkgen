@@ -15,9 +15,9 @@
   "type": "added",
   "section": "reference",
   "sentences": [
-   "eb2099b4b6"
+   "957a8c7efa"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "3980935898": {
   "outcome": "correction:write-comment-style",
@@ -43,21 +43,21 @@
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "ac969fd7fb"
+   "cb33d087c0"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "ff4863a314": {
-  "outcome": "shared:ts:123923823b",
-  "why": "masked, it is the ts unit of class 123923823b (correction:S28, by rule:tutorial-leadin)",
+  "outcome": "shared:ts:ff4863a314",
+  "why": "masked, it is the ts unit of class ff4863a314 (correction:S28, by rule:tutorial-leadin)",
   "n": 10,
   "by": "shared",
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "509df65eab"
+   "ebfc2354cd"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "7e1edcb0af": {
   "outcome": "restored:shared",
@@ -68,28 +68,16 @@
   "section": "tutorial"
  },
  "0538108a37": {
-  "outcome": "shared:ts:4147ad0745",
-  "why": "masked, it is the ts unit of class 4147ad0745 (restored:shared, by rule:entities-contract)",
+  "outcome": "shared:ts:0538108a37",
+  "why": "masked, it is the ts unit of class 0538108a37 (restored:shared, by rule:entities-contract)",
   "n": 18,
   "by": "shared",
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "ee58ce03de"
+   "9ca694d427"
   ],
-  "unreviewed": 1
- },
- "3320e33aa5": {
-  "outcome": "shared:ts:3320e33aa5",
-  "why": "masked, it is the ts unit of class 3320e33aa5 (unification:client-env-sentence, by rule:apikey-env)",
-  "n": 15,
-  "by": "shared",
-  "type": "added",
-  "section": "tutorial",
-  "sentences": [
-   "a2bf96f937"
-  ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "9363faf207": {
   "outcome": "shared:ts:9363faf207",
@@ -99,33 +87,21 @@
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "afbad155be"
+   "7a955e855f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "31efe2422b": {
-  "outcome": "shared:py:5e6ce1e565",
-  "why": "masked, it is the py unit of class 5e6ce1e565 (unification:tutorial-op-sentence, by rule:add-tutorial-op)",
+  "outcome": "shared:py:2193bc71b2",
+  "why": "masked, it is the py unit of class 2193bc71b2 (unification:tutorial-op-sentence, by rule:add-tutorial-op)",
   "n": 10,
   "by": "shared",
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "1b25034e90"
+   "86db54d92d"
   ],
-  "unreviewed": 1
- },
- "b98c5c1370": {
-  "outcome": "shared:ts:b98c5c1370",
-  "why": "masked, it is the ts unit of class b98c5c1370 (correction:S50, by rule:basic-secret)",
-  "n": 2,
-  "by": "shared",
-  "type": "added",
-  "section": "tutorial",
-  "sentences": [
-   "cfc01f1671"
-  ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "849816779b": {
   "outcome": "shared:ts:849816779b",
@@ -135,21 +111,21 @@
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "c246e90164"
+   "a491ead7c9"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "5a3859e529": {
-  "outcome": "shared:ts:428b2a83e1",
-  "why": "masked, it is the ts unit of class 428b2a83e1 (correction:S28, by rule:tutorial-leadin)",
+  "outcome": "shared:ts:5a3859e529",
+  "why": "masked, it is the ts unit of class 5a3859e529 (correction:S28, by rule:tutorial-leadin)",
   "n": 3,
   "by": "shared",
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "3b42b780fa"
+   "836725aec1"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "0173dc709f": {
   "outcome": "restored:shared",
@@ -201,43 +177,43 @@
   "sentences": [
    "f2515f53be"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "c41348288d": {
-  "outcome": "shared:py:7f8b2cc8a9",
-  "why": "masked, it is the py unit of class 7f8b2cc8a9 (restored:fact, by rule:write-comments)",
+  "outcome": "shared:py:d0874922f8",
+  "why": "masked, it is the py unit of class d0874922f8 (restored:fact, by rule:write-comments)",
   "n": 4,
   "by": "shared",
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "a12cc73410"
+   "663f4dd150"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "0ed7dc127d": {
-  "outcome": "shared:ts:94cf7a3ef4",
-  "why": "masked, it is the ts unit of class 94cf7a3ef4 (unification:write-comment-style, by rule:write-comment-id2)",
+  "outcome": "shared:ts:079a339ba7",
+  "why": "masked, it is the ts unit of class 079a339ba7 (unification:write-comment-style, by rule:write-comment-id2)",
   "n": 4,
   "by": "shared",
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "3b2733cb55"
+   "a102512ba9"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "aeabe4bdf1": {
-  "outcome": "shared:ts:d11bb4c954",
-  "why": "masked, it is the ts unit of class d11bb4c954 (unification:write-comment-style, by rule:write-comment-id2)",
+  "outcome": "shared:ts:b7c60b65eb",
+  "why": "masked, it is the ts unit of class b7c60b65eb (unification:write-comment-style, by rule:write-comment-id2)",
   "n": 3,
   "by": "shared",
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "ac63285763"
+   "e3dc10a6b7"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "732bb80f3d": {
   "outcome": "shared:ts:732bb80f3d",
@@ -247,45 +223,45 @@
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "4633b64615"
+   "16698bd386"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "29bba9e03f": {
-  "outcome": "shared:ts:67bc2b34e8",
-  "why": "masked, it is the ts unit of class 67bc2b34e8 (correction:S28, by rule:tutorial-leadin)",
+  "outcome": "shared:ts:29bba9e03f",
+  "why": "masked, it is the ts unit of class 29bba9e03f (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "8e422a85a8"
+   "728df7c1c3"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "1fa815677a": {
-  "outcome": "shared:ts:2609d87cfb",
-  "why": "masked, it is the ts unit of class 2609d87cfb (correction:S28, by rule:tutorial-leadin)",
+  "outcome": "shared:ts:1fa815677a",
+  "why": "masked, it is the ts unit of class 1fa815677a (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "95064ad01e"
+   "1760a2d205"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "defb73bfd8": {
-  "outcome": "shared:ts:69ba25b1fc",
-  "why": "masked, it is the ts unit of class 69ba25b1fc (correction:S28, by rule:tutorial-leadin)",
+  "outcome": "shared:ts:defb73bfd8",
+  "why": "masked, it is the ts unit of class defb73bfd8 (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "59ac8a63ea"
+   "3ab3fb2b2e"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "3929ad2a30": {
   "outcome": "correction:write-comment-style",
@@ -296,8 +272,8 @@
   "section": "tutorial"
  },
  "9cbb8e3add": {
-  "outcome": "shared:ts:d39368fa0b",
-  "why": "masked, it is the ts unit of class d39368fa0b (correction:S28, by rule:tutorial-leadin)",
+  "outcome": "shared:ts:9cbb8e3add",
+  "why": "masked, it is the ts unit of class 9cbb8e3add (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
@@ -305,7 +281,7 @@
   "sentences": [
    "bcbefa9d5b"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "3b2af3d003": {
   "outcome": "same-meaning",
@@ -316,28 +292,28 @@
   "section": "tutorial"
  },
  "c44f65ddeb": {
-  "outcome": "shared:ts:dd5f182f01",
-  "why": "masked, it is the ts unit of class dd5f182f01 (correction:S28, by rule:tutorial-leadin)",
+  "outcome": "shared:ts:c44f65ddeb",
+  "why": "masked, it is the ts unit of class c44f65ddeb (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "5f48968a61"
+   "0416b3a5e1"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "3528a38f43": {
-  "outcome": "shared:ts:f4f124751b",
-  "why": "masked, it is the ts unit of class f4f124751b (correction:S28, by rule:tutorial-leadin)",
+  "outcome": "shared:ts:3528a38f43",
+  "why": "masked, it is the ts unit of class 3528a38f43 (correction:S28, by rule:tutorial-leadin)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
   "section": "tutorial",
   "sentences": [
-   "fc11508b53"
+   "787064e0dd"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "9562ae8fc5": {
   "outcome": "correction:U45",
@@ -355,9 +331,9 @@
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "f999547282"
+   "46ab3e9cf3"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "c2358342da": {
   "outcome": "shared:py:db304a6ebf",
@@ -367,9 +343,9 @@
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "2e3c8aae76"
+   "d7a6195670"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "325b1911ed": {
   "outcome": "same-meaning",
@@ -387,9 +363,9 @@
   "type": "added",
   "section": "tutorial",
   "sentences": [
-   "2873e86578"
+   "7a955e855f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "6fb3670380": {
   "outcome": "same-meaning",
@@ -929,7 +905,7 @@
   "sentences": [
    "5ddee20721"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "6aced21d71": {
   "outcome": "shared:go:6aced21d71",
@@ -941,20 +917,19 @@
   "sentences": [
    "4fb872e54f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "cce9e8691a": {
-  "outcome": "shared:ts:bde0d2283c",
-  "why": "masked, it is the ts unit of class bde0d2283c (unification:accessor-sentence, by rule:accessor-sentence) | masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
+  "outcome": "shared:ts:cce9e8691a",
+  "why": "masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
   "n": 92,
   "by": "shared",
   "type": "reworded",
   "section": "reference",
   "sentences": [
-   "1eccc7250d"
+   "0071df96c2"
   ],
-  "unreviewed": 1,
-  "rekeyed": "bde0d2283c+cce9e8691a"
+  "unreviewed": 0
  },
  "bc359f4a19": {
   "outcome": "correction:runtime-forms",
@@ -970,8 +945,7 @@
   "n": 15,
   "by": "hand",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "0670e4a87f+6414adddb5"
+  "section": "reference"
  },
  "d15797ca9d": {
   "outcome": "correction:runtime-forms",
@@ -979,8 +953,7 @@
   "n": 81,
   "by": "hand",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "d15797ca9d+07afcb51c1"
+  "section": "reference"
  },
  "9557524e8d": {
   "outcome": "correction:runtime-forms",
@@ -988,8 +961,7 @@
   "n": 27,
   "by": "hand",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "9557524e8d+36d626bcf0"
+  "section": "reference"
  },
  "8fc1b6a197": {
   "outcome": "correction:runtime-forms",
@@ -1005,8 +977,7 @@
   "n": 92,
   "by": "hand",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "d8065d07cb+81b3ea8a7b"
+  "section": "reference"
  },
  "3780da62e4": {
   "outcome": "shared:py:3780da62e4",
@@ -1018,19 +989,19 @@
   "sentences": [
    "f28445713f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "4299fe5f5e": {
-  "outcome": "shared:ts:c47c92da89",
-  "why": "masked, it is the ts unit of class c47c92da89 (unification:op-sentences, by rule:op-sentences)",
+  "outcome": "shared:ts:4299fe5f5e",
+  "why": "masked, it is the ts unit of class 4299fe5f5e (unification:op-sentences, by rule:op-sentences)",
   "n": 19,
   "by": "shared",
   "type": "reworded",
   "section": "reference",
   "sentences": [
-   "ed7f424dbc"
+   "774adb2ffa"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "9beedf1687": {
   "outcome": "unification:op-failure-clause",
@@ -1058,7 +1029,7 @@
   "sentences": [
    "04d3017bb0"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "62d13e0a33": {
   "outcome": "shared:py:62d13e0a33",
@@ -1070,7 +1041,7 @@
   "sentences": [
    "1c3e043734"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "e72c9d98eb": {
   "outcome": "correction:guard-accessor-arg",
@@ -1170,7 +1141,7 @@
   "sentences": [
    "6afe3f6b0d"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "fce7ffe65c": {
   "outcome": "shared:py:e3d31fb103",
@@ -1182,7 +1153,7 @@
   "sentences": [
    "dfa5cb5552"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "b2a89584dc": {
   "outcome": "shared:ts:b2a89584dc",
@@ -1194,7 +1165,7 @@
   "sentences": [
    "4eea983832"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "ae8fd518c8": {
   "outcome": "shared:go:ae8fd518c8",
@@ -1206,7 +1177,7 @@
   "sentences": [
    "e61813ee66"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "717c04afe8": {
   "outcome": "shared:ts:6979eaacb4",
@@ -1218,7 +1189,7 @@
   "sentences": [
    "ea66aefd24"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "35ea4c3e84": {
   "outcome": "shared:ts:35ea4c3e84",
@@ -1230,7 +1201,7 @@
   "sentences": [
    "7247de945f"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "ac200e5023": {
   "outcome": "shared:go:ac200e5023",
@@ -1242,7 +1213,7 @@
   "sentences": [
    "8a90021109"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "06e0e1b2b7": {
   "outcome": "shared:ts:06e0e1b2b7",
@@ -1254,7 +1225,7 @@
   "sentences": [
    "9c7c471a05"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "a986258b72": {
   "outcome": "shared:ts:a986258b72",
@@ -1266,7 +1237,7 @@
   "sentences": [
    "ffe4eb970b"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "b5b91fba23": {
   "outcome": "restored:shared",
@@ -1275,18 +1246,6 @@
   "by": "hand",
   "type": "added",
   "section": "reference"
- },
- "7e13c0a95a": {
-  "outcome": "shared:ts:7e13c0a95a",
-  "why": "masked, it is the ts unit of class 7e13c0a95a (restored:shared, by rule:test-opts-shared)",
-  "n": 19,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "9577ba159e"
-  ],
-  "unreviewed": 1
  },
  "af55f86fa2": {
   "outcome": "restored:shared",
@@ -1304,9 +1263,9 @@
   "type": "added",
   "section": "reference",
   "sentences": [
-   "0f06358e5b"
+   "8ef6d94916"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "a36cfc5046": {
   "outcome": "shared:py:a36cfc5046",
@@ -1318,19 +1277,19 @@
   "sentences": [
    "943a2c940d"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "c7eb7ed6f9": {
-  "outcome": "shared:go:69429bb577",
-  "why": "masked, it is the go unit of class 69429bb577 (restored:shared, by hand)",
+  "outcome": "shared:ts:89c5ef9c6d",
+  "why": "masked, it is the ts unit of class 89c5ef9c6d (restored:shared, by hand)",
   "n": 79,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "2d9199cb7a"
+   "3bb5d3a968"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "90e9b6e073": {
   "outcome": "restored:fact",
@@ -1357,16 +1316,16 @@
   "section": "reference"
  },
  "566d3ef425": {
-  "outcome": "shared:ts:eaf64e26bd",
-  "why": "masked, it is the ts unit of class eaf64e26bd (unification:op-sentences, by rule:op-sentences)",
+  "outcome": "shared:ts:566d3ef425",
+  "why": "masked, it is the ts unit of class 566d3ef425 (unification:op-sentences, by rule:op-sentences)",
   "n": 82,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "9c22b8823a"
+   "37c2dafcf5"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "fbc8bf5458": {
   "outcome": "restored:shared",
@@ -1386,7 +1345,7 @@
   "sentences": [
    "185f26bc68"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "0f10166e63": {
   "outcome": "shared:go:0f10166e63",
@@ -1398,7 +1357,7 @@
   "sentences": [
    "abe9546ee3"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "c2467756ac": {
   "outcome": "shared:ts:6e0387536b",
@@ -1410,7 +1369,7 @@
   "sentences": [
    "82e6814387"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "d3f3b82555": {
   "outcome": "shared:go:d3f3b82555",
@@ -1422,7 +1381,7 @@
   "sentences": [
    "2b8bc511e9"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "7615c6fe93": {
   "outcome": "shared:ts:7615c6fe93",
@@ -1434,7 +1393,7 @@
   "sentences": [
    "c151802d4a"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "6356afc86b": {
   "outcome": "shared:go:6356afc86b",
@@ -1446,7 +1405,7 @@
   "sentences": [
    "120aec2437"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "193859bf79": {
   "outcome": "shared:go:193859bf79",
@@ -1458,7 +1417,7 @@
   "sentences": [
    "22bdd0ff18"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "28d337e733": {
   "outcome": "shared:go:28d337e733",
@@ -1470,7 +1429,7 @@
   "sentences": [
    "2a8d9aa773"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "9023782dca": {
   "outcome": "shared:ts:9023782dca",
@@ -1482,19 +1441,19 @@
   "sentences": [
    "e3081c2053"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "650eff7141": {
-  "outcome": "shared:go:3d50058045",
-  "why": "masked, it is the go unit of class 3d50058045 (correction:ref-6, by rule:actions-table)",
+  "outcome": "shared:go:650eff7141",
+  "why": "masked, it is the go unit of class 650eff7141 (correction:ref-6, by rule:actions-table)",
   "n": 16,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "ebea8de27f"
+   "870d2c9402"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "4f4ee88c0e": {
   "outcome": "correction:ref-6",
@@ -1503,18 +1462,6 @@
   "by": "hand",
   "type": "added",
   "section": "reference"
- },
- "3c49d29119": {
-  "outcome": "shared:go:b31b1f71dd",
-  "why": "masked, it is the go unit of class b31b1f71dd (correction:ref-6, by rule:actions-table)",
-  "n": 16,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "cf564b5fca"
-  ],
-  "unreviewed": 1
  },
  "1095fa7261": {
   "outcome": "shared:ts:1095fa7261",
@@ -1526,7 +1473,7 @@
   "sentences": [
    "8d6016d7e2"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "916036b165": {
   "outcome": "shared:ts:916036b165",
@@ -1538,7 +1485,7 @@
   "sentences": [
    "d77745e7ee"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "6aeea92fca": {
   "outcome": "shared:go:6aeea92fca",
@@ -1550,7 +1497,7 @@
   "sentences": [
    "dc97559d3c"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "3e1ef005aa": {
   "outcome": "shared:go:3e1ef005aa",
@@ -1562,7 +1509,7 @@
   "sentences": [
    "b21c47b21e"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "9ca5c90a96": {
   "outcome": "correction:runtime-forms",
@@ -1582,19 +1529,19 @@
   "sentences": [
    "5338ac6916"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "e861a34f8e": {
-  "outcome": "shared:ts:cbcdf6e5f9",
-  "why": "masked, it is the ts unit of class cbcdf6e5f9 (unification:op-sentences, by rule:op-sentences)",
+  "outcome": "shared:ts:e861a34f8e",
+  "why": "masked, it is the ts unit of class e861a34f8e (unification:op-sentences, by rule:op-sentences)",
   "n": 1,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "d3d603d612"
+   "52d3c15e31"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "066a083189": {
   "outcome": "same-meaning",
@@ -1633,19 +1580,7 @@
   "sentences": [
    "9402aedbb5"
   ],
-  "unreviewed": 1
- },
- "f878d6c74a": {
-  "outcome": "shared:ts:f878d6c74a",
-  "why": "masked, it is the ts unit of class f878d6c74a (correction:S13, by rule:test-nofeature)",
-  "n": 1,
-  "by": "shared",
-  "type": "added",
-  "section": "reference",
-  "sentences": [
-   "d48de033ea"
-  ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "da08f7e7bd": {
   "outcome": "shared:ts:da08f7e7bd",
@@ -1654,10 +1589,8 @@
   "by": "shared",
   "type": "reworded",
   "section": "reference",
-  "sentences": [
-   "0676c37240"
-  ],
-  "unreviewed": 1
+  "sentences": [],
+  "unreviewed": 0
  },
  "f8447fc95c": {
   "outcome": "correction:runtime-forms",
@@ -1665,8 +1598,7 @@
   "n": 1,
   "by": "hand",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "d15797ca9d"
+  "section": "reference"
  },
  "ac2746b27e": {
   "outcome": "correction:runtime-forms",
@@ -1674,45 +1606,43 @@
   "n": 1,
   "by": "hand",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "d8065d07cb"
+  "section": "reference"
  },
  "56561c6006": {
-  "outcome": "shared:ts:e496bcc19a",
-  "why": "masked, it is the ts unit of class e496bcc19a (correction:U34, by rule:class-collision)",
+  "outcome": "shared:ts:56561c6006",
+  "why": "masked, it is the ts unit of class 56561c6006 (correction:U34, by rule:class-collision)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
   "section": "reference",
   "sentences": [
-   "82c5fb6c18"
+   "0071df96c2"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "88dc600aad": {
-  "outcome": "shared:ts:cce9e8691a",
-  "why": "masked, it is the ts unit of class cce9e8691a (unification:accessor-sentence, by rule:accessor-sentence)",
+  "outcome": "shared:ts:88dc600aad",
+  "why": "masked, it is the ts unit of class 88dc600aad (unification:accessor-sentence, by rule:accessor-sentence)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
   "section": "reference",
   "sentences": [
-   "b90b5c03ed"
+   "0071df96c2"
   ],
-  "unreviewed": 1,
-  "rekeyed": "cce9e8691a"
+  "unreviewed": 0
  },
  "b7bbd03809": {
-  "outcome": "shared:ts:409d0f7ba8",
-  "why": "masked, it is the ts unit of class 409d0f7ba8 (correction:U34, by rule:class-collision)",
+  "outcome": "shared:ts:b7bbd03809",
+  "why": "masked, it is the ts unit of class b7bbd03809 (correction:U34, by rule:class-collision)",
   "n": 1,
   "by": "shared",
   "type": "reworded",
   "section": "reference",
   "sentences": [
-   "58f6c63c63"
+   "f6b8425ed5"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "f6aa168485": {
   "outcome": "correction:U34",
@@ -1819,16 +1749,16 @@
   "section": "reference"
  },
  "7393140c1f": {
-  "outcome": "shared:ts:5130ea0617",
-  "why": "masked, it is the ts unit of class 5130ea0617 (correction:U34, by rule:class-collision)",
+  "outcome": "shared:ts:7393140c1f",
+  "why": "masked, it is the ts unit of class 7393140c1f (correction:U34, by rule:class-collision)",
   "n": 1,
   "by": "shared",
   "type": "added",
   "section": "reference",
   "sentences": [
-   "d9b679fcb2"
+   "9fe8f9d917"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "7dd340f0f1": {
   "outcome": "shared:ts:7dd340f0f1",
@@ -1837,10 +1767,8 @@
   "by": "shared",
   "type": "added",
   "section": "reference",
-  "sentences": [
-   "20aa105d6b"
-  ],
-  "unreviewed": 1
+  "sentences": [],
+  "unreviewed": 0
  },
  "e705aa789f": {
   "outcome": "correction:U34",
@@ -1860,7 +1788,7 @@
   "sentences": [
    "799b8582a8"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "b4523a5362": {
   "outcome": "correction:S49",

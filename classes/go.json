@@ -5,8 +5,7 @@
   "n": 17,
   "by": "hand",
   "type": "echo",
-  "section": "tutorial",
-  "rekeyed": "360f66a3d2+e1b0d2d30d"
+  "section": "tutorial"
  },
  "ff4863a314": {
   "outcome": "correction:S28",
@@ -70,17 +69,19 @@
   "n": 17,
   "by": "rule:apikey-env",
   "type": "added",
-  "section": "tutorial",
-  "rekeyed": "9b8d1fdca3"
+  "section": "tutorial"
  },
- "227d62e867": {
-  "outcome": "unification:op-sentences",
-  "why": "",
-  "n": 12,
-  "by": "rule:op-sentences",
+ "9363faf207": {
+  "outcome": "shared:ts:9363faf207",
+  "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
+  "n": 17,
+  "by": "shared",
   "type": "added",
   "section": "tutorial",
-  "rekeyed": "4ee5b3632c"
+  "sentences": [
+   "7a955e855f"
+  ],
+  "unreviewed": 0
  },
  "769cd94ade": {
   "outcome": "unification:op-sentences",
@@ -88,8 +89,7 @@
   "n": 18,
   "by": "rule:op-sentences",
   "type": "added",
-  "section": "tutorial",
-  "rekeyed": "bc4fcddb1f+4ee5b3632c+1d764de090"
+  "section": "tutorial"
  },
  "c0831e892a": {
   "outcome": "unification:step-comment-runtime-fact",
@@ -105,8 +105,7 @@
   "n": 2,
   "by": "rule:basic-secret",
   "type": "added",
-  "section": "tutorial",
-  "rekeyed": "7b051ea3b0"
+  "section": "tutorial"
  },
  "5a3859e529": {
   "outcome": "correction:S28",
@@ -164,24 +163,6 @@
   "type": "missing",
   "section": "tutorial"
  },
- "2081dbd030": {
-  "outcome": "restored:fact",
-  "why": "",
-  "n": 7,
-  "by": "rule:add-go-pair",
-  "type": "added",
-  "section": "tutorial",
-  "rekeyed": "14f5b323fe"
- },
- "6145dede90": {
-  "outcome": "restored:fact",
-  "why": "",
-  "n": 7,
-  "by": "rule:add-go-pair",
-  "type": "added",
-  "section": "tutorial",
-  "rekeyed": "14f5b323fe"
- },
  "84a20c16fc": {
   "outcome": "restored:fact",
   "why": "",
@@ -196,8 +177,7 @@
   "n": 3,
   "by": "hand",
   "type": "added",
-  "section": "tutorial",
-  "rekeyed": "dd5bf246c5"
+  "section": "tutorial"
  },
  "566d36954a": {
   "outcome": "restored:fact",
@@ -205,8 +185,7 @@
   "n": 5,
   "by": "hand",
   "type": "added",
-  "section": "tutorial",
-  "rekeyed": "dd5bf246c5+160b7454ef+e136a25dbb"
+  "section": "tutorial"
  },
  "73e14658e4": {
   "outcome": "unification:step-comment-runtime-fact",
@@ -262,8 +241,7 @@
   "n": 1,
   "by": "hand",
   "type": "added",
-  "section": "tutorial",
-  "rekeyed": "160b7454ef"
+  "section": "tutorial"
  },
  "1fa815677a": {
   "outcome": "correction:S28",
@@ -287,8 +265,7 @@
   "n": 1,
   "by": "rule:add-nested-sentence",
   "type": "added",
-  "section": "tutorial",
-  "rekeyed": "d4e96cf680"
+  "section": "tutorial"
  },
  "64340cef2b": {
   "outcome": "restored:fact",
@@ -296,8 +273,7 @@
   "n": 1,
   "by": "hand",
   "type": "added",
-  "section": "tutorial",
-  "rekeyed": "e136a25dbb"
+  "section": "tutorial"
  },
  "1e40e0611c": {
   "outcome": "same-meaning",
@@ -345,8 +321,7 @@
   "n": 1,
   "by": "hand",
   "type": "added",
-  "section": "tutorial",
-  "rekeyed": "fbac4aa9f2"
+  "section": "tutorial"
  },
  "3bff3ce162": {
   "outcome": "restored:fact",
@@ -354,8 +329,7 @@
   "n": 1,
   "by": "hand",
   "type": "added",
-  "section": "tutorial",
-  "rekeyed": "fbac4aa9f2"
+  "section": "tutorial"
  },
  "d371d2e0ec": {
   "outcome": "unification:write-comment-style",
@@ -891,8 +865,7 @@
   "n": 106,
   "by": "rule:accessor-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "bde0d2283c+cce9e8691a"
+  "section": "reference"
  },
  "4299fe5f5e": {
   "outcome": "unification:op-sentences",
@@ -1386,8 +1359,7 @@
   "n": 1,
   "by": "rule:accessor-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "cce9e8691a"
+  "section": "reference"
  },
  "b7bbd03809": {
   "outcome": "correction:U34",

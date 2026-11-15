@@ -256,6 +256,11 @@ function run(a) {
           if (nh.every(Boolean)) hint = `the NEW side is the reviewed ${nh[0][0].ref} unit of class ${nh[0][0].id}; the OLD side matches no reviewed pair: say what the OLD sentence said that the NEW one does not`
         }
       }
+      // a class accepted (by hand or a rule record) whose NEW sentence a reviewer called false: counted, shown, not failed (the fix is in shared code)
+      if (d && 'ledger' === c.tool && AUTO_TYPES.has(c.type) && !/^(defect|dropped)$/.test(d.outcome)) {
+        const fs = masked(c, myMask, I, lang).map((m) => m.nid).filter((x) => x && 'false' === verd[x])
+        if (fs.length) { rep.falseVerdict = (rep.falseVerdict || 0) + 1; (report.falseVerdict = report.falseVerdict || []).push({ id: c.id, section, sentences: [...new Set(fs)], text: text.slice(0, 120) }) }
+      }
       if (d) { (report.decided = report.decided || {})[c.id] = { by: d.by, outcome: d.outcome, type: c.type, section }; out[c.id] = { outcome: d.outcome, why: d.why || '', n: c.n, by: d.by, type: c.type, section, ...(d.where ? { where: d.where, true: d.true, evidence: d.evidence } : {}), ...(d.sentences ? { sentences: d.sentences, unreviewed: d.unreviewed } : {}) }; const k = d.by === 'hand' ? 'hand' : d.by === 'shared' ? 'shared' : 'pinned'; rep[k]++; t[k]++ }
       else {
         rep.open++; t.open++; (report.open = report.open || {})[c.id] = { type: c.type, section, text: text.slice(0, 200), ...(hint ? { hint } : {}) }
@@ -272,7 +277,7 @@ function run(a) {
   if (!a.dry) K.writeFile(file, JSON.stringify(out, null, 1) + '\n')
   report.file = a.dry ? null : file
   // what the portcheck summary prints about shared sentences
-  const sum = { matched: 0, unreviewed: 0, fewer: 0, absent: 0, absentExplained: 0, sections: {} }
+  const sum = { matched: 0, unreviewed: 0, fewer: 0, absent: 0, absentExplained: 0, falseVerdict: (report.falseVerdict || []).length, falseList: report.falseVerdict || [], sections: {} }
   for (const [s, r] of Object.entries(report.sections)) { sum.matched += r.shared; sum.unreviewed += r.sharedUnreviewed || 0; sum.fewer += r.fewer || 0; sum.absent += r.absent || 0; sum.absentExplained += r.absentExplained || 0; sum.sections[s] = { matched: r.shared, unreviewed: r.sharedUnreviewed || 0, fewer: r.fewer || 0, absent: r.absent || 0 } }
   report.sentences = sum
   K.writeFile(Path.join(a.out, lang, 'sentences.json'), JSON.stringify(sum, null, 1) + '\n')

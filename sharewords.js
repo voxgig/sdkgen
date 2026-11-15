@@ -36,6 +36,7 @@ const C = require('./cut.js')
 const K = require('./common.js')
 const Facts = require('./facts.js')
 const { sourceWords } = require('./share.js')
+const Ident = require('./ident.js')
 
 const prosewords = (s) => C.words(String(s).replace(/`[^`]*`/g, ' '))
 const flat = (s) => String(s).replace(/\s+/g, ' ').trim()
@@ -63,6 +64,9 @@ function main() {
   const sections = K.list(a.section) || C.SECTIONS
   const named = K.list(a.lang) || []
   const vars = C.variationsOf(a.root)
+  // "the same sentence" is ident.js's identity (one template, one sentence,
+  // whatever each language's tokens); --v32 counts with the v3.2 mask instead
+  const I = a.v32 ? null : Ident.make({ clone: a.clone, old: a.old || Path.join(Path.dirname(Path.resolve(a.root)), 'old'), new: a.root })
   const res = {}
   for (const section of sections) {
     const langs = [...new Set([...(C.REG.ported[section] || []), ...named])]
@@ -80,7 +84,7 @@ function main() {
       const U = {}
       for (const l of langs) {
         const s = C.loadSection(a.root, v, section, l)
-        U[l] = null == s ? [] : C.units(s).map((u) => ({ u, m: u.kind + '\u0000' + M[l](u.text, u.kind) }))
+        U[l] = null == s ? [] : C.units(s).map((u) => ({ u, m: I ? I.identity(u.text, u.kind, l) : u.kind + '\u0000' + M[l](u.text, u.kind) }))
       }
       const who = new Map()
       for (const l of langs) for (const x of U[l]) { if (!who.has(x.m)) who.set(x.m, new Set()); who.get(x.m).add(l) }

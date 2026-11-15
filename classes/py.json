@@ -589,8 +589,7 @@
   "n": 27,
   "by": "rule:op-signature",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "c0e6640e69+fe603541cd"
+  "section": "reference"
  },
  "1e52c8e19e": {
   "outcome": "correction:runtime-forms",
@@ -606,8 +605,7 @@
   "n": 92,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "6738d1d568+be62a48d77"
+  "section": "reference"
  },
  "4299fe5f5e": {
   "outcome": "unification:op-sentences",
@@ -1154,8 +1152,7 @@
   "n": 1,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "6738d1d568"
+  "section": "reference"
  },
  "58dce0253b": {
   "outcome": "correction:U34",
@@ -1286,8 +1283,8 @@
   "section": "reference"
  },
  "3d0c046be0": {
-  "outcome": "shared:c:88dff1bb13",
-  "why": "masked, it is the c unit of class 88dff1bb13 (restored:fact, by rule:add-stream-sig)",
+  "outcome": "shared:ts:39135c73d0",
+  "why": "masked, it is the ts unit of class 39135c73d0 (restored:fact, by rule:stream-member)",
   "n": 1,
   "by": "shared",
   "type": "added",
@@ -1295,7 +1292,7 @@
   "sentences": [
    "7034f074ec"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "d2af3edbca": {
   "outcome": "correction:S49",

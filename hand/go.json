@@ -291,5 +291,30 @@
   "outcome": "restored:shared",
   "why": "restored as the kind sentence 'Run an operation through the pipeline and stream its result items.' followed by the runs sentence, and go's note 'It sends the items on the returned channel, which closes when the stream ends.'",
   "n": 1
+ },
+ "defa8274d4": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "the new splitter cuts go's program step lead from the sentence after it (cut.js splitSentences, bold lead after [.!?]**); this is the lead alone, the step title ReadmeQuick.ts prints for p.program. Re-key (rekey.js, logs/rekey/go.log) found it in four old classes that disagreed only because each held a different sentence after the lead: defa8274d4 (the bare lead, unification:go-tutorial-program, rule add-go-steps), 9b8d1fdca3 (client-env-sentence), 7b051ea3b0 (S50), e1b0d2d30d (same-meaning, hand). The lead takes the bare lead's decision; the sentences after it are their own classes now and keep theirs.",
+  "n": 21
+ },
+ "227d62e867": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "the new splitter cuts go's program step lead from the sentence after it (cut.js splitSentences, bold lead after [.!?]**); this is the lead alone, the step title ReadmeQuick.ts prints for p.program. Split from 4ee5b3632c (unification:op-sentences, rule record); the sentence after the lead is 769cd94ade and keeps op-sentences.",
+  "n": 12
+ },
+ "b214355702": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "the new splitter cuts go's program step lead from the sentence after it (cut.js splitSentences, bold lead after [.!?]**); this is the lead alone, the step title ReadmeQuick.ts prints for p.program. Re-key conflict: 1d764de090 (op-sentences) and d4e96cf680 (tutorial-nested-load) both began with this lead; the sentences after it are 769cd94ade and f2812787cc and keep their decisions.",
+  "n": 6
+ },
+ "2081dbd030": {
+  "outcome": "unification:go-tutorial-program",
+  "why": "the new splitter cuts go's program step lead from the sentence after it (cut.js splitSentences, bold lead after [.!?]**); this is the lead alone, the step title ReadmeQuick.ts prints for p.program. Split from 14f5b323fe (restored:fact); the sentence after it is 6145dede90.",
+  "n": 7
+ },
+ "6145dede90": {
+  "outcome": "restored:fact",
+  "why": "the sentence after go's bold lead '**List planet records.**', split from 14f5b323fe (restored:fact: go's (value, error) pair and its []any list), whose decision it inherits (rekey.js listed it as a split part; the stage-3a rule record did not match the part's text).",
+  "n": 7
  }
 }

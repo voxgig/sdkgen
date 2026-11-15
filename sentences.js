@@ -27,6 +27,7 @@ const K = require('./common.js')
 const Ledger = require('./ledger.js')
 const Facts = require('./facts.js')
 const Classify = require('./classify.js')
+const Ident = require('./ident.js')
 
 const AUTO_TYPES = new Set(['reworded', 'added'])
 const SHARED_SRC = ['ts/src/cmp', 'ts/src/helpers']
@@ -71,12 +72,13 @@ function main() {
   const verd = Classify.verdicts(a.sentences)
   const srcs = sources(clone)
   const S = new Map()
+  const I = Ident.make({ clone, old: a.old, new: a.new })
+  const modelText = new Map()
   const t0 = Date.now()
   for (const section of sections) {
     const refs = K.list(a.refs) || C.REG.ported[section] || []
     for (const r of refs) {
       const decided = JSON.parse(Fs.readFileSync(Path.join(a.classes, r + '.json'), 'utf8'))
-      const rmask = Facts.masker(Facts.load(ts, r), [a.old, a.new])
       for (const c of Ledger.run(a, section, r).classes) {
         if (!AUTO_TYPES.has(c.type)) continue
         const d = decided[c.id]
@@ -84,8 +86,10 @@ function main() {
         for (const show of c.inst.values()) {
           const kind = 'reworded' === c.type ? c.kind.split(':')[0] : c.kind
           const text = 'reworded' === c.type ? show[1] : show[0]
-          const m = rmask(text, kind)
-          const id = Classify.sentenceId(kind, m)
+          // text the fixture model holds is no sentence of shared code
+          if (I.isModelText(text)) { modelText.set(text, (modelText.get(text) || new Set()).add(r)); continue }
+          const m = I.identity(text, kind, r).split('\u0000').slice(1).join('\u0000')
+          const id = I.sentenceId(text, kind, r)
           if (!S.has(id)) S.set(id, { id, section, kind, masked: m, example: { lang: r, where: c.where, text }, langs: new Set(), classes: new Set(), by: {}, template: null, verdict: verd[id] || null })
           const x = S.get(id)
           x.langs.add(r)
@@ -96,6 +100,23 @@ function main() {
     }
   }
   for (const x of S.values()) x.template = templateOf(srcs, x.example.text)
+  // A sentence one language prints: a note of its provider; a unit that is
+  // all code (a signature, a key, a call: that language's printer); shared
+  // code that one condition selects (its words are a shared template's);
+  // another literal of its provider; or none of these, listed.
+  const provSrc = {}
+  const provOf = (l) => provSrc[l] = provSrc[l] || [{ file: 'Syntax_' + l + '.ts', text: C.readIf(Path.join(ts, 'project/.sdk/src/cmp', l, 'Syntax_' + l + '.ts')) || '' }]
+  const notesOf = (l) => Object.values(Facts.load(ts, l).notes || {}).map((n) => String(n).replace(/\s+/g, ' '))
+  for (const x of S.values()) {
+    if (1 !== x.langs.size) continue
+    const l = [...x.langs][0]
+    const flat = x.example.text.replace(/\s+/g, ' ')
+    if (flat.length > 8 && notesOf(l).some((n) => n.includes(flat))) x.single = 'note'
+    else if (!/[A-Za-z]{2}/.test(x.masked.replace(/⟦[^⟧]*⟧|`[^`]*`|[ⒺⒻⓈⓁⓃ]/g, ''))) x.single = 'code'
+    else if (x.template) x.single = 'shared-condition'
+    else if (templateOf(provOf(l), x.example.text)) x.single = 'provider-literal'
+    else x.single = 'unexplained'
+  }
   const list = [...S.values()].map((x) => ({ ...x, langs: [...x.langs].sort(), classes: x.classes.size }))
   // per section: how many, how accepted, how many found in a template, verdicts
   const bySec = {}
@@ -109,7 +130,8 @@ function main() {
     if (x.template) b.template++
     b.verdict[x.verdict || 'none']++
   }
-  const res = { sentences: list.length, sections: bySec, match: null }
+  for (const x of list) if (1 === x.langs.length) { const b = bySec[x.section]; b.single = b.single || { all: 0 }; b.single.all++; b.single[x.single] = (b.single[x.single] || 0) + 1 }
+  const res = { sentences: list.length, sections: bySec, match: null, modelText: [...modelText.entries()].map(([t, ls]) => ({ text: t, langs: [...ls].sort() })) }
   if (a.match) {
     res.match = {}
     for (const section of sections) for (const l of C.REG.ported[section] || []) {
@@ -121,10 +143,12 @@ function main() {
   }
   K.writeFile(Path.join(a.out, 'sentences.json'), JSON.stringify({ ...res, list }, null, 1) + '\n')
   const L = [`# reference sentences: ${list.length} distinct masked sentences (NEW side of the reference languages' reworded and added classes)`]
+  L.push(`# text the fixture model holds, left out: ${res.modelText.length} (${res.modelText.map((x) => JSON.stringify(x.text.slice(0, 50))).join(', ')})`)
+  for (const [s, b] of Object.entries(bySec)) L.push(`# ${s}: printed by one language ${b.single ? b.single.all : 0}: ${b.single ? Object.entries(b.single).filter(([k]) => 'all' !== k).map(([k, v]) => k + ' ' + v).join(', ') : '-'}`)
   for (const [s, b] of Object.entries(bySec)) L.push(`# ${s}: ${b.sentences} (accepted by hand only ${b.byHandOnly}, by stage-3a rule records only ${b.byRuleOnly}, both ${b.mixed}; template found ${b.template}; verdicts ok ${b.verdict.ok}, false ${b.verdict.false}, awkward ${b.verdict.awkward}, none ${b.verdict.none})`)
   if (res.match) for (const [l, x] of Object.entries(res.match)) L.push(`# matched from scratch, ${l}: ` + Object.entries(x).map(([s, y]) => `${s} ${y.matched} of ${y.classes} classes (${y.againstUnreviewed} against a sentence with no verdict)`).join('; '))
   for (const x of list.sort((p, q) => p.section.localeCompare(q.section) || q.langs.length - p.langs.length)) {
-    L.push('', `[${x.id}] ${x.section} ${x.kind} | ${x.langs.length} language(s) ${x.langs.join(' ')}, ${x.classes} class(es) | accepted: ${Object.entries(x.by).map(([k, v]) => k + ' ' + v).join(', ')} | verdict: ${x.verdict || 'NONE'} | template: ${x.template ? `${x.template.file} (${x.template.n} of ${x.template.of} runs)` : 'not found'}`)
+    L.push('', `[${x.id}] ${x.section} ${x.kind} | ${x.langs.length} language(s) ${x.langs.join(' ')}${x.single ? ' (' + x.single + ')' : ''}, ${x.classes} class(es) | accepted: ${Object.entries(x.by).map(([k, v]) => k + ' ' + v).join(', ')} | verdict: ${x.verdict || 'NONE'} | template: ${x.template ? `${x.template.file} (${x.template.n} of ${x.template.of} runs)` : 'not found'}`)
     L.push(`   masked:  ${x.masked}`)
     L.push(`   example: ${x.example.lang} ${x.example.where.split(':')[0]}: ${x.example.text}`)
   }

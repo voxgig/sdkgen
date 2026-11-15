@@ -7,7 +7,7 @@
   },
   "ref.heading": {
    "value": "{module}",
-   "why": "the page's section heading names what the members are reached through; clojure has no client type, and the functions are called through the namespace sdk.api (README `(require '[sdk.api :as api])`, every signature `(api/...)`); OLD's 'Client' named no runtime thing",
+   "why": "the page's section heading names what the members are reached through; clojure has no client type, and the functions are called through the namespace sdk.api (README `(require '[sdk.api :as api]`, the form's first line, every signature `(api/...)`); OLD's 'Client' named no runtime thing",
    "evidence": "NEW B/clojure/README.md:52 `(require '[sdk.api :as api]`; Main_clojure.ts:85-90 sdk.api re-exports make-sdk, test-sdk, direct, prepare, options-map; OLD B/clojure/REFERENCE.md:6 '## Client'"
   },
   "ref.valueType.OBJECT": {

@@ -525,8 +525,7 @@
   "n": 7,
   "by": "rule:root-step-comment",
   "type": "reworded",
-  "section": "rootquick",
-  "rekeyed": "9c55b7a847+865b8bed5e"
+  "section": "rootquick"
  },
  "33da37ea50": {
   "outcome": "unification:step-comment-runtime-fact",
@@ -790,8 +789,7 @@
   "n": 93,
   "by": "hand",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "37cbd7c81c"
+  "section": "reference"
  },
  "8ac9e540a8": {
   "outcome": "restored:shared",
@@ -807,8 +805,7 @@
   "n": 92,
   "by": "rule:accessor-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "bde0d2283c+cce9e8691a"
+  "section": "reference"
  },
  "4299fe5f5e": {
   "outcome": "unification:op-sentences",
@@ -936,8 +933,7 @@
   "n": 93,
   "by": "hand",
   "type": "missing",
-  "section": "reference",
-  "rekeyed": "d2cb7060c6+58f6fe5f58"
+  "section": "reference"
  },
  "363701dbb8": {
   "outcome": "restored:shared",
@@ -1099,9 +1095,9 @@
   "type": "added",
   "section": "reference",
   "sentences": [
-   "111e3864bc"
+   "fef59d5955"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "134eeab855": {
   "outcome": "restored:shared",
@@ -1344,8 +1340,7 @@
   "n": 1,
   "by": "hand",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "37cbd7c81c"
+  "section": "reference"
  },
  "b7bbd03809": {
   "outcome": "correction:U34",
@@ -1369,8 +1364,7 @@
   "n": 1,
   "by": "rule:accessor-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "cce9e8691a"
+  "section": "reference"
  },
  "cff43aaa1d": {
   "outcome": "restored:shared",
@@ -1378,8 +1372,7 @@
   "n": 1,
   "by": "hand",
   "type": "missing",
-  "section": "reference",
-  "rekeyed": "d2cb7060c6"
+  "section": "reference"
  },
  "dac11a1691": {
   "outcome": "correction:G27",

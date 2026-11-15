@@ -813,8 +813,7 @@
   "n": 93,
   "by": "rule:accessor-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "bde0d2283c"
+  "section": "reference"
  },
  "042740d448": {
   "outcome": "unification:direct-table",
@@ -830,8 +829,7 @@
   "n": 93,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "d5b8571b7f"
+  "section": "reference"
  },
  "92ce533dbd": {
   "outcome": "restored:shared",
@@ -1151,8 +1149,7 @@
   "n": 93,
   "by": "rule:add-stream-sig",
   "type": "added",
-  "section": "reference",
-  "rekeyed": "88dff1bb13"
+  "section": "reference"
  },
  "b3483ee526": {
   "outcome": "restored:fact",
@@ -1384,8 +1381,7 @@
   "n": 1,
   "by": "rule:accessor-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "bde0d2283c"
+  "section": "reference"
  },
  "9b30bab00c": {
   "outcome": "unification:member-sentences",
@@ -1393,8 +1389,7 @@
   "n": 1,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "d5b8571b7f"
+  "section": "reference"
  },
  "dac11a1691": {
   "outcome": "correction:G27",
@@ -1458,8 +1453,7 @@
   "n": 1,
   "by": "rule:add-stream-sig",
   "type": "added",
-  "section": "reference",
-  "rekeyed": "88dff1bb13"
+  "section": "reference"
  },
  "5153f403d8": {
   "outcome": "correction:S49",

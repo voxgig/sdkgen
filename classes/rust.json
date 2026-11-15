@@ -757,8 +757,7 @@
   "n": 92,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "6738d1d568+be62a48d77"
+  "section": "reference"
  },
  "92ce533dbd": {
   "outcome": "restored:shared",
@@ -1318,8 +1317,7 @@
   "n": 1,
   "by": "rule:make-sentence",
   "type": "reworded",
-  "section": "reference",
-  "rekeyed": "6738d1d568"
+  "section": "reference"
  },
  "58dce0253b": {
   "outcome": "correction:U34",

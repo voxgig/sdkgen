@@ -1207,7 +1207,7 @@
   "sentences": [
    "f2901d9293"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "65ab1c1cb3": {
   "outcome": "unification:op-failure-clause",
@@ -1259,7 +1259,7 @@
   "sentences": [
    "82e6814387"
   ],
-  "unreviewed": 1
+  "unreviewed": 0
  },
  "d3f3b82555": {
   "outcome": "correction:ref-6",

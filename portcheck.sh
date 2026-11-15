@@ -13,7 +13,9 @@
 #      with no verdict in reviewed/sentences.json.
 # Writes only this language's files: classes/<lang>.json and review/<lang>/.
 # Exit 1 on anything unclassified (RECOUNT and INVALID included), a defect, an
-# impure provider, notes with no region the lint read, or a failed guard.
+# impure provider, notes with no region the lint read, a failed guard, a stale
+# build (a source newer than its output) or a stale hand record (a reason that
+# quotes text no page and no file of the clone holds any more).
 set -u
 here="$(cd "$(dirname "$0")" && pwd)"
 clone="$(cd "$1" && pwd)"; root="$(cd "$2" && pwd)"; lang="$3"
@@ -44,6 +46,10 @@ fi
 missing_vars=$(comm -23 <(ls "$root/old" | sort) <(ls "$root/new" | sort) | tr '\n' ' ')
 step "sections: $sections; variations in old/ missing from new/: ${missing_vars:-none}"
 
+# the build must be current: a failed build leaves the previous output in place
+step "build: is every output newer than its source (ts/src, ts/test, the components and fragments)"
+node "$here/buildfresh.js" "$clone" > "$out/build.txt" 2>&1 || { grep '^STALE BUILD' "$out/build.txt" | head -20; rc=1; }
+
 cls="$here/classes"; scratch=(); fscratch=()
 if [ "${SCRATCH:-0}" = 1 ]; then cls="$out/scratch-classes"; scratch=(--scratch --out-file "$cls/$lang.json"); fscratch=(--scratch); mkdir -p "$cls"; step "FROM SCRATCH: no hand entries, no rule records, no hand-recorded facts; classes in $cls"; fi
 step "classify (hand/$lang.json, then stage-3a rule records for this language, then exact shared sentences)"
@@ -54,6 +60,10 @@ step "blocks";   node "$here/blocks.js" --old "$root/old" --new "$root/new" --la
 node "$here/ledger.js" --old "$root/old" --new "$root/new" --lang "$lang" --section "$sections" --classes "$cls" > "$out/ledger.log" 2>&1
 node "$here/blocks.js" --old "$root/old" --new "$root/new" --lang "$lang" --section "$sections" --classes "$cls" > "$out/blocks.log" 2>&1
 step "fact sheet (and the language and convention facts against the OLD page)"; node "$here/factsheet.js" --clone "$clone" --old "$root/old" --new "$root/new" --lang "$lang" --section "$sections" "${fscratch[@]}" > "$out/factsheet.log" 2>&1 || rc=1
+if [ "${SCRATCH:-0}" != 1 ]; then
+  step "hand records: does every quotation in a reason still stand on a page or in the clone"
+  node "$here/handstale.js" --clone "$clone" --old "$root/old" --new "$root/new" --lang "$lang" --json > "$out/handstale.json" 2> "$out/handstale.err" || rc=1
+else rm -f "$out/handstale.json"; fi
 step "purity";   node "$here/purity.js" --providers "$clone/ts/project/.sdk/src/cmp" --lang "$lang" --root "$root/new" --json > "$out/purity.json" 2> "$out/purity.err" || rc=1
 
 guard="${GUARD:-ts/dist-test/runtimefacts.test.js}"
