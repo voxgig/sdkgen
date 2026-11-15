@@ -74,14 +74,15 @@ const forms: Forms = {
     'ref.facts.direct.okFalse': { value: "0", file: "src/cmp/perl/fragment/Main.fragment.pm", quote: "'ok' => 0," },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
     'ref.facts.testMock': { value: "generated", file: "src/cmp/perl/Main_perl.ts", quote: "  return ${model.const.Name}BaseFeature->new;" },
-    'ref.facts.ctor[0]': { file: 'src/cmp/perl/Main_perl.ts', quote: "// callers write `use lib '<sdk>/lib'; use <Name>SDK;`." },
+    // `use lib '<sdk>/lib'` read from the SDK's own directory, which is where the Makefile runs its suite with -Ilib.
+    'ref.facts.ctor[0]': { file: 'src/cmp/perl/Main_perl.ts', quote: "// callers write `use lib '<sdk>/lib'; use <Name>SDK;`.", also: [{ file: 'tm/perl/Makefile', quote: ['# netsim tests) with prove (TAP). -Ilib puts the generated SDK module on', '\tprove -r -Ilib t/'] }] },
     'ref.facts.ctor[1]': { file: 'tm/perl/t/feature.t', quote: 'use ProjectNameSDK;' },
     'ref.facts.direct.returns': { file: MAIN, quote: ['# direct() is the raw-HTTP escape hatch: it always returns a result hash', '# ({ ok => ..., ... }) and never dies.'], unquoted: { hashref: 'the result is a hash reference literal; the runtime says "a result hash"' } },
     'ref.facts.prepare.returns': { file: MAIN, quote: '# return just the fetchdef hashref (dying on error) so callers -' },
-    'ref.facts.none': { file: ENTITY, quote: 'return undef unless @items;' },
+    'ref.facts.none': { file: 'src/cmp/perl/fragment/EntityLoadOp.fragment.pm', quote: '# (undef is treated as an empty match). ctrl: optional per-call control.' },
     'facts.collection': { file: 'src/cmp/perl/fragment/EntityListOp.fragment.pm', quote: '# Returns the matching EntityName items as an arrayref of entities, one per' },
     'facts.recordType': { file: ENTITY, quote: '# Returns the current EntityName data (hashref).' },
-    'ref.facts.container': { file: MAIN, quote: '$options = {} unless defined $options;', unquoted: { hashref: 'a `{}` literal is a hash reference; the runtime never names the type' } },
+    'ref.facts.container': { file: MAIN, quote: '$options = {} unless defined $options;', unquoted: { hashref: 'the options default to a `{}` literal, a hash reference; the runtime names hashref for a match, request data and a record (EntityLoadOp.fragment.pm:5, EntityCreateOp.fragment.pm:5, Entity.fragment.pm:99), never in a comment on the options themselves' } },
     'ref.facts.client[0].copy': { value: true, file: MAIN, quote: 'my $out = Voxgig::Struct::clone($self->{options});' },
     'ref.facts.client[1].kind': { value: 'utility', file: MAIN, quote: 'return ProjectNameUtility->copy($self->{_utility});' },
     'ref.facts.entity[0].copy': { value: true, file: ENTITY, quote: 'return Voxgig::Struct::clone($self->{_data});' },
@@ -89,7 +90,7 @@ const forms: Forms = {
     'ref.facts.body.values': { value: 'a byte string, a character string, sent as UTF-8, or a filehandle', file: 'tm/perl/utility/media.pm', quote: '# A string of bytes, a character string (sent as UTF-8), or a filehandle. A' },
     'ref.facts.body.once': { value: 'a filehandle', file: 'tm/perl/utility/media.pm', quote: '# filehandle can be read once, so it is read here, before the first attempt,' },
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|alarm\b/i, files: ['tm/perl/utility/fetcher.pm'] } },
-    'notes.member:streamFunction': { value: 'Each item is the hashref `data_get` returns, not an entity.', file: ENTITY, quote: '# An entity is yielded as its record, the hashref its data_get returns.' },
+    'notes.member:streamFunction': { value: 'An entity is yielded as the hashref its `data_get` returns.', file: ENTITY, quote: '# An entity is yielded as its record, the hashref its data_get returns.' },
   },
 }
 
