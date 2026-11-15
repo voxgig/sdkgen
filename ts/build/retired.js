@@ -23,7 +23,7 @@ const TREE = 'src/cmp/'
 const OUT = path.join(TS, 'project', RETIRED_FILE)
 
 const git = (args, input) => execFileSync('git', args,
-  { cwd: TS, encoding: 'buffer', maxBuffer: 1 << 30, input })
+  { cwd: path.join(TS, '..'), maxBuffer: 1 << 30, input })
 
 const semver = (tag) => tag.slice(1).split('.').map(Number)
 const older = (a, b) => {

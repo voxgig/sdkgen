@@ -166,8 +166,11 @@ publish:
 	@# asserts they agree — so without this stamp `make all` below fails
 	@# on every real bump, and the release command could never work.
 	cd ts && npm run embed-version
+	@# The fingerprints of every released version of each file this release
+	@# no longer ships, read from the release tags, which CI does not fetch.
+	cd ts && npm run retired
 	$(MAKE) all
-	git add ts/package.json ts/package-lock.json ts/bin/voxgig-sdkgen ts/project/sdkgen-package.json
+	git add ts/package.json ts/package-lock.json ts/bin/voxgig-sdkgen ts/project/sdkgen-package.json ts/project/sdkgen-retired.json
 	git commit -m "$(V)"
 	git push origin main
 	@# `--ref main` is a MOVING target: another commit can land between the

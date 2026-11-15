@@ -378,6 +378,10 @@ async function guardCopies<T>(
   const files = record.files
   const flags = actx.flags ?? {}
 
+  // Copies an add found to be a released version (releasedCopy): the toolchain
+  // wrote them as they are, whatever the record holds.
+  const released = new Set<string>()
+
   if (0 < record.damaged.length) {
     actx.log.warn({
       point: 'copies-damaged', lines: record.damaged,
@@ -397,13 +401,14 @@ async function guardCopies<T>(
     keep: true === flags.keep,
     dryrun: true === actx.opts?.dryrun,
     manage: isCopy,
-    recorded: (rel: string) => files[rel],
+    recorded: (rel: string) => released.has(rel) ?
+      fingerprint(fs.readFileSync(Path.join(actx.folder, ...rel.split('/')))) : files[rel],
     fingerprint,
     basedir: BASE_DIR,
     conflictdir: CONFLICT_DIR,
     versions: gitVersions,
     error: (msg: string) => new SdkGenError(msg),
-  }, (gfs: any) => run({ ...actx, fs: () => gfs, copyGuarded: true }))
+  }, (gfs: any) => run({ ...actx, fs: () => gfs, copyGuarded: true, released }))
 }
 
 
