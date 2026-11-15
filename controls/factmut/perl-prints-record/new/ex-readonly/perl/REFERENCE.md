@@ -88,12 +88,13 @@ Make a direct HTTP request to any API endpoint.
 | `$fetchargs->{body}` | `any` | Request body (hashrefs are JSON-serialized). |
 | `$fetchargs->{ctrl}` | `hashref` | Control options. |
 
-**Returns:** `hashref`, a result map. For a response, 2xx or not, it
-holds the keys `ok`, `status`, `headers` and `data`, and `ok` is `0`
-unless the status is 2xx. When the body cannot be read, `ok` is `0` and
-the key `err` holds the error; a request that cannot be made gives only
-`ok` (`0`) and `err`. A key is read as `$result->{err}`. A failure is
-reported in the result, not as an error, so branch on `$result->{ok}`.
+**Returns:** `hashref`, a result map. For a response whose body is read,
+2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and
+`ok` is `0` unless the status is 2xx. When the body cannot be read, `ok`
+is `0` and the key `err` holds the error, read as `$result->{err}`; a
+request that cannot be made gives only `ok` (`0`) and `err`. A failure
+is reported in the result, not as an error, so branch on
+`$result->{ok}`.
 
 #### `prepare($fetchargs) -> hashref`
 
@@ -124,8 +125,9 @@ my $planet = $client->Planet;
 
 #### `list($reqmatch, $ctrl) -> arrayref`
 
-List entities matching the given criteria. The match is optional.
-Returns an `arrayref` of entities, one per record, and dies on failure.
+List entities matching the given criteria. The match is optional; a call
+without one is `list()`. Returns an `arrayref` of entities, one per
+record, and dies on failure.
 
 ```perl
 my $results = $client->Planet->list();
@@ -155,7 +157,8 @@ Set the entity data.
 
 #### `match_get() -> hashref`
 
-Get the entity match criteria.
+Get the entity match criteria. Returns a copy of the current match
+criteria.
 
 #### `match_set($match)`
 
@@ -170,7 +173,8 @@ options.
 
 Run an operation through the pipeline and return a function that returns
 its next result item on each call, and `undef` once the items end. The
-operation runs before the call returns.
+operation runs before the call returns. It ends early once
+`callopts.signal` reports an abort.
 
 An entity is yielded as the hashref its `data_get` returns.
 
@@ -198,8 +202,9 @@ my $record = $client->Record;
 
 #### `list($reqmatch, $ctrl) -> arrayref`
 
-List entities matching the given criteria. The match is optional.
-Returns an `arrayref` of entities, one per record, and dies on failure.
+List entities matching the given criteria. The match is optional; a call
+without one is `list()`. Returns an `arrayref` of entities, one per
+record, and dies on failure.
 
 ```perl
 my $results = $client->Record->list();
@@ -220,7 +225,8 @@ Set the entity data.
 
 #### `match_get() -> hashref`
 
-Get the entity match criteria.
+Get the entity match criteria. Returns a copy of the current match
+criteria.
 
 #### `match_set($match)`
 
@@ -235,7 +241,8 @@ options.
 
 Run an operation through the pipeline and return a function that returns
 its next result item on each call, and `undef` once the items end. The
-operation runs before the call returns.
+operation runs before the call returns. It ends early once
+`callopts.signal` reports an abort.
 
 An entity is yielded as the hashref its `data_get` returns.
 
@@ -263,8 +270,9 @@ my $utility = $client->Utility;
 
 #### `list($reqmatch, $ctrl) -> arrayref`
 
-List entities matching the given criteria. The match is optional.
-Returns an `arrayref` of entities, one per record, and dies on failure.
+List entities matching the given criteria. The match is optional; a call
+without one is `list()`. Returns an `arrayref` of entities, one per
+record, and dies on failure.
 
 ```perl
 my $results = $client->Utility->list();
@@ -285,7 +293,8 @@ Set the entity data.
 
 #### `match_get() -> hashref`
 
-Get the entity match criteria.
+Get the entity match criteria. Returns a copy of the current match
+criteria.
 
 #### `match_set($match)`
 
@@ -300,7 +309,8 @@ options.
 
 Run an operation through the pipeline and return a function that returns
 its next result item on each call, and `undef` once the items end. The
-operation runs before the call returns.
+operation runs before the call returns. It ends early once
+`callopts.signal` reports an abort.
 
 An entity is yielded as the hashref its `data_get` returns.
 

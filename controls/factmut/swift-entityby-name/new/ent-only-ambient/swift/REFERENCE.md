@@ -75,13 +75,13 @@ Make a direct HTTP request to any API endpoint.
 | `fetchargs["body"]` | `Value` | Request body (maps are JSON-serialized). |
 | `fetchargs["ctrl"]` | `VMap` | Control options. |
 
-**Returns:** `VMap`, a result map. For a response, 2xx or not, it holds
-the keys `ok`, `status`, `headers` and `data`, and `ok` is `false`
-unless the status is 2xx. When the body cannot be read, `ok` is `false`
-and the key `err` holds the error; a request that cannot be made gives
-only `ok` (`false`) and `err`. A key is read as `result.entries["err"]`.
-A failure is reported in the result, not as an error, so branch on
-`result.entries["ok"] == .bool(true)`.
+**Returns:** `VMap`, a result map. For a response whose body is read,
+2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and
+`ok` is `false` unless the status is 2xx. When the body cannot be read,
+`ok` is `false` and the key `err` holds the error, read as
+`result.entries["err"]`; a request that cannot be made gives only `ok`
+(`false`) and `err`. A failure is reported in the result, not as an
+error, so branch on `result.entries["ok"] == .bool(true)`.
 
 #### `prepare(_ fetchargs: VMap?) throws -> VMap`
 
@@ -112,8 +112,8 @@ let ambient = client.Ambient()
 #### `load(_ reqmatch: VMap?, _ ctrl: VMap?) throws -> Value`
 
 Load a single entity matching the given criteria. Returns a value
-holding the entity, and throws on failure.
-`(result.asNative as? Entity)?.data()` reads its record.
+holding the entity, and throws on failure. `asNative as? Entity` takes
+the entity out, and `result.data()` reads its record.
 
 ```swift
 let result = try client.Ambient().load(nil, nil)
@@ -128,7 +128,8 @@ to set it.
 
 #### `matchv(_ newmatch: Value?) -> Value`
 
-Get the entity match criteria. Pass a `Value` to set it.
+Get the entity match criteria. Returns a copy of the current match
+criteria. Pass a `Value` to set it.
 
 #### `make() -> Entity`
 
@@ -138,7 +139,8 @@ options.
 #### `stream(_ action: String, _ args: VMap? = nil, _ callopts: VMap? = nil) throws -> AsyncStream<Value>`
 
 Run an operation through the pipeline and yield its result items as an
-async iterator. The operation runs before the call returns.
+async iterator. The operation runs before the call returns. It ends
+early once `callopts.signal` reports an abort.
 
 #### `getName() -> String`
 

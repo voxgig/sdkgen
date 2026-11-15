@@ -39,6 +39,7 @@ planet. Every operation returns entities, not raw records.
 ### 1. Create a client
 
 ```perl
+use lib 'lib';
 use DemoSDK;
 
 my $client = DemoSDK->new;

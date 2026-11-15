@@ -107,13 +107,13 @@ Make a direct HTTP request to any API endpoint.
 | `fetchargs["body"]` | `any` | Request body (hashes are JSON-serialized). |
 | `fetchargs["ctrl"]` | `Hash` | Control options. |
 
-**Returns:** `Hash`, a result map. For a response, 2xx or not, it holds
-the keys `ok`, `status`, `headers` and `data`, and `ok` is `false`
-unless the status is 2xx. When the body cannot be read, `ok` is `false`
-and the key `err` holds the error; a request that cannot be made gives
-only `ok` (`false`) and `err`. A key is read as `result["err"]`. A
-failure is reported in the result, not as an error, so branch on
-`result["ok"]`.
+**Returns:** `Hash`, a result map. For a response whose body is read,
+2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and
+`ok` is `false` unless the status is 2xx. When the body cannot be read,
+`ok` is `false` and the key `err` holds the error, read as
+`result["err"]`; a request that cannot be made gives only `ok` (`false`)
+and `err`. A failure is reported in the result, not as an error, so
+branch on `result["ok"]`.
 
 #### `prepare(fetchargs = {}) -> Hash`
 
@@ -162,7 +162,8 @@ Set the entity data.
 
 #### `match_get -> Hash`
 
-Get the entity match criteria.
+Get the entity match criteria. Returns a copy of the current match
+criteria.
 
 #### `match_set(match)`
 
@@ -177,7 +178,7 @@ options.
 
 Run an operation through the pipeline and return an iterator over its
 result items. The operation runs when iteration starts, not when the
-call returns.
+call returns. It ends early once `callopts.signal` reports an abort.
 
 #### `get_name -> String`
 
@@ -223,7 +224,8 @@ Set the entity data.
 
 #### `match_get -> Hash`
 
-Get the entity match criteria.
+Get the entity match criteria. Returns a copy of the current match
+criteria.
 
 #### `match_set(match)`
 
@@ -238,7 +240,7 @@ options.
 
 Run an operation through the pipeline and return an iterator over its
 result items. The operation runs when iteration starts, not when the
-call returns.
+call returns. It ends early once `callopts.signal` reports an abort.
 
 #### `get_name -> String`
 
@@ -284,7 +286,8 @@ Set the entity data.
 
 #### `match_get -> Hash`
 
-Get the entity match criteria.
+Get the entity match criteria. Returns a copy of the current match
+criteria.
 
 #### `match_set(match)`
 
@@ -299,7 +302,7 @@ options.
 
 Run an operation through the pipeline and return an iterator over its
 result items. The operation runs when iteration starts, not when the
-call returns.
+call returns. It ends early once `callopts.signal` reports an abort.
 
 #### `get_name -> String`
 
@@ -345,7 +348,8 @@ Set the entity data.
 
 #### `match_get -> Hash`
 
-Get the entity match criteria.
+Get the entity match criteria. Returns a copy of the current match
+criteria.
 
 #### `match_set(match)`
 
@@ -360,7 +364,7 @@ options.
 
 Run an operation through the pipeline and return an iterator over its
 result items. The operation runs when iteration starts, not when the
-call returns.
+call returns. It ends early once `callopts.signal` reports an abort.
 
 #### `get_name -> String`
 
@@ -447,7 +451,8 @@ result = client.Planet.update({
 #### `remove(reqmatch = nil, ctrl = nil) -> PlanetEntity`
 
 Remove the entity matching the given criteria. Returns the entity,
-marked as deleted, and raises on failure. `data_get` reads its record.
+marked as deleted, and raises on failure. `result.deleted` reads the
+mark. `data_get` reads its record.
 
 ```ruby
 result = client.Planet.remove({ "id" => "planet_id" })
@@ -465,7 +470,8 @@ Set the entity data.
 
 #### `match_get -> Hash`
 
-Get the entity match criteria.
+Get the entity match criteria. Returns a copy of the current match
+criteria.
 
 #### `match_set(match)`
 
@@ -480,7 +486,7 @@ options.
 
 Run an operation through the pipeline and return an iterator over its
 result items. The operation runs when iteration starts, not when the
-call returns.
+call returns. It ends early once `callopts.signal` reports an abort.
 
 #### `get_name -> String`
 
@@ -526,7 +532,8 @@ Set the entity data.
 
 #### `match_get -> Hash`
 
-Get the entity match criteria.
+Get the entity match criteria. Returns a copy of the current match
+criteria.
 
 #### `match_set(match)`
 
@@ -541,7 +548,7 @@ options.
 
 Run an operation through the pipeline and return an iterator over its
 result items. The operation runs when iteration starts, not when the
-call returns.
+call returns. It ends early once `callopts.signal` reports an abort.
 
 #### `get_name -> String`
 
@@ -587,7 +594,8 @@ Set the entity data.
 
 #### `match_get -> Hash`
 
-Get the entity match criteria.
+Get the entity match criteria. Returns a copy of the current match
+criteria.
 
 #### `match_set(match)`
 
@@ -602,7 +610,7 @@ options.
 
 Run an operation through the pipeline and return an iterator over its
 result items. The operation runs when iteration starts, not when the
-call returns.
+call returns. It ends early once `callopts.signal` reports an abort.
 
 #### `get_name -> String`
 

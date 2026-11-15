@@ -80,20 +80,20 @@ Make a direct HTTP request to any API endpoint.
 | `body` | `value` | Request body (maps are JSON-serialized). |
 | `ctrl` | `map` | Control options. |
 
-**Returns:** `value`, a result map. For a response, 2xx or not, it holds
-the keys `ok`, `status`, `headers` and `data`, and `ok` is `Bool false`
-unless the status is 2xx. When the body cannot be read, `ok` is
-`Bool false` and the key `err` holds the error; a request that cannot be
-made gives only `ok` (`Bool false`) and `err`. A key is read as
-`getp result "err"`. A failure is reported in the result, not as an
+**Returns:** `value`, a result map. For a response whose body is read,
+2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and
+`ok` is `Bool false` unless the status is 2xx. When the body cannot be
+read, `ok` is `Bool false` and the key `err` holds the error, read as
+`getp result "err"`; a request that cannot be made gives only `ok`
+(`Bool false`) and `err`. A failure is reported in the result, not as an
 error, so branch on `getp result "ok" = Bool true`.
 
 #### `prepare (client : sdk_client) (fetchargs : value) : value`
 
 Prepare a fetch definition without sending the request. Accepts the
-same parameters as `direct()`.
+same parameters as `direct`.
 
-**Returns:** `value`, the fetch definition: the request `direct()` would
+**Returns:** `value`, the fetch definition: the request `direct` would
 send. It raises on failure.
 
 
@@ -138,7 +138,8 @@ Set the entity data.
 
 #### `e_match_get () : value`
 
-Get the entity match criteria.
+Get the entity match criteria. Returns a copy of the current match
+criteria.
 
 #### `e_match_set (value) : unit`
 
@@ -152,15 +153,14 @@ options.
 #### `e_stream (string) (value) (value) : value Seq.t`
 
 Run an operation through the pipeline and return an iterator over its
-result items. The operation runs before the call returns.
+result items. The operation runs before the call returns. It ends early
+once `callopts.signal` reports an abort.
 
 Its arguments are the name of the operation, its match, and `callopts`.
 
 #### `e_name : string`
 
-Return the entity name.
-
-`e_name` is a field of the entity, read without a call.
+The entity name.
 
 
 ---

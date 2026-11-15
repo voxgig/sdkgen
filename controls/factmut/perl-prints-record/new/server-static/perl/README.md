@@ -41,6 +41,7 @@ The example passes the API key from the `DEMO_APIKEY` environment
 variable as the `apikey` option.
 
 ```perl
+use lib 'lib';
 use DemoSDK;
 
 my $client = DemoSDK->new({

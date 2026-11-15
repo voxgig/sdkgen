@@ -72,13 +72,13 @@ Make a direct HTTP request to any API endpoint.
 | `body` | `any` | Request body (maps are JSON-serialized). |
 | `ctrl` | `map` | Control options. |
 
-**Returns:** `map`, a result map. For a response, 2xx or not, it holds
-the keys `ok`, `status`, `headers` and `data`, and `ok` is `false`
-unless the status is 2xx. When the body cannot be read, `ok` is `false`
-and the key `err` holds the error; a request that cannot be made gives
-only `ok` (`false`) and `err`. A key is read as
-`(vs/getprop result "err")`. A failure is reported in the result, not as
-an error, so branch on `(vs/getprop result "ok")`.
+**Returns:** `map`, a result map. For a response whose body is read, 2xx
+or not, it holds the keys `ok`, `status`, `headers` and `data`, and `ok`
+is `false` unless the status is 2xx. When the body cannot be read, `ok`
+is `false` and the key `err` holds the error, read as
+`(vs/getprop result "err")`; a request that cannot be made gives only
+`ok` (`false`) and `err`. A failure is reported in the result, not as an
+error, so branch on `(vs/getprop result "ok")`.
 
 #### `(api/prepare client fetchargs) -> map`
 

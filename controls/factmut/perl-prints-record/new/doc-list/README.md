@@ -392,7 +392,7 @@ func main() {
 ### Ruby
 
 ```ruby
-require_relative "Demo_sdk"
+require_relative "rb/Demo_sdk"
 
 client = DemoSDK.new({
   "apikey" => ENV["DEMO_APIKEY"],
@@ -593,6 +593,7 @@ let () = List.iter (fun console -> print_endline (stringify (console.e_data_get 
 ### Perl
 
 ```perl
+use lib 'perl/lib';
 use DemoSDK;
 
 my $client = DemoSDK->new({

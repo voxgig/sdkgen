@@ -72,13 +72,13 @@ Make a direct HTTP request to any API endpoint.
 | `fetchargs["body"]` | `any` | Request body (dicts are JSON-serialized). |
 | `fetchargs["ctrl"]` | `dict` | Control options. |
 
-**Returns:** `dict`, a result map. For a response, 2xx or not, it holds
-the keys `ok`, `status`, `headers` and `data`, and `ok` is `False`
-unless the status is 2xx. When the body cannot be read, `ok` is `False`
-and the key `err` holds the error; a request that cannot be made gives
-only `ok` (`False`) and `err`. A key is read as `result["err"]`. A
-failure is reported in the result, not as an error, so branch on
-`result["ok"]`.
+**Returns:** `dict`, a result map. For a response whose body is read,
+2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and
+`ok` is `False` unless the status is 2xx. When the body cannot be read,
+`ok` is `False` and the key `err` holds the error, read as
+`result["err"]`; a request that cannot be made gives only `ok` (`False`)
+and `err`. A failure is reported in the result, not as an error, so
+branch on `result["ok"]`.
 
 #### `prepare(fetchargs=None) -> dict`
 

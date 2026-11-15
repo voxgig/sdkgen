@@ -43,6 +43,7 @@ options. The server URL is templated, so `server` must give `tenant`;
 `region` defaults to `eu`.
 
 ```perl
+use lib 'lib';
 use DemoSDK;
 
 my $client = DemoSDK->new({
