@@ -10,7 +10,8 @@ import {
 } from '../helpers/example'
 import { note } from '../helpers/example'
 import type { Stmt, Syntax, Scope } from '../helpers/example'
-import { listComment, listSentence, loadComment, loadSentence, writeSentence } from '../helpers/runtimeprose'
+import { article, listComment, listSentence, loadComment, loadSentence, writeSentence } from '../helpers/runtimeprose'
+import { spans } from '../helpers/markdown'
 import type { ShowPlace } from '../helpers/example'
 
 
@@ -55,7 +56,6 @@ function describeTarget(ctx$: any, target: any): SdkDescription {
 }
 
 
-const article = (s: string) => /^[aeiou]/i.test(s) ? 'an' : 'a'
 
 function series(items: string[]): string {
   if (items.length < 3) return items.join(' and ')
@@ -72,14 +72,20 @@ function placement(desc: SdkDescription): string {
   return 'authorization' === name.toLowerCase() ? '' : `The client sends the API key in the \`${name}\` header.`
 }
 
+// The example reads the credentials from the environment and passes them as
+// options: no client reads the environment itself (PrepareAuth reads only the
+// options).
 function clientText(desc: SdkDescription): string {
-  const env = desc.options.filter((o: any) => null != o.env).map((o: any) => '`' + o.env + '`')
+  const creds = desc.options.filter((o: any) => null != o.env)
+  const env = creds.map((o: any) => '`' + o.env + '`')
+  const opt = creds.map((o: any) => '`' + o.name + '`')
   const sentences: string[] = []
   if (1 === env.length) {
-    sentences.push(`The client reads its API key from the ${env[0]} environment variable.`)
+    sentences.push(`The example passes the API key from the ${env[0]} environment variable as the ${opt[0]} option.`)
   }
   else if (2 === env.length) {
-    sentences.push(`The client reads its API key and secret from the ${env[0]} and ${env[1]} environment variables.`)
+    sentences.push(`The example passes the API key and secret from the ${env[0]} and ${env[1]} environment ` +
+      `variables as the ${opt[0]} and ${opt[1]} options.`)
   }
   const required = desc.server.filter((v) => v.required).map((v) => '`' + v.name + '`')
   const dflt = desc.server.filter((v) => !v.required).map((v) => `\`${v.name}\` defaults to \`${v.dflt}\``)
@@ -100,7 +106,7 @@ function wrap(text: string, first = '', rest = ''): string {
   const out: string[] = []
   let line = first
   let empty = true
-  for (const word of text.split(' ')) {
+  for (const word of spans(text)) {
     if (!empty && 72 < (line + ' ' + word).length) {
       out.push(line)
       line = rest + word
@@ -159,7 +165,7 @@ function quickSteps(p: Syntax, desc: SdkDescription, where: ShowPlace = 'tutoria
     const n = e.Name.toLowerCase()
     lead.push(`loading ${article(n)} ${n}`)
     const nested = null == q.load.nested ? '' :
-      `${e.Name} is nested under ${q.load.nested.parent}, so provide the \`${q.load.nested.param}\`. `
+      `${e.Name} is nested under ${q.load.nested.parent}, so the match also gives \`${q.load.nested.param}\`. `
     steps.push({
       title: `Load ${article(n)} ${n}`, text: nested + loadSentence(f, boundName(load, 'one')) + noteText(p, 'tutorial:load', desc),
       stmts: load, comment: loadComment(f, `Load ${article(n)} ${n}`, e.className),
@@ -171,9 +177,10 @@ function quickSteps(p: Syntax, desc: SdkDescription, where: ShowPlace = 'tutoria
     const ops = writeOps(desc)
     const n = ent(q.entity).Name.toLowerCase()
     lead.push(`${series(ops.map((o) => GERUND[o]))} ${article(n)} ${n}`)
-    const title = series(ops)
+    const title = `${series(ops)} ${article(n)} ${n}`
     const Title = title.charAt(0).toUpperCase() + title.slice(1)
-    steps.push({ title: Title, text: writeSentence(f, ops) + noteText(p, 'tutorial:write', desc), stmts: writes, comment: Title })
+    // `after`: the client is the only step before, or a list or load came too.
+    steps.push({ title: Title, text: writeSentence(f, ops, 1 < steps.length) + noteText(p, 'tutorial:write', desc), stmts: writes, comment: Title })
   }
   return { steps, lead }
 }
@@ -199,8 +206,8 @@ ${wrap(`This tutorial walks through ${series(lead)}.${'' === where ? '' : ' ' + 
   // opens the program unnamed, as it always did.
   if (p.program) {
     out += (1 === steps.length
-      ? 'The program after this step runs it.'
-      : `The program after these ${steps.length} steps runs them in order.`) + '\n\n'
+      ? 'The program below runs this step.'
+      : `The program below runs these ${steps.length} steps in order.`) + '\n\n'
     steps.forEach((s, i) => {
       const lead = `${i + 1}. **${s.title}.**`
       out += ('' === s.text ? lead : wrap(s.text.trim(), lead + ' ', '   ')) + '\n'

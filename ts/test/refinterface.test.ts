@@ -48,7 +48,7 @@ describe('reference interface', () => {
     const out = refText(p, desc).replace(/\s+/g, ' ')
     ok(out.includes('`DemoSDK.make0()` uses the defaults and `DemoSDK.of(options)` takes the options spelled out.'), out)
     ok(out.includes('`DemoSDK.test_with(options)` takes the options spelled out.'), out)
-    ok(out.includes('Create a test client with mock features active, and no options.'), out)
+    ok(out.includes('Create a test client with mock features active. It takes no arguments.'), out)
   })
 
   test('a client with no type is headed as declared; nouns differ for the client and an entity', () => {
@@ -59,7 +59,7 @@ describe('reference interface', () => {
     })
     const out = refText(p, desc)
     ok(out.includes('\n## demo-sdk\n'), out)
-    ok(out.includes('### Instance Functions'), out)
+    ok(out.includes('### Client Functions'), out)
     ok(out.includes('### Common Members'), out)
   })
 
@@ -68,8 +68,8 @@ describe('reference interface', () => {
       stream: /stream its result items\./,
       streamIterator: /as an async iterator\./,
       streamGenerator: /as a generator\./,
-      streamLazy: /a lazy sequence of its result items\./,
-      streamList: /as one list\./,
+      streamLazy: /return a sequence of its result items\./,
+      streamList: /return its result items, every one already read\./,
       streamSync: /an iterator over its result items\./,
       streamFunction: /returns its next result item on each call, and `undefined` once the items end\./,
     }
@@ -109,8 +109,37 @@ describe('reference interface', () => {
   // code holds none.
   test('the direct result states the declared ok literal, and has no default', () => {
     const out = refText(provider((f) => { f.direct = { ...f.direct, okFalse: '0' } }), desc).replace(/\n/g, ' ')
-    ok(out.includes('on a failure `ok` is `0`'), out)
+    ok(out.includes('`ok` is `0` unless the status is 2xx'), out)
     ok(!/`ok` is (then )?`false`/.test(out), out)
+  })
+
+  // Without the test feature the client has a mock only where the runtime
+  // ships the feature whatever the model says.
+  test('the test client without the test feature follows testMock, which has no default', () => {
+    const none = { ...desc, ref: { ...desc.ref, test: false } }
+    const model = refText(provider((r) => { r.testMock = 'model' }), none).replace(/\n/g, ' ')
+    ok(model.includes('so the client has no mock transport and refuses every request.'), model)
+    const always = refText(provider((r) => { r.testMock = 'always' }), none).replace(/\n/g, ' ')
+    ok(always.includes('Create a test client with mock features active.'), always)
+    ok(!always.includes('no mock transport'), always)
+    throws(() => refText(provider((r) => { r.testMock = undefined }), none), /testMock/)
+  })
+
+  // A key of the direct result is read by the language's own printer; the
+  // branch reads it as a truth test.
+  test('the direct result names its keys through the read printer', () => {
+    const p = provider(() => { })
+    const read = (v: string, k: string, truth?: boolean) => truth ? `test(${v}, ${k})` : `get(${v}, ${k})`
+    const out = refText({ ...p, ref: { ...p.ref, read } }, desc).replace(/\n/g, ' ')
+    ok(out.includes('A key is read as `get(result, err)`.'), out)
+    ok(out.includes('so branch on `test(result, ok)`.'), out)
+  })
+
+  test('an entity that is no instance of a class is called an entity', () => {
+    const out = refText(provider((r) => { r.entityBy = 'Name' }), desc).replace(/\n/g, ' ')
+    ok(out.includes('Create a new `Planet` entity.'), out)
+    const cls = refText(provider((r) => { r.entityBy = 'class' }), desc).replace(/\n/g, ' ')
+    ok(cls.includes('Create a new `PlanetEntity` instance.'), cls)
   })
 
   test('the entity is named by its class, its Name or its module', () => {

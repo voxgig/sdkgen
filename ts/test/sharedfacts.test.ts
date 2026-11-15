@@ -86,7 +86,10 @@ describe('shared facts', () => {
     const f = ts().facts
     ok(/^Each write resolves to the entity it wrote \(a removed one is marked as deleted\), and throws/
       .test(writeSentence(f, ['create', 'remove'])))
-    ok(/`\(value, error\)` too: .* a non-nil `err`/.test(writeSentence({ ...f, result: 'pair', errVar: 'err', pairForm: '(value, error)', noError: 'nil' }, ['create'])))
+    // `too` only after a list or load step has named the pair.
+    const pair = { ...f, result: 'pair', errVar: 'err', pairForm: '(value, error)', noError: 'nil' }
+    ok(/`\(value, error\)` too: .* a non-nil `err`/.test(writeSentence(pair, ['create'], true)))
+    ok(/`\(value, error\)`: .* a non-nil `err`/.test(writeSentence(pair, ['create'])))
     // A pair's form and its no-error value are declared, never supplied here.
     throws(() => writeSentence({ ...f, result: 'pair', errVar: 'err' }, ['create']), /needs facts\.pairForm/)
     ok(/`NULL` with `\*err` set on failure, so check `err`/

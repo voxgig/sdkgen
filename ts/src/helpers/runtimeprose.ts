@@ -7,7 +7,11 @@ import type { RuntimeFacts } from './example'
 
 const code = (s: string): string => '`' + s + '`'
 
-const article = (s: string): string => /^`?[aeiou]/i.test(s) ? 'an' : 'a'
+// The article before a word: 'an' before a vowel sound. A word that opens
+// with a vowel letter but a consonant sound takes 'a' (a utility, a user).
+const article = (s: string): string =>
+  /^`?(?:u[bcdfgklmnprstvz][aeiou]|uni|use|usu|eu|one\b)/i.test(s) ? 'a'
+    : (/^`?[aeiou]/i.test(s) ? 'an' : 'a')
 
 const a = (s: string): string => article(s) + ' ' + s
 
@@ -71,7 +75,7 @@ function listSentence(f: RuntimeFacts, bound: string): string {
         `takes one entity out, and ${rec}.`
     case 'pair':
       return `${op} returns ${code(pairForm(f))}: the value is ${m}, and a ${nonNil(f)} ${code(f.errVar as string)} ` +
-        `reports failure. There is no ${code('{ok, data}')} wrapper; ${rec}.`
+        `reports failure. ${rec}.`
     case 'errslot':
       return `${op} returns ${m}, or ${code(f.nullValue as string)} with ${code(f.errSlot as string)} set on failure, ` +
         `so check ${code(f.errVar as string)} after the call; ${rec}.`
@@ -108,8 +112,9 @@ function loadSentence(f: RuntimeFacts, bound: string): string {
 
 
 // What the tutorial's writes return, and how each fails: one sentence over
-// all of them, in the result style's words.
-function writeSentence(f: RuntimeFacts, ops: string[]): string {
+// all of them, in the result style's words. `after`: a list or load step
+// came before, whose sentence already named the pair.
+function writeSentence(f: RuntimeFacts, ops: string[], after = false): string {
   const each = 1 === ops.length ? `${opName(f, ops[0])} returns` : 'Each write returns'
   const what = 'the entity it wrote' + (ops.includes('remove') ? ' (a removed one is marked as deleted)' : '')
   switch (f.result) {
@@ -120,7 +125,7 @@ function writeSentence(f: RuntimeFacts, ops: string[]): string {
     case 'wrapped':
       return `${each} a value holding ${what}, and throws on failure.`
     case 'pair':
-      return `${each} ${code(pairForm(f))} too: the value is ${what}, and a ${nonNil(f)} ` +
+      return `${each} ${code(pairForm(f))}${after ? ' too' : ''}: the value is ${what}, and a ${nonNil(f)} ` +
         `${code(f.errVar as string)} reports failure.`
     case 'errslot':
       return `${each} ${what}, or ${code(f.nullValue as string)} with ${code(f.errSlot as string)} set on ` +
@@ -162,7 +167,7 @@ function failsShort(f: RuntimeFacts): string {
     case 'wrapped': return verb(f) + ' on failure'
     case 'pair': return f.errVar + ' is ' + nonNil(f) + ' on failure'
     case 'errslot': return f.errSlot + ' is set on failure'
-    case 'union': return f.err + ' on failure'
+    case 'union': return f.err + ' holds the failure'
   }
 }
 
@@ -222,10 +227,10 @@ function opText(f: RuntimeFacts, op: string, needs: string[], idInData: string |
   const parts = [OP_DOES[op]]
   if ('list' === op) {
     parts.push(0 === needs.length
-      ? 'The match is optional: without one, every record is listed.'
+      ? 'The match is optional.'
       : `The match must include ${needs.map(code).join(' and ')}.`)
   }
-  if (null != idInData) parts.push(`The data must include the entity id, ${code(idInData)}.`)
+  if (null != idInData) parts.push(`The data must include the entity id, ${code(idInData)}, unless the entity already holds it.`)
   parts.push(returnClause(f, opValue(f, op)))
   // Every single-entity result says how its record is read: the reference's
   // examples print none of them (the majority shape), so the sentence keeps it.
@@ -248,6 +253,7 @@ function failsSentence(f: RuntimeFacts): string {
 
 
 export {
+  article,
   createComment,
   failsSentence,
   opText,

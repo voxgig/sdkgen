@@ -40,12 +40,15 @@ const DEFAULTS: [RegExp, Category][] = [
   [/^ref\.facts\.prepare\.fails$/, 'cited'],
   [/^ref\.facts\.body\.(values|once|binary)$/, 'cited'],
   [/^ref\.facts\.cancel$/, 'cited'],
+  // Where the test client's mock comes from without the test feature: the
+  // factory's fallback, or the runtime's own list of the features it ships.
+  [/^ref\.facts\.testMock$/, 'cited'],
   [/^notes\./, 'cited'],
 ]
 
 // A fact cited before the provider declares it: its citation carries the
 // value the runtime shows, and a later declaration must equal it.
-const AHEAD = /^ref\.facts\.direct\.okFalse$/
+const AHEAD = /^ref\.facts\.(direct\.okFalse|testMock)$/
 
 function defaultCategory(path: string, value: any): Category | null {
   if ('' === value) return 'convention'
@@ -76,7 +79,7 @@ function declaredLeaves(S: any): [string, any][] {
 const MARKDOWN = /^facts\.collection$|^ref\.facts\.(body\.\w+|setArg)$/
 
 function codeTokens(path: string, value: any, spell: (s: string) => string): string[] {
-  if ('string' !== typeof value || /\.kind$|\.fails$/.test(path)) return []
+  if ('string' !== typeof value || /\.kind$|\.fails$|\.testMock$/.test(path)) return []
   // A note is prose; the code it names is backticked, less the slots it fills.
   if (/^notes\./.test(path)) {
     return [...spell(value).matchAll(/`([^`]+)`/g)].map((m) => m[1]).filter((x) => !/^\{\w+(\.\w+)*\}$/.test(x))

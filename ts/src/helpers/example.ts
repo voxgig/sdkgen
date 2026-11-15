@@ -138,6 +138,10 @@ type RefFacts = {
   ctor: string[] // the constructor, as the page shows it
   ctorAlts?: { call: string, kind: CtorKind }[] // other ways to construct one, each with its sentence
   test: { sig: string, call: string, args: boolean, alts?: { call: string, kind: CtorKind }[] }[] // test constructors
+  // Where the test constructor's mock comes from in an SDK generated without
+  // the test feature: 'model', nowhere (the base feature stands in, and the
+  // client refuses every request); 'always', the runtime ships the feature.
+  testMock: 'model' | 'always'
   // The client's entity accessor. `param`: the name its signature gives the
   // argument, which the page names where it is not the options' name.
   accessor: { sig: string, arg: 'data' | 'entopts', param: string }
@@ -447,7 +451,9 @@ type RefSyntax = {
   // How a table names an option; [] is the container itself.
   key: (container: 'options' | 'fetchargs', path: string[]) => string
   instance: (ent: Ent, desc: SdkDescription) => string[] // obtaining one entity from the client
-  read: (value: string, key: string) => string // reading one key of a result map: result["ok"]
+  // Reading one key of a result map: result["ok"]. `truth`: the read is the
+  // condition of a branch, written as the language tests that key.
+  read: (value: string, key: string, truth?: boolean) => string
 }
 
 // The places of the shared page a runtime note can attach to. A note is
