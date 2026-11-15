@@ -341,6 +341,7 @@ src/cmp/csharp/Entity_csharp.ts 5deffffa349f
 src/cmp/csharp/Gitignore_csharp.ts bd603cc2c5c7
 src/cmp/csharp/MainEntity_csharp.ts 1c24807ab2fe
 src/cmp/csharp/Main_csharp.ts 45456e223adc
+src/cmp/csharp/Naming_csharp.ts 517585aed19d
 src/cmp/csharp/Package_csharp.ts 99287d8a129d
 src/cmp/csharp/PrepareAuth_csharp.ts 31a115d93de8
 src/cmp/csharp/ReadmeEntity_csharp.ts 2dcd4dcb59dd
@@ -351,13 +352,11 @@ src/cmp/csharp/ReadmeInstall_csharp.ts 51a168916cd3
 src/cmp/csharp/ReadmeIntro_csharp.ts a4751721738b
 src/cmp/csharp/ReadmeModel_csharp.ts 4f0c0d4867ee
 src/cmp/csharp/ReadmeOptions_csharp.ts 5d00eb866c0c
-src/cmp/csharp/ReadmeQuick_csharp.ts c03593990998
-src/cmp/csharp/ReadmeRef_csharp.ts 0c8bace436a0
 src/cmp/csharp/ReadmeTopHowto_csharp.ts 8c938ccb8691
-src/cmp/csharp/ReadmeTopQuick_csharp.ts ab4659f3e8e2
 src/cmp/csharp/ReadmeTopTest_csharp.ts 1719680896a3
 src/cmp/csharp/Schema_csharp.ts a898466bc43d
 src/cmp/csharp/SdkError_csharp.ts 1cd61a4cfec7
+src/cmp/csharp/Syntax_csharp.ts 119a2b13fff4
 src/cmp/csharp/TestClean_csharp.ts e54205e08182
 src/cmp/csharp/TestDirect_csharp.ts 3899f5e9862c
 src/cmp/csharp/TestEntity_csharp.ts a90129905f07
