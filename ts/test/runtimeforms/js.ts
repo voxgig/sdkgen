@@ -49,6 +49,10 @@ const forms: Forms = {
     draw: "for await (const item of result.stream())",
     runs: "as the caller iterates", items: "as the caller iterates",
   },
+  // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
+  cite: {
+    'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/js/fragment/Main.fragment.js", quote: "return { ok: false, err: utility.clean(this._rootctx, fetchdef) }" },
+  },
 }
 
 export { forms }
