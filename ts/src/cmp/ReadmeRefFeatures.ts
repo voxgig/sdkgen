@@ -62,10 +62,9 @@ ever seeing that call.
 `}` : `${names(wrapping)} is the one feature that wraps the transport: it wraps
 whatever transport is installed.
 `}
-${names(hooked)} attach to pipeline hooks
-rather than the transport, so their order does not affect what they observe.
-
-`)
+${0 === hooked.length ? '' : 1 === hooked.length ?
+  `${names(hooked)} attaches to pipeline hooks\nrather than the transport, so its order does not affect what it observes.\n\n` :
+  `${names(hooked)} attach to pipeline hooks\nrather than the transport, so their order does not affect what they observe.\n\n`}`)
   }
 
   for (const f of features) {
