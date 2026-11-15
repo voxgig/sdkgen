@@ -53,9 +53,10 @@ const forms: Forms = {
 
   // The porter's, from here on.
   cite: {
+    'facts.pairForm': { value: '(value, error)', file: 'src/cmp/go/fragment/EntityLoadOp.fragment.go', quote: 'func (e *EntyClass) Load(reqmatch map[string]any, ctrl map[string]any) (any, error) {', unquoted: { value: 'the page names the first result by what it is; the runtime types it any' } },
+    'facts.noError': { file: 'src/cmp/go/fragment/Entity.fragment.go', quote: 'return e, nil' },
     'ref.facts.none': { file: MAIN, quote: 'return nil, err' },
-    'ref.facts.lits.false': { value: 'false', file: MAIN, quote: 'return map[string]any{"ok": false, "err": sdk.cleanErr(sdk.rootctx, err)}, nil' },
-    'ref.facts.lits.true': { value: 'true', file: MAIN, quote: '"ok":      bodyErr == nil && status >= 200 && status < 300,', unquoted: { true: 'ok is the bool the status test computes; true is not spelled' } },
+    'ref.facts.direct.okFalse': { file: MAIN, quote: 'return map[string]any{"ok": false, "err": sdk.cleanErr(sdk.rootctx, err)}, nil' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/go/fragment/Entity.fragment.go", quote: "out := vs.Clone(e.data)" },
     'facts.collection': { file: 'tm/go/utility/make_result.go', quote: 'var entities []any' },
     'ref.facts.container': { file: MAIN, quote: 'func NewProjectNameSDK(options map[string]any) *ProjectNameSDK {' },
