@@ -1,0 +1,27 @@
+{
+ "tutorial": {
+  "corrected": 14,
+  "unified": 0,
+  "used": {
+   "secret-option": 2,
+   "server-required-given": 13,
+   "trailing-blank": 1
+  }
+ },
+ "rootquick": {
+  "corrected": 11,
+  "unified": 0,
+  "used": {
+   "blank-lines": 9,
+   "secret-option": 1,
+   "server-required-given": 9,
+   "step-comment-runtime-fact": 9,
+   "trailing-blank": 2
+  }
+ },
+ "reference": {
+  "corrected": 0,
+  "unified": 0,
+  "used": {}
+ }
+}
