@@ -89,7 +89,7 @@ const forms: Forms = {
       quote: ['if (voxgig_is_string(body)) {\n    bytes = voxgig_as_string(body);\n    blen = voxgig_string_len(body);', '"body", voxgig_new_string_n(text, len),'],
     },
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/c/utility/http.c'] } },
-    'ref.facts.testMock': { value: "model", file: "src/cmp/c/Config_c.ts", quote: "return feature_base_new();" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/c/Config_c.ts", quote: "return feature_base_new();" },
   },
   exceptions: {
     'types:ARRAY': 'the code generator\'s map gives voxgig_value* for arrays and maps alike; the page says which, as the old page did',

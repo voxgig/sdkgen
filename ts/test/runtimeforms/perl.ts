@@ -68,7 +68,7 @@ const forms: Forms = {
   cite: {
     'ref.facts.direct.okFalse': { value: "0", file: "src/cmp/perl/fragment/Main.fragment.pm", quote: "'ok' => 0," },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
-    'ref.facts.testMock': { value: "model", file: "src/cmp/perl/Main_perl.ts", quote: "  return ${model.const.Name}BaseFeature->new;" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/perl/Main_perl.ts", quote: "  return ${model.const.Name}BaseFeature->new;" },
   },
 }
 

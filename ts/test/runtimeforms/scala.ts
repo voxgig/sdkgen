@@ -63,7 +63,7 @@ const forms: Forms = {
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "tm/scala/core/SdkClient.scala", quote: "out.put(\"ok\", java.lang.Boolean.FALSE)", unquoted: { false: "java.lang.Boolean.FALSE is the boxed false a Scala map of Any holds" } },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
-    'ref.facts.testMock': { value: "model", file: "src/cmp/scala/Config_scala.ts", quote: "case _ => new ${scalapackage}.feature.BaseFeature()" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/scala/Config_scala.ts", quote: "case _ => new ${scalapackage}.feature.BaseFeature()" },
   },
 }
 

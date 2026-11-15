@@ -77,7 +77,7 @@ const forms: Forms = {
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/lua/fragment/Main.fragment.lua", quote: "return { ok = false, err = err }, nil" },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
-    'ref.facts.testMock': { value: "model", file: "src/cmp/lua/fragment/Main.fragment.lua", quote: "return features_factory.base()" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/lua/fragment/Main.fragment.lua", quote: "return features_factory.base()" },
   },
 }
 

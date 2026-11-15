@@ -65,7 +65,7 @@ const forms: Forms = {
     },
     'ref.facts.body.once': { value: "a file object", file: 'tm/py/pkg/utility/media.py', quote: 'if body is not None and callable(getattr(body, "read", None)):\n        return body.read()' },
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/py/pkg/utility/fetcher.py'] } },
-    'ref.facts.testMock': { value: "model", file: "src/cmp/py/Main_py.ts", quote: "return _FEATURES[\"base\"]()" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/py/Main_py.ts", quote: "return _FEATURES[\"base\"]()" },
   },
   exceptions: {
     'optional:opMatched list': 'the runtime defaults the match, and a nested entity\'s list needs its parent: the page shows it required, beside the sentence naming the members (stage 3, ref-10)',

@@ -100,7 +100,7 @@ const forms: Forms = {
     },
     'ref.facts.body.once': { value: "a stream", file: 'tm/ts/src/utility/MakeRequestUtility.ts', quote: '// A stream can be read once; read it now, so that a retry sends the same bytes.' },
     'ref.facts.cancel': { value: true, file: 'tm/ts/src/utility/MakeFetchDefUtility.ts', quote: 'fetchdef.signal = ctx.ctrl.signal' },
-    'ref.facts.testMock': { value: "model", file: "src/cmp/ts/fragment/Config.fragment.ts", quote: "const fc = FEATURE_CLASS[fn] || BaseFeature" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/ts/fragment/Config.fragment.ts", quote: "const fc = FEATURE_CLASS[fn] || BaseFeature" },
   },
   // What the table states besides names, parameters and returns.
   testDecl: 'test',

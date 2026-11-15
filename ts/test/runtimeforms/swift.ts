@@ -70,7 +70,7 @@ const forms: Forms = {
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/swift/fragment/Main.fragment.swift", quote: "r.entries[\"ok\"] = .bool(false)" },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
-    'ref.facts.testMock': { value: "model", file: "src/cmp/swift/Config_swift.ts", quote: "default: return BaseFeature()" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/swift/Config_swift.ts", quote: "default: return BaseFeature()" },
   },
 }
 

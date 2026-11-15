@@ -80,7 +80,7 @@ const forms: Forms = {
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "tm/cpp/core/types.hpp", quote: "map_put(out, \"ok\", Value(false));" },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
-    'ref.facts.testMock': { value: "model", file: "src/cmp/cpp/Config_cpp.ts", quote: "return std::make_shared<BaseFeature>();" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/cpp/Config_cpp.ts", quote: "return std::make_shared<BaseFeature>();" },
   },
 }
 

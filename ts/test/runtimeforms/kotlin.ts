@@ -63,7 +63,7 @@ const forms: Forms = {
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "tm/kotlin/core/SdkClient.kt", quote: "out[\"ok\"] = false" },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
-    'ref.facts.testMock': { value: "model", file: "src/cmp/kotlin/Config_kotlin.ts", quote: "else -> ${kotlinpackage}.feature.BaseFeature()" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/kotlin/Config_kotlin.ts", quote: "else -> ${kotlinpackage}.feature.BaseFeature()" },
   },
 }
 

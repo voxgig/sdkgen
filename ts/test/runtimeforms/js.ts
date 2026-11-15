@@ -53,7 +53,7 @@ const forms: Forms = {
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/js/fragment/Main.fragment.js", quote: "return { ok: false, err: utility.clean(this._rootctx, fetchdef) }" },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
-    'ref.facts.testMock': { value: "model", file: "src/cmp/js/fragment/Config.fragment.js", quote: "const fc = FEATURE_CLASS[fn] || BaseFeature" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/js/fragment/Config.fragment.js", quote: "const fc = FEATURE_CLASS[fn] || BaseFeature" },
   },
 }
 

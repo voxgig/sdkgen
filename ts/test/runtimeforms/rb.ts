@@ -86,7 +86,7 @@ const forms: Forms = {
     },
     'ref.facts.body.once': { value: "an IO", file: 'tm/rb/utility/media.rb', quote: 'body.respond_to?(:read) ? body.read : body' },
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/rb/utility/fetcher.rb'] } },
-    'ref.facts.testMock': { value: "model", file: "src/cmp/rb/Main_rb.ts", quote: "${model.const.Name}BaseFeature.new" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/rb/Main_rb.ts", quote: "${model.const.Name}BaseFeature.new" },
   },
   exceptions: {
     'returns:entity dataGet': 'the runtime documents `[EntityName, Hash]`: the typed Struct name or a Hash; the page names the Hash, as the old page did',

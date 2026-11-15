@@ -78,7 +78,7 @@ const forms: Forms = {
       unquoted: { 'bytes_value(&[u8])': 'the signature bytes_value(bytes: &[u8]) with its parameter name left out' },
     },
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/rust/utility/fetcher.rs'] } },
-    'ref.facts.testMock': { value: "model", file: "src/cmp/rust/Config_rust.ts", quote: "_ => Rc::new(RefCell::new(crate::feature::base::BaseFeature::new()))," },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/rust/Config_rust.ts", quote: "_ => Rc::new(RefCell::new(crate::feature::base::BaseFeature::new()))," },
   },
   // What the table states besides names, parameters and returns.
   testDecl: 'test_sdk',

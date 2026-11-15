@@ -53,7 +53,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'dict', fails: 'style' },
   body: { values: '`bytes`, `bytearray`, `memoryview`, a `str` or a file object', once: 'a file object' },
   cancel: false,
-  testMock: 'model',
+  testMock: 'generated',
 }
 
 const str = (s: string): string => JSON.stringify(s)

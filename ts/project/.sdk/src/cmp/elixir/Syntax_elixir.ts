@@ -52,7 +52,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'map()', fails: 'style' },
   body: { values: 'a binary' },
   cancel: false,
-  testMock: 'model',
+  testMock: 'generated',
 }
 
 // An Elixir string literal: `#` is escaped, since `#{` interpolates.

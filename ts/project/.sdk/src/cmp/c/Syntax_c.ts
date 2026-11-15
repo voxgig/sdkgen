@@ -54,7 +54,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'voxgig_value*', fails: 'style' },
   body: { values: 'a string value holding the bytes, such as `voxgig_new_string_n`' },
   cancel: false,
-  testMock: 'model',
+  testMock: 'generated',
 }
 
 const str = (s: string): string => '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'

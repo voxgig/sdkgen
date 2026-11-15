@@ -57,7 +57,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'Result<Value, ProjectNameError>', fails: 'style' },
   body: { values: 'a string, or bytes as `bytes_value(&[u8])`' },
   cancel: false,
-  testMock: 'model',
+  testMock: 'generated',
 }
 
 const str = (s: string): string => JSON.stringify(s)

@@ -53,7 +53,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'Hash', fails: 'style' },
   body: { values: 'a `String`, or an IO that responds to `read`', once: 'an IO' },
   cancel: false,
-  testMock: 'model',
+  testMock: 'generated',
 }
 
 // A double-quoted Ruby string; `#` is escaped only where it would open an

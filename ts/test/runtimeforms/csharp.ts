@@ -56,7 +56,7 @@ const forms: Forms = {
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/csharp/fragment/Main.fragment.cs", quote: "[\"ok\"] = false," },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
-    'ref.facts.testMock': { value: "model", file: "src/cmp/csharp/Config_csharp.ts", quote: "return new Feature.BaseFeature();" },
+    'ref.facts.testMock': { value: "generated", file: "src/cmp/csharp/Config_csharp.ts", quote: "return new Feature.BaseFeature();" },
   },
 }
 

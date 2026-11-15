@@ -57,7 +57,7 @@ const refFacts: RefFacts = {
   prepare: { returns: '(map[string]any, error)', fails: 'style' },
   body: { values: 'a `[]byte`, a `string` or an `io.Reader`', once: 'an `io.Reader`' },
   cancel: false,
-  testMock: 'model',
+  testMock: 'generated',
 }
 
 const str = (s: string): string => JSON.stringify(s).replace(/﻿/g, '\\ufeff')
