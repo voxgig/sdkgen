@@ -1,0 +1,923 @@
+{
+ "328546aa9b": {
+  "outcome": "same-meaning",
+  "why": "a word match: `Map`, the type word for a map-valued option or fetcharg, is the one the README options table also prints; both say the same",
+  "n": 35
+ },
+ "9c6d819441": {
+  "outcome": "same-meaning",
+  "why": "a word match on `false` and `headers`: the README's direct how-to (an unported section) says `ok` is `false` on error, which agrees",
+  "n": 19
+ },
+ "9efa1d0afc": {
+  "outcome": "same-meaning",
+  "why": "a word match on `false`: the README's direct how-to says `ok` is `false` on error, which agrees",
+  "n": 19
+ },
+ "fbcf05a673": {
+  "outcome": "same-meaning",
+  "why": "a word match on `true`: the README compares `result[\"ok\"] == true`; the stream note speaks of the signal function returning true, another thing",
+  "n": 94
+ },
+ "f64ae2f4fc": {
+  "outcome": "same-meaning",
+  "why": "a word match on `log`: the README line is `console.log(...)` in a ts block of the unported Error handling section, not the log feature",
+  "n": 19
+ },
+ "9cd934242f": {
+  "outcome": "same-meaning",
+  "why": "OLD said \"Returns a result `MutableMap<String, Any?>` with `ok`, `status`, `headers`, and `data` (or `err` on failure)\"; restated by the shared direct Returns paragraph (9c6d819441, 9efa1d0afc), which the README how-to agrees with",
+  "n": 19
+ },
+ "48d12b9b75": {
+  "outcome": "same-meaning",
+  "why": "OLD said \"Returns the `fetchdef` and raises on error\"; restated by the shared prepare Returns paragraph (\"the fetch definition ... It throws on failure\"), which the README how-to (`val fetchdef = client.prepare(...)`) agrees with",
+  "n": 19
+ },
+ "8c502e5444": {
+  "outcome": "restored:fact",
+  "why": "the options row names the container the constructor takes, `MutableMap<String, Any?>` (ref.facts.container, cited: Main.fragment.kt `class ProjectNameSDK(options: MutableMap<String, Any?>?)`), where OLD wrote `Map` in the row and the full type in a sentence (8fdda070eb)",
+  "n": 19
+ },
+ "3f1f5abd57": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type`",
+  "n": 94
+ },
+ "5bb23f6741": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type`; `name` is a property, so it has no parameter list (EntityBase.fragment.kt:18 `override var name: String`)",
+  "n": 94
+ },
+ "1bb7177610": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type`; the parameter is `args` in the runtime (EntityBase.fragment.kt:49 `override fun data(vararg args: Any?): Any?`), not OLD's `newdata`",
+  "n": 94
+ },
+ "c74b4bcd15": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type`; the parameter is `args` in the runtime (EntityBase.fragment.kt:60), not OLD's `newmatch`",
+  "n": 94
+ },
+ "94eba098bf": {
+  "outcome": "same-meaning",
+  "why": "the shared throw-style verb: a Kotlin operation throws (makeError throws an SdkError, a RuntimeException); OLD said \"raises on error\"",
+  "n": 83
+ },
+ "91234b31f0": {
+  "outcome": "same-meaning",
+  "why": "the shared throw-style verb (\"throws on failure\" for OLD \"raises on error\"), same fact",
+  "n": 15
+ },
+ "8fdda070eb": {
+  "outcome": "restored:fact",
+  "why": "the container is now the type in the `options` row of the parameter table (8c502e5444, ref.facts.container)",
+  "n": 19
+ },
+ "1d5f2874ab": {
+  "outcome": "restored:shared",
+  "why": "the shared heading over the test constructors is \"Test client\"; testSDK is still shown called on the class",
+  "n": 19
+ },
+ "5e882342e7": {
+  "outcome": "restored:shared",
+  "why": "the shared test-constructor heading with its full signature, `DemoSDK.testSDK(testopts: MutableMap<String, Any?>?, sdkopts: MutableMap<String, Any?>?): DemoSDK` (2cf40f881d), beside the no-argument overload OLD did not show",
+  "n": 19
+ },
+ "d553096f96": {
+  "outcome": "restored:shared",
+  "why": "the shared test sentence ends \"both may be `null`\"",
+  "n": 19
+ },
+ "aa6c3feb8f": {
+  "outcome": "unification:client-heading",
+  "why": "the shared heading \"Client Methods\" (ref.noun Methods, the `Client <noun>` heading)",
+  "n": 19
+ },
+ "051347e851": {
+  "outcome": "restored:shared",
+  "why": "the accessor heading is its full signature, `ambient(entopts: MutableMap<String, Any?>?): SdkEntity` (ec40c2152b)",
+  "n": 93
+ },
+ "183dea1a01": {
+  "outcome": "restored:shared",
+  "why": "the shared accessor sentence \"Create a new `Ambient` entity. Pass `null` for no initial options.\" with the return type `SdkEntity` in the heading signature",
+  "n": 93
+ },
+ "db4f939ca2": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (`optionsMap(): MutableMap<String, Any?>`)",
+  "n": 19
+ },
+ "ea046341d8": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (`getUtility(): Utility`)",
+  "n": 19
+ },
+ "ce64e83db7": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (`direct(fetchargs: MutableMap<String, Any?>?): MutableMap<String, Any?>`)",
+  "n": 19
+ },
+ "cab49408fe": {
+  "outcome": "restored:shared",
+  "why": "the shared direct Returns paragraph names `MutableMap<String, Any?>`, the keys ok, status, headers and data, and when `err` is set",
+  "n": 19
+ },
+ "c6998cc942": {
+  "outcome": "restored:shared",
+  "why": "the shared direct Returns paragraph ends \"A failure is reported in the result, not as an error, so branch on `result[\"ok\"] == true`\"; rawRequest returns every failure in the map (SdkClient.kt: `out[\"ok\"] = false` with `out[\"err\"]`)",
+  "n": 19
+ },
+ "c115f99e12": {
+  "outcome": "restored:shared",
+  "why": "the shared fetchargs row \"Path parameter values for `{param}` substitution.\"",
+  "n": 19
+ },
+ "d699d861ca": {
+  "outcome": "restored:shared",
+  "why": "the shared direct paragraph opens \"**Returns:** `MutableMap<String, Any?>`, a result map.\"",
+  "n": 19
+ },
+ "da3b2b0dde": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (`prepare(fetchargs: MutableMap<String, Any?>?): MutableMap<String, Any?>`)",
+  "n": 19
+ },
+ "c41a606d0c": {
+  "outcome": "restored:shared",
+  "why": "the shared prepare paragraph: \"**Returns:** `MutableMap<String, Any?>`, the fetch definition ... It throws on failure.\" (SdkClient.kt `throw ctx.makeError(\"spec_method_allow\", ...)`)",
+  "n": 19
+ },
+ "117e747544": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (`load(reqmatch: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>?): Any?`)",
+  "n": 28
+ },
+ "957163de8e": {
+  "outcome": "restored:shared",
+  "why": "the shared load sentences \"Returns the entity, and throws on failure. `data()` reads its record.\"",
+  "n": 28
+ },
+ "8c85faf6c4": {
+  "outcome": "restored:shared",
+  "why": "the shared field sentence \"The entity name.\" (the member is declared a field, which the guard derives from `override var name: String`); OLD's \"read-only\" held only through the SdkEntity interface (`val name`), while EntityBase declares it `var`",
+  "n": 94
+ },
+ "1a08436756": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (`list(reqmatch: ..., ctrl: ...): Any?`)",
+  "n": 83
+ },
+ "3469c940f0": {
+  "outcome": "restored:shared",
+  "why": "the shared sentence \"The match is optional; a call without one is `list(null, null)`.\" (424b447659); it no longer says the call lists all records, which the entity's stored match and paging can make false",
+  "n": 83
+ },
+ "8a55d0929f": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (`create(reqdata: ..., ctrl: ...): Any?`)",
+  "n": 16
+ },
+ "8bf4334a4c": {
+  "outcome": "restored:shared",
+  "why": "the shared create sentence \"Returns the created entity, and throws on failure.\" (a6c40f43b6)",
+  "n": 16
+ },
+ "c55858bcb3": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (`remove(reqmatch: ..., ctrl: ...): Any?`)",
+  "n": 16
+ },
+ "291b719a7c": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (`update(reqdata: ..., ctrl: ...): Any?`)",
+  "n": 16
+ },
+ "0b29ec4944": {
+  "outcome": "restored:shared",
+  "why": "the shared sentence \"The data must include the entity id, `id`, unless the entity already holds it.\" for every update and patch whose data carries an id; in ref-issues the gauge update carries none, and the sentence is not printed for it (sentence review)",
+  "n": 20
+ },
+ "e1e40527b4": {
+  "outcome": "restored:shared",
+  "why": "the shared update sentence \"Returns the updated entity, and throws on failure.\" (caabc79e5a)",
+  "n": 16
+ },
+ "2f38082332": {
+  "outcome": "correction:S09",
+  "why": "the shared features sentence now says \"Each feature is inactive until switched on, except `log`, which runs unless disabled.\" (log.aontu `active: true`)",
+  "n": 19
+ },
+ "ac1eac6be0": {
+  "outcome": "correction:S09",
+  "why": "the shared feature reference states log's default from its model (`active: true`) instead of \"Inactive by default\" for it; every other feature keeps the sentence",
+  "n": 19
+ },
+ "9b08e38580": {
+  "outcome": "correction:kotlin-test-overload",
+  "why": "the no-argument test constructor the runtime declares, `fun testSDK(): ProjectNameSDK = testSDK(null, null)` (Main.fragment.kt:17), which OLD did not document",
+  "n": 19
+ },
+ "2cf40f881d": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (`DemoSDK.testSDK(testopts: ..., sdkopts: ...): DemoSDK`, Main.fragment.kt:19-22)",
+  "n": 19
+ },
+ "ec40c2152b": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (the accessor MainEntity_kotlin writes: `fun ${accessor}(entopts: MutableMap<String, Any?>?): SdkEntity`)",
+  "n": 93
+ },
+ "c692d85a6d": {
+  "outcome": "restored:shared",
+  "why": "the shared prepare sentence for the throw style; OLD said \"raises on error\" (c41a606d0c)",
+  "n": 19
+ },
+ "80d61d1816": {
+  "outcome": "restored:shared",
+  "why": "the shared load return sentence (957163de8e)",
+  "n": 28
+ },
+ "28d0569a0d": {
+  "outcome": "restored:shared",
+  "why": "the shared `data` kind sentence: data(vararg args) sets the data when given a value (EntityBase.fragment.kt:50-53) and returns it",
+  "n": 94
+ },
+ "486e9a1df9": {
+  "outcome": "restored:shared",
+  "why": "the shared `data` kind sentence with copy: data() returns `Struct.clone(this.data)` (EntityBase.fragment.kt:57, cited)",
+  "n": 94
+ },
+ "46661fe900": {
+  "outcome": "restored:shared",
+  "why": "the shared `match` kind sentence: match works as data does (EntityBase.fragment.kt:60-69)",
+  "n": 94
+ },
+ "30bf0a94df": {
+  "outcome": "restored:note",
+  "why": "the kotlin note on the stream member: only a Function0 signal is read, and only `true` ends the stream (EntityBase.fragment.kt:233-240, cited)",
+  "n": 94
+ },
+ "424b447659": {
+  "outcome": "restored:shared",
+  "why": "the shared list sentence with the no-match call as Kotlin must write it (arity 2, derived: both list parameters are required)",
+  "n": 82
+ },
+ "97272cc792": {
+  "outcome": "correction:ref-6",
+  "why": "the shared Actions table now shows how an action is called (the Call column); the call routes `$action` through create, escaped as `\\$action` in a Kotlin string",
+  "n": 16
+ },
+ "a6c40f43b6": {
+  "outcome": "restored:shared",
+  "why": "the shared create return sentence (8bf4334a4c)",
+  "n": 16
+ },
+ "caabc79e5a": {
+  "outcome": "restored:shared",
+  "why": "the shared update return sentence (e1e40527b4)",
+  "n": 16
+ },
+ "482def0a4d": {
+  "outcome": "same-meaning",
+  "why": "a word match on `apikey`: the README client example passes `\"apikey\"`, and the secret row says `apikey` is the user name; they agree",
+  "n": 2
+ },
+ "91e8f78dd5": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (`patch(reqdata: ..., ctrl: ...): Any?`)",
+  "n": 4
+ },
+ "50d6ad1e73": {
+  "outcome": "restored:shared",
+  "why": "the shared patch return sentence (0c361e13cd)",
+  "n": 4
+ },
+ "0c361e13cd": {
+  "outcome": "restored:shared",
+  "why": "the shared patch return sentence; OLD \"Returns the patched entity and raises on error\" (50d6ad1e73)",
+  "n": 4
+ },
+ "bd4b298802": {
+  "outcome": "same-meaning",
+  "why": "a word match on `null`: the README test-mode line says both arguments may be `null`, as this sentence does",
+  "n": 1
+ },
+ "d4af1f09d0": {
+  "outcome": "same-meaning",
+  "why": "OLD said \"Both arguments may be `null`.\"; the shared test sentence says \"both may be `null`\", as the README does",
+  "n": 1
+ },
+ "403b7ffc3d": {
+  "outcome": "same-meaning",
+  "why": "OLD said the accessor \"returns `SdkEntity`\"; the heading signature now ends `: SdkEntity`, as the README examples cast to it",
+  "n": 1
+ },
+ "bff341cf32": {
+  "outcome": "contradiction",
+  "n": 2,
+  "why": "the README test-mode how-to (unported) promises a mock whatever the model",
+  "where": "kotlin/README.md, Use test mode (the unported README test-mode how-to)",
+  "true": "REFERENCE (no-test): without the test feature the test client has no mock transport and refuses every request",
+  "evidence": "Config_kotlin.ts makeFeature: `else -> ${kotlinpackage}.feature.BaseFeature()`; the README how-to says testSDK \"Creates a test-mode client with mock transport\" whatever the model"
+ },
+ "46dc1a3462": {
+  "outcome": "correction:S13",
+  "why": "no-test: without the test feature the factory falls back to BaseFeature (Config_kotlin.ts `else -> ${kotlinpackage}.feature.BaseFeature()`, cited as testMock generated), so the shared sentence says the client has no mock transport and refuses every request, where OLD promised mock features",
+  "n": 1
+ },
+ "032adf5867": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (ref-issues: `planetEntity(entopts: MutableMap<String, Any?>?): SdkEntity`)",
+  "n": 1
+ },
+ "ed3da20ea2": {
+  "outcome": "restored:shared",
+  "why": "ref-issues: the shared accessor sentence \"Create a new `PlanetEntity` entity.\" with the return type in the heading signature",
+  "n": 1
+ },
+ "dac11a1691": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: a field description that held a `|` and a line break broke the table row in OLD (the row split after \"percent\"); the shared cell escapes the pipe and joins the line (\"Level \\| percent see the guide ...\")",
+  "n": 1
+ },
+ "d7495fe92f": {
+  "outcome": "correction:G27",
+  "why": "ref-issues: the second half of the broken OLD row (dac11a1691), now in one cell; the relative link to guide.md, which does not resolve from REFERENCE.md, is printed as text",
+  "n": 1
+ },
+ "9b3a3864f9": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: planet's remove is active: false; it is no longer documented, so its sentence is gone (0c7b60723b)",
+  "n": 1
+ },
+ "f010700f70": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: planet's remove is active: false; its return sentence is gone with it (0c7b60723b)",
+  "n": 1
+ },
+ "c9ba5bb966": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "every signature is now written as the runtime declares it, name, parameters with their types, then the return after a colon (derived by the guard from the fragment and SdkClient.kt declarations), where OLD wrote bare names and `-> Type` (ref-issues accessor)",
+  "n": 1
+ },
+ "b4523a5362": {
+  "outcome": "correction:S49",
+  "why": "the server option and its variables: the URL is templated on tenant (account), so the options table lists `options[\"server\"]` and each variable",
+  "n": 1
+ },
+ "fd1c2f8fd4": {
+  "outcome": "correction:S49",
+  "why": "the required server variable tenant, in the options table",
+  "n": 1
+ },
+ "e231e4d0f8": {
+  "outcome": "correction:S49",
+  "why": "the server variable region and its default, in the options table",
+  "n": 1
+ },
+ "05e95df417": {
+  "outcome": "correction:S49",
+  "why": "the default of region, `eu`, in the options table",
+  "n": 1
+ },
+ "07b6a683db": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "the runtime parameter name `args` of data, match and stream, now in their signatures",
+  "n": 1
+ },
+ "fd48acdf84": {
+  "outcome": "correction:stream-member",
+  "why": "the stream member the runtime declares on every entity (EntityBase.fragment.kt:180 `override fun stream(...)`), which OLD did not document",
+  "n": 1
+ },
+ "057b5775f7": {
+  "outcome": "correction:stream-member",
+  "why": "the stream member's `action` parameter, and the `$action` of the Actions table",
+  "n": 1
+ },
+ "7a9d5874ad": {
+  "outcome": "correction:stream-member",
+  "why": "the stream member's `callopts` parameter, and the shared sentence on `callopts.signal`",
+  "n": 1
+ },
+ "465a5d5e3b": {
+  "outcome": "correction:stream-member",
+  "why": "the stream member returns `Sequence<Any?>` (EntityBase.fragment.kt:184)",
+  "n": 1
+ },
+ "eea38408c0": {
+  "outcome": "correction:stream-member",
+  "why": "the stream reads `callopts.signal` (streamSignal, cited) and the kotlin note on it",
+  "n": 1
+ },
+ "8ff27d81e0": {
+  "outcome": "restored:note",
+  "why": "the kotlin stream note names `Function0`, the only signal the stream reads (EntityBase.fragment.kt:234)",
+  "n": 1
+ },
+ "9c792a9893": {
+  "outcome": "correction:ref-6",
+  "why": "the action name in the Actions table Call column (97272cc792)",
+  "n": 1
+ },
+ "7e7f66c823": {
+  "outcome": "correction:ref-6",
+  "why": "the Call column calls the action on `client` (97272cc792)",
+  "n": 1
+ },
+ "cb9fe69138": {
+  "outcome": "correction:ref-6",
+  "why": "the Call column builds its argument with `mutableMapOf` (97272cc792)",
+  "n": 1
+ },
+ "b6a6400ef3": {
+  "outcome": "correction:ref-6",
+  "why": "the Call column pairs each key `to` its value (97272cc792)",
+  "n": 1
+ },
+ "045e555fdd": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the options table lists `options[\"secret\"]`, which PrepareAuth_kotlin reads",
+  "n": 1
+ },
+ "a9e4808c74": {
+  "outcome": "correction:S49",
+  "why": "server-mixed: the required server variable account, in the options table",
+  "n": 1
+ },
+ "8928fd2128": {
+  "outcome": "restored:shared",
+  "why": "OLD named the result `fetchdef`; the shared prepare paragraph calls it the fetch definition",
+  "n": 1
+ },
+ "51be247ee2": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "OLD's invented parameter name newdata; the runtime calls it `args` (EntityBase.fragment.kt:49)",
+  "n": 1
+ },
+ "7c0b860ae4": {
+  "outcome": "unification:kotlin-declaration-notation",
+  "why": "OLD's invented parameter name newmatch; the runtime calls it `args` (EntityBase.fragment.kt:60)",
+  "n": 1
+ },
+ "fadcbbaa1e": {
+  "outcome": "unification:feature-block",
+  "why": "the shared features block builds the client with the feature map inline, each feature a `mutableMapOf<String, Any?>(\"active\" to true)`, where OLD built a `feature` variable of `mapOf(...)` first; the same options reach the constructor",
+  "n": 18
+ },
+ "fde030938b": {
+  "outcome": "unification:write-note",
+  "why": "the shared update example closes its data with the comment \"// Fields to update\"",
+  "n": 16
+ },
+ "2f6838b6a6": {
+  "outcome": "correction:kotlin-test-overload",
+  "why": "the no-argument test constructor's example (9b08e38580)",
+  "n": 18
+ },
+ "a5c010c994": {
+  "outcome": "unification:write-note",
+  "why": "the shared patch example closes its data with the comment \"// Only the fields to change\"",
+  "n": 4
+ },
+ "d7a4a4ef20": {
+  "outcome": "unification:feature-block",
+  "why": "no-test: the same shared features block (fadcbbaa1e), without the test feature",
+  "n": 1
+ },
+ "0c7b60723b": {
+  "outcome": "correction:S25",
+  "why": "ref-issues: planet's remove is active: false, so it is no longer documented; the OLD remove block has no NEW counterpart and the tools paired it with the NEW no-argument test client block",
+  "n": 1
+ },
+ "f348eeaeba": {
+  "outcome": "unification:write-note",
+  "why": "the update note \"Fields to update\" (fde030938b)",
+  "n": 1
+ },
+ "54d103011e": {
+  "outcome": "unification:write-note",
+  "why": "the patch note \"Only the fields to change\" (a5c010c994)",
+  "n": 1
+ },
+ "0856872351": {
+  "outcome": "unification:write-note",
+  "why": "the patch note \"Only the fields to change\" (a5c010c994)",
+  "n": 1
+ },
+ "3a03a66ea9": {
+  "outcome": "unification:write-note",
+  "why": "the patch note \"Only the fields to change\" (a5c010c994)",
+  "n": 1
+ },
+ "f5aa89a42e": {
+  "outcome": "unification:feature-block",
+  "why": "OLD's `mapOf(\"active\" to true)` per feature; the shared feature block passes `mutableMapOf<String, Any?>(\"active\" to true)`",
+  "n": 1
+ },
+ "360f66a3d2": {
+  "outcome": "same-meaning",
+  "why": "a word match: the README options table's `base` cell says \"Base URL of the API server\"; the kotlin README options table does not list `server`, so it states nothing about the server variables",
+  "n": 15
+ },
+ "ab76c4efa0": {
+  "outcome": "restored:shared",
+  "why": "OLD said \"`load()` returns the ENTITY — call data() for the record — and raises on error\"; restored as the shared load sentence \"`load` returns the entity and throws on failure; `data()` reads its record.\" (41e1d81585), the operation named bare because both its parameters are required (facts.arity 2, derived; brief 7 decision 14)",
+  "n": 10
+ },
+ "41e1d81585": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "brief 7 decision 14: where every call must pass its arguments (arity 2 here: EntityLoadOp.fragment.kt `override fun load(reqmatch: MutableMap<String, Any?>?, ctrl: MutableMap<String, Any?>?)`, no defaults), prose names the operation bare; the shared load sentence, as OLD said it otherwise (ab76c4efa0)",
+  "n": 10
+ },
+ "356f46a7dd": {
+  "outcome": "restored:printer",
+  "why": "the shared list sentence; OLD's \"(as `Any?`)\" is now in the printed block, which casts the value `as List<*>` and each item `as SdkEntity` (an operation returns `Any?`, EntityListOp.fragment.kt); `list(null, null)` is the block's call, the operation is named bare in prose (decision 14)",
+  "n": 7
+ },
+ "b6d0e5b55b": {
+  "outcome": "restored:shared",
+  "why": "the shared load sentence (41e1d81585); \"raises on error\" becomes the throw style's \"throws on failure\"",
+  "n": 6
+ },
+ "454d326c2d": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 5
+ },
+ "77832f0697": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 4
+ },
+ "691bdc9ddb": {
+  "outcome": "restored:shared",
+  "why": "the shared patch comment keeps \"Patch — sends only the fields given\" and adds where the id comes from",
+  "n": 3
+ },
+ "cd43169d87": {
+  "outcome": "restored:shared",
+  "why": "the shared write sentence: each write returns the entity it wrote (EntityBase.fragment.kt runOp `return this`), and a removed one is marked as deleted (`this.markDeleted()`); OLD printed no sentence for the write step",
+  "n": 5
+ },
+ "9562ae8fc5": {
+  "outcome": "correction:U45",
+  "why": "ref-issues has update only: the step is headed \"2. Update a gauge\", as the operations it runs",
+  "n": 1
+ },
+ "fdd288e4f2": {
+  "outcome": "correction:U45",
+  "why": "ref-issues: the write step's sentence for its one operation, update",
+  "n": 1
+ },
+ "325b1911ed": {
+  "outcome": "same-meaning",
+  "why": "server-mixed: the same word match on `base` as 360f66a3d2",
+  "n": 1
+ },
+ "6fb3670380": {
+  "outcome": "unification:client-env-sentence",
+  "why": "DEMO_APIKEY and the apikey option in the shared client sentence; the OLD block's code read the same variable",
+  "n": 1
+ },
+ "275db80f77": {
+  "outcome": "unification:client-env-sentence",
+  "why": "DEMO_APIKEY and the apikey option in the shared client sentence; the OLD block's code read the same variable",
+  "n": 1
+ },
+ "1a135d465d": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "dc963c4a40": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "c22c8885c9": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "f7d7dc68ab": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "e5e05eb7a6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_kotlin reads options secret",
+  "n": 1
+ },
+ "f5ea3ada1b": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_kotlin reads options secret",
+  "n": 1
+ },
+ "f6f21dc984": {
+  "outcome": "correction:U45",
+  "why": "ref-issues: \"update\" in the lead and the step title of the tutorial that only updates",
+  "n": 1
+ },
+ "a12e1f1e52": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "5a5008f076": {
+  "outcome": "correction:decision-14-bare-name",
+  "why": "OLD named `list(null, null)` in prose; the shared sentence names the operation bare (both parameters required), and the block keeps `list(null, null)`",
+  "n": 1
+ },
+ "3f1195bfde": {
+  "outcome": "restored:printer",
+  "why": "OLD's \"(as `Any?`)\" in the list sentence: the block casts the `Any?` an operation returns (356f46a7dd)",
+  "n": 1
+ },
+ "03d0e2b4ef": {
+  "outcome": "correction:S49",
+  "why": "auth-off: no API key, but the URL is still templated, so the client passes server (tenant); OLD built a client with no server and so no base URL",
+  "n": 1
+ },
+ "4b625082e7": {
+  "outcome": "unification:example-names",
+  "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem",
+  "n": 7
+ },
+ "2f731f3ba4": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 3
+ },
+ "92c2488a35": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "7c99de9235": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "474e2b7332": {
+  "outcome": "correction:S49",
+  "why": "ent-none and ref-issues: the client passes the required server option; SdkEntity is imported only where a block reads a record (ref-issues updates only, ent-none makes no call)",
+  "n": 2
+ },
+ "87aafab844": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "37b37bdcf2": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "f4629e37f4": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_kotlin reads options secret",
+  "n": 1
+ },
+ "642f81e303": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_kotlin reads options secret",
+  "n": 1
+ },
+ "14eb5dfde1": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "70ac6b6b08": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "b3e1a90434": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "431e9ea0d5": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "4e30f7a270": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "c76072420b": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "eb691c2320": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "bc883ce38e": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "fa99929817": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "39cd96730f": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "3805b111d7": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "c4f1ef9b16": {
+  "outcome": "unification:write-comment-style",
+  "why": "the shared write comments: Create says what it returns and how its record is read (\"data() reads its record\"), Update/Patch say the id comes off the created entity's record, and the id is read off it (`(created.data() as Map<*, *>)[\"id\"]`); created is cast to SdkEntity where it is bound, because an operation returns `Any?` (EntityLoadOp.fragment.kt etc.: `): Any?`)",
+  "n": 1
+ },
+ "f9713683ba": {
+  "outcome": "unification:example-names",
+  "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem",
+  "n": 1
+ },
+ "2eb69fa8a2": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 10
+ },
+ "5eae1ff183": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 10
+ },
+ "7ce2b20b2f": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 7
+ },
+ "9f62ed0ac0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 6
+ },
+ "9c78fcb760": {
+  "outcome": "correction:S49",
+  "why": "auth-off: the client passes the required server option (tenant); OLD built a client with no server",
+  "n": 1
+ },
+ "b31f172f36": {
+  "outcome": "unification:example-names",
+  "why": "the shared example names: the list is bound to the entity plural and each item to the entity variable (planets/planet), not planetList/planetItem",
+  "n": 1
+ },
+ "26a2adc40e": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_kotlin reads options secret",
+  "n": 1
+ },
+ "f7920e85a8": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 3
+ },
+ "c5522631f5": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "22ed50a420": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "ff935caa13": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "fe936330a5": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "4a3209e8d9": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 1
+ },
+ "cdb707579b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 1
+ },
+ "41e8b6808d": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 1
+ },
+ "797ec8d55d": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_kotlin reads options secret",
+  "n": 1
+ },
+ "5ac10c03c6": {
+  "outcome": "correction:S50",
+  "why": "header Basic auth: the client also passes the secret the runtime reads (DEMO_SECRET), as PrepareAuth_kotlin reads options secret",
+  "n": 1
+ },
+ "d22dabf866": {
+  "outcome": "correction:S49",
+  "why": "the required server option and its variable, which the client must now pass (the URL is templated on tenant/account); the tutorial sentence names them, and region defaults to eu",
+  "n": 1
+ },
+ "b1989358a0": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 1
+ },
+ "61d073347b": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 1
+ },
+ "ac19dca525": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 1
+ },
+ "5524296637": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 1
+ },
+ "0c5db6b150": {
+  "outcome": "unification:step-comment-runtime-fact",
+  "why": "the root step comments name the step and state its runtime fact in the shared form (\"Load an ambient: the entity; throws on failure\")",
+  "n": 1
+ },
+ "31a80d54a8": {
+  "outcome": "unification:root-load-nested",
+  "why": "doc-nested: the root quick start loads the nested satellite, as the tutorial does, so its match carries planet_id",
+  "n": 1
+ },
+ "bda1b97c0c": {
+  "outcome": "unification:root-load-nested",
+  "why": "doc-nested: the placeholder for planet_id in the nested load (31a80d54a8)",
+  "n": 1
+ },
+ "facts": {
+  "named": {
+   "value": "call",
+   "why": "OLD kotlin names an operation as a call: \"`load()` returns the ENTITY — call data() for the record\" (tutorial) and \"call `list(null, null)` to list all records\" (REFERENCE). With arity 2 the shared prose names the operation bare anyway (decision 14), so the minimal pair against bare changes no sentence OLD can judge; recorded by hand",
+   "evidence": "OLD out/old/B/kotlin/README.md: \"`load()` returns the ENTITY\"; out/old/crud-bare/kotlin/README.md: \"`list(null, null)` returns a list of entities\""
+  },
+  "ref.noun": {
+   "value": "Methods",
+   "why": "the client's heading is now \"Client Methods\" (the shared `Client <noun>` heading, a context no OLD page had); OLD kotlin said \"Instance Methods\" and \"Common Methods\", which \"Common Methods\" still holds",
+   "evidence": "OLD out/old/B/kotlin/REFERENCE.md: \"### Instance Methods\", \"### Common Methods\""
+  }
+ },
+ "absent": {
+  "ed44d07e36": "ts's async load sentence (it resolves); kotlin's operations return (EntityLoadOp.fragment.kt `): Any?`, no suspend), so the shared throw-style sentence says \"returns\" (41e1d81585)",
+  "5e178e9588": "ts's async list sentence (it resolves); kotlin prints the same sentence with \"returns\" and its collection, a list",
+  "6d459aa83b": "ts's async write sentence (it resolves); kotlin prints the same sentence with \"returns\" (cd43169d87)",
+  "64560e9dff": "ts's async create comment (it resolves); kotlin prints the same comment with \"returns\"",
+  "78dac4093d": "ts's async single-write sentence (it resolves); kotlin prints it with \"returns\" (fdd288e4f2)",
+  "99a8153c15": "ts's comment names the entity class because ts declares `listOf` (`{Class}[]`); a Kotlin operation returns `Any?`, so kotlin declares no typed list and its comment says \"the entity\"",
+  "a0b269a293": "ts's comment names the typed list `PlanetEntity[]` (ts listOf); kotlin's list returns `Any?` holding a list, so its comment says \"a list of entities\"",
+  "7ab5ba644d": "not part of a per-language quick start: the sentence follows the TypeScript block of the root README's Quickstart, the primary language's, which kotlin does not print",
+  "f3e421e046": "kotlin prints the copy sentence \"Return a copy of the SDK utility object.\": getUtility() returns `this.util.copy()`, which allocates a new Utility (SdkClient.kt, Utility.kt `val u = Utility(false)`; cited); ts's utility() returns the live object",
+  "f30b7d4864": "ts only: direct takes `ctrl.signal` (direct.signal); kotlin's rawRequest reads no signal (cancel false, an absence searched over the whole runtime)",
+  "ea3964d6ba": "ts's prepare returns its error; kotlin's prepare throws (SdkClient.kt `throw ctx.makeError(\"spec_method_allow\", ...)`, prepare.fails style) and the page says \"It throws on failure.\"",
+  "abe923e0b2": "ts's tester() alias; the kotlin client declares no alias of testSDK (Main.fragment.kt, SdkClient.kt)",
+  "9efa1b3a1e": "the cancel paragraph prints where operations read an abort signal (ts, js); no kotlin operation reads one (cancel false, an absence searched over the whole runtime; only the stream reads callopts.signal)",
+  "bb93495ee9": "the cancel paragraph: no kotlin operation reads an abort signal (9efa1b3a1e)",
+  "d86e9841eb": "the cancel paragraph: no kotlin operation reads an abort signal (9efa1b3a1e)",
+  "cad5dfc5f6": "the cancel paragraph: no kotlin operation reads an abort signal (9efa1b3a1e)",
+  "9f6d56f5fb": "ts's async load return clause (it resolves); kotlin prints \"Returns the entity, and throws on failure.\"",
+  "f6b8425ed5": "the make sentence for entityBy class; kotlin names an entity by its Name (OLD attested: \"Create a new `Planet` entity instance with the same options\"), so it prints \"Create another `Planet` entity with the same client and options.\"",
+  "0071df96c2": "the accessor sentence for entityBy class; kotlin names an entity by its Name (OLD: \"Create a new `Ambient` entity instance\"), so it prints \"Create a new `Ambient` entity.\"",
+  "4c93659f14": "ts's stream is an async iterator; kotlin's returns a `Sequence` (EntityBase.fragment.kt:184), whose sentence is \"return a sequence of its result items\"",
+  "5003b705ca": "ts's stream runs as iteration starts; kotlin's runs runOp before building the sequence (EntityBase.fragment.kt:213 then :245; runs call, derived), so it prints \"The operation runs before the call returns.\"",
+  "2d65ce1465": "ts's entity has a public client() getter; kotlin's EntityBase holds the client in a protected property (EntityBase.fragment.kt:19 `protected var client: SdkClient`), with no public member",
+  "74dc5866b7": "ts's entity has a public entopts() getter; kotlin's EntityBase holds them in a protected property (EntityBase.fragment.kt:21 `protected var entopts`), with no public member",
+  "a32ec5077c": "ts's async list return clause (it resolves); kotlin prints \"Returns a list of entities, one per record, and throws on failure.\"",
+  "d6fd5c15c3": "ts's async create return clause; kotlin prints \"Returns the created entity, and throws on failure.\"",
+  "863f603c11": "ts's async update return clause; kotlin prints \"Returns the updated entity, and throws on failure.\"",
+  "b1666a52ac": "ts's async remove return clause; kotlin prints \"Returns the entity, marked as deleted, and throws on failure.\"",
+  "808ab9f422": "kotlin declares no ref.facts.deleted: `deleted()` is declared on EntityBase only (EntityBase.fragment.kt:83), not on SdkEntity (core/Interfaces.kt:19-40), the type the accessor returns and the examples cast to; `result` is `Any?` in the reference example. Reading the mark needs a cast to the entity package's EntityBase, which no example imports, so the sentence would name a call that does not compile as printed",
+  "b7eb8b0b55": "ts's async patch return clause; kotlin prints \"Returns the patched entity, and throws on failure.\""
+ }
+}
