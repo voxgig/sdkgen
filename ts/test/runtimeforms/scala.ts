@@ -59,6 +59,10 @@ const forms: Forms = {
     draw: "item = if (ready) source.next() else null",
     runs: "before it returns", items: "as the caller iterates",
   },
+  // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
+  cite: {
+    'ref.facts.direct.okFalse': { value: "false", file: "tm/scala/core/SdkClient.scala", quote: "out.put(\"ok\", java.lang.Boolean.FALSE)", unquoted: { false: "java.lang.Boolean.FALSE is the boxed false a Scala map of Any holds" } },
+  },
 }
 
 export { forms }
