@@ -12,6 +12,7 @@ type FeatureDoc = {
   title: string
   transport: string
   wraps: boolean
+  hooks: string[] // the pipeline hooks the feature declares active
   options: Array<{ name: string, value: string }>
 
   extras: Array<{ name: string, type: string }>
@@ -70,6 +71,9 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
         value: renderValue(opts[k]),
       }))
 
+      const hooks = Object.keys(f.hook || {})
+        .filter((h) => null != f.hook[h] && false !== f.hook[h].active).sort()
+
       const extra = (f.config && f.config.optspec) || {}
       const extras = Object.keys(extra)
         .filter((k) => null == opts[k])
@@ -81,6 +85,7 @@ function featureDocs(model: any, target?: any): FeatureDoc[] {
         title: f.title || '',
         transport: f.transport || 'none',
         wraps: isWrapping(f),
+        hooks,
         options,
         extras,
       }
