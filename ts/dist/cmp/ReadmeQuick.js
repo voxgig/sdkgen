@@ -169,7 +169,7 @@ function quickSteps(p, desc, where = 'tutorial') {
     return { steps, lead };
 }
 function quickText(p, desc) {
-    const sc = (0, example_1.newScope)();
+    const sc = (0, example_1.newScope)(false, 'tutorial');
     const { steps, lead } = quickSteps(p, desc);
     sc.section = steps.flatMap((s) => s.stmts);
     const where = placement(desc);
@@ -220,7 +220,7 @@ function bare(stmts) {
 // old root quick starts were. Where a call does not check itself, its check
 // stays: the load after the list may not run past an unchecked failure.
 function topQuickText(p, desc) {
-    const sc = (0, example_1.newScope)();
+    const sc = (0, example_1.newScope)(false, 'top');
     const { steps } = quickSteps(p, desc, 'top');
     const first = steps.filter((s) => /^(Create a client|List |Load )/.test(s.title));
     // The comment names the step, so the program printer adds no title of its own.
@@ -230,6 +230,7 @@ function topQuickText(p, desc) {
             : [{ k: 'comment', text: s.comment }, ...((0, example_1.checksItself)(p.facts.result) ? bare(s.stmts) : s.stmts)],
     }));
     sc.section = commented.flatMap((s) => s.stmts);
-    return p.program ? (0, example_1.printProgram)(p, commented, desc, sc) : (0, example_1.printJoined)(p, commented, desc, sc);
+    return (p.program ? (0, example_1.printProgram)(p, commented, desc, sc) : (0, example_1.printJoined)(p, commented, desc, sc)) +
+        ('' === (0, example_2.note)(p, 'top', desc) ? '' : '\n' + (0, example_2.note)(p, 'top', desc));
 }
 //# sourceMappingURL=ReadmeQuick.js.map

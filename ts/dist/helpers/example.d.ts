@@ -89,6 +89,7 @@ type RuntimeFacts = {
     unwrap?: string;
     unusedError?: boolean;
     listOf?: string;
+    arity?: number;
     prints: Prints;
 };
 type Prints = 'record' | 'listFields' | 'fields';
@@ -101,6 +102,7 @@ type Member = {
     returns?: string;
     copy?: boolean;
     runs?: StreamRuns;
+    field?: boolean;
 };
 type RefFacts = {
     entityBy: 'class' | 'Name' | 'module';
@@ -132,6 +134,7 @@ type RefFacts = {
         sig: string;
         arg: 'data' | 'entopts';
         param: string;
+        cached?: boolean;
     };
     op: Record<OpName, string>;
     opMatched?: Partial<Record<OpName, string>>;
@@ -153,6 +156,9 @@ type RefFacts = {
         binary?: boolean;
     };
     cancel: boolean;
+    streamSignal?: boolean;
+    memberNamed?: 'call' | 'bare';
+    deleted?: string;
 };
 type CtorKind = 'defaults' | 'explicit';
 declare function entOf(desc: SdkDescription, name: string): Ent;
@@ -179,6 +185,7 @@ type Scope = {
     stmts: Stmt[];
     section: Stmt[];
     standalone: boolean;
+    place?: ShowPlace;
 };
 type CallContext = {
     inAttempt: boolean;
@@ -208,7 +215,7 @@ type Syntax = {
     }>, inner: (body: Stmt[]) => string[], sc: Scope, desc: SdkDescription) => string[];
     comment: (text: string) => string;
     expr: (e: Expr, sc: Scope, desc: SdkDescription) => string;
-    imports?: (desc: SdkDescription, used: Uses) => string[];
+    imports?: (desc: SdkDescription, used: Uses, place?: ShowPlace) => string[];
     notes?: Partial<Record<NoteSlot, string>>;
     before?: (stmts: Stmt[], desc: SdkDescription, sc: Scope) => string[];
     program?: (steps: ProgramStep[], desc: SdkDescription, sc: Scope) => string[];
@@ -236,7 +243,7 @@ declare function printJoined(p: Syntax, steps: {
     title: string;
     stmts: Stmt[];
 }[], desc: SdkDescription, sc: Scope): string;
-declare function newScope(standalone?: boolean): Scope;
+declare function newScope(standalone?: boolean, place?: ShowPlace): Scope;
 declare function note(p: Syntax, slot: NoteSlot, desc?: SdkDescription): string;
 declare function indent(lines: string[], by: string): string[];
 export type { CallContext, CtorKind, NoteSlot, Member, MemberKind, RefFacts, RefSyntax, Ent, Entry, Expr, OpName, Prints, ProgramStep, ShowPlace, StreamRuns, Ref, ResultStyle, RuntimeFacts, Scope, Stmt, Syntax, Uses, };

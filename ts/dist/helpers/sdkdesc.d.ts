@@ -30,6 +30,7 @@ type DescLayout = {
     module: string;
     client: string;
     ctor: string;
+    dir?: string;
     names?: Record<string, string>;
     vars?: Record<string, string>;
 };
@@ -142,5 +143,6 @@ type SdkDescription = {
 declare function readsSecret(model: any): boolean;
 declare function sdkDescription(model: any, target: any, naming?: Naming, stdrep?: Record<string, string>): SdkDescription;
 declare function templateName(map: Record<string, string>, name: string): string;
+declare function showFields(fields: any[], dataIdF: string | null): string[];
 export type { DescAction, DescField, DescFeature, DescOp, DescOptionRow, DescRef, Naming, SdkDescription, DescLayout, DescSymbols, DescArg, DescEntity, DescOption, DescQuick, DescServerVar, Scalar, };
-export { templateName, sdkDescription, readsSecret, };
+export { templateName, sdkDescription, readsSecret, showFields as showFieldsOf, };
