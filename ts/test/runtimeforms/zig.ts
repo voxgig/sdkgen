@@ -70,6 +70,7 @@ const forms: Forms = {
       quote: ['.string, .integer, .float, .number_string, .bool => is_json_request(ctx.point),', 'h.setp(fetchdef, "body", body);'],
     },
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/zig/core/utility.zig'] } },
+    'ref.facts.testMock': { value: "always", file: "src/cmp/zig/Config_zig.ts", quote: "'retry', 'streaming', 'telemetry', 'test', 'timeout'," },
     'notes.member:prepare': { value: "On failure it returns the error of its error union, for `try` or `catch`.", file: MAIN, quote: 'pub fn prepare(self: *ProjectNameSDK, fetchargs_in: Value) E!Value {', also: [{ file: 'tm/zig/core/error.zig', quote: 'pub const E = error{Sdk};' }],
       unquoted: { try: 'a Zig keyword for a call to an error-union function', catch: 'a Zig keyword for a call to an error-union function' } },
     'notes.member:streamList': { value: "Under `throw: false` in `callopts.ctrl`, a failed stream is `.ok` with\nwhatever data the failure left; otherwise `.err` holds the branded error.",

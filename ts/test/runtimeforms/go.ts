@@ -69,6 +69,7 @@ const forms: Forms = {
     },
     'ref.facts.body.once': { value: "an `io.Reader`", file: 'tm/go/utility/media.go', quote: 'if r, ok := body.(io.Reader); ok {\n\t\tdata, err := io.ReadAll(r)' },
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/go/utility/fetcher.go'] } },
+    'ref.facts.testMock': { value: "model", file: "src/cmp/go/Config_go.ts", quote: "return NewBaseFeatureFunc()" },
     'notes.member:stream': { value: "It sends the items on the returned channel, which closes when the stream\nends. A `StreamItem` holds one item in `Item`, or in `Err` the error that\nended the stream: the error the operation itself would return, sent as the\nlast value. Under `throw: false` in `callopts[\"ctrl\"]`, no error is sent.",
       file: ENTITY,
       quote: [

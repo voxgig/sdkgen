@@ -74,6 +74,7 @@ const forms: Forms = {
       quote: ['scalar = is_binary(body) or is_number(body) or is_boolean(body)', 'S.setprop(fetchdef, "body", body)'],
     },
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|signal)\b|cancel_request|:abort\b/i, files: ['tm/elixir/lib/projectname/utility.ex'] } },
+    'ref.facts.testMock': { value: "model", file: "src/cmp/elixir/Main_elixir.ts", quote: "_ -> ${Name}.Feature.new()" },
     'notes.member:utilityBase': { value: "It is the client's own node, not a copy.", file: MAIN, quote: 'def get_utility(client), do: S.getprop(client, "_utility")' },
   },
   exceptions: {

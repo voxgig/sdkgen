@@ -53,7 +53,7 @@ const forms: Forms = {
     'ref.facts.client[0].copy': { value: true, file: "src/cmp/rust/fragment/Main.fragment.rs", quote: "vs::clone(&self.options.borrow())" },
     'ref.facts.direct.okFalse': { file: MAIN, quote: '("ok", Value::Bool(false)),' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/rust/fragment/Entity.fragment.rs", quote: "vs::clone(&self.data.borrow())" },
-    'notes.member:direct': { value: "The result map always comes back inside `Ok`, for a non-2xx response and\nfor a request that could not be made alike; its `ok` key reports the failure.", file: "src/cmp/rust/fragment/Main.fragment.rs", quote: ["        self.raw_request(fetchargs)", "            Err(err) => {\n                return Ok(jo(vec![", "        Ok(jo(vec![\n            (\"ok\", Value::Bool(false)),"] },
+    'notes.member:direct': { value: "The result map always comes back inside `Ok`.", file: "src/cmp/rust/fragment/Main.fragment.rs", quote: ["        self.raw_request(fetchargs)", "            Err(err) => {\n                return Ok(jo(vec![", "        Ok(jo(vec![\n            (\"ok\", Value::Bool(false)),"] },
     'facts.ok': { file: OPS[0], quote: 'Ok(self.clone())' },
     'facts.err': { file: ENTITY, quote: 'Err(err) => return utility.make_error(ctx, Some(err)),' },
     'ref.facts.none': { file: MAIN, quote: 'options: RefCell::new(Value::Noval),' },
@@ -78,6 +78,7 @@ const forms: Forms = {
       unquoted: { 'bytes_value(&[u8])': 'the signature bytes_value(bytes: &[u8]) with its parameter name left out' },
     },
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/rust/utility/fetcher.rs'] } },
+    'ref.facts.testMock': { value: "model", file: "src/cmp/rust/Config_rust.ts", quote: "_ => Rc::new(RefCell::new(crate::feature::base::BaseFeature::new()))," },
   },
   // What the table states besides names, parameters and returns.
   testDecl: 'test_sdk',

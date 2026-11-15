@@ -53,6 +53,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'Promise<{ url, method, headers, body } | Error>', fails: 'value' },
   body: { values: 'a `Buffer`, `Uint8Array`, `ArrayBuffer`, `Blob`, stream or string', once: 'a stream' },
   cancel: true,
+  testMock: 'model',
 }
 
 const name = (r: Ref): string => r.name

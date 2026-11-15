@@ -57,6 +57,7 @@ const refFacts: RefFacts = {
   prepare: { returns: '(map[string]any, error)', fails: 'style' },
   body: { values: 'a `[]byte`, a `string` or an `io.Reader`', once: 'an `io.Reader`' },
   cancel: false,
+  testMock: 'model',
 }
 
 const str = (s: string): string => JSON.stringify(s).replace(/﻿/g, '\\ufeff')
@@ -151,7 +152,7 @@ const Syntax: SyntaxType = {
     key: (container, path) => container + path.map((k) => `[${str(k)}]`).join(''),
     // A binding nothing reads does not compile, so the handle is used.
     instance: (e) => [`${e.sym.var} := client.${e.sym.accessor}(nil)`, `fmt.Println(${e.sym.var}.GetName()) // ${str(e.name)}`],
-    read: (value, key) => `${value}[${str(key)}]`,
+    read: (value, key, truth) => `${value}[${str(key)}]` + (truth ? ' == true' : ''),
   },
 
   notes: {

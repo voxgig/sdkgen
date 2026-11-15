@@ -55,6 +55,8 @@ const forms: Forms = {
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
     'ref.facts.direct.okFalse': { value: "false", file: "tm/java/core/SdkClient.java", quote: "out.put(\"ok\", false);" },
+    // The test client's mock without the test feature, cited ahead: the factory's fallback.
+    'ref.facts.testMock': { value: "model", file: "src/cmp/java/Config_java.ts", quote: "return new ${javapackage}.feature.BaseFeature();" },
   },
 }
 

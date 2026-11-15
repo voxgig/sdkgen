@@ -57,6 +57,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'Result<Value, ProjectNameError>', fails: 'style' },
   body: { values: 'a string, or bytes as `bytes_value(&[u8])`' },
   cancel: false,
+  testMock: 'model',
 }
 
 const str = (s: string): string => JSON.stringify(s)
@@ -161,11 +162,11 @@ const Syntax: SyntaxType = {
     type: (t) => canonToType(t, 'rust'),
     key: (_container, path) => path.join('.'),
     instance: (e) => [`let ${e.sym.var} = client.${e.sym.accessor}(Value::Noval);`],
-    read: (value, key) => `getp(&${value}, ${str(key)})`,
+    read: (value, key, truth) => `getp(&${value}, ${str(key)})` + (truth ? ' == Value::Bool(true)' : ''),
   },
 
   notes: {
-    'member:direct': 'The result map always comes back inside `Ok`, for a non-2xx response and\nfor a request that could not be made alike; its `ok` key reports the failure.',
+    'member:direct': 'The result map always comes back inside `Ok`.',
   },
 }
 

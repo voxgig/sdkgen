@@ -54,6 +54,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'voxgig_value*', fails: 'style' },
   body: { values: 'a string value holding the bytes, such as `voxgig_new_string_n`' },
   cancel: false,
+  testMock: 'model',
 }
 
 const str = (s: string): string => '"' + s.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"'
@@ -226,7 +227,7 @@ const Syntax: SyntaxType = {
     },
     key: (_container, path) => path.join('.'),
     instance: (e) => [`Entity* ${e.sym.var} = ${e.sym.accessor}(client, NULL);`],
-    read: (value, key) => `getp(${value}, ${str(key)})`,
+    read: (value, key, truth) => truth ? `voxgig_as_bool(getp(${value}, ${str(key)}))` : `getp(${value}, ${str(key)})`,
   },
 }
 

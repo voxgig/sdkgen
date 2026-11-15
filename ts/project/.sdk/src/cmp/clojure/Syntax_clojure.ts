@@ -57,6 +57,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'map', fails: 'style' },
   body: { values: 'a byte array, a `String` or an `InputStream`', once: 'an `InputStream`' },
   cancel: false,
+  testMock: 'always',
 }
 
 // Field types as the old reference named them; clojure emits no typed models.

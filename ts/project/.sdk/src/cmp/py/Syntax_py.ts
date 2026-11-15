@@ -34,7 +34,6 @@ const refFacts: RefFacts = {
     patch: 'patch(reqdata, ctrl=None) -> {Class}',
     remove: 'remove(reqmatch=None, ctrl=None) -> {Class}',
   },
-  opMatched: { list: 'list(reqmatch, ctrl=None) -> list[{Class}]' },
   client: [
     { kind: 'options', sig: 'options_map() -> dict', copy: true },
     { kind: 'utility', sig: 'get_utility() -> Utility' },
@@ -54,6 +53,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'dict', fails: 'style' },
   body: { values: '`bytes`, `bytearray`, `memoryview`, a `str` or a file object', once: 'a file object' },
   cancel: false,
+  testMock: 'model',
 }
 
 const str = (s: string): string => JSON.stringify(s)

@@ -53,6 +53,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'E!Value', fails: 'note' },
   body: { values: 'a string value holding the bytes' },
   cancel: false,
+  testMock: 'always',
 }
 
 const str = (s: string): string => JSON.stringify(s)
@@ -183,7 +184,7 @@ const Syntax: SyntaxType = {
     type: zigType,
     key: (_container, path) => path.join('.'),
     instance: (e) => [`const ${e.sym.var} = client.${e.sym.accessor}(h.vnull());`],
-    read: (value, key) => `h.get_bool(${value}, ${str(key)})`,
+    read: (value, key, truth) => truth ? `h.get_bool(${value}, ${str(key)}) orelse false` : `h.getp(${value}, ${str(key)})`,
   },
 
   notes: {

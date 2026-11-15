@@ -67,6 +67,8 @@ const forms: Forms = {
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
     'ref.facts.direct.okFalse': { value: "0", file: "src/cmp/perl/fragment/Main.fragment.pm", quote: "'ok' => 0," },
+    // The test client's mock without the test feature, cited ahead: the factory's fallback.
+    'ref.facts.testMock': { value: "model", file: "src/cmp/perl/Main_perl.ts", quote: "  return ${model.const.Name}BaseFeature->new;" },
   },
 }
 

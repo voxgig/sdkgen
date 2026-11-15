@@ -87,6 +87,7 @@ const forms: Forms = {
     },
     'ref.facts.body.once': { value: "an `InputStream`", file: 'tm/clojure/src/sdk/core.clj', quote: ';; read here, once, before the first attempt, so that a retry sends the same' , also: [{ file: 'tm/clojure/src/sdk/core.clj', quote: '(if (instance? java.io.InputStream body) (.readAllBytes ^java.io.InputStream body) body)' }] },
     'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/clojure/src/sdk/core.clj'] } },
+    'ref.facts.testMock': { value: "always", file: "tm/clojure/src/sdk/features.clj", quote: "\"test\" (test-feature)" },
   },
   // What the table states besides names, parameters and returns.
   testDecl: 'test-sdk',

@@ -33,7 +33,6 @@ const refFacts: RefFacts = {
     patch: 'patch(entity, reqdata, ctrl \\\\ nil) :: entity',
     remove: 'remove(entity, reqmatch \\\\ nil, ctrl \\\\ nil) :: entity',
   },
-  opMatched: { list: 'list(entity, reqmatch, ctrl \\\\ nil) :: list()' },
   client: [
     { kind: 'options', sig: 'options_map(client) :: map()', copy: true },
     { kind: 'utilityBase', sig: 'get_utility(client) :: map()' },
@@ -53,6 +52,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'map()', fails: 'style' },
   body: { values: 'a binary' },
   cancel: false,
+  testMock: 'model',
 }
 
 // An Elixir string literal: `#` is escaped, since `#{` interpolates.
