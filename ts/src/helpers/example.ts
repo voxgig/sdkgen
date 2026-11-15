@@ -80,6 +80,11 @@ type RuntimeFacts = {
   unwrap?: string // wrapped: the code that takes the entity out of the value
   unusedError?: boolean // a bound value no statement reads fails the build (go, zig)
   listOf?: string // the type a list resolves to, where the language names one: '{Class}[]'
+  // The arguments an operation call must pass, each the none value where it
+  // is left out: 0 where every argument may be omitted (`list()`), 2 where the
+  // language has no default arguments (`list(nil, nil)`). A sentence then
+  // names an operation by a call that compiles.
+  arity?: number
   prints: Prints
 }
 
@@ -119,7 +124,8 @@ type StreamRuns = 'iterate' | 'call' | 'background'
 // `copy`: a getter (data, match, options, entopts) returns a copy of the
 // value it holds, not the value itself; without it the page says no copy.
 // `runs`: a stream kind's StreamRuns, required for every stream kind.
-type Member = { kind: MemberKind, sig: string, returns?: string, copy?: boolean, runs?: StreamRuns }
+// `field`: the member is a field, read without a call (ocaml's `e_name`).
+type Member = { kind: MemberKind, sig: string, returns?: string, copy?: boolean, runs?: StreamRuns, field?: boolean }
 
 // What the reference page states about a runtime, independently of any model.
 type RefFacts = {
@@ -145,7 +151,9 @@ type RefFacts = {
   testMock: 'generated' | 'always'
   // The client's entity accessor. `param`: the name its signature gives the
   // argument, which the page names where it is not the options' name.
-  accessor: { sig: string, arg: 'data' | 'entopts', param: string }
+  // `cached`: called with the none value, it returns one instance the client
+  // keeps (made by the first such call), not a new one.
+  accessor: { sig: string, arg: 'data' | 'entopts', param: string, cached?: boolean }
   op: Record<OpName, string> // each operation's signature
   opMatched?: Partial<Record<OpName, string>> // the signature where the match is required (a nested list)
   client: Member[] // the client's fixed members, in page order
@@ -159,6 +167,14 @@ type RefFacts = {
   prepare: { returns: string, fails: 'style' | 'value' | 'note' }
   body: { values: string, once?: string, binary?: boolean } // what `$body` accepts
   cancel: boolean // operations take an abort signal in ctrl.signal
+  // The stream reads `callopts.signal` and ends early once it reports an
+  // abort, whether or not the operations can be cancelled.
+  streamSignal?: boolean
+  // How prose names a member: 'call', `direct()` (the default), or 'bare',
+  // `direct`, where a call is not written with parentheses.
+  memberNamed?: 'call' | 'bare'
+  // How a removed entity's mark is read, {var} the entity: '{var}.deleted()'.
+  deleted?: string
 }
 
 
@@ -409,7 +425,9 @@ function uses(stmts: Stmt[]): Uses {
 // block, for a printer that declares ahead what later blocks use.
 // `standalone`: the block stands alone (a reference example), rather than
 // following the section's client block and the page's imports.
-type Scope = { declared: Set<string>, local: Set<string>, stmts: Stmt[], section: Stmt[], standalone: boolean }
+// `place`: the section the block is printed for, which the imports printer
+// is told (a library path depends on where the reader runs).
+type Scope = { declared: Set<string>, local: Set<string>, stmts: Stmt[], section: Stmt[], standalone: boolean, place?: ShowPlace }
 
 // Where a call stands: inside an attempt (whose handling covers it) or not,
 // and whether it is the last statement of its block.
@@ -433,7 +451,9 @@ type Syntax = {
   // shared page prints these ahead of the client block of the tutorial and
   // of the root quick start, and nowhere else. `used` is what the whole
   // section uses, for an import that only an option needs (an env reader).
-  imports?: (desc: SdkDescription, used: Uses) => string[]
+  // `place`: where the block is read from (the tutorial from the SDK's own
+  // directory, the root quick start from the repository root).
+  imports?: (desc: SdkDescription, used: Uses, place?: ShowPlace) => string[]
   // Optional: runtime notes, static prose true of this runtime alone, each
   // printed exactly where the shared page prints its slot (NoteSlot).
   notes?: Partial<Record<NoteSlot, string>>
@@ -473,7 +493,7 @@ function printStmts(p: Syntax, stmts: Stmt[], desc: SdkDescription, sc: Scope, i
       case 'client':
         if (p.imports && !sc.standalone && !sc.declared.has(IMPORTED)) {
           sc.declared.add(IMPORTED)
-          const lines = p.imports(desc, uses(sc.section.length ? sc.section : stmts))
+          const lines = p.imports(desc, uses(sc.section.length ? sc.section : stmts), sc.place)
           if (0 < lines.length) out.push(...lines, '')
         }
         out.push(...p.client(s, desc, sc)); break
@@ -538,8 +558,8 @@ function fenced(p: Syntax, lines: string[]): string {
 // Recorded in Scope.declared once the page's imports are printed.
 const IMPORTED = '\u0000imports'
 
-function newScope(standalone = false): Scope {
-  return { declared: new Set(), local: new Set(), stmts: [], section: [], standalone }
+function newScope(standalone = false, place?: ShowPlace): Scope {
+  return { declared: new Set(), local: new Set(), stmts: [], section: [], standalone, place }
 }
 
 // A runtime note for a slot, as a paragraph, or nothing. A note names the

@@ -187,7 +187,7 @@ function quickSteps(p: Syntax, desc: SdkDescription, where: ShowPlace = 'tutoria
 
 
 function quickText(p: Syntax, desc: SdkDescription): string {
-  const sc: Scope = newScope()
+  const sc: Scope = newScope(false, 'tutorial')
   const { steps, lead } = quickSteps(p, desc)
   sc.section = steps.flatMap((s) => s.stmts)
 
@@ -244,7 +244,7 @@ function bare(stmts: Stmt[]): Stmt[] {
 // old root quick starts were. Where a call does not check itself, its check
 // stays: the load after the list may not run past an unchecked failure.
 function topQuickText(p: Syntax, desc: SdkDescription): string {
-  const sc: Scope = newScope()
+  const sc: Scope = newScope(false, 'top')
   const { steps } = quickSteps(p, desc, 'top')
   const first = steps.filter((s) => /^(Create a client|List |Load )/.test(s.title))
   // The comment names the step, so the program printer adds no title of its own.
@@ -254,7 +254,8 @@ function topQuickText(p: Syntax, desc: SdkDescription): string {
       : [{ k: 'comment', text: s.comment } as Stmt, ...(checksItself(p.facts.result) ? bare(s.stmts) : s.stmts)],
   }))
   sc.section = commented.flatMap((s) => s.stmts)
-  return p.program ? printProgram(p, commented, desc, sc) : printJoined(p, commented, desc, sc)
+  return (p.program ? printProgram(p, commented, desc, sc) : printJoined(p, commented, desc, sc)) +
+    ('' === note(p, 'top', desc) ? '' : '\n' + note(p, 'top', desc))
 }
 
 

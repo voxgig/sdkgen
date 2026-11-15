@@ -50,6 +50,7 @@ type DescLayout = {
   module: string // what an example imports the SDK by: a package, module path, header or namespace
   client: string // the client type
   ctor: string // the function or constructor an example creates a client with
+  dir?: string // the target's directory in the generated repository, for a path the root README needs
   names?: Record<string, string> // further names an example imports, by role (rust's entity-base trait, elixir's helpers module)
   vars?: Record<string, string> // the example variable names shared code chooses, as the language must spell them
 }
@@ -495,11 +496,12 @@ function quickChoices(activeEntities: any[]): DescQuick | null {
 
 
 // The record id, then the first other string field, else the first other
-// field of any type: what php, rb and lua chose for themselves (perl printed
-// the id alone), chosen here once.
+// integer, number or boolean field; with no scalar, the id alone (a map or a
+// list printed whole is no display field: perl prints `HASH(0x...)`).
 function showFields(fields: any[], dataIdF: string | null): string[] {
   const other = fields.filter((f: any) => f && f.n !== 'id' && f.n !== dataIdF)
-  const display = other.find((f: any) => 'STRING' === canonScalarKey(f.t)) || other[0]
+  const display = ['STRING', 'INTEGER', 'NUMBER', 'BOOLEAN']
+    .map((k) => other.find((f: any) => k === canonScalarKey(f.t))).find((f) => null != f)
   return [dataIdF, display ? display.n : null].filter((f): f is string => null != f)
 }
 
@@ -527,4 +529,5 @@ export {
   templateName,
   sdkDescription,
   readsSecret,
+  showFields as showFieldsOf,
 }

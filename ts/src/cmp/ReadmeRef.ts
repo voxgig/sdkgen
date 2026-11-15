@@ -94,7 +94,7 @@ function memberName(r: RefSyntax, k: MemberKind | ((k: MemberKind) => boolean)):
   if (null != head) return head[1]
   const named = /([\w.]+(?:->\w+)?)\s*\(/.exec(m.sig)
   if (null == named) throw new Error(`ReadmeRef: the signature of ${m.kind} names no call: ${m.sig}`)
-  return named[1] + '()'
+  return 'bare' === r.facts.memberNamed ? named[1] : named[1] + '()'
 }
 
 // How a map is passed to set an entity's data or match.
@@ -113,14 +113,19 @@ const STREAM_RUNS: Record<StreamRuns, string> = {
 }
 
 // A stream kind's sentence: what it returns, then when it runs.
-function streamText(what: string, m: Member): string {
+function streamText(what: string, m: Member, r: RefSyntax): string {
   if (null == m.runs) throw new Error(`ReadmeRef: stream member ${m.sig} needs runs`)
-  return wrap(`Run an operation through the pipeline and ${what} ${STREAM_RUNS[m.runs].replace(/\n/g, ' ')}`)
+  return wrap(`Run an operation through the pipeline and ${what} ${STREAM_RUNS[m.runs].replace(/\n/g, ' ')}` +
+    (r.facts.streamSignal ? ' ' + STREAM_SIGNAL : ''))
 }
+
+// A stream that reads `callopts.signal` (ReadmeRef's streamSignal fact).
+const STREAM_SIGNAL = 'It ends early once `callopts.signal` reports an abort.'
 
 // What a getter hands back: a copy where the runtime clones, which its member
 // declares (Member.copy).
 const COPY = 'Returns a copy of the current data.'
+const COPY_MATCH = 'Returns a copy of the current match criteria.'
 
 // The sentence each fixed member kind is described by.
 function memberText(m: Member, p: Syntax, desc: SdkDescription, ent?: DescEntity): string {
@@ -129,7 +134,7 @@ function memberText(m: Member, p: Syntax, desc: SdkDescription, ent?: DescEntity
   const kind = m.kind
   switch (kind) {
     case 'options': return m.copy ? 'Return a deep copy of the current SDK options.' : 'Return the current SDK options.'
-    case 'utility': return 'Return a copy of the SDK utility object.'
+    case 'utility': return m.copy ? 'Return a copy of the SDK utility object.' : 'Return the SDK utility object.'
     case 'utilityBase': return 'Return the SDK utility object.'
     case 'tester': {
       const test = r.facts.test.find((x) => x.args) || r.facts.test[0]
@@ -138,27 +143,28 @@ function memberText(m: Member, p: Syntax, desc: SdkDescription, ent?: DescEntity
     case 'data': return 'Get or set the entity data. When called with data, sets the entity\'s\n' +
       'internal data and returns the current data. When called without\narguments, returns ' +
       (m.copy ? 'a copy of the current data.' : 'the current data.')
-    case 'match': return `Get or set the entity match criteria. Works the same as ${code(sig('data'))}.`
+    case 'match': return `Get or set the entity match criteria. Works the same as ${code(sig('data'))}.` +
+      (m.copy ? ' ' + COPY_MATCH : '')
     case 'dataArg': return wrap(`Get the entity data.${m.copy ? ' ' + COPY : ''} Pass ${setArg(r)} to set it.`)
-    case 'matchArg': return `Get the entity match criteria. Pass ${setArg(r)} to set it.`
+    case 'matchArg': return wrap(`Get the entity match criteria.${m.copy ? ' ' + COPY_MATCH : ''} Pass ${setArg(r)} to set it.`)
     case 'dataGet': return 'Get the entity data.' + (m.copy ? ' ' + COPY : '')
     case 'dataSet': return 'Set the entity data.'
-    case 'matchGet': return 'Get the entity match criteria.'
+    case 'matchGet': return 'Get the entity match criteria.' + (m.copy ? ' ' + COPY_MATCH : '')
     case 'matchSet': return 'Set the entity match criteria.'
     case 'make': return 'class' === r.facts.entityBy
       ? `Create a new ${code(ent ? typeOf(r, ent) : '')} instance with the same client and\noptions.`
       : `Create another ${code(ent ? typeOf(r, ent) : '')} entity with the same client and\noptions.`
-    case 'name': return 'Return the entity name.'
+    case 'name': return m.field ? 'The entity name.' : 'Return the entity name.'
     case 'client': return `Return the parent ${code(desc.layout.client)} instance.`
     case 'entopts': return m.copy ? 'Return a copy of the entity options.' : 'Return the entity options.'
-    case 'stream': return streamText('stream its result items.', m)
-    case 'streamIterator': return streamText('yield its result items as an async iterator.', m)
-    case 'streamGenerator': return streamText('yield its result items as a generator.', m)
-    case 'streamLazy': return streamText('return a sequence of its result items.', m)
-    case 'streamSync': return streamText('return an iterator over its result items.', m)
+    case 'stream': return streamText('stream its result items.', m, r)
+    case 'streamIterator': return streamText('yield its result items as an async iterator.', m, r)
+    case 'streamGenerator': return streamText('yield its result items as a generator.', m, r)
+    case 'streamLazy': return streamText('return a sequence of its result items.', m, r)
+    case 'streamSync': return streamText('return an iterator over its result items.', m, r)
     case 'streamFunction': return streamText('return a function that returns its next result item on each ' +
-      `call, and ${code(r.facts.none)} once the items end.`, m)
-    case 'streamList': return streamText(`return its result items, every one already read. ${failsSentence(p.facts)}`, m)
+      `call, and ${code(r.facts.none)} once the items end.`, m, r)
+    case 'streamList': return streamText(`return its result items, every one already read. ${failsSentence(p.facts)}`, m, r)
     case 'direct': return 'Make a direct HTTP request to any API endpoint.'
     case 'prepare': return `Prepare a fetch definition without sending the request. Accepts the\nsame parameters as ${code(sig('direct'))}.`
   }
@@ -287,7 +293,13 @@ function accessorText(r: RefSyntax, type: string): string {
   const what = 'data' === arg ? 'data' : 'options'
   const name = 'data' === arg ? 'data' : 'entopts'
   // Where an entity is no instance of a class (named by its Name or its module).
-  const made = `Create a new ${code(type)} ${'class' === r.facts.entityBy ? 'instance' : 'entity'}.`
+  const kind = 'class' === r.facts.entityBy ? 'instance' : 'entity'
+  if (r.facts.accessor.cached) {
+    return wrap(`Called with ${code(r.facts.none)}, return the ${code(type)} ${kind} the client keeps, made by ` +
+      `the first such call; called with entity ${what}, create a new one.` +
+      (param === name ? '' : ` Its ${code(param)} argument holds the entity ${what}.`))
+  }
+  const made = `Create a new ${code(type)} ${kind}.`
   return param === name
     ? `${made} Pass ${code(r.facts.none)} for no initial\n${what}.`
     : wrap(`${made} Its ${code(param)} argument holds the entity ${what}: pass ${code(r.facts.none)} for none.`)
@@ -310,8 +322,7 @@ Every entity operation takes an optional \`ctrl\` object after its match or
 data, and ${a(code(cancelSignal(r)))} in \`ctrl.signal\` cancels the request in flight.
 The operation then rejects with an error whose \`code\` is
 ${code(abortCode(r))} and whose \`cause\` is the signal's reason. A request
-whose signal has already aborted is not sent. ${code(memberName(r, (k) => k.startsWith('stream')))} takes the signal
-as \`callopts.signal\`, and ends when it aborts.
+whose signal has already aborted is not sent.
 
 `
   }
@@ -369,7 +380,8 @@ record — check the API definition for its shape.
       const sig = (0 < op.needs.length && r.facts.opMatched && r.facts.opMatched[name]) || r.facts.op[name]
       const block = refOpBlock(desc, p.facts, ent, op)
       out += `#### ${code(fill(sig, desc, ent))}\n\n` +
-        `${wrap(opText(p.facts, op.name, op.needs, op.idInData, boundOf(block, desc)))}\n\n`
+        `${wrap(opText(p.facts, op.name, op.needs, op.idInData, boundOf(block, desc),
+          { none: r.facts.none, deleted: r.facts.deleted }))}\n\n`
       if (null != block) out += printBlock(p, block, desc, newScope(true)) + '\n'
       out += bodyNoteText(op.body, r.facts.body)
     }
