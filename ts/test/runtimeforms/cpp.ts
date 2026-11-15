@@ -21,7 +21,9 @@ const forms: Forms = {
     return null == m ? { name: '', type: p.trim() } : { name: m[2], type: m[1].trim() }
   },
   optional: (p) => /=/.test(p),
-  returns: (_after, _before, head) => (/^[ \t]*(?:virtual |static |explicit |inline )*(.*?)\s+[\w$\{\}]+$/.exec(head) || [])[1]?.trim() || '',
+  // A constructor's head carries modifiers and no return type.
+  returns: (_after, _before, head) => ((/^[ \t]*(?:virtual |static |explicit |inline )*(.*?)\s+[\w$\{\}]+$/.exec(head) || [])[1]?.trim() || '')
+    .replace(/^(virtual|static|explicit|inline)$/, ''),
   entityCtor: 'EntyClass',
   opName: /^  [\w:<>]+ ([a-z]\w*)\(const Value& req\w+, const Value& ctrl\) override/gm,
   public: {
