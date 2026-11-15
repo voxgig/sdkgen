@@ -40,7 +40,7 @@ function corpus(a, lang) {
     names.add(Path.basename(f))
     if (/\.(ts|js|md|aontu|json|go|py|rb|rs|c|h|zig|clj|ex|exs|lua|pm|pl|swift|ml|php|java|kt|scala|cs|cpp|hpp|txt)$/.test(f) && Fs.statSync(f).size < 2e6) src.push(Fs.readFileSync(f, 'utf8'))
   }
-  const res = { pages: norm(pages.join('\n')), raw: pages.join('\n'), src: src.join('\n'), names }
+  const res = { pages: norm(pages.join('\n')), raw: pages.join('\n'), src: src.join('\n'), srcNorm: norm(src.join('\n')), names }
   CORPUS.set(k, res)
   return res
 }
@@ -50,20 +50,30 @@ function quotes(text) {
   const out = []
   const s = String(text || '')
   for (const m of s.matchAll(/`([^`]+)`/g)) out.push({ q: m[1], kind: 'code' })
-  for (const m of s.replace(/`[^`]*`/g, ' ').matchAll(/["“]([^"”]{3,200})["”]/g)) if (/\S+\s+\S+/.test(m[1])) out.push({ q: m[1], kind: 'text' })
+  // a quoted passage keeps its code spans (compared with the markup taken off,
+  // on both sides): blanking them left "Pass a   to set it.", on no page
+  const spanless = s.replace(/`[^`]*`/g, (m) => m.replace(/"/g, '\u0001'))
+  for (const m of spanless.matchAll(/["“]([^"”]{3,200})["”]/g)) if (/\S+\s+\S+/.test(m[1])) out.push({ q: m[1].replace(/\u0001/g, '"'), kind: 'text' })
   return out
 }
 
 // A quotation elided with "..." is its parts, each to be found.
 function found(cp, q) {
   const parts = q.q.split(/\.\.\.|…/).map((s) => s.trim()).filter((s) => s.length >= 3)
+  // elided down to nothing of three characters (`... in`): nothing left to look for
+  if (!parts.length && /\.\.\.|…/.test(q.q)) return true
   if (parts.length > 1 || parts.length && parts[0] !== q.q.trim()) return parts.every((p) => found1(cp, { ...q, q: p }))
   return found1(cp, q)
 }
 function found1(cp, q) {
   const t = q.q.trim()
   if (!t) return true
-  if (cp.raw.includes(t) || cp.pages.includes(norm(t)) || cp.src.includes(t)) return true
+  if (cp.raw.includes(t) || cp.pages.includes(norm(t)) || cp.src.includes(t) || cp.srcNorm.includes(norm(t))) return true
+  // `<var>`, `<Name>`: a placeholder the reason wrote for any identifier
+  if (/<\w+>/.test(t)) {
+    const re = new RegExp(t.split(/(<\w+>)/).map((p, i) => i % 2 ? '[A-Za-z_$][\\w$]*' : p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')).join(''))
+    if (re.test(cp.raw) || re.test(cp.src)) return true
+  }
   // a path with a line (`Main.fragment.ts:270-276`): the file exists in the clone
   const p = /^([\w./-]+\.[A-Za-z]+)(:\d+(-\d+)?(,\d+(-\d+)?)*)?$/.exec(t)
   if (p && cp.names.has(Path.basename(p[1]))) return true
@@ -75,7 +85,8 @@ function found1(cp, q) {
   }
   // a quoted page text may carry the page's own escapes or markup
   const plain = (x) => norm(x).replace(/\\\|/g, '|').replace(/[`*]/g, '')
-  if (q.kind === 'text' && plain(cp.raw).includes(plain(t))) return true
+  // a table row or a span quoted without the page's own backticks
+  if (plain(cp.raw).includes(plain(t))) return true
   return false
 }
 
