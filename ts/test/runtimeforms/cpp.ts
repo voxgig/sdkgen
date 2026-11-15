@@ -76,6 +76,10 @@ const forms: Forms = {
     draw: "return res->stream();",
     runs: "before it returns", items: "before it returns",
   },
+  // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
+  cite: {
+    'ref.facts.direct.okFalse': { value: "false", file: "tm/cpp/core/types.hpp", quote: "map_put(out, \"ok\", Value(false));" },
+  },
 }
 
 export { forms }
