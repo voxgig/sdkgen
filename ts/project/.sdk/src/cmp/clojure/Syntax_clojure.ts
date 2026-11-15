@@ -40,7 +40,7 @@ const refFacts: RefFacts = {
     remove: '(remove ent reqmatch ctrl) -> entity',
   },
   client: [
-    { kind: 'options', sig: '({client}/options-map client) -> map' },
+    { kind: 'options', sig: '({client}/options-map client) -> map', copy: true },
     { kind: 'direct', sig: '({client}/direct client fetchargs) -> map' },
     { kind: 'prepare', sig: '({client}/prepare client fetchargs) -> map' },
   ],
