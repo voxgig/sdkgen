@@ -68,7 +68,12 @@ function typeOf(r, ent) {
     }
 }
 // The value the direct result's `ok` holds on a failure, as the runtime writes it.
-const okFalse = (r) => code(r.facts.direct.okFalse);
+const okFalse = (r) => {
+    const v = r.facts.direct.okFalse;
+    if (null == v || '' === v)
+        throw new Error('ReadmeRef: direct needs ref.facts.direct.okFalse');
+    return code(v);
+};
 // How prose names a fixed member: its name from its signature, called.
 function memberName(r, k) {
     const m = [...r.facts.client, ...r.facts.entity].find((x) => 'function' === typeof k ? k(x.kind) : x.kind === k);
