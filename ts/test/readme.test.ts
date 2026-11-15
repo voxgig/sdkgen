@@ -304,4 +304,10 @@ describe('ReadmeRefFeatures', () => {
     // An ordinary default prints as before.
     ok(out.includes('| `active` | `true` |'), out)
   })
+
+  test('the ordering note prints feature names as code, never as escaped backticks', async () => {
+    const out = await renderRefFeatures(SHIPPED)
+    ok(/`cost` activated before `cache`/.test(out), out)
+    ok(!out.includes('\\`'), 'no escaped backtick')
+  })
 })

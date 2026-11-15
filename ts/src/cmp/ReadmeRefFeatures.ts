@@ -53,8 +53,8 @@ wraps whatever is already installed${ordered ?
   '. This SDK fixes that order in its own\ncatalog rather than taking it from the caller.'}
 
 ${(has('cost') && has('cache')) ?
-`That decides behaviour, not just sequence. \\\`cost\\\` activated before \\\`cache\\\`
-sits inside it, so a response served from the cache never reaches \\\`cost\\\` and is
+`That decides behaviour, not just sequence. \`cost\` activated before \`cache\`
+sits inside it, so a response served from the cache never reaches \`cost\` and is
 correctly charged nothing; reverse them and every cache hit is billed for money
 that was never spent.
 ` : `That decides behaviour, not just sequence: a feature that short-circuits the
