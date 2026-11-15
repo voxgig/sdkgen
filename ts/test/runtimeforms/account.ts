@@ -77,8 +77,13 @@ function declaredLeaves(S: any): [string, any][] {
 // An empty list is prose: only an audit of the citation checks it.
 const MARKDOWN = /^facts\.collection$|^ref\.facts\.(body\.\w+|setArg)$/
 
+// An unwrap is an expression whose operators carry its meaning (`as?` against
+// `as!`): its quote must hold it verbatim.
+const VERBATIM = /^facts\.unwrap$/
+
 function codeTokens(path: string, value: any, spell: (s: string) => string): string[] {
   if ('string' !== typeof value || /\.kind$|\.fails$/.test(path)) return []
+  if (VERBATIM.test(path)) return [spell(value).trim()]
   // A note is prose; the code it names is backticked, less the slots it fills.
   if (/^notes\./.test(path)) {
     return [...spell(value).matchAll(/`([^`]+)`/g)].map((m) => m[1]).filter((x) => !/^\{\w+(\.\w+)*\}$/.test(x))

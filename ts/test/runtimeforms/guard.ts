@@ -247,6 +247,14 @@ function check(t: string, S: any, forms: Forms): Result {
     add('record', `the provider prints a record as ${JSON.stringify(printed)}, which does not call ${acc.name}`)
   }
   if (!recordWhole(t, S, forms, acc.name, printed, spell, add)) recordOk = false
+  // A record printed by the print printer is unwrapped with facts.unwrap too.
+  if (null != f.unwrap) {
+    const shown = printStmt(S)
+    if (null == shown || !shown.includes(String(f.unwrap))) {
+      recordOk = false
+      add('record', `the print printer shows a record as ${JSON.stringify(shown)}, which does not unwrap with facts.unwrap (${f.unwrap})`)
+    }
+  }
   if (recordOk) verified.add('facts.record')
 
   if (S.ref) {
@@ -441,7 +449,11 @@ function check(t: string, S: any, forms: Forms): Result {
         const m = (f.method as any)[op]
         const d = one(read(opSource(forms, op)), m) || one(ops, m)
         if (null == d) continue
-        const variants = ['list', 'load', 'remove'].includes(op) ? [null, [{ key: 'id', value: { k: 'str', text: 'x' } }]] : [[{ key: 'id', value: { k: 'str', text: 'x' } }]]
+        // No argument where a page calls it so; one member; three, so that a
+        // map spread into separate arguments shows in their count.
+        const one1 = [{ key: 'id', value: { k: 'str', text: 'x' } }]
+        const three = [...one1, { key: 'name', value: { k: 'str', text: 'n' } }, { key: 'size', value: { k: 'lit', type: 'INTEGER', text: '1' } }]
+        const variants = ['list', 'load', 'remove'].includes(op) ? [null, one1, three] : [one1, three]
         for (const arg of variants) {
           let text = ''
           try {
@@ -702,6 +714,18 @@ function printCall(S: any): string | null {
   try {
     return S.call({ k: 'call', entity: PROBE_ENT, op: 'load', bind: { role: 'one', entity: PROBE_ENT, name: 'planet' }, arg: null },
       desc, sc, { inAttempt: false, last: false }).join('\n')
+  }
+  catch (e: any) {
+    return null
+  }
+}
+
+// A whole record printed through the provider's print printer.
+function printStmt(S: any): string | null {
+  const of = { role: 'one', entity: PROBE_ENT, name: 'planet' }
+  const desc: any = { layout: { vars: {} }, entities: [{ ...PROBE_ENT, fields: [] }], quick: null, options: [] }
+  try {
+    return S.print({ k: 'print', what: { k: 'record', of } }, scope(), desc).join('\n')
   }
   catch (e: any) {
     return null
