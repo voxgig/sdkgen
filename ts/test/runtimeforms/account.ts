@@ -129,7 +129,7 @@ function codeTokens(path: string, value: any, spell: (s: string) => string): str
 type Account = {
   lang: string
   category: Record<string, Category | 'excepted'>
-  cited: { path: string, file: string, quote: string, prose: boolean, absence: boolean, value: any, unquoted: string[] }[]
+  cited: { path: string, file: string, quote: string, prose: boolean, absence: boolean, comment?: boolean, value: any, unquoted: string[] }[]
   excepted: { path: string, reason: string }[]
   // Facts cited before the provider declares them.
   ahead: { path: string, value: any }[]
@@ -178,7 +178,7 @@ function account(lang: string, S: any, forms: Forms, verified: Set<string>): Acc
           const quote = parts.map((x) => ([] as string[]).concat(x.quote).join(' ... ')).join(' | ')
           out.cited.push({
             path, file: parts.map((x) => x.file).join(' | '), quote, value,
-            prose: prosy(value, codeTokens(path, value, spell), spell), absence: false,
+            prose: prosy(value, codeTokens(path, value, spell), spell), absence: false, comment: commentOnly(parts),
             unquoted: Object.entries(c.unquoted || {}).map(([k, v]) => k + ': ' + v),
           })
         }
@@ -193,9 +193,16 @@ function account(lang: string, S: any, forms: Forms, verified: Set<string>): Acc
     else out.category[path] = def
   }
 
+  // copy may come ahead only on a match getter, the getter brief 7 adds it to;
+  // elsewhere a copy citation with no declaration is a fact the provider dropped.
+  const aheadOk = (p: string) => {
+    if (!AHEAD.test(p)) return false
+    const m = /^ref\.facts\.(client|entity)\[(\d+)\]\.copy$/.exec(p)
+    return null == m || /^match/.test(String(S.ref?.facts?.[m[1]]?.[+m[2]]?.kind))
+  }
   for (const p of Object.keys(cite)) {
     if (paths.has(p)) continue
-    if (!AHEAD.test(p)) {
+    if (!aheadOk(p)) {
       out.findings.push(`cite ${p}: the provider declares no such fact`)
       continue
     }
@@ -213,6 +220,13 @@ function account(lang: string, S: any, forms: Forms, verified: Set<string>): Acc
   return out
 }
 
+
+// Whether every line a citation quotes is a comment: a comment can state
+// anything, so the reviewer reads these first. Counted, not failed.
+const COMMENT_LINE = /^\s*(\/\/|#|--|;|\(\*|\*|\/\*|%|@doc|@moduledoc)/
+function commentOnly(parts: { quote: string | string[] }[]): boolean {
+  return parts.every((x) => ([] as string[]).concat(x.quote).every((q) => q.split('\n').every((l) => '' === l.trim() || COMMENT_LINE.test(l))))
+}
 
 // Whether a value says more than its code tokens: words a quote cannot pin.
 function prosy(value: any, toks: string[], spell: (s: string) => string): boolean {

@@ -77,7 +77,7 @@ describe('runtimefacts', () => {
         `; constructor ${namingOf(t).layout?.ctor} (${ctorSource(t)})` +
         `; uncompared ${Object.entries(res.uncompared).filter(([, v]) => 0 < v).map(([k, v]) => `${k} ${v} (${(forms.uncompared as any)?.[k]})`).join(', ') || 'none'}`)
       for (const c of res.account.cited) {
-        lines.push(`  cited${c.absence ? ' (absence: searched)' : c.prose ? ' (prose: audit only)' : ''} ${c.path} = ${JSON.stringify(c.value)}\n    ${c.file}: ${JSON.stringify(c.quote)}` +
+        lines.push(`  cited${c.absence ? ' (absence: searched)' : c.prose ? ' (prose: audit only)' : ''}${c.comment ? ' (a comment only)' : ''} ${c.path} = ${JSON.stringify(c.value)}\n    ${c.file}: ${JSON.stringify(c.quote)}` +
           c.unquoted.map((u) => `\n    unquoted ${u} [the runtime has it in ${occurrences(t, u.split(':')[0]).length} file(s)]`).join(''))
       }
       for (const x of res.account.excepted) lines.push(`  excepted ${x.path}: ${x.reason}`)
