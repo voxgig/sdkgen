@@ -270,11 +270,13 @@ function checkCitation(lang: string, path: string, value: any, c: Citation, spel
       return `cite ${path}: the quote does not contain ${JSON.stringify(tok)}, which the fact states`
     }
   }
-  if (prosy(value, toks, spell)) {
-    if (!('value' in c)) return `cite ${path}: no quote can hold ${JSON.stringify(value)}; pin the audited value (value: ...)`
-    if (JSON.stringify(c.value) !== JSON.stringify(value)) {
-      return `cite ${path}: the fact is ${JSON.stringify(value)}; the citation audited ${JSON.stringify(c.value)}`
-    }
+  // A pin is compared whenever it is given: a token standing somewhere in the
+  // quote does not make a different declaration the audited one.
+  if ('value' in c && JSON.stringify(c.value) !== JSON.stringify(value)) {
+    return `cite ${path}: the fact is ${JSON.stringify(value)}; the citation pins ${JSON.stringify(c.value)}`
+  }
+  if (prosy(value, toks, spell) && !('value' in c)) {
+    return `cite ${path}: no quote can hold ${JSON.stringify(value)}; pin the audited value (value: ...)`
   }
   for (const tok of Object.keys(c.unquoted || {})) {
     if (!toks.includes(tok) || has(tok)) return `cite ${path}: unquoted ${tok} is not a token the quote lacks`
