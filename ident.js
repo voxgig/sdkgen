@@ -241,8 +241,16 @@ function make(a) {
     // there as plain shared text
     return build(x, (i) => isOwn(lang, x.fills[i].raw) && samePath(lang, x, i, excl) && !literalElsewhere(x, i, x.fills[i].fill, excl))
   }
+  // Every position a slot, whatever fills it: what the absent list compares
+  // (a sentence is the same sentence whichever facts, printer output or code
+  // a language prints in its places). null for a unit that is all positions.
+  function slots(text, kind, lang, excl) {
+    const x = analyse(text, kind, lang, excl)
+    if (x.whole) return null
+    return build(x, () => true)
+  }
   const sentenceId = (text, kind, lang) => K.classId('sentence', identity(text, kind, lang))
-  const res = { identity, match, sentenceId, analyse, table, isOwn, ownPaths, pathsAt, langs, isModelText: modelTextOf(a, ts) }
+  const res = { identity, match, slots, sentenceId, analyse, table, isOwn, ownPaths, pathsAt, langs, isModelText: modelTextOf(a, ts) }
   MADE.set(key, res)
   return res
 }

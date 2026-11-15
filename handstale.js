@@ -116,7 +116,8 @@ function run(a) {
   }
   for (const [id, rec] of Object.entries(hand)) if (/^[0-9a-f]{10}$/.test(id) && rec && 'object' === typeof rec) look(id, 'class', rec)
   for (const [p, rec] of Object.entries(hand.facts || {})) look(p, 'fact', rec)
-  for (const [id, why] of Object.entries(hand.absent || {})) look(id, 'absent', { why })
+  // an absent reason is a string, or { why, variations } for a sentence dropped from some variations
+  for (const [id, why] of Object.entries(hand.absent || {})) look(id, 'absent', { why: why && 'object' === typeof why ? why.why : why })
   return res
 }
 
