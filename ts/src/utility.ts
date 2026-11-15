@@ -167,7 +167,13 @@ class SdkGenError extends Error {
 }
 
 
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+
 export {
+  escapeRe,
   resolvePath,
   loadOptional,
   requirePath,

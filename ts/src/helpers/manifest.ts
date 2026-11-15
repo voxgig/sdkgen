@@ -62,6 +62,15 @@ function manifestPath(sdkfolder: string): string {
 }
 
 
+// Beside the manifest: for each file under `.sdk/src/cmp/` a release shipped
+// and the package no longer does, the fingerprint of every released version.
+const RETIRED_FILE = 'sdkgen-retired.json'
+
+function retiredPath(sdkfolder: string): string {
+  return Path.join(sdkfolder, '..', RETIRED_FILE)
+}
+
+
 function readManifest(fs: any, sdkfolder: string): ManifestRead {
   const file = manifestPath(sdkfolder)
 
@@ -375,6 +384,8 @@ export type {
 
 export {
   MANIFEST,
+  RETIRED_FILE,
+  retiredPath,
   SCHEMA,
   PARITY,
   ITEM_NAME_RE,

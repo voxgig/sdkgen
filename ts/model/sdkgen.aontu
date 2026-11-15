@@ -125,6 +125,11 @@ main: kit: target: &: {
 
   superseded: *[] | [&: string]
 
+  # Sections this project writes itself in place of the shared one, by
+  # component name (ReadmeQuick, ReadmeRef, ReadmeTopQuick). Doctor fails on
+  # a changed copy of one of them that is not named here.
+  override: &: boolean
+
   feature: {
     trim: *true | boolean
 

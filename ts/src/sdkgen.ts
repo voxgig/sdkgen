@@ -85,7 +85,6 @@ import type { ExampleLang, LiteralLang } from './helpers/opExample'
 import { readsSecret, sdkDescription, templateName } from './helpers/sdkdesc'
 import type { SdkDescription, DescAction, DescArg, DescEntity, DescLayout, DescOption, DescQuick, DescServerVar, DescSymbols, Naming } from './helpers/sdkdesc'
 import { featureBlock, refOpBlock, clientBlock, listBlock, loadBlock, writeBlock, writeOps, printBlock, printProgram, printStmts, newScope, note, uses, indent as indentLines } from './helpers/example'
-import { SYNTAX_INTERFACE } from './helpers/syntaxversion'
 import type { CtorKind, Member, MemberKind, NoteSlot, RefFacts, RefSyntax, CallContext, Ent, Entry, Expr, OpName, Prints, ProgramStep, Ref, ResultStyle, ShowPlace, StreamRuns, RuntimeFacts, Scope, Stmt, Syntax, Uses } from './helpers/example'
 import {
   liveStrict, liveStrictNote, liveFlowNeeds, liveIdentity,
@@ -1075,7 +1074,7 @@ export const List: Component = JostracaModule.List
 
 export {
   mdCell, mdInline, bodyFacts, bodyNoteText, featureBlock, refOpBlock,
-  sdkDescription, readsSecret, clientBlock, listBlock, loadBlock, writeBlock, writeOps, printBlock, printProgram, printStmts, newScope, note, templateName, uses, indentLines, SYNTAX_INTERFACE,
+  sdkDescription, readsSecret, clientBlock, listBlock, loadBlock, writeBlock, writeOps, printBlock, printProgram, printStmts, newScope, note, templateName, uses, indentLines,
   Main,
   Deploy,
   License,
