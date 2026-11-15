@@ -127,7 +127,7 @@ type RefFacts = {
             kind: CtorKind;
         }[];
     }[];
-    testMock: 'model' | 'always';
+    testMock: 'generated' | 'always';
     accessor: {
         sig: string;
         arg: 'data' | 'entopts';
