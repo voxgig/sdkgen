@@ -849,7 +849,7 @@
  },
  "1f2bf8a246": {
   "outcome": "restored:shared",
-  "why": "restored as 'The match is optional: without one, every record is listed.'",
+  "why": "restored as 'The match is optional.' (v3.3: 'without one, every record is listed' overstated, sentence review)",
   "n": 83,
   "by": "hand",
   "type": "missing",

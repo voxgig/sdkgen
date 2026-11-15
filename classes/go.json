@@ -17,7 +17,7 @@
  },
  "b6ef0e9023": {
   "outcome": "dropped",
-  "why": "the go tutorial is one program under the section heading; the steps are bold lead-ins and 'The program after these N steps runs them in order.' introduces the code, so no sub-heading is needed",
+  "why": "the go tutorial is one program under the section heading; the steps are bold lead-ins and 'The program below runs these N steps in order.' introduces the code, so no sub-heading is needed",
   "n": 21,
   "by": "hand",
   "type": "missing",
@@ -25,7 +25,7 @@
  },
  "3291b1acc6": {
   "outcome": "restored:shared",
-  "why": "restored as 'The program after these N steps runs them in order.' and step 1 Create a client",
+  "why": "restored as 'The program below runs these N steps in order.' and step 1 Create a client",
   "n": 21,
   "by": "hand",
   "type": "missing",
@@ -33,7 +33,7 @@
  },
  "fea443712e": {
   "outcome": "restored:shared",
-  "why": "restored as the pair-style step sentences: List returns (value, error), a []any of entities, no {ok, data} wrapper, Data() reads a record; Load the same; and the write sentence",
+  "why": "restored as the pair-style step sentences: List returns (value, error), a []any of entities, and Data() reads an entity's record (v3.3 dropped the {ok, data} wrapper clause, old go wording, sentence review); Load the same; and the write sentence",
   "n": 21,
   "by": "hand",
   "type": "missing",

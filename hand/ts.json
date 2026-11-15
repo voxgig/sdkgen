@@ -157,12 +157,12 @@
  },
  "a188efe74d": {
   "outcome": "restored:shared",
-  "why": "restored as 'further client options, merged over the test defaults'",
+  "why": "restored as the test arguments sentence: 'The first argument holds the test feature's options, which the call switches on, and replaces any `options.feature.test` in the second, which holds the other client options' (v3.3: the old 'merged over the test defaults' was vague, sentence review)",
   "n": 19
  },
  "cc0b7cd9c6": {
   "outcome": "restored:shared",
-  "why": "restored as 'It returns a client in test mode.'",
+  "why": "restored in the test client's first sentence ('Create a test client with mock features active.', or without the test feature 'Create a test client. ... no mock transport and refuses every request.'); v3.3 dropped 'It returns a client in test mode', which repeated it (sentence review)",
   "n": 38
  },
  "5734aba53e": {
@@ -198,7 +198,7 @@
  },
  "7b8e8beaa8": {
   "outcome": "restored:shared",
-  "why": "inside the Returns sentence: 'on a failure `ok` is `false` and `err` holds the error'",
+  "why": "inside the Returns sentence: 'When the body cannot be read, `ok` is `false` and the key `err` holds the error; a request that cannot be made gives only `ok` (`false`) and `err`' (v3.3, sentence review: a readable non-2xx response has no err)",
   "n": 19
  },
  "6742b0a309": {

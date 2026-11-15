@@ -468,7 +468,7 @@
  },
  "f28a4a4041": {
   "outcome": "restored:shared",
-  "why": "restored as the Returns sentence (ok, status, headers, data; err on failure) and 'A failed request is reported in the result, not as an error, so branch on result[\"ok\"]'",
+  "why": "restored as the Returns sentence (the keys ok, status, headers, data; err when the body cannot be read or the request cannot be made) and 'A failure is reported in the result, not as an error, so branch on result[\"ok\"]'",
   "n": 19
  },
  "7141e40426": {
@@ -483,7 +483,7 @@
  },
  "ed238167e1": {
   "outcome": "restored:shared",
-  "why": "restored as 'List entities matching the given criteria.' and 'The match is optional: without one, every record is listed.'",
+  "why": "restored as 'List entities matching the given criteria.' and 'The match is optional.' (v3.3: 'without one, every record is listed' overstated, sentence review)",
   "n": 83
  },
  "fcae1f7486": {

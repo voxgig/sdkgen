@@ -951,7 +951,7 @@
  },
  "f23290592f": {
   "outcome": "same-meaning",
-  "why": "README:242's stream row says the same: .ok with its result items, or .err; the REFERENCE now says the items come back as one list and .err reports failure",
+  "why": "README:242's stream row says the same: .ok with its result items, or .err; the REFERENCE says the items are returned, every one already read, and .err reports failure",
   "n": 94,
   "by": "hand",
   "type": "echo",
@@ -1119,7 +1119,7 @@
  },
  "1942272f09": {
   "outcome": "restored:shared",
-  "why": "restored as 'return its result items as one list. Its `.err` reports failure.' with the throw:false note",
+  "why": "restored as 'return its result items, every one already read. Its `.err` reports failure.' with the throw:false note (v3.3: 'as one list', sentence review)",
   "n": 94,
   "by": "hand",
   "type": "missing",
@@ -1127,7 +1127,7 @@
  },
  "6a59b75c3e": {
   "outcome": "restored:shared",
-  "why": "restored as 'The match is optional: without one, every record is listed.'",
+  "why": "restored as 'The match is optional.' (v3.3: 'without one, every record is listed' overstated, sentence review)",
   "n": 83,
   "by": "hand",
   "type": "missing",
