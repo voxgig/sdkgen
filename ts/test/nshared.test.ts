@@ -81,9 +81,9 @@ describe('optional runtime facts select shared sentences', () => {
 
   test('the deleted mark and the no-match call come from the facts', () => {
     const f = syntax('swift').facts
-    strictEqual(opText(f, 'list', [], null, 'planets', { none: 'nil' }).includes('`list(nil, nil)` lists every record.'), true)
-    strictEqual(opText(syntax('ts').facts, 'list', [], null, 'planets', { none: 'undefined' }).includes('`list()` lists every record.'), true)
-    strictEqual(opText(syntax('lua').facts, 'list', [], null, 'planets', { none: 'nil' }).includes('lists every record'), false)
+    strictEqual(opText(f, 'list', [], null, 'planets', { none: 'nil' }).includes('a call without one is `list(nil, nil)`.'), true)
+    strictEqual(opText(syntax('ts').facts, 'list', [], null, 'planets', { none: 'undefined' }).includes('a call without one is `list()`.'), true)
+    strictEqual(opText(syntax('lua').facts, 'list', [], null, 'planets', { none: 'nil' }).includes('a call without one'), false)
     ok(opText(syntax('ts').facts, 'remove', [], null, 'planet', { deleted: '{var}.deleted()' }).includes('`planet.deleted()` reads the mark.'))
     ok(!opText(syntax('ts').facts, 'remove', [], null, 'planet', {}).includes('mark.'))
   })
