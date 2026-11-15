@@ -52,6 +52,7 @@ const forms: Forms = {
   typeNames: { '*@import("../entity/${mod}.zig").${cls}': '*EntyClass' },
   namesWhy: 'zig passes by position; the runtime suffixes a parameter it rebinds with _in, and the accessor\'s return is spelled through the generator',
   cite: {
+    'ref.facts.client[0].copy': { value: true, file: "src/cmp/zig/fragment/Main.fragment.zig", quote: "return h.clone(self.options);" },
     'ref.facts.setArg': { value: 'a map', file: 'src/cmp/zig/fragment/Entity.fragment.zig', quote: ['self.data = if (arg == .null) h.omap() else h.clone(arg);', 'const cloned = h.to_map(h.clone(arg));'] },
     'ref.facts.direct.okFalse': { file: MAIN, quote: '.{ "ok", h.vbool(false) },' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/zig/fragment/Entity.fragment.zig", quote: "return h.clone(self.data);" },

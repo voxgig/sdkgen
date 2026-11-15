@@ -38,7 +38,7 @@ const refFacts: RefFacts = {
     remove: 'remove(reqmatch: Value, ctrl: Value) EntResult',
   },
   client: [
-    { kind: 'options', sig: 'options_map() Value' },
+    { kind: 'options', sig: 'options_map() Value', copy: true },
     { kind: 'utility', sig: 'get_utility() *Utility' },
     { kind: 'direct', sig: 'direct(fetchargs: Value) Value' },
     { kind: 'prepare', sig: 'prepare(fetchargs: Value) E!Value' },
