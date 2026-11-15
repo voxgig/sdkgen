@@ -14,7 +14,8 @@ declare function requirePath(ctx$: any, path: string, flags?: {
 declare class SdkGenError extends Error {
     constructor(...args: any[]);
 }
-export { resolvePath, loadOptional, requirePath, isAuthActive, resolveAuthPrefix, resolveAuthIn, resolveAuthName, credentialPlacement, isAuthSuppressed, resolveAuthExchange, isHttpBasicAuth, SdkGenError, CONFIG_DATA_THRESHOLD, CONFIG_REPR_VALUES, isConfigData, configRepr, configReprSetting, configDefinition, clean, rawStringLiteral, };
+declare function escapeRe(s: string): string;
+export { escapeRe, resolvePath, loadOptional, requirePath, isAuthActive, resolveAuthPrefix, resolveAuthIn, resolveAuthName, credentialPlacement, isAuthSuppressed, resolveAuthExchange, isHttpBasicAuth, SdkGenError, CONFIG_DATA_THRESHOLD, CONFIG_REPR_VALUES, isConfigData, configRepr, configReprSetting, configDefinition, clean, rawStringLiteral, };
 declare const CONFIG_DATA_THRESHOLD: number;
 declare const CONFIG_REPR_VALUES: string[];
 declare function isConfigData(configJson: string, repr?: string): boolean;

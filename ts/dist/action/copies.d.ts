@@ -12,6 +12,7 @@ type CopyItem = {
 type CopyRecord = {
     items: Record<string, CopyItem>;
     files: Record<string, string>;
+    damaged: string[];
 };
 declare function itemKey(kind: string, name: string): string;
 declare function fingerprint(content: any): string;
@@ -23,5 +24,7 @@ declare function forgetCopies(actx: ActionContext, kind: string, name: string): 
 declare function projectCopyMode(actx: ActionContext): CopyMode;
 declare function guardCopies<T>(actx: ActionContext, what: string, run: (actx: ActionContext) => Promise<T>): Promise<T>;
 declare function untouched(fs: any, folder: string, record: CopyRecord, rel: string): boolean | undefined;
+declare function releasedCopy(fs: any, folder: string, kind: string, source: Source, rel: string): boolean;
+declare function unchangedCopy(fs: any, folder: string, record: CopyRecord, kind: string, source: Source, rel: string): boolean | undefined;
 export type { CopyItem, CopyRecord, };
-export { BASE_DIR, CONFLICT_DIR, COPY_LOG, IGNORED_LOG, ignoredLog, itemKey, fingerprint, readCopies, recordCopies, forgetCopies, guardCopies, projectCopyMode, untouched, isCopy, };
+export { BASE_DIR, CONFLICT_DIR, COPY_LOG, IGNORED_LOG, ignoredLog, itemKey, fingerprint, readCopies, recordCopies, forgetCopies, guardCopies, projectCopyMode, untouched, unchangedCopy, releasedCopy, isCopy, };

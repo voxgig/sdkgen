@@ -1,5 +1,5 @@
 import type { DescAction, DescEntity, DescOp, DescSymbols, Scalar, SdkDescription } from './sdkdesc';
-import type { SYNTAX_INTERFACE } from './syntaxversion';
+import type { SYNTAX_INTERFACE, SYNTAX_PREVIOUS } from './syntaxversion';
 type Ent = {
     name: string;
     Name: string;
@@ -79,6 +79,7 @@ type RuntimeFacts = {
     result: ResultStyle;
     collection: string;
     record: string;
+    served?: typeof SYNTAX_PREVIOUS;
     recordType?: string;
     errVar?: string;
     errSlot?: string;
@@ -130,7 +131,7 @@ type RefFacts = {
             kind: CtorKind;
         }[];
     }[];
-    testMock: 'generated' | 'always';
+    testMock?: 'generated' | 'always';
     accessor: {
         sig: string;
         arg: 'data' | 'entopts';
@@ -197,7 +198,7 @@ type ProgramStep = {
     lines: string[];
 };
 type Syntax = {
-    interface: typeof SYNTAX_INTERFACE;
+    interface?: typeof SYNTAX_INTERFACE | typeof SYNTAX_PREVIOUS;
     fence: string;
     facts: RuntimeFacts;
     client: (s: Extract<Stmt, {

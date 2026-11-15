@@ -13,6 +13,8 @@ exports.forgetCopies = forgetCopies;
 exports.guardCopies = guardCopies;
 exports.projectCopyMode = projectCopyMode;
 exports.untouched = untouched;
+exports.unchangedCopy = unchangedCopy;
+exports.releasedCopy = releasedCopy;
 exports.isCopy = isCopy;
 const node_path_1 = __importDefault(require("node:path"));
 const node_crypto_1 = require("node:crypto");
@@ -21,6 +23,8 @@ const utility_1 = require("../utility");
 const copymerge_1 = require("../helpers/copymerge");
 const definition_1 = require("../helpers/definition");
 const kind_1 = require("./kind");
+const manifest_1 = require("../helpers/manifest");
+const cmpfile_1 = require("../helpers/cmpfile");
 // What every add wrote into `.sdk`, by fingerprint, and the version of the
 // package each item came from: the only record that tells a copy the project
 // changed from one its source has since moved past. Append-only, one line per
@@ -52,31 +56,50 @@ function fingerprint(content) {
     const lf = Buffer.from(bytes.toString('latin1').replace(/\r\n/g, '\n'), 'latin1');
     return (0, node_crypto_1.createHash)('sha256').update(lf).digest('hex').slice(0, 16);
 }
-// Unreadable lines are skipped. A copy can then only lose its entry, which
-// leaves it unrecorded, as in a project from before the record existed.
+// An unreadable line is skipped and named in `damaged`: the copies it held
+// read as unrecorded, and doctor reports the line.
 function readCopies(fs, folder) {
-    const record = { items: {}, files: {} };
+    const record = { items: {}, files: {}, damaged: [] };
     const log = logPath(folder);
-    const entries = fs.existsSync(log) ?
-        String(fs.readFileSync(log, 'utf8')).split('\n').map(parseEntry) :
-        [readLegacy(fs, folder)];
-    for (const entry of entries) {
-        if (null != entry) {
-            apply(record, entry);
+    if (fs.existsSync(log)) {
+        String(fs.readFileSync(log, 'utf8')).split('\n').forEach((line, i) => {
+            const entry = parseEntry(line);
+            if (null === entry) {
+                record.damaged.push(COPY_LOG + ':' + (i + 1));
+            }
+            else if (null != entry) {
+                apply(record, entry);
+            }
+        });
+    }
+    else {
+        const legacy = readLegacy(fs, folder);
+        if (null === legacy) {
+            record.damaged.push(LEGACY);
+        }
+        else if (null != legacy) {
+            apply(record, legacy);
         }
     }
     return record;
 }
+// Undefined for a blank line, null for one that is not an entry.
 function parseEntry(line) {
     if ('' === line.trim()) {
         return undefined;
     }
     try {
-        return JSON.parse(line) ?? undefined;
+        const entry = JSON.parse(line);
+        return isEntry(entry) ? entry : null;
     }
     catch (err) {
-        return undefined;
+        return null;
     }
+}
+function isEntry(entry) {
+    const map = (v) => null == v || ('object' === typeof v && !Array.isArray(v));
+    return null != entry && 'object' === typeof entry && !Array.isArray(entry) &&
+        map(entry.items) && map(entry.files);
 }
 function readLegacy(fs, folder) {
     const path = node_path_1.default.join(folder, LEGACY);
@@ -88,7 +111,7 @@ function readLegacy(fs, folder) {
         return { items: read?.items ?? {}, files: read?.files ?? {} };
     }
     catch (err) {
-        return undefined;
+        return null;
     }
 }
 function apply(record, entry) {
@@ -124,10 +147,14 @@ function appendEntry(actx, op, entry) {
             lines.push(entryLine('import', imported));
         }
     }
+    // A line cut short must not swallow the next one.
+    else if (!String(fs.readFileSync(log, 'utf8')).endsWith('\n')) {
+        lines.unshift('');
+    }
     if (changes(entry)) {
         lines.push(entryLine(op, entry));
     }
-    if (0 < lines.length) {
+    if (lines.some((line) => '' !== line)) {
         fs.mkdirSync(node_path_1.default.dirname(log), { recursive: true });
         fs.appendFileSync(log, lines.join('\n') + '\n');
         if (fresh && ignoredLog(fs, folder)) {
@@ -253,8 +280,20 @@ async function guardCopies(actx, what, run) {
         return run(actx);
     }
     const fs = actx.fs();
-    const files = readCopies(fs, actx.folder).files;
+    const record = readCopies(fs, actx.folder);
+    const files = record.files;
     const flags = actx.flags ?? {};
+    // Copies an add found to be a released version (releasedCopy): the toolchain
+    // wrote them as they are, whatever the record holds.
+    const released = new Set();
+    if (0 < record.damaged.length) {
+        actx.log.warn({
+            point: 'copies-damaged', lines: record.damaged,
+            note: 'cannot read ' + record.damaged.join(', ') + ': the copies it ' +
+                'named read as unrecorded, so a changed one cannot be told from an ' +
+                'outdated one. Restore it from git, or delete the line.',
+        });
+    }
     return (0, copymerge_1.withCopyMerge)({
         fs,
         folder: actx.folder,
@@ -265,13 +304,14 @@ async function guardCopies(actx, what, run) {
         keep: true === flags.keep,
         dryrun: true === actx.opts?.dryrun,
         manage: isCopy,
-        recorded: (rel) => files[rel],
+        recorded: (rel) => released.has(rel) ?
+            fingerprint(fs.readFileSync(node_path_1.default.join(actx.folder, ...rel.split('/')))) : files[rel],
         fingerprint,
         basedir: BASE_DIR,
         conflictdir: CONFLICT_DIR,
         versions: copymerge_1.gitVersions,
         error: (msg) => new utility_1.SdkGenError(msg),
-    }, (gfs) => run({ ...actx, fs: () => gfs, copyGuarded: true }));
+    }, (gfs) => run({ ...actx, fs: () => gfs, copyGuarded: true, released }));
 }
 // Was this project file left exactly as an add wrote it?
 function untouched(fs, folder, record, rel) {
@@ -281,5 +321,43 @@ function untouched(fs, folder, record, rel) {
     }
     const abs = node_path_1.default.join(folder, ...rel.split('/'));
     return fs.existsSync(abs) && recorded === fingerprint(fs.readFileSync(abs));
+}
+// Is this project copy, of a file its source no longer ships, byte for byte
+// a version a release of that source shipped? Read from the source package's
+// retired list, so it holds without the copy record.
+function releasedCopy(fs, folder, kind, source, rel) {
+    const aliased = source.name !== source.origname;
+    const from = (0, kind_1.kindTrees)(kind, source.origname);
+    const at = (0, kind_1.kindTrees)(kind, source.name)
+        .findIndex((tree) => rel.startsWith(tree.path + '/'));
+    const list = readRetired(fs, source.folder);
+    if (at < 0 || null == list) {
+        return false;
+    }
+    const inner = rel.slice((0, kind_1.kindTrees)(kind, source.name)[at].path.length + 1);
+    const prints = list[from[at].path + '/' +
+        (aliased ? (0, cmpfile_1.aliasCmpName)(inner, source.name, source.origname) : inner)];
+    const abs = node_path_1.default.join(folder, ...rel.split('/'));
+    if (!Array.isArray(prints) || !fs.existsSync(abs)) {
+        return false;
+    }
+    const bytes = fs.readFileSync(abs);
+    return prints.includes(fingerprint(aliased ? Buffer.from((0, cmpfile_1.aliasCmpText)(bytes.toString('latin1'), source.name, source.origname), 'latin1') : bytes));
+}
+function readRetired(fs, sdkfolder) {
+    const path = (0, manifest_1.retiredPath)(sdkfolder);
+    try {
+        return fs.existsSync(path) ?
+            JSON.parse(String(fs.readFileSync(path, 'utf8')))?.files : undefined;
+    }
+    catch (err) {
+        return undefined;
+    }
+}
+// An unshipped copy is unchanged when the record says so or when it is a
+// released version; otherwise the record's verdict stands.
+function unchangedCopy(fs, folder, record, kind, source, rel) {
+    const same = untouched(fs, folder, record, rel);
+    return true !== same && releasedCopy(fs, folder, kind, source, rel) ? true : same;
 }
 //# sourceMappingURL=copies.js.map

@@ -1,9 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OPTIONAL_COMPONENTS = void 0;
+exports.SYNTAX_SECTIONS = exports.OPTIONAL_COMPONENTS = void 0;
 exports.optionalComponent = optionalComponent;
+exports.undeclaredOverride = undeclaredOverride;
 const utility_1 = require("../utility");
 const syntaxversion_1 = require("./syntaxversion");
+const cmpfile_1 = require("./cmpfile");
 const DOCS = 'https://github.com/voxgig/sdkgen/blob/main/docs/how-to/' +
     'author-a-new-language.md#optional-readme-components';
 // What a target's documentation goes without when the target does not supply
@@ -29,17 +31,26 @@ const OPTIONAL_COMPONENTS = {
     ReadmeTopHowto: (t) => "the top-level README.md's direct call guide has no " + t + ' example',
 };
 exports.OPTIONAL_COMPONENTS = OPTIONAL_COMPONENTS;
+// The sections a shared component writes from the target's syntax provider
+// when the target has no component of its own by that name.
+const SYNTAX_SECTIONS = ['ReadmeQuick', 'ReadmeRef', 'ReadmeTopQuick'];
+exports.SYNTAX_SECTIONS = SYNTAX_SECTIONS;
+// A target's own copy of a section the shared component writes from the
+// syntax provider, which the model does not name as the project's choice
+// under `main.kit.target.<t>.override.<Name>`.
+function undeclaredOverride(model, file) {
+    const own = (0, cmpfile_1.parseComponent)(file);
+    return null != own && SYNTAX_SECTIONS.includes(own.name) &&
+        true !== model?.main?.kit?.target?.[own.target]?.override?.[own.name];
+}
 function optionalComponent(ctx$, target, name) {
     const t = target.name;
-    const found = (0, utility_1.loadOptional)(ctx$, `./cmp/${t}/${name}_${t}`);
+    const found = (0, utility_1.loadOptional)(ctx$, (0, cmpfile_1.componentModule)(t, name));
     if (undefined !== found) {
-        if ('Syntax' === name) {
-            (0, syntaxversion_1.checkSyntaxInterface)(t, found.Syntax?.interface);
-        }
-        return found;
+        return 'Syntax' === name ? (0, syntaxversion_1.serveSyntax)(t, found, ctx$.log) : found;
     }
     const lacks = OPTIONAL_COMPONENTS[name];
-    const file = `.sdk/src/cmp/${t}/${name}_${t}.ts`;
+    const file = '.sdk/' + (0, cmpfile_1.componentSource)(t, name);
     if (null == lacks) {
         ctx$.log?.debug?.({
             point: 'optional-component-default', target: t, component: name,

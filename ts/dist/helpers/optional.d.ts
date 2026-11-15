@@ -17,6 +17,8 @@ declare const OPTIONAL_COMPONENTS: {
     ReadmeTopHowto: (t: string) => string;
 };
 type OptionalComponent = keyof typeof OPTIONAL_COMPONENTS;
+declare const SYNTAX_SECTIONS: string[];
+declare function undeclaredOverride(model: any, file: string): boolean;
 declare function optionalComponent(ctx$: any, target: any, name: OptionalComponent): any;
 export type { OptionalComponent, };
-export { OPTIONAL_COMPONENTS, optionalComponent, };
+export { OPTIONAL_COMPONENTS, SYNTAX_SECTIONS, optionalComponent, undeclaredOverride, };

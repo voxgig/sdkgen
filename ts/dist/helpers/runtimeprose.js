@@ -46,10 +46,14 @@ function need(f, key) {
 function record(f, bound) {
     return f.record.replace(/\{var\}/g, bound);
 }
+// A previous-interface provider's record fact holds the unwrap itself.
+function unwraps(f) {
+    return 'wrapped' === f.result && !(f.served && null == f.unwrap);
+}
 // Where an operation returns a value holding the entity (wrapped), the unwrap
 // that takes it out comes first.
 function readsRecord(f, bound, of = 'its') {
-    const unwrapped = 'wrapped' === f.result ? `${code(need(f, 'unwrap'))} takes the entity out, and ` : '';
+    const unwrapped = unwraps(f) ? `${code(need(f, 'unwrap'))} takes the entity out, and ` : '';
     return `${unwrapped}${code(record(f, bound))} reads ${of} record`;
 }
 function recordClause(f, of, bound) {
@@ -161,7 +165,7 @@ function carries(f, value) {
 // and how its record is read.
 function createComment(f, bound) {
     return `Create — ${carries(f, 'the created entity')}; ` +
-        ('wrapped' === f.result ? `${need(f, 'unwrap')} takes it out, and ` : '') + `${record(f, bound)} reads its record`;
+        (unwraps(f) ? `${need(f, 'unwrap')} takes it out, and ` : '') + `${record(f, bound)} reads its record`;
 }
 // A short form for a code comment: how failure is reported.
 function failsShort(f) {

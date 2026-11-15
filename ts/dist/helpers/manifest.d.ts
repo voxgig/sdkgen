@@ -28,6 +28,8 @@ type Finding = {
     file?: string;
 };
 declare function manifestPath(sdkfolder: string): string;
+declare const RETIRED_FILE = "sdkgen-retired.json";
+declare function retiredPath(sdkfolder: string): string;
 declare function readManifest(fs: any, sdkfolder: string): ManifestRead;
 declare function checkShape(manifest: Manifest, file: string): Finding[];
 declare const ITEM_NAME_RE: RegExp;
@@ -48,4 +50,4 @@ declare function probePackage(fs: any, project: string, ref: string): {
     search: string[];
 };
 export type { Manifest, ManifestRead, PackageProbe, Finding, };
-export { MANIFEST, SCHEMA, PARITY, ITEM_NAME_RE, manifestPath, probePackage, readManifest, validateManifest, checkShape, };
+export { MANIFEST, RETIRED_FILE, retiredPath, SCHEMA, PARITY, ITEM_NAME_RE, manifestPath, probePackage, readManifest, validateManifest, checkShape, };

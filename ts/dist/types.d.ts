@@ -91,6 +91,7 @@ type ActionContext = {
     flags?: Record<string, any>;
     fetchPackage?: (pkgname: string, actx: ActionContext) => Promise<void>;
     copyGuarded?: boolean;
+    released?: Set<string>;
 };
 type ActionResult = {
     jres?: JostracaResult;

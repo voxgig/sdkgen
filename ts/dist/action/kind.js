@@ -1,9 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isBare = exports.recordedRef = exports.KINDS = void 0;
+exports.isBare = exports.escapeRe = exports.recordedRef = exports.KINDS = void 0;
 exports.aliasModelKey = aliasModelKey;
 exports.kindTrees = kindTrees;
-exports.escapeRe = escapeRe;
 exports.kindDef = kindDef;
 exports.resolveKind = resolveKind;
 exports.kindModel = kindModel;
@@ -11,6 +10,7 @@ exports.kindIndex = kindIndex;
 exports.installedModelText = installedModelText;
 const jostraca_1 = require("jostraca");
 const utility_1 = require("../utility");
+Object.defineProperty(exports, "escapeRe", { enumerable: true, get: function () { return utility_1.escapeRe; } });
 const stdrep_1 = require("../helpers/stdrep");
 const definition_1 = require("../helpers/definition");
 const resolve_1 = require("./resolve");
@@ -21,14 +21,11 @@ const BARE_KEY_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 function aliasModelKey(kind) {
     return function aliasModelText(src, origname, name) {
         const mustQuote = !BARE_KEY_RE.test(name);
-        return src.replace(new RegExp(kind + ":(\\s*)('?)" + escapeRe(origname) + "\\2:", 'g'), (_m, gap, quote) => {
+        return src.replace(new RegExp(kind + ":(\\s*)('?)" + (0, utility_1.escapeRe)(origname) + "\\2:", 'g'), (_m, gap, quote) => {
             const q = ('' !== quote || mustQuote) ? "'" : '';
             return kind + ':' + gap + q + name + q + ':';
         });
     };
-}
-function escapeRe(s) {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 const KINDS = Object.assign(Object.create(null), {
     target: {
