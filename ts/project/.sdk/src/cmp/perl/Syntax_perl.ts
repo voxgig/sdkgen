@@ -55,7 +55,7 @@ const refFacts: RefFacts = {
   prepare: { returns: 'hashref', fails: 'style' },
   body: { values: 'a byte string, a character string, sent as UTF-8, or a filehandle', once: 'a filehandle' },
   cancel: false,
-  deleted: '{var}->deleted',
+  deleted: '${var}->deleted',
   streamSignal: true,
 }
 
