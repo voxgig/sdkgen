@@ -42,6 +42,16 @@ const forms: Forms = {
   tokens: { Class: 'EntyClass', client: 'ProjectNameSDK', sdk: 'ProjectName', ctor: 'ProjectNameSDK', accessor: '${entity.Name}' },
   types: { column: 'csharp' },
   // The porter's: sigName, sigParams, sigReturns, renames, typeNames, uncompared, cite and exceptions.
+  // What the table states besides names, parameters and returns.
+  testDecl: 'TestSDK',
+  expect: { TestSDK: { on: 'type' } },
+  stream: {
+    file: "src/cmp/csharp/fragment/EntityBase.fragment.cs",
+    construct: "public async IAsyncEnumerable<object?> Stream(", starts: "on iteration",
+    run: "var materialised = RunOp(ctx, () =>",
+    draw: "source ??= stream().GetEnumerator();",
+    runs: "as the caller iterates", items: "as the caller iterates",
+  },
 }
 
 export { forms }
