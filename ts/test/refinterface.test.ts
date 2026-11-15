@@ -131,7 +131,7 @@ describe('reference interface', () => {
     const p = provider(() => { })
     const read = (v: string, k: string, truth?: boolean) => truth ? `test(${v}, ${k})` : `get(${v}, ${k})`
     const out = refText({ ...p, ref: { ...p.ref, read } }, desc).replace(/\n/g, ' ')
-    ok(out.includes('A key is read as `get(result, err)`.'), out)
+    ok(out.includes('the key `err` holds the error, read as `get(result, err)`;'), out)
     ok(out.includes('so branch on `test(result, ok)`.'), out)
   })
 

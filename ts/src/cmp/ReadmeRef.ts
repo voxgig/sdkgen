@@ -217,12 +217,14 @@ function clientMember(m: Member, p: Syntax, desc: SdkDescription): string {
     }
     // A key as this language reads it: `err` is a key of the result, not the
     // error a signature may also return.
+    // Nothing is said of `data` for an unreadable body: ts and js drop the key,
+    // other runtimes keep it empty.
     out += '\n' + wrap(`**Returns:** ${code(fill(r.facts.direct.returns, desc))}, a result map. For a ` +
-      'response, 2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, and `ok` is ' +
-      `${okFalse(r)} unless the status is 2xx. When the body cannot be read, \`ok\` is ${okFalse(r)} and ` +
-      `the key \`err\` holds the error; a request that cannot be made gives only \`ok\` (${okFalse(r)}) ` +
-      `and \`err\`. A key is read as ${code(r.read('result', 'err'))}. A failure is reported in the ` +
-      `result, not as an error, so branch on ${code(r.read('result', 'ok', true))}.`) + '\n\n'
+      'response whose body is read, 2xx or not, it holds the keys `ok`, `status`, `headers` and `data`, ' +
+      `and \`ok\` is ${okFalse(r)} unless the status is 2xx. When the body cannot be read, \`ok\` is ` +
+      `${okFalse(r)} and the key \`err\` holds the error, read as ${code(r.read('result', 'err'))}; a ` +
+      `request that cannot be made gives only \`ok\` (${okFalse(r)}) and \`err\`. A failure is reported ` +
+      `in the result, not as an error, so branch on ${code(r.read('result', 'ok', true))}.`) + '\n\n'
   }
   else if ('prepare' === m.kind) {
     const fails = 'value' === r.facts.prepare.fails
