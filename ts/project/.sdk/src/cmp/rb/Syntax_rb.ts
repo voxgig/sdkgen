@@ -35,7 +35,7 @@ const refFacts: RefFacts = {
     remove: 'remove(reqmatch = nil, ctrl = nil) -> {Class}',
   },
   client: [
-    { kind: 'options', sig: 'options_map -> Hash' },
+    { kind: 'options', sig: 'options_map -> Hash', copy: true },
     { kind: 'utility', sig: 'get_utility -> Utility' },
     { kind: 'direct', sig: 'direct(fetchargs = {}) -> Hash' },
     { kind: 'prepare', sig: 'prepare(fetchargs = {}) -> Hash' },
