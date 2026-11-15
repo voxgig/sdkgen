@@ -75,6 +75,8 @@ const forms: Forms = {
   namesWhy: 'Perl passes these by position; the runtime names the setter argument $args, the page names what it holds',
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
+    // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
+    'ref.facts.entity[2].copy': { value: true, file: 'src/cmp/perl/fragment/Entity.fragment.pm', quote: 'return Voxgig::Struct::clone($self->{_match});' },
     'ref.facts.direct.okFalse': { value: "0", file: "src/cmp/perl/fragment/Main.fragment.pm", quote: "'ok' => 0," },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
     'ref.facts.testMock': { value: "generated", file: "src/cmp/perl/Main_perl.ts", quote: "  return ${model.const.Name}BaseFeature->new;" },

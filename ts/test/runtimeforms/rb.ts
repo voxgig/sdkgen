@@ -71,6 +71,8 @@ const forms: Forms = {
   namesWhy: 'Ruby passes these by position; the runtime names the setter argument args',
   uncompared: { returns: 'the runtime documents a return with `@return` on some methods only; the facts that rest on the others are cited' },
   cite: {
+    // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
+    'ref.facts.entity[2].copy': { value: true, file: 'src/cmp/rb/fragment/Entity.fragment.rb', quote: 'VoxgigStruct.clone(@_match)' },
     'ref.facts.client[0].copy': { value: true, file: "src/cmp/rb/fragment/Main.fragment.rb", quote: "out = VoxgigStruct.clone(@options)" },
     'ref.facts.none': { file: 'src/cmp/rb/fragment/EntityLoadOp.fragment.rb', quote: 'def load(reqmatch = nil, ctrl = nil)' },
     'ref.facts.direct.okFalse': { file: MAIN, quote: 'return { "ok" => false, "err" => err }' },

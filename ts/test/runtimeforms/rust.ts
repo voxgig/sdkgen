@@ -52,6 +52,8 @@ const forms: Forms = {
   // The porter's, from here on.
   typeNames: { 'Rc<crate::entity::${mod}::${cls}>': 'Rc<EntyClass>' },
   cite: {
+    // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
+    'ref.facts.entity[1].copy': { value: true, file: 'src/cmp/rust/fragment/Entity.fragment.rs', quote: 'vs::clone(&self.mtch.borrow())' },
     'ref.facts.client[0].copy': { value: true, file: "src/cmp/rust/fragment/Main.fragment.rs", quote: "vs::clone(&self.options.borrow())" },
     'ref.facts.direct.okFalse': { file: MAIN, quote: '("ok", Value::Bool(false)),' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/rust/fragment/Entity.fragment.rs", quote: "vs::clone(&self.data.borrow())" },

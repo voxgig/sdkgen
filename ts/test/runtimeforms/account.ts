@@ -11,6 +11,23 @@ import { SCAFFOLD } from './forms'
 
 type Category = 'derived' | 'cited' | 'language' | 'convention'
 
+// The optional facts brief 7's decisions add, by the keys this guard expects.
+// Where the shared code names one otherwise, rename it here, once; the guard
+// (guard.ts newFacts) and the defaults below read these.
+const NEW_FACTS = {
+  accessorCached: /^ref\.facts\.accessor\.cached$/, // cited: the accessor's kept instance
+  streamSignal: /^ref\.facts\.streamSignal$/, // cited: the stream reads callopts.signal
+  memberNamed: /^ref\.facts\.memberNamed$/, // derived: 'call' or 'bare', from the forms' call notation
+  memberField: /^ref\.facts\.(client|entity)\[\d+\]\.field$/, // derived: the runtime declaration is a field
+  deleted: /^ref\.facts\.deleted$/, // derived: a member or field the entity declares
+  direct: /^ref\.facts\.direct\.\w+$/, // cited: what direct does that differs between runtimes (its err)
+  importPlace: /^ref\.facts\.imports?\.\w+$/, // cited: where an import line is read from
+}
+
+// A value naming what members are called on (the client heading): derived
+// from the runtime declarations of the client's members.
+const ON_VALUES = ['instance', 'type', 'module']
+
 const DEFAULTS: [RegExp, Category][] = [
   [/^facts\.method\.\w+$/, 'derived'],
   [/^facts\.(async|result|record|listOf)$/, 'derived'],
@@ -43,6 +60,12 @@ const DEFAULTS: [RegExp, Category][] = [
   // Where the test client's mock comes from without the test feature: the
   // factory's fallback, or the runtime's own list of the features it ships.
   [/^ref\.facts\.testMock$/, 'cited'],
+  [NEW_FACTS.accessorCached, 'cited'],
+  [NEW_FACTS.memberNamed, 'derived'],
+  [NEW_FACTS.memberField, 'derived'],
+  [NEW_FACTS.deleted, 'derived'],
+  [NEW_FACTS.direct, 'cited'],
+  [NEW_FACTS.importPlace, 'cited'],
   // Whether a stream reads callopts.signal between items, apart from cancel.
   [/^ref\.facts\.streamSignal$/, 'cited'],
   [/^notes\./, 'cited'],
@@ -50,10 +73,11 @@ const DEFAULTS: [RegExp, Category][] = [
 
 // A fact cited before the provider declares it: its citation carries the
 // value the runtime shows, and a later declaration must equal it.
-const AHEAD = /^ref\.facts\.(direct\.okFalse|testMock|streamSignal)$/
+const AHEAD = /^ref\.facts\.(direct\.okFalse|testMock|streamSignal|accessor\.cached|(client|entity)\[\d+\]\.copy)$/
 
 function defaultCategory(path: string, value: any): Category | null {
   if ('' === value) return 'convention'
+  if (/^ref\.facts\.[\w.]+$/.test(path) && !/\.entityBy$/.test(path) && ON_VALUES.includes(value)) return 'derived'
   if (/\.kind$/.test(path) && /^utility/.test(value)) return 'cited'
   const hit = DEFAULTS.find(([re]) => re.test(path))
   return null == hit ? null : hit[1]
@@ -340,4 +364,4 @@ function occurrences(lang: string, tok: string): string[] {
   return runtimeFiles(lang).filter((f) => wordIn(tok, Fs.readFileSync(Path.join(SCAFFOLD, f), 'utf8')))
 }
 
-export { AHEAD, DEFAULTS, NOT_RUNTIME, account, checkAbsence, checkCitation, occurrences, codeTokens, declaredLeaves, defaultCategory, runtimeFiles, runtimeText, tally }
+export { AHEAD, DEFAULTS, NEW_FACTS, NOT_RUNTIME, ON_VALUES, account, checkAbsence, checkCitation, occurrences, codeTokens, declaredLeaves, defaultCategory, runtimeFiles, runtimeText, tally }

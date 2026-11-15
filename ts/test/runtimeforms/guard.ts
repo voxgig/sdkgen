@@ -11,7 +11,7 @@ import {
   OPS, defaultSigName, defaultSigParams, defaultSigReturns, esc, findDecls, generatorColumn, namePattern, opMethod, opSource,
   publicNames, read,
 } from './forms'
-import { account, checkCitation, codeTokens, runtimeFiles, runtimeText } from './account'
+import { NEW_FACTS, ON_VALUES, account, checkCitation, codeTokens, runtimeFiles, runtimeText } from './account'
 import type { Call } from './calls'
 import { arityFits, readCalls, receiverFits } from './calls'
 
@@ -496,6 +496,48 @@ function check(t: string, S: any, forms: Forms): Result {
         if (want !== m.runs) add('runs', `the code runs the stream's operation ${st.runs} (${want}); declared runs: ${m.runs}`)
         else verified.add(`ref.facts.${side}[${i}].runs`)
       })
+    }
+  }
+
+  // The optional facts brief 7 adds, each re-derived where the runtime shows it.
+  {
+    // A member written as a field is one in the runtime, and the reverse.
+    for (const [side, list] of [['client', r.client], ['entity', r.entity]] as const) {
+      list.forEach((m: any, i: number) => {
+        if (!('field' in m)) return
+        const d = memberDecl[side + i]
+        if (null == d) return
+        if (!!m.field !== d.field) add('field', `${side} ${m.kind}: declared field: ${m.field}; the runtime's ${d.name} is ${d.field ? 'a field' : 'called'}`)
+        else verified.add(`ref.facts.${side}[${i}].field`)
+      })
+    }
+    // What members are called on, wherever the page states it.
+    const on = [...new Set(r.client.map((_m: any, i: number) => memberDecl['client' + i]?.on).filter((x: any) => null != x))]
+    const leavesOn: [string, any][] = []
+    const walk = (x: any, pre: string) => {
+      if (null == x || 'object' !== typeof x) return void ((ON_VALUES.includes(x)) && leavesOn.push([pre, x]))
+      for (const [k, v] of Object.entries(x)) if (!['client', 'entity', 'test', 'op', 'opMatched', 'entityBy'].includes(k) || pre !== 'ref.facts') walk(v, pre + (Array.isArray(x) ? '[' + k + ']' : '.' + k))
+    }
+    walk(r, 'ref.facts')
+    for (const [path, v] of leavesOn) {
+      if (1 === on.length && on[0] === v) verified.add(path)
+      else add('on', `${path} says the client's members are called on ${v}; the runtime declares them on ${on.join(' and ') || '(none read)'}`)
+    }
+    // How prose names a member: bare where a call is juxtaposed or a Lisp form.
+    for (const [k, v] of Object.entries(r)) {
+      const path = 'ref.facts.' + k
+      if (!NEW_FACTS.memberNamed.test(path) || null == forms.calls) continue
+      const want = ['space', 'lisp'].includes(forms.calls.args || 'paren') ? 'bare' : 'call'
+      if (v === want) verified.add(path)
+      else add('named', `${path} is ${v}; in this notation (${forms.calls.args || 'paren'}) a member is named ${want}`)
+    }
+    // The deleted mark is a member or field the entity declares.
+    for (const [k, v] of Object.entries(r)) {
+      const path = 'ref.facts.' + k
+      if (!NEW_FACTS.deleted.test(path)) continue
+      const n = (/[A-Za-z_]\w*/.exec(spell(String(v))) || [])[0]
+      if (null != n && 0 < findDecls(forms, entity, esc(n)).length) verified.add(path)
+      else add('deleted', `${path} names ${v}, which the entity does not declare`)
     }
   }
 

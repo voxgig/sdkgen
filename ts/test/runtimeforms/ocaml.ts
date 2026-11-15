@@ -127,6 +127,8 @@ const forms: Forms = {
   },
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
+    // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
+    'ref.facts.entity[2].copy': { value: true, file: 'src/cmp/ocaml/Entity_ocaml.ts', quote: 'ent.e_match_get <- (fun () -> utility.u_feature_hook entctx "GetMatch"; clone ent.e_match);' },
     // The test client's mock without the test feature, cited ahead: the factory's fallback.
     'ref.facts.testMock': { value: "generated", file: "src/cmp/ocaml/Config_ocaml.ts", quote: "| _ -> base_feature ()" },
     'ref.facts.direct.okFalse': { value: "Bool false", file: "tm/ocaml/sdk_features.ml", quote: "jo [(\"ok\", Bool false);" },

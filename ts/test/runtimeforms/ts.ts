@@ -55,6 +55,9 @@ const forms: Forms = {
     ['Control', 'object'], ['any', 'object'], ['Partial<D>', 'object'], ['Record<string,any>', 'object'],
   ]),
   cite: {
+    // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
+    'ref.facts.streamSignal': { value: true, file: 'src/cmp/ts/fragment/EntityBase.fragment.ts', quote: ['ctrl.signal = callopts.signal', 'if (signal && signal.aborted) { return }'] },
+    'ref.facts.entity[1].copy': { value: true, file: 'src/cmp/ts/fragment/EntityBase.fragment.ts', quote: 'let out = struct.clone(this._match)' },
     'ref.facts.client[0].copy': { value: true, file: "src/cmp/ts/fragment/Main.fragment.ts", quote: "return this._utility.struct.clone(this._options)" },
     'ref.facts.entity[5].copy': { value: true, file: "src/cmp/ts/fragment/EntityBase.fragment.ts", quote: "return this._utility.struct.merge([{}, this._entopts])" },
     'ref.facts.direct.abortCode': { file: 'tm/ts/src/utility/MakeRequestUtility.ts', quote: "const abort = ctx.error('request_aborted', 'request aborted')" },
