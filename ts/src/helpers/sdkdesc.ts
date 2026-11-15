@@ -278,37 +278,54 @@ function describe(model: any, target: any, naming: Naming, template: Record<stri
 }
 
 
-// The constructor's option rows. Each must be a key of main.kit.optspec, the
-// schema make_options validates against; `feature` is assembled per target.
-const OPTION_TEXT: [string, string][] = [
-  ['apikey', 'API key for authentication.'],
-  ['secret', 'Password for HTTP Basic authentication; `apikey` is the user name.'],
-  ['base', 'Base URL for API requests.'],
-  ['prefix', 'URL prefix appended after base.'],
-  ['suffix', 'URL suffix appended after path.'],
-  ['headers', 'Custom headers for all requests.'],
-  ['feature', 'Feature configuration.'],
-  ['system', 'System overrides (e.g. custom fetch).'],
-]
+// The constructor's option rows come from main.kit.optspec, the schema
+// make_options validates against: one row per key, in the schema's order,
+// then `feature`, which is assembled per target. A key is left out where the
+// model makes it inapplicable (no auth, no Basic secret, no templated server
+// URL) or where what it does differs between runtimes and no runtime fact
+// says which (OPTION_UNSTATED). Rows follow this table's order, then any other
+// schema key, sorted; text for a key the schema lacks is never read.
+const OPTION_TEXT: Record<string, string> = {
+  apikey: 'API key for authentication.',
+  secret: 'Password for HTTP Basic authentication; `apikey` is the user name.',
+  auth: 'Settings for how the credential is sent.',
+  base: 'Base URL for API requests.',
+  prefix: 'URL prefix appended after base.',
+  suffix: 'URL suffix appended after path.',
+  headers: 'Custom headers for all requests.',
+  allow: 'Comma-separated allow-lists of the HTTP methods and the operations the client may use.',
+  feature: 'Feature configuration.',
+  system: 'System overrides (e.g. custom fetch).',
+  clean: 'Redaction of everything the SDK emits.',
+  server: 'Values for the variables the server URL is templated on.',
+}
+
+const OPTION_UNSTATED: Record<string, string> = {
+  entity: 'per-entity overrides: which runtimes read them is not established',
+  extend: 'feature instances: rust, c and ocaml do not read the option, and zig takes them as an argument of new_with',
+  utility: 'utility replacements: rust, c, zig, ocaml and cpp hold options in a closed value union that cannot carry one',
+  test: 'test-mode settings beside feature.test: which runtimes read them is not established',
+}
 
 function describeRef(model: any, target: any, active: boolean, secret: boolean, server: DescServerVar[]): DescRef {
   const spec = getModelPath(model, `main.${KIT}.optspec`, { required: false, only_active: false }) || {}
   const kind = (v: any): DescOptionRow['type'] =>
     null != v && 'object' === typeof v ? 'OBJECT' : ('string' === typeof v && !v.includes('$ANY') ? 'STRING' : 'ANY')
+  const applies: Record<string, boolean> = { apikey: active, auth: active, secret, server: 0 < server.length }
   const rows: DescOptionRow[] = []
-  for (const [key, text] of OPTION_TEXT) {
-    if ('apikey' === key && !active) continue
-    if ('secret' === key && !secret) continue
-    if ('feature' !== key && !(key in spec)) continue
-    rows.push({ path: [key], type: 'feature' === key ? 'OBJECT' : kind(spec[key]), text })
-  }
-  if (0 < server.length && 'server' in spec) {
-    rows.push({ path: ['server'], type: 'OBJECT', text: 'Values for the variables the server URL is templated on.' })
-    for (const v of server) {
-      rows.push({
-        path: ['server', v.name], type: 'STRING',
-        text: v.required ? 'Required.' : 'Defaults to `' + v.dflt + '`.',
-      })
+  const keys = [...Object.keys(spec), 'feature']
+  const order = Object.keys(OPTION_TEXT)
+  const rank = (k: string): number => order.includes(k) ? order.indexOf(k) : order.length
+  for (const key of keys.filter((k, i) => i === keys.indexOf(k)).sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))) {
+    if (key in OPTION_UNSTATED || false === applies[key]) continue
+    rows.push({ path: [key], type: 'feature' === key ? 'OBJECT' : kind(spec[key]), text: OPTION_TEXT[key] || '' })
+    if ('server' === key) {
+      for (const v of server) {
+        rows.push({
+          path: ['server', v.name], type: 'STRING',
+          text: v.required ? 'Required.' : 'Defaults to `' + v.dflt + '`.',
+        })
+      }
     }
   }
   const feats = targetFeatures(model, target)
@@ -526,6 +543,8 @@ export type {
 }
 
 export {
+  OPTION_TEXT,
+  OPTION_UNSTATED,
   templateName,
   sdkDescription,
   readsSecret,

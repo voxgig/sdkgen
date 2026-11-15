@@ -359,3 +359,50 @@ describe('optionSpec: the shipped feature set', () => {
     }
   })
 })
+
+
+// D26: the REFERENCE constructor table takes its rows from the schema, both
+// ways. A model that applies every gated key (auth, a Basic secret, a
+// templated server URL) shows every key but the ones whose meaning differs
+// between runtimes, which are named with a reason.
+describe('constructor option rows follow optspec', () => {
+  const { sdkDescription, OPTION_TEXT, OPTION_UNSTATED } = require('../dist/helpers/sdkdesc')
+
+  function rows(extra: any = {}): string[] {
+    const model = {
+      name: 'demo', const: { Name: 'Demo' },
+      main: { kit: {
+        optspec: baseModel().main.kit.optspec, entity: {}, feature: {}, target: { ts: { name: 'ts' } },
+        info: { servers: [{ url: 'https://{tenant}.example.com', variables: {} }] },
+        ...extra,
+      } },
+    }
+    return sdkDescription(model, { name: 'ts' }).ref.optionRows
+      .filter((r: any) => 1 === r.path.length).map((r: any) => r.path[0])
+  }
+
+  test('every schema key has a row or a stated reason, and no row lacks a schema key', () => {
+    const spec = Object.keys(baseModel().main.kit.optspec)
+    const basic = rows({ config: { auth: { active: true, basic: true, in: 'header' } } })
+    ok(basic.includes('secret'), 'a Basic model shows secret: ' + basic.join(' '))
+    const shown = new Set([...rows(), ...basic])
+    for (const k of spec) {
+      ok(shown.has(k) || k in OPTION_UNSTATED, `schema key ${k} has no row and no reason`)
+    }
+    for (const k of shown) ok(spec.includes(k) || 'feature' === k, `row ${k} is no schema key`)
+    for (const k of Object.keys(OPTION_UNSTATED)) ok(spec.includes(k), `unstated ${k} is no schema key`)
+    for (const k of Object.keys(OPTION_TEXT)) ok(spec.includes(k) || 'feature' === k, `text for ${k}, no schema key`)
+    // A key the schema gains is a row at once, with no text written for it.
+    ok(rows({ optspec: { ...baseModel().main.kit.optspec, retries: 3 } }).includes('retries'))
+    // A key the schema loses loses its row.
+    const less = { ...baseModel().main.kit.optspec }
+    delete less.headers
+    ok(!rows({ optspec: less }).includes('headers'))
+  })
+
+  test('a gated key follows the model: no auth, no apikey or auth row', () => {
+    const off = rows({ config: { auth: { active: false } } })
+    ok(!off.includes('apikey') && !off.includes('auth'), off.join(' '))
+    ok(rows().includes('apikey'))
+  })
+})
