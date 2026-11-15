@@ -1,0 +1,7 @@
+[
+ { "id": "record-to-item-rb", "lang": "rb", "section": "reference", "file": "B/rb/REFERENCE.md", "from": "without one, every record is listed.", "to": "without one, every item is listed.", "note": "a shared word the v3.2 mask hid (B has an entity named record): a wrong word there must be left open" },
+ { "id": "record-to-planet-rb", "lang": "rb", "section": "reference", "file": "B/rb/REFERENCE.md", "from": "without one, every record is listed.", "to": "without one, every planet is listed.", "note": "the same shared word replaced by another entity name: still a word, not a model slot" },
+ { "id": "record-to-utility-go", "lang": "go", "section": "reference", "file": "B/go/REFERENCE.md", "from": "without one, every record is listed.", "to": "without one, every utility is listed.", "note": "as above in a language whose result style differs" },
+ { "id": "reads-its-utility-ts", "lang": "ts", "section": "reference", "file": "B/ts/REFERENCE.md", "from": "`.data()` reads its record.", "to": "`.data()` reads its utility.", "note": "the record noun after the record accessor" },
+ { "id": "headers-and-body-py", "lang": "py", "section": "reference", "file": "B/py/REFERENCE.md", "from": "`data`, even for a non-2xx", "to": "`body`, even for a non-2xx", "note": "a shared literal that equals py's own fact value (accessor.param `data`) in v3.2 was masked as that fact" }
+]

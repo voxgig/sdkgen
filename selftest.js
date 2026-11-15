@@ -1,4 +1,4 @@
-// node selftest.js --clone <clone> --old <root> --new <root> [--stage2 <root with old/ new/>] [--only part,..] [--modes reviewed,scratch]
+// node selftest.js --clone <clone> --old <root> --new <root> [--stage2 <root with old/ new/>] [--v32 <tools dir of v3.2 records>] [--only part,..] [--modes reviewed,scratch]
 //
 // The tools test themselves, and fail when one has gone blind. Nothing under
 // tools/classes, tools/hand or tools/review is written: injections run on a
@@ -30,6 +30,17 @@
 //           recording the true values, so that the unmutated output passes;
 //   sentences a reference sentence marked `false` in reviewed/sentences.json
 //           is never matched, and every shared match records its verdict.
+//   masking a shared word the v3.2 mask hid as a model name or a fact
+//           (controls/masking.json), changed on one page: a new class left
+//           for a person and nothing accepted automatically, in both modes;
+//   identity one template in several languages is one sentence id (printer
+//           output, member names, labels, articles, class shapes, numbers,
+//           comment facts, a value with its own backticks); a shared word or
+//           literal is not a slot; go's bold step lead is split, a
+//           `**Returns:**` lead is not; the fixture model's text is left out;
+//           a stale build and a stale hand record fail; re-keying records
+//           keyed by this code changes nothing (twice), and re-keying the
+//           v3.2 records (--v32) loses no hand entry.
 // ledger, accept, recheck and missing run in each mode of --modes (default
 // both): `reviewed` (hand entries, rule records, the previous record) and
 // `scratch` (classify.js --scratch: every class new, as for a new language,
@@ -122,12 +133,14 @@ function injected(j, mode = 'reviewed') {
 const holes = []
 const tag = (mode) => 'scratch' === mode ? ' [scratch]' : ''
 
-if (want('ledger') || want('accept') || want('recheck') || want('missing')) {
+if (want('ledger') || want('accept') || want('recheck') || want('missing') || want('masking')) {
   const inj = want('ledger') ? JSON.parse(Fs.readFileSync(Path.join(CTL, 'injections.json'), 'utf8')) : []
   const acc = want('accept') ? JSON.parse(Fs.readFileSync(Path.join(CTL, 'accept.json'), 'utf8')) : []
   const rck = want('recheck') ? JSON.parse(Fs.readFileSync(Path.join(CTL, 'recheck.json'), 'utf8')) : []
   const mis = want('missing') ? JSON.parse(Fs.readFileSync(Path.join(CTL, 'missing.json'), 'utf8')) : []
-  const total = (inj.length + acc.length + rck.length + mis.length) * MODES.length
+  // a shared word the v3.2 mask hid as a model name (or as a fact), changed on one page
+  const msk = want('masking') ? JSON.parse(Fs.readFileSync(Path.join(CTL, 'masking.json'), 'utf8')) : []
+  const total = (inj.length + acc.length + rck.length + mis.length + msk.length) * MODES.length
   progress(`injections: ${inj.length} regressions, ${acc.length} false sentences, ${rck.length} of the re-check's, ${mis.length} dropped sentences; modes ${MODES.join(', ')} (${total} runs)`)
   let i = 0
   const pct = () => `${i}/${total}, ${Math.round(100 * i / total)}%`
@@ -141,13 +154,13 @@ if (want('ledger') || want('accept') || want('recheck') || want('missing')) {
       if (!flagged && 'scratch' === mode) holes.push(`${part} ${j.id}`)
       record(part, j.id + tag(mode), flagged, `${flagged ? 'flagged' : 'NOT FLAGGED'}: ${r.newOpen.length} new open class(es)${r.fewer.length ? ` (${r.fewer.length} printed less often than its reference)` : ''}, unclassified ${r.baseUn} -> ${r.un} (${pct()})`)
     }
-    for (const j of acc) {
+    for (const [part, list] of [['accept', acc], ['masking', msk]]) for (const j of list) {
       i++
       const r = injected(j, mode)
-      if (r.err) { record('accept', j.id + tag(mode), false, r.err); continue }
+      if (r.err) { record(part, j.id + tag(mode), false, r.err); continue }
       const ok = 0 === r.auto.length && r.newOpen.length > 0
-      if (!ok && 'scratch' === mode) holes.push(`accept ${j.id}`)
-      record('accept', j.id + tag(mode), ok, `${r.newOpen.length} new class(es) left for a person; accepted automatically: ${r.auto.length ? r.auto.join('; ') : 'none'} (${pct()})`)
+      if (!ok && 'scratch' === mode) holes.push(`${part} ${j.id}`)
+      record(part, j.id + tag(mode), ok, `${r.newOpen.length} new class(es) left for a person; accepted automatically: ${r.auto.length ? r.auto.join('; ') : 'none'} (${pct()})`)
     }
     for (const j of mis) {
       i++
@@ -215,6 +228,68 @@ if (want('sentences')) {
   const r1 = Classify.run({ clone: a.clone, old: OLD, new: NEW, lang, section, classes: TC, out: TR, scratch: true, dry: true, sentences: sf })
   record('sentences', 'false-never-matched', !!(r1.open || {})[pid] && !((r1.decided || {})[pid]), `class ${pid} (${pd.outcome}) with its sentence marked false: ${(r1.open || {})[pid] ? 'left open' : 'STILL MATCHED as ' + ((r1.decided || {})[pid] || {}).outcome}`)
   void cls; void recorded
+}
+
+if (want('identity')) {
+  progress('identity: one template one sentence, the bold lead, comment facts, model text, re-key, stale build, stale hand record')
+  const C = require('./cut.js')
+  const I = require('./ident.js').make({ clone: a.clone, old: OLD, new: NEW })
+  const same = (id, xs, want = true) => {
+    const ids = xs.map(([text, kind, lang]) => I.sentenceId(text, kind, lang))
+    const ok = want === (new Set(ids).size === 1)
+    record('identity', id, ok, `${want ? 'one id' : 'different ids'} expected: ${xs.map(([t, , l], k) => `${l} ${ids[k]} "${t.slice(0, 50)}"`).join(' | ')}`)
+  }
+  same('template-two-langs', [['A failed request is reported in the result, not as an error, so branch on `result.ok`.', 'sentence', 'ts'], ['A failed request is reported in the result, not as an error, so branch on `result["ok"]`.', 'sentence', 'py'], ['A failed request is reported in the result, not as an error, so branch on `getp(&result, "ok")`.', 'sentence', 'rust']])
+  same('member-name', [['Accepts the same parameters as `direct()`.', 'sentence', 'ts'], ['Accepts the same parameters as `Direct()`.', 'sentence', 'go'], ['Accepts the same parameters as `sdk_direct()`.', 'sentence', 'c']])
+  same('label-none', [['The first argument holds the test feature\'s options and the second further client options, merged over the test defaults; both may be `undefined`.', 'sentence', 'ts'], ['The first argument holds the test feature\'s options and the second further client options, merged over the test defaults; both may be `nil`.', 'sentence', 'go'], ['The first argument holds the test feature\'s options and the second further client options, merged over the test defaults; both may be `NULL`.', 'sentence', 'c']])
+  same('article-and-class', [['Create a new `AmbientEntity` instance.', 'sentence', 'ts'], ['Create a new `Ambient` instance.', 'sentence', 'c'], ['Create a new `Demo.Entity.Ambient` instance.', 'sentence', 'elixir']])
+  same('number', [['The program after these 2 steps runs them in order.', 'sentence', 'go'], ['The program after these 4 steps runs them in order.', 'sentence', 'go']])
+  same('comment-fact', [['Load an ambient: Ok is the entity; Err on failure', 'comment', 'rust'], ['Load an ambient: .ok is the entity; .err on failure', 'comment', 'zig']])
+  same('comment-collection', [['List planet records: a list of entities, one per record; raises on failure', 'comment', 'py'], ['List planet records: a vector of entities, one per record; raises on failure', 'comment', 'clojure']])
+  same('vec-own-backticks', [['The result\'s `Ok` is a `Vec` of entities, one per record, and its `Err` reports failure.', 'sentence', 'rust'], ['The result\'s `.ok` is a `slice` of entities, one per record, and its `.err` reports failure.', 'sentence', 'zig']])
+  // the converse: a shared word is not a slot
+  same('shared-word-stays', [['The match is optional: without one, every record is listed.', 'sentence', 'ts'], ['The match is optional: without one, every planet is listed.', 'sentence', 'ts']], false)
+  same('shared-literal-stays', [['A failed request is reported in the result, not as an error, so branch on `result.ok`.', 'sentence', 'ts'], ['A failed request is reported in the result, not as an error, and so branch on `result.ok`.', 'sentence', 'ts']], false)
+  const parts = C.splitSentences('**Create a client.** The client reads its API key from the `DEMO_APIKEY` environment variable.')
+  record('identity', 'bold-step-lead', 2 === parts.length && '**Create a client.**' === parts[0], `split into ${parts.length}: ${parts.map((p) => JSON.stringify(p.slice(0, 40))).join(' | ')}`)
+  const ret = C.splitSentences('**Returns:** `dict`, the fetch definition: the request `direct()` would send.')
+  record('identity', 'returns-lead-kept', 1 === ret.length, `**Returns:** lead kept with its sentence (${ret.length} unit)`)
+  record('identity', 'model-text-left-out', I.isModelText('Words the project chose | not the spec') && I.isModelText('Level \\| percent see the guide or [site](https://example.com/x)') && !I.isModelText('The match must include `planet_id`.'), 'the fixture model\'s descriptions are model text; a shared sentence is not')
+  // the stale build: a mirror whose one source is newer than its output
+  const BF = require('./buildfresh.js')
+  const real = BF.check(a.clone)
+  record('identity', 'build-current', 0 === real.stale.length + real.missing.length, `the clone: ${real.checked} sources, ${real.stale.length + real.missing.length} stale`)
+  const SB = Path.join(TMP, 'stalebuild', 'ts')
+  for (const d of ['src/helpers', 'dist/helpers']) Fs.mkdirSync(Path.join(SB, d), { recursive: true })
+  Fs.writeFileSync(Path.join(SB, 'dist/helpers/x.js'), '1'); Fs.utimesSync(Path.join(SB, 'dist/helpers/x.js'), new Date(1e12), new Date(1e12))
+  Fs.writeFileSync(Path.join(SB, 'src/helpers/x.ts'), '1')
+  const sb = node([Path.join(__dirname, 'buildfresh.js'), Path.dirname(SB)])
+  record('identity', 'stale-build', 0 !== sb.rc && /STALE BUILD: ts\/src\/helpers\/x\.ts/.test(sb.out), sb.out.trim().split('\n')[0])
+  // the stale hand record: a reason quoting text that no page and no file holds
+  const HS = require('./handstale.js')
+  const hf = Path.join(TMP, 'hand-stale.json')
+  Fs.writeFileSync(hf, JSON.stringify({ 'aaaaaaaaaa': { outcome: 'same-meaning', why: 'the page says `getp(result, "ok")` as it did', n: 1 }, 'bbbbbbbbbb': { outcome: 'same-meaning', why: 'the page says `voxgig_branch_on_okay(result)` as it did', n: 1 } }))
+  const hs = HS.run({ clone: a.clone, old: OLD, new: NEW, lang: 'c', hand: hf })
+  record('identity', 'stale-hand-record', 1 === hs.stale.length && 'bbbbbbbbbb' === hs.stale[0].id, `${hs.stale.length} stale: ${hs.stale.map((s) => s.id + ' ' + s.missing.join(',')).join('; ')}`)
+  // re-key: records keyed by this code are left alone, twice; a decision is never lost
+  const RK = require('./rekey.js')
+  const RT = Path.join(TMP, 'rekey')
+  for (const d of ['hand', 'pinned', 'classes', 'counts', 'normalizers']) Fs.cpSync(Path.join(__dirname, d), Path.join(RT, d), { recursive: true })
+  const lang = 'clojure'
+  const before = Fs.readFileSync(Path.join(RT, 'hand', lang + '.json'), 'utf8')
+  const r1 = RK.rekeyLang({ clone: a.clone, old: OLD, new: NEW, lang, from: RT })
+  const r2 = RK.rekeyLang({ clone: a.clone, old: OLD, new: NEW, lang, from: RT })
+  record('identity', 'rekey-idempotent', r1.already && r2.already && before === Fs.readFileSync(Path.join(RT, 'hand', lang + '.json'), 'utf8'), `records keyed by this code: ${r1.already ? 'left alone' : 'CHANGED'}, twice: ${r2.already ? 'left alone' : 'CHANGED'}`)
+  // from the v3.2 records (the base, read-only) into a copy: every hand entry carried, stale before, or listed
+  const RV = Path.join(TMP, 'rekey-v32')
+  if (a.v32) {
+    for (const d of ['hand', 'pinned', 'classes', 'counts', 'normalizers']) Fs.cpSync(Path.join(a.v32, d), Path.join(RV, d), { recursive: true })
+    const v = RK.rekeyLang({ clone: a.clone, old: OLD, new: NEW, lang, from: RV })
+    const handN = Object.keys(JSON.parse(Fs.readFileSync(Path.join(a.v32, 'hand', lang + '.json'), 'utf8'))).filter((k) => /^[0-9a-f]{10}$/.test(k)).length
+    const accounted = v.stale.hand.length + v.dropped.hand.length + new Set(Object.keys(JSON.parse(Fs.readFileSync(Path.join(RV, 'hand', lang + '.json'), 'utf8'))).filter((k) => /^[0-9a-f]{10}$/.test(k))).size
+    const again = RK.rekeyLang({ clone: a.clone, old: OLD, new: NEW, lang, from: RV })
+    record('identity', 'rekey-never-loses', 0 === v.dropped.hand.length && again.already && accounted >= handN - v.merged.length, `${lang}: ${handN} hand entries -> carried ${v.carried.hand} (stale before ${v.stale.hand.length}, not carried ${v.dropped.hand.length}, conflicts ${v.conflicts.length}); re-keyed again: ${again.already ? 'nothing to do' : 'CHANGED'}`)
+  }
 }
 
 if (want('purity')) {

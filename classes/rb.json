@@ -79,6 +79,14 @@
   ],
   "unreviewed": 0
  },
+ "3320e33aa5": {
+  "outcome": "unification:client-env-sentence",
+  "why": "Was accepted automatically as shared:ts:3320e33aa5 (masked, it is the ts unit of class 3320e33aa5 (unification:client-env-sentence, by rule:apikey-env)). The sentence review marked its sentence false (reviewed/sentences.json a2bf96f937, carried by rekey.js --verdicts), and a false sentence is never matched again; recorded by hand with the reference class's own outcome so that rb stands where the reference languages stand until shared code is fixed. Counted on the one screen as an accepted class whose sentence a reviewer called false.",
+  "n": 15,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
+ },
  "9363faf207": {
   "outcome": "shared:ts:9363faf207",
   "why": "masked, it is the ts unit of class 9363faf207 (correction:S49, by rule:server-vars)",
@@ -102,6 +110,14 @@
    "86db54d92d"
   ],
   "unreviewed": 0
+ },
+ "b98c5c1370": {
+  "outcome": "correction:S50",
+  "why": "Was accepted automatically as shared:ts:b98c5c1370 (masked, it is the ts unit of class b98c5c1370 (correction:S50, by rule:basic-secret)). The sentence review marked its sentence false (reviewed/sentences.json cfc01f1671, carried by rekey.js --verdicts), and a false sentence is never matched again; recorded by hand with the reference class's own outcome so that rb stands where the reference languages stand until shared code is fixed. Counted on the one screen as an accepted class whose sentence a reviewer called false.",
+  "n": 2,
+  "by": "hand",
+  "type": "added",
+  "section": "tutorial"
  },
  "849816779b": {
   "outcome": "shared:ts:849816779b",
@@ -1247,6 +1263,14 @@
   "type": "added",
   "section": "reference"
  },
+ "7e13c0a95a": {
+  "outcome": "restored:shared",
+  "why": "Was accepted automatically as shared:ts:7e13c0a95a (masked, it is the ts unit of class 7e13c0a95a (restored:shared, by rule:test-opts-shared)). The sentence review marked its sentence false (reviewed/sentences.json 9577ba159e, carried by rekey.js --verdicts), and a false sentence is never matched again; recorded by hand with the reference class's own outcome so that rb stands where the reference languages stand until shared code is fixed. Counted on the one screen as an accepted class whose sentence a reviewer called false.",
+  "n": 19,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "af55f86fa2": {
   "outcome": "restored:shared",
   "why": "the old direct Returns line with the keys it listed",
@@ -1463,6 +1487,14 @@
   "type": "added",
   "section": "reference"
  },
+ "3c49d29119": {
+  "outcome": "correction:ref-6",
+  "why": "Was accepted automatically as shared:go:b31b1f71dd (masked, it is the go unit of class b31b1f71dd (correction:ref-6, by rule:actions-table)). The sentence review marked its sentence false (reviewed/sentences.json cf564b5fca, carried by rekey.js --verdicts), and a false sentence is never matched again; recorded by hand with the reference class's own outcome so that rb stands where the reference languages stand until shared code is fixed. Counted on the one screen as an accepted class whose sentence a reviewer called false.",
+  "n": 16,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
+ },
  "1095fa7261": {
   "outcome": "shared:ts:1095fa7261",
   "why": "masked, it is the ts unit of class 1095fa7261 (correction:S09, by rule:features-log)",
@@ -1581,6 +1613,14 @@
    "9402aedbb5"
   ],
   "unreviewed": 0
+ },
+ "f878d6c74a": {
+  "outcome": "correction:S13",
+  "why": "Was accepted automatically as shared:ts:f878d6c74a (masked, it is the ts unit of class f878d6c74a (correction:S13, by rule:test-nofeature)). The sentence review marked its sentence false (reviewed/sentences.json d48de033ea, carried by rekey.js --verdicts), and a false sentence is never matched again; recorded by hand with the reference class's own outcome so that rb stands where the reference languages stand until shared code is fixed. Counted on the one screen as an accepted class whose sentence a reviewer called false.",
+  "n": 1,
+  "by": "hand",
+  "type": "added",
+  "section": "reference"
  },
  "da08f7e7bd": {
   "outcome": "shared:ts:da08f7e7bd",
