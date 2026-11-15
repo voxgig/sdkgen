@@ -73,7 +73,19 @@ const forms: Forms = {
       file: 'tm/elixir/lib/projectname/utility.ex',
       quote: ['scalar = is_binary(body) or is_number(body) or is_boolean(body)', 'S.setprop(fetchdef, "body", body)'],
     },
-    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|signal)\b|cancel_request|:abort\b/i, files: ['tm/elixir/lib/projectname/utility.ex'] } },
+    // Searched over the whole elixir runtime: a region it leaves out is quoted, with the reason.
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context|:abort\b/i, except: [
+      { file: "tm/elixir/lib/projectname/entity_base.ex", quote: ["#   - signal: an optional 0-arity fn; when it returns true iteration stops.", "signal = S.getprop(callopts, \"signal\")", "|> Stream.take_while(fn _ -> not (S.isfunc(signal) and signal.() == true) end)"],
+        why: "the stream reads callopts.signal between the items it hands over (ref.facts.streamSignal); no operation reads it", fact: "ref.facts.streamSignal" },
+      { file: "tm/elixir/lib/projectname/feature/cost.ex", quote: ["# supersedes it loses precision to catastrophic cancellation", "# PrePoint, so its absence is the signal."],
+        why: "the cost feature's comments: floating-point 'catastrophic cancellation', and 'the signal' as an English word" },
+      { file: "tm/elixir/lib/projectname/feature/timeout.ex", quote: ["# Annotate the fetch definition so a real transport can cancel itself", "# (Python-idiomatic analog of an abort signal). Copy so the caller's"],
+        why: "the timeout feature's own deadline on the transport, which ends a request by time; no caller can cancel an operation through it" },
+      { file: "tm/elixir/lib/projectname/utility.ex", quote: [":aborted ->"],
+        why: ":global.trans answers :aborted when the clean registry's lock is held elsewhere, and registering retries; no request is involved" },
+    ] } },
+    // The stream reads callopts.signal between items, which no operation does: cited ahead of a provider.
+    'ref.facts.streamSignal': { value: true, file: "tm/elixir/lib/projectname/entity_base.ex", quote: ["signal = S.getprop(callopts, \"signal\")", "|> Stream.take_while(fn _ -> not (S.isfunc(signal) and signal.() == true) end)"] },
     'notes.member:utilityBase': { value: "It is the client's own node, not a copy.", file: MAIN, quote: 'def get_utility(client), do: S.getprop(client, "_utility")' },
   },
   exceptions: {

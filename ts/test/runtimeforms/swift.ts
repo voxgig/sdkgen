@@ -95,7 +95,25 @@ const forms: Forms = {
       also: [{ file: 'tm/swift/Sources/ProjectNameSDK/Struct/Value.swift', quote: ['case string(String)', 'public static func nat(_ v: Any) -> Value { .native(NativeRef(v)) }'] },
         { file: 'tm/swift/Sources/ProjectNameSDK/utility/MakeError.swift', quote: '_ = cleanUtil(ctx, .nat(sdkErr))' }],
     },
-    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*)\b|isCancelled|AbortController/i, files: ['tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift', 'src/cmp/swift/fragment/EntityLoadOp.fragment.swift'] } },
+    // Searched over the whole swift runtime: a region it leaves out is quoted, with the reason.
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context/i, except: [
+      { file: "src/cmp/swift/fragment/EntityBase.fragment.swift", quote: ["//   - callopts[\"ctrl\"] threads pipeline control and callopts[\"signal\"] (a", "//     native () -> Bool that returns true when aborted) is honoured between", "let signal = opts.entries[\"signal\"]?.asNative as? @Sendable () -> Bool", "if let s = signal, s() { break }"],
+        why: "the stream reads callopts.signal between the items it hands over (ref.facts.streamSignal); no operation reads it", fact: "ref.facts.streamSignal" },
+      { file: "tm/swift/Sources/ProjectNameSDK/Struct/Transform.swift", quote: ["// Throw via fatalError isn't ideal — use a token to signal upstream."],
+        why: "the vendored struct library's comment on its own error handling" },
+      { file: "tm/swift/Sources/ProjectNameSDK/feature/CostFeature.swift", quote: ["// supersedes it loses precision to catastrophic cancellation", "// is set by prePoint, so its absence is the signal."],
+        why: "the cost feature's comments: floating-point 'catastrophic cancellation', and 'the signal' as an English word" },
+      { file: "tm/swift/Sources/ProjectNameSDK/feature/TimeoutFeature.swift", quote: ["sem.signal()"],
+        why: "the timeout feature's own deadline on the transport, which ends a request by time; no caller can cancel an operation through it" },
+      { file: "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Httpjson.swift", quote: ["/// The body is counted as it arrives and the task cancelled one byte over", "dataTask.cancel()", "finished.signal()"],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+      { file: "tm/swift/Sources/ProjectNameSDK/feature/secrets/plugins/Proc.swift", quote: ["drained.signal()"],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+      { file: "tm/swift/Sources/ProjectNameSDK/utility/Fetcher.swift", quote: ["box.data = d; box.resp = r; box.err = e; sem.signal()"],
+        why: "a DispatchSemaphore's signal(), which wakes the fetch waiting for its response" },
+    ] } },
+    // The stream reads callopts.signal between items, which no operation does: cited ahead of a provider.
+    'ref.facts.streamSignal': { value: true, file: "src/cmp/swift/fragment/EntityBase.fragment.swift", quote: ["let signal = opts.entries[\"signal\"]?.asNative as? @Sendable () -> Bool", "if let s = signal, s() { break }"] },
   },
   // What the table states besides names, parameters and returns.
   testDecl: 'testSDK',

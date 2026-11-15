@@ -34,13 +34,18 @@ type Family =
   | 'data' | 'match' | 'make' | 'name' | 'client' | 'entopts' | 'stream'
 
 // `unquoted`: a token no quote holds, and why; `value`: what was audited where
-// no quote can hold it; `absent`: a search the named files must not match.
+// no quote can hold it; `absent`: a search over the language's whole runtime
+// that must not match outside the regions `except` quotes, each with its
+// reason (`fact`: the cited fact a region shows instead, such as a stream's
+// signal beside an operation's cancel).
+type Exclusion = { file: string, quote: string | string[], why: string, fact?: string }
+
 type Citation = {
   file: string, quote: string | string[], value?: any
   also?: { file: string, quote: string | string[] }[]
   unquoted?: Record<string, string>
 } | {
-  absent: { pattern: RegExp, files: string[] }, value: any
+  absent: { pattern: RegExp, except?: Exclusion[] }, value: any
 }
 
 // A stream read by position: a `run` or `draw` quote ahead of `construct`
@@ -348,7 +353,7 @@ function view(forms: Forms): View {
 }
 
 
-export type { Citation, Decl, Family, Forms, On, OpName, Shape, Src, StreamItems, Style, View }
+export type { Citation, Decl, Exclusion, Family, Forms, On, OpName, Shape, Src, StreamItems, Style, View }
 export {
   CTOR_NAMES,
   OPS,

@@ -88,7 +88,17 @@ const forms: Forms = {
       file: 'tm/c/utility/http.c',
       quote: ['if (voxgig_is_string(body)) {\n    bytes = voxgig_as_string(body);\n    blen = voxgig_string_len(body);', '"body", voxgig_new_string_n(text, len),'],
     },
-    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort\w*|signal)\b|AbortController|WithContext|context\.Context|cancel_request|sendAsync/i, files: ['tm/c/utility/http.c'] } },
+    // Searched over the whole c runtime: a region it leaves out is quoted, with the reason.
+    'ref.facts.cancel': { value: false, absent: { pattern: /\b(cancel\w*|abort(?!\(\))\w*|signal|signalled\??)\b|AbortController|isCancelled|CancellationToken|WithContext|context\.Context/i, except: [
+      { file: "tm/c/feature/cost.c", quote: ["// figure supersedes it loses precision to catastrophic cancellation."],
+        why: "the cost feature's comments: floating-point 'catastrophic cancellation', and 'the signal' as an English word" },
+      { file: "tm/c/feature/secrets/plugin/types.h", quote: ["* pops it. A raise with no frame installed aborts loudly rather than"],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+      { file: "tm/c/feature/secrets/plugins/tls.c", quote: ["* failure ABORT the handshake - without it OpenSSL happily completes", "/* Belt and braces. SSL_VERIFY_PEER above already aborts on a bad chain,"],
+        why: "the secrets feature's own client for fetching a secret (its HTTP, TLS or process calls), which no operation's request goes through" },
+      { file: "tm/c/utility/struct/transform.c", quote: ["For C, write the joined message into errs and abort via a longer-term"],
+        why: "the vendored struct library's comment on its own error handling" },
+    ] } },
   },
   exceptions: {
     'types:ARRAY': 'the code generator\'s map gives voxgig_value* for arrays and maps alike; the page says which, as the old page did',
