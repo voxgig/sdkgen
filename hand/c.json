@@ -208,12 +208,12 @@
  },
  "a1848760f9": {
   "outcome": "restored:shared",
-  "why": "restored as the Returns sentence: a result map holding ok, status, headers and data; on a failure ok is false and err holds the error",
+  "why": "restored as the Returns sentence: a result map; for a response, 2xx or not, the keys ok, status, headers and data; err when the body cannot be read or the request cannot be made (v3.3, sentence review)",
   "n": 19
  },
  "74cdbb7125": {
   "outcome": "restored:shared",
-  "why": "restored as 'A failed request is reported in the result, not as an error, so branch on getp(result, \"ok\")'; true: sdk_raw_request only sets *err to NULL and returns err_map(...) for every failure (Main.fragment.c:196-275)",
+  "why": "restored as 'A failure is reported in the result, not as an error, so branch on `voxgig_as_bool(getp(result, \"ok\"))`'; true: sdk_raw_request only sets *err to NULL and returns err_map(...) for every failure (Main.fragment.c:196-275); v3.3 reads the key as a truth test (getp alone is a pointer)",
   "n": 19
  },
  "c115f99e12": {
