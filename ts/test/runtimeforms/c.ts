@@ -74,9 +74,9 @@ const forms: Forms = {
     paramNames: 'the EntityVT function pointers in core/sdk.h leave their receiver parameter unnamed (Entity*)',
   },
   cite: {
+    'ref.facts.setArg': { value: 'a map', file: 'src/cmp/c/fragment/Entity.fragment.c', quote: ['static voxgig_value* entyvar_data(Entity* e, voxgig_value* args) {', 'voxgig_value* cloned = to_map(voxgig_clone(args));'] },
     'ref.facts.none': { file: 'src/cmp/c/fragment/EntityLoadOp.fragment.c', quote: 'if (*err) return NULL;' },
-    'ref.facts.lits.false': { value: 'false', file: 'src/cmp/c/fragment/Main.fragment.c', quote: 'return cmap(2, "ok", v_bool(false), "err", v_str(msg));' },
-    'ref.facts.lits.true': { value: 'true', file: 'src/cmp/c/fragment/Main.fragment.c', quote: '"ok", v_bool(NULL == body_err && status >= 200 && status < 300),', unquoted: { true: 'ok is the bool the status test computes; true is not spelled' } },
+    'ref.facts.direct.okFalse': { file: 'src/cmp/c/fragment/Main.fragment.c', quote: 'return cmap(2, "ok", v_bool(false), "err", v_str(msg));' },
     'ref.facts.entity[0].copy': { value: true, file: "src/cmp/c/fragment/Entity.fragment.c", quote: "return voxgig_clone(self->data);" },
     'facts.collection': { value: "`NULL`-terminated array", file: OPFILES[1], quote: ['// array is NULL-terminated.', 'items[n] = NULL;'] },
     'facts.errSlot': { file: MAIN, quote: '*err = context_make_error(ctx, "spec_method_allow", buf);' },
