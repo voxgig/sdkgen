@@ -31,7 +31,13 @@ const ReadmeRef = cmp(function ReadmeRef(props: any) {
     File({ name: 'REFERENCE.md' }, () => {
       Content(refText(provider.Syntax, desc))
       if (0 < desc.ref.features.length) {
-        ReadmeRefFeatures({ target })
+        const r = provider.Syntax.ref as RefSyntax
+        ReadmeRefFeatures({
+          target, spell: {
+            key: (path: string[]) => r.key('options', path),
+            on: provider.Syntax.expr({ k: 'lit', type: 'BOOLEAN', text: '' }, newScope(), desc),
+          },
+        })
       }
     })
     return
