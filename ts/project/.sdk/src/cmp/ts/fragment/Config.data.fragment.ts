@@ -19,7 +19,9 @@ const CONFIG_DATA = 'CONFIGJSON'
 class Config {
 
   makeFeature(this: any, fn: string) {
-    const fc = FEATURE_CLASS[fn]
+    // A name the SDK was generated without is the base feature, as in
+    // every other runtime: test() still makes a client, with no mock.
+    const fc = FEATURE_CLASS[fn] || BaseFeature
     const fi = new fc()
     return fi
   }

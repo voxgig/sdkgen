@@ -27,9 +27,10 @@ const FEATURE_PLUGINS = {
 class Config {
 
   makeFeature(fn) {
-    const fc = FEATURE_CLASS[fn]
+    // A name the SDK was generated without is the base feature, as in
+    // every other runtime: test() still makes a client, with no mock.
+    const fc = FEATURE_CLASS[fn] || BaseFeature
     const fi = new fc()
-    // TODO: errors etc
     return fi
   }
 
