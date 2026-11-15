@@ -134,7 +134,10 @@ function memberText(m: Member, p: Syntax, desc: SdkDescription, ent?: DescEntity
   const kind = m.kind
   switch (kind) {
     case 'options': return m.copy ? 'Return a deep copy of the current SDK options.' : 'Return the current SDK options.'
-    case 'utility': return m.copy ? 'Return a copy of the SDK utility object.' : 'Return the SDK utility object.'
+    // A previous-interface provider that says nothing keeps the sentence its
+    // own page carried: no wording is true of both.
+    case 'utility': return m.copy || (null == m.copy && p.facts.served)
+      ? 'Return a copy of the SDK utility object.' : 'Return the SDK utility object.'
     case 'utilityBase': return 'Return the SDK utility object.'
     case 'tester': {
       const test = r.facts.test.find((x) => x.args) || r.facts.test[0]
