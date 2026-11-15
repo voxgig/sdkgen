@@ -195,13 +195,11 @@ function account(lang: string, S: any, forms: Forms, verified: Set<string>): Acc
     else out.category[path] = def
   }
 
-  // copy may come ahead only on a match getter, the getter brief 7 adds it to;
-  // elsewhere a copy citation with no declaration is a fact the provider dropped.
-  const aheadOk = (p: string) => {
-    if (!AHEAD.test(p)) return false
-    const m = /^ref\.facts\.(client|entity)\[(\d+)\]\.copy$/.exec(p)
-    return null == m || /^match/.test(String(S.ref?.facts?.[m[1]]?.[+m[2]]?.kind))
-  }
+  // A fact is cited ahead only for a language no provider prints yet (the
+  // reader test checks those citations). Once a provider exists, brief 7's
+  // facts are in shared code: a citation of a fact it does not declare is a
+  // fact the provider dropped (copy on a getter, streamSignal, accessor.cached).
+  const aheadOk = (_p: string) => false
   for (const p of Object.keys(cite)) {
     if (paths.has(p)) continue
     if (!aheadOk(p)) {

@@ -512,9 +512,14 @@ function check(t: string, S: any, forms: Forms): Result {
     // A member written as a field is one in the runtime, and the reverse.
     for (const [side, list] of [['client', r.client], ['entity', r.entity]] as const) {
       list.forEach((m: any, i: number) => {
-        if (!('field' in m)) return
+        // Left out, the flag says the member is called: a runtime field
+        // printed as a call fails as a wrong flag does.
         const d = memberDecl[side + i]
         if (null == d) return
+        if (!('field' in m)) {
+          if (d.field) add('field', `${side} ${m.kind}: declared without the field flag (called); the runtime's ${d.name} is a field`)
+          return
+        }
         if (!!m.field !== d.field) add('field', `${side} ${m.kind}: declared field: ${m.field}; the runtime's ${d.name} is ${d.field ? 'a field' : 'called'}`)
         else verified.add(`ref.facts.${side}[${i}].field`)
       })
