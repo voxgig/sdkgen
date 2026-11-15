@@ -118,6 +118,11 @@ const forms: Forms = {
   testDecl: 'test',
   on: (d) => /^\s*mutable /.test(d.head) ? 'instance' : 'module',
   expect: { e_name: { field: true }, e_deleted: { field: true }, e_data: { field: true }, e_load: { field: false }, test: { on: 'module' } },
+  shows: {
+    // The client has no options or utility function; the sdk_client record holds both as fields.
+    'the client\'s options and utility': { value: 'the fields cl_options and cl_utility of the sdk_client record, read without a call',
+      file: 'tm/ocaml/sdk_types.ml', quote: ['mutable cl_options : value;', 'mutable cl_utility : utility;'] },
+  },
   stream: {
     file: "src/cmp/ocaml/Entity_ocaml.ts",
     construct: "seq_of raw);", starts: "on iteration",

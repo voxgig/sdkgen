@@ -27,6 +27,8 @@ const forms: Forms = {
   optional: (p) => /=/.test(p),
   returns: (_after, _before, _head, rest) => {
     const m = /^\s*(?:throws\s*)?->\s*((?:\$\{[^}]*\}|[^{\n])+)/.exec(rest) || /^\s*:\s*((?:\$\{[^}]*\}|[^={\n])+)/.exec(rest)
+    // A property initialised with a string literal (`var mode = "live"`) is a String.
+    if (null == m && /^\s*=\s*"/.test(rest)) return 'String'
     return null == m ? '' : m[1].trim()
   },
   entityCtor: 'init',

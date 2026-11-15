@@ -9,7 +9,7 @@ import * as Fs from 'node:fs'
 import * as Path from 'node:path'
 
 import type { Decl, Forms, View } from './runtimeforms/forms'
-import { OPS, bracketed, esc, findDecls, generatorColumn, read, view } from './runtimeforms/forms'
+import { OPS, SCAFFOLD, bracketed, esc, findDecls, generatorColumn, read, view } from './runtimeforms/forms'
 import { FORMS_SRC, FRAMEWORK, RUNS, streamItems, streamClaims } from './runtimeforms/guard'
 import { AHEAD, checkCitation } from './runtimeforms/account'
 
@@ -217,6 +217,7 @@ function section(t: string, forms: Forms, v: View): string {
     null == st || null != st.problem ? 'Stream: (not read)' :
       `Stream (${forms.stream?.file}): the operation runs **${st.runs}** (a provider declares \`runs: '${RUNS[st.runs]}'\`); the streaming feature's items are read **${st.items}**; ` +
       'without the feature the items are the whole result, read before the first one is handed over.',
+    ...newRows(t, forms, v),
     ...Object.entries(forms.cite || {}).filter(([p, c]: [string, any]) => AHEAD.test(p) && 'value' in c)
       .map(([p, c]: [string, any]) => `- \`${p}\`, cited ahead of a provider: \`${c.value}\` (${c.file}: \`${c.quote}\`)`),
     ...Object.entries(forms.shows || {}).map(([what, c]: [string, any]) => `- ${what}: ${JSON.stringify(c.value)} (${c.file ?? 'absent from ' + c.absent?.files.join(', ')})`),
@@ -228,6 +229,42 @@ function section(t: string, forms: Forms, v: View): string {
     '',
   ]
   return lines.join('\n')
+}
+
+
+// Where a quote stands in its file, as file:line.
+function where(file: string, quote: string | string[]): string {
+  const q = ([] as string[]).concat(quote)[0]
+  const p = Path.join(SCAFFOLD, file)
+  if (!Fs.existsSync(p)) return file
+  const text = Fs.readFileSync(p, 'utf8')
+  const at = text.indexOf(q)
+  return at < 0 ? file : file + ':' + text.slice(0, at).split('\n').length
+}
+
+// What a port's call printer and page must agree with: how a call is written,
+// whether a stream reads a signal, the deleted mark, the accessor's kept
+// instance.
+function newRows(t: string, forms: Forms, v: View): string[] {
+  const cite = (forms.cite || {}) as Record<string, any>
+  const calls = null == forms.calls ? 'not stated yet (a port states them in calls)'
+    : Object.entries(forms.calls.on).map(([on, seps]) => `on ${on} through ${0 === (seps as string[]).length ? 'nothing (a free function)' : (seps as string[]).map((x) => '`' + x + '`').join(' or ')}`).join('; ') +
+      `; arguments ${({ paren: 'in parentheses', space: 'juxtaposed', lisp: 'in a Lisp form' } as any)[forms.calls.args || 'paren']}` +
+      (forms.calls.parenless ? ', the parentheses optional' : '') +
+      (null == forms.calls.ctor ? '' : '; ' + Object.entries(forms.calls.ctor).map(([a, b]) => `\`${a}\` runs \`${b}\``).join(', '))
+  const sig = cite['ref.facts.streamSignal']
+  const cancel = cite['ref.facts.cancel']
+  const signal = null != sig && 'absent' in sig ? `none: absent from the whole runtime (${sig.absent.pattern})`
+    : null != sig ? `read: \`${([] as string[]).concat(sig.quote)[0]}\` (${where(sig.file, sig.quote)})`
+    : (null != cancel && 'absent' in cancel ? 'none: the cancel search leaves no stream region out' : 'not read by these forms')
+  const deleted = v.entity.filter((n) => /delet/i.test(n))
+  const cached = cite['ref.facts.accessor.cached']
+  return [
+    '', `Calls: ${calls}.`,
+    `Stream signal (\`callopts.signal\`): ${signal}.`,
+    `Deleted mark: ${0 === deleted.length ? 'no public entity member names one' : deleted.map((n) => '`' + n + '`' + (null != forms.undocumented?.[n] ? ' (' + forms.undocumented[n] + ')' : '')).join(', ')}.`,
+    `Accessor called with no options: ${null == cached ? 'no kept instance cited' : `returns the instance the client keeps (\`${([] as string[]).concat(cached.quote)[0].split('\n')[0]}\`, ${where(cached.file, cached.quote)})`}.`,
+  ]
 }
 
 
