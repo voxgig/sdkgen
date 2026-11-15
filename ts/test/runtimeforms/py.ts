@@ -47,6 +47,8 @@ const forms: Forms = {
   // The porter's, from here on.
   uncompared: { returns: 'the runtime annotates the returns of the operations and data_get/match_get only; the others are cited where a fact rests on them' },
   cite: {
+    // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
+    'ref.facts.entity[2].copy': { value: true, file: 'src/cmp/py/fragment/Entity.fragment.py', quote: 'return vs.clone(self._match)' },
     'ref.facts.client[0].copy': { value: true, file: "src/cmp/py/fragment/Main.fragment.py", quote: "out = vs.clone(self.options)" },
     'ref.facts.none': { file: 'src/cmp/py/fragment/EntityLoadOp.fragment.py', quote: 'def load(self, reqmatch=None, ctrl=None) -> EntyClass:' },
     'ref.facts.direct.okFalse': { file: MAIN, quote: 'return {"ok": False, "err": utility.clean(self._rootctx, err)}' },

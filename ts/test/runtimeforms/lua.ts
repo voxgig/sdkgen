@@ -87,6 +87,8 @@ const forms: Forms = {
   },
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
+    // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
+    'ref.facts.accessor.cached': { value: true, file: 'src/cmp/lua/MainEntity_lua.ts', quote: ['if data == nil then\n    if self._${field} == nil then', 'return self._${field}'] },
     'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/lua/fragment/Main.fragment.lua", quote: "return { ok = false, err = err }, nil" },
     // The pair as the code returns it: the error table second on a failure, nil second on success.
     'facts.pairForm': { value: 'value, err', file: 'tm/lua/utility/make_error.lua', quote: 'return nil, sdk_err',

@@ -54,6 +54,8 @@ const forms: Forms = {
   },
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
+    // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
+    'ref.facts.streamSignal': { value: true, file: 'src/cmp/java/fragment/EntityBase.fragment.java', quote: ['Object signalObj = callopts.get("signal");', 'if (ended || (signal != null && signal.getAsBoolean())) {'] },
     'ref.facts.direct.okFalse': { value: "false", file: "tm/java/core/SdkClient.java", quote: "out.put(\"ok\", false);" },
   },
 }

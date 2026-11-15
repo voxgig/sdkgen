@@ -61,6 +61,8 @@ const forms: Forms = {
   },
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
+    // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
+    'ref.facts.streamSignal': { value: true, file: 'src/cmp/scala/fragment/EntityBase.fragment.scala', quote: ['val signal = opts.get("signal")', 'val aborted: () => Boolean = signal match {'] },
     'ref.facts.direct.okFalse': { value: "false", file: "tm/scala/core/SdkClient.scala", quote: "out.put(\"ok\", java.lang.Boolean.FALSE)", unquoted: { false: "java.lang.Boolean.FALSE is the boxed false a Scala map of Any holds" } },
   },
 }

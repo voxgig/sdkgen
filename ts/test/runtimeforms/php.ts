@@ -52,6 +52,9 @@ const forms: Forms = {
   },
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
+    // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
+    'ref.facts.streamSignal': { value: true, file: 'src/cmp/php/fragment/Entity.fragment.php', quote: ["$signal = $callopts['signal'] ?? null;", '$aborted = function () use ($signal): bool {'] },
+    'ref.facts.accessor.cached': { value: true, file: 'src/cmp/php/MainEntity_php.ts', quote: ['if ($data === null) {\n            if ($this->_${field} === null) {', 'return $this->_${field};'] },
     'ref.facts.direct.okFalse': { value: "false", file: "src/cmp/php/fragment/Main.fragment.php", quote: "return [\"ok\" => false, \"err\" => $err];" },
   },
 }

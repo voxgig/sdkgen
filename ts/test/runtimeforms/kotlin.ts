@@ -61,6 +61,8 @@ const forms: Forms = {
   },
   // direct's `ok` on a failure, cited ahead of the provider: a port declares ref.facts.direct.okFalse as this value.
   cite: {
+    // Cited ahead of the provider (brief 7): a later declaration must equal the pinned value.
+    'ref.facts.streamSignal': { value: true, file: 'src/cmp/kotlin/fragment/EntityBase.fragment.kt', quote: ['val signal = opts["signal"]', 'val aborted: () -> Boolean = when (signal) {'] },
     'ref.facts.direct.okFalse': { value: "false", file: "tm/kotlin/core/SdkClient.kt", quote: "out[\"ok\"] = false" },
   },
 }
